@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
+import { composerInput } from './__helpers/composer';
 import { chatPicksPreference, chatsSlug, pickerAgentSlug } from './fixtures/question/shared';
 
 test.setTimeout(120_000);
@@ -15,7 +16,7 @@ test.beforeEach(async ({ page }) => {
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
 
   await page.goto(`/collections/${chatsSlug}/create`);
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 
   await choosePickerAgent(page);
 });
@@ -751,7 +752,7 @@ async function renameModels({ page, names }: { page: Page; names: Record<string,
 
   await page.reload();
 
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 
   await choosePickerAgent(page);
 }
@@ -860,7 +861,7 @@ async function composerLayout(page: Page) {
     );
 
     return {
-      textarea: box(composer.querySelector('textarea')!),
+      input: box(composer.querySelector('.fb-composer__input')!),
       start: Array.from(start).map(box),
       end: Array.from(composer.querySelectorAll('.fb-composer__end > *')).map(box),
       trigger: [round(selector.left), round(selector.top)],
@@ -1046,7 +1047,7 @@ async function dropModel({ page, id }: { page: Page; id: string }) {
 
   await page.reload();
 
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 
   await choosePickerAgent(page);
 }

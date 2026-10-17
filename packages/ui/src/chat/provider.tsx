@@ -6,6 +6,9 @@ import { createContext, type ReactNode, use, useEffect, useState } from 'react';
 import type { ChatPlatformAdapter } from './adapter.js';
 import { ArtifactProvider } from './artifact.js';
 import type { ArtifactPersistence, ArtifactRegistryItem } from './artifact-registry.js';
+import type { ComposerCommand, MentionSource } from './composer/context.js';
+import type { ComposerFeature } from './composer/features.js';
+import type { ComposerHistoryStorage } from './composer/history.js';
 import type { DataRenderer } from './data-part.js';
 import type { ToolRenderer } from './tool-registry.js';
 
@@ -16,6 +19,10 @@ export type ChatProviderValue = {
   loading: boolean;
   toolRenderers: readonly ToolRenderer[];
   dataRenderers: readonly DataRenderer[];
+  commands?: readonly ComposerCommand[];
+  mentionSources?: readonly MentionSource[];
+  composerFeatures?: readonly ComposerFeature[];
+  composerHistory?: ComposerHistoryStorage;
 };
 
 const ChatContext = createContext<ChatProviderValue | undefined>(undefined);
@@ -25,14 +32,22 @@ export function ChatProvider({
   artifactKinds = [],
   artifactPersistence,
   children,
+  commands,
+  composerFeatures,
+  composerHistory,
   dataRenderers = [],
+  mentionSources,
   toolRenderers = [],
 }: {
   adapter: ChatPlatformAdapter;
   artifactKinds?: readonly ArtifactRegistryItem[];
   artifactPersistence?: ArtifactPersistence;
   children: ReactNode;
+  commands?: readonly ComposerCommand[];
+  composerFeatures?: readonly ComposerFeature[];
+  composerHistory?: ComposerHistoryStorage;
   dataRenderers?: readonly DataRenderer[];
+  mentionSources?: readonly MentionSource[];
   toolRenderers?: readonly ToolRenderer[];
 }) {
   const [state, setState] = useState<Pick<ChatProviderValue, 'manifest' | 'error' | 'loading'>>({
@@ -60,7 +75,18 @@ export function ChatProvider({
   }, [adapter]);
 
   return (
-    <ChatContext value={{ adapter, ...state, toolRenderers, dataRenderers }}>
+    <ChatContext
+      value={{
+        adapter,
+        ...state,
+        toolRenderers,
+        dataRenderers,
+        commands,
+        mentionSources,
+        composerFeatures,
+        composerHistory,
+      }}
+    >
       <ArtifactProvider persistence={artifactPersistence} registry={artifactKinds}>
         {children}
       </ArtifactProvider>

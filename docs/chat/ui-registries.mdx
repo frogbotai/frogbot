@@ -2,10 +2,10 @@
 title: "Register tools and artifacts"
 sidebarTitle: "Tools and artifacts"
 description: "Render application-specific tools and artifact kinds through public registries."
-keywords: ["tools", "artifacts", "registry", "custom renderer"]
+keywords: ["tools", "artifacts", "registry", "custom renderer", "commands", "mentions", "composer"]
 ---
 
-Pass tool renderers, data renderers and artifact kinds to `ChatProvider`. Registration uses exact, case-sensitive `kind` values.
+Pass tool renderers, data renderers and artifact kinds to `ChatProvider`. Registration uses exact, case-sensitive `kind` values. The composer's `/` commands, `@` mention sources and features go there too; see [Composer commands](#composer-commands).
 
 ```tsx
 import { ChatProvider } from '@frogbotai/ui/chat'
@@ -104,6 +104,126 @@ While `status` is `running`, it shows **Compacting…** with a spinner and no cl
 | --- | --- | --- | --- |
 | `load` | `(id: string) => Promise<Artifact \| undefined>` | Required | Loads an artifact by ID when an artifact viewer opens it. |
 | `save` | `(artifact: Artifact) => Promise<Artifact>` | Required | Saves the open artifact when the viewer's **Save** button is clicked, then shows the returned artifact. |
+
+## Composer commands
+
+`commands`, `mentionSources`, `composerFeatures` and `composerHistory` on `ChatProvider` extend the composer, in `<Chat>` or a standalone `Composer`.
+
+```tsx
+'use client'
+
+import {
+  ChatProvider,
+  type ComposerCommand,
+  type ComposerFeature,
+  defaultComposerFeatures,
+  type MentionSource,
+} from '@frogbotai/ui/chat'
+import { useLexicalComposerContext } from '@frogbotai/ui/lexical'
+import { useEffect } from 'react'
+
+const commands: ComposerCommand[] = [
+  { id: 'new', title: 'New chat', execute: () => startNewChat() },
+  { id: 'model', title: 'Switch model', arguments: true, execute: (name) => selectModel(name) },
+]
+
+const pages: MentionSource = {
+  id: 'pages',
+  search: async (query, { signal }) => {
+    const response = await fetch(`/api/pages?search=${encodeURIComponent(query)}`, { signal })
+    const { docs } = await response.json()
+
+    return docs.map((page: { id: string; title: string; url: string }) => ({
+      id: page.id,
+      label: page.title,
+      data: { url: page.url },
+    }))
+  },
+}
+
+function SaveDraft() {
+  const [editor] = useLexicalComposerContext()
+
+  useEffect(
+    () => editor.registerTextContentListener((text) => sessionStorage.setItem('draft', text)),
+    [editor],
+  )
+
+  return null
+}
+
+const features: ComposerFeature[] = [...defaultComposerFeatures, { key: 'draft', plugin: SaveDraft }]
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <ChatProvider
+      adapter={adapter}
+      commands={commands}
+      mentionSources={[pages]}
+      composerFeatures={features}
+    >
+      {children}
+    </ChatProvider>
+  )
+}
+```
+
+Typing `/` as the whole input opens a menu of the enabled commands whose `id` or `title` contains the text after it. Typing `@` at the start or after a space searches every mention source and groups the results by source. In both menus Tab or Enter picks, Up and Down or Ctrl+N and Ctrl+P move, and Escape closes the menu.
+
+Picking a command without `arguments` clears the input and runs it. Picking one with `arguments` writes `/id `; sending `/id rest` then calls `execute(rest)`. Either way the text clears, attachments stay, nothing is sent or added to history, and it works while a reply streams. In `<Chat>`, a command that rejects shows `Command failed: <message>`.
+
+Picking a mention inserts a chip that reads `@label`. One Backspace removes it. `<Chat>` sends the chip's `@label` in the text and a `data-mention` part for it; see [Composer prompt](/chat/ui-custom-shell#composer-prompt).
+
+Up in an empty input recalls the last sent prompt, chips included; Up and Down then page through the list while the caret is at the start or end, and Down past the newest empties the input. FrogBot keeps 100 prompts, newest first, without repeating the newest. Commands and attachments are not kept.
+
+Import Lexical from `@frogbotai/ui/lexical`, which re-exports `lexical` and `useLexicalComposerContext`, so a feature uses the composer's own copy.
+
+### Command options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `id` | `string` | Required | Typed after `/`, such as `model` for `/model`. |
+| `title` | `string` | Required | Shown in the menu, and matched like `id`. |
+| `description` | `string` | — | Shown after the title. |
+| `arguments` | `boolean` | `false` | The command takes the text after `/id `. |
+| `disabled` | `boolean` | `false` | Leaves the command out of the menu and out of `/id rest`. |
+| `execute` | `(input: string) => void \| Promise<void>` | Required | Runs the command with the text after `/id `, or `''`. |
+
+### Mention source options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `id` | `string` | Required | Names the source; the menu groups its results under it, and each chip records it as `source`. |
+| `search` | `(query: string, options: { signal: AbortSignal }) => MentionItem[] \| Promise<MentionItem[]>` | Required | Returns the items for the text after `@`. The next keystroke aborts `signal`. A source that rejects adds no results. |
+
+### Mention item options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `id` | `string` | Required | Identifies the item within its source. |
+| `label` | `string` | Required | Shown in the menu; the chip reads `@label`. |
+| `description` | `string` | — | Shown after the label. |
+| `icon` | `ReactNode` | — | Shown before the label. |
+| `data` | `Record<string, unknown>` | — | Sent with the chip in its `data-mention` part. |
+
+### Composer feature options
+
+`defaultComposerFeatures` holds `slash`, `mentions`, `paste`, `history` and `keybindings`. A `composerFeatures` list replaces it, and the last feature with a key wins, so `[...defaultComposerFeatures, { key: 'history' }]` turns prompt history off. Editing a sent message uses only `mentions` and `keybindings`.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `key` | `string` | Required | Names the feature. |
+| `nodes` | `Klass<LexicalNode>[]` | — | Lexical nodes the feature uses, registered when the editor is created. |
+| `plugin` | `ComponentType` | — | Rendered inside the editor, where `useLexicalComposerContext()` returns it. |
+
+### Composer history storage options
+
+The default keeps the list in `localStorage` under `frogbot:composer-history`, and loads an empty list from data it can't read. Errors from `load` and `save` are ignored.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `load` | `() => ComposerPrompt[] \| Promise<ComposerPrompt[]>` | Required | Returns the stored prompts, newest first. Called once when a composer mounts. |
+| `save` | `(entries: ComposerPrompt[]) => void \| Promise<void>` | Required | Stores the list after each send that adds to it. |
 
 ## Answer client tools
 

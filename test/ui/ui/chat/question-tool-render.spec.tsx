@@ -9,6 +9,7 @@ import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
 import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
 import type { ToolPartValue } from '../../../../packages/ui/src/exports/chat-tools';
 import { QuestionToolRender } from '../../../../packages/ui/src/exports/chat-tools';
+import { press, type } from './composerEditor';
 
 const api = 'https://frogbot.example/api';
 const agent = 'questioner';
@@ -602,21 +603,19 @@ describe('QuestionToolRender in Chat', () => {
       ]);
     });
 
-    const { container } = renderChat();
+    renderChat();
 
     await screen.findByText('lookup');
 
-    const composer = container.querySelector('.fb-composer__textarea') as HTMLTextAreaElement;
-
-    fireEvent.change(composer, { target: { value: 'Anything else?' } });
-    fireEvent.keyDown(composer, { key: 'Enter' });
+    type('Anything else?');
+    press('Enter');
 
     expect(await queuedIndicator()).toBeTruthy();
 
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull());
 
-    fireEvent.change(composer, { target: { value: 'One more thing' } });
-    fireEvent.keyDown(composer, { key: 'Enter' });
+    type('One more thing');
+    press('Enter');
 
     await waitFor(() => expect(requests(`/api/agents/${agent}`)).toHaveLength(2));
 

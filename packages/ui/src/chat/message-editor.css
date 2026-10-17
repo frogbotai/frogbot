@@ -1,15 +1,15 @@
 @layer frogbot {
   .fb-message-editor {
+    position: relative;
     display: flex;
     width: 100%;
     flex-direction: column;
     gap: 0.5rem;
   }
 
-  .fb-message-editor__textarea {
+  .fb-message-editor__input {
     width: 100%;
-    resize: none;
-    overflow: hidden;
+    overflow-wrap: anywhere;
     padding: 0.75rem 1.25rem 1rem;
     border: 1px solid var(--theme-base-500);
     border-radius: calc(var(--fb-radius-xl) + 0.25rem);
@@ -22,9 +22,9 @@
     outline: none;
   }
 
-  .fb-message-editor__textarea:hover,
-  .fb-message-editor__textarea:focus,
-  .fb-message-editor__textarea:active {
+  .fb-message-editor__input:hover,
+  .fb-message-editor__input:focus,
+  .fb-message-editor__input:active {
     border-color: var(--theme-base-600);
   }
 

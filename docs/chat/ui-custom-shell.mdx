@@ -22,7 +22,7 @@ export function CustomShell() {
       <Composer
         pending={chat.status === 'submitted' || chat.status === 'streaming'}
         onStop={() => chat.stop()}
-        onSubmit={(text) => chat.sendMessage({ text })}
+        onSubmit={({ text }) => chat.sendMessage({ text })}
         submitContent="Send"
         stopContent="Stop"
       />
@@ -35,17 +35,22 @@ export function CustomShell() {
 
 ## Composer props
 
-`Composer` also accepts any `textarea` attribute except `value`, `defaultValue`, and `onSubmit`, which it replaces below. `className` goes on the surrounding form; other attributes go on the `textarea`.
+`Composer` is a [Lexical](https://lexical.dev) plain-text editor. `className` goes on the surrounding form. Its `/` commands, `@` mention sources, features and prompt history come from [`ChatProvider`](/chat/ui-provider#provider-props); without one it has no commands or mentions, the default features, and history in `localStorage`. See [Composer commands, mentions and features](/chat/ui-registries#composer-commands).
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `onSubmit` | `(value: string, attachments: ComposerAttachment[]) => void \| Promise<void>` | Required | Called with the draft and its [attachments](#composer-attachments) when the user sends. Only ready and text attachments are included; refused, failed, and too-large files never are. Enter sends; Shift+Enter adds a line. Nothing is sent while `pending`, `disabled`, or uploading. |
+| `onSubmit` | `(prompt: ComposerPrompt, attachments: ComposerAttachment[]) => void \| Promise<void>` | Required | Called with the prompt and its [attachments](#composer-attachments) when the user sends. `prompt` is `{ text, mentions }`; see [Composer prompt](#composer-prompt). Only ready and text attachments are included; refused, failed, and too-large files never are. Enter sends; Shift+Enter adds a line; Enter while an input method is composing never sends. Nothing is sent while `pending`, `disabled`, or uploading. Attachments clear when the returned promise resolves. |
 | `submitContent` | `ReactNode` | Required | Accessible label for the send button. |
 | `stopContent` | `ReactNode` | Required | Accessible label for the stop button. |
-| `value` | `string` | — | Controlled draft text. |
-| `defaultValue` | `string` | `''` | Initial draft text when uncontrolled. |
-| `onValueChange` | `(value: string) => void` | — | Called when the draft changes, including when it is cleared after sending. |
-| `onStop` | `() => void` | — | Called by the stop button, which replaces the send button while `pending`. |
+| `onBeforeSubmit` | `(prompt: ComposerSubmission) => boolean \| Promise<boolean>` | — | Called before each send with `{ text, mentions, attachments }`, also while `pending`. Return `true` to handle it yourself: the text clears and attachments stay. See [Typed commands](/chat/ui-chat#typed-commands). |
+| `onError` | `(error: Error) => void` | — | Called when `onBeforeSubmit` or a command rejects. |
+| `defaultValue` | `string` | `''` | Initial text. |
+| `placeholder` | `string` | — | Shown while the input is empty. |
+| `aria-label` | `string` | `'Message'` | Accessible name of the input. |
+| `autoFocus` | `boolean` | `false` | Focuses the input on mount. |
+| `disabled` | `boolean` | `false` | Makes the input read-only and hides the send, stop and microphone buttons. |
+| `hidden` | `boolean` | `false` | Hides the composer and keeps its text and attachments. |
+| `onStop` | `() => void` | — | Called by the stop button, which replaces the send button while `pending`, and by Escape or Ctrl+G while `pending` with no menu open. |
 | `pending` | `boolean` | `false` | A reply is in progress: shows the stop button and blocks sending. |
 | `startSlot` | `ReactNode` | — | Controls at the start of the toolbar. |
 | `endSlot` | `ReactNode` | — | Controls at the end of the toolbar, before the microphone and send button. |
@@ -53,7 +58,22 @@ export function CustomShell() {
 | `modelInputs` | `('text' \| 'image' \| 'audio' \| 'video' \| 'pdf')[]` | All file kinds accepted | Input types of the selected model, usually the agent's [`inputs`](/chat/manifest) entry for it. Images, PDFs, audio, and video the model doesn't read are refused when picked; text files are always accepted. See [which files the composer accepts](/chat/ui-chat#which-files-the-composer-accepts). |
 | `modelName` | `string` | `'This model'` | Display name of the selected model, used in refusals such as "Text Only can't read images." |
 
-Without an adapter that has `uploadAttachment`, the composer has no attachment control, ignores dropped and pasted files, and keeps pastes over 650 characters in the browser as `PasteAttachment`s. `<Chat>` passes the provider's adapter and sets `modelInputs` and `modelName` from the selected model.
+Without an adapter that has `uploadAttachment`, the composer has no attachment control, ignores dropped and pasted files, and keeps pastes over 650 characters in the browser as `PasteAttachment`s. With one, pasted files become attachments, and any text copied with them is dropped. `<Chat>` passes the provider's adapter and sets `modelInputs` and `modelName` from the selected model.
+
+## Composer prompt
+
+`ComposerPrompt` is `{ text, mentions }`. A mention chip stays in `text` as `@label`, and `mentions` lists each chip once, in order, as a `ComposerMention`:
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `source` | `string` | Yes | `id` of the [mention source](/chat/ui-registries#mention-source-options) it came from. |
+| `id` | `string` | Yes | The item's `id`. |
+| `label` | `string` | Yes | The item's `label`; the chip reads `@label`. |
+| `start` | `number` | Yes | Offset of `@label` in `text`. |
+| `end` | `number` | Yes | Offset just after `@label`, so `text.slice(start, end)` is `@label`. |
+| `data` | `Record<string, unknown>` | No | The item's `data`. |
+
+`composerParts(prompt, attachments)` builds the parts `<Chat>` sends: a `file-reference` or `data-paste` part per attachment, a `text` part, then a `data-mention` part per chip with its `ComposerMention` as `data`. FrogBot's server leaves `data-mention` parts out of the model's messages, so the model reads `@label` in the text, and `MessagePart` renders nothing for them.
 
 ## Composer attachments
 

@@ -12,6 +12,8 @@ const allProjects = [
   'rich-text',
   'live-preview',
   'chat-assets',
+  'chat-assets-firefox',
+  'chat-assets-webkit',
   'question',
   'question-firefox',
   'question-webkit',
@@ -60,6 +62,11 @@ describe('browser project servers', () => {
       name: 'project with a dependency server',
       args: ['--project=chat-assets'],
       projects: ['chat-assets'],
+    },
+    {
+      name: 'project that runs after other projects',
+      args: ['--project=chat-assets-webkit'],
+      projects: ['chat-assets', 'chat-assets-firefox', 'chat-assets-webkit'],
     },
     {
       name: 'project whose server is ready on /admin',

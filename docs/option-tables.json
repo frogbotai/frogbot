@@ -310,6 +310,31 @@
     "type": "import('@frogbotai/ui/chat/artifacts').ArtifactPersistence"
   },
   {
+    "page": "chat/ui-registries",
+    "heading": "Command options",
+    "type": "import('@frogbotai/ui/chat').ComposerCommand"
+  },
+  {
+    "page": "chat/ui-registries",
+    "heading": "Mention source options",
+    "type": "import('@frogbotai/ui/chat').MentionSource"
+  },
+  {
+    "page": "chat/ui-registries",
+    "heading": "Mention item options",
+    "type": "import('@frogbotai/ui/chat').MentionItem"
+  },
+  {
+    "page": "chat/ui-registries",
+    "heading": "Composer feature options",
+    "type": "import('@frogbotai/ui/chat').ComposerFeature"
+  },
+  {
+    "page": "chat/ui-registries",
+    "heading": "Composer history storage options",
+    "type": "import('@frogbotai/ui/chat').ComposerHistoryStorage"
+  },
+  {
     "page": "configuration/collections",
     "heading": "Collection config options",
     "type": "import('frogbot').CollectionConfig"

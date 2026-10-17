@@ -40,6 +40,7 @@ export const CHECK_INPUTS = {
   'docs-links': ['docs/**', 'skills/**'],
   'docs-references': [...DOCS_PAGES, 'templates/*/README.md', 'packages/frogbot/src/bin/**'],
   generated: ['**/importMap.js', '**/frogbot-types.ts', '**/piece-types.ts'],
+  lexical: ['pnpm-lock.yaml', 'packages/ui/package.json'],
   'option-tables': ['docs/**'],
   'package-boundaries': ['packages/**/src/**', 'packages/ui/package.json'],
   packages: ['pnpm-workspace.yaml', ...MANIFESTS],

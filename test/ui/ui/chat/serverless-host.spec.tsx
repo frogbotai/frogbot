@@ -14,6 +14,7 @@ import { Chat } from '../../../../packages/ui/src/chat/chat';
 import { ChatHistory } from '../../../../packages/ui/src/chat/chat-history';
 import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
 import { useChats } from '../../../../packages/ui/src/chat/use-chats';
+import { type } from './composerEditor';
 
 vi.mock('@frogbotai/sdk', () => {
   throw new Error('the chat UI must not load @frogbotai/sdk');
@@ -149,7 +150,7 @@ function renderHost(adapter: ChatPlatformAdapter) {
 async function send(text: string) {
   const user = userEvent.setup();
 
-  await user.type(await screen.findByRole('textbox'), text);
+  type(text, await screen.findByRole('textbox', { name: 'Message' }));
   await user.click(screen.getByRole('button', { name: 'Send' }));
 
   return user;

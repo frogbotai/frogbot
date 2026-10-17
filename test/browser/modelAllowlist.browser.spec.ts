@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel';
+import { composerInput, fillComposer } from './__helpers/composer';
 import { test } from './__helpers/questionTest';
 import { chatsSlug, usersSlug } from './fixtures/question/shared';
 
@@ -51,7 +52,7 @@ test.beforeEach(async ({ page }) => {
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
 
   await page.goto(`/collections/${chatsSlug}/create`);
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 });
 
 test.afterEach(async ({ page }) => {
@@ -80,8 +81,8 @@ test('a restricted user sees only the allowed model already selected and sends o
 
   model.respond({ text: 'Allowed model reply.' });
 
-  await page.locator('.fb-composer textarea').fill('Answer with the allowed model');
-  await page.locator('.fb-composer textarea').press('Enter');
+  await fillComposer(page, 'Answer with the allowed model');
+  await composerInput(page).press('Enter');
 
   await expect(page.getByText('Allowed model reply.', { exact: true })).toBeVisible();
 

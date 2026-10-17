@@ -49,8 +49,12 @@ The REST adapter reads renamed chat, message, and asset collection slugs from `/
 | `dataRenderers` | `DataRenderer[]` | `[]` | Custom renderers for `data-<kind>` message parts. See [Data renderer options](/chat/ui-registries#data-renderer-options). |
 | `artifactKinds` | `ArtifactRegistryItem[]` | `[]` | Artifact kinds the chat can render. See [Register tools and artifacts](/chat/ui-registries#artifact-options). |
 | `artifactPersistence` | `ArtifactPersistence` | — | `load` and `save` functions for artifacts. See [Register tools and artifacts](/chat/ui-registries#artifact-options). |
+| `commands` | `ComposerCommand[]` | No commands | `/` commands the composer offers. See [Command options](/chat/ui-registries#command-options). |
+| `mentionSources` | `MentionSource[]` | No mentions | Where `@` mentions come from. See [Mention source options](/chat/ui-registries#mention-source-options). |
+| `composerFeatures` | `ComposerFeature[]` | `defaultComposerFeatures` | The composer's features. A list replaces the defaults. See [Composer feature options](/chat/ui-registries#composer-feature-options). |
+| `composerHistory` | `ComposerHistoryStorage` | `localStorage` | Where sent prompts are kept for Up and Down. See [Composer history storage options](/chat/ui-registries#composer-history-storage-options). |
 
-`ChatProvider` calls the adapter's `loadManifest` once per adapter and aborts it on unmount. Until it resolves, `<Chat>` renders its `loadingContent`; a failure renders its `errorContent`, and `null` renders its `disabledContent`. `useChatProvider()` returns `{ adapter, manifest, error, loading, toolRenderers, dataRenderers }`.
+`ChatProvider` calls the adapter's `loadManifest` once per adapter and aborts it on unmount. Until it resolves, `<Chat>` renders its `loadingContent`; a failure renders its `errorContent`, and `null` renders its `disabledContent`. `useChatProvider()` returns `{ adapter, manifest, error, loading, toolRenderers, dataRenderers, commands, mentionSources, composerFeatures, composerHistory }`.
 
 ## REST adapter options
 

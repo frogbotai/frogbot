@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
 import { setAdminTheme } from './__helpers/adminTheme';
+import { composerInput } from './__helpers/composer';
 import { createMessage, deleteMessage, type SavedMessage } from './__helpers/messages';
 import {
   collectionNavIcon,
@@ -182,7 +183,7 @@ test.describe('nav shell on desktop', () => {
   test('chats create route opens the chat composer', async ({ page }) => {
     await page.goto('/collections/chats/create');
 
-    await expect(page.locator('.fb-composer textarea')).toBeVisible();
+    await expect(composerInput(page)).toBeVisible();
   });
 
   test('collapsed sidebar stays visible as an icon rail', async ({ page }) => {

@@ -1,8 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { MessageActions } from '../../../../packages/ui/src/chat/message-actions';
 import { MessageEditor } from '../../../../packages/ui/src/chat/message-editor';
+import { composerPrompt, press, type } from './composerEditor';
+
+const pricing = { source: 'pages', id: 'pricing', label: 'Pricing page' };
 
 describe('message controls', () => {
   it('renders the message actions BEM inventory', () => {
@@ -51,16 +54,56 @@ describe('message controls', () => {
     expect(screen.getAllByText('Jan 12 6:58 PM')).toHaveLength(2);
   });
 
-  it('edits and resubmits without owning chat state', () => {
+  it('edits and resubmits without owning chat state, keeping its mention chips', async () => {
     const submit = vi.fn();
-    render(<MessageEditor initialValue="Original" onSubmit={submit} />);
+    const cancel = vi.fn();
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Edit message' }), {
-      target: { value: 'Revised' },
-    });
+    render(
+      <MessageEditor
+        initialValue={{
+          text: 'Summarise @Pricing page',
+          mentions: [{ ...pricing, start: 10, end: 23 }],
+        }}
+        onCancel={cancel}
+        onSubmit={submit}
+      />,
+    );
 
+    const input = screen.getByRole('textbox', { name: 'Edit message' });
+
+    expect(input.className).toBe('fb-message-editor__input');
+    expect(input.querySelector('.fb-composer-mention')?.textContent).toBe('@Pricing page');
+
+    type(' briefly', input);
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
-    expect(submit).toHaveBeenCalledWith('Revised');
+    await waitFor(() =>
+      expect(submit).toHaveBeenCalledWith({
+        text: 'Summarise @Pricing page briefly',
+        mentions: [{ ...pricing, start: 10, end: 23 }],
+      }),
+    );
+
+    press('Enter', {}, input);
+
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(2));
+
+    press('Escape', {}, input);
+
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(composerPrompt(input).mentions).toHaveLength(1);
+  });
+
+  it('keeps a mention whose offsets no longer read @label as plain text', () => {
+    render(
+      <MessageEditor
+        initialValue={{ text: 'Summarise it', mentions: [{ ...pricing, start: 10, end: 12 }] }}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    const input = screen.getByRole('textbox', { name: 'Edit message' });
+
+    expect(composerPrompt(input)).toEqual({ text: 'Summarise it', mentions: [] });
   });
 });

@@ -23,7 +23,8 @@ import { ChannelConversationNotice } from './channel-conversation-notice.js';
 import { deriveChatTitle } from './chat-history.js';
 import { ChatShell } from './chat-shell.js';
 import { ChatStatus } from './chat-status.js';
-import { Composer } from './composer.js';
+import { Composer, type ComposerSubmission } from './composer/composer.js';
+import { type ComposerMention, composerParts, type ComposerPrompt } from './composer/prompt.js';
 import { isFlagPart, renderFlagPart } from './flag-parts.js';
 import { Greeting, type GreetingProps } from './greeting.js';
 import { Message } from './message.js';
@@ -86,7 +87,7 @@ export type ChatProps = {
   composerEndSlot?: ReactNode;
   dockSlot?: ReactNode;
   dockBlocking?: boolean;
-  onBeforeSubmit?: (prompt: { text: string }) => boolean | Promise<boolean>;
+  onBeforeSubmit?: (prompt: ComposerSubmission) => boolean | Promise<boolean>;
   submitContent?: ReactNode;
   stopContent?: ReactNode;
   fallbackTitle?: string;
@@ -121,6 +122,14 @@ function messageText(message: UIMessage) {
     )
     .map((part) => part.text)
     .join('\n\n');
+}
+
+function messagePrompt(message: UIMessage): ComposerPrompt {
+  const mentions = message.parts.flatMap((part) =>
+    part.type === 'data-mention' ? [part.data as ComposerMention] : [],
+  );
+
+  return { text: messageText(message), mentions };
 }
 
 export function Chat(props: ChatProps) {
@@ -523,35 +532,17 @@ function ChatInner({
       : undefined,
   });
 
-  const submit = async (text: string, attachments: ComposerAttachment[]) => {
-    if (onBeforeSubmit) {
-      try {
-        if (await onBeforeSubmit({ text })) return false;
-      } catch (error) {
-        failAction(error, 'Failed to send');
-
-        return false;
-      }
-    }
-
+  const submit = async (prompt: ComposerPrompt, attachments: ComposerAttachment[]) => {
     setAborted(false);
-    const parts = [
-      ...attachments.map((attachment) =>
-        'type' in attachment && attachment.type === 'paste'
-          ? {
-              type: 'data-paste' as const,
-              data: { text: attachment.text, filename: attachment.filename },
-            }
-          : { type: 'file-reference' as const, ...attachment },
-      ),
-      ...(text ? [{ type: 'text' as const, text }] : []),
-    ];
 
-    const message: UIMessage = { id: '', role: 'user', parts: parts as UIMessage['parts'] };
+    const message: UIMessage = {
+      id: '',
+      role: 'user',
+      parts: composerParts(prompt, attachments) as UIMessage['parts'],
+    };
+
     const metadata = await adapter.buildMetadata?.(message);
     await chat.sendMessage({ parts: message.parts, metadata });
-
-    return true;
   };
 
   const stop = () => {
@@ -559,10 +550,10 @@ function ChatInner({
     void chat.stop();
   };
 
-  const editMessage = async (message: UIMessage, text: string) => {
+  const editMessage = async (message: UIMessage, prompt: ComposerPrompt) => {
     const parts = [
-      ...message.parts.filter((part) => part.type !== 'text'),
-      { type: 'text' as const, text },
+      ...message.parts.filter((part) => part.type !== 'text' && part.type !== 'data-mention'),
+      ...composerParts(prompt, []),
     ] as UIMessage['parts'];
 
     const revisedMessage = { ...message, parts };
@@ -748,9 +739,9 @@ function ChatInner({
       >
         {editingMessageId === message.id ? (
           <MessageEditor
-            initialValue={text}
+            initialValue={messagePrompt(message)}
             onCancel={() => setEditingMessageId(undefined)}
-            onSubmit={(value) => editMessage(message, value)}
+            onSubmit={(prompt) => editMessage(message, prompt)}
           />
         ) : (
           message.parts.map((part, index) => (
@@ -840,6 +831,10 @@ function ChatInner({
               modelName={modelName}
               hidden={dockBlocking || dockedParts.length > 0}
               pending={pending}
+              onBeforeSubmit={onBeforeSubmit}
+              onError={(error) =>
+                failAction(new Error(`Command failed: ${error.message}`), 'Command failed')
+              }
               onStop={stop}
               onSubmit={submit}
               startSlot={composerStartSlot}

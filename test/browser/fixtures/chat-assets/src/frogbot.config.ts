@@ -17,7 +17,10 @@ export default buildConfig({
   secret: process.env.FROGBOT_SECRET || 'browser-chat-assets-secret',
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || 'file:./frogbot.db' } }),
   typescript: { autoGenerate: false },
-  admin: { importMap: { autoGenerate: false } },
+  admin: {
+    importMap: { autoGenerate: false },
+    components: { chat: { Chat: '/components/MentionChat#MentionChat' } },
+  },
   collections: [
     { slug: usersSlug, auth: true, fields: [] },
     { slug: filesSlug, file: true, fields: [] },

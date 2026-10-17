@@ -2,8 +2,31 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Composer, type ComposerProps } from '../../../../packages/ui/src/chat/composer';
+import { Composer, type ComposerProps } from '../../../../packages/ui/src/chat/composer/composer';
+import type {
+  ComposerCommand,
+  MentionSource,
+} from '../../../../packages/ui/src/chat/composer/context';
+import {
+  type ComposerHistoryStorage,
+  HISTORY_LIMIT,
+} from '../../../../packages/ui/src/chat/composer/history';
+import type { ComposerPrompt } from '../../../../packages/ui/src/chat/composer/prompt';
+import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
 import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
+import {
+  composerInput,
+  composerPrompt,
+  composerText,
+  insertMention,
+  paste,
+  press,
+  type,
+} from './composerEditor';
+
+const emptyPrompt = { text: '', mentions: [] };
+
+const prompt = (text: string) => ({ text, mentions: [] });
 
 const DOCX_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
@@ -78,7 +101,6 @@ function renderComposer(props: Partial<ComposerProps> = {}) {
 
   const element = (next: Partial<ComposerProps>) => (
     <Composer
-      aria-label="Message"
       adapter={adapter}
       onSubmit={onSubmit}
       submitContent="Send"
@@ -107,6 +129,14 @@ function png(name: string) {
   return new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], name, {
     type: 'image/png',
   });
+}
+
+function clipboard({ files = [], text }: { files?: File[]; text?: string }) {
+  return {
+    files: files as unknown as FileList,
+    types: [...(text === undefined ? [] : ['text/plain']), ...(files.length ? ['Files'] : [])],
+    getData: (type: string) => (type === 'text/plain' ? (text ?? '') : ''),
+  };
 }
 
 function pdf(name: string) {
@@ -140,12 +170,11 @@ describe('Composer', () => {
     vi.unstubAllGlobals();
   });
 
-  it('submits with Enter, preserves Shift+Enter, and renders slots', () => {
+  it('submits with Enter, preserves Shift+Enter, and renders slots', async () => {
     const onSubmit = vi.fn();
 
     render(
       <Composer
-        aria-label="Message"
         onSubmit={onSubmit}
         startSlot={<span>start</span>}
         endSlot={<span>end</span>}
@@ -154,15 +183,23 @@ describe('Composer', () => {
       />,
     );
 
-    const input = screen.getByLabelText('Message');
-    fireEvent.change(input, { target: { value: 'Hello' } });
-    fireEvent.keyDown(input, { key: 'Enter', shiftKey: true });
+    const input = composerInput();
+
+    expect(input.className).toBe('fb-composer__input');
+    expect(input.getAttribute('aria-multiline')).toBe('true');
+
+    type('Hello');
+    press('Enter', { shiftKey: true });
 
     expect(onSubmit).not.toHaveBeenCalled();
+    expect(composerText()).toBe('Hello');
 
-    fireEvent.keyDown(input, { key: 'Enter' });
+    press('Enter');
 
-    expect(onSubmit).toHaveBeenCalledWith('Hello', []);
+    expect(onSubmit).toHaveBeenCalledWith({ text: 'Hello', mentions: [] }, []);
+
+    await waitFor(() => expect(composerText()).toBe(''));
+
     expect(screen.getByText('start')).toBeTruthy();
     expect(screen.getByText('end')).toBeTruthy();
   });
@@ -193,29 +230,38 @@ describe('Composer', () => {
     expect(onStop).toHaveBeenCalledOnce();
   });
 
-  it('supports a controlled value', () => {
-    const onValueChange = vi.fn();
-
-    render(
+  it('starts from a default value and labels an empty input with its placeholder', () => {
+    const { rerender } = render(
       <Composer
-        aria-label="Message"
-        value="Controlled"
-        onValueChange={onValueChange}
+        aria-label="Ask"
+        defaultValue="Draft"
+        placeholder="Ask anything"
         onSubmit={vi.fn()}
         submitContent="Send"
         stopContent="Stop"
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Next' } });
+    expect(composerText(composerInput('Ask'))).toBe('Draft');
+    expect(screen.queryByText('Ask anything')).toBeNull();
 
-    expect(onValueChange).toHaveBeenCalledWith('Next');
-    expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe('Controlled');
+    rerender(
+      <Composer
+        key="empty"
+        placeholder="Ask anything"
+        onSubmit={vi.fn()}
+        submitContent="Send"
+        stopContent="Stop"
+      />,
+    );
+
+    expect(screen.getByText('Ask anything').className).toBe('fb-composer-editor__placeholder');
+    expect(composerInput().getAttribute('aria-placeholder')).toBe('Ask anything');
   });
 
   it('shows drag and disabled states without accepting files', () => {
     const { container, rerender } = render(
-      <Composer aria-label="Message" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />,
+      <Composer onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />,
     );
 
     const form = container.querySelector('form') as HTMLFormElement;
@@ -234,7 +280,6 @@ describe('Composer', () => {
 
     rerender(
       <Composer
-        aria-label="Message"
         disabled
         defaultValue="Hello"
         onSubmit={vi.fn()}
@@ -244,7 +289,8 @@ describe('Composer', () => {
     );
 
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
-    expect((screen.getByLabelText('Message') as HTMLTextAreaElement).disabled).toBe(true);
+    expect(composerInput().getAttribute('contenteditable')).toBe('false');
+    expect(composerInput().getAttribute('aria-readonly')).toBe('true');
   });
 
   it('limits the file picker to text and the media the model reads', () => {
@@ -277,7 +323,7 @@ describe('Composer', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
-    expect(onSubmit).toHaveBeenCalledWith('', [
+    expect(onSubmit).toHaveBeenCalledWith(emptyPrompt, [
       { id: 'asset-1', filename: 'report.pdf', mediaType: 'application/pdf' },
     ]);
     expect(JSON.stringify(onSubmit.mock.calls)).not.toContain('base64');
@@ -317,7 +363,7 @@ describe('Composer', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
-    expect(onSubmit).toHaveBeenCalledWith('', [
+    expect(onSubmit).toHaveBeenCalledWith(emptyPrompt, [
       { id: 'asset-1', filename: 'app.js', mediaType: 'text/plain' },
     ]);
   });
@@ -326,7 +372,7 @@ describe('Composer', () => {
     const { onSubmit, server } = renderComposer();
     const text = 'p'.repeat(651);
 
-    fireEvent.paste(screen.getByLabelText('Message'), { clipboardData: { getData: () => text } });
+    paste({ getData: () => text });
 
     expect(screen.getByRole('group', { name: 'Pasted text, PASTED, uploading' })).toBeTruthy();
     expect(await screen.findByRole('group', { name: 'Pasted text, PASTED, ready' })).toBeTruthy();
@@ -336,30 +382,20 @@ describe('Composer', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
-    expect(onSubmit).toHaveBeenCalledWith('', [
+    expect(onSubmit).toHaveBeenCalledWith(emptyPrompt, [
       { id: 'asset-1', filename: 'Pasted text', mediaType: 'text/plain', origin: 'paste' },
     ]);
   });
 
-  it('keeps 650 characters in the textarea and keeps a longer paste inline without storage', () => {
+  it('keeps 650 characters in the input and keeps a longer paste inline without storage', () => {
     const onSubmit = vi.fn();
 
-    render(
-      <Composer aria-label="Message" onSubmit={onSubmit} submitContent="Send" stopContent="Stop" />,
-    );
+    render(<Composer onSubmit={onSubmit} submitContent="Send" stopContent="Stop" />);
 
-    const input = screen.getByLabelText('Message') as HTMLTextAreaElement;
-
-    fireEvent.paste(input, { clipboardData: { getData: () => 'a'.repeat(650) } });
-    fireEvent.change(input, { target: { value: 'a'.repeat(650) } });
-
-    expect(input.value).toBe('a'.repeat(650));
+    expect(paste({ getData: () => 'a'.repeat(650), types: ['text/plain'] })).toBe(true);
     expect(screen.queryByTestId('attachment-card')).toBeNull();
-
-    fireEvent.change(input, { target: { value: '' } });
-    fireEvent.paste(input, { clipboardData: { getData: () => 'b'.repeat(651) } });
-
-    expect(input.value).toBe('');
+    expect(paste({ getData: () => 'b'.repeat(651) })).toBe(false);
+    expect(composerText()).toBe('');
     expect(screen.getByRole('group', { name: 'Pasted text, PASTED, ready' }).dataset.state).toBe(
       'text',
     );
@@ -367,7 +403,7 @@ describe('Composer', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
-    expect(onSubmit).toHaveBeenCalledWith('', [
+    expect(onSubmit).toHaveBeenCalledWith(emptyPrompt, [
       {
         type: 'paste',
         text: 'b'.repeat(651),
@@ -383,13 +419,7 @@ describe('Composer', () => {
     });
 
     const { container } = render(
-      <Composer
-        adapter={adapter}
-        aria-label="Message"
-        onSubmit={vi.fn()}
-        submitContent="Send"
-        stopContent="Stop"
-      />,
+      <Composer adapter={adapter} onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />,
     );
 
     fireEvent.drop(container.querySelector('form') as HTMLFormElement, {
@@ -433,7 +463,7 @@ describe('Composer', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
-    expect(onSubmit).toHaveBeenCalledWith('', [
+    expect(onSubmit).toHaveBeenCalledWith(emptyPrompt, [
       { id: 'asset-1', filename: 'report.docx', mediaType: DOCX_TYPE },
     ]);
   });
@@ -506,10 +536,10 @@ describe('Composer', () => {
     expect(within(card).queryByRole('button', { name: /Retry/ })).toBeNull();
     expect(status()).toBe("report.docx won't be sent: this file couldn't be read");
 
-    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Summarise it' } });
+    type('Summarise it');
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
-    expect(onSubmit).toHaveBeenCalledWith('Summarise it', []);
+    expect(onSubmit).toHaveBeenCalledWith(prompt('Summarise it'), []);
     expect(server.fetch).toHaveBeenCalledOnce();
   });
 
@@ -584,7 +614,7 @@ describe('Composer', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(server.fetch).toHaveBeenCalledTimes(2);
-    expect(onSubmit).toHaveBeenCalledWith('', [
+    expect(onSubmit).toHaveBeenCalledWith(emptyPrompt, [
       { id: 'asset-1', filename: 'retry.txt', mediaType: 'text/plain' },
     ]);
   });
@@ -620,10 +650,10 @@ describe('Composer', () => {
 
     await screen.findByRole('group', { name: 'notes.md, MD, ready' });
 
-    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Here' } });
+    type('Here');
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
-    expect(onSubmit).toHaveBeenCalledWith('Here', [
+    expect(onSubmit).toHaveBeenCalledWith(prompt('Here'), [
       { id: 'asset-1', filename: 'notes.md', mediaType: 'text/markdown' },
     ]);
 
@@ -669,7 +699,7 @@ describe('Composer', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
-    expect(onSubmit).toHaveBeenCalledWith('', [
+    expect(onSubmit).toHaveBeenCalledWith(emptyPrompt, [
       { id: 'asset-1', filename: 'photo.png', mediaType: 'image/png' },
     ]);
   });
@@ -680,7 +710,7 @@ describe('Composer', () => {
 
     server.fetch.mockImplementationOnce(() => upload.promise);
 
-    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Hi' } });
+    type('Hi');
     drop(new File(['notes'], 'notes.txt', { type: 'text/plain' }));
 
     await screen.findByRole('group', { name: 'notes.txt, TXT, uploading' });
@@ -702,7 +732,7 @@ describe('Composer', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
-    expect(onSubmit).toHaveBeenCalledWith('Hi', []);
+    expect(onSubmit).toHaveBeenCalledWith(prompt('Hi'), []);
   });
 
   it('sends once when Enter is pressed twice before the submit settles', async () => {
@@ -714,13 +744,481 @@ describe('Composer', () => {
 
     await screen.findByRole('group', { name: 'report.pdf, PDF, ready' });
 
-    fireEvent.keyDown(screen.getByLabelText('Message'), { key: 'Enter' });
-    fireEvent.keyDown(screen.getByLabelText('Message'), { key: 'Enter' });
+    press('Enter');
+    press('Enter');
 
     expect(onSubmit).toHaveBeenCalledOnce();
 
     await settle(() => submitted.resolve());
 
     expect(screen.queryByTestId('attachment-card')).toBeNull();
+  });
+
+  it('turns every pasted file into an attachment and drops the clipboard text with it', async () => {
+    const { onSubmit } = renderComposer();
+
+    expect(paste(clipboard({ files: [png('shot.png')] }))).toBe(false);
+    expect(await screen.findByRole('group', { name: 'shot.png, ready' })).toBeTruthy();
+
+    expect(paste(clipboard({ files: [png('page.png')], text: 'Copied caption' }))).toBe(false);
+    expect(await screen.findByRole('group', { name: 'page.png, ready' })).toBeTruthy();
+    expect(composerText()).toBe('');
+
+    expect(paste(clipboard({ text: 'Just text' }))).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(onSubmit).toHaveBeenCalledWith(emptyPrompt, [
+      { id: 'asset-1', filename: 'shot.png', mediaType: 'image/png' },
+      { id: 'asset-2', filename: 'page.png', mediaType: 'image/png' },
+    ]);
+  });
+
+  it('leaves a pasted file to the editor when the adapter cannot upload', () => {
+    render(<Composer onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />);
+
+    expect(paste(clipboard({ files: [png('shot.png')], text: 'Copied caption' }))).toBe(true);
+    expect(screen.queryByTestId('attachment-card')).toBeNull();
+  });
+
+  it('stops a pending turn with Escape or Ctrl+G, and does nothing otherwise', () => {
+    const onStop = vi.fn();
+
+    const { rerender } = render(
+      <Composer
+        pending
+        onStop={onStop}
+        onSubmit={vi.fn()}
+        submitContent="Send"
+        stopContent="Stop"
+      />,
+    );
+
+    press('Escape');
+    press('g', { ctrlKey: true });
+
+    expect(onStop).toHaveBeenCalledTimes(2);
+
+    rerender(
+      <Composer onStop={onStop} onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />,
+    );
+
+    press('Escape');
+
+    expect(onStop).toHaveBeenCalledTimes(2);
+  });
+
+  it('runs onBeforeSubmit mid-turn and sends nothing when it handles the prompt', async () => {
+    const onSubmit = vi.fn();
+    const onBeforeSubmit = vi.fn(() => Promise.resolve(true));
+
+    render(
+      <Composer
+        pending
+        onBeforeSubmit={onBeforeSubmit}
+        onSubmit={onSubmit}
+        submitContent="Send"
+        stopContent="Stop"
+      />,
+    );
+
+    type('/model sonnet');
+    press('Enter');
+
+    await waitFor(() => expect(composerText()).toBe(''));
+
+    expect(onBeforeSubmit).toHaveBeenCalledWith({
+      text: '/model sonnet',
+      mentions: [],
+      attachments: [],
+    });
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('keeps the text when onBeforeSubmit declines mid-turn, and reports a rejection', async () => {
+    const onError = vi.fn();
+    const onSubmit = vi.fn();
+    const onBeforeSubmit = vi.fn<() => Promise<boolean>>(() => Promise.resolve(false));
+
+    render(
+      <Composer
+        pending
+        onBeforeSubmit={onBeforeSubmit}
+        onError={onError}
+        onSubmit={onSubmit}
+        submitContent="Send"
+        stopContent="Stop"
+      />,
+    );
+
+    type('Later');
+    press('Enter');
+
+    await waitFor(() => expect(onBeforeSubmit).toHaveBeenCalledOnce());
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(composerText()).toBe('Later');
+
+    onBeforeSubmit.mockRejectedValueOnce(new Error('Unknown command'));
+    press('Enter');
+
+    await waitFor(() => expect(onError).toHaveBeenCalledWith(new Error('Unknown command')));
+
+    expect(composerText()).toBe('Later');
+  });
+
+  describe('history', () => {
+    function memoryHistory(texts: string[]) {
+      const storage = {
+        load: vi.fn<ComposerHistoryStorage['load']>(() => texts.map(prompt)),
+        save: vi.fn<ComposerHistoryStorage['save']>(),
+      };
+
+      return storage;
+    }
+
+    async function renderWithHistory(storage: ComposerHistoryStorage) {
+      const onSubmit = vi.fn();
+      const adapter = createRestChatAdapter({
+        fetch: vi.fn(() => new Promise<Response>(() => {})),
+      });
+
+      render(
+        <ChatProvider adapter={adapter} composerHistory={storage}>
+          <Composer onSubmit={onSubmit} submitContent="Send" stopContent="Stop" />
+        </ChatProvider>,
+      );
+
+      await act(() => Promise.resolve());
+
+      return { onSubmit };
+    }
+
+    it('pages through sent prompts from an empty input, newest first', async () => {
+      await renderWithHistory(memoryHistory(['second', 'first']));
+
+      press('ArrowUp');
+      await waitFor(() => expect(composerText()).toBe('second'));
+
+      press('ArrowUp');
+      await waitFor(() => expect(composerText()).toBe('first'));
+
+      press('ArrowUp');
+      press('ArrowDown');
+      await waitFor(() => expect(composerText()).toBe('second'));
+
+      press('ArrowDown');
+      await waitFor(() => expect(composerText()).toBe(''));
+
+      type('draft');
+      press('ArrowUp');
+      await act(() => Promise.resolve());
+
+      expect(composerText()).toBe('draft');
+    });
+
+    it('saves each sent prompt once, newest first, capped at 100', async () => {
+      const storage = memoryHistory(
+        Array.from({ length: HISTORY_LIMIT }, (_, index) => `old ${index}`),
+      );
+
+      const { onSubmit } = await renderWithHistory(storage);
+
+      type('new');
+      press('Enter');
+      await waitFor(() => expect(storage.save).toHaveBeenCalledOnce());
+
+      const saved = storage.save.mock.calls[0]?.[0] ?? [];
+
+      expect(saved).toHaveLength(HISTORY_LIMIT);
+      expect(saved[0]).toEqual(prompt('new'));
+      expect(saved.at(-1)).toEqual(prompt('old 98'));
+
+      await waitFor(() => expect(composerText()).toBe(''));
+      type('new');
+      press('Enter');
+      await act(() => Promise.resolve());
+
+      expect(onSubmit).toHaveBeenCalledTimes(2);
+      expect(storage.save).toHaveBeenCalledOnce();
+    });
+
+    it('keeps sending when the storage throws', async () => {
+      const storage: ComposerHistoryStorage = {
+        load: () => {
+          throw new Error('denied');
+        },
+        save: () => Promise.reject(new Error('full')),
+      };
+
+      const { onSubmit } = await renderWithHistory(storage);
+
+      press('ArrowUp');
+      type('Hello');
+      press('Enter');
+      await act(() => Promise.resolve());
+
+      expect(onSubmit).toHaveBeenCalledWith(prompt('Hello'), []);
+    });
+
+    it('recalls a stored prompt with malformed mentions as its text', async () => {
+      await renderWithHistory({
+        load: () => [
+          {
+            text: 'Ask @Docs',
+            mentions: [null, { label: 7 }, 'Docs'] as unknown as ComposerPrompt['mentions'],
+          },
+        ],
+        save: vi.fn(),
+      });
+
+      press('ArrowUp');
+
+      await waitFor(() => expect(composerText()).toBe('Ask @Docs'));
+    });
+
+    it('reads the default localStorage list and ignores unreadable data', async () => {
+      window.localStorage.setItem('frogbot:composer-history', '{not json');
+
+      render(<Composer onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />);
+      await act(() => Promise.resolve());
+
+      type('Hello');
+      press('Enter');
+
+      await waitFor(() =>
+        expect(JSON.parse(window.localStorage.getItem('frogbot:composer-history') ?? '')).toEqual([
+          prompt('Hello'),
+        ]),
+      );
+
+      window.localStorage.clear();
+    });
+  });
+
+  describe('commands and mentions', () => {
+    const pricing = { source: 'pages', id: 'pricing', label: 'Pricing page' };
+
+    function renderWithRegistries({
+      commands = [],
+      mentionSources = [],
+      ...props
+    }: Partial<ComposerProps> & {
+      commands?: ComposerCommand[];
+      mentionSources?: MentionSource[];
+    } = {}) {
+      const onSubmit = vi.fn();
+      const storage = { load: () => [], save: vi.fn() };
+      const adapter = createRestChatAdapter({
+        fetch: vi.fn(() => new Promise<Response>(() => {})),
+      });
+
+      render(
+        <ChatProvider
+          adapter={adapter}
+          commands={commands}
+          composerHistory={storage}
+          mentionSources={mentionSources}
+        >
+          <Composer onSubmit={onSubmit} submitContent="Send" stopContent="Stop" {...props} />
+        </ChatProvider>,
+      );
+
+      return { onSubmit, storage };
+    }
+
+    const options = () => screen.queryAllByRole('option').map((option) => option.textContent ?? '');
+
+    it('lists enabled commands matching the typed id or title, and runs a picked one', async () => {
+      const clear = vi.fn();
+      const model = vi.fn();
+
+      const { onSubmit } = renderWithRegistries({
+        commands: [
+          { id: 'clear', title: 'Clear chat', execute: clear },
+          { id: 'model', title: 'Pick a model', arguments: true, execute: model },
+          { id: 'compact', title: 'Compact', disabled: true, execute: vi.fn() },
+        ],
+      });
+
+      type('/');
+
+      await waitFor(() => expect(options()).toEqual(['/clearClear chat', '/modelPick a model']));
+
+      type('c');
+
+      await waitFor(() => expect(options()).toEqual(['/clearClear chat', '/modelPick a model']));
+
+      type('l');
+
+      await waitFor(() => expect(options()).toEqual(['/clearClear chat']));
+
+      expect(screen.getByRole('listbox', { name: 'Commands' })).toBeTruthy();
+
+      press('Enter');
+
+      await waitFor(() => expect(clear).toHaveBeenCalledWith(''));
+      await waitFor(() => expect(composerText()).toBe(''));
+
+      expect(onSubmit).not.toHaveBeenCalled();
+      expect(screen.queryByRole('listbox')).toBeNull();
+    });
+
+    it('writes /id for a command that takes arguments, and moves with Ctrl+N and Ctrl+P', async () => {
+      renderWithRegistries({
+        commands: [
+          { id: 'clear', title: 'Clear chat', execute: vi.fn() },
+          { id: 'model', title: 'Pick a model', arguments: true, execute: vi.fn() },
+        ],
+      });
+
+      type('/');
+
+      await waitFor(() => expect(options()).toHaveLength(2));
+
+      const selected = () =>
+        screen.getAllByRole('option').map((option) => option.getAttribute('aria-selected'));
+
+      expect(selected()).toEqual(['true', 'false']);
+      expect(composerInput().getAttribute('aria-activedescendant')).toBe(
+        screen.getAllByRole('option')[0]?.id,
+      );
+
+      press('n', { ctrlKey: true });
+
+      await waitFor(() => expect(selected()).toEqual(['false', 'true']));
+
+      press('p', { ctrlKey: true });
+      press('ArrowUp');
+
+      await waitFor(() => expect(selected()).toEqual(['false', 'true']));
+
+      press('Tab');
+
+      await waitFor(() => expect(composerText()).toBe('/model '));
+
+      expect(screen.queryByRole('listbox')).toBeNull();
+    });
+
+    it('closes the menu with Escape without stopping the turn', async () => {
+      const onStop = vi.fn();
+
+      renderWithRegistries({
+        pending: true,
+        onStop,
+        commands: [{ id: 'clear', title: 'Clear chat', execute: vi.fn() }],
+      });
+
+      type('/');
+      await screen.findByRole('listbox');
+      press('Escape');
+
+      await waitFor(() => expect(screen.queryByRole('listbox')).toBeNull());
+
+      expect(onStop).not.toHaveBeenCalled();
+
+      press('Escape');
+
+      expect(onStop).toHaveBeenCalledOnce();
+    });
+
+    it('runs /model sonnet mid-turn, sending nothing and keeping attachments and history', async () => {
+      const model = vi.fn();
+      const onBeforeSubmit = vi.fn(() => false);
+
+      const { onSubmit, storage } = renderWithRegistries({
+        pending: true,
+        onBeforeSubmit,
+        commands: [{ id: 'model', title: 'Pick a model', arguments: true, execute: model }],
+      });
+
+      paste({ getData: () => 'p'.repeat(651) });
+      type('/model sonnet');
+      press('Enter');
+
+      await waitFor(() => expect(model).toHaveBeenCalledWith('sonnet'));
+      await waitFor(() => expect(composerText()).toBe(''));
+
+      expect(onBeforeSubmit).not.toHaveBeenCalled();
+      expect(onSubmit).not.toHaveBeenCalled();
+      expect(storage.save).not.toHaveBeenCalled();
+      expect(screen.getAllByRole('listitem')).toHaveLength(1);
+    });
+
+    it('reports a command that fails through onError', async () => {
+      const onError = vi.fn();
+
+      renderWithRegistries({
+        onError,
+        commands: [
+          {
+            id: 'model',
+            title: 'Pick a model',
+            arguments: true,
+            execute: () => Promise.reject(new Error('No such model')),
+          },
+        ],
+      });
+
+      type('/model nope');
+      press('Enter');
+
+      await waitFor(() => expect(onError).toHaveBeenCalledWith(new Error('No such model')));
+    });
+
+    it('sends chips with the offsets of their @label', () => {
+      const { onSubmit } = renderWithRegistries();
+
+      type('Ask ');
+      insertMention({ ...pricing, data: { url: '/pricing' } });
+      type(' about it');
+
+      const sent = {
+        text: 'Ask @Pricing page about it',
+        mentions: [{ ...pricing, data: { url: '/pricing' }, start: 4, end: 17 }],
+      };
+
+      expect(composerPrompt()).toEqual(sent);
+      expect(sent.text.slice(4, 17)).toBe('@Pricing page');
+
+      press('Enter');
+
+      expect(onSubmit).toHaveBeenCalledWith(sent, []);
+    });
+
+    it('searches every source per keystroke, aborting the last search, grouped by source', async () => {
+      const signals: AbortSignal[] = [];
+
+      const source = (id: string, labels: string[]): MentionSource => ({
+        id,
+        search: (query, { signal }) => {
+          signals.push(signal);
+
+          return Promise.resolve(
+            labels
+              .filter((label) => label.toLowerCase().startsWith(query))
+              .map((label) => ({ id: label, label })),
+          );
+        },
+      });
+
+      renderWithRegistries({
+        mentionSources: [source('pages', ['Pricing', 'Plans']), source('tabs', ['Preview'])],
+      });
+
+      type('Ask @p');
+
+      await waitFor(() => expect(options()).toEqual(['Pricing', 'Plans', 'Preview']));
+
+      type('r');
+
+      await waitFor(() => expect(options()).toEqual(['Pricing', 'Preview']));
+
+      expect(signals.map(({ aborted }) => aborted)).toEqual([true, true, false, false]);
+      expect(screen.getAllByRole('group').map((group) => group.getAttribute('aria-label'))).toEqual(
+        ['pages', 'tabs'],
+      );
+      expect(screen.getByRole('listbox', { name: 'Mentions' })).toBeTruthy();
+    });
   });
 });

@@ -235,6 +235,21 @@ describe('toAgentModelMessages', () => {
     expect(findByID).not.toHaveBeenCalled();
   });
 
+  it('reads a mention chip as its @label and drops its data-mention part', async () => {
+    const findByID = vi.fn();
+
+    const messages = await load(request({ findByID, chat: { enabled: false } }), [
+      user({ type: 'text', text: 'Summarise @Docs' }, {
+        type: 'data-mention',
+        data: { source: 'pages', id: 'docs', label: 'Docs', start: 10, end: 15 },
+      } as never),
+    ]);
+
+    expect(messages).toEqual([
+      { role: 'user', content: [{ type: 'text', text: 'Summarise @Docs' }] },
+    ]);
+  });
+
   it('reads text contents even when the recorded type says video', async () => {
     const req = request({
       findByID: assets({ id: 'ts', filename: 'index.ts', mimeType: 'video/mp2t' }),

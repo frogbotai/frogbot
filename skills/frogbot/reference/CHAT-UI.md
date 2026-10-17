@@ -78,7 +78,7 @@ import { Chat, ChatHistory } from '@frogbotai/ui/chat';
 
 `dockSlot` puts cards above the composer; wrap them in `ChatDock` (`header`, body, `footer`) and set `dockBlocking` to hide the composer while they wait. A waiting client tool call with a registered renderer, such as `question`, docks there automatically and hides the composer until it is answered. The composer stays mounted, so its draft survives.
 
-`onBeforeSubmit({ text })` runs before each send; return `true` to handle a typed command yourself (text clears, attachments stay). `ModelSelector` takes `open` and `onOpenChange` so a command can open it, and `matchesModelSearch`, `normalizeModelSearch` and `compactModelSearch` from `@frogbotai/ui/chat` match like its search.
+Register `/` commands (`ComposerCommand`) and `@` mention sources (`MentionSource`) with `ChatProvider commands={…} mentionSources={…}`; `/id rest` runs a command that takes `arguments`, and a mention chip is sent as `@label` text plus a `data-mention` part. `onBeforeSubmit({ text, mentions, attachments })` runs before each send, also mid-turn; return `true` to handle it yourself (text clears, attachments stay). Composer features (`ComposerFeature`, `defaultComposerFeatures`) are Lexical plugins; import Lexical from `@frogbotai/ui/lexical`. `ModelSelector` takes `open` and `onOpenChange` so a command can open it, and `matchesModelSearch`, `normalizeModelSearch` and `compactModelSearch` from `@frogbotai/ui/chat` match like its search.
 
 `AgentSelector` reads available agents from `ChatProvider`. `ModelSelector` and `ToolSelector` only manage caller-supplied client state; they do not change the server model or server tool access.
 

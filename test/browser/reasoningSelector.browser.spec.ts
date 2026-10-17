@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel';
+import { composerInput, fillComposer } from './__helpers/composer';
 import { test } from './__helpers/questionTest';
 import {
   agentSlug,
@@ -42,7 +43,7 @@ test.beforeEach(async ({ page }) => {
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
 
   await page.goto(`/collections/${chatsSlug}/create`);
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 });
 
 test.afterEach(async ({ page }) => {
@@ -62,8 +63,8 @@ function slider(page: Page) {
 }
 
 async function send(page: Page, text: string) {
-  await page.locator('.fb-composer textarea').fill(text);
-  await page.locator('.fb-composer textarea').press('Enter');
+  await fillComposer(page, text);
+  await composerInput(page).press('Enter');
 }
 
 function card(page: Page) {
@@ -576,7 +577,7 @@ async function lengthenVerboseLevel(page: Page) {
 
   await page.reload();
 
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 }
 
 test('a long custom level name truncates without widening the popover card', async ({ page }) => {

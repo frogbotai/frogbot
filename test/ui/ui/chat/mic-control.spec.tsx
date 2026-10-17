@@ -1,10 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { Composer } from '../../../../packages/ui/src/chat/composer';
+import { Composer } from '../../../../packages/ui/src/chat/composer/composer';
 import { MicControl } from '../../../../packages/ui/src/chat/mic-control';
 import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
 import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
+import { composerText, type } from './composerEditor';
 
 class Recorder {
   static isTypeSupported = () => true;
@@ -98,7 +99,7 @@ describe('MicControl', () => {
     expect((init.body as FormData).get('file')).toBeInstanceOf(File);
   });
 
-  it('renders the waveform above the textarea only while recording', async () => {
+  it('renders the waveform above the input only while recording and appends the text', async () => {
     vi.stubGlobal('MediaRecorder', Recorder);
 
     vi.stubGlobal('navigator', {
@@ -108,9 +109,11 @@ describe('MicControl', () => {
     const value = adapter(Response.json({ text: 'hello' }));
     const { container } = render(
       <ChatProvider adapter={value.adapter}>
-        <Composer aria-label="Message" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />
+        <Composer onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />
       </ChatProvider>,
     );
+
+    type('Say ');
 
     const button = await screen.findByRole('button', { name: 'Use microphone' });
 
@@ -124,6 +127,7 @@ describe('MicControl', () => {
 
     fireEvent.click(button);
     await waitFor(() => expect(container.querySelector('.fb-audio-waveform')).toBeNull());
+    await waitFor(() => expect(composerText()).toBe('Say hello'));
   });
 
   it('hides when transcription is unavailable', async () => {

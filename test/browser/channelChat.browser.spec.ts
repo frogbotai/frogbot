@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel';
+import { composerInput, fillComposer } from './__helpers/composer';
 import { test } from './__helpers/questionTest';
 import { channelQuestion, chatsSlug, messagesSlug } from './fixtures/question/shared';
 
@@ -122,7 +123,7 @@ test('Branch branches at the last message and opens the private chat', async ({ 
   const branchId = (await response.json()).chatId;
 
   await expect(page).toHaveURL(new RegExp(`/collections/${chatsSlug}/${branchId}$`));
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 });
 
 test('a branch continues privately without touching the channel conversation', async ({ page }) => {
@@ -137,8 +138,8 @@ test('a branch continues privately without touching the channel conversation', a
     'Interrupted before the tool call completed.',
   );
 
-  await page.locator('.fb-composer textarea').fill('Summarize the thread');
-  await page.locator('.fb-composer textarea').press('Enter');
+  await fillComposer(page, 'Summarize the thread');
+  await composerInput(page).press('Enter');
 
   await expect(page.getByText('The thread asks where to deploy.', { exact: true })).toBeVisible();
   expect(model.requests).toHaveLength(1);
