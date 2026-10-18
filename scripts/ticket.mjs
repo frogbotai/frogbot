@@ -607,6 +607,28 @@ export async function untilMainSettles({ head, round, log = console.log }) {
   }
 }
 
+export function dependenciesChanged(files) {
+  return files.some(
+    (file) => file === 'pnpm-lock.yaml' || path.posix.basename(file) === 'package.json',
+  );
+}
+
+export function installAfterLand({ files, checkout, install, log = console.log }) {
+  if (!dependenciesChanged(files)) return { ran: false, ok: true };
+
+  const result = install();
+
+  if (!result.ok) {
+    log(tail(result.output).join('\n'));
+
+    log(
+      `pnpm install failed in ${checkout}; ${MAIN} has landed and stays there, so its node_modules are stale until you run pnpm install --frozen-lockfile there`,
+    );
+  }
+
+  return { ran: true, ok: result.ok };
+}
+
 export const GATE_SERVICES = {
   'test:int:sqlite': [
     { name: 'PostgreSQL', profile: 'postgres', port: 5433 },
@@ -1176,7 +1198,7 @@ async function landRound({ main, repo, found, key, dir, branch }) {
     }
   }
 
-  return { gates, landed: patchId(dir) };
+  return { gates, landed: patchId(dir), log };
 }
 
 async function commandLand(main, { ticket, part }) {
@@ -1212,11 +1234,12 @@ async function commandLand(main, { ticket, part }) {
 }
 
 async function landSerialized({ main, checkout, repo, found, key, dir, branch }) {
-  const { gates, landed } = await untilMainSettles({
+  const { gates, landed, log } = await untilMainSettles({
     head: () => gitOut(checkout, ['rev-parse', MAIN]),
     round: () => landRound({ main, repo, found, key, dir, branch }),
   });
 
+  const before = gitOut(checkout, ['rev-parse', MAIN]);
   const merged = git(checkout, ['merge', '--ff-only', '--quiet', branch]);
 
   if (!merged.ok) refuse(`git merge --ff-only refused; ${MAIN} untouched:\n${merged.err}`);
@@ -1227,6 +1250,19 @@ async function landSerialized({ main, checkout, repo, found, key, dir, branch })
     level: landLevel(gates),
     evidence: gates.map((gate) => `pnpm ${gate}`).join(', '),
     verifier: LAND,
+  });
+
+  installAfterLand({
+    files: lines(gitOut(checkout, ['diff', '--name-only', before, MAIN])),
+    checkout,
+    install: () =>
+      step(
+        log,
+        'pnpm install --frozen-lockfile',
+        'pnpm',
+        ['install', '--frozen-lockfile'],
+        checkout,
+      ),
   });
 
   const inRepo = checkout === main ? 'git' : `git -C ${checkout}`;

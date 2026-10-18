@@ -13,6 +13,7 @@ import {
   expandBraces,
   formatTable,
   hasTesterRow,
+  installAfterLand,
   keyOfWorktree,
   landLevel,
   lanes,
@@ -694,5 +695,55 @@ describe('affectedRuns', () => {
 describe('tail', () => {
   it('keeps the last non-empty lines', () => {
     expect(tail('a\n\nb\nc\n', 2)).toEqual(['b', 'c']);
+  });
+});
+
+describe('installAfterLand', () => {
+  const run = (files: string[], result = { ok: true, output: '' }) => {
+    const logged: string[] = [];
+    let installs = 0;
+
+    const outcome = installAfterLand({
+      files,
+      checkout: '/code/frogbot',
+      install: () => {
+        installs += 1;
+
+        return result;
+      },
+      log: (line: string) => logged.push(line),
+    });
+
+    return { outcome, installs, logged };
+  };
+
+  it('installs when the lockfile or a package.json changed', () => {
+    expect(run(['pnpm-lock.yaml', 'scripts/ticket.mjs'])).toEqual({
+      outcome: { ran: true, ok: true },
+      installs: 1,
+      logged: [],
+    });
+    expect(run(['packages/frogbot/package.json']).installs).toBe(1);
+  });
+
+  it('skips when no dependency file changed', () => {
+    expect(run(['scripts/ticket.mjs', 'docs/package.json.md'])).toEqual({
+      outcome: { ran: false, ok: true },
+      installs: 0,
+      logged: [],
+    });
+  });
+
+  it('says plainly that the install failed and main stays landed', () => {
+    const { outcome, logged } = run(['pnpm-lock.yaml'], {
+      ok: false,
+      output: 'progress\nERR_PNPM_OUTDATED_LOCKFILE\n',
+    });
+
+    expect(outcome).toEqual({ ran: true, ok: false });
+    expect(logged).toEqual([
+      'progress\nERR_PNPM_OUTDATED_LOCKFILE',
+      'pnpm install failed in /code/frogbot; main has landed and stays there, so its node_modules are stale until you run pnpm install --frozen-lockfile there',
+    ]);
   });
 });
