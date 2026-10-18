@@ -39,7 +39,7 @@ Read the smallest relevant reference before editing:
 | Store user credentials or configure OAuth flows             | [CONNECTIONS.md](reference/CONNECTIONS.md)                         |
 | Queue tasks, run workflows, or wait for resumption          | [JOBS.md](reference/JOBS.md)                                       |
 | Store expiring values or coordinate with locks              | [KV.md](reference/KV.md)                                           |
-| Expose selected operations to MCP clients                   | [MCP.md](reference/MCP.md)                                         |
+| Expose operations to MCP clients, or call MCP servers       | [MCP.md](reference/MCP.md)                                         |
 | Run or embed the AI gateway                                 | [GATEWAY.md](reference/GATEWAY.md)                                 |
 | Configure roles or API keys                                 | [PLUGINS-ROLES-KEYS.md](reference/PLUGINS-ROLES-KEYS.md)           |
 | Parse typed server environment variables                    | [ENV.md](reference/ENV.md)                                         |

@@ -1185,6 +1185,11 @@
     "type": "Omit<import('frogbot').VerifyEmailArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
   },
   {
+    "page": "mcp/overview",
+    "heading": "Server options",
+    "type": "import('frogbot/tools').MCPServerOptions"
+  },
+  {
     "page": "pieces/discord",
     "heading": "Connect an agent",
     "type": "Parameters<typeof import('@frogbotai/piece-discord').createDiscord>[0]"

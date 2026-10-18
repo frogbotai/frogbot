@@ -71,6 +71,7 @@ import { createKV } from './kv/index.js';
 import type { KV } from './kv/types.js';
 import type { FrogBotLocalAPI } from './localAPI.js';
 import { createFrogBotLocalAPI } from './localAPI.js';
+import { MCPConnections } from './mcp/connections.js';
 import { toPayloadRequest } from './seams/request.js';
 import { searchManyOperation, searchOperation } from './search/operation.js';
 import type {
@@ -125,6 +126,7 @@ type PayloadInitOptions = Pick<InitOptions, 'disableOnInit' | 'onInit' | 'startC
 type FrogBotState = {
   kv: KV;
   local: FrogBotLocalAPI;
+  mcp?: MCPConnections;
   payload: Payload;
 };
 
@@ -198,6 +200,7 @@ export class FrogBot {
 
   async destroy(): Promise<void> {
     await shutdownChannelHost(this);
+    await state(this).mcp?.closeAll();
     await state(this).payload.destroy();
   }
 
@@ -438,16 +441,10 @@ async function initialize(
     payload,
   });
 
-  registerFrogBotInstance(
-    payload,
-    frogbot,
-    config,
-    (next) =>
-      new Promise<void>((resolve) => {
-        refresh(frogbot, next);
-        resolve();
-      }),
-  );
+  registerFrogBotInstance(payload, frogbot, config, async (next) => {
+    await state(frogbot).mcp?.closeAll();
+    refresh(frogbot, next);
+  });
 
   frogbot.secret = payload.secret;
   frogbot.logger = payload.logger;
@@ -520,12 +517,18 @@ function refresh(frogbot: FrogBot, config: FrogBotSanitizedConfig): void {
   frogbot.triggers ??= new TriggerSubscriptions(frogbot);
   frogbot.gateway = config.ai ? createAIGateway(config.ai, frogbot.logger) : undefined;
   frogbot.agents = {};
+  state(frogbot).mcp = undefined;
 
   if (config.agents?.length && config.ai) {
+    const mcp = new MCPConnections(frogbot.logger);
+
+    state(frogbot).mcp = mcp;
+
     const agentDeps = {
       gateway: assertAIConfigured(frogbot),
       config: config.ai,
       frogbot,
+      mcp,
     };
 
     for (const agentConfig of config.agents) {

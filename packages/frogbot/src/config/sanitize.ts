@@ -38,6 +38,7 @@ import { withJobsRuntime } from '../jobs/runtime.js';
 import { defaultWaitpointsCollection, WAITPOINTS_SLUG } from '../jobs/waitpoints/collection.js';
 import { databaseKVAdapter } from '../kv/adapters/DatabaseKVAdapter.js';
 import { resolveKVCleanupTask } from '../kv/resolveCleanupTask.js';
+import { sanitizeMCPServers } from '../mcp/server.js';
 import { collectPieceInstances } from '../pieces/config/sanitize.js';
 import { buildSearchManyEndpoint } from '../search/endpoints.js';
 import { withSearchRuntime } from '../search/runtime.js';
@@ -267,9 +268,10 @@ export function sanitize(
   }
 
   const rootTools = sanitizeToolList(config.tools ?? [], 'Root');
+  const rootMCP = sanitizeMCPServers(config.tools ?? [], 'Root');
   const agents =
     config.agents !== undefined
-      ? sanitizeAgents({ agents: config.agents, ai: sanitizedAI, mode, rootTools })
+      ? sanitizeAgents({ agents: config.agents, ai: sanitizedAI, mode, rootTools, rootMCP })
       : undefined;
 
   const triggers = buildIngressRegistry({ agents });

@@ -7,6 +7,7 @@ import { getFileByPath } from 'payload';
 
 import { AgentServiceError } from '../agents/service.js';
 import { resolveModelInputs } from '../ai/modelInputs.js';
+import { mcpReplayTools } from '../mcp/tools.js';
 import { toPayloadRequest } from '../seams/request.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { AttachmentKind } from './attachmentParts.js';
@@ -96,7 +97,10 @@ export async function toAgentModelMessages({
     parts: message.parts.map((part) => resolved.get(part) ?? part),
   }));
 
-  return convertToModelMessages(uiMessages, { tools, convertDataPart });
+  return convertToModelMessages(uiMessages, {
+    tools: { ...mcpReplayTools(uiMessages), ...tools },
+    convertDataPart,
+  });
 }
 
 function convertDataPart(part: { type: string; data: unknown }): TextPart | undefined {

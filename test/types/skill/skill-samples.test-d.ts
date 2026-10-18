@@ -24,6 +24,7 @@ import './samples/hooks.js';
 import './samples/jobs.js';
 import './samples/kv.js';
 import './samples/mcp.js';
+import './samples/mcp-client.js';
 import './samples/pieces.js';
 import './samples/plugin-development.js';
 import './samples/plugins-roles-keys.js';

@@ -1,89 +1,138 @@
 ---
-title: "MCP server tools"
-sidebarTitle: "MCP server tools"
-description: "Connect an MCP server and adapt its tools for FrogBot agents."
-keywords: ["MCP", "agents", "tools", "credentials", "AI SDK"]
+title: "MCP servers"
+sidebarTitle: "MCP servers"
+description: "Give FrogBot agents the tools of a local or remote MCP server, such as Sidekick's browser."
+keywords: ["MCP", "agents", "tools", "Sidekick", "browser", "stdio", "Streamable HTTP"]
 ---
 
-FrogBot agents can use tools from a remote MCP server through a small config-time adapter. This connects FrogBot to an external MCP server as a client.
+An agent can use the tools of any [MCP](https://modelcontextprotocol.io) server. Declare the server with `mcpServer()` and put it in the agent's `tools`, or in root `tools` for every agent. FrogBot connects on the agent's first run and gives the model the server's tools next to its own.
 
-## Install the MCP client
+To expose your app's collections to other MCP clients instead, use the [MCP plugin](/plugins/mcp).
 
-`@ai-sdk/mcp` is a separate package and is not included with `ai` or FrogBot.
+## Add a server
 
-```bash
-pnpm add @ai-sdk/mcp
-```
-
-## Connect and adapt tools
-
-Export a promise from `frogbot.config.ts`. FrogBot awaits the config before building agents, so the module can connect, discover tools, and convert the returned record into FrogBot's tool array first.
+A local server is a program FrogBot starts and talks to over stdin and stdout:
 
 ```ts
-import { createMCPClient } from '@ai-sdk/mcp'
-import type { AgentConfig } from 'frogbot'
 import { buildConfig } from 'frogbot'
-import { z } from 'zod'
+import { mcpServer } from 'frogbot/tools'
 
-export default (async () => {
-  const mcpClient = await createMCPClient({
-    transport: {
-      type: 'http',
-      url: process.env.MCP_SERVER_URL!,
-      headers: {
-        Authorization: `Bearer ${process.env.MCP_API_KEY}`
-      }
-    }
-  })
-
-  const mcpTools = await mcpClient.tools({
-    schemas: {
-      search_docs: {
-        inputSchema: z.object({ query: z.string() })
-      }
-    }
-  })
-
-  const tools: NonNullable<AgentConfig['tools']> = Object.entries(mcpTools).map(
-    ([slug, mcpTool]) => ({
-      slug,
-      description: mcpTool.description ?? `MCP tool: ${slug}`,
-      inputSchema: mcpTool.inputSchema,
-      execute: (input, ctx) =>
-        mcpTool.execute(input, {
-          toolCallId: ctx.agent.runId,
-          messages: []
-        })
-    })
-  )
-
-  return buildConfig({
-    // secret, db, collections, and ai omitted
-    agents: [
-      {
-        slug: 'support',
-        model: 'openai/gpt-4o-mini',
-        instructions: 'Use search_docs when answering documentation questions.',
-        tools
-      }
-    ]
-  })
-})()
+export default buildConfig({
+  // secret, db, collections, and ai omitted
+  agents: [
+    {
+      slug: 'researcher',
+      instructions: 'Use the browser tools to read pages.',
+      tools: [
+        mcpServer({
+          name: 'sidekick',
+          type: 'local',
+          command: ['npx', '-y', '@frogbotai/sidekick-mcp'],
+          environment: { SIDEKICK_TOKEN: process.env.SIDEKICK_TOKEN! },
+        }),
+      ],
+    },
+  ],
+})
 ```
 
-Credentials are passed directly to the MCP HTTP transport. FrogBot does not store them. Use the transport's `headers` for other credential formats.
+A remote server is a Streamable HTTP endpoint:
 
-`mcpClient.tools()` returns a record keyed by tool name, not an array of FrogBot tools. `Object.entries().map()` supplies the required `slug`; passing `Object.values(mcpTools)` directly fails config validation.
+```ts
+import { mcpServer } from 'frogbot/tools'
 
-Explicit schemas are recommended because they type and validate known tools. To discover every server-provided schema automatically, call `await mcpClient.tools()` without `schemas`. The same adapter works, but its inputs are less type-safe.
+export const docsServer = mcpServer({
+  name: 'docs',
+  type: 'remote',
+  url: 'https://docs.example.com/mcp',
+  headers: { Authorization: `Bearer ${process.env.DOCS_MCP_TOKEN}` },
+})
+```
 
-## Limitations
+A server in root `tools` reaches every agent, as root tools do. An agent with `inheritTools: false` skips it, and an agent server with the same `name` replaces it.
 
-- **Process lifetime:** The client opens once while the config loads and remains open for the process lifetime. FrogBot has no shutdown hook for closing it, and this recipe is not a per-request connection.
-- **Startup snapshot:** Tool discovery runs once. Server-side additions or removals require a process restart; FrogBot does not refresh tools per request.
-- **Descriptions:** MCP descriptions are optional, but FrogBot requires a non-empty description. Keep the fallback or a descriptionless tool will fail startup.
-- **Execution bridge:** The wrapper converts FrogBot's `(input, ToolCtx)` call into the MCP tool's `(input, ToolExecutionOptions)` call. This works with the current `@ai-sdk/mcp` implementation, but it is not a guaranteed compatibility contract. Its execution options may gain requirements in a future release, so keep this recipe and its dependency current.
-- **Name collisions:** Duplicate slugs fail FrogBot startup. Namespace names yourself when combining servers, such as `${serverName}_${toolName}`.
-- **No native MCP config:** FrogBot does not currently provide a first-class MCP piece or config key. That surface is tracked separately.
+### Server options
 
-For supported integrations, [Pieces](/pieces/overview) provide the first-class alternative with curated, namespaced tools. See [Agents](/agents/overview#add-tools) for the FrogBot tool contract.
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | — | Prefix for the server's tools. Letters, digits, `_` and `-` only, and unique in its `tools` list. |
+| `type` | `'local' \| 'remote'` | — | `local` starts `command`; `remote` connects to `url`. |
+| `command` | `string[]` | — | Local: the program and its arguments. |
+| `cwd` | `string` | FrogBot's | Local: the working directory. |
+| `environment` | `Record<string, string>` | — | Local: added to FrogBot's own environment, which the server always gets. |
+| `url` | `string` | — | Remote: the Streamable HTTP endpoint. SSE is not supported. |
+| `headers` | `Record<string, string>` | — | Remote: sent with every request, for example a bearer token. |
+| `timeout.startup` | `number` | `30000` | Milliseconds to start the server and finish the handshake. |
+| `timeout.catalog` | `number` | `30000` | Milliseconds to list the server's tools on each run. |
+| `timeout.execution` | `number` | 12 hours | Milliseconds one tool call may run. |
+
+## Tool names
+
+The model sees each tool as `<name>_<tool>`, with the server's description and input schema: Sidekick's `navigate` becomes `sidekick_navigate`. Characters outside `[A-Za-z0-9_-]` in a tool's name become `_`.
+
+When an agent already has a tool with that name, its own tool wins and FrogBot logs one warning that the MCP tool is left out.
+
+Text results reach the model as text and images as images, so a screenshot is something the model sees. A result the server marks as an error reaches the model as its text. Stored results replay the same way when the chat continues, even if the server is down by then.
+
+## Lifecycle
+
+- **First run:** FrogBot connects when an agent's run first needs the server, never at startup, so `next build`, type generation and jobs start nothing.
+- **One connection per agent:** each agent gets its own connection to each server and keeps it across runs. Two agents that list one local server start two processes.
+- **Each run:** FrogBot lists the server's tools from the open connection, so tools the server adds or removes show up on the next run.
+- **Stop:** stopping a turn cancels the tool call in flight.
+- **Shutdown:** `frogbot.destroy()` and a config reload close every connection and end local processes. A local server still running 2 seconds after `SIGTERM` gets `SIGKILL`.
+
+FrogBot sends the plain `initialize` handshake with the agent's slug as the client name, and never probes with `server/discover`.
+
+## When a server fails
+
+A server that fails to start, or to list its tools within its timeouts, is left out of that run. FrogBot logs one warning, `[frogbot] MCP server '<name>' for agent '<slug>' is unavailable: <reason>`, and the run goes on with the agent's other tools. The next run tries again.
+
+A local server that exits while connected fails the call in flight, and FrogBot logs `[frogbot] MCP server '<name>' for agent '<slug>' exited (<code or signal>); it starts again on the next run.`
+
+## Who can use a server
+
+FrogBot doesn't ask before an MCP tool runs. Whoever may run the agent may use its servers, so list a server only on agents whose [`access`](/agents/overview#agent-options) you trust with it:
+
+```ts
+import type { AgentConfig } from 'frogbot'
+import { mcpServer } from 'frogbot/tools'
+
+export const browserAgent: AgentConfig = {
+  slug: 'browser',
+  instructions: 'Use the browser tools to check pages.',
+  access: ({ req }) => req.user?.role === 'admin',
+  inheritTools: false,
+  tools: [
+    mcpServer({
+      name: 'sidekick',
+      type: 'local',
+      command: ['npx', '-y', '@frogbotai/sidekick-mcp'],
+      environment: { SIDEKICK_TOKEN: process.env.SIDEKICK_TOKEN! },
+    }),
+  ],
+}
+```
+
+## Sidekick
+
+Sidekick is FrogBot's Chrome extension. Its MCP server lets an agent drive your browser: open and switch tabs, navigate, read the page, click, fill and take screenshots. It runs where Chrome runs, so use it with a FrogBot running on the same computer.
+
+1. In Sidekick's settings, open **Connected agents**, choose **Other**, name it, for example `FrogBot`, and add it.
+2. Sidekick shows the server's command once. Copy the `SIDEKICK_TOKEN` from it into FrogBot's `.env`.
+3. Add the server to each agent that should use the browser:
+
+   ```ts
+   import { mcpServer } from 'frogbot/tools'
+
+   export const sidekick = mcpServer({
+     name: 'sidekick',
+     type: 'local',
+     command: ['npx', '-y', '@frogbotai/sidekick-mcp'],
+     environment: { SIDEKICK_TOKEN: process.env.SIDEKICK_TOKEN! },
+   })
+   ```
+
+Each agent opens its own Sidekick tab group, titled with the pairing's name and the agent's slug, for example `FrogBot · researcher`. Stopping one group stops only that agent. Sidekick never asks before an agent's action; blocked sites still apply.
+
+Restarting FrogBot doesn't open Chrome: Sidekick's helper answers the handshake and the tool list from its cache, and wakes Chrome on the first real call.

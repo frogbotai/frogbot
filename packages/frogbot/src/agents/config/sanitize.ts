@@ -3,6 +3,8 @@ import { Cron } from 'croner';
 import { defaultAccessFn, type SanitizedAIBase } from '../../ai/config/sanitize.js';
 import { getConfiguredChatModelIds, getConfiguredModelIds } from '../../ai/models.js';
 import type { ValidationMode } from '../../config/validationContext.js';
+import { sanitizeMCPServers } from '../../mcp/server.js';
+import type { MCPServer } from '../../mcp/types.js';
 import { isPieceInstance, pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import { pieceCapabilities, type PieceInstance } from '../../pieces/types.js';
 import { sanitizeSkills } from '../../skills/config/sanitize.js';
@@ -18,11 +20,13 @@ export function sanitizeAgents({
   ai,
   mode,
   rootTools,
+  rootMCP,
 }: {
   agents: AgentConfig[];
   ai: SanitizedAIBase | undefined;
   mode: ValidationMode;
   rootTools: AnyTool[];
+  rootMCP: MCPServer[];
 }): SanitizedAgentConfig[] | undefined {
   if (!Array.isArray(agents)) {
     throw new Error('[frogbot] `agents` must be an array.');
@@ -178,12 +182,29 @@ export function sanitizeAgents({
     }
 
     let agentTools: AnyTool[] | undefined;
+    let mcp: MCPServer[] = [];
     if (agent.tools !== undefined) {
       if (!Array.isArray(agent.tools)) {
         throw new Error(`[frogbot] Agent '${agent.slug}' tools must be an array when configured.`);
       }
 
       agentTools = sanitizeToolList(agent.tools, `Agent '${agent.slug}'`);
+      mcp = sanitizeMCPServers(agent.tools, `Agent '${agent.slug}'`);
+    }
+
+    if (agent.inheritTools !== false && rootMCP.length > 0) {
+      const names = new Set(mcp.map(({ name }) => name));
+
+      for (const { name } of rootMCP) {
+        if (names.has(name)) {
+          // eslint-disable-next-line no-console -- build-time config warnings go to the terminal
+          console.warn(
+            `[frogbot] Agent '${agent.slug}' MCP server '${name}' shadows root MCP server '${name}'.`,
+          );
+        }
+      }
+
+      mcp = [...rootMCP.filter(({ name }) => !names.has(name)), ...mcp];
     }
 
     if (agent.inheritTools !== false && rootTools.length > 0) {
@@ -327,6 +348,7 @@ export function sanitizeAgents({
       },
       access: agent.access ?? defaultAccessFn,
       tools: agentTools,
+      ...(mcp.length > 0 ? { mcp } : {}),
     };
   });
 }

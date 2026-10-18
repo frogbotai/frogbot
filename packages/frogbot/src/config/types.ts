@@ -8,6 +8,7 @@ import type { Endpoint } from '../endpoints/types.js';
 import type { Block } from '../fields/config/types.js';
 import type { FrogBot } from '../frogbot.js';
 import type { JobsConfig } from '../jobs/types.js';
+import type { MCPServer } from '../mcp/types.js';
 import type { EmailPiece } from '../pieces/email.js';
 import type { Plugin } from '../plugin.js';
 import type { AnyTool } from '../tools/types.js';
@@ -116,8 +117,8 @@ export type FrogBotConfig = Omit<PayloadConfig, FrogBotOverridden> & {
   email?: EmailPiece | Promise<EmailPiece>;
   /** Agent configs registered at boot and exposed via frogbot.agents. */
   agents?: AgentConfig[];
-  /** Standalone tools available to agents, outside of any piece. */
-  tools?: readonly AnyTool[];
+  /** Standalone tools and MCP servers available to agents, outside of any piece. */
+  tools?: readonly (AnyTool | MCPServer)[];
   /** Third-party account linking — which providers users can connect. */
   connections?: ConnectionsConfig;
   /** File storage adapters from `@frogbotai/storage-*`. The first also serves FrogBot's upload collections. */
