@@ -6,10 +6,10 @@ import { chatPicksPreference, chatsSlug, pickerAgentSlug } from './fixtures/ques
 test.setTimeout(120_000);
 
 async function choosePickerAgent(page: Page) {
-  await page.locator('.fb-agent-selector__trigger').click();
+  await page.locator('.fb-agent-selector').click();
   await page.getByRole('menuitem', { name: pickerAgentSlug, exact: true }).click();
 
-  await expect(page.locator('.fb-agent-selector__trigger')).toHaveText(pickerAgentSlug);
+  await expect(page.locator('.fb-agent-selector')).toHaveText(pickerAgentSlug);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -1017,7 +1017,7 @@ test('a saved pick the agent no longer offers shows the default model and opens 
 
   await page.reload();
 
-  await expect(page.locator('.fb-agent-selector__trigger')).toHaveText(pickerAgentSlug);
+  await expect(page.locator('.fb-agent-selector')).toHaveText(pickerAgentSlug);
   await expect(trigger(page)).toHaveText('questioner');
 
   const list = await openModelList(page);

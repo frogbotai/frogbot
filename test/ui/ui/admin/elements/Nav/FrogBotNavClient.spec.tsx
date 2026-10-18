@@ -49,8 +49,8 @@ function Harness({
   );
 }
 
-const shell = () => document.querySelector('.frogbot-nav-shell') as HTMLElement;
-const backdrop = () => document.querySelector('.frogbot-nav-backdrop');
+const shell = () => document.querySelector('.fb-nav-shell') as HTMLElement;
+const backdrop = () => document.querySelector('.fb-nav-backdrop');
 
 describe('FrogBotNavClient', () => {
   beforeEach(() => {
@@ -63,7 +63,7 @@ describe('FrogBotNavClient', () => {
   it('does not reuse Payload nav classes on the shell', () => {
     render(<Harness initialNavOpen />);
 
-    expect(shell().className).toBe('frogbot-nav-shell');
+    expect(shell().className).toBe('fb-nav-shell');
   });
 
   it('exposes desktop-nav-open and desktop-nav-closed on desktop', () => {

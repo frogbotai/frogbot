@@ -1,0 +1,131 @@
+@layer frogbot {
+  .fb-tool-card {
+    min-width: 0;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--fb-theme-base-300);
+    border-radius: 1rem;
+    background-color: var(--fb-theme-base-200);
+    box-shadow:
+      0 10px 15px -3px rgb(0 0 0 / 0.1),
+      0 4px 6px -4px rgb(0 0 0 / 0.1);
+    color: var(--fb-theme-base-900);
+    font-size: var(--fb-text-base);
+    line-height: var(--fb-text-base--line-height);
+  }
+
+  .fb-tool-card__header {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+  }
+
+  button.fb-tool-card__header {
+    cursor: pointer;
+  }
+
+  .fb-tool-card__icon {
+    display: flex;
+    flex-shrink: 0;
+    margin-block: 0.125rem;
+  }
+
+  .fb-tool-card__icon svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .fb-tool-card__icon--done {
+    color: var(--fb-color-green-500);
+  }
+
+  .fb-tool-card__icon--error,
+  .fb-tool-card__icon--denied {
+    color: var(--fb-theme-red-500);
+  }
+
+  .fb-tool-card__spinner {
+    animation: fb-tool-card-spin 1s linear infinite;
+  }
+
+  .fb-tool-card__text {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 auto;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  .fb-tool-card__title {
+    min-width: 0;
+    flex-shrink: 1;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .fb-tool-card__subtitle {
+    min-width: 0;
+    flex: 1 1 0;
+    overflow: hidden;
+    color: var(--fb-theme-base-600);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fb-tool-card__chevron {
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+    margin-block: 0.125rem;
+    margin-inline-end: -0.5rem;
+    color: var(--fb-theme-base-600);
+    transform: rotate(90deg);
+    transition: transform 150ms ease;
+  }
+
+  .fb-tool-card__chevron:dir(rtl) {
+    transform: rotate(-90deg);
+  }
+
+  .fb-tool-card__header:hover .fb-tool-card__chevron {
+    color: var(--fb-theme-base-400);
+  }
+
+  .fb-tool-card__header[data-state="open"] .fb-tool-card__chevron {
+    transform: none;
+  }
+
+  .fb-tool-card__body {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    overflow: visible;
+    box-shadow: none;
+    font-size: inherit;
+  }
+
+  @keyframes fb-tool-card-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fb-tool-card__spinner {
+      animation-duration: 3s;
+    }
+
+    .fb-tool-card__chevron {
+      transition: none;
+    }
+  }
+}

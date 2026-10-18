@@ -88,6 +88,7 @@ export type ChatProps = {
   dockSlot?: ReactNode;
   dockBlocking?: boolean;
   onBeforeSubmit?: (prompt: ComposerSubmission) => boolean | Promise<boolean>;
+  placeholder?: string;
   submitContent?: ReactNode;
   stopContent?: ReactNode;
   fallbackTitle?: string;
@@ -190,6 +191,7 @@ function ChatInner({
   onChatIdChange,
   onError,
   panel,
+  placeholder,
   reasoning,
   renderMessage,
   renderSidebar,
@@ -837,6 +839,7 @@ function ChatInner({
               }
               onStop={stop}
               onSubmit={submit}
+              placeholder={placeholder}
               startSlot={composerStartSlot}
               endSlot={composerEndSlot}
               submitContent={submitContent}

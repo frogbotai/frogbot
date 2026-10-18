@@ -36,7 +36,61 @@ export function Providers({ children }: { children: React.ReactNode }) {
 }
 ```
 
-Tool kinds without a registration use the generic tool renderer: a closed row with the tool's name, a one-line summary of its input, and a spinner, **Failed** or **Denied**. Opening it shows the input, then the output, error or denial reason, scrolling past 240px. An output in MCP's `CallToolResult` shape, `{ content: [...] }`, shows its `{ type: 'text', text }` items as text and its `{ type: 'image', data, mimeType }` items with an `image/*` type as images, in order; anything else shows as JSON. Artifact kinds without a registration show their title, kind, and serialized content rather than throwing.
+Tool kinds without a registration use the generic tool card: a closed card with a wrench icon, the tool's name and a one-line summary of its input. While the call runs the icon is a spinner; when it finishes the icon turns green, and a failed or denied call turns it red and starts the title with **Failed:** or **Denied:**. Opening it shows the input, then the output, error or denial reason, scrolling past 240px. An output in MCP's `CallToolResult` shape, `{ content: [...] }`, shows its `{ type: 'text', text }` items as text and its `{ type: 'image', data, mimeType }` items with an `image/*` type as images, in order; anything else shows as JSON. Artifact kinds without a registration show their title, kind, and serialized content rather than throwing.
+
+## Tool cards
+
+`toolCard(kind, describe)` returns a tool renderer that draws each call of `kind` as the same card, with your own icon, title and body. `describe` gets the call's part and returns what the card shows:
+
+```tsx
+import { toolCard } from '@frogbotai/ui/chat/tools'
+
+const search = toolCard('web_search', (part) => ({
+  icon: 'web',
+  title: part.state === 'output-available' ? 'Searched the web' : 'Searching the web',
+  subtitle: (part.input as { query?: string } | undefined)?.query,
+  links:
+    part.state === 'output-available'
+      ? (part.output as { results: { url: string; title: string }[] }).results
+      : undefined,
+}))
+
+<ChatProvider adapter={adapter} toolRenderers={[search]} />
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `icon` | `IconName` | The tool's icon, by its name in FrogBot's icon set, such as `web`, `cursor` or `keyboard`. |
+| `title` | `ReactNode` | The card's title. Failed and denied calls add **Failed:** or **Denied:** in front. |
+| `subtitle` | `ReactNode` | Muted text after the title, cut off with an ellipsis when it doesn't fit. |
+| `links` | `LinkListItem[]` | Rows of links, shown first in the body. See [Link lists](#link-lists). |
+| `body` | `ReactNode` | Anything else the card opens to. |
+
+A card with no `links` or `body` has no chevron and doesn't open. The card's status comes from the part's state: `running` until the call has an output, then `done`, `error` or `denied`.
+
+To draw the card yourself, for example inside your own renderer, use `ToolCard`. It takes `icon`, `status` (`'running' | 'done' | 'error' | 'denied'`), `title`, `subtitle` and the body as children, plus Radix Collapsible's `open`, `defaultOpen` and `onOpenChange`.
+
+### Link lists
+
+`LinkList` shows rows of links, each with the site's icon, the page's title, its host and an optional snippet. Every row opens in a new tab.
+
+```tsx
+import { LinkList } from '@frogbotai/ui/chat/tools'
+
+<LinkList
+  items={[
+    { url: 'https://frogs.example/tree-frogs', title: 'Tree frogs', snippet: 'A care guide.' },
+  ]}
+/>
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `url` | `string` | The page. Its host, without `www.`, shows after the title. |
+| `title` | `string` | The page's title. |
+| `snippet` | `string` | Up to two lines of text under the title. |
+
+Site icons come from `ChatProvider`'s [`faviconUrl`](/chat/ui-provider#provider-props). Without it, each row shows the host's first letter and no request leaves the page.
 
 ## Tool renderer options
 

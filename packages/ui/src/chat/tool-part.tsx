@@ -1,9 +1,8 @@
 import { type DynamicToolUIPart, getToolName, type ToolUIPart, type UITools } from 'ai';
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible.js';
-import LoadingIcon from '../icons/icons/LoadingIcon.js';
 import { useChatProvider } from './provider.js';
 import { useToolActions } from './tool-actions.js';
+import { ToolCard, toolCardStatus } from './tool-card.js';
 import type { ToolRenderer } from './tool-registry.js';
 import { resolveToolRenderer } from './tool-registry.js';
 
@@ -140,21 +139,15 @@ export function ToolPart({
   const summary = summarize(part.input);
 
   return (
-    <Collapsible data-part="tool" data-state={part.state} className="fb-tool-part">
-      <CollapsibleTrigger className="fb-tool-part__header">
-        <strong className="fb-tool-part__name">{name}</strong>
-        {summary && <span className="fb-tool-part__summary">{summary}</span>}
-        <span className="fb-tool-part__state">
-          {part.state === 'input-streaming' || part.state === 'input-available' ? (
-            <LoadingIcon className="fb-tool-part__spinner" aria-label="Running" />
-          ) : part.state === 'output-error' ? (
-            'Failed'
-          ) : part.state === 'output-denied' ? (
-            'Denied'
-          ) : null}
-        </span>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="fb-tool-part__body">
+    <ToolCard
+      data-part="tool"
+      data-state={part.state}
+      icon="wrench"
+      status={toolCardStatus(part)}
+      title={name}
+      subtitle={summary}
+    >
+      <div className="fb-tool-part__body">
         {part.input !== undefined && (
           <pre className="fb-tool-part__content">{serialize(part.input)}</pre>
         )}
@@ -165,7 +158,7 @@ export function ToolPart({
         ) : part.state === 'output-denied' ? (
           <pre className="fb-tool-part__content">{deniedReason(part.approval)}</pre>
         ) : null}
-      </CollapsibleContent>
-    </Collapsible>
+      </div>
+    </ToolCard>
   );
 }

@@ -1,0 +1,64 @@
+@layer frogbot {
+  .fb-glow {
+    --fb-glow-green: var(--color-green-350, #66eb96);
+    --fb-glow-blue: #78b6fc;
+    --fb-glow-pink: #f598a2;
+    --fb-glow-purple: var(--color-purple-350, #cb9afe);
+    position: relative;
+    filter: drop-shadow(0 0 6px rgba(134, 239, 172, 0.6))
+      drop-shadow(0 0 12px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 18px rgba(216, 180, 254, 0.3));
+  }
+
+  .fb-glow--active {
+    filter: drop-shadow(0 0 12px rgba(134, 239, 172, 0.6))
+      drop-shadow(0 0 24px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 36px rgba(216, 180, 254, 0.3));
+  }
+
+  .fb-glow__ring {
+    position: relative;
+    isolation: isolate;
+    display: block;
+    padding: 5px;
+    overflow: hidden;
+    border-radius: 20px;
+  }
+
+  .fb-glow__ring::before {
+    position: absolute;
+    z-index: -1;
+    inset: -5000000px;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      transparent 150deg,
+      var(--fb-glow-green) 180deg,
+      var(--fb-glow-blue) 210deg,
+      var(--fb-glow-pink) 270deg,
+      var(--fb-glow-purple) 300deg,
+      var(--fb-glow-blue) 330deg,
+      transparent 360deg,
+      var(--fb-glow-green) 5deg,
+      transparent 15deg,
+      transparent 360deg
+    );
+    animation: fb-glow-rotate 8s linear infinite;
+    content: "";
+  }
+
+  @keyframes fb-glow-rotate {
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fb-glow__ring::before {
+      animation: none;
+    }
+  }
+}

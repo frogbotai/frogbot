@@ -163,8 +163,10 @@ describe('asChild link styles', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('no @frogbotai/ui stylesheet outside the admin targets bare anchors', () => {
-    const files = listCssFiles(uiSource).filter((file) => !file.startsWith(adminSource + sep));
+  it('no @frogbotai/ui stylesheet outside the admin and the reset targets bare anchors', () => {
+    const files = listCssFiles(uiSource).filter(
+      (file) => !file.startsWith(adminSource + sep) && file !== join(uiSource, 'reset.css'),
+    );
 
     const offenders = files.flatMap((file) =>
       readRules(file)

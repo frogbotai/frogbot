@@ -37,6 +37,7 @@
   .fb-markdown__ordered-list,
   .fb-markdown__unordered-list {
     margin-left: 1rem;
+    padding-left: 1.53846rem;
     list-style-position: outside;
   }
 

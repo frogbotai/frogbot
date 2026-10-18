@@ -3,7 +3,7 @@ import type { PayloadRequest, ServerProps } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 
 import type { ChatDocument } from '../../../chat/adapter.js';
-import { NavSection } from './NavSection.js';
+import { NavSection } from '../../../nav/NavSection.js';
 import { RecentsSectionClient } from './RecentsSection.client.js';
 
 export type RecentsSectionProps = { req?: PayloadRequest } & ServerProps;

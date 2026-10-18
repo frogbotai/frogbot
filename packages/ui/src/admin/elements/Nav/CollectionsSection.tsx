@@ -1,14 +1,14 @@
 import type { CustomComponent, ServerProps } from 'payload';
 
 import FolderIcon from '../../../icons/icons/FolderIcon.js';
+import { NavItem } from '../../../nav/NavItem.js';
+import { NavSection } from '../../../nav/NavSection.js';
 import { buildCollectionGroups } from './buildNavModel.js';
-import { NavItem } from './NavItem.js';
-import { NavSection } from './NavSection.js';
 import { renderNavIcon } from './renderNavIcon.js';
 
 export type CollectionsSectionProps = ServerProps;
 
-const iconClassName = 'frogbot-nav-item__icon-svg';
+const iconClassName = 'fb-nav-item__icon-svg';
 
 export function CollectionsSection({
   i18n,

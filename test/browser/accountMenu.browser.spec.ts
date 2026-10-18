@@ -14,7 +14,7 @@ test.describe('account menu slots', () => {
 
     await page.getByRole('button', { name: 'Account' }).click();
 
-    const menu = page.locator('.frogbot-account-menu');
+    const menu = page.locator('.fb-account-menu');
     const items = menu.getByRole('menuitem');
     const probes = menu.getByTestId('account-menu-probe');
 

@@ -64,6 +64,7 @@ Chat renders no sidebar by default because the FrogBot admin navigation already 
 | `dockSlot` | `ReactNode` | — | Cards docked above the composer, such as a permission request. See [Dock](#dock). |
 | `dockBlocking` | `boolean` | `false` | Hides the composer while `dockSlot` needs an answer. The draft is kept. |
 | `onBeforeSubmit` | `(prompt: ComposerSubmission) => boolean \| Promise<boolean>` | — | Called before each message is sent, with `{ text, mentions, attachments }`. Return `true` to handle it yourself, such as a typed command. See [Typed commands](#typed-commands). |
+| `placeholder` | `string` | — | Text shown in the empty composer, such as `Ask anything`. |
 | `submitContent` | `ReactNode` | `'Send'` | Accessible label for the send button. |
 | `stopContent` | `ReactNode` | `'Stop'` | Accessible label for the stop button. |
 | `fallbackTitle` | `string` | `'Untitled'` | Sidebar title for the active chat before it has a title and before its first message has text. |
@@ -327,6 +328,29 @@ export function AgentChat() {
 | --- | --- | --- | --- |
 | `selectedAgent` | `string` | Required | Slug of the selected agent. The trigger shows its profile name, or the slug. |
 | `onAgentChange` | `(slug: string) => void` | Required | Called with the slug of the chosen agent. |
+
+For any other choice in the composer, such as a mode, use `ComposerSelect`. `AgentSelector` is built on it, so the two look the same.
+
+```tsx
+import { ComposerSelect } from '@frogbotai/ui/chat'
+
+<ComposerSelect
+  value={mode}
+  options={[
+    { value: 'build', label: 'Build', icon: 'wrench' },
+    { value: 'plan', label: 'Plan', icon: 'check-list' },
+  ]}
+  onChange={setMode}
+/>
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | Required | The selected option's `value`. The trigger shows its label, or the value when no option matches. |
+| `options` | `{ value: string; label: string; icon?: IconName }[]` | Required | The choices, in order. `icon` is a name from FrogBot's icon set. |
+| `onChange` | `(value: string) => void` | Required | Called with the chosen option's `value`. |
+| `aria-label` | `string` | The selected label | Accessible name for the trigger. |
+| `className` | `string` | — | Added to the trigger. |
 
 `ModelSelector` shows the active model and reasoning level as compact text. Clicking it opens a reasoning slider for that model; clicking the model name switches to the model list, grouped by provider when there is more than one. A group is labelled with its first model's `providerName`, then FrogBot's name for the provider (`OpenAI` for `openai`), then the provider slug; models without a `provider` go under `Other`. While the selector is open, its trigger reads `Select effort` on the slider and `Select model` on the list. A model without reasoning levels opens straight on the list, which then has no Back button, and choosing such a model closes the selector; choosing a model with levels shows its slider. The reasoning slider shows the active level's name above a track with one dot per level. The selector keeps one width in both views and while searching, and long model names are truncated. Its selection is fully controlled, and it renders nothing when `models` is empty.
 

@@ -16,7 +16,7 @@ async function waitForHydratedForm(page: Page) {
 
 async function submitLoginForm(page: Page, adminRoute: string) {
   await page.goto(`${adminRoute}/login`);
-  await page.locator('input[name="email"], .frogbot-nav-shell').first().waitFor();
+  await page.locator('input[name="email"], .fb-nav-shell').first().waitFor();
 
   if (!new URL(page.url()).pathname.endsWith('/login')) return;
 
@@ -47,5 +47,5 @@ export async function signIn(
 ) {
   await expect(() => submitLoginForm(page, adminRoute)).toPass({ timeout });
 
-  await expect(page.locator('.frogbot-nav-shell')).toHaveAttribute('data-nav-hydrated', 'true');
+  await expect(page.locator('.fb-nav-shell')).toHaveAttribute('data-nav-hydrated', 'true');
 }

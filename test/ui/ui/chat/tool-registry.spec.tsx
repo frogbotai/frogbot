@@ -60,7 +60,7 @@ describe('tool registry', () => {
     expect(screen.getByText('search')).toBeTruthy();
   });
 
-  it('starts closed with the name, input summary and status, and opens to input and output', () => {
+  it('starts closed as a card with the name, input summary and status, and opens to input and output', () => {
     const { container } = render(
       <ToolPart
         part={{
@@ -86,10 +86,13 @@ describe('tool registry', () => {
 
     expect(root.dataset.state).toBe('output-available');
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
-    expect(container.querySelector('.fb-tool-part__summary')?.textContent).toBe(
+    expect(root.classList).toContain('fb-tool-card');
+    expect(root.dataset.status).toBe('done');
+    expect(container.querySelector('.fb-tool-card__title')?.textContent).toBe('snapshot');
+    expect(container.querySelector('.fb-tool-card__subtitle')?.textContent).toBe(
       'https://frog.example depth=2 full=true tab=main',
     );
-    expect(container.querySelector('.fb-tool-part__state')?.textContent).toBe('');
+    expect(container.querySelector('.fb-tool-card__icon--done .lucide-wrench-icon')).toBeTruthy();
     expect(screen.queryByText('x'.repeat(30_000))).toBeNull();
 
     fireEvent.click(trigger);
@@ -125,7 +128,7 @@ describe('tool registry', () => {
       />,
     );
 
-    expect(screen.getByText('Failed')).toBeTruthy();
+    expect(screen.getByText('Failed: search')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /search/ }));
 
@@ -144,7 +147,7 @@ describe('tool registry', () => {
       />,
     );
 
-    expect(screen.getByText('Denied')).toBeTruthy();
+    expect(screen.getByText('Denied: search')).toBeTruthy();
     expect(screen.getByText('Not now')).toBeTruthy();
   });
 
@@ -180,7 +183,8 @@ describe('tool registry', () => {
     render(<ToolPart part={part} />);
     fireEvent.click(screen.getByRole('button', { name: /search/ }));
 
-    expect(screen.getAllByText('Denied')).toHaveLength(2);
+    expect(screen.getByText('Denied: search')).toBeTruthy();
+    expect(screen.getByText('Denied')).toBeTruthy();
   });
 
   it('renders MCP content in order: text, PNG images as data URLs, other items and keys as JSON', () => {
@@ -206,7 +210,7 @@ describe('tool registry', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /screenshot/ }));
 
-    const body = container.querySelector('.fb-tool-part__body') as HTMLElement;
+    const body = container.querySelector('.fb-tool-card__body .fb-tool-part__body') as HTMLElement;
     const images = body.querySelectorAll('img');
 
     expect(images).toHaveLength(1);

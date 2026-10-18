@@ -61,7 +61,7 @@ test.afterAll(async () => {
 });
 
 const stepNav = (page: Page) => page.locator('.app-header__step-nav');
-const sidebar = (page: Page) => page.locator('.frogbot-nav-shell');
+const sidebar = (page: Page) => page.locator('.fb-nav-shell');
 const recents = (page: Page) => page.locator('#frogbot-nav-section-recents');
 const collectionsNav = (page: Page) => page.locator('#frogbot-nav-section-collections');
 const settingsNav = (page: Page) => page.locator('.frogbot-settings-nav');
@@ -528,13 +528,11 @@ test('a new chat is listed first under Today in Recents while its reply is held'
 
   await send(page, firstMessage);
 
-  const today = recents(page).locator('.frogbot-recents-section__group', {
-    has: page.locator('.frogbot-recents-section__group-label', { hasText: /^Today$/ }),
+  const today = recents(page).locator('.fb-recent-chats__group', {
+    has: page.locator('.fb-recent-chats__group-label', { hasText: /^Today$/ }),
   });
 
-  await expect(today.locator('.frogbot-recents-section__item').first()).toHaveText(
-    placeholderTitle,
-  );
+  await expect(today.locator('.fb-recent-chats__item').first()).toHaveText(placeholderTitle);
   await expect(page.getByText('Here is the summary.', { exact: true })).toHaveCount(0);
 
   reply.release();

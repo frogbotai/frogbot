@@ -1,68 +1,10 @@
 @layer frogbot {
-  .fb-tool-part {
-    min-width: 0;
-    border: 1px solid var(--fb-theme-base-200);
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-  }
-
-  .fb-tool-part__header {
-    display: flex;
-    width: 100%;
-    min-width: 0;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border: 0;
-    border-radius: inherit;
-    background: none;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-  }
-
-  .fb-tool-part__name {
-    flex-shrink: 0;
-    font-weight: 600;
-  }
-
-  .fb-tool-part__summary {
-    min-width: 0;
-    flex: 1 1 auto;
-    overflow: hidden;
-    color: var(--fb-theme-base-600);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .fb-tool-part__state {
-    display: inline-flex;
-    flex-shrink: 0;
-    align-items: center;
-    margin-left: auto;
-    color: var(--fb-theme-base-750);
-    font-size: 0.75rem;
-    line-height: 1rem;
-  }
-
-  .fb-tool-part__spinner {
-    width: 0.875rem;
-    height: 0.875rem;
-    animation: fb-tool-part-spin 1s linear infinite;
-  }
-
   .fb-tool-part__body {
     display: flex;
     max-height: 240px;
     flex-direction: column;
     gap: 0.5rem;
-    margin: 0;
-    padding: 0 0.75rem 0.75rem;
     overflow: auto;
-    box-shadow: none;
     font-size: 0.75rem;
     line-height: 1rem;
   }
@@ -78,11 +20,5 @@
     max-width: 100%;
     height: auto;
     border-radius: 0.25rem;
-  }
-
-  @keyframes fb-tool-part-spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
 }

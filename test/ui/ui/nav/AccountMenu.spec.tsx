@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { AccountMenu } from '../../../../../../packages/ui/src/admin/elements/Nav/AccountMenu';
+import { AccountMenu } from '../../../../packages/ui/src/nav/AccountMenu';
 
 const props = {
   accountPath: '/admin/account',

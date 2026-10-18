@@ -1,7 +1,8 @@
 'use client';
 
-import { Link } from '@payloadcms/ui';
 import { type ComponentType, createElement, isValidElement, type ReactNode } from 'react';
+
+import { useNavAdapter } from './adapter.js';
 
 export type NavItemIcon = ComponentType<{ className?: string; size?: number }> | ReactNode;
 
@@ -13,9 +14,11 @@ export type NavItemProps = {
   path: string;
 };
 
-const baseClass = 'frogbot-nav-item';
+const baseClass = 'fb-nav-item';
 
 export function NavItem({ active = false, className, icon, label, path }: NavItemProps) {
+  const { Link } = useNavAdapter();
+
   return (
     <Link
       aria-current={active ? 'page' : undefined}
@@ -28,7 +31,6 @@ export function NavItem({ active = false, className, icon, label, path }: NavIte
         .filter(Boolean)
         .join(' ')}
       href={path}
-      prefetch={false}
     >
       {icon ? (
         <span aria-hidden="true" className={`${baseClass}__icon`}>

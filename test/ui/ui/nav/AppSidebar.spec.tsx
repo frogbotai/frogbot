@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { AppSidebar } from '../../../../../../packages/ui/src/admin/elements/Nav/AppSidebar';
+import { AppSidebar } from '../../../../packages/ui/src/nav/AppSidebar';
 
 const props = {
   accountIcon: <span />,
@@ -20,7 +20,7 @@ describe('AppSidebar', () => {
     render(<AppSidebar {...props} open />);
 
     expect(screen.getByRole('button', { name: 'Users' }).className).toContain(
-      'frogbot-admin-sidebar__item--active',
+      'fb-app-sidebar__item--active',
     );
   });
 
@@ -36,7 +36,7 @@ describe('AppSidebar', () => {
       />,
     );
 
-    expect(container.querySelectorAll('.frogbot-admin-sidebar__icon')).toHaveLength(2);
+    expect(container.querySelectorAll('.fb-app-sidebar__icon')).toHaveLength(2);
   });
 
   it('renders the key-round icon on a collapsed rail item', () => {
@@ -73,13 +73,13 @@ describe('AppSidebar', () => {
   it('shows a label tooltip on hover while collapsed', () => {
     render(<AppSidebar {...props} open={false} />);
     fireEvent.mouseEnter(screen.getByRole('button', { name: 'Users' }));
-    const tooltip = document.querySelector('.frogbot-admin-sidebar__tooltip');
+    const tooltip = document.querySelector('.fb-app-sidebar__tooltip');
 
-    expect(tooltip?.querySelector('.tooltip-content')?.textContent).toBe('Users');
+    expect(tooltip?.querySelector('[role="tooltip"]')?.textContent).toBe('Users');
 
     fireEvent.mouseLeave(screen.getByRole('button', { name: 'Users' }));
 
-    expect(document.querySelector('.frogbot-admin-sidebar__tooltip')).toBeNull();
+    expect(document.querySelector('.fb-app-sidebar__tooltip')).toBeNull();
   });
 
   it('shows no tooltip while open', () => {
@@ -87,7 +87,7 @@ describe('AppSidebar', () => {
     fireEvent.mouseEnter(screen.getByRole('button', { name: 'Users' }));
     fireEvent.mouseEnter(screen.getByRole('button', { name: 'Home' }));
 
-    expect(document.querySelector('.frogbot-admin-sidebar__tooltip')).toBeNull();
+    expect(document.querySelector('.fb-app-sidebar__tooltip')).toBeNull();
   });
 
   it('renders no Tailwind utility classes', () => {
@@ -97,13 +97,7 @@ describe('AppSidebar', () => {
     );
 
     expect(
-      classNames.filter(
-        (name) =>
-          name &&
-          !name.startsWith('frogbot-admin-sidebar') &&
-          !name.startsWith('fb-') &&
-          !name.startsWith('lucide'),
-      ),
+      classNames.filter((name) => name && !name.startsWith('fb-') && !name.startsWith('lucide')),
     ).toEqual([]);
   });
 

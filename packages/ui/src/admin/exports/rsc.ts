@@ -3,8 +3,6 @@ export {
   type CollectionsSectionProps,
 } from '../elements/Nav/CollectionsSection.js';
 export { FrogBotNav, type FrogBotNavProps } from '../elements/Nav/index.js';
-export { NavItem, type NavItemIcon, type NavItemProps } from '../elements/Nav/NavItem.js';
-export { NavSection, type NavSectionProps } from '../elements/Nav/NavSection.js';
 export { RecentsSection, type RecentsSectionProps } from '../elements/Nav/RecentsSection.js';
 export { SignInButtons } from '../elements/SignInButtons/index.js';
 export { FrogBotIcon } from '../graphics/FrogBotIcon.js';

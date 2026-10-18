@@ -75,7 +75,7 @@ test('collapsed rail omits collection icons and restores them when reopened', as
 
   await page.getByRole('button', { name: 'Close sidebar', exact: true }).click();
 
-  await expect(page.locator('.frogbot-nav-shell')).toHaveAttribute(
+  await expect(page.locator('.fb-nav-shell')).toHaveAttribute(
     'data-nav-state',
     'desktop-nav-closed',
   );

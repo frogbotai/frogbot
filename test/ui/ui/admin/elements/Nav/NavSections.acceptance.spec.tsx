@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import type { PayloadRequest, ServerProps } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@frogbotai/ui/admin/rsc', () => ({
+vi.mock('@frogbotai/ui', () => ({
   NavSection: ({ children, title }: React.PropsWithChildren<{ title: string }>) => (
     <section aria-label={title}>{children}</section>
   ),

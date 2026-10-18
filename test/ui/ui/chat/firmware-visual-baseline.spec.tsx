@@ -8,8 +8,8 @@ import { Composer } from '../../../../packages/ui/src/chat/composer/composer';
 import { composerInput, type } from './composerEditor';
 
 const firmwareComposerBaseline = {
-  wrapper: 'fb-composer__gradient',
-  gradientContainer: 'fb-composer__gradient-container',
+  wrapper: 'fb-composer__gradient fb-glow',
+  gradientContainer: 'fb-composer__gradient-container fb-glow__ring',
   panel: 'fb-composer__panel',
   input: 'fb-composer__input',
   submit: 'fb-composer__action fb-composer__submit',
@@ -18,8 +18,8 @@ const firmwareComposerBaseline = {
 it('matches the canonical Firmware theme foundation', () => {
   const styles = readFileSync(resolve('packages/ui/src/styles.css'), 'utf8');
 
-  expect(styles).toContain('--fb-base-0: rgb(249, 250, 251)');
-  expect(styles).toContain('--fb-base-900: rgb(16, 24, 40)');
+  expect(styles).toContain('--fb-base-0: #ffffff');
+  expect(styles).toContain('--fb-base-900: #1e1e1e');
   expect(styles).toContain('--color-brand-500: #2f964f');
   expect(styles).toContain('--fb-theme-base-0: light-dark(var(--fb-base-0), var(--fb-base-1000))');
   expect(styles).toContain(
@@ -35,10 +35,8 @@ it('matches the canonical Firmware composer shell', () => {
     <Composer onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />,
   );
 
-  const wrapper = container.querySelector(`.${firmwareComposerBaseline.wrapper}`);
-  const gradientContainer = container.querySelector(
-    `.${firmwareComposerBaseline.gradientContainer}`,
-  );
+  const wrapper = container.querySelector('.fb-composer__gradient');
+  const gradientContainer = container.querySelector('.fb-composer__gradient-container');
 
   const panel = gradientContainer?.firstElementChild;
   const input = composerInput();

@@ -8,9 +8,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../../../components/dropdown-menu.js';
-import LogoutRightIcon from '../../../icons/icons/LogoutRightIcon.js';
-import SettingIcon from '../../../icons/icons/SettingIcon.js';
+} from '../components/dropdown-menu.js';
+import LogoutRightIcon from '../icons/icons/LogoutRightIcon.js';
+import SettingIcon from '../icons/icons/SettingIcon.js';
 
 export type AccountMenuIcon = ComponentType<{ className?: string; size?: number }> | ReactNode;
 
@@ -31,10 +31,10 @@ export type AccountMenuProps = {
   logoutPath?: string;
   name?: string;
   onNavigate: (path: string) => void;
-  settingsPath: string;
+  settingsPath?: string;
 };
 
-const baseClass = 'frogbot-account-menu';
+const baseClass = 'fb-account-menu';
 
 const renderIcon = (icon: AccountMenuIcon | undefined) => {
   if (!icon) return null;
@@ -86,11 +86,13 @@ export function AccountMenu({
         </DropdownMenuItem>
         <DropdownMenuSeparator className={`${baseClass}__separator`} />
         {beforeMenuItems}
-        <AccountMenuItem
-          icon={SettingIcon}
-          label="Settings"
-          onSelect={() => onNavigate(settingsPath)}
-        />
+        {settingsPath && (
+          <AccountMenuItem
+            icon={SettingIcon}
+            label="Settings"
+            onSelect={() => onNavigate(settingsPath)}
+          />
+        )}
         {afterMenuItems}
         {(logout || logoutPath) && <DropdownMenuSeparator className={`${baseClass}__separator`} />}
         {logout ??

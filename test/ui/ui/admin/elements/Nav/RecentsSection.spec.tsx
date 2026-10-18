@@ -25,13 +25,13 @@ vi.mock('frogbot', () => ({
   }),
 }));
 
-vi.mock('../../../../../../packages/ui/src/admin/elements/Nav/NavSection', () => ({
+vi.mock('../../../../../../packages/ui/src/nav/NavSection', () => ({
   NavSection: ({ children, title }: React.PropsWithChildren<{ title: string }>) => (
     <section aria-label={title}>{children}</section>
   ),
 }));
 
-vi.mock('../../../../../../packages/ui/src/admin/elements/Nav/NavItem', () => ({
+vi.mock('../../../../../../packages/ui/src/nav/NavItem', () => ({
   NavItem: ({ active, label, path }: { active?: boolean; label: string; path: string }) => (
     <a aria-current={active ? 'page' : undefined} href={path}>
       {label}
@@ -39,9 +39,10 @@ vi.mock('../../../../../../packages/ui/src/admin/elements/Nav/NavItem', () => ({
   ),
 }));
 
-import { NavSection } from '../../../../../../packages/ui/src/admin/elements/Nav/NavSection';
 import { RecentsSection } from '../../../../../../packages/ui/src/admin/elements/Nav/RecentsSection';
-import { bucketRecents } from '../../../../../../packages/ui/src/admin/elements/Nav/RecentsSection.client';
+import { NavAdapterProvider } from '../../../../../../packages/ui/src/nav/adapter';
+import { NavSection } from '../../../../../../packages/ui/src/nav/NavSection';
+import { bucketRecents } from '../../../../../../packages/ui/src/nav/RecentChats';
 
 function props(): { req: PayloadRequest } & ServerProps {
   const req = { user: { id: 'user-1' } } as PayloadRequest;
@@ -55,6 +56,14 @@ function props(): { req: PayloadRequest } & ServerProps {
     req,
     user: req.user,
   } as unknown as { req: PayloadRequest } & ServerProps;
+}
+
+function InNav({ children }: React.PropsWithChildren) {
+  return (
+    <NavAdapterProvider navigate={push} pathname={pathname}>
+      {children}
+    </NavAdapterProvider>
+  );
 }
 
 describe('RecentsSection', () => {
@@ -80,7 +89,7 @@ describe('RecentsSection', () => {
     });
 
     const componentProps = props();
-    render(await RecentsSection(componentProps));
+    render(await RecentsSection(componentProps), { wrapper: InNav });
 
     expect(screen.getByRole('region', { name: 'Recents' })).not.toBeNull();
     expect(find).toHaveBeenCalledWith({
@@ -106,7 +115,7 @@ describe('RecentsSection', () => {
   it('renders without a FrogBot theme wrapper', async () => {
     find.mockResolvedValueOnce({ docs: [{ id: 1, title: 'Latest chat' }] });
 
-    const { container } = render(await RecentsSection(props()));
+    const { container } = render(await RecentsSection(props()), { wrapper: InNav });
 
     expect(screen.getByRole('link', { name: 'Latest chat' })).not.toBeNull();
     expect(container.querySelector('.fb-theme')).toBeNull();
@@ -117,7 +126,7 @@ describe('RecentsSection', () => {
     find.mockClear();
     const componentProps = props();
     componentProps.req.user = null;
-    render(await RecentsSection(componentProps));
+    render(await RecentsSection(componentProps), { wrapper: InNav });
 
     expect(find).not.toHaveBeenCalled();
     expect(screen.getByText('No recent chats')).not.toBeNull();
@@ -132,7 +141,7 @@ describe('RecentsSection', () => {
       );
     }
 
-    render(<CustomRecentsSection />);
+    render(<CustomRecentsSection />, { wrapper: InNav });
 
     expect(screen.getByRole('region', { name: 'Recent work' })).not.toBeNull();
     expect(screen.getByText('Custom body')).not.toBeNull();
@@ -153,7 +162,7 @@ describe('RecentsSection', () => {
     );
 
     find.mockResolvedValueOnce({ docs: [{ id: 'seed', title: 'Seed chat', agent: 'general' }] });
-    render(await RecentsSection(props()));
+    render(await RecentsSection(props()), { wrapper: InNav });
 
     expect(screen.getByRole('link', { name: 'Seed chat' })).not.toBeNull();
 
@@ -196,7 +205,7 @@ describe('RecentsSection', () => {
 
     find.mockResolvedValueOnce({ docs: [{ id: 'seed', title: 'Seed chat', agent: 'general' }] });
     pathname = '/control/collections/conversations/seed';
-    render(await RecentsSection(props()));
+    render(await RecentsSection(props()), { wrapper: InNav });
 
     await user.click(screen.getByRole('button', { name: 'Chat actions' }));
     await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
@@ -224,7 +233,7 @@ describe('RecentsSection', () => {
     );
 
     find.mockResolvedValueOnce({ docs: [{ id: 'seed', title: 'Seed chat', agent: 'general' }] });
-    render(await RecentsSection(props()));
+    render(await RecentsSection(props()), { wrapper: InNav });
 
     act(() => {
       window.dispatchEvent(new Event('frogbot:chats:mutated'));
@@ -260,7 +269,7 @@ describe('RecentsSection', () => {
 
     fetch.mockResolvedValue(Response.json(result));
     find.mockResolvedValueOnce({ docs: [] });
-    render(await RecentsSection(props()));
+    render(await RecentsSection(props()), { wrapper: InNav });
 
     act(() => {
       window.dispatchEvent(new Event('focus'));
@@ -312,7 +321,7 @@ describe('RecentsSection', () => {
     });
 
     pathname = '/control/collections/conversations/today';
-    const view = render(await RecentsSection(props()));
+    const view = render(await RecentsSection(props()), { wrapper: InNav });
 
     expect(
       screen.getAllByRole('heading').map(({ textContent }: HTMLElement) => textContent),

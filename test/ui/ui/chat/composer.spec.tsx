@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useEffect, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Composer, type ComposerProps } from '../../../../packages/ui/src/chat/composer/composer';
@@ -1220,5 +1221,40 @@ describe('Composer', () => {
       );
       expect(screen.getByRole('listbox', { name: 'Mentions' })).toBeTruthy();
     });
+  });
+
+  it('keeps text typed as soon as the editor mounts, before its effects run', async () => {
+    function MountLater() {
+      const [shown, setShown] = useState(false);
+
+      useEffect(() => {
+        const timer = setTimeout(() => setShown(true), 0);
+
+        return () => clearTimeout(timer);
+      }, []);
+
+      return shown ? <Composer onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" /> : null;
+    }
+
+    const typed = new Promise<void>((resolve) => {
+      const observer = new MutationObserver(() => {
+        const box = document.querySelector<HTMLElement & { __lexicalEditor?: unknown }>(
+          '[role="textbox"]',
+        );
+
+        if (!box?.__lexicalEditor) return;
+
+        observer.disconnect();
+        type('hello', box);
+        resolve();
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
+
+    render(<MountLater />);
+    await typed;
+
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
   });
 });

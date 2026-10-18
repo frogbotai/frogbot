@@ -26,6 +26,8 @@ const layerOrderFiles = [
   join(root, 'packages/next/src/layers.css'),
 ];
 
+const resetPath = join(root, 'packages/ui/src/reset.css');
+
 const oldTokenPattern = new RegExp(
   [
     '-',
@@ -34,7 +36,18 @@ const oldTokenPattern = new RegExp(
   ].join(''),
 );
 
-const adminOwnedNames = ['--color-border', '--font-body'];
+const adminOwnedNames = [
+  '--color-bg',
+  '--color-bg-hover',
+  '--color-bg-inverse',
+  '--color-bg-secondary-hover',
+  '--color-bg-tertiary',
+  '--color-border',
+  '--color-border-success-strong',
+  '--color-text',
+  '--color-text-secondary',
+  '--font-body',
+];
 
 const paletteNames = [
   '--fb-base-0',
@@ -207,15 +220,21 @@ const frogbotCssFiles = [
 ];
 
 describe('FrogBot cascade layers', () => {
-  it('puts every UI, admin and plugin rule in the frogbot layer or theme.frogbot', () => {
+  it('puts every UI, admin and plugin rule in the frogbot layer or theme.frogbot, the reset aside', () => {
     const offenders = frogbotCssFiles.flatMap((file) =>
       readTopLevelBlocks(file)
         .filter((prelude) => !frogbotLayers.includes(prelude))
+        .filter((prelude) => file !== resetPath || prelude !== '@layer frogbot-reset')
         .map((prelude) => `${relative(root, file)}: ${prelude}`),
     );
 
     expect(frogbotCssFiles.length).toBeGreaterThan(75);
     expect(offenders).toEqual([]);
+  });
+
+  it('keeps the reset in its own layer, in reset.css only', () => {
+    expect(readTopLevelBlocks(resetPath)).toEqual(['@layer frogbot-reset']);
+    expect(readImports(stylesPath).slice(0, 2)).toEqual([layerOrderFiles[0], resetPath]);
   });
 
   it('declares the layer order only in the layers.css files', () => {
@@ -228,10 +247,10 @@ describe('FrogBot cascade layers', () => {
 
   it('declares the Tailwind order in the UI and the admin order before the admin styles', () => {
     expect(readFileSync(layerOrderFiles[0], 'utf8').trim()).toBe(
-      '@layer theme, base, components, frogbot, utilities;',
+      '@layer frogbot-reset, theme, base, components, frogbot, utilities;',
     );
     expect(readFileSync(layerOrderFiles[1], 'utf8').trim()).toBe(
-      '@layer payload-default, frogbot, payload;',
+      '@layer frogbot-reset, payload-default, frogbot, payload;',
     );
     expect(readImports(stylesPath)[0]).toBe(layerOrderFiles[0]);
     expect(readFileSync(join(root, 'packages/next/src/css.css'), 'utf8')).toMatch(

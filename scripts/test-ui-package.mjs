@@ -33,7 +33,13 @@ const subpaths = [
   './admin/rsc',
 ];
 
-const stylesheets = ['./admin/styles.css', './styles.css', './utilities.css'];
+const stylesheets = [
+  './admin/styles.css',
+  './fonts.css',
+  './glow.css',
+  './styles.css',
+  './utilities.css',
+];
 
 const nodeEntries = subpaths
   .filter((subpath) => !subpath.startsWith('./admin') && !subpath.includes('*'))
@@ -313,7 +319,10 @@ export const picker = (
     .map((file) => fs.readFileSync(path.join(appRoot, 'dist/assets', file), 'utf8'))
     .join('\n');
 
-  assert.match(bundledCss, /^@layer theme,\s*base,\s*components,\s*frogbot,\s*utilities;/);
+  assert.match(
+    bundledCss,
+    /^@layer frogbot-reset,\s*theme,\s*base,\s*components,\s*frogbot,\s*utilities;/,
+  );
 
   for (const forbidden of [
     'process.env',

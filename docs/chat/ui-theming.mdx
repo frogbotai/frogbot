@@ -41,6 +41,40 @@ On admin pages `--fb-theme-base-*` and `--fb-base-*` read the admin panel's pale
 
 FrogBot's tokens include common names such as `--color-*`, `--primary`, `--background`, and `--sidebar-*`. If your app defines a token with the same name for its own use, it restyles FrogBot too. For example, an app theme that sets `--sidebar-background` changes FrogBot's sidebar. Rename your token or scope it to your own elements. On admin pages, the admin panel's semantic tokens (`--color-bg*`, `--color-text*`, `--color-border*`, `--radius-*`, `--spacer-*`) share the same space: overriding one there restyles the admin as well as FrogBot.
 
+## Fonts
+
+FrogBot's text uses one token, `--font-body`. Set it on `:root` to change the font of every FrogBot component, in the admin panel and on your own pages:
+
+```css
+@font-face {
+  font-family: Satoshi;
+  src: url('/fonts/Satoshi-Variable.woff2') format('woff2');
+  font-weight: 300 900;
+}
+
+:root {
+  --font-body: Satoshi, sans-serif;
+}
+```
+
+Outside the admin it defaults to `Inter, sans-serif`. Inter only loads if you import `@frogbotai/ui/fonts.css`; without it, the browser's sans-serif font shows. In the admin panel, Inter is already loaded and `--font-body` already set.
+
+Code in tool results and code blocks uses Roboto Mono, also from `fonts.css`. On pages outside the admin, set `--font-family-mono` on `:root` to use another code font.
+
+## Glow
+
+The composer's animated rainbow ring is a reusable block. Put `fb-glow` on a wrapper and `fb-glow__ring` on the element inside it; the ring shows in a 5px band around that element's child, with 20px corners. Add `fb-glow--active` for the brighter glow the composer shows while you type.
+
+```tsx
+<div className="fb-glow">
+  <div className="fb-glow__ring">
+    <div className="my-panel">…</div>
+  </div>
+</div>
+```
+
+`@frogbotai/ui/styles.css` includes it. `@frogbotai/ui/glow.css` is the block on its own, with its colors set on `.fb-glow`, so it also works where FrogBot's tokens don't reach, such as a page's shadow root. With reduced motion the ring stops turning.
+
 ## Light and dark modes
 
 FrogBot tokens follow the mode of the element that uses them. A value you set on `:root` applies in both modes. To set a different value per mode, write it with `light-dark()`:

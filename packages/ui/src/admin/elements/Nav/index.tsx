@@ -89,7 +89,7 @@ export async function FrogBotNav(props: FrogBotNavProps) {
   const configuredItems = navModel.items.map((item) => ({
     ...item,
     icon: renderNavIcon({
-      className: 'frogbot-admin-sidebar__icon',
+      className: 'fb-app-sidebar__icon',
       icon: item.icon,
       importMap: payload.importMap,
       serverProps,
