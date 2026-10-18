@@ -40,7 +40,7 @@ export const Summary: Field = {
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ## Admin options
 
@@ -81,9 +81,9 @@ export const Articles: CollectionConfig = {
 
 ```tsx
 import { TextareaField } from '@frogbotai/ui/admin'
-import type { TextareaFieldServerComponent } from 'frogbot'
+import type { TextareaFieldServerProps } from 'frogbot'
 
-export const CustomTextareaServer: TextareaFieldServerComponent = (props) => (
+export const CustomTextareaServer = (props: TextareaFieldServerProps) => (
   <TextareaField
     field={props.clientField}
     path={props.path}
@@ -99,9 +99,9 @@ export const CustomTextareaServer: TextareaFieldServerComponent = (props) => (
 'use client'
 
 import { TextareaField } from '@frogbotai/ui/admin'
-import type { TextareaFieldClientComponent } from 'frogbot'
+import type { TextareaFieldClientProps } from 'frogbot'
 
-export const CustomTextareaClient: TextareaFieldClientComponent = (props) => <TextareaField {...props} />
+export const CustomTextareaClient = (props: TextareaFieldClientProps) => <TextareaField {...props} />
 ```
 
 ### Label
@@ -110,9 +110,9 @@ export const CustomTextareaClient: TextareaFieldClientComponent = (props) => <Te
 
 ```tsx
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { TextareaFieldLabelServerComponent } from 'frogbot'
+import type { TextareaFieldLabelServerProps } from 'frogbot'
 
-export const CustomTextareaLabelServer: TextareaFieldLabelServerComponent = ({ clientField, path }) => (
+export const CustomTextareaLabelServer = ({ clientField, path }: TextareaFieldLabelServerProps) => (
   <FieldLabel
     label={clientField.label || clientField.name}
     path={path}
@@ -127,9 +127,9 @@ export const CustomTextareaLabelServer: TextareaFieldLabelServerComponent = ({ c
 'use client'
 
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { TextareaFieldLabelClientComponent } from 'frogbot'
+import type { TextareaFieldLabelClientProps } from 'frogbot'
 
-export const CustomTextareaLabelClient: TextareaFieldLabelClientComponent = ({ field, path }) => (
+export const CustomTextareaLabelClient = ({ field, path }: TextareaFieldLabelClientProps) => (
   <FieldLabel label={field.label || field.name} path={path} required={field.required} />
 )
 ```

@@ -4,14 +4,11 @@ import { durationField } from '../../../../../packages/frogbot/src/fields/baseFi
 import type { TextField } from '../../../../../packages/frogbot/src/fields/config/types.js';
 import { validateField } from './validateField.js';
 
-type Schema = Parameters<NonNullable<TextField['typescriptSchema']>[number]>[0]['jsonSchema'];
+type Schema = Parameters<NonNullable<TextField['jsonSchema']>[number]>[0]['jsonSchema'];
 
-function runSchema(
-  field: { typescriptSchema?: TextField['typescriptSchema'] },
-  jsonSchema: Schema,
-) {
-  return (field.typescriptSchema ?? []).reduce(
-    (schema, entry) => entry({ jsonSchema: schema }),
+function runSchema(field: { jsonSchema?: TextField['jsonSchema'] }, jsonSchema: Schema) {
+  return (field.jsonSchema ?? []).reduce(
+    (schema, entry) => entry({ jsonSchema: schema, variant: 'output' }),
     jsonSchema,
   );
 }
@@ -47,7 +44,7 @@ describe('durationField', () => {
   it('passes number field options through unchanged', () => {
     const access = { update: () => false };
     const afterRead = () => 1;
-    const developerEntry: NonNullable<TextField['typescriptSchema']>[number] = ({ jsonSchema }) =>
+    const developerEntry: NonNullable<TextField['jsonSchema']>[number] = ({ jsonSchema }) =>
       jsonSchema;
 
     const field = durationField({
@@ -60,7 +57,7 @@ describe('durationField', () => {
       access,
       hooks: { afterRead: [afterRead] },
       admin: { readOnly: true, placeholder: '0:00', custom: { other: true } },
-      typescriptSchema: [developerEntry],
+      jsonSchema: [developerEntry],
     });
 
     expect(field).toMatchObject({
@@ -79,8 +76,8 @@ describe('durationField', () => {
       },
     });
 
-    expect(field.typescriptSchema).toHaveLength(2);
-    expect(field.typescriptSchema?.[1]).toBe(developerEntry);
+    expect(field.jsonSchema).toHaveLength(2);
+    expect(field.jsonSchema?.[1]).toBe(developerEntry);
   });
 });
 
@@ -99,7 +96,7 @@ describe('durationField option errors', () => {
   });
 });
 
-describe('durationField typescriptSchema', () => {
+describe('durationField jsonSchema', () => {
   it('tells agents the value is whole seconds', () => {
     const field = durationField({ name: 'timeSpent' });
 

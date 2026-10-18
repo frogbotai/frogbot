@@ -86,6 +86,26 @@ describe('scaffold', () => {
     }
   });
 
+  it('packs only versions a generated app can install outside the workspace', () => {
+    const databaseDependencies = JSON.parse(
+      fs.readFileSync(path.join(packageRoot, 'dist', 'database-dependencies.json'), 'utf8'),
+    ) as Record<string, Record<string, string>>;
+
+    const pkg = JSON.parse(fs.readFileSync(path.join(templateDir, 'package.json'), 'utf8')) as {
+      dependencies: Record<string, string>;
+      devDependencies: Record<string, string>;
+    };
+
+    const versions = [
+      ...Object.values(databaseDependencies).flatMap(Object.values),
+      ...Object.values(pkg.dependencies),
+      ...Object.values(pkg.devDependencies),
+    ];
+
+    expect(Object.keys(databaseDependencies).sort()).toEqual(['mongodb', 'postgres', 'sqlite']);
+    expect(versions.filter((version) => /^(catalog|workspace):/.test(version))).toEqual([]);
+  });
+
   it('writes a .env with a generated secret alongside the untouched .env.example', () => {
     const options = createDest();
     scaffold({ ...options, templateDir });

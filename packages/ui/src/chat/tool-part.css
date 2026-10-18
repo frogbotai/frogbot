@@ -1,7 +1,7 @@
 @layer frogbot {
   .fb-tool-part {
     min-width: 0;
-    border: 1px solid var(--theme-base-200);
+    border: 1px solid var(--fb-theme-base-200);
     border-radius: 0.5rem;
     font-size: 0.875rem;
     line-height: 1.25rem;
@@ -33,7 +33,7 @@
     min-width: 0;
     flex: 1 1 auto;
     overflow: hidden;
-    color: var(--theme-base-600);
+    color: var(--fb-theme-base-600);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -43,7 +43,7 @@
     flex-shrink: 0;
     align-items: center;
     margin-left: auto;
-    color: var(--theme-base-750);
+    color: var(--fb-theme-base-750);
     font-size: 0.75rem;
     line-height: 1rem;
   }

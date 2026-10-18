@@ -29,6 +29,8 @@ export function defaultChatsCollection({
   return {
     slug,
     versions: false,
+    authorship: false,
+    custom: { frogbot: { internal: true } },
     trash: true,
     admin: {
       icon: 'bubble-chat',
@@ -82,7 +84,7 @@ export function defaultChatsCollection({
         type: 'json',
         access: readOnly,
         admin: { hidden: true },
-        typescriptSchema: [() => ({ tsType: "import('frogbot').ChannelThreadReference" })],
+        jsonSchema: [() => ({ tsType: "import('frogbot').ChannelThreadReference" })],
       },
       {
         name: 'channelLabel',
@@ -98,7 +100,7 @@ export function defaultChatsCollection({
       {
         name: 'todos',
         type: 'json',
-        typescriptSchema: [() => ({ tsType: "import('frogbot/tools').TodoItem[]" })],
+        jsonSchema: [() => ({ tsType: "import('frogbot/tools').TodoItem[]" })],
       },
     ],
   };

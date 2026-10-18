@@ -1,12 +1,10 @@
 import { number as validateNumber, text as validateText } from 'payload/shared';
 
-import type { Field, TextField, UIField, Validate } from '../config/types.js';
+import type { Field, JSONSchemaTransform, UIField, Validate } from '../config/types.js';
 
 type KindField = Exclude<Extract<Field, { name: string }>, UIField>;
 
-type TypescriptSchemaEntry = NonNullable<TextField['typescriptSchema']>[number];
-
-type JSONSchema = ReturnType<TypescriptSchemaEntry>;
+type JSONSchema = ReturnType<JSONSchemaTransform>;
 
 export type FieldKindSpec = {
   kind: { type: string } & Record<string, unknown>;
@@ -17,7 +15,7 @@ export type FieldKindSpec = {
   check?: (value: unknown) => string | true;
 };
 
-export type KindTypescriptSchemaArgs = {
+export type KindJSONSchemaArgs = {
   text: string;
   min?: number;
   max?: number;
@@ -90,13 +88,13 @@ function withLimits({
   };
 }
 
-export function kindTypescriptSchema({
+export function kindJSONSchema({
   hasMany,
   integer,
   max,
   min,
   text,
-}: KindTypescriptSchemaArgs): TypescriptSchemaEntry {
+}: KindJSONSchemaArgs): JSONSchemaTransform {
   return ({ jsonSchema }) => {
     const description = jsonSchema.description
       ? `${jsonSchema.description} (${text[0].toLowerCase()}${text.slice(1)})`
@@ -134,7 +132,7 @@ export function applyFieldKind<TField extends KindField>(
   const max = 'max' in field && typeof field.max === 'number' ? field.max : undefined;
   const hasMany = 'hasMany' in field && field.hasMany === true;
 
-  const kindEntry = kindTypescriptSchema({
+  const kindEntry = kindJSONSchema({
     text: spec.description,
     min,
     max,
@@ -155,7 +153,7 @@ export function applyFieldKind<TField extends KindField>(
       },
       ...(Object.keys(components).length > 0 ? { components } : {}),
     },
-    typescriptSchema: [kindEntry, ...(field.typescriptSchema ?? [])],
+    jsonSchema: [kindEntry, ...(Array.isArray(field.jsonSchema) ? field.jsonSchema : [])],
     ...(spec.check ? { validate: composeValidate(field, spec.check) } : {}),
   };
 }

@@ -26,6 +26,7 @@ const seed = async () => {
 
   const user = await frogbot.create({
     collection: 'users',
+    overrideAccess: true,
     data: {
       email: 'dev@frogbot.com',
       password: 'some-password',

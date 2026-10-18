@@ -315,9 +315,7 @@ export function resolveAIFieldTask<T extends JobsConfig>({
   const task: TaskConfig<AIFieldTask> = {
     slug: AI_FIELD_TASK_SLUG,
     interfaceName: 'TaskFrogBotRunAIField',
-    ...(jobs.enableConcurrencyControl === true && {
-      concurrency: { key: concurrencyKey, supersedes: true },
-    }),
+    concurrency: { key: concurrencyKey, supersedes: true },
     handler: async ({ input, req }) => {
       await runAIField({ input, req });
 

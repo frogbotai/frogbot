@@ -113,11 +113,11 @@ describe('file references', () => {
 
     const { container, unmount } = render(
       <ChatProvider adapter={adapter}>
-        <MessagePart part={reference} />
+        <MessagePart part={{ ...reference, filename: 'chart.png' }} />
       </ChatProvider>,
     );
 
-    expect(screen.getByRole('status').textContent).toBe('Loading attachment: claimed.txt');
+    expect(screen.getByRole('status').textContent).toBe('Loading attachment: chart.png');
     expect(screen.queryByRole('img')).toBeNull();
 
     await settle(() => {
@@ -126,12 +126,12 @@ describe('file references', () => {
       );
     });
 
-    const image = await screen.findByRole('img', { name: 'chart one.png' });
+    const image = await screen.findByRole('img', { name: 'chart.png' });
 
     expect(image.getAttribute('src')).toBe('blob:chat-asset');
     expect(image.className).toBe('fb-file-part__image');
     expect(container.querySelector('figure')?.className).toBe('fb-file-part fb-file-part--image');
-    expect(container.querySelector('figcaption')?.textContent).toBe('chart one.png');
+    expect(container.querySelector('figcaption')?.textContent).toBe('chart.png');
     expect(screen.queryByRole('status')).toBeNull();
 
     expect(adapter.fetch.mock.calls.map(([url]) => String(url))).toEqual([
@@ -155,14 +155,18 @@ describe('file references', () => {
   it('renders an authenticated document as the existing downloadable link', async () => {
     const adapter = createAdapter({
       [metadataPath]: () =>
-        Response.json({ id: 'asset-1', filename: 'report.pdf', mimeType: 'application/pdf' }),
-      [`/${assetsSlug}/file/report.pdf`]: () =>
+        Response.json({
+          id: 'asset-1',
+          filename: 'report-original.pdf',
+          mimeType: 'application/pdf',
+        }),
+      [`/${assetsSlug}/file/report-original.pdf`]: () =>
         new Response('%PDF-1.7', { headers: { 'content-type': 'application/pdf' } }),
     });
 
     render(
       <ChatProvider adapter={adapter}>
-        <MessagePart part={reference} />
+        <MessagePart part={{ ...reference, filename: 'report.pdf' }} />
       </ChatProvider>,
     );
 
@@ -358,11 +362,11 @@ describe('file references', () => {
 
       render(
         <ChatProvider adapter={adapter}>
-          <MessagePart part={reference} />
+          <MessagePart part={{ ...reference, filename: 'chart.png' }} />
         </ChatProvider>,
       );
 
-      await screen.findByRole('img', { name: 'chart one.png' });
+      await screen.findByRole('img', { name: 'chart.png' });
 
       expect(Boolean(screen.queryByText('Large file'))).toBe(large);
       expect(Boolean(screen.queryByText(largeHint))).toBe(large);
@@ -446,11 +450,11 @@ describe('file references', () => {
 
     rerender(
       <ChatProvider adapter={adapter}>
-        <MessagePart part={{ ...reference, id: 'asset-2' }} />
+        <MessagePart part={{ ...reference, id: 'asset-2', filename: 'chart.png' }} />
       </ChatProvider>,
     );
 
-    await screen.findByRole('img', { name: 'chart one.png' });
+    await screen.findByRole('img', { name: 'chart.png' });
 
     expect(signal?.aborted).toBe(true);
 
@@ -460,7 +464,7 @@ describe('file references', () => {
       );
     });
 
-    expect(screen.getByRole('img').getAttribute('alt')).toBe('chart one.png');
+    expect(screen.getByRole('img').getAttribute('alt')).toBe('chart.png');
     expect(createObjectURL).toHaveBeenCalledTimes(1);
     expect(adapter.fetch.mock.calls.some(([url]) => String(url).includes('stale.png'))).toBe(false);
   });

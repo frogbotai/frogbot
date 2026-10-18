@@ -6,14 +6,6 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { mongooseAdapter } from '../../../packages/db-mongodb/src/index.js';
 import { resolveJobsConfig } from '../../../packages/frogbot/src/jobs/config.js';
-import type { JobLeaseDatabase } from '../../../packages/frogbot/src/jobs/lease.js';
-import {
-  getJobLeaseContext,
-  jobLeaseOperations,
-  renewJobLease,
-  resetJobLease,
-  withJobLease,
-} from '../../../packages/frogbot/src/jobs/lease.js';
 import { installJobsRuntime } from '../../../packages/frogbot/src/jobs/runtime.js';
 
 vi.mock('frogbot/jobs', () => import('../../../packages/frogbot/src/exports/jobs.js'));
@@ -24,13 +16,13 @@ const require = createRequire(
 
 const upstreamRequire = createRequire(require.resolve('@payloadcms/db-mongodb'));
 
-const { buildConfig, BasePayload, createLocalReq } = await import(
+const { buildConfig, BasePayload, createPayloadRequest } = await import(
   upstreamRequire.resolve('payload')
 );
 
 const mongoURL = process.env.TICKET121_MONGO_URL;
 
-describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
+describe.skipIf(!mongoURL)('Mongo job claims', () => {
   let payload: MongooseAdapter['payload'];
   let adapter: MongooseAdapter;
   let Model: MongooseAdapter['collections'][string];
@@ -83,7 +75,7 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
     adapter = payload.db as MongooseAdapter;
     Model = adapter.collections['payload-jobs'];
 
-    jobs = installJobsRuntime({ payload, leaseDuration: 300_000 });
+    jobs = installJobsRuntime({ payload });
   }, 30_000);
 
   beforeEach(async () => {
@@ -110,7 +102,6 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
     const doc = await Model.create({
       taskSlug: 'noop',
       queue: 'work',
-      processing: false,
       hasError: false,
       priority: 1,
       lane: 'ready',
@@ -121,31 +112,38 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
     return doc._id.toString() as string;
   }
 
-  function claim(args: Partial<Parameters<MongooseAdapter['updateJobs']>[0]> = {}) {
-    return withJobLease({
-      payload,
-      leaseDuration: 300_000,
-      run: async () => {
-        const rows = await adapter.updateJobs({
-          where: { queue: { equals: 'work' } },
-          data: { processing: true },
-          ...args,
-        });
+  const lease = () => ({
+    processingToken: randomUUID(),
+    processingUntil: new Date(Date.now() + 300_000).toISOString(),
+  });
 
-        const context = getJobLeaseContext()!;
-
-        return { rows, owner: context.owner, ids: [...context.ids] };
-      },
+  async function claim(args: Partial<Parameters<MongooseAdapter['updateJobs']>[0]> = {}) {
+    const data = args.data ?? lease();
+    const rows = await adapter.updateJobs({
+      where: { queue: { equals: 'work' } },
+      ...args,
+      data,
     });
+
+    const claimed = await Model.find({ processingToken: data.processingToken })
+      .sort({ _id: 1 })
+      .lean();
+
+    return {
+      rows,
+      token: data.processingToken as string,
+      ids: (rows ?? claimed).map((row: { id?: string; _id?: unknown }) =>
+        String(row.id ?? row._id),
+      ),
+    };
   }
 
   function read(id: string) {
     return Model.findById(id).lean();
   }
 
-  it('installs atomic lease operations during descriptor init', () => {
+  it('names the FrogBot package', () => {
     expect(adapter.packageName).toBe('@frogbotai/db-mongodb');
-    expect((adapter as JobLeaseDatabase)[jobLeaseOperations]?.update).toBeTypeOf('function');
   });
 
   it('partitions overlapping candidate snapshots without returning duplicate claims', async () => {
@@ -177,16 +175,12 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
 
     expect(returned).toHaveLength(12);
     expect(new Set(returned)).toEqual(new Set(ids));
-    expect(batches[0].owner).not.toBe(batches[1].owner);
 
     for (const batch of batches) {
-      expect(batch.ids).toEqual(batch.rows!.map(({ id }) => id));
-
-      for (const id of batch.ids) {
+      for (const { id } of batch.rows!) {
         expect(await read(String(id))).toMatchObject({
-          processing: true,
-          leaseOwner: batch.owner,
-          leaseUntil: expect.any(Date),
+          processingToken: batch.token,
+          processingUntil: expect.any(Date),
         });
       }
     }
@@ -233,7 +227,7 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
     });
 
     expect(result.ids).toEqual([eligible]);
-    expect(await read(changed)).toMatchObject({ processing: false });
+    expect((await read(changed))!.processingToken ?? null).toBeNull();
   });
 
   it('keeps sort, limit, default order, and sanitized output', async () => {
@@ -253,7 +247,7 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
       id: third,
       input: { message: 'retained' },
       createdAt: '2026-01-03T00:00:00.000Z',
-      leaseUntil: expect.any(String),
+      processingUntil: expect.any(String),
     });
 
     expect(descending.rows![0]).not.toHaveProperty('_id');
@@ -272,7 +266,7 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
     expect(result.ids).toEqual([ids[1], ids[0], ids[2]]);
   });
 
-  it('atomically claims a single ID and records it when returning is disabled', async () => {
+  it('atomically claims a single ID when returning is disabled', async () => {
     const id = await seed();
 
     const results = await Promise.all([
@@ -283,176 +277,36 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
     expect(results.map(({ rows }) => rows)).toEqual([null, null]);
     expect(results.flatMap(({ ids }) => ids)).toEqual([id]);
     expect(await read(id)).toMatchObject({
-      leaseOwner: results.find(({ ids }) => ids.length)!.owner,
+      processingToken: results.find(({ ids }) => ids.length)!.token,
     });
   });
 
-  it('retains existing logs and applies native update operators during a claim', async () => {
-    const log = {
-      taskSlug: 'noop',
-      taskID: 'previous',
-      executedAt: new Date('2026-01-01'),
-      completedAt: new Date('2026-01-01'),
-      state: 'succeeded',
-      error: {},
-    };
-
-    const id = await seed({ totalTried: 3, log: [log] });
-
-    const result = await claim({
-      id,
-      data: { processing: true, totalTried: { $inc: 2 }, log: [] },
+  it('skips a live lease and reclaims an expired one', async () => {
+    const live = await seed({
+      processingToken: 'other',
+      processingUntil: new Date(Date.now() + 60_000),
     });
 
-    expect(result.rows![0]).toMatchObject({ totalTried: 5, input: { message: 'retained' } });
-    expect(result.rows![0].log).toHaveLength(1);
-    expect(result.rows![0].log![0]).toMatchObject({ taskID: 'previous' });
-
-    await adapter.updateJobs({ id, data: { processing: false } });
-
-    const appended = await claim({
-      id,
-      data: { processing: true, log: { $push: { ...log, taskID: 'next' } } },
+    const expired = await seed({
+      processingToken: 'crashed',
+      processingUntil: new Date(Date.now() - 60_000),
     });
 
-    expect(appended.rows![0].log!.map(({ taskID }) => taskID)).toEqual(['previous', 'next']);
+    const result = await claim({ limit: 10 });
+
+    expect(result.ids).toEqual([expired]);
+    expect(await read(live)).toMatchObject({ processingToken: 'other' });
   });
 
-  it('records successful claims even if a later claim fails', async () => {
-    const first = await seed({ priority: 1 });
+  it('delegates ordinary updates, including native operators', async () => {
+    const id = await seed({ totalTried: 1 });
 
-    const second = await seed({ priority: 2 });
+    const rows = await adapter.updateJobs({ id, data: { totalTried: { $inc: 1 } } });
 
-    const update = Model.findOneAndUpdate.bind(Model);
-
-    vi.spyOn(Model, 'findOneAndUpdate')
-      .mockImplementationOnce((...args) => update(...args))
-      .mockImplementationOnce(() => {
-        throw new Error('claim interrupted');
-      });
-
-    await withJobLease({
-      payload,
-      leaseDuration: 300_000,
-      run: async () => {
-        await expect(
-          adapter.updateJobs({
-            data: { processing: true },
-            where: { queue: { equals: 'work' } },
-            limit: 2,
-          }),
-        ).rejects.toThrow('claim interrupted');
-
-        expect([...getJobLeaseContext()!.ids]).toEqual([first]);
-      },
-    });
-
-    expect(await read(first)).toMatchObject({ processing: true });
-    expect(await read(second)).toMatchObject({ processing: false });
+    expect(rows![0]).toMatchObject({ id, totalTried: 2 });
   });
 
-  it('delegates ordinary updates without a lease context', async () => {
-    const id = await seed({ processing: true, totalTried: 1 });
-
-    const rows = await adapter.updateJobs({
-      id,
-      data: { processing: false, totalTried: { $inc: 1 } },
-    });
-
-    expect(rows![0]).toMatchObject({ id, processing: false, totalTried: 2 });
-  });
-
-  it('rejects absent and mismatched runtime contexts before writing', async () => {
-    const id = await seed();
-
-    await expect(adapter.updateJobs({ id, data: { processing: true } })).rejects.toThrow(
-      'this runtime',
-    );
-
-    await expect(
-      withJobLease({
-        payload,
-        leaseDuration: 300_000,
-        run: async () => {
-          getJobLeaseContext()!.payload = {} as typeof payload;
-
-          await adapter.updateJobs({ id, data: { processing: true } });
-        },
-      }),
-    ).rejects.toThrow('this runtime');
-
-    expect(await read(id)).toMatchObject({ processing: false });
-  });
-
-  it('renews only matching owners with unexpired incomplete claims', async () => {
-    const future = new Date(Date.now() + 60_000);
-    const expired = new Date(Date.now() - 60_000);
-
-    const active = await seed({ processing: true, leaseOwner: 'owner', leaseUntil: future });
-
-    const successor = await seed({ processing: true, leaseOwner: 'successor', leaseUntil: future });
-
-    const stale = await seed({ processing: true, leaseOwner: 'owner', leaseUntil: expired });
-
-    const done = await seed({
-      processing: true,
-      leaseOwner: 'owner',
-      leaseUntil: future,
-      completedAt: new Date(),
-    });
-
-    const idle = await seed({ processing: false, leaseOwner: 'owner', leaseUntil: future });
-
-    const req = { payload } as Parameters<typeof renewJobLease>[0]['req'];
-
-    await renewJobLease({ ids: [active, successor, stale, done, idle], owner: 'owner', req });
-
-    expect((await read(active))!.leaseUntil.getTime()).toBeGreaterThan(future.getTime());
-
-    for (const id of [successor, done, idle]) {
-      expect((await read(id))!.leaseUntil).toEqual(future);
-    }
-
-    expect((await read(stale))!.leaseUntil).toEqual(expired);
-  });
-
-  it('keeps sweep CAS conditional when the owner or observed expiry changes', async () => {
-    const expired = new Date(Date.now() - 60_000).toISOString();
-    const newerExpired = new Date(Date.now() - 30_000).toISOString();
-
-    const id = await seed({ processing: true, leaseOwner: 'owner', leaseUntil: expired });
-
-    const req = { payload } as Parameters<typeof resetJobLease>[0]['req'];
-
-    const updateMany = Model.updateMany.bind(Model);
-
-    vi.spyOn(Model, 'updateMany').mockImplementationOnce(
-      (...args) =>
-        (async () => {
-          await Model.updateOne({ _id: id }, { $set: { leaseUntil: newerExpired } });
-
-          return updateMany(...args);
-        })() as unknown as ReturnType<typeof Model.updateMany>,
-    );
-
-    await resetJobLease({ id, owner: 'owner', leaseUntil: expired, req });
-
-    expect(await read(id)).toMatchObject({ processing: true, leaseUntil: new Date(newerExpired) });
-
-    await Model.updateOne({ _id: id }, { $set: { leaseOwner: 'successor' } });
-
-    await resetJobLease({ id, owner: 'owner', leaseUntil: newerExpired, req });
-
-    expect(await read(id)).toMatchObject({ processing: true, leaseOwner: 'successor' });
-
-    await resetJobLease({ id, owner: 'successor', leaseUntil: newerExpired, req });
-
-    expect(await read(id)).toMatchObject({ processing: false, leaseOwner: null, leaseUntil: null });
-
-    expect((await claim({ id })).ids).toEqual([id]);
-  });
-
-  it('uses request transactions for claim and lease writes', async () => {
+  it('claims inside the request transaction', async () => {
     const id = await seed();
 
     const transactionID = await adapter.beginTransaction();
@@ -461,30 +315,11 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
 
     await claim({ id, req: { transactionID: Promise.resolve(transactionID) } });
 
-    expect(await read(id)).toMatchObject({ processing: false });
+    expect((await read(id))!.processingToken ?? null).toBeNull();
 
     await adapter.rollbackTransaction(transactionID);
 
-    expect(await read(id)).toMatchObject({ processing: false });
-
-    const claimed = await claim({ id });
-
-    const originalExpiry = (await read(id))!.leaseUntil;
-
-    const leaseTransaction = await adapter.beginTransaction();
-
-    await renewJobLease({
-      ids: [id],
-      owner: claimed.owner,
-      leaseDuration: 600_000,
-      req: { payload, transactionID: Promise.resolve(leaseTransaction) } as Parameters<
-        typeof renewJobLease
-      >[0]['req'],
-    });
-
-    await adapter.rollbackTransaction(leaseTransaction);
-
-    expect((await read(id))!.leaseUntil).toEqual(originalExpiry);
+    expect((await read(id))!.processingToken ?? null).toBeNull();
   });
 
   it('discards ended transaction sessions before claiming', async () => {
@@ -588,8 +423,15 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
 
     transactionIDs.push(loserTransaction);
 
-    const winnerReq = await createLocalReq({ req: { transactionID: winnerTransaction } }, payload);
-    const loserReq = await createLocalReq({ req: { transactionID: loserTransaction } }, payload);
+    const winnerReq = await createPayloadRequest({
+      payload: payload,
+      req: { transactionID: winnerTransaction },
+    });
+
+    const loserReq = await createPayloadRequest({
+      payload: payload,
+      req: { transactionID: loserTransaction },
+    });
 
     const winner = await jobs.queue({
       task: 'noop',
@@ -647,27 +489,32 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
     expect(rows[0]).toMatchObject({ jobId, completedAt: null, hasError: false });
   });
 
-  it('runs native queue, batch, and runByID through default atomic lease claims', async () => {
+  it('runs native queue, batch, and runByID through atomic claims', async () => {
     const single = await jobs.queue({
       task: 'noop',
       jobId: 'single',
       queue: 'work',
       input: {},
+      overrideAccess: true,
     });
 
-    const batch = await jobs.queue({ task: 'noop', jobId: 'batch', queue: 'work', input: {} });
+    const batch = await jobs.queue({
+      task: 'noop',
+      jobId: 'batch',
+      queue: 'work',
+      input: {},
+      overrideAccess: true,
+    });
 
-    await jobs.runByID({ id: single.id });
-    await jobs.run({ queue: 'work', limit: 1 });
+    await jobs.runByID({ id: single.id, overrideAccess: true });
+    await jobs.run({ queue: 'work', limit: 1, overrideAccess: true });
 
     expect(executions).toEqual([single.id, batch.id]);
 
     for (const id of executions) {
       expect(await read(String(id))).toMatchObject({
-        processing: false,
         completedAt: expect.any(Date),
-        leaseOwner: expect.any(String),
-        leaseUntil: expect.any(Date),
+        processingUntil: null,
       });
     }
   });

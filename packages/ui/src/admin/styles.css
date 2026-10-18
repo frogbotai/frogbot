@@ -6,7 +6,7 @@
 
 @layer frogbot {
   .frogbot-chat-view {
-    color: var(--theme-base-900);
+    color: var(--fb-theme-base-900);
     height: calc(100dvh - var(--app-header-height));
   }
 
@@ -75,8 +75,8 @@
   }
 
   .frogbot-nav-shell {
-    background: var(--theme-bg);
-    border-right: 1px solid var(--theme-elevation-100);
+    background: var(--color-bg);
+    border-right: 1px solid var(--color-border);
     flex-shrink: 0;
     height: 100vh;
     overflow: hidden;
@@ -86,7 +86,7 @@
   }
 
   [dir="rtl"] .frogbot-nav-shell {
-    border-left: 1px solid var(--theme-elevation-100);
+    border-left: 1px solid var(--color-border);
     border-right: 0;
   }
 
@@ -110,14 +110,9 @@
     padding: 8px;
   }
 
-  a.step-nav__home,
   button[aria-label="Open Menu"],
   button[aria-label="Close Menu"] {
     transition: transform 200ms ease-out;
-  }
-
-  a.step-nav__home:hover {
-    transform: translateY(-4px);
   }
 
   button[aria-label="Open Menu"]:hover,

@@ -12,7 +12,7 @@ type Data = { title: string };
 
 declare const args: AccessArgs<Data>;
 
-expectTypeOf(args.collectionConfig).toEqualTypeOf<PayloadAccessArgs<Data>['collectionConfig']>();
+expectTypeOf(args.slug).toEqualTypeOf<PayloadAccessArgs<Data>['slug']>();
 expectTypeOf(args.data).toEqualTypeOf<Data | undefined>();
 expectTypeOf(args.id).toEqualTypeOf<PayloadAccessArgs<Data>['id']>();
 expectTypeOf(args.isReadingStaticFile).toEqualTypeOf<boolean | undefined>();
@@ -53,9 +53,9 @@ const collection: CollectionConfig = {
   slug: 'posts',
   fields: [],
   access: {
-    read: ({ req, collectionConfig }) => {
+    read: ({ req, slug }) => {
       expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
-      expectTypeOf(collectionConfig).toEqualTypeOf<PayloadAccessArgs['collectionConfig']>();
+      expectTypeOf(slug).toEqualTypeOf<PayloadAccessArgs['slug']>();
 
       // @ts-expect-error FrogBot requests don't expose req.payload.
       void req.payload;

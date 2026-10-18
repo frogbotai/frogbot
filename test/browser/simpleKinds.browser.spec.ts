@@ -203,7 +203,7 @@ test('a Board card title still opens the card', async ({ page }) => {
 
   await boardCard(page, full.title).locator('.collection-board__title').click();
 
-  await expect(page.locator(`dialog[id*="doc-drawer_${tasksSlug}"]`)).toBeVisible();
+  await expect(page.locator(`dialog[id^="doc-drawer_${tasksSlug}"]`)).toBeVisible();
 });
 
 test('Board cards and Calendar events show kind values and leave empty ones blank', async ({

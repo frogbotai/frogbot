@@ -1,5 +1,5 @@
 import type { Payload, SanitizedCollectionConfig, Where } from 'payload';
-import { createLocalReq, validateQueryPaths } from 'payload';
+import { createPayloadRequest, validateQueryPaths } from 'payload';
 
 import type { FrogBot } from '../frogbot.js';
 import { fromPayloadFields } from '../seams/config.js';
@@ -255,14 +255,12 @@ async function createSearchRequest(
     throw new SearchValidationError('Search requires req unless overrideAccess: true is explicit.');
   }
 
-  const payloadReq = await createLocalReq(
-    {
-      req: toPayloadRequest(req ?? (await frogbot.createRequest())),
-      locale,
-      fallbackLocale,
-    },
+  const payloadReq = await createPayloadRequest({
     payload,
-  );
+    req: toPayloadRequest(req ?? (await frogbot.createRequest())),
+    locale,
+    fallbackLocale,
+  });
 
   return Object.assign(payloadReq, { frogbot });
 }

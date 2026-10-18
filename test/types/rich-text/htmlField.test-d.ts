@@ -25,6 +25,7 @@ const collection: CollectionConfig = {
   fields: [
     { name: 'content', type: 'richText' },
     lexicalHTMLField({
+      // @ts-expect-error Payload 4.0.0-beta.2 rejects typed block converters here (F-238, to report upstream); drop this when it accepts them.
       converters,
       htmlFieldName: 'html',
       lexicalFieldName: 'content',

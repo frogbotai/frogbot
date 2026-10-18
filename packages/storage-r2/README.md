@@ -15,7 +15,7 @@ import { buildConfig } from 'frogbot';
 import { r2Storage } from '@frogbotai/storage-r2';
 
 export default buildConfig({
-  plugins: [
+  storage: [
     r2Storage({
       bucket: env.R2_BUCKET,
     }),

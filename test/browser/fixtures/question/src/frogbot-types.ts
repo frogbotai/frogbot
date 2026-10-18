@@ -105,13 +105,16 @@ export interface Config {
   globalsSelect: {};
   locale: null;
   widgets: {
+    welcome: WelcomeWidget;
     collections: CollectionsWidget;
+    'collection-query': CollectionQueryWidget;
+    activity: ActivityWidget;
   };
   user: User;
   jobs: {
     tasks: {
       'frogbot-reset-ai-budgets': TaskFrogBotResetAiBudgets;
-      'frogbot-sweep-jobs': TaskFrogBotSweepJobs;
+      'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       'frogbot-run-ai-field': TaskFrogBotRunAIField;
       inline: {
@@ -715,6 +718,14 @@ export interface User {
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
   spendThisPeriodUSD?: number | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -846,14 +857,14 @@ export interface Task {
    * Unique number set by FrogBot when the record is created; read-only
    */
   number?: number | null;
-  /**
-   * Set by FrogBot to the user who created the record; read-only
-   */
-  createdBy?: (number | null) | User;
-  /**
-   * Set by FrogBot to the user who last saved the record; read-only
-   */
-  lastModifiedBy?: (number | null) | User;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   project?: (number | null) | Project;
   tags?: (number | Tag)[] | null;
   projectBudget?: number | null;
@@ -888,6 +899,14 @@ export interface Project {
    */
   budget?: number | null;
   status?: ('active' | 'paused') | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -898,6 +917,14 @@ export interface Project {
 export interface Tag {
   id: number;
   name?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -912,6 +939,14 @@ export interface Timesheet {
    * Duration in whole seconds, for example 5400 for 1 hour 30 minutes
    */
   logged?: number | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -992,6 +1027,16 @@ export interface FrogBotChatAsset {
   filesize?: number | null;
   width?: number | null;
   height?: number | null;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+  };
   focalX?: number | null;
   focalY?: number | null;
 }
@@ -1057,6 +1102,8 @@ export interface UsersSelect {
   models?: boolean;
   monthlyBudget?: boolean;
   spendThisPeriodUSD?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   email?: boolean;
@@ -1126,7 +1173,7 @@ export interface TasksSelect {
   sku?: boolean;
   number?: boolean;
   createdBy?: boolean;
-  lastModifiedBy?: boolean;
+  updatedBy?: boolean;
   project?: boolean;
   tags?: boolean;
   projectBudget?: boolean;
@@ -1148,6 +1195,8 @@ export interface ProjectsSelect {
   name?: boolean;
   budget?: boolean;
   status?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -1157,6 +1206,8 @@ export interface ProjectsSelect {
  */
 export interface TagsSelect {
   name?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -1167,6 +1218,8 @@ export interface TagsSelect {
 export interface TimesheetsSelect {
   title?: boolean;
   logged?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   _status?: boolean;
@@ -1247,6 +1300,18 @@ export interface FrogBotChatAssetsSelect {
   filesize?: boolean;
   width?: boolean;
   height?: boolean;
+  original?:
+    | boolean
+    | {
+        filename?: boolean;
+        url?: boolean;
+        mimeType?: boolean;
+        filesize?: boolean;
+        width?: boolean;
+        height?: boolean;
+        prefix?: boolean;
+        _objectKey?: boolean;
+      };
   focalX?: boolean;
   focalY?: boolean;
 }
@@ -1295,6 +1360,16 @@ export interface FrogBotAutonumbersSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "welcome_widget".
+ */
+export interface WelcomeWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -1302,6 +1377,60 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collection-query_widget".
+ */
+export interface CollectionQueryWidget {
+  data?: {
+    title?: string | null;
+    relatedCollection:
+      | 'users'
+      | 'messages'
+      | 'tasks'
+      | 'projects'
+      | 'tags'
+      | 'timesheets'
+      | 'api-keys'
+      | 'usage-logs'
+      | 'chats';
+    where?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    sortField?: string | null;
+    sortDirection?: ('asc' | 'desc') | null;
+    limit?: number | null;
+  };
+  width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "activity_widget".
+ */
+export interface ActivityWidget {
+  data?: {
+    excludedCollections?:
+      | (
+          | 'users'
+          | 'messages'
+          | 'tasks'
+          | 'projects'
+          | 'tags'
+          | 'timesheets'
+          | 'api-keys'
+          | 'usage-logs'
+          | 'chats'
+        )[]
+      | null;
+  };
+  width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1313,9 +1442,9 @@ export interface TaskFrogBotResetAiBudgets {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBotSweepJobs".
+ * via the `definition` "TaskFrogBotSweepWaitpoints".
  */
-export interface TaskFrogBotSweepJobs {
+export interface TaskFrogBotSweepWaitpoints {
   input?: unknown;
   output?: unknown;
 }

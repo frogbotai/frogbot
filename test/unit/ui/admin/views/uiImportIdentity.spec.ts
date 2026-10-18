@@ -32,10 +32,9 @@ describe('view controls admin styles', () => {
   it('uses admin runtime accent tokens', () => {
     const source = readFileSync(resolve(viewsPath, 'controls/ViewControls.css'), 'utf8');
 
-    expect(source).toMatch(/--theme-success-150/);
-    expect(source).toMatch(/--theme-success-250/);
-    expect(source).toMatch(/--theme-success-800/);
-    expect(source).not.toMatch(/--theme-base-/);
+    expect(source).toMatch(/--color-bg-success-tertiary/);
+    expect(source).toMatch(/--color-border-success/);
+    expect(source).not.toMatch(/--fb-theme-base-/);
     expect(source).not.toMatch(/--color-blue-/);
   });
 });

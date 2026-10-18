@@ -9,6 +9,6 @@
     overflow-wrap: anywhere;
     white-space: normal;
     border-radius: var(--fb-radius-md);
-    outline: 2px solid var(--theme-base-400);
+    outline: 2px solid var(--fb-theme-base-400);
   }
 }

@@ -19,8 +19,8 @@
   }
 
   .fb-button:focus-visible {
-    border-color: var(--theme-brand-500);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-brand-500) 50%, transparent);
+    border-color: var(--fb-theme-brand-500);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--fb-theme-brand-500) 50%, transparent);
   }
 
   .fb-button:disabled {
@@ -34,65 +34,65 @@
   }
 
   .fb-button--default {
-    color: var(--theme-base-200);
-    background: var(--theme-base-1000);
+    color: var(--fb-theme-base-200);
+    background: var(--fb-theme-base-1000);
   }
 
   .fb-button--default:hover {
-    background: var(--theme-base-700);
+    background: var(--fb-theme-base-700);
   }
 
   .fb-button--default:active {
-    background: var(--theme-base-600);
+    background: var(--fb-theme-base-600);
   }
 
   .fb-button--destructive {
-    color: var(--color-base-900);
-    background: var(--theme-red-500);
+    color: var(--fb-base-900);
+    background: var(--fb-theme-red-500);
   }
 
   .fb-button--destructive:hover {
-    background: var(--theme-red-700);
+    background: var(--fb-theme-red-700);
   }
 
   .fb-button--destructive:active {
-    background: var(--theme-red-600);
+    background: var(--fb-theme-red-600);
   }
 
   .fb-button--outline {
-    border: 1px solid var(--theme-base-400);
-    background: var(--theme-base-250);
+    border: 1px solid var(--fb-theme-base-400);
+    background: var(--fb-theme-base-250);
   }
 
   .fb-button--outline:hover,
   .fb-button--secondary:hover {
-    background: var(--theme-base-350);
+    background: var(--fb-theme-base-350);
   }
 
   .fb-button--outline:active,
   .fb-button--secondary:active {
-    background: var(--theme-base-400);
+    background: var(--fb-theme-base-400);
   }
 
   .fb-button--secondary {
-    background: var(--theme-base-250);
+    background: var(--fb-theme-base-250);
   }
 
   .fb-button--ghost {
-    color: var(--theme-base-700);
+    color: var(--fb-theme-base-700);
   }
 
   .fb-button--ghost:hover {
-    color: var(--theme-base-1000);
-    background: var(--theme-base-400);
+    color: var(--fb-theme-base-1000);
+    background: var(--fb-theme-base-400);
   }
 
   .fb-button--ghost:active {
-    color: var(--theme-base-1000);
+    color: var(--fb-theme-base-1000);
   }
 
   .fb-button--link {
-    color: var(--theme-base-850);
+    color: var(--fb-theme-base-850);
     text-underline-offset: 4px;
   }
 

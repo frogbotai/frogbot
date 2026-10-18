@@ -53,7 +53,7 @@ function relationship(id: number | string): RichTextHtmlArticle['content'] {
           format: '',
           relationTo: restrictedNotesSlug,
           type: 'relationship',
-          value: id,
+          value: Number(id),
           version: 2,
         },
       ],

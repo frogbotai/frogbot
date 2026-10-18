@@ -49,7 +49,7 @@ The value is a [Text field](/fields/text), or a [Select field](/fields/select) w
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated. Without it, a duplicate keeps the value as a hand-written one. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the AI field's own entry. See [Agents and generated types](#agents-and-generated-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the AI field's own entry. See [Agents and generated types](#agents-and-generated-types). |
 
 With `options`, these Select options are also accepted, and `minLength` and `maxLength` are not:
 
@@ -183,6 +183,7 @@ Generate, Regenerate and Retry all set the status to `pending`, which queues a r
 ```ts
 await req.frogbot.update({
   collection: 'tasks',
+  overrideAccess: true,
   id,
   data: { _summary_status: 'pending' },
   req,
@@ -193,9 +194,9 @@ This needs update access to the record. Any other status you write is ignored. T
 
 ### Quick edits
 
-With `jobs.enableConcurrencyControl` on, the default, quick edits leave at most one waiting run per record, field and locale, and it uses the latest inputs. A run that has already started finishes first.
+Quick edits leave at most one waiting run per record, field and locale, and it uses the latest inputs. A run that has already started finishes first.
 
-With `jobs.enableConcurrencyControl: false`, every qualifying save queues its own run, so quick edits can make extra model calls. Either way, an answer generated from inputs that have changed since is never saved. See [Jobs](/jobs-queue/overview).
+An answer generated from inputs that have changed since is never saved. See [Jobs](/jobs-queue/overview).
 
 ### Who a run belongs to
 
@@ -212,7 +213,7 @@ The user who started this run no longer exists.
 The user who started this run can't read this record.
 ```
 
-A run's save doesn't change a [Last modified by](/fields/last-modified-by) field.
+A run's save sets `updatedBy` to the user who started the run.
 
 ### Failures
 
@@ -345,7 +346,7 @@ Set by FrogBot: the error message from the last failed run
 
 With a string `admin.description`, or a translated one with an `en` entry, the AI text is added after it in parentheses. The admin panel still shows only your description. A function `admin.description` isn't copied, so the AI text stands alone. The text is English only.
 
-To change the value's text, add your own `typescriptSchema` entry. It runs after the AI field's entry, so it can adjust or replace the description.
+To change the value's text, add your own `jsonSchema` entry. It runs after the AI field's entry, so it can adjust or replace the description.
 
 ## Custom components
 

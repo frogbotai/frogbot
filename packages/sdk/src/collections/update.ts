@@ -52,6 +52,10 @@ export type UpdateBaseOptions<
    */
   populate?: PopulateType<T>;
   /**
+   * Publish in every locale. Without it, a publish applies to the request's locale only.
+   */
+  publishAllLocales?: boolean;
+  /**
    * Which fields to include in the result.
    */
   select?: TSelect;
@@ -60,6 +64,10 @@ export type UpdateBaseOptions<
    * @default false
    */
   trash?: boolean;
+  /**
+   * Unpublish in every locale.
+   */
+  unpublishAllLocales?: boolean;
 };
 
 export type UpdateByIDOptions<
@@ -76,10 +84,6 @@ export type UpdateByIDOptions<
    */
   id: number | string;
   limit?: never;
-  /**
-   * Publish only this locale's changes. Other locales keep their published values.
-   */
-  publishSpecificLocale?: TypedLocale<T>;
   where?: never;
 } & UpdateBaseOptions<T, TSlug, TSelect>;
 

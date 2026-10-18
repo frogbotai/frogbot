@@ -4,8 +4,8 @@ Ported from the Payload monorepo — `packages/sdk/src/`.
 
 - Upstream: https://github.com/payloadcms/payload
 - Path: `packages/sdk/src`
-- Commit: `93111ff435e2deb81923bc9025310b9c7f61d485`
-- Tag: `v3.90.1`
+- Commit: `73d3dd897381a851ff1708bbde19444d1a0c5b43`
+- Tag: `v4.0.0-beta.2`
 - License: MIT, reproduced in [`../THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md)
 
 Ported so the SDK ships one FrogBot client whose requests match Payload's REST client byte for byte,
@@ -52,11 +52,12 @@ except for the options upstream drops (see Local modifications).
 - Operations receive the client's private `#send` instead of the client. `#send` builds on the existing
   `request()`, so `FrogBotSDKError`, base headers, and per-request header merging apply to every method.
 - `PayloadSDKError` is replaced by the existing `FrogBotSDKError`.
-- `buildSearchParams` sends `fallbackLocale: false` as `fallback-locale=false`, and sends `autosave` and
-  `publishSpecificLocale`. Upstream drops all three, so the server never sees them.
+- `buildSearchParams` sends `fallbackLocale: false` as `fallback-locale=false`, and sends `autosave`,
+  `publishAllLocales` and `unpublishAllLocales`. Upstream drops all four, so the server never sees them.
 - `JoinQuery` has no top-level `false`: the REST server reads `joins` per field, so `joins=false` is ignored.
   Setting one join field to `false` works.
-- `autosave` and `publishSpecificLocale` are on `UpdateByIDOptions` only; the REST update by `where` reads neither.
+- `autosave` is on `UpdateByIDOptions` only; the REST update by `where` doesn't read it.
+  `publishAllLocales` is on both update forms, as both REST endpoints read it.
 - `ForgotPasswordOptions['data']` is `{ email }`. The REST endpoint reads no other field; `disableEmail` and
   `expiration` are Local API options.
 - JSDoc rewritten in FrogBot wording; comments stripped; house code style (semicolons).

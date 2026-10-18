@@ -1,4 +1,7 @@
-import type { Plugin as PayloadPlugin, UploadConfig as PayloadUploadConfig } from 'payload';
+import type {
+  StorageAdapter as PayloadStorageAdapter,
+  UploadConfig as PayloadUploadConfig,
+} from 'payload';
 
 import type { FrogBotRequest } from '../types/request.js';
 
@@ -21,8 +24,10 @@ export type StorageAdapterCollections<TOptions = unknown> = Partial<
   Record<string, TOptions | true | false>
 >;
 
-export type StorageAdapterRegistration = {
+/** A storage adapter for the root `storage` key, made by a `@frogbotai/storage-*` factory. */
+export type StorageAdapter = {
+  /** Collections the app listed; `false` keeps a FrogBot upload collection on local disk. */
   collections: StorageAdapterCollections;
-  /** Builds the Payload plugin; `builtIns` are FrogBot's upload collections it also serves. */
-  plugin: (builtIns: string[]) => PayloadPlugin;
+  /** Builds Payload's adapter; `builtIns` are FrogBot's upload collections it also serves. */
+  init: (builtIns: string[]) => PayloadStorageAdapter;
 };

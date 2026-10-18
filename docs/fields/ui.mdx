@@ -56,6 +56,5 @@ UI fields accept these admin options. Unlike data fields, they do not support th
 | `condition` | `(data, siblingData, ctx) => boolean` | — | Shows the field only when it returns `true`. See [Conditional logic](/fields/overview#conditional-logic). |
 | `position` | `string` | Main form | Set to `'sidebar'` to render the field in the edit view's sidebar. |
 | `width` | `string \| number` | Full width | CSS width, especially within a row. |
-| `disableBulkEdit` | `boolean` | `true` | UI fields are excluded from bulk editing unless set to `false`. |
-| `disableListColumn` | `boolean` | `false` | Removes the field from the list-view column selector. |
+| `disabled` | `boolean \| { field?, column?, filter?, groupBy?, bulkEdit? }` | `{ bulkEdit: true }` | Omits the field from admin areas, as for [data fields](/fields/overview#admin-options). UI fields are excluded from bulk editing unless `bulkEdit` is `false`. |
 | `custom` | `Record<string, any>` | — | Metadata available on the server and in the browser. |

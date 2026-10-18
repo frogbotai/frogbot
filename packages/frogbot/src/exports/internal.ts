@@ -1,6 +1,7 @@
 export { executeAuthStrategy } from '../auth/executeAuthStrategy.js';
 export { formatCliError } from '../bin/formatCliError.js';
 export { loadEnv } from '../bin/loadEnv.js';
+export { isInternalCollection } from '../collections/config/internal.js';
 export { attachRegisteredFrogBot } from '../config/attachFrogBot.js';
 export { getPayloadConfig } from '../config/getPayloadConfig.js';
 export { loadConfig } from '../config/load.js';
@@ -23,5 +24,5 @@ export {
   wrapPayloadPlugin,
 } from '../seams/config.js';
 export { hasFrogBot, toFrogBotRequest, toPayloadRequest } from '../seams/request.js';
-export type { StorageAdapterOptions } from '../uploads/storage.js';
+export type { StorageAdapterOptions, StorageAdapterProps } from '../uploads/storage.js';
 export { storageAdapter } from '../uploads/storage.js';

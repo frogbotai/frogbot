@@ -76,7 +76,7 @@ Generated records contain an array under the field name. Each row receives an `i
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 <Banner type="warning">
   Setting `unique: true` on a field inside an Array creates a collection-wide
@@ -143,14 +143,14 @@ Use the public field component and FrogBot component type for a custom field wra
 
 ```tsx
 import { ArrayField } from '@frogbotai/ui/admin'
-import type { ArrayFieldServerComponent } from 'frogbot'
+import type { ArrayFieldServerProps } from 'frogbot'
 
-export const CustomArrayField: ArrayFieldServerComponent = ({
+export const CustomArrayField = ({
   clientField,
   path,
   permissions,
   schemaPath,
-}) => {
+}: ArrayFieldServerProps) => {
   return (
     <ArrayField
       field={clientField}
@@ -178,27 +178,27 @@ export function LinkRowLabel() {
 
 Configure it with `admin.components.RowLabel: '/components/LinkRowLabel#LinkRowLabel'`.
 
-Use `ArrayFieldClientComponent` for a client field wrapper. Use `ArrayFieldLabelServerComponent` or `ArrayFieldLabelClientComponent` to replace only the field label while retaining the default field UI.
+Use `ArrayFieldClientProps` for a client field wrapper. Use `ArrayFieldLabelServerProps` or `ArrayFieldLabelClientProps` to replace only the field label while retaining the default field UI.
 
 ```tsx
 'use client'
 
 import { ArrayField } from '@frogbotai/ui/admin'
-import type { ArrayFieldClientComponent } from 'frogbot'
+import type { ArrayFieldClientProps } from 'frogbot'
 
-export const CustomArrayFieldClient: ArrayFieldClientComponent = (props) => {
+export const CustomArrayFieldClient = (props: ArrayFieldClientProps) => {
   return <ArrayField {...props} />
 }
 ```
 
 ```tsx
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { ArrayFieldLabelServerComponent } from 'frogbot'
+import type { ArrayFieldLabelServerProps } from 'frogbot'
 
-export const CustomArrayLabel: ArrayFieldLabelServerComponent = ({
+export const CustomArrayLabel = ({
   clientField,
   path,
-}) => {
+}: ArrayFieldLabelServerProps) => {
   return (
     <FieldLabel
       label={clientField?.label || clientField?.name}

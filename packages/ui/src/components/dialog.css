@@ -3,7 +3,7 @@
     position: fixed;
     inset: 0;
     z-index: 50;
-    background: color-mix(in srgb, var(--color-base-1000) 80%, transparent);
+    background: color-mix(in srgb, var(--fb-base-1000) 80%, transparent);
   }
 
   .fb-dialog__content {
@@ -15,8 +15,8 @@
     width: calc(100% - 2rem);
     max-width: 32rem;
     padding: 1.5rem;
-    background: var(--theme-base-0);
-    border: 1px solid var(--theme-base-150);
+    background: var(--fb-theme-base-0);
+    border: 1px solid var(--fb-theme-base-150);
     border-radius: var(--fb-radius-xl);
     box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%);
     transform: translate(-50%, -50%);
@@ -27,20 +27,20 @@
     top: 1rem;
     right: 1rem;
     padding: 0.5rem;
-    color: var(--theme-base-700);
+    color: var(--fb-theme-base-700);
     background: transparent;
-    border: 1px solid var(--theme-base-150);
+    border: 1px solid var(--fb-theme-base-150);
     border-radius: 9999px;
     opacity: 0.7;
   }
 
   .fb-dialog__close:hover {
-    background: var(--theme-base-200);
+    background: var(--fb-theme-base-200);
     opacity: 1;
   }
 
   .fb-dialog__close:focus-visible {
-    outline: 2px solid var(--theme-base-900);
+    outline: 2px solid var(--fb-theme-base-900);
     outline-offset: 2px;
   }
 
@@ -84,7 +84,7 @@
   }
 
   .fb-dialog__description {
-    color: var(--theme-base-750);
+    color: var(--fb-theme-base-750);
     font-size: var(--fb-text-sm);
     line-height: var(--fb-text-sm--line-height);
   }

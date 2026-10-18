@@ -22,7 +22,7 @@ ruleTester.run('client-imports', rule, {
     },
     {
       name: 'type-only imports are erased',
-      code: "'use client';\nimport type { Stats } from 'node:fs';\nexport type { ServerProps } from '@frogbotai/next/rsc';",
+      code: "'use client';\nimport type { Stats } from 'node:fs';\nexport type { DefaultTemplateProps } from '@frogbotai/ui/admin/rsc';",
       filename,
     },
     {

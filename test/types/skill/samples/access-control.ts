@@ -104,6 +104,7 @@ export const canDeleteCustomer: Access = async ({ id, req }) => {
 
   const contracts = await req.frogbot.find({
     collection: 'contracts',
+    overrideAccess: true,
     depth: 0,
     limit: 0,
     req,

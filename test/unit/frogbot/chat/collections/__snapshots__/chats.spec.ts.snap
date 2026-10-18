@@ -24,6 +24,12 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
       },
     ],
   },
+  "authorship": false,
+  "custom": {
+    "frogbot": {
+      "internal": true,
+    },
+  },
   "fields": [
     {
       "name": "title",
@@ -95,11 +101,11 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
       "admin": {
         "hidden": true,
       },
-      "name": "channelThread",
-      "type": "json",
-      "typescriptSchema": [
+      "jsonSchema": [
         [Function],
       ],
+      "name": "channelThread",
+      "type": "json",
     },
     {
       "access": {
@@ -124,11 +130,11 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
       "type": "date",
     },
     {
-      "name": "todos",
-      "type": "json",
-      "typescriptSchema": [
+      "jsonSchema": [
         [Function],
       ],
+      "name": "todos",
+      "type": "json",
     },
   ],
   "slug": "chats",

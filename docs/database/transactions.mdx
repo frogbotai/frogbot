@@ -25,6 +25,7 @@ const afterChange: CollectionAfterChangeHook = async ({ req }) => {
   await req.frogbot.create({
     req,
     collection: 'my-slug',
+    overrideAccess: true,
     data: {
       some: 'data',
     },
@@ -43,6 +44,7 @@ const afterChange: CollectionAfterChangeHook = async ({ req }) => {
   const dangerouslyIgnoreAsync = req.frogbot.create({
     req,
     collection: 'my-slug',
+    overrideAccess: true,
     data: {
       some: 'other data',
     },
@@ -52,6 +54,7 @@ const afterChange: CollectionAfterChangeHook = async ({ req }) => {
   // because the req (and its transactionID) is not passed through
   const safelyIgnoredAsync = req.frogbot.create({
     collection: 'my-slug',
+    overrideAccess: true,
     data: {
       some: 'other data',
     },
@@ -86,6 +89,7 @@ const standaloneFrogBotScript = async () => {
     // Make an update using the Local API
     await frogbot.update({
       collection: 'posts',
+      overrideAccess: true,
       data: {
         some: 'data',
       },
@@ -120,6 +124,7 @@ In addition to allowing database transactions to be disabled at the adapter leve
 ```ts
 await frogbot.update({
   collection: 'posts',
+  overrideAccess: true,
   data: {
     some: 'data',
   },

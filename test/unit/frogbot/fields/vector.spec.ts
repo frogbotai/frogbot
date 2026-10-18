@@ -7,7 +7,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { sanitize } from '../../../../packages/frogbot/src/config/sanitize.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import type { MapVectorFieldArgs } from '../../../../packages/frogbot/src/database/types.js';
-import type { SystemKindUsers } from '../../../../packages/frogbot/src/fields/config/sanitizeSystemKinds.js';
 import { sanitizeVectorFields } from '../../../../packages/frogbot/src/fields/config/sanitizeVector.js';
 import type {
   JSONField,
@@ -15,8 +14,6 @@ import type {
 } from '../../../../packages/frogbot/src/fields/config/types.js';
 import { validateVector } from '../../../../packages/frogbot/src/fields/validations.js';
 import { writeGeneratedTypes } from '../../../../packages/frogbot/src/typegen/index.js';
-
-const users: SystemKindUsers = { authSlugs: ['users'], resolve: () => 'users' };
 
 function config(fields: FrogBotConfig['collections'][number]['fields']): FrogBotConfig {
   return {
@@ -108,7 +105,6 @@ describe('vector fields', () => {
 
     const result = sanitizeVectorFields({
       collection: 'documents',
-      users,
       fields: [field],
     })[0] as JSONField;
 
@@ -145,7 +141,6 @@ describe('vector fields', () => {
   it('lowers vectors inside groups, tabs, rows, collapsibles, arrays and blocks', () => {
     const nested = sanitizeVectorFields({
       collection: 'documents',
-      users,
       fields: [
         {
           name: 'group',
@@ -185,8 +180,6 @@ describe('vector fields', () => {
           type: 'blocks',
           blocks: [
             { slug: 'note', fields: [{ name: 'embedding', type: 'vector', dimensions: 3 }] },
-          ],
-          blockReferences: [
             { slug: 'referenced', fields: [{ name: 'embedding', type: 'vector', dimensions: 3 }] },
           ],
         },
@@ -198,9 +191,7 @@ describe('vector fields', () => {
   });
 
   it('lowers vectors in shared root blocks referenced by a collection', async () => {
-    const input = config([
-      { name: 'content', type: 'blocks', blocks: [], blockReferences: ['shared'] },
-    ]);
+    const input = config([{ name: 'content', type: 'blocks', blocks: ['shared'] }]);
 
     input.blocks = [
       { slug: 'shared', fields: [{ name: 'embedding', type: 'vector', dimensions: 3 }] },

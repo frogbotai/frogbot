@@ -7,6 +7,9 @@ import {
   useConfig,
   useDocumentDrawer,
   useListQuery,
+  usePathname,
+  useRouter,
+  useSearchParams,
   useTableColumns,
   useTranslation,
 } from '@payloadcms/ui';
@@ -18,7 +21,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Calendar } from '../../../calendar/Calendar.js';
 import { getVisibleRange } from '../../../calendar/core/index.js';
-import { useRouterAdapter } from '../../adapters/router.js';
 import { FieldCell } from '../../fields/FieldCell/index.client.js';
 import { appendQuery, getPath, setPath } from '../cells.js';
 import { getViewCardColumns } from '../preferences.js';
@@ -134,7 +136,9 @@ export function CalendarViewClient({
   const { config, getEntityConfig } = useConfig();
   const { query } = useListQuery();
   const { columns } = useTableColumns();
-  const { pathname, router, searchParams } = useRouterAdapter();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const collectionConfig = getEntityConfig({ collectionSlug });
   const cardColumns = useMemo(
     () => getViewCardColumns(columns, collectionConfig.admin?.useAsTitle),

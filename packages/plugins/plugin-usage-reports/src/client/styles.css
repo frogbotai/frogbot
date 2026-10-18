@@ -18,7 +18,7 @@
   }
 
   .usage-reports__header p {
-    color: var(--theme-elevation-500);
+    color: var(--color-text-secondary);
     margin-top: 6px;
   }
 
@@ -32,10 +32,10 @@
 
   .usage-reports button,
   .usage-reports-nav-link {
-    background: var(--theme-elevation-100);
-    border: 1px solid var(--theme-elevation-200);
-    border-radius: var(--style-radius-s);
-    color: var(--theme-text);
+    background: var(--color-bg-hover);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    color: var(--color-text);
     cursor: pointer;
     padding: 9px 14px;
   }
@@ -47,15 +47,15 @@
   }
 
   .usage-reports__tabs button.active {
-    background: var(--theme-elevation-800);
-    color: var(--theme-elevation-0);
+    background: var(--color-bg-inverse);
+    color: var(--color-text-oninverse);
   }
 
   .usage-reports__custom {
     align-items: end;
-    background: var(--theme-elevation-50);
-    border: 1px solid var(--theme-elevation-150);
-    border-radius: var(--style-radius-m);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
     padding: 16px;
   }
 
@@ -65,17 +65,17 @@
   }
 
   .usage-reports__custom input {
-    background: var(--theme-input-bg);
-    border: 1px solid var(--theme-elevation-200);
-    border-radius: var(--style-radius-s);
-    color: var(--theme-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    color: var(--color-text);
     padding: 9px;
   }
 
   .usage-reports__card {
-    background: var(--theme-elevation-50);
-    border: 1px solid var(--theme-elevation-150);
-    border-radius: var(--style-radius-m);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
     overflow: hidden;
   }
 
@@ -87,13 +87,13 @@
   }
 
   .usage-reports__totals span {
-    color: var(--theme-elevation-500);
+    color: var(--color-text-secondary);
     display: grid;
     gap: 4px;
   }
 
   .usage-reports__totals strong {
-    color: var(--theme-text);
+    color: var(--color-text);
     font-size: 22px;
   }
 
@@ -109,7 +109,7 @@
 
   .usage-reports th,
   .usage-reports td {
-    border-top: 1px solid var(--theme-elevation-150);
+    border-top: 1px solid var(--color-border);
     padding: 13px 16px;
     text-align: right;
     white-space: nowrap;
@@ -129,13 +129,13 @@
   }
 
   .usage-reports__state {
-    color: var(--theme-elevation-500);
+    color: var(--color-text-secondary);
     padding: 32px;
     text-align: center;
   }
 
   .usage-reports__error {
-    color: var(--theme-error-500);
+    color: var(--color-text-danger);
   }
 
   @media (max-width: 768px) {

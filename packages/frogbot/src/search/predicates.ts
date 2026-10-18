@@ -106,7 +106,10 @@ export async function resolveSearchPredicate({
 }): Promise<Where> {
   const access = overrideAccess
     ? true
-    : await executeAccess({ req: toPayloadRequest(req) }, collection.access.read);
+    : await executeAccess(
+        { req: toPayloadRequest(req), slug: collection.slug },
+        collection.access.read,
+      );
 
   if (!access) throw new Forbidden(req.t);
 

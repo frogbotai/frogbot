@@ -174,9 +174,13 @@ async function runSource() {
 }
 
 async function sweep() {
-  const job = await fixture.worker.jobs.queue({ task: 'frogbot-sweep-jobs', input: {} });
+  const job = await fixture.worker.jobs.queue({
+    task: 'frogbot-sweep-waitpoints',
+    input: {},
+    overrideAccess: true,
+  });
 
-  await fixture.worker.jobs.runByID({ id: job.id, silent: true });
+  await fixture.worker.jobs.runByID({ id: job.id, silent: true, overrideAccess: true });
 
   const stored = (await jobs()).find(({ id }) => id === job.id)!;
 
@@ -220,11 +224,10 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     expect(stored[0]).toMatchObject({
       id: source.id,
       completedAt: null,
-      processing: false,
+      processingUntil: null,
       hasError: false,
       error: null,
-      leaseOwner: null,
-      leaseUntil: null,
+      processingToken: null,
       totalTried: 0,
       waitUntil: until,
       log: [expect.objectContaining({ taskID: 'prepare', taskSlug: 'inline', state: 'succeeded' })],
@@ -302,12 +305,16 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     expect(failed.hasError).toBe(false);
     expect(failed.log).toEqual([expect.objectContaining({ taskID: 'failed', state: 'failed' })]);
 
-    await fixture.worker.jobs.runByID({ id: scheduled[0].id, silent: true });
+    vi.setSystemTime(timestamp(failed.waitUntil) + 1);
+
+    await fixture.worker.jobs.runByID({ id: scheduled[0].id, silent: true, overrideAccess: true });
 
     const retrying = (await jobs())[0];
 
     expect(retrying.error).toBeTruthy();
     expect(retrying.hasError).toBe(false);
+
+    vi.setSystemTime(timestamp(retrying.waitUntil) + 1);
 
     await fixture.frogbot.jobs.runByID({ id: scheduled[0].id, silent: true, overrideAccess: true });
 
@@ -360,7 +367,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     expect(Buffer.from(before.token, 'base64url')).toHaveLength(32);
     expect(await holder(source.id)).toMatchObject({
       completedAt: null,
-      processing: false,
+      processingUntil: null,
       hasError: false,
       totalTried: 0,
       waitUntil: before.expiresAt,
@@ -408,7 +415,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     expect((await request(url)).status).toBe(409);
     expect((await request(url, { method: 'HEAD' })).status).toBe(409);
 
-    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect(finished).toHaveBeenCalledExactlyOnceWith({ expired: false, data: {} });
     expect(prepare).toHaveBeenCalledTimes(1);
@@ -445,7 +452,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     ).rejects.toMatchObject({ status: 409, code: 'WAITPOINT_CONSUMED' });
 
     await sweep();
-    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect((await waits())[0]).toMatchObject({ token: before.token, status: 'pending' });
     expect((await jobs()).filter(({ workflowSlug }) => workflowSlug === 'http-wait')).toEqual([]);
@@ -475,6 +482,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       jobId,
       queue: 'ignored-queue',
       input: { requestId: 'ignored-input' },
+      overrideAccess: true,
     });
 
     expect(duplicate).toMatchObject({
@@ -497,7 +505,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     expect(resumed).toEqual({ jobId: source.id });
     expect((await post(url(), {})).status).toBe(409);
 
-    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect(finished).toHaveBeenCalledExactlyOnceWith({ expired: false, data: { approved: true } });
     expect(await holder(source.id)).toMatchObject({ id: source.id, jobId });
@@ -518,7 +526,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
 
     expect((await post(url(), {})).status).toBe(200);
 
-    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect((await holder(source.id)).completedAt).toEqual(expect.any(String));
 
@@ -570,13 +578,18 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       waitUntil: new Date(now + 999).toISOString(),
     });
 
-    const duplicate = await fixture.worker.jobs.queue({ workflow: 'http-wait', jobId, input: {} });
+    const duplicate = await fixture.worker.jobs.queue({
+      workflow: 'http-wait',
+      jobId,
+      input: {},
+      overrideAccess: true,
+    });
 
     expect(duplicate.id).toBe(source.id);
 
     vi.setSystemTime(now + 1001);
 
-    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect(finished).toHaveBeenCalledExactlyOnceWith({ expired: true });
     expect(await holder(source.id)).toMatchObject({ id: source.id, jobId });
@@ -595,7 +608,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     });
 
     await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
-    await fixture.worker.jobs.cancelByID({ id: source.id });
+    await fixture.worker.jobs.cancelByID({ id: source.id, overrideAccess: true });
 
     const response = await post(url(), { approved: true });
 
@@ -633,6 +646,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       workflow: 'http-wait-supersede',
       jobId,
       input: { key, replacement: true },
+      overrideAccess: true,
     });
 
     const response = await post(url(), { approved: true });
@@ -671,7 +685,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
 
     expect((await post(url, {})).status).toBe(200);
 
-    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect(await holder(source.id)).toMatchObject({ id: source.id, jobId, hasError: true });
 
@@ -703,7 +717,11 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     expect(response.status).toBe(200);
     expect((await waits())[0].status).toBe('pending');
 
-    await fixture.worker.jobs.run({ queue: 'frogbot-trigger:reply-resumer:reply', silent: true });
+    await fixture.worker.jobs.run({
+      queue: 'frogbot-trigger:reply-resumer:reply',
+      silent: true,
+      overrideAccess: true,
+    });
 
     expect(triggerContexts).toEqual([
       { piece: 'waitpoint-inbox', trigger: 'reply', agent: 'reply-resumer' },
@@ -763,7 +781,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     expect(attempts.filter((status) => status === 409)).toHaveLength(11);
 
     await sweep();
-    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect((await waits())[0]).toMatchObject({
       ready: false,
@@ -779,7 +797,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
 
     expect(paused).toMatchObject({
       id: original.id,
-      processing: false,
+      processingUntil: null,
       completedAt: null,
       input: original.input,
       log: [expect.objectContaining({ taskID: 'notify', state: 'succeeded' })],
@@ -789,7 +807,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
 
     await sweep();
 
-    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     const waiting = (await waits())[0];
 
@@ -829,7 +847,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     const waiting = (await waits())[0];
     const before = await holder(waiting.holder!);
 
-    expect(before.processing).toBe(true);
+    expect(before.processingToken).toEqual(expect.any(String));
 
     const resumed = await fixture.worker.jobs.resume({
       token: waiting.token,
@@ -851,7 +869,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     expect(await holder(original.id)).toMatchObject({
       id: before.id,
       completedAt: null,
-      processing: false,
+      processingUntil: null,
       waitUntil: new Date(now - 1).toISOString(),
     });
     expect((await waits())[0]).toMatchObject({ ready: true, dispatched: false });
@@ -863,7 +881,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
 
     vi.setSystemTime(now + 1);
 
-    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
     await fixture.frogbot.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect(finished).toHaveBeenCalledExactlyOnceWith({ expired: false, data: { approved: true } });
@@ -913,7 +931,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
 
     expect((await waits())[0].dispatched).toBe(false);
 
-    await fixture.worker.jobs.runByID({ id: source.id, silent: true });
+    await fixture.worker.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     expect(urls).toEqual([urls[0], urls[0]]);
     expect((await waits())[0]).toMatchObject({
@@ -978,7 +996,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
 
     vi.setSystemTime(now + 1);
 
-    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect((await waits()).map(({ name }) => name)).toEqual(['approval', 'cooldown']);
     expect((await jobs()).filter(({ completedAt }) => !completedAt)).toEqual([
@@ -995,14 +1013,14 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       overrideAccess: true,
     });
 
-    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect(links).toHaveLength(1);
     expect(finished).not.toHaveBeenCalled();
 
     vi.setSystemTime(now + 60_001);
 
-    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect((await waits()).map(({ name }) => name)).toEqual(['approval', 'cooldown', 'reply']);
     expect((await waits()).map(({ holder }) => holder)).toEqual([source.id, source.id, source.id]);
@@ -1019,7 +1037,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
 
     vi.setSystemTime(now + 61_002);
 
-    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect(finished).toHaveBeenCalledExactlyOnceWith({
       approval: { expired: false, data: 'approved' },
@@ -1116,7 +1134,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true });
 
-    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect(finished).toHaveBeenCalledExactlyOnceWith({ expired: false, data });
     expect(Object.prototype).not.toHaveProperty('approved');

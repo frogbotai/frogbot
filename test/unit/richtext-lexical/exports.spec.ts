@@ -38,4 +38,25 @@ describe('@frogbotai/richtext-lexical exports', () => {
       ),
     );
   });
+
+  it('re-exports with export * only from entries that are not client boundaries', async () => {
+    const manifest = JSON.parse(await readFile(manifestURL, 'utf8')) as {
+      exports: Record<string, string>;
+    };
+
+    const boundaries = [];
+
+    for (const target of Object.values(manifest.exports)) {
+      const source = await readFile(
+        new URL(`../../../packages/richtext-lexical/${target}`, import.meta.url),
+        'utf8',
+      );
+
+      if (/^['"]use client['"]/m.test(source) && /^export \* from/m.test(source)) {
+        boundaries.push(target);
+      }
+    }
+
+    expect(boundaries).toEqual([]);
+  });
 });

@@ -1,11 +1,10 @@
 'use client';
 
-import { useNav, usePreferences, useRouteTransition } from '@payloadcms/ui';
+import { useNav, usePathname, usePreferences, useRouter, useRouteTransition } from '@payloadcms/ui';
 import { PREFERENCE_KEYS } from 'payload/shared';
 import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react';
 
 import { useIsMobile } from '../../../hooks/use-mobile.js';
-import { useRouterAdapter } from '../../adapters/router.js';
 import type { AppSidebarNavItem } from './AppSidebar.js';
 import { AppSidebar } from './AppSidebar.js';
 import { MobileNavToggle } from './MobileNavToggle.js';
@@ -56,7 +55,8 @@ export function FrogBotNavClient({
   sections,
   settingsPath,
 }: FrogBotNavClientProps) {
-  const { pathname, router } = useRouterAdapter();
+  const pathname = usePathname();
+  const router = useRouter();
   const { setPreference } = usePreferences();
   const { startRouteTransition } = useRouteTransition();
   const { hydrated, navOpen, navRef, setNavOpen } = useNav();

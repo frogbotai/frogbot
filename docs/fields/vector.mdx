@@ -54,7 +54,7 @@ This configuration has **no `search` index** and can initialize with the SQLite 
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. FrogBot adds the dimensions under `custom.frogbot.vector`. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). FrogBot runs its own step last, so generated types are always `number[]`, plus `null` when the field is optional. |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). FrogBot runs its own step last, so generated types are always `number[]`, plus `null` when the field is optional. |
 
 ## Admin options
 

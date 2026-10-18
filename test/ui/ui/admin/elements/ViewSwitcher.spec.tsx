@@ -1,15 +1,16 @@
+import type * as PayloadUI from '@payloadcms/ui';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const setPreference = vi.fn(() => Promise.resolve());
 
-vi.mock('@payloadcms/ui', () => ({
+vi.mock('@payloadcms/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof PayloadUI>()),
   useConfig: () => ({ config: { routes: { admin: '/admin' } } }),
   usePreferences: () => ({ setPreference }),
 }));
 
-const { RouterAdapterProvider } =
-  await import('../../../../../packages/ui/src/admin/adapters/router.js');
+const { RouterAdapterContext } = await import('@payloadcms/ui');
 
 const { ViewSwitcher } =
   await import('../../../../../packages/ui/src/admin/elements/ViewSwitcher/index.client.js');
@@ -19,7 +20,7 @@ const views = [
   { label: 'Board', path: '/board', slug: 'board', type: 'board' },
 ];
 
-describe('ViewSwitcher under a router adapter', () => {
+describe("ViewSwitcher under Payload's router adapter", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -28,15 +29,17 @@ describe('ViewSwitcher under a router adapter', () => {
     const router = { back: vi.fn(), push: vi.fn(), refresh: vi.fn(), replace: vi.fn() };
 
     render(
-      <RouterAdapterProvider
+      <RouterAdapterContext
         value={{
+          Link: ({ children, href }) => <a href={href}>{children}</a>,
+          params: {},
           pathname: '/admin/collections/posts',
           router,
           searchParams: new URLSearchParams('page=2'),
         }}
       >
         <ViewSwitcher collectionSlug="posts" views={views} />
-      </RouterAdapterProvider>,
+      </RouterAdapterContext>,
     );
 
     expect(screen.getByRole('link', { name: 'List' }).getAttribute('aria-current')).toBe('page');
@@ -54,7 +57,7 @@ describe('ViewSwitcher under a router adapter', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     expect(() => render(<ViewSwitcher collectionSlug="posts" views={views} />)).toThrow(
-      '[frogbot] useRouterAdapter needs a RouterAdapterProvider.',
+      'useRouter/usePathname/useSearchParams/useParams must be used within a RouterAdapterProvider',
     );
   });
 });

@@ -59,9 +59,9 @@
 
   .fb-composer__panel {
     padding: 0.75rem;
-    border: 1px solid var(--theme-base-200);
+    border: 1px solid var(--fb-theme-base-200);
     border-radius: 20px;
-    background-color: var(--theme-base-150);
+    background-color: var(--fb-theme-base-150);
   }
 
   .fb-composer-editor {
@@ -79,7 +79,7 @@
     overflow: hidden;
     padding-top: 0.5rem;
     padding-left: 0.5rem;
-    color: var(--theme-base-500);
+    color: var(--fb-theme-base-500);
     font-family: var(--font-payload);
     font-size: var(--fb-text-base);
     line-height: var(--fb-text-base--line-height);
@@ -99,7 +99,7 @@
     overflow-y: auto;
     border: 0;
     outline: 0;
-    background-color: var(--theme-base-150);
+    background-color: var(--fb-theme-base-150);
     font-family: var(--font-payload);
     font-size: var(--fb-text-base);
     line-height: var(--fb-text-base--line-height);
@@ -142,22 +142,22 @@
   }
 
   .fb-composer__stop {
-    color: var(--theme-base-700);
-    background-color: var(--theme-base-300);
+    color: var(--fb-theme-base-700);
+    background-color: var(--fb-theme-base-300);
   }
 
   .fb-composer__stop:hover {
-    color: var(--theme-base-1000);
-    background-color: var(--theme-base-400);
+    color: var(--fb-theme-base-1000);
+    background-color: var(--fb-theme-base-400);
   }
 
   .fb-composer__stop:active {
-    color: var(--theme-base-1000);
+    color: var(--fb-theme-base-1000);
   }
 
   .fb-composer__submit {
     margin-left: -0.25rem;
-    color: var(--color-base-1000);
+    color: var(--fb-base-1000);
     background-color: var(--color-brand-500);
   }
 
@@ -173,7 +173,7 @@
     display: block;
     width: 1.25rem;
     height: 1.25rem;
-    stroke: var(--theme-base-150);
+    stroke: var(--fb-theme-base-150);
   }
 
   .fb-composer__stop-icon {

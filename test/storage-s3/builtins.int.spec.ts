@@ -31,7 +31,7 @@ describe('s3 storage for built-in collections', () => {
 
     created.push({ collection, id: doc.id });
 
-    return doc as { filename: string };
+    return doc as { _objectKey: string; filename: string };
   }
 
   beforeAll(async () => {
@@ -76,17 +76,21 @@ describe('s3 storage for built-in collections', () => {
   });
 
   it('stores uploads to the file: true collection in the bucket', async () => {
-    const { filename } = await upload(filesSlug);
+    const { _objectKey, filename } = await upload(filesSlug);
 
-    const object = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: filename }));
+    const object = await client.send(
+      new HeadObjectCommand({ Bucket: bucket, Key: `${_objectKey}/${filename}` }),
+    );
 
     expect(object.ContentType).toBe('text/plain');
   });
 
   it('stores uploads to frogbot-chat-assets in the bucket', async () => {
-    const { filename } = await upload(chatAssetsSlug);
+    const { _objectKey, filename } = await upload(chatAssetsSlug);
 
-    const object = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: filename }));
+    const object = await client.send(
+      new HeadObjectCommand({ Bucket: bucket, Key: `${_objectKey}/${filename}` }),
+    );
 
     expect(object.ContentType).toBe('text/plain');
   });

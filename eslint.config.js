@@ -126,7 +126,7 @@ const UI_ADMIN_BANS = [
   {
     regex: '^(?:next|@payloadcms/next|@frogbotai/next)(?:/|$)',
     message:
-      'packages/ui/src/admin reaches the host only through its adapters (useRouterAdapter, getServerAdapter); it never imports Next.',
+      "packages/ui/src/admin reaches the host only through Payload's adapters (useRouter, usePathname, useSearchParams, and the server prop or req.server); it never imports Next.",
   },
 ];
 

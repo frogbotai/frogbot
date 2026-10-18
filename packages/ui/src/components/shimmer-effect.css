@@ -2,7 +2,7 @@
   .fb-shimmer {
     position: relative;
     overflow: hidden;
-    background: var(--theme-base-200);
+    background: var(--fb-theme-base-200);
     border-radius: var(--fb-radius-lg);
   }
   .fb-shimmer__shine {
@@ -11,7 +11,7 @@
     background: linear-gradient(
       90deg,
       transparent,
-      color-mix(in srgb, var(--theme-base-0) 70%, transparent),
+      color-mix(in srgb, var(--fb-theme-base-0) 70%, transparent),
       transparent
     );
     transform: translateX(-100%);

@@ -54,7 +54,7 @@ async function readableChats({
 
   if (!read) return Boolean(req.user);
 
-  return read({ req: toPayloadRequest(req) });
+  return read({ req: toPayloadRequest(req), slug: chatsSlug });
 }
 
 async function uploadBytes({ data, tempFilePath }: UploadedFile): Promise<Uint8Array> {
@@ -111,6 +111,8 @@ export function defaultChatAssetsCollection({
   return {
     slug: CHAT_ASSETS_SLUG,
     versions: false,
+    authorship: false,
+    custom: { frogbot: { internal: true } },
     typescript: { interface: 'FrogBotChatAsset' },
     upload: true,
     admin: { hidden: true },

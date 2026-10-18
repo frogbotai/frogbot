@@ -28,6 +28,7 @@ export async function queueReport(frogbot: FrogBotInstance) {
     task: 'send-report',
     input: { reportId: 'report-123' },
     queue: 'default',
+    overrideAccess: true,
   });
 }
 

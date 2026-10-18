@@ -20,6 +20,7 @@ import type { FrogBot } from 'frogbot'
 const getPosts = async (frogbot: FrogBot) => {
   const posts = await frogbot.find({
     collection: 'posts',
+    overrideAccess: true,
     select: {
       text: true,
       // select a specific field from group
@@ -38,6 +39,7 @@ const getPosts = async (frogbot: FrogBot) => {
 const getPosts = async (frogbot: FrogBot) => {
   const posts = await frogbot.find({
     collection: 'posts',
+    overrideAccess: true,
     // Select everything except for array and group.number
     select: {
       array: false,
@@ -58,6 +60,7 @@ The `id` field is always included in the result, regardless of your `select` que
 ```ts
 const post = await frogbot.findByID({
   collection: 'posts',
+  overrideAccess: true,
   id: '1',
   select: {},
 })
@@ -70,13 +73,15 @@ console.log(post) // { id: '1' }
   `select` query on the database level. Because of that, your `beforeRead` and
   `afterRead` hooks may not receive the full `doc`. To ensure that some fields
   are always selected for your hooks / access control, regardless of the
-  `select` query, use [`forceSelect`](#always-selected-fields) on your
-  Collection config.
+  `select` query, use a [`select` function](#entity-level-select-config)
+  on your Collection config.
 </Warning>
 
-## Always-selected fields
+## Entity-level select config
 
-Collections accept a top-level `forceSelect` object listing fields that every read, and every write that returns a document, includes. When the caller passes a `select` that includes fields, FrogBot deep-merges `forceSelect` into it. When the caller passes no `select`, the full document is returned anyway. A `select` that excludes fields (uses `false`) is applied as written, so it can still exclude a forced field.
+Collections and globals accept a top-level `select` function that runs before every read and returns the `select` to apply, replacing the caller's. It receives `{ operation, req, select }`; return `undefined` to keep the caller's `select`.
+
+Use it to make sure hooks and access control always get a field, or to send admin requests less data than API requests. The function runs before the read, so it can't see the document.
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -84,12 +89,14 @@ import type { CollectionConfig } from 'frogbot'
 export const Posts: CollectionConfig = {
   slug: 'posts',
   // Always include `title`, regardless of the caller's `select`.
-  forceSelect: { title: true },
+  select: ({ select }) => (select ? { ...select, title: true } : undefined),
   fields: [
     // ...
   ],
 }
 ```
+
+The returned object replaces the caller's `select` instead of merging with it, so spread the caller's `select` in when you only want to add fields.
 
 ## REST API
 
@@ -186,6 +193,7 @@ import type { FrogBot } from 'frogbot'
 const getPosts = async (frogbot: FrogBot) => {
   const posts = await frogbot.find({
     collection: 'posts',
+    overrideAccess: true,
     populate: {
       // Select only `text` from populated docs in the "pages" collection
       // Now, no matter what the `defaultPopulate` is set to on the "pages" collection,

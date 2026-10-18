@@ -3,10 +3,8 @@
 @import 'tailwindcss/utilities.css' layer(utilities);
 
 @theme inline {
-  --color-elevation-0: var(--theme-elevation-0);
-  --color-elevation-500: var(--theme-elevation-500);
-  --color-elevation-1000: var(--theme-elevation-1000);
-  --color-admin-bg: var(--theme-bg);
-  --color-admin-text: var(--theme-text);
-  --color-admin-border: var(--theme-border-color);
+  --color-admin-bg: var(--color-bg);
+  --color-admin-text: var(--color-text);
+  --color-admin-text-secondary: var(--color-text-secondary);
+  --color-admin-border: var(--color-border);
 }

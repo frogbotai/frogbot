@@ -2,13 +2,13 @@ import { expect, it } from 'vitest';
 
 import type { TextField } from '../../../../../packages/frogbot/src/fields/config/types.js';
 
-type Schema = Parameters<NonNullable<TextField['typescriptSchema']>[number]>[0]['jsonSchema'];
+type Schema = Parameters<NonNullable<TextField['jsonSchema']>[number]>[0]['jsonSchema'];
 
 type KindField = {
   access?: Record<string, unknown>;
   admin?: { components?: { Cell?: unknown }; custom?: unknown; [key: string]: unknown };
   hooks?: Record<string, ((args: never) => unknown)[] | undefined>;
-  typescriptSchema?: TextField['typescriptSchema'];
+  jsonSchema?: TextField['jsonSchema'];
 };
 
 export type HookArgs = {
@@ -20,8 +20,8 @@ export type HookArgs = {
 };
 
 export function runSchema(field: KindField, jsonSchema: Schema) {
-  return (field.typescriptSchema ?? []).reduce(
-    (schema, entry) => entry({ jsonSchema: schema }),
+  return (field.jsonSchema ?? []).reduce(
+    (schema, entry) => entry({ jsonSchema: schema, variant: 'output' }),
     jsonSchema,
   );
 }

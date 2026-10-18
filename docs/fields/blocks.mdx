@@ -49,8 +49,7 @@ Each stored item includes `blockType`, whose value is the block's `slug`, and an
 | --- | --- | --- | --- |
 | `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
 | `type` | `'blocks'` | Required | Selects the Blocks field. |
-| `blocks` | `Block[]` | Required | Block configs available directly to this field. Use an empty array when only references are used. |
-| `blockReferences` | `(Block \| string)[]` | — | Blocks registered in the root `blocks` config, by slug or object. Can't be combined with a non-empty `blocks`. See [Root block registration](#root-block-registration). |
+| `blocks` | `(Block \| string)[]` | Required | Blocks available to this field: block configs, or slugs of blocks registered in the root `blocks` config. See [Root block registration](#root-block-registration). |
 | `filterOptions` | `string[] \| ({ id, data, req, siblingData, user }) => string[] \| true \| Promise<string[] \| true>` | All blocks | Block slugs available for the current document; `true` allows every block. See [Conditional blocks](#conditional-blocks). |
 | `labels` | `{ singular, plural }` | Generated from `name` | Singular and plural labels for block rows. Each accepts the same values as `label`, except `false`. |
 | `minRows` | `number` | — | Minimum number of blocks when a value is present. |
@@ -70,7 +69,7 @@ Each stored item includes `blockType`, whose value is the block's `slug`, and an
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Field admin options](#field-admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 <Banner type="warning">
   Setting `unique: true` on a field inside a block creates a collection-wide
@@ -258,8 +257,7 @@ export default buildConfig({
         {
           name: 'layout',
           type: 'blocks',
-          blocks: [],
-          blockReferences: ['text'],
+          blocks: ['text'],
         },
       ],
     },
@@ -269,7 +267,7 @@ export default buildConfig({
 
 Referenced block configuration is shared and cannot be extended at the field. Its access control runs without collection-specific sibling data.
 
-The root registration prevents the same block schema from being sent and processed repeatedly when many fields reuse it. Keep `blocks: []` on a Blocks field that uses only `blockReferences`.
+The root registration prevents the same block schema from being sent and processed repeatedly when many fields reuse it.
 
 <Banner type="warning">
   Referenced blocks are isolated from the collection configuration. Their
@@ -388,14 +386,14 @@ Replace the Blocks field while retaining the default UI:
 
 ```tsx
 import { BlocksField } from '@frogbotai/ui/admin'
-import type { BlocksFieldServerComponent } from 'frogbot'
+import type { BlocksFieldServerProps } from 'frogbot'
 
-export const CustomBlocksField: BlocksFieldServerComponent = ({
+export const CustomBlocksField = ({
   clientField,
   path,
   permissions,
   schemaPath,
-}) => {
+}: BlocksFieldServerProps) => {
   return (
     <BlocksField
       field={clientField}
@@ -413,9 +411,9 @@ Client field replacements receive props compatible with the default field compon
 'use client'
 
 import { BlocksField } from '@frogbotai/ui/admin'
-import type { BlocksFieldClientComponent } from 'frogbot'
+import type { BlocksFieldClientProps } from 'frogbot'
 
-export const CustomBlocksFieldClient: BlocksFieldClientComponent = (props) => {
+export const CustomBlocksFieldClient = (props: BlocksFieldClientProps) => {
   return <BlocksField {...props} />
 }
 ```
@@ -424,12 +422,12 @@ Replace only the field label when the default Blocks interface should remain unc
 
 ```tsx
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { BlocksFieldLabelServerComponent } from 'frogbot'
+import type { BlocksFieldLabelServerProps } from 'frogbot'
 
-export const CustomBlocksLabel: BlocksFieldLabelServerComponent = ({
+export const CustomBlocksLabel = ({
   clientField,
   path,
-}) => {
+}: BlocksFieldLabelServerProps) => {
   return (
     <FieldLabel
       label={clientField?.label || clientField?.name}
@@ -440,6 +438,6 @@ export const CustomBlocksLabel: BlocksFieldLabelServerComponent = ({
 }
 ```
 
-Use `BlocksFieldLabelClientComponent` for a client label and `BlockRowLabelServerComponent` or `BlockRowLabelClientComponent` for block rows.
+Use `BlocksFieldLabelClientProps` for a client label and `BlockRowLabelServerProps` or `BlockRowLabelClientProps` for block rows.
 
 Lexical block previews use `LexicalBlockServerProps` or `LexicalBlockClientProps` from `@frogbotai/richtext-lexical`. Configure their component paths on the block's `admin.components.Block` slot.

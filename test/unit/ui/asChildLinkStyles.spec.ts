@@ -29,11 +29,11 @@ const baseRules = [
 
 const ownColors = [
   { file: 'components/accordion.css', selector: '.fb-accordion__trigger', color: 'inherit' },
-  { file: 'components/toggle.css', selector: '.fb-toggle', color: 'var(--theme-base-600)' },
+  { file: 'components/toggle.css', selector: '.fb-toggle', color: 'var(--fb-theme-base-600)' },
   {
     file: 'chat/file-part.css',
     selector: '.fb-file-part--download',
-    color: 'var(--theme-base-850)',
+    color: 'var(--fb-theme-base-850)',
   },
 ];
 

@@ -6,6 +6,7 @@ import {
   RichText,
   type SerializedBlockNode,
   type SerializedInlineBlockNode,
+  type TypedEditorState,
 } from '@frogbotai/richtext-lexical/react';
 import { getFrogBot } from 'frogbot';
 
@@ -42,7 +43,7 @@ const converters: JSXConvertersFunction<FrontendNodeTypes> = ({ defaultConverter
   },
 });
 
-function hasEditorState(value: unknown): value is SerializedEditorState<FrontendNodeTypes> {
+function hasEditorState(value: unknown): value is TypedEditorState<FrontendNodeTypes> {
   return typeof value === 'object' && value !== null && 'root' in value;
 }
 

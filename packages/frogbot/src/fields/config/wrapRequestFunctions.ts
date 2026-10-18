@@ -14,11 +14,11 @@ type AccessOperation = 'create' | 'read' | 'update';
 
 type FieldSlots = {
   access?: Partial<Record<AccessOperation, unknown>>;
-  blockReferences?: (Block | string)[];
-  blocks?: Block[];
+  blocks?: (Block | string)[];
   defaultValue?: unknown;
   fields?: Field[];
   filterOptions?: unknown;
+  slugify?: unknown;
   tabs?: FieldSlots[];
   type?: string;
   validate?: unknown;
@@ -84,6 +84,8 @@ function wrapField<T extends FieldSlots>(field: T): T {
     patch.filterOptions = wrapRequestFunction(field.filterOptions);
   }
 
+  if (typeof field.slugify === 'function') patch.slugify = wrapRequestFunction(field.slugify);
+
   if (typeof field.validate === 'function') patch.validate = wrapValidate(field.validate);
 
   if (field.access && typeof field.access === 'object') patch.access = wrapAccess(field.access);
@@ -93,11 +95,7 @@ function wrapField<T extends FieldSlots>(field: T): T {
   if (field.type === 'tabs' && Array.isArray(field.tabs)) patch.tabs = field.tabs.map(wrapField);
 
   if (field.type === 'blocks' && Array.isArray(field.blocks)) {
-    patch.blocks = field.blocks.map(wrapBlock);
-  }
-
-  if (field.type === 'blocks' && field.blockReferences) {
-    patch.blockReferences = field.blockReferences.map((block) =>
+    patch.blocks = field.blocks.map((block) =>
       typeof block === 'string' ? block : wrapBlock(block),
     );
   }

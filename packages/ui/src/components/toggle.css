@@ -5,7 +5,7 @@
     padding: 0 0.75rem;
     align-items: center;
     justify-content: center;
-    color: var(--theme-base-600);
+    color: var(--fb-theme-base-600);
     font-size: var(--fb-text-sm);
     font-weight: 500;
     background: transparent;
@@ -15,11 +15,11 @@
   }
   .fb-toggle:hover,
   .fb-toggle[data-state="on"] {
-    color: var(--theme-base-1000);
-    background: var(--theme-base-300);
+    color: var(--fb-theme-base-1000);
+    background: var(--fb-theme-base-300);
   }
   .fb-toggle--outline {
-    border: 1px solid var(--theme-base-250);
+    border: 1px solid var(--fb-theme-base-250);
   }
   .fb-toggle--sm {
     height: 2.25rem;

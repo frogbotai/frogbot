@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@libsql/client": "0.14.0",
-    "@payloadcms/db-sqlite": "3.90.2",
+    "@payloadcms/db-sqlite": "catalog:",
     "drizzle-orm": "0.45.2"
   },
   "peerDependencies": {

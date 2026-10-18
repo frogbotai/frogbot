@@ -19,7 +19,6 @@ describe('resolveFilesCollection', () => {
         slug: 'documents',
         file: true,
         upload: { mimeTypes: ['application/pdf'] },
-        folders: false,
         access,
         fields: [{ name: 'category', type: 'text' }],
       },
@@ -28,14 +27,16 @@ describe('resolveFilesCollection', () => {
     const result = resolveFilesCollection({ collections });
 
     expect(result.files).toEqual({ slug: 'documents' });
-    expect(result.collections).toHaveLength(1);
+    expect(result.collections.map(({ slug }) => slug)).toEqual(['documents', 'folders']);
     expect(result.collections[0]).toMatchObject({
       slug: 'documents',
       upload: { mimeTypes: ['application/pdf'] },
-      folders: false,
       access,
     });
-    expect(result.collections[0]?.fields).toEqual([{ name: 'category', type: 'text' }]);
+    expect(result.collections[0]?.fields.map((field) => 'name' in field && field.name)).toEqual([
+      'category',
+      '_h_folders',
+    ]);
   });
 
   it('rejects duplicate markers', () => {

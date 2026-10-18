@@ -1,4 +1,12 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readlinkSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import Module from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
@@ -73,6 +81,10 @@ function installPnpmLibsql(root: string, platforms: string[]): string {
   }
 
   return libsql;
+}
+
+function libsqlIncludes(config: ReturnType<typeof withFrogBot>): string[] | undefined {
+  return config.outputFileTracingIncludes?.['**/*']?.filter((path) => !path.includes('strtok3'));
 }
 
 function createApp(dir: string): string {
@@ -217,6 +229,81 @@ describe('withFrogBot', () => {
     });
   });
 
+  it('links file-type and sharp into the build and requires them by the link, in Node server builds only', async () => {
+    const payloadDir = dirname(
+      Module.createRequire(join(process.cwd(), 'packages/frogbot/package.json')).resolve('payload'),
+    );
+
+    const transformerDir = dirname(
+      Module.createRequire(join(process.cwd(), 'packages/transformer-sharp/package.json')).resolve(
+        '@payloadcms/transformer-sharp',
+      ),
+    );
+
+    const distDir = join(createFixtureRoot(), '.next');
+    const config = withFrogBot();
+    const server = config.webpack?.(
+      { externals: ['next-external'], output: { path: join(distDir, 'server') } },
+      { isServer: true, nextRuntime: 'nodejs', webpack: { IgnorePlugin: class {} } } as never,
+    );
+
+    const browser = config.webpack?.({ output: { path: join(distDir, 'static') } }, {
+      isServer: false,
+      webpack: { IgnorePlugin: class {} },
+    } as never);
+
+    const [external] = (server?.externals as unknown[]).filter(
+      (entry) => typeof entry === 'function',
+    ) as ((
+      data: { context?: string; request?: string },
+      callback: (error?: Error, result?: string) => void,
+    ) => void)[];
+
+    const resolveExternal = (request: string, context = payloadDir) =>
+      new Promise<string | undefined>((done) =>
+        external({ context, request }, (_error, result) => done(result)),
+      );
+
+    const required = (external: string | undefined, name: string) => {
+      const link = /^commonjs (\S+)$/.exec(external ?? '')?.[1];
+
+      expect(link).toMatch(new RegExp(`^${name}-[0-9a-f]{16}$`));
+      expect(isAbsolute(readlinkSync(join(distDir, 'node_modules', link!)))).toBe(false);
+
+      return Module.createRequire(join(distDir, 'server', 'chunks', 'noop.js')).resolve(link!);
+    };
+
+    expect((server?.externals as unknown[])[0]).toBe(external);
+    expect((browser?.externals as unknown[]).some((entry) => typeof entry === 'function')).toBe(
+      false,
+    );
+    expect(required(await resolveExternal('file-type'), 'file-type')).toBe(
+      Module.createRequire(join(payloadDir, 'noop.js')).resolve('file-type'),
+    );
+    expect(required(await resolveExternal('sharp', transformerDir), 'sharp')).toBe(
+      Module.createRequire(join(transformerDir, 'noop.js')).resolve('sharp'),
+    );
+    expect(await resolveExternal('file-type')).toBe(await resolveExternal('file-type'));
+    expect(await resolveExternal('payload')).toBeUndefined();
+  });
+
+  it('traces the Node entry of strtok3, which file-type imports at runtime', () => {
+    const payloadRequire = Module.createRequire(
+      Module.createRequire(join(process.cwd(), 'packages/next/package.json')).resolve('payload'),
+    );
+
+    const strtok3Entry = Module.createRequire(payloadRequire.resolve('file-type')).resolve(
+      'strtok3',
+    );
+
+    const app = createApp(createFixtureRoot());
+    const strtok3 = (withFrogBot().outputFileTracingIncludes?.['**/*'] ?? []).filter((path) =>
+      path.includes('strtok3'),
+    );
+
+    expect(strtok3).toEqual([`${relative(app, dirname(strtok3Entry))}/**`]);
+  });
+
   it('adds the hoisted libsql platform package', () => {
     const app = createApp(createFixtureRoot());
 
@@ -224,9 +311,7 @@ describe('withFrogBot', () => {
 
     const config = withFrogBot();
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([
-      './node_modules/@libsql/linux-x64-gnu/**',
-    ]);
+    expect(libsqlIncludes(config)).toEqual(['./node_modules/@libsql/linux-x64-gnu/**']);
   });
 
   it('adds the pnpm sibling path, not the store path or the hidden hoist', () => {
@@ -241,7 +326,7 @@ describe('withFrogBot', () => {
 
     const config = withFrogBot();
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([
+    expect(libsqlIncludes(config)).toEqual([
       './node_modules/.pnpm/libsql@0.4.7/node_modules/@libsql/darwin-arm64/**',
     ]);
   });
@@ -255,7 +340,7 @@ describe('withFrogBot', () => {
 
     const config = withFrogBot();
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([
+    expect(libsqlIncludes(config)).toEqual([
       '../../node_modules/.pnpm/libsql@0.4.7/node_modules/@libsql/darwin-arm64/**',
     ]);
   });
@@ -268,9 +353,7 @@ describe('withFrogBot', () => {
 
     const config = withFrogBot();
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([
-      '../../node_modules/@libsql/linux-x64-gnu/**',
-    ]);
+    expect(libsqlIncludes(config)).toEqual(['../../node_modules/@libsql/linux-x64-gnu/**']);
   });
 
   it('adds both glibc and musl packages when both are installed', () => {
@@ -280,7 +363,7 @@ describe('withFrogBot', () => {
 
     const config = withFrogBot();
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([
+    expect(libsqlIncludes(config)).toEqual([
       './node_modules/@libsql/linux-x64-gnu/**',
       './node_modules/@libsql/linux-x64-musl/**',
     ]);
@@ -291,7 +374,7 @@ describe('withFrogBot', () => {
 
     const config = withFrogBot();
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([]);
+    expect(libsqlIncludes(config)).toEqual([]);
   });
 
   it('adds nothing when libsql has no platform package installed', () => {
@@ -301,7 +384,7 @@ describe('withFrogBot', () => {
 
     const config = withFrogBot();
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([]);
+    expect(libsqlIncludes(config)).toEqual([]);
   });
 
   it("keeps the app's tracing includes", () => {
@@ -316,10 +399,11 @@ describe('withFrogBot', () => {
       },
     });
 
-    expect(config.outputFileTracingIncludes).toEqual({
-      '/custom': ['./custom/**'],
-      '**/*': ['./extra/**', './node_modules/@libsql/linux-x64-gnu/**'],
-    });
+    expect(config.outputFileTracingIncludes?.['/custom']).toEqual(['./custom/**']);
+    expect(libsqlIncludes(config)).toEqual([
+      './extra/**',
+      './node_modules/@libsql/linux-x64-gnu/**',
+    ]);
   });
 
   it("passes the app's duplicate and unusual includes through unchanged", () => {
@@ -333,7 +417,7 @@ describe('withFrogBot', () => {
       },
     });
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([
+    expect(libsqlIncludes(config)).toEqual([
       './node_modules/@libsql/linux-x64-gnu/**',
       './[broken/**',
       './node_modules/@libsql/linux-x64-gnu/**',
@@ -351,7 +435,7 @@ describe('withFrogBot', () => {
 
     const config = withFrogBot();
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([
+    expect(libsqlIncludes(config)).toEqual([
       './node_modules/libsql/node_modules/@libsql/linux-x64-gnu/**',
     ]);
   });
@@ -364,9 +448,7 @@ describe('withFrogBot', () => {
 
     const config = withFrogBot();
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([
-      './node_modules/@libsql/linux-x64-gnu/**',
-    ]);
+    expect(libsqlIncludes(config)).toEqual(['./node_modules/@libsql/linux-x64-gnu/**']);
   });
 
   it('ignores a libsql that only NODE_PATH can reach', () => {
@@ -380,7 +462,7 @@ describe('withFrogBot', () => {
 
     const config = withFrogBot();
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([]);
+    expect(libsqlIncludes(config)).toEqual([]);
   });
 
   it('adds nothing when the project folder has no package.json or libsql', () => {
@@ -388,6 +470,6 @@ describe('withFrogBot', () => {
 
     const config = withFrogBot();
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([]);
+    expect(libsqlIncludes(config)).toEqual([]);
   });
 });

@@ -14,6 +14,37 @@ packages:
 
 catalog:
   '@next/env': '16.4.2'
+  # Payload: bump this one line, then run `pnpm vendored`.
+  payload: &payload '4.0.0-beta.2'
+  '@payloadcms/db-d1-sqlite': *payload
+  '@payloadcms/db-mongodb': *payload
+  '@payloadcms/db-postgres': *payload
+  '@payloadcms/db-sqlite': *payload
+  '@payloadcms/db-vercel-postgres': *payload
+  '@payloadcms/drizzle': *payload
+  '@payloadcms/graphql': *payload
+  '@payloadcms/kv-redis': *payload
+  '@payloadcms/live-preview': *payload
+  '@payloadcms/live-preview-react': *payload
+  '@payloadcms/live-preview-vue': *payload
+  '@payloadcms/next': *payload
+  '@payloadcms/plugin-import-export': *payload
+  '@payloadcms/plugin-mcp': *payload
+  '@payloadcms/plugin-nested-docs': *payload
+  '@payloadcms/plugin-redirects': *payload
+  '@payloadcms/plugin-sentry': *payload
+  '@payloadcms/plugin-seo': *payload
+  '@payloadcms/plugin-stripe': *payload
+  '@payloadcms/richtext-lexical': *payload
+  '@payloadcms/sdk': *payload
+  '@payloadcms/storage-azure': *payload
+  '@payloadcms/storage-gcs': *payload
+  '@payloadcms/storage-r2': *payload
+  '@payloadcms/storage-s3': *payload
+  '@payloadcms/storage-vercel-blob': *payload
+  '@payloadcms/transformer-sharp': *payload
+  '@payloadcms/translations': *payload
+  '@payloadcms/ui': *payload
   '@types/node': '24.12.3'
   next: '16.4.2'
   react: '19.3.1'

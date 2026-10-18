@@ -45,7 +45,7 @@ function visitFields(
       }
     }
 
-    const blocks = Array.isArray(value.blockReferences) ? value.blockReferences : value.blocks;
+    const blocks = value.blocks;
 
     if (Array.isArray(blocks)) {
       for (const block of blocks) {

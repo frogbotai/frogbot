@@ -85,7 +85,7 @@ export const namedTab: NamedTab = {
   localized: true,
   name: 'seo',
   saveToJWT: 'seo',
-  typescriptSchema: [({ jsonSchema }) => jsonSchema],
+  jsonSchema: [({ jsonSchema }) => jsonSchema],
   virtual: false,
 };
 
@@ -154,10 +154,10 @@ export const rowWithSaveToJWT: RowField = {
   saveToJWT: true,
 };
 
-export const rowWithTypescriptSchema: RowField = {
+export const rowWithJSONSchema: RowField = {
   ...row,
-  // @ts-expect-error Row fields ignore `typescriptSchema`.
-  typescriptSchema: [],
+  // @ts-expect-error Row fields ignore `jsonSchema`.
+  jsonSchema: [],
 };
 
 export const rowWithUnique: RowField = {
@@ -208,10 +208,10 @@ export const collapsibleWithSaveToJWT: CollapsibleField = {
   saveToJWT: true,
 };
 
-export const collapsibleWithTypescriptSchema: CollapsibleField = {
+export const collapsibleWithJSONSchema: CollapsibleField = {
   ...collapsible,
-  // @ts-expect-error Collapsible fields ignore `typescriptSchema`.
-  typescriptSchema: [],
+  // @ts-expect-error Collapsible fields ignore `jsonSchema`.
+  jsonSchema: [],
 };
 
 export const collapsibleWithUnique: CollapsibleField = {
@@ -268,10 +268,10 @@ export const tabsWithSaveToJWT: TabsField = {
   saveToJWT: true,
 };
 
-export const tabsWithTypescriptSchema: TabsField = {
+export const tabsWithJSONSchema: TabsField = {
   ...tabs,
-  // @ts-expect-error Tabs fields ignore `typescriptSchema`.
-  typescriptSchema: [],
+  // @ts-expect-error Tabs fields ignore `jsonSchema`.
+  jsonSchema: [],
 };
 
 export const tabsWithUnique: TabsField = {
@@ -328,10 +328,10 @@ export const unnamedTabWithSaveToJWT: UnnamedTab = {
   saveToJWT: true,
 };
 
-export const unnamedTabWithTypescriptSchema: UnnamedTab = {
+export const unnamedTabWithJSONSchema: UnnamedTab = {
   ...unnamedTab,
-  // @ts-expect-error Unnamed tabs ignore `typescriptSchema`.
-  typescriptSchema: [],
+  // @ts-expect-error Unnamed tabs ignore `jsonSchema`.
+  jsonSchema: [],
 };
 
 export const unnamedTabWithUnique: UnnamedTab = {
@@ -412,10 +412,10 @@ export const uiWithSaveToJWT: UIField = {
   saveToJWT: true,
 };
 
-export const uiWithTypescriptSchema: UIField = {
+export const uiWithJSONSchema: UIField = {
   ...ui,
-  // @ts-expect-error UI fields ignore `typescriptSchema`.
-  typescriptSchema: [],
+  // @ts-expect-error UI fields ignore `jsonSchema`.
+  jsonSchema: [],
 };
 
 export const uiWithUnique: UIField = {

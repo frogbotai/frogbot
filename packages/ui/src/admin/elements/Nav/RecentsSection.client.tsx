@@ -1,6 +1,6 @@
 'use client';
 
-import { Link, useConfig } from '@payloadcms/ui';
+import { Link, useConfig, usePathname, useRouter } from '@payloadcms/ui';
 import { useMemo } from 'react';
 
 import { type ChatDocument } from '../../../chat/adapter.js';
@@ -8,7 +8,6 @@ import { ChatHistoryActions } from '../../../chat/chat-history-actions.js';
 import { createRestChatAdapter } from '../../../chat/rest/adapter.js';
 import { cookieFetch } from '../../../chat/rest/auth.js';
 import { useChats } from '../../../chat/use-chats.js';
-import { useRouterAdapter } from '../../adapters/router.js';
 import { NavItem } from './NavItem.js';
 
 export type RecentsSectionClientProps = {
@@ -68,7 +67,8 @@ export function RecentsSectionClient({
   recents,
 }: RecentsSectionClientProps) {
   const { config } = useConfig();
-  const { pathname, router } = useRouterAdapter();
+  const pathname = usePathname();
+  const router = useRouter();
   const adapter = useMemo(
     () =>
       createRestChatAdapter({

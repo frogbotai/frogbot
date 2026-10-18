@@ -44,15 +44,19 @@ First, let's create our server function. Here are some key points for this proce
 ```ts
 'use server'
 
+import { headers } from 'next/headers'
 import { getFrogBot } from 'frogbot'
 import config from '@frogbot-config'
 
 export async function createPost(data) {
   const frogbot = await getFrogBot({ config })
+  const { user } = await frogbot.auth({ headers: await headers() })
 
   try {
     const post = await frogbot.create({
       collection: 'posts',
+      overrideAccess: false,
+      user,
       data,
     })
     return post
@@ -103,15 +107,19 @@ Here's how the server function would look:
 ```ts
 'use server'
 
+import { headers } from 'next/headers'
 import { getFrogBot } from 'frogbot'
 import config from '@frogbot-config'
 
 export async function updatePost(id, data) {
   const frogbot = await getFrogBot({ config })
+  const { user } = await frogbot.auth({ headers: await headers() })
 
   try {
     const post = await frogbot.update({
       collection: 'posts',
+      overrideAccess: false,
+      user,
       id, // the document id is required
       data,
     })
@@ -225,11 +233,13 @@ This example demonstrates how to write a server function that creates a document
 ```ts
 'use server'
 
+import { headers } from 'next/headers'
 import { getFrogBot } from 'frogbot'
 import config from '@frogbot-config'
 
 export async function createPostWithUpload(data, upload) {
   const frogbot = await getFrogBot({ config })
+  const { user } = await frogbot.auth({ headers: await headers() })
 
   try {
     // Prepare the data with the file
@@ -240,6 +250,8 @@ export async function createPostWithUpload(data, upload) {
 
     const post = await frogbot.create({
       collection: 'posts',
+      overrideAccess: false,
+      user,
       data: postData,
     })
 
@@ -322,7 +334,9 @@ Example of good error handling:
 export async function createPost(data) {
   try {
     const frogbot = await getFrogBot({ config })
-    return await frogbot.create({ collection: 'posts', data })
+    const { user } = await frogbot.auth({ headers: await headers() })
+
+    return await frogbot.create({ collection: 'posts', data, overrideAccess: false, user })
   } catch (error) {
     console.error('Error creating post:', error)
     return { error: 'Failed to create post' }

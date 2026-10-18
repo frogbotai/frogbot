@@ -291,7 +291,12 @@ describe('chat attachments stored in S3', () => {
   it('replaces an image whose S3 object is gone with a marker on a queued turn', async () => {
     const photo = await upload();
 
-    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: photo.filename }));
+    await client.send(
+      new DeleteObjectCommand({
+        Bucket: bucket,
+        Key: `${String((photo as { _objectKey?: string })._objectKey)}/${photo.filename}`,
+      }),
+    );
 
     const { chatId, hold, running } = await startSlowTurn();
 
@@ -312,7 +317,10 @@ describe('chat attachments stored in S3', () => {
     const report = await reportUpload();
 
     const object = await client.send(
-      new GetObjectCommand({ Bucket: bucket, Key: report.filename }),
+      new GetObjectCommand({
+        Bucket: bucket,
+        Key: `${String((report as { _objectKey?: string })._objectKey)}/${report.filename}`,
+      }),
     );
 
     await expect(fs.access(path.resolve(chatAssetsSlug, report.filename))).rejects.toThrow();

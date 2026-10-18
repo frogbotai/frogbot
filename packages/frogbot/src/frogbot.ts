@@ -1,6 +1,6 @@
 import type { Gateway } from '@frogbotai/gateway';
 import type { Payload } from 'payload';
-import { createLocalReq, getPayload, handleEndpoints, resetPasswordOperation } from 'payload';
+import { createPayloadRequest, getPayload, handleEndpoints, resetPasswordOperation } from 'payload';
 
 import { createAgentInstance } from './agents/instance.js';
 import type { AgentRegistry } from './agents/types.js';
@@ -210,11 +210,11 @@ export class FrogBot {
 
   async createRequest(req?: Partial<FrogBotRequest>): Promise<FrogBotRequest> {
     if (req?.frogbot) return req as FrogBotRequest;
-    type LocalRequest = NonNullable<Parameters<typeof createLocalReq>[0]['req']>;
-    const localReq = await createLocalReq(
-      { req: (req ?? {}) as LocalRequest },
-      state(this).payload,
-    );
+    type LocalRequest = NonNullable<Parameters<typeof createPayloadRequest>[0]['req']>;
+    const localReq = await createPayloadRequest({
+      payload: state(this).payload,
+      req: (req ?? {}) as LocalRequest,
+    });
 
     return Object.assign(localReq, { frogbot: this });
   }
@@ -350,7 +350,11 @@ export class FrogBot {
           collection,
           data: args.data,
           overrideAccess: args.overrideAccess,
-          req: await createLocalReq({ context: args.context, req: payloadReq }, payloadReq.payload),
+          req: await createPayloadRequest({
+            context: args.context,
+            payload: payloadReq.payload,
+            req: payloadReq,
+          }),
         });
 
         if (collection.config.auth.removeTokenFromResponses) delete result.token;

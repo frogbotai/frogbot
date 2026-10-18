@@ -40,17 +40,6 @@ export const Media: CollectionConfig = {
   slug: 'media',
   upload: {
     mimeTypes: ['image/*'],
-    imageSizes: [
-      {
-        name: 'thumbnail',
-        width: 400,
-        height: 300,
-        position: 'centre',
-      },
-    ],
-    adminThumbnail: 'thumbnail',
-    focalPoint: true,
-    crop: true,
   },
   access: { read: () => true },
   fields: [{ name: 'alt', type: 'text', required: true }],
@@ -84,12 +73,14 @@ export const DraftPosts: CollectionConfig = {
 export async function createDraft(frogbot: FrogBotInstance) {
   const post = await frogbot.create({
     collection: 'posts',
+    overrideAccess: true,
     data: { title: 'Draft post' },
     draft: true,
   });
 
   const latest = await frogbot.findByID({
     collection: 'posts',
+    overrideAccess: true,
     id: post.id,
     draft: true,
   });

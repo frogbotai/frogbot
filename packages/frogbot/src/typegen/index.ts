@@ -66,6 +66,17 @@ function definitionGroups(schema: ConfigJSONSchema): Record<string, unknown>[] {
   return [schema.definitions, schema.$defs].filter((group) => group !== undefined);
 }
 
+const RELATIONSHIP_NODE_TYPE = /\b(SerializedRelationshipNode(?:Input)?)<([^>]*)>/g;
+
+function relationTo(variant: unknown): string | undefined {
+  const properties = (variant as { properties?: { relationTo?: { const?: unknown } } } | null)
+    ?.properties;
+
+  const slug = properties?.relationTo?.const;
+
+  return typeof slug === 'string' ? slug : undefined;
+}
+
 function stripRefs(schema: unknown, stripped: ReadonlySet<string>): void {
   if (!schema || typeof schema !== 'object') return;
   if (Array.isArray(schema)) {
@@ -75,6 +86,22 @@ function stripRefs(schema: unknown, stripped: ReadonlySet<string>): void {
   }
 
   const obj = schema as Record<string, unknown>;
+
+  if (typeof obj.tsType === 'string') {
+    obj.tsType = obj.tsType.replace(
+      RELATIONSHIP_NODE_TYPE,
+      (_, name: string, slugs: string) =>
+        `${name}<${slugs
+          .split(' | ')
+          .filter((slug) => !stripped.has(slug.slice(1, -1)))
+          .join(' | ')}>`,
+    );
+  }
+
+  if (Array.isArray(obj.oneOf)) {
+    obj.oneOf = obj.oneOf.filter((variant) => !stripped.has(relationTo(variant) ?? ''));
+  }
+
   if (typeof obj.$ref === 'string') {
     const match = /#\/(?:definitions|\$defs)\/(.+)/.exec(obj.$ref);
     if (match && stripped.has(match[1])) {
@@ -191,7 +218,11 @@ async function compileTypes(
   });
 
   if (extraTypeStrings && extraTypeStrings.size > 0) {
-    compiled = `${compiled.trimEnd()}\n\n${[...extraTypeStrings].join('\n\n')}\n`;
+    const definitions = [...extraTypeStrings].map((definition) =>
+      definition.replaceAll('@payloadcms/richtext-lexical', '@frogbotai/richtext-lexical'),
+    );
+
+    compiled = `${compiled.trimEnd()}\n\n${definitions.join('\n\n')}\n`;
   }
 
   const output = `${compiled.trimEnd()}\n\n\n${buildGeneratedTypesFooter(agentSlugs, ai, roleSlugs)}\n`;

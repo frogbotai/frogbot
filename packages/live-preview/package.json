@@ -30,7 +30,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@payloadcms/live-preview": "3.90.2"
+    "@payloadcms/live-preview": "catalog:"
   },
   "devDependencies": {
     "typescript": "catalog:"

@@ -856,7 +856,7 @@ describe.skipIf(!isSQLite)('SQLite write lock release and classification', () =>
     expect(await app.titlesAfterRestart()).toEqual(['After', 'Slow transaction']);
   });
 
-  it("a jobs claim that throws leaves Payload's transaction open, so later writes time out", async () => {
+  it('a jobs claim that throws leaves no transaction open', async () => {
     const payload = getFrogBotPayload(app.frogbot);
     const adapter = payload.db as unknown as SQLiteAdapter;
     const { updateJobs } = payload.db;
@@ -867,12 +867,7 @@ describe.skipIf(!isSQLite)('SQLite write lock release and classification', () =>
 
     payload.db.updateJobs = updateJobs;
 
-    const abandoned = Object.keys(adapter.sessions);
-
-    expect(abandoned).toHaveLength(1);
-    await expect(app.create('Blocked')).rejects.toThrow(lockTimeoutMessage);
-
-    for (const id of abandoned) await payload.db.rollbackTransaction(id);
+    expect(Object.keys(adapter.sessions)).toEqual([]);
 
     await app.create('After');
 

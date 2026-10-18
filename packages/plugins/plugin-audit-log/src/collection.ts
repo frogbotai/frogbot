@@ -14,6 +14,8 @@ export function createAuditLogCollection(options: CollectionOptions): Collection
   return {
     slug: options.slug,
     versions: false,
+    authorship: false,
+    custom: { frogbot: { internal: true } },
     admin: {
       views: [
         {

@@ -20,7 +20,7 @@ const Media: CollectionConfig = {
 
 export default await buildTestConfig({
   collections: [Users, Media],
-  plugins: [
+  storage: [
     gcsStorage({
       collections: { [mediaSlug]: true },
       bucket: 'frogbot-test-bucket',

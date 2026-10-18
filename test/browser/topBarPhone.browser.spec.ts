@@ -118,7 +118,7 @@ test('the phone task edit top bar shows only the long task title clear of the me
   await expectPhoneTopBar(page, taskTitle);
 });
 
-test('the phone create-chat top bar keeps the home icon clear of the menu button', async ({
+test('the phone create-chat top bar keeps the home crumb clear of the menu button', async ({
   page,
 }) => {
   await page.goto(`/collections/${chatsSlug}/create`);
@@ -128,10 +128,10 @@ test('the phone create-chat top bar keeps the home icon clear of the menu button
     'mobile-nav-closed',
   );
 
-  const home = page.locator('.app-header__step-nav .step-nav__home');
+  const home = page.locator('.app-header__step-nav .step-nav__first');
   const toggle = page.locator('.frogbot-mobile-nav-toggle');
 
-  await expect(page.locator('.app-header__step-nav .step-nav__last')).toHaveCount(0);
+  await expect(page.locator('.app-header__step-nav .step-nav__item')).toHaveCount(1);
   await expect(home).toBeVisible();
   await expect(toggle).toBeVisible();
 
@@ -192,7 +192,7 @@ test('opening the phone menu restores the full trail without moving the page bod
   );
 
   await expect(page.locator('.app-header__controls-wrapper')).toHaveCSS('padding-left', '0px');
-  await expect(page.locator('.step-nav__last')).toHaveCSS('max-width', '160px');
+  await expect(page.locator('.step-nav__last')).toHaveCSS('max-width', 'none');
 
   for (const ancestor of await ancestors.all()) {
     await expect(ancestor).toBeVisible();
@@ -231,7 +231,7 @@ test('resizing to 1280px restores the unchanged desktop trail', async ({ page })
 
   await expect(page.locator('.frogbot-mobile-nav-toggle')).toHaveCount(0);
   await expect(page.locator('.app-header__controls-wrapper')).toHaveCSS('padding-left', '0px');
-  await expect(page.locator('.step-nav__last')).toHaveCSS('max-width', '160px');
+  await expect(page.locator('.step-nav__last')).toHaveCSS('max-width', 'none');
   await expect(page.locator('.app-header__step-nav > *')).toHaveText(trail);
 
   for (const part of await page.locator('.app-header__step-nav > *').all()) {

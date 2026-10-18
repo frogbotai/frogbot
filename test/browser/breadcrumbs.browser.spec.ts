@@ -89,7 +89,7 @@ async function chatCount(page: Page) {
 }
 
 async function expectLabel(page: Page, ...segments: string[]) {
-  await expect(stepNav(page)).toHaveText(segments.length > 0 ? `/${segments.join('/')}` : '');
+  await expect(stepNav(page)).toHaveText(['Dashboard', ...segments].join('/'));
 }
 
 async function expectTabTitle(page: Page, text: string) {
@@ -331,7 +331,7 @@ test('moving through chat, Settings, and a board labels each page without a relo
   await expectTabTitle(page, 'Tasks');
 });
 
-test('a custom view that sets no label shows only the logo', async ({ page }) => {
+test('a custom view that sets no label shows only the Dashboard crumb', async ({ page }) => {
   await openFirstPage(page, `/collections/${usersSlug}`);
   await expectLabel(page, 'Users');
   await expectTabTitle(page, 'Users');
@@ -397,7 +397,7 @@ test('saving a new task labels its edit page with the task title', async ({ page
   await openFirstPage(page, `/collections/${tasksSlug}`);
   await expectLabel(page, 'Tasks');
 
-  await page.locator('.list-create-new-doc__create-new-button').click();
+  await page.locator('#create-new-doc').click();
 
   await expectTabTitle(page, 'Create New');
   await recordTitles(page);
@@ -474,7 +474,7 @@ test('a new chat label follows the placeholder, generated, and renamed titles', 
 
   await expect(async () => {
     await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-    await expect(stepNav(page)).toHaveText(`/Chats/${generatedTitle}`, { timeout: 1_000 });
+    await expect(stepNav(page)).toHaveText(`Dashboard/Chats/${generatedTitle}`, { timeout: 1_000 });
   }).toPass();
   await expect(
     recents(page).getByRole('link', { name: generatedTitle, exact: true }),
@@ -676,7 +676,7 @@ test('Back after New Chat from a new thread shows the first conversation again',
   await expect(chatView(page).getByText('Here is the summary.', { exact: true })).toBeVisible();
   await expectLabel(page, 'Chats', placeholderTitle);
 
-  const shown = ['', '/Chats', `/Chats/${placeholderTitle}`];
+  const shown = ['Dashboard', 'Dashboard/Chats', `Dashboard/Chats/${placeholderTitle}`];
   const labels = await recordedLabels(page);
 
   expect(labels.filter((label) => !shown.includes(label))).toEqual([]);
@@ -721,7 +721,7 @@ test('a navigation replaced before it finishes never shows its label', async ({ 
 
   const labels = await recordedLabels(page);
 
-  expect(labels[0]).toBe('/Users');
+  expect(labels[0]).toBe('Dashboard/Users');
   expect(labels).not.toContainEqual(expect.stringContaining('Tasks'));
   await expectNoReload(page);
 
@@ -756,7 +756,13 @@ test('the first conversation stays on screen after a new chat moves to its threa
     recents(page).getByRole('link', { name: generatedTitle, exact: true }),
   ).toBeVisible();
 
-  const shown = ['', '/Chats', `/Chats/${placeholderTitle}`, `/Chats/${generatedTitle}`];
+  const shown = [
+    'Dashboard',
+    'Dashboard/Chats',
+    `Dashboard/Chats/${placeholderTitle}`,
+    `Dashboard/Chats/${generatedTitle}`,
+  ];
+
   const labels = await recordedLabels(page);
 
   expect(labels.filter((label) => !shown.includes(label))).toEqual([]);

@@ -53,7 +53,7 @@ describe('usageReportsPlugin', () => {
     const { result } = await setup();
     const usage = result.collections.find((item) => item.slug === 'ai-usage');
 
-    expect(usage?.admin).toMatchObject({ group: 'AI', groupBy: true });
+    expect(usage?.admin).toMatchObject({ group: 'AI' });
     expect(result.settings).toContainEqual({
       label: 'Usage',
       path: 'usage',

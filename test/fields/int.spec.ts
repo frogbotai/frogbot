@@ -49,36 +49,30 @@ describe('fields', () => {
     expect(persisted.slug).not.toBeInstanceOf(Promise);
   });
 
-  it('preserves manual and locked slugs until generation is explicitly enabled', async () => {
+  it('keeps the slug when the source changes, and normalizes an explicit one', async () => {
     const created = await booted.frogbot.create({
       collection: postsSlug,
-      data: { generateSlug: false, slug: 'manual-slug', title: 'Original title' },
+      data: { title: 'Original title' },
       overrideAccess: true,
     });
 
-    const locked = await booted.frogbot.update({
+    const renamed = await booted.frogbot.update({
       collection: postsSlug,
       id: created.id,
-      data: { generateSlug: false, title: 'Locked title' },
+      data: { title: 'Renamed title' },
       overrideAccess: true,
     });
 
-    expect(locked.slug).toBe('manual-slug');
-
-    await booted.frogbot.update({
+    const explicit = await booted.frogbot.update({
       collection: postsSlug,
       id: created.id,
-      data: { generateSlug: true, title: 'Generated title' },
+      data: { slug: 'Hand Written' },
       overrideAccess: true,
     });
 
-    const persisted = await booted.frogbot.findByID({
-      collection: postsSlug,
-      id: created.id,
-      overrideAccess: true,
-    });
-
-    expect(persisted.slug).toBe('generated-title');
+    expect(created.slug).toBe('original-title');
+    expect(renamed.slug).toBe('original-title');
+    expect(explicit.slug).toBe('hand-written');
   });
 
   it('rejects a failed slugify callback without creating a document', async () => {
@@ -90,153 +84,73 @@ describe('fields', () => {
       }),
     ).rejects.toThrow('slug generation rejected');
 
-    const persisted = await booted.frogbot.find({
+    const { totalDocs } = await booted.frogbot.count({
       collection: postsSlug,
       overrideAccess: true,
-      where: { title: { equals: rejectedTitle } },
     });
 
-    expect(persisted.totalDocs).toBe(0);
+    expect(totalDocs).toBe(0);
   });
 
-  it('rejects duplicate slugs when uniqueness is enabled', async () => {
+  it('rejects an explicit duplicate slug when uniqueness is on', async () => {
     await booted.frogbot.create({
       collection: postsSlug,
-      data: { title: 'Duplicate Slug' },
+      data: { title: 'First', slug: 'duplicate-slug' },
       overrideAccess: true,
     });
 
     await expect(
       booted.frogbot.create({
         collection: postsSlug,
-        data: { title: 'Duplicate Slug' },
+        data: { title: 'Second', slug: 'duplicate-slug' },
         overrideAccess: true,
       }),
     ).rejects.toThrow();
-
-    const persisted = await booted.frogbot.find({
-      collection: postsSlug,
-      overrideAccess: true,
-      where: { slug: { equals: 'duplicate-slug' } },
-    });
-
-    expect(persisted.totalDocs).toBe(1);
   });
 
-  it('persists duplicate slugs when uniqueness is disabled', async () => {
+  it('rejects a duplicate explicit slug even when uniqueness is off, and dedupes generated ones', async () => {
     await booted.frogbot.create({
       collection: nonUniquePostsSlug,
-      data: { title: 'Duplicate Slug' },
+      data: { title: 'First', slug: 'duplicate-slug' },
       overrideAccess: true,
     });
 
-    await booted.frogbot.create({
-      collection: nonUniquePostsSlug,
-      data: { title: 'Duplicate Slug' },
-      overrideAccess: true,
-    });
-
-    const persisted = await booted.frogbot.find({
-      collection: nonUniquePostsSlug,
-      overrideAccess: true,
-      where: { slug: { equals: 'duplicate-slug' } },
-    });
-
-    expect(persisted.totalDocs).toBe(2);
-  });
-
-  it('rejects a required slug when slugify resolves undefined', async () => {
     await expect(
       booted.frogbot.create({
-        collection: undefinedSlugPostsSlug,
-        data: { title: 'Missing Slug' },
+        collection: nonUniquePostsSlug,
+        data: { title: 'Second', slug: 'duplicate-slug' },
         overrideAccess: true,
       }),
     ).rejects.toThrow();
 
-    const persisted = await booted.frogbot.count({
+    const generated = await booted.frogbot.create({
+      collection: nonUniquePostsSlug,
+      data: { title: 'Duplicate slug' },
+      overrideAccess: true,
+    });
+
+    expect(generated.slug).not.toBe('duplicate-slug');
+  });
+
+  it('falls back to a numbered slug when slugify returns nothing', async () => {
+    const created = await booted.frogbot.create({
       collection: undefinedSlugPostsSlug,
+      data: { title: 'No slug' },
       overrideAccess: true,
     });
 
-    expect(persisted.totalDocs).toBe(0);
+    expect(created.slug).toMatch(/-\d+$/);
   });
 
-  it('regenerates draft slugs and locks the slug when published', async () => {
-    const created = await booted.frogbot.create({
+  it('gives an autosaved draft a slug before it has a title', async () => {
+    const draft = await booted.frogbot.create({
       collection: draftPostsSlug,
-      data: { title: 'First Draft' },
+      data: {},
       draft: true,
       overrideAccess: true,
     });
 
-    const draft = await booted.frogbot.update({
-      collection: draftPostsSlug,
-      id: created.id,
-      data: { generateSlug: true, title: 'Second Draft' },
-      draft: true,
-      overrideAccess: true,
-    });
-
-    expect(draft.slug).toBe('second-draft');
-    expect(draft.generateSlug).toBe(true);
-
-    const published = await booted.frogbot.update({
-      collection: draftPostsSlug,
-      id: created.id,
-      data: { _status: 'published', generateSlug: true, title: 'Published Title' },
-      draft: false,
-      overrideAccess: true,
-    });
-
-    expect(published.slug).toBe('published-title');
-    expect(published.generateSlug).toBe(false);
-
-    const locked = await booted.frogbot.update({
-      collection: draftPostsSlug,
-      id: created.id,
-      data: { generateSlug: false, title: 'Later Draft' },
-      draft: true,
-      overrideAccess: true,
-    });
-
-    const persisted = await booted.frogbot.findByID({
-      collection: draftPostsSlug,
-      id: created.id,
-      draft: true,
-      overrideAccess: true,
-    });
-
-    expect(locked.slug).toBe('published-title');
-    expect(persisted.slug).toBe('published-title');
-  });
-
-  it('preserves a manual slug and locks generation during an autosave update', async () => {
-    const created = await booted.frogbot.create({
-      collection: draftPostsSlug,
-      data: { title: 'Initial Draft' },
-      draft: true,
-      overrideAccess: true,
-    });
-
-    const updated = await booted.frogbot.update({
-      collection: draftPostsSlug,
-      id: created.id,
-      data: { generateSlug: true, slug: 'manual-draft-slug', title: 'Changed Draft' },
-      draft: true,
-      overrideAccess: true,
-    });
-
-    const persisted = await booted.frogbot.findByID({
-      collection: draftPostsSlug,
-      id: created.id,
-      draft: true,
-      overrideAccess: true,
-    });
-
-    expect(updated.slug).toBe('manual-draft-slug');
-    expect(updated.generateSlug).toBe(false);
-    expect(persisted.slug).toBe('manual-draft-slug');
+    expect(draft.slug).toEqual(expect.any(String));
   });
 
   it('passes FrogBot requests to hooks inside nested containers', async () => {

@@ -37,6 +37,7 @@ const afterChangeHook: CollectionAfterChangeHook = async ({
 }) => {
   const posts = await frogbot.find({
     collection: 'posts',
+    overrideAccess: true,
   })
 }
 ```
@@ -78,11 +79,11 @@ You can specify more options within the Local API vs. REST or GraphQL due to the
 | --- | --- | --- | --- |
 | `collection` | `string` | Required | The slug of the collection to operate against. |
 | `context` | `Record<string, unknown>` | — | [Context](/hooks/context), which will then be passed to `context` and `req.context`, which can be read by hooks. Useful if you want to pass additional information to the hooks which shouldn't be necessarily part of the document, for example a `triggerBeforeChange` option which can be read by the BeforeChange hook to determine if it should run or not. |
-| `depth` | `number` | `defaultDepth` (`2`) | [Control auto-population](/queries/depth) of nested relationship and upload fields. Capped at `maxDepth`. |
+| `depth` | `number` | `defaultDepth` (`1`) | [Control auto-population](/queries/depth) of nested relationship and upload fields. Capped at `maxDepth`. |
 | `disableErrors` | `boolean` | `false` | When set to `true`, errors will not be thrown. Instead, the `findByID` operation will return `null`, and the `find` operation will return an empty documents array. |
 | `fallbackLocale` | `string` | The locale's `fallbackLocale`, then `defaultLocale`, when `localization.fallback` is on | Specify a [fallback locale](/configuration/localization) to use for any returned documents. Pass `'none'` to turn fallback off. |
 | `locale` | `string` | `defaultLocale` | Specify [locale](/configuration/localization) for any returned documents. Pass `'all'` to return every locale. |
-| `overrideAccess` | `boolean` | `true` | Skip access control. Set `false` to check access as `user` or `req.user`. |
+| `overrideAccess` | `boolean` | `false` | Access control runs as `user` or `req.user` unless this is `true`. Pass it on every call: `true` for trusted server work such as scripts, seeds and jobs, `false` with `user` or `req` when acting for a signed-in user. |
 | `populate` | `Record<string, unknown>` | — | Specify [populate](/queries/select#populate) to control which fields to include to the result from populated documents. |
 | `req` | `FrogBotRequest` | Created for the call | The current request. Pass it to run in the same [transaction](#transactions) and give hooks the same `req.user` and `req.context`. |
 | `select` | `SelectType` | — | Specify [select](/queries/select) to control which fields to include to the result. |
@@ -100,6 +101,7 @@ When your database uses transactions you need to thread req through to all local
 ```ts
 const post = await frogbot.find({
   collection: 'posts',
+  overrideAccess: false,
   req, // passing req is recommended
 })
 ```
@@ -328,7 +330,6 @@ Accepts the [common options](#local-options-available) plus:
 | `data` | `object` | Required | The fields to change. |
 | `autosave` | `boolean` | `false` | Saves the update as an autosave draft. Needs `versions.drafts.autosave`. |
 | `draft` | `boolean` | `false` | Save as a draft. Required fields aren't validated unless `versions.drafts.validate` is on. Needs [drafts](/versions/drafts). |
-| `publishSpecificLocale` | `string` | — | Publishes only this locale. |
 | `overrideLock` | `boolean` | `true` | Document locks are ignored by default. Set to `false` to throw while another user holds the lock on the document. |
 | `filePath` | `string` | — | Upload collections only. Absolute path of a new file on disk to store in place of the current one. |
 | `overwriteExistingFiles` | `boolean` | `false` | Upload collections only. When a file with the same name is already stored, replace it instead of saving the upload under a numbered name such as `photo-1.jpg`. |
@@ -455,6 +456,7 @@ Accepts the [common options](#local-options-available) plus:
 // Result will be the new copy of the Post document.
 const result = await frogbot.duplicate({
   collection: 'posts', // required
+  overrideAccess: true,
   id: '507f1f77bcf86cd799439011', // required
 })
 ```
@@ -479,6 +481,7 @@ If a collection has [Versions](/versions/overview) enabled, these operations are
 // Result will be a paginated set of versions.
 const result = await frogbot.findVersions({
   collection: 'posts', // required
+  overrideAccess: true,
   where: { parent: { equals: '507f1f77bcf86cd799439011' } },
   sort: '-updatedAt',
   limit: 10,
@@ -501,6 +504,7 @@ Accepts the [common options](#local-options-available) plus:
 ```ts
 const version = await frogbot.findVersionByID({
   collection: 'posts', // required
+  overrideAccess: true,
   id: '61cf752c19cdf1b1af7b61f1', // required
 })
 ```
@@ -517,6 +521,7 @@ Accepts the [common options](#local-options-available) plus:
 ```ts
 const { totalDocs } = await frogbot.countVersions({
   collection: 'posts', // required
+  overrideAccess: true,
   where: { parent: { equals: '507f1f77bcf86cd799439011' } },
 })
 ```
@@ -534,6 +539,7 @@ Accepts the [common options](#local-options-available) plus:
 // Result will be the document with the version's data.
 const post = await frogbot.restoreVersion({
   collection: 'posts', // required
+  overrideAccess: true,
   id: '61cf752c19cdf1b1af7b61f1', // required
 })
 ```
@@ -710,6 +716,7 @@ Here is an example of usage:
 // Properly inferred as `Post` type
 const post = await frogbot.create({
   collection: 'posts',
+  overrideAccess: true,
 
   // Data will now be typed as Post and give you type hints
   data: {

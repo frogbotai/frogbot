@@ -6,8 +6,8 @@
   }
 
   .frogbot-settings-nav {
-    background: var(--theme-elevation-50);
-    border-right: 1px solid var(--theme-elevation-150);
+    background: var(--color-bg-secondary);
+    border-right: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
     padding: 1.25rem 0.75rem;
@@ -16,7 +16,7 @@
   .frogbot-settings-nav__back,
   .frogbot-settings-nav__item {
     align-items: center;
-    color: var(--theme-elevation-600);
+    color: var(--color-text-secondary);
     display: flex;
     font-size: 0.875rem;
     font-weight: 500;
@@ -31,11 +31,11 @@
 
   .frogbot-settings-nav__back:hover,
   .frogbot-settings-nav__item:hover {
-    color: var(--theme-text);
+    color: var(--color-text);
   }
 
   .frogbot-settings-nav__heading {
-    color: var(--theme-elevation-500);
+    color: var(--color-text-secondary);
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.08em;
@@ -51,7 +51,7 @@
   }
 
   .frogbot-settings-nav__item {
-    border-radius: var(--style-radius-m);
+    border-radius: var(--radius-medium);
     padding: 0.5rem 0.625rem;
     transition:
       background-color 100ms ease,
@@ -59,12 +59,12 @@
   }
 
   .frogbot-settings-nav__item:hover {
-    background: var(--theme-elevation-100);
+    background: var(--color-bg-hover);
   }
 
   .frogbot-settings-nav__item--active {
-    background: var(--theme-elevation-150);
-    color: var(--theme-text);
+    background: var(--color-bg-secondary-hover);
+    color: var(--color-text);
   }
 
   .frogbot-settings-nav__icon {
@@ -80,19 +80,19 @@
   }
 
   .frogbot-settings-nav__footer {
-    border-top: 1px solid var(--theme-elevation-150);
+    border-top: 1px solid var(--color-border);
     margin-top: auto;
     padding-top: 0.75rem;
   }
 
   .frogbot-settings-template__main {
-    background: var(--theme-bg);
+    background: var(--color-bg);
     min-width: 0;
   }
 
   .frogbot-settings-template__header {
     align-items: center;
-    border-bottom: 1px solid var(--theme-elevation-100);
+    border-bottom: 1px solid var(--color-border);
     display: flex;
     font-size: 1rem;
     font-weight: 600;
@@ -129,7 +129,7 @@
   }
 
   .frogbot-settings__not-found p {
-    color: var(--theme-elevation-600);
+    color: var(--color-text-secondary);
     margin: 0;
   }
 
@@ -139,7 +139,7 @@
     }
 
     .frogbot-settings-nav {
-      border-bottom: 1px solid var(--theme-elevation-150);
+      border-bottom: 1px solid var(--color-border);
       border-right: 0;
     }
 

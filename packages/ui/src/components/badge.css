@@ -3,10 +3,10 @@
     display: inline-flex;
     padding: 0.125rem 0.625rem;
     align-items: center;
-    color: var(--theme-base-100);
+    color: var(--fb-theme-base-100);
     font-size: var(--fb-text-xs);
     font-weight: 600;
-    background: var(--theme-base-850);
+    background: var(--fb-theme-base-850);
     border: 1px solid transparent;
     border-radius: 9999px;
   }
@@ -15,16 +15,16 @@
     background: var(--color-accent);
   }
   .fb-badge--destructive {
-    color: var(--theme-red-700);
-    background: color-mix(in srgb, var(--theme-red-500) 15%, transparent);
+    color: var(--fb-theme-red-700);
+    background: color-mix(in srgb, var(--fb-theme-red-500) 15%, transparent);
   }
   .fb-badge--outline {
-    color: var(--theme-base-900);
+    color: var(--fb-theme-base-900);
     background: transparent;
-    border-color: var(--theme-base-300);
+    border-color: var(--fb-theme-base-300);
   }
   .fb-badge--ghost {
-    color: var(--theme-base-900);
+    color: var(--fb-theme-base-900);
     background: transparent;
     border: 0;
   }

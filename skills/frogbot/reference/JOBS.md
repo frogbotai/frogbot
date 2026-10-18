@@ -30,6 +30,7 @@ export default buildConfig({
 ```ts
 await frogbot.jobs.queue({
   task: 'send-report',
+  overrideAccess: true,
   input: { reportId: 'report-123' },
   queue: 'default',
 });
@@ -39,9 +40,9 @@ Generated FrogBot types connect task and workflow slugs to their input and outpu
 
 ## Leases
 
-FrogBot claims jobs with database-backed leases so competing workers do not execute the same claim concurrently. `leaseDuration` defaults to the exported `DEFAULT_JOB_LEASE_DURATION` and must be an integer from 5 through 2,147,483,647 milliseconds.
+Each run claims jobs with a fresh `processingToken` and a `processingUntil` lease and renews it while the jobs run, so competing workers never execute the same job at once. A job whose lease has passed can be claimed by any worker. `jobs.processingLease.duration` defaults to 20 minutes and `jobs.processingLease.safetyBuffer`, the cutoff before expiry after which a worker stops writing, to 30 seconds.
 
-`jobs.runHooks` must remain false and `jobs.depth` must remain zero because claims must stay atomic. FrogBot adds and owns its claim fields and a reserved sweep task. Do not define the `frogbot-sweep-jobs` task.
+Recovery is at least once: make external side effects idempotent.
 
 ## Workflow waits
 

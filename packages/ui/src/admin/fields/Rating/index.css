@@ -7,7 +7,7 @@
 
   .rating-stars__star {
     flex-shrink: 0;
-    stroke: var(--theme-base-400);
+    stroke: var(--fb-theme-base-400);
     fill: none;
   }
 
@@ -34,7 +34,7 @@
   }
 
   .rating-field__option:has(.rating-field__input:focus-visible) {
-    box-shadow: 0 0 0 2px var(--theme-brand-500);
+    box-shadow: 0 0 0 2px var(--fb-theme-brand-500);
   }
 
   .rating-field__input,
@@ -52,7 +52,7 @@
 
   .rating-field__star {
     flex-shrink: 0;
-    stroke: var(--theme-base-400);
+    stroke: var(--fb-theme-base-400);
     fill: none;
   }
 

@@ -39,7 +39,7 @@ The result is a plain `number` field with a unique index. It works at the top le
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated. A duplicate always gets a new number either way. See [Duplicates and versions](#duplicates-and-versions). |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the field's own entry. See [Agents and generated types](#agents-and-generated-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the field's own entry. See [Agents and generated types](#agents-and-generated-types). |
 
 An autonumber field holds one number that FrogBot sets and is always unique, so `hasMany`, `minRows`, `maxRows`, `localized`, `defaultValue`, `required`, `unique`, `virtual`, `access.create` and `access.update` are not accepted. TypeScript rejects them, and setting any of them from JavaScript fails at startup with an error naming the field:
 
@@ -80,7 +80,7 @@ The admin panel shows the field as read-only. A number sent through the admin pa
 Trusted server code can supply a number when it creates a record. This is the Local API with access overridden, which is its default:
 
 ```ts
-await frogbot.create({ collection: 'tickets', data: { number: 100, title: 'Imported ticket' } })
+await frogbot.create({ collection: 'tickets', data: { number: 100, title: 'Imported ticket' }, overrideAccess: true })
 ```
 
 - A supplied number must be a whole number of 1 or more. Anything else fails with an error naming the field: `Autonumber values must be whole numbers of 1 or more.`
@@ -161,6 +161,7 @@ The field sorts and filters like any number, in the admin panel and in REST and 
 ```ts
 const recent = await frogbot.find({
   collection: 'tickets',
+  overrideAccess: true,
   where: { number: { greater_than: 100 } },
   sort: '-number',
 })
@@ -190,4 +191,4 @@ autonumberField({ name: 'number', admin: { description: 'Ticket number' } })
 Ticket number (unique number set by FrogBot when the record is created; read-only)
 ```
 
-A function `admin.description` isn't copied, so the text stands alone. The text is English only. Generated types show it as a comment above the property. To change it, add your own `typescriptSchema` entry, which runs after the field's entry.
+A function `admin.description` isn't copied, so the text stands alone. The text is English only. Generated types show it as a comment above the property. To change it, add your own `jsonSchema` entry, which runs after the field's entry.

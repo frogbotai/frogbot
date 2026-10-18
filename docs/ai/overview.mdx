@@ -15,7 +15,7 @@ Agent chat applies the same list. A user sees only the agent models they may use
 
 ### Customizing the fields
 
-Policy fields have no default access restrictions. Define a same-name field on your auth collection to override labels, admin settings, defaults, or access while FrogBot supplies omitted policy behavior. The money fields keep their money display and agent description unless your override sets its own `admin.components`, `admin.custom`, or `typescriptSchema`.
+Policy fields have no default access restrictions. Define a same-name field on your auth collection to override labels, admin settings, defaults, or access while FrogBot supplies omitted policy behavior. The money fields keep their money display and agent description unless your override sets its own `admin.components`, `admin.custom`, or `jsonSchema`.
 
 Leave the fields out for fully open field access.
 
@@ -502,7 +502,7 @@ ai: {
 
 A rule that returns `false` rejects the call with `AIAccessError` (status `403`).
 
-An in-process call with `req` enforces access unless `overrideAccess: true` is set. A server-side call without `req` bypasses access by default, following the Local API convention.
+An in-process call with `req` enforces access unless `overrideAccess: true` is set. A server-side call without `req` bypasses access by default, since there is no user to check.
 
 ---
 

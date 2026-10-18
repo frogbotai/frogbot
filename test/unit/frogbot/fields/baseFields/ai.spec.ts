@@ -12,12 +12,12 @@ import {
 import type { AIKind } from '../../../../../packages/frogbot/src/fields/baseFields/ai/state.js';
 import type { Field, TextField } from '../../../../../packages/frogbot/src/fields/config/types.js';
 
-type Schema = Parameters<NonNullable<TextField['typescriptSchema']>[number]>[0]['jsonSchema'];
+type Schema = Parameters<NonNullable<TextField['jsonSchema']>[number]>[0]['jsonSchema'];
 
-type AnyField = Omit<Field, 'admin' | 'hooks' | 'typescriptSchema'> & {
+type AnyField = Omit<Field, 'admin' | 'hooks' | 'jsonSchema'> & {
   admin?: Record<string, unknown>;
   hooks?: Record<string, ((args: unknown) => unknown)[]>;
-  typescriptSchema?: TextField['typescriptSchema'];
+  jsonSchema?: TextField['jsonSchema'];
 };
 
 const base = { name: 'summary', inputs: ['title', 'notes'], prompt: 'Summarize.' };
@@ -54,8 +54,8 @@ function makeSelect(args: Partial<AISelectFieldArgs> = {}) {
 }
 
 function runSchema(field: AnyField, jsonSchema: Schema) {
-  return (field.typescriptSchema ?? []).reduce(
-    (schema, entry) => entry({ jsonSchema: schema }),
+  return (field.jsonSchema ?? []).reduce(
+    (schema, entry) => entry({ jsonSchema: schema, variant: 'output' }),
     jsonSchema,
   );
 }

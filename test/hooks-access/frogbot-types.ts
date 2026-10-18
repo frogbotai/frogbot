@@ -101,12 +101,15 @@ export interface Config {
   globalsSelect: {};
   locale: null;
   widgets: {
+    welcome: WelcomeWidget;
     collections: CollectionsWidget;
+    'collection-query': CollectionQueryWidget;
+    activity: ActivityWidget;
   };
   user: User;
   jobs: {
     tasks: {
-      'frogbot-sweep-jobs': TaskFrogBotSweepJobs;
+      'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
         input: unknown;
@@ -141,91 +144,14 @@ export interface UserAuthOperations {
 export interface HookOrder {
   id: number;
   title: string;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "req-access".
- */
-export interface ReqAccess {
-  id: number;
-  title?: string | null;
-  hookCount?: number | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "access-boolean".
- */
-export interface AccessBoolean {
-  id: number;
-  title?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "access-where".
- */
-export interface AccessWhere {
-  id: number;
-  title?: string | null;
-  hidden?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "field-access".
- */
-export interface FieldAccess {
-  id: number;
-  secret?: string | null;
-  public?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "validate-ctx".
- */
-export interface ValidateCtx {
-  id: number;
-  title: string;
-  mustMatch?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "after-operation".
- */
-export interface AfterOperation {
-  id: number;
-  title: string;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "context-flow".
- */
-export interface ContextFlow {
-  id: number;
-  title?: string | null;
-  contextResult?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "override-access".
- */
-export interface OverrideAccess {
-  id: number;
-  title?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -237,6 +163,14 @@ export interface User {
   id: number;
   name?: string | null;
   lastLogin?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -258,6 +192,155 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "req-access".
+ */
+export interface ReqAccess {
+  id: number;
+  title?: string | null;
+  hookCount?: number | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "access-boolean".
+ */
+export interface AccessBoolean {
+  id: number;
+  title?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "access-where".
+ */
+export interface AccessWhere {
+  id: number;
+  title?: string | null;
+  hidden?: boolean | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "field-access".
+ */
+export interface FieldAccess {
+  id: number;
+  secret?: string | null;
+  public?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "validate-ctx".
+ */
+export interface ValidateCtx {
+  id: number;
+  title: string;
+  mustMatch?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "after-operation".
+ */
+export interface AfterOperation {
+  id: number;
+  title: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "context-flow".
+ */
+export interface ContextFlow {
+  id: number;
+  title?: string | null;
+  contextResult?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "override-access".
+ */
+export interface OverrideAccess {
+  id: number;
+  title?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -295,6 +378,8 @@ export interface FrogBotWaitpoint {
  */
 export interface HookOrderSelect {
   title?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -305,6 +390,8 @@ export interface HookOrderSelect {
 export interface ReqAccessSelect {
   title?: boolean;
   hookCount?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -314,6 +401,8 @@ export interface ReqAccessSelect {
  */
 export interface AccessBooleanSelect {
   title?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -324,6 +413,8 @@ export interface AccessBooleanSelect {
 export interface AccessWhereSelect {
   title?: boolean;
   hidden?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -334,6 +425,8 @@ export interface AccessWhereSelect {
 export interface FieldAccessSelect {
   secret?: boolean;
   public?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -344,6 +437,8 @@ export interface FieldAccessSelect {
 export interface ValidateCtxSelect {
   title?: boolean;
   mustMatch?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -353,6 +448,8 @@ export interface ValidateCtxSelect {
  */
 export interface AfterOperationSelect {
   title?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -363,6 +460,8 @@ export interface AfterOperationSelect {
 export interface ContextFlowSelect {
   title?: boolean;
   contextResult?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -372,6 +471,8 @@ export interface ContextFlowSelect {
  */
 export interface OverrideAccessSelect {
   title?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -382,6 +483,8 @@ export interface OverrideAccessSelect {
 export interface UsersSelect {
   name?: boolean;
   lastLogin?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   email?: boolean;
@@ -425,6 +528,16 @@ export interface FrogBotWaitpointsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "welcome_widget".
+ */
+export interface WelcomeWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -435,9 +548,65 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBotSweepJobs".
+ * via the `definition` "collection-query_widget".
  */
-export interface TaskFrogBotSweepJobs {
+export interface CollectionQueryWidget {
+  data?: {
+    title?: string | null;
+    relatedCollection:
+      | 'hook-order'
+      | 'req-access'
+      | 'access-boolean'
+      | 'access-where'
+      | 'field-access'
+      | 'validate-ctx'
+      | 'after-operation'
+      | 'context-flow'
+      | 'override-access'
+      | 'users';
+    where?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    sortField?: string | null;
+    sortDirection?: ('asc' | 'desc') | null;
+    limit?: number | null;
+  };
+  width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "activity_widget".
+ */
+export interface ActivityWidget {
+  data?: {
+    excludedCollections?:
+      | (
+          | 'hook-order'
+          | 'req-access'
+          | 'access-boolean'
+          | 'access-where'
+          | 'field-access'
+          | 'validate-ctx'
+          | 'after-operation'
+          | 'context-flow'
+          | 'override-access'
+          | 'users'
+        )[]
+      | null;
+  };
+  width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogBotSweepWaitpoints".
+ */
+export interface TaskFrogBotSweepWaitpoints {
   input?: unknown;
   output?: unknown;
 }

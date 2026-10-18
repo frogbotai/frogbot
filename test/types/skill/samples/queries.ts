@@ -30,6 +30,7 @@ export async function localAPI() {
 
   const posts = await frogbot.find({
     collection: 'posts',
+    overrideAccess: true,
     where: { status: { equals: 'published' } },
     depth: 1,
     limit: 10,
@@ -39,28 +40,33 @@ export async function localAPI() {
 
   const post = await frogbot.findByID({
     collection: 'posts',
+    overrideAccess: true,
     id: '123',
     depth: 1,
   });
 
   await frogbot.create({
     collection: 'posts',
+    overrideAccess: true,
     data: { title: 'New post', status: 'draft' },
   });
 
   await frogbot.update({
     collection: 'posts',
+    overrideAccess: true,
     id: '123',
     data: { status: 'published' },
   });
 
   await frogbot.delete({
     collection: 'posts',
+    overrideAccess: true,
     id: '123',
   });
 
   const count = await frogbot.count({
     collection: 'posts',
+    overrideAccess: true,
     where: { status: { equals: 'published' } },
   });
 
@@ -76,6 +82,7 @@ export const select = {
 export async function findPosts(frogbot: FrogBotInstance) {
   const posts = await frogbot.find({
     collection: 'posts',
+    overrideAccess: true,
     select,
   });
 
@@ -106,6 +113,7 @@ export async function accessControl({
 export const createAuditEvent: CollectionAfterChangeHook<Post> = async ({ doc, req }) => {
   await req.frogbot.create({
     collection: 'audit-events',
+    overrideAccess: true,
     data: { action: 'post-created', document: doc.id },
     req,
   });

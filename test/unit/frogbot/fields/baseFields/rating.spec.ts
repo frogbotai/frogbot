@@ -4,14 +4,11 @@ import { ratingField } from '../../../../../packages/frogbot/src/fields/baseFiel
 import type { TextField } from '../../../../../packages/frogbot/src/fields/config/types.js';
 import { validateField } from './validateField.js';
 
-type Schema = Parameters<NonNullable<TextField['typescriptSchema']>[number]>[0]['jsonSchema'];
+type Schema = Parameters<NonNullable<TextField['jsonSchema']>[number]>[0]['jsonSchema'];
 
-function runSchema(
-  field: { typescriptSchema?: TextField['typescriptSchema'] },
-  jsonSchema: Schema,
-) {
-  return (field.typescriptSchema ?? []).reduce(
-    (schema, entry) => entry({ jsonSchema: schema }),
+function runSchema(field: { jsonSchema?: TextField['jsonSchema'] }, jsonSchema: Schema) {
+  return (field.jsonSchema ?? []).reduce(
+    (schema, entry) => entry({ jsonSchema: schema, variant: 'output' }),
     jsonSchema,
   );
 }
@@ -43,7 +40,7 @@ describe('ratingField', () => {
   it('passes number field options through unchanged', () => {
     const access = { update: () => false };
     const afterRead = () => 1;
-    const developerEntry: NonNullable<TextField['typescriptSchema']>[number] = ({ jsonSchema }) =>
+    const developerEntry: NonNullable<TextField['jsonSchema']>[number] = ({ jsonSchema }) =>
       jsonSchema;
 
     const field = ratingField({
@@ -54,7 +51,7 @@ describe('ratingField', () => {
       access,
       hooks: { afterRead: [afterRead] },
       admin: { readOnly: true, custom: { other: true } },
-      typescriptSchema: [developerEntry],
+      jsonSchema: [developerEntry],
     });
 
     expect(field).toMatchObject({
@@ -70,8 +67,8 @@ describe('ratingField', () => {
       },
     });
 
-    expect(field.typescriptSchema).toHaveLength(2);
-    expect(field.typescriptSchema?.[1]).toBe(developerEntry);
+    expect(field.jsonSchema).toHaveLength(2);
+    expect(field.jsonSchema?.[1]).toBe(developerEntry);
   });
 });
 
@@ -93,7 +90,7 @@ describe('ratingField option errors', () => {
   });
 });
 
-describe('ratingField typescriptSchema', () => {
+describe('ratingField jsonSchema', () => {
   it('gives agents the range as a whole number', () => {
     const field = ratingField({ name: 'score' });
 

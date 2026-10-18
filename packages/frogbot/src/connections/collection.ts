@@ -10,6 +10,8 @@ export function defaultConnectionsCollection({
   return {
     slug,
     versions: false,
+    authorship: false,
+    custom: { frogbot: { internal: true } },
     admin: {
       icon: 'link-square',
       useAsTitle: 'piece',

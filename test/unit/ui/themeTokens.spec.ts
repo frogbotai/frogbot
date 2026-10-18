@@ -30,18 +30,19 @@ const oldTokenPattern = new RegExp(
   [
     '-',
     '-(?:text-(?:xs|sm|base|lg|xl|[2-5]xl)(?:-',
-    '-line-height)?|radius(?:-(?:sm|md|lg|xl))?|color-red-(?:500|600|700))\\b',
+    '-line-height)?|radius(?:-(?:sm|md|lg|xl))?|color-red-(?:500|600|700))(?![\\w-])',
   ].join(''),
 );
 
-const adminOwnedNames = [
-  '--font-body',
-  '--color-base-0',
-  ...Array.from({ length: 20 }, (_, index) => `--color-base-${(index + 1) * 50}`),
-  '--color-blue-350',
+const adminOwnedNames = ['--color-border', '--font-body'];
+
+const paletteNames = [
+  '--fb-base-0',
+  ...Array.from({ length: 20 }, (_, index) => `--fb-base-${(index + 1) * 50}`),
 ];
 
 const paletteSelector = ':where(html:not([data-fb-ui-page]))';
+const adminPaletteSelector = ':where(html[data-fb-ui-page])';
 const lightPortalSelector =
   'html[data-fb-ui-page][data-theme="light"] [data-fb-ui][data-theme="system"]';
 
@@ -174,7 +175,7 @@ function readImports(path: string): string[] {
 function readDeclaredNames(path: string): Set<string> {
   const css = readFileSync(path, 'utf8');
 
-  return new Set(Array.from(css.matchAll(/(--[\w-]+)\s*:/g), (match) => match[1]));
+  return new Set(Array.from(css.matchAll(/(?:^|[{;\s])(--[\w-]+)\s*:/g), (match) => match[1]));
 }
 
 function resolveFrom(packageDirectory: string, specifier: string): string {
@@ -266,6 +267,7 @@ describe('FrogBot theme tokens', () => {
     expect(tokenRules.map(({ layer, media, selectors }) => ({ layer, media, selectors }))).toEqual([
       { layer: 'theme.frogbot', media: undefined, selectors: [':root'] },
       { layer: 'theme.frogbot', media: undefined, selectors: [paletteSelector] },
+      { layer: 'theme.frogbot', media: undefined, selectors: [adminPaletteSelector] },
     ]);
   });
 
@@ -282,18 +284,33 @@ describe('FrogBot theme tokens', () => {
       (name) => adminNames.has(name) || tailwindNames.has(name),
     );
 
-    expect(adminNames.has('--color-base-0')).toBe(true);
+    expect(adminNames.has('--color-border')).toBe(true);
     expect(clashes).toEqual([]);
   });
 
-  it('declares the admin-owned palette names only outside the admin', () => {
+  it('declares the admin-owned names only outside the admin', () => {
     const palette = findRule(paletteSelector);
 
     expect(adminOwnedNames.every((name) => adminNames.has(name))).toBe(true);
-    expect([...palette.properties].sort()).toEqual(
-      adminOwnedNames.filter((name) => name !== '--color-blue-350').sort(),
-    );
-    expect(rules.some((rule) => rule.properties.includes('--color-blue-350'))).toBe(false);
+    expect([...palette.properties].sort()).toEqual([...adminOwnedNames, ...paletteNames].sort());
+    expect(
+      rules
+        .filter((rule) => rule !== palette)
+        .flatMap((rule) => rule.properties.filter((name) => adminOwnedNames.includes(name))),
+    ).toEqual([]);
+  });
+
+  it("reads the palette from Payload's ramps on admin pages", () => {
+    const admin = findRule(adminPaletteSelector);
+
+    expect([...admin.properties].sort()).toEqual([...paletteNames].sort());
+    expect(paletteNames.some((name) => adminNames.has(name))).toBe(false);
+
+    for (const value of admin.declarations.values()) {
+      for (const [, name] of value.matchAll(/var\((--[\w-]+)\)/g)) {
+        expect(adminNames.has(name), name).toBe(true);
+      }
+    }
   });
 
   it('keeps font-family and color on the wrapper rule only', () => {
@@ -310,13 +327,13 @@ describe('FrogBot theme tokens', () => {
   it('inverts the neutral scale with light-dark()', () => {
     const tokens = findRule(':root').declarations;
 
-    const values = baseSteps.map((step) => tokens.get(`--theme-base-${step}`));
+    const values = baseSteps.map((step) => tokens.get(`--fb-theme-base-${step}`));
 
     expect(values).toEqual(
       baseSteps.map((step) =>
         step === 500
-          ? 'var(--color-base-500)'
-          : `light-dark(var(--color-base-${step}), var(--color-base-${1000 - step}))`,
+          ? 'var(--fb-base-500)'
+          : `light-dark(var(--fb-base-${step}), var(--fb-base-${1000 - step}))`,
       ),
     );
   });

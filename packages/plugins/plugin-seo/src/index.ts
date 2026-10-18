@@ -93,7 +93,7 @@ function toPayloadSEOConfig<S extends CollectionSlug>(
 }
 
 export function seoPlugin<const S extends CollectionSlug>(options: SEOPluginOptions<S>): Plugin {
-  return (config) => {
+  return async (config) => {
     const handPlacedCollections = new Map<string, CollectionConfig>();
 
     for (const collection of config.collections ?? []) {
@@ -106,7 +106,7 @@ export function seoPlugin<const S extends CollectionSlug>(options: SEOPluginOpti
       options.collections ?? (config.collections ?? []).map((collection) => collection.slug);
 
     const result = fromPayloadConfig(
-      payloadSeoPlugin(toPayloadSEOConfig(options, slugs))(toPayloadConfig(config)),
+      await payloadSeoPlugin(toPayloadSEOConfig(options, slugs))(toPayloadConfig(config)),
     );
 
     return {

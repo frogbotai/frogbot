@@ -39,7 +39,7 @@ export const ContactEmail: Field = {
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ## Admin options
 
@@ -80,9 +80,9 @@ export const Contacts: CollectionConfig = {
 
 ```tsx
 import { EmailField } from '@frogbotai/ui/admin'
-import type { EmailFieldServerComponent } from 'frogbot'
+import type { EmailFieldServerProps } from 'frogbot'
 
-export const CustomEmailServer: EmailFieldServerComponent = (props) => (
+export const CustomEmailServer = (props: EmailFieldServerProps) => (
   <EmailField
     field={props.clientField}
     path={props.path}
@@ -98,9 +98,9 @@ export const CustomEmailServer: EmailFieldServerComponent = (props) => (
 'use client'
 
 import { EmailField } from '@frogbotai/ui/admin'
-import type { EmailFieldClientComponent } from 'frogbot'
+import type { EmailFieldClientProps } from 'frogbot'
 
-export const CustomEmailClient: EmailFieldClientComponent = (props) => <EmailField {...props} />
+export const CustomEmailClient = (props: EmailFieldClientProps) => <EmailField {...props} />
 ```
 
 ### Label
@@ -109,9 +109,9 @@ export const CustomEmailClient: EmailFieldClientComponent = (props) => <EmailFie
 
 ```tsx
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { EmailFieldLabelServerComponent } from 'frogbot'
+import type { EmailFieldLabelServerProps } from 'frogbot'
 
-export const CustomEmailLabelServer: EmailFieldLabelServerComponent = ({ clientField, path }) => (
+export const CustomEmailLabelServer = ({ clientField, path }: EmailFieldLabelServerProps) => (
   <FieldLabel
     label={clientField.label || clientField.name}
     path={path}
@@ -126,9 +126,9 @@ export const CustomEmailLabelServer: EmailFieldLabelServerComponent = ({ clientF
 'use client'
 
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { EmailFieldLabelClientComponent } from 'frogbot'
+import type { EmailFieldLabelClientProps } from 'frogbot'
 
-export const CustomEmailLabelClient: EmailFieldLabelClientComponent = ({ field, path }) => (
+export const CustomEmailLabelClient = ({ field, path }: EmailFieldLabelClientProps) => (
   <FieldLabel label={field.label || field.name} path={path} required={field.required} />
 )
 ```

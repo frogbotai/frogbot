@@ -32,17 +32,17 @@
     "node": ">=24.21.0"
   },
   "dependencies": {
-    "@payloadcms/plugin-sentry": "3.90.2"
+    "@payloadcms/plugin-sentry": "catalog:"
   },
   "peerDependencies": {
     "frogbot": "workspace:*",
-    "payload": "3.90.2",
+    "payload": "catalog:",
     "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
     "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
   },
   "devDependencies": {
     "frogbot": "workspace:*",
-    "payload": "3.90.2",
+    "payload": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "typescript": "catalog:"

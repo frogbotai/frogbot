@@ -22,6 +22,7 @@
     "@frogbotai/db-sqlite": "workspace:*",
     "@frogbotai/next": "workspace:*",
     "@frogbotai/richtext-lexical": "workspace:*",
+    "@frogbotai/transformer-sharp": "workspace:*",
     "@frogbotai/ui": "workspace:*",
     "cross-env": "^7.0.3",
     "drizzle-kit": "^0.31.7",
@@ -33,7 +34,6 @@
     "pino": "^9.14.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "sharp": "^0.35.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {

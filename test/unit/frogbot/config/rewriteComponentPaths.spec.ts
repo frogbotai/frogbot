@@ -69,13 +69,13 @@ describe('rewriteComponentPaths', () => {
     expect(config.admin.components?.beforeLogin).toEqual([path]);
   });
 
-  it('rewrites the CollectionCards dashboard widget to @frogbotai/next', () => {
+  it('rewrites the CollectionCards dashboard widget to @frogbotai/ui/admin/rsc', () => {
     const config = makeConfig({
       dashboard: {
         widgets: [
           {
             slug: 'collections',
-            Component: '@payloadcms/next/rsc#CollectionCards',
+            Component: '@payloadcms/ui/rsc#CollectionCards',
             minWidth: 'full',
           },
         ],
@@ -85,28 +85,34 @@ describe('rewriteComponentPaths', () => {
     rewriteComponentPaths(config);
 
     expect(config.admin.dashboard?.widgets).toEqual([
-      { slug: 'collections', Component: '@frogbotai/next/rsc#CollectionCards', minWidth: 'full' },
+      {
+        slug: 'collections',
+        Component: '@frogbotai/ui/admin/rsc#CollectionCards',
+        minWidth: 'full',
+      },
     ]);
   });
 
-  it('rewrites @payloadcms/next/client component strings', () => {
+  it('rewrites Payload-referenced @payloadcms/ui component strings', () => {
     const config = makeConfig({
       dashboard: {
-        widgets: [{ slug: 'slugs', Component: '@payloadcms/next/client#SlugField' }],
+        widgets: [{ slug: 'welcome', Component: '@payloadcms/ui/rsc#WelcomeWidget' }],
       },
     });
 
     rewriteComponentPaths(config);
 
-    expect(config.admin.dashboard?.widgets?.[0].Component).toBe('@frogbotai/next/client#SlugField');
+    expect(config.admin.dashboard?.widgets?.[0].Component).toBe(
+      '@frogbotai/ui/admin/rsc#WelcomeWidget',
+    );
   });
 
   it('rewrites storage adapter admin.dependencies keys and paths', () => {
     const config = makeConfig({
       dependencies: {
-        '@payloadcms/storage-s3/client#S3ClientUploadHandler': {
+        '@payloadcms/storage-r2/client#R2ClientUploadHandler': {
           type: 'function',
-          path: '@payloadcms/storage-s3/client#S3ClientUploadHandler',
+          path: '@payloadcms/storage-r2/client#R2ClientUploadHandler',
         },
       },
     });
@@ -114,9 +120,9 @@ describe('rewriteComponentPaths', () => {
     rewriteComponentPaths(config);
 
     expect(config.admin.dependencies).toEqual({
-      '@frogbotai/storage-s3/client#S3ClientUploadHandler': {
+      '@frogbotai/storage-r2/client#R2ClientUploadHandler': {
         type: 'function',
-        path: '@frogbotai/storage-s3/client#S3ClientUploadHandler',
+        path: '@frogbotai/storage-r2/client#R2ClientUploadHandler',
       },
     });
   });
@@ -173,32 +179,32 @@ describe('rewriteComponentPaths', () => {
     const config = {
       admin: {
         components: {
-          afterBottomRail: ['@payloadcms/next/rsc#AfterBottom'],
+          afterBottomRail: ['@payloadcms/ui/rsc#WelcomeWidget'],
           beforeBottomRail: ['./components/BeforeBottom#BeforeBottom'],
-          beforeSidebarClose: ['@payloadcms/next/client#BeforeClose'],
-          navItems: [{ icon: '@payloadcms/next/client#ItemIcon' }],
-          navSections: ['@payloadcms/next/rsc#Section', './components/Section#Section'],
+          beforeSidebarClose: ['@payloadcms/ui#NullField'],
+          navItems: [{ icon: '@payloadcms/ui#TagIcon' }],
+          navSections: ['@payloadcms/ui/rsc#CollectionCards', './components/Section#Section'],
         },
       },
-      collections: [{ admin: { icon: '@payloadcms/next/rsc#CollectionIcon' }, fields: [] }],
+      collections: [{ admin: { icon: '@payloadcms/ui#FolderIcon' }, fields: [] }],
     } as unknown as SanitizedConfig;
 
     rewriteComponentPaths(config);
 
     expect(
       (config.admin.components as never as { navItems: { icon: string }[] }).navItems[0]?.icon,
-    ).toBe('@frogbotai/next/client#ItemIcon');
+    ).toBe('@frogbotai/ui/admin#TagIcon');
     expect((config.admin.components as never as { navSections: string[] }).navSections).toEqual([
-      '@frogbotai/next/rsc#Section',
+      '@frogbotai/ui/admin/rsc#CollectionCards',
       './components/Section#Section',
     ]);
     expect(config.admin.components).toMatchObject({
-      afterBottomRail: ['@frogbotai/next/rsc#AfterBottom'],
+      afterBottomRail: ['@frogbotai/ui/admin/rsc#WelcomeWidget'],
       beforeBottomRail: ['./components/BeforeBottom#BeforeBottom'],
-      beforeSidebarClose: ['@frogbotai/next/client#BeforeClose'],
+      beforeSidebarClose: ['@frogbotai/ui/admin#NullField'],
     });
     expect((config.collections[0]?.admin as never as { icon: string }).icon).toBe(
-      '@frogbotai/next/rsc#CollectionIcon',
+      '@frogbotai/ui/admin#FolderIcon',
     );
   });
 
@@ -208,8 +214,8 @@ describe('rewriteComponentPaths', () => {
         {
           label: 'Usage',
           path: 'usage',
-          Component: '@payloadcms/next/rsc#Usage',
-          icon: '@payloadcms/next/client#UsageIcon',
+          Component: '@payloadcms/ui/rsc#WelcomeWidget',
+          icon: '@payloadcms/ui#TagIcon',
         },
       ],
     });
@@ -220,24 +226,23 @@ describe('rewriteComponentPaths', () => {
       {
         label: 'Usage',
         path: 'usage',
-        Component: '@frogbotai/next/rsc#Usage',
-        icon: '@frogbotai/next/client#UsageIcon',
+        Component: '@frogbotai/ui/admin/rsc#WelcomeWidget',
+        icon: '@frogbotai/ui/admin#TagIcon',
       },
     ]);
   });
 
-  it('rewrites Payload folder field components', () => {
+  it('rewrites Payload hierarchy field components', () => {
     const config = {
       collections: [
         {
           fields: [
             {
-              name: 'folder',
+              name: '_h_folders',
               type: 'relationship',
               admin: {
                 components: {
-                  Cell: '@payloadcms/next/rsc#FolderTableCell',
-                  Field: '@payloadcms/next/rsc#FolderField',
+                  Field: '@payloadcms/ui/rsc#HierarchyField',
                 },
               },
             },
@@ -249,8 +254,7 @@ describe('rewriteComponentPaths', () => {
     rewriteComponentPaths(config);
 
     expect(config.collections[0]?.fields[0]?.admin?.components).toEqual({
-      Cell: '@frogbotai/next/rsc#FolderTableCell',
-      Field: '@frogbotai/next/rsc#FolderField',
+      Field: '@frogbotai/ui/admin/rsc#HierarchyField',
     });
   });
 
@@ -265,7 +269,7 @@ describe('rewriteComponentPaths', () => {
               admin: {
                 components: {
                   Field: '@payloadcms/ui#TextField',
-                  Description: '@payloadcms/ui/shared#formatAdminURL',
+                  Description: '@payloadcms/ui/shared#formatDate',
                   Diff: '@payloadcms/ui/rsc#FieldDiffContainer',
                   Error: '/components/ColorField#ColorField',
                   Label: '@payloadcms/ui-foo#Label',
@@ -281,7 +285,7 @@ describe('rewriteComponentPaths', () => {
 
     expect(config.collections[0]?.fields[0]?.admin?.components).toEqual({
       Field: '@frogbotai/ui/admin#TextField',
-      Description: '@frogbotai/ui/admin/shared#formatAdminURL',
+      Description: '@frogbotai/ui/admin/shared#formatDate',
       Diff: '@frogbotai/ui/admin/rsc#FieldDiffContainer',
       Error: '/components/ColorField#ColorField',
       Label: '@payloadcms/ui-foo#Label',
@@ -289,12 +293,12 @@ describe('rewriteComponentPaths', () => {
   });
 
   it('does not traverse arbitrary circular custom data', () => {
-    const custom: Record<string, unknown> = { component: '@payloadcms/next/rsc#FolderField' };
+    const custom: Record<string, unknown> = { component: '@payloadcms/ui/rsc#HierarchyField' };
     custom.self = custom;
     const config = makeConfig({ custom });
 
     expect(() => rewriteComponentPaths(config)).not.toThrow();
-    expect(custom.component).toBe('@payloadcms/next/rsc#FolderField');
+    expect(custom.component).toBe('@payloadcms/ui/rsc#HierarchyField');
   });
 
   it('rewrites lexical adapters, features, views, and nested node fields idempotently', () => {
@@ -379,7 +383,7 @@ describe('rewriteComponentPaths', () => {
       },
       collections: [
         {
-          fields: [{ name: 'layout', type: 'blocks', blockReferences: [block] }],
+          fields: [{ name: 'layout', type: 'blocks', blocks: [block] }],
           slug: 'posts',
         },
       ],

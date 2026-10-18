@@ -8,11 +8,9 @@ const fetch = vi.fn();
 let pathname = '/control';
 const push = vi.fn();
 
-vi.mock('../../../../../../packages/ui/src/admin/adapters/router.js', () => ({
-  useRouterAdapter: () => ({ pathname: pathname, router: { push } }),
-}));
-
 vi.mock('@payloadcms/ui', () => ({
+  usePathname: () => pathname,
+  useRouter: () => ({ push }),
   Link: ({ children, href, ...props }: React.ComponentProps<'a'>) => (
     <a href={href} {...props}>
       {children}

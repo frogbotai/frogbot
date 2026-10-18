@@ -186,6 +186,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
         ...['users', 'customers'].map((slug) => ({
           slug,
           trash: true,
+          access: { read: ({ req }: { req: { user?: unknown } }) => Boolean(req.user) },
           auth: {
             signIn: [method, otherMethod],
             verify: true,

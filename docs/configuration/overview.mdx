@@ -39,35 +39,35 @@ export default buildConfig({
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `secret` | `string` | Required | Signs tokens and cookies and encrypts stored secrets. |
+| `previousSecrets` | `string[]` | — | Earlier `secret` values still accepted for reads (verifying tokens, matching API keys, decrypting stored values) while you rotate the secret. New data always uses `secret`. |
 | `db` | `DatabaseAdapter` | Required | Database adapter, such as `sqliteAdapter()`. See [Database](/database/overview). |
 | `collections` | `CollectionConfig[]` | Required | Collections to register. When none has `auth`, FrogBot adds a `users` auth collection. See [Collections](/configuration/collections). |
 | `admin` | `RootAdminConfig` | — | Root admin panel options, such as `user`, `meta`, `theme`, and `components`. See [Root components](/custom-components/root-components). |
 | `agents` | `AgentConfig[]` | — | Code-defined agents. Requires `ai`. See [Agents](/agents/overview). |
 | `ai` | `AIConfig` | — | Providers, routers, access, hooks, and telemetry. See [AI](/ai/overview). |
 | `auth` | `{ jwtOrder: ('JWT' \| 'Bearer' \| 'cookie')[] }` | `{ jwtOrder: ['JWT', 'Bearer', 'cookie'] }` | Order in which the built-in strategy reads a token from the `Authorization: JWT` header, the `Authorization: Bearer` header, and the auth cookie. Methods left out of `jwtOrder` aren't read. `jwtOrder` is required when you set `auth`. |
-| `bin` | `{ key: string; scriptPath: string }[]` | `[]` | Accepted by the type, but the `frogbot` CLI doesn't run these scripts. Use [`frogbot run`](/local-api/outside-nextjs) instead. |
+| `baseAccess` | `{ collections?: CollectionAccess; globals?: GlobalAccess }` | — | Access rules combined with every collection's and global's own access using AND. |
 | `blocks` | `Block[]` | — | Blocks registered once and referenced by slug from Blocks fields. See [Root block registration](/fields/blocks#root-block-registration). |
 | `bodyParser` | `Partial<BusboyConfig>` | — | Options passed to the [busboy](https://www.npmjs.com/package/busboy) parser for `multipart/form-data` requests, such as `limits`. Experimental. |
-| `compatibility` | `{ allowLocalizedWithinLocalized: true }` | — | Keeps `localized: true` on fields nested in a localized parent. Only for MongoDB databases created before this behavior changed. |
+| `cli` | `{ commands?: CLICommands } \| false` | — | Accepted by the type, but the `frogbot` CLI doesn't read it. Use [`frogbot run`](/local-api/outside-nextjs) for your own scripts. |
 | `connections` | `ConnectionsConfig` | — | Providers users can link accounts with. See [Connections](/connections/overview#configure-linking). |
 | `cookiePrefix` | `string` | `'frogbot'` | Prefix for every cookie FrogBot sets, such as `frogbot-token`. |
 | `cors` | `'*' \| string[] \| { origins: '*' \| string[]; headers?: string[] }` | `[]` | Origins allowed to make cross-origin requests. `'*'` allows any origin. The object form also adds allowed request `headers`. See [Cookies](/authentication/cookies). |
 | `csrf` | `string[]` | `[]` | Origins whose requests may authenticate with the auth cookie. `serverURL` is added automatically when set. See [Cookies](/authentication/cookies). |
 | `custom` | `Record<string, any>` | `{}` | Your own server-only data. FrogBot doesn't read it. |
 | `debug` | `boolean` | `false` | Returns error messages and stack traces in API responses, including errors that are normally hidden. |
-| `defaultDepth` | `number` | `2` | Relationship population depth used when a request doesn't set `depth`. See [Depth](/queries/depth). |
+| `defaultDepth` | `number` | `1` | Relationship population depth used when a request doesn't set `depth`. See [Depth](/queries/depth). |
 | `defaultMaxTextLength` | `number` | `40000` | Maximum length of Text and Textarea values when the field doesn't set `maxLength`. |
 | `editor` | `RichTextAdapterProvider` | — | Default editor for Rich Text fields. Required when any collection has a Rich Text field without its own `editor`. See [Rich Text](/rich-text/overview#configure-the-root-editor). |
 | `email` | `EmailPiece \| Promise<EmailPiece>` | No email | Email piece used to send verification and password-reset messages. Without it, FrogBot warns at startup and logs email sends instead of delivering them. See [Email](/email/overview). |
 | `endpoints` | `Endpoint[]` | — | Root REST endpoints. Handlers receive `FrogBotRequest`. See [Custom endpoints](/rest-api/overview#custom-endpoints). |
-| `experimental` | `{ localizeStatus?: boolean }` | — | Experimental features. `localizeStatus: true` tracks draft and published status per locale; it also needs `localization` and `versions.drafts.localizeStatus` on the collection. |
-| `folders` | `false \| RootFoldersConfiguration` | Enabled when a collection sets `folders` | Folder options for the admin panel. `false` turns folders off everywhere. See [Folders](#folders). |
 | `graphQL` | `GraphQLConfig` | See [GraphQL options](/graphql/overview#graphql-options) | GraphQL API options. |
 | `hooks` | `{ afterError?: AfterErrorHook[] }` | — | Root hooks. See [Root hooks](/hooks/overview#root-hooks). |
 | `i18n` | `I18nOptions` | English only | Admin panel languages and translations. See [I18n](/configuration/i18n#config-options). |
 | `indexSortableFields` | `boolean` | `false` | Adds a database index to every sortable top-level field. Useful for databases that require an index to sort, such as Azure Cosmos DB. |
 | `jobs` | `JobsConfig` | — | Tasks, workflows, queues, and schedules. See [Jobs Queue](/jobs-queue/overview). |
 | `kv` | `KVAdapterResult` | `databaseKVAdapter()` | Key-value store behind `frogbot.kv`. See [Key-value store](#key-value-store). |
+| `llmInstructions` | `false \| { access?: Access; editor?: RichTextAdapter }` | `{}` | Agent instructions editors can save per collection, shared with MCP clients. `access` adds who may edit them (default: users of the admin user collection); `false` removes the collection and the menu item. |
 | `localization` | `false \| LocalizationConfig` | `false` | Content locales. See [Localization](/configuration/localization#config-options). |
 | `logger` | `'sync' \| { options: LoggerOptions; destination?: DestinationStream } \| Logger` | Pretty-printed pino logger | Logger behind `frogbot.logger`. Pass [pino options](https://getpino.io/#/docs/api?id=options), options with a destination stream, or a pino logger instance. `'sync'` writes logs synchronously. |
 | `loggingLevels` | `Partial<Record<ErrorName, Level \| false>>` | See description | Log level for each error class, or `false` to not log it. Defaults: `info` for `Forbidden`, `Locked`, `MissingFile`, `NotFound`, and `ValidationError`; `error` for the rest. |
@@ -78,11 +78,11 @@ export default buildConfig({
 | `routes` | `RoutesConfig` | See [Routes](#routes) | URL paths for the admin panel, REST API, and GraphQL. |
 | `serverURL` | `string` | `''` | Absolute URL of your app, such as `https://example.com`, with no path. Used for links in emails and file URLs, and added to `csrf`. |
 | `settings` | `SettingsEntry[]` | — | Pages added to the admin Settings area. See [Register a settings page](/admin/admin-navigation#register-a-settings-page). |
-| `sharp` | `SharpDependency` | — | Your installed `sharp` module, used to resize and crop images. See [Uploads](/upload/overview). |
+| `storage` | `StorageAdapter[]` | — | File storage adapters from `@frogbotai/storage-*`. The first also serves FrogBot's own upload collections. See [Storage adapters](/upload/storage-adapters). |
 | `telemetry` | `boolean` | `true` | Sends anonymous usage events. Set `false` to turn it off. |
 | `tools` | `readonly AnyTool[]` | — | Tools attached to every agent. See [Share tools across agents](/agents/overview#share-tools-across-agents). |
 | `typescript` | `TypeScriptConfig` | See [Type generation options](/typescript/generating-types#type-generation-options) | Type generation options. |
-| `upload` | `FetchAPIFileUploadOptions` | `{}` | Options for parsing uploaded files on every upload collection. See [Uploads](/upload/overview#frogbot-wide-upload-options). |
+| `upload` | `FetchAPIFileUploadOptions` | `{}` | Options for parsing uploaded files on every upload collection, and the `transformers` that process them, such as `sharpTransformer()`. See [Uploads](/upload/overview#frogbot-wide-upload-options). |
 | `_roles` | `RolesPrewiring` | — | Internal. Set by the roles plugin; don't set it yourself. |
 
 ### Routes
@@ -93,19 +93,6 @@ export default buildConfig({
 | `api` | `string` | `'/api'` | Path prefix for the REST API. |
 | `graphQL` | `string` | `'/graphql'` | Path of the GraphQL endpoint, below `api`. |
 | `graphQLPlayground` | `string` | `'/graphql-playground'` | Path of the GraphQL Playground, below `api`. |
-
-### Folders
-
-Folders are turned on when any collection sets `folders`, including a collection marked [`file: true`](/upload/files).
-
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `browseByFolder` | `boolean` | `true` | Adds the Browse by folder view to the admin panel. |
-| `collectionOverrides` | `(({ collection }) => CollectionConfig \| Promise<CollectionConfig>)[]` | — | Functions that modify the generated folders collection, in order. |
-| `collectionSpecific` | `boolean` | `true` | Lets each folder be limited to certain collections. |
-| `debug` | `boolean` | `false` | Shows the folder collection and its hidden fields in the admin panel. |
-| `fieldName` | `string` | `'folder'` | Name of the folder relationship field added to each collection with `folders`. |
-| `slug` | `string` | `'payload-folders'` | Slug of the generated folders collection. |
 
 ### Query presets
 

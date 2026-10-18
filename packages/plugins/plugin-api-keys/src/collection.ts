@@ -252,6 +252,8 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
     labels: { singular: 'API Key', plural: 'API Keys' },
     timestamps: true,
     versions: false,
+    authorship: false,
+    custom: { frogbot: { internal: true } },
     ...existing,
     ...collection,
     access: {

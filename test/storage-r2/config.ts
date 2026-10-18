@@ -35,7 +35,7 @@ const bucket: R2StorageOptions['bucket'] = {
 
 export default await buildTestConfig({
   collections: [Users, Media],
-  plugins: [
+  storage: [
     r2Storage({
       collections: { [mediaSlug]: true },
       bucket,

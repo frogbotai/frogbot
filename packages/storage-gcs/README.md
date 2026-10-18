@@ -15,7 +15,7 @@ import { buildConfig } from 'frogbot';
 import { gcsStorage } from '@frogbotai/storage-gcs';
 
 export default buildConfig({
-  plugins: [
+  storage: [
     gcsStorage({
       bucket: process.env.GCS_BUCKET,
       options: {

@@ -15,8 +15,8 @@
     background: var(--color-success);
   }
   .fb-status-icon-text--error {
-    color: var(--theme-red-700);
-    background: color-mix(in srgb, var(--theme-red-500) 15%, transparent);
+    color: var(--fb-theme-red-700);
+    background: color-mix(in srgb, var(--fb-theme-red-500) 15%, transparent);
   }
   .fb-status-icon-text--secondary {
     color: var(--color-secondary-foreground);

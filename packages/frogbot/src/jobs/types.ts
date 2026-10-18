@@ -13,8 +13,7 @@ import type { FrogBotTypes } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { WaitFor, WaitpointOptions } from './waitpoints/types.js';
 
-export type JobsConfig = Omit<PayloadJobsConfig, 'runHooks' | 'depth' | 'workflows'> & {
-  leaseDuration?: number;
+export type JobsConfig = Omit<PayloadJobsConfig, 'workflows'> & {
   waitpoints?: Partial<WaitpointOptions>;
   workflows?: WorkflowConfig<Document>[];
 };
@@ -30,15 +29,15 @@ type JobTaskSlug = Extract<keyof TypedJobs['tasks'], string>;
 
 type JobWorkflowSlug = Extract<keyof TypedJobs['workflows'], string>;
 
-type WorkflowInput<T extends false | JobWorkflowSlug | object> = T extends JobWorkflowSlug
+type WorkflowInput<T extends JobWorkflowSlug | object> = T extends JobWorkflowSlug
   ? TypedJobs['workflows'][T]['input']
   : T;
 
-export type WorkflowHandler<T extends false | JobWorkflowSlug | object = false> = (
+export type WorkflowHandler<T extends JobWorkflowSlug | object = object> = (
   args: Parameters<PayloadWorkflowHandler<WorkflowInput<T>>>[0] & { waitFor: WaitFor },
 ) => ReturnType<PayloadWorkflowHandler<WorkflowInput<T>>>;
 
-export type WorkflowConfig<T extends false | JobWorkflowSlug | object = false> = Omit<
+export type WorkflowConfig<T extends JobWorkflowSlug | object = object> = Omit<
   PayloadWorkflowConfig<WorkflowInput<T>>,
   'handler' | 'slug'
 > & {

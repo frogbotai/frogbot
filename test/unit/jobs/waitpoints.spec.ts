@@ -2,8 +2,8 @@ import type { Payload, Where } from 'payload';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveJobsConfig } from '../../../packages/frogbot/src/jobs/config.js';
-import type { JobLeaseContext } from '../../../packages/frogbot/src/jobs/lease.js';
-import type * as leaseModule from '../../../packages/frogbot/src/jobs/lease.js';
+import type { JobRunContext } from '../../../packages/frogbot/src/jobs/run.js';
+import type * as runModule from '../../../packages/frogbot/src/jobs/run.js';
 import type { WorkflowHandler } from '../../../packages/frogbot/src/jobs/types.js';
 import { defaultWaitpointsCollection } from '../../../packages/frogbot/src/jobs/waitpoints/collection.js';
 import {
@@ -22,15 +22,15 @@ const storage = vi.hoisted(() => ({
   rows: [] as Waitpoint[],
   wakeHolder: vi.fn(),
   ready: vi.fn(),
-  context: undefined as JobLeaseContext | undefined,
+  context: undefined as JobRunContext | undefined,
 }));
 
-vi.mock('../../../packages/frogbot/src/jobs/lease.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof leaseModule>();
+vi.mock('../../../packages/frogbot/src/jobs/run.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof runModule>();
 
   return {
     ...actual,
-    getJobLeaseContext: () => actual.getJobLeaseContext() ?? storage.context,
+    getJobRunContext: () => actual.getJobRunContext() ?? storage.context,
   };
 });
 
@@ -84,13 +84,7 @@ function workflowArgs(replay?: WaitpointReplay): Parameters<WorkflowHandler>[0] 
     config: { serverURL: 'https://example.com', routes: { api: '/api' } },
   } as Payload;
 
-  storage.context = {
-    owner: 'unit',
-    leaseDuration: 5000,
-    ids: new Set(),
-    rearm: new Map(),
-    payload,
-  };
+  storage.context = { rearm: new Map(), payload };
 
   return {
     job: { ...jobRow(1, true), waitpoint: replay },
@@ -291,7 +285,7 @@ describe('workflow wait creation', () => {
     await payload.jobs.runByID({ id: 1, req, silent: true, overrideAccess: true });
 
     expect(rows[0].completedAt).toBeNull();
-    expect(rows[0].processing).toBe(false);
+    expect(rows[0].processingUntil).toBeNull();
     expect(rows[0].hasError).not.toBe(true);
     expect(later).not.toHaveBeenCalled();
     expect(onWait).toHaveBeenCalledExactlyOnceWith(
@@ -317,6 +311,7 @@ describe('workflow wait creation', () => {
       taskID: 'step',
       executedAt: '',
       completedAt: '',
+      input: {},
       state: 'succeeded' as const,
     };
 
@@ -328,7 +323,9 @@ describe('workflow wait creation', () => {
 
     await run(async ({ waitFor }) => waitFor('delay', { until: '2026-10-01' }), args);
 
-    args.job.log[0].output = { value: 'changed' };
+    const [inline] = args.job.log ?? [];
+
+    Object.assign(inline ?? {}, { output: { value: 'changed' } });
 
     expect(storage.context?.rearm.get(1)?.log).toEqual([
       expect.objectContaining({ id: 'log', output: { value: 'saved' } }),
@@ -578,6 +575,7 @@ describe('named wait replay', () => {
     await payload.jobs.runByID({ id: 1, req, silent: true, overrideAccess: true });
 
     Object.assign(storage.rows[0], { status: 'resumed', data: { approved: true } });
+    rows[0].waitUntil = new Date(Date.now() - 1).toISOString();
 
     await payload.jobs.runByID({ id: 1, req, silent: true, overrideAccess: true });
 
@@ -588,7 +586,7 @@ describe('named wait replay', () => {
       waitUntil: '2026-10-01T00:00:00.000Z',
     });
 
-    vi.setSystemTime(new Date('2026-10-01T00:00:00.000Z'));
+    vi.setSystemTime(new Date('2026-10-01T00:00:00.001Z'));
 
     await payload.jobs.runByID({ id: 1, req, silent: true, overrideAccess: true });
 
@@ -609,7 +607,7 @@ describe('named wait replay', () => {
     expect(storage.rows.map(({ holder }) => holder)).toEqual([1, 1, 1]);
     expect(rows[0].log?.map(({ taskID }) => taskID)).toEqual(['prepare']);
 
-    vi.setSystemTime(new Date(storage.rows[2].expiresAt!));
+    vi.setSystemTime(Date.parse(storage.rows[2].expiresAt!) + 1);
 
     await payload.jobs.runByID({ id: 1, req, silent: true, overrideAccess: true });
 

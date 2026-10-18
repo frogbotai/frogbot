@@ -32,15 +32,15 @@
     "node": ">=24.21.0"
   },
   "dependencies": {
-    "@payloadcms/plugin-redirects": "3.90.2"
+    "@payloadcms/plugin-redirects": "catalog:"
   },
   "peerDependencies": {
     "frogbot": "workspace:*",
-    "payload": "3.90.2"
+    "payload": "catalog:"
   },
   "devDependencies": {
     "frogbot": "workspace:*",
-    "payload": "3.90.2",
+    "payload": "catalog:",
     "typescript": "catalog:"
   },
   "publishConfig": {

@@ -73,6 +73,7 @@ export async function initializedInstance() {
   const frogbot = await getFrogBot({ config });
   const posts = await frogbot.find({
     collection: 'posts',
+    overrideAccess: true,
     where: {
       status: { equals: 'published' },
     },
@@ -101,6 +102,7 @@ export async function enforceAccess({
 export const auditPost: CollectionAfterChangeHook<Post> = async ({ doc, req }) => {
   await req.frogbot.create({
     collection: 'audit-events',
+    overrideAccess: true,
     data: {
       action: 'post-created',
       document: doc.id,
@@ -116,6 +118,7 @@ export const syncPost: CollectionAfterChangeHook<Post> = async ({ context, doc, 
 
   await req.frogbot.update({
     collection: 'posts',
+    overrideAccess: true,
     id: doc.id,
     data: { synced: true },
     context: { syncingPost: true },

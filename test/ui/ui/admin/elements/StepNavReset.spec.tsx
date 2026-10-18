@@ -26,6 +26,7 @@ vi.mock('@payloadcms/ui', async () => {
   };
 
   return {
+    usePathname: () => mocks.pathname,
     useConfig: () => ({ config: { admin: { meta: { titleSuffix: '- FrogBot' } } } }),
     useStepNav: () => useContext(StepNavContext),
     useTranslation: () => ({
@@ -33,10 +34,6 @@ vi.mock('@payloadcms/ui', async () => {
     }),
   };
 });
-
-vi.mock('../../../../../packages/ui/src/admin/adapters/router.js', () => ({
-  useRouterAdapter: () => ({ pathname: mocks.pathname }),
-}));
 
 const { useStepNav } = await import('@payloadcms/ui');
 

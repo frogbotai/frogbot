@@ -36,10 +36,6 @@ function rewritePath(path: string, exportName?: string): string {
     return path.replace('@payloadcms/ui', '@frogbotai/ui/admin');
   }
 
-  if (path.startsWith('@payloadcms/next/rsc#') || path.startsWith('@payloadcms/next/client#')) {
-    return path.replace('@payloadcms/next/', '@frogbotai/next/');
-  }
-
   if (path.startsWith('@payloadcms/storage-')) {
     return path.replace('@payloadcms/', '@frogbotai/');
   }
@@ -172,7 +168,7 @@ function rewriteFields(fields: unknown[], visited: WeakSet<object>): void {
       }
     }
 
-    const blocks = Array.isArray(value.blockReferences) ? value.blockReferences : value.blocks;
+    const blocks = value.blocks;
 
     if (Array.isArray(blocks)) {
       for (const block of blocks) {

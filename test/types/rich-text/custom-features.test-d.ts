@@ -68,17 +68,6 @@ class DividerNode extends DecoratorNode<null> {
 const fields: Field[] = [{ name: 'label', type: 'text' }];
 
 const dividerNode = createNode({
-  converters: {
-    html: {
-      converter: ({ node, req }) => {
-        expectTypeOf(node.fields.label).toBeString();
-        expectTypeOf(req).toEqualTypeOf<FrogBotRequest | null | undefined>();
-
-        return '<hr>';
-      },
-      nodeTypes: ['divider'],
-    },
-  },
   getSubFields: ({ node, req }) => {
     expectTypeOf(node?.fields.label).toEqualTypeOf<string | undefined>();
     expectTypeOf(req).toEqualTypeOf<FrogBotRequest | undefined>();

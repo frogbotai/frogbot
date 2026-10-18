@@ -53,14 +53,14 @@ Set `admin.width` on the nested fields to control their relative widths. On narr
 
 ```tsx
 import { RowField } from '@frogbotai/ui/admin'
-import type { RowFieldServerComponent } from 'frogbot'
+import type { RowFieldServerProps } from 'frogbot'
 
-export const CustomRowField: RowFieldServerComponent = ({
+export const CustomRowField = ({
   clientField,
   path,
   permissions,
   schemaPath,
-}) => {
+}: RowFieldServerProps) => {
   return (
     <RowField
       field={clientField}
@@ -72,4 +72,4 @@ export const CustomRowField: RowFieldServerComponent = ({
 }
 ```
 
-Use `RowFieldClientComponent` when the replacement must run in the browser.
+Use `RowFieldClientProps` when the replacement must run in the browser.

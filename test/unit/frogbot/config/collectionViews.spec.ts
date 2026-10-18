@@ -7,7 +7,7 @@ import {
   getBoardOrderFieldName,
   getBoardOrderFieldNames,
 } from '../../../../packages/frogbot/src/config/collectionViews.js';
-import { getCustomCollectionViewByRoute } from '../../../../packages/next/node_modules/@payloadcms/next/dist/views/Root/getCustomCollectionViewByRoute.js';
+import { getCustomCollectionViewByRoute } from '../../../../packages/ui/node_modules/@payloadcms/ui/dist/views/Root/getCustomCollectionViewByRoute.js';
 
 describe('collection views', () => {
   it('builds per-board order field names and fields', () => {
@@ -26,7 +26,7 @@ describe('collection views', () => {
       name: '_order_by_stage',
       type: 'text',
       index: true,
-      admin: { hidden: true, readOnly: true, disableListColumn: true },
+      admin: { disabled: true, hidden: true, readOnly: true },
     });
 
     const siblingData = { _order_by_stage: 'a0' };
@@ -79,40 +79,6 @@ describe('collection views', () => {
     expect(admin?.components?.views?.list).toEqual({
       Component: '@frogbotai/ui/admin#DefaultListView',
     });
-    expect(admin?.groupBy).toBe(true);
-  });
-
-  it('keeps board Group By runtime support when the list opts out', () => {
-    const admin = compileCollectionViews({
-      collection: {
-        slug: 'posts',
-        fields: [{ name: 'stage', type: 'select', options: [] }],
-        admin: {
-          views: [
-            { type: 'list', groupBy: false },
-            { type: 'board', groupBy: 'stage' },
-          ],
-        },
-      },
-    });
-
-    expect(admin?.groupBy).toBe(true);
-    expect(admin?.custom?.frogbot.views[0]).toMatchObject({
-      groupBy: false,
-      type: 'list',
-    });
-  });
-
-  it('disables native Group By when an opted-out list has no board', () => {
-    const admin = compileCollectionViews({
-      collection: {
-        slug: 'posts',
-        fields: [],
-        admin: { views: [{ type: 'list', groupBy: false }] },
-      },
-    });
-
-    expect(admin?.groupBy).toBeUndefined();
   });
 
   it('normalizes slugs and compiles multiple board and custom routes', () => {
@@ -150,7 +116,6 @@ describe('collection views', () => {
     expect(admin?.custom?.frogbot.views[2].orderField).toBe('_order_by_stage');
     expect(admin?.components?.Description).toBe('@frogbotai/ui/admin/rsc#CollectionViewSwitcher');
     expect(admin?.components?.beforeList).toBeUndefined();
-    expect(admin?.groupBy).toBe(true);
     expect(admin?.components?.views?.list).toEqual({
       Component: '@frogbotai/ui/admin#DefaultListView',
     });

@@ -26,6 +26,7 @@ import type { FrogBot } from 'frogbot'
 const getPosts = async (frogbot: FrogBot) => {
   const posts = await frogbot.find({
     collection: 'posts',
+    overrideAccess: true,
     sort: '-createdAt',
   })
 
@@ -41,6 +42,7 @@ import type { FrogBot } from 'frogbot'
 const getPosts = async (frogbot: FrogBot) => {
   const posts = await frogbot.find({
     collection: 'posts',
+    overrideAccess: true,
     sort: ['priority', '-createdAt'],
   })
 

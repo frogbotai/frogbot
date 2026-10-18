@@ -27,9 +27,7 @@ function childFieldLists(field: Field): Field[][] {
   if (field.type === 'tabs') return field.tabs.map((tab) => tab.fields);
 
   if (field.type === 'blocks') {
-    const blocks = [...field.blocks, ...(field.blockReferences ?? [])];
-
-    return blocks.filter((block) => typeof block !== 'string').map((block) => block.fields);
+    return field.blocks.filter((block) => typeof block !== 'string').map((block) => block.fields);
   }
 
   return 'fields' in field && Array.isArray(field.fields) ? [field.fields] : [];

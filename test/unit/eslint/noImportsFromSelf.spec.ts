@@ -29,12 +29,12 @@ ruleTester.run('no-imports-from-self', rule, {
       name: 'ace156ca packages/next/src/elements/Nav/fixtures/consumer/RecentsSection.tsx',
       code: [
         "import { NavSection } from '@frogbotai/next';",
-        "import { RecentsSectionClient } from '@frogbotai/next/client';",
+        "import { RootLayout } from '@frogbotai/next/layouts';",
       ].join('\n'),
       filename: file('packages/next/src/elements/Nav/fixtures/consumer/RecentsSection.tsx'),
       errors: [
         { messageId: 'self', data: { source: '@frogbotai/next', name: '@frogbotai/next' } },
-        { messageId: 'self', data: { source: '@frogbotai/next/client', name: '@frogbotai/next' } },
+        { messageId: 'self', data: { source: '@frogbotai/next/layouts', name: '@frogbotai/next' } },
       ],
     },
     {

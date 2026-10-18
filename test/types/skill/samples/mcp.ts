@@ -22,16 +22,5 @@ export const config = buildConfig({
       ],
     },
   ],
-  plugins: [
-    apiKeysPlugin(),
-    mcpPlugin({
-      collections: {
-        posts: {
-          enabled: {
-            find: true,
-          },
-        },
-      },
-    }),
-  ],
+  plugins: [apiKeysPlugin(), mcpPlugin()],
 });

@@ -30,7 +30,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@payloadcms/live-preview-react": "3.90.2"
+    "@payloadcms/live-preview-react": "catalog:"
   },
   "peerDependencies": {
     "react": "^19.0.1 || ^19.1.2 || ^19.2.1",

@@ -126,7 +126,7 @@ describe('mergeCollection', () => {
     });
 
     expect(merged.access?.read).toBe(userRead);
-    expect(await merged.access?.create?.({ req: {} as never })).toBe(true);
+    expect(await merged.access?.create?.({ slug: 'test', req: {} as never })).toBe(true);
   });
 
   it('user admin keys win per-key, base fills the rest', () => {

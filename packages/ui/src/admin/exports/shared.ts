@@ -9,7 +9,6 @@ export { abortAndIgnore } from '@payloadcms/ui/shared';
 export { handleAbortRef } from '@payloadcms/ui/shared';
 export { requests } from '@payloadcms/ui/shared';
 export { findLocaleFromCode } from '@payloadcms/ui/shared';
-export { formatAdminURL } from '@payloadcms/ui/shared';
 export { formatDate } from '@payloadcms/ui/shared';
 export { formatDocTitle } from '@payloadcms/ui/shared';
 export { handleBackToDashboard } from '@payloadcms/ui/shared';

@@ -47,6 +47,7 @@ import type { FrogBot } from 'frogbot'
 const getPosts = async (frogbot: FrogBot) => {
   const posts = await frogbot.find({
     collection: 'posts',
+    overrideAccess: true,
     depth: 2,
   })
 
@@ -66,7 +67,7 @@ fetch('https://localhost:3000/api/posts?depth=2')
 
 ## Default Depth
 
-If no depth is specified in the request, FrogBot will use its default depth for all requests. By default, this is set to `2`.
+If no depth is specified in the request, FrogBot will use its default depth for all requests. By default, this is set to `1`.
 
 To change the default depth on the application level, you can use the `defaultDepth` option in your root FrogBot config:
 
@@ -75,7 +76,7 @@ import { buildConfig } from 'frogbot'
 
 export default buildConfig({
   // ...
-  defaultDepth: 1,
+  defaultDepth: 2,
   // ...
 })
 ```

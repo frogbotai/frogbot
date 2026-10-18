@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { Job, PayloadRequest, Where } from 'payload';
 
 import { compareAndSet } from '../../database/compareAndSet.js';
-import { runnableNow } from '../lease.js';
+import { runnableNow, unleased } from '../run.js';
 import { updateWaitpoint } from './atomic.js';
 import { WAITPOINTS_SLUG } from './collection.js';
 import { copyResumeData } from './json.js';
@@ -146,7 +146,14 @@ async function wakeHolder({
 
   if (!isLiveHolder(row, waitpoint)) return {};
 
-  if (row.processing || row.waitpoint?.waiting !== waitpoint.name) return { retry: true };
+  const now = new Date().toISOString();
+
+  if (
+    (row.processingUntil && new Date(row.processingUntil).getTime() > Date.parse(now)) ||
+    row.waitpoint?.waiting !== waitpoint.name
+  ) {
+    return { retry: true };
+  }
 
   const woken = await compareAndSet({
     req,
@@ -156,7 +163,7 @@ async function wakeHolder({
         { id: { equals: row.id } },
         { 'waitpoint.jobId': { equals: waitpoint.jobId } },
         { 'waitpoint.waiting': { equals: waitpoint.name } },
-        { processing: { equals: false } },
+        unleased(now),
         { completedAt: { exists: false } },
         { hasError: { not_equals: true } },
       ],

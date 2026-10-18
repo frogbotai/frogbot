@@ -181,7 +181,6 @@ export const payloadBlocksFilter: BlocksField = {
 };
 
 export const asyncSelectFilter: SelectField = {
-  // @ts-expect-error select filterOptions is called synchronously
   filterOptions: ({ options }) => Promise.resolve(options),
   name: 'color',
   options: ['red'],

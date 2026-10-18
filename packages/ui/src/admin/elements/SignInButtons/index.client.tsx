@@ -59,7 +59,6 @@ export function SignInButtonsClient({
             el="link"
             icon={Icon ? <Icon aria-hidden="true" size={20} /> : undefined}
             iconPosition="left"
-            iconStyle="none"
             key={method.slug}
             round
             size="large"

@@ -44,7 +44,7 @@ export const PublishedAt: Field = {
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ## Admin options
 
@@ -120,9 +120,9 @@ export const Events: CollectionConfig = {
 
 ```tsx
 import { DateTimeField } from '@frogbotai/ui/admin'
-import type { DateFieldServerComponent } from 'frogbot'
+import type { DateFieldServerProps } from 'frogbot'
 
-export const CustomDateServer: DateFieldServerComponent = (props) => (
+export const CustomDateServer = (props: DateFieldServerProps) => (
   <DateTimeField
     field={props.clientField}
     path={props.path}
@@ -138,9 +138,9 @@ export const CustomDateServer: DateFieldServerComponent = (props) => (
 'use client'
 
 import { DateTimeField } from '@frogbotai/ui/admin'
-import type { DateFieldClientComponent } from 'frogbot'
+import type { DateFieldClientProps } from 'frogbot'
 
-export const CustomDateClient: DateFieldClientComponent = (props) => <DateTimeField {...props} />
+export const CustomDateClient = (props: DateFieldClientProps) => <DateTimeField {...props} />
 ```
 
 ### Label
@@ -149,9 +149,9 @@ export const CustomDateClient: DateFieldClientComponent = (props) => <DateTimeFi
 
 ```tsx
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { DateFieldLabelServerComponent } from 'frogbot'
+import type { DateFieldLabelServerProps } from 'frogbot'
 
-export const CustomDateLabelServer: DateFieldLabelServerComponent = ({ clientField, path }) => (
+export const CustomDateLabelServer = ({ clientField, path }: DateFieldLabelServerProps) => (
   <FieldLabel
     label={clientField.label || clientField.name}
     path={path}
@@ -166,9 +166,9 @@ export const CustomDateLabelServer: DateFieldLabelServerComponent = ({ clientFie
 'use client'
 
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { DateFieldLabelClientComponent } from 'frogbot'
+import type { DateFieldLabelClientProps } from 'frogbot'
 
-export const CustomDateLabelClient: DateFieldLabelClientComponent = ({ field, path }) => (
+export const CustomDateLabelClient = ({ field, path }: DateFieldLabelClientProps) => (
   <FieldLabel label={field.label || field.name} path={path} required={field.required} />
 )
 ```
@@ -223,7 +223,7 @@ export const PublishedAt: Field = {
   timezone: {
     override: ({ baseField }) => ({
       ...baseField,
-      admin: { ...baseField.admin, disableListColumn: true },
+      admin: { ...baseField.admin, disabled: { column: true } },
     }),
   },
 }

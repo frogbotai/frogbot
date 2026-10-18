@@ -86,7 +86,7 @@ export type TransformCollectionWithSelect<
     >
   : T['collections'][TSlug];
 
-type SystemFields = 'createdAt' | 'id' | 'sizes' | 'updatedAt';
+type SystemFields = 'createdAt' | 'id' | 'updatedAt' | 'variants';
 
 export type RequiredDataFromCollection<TData> = Omit<TData, SystemFields> &
   Partial<Pick<Record<SystemFields, unknown> & TData, SystemFields>>;

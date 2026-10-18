@@ -60,6 +60,127 @@ export type SupportedTimezones =
   | 'Pacific/Noumea'
   | 'Pacific/Auckland'
   | 'Pacific/Fiji';
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LexicalNodes_92CA62D8".
+ */
+export type LexicalNodes_92CA62D8 =
+  | SerializedTextNode
+  | SerializedTabNode
+  | SerializedLineBreakNode
+  | SerializedParagraphNode<LexicalNodes_92CA62D8>
+  | SerializedHorizontalRuleNode
+  | {
+      type: 'upload';
+      /**
+       * @deprecated
+       * Lexical's internal serialization version for this node type.
+       */
+      version?: number;
+      [k: string]: unknown;
+    }
+  | SerializedQuoteNode<LexicalNodes_92CA62D8>
+  | SerializedRelationshipNode<
+      | 'rich-text-users'
+      | 'rich-text-articles'
+      | 'rich-text-html-articles'
+      | 'rich-text-restricted-notes'
+      | 'frogbot-waitpoints'
+    >
+  | SerializedAutoLinkNode<LexicalNodes_92CA62D8, LexicalLinkFields>
+  | SerializedLinkNode<LexicalNodes_92CA62D8, LexicalLinkFields>
+  | SerializedListNode<LexicalNodes_92CA62D8>
+  | SerializedListItemNode<LexicalNodes_92CA62D8>
+  | SerializedHeadingNode<LexicalNodes_92CA62D8>;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LexicalNodes_57ABC551".
+ */
+export type LexicalNodes_57ABC551 =
+  | SerializedTextNode
+  | SerializedTabNode
+  | SerializedLineBreakNode
+  | SerializedParagraphNode<LexicalNodes_57ABC551>
+  | SerializedInlineBlockNode<InlineCode>
+  | SerializedHorizontalRuleNode
+  | {
+      type: 'upload';
+      /**
+       * @deprecated
+       * Lexical's internal serialization version for this node type.
+       */
+      version?: number;
+      [k: string]: unknown;
+    }
+  | SerializedQuoteNode<LexicalNodes_57ABC551>
+  | SerializedRelationshipNode<
+      | 'rich-text-users'
+      | 'rich-text-articles'
+      | 'rich-text-html-articles'
+      | 'rich-text-restricted-notes'
+      | 'frogbot-waitpoints'
+    >
+  | SerializedAutoLinkNode<LexicalNodes_57ABC551, LexicalLinkFields>
+  | SerializedLinkNode<LexicalNodes_57ABC551, LexicalLinkFields>
+  | SerializedListNode<LexicalNodes_57ABC551>
+  | SerializedListItemNode<LexicalNodes_57ABC551>
+  | SerializedHeadingNode<LexicalNodes_57ABC551>;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LexicalNodes_946A4157".
+ */
+export type LexicalNodes_946A4157 =
+  | SerializedTextNode
+  | SerializedTabNode
+  | SerializedLineBreakNode
+  | SerializedParagraphNode<LexicalNodes_946A4157>
+  | SerializedBlockNode<Callout>
+  | SerializedInlineBlockNode<InlineCode>
+  | SerializedHorizontalRuleNode
+  | {
+      type: 'upload';
+      /**
+       * @deprecated
+       * Lexical's internal serialization version for this node type.
+       */
+      version?: number;
+      [k: string]: unknown;
+    }
+  | SerializedQuoteNode<LexicalNodes_946A4157>
+  | SerializedRelationshipNode<
+      | 'rich-text-users'
+      | 'rich-text-articles'
+      | 'rich-text-html-articles'
+      | 'rich-text-restricted-notes'
+      | 'frogbot-waitpoints'
+    >
+  | SerializedAutoLinkNode<LexicalNodes_946A4157, LexicalLinkFields>
+  | SerializedLinkNode<LexicalNodes_946A4157, LexicalLinkFields>
+  | SerializedListNode<LexicalNodes_946A4157>
+  | SerializedListItemNode<LexicalNodes_946A4157>
+  | SerializedHeadingNode<LexicalNodes_946A4157>;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LexicalNodes_7262A34B".
+ */
+export type LexicalNodes_7262A34B =
+  | SerializedTextNode
+  | SerializedTabNode
+  | SerializedLineBreakNode
+  | SerializedParagraphNode<LexicalNodes_7262A34B>
+  | SerializedHeadingNode<LexicalNodes_7262A34B>;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LexicalNodes_3DE324E4".
+ */
+export type LexicalNodes_3DE324E4 =
+  | SerializedTextNode
+  | SerializedTabNode
+  | SerializedLineBreakNode
+  | SerializedParagraphNode<LexicalNodes_3DE324E4>
+  | SerializedListNode<LexicalNodes_3DE324E4>
+  | SerializedListItemNode<LexicalNodes_3DE324E4>
+  | SerializedHeadingNode<LexicalNodes_3DE324E4, 'h2' | 'h3' | 'h4'>;
 
 export interface Config {
   auth: {
@@ -94,12 +215,15 @@ export interface Config {
   globalsSelect: {};
   locale: 'en' | 'es';
   widgets: {
+    welcome: WelcomeWidget;
     collections: CollectionsWidget;
+    'collection-query': CollectionQueryWidget;
+    activity: ActivityWidget;
   };
   user: RichTextUser;
   jobs: {
     tasks: {
-      'frogbot-sweep-jobs': TaskFrogBotSweepJobs;
+      'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
         input: unknown;
@@ -134,6 +258,14 @@ export interface RichTextUserAuthOperations {
 export interface RichTextUser {
   id: number;
   name?: string | null;
+  createdBy?: {
+    relationTo: 'rich-text-users';
+    value: number | RichTextUser;
+  } | null;
+  updatedBy?: {
+    relationTo: 'rich-text-users';
+    value: number | RichTextUser;
+  } | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -161,50 +293,16 @@ export interface RichTextUser {
 export interface RichTextArticle {
   id: number;
   title: string;
-  content: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  };
-  structuredContent?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
+  content: LexicalRichText<LexicalNodes_92CA62D8>;
+  structuredContent?: LexicalRichText<LexicalNodes_946A4157> | null;
+  headingOnly?: LexicalRichText<LexicalNodes_7262A34B> | null;
+  createdBy?: {
+    relationTo: 'rich-text-users';
+    value: number | RichTextUser;
   } | null;
-  headingOnly?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
+  updatedBy?: {
+    relationTo: 'rich-text-users';
+    value: number | RichTextUser;
   } | null;
   updatedAt: string;
   createdAt: string;
@@ -216,43 +314,23 @@ export interface RichTextArticle {
 export interface RichTextHtmlArticle {
   id: number;
   title: string;
-  content: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  };
+  content: LexicalRichText<LexicalNodes_92CA62D8>;
   contentHTML?: string | null;
   customHTML?: string | null;
   missingHTML?: string | null;
   storedHTML?: string | null;
   details?: {
-    content?: {
-      root: {
-        type: string;
-        children: {
-          type: any;
-          version: number;
-          [k: string]: unknown;
-        }[];
-        direction: ('ltr' | 'rtl') | null;
-        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-        indent: number;
-        version: number;
-      };
-      [k: string]: unknown;
-    } | null;
+    content?: LexicalRichText<LexicalNodes_92CA62D8> | null;
     contentHTML?: string | null;
   };
+  createdBy?: {
+    relationTo: 'rich-text-users';
+    value: number | RichTextUser;
+  } | null;
+  updatedBy?: {
+    relationTo: 'rich-text-users';
+    value: number | RichTextUser;
+  } | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -265,6 +343,14 @@ export interface RichTextRestrictedNote {
   title: string;
   secret?: string | null;
   child?: (number | null) | RichTextRestrictedNote;
+  createdBy?: {
+    relationTo: 'rich-text-users';
+    value: number | RichTextUser;
+  } | null;
+  updatedBy?: {
+    relationTo: 'rich-text-users';
+    value: number | RichTextUser;
+  } | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -305,6 +391,8 @@ export interface FrogBotWaitpoint {
  */
 export interface RichTextUsersSelect {
   name?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   email?: boolean;
@@ -332,6 +420,8 @@ export interface RichTextArticlesSelect {
   content?: boolean;
   structuredContent?: boolean;
   headingOnly?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -352,6 +442,8 @@ export interface RichTextHtmlArticlesSelect {
         content?: boolean;
         contentHTML?: boolean;
       };
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -363,6 +455,8 @@ export interface RichTextRestrictedNotesSelect {
   title?: boolean;
   secret?: boolean;
   child?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   _status?: boolean;
@@ -390,6 +484,16 @@ export interface FrogBotWaitpointsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "welcome_widget".
+ */
+export interface WelcomeWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -400,9 +504,53 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBotSweepJobs".
+ * via the `definition` "collection-query_widget".
  */
-export interface TaskFrogBotSweepJobs {
+export interface CollectionQueryWidget {
+  data?: {
+    title?: string | null;
+    relatedCollection:
+      | 'rich-text-users'
+      | 'rich-text-articles'
+      | 'rich-text-html-articles'
+      | 'rich-text-restricted-notes';
+    where?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    sortField?: string | null;
+    sortDirection?: ('asc' | 'desc') | null;
+    limit?: number | null;
+  };
+  width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "activity_widget".
+ */
+export interface ActivityWidget {
+  data?: {
+    excludedCollections?:
+      | (
+          | 'rich-text-users'
+          | 'rich-text-articles'
+          | 'rich-text-html-articles'
+          | 'rich-text-restricted-notes'
+        )[]
+      | null;
+  };
+  width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogBotSweepWaitpoints".
+ */
+export interface TaskFrogBotSweepWaitpoints {
   input?: unknown;
   output?: unknown;
 }
@@ -416,11 +564,219 @@ export interface TaskFrogBotCleanupKv {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "InlineCode".
+ */
+export interface InlineCode {
+  id: string;
+  blockType: 'InlineCode';
+  code?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "Callout".
+ */
+export interface Callout {
+  id: string;
+  blockType: 'Callout';
+  tone?: ('info' | 'warning') | null;
+  content?: LexicalRichText<LexicalNodes_57ABC551> | null;
+  blockName?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "auth".
  */
 export interface Auth {
   [k: string]: unknown;
 }
+
+/** @internal Core Lexical types — see @frogbotai/richtext-lexical. */
+export type LexicalElementFormat =
+  'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+export type LexicalElementDirection = ('ltr' | 'rtl') | null;
+
+export interface SerializedLexicalElementBase<TChildren> {
+  children: TChildren[];
+  direction: LexicalElementDirection;
+  format: LexicalElementFormat;
+  indent: number;
+  textFormat?: number;
+  textStyle?: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export type LexicalTextMode = 'normal' | 'token' | 'segmented';
+
+export interface SerializedTextNode {
+  type: 'text';
+  detail: number;
+  format: number;
+  mode: LexicalTextMode;
+  style: string;
+  text: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export interface SerializedTabNode {
+  type: 'tab';
+  detail: number;
+  format: number;
+  mode: LexicalTextMode;
+  style: string;
+  text: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export interface SerializedLineBreakNode {
+  type: 'linebreak';
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export interface SerializedParagraphNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'paragraph';
+  textFormat: number;
+  textStyle: string;
+}
+
+export interface SerializedHorizontalRuleNode {
+  type: 'horizontalrule';
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export type SerializedUploadNode<
+  TSlugs extends keyof Config['collections'],
+  TFields = { [k: string]: unknown },
+> = {
+  type: 'upload';
+  format: LexicalElementFormat;
+  id: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+  fields: TFields;
+} & {
+  [TSlug in TSlugs]: {
+    relationTo: TSlug;
+    value: Config['collections'][TSlug]['id'] | Config['collections'][TSlug];
+  };
+}[TSlugs];
+
+export interface SerializedQuoteNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'quote';
+}
+
+export type SerializedRelationshipNode<
+  TSlugs extends keyof Config['collections'],
+> = {
+  type: 'relationship';
+  format: LexicalElementFormat;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+} & {
+  [TSlug in TSlugs]: {
+    relationTo: TSlug;
+    value: Config['collections'][TSlug]['id'] | Config['collections'][TSlug];
+  };
+}[TSlugs];
+
+export interface LexicalLinkFields {
+  [k: string]: unknown;
+  doc?: {
+    relationTo: string;
+    value:
+      | Config['db']['defaultIDType']
+      | { [k: string]: unknown; id: Config['db']['defaultIDType'] };
+  } | null;
+  linkType: 'custom' | 'internal';
+  newTab: boolean;
+  url?: string;
+}
+export interface SerializedLinkNode<
+  TChildren,
+  TFields = LexicalLinkFields,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'link';
+  fields: TFields;
+  id?: string;
+}
+export interface SerializedAutoLinkNode<
+  TChildren,
+  TFields = LexicalLinkFields,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'autolink';
+  fields: TFields;
+}
+
+export interface SerializedListNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'list';
+  checked?: boolean;
+  listType: 'number' | 'bullet' | 'check';
+  start: number;
+  tag: 'ul' | 'ol';
+}
+
+export interface SerializedListItemNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'listitem';
+  checked?: boolean;
+  value: number;
+}
+
+export interface SerializedHeadingNode<
+  TChildren,
+  TTag extends 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' =
+    'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6',
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'heading';
+  tag: TTag;
+}
+
+/** Shape of a Lexical `richText` field. */
+export interface LexicalRichText<TNode> {
+  root: {
+    children: TNode[];
+    direction: LexicalElementDirection;
+    format: LexicalElementFormat;
+    indent: number;
+    type: 'root';
+    /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+    version: number;
+  };
+}
+
+export type SerializedBlockNode<TFields extends { blockType: string }> =
+  TFields extends unknown
+    ? {
+        type: 'block';
+        format: LexicalElementFormat;
+        /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+        version: number;
+        fields: { id: string; blockName?: string | null } & Omit<
+          TFields,
+          'id' | 'blockName'
+        >;
+      }
+    : never;
+export type SerializedInlineBlockNode<TFields extends { blockType: string }> =
+  TFields extends unknown
+    ? {
+        type: 'inlineBlock';
+        /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+        version: number;
+        fields: { id: string } & Omit<TFields, 'id'>;
+      }
+    : never;
 
 declare module 'frogbot' {
   export interface GeneratedTypes extends Config {

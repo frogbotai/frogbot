@@ -121,11 +121,12 @@ describe('frogbot importMap generator', () => {
     await generateImportMap(payloadConfig);
     const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
 
-    expect(output).toContain("from '@frogbotai/next/rsc'");
+    expect(output).not.toContain('@frogbotai/next');
     expect(output).toContain("from '@frogbotai/ui/admin/rsc'");
     expect(output).not.toContain("'@frogbotai/ui/admin/rsc#ChatView'");
     expect(output).toContain("'@frogbotai/ui/admin/rsc#SettingsView'");
-    expect(output).toContain("'@frogbotai/next/rsc#CollectionCards'");
+    expect(output).toContain("'@frogbotai/ui/admin/rsc#CollectionCards'");
+    expect(output).toContain("'@frogbotai/ui/admin#LLMInstructionsMenuItem'");
     expect(output).toContain("from './fields/NameField.tsx'");
     expect(output).toContain("from './components/UserIcon.tsx'");
     expect(output).toContain("from './components/HomeIcon.tsx'");
@@ -330,8 +331,7 @@ describe('frogbot importMap generator', () => {
     users?.fields.push({
       name: 'layout',
       type: 'blocks',
-      blockReferences: [block],
-      blocks: [],
+      blocks: [block],
     } as never);
 
     payloadConfig.admin.dashboard = {

@@ -29,11 +29,13 @@ export default buildConfig({
 });
 ```
 
+Upgrading an app from FrogBot 0.33 or earlier: run `npx frogbot migrate:create upgrade --file frogbot/migrations/upgrade-0.34` before any other migration. It changes the schema, keeps rows in rebuilt SQLite tables, and copies authors from `createdByField()`/`lastModifiedByField()` columns into `createdBy`/`updatedBy`. Docs: https://docs.frogbot.ai/database/migrations#upgrading-from-earlier-frogbot-versions
+
 Use the adapter package's exported option types instead of recreating its configuration shape. Do not combine database adapters or pass a connection client where `db` expects an adapter.
 
 ## Storage
 
-Register storage adapters in `plugins`. Each adapter stores files for FrogBot's own upload collections automatically: the collection marked `file: true`, if any, and `frogbot-chat-assets` when chat persistence is enabled. List only your own extra upload collections in `collections`.
+Register storage adapters in the root `storage` key, not in `plugins`. Each adapter stores files for FrogBot's own upload collections automatically: the collection marked `file: true`, if any, and `frogbot-chat-assets` when chat persistence is enabled. List only your own extra upload collections in `collections`.
 
 | Service                              | Package                          | Factory             |
 | ------------------------------------ | -------------------------------- | ------------------- |
@@ -54,7 +56,7 @@ export default buildConfig({
   secret: process.env.FROGBOT_SECRET!,
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL! } }),
   collections: [Media],
-  plugins: [
+  storage: [
     s3Storage({
       bucket: process.env.S3_BUCKET!,
       collections: { media: true },

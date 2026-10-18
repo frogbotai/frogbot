@@ -1,6 +1,6 @@
 import type { ModelId } from '../../../ai/types.js';
 import type { Field, Option, RowField, SelectField, TextField } from '../../config/types.js';
-import { applyFieldKind, kindTypescriptSchema } from '../applyFieldKind.js';
+import { applyFieldKind, kindJSONSchema } from '../applyFieldKind.js';
 import { rejectFieldOptions } from '../rejectFieldOptions.js';
 import {
   aiFieldErrorHook,
@@ -121,8 +121,8 @@ export function aiField(args: AIFieldArgs | AISelectFieldArgs): RowField {
       afterChange: [aiFieldQueueHook({ kind, name: args.name })],
       afterRead: [({ value }) => value ?? null],
     },
-    typescriptSchema: [
-      kindTypescriptSchema({
+    jsonSchema: [
+      kindJSONSchema({
         text: 'Set by FrogBot: pending, done, error or manual. Write "pending" to regenerate the value',
       }),
     ],
@@ -137,8 +137,8 @@ export function aiField(args: AIFieldArgs | AISelectFieldArgs): RowField {
       beforeValidate: [aiFieldRunGuardHook({ name: args.name, path: paths.error })],
       beforeChange: [aiFieldErrorHook({ kind, name: args.name })],
     },
-    typescriptSchema: [
-      kindTypescriptSchema({ text: 'Set by FrogBot: the error message from the last failed run' }),
+    jsonSchema: [
+      kindJSONSchema({ text: 'Set by FrogBot: the error message from the last failed run' }),
     ],
   };
 

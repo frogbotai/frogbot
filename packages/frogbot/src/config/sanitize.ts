@@ -51,7 +51,7 @@ import { buildTriggerEndpoints } from '../triggers/endpoints.js';
 import { buildIngressRegistry, requiresAdapterVerification } from '../triggers/registry.js';
 import { AGENT_TRIGGER_TASK_SLUG, resolveTriggerTasks } from '../triggers/task.js';
 import { resolveFilesCollection } from '../uploads/resolveCollections.js';
-import { applyStorageAdapters } from '../uploads/storage.js';
+import { resolveStorageAdapters } from '../uploads/storage.js';
 import { attachFrogBotInstance } from './attachFrogBot.js';
 import { buildPayloadConfig } from './buildPayloadConfig.js';
 import { hideBuiltInGraphQL } from './hideBuiltInGraphQL.js';
@@ -222,6 +222,8 @@ export function sanitize(
           : [
               {
                 slug: authCollection,
+                authorship: false,
+                custom: { frogbot: { internal: true } },
                 admin: { useAsTitle: 'name' },
                 auth: { tokenExpiration: 7200 },
                 fields: [{ name: 'name', type: 'text' }, ...policyFields],
@@ -367,8 +369,10 @@ export function sanitize(
     ],
   });
 
-  config = applyStorageAdapters({
-    config: { ...config, collections: resolvedCollections, onInit: normalizeOnInit(config.onInit) },
+  config = { ...config, collections: resolvedCollections, onInit: normalizeOnInit(config.onInit) };
+
+  const storage = resolveStorageAdapters({
+    adapters: config.storage ?? [],
     builtInSlugs: [
       ...(files ? [files.slug] : []),
       ...(chatResult.chat.enabled ? [chatResult.chat.assetsSlug] : []),
@@ -408,7 +412,7 @@ export function sanitize(
       )
     : collections;
 
-  const localizeStatus = config.experimental?.localizeStatus === true;
+  const localizeStatus = Boolean(config.localization);
 
   const collectionsMeta: SanitizedCollectionMeta[] = collections.map((c) => {
     const search = sanitizeSearchIndexes(c, { localizeStatus });
@@ -452,13 +456,11 @@ export function sanitize(
     resolveFrogBot,
     searchCollections,
     autonumbers,
+    storage,
   });
 
   payloadConfig.db = withSearchRuntime({
-    adapter: withJobsRuntime({
-      adapter: payloadConfig.db,
-      leaseDuration: jobs.leaseDuration,
-    }),
+    adapter: withJobsRuntime({ adapter: payloadConfig.db }),
     collections: searchCollections,
     search: config.db.search,
   });

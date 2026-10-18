@@ -4,7 +4,7 @@
     "jsx": "preserve",
     "noEmit": true,
     "paths": {
-      "@frogbotai/next/templates": ["../../../packages/next/src/exports/templates.ts"]
+      "@frogbotai/ui/admin/rsc": ["../../../packages/ui/src/admin/exports/rsc.ts"]
     }
   },
   "include": ["*.ts"]

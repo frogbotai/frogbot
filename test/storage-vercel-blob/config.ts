@@ -26,7 +26,7 @@ const Media: CollectionConfig = {
 
 export default await buildTestConfig({
   collections: [Users, Media],
-  plugins: [
+  storage: [
     vercelBlobStorage({
       collections: { [mediaSlug]: true },
       token: 'vercel_blob_rw_emulator_test',

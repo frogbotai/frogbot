@@ -54,7 +54,7 @@ describe('assertRichTextEditor', () => {
             {
               name: 'layout',
               type: 'blocks',
-              blockReferences: [{ slug: 'copy', fields: [{ name: 'content', type: 'richText' }] }],
+              blocks: [{ slug: 'copy', fields: [{ name: 'content', type: 'richText' }] }],
             },
           ],
         },

@@ -10,24 +10,18 @@ import type {
   RootAdminConfig,
   RootComponentServerProps,
   SaveButtonServerProps,
-  TextFieldClientComponent,
-  TextFieldServerComponent,
+  TextFieldClientProps,
   TextFieldServerProps,
   WidgetInstance,
   WidgetServerProps,
 } from 'frogbot';
-import type { TextFieldClientComponent as PayloadTextFieldClientComponent } from 'payload';
+import type { TextFieldClientProps as PayloadTextFieldClientProps } from 'payload';
 import { expectTypeOf } from 'vitest';
 
 import type { WelcomeWidget } from './generated.js';
 
-type ComponentProps<T> = T extends (props: infer TProps) => unknown ? TProps : never;
-
-type TextServerComponentProps = ComponentProps<TextFieldServerComponent>;
-
-expectTypeOf<TextServerComponentProps>().toEqualTypeOf<TextFieldServerProps>();
-expectTypeOf<TextServerComponentProps['req']>().toEqualTypeOf<FrogBotRequest>();
-expectTypeOf<TextFieldClientComponent>().toEqualTypeOf<PayloadTextFieldClientComponent>();
+expectTypeOf<TextFieldServerProps['req']>().toEqualTypeOf<FrogBotRequest>();
+expectTypeOf<TextFieldClientProps>().toEqualTypeOf<PayloadTextFieldClientProps>();
 
 declare const textProps: TextFieldServerProps;
 

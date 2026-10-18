@@ -123,7 +123,6 @@ function useAIFieldTarget(collectionSlug: string) {
   return {
     api: config.routes.api,
     hasDrafts: Boolean(collection?.versions?.drafts),
-    listSelectAPI: Boolean(collection?.admin?.enableListViewSelectAPI),
     locale: locale || undefined,
   };
 }
@@ -204,12 +203,12 @@ function drawValue(props: DefaultCellComponentProps, value: unknown): ReactNode 
 export function AICell(props: DefaultCellComponentProps) {
   const { cellData, collectionSlug, field, rowData, viewType } = props;
   const { permissions } = useAuth();
-  const { hasDrafts, listSelectAPI } = useAIFieldTarget(collectionSlug);
+  const { hasDrafts } = useAIFieldTarget(collectionSlug);
 
   const name = getFieldName(field);
   const paths = aiFieldPaths(name);
   const isCard = viewType === 'board' || viewType === 'calendar';
-  const plain = !Object.hasOwn(rowData ?? {}, paths.status) || (!isCard && listSelectAPI);
+  const plain = !Object.hasOwn(rowData ?? {}, paths.status);
 
   const { merge, overridden, record } = useLatestRecord(rowData);
   const status = plain ? null : getAIStatus(record, paths.status);
@@ -483,7 +482,7 @@ function AIFieldComponent(props: AIFieldProps) {
   const { field, path: pathFromProps, readOnly, validate } = props;
   const { name } = field;
 
-  const { collectionSlug = '', docPermissions, id, savedDocumentData } = useDocumentInfo();
+  const { collectionSlug = '', data, docPermissions, id } = useDocumentInfo();
   const { hasDrafts } = useAIFieldTarget(collectionSlug);
   const validateOptions = useMemo(() => getValidateOptions(field), [field]);
 
@@ -499,7 +498,7 @@ function AIFieldComponent(props: AIFieldProps) {
   });
 
   const paths = aiFieldPaths(name);
-  const { merge, record } = useLatestRecord(savedDocumentData);
+  const { merge, record } = useLatestRecord(data);
   const status = getAIStatus(record, paths.status);
   const formValue = useRef(value);
 

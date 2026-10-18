@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { createLocalReq, getAccessResults } from 'payload';
+import { createPayloadRequest, getAccessResults } from 'payload';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
@@ -84,7 +84,10 @@ describe('hooks-access', () => {
       overrideAccess: true,
     });
 
-    const req = await createLocalReq({ user: { ...user, collection: usersSlug } }, booted.payload);
+    const req = await createPayloadRequest({
+      payload: booted.payload,
+      user: { ...user, collection: usersSlug },
+    });
 
     expect(req).not.toHaveProperty('frogbot');
 

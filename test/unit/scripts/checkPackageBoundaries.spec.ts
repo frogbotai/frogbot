@@ -48,7 +48,7 @@ describe('checkPackageBoundaries', () => {
   it('passes admin code that imports Payload and shared code that imports neither', () => {
     write(
       'packages/ui/src/admin/exports/client.ts',
-      "export { useConfig } from '@payloadcms/ui';\nexport { RouterAdapterProvider } from '../adapters/router.js';\n",
+      "export { useConfig } from '@payloadcms/ui';\nexport { shallowRouteState } from '../utilities/shallowRoute.js';\n",
     );
 
     write('packages/ui/src/admin/views/Board/index.tsx', "import type { Where } from 'payload';\n");

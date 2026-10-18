@@ -308,16 +308,6 @@ describe('AICell in a list', () => {
     expect(screen.getByRole('img', { name: 'Model unavailable' })).toBeTruthy();
   });
 
-  it('renders the plain value when the list select API is on', () => {
-    collections.tasks = { slug: 'tasks', admin: { enableListViewSelectAPI: true } };
-
-    const { container } = render(cell(row({ _summary_status: 'pending' })));
-
-    expect(screen.getByTestId('default-cell').textContent).toBe('Old summary');
-    expect(container.querySelector('.ai-cell')).toBeNull();
-    expect(screen.queryByRole('img')).toBeNull();
-  });
-
   it('renders the plain value when the row has no status key', () => {
     const { _summary_status: _status, ...rowData } = row();
 
@@ -609,7 +599,7 @@ describe('AIField', () => {
       collectionSlug: 'tasks',
       docPermissions: { update: auth.update },
       id: 1,
-      savedDocumentData: row(state),
+      data: row(state),
     });
   }
 
@@ -815,7 +805,7 @@ describe('AIField for a select', () => {
       collectionSlug: 'tasks',
       docPermissions: { update: true },
       id: 1,
-      savedDocumentData: row({ notes: 'Broken', type: 'bug', _type_status: 'done', ...state }),
+      data: row({ notes: 'Broken', type: 'bug', _type_status: 'done', ...state }),
     });
   }
 

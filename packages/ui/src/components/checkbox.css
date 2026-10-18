@@ -7,21 +7,21 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    color: var(--theme-base-100);
+    color: var(--fb-theme-base-100);
     background: transparent;
-    border: 1px solid var(--theme-base-850);
+    border: 1px solid var(--fb-theme-base-850);
     border-radius: var(--fb-radius-sm);
   }
   .fb-checkbox--primary[data-state="checked"],
   .fb-checkbox--primary[data-state="indeterminate"] {
-    background: var(--theme-base-850);
+    background: var(--fb-theme-base-850);
   }
   .fb-checkbox--secondary {
-    border-color: var(--theme-brand-500);
+    border-color: var(--fb-theme-brand-500);
   }
   .fb-checkbox--secondary[data-state="checked"],
   .fb-checkbox--secondary[data-state="indeterminate"] {
-    background: var(--theme-brand-500);
+    background: var(--fb-theme-brand-500);
   }
   .fb-checkbox__indicator,
   .fb-checkbox__indicator svg {

@@ -1,5 +1,5 @@
 import type * as PayloadModule from 'payload';
-import type { Payload, PayloadRequest, SanitizedConfig } from 'payload';
+import type { PayloadRequest, SanitizedConfig } from 'payload';
 import { BasePayload } from 'payload';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,11 +11,6 @@ import {
   getCachedFrogBot,
   resetFrogBotCache,
 } from '../../../../packages/frogbot/src/getFrogBot.js';
-import {
-  jobLeaseOperations,
-  recordJobClaims,
-  withJobLease,
-} from '../../../../packages/frogbot/src/jobs/lease.js';
 
 const mocks = vi.hoisted(() => ({
   loadConfig: vi.fn(),
@@ -28,7 +23,7 @@ vi.mock('../../../../packages/frogbot/src/config/load.js', () => ({
 
 vi.mock('payload', async (importOriginal) => ({
   ...(await importOriginal<typeof PayloadModule>()),
-  createLocalReq: vi.fn(({ req }, payload) => Promise.resolve({ ...req, payload })),
+  createPayloadRequest: vi.fn(({ req, payload }) => Promise.resolve({ ...req, payload })),
 }));
 
 function deferred() {
@@ -43,7 +38,7 @@ function deferred() {
 function makePayload() {
   return {
     config: { collections: [] },
-    db: { [jobLeaseOperations]: { update: vi.fn((): Promise<void> => Promise.resolve()) } },
+    db: {},
     kv: {},
     logger: { warn: vi.fn(), error: vi.fn() },
     secret: 'worker-secret',
@@ -293,51 +288,28 @@ describe('jobs:run lifecycle', () => {
     await signal();
   });
 
-  it.each(['SIGINT', 'SIGTERM'] as const)(
-    'drains active jobs and actual lease renewal on %s',
-    async (shutdownSignal) => {
-      const running = deferred();
-      const renewal = deferred();
+  it.each(['SIGINT', 'SIGTERM'] as const)('drains active jobs on %s', async (shutdownSignal) => {
+    const running = deferred();
 
-      mocks.payload.db[jobLeaseOperations].update.mockImplementation(() => renewal.promise);
+    mocks.payload.jobs.run.mockImplementation(() => running.promise);
 
-      mocks.payload.jobs.run.mockImplementation(async (args) =>
-        withJobLease({
-          payload: mocks.payload as unknown as Payload,
-          req: (args as { req: PayloadRequest }).req,
-          leaseDuration: 5000,
-          run: async () => {
-            recordJobClaims([1]);
+    await start();
+    await vi.advanceTimersByTimeAsync(2000);
 
-            await running.promise;
-          },
-        }),
-      );
+    process.emit(shutdownSignal);
+    process.emit(shutdownSignal);
+    await vi.advanceTimersByTimeAsync(2000);
 
-      await start();
-      await vi.advanceTimersByTimeAsync(2000);
+    expect(mocks.payload.jobs.run).toHaveBeenCalledOnce();
+    expect(mocks.payload.destroy).not.toHaveBeenCalled();
+    expect(exit).not.toHaveBeenCalled();
 
-      process.emit(shutdownSignal);
-      process.emit(shutdownSignal);
-      await vi.advanceTimersByTimeAsync(2000);
+    running.resolve();
 
-      expect(mocks.payload.jobs.run).toHaveBeenCalledOnce();
-      expect(mocks.payload.db[jobLeaseOperations].update).toHaveBeenCalledOnce();
-      expect(mocks.payload.destroy).not.toHaveBeenCalled();
-      expect(exit).not.toHaveBeenCalled();
-
-      running.resolve();
-      await vi.advanceTimersByTimeAsync(0);
-
-      expect(mocks.payload.destroy).not.toHaveBeenCalled();
-
-      renewal.resolve();
-
-      expect(await worker).toEqual(new Error('exit:0'));
-      expect(mocks.payload.destroy).toHaveBeenCalledOnce();
-      expect(exit).toHaveBeenCalledOnce();
-    },
-  );
+    expect(await worker).toEqual(new Error('exit:0'));
+    expect(mocks.payload.destroy).toHaveBeenCalledOnce();
+    expect(exit).toHaveBeenCalledOnce();
+  });
 
   it('drains scheduling on signal without starting another batch', async () => {
     const scheduling = deferred();

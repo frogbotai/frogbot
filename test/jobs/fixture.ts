@@ -5,7 +5,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { buildConfig, type FrogBotConfig } from 'frogbot';
-import { getJobLeaseContext } from 'frogbot/jobs';
 import { FrogBot, getFrogBotPayload } from 'frogbot/test';
 import {
   type BaseDatabaseAdapter,
@@ -39,8 +38,6 @@ export function deferred() {
 
 export type FrogBotJob = Job & {
   jobId?: null | string;
-  leaseOwner?: null | string;
-  leaseUntil?: null | string;
   priority?: null | number;
   waitpoint?: unknown;
 };
@@ -194,13 +191,18 @@ export async function bootJobsFixture({
     req,
     event,
   }: {
-    job: { id: number | string; totalTried?: number; input: object };
+    job: {
+      id: number | string;
+      totalTried?: number;
+      input: object;
+      processingToken?: null | string;
+    };
     req: PayloadRequest;
     event: string;
   }) => {
-    const owner = getJobLeaseContext()?.owner;
+    const owner = job.processingToken;
 
-    if (!owner) throw new Error('Native task callback has no jobs lease context.');
+    if (!owner) throw new Error('Native task callback has no job lease.');
 
     const marker = 'marker' in job.input ? job.input.marker : undefined;
 
@@ -297,7 +299,7 @@ export async function bootJobsFixture({
       jobs: {
         autoRun: [],
         deleteJobOnComplete: false,
-        leaseDuration: 5_000,
+        processingLease: { duration: 5_000, safetyBuffer: 1_000 },
         access: { run: () => true },
         tasks: [
           {
@@ -312,11 +314,9 @@ export async function bootJobsFixture({
             inputSchema: [{ name: 'marker', type: 'text', required: true }],
             outputSchema: [{ name: 'marker', type: 'text', required: true }],
             handler: async ({ input, job, req }) => {
-              const owner = getJobLeaseContext()?.owner;
+              const owner = job.processingToken;
 
-              if (!owner) {
-                throw new Error('Native task did not inherit the built jobs lease context.');
-              }
+              if (!owner) throw new Error('Native task runs without a job lease.');
 
               const gate = gates.get(input.marker);
 

@@ -22,11 +22,10 @@ export type WorkerJob = {
   id: number;
   queue: string;
   task_slug: string;
-  processing: number;
+  processing_until: string | null;
   completed_at: string | null;
   total_tried: number;
-  lease_owner: string | null;
-  lease_until: string | null;
+  processing_token: string | null;
 };
 
 const fixtureDirectory = fileURLToPath(new URL('.', import.meta.url));

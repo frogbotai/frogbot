@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
-import { createLocalReq } from 'payload';
+import { createPayloadRequest } from 'payload';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { adapterName, bootJobsFixture, type FrogBotJob } from './fixture.js';
@@ -42,11 +42,8 @@ function queueJob(marker: string) {
 }
 
 describe(`native jobs runtime regressions: ${adapterName}`, () => {
-  it.each([
-    { processing: false, preProcessed: [] },
-    { processing: true, preProcessed: ['outside', 'inside'] },
-  ] as const)(
-    'preserves ordinary allowed by-ID updates from handlers (already processing=$processing)',
+  it.each([{ updated: false, preProcessed: [] }, { preProcessed: ['outside', 'inside'] }] as const)(
+    'preserves ordinary allowed by-ID updates from handlers (already updated=$updated)',
     async ({ preProcessed }) => {
       const marker = randomUUID();
       const outside = await queueJob(`${marker}-outside`);
@@ -59,16 +56,16 @@ describe(`native jobs runtime regressions: ${adapterName}`, () => {
         await fixture.payload.db.updateOne({
           collection: 'payload-jobs',
           id: queued[name].id,
-          data: { processing: true },
+          data: { priority: 7 },
         });
       }
 
       const before = await readJob(inside.id);
-      const req = await createLocalReq({}, fixture.payload);
+      const req = await createPayloadRequest({ payload: fixture.payload });
       const outsideResult = await fixture.payload.update({
         collection: 'payload-jobs',
         id: outside.id,
-        data: { processing: true, priority: 42 },
+        data: { priority: 42 },
         overrideAccess: false,
         req,
       });
@@ -79,7 +76,7 @@ describe(`native jobs runtime regressions: ${adapterName}`, () => {
         insideResult = await req.payload.update({
           collection: 'payload-jobs',
           id: inside.id,
-          data: { processing: true, priority: 42 },
+          data: { priority: 42 },
           overrideAccess: false,
           req,
         });
@@ -87,12 +84,12 @@ describe(`native jobs runtime regressions: ${adapterName}`, () => {
 
       await fixture.frogbot.jobs.runByID({ id: worker.id, overrideAccess: true });
 
-      expect(outsideResult).toMatchObject({ id: outside.id, processing: true, priority: 42 });
-      expect.soft(insideResult).toMatchObject({ id: inside.id, processing: true, priority: 42 });
+      expect(outsideResult).toMatchObject({ id: outside.id, priority: 42 });
+      expect.soft(insideResult).toMatchObject({ id: inside.id, priority: 42 });
       expect.soft(insideResult).not.toHaveProperty('docs');
-      expect.soft(await readJob(inside.id)).toMatchObject({ processing: true, priority: 42 });
-      expect.soft((await readJob(inside.id)).leaseOwner).toBe(before.leaseOwner);
-      expect.soft((await readJob(inside.id)).leaseUntil).toBe(before.leaseUntil);
+      expect.soft(await readJob(inside.id)).toMatchObject({ priority: 42 });
+      expect.soft((await readJob(inside.id)).processingToken).toBe(before.processingToken);
+      expect.soft((await readJob(inside.id)).processingUntil).toBe(before.processingUntil);
     },
   );
 
@@ -102,16 +99,16 @@ describe(`native jobs runtime regressions: ${adapterName}`, () => {
     const inside = await queueJob(`${marker}-inside`);
     const worker = await queueJob(marker);
     const before = await readJob(inside.id);
-    const req = await createLocalReq(
-      { req: { context: { denyJobUpdate: true } } },
-      fixture.payload,
-    );
+    const req = await createPayloadRequest({
+      payload: fixture.payload,
+      req: { context: { denyJobUpdate: true } },
+    });
 
     await expect(
       fixture.payload.update({
         collection: 'payload-jobs',
         id: outside.id,
-        data: { processing: true, priority: 99 },
+        data: { priority: 99 },
         overrideAccess: false,
         req,
       }),
@@ -120,16 +117,16 @@ describe(`native jobs runtime regressions: ${adapterName}`, () => {
     let rejected: unknown;
 
     fixture.actions.set(marker, async (req) => {
-      const deniedReq = await createLocalReq(
-        { req: { ...req, context: { ...req.context, denyJobUpdate: true } } },
-        req.payload,
-      );
+      const deniedReq = await createPayloadRequest({
+        payload: req.payload,
+        req: { ...req, context: { ...req.context, denyJobUpdate: true } },
+      });
 
       rejected = await req.payload
         .update({
           collection: 'payload-jobs',
           id: inside.id,
-          data: { processing: true, priority: 99 },
+          data: { priority: 99 },
           overrideAccess: false,
           req: deniedReq,
         })

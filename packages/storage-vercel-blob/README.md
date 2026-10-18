@@ -15,7 +15,7 @@ import { buildConfig } from 'frogbot';
 import { vercelBlobStorage } from '@frogbotai/storage-vercel-blob';
 
 export default buildConfig({
-  plugins: [
+  storage: [
     vercelBlobStorage({
       token: process.env.BLOB_READ_WRITE_TOKEN,
     }),

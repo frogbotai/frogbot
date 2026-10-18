@@ -18,6 +18,7 @@ import {
   customStrategyName,
   mcpEndpoint,
   postsSlug,
+  secretsSlug,
   strategyFailureMessage,
   testCredentials,
   ticketsSlug,
@@ -27,38 +28,41 @@ import {
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const configuredTools = [
-  'createPosts',
-  'updatePosts',
-  'findPosts',
-  'createTickets',
-  'findTickets',
-  actorToolName,
+const builtInTools = [
+  'getConfigInfo',
+  'countDocuments',
+  'createDocuments',
+  'findDocuments',
+  'getCollectionSchema',
 ];
 
 type MeBody = {
   user: { id: string | number; email: string; _strategy: string } | null;
 };
 
-type InputSchema = {
+type JSONSchema = {
   type?: string | string[];
   description?: string;
   minimum?: number;
   maximum?: number;
-  anyOf?: InputSchema[];
-  properties?: Record<string, InputSchema>;
+  anyOf?: JSONSchema[];
+  properties?: Record<string, JSONSchema>;
 };
 
 type ToolsListBody = {
   jsonrpc: '2.0';
   id: number;
-  result: { tools: Array<{ name: string; inputSchema: InputSchema }> };
+  result: { tools: Array<{ name: string }> };
 };
 
 type ToolCallBody = {
   jsonrpc: '2.0';
   id: number;
-  result: { content: Array<{ type: 'text'; text: string }>; isError?: boolean };
+  result: {
+    content: Array<{ type: 'text'; text: string }>;
+    isError?: boolean;
+    structuredContent?: { schema?: JSONSchema };
+  };
 };
 
 function parseMcpResponse<T>(body: T | string): T {
@@ -160,7 +164,26 @@ describe('MCP plugin integration', () => {
     );
   }
 
-  it('POST /api/mcp lists configured tools with a persisted API key', async () => {
+  function toolText(body: ToolCallBody | string) {
+    const { result } = parseMcpResponse<ToolCallBody>(body);
+
+    return {
+      isError: result.isError === true,
+      text: result.content.map(({ text }) => text).join(''),
+    };
+  }
+
+  function createDocument(slug: string, data: Record<string, unknown>) {
+    return callTool('createDocuments', { slug, documents: [{ data }] });
+  }
+
+  async function collectionSchema(slug: string): Promise<JSONSchema> {
+    const response = await callTool('getCollectionSchema', { slug });
+
+    return parseMcpResponse<ToolCallBody>(response.body).result.structuredContent?.schema ?? {};
+  }
+
+  it('POST /api/mcp lists Payload tools and the custom tool with a persisted API key', async () => {
     const response = await listTools(apiKeyToken);
 
     expect(response.status).toBe(200);
@@ -168,51 +191,85 @@ describe('MCP plugin integration', () => {
     const body = parseMcpResponse<ToolsListBody>(response.body);
 
     expect(body).toMatchObject({ jsonrpc: '2.0', id: 1 });
-    expect(body.result.tools.map(({ name }) => name)).toEqual(configuredTools);
+    expect(body.result.tools.map(({ name }) => name)).toEqual(
+      expect.arrayContaining([...builtInTools, actorToolName]),
+    );
   });
 
-  it('POST /api/mcp describes money fields in the create and update tool schemas', async () => {
-    const { tools } = parseMcpResponse<ToolsListBody>((await listTools(apiKeyToken)).body).result;
-
-    for (const name of ['createPosts', 'updatePosts']) {
-      const properties = tools.find((tool) => tool.name === name)?.inputSchema.properties ?? {};
-      const price = properties.price ?? {};
-      const wholesale = properties.cost?.properties?.wholesale ?? {};
-      const number = price.anyOf?.find(({ type }) => type === 'number') ?? price;
-
-      expect(price.description).toBe(
-        'Retail price (decimal amount in USD, in whole units, not minor units such as cents)',
-      );
-      expect(number.minimum).toBe(0);
-      expect(wholesale.description).toBe(
-        'Decimal amount in EUR, in whole units, not minor units such as cents',
-      );
-    }
-  });
-
-  it('POST /api/mcp converts money field schemas without the permissive fallback', async () => {
-    const warn = vi.spyOn(console, 'warn');
-
-    const response = await listTools(apiKeyToken);
+  it("POST /api/mcp lists the app collections the key's user can read, none of FrogBot's", async () => {
+    const response = await callTool('getConfigInfo', {});
 
     expect(response.status).toBe(200);
-    expect(warn.mock.calls.flat().map(String).join('\n')).not.toContain('Schema conversion failed');
+    expect(toolText(response.body)).toEqual({
+      isError: false,
+      text: `Collections: ${usersSlug}, ${postsSlug}, ${ticketsSlug}\nGlobals: none`,
+    });
   });
 
-  it('POST /api/mcp rejects a negative money amount without saving', async () => {
-    const response = await callTool('createPosts', { title: 'Negative', price: -3 });
+  it('POST /api/mcp refuses FrogBot collections', async () => {
+    const response = await callTool('findDocuments', { slug: apiKeysSlug });
+
+    expect(toolText(response.body)).toEqual({
+      isError: true,
+      text: `Error: MCP access to "findDocuments" is not enabled for collection "${apiKeysSlug}"`,
+    });
+  });
+
+  it("POST /api/mcp returns an access error for a collection the key's user can't read", async () => {
+    await booted.frogbot.create({
+      collection: secretsSlug,
+      data: { title: 'Hidden' },
+      overrideAccess: true,
+    });
+
+    const response = await callTool('findDocuments', { slug: secretsSlug });
+    const { isError, text } = toolText(response.body);
+
+    expect(isError).toBe(true);
+    expect(text).not.toContain('Hidden');
+  });
+
+  it('POST /api/mcp describes money, rating and duration fields in the collection schema', async () => {
+    const properties = (await collectionSchema(postsSlug)).properties ?? {};
+    const pick = (schema: JSONSchema = {}, type: string) =>
+      schema.anyOf?.find((option) => option.type === type) ?? schema;
+
+    expect(properties.price?.description).toBe(
+      'Retail price (decimal amount in USD, in whole units, not minor units such as cents)',
+    );
+    expect(pick(properties.price, 'number').minimum).toBe(0);
+    expect(properties.cost?.properties?.wholesale?.description).toBe(
+      'Decimal amount in EUR, in whole units, not minor units such as cents',
+    );
+    expect(properties.score?.description).toBe('Whole-number rating from 1 to 5');
+    expect(pick(properties.score, 'integer')).toMatchObject({
+      type: expect.arrayContaining(['integer']),
+      minimum: 1,
+      maximum: 5,
+    });
+    expect(properties.timeSpent?.description).toBe(
+      'Duration in whole seconds, for example 5400 for 1 hour 30 minutes',
+    );
+    expect(pick(properties.timeSpent, 'integer')).toMatchObject({
+      type: expect.arrayContaining(['integer']),
+    });
+  });
+
+  it('POST /api/mcp leaves the autonumber field out of the input schema', async () => {
+    const properties = (await collectionSchema(ticketsSlug)).properties ?? {};
+
+    expect(Object.keys(properties)).toContain('title');
+    expect(Object.keys(properties)).not.toContain('number');
+  });
+
+  it.each([
+    ['a negative money amount', { title: 'Negative', price: -3 }],
+    ['a fractional rating', { title: 'Half star', score: 3.5 }],
+  ])('POST /api/mcp rejects %s without saving', async (_name, data) => {
+    const response = await createDocument(postsSlug, data);
 
     expect(response.status).toBe(200);
-
-    const { result } = parseMcpResponse<ToolCallBody>(response.body);
-
-    expect(result.isError).toBe(true);
-    expect(result.content).toEqual([
-      {
-        type: 'text',
-        text: expect.stringMatching(/^MCP error -32602: Input validation error: .*>=0 at price$/),
-      },
-    ]);
+    expect(toolText(response.body).isError).toBe(true);
 
     const { totalDocs } = await booted.frogbot.count({
       collection: postsSlug,
@@ -222,103 +279,27 @@ describe('MCP plugin integration', () => {
     expect(totalDocs).toBe(0);
   });
 
-  it('POST /api/mcp saves a decimal money amount', async () => {
-    const response = await callTool('createPosts', { title: 'Decimal', price: 12.5 });
+  it('POST /api/mcp saves a decimal money amount, a rating and a duration', async () => {
+    const response = await createDocument(postsSlug, {
+      title: 'Rated',
+      price: 12.5,
+      score: 3,
+      timeSpent: 5400,
+    });
 
-    expect(response.status).toBe(200);
-    expect(parseMcpResponse<ToolCallBody>(response.body).result.isError).not.toBe(true);
+    expect(toolText(response.body).isError).toBe(false);
 
     const { docs } = await booted.frogbot.find({ collection: postsSlug, overrideAccess: true });
 
-    expect(docs.map(({ title, price }) => ({ title, price }))).toEqual([
-      { title: 'Decimal', price: 12.5 },
-    ]);
+    expect(
+      docs.map(({ title, price, score, timeSpent }) => ({ title, price, score, timeSpent })),
+    ).toEqual([{ title: 'Rated', price: 12.5, score: 3, timeSpent: 5400 }]);
   });
 
-  it('POST /api/mcp describes rating and duration fields as whole numbers', async () => {
-    const { tools } = parseMcpResponse<ToolsListBody>((await listTools(apiKeyToken)).body).result;
+  it('POST /api/mcp create sets the number and records the key owner as the author', async () => {
+    const response = await createDocument(ticketsSlug, { title: 'Printer', number: 99 });
 
-    for (const name of ['createPosts', 'updatePosts']) {
-      const properties = tools.find((tool) => tool.name === name)?.inputSchema.properties ?? {};
-      const score = properties.score ?? {};
-      const timeSpent = properties.timeSpent ?? {};
-      const scoreNumber = score.anyOf?.find(({ type }) => type === 'integer') ?? score;
-      const timeSpentNumber = timeSpent.anyOf?.find(({ type }) => type === 'integer') ?? timeSpent;
-
-      expect(score.description).toBe('Whole-number rating from 1 to 5');
-      expect(scoreNumber).toMatchObject({ type: 'integer', minimum: 1, maximum: 5 });
-      expect(timeSpent.description).toBe(
-        'Duration in whole seconds, for example 5400 for 1 hour 30 minutes',
-      );
-      expect(timeSpentNumber).toMatchObject({ type: 'integer' });
-    }
-  });
-
-  it('POST /api/mcp rejects a fractional rating without saving', async () => {
-    const response = await callTool('createPosts', { title: 'Half star', score: 3.5 });
-
-    expect(response.status).toBe(200);
-
-    const { result } = parseMcpResponse<ToolCallBody>(response.body);
-
-    expect(result.isError).toBe(true);
-    expect(result.content).toEqual([
-      {
-        type: 'text',
-        text: 'MCP error -32602: Input validation error: Invalid arguments for tool createPosts: Invalid input at score',
-      },
-    ]);
-
-    const { totalDocs } = await booted.frogbot.count({
-      collection: postsSlug,
-      overrideAccess: true,
-    });
-
-    expect(totalDocs).toBe(0);
-  });
-
-  it('POST /api/mcp saves a whole rating and duration', async () => {
-    const response = await callTool('createPosts', { title: 'Rated', score: 3, timeSpent: 5400 });
-
-    expect(response.status).toBe(200);
-    expect(parseMcpResponse<ToolCallBody>(response.body).result.isError).not.toBe(true);
-
-    const { docs } = await booted.frogbot.find({ collection: postsSlug, overrideAccess: true });
-
-    expect(docs.map(({ title, score, timeSpent }) => ({ title, score, timeSpent }))).toEqual([
-      { title: 'Rated', score: 3, timeSpent: 5400 },
-    ]);
-  });
-
-  it('POST /api/mcp describes created by, last modified by and autonumber fields as set by FrogBot', async () => {
-    const { tools } = parseMcpResponse<ToolsListBody>((await listTools(apiKeyToken)).body).result;
-    const properties = tools.find(({ name }) => name === 'createTickets')?.inputSchema.properties;
-    const number = properties?.number ?? {};
-
-    expect(number.description).toBe(
-      'Unique number set by FrogBot when the record is created; read-only',
-    );
-    expect(number.anyOf?.find(({ type }) => type === 'integer') ?? number).toMatchObject({
-      type: 'integer',
-    });
-    expect(properties?.createdBy?.description).toBe(
-      'Set by FrogBot to the user who created the record; read-only',
-    );
-    expect(properties?.lastModifiedBy?.description).toBe(
-      'Set by FrogBot to the user who last saved the record; read-only',
-    );
-  });
-
-  it('POST /api/mcp create drops a sent number and creator and records the key owner', async () => {
-    const response = await callTool('createTickets', {
-      title: 'Printer',
-      number: 99,
-      createdBy: customActorId,
-      lastModifiedBy: customActorId,
-    });
-
-    expect(response.status).toBe(200);
-    expect(parseMcpResponse<ToolCallBody>(response.body).result.isError).not.toBe(true);
+    expect(toolText(response.body).isError).toBe(false);
 
     const { docs } = await booted.frogbot.find({
       collection: ticketsSlug,
@@ -327,13 +308,20 @@ describe('MCP plugin integration', () => {
     });
 
     expect(
-      docs.map(({ title, number, createdBy, lastModifiedBy }) => ({
+      docs.map(({ title, number, createdBy, updatedBy }) => ({
         title,
         number,
         createdBy,
-        lastModifiedBy,
+        updatedBy,
       })),
-    ).toEqual([{ title: 'Printer', number: 1, createdBy: ownerId, lastModifiedBy: ownerId }]);
+    ).toEqual([
+      {
+        title: 'Printer',
+        number: 1,
+        createdBy: { relationTo: usersSlug, value: ownerId },
+        updatedBy: { relationTo: usersSlug, value: ownerId },
+      },
+    ]);
   });
 
   it('POST /api/mcp uses the API-key actor when an earlier custom strategy authenticates the engine request', async () => {
@@ -357,7 +345,7 @@ describe('MCP plugin integration', () => {
     expect(tools.status).toBe(200);
     expect(
       parseMcpResponse<ToolsListBody>(tools.body).result.tools.map(({ name }) => name),
-    ).toEqual(configuredTools);
+    ).toContain(actorToolName);
 
     const response = await booted.restClient.post<ToolCallBody | string>(
       mcpEndpoint,

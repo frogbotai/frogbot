@@ -30,7 +30,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@payloadcms/live-preview-vue": "3.90.2"
+    "@payloadcms/live-preview-vue": "catalog:"
   },
   "peerDependencies": {
     "vue": "^3.0.0"

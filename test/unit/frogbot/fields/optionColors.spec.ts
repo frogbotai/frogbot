@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { sanitize } from '../../../../packages/frogbot/src/config/sanitize.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
-import type { SystemKindUsers } from '../../../../packages/frogbot/src/fields/config/sanitizeSystemKinds.js';
 import { sanitizeVectorFields } from '../../../../packages/frogbot/src/fields/config/sanitizeVector.js';
 import type {
   Block,
@@ -10,8 +9,6 @@ import type {
   RadioField,
   SelectField,
 } from '../../../../packages/frogbot/src/fields/config/types.js';
-
-const users: SystemKindUsers = { authSlugs: ['users'], resolve: () => 'users' };
 
 const FIELD_CELL = '@frogbotai/ui/admin#FieldCell';
 
@@ -48,7 +45,7 @@ function config({ blocks, fields }: { blocks?: Block[]; fields: Field[] }): Frog
 }
 
 function sanitizeOne(field: Field): Field & { admin?: Record<string, any> } {
-  return sanitizeVectorFields({ collection: 'tasks', fields: [field], users })[0];
+  return sanitizeVectorFields({ collection: 'tasks', fields: [field] })[0];
 }
 
 function findField(fields: unknown, name: string): Record<string, any> | undefined {
@@ -109,16 +106,15 @@ describe('option colors', () => {
       (field) => ({ name: 'content', type: 'blocks', blocks: [{ slug: 'note', fields: [field] }] }),
     ],
     [
-      'inline blockReferences block',
+      'inline block beside a slug',
       (field) => ({
         name: 'content',
         type: 'blocks',
-        blocks: [],
-        blockReferences: [{ slug: 'note', fields: [field] }],
+        blocks: [{ slug: 'note', fields: [field] }],
       }),
     ],
   ])('copies colours and sets the List Cell inside a %s', (_, wrap) => {
-    const [result] = sanitizeVectorFields({ collection: 'tasks', fields: [wrap(status())], users });
+    const [result] = sanitizeVectorFields({ collection: 'tasks', fields: [wrap(status())] });
 
     expect(findField(result, 'status')?.admin).toEqual(coloredAdmin);
   });
@@ -127,7 +123,7 @@ describe('option colors', () => {
     const runtime = await sanitize(
       config({
         blocks: [{ slug: 'hero', fields: [status()] }],
-        fields: [{ name: 'content', type: 'blocks', blocks: [], blockReferences: ['hero'] }],
+        fields: [{ name: 'content', type: 'blocks', blocks: ['hero'] }],
       }),
     )._internal.payloadConfig;
 
@@ -153,7 +149,6 @@ describe('option colors', () => {
   it('keeps a separate colour map for each field that shares an option value', () => {
     const [first, second] = sanitizeVectorFields({
       collection: 'tasks',
-      users,
       fields: [
         status(),
         {

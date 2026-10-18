@@ -199,11 +199,13 @@ describe('allow', () => {
     const result = await rolesPlugin({ roles: ['member', 'finance'] })(input);
     const bound = result.collections[1].access!.read!;
 
-    await expect(bound({ req: req(['finance']) })).resolves.toBe(true);
-    await expect(bound({ req: req(['member']) })).resolves.toEqual({
+    await expect(bound({ slug: 'test', req: req(['finance']) })).resolves.toBe(true);
+    await expect(bound({ slug: 'test', req: req(['member']) })).resolves.toEqual({
       or: [{ owner: { equals: 'user-1' } }, { reviewer: { equals: 'user-1' } }],
     });
-    await expect(bound({ req: { user: null } as FrogBotRequest })).resolves.toBe(false);
+    await expect(bound({ slug: 'test', req: { user: null } as FrogBotRequest })).resolves.toBe(
+      false,
+    );
   });
 
   it('grants only roles listed in each allow call', async () => {
@@ -211,10 +213,12 @@ describe('allow', () => {
     input.collections[1].access = { read: allow('finance') };
     const result = await rolesPlugin({ roles: ['admin', 'finance'] })(input);
 
-    await expect(result.collections[1].access!.read!({ req: req(['admin']) })).resolves.toBe(false);
-    await expect(result.collections[1].access!.read!({ req: req(['finance']) })).resolves.toBe(
-      true,
-    );
+    await expect(
+      result.collections[1].access!.read!({ slug: 'test', req: req(['admin']) }),
+    ).resolves.toBe(false);
+    await expect(
+      result.collections[1].access!.read!({ slug: 'test', req: req(['finance']) }),
+    ).resolves.toBe(true);
   });
 
   it('validates own clauses and stamps create ownership', async () => {
@@ -228,8 +232,8 @@ describe('allow', () => {
     expect(
       await hook({ operation: 'create', data: { owner: 'spoofed' }, req: req() } as never),
     ).toEqual({ owner: 'user-1' });
-    expect(await posts.access!.create!({ req: req() })).toBe(true);
-    expect(await posts.access!.create!({ req: req(['admin']) })).toBe(false);
+    expect(await posts.access!.create!({ slug: 'test', req: req() })).toBe(true);
+    expect(await posts.access!.create!({ slug: 'test', req: req(['admin']) })).toBe(false);
 
     const invalid = config();
     invalid.collections[1].access = { read: allow({ role: 'member', own: 'oner' }) };
@@ -248,7 +252,7 @@ describe('allow', () => {
     const posts = result.collections[1];
     const hook = posts.hooks!.beforeChange!.at(-1)!;
 
-    expect(await posts.access!.create!({ req: req(['finance']) })).toBe(true);
+    expect(await posts.access!.create!({ slug: 'test', req: req(['finance']) })).toBe(true);
     expect(await hook({ operation: 'create', data: {}, req: req(['finance']) } as never)).toEqual(
       {},
     );
@@ -269,7 +273,7 @@ describe('allow', () => {
       user: { id: 'user-1', roles: ['member'], collection: 'users' },
     } as unknown as FrogBotRequest;
 
-    expect(await result.collections[1].access!.read!({ req: request })).toEqual({
+    expect(await result.collections[1].access!.read!({ slug: 'test', req: request })).toEqual({
       subject: { equals: { relationTo: 'users', value: 'user-1' } },
     });
   });
@@ -307,7 +311,11 @@ describe('allow', () => {
 
     const secondResult = await rolesPlugin({ roles: ['finance'], resolveRoles: () => [] })(second);
 
-    expect(await firstResult.collections[1].access!.read!({ req: req([]) })).toBe(true);
-    expect(await secondResult.collections[1].access!.read!({ req: req([]) })).toBe(false);
+    expect(await firstResult.collections[1].access!.read!({ slug: 'test', req: req([]) })).toBe(
+      true,
+    );
+    expect(await secondResult.collections[1].access!.read!({ slug: 'test', req: req([]) })).toBe(
+      false,
+    );
   });
 });

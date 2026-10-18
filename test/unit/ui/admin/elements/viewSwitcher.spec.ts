@@ -11,19 +11,14 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@payloadcms/ui', () => ({
+  usePathname: () => mocks.pathname,
+  useRouter: () => ({ push: mocks.push }),
+  useSearchParams: () => mocks.searchParams,
   useConfig: () => ({
     config: { routes: { admin: '/admin' } },
     getEntityConfig: () => ({ admin: { custom: { frogbot: { views: mocks.views } } } }),
   }),
   usePreferences: () => ({ setPreference: mocks.setPreference }),
-}));
-
-vi.mock('../../../../../packages/ui/src/admin/adapters/router.js', () => ({
-  useRouterAdapter: () => ({
-    pathname: mocks.pathname,
-    router: { push: mocks.push },
-    searchParams: mocks.searchParams,
-  }),
 }));
 
 const { ViewSwitcher } =

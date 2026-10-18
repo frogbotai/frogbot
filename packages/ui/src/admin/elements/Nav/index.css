@@ -1,7 +1,7 @@
 @layer frogbot {
   .frogbot-nav {
-    background: var(--theme-bg);
-    color: var(--theme-text);
+    background: var(--color-bg);
+    color: var(--color-text);
     display: block;
     height: 100vh;
     min-height: 100%;
@@ -17,10 +17,10 @@
   .frogbot-mobile-nav-toggle {
     align-items: center;
     appearance: none;
-    background: var(--theme-elevation-0);
-    border: 1px solid var(--theme-elevation-150);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
-    color: var(--theme-elevation-800);
+    color: var(--color-text);
     cursor: pointer;
     display: flex;
     height: 40px;
@@ -34,11 +34,11 @@
   }
 
   .frogbot-mobile-nav-toggle:hover {
-    background: var(--theme-elevation-100);
+    background: var(--color-bg-hover);
   }
 
   .frogbot-nav-backdrop {
-    background: color-mix(in srgb, var(--theme-elevation-1000) 40%, transparent);
+    background: color-mix(in srgb, var(--color-bg-inverse) 40%, transparent);
     inset: 0;
     position: fixed;
     z-index: 99;
@@ -140,7 +140,7 @@
   .frogbot-admin-sidebar__logo--toggle:hover,
   .frogbot-admin-sidebar__collapse:hover,
   .frogbot-admin-sidebar__item:hover {
-    background: var(--theme-elevation-100);
+    background: var(--color-bg-hover);
   }
 
   .frogbot-admin-sidebar__tooltip {
@@ -181,7 +181,7 @@
   }
 
   .frogbot-admin-sidebar__group-label {
-    color: var(--theme-elevation-600);
+    color: var(--color-text-secondary);
     cursor: pointer;
     font-size: 12px;
     font-weight: 500;
@@ -218,7 +218,7 @@
     background: transparent;
     border: 0;
     border-radius: 8px;
-    color: var(--theme-elevation-700);
+    color: var(--color-text);
     cursor: pointer;
     display: flex;
     font: inherit;
@@ -240,8 +240,8 @@
 
   .frogbot-admin-sidebar__item--active,
   .frogbot-admin-sidebar__bottom .nav__log-out:hover {
-    background: var(--theme-elevation-150);
-    color: var(--theme-elevation-900);
+    background: var(--color-bg-secondary-hover);
+    color: var(--color-text);
   }
 
   .frogbot-admin-sidebar--collapsed .frogbot-admin-sidebar__bottom .nav__log-out {
@@ -272,7 +272,7 @@
   }
 
   .frogbot-nav .usage-reports-nav-link {
-    color: var(--theme-elevation-700);
+    color: var(--color-text);
     display: flex;
     font-size: 14px;
     font-weight: 500;
@@ -281,19 +281,19 @@
   }
 
   .frogbot-nav .usage-reports-nav-link:hover {
-    background: var(--theme-elevation-100);
+    background: var(--color-bg-hover);
     border-radius: 8px;
-    color: var(--theme-elevation-900);
+    color: var(--color-text);
   }
 
   .frogbot-account-menu.fb-dropdown-menu__content {
-    background: var(--theme-input-bg);
-    border: 1px solid var(--theme-elevation-150);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     box-shadow:
       0 8px 24px rgb(0 0 0 / 0.12),
       0 2px 8px rgb(0 0 0 / 0.08);
-    color: var(--theme-text);
+    color: var(--color-text);
     min-width: 240px;
     padding: 8px;
     z-index: 100;
@@ -313,7 +313,7 @@
 
   .frogbot-account-menu__header.fb-dropdown-menu__item:focus,
   .frogbot-account-menu__header.fb-dropdown-menu__item[data-highlighted] {
-    background: var(--theme-elevation-100);
+    background: var(--color-bg-hover);
   }
 
   .frogbot-account-menu__avatar {
@@ -343,7 +343,7 @@
   }
 
   .frogbot-account-menu__email {
-    color: var(--theme-elevation-600);
+    color: var(--color-text-secondary);
     font-size: 12px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -351,14 +351,14 @@
   }
 
   .frogbot-account-menu__separator.fb-dropdown-menu__separator {
-    background: var(--theme-elevation-150);
+    background: var(--color-bg-secondary-hover);
     margin: 6px 0;
   }
 
   .frogbot-account-menu__item.fb-dropdown-menu__item {
     align-items: center;
     border-radius: 8px;
-    color: var(--theme-elevation-700);
+    color: var(--color-text);
     cursor: pointer;
     display: flex;
     font-size: 14px;
@@ -369,8 +369,8 @@
 
   .frogbot-account-menu__item.fb-dropdown-menu__item:focus,
   .frogbot-account-menu__item.fb-dropdown-menu__item[data-highlighted] {
-    background: var(--theme-elevation-100);
-    color: var(--theme-elevation-900);
+    background: var(--color-bg-hover);
+    color: var(--color-text);
   }
 
   .frogbot-account-menu__item-icon {
@@ -388,7 +388,7 @@
   .frogbot-account-menu .nav__log-out {
     align-items: center;
     border-radius: 8px;
-    color: var(--theme-elevation-700);
+    color: var(--color-text);
     display: flex;
     font-size: 14px;
     font-weight: 500;
@@ -399,7 +399,7 @@
   }
 
   .frogbot-account-menu .nav__log-out:hover {
-    background: var(--theme-elevation-100);
-    color: var(--theme-elevation-900);
+    background: var(--color-bg-hover);
+    color: var(--color-text);
   }
 }

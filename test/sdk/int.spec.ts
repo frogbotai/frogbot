@@ -33,6 +33,7 @@ describe('FrogBot SDK against a running app', () => {
       collection: pagesSlug,
       data: { ...data, _status: 'published' },
       overrideAccess: true,
+      publishAllLocales: true,
     } as never) as Promise<{ id: number }>;
 
   const loginHeaders = async () => {
@@ -181,7 +182,11 @@ describe('FrogBot SDK against a running app', () => {
 
       const media = await sdk.create({ collection: mediaSlug, data: { alt: 'A frog' }, file });
 
-      expect(media).toMatchObject({ alt: 'A frog', filename: 'frog.txt', mimeType: 'text/plain' });
+      expect(media).toMatchObject({
+        alt: 'A frog',
+        filename: 'frog-original.txt',
+        mimeType: 'text/plain',
+      });
     });
 
     it('update by ID changes one document', async () => {
@@ -275,7 +280,7 @@ describe('FrogBot SDK against a running app', () => {
       });
 
       expect(fallback.summary).toBe('Hello');
-      expect(noFallback.summary).toBeUndefined();
+      expect(noFallback.summary).toBeNull();
     });
 
     it('find with fallbackLocale false leaves an untranslated field empty', async () => {
@@ -283,7 +288,8 @@ describe('FrogBot SDK against a running app', () => {
 
       const result = await sdk.find({ collection: pagesSlug, fallbackLocale: false, locale: 'fr' });
 
-      expect(result.docs[0]?.summary).toBeUndefined();
+      expect(result.docs).toHaveLength(1);
+      expect(result.docs[0]?.summary).toBeNull();
     });
 
     it('find leaves out a join field set to false', async () => {
@@ -329,7 +335,7 @@ describe('FrogBot SDK against a running app', () => {
       expect(versions.docs[0]).toMatchObject({ autosave: true, version: { title: 'Typing' } });
     });
 
-    it('update by ID with publishSpecificLocale publishes only that locale', async () => {
+    it('update by ID publishes only its locale', async () => {
       const page = await createLocalizedPage({ en: 'Hello', fr: 'Bonjour' });
 
       await booted.frogbot.update({
@@ -347,7 +353,6 @@ describe('FrogBot SDK against a running app', () => {
           data: { _status: 'published', summary: 'Salut' },
           id: page.id,
           locale: 'fr',
-          publishSpecificLocale: 'fr',
         },
         { headers: await loginHeaders() },
       );
@@ -383,12 +388,12 @@ describe('FrogBot SDK against a running app', () => {
       expect(current.title).toBe('First');
     });
 
-    it('findVersions rejects anonymous requests with FrogBotSDKError', async () => {
-      const error = await sdk.findVersions({ collection: pagesSlug }).catch((e) => e);
+    it("findVersions follows the collection's read access for anonymous requests", async () => {
+      const page = await createPage({ title: 'Versioned' });
 
-      expect(error).toBeInstanceOf(FrogBotSDKError);
-      expect(error.status).toBe(403);
-      expect(error.errors[0].message).toBe('You are not allowed to perform this action.');
+      const result = await sdk.findVersions({ collection: pagesSlug });
+
+      expect(result.docs.map(({ parent }) => parent)).toContain(page.id);
     });
 
     it('findVersionByID with disableErrors returns null for a missing version', async () => {

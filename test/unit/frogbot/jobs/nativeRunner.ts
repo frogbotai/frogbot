@@ -1,11 +1,11 @@
 import type { Job, UpdateJobsArgs } from 'payload';
 import { vi } from 'vitest';
 
-import { getJobClaimFields, recordJobClaims } from '../../../../packages/frogbot/src/jobs/lease.js';
 import {
   type JobLogDatabase,
   jobLogOperations,
 } from '../../../../packages/frogbot/src/jobs/log.js';
+import { isJobClaim } from '../../../../packages/frogbot/src/jobs/run.js';
 import type { JobsConfig } from '../../../../packages/frogbot/src/jobs/types.js';
 import { matches, setup } from './helpers.js';
 
@@ -18,11 +18,12 @@ export function deferred() {
   return { promise, resolve };
 }
 
-export function jobRow(id: number, workflow = false): Job & { id: number; processing: boolean } {
+export function jobRow(id: number, workflow = false): Job & { id: number } {
   return {
     id,
     input: {},
-    processing: false,
+    processingToken: null,
+    processingUntil: null,
     queue: 'default',
     taskStatus: {},
     totalTried: 0,
@@ -119,23 +120,22 @@ export async function nativeRunner({
   }) as typeof database.updateOne;
 
   database.updateJobs = vi.fn(async (args: UpdateJobsArgs) => {
-    if (args.data.processing === true) {
+    if (isJobClaim(args.data)) {
       const candidates = rows
-        .filter((row) => !row.processing && (args.id === undefined || row.id === args.id))
-        .slice(0, args.limit ?? rows.length);
+        .filter((row) => (args.where ? matches(row, args.where) : true))
+        .filter((row) => args.id === undefined || row.id === args.id)
+        .slice(0, args.limit || rows.length);
 
-      const fields = getJobClaimFields();
-
-      for (const row of candidates) {
-        Object.assign(row, args.data, fields);
-      }
-
-      recordJobClaims(candidates.map(({ id }) => id));
+      for (const row of candidates) Object.assign(row, args.data);
 
       return structuredClone(candidates);
     }
 
-    const candidates = rows.filter((row) => args.id === undefined || row.id === args.id);
+    const candidates = rows.filter(
+      (row) =>
+        (args.id === undefined || row.id === args.id) && (!args.where || matches(row, args.where)),
+    );
+
     const result = [];
 
     for (const row of candidates) {

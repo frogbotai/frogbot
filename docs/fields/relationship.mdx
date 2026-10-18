@@ -5,7 +5,7 @@ description: Relate records from one or more collections with Relationship field
 keywords: relationship, fields, collections, polymorphic, filters, depth, virtual
 ---
 
-The Relationship field connects records across collections. Use it for associations such as a product on an order, the user who placed an order, or categories assigned to a post. To record the user who created or last saved a record, use a [Created by](/fields/created-by) or [Last modified by](/fields/last-modified-by) field.
+The Relationship field connects records across collections. Use it for associations such as a product on an order, the user who placed an order, or categories assigned to a post. Collections already record the user who created and last saved each record in `createdBy` and `updatedBy`; see [Default fields](/fields/default-fields#document-fields).
 
 Set `type` to `relationship` and provide the target collection slug in `relationTo`:
 
@@ -30,8 +30,6 @@ export const ProductField: Field = {
 | `hasMany` | `boolean` | `false` | Stores an ordered array of relationships instead of one. |
 | `minRows` | `number` | — | Minimum number of relationships when a value is present. Only with `hasMany: true`. |
 | `maxRows` | `number` | — | Maximum number of relationships when a value is present. Only with `hasMany: true`. |
-| `min` | `number` | — | Deprecated alias for `minRows`. Copied to `minRows` with a warning when `minRows` is unset. |
-| `max` | `number` | — | Deprecated alias for `maxRows`. Copied to `maxRows` with a warning when `maxRows` is unset. |
 | `maxDepth` | `number` | Request depth | Maximum population depth for this field, regardless of the remaining request depth. See [depth](/queries/depth#max-depth). |
 | `graphQL` | `{ complexity?: number }` | `{ complexity: 10 }` | Query complexity used only when an application mounts its own GraphQL executor. FrogBot does not ship a GraphQL request handler. |
 | `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
@@ -49,7 +47,7 @@ export const ProductField: Field = {
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 <Banner type="success">
   Use the [depth parameter](/queries/depth) to populate related records in API
@@ -371,14 +369,14 @@ Override the field or its label through `admin.components`. Custom components ca
 
 ```tsx
 import { RelationshipField } from '@frogbotai/ui/admin'
-import type { RelationshipFieldServerComponent } from 'frogbot'
+import type { RelationshipFieldServerProps } from 'frogbot'
 
-export const CustomRelationshipFieldServer: RelationshipFieldServerComponent = ({
+export const CustomRelationshipFieldServer = ({
   clientField,
   path,
   permissions,
   schemaPath,
-}) => (
+}: RelationshipFieldServerProps) => (
   <RelationshipField
     field={clientField}
     path={path}
@@ -394,11 +392,9 @@ export const CustomRelationshipFieldServer: RelationshipFieldServerComponent = (
 'use client'
 
 import { RelationshipField } from '@frogbotai/ui/admin'
-import type { RelationshipFieldClientComponent } from 'frogbot'
+import type { RelationshipFieldClientProps } from 'frogbot'
 
-export const CustomRelationshipFieldClient: RelationshipFieldClientComponent = (
-  props,
-) => <RelationshipField {...props} />
+export const CustomRelationshipFieldClient = (props,: RelationshipFieldClientProps) => <RelationshipField {...props} />
 ```
 
 ### Label
@@ -407,12 +403,12 @@ export const CustomRelationshipFieldClient: RelationshipFieldClientComponent = (
 
 ```tsx
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { RelationshipFieldLabelServerComponent } from 'frogbot'
+import type { RelationshipFieldLabelServerProps } from 'frogbot'
 
-export const CustomRelationshipLabelServer: RelationshipFieldLabelServerComponent = ({
+export const CustomRelationshipLabelServer = ({
   clientField,
   path,
-}) => (
+}: RelationshipFieldLabelServerProps) => (
   <FieldLabel
     label={clientField.label || clientField.name}
     path={path}
@@ -427,12 +423,12 @@ export const CustomRelationshipLabelServer: RelationshipFieldLabelServerComponen
 'use client'
 
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { RelationshipFieldLabelClientComponent } from 'frogbot'
+import type { RelationshipFieldLabelClientProps } from 'frogbot'
 
-export const CustomRelationshipLabelClient: RelationshipFieldLabelClientComponent = ({
+export const CustomRelationshipLabelClient = ({
   field,
   path,
-}) => (
+}: RelationshipFieldLabelClientProps) => (
   <FieldLabel
     label={field.label || field.name}
     path={path}

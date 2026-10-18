@@ -117,6 +117,7 @@ export const activeAccount: Access = async ({ req }) => {
 
   const user = await req.frogbot.findByID({
     collection: 'users',
+    overrideAccess: true,
     id: req.user.id,
     req,
   });

@@ -338,7 +338,7 @@ describe('buildConfig KV wiring', () => {
       index: true,
     });
     expect(built.jobs.tasks?.map(({ slug }) => slug)).toEqual(
-      expect.arrayContaining(['frogbot-sweep-jobs', KV_CLEANUP_TASK_SLUG]),
+      expect.arrayContaining(['frogbot-sweep-waitpoints', KV_CLEANUP_TASK_SLUG]),
     );
     expect(built.jobs.autoRun).toBeUndefined();
     expect(config.kv).toBeUndefined();
@@ -358,7 +358,7 @@ describe('buildConfig KV wiring', () => {
       expect.arrayContaining([expect.objectContaining({ slug: 'report-workflow' })]),
     );
     expect(built.jobs.tasks?.map(({ slug }) => slug)).toEqual(
-      expect.arrayContaining(['send-report', 'frogbot-sweep-jobs', KV_CLEANUP_TASK_SLUG]),
+      expect.arrayContaining(['send-report', 'frogbot-sweep-waitpoints', KV_CLEANUP_TASK_SLUG]),
     );
     expect(jobs.tasks).toHaveLength(1);
   });
@@ -372,7 +372,7 @@ describe('buildConfig KV wiring', () => {
     expect(built.kv).toBe(kv);
     expect(built.jobs.autoRun).toBe(jobs.autoRun);
     expect(built.jobs.tasks?.map(({ slug }) => slug)).toEqual(
-      expect.arrayContaining(['send-report', 'frogbot-sweep-jobs']),
+      expect.arrayContaining(['send-report', 'frogbot-sweep-waitpoints']),
     );
     expect(built.jobs.tasks?.map(({ slug }) => slug)).not.toContain(KV_CLEANUP_TASK_SLUG);
   });
@@ -391,7 +391,7 @@ describe('buildConfig KV wiring', () => {
     expect(built.kv).toBe(kv);
     expect(built.jobs.autoRun).toBe(jobs.autoRun);
     expect(built.jobs.tasks?.map(({ slug }) => slug)).toEqual(
-      expect.arrayContaining(['send-report', 'frogbot-sweep-jobs']),
+      expect.arrayContaining(['send-report', 'frogbot-sweep-waitpoints']),
     );
   });
 

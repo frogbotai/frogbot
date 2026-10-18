@@ -61,11 +61,7 @@ export function buildBoardOrderField(name: string): TextField {
     name,
     type: 'text',
     admin: {
-      disableBulkEdit: true,
       disabled: true,
-      disableGroupBy: true,
-      disableListColumn: true,
-      disableListFilter: true,
       hidden: true,
       readOnly: true,
     },
@@ -265,9 +261,6 @@ export function compileCollectionViews({
     ...(list?.defaultFields ? { defaultColumns: list.defaultFields } : {}),
     ...(list?.defaultSort ? { defaultSort: list.defaultSort } : {}),
     ...(list?.filter ? { baseFilter: list.filter } : {}),
-    ...((Boolean(list) && list?.groupBy !== false) || views.some((view) => view.type === 'board')
-      ? { groupBy: true }
-      : {}),
     ...(list?.pagination ? { pagination: list.pagination } : {}),
     ...(list?.searchableFields ? { listSearchableFields: list.searchableFields } : {}),
     components,

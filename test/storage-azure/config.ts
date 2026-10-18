@@ -25,7 +25,7 @@ const connectionString =
 
 export default await buildTestConfig({
   collections: [Users, Media],
-  plugins: [
+  storage: [
     azureStorage({
       collections: { [mediaSlug]: true },
       allowContainerCreate: true,

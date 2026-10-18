@@ -100,13 +100,16 @@ export interface Config {
   globalsSelect: {};
   locale: 'en' | 'fr';
   widgets: {
+    welcome: WelcomeWidget;
     collections: CollectionsWidget;
+    'collection-query': CollectionQueryWidget;
+    activity: ActivityWidget;
   };
   user: User;
   jobs: {
     tasks: {
       'frogbot-reset-ai-budgets': TaskFrogBotResetAiBudgets;
-      'frogbot-sweep-jobs': TaskFrogBotSweepJobs;
+      'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       'frogbot-run-ai-field': TaskFrogBotRunAIField;
       inline: {
@@ -152,6 +155,14 @@ export interface User {
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
   spendThisPeriodUSD?: number | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -206,10 +217,14 @@ export interface Task {
    * Set by FrogBot: the error message from the last failed run
    */
   _category_error?: string | null;
-  /**
-   * Set by FrogBot to the user who last saved the record; read-only
-   */
-  lastModifiedBy?: (number | null) | User;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -233,6 +248,14 @@ export interface Article {
    * Set by FrogBot: the error message from the last failed run
    */
   _summary_error?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -256,6 +279,14 @@ export interface Issue {
    * Set by FrogBot: the error message from the last failed run
    */
   _type_error?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -278,6 +309,14 @@ export interface Report {
    * Set by FrogBot: the error message from the last failed run
    */
   _labels_error?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -301,6 +340,14 @@ export interface Shout {
    * Set by FrogBot: the error message from the last failed run
    */
   _summary_error?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -380,6 +427,8 @@ export interface UsersSelect {
   models?: boolean;
   monthlyBudget?: boolean;
   spendThisPeriodUSD?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   email?: boolean;
@@ -413,7 +462,8 @@ export interface TasksSelect {
   category?: boolean;
   _category_status?: boolean;
   _category_error?: boolean;
-  lastModifiedBy?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -427,6 +477,8 @@ export interface ArticlesSelect {
   summary?: boolean;
   _summary_status?: boolean;
   _summary_error?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   _status?: boolean;
@@ -440,6 +492,8 @@ export interface IssuesSelect {
   type?: boolean;
   _type_status?: boolean;
   _type_error?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -452,6 +506,8 @@ export interface ReportsSelect {
   labels?: boolean;
   _labels_status?: boolean;
   _labels_error?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -465,6 +521,8 @@ export interface ShoutsSelect {
   summary?: boolean;
   _summary_status?: boolean;
   _summary_error?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -513,6 +571,16 @@ export interface FrogBotWaitpointsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "welcome_widget".
+ */
+export interface WelcomeWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -520,6 +588,56 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collection-query_widget".
+ */
+export interface CollectionQueryWidget {
+  data?: {
+    title?: string | null;
+    relatedCollection:
+      | 'users'
+      | 'tasks'
+      | 'articles'
+      | 'issues'
+      | 'reports'
+      | 'shouts'
+      | 'usage-logs';
+    where?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    sortField?: string | null;
+    sortDirection?: ('asc' | 'desc') | null;
+    limit?: number | null;
+  };
+  width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "activity_widget".
+ */
+export interface ActivityWidget {
+  data?: {
+    excludedCollections?:
+      | (
+          | 'users'
+          | 'tasks'
+          | 'articles'
+          | 'issues'
+          | 'reports'
+          | 'shouts'
+          | 'usage-logs'
+        )[]
+      | null;
+  };
+  width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -531,9 +649,9 @@ export interface TaskFrogBotResetAiBudgets {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBotSweepJobs".
+ * via the `definition` "TaskFrogBotSweepWaitpoints".
  */
-export interface TaskFrogBotSweepJobs {
+export interface TaskFrogBotSweepWaitpoints {
   input?: unknown;
   output?: unknown;
 }

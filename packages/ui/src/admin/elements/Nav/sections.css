@@ -11,7 +11,7 @@
     appearance: none;
     background: transparent;
     border: 0;
-    color: var(--theme-elevation-600);
+    color: var(--color-text-secondary);
     cursor: pointer;
     display: flex;
     font: inherit;
@@ -25,12 +25,12 @@
 
   .frogbot-nav-section__toggle:hover,
   .frogbot-nav-section__toggle:focus-visible {
-    color: var(--theme-elevation-900);
+    color: var(--color-text);
   }
 
   .frogbot-nav-section__toggle:focus-visible,
   .frogbot-nav-item:focus-visible {
-    outline: 2px solid var(--theme-success-500);
+    outline: 2px solid var(--color-border-success-strong);
     outline-offset: -2px;
   }
 
@@ -65,7 +65,7 @@
     align-items: center;
     background: transparent;
     border-radius: 8px;
-    color: var(--theme-elevation-700);
+    color: var(--color-text);
     display: flex;
     font-size: 14px;
     font-weight: 500;
@@ -79,13 +79,13 @@
   }
 
   .frogbot-nav-item:hover {
-    background: var(--theme-elevation-100);
-    color: var(--theme-elevation-900);
+    background: var(--color-bg-hover);
+    color: var(--color-text);
   }
 
   .frogbot-nav-item--active {
-    background: var(--theme-elevation-150);
-    color: var(--theme-elevation-900);
+    background: var(--color-bg-secondary-hover);
+    color: var(--color-text);
   }
 
   .frogbot-nav-item__icon {
@@ -127,7 +127,7 @@
   }
 
   .frogbot-collections-section__group-label {
-    color: var(--theme-elevation-500);
+    color: var(--color-text-secondary);
     font-size: 12px;
     font-weight: 500;
     padding: 8px 10px 2px;
@@ -141,7 +141,7 @@
   }
 
   .frogbot-recents-section__empty {
-    color: var(--theme-elevation-500);
+    color: var(--color-text-secondary);
     font-size: 13px;
     margin: 0;
     padding: 8px 10px;
@@ -155,12 +155,12 @@
   }
 
   .frogbot-recents-section__groups {
-    color: var(--theme-base-900);
+    color: var(--fb-theme-base-900);
     gap: 4px;
   }
 
   .frogbot-recents-section__group-label {
-    color: var(--theme-elevation-500);
+    color: var(--color-text-secondary);
     font-size: 11px;
     font-weight: 500;
     margin: 0;
@@ -180,11 +180,11 @@
 
   .frogbot-recents-section__item:hover,
   .frogbot-recents-section__item.fb-chat-row-actions__row--open {
-    background: var(--theme-elevation-100);
+    background: var(--color-bg-hover);
   }
 
   .frogbot-recents-section__item:has(.frogbot-nav-item--active) {
-    background: var(--theme-elevation-150);
+    background: var(--color-bg-secondary-hover);
   }
 
   .frogbot-recents-section__item .frogbot-nav-item:hover,
@@ -195,11 +195,11 @@
   .frogbot-recents-section__item:hover .frogbot-nav-item,
   .frogbot-recents-section__item.fb-chat-row-actions__row--open .frogbot-nav-item,
   .frogbot-recents-section__item .frogbot-nav-item--active {
-    color: var(--theme-elevation-900);
+    color: var(--color-text);
   }
 
   .frogbot-recents-section__item .fb-chat-row-actions__trigger:hover {
-    background: var(--theme-elevation-250);
+    background: var(--color-bg-tertiary);
   }
 
   .frogbot-recents-section__item .frogbot-nav-item {
@@ -214,7 +214,7 @@
   }
 
   .frogbot-recents-section__view-all {
-    color: var(--theme-elevation-600);
+    color: var(--color-text-secondary);
     font-size: 12px;
     font-weight: 500;
     padding: 8px 10px;
@@ -223,11 +223,11 @@
 
   .frogbot-recents-section__view-all:hover,
   .frogbot-recents-section__view-all:focus-visible {
-    color: var(--theme-elevation-900);
+    color: var(--color-text);
   }
 
   .frogbot-recents-section__view-all:focus-visible {
-    outline: 2px solid var(--theme-success-500);
+    outline: 2px solid var(--color-border-success-strong);
     outline-offset: -2px;
   }
 }

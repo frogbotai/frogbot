@@ -546,12 +546,8 @@ Every data field accepts these options. Each field type's page lists the extra o
 | `style` | `CSSProperties` | — | Inline CSS properties added to the field root. |
 | `className` | `string` | — | CSS class added to the field root. |
 | `readOnly` | `boolean` | `false`, or `true` for virtual fields | Prevents editing in the admin panel but does not restrict API writes. |
-| `disabled` | `boolean` | `false` | Omits the field from the admin panel. |
+| `disabled` | `boolean \| { field?, column?, filter?, groupBy?, bulkEdit? }` | `false` | `true` omits the field everywhere in the admin panel. An object omits it from one area each: the edit form, list columns, list filters, list grouping or bulk editing. |
 | `hidden` | `boolean` | `false` | Hides the input while retaining its submitted value. |
-| `disableBulkEdit` | `boolean` | `false` | Excludes the field from bulk editing. |
-| `disableGroupBy` | `boolean` | `false` | Excludes the field from list grouping. |
-| `disableListColumn` | `boolean` | `false` | Excludes the field from selectable list columns. |
-| `disableListFilter` | `boolean` | `false` | Excludes the field from list filters. |
 | `custom` | `Record<string, any>` | — | Metadata available on the server and in the browser. Use the field's top-level `custom` for server-only data. |
 
 ### Field descriptions
@@ -758,10 +754,10 @@ Client components manage form state with hooks and field primitives from `@frogb
 ```tsx
 'use client'
 
-import type { TextFieldClientComponent } from 'frogbot'
+import type { TextFieldClientProps } from 'frogbot'
 import { FieldLabel, useField } from '@frogbotai/ui/admin'
 
-export const ColorField: TextFieldClientComponent = ({ field, path }) => {
+export const ColorField = ({ field, path }: TextFieldClientProps) => {
   const { setValue, value } = useField<string>({ path })
 
   return (
@@ -777,12 +773,12 @@ Client field components receive serializable field and form props. They do not r
 
 #### Server field components
 
-Server component types follow the same field-specific naming convention. For example, `TextFieldServerComponent` and `TextFieldServerProps` are exported from `frogbot`. Their framework-issued `req` is a `FrogBotRequest`, and `req.frogbot` is attached before the component renders, including form-state rebuilds.
+Server component types follow the same field-specific naming convention. For example, `TextFieldServerProps` and `TextFieldServerProps` are exported from `frogbot`. Their framework-issued `req` is a `FrogBotRequest`, and `req.frogbot` is attached before the component renders, including form-state rebuilds.
 
 ```tsx
-import type { TextFieldServerComponent } from 'frogbot'
+import type { TextFieldServerProps } from 'frogbot'
 
-export const CollectionSummary: TextFieldServerComponent = ({ req }) => {
+export const CollectionSummary = ({ req }: TextFieldServerProps) => {
   const count = Object.keys(req.frogbot.collections).length
 
   return <p>{count} collections are available.</p>
@@ -793,13 +789,13 @@ Do not construct this request yourself or use a fallback instance lookup. Compon
 
 #### Field component types
 
-Each field family exports its supported client and server types from `frogbot`, including `*FieldClientComponent`, `*FieldClientProps`, `*FieldServerComponent`, and `*FieldServerProps`. Supported field families also provide `*FieldLabel*`, `*FieldDescription*`, `*FieldError*`, and `*FieldDiff*` component types. UI fields do not have label, description, or error families; Blocks fields additionally provide `BlockRowLabelServerComponent` and `BlockRowLabelClientComponent`.
+Each field family exports the props its components receive from `frogbot`: `*FieldClientProps` and `*FieldServerProps`, plus `*FieldLabel*Props`, `*FieldDescription*Props`, `*FieldError*Props` and `*FieldDiff*Props`. Type a component by its props, as in `({ field }: TextFieldServerProps) => …`. UI fields do not have label, description, or error props; Blocks fields additionally provide `BlockRowLabelServerProps` and `BlockRowLabelClientProps`.
 
 ```tsx
 import type {
-  TextFieldClientComponent,
   TextFieldClientProps,
-  TextFieldServerComponent,
+  TextFieldClientProps,
+  TextFieldServerProps,
   TextFieldServerProps,
 } from 'frogbot'
 ```
@@ -909,8 +905,8 @@ Label component types follow the field-family convention:
 
 ```tsx
 import type {
-  TextFieldLabelClientComponent,
-  TextFieldLabelServerComponent,
+  TextFieldLabelClientProps,
+  TextFieldLabelServerProps,
 } from 'frogbot'
 ```
 
@@ -936,8 +932,8 @@ Description component types follow the same convention:
 
 ```tsx
 import type {
-  TextFieldDescriptionClientComponent,
-  TextFieldDescriptionServerComponent,
+  TextFieldDescriptionClientProps,
+  TextFieldDescriptionServerProps,
 } from 'frogbot'
 ```
 
@@ -963,8 +959,8 @@ Error component types follow the same convention:
 
 ```tsx
 import type {
-  TextFieldErrorClientComponent,
-  TextFieldErrorServerComponent,
+  TextFieldErrorClientProps,
+  TextFieldErrorServerProps,
 } from 'frogbot'
 ```
 
@@ -990,8 +986,8 @@ Diff component types follow the same convention:
 
 ```tsx
 import type {
-  TextFieldDiffClientComponent,
-  TextFieldDiffServerComponent,
+  TextFieldDiffClientProps,
+  TextFieldDiffServerProps,
 } from 'frogbot'
 ```
 
@@ -1023,7 +1019,7 @@ Use only the curated admin hooks and field primitives exported by `@frogbotai/ui
 Import `Field`, individual field configuration types, and custom component types from `frogbot`. Container field types are recursive, so nested fields retain FrogBot hook, access, and validation request types.
 
 ```ts
-import type { Field, TextField, TextFieldClientComponent } from 'frogbot'
+import type { Field, TextField, TextFieldClientProps } from 'frogbot'
 ```
 
 Run `frogbot generate:types` to generate your application's `frogbot-types.ts` declarations from the configured collections and fields. See [TypeScript](/typescript/overview) for generated type setup.

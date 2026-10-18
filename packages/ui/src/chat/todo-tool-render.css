@@ -4,9 +4,9 @@
     flex-direction: column;
     gap: 0.75rem;
     padding: 0.75rem;
-    border: 1px solid var(--theme-base-200);
+    border: 1px solid var(--fb-theme-base-200);
     border-radius: 0.5rem;
-    box-shadow: 0 1px 2px color-mix(in srgb, var(--theme-base-1000) 8%, transparent);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--fb-theme-base-1000) 8%, transparent);
   }
 
   .fb-todo-tool__header {
@@ -23,7 +23,7 @@
   .fb-todo-tool__summary {
     display: flex;
     gap: 0.5rem;
-    color: var(--theme-base-600);
+    color: var(--fb-theme-base-600);
     font-size: 0.75rem;
     line-height: 1rem;
   }
@@ -45,7 +45,7 @@
     width: 1.25rem;
     height: 1.25rem;
     margin: 0.125rem 0.25rem;
-    border: 1.25px solid var(--theme-base-400);
+    border: 1.25px solid var(--fb-theme-base-400);
     border-radius: 50%;
   }
 
@@ -62,15 +62,15 @@
     width: 0.3rem;
     height: 0.55rem;
     transform: rotate(45deg);
-    border: solid var(--theme-base-0);
+    border: solid var(--fb-theme-base-0);
     border-width: 0 2px 2px 0;
     content: "";
   }
 
   .fb-todo-tool__status--in_progress {
-    border-color: var(--theme-base-400) var(--theme-base-400) transparent transparent;
+    border-color: var(--fb-theme-base-400) var(--fb-theme-base-400) transparent transparent;
     animation: fb-todo-tool-spin 1s linear infinite;
-    background: var(--theme-base-100);
+    background: var(--fb-theme-base-100);
   }
 
   .fb-todo-tool__content {
@@ -80,7 +80,7 @@
   }
 
   .fb-todo-tool__content--completed {
-    color: var(--theme-base-600);
+    color: var(--fb-theme-base-600);
     text-decoration: line-through;
   }
 

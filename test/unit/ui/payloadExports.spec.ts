@@ -112,7 +112,7 @@ describe('Payload UI export classification', () => {
       path.join(packageRoot, 'src/admin/exports/client.ts'),
       {
         values: [...root.tier1.values, ...root.tier2.values].filter(
-          (name) => !adminOverrides.includes(name),
+          (name) => !adminOverrides.client.includes(name),
         ),
         types: [...root.tier1.types, ...root.tier2.types],
       },
@@ -127,23 +127,30 @@ describe('Payload UI export classification', () => {
 
     expectEntry(
       path.join(packageRoot, 'src/admin/exports/rsc.ts'),
-      rsc.included,
+      {
+        values: rsc.included.values.filter((name) => !adminOverrides.rsc.includes(name)),
+        types: rsc.included.types.filter((name) => !adminOverrides.rsc.includes(name)),
+      },
       '@payloadcms/ui/rsc',
     );
   });
 
-  it("binds each admin override to FrogBot's own module", () => {
-    const local = readExports(path.join(packageRoot, 'src/admin/exports/client.ts'));
-    const payload = readExports(
-      path.join(packageRoot, 'src/admin/exports/client.ts'),
-      '@payloadcms/ui',
-    );
+  it.each([
+    { entry: 'client', specifier: '@payloadcms/ui' },
+    { entry: 'rsc', specifier: '@payloadcms/ui/rsc' },
+  ] as const)(
+    "binds each $entry admin override to FrogBot's own module",
+    ({ entry, specifier }) => {
+      const file = path.join(packageRoot, `src/admin/exports/${entry}.ts`);
+      const local = readExports(file);
+      const payload = readExports(file, specifier);
 
-    for (const name of adminOverrides) {
-      expect(local.values, name).toContain(name);
-      expect(payload.values, name).not.toContain(name);
-    }
-  });
+      for (const name of adminOverrides[entry]) {
+        expect([...local.values, ...local.types], name).toContain(name);
+        expect([...payload.values, ...payload.types], name).not.toContain(name);
+      }
+    },
+  );
 
   it('keeps every Payload name out of the root entry', () => {
     expect(

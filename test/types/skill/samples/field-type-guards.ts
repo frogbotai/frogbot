@@ -36,7 +36,7 @@ export function visit({
     }
 
     if (fieldIsBlockType(field)) {
-      for (const reference of field.blockReferences ?? field.blocks) {
+      for (const reference of field.blocks) {
         const block = typeof reference === 'string' ? rootBlocks.get(reference) : reference;
 
         if (!block) {
@@ -116,8 +116,7 @@ export const schema = {
         {
           name: 'layout',
           type: 'blocks',
-          blocks: [],
-          blockReferences: ['callout', Hero],
+          blocks: ['callout', Hero],
         },
       ],
     },

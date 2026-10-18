@@ -2,7 +2,7 @@
   .oauth-login-buttons {
     display: flex;
     flex-direction: column;
-    gap: calc(var(--base) / 2);
+    gap: var(--spacer-2);
     margin: 0 auto;
     max-width: 480px;
     width: 100%;
@@ -10,22 +10,22 @@
 
   .oauth-login-buttons__separator {
     align-items: center;
-    color: var(--theme-base-500);
+    color: var(--fb-theme-base-500);
     display: flex;
     justify-content: center;
-    margin-bottom: calc(var(--base) / 2);
+    margin-bottom: var(--spacer-2);
   }
 
   .oauth-login-buttons__rule {
-    background-color: var(--theme-border-color);
+    background-color: var(--color-border);
     height: 1px;
     max-width: 120px;
     width: 100%;
   }
 
   .oauth-login-buttons__label {
-    font-size: var(--font-size-small);
-    margin: 0 calc(var(--base) / 2);
+    font-size: var(--text-body-small-font-size);
+    margin: 0 var(--spacer-2);
   }
 
   .oauth-login-buttons .btn {

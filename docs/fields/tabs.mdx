@@ -77,7 +77,7 @@ Each tab accepts the options below. Options marked "Named tabs only" are rejecte
 | `disableDuplicate` | `boolean` | `false` | Named tabs only. Leaves the tab's value out when a document is duplicated. |
 | `admin` | `object` | — | Standard [field admin options](/fields/overview#admin-options), including `condition` and `description`. |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Named tabs only. Functions that modify the tab's JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Named tabs only. Functions that modify the tab's JSON Schema used by [type generation](/typescript/generating-types). |
 
 ## Conditional tabs
 
@@ -120,14 +120,14 @@ export const advancedTabs: TabsField = {
 
 ```tsx
 import { TabsField } from '@frogbotai/ui/admin'
-import type { TabsFieldServerComponent } from 'frogbot'
+import type { TabsFieldServerProps } from 'frogbot'
 
-export const CustomTabsField: TabsFieldServerComponent = ({
+export const CustomTabsField = ({
   clientField,
   path,
   permissions,
   schemaPath,
-}) => {
+}: TabsFieldServerProps) => {
   return (
     <TabsField
       field={clientField}
@@ -139,4 +139,4 @@ export const CustomTabsField: TabsFieldServerComponent = ({
 }
 ```
 
-Use `TabsFieldClientComponent` for a client wrapper. Tab labels and descriptions are configured on each tab rather than through field label component slots.
+Use `TabsFieldClientProps` for a client wrapper. Tab labels and descriptions are configured on each tab rather than through field label component slots.

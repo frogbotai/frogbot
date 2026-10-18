@@ -43,21 +43,6 @@
       "types": "./dist/exports/routes.d.ts",
       "import": "./dist/exports/routes.js",
       "default": "./dist/exports/routes.js"
-    },
-    "./client": {
-      "types": "./dist/exports/client.d.ts",
-      "import": "./dist/exports/client.js",
-      "default": "./dist/exports/client.js"
-    },
-    "./rsc": {
-      "types": "./dist/exports/rsc.d.ts",
-      "import": "./dist/exports/rsc.js",
-      "default": "./dist/exports/rsc.js"
-    },
-    "./templates": {
-      "types": "./dist/exports/templates.d.ts",
-      "import": "./dist/exports/templates.js",
-      "default": "./dist/exports/templates.js"
     }
   },
   "files": [
@@ -97,21 +82,6 @@
         "types": "./dist/exports/routes.d.ts",
         "import": "./dist/exports/routes.js",
         "default": "./dist/exports/routes.js"
-      },
-      "./client": {
-        "types": "./dist/exports/client.d.ts",
-        "import": "./dist/exports/client.js",
-        "default": "./dist/exports/client.js"
-      },
-      "./rsc": {
-        "types": "./dist/exports/rsc.d.ts",
-        "import": "./dist/exports/rsc.js",
-        "default": "./dist/exports/rsc.js"
-      },
-      "./templates": {
-        "types": "./dist/exports/templates.d.ts",
-        "import": "./dist/exports/templates.js",
-        "default": "./dist/exports/templates.js"
       }
     }
   },
@@ -122,9 +92,9 @@
   },
   "dependencies": {
     "@frogbotai/ui": "workspace:*",
-    "@payloadcms/next": "3.90.2",
-    "@payloadcms/translations": "3.90.2",
-    "@payloadcms/ui": "3.90.2"
+    "@payloadcms/next": "catalog:",
+    "@payloadcms/translations": "catalog:",
+    "@payloadcms/ui": "catalog:"
   },
   "peerDependencies": {
     "frogbot": "workspace:*",
@@ -140,7 +110,7 @@
     "frogbot": "workspace:*",
     "graphql": "^16.8.1",
     "next": "catalog:",
-    "payload": "3.90.2",
+    "payload": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "typescript": "catalog:"

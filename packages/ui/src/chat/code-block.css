@@ -3,7 +3,7 @@
     overflow-x: auto;
     padding: 1rem;
     border-radius: var(--fb-radius-lg);
-    background-color: var(--theme-base-50);
+    background-color: var(--fb-theme-base-50);
     font-size: var(--fb-text-sm);
     line-height: var(--fb-text-sm--line-height);
   }

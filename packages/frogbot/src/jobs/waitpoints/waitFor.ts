@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 
 import type { Job, PayloadRequest } from 'payload';
 
-import { type ReArm, runnableNow } from '../lease.js';
+import { type ReArm, runnableNow } from '../run.js';
 import { updateWaitpoint } from './atomic.js';
 import { isReservedWaitpointKey } from './json.js';
 import {

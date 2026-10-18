@@ -13,6 +13,7 @@ With a `sync-user` task registered that accepts `userId`, enqueue it from a hook
 ```ts
 const job = await req.frogbot.jobs.queue({
   task: 'sync-user',
+  overrideAccess: true,
   input: { userId: '42' },
   queue: 'sync',
   jobId: 'sync-user-42',
@@ -32,7 +33,7 @@ A duplicate `jobs.queue` with a reserved `jobId` creates nothing, does not throw
 - Omitting `jobId` preserves ordinary enqueue behavior; multiple jobs can omit it.
 - Completion, failure for good, cancellation, or deletion frees the ID. Completion frees it whether the record is kept or deleted, with either `jobs.deleteJobOnComplete` setting.
 
-`jobId` means “first live job wins; later duplicates are absorbed.” When `jobs.enableConcurrencyControl` is enabled, `concurrency.supersedes` instead deletes older pending jobs with the same `concurrencyKey` first, including paused workflows, freeing their IDs before inserting the replacement. A job that is already processing is not superseded; the duplicate resolves with it.
+`jobId` means “first live job wins; later duplicates are absorbed.” `concurrency.supersedes` instead deletes older pending jobs with the same `concurrencyKey` first, including paused workflows, freeing their IDs before inserting the replacement. A job that is already processing is not superseded; the duplicate resolves with it.
 
 `jobId` is not an “only ever once” key and does not give exactly-once execution. After a job finishes, the same ID queues new work; recovery can also repeat an external side effect. Check your own records for side effects that must happen once.
 
@@ -61,10 +62,10 @@ For example, a maintenance loop can schedule and run across every queue:
 ```ts
 await frogbot.jobs.handleSchedules({ allQueues: true, req });
 
-await frogbot.jobs.run({ allQueues: true, limit: 10, req });
+await frogbot.jobs.run({ allQueues: true, limit: 10, req, overrideAccess: true });
 ```
 
-`run` also accepts `where`, `processingOrder`, `sequential`, and `silent`. Jobs run in parallel unless `sequential: true`. Queue, run, and cancel operations bypass access checks by default; pass `overrideAccess: false` and `req` to enforce the corresponding `jobs.access` rule.
+`run` also accepts `where`, `processingOrder`, `sequential`, and `silent`. Jobs run in parallel unless `sequential: true`. Queue, run, and cancel operations run the matching `jobs.access` rule unless `overrideAccess: true` is passed. The default rule allows a signed-in user, so workers, crons and other calls without a user pass `overrideAccess: true`.
 
 An exceptional completion or database-write failure can reject a batch before already-started sibling work finishes. The batch promise does not guarantee that siblings have drained after such a failure.
 
@@ -75,7 +76,7 @@ An exceptional completion or database-write failure can reject a batch before al
 
 ### Method options
 
-Every method that accepts `req` takes a `FrogBotRequest`. `overrideAccess` defaults to `true`; set it to `false` with `req` to run the matching [`jobs.access`](#access-options) rule.
+Every method that accepts `req` takes a `FrogBotRequest`. `overrideAccess` defaults to `false`, which runs the matching [`jobs.access`](#access-options) rule against `req.user`; pass `true` to skip it.
 
 `queue` accepts:
 
@@ -88,7 +89,7 @@ Every method that accepts `req` takes a `FrogBotRequest`. `overrideAccess` defau
 | `waitUntil` | `Date` | — | The job is not eligible to run before this time. |
 | `jobId` | `string` | — | Reserves the ID while the job or its workflow is unfinished. See [Reserve a `jobId`](#reserve-a-jobid). |
 | `meta` | `Record<string, unknown>` | — | Extra data stored on the job record. |
-| `overrideAccess` | `boolean` | `true` | Set `false` to run `jobs.access.queue`. |
+| `overrideAccess` | `boolean` | `false` | `true` skips `jobs.access.queue`. |
 | `req` | `FrogBotRequest` | — | Request used for the access check. |
 
 `run` accepts:
@@ -102,14 +103,14 @@ Every method that accepts `req` takes a `FrogBotRequest`. `overrideAccess` defau
 | `processingOrder` | `Sort` | [`jobs.processingOrder`](#jobs-options) | Sort for this batch, such as `'createdAt'` for oldest first. |
 | `sequential` | `boolean` | `false` | Run the claimed jobs one at a time instead of in parallel. |
 | `silent` | `boolean \| { info?: boolean; error?: boolean }` | `false` | Suppress the job system's info logs, error logs, or both. Your own logging is unaffected. |
-| `overrideAccess` | `boolean` | `true` | Set `false` to run `jobs.access.run`. |
+| `overrideAccess` | `boolean` | `false` | `true` skips `jobs.access.run`. |
 | `req` | `FrogBotRequest` | — | Request used for the access check and passed to handlers. |
 
 | Method | Options |
 | --- | --- |
 | `runByID` | `id` (required), `overrideAccess`, `req`, and `silent`, as for `run`. |
 | `handleSchedules` | `allQueues` (default `false`), `queue` (default `'default'`), and `req`. Enqueues due jobs for tasks and workflows with a `schedule` in the selected queues. |
-| `cancel` | `where` (required), `queue`, `overrideAccess`, and `req`. `overrideAccess: false` runs `jobs.access.cancel`. |
+| `cancel` | `where` (required), `queue`, `overrideAccess`, and `req`. Runs `jobs.access.cancel` unless `overrideAccess: true`. |
 | `cancelByID` | `id` (required), `overrideAccess`, and `req`. |
 | `resume` | `token` (required), `data` (required JSON value), and `req`. See [Resume from code](#resume-from-code). |
 
@@ -119,7 +120,7 @@ Task definitions support `onSuccess` and `onFail`. Both callbacks are awaited: `
 
 Configured retries and checkpoint restoration remain supported. By default, a previously completed task restores its saved output without rerunning its handler or `onSuccess`; retry settings can disable restoration. Work without a durable checkpoint can run again, including callback side effects.
 
-Job execution uses atomic claims and direct job-record updates. It does not run jobs collection hooks; `jobs.runHooks` and job-execution `jobs.depth` are unsupported and are not exposed in FrogBot configuration. Ordinary application collection hooks, including those invoked by collection operations inside a task, remain supported.
+Job execution uses atomic claims and direct job-record updates at depth 0. It does not run jobs collection hooks. Ordinary application collection hooks, including those invoked by collection operations inside a task, remain supported.
 
 ## Durable workflow waits
 
@@ -246,25 +247,22 @@ const jobs = {
 
 All durations are positive safe-integer milliseconds. The default must not exceed the maximum; per-wait `expiresIn` must not exceed it either and must produce a valid date on or before `9999-12-31T23:59:59.999Z`. The deadline starts when the wait is first created, including time spent in `onWait`.
 
-Expiry continues the same job with `{ expired: true }`, even if nobody attempts to resume it. Its `jobId` stays reserved if it waits again, until the workflow completes, fails for good, is cancelled, or is deleted. Runners can pick it up after its expiry `waitUntil` passes; the scheduled `frogbot-sweep-jobs` task also expires waits and wakes their jobs. A racing response and expiry have one winner. Keep scheduling and execution running for `default`, plus workers for the workflow's original queue; see [Workers for durable waits](/jobs-queue/workers#workers-for-durable-waits). A stopped worker does not extend token validity, but it delays expiry handling and execution.
+Expiry continues the same job with `{ expired: true }`, even if nobody attempts to resume it. Its `jobId` stays reserved if it waits again, until the workflow completes, fails for good, is cancelled, or is deleted. Runners can pick it up after its expiry `waitUntil` passes; the scheduled `frogbot-sweep-waitpoints` task also expires waits and wakes their jobs. A racing response and expiry have one winner. Keep scheduling and execution running for `default`, plus workers for the workflow's original queue; see [Workers for durable waits](/jobs-queue/workers#workers-for-durable-waits). A stopped worker does not extend token validity, but it delays expiry handling and execution.
 
 ## Leases and crash recovery
 
-FrogBot atomically claims jobs through its database adapters and renews their leases while the run promise is pending. Renewal covers the local `run` and `runByID` APIs, REST job execution, web autorun, and the worker CLI. Task and workflow handlers need no heartbeat code. An exceptional early batch rejection ends renewal even if sibling work is still running.
+Each run claims jobs with a fresh `processingToken` and a `processingUntil` lease, and renews the lease while the jobs run. Task and workflow handlers need no heartbeat code. A job whose lease has passed can be claimed by any worker; an old worker can't update a job once a successor holds it. FrogBot's SQL adapters claim with `FOR UPDATE SKIP LOCKED` on Postgres, so concurrent workers take different jobs.
 
-| Setting              | Value                                                                |
-| -------------------- | -------------------------------------------------------------------- |
-| `jobs.leaseDuration` | Milliseconds; default `300000` (five minutes).                       |
-| Renewal cadence      | Derived as `leaseDuration / 5`; one minute by default.               |
-| Recovery sweep       | `frogbot-sweep-jobs`, scheduled every minute in the `default` queue. |
+| Setting | Value |
+| --- | --- |
+| `jobs.processingLease.duration` | Milliseconds; default `1200000` (20 minutes). |
+| `jobs.processingLease.safetyBuffer` | Milliseconds before expiry that a worker stops writing; default `30000`. |
 
-Set `jobs.leaseDuration` in `frogbot.config.ts` to tune recovery. It must be an integer from `5` to `2147483647`. Choose a duration with headroom for event-loop pauses and database delays; it is not a maximum job runtime.
+Choose a duration with headroom for event-loop pauses and database delays; it is not a maximum job runtime.
 
-The sweep releases expired, still-processing, incomplete jobs so workers can claim them again. Renewal and release check a private owner token, so an old worker cannot renew or reset a successor's lease. Completed jobs are left alone.
+**Keep a scheduler and worker running that cover the `default` queue**, or use `allQueues: true` for both scheduling and execution. They can share one process. The `default` queue runs the `frogbot-sweep-waitpoints` task, which expires waits and wakes their jobs.
 
-**Keep a scheduler and worker running that cover the `default` queue**, or use `allQueues: true` for both scheduling and execution. They can share one process. Workers that only process a custom queue do not run recovery maintenance; lease expiry alone does not release a job. Recovery timing includes lease expiry, the next sweep's scheduling and execution, and a subsequent worker tick; queue backlog can extend it.
-
-Recovery is **at least once**. A crash, database outage, or event-loop stall can lose the lease after an external action has already happened. Ownership checks protect lease mutations, not external effects or stale completion writes. Make external operations idempotent, for example with the destination service's idempotency key.
+Recovery is **at least once**. A crash, database outage, or event-loop stall can lose the lease after an external action has already happened. The lease protects job updates, not external effects. Make external operations idempotent, for example with the destination service's idempotency key.
 
 ## Configuration reference
 
@@ -272,20 +270,17 @@ Recovery is **at least once**. A crash, database outage, or event-loop stall can
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `tasks` | `TaskConfig[]` | `[]` | Tasks that can be queued or run inside workflows. See [Task options](#task-options). The slug `frogbot-sweep-jobs` is reserved. |
+| `tasks` | `TaskConfig[]` | `[]` | Tasks that can be queued or run inside workflows. See [Task options](#task-options). The slug `frogbot-sweep-waitpoints` is reserved. |
 | `workflows` | `WorkflowConfig[]` | `[]` | Workflows that orchestrate tasks. See [Workflow options](#workflow-options). |
 | `access` | `{ queue?, run?, cancel? }` | Signed-in users | Access rules checked when a call sets `overrideAccess: false`. See [Access options](#access-options). |
 | `autoRun` | `AutorunCronConfig[] \| (() => AutorunCronConfig[] \| Promise<AutorunCronConfig[]>)` | No runners | In-process cron runners that claim queued jobs. They do not queue new jobs, apart from handling schedules. FrogBot appends its own all-queues runner when agents have schedules or piece triggers. Avoid on serverless platforms. See [Autorun options](#autorun-options). |
 | `shouldAutoRun` | `() => boolean \| Promise<boolean>` | Always run | Checked on each autorun tick before jobs are claimed. Return `false` to skip the tick. See [Disable web autorun](/jobs-queue/workers#disable-web-autorun). |
 | `deleteJobOnComplete` | `boolean` | `true` | Delete each job record once it completes successfully. Set `false` to keep completed records. |
-| `enableConcurrencyControl` | `boolean` | `true` | Adds an indexed concurrency key to the jobs collection so tasks and workflows can use `concurrency`. May need a database migration. |
 | `processingOrder` | `Sort \| { default?: Sort; queues: Record<string, Sort> } \| ((args) => Sort \| Promise<Sort>)` | `'createdAt'` (oldest first) | Order jobs are claimed in, globally, per queue, or computed from the `run` arguments. `'-createdAt'` claims newest first. |
-| `addParentToTaskLog` | `boolean` | `false` | Records the parent task in each task log entry, for tracing nested tasks. |
-| `jobsCollectionOverrides` | `({ defaultJobsCollection }) => CollectionConfig` | — | Returns a modified jobs collection. FrogBot still adds its `jobId`, `leaseUntil`, `leaseOwner`, and `waitpoint` fields, replacing any with those names. |
-| `leaseDuration` | `number` | `300000` | Job lease length in milliseconds, from `5` to `2147483647`. See [Leases and crash recovery](#leases-and-crash-recovery). |
+| `jobsCollectionOverrides` | `({ defaultJobsCollection }) => CollectionConfig` | — | Returns a modified jobs collection. FrogBot still adds its `jobId` and `waitpoint` fields, replacing any with those names. |
+| `processingLease` | `{ duration?: number; safetyBuffer?: number }` | 20 minutes, 30 seconds | Job lease length and write cutoff. See [Leases and crash recovery](#leases-and-crash-recovery). |
 | `waitpoints` | `{ defaultExpiresIn?: number; maxExpiresIn?: number }` | 7 and 30 days | Resumable-wait lifetimes. See [Expiry](#expiry). |
 
-`runHooks` and `depth` are not accepted; see [Task callbacks and retries](#task-callbacks-and-retries).
 
 ### Access options
 
@@ -313,13 +308,13 @@ Each rule receives `{ req }` and returns a boolean or a promise of one.
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `slug` | `string` | Required | Unique among all tasks and workflows. |
-| `handler` | `(args) => { output } \| { state: 'failed'; errorMessage? } \| Promise<…> \| string` | Required | Runs the task. It receives `input`, `job`, `req`, `inlineTask`, and `tasks`, and returns `{ output }`, or `{ state: 'failed', errorMessage? }` to fail without throwing. A string is a module path, `'path#exportName'`, loaded when the task runs. |
+| `handler` | `(args) => { output } \| Promise<…> \| string` | Required | Runs the task. It receives `input`, `job`, `req`, `inlineTask`, and `tasks`, and returns `{ output }`; throw to fail. A string is a module path, `'path#exportName'`, loaded when the task runs. |
 | `inputSchema` | `Field[]` | — | Fields describing `input`, used for generated types. |
 | `outputSchema` | `Field[]` | — | Fields describing `output`, used for generated types. |
 | `interfaceName` | `string` | `Task` plus the capitalized slug | Name of the generated input and output interface. |
 | `label` | `string` | — | Human-friendly name for the task or workflow. |
 | `retries` | `number \| RetryConfig` | No retries, unless a workflow sets them | Retries after a failure. See [Retry options](#retry-options). |
-| `concurrency` | `ConcurrencyConfig` | — | Keeps related jobs from running at once. Requires `jobs.enableConcurrencyControl`. See [Concurrency options](#concurrency-options). |
+| `concurrency` | `ConcurrencyConfig` | — | Keeps related jobs from running at once. See [Concurrency options](#concurrency-options). |
 | `schedule` | `ScheduleConfig[]` | — | Queues the task on a cron schedule. See [Schedule options](#schedule-options). |
 | `onSuccess` | `({ input, job, req, taskStatus }) => void \| Promise<void>` | — | Awaited after a successful handler, before its checkpoint is saved. |
 | `onFail` | `({ input, job, req, taskStatus }) => void \| Promise<void>` | — | Awaited after every failed attempt, including attempts that will retry. |
@@ -371,4 +366,4 @@ Each rule receives `{ req }` and returns a boolean or a promise of one.
 
 Use the FrogBot adapters: `@frogbotai/db-postgres`, `@frogbotai/db-vercel-postgres`, `@frogbotai/db-sqlite`, `@frogbotai/db-d1-sqlite`, or `@frogbotai/db-mongodb`. They provide atomic claims and conditional lease updates without Redis.
 
-The jobs collection includes a `jobId` field that is unique while its job is unfinished, an indexed `leaseUntil` field, and a private `leaseOwner` field. New SQL projects get the partial unique index through their generated [database migrations](/database/migrations); apply them before starting workers. MongoDB creates its index on connect. See [SQLite and D1 requirements](/jobs-queue/workers#sqlite-and-d1) for `RETURNING` support and local development.
+The jobs collection includes a `jobId` field that is unique while its job is unfinished. New SQL projects get the partial unique index through their generated [database migrations](/database/migrations); apply them before starting workers. MongoDB creates its index on connect. See [SQLite and D1 requirements](/jobs-queue/workers#sqlite-and-d1) for `RETURNING` support and local development.

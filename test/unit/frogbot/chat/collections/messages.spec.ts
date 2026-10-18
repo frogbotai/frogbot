@@ -95,8 +95,8 @@ describe('defaultMessagesCollection', () => {
   it('types author and settlements as turn coordinator shapes', () => {
     const schema = (name: string) =>
       (
-        field(name) as { typescriptSchema?: Array<(args: { jsonSchema: object }) => object> }
-      ).typescriptSchema?.[0]({ jsonSchema: {} });
+        field(name) as { jsonSchema?: Array<(args: { jsonSchema: object }) => object> }
+      ).jsonSchema?.[0]({ jsonSchema: {} });
 
     expect(schema('author')).toEqual({ tsType: "import('frogbot').TurnActor" });
     expect(schema('settlements')).toEqual({
@@ -116,12 +116,12 @@ describe('defaultMessagesCollection', () => {
     },
   );
 
-  it('types parts as UIMessage parts via typescriptSchema', () => {
+  it('types parts as UIMessage parts via jsonSchema', () => {
     const parts = collection.fields.find((f) => 'name' in f && f.name === 'parts') as {
-      typescriptSchema?: Array<(args: { jsonSchema: object }) => object>;
+      jsonSchema?: Array<(args: { jsonSchema: object }) => object>;
     };
 
-    expect(parts.typescriptSchema?.[0]({ jsonSchema: {} })).toEqual({
+    expect(parts.jsonSchema?.[0]({ jsonSchema: {} })).toEqual({
       tsType: "import('frogbot').UIMessage['parts']",
     });
   });
@@ -165,8 +165,10 @@ describe('defaultMessagesCollection', () => {
 
   describe('access', () => {
     it('create requires an authenticated user', async () => {
-      expect(await collection.access?.create?.({ req: reqWithUser('u1') })).toBe(true);
-      expect(await collection.access?.create?.({ req: reqWithUser() })).toBe(false);
+      expect(await collection.access?.create?.({ slug: 'test', req: reqWithUser('u1') })).toBe(
+        true,
+      );
+      expect(await collection.access?.create?.({ slug: 'test', req: reqWithUser() })).toBe(false);
     });
 
     it.each([
@@ -178,28 +180,28 @@ describe('defaultMessagesCollection', () => {
     ])('create %s a message into %s', async (verdict, _, chat, context) => {
       const req = reqWithChat(chat, context);
 
-      expect(await collection.access?.create?.({ req, data: { chat: 'chat-1' } })).toBe(
-        verdict === 'allows',
-      );
+      expect(
+        await collection.access?.create?.({ slug: 'test', req, data: { chat: 'chat-1' } }),
+      ).toBe(verdict === 'allows');
     });
 
     it('read resolves ownership through the chat relation', async () => {
-      expect(await collection.access?.read?.({ req: reqWithUser('u1') })).toEqual({
+      expect(await collection.access?.read?.({ slug: 'test', req: reqWithUser('u1') })).toEqual({
         'chat.user': { equals: 'u1' },
       });
-      expect(await collection.access?.read?.({ req: reqWithUser() })).toBe(false);
+      expect(await collection.access?.read?.({ slug: 'test', req: reqWithUser() })).toBe(false);
     });
 
     it('update/delete are limited to the caller’s web chats', async () => {
       for (const op of ['update', 'delete'] as const) {
-        expect(await collection.access?.[op]?.({ req: reqWithUser('u1') })).toEqual({
+        expect(await collection.access?.[op]?.({ slug: 'test', req: reqWithUser('u1') })).toEqual({
           'chat.user': { equals: 'u1' },
           'chat.channelKey': { exists: false },
         });
-        expect(await collection.access?.[op]?.({ req: reqWithUser() })).toBe(false);
-        expect(await collection.access?.[op]?.({ req: reqWithUser('u1', channelContext) })).toBe(
-          false,
-        );
+        expect(await collection.access?.[op]?.({ slug: 'test', req: reqWithUser() })).toBe(false);
+        expect(
+          await collection.access?.[op]?.({ slug: 'test', req: reqWithUser('u1', channelContext) }),
+        ).toBe(false);
       }
     });
 
@@ -218,7 +220,7 @@ describe('defaultMessagesCollection', () => {
       });
 
       expect(configured.access?.read).toBe(read);
-      expect(await configured.access?.update?.({ req: reqWithUser('u1') })).toEqual({
+      expect(await configured.access?.update?.({ slug: 'test', req: reqWithUser('u1') })).toEqual({
         'chat.user': { equals: 'u1' },
         'chat.channelKey': { exists: false },
       });

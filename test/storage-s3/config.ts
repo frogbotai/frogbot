@@ -69,7 +69,7 @@ export default await buildTestConfig({
       tools: [...todoTools],
     },
   ],
-  plugins: [
+  storage: [
     s3Storage({
       collections: { [mediaSlug]: true },
       bucket,

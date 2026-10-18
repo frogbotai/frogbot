@@ -47,7 +47,7 @@ if (fieldIsArrayType(field)) {
 
 if (fieldIsBlockType(field)) {
   expectTypeOf(field.type).toEqualTypeOf<'blocks'>();
-  expectTypeOf(field.blocks).toMatchTypeOf<object[]>();
+  expectTypeOf(field.blocks).toMatchTypeOf<(object | string)[]>();
 }
 
 if (fieldIsGroupType(field)) {

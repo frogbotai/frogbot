@@ -31,7 +31,7 @@ export const RecursivePages: CollectionConfig = {
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
-  fields: [{ name: 'title', type: 'text', required: true }, slugField()],
+  fields: [{ name: 'title', type: 'text', required: true }, slugField({ useAsSlug: 'title' })],
 };
 
 export const pageSlug = slugField({

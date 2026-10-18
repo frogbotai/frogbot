@@ -36,7 +36,7 @@ Field configuration is recursive:
 | Tabs          | `tabs: Tab[]`, each with `fields: Field[]` | Named tabs create objects; unnamed tabs are presentational |
 | Block         | `fields: Field[]`                          | Object selected through a Blocks or Rich Text field        |
 
-A Blocks field uses `blocks: Block[]` and optional `blockReferences`; each `Block` owns its recursive `fields`. `fieldHasSubFields` therefore matches arrays, collapsibles, groups, and rows, not Blocks or Tabs fields.
+A Blocks field uses `blocks: (Block | string)[]`, where a string is the slug of a root block; each `Block` owns its recursive `fields`. `fieldHasSubFields` therefore matches arrays, collapsibles, groups, and rows, not Blocks or Tabs fields.
 
 ```ts
 import type { CollectionConfig } from 'frogbot';
@@ -61,11 +61,11 @@ export const Pages: CollectionConfig = {
 };
 ```
 
-Use the public guards in the [field type guards skill reference](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/FIELD-TYPE-GUARDS.md) when walking unknown field trees. Handle `tabs`, `blocks`, and `blockReferences` separately from `fieldHasSubFields`.
+Use the public guards in the [field type guards skill reference](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/FIELD-TYPE-GUARDS.md) when walking unknown field trees. Handle `tabs` and `blocks` separately from `fieldHasSubFields`.
 
 ## Slug field
 
-`slugField()` returns a `RowField` containing a generated Text field and a lock checkbox. Its source is a top-level field in the same collection.
+`slugField(options)` returns the built-in Slug field, `{ name: 'slug', type: 'slug', ...options }`. Its `useAsSlug` source is a top-level field in the same collection.
 
 ```ts
 import { slugField } from 'frogbot';
@@ -73,11 +73,11 @@ import type { CollectionConfig } from 'frogbot';
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
-  fields: [{ name: 'title', type: 'text', required: true }, slugField()],
+  fields: [{ name: 'title', type: 'text', required: true }, slugField({ useAsSlug: 'title' })],
 };
 ```
 
-Defaults are `name: 'slug'`, `checkboxName: 'generateSlug'`, `useAsSlug: 'title'`, and `required: true`. Set `disableUnique: true` to disable the unique index. `fieldToUse` is also accepted as the source field. `overrides` receives and returns the generated `RowField`; `slugify` may synchronously or asynchronously return a string or `undefined`.
+The slug is required, unique and indexed by default, and set once: it's generated on create (from the source, or `<singular>-<N>` without one) and never regenerated when the source changes. Set `unique: false` to drop the unique index. `slugify` may synchronously or asynchronously return a string or `undefined`.
 
 ```ts
 export const pageSlug = slugField({

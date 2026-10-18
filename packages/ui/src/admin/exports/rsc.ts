@@ -1,4 +1,3 @@
-export { getServerAdapter, type ServerAdapter, setServerAdapter } from '../adapters/server.js';
 export {
   CollectionsSection,
   type CollectionsSectionProps,
@@ -10,6 +9,7 @@ export { RecentsSection, type RecentsSectionProps } from '../elements/Nav/Recent
 export { SignInButtons } from '../elements/SignInButtons/index.js';
 export { FrogBotIcon } from '../graphics/FrogBotIcon.js';
 export { FrogBotLogo } from '../graphics/FrogBotLogo.js';
+export { DefaultTemplate, type DefaultTemplateProps } from '../templates/Default/index.js';
 export { BoardView } from '../views/Board/index.js';
 export { CalendarView } from '../views/Calendar/index.js';
 export { ChatView } from '../views/Chat/index.js';
@@ -32,3 +32,13 @@ export { upsertPreferences } from '@payloadcms/ui/rsc';
 export { handlePreview } from '@payloadcms/ui/rsc';
 export { handleLivePreview } from '@payloadcms/ui/rsc';
 export { copyDataFromLocaleHandler } from '@payloadcms/ui/rsc';
+export { CollectionCards } from '@payloadcms/ui/rsc';
+export { CollectionQueryWidget } from '@payloadcms/ui/rsc';
+export { HierarchyButton } from '@payloadcms/ui/rsc';
+export { HierarchyField } from '@payloadcms/ui/rsc';
+export { HierarchySidebarTabServer } from '@payloadcms/ui/rsc';
+export { HierarchyTypeFieldServer } from '@payloadcms/ui/rsc';
+export { LLMInstructionsCell } from '@payloadcms/ui/rsc';
+export { RecentlyViewedWidget } from '@payloadcms/ui/rsc';
+export { UploadDropzoneWidget } from '@payloadcms/ui/rsc';
+export { WelcomeWidget } from '@payloadcms/ui/rsc';

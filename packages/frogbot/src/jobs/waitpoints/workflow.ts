@@ -1,7 +1,7 @@
 import type { WorkflowConfig as PayloadWorkflowConfig } from 'payload';
 import { dynamicImport } from 'payload';
 
-import { getJobLeaseContext } from '../lease.js';
+import { getJobRunContext } from '../run.js';
 import type { JobsConfig, WorkflowHandler } from '../types.js';
 import type { WaitpointOptions } from './types.js';
 import { createWaitFor } from './waitFor.js';
@@ -42,7 +42,7 @@ export function wrapWorkflow({
       } catch (error) {
         if (!isWaiting(error)) throw error;
 
-        const context = getJobLeaseContext();
+        const context = getJobRunContext();
 
         if (!context || context.payload !== args.req.payload) {
           throw new Error('FrogBot workflow waits require an active jobs run for this runtime.');

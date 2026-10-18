@@ -1,5 +1,5 @@
 import type { FrogBot, NumberField, TextField, ValidateOptions, VectorField } from 'frogbot';
-import type { BaseValidateOptions, Operation } from 'payload';
+import type { BaseValidateOptions } from 'payload';
 import { expectTypeOf } from 'vitest';
 
 type Data = { title: string };
@@ -21,7 +21,11 @@ expectTypeOf(options.preferences).toEqualTypeOf<
 
 expectTypeOf(options.collectionSlug).toEqualTypeOf<string | undefined>();
 expectTypeOf(options.overrideAccess).toEqualTypeOf<boolean | undefined>();
-expectTypeOf(options.operation).toEqualTypeOf<Operation | undefined>();
+
+expectTypeOf(options.operation).toEqualTypeOf<
+  BaseValidateOptions<Data, SiblingData, Value>['operation']
+>();
+
 expectTypeOf(options.req.frogbot).toEqualTypeOf<FrogBot>();
 expectTypeOf(options.req).not.toHaveProperty('payload');
 
@@ -33,7 +37,11 @@ const text: TextField = {
     expectTypeOf(value).toBeAny();
     expectTypeOf(fieldOptions.minLength).toEqualTypeOf<number | undefined>();
     expectTypeOf(fieldOptions.type).toEqualTypeOf<'text'>();
-    expectTypeOf(fieldOptions.operation).toEqualTypeOf<Operation | undefined>();
+
+    expectTypeOf(fieldOptions.operation).toEqualTypeOf<
+      BaseValidateOptions<unknown, unknown, unknown>['operation']
+    >();
+
     expectTypeOf(fieldOptions.req.frogbot).toEqualTypeOf<FrogBot>();
     expectTypeOf(fieldOptions.req).not.toHaveProperty('payload');
     expectTypeOf(fieldOptions).not.toHaveProperty('hooks');

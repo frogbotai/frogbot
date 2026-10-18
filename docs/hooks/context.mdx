@@ -73,6 +73,7 @@ const Customer: CollectionConfig = {
     afterChange: [
       async ({ doc, req }) => {
         await req.frogbot.update({
+          overrideAccess: true,
           // DANGER: updating the same slug as the collection in an afterChange will create an infinite loop!
           collection: 'customers',
           id: doc.id,
@@ -107,6 +108,7 @@ const MyCollection: CollectionConfig = {
         }
         await req.frogbot.update({
           collection: contextHooksSlug,
+          overrideAccess: true,
           id: doc.id,
           data: {
             ...(await fetchCustomerData(data.customerID)),

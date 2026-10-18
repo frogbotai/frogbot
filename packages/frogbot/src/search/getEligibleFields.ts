@@ -57,7 +57,7 @@ export function getFieldNodes(fields: readonly Field[]): Map<string, SearchField
           });
         }
       } else if (field.type === 'blocks') {
-        for (const block of [...field.blocks, ...(field.blockReferences ?? [])]) {
+        for (const block of field.blocks) {
           if (typeof block === 'string') continue;
 
           visit(block.fields, { ...node, repeated: true });

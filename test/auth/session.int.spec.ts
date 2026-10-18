@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { redisKVAdapter } from '@frogbotai/kv-redis';
-import { getPayload, jwtSign, type Payload, type TypedUser } from 'payload';
+import { getPayload, jwtSign, type Payload, type User } from 'payload';
 import {
   afterAll,
   beforeAll,
@@ -49,7 +49,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
 
   const readUser = () =>
-    payload.db.findOne<TypedUser>({ collection: 'members', where: { id: { equals: userId } } });
+    payload.db.findOne<User>({ collection: 'members', where: { id: { equals: userId } } });
 
   const writeUser = (data: Record<string, unknown>) =>
     payload.db.updateOne({ id: userId, collection: 'members', data, returning: false });
@@ -620,7 +620,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     expect(update).not.toHaveBeenCalled();
     expect(afterLogin).toHaveBeenCalledOnce();
     expect(req.user).toBe(result.user);
-    expect(result.user.name).toBe('Stateless');
+    expect((result.user as { name?: string }).name).toBe('Stateless');
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
   });
 

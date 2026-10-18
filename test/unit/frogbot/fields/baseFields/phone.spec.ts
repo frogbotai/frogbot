@@ -4,14 +4,11 @@ import { phoneField } from '../../../../../packages/frogbot/src/fields/baseField
 import type { TextField } from '../../../../../packages/frogbot/src/fields/config/types.js';
 import { validateField } from './validateField.js';
 
-type Schema = Parameters<NonNullable<TextField['typescriptSchema']>[number]>[0]['jsonSchema'];
+type Schema = Parameters<NonNullable<TextField['jsonSchema']>[number]>[0]['jsonSchema'];
 
-function runSchema(
-  field: { typescriptSchema?: TextField['typescriptSchema'] },
-  jsonSchema: Schema,
-) {
-  return (field.typescriptSchema ?? []).reduce(
-    (schema, entry) => entry({ jsonSchema: schema }),
+function runSchema(field: { jsonSchema?: TextField['jsonSchema'] }, jsonSchema: Schema) {
+  return (field.jsonSchema ?? []).reduce(
+    (schema, entry) => entry({ jsonSchema: schema, variant: 'output' }),
     jsonSchema,
   );
 }
@@ -38,7 +35,7 @@ describe('phoneField', () => {
   it('passes text field options through unchanged', () => {
     const access = { update: () => false };
     const afterRead = () => '5551234567';
-    const developerEntry: NonNullable<TextField['typescriptSchema']>[number] = ({ jsonSchema }) =>
+    const developerEntry: NonNullable<TextField['jsonSchema']>[number] = ({ jsonSchema }) =>
       jsonSchema;
 
     const field = phoneField({
@@ -51,7 +48,7 @@ describe('phoneField', () => {
       access,
       hooks: { afterRead: [afterRead] },
       admin: { readOnly: true, placeholder: '+1', custom: { other: true } },
-      typescriptSchema: [developerEntry],
+      jsonSchema: [developerEntry],
     });
 
     expect(field).toMatchObject({
@@ -70,8 +67,8 @@ describe('phoneField', () => {
       },
     });
 
-    expect(field.typescriptSchema).toHaveLength(2);
-    expect(field.typescriptSchema?.[1]).toBe(developerEntry);
+    expect(field.jsonSchema).toHaveLength(2);
+    expect(field.jsonSchema?.[1]).toBe(developerEntry);
   });
 });
 
@@ -85,7 +82,7 @@ describe('phoneField option errors', () => {
   });
 });
 
-describe('phoneField typescriptSchema', () => {
+describe('phoneField jsonSchema', () => {
   it('describes the value to agents when there is no description', () => {
     const field = phoneField({ name: 'phone' });
 

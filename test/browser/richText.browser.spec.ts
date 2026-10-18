@@ -78,10 +78,7 @@ test('edits, saves, reloads, and renders rich text through the generated import 
 
   const inlineBlockContainer = inlineBlock.locator('.LexicalEditorTheme__inlineBlock__container');
 
-  await inlineBlockContainer
-    .locator('.LexicalEditorTheme__inlineBlock__editButton')
-    .first()
-    .click();
+  await inlineBlockContainer.first().click();
 
   const inlineBlockEditDrawer = page
     .locator('dialog[id^="drawer_1_lexical-inlineBlocks-create-"]')
@@ -94,9 +91,9 @@ test('edits, saves, reloads, and renders rich text through the generated import 
   await inlineBlockEditDrawer.getByRole('button', { name: /save changes/i }).click();
   await expect(inlineBlockEditDrawer).toBeHidden();
 
-  await inlineBlock.click();
-  await page.keyboard.press('Backspace');
+  await inlineBlock.locator('.LexicalEditorTheme__inlineBlock__removeButton').click();
   await expect(editor.locator('.LexicalEditorTheme__inlineBlock')).toHaveCount(0);
+  await editor.locator('p').first().click();
   await page.keyboard.press('ControlOrMeta+z');
   await expect(editor.locator('.LexicalEditorTheme__inlineBlock')).toHaveCount(1);
 
@@ -157,8 +154,13 @@ test('creates and persists an external link through the link drawer', async ({ p
   const linkDrawer = page.locator('dialog[id^="drawer_1_lexical-rich-text-link-"]').first();
 
   await expect(linkDrawer).toBeVisible();
-  await linkDrawer.locator('#field-url').fill('https://frogbot.ai/docs');
-  await linkDrawer.locator('#field-url').press('Tab');
+
+  const urlField = linkDrawer.locator('#field-url');
+
+  await expect(urlField).toHaveValue('https://');
+  await urlField.fill('https://frogbot.ai/docs');
+  await urlField.press('Tab');
+  await expect(urlField).toHaveValue('https://frogbot.ai/docs');
   await linkDrawer.getByRole('button', { name: /save changes/i }).click();
   await expect(linkDrawer).toBeHidden();
 
@@ -201,7 +203,7 @@ test('documented block components render and server blocks use req.frogbot', asy
   await expect(banner).toContainText('info banner');
   await expect(banner).toContainText('Banner: Runtime banner');
   await expect(banner).toContainText('Persisted banner content');
-  await expect(banner.locator('.LexicalEditorTheme__block__editButton')).toHaveCount(2);
+  await expect(banner.locator('.LexicalEditorTheme__block__editButton')).toHaveCount(1);
   await expect(banner.locator('.LexicalEditorTheme__block__removeButton')).toHaveCount(1);
 
   await banner.locator('.LexicalEditorTheme__block__editButton').first().click();
@@ -345,7 +347,7 @@ test('form-backed RenderLexical content persists with the form', async ({ page }
 
 test('RenderLexical omits the editor when its schema path does not resolve', async ({ page }) => {
   await page.goto('/admin/collections/schema-mismatches/create');
-  await expect(page.getByRole('heading', { name: '[Untitled]' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Untitled', exact: true })).toBeVisible();
   await expect(page.locator('[contenteditable="true"]')).toHaveCount(0);
 });
 
@@ -362,7 +364,7 @@ test('CodeBlock exposes the documented TypeScript language in the editor', async
   await page.keyboard.insertText('/code');
   await expect(page.locator('#slash-menu .slash-menu-popup')).toBeVisible();
   await page.getByRole('option', { name: 'Code' }).click();
-  await expect(editor.getByText('TypeScript')).toBeVisible();
+  await expect(editor.locator('[data-language="ts"]')).toHaveText('TypeScript');
 });
 
 test('divider inserts from the slash menu and typed Markdown', async ({ page }) => {
@@ -389,17 +391,11 @@ test('divider inserts from the slash menu and typed Markdown', async ({ page }) 
 
   await editor.locator('p').last().click();
   await page.locator('.fixed-toolbar__group-add:visible').getByRole('button').click();
-  await page.getByRole('button', { name: 'Divider' }).click();
+  await page.getByRole('menuitemcheckbox', { name: 'Divider' }).click();
   await expect(editor.getByRole('separator', { name: 'Divider' })).toHaveCount(3);
 });
 
 test('view selection preserves saved content and safely renders editor nodes', async ({ page }) => {
-  // Workaround: https://github.com/payloadcms/payload/pull/18188, remove when Payload is bumped past 3.90.2
-  test.fail(
-    process.env.FROGBOT_BROWSER_DEV !== '1',
-    'Payload #18188: custom block views do not render after switching views',
-  );
-
   const paragraph = {
     children: [
       {
@@ -474,7 +470,7 @@ test('view selection preserves saved content and safely renders editor nodes', a
 
   await expect(viewEditor).toContainText('View paragraph');
   await page.locator('.lexical-view-selector__button').click();
-  await page.getByRole('button', { name: 'Preview' }).click();
+  await page.getByRole('menuitem', { name: 'Preview' }).click();
   await expect(page.locator('.lexical-view-selector__label')).toHaveText('Preview');
   await expect(viewEditor).toContainText('View paragraph');
   await expect(viewEditor.locator('.post-preview-banner')).toHaveCount(1);

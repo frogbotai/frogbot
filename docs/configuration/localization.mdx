@@ -81,7 +81,6 @@ The following options are available:
 | `locales` | `(string \| Locale)[]` | Required | Every locale you support, as codes or [locale objects](#locale-object). [More details](#locales). |
 | `defaultLocale` | `string` | Required | One of the locale codes. Documents are read and written in this locale when a request doesn't set `locale`. |
 | `fallback` | `boolean` | `true` | When a localized field has no value in the requested locale, returns the value from the fallback locale instead. When `false`, the value stays empty unless the request sets `fallbackLocale`. |
-| `defaultLocalePublishOption` | `'all' \| 'active'` | `'all'` | What the main **Publish** button publishes: every locale (`'all'`) or only the locale being edited (`'active'`). The other option is offered by the secondary button. |
 | `filterAvailableLocales` | `({ locales, req }) => Locale[] \| Promise<Locale[]>` | — | Returns the locales shown in the admin panel's locale selector. `req` is the current `FrogBotRequest`, with `req.frogbot`. [More details](#filter-available-options). |
 
 ### Locales
@@ -113,6 +112,7 @@ localization: {
       const fullTenant = await req.frogbot.findByID({
         id: getTenantFromCookie(req.headers, 'text') as string,
         collection: 'tenants',
+        overrideAccess: true,
         req,
       })
       if (fullTenant && fullTenant.supportedLocales?.length) {
@@ -164,7 +164,7 @@ All field types with a `name` property support the `localized` property—even t
 
 ## Status Localization
 
-Publication status can be tracked per locale, so you can publish in English while keeping Spanish as a draft. This is experimental. It needs [Localization](/configuration/localization), **drafts enabled** with `versions.drafts.localizeStatus: true` on the collection, and `experimental.localizeStatus: true` in your [FrogBot Config](/configuration/overview). Without the root flag, FrogBot logs a warning and keeps a single status.
+When [Localization](/configuration/localization) is enabled and a collection has **drafts enabled** and at least one localized field, FrogBot localizes the `_status` field. Publication status is then tracked per locale, so you can publish in English while keeping Spanish as a draft.
 
 When the status field is localized, it is stored as an object keyed by locale:
 
@@ -186,6 +186,7 @@ When the `_status` field is localized, publishing and unpublishing are scoped to
 // Publishes ONLY the Spanish status; English, German, etc. are unchanged
 await frogbot.update({
   collection: 'posts',
+  overrideAccess: true,
   id,
   locale: 'es',
   data: { _status: 'published' },
@@ -198,6 +199,7 @@ To publish or unpublish every locale at once, use `publishAllLocales` or `unpubl
 // Publishes every locale
 await frogbot.update({
   collection: 'posts',
+  overrideAccess: true,
   id,
   publishAllLocales: true,
   data: { _status: 'published' },
@@ -206,6 +208,7 @@ await frogbot.update({
 // Unpublishes every locale
 await frogbot.update({
   collection: 'posts',
+  overrideAccess: true,
   id,
   unpublishAllLocales: true,
   data: { _status: 'draft' },
@@ -285,6 +288,7 @@ locale, array of locales, as well as `'null'`, `'false'`, `false`, and `'none'`.
 ```js
 const posts = await frogbot.find({
   collection: 'posts',
+  overrideAccess: true,
   locale: 'es',
   fallbackLocale: false,
 })

@@ -47,20 +47,20 @@ afterAll(() => {
 });
 
 describe('rich text documentation examples', () => {
-  it('rejects a missing paragraph feature in the exact dependency example', async () => {
-    await expect(
+  it('rejects a missing paragraph feature in the exact dependency example', () => {
+    expect(() =>
       editorConfigFactory.fromFeatures({
         config: {} as SanitizedConfig,
         features: [DividerFeature()],
       }),
-    ).rejects.toThrow('DividerFeature requires the paragraph feature');
+    ).toThrow('DividerFeature requires the paragraph feature');
   });
 
   it.each([
     { order: 'divider-first', features: [DividerFeature(), ParagraphFeature()] },
     { order: 'paragraph-first', features: [ParagraphFeature(), DividerFeature()] },
-  ])('loads the exact dependency example: $order', async ({ features }) => {
-    const config = await editorConfigFactory.fromFeatures({
+  ])('loads the exact dependency example: $order', ({ features }) => {
+    const config = editorConfigFactory.fromFeatures({
       config: {} as SanitizedConfig,
       features,
     });

@@ -4,14 +4,11 @@ import { barcodeField } from '../../../../../packages/frogbot/src/fields/baseFie
 import type { TextField } from '../../../../../packages/frogbot/src/fields/config/types.js';
 import { validateField } from './validateField.js';
 
-type Schema = Parameters<NonNullable<TextField['typescriptSchema']>[number]>[0]['jsonSchema'];
+type Schema = Parameters<NonNullable<TextField['jsonSchema']>[number]>[0]['jsonSchema'];
 
-function runSchema(
-  field: { typescriptSchema?: TextField['typescriptSchema'] },
-  jsonSchema: Schema,
-) {
-  return (field.typescriptSchema ?? []).reduce(
-    (schema, entry) => entry({ jsonSchema: schema }),
+function runSchema(field: { jsonSchema?: TextField['jsonSchema'] }, jsonSchema: Schema) {
+  return (field.jsonSchema ?? []).reduce(
+    (schema, entry) => entry({ jsonSchema: schema, variant: 'output' }),
     jsonSchema,
   );
 }
@@ -33,7 +30,7 @@ describe('barcodeField', () => {
   it('passes text field options through unchanged', () => {
     const access = { update: () => false };
     const afterRead = () => '0123456789012';
-    const developerEntry: NonNullable<TextField['typescriptSchema']>[number] = ({ jsonSchema }) =>
+    const developerEntry: NonNullable<TextField['jsonSchema']>[number] = ({ jsonSchema }) =>
       jsonSchema;
 
     const field = barcodeField({
@@ -46,7 +43,7 @@ describe('barcodeField', () => {
       access,
       hooks: { afterRead: [afterRead] },
       admin: { readOnly: true, placeholder: 'EAN-13', custom: { other: true } },
-      typescriptSchema: [developerEntry],
+      jsonSchema: [developerEntry],
     });
 
     expect(field).toMatchObject({
@@ -65,8 +62,8 @@ describe('barcodeField', () => {
       },
     });
 
-    expect(field.typescriptSchema).toHaveLength(2);
-    expect(field.typescriptSchema?.[1]).toBe(developerEntry);
+    expect(field.jsonSchema).toHaveLength(2);
+    expect(field.jsonSchema?.[1]).toBe(developerEntry);
   });
 });
 
@@ -80,7 +77,7 @@ describe('barcodeField option errors', () => {
   });
 });
 
-describe('barcodeField typescriptSchema', () => {
+describe('barcodeField jsonSchema', () => {
   it('describes the value to agents when there is no description', () => {
     const field = barcodeField({ name: 'sku' });
 

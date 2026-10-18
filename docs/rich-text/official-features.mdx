@@ -36,10 +36,10 @@ Every feature is configurable. You can use the recommended defaults, remove feat
 | `FixedToolbarFeature` | No | Persistent toolbar above the editor. |
 | `BlocksFeature` | No | Block and inline-block nodes with custom fields. |
 | `TreeViewFeature` | No | Editor-state and DOM debugging panel. |
-| `EXPERIMENTAL_TableFeature` | No | Table editing. Its API may change without a major release. |
+| `TableFeature` | No | Table editing. |
 | `TextStateFeature` | No | Key-value text attributes mapped to inline styles. |
 
-Each feature is a function that returns a feature provider, such as `BoldFeature()`. The features with options are documented below. Every other feature takes no arguments: `BoldFeature`, `ItalicFeature`, `UnderlineFeature`, `StrikethroughFeature`, `SubscriptFeature`, `SuperscriptFeature`, `InlineCodeFeature`, `ParagraphFeature`, `AlignFeature`, `UnorderedListFeature`, `OrderedListFeature`, `ChecklistFeature`, `BlockquoteFeature`, `HorizontalRuleFeature`, `InlineToolbarFeature`, `TreeViewFeature`, and `EXPERIMENTAL_TableFeature`.
+Each feature is a function that returns a feature provider, such as `BoldFeature()`. The features with options are documented below. Every other feature takes no arguments: `BoldFeature`, `ItalicFeature`, `UnderlineFeature`, `StrikethroughFeature`, `SubscriptFeature`, `SuperscriptFeature`, `InlineCodeFeature`, `ParagraphFeature`, `AlignFeature`, `UnorderedListFeature`, `OrderedListFeature`, `ChecklistFeature`, `BlockquoteFeature`, `HorizontalRuleFeature`, `InlineToolbarFeature`, `TreeViewFeature`, and `TableFeature`.
 
 ## Configure headings
 
@@ -212,7 +212,7 @@ BlocksFeature({
 
 See [Converting JSX](/rich-text/converting-jsx#lexical-blocks), [Converting HTML](/rich-text/converting-html#blocks-to-html), and [Converting Markdown](/rich-text/converting-markdown#defining-a-custom-block) to render blocks. Every `BlocksFeature` option is listed in [BlocksFeature options](/rich-text/blocks#blocksfeature-options).
 
-`TreeViewFeature` adds an editor-state, DOM, and time-travel debugging panel. `EXPERIMENTAL_TableFeature` adds table editing, but may receive breaking changes within a stable release.
+`TreeViewFeature` adds an editor-state, DOM, and time-travel debugging panel. `TableFeature` adds table editing.
 
 ## Configure text state
 

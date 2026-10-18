@@ -87,12 +87,15 @@ export interface Config {
   globalsSelect: {};
   locale: null;
   widgets: {
+    welcome: WelcomeWidget;
     collections: CollectionsWidget;
+    'collection-query': CollectionQueryWidget;
+    activity: ActivityWidget;
   };
   user: Member;
   jobs: {
     tasks: {
-      'frogbot-sweep-jobs': TaskFrogBotSweepJobs;
+      'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
         input: unknown;
@@ -127,6 +130,14 @@ export interface MemberAuthOperations {
 export interface Note {
   id: number;
   title?: string | null;
+  createdBy?: {
+    relationTo: 'members';
+    value: number | Member;
+  } | null;
+  updatedBy?: {
+    relationTo: 'members';
+    value: number | Member;
+  } | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -136,6 +147,14 @@ export interface Note {
  */
 export interface Member {
   id: number;
+  createdBy?: {
+    relationTo: 'members';
+    value: number | Member;
+  } | null;
+  updatedBy?: {
+    relationTo: 'members';
+    value: number | Member;
+  } | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -171,6 +190,14 @@ export interface Post {
     | null;
   related?: (number | Note)[] | null;
   kind?: ('a' | 'b')[] | null;
+  createdBy?: {
+    relationTo: 'members';
+    value: number | Member;
+  } | null;
+  updatedBy?: {
+    relationTo: 'members';
+    value: number | Member;
+  } | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -211,6 +238,8 @@ export interface FrogBotWaitpoint {
  */
 export interface NotesSelect {
   title?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -219,6 +248,8 @@ export interface NotesSelect {
  * via the `definition` "members_select".
  */
 export interface MembersSelect {
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   email?: boolean;
@@ -251,6 +282,8 @@ export interface PostsSelect {
       };
   related?: boolean;
   kind?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   _status?: boolean;
@@ -278,6 +311,16 @@ export interface FrogBotWaitpointsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "welcome_widget".
+ */
+export interface WelcomeWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -288,9 +331,42 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBotSweepJobs".
+ * via the `definition` "collection-query_widget".
  */
-export interface TaskFrogBotSweepJobs {
+export interface CollectionQueryWidget {
+  data?: {
+    title?: string | null;
+    relatedCollection: 'notes' | 'members' | 'posts';
+    where?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    sortField?: string | null;
+    sortDirection?: ('asc' | 'desc') | null;
+    limit?: number | null;
+  };
+  width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "activity_widget".
+ */
+export interface ActivityWidget {
+  data?: {
+    excludedCollections?: ('notes' | 'members' | 'posts')[] | null;
+  };
+  width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogBotSweepWaitpoints".
+ */
+export interface TaskFrogBotSweepWaitpoints {
   input?: unknown;
   output?: unknown;
 }

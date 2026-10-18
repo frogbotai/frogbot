@@ -5,8 +5,8 @@ import type {
   BeforeValidateNodeHook as PayloadBeforeValidateNodeHook,
   FeatureProviderProviderServer,
   FeatureProviderServer,
-  HTMLConverter as PayloadHTMLConverter,
   NodeValidation as PayloadNodeValidation,
+  NodeWithHooks as PayloadNodeWithHooks,
   PopulationPromise as PayloadPopulationPromise,
   ResolvedServerFeatureMap,
   ServerFeature as PayloadServerFeature,
@@ -21,7 +21,18 @@ import type {
 import type { Field, FrogBotRequest } from 'frogbot';
 import type { JsonObject } from 'payload';
 
-export type ExtractSerializedNode<TNode extends LexicalNode> = ReturnType<TNode['exportJSON']>;
+/**
+ * The full serialized form of a node. `ReturnType` would pick Lexical's compact `exportJSON`
+ * overload, so both overloads are matched, as Payload does.
+ */
+export type ExtractSerializedNode<TNode extends LexicalNode> = TNode['exportJSON'] extends {
+  (compact?: false): infer Serialized extends SerializedLexicalNode;
+  (compact: boolean): unknown;
+}
+  ? Serialized
+  : never;
+
+type JSONSchemaFn = NonNullable<PayloadNodeWithHooks['jsonSchema']>;
 
 type WithNode<TArgs, TNode extends SerializedLexicalNode> = Omit<TArgs, 'node' | 'req'> & {
   node: TNode;
@@ -40,23 +51,10 @@ export type NodeValidation<TNode extends SerializedLexicalNode = SerializedLexic
   args: Omit<Parameters<PayloadNodeValidation<TNode>>[0], 'node'> & { node: TNode },
 ) => ReturnType<PayloadNodeValidation<TNode>>;
 
-export type HTMLConverter<TNode extends SerializedLexicalNode = SerializedLexicalNode> = Omit<
-  PayloadHTMLConverter<TNode>,
-  'converter'
-> & {
-  converter: (
-    args: Omit<Parameters<PayloadHTMLConverter<TNode>['converter']>[0], 'node' | 'req'> & {
-      node: TNode;
-      req: FrogBotRequest | null | undefined;
-    },
-  ) => ReturnType<PayloadHTMLConverter<TNode>['converter']>;
-};
-
 export type NodeWithHooks<
   TNode extends LexicalNode = LexicalNode,
   TSerializedNode extends SerializedLexicalNode = ExtractSerializedNode<TNode>,
 > = {
-  converters?: { html?: HTMLConverter<TSerializedNode> };
   getSubFields?: (args: { node?: TSerializedNode; req?: FrogBotRequest }) => Field[] | null;
   getSubFieldsData?: (args: { node: TSerializedNode; req: FrogBotRequest }) => JsonObject;
   graphQLPopulationPromises?: PopulationPromise<TSerializedNode>[];
@@ -66,6 +64,7 @@ export type NodeWithHooks<
     beforeChange?: NodeHook<PayloadBeforeChangeNodeHook<TSerializedNode>, TSerializedNode>[];
     beforeValidate?: NodeHook<PayloadBeforeValidateNodeHook<TSerializedNode>, TSerializedNode>[];
   };
+  jsonSchema?: JSONSchemaFn;
   node: Klass<TNode> | LexicalNodeReplacement | (new (...args: never[]) => TNode);
   validations?: NodeValidation<TSerializedNode>[];
 };
@@ -73,15 +72,13 @@ export type NodeWithHooks<
 type AnyNodeCallback = (args: never) => unknown;
 
 type ServerNodeRegistration = {
-  converters?: {
-    html?: Omit<PayloadHTMLConverter, 'converter'> & { converter: AnyNodeCallback };
-  };
   getSubFields?: AnyNodeCallback;
   getSubFieldsData?: AnyNodeCallback;
   graphQLPopulationPromises?: AnyNodeCallback[];
   hooks?: Partial<
     Record<'afterChange' | 'afterRead' | 'beforeChange' | 'beforeValidate', AnyNodeCallback[]>
   >;
+  jsonSchema?: JSONSchemaFn;
   node: LexicalNodeReplacement | (new (...args: never[]) => unknown);
   validations?: AnyNodeCallback[];
 };

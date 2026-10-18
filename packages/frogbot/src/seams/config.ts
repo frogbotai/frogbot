@@ -21,7 +21,8 @@ type ReshapedConfigKeys =
   | 'jobs'
   | 'localization'
   | 'onInit'
-  | 'plugins';
+  | 'plugins'
+  | 'storage';
 
 type ReshapedCollectionKeys =
   'access' | 'admin' | 'auth' | 'endpoints' | 'fields' | 'hooks' | 'upload';
@@ -30,11 +31,12 @@ type ReshapedJobsKeys = 'workflows';
 
 type ReshapedFieldKeys =
   | 'access'
-  | 'blockReferences'
   | 'blocks'
   | 'fields'
   | 'filterOptions'
   | 'hooks'
+  | 'jsonSchema'
+  | 'slugify'
   | 'tabs'
   | 'validate';
 

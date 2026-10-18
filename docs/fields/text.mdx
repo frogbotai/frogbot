@@ -43,7 +43,7 @@ export const PageTitle: Field = {
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ## Admin options
 
@@ -84,9 +84,9 @@ export const Pages: CollectionConfig = {
 
 ```tsx
 import { TextField } from '@frogbotai/ui/admin'
-import type { TextFieldServerComponent } from 'frogbot'
+import type { TextFieldServerProps } from 'frogbot'
 
-export const CustomTextFieldServer: TextFieldServerComponent = (props) => (
+export const CustomTextFieldServer = (props: TextFieldServerProps) => (
   <TextField
     field={props.clientField}
     path={props.path}
@@ -102,9 +102,9 @@ export const CustomTextFieldServer: TextFieldServerComponent = (props) => (
 'use client'
 
 import { TextField } from '@frogbotai/ui/admin'
-import type { TextFieldClientComponent } from 'frogbot'
+import type { TextFieldClientProps } from 'frogbot'
 
-export const CustomTextFieldClient: TextFieldClientComponent = (props) => (
+export const CustomTextFieldClient = (props: TextFieldClientProps) => (
   <TextField {...props} />
 )
 ```
@@ -115,9 +115,9 @@ export const CustomTextFieldClient: TextFieldClientComponent = (props) => (
 
 ```tsx
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { TextFieldLabelServerComponent } from 'frogbot'
+import type { TextFieldLabelServerProps } from 'frogbot'
 
-export const CustomTextLabelServer: TextFieldLabelServerComponent = ({ clientField, path }) => (
+export const CustomTextLabelServer = ({ clientField, path }: TextFieldLabelServerProps) => (
   <FieldLabel
     label={clientField.label || clientField.name}
     path={path}
@@ -132,9 +132,9 @@ export const CustomTextLabelServer: TextFieldLabelServerComponent = ({ clientFie
 'use client'
 
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { TextFieldLabelClientComponent } from 'frogbot'
+import type { TextFieldLabelClientProps } from 'frogbot'
 
-export const CustomTextLabelClient: TextFieldLabelClientComponent = ({ field, path }) => (
+export const CustomTextLabelClient = ({ field, path }: TextFieldLabelClientProps) => (
   <FieldLabel label={field.label || field.name} path={path} required={field.required} />
 )
 ```
@@ -145,7 +145,7 @@ export const CustomTextLabelClient: TextFieldLabelClientComponent = ({ field, pa
   The Slug field is experimental and may change or be removed in a future release.
 </Banner>
 
-`slugField` creates a row containing a generated Text field and a lock checkbox. Editors can unlock the slug to regenerate it on save or regenerate it on demand in the admin panel.
+`slugField` returns the built-in Slug field (`type: 'slug'`): a unique, indexed string generated from another field, shown in the sidebar. Editors can unlock it to edit it, or regenerate it on demand in the admin panel.
 
 ```ts
 import { slugField } from 'frogbot'
@@ -155,48 +155,29 @@ export const Pages: CollectionConfig = {
   slug: 'pages',
   fields: [
     { name: 'title', type: 'text', required: true },
-    slugField(),
+    slugField({ useAsSlug: 'title' }),
   ],
 }
 ```
 
-The source named by `useAsSlug` must be a top-level field in the same collection. Nested placement of the returned row does not make slug generation sibling-relative.
+The slug fills once while it's empty and then stays, so editing the title never changes a live URL:
+
+- On create, an empty slug is generated from `useAsSlug`. Without a source value, it becomes `<singular>-<N>`, such as `pages-1`, so a record always has one.
+- An explicit value wins and goes through `slugify`, so `Hello World` becomes `hello-world`. A value another record already uses is rejected.
+- Generated values skip slugs other records already use.
+
+`slugField(options)` is the same as writing `{ name: 'slug', type: 'slug', ...options }`. Besides the usual field options, such as `label`, `localized`, `required`, `unique`, `index`, `defaultValue` and `admin`, it takes:
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `string` | `'slug'` | Name of the generated Text field. |
-| `checkboxName` | `string` | `'generateSlug'` | Name of the generated lock checkbox. |
-| `useAsSlug` | `string` | `'title'` | Top-level field the slug is generated from. |
-| `fieldToUse` | `string` | — | Deprecated alias for `useAsSlug`. When set, it takes precedence over `useAsSlug`. |
-| `disableUnique` | `boolean` | `false` | Removes the slug field's unique index. |
-| `localized` | `boolean` | `false` | Localizes the slug field. |
-| `required` | `boolean` | `true` | Requires a slug value. |
-| `position` | `'main' \| 'sidebar'` | `'sidebar'` | Where the generated row appears in the admin form. |
-| `overrides` | `(field: RowField) => RowField` | — | Receives the generated row and returns the row to use. See [Slug overrides](#slug-overrides). |
+| `name` | `string` | `'slug'` | Name of the field. |
+| `useAsSlug` | `string` | — | Top-level field in the same collection the slug is generated from. |
+| `unique` | `boolean` | `true` | Set `false` to drop the unique index, for example for a per-tenant compound index. |
 | `slugify` | `({ data, req, valueToSlugify }) => string \| undefined \| Promise<string \| undefined>` | Built-in slugify | Replaces the slug-generation function. See [Custom slugify function](#custom-slugify-function). |
-
-### Slug overrides
-
-The override runs once and may change either generated field or add recursively typed fields:
-
-```ts
-import { slugField } from 'frogbot'
-
-export const pageSlug = slugField({
-  overrides: (row) => ({
-    ...row,
-    fields: row.fields.map((field) =>
-      'name' in field && field.name === 'slug'
-        ? { ...field, label: 'URL slug' }
-        : field,
-    ),
-  }),
-})
-```
 
 ### Custom slugify function
 
-The function receives the complete document data, the top-level source value, and the framework-issued `FrogBotRequest`. It may return a string or `undefined`, synchronously or asynchronously. Rejections stop the save.
+The function receives the complete document data, the source value, and the framework-issued `FrogBotRequest`. It may return a string or `undefined`, synchronously or asynchronously. Rejections stop the save.
 
 ```ts
 import { slugField } from 'frogbot'
@@ -204,7 +185,7 @@ import { slugField } from 'frogbot'
 export const pageSlug = slugField({
   useAsSlug: 'title',
   slugify: async ({ req, valueToSlugify }) => {
-    await req.frogbot.count({ collection: 'pages' })
+    await req.frogbot.count({ collection: 'pages', overrideAccess: true })
 
     return typeof valueToSlugify === 'string'
       ? valueToSlugify
@@ -217,5 +198,3 @@ export const pageSlug = slugField({
   },
 })
 ```
-
-`disableUnique` only removes the default unique index. Add an appropriate collection index if uniqueness must instead be scoped by another field.

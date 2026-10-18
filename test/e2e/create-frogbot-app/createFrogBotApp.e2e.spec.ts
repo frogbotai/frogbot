@@ -1,8 +1,11 @@
 import fs from 'node:fs';
+import http from 'node:http';
+import type net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 
 import { createPostgresDatabase } from '../../__helpers/shared/db/postgres';
 import { getFreePort, spawnServer, terminateProcess, waitForServer } from '../process';
@@ -16,6 +19,10 @@ import {
   serviceAvailable,
   subprocessEnvironment,
 } from './harness';
+
+const { catalogVersion } = (await import(
+  pathToFileURL(path.resolve(import.meta.dirname, '../../../scripts/lib/workspace.mjs')).href
+)) as { catalogVersion: (name: string) => string };
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const RUN_COMPILER_CHECKS = process.env.RUN_COMPILER_CHECKS === '1';
@@ -176,6 +183,16 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
       appDirectories.set(appCase.name, path.join(root, appCase.name));
     }
 
+    if (RUN_COMPILER_CHECKS) {
+      runSetup(
+        process.execPath,
+        [cli, 'sqlite-files', '--yes', '--no-git', '--no-install', '--db', 'sqlite', '--ai', 'zen'],
+        { cwd: root },
+      );
+
+      appDirectories.set('sqlite-files', path.join(root, 'sqlite-files'));
+    }
+
     localPackages = packLocalClosure({
       appDirectories: [...appDirectories.values()],
       outputDirectory: path.join(root, 'packages'),
@@ -248,9 +265,9 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
       ),
     ) as { dependencies: Record<string, string> };
 
-    const runtime = Object.entries(adapter.dependencies).filter(
-      ([, version]) => !version.startsWith('workspace:'),
-    );
+    const runtime = Object.entries(adapter.dependencies)
+      .filter(([, version]) => !version.startsWith('workspace:'))
+      .map(([name, version]) => [name, version === 'catalog:' ? catalogVersion(name) : version]);
 
     expect(runtime.map(([name]) => [name, pkg.dependencies[name]])).toEqual(runtime);
   });
@@ -388,18 +405,302 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
       120000,
     );
 
-    it.each(cases)(
-      'builds the complete $name application for production',
+    it.each(
+      cases.flatMap((appCase) =>
+        ['turbopack', 'webpack'].map((bundler) => ({ ...appCase, bundler })),
+      ),
+    )(
+      'builds the complete $name application for production ($bundler)',
       (appCase) => {
-        const result = run('pnpm', ['build'], {
-          cwd: appDirectories.get(appCase.name)!,
-          env: databaseEnvironment(appCase),
-        });
+        const result = run(
+          'pnpm',
+          ['build', ...(appCase.bundler === 'webpack' ? ['--webpack'] : [])],
+          {
+            cwd: appDirectories.get(appCase.name)!,
+            env: databaseEnvironment(appCase),
+          },
+        );
 
         expect(result.status, result.output).toBe(0);
+        expect(result.output).toContain(
+          appCase.bundler === 'webpack' ? '(webpack)' : '(Turbopack)',
+        );
       },
       240000,
     );
+
+    describe('uploaded files in a production build', () => {
+      const name = 'sqlite-files';
+      const text = 'Standalone file read: café, 蛙.\n';
+      const modelRequests: string[] = [];
+      let directory: string;
+      let image: Buffer;
+      let provider: http.Server;
+      let providerURL: string;
+
+      beforeAll(async () => {
+        directory = appDirectories.get(name)!;
+        image = fs.readFileSync(path.join(repoRoot, 'test', 'uploads', 'image.png'));
+
+        provider = http.createServer(async (request, response) => {
+          let body = '';
+
+          for await (const chunk of request) body += chunk;
+
+          modelRequests.push(body);
+
+          const chunk = (choice: Record<string, unknown>, usage?: Record<string, number>) =>
+            `data: ${JSON.stringify({
+              id: 'standalone-files',
+              object: 'chat.completion.chunk',
+              created: 1,
+              model: 'deepseek-v4.1-flash',
+              choices: [{ index: 0, ...choice }],
+              ...(usage ? { usage } : {}),
+            })}\n\n`;
+
+          const usage = { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 };
+
+          if (!(JSON.parse(body) as { stream?: boolean }).stream) {
+            response.writeHead(200, { 'content-type': 'application/json' });
+
+            response.end(
+              JSON.stringify({
+                id: 'standalone-files',
+                object: 'chat.completion',
+                created: 1,
+                model: 'deepseek-v4.1-flash',
+                choices: [
+                  {
+                    index: 0,
+                    message: { role: 'assistant', content: 'Read.' },
+                    finish_reason: 'stop',
+                  },
+                ],
+                usage,
+              }),
+            );
+
+            return;
+          }
+
+          response.writeHead(200, { 'content-type': 'text/event-stream' });
+          response.write(chunk({ delta: { role: 'assistant', content: 'Read.' } }));
+          response.write(chunk({ delta: {}, finish_reason: 'stop' }, usage));
+          response.end('data: [DONE]\n\n');
+        });
+
+        await new Promise<void>((resolve) => provider.listen(0, '127.0.0.1', resolve));
+        providerURL = `http://127.0.0.1:${(provider.address() as net.AddressInfo).port}/v1`;
+
+        const configPath = path.join(directory, 'src', 'frogbot.config.ts');
+
+        fs.writeFileSync(
+          configPath,
+          fs
+            .readFileSync(configPath, 'utf8')
+            .replace(
+              "baseUrl: 'https://opencode.ai/zen/v1'",
+              "baseUrl: process.env.MODEL_URL || 'https://opencode.ai/zen/v1'",
+            ),
+        );
+
+        for (const args of [
+          ['install', '--store-dir', path.join(root, 'store')],
+          ['generate:types'],
+          ['migrate:create', 'init'],
+          ['migrate'],
+        ]) {
+          runSetup('pnpm', args, { cwd: directory });
+        }
+      }, 300000);
+
+      afterAll(async () => {
+        await new Promise((resolve) => provider?.close(resolve));
+      });
+
+      async function expectUploadsRead(base: string, label: string, output: () => string) {
+        const credentials = { email: 'owner@files.test', password: 'standalone-files' };
+        const json = { 'content-type': 'application/json' };
+
+        await fetch(`${base}/api/users/first-register`, {
+          method: 'POST',
+          headers: json,
+          body: JSON.stringify(credentials),
+        });
+
+        const login = await fetch(`${base}/api/users/login`, {
+          method: 'POST',
+          headers: json,
+          body: JSON.stringify(credentials),
+        });
+
+        expect(login.status, output()).toBe(200);
+
+        const auth = {
+          authorization: `Bearer ${((await login.json()) as { token: string }).token}`,
+        };
+
+        for (const slug of ['files', 'frogbot-chat-assets']) {
+          for (const [filename, mediaType, data] of [
+            ['upload.png', 'image/png', image],
+            ['upload.txt', 'text/plain', Buffer.from(text)],
+          ] as const) {
+            const body = new FormData();
+
+            body.set('_payload', '{}');
+            body.set('file', new Blob([new Uint8Array(data)], { type: mediaType }), filename);
+
+            const uploaded = await fetch(`${base}/api/${slug}`, {
+              method: 'POST',
+              headers: auth,
+              body,
+            });
+
+            const { doc } = (await uploaded.json()) as {
+              doc: { id: number; filename: string; url: string };
+            };
+
+            expect(uploaded.status, output()).toBe(201);
+
+            const read = await fetch(new URL(doc.url, base), { headers: auth });
+
+            expect(read.status, output()).toBe(200);
+            expect(Buffer.from(await read.arrayBuffer()).equals(data)).toBe(true);
+
+            if (slug !== 'frogbot-chat-assets') continue;
+
+            modelRequests.length = 0;
+
+            const answered = await fetch(`${base}/api/agents/assistant`, {
+              method: 'POST',
+              headers: { ...auth, ...json, accept: 'application/json' },
+              body: JSON.stringify({
+                messages: [
+                  {
+                    id: `${label}-${filename}`,
+                    role: 'user',
+                    parts: [
+                      { type: 'text', text: 'Read the attachment.' },
+                      { type: 'file-reference', id: doc.id, filename: doc.filename, mediaType },
+                    ],
+                  },
+                ],
+              }),
+            });
+
+            expect(answered.status, output()).toBe(200);
+            expect(modelRequests.join('\n')).toContain(
+              mediaType === 'text/plain'
+                ? JSON.stringify(text).slice(1, -1)
+                : data.toString('base64'),
+            );
+          }
+        }
+      }
+
+      async function withServer(
+        command: string,
+        args: string[],
+        cwd: string,
+        use: (base: string, output: () => string) => Promise<void>,
+      ) {
+        const port = await getFreePort();
+        const base = `http://127.0.0.1:${port}`;
+        const child = spawnServer(command, args, {
+          cwd,
+          env: subprocessEnvironment(cwd, {
+            HOSTNAME: '127.0.0.1',
+            MODEL_URL: providerURL,
+            NODE_ENV: 'production',
+            OPENCODE_API_KEY: 'standalone-files',
+            PORT: String(port),
+          }),
+        });
+
+        let output = '';
+
+        for (const stream of [child.stdout, child.stderr]) {
+          stream?.on('data', (chunk: Buffer) => {
+            output += chunk.toString();
+          });
+        }
+
+        try {
+          await waitForServer(
+            child,
+            async () =>
+              (
+                await fetch(`${base}/api/users/me`, { signal: AbortSignal.timeout(10000) }).catch(
+                  () => undefined,
+                )
+              )?.status === 200,
+            { name: 'Built app', timeout: 90000, interval: 500, output: () => output },
+          );
+
+          await use(base, () => output);
+        } finally {
+          await terminateProcess(child);
+        }
+      }
+
+      it.each(['turbopack', 'webpack'])(
+        'reads uploads through the file endpoint and an agent attachment after pnpm start (%s)',
+        async (bundler) => {
+          const built = run('pnpm', ['build', ...(bundler === 'webpack' ? ['--webpack'] : [])], {
+            cwd: directory,
+          });
+
+          expect(built.status, built.output).toBe(0);
+
+          await withServer('pnpm', ['start'], directory, (base, output) =>
+            expectUploadsRead(base, `start-${bundler}`, output),
+          );
+        },
+        600000,
+      );
+
+      it.each(['turbopack', 'webpack'])(
+        'reads uploads through the file endpoint and an agent attachment in a moved standalone build (%s)',
+        async (bundler) => {
+          const built = run('pnpm', ['build', ...(bundler === 'webpack' ? ['--webpack'] : [])], {
+            cwd: directory,
+            env: { NEXT_OUTPUT: 'standalone' },
+          });
+
+          expect(built.status, built.output).toBe(0);
+
+          const server = path.join(root, `standalone-${bundler}`);
+
+          fs.cpSync(path.join(directory, '.next', 'standalone'), server, {
+            recursive: true,
+            verbatimSymlinks: true,
+          });
+
+          fs.cpSync(path.join(directory, '.next', 'static'), path.join(server, '.next', 'static'), {
+            recursive: true,
+          });
+
+          for (const file of fs.readdirSync(directory).filter((f) => f.startsWith('frogbot.db'))) {
+            fs.copyFileSync(path.join(directory, file), path.join(server, file));
+          }
+
+          const installed = path.join(directory, 'node_modules');
+          const hidden = `${installed}.hidden`;
+
+          fs.renameSync(installed, hidden);
+          onTestFinished(() => fs.renameSync(hidden, installed));
+
+          await withServer(
+            process.execPath,
+            [path.join(server, 'server.js')],
+            server,
+            (base, output) => expectUploadsRead(base, `standalone-${bundler}`, output),
+          );
+        },
+        600000,
+      );
+    });
   });
 
   it.each(['sqlite-zen', 'sqlite-none'])(

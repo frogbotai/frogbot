@@ -212,6 +212,7 @@ export const Posts: CollectionConfig = {
 
         await req.frogbot.update({
           collection: 'posts',
+          overrideAccess: true,
           id: doc.id,
           data: {
             synced: true,
@@ -256,6 +257,7 @@ export const Users: CollectionConfig = {
       async ({ req, user }) => {
         await req.frogbot.update({
           collection: 'users',
+          overrideAccess: true,
           id: user.id,
           data: {
             lastLogin: new Date().toISOString(),

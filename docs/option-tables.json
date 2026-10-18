@@ -391,11 +391,6 @@
   },
   {
     "page": "configuration/overview",
-    "heading": "Folders",
-    "type": "NonNullable<import('frogbot').FrogBotConfig['folders']>"
-  },
-  {
-    "page": "configuration/overview",
     "heading": "Query presets",
     "type": "NonNullable<import('frogbot').FrogBotConfig['queryPresets']>"
   },
@@ -585,16 +580,6 @@
     "type": "Omit<NonNullable<import('frogbot').CollapsibleField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>> & { components?: Pick<NonNullable<NonNullable<import('frogbot').CollapsibleField['admin']>['components']>, 'Label'> }"
   },
   {
-    "page": "fields/created-by",
-    "heading": "Config options",
-    "type": "import('frogbot').CreatedByFieldArgs"
-  },
-  {
-    "page": "fields/created-by",
-    "heading": "Admin options",
-    "type": "Omit<NonNullable<import('frogbot').CreatedByFieldArgs['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
-  },
-  {
     "page": "fields/date",
     "heading": "Config options",
     "type": "import('frogbot').DateField"
@@ -663,16 +648,6 @@
     "page": "fields/json",
     "heading": "Admin options",
     "type": "Omit<NonNullable<import('frogbot').JSONField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
-  },
-  {
-    "page": "fields/last-modified-by",
-    "heading": "Config options",
-    "type": "import('frogbot').LastModifiedByFieldArgs"
-  },
-  {
-    "page": "fields/last-modified-by",
-    "heading": "Admin options",
-    "type": "Omit<NonNullable<import('frogbot').LastModifiedByFieldArgs['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
   },
   {
     "page": "fields/money",
@@ -807,7 +782,7 @@
   {
     "page": "fields/text",
     "heading": "Slug field",
-    "type": "Parameters<typeof import('frogbot').slugField>[0]"
+    "type": "Pick<NonNullable<Parameters<typeof import('frogbot').slugField>[0]>, 'name' | 'useAsSlug' | 'unique' | 'slugify'>"
   },
   {
     "page": "fields/textarea",
@@ -1315,16 +1290,6 @@
     "type": "import('@frogbotai/plugin-mcp').McpPluginOptions"
   },
   {
-    "page": "plugins/mcp",
-    "heading": "Collection and global entries",
-    "type": "NonNullable<NonNullable<import('@frogbotai/plugin-mcp').McpPluginOptions['collections']>[string]> | NonNullable<NonNullable<import('@frogbotai/plugin-mcp').McpPluginOptions['globals']>[string]>"
-  },
-  {
-    "page": "plugins/mcp",
-    "heading": "Server options",
-    "type": "Pick<import('@frogbotai/plugin-mcp').McpPluginOptions, 'mcp'>"
-  },
-  {
     "page": "plugins/nested-docs",
     "heading": "Options",
     "type": "import('@frogbotai/plugin-nested-docs').NestedDocsPluginOptions"
@@ -1512,7 +1477,7 @@
   {
     "page": "rich-text/converting-html",
     "heading": "buildEditorState options",
-    "type": "Parameters<typeof import('@frogbotai/richtext-lexical').buildEditorState>[0]"
+    "type": "Parameters<typeof import('@frogbotai/richtext-lexical').buildEditorState<import('@frogbotai/richtext-lexical').DefaultNodeTypes>>[0]"
   },
   {
     "page": "rich-text/converting-jsx",
@@ -1667,7 +1632,7 @@
   {
     "page": "upload/overview",
     "heading": "Collection Upload Options",
-    "type": "Extract<NonNullable<import('frogbot').CollectionConfig['upload']>, object>"
+    "type": "Omit<Extract<NonNullable<import('frogbot').CollectionConfig['upload']>, object>, 'fileOperations' | 'hasImageAdjustments' | 'uploadInstructions'>"
   },
   {
     "page": "upload/overview",
@@ -1681,13 +1646,18 @@
   },
   {
     "page": "upload/overview",
+    "heading": "Image Sizes",
+    "type": "import('@frogbotai/transformer-sharp').SharpCollectionConfig"
+  },
+  {
+    "page": "upload/overview",
     "heading": "Image size options",
-    "type": "NonNullable<import('frogbot').UploadConfig['imageSizes']>[number]"
+    "type": "Omit<NonNullable<import('@frogbotai/transformer-sharp').SharpCollectionConfig['variants']>[number], 'variants'>"
   },
   {
     "page": "upload/overview",
     "heading": "Admin List View Options",
-    "type": "NonNullable<NonNullable<import('frogbot').UploadConfig['imageSizes']>[number]['admin']>"
+    "type": "NonNullable<NonNullable<import('@frogbotai/transformer-sharp').SharpCollectionConfig['variants']>[number]['admin']>"
   },
   {
     "page": "upload/overview",
@@ -1697,12 +1667,12 @@
   {
     "page": "upload/storage-adapters",
     "heading": "Configuration Options#vercel-blob-configuration",
-    "type": "Omit<import('@frogbotai/storage-vercel-blob').VercelBlobStorageOptions, 'collections' | 'enabled' | 'alwaysInsertFields' | 'clientUploads' | 'useCompositePrefixes'>"
+    "type": "Omit<import('@frogbotai/storage-vercel-blob').VercelBlobStorageOptions, 'collections' | 'enabled' | 'clientUploads' | 'useCompositePrefixes'>"
   },
   {
     "page": "upload/storage-adapters",
     "heading": "Configuration Options#s3-configuration",
-    "type": "Omit<import('@frogbotai/storage-s3').S3StorageOptions, 'collections' | 'enabled' | 'alwaysInsertFields' | 'clientUploads' | 'useCompositePrefixes'>"
+    "type": "Omit<import('@frogbotai/storage-s3').S3StorageOptions, 'collections' | 'enabled' | 'clientUploads' | 'useCompositePrefixes'>"
   },
   {
     "page": "upload/storage-adapters",
@@ -1712,22 +1682,22 @@
   {
     "page": "upload/storage-adapters",
     "heading": "Configuration Options#azure-configuration",
-    "type": "Omit<import('@frogbotai/storage-azure').AzureStorageOptions, 'collections' | 'enabled' | 'alwaysInsertFields' | 'useCompositePrefixes'>"
+    "type": "Omit<import('@frogbotai/storage-azure').AzureStorageOptions, 'collections' | 'enabled' | 'useCompositePrefixes'>"
   },
   {
     "page": "upload/storage-adapters",
     "heading": "Configuration Options#gcs-configuration",
-    "type": "Omit<import('@frogbotai/storage-gcs').GcsStorageOptions, 'collections' | 'enabled' | 'alwaysInsertFields' | 'clientUploads' | 'useCompositePrefixes'>"
+    "type": "Omit<import('@frogbotai/storage-gcs').GcsStorageOptions, 'collections' | 'enabled' | 'clientUploads' | 'useCompositePrefixes'>"
   },
   {
     "page": "upload/storage-adapters",
     "heading": "Configuration Options#r2-configuration",
-    "type": "Omit<import('@frogbotai/storage-r2').R2StorageOptions, 'collections' | 'enabled' | 'alwaysInsertFields' | 'clientUploads' | 'useCompositePrefixes'>"
+    "type": "Omit<import('@frogbotai/storage-r2').R2StorageOptions, 'collections' | 'enabled' | 'clientUploads' | 'useCompositePrefixes'>"
   },
   {
     "page": "upload/storage-adapters",
     "heading": "Shared storage options",
-    "type": "Pick<import('@frogbotai/storage-s3').S3StorageOptions, 'collections' | 'enabled' | 'alwaysInsertFields' | 'clientUploads' | 'useCompositePrefixes'>"
+    "type": "Pick<import('@frogbotai/storage-s3').S3StorageOptions, 'collections' | 'enabled' | 'clientUploads' | 'useCompositePrefixes'>"
   },
   {
     "page": "upload/storage-adapters",

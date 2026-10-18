@@ -127,7 +127,7 @@ function buildReportEndpoint({ slug, pageSize, groups, access }: ReportEndpointO
     path: '/usage/report',
     handler: async (req) => {
       if (!req.user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-      const permitted = await access({ req });
+      const permitted = await access({ req, slug });
       if (permitted === false) return Response.json({ error: 'Forbidden' }, { status: 403 });
       const scope: Exclude<AccessResult, boolean>[] = permitted === true ? [] : [permitted];
       const query = parseRequest(req, groups);
@@ -208,11 +208,9 @@ export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plu
     const usage = existing ?? { slug: 'usage-logs', usageLog: true as const, fields: [] };
     const collections = existing
       ? config.collections.map((collection) =>
-          collection === existing
-            ? { ...collection, admin: { ...collection.admin, groupBy: true } }
-            : collection,
+          collection === existing ? { ...collection, admin: { ...collection.admin } } : collection,
         )
-      : [...config.collections, { ...usage, admin: { groupBy: true } }];
+      : [...config.collections, { ...usage, admin: {} }];
 
     const groups = new Set<UsageReportGroup>(['day', 'model', 'user']);
     if (usage.fields.some((field) => 'name' in field && field.name === 'apiKey')) {

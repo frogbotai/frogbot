@@ -1,6 +1,7 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { rolesPlugin } from '@frogbotai/plugin-roles';
+import { sharpTransformer } from '@frogbotai/transformer-sharp';
 import type { FrogBotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
 
@@ -27,6 +28,7 @@ const config: FrogBotConfig = {
     rolesPlugin(),
     apiKeysPlugin({ collection: { admin: { group: 'Security' } } }),
   ],
+  upload: { transformers: [sharpTransformer()] },
 };
 
 export default buildConfig(config);

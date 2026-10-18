@@ -6,6 +6,8 @@ export function defaultWaitpointsCollection(): CollectionConfig {
   return {
     slug: WAITPOINTS_SLUG,
     versions: false,
+    authorship: false,
+    custom: { frogbot: { internal: true } },
     typescript: { interface: 'FrogBotWaitpoint' },
     admin: { hidden: true },
     graphQL: false,

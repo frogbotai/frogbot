@@ -6,8 +6,8 @@
   }
 
   .fb-sidebar {
-    color: var(--theme-base-900);
-    background-color: var(--theme-base-50);
+    color: var(--fb-theme-base-900);
+    background-color: var(--fb-theme-base-50);
   }
 
   .fb-sidebar--mobile {
@@ -17,7 +17,7 @@
 
   .fb-sidebar--desktop {
     width: 16rem;
-    border-color: var(--theme-base-150);
+    border-color: var(--fb-theme-base-150);
     transition-property: width;
     transition-duration: 150ms;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);

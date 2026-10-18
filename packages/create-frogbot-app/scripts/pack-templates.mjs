@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { catalogVersion } from '../../../scripts/lib/workspace.mjs';
+
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(dirname, '..');
 const repoRoot = path.resolve(packageRoot, '..', '..');
@@ -84,6 +86,8 @@ for (const template of TEMPLATES) {
     for (const [name, version] of Object.entries(deps)) {
       if (typeof version === 'string' && version.startsWith('workspace:')) {
         deps[name] = resolveVersion(name);
+      } else if (version === 'catalog:') {
+        deps[name] = catalogVersion(name);
       }
     }
   }
@@ -105,9 +109,9 @@ for (const database of DATABASE_CHOICES) {
   );
 
   databaseDependencies[database] = Object.fromEntries(
-    Object.entries(adapter.dependencies ?? {}).filter(
-      ([, version]) => !version.startsWith('workspace:'),
-    ),
+    Object.entries(adapter.dependencies ?? {})
+      .filter(([, version]) => !version.startsWith('workspace:'))
+      .map(([name, version]) => [name, version === 'catalog:' ? catalogVersion(name) : version]),
   );
 }
 

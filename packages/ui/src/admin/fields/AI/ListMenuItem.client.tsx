@@ -1,10 +1,16 @@
 'use client';
 
 import { getTranslation } from '@payloadcms/translations';
-import { PopupList, useConfig, useListQuery, useSelection, useTranslation } from '@payloadcms/ui';
+import {
+  PopupList,
+  useConfig,
+  useListQuery,
+  useRouter,
+  useSelection,
+  useTranslation,
+} from '@payloadcms/ui';
 import { type ReactNode, useState } from 'react';
 
-import { useRouterAdapter } from '../../adapters/router.js';
 import { type AIBulkField, type AIBulkScope, aiBulkScope } from './bulk.js';
 import { AIBulkDialog } from './BulkDialog.client.js';
 
@@ -19,7 +25,7 @@ export function AIFieldListMenuItem({
   const { query } = useListQuery();
   const { selectAll, selectedIDs, toggleAll } = useSelection();
   const { i18n } = useTranslation();
-  const { router } = useRouterAdapter();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [scope, setScope] = useState<AIBulkScope>();
 

@@ -33,6 +33,7 @@ import type { FrogBot } from 'frogbot'
 const getPosts = async (frogbot: FrogBot) => {
   const posts = await frogbot.find({
     collection: 'posts',
+    overrideAccess: true,
     limit: 10,
     page: 2,
   })
@@ -116,6 +117,7 @@ To do this, set the `limit` option in your query:
 ```ts
 await frogbot.find({
   collection: 'posts',
+  overrideAccess: true,
   where: {
     slug: {
       equals: 'post-1',
@@ -139,6 +141,7 @@ import type { FrogBot } from 'frogbot'
 const getPost = async (frogbot: FrogBot) => {
   const posts = await frogbot.find({
     collection: 'posts',
+    overrideAccess: true,
     where: {
       title: { equals: 'My Post' },
     },

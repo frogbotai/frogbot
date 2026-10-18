@@ -364,9 +364,8 @@ export function sanitizeSearchIndexes(
     nodes,
     localizeStatus:
       localizeStatus &&
-      typeof drafts === 'object' &&
-      drafts !== null &&
-      drafts.localizeStatus === true,
+      Boolean(drafts) &&
+      [...nodes.values()].some((matches) => matches.some((node) => node.localized)),
   });
 
   const indexes: SearchIndexDescriptors = {};

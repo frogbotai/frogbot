@@ -77,6 +77,8 @@ import type { WidgetServerProps } from 'frogbot'
 export async function UserStats({ req }: WidgetServerProps) {
   const result = await req.frogbot.count({
     collection: 'users',
+    overrideAccess: false,
+    req,
   })
 
   return (
@@ -92,9 +94,9 @@ Use FrogBot theme tokens in the widget stylesheet:
 
 ```css
 .user-stats {
-  background: var(--theme-base-50);
-  border: 1px solid var(--theme-base-200);
-  color: var(--theme-base-900);
+  background: var(--fb-theme-base-50);
+  border: 1px solid var(--fb-theme-base-200);
+  color: var(--fb-theme-base-900);
   padding: 1rem;
 }
 ```
@@ -124,6 +126,8 @@ export default buildConfig({
       defaultLayout: async ({ req }) => {
         const result = await req.frogbot.count({
           collection: 'orders',
+          overrideAccess: false,
+          req,
         })
 
         return [
@@ -200,7 +204,7 @@ Generated types constrain `widgetSlug`, `data`, and `width` in `defaultLayout` t
 
 ## Built-in Widget
 
-The modular dashboard includes a `collections` widget. When you do not provide `defaultLayout`, the dashboard starts with this widget. Its component path is `@frogbotai/next/rsc#CollectionCards` when you need to reference it explicitly.
+The modular dashboard includes a `collections` widget. When you do not provide `defaultLayout`, the dashboard starts with this widget. Its component path is `@frogbotai/ui/admin/rsc#CollectionCards` when you need to reference it explicitly.
 
 ## User Customization
 

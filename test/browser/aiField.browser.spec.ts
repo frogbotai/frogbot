@@ -64,7 +64,7 @@ async function gotoList(page: Page, path: string = listPath): Promise<void> {
 }
 
 function bulkEntry(page: Page): Locator {
-  return page.getByRole('button', { name: 'Regenerate Summary…' });
+  return page.getByRole('menuitem', { name: 'Regenerate Summary…' });
 }
 
 async function openBulkDialog(page: Page): Promise<Locator> {

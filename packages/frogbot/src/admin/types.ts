@@ -7,14 +7,12 @@ import type { PayloadConfig } from '../types/payload.js';
 import type { IconName } from './icons.js';
 import type { DashboardConfig } from './views/types.js';
 
-type DeepClone<T> = T extends object ? { [K in keyof T]: DeepClone<T[K]> } : T;
-
-/** Metadata for the root admin block. Mirrors Payload's `MetaConfig` shape:
- *  `{ defaultOGImageType?, titleSuffix? } & DeepClone<Metadata>` from `next`. */
+/** Metadata for the root admin block: Payload's `MetaConfig`, `{ defaultOGImageType?, titleSuffix? }`
+ *  and `Metadata` from `next`. */
 export type RootAdminMetaConfig = {
   defaultOGImageType?: 'dynamic' | 'static' | 'off';
   titleSuffix?: string;
-} & DeepClone<Metadata>;
+} & Metadata;
 
 export interface RootAdminGraphics {
   /** Replace the icon in the admin navigation. Defaults to the FrogBot head mark. */

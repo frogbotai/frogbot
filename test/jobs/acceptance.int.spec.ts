@@ -1,14 +1,5 @@
-import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
-import {
-  type JobLeaseDatabase,
-  jobLeaseOperations,
-  renewJobLease,
-  resetJobLease,
-  sweepJobLeases,
-} from 'frogbot/jobs';
-import { createLocalReq } from 'payload';
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { adapterName, bootJobsFixture, deferred, type FrogBotJob, timestamp } from './fixture.js';
@@ -17,10 +8,6 @@ let fixture: Awaited<ReturnType<typeof bootJobsFixture>>;
 
 beforeAll(async () => {
   fixture = await bootJobsFixture();
-
-  const database: JobLeaseDatabase = fixture.payload.db;
-
-  assert.ok(database[jobLeaseOperations], 'Rebuild the selected adapter before acceptance.');
 });
 
 afterEach(() => {
@@ -133,6 +120,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
           queue,
           input: { marker: queue },
           jobId,
+          overrideAccess: true,
         }),
       ),
     );
@@ -188,6 +176,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
       waitUntil: new Date('2099-01-01T00:00:00.000Z'),
       meta: { ignored: true },
       jobId,
+      overrideAccess: true,
     });
 
     const rows = await fixture.payload.db.find<FrogBotJob>({
@@ -214,7 +203,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
 
     await Promise.all([
       fixture.frogbot.jobs.run({ queue, limit: 12, overrideAccess: true }),
-      fixture.worker.jobs.run({ queue, limit: 12 }),
+      fixture.worker.jobs.run({ queue, limit: 12, overrideAccess: true }),
     ]);
 
     const recorded = await effects(queue);
@@ -226,7 +215,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
 
     for (const job of jobs) {
       expect(await readJob(job.id)).toMatchObject({
-        processing: false,
+        processingUntil: null,
         hasError: false,
         completedAt: expect.any(String),
         totalTried: 1,
@@ -243,7 +232,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
 
     const runs = Promise.all([
       fixture.frogbot.jobs.runByID({ id: job.id, overrideAccess: true }),
-      fixture.worker.jobs.runByID({ id: job.id }),
+      fixture.worker.jobs.runByID({ id: job.id, overrideAccess: true }),
     ]);
 
     onTestFinished(async () => {
@@ -254,9 +243,8 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     await enteredOrFinished(gate.entered.promise, runs);
 
     expect(await readJob(job.id)).toMatchObject({
-      processing: true,
-      leaseOwner: expect.any(String),
-      leaseUntil: expect.any(String),
+      processingToken: expect.any(String),
+      processingUntil: expect.any(String),
     });
 
     gate.release.resolve();
@@ -287,7 +275,9 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     );
     expect(persisted.docs).toHaveLength(120);
     expect(
-      persisted.docs.every((job) => job.completedAt && !job.processing && job.totalTried === 1),
+      persisted.docs.every(
+        (job) => job.completedAt && !job.processingUntil && job.totalTried === 1,
+      ),
     ).toBe(true);
   });
 
@@ -322,17 +312,17 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     expect((await effects(queue)).docs.map((effect) => effect.jobRecord)).toEqual([
       String(jobs[1].id),
     ]);
-    expect(await readJob(jobs[0].id)).toMatchObject({ processing: false, totalTried: 0 });
-    expect(await readJob(jobs[2].id)).toMatchObject({ processing: false, totalTried: 0 });
-    expect(await readJob(future.id)).toMatchObject({ processing: false, totalTried: 0 });
-    expect(await readJob(other.id)).toMatchObject({ processing: false, totalTried: 0 });
+
+    for (const job of [jobs[0], jobs[2], future, other]) {
+      const row = await readJob(job.id);
+
+      expect(row.totalTried).toBe(0);
+      expect(row.processingUntil ?? null).toBeNull();
+    }
   });
 
   it('uses default atomic execution while retaining ordinary application collection hooks', async () => {
     const queue = randomUUID();
-
-    expect(fixture.payload.config.jobs.runHooks).toBeFalsy();
-    expect(fixture.payload.config.jobs.depth).toBeFalsy();
 
     const job = await queueJob(queue);
 
@@ -347,8 +337,6 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     });
     expect(await readJob(job.id)).toMatchObject({
       completedAt: expect.any(String),
-      leaseOwner: expect.any(String),
-      leaseUntil: expect.any(String),
       totalTried: 1,
     });
   });
@@ -370,7 +358,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
       for (let attempt = 1; attempt <= 3; attempt++) {
         const runner = attempt === 2 ? fixture.worker : fixture.frogbot;
 
-        await runner.jobs.runByID({ id: job.id, silent: true });
+        await runner.jobs.runByID({ id: job.id, silent: true, overrideAccess: true });
 
         const persisted = await readJob(job.id);
         const recorded = await effects(queue);
@@ -380,7 +368,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
         const newAttempts = attempts.filter((entry) => !previousAttemptIDs.has(entry.id));
 
         expect(persisted).toMatchObject({
-          processing: false,
+          processingUntil: null,
           totalTried: attempt,
           hasError: attempt === 3 && alwaysFail,
         });
@@ -426,11 +414,10 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     },
   );
 
-  it('automatically renews a long native job beyond its original lease and excludes competing workers and sweep', async () => {
+  it('renews a long job beyond its original lease and excludes competing workers', async () => {
     const queue = randomUUID();
     const job = await queueJob(queue);
     const gate = { entered: deferred(), release: deferred() };
-    const req = await createLocalReq({}, fixture.payload);
 
     fixture.gates.set(queue, gate);
 
@@ -446,20 +433,14 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     const initial = await readJob(job.id);
 
     await expect
-      .poll(async () => timestamp((await readJob(job.id)).leaseUntil), {
-        timeout: 15_000,
-      })
-      .toBeGreaterThan(timestamp(initial.leaseUntil) + 5_000);
+      .poll(() => Date.now(), { timeout: 15_000 })
+      .toBeGreaterThan(timestamp(initial.processingUntil) + 500);
 
-    expect(Date.now()).toBeGreaterThan(timestamp(initial.leaseUntil));
+    expect(timestamp((await readJob(job.id)).processingUntil)).toBeGreaterThan(Date.now());
 
-    await sweepJobLeases({ req });
-    await fixture.payload.jobs.runByID({ id: job.id, overrideAccess: true });
+    await fixture.worker.jobs.runByID({ id: job.id, overrideAccess: true });
 
-    expect(await readJob(job.id)).toMatchObject({
-      processing: true,
-      leaseOwner: initial.leaseOwner,
-    });
+    expect(await readJob(job.id)).toMatchObject({ processingToken: initial.processingToken });
     expect((await effects(queue)).docs).toHaveLength(0);
 
     gate.release.resolve();
@@ -468,64 +449,26 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     expect((await effects(queue)).docs).toHaveLength(1);
   });
 
-  it('sweeps an expired crash, reclaims it, and fences stale renewal/reset against its successor', async () => {
+  it("reclaims a crashed worker's job once its lease has expired, and only then", async () => {
     const queue = randomUUID();
     const job = await queueJob(queue);
-    const req = await createLocalReq({}, fixture.payload);
-    const expired = '2020-01-01T00:00:00.000Z';
+    const lease = (processingUntil: string) =>
+      fixture.payload.db.updateOne({
+        collection: 'payload-jobs',
+        id: job.id,
+        data: { processingToken: 'crashed', processingUntil },
+      });
 
-    await fixture.payload.db.updateOne({
-      collection: 'payload-jobs',
-      id: job.id,
-      data: { processing: true, leaseOwner: 'crashed', leaseUntil: expired },
-    });
+    await lease(new Date(Date.now() + 60_000).toISOString());
+    await fixture.worker.jobs.runByID({ id: job.id, overrideAccess: true });
 
-    await sweepJobLeases({ req });
+    expect((await effects(queue)).docs).toHaveLength(0);
 
-    expect(await readJob(job.id)).toMatchObject({ processing: false });
-
-    const gate = { entered: deferred(), release: deferred() };
-
-    fixture.gates.set(queue, gate);
-
-    const run = fixture.frogbot.jobs.runByID({ id: job.id, overrideAccess: true });
-
-    onTestFinished(async () => {
-      gate.release.resolve();
-      await run;
-    });
-
-    await enteredOrFinished(gate.entered.promise, run);
-
-    const successor = await readJob(job.id);
-
-    await resetJobLease({ id: job.id, owner: 'crashed', leaseUntil: expired, req });
-    await renewJobLease({ ids: [job.id], owner: 'crashed', req });
-
-    expect(await readJob(job.id)).toMatchObject({
-      processing: true,
-      leaseOwner: successor.leaseOwner,
-      leaseUntil: successor.leaseUntil,
-    });
-
-    gate.release.resolve();
-    await run;
+    await lease('2020-01-01T00:00:00.000Z');
+    await fixture.worker.jobs.runByID({ id: job.id, overrideAccess: true });
 
     expect((await effects(queue)).docs).toHaveLength(1);
-
-    await fixture.payload.db.updateOne({
-      collection: 'payload-jobs',
-      id: job.id,
-      data: { processing: true, leaseOwner: 'completed', leaseUntil: expired },
-    });
-
-    await sweepJobLeases({ req });
-
-    expect(await readJob(job.id)).toMatchObject({
-      processing: true,
-      leaseOwner: 'completed',
-      completedAt: expect.any(String),
-    });
+    expect(await readJob(job.id)).toMatchObject({ completedAt: expect.any(String), totalTried: 1 });
   });
 
   it('retains ordinary update, cancellation, and persisted job log behavior', async () => {
@@ -552,31 +495,18 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     await fixture.frogbot.jobs.run({ queue, overrideAccess: true });
 
     expect(await readJob(cancelled.id)).toMatchObject({
-      processing: false,
+      processingUntil: null,
       hasError: true,
       error: { cancelled: true },
     });
     expect((await effects(queue)).docs).toHaveLength(1);
   });
 
-  it('queues the injected minute sweep through native scheduling and runs its persisted job', async () => {
-    const queue = randomUUID();
-    const crashed = await queueJob(queue);
-
-    await fixture.payload.db.updateOne({
-      collection: 'payload-jobs',
-      id: crashed.id,
-      data: {
-        processing: true,
-        leaseOwner: 'scheduled-crash',
-        leaseUntil: '2020-01-01T00:00:00.000Z',
-      },
-    });
-
+  it('queues the waitpoint sweep through native scheduling and runs its persisted job', async () => {
     const result = await fixture.frogbot.jobs.handleSchedules({ queue: 'default' });
     const scheduled = await fixture.payload.find({
       collection: 'payload-jobs',
-      where: { taskSlug: { equals: 'frogbot-sweep-jobs' } },
+      where: { taskSlug: { equals: 'frogbot-sweep-waitpoints' } },
       limit: 0,
       overrideAccess: true,
     });
@@ -594,20 +524,19 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
 
     await fixture.frogbot.jobs.run({
       queue: 'default',
-      where: { taskSlug: { equals: 'frogbot-sweep-jobs' } },
+      where: { taskSlug: { equals: 'frogbot-sweep-waitpoints' } },
       overrideAccess: true,
     });
 
     vi.useRealTimers();
 
-    expect(await readJob(crashed.id)).toMatchObject({ processing: false });
     expect(await readJob(scheduled.docs[0].id)).toMatchObject({
       completedAt: expect.any(String),
       hasError: false,
     });
   });
 
-  it('executes the native REST jobs route with persisted effects and lease context', async () => {
+  it('executes the native REST jobs route with persisted effects', async () => {
     const queue = randomUUID();
     const job = await queueJob(queue);
     const response = await fixture.frogbot.handleRequest(

@@ -2,7 +2,7 @@ import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { importExportPlugin } from '@frogbotai/plugin-import-export';
 import type { CollectionConfig, FrogBotConfig, Tool } from 'frogbot';
-import { autonumberField, createdByField, lastModifiedByField } from 'frogbot';
+import { autonumberField } from 'frogbot';
 import { z } from 'zod';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
@@ -47,9 +47,6 @@ const Tickets: CollectionConfig = {
       type: 'group',
       fields: [autonumberField({ name: 'ref' }), { name: 'note', type: 'text' }],
     },
-    createdByField({ name: 'createdBy' }),
-    lastModifiedByField({ name: 'lastModifiedBy' }),
-    lastModifiedByField({ name: 'editedByAdmin', relationTo: adminsSlug }),
   ],
 };
 

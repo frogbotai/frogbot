@@ -32,7 +32,7 @@ export type OwnClause = {
   own: string;
 };
 
-export type RoleAccessArgs = AccessArgs;
+export type RoleAccessArgs = Omit<AccessArgs, 'slug'> & Partial<Pick<AccessArgs, 'slug'>>;
 
 export type ClauseFunction<
   TArgs extends RoleAccessArgs = RoleAccessArgs,

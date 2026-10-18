@@ -70,7 +70,7 @@ for (const theme of ['light', 'dark'] as const) {
     await create.getByRole('button', { name: 'Close' }).click();
     await expect(create).toBeHidden();
 
-    const row = page.getByRole('row', { name: new RegExp(name) });
+    const row = page.getByRole('row').filter({ hasText: new RegExp(name) });
 
     await row.getByRole('button', { name: 'Revoke', exact: true }).click();
 

@@ -14,7 +14,6 @@ import { resolveUserSlug } from '../chat/resolveUserSlug.js';
 import { sanitizeCollection } from '../collections/config/sanitize.js';
 import type { Endpoint } from '../endpoints/types.js';
 import { defaultAutonumbersCollection } from '../fields/baseFields/autonumber/collection.js';
-import type { SystemKindUsers } from '../fields/config/sanitizeSystemKinds.js';
 import { sanitizeVectorFields } from '../fields/config/sanitizeVector.js';
 import { wrapFieldRequestFunctions } from '../fields/config/wrapRequestFunctions.js';
 import { buildResumeEndpoints } from '../jobs/endpoints/resume.js';
@@ -57,6 +56,7 @@ export function buildPayloadConfig({
   resolveFrogBot,
   searchCollections = [],
   autonumbers = [],
+  storage = [],
 }: {
   config: FrogBotConfig;
   onInit: NonNullable<PayloadConfig['onInit']>;
@@ -65,17 +65,9 @@ export function buildPayloadConfig({
   resolveFrogBot: ResolveFrogBot;
   searchCollections?: SearchCollection[];
   autonumbers?: AutonumberEntry[];
+  storage?: NonNullable<PayloadConfig['storage']>;
 }): PayloadConfig {
   const mapVectorField = config.db.mapVectorField;
-
-  const authSlugs = config.collections
-    .filter((collection) => Boolean(collection.auth))
-    .map(({ slug }) => slug);
-
-  const users: SystemKindUsers = {
-    authSlugs: authSlugs.length ? authSlugs : ['users'],
-    resolve: () => resolveUserSlug(config),
-  };
 
   const collections = config.collections.map((collection) =>
     sanitizeCollection(
@@ -88,7 +80,6 @@ export function buildPayloadConfig({
         onAutonumber: (path) => autonumbers.push({ collection: collection.slug, path }),
         resolveFrogBot,
         search: searchCollections.find(({ slug }) => slug === collection.slug)?.search,
-        users,
       },
     ),
   );
@@ -98,12 +89,14 @@ export function buildPayloadConfig({
       sanitizeCollection(
         {
           slug: 'users',
+          authorship: false,
+          custom: { frogbot: { internal: true } },
           admin: { icon: 'people', useAsTitle: 'name' },
           auth: { tokenExpiration: 7200 },
           fields: [{ name: 'name', type: 'text' }],
         },
         attachFrogBot,
-        { mapVectorField, resolveFrogBot, users },
+        { mapVectorField, resolveFrogBot },
       ),
     );
   }
@@ -113,12 +106,12 @@ export function buildPayloadConfig({
       sanitizeCollection(defaultAutonumbersCollection(), attachFrogBot, {
         mapVectorField,
         resolveFrogBot,
-        users,
       }),
     );
   }
 
   const {
+    _payloadPlugins: payloadPlugins,
     agents: _agents,
     ai: _ai,
     connections: _connections,
@@ -126,6 +119,7 @@ export function buildPayloadConfig({
     onInit: _onInit,
     plugins: _plugins,
     settings: _settings,
+    storage: _storage,
     tools: _tools,
     ...payloadKeys
   } = config;
@@ -142,7 +136,6 @@ export function buildPayloadConfig({
                   block: block.slug,
                   fields: block.fields,
                   mapVectorField,
-                  users,
                 }),
               ),
             ),
@@ -346,6 +339,8 @@ export function buildPayloadConfig({
     },
   };
 
+  if (payloadPlugins?.length) out.plugins = payloadPlugins;
+  if (storage.length) out.storage = storage;
   out.onInit = onInit;
 
   return out;

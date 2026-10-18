@@ -5,7 +5,7 @@
     padding: 0 0.75rem;
     align-items: center;
     gap: 0.5rem;
-    background: var(--theme-base-150);
+    background: var(--fb-theme-base-150);
   }
   .fb-search-input__icon,
   .fb-search-input__clear svg {

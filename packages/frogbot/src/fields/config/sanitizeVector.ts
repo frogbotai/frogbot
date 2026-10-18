@@ -1,11 +1,12 @@
 import { ValidationError } from 'payload';
+import { json as validateJSON } from 'payload/shared';
 
 import type { MapVectorField } from '../../database/types.js';
 import { fromPayloadField, toPayloadField } from '../../seams/config.js';
 import { validateVector } from '../validations.js';
 import { FIELD_CELL_PATH, sanitizeOptionColors } from './sanitizeOptionColors.js';
-import { getSystemKind, sanitizeSystemKind, type SystemKindUsers } from './sanitizeSystemKinds.js';
-import type { Field, JSONField, VectorField } from './types.js';
+import { getSystemKind, sanitizeSystemKind } from './sanitizeSystemKinds.js';
+import type { Field, JSONField, JSONSchemaTransform, VectorField } from './types.js';
 
 type VectorOwner =
   { block?: undefined; collection: string } | { block: string; collection?: undefined };
@@ -14,7 +15,6 @@ type SanitizeVectorFieldsArgs = VectorOwner & {
   fields: readonly Field[];
   mapVectorField?: MapVectorField;
   onAutonumber?: (path: string) => void;
-  users: SystemKindUsers;
 };
 
 type SanitizeVectorFieldArgs = VectorOwner & {
@@ -55,7 +55,7 @@ function sanitizeVectorField({
     return validate ? validate(value as number[] | null | undefined, options) : true;
   };
 
-  const vectorSchema: NonNullable<JSONField['typescriptSchema']>[number] = ({ jsonSchema }) => ({
+  const vectorSchema: JSONSchemaTransform = ({ jsonSchema }) => ({
     ...jsonSchema,
     type: field.required ? 'array' : ['array', 'null'],
     items: { type: 'number' },
@@ -89,7 +89,7 @@ function sanitizeVectorField({
       ...field.hooks,
       beforeChange: [...(field.hooks?.beforeChange ?? []), validateStoredVector],
     },
-    typescriptSchema: [...(field.typescriptSchema ?? []), vectorSchema],
+    jsonSchema: [...(field.jsonSchema ?? []), vectorSchema],
   };
 
   if (!mapVectorField) return lowered;
@@ -97,6 +97,19 @@ function sanitizeVectorField({
   return fromPayloadField(
     mapVectorField({ collection, block, dimensions, field: toPayloadField(lowered), path }),
   );
+}
+
+type JSONValidate = (value: unknown, options: object) => Promise<string | true> | string | true;
+
+function sanitizeJSONSchemaTransforms(field: JSONField): JSONField {
+  if (!Array.isArray(field.jsonSchema)) return field;
+
+  const validate = (field.validate ?? validateJSON) as JSONValidate;
+
+  return {
+    ...field,
+    validate: (value, options) => validate(value, { ...options, jsonSchema: undefined }),
+  };
 }
 
 function sanitizeVirtualPath(field: Field): Field {
@@ -135,6 +148,8 @@ function sanitizeFields(
       return sanitizeOptionColors({ ...args, field, path });
     }
 
+    if (field.type === 'json') return sanitizeJSONSchemaTransforms(field);
+
     if ('fields' in field && Array.isArray(field.fields)) {
       return {
         ...field,
@@ -168,8 +183,7 @@ function sanitizeFields(
 
       return {
         ...field,
-        blocks: field.blocks.map(sanitizeBlock),
-        blockReferences: field.blockReferences?.map((block) =>
+        blocks: field.blocks.map((block) =>
           typeof block === 'string' ? block : sanitizeBlock(block),
         ),
       };

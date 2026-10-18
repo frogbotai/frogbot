@@ -6,6 +6,8 @@ export function defaultTriggerSubscriptionsCollection(): CollectionConfig {
   return {
     slug: TRIGGER_SUBSCRIPTIONS_SLUG,
     versions: false,
+    authorship: false,
+    custom: { frogbot: { internal: true } },
     typescript: { interface: 'FrogBotTriggerSubscription' },
     admin: { hidden: true },
     graphQL: false,

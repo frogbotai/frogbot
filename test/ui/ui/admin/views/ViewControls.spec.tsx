@@ -3,77 +3,26 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   ListControls: vi.fn(),
-  query: {},
-  refineListData: vi.fn(),
   SortBuilder: vi.fn(() => null),
 }));
 
 vi.mock('@payloadcms/ui', async () => {
   const { createElement, useState } = await import('react');
-  const dictionary: Record<string, string> = {
-    'general:clear': 'Clear',
-    'general:columns': 'Columns',
-    'general:filters': 'Filters',
-    'general:groupByLabel': 'Group by {{label}}',
-    'general:sort': 'Sort',
-  };
-
-  const t = (key: string, vars?: Record<string, string>) =>
-    Object.entries(vars ?? {}).reduce(
-      (value, [name, replacement]) => value.replaceAll(`{{${name}}}`, replacement),
-      dictionary[key] ?? key,
-    );
 
   return {
     AnimateHeight: ({ children, height }: { children: React.ReactNode; height: number | string }) =>
       createElement('div', { 'data-height': height, 'data-testid': 'sort-height' }, children),
-    ChevronIcon: () => createElement('svg', { 'data-testid': 'chevron' }),
-    ListControls: (props: { beforeActions?: React.ReactNode } & Record<string, unknown>) => {
+    ListControls: (props: Record<string, unknown>) => {
       mocks.ListControls(props);
-      const [drawer, setDrawer] = useState<string>();
-      const toggle = (id: string, value: string) =>
-        createElement('button', {
-          'aria-expanded': drawer === value,
-          id,
-          key: id,
-          onClick: () => setDrawer(drawer === value ? undefined : value),
-        });
+      const [open, setOpen] = useState(false);
 
-      return createElement('div', { className: 'list-controls' }, [
-        createElement(
-          'div',
-          { 'data-testid': 'before-actions', key: 'before' },
-          props.beforeActions,
-        ),
-        toggle('toggle-list-columns', 'columns'),
-        toggle('toggle-list-filters', 'filters'),
-        toggle('toggle-list-sort', 'sort'),
-        toggle('toggle-group-by', 'group-by'),
-      ]);
+      return createElement('button', {
+        'aria-expanded': open,
+        id: 'toggle-list-sort',
+        onClick: () => setOpen(!open),
+        type: 'button',
+      });
     },
-    Pill: ({
-      children,
-      className,
-      icon,
-      id,
-      onClick,
-      pillStyle,
-    }: {
-      children?: React.ReactNode;
-      className?: string;
-      icon?: React.ReactNode;
-      id?: string;
-      onClick?: () => void;
-      pillStyle?: string;
-    }) =>
-      createElement(
-        'button',
-        { className, 'data-pill-style': pillStyle, id, onClick, type: 'button' },
-        [children, icon],
-      ),
-    useListQuery: () => ({ query: mocks.query, refineListData: mocks.refineListData }),
-    useTranslation: () => ({ t }),
-    XIcon: () => createElement('svg', { 'data-testid': 'x' }),
   };
 });
 
@@ -81,141 +30,53 @@ vi.mock('../../../../../packages/ui/src/admin/views/controls/SortBuilder.client.
   SortBuilder: mocks.SortBuilder,
 }));
 
-const { countWhereConditions, ViewControls } =
+const { ViewControls } =
   await import('../../../../../packages/ui/src/admin/views/controls/ViewControls.client.js');
 
 const collectionConfig = {
-  admin: { groupBy: true },
+  admin: {},
   fields: [{ name: 'title', label: 'Title', type: 'text' }],
   slug: 'posts',
 };
 
-const renderControls = (
-  props: Record<string, unknown> = {},
-  config: Record<string, unknown> = {},
-) =>
+const renderControls = (props: Record<string, unknown> = {}) =>
   render(
-    <ViewControls
-      collectionConfig={{ ...collectionConfig, ...config } as never}
-      collectionSlug="posts"
-      enableSort
-      {...props}
-    />,
+    <ViewControls collectionConfig={collectionConfig as never} collectionSlug="posts" {...props} />,
   );
 
-const control = (placement: string, key: string) =>
-  document.getElementById(`view-controls-${placement}-${key}`)!;
-
-const clear = (placement: string, key: string) =>
-  document.getElementById(`view-controls-${placement}-clear-${key}`)!;
-
 beforeEach(() => {
-  mocks.query = {};
-  mocks.refineListData.mockClear();
   mocks.ListControls.mockClear();
+  mocks.SortBuilder.mockClear();
 });
 
 describe('ViewControls', () => {
-  it('renders one unified set in beforeActions and one CSS-controlled mobile set', () => {
-    const { container } = renderControls();
+  it("passes every prop but the manual sort field to Payload's list controls", () => {
+    renderControls({ enableSort: true, manualSortField: '_order_by_stage' });
 
-    expect(
-      screen.getByTestId('before-actions').querySelectorAll('.view-controls__control'),
-    ).toHaveLength(4);
-    expect(container.querySelectorAll('.view-controls__mobile-controls')).toHaveLength(1);
-    expect(container.querySelector('.view-controls__active-state')).toBeNull();
-    expect(control('desktop', 'columns').textContent).toBe('Columns');
-    expect(control('mobile', 'columns').textContent).toBe('Columns');
-  });
-
-  it('preserves caller beforeActions before controls', () => {
-    renderControls({ beforeActions: [<span key="caller">Caller</span>] });
-    const actions = screen.getByTestId('before-actions');
-
-    expect(actions.firstElementChild?.textContent).toBe('Caller');
-    expect(mocks.ListControls).toHaveBeenLastCalledWith(
-      expect.objectContaining({ beforeActions: expect.any(Array) }),
+    expect(mocks.ListControls).toHaveBeenCalledWith(
+      expect.objectContaining({ collectionSlug: 'posts', enableSort: true }),
     );
+    expect(mocks.ListControls.mock.calls[0][0]).not.toHaveProperty('manualSortField');
   });
 
-  it('renders inactive light pills with chevrons and no clear affordance', () => {
+  it('renders no sort builder unless sort is enabled', () => {
     renderControls();
 
-    for (const key of ['columns', 'filters', 'sort', 'group-by']) {
-      expect(control('desktop', key).getAttribute('data-pill-style')).toBe('light');
-      expect(control('desktop', key).querySelector('[data-testid="chevron"]')).not.toBeNull();
-      expect(clear('desktop', key)).toBeNull();
-    }
+    expect(screen.queryByTestId('sort-height')).toBeNull();
+    expect(mocks.SortBuilder).not.toHaveBeenCalled();
   });
 
-  it('changes filters, sort, and group by to counted success pills', () => {
-    mocks.query = {
-      columns: ['title'],
-      groupBy: 'title',
-      sort: '-title,title',
-      where: { or: [{ and: [{ title: { equals: 'a' } }, { title: { equals: 'b' } }] }] },
-    };
+  it("opens the sort builder when Payload's Sort button expands", async () => {
+    renderControls({ enableSort: true, manualSortField: '_order_by_stage' });
 
-    renderControls();
-
-    expect(control('desktop', 'columns').textContent).toBe('Columns');
-    expect(control('desktop', 'columns').getAttribute('data-pill-style')).toBe('light');
-    expect(control('desktop', 'columns').querySelector('[data-testid="chevron"]')).not.toBeNull();
-    expect(clear('desktop', 'columns')).toBeNull();
-    expect(control('desktop', 'filters').textContent).toBe('Filters: 2');
-    expect(control('desktop', 'sort').textContent).toBe('Sort: 2');
-    expect(control('desktop', 'group-by').textContent).toBe('Group by: 1');
-    expect(control('desktop', 'filters').getAttribute('data-pill-style')).toBe('success');
-    expect(control('desktop', 'filters').querySelector('[data-testid="x"]')).not.toBeNull();
-    expect(control('desktop', 'filters').querySelector('[data-testid="chevron"]')).toBeNull();
-  });
-
-  it('omits disabled controls from both placements', () => {
-    renderControls({
-      enableColumns: false,
-      enableFilters: false,
-      enableGroupBy: false,
-      enableSort: false,
-    });
-
-    expect(document.querySelectorAll('.view-controls__control')).toHaveLength(0);
-  });
-
-  it('opens native drawers and keeps sort expansion observer-driven', async () => {
-    renderControls();
-    fireEvent.click(control('desktop', 'sort'));
-
-    await waitFor(() =>
-      expect(screen.getByTestId('sort-height').getAttribute('data-height')).toBe('auto'),
+    expect(screen.getByTestId('sort-height').dataset.height).toBe('0');
+    expect(mocks.SortBuilder).toHaveBeenCalledWith(
+      expect.objectContaining({ collectionSlug: 'posts', manualField: '_order_by_stage' }),
+      undefined,
     );
 
-    fireEvent.click(control('desktop', 'columns'));
+    fireEvent.click(screen.getByRole('button'));
 
-    await waitFor(() =>
-      expect(screen.getByTestId('sort-height').getAttribute('data-height')).toBe('0'),
-    );
-  });
-
-  it('clears without opening the native drawer, including keyboard activation', () => {
-    mocks.query = { sort: 'title', where: { title: { equals: 'a' } } };
-    renderControls();
-
-    fireEvent.click(clear('desktop', 'filters'));
-
-    expect(mocks.refineListData).toHaveBeenLastCalledWith({ where: {} });
-    expect(document.getElementById('toggle-list-filters')?.getAttribute('aria-expanded')).toBe(
-      'false',
-    );
-
-    fireEvent.keyDown(clear('desktop', 'sort'), { key: ' ' });
-
-    expect(mocks.refineListData).toHaveBeenLastCalledWith({ page: 1, sort: '' });
-  });
-});
-
-describe('control counters', () => {
-  it('counts filter leaves', () => {
-    expect(countWhereConditions({ title: { equals: 'a' } })).toBe(1);
-    expect(countWhereConditions({ or: [{ and: [{ title: { equals: 'a' } }] }] })).toBe(1);
+    await waitFor(() => expect(screen.getByTestId('sort-height').dataset.height).toBe('auto'));
   });
 });

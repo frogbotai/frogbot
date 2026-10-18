@@ -13,9 +13,13 @@ import { vercelBlobStorage } from '../../../../packages/storage-vercel-blob/src/
 
 vi.mock('payload', async (importOriginal) => ({
   ...(await importOriginal<typeof PayloadModule>()),
-  buildConfig: vi.fn((config: Record<string, unknown>) =>
-    Promise.resolve({ globals: [], ...config }),
-  ),
+  buildConfig: vi.fn(async (config: PayloadModule.Config) => {
+    let built = config;
+
+    for (const adapter of config.storage ?? []) built = await adapter.init(built);
+
+    return { globals: [], ...built };
+  }),
   handleEndpoints: vi.fn(),
 }));
 
@@ -46,9 +50,7 @@ const s3 = (options: Partial<Parameters<typeof s3Storage>[0]> = {}) =>
 const gcs = (options: Partial<Parameters<typeof gcsStorage>[0]> = {}) =>
   gcsStorage({ bucket: 'bucket', options: {}, ...options });
 
-type UploadShape = { adapter?: string; disableLocalStorage?: boolean };
-
-type ProviderShape = { clientProps?: { collectionSlug?: string } };
+type UploadShape = { adapter?: string; disableLocalStorage?: boolean; uploadInstructions?: object };
 
 async function build(overrides: Partial<FrogBotConfig>) {
   const sanitized = await buildConfig({
@@ -59,7 +61,6 @@ async function build(overrides: Partial<FrogBotConfig>) {
   });
 
   const payloadConfig = (await sanitized._internal.payloadConfig) as unknown as {
-    admin?: { components?: { providers?: ProviderShape[] } };
     collections: { slug: string; upload?: UploadShape | boolean }[];
   };
 
@@ -71,9 +72,8 @@ async function build(overrides: Partial<FrogBotConfig>) {
     return typeof collection.upload === 'object' ? collection.upload : undefined;
   };
 
-  const clientUploadSlugs = (payloadConfig.admin?.components?.providers ?? []).flatMap(
-    (provider) =>
-      provider.clientProps?.collectionSlug ? [provider.clientProps.collectionSlug] : [],
+  const clientUploadSlugs = payloadConfig.collections.flatMap(({ slug, upload }) =>
+    typeof upload === 'object' && upload.uploadInstructions ? [slug] : [],
   );
 
   return { sanitized, payloadConfig, upload, clientUploadSlugs };
@@ -81,20 +81,21 @@ async function build(overrides: Partial<FrogBotConfig>) {
 
 describe('storage adapters', () => {
   it('cover the files collection and chat assets without listing them', async () => {
-    const { upload } = await build({ collections: [Users, Files, Chats], plugins: [s3()] });
+    const { upload } = await build({ collections: [Users, Files, Chats], storage: [s3()] });
 
     expect(upload('files')).toMatchObject({ adapter: 's3', disableLocalStorage: true });
     expect(upload(chatAssetsSlug)).toMatchObject({ adapter: 's3', disableLocalStorage: true });
   });
 
-  it('cover collections added by plugins that run after the adapter', async () => {
+  it('cover collections added by plugins', async () => {
     const addMedia: Plugin = (config) => ({
       ...config,
       collections: [...config.collections, Media],
     });
 
     const { upload } = await build({
-      plugins: [s3({ collections: { media: true } }), addMedia],
+      plugins: [addMedia],
+      storage: [s3({ collections: { media: true } })],
     });
 
     expect(upload('media')).toMatchObject({ adapter: 's3' });
@@ -106,7 +107,7 @@ describe('storage adapters', () => {
 
     const { payloadConfig, upload } = await build({
       collections: [Users, Documents],
-      plugins: [s3()],
+      storage: [s3()],
     });
 
     expect(upload('documents')).toMatchObject({ adapter: 's3', disableLocalStorage: true });
@@ -116,7 +117,7 @@ describe('storage adapters', () => {
   it('leave a built-in collection on local disk when it is set to false', async () => {
     const { upload, clientUploadSlugs } = await build({
       collections: [Users, Files, Chats],
-      plugins: [s3({ clientUploads: true, collections: { [chatAssetsSlug]: false } })],
+      storage: [s3({ clientUploads: true, collections: { [chatAssetsSlug]: false } })],
     });
 
     expect(upload('files')).toMatchObject({ adapter: 's3' });
@@ -126,7 +127,7 @@ describe('storage adapters', () => {
 
   it('skip chat assets when chat persistence is disabled', async () => {
     const { payloadConfig, clientUploadSlugs } = await build({
-      plugins: [s3({ clientUploads: true })],
+      storage: [s3({ clientUploads: true })],
     });
 
     expect(payloadConfig.collections.map(({ slug }) => slug)).not.toContain(chatAssetsSlug);
@@ -136,7 +137,7 @@ describe('storage adapters', () => {
   it('assign built-in collections to the first adapter', async () => {
     const { upload } = await build({
       collections: [Users, Files, Chats, Media],
-      plugins: [s3(), gcs({ collections: { media: true } })],
+      storage: [s3(), gcs({ collections: { media: true } })],
     });
 
     expect(upload('files')).toMatchObject({ adapter: 's3' });
@@ -147,7 +148,7 @@ describe('storage adapters', () => {
   it('give a built-in collection to the adapter that lists it', async () => {
     const { upload } = await build({
       collections: [Users, Files, Chats],
-      plugins: [s3(), gcs({ collections: { files: { prefix: 'files' } } })],
+      storage: [s3(), gcs({ collections: { files: { prefix: 'files' } } })],
     });
 
     expect(upload('files')).toMatchObject({ adapter: 'gcs' });
@@ -157,7 +158,7 @@ describe('storage adapters', () => {
   it('cover only chat assets when nothing is marked file: true', async () => {
     const { payloadConfig, clientUploadSlugs } = await build({
       collections: [Users, Chats],
-      plugins: [s3({ clientUploads: true })],
+      storage: [s3({ clientUploads: true })],
     });
 
     expect(payloadConfig.collections.map(({ slug }) => slug)).not.toContain('files');
@@ -167,7 +168,7 @@ describe('storage adapters', () => {
   it('build without built-in upload collections when chat is off and nothing is marked file: true', async () => {
     const { payloadConfig, clientUploadSlugs } = await build({
       collections: [Users],
-      plugins: [s3({ clientUploads: true })],
+      storage: [s3({ clientUploads: true })],
     });
 
     expect(payloadConfig.collections.map(({ slug }) => slug)).not.toContain('files');
@@ -178,7 +179,7 @@ describe('storage adapters', () => {
   it('add no files collection when an adapter lists files and nothing is marked file: true', async () => {
     const { payloadConfig } = await build({
       collections: [Users],
-      plugins: [s3({ collections: { files: true } })],
+      storage: [s3({ collections: { files: true } })],
     });
 
     expect(payloadConfig.collections.map(({ slug }) => slug)).not.toContain('files');
@@ -188,7 +189,7 @@ describe('storage adapters', () => {
     await expect(
       build({
         collections: [Users, Media],
-        plugins: [s3({ collections: { media: true } }), gcs({ collections: { media: true } })],
+        storage: [s3({ collections: { media: true } }), gcs({ collections: { media: true } })],
       }),
     ).rejects.toThrow(
       "[frogbot] Collection 'media' is listed in more than one storage adapter. List it in exactly one.",
@@ -199,7 +200,7 @@ describe('storage adapters', () => {
     const first = vi.fn();
     const second = vi.fn();
 
-    const { sanitized } = await build({ onInit: [first, second], plugins: [s3()] });
+    const { sanitized } = await build({ onInit: [first, second], storage: [s3()] });
 
     await sanitized.onInit?.({} as FrogBot);
 
@@ -221,7 +222,7 @@ describe('storage adapters', () => {
     ],
     ['vercel-blob', vercelBlobStorage({ token: 'vercel_blob_rw_store_secret' })],
   ])('%s covers the files collection', async (adapter, plugin) => {
-    const { upload } = await build({ plugins: [plugin] });
+    const { upload } = await build({ storage: [plugin] });
 
     expect(upload('files')).toMatchObject({ adapter });
   });

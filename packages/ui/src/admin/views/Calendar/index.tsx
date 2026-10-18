@@ -8,7 +8,6 @@ import type {
 import { getFromImportMap, transformColumnsToSearchParams } from 'payload/shared';
 import type { ComponentType } from 'react';
 
-import { getServerAdapter } from '../../adapters/server.js';
 import { getActiveViewSlug, resolveCollectionViews } from '../collectionViews.js';
 import { CollectionViewShell } from '../CollectionViewShell.js';
 import {
@@ -48,7 +47,7 @@ export async function CalendarView(props: AdminViewServerProps) {
     ({ slug }) => slug === activeSlug && views.some((item) => item.slug === slug),
   );
 
-  if (!calendar || calendar.type !== 'calendar') return getServerAdapter().notFound();
+  if (!calendar || calendar.type !== 'calendar') return props.server.notFound();
 
   const query = (initPageResult.req.query ?? {}) as {
     columns?: unknown;

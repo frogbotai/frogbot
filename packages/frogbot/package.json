@@ -29,6 +29,16 @@
       "import": "./dist/exports/jobs.js",
       "default": "./dist/exports/jobs.js"
     },
+    "./migrations": {
+      "types": "./dist/exports/migrations.d.ts",
+      "import": "./dist/exports/migrations.js",
+      "default": "./dist/exports/migrations.js"
+    },
+    "./migrations/upgrade-0.34": {
+      "types": "./dist/exports/migrations-upgrade-0.34.d.ts",
+      "import": "./dist/exports/migrations-upgrade-0.34.js",
+      "default": "./dist/exports/migrations-upgrade-0.34.js"
+    },
     "./search": {
       "types": "./dist/exports/search.d.ts",
       "import": "./dist/exports/search.js",
@@ -100,8 +110,8 @@
     "@frogbotai/gateway": "workspace:*",
     "@frogbotai/protocol": "workspace:*",
     "@next/env": "catalog:",
-    "@payloadcms/drizzle": "3.90.2",
-    "@payloadcms/translations": "3.90.2",
+    "@payloadcms/drizzle": "catalog:",
+    "@payloadcms/translations": "catalog:",
     "ai": "7.0.116",
     "chat": "^4.40.0",
     "croner": "10.0.1",
@@ -109,11 +119,11 @@
     "fflate": "0.8.3",
     "json-schema-to-typescript": "^15.0.3",
     "mammoth": "1.13.0",
-    "payload": "3.90.2",
+    "payload": "catalog:",
     "prettier": "^3.2.5",
     "read-excel-file": "9.3.10",
     "to-snake-case": "1.0.0",
-    "tsx": "^4.19.2",
+    "tsx": "^4.23.15",
     "yauzl": "3.4.0",
     "zod": "^4.3.6"
   },
@@ -155,6 +165,16 @@
         "types": "./dist/exports/jobs.d.ts",
         "import": "./dist/exports/jobs.js",
         "default": "./dist/exports/jobs.js"
+      },
+      "./migrations": {
+        "types": "./dist/exports/migrations.d.ts",
+        "import": "./dist/exports/migrations.js",
+        "default": "./dist/exports/migrations.js"
+      },
+      "./migrations/upgrade-0.34": {
+        "types": "./dist/exports/migrations-upgrade-0.34.d.ts",
+        "import": "./dist/exports/migrations-upgrade-0.34.js",
+        "default": "./dist/exports/migrations-upgrade-0.34.js"
       },
       "./search": {
         "types": "./dist/exports/search.d.ts",

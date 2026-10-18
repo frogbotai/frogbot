@@ -1,9 +1,8 @@
 'use client';
 
-import { useStepNav } from '@payloadcms/ui';
+import { usePathname, useStepNav } from '@payloadcms/ui';
 import { type ReactNode, useLayoutEffect, useRef } from 'react';
 
-import { useRouterAdapter } from '../../adapters/router.js';
 import { TabTitleSync } from './TabTitleSync.js';
 
 export type StepNavResetProps = {
@@ -11,7 +10,7 @@ export type StepNavResetProps = {
 };
 
 export function StepNavReset({ children }: StepNavResetProps) {
-  const { pathname } = useRouterAdapter();
+  const pathname = usePathname();
   const { setStepNav } = useStepNav();
   const previousPathname = useRef(pathname);
 
