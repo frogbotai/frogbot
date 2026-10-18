@@ -9,7 +9,7 @@ import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
 import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin';
 import type { LexicalEditor } from 'lexical';
-import { type RefObject, useEffect, useRef } from 'react';
+import { type RefObject, useEffect, useLayoutEffect, useRef } from 'react';
 
 import { ComposerEditorContext, type ComposerEditorContextValue } from './context.js';
 import { type ComposerFeature, resolveFeatures } from './features.js';
@@ -36,7 +36,7 @@ function EditorState({ disabled, onChange }: Pick<ComposerEditorProps, 'disabled
 
   useEffect(() => editor.setEditable(!disabled), [disabled, editor]);
 
-  useEffect(
+  useLayoutEffect(
     () =>
       editor.registerUpdateListener(({ editorState }) => {
         change.current?.(editorState.read($readPrompt));

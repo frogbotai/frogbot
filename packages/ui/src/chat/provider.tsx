@@ -23,6 +23,7 @@ export type ChatProviderValue = {
   mentionSources?: readonly MentionSource[];
   composerFeatures?: readonly ComposerFeature[];
   composerHistory?: ComposerHistoryStorage;
+  faviconUrl?: (pageUrl: string) => string | undefined;
 };
 
 const ChatContext = createContext<ChatProviderValue | undefined>(undefined);
@@ -36,6 +37,7 @@ export function ChatProvider({
   composerFeatures,
   composerHistory,
   dataRenderers = [],
+  faviconUrl,
   mentionSources,
   toolRenderers = [],
 }: {
@@ -47,6 +49,8 @@ export function ChatProvider({
   composerFeatures?: readonly ComposerFeature[];
   composerHistory?: ComposerHistoryStorage;
   dataRenderers?: readonly DataRenderer[];
+  /** The favicon to show for a page in `LinkList`; without it, no favicon is requested. */
+  faviconUrl?: (pageUrl: string) => string | undefined;
   mentionSources?: readonly MentionSource[];
   toolRenderers?: readonly ToolRenderer[];
 }) {
@@ -85,6 +89,7 @@ export function ChatProvider({
         mentionSources,
         composerFeatures,
         composerHistory,
+        faviconUrl,
       }}
     >
       <ArtifactProvider persistence={artifactPersistence} registry={artifactKinds}>

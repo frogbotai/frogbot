@@ -21,9 +21,16 @@ import '@frogbotai/ui/styles.css'
 
 The FrogBot admin panel already loads this stylesheet through `@frogbotai/next/css`, so you only import it for pages outside the admin.
 
+FrogBot components look the same outside the admin as inside it: the stylesheet brings its own reset, scoped to FrogBot elements, so your page's other markup is left alone. To get the admin's fonts (Inter, and Roboto Mono for code), import the bundled font files too, or [pick your own font](/chat/ui-theming#fonts):
+
+```tsx
+import '@frogbotai/ui/styles.css'
+import '@frogbotai/ui/fonts.css'
+```
+
 ## Cascade layer
 
-FrogBot puts all of its styles in a CSS cascade layer named `frogbot`. Your own CSS that isn't in a layer always beats FrogBot, whatever the selector, so you can restyle components with plain class rules and no `!important`. See [how to override FrogBot styles](/chat/ui-theming#override-frogbot-styles).
+FrogBot puts all of its styles in a CSS cascade layer named `frogbot`, and its reset in `frogbot-reset`, the first layer on the page. Your own CSS that isn't in a layer always beats FrogBot, whatever the selector, so you can restyle components with plain class rules and no `!important`. See [how to override FrogBot styles](/chat/ui-theming#override-frogbot-styles).
 
 ## Use with Tailwind CSS
 
@@ -39,7 +46,7 @@ With Tailwind CSS v4, utilities such as `text-red-600` or `underline` on a FrogB
 - Or put the layer order above the Tailwind import in your own CSS, then import FrogBot in any order.
 
   ```css
-  @layer theme, base, components, frogbot, utilities;
+  @layer frogbot-reset, theme, base, components, frogbot, utilities;
   @import "tailwindcss";
   ```
 

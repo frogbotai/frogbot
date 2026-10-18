@@ -212,11 +212,14 @@ export function Composer({
         status={attachments.status}
       />
       <div
-        className={['fb-composer__gradient', dragging && 'fb-composer__gradient--dragging']
+        className={[
+          'fb-composer__gradient fb-glow',
+          dragging && 'fb-composer__gradient--dragging fb-glow--active',
+        ]
           .filter(Boolean)
           .join(' ')}
       >
-        <div className="fb-composer__gradient-container">
+        <div className="fb-composer__gradient-container fb-glow__ring">
           <div className="fb-composer__panel">
             {audioData !== undefined && <AudioWaveform audioData={audioData} />}
             <ComposerEditor

@@ -3,7 +3,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 type NavStateWindow = Window & { __frogbotNavStates?: string[] };
 
 export async function expandSidebar(page: Page) {
-  const shell = page.locator('.frogbot-nav-shell');
+  const shell = page.locator('.fb-nav-shell');
 
   if ((await shell.getAttribute('data-nav-state')) === 'desktop-nav-closed') {
     await page.click('button[aria-label="Open sidebar"]');
@@ -74,12 +74,12 @@ export async function recordNavStates(page: Page) {
       mutations.forEach((mutation) => {
         const target = mutation.target as Element;
 
-        if (mutation.type === 'attributes' && target.classList.contains('frogbot-nav-shell')) {
+        if (mutation.type === 'attributes' && target.classList.contains('fb-nav-shell')) {
           record(mutation.oldValue);
         }
       });
 
-      record(document.querySelector('.frogbot-nav-shell')?.getAttribute('data-nav-state'));
+      record(document.querySelector('.fb-nav-shell')?.getAttribute('data-nav-state'));
     }).observe(document, {
       attributeFilter: ['data-nav-state'],
       attributeOldValue: true,
@@ -94,7 +94,7 @@ export const navStates = (page: Page) =>
   page.evaluate(() => (window as NavStateWindow).__frogbotNavStates ?? []);
 
 export async function waitForNavSettled(page: Page) {
-  await expect(page.locator('.frogbot-nav-shell')).toHaveAttribute('data-nav-hydrated', 'true');
+  await expect(page.locator('.fb-nav-shell')).toHaveAttribute('data-nav-hydrated', 'true');
 
   await page.evaluate(
     () =>

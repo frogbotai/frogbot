@@ -1,0 +1,317 @@
+/*
+  What FrogBot's components get from Payload's admin CSS (preflight.css and app.css, Payload
+  4.0.0-beta.2), so they render the same on a page without it. It applies only inside
+  [data-fb-ui] and to fb- elements, sits in the first layer so app CSS wins, and skips anything
+  inside an admin page (html[data-fb-ui-page]): Payload's preflight covers it there, and admin CSS
+  chunks can load before the layer order is declared, which would put this layer last.
+*/
+@layer frogbot-reset {
+  :where([data-fb-ui], [data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+    :not([data-fb-ui-page] *)
+  ),
+  :where([data-fb-ui], [data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::before,
+  :where([data-fb-ui], [data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::after,
+  :where([data-fb-ui], [data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::backdrop,
+  :where([data-fb-ui], [data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::file-selector-button {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0 solid;
+  }
+
+  /* Payload sets these on html and body; elsewhere the FrogBot root carries them. */
+  :where([data-fb-ui]):where(:not([data-fb-ui-page] *)) {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 450;
+    line-height: 1rem;
+    letter-spacing: -0.001px;
+    tab-size: 4;
+    font-feature-settings: normal;
+    font-variation-settings: normal;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :where(hr):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    height: 0;
+    color: inherit;
+    border-top-width: 1px;
+  }
+
+  :where(abbr[title]):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    text-decoration: underline dotted;
+  }
+
+  :where(h1, h2, h3, h4, h5, h6):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  :where(a):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    color: inherit;
+    text-decoration: inherit;
+  }
+
+  :where(b, strong):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    font-weight: bolder;
+  }
+
+  :where(code, kbd, samp, pre):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    font-family: var(--font-family-mono, "Roboto Mono", monospace);
+    font-feature-settings: normal;
+    font-variation-settings: normal;
+    font-size: 1em;
+  }
+
+  :where(small):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    font-size: 80%;
+  }
+
+  :where(sub, sup):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    position: relative;
+    font-size: 75%;
+    line-height: 0;
+    vertical-align: baseline;
+  }
+
+  :where(sub):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    bottom: -0.25em;
+  }
+
+  :where(sup):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    top: -0.5em;
+  }
+
+  :where(table):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    text-indent: 0;
+    border-color: inherit;
+    border-collapse: collapse;
+  }
+
+  :where(progress):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    vertical-align: baseline;
+  }
+
+  :where(summary):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    display: list-item;
+  }
+
+  :where(ol, ul, menu):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    list-style: none;
+  }
+
+  :where(ol, ul):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    padding-left: 1.53846rem;
+  }
+
+  :where(img, svg, video, canvas, audio, iframe, embed, object):where(
+      [data-fb-ui] *,
+      [class^="fb-"],
+      [class*=" fb-"]
+    ):where(:not([data-fb-ui-page] *)) {
+    display: block;
+    vertical-align: middle;
+  }
+
+  :where(img, video):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  :where(button, input, select, optgroup, textarea):where(
+      [data-fb-ui] *,
+      [class^="fb-"],
+      [class*=" fb-"]
+    ):where(:not([data-fb-ui-page] *)),
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::file-selector-button {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    border-radius: 0;
+    background-color: transparent;
+    opacity: 1;
+  }
+
+  :where(button, input:where([type="button"], [type="reset"], [type="submit"])):where(
+      [data-fb-ui] *,
+      [class^="fb-"],
+      [class*=" fb-"]
+    ):where(:not([data-fb-ui-page] *)),
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::file-selector-button {
+    appearance: button;
+  }
+
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::file-selector-button {
+    margin-inline-end: 0.25rem;
+  }
+
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::placeholder {
+    opacity: 1;
+  }
+
+  /* Not in Safari before 17, which crashes on color-mix() with currentcolor. */
+  @supports (not (-webkit-appearance: -apple-pay-button)) or (contain-intrinsic-size: 1px) {
+    :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+        :not([data-fb-ui-page] *)
+      )::placeholder {
+      color: color-mix(in oklab, currentcolor 50%, transparent);
+    }
+  }
+
+  :where(textarea):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    resize: vertical;
+  }
+
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-search-decoration {
+    appearance: none;
+  }
+
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-date-and-time-value {
+    min-height: 1lh;
+    text-align: inherit;
+  }
+
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-datetime-edit {
+    display: inline-flex;
+  }
+
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+  }
+
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-datetime-edit,
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-datetime-edit-year-field,
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-datetime-edit-month-field,
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-datetime-edit-day-field,
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-datetime-edit-hour-field,
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-datetime-edit-minute-field,
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-datetime-edit-second-field,
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-datetime-edit-millisecond-field,
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-datetime-edit-meridiem-field {
+    padding-block: 0;
+  }
+
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-calendar-picker-indicator {
+    line-height: 1;
+  }
+
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):-moz-ui-invalid:where(
+      :not([data-fb-ui-page] *)
+    ) {
+    box-shadow: none;
+  }
+
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-inner-spin-button,
+  :where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    )::-webkit-outer-spin-button {
+    height: auto;
+  }
+
+  :where(dialog):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      :not([data-fb-ui-page] *)
+    ) {
+    width: 100%;
+    border: 0;
+    padding: 0;
+    color: currentcolor;
+  }
+
+  :where([data-fb-ui], [data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):focus-visible:where(
+      :not([data-fb-ui-page] *)
+    ) {
+    outline: 1px solid #0d99ff;
+    outline-offset: 1px;
+    border-radius: 0.3125rem;
+  }
+
+  :where([data-fb-ui], [data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
+      [hidden]:not([hidden="until-found"])
+    ):where(:not([data-fb-ui-page] *)) {
+    display: none !important;
+  }
+}

@@ -127,7 +127,8 @@ Each `navItems` entry is a `NavItem`:
 The default sections and their prop types are exported from `@frogbotai/ui/admin/rsc`. Copy `RecentsSection` into your application when you need to change its query, heading, or server-rendered content. Keep its server component contract and import the reusable client renderer from the public client entry point:
 
 ```tsx
-import { NavSection, type RecentsSectionProps } from '@frogbotai/ui/admin/rsc'
+import { NavSection } from '@frogbotai/ui'
+import type { RecentsSectionProps } from '@frogbotai/ui/admin/rsc'
 import {
   RecentsSectionClient,
   type RecentsSectionClientProps
@@ -174,7 +175,7 @@ export async function WorkspaceRecents({ payload, req }: RecentsSectionProps) {
 }
 ```
 
-`RecentsSectionClient` preserves live refresh, date buckets, active rows, and View all. Its public `RecentsSectionClientProps` contract requires `chatsSlug`, `collectionPath`, and normalized `recents`. `bucketRecents` is also exported from `@frogbotai/ui/admin` when only the default grouping is needed.
+`RecentsSectionClient` preserves live refresh, date buckets, active rows, and View all. Its public `RecentsSectionClientProps` contract requires `chatsSlug`, `collectionPath`, and normalized `recents`. `bucketRecents` is exported from `@frogbotai/ui` when only the default grouping is needed.
 
 ```ts
 admin: {
@@ -327,3 +328,77 @@ admin: {
 ```
 
 A custom `Nav` fully owns navigation rendering. It does not receive FrogBot's default sidebar styles, configured items or sections, bottom rail, or shell slots automatically.
+
+## Use the sidebar outside the admin
+
+The sidebar doesn't need the admin panel. `NavShell`, `AppSidebar`, `NavSection`, `NavItem`, `AccountMenu` and `RecentChats` are exported from `@frogbotai/ui`, so a browser extension's side panel or your own app can show the same sidebar with `@frogbotai/ui/styles.css` alone.
+
+`NavAdapterProvider` tells the sidebar how your app links and navigates. Every prop is optional: without it, links are plain anchors, the current path comes from `location`, navigating sets `location`, and preferences, such as a collapsed section, live in memory. Define `Link` outside your component, as any React component: a new `Link` on each render remounts every link and moves keyboard focus off the one just pressed. Render the sidebar inside a [`ThemeProvider`](/chat/ui-theming#themeprovider), like any FrogBot component outside the admin, so it gets FrogBot's font and light or dark mode.
+
+```tsx
+import {
+  NavAdapterProvider,
+  type NavLinkProps,
+  NavSection,
+  NavShell,
+  RecentChats,
+  useNavAdapter,
+} from '@frogbotai/ui'
+import { ThemeProvider } from '@frogbotai/ui/theme'
+
+const preferences = {
+  get: async (key: string) => (await chrome.storage.local.get(key))[key],
+  set: (key: string, value: unknown) => chrome.storage.local.set({ [key]: value }),
+}
+
+export function PanelNav({ adapter, recents }: PanelNavProps) {
+  const [view, setView] = useState('/chat')
+
+  return (
+    <ThemeProvider>
+      <NavAdapterProvider pathname={view} navigate={setView} Link={PanelLink} preferences={preferences}>
+        <NavShell
+          homePath="/chat"
+          navItems={[{ label: 'Providers', path: '/providers', icon: 'key-round' }]}
+          sections={
+            <NavSection id="recents" title="Recents">
+              <RecentChats
+                adapter={adapter}
+                recents={recents}
+                chatPath={(id) => `/chat/${id}`}
+                viewAllPath="/chats"
+              />
+            </NavSection>
+          }
+        />
+      </NavAdapterProvider>
+    </ThemeProvider>
+  )
+}
+
+// Opens a view in the panel instead of loading a page.
+function PanelLink({ href, ...props }: NavLinkProps) {
+  const { navigate } = useNavAdapter()
+
+  return (
+    <a
+      {...props}
+      href={href}
+      onClick={(event) => {
+        event.preventDefault()
+        navigate(href)
+      }}
+    />
+  )
+}
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `Link` | `ComponentType<NavLinkProps>` | An `<a>` | Renders every link, with `href`, `className`, `aria-current` and the children. |
+| `pathname` | `string` | `location.pathname` | The current path, which marks the active item. |
+| `navigate` | `(path: string) => void` | `location.assign` | Called by sidebar buttons, such as a nav item on the rail or Home. |
+| `preferences` | `{ get(key), set(key, value) }` | In memory | Where the sidebar saves its open state (under `nav`) and each section's collapsed state. |
+| `drawer` | `{ open, setOpen, hydrated, ref? }` | The shell's own state | The open state, when your layout also needs it. |
+
+Below 768px the shell is a drawer with a menu button, a backdrop and Escape to close it; on wider screens it is a rail that collapses to icons, with a label tooltip on hover. Without `accountPath` the bottom rail has no account menu.

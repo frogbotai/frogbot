@@ -1,27 +1,19 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { NavSection } from '../../../../../../packages/ui/src/admin/elements/Nav/NavSection';
+import { NavAdapterProvider } from '../../../../packages/ui/src/nav/adapter';
+import { NavSection as Section } from '../../../../packages/ui/src/nav/NavSection';
 
 const getPreference = vi.fn();
 const setPreference = vi.fn();
 
-vi.mock('@payloadcms/ui', () => ({
-  AnimateHeight: ({
-    children,
-    height,
-    id,
-  }: {
-    children: React.ReactNode;
-    height: number | string;
-    id: string;
-  }) => (
-    <div aria-hidden={height === 0} id={id}>
-      {children}
-    </div>
-  ),
-  usePreferences: () => ({ getPreference, setPreference }),
-}));
+function NavSection(props: React.ComponentProps<typeof Section>) {
+  return (
+    <NavAdapterProvider preferences={{ get: getPreference, set: setPreference }}>
+      <Section {...props} />
+    </NavAdapterProvider>
+  );
+}
 
 describe('NavSection', () => {
   beforeEach(() => {
@@ -51,6 +43,32 @@ describe('NavSection', () => {
     });
   });
 
+  it('keeps a toggle while the host re-renders with new preferences', async () => {
+    getPreference.mockResolvedValue({ collapsed: false });
+
+    const { rerender } = render(
+      <NavSection id="recents" title="Recents">
+        <span>Latest thread</span>
+      </NavSection>,
+    );
+
+    const toggle = screen.getByRole<HTMLButtonElement>('button', { name: 'Recents' });
+    await waitFor(() => expect(toggle.disabled).toBe(false));
+
+    fireEvent.click(toggle);
+
+    rerender(
+      <NavSection id="recents" title="Recents">
+        <span>Latest thread</span>
+      </NavSection>,
+    );
+
+    await Promise.resolve();
+
+    expect(getPreference).toHaveBeenCalledTimes(1);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  });
+
   it('renders an accessible scroll region', async () => {
     getPreference.mockResolvedValue(null);
     const { container } = render(
@@ -65,8 +83,6 @@ describe('NavSection', () => {
       ),
     );
 
-    expect(container.querySelector('.frogbot-nav-section__scroll')?.textContent).toBe(
-      'Latest thread',
-    );
+    expect(container.querySelector('.fb-nav-section__scroll')?.textContent).toBe('Latest thread');
   });
 });

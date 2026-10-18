@@ -593,7 +593,7 @@ describe('test lint', () => {
       'the nav-state assertion from 0a2e7a63 without its await',
       'test/browser/navShell.browser.spec.ts',
       "test('keeps the desktop nav open', async ({ page }) => {\n" +
-        "  expect(page.locator('.frogbot-nav-shell')).toHaveAttribute('data-nav-state', 'desktop-nav-open');\n" +
+        "  expect(page.locator('.fb-nav-shell')).toHaveAttribute('data-nav-state', 'desktop-nav-open');\n" +
         '});\n',
     ],
     [
@@ -602,7 +602,7 @@ describe('test lint', () => {
       'test/browser/navShell.browser.spec.ts',
       "test('keeps the desktop nav open', async ({ page }) => {\n" +
         '  await page.waitForTimeout(500);\n' +
-        "  await expect(page.locator('.frogbot-nav-shell')).toHaveAttribute('data-nav-state', 'desktop-nav-open');\n" +
+        "  await expect(page.locator('.fb-nav-shell')).toHaveAttribute('data-nav-state', 'desktop-nav-open');\n" +
         '});\n',
     ],
     [
@@ -610,7 +610,7 @@ describe('test lint', () => {
       'sidebar toggle from 36d03476',
       'test/browser/customField.browser.spec.ts',
       "test('opens the sidebar', async ({ page }) => {\n" +
-        "  const shell = page.locator('.frogbot-nav-shell');\n\n" +
+        "  const shell = page.locator('.fb-nav-shell');\n\n" +
         "  if ((await shell.getAttribute('data-nav-state')) === 'desktop-nav-closed') {\n" +
         '    await page.locator(\'button[aria-label="Open sidebar"]\').click();\n' +
         '  }\n' +

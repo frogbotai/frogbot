@@ -15,13 +15,13 @@ vi.mock('@payloadcms/ui/elements/RenderServerComponent', () => ({
   RenderServerComponent: renderServerComponent,
 }));
 
-vi.mock('../../../../../../packages/ui/src/admin/elements/Nav/NavSection', () => ({
+vi.mock('../../../../../../packages/ui/src/nav/NavSection', () => ({
   NavSection: ({ children, title }: React.PropsWithChildren<{ title: string }>) => (
     <section aria-label={title}>{children}</section>
   ),
 }));
 
-vi.mock('../../../../../../packages/ui/src/admin/elements/Nav/NavItem', () => ({
+vi.mock('../../../../../../packages/ui/src/nav/NavItem', () => ({
   NavItem: ({ icon, label, path }: { icon: ReactNode; label: string; path: string }) => (
     <a data-element={isValidElement(icon) ? 'element' : 'other'} href={path}>
       <span data-testid={`icon-${label}`}>{icon}</span>
@@ -36,7 +36,7 @@ const i18n = {
 } as ServerProps['i18n'];
 
 const iconMarkup = (Icon: typeof FolderIcon) =>
-  renderToStaticMarkup(<Icon className="frogbot-nav-item__icon-svg" size={20} />);
+  renderToStaticMarkup(<Icon className="fb-nav-item__icon-svg" size={20} />);
 
 function props(): ServerProps {
   return {
@@ -139,7 +139,7 @@ describe('CollectionsSection', () => {
     expect(renderServerComponent).toHaveBeenCalledTimes(1);
     expect(renderServerComponent).toHaveBeenCalledWith(
       expect.objectContaining({
-        clientProps: { className: 'frogbot-nav-item__icon-svg', size: 20 },
+        clientProps: { className: 'fb-nav-item__icon-svg', size: 20 },
         Component: './CustomIcon#CustomIcon',
       }),
     );

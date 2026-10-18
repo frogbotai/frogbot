@@ -43,6 +43,8 @@ export { defaultComposerFeatures } from '../chat/composer/features.js';
 export type { ComposerHistoryStorage } from '../chat/composer/history.js';
 export type { ComposerMention, ComposerPrompt } from '../chat/composer/prompt.js';
 export { composerParts } from '../chat/composer/prompt.js';
+export type { ComposerSelectOption, ComposerSelectProps } from '../chat/composer-select.js';
+export { ComposerSelect } from '../chat/composer-select.js';
 export { copyMarkdown } from '../chat/copy-markdown.js';
 export type { DataPartValue, DataRenderer } from '../chat/data-part.js';
 export { DataPart } from '../chat/data-part.js';

@@ -280,7 +280,7 @@ describe('FrogBotNav', () => {
     render(await FrogBotNav(navItemProps([{ icon: 'home', label: 'Home', path: '/home' }])));
 
     expect(renderToStaticMarkup(renderedItemIcon(0))).toBe(
-      renderToStaticMarkup(<HomeIcon className="frogbot-admin-sidebar__icon" size={24} />),
+      renderToStaticMarkup(<HomeIcon className="fb-app-sidebar__icon" size={24} />),
     );
   });
 
@@ -289,7 +289,7 @@ describe('FrogBotNav', () => {
 
     const { getByTestId } = render(renderedItemIcon(0));
 
-    expect(getByTestId('nav-icon').getAttribute('class')).toBe('frogbot-admin-sidebar__icon');
+    expect(getByTestId('nav-icon').getAttribute('class')).toBe('fb-app-sidebar__icon');
     expect(getByTestId('nav-icon').dataset.size).toBe('24');
   });
 
@@ -300,7 +300,7 @@ describe('FrogBotNav', () => {
 
     const { getByTestId } = render(renderedItemIcon(0));
 
-    expect(getByTestId('nav-icon').getAttribute('class')).toBe('frogbot-admin-sidebar__icon');
+    expect(getByTestId('nav-icon').getAttribute('class')).toBe('fb-app-sidebar__icon');
   });
 
   it('leaves an empty nav item icon to the sidebar fallback', async () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getNavShellState } from '../../../../../../packages/ui/src/admin/elements/Nav/navShellState';
+import { getNavShellState } from '../../../../packages/ui/src/nav/navShellState';
 
 describe('getNavShellState', () => {
   it.each([

@@ -1,5 +1,5 @@
+import { NavSection } from '@frogbotai/ui';
 import { RecentsSectionClient } from '@frogbotai/ui/admin';
-import { NavSection } from '@frogbotai/ui/admin/rsc';
 import type { ChatDocument } from '@frogbotai/ui/chat';
 import { getCachedFrogBot } from 'frogbot';
 import type { PayloadRequest, ServerProps } from 'payload';

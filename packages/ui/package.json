@@ -84,6 +84,16 @@
       "import": "./src/admin/styles.css",
       "default": "./src/admin/styles.css"
     },
+    "./fonts.css": {
+      "types": "./src/exports/css.ts",
+      "import": "./src/fonts.css",
+      "default": "./src/fonts.css"
+    },
+    "./glow.css": {
+      "types": "./src/exports/css.ts",
+      "import": "./src/glow.css",
+      "default": "./src/glow.css"
+    },
     "./styles.css": {
       "types": "./src/exports/css.ts",
       "import": "./src/styles.css",
@@ -223,6 +233,16 @@
         "types": "./dist/exports/css.d.ts",
         "import": "./src/admin/styles.css",
         "default": "./src/admin/styles.css"
+      },
+      "./fonts.css": {
+        "types": "./dist/exports/css.d.ts",
+        "import": "./src/fonts.css",
+        "default": "./src/fonts.css"
+      },
+      "./glow.css": {
+        "types": "./dist/exports/css.d.ts",
+        "import": "./src/glow.css",
+        "default": "./src/glow.css"
       },
       "./styles.css": {
         "types": "./dist/exports/css.d.ts",

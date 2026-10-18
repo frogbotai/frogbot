@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { MobileNavToggle } from '../../../../../../packages/ui/src/admin/elements/Nav/MobileNavToggle';
+import { MobileNavToggle } from '../../../../packages/ui/src/nav/MobileNavToggle';
 
 describe('MobileNavToggle', () => {
   it('opens the drawer while it is closed', () => {

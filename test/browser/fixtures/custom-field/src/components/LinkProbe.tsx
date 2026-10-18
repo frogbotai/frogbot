@@ -4,7 +4,7 @@ import { Button, DropdownMenuItem } from '@frogbotai/ui';
 
 export function LogoutLinkProbe() {
   return (
-    <DropdownMenuItem asChild className="frogbot-account-menu__item">
+    <DropdownMenuItem asChild className="fb-account-menu__item">
       <a data-testid="link-probe-logout" href="/logout">
         Log out
       </a>

@@ -180,6 +180,12 @@ describe('Chat', () => {
     expect(container.querySelector('.fb-chat-shell__sidebar')).toBeNull();
   });
 
+  it('passes its placeholder to the composer', () => {
+    render(<Chat agent="support" placeholder="Ask about this page" />);
+
+    expect(screen.getByText('Ask about this page')).toBeTruthy();
+  });
+
   it('renders a caller-provided sidebar with history context', () => {
     const { container } = render(<Chat {...props} defaultChatId="one" />);
 

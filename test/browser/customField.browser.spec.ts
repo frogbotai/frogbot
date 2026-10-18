@@ -77,23 +77,23 @@ test('lists ungrouped collections directly under one Collections heading', async
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
 
-  const shell = page.locator('.frogbot-nav-shell');
+  const shell = page.locator('.fb-nav-shell');
 
   await expandSidebar(page);
 
   const collections = page.locator('#frogbot-nav-section-collections');
 
   await expect(shell.getByText('Collections', { exact: true })).toHaveCount(1);
-  await expect(collections.locator('.frogbot-nav-section__scroll > .frogbot-nav-item')).toHaveText([
+  await expect(collections.locator('.fb-nav-section__scroll > .fb-nav-item')).toHaveText([
     'Users',
     'API Keys',
   ]);
   await expect(collections.locator('.frogbot-collections-section__group-label')).toHaveText([
     'Content',
   ]);
-  await expect(
-    collections.locator('.frogbot-collections-section__group .frogbot-nav-item'),
-  ).toHaveText(['Posts']);
+  await expect(collections.locator('.frogbot-collections-section__group .fb-nav-item')).toHaveText([
+    'Posts',
+  ]);
 });
 
 test('lists ungrouped collection cards directly under the Collections settings page', async ({
@@ -121,7 +121,7 @@ test('renders the API Keys collection with the key icon directly under Collectio
   await expandSidebar(page);
 
   const apiKeys = page
-    .locator('#frogbot-nav-section-collections .frogbot-nav-section__scroll > .frogbot-nav-item')
+    .locator('#frogbot-nav-section-collections .fb-nav-section__scroll > .fb-nav-item')
     .filter({ hasText: 'API Keys' });
 
   await expect(apiKeys.locator('svg.lucide-key-round-icon')).toBeVisible();
@@ -216,7 +216,7 @@ test('the phone dashboard breadcrumb dropdown keeps its options clickable', asyn
   await page.setViewportSize({ width: 375, height: 667 });
   await page.goto('/');
 
-  await expect(page.locator('.frogbot-nav-shell')).toHaveAttribute(
+  await expect(page.locator('.fb-nav-shell')).toHaveAttribute(
     'data-nav-state',
     'mobile-nav-closed',
   );

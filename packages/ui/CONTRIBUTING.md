@@ -8,6 +8,7 @@ Read the [root contribution guide](../../CONTRIBUTING.md) first for shared codin
 - Components must not import chat, admin, or other domain code.
 - Internal file placement and public exports are separate decisions. Add consumer APIs to `src/index.ts` explicitly.
 - The classification test governs the Payload re-exports in `src/admin/exports/{client,shared,rsc}.ts`.
+- `src/nav` holds the app sidebar and never imports Payload. It reads links, the current path, navigation and preferences from `NavAdapterProvider`; `src/admin/elements/Nav` fills that adapter from Payload and keeps the Payload-only sections and restyles.
 
 ## Admin
 

@@ -129,12 +129,13 @@ test.describe('FrogBot CSS layer in the admin', () => {
     await expect(page.getByTestId('layer-probe').first()).toBeVisible();
   });
 
-  test('declares frogbot between payload-default and payload, before the app layers', async ({
+  test('declares the reset first, then frogbot between payload-default and payload, before the app layers', async ({
     page,
   }) => {
     const { order } = await readLayers(page);
 
-    expect(order.slice(0, 7)).toEqual([
+    expect(order.slice(0, 8)).toEqual([
+      'frogbot-reset',
       'payload-default',
       'frogbot',
       'payload',
@@ -183,7 +184,7 @@ test.describe('FrogBot CSS layer in the admin', () => {
   test('the account menu restyle still applies', async ({ page }) => {
     await page.locator('button[aria-label="Account"]').click();
 
-    const menu = page.locator('.frogbot-account-menu.fb-dropdown-menu__content');
+    const menu = page.locator('.fb-account-menu.fb-dropdown-menu__content');
 
     await expect(menu).toBeVisible();
     await expect(menu).toHaveCSS('border-radius', '12px');
@@ -214,13 +215,13 @@ test.describe('FrogBot CSS layer in the admin', () => {
 
   test('admin CSS loaded after a client navigation keeps the layer order', async ({ page }) => {
     await page.goto('/');
-    await page.locator('.frogbot-nav-shell a[href$="/collections/posts"]').first().click();
+    await page.locator('.fb-nav-shell a[href$="/collections/posts"]').first().click();
     await page.waitForURL(/\/collections\/posts(\?|$)/);
     await expect(page.locator('.collection-list')).toBeVisible();
 
     const { frogbotSelectors, order } = await readLayers(page);
 
-    expect(order.slice(0, 3)).toEqual(['payload-default', 'frogbot', 'payload']);
+    expect(order.slice(0, 4)).toEqual(['frogbot-reset', 'payload-default', 'frogbot', 'payload']);
     expect(frogbotSelectors).toContain('.collection-view-shell');
   });
 });
@@ -230,6 +231,16 @@ test.describe('FrogBot CSS layer on app pages', () => {
     test(`Tailwind utilities beat FrogBot components on ${path}`, async ({ page }) => {
       await page.goto(path);
       await expectUtilitiesWin(page);
+    });
+
+    test(`declares the reset before Tailwind's layers on ${path}`, async ({ page }) => {
+      await page.goto(path);
+
+      const { order } = await readLayers(page);
+
+      expect(order.indexOf('frogbot-reset')).toBeGreaterThan(-1);
+      expect(order.indexOf('frogbot-reset')).toBeLessThan(order.indexOf('theme'));
+      expect(order.indexOf('frogbot')).toBeLessThan(order.indexOf('utilities'));
     });
   }
 
@@ -247,7 +258,7 @@ test.describe('FrogBot CSS layer on app pages', () => {
 
   test('Tailwind Preflight does not reset FrogBot buttons', async ({ page }) => {
     await page.goto('/tw/frogbot-first');
-    await expectBackground(page.getByTestId('layer-default'), 'rgb(1, 3, 10)');
+    await expectBackground(page.getByTestId('layer-default'), 'rgb(0, 0, 0)');
   });
 
   test('a Tailwind @theme static override reaches buttons, menus, dark sections and dialogs', async ({

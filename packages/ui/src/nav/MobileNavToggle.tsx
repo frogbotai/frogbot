@@ -1,6 +1,6 @@
 'use client';
 
-import { MenuIcon } from '../../../icons/menu.js';
+import { MenuIcon } from '../icons/menu.js';
 import type { NavShellState } from './navShellState.js';
 
 export type MobileNavToggleProps = {
@@ -14,7 +14,7 @@ export function MobileNavToggle({ navState, onOpen }: MobileNavToggleProps) {
   return (
     <button
       aria-label="Open navigation"
-      className="frogbot-mobile-nav-toggle"
+      className="fb-mobile-nav-toggle"
       onClick={onOpen}
       type="button"
     >

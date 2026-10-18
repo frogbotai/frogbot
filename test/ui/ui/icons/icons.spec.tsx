@@ -52,6 +52,7 @@ const iconNames = [
   'HomeIcon',
   'InfoCircleIcon',
   'InvalidStepIcon',
+  'KeyboardIcon',
   'KeyRoundIcon',
   'PencilIcon',
   'FacebookIcon',

@@ -281,6 +281,8 @@ const testProjects = [
       'generalPicker.browser.spec.ts',
       'iconGeometry.browser.spec.ts',
       'navShell.browser.spec.ts',
+      'navStandalone.browser.spec.ts',
+      'uiParity.browser.spec.ts',
     ],
   }),
   project({

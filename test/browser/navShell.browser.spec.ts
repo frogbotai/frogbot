@@ -20,8 +20,8 @@ const mobile = { width: 390, height: 844 };
 const expandedRem = 17;
 const collapsedWidth = 60;
 
-const shell = (page: Page) => page.locator('.frogbot-nav-shell');
-const backdrop = (page: Page) => page.locator('.frogbot-nav-backdrop');
+const shell = (page: Page) => page.locator('.fb-nav-shell');
+const backdrop = (page: Page) => page.locator('.fb-nav-backdrop');
 
 const shellWidth = (page: Page) =>
   shell(page).evaluate((el) => Math.round(el.getBoundingClientRect().width));
@@ -194,7 +194,7 @@ test.describe('nav shell on desktop', () => {
     await expect(shell(page)).toHaveCSS('opacity', '1');
     await expect.poll(() => shellWidth(page)).toBe(collapsedWidth);
     await expect.poll(() => contentWidth(page)).toBe(desktop.width - collapsedWidth);
-    await expect(page.locator('.frogbot-admin-sidebar__logo')).toBeVisible();
+    await expect(page.locator('.fb-app-sidebar__logo')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Account' })).toBeVisible();
     await expect(page.locator('#frogbot-nav-section-collections')).toHaveCount(0);
     await expect(collectionNavIcon(page, 'chats')).toHaveCount(0);

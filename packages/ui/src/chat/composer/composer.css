@@ -10,49 +10,15 @@
   }
 
   .fb-composer__gradient {
-    position: relative;
     z-index: 10;
     width: 100%;
-    filter: drop-shadow(0 0 6px rgba(134, 239, 172, 0.6))
-      drop-shadow(0 0 12px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 18px rgba(216, 180, 254, 0.3));
   }
 
   .fb-composer__gradient-container {
-    --fb-composer-blue: #78b6fc;
-    position: relative;
-    isolation: isolate;
-    display: block;
     width: 100%;
-    padding: 5px;
-    overflow: hidden;
-    border-radius: 20px;
   }
 
-  .fb-composer__gradient-container::before {
-    position: absolute;
-    z-index: -1;
-    inset: -5000000px;
-    border-radius: 50%;
-    background: conic-gradient(
-      from 0deg,
-      transparent 0deg,
-      transparent 150deg,
-      var(--color-green-350) 180deg,
-      var(--fb-composer-blue) 210deg,
-      #f598a2 270deg,
-      var(--color-purple-350) 300deg,
-      var(--fb-composer-blue) 330deg,
-      transparent 360deg,
-      var(--color-green-350) 5deg,
-      transparent 15deg,
-      transparent 360deg
-    );
-    animation: fb-composer-rotate 8s linear infinite;
-    content: "";
-  }
-
-  .fb-composer__gradient:has(.fb-composer__input:focus),
-  .fb-composer__gradient--dragging {
+  .fb-composer__gradient:has(.fb-composer__input:focus) {
     filter: drop-shadow(0 0 12px rgba(134, 239, 172, 0.6))
       drop-shadow(0 0 24px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 36px rgba(216, 180, 254, 0.3));
   }
@@ -192,16 +158,6 @@
     border: 0;
   }
 
-  @keyframes fb-composer-rotate {
-    from {
-      transform: rotate(0deg);
-    }
-
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
   @keyframes fb-composer-slide-up {
     from {
       transform: translateY(0.25rem);
@@ -222,12 +178,6 @@
     .fb-composer__action-icon {
       width: 1.5rem;
       height: 1.5rem;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .fb-composer__gradient-container::before {
-      animation: none;
     }
   }
 }

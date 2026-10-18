@@ -167,4 +167,29 @@ export { useHotkey } from './hooks/use-hotkey.js';
 export { useIsMobile } from './hooks/use-mobile.js';
 export { useScrollToBottom } from './hooks/use-scroll-to-bottom.js';
 export { composeRefs } from './lib/utils.js';
+export {
+  AccountMenu,
+  type AccountMenuIcon,
+  AccountMenuItem,
+  type AccountMenuItemProps,
+  type AccountMenuProps,
+} from './nav/AccountMenu.js';
+export {
+  type NavAdapter,
+  NavAdapterProvider,
+  type NavDrawer,
+  type NavLinkProps,
+  type NavPreferences,
+  useNavAdapter,
+} from './nav/adapter.js';
+export { AppSidebar, type AppSidebarNavItem, type AppSidebarProps } from './nav/AppSidebar.js';
+export { NavItem, type NavItemIcon, type NavItemProps } from './nav/NavItem.js';
+export { NavSection, type NavSectionProps } from './nav/NavSection.js';
+export { NAV_PREFERENCE_KEY, NavShell, type NavShellProps } from './nav/NavShell.js';
+export {
+  bucketRecents,
+  recentBucketLabels,
+  RecentChats,
+  type RecentChatsProps,
+} from './nav/RecentChats.js';
 export { Placeholder } from './placeholder.js';

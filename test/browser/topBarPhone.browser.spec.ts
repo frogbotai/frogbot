@@ -29,9 +29,9 @@ async function expectPhoneTopBar(page: Page, title: string) {
   const stepNav = page.locator('.app-header__step-nav');
   const leaf = stepNav.locator(':scope > .step-nav__last');
   const ancestors = stepNav.locator(':scope > :not(.step-nav__last)');
-  const toggle = page.locator('.frogbot-mobile-nav-toggle');
+  const toggle = page.locator('.fb-mobile-nav-toggle');
 
-  await expect(page.locator('.frogbot-nav-shell')).toHaveAttribute(
+  await expect(page.locator('.fb-nav-shell')).toHaveAttribute(
     'data-nav-state',
     'mobile-nav-closed',
   );
@@ -123,13 +123,13 @@ test('the phone create-chat top bar keeps the home crumb clear of the menu butto
 }) => {
   await page.goto(`/collections/${chatsSlug}/create`);
   await expect(composerInput(page)).toBeVisible();
-  await expect(page.locator('.frogbot-nav-shell')).toHaveAttribute(
+  await expect(page.locator('.fb-nav-shell')).toHaveAttribute(
     'data-nav-state',
     'mobile-nav-closed',
   );
 
   const home = page.locator('.app-header__step-nav .step-nav__first');
-  const toggle = page.locator('.frogbot-mobile-nav-toggle');
+  const toggle = page.locator('.fb-mobile-nav-toggle');
 
   await expect(page.locator('.app-header__step-nav .step-nav__item')).toHaveCount(1);
   await expect(home).toBeVisible();
@@ -184,12 +184,9 @@ test('opening the phone menu restores the full trail without moving the page bod
   const closedBox = await bounds(content);
   const ancestors = page.locator('.app-header__step-nav > :not(.step-nav__last)');
 
-  await page.locator('.frogbot-mobile-nav-toggle').click();
+  await page.locator('.fb-mobile-nav-toggle').click();
 
-  await expect(page.locator('.frogbot-nav-shell')).toHaveAttribute(
-    'data-nav-state',
-    'mobile-nav-open',
-  );
+  await expect(page.locator('.fb-nav-shell')).toHaveAttribute('data-nav-state', 'mobile-nav-open');
 
   await expect(page.locator('.app-header__controls-wrapper')).toHaveCSS('padding-left', '0px');
   await expect(page.locator('.step-nav__last')).toHaveCSS('max-width', 'none');
@@ -224,12 +221,12 @@ test('resizing to 1280px restores the unchanged desktop trail', async ({ page })
 
   await page.setViewportSize({ width: 1280, height: 800 });
 
-  await expect(page.locator('.frogbot-nav-shell')).toHaveAttribute(
+  await expect(page.locator('.fb-nav-shell')).toHaveAttribute(
     'data-nav-state',
     /desktop-nav-(open|closed)/,
   );
 
-  await expect(page.locator('.frogbot-mobile-nav-toggle')).toHaveCount(0);
+  await expect(page.locator('.fb-mobile-nav-toggle')).toHaveCount(0);
   await expect(page.locator('.app-header__controls-wrapper')).toHaveCSS('padding-left', '0px');
   await expect(page.locator('.step-nav__last')).toHaveCSS('max-width', 'none');
   await expect(page.locator('.app-header__step-nav > *')).toHaveText(trail);

@@ -5,7 +5,7 @@ import { aiFieldName, chatsSlug, tasksSlug } from './fixtures/question/shared';
 
 const day = '2026-01-15';
 
-const nav = '.frogbot-nav-shell';
+const nav = '.fb-nav-shell';
 
 const surfaces = [
   {

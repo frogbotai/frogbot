@@ -1,219 +1,13 @@
 @layer frogbot {
-  .frogbot-nav {
-    background: var(--color-bg);
-    color: var(--color-text);
-    display: block;
-    height: 100vh;
-    min-height: 100%;
-    overflow: visible;
-    width: 100%;
-  }
-
-  .frogbot-nav,
-  .frogbot-nav * {
-    box-sizing: border-box;
-  }
-
-  .frogbot-mobile-nav-toggle {
-    align-items: center;
-    appearance: none;
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    color: var(--color-text);
-    cursor: pointer;
-    display: flex;
-    height: 40px;
-    justify-content: center;
-    left: 12px;
-    padding: 0;
-    position: fixed;
-    top: 12px;
-    width: 40px;
-    z-index: 100;
-  }
-
-  .frogbot-mobile-nav-toggle:hover {
-    background: var(--color-bg-hover);
-  }
-
-  .frogbot-nav-backdrop {
-    background: color-mix(in srgb, var(--color-bg-inverse) 40%, transparent);
-    inset: 0;
-    position: fixed;
-    z-index: 99;
-  }
-
-  .frogbot-admin-sidebar {
-    cursor: default;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-  }
-
-  .frogbot-admin-sidebar--collapsed {
-    cursor: pointer;
-  }
-
-  .frogbot-admin-sidebar--collapsed .frogbot-admin-sidebar__group-label,
-  .frogbot-admin-sidebar--collapsed .frogbot-admin-sidebar__label {
+  .fb-app-sidebar--collapsed .frogbot-collections-section__group-label {
     display: none;
   }
 
-  .frogbot-admin-sidebar--collapsed .frogbot-nav-section__toggle,
-  .frogbot-admin-sidebar--collapsed .frogbot-collections-section__group-label,
-  .frogbot-admin-sidebar--collapsed .frogbot-recents-section__group-label,
-  .frogbot-admin-sidebar--collapsed .frogbot-recents-section__empty {
-    display: none;
-  }
-
-  .frogbot-admin-sidebar--collapsed .frogbot-collections-section__items {
+  .fb-app-sidebar--collapsed .frogbot-collections-section__items {
     padding-inline-start: 0;
   }
 
-  .frogbot-admin-sidebar--collapsed .frogbot-nav-item {
-    justify-content: center;
-    padding: 8px;
-  }
-
-  .frogbot-admin-sidebar--collapsed .frogbot-nav-item__label {
-    display: none;
-  }
-
-  .frogbot-admin-sidebar--collapsed .frogbot-admin-sidebar__item {
-    justify-content: center;
-    padding: 8px;
-  }
-
-  .frogbot-admin-sidebar__header {
-    align-items: center;
-    display: flex;
-    flex: 0 0 auto;
-    justify-content: space-between;
-    margin-block-end: 8px;
-  }
-
-  .frogbot-admin-sidebar__header-controls {
-    align-items: center;
-    display: flex;
-    gap: 4px;
-  }
-
-  .frogbot-admin-sidebar__logo,
-  .frogbot-admin-sidebar__collapse {
-    align-items: center;
-    appearance: none;
-    background: transparent;
-    border: 0;
-    border-radius: 8px;
-    color: inherit;
-    cursor: pointer;
-    display: flex;
-    font: inherit;
-    justify-content: center;
-    margin: 0;
-    padding: 0;
-  }
-
-  .frogbot-admin-sidebar__logo {
-    height: 40px;
-    margin-inline-start: 3px;
-    width: 40px;
-  }
-
-  .frogbot-admin-sidebar__logo > *,
-  .frogbot-admin-sidebar__logo svg {
-    height: 100%;
-    width: 100%;
-  }
-
-  .frogbot-admin-sidebar__logo--toggle {
-    padding: 8px;
-  }
-
-  .frogbot-admin-sidebar__collapse {
-    height: 32px;
-    width: 32px;
-  }
-
-  .frogbot-admin-sidebar__logo--toggle:hover,
-  .frogbot-admin-sidebar__collapse:hover,
-  .frogbot-admin-sidebar__item:hover {
-    background: var(--color-bg-hover);
-  }
-
-  .frogbot-admin-sidebar__tooltip {
-    position: fixed;
-    z-index: 100;
-  }
-
-  .frogbot-admin-sidebar__tooltip .tooltip {
-    bottom: auto;
-    left: 0;
-    top: 0;
-    transform: translate3d(8px, -50%, 0);
-  }
-
-  .frogbot-admin-sidebar__tooltip .tooltip::after {
-    display: none;
-  }
-
-  .frogbot-admin-sidebar__nav {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-height: 0;
-    overflow-y: auto;
-    scrollbar-width: none;
-  }
-
-  .frogbot-admin-sidebar__nav::-webkit-scrollbar {
-    display: none;
-  }
-
-  .frogbot-admin-sidebar__group {
-    margin-block-start: 12px;
-  }
-
-  .frogbot-admin-sidebar__group:first-child {
-    margin-block-start: 0;
-  }
-
-  .frogbot-admin-sidebar__group-label {
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    list-style: none;
-    padding: 0 10px 4px;
-  }
-
-  .frogbot-admin-sidebar__group-label::-webkit-details-marker {
-    display: none;
-  }
-
-  .frogbot-admin-sidebar__group-label::marker {
-    content: "";
-  }
-
-  .frogbot-admin-sidebar__items,
-  .frogbot-admin-sidebar__bottom {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .frogbot-admin-sidebar__spacer {
-    flex: 1;
-  }
-
-  .frogbot-admin-sidebar__bottom {
-    flex: 0 0 auto;
-  }
-
-  .frogbot-admin-sidebar__item,
-  .frogbot-admin-sidebar__bottom .nav__log-out {
+  .fb-app-sidebar__bottom .nav__log-out {
     align-items: center;
     background: transparent;
     border: 0;
@@ -234,44 +28,27 @@
     width: 100%;
   }
 
-  .frogbot-admin-sidebar__bottom .nav__log-out:hover {
+  .fb-app-sidebar__bottom .nav__log-out:hover {
     transform: translateX(4px);
   }
 
-  .frogbot-admin-sidebar__item--active,
-  .frogbot-admin-sidebar__bottom .nav__log-out:hover {
+  .fb-app-sidebar__bottom .nav__log-out:hover {
     background: var(--color-bg-secondary-hover);
     color: var(--color-text);
   }
 
-  .frogbot-admin-sidebar--collapsed .frogbot-admin-sidebar__bottom .nav__log-out {
+  .fb-app-sidebar--collapsed .fb-app-sidebar__bottom .nav__log-out {
     justify-content: center;
     padding: 8px;
   }
 
-  .frogbot-admin-sidebar__item svg,
-  .frogbot-admin-sidebar__bottom .nav__log-out svg {
+  .fb-app-sidebar__bottom .nav__log-out svg {
     flex: 0 0 auto;
     height: 20px;
     width: 20px;
   }
 
-  .frogbot-admin-sidebar__item svg.frogbot-admin-sidebar__icon {
-    box-sizing: border-box;
-    flex: 0 0 auto;
-    height: 24px;
-    padding: 2px;
-    width: 24px;
-  }
-
-  .frogbot-admin-sidebar__label {
-    margin-inline-start: 8px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .frogbot-nav .usage-reports-nav-link {
+  .fb-nav .usage-reports-nav-link {
     color: var(--color-text);
     display: flex;
     font-size: 14px;
@@ -280,112 +57,13 @@
     text-decoration: none;
   }
 
-  .frogbot-nav .usage-reports-nav-link:hover {
+  .fb-nav .usage-reports-nav-link:hover {
     background: var(--color-bg-hover);
     border-radius: 8px;
     color: var(--color-text);
   }
 
-  .frogbot-account-menu.fb-dropdown-menu__content {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-    box-shadow:
-      0 8px 24px rgb(0 0 0 / 0.12),
-      0 2px 8px rgb(0 0 0 / 0.08);
-    color: var(--color-text);
-    min-width: 240px;
-    padding: 8px;
-    z-index: 100;
-  }
-
-  .frogbot-account-menu__header {
-    align-items: center;
-    display: flex;
-    gap: 10px;
-    padding: 8px 10px;
-  }
-
-  .frogbot-account-menu__header.fb-dropdown-menu__item {
-    border-radius: 8px;
-    cursor: pointer;
-  }
-
-  .frogbot-account-menu__header.fb-dropdown-menu__item:focus,
-  .frogbot-account-menu__header.fb-dropdown-menu__item[data-highlighted] {
-    background: var(--color-bg-hover);
-  }
-
-  .frogbot-account-menu__avatar {
-    align-items: center;
-    display: flex;
-    flex: 0 0 auto;
-    justify-content: center;
-  }
-
-  .frogbot-account-menu__avatar svg {
-    height: 32px;
-    width: 32px;
-  }
-
-  .frogbot-account-menu__identity {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
-
-  .frogbot-account-menu__name {
-    font-size: 14px;
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .frogbot-account-menu__email {
-    color: var(--color-text-secondary);
-    font-size: 12px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .frogbot-account-menu__separator.fb-dropdown-menu__separator {
-    background: var(--color-bg-secondary-hover);
-    margin: 6px 0;
-  }
-
-  .frogbot-account-menu__item.fb-dropdown-menu__item {
-    align-items: center;
-    border-radius: 8px;
-    color: var(--color-text);
-    cursor: pointer;
-    display: flex;
-    font-size: 14px;
-    font-weight: 500;
-    gap: 8px;
-    padding: 8px 10px;
-  }
-
-  .frogbot-account-menu__item.fb-dropdown-menu__item:focus,
-  .frogbot-account-menu__item.fb-dropdown-menu__item[data-highlighted] {
-    background: var(--color-bg-hover);
-    color: var(--color-text);
-  }
-
-  .frogbot-account-menu__item-icon {
-    flex: 0 0 auto;
-    height: 20px;
-    width: 20px;
-  }
-
-  .frogbot-account-menu__item-label {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .frogbot-account-menu .nav__log-out {
+  .fb-account-menu .nav__log-out {
     align-items: center;
     border-radius: 8px;
     color: var(--color-text);
@@ -398,8 +76,27 @@
     width: 100%;
   }
 
-  .frogbot-account-menu .nav__log-out:hover {
+  .fb-account-menu .nav__log-out:hover {
     background: var(--color-bg-hover);
     color: var(--color-text);
+  }
+
+  .frogbot-collections-section__group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .frogbot-collections-section__group-label {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 8px 10px 2px;
+  }
+
+  .frogbot-collections-section__items {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-inline-start: 8px;
   }
 }

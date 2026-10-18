@@ -218,13 +218,13 @@ test.describe('FrogBot UI in the admin', () => {
   });
 });
 
-test('keeps the FrogBot palette on pages outside the admin', async ({ page }) => {
+test("uses the admin's palette on pages outside the admin", async ({ page }) => {
   await page.goto('/theme-check');
 
   const button = page.getByTestId('theme-check-default');
 
   await expect(button).toBeVisible();
-  await expectBackground(button, 'rgb(1, 3, 10)');
+  await expectBackground(button, 'rgb(0, 0, 0)');
   await expect(page.locator('html')).not.toHaveAttribute('data-fb-ui-page');
   expect(
     await page.evaluate(() => {
@@ -251,14 +251,14 @@ test('keeps the FrogBot palette on pages outside the admin', async ({ page }) =>
       };
     }),
   ).toEqual({
-    base0: 'rgb(249, 250, 251)',
-    themeBase0: { light: 'rgb(249, 250, 251)', dark: 'rgb(1, 3, 10)' },
+    base0: 'rgb(255, 255, 255)',
+    themeBase0: { light: 'rgb(255, 255, 255)', dark: 'rgb(0, 0, 0)' },
   });
 });
 
 for (const [colorScheme, userBackground, assistantBackground, grayBackground] of [
-  ['light', 'rgb(246, 247, 249)', 'rgb(246, 247, 249)', 'rgb(217, 221, 226)'],
-  ['dark', 'rgb(217, 221, 226)', 'rgb(3, 7, 18)', 'rgb(44, 53, 68)'],
+  ['light', 'rgb(245, 245, 245)', 'rgb(245, 245, 245)', 'rgb(217, 217, 217)'],
+  ['dark', 'rgb(217, 217, 217)', 'rgb(18, 18, 18)', 'rgb(44, 44, 44)'],
 ] as const) {
   test.describe(`on a ${colorScheme} operating system outside the admin`, () => {
     test.use({ colorScheme });
@@ -389,7 +389,7 @@ async function openAccountMenu(page: Page, theme: AdminTheme) {
   await openPostCreate(page, theme);
   await page.locator('button[aria-label="Account"]').click();
 
-  const settings = page.locator('.frogbot-account-menu__item', { hasText: 'Settings' });
+  const settings = page.locator('.fb-account-menu__item', { hasText: 'Settings' });
   const logout = page.getByTestId('link-probe-logout');
 
   await expect(logout).toBeVisible();

@@ -53,8 +53,9 @@ The REST adapter reads renamed chat, message, and asset collection slugs from `/
 | `mentionSources` | `MentionSource[]` | No mentions | Where `@` mentions come from. See [Mention source options](/chat/ui-registries#mention-source-options). |
 | `composerFeatures` | `ComposerFeature[]` | `defaultComposerFeatures` | The composer's features. A list replaces the defaults. See [Composer feature options](/chat/ui-registries#composer-feature-options). |
 | `composerHistory` | `ComposerHistoryStorage` | `localStorage` | Where sent prompts are kept for Up and Down. See [Composer history storage options](/chat/ui-registries#composer-history-storage-options). |
+| `faviconUrl` | `(pageUrl: string) => string \| undefined` | — | The site icon `LinkList` shows for a page. Without it, or when it returns `undefined` or the image fails, the row shows the host's first letter and nothing is requested. See [Link lists](/chat/ui-registries#link-lists). |
 
-`ChatProvider` calls the adapter's `loadManifest` once per adapter and aborts it on unmount. Until it resolves, `<Chat>` renders its `loadingContent`; a failure renders its `errorContent`, and `null` renders its `disabledContent`. `useChatProvider()` returns `{ adapter, manifest, error, loading, toolRenderers, dataRenderers, commands, mentionSources, composerFeatures, composerHistory }`.
+`ChatProvider` calls the adapter's `loadManifest` once per adapter and aborts it on unmount. Until it resolves, `<Chat>` renders its `loadingContent`; a failure renders its `errorContent`, and `null` renders its `disabledContent`. `useChatProvider()` returns `{ adapter, manifest, error, loading, toolRenderers, dataRenderers, commands, mentionSources, composerFeatures, composerHistory, faviconUrl }`.
 
 ## REST adapter options
 
