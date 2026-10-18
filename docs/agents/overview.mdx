@@ -36,7 +36,7 @@ export const supportAgent: AgentConfig = {
 | `profile` | `AgentProfile` | — | Client-facing identity. See [Profile options](#profile-options). |
 | `channels` | `ChannelPieceInstance[]` | — | Channel-capable piece instances, such as [Slack](/pieces/slack), that the agent answers in. Each instance needs factory `auth` and can belong to only one agent. |
 | `skills` | `SkillConfig[]` | — | Playbooks the agent loads on demand. See [Add skills](#add-skills). |
-| `tools` | `(Tool \| ClientTool \| PieceAction \| PieceInstance)[]` | — | Tools for this agent. A piece instance adds all of its actions. See [Add tools](#add-tools). |
+| `tools` | `(Tool \| ClientTool \| PieceAction \| PieceInstance \| MCPServer)[]` | — | Tools for this agent. A piece instance adds all of its actions, and an [MCP server](/mcp/overview) adds its tools on each run. See [Add tools](#add-tools). |
 | `inheritTools` | `false` | Inherits root `tools` | Set `false` to skip the root `tools` list. |
 | `stopWhen` | `StopCondition<ToolSet> \| StopCondition<ToolSet>[]` | `isStepCount(20)` | When to stop the tool loop. An array must be non-empty. |
 | `access` | `({ req, agent }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Who may run the agent. See [Control access](#control-access). |
@@ -149,7 +149,7 @@ Accessible profiles appear in both `GET /api/agents` and the [chat manifest](/ch
 
 Agents accept FrogBot `Tool` objects, not raw AI SDK tools. FrogBot converts them internally and supplies request, runtime, slug, and run ID context to every execution.
 
-To add integration actions, pass individual piece actions or a whole piece instance. To add current web results, use the [web search pieces](/pieces/web-search). To connect tools discovered from an external server, use the [MCP server tools recipe](/mcp/overview).
+To add integration actions, pass individual piece actions or a whole piece instance. To add current web results, use the [web search pieces](/pieces/web-search). To give an agent the tools of an MCP server, such as Sidekick's browser, add an [`mcpServer()`](/mcp/overview).
 
 ```ts
 import type { Tool } from 'frogbot'

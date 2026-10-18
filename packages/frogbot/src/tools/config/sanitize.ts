@@ -1,3 +1,5 @@
+import { isMCPServer } from '../../mcp/server.js';
+import type { MCPServer } from '../../mcp/types.js';
 import {
   isPieceAction,
   isPieceInstance,
@@ -10,7 +12,7 @@ import type { AnyTool } from '../types.js';
 import { isClientTool } from '../types.js';
 
 export function sanitizeToolList(
-  tools: readonly (AnyTool | PieceAction | PieceInstance)[],
+  tools: readonly (AnyTool | PieceAction | PieceInstance | MCPServer)[],
   contextLabel: string,
 ): AnyTool[] {
   const context = `${contextLabel[0].toLowerCase()}${contextLabel.slice(1)}`;
@@ -18,6 +20,8 @@ export function sanitizeToolList(
   const expanded: AnyTool[] = [];
 
   for (const configuredTool of tools) {
+    if (isMCPServer(configuredTool)) continue;
+
     if (isPieceInstance(configuredTool)) {
       const instanceTools = pieceInstanceTools(configuredTool);
       if (instanceTools) expanded.push(...instanceTools);

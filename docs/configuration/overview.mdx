@@ -80,7 +80,7 @@ export default buildConfig({
 | `settings` | `SettingsEntry[]` | — | Pages added to the admin Settings area. See [Register a settings page](/admin/admin-navigation#register-a-settings-page). |
 | `storage` | `StorageAdapter[]` | — | File storage adapters from `@frogbotai/storage-*`. The first also serves FrogBot's own upload collections. See [Storage adapters](/upload/storage-adapters). |
 | `telemetry` | `boolean` | `true` | Sends anonymous usage events. Set `false` to turn it off. |
-| `tools` | `readonly AnyTool[]` | — | Tools attached to every agent. See [Share tools across agents](/agents/overview#share-tools-across-agents). |
+| `tools` | `readonly (AnyTool \| MCPServer)[]` | — | Tools and [MCP servers](/mcp/overview) attached to every agent. See [Share tools across agents](/agents/overview#share-tools-across-agents). |
 | `typescript` | `TypeScriptConfig` | See [Type generation options](/typescript/generating-types#type-generation-options) | Type generation options. |
 | `upload` | `FetchAPIFileUploadOptions` | `{}` | Options for parsing uploaded files on every upload collection, and the `transformers` that process them, such as `sharpTransformer()`. See [Uploads](/upload/overview#frogbot-wide-upload-options). |
 | `_roles` | `RolesPrewiring` | — | Internal. Set by the roles plugin; don't set it yourself. |

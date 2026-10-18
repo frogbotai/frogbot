@@ -19,6 +19,7 @@ import type { ChannelChatAccess } from '../chat/channelAccess.js';
 import type { ClientToolsOption, MessageDelivery } from '../chat/turn/types.js';
 import type { DocID } from '../collections/config/types.js';
 import type { FrogBot } from '../frogbot.js';
+import type { MCPServer } from '../mcp/types.js';
 import type {
   ChannelPieceInstance,
   PieceAction,
@@ -93,7 +94,7 @@ export type AgentConfig<TTrigger extends PieceTriggerReference = PieceTriggerRef
   profile?: AgentProfile;
   channels?: readonly ChannelPieceInstance[];
   skills?: readonly SkillConfig[];
-  tools?: readonly (AnyTool | PieceAction | PieceInstance)[];
+  tools?: readonly (AnyTool | PieceAction | PieceInstance | MCPServer)[];
   inheritTools?: false;
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];
   access?: AgentAccess;
@@ -103,6 +104,8 @@ export type AgentConfig<TTrigger extends PieceTriggerReference = PieceTriggerRef
 export type SanitizedAgentConfig = Omit<AgentConfig, 'model' | 'tools'> & {
   model: { default: AgentModelId; options: readonly AgentModelId[] };
   tools?: readonly AnyTool[];
+  /** MCP servers from `tools`, the agent's own after the root ones it inherits. */
+  mcp?: readonly MCPServer[];
 };
 
 export type AgentSelection = {

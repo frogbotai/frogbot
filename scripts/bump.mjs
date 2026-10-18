@@ -201,6 +201,13 @@ for (const { path: file, json, name } of targets) {
 writeJSON(marketplacePath, marketplace);
 writeFileSync(skillPath, skill);
 
+const versionPath = path.join(ROOT, 'packages/frogbot/src/version.ts');
+
+if (existsSync(versionPath)) {
+  writeFileSync(versionPath, `export const FROGBOT_VERSION = '${next}';\n`);
+  console.log(`  packages/frogbot/src/version.ts -> ${next}`);
+}
+
 console.log(`  .claude-plugin/marketplace.json (frogbot) ${marketplaceVersion} -> ${next}`);
 console.log(`  skills/frogbot/SKILL.md metadata.version -> ${next}`);
 console.log(`\nDone. ${packageCount} package.json files and 3 distribution files updated.\n`);

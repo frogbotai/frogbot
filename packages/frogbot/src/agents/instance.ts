@@ -4,6 +4,7 @@ import type {
   AgentStreamParameters,
   ModelMessage,
   TextStreamPart,
+  ToolSet,
   UIMessage,
 } from 'ai';
 import { generateId, ToolLoopAgent } from 'ai';
@@ -24,6 +25,8 @@ import { holdTurn, releaseTurn } from '../chat/turn/state.js';
 import { streamTurn } from '../chat/turn/streamTurn.js';
 import { validateChatMessages } from '../chat/validateMessages.js';
 import type { FrogBot } from '../frogbot.js';
+import type { MCPConnections } from '../mcp/connections.js';
+import { resolveMCPTools } from '../mcp/tools.js';
 import type { ToolCtx } from '../tools/types.js';
 import { isClientTool } from '../tools/types.js';
 import type { FrogBotRequest } from '../types/request.js';
@@ -50,12 +53,14 @@ export type AgentInstanceDeps = {
   gateway: Gateway;
   config: SanitizedAIConfig;
   frogbot: FrogBot;
+  mcp: MCPConnections;
 };
 
 type AgentRun = {
   selection: ResolvedAgentSelection;
   models: string[];
   hashes: AttachmentHashes;
+  mcpTools: ToolSet;
 };
 
 export function createAgentInstance(
@@ -69,6 +74,9 @@ export function createAgentInstance(
   const tools = toAISDKTools(agentConfig.tools, {
     skip: (messages) => clientSteps.has(messages),
   });
+
+  const mcpServers = agentConfig.mcp ?? [];
+  const toolSlugs = new Set(Object.keys(tools));
 
   const access = agentConfig.access ?? (({ req }) => !!req.user);
   const runs = new WeakMap<AgentCallOptions, AgentRun>();
@@ -96,17 +104,23 @@ export function createAgentInstance(
       const chatId = options.chatId;
       const run = runs.get(options)!;
 
+      const mcpToolNames = Object.keys(run.mcpTools);
+
       return {
         ...call,
         model: gateway.chatModel(run.selection.model),
         runtimeContext: { agent: ctx.agent },
+        ...(mcpToolNames.length === 0 ? {} : { tools: { ...tools, ...run.mcpTools } }),
         toolsContext: toAISDKToolsContext(agentConfig.tools, ctx),
         ...(clientTools.length === 0
           ? {}
           : {
-              activeTools: (agentConfig.tools ?? [])
-                .filter((tool) => !isClientTool(tool) || kinds.has(tool.client.kind))
-                .map(({ slug }) => slug),
+              activeTools: [
+                ...(agentConfig.tools ?? [])
+                  .filter((tool) => !isClientTool(tool) || kinds.has(tool.client.kind))
+                  .map(({ slug }) => slug),
+                ...mcpToolNames,
+              ],
               toolApproval: ({ toolCall, messages }) => {
                 if (clientToolSlugs.has(toolCall.toolName)) clientSteps.add(messages);
 
@@ -238,7 +252,19 @@ export function createAgentInstance(
 
     const runId = options.runId ?? generateId();
     const preparedOptions = { ...options, req, overrideAccess, runId };
-    const run: AgentRun = { selection, models: [], hashes: new Map() };
+    const mcpTools =
+      mcpServers.length === 0
+        ? {}
+        : await resolveMCPTools({
+            agent: agentConfig.slug,
+            servers: mcpServers,
+            connections: deps.mcp,
+            reserved: toolSlugs,
+            abortSignal: call.abortSignal,
+            logger: frogbot.logger,
+          });
+
+    const run: AgentRun = { selection, models: [], hashes: new Map(), mcpTools };
 
     runs.set(preparedOptions, run);
 

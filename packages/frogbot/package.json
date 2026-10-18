@@ -107,6 +107,7 @@
     "typecheck": "node scripts/typecheck.mjs"
   },
   "dependencies": {
+    "@ai-sdk/mcp": "2.0.60",
     "@frogbotai/gateway": "workspace:*",
     "@frogbotai/protocol": "workspace:*",
     "@next/env": "catalog:",

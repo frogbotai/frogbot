@@ -502,6 +502,9 @@ importers:
 
   packages/frogbot:
     dependencies:
+      '@ai-sdk/mcp':
+        specifier: 2.0.60
+        version: 2.0.60(zod@4.4.3)
       '@frogbotai/gateway':
         specifier: workspace:*
         version: link:../gateway
