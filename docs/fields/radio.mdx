@@ -48,7 +48,7 @@ Options may be strings or `{ label, value }` objects.
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 <Banner type="warning">
   Option values should avoid hyphens and special characters when the field's
@@ -103,9 +103,9 @@ export const Themes: CollectionConfig = {
 
 ```tsx
 import { RadioGroupField } from '@frogbotai/ui/admin'
-import type { RadioFieldServerComponent } from 'frogbot'
+import type { RadioFieldServerProps } from 'frogbot'
 
-export const CustomRadioServer: RadioFieldServerComponent = (props) => (
+export const CustomRadioServer = (props: RadioFieldServerProps) => (
   <RadioGroupField
     field={props.clientField}
     path={props.path}
@@ -121,9 +121,9 @@ export const CustomRadioServer: RadioFieldServerComponent = (props) => (
 'use client'
 
 import { RadioGroupField } from '@frogbotai/ui/admin'
-import type { RadioFieldClientComponent } from 'frogbot'
+import type { RadioFieldClientProps } from 'frogbot'
 
-export const CustomRadioClient: RadioFieldClientComponent = (props) => <RadioGroupField {...props} />
+export const CustomRadioClient = (props: RadioFieldClientProps) => <RadioGroupField {...props} />
 ```
 
 ### Label
@@ -132,9 +132,9 @@ export const CustomRadioClient: RadioFieldClientComponent = (props) => <RadioGro
 
 ```tsx
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { RadioFieldLabelServerComponent } from 'frogbot'
+import type { RadioFieldLabelServerProps } from 'frogbot'
 
-export const CustomRadioLabelServer: RadioFieldLabelServerComponent = ({ clientField, path }) => (
+export const CustomRadioLabelServer = ({ clientField, path }: RadioFieldLabelServerProps) => (
   <FieldLabel
     label={clientField.label || clientField.name}
     path={path}
@@ -149,9 +149,9 @@ export const CustomRadioLabelServer: RadioFieldLabelServerComponent = ({ clientF
 'use client'
 
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { RadioFieldLabelClientComponent } from 'frogbot'
+import type { RadioFieldLabelClientProps } from 'frogbot'
 
-export const CustomRadioLabelClient: RadioFieldLabelClientComponent = ({ field, path }) => (
+export const CustomRadioLabelClient = ({ field, path }: RadioFieldLabelClientProps) => (
   <FieldLabel label={field.label || field.name} path={path} required={field.required} />
 )
 ```

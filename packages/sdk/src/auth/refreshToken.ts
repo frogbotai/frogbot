@@ -13,8 +13,7 @@ export type RefreshResult<T extends FrogBotTypesShape, TSlug extends AuthCollect
   exp: number;
   refreshedToken: string;
   setCookie?: boolean;
-  strategy?: string;
-  user: DataFromAuthSlug<T, TSlug>;
+  user: { _strategy?: string } & DataFromAuthSlug<T, TSlug>;
 };
 
 export async function refreshToken<

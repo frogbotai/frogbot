@@ -17,6 +17,44 @@ export function generateEnv(extra = {}) {
   return { ...Object.fromEntries(passed), ...PINNED_ENV, ...extra };
 }
 
+function unquote(text) {
+  return text.trim().replace(/^(['"])(.*)\1$/, '$2');
+}
+
+export function catalog(yaml = readFileSync(path.join(ROOT, 'pnpm-workspace.yaml'), 'utf8')) {
+  const entries = {};
+  const anchors = {};
+  let inCatalog = false;
+
+  for (const line of yaml.split('\n')) {
+    if (/^\S/.test(line)) {
+      inCatalog = /^catalog:\s*$/.test(line);
+      continue;
+    }
+
+    const match = inCatalog && /^\s+((?:'[^']+')|(?:"[^"]+")|[^\s:#]+):\s*(.+?)\s*$/.exec(line);
+
+    if (!match) continue;
+
+    const anchor = /^&(\S+)\s+(.+)$/.exec(match[2]);
+    const alias = /^\*(\S+)$/.exec(match[2]);
+    const value = anchor ? unquote(anchor[2]) : alias ? anchors[alias[1]] : unquote(match[2]);
+
+    if (anchor) anchors[anchor[1]] = value;
+    entries[unquote(match[1])] = value;
+  }
+
+  return entries;
+}
+
+export function catalogVersion(name) {
+  const version = catalog()[name];
+
+  if (!version) throw new Error(`pnpm-workspace.yaml has no catalog entry for ${name}`);
+
+  return version;
+}
+
 export function readJSON(file) {
   return JSON.parse(readFileSync(file, 'utf8'));
 }

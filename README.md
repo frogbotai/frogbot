@@ -183,6 +183,12 @@ This monorepo publishes the following packages:
 | [`@frogbotai/storage-azure`](./packages/storage-azure)             | Azure Blob Storage   |
 | [`@frogbotai/storage-vercel-blob`](./packages/storage-vercel-blob) | Vercel Blob          |
 
+**Image processing**
+
+| Package                                                        | Description                      |
+| -------------------------------------------------------------- | -------------------------------- |
+| [`@frogbotai/transformer-sharp`](./packages/transformer-sharp) | Image sizes and resizing (Sharp) |
+
 **Live preview**
 
 | Package                                                          | Description             |

@@ -15,7 +15,7 @@ import { buildConfig } from 'frogbot';
 import { s3Storage } from '@frogbotai/storage-s3';
 
 export default buildConfig({
-  plugins: [
+  storage: [
     s3Storage({
       bucket: process.env.S3_BUCKET,
       config: {

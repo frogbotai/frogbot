@@ -224,6 +224,7 @@ The following arguments are provided to the `afterChange` hook:
 | `previousDoc` | `object` | Always set | The Document before changes were applied. |
 | `overrideAccess` | `boolean` | — | Whether the operation skips access control. |
 | `req` | `FrogBotRequest` | Always set | The request, with the signed-in `user` and `req.frogbot`. For [Local API](/local-api/overview) operations without a `req`, FrogBot creates one. |
+| `select` | `SelectType` | — | The field selection the operation's response uses. |
 
 ### beforeRead
 

@@ -49,7 +49,7 @@ export const Places: CollectionConfig = {
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ## Admin options
 
@@ -67,6 +67,7 @@ Point fields support the standard [field admin options](/fields/overview#admin-o
 ```ts
 const nearby = await frogbot.find({
   collection: 'places',
+  overrideAccess: true,
   where: {
     location: {
       near: [-73.9857, 40.7484, 5000, 0],
@@ -90,6 +91,7 @@ const polygon: [number, number][] = [
 
 const places = await frogbot.find({
   collection: 'places',
+  overrideAccess: true,
   where: {
     location: {
       within: {
@@ -108,6 +110,7 @@ const places = await frogbot.find({
 ```ts
 const places = await frogbot.find({
   collection: 'places',
+  overrideAccess: true,
   where: {
     location: {
       intersects: {
@@ -137,14 +140,14 @@ Override the field or its label through `admin.components`. Custom components ca
 
 ```tsx
 import { PointField } from '@frogbotai/ui/admin'
-import type { PointFieldServerComponent } from 'frogbot'
+import type { PointFieldServerProps } from 'frogbot'
 
-export const CustomPointFieldServer: PointFieldServerComponent = ({
+export const CustomPointFieldServer = ({
   clientField,
   path,
   permissions,
   schemaPath,
-}) => (
+}: PointFieldServerProps) => (
   <PointField
     field={clientField}
     path={path}
@@ -160,9 +163,9 @@ export const CustomPointFieldServer: PointFieldServerComponent = ({
 'use client'
 
 import { PointField } from '@frogbotai/ui/admin'
-import type { PointFieldClientComponent } from 'frogbot'
+import type { PointFieldClientProps } from 'frogbot'
 
-export const CustomPointFieldClient: PointFieldClientComponent = (props) => (
+export const CustomPointFieldClient = (props: PointFieldClientProps) => (
   <PointField {...props} />
 )
 ```
@@ -173,12 +176,12 @@ export const CustomPointFieldClient: PointFieldClientComponent = (props) => (
 
 ```tsx
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { PointFieldLabelServerComponent } from 'frogbot'
+import type { PointFieldLabelServerProps } from 'frogbot'
 
-export const CustomPointLabelServer: PointFieldLabelServerComponent = ({
+export const CustomPointLabelServer = ({
   clientField,
   path,
-}) => (
+}: PointFieldLabelServerProps) => (
   <FieldLabel
     label={clientField.label || clientField.name}
     path={path}
@@ -193,9 +196,9 @@ export const CustomPointLabelServer: PointFieldLabelServerComponent = ({
 'use client'
 
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { PointFieldLabelClientComponent } from 'frogbot'
+import type { PointFieldLabelClientProps } from 'frogbot'
 
-export const CustomPointLabelClient: PointFieldLabelClientComponent = ({ field, path }) => (
+export const CustomPointLabelClient = ({ field, path }: PointFieldLabelClientProps) => (
   <FieldLabel label={field.label || field.name} path={path} required={field.required} />
 )
 ```

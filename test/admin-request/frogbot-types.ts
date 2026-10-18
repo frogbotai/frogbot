@@ -60,6 +60,44 @@ export type SupportedTimezones =
   | 'Pacific/Noumea'
   | 'Pacific/Auckland'
   | 'Pacific/Fiji';
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LexicalNodes_41826806".
+ */
+export type LexicalNodes_41826806 =
+  | SerializedTextNode
+  | SerializedTabNode
+  | SerializedLineBreakNode
+  | SerializedParagraphNode<LexicalNodes_41826806>
+  | SerializedBlockNode<Callout>
+  | SerializedUploadNode<'files'>
+  | SerializedUploadNode<'admin-request-assets', LexicalUploadFields_7C90EEAC>
+  | SerializedAutoLinkNode<LexicalNodes_41826806, LexicalLinkFields_0AC21CD7>
+  | SerializedLinkNode<LexicalNodes_41826806, LexicalLinkFields_0AC21CD7>
+  | SerializedHorizontalRuleNode
+  | SerializedQuoteNode<LexicalNodes_41826806>
+  | SerializedRelationshipNode<
+      | 'users'
+      | 'admin-request-pages'
+      | 'admin-request-broken-pages'
+      | 'frogbot-waitpoints'
+      | 'folders'
+    >
+  | SerializedListNode<LexicalNodes_41826806>
+  | SerializedListItemNode<LexicalNodes_41826806>
+  | SerializedHeadingNode<LexicalNodes_41826806>;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LexicalNodes_3DE324E4".
+ */
+export type LexicalNodes_3DE324E4 =
+  | SerializedTextNode
+  | SerializedTabNode
+  | SerializedLineBreakNode
+  | SerializedParagraphNode<LexicalNodes_3DE324E4>
+  | SerializedListNode<LexicalNodes_3DE324E4>
+  | SerializedListItemNode<LexicalNodes_3DE324E4>
+  | SerializedHeadingNode<LexicalNodes_3DE324E4, 'h2' | 'h3' | 'h4'>;
 
 export interface Config {
   auth: {
@@ -73,6 +111,7 @@ export interface Config {
     'admin-request-broken-pages': AdminRequestBrokenPage;
     'admin-request-assets': AdminRequestAsset;
     'frogbot-waitpoints': FrogBotWaitpoint;
+    folders: Folder;
   };
   collectionsJoins: {};
   collectionsSelect: {
@@ -82,6 +121,7 @@ export interface Config {
     'admin-request-broken-pages': AdminRequestBrokenPagesSelect;
     'admin-request-assets': AdminRequestAssetsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
+    folders: FoldersSelect;
   };
   db: {
     defaultIDType: number;
@@ -96,12 +136,16 @@ export interface Config {
   globalsSelect: {};
   locale: 'en' | 'es';
   widgets: {
+    welcome: WelcomeWidget;
     collections: CollectionsWidget;
+    'collection-query': CollectionQueryWidget;
+    activity: ActivityWidget;
+    'upload-dropzone': UploadDropzoneWidget;
   };
   user: User;
   jobs: {
     tasks: {
-      'frogbot-sweep-jobs': TaskFrogBotSweepJobs;
+      'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
         input: unknown;
@@ -136,6 +180,14 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   name?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -162,7 +214,15 @@ export interface User {
  */
 export interface File {
   id: number;
-  folder?: (number | null) | null;
+  _h_folders?: (number | null) | Folder;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
@@ -173,8 +233,39 @@ export interface File {
   filesize?: number | null;
   width?: number | null;
   height?: number | null;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+  };
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders".
+ */
+export interface Folder {
+  id: number;
+  _h_folders?: (number | null) | Folder;
+  name: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _h_slugPath?: string | null;
+  _h_titlePath?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -186,31 +277,28 @@ export interface AdminRequestPage {
   owner?: (number | null) | User;
   image?: (number | null) | File;
   color?: ('red' | 'green') | null;
-  layout?:
-    | {
-        heading?: string | null;
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'hero';
-      }[]
-    | null;
-  body?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
+  layout?: Hero[] | null;
+  body?: LexicalRichText<LexicalNodes_41826806> | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
   } | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "Hero".
+ */
+export interface Hero {
+  heading?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'hero';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -219,6 +307,14 @@ export interface AdminRequestPage {
 export interface AdminRequestBrokenPage {
   id: number;
   title?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -228,6 +324,14 @@ export interface AdminRequestBrokenPage {
  */
 export interface AdminRequestAsset {
   id: number;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -237,6 +341,16 @@ export interface AdminRequestAsset {
   filesize?: number | null;
   width?: number | null;
   height?: number | null;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+  };
   focalX?: number | null;
   focalY?: number | null;
 }
@@ -276,6 +390,8 @@ export interface FrogBotWaitpoint {
  */
 export interface UsersSelect {
   name?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   email?: boolean;
@@ -299,7 +415,9 @@ export interface UsersSelect {
  * via the `definition` "files_select".
  */
 export interface FilesSelect {
-  folder?: boolean;
+  _h_folders?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   deletedAt?: boolean;
@@ -310,6 +428,18 @@ export interface FilesSelect {
   filesize?: boolean;
   width?: boolean;
   height?: boolean;
+  original?:
+    | boolean
+    | {
+        filename?: boolean;
+        url?: boolean;
+        mimeType?: boolean;
+        filesize?: boolean;
+        width?: boolean;
+        height?: boolean;
+        prefix?: boolean;
+        _objectKey?: boolean;
+      };
   focalX?: boolean;
   focalY?: boolean;
 }
@@ -334,6 +464,8 @@ export interface AdminRequestPagesSelect {
             };
       };
   body?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -343,6 +475,8 @@ export interface AdminRequestPagesSelect {
  */
 export interface AdminRequestBrokenPagesSelect {
   title?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -351,6 +485,8 @@ export interface AdminRequestBrokenPagesSelect {
  * via the `definition` "admin-request-assets_select".
  */
 export interface AdminRequestAssetsSelect {
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   url?: boolean;
@@ -360,6 +496,18 @@ export interface AdminRequestAssetsSelect {
   filesize?: boolean;
   width?: boolean;
   height?: boolean;
+  original?:
+    | boolean
+    | {
+        filename?: boolean;
+        url?: boolean;
+        mimeType?: boolean;
+        filesize?: boolean;
+        width?: boolean;
+        height?: boolean;
+        prefix?: boolean;
+        _objectKey?: boolean;
+      };
   focalX?: boolean;
   focalY?: boolean;
 }
@@ -386,6 +534,30 @@ export interface FrogBotWaitpointsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders_select".
+ */
+export interface FoldersSelect {
+  _h_folders?: boolean;
+  name?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  _h_slugPath?: boolean;
+  _h_titlePath?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "welcome_widget".
+ */
+export interface WelcomeWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -396,9 +568,67 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBotSweepJobs".
+ * via the `definition` "collection-query_widget".
  */
-export interface TaskFrogBotSweepJobs {
+export interface CollectionQueryWidget {
+  data?: {
+    title?: string | null;
+    relatedCollection:
+      | 'users'
+      | 'files'
+      | 'admin-request-pages'
+      | 'admin-request-broken-pages'
+      | 'admin-request-assets'
+      | 'folders';
+    where?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    sortField?: string | null;
+    sortDirection?: ('asc' | 'desc') | null;
+    limit?: number | null;
+  };
+  width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "activity_widget".
+ */
+export interface ActivityWidget {
+  data?: {
+    excludedCollections?:
+      | (
+          | 'users'
+          | 'files'
+          | 'admin-request-pages'
+          | 'admin-request-broken-pages'
+          | 'admin-request-assets'
+          | 'folders'
+        )[]
+      | null;
+  };
+  width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "upload-dropzone_widget".
+ */
+export interface UploadDropzoneWidget {
+  data?: {
+    excludedCollections?: ('files' | 'admin-request-assets')[] | null;
+  };
+  width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogBotSweepWaitpoints".
+ */
+export interface TaskFrogBotSweepWaitpoints {
   input?: unknown;
   output?: unknown;
 }
@@ -412,10 +642,235 @@ export interface TaskFrogBotCleanupKv {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "Callout".
+ */
+export interface Callout {
+  id: string;
+  blockType: 'callout';
+  tone?: string | null;
+  blockName?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LexicalUploadFields_7C90EEAC".
+ */
+export interface LexicalUploadFields_7C90EEAC {
+  caption?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LexicalLinkFields_0AC21CD7".
+ */
+export interface LexicalLinkFields_0AC21CD7 {
+  linkType: 'custom' | 'internal';
+  url?: string;
+  doc?: {
+    relationTo: string;
+    value:
+      | string
+      | number
+      | {
+          id: string | number;
+          [k: string]: unknown;
+        };
+  } | null;
+  newTab: boolean;
+  rel?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "auth".
  */
 export interface Auth {
   [k: string]: unknown;
+}
+
+/** @internal Core Lexical types — see @frogbotai/richtext-lexical. */
+export type LexicalElementFormat =
+  'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+export type LexicalElementDirection = ('ltr' | 'rtl') | null;
+
+export interface SerializedLexicalElementBase<TChildren> {
+  children: TChildren[];
+  direction: LexicalElementDirection;
+  format: LexicalElementFormat;
+  indent: number;
+  textFormat?: number;
+  textStyle?: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export type LexicalTextMode = 'normal' | 'token' | 'segmented';
+
+export interface SerializedTextNode {
+  type: 'text';
+  detail: number;
+  format: number;
+  mode: LexicalTextMode;
+  style: string;
+  text: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export interface SerializedTabNode {
+  type: 'tab';
+  detail: number;
+  format: number;
+  mode: LexicalTextMode;
+  style: string;
+  text: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export interface SerializedLineBreakNode {
+  type: 'linebreak';
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export interface SerializedParagraphNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'paragraph';
+  textFormat: number;
+  textStyle: string;
+}
+
+export type SerializedBlockNode<TFields extends { blockType: string }> =
+  TFields extends unknown
+    ? {
+        type: 'block';
+        format: LexicalElementFormat;
+        /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+        version: number;
+        fields: { id: string; blockName?: string | null } & Omit<
+          TFields,
+          'id' | 'blockName'
+        >;
+      }
+    : never;
+export type SerializedInlineBlockNode<TFields extends { blockType: string }> =
+  TFields extends unknown
+    ? {
+        type: 'inlineBlock';
+        /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+        version: number;
+        fields: { id: string } & Omit<TFields, 'id'>;
+      }
+    : never;
+
+export type SerializedUploadNode<
+  TSlugs extends keyof Config['collections'],
+  TFields = { [k: string]: unknown },
+> = {
+  type: 'upload';
+  format: LexicalElementFormat;
+  id: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+  fields: TFields;
+} & {
+  [TSlug in TSlugs]: {
+    relationTo: TSlug;
+    value: Config['collections'][TSlug]['id'] | Config['collections'][TSlug];
+  };
+}[TSlugs];
+
+export interface LexicalLinkFields {
+  [k: string]: unknown;
+  doc?: {
+    relationTo: string;
+    value:
+      | Config['db']['defaultIDType']
+      | { [k: string]: unknown; id: Config['db']['defaultIDType'] };
+  } | null;
+  linkType: 'custom' | 'internal';
+  newTab: boolean;
+  url?: string;
+}
+export interface SerializedLinkNode<
+  TChildren,
+  TFields = LexicalLinkFields,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'link';
+  fields: TFields;
+  id?: string;
+}
+export interface SerializedAutoLinkNode<
+  TChildren,
+  TFields = LexicalLinkFields,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'autolink';
+  fields: TFields;
+}
+
+export interface SerializedHorizontalRuleNode {
+  type: 'horizontalrule';
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export interface SerializedQuoteNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'quote';
+}
+
+export type SerializedRelationshipNode<
+  TSlugs extends keyof Config['collections'],
+> = {
+  type: 'relationship';
+  format: LexicalElementFormat;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+} & {
+  [TSlug in TSlugs]: {
+    relationTo: TSlug;
+    value: Config['collections'][TSlug]['id'] | Config['collections'][TSlug];
+  };
+}[TSlugs];
+
+export interface SerializedListNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'list';
+  checked?: boolean;
+  listType: 'number' | 'bullet' | 'check';
+  start: number;
+  tag: 'ul' | 'ol';
+}
+
+export interface SerializedListItemNode<
+  TChildren,
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'listitem';
+  checked?: boolean;
+  value: number;
+}
+
+export interface SerializedHeadingNode<
+  TChildren,
+  TTag extends 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' =
+    'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6',
+> extends SerializedLexicalElementBase<TChildren> {
+  type: 'heading';
+  tag: TTag;
+}
+
+/** Shape of a Lexical `richText` field. */
+export interface LexicalRichText<TNode> {
+  root: {
+    children: TNode[];
+    direction: LexicalElementDirection;
+    format: LexicalElementFormat;
+    indent: number;
+    type: 'root';
+    /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+    version: number;
+  };
 }
 
 declare module 'frogbot' {

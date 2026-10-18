@@ -85,12 +85,15 @@ export interface Config {
   globalsSelect: {};
   locale: null;
   widgets: {
+    welcome: WelcomeWidget;
     collections: CollectionsWidget;
+    'collection-query': CollectionQueryWidget;
+    activity: ActivityWidget;
   };
   user: SelectUser;
   jobs: {
     tasks: {
-      'frogbot-sweep-jobs': TaskFrogBotSweepJobs;
+      'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
         input: unknown;
@@ -125,6 +128,14 @@ export interface SelectUserAuthOperations {
 export interface SelectUser {
   id: number;
   name: string;
+  createdBy?: {
+    relationTo: 'select-users';
+    value: number | SelectUser;
+  } | null;
+  updatedBy?: {
+    relationTo: 'select-users';
+    value: number | SelectUser;
+  } | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -159,6 +170,14 @@ export interface SelectPost {
   };
   owner: number | SelectUser;
   secret?: string | null;
+  createdBy?: {
+    relationTo: 'select-users';
+    value: number | SelectUser;
+  } | null;
+  updatedBy?: {
+    relationTo: 'select-users';
+    value: number | SelectUser;
+  } | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -198,6 +217,8 @@ export interface FrogBotWaitpoint {
  */
 export interface SelectUsersSelect {
   name?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   email?: boolean;
@@ -231,6 +252,8 @@ export interface SelectPostsSelect {
       };
   owner?: boolean;
   secret?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -257,6 +280,16 @@ export interface FrogBotWaitpointsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "welcome_widget".
+ */
+export interface WelcomeWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -267,9 +300,42 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBotSweepJobs".
+ * via the `definition` "collection-query_widget".
  */
-export interface TaskFrogBotSweepJobs {
+export interface CollectionQueryWidget {
+  data?: {
+    title?: string | null;
+    relatedCollection: 'select-users' | 'select-posts';
+    where?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    sortField?: string | null;
+    sortDirection?: ('asc' | 'desc') | null;
+    limit?: number | null;
+  };
+  width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "activity_widget".
+ */
+export interface ActivityWidget {
+  data?: {
+    excludedCollections?: ('select-users' | 'select-posts')[] | null;
+  };
+  width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogBotSweepWaitpoints".
+ */
+export interface TaskFrogBotSweepWaitpoints {
   input?: unknown;
   output?: unknown;
 }

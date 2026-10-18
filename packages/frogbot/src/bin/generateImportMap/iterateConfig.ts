@@ -1,88 +1,12 @@
-import type { Block, Field, SanitizedConfig } from 'payload';
+import type { SanitizedConfig } from 'payload';
 import { genImportMapIterateFields } from 'payload';
+import { isUserMenuSettingsGroup } from 'payload/shared';
 
 import { isIconComponent } from '../../admin/icons.js';
 import type { RootAdminComponents, SettingsEntry } from '../../admin/types.js';
 import type { AddToImportMap, Imports, InternalImportMap } from './index.js';
 import { iterateCollections } from './iterateCollections.js';
 import { iterateGlobals } from './iterateGlobals.js';
-
-function iterateBlockReferenceFields({
-  addToImportMap,
-  baseDir,
-  config,
-  fields,
-  importMap,
-  imports,
-  visited,
-}: {
-  addToImportMap: AddToImportMap;
-  baseDir: string;
-  config: SanitizedConfig;
-  fields: unknown[];
-  importMap: InternalImportMap;
-  imports: Imports;
-  visited: WeakSet<object>;
-}): void {
-  for (const field of fields) {
-    if (!field || typeof field !== 'object' || visited.has(field)) continue;
-
-    visited.add(field);
-
-    const value = field as Record<string, unknown>;
-
-    if (Array.isArray(value.fields)) {
-      iterateBlockReferenceFields({
-        addToImportMap,
-        baseDir,
-        config,
-        fields: value.fields,
-        importMap,
-        imports,
-        visited,
-      });
-    }
-
-    if (Array.isArray(value.tabs)) {
-      iterateBlockReferenceFields({
-        addToImportMap,
-        baseDir,
-        config,
-        fields: value.tabs,
-        importMap,
-        imports,
-        visited,
-      });
-    }
-
-    if (!Array.isArray(value.blockReferences)) continue;
-
-    const blocks = value.blockReferences.filter((block): block is { fields: Field[] } =>
-      Boolean(block && typeof block === 'object' && Array.isArray(block.fields)),
-    );
-
-    if (blocks.length === 0) continue;
-
-    genImportMapIterateFields({
-      addToImportMap,
-      baseDir,
-      config,
-      fields: blocks as Block[],
-      importMap,
-      imports,
-    });
-
-    iterateBlockReferenceFields({
-      addToImportMap,
-      baseDir,
-      config,
-      fields: blocks,
-      importMap,
-      imports,
-      visited,
-    });
-  }
-}
 
 export function iterateConfig({
   addToImportMap,
@@ -97,8 +21,6 @@ export function iterateConfig({
   importMap: InternalImportMap;
   imports: Imports;
 }) {
-  const visited = new WeakSet<object>();
-
   iterateCollections({
     addToImportMap,
     baseDir,
@@ -115,40 +37,6 @@ export function iterateConfig({
     globals: config.globals,
     importMap,
     imports,
-  });
-
-  for (const collection of config.collections) {
-    iterateBlockReferenceFields({
-      addToImportMap,
-      baseDir,
-      config,
-      fields: collection.fields,
-      importMap,
-      imports,
-      visited,
-    });
-  }
-
-  for (const global of config.globals) {
-    iterateBlockReferenceFields({
-      addToImportMap,
-      baseDir,
-      config,
-      fields: global.fields,
-      importMap,
-      imports,
-      visited,
-    });
-  }
-
-  iterateBlockReferenceFields({
-    addToImportMap,
-    baseDir,
-    config,
-    fields: config.blocks ?? [],
-    importMap,
-    imports,
-    visited,
   });
 
   if (config?.blocks) {
@@ -173,6 +61,15 @@ export function iterateConfig({
   addToImportMap(config.admin?.components?.header);
   addToImportMap(config.admin?.components?.logout?.Button);
   addToImportMap(config.admin?.components?.settingsMenu);
+
+  for (const item of config.admin?.components?.userMenuSettingsItems ?? []) {
+    if (isUserMenuSettingsGroup(item)) {
+      for (const groupedItem of item.items) addToImportMap(groupedItem);
+    } else {
+      addToImportMap(item);
+    }
+  }
+
   addToImportMap(config.admin?.components?.graphics?.Icon);
   addToImportMap(config.admin?.components?.graphics?.Logo);
 
@@ -233,6 +130,11 @@ export function iterateConfig({
 
   addToImportMap(config.admin?.components?.providers);
 
+  for (const tab of config.admin?.components?.sidebar?.tabs ?? []) {
+    addToImportMap(tab.components.Icon);
+    addToImportMap(tab.components.Content);
+  }
+
   if (config.admin?.components?.views) {
     if (Object.keys(config.admin?.components?.views)?.length) {
       for (const key in config.admin?.components?.views) {
@@ -250,19 +152,9 @@ export function iterateConfig({
           addToImportMap,
           baseDir,
           config,
-          fields: dashboardWidget.fields as Field[],
-          importMap,
-          imports,
-        });
-
-        iterateBlockReferenceFields({
-          addToImportMap,
-          baseDir,
-          config,
           fields: dashboardWidget.fields,
           importMap,
           imports,
-          visited,
         });
       }
     }

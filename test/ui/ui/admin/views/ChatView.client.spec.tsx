@@ -41,6 +41,8 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@payloadcms/ui', () => ({
+  usePathname: () => mocks.pathname,
+  useRouter: () => ({ push: mocks.push, refresh: mocks.refresh }),
   toast: { error: mocks.toastError },
   useConfig: () => ({ getEntityConfig: mocks.getEntityConfig }),
   usePreferences: () => ({
@@ -50,14 +52,6 @@ vi.mock('@payloadcms/ui', () => ({
   useRouteTransition: () => ({ startRouteTransition: mocks.startRouteTransition }),
   useStepNav: () => ({ setStepNav: mocks.setStepNav }),
   useTranslation: () => ({ i18n: { language: 'en' } }),
-}));
-
-vi.mock('../../../../../packages/ui/src/admin/adapters/router.js', () => ({
-  shallowRouteState: 'frogbotShallowRoute',
-  useRouterAdapter: () => ({
-    pathname: mocks.pathname,
-    router: { push: mocks.push, refresh: mocks.refresh },
-  }),
 }));
 
 vi.mock('../../../../../packages/ui/src/chat/agent-selector.js', () => ({

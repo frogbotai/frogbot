@@ -1,11 +1,12 @@
 import type { Field, JobsConfig as PayloadJobsConfig } from 'payload';
 
-import { DEFAULT_JOB_LEASE_DURATION, withJobLease } from './lease.js';
-import { JOB_SWEEP_TASK_SLUG, sweepJobLeases } from './sweep.js';
+import { withJobRun } from './run.js';
 import type { JobsConfig } from './types.js';
 import { sweepWaitpoints } from './waitpoints/operations.js';
 import type { WaitpointOptions } from './waitpoints/types.js';
 import { wrapWorkflow } from './waitpoints/workflow.js';
+
+export const WAITPOINT_SWEEP_TASK_SLUG = 'frogbot-sweep-waitpoints';
 
 const DEFAULT_WAITPOINT_EXPIRY = 7 * 24 * 60 * 60 * 1000;
 const MAX_WAITPOINT_EXPIRY = 30 * 24 * 60 * 60 * 1000;
@@ -13,7 +14,7 @@ const MAX_WAITPOINT_EXPIRY = 30 * 24 * 60 * 60 * 1000;
 function removeOwnedFields(fields: Field[]): Field[] {
   return fields.flatMap((field): Field[] => {
     if ('name' in field && field.name) {
-      return ['jobId', 'leaseUntil', 'leaseOwner', 'waitpoint'].includes(field.name) ? [] : [field];
+      return ['jobId', 'waitpoint'].includes(field.name) ? [] : [field];
     }
 
     if ('fields' in field) return [{ ...field, fields: removeOwnedFields(field.fields) }];
@@ -34,32 +35,10 @@ function removeOwnedFields(fields: Field[]): Field[] {
 }
 
 export function resolveJobsConfig(jobs: JobsConfig = {}): PayloadJobsConfig & {
-  leaseDuration: number;
   waitpoints: WaitpointOptions;
-  runHooks: false;
-  depth: 0;
 } {
-  const runHooks = 'runHooks' in jobs ? jobs.runHooks : undefined;
-  const depth = 'depth' in jobs ? jobs.depth : undefined;
-
-  if (runHooks) {
-    throw new Error('FrogBot jobs.runHooks is unsupported because job claims must be atomic.');
-  }
-
-  if (Number(depth) > 0) {
-    throw new Error('FrogBot jobs.depth must be 0 because job claims must be atomic.');
-  }
-
-  const leaseDuration = jobs.leaseDuration ?? DEFAULT_JOB_LEASE_DURATION;
-
-  if (!Number.isSafeInteger(leaseDuration) || leaseDuration < 5 || leaseDuration > 2_147_483_647) {
-    throw new Error(
-      'FrogBot jobs.leaseDuration must be an integer from 5 to 2147483647 milliseconds.',
-    );
-  }
-
-  if (jobs.tasks?.some(({ slug }) => slug === JOB_SWEEP_TASK_SLUG)) {
-    throw new Error(`FrogBot job task '${JOB_SWEEP_TASK_SLUG}' is reserved.`);
+  if (jobs.tasks?.some(({ slug }) => slug === WAITPOINT_SWEEP_TASK_SLUG)) {
+    throw new Error(`FrogBot job task '${WAITPOINT_SWEEP_TASK_SLUG}' is reserved.`);
   }
 
   const waitpoints = {
@@ -87,14 +66,6 @@ export function resolveJobsConfig(jobs: JobsConfig = {}): PayloadJobsConfig & {
 
   const fields: Field[] = [
     { name: 'jobId', type: 'text', required: false },
-    { name: 'leaseUntil', type: 'date', index: true, admin: { readOnly: true } },
-    {
-      name: 'leaseOwner',
-      type: 'text',
-      hidden: true,
-      access: { create: () => false, read: () => false, update: () => false },
-      admin: { hidden: true },
-    },
     {
       name: 'waitpoint',
       type: 'json',
@@ -106,21 +77,15 @@ export function resolveJobsConfig(jobs: JobsConfig = {}): PayloadJobsConfig & {
 
   return {
     ...jobs,
-    enableConcurrencyControl: jobs.enableConcurrencyControl ?? true,
-    runHooks: false,
-    depth: 0,
-    leaseDuration,
     waitpoints,
     workflows: jobs.workflows?.map((workflow) => wrapWorkflow({ workflow, config: waitpoints })),
     tasks: [
       ...(jobs.tasks ?? []),
       {
-        slug: JOB_SWEEP_TASK_SLUG,
-        interfaceName: 'TaskFrogBotSweepJobs',
+        slug: WAITPOINT_SWEEP_TASK_SLUG,
+        interfaceName: 'TaskFrogBotSweepWaitpoints',
         schedule: [{ cron: '* * * * *', queue: 'default' }],
         handler: async ({ req }) => {
-          await sweepJobLeases({ req });
-
           await sweepWaitpoints({ req });
 
           return { output: {} };
@@ -141,12 +106,7 @@ export function resolveJobsConfig(jobs: JobsConfig = {}): PayloadJobsConfig & {
               ? {
                   ...endpoint,
                   handler: (req) =>
-                    withJobLease({
-                      payload: req.payload,
-                      req,
-                      leaseDuration,
-                      run: async () => endpoint.handler(req),
-                    }),
+                    withJobRun({ payload: req.payload, run: async () => endpoint.handler(req) }),
                 }
               : endpoint,
           ),

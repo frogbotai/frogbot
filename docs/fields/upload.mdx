@@ -47,8 +47,6 @@ export const FeaturedImageField: Field = {
 | `hasMany` | `boolean` | `false` | Stores an ordered array of files instead of one. |
 | `minRows` | `number` | — | Minimum number of files when a value is present. Only with `hasMany: true`. |
 | `maxRows` | `number` | — | Maximum number of files when a value is present. Only with `hasMany: true`. |
-| `min` | `number` | — | Deprecated alias for `minRows`. Copied to `minRows` with a warning when `minRows` is unset. |
-| `max` | `number` | — | Deprecated alias for `maxRows`. Copied to `maxRows` with a warning when `maxRows` is unset. |
 | `maxDepth` | `number` | Request depth | Maximum population depth for this field, regardless of the remaining request depth. See [depth](/queries/depth#max-depth). |
 | `displayPreview` | `boolean` | The file collection's setting | Whether the field shows a file preview. See [File collection options](/upload/overview#collection-upload-options). |
 | `graphQL` | `{ complexity?: number }` | `{ complexity: 10 }` | Query complexity used only when an application mounts its own GraphQL executor. FrogBot does not ship a GraphQL request handler. |
@@ -67,7 +65,7 @@ export const FeaturedImageField: Field = {
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ## Admin options
 
@@ -184,14 +182,14 @@ Override the field through `admin.components`. A custom component can wrap FrogB
 
 ```tsx
 import { UploadField } from '@frogbotai/ui/admin'
-import type { UploadFieldServerComponent } from 'frogbot'
+import type { UploadFieldServerProps } from 'frogbot'
 
-export const CustomUploadFieldServer: UploadFieldServerComponent = ({
+export const CustomUploadFieldServer = ({
   clientField,
   path,
   permissions,
   schemaPath,
-}) => (
+}: UploadFieldServerProps) => (
   <UploadField
     field={clientField}
     path={path}
@@ -207,9 +205,9 @@ export const CustomUploadFieldServer: UploadFieldServerComponent = ({
 'use client'
 
 import { UploadField } from '@frogbotai/ui/admin'
-import type { UploadFieldClientComponent } from 'frogbot'
+import type { UploadFieldClientProps } from 'frogbot'
 
-export const CustomUploadFieldClient: UploadFieldClientComponent = (props) => (
+export const CustomUploadFieldClient = (props: UploadFieldClientProps) => (
   <UploadField {...props} />
 )
 ```

@@ -64,8 +64,7 @@ const block: Block = {
 };
 
 const blocks: BlocksField = {
-  blockReferences: [block, 'shared-callout'],
-  blocks: [block],
+  blocks: [block, 'shared-callout'],
   name: 'layout',
   type: 'blocks',
 };

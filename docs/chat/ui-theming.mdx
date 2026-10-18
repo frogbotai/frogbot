@@ -9,8 +9,8 @@ Set FrogBot's colors with CSS variables on `:root`. A page-level value reaches e
 
 ```css
 :root {
-  --theme-base-1000: oklch(0.58 0.18 250);
-  --theme-base-50: oklch(0.97 0.01 250);
+  --fb-theme-base-1000: oklch(0.58 0.18 250);
+  --fb-theme-base-50: oklch(0.97 0.01 250);
 }
 ```
 
@@ -20,8 +20,8 @@ With Tailwind CSS v4, set the same tokens in `@theme static`:
 @import "tailwindcss";
 
 @theme static {
-  --theme-base-1000: oklch(0.58 0.18 250);
-  --theme-base-50: oklch(0.97 0.01 250);
+  --fb-theme-base-1000: oklch(0.58 0.18 250);
+  --fb-theme-base-50: oklch(0.97 0.01 250);
 }
 ```
 
@@ -29,17 +29,17 @@ Tailwind drops `@theme` values that no utility uses, so FrogBot tokens need `sta
 
 ## Color tokens
 
-Buttons, menus, dialogs, and most other components read the neutral `--theme-base-*` scale. For example, the default `Button` uses `--theme-base-1000` for its background, menus use `--theme-base-50`, and dialogs use `--theme-base-0`.
+Buttons, menus, dialogs, and most other components read the neutral `--fb-theme-base-*` scale. For example, the default `Button` uses `--fb-theme-base-1000` for its background, menus use `--fb-theme-base-50`, and dialogs use `--fb-theme-base-0`.
 
 `--primary` (and `--color-primary`) colors `Alert` and `Dot` only. It doesn't change buttons, menus, or dialogs.
 
-Use `--theme-base-*` for neutral component colors that should invert between light and dark modes. Use `--color-base-*` only when a color must remain fixed, such as a dark overlay or fixed-contrast text on a brand surface.
+Use `--fb-theme-base-*` for neutral component colors that should invert between light and dark modes. Use `--fb-base-*` only when a color must remain fixed, such as a dark overlay or fixed-contrast text on a brand surface.
 
-`--theme-elevation-*` belongs to the FrogBot admin theme. Reusable `@frogbotai/ui` styles should use `--theme-base-*` so they also work outside the admin panel.
+On admin pages `--fb-theme-base-*` and `--fb-base-*` read the admin panel's palette, so FrogBot components match the admin. The admin panel's semantic tokens (`--color-bg`, `--color-text`, `--color-border`) belong to admin styles; reusable `@frogbotai/ui` styles use `--fb-theme-base-*` so they also work outside the admin panel.
 
 ### Token names your app may already use
 
-FrogBot's tokens include common names such as `--color-*`, `--primary`, `--background`, and `--sidebar-*`. If your app defines a token with the same name for its own use, it restyles FrogBot too. For example, an app theme that sets `--sidebar-background` changes FrogBot's sidebar. Rename your token or scope it to your own elements.
+FrogBot's tokens include common names such as `--color-*`, `--primary`, `--background`, and `--sidebar-*`. If your app defines a token with the same name for its own use, it restyles FrogBot too. For example, an app theme that sets `--sidebar-background` changes FrogBot's sidebar. Rename your token or scope it to your own elements. On admin pages, the admin panel's semantic tokens (`--color-bg*`, `--color-text*`, `--color-border*`, `--radius-*`, `--spacer-*`) share the same space: overriding one there restyles the admin as well as FrogBot.
 
 ## Light and dark modes
 
@@ -47,7 +47,7 @@ FrogBot tokens follow the mode of the element that uses them. A value you set on
 
 ```css
 :root {
-  --theme-base-1000: light-dark(oklch(0.58 0.18 250), oklch(0.82 0.12 250));
+  --fb-theme-base-1000: light-dark(oklch(0.58 0.18 250), oklch(0.82 0.12 250));
 }
 ```
 
@@ -89,7 +89,7 @@ Place `ThemeScript` before themed content during server rendering. It reads the 
 
 ### Sections
 
-A section of a page can use its own mode: wrap it in `ThemeProvider` with `mode`, and its menus and dialogs follow. Colors set on a section, such as `.billing { --theme-base-50: … }`, apply to the section's own content but not to its menus and dialogs, which render at the end of the page. Set colors on `:root` instead.
+A section of a page can use its own mode: wrap it in `ThemeProvider` with `mode`, and its menus and dialogs follow. Colors set on a section, such as `.billing { --fb-theme-base-50: … }`, apply to the section's own content but not to its menus and dialogs, which render at the end of the page. Set colors on `:root` instead.
 
 ## Override FrogBot styles
 
@@ -156,7 +156,7 @@ To use Tailwind CSS in the admin, import only its theme and utilities, after `@f
 }
 ```
 
-`--primary` colors `Alert` and `Dot` only. If you used it to recolor buttons, menus, or dialogs, set the [`--theme-base-*` token](#color-tokens) they read instead.
+`--primary` colors `Alert` and `Dot` only. If you used it to recolor buttons, menus, or dialogs, set the [`--fb-theme-base-*` token](#color-tokens) they read instead.
 
 To change colors at runtime, for example per tenant, set the CSS variables on `document.documentElement` yourself.
 

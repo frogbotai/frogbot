@@ -166,7 +166,9 @@ test('renders typed default widgets with req.frogbot through the modular dashboa
 
   await expect(page.getByTestId('welcome-widget')).toContainText('Default dashboard');
   await expect(page.getByTestId('activity-widget')).toContainText('Recent activity');
-  await expect(page.locator('.app-header__step-nav .step-nav__last button')).toBeVisible();
+  await expect(
+    page.locator('.app-header__step-nav').getByRole('button', { name: 'Dashboard', exact: true }),
+  ).toBeVisible();
   await expect(page).toHaveTitle('Dashboard - Field Lab');
   await expect(page.locator('head title[data-frogbot-tab-title]')).toHaveCount(0);
   await expect
@@ -182,11 +184,11 @@ test('edits, persists, and resets the modular dashboard layout', async ({ page }
 
   const stepNav = page.locator('.app-header__step-nav-wrapper');
 
-  await stepNav.locator('button').click();
-  await stepNav.getByText('Edit Dashboard', { exact: true }).click();
-  await page.getByRole('button', { exact: true, name: 'Edit welcome-0' }).click();
+  await stepNav.getByRole('button', { name: 'Dashboard', exact: true }).click();
+  await stepNav.getByRole('menuitem', { name: 'Edit Dashboard', exact: true }).click();
+  await page.getByRole('button', { exact: true, name: 'Edit Welcome summary' }).click();
 
-  const widgetEditor = page.getByRole('dialog', { name: /^widget-editor-/ });
+  const widgetEditor = page.getByRole('dialog', { name: 'Edit Welcome summary' });
 
   await expect(widgetEditor.getByRole('heading', { name: 'Edit Welcome summary' })).toBeVisible();
   await expect(widgetEditor.getByRole('textbox')).toHaveValue(/Default dashboard/);
@@ -200,8 +202,8 @@ test('edits, persists, and resets the modular dashboard layout', async ({ page }
 
   await expect(page.getByTestId('welcome-widget')).toContainText('Saved dashboard heading');
 
-  await stepNav.locator('button').click();
-  await stepNav.getByText('Reset Layout', { exact: true }).click();
+  await stepNav.getByRole('button', { name: 'Dashboard', exact: true }).click();
+  await stepNav.getByRole('menuitem', { name: 'Reset Layout', exact: true }).click();
 
   await expect(page.getByTestId('welcome-widget')).toContainText('Default dashboard');
 
@@ -221,9 +223,9 @@ test('the phone dashboard breadcrumb dropdown keeps its options clickable', asyn
 
   const stepNav = page.locator('.app-header__step-nav-wrapper');
 
-  await stepNav.locator('button').click();
+  await stepNav.getByRole('button', { name: 'Dashboard', exact: true }).click();
 
-  const edit = stepNav.getByText('Edit Dashboard', { exact: true });
+  const edit = stepNav.getByRole('menuitem', { name: 'Edit Dashboard', exact: true });
 
   await expect(edit).toBeVisible();
   await expect
@@ -244,7 +246,7 @@ test('the phone dashboard breadcrumb dropdown keeps its options clickable', asyn
 
   await stepNav.getByRole('button', { name: 'Cancel', exact: true }).click();
 
-  await expect(stepNav.locator('.dashboard-breadcrumb-select')).toBeVisible();
+  await expect(stepNav.locator('.dashboard-breadcrumb-dropdown')).toBeVisible();
 });
 
 test.describe('tab titles with a custom suffix and site name', () => {

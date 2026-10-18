@@ -14,10 +14,11 @@ export type OperationArgs = {
   page?: number;
   pagination?: boolean;
   populate?: Record<string, unknown>;
-  publishSpecificLocale?: unknown;
+  publishAllLocales?: boolean;
   select?: unknown;
   sort?: Sort;
   trash?: boolean;
+  unpublishAllLocales?: boolean;
   where?: Where;
 };
 
@@ -60,8 +61,12 @@ export const buildSearchParams = (args: OperationArgs): string => {
     search.locale = args.locale;
   }
 
-  if (args.publishSpecificLocale) {
-    search.publishSpecificLocale = args.publishSpecificLocale;
+  if (typeof args.publishAllLocales === 'boolean') {
+    search.publishAllLocales = String(args.publishAllLocales);
+  }
+
+  if (typeof args.unpublishAllLocales === 'boolean') {
+    search.unpublishAllLocales = String(args.unpublishAllLocales);
   }
 
   if (args.sort) {

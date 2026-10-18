@@ -9,7 +9,7 @@
     padding: 1rem;
     margin-bottom: 1rem;
     border-radius: 1rem;
-    background: var(--theme-base-100);
+    background: var(--fb-theme-base-100);
   }
 
   .fb-audio-waveform__bar {
@@ -17,6 +17,6 @@
     max-height: 100%;
     flex: 1;
     border-radius: 9999px;
-    background: var(--theme-base-900);
+    background: var(--fb-theme-base-900);
   }
 }

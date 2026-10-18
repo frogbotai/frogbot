@@ -1,8 +1,8 @@
 import { getTranslation } from '@payloadcms/translations';
 import type { EntityToGroup } from '@payloadcms/ui/shared';
-import { EntityType, groupNavItems } from '@payloadcms/ui/shared';
+import { groupNavItems } from '@payloadcms/ui/shared';
 import type { CustomComponent, SanitizedConfig, ServerProps } from 'payload';
-import { formatAdminURL } from 'payload/shared';
+import { EntityType, formatAdminURL } from 'payload/shared';
 
 export type NavConfigItem = { icon?: CustomComponent; label: string; path: string };
 

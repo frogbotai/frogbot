@@ -6,9 +6,12 @@ import {
   getTableName,
   inArray,
   is,
+  isNull,
+  lte,
   max,
   min,
   notInArray,
+  or,
   type SQL,
   sql,
 } from 'drizzle-orm';
@@ -32,14 +35,8 @@ import {
   assertSQLiteAdapter,
 } from '../database/guards.js';
 import { type JobInsertDatabase, jobInsertOperations } from './insert.js';
-import {
-  getJobClaimFields,
-  getJobLeaseContext,
-  type JobLeaseDatabase,
-  jobLeaseOperations,
-  recordJobClaims,
-} from './lease.js';
 import { type JobLogDatabase, jobLogOperations } from './log.js';
+import { isJobClaim, unleased } from './run.js';
 
 type JobSQLDialect = 'postgres' | 'sqlite';
 
@@ -50,28 +47,6 @@ type JobTable = DrizzleAdapter['tables'][string];
 type JobSQLiteWriter = Pick<BaseSQLiteDatabase<'async', unknown>, 'delete' | 'update'>;
 
 const feature = 'FrogBot SQL jobs';
-
-async function updateJobRows({
-  db,
-  table,
-  data,
-  where,
-}: {
-  db: JobDatabase;
-  table: JobTable;
-  data: Record<string, unknown>;
-  where: SQL | undefined;
-}): Promise<void> {
-  if (is(db, PgDatabase)) {
-    await db.update(table).set(data).where(where);
-
-    return;
-  }
-
-  const writer: JobSQLiteWriter = db;
-
-  await writer.update(table).set(data).where(where);
-}
 
 async function claimJobRows({
   db,
@@ -214,7 +189,9 @@ function getJobCandidates({
       );
     }
   } else {
-    candidates = sql`select ${table.id} from ${table} where ${where}`;
+    candidates = where
+      ? sql`select ${table.id} from ${table} where ${where}`
+      : sql`select ${table.id} from ${table}`;
 
     if (orderBy.length) {
       candidates.append(
@@ -365,15 +342,10 @@ export function installSQLJobOperations({
   }
 
   database.updateJobs = async (args) => {
-    if (args.data.processing !== true) return updateJobs.call(database, args);
-
-    const context = getJobLeaseContext();
-
-    if (!context || context.payload !== adapter.payload) {
-      throw new Error('FrogBot job claims require an active jobs run for this runtime.');
-    }
+    if (!isJobClaim(args.data)) return updateJobs.call(database, args);
 
     const sort = args.sort ?? adapter.payload.collections['payload-jobs'].config.defaultSort;
+    const now = new Date().toISOString();
 
     const query = getJobQuery({
       adapter,
@@ -382,24 +354,15 @@ export function installSQLJobOperations({
         and: [
           ...(args.where ? [args.where] : []),
           ...(args.id !== undefined ? [{ id: { equals: args.id } }] : []),
-          { processing: { equals: false } },
+          unleased(now),
         ],
       },
     });
 
-    const fields = getJobClaimFields();
-    const data: Record<string, unknown> = {
-      ...args.data,
-      ...fields,
-      updatedAt: args.data.updatedAt ?? new Date().toISOString(),
-    };
-
-    if (!data.log || (Array.isArray(data.log) && !data.log.length)) delete data.log;
+    const data: Record<string, unknown> = { ...args.data, updatedAt: args.data.updatedAt ?? now };
 
     for (const key of Object.keys(data)) {
-      if (!(key in query.table)) {
-        throw new Error(`FrogBot job claims cannot write nested field "${key}".`);
-      }
+      if (!(key in query.table)) throw new Error(`FrogBot job claims cannot write "${key}".`);
     }
 
     const db = await getJobDatabase(adapter, args.req);
@@ -413,10 +376,11 @@ export function installSQLJobOperations({
       db,
       table: query.table,
       data,
-      where: and(eq(query.table.processing, false), inArray(query.table.id, sql`(${candidates})`)),
+      where: and(
+        or(isNull(query.table.processingUntil), lte(query.table.processingUntil, now)),
+        inArray(query.table.id, sql`(${candidates})`),
+      ),
     });
-
-    recordJobClaims(ids);
 
     adapter.lastWriteTimestamp = Date.now();
 
@@ -431,28 +395,12 @@ export function installSQLJobOperations({
         limit: 0,
         pagination: false,
         sort: Array.isArray(sort) ? [...sort] : sort,
-        where: { and: [{ id: { in: ids } }, { leaseOwner: { equals: fields.leaseOwner } }] },
+        where: {
+          and: [{ id: { in: ids } }, { processingToken: { equals: args.data.processingToken } }],
+        },
       },
     );
 
     return result.docs as Job[];
-  };
-
-  (database as JobLeaseDatabase)[jobLeaseOperations] = {
-    async update({ data, where, req }) {
-      if (req.payload !== adapter.payload) {
-        throw new Error('FrogBot job lease updates require a request for this runtime.');
-      }
-
-      const query = getJobQuery({ adapter, where });
-
-      if (query.joins.length) throw new Error('FrogBot job lease predicates must use job fields.');
-
-      const db = await getJobDatabase(adapter, req);
-
-      await updateJobRows({ db, table: query.table, data, where: query.where });
-
-      adapter.lastWriteTimestamp = Date.now();
-    },
   };
 }

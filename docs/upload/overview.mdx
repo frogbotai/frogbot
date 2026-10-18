@@ -26,7 +26,7 @@ keywords: uploads, images, media, overview, documentation, Content Management Sy
 
 **By simply enabling Upload functionality on a Collection, FrogBot will automatically transform your Collection into a robust file management / storage solution. The following modifications will be made:**
 
-1. `filename`, `mimeType`, and `filesize` fields will be automatically added to your Collection. Optionally, if you pass `imageSizes` to your Collection's Upload config, a [`sizes`](#image-sizes) array will also be added containing auto-resized image sizes and filenames.
+1. `filename`, `mimeType`, and `filesize` fields will be automatically added to your Collection. Optionally, if you declare image sizes as `variants` on [`sharpTransformer`](#image-sizes), a [`variants`](#image-sizes) group will also be added containing auto-resized image sizes and filenames.
 1. The Admin Panel will modify its built-in `List` component to show a thumbnail for each upload within the List View
 1. The Admin Panel will modify its `Edit` view(s) to add a new set of corresponding Upload UI which will allow for file upload
 1. The `create`, `update`, and `delete` Collection operations will be modified to support file upload, re-upload, and deletion
@@ -49,30 +49,6 @@ export const Media: CollectionConfig = {
   slug: 'media',
   upload: {
     staticDir: 'media',
-    imageSizes: [
-      {
-        name: 'thumbnail',
-        width: 400,
-        height: 300,
-        position: 'centre',
-      },
-      {
-        name: 'card',
-        width: 768,
-        height: 1024,
-        position: 'centre',
-      },
-      {
-        name: 'tablet',
-        width: 1024,
-        // By specifying `undefined` or leaving a height undefined,
-        // the image will be sized to a certain width,
-        // but it will retain its original aspect ratio
-        // and calculate a height automatically.
-        height: undefined,
-        position: 'centre',
-      },
-    ],
     adminThumbnail: 'thumbnail',
     mimeTypes: ['image/*'],
   },
@@ -87,21 +63,15 @@ export const Media: CollectionConfig = {
 
 ### Collection Upload Options
 
-Set `upload: true` for the defaults, or pass an object with these options. Image processing options require `sharp`; see [Image Sizes](#image-sizes).
+Set `upload: true` for the defaults, or pass an object with these options. Image processing (sizes, resizing, format, trim, metadata, crop and focal point) is configured on `sharpTransformer`; see [Image Sizes](#image-sizes).
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `staticDir` | `string` | The collection slug | Folder where files are stored: an absolute path, or a path relative to the server's working directory (`/app` in the template `Dockerfile`). Ignored when `disableLocalStorage` is `true`. |
 | `mimeTypes` | `string[]` | Any type | MIME types or wildcards the file picker offers and the server accepts, such as `['image/*', 'application/pdf']`. Setting it also skips the [restricted file type](#restricted-file-types) check. [More](#mimetypes) |
-| `imageSizes` | `ImageSize[]` | None | Resized copies to generate for each uploaded image. Adds a `sizes` field to the collection. [More](#image-sizes) |
-| `adminThumbnail` | `string \| ({ doc }) => string \| false \| null` | The original file, for images | Image size name, or a function returning a full URL, used for thumbnails in the Admin Panel. [More](#admin-thumbnails) |
-| `formatOptions` | `{ format, options? }` | None | Converts the original image with `sharp`'s [`toFormat`](https://sharp.pixelplumbing.com/api-output#toformat). Each image size has its own `formatOptions`. |
-| `resizeOptions` | `ResizeOptions` | None | `sharp` [resize options](https://sharp.pixelplumbing.com/api-resize) applied to the original image. |
-| `trimOptions` | `TrimOptions` | None | `sharp` [trim options](https://sharp.pixelplumbing.com/api-resize#trim) applied to the original image. |
-| `constructorOptions` | `SharpOptions` | None | `sharp` [constructor options](https://sharp.pixelplumbing.com/api-constructor/) used when the original image is loaded. |
-| `withMetadata` | `boolean \| ({ metadata, req }) => Promise<boolean>` | `false` | Keeps image metadata, such as EXIF, in processed files. A function receives the image metadata and the request and returns whether to keep it. |
-| `crop` | `boolean` | `true` | Shows the cropping tool in the Admin Panel. Cropping runs before resizing. [More](#crop-and-focal-point-selector) |
-| `focalPoint` | `boolean` | `true` | Shows the focal point selector in the Admin Panel. It appears only when `imageSizes` or `resizeOptions` is set. [More](#crop-and-focal-point-selector) |
+| `adminThumbnail` | `string \| ({ doc }) => string \| false \| null` | The original file, for images | Variant name, or a function returning a full URL, used for thumbnails in the Admin Panel. [More](#admin-thumbnails) |
+| `crop` | `boolean` | `true` | Shows the cropping tool in the Admin Panel. A `crop` set on `sharpTransformer` for this collection replaces it. [More](#crop-and-focal-point-selector) |
+| `focalPoint` | `boolean` | `true` | Shows the focal point selector in the Admin Panel. A `focalPoint` set on `sharpTransformer` for this collection replaces it. [More](#crop-and-focal-point-selector) |
 | `bulkUpload` | `boolean` | `true` | Allows uploading several files at once from the list view. |
 | `filesRequiredOnCreate` | `boolean` | `true` | Requires a file when a document is created. |
 | `hideFileInputOnCreate` | `boolean` | `false` | Hides the file input when creating a document in the Admin Panel, for files your code generates. |
@@ -118,7 +88,6 @@ Set `upload: true` for the defaults, or pass an object with these options. Image
 | `allowRestrictedFileTypes` | `boolean` | `false` | Allows [restricted file types](#restricted-file-types). Has no effect when `mimeTypes` is set, because that already skips the check. |
 | `admin` | `{ components?: { controls?: FrogBotComponent[] } }` | None | `controls` adds components beside the Select file and Paste URL buttons in the upload area. |
 | `adapter` | `string` | None | Name of the storage adapter handling this collection. Storage adapters set it; you don't need to. |
-| `requiresClientUploadReceipt` | `boolean` | `false` | Requires a server-issued receipt before client-upload handlers run. Storage adapters with client uploads set it; you don't need to. |
 
 ### FrogBot-wide Upload Options
 
@@ -126,6 +95,7 @@ The root `upload` option configures how multipart requests are parsed for every 
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
+| `transformers` | `UploadTransformer[]` | `[]` | File transformers that process uploads and serve transformed files, in order, such as `sharpTransformer()`. See [Image Sizes](#image-sizes). |
 | `limits` | `Limits` | See [Upload limits](#upload-limits) | Size and count limits for each request. |
 | `requestSizeLimit` | `number` | `52428800` (50 MB) | Maximum size in bytes of the whole multipart request, including files, fields, and boundaries. Larger requests fail with HTTP 413. Must be a non-negative safe integer, or `Infinity` to disable the check. |
 | `abortOnLimit` | `boolean` | `true` | When a file exceeds `limits.fileSize`, fail the request with HTTP 413 and `responseOnLimit`. When `false`, the file is truncated and marked `truncated: true`. |
@@ -204,31 +174,57 @@ The filename from here will also be threaded to image sizes if they're enabled.
 
 ## Image Sizes
 
-If you specify an array of `imageSizes` to your `upload` config, FrogBot will automatically crop and resize your uploads to fit each of the sizes specified by your config.
+If you declare image sizes, FrogBot will automatically crop and resize your uploads to fit each of them. The Admin Panel shows every size, with its width, height, and file size.
 
-The Admin Panel will also automatically display all available files, including width, height, and file size, for each of your uploaded files.
-
-Behind the scenes, FrogBot relies on [`sharp`](https://sharp.pixelplumbing.com/api-resize#resize) to perform its image resizing. You can specify additional options for `sharp` to use while resizing your images.
-
-Image processing requires the `sharp` package. Install it and pass it to your config with the root `sharp` option; without it, FrogBot stores uploads but skips `imageSizes`, `resizeOptions`, `formatOptions`, `trimOptions`, cropping, and focal points.
+Image sizes, declared as `variants`, and the rest of the image options are configured on `sharpTransformer` from [`@frogbotai/transformer-sharp`](https://www.npmjs.com/package/@frogbotai/transformer-sharp), which resizes with [`sharp`](https://sharp.pixelplumbing.com/api-resize#resize). The blank template installs it. Without a transformer, FrogBot stores uploads as they are and shows no crop or focal point tools.
 
 ```ts
+import { sharpTransformer } from '@frogbotai/transformer-sharp'
 import { buildConfig } from 'frogbot'
-import sharp from 'sharp'
 
 export default buildConfig({
   // required options omitted
-  sharp,
+  upload: {
+    transformers: [
+      sharpTransformer({
+        collections: {
+          media: {
+            variants: [
+              { name: 'thumbnail', width: 400, height: 300, position: 'centre' },
+              { name: 'card', width: 768, height: 1024, position: 'centre' },
+              // Without a height, the image keeps its aspect ratio.
+              { name: 'tablet', width: 1024, position: 'centre' },
+            ],
+          },
+        },
+      }),
+    ],
+  },
 })
 ```
 
-### Image size options
-
-Each entry in `imageSizes` is an `ImageSize`. Besides the options below, it accepts every `sharp` [resize option](https://sharp.pixelplumbing.com/api-resize#resize).
+Each entry in `collections` accepts these options:
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `string` | Required | Key of this size in the document's `sizes` field. |
+| `variants` | `ImageSize[]` | None | Resized copies to generate for each uploaded image. Adds a `variants` group to the collection. |
+| `formatOptions` | `{ format, options? }` | None | Converts the original image with `sharp`'s [`toFormat`](https://sharp.pixelplumbing.com/api-output#toformat). Each variant has its own `formatOptions`. |
+| `resizeOptions` | `ResizeOptions` | None | `sharp` [resize options](https://sharp.pixelplumbing.com/api-resize) applied to the original image. |
+| `trimOptions` | `TrimOptions` | None | `sharp` [trim options](https://sharp.pixelplumbing.com/api-resize#trim) applied to the original image. |
+| `constructorOptions` | `SharpOptions` | None | `sharp` [constructor options](https://sharp.pixelplumbing.com/api-constructor/) used when the original image is loaded. |
+| `withMetadata` | `boolean \| ({ metadata, req }) => Promise<boolean>` | `false` | Keeps image metadata, such as EXIF, in processed files. |
+| `crop` | `boolean` | `true` | Shows the cropping tool in the Admin Panel. [More](#crop-and-focal-point-selector) |
+| `focalPoint` | `boolean` | `true` | Shows the focal point selector in the Admin Panel. [More](#crop-and-focal-point-selector) |
+
+`sharpTransformer({ dynamic: true })` also resizes on request, through `?width=` and `?height=` on the file URL. Registering any transformer changes the file endpoint: a file is served only when it belongs to an upload document.
+
+### Image size options
+
+Each entry in `variants` is an `ImageSize`. Besides the options below, it accepts every `sharp` [resize option](https://sharp.pixelplumbing.com/api-resize#resize).
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Required | Key of this size in the document's `variants` group. |
 | `width` | `number` | None | Target width in pixels. With only one of `width` or `height`, the other follows the original aspect ratio. |
 | `height` | `number` | None | Target height in pixels. |
 | `fit` | `'cover' \| 'contain' \| 'fill' \| 'inside' \| 'outside'` | `'cover'` | How the image fits both dimensions. |
@@ -241,7 +237,7 @@ Each entry in `imageSizes` is an `ImageSize`. Besides the options below, it acce
 | `formatOptions` | `{ format, options? }` | The original format | Converts this size with `sharp`'s [`toFormat`](https://sharp.pixelplumbing.com/api-output#toformat). |
 | `trimOptions` | `TrimOptions` | None | `sharp` [trim options](https://sharp.pixelplumbing.com/api-resize#trim) applied after resizing. |
 | `generateImageName` | `({ originalName, sizeName, extension, width, height }) => string` | `` `${originalName}-${width}x${height}.${extension}` `` | Builds the file name of the resized image. [More](#custom-file-name-per-size) |
-| `admin` | `{ disableGroupBy?, disableListColumn?, disableListFilter? }` | All `false` | Hides this size's fields from list view controls. [More](#admin-list-view-options) |
+| `admin` | `{ disabled?: { groupBy?, column?, filter? } }` | All `false` | Hides this size's fields from list view controls. [More](#admin-list-view-options) |
 | `crop` | `string` | None | Deprecated and has no effect. Use `position`. |
 
 When a document has a focal point and the size's aspect ratio differs from the image, FrogBot crops around the focal point instead of applying `position`, unless `fit` is `'contain'` or `'inside'`.
@@ -256,18 +252,20 @@ Each image size also supports `admin` options to control whether it appears in t
   width: 400,
   height: 300,
   admin: {
-    disableGroupBy: true, // hide from list view groupBy options
-    disableListColumn: true, // hide from list view columns
-    disableListFilter: true, // hide from list view filters
+    disabled: {
+      groupBy: true, // hide from list view groupBy options
+      column: true, // hide from list view columns
+      filter: true, // hide from list view filters
+    },
   },
 }
 ```
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `disableGroupBy` | `boolean` | `false` | Hides this image size from the list view's group-by options. |
-| `disableListColumn` | `boolean` | `false` | Hides this image size from the list view's selectable columns. |
-| `disableListFilter` | `boolean` | `false` | Hides this image size from the list view's filters. |
+| `disabled.groupBy` | `boolean` | `false` | Hides this image size from the list view's group-by options. |
+| `disabled.column` | `boolean` | `false` | Hides this image size from the list view's selectable columns. |
+| `disabled.filter` | `boolean` | `false` | Hides this image size from the list view's filters. |
 
 This is useful for hiding large or rarely used image sizes from the list view UI while still keeping them available in the API.
 
@@ -313,13 +311,13 @@ This function receives the original file name, the resize name, the extension, h
 
 ## Crop and Focal Point Selector
 
-This feature is only available for image file types.
+This feature is only available for image file types, with `sharpTransformer` registered.
 
-Setting `crop: false` and `focalPoint: false` in your Upload config disables the respective selector in the Admin Panel.
+Setting `crop: false` and `focalPoint: false` on `sharpTransformer({ collections })` for a collection disables the respective selector in the Admin Panel.
 
-Image cropping occurs before any resizing, the resized images will therefore be generated from the cropped image (**not** the original image).
+Cropping changes the main image. Variants are generated from the retained original, so cropping the main image does not also crop them. The focal point controls how variants are framed.
 
-If no resizing options are specified (`imageSizes` or `resizeOptions`), the focal point selector will not be displayed.
+The focal point selector is shown only when the collection has `variants` or image adjustments (`resizeOptions`, `formatOptions`, `trimOptions`, `constructorOptions`, or `withMetadata`), or when `focalPoint` is `true`.
 
 ## Disabling Local Upload Storage
 
@@ -339,7 +337,7 @@ provide your own admin thumbnail using **upload.adminThumbnail**.
 
 You can specify how FrogBot retrieves admin thumbnails for your upload-enabled Collections with one of the following:
 
-1. `adminThumbnail` as a **string**, equal to one of your provided image size names.
+1. `adminThumbnail` as a **string**, equal to one of your variant names (declared on `sharpTransformer`).
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -350,20 +348,6 @@ export const Media: CollectionConfig = {
     // highlight-start
     adminThumbnail: 'small',
     // highlight-end
-    imageSizes: [
-      {
-        name: 'small',
-        fit: 'cover',
-        height: 300,
-        width: 900,
-      },
-      {
-        name: 'large',
-        fit: 'cover',
-        height: 600,
-        width: 1800,
-      },
-    ],
   },
 }
 ```
@@ -424,9 +408,9 @@ Wrap `UploadField` from `@frogbotai/ui/admin` and forward the provided props, in
 'use client'
 
 import { UploadField } from '@frogbotai/ui/admin'
-import type { UploadFieldClientComponent } from 'frogbot'
+import type { UploadFieldClientProps } from 'frogbot'
 
-export const CustomUploadField: UploadFieldClientComponent = (props) => {
+export const CustomUploadField = (props: UploadFieldClientProps) => {
   return (
     <div>
       <p>Select an image for the post.</p>
@@ -591,6 +575,7 @@ const localFilePath = path.resolve(__dirname, filename)
 
 await frogbot.create({
   collection: 'media',
+  overrideAccess: true,
   data: {
     alt,
   },
@@ -604,7 +589,7 @@ The `data` property should still include all the required fields of your `media`
   **Important:**
 
 Remember that all custom hooks attached to the `media` collection will still trigger.
-Ensure that files match the specified mimeTypes or sizes defined in the collection's `formatOptions` or custom `hooks`.
+Ensure that files match the collection's `mimeTypes`, the `formatOptions` set on `sharpTransformer`, or your own `hooks`.
 
 </Banner>
 

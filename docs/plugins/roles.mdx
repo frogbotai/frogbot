@@ -158,11 +158,12 @@ The resolver must return listed slugs. Its result is cached once per request and
 
 ## Bootstrap access
 
-The plugin does not promote the first user. Bootstrap privileged assignments explicitly with FrogBot's Local API from a seed or migration, which bypasses access control by default:
+The plugin does not promote the first user. Bootstrap privileged assignments explicitly with FrogBot's Local API from a seed or migration, with `overrideAccess: true`:
 
 ```ts
 await frogbot.update({
   collection: 'users',
+  overrideAccess: true,
   id: ownerUserId,
   data: { roles: ['admin'] },
 })
@@ -173,6 +174,7 @@ You can also assign roles when seeding users:
 ```ts
 await frogbot.create({
   collection: 'users',
+  overrideAccess: true,
   data: { email, password, roles: ['admin'] },
 })
 ```

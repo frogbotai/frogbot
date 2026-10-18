@@ -19,7 +19,7 @@
     height: 100%;
     align-items: center;
     justify-content: center;
-    background: var(--theme-base-200);
+    background: var(--fb-theme-base-200);
     border-radius: 50%;
   }
 }

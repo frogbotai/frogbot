@@ -1,8 +1,8 @@
 import type { WidgetServerProps } from 'frogbot';
 
-import type { ActivityWidget, WelcomeWidget } from '../frogbot-types';
+import type { LabActivityWidget, LabWelcomeWidget } from '../frogbot-types';
 
-export function WelcomeWidgetComponent({ req, widgetData }: WidgetServerProps<WelcomeWidget>) {
+export function WelcomeWidgetComponent({ req, widgetData }: WidgetServerProps<LabWelcomeWidget>) {
   return (
     <section data-testid="welcome-widget">
       <h2>{widgetData?.heading || 'Welcome'}</h2>
@@ -11,7 +11,7 @@ export function WelcomeWidgetComponent({ req, widgetData }: WidgetServerProps<We
   );
 }
 
-export function ActivityWidgetComponent({ req }: WidgetServerProps<ActivityWidget>) {
+export function ActivityWidgetComponent({ req }: WidgetServerProps<LabActivityWidget>) {
   return (
     <section data-testid="activity-widget">
       <h2>Recent activity</h2>

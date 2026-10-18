@@ -83,7 +83,9 @@ describe('UI component destinations', () => {
     expect(fs.statSync(resolved).isFile()).toBe(true);
     expect(uiComponentExports[entry.source]).toEqual(new Set(entry.included));
 
-    const overrides = entry.bridge === 'client' ? adminOverrides : [];
+    const overrides = (
+      entry.bridge === 'shared' ? [] : adminOverrides[entry.bridge as keyof typeof adminOverrides]
+    ).filter((name: string) => entry.included.includes(name));
 
     expect(new Set([...bridge.keys(), ...overrides])).toEqual(uiComponentExports[entry.source]);
 
@@ -96,7 +98,7 @@ describe('UI component destinations', () => {
       expect(component).toEqual({ path: entry.destination, exportName: name });
       expect(requireFromUI.resolve(component.path)).toBe(resolved);
       expect(bridgeExports.get(name)).toMatch(
-        adminOverrides.includes(name) ? /^\.\.\// : new RegExp(`^${entry.source}$`),
+        overrides.includes(name) ? /^\.\.\// : new RegExp(`^${entry.source}$`),
       );
       expect(upstream.has(name)).toBe(true);
     }
@@ -176,10 +178,10 @@ describe('UI component destinations', () => {
     const config = {
       admin: {
         dependencies: {
-          '@payloadcms/ui/shared#formatAdminURL': {
+          '@payloadcms/ui/shared#formatDate': {
             type: 'function',
             path: '@payloadcms/ui/shared',
-            exportName: 'formatAdminURL',
+            exportName: 'formatDate',
           },
           '@payloadcms/ui#Button': { type: 'component', path: '@payloadcms/ui#Button' },
         },
@@ -189,10 +191,10 @@ describe('UI component destinations', () => {
     rewriteComponentPaths(config);
 
     expect(config.admin.dependencies).toEqual({
-      '@frogbotai/ui/admin/shared#formatAdminURL': {
+      '@frogbotai/ui/admin/shared#formatDate': {
         type: 'function',
         path: '@frogbotai/ui/admin/shared',
-        exportName: 'formatAdminURL',
+        exportName: 'formatDate',
       },
       '@payloadcms/ui#Button': { type: 'component', path: '@payloadcms/ui#Button' },
     });

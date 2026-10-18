@@ -5,7 +5,6 @@ const mocks = vi.hoisted(() => ({
   RootLayout: vi.fn(() => null),
   connection: vi.fn(() => Promise.resolve()),
   handleServerFunctions: vi.fn((args: unknown) => Promise.resolve(args)),
-  setServerAdapter: vi.fn(),
 }));
 
 vi.mock('@payloadcms/next/layouts', () => ({
@@ -13,24 +12,21 @@ vi.mock('@payloadcms/next/layouts', () => ({
   handleServerFunctions: mocks.handleServerFunctions,
 }));
 
-vi.mock('@frogbotai/ui/admin', () => ({ RouterAdapterProvider: () => null }));
+vi.mock('@frogbotai/ui/admin', () => ({ shallowRouteState: 'frogbotShallowRoute' }));
 vi.mock('next/server.js', () => ({ connection: mocks.connection }));
-vi.mock('@frogbotai/ui/admin/rsc', () => ({ setServerAdapter: mocks.setServerAdapter }));
 
 const { RootLayout, handleServerFunctions } =
   await import('../../../../packages/next/src/exports/layouts.js');
 
-const { NextRouterAdapter } =
+const { ShallowRouteListener } =
   await import('../../../../packages/next/src/adapters/router.client.js');
-
-const { nextServerAdapter } = await import('../../../../packages/next/src/adapters/server.js');
 
 async function payloadLayout(rendered: ReturnType<typeof RootLayout>) {
   const element = await rendered;
 
-  expect(element.type).toBe(NextRouterAdapter);
+  expect(element.type).toBe(mocks.RootLayout);
 
-  return element.props.children;
+  return element;
 }
 
 function makeConfig() {
@@ -43,11 +39,19 @@ function makeConfig() {
 }
 
 describe('@frogbotai/next layouts', () => {
-  it('installs the Next server adapter when the layouts load', () => {
-    expect(mocks.setServerAdapter).toHaveBeenCalledWith(nextServerAdapter);
+  it("RootLayout mounts the shallow-route listener inside Payload's layout", async () => {
+    const { config } = makeConfig();
+    const children = 'page';
+
+    const element = await payloadLayout(
+      RootLayout({ config, importMap: {}, serverFunction: vi.fn(), children }),
+    );
+
+    expect(element.props.children[0].type).toBe(ShallowRouteListener);
+    expect(element.props.children[1]).toBe(children);
   });
 
-  it('RootLayout opts into dynamic rendering before it renders the router adapter', async () => {
+  it('RootLayout opts into dynamic rendering before it renders', async () => {
     const { config } = makeConfig();
     let resolveConnection = () => {};
 
@@ -81,7 +85,6 @@ describe('@frogbotai/next layouts', () => {
       }),
     );
 
-    expect(element.type).toBe(mocks.RootLayout);
     expect(element.props.importMap).toEqual({});
     expect(element.props.serverFunction).toBe(serverFunction);
     await expect(element.props.config).resolves.toBe(payloadConfig);

@@ -88,8 +88,8 @@ test('the tasks List shows the channel badge only where a channel is set', async
 
   await page.goto(`/collections/${tasksSlug}?columns=${columns}`);
 
-  const markedRow = page.getByRole('row', { name: new RegExp(marked.title) });
-  const plainRow = page.getByRole('row', { name: new RegExp(plain.title) });
+  const markedRow = page.getByRole('row').filter({ hasText: new RegExp(marked.title) });
+  const plainRow = page.getByRole('row').filter({ hasText: new RegExp(plain.title) });
 
   await expectBadge(markedRow.locator('td.cell-channel'));
   await expect(plainRow.locator('td.cell-channel')).toHaveCount(1);
@@ -101,7 +101,7 @@ test('the chats List shows the channel badge', async ({ page }) => {
 
   await page.goto(`/collections/${chatsSlug}`);
 
-  const row = page.getByRole('row', { name: new RegExp(channelChat.title) });
+  const row = page.getByRole('row').filter({ hasText: new RegExp(channelChat.title) });
 
   await expectBadge(row.locator('td.cell-channel'));
 });

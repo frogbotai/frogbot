@@ -1,4 +1,5 @@
 import {
+  type AuthenticatedUser,
   AuthenticationError,
   checkLoginPermission,
   commitTransaction,
@@ -6,8 +7,8 @@ import {
   initTransaction,
   jwtSign,
   resetLoginAttempts,
-  type TypedUser,
   UnverifiedEmail,
+  type User,
 } from 'payload';
 import { addSessionToUser } from 'payload/shared';
 
@@ -27,7 +28,7 @@ type SessionIssueArgs = {
   userId: string | number;
 };
 
-type SessionIssueResult = { user: TypedUser; token: string; exp: number };
+type SessionIssueResult = { user: AuthenticatedUser; token: string; exp: number };
 
 export async function issueSession({
   req,
@@ -102,7 +103,7 @@ export async function issueSession({
       cleanups.add(revoke);
       signal.throwIfAborted();
 
-      const authoritative = await payload.db.findOne<TypedUser>({
+      const authoritative = await payload.db.findOne<User>({
         collection: collectionSlug,
         req: dbReq,
         where: {
@@ -123,7 +124,7 @@ export async function issueSession({
       subjectId = authoritative.id;
       const email = authoritative.email;
       if (typeof email !== 'string' || !email) throw new AuthenticationError(payloadReq.t);
-      const identify = (user: TypedUser): TypedUser => ({
+      const identify = (user: User): AuthenticatedUser => ({
         ...user,
         id: subjectId,
         email,
@@ -134,7 +135,7 @@ export async function issueSession({
       const sessionUser = {
         id: subjectId,
         sessions: structuredClone(authoritative.sessions ?? []),
-      } as TypedUser;
+      } as User;
 
       const previousSids = new Set(sessionUser.sessions?.map((session) => session.id));
       const sessionPayload = Object.create(payload) as typeof payload;
@@ -225,7 +226,7 @@ export async function issueSession({
         'loginAttempts',
         'lockUntil',
       ]) {
-        delete user[field];
+        Reflect.deleteProperty(user, field);
       }
 
       payloadReq.user = user;

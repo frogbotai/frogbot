@@ -8,13 +8,13 @@ import {
   ListQueryProvider,
   TableColumnsProvider,
   useConfig,
+  usePathname,
   useStepNav,
   useTranslation,
 } from '@payloadcms/ui';
 import type { Column, ListQuery } from 'payload';
 import { type ReactNode, useEffect } from 'react';
 
-import { useRouterAdapter } from '../adapters/router.js';
 import { ViewControls } from './controls/ViewControls.client.js';
 
 export type CollectionViewShellClientProps = {
@@ -57,10 +57,9 @@ export function CollectionViewShellClient({
   const { i18n } = useTranslation();
   const { getEntityConfig } = useConfig();
   const { setStepNav } = useStepNav();
-  const { pathname } = useRouterAdapter();
+  const pathname = usePathname();
   const collectionConfig = getEntityConfig({ collectionSlug });
   const pluralLabel = getTranslation(collectionConfig.labels.plural, i18n);
-  const bulkUploadCompatibility = { openBulkUpload: () => undefined };
 
   useEffect(() => {
     setStepNav([{ label: pluralLabel }]);
@@ -79,14 +78,12 @@ export function CollectionViewShellClient({
           isBulkUploadEnabled={false}
           newDocumentURL={newDocumentURL}
           smallBreak
-          {...bulkUploadCompatibility}
         />
         {Actions}
         <ViewControls
           collectionConfig={collectionConfig}
           collectionSlug={collectionConfig.slug}
           enableColumns={Boolean(columnState)}
-          enableGroupBy={false}
           listMenuItems={listMenuItems}
           enableSort={enableSort}
           manualSortField={manualSortField}

@@ -144,6 +144,7 @@ The following options are available:
 | `usageLog` | `boolean` | `false` | **FrogBot** — adopts this collection as the AI usage log when `ai` is configured. At most one collection may be marked. Without a marker, FrogBot adds a `usage-logs` collection. |
 | `admin` | `CollectionAdminConfig` | — | Admin panel options. [More details](#admin-options). |
 | `access` | `CollectionAccess` | Signed-in users only | Access control functions for each operation. [More details](/access-control/collections). |
+| `authorship` | `boolean \| { createdBy?: boolean; updatedBy?: boolean }` | `true` | Records the user who created and last updated each document in `createdBy` and `updatedBy`. `false` turns both off; an object turns each off. [More details](/fields/default-fields). |
 | `auth` | `boolean \| AuthConfig` | `false` | Set to `true` for default authentication or pass an auth config object. Use `signIn` to add [OAuth login methods](/authentication/sign-in). [More details](/authentication/overview#config-options). |
 | `custom` | `Record<string, any>` | `{}` | Extension point for your own data, such as plugin settings. Server only. |
 | `dbName` | `string \| (({ tableName }) => string)` | Derived from `slug` | Table or collection name in the database. Changing it on existing data needs a migration. |
@@ -154,8 +155,10 @@ The following options are available:
 | `disableDuplicate` | `boolean` | `false` | Hides the **Duplicate** button and makes `duplicate` fail in every API. |
 | `enableQueryPresets` | `boolean` | `false` | Lets users save and share list filters, columns, and sorts for this collection. Configure access with the root [`queryPresets`](/configuration/overview#query-presets). |
 | `endpoints` | `Endpoint[]` | — | Custom REST routes under this collection's path. [More details](/rest-api/overview#custom-endpoints). |
-| `folders` | `boolean \| { browseByFolder?: boolean }` | `false` | Adds a folder field and folder navigation to this collection. `browseByFolder` (default `true`) includes it in the Browse by folder view. See [root folder options](/configuration/overview#folders). |
-| `forceSelect` | `SelectType` | — | Fields always selected, whatever `select` a request passes. Use it for fields that hooks or access control read. [More details](/queries/select#always-selected-fields). |
+| `hierarchy` | `boolean \| HierarchyConfig` | `false` | Makes records nest under each other, with parent fields and generated paths. `folders` and `tags` are presets of it. |
+| `tags` | `boolean \| TagsConfig` | `false` | Makes this collection a tag tree that other collections link to with `createTagField({ relationTo })`. Can't be combined with `folders` or `hierarchy`. |
+| `folders` | `boolean \| FoldersConfig` | `false` | Makes this collection a folder tree: each record can sit inside another. Other collections file records into it with `createFolderField({ relationTo })`. See [Folders](/upload/files#folders). |
+| `select` | `({ operation, req, select }) => SelectType \| undefined` | — | Returns the `select` every read uses, replacing the caller's. Use it for fields that hooks or access control read. [More details](/queries/select#entity-level-select-config). |
 | `graphQL` | `false \| CollectionGraphQL` | — | GraphQL names, or `false` to leave this collection out of the schema. [More details](#graphql). |
 | `hooks` | `CollectionHooks` | — | Lifecycle hooks. [More details](/hooks/collections). |
 | `indexes` | `CompoundIndex[]` | `[]` | Compound indexes on two or more fields, to speed up queries or enforce uniqueness. [More details](/database/indexes). |
@@ -167,7 +170,8 @@ The following options are available:
 | `trash` | `boolean` | `false` | Turns on soft deletes. [More details](/trash/overview). |
 | `typescript` | `{ interface?: string }` | Derived from `slug` | Name of the generated TypeScript interface. |
 | `upload` | `boolean \| UploadConfig` | `false` | Turns on file uploads. [More details](/upload/overview). |
-| `versions` | `boolean \| VersionsConfig` | `false` | Turns on versions and drafts. [More details](/versions/overview#collection-config). |
+| `llmInstructions` | `string` | — | Read-only Markdown instructions for agents, included in this collection's MCP schema. Editors can add their own in the admin's **Edit agent instructions**. |
+| `versions` | `boolean \| VersionsConfig` | `true`, or `false` with `auth` | Keeps a version history of each document; pass an object with `drafts` to add drafts. Collections with `auth` default to `false`, since a version would copy password hashes and sessions. [More details](/versions/overview#collection-config). |
 | `_sanitized` | `boolean` | — | Internal. Set during sanitization; don't set it yourself. |
 
 ### Fields
@@ -213,18 +217,16 @@ The following options are available:
 | `custom` | `Record<string, any>` | `{}` | Your own data, sent to the admin panel's client config. |
 | `description` | `string \| Record<string, string> \| (({ t }) => string)` | — | Text shown below the collection label in the List View. It's also used as the JSDoc comment on the generated type. Use `components.Description` to render a component instead. |
 | `disableCopyToLocale` | `boolean` | `false` | Hides the **Copy to Locale** button in the Edit View. Only applies when localization is on. |
-| `enableListViewSelectAPI` | `boolean` | `false` | Experimental. Makes the List View select only its active columns. [More details](#list-view-select-api). |
 | `enableRichTextLink` | `boolean` | `true` | Lets Rich Text links point to documents in this collection. |
 | `enableRichTextRelationship` | `boolean` | `true` | Lets Rich Text relationship blocks reference documents in this collection. |
 | `formatDocURL` | `(args) => string \| null` | Default edit URL | Customizes document links in the List View. [More details](#format-document-urls). |
 | `group` | `string \| Record<string, string> \| false \| null` | Collections group | Text or localized object used to group the navigation link. `null` makes it a top-level link; `false` hides the link but keeps its routes. |
-| `groupBy` | `boolean` | See description | Beta. Lets the List View group documents by a field. FrogBot turns it on when `views` has a list view whose `groupBy` isn't `false`, or any board view. |
 | `hidden` | `boolean \| (({ user }) => boolean)` | `false` | Leaves this collection out of navigation and admin routes. A function receives the current user. |
-| `hideAPIURL` | `boolean` | `false` | Hides the API URL in the Edit View. |
 | `icon` | `AdminIcon` | `'people'` for auth collections | Built-in kebab-case icon name or component path for the navigation link. See [Collection icons](/admin/admin-navigation#collection-icons-and-placement). |
 | `livePreview` | `LivePreviewConfig` | — | Live Preview for this collection. See [Live Preview](/live-preview/overview). |
 | `meta` | `MetaConfig` | — | Page metadata for this collection's admin pages. |
 | `preview` | `(doc, { locale, req, token }) => string \| null \| Promise<string \| null>` | — | Builds a preview URL that points to your app. `req` is a `FrogBotRequest` with `req.frogbot`. |
+| `useAsThumbnail` | `string` | The first upload field | Top-level upload field used as the document thumbnail in grid views and the Recents and Pinned dashboard widgets. A document icon shows when there's none. |
 | `useAsTitle` | `string` | `'id'` | Top-level field used as the document title throughout the admin panel. |
 | `views` | `CollectionView[]` | One list view | Collection views, such as list, board, calendar, and custom layouts. [More details](#collection-views). |
 
@@ -307,7 +309,6 @@ These shell slots are shared by list, board, calendar, and custom views. Each va
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
 | `type` | `'list'` | Yes | Selects the table-based list view. |
-| `groupBy` | `boolean` | No; `true` | Shows the **Group by** control in the list controls. Set `false` to hide it. |
 | `components` | `ViewComponents & ListViewComponents` | No | Adds shared shell slots and list table slots. |
 
 **ListView components**
@@ -402,6 +403,7 @@ Configure these slots under `admin.components.edit`. See [Edit View](/custom-com
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
+| `BeforeDocumentMeta` | `FrogBotComponent[]` | `[]` | Inject custom components before the document's meta row, where FrogBot's folder button sits. |
 | `beforeDocumentControls` | `FrogBotComponent[]` | `[]` | Inject custom components before the Save / Publish buttons. |
 | `editMenuItems` | `FrogBotComponent[]` | `[]` | Inject custom components within the 3-dot menu dropdown located in the document controls bar. |
 | `SaveButton` | `FrogBotComponent` | Built-in button | Replace the default Save Button within the Edit View. [Drafts](/versions/drafts) must be disabled. |
@@ -533,11 +535,7 @@ export const Posts: CollectionConfig = {
 
 ## List View Select API
 
-Set `admin.enableListViewSelectAPI` to `true` to make the List View use the [Select API](/queries/select) to query only the _active_ columns as opposed to entire documents. This greatly improves performance, especially for collections with large documents or many fields.
-
-This may cause unexpected behavior in some cases, such as when using hooks that rely on the full document data.
-
-For example, if your component relies on a "title" field, this field will not be populated if the column is inactive:
+The List View uses the [Select API](/queries/select) to query only the _active_ columns, not whole documents. This keeps large collections fast, but a hook that relies on another field only gets it while that field's column is shown:
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -551,7 +549,7 @@ export const Posts: CollectionConfig = {
       type: 'text',
       hooks: {
         afterRead: [
-          ({ doc }) => doc.title, // The `title` field will not be populated by default, unless the column is active
+          ({ doc }) => doc.title, // `title` is only populated while its column is active
         ],
       },
     },
@@ -559,12 +557,12 @@ export const Posts: CollectionConfig = {
 }
 ```
 
-To ensure title is always present, list it in [`forceSelect`](/queries/select#always-selected-fields) on your Collection Config:
+To keep `title` present, return it from a [`select` function](/queries/select#entity-level-select-config) on your Collection Config:
 
 ```ts
 export const Posts: CollectionConfig = {
   // ...
-  forceSelect: { title: true },
+  select: ({ select }) => (select ? { ...select, title: true } : undefined),
 }
 ```
 

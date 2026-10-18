@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => {
     attachRegisteredFrogBot: vi.fn((req: Record<string, unknown>) =>
       Object.assign(req, { frogbot }),
     ),
-    createLocalReq: vi.fn((options: { req?: Record<string, unknown> }) =>
+    createPayloadRequest: vi.fn((options: { req?: Record<string, unknown> }) =>
       Promise.resolve({ ...options.req }),
     ),
     executeAuthStrategies: vi.fn(() => Promise.resolve({ user: { id: 'user-1' } })),
@@ -98,11 +98,8 @@ vi.mock('@payloadcms/ui', () => ({
   withCondition: <T>(Component: T) => Component,
 }));
 
-vi.mock('@payloadcms/ui/elements/ColumnSelector', () => ({}));
-vi.mock('@payloadcms/ui/elements/GroupByBuilder', () => ({}));
 vi.mock('@payloadcms/ui/elements/NoListResults', () => ({ NoListResults: () => null }));
 vi.mock('@payloadcms/ui/elements/QueryPresets/QueryPresetBar', () => ({}));
-vi.mock('@payloadcms/ui/elements/SearchBar', () => ({}));
 vi.mock('@payloadcms/ui/elements/WhereBuilder', () => ({}));
 vi.mock('@payloadcms/ui/icons/Dots', () => ({}));
 
@@ -114,7 +111,6 @@ vi.mock('@payloadcms/ui/rsc', () => ({
 vi.mock('@payloadcms/ui/utilities/reduceFieldsToOptions', () => ({}));
 
 vi.mock('@frogbotai/ui/admin/rsc', async () => ({
-  ...(await import('../../../../packages/ui/src/admin/adapters/server.js')),
   ...(await import('../../../../packages/ui/src/admin/views/Settings/resolveSection.js')),
 }));
 
@@ -145,7 +141,7 @@ vi.mock('frogbot/internal', async (importOriginal) => ({
 
 vi.mock('payload', async (importOriginal) => ({
   ...(await importOriginal<typeof payloadModule>()),
-  createLocalReq: mocks.createLocalReq,
+  createPayloadRequest: mocks.createPayloadRequest,
   executeAuthStrategies: mocks.executeAuthStrategies,
   getPayload: mocks.getPayload,
 }));
@@ -512,6 +508,7 @@ describe('@frogbotai/next views', () => {
         },
         payload: { config },
         routeSegments: segments,
+        server: { notFound: vi.fn(), redirect: mocks.redirect },
       } as never);
 
       const title = await getSettingsTitle({ config: config as never, segments });

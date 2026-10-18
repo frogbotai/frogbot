@@ -1,6 +1,6 @@
 import type { MongooseAdapter } from '@payloadcms/db-mongodb';
 import { transform } from '@payloadcms/db-mongodb/internal';
-import { getJobClaimFields, getJobLeaseContext, recordJobClaims } from 'frogbot/jobs';
+import { isJobClaim, unleased } from 'frogbot/jobs';
 
 import { getJobModel, getJobSession, transformJobUpdate } from './jobModel.js';
 
@@ -10,13 +10,7 @@ export function createUpdateJobs(adapter: MongooseAdapter): MongooseAdapter['upd
   const updateJobs = adapter.updateJobs;
 
   return async (args) => {
-    if (args.data.processing !== true) return updateJobs.call(adapter, args);
-
-    const context = getJobLeaseContext();
-
-    if (!context || context.payload !== adapter.payload) {
-      throw new Error('FrogBot job claims require an active jobs run for this runtime.');
-    }
+    if (!isJobClaim(args.data)) return updateJobs.call(adapter, args);
 
     const { id, limit, req, returning, sort } = args;
     const { fields, Model } = getJobModel(adapter);
@@ -25,7 +19,7 @@ export function createUpdateJobs(adapter: MongooseAdapter): MongooseAdapter['upd
       and: [
         args.where ?? {},
         ...(id !== undefined ? [{ id: { equals: id } }] : []),
-        { processing: { equals: false } },
+        unleased(new Date().toISOString()),
       ],
     };
 
@@ -48,16 +42,7 @@ export function createUpdateJobs(adapter: MongooseAdapter): MongooseAdapter['upd
             })
           ).docs;
 
-    const data = { ...args.data };
-
-    if (
-      !(Array.isArray(data.log) && data.log.length) &&
-      !(data.log && typeof data.log === 'object' && '$push' in data.log)
-    ) {
-      delete data.log;
-    }
-
-    const update = transformJobUpdate({ adapter, data });
+    const update = transformJobUpdate({ adapter, data: { ...args.data } });
 
     const result: MongoJob[] = [];
 
@@ -67,17 +52,15 @@ export function createUpdateJobs(adapter: MongooseAdapter): MongooseAdapter['upd
         where: { id: { equals: candidate.id } },
       });
 
-      const doc = await Model.findOneAndUpdate(
-        { $and: [query, candidateQuery] },
-        { ...update, $set: { ...update.$set, ...getJobClaimFields() } },
-        { session, timestamps: false, new: true },
-      ).lean<MongoJob | null>();
+      const doc = await Model.findOneAndUpdate({ $and: [query, candidateQuery] }, update, {
+        session,
+        timestamps: false,
+        new: true,
+      }).lean<MongoJob | null>();
 
       if (!doc) continue;
 
       transform({ adapter, data: doc, fields, operation: 'read' });
-
-      recordJobClaims([doc.id]);
 
       result.push(doc);
     }

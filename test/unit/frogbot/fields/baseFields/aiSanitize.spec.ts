@@ -369,7 +369,7 @@ describe('AI field task', () => {
     expect(aiTask(await jobsOf(config))).toBeDefined();
   });
 
-  it('keys runs by record, field and locale when concurrency control is on', async () => {
+  it('keys runs by record, field and locale', async () => {
     const jobs = await jobsOf(makeConfig());
     const concurrency = aiTask(jobs)?.concurrency as {
       key: (args: { input: unknown; queue: string }) => string;
@@ -378,21 +378,12 @@ describe('AI field task', () => {
 
     const key = (input: Record<string, unknown>) => concurrency.key({ input, queue: 'default' });
 
-    expect(jobs.enableConcurrencyControl).toBe(true);
     expect(concurrency.supersedes).toBe(true);
     expect(key({ collection: 'tasks', id: 42, field: 'summary' })).toBe('tasks:42:summary');
 
     expect(key({ collection: 'articles', id: 7, field: 'summary', locale: 'fr' })).toBe(
       'articles:7:summary:fr',
     );
-  });
-
-  it('sets no concurrency when the app turns concurrency control off', async () => {
-    const jobs = await jobsOf(makeConfig({ jobs: { enableConcurrencyControl: false } }));
-
-    expect(jobs.enableConcurrencyControl).toBe(false);
-    expect(aiTask(jobs)).toBeDefined();
-    expect(aiTask(jobs)).not.toHaveProperty('concurrency');
   });
 });
 

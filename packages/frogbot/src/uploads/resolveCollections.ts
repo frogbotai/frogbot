@@ -1,7 +1,7 @@
 import { mergeCollection } from '../collections/config/merge.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import { validateCollectionMarkers } from '../collections/config/validateMarkers.js';
-import { defaultFilesCollection } from './collection.js';
+import { defaultFilesCollection, defaultFoldersCollection } from './collection.js';
 import type { SanitizedFilesConfig } from './types.js';
 
 export type ResolveFilesCollectionProps = {
@@ -29,13 +29,17 @@ export function resolveFilesCollection({ collections }: ResolveFilesCollectionPr
     }
 
     const resolved = [...collections];
+    const folders =
+      collections.find((collection) => collection.folders) ?? defaultFoldersCollection();
 
     resolved[collections.indexOf(existing)] = mergeCollection({
       user: existing,
-      base: defaultFilesCollection({ slug }),
+      base: defaultFilesCollection({ slug, folders: folders.slug }),
       reservedFields: [],
       feature: 'files',
     });
+
+    if (!collections.includes(folders)) resolved.push(folders);
 
     return { collections: resolved, files: { slug } };
   }

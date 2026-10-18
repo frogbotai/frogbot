@@ -149,6 +149,7 @@ import config from './frogbot.config';
 const frogbot = await getFrogBot({ config });
 const posts = await frogbot.find({
   collection: 'posts',
+  overrideAccess: true,
   where: {
     status: { equals: 'published' },
   },
@@ -160,9 +161,9 @@ Inside hooks, endpoints, tools, and other request-aware callbacks, use `req.frog
 
 ## Critical Pitfalls
 
-### Local API Access Bypass
+### Local API Access Control
 
-Local API operations bypass access control by default, even when `user` is supplied. For work performed on behalf of a user, set `overrideAccess: false`:
+Local API operations enforce access control by default, for the `user` or `req` they're given (anonymous without one). Pass `overrideAccess` on every call so it says which it is: `true` for trusted server work such as scripts, seeds, jobs and system hooks, and `false` with the user for work done on a user's behalf:
 
 ```ts
 const posts = await frogbot.find({
@@ -181,6 +182,7 @@ Nested operations without the current request do not share its context or active
 ```ts
 await req.frogbot.create({
   collection: 'audit-events',
+  overrideAccess: true,
   data: {
     action: 'post-created',
     document: doc.id,
@@ -201,6 +203,7 @@ async ({ context, doc, req }) => {
 
   await req.frogbot.update({
     collection: 'posts',
+    overrideAccess: true,
     id: doc.id,
     data: { synced: true },
     context: { syncingPost: true },

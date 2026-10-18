@@ -151,7 +151,7 @@ async function send(text: string) {
   const user = userEvent.setup();
 
   type(text, await screen.findByRole('textbox', { name: 'Message' }));
-  await user.click(screen.getByRole('button', { name: 'Send' }));
+  await user.click(await screen.findByRole('button', { name: 'Send' }));
 
   return user;
 }

@@ -9,7 +9,7 @@ import {
   type Payload,
   type PayloadRequest,
   type SanitizedCollectionConfig,
-  type TypedUser,
+  type User,
 } from 'payload';
 
 import { KVLockContentionError } from '../kv/errors.js';
@@ -275,7 +275,7 @@ export async function revokeIssuedSession({
   const shouldCommit = await initTransaction(dbReq);
   try {
     await requireSessionTransaction(dbReq);
-    const user = await dbReq.payload.db.findOne<TypedUser>({
+    const user = await dbReq.payload.db.findOne<User>({
       collection: collectionSlug,
       req: dbReq,
       select: { sessions: true },
@@ -449,7 +449,7 @@ export async function withAuthOperation<T>({
         if (kind === 'refresh' && payloadReq.user) {
           if (payloadReq.user.collection !== collectionSlug) throw new Forbidden(payloadReq.t);
           if (collection.auth.useSessions && !collection.auth.disableLocalStrategy) {
-            const user = await payloadReq.payload.db.findOne<TypedUser>({
+            const user = await payloadReq.payload.db.findOne<User>({
               collection: collectionSlug,
               req: payloadReq,
               where: { id: { equals: payloadReq.user.id } },

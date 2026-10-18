@@ -32,9 +32,9 @@ function readRootProperty(page: Page, name: string) {
 
 async function readAdminPalette(page: Page) {
   return {
-    base0: await readAdminColor(page, '--color-base-0'),
-    base500: await readAdminColor(page, '--color-base-500'),
-    base1000: await readAdminColor(page, '--color-base-1000'),
+    base0: await readAdminColor(page, '--fb-base-0'),
+    base500: await readAdminColor(page, '--fb-base-500'),
+    base1000: await readAdminColor(page, '--fb-base-1000'),
   };
 }
 
@@ -44,12 +44,12 @@ test.describe('FrogBot UI in the admin', () => {
 
     await expectBackground(
       page.getByTestId('theme-probe-default').first(),
-      await readAdminColor(page, '--color-base-1000'),
+      await readAdminColor(page, '--fb-base-1000'),
     );
 
     await expectBackground(
       page.getByTestId('theme-probe-secondary').first(),
-      await readAdminColor(page, '--color-base-250'),
+      await readAdminColor(page, '--fb-base-250'),
     );
   });
 
@@ -58,12 +58,12 @@ test.describe('FrogBot UI in the admin', () => {
 
     await expectBackground(
       page.getByTestId('theme-probe-default').first(),
-      await readAdminColor(page, '--color-base-0'),
+      await readAdminColor(page, '--fb-base-0'),
     );
 
     await expectBackground(
       page.getByTestId('theme-probe-secondary').first(),
-      await readAdminColor(page, '--color-base-750'),
+      await readAdminColor(page, '--fb-base-750'),
     );
   });
 
@@ -79,12 +79,12 @@ test.describe('FrogBot UI in the admin', () => {
 
     await expectBackground(
       page.getByTestId('theme-probe-default').first(),
-      await readAdminColor(page, '--color-base-0'),
+      await readAdminColor(page, '--fb-base-0'),
     );
 
     await expectBackground(
       page.getByTestId('theme-probe-secondary').first(),
-      await readAdminColor(page, '--color-base-750'),
+      await readAdminColor(page, '--fb-base-750'),
     );
 
     expect(
@@ -99,25 +99,25 @@ test.describe('FrogBot UI in the admin', () => {
     const drawerButton = page.locator('.drawer__content').getByTestId('theme-probe-default');
 
     await expect(drawerButton).toBeVisible();
-    await expectBackground(drawerButton, await readAdminColor(page, '--color-base-1000'));
+    await expectBackground(drawerButton, await readAdminColor(page, '--fb-base-1000'));
   });
 
-  for (const [theme, pageBackground] of [
-    ['light', 'rgb(255, 255, 255)'],
-    ['dark', 'rgb(20, 20, 20)'],
-  ] as const) {
+  for (const theme of ['light', 'dark'] as const) {
     test(`leaves the ${theme} admin's own palette in place`, async ({ page }) => {
       await openPostCreate(page, theme);
       await expect(page.locator('html')).toHaveAttribute('data-fb-ui-page', '');
       await expect(page.getByTestId('theme-probe-default').first()).toBeVisible();
 
       expect(await readAdminPalette(page)).toEqual({
-        base0: 'rgb(255, 255, 255)',
-        base500: 'rgb(128, 128, 128)',
+        base0: await readAdminColor(page, '--ramp-white-1000'),
+        base500: await readAdminColor(page, '--ramp-grey-500'),
         base1000: 'rgb(0, 0, 0)',
       });
-      expect(await readRootProperty(page, '--font-body')).toMatch(/^-apple-system,/);
-      await expect(page.locator('html')).toHaveCSS('background-color', pageBackground);
+      expect(await readRootProperty(page, '--font-body')).toMatch(/^"Inter",/);
+      await expect(page.locator('html')).toHaveCSS(
+        'background-color',
+        await readAdminColor(page, '--color-bg'),
+      );
     });
   }
 
@@ -126,11 +126,11 @@ test.describe('FrogBot UI in the admin', () => {
 
     const menu = await openMenu(page, 'theme-probe-menu');
     const portalBase0 = await menu.evaluate((element) =>
-      getComputedStyle(element.closest('.fb-portal')!).getPropertyValue('--color-base-0'),
+      getComputedStyle(element.closest('.fb-portal')!).getPropertyValue('--fb-base-0'),
     );
 
     expect(portalBase0).not.toBe('');
-    expect(portalBase0).toBe(await readRootProperty(page, '--color-base-0'));
+    expect(portalBase0).toBe(await readRootProperty(page, '--fb-base-0'));
   });
 
   test('ignores a leftover data-fb-theme value in portals', async ({ page }) => {
@@ -139,7 +139,7 @@ test.describe('FrogBot UI in the admin', () => {
 
     const menu = await openMenu(page, 'theme-probe-menu');
 
-    await expectBackground(menu, await readAdminColor(page, '--color-base-950'));
+    await expectBackground(menu, await readAdminColor(page, '--fb-base-950'));
 
     expect(
       await menu.evaluate(
@@ -154,18 +154,18 @@ test.describe('FrogBot UI in the admin', () => {
 
     await expectBackground(
       page.getByTestId('theme-probe-dark-default').first(),
-      await readAdminColor(page, '--color-base-0'),
+      await readAdminColor(page, '--fb-base-0'),
     );
 
     const darkMenu = await openMenu(page, 'theme-probe-dark-menu');
 
-    await expectBackground(darkMenu, await readAdminColor(page, '--color-base-950'));
+    await expectBackground(darkMenu, await readAdminColor(page, '--fb-base-950'));
     await page.keyboard.press('Escape');
     await expect(darkMenu).toBeHidden();
 
     const pageMenu = await openMenu(page, 'theme-probe-menu');
 
-    await expectBackground(pageMenu, await readAdminColor(page, '--color-base-50'));
+    await expectBackground(pageMenu, await readAdminColor(page, '--fb-base-50'));
   });
 
   test('lets an app override a FrogBot token on :root', async ({ page }) => {
@@ -184,9 +184,9 @@ test.describe('FrogBot UI in the admin', () => {
 
     const code = page.getByTestId('theme-probe-code').first();
 
-    await expectBackground(code, await readAdminColor(page, '--color-base-50'));
+    await expectBackground(code, await readAdminColor(page, '--fb-base-50'));
     await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
-    await expectBackground(code, await readAdminColor(page, '--color-base-250'));
+    await expectBackground(code, await readAdminColor(page, '--fb-base-250'));
   });
 
   test.describe('on a light operating system', () => {
@@ -199,7 +199,7 @@ test.describe('FrogBot UI in the admin', () => {
       const menu = page.getByTestId('theme-probe-menu');
 
       await expect(menu).toBeVisible();
-      await expectBackground(menu, await readAdminColor(page, '--color-base-950'));
+      await expectBackground(menu, await readAdminColor(page, '--fb-base-950'));
     });
   });
 
@@ -213,7 +213,7 @@ test.describe('FrogBot UI in the admin', () => {
       const menu = page.getByTestId('theme-probe-menu');
 
       await expect(menu).toBeVisible();
-      await expectBackground(menu, await readAdminColor(page, '--color-base-50'));
+      await expectBackground(menu, await readAdminColor(page, '--fb-base-50'));
     });
   });
 });
@@ -243,10 +243,10 @@ test('keeps the FrogBot palette on pages outside the admin', async ({ page }) =>
       };
 
       return {
-        base0: color('--color-base-0'),
+        base0: color('--fb-base-0'),
         themeBase0: {
-          light: color('--theme-base-0', 'light'),
-          dark: color('--theme-base-0', 'dark'),
+          light: color('--fb-theme-base-0', 'light'),
+          dark: color('--fb-theme-base-0', 'dark'),
         },
       };
     }),
@@ -577,29 +577,29 @@ test.describe('asChild links', () => {
         );
 
       for (const suffix of ['button', 'link']) {
-        await expectColor(`button-ghost-${suffix}`, 'var(--theme-base-700)');
-        await expectColor(`button-destructive-${suffix}`, 'var(--color-base-900)');
-        await expectColor(`tab-active-${suffix}`, 'var(--theme-base-900)');
-        await expectColor(`toggle-on-${suffix}`, 'var(--theme-base-1000)');
+        await expectColor(`button-ghost-${suffix}`, 'var(--fb-theme-base-700)');
+        await expectColor(`button-destructive-${suffix}`, 'var(--fb-base-900)');
+        await expectColor(`tab-active-${suffix}`, 'var(--fb-theme-base-900)');
+        await expectColor(`toggle-on-${suffix}`, 'var(--fb-theme-base-1000)');
       }
 
       for (const suffix of ['button', 'link']) {
         const ghost = page.getByTestId(`button-ghost-${suffix}`);
 
         expect((await hoverAndRead(page, ghost)).color, `ghost ${suffix} hover`).toBe(
-          await resolveColor(container, 'var(--theme-base-1000)'),
+          await resolveColor(container, 'var(--fb-theme-base-1000)'),
         );
 
         const destructive = page.getByTestId(`button-destructive-${suffix}`);
 
         expect((await hoverAndRead(page, destructive)).color, `destructive ${suffix} hover`).toBe(
-          await resolveColor(container, 'var(--color-base-900)'),
+          await resolveColor(container, 'var(--fb-base-900)'),
         );
 
         const toggle = page.getByTestId(`toggle-${suffix}`);
 
         expect((await hoverAndRead(page, toggle)).color, `toggle ${suffix} hover`).toBe(
-          await resolveColor(container, 'var(--theme-base-1000)'),
+          await resolveColor(container, 'var(--fb-theme-base-1000)'),
         );
       }
     });
@@ -611,7 +611,7 @@ test.describe('asChild links', () => {
       const highlighted = await hoverAndRead(page, menuLink);
       const content = page.locator('.fb-dropdown-menu__content');
 
-      expect(highlighted.color).toBe(await resolveColor(content, 'var(--theme-base-800)'));
+      expect(highlighted.color).toBe(await resolveColor(content, 'var(--fb-theme-base-800)'));
       expect(highlighted.color).not.toBe(await readParentColor(menuLink));
     });
   });

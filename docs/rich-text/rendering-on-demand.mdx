@@ -23,9 +23,9 @@ This component renders an editor at the `previewContent` form path while using t
 
 import type { DefaultNodeTypes } from '@frogbotai/richtext-lexical'
 import { buildEditorState, RenderLexical } from '@frogbotai/richtext-lexical/client'
-import type { JSONFieldClientComponent } from 'frogbot'
+import type { JSONFieldClientProps } from 'frogbot'
 
-export const PreviewContentField: JSONFieldClientComponent = () => {
+export const PreviewContentField = (_props: JSONFieldClientProps) => {
   return (
     <RenderLexical
       initialValue={buildEditorState<DefaultNodeTypes>({

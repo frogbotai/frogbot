@@ -768,7 +768,7 @@ describe('aiField runs', () => {
       await booted.frogbot.update({
         collection: articlesSlug,
         id: article.id,
-        data: { body: 'Bonjour' } as never,
+        data: { body: 'Bonjour', _status: 'published' } as never,
         locale: 'fr',
         overrideAccess: true,
       });
@@ -835,7 +835,7 @@ describe('aiField runs', () => {
       expect((await usageRows())[0]?.user ?? null).toBeNull();
     });
 
-    it("a run's save keeps the last modified by of a later save", async () => {
+    it("a run's save records the user who started it as updatedBy", async () => {
       const first = await createUser('editor');
       const second = await createUser('editor');
       const task = await createTask({});
@@ -847,7 +847,7 @@ describe('aiField runs', () => {
 
       expect(await findTask(task.id)).toMatchObject({
         _summary_status: 'done',
-        lastModifiedBy: second.id,
+        updatedBy: { relationTo: usersSlug, value: first.id },
       });
     });
   });
@@ -1544,7 +1544,7 @@ describe('aiField runs', () => {
       await writeSummary({
         collection: articlesSlug,
         id: article.id,
-        data: { body: 'Bonjour', summary: 'Résumé', _summary_status: 'done' },
+        data: { body: 'Bonjour', summary: 'Résumé', _summary_status: 'done', _status: 'published' },
         locale: 'fr',
       });
 
@@ -1567,7 +1567,7 @@ describe('aiField runs', () => {
       await writeSummary({
         collection: articlesSlug,
         id: article.id,
-        data: { body: 'Bonjour', summary: 'Résumé', _summary_status: 'done' },
+        data: { body: 'Bonjour', summary: 'Résumé', _summary_status: 'done', _status: 'published' },
         locale: 'fr',
       });
 

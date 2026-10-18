@@ -4,14 +4,11 @@ import { describe, expect, it } from 'vitest';
 import { moneyField } from '../../../../../packages/frogbot/src/fields/baseFields/money/index.js';
 import type { TextField } from '../../../../../packages/frogbot/src/fields/config/types.js';
 
-type Schema = Parameters<NonNullable<TextField['typescriptSchema']>[number]>[0]['jsonSchema'];
+type Schema = Parameters<NonNullable<TextField['jsonSchema']>[number]>[0]['jsonSchema'];
 
-function runSchema(
-  field: { typescriptSchema?: TextField['typescriptSchema'] },
-  jsonSchema: Schema,
-) {
-  return (field.typescriptSchema ?? []).reduce(
-    (schema, entry) => entry({ jsonSchema: schema }),
+function runSchema(field: { jsonSchema?: TextField['jsonSchema'] }, jsonSchema: Schema) {
+  return (field.jsonSchema ?? []).reduce(
+    (schema, entry) => entry({ jsonSchema: schema, variant: 'output' }),
     jsonSchema,
   );
 }
@@ -56,7 +53,7 @@ describe('moneyField', () => {
     const access = { update: () => false };
     const afterRead = () => 1;
     const validate = () => true as const;
-    const developerEntry: NonNullable<TextField['typescriptSchema']>[number] = ({ jsonSchema }) =>
+    const developerEntry: NonNullable<TextField['jsonSchema']>[number] = ({ jsonSchema }) =>
       jsonSchema;
 
     const field = moneyField({
@@ -71,7 +68,7 @@ describe('moneyField', () => {
       validate,
       virtual: true,
       admin: { readOnly: true, custom: { other: true, frogbot: { extra: 1 } } },
-      typescriptSchema: [developerEntry],
+      jsonSchema: [developerEntry],
     });
 
     expect(field).toMatchObject({
@@ -94,8 +91,8 @@ describe('moneyField', () => {
       },
     });
 
-    expect(field.typescriptSchema).toHaveLength(2);
-    expect(field.typescriptSchema?.[1]).toBe(developerEntry);
+    expect(field.jsonSchema).toHaveLength(2);
+    expect(field.jsonSchema?.[1]).toBe(developerEntry);
   });
 });
 
@@ -127,7 +124,7 @@ describe('moneyField option errors', () => {
   });
 });
 
-describe('moneyField typescriptSchema', () => {
+describe('moneyField jsonSchema', () => {
   it('describes the value to agents when there is no description', () => {
     const field = moneyField({ name: 'price' });
 
@@ -168,7 +165,7 @@ describe('moneyField in the admin', () => {
       importMap: {},
     });
 
-    expect(clientField).not.toHaveProperty('typescriptSchema');
+    expect(clientField).not.toHaveProperty('jsonSchema');
     expect(clientField.admin).not.toHaveProperty('components');
     expect(clientField.admin?.custom).toEqual({
       frogbot: { kind: { type: 'money', currency: 'USD', precision: 'auto' } },

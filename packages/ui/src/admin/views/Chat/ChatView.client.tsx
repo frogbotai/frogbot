@@ -4,7 +4,9 @@ import { getTranslation } from '@payloadcms/translations';
 import {
   toast,
   useConfig,
+  usePathname,
   usePreferences,
+  useRouter,
   useRouteTransition,
   useStepNav,
   useTranslation,
@@ -23,7 +25,7 @@ import { createRestChatAdapter } from '../../../chat/rest/adapter.js';
 import { cookieFetch } from '../../../chat/rest/auth.js';
 import type { ToolRenderer } from '../../../chat/tool-registry.js';
 import { emitChatMutation, useChatDocument } from '../../../chat/use-chats.js';
-import { shallowRouteState, useRouterAdapter } from '../../adapters/router.js';
+import { shallowRouteState } from '../../utilities/shallowRoute.js';
 
 const adapter = createRestChatAdapter({ fetch: cookieFetch() });
 const chatPicksPreference = 'frogbot-chat-picks';
@@ -80,7 +82,8 @@ export function ChatViewClient({
   toolRenderersByAgent = {},
   userName,
 }: ChatViewClientProps) {
-  const { pathname, router } = useRouterAdapter();
+  const pathname = usePathname();
+  const router = useRouter();
   const { startRouteTransition } = useRouteTransition();
   const [selectedAgent, setSelectedAgent] = useState(agent);
   const [labelChatId, setLabelChatId] = useState(chatId);
@@ -204,7 +207,7 @@ function ChatStepNavInner({
   documentPath,
   initialChat,
 }: ChatStepNavProps & { chatId: string | number }) {
-  const { pathname } = useRouterAdapter();
+  const pathname = usePathname();
   const { i18n } = useTranslation();
   const { getEntityConfig } = useConfig();
   const { setStepNav } = useStepNav();

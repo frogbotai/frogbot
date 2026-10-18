@@ -92,7 +92,11 @@ const Posts: CollectionConfig = {
       },
     ],
   },
-  fields: [observedText('title'), slugField(), { name: 'note', type: 'text' }],
+  fields: [
+    observedText('title'),
+    slugField({ useAsSlug: 'title' }),
+    { name: 'note', type: 'text' },
+  ],
 };
 
 const NestedFields: CollectionConfig = {

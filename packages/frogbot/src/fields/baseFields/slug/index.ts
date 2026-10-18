@@ -1,69 +1,10 @@
-import type { Document, TypeWithID } from 'payload';
-import { slugField as upstreamSlugField } from 'payload';
-import type { Slugify as PayloadSlugify } from 'payload/shared';
+import type { SlugField } from '../../config/types.js';
 
-import type { FrogBotArgs } from '../../../types/request.js';
-import type { RowField } from '../../config/types.js';
-import { generateSlug } from './generateSlug.js';
+export type { SlugField, Slugify } from '../../config/types.js';
 
-export type Slugify<T extends TypeWithID = Document> = (
-  args: FrogBotArgs<Parameters<PayloadSlugify<T>>[0]>,
-) => ReturnType<PayloadSlugify<T>>;
+export type SlugFieldArgs = Omit<SlugField, 'name' | 'type'> & { name?: string };
 
-type UpstreamSlugFieldArgs = NonNullable<Parameters<typeof upstreamSlugField>[0]>;
-
-export type SlugFieldArgs = Omit<UpstreamSlugFieldArgs, 'overrides' | 'slugify'> & {
-  overrides?: (field: RowField) => RowField;
-  slugify?: Slugify;
-};
-
-export type SlugField = (args?: SlugFieldArgs) => RowField;
-
-export const slugField: SlugField = (args = {}) => {
-  const {
-    checkboxName = 'generateSlug',
-    fieldToUse,
-    name: slugFieldName = 'slug',
-    overrides,
-    slugify,
-    useAsSlug: useAsSlugFromArgs = 'title',
-    ...options
-  } = args;
-
-  const useAsSlug = fieldToUse || useAsSlugFromArgs;
-
-  return upstreamSlugField({
-    ...options,
-    checkboxName,
-    fieldToUse,
-    name: slugFieldName,
-    overrides: (upstreamField) => {
-      const field = upstreamField as RowField;
-      const checkbox = field.fields.find(
-        (nestedField) => 'name' in nestedField && nestedField.name === checkboxName,
-      );
-
-      if (checkbox && 'hooks' in checkbox) {
-        checkbox.hooks = {
-          ...checkbox.hooks,
-          beforeChange: [],
-        };
-      }
-
-      const text = field.fields.find(
-        (nestedField) => 'name' in nestedField && nestedField.name === slugFieldName,
-      );
-
-      if (text?.type === 'text') {
-        text.hooks = {
-          ...text.hooks,
-          beforeValidate: [generateSlug({ checkboxName, slugFieldName, slugify, useAsSlug })],
-        };
-      }
-
-      return overrides ? (overrides(field) as typeof upstreamField) : upstreamField;
-    },
-    slugify: slugify as UpstreamSlugFieldArgs['slugify'],
-    useAsSlug: useAsSlugFromArgs,
-  }) as RowField;
-};
+/** Payload's `type: 'slug'` field, named `slug` unless set. */
+export function slugField(args: SlugFieldArgs = {}): SlugField {
+  return { name: 'slug', ...args, type: 'slug' };
+}

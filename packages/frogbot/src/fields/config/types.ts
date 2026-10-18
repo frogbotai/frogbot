@@ -24,6 +24,7 @@ import type {
   RichTextField as PayloadRichTextField,
   RowField as PayloadRowField,
   SelectField as PayloadSelectField,
+  SlugField as PayloadSlugField,
   TabsField as PayloadTabsField,
   TextareaField as PayloadTextareaField,
   TextField as PayloadTextField,
@@ -146,8 +147,8 @@ type LayoutIgnoredKey =
   | 'hooks'
   | 'index'
   | 'required'
+  | 'jsonSchema'
   | 'saveToJWT'
-  | 'typescriptSchema'
   | 'unique'
   | 'validate';
 
@@ -156,8 +157,7 @@ interface FieldContainer {
 }
 
 interface BlockList {
-  blockReferences?: (Block | BlockReference)[];
-  blocks: Block[];
+  blocks: (Block | string)[];
 }
 
 interface TabList {
@@ -166,8 +166,7 @@ interface TabList {
 
 export type ArrayField = RetypedField<Omit<PayloadArrayField, 'fields'>> & FieldContainer;
 
-export type BlocksField = RetypedField<Omit<PayloadBlocksField, 'blockReferences' | 'blocks'>> &
-  BlockList;
+export type BlocksField = RetypedField<Omit<PayloadBlocksField, 'blocks'>> & BlockList;
 
 export type CheckboxField = RetypedField<PayloadCheckboxField>;
 
@@ -185,7 +184,12 @@ export type EmailField = RetypedField<PayloadEmailField>;
 
 export type JoinField = RetypedField<PayloadJoinField>;
 
-export type JSONField = RetypedField<PayloadJSONField>;
+export type JSONSchemaTransform = NonNullable<PayloadFieldBase['jsonSchema']>[number];
+
+export type JSONField = RetypedField<Omit<PayloadJSONField, 'jsonSchema'>> & {
+  /** The editor's schema, or transforms of the generated type, as on any other field. */
+  jsonSchema?: PayloadJSONField['jsonSchema'] | JSONSchemaTransform[];
+};
 
 export type NumberField = RetypedField<PayloadNumberField>;
 
@@ -201,6 +205,12 @@ export type SelectField = RetypedField<
   DistributiveOmit<PayloadSelectField, 'options'> & { options: Option[] }
 >;
 
+export type Slugify<T extends TypeWithID = PayloadDocument> = (
+  args: FrogBotArgs<Parameters<NonNullable<PayloadSlugField['slugify']>>[0]> & { data: T },
+) => ReturnType<NonNullable<PayloadSlugField['slugify']>>;
+
+export type SlugField = RetypedField<Omit<PayloadSlugField, 'slugify'>> & { slugify?: Slugify };
+
 export type TextareaField = RetypedField<PayloadTextareaField>;
 
 export type TextField = RetypedField<PayloadTextField>;
@@ -213,6 +223,7 @@ export type VectorField = Omit<
   RetypedField<Omit<PayloadJSONField, 'jsonSchema' | 'type'>>,
   'validate'
 > & {
+  jsonSchema?: JSONSchemaTransform[];
   dimensions: number;
   type: 'vector';
   validate?: Validate<number[]>;
@@ -247,11 +258,6 @@ export type TabAsField = Tab & { type: 'tab' };
 
 export type TabsField = Omit<PayloadTabsField, 'label' | 'tabs' | LayoutIgnoredKey> & TabList;
 
-type BlockReference = Exclude<
-  NonNullable<PayloadBlocksField['blockReferences']>[number],
-  PayloadBlock
->;
-
 export interface Block extends Omit<PayloadBlock, 'fields'> {
   fields: Field[];
 }
@@ -274,6 +280,7 @@ export type Field =
   | RichTextField
   | RowField
   | SelectField
+  | SlugField
   | TabsField
   | TextareaField
   | TextField
@@ -399,12 +406,7 @@ export function fieldShouldBeLocalized({
   field: Field | Tab;
   parentIsLocalized: boolean;
 }): boolean {
-  return Boolean(
-    'localized' in field &&
-    field.localized &&
-    (!parentIsLocalized ||
-      process.env.NEXT_PUBLIC_PAYLOAD_COMPATIBILITY_allowLocalizedWithinLocalized === 'true'),
-  );
+  return Boolean('localized' in field && field.localized && !parentIsLocalized);
 }
 
 export function fieldIsVirtual(field: Field | Tab): boolean {

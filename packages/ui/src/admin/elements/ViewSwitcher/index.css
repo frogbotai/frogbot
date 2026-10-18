@@ -1,21 +1,21 @@
 @layer frogbot {
   .view-switcher {
     align-items: center;
-    border-bottom: 1px solid var(--theme-elevation-150);
+    border-bottom: 1px solid var(--color-border);
     display: flex;
-    gap: calc(var(--base) * 1.25);
+    gap: calc(var(--spacer-3) * 1.25);
   }
 
   .view-switcher__link {
-    color: var(--theme-elevation-600);
-    padding: calc(var(--base) * 0.5) 0;
+    color: var(--color-text-secondary);
+    padding: calc(var(--spacer-3) * 0.5) 0;
     position: relative;
     text-decoration: none;
   }
 
   .view-switcher__link:hover,
   .view-switcher__link--active {
-    color: var(--theme-text);
+    color: var(--color-text);
   }
 
   .view-switcher__link--active {
@@ -23,7 +23,7 @@
   }
 
   .view-switcher__link--active::after {
-    background: var(--theme-text);
+    background: var(--color-text);
     bottom: -1px;
     content: "";
     height: 2px;

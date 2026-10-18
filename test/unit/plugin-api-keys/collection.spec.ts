@@ -36,6 +36,7 @@ describe('API keys collection', () => {
     ]);
     expect(
       await collection.access?.read?.({
+        slug: 'test',
         req: request({ user: { id: 'user-1', roles: ['member'] } }),
       }),
     ).toEqual({
@@ -43,15 +44,16 @@ describe('API keys collection', () => {
     });
     expect(
       await collection.access?.update?.({
+        slug: 'test',
         req: request({ user: { id: 'user-1', roles: ['member'] } }),
       }),
     ).toEqual({
       owner: { equals: 'user-1' },
     });
-    expect(await collection.access?.create?.({ req: request() })).toBe(false);
-    expect(await collection.access?.delete?.({ req: request() })).toBe(false);
-    expect(await collection.access?.read?.({ req: request() })).toBe(false);
-    expect(await collection.access?.update?.({ req: request() })).toBe(false);
+    expect(await collection.access?.create?.({ slug: 'test', req: request() })).toBe(false);
+    expect(await collection.access?.delete?.({ slug: 'test', req: request() })).toBe(false);
+    expect(await collection.access?.read?.({ slug: 'test', req: request() })).toBe(false);
+    expect(await collection.access?.update?.({ slug: 'test', req: request() })).toBe(false);
 
     for (const name of ['owner', 'prefix', 'tokenHash', 'lastUsedAt', 'revokedAt']) {
       const field = collection.fields.find((item) => 'name' in item && item.name === name);
@@ -144,7 +146,7 @@ describe('API keys collection', () => {
         custom: { frogbot: { kind: { type: 'money', currency: 'USD', precision: 'auto' } } },
       },
     });
-    expect('typescriptSchema' in field! && field.typescriptSchema).toHaveLength(1);
+    expect('jsonSchema' in field! && field.jsonSchema).toHaveLength(1);
     expect(collection.admin?.views?.[0]).toMatchObject({
       type: 'list',
       defaultFields: expect.arrayContaining(['totalCostUSD']),
@@ -308,7 +310,7 @@ describe('API keys collection', () => {
         },
       },
     ]);
-    expect(await collection.access?.read?.({ req: request() })).toBe(true);
+    expect(await collection.access?.read?.({ slug: 'test', req: request() })).toBe(true);
   });
 
   it('prefers explicit override views and injects the manager into the first list view', async () => {

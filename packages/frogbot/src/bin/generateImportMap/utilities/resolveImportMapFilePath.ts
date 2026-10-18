@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import { NEXT_ROUTE_GROUP } from '../frameworkConventions.js';
+
 async function pathOrFileExists(path: string): Promise<boolean> {
   try {
     await fs.access(path);
@@ -11,13 +13,20 @@ async function pathOrFileExists(path: string): Promise<boolean> {
   }
 }
 
+const defaultCandidateDirectories = (rootDir: string, adminRoute: string): string[] => [
+  path.resolve(rootDir, `app/${NEXT_ROUTE_GROUP}${adminRoute}/`),
+  path.resolve(rootDir, `src/app/${NEXT_ROUTE_GROUP}${adminRoute}/`),
+];
+
 export async function resolveImportMapFilePath({
   adminRoute = '/',
+  candidateDirectories,
   create = true,
   importMapFile,
   rootDir,
 }: {
   adminRoute?: string;
+  candidateDirectories?: string[];
   create?: boolean;
   importMapFile?: string;
   rootDir: string;
@@ -37,22 +46,23 @@ export async function resolveImportMapFilePath({
 
     importMapFilePath = importMapFile;
   } else {
-    const appLocation = path.resolve(rootDir, `app/(frogbot)${adminRoute}/`);
-    const srcAppLocation = path.resolve(rootDir, `src/app/(frogbot)${adminRoute}/`);
+    const directories = candidateDirectories ?? defaultCandidateDirectories(rootDir, adminRoute);
 
-    if (appLocation && (await pathOrFileExists(appLocation))) {
-      importMapFilePath = path.resolve(appLocation, 'importMap.js');
-      if (create && !(await pathOrFileExists(importMapFilePath))) {
-        await fs.writeFile(importMapFilePath, '', { flag: 'wx' });
+    for (const dir of directories) {
+      if (await pathOrFileExists(dir)) {
+        importMapFilePath = path.resolve(dir, 'importMap.js');
+
+        if (create && !(await pathOrFileExists(importMapFilePath))) {
+          await fs.writeFile(importMapFilePath, '', { flag: 'wx' });
+        }
+
+        break;
       }
-    } else if (srcAppLocation && (await pathOrFileExists(srcAppLocation))) {
-      importMapFilePath = path.resolve(srcAppLocation, 'importMap.js');
-      if (create && !(await pathOrFileExists(importMapFilePath))) {
-        await fs.writeFile(importMapFilePath, '', { flag: 'wx' });
-      }
-    } else {
+    }
+
+    if (!importMapFilePath) {
       return new Error(
-        `Could not find the import map folder. Looked in ${appLocation} and ${srcAppLocation}`,
+        `Could not find the import map folder. Looked in ${directories.join(' and ')}`,
       );
     }
   }

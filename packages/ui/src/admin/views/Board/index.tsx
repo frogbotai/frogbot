@@ -6,7 +6,6 @@ import type { AdminViewServerProps, PayloadComponent, SanitizedFieldPermissions 
 import { getFromImportMap, transformColumnsToSearchParams } from 'payload/shared';
 import type { ComponentType } from 'react';
 
-import { getServerAdapter } from '../../adapters/server.js';
 import { getActiveViewSlug, resolveCollectionViews } from '../collectionViews.js';
 import { CollectionViewShell } from '../CollectionViewShell.js';
 import {
@@ -35,9 +34,9 @@ export async function BoardView(props: AdminViewServerProps) {
     ({ slug }) => slug === activeSlug && views.some((item) => item.slug === slug),
   );
 
-  if (!board || board.type !== 'board') return getServerAdapter().notFound();
+  if (!board || board.type !== 'board') return props.server.notFound();
   const orderField = views.find(({ slug }) => slug === board.slug)?.orderField;
-  if (!orderField) return getServerAdapter().notFound();
+  if (!orderField) return props.server.notFound();
   const query = (initPageResult.req.query ?? {}) as {
     columns?: unknown;
     groupBy?: unknown;
@@ -174,7 +173,7 @@ export async function BoardView(props: AdminViewServerProps) {
   }
 
   const groupField = resolveBoardField(collectionConfig.fields, groupBy);
-  if (!groupField) return getServerAdapter().notFound();
+  if (!groupField) return props.server.notFound();
   const columns = await resolveColumns({
     collectionSlug,
     field: groupField,

@@ -23,8 +23,27 @@ exports[`defaultFilesCollection > produces the base config shape 1`] = `
       },
     ],
   },
-  "fields": [],
-  "folders": true,
+  "fields": [
+    {
+      "admin": {
+        "components": {
+          "Field": "@payloadcms/ui#NullField",
+        },
+        "position": "sidebar",
+      },
+      "custom": {
+        "hierarchy": {
+          "injectHeaderButton": true,
+        },
+      },
+      "hasMany": false,
+      "index": true,
+      "label": "Folder",
+      "name": "_h_folders",
+      "relationTo": "folders",
+      "type": "relationship",
+    },
+  ],
   "slug": "files",
   "trash": true,
   "upload": true,

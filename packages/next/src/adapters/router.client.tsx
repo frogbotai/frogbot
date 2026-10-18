@@ -1,8 +1,8 @@
 'use client';
 
-import { RouterAdapterProvider, shallowRouteState } from '@frogbotai/ui/admin';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation.js';
-import { type ReactNode, useEffect, useMemo } from 'react';
+import { shallowRouteState } from '@frogbotai/ui/admin';
+import { useRouter } from 'next/navigation.js';
+import { useEffect } from 'react';
 
 let shallowRouteRouter: ReturnType<typeof useRouter> | undefined;
 
@@ -21,25 +21,17 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Supplies Next's router to FrogBot's admin.
- *
- * Back or Forward to an entry the admin moved to another page with `history.replaceState` becomes
+ * Makes Back or Forward to an entry the admin moved to another page with `history.replaceState`
  * a client navigation to that page. Next 16 keeps the router tree of the page the entry was
  * rewritten from, refetches the entry with it, and falls back to a full reload. The listener is
  * added when this module loads, before Next's own, so it can take over.
  */
-export function NextRouterAdapter({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
+export function ShallowRouteListener() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const value = useMemo(
-    () => ({ pathname, router, searchParams }),
-    [pathname, router, searchParams],
-  );
 
   useEffect(() => {
     shallowRouteRouter = router;
   }, [router]);
 
-  return <RouterAdapterProvider value={value}>{children}</RouterAdapterProvider>;
+  return null;
 }

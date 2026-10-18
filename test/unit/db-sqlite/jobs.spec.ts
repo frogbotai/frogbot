@@ -1,21 +1,14 @@
+import { randomUUID } from 'node:crypto';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { Job, Payload, PayloadRequest, UpdateJobsArgs, Where } from 'payload';
-import { BasePayload, buildConfig, createLocalReq } from 'payload';
+import type { Job, Payload, UpdateJobsArgs, Where } from 'payload';
+import { BasePayload, buildConfig } from 'payload';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { sqliteAdapter } from '../../../packages/db-sqlite/src/index.js';
 import { resolveJobsConfig } from '../../../packages/frogbot/src/jobs/config.js';
-import {
-  getJobLeaseContext,
-  type JobLeaseDatabase,
-  jobLeaseOperations,
-  renewJobLease,
-  resetJobLease,
-  withJobLease,
-} from '../../../packages/frogbot/src/jobs/lease.js';
 
 vi.mock('frogbot/jobs', () => import('../../../packages/frogbot/src/exports/jobs.js'));
 
@@ -30,7 +23,6 @@ const descriptor = sqliteAdapter({
 });
 
 let database: ReturnType<typeof descriptor.init>;
-let req: PayloadRequest;
 
 function create(data: Record<string, unknown> = {}) {
   return database.create({
@@ -38,7 +30,6 @@ function create(data: Record<string, unknown> = {}) {
     data: {
       taskSlug: 'work',
       queue: 'default',
-      processing: false,
       hasError: false,
       createdAt: '2026-09-13T00:00:00.000Z',
       updatedAt: '2026-09-13T00:00:00.000Z',
@@ -55,23 +46,17 @@ async function beginTransaction(): Promise<number | string> {
   return transactionID;
 }
 
-function claim(args: Partial<UpdateJobsArgs> = {}) {
-  return withJobLease({
-    payload,
-    req,
-    leaseDuration: 300_000,
-    run: async () => {
-      const jobs = await database.updateJobs({
-        data: { processing: true },
-        where: {},
-        sort: 'id',
-        limit: 10,
-        ...args,
-      } as UpdateJobsArgs);
+async function claim(args: Partial<UpdateJobsArgs> = {}) {
+  const token = randomUUID();
+  const jobs = await database.updateJobs({
+    data: { processingToken: token, processingUntil: new Date(Date.now() + 300_000).toISOString() },
+    where: {},
+    sort: 'id',
+    limit: 10,
+    ...args,
+  } as UpdateJobsArgs);
 
-      return { jobs, context: getJobLeaseContext()! };
-    },
-  });
+  return { jobs, token };
 }
 
 beforeAll(async () => {
@@ -109,8 +94,6 @@ beforeAll(async () => {
 
   await database.init();
   await database.connect();
-
-  req = await createLocalReq({}, payload);
 }, 30_000);
 
 beforeEach(async () => {
@@ -126,7 +109,7 @@ afterAll(() => {
 });
 
 describe('SQLite atomic jobs', () => {
-  it('partitions concurrent claims and records only the winning IDs', async () => {
+  it("partitions concurrent claims and returns only each claim's rows", async () => {
     for (let i = 0; i < 12; i++) await create();
 
     statements.length = 0;
@@ -137,16 +120,11 @@ describe('SQLite atomic jobs', () => {
 
     expect(ids).toHaveLength(12);
     expect(new Set(ids).size).toBe(12);
-    expect(results[0].context.owner).not.toBe(results[1].context.owner);
 
-    for (const { jobs, context } of results) {
-      expect(context.ids).toEqual(new Set(jobs!.map((job) => job.id)));
-
+    for (const { jobs, token } of results) {
       for (const job of jobs!) {
-        expect(job).toMatchObject({ processing: true, leaseOwner: context.owner });
-        expect(
-          new Date((job as Job & { leaseUntil: string }).leaseUntil).getTime(),
-        ).toBeGreaterThan(Date.now());
+        expect(job).toMatchObject({ processingToken: token });
+        expect(new Date(job.processingUntil!).getTime()).toBeGreaterThan(Date.now());
       }
     }
 
@@ -202,6 +180,7 @@ describe('SQLite atomic jobs', () => {
           id: 'log-1',
           taskID: 'prior',
           taskSlug: 'work',
+          input: {},
           state: 'succeeded',
           executedAt: '2026-09-13T00:00:00.000Z',
           completedAt: '2026-09-13T00:00:00.000Z',
@@ -216,31 +195,49 @@ describe('SQLite atomic jobs', () => {
       id: queued.id,
       input: { nested: ['kept'] },
       priority: 4,
-      processing: true,
+      processingToken: expect.any(String),
       createdAt: '2026-09-13T00:00:00.000Z',
       log: [{ taskID: 'prior', state: 'succeeded', output: { preserved: true } }],
     });
   });
 
-  it('claims a single ID only once even without a caller processing predicate', async () => {
+  it('claims a single ID only once', async () => {
     const job = await create();
 
     const results = await Promise.all([claim({ id: job.id }), claim({ id: job.id })]);
 
     expect(results.flatMap(({ jobs }) => jobs!)).toHaveLength(1);
-    expect(results.reduce((count, result) => count + result.context.ids.size, 0)).toBe(1);
   });
 
-  it('records ownership with returning disabled and handles no eligible jobs', async () => {
-    const job = await create();
+  it('skips jobs held by a live lease and reclaims an expired one', async () => {
+    const live = await create({
+      processingToken: 'other',
+      processingUntil: '2099-01-01T00:00:00.000Z',
+    });
+
+    const expired = await create({
+      processingToken: 'crashed',
+      processingUntil: '2020-01-01T00:00:00.000Z',
+    });
+
+    const { jobs, token } = await claim();
+
+    expect(jobs!.map(({ id }) => id)).toEqual([expired.id]);
+    expect(jobs![0].processingToken).toBe(token);
+
+    const rows = await database.find<Job>({ collection: 'payload-jobs', sort: 'id' });
+
+    expect(rows.docs.find(({ id }) => id === live.id)?.processingToken).toBe('other');
+  });
+
+  it('claims with returning disabled and handles no eligible jobs', async () => {
+    await create();
 
     const result = await claim({ returning: false });
     const empty = await claim();
 
     expect(result.jobs).toBeNull();
-    expect(result.context.ids).toEqual(new Set([job.id]));
     expect(empty.jobs).toEqual([]);
-    expect(empty.context.ids.size).toBe(0);
   });
 
   it('delegates ordinary updates including log writes', async () => {
@@ -249,13 +246,13 @@ describe('SQLite atomic jobs', () => {
     const updated = await database.updateJobs({
       id: job.id,
       data: {
-        processing: false,
         totalTried: 2,
         log: [
           {
             id: 'ordinary-log',
             taskID: 'work',
             taskSlug: 'work',
+            input: {},
             state: 'succeeded',
             executedAt: '2026-09-13T00:00:00.000Z',
             completedAt: '2026-09-13T00:00:00.000Z',
@@ -266,84 +263,9 @@ describe('SQLite atomic jobs', () => {
 
     expect(updated![0]).toMatchObject({
       id: job.id,
-      processing: false,
       totalTried: 2,
       log: [{ id: 'ordinary-log', state: 'succeeded' }],
     });
-  });
-
-  it('rejects missing and cross-runtime ownership before writing', async () => {
-    await create();
-
-    statements.length = 0;
-
-    await expect(database.updateJobs({ data: { processing: true }, where: {} })).rejects.toThrow(
-      'this runtime',
-    );
-
-    const other = Object.assign(new BasePayload(), { config: payload.config, db: database });
-
-    await expect(
-      withJobLease({
-        payload: other,
-        leaseDuration: 300_000,
-        run: () => database.updateJobs({ data: { processing: true }, where: {} }),
-      }),
-    ).rejects.toThrow('this runtime');
-
-    expect(statements).toEqual([]);
-  });
-
-  it('renews and resets through conditional SQL while rejecting stale owners and observations', async () => {
-    const past = '2020-01-01T00:00:00.000Z';
-    const future = '2099-01-01T00:00:00.000Z';
-
-    const active = await create({ processing: true, leaseOwner: 'active', leaseUntil: future });
-    const expired = await create({ processing: true, leaseOwner: 'expired', leaseUntil: past });
-    const completed = await create({
-      processing: true,
-      leaseOwner: 'active',
-      leaseUntil: future,
-      completedAt: past,
-    });
-
-    statements.length = 0;
-
-    await renewJobLease({ ids: [active.id, expired.id, completed.id], owner: 'active', req });
-
-    await resetJobLease({ id: active.id, owner: 'old-owner', leaseUntil: past, req });
-
-    await resetJobLease({ id: active.id, owner: 'active', leaseUntil: past, req });
-
-    await resetJobLease({ id: expired.id, owner: 'expired', leaseUntil: past, req });
-
-    expect(statements).toHaveLength(4);
-    expect(
-      statements.every(
-        (statement) => statement.startsWith('update') && statement.includes(' where '),
-      ),
-    ).toBe(true);
-
-    const rows = await database.find<Job & { leaseUntil?: string | null }>({
-      collection: 'payload-jobs',
-      pagination: false,
-      sort: 'id',
-    });
-
-    expect(rows.docs[0]).toMatchObject({ processing: true, leaseOwner: 'active' });
-    expect(rows.docs[0].leaseUntil).not.toBe(future);
-    expect(rows.docs[1]).toMatchObject({ processing: false, leaseOwner: null, leaseUntil: null });
-    expect(rows.docs[2]).toMatchObject({ leaseUntil: future, processing: true });
-  });
-
-  it('rejects lease mutations from a different runtime', async () => {
-    await expect(
-      (payload.db as JobLeaseDatabase)[jobLeaseOperations]!.update({
-        data: { leaseUntil: null },
-        where: {},
-        req: { ...req, payload: new BasePayload() },
-      }),
-    ).rejects.toThrow('this runtime');
   });
 
   it('deduplicates joined log matches before applying the limit and sorts by joined values', async () => {
@@ -353,6 +275,7 @@ describe('SQLite atomic jobs', () => {
       completedAt: executedAt,
       taskID: id,
       taskSlug: 'work',
+      input: {},
       state: 'succeeded',
     });
 
@@ -373,21 +296,21 @@ describe('SQLite atomic jobs', () => {
     expect(result.jobs!.map(({ id }) => id)).toEqual([first.id, second.id]);
   });
 
-  it('hydrates claims from their transaction and rolls back the lease with the claim', async () => {
+  it('hydrates claims from their transaction and rolls back the claim with it', async () => {
     const job = await create();
     const transactionID = await beginTransaction();
     const result = await claim({ id: job.id, req: { transactionID } }).finally(() =>
       database.rollbackTransaction(transactionID),
     );
 
-    expect(result.jobs![0]).toMatchObject({ id: job.id, processing: true });
+    expect(result.jobs![0]).toMatchObject({ id: job.id, processingToken: result.token });
 
     const rows = await database.find({
       collection: 'payload-jobs',
       where: { id: { equals: job.id } },
     });
 
-    expect(rows.docs[0]).toMatchObject({ processing: false, leaseOwner: null, leaseUntil: null });
+    expect(rows.docs[0]).toMatchObject({ processingToken: null, processingUntil: null });
   });
 
   it('preserves aliases when caller predicates join the same collection twice', async () => {

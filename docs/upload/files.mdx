@@ -44,11 +44,23 @@ A collection marked `file: true` must not set `upload: false`. Mark only one col
 
 ## Folders
 
-Folders are enabled on a collection marked `file: true`. Set `folders: false` on it if you do not want the Browse-by-folder view.
+Files sit in folders. FrogBot adds a folders collection, `folders`, with a `name` field and `folders: true`, and gives the collection marked `file: true` a folder field, `_h_folders`, which the admin panel shows as a folder picker. Folders nest inside each other.
+
+To use your own folders collection, set `folders: true` on it; FrogBot files into that one instead and doesn't add `folders`. Any other collection can file into it too:
+
+```ts
+import { createFolderField } from 'frogbot'
+import type { CollectionConfig } from 'frogbot'
+
+export const Pages: CollectionConfig = {
+  slug: 'pages',
+  fields: [{ name: 'title', type: 'text' }, createFolderField({ relationTo: 'folders' })],
+}
+```
 
 ## Storage
 
-FrogBot stores uploads on local disk unless you configure a storage adapter. For production and serverless deployments, add an [upload storage adapter](/upload/storage-adapters) to `plugins`. The adapter covers the collection marked `file: true`, if any, and `frogbot-chat-assets` when chat is enabled, automatically; you don't list them in the adapter's `collections`.
+FrogBot stores uploads on local disk unless you configure a storage adapter. For production and serverless deployments, add an [upload storage adapter](/upload/storage-adapters) to `storage`. The adapter covers the collection marked `file: true`, if any, and `frogbot-chat-assets` when chat is enabled, automatically; you don't list them in the adapter's `collections`.
 
 ## Access
 
@@ -75,7 +87,7 @@ export const Files: CollectionConfig = {
 Without a marked collection, the next schema change in an existing app drops these tables:
 
 - the `files` table;
-- `payload_folders`, when no other collection enables folders;
+- `folders`, when no other collection enables folders;
 - `frogbot_trigger_subscriptions`, when no agent has a trigger or channel.
 
 In development mode, schema push warns about the data loss and drops the tables only if you confirm. `frogbot migrate:create` writes the `DROP TABLE` statements into the migration for you to review before applying it. Stored files stay on disk or in the storage adapter, but no document references them anymore. On MongoDB the data stays, but FrogBot can't reach it.

@@ -65,7 +65,10 @@ test('the List link around a coloured status keeps its classes and opens the doc
 }) => {
   await page.goto(listPath);
 
-  const link = page.getByRole('row', { name: /Shipped/ }).locator('td.cell-status a');
+  const link = page
+    .getByRole('row')
+    .filter({ hasText: /Shipped/ })
+    .locator('td.cell-status a');
 
   await expect(link).toHaveClass(/(^|\s)selected--done(\s|$)/);
   await expect(link.locator('.fb-option-pill--green')).toHaveText('Done');
@@ -83,10 +86,16 @@ test('the List shows a pill per stored value and gray for an uncoloured option',
 }) => {
   await page.goto(listPath);
 
-  await expectPills(page.getByRole('row', { name: /Shipped/ }).locator('td.cell-labels'));
+  await expectPills(
+    page
+      .getByRole('row')
+      .filter({ hasText: /Shipped/ })
+      .locator('td.cell-labels'),
+  );
 
   const queuedStatus = page
-    .getByRole('row', { name: /Queued/ })
+    .getByRole('row')
+    .filter({ hasText: /Queued/ })
     .locator('td.cell-status .fb-option-pill');
 
   await expect(queuedStatus).toHaveText('Backlog');
@@ -125,7 +134,10 @@ for (const theme of ['light', 'dark'] satisfies AdminTheme[]) {
     await page.goto(listPath);
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
 
-    const labelsCell = page.getByRole('row', { name: /Shipped/ }).locator('td.cell-labels');
+    const labelsCell = page
+      .getByRole('row')
+      .filter({ hasText: /Shipped/ })
+      .locator('td.cell-labels');
 
     await expectPills(labelsCell);
 

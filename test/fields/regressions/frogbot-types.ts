@@ -89,12 +89,15 @@ export interface Config {
   globalsSelect: {};
   locale: null;
   widgets: {
+    welcome: WelcomeWidget;
     collections: CollectionsWidget;
+    'collection-query': CollectionQueryWidget;
+    activity: ActivityWidget;
   };
   user: User;
   jobs: {
     tasks: {
-      'frogbot-sweep-jobs': TaskFrogBotSweepJobs;
+      'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
         input: unknown;
@@ -128,6 +131,14 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -155,12 +166,16 @@ export interface User {
 export interface DraftFieldPost {
   id: number;
   title?: string | null;
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
   slug: string;
   note?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -174,6 +189,14 @@ export interface NestedField {
   group?: {
     value?: string | null;
   };
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -183,19 +206,30 @@ export interface NestedField {
  */
 export interface FieldArgument {
   id: number;
-  blocks?:
-    | {
-        observed?: string | null;
-        validated?: string | null;
-        readable?: string | null;
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'observed-block';
-      }[]
-    | null;
+  blocks?: ObservedBlock[] | null;
   payloadAuthored?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ObservedBlock".
+ */
+export interface ObservedBlock {
+  observed?: string | null;
+  validated?: string | null;
+  readable?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'observed-block';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -232,6 +266,8 @@ export interface FrogBotWaitpoint {
  * via the `definition` "users_select".
  */
 export interface UsersSelect {
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   email?: boolean;
@@ -256,9 +292,10 @@ export interface UsersSelect {
  */
 export interface DraftFieldPostsSelect {
   title?: boolean;
-  generateSlug?: boolean;
   slug?: boolean;
   note?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   _status?: boolean;
@@ -273,6 +310,8 @@ export interface NestedFieldsSelect {
     | {
         value?: boolean;
       };
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -295,6 +334,8 @@ export interface FieldArgumentsSelect {
             };
       };
   payloadAuthored?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -321,6 +362,16 @@ export interface FrogBotWaitpointsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "welcome_widget".
+ */
+export interface WelcomeWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -331,9 +382,45 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBotSweepJobs".
+ * via the `definition` "collection-query_widget".
  */
-export interface TaskFrogBotSweepJobs {
+export interface CollectionQueryWidget {
+  data?: {
+    title?: string | null;
+    relatedCollection:
+      'users' | 'draft-field-posts' | 'nested-fields' | 'field-arguments';
+    where?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    sortField?: string | null;
+    sortDirection?: ('asc' | 'desc') | null;
+    limit?: number | null;
+  };
+  width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "activity_widget".
+ */
+export interface ActivityWidget {
+  data?: {
+    excludedCollections?:
+      | ('users' | 'draft-field-posts' | 'nested-fields' | 'field-arguments')[]
+      | null;
+  };
+  width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogBotSweepWaitpoints".
+ */
+export interface TaskFrogBotSweepWaitpoints {
   input?: unknown;
   output?: unknown;
 }

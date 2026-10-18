@@ -90,7 +90,7 @@ Root views receive `AdminViewServerProps`. Use the request and permissions in `i
 ```tsx
 import { notFound, redirect } from 'next/navigation';
 
-import { DefaultTemplate } from '@frogbotai/next/templates';
+import { DefaultTemplate } from '@frogbotai/ui/admin/rsc';
 import type { AdminViewServerProps } from 'frogbot';
 
 export function ReportsView({ initPageResult, params, searchParams, user }: AdminViewServerProps) {
@@ -237,6 +237,7 @@ export default buildConfig({
 ```ts
 const posts = await frogbot.find({
   collection: 'posts',
+  overrideAccess: true,
   locale: 'es',
 });
 ```

@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => {
     attachRegisteredFrogBot: vi.fn((req: Record<string, unknown>) =>
       Object.assign(req, { frogbot }),
     ),
-    createLocalReq: vi.fn((options: { req?: Record<string, unknown> }) =>
+    createPayloadRequest: vi.fn((options: { req?: Record<string, unknown> }) =>
       Promise.resolve({ ...options.req }),
     ),
     executeAuthStrategies: vi.fn(() => Promise.resolve({ user: { id: 'user-1' } })),
@@ -44,7 +44,7 @@ const mocks = vi.hoisted(() => {
     ListControls: vi.fn(() => null),
     ListHeader: vi.fn(() => null),
     ListQueryProvider: vi.fn(({ children }) => children),
-    listGroupBy: undefined as boolean | undefined,
+    PayloadDefaultListView: vi.fn(() => null),
     ViewControls: vi.fn(() => null),
   };
 });
@@ -57,6 +57,7 @@ vi.mock('@payloadcms/ui', () => ({
   Button: () => null,
   Card: ({ buttonAriaLabel, href, id, title }: Record<string, string>) =>
     createElement('a', { 'aria-label': buttonAriaLabel, href, id }, title),
+  DefaultListView: mocks.PayloadDefaultListView,
   Gutter: ({ children }: ComponentProps<'div'>) => createElement('div', null, children),
   Link: ({ children, href, ...props }: ComponentProps<'a'>) =>
     createElement('a', { href, ...props }, children),
@@ -69,7 +70,6 @@ vi.mock('@payloadcms/ui', () => ({
   RenderCustomComponent: () => null,
   SelectionProvider: ({ children }: ComponentProps<'div'>) => children,
   SelectMany: () => null,
-  StickyToolbar: ({ children }: ComponentProps<'div'>) => children,
   TableColumnsProvider: ({ children }: ComponentProps<'div'>) => children,
   useAuth: () => ({}),
   useBulkUpload: () => ({
@@ -80,7 +80,7 @@ vi.mock('@payloadcms/ui', () => ({
   useConfig: () => ({
     config: { routes: { admin: '/admin' }, serverURL: '' },
     getEntityConfig: () => ({
-      admin: { custom: { frogbot: { views: [{ groupBy: mocks.listGroupBy, type: 'list' }] } } },
+      admin: { custom: { frogbot: { views: [{ type: 'list' }] } } },
       fields: [],
       labels: { plural: 'Posts', singular: 'Post' },
       slug: 'posts',
@@ -97,11 +97,8 @@ vi.mock('@payloadcms/ui', () => ({
   withCondition: <T>(Component: T) => Component,
 }));
 
-vi.mock('@payloadcms/ui/elements/ColumnSelector', () => ({}));
-vi.mock('@payloadcms/ui/elements/GroupByBuilder', () => ({}));
 vi.mock('@payloadcms/ui/elements/NoListResults', () => ({ NoListResults: () => null }));
 vi.mock('@payloadcms/ui/elements/QueryPresets/QueryPresetBar', () => ({}));
-vi.mock('@payloadcms/ui/elements/SearchBar', () => ({}));
 vi.mock('@payloadcms/ui/elements/WhereBuilder', () => ({}));
 vi.mock('@payloadcms/ui/icons/Dots', () => ({}));
 
@@ -111,10 +108,6 @@ vi.mock('@payloadcms/ui/rsc', () => ({
 }));
 
 vi.mock('@payloadcms/ui/utilities/reduceFieldsToOptions', () => ({}));
-
-vi.mock('../../../../../packages/ui/src/admin/adapters/router.js', () => ({
-  useRouterAdapter: () => ({ router: { refresh: vi.fn() } }),
-}));
 
 vi.mock('../../../../../packages/ui/src/admin/views/controls/ViewControls.client.js', () => ({
   ViewControls: mocks.ViewControls,
@@ -143,20 +136,17 @@ vi.mock('frogbot/internal', async (importOriginal) => ({
 
 vi.mock('payload', async (importOriginal) => ({
   ...(await importOriginal<typeof payloadModule>()),
-  createLocalReq: mocks.createLocalReq,
+  createPayloadRequest: mocks.createPayloadRequest,
   executeAuthStrategies: mocks.executeAuthStrategies,
   getPayload: mocks.getPayload,
 }));
 
-const { setServerAdapter } =
-  await import('../../../../../packages/ui/src/admin/adapters/server.js');
-
-setServerAdapter({
+const server = {
   notFound: () => {
     throw new Error('not-found');
   },
-  redirect: mocks.redirect as never,
-});
+  redirect: mocks.redirect,
+};
 
 const { ChatView } = await import('../../../../../packages/ui/src/admin/views/Chat/index.js');
 const { CollectionViewShell } =
@@ -165,8 +155,11 @@ const { CollectionViewShell } =
 const { DefaultListView } =
   await import('../../../../../packages/ui/src/admin/views/List/DefaultListView.client.js');
 
-const { SettingsView } =
+const { SettingsView: RenderSettingsView } =
   await import('../../../../../packages/ui/src/admin/views/Settings/index.js');
+
+const SettingsView = (props: Parameters<typeof RenderSettingsView>[0]) =>
+  RenderSettingsView(Object.assign(props, { server }));
 
 function settingsViewProps(props: object): Parameters<typeof SettingsView>[0] {
   return props as Parameters<typeof SettingsView>[0];
@@ -177,36 +170,22 @@ describe('FrogBot admin views', () => {
     expect(DefaultListView).toBeTypeOf('function');
   });
 
-  it.each([
-    ['enabled by default', undefined, true],
-    ['disabled by the list view', false, false],
-  ] as const)(
-    'DefaultListView renders ViewControls with sort enabled and Group By %s',
-    (_, groupBy, expected) => {
-      mocks.ViewControls.mockClear();
-      mocks.listGroupBy = groupBy;
+  it("DefaultListView renders Payload's list view with the given props", () => {
+    mocks.PayloadDefaultListView.mockClear();
 
-      renderToStaticMarkup(
-        createElement(DefaultListView, {
-          collectionSlug: 'posts',
-          columnState: [],
-          hasCreatePermission: true,
-          hasDeletePermission: true,
-          Table: createElement('table'),
-          viewType: 'default',
-        } as never),
-      );
+    const props = {
+      collectionSlug: 'posts',
+      columnState: [],
+      hasCreatePermission: true,
+      hasDeletePermission: true,
+      Table: createElement('table'),
+      viewType: 'default',
+    };
 
-      expect(mocks.ViewControls).toHaveBeenCalledWith(
-        expect.objectContaining({
-          collectionSlug: 'posts',
-          enableGroupBy: expected,
-          enableSort: true,
-        }),
-        undefined,
-      );
-    },
-  );
+    renderToStaticMarkup(createElement(DefaultListView, props as never));
+
+    expect(mocks.PayloadDefaultListView).toHaveBeenCalledWith(props, undefined);
+  });
 
   it('CollectionViewShell renders shared slots and custom cell content', () => {
     mocks.RenderServerComponent.mockImplementation(({ Component }) => `slot:${String(Component)}`);

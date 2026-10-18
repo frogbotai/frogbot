@@ -39,6 +39,7 @@ const frogbot = await getFrogBot({ config });
 
 const posts = await frogbot.find({
   collection: 'posts',
+  overrideAccess: true,
   where: { status: { equals: 'published' } },
   depth: 1,
   limit: 10,
@@ -48,28 +49,33 @@ const posts = await frogbot.find({
 
 const post = await frogbot.findByID({
   collection: 'posts',
+  overrideAccess: true,
   id: '123',
   depth: 1,
 });
 
 await frogbot.create({
   collection: 'posts',
+  overrideAccess: true,
   data: { title: 'New post', status: 'draft' },
 });
 
 await frogbot.update({
   collection: 'posts',
+  overrideAccess: true,
   id: '123',
   data: { status: 'published' },
 });
 
 await frogbot.delete({
   collection: 'posts',
+  overrideAccess: true,
   id: '123',
 });
 
 const count = await frogbot.count({
   collection: 'posts',
+  overrideAccess: true,
   where: { status: { equals: 'published' } },
 });
 ```
@@ -93,6 +99,7 @@ const select = {
 
 const posts = await frogbot.find({
   collection: 'posts',
+  overrideAccess: true,
   select,
 });
 ```
@@ -108,7 +115,7 @@ const select = {
 
 ### Access Control
 
-Local API operations bypass access control by default. To run an operation as a user, pass the user and set `overrideAccess: false`:
+Local API operations enforce access control by default. Pass `overrideAccess: true` for trusted server work; to run an operation as a user, pass the user and set `overrideAccess: false`:
 
 ```ts
 const posts = await frogbot.find({
@@ -123,6 +130,7 @@ When starting a nested operation from a hook or endpoint, pass its `req` so it s
 ```ts
 await req.frogbot.create({
   collection: 'audit-events',
+  overrideAccess: true,
   data: { action: 'post-created', document: doc.id },
   req,
 });

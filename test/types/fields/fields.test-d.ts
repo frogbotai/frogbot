@@ -17,6 +17,7 @@ import {
   type RichTextField,
   type RowField,
   type SelectField,
+  type SlugField,
   type TabsField,
   type TextareaField,
   type TextField,
@@ -44,6 +45,7 @@ type Variants =
   | RichTextField
   | RowField
   | SelectField
+  | SlugField
   | TabsField
   | TextareaField
   | TextField

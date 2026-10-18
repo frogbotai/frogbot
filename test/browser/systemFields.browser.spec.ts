@@ -106,7 +106,7 @@ test('the edit form shows the three fields read-only', async ({ page }) => {
   await expect(numberInput).toHaveValue(String(number));
   await expect(numberInput).toBeDisabled();
 
-  for (const name of ['createdBy', 'lastModifiedBy']) {
+  for (const name of ['createdBy', 'updatedBy']) {
     const field = page.locator(`#field-${name}`);
 
     await expect(field).toHaveClass(/relationship--read-only/);

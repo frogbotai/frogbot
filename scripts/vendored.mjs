@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ROOT } from './lib/workspace.mjs';
+import { catalog, ROOT } from './lib/workspace.mjs';
 
 const FIELDS = ['Upstream', 'Path', 'Commit', 'Tag'];
 
@@ -97,11 +97,7 @@ function gitIn(cwd) {
 }
 
 export function defaultTarget(root) {
-  const manifest = JSON.parse(
-    readFileSync(path.join(root, 'packages/frogbot/package.json'), 'utf8'),
-  );
-
-  const version = manifest.dependencies?.payload?.replace(/^[^\d]*/, '');
+  const version = catalog(readFileSync(path.join(root, 'pnpm-workspace.yaml'), 'utf8')).payload;
 
   return version ? `v${version}` : null;
 }

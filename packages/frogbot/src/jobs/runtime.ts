@@ -1,13 +1,19 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
 
-import { type Config, createLocalReq, type Job, type Payload, type PayloadRequest } from 'payload';
+import {
+  type Config,
+  createPayloadRequest,
+  type Job,
+  type Payload,
+  type PayloadRequest,
+} from 'payload';
 
 import { compareAndSet } from '../database/compareAndSet.js';
 import { toPayloadRequest } from '../seams/request.js';
 import { type JobInsertDatabase, jobInsertOperations } from './insert.js';
-import { getJobLeaseContext, withJobLease } from './lease.js';
 import { type JobLogDatabase, jobLogOperations } from './log.js';
+import { getJobRunContext, targetJob, withJobRun } from './run.js';
 import type { Jobs, JobsRuntime } from './types.js';
 import { resumeWaitpoint } from './waitpoints/operations.js';
 import type { WaitpointReplay } from './waitpoints/types.js';
@@ -35,13 +41,7 @@ function inTransaction(session: unknown): boolean {
 const queueContext = new AsyncLocalStorage<{ payload: Payload; seed: JobQueueSeed } | undefined>();
 const runtimes = new WeakMap<Payload, Jobs>();
 
-export function installJobsRuntime({
-  payload,
-  leaseDuration,
-}: {
-  payload: Payload;
-  leaseDuration: number;
-}): Jobs {
+export function installJobsRuntime({ payload }: { payload: Payload }): Jobs {
   const installed = runtimes.get(payload);
 
   if (installed) return installed;
@@ -55,15 +55,16 @@ export function installJobsRuntime({
   const nativeDeleteMany = payload.db.deleteMany.bind(payload.db);
 
   payload.db.updateJobs = async (args) => {
-    const context = getJobLeaseContext();
+    const context = getJobRunContext();
+    const target = targetJob(args);
     const rearm =
-      context?.payload === payload && args.id !== undefined
-        ? context.rearm.get(args.id)
+      context?.payload === payload && target.id !== undefined
+        ? context.rearm.get(target.id)
         : undefined;
 
     if (!rearm || !args.data.completedAt) return nativeUpdateJobs(args);
 
-    const id = args.id!;
+    const id = target.id!;
     const req = { ...args.req, payload } as PayloadRequest;
     const operations = (payload.db as JobLogDatabase)[jobLogOperations];
 
@@ -75,6 +76,9 @@ export function installJobsRuntime({
       where: {
         and: [
           { id: { equals: id } },
+          ...(target.processingToken
+            ? [{ processingToken: { equals: target.processingToken } }]
+            : []),
           { completedAt: { exists: false } },
           { hasError: { not_equals: true } },
         ],
@@ -84,6 +88,8 @@ export function installJobsRuntime({
         hasError: false,
         error: null,
         totalTried: 0,
+        processingToken: null,
+        processingUntil: null,
         waitUntil: rearm.waitUntil,
         waitpoint: rearm.waitpoint,
       },
@@ -96,13 +102,6 @@ export function installJobsRuntime({
     }
 
     await operations.prune({ id, keep: (rearm.log ?? []).map((entry) => entry.id), req });
-
-    await compareAndSet({
-      req,
-      collection: 'payload-jobs',
-      where: { and: [{ id: { equals: id } }, { processing: { equals: true } }] },
-      data: { processing: false, leaseOwner: null, leaseUntil: null },
-    });
 
     if (args.returning === false) return null;
 
@@ -118,7 +117,7 @@ export function installJobsRuntime({
   };
 
   payload.db.deleteMany = async (args) => {
-    const context = getJobLeaseContext();
+    const context = getJobRunContext();
     const idFilter = args.where?.id;
     const ids = idFilter && !Array.isArray(idFilter) ? idFilter.in : undefined;
 
@@ -244,27 +243,15 @@ export function installJobsRuntime({
     resumeWaitpoint({
       token,
       data,
-      req: await createLocalReq(
-        { req: req && 'frogbot' in req ? toPayloadRequest(req) : req },
+      req: await createPayloadRequest({
         payload,
-      ),
+        req: req && 'frogbot' in req ? toPayloadRequest(req) : req,
+      }),
     });
 
-  jobs.run = (args) =>
-    withJobLease({
-      payload,
-      req: args?.req,
-      leaseDuration,
-      run: () => nativeRun(args),
-    });
+  jobs.run = (args) => withJobRun({ payload, run: () => nativeRun(args) });
 
-  jobs.runByID = (args) =>
-    withJobLease({
-      payload,
-      req: args.req,
-      leaseDuration,
-      run: () => nativeRunByID(args),
-    });
+  jobs.runByID = (args) => withJobRun({ payload, run: () => nativeRunByID(args) });
 
   const publicJobs = jobs as Jobs;
 
@@ -273,13 +260,7 @@ export function installJobsRuntime({
   return publicJobs;
 }
 
-export function withJobsRuntime({
-  adapter,
-  leaseDuration,
-}: {
-  adapter: Config['db'];
-  leaseDuration: number;
-}): Config['db'] {
+export function withJobsRuntime({ adapter }: { adapter: Config['db'] }): Config['db'] {
   return {
     ...adapter,
     init(args) {
@@ -287,7 +268,7 @@ export function withJobsRuntime({
 
       args.payload.db = database;
 
-      installJobsRuntime({ payload: args.payload, leaseDuration });
+      installJobsRuntime({ payload: args.payload });
 
       return database;
     },

@@ -6,7 +6,7 @@ const appPage = '/theme-check/layers';
 const buttonOverride = 'rgb(11, 22, 33)';
 const menuOverride = 'rgb(44, 55, 66)';
 const dialogOverride = 'rgb(77, 88, 99)';
-const rootOverride = `:root { --theme-base-1000: ${buttonOverride}; --theme-base-50: ${menuOverride}; --theme-base-0: ${dialogOverride}; }`;
+const rootOverride = `:root { --fb-theme-base-1000: ${buttonOverride}; --fb-theme-base-50: ${menuOverride}; --fb-theme-base-0: ${dialogOverride}; }`;
 const probeColor = 'rgb(1, 2, 3)';
 
 function readLayers(page: Page) {
@@ -103,7 +103,7 @@ async function expectPageOverride(page: Page) {
 }
 
 async function expectSectionOverrideStaysInline(page: Page) {
-  await page.addStyleTag({ content: `.billing { --theme-base-50: ${menuOverride}; }` });
+  await page.addStyleTag({ content: `.billing { --fb-theme-base-50: ${menuOverride}; }` });
 
   const menu = await openMenu(page, 'layer-billing-menu');
 
@@ -203,25 +203,25 @@ test.describe('FrogBot CSS layer in the admin', () => {
   test('the Connections search keeps the shared search look', async ({ page }) => {
     const search = page.locator('.frogbot-connections__toolbar > .fb-search-input').first();
 
-    await expectBackground(search, await readAdminColor(page, '--theme-base-150'));
+    await expectBackground(search, await readAdminColor(page, '--fb-theme-base-150'));
     await expect(search).toHaveCSS('border-top-width', '0px');
 
     await openPostCreate(page, 'dark');
 
-    await expectBackground(search, await readAdminColor(page, '--theme-base-150'));
+    await expectBackground(search, await readAdminColor(page, '--fb-theme-base-150'));
     await expect(search).toHaveCSS('border-top-width', '0px');
   });
 
   test('admin CSS loaded after a client navigation keeps the layer order', async ({ page }) => {
     await page.goto('/');
     await page.locator('.frogbot-nav-shell a[href$="/collections/posts"]').first().click();
-    await page.waitForURL(/\/collections\/posts$/);
+    await page.waitForURL(/\/collections\/posts(\?|$)/);
     await expect(page.locator('.collection-list')).toBeVisible();
 
     const { frogbotSelectors, order } = await readLayers(page);
 
     expect(order.slice(0, 3)).toEqual(['payload-default', 'frogbot', 'payload']);
-    expect(frogbotSelectors).toContain('.collection-list');
+    expect(frogbotSelectors).toContain('.collection-view-shell');
   });
 });
 

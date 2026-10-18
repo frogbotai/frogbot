@@ -251,13 +251,18 @@ describe('resolveConnectionsCollections', () => {
     const collection = result.collections.find((item) => item.slug === 'connections')!;
     const read = collection.access!.read!;
 
-    expect(await read({ req: { user: { id: 'owner', collection: 'users' } } as never })).toEqual({
+    expect(
+      await read({ slug: 'test', req: { user: { id: 'owner', collection: 'users' } } as never }),
+    ).toEqual({
       owner: { equals: 'owner' },
     });
-    expect(await read({ req: { user: null } as never })).toBe(false);
-    expect(await read({ req: { user: { id: 'owner', collection: 'customers' } } as never })).toBe(
-      false,
-    );
+    expect(await read({ slug: 'test', req: { user: null } as never })).toBe(false);
+    expect(
+      await read({
+        slug: 'test',
+        req: { user: { id: 'owner', collection: 'customers' } } as never,
+      }),
+    ).toBe(false);
 
     const encrypted = collection.fields.find(
       (field) => 'name' in field && field.name === 'credential',

@@ -502,7 +502,11 @@ describe('chat assets', () => {
     const stored = await fs.readFile(path.resolve(CHAT_ASSETS_SLUG, doc.filename));
 
     expect(response.status).toBe(201);
-    expect(doc).toMatchObject({ filename: 'report.docx', mimeType: DOCX_TYPE, text: reportText });
+    expect(doc).toMatchObject({
+      filename: 'report-original.docx',
+      mimeType: DOCX_TYPE,
+      text: reportText,
+    });
     expect(new Uint8Array(stored)).toEqual(bytes);
     expect((await readAsset(doc.id)).sha256).toBe(sha256(bytes));
   });
@@ -516,7 +520,11 @@ describe('chat assets', () => {
     const stored = await fs.readFile(path.resolve(CHAT_ASSETS_SLUG, doc.filename));
 
     expect(response.status).toBe(201);
-    expect(doc).toMatchObject({ filename: 'budget.xlsx', mimeType: XLSX_TYPE, text: budgetText });
+    expect(doc).toMatchObject({
+      filename: 'budget-original.xlsx',
+      mimeType: XLSX_TYPE,
+      text: budgetText,
+    });
     expect(new Uint8Array(stored)).toEqual(bytes);
     expect((await readAsset(doc.id)).sha256).toBe(sha256(bytes));
   });
@@ -611,9 +619,9 @@ describe('chat assets', () => {
       { headers: { authorization: `JWT ${ownerToken}` } },
     );
 
-    expect(record).toMatchObject({ id: doc.id, filename: 'selected.docx' });
+    expect(record).toMatchObject({ id: doc.id, filename: 'selected-original.docx' });
     expect(record).not.toHaveProperty('text');
-    expect(selected).toMatchObject({ id: doc.id, filename: 'selected.docx' });
+    expect(selected).toMatchObject({ id: doc.id, filename: 'selected-original.docx' });
     expect(selected).not.toHaveProperty('text');
   });
 
@@ -782,7 +790,11 @@ describe('chat assets', () => {
       )
       .catch((error: unknown) => error);
 
-    expect(uploaded).toMatchObject({ filename: 'sdk.docx', mimeType: DOCX_TYPE, text: reportText });
+    expect(uploaded).toMatchObject({
+      filename: 'sdk-original.docx',
+      mimeType: DOCX_TYPE,
+      text: reportText,
+    });
     expect(refused).toBeInstanceOf(FrogBotSDKError);
     expect(refused).toMatchObject({
       status: 400,

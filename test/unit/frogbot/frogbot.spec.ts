@@ -33,7 +33,7 @@ vi.mock('payload', () => {
   return {
     APIError: class APIError extends Error {},
     getPayload: vi.fn(() => mockPayload),
-    createLocalReq: vi.fn(({ req }) => ({ ...req, payload: mockPayload })),
+    createPayloadRequest: vi.fn(({ req }) => ({ ...req, payload: mockPayload })),
     handleEndpoints: vi.fn(() => new Response('ok')),
     __getMockPayload: () => mockPayload,
     __resetMockPayload: () => {

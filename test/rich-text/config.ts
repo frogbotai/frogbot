@@ -12,6 +12,7 @@ import type { BlockJSX } from 'payload';
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 import { articlesSlug, htmlArticlesSlug, restrictedNotesSlug, usersSlug } from './shared.js';
 
+// @ts-expect-error Payload 4.0.0-beta.2 rejects overriding a default converter (F-238, to report upstream); drop this when it accepts it.
 const customConverters: HTMLConvertersFunctionAsync = ({ defaultConverters }) => ({
   ...defaultConverters,
   paragraph: async ({ node, nodesToHTML }) => {

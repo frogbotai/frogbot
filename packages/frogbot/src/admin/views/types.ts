@@ -43,7 +43,6 @@ export type ListView = ViewConfig & {
     afterTable?: FrogBotComponent[];
     beforeTable?: FrogBotComponent[];
   };
-  groupBy?: boolean;
   type: 'list';
 };
 
@@ -159,34 +158,6 @@ export type AfterListTableServerPropsOnly = WithoutPayload<Payload.AfterListTabl
 
 export type AfterListTableServerProps = Payload.AfterListTableClientProps &
   AfterListTableServerPropsOnly;
-
-export type FolderListViewServerPropsOnly = WithoutPayload<Payload.FolderListViewServerPropsOnly>;
-
-export type FolderListViewServerProps = Payload.FolderListViewClientProps &
-  FolderListViewServerPropsOnly;
-
-export type BeforeFolderListServerPropsOnly =
-  WithoutPayload<Payload.BeforeFolderListServerPropsOnly>;
-
-export type BeforeFolderListServerProps = Payload.BeforeFolderListClientProps &
-  BeforeFolderListServerPropsOnly;
-
-export type BeforeFolderListTableServerPropsOnly =
-  WithoutPayload<Payload.BeforeFolderListTableServerPropsOnly>;
-
-export type BeforeFolderListTableServerProps = Payload.BeforeFolderListTableClientProps &
-  BeforeFolderListTableServerPropsOnly;
-
-export type AfterFolderListServerPropsOnly = WithoutPayload<Payload.AfterFolderListServerPropsOnly>;
-
-export type AfterFolderListServerProps = Payload.AfterFolderListClientProps &
-  AfterFolderListServerPropsOnly;
-
-export type AfterFolderListTableServerPropsOnly =
-  WithoutPayload<Payload.AfterFolderListTableServerPropsOnly>;
-
-export type AfterFolderListTableServerProps = Payload.AfterFolderListTableClientProps &
-  AfterFolderListTableServerPropsOnly;
 
 export type BeforeDocumentControlsServerPropsOnly =
   WithoutPayloadOrGlobal<Payload.BeforeDocumentControlsServerPropsOnly>;
@@ -310,13 +281,9 @@ export type WidgetServerProps<TWidget extends { data?: unknown } | never = never
 
 export type {
   AdminViewClientProps,
-  AfterFolderListClientProps,
-  AfterFolderListTableClientProps,
   AfterListClientProps,
   AfterListTableClientProps,
   BeforeDocumentControlsClientProps,
-  BeforeFolderListClientProps,
-  BeforeFolderListTableClientProps,
   BeforeListClientProps,
   BeforeListTableClientProps,
   DocumentSubViewTypes,
@@ -324,9 +291,6 @@ export type {
   DocumentViewClientProps,
   EditMenuItemsClientProps,
   EditViewProps,
-  FolderListViewClientProps,
-  FolderListViewSlots,
-  FolderListViewSlotSharedClientProps,
   ListViewClientProps,
   ListViewSlots,
   ListViewSlotSharedClientProps,

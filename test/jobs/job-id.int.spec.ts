@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
 import type { MongooseAdapter } from '@frogbotai/db-mongodb';
-import { createLocalReq, type PayloadRequest } from 'payload';
+import { createPayloadRequest, type PayloadRequest } from 'payload';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { adapterName, bootJobsFixture, type FrogBotJob } from './fixture.js';
@@ -47,7 +47,7 @@ async function beginTransaction() {
 
   assert.ok(transactionID);
 
-  transactionReq = await createLocalReq({ req: { transactionID } }, fixture.payload);
+  transactionReq = await createPayloadRequest({ payload: fixture.payload, req: { transactionID } });
 
   return transactionReq;
 }
@@ -92,7 +92,13 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
       overrideAccess: true,
     });
 
-    const second = await fixture.worker.jobs.queue({ task: 'record-effect', input: {}, jobId });
+    const second = await fixture.worker.jobs.queue({
+      task: 'record-effect',
+      input: {},
+      jobId,
+      overrideAccess: true,
+    });
+
     const rows = await fixture.payload.db.find<FrogBotJob>({
       collection: 'payload-jobs',
       where: { jobId: { equals: jobId } },
@@ -130,6 +136,7 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
         task: 'record-effect',
         input: {},
         jobId,
+        overrideAccess: true,
       });
 
       expect(raw).toHaveProperty('completedAt', null);
@@ -298,7 +305,10 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
     await fixture.payload.db.updateOne({
       collection: 'payload-jobs',
       id: first.id,
-      data: { processing: true },
+      data: {
+        processingToken: 'held',
+        processingUntil: new Date(Date.now() + 60_000).toISOString(),
+      },
     });
 
     const duplicate = await fixture.frogbot.jobs.queue({
@@ -313,7 +323,7 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
       pagination: false,
     });
 
-    expect(duplicate).toMatchObject({ id: first.id, input: first.input, processing: true });
+    expect(duplicate).toMatchObject({ id: first.id, input: first.input, processingToken: 'held' });
     expect(rows.docs).toHaveLength(1);
   });
 

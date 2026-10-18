@@ -17,7 +17,7 @@ FrogBot offers additional storage adapters to handle file uploads. These adapter
 
 ## Configuration
 
-Add a storage adapter to `plugins`. Without further configuration, it stores the files for FrogBot's own upload collections:
+Add a storage adapter to the root `storage` key. Without further configuration, it stores the files for FrogBot's own upload collections:
 
 - The [files collection](/upload/files): the collection marked `file: true`, if any.
 - `frogbot-chat-assets`, when [chat persistence](/chat/overview#chat-assets) is enabled.
@@ -27,7 +27,7 @@ import { s3Storage } from '@frogbotai/storage-s3'
 import { buildConfig } from 'frogbot'
 
 export default buildConfig({
-  plugins: [
+  storage: [
     s3Storage({
       bucket: process.env.S3_BUCKET,
       config: { region: process.env.S3_REGION },
@@ -50,11 +50,11 @@ s3Storage({
 })
 ```
 
-FrogBot applies storage adapters after every other plugin has run, so an adapter also covers collections that other plugins add, wherever it sits in `plugins`.
+Storage adapters run after every plugin, so an adapter also covers collections that plugins add.
 
 ### Multiple adapters
 
-FrogBot's collections go to the first storage adapter in `plugins`. To store one of them with a different adapter, list it in that adapter's `collections`. Setting one to `false` only takes effect in the first adapter. Listing the same collection in two adapters stops FrogBot at startup with an error.
+FrogBot's collections go to the first storage adapter in `storage`. To store one of them with a different adapter, list it in that adapter's `collections`. Setting one to `false` only takes effect in the first adapter. Listing the same collection in two adapters stops FrogBot at startup with an error.
 
 ```ts
 import { s3Storage } from '@frogbotai/storage-s3'
@@ -62,7 +62,7 @@ import { vercelBlobStorage } from '@frogbotai/storage-vercel-blob'
 import { buildConfig } from 'frogbot'
 
 export default buildConfig({
-  plugins: [
+  storage: [
     s3Storage({
       bucket: process.env.S3_BUCKET,
       config: { region: process.env.S3_REGION },
@@ -102,7 +102,7 @@ import { MediaWithPrefix } from './collections/MediaWithPrefix'
 
 export default buildConfig({
   collections: [Media, MediaWithPrefix],
-  plugins: [
+  storage: [
     vercelBlobStorage({
       enabled: true, // Optional, defaults to true
       // Your own upload collections; FrogBot's are included automatically
@@ -157,7 +157,7 @@ import { Videos } from './collections/Videos'
 
 export default buildConfig({
   collections: [Media, MediaWithPrefix, Videos],
-  plugins: [
+  storage: [
     s3Storage({
       collections: {
         media: true,
@@ -226,7 +226,7 @@ import { s3Storage } from '@frogbotai/storage-s3'
 
 export default buildConfig({
   collections: [Media],
-  plugins: [
+  storage: [
     s3Storage({
       enabled: Boolean(process.env.R2_BUCKET),
       collections: {
@@ -293,7 +293,7 @@ import { MediaWithPrefix } from './collections/MediaWithPrefix'
 
 export default buildConfig({
   collections: [Media, MediaWithPrefix],
-  plugins: [
+  storage: [
     azureStorage({
       collections: {
         media: true,
@@ -348,7 +348,7 @@ import { MediaWithPrefix } from './collections/MediaWithPrefix'
 
 export default buildConfig({
   collections: [Media, MediaWithPrefix],
-  plugins: [
+  storage: [
     gcsStorage({
       collections: {
         media: true,
@@ -403,7 +403,7 @@ pnpm add @frogbotai/storage-r2
 ```ts
 export default buildConfig({
   collections: [Media],
-  plugins: [
+  storage: [
     r2Storage({
       collections: {
         media: true,
@@ -421,6 +421,7 @@ Also accepts the [shared options](#shared-storage-options).
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `bucket` | `R2Bucket` | Required | The R2 bucket binding from your Cloudflare Worker environment. |
+| `copyCredentials` | `{ accessKeyId, accountId, bucket, secretAccessKey }` | — | S3 API credentials for the bucket. Only needed for file versioning operations that copy objects. |
 
 ## Shared storage options
 
@@ -430,7 +431,6 @@ Every storage adapter accepts these options, except where noted.
 | --- | --- | --- | --- |
 | `collections` | `Record<string, true \| false \| CollectionOptions>` | `{}` | Your own upload collections that use the adapter, keyed by slug. The collection marked `file: true`, if any, and `frogbot-chat-assets` are [included automatically](#configuration) in the first adapter. Use `true` for the defaults, an object of [collection-specific options](#collection-specific-options), or `false` to keep one of FrogBot's collections on local disk. Each slug _must_ match an existing upload collection. |
 | `enabled` | `boolean` | `true` | Set `false` to turn the adapter off. When it's off, the collections keep using local storage. |
-| `alwaysInsertFields` | `boolean` | `false` | Adds the adapter's fields, such as `prefix`, to the collection schema even when the adapter is disabled, so the schema is the same in every environment. Only S3 and Vercel Blob read it; other adapters add no fields when disabled. |
 | `clientUploads` | `boolean \| { access?: ClientUploadsAccess }` | `false` | Uploads files directly from the browser to storage, bypassing server upload limits such as Vercel's 4.5 MB. The user must be signed in and able to create or update documents in the collection. `access` is `({ collectionSlug, req }) => boolean \| Promise<boolean>` and adds a further check. Azure accepts extra keys. |
 | `useCompositePrefixes` | `boolean` | `false` | Stores the document prefix relative to the collection prefix. See [Prefix composition](#prefix-composition). |
 
@@ -473,7 +473,7 @@ Files uploaded before you change the setting keep the prefix they were stored wi
 This is useful when you want a base folder structure (collection prefix) while still allowing per-document organization (document prefix).
 
 ```ts
-plugins: [
+storage: [
   s3Storage({
     collections: {
       media: {
@@ -508,7 +508,7 @@ import { Media } from './collections/Media'
 
 export default buildConfig({
   collections: [Media],
-  plugins: [
+  storage: [
     s3Storage({
       enabled: Boolean(process.env.S3_BUCKET),
       collections: { media: true },

@@ -1,5 +1,5 @@
-import { DefaultTemplate } from '@frogbotai/next/templates';
 import { SetStepNav } from '@frogbotai/ui/admin';
+import { DefaultTemplate } from '@frogbotai/ui/admin/rsc';
 import type { AdminViewServerProps } from 'frogbot';
 
 export function InsightsView({ initPageResult, params, searchParams, user }: AdminViewServerProps) {

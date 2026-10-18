@@ -1,9 +1,6 @@
-import type { Plugin as PayloadPlugin } from 'payload';
+import type { StorageAdapter as PayloadStorageAdapter } from 'payload';
 
-import type { FrogBotConfig } from '../config/types.js';
-import type { Plugin } from '../plugin.js';
-import { wrapPayloadPlugin } from '../seams/config.js';
-import type { StorageAdapterCollections, StorageAdapterRegistration } from './types.js';
+import type { StorageAdapter, StorageAdapterCollections } from './types.js';
 
 type PayloadStorageOptions = {
   collections: Partial<Record<string, unknown>>;
@@ -30,24 +27,24 @@ type ResolvedStorageOptions<TOptions extends PayloadStorageOptions> = Omit<
 
 export type StorageAdapterProps<TOptions extends PayloadStorageOptions> = {
   options: StorageAdapterOptions<TOptions>;
-  plugin: (options: ResolvedStorageOptions<TOptions>) => PayloadPlugin;
+  adapter: (options: ResolvedStorageOptions<TOptions>) => PayloadStorageAdapter;
 };
 
-export type ApplyStorageAdaptersProps = {
-  config: FrogBotConfig;
+export type ResolveStorageAdaptersProps = {
+  adapters: StorageAdapter[];
   builtInSlugs: string[];
 };
 
 export function storageAdapter<TOptions extends PayloadStorageOptions>({
   options,
-  plugin,
-}: StorageAdapterProps<TOptions>): Plugin {
+  adapter,
+}: StorageAdapterProps<TOptions>): StorageAdapter {
   const { collections = {}, ...rest } = options;
 
-  const registration: StorageAdapterRegistration = {
+  return {
     collections,
-    plugin: (builtIns) =>
-      plugin({
+    init: (builtIns) =>
+      adapter({
         ...rest,
         collections: {
           ...Object.fromEntries(builtIns.map((slug) => [slug, true] as const)),
@@ -55,8 +52,6 @@ export function storageAdapter<TOptions extends PayloadStorageOptions>({
         },
       }),
   };
-
-  return (config) => ({ ...config, _storage: [...(config._storage ?? []), registration] });
 }
 
 function isListed(options: unknown): boolean {
@@ -73,11 +68,11 @@ function listedCollections<T>(collections: StorageAdapterCollections<T>): Record
   return listed;
 }
 
-export function applyStorageAdapters({
-  config,
+/** Payload's `storage` adapters, with FrogBot's upload collections routed to the first one. */
+export function resolveStorageAdapters({
+  adapters,
   builtInSlugs,
-}: ApplyStorageAdaptersProps): FrogBotConfig {
-  const { _storage: adapters = [], ...rest } = config;
+}: ResolveStorageAdaptersProps): PayloadStorageAdapter[] {
   const listed = new Set<string>();
 
   for (const { collections } of adapters) {
@@ -94,18 +89,11 @@ export function applyStorageAdapters({
     }
   }
 
-  return adapters.reduce<FrogBotConfig>((current, { collections, plugin }, index) => {
-    const builtIns =
+  return adapters.map(({ collections, init }, index) =>
+    init(
       index === 0
         ? builtInSlugs.filter((slug) => !listed.has(slug) && collections[slug] !== false)
-        : [];
-
-    const next = wrapPayloadPlugin(plugin(builtIns))(current);
-
-    if (next instanceof Promise) {
-      throw new Error('[frogbot] Storage adapters must configure collections synchronously.');
-    }
-
-    return next;
-  }, rest);
+        : [],
+    ),
+  );
 }

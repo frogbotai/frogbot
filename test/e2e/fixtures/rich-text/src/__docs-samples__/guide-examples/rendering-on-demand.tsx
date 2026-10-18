@@ -2,11 +2,11 @@
 
 import type { DefaultNodeTypes } from '@frogbotai/richtext-lexical';
 import { buildEditorState, RenderLexical } from '@frogbotai/richtext-lexical/client';
-import type { JSONFieldClientComponent } from 'frogbot';
+import type { JSONFieldClientProps } from 'frogbot';
 import type { ComponentProps } from 'react';
 import { useState } from 'react';
 
-export const PreviewContentField: JSONFieldClientComponent = () => {
+export const PreviewContentField = (_props: JSONFieldClientProps) => {
   return (
     <RenderLexical
       field={{ name: 'previewContent' }}
@@ -51,7 +51,7 @@ export function ControlledEditor() {
   );
 }
 
-export const MismatchedSchemaField: JSONFieldClientComponent = () => {
+export const MismatchedSchemaField = (_props: JSONFieldClientProps) => {
   return (
     <RenderLexical
       field={{ name: 'mismatchedSchema' }}

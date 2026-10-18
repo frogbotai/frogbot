@@ -1,16 +1,10 @@
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 
-import { BasePayload, buildConfig, createLocalReq, type Payload } from 'payload';
+import { BasePayload, buildConfig, type Payload } from 'payload';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { sqliteD1Adapter } from '../../../packages/db-d1-sqlite/src/index.js';
 import { resolveJobsConfig } from '../../../packages/frogbot/src/jobs/config.js';
-import {
-  getJobLeaseContext,
-  renewJobLease,
-  resetJobLease,
-  withJobLease,
-} from '../../../packages/frogbot/src/jobs/lease.js';
 
 vi.mock('frogbot/jobs', () => import('../../../packages/frogbot/src/exports/jobs.js'));
 
@@ -78,7 +72,7 @@ beforeAll(async () => {
   await database.connect();
 
   sqlite.exec(
-    'CREATE TABLE payload_jobs (id INTEGER PRIMARY KEY, processing INTEGER DEFAULT 0, lease_until TEXT, lease_owner TEXT, updated_at TEXT, created_at TEXT, completed_at TEXT, queue TEXT)',
+    'CREATE TABLE payload_jobs (id INTEGER PRIMARY KEY, processing_until TEXT, processing_token TEXT, updated_at TEXT, created_at TEXT, completed_at TEXT, queue TEXT)',
   );
 });
 
@@ -92,29 +86,26 @@ beforeEach(() => {
 
 afterAll(() => sqlite.close());
 
-function claim(id?: number) {
-  return withJobLease({
-    payload,
-    leaseDuration: 300_000,
-    run: async () => {
-      await database.updateJobs({
-        ...(id === undefined
-          ? { where: { queue: { equals: 'work' } }, limit: 1, sort: 'id' }
-          : { id }),
-        data: { processing: true },
-        returning: false,
-      });
+async function claim(id?: number) {
+  const token = `token-${Math.random()}`;
 
-      return getJobLeaseContext()!;
-    },
+  await database.updateJobs({
+    ...(id === undefined ? { where: { queue: { equals: 'work' } }, limit: 1, sort: 'id' } : { id }),
+    data: { processingToken: token, processingUntil: new Date(Date.now() + 300_000).toISOString() },
+    returning: false,
   });
+
+  return token;
 }
 
-describe('D1 native driver claim and CAS', () => {
-  it('executes UPDATE/subselect/RETURNING through the native raw binding method', async () => {
-    const contexts = await Promise.all([claim(), claim()]);
+const holder = (id: number) =>
+  sqlite.prepare('SELECT processing_token FROM payload_jobs WHERE id = ?').get(id)!
+    .processing_token;
 
-    expect(contexts.map((context) => [...context.ids])).toEqual([[1], [2]]);
+describe('D1 native driver claim', () => {
+  it('executes UPDATE/subselect/RETURNING through the native raw binding method', async () => {
+    const tokens = await Promise.all([claim(), claim()]);
+
     expect(statements).toHaveLength(2);
 
     for (const statement of statements) {
@@ -123,48 +114,15 @@ describe('D1 native driver claim and CAS', () => {
       expect(statement.sql).not.toContain('skip locked');
     }
 
-    const rows = sqlite.prepare('SELECT * FROM payload_jobs ORDER BY id').all();
-
-    expect(rows.map((row) => row.processing)).toEqual([1, 1, 0]);
-    expect(rows[0].lease_owner).toBe(contexts[0].owner);
-    expect(rows[1].lease_owner).toBe(contexts[1].owner);
+    expect([holder(1), holder(2)].sort()).toEqual([...tokens].sort());
+    expect(holder(3)).toBeNull();
   });
 
-  it('never claims an already processing ID', async () => {
+  it('never claims an ID another run holds', async () => {
     const first = await claim(1);
-    const second = await claim(1);
 
-    expect([...first.ids]).toEqual([1]);
-    expect(second.ids.size).toBe(0);
-    expect(
-      sqlite.prepare('SELECT lease_owner FROM payload_jobs WHERE id = 1').get()!.lease_owner,
-    ).toBe(first.owner);
-  });
+    await claim(1);
 
-  it('preserves the conditional owner and expiry predicates in native CAS updates', async () => {
-    const context = await claim(1);
-    const req = await createLocalReq({}, payload);
-
-    statements.length = 0;
-
-    await renewJobLease({
-      ids: Array.from({ length: 150 }, (_, index) => index + 1),
-      owner: context.owner,
-      req,
-    });
-
-    await resetJobLease({
-      id: 1,
-      owner: 'stale-owner',
-      leaseUntil: '2020-01-01T00:00:00.000Z',
-      req,
-    });
-
-    expect(statements).toHaveLength(2);
-    expect(statements.every(({ method }) => method === 'run')).toBe(true);
-    expect(statements[0].params.length).toBeLessThan(100);
-    expect(
-      sqlite.prepare('SELECT processing, lease_owner FROM payload_jobs WHERE id = 1').get(),
-    ).toMatchObject({ processing: 1, lease_owner: context.owner });
+    expect(holder(1)).toBe(first);
   });
 });

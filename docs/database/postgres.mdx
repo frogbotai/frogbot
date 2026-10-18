@@ -136,6 +136,7 @@ Both adapters accept these options. `@frogbotai/db-vercel-postgres` takes a diff
 | --- | --- | --- | --- |
 | `pool` | `PoolConfig` | Required | [`node-postgres` pool options](https://node-postgres.com/apis/pool), such as `connectionString`. |
 | `push` | `boolean` | `true` | Pushes schema changes to the database with Drizzle's [`db push`](https://orm.drizzle.team/kit-docs/overview#prototyping-with-db-push) on startup. Push never runs when `NODE_ENV` is `production` or during migration commands. Set `false` to rely on migrations only. |
+| `query` | `PostgresQueryConfig` | — | Customizes how query operators such as `contains`, `like` and `not_like` are built, for example to make text matching accent-insensitive. |
 | `migrationDir` | `string` | First of `src/migrations`, `dist/migrations`, or `migrations` that exists | Directory migrations are written to and read from. See [Migrations](/database/migrations#migrations-directory). |
 | `prodMigrations` | `{ name: string; up: (args: MigrateUpArgs) => Promise<void>; down: (args: MigrateDownArgs) => Promise<void> }[]` | — | Migrations to run on connect when `NODE_ENV` is `production`. See [Running migrations in production](/database/migrations#running-migrations-in-production). |
 | `idType` | `'serial' \| 'uuid' \| 'uuidv7'` | `'serial'` | Column type for document IDs. `serial` IDs are numbers; `uuid` and `uuidv7` IDs are strings. |

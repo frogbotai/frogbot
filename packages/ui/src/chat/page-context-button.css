@@ -6,7 +6,7 @@
     padding: 0;
     border: 0;
     outline: none;
-    background-color: var(--theme-base-200);
+    background-color: var(--fb-theme-base-200);
   }
 
   .fb-page-context-button__trigger,
@@ -22,18 +22,18 @@
   .fb-page-context-button__trigger {
     padding: 0.375rem;
     border-radius: 9999px;
-    color: var(--theme-base-700);
+    color: var(--fb-theme-base-700);
     line-height: 1;
   }
 
   .fb-page-context-button__trigger:hover {
-    background-color: var(--theme-base-300);
-    color: var(--theme-base-1000);
+    background-color: var(--fb-theme-base-300);
+    color: var(--fb-theme-base-1000);
   }
 
   .fb-page-context-button__trigger:active {
-    background-color: var(--theme-base-400);
-    color: var(--theme-base-1000);
+    background-color: var(--fb-theme-base-400);
+    color: var(--fb-theme-base-1000);
   }
 
   .fb-page-context-button__trigger:disabled {
@@ -41,7 +41,7 @@
   }
 
   .fb-page-context-button__trigger--open {
-    background-color: var(--theme-base-300);
+    background-color: var(--fb-theme-base-300);
   }
 
   .fb-page-context-button__trigger-icon {
@@ -57,9 +57,9 @@
     max-width: calc(100vw - 16px);
     flex-direction: column;
     padding: 1rem 0;
-    border: 1px solid var(--theme-base-300);
+    border: 1px solid var(--fb-theme-base-300);
     border-radius: var(--fb-radius-lg);
-    background-color: var(--theme-base-250);
+    background-color: var(--fb-theme-base-250);
     box-shadow:
       0 10px 15px -3px rgb(0 0 0 / 10%),
       0 4px 6px -4px rgb(0 0 0 / 10%);
@@ -74,7 +74,7 @@
 
   .fb-page-context-button__title {
     margin: 0;
-    color: var(--theme-base-700);
+    color: var(--fb-theme-base-700);
     font-size: 1rem;
     line-height: 1.75rem;
     font-weight: 700;
@@ -82,13 +82,13 @@
 
   .fb-page-context-button__close {
     padding: 0;
-    color: var(--theme-base-600);
+    color: var(--fb-theme-base-600);
     line-height: 1;
     transition: color 150ms;
   }
 
   .fb-page-context-button__close:hover {
-    color: var(--theme-base-800);
+    color: var(--fb-theme-base-800);
   }
 
   .fb-page-context-button__close-icon {
@@ -121,7 +121,7 @@
   }
 
   .fb-page-context-button__tab:hover {
-    background-color: var(--theme-base-300);
+    background-color: var(--fb-theme-base-300);
   }
 
   .fb-page-context-button__favicon,
@@ -133,7 +133,7 @@
 
   .fb-page-context-button__favicon-placeholder {
     border-radius: 9999px;
-    background-color: var(--theme-base-800);
+    background-color: var(--fb-theme-base-800);
   }
 
   .fb-page-context-button__tab-title {
@@ -141,7 +141,7 @@
     flex: 1 1 0%;
     overflow: hidden;
     margin: 0;
-    color: var(--theme-base-700);
+    color: var(--fb-theme-base-700);
     font-size: 0.875rem;
     line-height: 1.5rem;
     font-weight: 500;
@@ -156,7 +156,7 @@
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--theme-base-400);
+    border: 1px solid var(--fb-theme-base-400);
     border-radius: 9999px;
     background-color: transparent;
     transition:
@@ -171,7 +171,7 @@
   }
 
   .fb-page-context-button__check {
-    color: var(--theme-base-100);
+    color: var(--fb-theme-base-100);
   }
 
   @media (min-width: 640px) {

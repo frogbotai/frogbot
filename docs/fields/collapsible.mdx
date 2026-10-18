@@ -57,14 +57,14 @@ Collapsible fields inherit the standard [field admin options](/fields/overview#a
 
 ```tsx
 import { CollapsibleField } from '@frogbotai/ui/admin'
-import type { CollapsibleFieldServerComponent } from 'frogbot'
+import type { CollapsibleFieldServerProps } from 'frogbot'
 
-export const CustomCollapsibleField: CollapsibleFieldServerComponent = ({
+export const CustomCollapsibleField = ({
   clientField,
   path,
   permissions,
   schemaPath,
-}) => {
+}: CollapsibleFieldServerProps) => {
   return (
     <CollapsibleField
       field={clientField}
@@ -76,4 +76,4 @@ export const CustomCollapsibleField: CollapsibleFieldServerComponent = ({
 }
 ```
 
-Use `CollapsibleFieldClientComponent` for a client replacement. A custom `label` component changes only the section header.
+Use `CollapsibleFieldClientProps` for a client replacement. A custom `label` component changes only the section header.

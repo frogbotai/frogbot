@@ -84,11 +84,7 @@ function setup() {
 
   initRepo(root);
 
-  write(
-    root,
-    'packages/frogbot/package.json',
-    JSON.stringify({ dependencies: { payload: '1.1.0' } }),
-  );
+  write(root, 'pnpm-workspace.yaml', "catalog:\n  payload: &payload '1.1.0'\n");
 
   write(root, 'packages/sdk/src/VENDORED.md', manifest(start));
 

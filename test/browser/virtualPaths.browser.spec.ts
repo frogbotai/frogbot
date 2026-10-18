@@ -59,7 +59,7 @@ test.afterEach(async ({ page }) => {
 test('the tasks List shows virtual path fields like their source', async ({ page }) => {
   await page.goto(`/collections/${tasksSlug}`);
 
-  const row = (title: string) => page.getByRole('row', { name: new RegExp(title) });
+  const row = (title: string) => page.getByRole('row').filter({ hasText: new RegExp(title) });
   const apollo = row(titles.apollo);
 
   await expect(apollo.locator('td.cell-projectBudget')).toHaveText('$12.50');
@@ -107,7 +107,7 @@ test('the tasks List shows 50 tasks with five tags each', async ({ page }) => {
 
   await page.goto(`/collections/${tasksSlug}?limit=100`);
 
-  const bulk = page.getByRole('row', { name: /Bulk task/ });
+  const bulk = page.getByRole('row').filter({ hasText: /Bulk task/ });
 
   await expect(bulk).toHaveCount(50);
   await expect(bulk.locator('td.cell-tagNames', { hasText: names.join(', ') })).toHaveCount(50);

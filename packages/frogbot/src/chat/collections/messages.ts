@@ -97,6 +97,8 @@ export function defaultMessagesCollection({
   return {
     slug,
     versions: false,
+    authorship: false,
+    custom: { frogbot: { internal: true } },
     trash: true,
     disableDuplicate: true,
     admin: {
@@ -141,7 +143,7 @@ export function defaultMessagesCollection({
         name: 'parts',
         type: 'json',
         required: true,
-        typescriptSchema: [() => ({ tsType: "import('frogbot').UIMessage['parts']" })],
+        jsonSchema: [() => ({ tsType: "import('frogbot').UIMessage['parts']" })],
       },
       { name: 'metadata', type: 'json' },
       {
@@ -164,16 +166,14 @@ export function defaultMessagesCollection({
         name: 'author',
         type: 'json',
         access: readOnly,
-        typescriptSchema: [() => ({ tsType: "import('frogbot').TurnActor" })],
+        jsonSchema: [() => ({ tsType: "import('frogbot').TurnActor" })],
       },
       {
         name: 'settlements',
         type: 'json',
         access: readOnly,
         admin: { hidden: true },
-        typescriptSchema: [
-          () => ({ tsType: "Record<string, import('frogbot').ClientToolSettlement>" }),
-        ],
+        jsonSchema: [() => ({ tsType: "Record<string, import('frogbot').ClientToolSettlement>" })],
       },
       {
         name: 'version',

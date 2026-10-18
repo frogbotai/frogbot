@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => {
 });
 
 vi.mock('@payloadcms/ui', () => ({
+  usePathname: () => mocks.pathname,
   ListHeader: () => null,
   ListQueryProvider: ({ children }: { children: React.ReactNode }) => children,
   TableColumnsProvider: ({ children }: { children: React.ReactNode }) => children,
@@ -19,10 +20,6 @@ vi.mock('@payloadcms/ui', () => ({
   }),
   useStepNav: () => ({ setStepNav: mocks.setStepNav }),
   useTranslation: () => ({ i18n: { language: 'en', t: (key: string) => key } }),
-}));
-
-vi.mock('../../../../../packages/ui/src/admin/adapters/router.js', () => ({
-  useRouterAdapter: () => ({ pathname: mocks.pathname }),
 }));
 
 vi.mock('../../../../../packages/ui/src/admin/views/controls/ViewControls.client.js', () => ({

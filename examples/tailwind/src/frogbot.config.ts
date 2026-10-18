@@ -1,4 +1,5 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
+import { sharpTransformer } from '@frogbotai/transformer-sharp';
 import type { FrogBotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
 
@@ -25,6 +26,7 @@ const config: FrogBotConfig = {
       },
     },
   },
+  upload: { transformers: [sharpTransformer()] },
 };
 
 export default buildConfig(config);

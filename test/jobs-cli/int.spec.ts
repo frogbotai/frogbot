@@ -55,12 +55,12 @@ describe('normal jobs:run executable with a real SQLite app', () => {
     expect(selected).toHaveLength(3);
 
     for (const job of selected) {
-      expect(job).toMatchObject({ processing: 0, total_tried: 1 });
+      expect(job).toMatchObject({ processing_until: null, total_tried: 1 });
       expect(job.completed_at).toEqual(expect.any(String));
     }
 
     expect(jobs.find((job) => job.id === boot.other)).toMatchObject({
-      processing: 0,
+      processing_until: null,
       completed_at: null,
       total_tried: 0,
     });
@@ -89,11 +89,10 @@ describe('normal jobs:run executable with a real SQLite app', () => {
 
     for (const job of jobs) {
       expect(job).toMatchObject({
-        processing: 0,
+        processing_until: null,
         completed_at: null,
         total_tried: 0,
-        lease_owner: null,
-        lease_until: null,
+        processing_token: null,
       });
     }
 
@@ -118,9 +117,9 @@ describe('normal jobs:run executable with a real SQLite app', () => {
       const claimed = worker.jobs().find((job) => job.id === started.id);
 
       expect(started.runtimeReady).toBe(true);
-      expect(claimed).toMatchObject({ processing: 1, completed_at: null });
-      expect(claimed?.lease_owner).toEqual(expect.any(String));
-      expect(claimed?.lease_until).toEqual(expect.any(String));
+      expect(claimed).toMatchObject({ completed_at: null });
+      expect(claimed?.processing_token).toEqual(expect.any(String));
+      expect(claimed?.processing_until).toEqual(expect.any(String));
 
       expect(worker.child.kill(signal)).toBe(true);
 
@@ -138,13 +137,13 @@ describe('normal jobs:run executable with a real SQLite app', () => {
       const jobs = worker.jobs();
       const completed = jobs.find((job) => job.id === started.id);
 
-      expect(completed).toMatchObject({ processing: 0, total_tried: 1 });
+      expect(completed).toMatchObject({ processing_until: null, total_tried: 1 });
       expect(completed?.completed_at).toEqual(expect.any(String));
       expect(worker.executions()).toEqual([{ job: String(started.id), runtime_ready: 1 }]);
       expect(jobs.filter((job) => job.id !== started.id)).toHaveLength(2);
 
       for (const job of jobs.filter((job) => job.id !== started.id)) {
-        expect(job).toMatchObject({ processing: 0, completed_at: null, total_tried: 0 });
+        expect(job).toMatchObject({ processing_until: null, completed_at: null, total_tried: 0 });
       }
     },
   );

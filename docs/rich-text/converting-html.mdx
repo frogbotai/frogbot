@@ -322,6 +322,7 @@ import { JSDOM } from 'jsdom'
 const frogbot = await getFrogBot({ config })
 const uploadedFile = await frogbot.create({
   collection: 'files',
+  overrideAccess: true,
   data: { alt: 'Mountain at sunrise' },
   filePath: '/imports/mountain.jpg',
 })

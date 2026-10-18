@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, realpathSync, symlinkSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, join, relative } from 'node:path';
 
@@ -28,6 +29,57 @@ const ALWAYS_SERVER_PACKAGES = ['@frogbotai/gateway'];
 
 const NATIVE_EXTERNALS = ['@basetenlabs/performance-client'];
 
+const RUNTIME_IMPORT_PACKAGES = ['file-type', 'sharp'];
+
+type ExternalData = { context?: string; request?: string };
+
+type ExternalCallback = (error?: Error, result?: string) => void;
+
+function getPackageRoot(entry: string, name: string): string {
+  let dir = dirname(entry);
+
+  while (basename(dir) !== name || basename(dirname(dir)) !== 'node_modules') {
+    const parent = dirname(dir);
+
+    if (parent === dir) throw new Error(`${entry} is not inside ${name}`);
+
+    dir = parent;
+  }
+
+  return dir;
+}
+
+function linkPackage(linkDir: string, root: string, name: string): string {
+  const linkName = `${name}-${createHash('sha256').update(root).digest('hex').slice(0, 16)}`;
+
+  mkdirSync(linkDir, { recursive: true });
+
+  try {
+    symlinkSync(relative(linkDir, root), join(linkDir, linkName), 'junction');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+  }
+
+  return linkName;
+}
+
+function runtimeImportExternal(linkDir: string) {
+  return ({ context, request }: ExternalData, callback: ExternalCallback) => {
+    if (!context || !request || !RUNTIME_IMPORT_PACKAGES.includes(request)) return callback();
+
+    try {
+      const entry = createRequire(join(context, 'noop.js')).resolve(request);
+
+      return callback(
+        undefined,
+        `commonjs ${linkPackage(linkDir, getPackageRoot(entry, request), request)}`,
+      );
+    } catch {
+      return callback();
+    }
+  };
+}
+
 const require = createRequire(import.meta.url);
 const payloadNextRequire = createRequire(require.resolve('@payloadcms/next/withPayload'));
 const PAYLOAD_UI_ROOT = payloadNextRequire.resolve('@payloadcms/ui');
@@ -51,6 +103,17 @@ function findLibsqlPackage(): LibsqlPackage | undefined {
     optionalDependencies: manifest.optionalDependencies,
     root: realpathSync(dirname(manifestPath)),
   };
+}
+
+function getRuntimeImportTracingIncludes(): string[] {
+  try {
+    const payloadRequire = createRequire(payloadNextRequire.resolve('payload'));
+    const fileTypeRequire = createRequire(payloadRequire.resolve('file-type'));
+
+    return [`${getProjectRelativePath(dirname(fileTypeRequire.resolve('strtok3')))}/**`];
+  } catch {
+    return [];
+  }
 }
 
 function getNodeModulesPaths(dir: string): string[] {
@@ -105,6 +168,7 @@ export function withFrogBot(
       '**/*': [
         ...(nextConfig.outputFileTracingIncludes?.['**/*'] || []),
         ...getLibsqlTracingIncludes(),
+        ...getRuntimeImportTracingIncludes(),
       ],
     },
     webpack: (webpackConfig, webpackOptions) => {
@@ -113,9 +177,17 @@ export function withFrogBot(
           ? nextConfig.webpack(webpackConfig, webpackOptions)
           : webpackConfig;
 
+      const outputPath = incoming?.output?.path;
+
       return {
         ...incoming,
-        externals: [...(incoming?.externals || []), ...NATIVE_EXTERNALS],
+        externals: [
+          ...(webpackOptions?.isServer && webpackOptions.nextRuntime === 'nodejs' && outputPath
+            ? [runtimeImportExternal(join(dirname(outputPath), 'node_modules'))]
+            : []),
+          ...(incoming?.externals || []),
+          ...NATIVE_EXTERNALS,
+        ],
         resolve: {
           ...incoming?.resolve,
           alias: {

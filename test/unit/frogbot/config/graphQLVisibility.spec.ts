@@ -14,7 +14,7 @@ const hiddenCollections = [
   'payload-preferences',
 ];
 
-const visibleCollections = ['users', 'chats', 'messages', 'files', 'payload-folders'];
+const visibleCollections = ['users', 'chats', 'messages', 'files', 'folders'];
 
 async function buildPayloadConfig() {
   const config = await buildConfig({

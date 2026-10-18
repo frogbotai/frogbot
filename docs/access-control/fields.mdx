@@ -72,6 +72,8 @@ Returns a boolean which allows or denies the ability to set a field's value when
 | `data` | `object` | Always set | The full data passed to create the document. |
 | `siblingData` | `object` | Always set | Immediately adjacent field data passed to create the document. |
 | `blockData` | `JsonObject \| undefined` | — | The nearest parent block's data, or `undefined` outside a block. |
+| `collection` | `SanitizedCollectionConfig` | — | The collection's sanitized config, when the field is on a collection. |
+| `global` | `SanitizedGlobalConfig` | — | The global's sanitized config, when the field is on a global. |
 | `doc` | `object` | — | The existing document. Not meaningful on create. |
 | `id` | `string \| number` | — | Not set on create, because the document doesn't exist yet. |
 
@@ -89,6 +91,8 @@ Returns a boolean which allows or denies the ability to read a field's value. If
 | `data` | `object` | Always set | The same value as `doc`. |
 | `siblingData` | `object` | Always set | Immediately adjacent field data of the document being read. |
 | `blockData` | `JsonObject \| undefined` | — | The nearest parent block's data, or `undefined` outside a block. |
+| `collection` | `SanitizedCollectionConfig` | — | The collection's sanitized config, when the field is on a collection. |
+| `global` | `SanitizedGlobalConfig` | — | The global's sanitized config, when the field is on a global. |
 
 ### Update
 
@@ -106,3 +110,5 @@ If `false` is returned and you attempt to update the field's value, the operatio
 | `siblingData` | `object` | Always set | Immediately adjacent field data passed to update the document with. |
 | `doc` | `object` | Always set | The full document data, before the update is applied. |
 | `blockData` | `JsonObject \| undefined` | — | The nearest parent block's data, or `undefined` outside a block. |
+| `collection` | `SanitizedCollectionConfig` | — | The collection's sanitized config, when the field is on a collection. |
+| `global` | `SanitizedGlobalConfig` | — | The global's sanitized config, when the field is on a global. |

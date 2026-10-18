@@ -2,7 +2,7 @@
 
 Docs: https://docs.frogbot.ai/mcp/overview and https://docs.frogbot.ai/plugins/mcp
 
-`@frogbotai/plugin-mcp` exposes selected FrogBot collection operations as tools over Streamable HTTP. It authenticates requests with hashed, revocable keys from `@frogbotai/plugin-api-keys`.
+`@frogbotai/plugin-mcp` exposes the app's collections to MCP clients over Streamable HTTP. It authenticates requests with hashed, revocable keys from `@frogbotai/plugin-api-keys`; every call runs as the key's owner, under the collections' access control.
 
 ## Install
 
@@ -39,22 +39,11 @@ export default buildConfig({
       ],
     },
   ],
-  plugins: [
-    apiKeysPlugin(),
-    mcpPlugin({
-      collections: {
-        posts: {
-          enabled: {
-            find: true,
-          },
-        },
-      },
-    }),
-  ],
+  plugins: [apiKeysPlugin(), mcpPlugin()],
 });
 ```
 
-Enable only the collections and operations the client needs. The plugin also accepts its public custom-tool, response-override, and handler options. Experimental configuration, collection-definition tools, job tools, and authentication-mutation tools are not supported.
+Every app collection is exposed by default, behind its access control; FrogBot's own collections never are. Turn a collection's built-in tools off with `collections: { posts: { tools: { delete: false } } }`. Options: `collections`, `globals`, `tools`, `prompts`, `resources`, `hooks`, `mcp`. Build custom tools with `defineTool` from `@frogbotai/plugin-mcp`.
 
 ## Connect a client
 

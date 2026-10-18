@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { sweepJobLeases } from 'frogbot/jobs';
-import { createLocalReq, type Payload } from 'payload';
+import { createPayloadRequest, type Payload, type Where } from 'payload';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { WorkflowHandler } from '../../packages/frogbot/dist/jobs/types.js';
@@ -89,6 +88,16 @@ function gateHolderRead(
   });
 }
 
+function targetsJob(args: { id?: number | string; where?: Where }, id: number | string) {
+  return (
+    args.id === id ||
+    (Array.isArray(args.where?.and) &&
+      args.where.and.some(
+        (condition) => condition.id && 'equals' in condition.id && condition.id.equals === id,
+      ))
+  );
+}
+
 function crashCompletion(
   payload: Payload,
   id: number | string,
@@ -98,7 +107,7 @@ function crashCompletion(
   const updateJobs = payload.db.updateJobs.bind(payload.db);
 
   return vi.spyOn(payload.db, 'updateJobs').mockImplementation(async (args) => {
-    if (args.id === id && args.data.completedAt) {
+    if (targetsJob(args, id) && args.data.completedAt) {
       entered.resolve();
 
       await release.promise;
@@ -158,36 +167,38 @@ describe(`reservation races: ${adapterName}`, () => {
 
     const closed = (await readWaitpoints())[0];
     const processing = await readJob(source.id);
-    const req = await createLocalReq({}, fixture.workerPayload);
+    const req = await createPayloadRequest({ payload: fixture.workerPayload });
 
     expect(closed).toMatchObject({ id: waiting.id, status: 'expired', dispatched: true });
-    expect(processing).toMatchObject({ processing: true, completedAt: null, hasError: false });
+    expect(processing).toMatchObject({
+      processingToken: expect.any(String),
+      completedAt: null,
+      hasError: false,
+    });
 
-    vi.setSystemTime(timestamp(processing.leaseUntil) + 1);
+    vi.setSystemTime(timestamp(processing.processingUntil) + 1);
 
-    await sweepJobLeases({ req });
-
-    expect((await readJob(source.id)).processing).toBe(false);
     expect(
       (
         await fixture.worker.jobs.queue({
           task: 'record-effect',
           input: { marker: 'ignored' },
           jobId,
+          overrideAccess: true,
         })
       ).id,
     ).toBe(source.id);
 
     await sweepWaitpoints({ req });
 
-    await fixture.worker.jobs.run({ silent: true });
+    await fixture.worker.jobs.run({ silent: true, overrideAccess: true });
 
     const recovered = await readJob(source.id);
 
     expect(recovered).toMatchObject({
       id: source.id,
       completedAt: expect.any(String),
-      processing: false,
+      processingUntil: null,
       hasError: false,
     });
     expect(await readWaitpoints()).toEqual([closed]);
@@ -235,7 +246,7 @@ describe(`reservation races: ${adapterName}`, () => {
 
     await entered.promise;
 
-    await fixture.worker.jobs.cancelByID({ id: source.id });
+    await fixture.worker.jobs.cancelByID({ id: source.id, overrideAccess: true });
 
     expect(await readJob(source.id)).toMatchObject({ hasError: true, error: { cancelled: true } });
 
@@ -252,6 +263,7 @@ describe(`reservation races: ${adapterName}`, () => {
       workflow: 'reservation-race',
       input: {},
       jobId,
+      overrideAccess: true,
     });
 
     expect(replacement.id).not.toBe(source.id);
@@ -298,7 +310,7 @@ describe(`reservation races: ${adapterName}`, () => {
       }),
     ]);
 
-    await fixture.worker.jobs.cancelByID({ id: source.id });
+    await fixture.worker.jobs.cancelByID({ id: source.id, overrideAccess: true });
 
     release.resolve();
 
@@ -339,14 +351,14 @@ describe(`reservation races: ${adapterName}`, () => {
 
     vi.setSystemTime(now + 60_001);
 
-    await fixture.worker.jobs.run({ silent: true });
+    await fixture.worker.jobs.run({ silent: true, overrideAccess: true });
 
-    expect(await readJob(source.id)).toMatchObject({ waitUntil: until, processing: false });
+    expect(await readJob(source.id)).toMatchObject({ waitUntil: until, processingUntil: null });
     expect(await readWaitpoints()).toEqual(
       expect.arrayContaining([expect.objectContaining({ name: 'approval', status: 'expired' })]),
     );
 
-    const req = await createLocalReq({}, fixture.workerPayload);
+    const req = await createPayloadRequest({ payload: fixture.workerPayload });
 
     await sweepWaitpoints({ req });
 
@@ -354,7 +366,7 @@ describe(`reservation races: ${adapterName}`, () => {
 
     vi.setSystemTime(now + 60_002);
 
-    await fixture.worker.jobs.run({ silent: true });
+    await fixture.worker.jobs.run({ silent: true, overrideAccess: true });
 
     expect(attempts).toHaveBeenCalledTimes(2);
   });
@@ -385,7 +397,7 @@ describe(`reservation races: ${adapterName}`, () => {
     await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     const waiting = (await readWaitpoints())[0];
-    const req = await createLocalReq({}, fixture.workerPayload);
+    const req = await createPayloadRequest({ payload: fixture.workerPayload });
     const blocked = gateHolderRead(fixture.workerPayload, entered, release);
 
     vi.setSystemTime(now + 60_001);
@@ -402,7 +414,7 @@ describe(`reservation races: ${adapterName}`, () => {
 
     expect(before).toMatchObject({
       waitUntil: until,
-      processing: false,
+      processingUntil: null,
       waitpoint: { results: { approval: { expired: true } } },
     });
 
@@ -440,12 +452,12 @@ describe(`reservation races: ${adapterName}`, () => {
     await fixture.frogbot.jobs.run({ silent: true, overrideAccess: true });
 
     const before = await readJob(source.id);
-    const req = await createLocalReq({}, fixture.workerPayload);
+    const req = await createPayloadRequest({ payload: fixture.workerPayload });
 
     expect(before).toMatchObject({
       completedAt: null,
       hasError: false,
-      processing: false,
+      processingUntil: null,
       totalTried: 1,
     });
     expect(before.error).toBeTruthy();
@@ -484,7 +496,7 @@ describe(`reservation races: ${adapterName}`, () => {
         data: { status: 'resumed', data: 'accepted' },
       });
 
-      const req = await createLocalReq({}, fixture.workerPayload);
+      const req = await createPayloadRequest({ payload: fixture.workerPayload });
       const blocked = gateHolderRead(fixture.workerPayload, entered, release);
       const wake = dispatchWaitpoint({ req, waitpoint: { ...waiting, status: 'resumed' } });
 
@@ -531,7 +543,12 @@ describe(`reservation races: ${adapterName}`, () => {
 
     await fixture.frogbot.jobs.cancelByID({ id: first.id, overrideAccess: true });
 
-    const second = await fixture.worker.jobs.queue({ task: 'record-effect', input: {}, jobId });
+    const second = await fixture.worker.jobs.queue({
+      task: 'record-effect',
+      input: {},
+      jobId,
+      overrideAccess: true,
+    });
 
     await Promise.allSettled([
       fixture.frogbot.update({

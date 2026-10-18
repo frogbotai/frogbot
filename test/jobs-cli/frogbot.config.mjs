@@ -71,6 +71,7 @@ const config = await buildConfig({
           await req.frogbot.create({
             collection: 'executions',
             data: { job: String(job.id), runtimeReady },
+            overrideAccess: true,
             req,
           });
 
@@ -114,6 +115,7 @@ const config = await buildConfig({
         queue: 'work',
         input: {},
         jobId: `cli-work-${index}`,
+        overrideAccess: true,
         req,
       });
 
@@ -124,6 +126,7 @@ const config = await buildConfig({
       task: 'cli-work',
       queue: 'other',
       input: {},
+      overrideAccess: true,
       req,
     });
 

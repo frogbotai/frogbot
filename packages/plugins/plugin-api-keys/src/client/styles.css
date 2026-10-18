@@ -11,13 +11,13 @@
   }
 
   .fb-dialog__description.api-keys-dialog__warning {
-    color: var(--theme-base-900);
+    color: var(--fb-theme-base-900);
     font-weight: 600;
   }
 
   .api-keys-dialog__error {
     margin: 0;
-    color: var(--theme-red-500);
+    color: var(--fb-theme-red-500);
     font-size: var(--fb-text-sm);
     line-height: var(--fb-text-sm--line-height);
   }
@@ -28,14 +28,14 @@
     gap: 0.5rem;
     min-width: 0;
     padding: 0.25rem 0.25rem 0.25rem 1rem;
-    background: var(--theme-base-100);
-    border: 1px solid var(--theme-base-150);
+    background: var(--fb-theme-base-100);
+    border: 1px solid var(--fb-theme-base-150);
     border-radius: var(--fb-radius-lg);
     transition: border-color 200ms ease-out;
   }
 
   .api-keys-dialog__token-row:hover {
-    border-color: var(--theme-base-400);
+    border-color: var(--fb-theme-base-400);
   }
 
   .api-keys-dialog__token {
@@ -53,7 +53,7 @@
   }
 
   .api-keys-dialog__token:focus-visible {
-    outline: 2px solid var(--theme-base-900);
+    outline: 2px solid var(--fb-theme-base-900);
     outline-offset: 2px;
   }
 }

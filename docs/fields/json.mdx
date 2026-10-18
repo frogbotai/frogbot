@@ -44,7 +44,7 @@ export const Settings: CollectionConfig = {
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ## Admin options
 
@@ -113,14 +113,14 @@ Override the field or its label through `admin.components`. Custom components ca
 
 ```tsx
 import { JSONField } from '@frogbotai/ui/admin'
-import type { JSONFieldServerComponent } from 'frogbot'
+import type { JSONFieldServerProps } from 'frogbot'
 
-export const CustomJSONFieldServer: JSONFieldServerComponent = ({
+export const CustomJSONFieldServer = ({
   clientField,
   path,
   permissions,
   schemaPath,
-}) => (
+}: JSONFieldServerProps) => (
   <JSONField
     field={clientField}
     path={path}
@@ -136,9 +136,9 @@ export const CustomJSONFieldServer: JSONFieldServerComponent = ({
 'use client'
 
 import { JSONField } from '@frogbotai/ui/admin'
-import type { JSONFieldClientComponent } from 'frogbot'
+import type { JSONFieldClientProps } from 'frogbot'
 
-export const CustomJSONFieldClient: JSONFieldClientComponent = (props) => (
+export const CustomJSONFieldClient = (props: JSONFieldClientProps) => (
   <JSONField {...props} />
 )
 ```
@@ -149,12 +149,12 @@ export const CustomJSONFieldClient: JSONFieldClientComponent = (props) => (
 
 ```tsx
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { JSONFieldLabelServerComponent } from 'frogbot'
+import type { JSONFieldLabelServerProps } from 'frogbot'
 
-export const CustomJSONLabelServer: JSONFieldLabelServerComponent = ({
+export const CustomJSONLabelServer = ({
   clientField,
   path,
-}) => (
+}: JSONFieldLabelServerProps) => (
   <FieldLabel
     label={clientField.label || clientField.name}
     path={path}
@@ -169,9 +169,9 @@ export const CustomJSONLabelServer: JSONFieldLabelServerComponent = ({
 'use client'
 
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { JSONFieldLabelClientComponent } from 'frogbot'
+import type { JSONFieldLabelClientProps } from 'frogbot'
 
-export const CustomJSONLabelClient: JSONFieldLabelClientComponent = ({ field, path }) => (
+export const CustomJSONLabelClient = ({ field, path }: JSONFieldLabelClientProps) => (
   <FieldLabel label={field.label || field.name} path={path} required={field.required} />
 )
 ```

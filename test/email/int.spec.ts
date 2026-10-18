@@ -561,6 +561,7 @@ describe('auth email templates', () => {
     const customer = await runtime.create({
       collection: customersSlug,
       data: { email: 'customer@example.com', password: 'password' },
+      overrideAccess: true,
     });
 
     const verifyToken = requestBody().html.match(
@@ -642,6 +643,7 @@ describe('auth email templates', () => {
     await runtime.create({
       collection: customersSlug,
       data: { email: 'customer@example.com', password: 'password' },
+      overrideAccess: true,
     });
 
     const token = await runtime.forgotPassword({

@@ -21,6 +21,8 @@ export function defaultUsageCollection({
   return {
     slug: USAGE_LOGS_SLUG,
     versions: false,
+    authorship: false,
+    custom: { frogbot: { internal: true } },
     admin: {
       icon: 'ai-search',
       views: [

@@ -18,17 +18,17 @@ const config: FrogBotConfig = {
           data: {
             heading: `Default dashboard (${Object.keys(req.frogbot.collections).length})`,
           },
-          widgetSlug: 'welcome',
+          widgetSlug: 'lab-welcome',
           width: 'medium',
         },
         {
-          widgetSlug: 'activity',
+          widgetSlug: 'lab-activity',
           width: 'small',
         },
       ],
       widgets: [
         {
-          slug: 'welcome',
+          slug: 'lab-welcome',
           label: 'Welcome summary',
           Component: '/components/DashboardWidgets#WelcomeWidgetComponent',
           fields: [{ name: 'heading', type: 'text', required: true }],
@@ -36,7 +36,7 @@ const config: FrogBotConfig = {
           maxWidth: 'large',
         },
         {
-          slug: 'activity',
+          slug: 'lab-activity',
           label: 'Activity summary',
           Component: '/components/DashboardWidgets#ActivityWidgetComponent',
           minWidth: 'small',

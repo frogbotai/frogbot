@@ -25,10 +25,10 @@ export function BannerBlock(_props: LexicalBlockClientProps) {
     <BlockCollapsible removeButton={false}>
       <div
         style={{
-          background: 'var(--theme-base-100)',
-          border: '1px solid var(--theme-base-300)',
+          background: 'var(--fb-theme-base-100)',
+          border: '1px solid var(--fb-theme-base-300)',
           borderRadius: 8,
-          color: 'var(--theme-base-800)',
+          color: 'var(--fb-theme-base-800)',
           padding: 16,
         }}
       >
@@ -60,9 +60,9 @@ export function MentionBadge(_props: LexicalInlineBlockClientProps) {
     <span
       style={{
         alignItems: 'center',
-        background: 'var(--theme-base-150)',
+        background: 'var(--fb-theme-base-150)',
         borderRadius: 12,
-        color: 'var(--theme-base-800)',
+        color: 'var(--fb-theme-base-800)',
         display: 'inline-flex',
         gap: 4,
         padding: '2px 8px',

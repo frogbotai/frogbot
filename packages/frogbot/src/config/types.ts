@@ -18,7 +18,7 @@ import type {
   SanitizedCollectionConfig,
 } from '../types/payload.js';
 import type { FrogBotArgs, FrogBotRequest } from '../types/request.js';
-import type { StorageAdapterRegistration } from '../uploads/types.js';
+import type { StorageAdapter } from '../uploads/types.js';
 
 export type LivePreviewURLType = null | string | undefined;
 
@@ -98,7 +98,8 @@ type FrogBotOverridden =
   | 'localization'
   | 'onInit'
   | 'plugins'
-  | 'secret';
+  | 'secret'
+  | 'storage';
 
 export type OnInit = (frogbot: FrogBot) => Promise<void> | void;
 
@@ -119,6 +120,8 @@ export type FrogBotConfig = Omit<PayloadConfig, FrogBotOverridden> & {
   tools?: readonly AnyTool[];
   /** Third-party account linking — which providers users can connect. */
   connections?: ConnectionsConfig;
+  /** File storage adapters from `@frogbotai/storage-*`. The first also serves FrogBot's upload collections. */
+  storage?: StorageAdapter[];
   /** Plugin pipeline — runs serially, in order, before sanitization. */
   plugins?: Plugin[];
   /** Pages added to the admin settings area, each with its own route. */
@@ -133,8 +136,11 @@ export type FrogBotConfig = Omit<PayloadConfig, FrogBotOverridden> & {
   onInit?: OnInit | OnInit[];
   /** AI configuration — providers, routers, hooks, and access control. */
   ai?: AIConfig;
+  /**
+   * Internal. Payload plugins that run inside Payload's `buildConfig`, for plugins that read
+   * themselves back from Payload's `config.plugins` (plugin-mcp). Set by FrogBot plugins.
+   */
+  _payloadPlugins?: NonNullable<PayloadConfig['plugins']>;
   /** Internal. Set by plugin-roles; not authored by users. */
   _roles?: RolesPrewiring;
-  /** Internal. Set by storage adapters; not authored by users. */
-  _storage?: StorageAdapterRegistration[];
 };

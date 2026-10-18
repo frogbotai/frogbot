@@ -158,13 +158,25 @@ describe('Local API select', () => {
     expect(result.docs[0].secret).toBeUndefined();
   });
 
-  it('bypasses access by default', async () => {
+  it('enforces access by default', async () => {
     await createPost('Owner post');
     await createPost('Other post', other.id);
 
-    const result = await booted.frogbot.find({ collection: postsSlug, select: { title: true } });
+    const req: FrogBotRequest = await booted.frogbot.createRequest({
+      user: { ...owner, collection: usersSlug },
+    });
 
-    expect(result.docs.map((post) => post.title).sort()).toEqual(['Other post', 'Owner post']);
+    await expect(
+      booted.frogbot.find({ collection: postsSlug, select: { title: true } }),
+    ).rejects.toThrow('You are not allowed to perform this action.');
+
+    const signedIn = await booted.frogbot.find({
+      collection: postsSlug,
+      req,
+      select: { title: true },
+    });
+
+    expect(signedIn.docs.map((post) => post.title)).toEqual(['Owner post']);
   });
 
   it('projects populated relationships at depth without losing relation data', async () => {

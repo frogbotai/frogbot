@@ -9,12 +9,12 @@
     flex-shrink: 0;
     align-items: center;
     padding: 0 0.75rem;
-    border: 1px solid var(--theme-base-300);
+    border: 1px solid var(--fb-theme-base-300);
     border-inline-end: 0;
     border-start-start-radius: var(--fb-radius-lg);
     border-end-start-radius: var(--fb-radius-lg);
-    background-color: var(--theme-base-100);
-    color: var(--theme-base-600);
+    background-color: var(--fb-theme-base-100);
+    color: var(--fb-theme-base-600);
     font-size: var(--fb-text-sm);
     line-height: var(--fb-text-sm--line-height);
     white-space: nowrap;

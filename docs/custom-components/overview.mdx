@@ -114,11 +114,13 @@ Plugin authors register public component paths in supported slots. Import helper
 Server Components can use the FrogBot instance attached to the request. Component-specific types describe the props and the request location:
 
 ```tsx
-import type { TextFieldServerComponent } from 'frogbot'
+import type { TextFieldServerProps } from 'frogbot'
 
-export const RelatedPostCount: TextFieldServerComponent = async ({ req }) => {
+export const RelatedPostCount = async ({ req }: TextFieldServerProps) => {
   const result = await req.frogbot.count({
     collection: 'posts',
+    overrideAccess: false,
+    req,
   })
 
   return <p>{result.totalDocs} posts</p>
@@ -183,9 +185,9 @@ export function ServerLink() {
 Field components receive their field config as `field`: authored configuration on the server and serializable configuration on the client. Server field components also receive `clientField` for passing serializable configuration to a client component.
 
 ```tsx
-import type { TextFieldServerComponent } from 'frogbot'
+import type { TextFieldServerProps } from 'frogbot'
 
-export const FieldName: TextFieldServerComponent = ({ field }) => {
+export const FieldName = ({ field }: TextFieldServerProps) => {
   return <p>Field name: {field.name}</p>
 }
 ```
@@ -193,9 +195,9 @@ export const FieldName: TextFieldServerComponent = ({ field }) => {
 ```tsx
 'use client'
 
-import type { TextFieldClientComponent } from 'frogbot'
+import type { TextFieldClientProps } from 'frogbot'
 
-export const ClientFieldName: TextFieldClientComponent = ({ field }) => {
+export const ClientFieldName = ({ field }: TextFieldClientProps) => {
   return <p>Field name: {field.name}</p>
 }
 ```
@@ -263,15 +265,15 @@ export function StatusAction() {
 }
 ```
 
-FrogBot UI components and theme tokens are available in every admin component without a wrapper and follow the admin's light and dark theme. Use `--theme-base-*` for neutral colors that should invert with the active theme. Use `--color-base-*` only for fixed palette colors that must not invert.
+FrogBot UI components and theme tokens are available in every admin component without a wrapper and follow the admin's light and dark theme. Use `--fb-theme-base-*` for neutral colors that should invert with the active theme. Use `--fb-base-*` only for fixed palette colors that must not invert.
 
 Your component CSS beats FrogBot's styles as long as it isn't in a CSS layer. See [override FrogBot styles](/chat/ui-theming#override-frogbot-styles) and [admin panel styles](/chat/ui-theming#admin-panel-styles).
 
 ```css
 .status-action {
-  background: var(--theme-base-100);
-  border: 1px solid var(--theme-base-300);
-  color: var(--theme-base-800);
+  background: var(--fb-theme-base-100);
+  border: 1px solid var(--fb-theme-base-300);
+  color: var(--fb-theme-base-800);
   padding: 0.75rem 1rem;
 }
 ```

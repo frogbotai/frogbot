@@ -26,8 +26,8 @@ test('Usage Logs heads the cost column "Cost (USD)" and shows money amounts', as
   await expect(page.locator('th#heading-costUSD')).toHaveText('Cost (USD)');
   await expect(page.getByText('Cost U S D')).toHaveCount(0);
 
-  const small = page.getByRole('row', { name: /browser\/cost-small/ });
-  const key = page.getByRole('row', { name: /browser\/cost-key/ });
+  const small = page.getByRole('row').filter({ hasText: /browser\/cost-small/ });
+  const key = page.getByRole('row').filter({ hasText: /browser\/cost-key/ });
 
   await expect(small.locator('td.cell-costUSD')).toHaveText('$0.000173');
   await expect(key.locator('td.cell-costUSD')).toHaveText('$0.02');
@@ -47,7 +47,7 @@ test('API Keys shows Total Cost (USD) as a money amount at two decimals', async 
 
   await expect(page.locator('th#heading-totalCostUSD')).toHaveText('Total Cost (USD)');
 
-  const row = page.getByRole('row', { name: new RegExp(costKeyName) });
+  const row = page.getByRole('row').filter({ hasText: new RegExp(costKeyName) });
 
   await expect(row.locator('td.cell-totalCostUSD')).toHaveText('$0.02');
 });

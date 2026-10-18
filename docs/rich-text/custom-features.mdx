@@ -60,7 +60,6 @@ The `feature` object, or the value the `feature` function returns, accepts these
 | `markdownTransformers` | `(Transformer \| ({ allNodes, allTransformers }) => Transformer)[]` | `[]` | Transformers used by the [Markdown converters](/rich-text/converting-markdown). A function receives every registered node and the transformers collected so far. See [Markdown transformers](#server-feature-markdown-transformers). |
 | `hooks` | `{ afterChange?, afterRead?, beforeChange?, beforeValidate? }` | None | Arrays of hooks run for the whole rich text field value, in addition to any node hooks. Each hook receives the field hook arguments and returns the field value to use. Every hook receives the original arguments, so when several features set the same hook, the value from the last one is used. |
 | `generateSchemaMap` | `({ config, field, i18n, props, schemaMap, schemaPath }) => FieldSchemaMap \| null` | None | Registers the feature's nested fields, keyed by path, so the Admin Panel can build form state for drawers that edit them. Return `null` when there are none. |
-| `generatedTypes` | `{ modifyOutputSchema: (args) => JSONSchema4 }` | None | Changes the JSON schema used for the rich text field in [generated types](/typescript/generating-types). `args` include `currentSchema`, `field`, `isRequired`, `collectionIDFieldTypes`, `interfaceNameDefinitions` for adding reusable top-level interfaces, and the optional `config` and `i18n`. |
 | `componentImports` | `Record<string, ComponentPath> \| ComponentPath[] \| (args) => void` | None | Components added to the [import map](/custom-components/overview#import-map). With the object form, each component is also passed to client features in `featureClientImportMap` as `<featureKey>.<key>`. |
 
 Add the feature to a rich text editor:
@@ -147,6 +146,7 @@ Register nodes on the server for headless editing, conversion, hooks, validation
 
 ```ts
 import { createNode, createServerFeature } from '@frogbotai/richtext-lexical'
+import type { HTMLConverters } from '@frogbotai/richtext-lexical/html'
 import type { Field } from 'frogbot'
 
 import { DividerMarkdownTransformer } from './markdownTransformer'
@@ -167,6 +167,13 @@ const dividerFields: Field[] = [
   },
 ]
 
+// Pass to the HTML converters' `converters` option to render dividers.
+export const dividerHTMLConverters: HTMLConverters<
+  SerializedDividerNode & { type: 'divider' }
+> = {
+  divider: '<hr>',
+}
+
 export const DividerFeature = createServerFeature<DividerFeatureInput>({
   feature: ({ props }) => ({
     ClientFeature: './divider/feature.client#DividerClientFeature',
@@ -177,12 +184,6 @@ export const DividerFeature = createServerFeature<DividerFeatureInput>({
     markdownTransformers: [DividerMarkdownTransformer],
     nodes: [
       createNode<DividerNode, SerializedDividerNode>({
-        converters: {
-          html: {
-            converter: () => '<hr>',
-            nodeTypes: [DividerNode.getType()],
-          },
-        },
         getSubFields: () => dividerFields,
         getSubFieldsData: ({ node }) => node.fields,
         ...(props?.enableGraphQLPopulation
@@ -226,7 +227,7 @@ The component path is resolved from the import-map base directory. Include the n
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `node` | `Klass<LexicalNode> \| LexicalNodeReplacement` | Required | Registers the node class or a [node replacement](https://lexical.dev/docs/concepts/node-replacement). |
-| `converters` | `{ html?: HTMLConverter }` | None | Legacy HTML serialization: `html` is `{ converter, nodeTypes }`. The converters in [Converting HTML](/rich-text/converting-html) do not read it; give them a converter for the node through their `converters` option instead. Markdown transformers belong on the feature. |
+| `jsonSchema` | `(args) => JSONSchema4` | None | Returns the node's JSON Schema, so generated types list it in the editor's node union. Nodes without it are left out of that union. |
 | `hooks` | `{ afterChange?, afterRead?, beforeChange?, beforeValidate? }` | None | Arrays of node-specific hooks. Each receives the serialized `node` and a `req` that exposes FrogBot as `req.frogbot`, and returns the node to save or read. |
 | `validations` | `NodeValidation[]` | None | Validates serialized node data with the containing document. Return `true` when valid or an error message string. |
 | `getSubFields` | `({ node, req }) => Field[] \| null` | None | Returns fields embedded in the node so their hooks and population behavior can run. |
@@ -575,6 +576,7 @@ export function dividerButtonGroup(
 | `order` | `number` | Unordered | Position relative to other groups, in ascending order. Groups without `order` come after ordered ones. |
 | `ChildComponent` | `React.FC` | None | Dropdown groups only. Component shown on the dropdown trigger, usually an icon. |
 | `isEnabled` | `({ editor, editorConfigContext, selection }) => boolean` | Always enabled | Dropdown groups only. Return `false` to disable the dropdown trigger for the current selection. |
+| `iconOnly` | `boolean` | `false` | Dropdown groups only. Shows the items as icons, without labels, with a tooltip on hover. |
 | `maxActiveItems` | `number` | `1` | Dropdown groups only. Maximum number of items marked active at once. The editor stops calling `isActive` for the remaining items once this many are active, so higher values cost more work. |
 
 The package also exports standard groups from `/client`: `toolbarAddDropdownGroupWithItems`, `toolbarTextDropdownGroupWithItems`, `toolbarFormatGroupWithItems`, and `toolbarFeatureButtonsGroupWithItems`.

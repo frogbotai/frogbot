@@ -519,7 +519,7 @@ describe('triggers', () => {
     expect(failed[0]).toMatchObject({
       id: jobs[0].id,
       hasError: true,
-      processing: false,
+      processingUntil: null,
       totalTried: 1,
       error: expect.objectContaining({
         message: expect.stringContaining('Intentional trigger handler failure'),

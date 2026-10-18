@@ -127,6 +127,7 @@ import type { FrogBot } from 'frogbot'
 const getPosts = async (frogbot: FrogBot) => {
   const posts = await frogbot.find({
     collection: 'posts',
+    overrideAccess: true,
     where: {
       color: {
         equals: 'mint',
@@ -230,6 +231,7 @@ Relationships will only populate down to the specified depth, and any relationsh
 ```ts
 const posts = await frogbot.find({
   collection: 'posts',
+  overrideAccess: true,
   where: { ... },
   depth: 0, // Only return the IDs of related documents
 })
@@ -244,6 +246,7 @@ Set the [Limit](/queries/pagination#limit) if you can reliably predict the numbe
 ```ts
 const posts = await frogbot.find({
   collection: 'posts',
+  overrideAccess: true,
   where: {
     slug: {
       equals: 'unique-post-slug',
@@ -269,6 +272,7 @@ This will reduce the amount of data returned from the request, and also skip pro
 ```ts
 const posts = await frogbot.find({
   collection: 'posts',
+  overrideAccess: true,
   where: { ... },
   select: {
     title: true,
@@ -286,6 +290,7 @@ To learn more, see the [Select documentation](/queries/select).
 ```ts
 const posts = await frogbot.find({
   collection: 'posts',
+  overrideAccess: true,
   where: {
     slug: {
       equals: 'unique-post-slug',

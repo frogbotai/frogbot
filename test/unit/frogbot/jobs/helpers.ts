@@ -1,18 +1,15 @@
 import type { DatabaseAdapter, Payload, Where } from 'payload';
-import { BasePayload, buildConfig, createLocalReq } from 'payload';
+import { BasePayload, buildConfig, createPayloadRequest } from 'payload';
 import { vi } from 'vitest';
 
 import { resolveJobsConfig } from '../../../../packages/frogbot/src/jobs/config.js';
-import type { JobLeaseMutation } from '../../../../packages/frogbot/src/jobs/lease.js';
-import { jobLeaseOperations } from '../../../../packages/frogbot/src/jobs/lease.js';
 import { withJobsRuntime } from '../../../../packages/frogbot/src/jobs/runtime.js';
 import type { Jobs, JobsConfig } from '../../../../packages/frogbot/src/jobs/types.js';
 
 export type LeaseRow = {
   id: number;
-  processing: boolean;
-  leaseOwner?: string | null;
-  leaseUntil?: string | null;
+  processingToken?: string | null;
+  processingUntil?: string | null;
   completedAt?: string | null;
 };
 
@@ -37,6 +34,10 @@ export function matches(row: Record<string, unknown>, where: Where): boolean {
         return typeof actual === 'string' && actual > String(expected);
       }
 
+      if (operator === 'less_than') {
+        return typeof actual === 'string' && actual < String(expected);
+      }
+
       if (operator === 'less_than_equal') {
         return typeof actual === 'string' && actual <= String(expected);
       }
@@ -52,14 +53,6 @@ export async function setup({
 }: { jobs?: JobsConfig; rows?: LeaseRow[] } = {}) {
   const payload = new BasePayload();
 
-  const operations = {
-    update: vi.fn(({ data, where }: JobLeaseMutation) => {
-      for (const row of rows) if (matches(row, where)) Object.assign(row, data);
-
-      return Promise.resolve();
-    }),
-  };
-
   const database = {
     name: 'mongoose',
     create: vi.fn(({ data }) => Promise.resolve({ id: 1, ...data })),
@@ -68,7 +61,6 @@ export async function setup({
       Promise.resolve({ docs: rows.filter((row) => matches(row, where)) }),
     ),
     deleteMany: vi.fn(() => Promise.resolve()),
-    [jobLeaseOperations]: operations,
   } as unknown as DatabaseAdapter;
 
   payload.logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() } as unknown as Payload['logger'];
@@ -82,18 +74,14 @@ export async function setup({
     secret: 'jobs-test-secret',
     collections: [],
     jobs: config,
-    db: withJobsRuntime({
-      adapter: { defaultIDType: 'number', init: () => database },
-      leaseDuration: config.leaseDuration,
-    }),
+    db: withJobsRuntime({ adapter: { defaultIDType: 'number', init: () => database } }),
   });
 
-  const req = await createLocalReq({}, payload);
+  const req = await createPayloadRequest({ payload: payload });
 
   return {
     payload,
     req,
-    operations,
     database,
     install: () => {
       payload.config.db.init({ payload });

@@ -1,4 +1,4 @@
-import { DefaultTemplate } from '@frogbotai/next/templates';
+import { DefaultTemplate } from '@frogbotai/ui/admin/rsc';
 import type { AdminViewServerProps } from 'frogbot';
 import { notFound, redirect } from 'next/navigation';
 

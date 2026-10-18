@@ -6,6 +6,8 @@ export function defaultAutonumbersCollection(): CollectionConfig {
   return {
     slug: AUTONUMBERS_SLUG,
     versions: false,
+    authorship: false,
+    custom: { frogbot: { internal: true } },
     typescript: { interface: 'FrogBotAutonumber' },
     admin: { hidden: true },
     graphQL: false,

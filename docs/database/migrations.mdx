@@ -4,23 +4,17 @@ sidebarTitle: "Migrations"
 description: "FrogBot uses FrogBot's migration system to evolve your database schema and data over time."
 ---
 
-FrogBot exposes a full suite of migration controls available for your use. Migration commands are accessible via
-the `npm run frogbot` command in your project directory.
+FrogBot exposes a full suite of migration controls available for your use. Run them with the
+`frogbot` command that your app installs, through `npx` (or `pnpm exec`, `yarn`, `bunx`) in your project directory:
 
-Ensure you have an npm script called "frogbot" in your `package.json` file.
-
-```json
-{
-  "scripts": {
-    "frogbot": "cross-env FROGBOT_CONFIG_PATH=src/frogbot.config.ts frogbot"
-  }
-}
+```bash
+npx frogbot migrate:status
 ```
 
 <Banner>
-  Note that you need to run FrogBot migrations through the package manager that
-  you are using, because FrogBot should not be globally installed on your
-  system.
+  FrogBot finds `frogbot.config.ts` in your project or its `src` folder; set
+  `FROGBOT_CONFIG_PATH` to use another file. FrogBot should not be installed
+  globally on your system.
 </Banner>
 
 ## Migration file contents
@@ -136,7 +130,7 @@ When `frogbot migrate` runs without an interactive terminal, such as in CI, it f
 The `migrate` command will run any migrations that have not yet been run.
 
 ```bash
-npm run frogbot migrate
+npx frogbot migrate
 ```
 
 ### Create
@@ -145,10 +139,22 @@ Create a new migration file in the migrations directory. You can optionally name
 default, migrations will be named using a timestamp.
 
 ```bash
-npm run frogbot migrate:create optional-name-here
+npx frogbot migrate:create optional-name-here
 ```
 
 See the [flags table](#commands) for `--name`, `--file`, `--skip-empty`, and `--force-accept-warning`.
+
+#### Upgrading from earlier FrogBot versions
+
+After upgrading, create the next migration from FrogBot's upgrade migration instead of the schema:
+
+```bash
+npx frogbot migrate:create upgrade --file frogbot/migrations/upgrade-0.34
+```
+
+On Postgres and SQLite it makes the schema change, and on SQLite it also rebuilds changed tables without losing their rows. Earlier versions stored authors in `createdByField()` and `lastModifiedByField()` fields; they're now the built-in `createdBy` and `updatedBy` fields. Remove those fields first: the migration copies each old author column into `createdBy` or `updatedBy`. Columns it can't place are listed in the console and at the top of the file, set to `null`: assign each to `'createdBy'` or `'updatedBy'`, or leave it to drop the column. The next `migrate:create` drops the old columns. On MongoDB it moves the `createdBy` and `lastModifiedBy` keys; edit the map at the top of the file for other names.
+
+Folders from earlier versions (`payload-folders`) aren't carried over: files keep everything else, and come back unfiled.
 
 ### Status
 
@@ -158,7 +164,7 @@ and which migrations have not yet run.
 `frogbot migrate:status`
 
 ```bash
-npm run frogbot migrate:status
+npx frogbot migrate:status
 ```
 
 ### Down
@@ -166,7 +172,7 @@ npm run frogbot migrate:status
 Roll back the last batch of migrations.
 
 ```bash
-npm run frogbot migrate:down
+npx frogbot migrate:down
 ```
 
 ### Refresh
@@ -174,7 +180,7 @@ npm run frogbot migrate:down
 Roll back all migrations that have been run, and run them again.
 
 ```bash
-npm run frogbot migrate:refresh
+npx frogbot migrate:refresh
 ```
 
 ### Reset
@@ -182,7 +188,7 @@ npm run frogbot migrate:refresh
 Roll back all migrations.
 
 ```bash
-npm run frogbot migrate:reset
+npx frogbot migrate:reset
 ```
 
 ### Fresh
@@ -190,7 +196,7 @@ npm run frogbot migrate:reset
 Drops all entities from the database and re-runs all migrations from scratch.
 
 ```bash
-npm run frogbot migrate:fresh
+npx frogbot migrate:fresh
 ```
 
 ## When to run migrations

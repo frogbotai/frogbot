@@ -3,19 +3,22 @@ import { fileURLToPath } from 'node:url';
 
 import {
   BlocksFeature,
-  convertLexicalToHTML,
   convertLexicalToMarkdown,
   convertMarkdownToLexical,
   editorConfigFactory,
   HeadingFeature,
   ParagraphFeature,
 } from '@frogbotai/richtext-lexical';
+import { convertLexicalToHTML } from '@frogbotai/richtext-lexical/html';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
-import { DividerFeature } from '../e2e/fixtures/rich-text/src/__docs-samples__/guide-examples/custom-features/divider/feature.server.js';
+import {
+  DividerFeature,
+  dividerHTMLConverters,
+} from '../e2e/fixtures/rich-text/src/__docs-samples__/guide-examples/custom-features/divider/feature.server.js';
 import config, { CalloutBlock, InlineCodeBlock } from './config.js';
 import type { RichTextArticle } from './frogbot-types.js';
 import { articlesSlug } from './shared.js';
@@ -180,8 +183,8 @@ describe('rich text integration [sqlite]', () => {
     const editorConfig = await editorConfigFactory.fromFeatures({ config, features });
     const state = convertMarkdownToLexical({ editorConfig, markdown: 'Before\n\n+++\n\nAfter' });
     const markdown = convertLexicalToMarkdown({ data: state, editorConfig });
-    const html = await convertLexicalToHTML({
-      converters: editorConfig.features.converters.html,
+    const html = convertLexicalToHTML({
+      converters: ({ defaultConverters }) => ({ ...defaultConverters, ...dividerHTMLConverters }),
       data: state,
     });
 

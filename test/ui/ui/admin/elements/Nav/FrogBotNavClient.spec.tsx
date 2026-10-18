@@ -14,11 +14,9 @@ vi.mock('../../../../../../packages/ui/src/hooks/use-mobile.js', () => ({
   useIsMobile: () => isMobile,
 }));
 
-vi.mock('../../../../../../packages/ui/src/admin/adapters/router.js', () => ({
-  useRouterAdapter: () => ({ pathname: pathname, router: { push: vi.fn() } }),
-}));
-
 vi.mock('@payloadcms/ui', () => ({
+  usePathname: () => pathname,
+  useRouter: () => ({ push: vi.fn() }),
   useNav: () => ({
     hydrated,
     navOpen: nav.navOpen,

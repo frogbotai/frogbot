@@ -1,4 +1,5 @@
 import { createNode, createServerFeature } from '@frogbotai/richtext-lexical';
+import type { HTMLConverters } from '@frogbotai/richtext-lexical/html';
 import type { Field } from 'frogbot';
 
 import { DividerMarkdownTransformer } from './markdownTransformer';
@@ -22,6 +23,11 @@ const dividerFields: Field[] = [
     required: true,
   },
 ];
+
+/** Pass to the HTML converters' `converters` option to render dividers. */
+export const dividerHTMLConverters: HTMLConverters<SerializedDividerNode & { type: 'divider' }> = {
+  divider: '<hr>',
+};
 
 export const DividerFeature = createServerFeature<
   DividerFeatureInput,
@@ -48,12 +54,6 @@ export const DividerFeature = createServerFeature<
       markdownTransformers: [DividerMarkdownTransformer],
       nodes: [
         createNode<DividerNode, SerializedDividerNode>({
-          converters: {
-            html: {
-              converter: () => '<hr>',
-              nodeTypes: [DividerNode.getType()],
-            },
-          },
           getSubFields: () => dividerFields,
           getSubFieldsData: ({ node }) => node.fields,
           ...(props?.enableGraphQLPopulation

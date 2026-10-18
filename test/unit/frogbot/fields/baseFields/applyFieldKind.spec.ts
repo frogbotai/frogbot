@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   applyFieldKind,
   type FieldKindSpec,
-  kindTypescriptSchema,
+  kindJSONSchema,
 } from '../../../../../packages/frogbot/src/fields/baseFields/applyFieldKind.js';
 import type {
   NumberField,
@@ -16,14 +16,11 @@ const spec: FieldKindSpec = {
   description: 'Length in metres',
 };
 
-type Schema = Parameters<NonNullable<TextField['typescriptSchema']>[number]>[0]['jsonSchema'];
+type Schema = Parameters<NonNullable<TextField['jsonSchema']>[number]>[0]['jsonSchema'];
 
-function runSchema(
-  field: { typescriptSchema?: TextField['typescriptSchema'] },
-  jsonSchema: Schema,
-) {
-  return (field.typescriptSchema ?? []).reduce(
-    (schema, entry) => entry({ jsonSchema: schema }),
+function runSchema(field: { jsonSchema?: TextField['jsonSchema'] }, jsonSchema: Schema) {
+  return (field.jsonSchema ?? []).reduce(
+    (schema, entry) => entry({ jsonSchema: schema, variant: 'output' }),
     jsonSchema,
   );
 }
@@ -65,12 +62,12 @@ describe('applyFieldKind components', () => {
   it('sets the FieldCell list cell and the kind field component', () => {
     const field = applyFieldKind<NumberField>(
       { name: 'length', type: 'number' },
-      { ...spec, cell: true, Field: '@frogbotai/next/client#SampleField' },
+      { ...spec, cell: true, Field: '@frogbotai/ui/admin#SampleField' },
     );
 
     expect(field.admin?.components).toEqual({
       Cell: '@frogbotai/ui/admin#FieldCell',
-      Field: '@frogbotai/next/client#SampleField',
+      Field: '@frogbotai/ui/admin#SampleField',
     });
   });
 
@@ -83,7 +80,7 @@ describe('applyFieldKind components', () => {
           components: { Cell: './Cell#Cell', Field: './Field#Field', Label: './Label#Label' },
         },
       },
-      { ...spec, cell: true, Field: '@frogbotai/next/client#SampleField' },
+      { ...spec, cell: true, Field: '@frogbotai/ui/admin#SampleField' },
     );
 
     expect(field.admin?.components).toEqual({
@@ -100,7 +97,7 @@ describe('applyFieldKind components', () => {
   });
 });
 
-describe('applyFieldKind typescriptSchema', () => {
+describe('applyFieldKind jsonSchema', () => {
   it('puts the kind entry first and keeps developer entries in order', () => {
     const calls: string[] = [];
 
@@ -108,7 +105,7 @@ describe('applyFieldKind typescriptSchema', () => {
       {
         name: 'length',
         type: 'number',
-        typescriptSchema: [
+        jsonSchema: [
           ({ jsonSchema }) => {
             calls.push(`first:${jsonSchema.description}`);
 
@@ -126,7 +123,7 @@ describe('applyFieldKind typescriptSchema', () => {
 
     runSchema(field, { type: 'number' });
 
-    expect(field.typescriptSchema).toHaveLength(3);
+    expect(field.jsonSchema).toHaveLength(3);
     expect(calls).toEqual(['first:Length in metres', 'second']);
   });
 
@@ -152,7 +149,7 @@ describe('applyFieldKind typescriptSchema', () => {
       {
         name: 'length',
         type: 'number',
-        typescriptSchema: [({ jsonSchema }) => ({ ...jsonSchema, description: 'Custom text' })],
+        jsonSchema: [({ jsonSchema }) => ({ ...jsonSchema, description: 'Custom text' })],
       },
       spec,
     );
@@ -235,22 +232,22 @@ describe('applyFieldKind typescriptSchema', () => {
 
 describe('applyFieldKind input', () => {
   it('leaves admin.description and the input field unchanged', () => {
-    const entry = kindTypescriptSchema({ text: 'Other' });
+    const entry = kindJSONSchema({ text: 'Other' });
 
     const input: NumberField = {
       name: 'length',
       type: 'number',
       admin: { description: 'Board length', custom: { other: true } },
-      typescriptSchema: [entry],
+      jsonSchema: [entry],
     };
 
-    const snapshot = structuredClone({ ...input, typescriptSchema: undefined });
+    const snapshot = structuredClone({ ...input, jsonSchema: undefined });
 
     const field = applyFieldKind(input, { ...spec, cell: true });
 
     expect(field.admin?.description).toBe('Board length');
-    expect({ ...input, typescriptSchema: undefined }).toEqual(snapshot);
-    expect(input.typescriptSchema).toEqual([entry]);
+    expect({ ...input, jsonSchema: undefined }).toEqual(snapshot);
+    expect(input.jsonSchema).toEqual([entry]);
     expect(input.admin).not.toHaveProperty('components');
   });
 });

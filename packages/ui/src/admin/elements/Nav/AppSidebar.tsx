@@ -247,7 +247,9 @@ export function AppSidebar({
       {tooltip &&
         createPortal(
           <div className={`${baseClass}__tooltip`} style={{ left: tooltip.left, top: tooltip.top }}>
-            <Tooltip staticPositioning>{tooltip.label}</Tooltip>
+            <Tooltip delay={0} portal={false} staticPositioning>
+              {tooltip.label}
+            </Tooltip>
           </div>,
           document.body,
         )}

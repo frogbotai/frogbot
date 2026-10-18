@@ -16,9 +16,9 @@ const Posts: CollectionConfig = {
   versions: true,
   access: {
     create: () => true,
-    delete: ({ req }) => ({ owner: { equals: req.user?.id } }),
-    read: ({ req }) => ({ owner: { equals: req.user?.id } }),
-    update: ({ req }) => ({ owner: { equals: req.user?.id } }),
+    delete: ({ req }) => (req.user ? { owner: { equals: req.user.id } } : false),
+    read: ({ req }) => (req.user ? { owner: { equals: req.user.id } } : false),
+    update: ({ req }) => (req.user ? { owner: { equals: req.user.id } } : false),
   },
   fields: [
     { name: 'title', type: 'text', required: true },

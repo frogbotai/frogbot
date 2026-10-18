@@ -2,10 +2,8 @@
 
 import './index.css';
 
-import { useConfig, usePreferences } from '@payloadcms/ui';
+import { useConfig, usePathname, usePreferences, useRouter, useSearchParams } from '@payloadcms/ui';
 import { formatAdminURL } from 'payload/shared';
-
-import { useRouterAdapter } from '../../adapters/router.js';
 
 type CollectionView = {
   label: string;
@@ -23,7 +21,9 @@ export type ViewSwitcherProps = {
 export function ViewSwitcher({ collectionSlug, viewSlug, views }: ViewSwitcherProps) {
   const { config } = useConfig();
   const { setPreference } = usePreferences();
-  const { pathname, router, searchParams } = useRouterAdapter();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   if (views.length < 2) return null;
 
   const active =

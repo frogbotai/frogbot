@@ -18,7 +18,7 @@ export const storageConfig = buildConfig({
   secret: process.env.FROGBOT_SECRET!,
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL! } }),
   collections: [Media],
-  plugins: [
+  storage: [
     s3Storage({
       bucket: process.env.S3_BUCKET!,
       collections: { media: true },

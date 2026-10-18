@@ -35,7 +35,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@payloadcms/storage-azure": "3.90.2"
+    "@payloadcms/storage-azure": "catalog:"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"

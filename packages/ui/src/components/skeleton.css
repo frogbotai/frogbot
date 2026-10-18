@@ -2,7 +2,7 @@
   .fb-skeleton {
     animation: fb-skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     border-radius: var(--fb-radius-md);
-    background-color: var(--theme-base-50);
+    background-color: var(--fb-theme-base-50);
   }
 
   @keyframes fb-skeleton-pulse {

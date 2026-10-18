@@ -88,7 +88,7 @@ describe('FrogBotSDK query strings', () => {
     expect(frogbotRequests[0]?.url).toBe(`${baseURL}/sdk-pages/7?fallback-locale=false`);
   });
 
-  it('update by ID sends autosave and publishSpecificLocale', async () => {
+  it('update by ID sends autosave and publishAllLocales', async () => {
     const { frogbot, frogbotRequests } = createClients();
 
     await frogbot.update({
@@ -97,12 +97,25 @@ describe('FrogBotSDK query strings', () => {
       data: { title: 'Toads' },
       draft: true,
       id: 7,
-      publishSpecificLocale: 'fr',
+      publishAllLocales: true,
     } as never);
 
     expect(frogbotRequests[0]?.url).toBe(
-      `${baseURL}/sdk-pages/7?draft=true&autosave=true&publishSpecificLocale=fr`,
+      `${baseURL}/sdk-pages/7?draft=true&autosave=true&publishAllLocales=true`,
     );
+  });
+
+  it('update by where sends unpublishAllLocales', async () => {
+    const { frogbot, frogbotRequests } = createClients();
+
+    await frogbot.update({
+      collection: 'sdk-pages',
+      data: { title: 'Toads' },
+      unpublishAllLocales: true,
+      where: { id: { equals: 7 } },
+    } as never);
+
+    expect(frogbotRequests[0]?.url).toContain('unpublishAllLocales=true');
   });
 
   it('update by ID sends autosave false', async () => {

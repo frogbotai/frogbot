@@ -382,7 +382,6 @@ export type UpdateByIDArgs<TSlug extends CollectionSlug> = LockedWriteArgs &
     data: Partial<TypedCollection<TSlug>>;
     autosave?: boolean;
     draft?: boolean;
-    publishSpecificLocale?: string;
   };
 
 export type UpdateManyArgs<TSlug extends CollectionSlug> = LockedWriteArgs &

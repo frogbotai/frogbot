@@ -8,7 +8,7 @@ import { setup } from './helpers.js';
 
 describe('jobs.queue', () => {
   it('retains native enqueue semantics with safe execution defaults', async () => {
-    const { payload, req, database, install } = await setup({
+    const { req, database, install } = await setup({
       jobs: {
         workflows: [
           {
@@ -32,6 +32,7 @@ describe('jobs.queue', () => {
       jobId: 'sync-42',
       waitUntil,
       req,
+      overrideAccess: true,
     });
 
     expect(result).toMatchObject({
@@ -45,7 +46,6 @@ describe('jobs.queue', () => {
     });
 
     expect(deleteMany).toHaveBeenCalledOnce();
-    expect(payload.config.jobs).toMatchObject({ runHooks: false, depth: 0 });
   });
 
   it('keeps concurrent job IDs isolated and leaves generated primary IDs alone', async () => {
@@ -62,9 +62,9 @@ describe('jobs.queue', () => {
     const jobs = install();
 
     const results = await Promise.all([
-      jobs.queue({ task: 'work', input: {}, jobId: 'a', req }),
-      jobs.queue({ task: 'work', input: {}, jobId: 'b', req }),
-      jobs.queue({ task: 'work', input: {}, req }),
+      jobs.queue({ task: 'work', input: {}, jobId: 'a', req, overrideAccess: true }),
+      jobs.queue({ task: 'work', input: {}, jobId: 'b', req, overrideAccess: true }),
+      jobs.queue({ task: 'work', input: {}, req, overrideAccess: true }),
     ]);
 
     expect(results.map((job) => job.id).sort()).toEqual([1, 2, 3]);
@@ -93,9 +93,9 @@ describe('jobs.queue', () => {
 
     create.mockRejectedValue(duplicate);
 
-    await expect(jobs.queue({ task: 'work', input: {}, jobId: 'duplicate', req })).rejects.toBe(
-      duplicate,
-    );
+    await expect(
+      jobs.queue({ task: 'work', input: {}, jobId: 'duplicate', req, overrideAccess: true }),
+    ).rejects.toBe(duplicate);
 
     expect(create).toHaveBeenCalledTimes(4);
     expect(database.find).toHaveBeenCalledTimes(5);
@@ -114,7 +114,13 @@ describe('jobs.queue', () => {
 
     const jobs = install();
 
-    const result = await jobs.queue({ task: 'work', input: {}, jobId: 'duplicate', req });
+    const result = await jobs.queue({
+      task: 'work',
+      input: {},
+      jobId: 'duplicate',
+      req,
+      overrideAccess: true,
+    });
 
     expect(result).toMatchObject(holder);
     expect(create).toHaveBeenCalledOnce();
@@ -140,7 +146,13 @@ describe('jobs.queue', () => {
 
     vi.mocked(database.find).mockResolvedValue({ docs: [holder] } as never);
 
-    const result = await install().queue({ task: 'work', input: {}, jobId: 'duplicate', req });
+    const result = await install().queue({
+      task: 'work',
+      input: {},
+      jobId: 'duplicate',
+      req,
+      overrideAccess: true,
+    });
 
     expect(result).toMatchObject(holder);
     expect(create).not.toHaveBeenCalled();
@@ -157,7 +169,9 @@ describe('jobs.queue', () => {
 
     const jobs = install();
 
-    await expect(jobs.queue({ task: 'work', input: {}, jobId: 'race', req })).rejects.toBe(error);
+    await expect(
+      jobs.queue({ task: 'work', input: {}, jobId: 'race', req, overrideAccess: true }),
+    ).rejects.toBe(error);
 
     expect(database.find).toHaveBeenCalledOnce();
     expect(create).toHaveBeenCalledOnce();
@@ -169,7 +183,13 @@ describe('jobs.queue', () => {
 
     create.mockRejectedValueOnce(new Error('unique constraint'));
 
-    const result = await install().queue({ task: 'work', input: {}, jobId: 'race', req });
+    const result = await install().queue({
+      task: 'work',
+      input: {},
+      jobId: 'race',
+      req,
+      overrideAccess: true,
+    });
 
     expect(result).toMatchObject({ id: 1, jobId: 'race' });
     expect(create).toHaveBeenCalledTimes(2);
@@ -182,7 +202,13 @@ describe('jobs.queue', () => {
 
     (database as JobInsertDatabase)[jobInsertOperations] = { insert };
 
-    const result = await install().queue({ task: 'work', input: {}, jobId: 'new', req });
+    const result = await install().queue({
+      task: 'work',
+      input: {},
+      jobId: 'new',
+      req,
+      overrideAccess: true,
+    });
 
     expect(result).toMatchObject({ id: 1, jobId: 'new' });
     expect(insert).toHaveBeenCalledWith({ req, insert: expect.any(Function) });

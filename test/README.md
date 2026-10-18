@@ -164,16 +164,14 @@ The `FROGBOT_DATABASE` env var controls which adapter is used at runtime. The me
 
 This mirrors Payload's adapter swap pattern from their test infrastructure.
 
-### Storage Plugin Pipeline
+### Storage Adapters
 
-Storage adapters are wrapped in `@frogbotai/storage-*` packages. Each wrapper is a plugin that records its options on the config; FrogBot applies it later. The execution flow:
+Storage adapters are wrapped in `@frogbotai/storage-*` packages and go in the root `storage` key, as in Payload. The execution flow:
 
-1. `runPlugins` (frogbot) executes plugins on `FrogBotConfig`; storage plugins only register themselves
-2. `sanitize()` adds FrogBot's collections, then applies each storage adapter with the collection marked `file: true` (if any) and `frogbot-chat-assets` (when chat is enabled) added to the first adapter's `collections`
-3. The adapters inject `upload.handlers` and hooks before `sanitize()` builds the final collections
-4. Payload receives config with handlers already wired — no re-run needed
+1. `sanitize()` adds FrogBot's collections, then resolves each adapter, adding the collection marked `file: true` (if any) and `frogbot-chat-assets` (when chat is enabled) to the first adapter's `collections`
+2. Payload's `buildConfig` runs the adapters after plugins, injecting `upload.handlers` and hooks
 
-Test configs use a single `plugins: [s3Storage(...)]` array, same as a real app would.
+Test configs use `storage: [s3Storage(...)]`, same as a real app would.
 
 ### FrogBotInstance Facade
 
@@ -498,7 +496,7 @@ This test infrastructure is modeled after Payload's (v3.85.1). Key differences:
 - Payload tests against their own API directly; we test through the `FrogBotInstance` facade
 - Payload uses a monorepo with per-package test configs; we use a centralized `test/` directory
 - Payload has MongoDB replica set + Atlas search tests; we skip those (not needed for v0)
-- Our storage plugins are wrapped (cast to `Plugin` type) rather than using Payload's plugin system directly
+- Our storage adapters are wrapped so FrogBot's upload collections join the first one
 
 ## First-run caveats
 

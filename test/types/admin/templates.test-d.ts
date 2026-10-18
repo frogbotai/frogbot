@@ -1,4 +1,4 @@
-import { DefaultTemplate, type DefaultTemplateProps } from '@frogbotai/next/templates';
+import { DefaultTemplate, type DefaultTemplateProps } from '@frogbotai/ui/admin/rsc';
 import type { AdminViewServerProps, FrogBotRequest } from 'frogbot';
 import { expectTypeOf } from 'vitest';
 

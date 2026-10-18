@@ -4,14 +4,11 @@ import { urlField } from '../../../../../packages/frogbot/src/fields/baseFields/
 import type { TextField } from '../../../../../packages/frogbot/src/fields/config/types.js';
 import { validateField } from './validateField.js';
 
-type Schema = Parameters<NonNullable<TextField['typescriptSchema']>[number]>[0]['jsonSchema'];
+type Schema = Parameters<NonNullable<TextField['jsonSchema']>[number]>[0]['jsonSchema'];
 
-function runSchema(
-  field: { typescriptSchema?: TextField['typescriptSchema'] },
-  jsonSchema: Schema,
-) {
-  return (field.typescriptSchema ?? []).reduce(
-    (schema, entry) => entry({ jsonSchema: schema }),
+function runSchema(field: { jsonSchema?: TextField['jsonSchema'] }, jsonSchema: Schema) {
+  return (field.jsonSchema ?? []).reduce(
+    (schema, entry) => entry({ jsonSchema: schema, variant: 'output' }),
     jsonSchema,
   );
 }
@@ -35,7 +32,7 @@ describe('urlField', () => {
   it('passes text field options through unchanged', () => {
     const access = { update: () => false };
     const afterRead = () => 'example.com';
-    const developerEntry: NonNullable<TextField['typescriptSchema']>[number] = ({ jsonSchema }) =>
+    const developerEntry: NonNullable<TextField['jsonSchema']>[number] = ({ jsonSchema }) =>
       jsonSchema;
 
     const field = urlField({
@@ -48,7 +45,7 @@ describe('urlField', () => {
       access,
       hooks: { afterRead: [afterRead] },
       admin: { readOnly: true, placeholder: 'example.com', custom: { other: true } },
-      typescriptSchema: [developerEntry],
+      jsonSchema: [developerEntry],
     });
 
     expect(field).toMatchObject({
@@ -67,8 +64,8 @@ describe('urlField', () => {
       },
     });
 
-    expect(field.typescriptSchema).toHaveLength(2);
-    expect(field.typescriptSchema?.[1]).toBe(developerEntry);
+    expect(field.jsonSchema).toHaveLength(2);
+    expect(field.jsonSchema?.[1]).toBe(developerEntry);
   });
 });
 
@@ -82,7 +79,7 @@ describe('urlField option errors', () => {
   });
 });
 
-describe('urlField typescriptSchema', () => {
+describe('urlField jsonSchema', () => {
   it('describes the value to agents when there is no description', () => {
     const field = urlField({ name: 'website' });
 

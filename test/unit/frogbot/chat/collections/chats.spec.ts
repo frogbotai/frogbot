@@ -61,10 +61,10 @@ describe('defaultChatsCollection', () => {
   it('stores the channel thread reference as hidden, typed JSON', () => {
     const channelThread = collection.fields.find(
       (f) => 'name' in f && f.name === 'channelThread',
-    ) as { typescriptSchema?: Array<(args: { jsonSchema: object }) => object> };
+    ) as { jsonSchema?: Array<(args: { jsonSchema: object }) => object> };
 
     expect(channelThread).toMatchObject({ type: 'json', admin: { hidden: true } });
-    expect(channelThread.typescriptSchema?.[0]({ jsonSchema: {} })).toEqual({
+    expect(channelThread.jsonSchema?.[0]({ jsonSchema: {} })).toEqual({
       tsType: "import('frogbot').ChannelThreadReference",
     });
   });
@@ -133,16 +133,18 @@ describe('defaultChatsCollection', () => {
 
   describe('access', () => {
     it('create requires an authenticated user', async () => {
-      expect(await collection.access?.create?.({ req: reqWithUser('u1') })).toBe(true);
-      expect(await collection.access?.create?.({ req: reqWithUser() })).toBe(false);
+      expect(await collection.access?.create?.({ slug: 'test', req: reqWithUser('u1') })).toBe(
+        true,
+      );
+      expect(await collection.access?.create?.({ slug: 'test', req: reqWithUser() })).toBe(false);
     });
 
     it('read/update/delete are owner-scoped where queries', async () => {
       for (const op of ['read', 'update', 'delete'] as const) {
-        expect(await collection.access?.[op]?.({ req: reqWithUser('u1') })).toEqual({
+        expect(await collection.access?.[op]?.({ slug: 'test', req: reqWithUser('u1') })).toEqual({
           user: { equals: 'u1' },
         });
-        expect(await collection.access?.[op]?.({ req: reqWithUser() })).toBe(false);
+        expect(await collection.access?.[op]?.({ slug: 'test', req: reqWithUser() })).toBe(false);
       }
     });
 
@@ -155,7 +157,7 @@ describe('defaultChatsCollection', () => {
       });
 
       expect(configured.access?.read).toBe(read);
-      expect(await configured.access?.update?.({ req: reqWithUser('u1') })).toEqual({
+      expect(await configured.access?.update?.({ slug: 'test', req: reqWithUser('u1') })).toEqual({
         user: { equals: 'u1' },
       });
     });

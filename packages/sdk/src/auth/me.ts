@@ -13,9 +13,8 @@ export type MeResult<T extends FrogBotTypesShape, TSlug extends AuthCollectionSl
   collection?: TSlug;
   exp?: number;
   message: string;
-  strategy?: string;
   token?: string;
-  user: DataFromAuthSlug<T, TSlug>;
+  user: { _strategy?: string } & DataFromAuthSlug<T, TSlug>;
 };
 
 export async function me<T extends FrogBotTypesShape, TSlug extends AuthCollectionSlug<T>>(

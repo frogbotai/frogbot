@@ -35,7 +35,6 @@ function sanitizeOne(field: Field): Field & { admin?: Record<string, any> } {
   return sanitizeVectorFields({
     collection: 'tasks',
     fields: [field],
-    users: { authSlugs: [], resolve: () => 'users' },
   })[0];
 }
 
@@ -89,7 +88,7 @@ describe('virtual path fields', () => {
 
   it('sets the FieldCell List Cell in a config-level block', async () => {
     const { runtime } = await runtimeTasks(
-      [{ name: 'content', type: 'blocks', blocks: [], blockReferences: ['hero'] }],
+      [{ name: 'content', type: 'blocks', blocks: ['hero'] }],
       [{ slug: 'hero', fields: [projectBudget()] }],
     );
 

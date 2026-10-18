@@ -45,7 +45,7 @@ The result is a plain `number` field, so it works anywhere a field does, includi
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the percent field's own entry. See [Agents and generated types](#agents-and-generated-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the percent field's own entry. See [Agents and generated types](#agents-and-generated-types). |
 
 A percent field holds one value, so `hasMany`, `minRows` and `maxRows` are not accepted. TypeScript rejects them, and setting any of them from JavaScript fails at startup.
 
@@ -124,12 +124,12 @@ A function `admin.description` isn't copied, so the percent text stands alone. T
 
 Generated types show the text as a comment above the property. In the MCP plugin's create and update tools, `min` and `max` also become the value's `minimum` and `maximum`, so agents see the allowed range. Generated types don't include limits, and virtual fields don't appear in MCP tool inputs.
 
-To change the text, add your own `typescriptSchema` entry. It runs after the percent field's entry, so it can adjust or replace the description:
+To change the text, add your own `jsonSchema` entry. It runs after the percent field's entry, so it can adjust or replace the description:
 
 ```ts
 percentField({
   name: 'progress',
-  typescriptSchema: [({ jsonSchema }) => ({ ...jsonSchema, description: 'Progress from 0 to 1' })],
+  jsonSchema: [({ jsonSchema }) => ({ ...jsonSchema, description: 'Progress from 0 to 1' })],
 })
 ```
 

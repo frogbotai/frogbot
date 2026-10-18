@@ -6,7 +6,14 @@ import {
   hashApiKeyToken,
 } from '../../../packages/plugins/plugin-api-keys/src/server/token.js';
 import { createApiKeyStrategy } from '../../../packages/plugins/plugin-api-keys/src/strategy.js';
-import { resolveMcpAccess } from '../../../packages/plugins/plugin-mcp/src/access.js';
+
+const filterMCPItems = vi.hoisted(() =>
+  vi.fn(({ items }: { items: unknown[] }) => Promise.resolve(items)),
+);
+
+vi.mock('@payloadcms/plugin-mcp/internal', () => ({ filterMCPItems }));
+
+const { authorizeMcp } = await import('../../../packages/plugins/plugin-mcp/src/access.js');
 
 function setup({ revoked = false } = {}) {
   const token = createApiKeyToken();
@@ -34,39 +41,48 @@ function setup({ revoked = false } = {}) {
     ({
       headers: new Headers({ authorization: `Bearer ${value}` }),
       frogbot,
+      payload: {
+        config: {
+          collections: [
+            { slug: 'posts' },
+            { slug: 'api-keys', custom: { frogbot: { internal: true } } },
+          ],
+        },
+      },
     }) as never;
 
   return { frogbot, request, strategy, token };
 }
 
-const pluginOptions = {
-  collections: {
-    'blog-posts': { enabled: { create: true, find: true } },
-    pages: { enabled: true },
-  },
-  globals: { 'site-settings': { enabled: { find: true } } },
-  mcp: {
-    tools: [{ name: 'send-email' }],
-    prompts: [{ name: 'write summary' }],
-    resources: [{ name: 'brand_guide' }],
-  },
+const tool = (type: string, collectionSlug?: string) => ({
+  type,
+  configKey: 'find',
+  label: 'find',
+  mcpName: 'findDocuments',
+  ...(collectionSlug ? { collectionSlug } : {}),
+});
+
+const pluginConfig = {
+  items: [tool('collectionTool', 'posts'), tool('collectionTool', 'api-keys'), tool('tool')],
 } as never;
 
-describe('resolveMcpAccess', () => {
-  it('authenticates the raw key and grants configured capabilities in Payload MCP shape', async () => {
+describe('authorizeMcp', () => {
+  it('signs in the key owner and lists items without FrogBot collections, enforcing access', async () => {
     const { request, strategy, token } = setup();
+    const req = request(token);
 
     await expect(
-      resolveMcpAccess({ collection: 'users', strategy, pluginOptions, req: request(token) }),
-    ).resolves.toMatchObject({
-      user: { id: 'user-1', _strategy: 'api-key', apiKeyId: 'key-1' },
-      blogPosts: { create: true, find: true },
-      pages: { create: true, delete: true, find: true, update: true },
-      siteSettings: { find: true },
-      'payload-mcp-tool': { sendEmail: true },
-      'payload-mcp-prompt': { writeSummary: true },
-      'payload-mcp-resource': { brandGuide: true },
+      authorizeMcp({ collection: 'users', strategy, pluginConfig, req }),
+    ).resolves.toEqual({
+      items: [tool('collectionTool', 'posts'), tool('tool')],
+      overrideAccess: false,
     });
+    expect(req).toMatchObject({
+      user: { id: 'user-1', collection: 'users', _strategy: 'api-key', apiKeyId: 'key-1' },
+    });
+    expect(filterMCPItems).toHaveBeenCalledWith(
+      expect.objectContaining({ overrideAccess: false, req }),
+    );
   });
 
   it.each([
@@ -77,10 +93,10 @@ describe('resolveMcpAccess', () => {
     const { request, strategy, token } = makeSetup();
 
     await expect(
-      resolveMcpAccess({
+      authorizeMcp({
         collection: 'users',
         strategy,
-        pluginOptions,
+        pluginConfig,
         req: request(replacement ?? token),
       }),
     ).rejects.toThrow(UnauthorizedError);

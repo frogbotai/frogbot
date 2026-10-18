@@ -1,4 +1,5 @@
-import { convertLexicalToHTML, createNode, createServerFeature } from '@frogbotai/richtext-lexical';
+import { createNode, createServerFeature } from '@frogbotai/richtext-lexical';
+import { convertLexicalToHTML } from '@frogbotai/richtext-lexical/html';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -12,21 +13,8 @@ import type { SanitizedConfig } from 'payload';
 import { describe, expect, it } from 'vitest';
 
 describe('custom server features', () => {
-  it('registers heterogeneous nodes and converts without a request', async () => {
-    const requests: unknown[] = [];
-    const paragraph = createNode({
-      converters: {
-        html: {
-          converter: ({ node, req }) => {
-            requests.push(req);
-
-            return `<p>${req?.frogbot ? 'online' : 'offline'}: ${node.children.length}</p>`;
-          },
-          nodeTypes: ['paragraph'],
-        },
-      },
-      node: ParagraphNode,
-    });
+  it('registers heterogeneous nodes and converts them with the HTML converters', () => {
+    const paragraph = createNode({ node: ParagraphNode });
 
     const text = createNode({ node: TextNode });
     const Feature = createServerFeature({
@@ -34,7 +22,7 @@ describe('custom server features', () => {
       key: 'heterogeneous',
     });
 
-    const config = await editorConfigFactory.fromFeatures({
+    const config = editorConfigFactory.fromFeatures({
       config: {} as SanitizedConfig,
       features: [Feature()],
     });
@@ -50,13 +38,16 @@ describe('custom server features', () => {
       { discrete: true },
     );
 
-    const html = await convertLexicalToHTML({
-      converters: config.features.converters.html,
+    const html = convertLexicalToHTML({
+      // @ts-expect-error Payload 4.0.0-beta.2 rejects overriding a default converter (F-238, to report upstream); drop this when it accepts it.
+      converters: ({ defaultConverters }) => ({
+        ...defaultConverters,
+        paragraph: ({ node }) => `<p>children: ${node.children.length}</p>`,
+      }),
       data: editor.getEditorState().toJSON(),
     });
 
     expect(config.features.nodes.map(({ node }) => node)).toEqual([ParagraphNode, TextNode]);
-    expect(requests).toEqual([undefined]);
-    expect(html).toBe('<p>offline: 1</p>');
+    expect(html).toBe('<div class="payload-richtext"><p>children: 1</p></div>');
   });
 });

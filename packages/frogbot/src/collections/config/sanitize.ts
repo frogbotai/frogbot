@@ -23,7 +23,7 @@ import {
   wrapUploadHandlers,
 } from '../../config/wrapRequest.js';
 import type { MapVectorField } from '../../database/types.js';
-import type { SystemKindUsers } from '../../fields/config/sanitizeSystemKinds.js';
+import { withAIFieldSelect } from '../../fields/baseFields/ai/select.js';
 import { sanitizeVectorFields } from '../../fields/config/sanitizeVector.js';
 import { wrapFieldRequestFunctions } from '../../fields/config/wrapRequestFunctions.js';
 import { pieceInstanceDefinition } from '../../pieces/definePiece.js';
@@ -108,13 +108,11 @@ export function sanitizeCollection(
     onAutonumber,
     search,
     resolveFrogBot,
-    users,
   }: {
     mapVectorField?: MapVectorField;
     onAutonumber?: (path: string) => void;
     search?: SearchIndexDescriptors;
     resolveFrogBot: ResolveFrogBot;
-    users: SystemKindUsers;
   },
 ): PayloadCollectionConfig {
   const signIn = validateSignIn(c);
@@ -150,6 +148,7 @@ export function sanitizeCollection(
   } = c;
 
   const base = toPayloadCollectionConfig(collection);
+  const select = withAIFieldSelect(c.fields, base.select);
   const existingHooks = base.hooks ?? {};
   const out: PayloadCollectionConfig = {
     ...base,
@@ -160,11 +159,11 @@ export function sanitizeCollection(
           fields: [...c.fields, ...orderFieldNames.map(buildBoardOrderField)],
           mapVectorField,
           onAutonumber,
-          users,
         }),
       ),
     ),
     ...(admin ? { admin } : {}),
+    ...(select ? { select } : {}),
     ...(typeof c.upload === 'object' && c.upload.handlers
       ? {
           upload: {

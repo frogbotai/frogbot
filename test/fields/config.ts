@@ -26,6 +26,7 @@ const Posts: CollectionConfig = {
   fields: [
     { name: 'title', type: 'text', required: true },
     slugField({
+      useAsSlug: 'title',
       slugify: async ({ req, valueToSlugify }) => {
         if (!req.frogbot) {
           throw new Error('req.frogbot is unavailable');
@@ -50,7 +51,10 @@ const Posts: CollectionConfig = {
 const NonUniquePosts: CollectionConfig = {
   slug: nonUniquePostsSlug,
   access: openAccess,
-  fields: [{ name: 'title', type: 'text', required: true }, slugField({ disableUnique: true })],
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    slugField({ useAsSlug: 'title', unique: false }),
+  ],
 };
 
 const UndefinedSlugPosts: CollectionConfig = {
@@ -58,7 +62,7 @@ const UndefinedSlugPosts: CollectionConfig = {
   access: openAccess,
   fields: [
     { name: 'title', type: 'text', required: true },
-    slugField({ slugify: () => Promise.resolve(undefined) }),
+    slugField({ useAsSlug: 'title', slugify: () => Promise.resolve(undefined) }),
   ],
 };
 
@@ -66,7 +70,7 @@ const DraftPosts: CollectionConfig = {
   slug: draftPostsSlug,
   access: openAccess,
   versions: { drafts: { autosave: true } },
-  fields: [{ name: 'title', type: 'text', required: true }, slugField()],
+  fields: [{ name: 'title', type: 'text' }, slugField({ useAsSlug: 'title' })],
 };
 
 const NestedFields: CollectionConfig = {

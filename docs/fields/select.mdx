@@ -49,7 +49,7 @@ Options may be strings or `{ label, value }` objects, and objects may add a [col
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 <Banner type="warning">
   Option values should avoid hyphens and special characters when the field's
@@ -167,9 +167,9 @@ export const Cars: CollectionConfig = {
 
 ```tsx
 import { SelectField } from '@frogbotai/ui/admin'
-import type { SelectFieldServerComponent } from 'frogbot'
+import type { SelectFieldServerProps } from 'frogbot'
 
-export const CustomSelectServer: SelectFieldServerComponent = (props) => (
+export const CustomSelectServer = (props: SelectFieldServerProps) => (
   <SelectField
     field={props.clientField}
     path={props.path}
@@ -185,9 +185,9 @@ export const CustomSelectServer: SelectFieldServerComponent = (props) => (
 'use client'
 
 import { SelectField } from '@frogbotai/ui/admin'
-import type { SelectFieldClientComponent } from 'frogbot'
+import type { SelectFieldClientProps } from 'frogbot'
 
-export const CustomSelectClient: SelectFieldClientComponent = (props) => <SelectField {...props} />
+export const CustomSelectClient = (props: SelectFieldClientProps) => <SelectField {...props} />
 ```
 
 ### Label
@@ -196,9 +196,9 @@ export const CustomSelectClient: SelectFieldClientComponent = (props) => <Select
 
 ```tsx
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { SelectFieldLabelServerComponent } from 'frogbot'
+import type { SelectFieldLabelServerProps } from 'frogbot'
 
-export const CustomSelectLabelServer: SelectFieldLabelServerComponent = ({ clientField, path }) => (
+export const CustomSelectLabelServer = ({ clientField, path }: SelectFieldLabelServerProps) => (
   <FieldLabel
     label={clientField.label || clientField.name}
     path={path}
@@ -213,9 +213,9 @@ export const CustomSelectLabelServer: SelectFieldLabelServerComponent = ({ clien
 'use client'
 
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { SelectFieldLabelClientComponent } from 'frogbot'
+import type { SelectFieldLabelClientProps } from 'frogbot'
 
-export const CustomSelectLabelClient: SelectFieldLabelClientComponent = ({ field, path }) => (
+export const CustomSelectLabelClient = ({ field, path }: SelectFieldLabelClientProps) => (
   <FieldLabel label={field.label || field.name} path={path} required={field.required} />
 )
 ```

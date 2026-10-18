@@ -12,8 +12,6 @@ import { buildConfig } from '../../../../packages/frogbot/src/config/build.js';
 import { compileCollectionViews } from '../../../../packages/frogbot/src/config/collectionViews.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import { autonumberField } from '../../../../packages/frogbot/src/fields/baseFields/autonumber/index.js';
-import { createdByField } from '../../../../packages/frogbot/src/fields/baseFields/createdBy/index.js';
-import { lastModifiedByField } from '../../../../packages/frogbot/src/fields/baseFields/lastModifiedBy/index.js';
 import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
 import {
   getCachedFrogBot,
@@ -302,7 +300,7 @@ describe('frogbot sanitize', () => {
 
     const payloadConfig = await result._internal.payloadConfig;
 
-    expect(payloadConfig.admin.components.views.settings).toEqual({
+    expect(payloadConfig.admin.components.views?.settings).toEqual({
       Component: './Settings#Custom',
       path: '/custom-settings',
       meta: {
@@ -319,7 +317,7 @@ describe('frogbot sanitize', () => {
     const result = sanitize(makeConfig());
     const payloadConfig = await result._internal.payloadConfig;
 
-    expect(payloadConfig.admin.components.views.settings.meta).toEqual({
+    expect(payloadConfig.admin.components.views?.settings.meta).toEqual({
       title: 'Settings',
       description: 'Settings',
       keywords: 'Settings',
@@ -338,7 +336,7 @@ describe('frogbot sanitize', () => {
 
     const payloadConfig = await result._internal.payloadConfig;
 
-    expect(payloadConfig.admin.components.views.reports.meta).toEqual({
+    expect(payloadConfig.admin.components.views?.reports.meta).toEqual({
       title: 'FrogBot',
       titleSuffix: '',
       description: 'FrogBot',
@@ -361,7 +359,7 @@ describe('frogbot sanitize', () => {
 
     const payloadConfig = await result._internal.payloadConfig;
 
-    expect(payloadConfig.admin.components.views.reports.meta).toEqual({
+    expect(payloadConfig.admin.components.views?.reports.meta).toEqual({
       title: 'Field Lab',
       titleSuffix: '',
       description: 'Field Lab',
@@ -388,13 +386,13 @@ describe('frogbot sanitize', () => {
     );
 
     const payloadConfig = await result._internal.payloadConfig;
-    const meta = payloadConfig.admin.components.views.reports.meta;
+    const meta = payloadConfig.admin.components.views?.reports.meta;
 
-    expect(meta.title).toEqual(viewMeta.title);
-    expect(meta.titleSuffix).toBeUndefined();
-    expect(meta.description).toBe('Reports');
-    expect(meta.keywords).toBe('Reports');
-    expect(meta.openGraph?.title).toBe('Reports');
+    expect(meta?.title).toEqual(viewMeta.title);
+    expect(meta?.titleSuffix).toBeUndefined();
+    expect(meta?.description).toBe('Reports');
+    expect(meta?.keywords).toBe('Reports');
+    expect(meta?.openGraph?.title).toBe('Reports');
   });
 
   it('falls back when the view title is an empty string', async () => {
@@ -412,7 +410,7 @@ describe('frogbot sanitize', () => {
 
     const payloadConfig = await result._internal.payloadConfig;
 
-    expect(payloadConfig.admin.components.views.reports.meta).toEqual({
+    expect(payloadConfig.admin.components.views?.reports.meta).toEqual({
       title: 'FrogBot',
       titleSuffix: '',
       description: 'FrogBot',
@@ -434,12 +432,12 @@ describe('frogbot sanitize', () => {
     );
 
     const payloadConfig = await result._internal.payloadConfig;
-    const meta = payloadConfig.admin.components.views.reports.meta;
+    const meta = payloadConfig.admin.components.views?.reports.meta;
 
-    expect(meta.title).toBeUndefined();
-    expect(meta.description).toBe('Acme');
-    expect(meta.keywords).toBe('Acme');
-    expect(meta.openGraph?.title).toBe('Acme');
+    expect(meta?.title).toBeUndefined();
+    expect(meta?.description).toBe('Acme');
+    expect(meta?.keywords).toBe('Acme');
+    expect(meta?.openGraph?.title).toBe('Acme');
   });
 
   it("keeps the view's own titleSuffix, description, keywords, and openGraph.title", async () => {
@@ -467,7 +465,7 @@ describe('frogbot sanitize', () => {
 
     const payloadConfig = await result._internal.payloadConfig;
 
-    expect(payloadConfig.admin.components.views.reports.meta).toEqual({
+    expect(payloadConfig.admin.components.views?.reports.meta).toEqual({
       title: 'Reports',
       titleSuffix: '- Field Lab',
       description: 'Custom',
@@ -494,10 +492,10 @@ describe('frogbot sanitize', () => {
     );
 
     const payloadConfig = await result._internal.payloadConfig;
-    const meta = payloadConfig.admin.components.views.reports.meta;
+    const meta = payloadConfig.admin.components.views?.reports.meta;
 
-    expect(meta.title).toBe('FrogBot');
-    expect(meta.titleSuffix).toBe('- Reports');
+    expect(meta?.title).toBe('FrogBot');
+    expect(meta?.titleSuffix).toBe('- Reports');
   });
 
   it('lets admin.meta.description and admin.meta.openGraph.title suppress the fill', async () => {
@@ -515,12 +513,12 @@ describe('frogbot sanitize', () => {
     );
 
     const payloadConfig = await result._internal.payloadConfig;
-    const meta = payloadConfig.admin.components.views.reports.meta;
+    const meta = payloadConfig.admin.components.views?.reports.meta;
 
-    expect(meta.title).toBe('Reports');
-    expect(meta.description).toBeUndefined();
-    expect(meta.keywords).toBe('Reports');
-    expect(meta.openGraph?.title).toBeUndefined();
+    expect(meta?.title).toBe('Reports');
+    expect(meta?.description).toBeUndefined();
+    expect(meta?.keywords).toBe('Reports');
+    expect(meta?.openGraph?.title).toBeUndefined();
   });
 
   it('leaves account and dashboard views identical', async () => {
@@ -536,8 +534,8 @@ describe('frogbot sanitize', () => {
 
     const payloadConfig = await result._internal.payloadConfig;
 
-    expect(payloadConfig.admin.components.views.account).toEqual(accountView);
-    expect(payloadConfig.admin.components.views.dashboard).toEqual(dashboardView);
+    expect(payloadConfig.admin.components.views?.account).toEqual(accountView);
+    expect(payloadConfig.admin.components.views?.dashboard).toEqual(dashboardView);
   });
 
   it.each(['', '/usage', '../usage', 'billing/../usage', 'billing//usage', 'billing\\usage'])(
@@ -736,7 +734,7 @@ describe('frogbot sanitize', () => {
     const payload = makePayload(payloadConfig);
     const frogbot = { agents: {} };
     registerFrogBotInstance(payload, frogbot as unknown as FrogBot);
-    const [field] = payloadConfig.admin.dashboard.widgets[0].fields;
+    const [field] = payloadConfig.admin.dashboard.widgets[0].fields ?? [];
     const fieldRead = ('access' in field ? field.access?.read : undefined) as
       ((args: Record<string, unknown>) => Promise<unknown>) | undefined;
 
@@ -1244,7 +1242,7 @@ describe('frogbot sanitize', () => {
       expect(allowed).toBe(true);
     });
 
-    it('wraps field functions nested in array, group, tabs, blocks and blockReferences', async () => {
+    it('wraps field functions nested in array, group, tabs and blocks, inline or by slug', async () => {
       const defaultValue = recordFrogBot();
       const leaf = () => ({
         name: 'leaf',
@@ -1279,8 +1277,7 @@ describe('frogbot sanitize', () => {
         {
           name: 'references',
           type: 'blocks',
-          blocks: [],
-          blockReferences: ['hero', { slug: 'inline', fields: [leaf()] }],
+          blocks: ['hero', { slug: 'inline', fields: [leaf()] }],
         },
       ]);
 
@@ -1289,7 +1286,7 @@ describe('frogbot sanitize', () => {
         items.fields[0],
         meta.fields[0],
         tabs.tabs[0].fields[0].fields[0].blocks[0].fields[0],
-        references.blockReferences[1].fields[0],
+        references.blocks[1].fields[0],
       ];
 
       const results = await Promise.all(
@@ -1297,7 +1294,7 @@ describe('frogbot sanitize', () => {
       );
 
       expect(results).toEqual([true, true, true, true]);
-      expect(references.blockReferences[0]).toBe('hero');
+      expect(references.blocks[0]).toBe('hero');
     });
 
     it('wraps field functions in root blocks', async () => {
@@ -1621,7 +1618,7 @@ describe('frogbot sanitize', () => {
 
       expect(result._internal.noEmail).toBe(false);
       expect(adapter).toBeTypeOf('function');
-      expect(adapter({ payload: payload as never })).toMatchObject({
+      expect(adapter?.({ payload: payload as never })).toMatchObject({
         name: 'mailer',
         defaultFromAddress: 'sender@example.com',
         defaultFromName: 'mailer',
@@ -2210,7 +2207,7 @@ describe('frogbot sanitize', () => {
       result: { errors: [] },
     };
 
-    const hookResponse = await payloadConfig.hooks.afterError[0](args);
+    const hookResponse = await payloadConfig.hooks.afterError?.[0]?.(args);
 
     expect(afterError).toHaveBeenCalledWith({
       ...args,
@@ -2236,7 +2233,7 @@ describe('frogbot sanitize', () => {
           widgets: [
             {
               slug: 'collections',
-              Component: '@payloadcms/next/rsc#CollectionCards',
+              Component: '@payloadcms/ui/rsc#CollectionCards',
               minWidth: 'full',
             },
           ],
@@ -2248,7 +2245,7 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
 
     expect((payloadConfig as any).admin.dashboard.widgets[0].Component).toBe(
-      '@frogbotai/next/rsc#CollectionCards',
+      '@frogbotai/ui/admin/rsc#CollectionCards',
     );
   });
 
@@ -2367,10 +2364,10 @@ describe('frogbot sanitize', () => {
     const { chatsSlug } = result.chat;
     const chats = payloadConfig.collections.find(({ slug }) => slug === chatsSlug);
 
-    expect(payloadConfig.admin.components.views.dashboard).toBeUndefined();
+    expect(payloadConfig.admin.components.views?.dashboard).toBeUndefined();
     expect(payloadConfig.admin.dashboard.widgets).toContainEqual(
       expect.objectContaining({
-        Component: '@frogbotai/next/rsc#CollectionCards',
+        Component: '@frogbotai/ui/admin/rsc#CollectionCards',
         slug: 'collections',
       }),
     );
@@ -2397,7 +2394,7 @@ describe('frogbot sanitize', () => {
 
     const payloadConfig = await result._internal.payloadConfig;
 
-    expect(payloadConfig.admin.components.views.dashboard).toEqual(dashboardView);
+    expect(payloadConfig.admin.components.views?.dashboard).toEqual(dashboardView);
     expect(payloadConfig.admin.dashboard.widgets).toHaveLength(1);
   });
 
@@ -2409,7 +2406,7 @@ describe('frogbot sanitize', () => {
 
     const payloadConfig = await result._internal.payloadConfig;
 
-    expect(payloadConfig.admin.components.views.dashboard).toEqual(dashboardView);
+    expect(payloadConfig.admin.components.views?.dashboard).toEqual(dashboardView);
   });
 
   it('keeps configured dashboard widgets without a dashboard view', async () => {
@@ -2425,7 +2422,7 @@ describe('frogbot sanitize', () => {
 
     const payloadConfig = await result._internal.payloadConfig;
 
-    expect(payloadConfig.admin.components.views.dashboard).toBeUndefined();
+    expect(payloadConfig.admin.components.views?.dashboard).toBeUndefined();
     expect(payloadConfig.admin.dashboard.widgets).toHaveLength(1);
   });
 
@@ -2544,7 +2541,7 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
     const chats = payloadConfig.collections.find(({ slug }) => slug === 'conversations');
 
-    expect(payloadConfig.admin.components.views.dashboard).toEqual(dashboard);
+    expect(payloadConfig.admin.components.views?.dashboard).toEqual(dashboard);
     expect(chats?.admin.components?.views?.list).toMatchObject({
       Component: '@frogbotai/ui/admin/rsc#CustomCollectionView',
     });
@@ -4667,7 +4664,7 @@ describe('frogbot sanitize', () => {
       expect(payloadConfig.jobs.tasks?.map(({ slug }) => slug)).toEqual([
         'user-task',
         'frogbot-reset-ai-budgets',
-        'frogbot-sweep-jobs',
+        'frogbot-sweep-waitpoints',
         'frogbot-run-agent-schedule',
         'frogbot-cleanup-kv',
       ]);
@@ -5043,134 +5040,7 @@ describe('frogbot sanitize', () => {
         ) as { fields: RuntimeField[] } | undefined;
     }
 
-    async function relationTo(config: { _internal: { payloadConfig: Promise<any> } }) {
-      const find = await payloadCollection(config);
-
-      return find('tickets')!.fields.find(({ name }) => name === 'createdBy')?.relationTo;
-    }
-
-    it('points a user kind at admin.user', async () => {
-      const result = sanitize(
-        makeConfig({
-          admin: { user: 'staff' },
-          collections: [
-            { slug: 'staff', auth: true, fields: [] },
-            { slug: 'admins', auth: true, fields: [] },
-            tickets([createdByField({ name: 'createdBy' })]),
-          ],
-        }),
-      );
-
-      expect(await relationTo(result)).toBe('staff');
-    });
-
-    it('points a user kind at the only auth collection', async () => {
-      const result = sanitize(
-        makeConfig({
-          collections: [
-            { slug: 'members', auth: true, fields: [] },
-            tickets([createdByField({ name: 'createdBy' })]),
-          ],
-        }),
-      );
-
-      expect(await relationTo(result)).toBe('members');
-    });
-
-    it('points a user kind at the default users collection', async () => {
-      const result = sanitize(
-        makeConfig({ collections: [tickets([createdByField({ name: 'createdBy' })])] }),
-      );
-
-      expect(await relationTo(result)).toBe('users');
-    });
-
-    it('points a user kind at an auth collection a plugin adds', async () => {
-      const result = await buildConfig(
-        makeConfig({
-          collections: [tickets([createdByField({ name: 'createdBy' })])],
-          plugins: [
-            (config) => ({
-              ...config,
-              collections: [...config.collections, { slug: 'members', auth: true, fields: [] }],
-            }),
-          ],
-        }),
-      );
-
-      expect(await relationTo(result)).toBe('members');
-    });
-
-    it('keeps an explicit auth collection', async () => {
-      const result = sanitize(
-        makeConfig({
-          admin: { user: 'users' },
-          collections: [
-            { slug: 'users', auth: true, fields: [] },
-            { slug: 'admins', auth: true, fields: [] },
-            tickets([createdByField({ name: 'createdBy', relationTo: 'admins' })]),
-          ],
-        }),
-      );
-
-      expect(await relationTo(result)).toBe('admins');
-    });
-
-    it('rejects a relationTo that is not an auth collection', () => {
-      expect(() =>
-        sanitize(
-          makeConfig({
-            collections: [
-              { slug: 'users', auth: true, fields: [] },
-              { slug: 'posts', fields: [] },
-              tickets([createdByField({ name: 'createdBy', relationTo: 'posts' })]),
-            ],
-          }),
-        ),
-      ).toThrow(
-        new Error(
-          "[frogbot] Created by field 'createdBy' in collection 'tickets' must point at an auth collection; 'posts' is not one.",
-        ),
-      );
-    });
-
-    it('names the field when the user collection cannot be resolved', () => {
-      expect(() =>
-        sanitize(
-          makeConfig({
-            collections: [
-              { slug: 'users', auth: true, fields: [] },
-              { slug: 'admins', auth: true, fields: [] },
-              tickets([lastModifiedByField({ name: 'lastModifiedBy' })]),
-            ],
-          }),
-        ),
-      ).toThrow(
-        new Error(
-          "[frogbot] Last modified by field 'lastModifiedBy' in collection 'tickets': Multiple auth collections found (users, admins). Set `admin.user` to the slug of your user collection.",
-        ),
-      );
-    });
-
-    it('does not resolve the user collection without a user kind', () => {
-      expect(() =>
-        sanitize(
-          makeConfig({
-            collections: [
-              { slug: 'users', auth: true, fields: [] },
-              { slug: 'admins', auth: true, fields: [] },
-              tickets([autonumberField({ name: 'number' })]),
-            ],
-          }),
-        ),
-      ).not.toThrow();
-    });
-
-    const kinds = [
-      ['Created by', () => createdByField({ name: 'number' })],
-      ['Last modified by', () => lastModifiedByField({ name: 'number' })],
-      ['Autonumber', () => autonumberField({ name: 'number' })],
-    ] as const;
+    const kinds = [['Autonumber', () => autonumberField({ name: 'number' })]] as const;
 
     it.each(kinds)('rejects %s fields inside an array', (label, make) => {
       expect(() =>
@@ -5229,7 +5099,7 @@ describe('frogbot sanitize', () => {
               {
                 name: 'details',
                 type: 'group',
-                fields: [autonumberField({ name: 'ref' }), createdByField({ name: 'owner' })],
+                fields: [autonumberField({ name: 'ref' })],
               },
               {
                 type: 'tabs',
@@ -5255,7 +5125,7 @@ describe('frogbot sanitize', () => {
       const find = await payloadCollection(result);
       const fields = find('tickets')!.fields;
 
-      expect(fields[0].fields[1].relationTo).toBe('users');
+      expect(fields[0].fields).toHaveLength(1);
       expect(result._internal.autonumbers).toEqual([
         { collection: 'tickets', path: 'details.ref' },
         { collection: 'tickets', path: 'meta.seq' },
@@ -5268,7 +5138,7 @@ describe('frogbot sanitize', () => {
         makeConfig({
           collections: [
             { slug: 'users', auth: true, fields: [] },
-            tickets([createdByField({ name: 'createdBy' })]),
+            tickets([{ name: 'title', type: 'text' }]),
           ],
         }),
       );

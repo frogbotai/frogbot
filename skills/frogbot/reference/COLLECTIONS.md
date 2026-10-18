@@ -79,7 +79,7 @@ Authentication supplies the email and password fields. Add application-specific 
 
 ## Uploads and the file role
 
-A normal upload collection can configure image processing and metadata:
+A normal upload collection limits its file types and adds its own metadata. FrogBot keeps uploads as they are: it has no image sizes or resizing.
 
 ```ts
 import type { CollectionConfig } from 'frogbot';
@@ -88,17 +88,6 @@ export const Media: CollectionConfig = {
   slug: 'media',
   upload: {
     mimeTypes: ['image/*'],
-    imageSizes: [
-      {
-        name: 'thumbnail',
-        width: 400,
-        height: 300,
-        position: 'centre',
-      },
-    ],
-    adminThumbnail: 'thumbnail',
-    focalPoint: true,
-    crop: true,
   },
   access: {
     read: () => true,
@@ -172,6 +161,7 @@ Draft-aware Local API operations use `draft: true`:
 ```ts
 const post = await frogbot.create({
   collection: 'posts',
+  overrideAccess: true,
   data: {
     title: 'Draft post',
   },
@@ -180,6 +170,7 @@ const post = await frogbot.create({
 
 const latest = await frogbot.findByID({
   collection: 'posts',
+  overrideAccess: true,
   id: post.id,
   draft: true,
 });

@@ -18,6 +18,7 @@ const collections = vi.hoisted((): Record<string, unknown> => ({}));
 const listQuery = vi.hoisted((): { query: Record<string, unknown> } => ({ query: {} }));
 
 vi.mock('@payloadcms/ui', () => ({
+  useRouter: () => router,
   PopupList: {
     Button: ({ children, onClick }: { children: ReactNode; onClick: () => void }) => (
       <button onClick={onClick} type="button">
@@ -35,10 +36,6 @@ vi.mock('@payloadcms/ui', () => ({
   useLocale: () => (locale.code ? { code: locale.code } : {}),
   useSelection: () => selection,
   useTranslation: () => ({ i18n: { language: 'en' } }),
-}));
-
-vi.mock('../../../../../packages/ui/src/admin/adapters/router.js', () => ({
-  useRouterAdapter: () => ({ router: router }),
 }));
 
 const { AIFieldListMenuItem } =

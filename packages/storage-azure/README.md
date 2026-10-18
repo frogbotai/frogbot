@@ -15,7 +15,7 @@ import { buildConfig } from 'frogbot';
 import { azureStorage } from '@frogbotai/storage-azure';
 
 export default buildConfig({
-  plugins: [
+  storage: [
     azureStorage({
       connectionString: process.env.AZURE_STORAGE_CONNECTION_STRING,
       containerName: process.env.AZURE_STORAGE_CONTAINER_NAME,

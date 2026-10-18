@@ -9,8 +9,8 @@
   }
 
   .frog-board__column {
-    background: var(--theme-base-50);
-    border: 1px solid var(--theme-base-150);
+    background: var(--fb-theme-base-50);
+    border: 1px solid var(--fb-theme-base-150);
     border-radius: 8px;
     display: flex;
     flex: 1 1 300px;
@@ -27,7 +27,7 @@
   }
 
   .frog-board__column-count {
-    color: var(--theme-base-500);
+    color: var(--fb-theme-base-500);
     font-size: 12px;
   }
 
@@ -49,10 +49,10 @@
   }
 
   .frog-board__card {
-    background: var(--theme-base-150);
-    border: 1px solid var(--theme-base-250);
+    background: var(--fb-theme-base-150);
+    border: 1px solid var(--fb-theme-base-250);
     border-radius: 6px;
-    box-shadow: 0 1px 2px color-mix(in srgb, var(--theme-base-1000) 8%, transparent);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--fb-theme-base-1000) 8%, transparent);
     cursor: grab;
     display: flex;
     flex-direction: column;
@@ -73,8 +73,8 @@
   }
 
   .frog-board__placeholder {
-    background: var(--theme-base-150);
-    border: 1px dashed var(--theme-base-400);
+    background: var(--fb-theme-base-150);
+    border: 1px dashed var(--fb-theme-base-400);
     border-radius: 6px;
     left: 0;
     pointer-events: none;
@@ -84,8 +84,8 @@
   }
 
   .frog-board__overlay .frog-board__card {
-    border-color: var(--theme-base-500);
-    box-shadow: 0 8px 24px color-mix(in srgb, var(--theme-base-1000) 25%, transparent);
+    border-color: var(--fb-theme-base-500);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--fb-theme-base-1000) 25%, transparent);
     cursor: grabbing;
     opacity: 1;
   }

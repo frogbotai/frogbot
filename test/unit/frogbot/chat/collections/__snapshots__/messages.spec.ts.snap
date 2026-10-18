@@ -22,6 +22,12 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
       },
     ],
   },
+  "authorship": false,
+  "custom": {
+    "frogbot": {
+      "internal": true,
+    },
+  },
   "disableDuplicate": true,
   "fields": [
     {
@@ -50,12 +56,12 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
       "type": "select",
     },
     {
+      "jsonSchema": [
+        [Function],
+      ],
       "name": "parts",
       "required": true,
       "type": "json",
-      "typescriptSchema": [
-        [Function],
-      ],
     },
     {
       "name": "metadata",
@@ -108,11 +114,11 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
         "create": [Function],
         "update": [Function],
       },
-      "name": "author",
-      "type": "json",
-      "typescriptSchema": [
+      "jsonSchema": [
         [Function],
       ],
+      "name": "author",
+      "type": "json",
     },
     {
       "access": {
@@ -122,11 +128,11 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
       "admin": {
         "hidden": true,
       },
-      "name": "settlements",
-      "type": "json",
-      "typescriptSchema": [
+      "jsonSchema": [
         [Function],
       ],
+      "name": "settlements",
+      "type": "json",
     },
     {
       "access": {

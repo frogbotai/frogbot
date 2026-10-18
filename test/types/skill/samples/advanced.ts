@@ -73,6 +73,7 @@ export const localizationConfig = buildConfig({
 export async function findSpanishPosts(frogbot: FrogBotInstance) {
   const posts = await frogbot.find({
     collection: 'posts',
+    overrideAccess: true,
     locale: 'es',
   });
 

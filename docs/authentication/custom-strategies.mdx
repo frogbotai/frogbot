@@ -64,6 +64,7 @@ export const codeStrategy: AuthStrategy = {
 
     const usersQuery = await frogbot.find({
       collection: 'users',
+      overrideAccess: true,
       depth: 0,
       limit: 1,
       req,

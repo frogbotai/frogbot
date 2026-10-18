@@ -128,7 +128,7 @@ export async function optionsTheServerReads() {
     data: { title: 'x' },
     draft: true,
     id: 1,
-    publishSpecificLocale: 'fr',
+    publishAllLocales: true,
   });
 
   // @ts-expect-error set each join field to false instead
@@ -137,11 +137,11 @@ export async function optionsTheServerReads() {
   // @ts-expect-error the REST update by where doesn't read autosave
   await automatic.update({ autosave: true, collection: 'sdk-pages', data: {}, where: {} });
 
-  // @ts-expect-error the REST update by where doesn't read publishSpecificLocale
   await automatic.update({
     collection: 'sdk-pages',
     data: {},
-    publishSpecificLocale: 'fr',
+    publishAllLocales: true,
+    unpublishAllLocales: false,
     where: {},
   });
 

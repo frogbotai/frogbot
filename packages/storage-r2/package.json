@@ -35,7 +35,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@payloadcms/storage-r2": "3.90.2"
+    "@payloadcms/storage-r2": "catalog:"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"

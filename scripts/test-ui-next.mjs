@@ -69,13 +69,13 @@ try {
   assert.equal(layerStatements[0], 'payload-default,frogbot,payload');
   assert.ok(layerStatements.includes('payload-default,payload'));
   assert.match(css, /\.fb-button/);
-  assert.match(css, /var\(--theme-base-/);
+  assert.match(css, /var\(--fb-theme-base-/);
   assert.match(css, /data-fb-theme/);
   assert.match(css, /data-fb-ui-page/);
 
   assert.doesNotMatch(
     css,
-    /--(text-(xs|sm|base|lg|xl|[2-5]xl)(--line-height)?|radius(-(sm|md|lg|xl))?|color-red-(500|600|700))\b/,
+    /--(text-(xs|sm|base|lg|xl|[2-5]xl)(--line-height)?|radius(-(sm|md|lg|xl))?|color-red-(500|600|700))(?![\w-])/,
   );
 
   assert.match(css, /body:has\(\.frogbot-nav-shell\) \.app-header__mobile-nav-toggler/);

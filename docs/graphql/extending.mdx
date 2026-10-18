@@ -95,6 +95,7 @@ export const resolver = async (
 ) => {
   const { totalDocs } = await context.req.frogbot.count({
     collection: 'users',
+    overrideAccess: false,
     req: context.req,
   })
 

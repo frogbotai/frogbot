@@ -19,7 +19,7 @@ FrogBot provides `useLivePreview` integrations for React and Vue. Other framewor
 | --- | --- | --- | --- |
 | `serverURL` | `string` | Required | Origin of your FrogBot server, such as `https://cms.example.com`. Messages from any other origin are ignored. |
 | `initialData` | `T` | Required | The document data fetched for the first render. It is returned until the first update arrives. |
-| `depth` | `number` | The server's `defaultDepth` (`2` unless configured) | Relationship population depth for each update. |
+| `depth` | `number` | The server's `defaultDepth` (`1` unless configured) | Relationship population depth for each update. |
 | `apiRoute` | `string` | `'/api'` | Your FrogBot REST API route, used to populate updates. |
 | `requestHandler` | `CollectionPopulationRequestHandler` | A `fetch` with `credentials: 'include'` | Replaces the request that populates each update, for example to route it through your own middleware. See [Custom population requests](#custom-population-requests). |
 
@@ -111,7 +111,7 @@ npm install @frogbotai/live-preview
 | `serverURL` | `string` | Required | Origin of your FrogBot server. Messages from any other origin are ignored. |
 | `initialData` | `T` | Required | The document data fetched for the first render. |
 | `callback` | `(data: T) => void` | Required | Receives the merged document after each update. |
-| `depth` | `number` | The server's `defaultDepth` (`2` unless configured) | Relationship population depth for each update. |
+| `depth` | `number` | The server's `defaultDepth` (`1` unless configured) | Relationship population depth for each update. |
 | `apiRoute` | `string` | `'/api'` | Your FrogBot REST API route. |
 | `requestHandler` | `CollectionPopulationRequestHandler` | A `fetch` with `credentials: 'include'` | Replaces the population request. See [Custom population requests](#custom-population-requests). |
 
@@ -205,6 +205,7 @@ Ensure the initial request and `useLivePreview` use the same [depth](/queries/de
 ```tsx
 const { docs } = await frogbot.find({
   collection: 'pages',
+  overrideAccess: true,
   depth: 1,
   where: {
     slug: {

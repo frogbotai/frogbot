@@ -2,14 +2,13 @@ import { getTranslation } from '@payloadcms/translations';
 import { Card } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import type { EntityToGroup } from '@payloadcms/ui/shared';
-import { EntityType } from '@payloadcms/ui/shared';
 import { attachRegisteredFrogBot } from 'frogbot/internal';
 import type { AdminViewServerProps } from 'payload';
+import { EntityType } from 'payload/shared';
 import { formatAdminURL } from 'payload/shared';
 
 import SettingIcon from '../../../icons/icons/SettingIcon.js';
 import TileIcon from '../../../icons/icons/TileIcon.js';
-import { getServerAdapter } from '../../adapters/server.js';
 import { splitNavGroups } from '../../elements/Nav/buildNavModel.js';
 import { renderNavIcon } from '../../elements/Nav/renderNavIcon.js';
 import { SettingsNav } from '../../elements/SettingsNav/index.js';
@@ -28,7 +27,7 @@ export async function SettingsView(props: SettingsViewProps) {
   const adminRoute = payload.config.routes.admin;
 
   if (routePath === '') {
-    getServerAdapter().redirect(formatAdminURL({ adminRoute, path: '/settings/collections' }));
+    props.server.redirect(formatAdminURL({ adminRoute, path: '/settings/collections' }));
   }
 
   const settings = (

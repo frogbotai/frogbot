@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -14,7 +15,12 @@ if (typeof nodeModule.default.registerHooks === 'function') {
 }
 
 const require = createRequire(path.join(FROGBOT, 'package.json'));
-const { tsImport } = await import(pathToFileURL(require.resolve('tsx/esm/api')).href);
+const tsxManifest = require.resolve('tsx/package.json');
+const tsxEntry = JSON.parse(readFileSync(tsxManifest, 'utf8')).exports['./esm/api'].import.default;
+const { tsImport } = await import(
+  pathToFileURL(path.join(path.dirname(tsxManifest), tsxEntry)).href
+);
+
 const base = pathToFileURL(`${FROGBOT}/`).href;
 
 const { loadConfig } = await tsImport('./dist/config/load.js', base);

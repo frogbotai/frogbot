@@ -3,9 +3,9 @@
     z-index: 50;
     min-width: 8rem;
     padding: 0.25rem;
-    color: var(--theme-base-900);
-    background-color: var(--theme-base-50);
-    border: 1px solid var(--theme-base-150);
+    color: var(--fb-theme-base-900);
+    background-color: var(--fb-theme-base-50);
+    border: 1px solid var(--fb-theme-base-150);
     border-radius: var(--fb-radius-md);
     box-shadow:
       0 4px 6px -1px rgb(0 0 0 / 0.1),
@@ -36,8 +36,8 @@
 
   .fb-dropdown-menu__item:focus,
   .fb-dropdown-menu__item[data-highlighted] {
-    color: var(--theme-base-800);
-    background-color: var(--theme-base-100);
+    color: var(--fb-theme-base-800);
+    background-color: var(--fb-theme-base-100);
   }
 
   .fb-dropdown-menu__item[data-disabled] {
@@ -54,6 +54,6 @@
   .fb-dropdown-menu__separator {
     height: 1px;
     margin: 0.25rem -0.25rem;
-    background-color: var(--theme-base-50);
+    background-color: var(--fb-theme-base-50);
   }
 }

@@ -12,9 +12,7 @@ import { catalog } from '../../../../packages/frogbot/src/ai/catalog.js';
 import { aiField } from '../../../../packages/frogbot/src/fields/baseFields/ai/index.js';
 import { autonumberField } from '../../../../packages/frogbot/src/fields/baseFields/autonumber/index.js';
 import { barcodeField } from '../../../../packages/frogbot/src/fields/baseFields/barcode/index.js';
-import { createdByField } from '../../../../packages/frogbot/src/fields/baseFields/createdBy/index.js';
 import { durationField } from '../../../../packages/frogbot/src/fields/baseFields/duration/index.js';
-import { lastModifiedByField } from '../../../../packages/frogbot/src/fields/baseFields/lastModifiedBy/index.js';
 import { moneyField } from '../../../../packages/frogbot/src/fields/baseFields/money/index.js';
 import { percentField } from '../../../../packages/frogbot/src/fields/baseFields/percent/index.js';
 import { phoneField } from '../../../../packages/frogbot/src/fields/baseFields/phone/index.js';
@@ -121,6 +119,32 @@ describe('frogbot generate:types', () => {
     expect(schema.properties.result.oneOf[1]).toEqual({ items: { type: 'null' }, type: 'array' });
     expect(schema.$defs).toEqual({ public: { type: 'object' } });
     expect(schema).not.toHaveProperty('definitions');
+  });
+
+  it('drops stripped collections from rich text relationship nodes', () => {
+    const variant = (slug: string) => ({
+      properties: { relationTo: { const: slug, type: 'string' } },
+      type: 'object',
+    });
+
+    const schema = {
+      properties: {
+        node: {
+          oneOf: [variant('posts'), variant('payload-kv')],
+          tsType: "SerializedRelationshipNode<'posts' | 'payload-kv'>",
+        },
+        input: { tsType: "SerializedRelationshipNodeInput<'payload-kv' | 'posts'>" },
+      },
+      $defs: { posts: { type: 'object' }, 'payload-kv': { type: 'object' } },
+    };
+
+    stripInternalCollections(schema);
+
+    expect(schema.properties.node).toEqual({
+      oneOf: [variant('posts')],
+      tsType: "SerializedRelationshipNode<'posts'>",
+    });
+    expect(schema.properties.input.tsType).toBe("SerializedRelationshipNodeInput<'posts'>");
   });
 
   it('titles internal select $defs', () => {
@@ -296,7 +320,7 @@ describe('frogbot generate:types', () => {
               moneyField({ name: 'computed', admin: { description: () => 'x' } }),
               moneyField({
                 name: 'override',
-                typescriptSchema: [
+                jsonSchema: [
                   ({ jsonSchema }) => ({
                     ...jsonSchema,
                     description: 'Cost in USD, excluding VAT',
@@ -465,11 +489,7 @@ describe('frogbot generate:types', () => {
           { slug: 'users', auth: true, fields: [] },
           {
             slug: 'tickets',
-            fields: [
-              autonumberField({ name: 'number' }),
-              createdByField({ name: 'createdBy' }),
-              lastModifiedByField({ name: 'lastModifiedBy' }),
-            ],
+            fields: [autonumberField({ name: 'number' })],
           },
         ],
       });
@@ -484,20 +504,6 @@ describe('frogbot generate:types', () => {
           'number',
           'number | null',
           'Unique number set by FrogBot when the record is created; read-only',
-        ),
-      );
-      expect(output).toContain(
-        documented(
-          'createdBy',
-          '(number | null) | User',
-          'Set by FrogBot to the user who created the record; read-only',
-        ),
-      );
-      expect(output).toContain(
-        documented(
-          'lastModifiedBy',
-          '(number | null) | User',
-          'Set by FrogBot to the user who last saved the record; read-only',
         ),
       );
     });
@@ -603,7 +609,7 @@ describe('frogbot generate:types', () => {
       expect(output).toContain('export interface FrogBotChatAssetsSelect {');
       expect(output).toContain('export interface FrogBotChatTurn {');
       expect(output).toContain('export interface FrogBotWaitpoint {');
-      expect(output).toContain('export interface TaskFrogBotSweepJobs {');
+      expect(output).toContain('export interface TaskFrogBotSweepWaitpoints {');
       expect(output).not.toMatch(/Frogbot[A-Z]/);
     });
 

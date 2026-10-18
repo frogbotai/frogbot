@@ -11,7 +11,7 @@
     width: 100%;
     overflow-wrap: anywhere;
     padding: 0.75rem 1.25rem 1rem;
-    border: 1px solid var(--theme-base-500);
+    border: 1px solid var(--fb-theme-base-500);
     border-radius: calc(var(--fb-radius-xl) + 0.25rem);
     border-top-right-radius: 0;
     background: transparent;
@@ -25,7 +25,7 @@
   .fb-message-editor__input:hover,
   .fb-message-editor__input:focus,
   .fb-message-editor__input:active {
-    border-color: var(--theme-base-600);
+    border-color: var(--fb-theme-base-600);
   }
 
   .fb-message-editor__actions {

@@ -100,7 +100,6 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
       admin: { user: 'editors', importMap: { autoGenerate: false } },
       typescript: { autoGenerate: false },
       localization: { defaultLocale: 'en', locales: ['en', 'fr'] },
-      experimental: { localizeStatus: true },
       collections: [
         { slug: 'editors', auth: { strategies: [editorHeaderStrategy] }, fields: [] },
         {
@@ -111,7 +110,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         { slug: 'attachments', upload: { staticDir: filesDir }, fields: [] },
         {
           slug: 'articles',
-          versions: { drafts: { localizeStatus: true } },
+          versions: { drafts: true },
           fields: [{ name: 'title', type: 'text', localized: true }],
         },
       ],
@@ -316,21 +315,21 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
       expect(await readFile(join(filesDir, String(copy.filename)), 'utf8')).toBe('ribbit');
     });
 
-    it('renames a file whose name is already on disk', async () => {
-      await writeFile(join(filesDir, 'orphan.txt'), 'left behind');
+    it('stores an untransformed upload as its original, renamed when that name is on disk', async () => {
+      await writeFile(join(filesDir, 'orphan-original.txt'), 'left behind');
 
       const created = await createAttachment(await writeFixture('orphan.txt', 'new'));
 
-      expect(created.filename).toBe('orphan-1.txt');
+      expect(created.filename).toBe('orphan-original-1.txt');
     });
 
-    it('overwriteExistingFiles replaces a file already on disk instead of renaming', async () => {
-      await writeFile(join(filesDir, 'stray.txt'), 'left behind');
+    it('overwriteExistingFiles still keeps a file already on local disk, for file versioning', async () => {
+      await writeFile(join(filesDir, 'stray-original.txt'), 'left behind');
 
       const created = await createAttachment(await writeFixture('stray.txt', 'replaced'), true);
 
-      expect(created.filename).toBe('stray.txt');
-      expect(await readFile(join(filesDir, 'stray.txt'), 'utf8')).toBe('replaced');
+      expect(created.filename).toBe('stray-original-1.txt');
+      expect(await readFile(join(filesDir, 'stray-original.txt'), 'utf8')).toBe('left behind');
     });
   });
 
@@ -346,11 +345,11 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         overrideAccess: true,
       });
 
-      expect(updated.filename).toBe('after.txt');
-      expect(await readFile(join(filesDir, 'after.txt'), 'utf8')).toBe('after');
+      expect(updated.filename).toBe('after-original.txt');
+      expect(await readFile(join(filesDir, 'after-original.txt'), 'utf8')).toBe('after');
     });
 
-    it('overwriteExistingFiles keeps the file name when the new file has the same name', async () => {
+    it('overwriteExistingFiles still gives a same-named file a fresh name on local disk', async () => {
       const attachment = await createAttachment(await writeFixture('same.txt', 'old'));
 
       const updated = await frogbot.update({
@@ -362,8 +361,8 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         overrideAccess: true,
       });
 
-      expect(updated.filename).toBe('same.txt');
-      expect(await readFile(join(filesDir, 'same.txt'), 'utf8')).toBe('new');
+      expect(updated.filename).toBe('same-original-1.txt');
+      expect(await readFile(join(filesDir, 'same-original-1.txt'), 'utf8')).toBe('new');
     });
 
     it('publishAllLocales and unpublishAllLocales set the status of every locale', async () => {

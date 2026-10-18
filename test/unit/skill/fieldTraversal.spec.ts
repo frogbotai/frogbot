@@ -50,13 +50,11 @@ test('schema inspection terminates recursive block references without repeating 
     slug: 'recursive',
     fields: [
       { name: 'title', type: 'text' },
-      { name: 'children', type: 'blocks', blocks: [], blockReferences: ['recursive'] },
+      { name: 'children', type: 'blocks', blocks: ['recursive'] },
     ],
   };
 
-  const fields: Field[] = [
-    { name: 'layout', type: 'blocks', blocks: [], blockReferences: ['recursive'] },
-  ];
+  const fields: Field[] = [{ name: 'layout', type: 'blocks', blocks: ['recursive'] }];
 
   const names: string[] = [];
 
@@ -72,9 +70,7 @@ test('schema inspection terminates recursive block references without repeating 
 });
 
 test('schema inspection reports an unresolved root block instead of skipping it', () => {
-  const fields: Field[] = [
-    { name: 'layout', type: 'blocks', blocks: [], blockReferences: ['missing'] },
-  ];
+  const fields: Field[] = [{ name: 'layout', type: 'blocks', blocks: ['missing'] }];
 
   expect(() => visit({ fields, onField: () => undefined })).toThrow(
     'Unknown root block reference: missing',

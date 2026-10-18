@@ -10,6 +10,7 @@ import {
 } from '@payloadcms/ui';
 import { reduceFieldsToOptions } from '@payloadcms/ui/utilities/reduceFieldsToOptions';
 import type { ClientField } from 'payload';
+import { isFieldDisabled } from 'payload/shared';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import {
@@ -55,12 +56,18 @@ export const SortBuilder: React.FC<SortBuilderProps> = ({
 
   const reducedFields = useMemo(
     () =>
-      reduceFieldsToOptions({ fieldPermissions, fields, i18n }).filter(
-        (field) =>
-          !field.field.admin?.disableListColumn &&
-          sortableFieldTypes.has(field.field.type) &&
-          !isBoardOrderField(String(field.value)),
-      ),
+      reduceFieldsToOptions({ fieldPermissions, fields, i18n })
+        .filter(
+          ({ field, fieldPath }) =>
+            !isFieldDisabled(field, 'column') &&
+            sortableFieldTypes.has(field.type) &&
+            !isBoardOrderField(fieldPath),
+        )
+        .map(({ fieldPath, label, plainTextLabel }) => ({
+          label,
+          plainTextLabel,
+          value: fieldPath,
+        })),
     [fields, fieldPermissions, i18n],
   );
 
@@ -167,17 +174,17 @@ export const SortBuilder: React.FC<SortBuilderProps> = ({
             </div>
             <div className={`${baseClass}__actions`}>
               <Button
-                buttonStyle="icon-label"
+                aria-label={t('general:remove')}
+                buttonStyle="ghost"
                 className={`${baseClass}__actions-remove`}
                 icon="x"
-                iconStyle="with-border"
                 onClick={() => update(visibleRows.filter((_, i) => i !== index))}
               />
               <Button
-                buttonStyle="icon-label"
+                aria-label={t('fields:addNew')}
+                buttonStyle="ghost"
                 className={`${baseClass}__actions-add`}
                 icon="plus"
-                iconStyle="with-border"
                 onClick={() => setRows([...visibleRows, emptyRow])}
               />
             </div>

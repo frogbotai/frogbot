@@ -187,7 +187,7 @@ function readCardColors(card: Locator) {
     const color = (selector: string) => getComputedStyle(element.querySelector(selector)!).color;
     const probe = document.createElement('span');
 
-    probe.style.color = 'var(--theme-base-900)';
+    probe.style.color = 'var(--fb-theme-base-900)';
     element.append(probe);
 
     const base = getComputedStyle(probe).color;
@@ -245,6 +245,7 @@ test('composer uploads a private chat asset, sends its bytes, and restores the a
   const anonymous = await playwright.request.newContext({ baseURL, storageState: signedOut });
 
   const filename = 'browser-attachment.png';
+  const storedFilename = 'browser-attachment-original.png';
   const prompt = 'Describe this uploaded image.';
   const image = Buffer.from(imageBase64, 'base64');
   const uploadResponse = page.waitForResponse(
@@ -267,7 +268,11 @@ test('composer uploads a private chat asset, sends its bytes, and restores the a
 
   const { doc: asset } = await uploaded.json();
 
-  expect(asset).toMatchObject({ filename, mimeType: 'image/png', filesize: image.length });
+  expect(asset).toMatchObject({
+    filename: storedFilename,
+    mimeType: 'image/png',
+    filesize: image.length,
+  });
   expect(asset.owner).toBeTruthy();
   expect(asset.chat).toBeFalsy();
 
@@ -349,7 +354,11 @@ test('composer uploads a private chat asset, sends its bytes, and restores the a
   const storedAsset = await page.request.get(`/api/${assetsSlug}/${asset.id}?depth=0`);
 
   expect(storedAsset.ok()).toBe(true);
-  expect(await storedAsset.json()).toMatchObject({ id: asset.id, chat: chatId, filename });
+  expect(await storedAsset.json()).toMatchObject({
+    id: asset.id,
+    chat: chatId,
+    filename: storedFilename,
+  });
 
   const storedMessages = await page.request.get(`/api/${messagesSlug}`, {
     params: { 'where[chat][equals]': chatId, depth: 0 },
@@ -450,7 +459,11 @@ test('a Word document becomes a DOCX text card that opens, and the agent receive
 
   const { doc: asset } = await uploaded.json();
 
-  expect(asset).toMatchObject({ filename: 'report.docx', mimeType: docxType, text: reportText });
+  expect(asset).toMatchObject({
+    filename: 'report-original.docx',
+    mimeType: docxType,
+    text: reportText,
+  });
 
   const card = composerCard(page);
 
@@ -674,7 +687,7 @@ test('a code file becomes a JS text card that opens, and the agent receives it u
 
   const { doc: asset } = await uploaded.json();
 
-  expect(asset).toMatchObject({ filename: 'app.js.txt', mimeType: 'text/plain' });
+  expect(asset).toMatchObject({ filename: 'app.js-original.txt', mimeType: 'text/plain' });
 
   const card = composerCard(page);
 
@@ -730,7 +743,7 @@ test('long pasted text is stored as a text asset and reaches the agent as pasted
 
   const { doc: asset } = await uploaded.json();
 
-  expect(asset.filename).toMatch(/^pasted-\d+\.txt$/);
+  expect(asset.filename).toMatch(/^pasted-\d+-original\.txt$/);
 
   const card = composerCard(page);
 

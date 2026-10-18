@@ -4,460 +4,348 @@ import type { FrogBotRequest } from '../../types/request.js';
 
 type ServerProps<T> = Omit<T, 'payload' | 'req'> & { req: FrogBotRequest };
 
-type ServerComponent<T> = T extends (props: infer TProps) => infer TResult
-  ? (props: ServerProps<TProps>) => TResult
-  : never;
+export type ArrayFieldDescriptionServerProps =
+  ServerProps<Payload.ArrayFieldDescriptionServerProps>;
+
+export type ArrayFieldDiffServerProps = ServerProps<Payload.ArrayFieldDiffServerProps>;
+
+export type ArrayFieldErrorServerProps = ServerProps<Payload.ArrayFieldErrorServerProps>;
+
+export type ArrayFieldLabelServerProps = ServerProps<Payload.ArrayFieldLabelServerProps>;
 
 export type ArrayFieldServerProps = ServerProps<Payload.ArrayFieldServerProps>;
 
-export type ArrayFieldServerComponent = ServerComponent<Payload.ArrayFieldServerComponent>;
+export type BlockRowLabelServerProps = ServerProps<Payload.BlockRowLabelServerProps>;
 
-export type ArrayFieldLabelServerComponent =
-  ServerComponent<Payload.ArrayFieldLabelServerComponent>;
+export type BlocksFieldDescriptionServerProps =
+  ServerProps<Payload.BlocksFieldDescriptionServerProps>;
 
-export type ArrayFieldDescriptionServerComponent =
-  ServerComponent<Payload.ArrayFieldDescriptionServerComponent>;
+export type BlocksFieldDiffServerProps = ServerProps<Payload.BlocksFieldDiffServerProps>;
 
-export type ArrayFieldErrorServerComponent =
-  ServerComponent<Payload.ArrayFieldErrorServerComponent>;
+export type BlocksFieldErrorServerProps = ServerProps<Payload.BlocksFieldErrorServerProps>;
 
-export type ArrayFieldDiffServerComponent = ServerComponent<Payload.ArrayFieldDiffServerComponent>;
+export type BlocksFieldLabelServerProps = ServerProps<Payload.BlocksFieldLabelServerProps>;
 
 export type BlocksFieldServerProps = ServerProps<Payload.BlocksFieldServerProps>;
 
-export type BlocksFieldServerComponent = ServerComponent<Payload.BlocksFieldServerComponent>;
+export type CheckboxFieldDescriptionServerProps =
+  ServerProps<Payload.CheckboxFieldDescriptionServerProps>;
 
-export type BlocksFieldLabelServerComponent =
-  ServerComponent<Payload.BlocksFieldLabelServerComponent>;
+export type CheckboxFieldDiffServerProps = ServerProps<Payload.CheckboxFieldDiffServerProps>;
 
-export type BlocksFieldDescriptionServerComponent =
-  ServerComponent<Payload.BlocksFieldDescriptionServerComponent>;
+export type CheckboxFieldErrorServerProps = ServerProps<Payload.CheckboxFieldErrorServerProps>;
 
-export type BlocksFieldErrorServerComponent =
-  ServerComponent<Payload.BlocksFieldErrorServerComponent>;
-
-export type BlocksFieldDiffServerComponent =
-  ServerComponent<Payload.BlocksFieldDiffServerComponent>;
-
-export type BlockRowLabelServerComponent = ServerComponent<Payload.BlockRowLabelServerComponent>;
+export type CheckboxFieldLabelServerProps = ServerProps<Payload.CheckboxFieldLabelServerProps>;
 
 export type CheckboxFieldServerProps = ServerProps<Payload.CheckboxFieldServerProps>;
 
-export type CheckboxFieldServerComponent = ServerComponent<Payload.CheckboxFieldServerComponent>;
+export type CodeFieldDescriptionServerProps = ServerProps<Payload.CodeFieldDescriptionServerProps>;
 
-export type CheckboxFieldLabelServerComponent =
-  ServerComponent<Payload.CheckboxFieldLabelServerComponent>;
+export type CodeFieldDiffServerProps = ServerProps<Payload.CodeFieldDiffServerProps>;
 
-export type CheckboxFieldDescriptionServerComponent =
-  ServerComponent<Payload.CheckboxFieldDescriptionServerComponent>;
+export type CodeFieldErrorServerProps = ServerProps<Payload.CodeFieldErrorServerProps>;
 
-export type CheckboxFieldErrorServerComponent =
-  ServerComponent<Payload.CheckboxFieldErrorServerComponent>;
-
-export type CheckboxFieldDiffServerComponent =
-  ServerComponent<Payload.CheckboxFieldDiffServerComponent>;
+export type CodeFieldLabelServerProps = ServerProps<Payload.CodeFieldLabelServerProps>;
 
 export type CodeFieldServerProps = ServerProps<Payload.CodeFieldServerProps>;
 
-export type CodeFieldServerComponent = ServerComponent<Payload.CodeFieldServerComponent>;
+export type CollapsibleFieldDescriptionServerProps =
+  ServerProps<Payload.CollapsibleFieldDescriptionServerProps>;
 
-export type CodeFieldLabelServerComponent = ServerComponent<Payload.CodeFieldLabelServerComponent>;
+export type CollapsibleFieldDiffServerProps = ServerProps<Payload.CollapsibleFieldDiffServerProps>;
 
-export type CodeFieldDescriptionServerComponent =
-  ServerComponent<Payload.CodeFieldDescriptionServerComponent>;
+export type CollapsibleFieldErrorServerProps =
+  ServerProps<Payload.CollapsibleFieldErrorServerProps>;
 
-export type CodeFieldErrorServerComponent = ServerComponent<Payload.CodeFieldErrorServerComponent>;
-
-export type CodeFieldDiffServerComponent = ServerComponent<Payload.CodeFieldDiffServerComponent>;
+export type CollapsibleFieldLabelServerProps =
+  ServerProps<Payload.CollapsibleFieldLabelServerProps>;
 
 export type CollapsibleFieldServerProps = ServerProps<Payload.CollapsibleFieldServerProps>;
 
-export type CollapsibleFieldServerComponent =
-  ServerComponent<Payload.CollapsibleFieldServerComponent>;
+export type DateFieldDescriptionServerProps = ServerProps<Payload.DateFieldDescriptionServerProps>;
 
-export type CollapsibleFieldLabelServerComponent =
-  ServerComponent<Payload.CollapsibleFieldLabelServerComponent>;
+export type DateFieldDiffServerProps = ServerProps<Payload.DateFieldDiffServerProps>;
 
-export type CollapsibleFieldDescriptionServerComponent =
-  ServerComponent<Payload.CollapsibleFieldDescriptionServerComponent>;
+export type DateFieldErrorServerProps = ServerProps<Payload.DateFieldErrorServerProps>;
 
-export type CollapsibleFieldErrorServerComponent =
-  ServerComponent<Payload.CollapsibleFieldErrorServerComponent>;
-
-export type CollapsibleFieldDiffServerComponent =
-  ServerComponent<Payload.CollapsibleFieldDiffServerComponent>;
+export type DateFieldLabelServerProps = ServerProps<Payload.DateFieldLabelServerProps>;
 
 export type DateFieldServerProps = ServerProps<Payload.DateFieldServerProps>;
 
-export type DateFieldServerComponent = ServerComponent<Payload.DateFieldServerComponent>;
+export type EmailFieldDescriptionServerProps =
+  ServerProps<Payload.EmailFieldDescriptionServerProps>;
 
-export type DateFieldLabelServerComponent = ServerComponent<Payload.DateFieldLabelServerComponent>;
+export type EmailFieldDiffServerProps = ServerProps<Payload.EmailFieldDiffServerProps>;
 
-export type DateFieldDescriptionServerComponent =
-  ServerComponent<Payload.DateFieldDescriptionServerComponent>;
+export type EmailFieldErrorServerProps = ServerProps<Payload.EmailFieldErrorServerProps>;
 
-export type DateFieldErrorServerComponent = ServerComponent<Payload.DateFieldErrorServerComponent>;
-
-export type DateFieldDiffServerComponent = ServerComponent<Payload.DateFieldDiffServerComponent>;
+export type EmailFieldLabelServerProps = ServerProps<Payload.EmailFieldLabelServerProps>;
 
 export type EmailFieldServerProps = ServerProps<Payload.EmailFieldServerProps>;
 
-export type EmailFieldServerComponent = ServerComponent<Payload.EmailFieldServerComponent>;
+export type GroupFieldDescriptionServerProps =
+  ServerProps<Payload.GroupFieldDescriptionServerProps>;
 
-export type EmailFieldLabelServerComponent =
-  ServerComponent<Payload.EmailFieldLabelServerComponent>;
+export type GroupFieldDiffServerProps = ServerProps<Payload.GroupFieldDiffServerProps>;
 
-export type EmailFieldDescriptionServerComponent =
-  ServerComponent<Payload.EmailFieldDescriptionServerComponent>;
+export type GroupFieldErrorServerProps = ServerProps<Payload.GroupFieldErrorServerProps>;
 
-export type EmailFieldErrorServerComponent =
-  ServerComponent<Payload.EmailFieldErrorServerComponent>;
-
-export type EmailFieldDiffServerComponent = ServerComponent<Payload.EmailFieldDiffServerComponent>;
+export type GroupFieldLabelServerProps = ServerProps<Payload.GroupFieldLabelServerProps>;
 
 export type GroupFieldServerProps = ServerProps<Payload.GroupFieldServerProps>;
 
-export type GroupFieldServerComponent = ServerComponent<Payload.GroupFieldServerComponent>;
+export type JSONFieldDescriptionServerProps = ServerProps<Payload.JSONFieldDescriptionServerProps>;
 
-export type GroupFieldLabelServerComponent =
-  ServerComponent<Payload.GroupFieldLabelServerComponent>;
+export type JSONFieldDiffServerProps = ServerProps<Payload.JSONFieldDiffServerProps>;
 
-export type GroupFieldDescriptionServerComponent =
-  ServerComponent<Payload.GroupFieldDescriptionServerComponent>;
+export type JSONFieldErrorServerProps = ServerProps<Payload.JSONFieldErrorServerProps>;
 
-export type GroupFieldErrorServerComponent =
-  ServerComponent<Payload.GroupFieldErrorServerComponent>;
-
-export type GroupFieldDiffServerComponent = ServerComponent<Payload.GroupFieldDiffServerComponent>;
+export type JSONFieldLabelServerProps = ServerProps<Payload.JSONFieldLabelServerProps>;
 
 export type JSONFieldServerProps = ServerProps<Payload.JSONFieldServerProps>;
 
-export type JSONFieldServerComponent = ServerComponent<Payload.JSONFieldServerComponent>;
+export type JoinFieldDescriptionServerProps = ServerProps<Payload.JoinFieldDescriptionServerProps>;
 
-export type JSONFieldLabelServerComponent = ServerComponent<Payload.JSONFieldLabelServerComponent>;
+export type JoinFieldDiffServerProps = ServerProps<Payload.JoinFieldDiffServerProps>;
 
-export type JSONFieldDescriptionServerComponent =
-  ServerComponent<Payload.JSONFieldDescriptionServerComponent>;
+export type JoinFieldErrorServerProps = ServerProps<Payload.JoinFieldErrorServerProps>;
 
-export type JSONFieldErrorServerComponent = ServerComponent<Payload.JSONFieldErrorServerComponent>;
-
-export type JSONFieldDiffServerComponent = ServerComponent<Payload.JSONFieldDiffServerComponent>;
+export type JoinFieldLabelServerProps = ServerProps<Payload.JoinFieldLabelServerProps>;
 
 export type JoinFieldServerProps = ServerProps<Payload.JoinFieldServerProps>;
 
-export type JoinFieldServerComponent = ServerComponent<Payload.JoinFieldServerComponent>;
+export type NumberFieldDescriptionServerProps =
+  ServerProps<Payload.NumberFieldDescriptionServerProps>;
 
-export type JoinFieldLabelServerComponent = ServerComponent<Payload.JoinFieldLabelServerComponent>;
+export type NumberFieldDiffServerProps = ServerProps<Payload.NumberFieldDiffServerProps>;
 
-export type JoinFieldDescriptionServerComponent =
-  ServerComponent<Payload.JoinFieldDescriptionServerComponent>;
+export type NumberFieldErrorServerProps = ServerProps<Payload.NumberFieldErrorServerProps>;
 
-export type JoinFieldErrorServerComponent = ServerComponent<Payload.JoinFieldErrorServerComponent>;
-
-export type JoinFieldDiffServerComponent = ServerComponent<Payload.JoinFieldDiffServerComponent>;
+export type NumberFieldLabelServerProps = ServerProps<Payload.NumberFieldLabelServerProps>;
 
 export type NumberFieldServerProps = ServerProps<Payload.NumberFieldServerProps>;
 
-export type NumberFieldServerComponent = ServerComponent<Payload.NumberFieldServerComponent>;
+export type PointFieldDescriptionServerProps =
+  ServerProps<Payload.PointFieldDescriptionServerProps>;
 
-export type NumberFieldLabelServerComponent =
-  ServerComponent<Payload.NumberFieldLabelServerComponent>;
+export type PointFieldDiffServerProps = ServerProps<Payload.PointFieldDiffServerProps>;
 
-export type NumberFieldDescriptionServerComponent =
-  ServerComponent<Payload.NumberFieldDescriptionServerComponent>;
+export type PointFieldErrorServerProps = ServerProps<Payload.PointFieldErrorServerProps>;
 
-export type NumberFieldErrorServerComponent =
-  ServerComponent<Payload.NumberFieldErrorServerComponent>;
-
-export type NumberFieldDiffServerComponent =
-  ServerComponent<Payload.NumberFieldDiffServerComponent>;
+export type PointFieldLabelServerProps = ServerProps<Payload.PointFieldLabelServerProps>;
 
 export type PointFieldServerProps = ServerProps<Payload.PointFieldServerProps>;
 
-export type PointFieldServerComponent = ServerComponent<Payload.PointFieldServerComponent>;
+export type RadioFieldDescriptionServerProps =
+  ServerProps<Payload.RadioFieldDescriptionServerProps>;
 
-export type PointFieldLabelServerComponent =
-  ServerComponent<Payload.PointFieldLabelServerComponent>;
+export type RadioFieldDiffServerProps = ServerProps<Payload.RadioFieldDiffServerProps>;
 
-export type PointFieldDescriptionServerComponent =
-  ServerComponent<Payload.PointFieldDescriptionServerComponent>;
+export type RadioFieldErrorServerProps = ServerProps<Payload.RadioFieldErrorServerProps>;
 
-export type PointFieldErrorServerComponent =
-  ServerComponent<Payload.PointFieldErrorServerComponent>;
-
-export type PointFieldDiffServerComponent = ServerComponent<Payload.PointFieldDiffServerComponent>;
+export type RadioFieldLabelServerProps = ServerProps<Payload.RadioFieldLabelServerProps>;
 
 export type RadioFieldServerProps = ServerProps<Payload.RadioFieldServerProps>;
 
-export type RadioFieldServerComponent = ServerComponent<Payload.RadioFieldServerComponent>;
+export type RelationshipFieldDescriptionServerProps =
+  ServerProps<Payload.RelationshipFieldDescriptionServerProps>;
 
-export type RadioFieldLabelServerComponent =
-  ServerComponent<Payload.RadioFieldLabelServerComponent>;
+export type RelationshipFieldDiffServerProps =
+  ServerProps<Payload.RelationshipFieldDiffServerProps>;
 
-export type RadioFieldDescriptionServerComponent =
-  ServerComponent<Payload.RadioFieldDescriptionServerComponent>;
+export type RelationshipFieldErrorServerProps =
+  ServerProps<Payload.RelationshipFieldErrorServerProps>;
 
-export type RadioFieldErrorServerComponent =
-  ServerComponent<Payload.RadioFieldErrorServerComponent>;
-
-export type RadioFieldDiffServerComponent = ServerComponent<Payload.RadioFieldDiffServerComponent>;
+export type RelationshipFieldLabelServerProps =
+  ServerProps<Payload.RelationshipFieldLabelServerProps>;
 
 export type RelationshipFieldServerProps = ServerProps<Payload.RelationshipFieldServerProps>;
 
-export type RelationshipFieldServerComponent =
-  ServerComponent<Payload.RelationshipFieldServerComponent>;
+export type RichTextFieldDescriptionServerProps =
+  ServerProps<Payload.RichTextFieldDescriptionServerProps>;
 
-export type RelationshipFieldLabelServerComponent =
-  ServerComponent<Payload.RelationshipFieldLabelServerComponent>;
+export type RichTextFieldDiffServerProps = ServerProps<Payload.RichTextFieldDiffServerProps>;
 
-export type RelationshipFieldDescriptionServerComponent =
-  ServerComponent<Payload.RelationshipFieldDescriptionServerComponent>;
+export type RichTextFieldErrorServerProps = ServerProps<Payload.RichTextFieldErrorServerProps>;
 
-export type RelationshipFieldErrorServerComponent =
-  ServerComponent<Payload.RelationshipFieldErrorServerComponent>;
-
-export type RelationshipFieldDiffServerComponent =
-  ServerComponent<Payload.RelationshipFieldDiffServerComponent>;
+export type RichTextFieldLabelServerProps = ServerProps<Payload.RichTextFieldLabelServerProps>;
 
 export type RichTextFieldServerProps = ServerProps<Payload.RichTextFieldServerProps>;
 
-export type RichTextFieldServerComponent = ServerComponent<Payload.RichTextFieldServerComponent>;
+export type RowFieldDescriptionServerProps = ServerProps<Payload.RowFieldDescriptionServerProps>;
 
-export type RichTextFieldLabelServerComponent =
-  ServerComponent<Payload.RichTextFieldLabelServerComponent>;
+export type RowFieldDiffServerProps = ServerProps<Payload.RowFieldDiffServerProps>;
 
-export type RichTextFieldDescriptionServerComponent =
-  ServerComponent<Payload.RichTextFieldDescriptionServerComponent>;
+export type RowFieldErrorServerProps = ServerProps<Payload.RowFieldErrorServerProps>;
 
-export type RichTextFieldErrorServerComponent =
-  ServerComponent<Payload.RichTextFieldErrorServerComponent>;
-
-export type RichTextFieldDiffServerComponent =
-  ServerComponent<Payload.RichTextFieldDiffServerComponent>;
+export type RowFieldLabelServerProps = ServerProps<Payload.RowFieldLabelServerProps>;
 
 export type RowFieldServerProps = ServerProps<Payload.RowFieldServerProps>;
 
-export type RowFieldServerComponent = ServerComponent<Payload.RowFieldServerComponent>;
+export type SelectFieldDescriptionServerProps =
+  ServerProps<Payload.SelectFieldDescriptionServerProps>;
 
-export type RowFieldLabelServerComponent = ServerComponent<Payload.RowFieldLabelServerComponent>;
+export type SelectFieldDiffServerProps = ServerProps<Payload.SelectFieldDiffServerProps>;
 
-export type RowFieldDescriptionServerComponent =
-  ServerComponent<Payload.RowFieldDescriptionServerComponent>;
+export type SelectFieldErrorServerProps = ServerProps<Payload.SelectFieldErrorServerProps>;
 
-export type RowFieldErrorServerComponent = ServerComponent<Payload.RowFieldErrorServerComponent>;
-
-export type RowFieldDiffServerComponent = ServerComponent<Payload.RowFieldDiffServerComponent>;
+export type SelectFieldLabelServerProps = ServerProps<Payload.SelectFieldLabelServerProps>;
 
 export type SelectFieldServerProps = ServerProps<Payload.SelectFieldServerProps>;
 
-export type SelectFieldServerComponent = ServerComponent<Payload.SelectFieldServerComponent>;
+export type TabsFieldDescriptionServerProps = ServerProps<Payload.TabsFieldDescriptionServerProps>;
 
-export type SelectFieldLabelServerComponent =
-  ServerComponent<Payload.SelectFieldLabelServerComponent>;
+export type TabsFieldDiffServerProps = ServerProps<Payload.TabsFieldDiffServerProps>;
 
-export type SelectFieldDescriptionServerComponent =
-  ServerComponent<Payload.SelectFieldDescriptionServerComponent>;
+export type TabsFieldErrorServerProps = ServerProps<Payload.TabsFieldErrorServerProps>;
 
-export type SelectFieldErrorServerComponent =
-  ServerComponent<Payload.SelectFieldErrorServerComponent>;
-
-export type SelectFieldDiffServerComponent =
-  ServerComponent<Payload.SelectFieldDiffServerComponent>;
+export type TabsFieldLabelServerProps = ServerProps<Payload.TabsFieldLabelServerProps>;
 
 export type TabsFieldServerProps = ServerProps<Payload.TabsFieldServerProps>;
 
-export type TabsFieldServerComponent = ServerComponent<Payload.TabsFieldServerComponent>;
+export type TextFieldDescriptionServerProps = ServerProps<Payload.TextFieldDescriptionServerProps>;
 
-export type TabsFieldLabelServerComponent = ServerComponent<Payload.TabsFieldLabelServerComponent>;
+export type TextFieldDiffServerProps = ServerProps<Payload.TextFieldDiffServerProps>;
 
-export type TabsFieldDescriptionServerComponent =
-  ServerComponent<Payload.TabsFieldDescriptionServerComponent>;
+export type TextFieldErrorServerProps = ServerProps<Payload.TextFieldErrorServerProps>;
 
-export type TabsFieldErrorServerComponent = ServerComponent<Payload.TabsFieldErrorServerComponent>;
-
-export type TabsFieldDiffServerComponent = ServerComponent<Payload.TabsFieldDiffServerComponent>;
+export type TextFieldLabelServerProps = ServerProps<Payload.TextFieldLabelServerProps>;
 
 export type TextFieldServerProps = ServerProps<Payload.TextFieldServerProps>;
 
-export type TextFieldServerComponent = ServerComponent<Payload.TextFieldServerComponent>;
+export type TextareaFieldDescriptionServerProps =
+  ServerProps<Payload.TextareaFieldDescriptionServerProps>;
 
-export type TextFieldLabelServerComponent = ServerComponent<Payload.TextFieldLabelServerComponent>;
+export type TextareaFieldDiffServerProps = ServerProps<Payload.TextareaFieldDiffServerProps>;
 
-export type TextFieldDescriptionServerComponent =
-  ServerComponent<Payload.TextFieldDescriptionServerComponent>;
+export type TextareaFieldErrorServerProps = ServerProps<Payload.TextareaFieldErrorServerProps>;
 
-export type TextFieldErrorServerComponent = ServerComponent<Payload.TextFieldErrorServerComponent>;
-
-export type TextFieldDiffServerComponent = ServerComponent<Payload.TextFieldDiffServerComponent>;
+export type TextareaFieldLabelServerProps = ServerProps<Payload.TextareaFieldLabelServerProps>;
 
 export type TextareaFieldServerProps = ServerProps<Payload.TextareaFieldServerProps>;
 
-export type TextareaFieldServerComponent = ServerComponent<Payload.TextareaFieldServerComponent>;
-
-export type TextareaFieldLabelServerComponent =
-  ServerComponent<Payload.TextareaFieldLabelServerComponent>;
-
-export type TextareaFieldDescriptionServerComponent =
-  ServerComponent<Payload.TextareaFieldDescriptionServerComponent>;
-
-export type TextareaFieldErrorServerComponent =
-  ServerComponent<Payload.TextareaFieldErrorServerComponent>;
-
-export type TextareaFieldDiffServerComponent =
-  ServerComponent<Payload.TextareaFieldDiffServerComponent>;
+export type UIFieldDiffServerProps = ServerProps<Payload.UIFieldDiffServerProps>;
 
 export type UIFieldServerProps = ServerProps<Payload.UIFieldServerProps>;
 
-export type UIFieldServerComponent = ServerComponent<Payload.UIFieldServerComponent>;
+export type UploadFieldDescriptionServerProps =
+  ServerProps<Payload.UploadFieldDescriptionServerProps>;
 
-export type UIFieldDiffServerComponent = ServerComponent<Payload.UIFieldDiffServerComponent>;
+export type UploadFieldDiffServerProps = ServerProps<Payload.UploadFieldDiffServerProps>;
+
+export type UploadFieldErrorServerProps = ServerProps<Payload.UploadFieldErrorServerProps>;
+
+export type UploadFieldLabelServerProps = ServerProps<Payload.UploadFieldLabelServerProps>;
 
 export type UploadFieldServerProps = ServerProps<Payload.UploadFieldServerProps>;
 
-export type UploadFieldServerComponent = ServerComponent<Payload.UploadFieldServerComponent>;
-
-export type UploadFieldLabelServerComponent =
-  ServerComponent<Payload.UploadFieldLabelServerComponent>;
-
-export type UploadFieldDescriptionServerComponent =
-  ServerComponent<Payload.UploadFieldDescriptionServerComponent>;
-
-export type UploadFieldErrorServerComponent =
-  ServerComponent<Payload.UploadFieldErrorServerComponent>;
-
-export type UploadFieldDiffServerComponent =
-  ServerComponent<Payload.UploadFieldDiffServerComponent>;
-
 export type {
-  ArrayFieldClientComponent,
   ArrayFieldClientProps,
-  ArrayFieldDescriptionClientComponent,
-  ArrayFieldDiffClientComponent,
-  ArrayFieldErrorClientComponent,
-  ArrayFieldLabelClientComponent,
-  BlockRowLabelClientComponent,
-  BlocksFieldClientComponent,
+  ArrayFieldDescriptionClientProps,
+  ArrayFieldDiffClientProps,
+  ArrayFieldErrorClientProps,
+  ArrayFieldLabelClientProps,
+  BlockRowLabelClientProps,
   BlocksFieldClientProps,
-  BlocksFieldDescriptionClientComponent,
-  BlocksFieldDiffClientComponent,
-  BlocksFieldErrorClientComponent,
-  BlocksFieldLabelClientComponent,
-  CheckboxFieldClientComponent,
+  BlocksFieldDescriptionClientProps,
+  BlocksFieldDiffClientProps,
+  BlocksFieldErrorClientProps,
+  BlocksFieldLabelClientProps,
   CheckboxFieldClientProps,
-  CheckboxFieldDescriptionClientComponent,
-  CheckboxFieldDiffClientComponent,
-  CheckboxFieldErrorClientComponent,
-  CheckboxFieldLabelClientComponent,
-  CodeFieldClientComponent,
+  CheckboxFieldDescriptionClientProps,
+  CheckboxFieldDiffClientProps,
+  CheckboxFieldErrorClientProps,
+  CheckboxFieldLabelClientProps,
   CodeFieldClientProps,
-  CodeFieldDescriptionClientComponent,
-  CodeFieldDiffClientComponent,
-  CodeFieldErrorClientComponent,
-  CodeFieldLabelClientComponent,
-  CollapsibleFieldClientComponent,
+  CodeFieldDescriptionClientProps,
+  CodeFieldDiffClientProps,
+  CodeFieldErrorClientProps,
+  CodeFieldLabelClientProps,
   CollapsibleFieldClientProps,
-  CollapsibleFieldDescriptionClientComponent,
-  CollapsibleFieldDiffClientComponent,
-  CollapsibleFieldErrorClientComponent,
-  CollapsibleFieldLabelClientComponent,
-  DateFieldClientComponent,
+  CollapsibleFieldDescriptionClientProps,
+  CollapsibleFieldDiffClientProps,
+  CollapsibleFieldErrorClientProps,
+  CollapsibleFieldLabelClientProps,
   DateFieldClientProps,
-  DateFieldDescriptionClientComponent,
-  DateFieldDiffClientComponent,
-  DateFieldErrorClientComponent,
-  DateFieldLabelClientComponent,
-  EmailFieldClientComponent,
+  DateFieldDescriptionClientProps,
+  DateFieldDiffClientProps,
+  DateFieldErrorClientProps,
+  DateFieldLabelClientProps,
   EmailFieldClientProps,
-  EmailFieldDescriptionClientComponent,
-  EmailFieldDiffClientComponent,
-  EmailFieldErrorClientComponent,
-  EmailFieldLabelClientComponent,
-  GroupFieldClientComponent,
+  EmailFieldDescriptionClientProps,
+  EmailFieldDiffClientProps,
+  EmailFieldErrorClientProps,
+  EmailFieldLabelClientProps,
   GroupFieldClientProps,
-  GroupFieldDescriptionClientComponent,
-  GroupFieldDiffClientComponent,
-  GroupFieldErrorClientComponent,
-  GroupFieldLabelClientComponent,
-  HiddenFieldProps,
-  JoinFieldClientComponent,
+  GroupFieldDescriptionClientProps,
+  GroupFieldDiffClientProps,
+  GroupFieldErrorClientProps,
+  GroupFieldLabelClientProps,
   JoinFieldClientProps,
-  JoinFieldDescriptionClientComponent,
-  JoinFieldDiffClientComponent,
-  JoinFieldErrorClientComponent,
-  JoinFieldLabelClientComponent,
-  JSONFieldClientComponent,
+  JoinFieldDescriptionClientProps,
+  JoinFieldDiffClientProps,
+  JoinFieldErrorClientProps,
+  JoinFieldLabelClientProps,
   JSONFieldClientProps,
-  JSONFieldDescriptionClientComponent,
-  JSONFieldDiffClientComponent,
-  JSONFieldErrorClientComponent,
-  JSONFieldLabelClientComponent,
-  NumberFieldClientComponent,
+  JSONFieldDescriptionClientProps,
+  JSONFieldDiffClientProps,
+  JSONFieldErrorClientProps,
+  JSONFieldLabelClientProps,
   NumberFieldClientProps,
-  NumberFieldDescriptionClientComponent,
-  NumberFieldDiffClientComponent,
-  NumberFieldErrorClientComponent,
-  NumberFieldLabelClientComponent,
-  PointFieldClientComponent,
+  NumberFieldDescriptionClientProps,
+  NumberFieldDiffClientProps,
+  NumberFieldErrorClientProps,
+  NumberFieldLabelClientProps,
   PointFieldClientProps,
-  PointFieldDescriptionClientComponent,
-  PointFieldDiffClientComponent,
-  PointFieldErrorClientComponent,
-  PointFieldLabelClientComponent,
-  RadioFieldClientComponent,
+  PointFieldDescriptionClientProps,
+  PointFieldDiffClientProps,
+  PointFieldErrorClientProps,
+  PointFieldLabelClientProps,
   RadioFieldClientProps,
-  RadioFieldDescriptionClientComponent,
-  RadioFieldDiffClientComponent,
-  RadioFieldErrorClientComponent,
-  RadioFieldLabelClientComponent,
-  RelationshipFieldClientComponent,
+  RadioFieldDescriptionClientProps,
+  RadioFieldDiffClientProps,
+  RadioFieldErrorClientProps,
+  RadioFieldLabelClientProps,
   RelationshipFieldClientProps,
-  RelationshipFieldDescriptionClientComponent,
-  RelationshipFieldDiffClientComponent,
-  RelationshipFieldErrorClientComponent,
-  RelationshipFieldLabelClientComponent,
-  RichTextFieldClientComponent,
+  RelationshipFieldDescriptionClientProps,
+  RelationshipFieldDiffClientProps,
+  RelationshipFieldErrorClientProps,
+  RelationshipFieldLabelClientProps,
   RichTextFieldClientProps,
-  RichTextFieldDescriptionClientComponent,
-  RichTextFieldDiffClientComponent,
-  RichTextFieldErrorClientComponent,
-  RichTextFieldLabelClientComponent,
-  RowFieldClientComponent,
+  RichTextFieldDescriptionClientProps,
+  RichTextFieldDiffClientProps,
+  RichTextFieldErrorClientProps,
+  RichTextFieldLabelClientProps,
   RowFieldClientProps,
-  RowFieldDescriptionClientComponent,
-  RowFieldDiffClientComponent,
-  RowFieldErrorClientComponent,
-  RowFieldLabelClientComponent,
-  SelectFieldClientComponent,
+  RowFieldDescriptionClientProps,
+  RowFieldDiffClientProps,
+  RowFieldErrorClientProps,
+  RowFieldLabelClientProps,
   SelectFieldClientProps,
-  SelectFieldDescriptionClientComponent,
-  SelectFieldDiffClientComponent,
-  SelectFieldErrorClientComponent,
-  SelectFieldLabelClientComponent,
-  TabsFieldClientComponent,
+  SelectFieldDescriptionClientProps,
+  SelectFieldDiffClientProps,
+  SelectFieldErrorClientProps,
+  SelectFieldLabelClientProps,
   TabsFieldClientProps,
-  TabsFieldDescriptionClientComponent,
-  TabsFieldDiffClientComponent,
-  TabsFieldErrorClientComponent,
-  TabsFieldLabelClientComponent,
-  TextareaFieldClientComponent,
+  TabsFieldDescriptionClientProps,
+  TabsFieldDiffClientProps,
+  TabsFieldErrorClientProps,
+  TabsFieldLabelClientProps,
   TextareaFieldClientProps,
-  TextareaFieldDescriptionClientComponent,
-  TextareaFieldDiffClientComponent,
-  TextareaFieldErrorClientComponent,
-  TextareaFieldLabelClientComponent,
-  TextFieldClientComponent,
+  TextareaFieldDescriptionClientProps,
+  TextareaFieldDiffClientProps,
+  TextareaFieldErrorClientProps,
+  TextareaFieldLabelClientProps,
   TextFieldClientProps,
-  TextFieldDescriptionClientComponent,
-  TextFieldDiffClientComponent,
-  TextFieldErrorClientComponent,
-  TextFieldLabelClientComponent,
-  UIFieldClientComponent,
+  TextFieldDescriptionClientProps,
+  TextFieldDiffClientProps,
+  TextFieldErrorClientProps,
+  TextFieldLabelClientProps,
   UIFieldClientProps,
-  UIFieldDiffClientComponent,
-  UploadFieldClientComponent,
+  UIFieldDiffClientProps,
   UploadFieldClientProps,
-  UploadFieldDescriptionClientComponent,
-  UploadFieldDiffClientComponent,
-  UploadFieldErrorClientComponent,
-  UploadFieldLabelClientComponent,
+  UploadFieldDescriptionClientProps,
+  UploadFieldDiffClientProps,
+  UploadFieldErrorClientProps,
+  UploadFieldLabelClientProps,
 } from 'payload';

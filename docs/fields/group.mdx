@@ -82,7 +82,7 @@ Options that describe a stored value apply only to named groups: `interfaceName`
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ## Admin options
 
@@ -96,14 +96,14 @@ Groups inherit the standard [field admin options](/fields/overview#admin-options
 
 ```tsx
 import { GroupField } from '@frogbotai/ui/admin'
-import type { GroupFieldServerComponent } from 'frogbot'
+import type { GroupFieldServerProps } from 'frogbot'
 
-export const CustomGroupField: GroupFieldServerComponent = ({
+export const CustomGroupField = ({
   clientField,
   path,
   permissions,
   schemaPath,
-}) => {
+}: GroupFieldServerProps) => {
   return (
     <GroupField
       field={clientField}
@@ -115,4 +115,4 @@ export const CustomGroupField: GroupFieldServerComponent = ({
 }
 ```
 
-Use `GroupFieldClientComponent` for a client component and `GroupFieldLabelServerComponent` or `GroupFieldLabelClientComponent` to replace only the label.
+Use `GroupFieldClientProps` for a client component and `GroupFieldLabelServerProps` or `GroupFieldLabelClientProps` to replace only the label.

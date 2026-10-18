@@ -135,6 +135,8 @@ export const Orders: CollectionConfig = {
         const data = await req.json()
         await req.frogbot.update({
           collection: 'tracking',
+          overrideAccess: false,
+          req,
           data: {
             // data to update the document with
           },
@@ -189,6 +191,8 @@ import { addDataAndFileToRequest } from 'frogbot'
     await addDataAndFileToRequest(req)
     await req.frogbot.update({
       collection: 'tracking',
+      overrideAccess: false,
+      req,
       data: {
         // data to update the document with
       }
@@ -642,7 +646,8 @@ Every method's last argument, `init`, takes standard `RequestInit` options that 
 | `select` | `SelectType` | — | Which fields to include in the result. |
 | `trash` | `boolean` | `false` | Allow the update to target trashed documents. Has no effect unless the collection has `trash` enabled. |
 | `autosave` | `boolean` | `false` | With `id` and `draft: true`, save the update as an autosave of the current draft. Needs `versions.drafts.autosave`. |
-| `publishSpecificLocale` | `TypedLocale` | — | With `id`, publish only this locale's changes. Other locales keep their published values. |
+| `publishAllLocales` | `boolean` | — | Publishes every locale. Without it, a publish with `_status: 'published'` publishes only `locale`. Needs [status localization](/configuration/localization#status-localization). |
+| `unpublishAllLocales` | `boolean` | — | Unpublishes every locale. Needs [status localization](/configuration/localization#status-localization). |
 
 **`delete(options, init?)`**
 

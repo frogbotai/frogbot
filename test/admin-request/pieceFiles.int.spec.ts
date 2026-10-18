@@ -76,7 +76,11 @@ describe('customApiCall binary responses', () => {
     const { id } = result.body as { id: number | string };
     const doc = await booted.frogbot.findByID({ collection: filesSlug, id, overrideAccess: true });
 
-    expect(doc).toMatchObject({ filename: 'q3.pdf', mimeType: 'application/pdf', filesize: 4 });
+    expect(doc).toMatchObject({
+      filename: 'q3-original.pdf',
+      mimeType: 'application/pdf',
+      filesize: 4,
+    });
   });
 
   it('checks files access as the caller', async () => {

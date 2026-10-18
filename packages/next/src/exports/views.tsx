@@ -1,4 +1,3 @@
-import { setServerAdapter } from '@frogbotai/ui/admin/rsc';
 import {
   generatePageMetadata as payloadGeneratePageMetadata,
   NotFoundPage as PayloadNotFoundPage,
@@ -7,7 +6,6 @@ import {
 import { getPayloadConfig } from 'frogbot/internal';
 import type { ComponentProps } from 'react';
 
-import { nextServerAdapter } from '../adapters/server.js';
 import frogbotFavicon from '../assets/frogbot-favicon.png';
 import frogbotOGImage from '../assets/frogbot-og.jpg';
 import type { FrogBotConfigArg } from '../types.js';
@@ -15,7 +13,6 @@ import { brandImportMapErrors } from '../utilities/brandImportMapErrors.js';
 import { getSettingsTitle } from '../views/Settings/metadata.js';
 
 brandImportMapErrors();
-setServerAdapter(nextServerAdapter);
 
 const assetURL = (asset: { src: string } | string): string =>
   typeof asset === 'object' ? asset.src : asset;

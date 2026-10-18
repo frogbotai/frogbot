@@ -326,14 +326,18 @@ describe('collection search configuration', () => {
     ]);
   });
 
-  it('marks draft status localized only when localizeStatus is enabled for the runtime', () => {
-    const collection = articles({ versions: { drafts: { localizeStatus: true } } });
+  it('marks draft status localized when the app is localized and the collection has localized fields', () => {
+    const plain = articles();
+    const localized = articles({
+      fields: [...articles().fields, { name: 'summary', type: 'text', localized: true }],
+    });
 
-    expect(sanitizeSearchIndexes(collection)?.content.filterFields._status.localized).toBe(false);
-    expect(
-      sanitizeSearchIndexes(collection, { localizeStatus: true })?.content.filterFields._status
-        .localized,
-    ).toBe(true);
+    const status = (collection: CollectionConfig, localizeStatus: boolean) =>
+      sanitizeSearchIndexes(collection, { localizeStatus })?.content.filterFields._status.localized;
+
+    expect(status(localized, false)).toBe(false);
+    expect(status(plain, true)).toBe(false);
+    expect(status(localized, true)).toBe(true);
   });
 
   it.each([

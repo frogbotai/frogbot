@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { createLocalReq } from 'payload';
+import { createPayloadRequest } from 'payload';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { defaultBeforeSchedule } from '../../packages/frogbot/node_modules/payload/dist/queues/operations/handleSchedules/defaultBeforeSchedule.js';
@@ -45,7 +45,7 @@ describe(`live reservation states: ${adapterName}`, () => {
     await fixture.frogbot.jobs.runByID({ id: first.id, silent: true, overrideAccess: true });
 
     const retrying = await readJob(first.id);
-    const req = await createLocalReq({}, fixture.payload);
+    const req = await createPayloadRequest({ payload: fixture.payload });
     const taskConfig = fixture.payload.config.jobs.tasks!.find(
       ({ slug }) => slug === 'retry-effect',
     )!;
@@ -91,6 +91,7 @@ describe(`live reservation states: ${adapterName}`, () => {
       task: 'record-effect',
       input: { marker: 'ignored' },
       jobId,
+      overrideAccess: true,
     });
 
     const after = await readJob(first.id);
@@ -127,9 +128,10 @@ describe(`live reservation states: ${adapterName}`, () => {
       input: undefined,
       jobId,
       waitUntil: new Date(),
+      overrideAccess: true,
     });
 
-    await fixture.worker.jobs.run({ silent: true });
+    await fixture.worker.jobs.run({ silent: true, overrideAccess: true });
 
     const rows = await fixture.payload.db.find<FrogBotJob>({
       collection: 'payload-jobs',
@@ -144,9 +146,9 @@ describe(`live reservation states: ${adapterName}`, () => {
       id: first.id,
       taskSlug: 'record-effect',
       waitUntil: waitUntil.toISOString(),
-      processing: false,
       totalTried: 0,
     });
+    expect(rows.docs[0].processingUntil ?? null).toBeNull();
     expect(effects.docs).toHaveLength(0);
   });
 });

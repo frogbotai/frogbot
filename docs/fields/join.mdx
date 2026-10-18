@@ -82,7 +82,7 @@ On PostgreSQL and SQLite, polymorphic or many-valued relationships normally use 
 | `graphQL` | `{ complexity?: number }` | `{ complexity: 10 }` | Query complexity used only when an application mounts its own GraphQL executor. FrogBot does not ship a GraphQL endpoint. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ### Admin options
 
@@ -144,6 +144,7 @@ Set a field to `false` instead of an object to leave just that field out.
 ```ts
 const result = await frogbot.find({
   collection: 'categories',
+  overrideAccess: true,
   joins: {
     relatedPosts: {
       count: true,
@@ -158,6 +159,7 @@ const result = await frogbot.find({
 
 const withoutJoins = await frogbot.findByID({
   collection: 'categories',
+  overrideAccess: true,
   id: 'category-1',
   joins: false,
 })

@@ -4,9 +4,7 @@ import { rolesPlugin } from '@frogbotai/plugin-roles';
 import {
   autonumberField,
   type CollectionConfig,
-  createdByField,
   durationField,
-  lastModifiedByField,
   moneyField,
   ratingField,
 } from 'frogbot';
@@ -16,6 +14,7 @@ import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig
 export const usersSlug = 'users';
 export const postsSlug = 'posts';
 export const ticketsSlug = 'tickets';
+export const secretsSlug = 'secrets';
 export const apiKeysSlug = 'api-keys';
 export const mcpEndpoint = '/api/mcp';
 export const apiKeyToken = `fb_${'A'.repeat(43)}`;
@@ -82,50 +81,43 @@ const Posts: CollectionConfig = {
   ],
 };
 
+const Secrets: CollectionConfig = {
+  slug: secretsSlug,
+  access: { ...openAccess, read: () => false },
+  fields: [{ name: 'title', type: 'text' }],
+};
+
 const Tickets: CollectionConfig = {
   slug: ticketsSlug,
   access: openAccess,
-  fields: [
-    { name: 'title', type: 'text' },
-    autonumberField({ name: 'number' }),
-    createdByField({ name: 'createdBy' }),
-    lastModifiedByField({ name: 'lastModifiedBy' }),
-  ],
+  fields: [{ name: 'title', type: 'text' }, autonumberField({ name: 'number' })],
 };
 
 export default await buildTestConfig({
   admin: { user: usersSlug },
-  collections: [Users, Posts, Tickets],
+  collections: [Users, Posts, Tickets, Secrets],
   plugins: [
     rolesPlugin(),
     apiKeysPlugin({ authCollection: usersSlug, collectionSlug: apiKeysSlug }),
     mcpPlugin({
-      collections: {
-        [postsSlug]: { enabled: { find: true, create: true, update: true } },
-        [ticketsSlug]: { enabled: { find: true, create: true } },
-      },
-      mcp: {
-        tools: [
-          {
-            name: actorToolName,
-            description: 'Returns the authenticated MCP actor.',
-            parameters: {},
-            handler: (_args, req) => ({
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({
-                    id: req.user?.id,
-                    email: req.user?.email,
-                    collection: req.user?.collection,
-                    strategy: req.user?._strategy,
-                    apiKeyId: req.user?.apiKeyId,
-                  }),
-                },
-              ],
-            }),
-          },
-        ],
+      tools: {
+        [actorToolName]: {
+          description: 'Returns the authenticated MCP actor.',
+          handler: ({ req }) => ({
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  id: req.user?.id,
+                  email: req.user?.email,
+                  collection: req.user?.collection,
+                  strategy: req.user?._strategy,
+                  apiKeyId: req.user && 'apiKeyId' in req.user ? req.user.apiKeyId : undefined,
+                }),
+              },
+            ],
+          }),
+        },
       },
     }),
   ],

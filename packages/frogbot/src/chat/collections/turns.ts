@@ -6,6 +6,8 @@ export function defaultChatTurnsCollection(): CollectionConfig {
   return {
     slug: CHAT_TURNS_SLUG,
     versions: false,
+    authorship: false,
+    custom: { frogbot: { internal: true } },
     typescript: { interface: 'FrogBotChatTurn' },
     admin: { hidden: true },
     graphQL: false,

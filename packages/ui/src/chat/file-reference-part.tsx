@@ -143,11 +143,13 @@ function FileReferencePartInner({
   }
 
   if (attachment?.kind === 'file') {
-    if (!isLargeFile(attachment.size)) return <FilePart part={attachment.part} />;
+    const part = { ...attachment.part, filename: filename || attachment.part.filename };
+
+    if (!isLargeFile(attachment.size)) return <FilePart part={part} />;
 
     return (
       <div className="fb-file-reference">
-        <FilePart part={attachment.part} />
+        <FilePart part={part} />
         <LargeFileHint size={attachment.size} />
       </div>
     );

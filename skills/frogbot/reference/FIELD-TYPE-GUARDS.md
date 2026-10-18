@@ -37,7 +37,7 @@ export function visit({
     }
 
     if (fieldIsBlockType(field)) {
-      for (const reference of field.blockReferences ?? field.blocks) {
+      for (const reference of field.blocks) {
         const block = typeof reference === 'string' ? rootBlocks.get(reference) : reference;
 
         if (!block) {
@@ -55,7 +55,7 @@ export function visit({
 
 This schema inspector calls `onField` once per field object, including layout fields. It follows arrays, collapsibles, named and unnamed groups, rows, both named and unnamed tabs, inline blocks, and root block references. Identity tracking terminates recursive block references and avoids inspecting shared field objects repeatedly; this is not a per-document-path walker.
 
-Pass the application's root `config.blocks` to resolve string references. Use `blocks: []` when configuring `blockReferences`; a nonempty `blocks` list cannot coexist with `blockReferences`. Missing root references throw rather than silently skipping fields. Rich Text editor feature configuration is separate from this `Field` tree.
+Pass the application's root `config.blocks` to resolve string references. Missing root references throw rather than silently skipping fields. Rich Text editor feature configuration is separate from this `Field` tree.
 
 ## Field shape guards
 
@@ -187,8 +187,7 @@ export const schema = {
         {
           name: 'layout',
           type: 'blocks',
-          blocks: [],
-          blockReferences: ['callout', Hero],
+          blocks: ['callout', Hero],
         },
       ],
     },

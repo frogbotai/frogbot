@@ -16,7 +16,6 @@ export { getFrogBotPopulateFn } from './features/converters/utilities/frogbotPop
 export { LinkFeature, type LinkFeatureServerProps } from './features/link/server/index.js';
 export type {
   ExtractSerializedNode,
-  HTMLConverter,
   NodeValidation,
   NodeWithHooks,
   PopulationPromise,

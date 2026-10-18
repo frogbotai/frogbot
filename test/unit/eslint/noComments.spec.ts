@@ -118,7 +118,7 @@ ruleTester.run('no-comments', rule, {
     {
       name: 'an upstream workaround link that says when to remove it',
       code: [
-        '// Workaround: https://github.com/payloadcms/payload/pull/18188, remove when Payload is past 3.90.2',
+        '// Workaround: https://github.com/payloadcms/payload/pull/12345, remove when Payload is past 3.90.2',
         'export const flag = true;',
       ].join('\n'),
       filename,
@@ -257,7 +257,7 @@ ruleTester.run('no-comments', rule, {
       code: [
         '// ---------------------------------------------------------------------------',
         '// TODO tighten when G5 is fixed',
-        '// Workaround: https://github.com/payloadcms/payload/pull/18188',
+        '// Workaround: https://github.com/payloadcms/payload/pull/12345',
         'export const a = 1;',
       ].join('\n'),
       output: 'export const a = 1;',

@@ -58,7 +58,7 @@ describe('resolveUsageCollection', () => {
           custom: { frogbot: { kind: { type: 'money', currency: 'USD', precision: 'auto' } } },
         },
       });
-      expect(costUSD && 'typescriptSchema' in costUSD && costUSD.typescriptSchema).toHaveLength(1);
+      expect(costUSD && 'jsonSchema' in costUSD && costUSD.jsonSchema).toHaveLength(1);
     }
   });
 

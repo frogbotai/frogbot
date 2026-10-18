@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import type { Payload, PayloadRequest } from 'payload';
-import { createLocalReq } from 'payload';
+import { createPayloadRequest } from 'payload';
 import { applyLocaleFiltering } from 'payload/shared';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -112,10 +112,10 @@ describe('admin request', () => {
       overrideAccess: true,
     });
 
-    req = await createLocalReq(
-      { user: { ...user, collection: usersSlug } as never },
-      booted.payload,
-    );
+    req = await createPayloadRequest({
+      payload: booted.payload,
+      user: { ...user, collection: usersSlug },
+    });
 
     requestCalls.length = 0;
   });
@@ -299,7 +299,16 @@ describe('admin request', () => {
   });
 
   it('serving an upload gives upload handlers req.frogbot after read access', async () => {
-    const response = await fetch(`${booted.baseUrl}/api/${assetsSlug}/file/photo.png`);
+    const asset = await booted.frogbot.create({
+      collection: assetsSlug,
+      data: {},
+      file: { data: Buffer.from('png'), mimetype: 'image/png', name: 'photo.png', size: 3 },
+      overrideAccess: true,
+    });
+
+    requestCalls.length = 0;
+
+    const response = await fetch(`${booted.baseUrl}/api/${assetsSlug}/file/${asset.filename}`);
 
     expect(response.status).toBe(200);
     expect(await response.text()).toBe(assetHandlerResponse);

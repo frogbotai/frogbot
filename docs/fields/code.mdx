@@ -48,7 +48,7 @@ export const Snippets: CollectionConfig = {
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
-| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ## Admin options
 
@@ -84,14 +84,14 @@ Override the field or its label through `admin.components`. Custom components ca
 
 ```tsx
 import { CodeField } from '@frogbotai/ui/admin'
-import type { CodeFieldServerComponent } from 'frogbot'
+import type { CodeFieldServerProps } from 'frogbot'
 
-export const CustomCodeFieldServer: CodeFieldServerComponent = ({
+export const CustomCodeFieldServer = ({
   clientField,
   path,
   permissions,
   schemaPath,
-}) => (
+}: CodeFieldServerProps) => (
   <CodeField
     field={clientField}
     path={path}
@@ -107,9 +107,9 @@ export const CustomCodeFieldServer: CodeFieldServerComponent = ({
 'use client'
 
 import { CodeField } from '@frogbotai/ui/admin'
-import type { CodeFieldClientComponent } from 'frogbot'
+import type { CodeFieldClientProps } from 'frogbot'
 
-export const CustomCodeFieldClient: CodeFieldClientComponent = (props) => (
+export const CustomCodeFieldClient = (props: CodeFieldClientProps) => (
   <CodeField {...props} />
 )
 ```
@@ -120,12 +120,12 @@ export const CustomCodeFieldClient: CodeFieldClientComponent = (props) => (
 
 ```tsx
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { CodeFieldLabelServerComponent } from 'frogbot'
+import type { CodeFieldLabelServerProps } from 'frogbot'
 
-export const CustomCodeLabelServer: CodeFieldLabelServerComponent = ({
+export const CustomCodeLabelServer = ({
   clientField,
   path,
-}) => (
+}: CodeFieldLabelServerProps) => (
   <FieldLabel
     label={clientField.label || clientField.name}
     path={path}
@@ -140,9 +140,9 @@ export const CustomCodeLabelServer: CodeFieldLabelServerComponent = ({
 'use client'
 
 import { FieldLabel } from '@frogbotai/ui/admin'
-import type { CodeFieldLabelClientComponent } from 'frogbot'
+import type { CodeFieldLabelClientProps } from 'frogbot'
 
-export const CustomCodeLabelClient: CodeFieldLabelClientComponent = ({ field, path }) => (
+export const CustomCodeLabelClient = ({ field, path }: CodeFieldLabelClientProps) => (
   <FieldLabel label={field.label || field.name} path={path} required={field.required} />
 )
 ```

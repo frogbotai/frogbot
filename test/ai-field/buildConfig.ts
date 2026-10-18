@@ -1,5 +1,5 @@
 import type { CollectionConfig, FrogBotConfig } from 'frogbot';
-import { aiField, lastModifiedByField } from 'frogbot';
+import { aiField } from 'frogbot';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 import {
@@ -70,7 +70,6 @@ const Tasks: CollectionConfig = {
       prompt: 'Categorize.',
       model: `test/${otherModel}`,
     }),
-    lastModifiedByField({ name: 'lastModifiedBy' }),
   ],
 };
 
