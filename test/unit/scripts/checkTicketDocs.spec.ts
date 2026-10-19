@@ -521,8 +521,9 @@ describe('check ticket-docs', () => {
       });
 
       expect(check(issue('sidekick'))).toEqual({ code: 0, lines: ['ticket-docs: OK · 1 ticket'] });
+      expect(check(issue('platform'))).toEqual({ code: 0, lines: ['ticket-docs: OK · 1 ticket'] });
       expect(problems(issue('elsewhere'))).toEqual([
-        `.idea/${GOOD}/issue.md:3 Repo: "elsewhere" is not one of frogbot, sidekick`,
+        `.idea/${GOOD}/issue.md:3 Repo: "elsewhere" is not one of frogbot, sidekick, platform`,
       ]);
     });
 

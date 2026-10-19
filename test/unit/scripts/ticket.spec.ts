@@ -125,8 +125,12 @@ describe('parseHeader', () => {
     ).toMatchObject({ repo: 'sidekick', problems: [] });
 
     expect(
+      parseHeader(header('Plan: — · Depends on: 298 · Batch: 37 · Repo: platform')),
+    ).toMatchObject({ repo: 'platform', problems: [] });
+
+    expect(
       parseHeader(header('Plan: — · Depends on: none · Batch: 36 · Repo: elsewhere'))?.problems,
-    ).toEqual(['Repo: "elsewhere" is not one of frogbot, sidekick']);
+    ).toEqual(['Repo: "elsewhere" is not one of frogbot, sidekick, platform']);
   });
 
   it('accepts none and deferred', () => {
@@ -306,6 +310,12 @@ describe('naming', () => {
     expect(worktreePath('/code/frogbot/frogbot', 265, 'sidekick')).toBe(
       '/code/frogbot/sidekick-ticket265',
     );
+    expect(repoCheckout('/code/frogbot/frogbot', 'platform')).toBe(
+      '/code/frogbot/frogbot-platform',
+    );
+    expect(worktreePath('/code/frogbot/frogbot', 299, 'platform')).toBe(
+      '/code/frogbot/platform-ticket299',
+    );
   });
 
   it('names a part with its letter', () => {
@@ -323,6 +333,8 @@ describe('naming', () => {
     [{ path: '/c/frogbot', branch: 'main' }, null],
     [{ path: '/c/sidekick-ticket265', branch: null }, '265'],
     [{ path: '/c/sidekick', branch: 'main' }, null],
+    [{ path: '/c/platform-ticket299', branch: null }, '299'],
+    [{ path: '/c/frogbot-platform', branch: 'main' }, null],
   ])('%j has key %s', (tree, key) => {
     expect(keyOfWorktree(tree)).toBe(key);
   });
@@ -580,11 +592,26 @@ describe('repo gates', () => {
     expect(landLevel(repoGates(REPOS.sidekick.gates, scripts))).toBe('unit');
   });
 
+  it('runs the platform gates, through integration tests', () => {
+    const scripts = {
+      check: 'prettier',
+      'test:unit': 'vitest',
+      'test:int': 'vitest',
+      ticket: 'node',
+    };
+
+    expect(repoGates(REPOS.platform.gates, scripts)).toEqual(['check', 'test:unit', 'test:int']);
+    expect(landLevel(repoGates(REPOS.platform.gates, scripts))).toBe('int');
+  });
+
   it('turns each gate into one verify group', () => {
     expect(repoGroups(['check', 'test:unit', 'test:e2e'])).toEqual([
       { group: 'check', level: 'typecheck', commands: [['pnpm', 'check']] },
       { group: 'test:unit', level: 'unit', commands: [['pnpm', 'test:unit']] },
       { group: 'test:e2e', level: null, commands: [['pnpm', 'test:e2e']] },
+    ]);
+    expect(repoGroups(['test:int'])).toEqual([
+      { group: 'test:int', level: 'int', commands: [['pnpm', 'test:int']] },
     ]);
   });
 
