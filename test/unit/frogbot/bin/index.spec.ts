@@ -24,6 +24,8 @@ const mocks = vi.hoisted(() => ({
   jobsRun: vi.fn(() =>
     Promise.resolve(mocks.calls.push(`jobsRun:${process.env.FROGBOT_TEST_KEY}`)),
   ),
+  logout: vi.fn(() => Promise.resolve(mocks.calls.push(`logout:${process.env.FROGBOT_TEST_KEY}`))),
+  share: vi.fn(() => Promise.resolve(mocks.calls.push(`share:${process.env.FROGBOT_TEST_KEY}`))),
   loadEnv: vi.fn(() => {
     mocks.calls.push('loadEnv');
 
@@ -76,6 +78,8 @@ vi.mock('../../../../packages/frogbot/src/bin/piecesPort.js', () => ({
 }));
 
 vi.mock('../../../../packages/frogbot/src/bin/start.js', () => ({ start: mocks.start }));
+vi.mock('../../../../packages/frogbot/src/bin/share.js', () => ({ share: mocks.share }));
+vi.mock('../../../../packages/frogbot/src/bin/logout.js', () => ({ logout: mocks.logout }));
 vi.mock('../../../../packages/frogbot/src/bin/run.js', () => ({ runScript: mocks.runScript }));
 
 import { bin } from '../../../../packages/frogbot/src/bin/index.js';
@@ -111,6 +115,8 @@ describe('frogbot bin', () => {
     ['export:captures', 'exportCaptures'],
     ['jobs:run', 'jobsRun'],
     ['channels:run', 'channelsRun'],
+    ['share', 'share'],
+    ['logout', 'logout'],
   ])('loads env before dispatching `%s`', async (command, handler) => {
     process.argv = ['node', 'frogbot', command];
 
@@ -140,7 +146,7 @@ describe('frogbot bin', () => {
 
     expect(mocks.calls).toEqual(['loadEnv']);
     expect(error).toHaveBeenCalledWith(
-      '[frogbot] usage: frogbot <start|dev|run|generate:types|generate:piece-types|pieces:port|generate:importmap|export:training-data|export:captures|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status>',
+      '[frogbot] usage: frogbot <start|dev|run|generate:types|generate:piece-types|pieces:port|generate:importmap|export:training-data|export:captures|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status|share|logout>',
     );
   });
 
@@ -170,6 +176,17 @@ describe('frogbot bin', () => {
     await bin();
 
     expect(mocks.jobsRun).toHaveBeenLastCalledWith(args);
+  });
+
+  it.each([
+    ['share', ['--no-data', '--workspace', 'colby']],
+    ['logout', []],
+  ] as const)('forwards `%s` arguments unchanged', async (command, args) => {
+    process.argv = ['node', 'frogbot', command, ...args];
+
+    await bin();
+
+    expect(mocks[command]).toHaveBeenLastCalledWith([...args]);
   });
 
   it('loads env before forwarding script arguments unchanged', async () => {

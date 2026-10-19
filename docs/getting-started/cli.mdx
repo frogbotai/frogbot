@@ -2,7 +2,7 @@
 title: "CLI"
 sidebarTitle: "CLI"
 description: "Every frogbot command, its arguments, and where each one is documented."
-keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot run", "commands"]
+keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot run", "frogbot share", "commands"]
 ---
 
 The `frogbot` package installs a `frogbot` command. Run it from your app's root directory through your package manager, for example `pnpm frogbot dev` or `npx frogbot dev`.
@@ -35,6 +35,8 @@ Before any command runs, `frogbot` loads `.env*` files from the current director
 | `migrate:refresh` | — | Rolls back every migration, then applies them all again. See [Migrations](/database/migrations). |
 | `migrate:reset` | — | Rolls back every migration. See [Migrations](/database/migrations). |
 | `migrate:fresh` | `--force-accept-warning` | Drops every table, then applies all migrations. See [Migrations](/database/migrations). |
+| `share` | `--data`, `--no-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys` | Uploads the app to Dojo, builds it and prints its live URL. See [`share`](#share). |
+| `logout` | — | Signs the CLI out of Dojo. See [`logout`](#logout). |
 
 ## `dev` and `start`
 
@@ -76,3 +78,50 @@ frogbot pieces:port google-sheets
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
 | `<slug>` | lowercase letters, numbers, and single dashes | Required | Piece slug, such as `google-sheets`. |
+
+## `share`
+
+```bash
+npx frogbot share --no-data
+```
+
+`frogbot share` takes the app in the current folder live on Dojo. Run it anywhere inside the app: it works from the folder that holds `frogbot.config.ts`, or the parent of `src/` when the config is there. It checks the app, signs in, uploads the working files, streams the build as `[build]` lines, and prints a link to share the app, then its live URL as the last line.
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `--data` | flag | — | On the first share, brings the local data along. |
+| `--no-data` | flag | — | On the first share, shares the code only. |
+| `--workspace` | workspace slug | — | On the first share, the Dojo workspace to create the app in, when you belong to more than one. |
+| `--name` | name | `package.json` `name` | On the first share, the app's name in its address, `https://<name>.frogbot.app`. Lowercased, with dashes for anything but letters and digits. |
+| `--no-keys` | flag | — | Brings no keys. |
+| `--skip-key` | key name, repeatable | — | Leaves this key out, such as `--skip-key STRIPE_KEY`. A name that isn't a key (names are case-sensitive) stops with exit 2. |
+| `--yes` | flag | — | On the first share, brings every key without showing the list to untick. |
+| `--update-keys` | flag | — | On a later share, sends local values for keys that differ from the app's live ones. |
+
+Before anything is sent, `share` stops with one line when there's no `package.json`, the app uses Bun, or there's no `pnpm-lock.yaml`, `package-lock.json` or `yarn.lock`. Run `pnpm install` to make a lockfile.
+
+**Signing in.** The first time, `share` prints a Dojo link and a code, each on its own line, and opens the link in your browser when it runs in a terminal. Confirm the code in Dojo and the share carries on. The token is stored in `~/.config/frogbotai/auth.json` (or under `$XDG_CONFIG_HOME`), readable only by you. When Dojo no longer accepts it, `share` signs in again.
+
+**The first share** creates a Dojo app named from `package.json`'s `name` and writes its id to `.frogbot/app.json`, adding `/.frogbot` to `.gitignore`. Later shares from this folder ship a new version of that app. Delete `.frogbot/app.json` to share as a new app. With more than one workspace, `share` asks which one, or, with no terminal, stops and asks you to rerun with `--workspace`. When the name is taken on Dojo, `share` stops with `[frogbot] The name "deals" is taken on Dojo. Rerun with --name <another name>.`
+
+It also asks whether to bring your local data. With no terminal, it stops before sending anything until you rerun with `--data` or `--no-data`. Later shares never ask and never send data.
+
+**Keys.** `share` brings the app's keys, such as `STRIPE_KEY`, from the same `.env` files `frogbot dev` loads; the first file to set a key wins, and empty values and variables set only in the shell stay behind. `DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT` and `HOSTNAME` are never brought: Dojo provides them. Values show masked, as `STRIPE_KEY ••••4242`, or `••••` under 12 characters, and are sealed to Dojo's key before they leave your machine.
+
+On the first share, `share` prints `[frogbot] Bringing 2 keys: STRIPE_KEY ••••4242, OPENAI_API_KEY ••••x7Qa` and, in a terminal, lets you untick any. With no terminal it doesn't wait: it brings them all and says `[frogbot] No terminal: carrying all keys. Use --no-keys or --skip-key NAME to leave some out.`
+
+Later shares compare your keys with the app's live ones without sending the values. New keys are brought and listed, as `[frogbot] Adding 1 new key: AIRTABLE_KEY ••••a91b`. A key whose local value differs from live keeps its live value and is named, as `[frogbot] 1 key differs from live, kept live: STRIPE_KEY. Use --update-keys to send local values.` A key you no longer have locally stays live. Change or remove live keys in Dojo.
+
+**What's uploaded.** The files in the folder as they are now, committed or not. In a git repository that is every file git tracks or would track; outside one, `.gitignore` files are still followed. These are never uploaded, even when committed: `.git`, `.frogbot/`, any `.env*` file, `frogbot.db*`, `*.sqlite*`, the database file a local `file:` `DATABASE_URL` names, `node_modules`, `.next`, `files/` and every upload collection's folder. Neither is the CLI's login file. Symlinks, and files reached through a symlinked folder, are left out and named in one line, such as `[frogbot] Skipped 2 symlinks: data, shared.ts`. The upload is limited to 100 MB; over it, `share` stops before sending.
+
+A failed build exits with code `1` and prints the error and the last lines of the build log. Usage errors, such as `--data` with `--no-data`, exit with code `2`.
+
+Set `FROGBOT_DOJO_URL` to share to a different Dojo, such as a local one.
+
+## `logout`
+
+```bash
+npx frogbot logout
+```
+
+`frogbot logout` revokes the CLI's key in Dojo and removes it from `auth.json`. If Dojo can't be reached or refuses, the key is kept, so you can run `logout` again.

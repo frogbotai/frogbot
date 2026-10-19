@@ -8,9 +8,11 @@ import { generatePieceTypesCommand } from './generatePieceTypes.js';
 import { generateTypes } from './generateTypes.js';
 import { jobsRun } from './jobsRun.js';
 import { loadEnv } from './loadEnv.js';
+import { logout } from './logout.js';
 import { migrate } from './migrate.js';
 import { piecesPort } from './piecesPort.js';
 import { runScript } from './run.js';
+import { share } from './share.js';
 import { start } from './start.js';
 
 type Command = (args: string[], command: string) => Promise<unknown> | unknown;
@@ -36,6 +38,8 @@ const commands: Record<string, Command> = {
   'migrate:refresh': runMigrate,
   'migrate:reset': runMigrate,
   'migrate:status': runMigrate,
+  share: (args) => share(args),
+  logout: (args) => logout(args),
 };
 
 export async function bin() {

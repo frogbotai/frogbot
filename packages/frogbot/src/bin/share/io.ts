@@ -1,0 +1,94 @@
+import { spawn } from 'node:child_process';
+
+import * as p from '@clack/prompts';
+
+import { loadConfig } from '../../config/load.js';
+import { ShareError } from './error.js';
+import type { ShareCollection } from './files.js';
+
+/** The questions `share` can ask; only called with a TTY. */
+export type SharePrompts = {
+  confirm: (message: string) => Promise<boolean>;
+  select: (message: string, options: { value: string; label: string }[]) => Promise<string>;
+  /** Every option starts ticked. */
+  multiselect: (message: string, options: { value: string; label: string }[]) => Promise<string[]>;
+};
+
+/** The environment `share` reads: `process.env`, or a test's own values. */
+export type ShareEnv = Record<string, string | undefined>;
+
+/** Everything `share` and `logout` touch outside the app folder, so tests can drive them. */
+export type ShareIO = {
+  cwd: string;
+  env: ShareEnv;
+  stdout: { write: (text: string) => unknown };
+  stderr: { write: (text: string) => unknown };
+  /** Both stdin and stdout are terminals, so a person can answer. */
+  isTTY: boolean;
+  prompts: SharePrompts;
+  openBrowser: (url: string) => void;
+  loadCollections: (root: string) => Promise<ShareCollection[]>;
+};
+
+function answered<T>(value: T | symbol): T {
+  if (typeof value === 'symbol') {
+    p.cancel('Cancelled.');
+
+    throw new ShareError('Cancelled.');
+  }
+
+  return value;
+}
+
+const clackPrompts: SharePrompts = {
+  confirm: async (message) => answered<boolean>(await p.confirm({ message, initialValue: true })),
+  select: async (message, options) => answered<string>(await p.select({ message, options })),
+  multiselect: async (message, options) =>
+    answered<string[]>(
+      await p.multiselect({
+        message,
+        options,
+        initialValues: options.map((option) => option.value),
+        required: false,
+      }),
+    ),
+};
+
+function openBrowser(url: string): void {
+  const [command, args] =
+    process.platform === 'darwin'
+      ? ['open', [url]]
+      : process.platform === 'win32'
+        ? ['cmd', ['/c', 'start', '""', url]]
+        : ['xdg-open', [url]];
+
+  const child = spawn(command, args, { detached: true, stdio: 'ignore' });
+
+  child.on('error', () => {});
+  child.unref();
+}
+
+async function loadCollections(root: string): Promise<ShareCollection[]> {
+  const config = await loadConfig({ cwd: root, mode: 'codegen' });
+
+  return (await config._internal.payloadConfig).collections;
+}
+
+/** The real terminal, browser and app config. */
+export function processIO(): ShareIO {
+  return {
+    cwd: process.cwd(),
+    env: process.env,
+    stdout: process.stdout,
+    stderr: process.stderr,
+    isTTY: Boolean(process.stdin.isTTY && process.stdout.isTTY),
+    prompts: clackPrompts,
+    openBrowser,
+    loadCollections,
+  };
+}
+
+/** Writes one line to stdout. */
+export function say(io: ShareIO, line: string): void {
+  io.stdout.write(`${line}\n`);
+}
