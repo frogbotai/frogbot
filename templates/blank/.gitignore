@@ -1,8 +1,10 @@
 # FrogBot local dev
 frogbot.db
 frogbot.db-*
-.env
-.env.local
+.env*
+!.env.example
+/files
+/.frogbot
 
 # Dependencies / build output
 node_modules
