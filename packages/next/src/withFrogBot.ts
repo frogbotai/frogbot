@@ -84,6 +84,23 @@ const require = createRequire(import.meta.url);
 const payloadNextRequire = createRequire(require.resolve('@payloadcms/next/withPayload'));
 const PAYLOAD_UI_ROOT = payloadNextRequire.resolve('@payloadcms/ui');
 
+const PLATFORM_PLUGIN = 'frogbot/platform-plugin';
+
+function resolvePlatformPlugin(): string | undefined {
+  const name = process.env.FROGBOT_PLATFORM_PLUGIN;
+
+  if (!name) return undefined;
+
+  try {
+    return createRequire(join(process.cwd(), 'package.json')).resolve(name);
+  } catch (cause) {
+    throw new Error(
+      `[frogbot] FROGBOT_PLATFORM_PLUGIN=${name} could not be resolved from ${process.cwd()}`,
+      { cause },
+    );
+  }
+}
+
 function getProjectRelativePath(path: string): string {
   const projectRelativePath = relative(process.cwd(), path).replaceAll('\\', '/');
 
@@ -145,6 +162,8 @@ export function withFrogBot(
   nextConfig: NextConfig = {},
   options: WithFrogBotOptions = {},
 ): NextConfig {
+  const platformPlugin = resolvePlatformPlugin();
+
   const frogbotConfig: NextConfig = {
     ...nextConfig,
     serverExternalPackages: [
@@ -161,6 +180,7 @@ export function withFrogBot(
       resolveAlias: {
         ...nextConfig.turbopack?.resolveAlias,
         '@payloadcms/ui': getProjectRelativePath(PAYLOAD_UI_ROOT),
+        ...(platformPlugin && { [PLATFORM_PLUGIN]: getProjectRelativePath(platformPlugin) }),
       },
     },
     outputFileTracingIncludes: {
@@ -193,6 +213,7 @@ export function withFrogBot(
           alias: {
             ...incoming?.resolve?.alias,
             '@payloadcms/ui$': PAYLOAD_UI_ROOT,
+            ...(platformPlugin && { [`${PLATFORM_PLUGIN}$`]: platformPlugin }),
           },
           extensionAlias: {
             ...incoming?.resolve?.extensionAlias,

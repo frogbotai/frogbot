@@ -1613,6 +1613,25 @@ importers:
         specifier: 4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.12.3)(happy-dom@20.14.5(bufferutil@4.1.0))(jsdom@24.1.3(bufferutil@4.1.0))(vite@6.4.3(@types/node@24.12.3)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.49.2)(tsx@4.23.15)(yaml@2.4.5))
 
+  packages/plugins/plugin-dojo:
+    dependencies:
+      '@frogbotai/storage-s3':
+        specifier: workspace:*
+        version: link:../../storage-s3
+    devDependencies:
+      '@frogbotai/gateway':
+        specifier: workspace:*
+        version: link:../../gateway
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      payload:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/plugins/plugin-import-export:
     dependencies:
       '@payloadcms/plugin-import-export':
@@ -2295,6 +2314,9 @@ importers:
       '@frogbotai/plugin-capture':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-capture
+      '@frogbotai/plugin-dojo':
+        specifier: workspace:*
+        version: link:../packages/plugins/plugin-dojo
       '@frogbotai/plugin-import-export':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-import-export
@@ -2343,6 +2365,9 @@ importers:
       '@frogbotai/storage-vercel-blob':
         specifier: workspace:*
         version: link:../packages/storage-vercel-blob
+      '@frogbotai/transformer-sharp':
+        specifier: workspace:*
+        version: link:../packages/transformer-sharp
       '@frogbotai/ui':
         specifier: workspace:*
         version: link:../packages/ui
@@ -2521,6 +2546,43 @@ importers:
       graphql:
         specifier: ^16.8.1
         version: 16.14.2
+      next:
+        specifier: 'catalog:'
+        version: 16.4.2(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@24.12.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4)
+      react:
+        specifier: 'catalog:'
+        version: 19.3.1
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.3.1(react@19.3.1)
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.12.3
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
+  test/e2e/fixtures/platform-plugin:
+    dependencies:
+      '@frogbotai/db-sqlite':
+        specifier: workspace:*
+        version: link:../../../../packages/db-sqlite
+      '@frogbotai/next':
+        specifier: workspace:*
+        version: link:../../../../packages/next
+      fixture-platform-marker:
+        specifier: link:./platform-marker
+        version: link:platform-marker
+      frogbot:
+        specifier: workspace:*
+        version: link:../../../../packages/frogbot
       next:
         specifier: 'catalog:'
         version: 16.4.2(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@24.12.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4)

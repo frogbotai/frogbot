@@ -1,0 +1,20 @@
+{
+  "name": "frogbot-e2e-platform-plugin",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@frogbotai/db-sqlite": "workspace:*",
+    "@frogbotai/next": "workspace:*",
+    "fixture-platform-marker": "link:./platform-marker",
+    "frogbot": "workspace:*",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "typescript": "catalog:"
+  }
+}

@@ -1,5 +1,5 @@
 import type * as PayloadModule from 'payload';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
@@ -271,6 +271,75 @@ describe('frogbot buildConfig', () => {
 
       await expect(buildConfig(makeConfig({ plugins: [plugin] }))).rejects.toThrowError(
         "[frogbot] Unknown admin icon 'robto'. Valid:",
+      );
+    });
+  });
+
+  describe('platform plugin', () => {
+    afterEach(() => {
+      vi.doUnmock('frogbot/platform-plugin');
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    });
+
+    async function buildWith(platformPlugin: Plugin) {
+      vi.resetModules();
+      vi.doMock('frogbot/platform-plugin', () => ({ default: platformPlugin }));
+
+      return (await import('../../../../packages/frogbot/src/config/build.js')).buildConfig;
+    }
+
+    it('runs once, after every app plugin, and sees the collections they added', async () => {
+      const order: string[] = [];
+      const platform = vi.fn<Plugin>((config) => {
+        order.push(`platform:${config.collections.map(({ slug }) => slug).join(',')}`);
+
+        return { ...config, custom: { ...config.custom, platformMarker: true } };
+      });
+
+      const addCollection: Plugin = (config) => {
+        order.push('app');
+
+        return {
+          ...config,
+          collections: [...config.collections, { slug: 'audits', fields: [] }],
+        };
+      };
+
+      const build = await buildWith(platform);
+      const result = await build(makeConfig({ plugins: [addCollection] }));
+
+      expect(platform).toHaveBeenCalledTimes(1);
+      expect(order).toEqual(['app', 'platform:users,audits']);
+      expect((await result._internal.payloadConfig).custom).toMatchObject({
+        platformMarker: true,
+      });
+    });
+
+    it('runs the plugin registered by loadConfig instead of the bundled one', async () => {
+      const bundled = vi.fn<Plugin>((config) => config);
+      const registered = vi.fn<Plugin>((config) => config);
+
+      const build = await buildWith(bundled);
+      const { registerPlatformPlugin } =
+        await import('../../../../packages/frogbot/src/config/platformPlugin.js');
+
+      registerPlatformPlugin(registered);
+      await build(makeConfig());
+
+      expect(registered).toHaveBeenCalledTimes(1);
+      expect(bundled).not.toHaveBeenCalled();
+    });
+
+    it('names the platform plugin when it fails', async () => {
+      vi.stubEnv('FROGBOT_PLATFORM_PLUGIN', '@frogbotai/plugin-dojo');
+
+      const build = await buildWith(() => {
+        throw new Error('DOJO=1 but DOJO_R2_BUCKET is not set.');
+      });
+
+      await expect(build(makeConfig())).rejects.toThrowError(
+        '[frogbot] platform plugin @frogbotai/plugin-dojo failed: DOJO=1 but DOJO_R2_BUCKET is not set.',
       );
     });
   });

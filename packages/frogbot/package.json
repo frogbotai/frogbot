@@ -88,6 +88,11 @@
       "types": "./dist/exports/env.d.ts",
       "import": "./dist/exports/env.js",
       "default": "./dist/exports/env.js"
+    },
+    "./platform-plugin": {
+      "types": "./dist/exports/platform-plugin.d.ts",
+      "import": "./dist/exports/platform-plugin.js",
+      "default": "./dist/exports/platform-plugin.js"
     }
   },
   "bin": {
@@ -226,6 +231,11 @@
         "types": "./dist/exports/env.d.ts",
         "import": "./dist/exports/env.js",
         "default": "./dist/exports/env.js"
+      },
+      "./platform-plugin": {
+        "types": "./dist/exports/platform-plugin.d.ts",
+        "import": "./dist/exports/platform-plugin.js",
+        "default": "./dist/exports/platform-plugin.js"
       }
     }
   }

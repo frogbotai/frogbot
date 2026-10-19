@@ -1,3 +1,4 @@
+import { getPlatformPlugin } from './platformPlugin.js';
 import { sanitize } from './sanitize.js';
 import type { FrogBotSanitizedConfig } from './sanitized.js';
 import type { FrogBotConfig } from './types.js';
@@ -50,6 +51,18 @@ async function runPlugins(config: FrogBotConfig): Promise<FrogBotConfig> {
     }
   }
 
+  const platformPlugin = getPlatformPlugin();
+
+  if (platformPlugin) {
+    try {
+      current = await platformPlugin(current);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const name = process.env.FROGBOT_PLATFORM_PLUGIN;
+      throw new Error(`[frogbot] platform plugin ${name ? `${name} ` : ''}failed: ${message}`);
+    }
+  }
+
   return current;
 }
 
@@ -89,7 +102,8 @@ function validatePluginMarkers(config: FrogBotConfig): FrogBotConfig {
  * Pipeline:
  *   1. Validate required fields (`secret`, `db`, `collections`), reject
  *      `globals`.
- *   2. Run plugins serially in array order, then strip the empty
+ *   2. Run plugins serially in array order, then the platform plugin
+ *      (`frogbot/platform-plugin`) if there is one, then strip the empty
  *      `globals` list some plugins return (a non-empty one is rejected).
  *   3. Sanitize — inject the `req.frogbot` bootstrap hook, wrap
  *      endpoints, produce FrogBotSanitizedConfig.

@@ -1,7 +1,10 @@
+import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import type { InitOptions } from '../frogbot.js';
+import type { Plugin } from '../plugin.js';
+import { registerPlatformPlugin } from './platformPlugin.js';
 import { findConfigFile, resolveEnvConfigPath } from './resolveConfigPath.js';
 import type { FrogBotSanitizedConfig } from './sanitized.js';
 import type { ValidationMode } from './validationContext.js';
@@ -18,6 +21,33 @@ function isSanitizedConfig(value: unknown): value is FrogBotSanitizedConfig {
   );
 }
 
+async function loadPlatformPlugin(cwd: string): Promise<void> {
+  const name = process.env.FROGBOT_PLATFORM_PLUGIN;
+
+  if (!name) return;
+
+  let plugin: unknown;
+  try {
+    const entry = createRequire(join(cwd, 'package.json')).resolve(name);
+
+    plugin = (
+      (await import(
+        /* webpackIgnore: true */ /* turbopackIgnore: true */ pathToFileURL(entry).href
+      )) as { default?: unknown }
+    ).default;
+  } catch (cause) {
+    throw new Error(`[frogbot] FROGBOT_PLATFORM_PLUGIN=${name} could not be loaded`, { cause });
+  }
+
+  if (typeof plugin !== 'function') {
+    throw new Error(
+      `[frogbot] FROGBOT_PLATFORM_PLUGIN=${name} could not be loaded: its default export is not a plugin`,
+    );
+  }
+
+  registerPlatformPlugin(plugin as Plugin);
+}
+
 export async function loadConfig({
   cwd,
   mode = 'runtime',
@@ -31,6 +61,8 @@ export async function loadConfig({
       `[frogbot] could not find frogbot.config.{ts,js,mjs} in ${cwd}, ${join(cwd, 'src')}, or any parent directory (set FROGBOT_CONFIG_PATH to override)`,
     );
   }
+
+  await loadPlatformPlugin(cwd);
 
   let mod: { default?: unknown };
   try {
