@@ -2,9 +2,10 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { afterAll, describe, expect, it, onTestFinished } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { loadConfig, resolveConfigDir } from '../../../../packages/frogbot/src/config/load.js';
+import { getPlatformPlugin } from '../../../../packages/frogbot/src/config/platformPlugin.js';
 
 const dirs: string[] = [];
 const CONFIG = 'export default { collections: [], _internal: {} };\n';
@@ -83,6 +84,68 @@ describe('frogbot loadConfig', () => {
   );
 
   it.todo('returns the sanitized config object on success');
+
+  describe('FROGBOT_PLATFORM_PLUGIN', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      delete (globalThis as { platformPluginOrder?: string[] }).platformPluginOrder;
+    });
+
+    async function makeApp(pluginSource: string): Promise<string> {
+      const dir = await makeDir();
+      const pkg = join(dir, 'node_modules', 'fixture-platform-plugin');
+
+      await mkdir(pkg, { recursive: true });
+
+      await writeFile(
+        join(pkg, 'package.json'),
+        JSON.stringify({ name: 'fixture-platform-plugin', type: 'module', exports: './index.js' }),
+      );
+
+      await writeFile(join(pkg, 'index.js'), pluginSource);
+
+      await writeFile(
+        join(dir, 'frogbot.config.mjs'),
+        `(globalThis.platformPluginOrder ??= []).push('config');\n${CONFIG}`,
+      );
+
+      return dir;
+    }
+
+    it('registers the named package before it imports the config', async () => {
+      const dir = await makeApp(
+        "(globalThis.platformPluginOrder ??= []).push('plugin');\nexport default (config) => ({ ...config, marker: true });\n",
+      );
+
+      vi.stubEnv('FROGBOT_PLATFORM_PLUGIN', 'fixture-platform-plugin');
+
+      await loadConfig({ cwd: dir });
+
+      expect((globalThis as { platformPluginOrder?: string[] }).platformPluginOrder).toEqual([
+        'plugin',
+        'config',
+      ]);
+      expect(await getPlatformPlugin()?.({} as never)).toEqual({ marker: true });
+    });
+
+    it('fails by name when the package cannot be resolved', async () => {
+      const dir = await makeApp('export default (config) => config;\n');
+      vi.stubEnv('FROGBOT_PLATFORM_PLUGIN', 'missing-platform-plugin');
+
+      await expect(loadConfig({ cwd: dir })).rejects.toThrow(
+        '[frogbot] FROGBOT_PLATFORM_PLUGIN=missing-platform-plugin could not be loaded',
+      );
+    });
+
+    it('fails by name when the default export is not a plugin', async () => {
+      const dir = await makeApp('export const dojo = () => (config) => config;\n');
+      vi.stubEnv('FROGBOT_PLATFORM_PLUGIN', 'fixture-platform-plugin');
+
+      await expect(loadConfig({ cwd: dir })).rejects.toThrow(
+        '[frogbot] FROGBOT_PLATFORM_PLUGIN=fixture-platform-plugin could not be loaded: its default export is not a plugin',
+      );
+    });
+  });
 });
 
 describe('frogbot resolveConfigDir', () => {

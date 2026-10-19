@@ -199,6 +199,48 @@ describe('withFrogBot', () => {
     expect(isAbsolute(webpackAlias as string)).toBe(true);
   });
 
+  it('adds no platform plugin alias when FROGBOT_PLATFORM_PLUGIN is unset', () => {
+    vi.stubEnv('FROGBOT_PLATFORM_PLUGIN', undefined);
+
+    const config = withFrogBot();
+    const result = config.webpack?.({ resolve: { alias: {} } }, {
+      webpack: { IgnorePlugin: class {} },
+    } as never);
+
+    expect(Object.keys(config.turbopack?.resolveAlias ?? {})).toEqual(['@payloadcms/ui']);
+    expect(Object.keys(result?.resolve?.alias ?? {})).toEqual(['@payloadcms/ui$']);
+  });
+
+  it('aliases frogbot/platform-plugin to the named package for webpack and Turbopack', () => {
+    const app = createApp(createFixtureRoot());
+    const pkg = join(app, 'node_modules/fixture-platform-plugin');
+    writePackage(pkg, { name: 'fixture-platform-plugin', exports: './dist/index.js' });
+    mkdirSync(join(pkg, 'dist'));
+    writeFileSync(join(pkg, 'dist/index.js'), '');
+    vi.stubEnv('FROGBOT_PLATFORM_PLUGIN', 'fixture-platform-plugin');
+
+    const config = withFrogBot();
+    const result = config.webpack?.({ resolve: { alias: {} } }, {
+      webpack: { IgnorePlugin: class {} },
+    } as never);
+
+    expect(config.turbopack?.resolveAlias).toMatchObject({
+      'frogbot/platform-plugin': './node_modules/fixture-platform-plugin/dist/index.js',
+    });
+    expect(result?.resolve?.alias).toMatchObject({
+      'frogbot/platform-plugin$': join(pkg, 'dist/index.js'),
+    });
+  });
+
+  it('throws at config time when the named package cannot be resolved', () => {
+    const app = createApp(createFixtureRoot());
+    vi.stubEnv('FROGBOT_PLATFORM_PLUGIN', 'missing-platform-plugin');
+
+    expect(() => withFrogBot()).toThrow(
+      `[frogbot] FROGBOT_PLATFORM_PLUGIN=missing-platform-plugin could not be resolved from ${app}`,
+    );
+  });
+
   it('calls the consumer webpack config and appends native externals', () => {
     const webpack = vi.fn((config: { externals?: string[] }) => ({
       ...config,

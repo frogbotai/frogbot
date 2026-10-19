@@ -1,0 +1,6 @@
+{
+  "name": "fixture-platform-marker",
+  "private": true,
+  "type": "module",
+  "exports": "./index.js"
+}
