@@ -89,8 +89,8 @@ npx frogbot share --no-data
 
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
-| `--data` | flag | — | On the first share, brings the local data along. |
-| `--no-data` | flag | — | On the first share, shares the code only. |
+| `--data` | flag | — | On the first share, brings the local data along without asking. |
+| `--no-data` | flag | — | On the first share, shares the code only, without asking. |
 | `--workspace` | workspace slug | — | On the first share, the Dojo workspace to create the app in, when you belong to more than one. |
 | `--name` | name | `package.json` `name` | On the first share, the app's name in its address, `https://<name>.frogbot.app`. Lowercased, with dashes for anything but letters and digits. |
 | `--no-keys` | flag | — | Brings no keys. |
@@ -104,9 +104,13 @@ Before anything is sent, `share` stops with one line when there's no `package.js
 
 **The first share** creates a Dojo app named from `package.json`'s `name` and writes its id to `.frogbot/app.json`, adding `/.frogbot` to `.gitignore`. Later shares from this folder ship a new version of that app. Delete `.frogbot/app.json` to share as a new app. With more than one workspace, `share` asks which one, or, with no terminal, stops and asks you to rerun with `--workspace`. When the name is taken on Dojo, `share` stops with `[frogbot] The name "deals" is taken on Dojo. Rerun with --name <another name>.`
 
-It also asks whether to bring your local data. With no terminal, it stops before sending anything until you rerun with `--data` or `--no-data`. Later shares never ask and never send data.
+**Your data.** The first share asks whether to bring your local data, as `Bring your data? 42 deals, 3 users, 12 files`: the records in each collection you can see in the admin, trash left out, and the files in your upload collections. With no terminal, it stops before sending anything and asks you to rerun with `--data` or `--no-data`. With nothing to bring there's no question. Only SQLite apps on a `file:` database can bring data; any other database shares the code and says `[frogbot] Your data stays on this computer: bringing data works only for SQLite apps for now.`
 
-**Keys.** `share` brings the app's keys, such as `STRIPE_KEY`, from the same `.env` files `frogbot dev` loads; the first file to set a key wins, and empty values and variables set only in the shell stay behind. `DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT` and `HOSTNAME` are never brought: Dojo provides them. Values show masked, as `STRIPE_KEY ••••4242`, or `••••` under 12 characters, and are sealed to Dojo's key before they leave your machine.
+`share` reads a copy of the database, never `frogbot.db` itself, so it works while `frogbot dev` runs. The copy leaves out what belongs to your computer: queued jobs, locks, logins and trigger subscriptions. Your users come along with their passwords, so they sign in on Dojo as they do locally, and `FROGBOT_SECRET` comes along too, so stored connections still work; without a local `FROGBOT_SECRET`, `share` warns that they won't. The copy and the files in each upload collection's folder go straight to the app's storage after `[frogbot] Bringing data: 42 deals, 3 users, 12 files (13.4 GB)`, with a progress line, such as `[frogbot] Uploading data: 1.2 GB of 13.4 GB`. An upload folder must lie inside the app: one that is the app itself, holds it or sits outside it is left out with a line naming it. Inside a folder, `share` leaves out the database, `.env` files, `.git`, `node_modules` and half-finished uploads, and names any file whose name Dojo can't store (a `\` or a control character). There's no size limit. A file that fails to upload is retried 3 times; if it still fails, nothing is deployed, and running `share` again sends a fresh copy of the database and skips the files that already arrived. Answering No on that rerun removes the data the earlier attempt sent.
+
+Once a version of the app has started, shares send code only and never ask; `--data` then prints `[frogbot] Data comes only with the first share; sharing code only.` Live data is never overwritten from your computer.
+
+**Keys.** `share` brings the app's keys, such as `STRIPE_KEY`, from the same `.env` files `frogbot dev` loads; the first file to set a key wins, and empty values and variables set only in the shell stay behind. `DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT` and `HOSTNAME` are never brought as keys: Dojo provides them, and `FROGBOT_SECRET` comes along only with your data. Values show masked, as `STRIPE_KEY ••••4242`, or `••••` under 12 characters, and are sealed to Dojo's key before they leave your machine.
 
 On the first share, `share` prints `[frogbot] Bringing 2 keys: STRIPE_KEY ••••4242, OPENAI_API_KEY ••••x7Qa` and, in a terminal, lets you untick any. With no terminal it doesn't wait: it brings them all and says `[frogbot] No terminal: carrying all keys. Use --no-keys or --skip-key NAME to leave some out.`
 

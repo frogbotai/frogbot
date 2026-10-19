@@ -7,6 +7,10 @@ import { checkAppRoot, findAppRoot } from './appRoot.js';
 import type { ShareArchive } from './archive.js';
 import { createArchive } from './archive.js';
 import { authPath } from './auth.js';
+import { askData } from './data/ask.js';
+import type { DataInventory } from './data/inventory.js';
+import { describeData } from './data/inventory.js';
+import { formatBytes, uploadData } from './data/upload.js';
 import type { DojoClient, DojoErrorBody } from './dojo.js';
 import { createDojo, dojoError, dojoMessage, followBuild } from './dojo.js';
 import type { EnvKey } from './envKeys.js';
@@ -102,36 +106,42 @@ async function share(argv: string[], io: ShareIO): Promise<void> {
   checkAppRoot(root);
 
   const link = await readLink(root);
-
-  if (!link) await askData(flags, io);
-
   const fileEnv = readEnvFiles(root);
   const allKeys = envKeys(fileEnv);
 
   checkSkipKeys(flags.skipKey, allKeys);
 
-  const { files, symlinks } = await shareFiles({
-    root,
-    collections: await io.loadCollections(root),
-    databaseUrl: fileEnv.DATABASE_URL ?? io.env.DATABASE_URL,
-    authFile: resolve(io.cwd, authPath(io.env)),
-  });
+  const config = await io.loadConfig(root);
+  const dojo = createDojo(io);
+  const started = link ? await appStarted(dojo, link.appId) : false;
 
-  if (symlinks.length > 0) {
-    say(
-      io,
-      `[frogbot] Skipped ${symlinks.length} ${symlinks.length === 1 ? 'symlink' : 'symlinks'}: ${symlinks.join(', ')}`,
-    );
+  if (started && flags.data) {
+    say(io, '[frogbot] Data comes only with the first share; sharing code only.');
   }
 
-  const archive = await createArchive({ root, files });
+  const data = started ? undefined : await askData({ data: flags.data, root, config, io });
+  let archive: ShareArchive | undefined;
 
   try {
+    const { files, symlinks } = await shareFiles({
+      root,
+      collections: config.collections,
+      databaseUrl: fileEnv.DATABASE_URL ?? io.env.DATABASE_URL,
+      authFile: resolve(io.cwd, authPath(io.env)),
+    });
+
+    if (symlinks.length > 0) {
+      say(
+        io,
+        `[frogbot] Skipped ${symlinks.length} ${symlinks.length === 1 ? 'symlink' : 'symlinks'}: ${symlinks.join(', ')}`,
+      );
+    }
+
+    archive = await createArchive({ root, files });
+
     const localKeys = flags.keys ? allKeys.filter((key) => !flags.skipKey.includes(key.name)) : [];
 
     const firstKeys = link ? [] : await chooseFirstKeys({ keys: localKeys, yes: flags.yes, io });
-
-    const dojo = createDojo(io);
 
     await dojo.signIn();
 
@@ -141,14 +151,31 @@ async function share(argv: string[], io: ShareIO): Promise<void> {
       ? await laterKeys({ dojo, io, appId, keys: localKeys, updateKeys: flags.updateKeys })
       : firstKeys;
 
+    const secret = fileEnv.FROGBOT_SECRET ?? io.env.FROGBOT_SECRET;
+
+    if (data) {
+      say(io, `[frogbot] Bringing data: ${describeData(data)} (${formatBytes(data.totalBytes)})`);
+      leftOut(io, data);
+
+      if (!secret) {
+        say(
+          io,
+          "[frogbot] There's no local FROGBOT_SECRET, so connections stored in the data won't open on Dojo.",
+        );
+      }
+
+      await uploadData({ dojo, appId, inventory: data, io });
+    }
+
     say(io, `[frogbot] ${archive.summary}`);
 
     const deploymentId = await deploy({
       dojo,
       appId,
       archive,
-      keys,
+      keys: data && secret ? [...keys, { name: 'FROGBOT_SECRET', value: secret }] : keys,
       updateKeys: flags.updateKeys,
+      data: started ? undefined : Boolean(data),
     });
 
     const build = await followBuild({
@@ -167,8 +194,35 @@ async function share(argv: string[], io: ShareIO): Promise<void> {
 
     if (build.url) say(io, build.url);
   } finally {
-    await archive.remove();
+    await archive?.remove();
+    await data?.dispose();
   }
+}
+
+function leftOut(io: ShareIO, { leftFolders, leftNames }: DataInventory): void {
+  for (const folder of leftFolders) {
+    say(
+      io,
+      `[frogbot] Left out the files of ${folder}: the folder is the app, holds it, or is outside it.`,
+    );
+  }
+
+  if (leftNames.length > 0) {
+    say(
+      io,
+      `[frogbot] Left out ${leftNames.length} ${leftNames.length === 1 ? 'file' : 'files'} whose names Dojo can't store: ${leftNames.map(visible).join(', ')}`,
+    );
+  }
+}
+
+// eslint-disable-next-line no-control-regex -- shown escaped so a file name can't drive the terminal
+const controlCharacters = /[\u0000-\u001f]/g;
+
+function visible(name: string): string {
+  return name.replace(
+    controlCharacters,
+    (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`,
+  );
 }
 
 function checkSkipKeys(skipKey: string[], keys: EnvKey[]): void {
@@ -183,16 +237,14 @@ function checkSkipKeys(skipKey: string[], keys: EnvKey[]): void {
   );
 }
 
-async function askData(flags: ShareFlags, io: ShareIO): Promise<void> {
-  if (flags.data === undefined && !io.isTTY) {
-    throw new ShareError(
-      'This first share can bring the local data. Ask the person whether to bring it, then rerun with --data or --no-data.',
-    );
-  }
+async function appStarted(dojo: DojoClient, appId: string | number): Promise<boolean> {
+  const response = await dojo.request(`/api/apps/${appId}`);
 
-  const data = flags.data ?? (await io.prompts.confirm('Bring your data?'));
+  await refusedApp(appId, response);
 
-  if (data) say(io, "[frogbot] Bringing data isn't available yet; sharing code only.");
+  if (!response.ok) throw new ShareError(`Couldn't read the app: ${await dojoMessage(response)}`);
+
+  return ((await response.json()) as { started?: boolean }).started === true;
 }
 
 async function appName(root: string): Promise<string> {
@@ -379,12 +431,14 @@ async function deploy({
   archive,
   keys,
   updateKeys,
+  data,
 }: {
   dojo: DojoClient;
   appId: string | number;
   archive: ShareArchive;
   keys: EnvKey[];
   updateKeys: boolean;
+  data: boolean | undefined;
 }): Promise<string | number> {
   const keysPart =
     keys.length > 0
@@ -401,6 +455,7 @@ async function deploy({
     );
 
     if (keysPart) form.append('keys', keysPart);
+    if (data !== undefined) form.append('data', String(data));
 
     return { method: 'POST', body: form };
   });

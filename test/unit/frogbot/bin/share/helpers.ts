@@ -6,7 +6,11 @@ import { promisify } from 'node:util';
 
 import { onTestFinished } from 'vitest';
 
-import type { ShareEnv, ShareIO } from '../../../../../packages/frogbot/src/bin/share/io.js';
+import type {
+  ShareConfig,
+  ShareEnv,
+  ShareIO,
+} from '../../../../../packages/frogbot/src/bin/share/io.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -59,6 +63,8 @@ export type TestIO = {
   asked: string[];
 };
 
+const emptyConfig = { collections: [], db: {} } as unknown as ShareConfig;
+
 /** A `ShareIO` that records its output and answers prompts with `answers`, or fails when none is given. */
 export function testIO({
   cwd,
@@ -67,6 +73,7 @@ export function testIO({
   confirm,
   select,
   multiselect,
+  config = emptyConfig,
 }: {
   cwd: string;
   env: ShareEnv;
@@ -74,6 +81,7 @@ export function testIO({
   confirm?: boolean;
   select?: string;
   multiselect?: string[];
+  config?: ShareConfig;
 }): TestIO {
   let out = '';
   let err = '';
@@ -100,7 +108,7 @@ export function testIO({
       multiselect: (message) => Promise.resolve(answer(message, multiselect)),
     },
     openBrowser: (url) => opened.push(url),
-    loadCollections: () => Promise.resolve([]),
+    loadConfig: () => Promise.resolve(config),
   };
 
   const lines = (text: string) => text.split('\n').filter(Boolean);

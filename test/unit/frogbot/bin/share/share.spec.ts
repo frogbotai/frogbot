@@ -124,6 +124,7 @@ describe('frogbot share: sign-in', () => {
 
     await signIn();
     dojo.projects.push({ id: 1, name: 'deals', slug: 'deals', workspace: 1 });
+    dojo.data.started = true;
 
     dojo.afterRequest = (route) => {
       if (route === 'GET /api/users/me') dojo.tokens.delete('fb_stored');
@@ -133,6 +134,7 @@ describe('frogbot share: sign-in', () => {
 
     expect(result.code).toBe(0);
     expect(dojo.paths()).toEqual([
+      'GET /api/apps/1',
       'GET /api/users/me',
       'POST /api/apps/1/deployments',
       'POST /api/cli/device/code',
@@ -226,54 +228,6 @@ describe('frogbot share: the link', () => {
     expect(result.stdout()).toContainEqual(
       expect.stringMatching(/^\[frogbot\] Uploading 4 files \(\d\.\d KB\)$/),
     );
-  });
-});
-
-describe('frogbot share: data', () => {
-  it('stops a first share with no TTY and no flag before any request', async () => {
-    const { dojo, run } = await setup();
-    const result = await run([]);
-
-    expect(result.code).toBe(1);
-    expect(result.stderr()).toEqual([
-      '[frogbot] This first share can bring the local data. Ask the person whether to bring it, then rerun with --data or --no-data.',
-    ]);
-    expect(dojo.requests).toEqual([]);
-  });
-
-  it('refuses --data with --no-data', async () => {
-    const { dojo, run } = await setup();
-    const result = await run(['--data', '--no-data']);
-
-    expect(result.code).toBe(2);
-    expect(result.stderr()[0]).toContain('Use --data or --no-data, not both.');
-    expect(dojo.requests).toEqual([]);
-  });
-
-  it('asks with a TTY, and says data is not available yet on Yes', async () => {
-    const { run, signIn } = await setup();
-
-    await signIn();
-
-    const result = await run([], { isTTY: true, confirm: true });
-
-    expect(result.code).toBe(0);
-    expect(result.asked).toEqual(['Bring your data?']);
-    expect(result.stdout()).toContain(
-      "[frogbot] Bringing data isn't available yet; sharing code only.",
-    );
-  });
-
-  it('never asks on a later share', async () => {
-    const { run, signIn } = await setup();
-
-    await signIn();
-    await run(['--no-data']);
-
-    const later = await run([], { isTTY: true });
-
-    expect(later.code).toBe(0);
-    expect(later.asked).toEqual([]);
   });
 });
 

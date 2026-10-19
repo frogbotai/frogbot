@@ -14,9 +14,12 @@ import type { AddressInfo } from 'node:net';
 
 import { onTestFinished } from 'vitest';
 
+import { snapshotKey } from '../../../../../packages/frogbot/src/bin/share/data/upload.js';
+
 export type FakeRequest = {
   method: string;
   path: string;
+  search: string;
   headers: IncomingMessage['headers'];
   body: Buffer;
   form?: FormData;
@@ -31,6 +34,21 @@ export type FakeBuild = {
   tail?: string[];
   /** The first log connection closes after this many lines, with no status. */
   dropAfter?: number;
+};
+
+export type FakeData = {
+  /** Objects up to this size get one PUT; larger ones go multipart in parts of this size. */
+  partSize: number;
+  /** The app has a started version, so `data-uploads` answers 409; set once a build is ready. */
+  started: boolean;
+  /** The app's bucket, by key. */
+  bucket: Map<string, Buffer>;
+  /** PUTs answered 500 before one succeeds, by `<key>` or `<key>#<part number>`. */
+  failures: Map<string, number>;
+  /** Every multipart upload completed, as sent. */
+  completed: { key: string; uploadId: string; parts: { partNumber: number; etag: string }[] }[];
+  /** Each deployment's `data` field, as sent; `undefined` when absent. */
+  sent: (string | undefined)[];
 };
 
 /** Dojo's side of `share` and `logout`: the contract in 303's plan, recording every request. */
@@ -59,6 +77,8 @@ export type FakeDojo = {
   /** Every `keys` part Dojo opened, as sent. */
   opened: { values: Record<string, string>; updateKeys: boolean }[];
   revokeStatus: number;
+  /** 300's `data-uploads` and the app's bucket, which takes the signed PUTs at `/bucket/<key>`. */
+  data: FakeData;
   /** Runs after each request is answered, as `METHOD /path`. */
   afterRequest?: (route: string) => void;
   paths: () => string[];
@@ -130,8 +150,23 @@ export async function startFakeDojo(): Promise<FakeDojo> {
     salts: new Map(),
     opened: [],
     revokeStatus: 200,
+    data: {
+      partSize: 64 * 1024 * 1024,
+      started: false,
+      bucket: new Map(),
+      failures: new Map(),
+      completed: [],
+      sent: [],
+    },
     paths: () => dojo.requests.map((request) => `${request.method} ${request.path}`),
   };
+
+  const parts = new Map<
+    string,
+    { key: string; parts: Map<number, { etag: string; body: Buffer }> }
+  >();
+
+  let uploadIds = 0;
 
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url ?? '/', dojo.url);
@@ -149,6 +184,7 @@ export async function startFakeDojo(): Promise<FakeDojo> {
     dojo.requests.push({
       method: req.method ?? '',
       path: url.pathname,
+      search: url.search,
       headers: req.headers,
       body,
       form,
@@ -157,6 +193,30 @@ export async function startFakeDojo(): Promise<FakeDojo> {
     const token = req.headers.authorization?.replace(/^Bearer /, '');
     const keyId = token ? dojo.tokens.get(token) : undefined;
     const signedIn = keyId !== undefined;
+
+    if (req.method === 'PUT' && url.pathname.startsWith('/bucket/')) {
+      const key = decodeURIComponent(url.pathname.slice('/bucket/'.length));
+      const uploadId = url.searchParams.get('uploadId');
+      const partNumber = Number(url.searchParams.get('partNumber'));
+      const failure = uploadId ? `${key}#${partNumber}` : key;
+      const failures = dojo.data.failures.get(failure) ?? 0;
+
+      if (failures > 0) {
+        dojo.data.failures.set(failure, failures - 1);
+        res.writeHead(500).end('<Error><Code>InternalError</Code></Error>');
+
+        return;
+      }
+
+      const etag = `"${createHash('md5').update(body).digest('hex')}"`;
+
+      if (uploadId) parts.get(uploadId)?.parts.set(partNumber, { etag, body });
+      else dojo.data.bucket.set(key, body);
+
+      res.writeHead(200, { etag }).end();
+
+      return;
+    }
 
     if (route === 'POST /api/cli/device/code') {
       return json(res, 200, {
@@ -213,12 +273,94 @@ export async function startFakeDojo(): Promise<FakeDojo> {
       return json(res, 200, { keyId: 'seal-1', publicKey });
     }
 
-    const app = /^\/api\/apps\/(\d+)\/(deployments|keys)$/.exec(url.pathname);
+    const dataUpload = /^\/api\/apps\/(\d+)\/data-uploads(\/complete)?$/.exec(url.pathname);
+
+    if (req.method === 'POST' && dataUpload) {
+      const appId = Number(dataUpload[1]);
+
+      if (dojo.forbidden.has(appId) || !dojo.projects.some((project) => project.id === appId)) {
+        return payloadError(res, 403, 'Only the app’s owners can publish it.');
+      }
+
+      if (dojo.data.started) {
+        return payloadError(
+          res,
+          409,
+          'This app has already started, so share can no longer bring data to it.',
+        );
+      }
+
+      if (dataUpload[2]) {
+        const { uploads } = JSON.parse(body.toString()) as { uploads: FakeData['completed'] };
+
+        for (const upload of uploads) {
+          const received = parts.get(upload.uploadId);
+
+          if (received?.key !== upload.key) return payloadError(res, 400, 'No such upload.');
+
+          const sent = upload.parts.map(({ partNumber, etag }) => {
+            const part = received.parts.get(partNumber);
+
+            return part?.etag === etag ? part.body : undefined;
+          });
+
+          if (sent.some((part) => !part)) return payloadError(res, 400, 'A part is missing.');
+
+          dojo.data.bucket.set(upload.key, Buffer.concat(sent as Buffer[]));
+          dojo.data.completed.push(upload);
+          parts.delete(upload.uploadId);
+        }
+
+        return json(res, 200, { completed: uploads.length });
+      }
+
+      const { objects } = JSON.parse(body.toString()) as {
+        objects: { key: string; size: number }[];
+      };
+
+      const { partSize } = dojo.data;
+      const signed = (key: string) =>
+        `${dojo.url}/bucket/${key.split('/').map(encodeURIComponent).join('/')}`;
+
+      return json(res, 200, {
+        objects: objects.map(({ key, size }) => {
+          if (key !== snapshotKey && dojo.data.bucket.get(key)?.length === size) {
+            return { key, done: true };
+          }
+
+          if (size <= partSize) return { key, put: signed(key) };
+
+          uploadIds += 1;
+
+          const uploadId = `upload-${uploadIds}`;
+
+          parts.set(uploadId, { key, parts: new Map() });
+
+          return {
+            key,
+            uploadId,
+            partSize,
+            parts: Array.from(
+              { length: Math.ceil(size / partSize) },
+              (_, index) => `${signed(key)}?uploadId=${uploadId}&partNumber=${index + 1}`,
+            ),
+          };
+        }),
+      });
+    }
+
+    const app = /^\/api\/apps\/(\d+)(?:\/(deployments|keys))?$/.exec(url.pathname);
     const appId = Number(app?.[1]);
     const owned =
       !dojo.forbidden.has(appId) && dojo.projects.some((project) => project.id === appId);
 
     if (app && !owned) return payloadError(res, 403, 'Only the app’s owners can publish it.');
+
+    if (req.method === 'GET' && app && !app[2]) {
+      const project = dojo.projects.find(({ id }) => id === appId);
+
+      return json(res, 200, { id: appId, slug: project?.slug, started: dojo.data.started });
+    }
 
     if (req.method === 'GET' && app?.[2] === 'keys') {
       const stored = Object.entries(dojo.keys.get(appId) ?? {});
@@ -241,6 +383,15 @@ export async function startFakeDojo(): Promise<FakeDojo> {
 
     if (req.method === 'POST' && app?.[2] === 'deployments') {
       const part = form?.get('keys');
+      const data = form?.get('data');
+
+      dojo.data.sent.push(typeof data === 'string' ? data : undefined);
+
+      if (data === 'false' && !dojo.data.started) {
+        for (const key of dojo.data.bucket.keys()) {
+          if (key.startsWith('.dojo/import/')) dojo.data.bucket.delete(key);
+        }
+      }
 
       if (typeof part === 'string') {
         const sealed = JSON.parse(part) as Parameters<typeof openKeys>[0] & {
@@ -288,6 +439,8 @@ export async function startFakeDojo(): Promise<FakeDojo> {
 
       const { status, error = null, tail = null } = dojo.build;
       const live = status === 'ready' ? { url: 'https://deals.frogbot.app' } : {};
+
+      if (status === 'ready') dojo.data.started = true;
 
       res.end(`event: status\ndata: ${JSON.stringify({ status, error, tail, ...live })}\n\n`);
 

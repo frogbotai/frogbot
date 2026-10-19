@@ -19,6 +19,7 @@ export const READ_ONLY = {
   'test/search/mongodb/hybrid.int.spec.ts': 'searches articles seeded once in beforeAll',
   'test/search/mongodb/indexes.int.spec.ts': 'checks search index definitions, not documents',
   'test/search/mongodb/searchMany.int.spec.ts': 'searches articles seeded once in beforeAll',
+  'test/share-data/int.spec.ts': 'seeds a fresh app once in beforeAll, then reads its snapshot',
 };
 
 const SOURCE_TEST = /^packages\/.+\/src\/(?:.+\/)?[^/]+\.(?:spec|test)(?:-d)?\.[cm]?[jt]sx?$/;
