@@ -133,7 +133,7 @@ A separate tester agent that tries to break every change is slow and costly, and
 
 ## Tickets in another repo
 
-Sidekick's code lives in `~/code/frogbot/sidekick`, but its tickets, decisions and ledger stay here. `Repo: sidekick` on an issue's header line (`Plan: … · Depends on: … · Batch: … · Repo: sidekick`) routes the ticket; no field means frogbot. The repos are the `REPOS` table in `scripts/ticket.mjs`.
+Sidekick's code lives in `~/code/frogbot/sidekick`, but its tickets, decisions and ledger stay here. `Repo: sidekick` on an issue's header line (`Plan: … · Depends on: … · Batch: … · Repo: sidekick`) routes the ticket; no field means frogbot. The repos are the `REPOS` table in `scripts/ticket.mjs`. The Dojo platform repo, `~/code/frogbot/frogbot-platform`, works the same way under `Repo: platform`, with `platform-ticket<n>` worktrees and gates `check`, `test:unit` and `test:int`.
 
 - `new` makes `~/code/frogbot/sidekick-ticket<n>` from the sidekick repo's `main` and runs `pnpm install`.
 - `status`, `next` and `stats` read both repos, so numbers never collide; `status` has a `repo` column.

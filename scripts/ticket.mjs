@@ -58,6 +58,11 @@ export const REPOS = {
     prefix: 'sidekick-ticket',
     gates: ['check', 'test:unit', 'test:e2e'],
   },
+  platform: {
+    dir: 'frogbot-platform',
+    prefix: 'platform-ticket',
+    gates: ['check', 'test:unit', 'test:int'],
+  },
 };
 
 export const LAND = 'land';
@@ -412,7 +417,7 @@ export function repoGates(gates, scripts) {
 }
 
 export function repoGroups(gates) {
-  const levels = { check: 'typecheck', 'test:unit': 'unit' };
+  const levels = { check: 'typecheck', 'test:unit': 'unit', 'test:int': 'int' };
 
   return gates.map((gate) => ({
     group: gate,
@@ -558,7 +563,7 @@ export function hasTesterRow(rows, { ticket, patchId, worker }) {
 }
 
 export function landLevel(gates) {
-  if (gates.includes('test:int:sqlite')) return 'int';
+  if (gates.includes('test:int:sqlite') || gates.includes('test:int')) return 'int';
 
   return gates.includes('test:unit') ? 'unit' : 'typecheck';
 }
