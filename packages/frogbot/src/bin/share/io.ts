@@ -1,10 +1,10 @@
 import { spawn } from 'node:child_process';
 
 import * as p from '@clack/prompts';
+import type { SanitizedConfig } from 'payload';
 
 import { loadConfig } from '../../config/load.js';
 import { ShareError } from './error.js';
-import type { ShareCollection } from './files.js';
 
 /** The questions `share` can ask; only called with a TTY. */
 export type SharePrompts = {
@@ -27,8 +27,11 @@ export type ShareIO = {
   isTTY: boolean;
   prompts: SharePrompts;
   openBrowser: (url: string) => void;
-  loadCollections: (root: string) => Promise<ShareCollection[]>;
+  loadConfig: (root: string) => Promise<ShareConfig>;
 };
+
+/** The parts of Payload's sanitized config `share` reads, built without connecting to the database. */
+export type ShareConfig = Pick<SanitizedConfig, 'collections' | 'db'>;
 
 function answered<T>(value: T | symbol): T {
   if (typeof value === 'symbol') {
@@ -68,10 +71,10 @@ function openBrowser(url: string): void {
   child.unref();
 }
 
-async function loadCollections(root: string): Promise<ShareCollection[]> {
+async function loadShareConfig(root: string): Promise<ShareConfig> {
   const config = await loadConfig({ cwd: root, mode: 'codegen' });
 
-  return (await config._internal.payloadConfig).collections;
+  return config._internal.payloadConfig;
 }
 
 /** The real terminal, browser and app config. */
@@ -84,7 +87,7 @@ export function processIO(): ShareIO {
     isTTY: Boolean(process.stdin.isTTY && process.stdout.isTTY),
     prompts: clackPrompts,
     openBrowser,
-    loadCollections,
+    loadConfig: loadShareConfig,
   };
 }
 

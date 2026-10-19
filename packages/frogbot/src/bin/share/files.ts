@@ -9,7 +9,8 @@ import ignore from 'ignore';
 
 const execFileAsync = promisify(execFile);
 
-const neverShipped = ignore().add([
+/** Laptop-only paths, relative to the app root: never in a share, code or data. */
+export const neverShared = ignore().add([
   '.git',
   '.frogbot',
   '.env*',
@@ -17,8 +18,9 @@ const neverShipped = ignore().add([
   '*.sqlite*',
   'node_modules',
   '.next',
-  '/files',
 ]);
+
+const neverShipped = ignore().add(neverShared).add('/files');
 
 /** A collection as Payload sanitizes it; only upload collections have `upload` set. */
 export type ShareCollection = {
