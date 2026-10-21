@@ -1,6 +1,20 @@
 #!/usr/bin/env node
-import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+const minimumNode = '24.21.0';
+const [major, minor, patch] = process.versions.node.split('.').map(Number);
+const [minMajor, minMinor, minPatch] = minimumNode.split('.').map(Number);
+
+if (
+  major < minMajor ||
+  (major === minMajor && (minor < minMinor || (minor === minMinor && patch < minPatch)))
+) {
+  console.error(
+    `[frogbot] error: FrogBot needs Node.js ${minimumNode} or newer, but this is Node.js ${process.versions.node}. Upgrade Node.js (in Docker, set NODE_VERSION to 24).`,
+  );
+  process.exit(1);
+}
+
+const { default: path } = await import('node:path');
+const { fileURLToPath, pathToFileURL } = await import('node:url');
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
