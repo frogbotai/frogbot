@@ -90,7 +90,7 @@ describe('docs fences gate', () => {
   it('uses bash for migrations commands', () => {
     const migrations = readFileSync(join(repoRoot, 'docs', 'database', 'migrations.mdx'), 'utf8');
 
-    expect(migrations).not.toContain('```text\nnpm run frogbot migrate');
-    expect(migrations.match(/^```bash\nnpm run frogbot migrate/gm)).toHaveLength(7);
+    expect(migrations).not.toContain('```text\nnpx frogbot migrate');
+    expect(migrations.match(/^```bash\nnpx frogbot migrate/gm)).toHaveLength(9);
   });
 });
