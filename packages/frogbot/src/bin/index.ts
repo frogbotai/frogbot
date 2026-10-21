@@ -9,6 +9,7 @@ import { generateTypes } from './generateTypes.js';
 import { jobsRun } from './jobsRun.js';
 import { loadEnv } from './loadEnv.js';
 import { logout } from './logout.js';
+import { logs } from './logs.js';
 import { migrate } from './migrate.js';
 import { piecesPort } from './piecesPort.js';
 import { pull } from './pull.js';
@@ -41,6 +42,7 @@ const commands: Record<string, Command> = {
   'migrate:status': runMigrate,
   share: (args) => share(args),
   pull: (args) => pull(args),
+  logs: (args) => logs(args),
   logout: (args) => logout(args),
 };
 

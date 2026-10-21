@@ -233,6 +233,8 @@ The first time, `share` prints `[frogbot] Sign in to Dojo: open this link and co
 
 When someone shared an app with the user as an editor on Dojo, `npx frogbot pull <slug>` downloads it into a new `./<slug>` folder with an empty database; then run `pnpm install` and `pnpm dev` there, and `share` from that folder ships a new version of the same app. An editor's share brings no keys and has no `Share it:` line, since only the app's owners manage its keys on Dojo.
 
+When a shared app misbehaves on Dojo, run `npx frogbot logs <slug>` to read its recent logs (key values show as `••••`); add `--follow`, in a background shell, to watch new lines while the user reproduces the problem.
+
 | Exit | Meaning                                                                                                      |
 | ---- | ------------------------------------------------------------------------------------------------------------ |
 | `0`  | Live. The last line is the URL.                                                                              |
