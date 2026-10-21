@@ -2,7 +2,7 @@
 title: "CLI"
 sidebarTitle: "CLI"
 description: "Every frogbot command, its arguments, and where each one is documented."
-keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot run", "frogbot share", "frogbot pull", "commands"]
+keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot run", "frogbot share", "frogbot pull", "frogbot logs", "commands"]
 ---
 
 The `frogbot` package installs a `frogbot` command. Run it from your app's root directory through your package manager, for example `pnpm frogbot dev` or `npx frogbot dev`.
@@ -37,6 +37,7 @@ Before any command runs, `frogbot` loads `.env*` files from the current director
 | `migrate:fresh` | `--force-accept-warning` | Drops every table, then applies all migrations. See [Migrations](/database/migrations). |
 | `share` | `--data`, `--no-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys` | Uploads the app to Dojo, builds it and prints its live URL. See [`share`](#share). |
 | `pull` | `<app>` | Downloads an app shared with you on Dojo into a new folder. See [`pull`](#pull). |
+| `logs` | `<app>`, `--follow` | Prints an app's recent logs from Dojo, or follows them. See [`logs`](#logs). |
 | `logout` | — | Signs the CLI out of Dojo. See [`logout`](#logout). |
 
 ## `dev` and `start`
@@ -140,6 +141,16 @@ pnpm dev
 ```
 
 `pull` refuses a folder that already exists and leaves it untouched. It writes only files and folders from the download: no links, and nothing outside the new folder. When Dojo refuses, such as for an app you can only use, or an app with nothing live yet, `pull` prints Dojo's reason in one line, exits with code `1` and leaves no folder behind. With no app named, it prints its usage and exits with code `2`.
+
+## `logs`
+
+```bash
+npx frogbot logs deals --follow
+```
+
+`frogbot logs <app>` prints the recent logs of an app on Dojo, oldest first, one `<time> <message>` line each. Logs reach back only 24 hours, so an app that broke days ago may show nothing. It takes the app's slug or id and signs in as [`share`](#share) does. Editors and owners can read an app's logs; anyone else gets Dojo's reason. Every stored key value of 8 or more characters, Dojo's own included, shows as `••••`. An app that has never started prints `[frogbot] No logs yet.`
+
+With `--follow`, it keeps asking Dojo every 2 seconds and prints only the new lines, until you press Ctrl-C. When Dojo refuses or can't read the logs, at any point, `logs` prints Dojo's reason in one `[frogbot]` line and exits with code `1`. With no app named, it prints its usage and exits with code `2`.
 
 ## `logout`
 

@@ -87,6 +87,10 @@ export type FakeDojo = {
   appReply?: { status: number; message: string };
   /** The reply to `GET /api/apps/:app/source`, instead of the archive. */
   sourceReply?: { status: number; message: string };
+  /** The app's runtime log, oldest first, served by `GET /api/apps/:app/logs`. */
+  logs: { at: string; message: string }[];
+  /** The status `GET /api/apps/:app/logs` answers with, in the contract's words, instead of the lines. */
+  logsStatus?: 403 | 404 | 502;
   /** Runs after each request is answered, as `METHOD /path`. */
   afterRequest?: (route: string) => void;
   paths: () => string[];
@@ -99,6 +103,12 @@ const json = (res: ServerResponse, status: number, body: unknown) => {
 
 const payloadError = (res: ServerResponse, status: number, message: string) =>
   json(res, status, { errors: [{ message }] });
+
+const logsRefusals = {
+  403: "You can't share to this app. Only its editors and owners can.",
+  404: 'No such app.',
+  502: "Dojo couldn't read this app's logs. Try again in a moment.",
+};
 
 /** Dojo's side of the seal: ECDH with its private key, HKDF-SHA256 (`frogbot-share-keys`), AES-256-GCM. */
 export function openKeys(
@@ -166,6 +176,7 @@ export async function startFakeDojo(): Promise<FakeDojo> {
       completed: [],
       sent: [],
     },
+    logs: [],
     paths: () => dojo.requests.map((request) => `${request.method} ${request.path}`),
   };
 
@@ -357,7 +368,7 @@ export async function startFakeDojo(): Promise<FakeDojo> {
       });
     }
 
-    const app = /^\/api\/apps\/([^/]+)(?:\/(deployments|keys|source))?$/.exec(url.pathname);
+    const app = /^\/api\/apps\/([^/]+)(?:\/(deployments|keys|logs|source))?$/.exec(url.pathname);
     const appRef = decodeURIComponent(app?.[1] ?? '');
     const bySlug = /^\d+$/.test(appRef)
       ? undefined
@@ -397,6 +408,19 @@ export async function startFakeDojo(): Promise<FakeDojo> {
       res.end(dojo.source);
 
       return;
+    }
+
+    if (req.method === 'GET' && app?.[2] === 'logs') {
+      if (dojo.logsStatus) {
+        return payloadError(res, dojo.logsStatus, logsRefusals[dojo.logsStatus]);
+      }
+
+      const after = Number(url.searchParams.get('after') ?? 0);
+
+      return json(res, 200, {
+        lines: dojo.logs.slice(after),
+        next: dojo.logs.length ? String(dojo.logs.length) : null,
+      });
     }
 
     const editor = dojo.level === 'editor';
