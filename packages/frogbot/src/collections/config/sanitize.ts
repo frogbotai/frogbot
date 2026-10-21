@@ -2,6 +2,7 @@ import type { CollectionConfig as PayloadCollectionConfig, PayloadRequest } from
 
 import type { CollectionView } from '../../admin/views/types.js';
 import { buildSignInEndpoints } from '../../auth/signIn/endpoints.js';
+import { buildSignInStrategy } from '../../auth/signIn/strategy.js';
 import { validateSignIn } from '../../auth/signIn/validate.js';
 import type { AuthConfig } from '../../auth/types.js';
 import {
@@ -210,6 +211,9 @@ export function sanitizeCollection(
       ...collectionAuth
     } = c.auth;
 
+    const sessionStrategy =
+      signIn.length && c.auth.disableLocalStrategy ? [buildSignInStrategy(c.slug)] : [];
+
     out.auth = {
       ...collectionAuth,
       ...(loginWithUsername !== undefined
@@ -220,8 +224,17 @@ export function sanitizeCollection(
         ? { verify: typeof verify === 'object' ? wrapAuthEmail(verify, attachFrogBot) : verify }
         : {}),
       ...(forgotPassword ? { forgotPassword: wrapAuthEmail(forgotPassword, attachFrogBot) } : {}),
-      ...(strategies
-        ? { strategies: wrapAuthStrategies({ collection: c.slug, strategies, resolveFrogBot }) }
+      ...(strategies || sessionStrategy.length
+        ? {
+            strategies: [
+              ...wrapAuthStrategies({
+                collection: c.slug,
+                strategies: strategies ?? [],
+                resolveFrogBot,
+              }),
+              ...sessionStrategy,
+            ],
+          }
         : {}),
     };
   }

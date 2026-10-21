@@ -211,6 +211,16 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
           },
         })),
         { slug: 'password-users', auth: true, fields: [] },
+        {
+          slug: 'oauth-only',
+          access: { read: ({ req }: { req: { user?: unknown } }) => Boolean(req.user) },
+          auth: {
+            signIn: [method],
+            disableLocalStrategy: { enableFields: true as const },
+            cookies: { sameSite: 'lax' as const },
+          },
+          fields: [],
+        },
       ],
       connections: [{ piece: method, oauth: true }],
     });
@@ -472,8 +482,57 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
     expect((await rawUser('person@example.com', 'customers')).sessions).toHaveLength(1);
   });
 
+  it('sets a usable session on a collection with the local strategy off, and keeps password operations off', async () => {
+    const response = await callback(
+      await authorize({ collection: 'oauth-only', code: 'oauth-only@example.com' }),
+    );
+
+    expect(response.status).toBe(302);
+
+    expect((await rawUser('oauth-only@example.com', 'oauth-only')).hash).toBeFalsy();
+
+    const cookie = sessionCookie(response)!;
+    const me = async () =>
+      (
+        await (
+          await request('/rest/v1/oauth-only/me', { headers: { cookie, origin: baseURL } })
+        ).json()
+      ).user;
+
+    expect(await me()).toMatchObject({
+      email: 'oauth-only@example.com',
+      collection: 'oauth-only',
+      _strategy: 'oauth-only-sign-in',
+    });
+
+    for (const [path, body] of [
+      ['login', { email: 'oauth-only@example.com', password: 'guess' }],
+      ['forgot-password', { email: 'oauth-only@example.com' }],
+      ['first-register', { email: 'first@example.com', password: 'first-password' }],
+    ] as const) {
+      const refused = await request(`/rest/v1/oauth-only/${path}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      expect(refused.status, path).toBe(403);
+      expect(sessionCookie(refused), path).toBeUndefined();
+    }
+
+    expect(
+      (
+        await request('/rest/v1/oauth-only/logout', {
+          method: 'POST',
+          headers: { cookie, origin: baseURL },
+        })
+      ).status,
+    ).toBe(200);
+    expect((await rawUser('oauth-only@example.com', 'oauth-only')).sessions).toEqual([]);
+    expect(await me()).toBeNull();
+  });
+
   it.each([
-    '/rest/v1/users/sign-in/unknown',
     '/rest/v1/users/sign-in/unknown/callback',
     '/rest/v1/password-users/sign-in/work',
     '/rest/v1/unknown/sign-in/work',

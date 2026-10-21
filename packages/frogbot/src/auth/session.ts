@@ -21,6 +21,7 @@ import {
   rollbackSessionTransaction,
   withSessionOperation,
 } from './operation.js';
+import { signInStrategyName } from './signIn/strategy.js';
 
 type SessionIssueArgs = {
   req: FrogBotRequest;
@@ -129,7 +130,7 @@ export async function issueSession({
         id: subjectId,
         email,
         collection: collectionSlug,
-        _strategy: 'local-jwt',
+        _strategy: auth.disableLocalStrategy ? signInStrategyName(collectionSlug) : 'local-jwt',
       });
 
       const sessionUser = {

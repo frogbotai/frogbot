@@ -81,7 +81,7 @@ For piece authors, `oauth.account({ tokens, client, req })` returns `{ id, label
 | --- | --- |
 | Existing user, `auth.verify` disabled | Sign in after the normal login checks. |
 | Existing user, `auth.verify` enabled | Require `_verified === true`. OAuth does not verify an existing unverified account. |
-| No matching user | Create a user with the normalized email and a random password. When `auth.verify` is enabled, set `_verified: true`; suppress the verification email. |
+| No matching user | Create a user with the normalized email and, unless the local strategy is off, a random password. When `auth.verify` is enabled, set `_verified: true`; suppress the verification email. |
 
 User creation runs collection validation and hooks. Give required custom fields defaults or populate them in a hook. If creation fails, sign-in fails. Trashed users are excluded from identity lookup; duplicate or incompatible email identities are rejected.
 
@@ -97,7 +97,7 @@ The SQLite adapter enables transactions automatically when you configure sign-in
 
 - Each sign-in method needs factory OAuth app credentials and a recipe with an `account` function. Method slugs must be URL-safe and unique within the collection.
 - Keep a unique, stored, non-localized email field. Sign-in requires email identity even if you also support usernames.
-- To disable password login, use `disableLocalStrategy: { enableFields: true }` so identity and session fields remain available.
+- For an OAuth-only collection, set `disableLocalStrategy: { enableFields: true }`. Identity and session fields remain, FrogBot authenticates the sign-in session cookie itself, and password login, forgot and reset password, unlock, and first-user registration are refused.
 - `auth.strategies` authenticates later requests. `auth.signIn` configures interactive login methods.
 
 ## Share an app with Gmail connections
