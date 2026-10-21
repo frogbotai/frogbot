@@ -66,7 +66,7 @@ try {
     match[1].replace(/\s+/g, ''),
   );
 
-  assert.equal(layerStatements[0], 'payload-default,frogbot,payload');
+  assert.equal(layerStatements[0], 'frogbot-reset,payload-default,frogbot,payload');
   assert.ok(layerStatements.includes('payload-default,payload'));
   assert.match(css, /\.fb-button/);
   assert.match(css, /var\(--fb-theme-base-/);
@@ -78,12 +78,12 @@ try {
     /--(text-(xs|sm|base|lg|xl|[2-5]xl)(--line-height)?|radius(-(sm|md|lg|xl))?|color-red-(500|600|700))(?![\w-])/,
   );
 
-  assert.match(css, /body:has\(\.frogbot-nav-shell\) \.app-header__mobile-nav-toggler/);
-  assert.match(css, /\.frogbot-mobile-nav-toggle/);
-  assert.match(css, /\.frogbot-nav-backdrop/);
+  assert.match(css, /body:has\(\.fb-nav-shell\) \.app-header__mobile-nav-toggler/);
+  assert.match(css, /\.fb-mobile-nav-toggle/);
+  assert.match(css, /\.fb-nav-backdrop/);
 
   for (const state of ['desktop-nav-closed', 'mobile-nav-open', 'mobile-nav-closed']) {
-    assert.match(css, new RegExp(`\\.frogbot-nav-shell\\[data-nav-state=${state}\\]`));
+    assert.match(css, new RegExp(`\\.fb-nav-shell\\[data-nav-state="?${state}"?\\]`));
   }
 
   assert.doesNotMatch(css, /\.template-default[^{]*\{[^}]*!important/);

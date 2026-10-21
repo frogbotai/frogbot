@@ -1125,6 +1125,11 @@
     "mode": "chat"
   },
   {
+    "id": "deepinfra/anthropic/claude-fable-5",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
     "id": "deepinfra/ByteDance/Seed-2.0-code",
     "provider": "deepinfra",
     "mode": "chat"
@@ -1186,6 +1191,11 @@
   },
   {
     "id": "deepinfra/deepseek-ai/DeepSeek-V4.1-Flash",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "provider": "deepinfra",
     "mode": "chat"
   },
@@ -1340,6 +1350,11 @@
     "mode": "chat"
   },
   {
+    "id": "deepinfra/stepfun-ai/Step-5-Preview",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
     "id": "deepinfra/tencent/Hy4-preview",
     "provider": "deepinfra",
     "mode": "chat"
@@ -1395,6 +1410,11 @@
     "mode": "chat"
   },
   {
+    "id": "fireworks/accounts/fireworks/models/deepseek-v4p1-flash-1017",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
     "id": "fireworks/accounts/fireworks/models/ember-1",
     "provider": "fireworks",
     "mode": "chat"
@@ -1426,6 +1446,11 @@
   },
   {
     "id": "fireworks/accounts/fireworks/models/minimax-m3",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/muse-spark-open",
     "provider": "fireworks",
     "mode": "chat"
   },
@@ -1631,6 +1656,11 @@
   },
   {
     "id": "google/gemini-3.8-flash",
+    "provider": "google",
+    "mode": "chat"
+  },
+  {
+    "id": "google/gemini-4-argon",
     "provider": "google",
     "mode": "chat"
   },
@@ -2170,6 +2200,11 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/~unbiased/pareto-latest",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/~x-ai/grok-latest",
     "provider": "openrouter",
     "mode": "chat"
@@ -2300,11 +2335,6 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/anthropic/claude-sonnet-4",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/anthropic/claude-sonnet-4.5",
     "provider": "openrouter",
     "mode": "chat"
@@ -2321,11 +2351,6 @@
   },
   {
     "id": "openrouter/anthropic/claude-sonnet-5.5",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/apodex/apodex-1.1-mini:free",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -2420,11 +2445,6 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/deepseek/deepseek-r1",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/deepseek/deepseek-r1-0528",
     "provider": "openrouter",
     "mode": "chat"
@@ -2475,7 +2495,17 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/dots-studio/dots-3-note-preview:free",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/elorian/glimpse",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -2555,6 +2585,11 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/google/gemini-4-argon",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/google/gemma-2-27b-it",
     "provider": "openrouter",
     "mode": "chat"
@@ -2625,16 +2660,6 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/inclusionai/ling-3.0-flash-fin",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/inclusionai/ling-3.0-flash-sante",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/inclusionai/ling-3.0-flash-vl",
     "provider": "openrouter",
     "mode": "chat"
@@ -2656,6 +2681,11 @@
   },
   {
     "id": "openrouter/liquid/lfm-2.5-2.6b:free",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/liquid/lfm-2.5-24b-a2b",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -2740,17 +2770,17 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/meta/muse-spark-open",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/meta/muse-wonder",
     "provider": "openrouter",
     "mode": "chat"
   },
   {
     "id": "openrouter/microsoft/phi-4",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/microsoft/wizardlm-2-8x22b",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -2791,6 +2821,11 @@
   },
   {
     "id": "openrouter/minimax/minimax-m3",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/minimax/minimax-m3.1-flash:free",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -2891,6 +2926,16 @@
   },
   {
     "id": "openrouter/mistralai/voxtral-small-24b-2507",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/moondream/moondream3-preview",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/moondream/moondream3.1-9b-a2b",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3011,6 +3056,16 @@
   },
   {
     "id": "openrouter/nvidia/nemotron-3.5-lightning:free",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/nvidia/nemotron-3.5-super-vl",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/nvidia/nemotron-3.5-super-vl:free",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3590,6 +3645,11 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/reflection/beam-1.0-501b-a23b",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/rekaai/reka-edge",
     "provider": "openrouter",
     "mode": "chat"
@@ -3640,7 +3700,12 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/sao10k/l3.3-euryale-70b",
+    "id": "openrouter/scaledown/extract",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/scaledown/summarize",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3730,12 +3795,12 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/unbiased/pareto",
+    "id": "openrouter/unbiased/pareto-26.10",
     "provider": "openrouter",
     "mode": "chat"
   },
   {
-    "id": "openrouter/unbiased/pareto-26.10-preview",
+    "id": "openrouter/unbiased/pareto-26.9",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3821,6 +3886,11 @@
   },
   {
     "id": "openrouter/xiaomi/mimo-v2.6-pro-ultraspeed",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/xingchen-agi/xing4.0-29b-a4b:free",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3950,6 +4020,11 @@
     "mode": "chat"
   },
   {
+    "id": "togetherai/meta-models/Muse-Spark-Open-816B-A42B",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
     "id": "togetherai/MiniMaxAI/MiniMax-M2.7",
     "provider": "togetherai",
     "mode": "chat"
@@ -3966,6 +4041,11 @@
   },
   {
     "id": "togetherai/nvidia/nemotron-3-ultra-550b-a55b",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/nvidia/NVIDIA-Nemotron-3.5-Super-VL",
     "provider": "togetherai",
     "mode": "chat"
   },
@@ -3991,6 +4071,11 @@
   },
   {
     "id": "togetherai/Qwen/Qwen3.7-Max",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/reflection/Beam-1.0-501B-A23B",
     "provider": "togetherai",
     "mode": "chat"
   },
@@ -4235,11 +4320,6 @@
     "mode": "chat"
   },
   {
-    "id": "vercel/anthropic/claude-sonnet-4",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
     "id": "vercel/anthropic/claude-sonnet-4.5",
     "provider": "vercel",
     "mode": "chat"
@@ -4340,7 +4420,22 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/deepseek/deepseek-v4.1-flash-1017",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/deepseek/deepseek-v4.1-flash-1017-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/deepseek/deepseek-v4.1-flash-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/elorian/glimpse",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -4410,6 +4505,11 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/google/gemini-4-argon",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/google/gemini-omni-flash-preview",
     "provider": "vercel",
     "mode": "chat"
@@ -4465,11 +4565,6 @@
     "mode": "chat"
   },
   {
-    "id": "vercel/inclusionai/ling-3.1-flash-free",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
     "id": "vercel/inference-net/schematron-v2-small",
     "provider": "vercel",
     "mode": "chat"
@@ -4481,6 +4576,11 @@
   },
   {
     "id": "vercel/interfaze/interfaze-beta",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/liquid/lfm2.5-24b-a2b",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -4545,6 +4645,11 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/meta/muse-spark-open",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/meta/muse-wonder-1.0",
     "provider": "vercel",
     "mode": "chat"
@@ -4586,6 +4691,11 @@
   },
   {
     "id": "vercel/minimax/minimax-m3",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/minimax/minimax-m3.1-flash",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -4701,6 +4811,16 @@
   },
   {
     "id": "vercel/nvidia/nemotron-3.5-lightning",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/nvidia/nemotron-3.5-lightning-free",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/nvidia/nemotron-3.5-super-vl",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -5035,6 +5155,16 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/reflection/beam",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/reflection/beam-free",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/sakana/fugu-max",
     "provider": "vercel",
     "mode": "chat"
@@ -5116,6 +5246,11 @@
   },
   {
     "id": "vercel/spacexai/grok-build-0.1",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/stealth/cat-jam",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -5411,6 +5546,11 @@
   },
   {
     "id": "vertex/gemini-3.8-flash",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/gemini-4-argon",
     "provider": "vertex",
     "mode": "chat"
   },

@@ -297,7 +297,7 @@ describe('chat assets HTTP e2e', () => {
           role: 'user',
           content: [
             { type: 'text', text: prompt },
-            { type: 'text', text: `Attached file "note.txt":\n${note}` },
+            { type: 'text', text: `Attached file "note-original.txt":\n${note}` },
             {
               type: 'image_url',
               image_url: { url: `data:image/png;base64,${image.toString('base64')}` },
@@ -330,7 +330,7 @@ describe('chat assets HTTP e2e', () => {
         toolCallId,
         input: { content: report },
         output: {
-          filename: 'report.txt',
+          filename: 'report-original.txt',
           mimeType: 'text/plain',
           filesize: Buffer.byteLength(report),
         },
@@ -450,7 +450,7 @@ describe('chat assets HTTP e2e', () => {
     await submit({ incoming: message([document]), accept: 'application/json' });
 
     expect(document).toMatchObject({
-      filename: 'report.docx',
+      filename: 'report-original.docx',
       mimeType: DOCX_TYPE,
       text: reportText,
     });
@@ -458,7 +458,7 @@ describe('chat assets HTTP e2e', () => {
       role: 'user',
       content: [
         { type: 'text', text: prompt },
-        { type: 'text', text: `Attached file "report.docx":\n${reportText}` },
+        { type: 'text', text: `Attached file "report-original.docx":\n${reportText}` },
       ],
     });
   });
