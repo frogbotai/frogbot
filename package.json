@@ -4,7 +4,7 @@
   "version": "0.34.0",
   "type": "module",
   "scripts": {
-    "build": "pnpm -r --filter '!blank' build && pnpm --filter blank build --webpack",
+    "build": "pnpm -r --filter '!blank' build && FROGBOT_SECRET=build-secret pnpm --filter blank build --webpack",
     "lint": "eslint . --max-warnings=0 --cache --cache-location .idea/tmp/.eslintcache",
     "lint:fix": "eslint . --fix --max-warnings=0 --cache --cache-location .idea/tmp/.eslintcache",
     "lint-staged": "lint-staged",

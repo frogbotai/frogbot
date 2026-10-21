@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "next build --webpack",
+    "build": "frogbot generate:importmap && next build --webpack",
     "dev": "frogbot dev --webpack"
   },
   "dependencies": {
