@@ -6,7 +6,8 @@ import { SignInButtonsClient } from '../../../../../packages/ui/src/admin/elemen
 import { SignInButtons } from '../../../../../packages/ui/src/admin/elements/SignInButtons/index.js';
 
 vi.mock('@payloadcms/ui', () => ({
-  Button: ({ to, children }: { to: string; children: ReactNode }) => <a href={to}>{children}</a>,
+  Button: ({ el, url, children }: { el: string; url: string; children: ReactNode }) =>
+    el === 'anchor' ? <a href={url}>{children}</a> : <span>{children}</span>,
 }));
 
 const methods = [{ slug: 'work', piece: 'google', label: 'Google' }];

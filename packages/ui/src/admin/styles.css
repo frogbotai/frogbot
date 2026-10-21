@@ -1,6 +1,7 @@
 @import "./elements/Nav/index.css";
 @import "./elements/SignInButtons/index.css";
 @import "./views/SettingsView.css";
+@import "./views/CreateFirstUser/index.css";
 @import "./views/Connections/index.css";
 
 @layer frogbot {

@@ -1,6 +1,7 @@
 import type { Config as PayloadConfig, PayloadEmailAdapter } from 'payload';
 
 import {
+  CREATE_FIRST_USER_VIEW,
   fillViewMeta,
   navSections,
   sanitizeSettings,
@@ -294,11 +295,18 @@ export function buildPayloadConfig({
       views: Object.fromEntries(
         Object.entries({
           ...admin?.components?.views,
+          ...(hasAdminSignIn
+            ? {
+                createFirstUser:
+                  admin?.components?.views?.createFirstUser ?? CREATE_FIRST_USER_VIEW,
+              }
+            : {}),
           settings: admin?.components?.views?.settings ?? SETTINGS_VIEW,
         }).map(([key, view]) => [
           key,
           key === 'account' ||
           key === 'dashboard' ||
+          view === CREATE_FIRST_USER_VIEW ||
           typeof view !== 'object' ||
           view === null ||
           Array.isArray(view)

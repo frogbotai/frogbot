@@ -63,6 +63,7 @@ export default defineConfig({
             'test/unit/gateway/**',
           ],
           environment: 'node',
+          server: { deps: { inline: [/@payloadcms\/ui\/dist\/views\/CreateFirstUser\//] } },
         },
       },
       {

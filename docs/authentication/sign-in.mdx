@@ -48,6 +48,12 @@ The Google piece requests `openid`, `https://www.googleapis.com/auth/userinfo.em
 
 The admin login page automatically renders methods from the collection selected by `admin.user`. With multiple auth collections, set `admin.user` explicitly. You can reuse the same Google instance in another collection's `auth.signIn`; each collection has its own routes and local users.
 
+### The first user
+
+While the admin user collection has no users, the admin sends everyone to `/admin/create-first-user`. With sign-in methods configured, that page shows the sign-in buttons below the password form, so the first person can also continue with Google. The first person to finish either one becomes the first user. With the [OAuth-only setup](#collection-requirements), the admin shows the login page instead, and the first person to sign in becomes the first user.
+
+**On an empty deployed app, that can be anyone who opens the URL.** Sign in yourself before you share it.
+
 ## Register the callback
 
 For the example above, register this redirect URI in your Google OAuth app:
@@ -98,6 +104,18 @@ The SQLite adapter enables transactions automatically when you configure sign-in
 - Each sign-in method needs factory OAuth app credentials and a recipe with an `account` function. Method slugs must be URL-safe and unique within the collection.
 - Keep a unique, stored, non-localized email field. Sign-in requires email identity even if you also support usernames.
 - For an OAuth-only collection, set `disableLocalStrategy: { enableFields: true }`. Identity and session fields remain, FrogBot authenticates the sign-in session cookie itself, and password login, forgot and reset password, unlock, and first-user registration are refused.
+
+  ```ts
+  export const Users: CollectionConfig = {
+    slug: 'users',
+    auth: {
+      signIn: [google],
+      disableLocalStrategy: { enableFields: true }
+    },
+    fields: []
+  }
+  ```
+
 - `auth.strategies` authenticates later requests. `auth.signIn` configures interactive login methods.
 
 ## Share an app with Gmail connections

@@ -1,0 +1,5 @@
+@layer frogbot {
+  .fb-create-first-user__sign-in {
+    margin-top: var(--spacer-5);
+  }
+}

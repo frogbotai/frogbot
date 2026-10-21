@@ -243,7 +243,7 @@ async function browserInputs(root, packages) {
   const projects = [];
 
   for (const [index, project] of (config.projects ?? []).entries()) {
-    const server = project.dependencies?.[0]?.replace(/-setup$/, '');
+    const server = project.dependencies?.[0]?.replace(/-setup$/, '') ?? project.name;
     const cwd = servers.find(({ name }) => name === server)?.cwd;
 
     if (!cwd) continue;
