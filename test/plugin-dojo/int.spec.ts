@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { createServer, type Server } from 'node:http';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,8 +12,19 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { loadConfig } from 'frogbot/internal';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from 'vitest';
 
+import { generateImportMap } from '../../packages/frogbot/src/bin/generateImportMap/index.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
@@ -359,5 +372,26 @@ describe('dojo() on a template app', () => {
         ({ authorization }) => authorization === `Bearer ${dojoEnv.DOJO_AI_API_KEY}`,
       ),
     ).toBe(true);
+  });
+
+  it('puts the badge in the generated import map', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'frogbot-dojo-importmap-'));
+
+    onTestFinished(() => rm(dir, { recursive: true, force: true }));
+
+    const { config } = booted.payload;
+
+    await generateImportMap({
+      ...config,
+      admin: {
+        ...config.admin,
+        importMap: { baseDir: dir, importMapFile: path.join(dir, 'importMap.js') },
+      },
+    });
+
+    const output = await readFile(path.join(dir, 'importMap.js'), 'utf8');
+
+    expect(output).toContain("from '@frogbotai/plugin-dojo/client'");
+    expect(output).toContain("'@frogbotai/plugin-dojo/client#DojoBadge'");
   });
 });

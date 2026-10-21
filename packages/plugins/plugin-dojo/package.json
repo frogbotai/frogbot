@@ -18,13 +18,21 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
     }
   },
   "files": [
     "dist"
   ],
+  "sideEffects": [
+    "*.css"
+  ],
   "scripts": {
-    "build": "node ../../../scripts/build-package.mjs",
+    "build": "node ../../../scripts/build-package.mjs --assets css",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },
@@ -37,12 +45,18 @@
   "peerDependencies": {
     "@frogbotai/gateway": "workspace:*",
     "frogbot": "workspace:*",
-    "payload": "catalog:"
+    "payload": "catalog:",
+    "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
+    "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
   },
   "devDependencies": {
     "@frogbotai/gateway": "workspace:*",
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "19.2.14",
     "frogbot": "workspace:*",
     "payload": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "typescript": "catalog:"
   },
   "publishConfig": {

@@ -18,6 +18,7 @@ const allProjects = [
   'question-firefox',
   'question-webkit',
   'plugin-seo',
+  'dojo',
 ];
 
 const dependencyURLs: Record<string, string[]> = {
