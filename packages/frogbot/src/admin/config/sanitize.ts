@@ -94,6 +94,10 @@ export function wrapDashboard(
   };
 }
 
+export const CREATE_FIRST_USER_VIEW: AdminViewConfig = {
+  Component: '@frogbotai/ui/admin/rsc#CreateFirstUserView',
+};
+
 export const SETTINGS_VIEW: AdminViewConfig = {
   Component: '@frogbotai/ui/admin/rsc#SettingsView',
   exact: false,

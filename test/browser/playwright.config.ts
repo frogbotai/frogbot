@@ -6,9 +6,10 @@ import { defineConfig, devices } from '@playwright/test';
 
 import { testPort, testPortOffset } from '../__helpers/shared/testPorts';
 import type { QuestionOptions } from './__helpers/questionTest';
-import type { SignInOptions } from './__helpers/signIn';
+import { signedOut as signedOutState, type SignInOptions } from './__helpers/signIn';
 import { stopServersOnSignal } from './__helpers/stopServersOnSignal';
 import { dojoBuildEnv, dojoEnv } from './fixtures/dojo/shared';
+import { signInOnly } from './fixtures/sign-in/shared';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(dirname, '..', '..');
@@ -98,6 +99,11 @@ const fixtures = {
     cli: 'next',
     env: { FROGBOT_SECRET: 'browser-dojo-secret', ...dojoBuildEnv },
   },
+  'sign-in': {
+    dir: path.join(dirname, 'fixtures', 'sign-in'),
+    cli: 'next',
+    env: { FROGBOT_SECRET: 'browser-sign-in-secret' },
+  },
 } satisfies Record<string, Fixture>;
 
 type Server = {
@@ -177,6 +183,22 @@ const servers: Record<string, Server> = {
     readyPath: '/admin',
   },
   dojo: { fixture: 'dojo', port: testPort(3138), database: 'frogbot.db', env: dojoEnv },
+  'first-user-blank': {
+    fixture: 'blank',
+    port: testPort(3139),
+    database: 'frogbot.first-user.browser.db',
+  },
+  'sign-in-passwords': {
+    fixture: 'sign-in',
+    port: testPort(3140),
+    database: 'frogbot.passwords.db',
+  },
+  'sign-in-only': {
+    fixture: 'sign-in',
+    port: testPort(3141),
+    database: 'frogbot.sign-in-only.db',
+    env: { SIGN_IN_SETUP: signInOnly },
+  },
 };
 
 const serverFor = (project: string) => (dev && servers[project].devServer) || project;
@@ -204,10 +226,14 @@ const project = ({
   name,
   browser = 'chromium',
   testMatch,
+  grep,
+  signedOut = false,
 }: {
   name: string;
   browser?: keyof typeof browsers;
   testMatch: string | string[];
+  grep?: RegExp;
+  signedOut?: boolean;
 }) => {
   const server = serverFor(name);
   const { port, modelPort } = servers[server];
@@ -215,12 +241,14 @@ const project = ({
   return {
     name,
     testMatch,
-    dependencies: [`${server}-setup`],
+    ...(grep ? { grep } : {}),
+    ...(signedOut ? { retries: 0 } : {}),
+    dependencies: signedOut ? [] : [`${server}-setup`],
     workers: 1,
     use: {
       ...browsers[browser],
       baseURL: `http://localhost:${port}`,
-      storageState: authFile(server),
+      storageState: signedOut ? signedOutState : authFile(server),
       ...(modelPort ? { modelPort } : {}),
     },
   };
@@ -322,6 +350,13 @@ const testProjects = [
   }),
   project({ name: 'plugin-seo', testMatch: 'seoFields.browser.spec.ts' }),
   project({ name: 'dojo', testMatch: 'dojoBadge.browser.spec.ts' }),
+  ...[
+    { name: 'first-user-blank', grep: /@blank/ },
+    { name: 'sign-in-passwords', grep: /@passwords/ },
+    { name: 'sign-in-only', grep: /@sign-in-only/ },
+  ].map((options) =>
+    project({ ...options, testMatch: 'firstUser.browser.spec.ts', signedOut: true }),
+  ),
 ];
 
 const withDependencies = (names: Set<string>): Set<string> => {
@@ -438,9 +473,13 @@ export default defineConfig<{ signInOptions: SignInOptions; authFile: string }, 
     video: 'off',
   },
   projects: [
-    ...[...new Set(testProjects.map(({ name }) => serverFor(name)))].map((server) =>
-      setupProject(server, signInOptions[server]),
-    ),
+    ...[
+      ...new Set(
+        testProjects
+          .filter(({ dependencies }) => dependencies.length)
+          .map(({ name }) => serverFor(name)),
+      ),
+    ].map((server) => setupProject(server, signInOptions[server])),
     ...testProjects,
   ],
   webServer: [

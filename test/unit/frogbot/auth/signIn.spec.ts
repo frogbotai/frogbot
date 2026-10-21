@@ -1,8 +1,13 @@
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { ValidationError } from 'payload';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { resolveSignInIdentity } from '../../../../packages/frogbot/src/auth/signIn/identity.js';
+import { generateImportMap } from '../../../../packages/frogbot/src/bin/generateImportMap/index.js';
 import { sanitize } from '../../../../packages/frogbot/src/config/sanitize.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
@@ -141,6 +146,69 @@ describe('collection sign-in configuration', () => {
         expect.objectContaining({ name: 'sessions', type: 'array' }),
       ]),
     );
+  });
+});
+
+const CREATE_FIRST_USER_VIEW = '@frogbotai/ui/admin/rsc#CreateFirstUserView';
+const dirs: string[] = [];
+
+afterAll(async () => {
+  await Promise.all(dirs.map((dir) => rm(dir, { recursive: true, force: true })));
+});
+
+describe('create-first-user view registration', () => {
+  it('registers the sign-in create-first-user view without adding metadata', async () => {
+    const built = await sanitize(config())._internal.payloadConfig;
+
+    expect(built.admin.components.views?.createFirstUser).toEqual({
+      Component: CREATE_FIRST_USER_VIEW,
+    });
+  });
+
+  it('keeps an app-defined create-first-user view', async () => {
+    const built = await sanitize({
+      ...config(),
+      admin: { components: { views: { createFirstUser: { Component: 'app#FirstUser' } } } },
+    })._internal.payloadConfig;
+
+    expect(built.admin.components.views?.createFirstUser).toMatchObject({
+      Component: 'app#FirstUser',
+    });
+  });
+
+  it.each([
+    ['no sign-in methods', config(true)],
+    [
+      'sign-in methods on another collection',
+      {
+        ...config(true),
+        admin: { user: 'users' },
+        collections: [
+          ...config(true).collections,
+          { slug: 'customers', auth: { signIn: [method] }, fields: [] },
+        ],
+      },
+    ],
+  ])('adds no create-first-user view with %s', async (_, input) => {
+    const built = await sanitize(input)._internal.payloadConfig;
+
+    expect(built.admin.components.views).not.toHaveProperty('createFirstUser');
+  });
+
+  it.each([
+    ['without', true, 0],
+    ['with', { signIn: [method] }, 1],
+  ])('maps the create-first-user view %s sign-in methods', async (_, auth, count) => {
+    const dir = await mkdtemp(join(tmpdir(), 'frogbot-sign-in-importmap-'));
+    dirs.push(dir);
+    const payloadConfig = await sanitize(config(auth))._internal.payloadConfig;
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    await generateImportMap(payloadConfig);
+    const output = await readFile(join(dir, 'importMap.js'), 'utf8');
+
+    expect(output.split(`'${CREATE_FIRST_USER_VIEW}'`).length - 1).toBe(count);
   });
 });
 

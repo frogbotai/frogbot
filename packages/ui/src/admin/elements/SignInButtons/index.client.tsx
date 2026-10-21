@@ -56,13 +56,13 @@ export function SignInButtonsClient({
         return (
           <Button
             buttonStyle="secondary"
-            el="link"
+            el="anchor"
             icon={Icon ? <Icon aria-hidden="true" size={20} /> : undefined}
             iconPosition="left"
             key={method.slug}
             round
             size="large"
-            to={`${authorizePath.replace(/\/+$/, '')}/${encodeURIComponent(method.slug)}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`}
+            url={`${authorizePath.replace(/\/+$/, '')}/${encodeURIComponent(method.slug)}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`}
           >
             Continue with {method.label}
           </Button>

@@ -18,6 +18,7 @@
     "browser/fixtures/dojo",
     "browser/fixtures/live-preview",
     "browser/fixtures/question",
+    "browser/fixtures/sign-in",
     "chat",
     "collections-rest",
     "config",

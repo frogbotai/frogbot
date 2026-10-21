@@ -19,6 +19,9 @@ const allProjects = [
   'question-webkit',
   'plugin-seo',
   'dojo',
+  'first-user-blank',
+  'sign-in-passwords',
+  'sign-in-only',
 ];
 
 const dependencyURLs: Record<string, string[]> = {
@@ -207,6 +210,26 @@ describe('browser project servers', () => {
         .slice(0, 2),
     ).toEqual(['slot', 'build']);
     expect(builtFixtures(config)).toEqual(['question', 'plugin-wrappers']);
+  });
+
+  it('runs empty-database projects signed out, with no setup project and no retries', async () => {
+    process.argv = [process.execPath, 'playwright', 'test'];
+    vi.resetModules();
+
+    const { default: config } = await import('../../browser/playwright.config.js');
+    const names = ['first-user-blank', 'sign-in-passwords', 'sign-in-only'];
+    const projects = config.projects?.filter(({ name }) => names.includes(name!)) ?? [];
+
+    expect(projects.map(({ name }) => name)).toEqual(names);
+    expect(
+      config.projects?.filter(({ name }) => names.some((entry) => name === `${entry}-setup`)),
+    ).toEqual([]);
+
+    for (const project of projects) {
+      expect(project.dependencies).toEqual([]);
+      expect(project.retries).toBe(0);
+      expect(project.use?.storageState).toEqual({ cookies: [], origins: [] });
+    }
   });
 
   it('runs every project in series on dev servers shared by browser variants with FROGBOT_BROWSER_DEV=1', async () => {

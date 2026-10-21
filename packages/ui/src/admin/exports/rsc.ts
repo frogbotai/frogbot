@@ -14,6 +14,7 @@ export { ChatView } from '../views/Chat/index.js';
 export { CollectionViewShell } from '../views/CollectionViewShell.js';
 export { CollectionViewSwitcher } from '../views/CollectionViewSwitcher.js';
 export { ConnectionsView } from '../views/Connections/index.js';
+export { CreateFirstUserView } from '../views/CreateFirstUser/index.js';
 export { CustomCollectionView } from '../views/CustomCollectionView.js';
 export { SettingsView } from '../views/Settings/index.js';
 export { resolveSettingsTitle, type SettingsEntry } from '../views/Settings/resolveSection.js';

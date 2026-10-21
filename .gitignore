@@ -56,6 +56,7 @@ pnpm-publish-summary.json
 test/browser/test-results
 test/browser/.auth
 templates/blank/frogbot.browser.db*
+templates/blank/frogbot.first-user.browser.db*
 test/e2e/fixtures/rich-text/rich-text.browser.db*
 test/e2e/fixtures/plugin-wrappers/plugin-wrappers.browser.db*
 test/browser/fixtures/**/*.db*
