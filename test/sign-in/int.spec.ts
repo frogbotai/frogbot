@@ -71,6 +71,19 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       .find((value) => value.startsWith('identity-token='))
       ?.split(';')[0];
 
+  const continuedTo = async (response: Response) => {
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('content-type')).toBe('text/html; charset=utf-8');
+    expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+
+    const url = /<meta http-equiv="refresh" content="0;url=([^"]*)">/.exec(
+      await response.text(),
+    )?.[1];
+
+    return url?.replaceAll('&#38;', '&');
+  };
+
   const rawUser = async (email: string, collection = 'users') =>
     (
       await frogbot.db.find<StoredUser>({
@@ -390,7 +403,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       lease.mockRestore();
       const response = await callback(await authorize({ code: email }));
 
-      expect(response.status).toBe(302);
+      expect(response.status).toBe(200);
       expect((await rawUser(email)).sessions).toHaveLength(1);
     },
     10_000,
@@ -399,7 +412,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
   it('authorizes anonymously, creates a verified user, runs login hooks and sets a usable collection session', async () => {
     const flow = await authorize({
       code: ' Person@Example.com ',
-      returnTo: '/control/settings?tab=profile',
+      returnTo: '/control/settings?tab=profile&view=list',
     });
 
     expect(flow.callback.pathname).toBe('/rest/v1/users/sign-in/work/callback');
@@ -407,8 +420,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
 
     const response = await callback(flow);
 
-    expect(response.status).toBe(302);
-    expect(response.headers.get('location')).toBe('/control/settings?tab=profile');
+    expect(await continuedTo(response)).toBe('/control/settings?tab=profile&view=list');
     expect(response.headers.get('cache-control')).toBe('no-store');
 
     const state = flow.url.searchParams.get('state')!;
@@ -451,7 +463,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
     const before = await rawUser('person@example.com');
     const response = await callback(await authorize());
 
-    expect(response.status).toBe(302);
+    expect(response.status).toBe(200);
 
     const after = await rawUser('person@example.com');
 
@@ -466,8 +478,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
   it('reuses the same instance across collections without crossing identity or redirect scope', async () => {
     const response = await callback(await authorize({ collection: 'customers' }));
 
-    expect(response.status).toBe(302);
-    expect(response.headers.get('location')).toBe('/');
+    expect(await continuedTo(response)).toBe('/');
     expect(hooks).toEqual(['customers:before', 'customers:after']);
 
     const me = await request('/rest/v1/customers/me', {
@@ -482,12 +493,24 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
     expect((await rawUser('person@example.com', 'customers')).sessions).toHaveLength(1);
   });
 
+  it('returns through a same-origin page, so the load it navigates to sees the session', async () => {
+    const response = await callback(await authorize({ returnTo: '/rest/v1/users/me' }));
+    const next = await continuedTo(response);
+    const cookie = sessionCookie(response)!;
+    const load = async (site: string) =>
+      (await (await request(next!, { headers: { cookie, 'sec-fetch-site': site } })).json()).user;
+
+    expect(next).toBe('/rest/v1/users/me');
+    expect(await load('cross-site')).toBeNull();
+    expect(await load('same-origin')).toMatchObject({ email: 'person@example.com' });
+  });
+
   it('sets a usable session on a collection with the local strategy off, and keeps password operations off', async () => {
     const response = await callback(
       await authorize({ collection: 'oauth-only', code: 'oauth-only@example.com' }),
     );
 
-    expect(response.status).toBe(302);
+    expect(response.status).toBe(200);
 
     expect((await rawUser('oauth-only@example.com', 'oauth-only')).hash).toBeFalsy();
 
@@ -614,7 +637,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
   it('rejects replay after a successful callback', async () => {
     const flow = await authorize({ code: 'replay@example.com' });
 
-    expect((await callback(flow)).status).toBe(302);
+    expect((await callback(flow)).status).toBe(200);
     expect((await callback(flow)).status).toBe(400);
     expect(exchanges).toHaveLength(1);
   });
@@ -751,7 +774,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
     findSpy.mockRestore();
     getSpy.mockRestore();
 
-    expect(responses.map(({ status }) => status)).toEqual([302, 302]);
+    expect(responses.map(({ status }) => status)).toEqual([200, 200]);
     expect(
       beforeChange.mock.calls.filter(
         ([{ data, operation }]) => operation === 'create' && data.email === email,

@@ -53,6 +53,21 @@ async function routeURLs({
   };
 }
 
+const escapeHTML = (value: string) =>
+  value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
+
+function continueTo(returnTo: string, headers: Headers): Response {
+  const url = escapeHTML(returnTo);
+
+  headers.set('content-type', 'text/html; charset=utf-8');
+  headers.set('referrer-policy', 'no-referrer');
+
+  return new Response(
+    `<!doctype html><meta http-equiv="refresh" content="0;url=${url}"><a href="${url}">Continue</a>`,
+    { headers },
+  );
+}
+
 export function buildSignInEndpoints({
   collectionSlug,
   methods,
@@ -171,9 +186,7 @@ export function buildSignInEndpoints({
             }),
           );
 
-          headers.set('location', intent.returnTo);
-
-          return new Response(null, { status: 302, headers });
+          return continueTo(intent.returnTo, headers);
         } catch (error) {
           return failure(error instanceof OAuthError ? 400 : 500, headers);
         }
