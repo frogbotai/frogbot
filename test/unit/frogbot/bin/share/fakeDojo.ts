@@ -79,6 +79,14 @@ export type FakeDojo = {
   revokeStatus: number;
   /** 300's `data-uploads` and the app's bucket, which takes the signed PUTs at `/bucket/<key>`. */
   data: FakeData;
+  /** The caller's `level` in `GET /api/apps/:app`; left out of the reply when unset, as an older Dojo does. */
+  level?: 'editor' | 'owner';
+  /** The live version's archive, served by `GET /api/apps/:app/source`; 404 when unset. */
+  source?: Buffer;
+  /** The reply to `GET /api/apps/:app`, instead of the app. */
+  appReply?: { status: number; message: string };
+  /** The reply to `GET /api/apps/:app/source`, instead of the archive. */
+  sourceReply?: { status: number; message: string };
   /** Runs after each request is answered, as `METHOD /path`. */
   afterRequest?: (route: string) => void;
   paths: () => string[];
@@ -349,17 +357,52 @@ export async function startFakeDojo(): Promise<FakeDojo> {
       });
     }
 
-    const app = /^\/api\/apps\/(\d+)(?:\/(deployments|keys))?$/.exec(url.pathname);
-    const appId = Number(app?.[1]);
+    const app = /^\/api\/apps\/([^/]+)(?:\/(deployments|keys|source))?$/.exec(url.pathname);
+    const appRef = decodeURIComponent(app?.[1] ?? '');
+    const bySlug = /^\d+$/.test(appRef)
+      ? undefined
+      : dojo.projects.find((project) => project.slug === appRef);
+
+    if (app && !/^\d+$/.test(appRef) && !bySlug) return payloadError(res, 404, 'No such app.');
+
+    const appId = bySlug?.id ?? Number(appRef);
     const owned =
       !dojo.forbidden.has(appId) && dojo.projects.some((project) => project.id === appId);
+
+    if (req.method === 'GET' && app && !app[2] && dojo.appReply) {
+      return payloadError(res, dojo.appReply.status, dojo.appReply.message);
+    }
 
     if (app && !owned) return payloadError(res, 403, 'Only the app’s owners can publish it.');
 
     if (req.method === 'GET' && app && !app[2]) {
       const project = dojo.projects.find(({ id }) => id === appId);
 
-      return json(res, 200, { id: appId, slug: project?.slug, started: dojo.data.started });
+      return json(res, 200, {
+        id: appId,
+        slug: project?.slug,
+        started: dojo.data.started,
+        ...(dojo.level ? { level: dojo.level } : {}),
+      });
+    }
+
+    if (req.method === 'GET' && app?.[2] === 'source') {
+      if (dojo.sourceReply) {
+        return payloadError(res, dojo.sourceReply.status, dojo.sourceReply.message);
+      }
+
+      if (!dojo.source) return payloadError(res, 404, 'This app has nothing live to pull yet.');
+
+      res.writeHead(200, { 'content-type': 'application/gzip' });
+      res.end(dojo.source);
+
+      return;
+    }
+
+    const editor = dojo.level === 'editor';
+
+    if (app?.[2] === 'keys' && editor) {
+      return payloadError(res, 403, "Only this app's owners can see or change its keys.");
     }
 
     if (req.method === 'GET' && app?.[2] === 'keys') {
@@ -402,6 +445,11 @@ export async function startFakeDojo(): Promise<FakeDojo> {
         if (sealed.keyId !== 'seal-1') return payloadError(res, 400, 'Unknown sealing key.');
 
         const values = openKeys(sealed, dojo.sealingPrivateKey);
+
+        if (editor && Object.keys(values).some((key) => key !== 'FROGBOT_SECRET')) {
+          return payloadError(res, 403, "Only this app's owners can change its keys.");
+        }
+
         const updateKeys = sealed.updateKeys === true;
         const stored = { ...dojo.keys.get(appId) };
 
