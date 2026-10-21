@@ -21,7 +21,7 @@ Authorization: Bearer fb_...
 X-API-Key: fb_...
 ```
 
-Plaintext keys are returned only when created. The collection stores SHA-256 hashes and supports multiple independently revoked keys per user.
+Plaintext keys are returned only when created. The collection stores SHA-256 hashes and supports multiple independently revoked keys per user. Minting and rotating need a signed-in session: a request authenticated by an API key gets `403`, so a leaked key can't leave new keys behind. A key can still list, rename, and revoke keys.
 
 A key has no budget or model limits of its own; requests use the owner's AI policy. With AI configured, usage rows include an optional `apiKey` relationship to the authenticating key. Cookie-authenticated requests omit it, and the relationship follows `collectionSlug`.
 

@@ -62,6 +62,26 @@ describe('API key services', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
+  it('refuses to mint or rotate for an API-key request', async () => {
+    const create = vi.fn();
+    const find = vi.fn();
+    const update = vi.fn();
+    const req = request({
+      user: { id: 'user-1', _strategy: 'api-key', apiKeyId: 'key-1' },
+      frogbot: { create, find, update },
+    });
+
+    await expect(
+      mintApiKey({ req, collectionSlug: 'credentials', tokenPrefix: 'fb', name: 'Persist' }),
+    ).rejects.toEqual(new ApiKeyServiceError('session_required'));
+    await expect(
+      rotateApiKey({ req, collectionSlug: 'credentials', id: 'key-1', tokenPrefix: 'fb' }),
+    ).rejects.toEqual(new ApiKeyServiceError('session_required'));
+    expect(create).not.toHaveBeenCalled();
+    expect(find).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
+  });
+
   it('ignores forged owner input and stamps the authenticated user', async () => {
     const create = vi.fn().mockResolvedValue({ id: 'key-1' });
     const req = request({ frogbot: { create } });

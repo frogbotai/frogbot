@@ -8,7 +8,13 @@ import {
   moneyField,
 } from 'frogbot';
 
-import { ApiKeyServiceError, mintApiKey, revokeApiKey, rotateApiKey } from './server/services.js';
+import {
+  ApiKeyServiceError,
+  isApiKeyRequest,
+  mintApiKey,
+  revokeApiKey,
+  rotateApiKey,
+} from './server/services.js';
 
 const MANAGER_COMPONENT = '@frogbotai/plugin-api-keys/client#ApiKeysManager';
 
@@ -21,6 +27,12 @@ type CollectionOptions = {
   collection?: Partial<CollectionConfig>;
   existing?: CollectionConfig;
 };
+
+const sessionRequired = () =>
+  Response.json(
+    { error: 'An API key cannot mint or rotate API keys. Sign in to manage keys.' },
+    { status: 403 },
+  );
 
 const ownKeys: Access = ({ req }) => (req.user ? { owner: { equals: req.user.id } } : false);
 
@@ -84,6 +96,7 @@ function createEndpoints({
       path: '/mint',
       handler: async (req) => {
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        if (isApiKeyRequest(req)) return sessionRequired();
         const body = ((await req.json?.().catch(() => null)) ?? null) as { name?: unknown } | null;
         const name = typeof body?.name === 'string' ? body.name.trim() : '';
         if (!name) return Response.json({ error: 'Name is required' }, { status: 400 });
@@ -137,6 +150,7 @@ function createEndpoints({
       path: '/:id/rotate',
       handler: async (req) => {
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        if (isApiKeyRequest(req)) return sessionRequired();
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
           return Response.json({ error: 'API key not found' }, { status: 404 });

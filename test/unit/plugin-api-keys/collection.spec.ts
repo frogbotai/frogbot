@@ -120,6 +120,37 @@ describe('API keys collection', () => {
     }
   });
 
+  it('refuses mint and rotate for API-key requests without writing', async () => {
+    const collection = await getCollection();
+    const create = vi.fn();
+    const update = vi.fn();
+    const req = {
+      user: { id: 'user-1', _strategy: 'api-key', apiKeyId: 'key-1' },
+      routeParams: { id: 'key-1' },
+      json: () => Promise.resolve({ name: 'Persist' }),
+      frogbot: {
+        find: vi
+          .fn()
+          .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
+        create,
+        update,
+      },
+    } as unknown as FrogBotRequest;
+
+    for (const path of ['/mint', '/:id/rotate']) {
+      const endpoint = collection.endpoints!.find((item) => item.path === path)!;
+      const response = await endpoint.handler(req);
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        error: 'An API key cannot mint or rotate API keys. Sign in to manage keys.',
+      });
+    }
+
+    expect(create).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
+  });
+
   it('shows attributed usage cost in list and document views', async () => {
     const config = makeConfig();
     config.ai = { providers: { openai: { apiKey: 'test' } } };

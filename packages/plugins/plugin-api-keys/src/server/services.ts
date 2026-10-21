@@ -1,5 +1,6 @@
 import type { FrogBotRequest } from 'frogbot';
 
+import { apiKeyStrategyName } from '../strategy.js';
 import { createApiKeyToken, getApiKeyPrefix, hashApiKeyToken } from './token.js';
 
 export type MintApiKeyOptions = {
@@ -17,9 +18,21 @@ export type RevokeApiKeyOptions = {
 };
 
 export class ApiKeyServiceError extends Error {
-  constructor(public readonly code: 'authentication_required' | 'not_found') {
+  constructor(public readonly code: 'authentication_required' | 'not_found' | 'session_required') {
     super(code);
   }
+}
+
+export function isApiKeyRequest(req: FrogBotRequest): boolean {
+  return (req.user as { _strategy?: unknown } | null | undefined)?._strategy === apiKeyStrategyName;
+}
+
+function requireSessionOwner(req: FrogBotRequest) {
+  const owner = req.user?.id;
+  if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
+  if (isApiKeyRequest(req)) throw new ApiKeyServiceError('session_required');
+
+  return owner;
 }
 
 type MintForOwnerOptions = MintApiKeyOptions & { owner: string | number };
@@ -44,8 +57,7 @@ async function mintForOwner({
 }
 
 export async function mintApiKey(options: MintApiKeyOptions) {
-  const owner = options.req.user?.id;
-  if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
+  const owner = requireSessionOwner(options.req);
 
   return mintForOwner({
     req: options.req,
@@ -65,6 +77,7 @@ export async function rotateApiKey({
   tokenPrefix,
   anyOwner,
 }: RotateApiKeyOptions) {
+  requireSessionOwner(req);
   const revoked = await revokeApiKey({ req, collectionSlug, id, anyOwner });
 
   return mintForOwner({
