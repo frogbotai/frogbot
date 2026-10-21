@@ -59,7 +59,7 @@ https://app.example.com/api/users/sign-in/google/callback
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/:collection/sign-in/:piece` | Start sign-in without requiring an existing session. |
-| `GET` | `/api/:collection/sign-in/:piece/callback` | Verify the OAuth response, resolve the user, and issue a session cookie. |
+| `GET` | `/api/:collection/sign-in/:piece/callback` | Verify the OAuth response, resolve the user, issue a session cookie, and continue to `returnTo`. |
 
 For sign-in, `:piece` is the configured instance's `slug`, which defaults to the piece slug. Unknown methods return `404`. Callback origins use `serverURL` when configured, otherwise the request origin. Replace `/api` with your configured `routes.api` in requests and registered redirect URIs.
 
@@ -85,7 +85,7 @@ For piece authors, `oauth.account({ tokens, client, req })` returns `{ id, label
 
 User creation runs collection validation and hooks. Give required custom fields defaults or populate them in a hook. If creation fails, sign-in fails. Trashed users are excluded from identity lookup; duplicate or incompatible email identities are rejected.
 
-Session issuance respects account lockout, collection session and cookie settings, and runs `beforeLogin` and `afterLogin`. The callback redirects with the session cookie rather than returning provider tokens.
+Session issuance respects account lockout, collection session and cookie settings, and runs `beforeLogin` and `afterLogin`. The callback sets the session cookie and never returns provider tokens. It answers with a small page that continues to `returnTo` (a `<meta http-equiv="refresh">`) rather than a redirect: browsers mark the callback's load cross-site because it comes from the provider, and with `serverURL` set the session cookie doesn't count on a cross-site load, so a redirect's target would not see the user until a reload. The page's own navigation is same-origin, so `returnTo` sees the user on its first load.
 
 For collections with sign-in methods, FrogBot coordinates OAuth and password login, logout, refresh, and password reset through the end of each operation. Operations serialize per collection to prevent concurrent requests from restoring revoked sessions. Use FrogBot's public API and normal auth endpoints; direct database operations bypass this coordination.
 
