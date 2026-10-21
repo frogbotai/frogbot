@@ -15,6 +15,7 @@
     "auth-strategies",
     "browser/fixtures/chat-assets",
     "browser/fixtures/custom-field",
+    "browser/fixtures/dojo",
     "browser/fixtures/live-preview",
     "browser/fixtures/question",
     "chat",

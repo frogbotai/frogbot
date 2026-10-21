@@ -8,6 +8,7 @@ import { testPort, testPortOffset } from '../__helpers/shared/testPorts';
 import type { QuestionOptions } from './__helpers/questionTest';
 import type { SignInOptions } from './__helpers/signIn';
 import { stopServersOnSignal } from './__helpers/stopServersOnSignal';
+import { dojoBuildEnv, dojoEnv } from './fixtures/dojo/shared';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(dirname, '..', '..');
@@ -92,6 +93,11 @@ const fixtures = {
     cli: 'frogbot',
     env: { FROGBOT_SECRET: 'browser-test-secret', NODE_PATH: '' },
   },
+  dojo: {
+    dir: path.join(dirname, 'fixtures', 'dojo'),
+    cli: 'next',
+    env: { FROGBOT_SECRET: 'browser-dojo-secret', ...dojoBuildEnv },
+  },
 } satisfies Record<string, Fixture>;
 
 type Server = {
@@ -170,6 +176,7 @@ const servers: Record<string, Server> = {
     database: 'plugin-wrappers.browser.db',
     readyPath: '/admin',
   },
+  dojo: { fixture: 'dojo', port: testPort(3138), database: 'frogbot.db', env: dojoEnv },
 };
 
 const serverFor = (project: string) => (dev && servers[project].devServer) || project;
@@ -314,6 +321,7 @@ const testProjects = [
     testMatch: ['accountMenu.browser.spec.ts', 'livePreview.browser.spec.ts'],
   }),
   project({ name: 'plugin-seo', testMatch: 'seoFields.browser.spec.ts' }),
+  project({ name: 'dojo', testMatch: 'dojoBadge.browser.spec.ts' }),
 ];
 
 const withDependencies = (names: Set<string>): Set<string> => {

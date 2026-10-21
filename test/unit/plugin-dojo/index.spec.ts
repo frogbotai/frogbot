@@ -96,21 +96,29 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
+const badgeDependency = {
+  '@frogbotai/plugin-dojo/client#DojoBadge': {
+    path: '@frogbotai/plugin-dojo/client#DojoBadge',
+    type: 'component',
+  },
+};
+
 describe('dojo() outside Dojo', () => {
-  it('returns the config unchanged when DOJO is unset', () => {
+  it('only lists the badge for the import map when DOJO is unset', () => {
     vi.stubEnv('DOJO', undefined);
 
     const config = template({ collections: [Users, Files, Media] });
 
-    expect(apply(config)).toEqual(template({ collections: [Users, Files, Media] }));
+    expect(apply(config)).toEqual({
+      ...template({ collections: [Users, Files, Media] }),
+      admin: { dependencies: badgeDependency },
+    });
   });
 
-  it('returns the config unchanged when DOJO is not 1', () => {
+  it('only lists the badge for the import map when DOJO is not 1', () => {
     vi.stubEnv('DOJO', 'true');
 
-    const config = template();
-
-    expect(apply(config)).toBe(config);
+    expect(apply(template())).toEqual({ ...template(), admin: { dependencies: badgeDependency } });
   });
 
   it.each(Object.keys(ENV))('names %s when it is missing on Dojo', (name) => {
@@ -326,6 +334,59 @@ describe('dojo() jobs', () => {
 
     await expect(run(config, request(undefined, { collection: 'users' }))).resolves.toBe(false);
     await expect(run(config, request('Bearer jobs-secret'))).resolves.toBe(true);
+  });
+});
+
+describe('dojo() badge', () => {
+  const badge = '@frogbotai/plugin-dojo/client#DojoBadge';
+
+  const own = './components/Theme#Theme';
+
+  const providers = (config: FrogBotConfig) => config.admin?.components?.providers;
+
+  it("adds the badge after the app's own providers", () => {
+    expect(providers(apply(template({ admin: { components: { providers: [own] } } })))).toEqual([
+      own,
+      badge,
+    ]);
+  });
+
+  it('adds the badge to an app with no admin config', () => {
+    expect(providers(apply(template()))).toEqual([badge]);
+  });
+
+  it('lists the badge for the import map, but adds no provider, without DOJO=1', () => {
+    vi.stubEnv('DOJO', undefined);
+
+    const applied = apply(template({ admin: { components: { providers: [own] } } }));
+
+    expect(providers(applied)).toEqual([own]);
+    expect((applied.admin as { dependencies?: unknown }).dependencies).toEqual(badgeDependency);
+  });
+
+  it('lists the badge for the import map too on Dojo', () => {
+    expect((apply(template()).admin as { dependencies?: unknown }).dependencies).toEqual(
+      badgeDependency,
+    );
+  });
+
+  it("keeps the app's own import map dependencies", () => {
+    vi.stubEnv('DOJO', undefined);
+
+    const theirs = { './Widget#Widget': { path: './Widget#Widget', type: 'component' as const } };
+    const admin = { dependencies: theirs } as FrogBotConfig['admin'];
+
+    expect((apply(template({ admin })).admin as { dependencies?: unknown }).dependencies).toEqual({
+      ...theirs,
+      ...badgeDependency,
+    });
+  });
+
+  it('adds the badge once when dojo() runs twice', () => {
+    const twice = apply(apply(template()));
+
+    expect(providers(twice)).toEqual([badge]);
+    expect((twice.admin as { dependencies?: unknown }).dependencies).toEqual(badgeDependency);
   });
 });
 

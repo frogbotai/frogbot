@@ -1634,12 +1634,24 @@ importers:
       '@frogbotai/gateway':
         specifier: workspace:*
         version: link:../../gateway
+      '@testing-library/react':
+        specifier: ^16.3.0
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
       payload:
         specifier: 'catalog:'
         version: 4.0.0-beta.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
+      react:
+        specifier: 'catalog:'
+        version: 19.3.1
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.3.1(react@19.3.1)
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -13288,7 +13300,6 @@ packages:
       {
         integrity: sha512-T9eIRCs6b0J1SHKYIvD8+KCJMcWZ900iZyxdnSCdqxN12Z1ijzT+jY5nrk72Jw4B0HGzms2NgpryArlJqvc3Lw==,
       }
-    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lie@3.3.0:
