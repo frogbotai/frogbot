@@ -116,3 +116,4 @@ plugins: [
 - Collection reads are scoped to the authenticated owner by default.
 - Keys are revoked individually without affecting the owning user's other authentication methods.
 - Collection reads and writes, revoke, and rotate are owner-scoped until you widen them.
+- Minting and rotating need a signed-in session. A request authenticated by an API key gets `403`, so a leaked key can't create keys that outlive revoking it. A key can still list, rename, and revoke keys, including itself.

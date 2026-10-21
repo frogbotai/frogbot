@@ -177,6 +177,56 @@ describe('API keys plugin integration', () => {
     expect(rejected.status).toBe(403);
   });
 
+  it('refuses minting and rotating with an API key but lets the key revoke itself', async () => {
+    await createOwner();
+    const login = await booted.restClient.post<{ token: string }>(
+      '/api/accounts/login',
+      credentials,
+    );
+
+    const mint = await booted.restClient.post<{ id: number | string; token: string }>(
+      '/api/credentials/mint',
+      { name: 'Stolen' },
+      { headers: { Authorization: `JWT ${login.body.token}` } },
+    );
+
+    expect(mint.status).toBe(201);
+
+    const keyHeaders = { 'x-service-key': mint.body.token };
+    const minted = await booted.restClient.post<{ error: string }>(
+      '/api/credentials/mint',
+      { name: 'Persist' },
+      { headers: keyHeaders },
+    );
+
+    expect(minted.status).toBe(403);
+    expect(minted.body.error).toMatch(/cannot mint or rotate/);
+
+    const rotated = await booted.restClient.post(
+      `/api/credentials/${mint.body.id}/rotate`,
+      undefined,
+      { headers: keyHeaders },
+    );
+
+    expect(rotated.status).toBe(403);
+
+    const keys = await booted.frogbot.find({
+      collection: 'credentials',
+      overrideAccess: true,
+      where: { revokedAt: { exists: false } },
+    });
+
+    expect(keys.docs.map((doc) => doc.id)).toEqual([mint.body.id]);
+
+    const revoked = await booted.restClient.post(
+      `/api/credentials/${mint.body.id}/revoke`,
+      undefined,
+      { headers: keyHeaders },
+    );
+
+    expect(revoked.status).toBe(200);
+  });
+
   it('enforces user model and budget policy and records spend', async () => {
     const owner = await createOwner();
 
