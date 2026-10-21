@@ -231,6 +231,8 @@ The first time, `share` prints `[frogbot] Sign in to Dojo: open this link and co
 
 `share` needs a `pnpm-lock.yaml`, `package-lock.json` or `yarn.lock` (not Bun) and an upload under 100 MB. It writes the app's id to `.frogbot/app.json`, so later shares from the folder update the same app; delete that file only when the user wants a new app. It ends with `[frogbot] Share it: <link>` and then the live URL as the last line: give the user both.
 
+When someone shared an app with the user as an editor on Dojo, `npx frogbot pull <slug>` downloads it into a new `./<slug>` folder with an empty database; then run `pnpm install` and `pnpm dev` there, and `share` from that folder ships a new version of the same app. An editor's share brings no keys and has no `Share it:` line, since only the app's owners manage its keys on Dojo.
+
 | Exit | Meaning                                                                                                      |
 | ---- | ------------------------------------------------------------------------------------------------------------ |
 | `0`  | Live. The last line is the URL.                                                                              |

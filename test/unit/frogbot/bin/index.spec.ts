@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => ({
   ),
   logout: vi.fn(() => Promise.resolve(mocks.calls.push(`logout:${process.env.FROGBOT_TEST_KEY}`))),
   share: vi.fn(() => Promise.resolve(mocks.calls.push(`share:${process.env.FROGBOT_TEST_KEY}`))),
+  pull: vi.fn(() => Promise.resolve(mocks.calls.push(`pull:${process.env.FROGBOT_TEST_KEY}`))),
   loadEnv: vi.fn(() => {
     mocks.calls.push('loadEnv');
 
@@ -79,6 +80,7 @@ vi.mock('../../../../packages/frogbot/src/bin/piecesPort.js', () => ({
 
 vi.mock('../../../../packages/frogbot/src/bin/start.js', () => ({ start: mocks.start }));
 vi.mock('../../../../packages/frogbot/src/bin/share.js', () => ({ share: mocks.share }));
+vi.mock('../../../../packages/frogbot/src/bin/pull.js', () => ({ pull: mocks.pull }));
 vi.mock('../../../../packages/frogbot/src/bin/logout.js', () => ({ logout: mocks.logout }));
 vi.mock('../../../../packages/frogbot/src/bin/run.js', () => ({ runScript: mocks.runScript }));
 
@@ -116,6 +118,7 @@ describe('frogbot bin', () => {
     ['jobs:run', 'jobsRun'],
     ['channels:run', 'channelsRun'],
     ['share', 'share'],
+    ['pull', 'pull'],
     ['logout', 'logout'],
   ])('loads env before dispatching `%s`', async (command, handler) => {
     process.argv = ['node', 'frogbot', command];
@@ -146,7 +149,7 @@ describe('frogbot bin', () => {
 
     expect(mocks.calls).toEqual(['loadEnv']);
     expect(error).toHaveBeenCalledWith(
-      '[frogbot] usage: frogbot <start|dev|run|generate:types|generate:piece-types|pieces:port|generate:importmap|export:training-data|export:captures|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status|share|logout>',
+      '[frogbot] usage: frogbot <start|dev|run|generate:types|generate:piece-types|pieces:port|generate:importmap|export:training-data|export:captures|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status|share|pull|logout>',
     );
   });
 
@@ -180,6 +183,7 @@ describe('frogbot bin', () => {
 
   it.each([
     ['share', ['--no-data', '--workspace', 'colby']],
+    ['pull', ['deals']],
     ['logout', []],
   ] as const)('forwards `%s` arguments unchanged', async (command, args) => {
     process.argv = ['node', 'frogbot', command, ...args];

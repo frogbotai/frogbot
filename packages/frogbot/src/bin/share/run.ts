@@ -40,6 +40,8 @@ type ShareFlags = {
 
 type Workspace = { id: string | number; name: string; slug: string };
 
+type AppInfo = { started: boolean; level: 'editor' | 'owner' };
+
 function parseShareArgs(argv: string[]): ShareFlags {
   let parsed;
 
@@ -113,7 +115,11 @@ async function share(argv: string[], io: ShareIO): Promise<void> {
 
   const config = await io.loadConfig(root);
   const dojo = createDojo(io);
-  const started = link ? await appStarted(dojo, link.appId) : false;
+  const { started, level }: AppInfo = link
+    ? await appInfo(dojo, link.appId)
+    : { started: false, level: 'owner' };
+
+  const editor = level === 'editor';
 
   if (started && flags.data) {
     say(io, '[frogbot] Data comes only with the first share; sharing code only.');
@@ -147,9 +153,15 @@ async function share(argv: string[], io: ShareIO): Promise<void> {
 
     const appId = link?.appId ?? (await createApp({ dojo, io, flags, root }));
 
-    const keys = link
-      ? await laterKeys({ dojo, io, appId, keys: localKeys, updateKeys: flags.updateKeys })
-      : firstKeys;
+    if (editor && (localKeys.length > 0 || flags.updateKeys)) {
+      say(io, "[frogbot] Keys left out: only the app's owners manage its keys on Dojo.");
+    }
+
+    const keys = editor
+      ? []
+      : link
+        ? await laterKeys({ dojo, io, appId, keys: localKeys, updateKeys: flags.updateKeys })
+        : firstKeys;
 
     const secret = fileEnv.FROGBOT_SECRET ?? io.env.FROGBOT_SECRET;
 
@@ -174,7 +186,7 @@ async function share(argv: string[], io: ShareIO): Promise<void> {
       appId,
       archive,
       keys: data && secret ? [...keys, { name: 'FROGBOT_SECRET', value: secret }] : keys,
-      updateKeys: flags.updateKeys,
+      updateKeys: !editor && flags.updateKeys,
       data: started ? undefined : Boolean(data),
     });
 
@@ -190,7 +202,9 @@ async function share(argv: string[], io: ShareIO): Promise<void> {
       );
     }
 
-    say(io, `[frogbot] Share it: ${dojo.url}/admin/collections/projects/${appId}?share=1`);
+    if (!editor) {
+      say(io, `[frogbot] Share it: ${dojo.url}/admin/collections/projects/${appId}?share=1`);
+    }
 
     if (build.url) say(io, build.url);
   } finally {
@@ -237,14 +251,16 @@ function checkSkipKeys(skipKey: string[], keys: EnvKey[]): void {
   );
 }
 
-async function appStarted(dojo: DojoClient, appId: string | number): Promise<boolean> {
+async function appInfo(dojo: DojoClient, appId: string | number): Promise<AppInfo> {
   const response = await dojo.request(`/api/apps/${appId}`);
 
   await refusedApp(appId, response);
 
   if (!response.ok) throw new ShareError(`Couldn't read the app: ${await dojoMessage(response)}`);
 
-  return ((await response.json()) as { started?: boolean }).started === true;
+  const app = (await response.json()) as { started?: boolean; level?: string };
+
+  return { started: app.started === true, level: app.level === 'editor' ? 'editor' : 'owner' };
 }
 
 async function appName(root: string): Promise<string> {

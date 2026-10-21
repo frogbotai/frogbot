@@ -11,6 +11,7 @@ import { loadEnv } from './loadEnv.js';
 import { logout } from './logout.js';
 import { migrate } from './migrate.js';
 import { piecesPort } from './piecesPort.js';
+import { pull } from './pull.js';
 import { runScript } from './run.js';
 import { share } from './share.js';
 import { start } from './start.js';
@@ -39,6 +40,7 @@ const commands: Record<string, Command> = {
   'migrate:reset': runMigrate,
   'migrate:status': runMigrate,
   share: (args) => share(args),
+  pull: (args) => pull(args),
   logout: (args) => logout(args),
 };
 

@@ -448,3 +448,62 @@ describe('frogbot share: the name', () => {
     ]);
   });
 });
+
+describe('frogbot share: as an editor', () => {
+  const keysLeftOut = "[frogbot] Keys left out: only the app's owners manage its keys on Dojo.";
+
+  async function linked(level?: 'editor' | 'owner') {
+    const shared = await setup({
+      '.frogbot/app.json': '{"appId":1}',
+      '.env': 'STRIPE_KEY=sk_test_aaaa4242\n',
+    });
+
+    await shared.signIn();
+    shared.dojo.projects.push({ id: 1, name: 'deals', slug: 'deals', workspace: 1 });
+    shared.dojo.data.started = true;
+    shared.dojo.keys.set(1, { STRIPE_KEY: 'sk_live_owner0001' });
+    shared.dojo.level = level;
+
+    return shared;
+  }
+
+  it('leaves keys out once, drops the Share it line and still prints the app URL', async () => {
+    const { dojo, run } = await linked('editor');
+    const result = await run(['--update-keys']);
+    const upload = dojo.requests.find((request) => request.path === '/api/apps/1/deployments');
+
+    expect(result.code).toBe(0);
+    expect(dojo.paths().filter((path) => path.endsWith('/keys'))).toEqual([]);
+    expect(dojo.paths()).not.toContain('GET /api/cli/sealing-key');
+    expect(upload?.form?.has('keys')).toBe(false);
+    expect(result.stdout().filter((line) => line === keysLeftOut)).toHaveLength(1);
+    expect(result.stdout().join('\n')).not.toContain('Share it');
+    expect(result.stdout().at(-1)).toBe('https://deals.frogbot.app');
+    expect(dojo.keys.get(1)).toEqual({ STRIPE_KEY: 'sk_live_owner0001' });
+  });
+
+  it('says nothing about keys with --no-keys', async () => {
+    const { run } = await linked('editor');
+    const result = await run(['--no-keys']);
+
+    expect(result.code).toBe(0);
+    expect(result.stdout()).not.toContain(keysLeftOut);
+    expect(result.stdout().at(-1)).toBe('https://deals.frogbot.app');
+  });
+
+  it.each([['owner' as const], [undefined]])(
+    'compares keys and prints Share it as before when the level is %s',
+    async (level) => {
+      const { dojo, run } = await linked(level);
+      const result = await run([]);
+
+      expect(result.code).toBe(0);
+      expect(dojo.paths()).toContain('GET /api/apps/1/keys');
+      expect(result.stdout()).not.toContain(keysLeftOut);
+      expect(result.stdout().slice(-2)).toEqual([
+        shareLink(dojo.url, 1),
+        'https://deals.frogbot.app',
+      ]);
+    },
+  );
+});
