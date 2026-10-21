@@ -3,7 +3,8 @@ name: frogbot
 description: >-
   Builds and maintains FrogBot applications. Use when working with
   frogbot.config.ts, getFrogBot, collections, fields, hooks, access control,
-  Local API queries, agents, tools, pieces, connections, jobs, KV, chat or gateway configuration.
+  Local API queries, agents, tools, pieces, connections, jobs, KV, chat or gateway configuration,
+  or when sharing, hosting or deploying a FrogBot app with `frogbot share`.
 license: MIT
 metadata:
   author: 'frogbotai'
@@ -216,6 +217,28 @@ async ({ context, doc, req }) => {
 
 Choose a domain-specific flag and check it before side effects.
 
+## Sharing The App
+
+`npx frogbot share` takes the app live on Dojo and prints its URL. Run it from anywhere inside the app when the user asks to share, host, publish or deploy it, or to send someone a link. Suggest it, without running it, when the user wants someone else to try the app or asks how to put it online. Don't share without being asked: it uploads the code and keys.
+
+Your shell has no terminal, so `share` never prompts you. Settle these with the user first:
+
+- **Data.** On the first share, when the app has local records or files, pass `--data` or `--no-data`; without either, `share` stops before sending anything. Ask the user: `--data` brings a copy of the local database and the upload files, including users with their passwords. Only SQLite `file:` databases can bring data. Data comes only with the first share; later shares send code only and never overwrite live data.
+- **Keys.** Every key in the `.env` files comes along without asking (`DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT` and `HOSTNAME` never do). Leave keys out with `--skip-key NAME` (repeatable, case-sensitive) or `--no-keys`. On later shares, keys whose local value differs from live keep their live value unless you pass `--update-keys`.
+- **Workspace and name.** With more than one Dojo workspace, pass `--workspace <slug>`. The address is `https://<name>.frogbot.app`, named from `package.json`; when that's taken, rerun with `--name <another name>`.
+
+The first time, `share` prints `[frogbot] Sign in to Dojo: open this link and confirm the code.`, then the link and the code on their own lines, and waits until the user confirms. Run it where you can read its output while it waits, such as a background shell, and pass the link and code on.
+
+`share` needs a `pnpm-lock.yaml`, `package-lock.json` or `yarn.lock` (not Bun) and an upload under 100 MB. It writes the app's id to `.frogbot/app.json`, so later shares from the folder update the same app; delete that file only when the user wants a new app. It ends with `[frogbot] Share it: <link>` and then the live URL as the last line: give the user both.
+
+| Exit | Meaning                                                                                                      |
+| ---- | ------------------------------------------------------------------------------------------------------------ |
+| `0`  | Live. The last line is the URL.                                                                              |
+| `1`  | Stopped. The last `[frogbot]` line on stderr says why and what to rerun with; fix it or ask the user.        |
+| `2`  | Bad flags, such as `--data` with `--no-data` or a `--skip-key` that names no key. Fix the command and rerun. |
+
+On Dojo the app runs as it does with `frogbot start`. Jobs run in the web server, and Dojo wakes a sleeping app when a task or agent schedule is due, so add no worker, external cron or `jobs.access.run` rule for Dojo. Dojo checks `GET /api/health` (`src/app/(frogbot)/api/health/route.ts`, `200` once FrogBot starts, `503` when it can't); keep that route. See the [CLI reference](https://docs.frogbot.ai/getting-started/cli#share).
+
 ## Project Layout
 
 ```text
@@ -226,6 +249,7 @@ src/
 │   └── (frogbot)/
 │       ├── [[...segments]]/
 │       ├── api/[...slug]/route.ts
+│       ├── api/health/route.ts
 │       └── layout.tsx
 ├── collections/
 │   ├── Files.ts

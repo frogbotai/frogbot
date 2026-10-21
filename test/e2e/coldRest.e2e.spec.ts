@@ -83,6 +83,14 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
     if (dataDir) rmSync(dataDir, { recursive: true, force: true });
   });
 
+  it('answers the health check at GET /api/health without signing in', async () => {
+    const res = await fetch(`${baseURL}/api/health`);
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('cache-control')).toContain('no-store');
+    expect(await res.json()).toEqual({ status: 'ok' });
+  });
+
   it('serves agent REST endpoints after cold initialization', async () => {
     const res = await fetch(`${baseURL}/api/agents/assistant`, {
       method: 'POST',

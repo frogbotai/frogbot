@@ -36,11 +36,12 @@ To call agents from your own code, see the
 
 ## Project layout
 
-| Path                    | Description                                                      |
-| ----------------------- | ---------------------------------------------------------------- |
-| `src/frogbot.config.ts` | Your FrogBot config — agents, collections, providers             |
-| `src/app/(frogbot)/`    | Admin panel + API routes (owned by FrogBot, safe to leave alone) |
-| `src/frogbot-types.ts`  | Generated types (`npm run generate:types`)                       |
+| Path                            | Description                                                      |
+| ------------------------------- | ---------------------------------------------------------------- |
+| `src/frogbot.config.ts`         | Your FrogBot config — agents, collections, providers             |
+| `src/app/(frogbot)/`            | Admin panel + API routes (owned by FrogBot, safe to leave alone) |
+| `src/app/(frogbot)/api/health/` | Health check, `GET /api/health`, for hosting                     |
+| `src/frogbot-types.ts`          | Generated types (`npm run generate:types`)                       |
 
 To use a root layout instead, move everything out of `src/` and update the
 `@/*` and `@frogbot-config` paths in `tsconfig.json`. No config, import-map, or
@@ -52,6 +53,7 @@ type-generation changes are needed — both layouts are detected automatically.
 - Add collections (`collections: [...]`) for FrogBot's data layer.
 - Choose PostgreSQL or MongoDB with `create-frogbot-app --db` when creating a project.
 - Restrict agent `access` (e.g. `({ req }) => !!req.user`) before deploying.
+- Put it online with `npx frogbot share`; see [`share`](https://docs.frogbot.ai/getting-started/cli#share).
 
 ## Add an AI provider
 
