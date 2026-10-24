@@ -544,7 +544,12 @@ function ChatInner({
     };
 
     const metadata = await adapter.buildMetadata?.(message);
-    await chat.sendMessage({ parts: message.parts, metadata });
+
+    try {
+      await chat.sendMessage({ parts: message.parts, metadata });
+    } catch (error) {
+      onError?.(toChatError(error instanceof Error ? error : new Error(String(error))));
+    }
   };
 
   const stop = () => {

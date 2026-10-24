@@ -110,12 +110,37 @@ export function Composer({
     submitting.current = true;
     history.add(next);
     clearText();
+    current.attachments.hold(sent);
 
-    void Promise.resolve(onSubmit(next, current.attachments.toSend))
-      .then(() => current.attachments.clear(sent))
+    void new Promise<void>((resolve) => resolve(onSubmit(next, current.attachments.toSend)))
+      .then(
+        () => state.current.attachments.clear(sent),
+        (error: unknown) => {
+          fail(error);
+          restore(next, sent);
+        },
+      )
       .finally(() => {
         submitting.current = false;
       });
+  };
+
+  const restore = (next: ComposerPrompt, sent: number[]) => {
+    const { attachments } = state.current;
+    const typed = editorRef.current?.getEditorState().read($readPrompt) ?? emptyPrompt;
+    const touched =
+      Boolean(typed.text.trim()) ||
+      typed.mentions.length > 0 ||
+      attachments.items.some(({ key }) => !sent.includes(key));
+
+    if (touched) {
+      attachments.clear(sent);
+
+      return;
+    }
+
+    attachments.release(sent);
+    editorRef.current?.update(() => $writePrompt(next));
   };
 
   const submit = (event?: FormEvent) => {
