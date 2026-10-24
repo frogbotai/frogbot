@@ -76,6 +76,7 @@
 @import "./chat/reasoning-part.css";
 @import "./chat/rename-chat-dialog.css";
 @import "./chat/source-part.css";
+@import "./chat/steered-part.css";
 @import "./chat/tool-card.css";
 @import "./chat/tool-part.css";
 @import "./chat/todo-tool-render.css";

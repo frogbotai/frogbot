@@ -3,6 +3,7 @@
 import { useChat } from '@ai-sdk/react';
 import type { AgentManifestEntry, ChatManifest, TurnErrorCode } from '@frogbotai/protocol';
 import {
+  generateId,
   getToolName,
   isToolUIPart,
   lastAssistantMessageIsCompleteWithToolCalls,
@@ -10,6 +11,7 @@ import {
 } from 'ai';
 import { type ComponentType, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
+import { Button } from '../components/button.js';
 import { useControlledState } from '../hooks/use-controlled-state.js';
 import {
   ChatAdapterError,
@@ -23,7 +25,12 @@ import { ChannelConversationNotice } from './channel-conversation-notice.js';
 import { deriveChatTitle } from './chat-history.js';
 import { ChatShell } from './chat-shell.js';
 import { ChatStatus } from './chat-status.js';
-import { Composer, type ComposerSubmission } from './composer/composer.js';
+import {
+  Composer,
+  type ComposerHandle,
+  type ComposerQueued,
+  type ComposerSubmission,
+} from './composer/composer.js';
 import { type ComposerMention, composerParts, type ComposerPrompt } from './composer/prompt.js';
 import { isFlagPart, renderFlagPart } from './flag-parts.js';
 import { Greeting, type GreetingProps } from './greeting.js';
@@ -52,6 +59,26 @@ type ChatActions = {
   rename?: (title: string) => Promise<void>;
   delete?: () => Promise<void>;
 };
+
+type QueueEntry = {
+  id: string;
+  chatKey: string;
+  queued: ComposerQueued;
+  paused: boolean;
+  steering: boolean;
+};
+
+const NEW_CHAT_KEY = 'new:';
+
+function queuedText(queued: ComposerQueued) {
+  if (queued.kind === 'command') return queued.text;
+
+  const { attachments, prompt } = queued;
+
+  if (prompt.text.trim()) return prompt.text;
+
+  return attachments.length === 1 ? '1 attachment' : `${attachments.length} attachments`;
+}
 
 export type ChatSidebarContext = {
   chats: ChatDocument[];
@@ -216,6 +243,8 @@ function ChatInner({
     activeChatId === undefined ? `new:${agent}` : String(activeChatId),
   );
 
+  const chatKey = activeChatId === undefined ? runtimeChatId : String(activeChatId);
+
   const createdChatId = useRef<ChatId | undefined>(undefined);
   const reportedChatId = useRef<string | undefined>(undefined);
   const previousAgent = useRef(agent);
@@ -237,6 +266,13 @@ function ChatInner({
   const [branching, setBranching] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string>();
   const [queued, setQueued] = useState<UIMessage[]>([]);
+  const [entries, setEntryState] = useState<QueueEntry[]>([]);
+  const [running, setRunning] = useState(false);
+  const [filled, setFilled] = useState(false);
+  const entriesRef = useRef(entries);
+  const runningRef = useRef(false);
+  const stopped = useRef(false);
+  const composerHandle = useRef<ComposerHandle>(null);
   const queuedRequest = useRef(false);
   const toolOutputAdded = useRef(false);
   const turnSync = useRef<AbortController | undefined>(undefined);
@@ -282,8 +318,16 @@ function ChatInner({
       : undefined,
     onData: (part) => {
       if (part.type === 'data-queued') queueMessage((part.data as { messageId: string }).messageId);
+
+      if (part.type === 'data-steered') {
+        const { messageId } = part.data as { messageId: string };
+
+        dropEntries((entry) => entry.id === messageId);
+      }
     },
-    onFinish: () => {
+    onFinish: ({ isAbort, isError }) => {
+      endTurn(isError || (isAbort && !stopped.current));
+
       if (flushChatId()) window.setTimeout(emitChatMutation, 2_500);
 
       if (queuedRequest.current) {
@@ -295,6 +339,7 @@ function ChatInner({
       if (queued.length > 0) void syncTurn();
     },
     onError: (error) => {
+      endTurn(true);
       flushChatId();
 
       const code = turnErrorCode(error);
@@ -321,6 +366,124 @@ function ChatInner({
 
       return messages.filter(({ id }) => id !== messageId);
     });
+  }
+
+  function setEntries(update: (current: QueueEntry[]) => QueueEntry[]) {
+    entriesRef.current = update(entriesRef.current);
+    setEntryState(entriesRef.current);
+  }
+
+  function dropEntries(match: (entry: QueueEntry) => boolean) {
+    const gone = entriesRef.current.filter(match);
+
+    if (gone.length === 0) return;
+
+    for (const entry of gone) composerHandle.current?.discard(entry.queued);
+
+    setEntries((current) => current.filter((entry) => !match(entry)));
+  }
+
+  function pauseEntries() {
+    setEntries((current) => current.map((entry) => ({ ...entry, paused: true })));
+  }
+
+  function endTurn(paused: boolean) {
+    stopped.current = false;
+    dropEntries((entry) => entry.steering);
+
+    if (paused) pauseEntries();
+  }
+
+  function leaveChat() {
+    dropEntries((entry) => entry.chatKey.startsWith(NEW_CHAT_KEY));
+    pauseEntries();
+  }
+
+  function enqueue(next: ComposerQueued) {
+    setEntries((current) => [
+      ...current,
+      { id: generateId(), chatKey, queued: next, paused: false, steering: false },
+    ]);
+  }
+
+  function reportComposerError(error: Error) {
+    failAction(new Error(`Command failed: ${error.message}`), 'Command failed');
+  }
+
+  async function runEntry(entry: QueueEntry) {
+    const { queued: next } = entry;
+
+    runningRef.current = true;
+    setRunning(true);
+    setEntries((current) => current.filter(({ id }) => id !== entry.id));
+
+    try {
+      if (next.kind === 'message') {
+        await submit(next.prompt, next.attachments);
+        composerHandle.current?.discard(next);
+      } else {
+        await next.command.execute(next.input);
+      }
+    } catch (error) {
+      if (next.kind === 'message') {
+        setEntries((current) => [{ ...entry, paused: true }, ...current]);
+      }
+
+      pauseEntries();
+      reportComposerError(error instanceof Error ? error : new Error(String(error)));
+    } finally {
+      runningRef.current = false;
+      setRunning(false);
+    }
+  }
+
+  function sendNow(entry: QueueEntry) {
+    if (runningRef.current) return;
+
+    setEntries((current) =>
+      current.map((candidate) =>
+        candidate.chatKey === entry.chatKey ? { ...candidate, paused: false } : candidate,
+      ),
+    );
+
+    void runEntry(entry);
+  }
+
+  function editEntry(entry: QueueEntry) {
+    if (!composerHandle.current?.edit(entry.queued)) return;
+
+    setEntries((current) => current.filter(({ id }) => id !== entry.id));
+  }
+
+  async function steerEntry(entry: QueueEntry) {
+    const chatId = createdChatId.current ?? request.current.chatId;
+    const { queued: next } = entry;
+
+    if (!adapter.steerMessage || chatId === undefined || next.kind !== 'message') return;
+
+    const mark = (steering: boolean) =>
+      setEntries((current) =>
+        current.map((candidate) =>
+          candidate.id === entry.id ? { ...candidate, steering } : candidate,
+        ),
+      );
+
+    mark(true);
+
+    const message: UIMessage = {
+      id: entry.id,
+      role: 'user',
+      parts: composerParts(next.prompt, next.attachments) as UIMessage['parts'],
+    };
+
+    try {
+      const metadata = await adapter.buildMetadata?.(message);
+
+      await adapter.steerMessage(chatId, { ...message, metadata });
+    } catch (error) {
+      mark(false);
+      failAction(error, 'Failed to steer');
+    }
   }
 
   function failAction(error: unknown, fallback: string) {
@@ -413,7 +576,16 @@ function ChatInner({
 
   function flushChatId() {
     if (createdChatId.current === undefined) return false;
-    reportedChatId.current = String(createdChatId.current);
+
+    const created = String(createdChatId.current);
+
+    setEntries((current) =>
+      current.map((entry) =>
+        entry.chatKey.startsWith(NEW_CHAT_KEY) ? { ...entry, chatKey: created } : entry,
+      ),
+    );
+
+    reportedChatId.current = created;
     setActiveChatId(createdChatId.current);
     createdChatId.current = undefined;
     chats.refresh();
@@ -422,6 +594,7 @@ function ChatInner({
   }
 
   const clearConversation = () => {
+    leaveChat();
     createdChatId.current = undefined;
     reportedChatId.current = undefined;
     setEditingMessageId(undefined);
@@ -430,8 +603,8 @@ function ChatInner({
     chat.setMessages([]);
   };
 
-  const latest = useRef({ clearConversation, setActiveChatId });
-  latest.current = { clearConversation, setActiveChatId };
+  const latest = useRef({ clearConversation, leaveChat, setActiveChatId });
+  latest.current = { clearConversation, leaveChat, setActiveChatId };
   const { setMessages } = chat;
 
   useEffect(
@@ -491,7 +664,10 @@ function ChatInner({
       return;
     }
 
-    if (String(controlledChatId) !== runtimeChatId) setRuntimeChatId(String(controlledChatId));
+    if (String(controlledChatId) !== runtimeChatId) {
+      latest.current.leaveChat();
+      setRuntimeChatId(String(controlledChatId));
+    }
   }, [chatIdControlled, controlledChatId, runtimeChatId]);
 
   useEffect(() => {
@@ -503,6 +679,7 @@ function ChatInner({
   }, [activeChatId, agent]);
 
   const selectChat = (nextChatId: string | number) => {
+    leaveChat();
     setAborted(false);
     setEditingMessageId(undefined);
     setQueued([]);
@@ -554,6 +731,8 @@ function ChatInner({
 
   const stop = () => {
     setAborted(true);
+    stopped.current = true;
+    pauseEntries();
     void chat.stop();
   };
 
@@ -626,6 +805,17 @@ function ChatInner({
     () => new Set(dockedParts.map(({ toolCallId }) => toolCallId)),
     [dockedParts],
   );
+
+  const visibleEntries = entries.filter((entry) => entry.chatKey === chatKey);
+  const nextEntry = visibleEntries.find(({ paused, steering }) => !paused && !steering);
+  const busy = pending || running || isReadonly || dockBlocking || dockedParts.length > 0;
+  const drainBlocked = busy || chat.status !== 'ready' || pendingToolCallIds.size > 0;
+
+  useEffect(() => {
+    if (drainBlocked || !nextEntry || toolOutputAdded.current || runningRef.current) return;
+
+    void runEntry(nextEntry);
+  });
 
   const dismissPendingToolCall = async (toolCallId: string) => {
     const chatId = request.current.chatId;
@@ -811,6 +1001,63 @@ function ChatInner({
               ))}
             </div>
           )}
+          {visibleEntries.length > 0 && (
+            <ul className="fb-chat__queued" aria-label="Queued messages">
+              {visibleEntries.map((entry) => (
+                <li
+                  key={entry.id}
+                  className="fb-chat__queued-message"
+                  data-state={entry.steering ? 'steering' : entry.paused ? 'paused' : 'queued'}
+                >
+                  <span className="fb-chat__queued-label">
+                    {entry.steering ? 'Steering' : entry.paused ? 'Paused' : 'Queued'}
+                  </span>
+                  <span className="fb-chat__queued-text">{queuedText(entry.queued)}</span>
+                  {!entry.steering && (
+                    <span className="fb-chat__queued-actions">
+                      {pending && adapter.steerMessage && entry.queued.kind === 'message' && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => void steerEntry(entry)}
+                        >
+                          Steer
+                        </Button>
+                      )}
+                      {entry.paused && !busy && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => sendNow(entry)}
+                        >
+                          Send now
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={filled}
+                        onClick={() => editEntry(entry)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => dropEntries(({ id }) => id === entry.id)}
+                      >
+                        Remove
+                      </Button>
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
           {(dockedParts.length > 0 || Boolean(dockSlot)) && (
             <div className="fb-chat__dock">
               {dockedParts.length > 0 && (
@@ -833,15 +1080,17 @@ function ChatInner({
             />
           ) : (
             <Composer
+              ref={composerHandle}
               adapter={adapter}
               modelInputs={modelInputs}
               modelName={modelName}
               hidden={dockBlocking || dockedParts.length > 0}
               pending={pending}
+              queueing={pending || running}
               onBeforeSubmit={onBeforeSubmit}
-              onError={(error) =>
-                failAction(new Error(`Command failed: ${error.message}`), 'Command failed')
-              }
+              onError={reportComposerError}
+              onFilledChange={setFilled}
+              onQueue={enqueue}
               onStop={stop}
               onSubmit={submit}
               placeholder={placeholder}

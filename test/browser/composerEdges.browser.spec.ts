@@ -127,7 +127,7 @@ test('an IME Enter neither picks a mention nor sends', async ({ page }) => {
   expect(sends).toHaveLength(0);
 });
 
-test('Enter during a reply sends nothing and keeps the draft', async ({ page }) => {
+test('Enter during a reply queues the draft and sends it once the reply ends', async ({ page }) => {
   let release = () => {};
 
   const held = new Promise<void>((resolve) => {
@@ -141,6 +141,8 @@ test('Enter during a reply sends nothing and keeps the draft', async ({ page }) 
   });
 
   const sends = trackSends(page);
+  const queued = page.getByRole('list', { name: 'Queued messages' }).getByRole('listitem');
+  const replies = page.getByRole('log').getByText(/^Received \d+ image attachment\.$/);
 
   await composerInput(page).click();
   await page.keyboard.type('first');
@@ -149,15 +151,49 @@ test('Enter during a reply sends nothing and keeps the draft', async ({ page }) 
 
   await page.keyboard.type('second');
   await page.keyboard.press('Enter');
-  await expectComposerText(page, 'second');
+  await expectComposerText(page, '');
+  await expect(queued).toHaveCount(1);
+  await expect(queued).toContainText('Queued');
+  await expect(queued).toContainText('second');
 
   expect(sends).toHaveLength(1);
 
-  release();
-  await expect(page.getByRole('log').getByText(/^Received \d+ image attachment\.$/)).toBeVisible();
-  await page.unroute(`**/api/agents/${agentSlug}`);
+  const second = page.waitForResponse(
+    (candidate) =>
+      isSend(candidate.request()) &&
+      candidate.request().postDataJSON().messages.at(-1).parts[0]?.text === 'second',
+  );
 
-  expect(await sendWithEnter(page)).toEqual([{ type: 'text', text: 'second' }]);
+  release();
+
+  expect((await second).request().postDataJSON().messages.at(-1).parts).toEqual([
+    { type: 'text', text: 'second' },
+  ]);
+  await expect(replies).toHaveCount(2);
+  await expect(queued).toHaveCount(0);
+  expect(sends).toHaveLength(2);
+});
+
+test('Stop with a draft only stops the reply and keeps the draft', async ({ page }) => {
+  await page.route(`**/api/agents/${agentSlug}`, async (route) => {
+    if (route.request().method() === 'POST') await new Promise(() => {});
+  });
+
+  const sends = trackSends(page);
+
+  await composerInput(page).click();
+  await page.keyboard.type('first');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => sends.length).toBe(1);
+
+  await page.keyboard.type('draft');
+  await page.getByRole('button', { name: 'Stop' }).click();
+
+  await expect(page.getByRole('button', { name: 'Stop' })).toHaveCount(0);
+  await expectComposerText(page, 'draft');
+  await expect(page.getByRole('list', { name: 'Queued messages' })).toHaveCount(0);
+
+  expect(sends).toHaveLength(1);
 });
 
 test('rich HTML pastes as its plain text, with no markup, script or style', async ({ page }) => {

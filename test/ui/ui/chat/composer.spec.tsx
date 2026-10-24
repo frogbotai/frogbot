@@ -1,9 +1,15 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useEffect, useState } from 'react';
+import { createRef, useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Composer, type ComposerProps } from '../../../../packages/ui/src/chat/composer/composer';
+import {
+  Composer,
+  type ComposerHandle,
+  type ComposerProps,
+  type ComposerQueued,
+} from '../../../../packages/ui/src/chat/composer/composer';
 import type {
   ComposerCommand,
   MentionSource,
@@ -836,16 +842,16 @@ describe('Composer', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it('keeps the text when onBeforeSubmit declines mid-turn, and reports a rejection', async () => {
-    const onError = vi.fn();
+  it('queues mid-turn, clearing the composer, instead of running onBeforeSubmit', async () => {
+    const onQueue = vi.fn();
     const onSubmit = vi.fn();
-    const onBeforeSubmit = vi.fn<() => Promise<boolean>>(() => Promise.resolve(false));
+    const onBeforeSubmit = vi.fn(() => false);
 
     render(
       <Composer
         pending
         onBeforeSubmit={onBeforeSubmit}
-        onError={onError}
+        onQueue={onQueue}
         onSubmit={onSubmit}
         submitContent="Send"
         stopContent="Stop"
@@ -855,17 +861,17 @@ describe('Composer', () => {
     type('Later');
     press('Enter');
 
-    await waitFor(() => expect(onBeforeSubmit).toHaveBeenCalledOnce());
+    expect(onQueue).toHaveBeenCalledWith({
+      kind: 'message',
+      prompt: prompt('Later'),
+      attachments: [],
+      keys: [],
+    });
 
+    await waitFor(() => expect(composerText()).toBe(''));
+
+    expect(onBeforeSubmit).not.toHaveBeenCalled();
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(composerText()).toBe('Later');
-
-    onBeforeSubmit.mockRejectedValueOnce(new Error('Unknown command'));
-    press('Enter');
-
-    await waitFor(() => expect(onError).toHaveBeenCalledWith(new Error('Unknown command')));
-
-    expect(composerText()).toBe('Later');
   });
 
   describe('history', () => {
@@ -1406,5 +1412,254 @@ describe('Composer send hand-off', () => {
 
     expect(screen.getAllByTestId('attachment-card')).toHaveLength(1);
     expect(screen.getByRole('group', { name: 'Pasted text, PASTED, ready' })).toBeTruthy();
+  });
+});
+
+describe('Composer queue', () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      'URL',
+      class extends URL {
+        static createObjectURL = vi.fn(() => 'blob:preview');
+        static revokeObjectURL = vi.fn();
+      },
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function StopsInTheClick({ onSubmit }: { onSubmit: ComposerProps['onSubmit'] }) {
+    const [pending, setPending] = useState(true);
+
+    return (
+      <Composer
+        defaultValue="Draft"
+        pending={pending}
+        onStop={() => flushSync(() => setPending(false))}
+        onSubmit={onSubmit}
+        submitContent="Send"
+        stopContent="Stop"
+      />
+    );
+  }
+
+  it('only stops when Stop is clicked with content, even if the turn ends inside the click', async () => {
+    const onSubmit = vi.fn();
+
+    render(<StopsInTheClick onSubmit={onSubmit} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Stop' }));
+
+    expect(screen.getByRole('button', { name: 'Send' })).toBeTruthy();
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(composerText()).toBe('Draft');
+  });
+
+  it('queues with the Queue message button beside Stop, which shows only with content', async () => {
+    const onQueue = vi.fn();
+    const onFilledChange = vi.fn();
+
+    renderComposer({ pending: true, onQueue, onFilledChange });
+
+    expect(screen.queryByRole('button', { name: 'Queue message' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Stop' })).toBeTruthy();
+
+    type('Next');
+
+    await waitFor(() => expect(onFilledChange).toHaveBeenLastCalledWith(true));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Queue message' }));
+
+    expect(onQueue).toHaveBeenCalledWith(expect.objectContaining({ prompt: prompt('Next') }));
+
+    await waitFor(() => expect(composerText()).toBe(''));
+
+    await waitFor(() => expect(onFilledChange).toHaveBeenLastCalledWith(false));
+
+    expect(screen.queryByRole('button', { name: 'Queue message' })).toBeNull();
+  });
+
+  it('queues while queueing without a turn, through the Queue message button', async () => {
+    const onQueue = vi.fn();
+    const { onSubmit } = renderComposer({ queueing: true, onQueue });
+
+    type('Next');
+
+    await screen.findByRole('button', { name: 'Queue message' });
+
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
+
+    press('Enter');
+
+    expect(onQueue).toHaveBeenCalledOnce();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('keeps attach, drop and the mic working mid-turn', async () => {
+    const { container, drop } = renderComposer({ pending: true, onQueue: vi.fn() });
+
+    expect(container.querySelector<HTMLInputElement>('input[type="file"]')?.disabled).toBe(false);
+
+    drop(pdf('report.pdf'));
+
+    expect(await screen.findByRole('group', { name: 'report.pdf, PDF, ready' })).toBeTruthy();
+  });
+
+  it('holds a queued paste out of sight, then writes it back on edit', async () => {
+    const onQueue = vi.fn();
+    const handle = createRef<ComposerHandle>();
+
+    renderComposer({ pending: true, onQueue, ref: handle });
+
+    paste({ getData: () => 'p'.repeat(651) });
+    await screen.findByRole('group', { name: 'Pasted text, PASTED, ready' });
+    type('Look');
+    press('Enter');
+
+    await waitFor(() => expect(screen.queryByTestId('attachment-card')).toBeNull());
+
+    const entry = onQueue.mock.calls[0]?.[0] as ComposerQueued;
+
+    expect(entry).toMatchObject({
+      kind: 'message',
+      prompt: prompt('Look'),
+      attachments: [{ id: 'asset-1', origin: 'paste' }],
+      keys: [0],
+    });
+
+    type('Busy');
+
+    let edited: boolean | undefined;
+
+    act(() => {
+      edited = handle.current?.edit(entry);
+    });
+
+    expect(edited).toBe(false);
+
+    press('Enter');
+
+    await waitFor(() => expect(composerText()).toBe(''));
+
+    act(() => {
+      edited = handle.current?.edit(entry);
+    });
+
+    expect(edited).toBe(true);
+
+    await waitFor(() => expect(composerText()).toBe('Look'));
+
+    expect(screen.getByRole('group', { name: 'Pasted text, PASTED, ready' })).toBeTruthy();
+  });
+
+  it('drops a queued photo and its preview on discard', async () => {
+    const onQueue = vi.fn();
+    const handle = createRef<ComposerHandle>();
+    const { drop } = renderComposer({ pending: true, onQueue, ref: handle });
+
+    drop(png('photo.png'));
+    await screen.findByRole('group', { name: 'photo.png, ready' });
+    press('Enter');
+
+    await waitFor(() => expect(screen.queryByTestId('attachment-card')).toBeNull());
+
+    act(() => {
+      handle.current?.discard(onQueue.mock.calls[0]?.[0] as ComposerQueued);
+    });
+
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:preview');
+  });
+
+  describe('commands', () => {
+    function renderCommands(commands: ComposerCommand[], props: Partial<ComposerProps> = {}) {
+      const onQueue = vi.fn();
+
+      render(
+        <ChatProvider
+          adapter={createRestChatAdapter({ fetch: vi.fn() })}
+          commands={commands}
+          composerHistory={{ load: () => [], save: vi.fn() }}
+        >
+          <Composer
+            onQueue={onQueue}
+            onSubmit={vi.fn()}
+            submitContent="Send"
+            stopContent="Stop"
+            {...props}
+          />
+        </ChatProvider>,
+      );
+
+      return { onQueue };
+    }
+
+    it('queues a queue command mid-turn as its / text, and runs the rest at once', async () => {
+      const review = vi.fn();
+      const plan = vi.fn();
+
+      const { onQueue } = renderCommands(
+        [
+          { id: 'review', title: 'Review', arguments: true, queue: true, execute: review },
+          { id: 'plan', title: 'Plan', arguments: true, execute: plan },
+        ],
+        { pending: true },
+      );
+
+      type('/review the footer');
+      press('Enter');
+
+      expect(onQueue).toHaveBeenCalledExactlyOnceWith({
+        kind: 'command',
+        command: expect.objectContaining({ id: 'review' }),
+        input: 'the footer',
+        text: '/review the footer',
+      });
+
+      await waitFor(() => expect(composerText()).toBe(''));
+
+      type('/plan on');
+      press('Enter');
+
+      await waitFor(() => expect(plan).toHaveBeenCalledWith('on'));
+
+      expect(review).not.toHaveBeenCalled();
+    });
+
+    it('queues a queue command picked from the menu mid-turn, and runs it when idle', async () => {
+      const review = vi.fn();
+      const commands = [{ id: 'review', title: 'Review', queue: true, execute: review }];
+
+      const { onQueue } = renderCommands(commands, { pending: true });
+
+      type('/rev');
+      await screen.findByRole('listbox');
+      press('Enter');
+
+      await waitFor(() =>
+        expect(onQueue).toHaveBeenCalledWith(
+          expect.objectContaining({ kind: 'command', input: '', text: '/review' }),
+        ),
+      );
+
+      expect(review).not.toHaveBeenCalled();
+    });
+
+    it('runs a queue command at once when no turn runs', async () => {
+      const review = vi.fn();
+
+      const { onQueue } = renderCommands([
+        { id: 'review', title: 'Review', arguments: true, queue: true, execute: review },
+      ]);
+
+      type('/review now');
+      press('Enter');
+
+      await waitFor(() => expect(review).toHaveBeenCalledWith('now'));
+
+      expect(onQueue).not.toHaveBeenCalled();
+    });
   });
 });

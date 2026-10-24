@@ -140,6 +140,8 @@ It reads `CompactionPartData`:
 
 While `status` is `running`, it shows **Compacting…** with a spinner and no closing divider. Data in any other shape shows as JSON.
 
+`SteeredPart` renders a `data-steered` part, a message the user [steered](/chat/ui-chat#queued-messages) into a running reply, as a user bubble where the reply took it. Register it as `{ kind: 'steered', render: SteeredPart }`. It reads `SteeredPartData`, `{ messageId: string, text: string }`; data in any other shape shows as JSON.
+
 ## Artifact options
 
 | Option | Type | Default | Description |
@@ -241,6 +243,7 @@ Import Lexical from `@frogbotai/ui/lexical`, which re-exports `lexical` and `use
 | `description` | `string` | — | Shown after the title. |
 | `arguments` | `boolean` | `false` | The command takes the text after `/id `. |
 | `disabled` | `boolean` | `false` | Leaves the command out of the menu and out of `/id rest`. |
+| `queue` | `boolean` | `false` | While a reply runs, the command waits in the chat's [queue](/chat/ui-chat#queued-messages) as its `/` text instead of running at once. |
 | `execute` | `(input: string) => void \| Promise<void>` | Required | Runs the command with the text after `/id `, or `''`. |
 
 ### Mention source options
