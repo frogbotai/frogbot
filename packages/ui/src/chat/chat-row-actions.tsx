@@ -16,16 +16,18 @@ import {
   DropdownMenuTrigger,
 } from '../components/dropdown-menu.js';
 import DeleteIcon from '../icons/icons/DeleteIcon.js';
+import DownloadIcon from '../icons/icons/DownloadIcon.js';
 import MoreHorizontalIcon from '../icons/icons/MoreHorizontalIcon.js';
 import PencilIcon from '../icons/icons/PencilIcon.js';
 
 export type ChatRowMenuItemsProps = {
   onRename?: () => void;
+  onExport?: () => void;
   onDelete?: () => void;
   context?: boolean;
 };
 
-export function ChatRowMenuItems({ context, onDelete, onRename }: ChatRowMenuItemsProps) {
+export function ChatRowMenuItems({ context, onDelete, onExport, onRename }: ChatRowMenuItemsProps) {
   const Item = context ? ContextMenuItem : DropdownMenuItem;
 
   return (
@@ -34,6 +36,12 @@ export function ChatRowMenuItems({ context, onDelete, onRename }: ChatRowMenuIte
         <Item className="fb-slide-right-1" onSelect={onRename}>
           <PencilIcon />
           <span>Rename</span>
+        </Item>
+      )}
+      {onExport && (
+        <Item className="fb-slide-right-1" onSelect={onExport}>
+          <DownloadIcon />
+          <span>Export</span>
         </Item>
       )}
       {onDelete && (
@@ -49,15 +57,16 @@ export function ChatRowMenuItems({ context, onDelete, onRename }: ChatRowMenuIte
 export type ChatRowActionsProps = {
   children: ReactElement<{ children?: ReactNode; className?: string }>;
   onRename?: () => void;
+  onExport?: () => void;
   onDelete?: () => void;
 };
 
-export function ChatRowActions({ children, onDelete, onRename }: ChatRowActionsProps) {
+export function ChatRowActions({ children, onDelete, onExport, onRename }: ChatRowActionsProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const open = menuOpen || contextOpen;
 
-  if (!onRename && !onDelete) return children;
+  if (!onRename && !onExport && !onDelete) return children;
 
   const rowClassName = [
     children.props.className,
@@ -84,7 +93,7 @@ export function ChatRowActions({ children, onDelete, onRename }: ChatRowActionsP
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="bottom">
-        <ChatRowMenuItems onDelete={onDelete} onRename={onRename} />
+        <ChatRowMenuItems onDelete={onDelete} onExport={onExport} onRename={onRename} />
       </DropdownMenuContent>
     </DropdownMenu>,
   );
@@ -93,7 +102,7 @@ export function ChatRowActions({ children, onDelete, onRename }: ChatRowActionsP
     <ContextMenu onOpenChange={setContextOpen}>
       <ContextMenuTrigger asChild>{row}</ContextMenuTrigger>
       <ContextMenuContent>
-        <ChatRowMenuItems context onDelete={onDelete} onRename={onRename} />
+        <ChatRowMenuItems context onDelete={onDelete} onExport={onExport} onRename={onRename} />
       </ContextMenuContent>
     </ContextMenu>
   );

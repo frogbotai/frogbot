@@ -71,6 +71,7 @@ export type ChatPlatformAdapter = {
   loadMessages: (chatId: ChatId) => Promise<ChatMessages>;
   renameChat?: (chatId: ChatId, title: string) => Promise<ChatDocument>;
   deleteChat?: (chatId: ChatId) => Promise<void>;
+  exportChat?: (chatId: ChatId) => Promise<void>;
   updateChatAgent?: (chatId: ChatId, agent: string) => Promise<ChatDocument>;
   branchChat?: (chatId: ChatId, messageId: string) => Promise<ChatId>;
   suggestChatTitle?: (chatId: ChatId) => Promise<string | undefined>;

@@ -44,6 +44,11 @@ export function ChatHistoryActions({
     <>
       <ChatRowActions
         onDelete={adapter.deleteChat ? () => setDeleteOpen(true) : undefined}
+        onExport={
+          adapter.exportChat
+            ? () => void adapter.exportChat?.(chat.id).catch(() => undefined)
+            : undefined
+        }
         onRename={adapter.renameChat ? () => setRenameOpen(true) : undefined}
       >
         {children}

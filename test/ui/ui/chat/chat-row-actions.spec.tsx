@@ -70,4 +70,67 @@ describe('ChatRowActions', () => {
 
     expect(rowClasses()?.contains('fb-chat-row-actions__row--open')).toBe(true);
   });
+
+  it('lists Export between Rename and Delete in both menus', async () => {
+    const user = userEvent.setup();
+    const onExport = vi.fn();
+
+    render(
+      <ChatRowActions onDelete={vi.fn()} onExport={onExport} onRename={vi.fn()}>
+        <div>Conversation</div>
+      </ChatRowActions>,
+    );
+
+    const names = () => screen.getAllByRole('menuitem').map((item) => item.textContent);
+
+    await user.click(screen.getByRole('button', { name: 'Chat actions' }));
+
+    expect(names()).toEqual(['Rename', 'Export', 'Delete']);
+
+    await user.click(screen.getByRole('menuitem', { name: 'Export' }));
+
+    expect(onExport).toHaveBeenCalledOnce();
+
+    fireEvent.contextMenu(screen.getByText('Conversation'));
+    await screen.findByRole('menuitem', { name: 'Export' });
+
+    expect(names()).toEqual(['Rename', 'Export', 'Delete']);
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Export' }));
+
+    expect(onExport).toHaveBeenCalledTimes(2);
+  });
+
+  it('hides Export without onExport', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ChatRowActions onDelete={vi.fn()} onRename={vi.fn()}>
+        <div>Conversation</div>
+      </ChatRowActions>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Chat actions' }));
+
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Rename',
+      'Delete',
+    ]);
+  });
+
+  it('shows the menu with only onExport', async () => {
+    const user = userEvent.setup();
+    const onExport = vi.fn();
+
+    render(
+      <ChatRowActions onExport={onExport}>
+        <div>Conversation</div>
+      </ChatRowActions>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Chat actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Export' }));
+
+    expect(onExport).toHaveBeenCalledOnce();
+  });
 });
