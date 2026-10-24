@@ -1258,3 +1258,153 @@ describe('Composer', () => {
     expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
   });
 });
+
+describe('Composer send hand-off', () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      'URL',
+      class extends URL {
+        static createObjectURL = vi.fn(() => 'blob:preview');
+        static revokeObjectURL = vi.fn();
+      },
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function pendingSend() {
+    let resolve!: () => void;
+    let reject!: (error: Error) => void;
+    const promise = new Promise<void>((done, fail) => {
+      resolve = done;
+      reject = fail;
+    });
+
+    return { onSubmit: vi.fn(() => promise), resolve, reject };
+  }
+
+  async function attachPhoto(drop: (...files: File[]) => void) {
+    drop(png('photo.png'));
+
+    await screen.findByRole('group', { name: 'photo.png, ready' });
+  }
+
+  it('clears the text and every card at Send, then discards them when the send resolves', async () => {
+    const send = pendingSend();
+    const { drop } = renderComposer({ onSubmit: send.onSubmit });
+
+    await attachPhoto(drop);
+    paste({ getData: () => 'p'.repeat(651) });
+    await screen.findByRole('group', { name: 'Pasted text, PASTED, ready' });
+    type('Hello');
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(send.onSubmit).toHaveBeenCalledOnce();
+
+    await waitFor(() => expect(composerText()).toBe(''));
+    await waitFor(() => expect(screen.queryByTestId('attachment-card')).toBeNull());
+
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+
+    await settle(send.resolve);
+
+    expect(screen.queryByTestId('attachment-card')).toBeNull();
+    expect(composerText()).toBe('');
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:preview');
+  });
+
+  it('restores the whole prompt when the send rejects into an untouched composer', async () => {
+    const send = pendingSend();
+    const onError = vi.fn();
+    const { drop } = renderComposer({ onError, onSubmit: send.onSubmit });
+
+    await attachPhoto(drop);
+    type('Hello');
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => expect(composerText()).toBe(''));
+
+    expect(screen.queryByTestId('attachment-card')).toBeNull();
+
+    await settle(() => send.reject(new Error('Offline')));
+
+    expect(onError).toHaveBeenCalledWith(new Error('Offline'));
+
+    await waitFor(() => expect(composerText()).toBe('Hello'));
+
+    const photo = await screen.findByRole('group', { name: 'photo.png, ready' });
+
+    expect(within(photo).getByRole('img', { name: 'photo.png' }).getAttribute('src')).toBe(
+      'blob:preview',
+    );
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(send.onSubmit).toHaveBeenLastCalledWith(prompt('Hello'), [
+      { id: 'asset-1', filename: 'photo.png', mediaType: 'image/png' },
+    ]);
+  });
+
+  it('keeps only new cards when the send rejects after the user attached more', async () => {
+    const send = pendingSend();
+    const onError = vi.fn();
+    const { drop } = renderComposer({ onError, onSubmit: send.onSubmit });
+
+    await attachPhoto(drop);
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(screen.queryByTestId('attachment-card')).toBeNull());
+
+    paste({ getData: () => 'p'.repeat(651) });
+    await screen.findByRole('group', { name: 'Pasted text, PASTED, ready' });
+
+    await settle(() => send.reject(new Error('Offline')));
+
+    expect(onError).toHaveBeenCalledWith(new Error('Offline'));
+    expect(composerText()).toBe('');
+    expect(screen.getAllByTestId('attachment-card')).toHaveLength(1);
+    expect(screen.getByRole('group', { name: 'Pasted text, PASTED, ready' })).toBeTruthy();
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:preview');
+    expect(send.onSubmit).toHaveBeenCalledWith(emptyPrompt, [
+      { id: 'asset-1', filename: 'photo.png', mediaType: 'image/png' },
+    ]);
+  });
+
+  it('keeps only new text when the send rejects after the user typed', async () => {
+    const send = pendingSend();
+    const { drop } = renderComposer({ onError: vi.fn(), onSubmit: send.onSubmit });
+
+    await attachPhoto(drop);
+    type('First');
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(composerText()).toBe(''));
+
+    expect(screen.queryByTestId('attachment-card')).toBeNull();
+
+    type('Second');
+    await settle(() => send.reject(new Error('Offline')));
+
+    expect(composerText()).toBe('Second');
+    expect(screen.queryByTestId('attachment-card')).toBeNull();
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:preview');
+  });
+
+  it('keeps a card added while the send is pending once it resolves', async () => {
+    const send = pendingSend();
+    const { drop } = renderComposer({ onSubmit: send.onSubmit });
+
+    await attachPhoto(drop);
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(screen.queryByTestId('attachment-card')).toBeNull());
+
+    paste({ getData: () => 'p'.repeat(651) });
+    await screen.findByRole('group', { name: 'Pasted text, PASTED, ready' });
+
+    await settle(send.resolve);
+
+    expect(screen.getAllByTestId('attachment-card')).toHaveLength(1);
+    expect(screen.getByRole('group', { name: 'Pasted text, PASTED, ready' })).toBeTruthy();
+  });
+});

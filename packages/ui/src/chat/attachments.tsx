@@ -45,6 +45,7 @@ type AttachmentItem = {
   text?: string;
   source?: File;
   attachment?: ComposerAttachment;
+  held?: boolean;
 };
 
 type AttachmentDraft = Omit<AttachmentItem, 'key'>;
@@ -93,7 +94,8 @@ export function useAttachments({
 }) {
   const nextKey = useRef(0);
   const removed = useRef(new Set<number>());
-  const [items, setItems] = useState<AttachmentItem[]>([]);
+  const [all, setItems] = useState<AttachmentItem[]>([]);
+  const items = all.filter((item) => !item.held);
   const [classifying, setClassifying] = useState(0);
   const [status, setStatus] = useState('');
   const storage = Boolean(adapter?.uploadAttachment);
@@ -264,11 +266,17 @@ export function useAttachments({
 
     for (const key of keys) removed.current.add(key);
 
-    for (const item of items) {
+    for (const item of all) {
       if (gone.has(item.key) && item.preview) URL.revokeObjectURL(item.preview);
     }
 
     setItems((current) => current.filter((item) => !gone.has(item.key)));
+  };
+
+  const setHeld = (keys: number[], held: boolean) => {
+    const marked = new Set(keys);
+
+    setItems((current) => current.map((item) => (marked.has(item.key) ? { ...item, held } : item)));
   };
 
   const remove = (key: number) => {
@@ -289,7 +297,9 @@ export function useAttachments({
     add,
     addPaste,
     clear: discard,
+    hold: (keys: number[]) => setHeld(keys, true),
     items,
+    release: (keys: number[]) => setHeld(keys, false),
     remove,
     retry,
     status,

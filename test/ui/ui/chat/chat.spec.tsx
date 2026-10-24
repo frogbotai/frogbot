@@ -971,6 +971,50 @@ describe('Chat composer parts', () => {
     ]);
   });
 
+  it('restores the prompt when metadata fails before the message is sent', async () => {
+    const onError = vi.fn();
+
+    state.buildMetadata.mockImplementationOnce(() => {
+      throw new Error('No page');
+    });
+
+    render(<Chat agent="support" onError={onError} />);
+
+    paste({ getData: () => 'p'.repeat(651) });
+    type('Hello');
+    press('Enter');
+
+    await waitFor(() => expect(onError).toHaveBeenCalledOnce());
+
+    expect(onError.mock.calls[0][0].message).toBe('Command failed: No page');
+    expect(state.sendMessage).not.toHaveBeenCalled();
+
+    await waitFor(() => expect(composerText()).toBe('Hello'));
+
+    expect(screen.getByRole('group', { name: 'Pasted text, PASTED, ready' })).toBeTruthy();
+  });
+
+  it('does not restore the prompt when sendMessage rejects after taking it', async () => {
+    const onError = vi.fn();
+
+    state.sendMessage.mockRejectedValueOnce(new Error('Panel closed'));
+
+    render(<Chat agent="support" onError={onError} />);
+
+    paste({ getData: () => 'p'.repeat(651) });
+    type('Hello');
+    press('Enter');
+
+    await waitFor(() => expect(onError).toHaveBeenCalledOnce());
+
+    expect(onError.mock.calls[0][0].message).toBe('Panel closed');
+    expect(state.sendMessage).toHaveBeenCalledOnce();
+
+    await waitFor(() => expect(composerText()).toBe(''));
+
+    expect(screen.queryByTestId('attachment-card')).toBeNull();
+  });
+
   it('shows the @label and hides the data-mention part', () => {
     state.messages = [mentioned];
 
