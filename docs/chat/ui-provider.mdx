@@ -86,7 +86,8 @@ An adapter is a `ChatPlatformAdapter` object. The first five members are require
 | `getChat` | `(chatId) => Promise<ChatDocument>` | Required | One chat's document. |
 | `loadMessages` | `(chatId) => Promise<ChatMessages>` | Required | The chat's stored messages as `{ messages, queued }`. |
 | `renameChat` | `(chatId, title) => Promise<ChatDocument>` | — | Without it, the Rename row action is hidden. |
-| `deleteChat` | `(chatId) => Promise<void>` | — | Without it, the Delete row action is hidden. With neither rename nor delete, rows have no menu. |
+| `deleteChat` | `(chatId) => Promise<void>` | — | Without it, the Delete row action is hidden. With no rename, export or delete, rows have no menu. |
+| `exportChat` | `(chatId) => Promise<void>` | — | Shows an Export row action between Rename and Delete. The adapter saves the file; a rejected export is ignored. Without it, the Export action is hidden. |
 | `updateChatAgent` | `(chatId, agent) => Promise<ChatDocument>` | — | Moves a chat to another agent. FrogBot's admin chat uses it when the agent selector changes. |
 | `branchChat` | `(chatId, messageId) => Promise<ChatId>` | — | Copies the chat through a message and returns the new chat's ID. Without it, the Branch actions are hidden. |
 | `suggestChatTitle` | `(chatId) => Promise<string \| undefined>` | — | Without it, the rename dialog shows no suggestion. |
