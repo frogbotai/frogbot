@@ -121,6 +121,20 @@
     color: var(--fb-theme-base-1000);
   }
 
+  .fb-composer__queue {
+    color: var(--fb-theme-base-700);
+    background-color: var(--fb-theme-base-200);
+  }
+
+  .fb-composer__queue:hover {
+    color: var(--fb-theme-base-1000);
+    background-color: var(--fb-theme-base-300);
+  }
+
+  .fb-composer__queue .fb-composer__action-icon {
+    stroke: currentColor;
+  }
+
   .fb-composer__submit {
     margin-left: -0.25rem;
     color: var(--fb-base-1000);

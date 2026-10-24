@@ -1,7 +1,16 @@
 'use client';
 
 import { $getRoot, type LexicalEditor } from 'lexical';
-import { type DragEvent, type FormEvent, type ReactNode, useRef, useState } from 'react';
+import {
+  type DragEvent,
+  type FormEvent,
+  type ReactNode,
+  type Ref,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 
 import ArrowUpIcon from '../../icons/icons/ArrowUpIcon.js';
 import SquareIcon from '../../icons/icons/SquareIcon.js';
@@ -27,6 +36,26 @@ import { matchCommand } from './slash-menu.js';
 /** A prompt about to be sent, with the attachments that go with it. */
 export type ComposerSubmission = ComposerPrompt & { attachments: readonly ComposerAttachment[] };
 
+/**
+ * A send held back while a turn runs. A message's `keys` name the attachment cards the composer
+ * keeps, hidden, until the entry is sent, edited back or removed.
+ */
+export type ComposerQueued =
+  | {
+      kind: 'message';
+      prompt: ComposerPrompt;
+      attachments: ComposerAttachment[];
+      keys: number[];
+    }
+  | { kind: 'command'; command: ComposerCommand; input: string; text: string };
+
+export interface ComposerHandle {
+  /** Writes a queued entry back into an empty composer; `false`, doing nothing, if it has content. */
+  edit: (entry: ComposerQueued) => boolean;
+  /** Drops a queued entry's held attachment cards. */
+  discard: (entry: ComposerQueued) => void;
+}
+
 export interface ComposerProps {
   adapter?: ChatPlatformAdapter;
   'aria-label'?: string;
@@ -40,10 +69,16 @@ export interface ComposerProps {
   modelName?: string;
   onBeforeSubmit?: (prompt: ComposerSubmission) => boolean | Promise<boolean>;
   onError?: (error: Error) => void;
+  onFilledChange?: (filled: boolean) => void;
+  /** Takes sends and `queue` commands while `queueing`; without it they wait as before. */
+  onQueue?: (entry: ComposerQueued) => void;
   onStop?: () => void;
   onSubmit: (prompt: ComposerPrompt, attachments: ComposerAttachment[]) => void | Promise<void>;
   pending?: boolean;
   placeholder?: string;
+  /** Whether a send goes to `onQueue`; defaults to `pending`. */
+  queueing?: boolean;
+  ref?: Ref<ComposerHandle>;
   startSlot?: ReactNode;
   stopContent: ReactNode;
   submitContent: ReactNode;
@@ -66,10 +101,14 @@ export function Composer({
   modelName,
   onBeforeSubmit,
   onError,
+  onFilledChange,
+  onQueue,
   onStop,
   onSubmit,
   pending = false,
   placeholder,
+  queueing = pending,
+  ref,
   startSlot,
   stopContent,
   submitContent,
@@ -87,18 +126,86 @@ export function Composer({
   const submitting = useRef(false);
   const attachments = useAttachments({ adapter, modelInputs, modelName });
   const sendable = Boolean(prompt.text.trim()) || attachments.toSend.length > 0;
-  const state = useRef({ attachments, pending });
+  const state = useRef({ attachments, pending, queue: queueing ? onQueue : undefined });
 
-  state.current = { attachments, pending };
+  state.current = { attachments, pending, queue: queueing ? onQueue : undefined };
+
+  const filledChange = useRef(onFilledChange);
+
+  filledChange.current = onFilledChange;
+
+  useEffect(() => {
+    filledChange.current?.(sendable);
+  }, [sendable]);
+
+  useImperativeHandle(ref, () => ({
+    edit: (entry) => {
+      const editor = editorRef.current;
+      const typed = editor?.getEditorState().read($readPrompt) ?? emptyPrompt;
+
+      if (
+        !editor ||
+        typed.text.trim() ||
+        typed.mentions.length > 0 ||
+        state.current.attachments.items.length > 0
+      ) {
+        return false;
+      }
+
+      if (entry.kind === 'message') state.current.attachments.release(entry.keys);
+
+      editor.update(() =>
+        $writePrompt(entry.kind === 'message' ? entry.prompt : { text: entry.text, mentions: [] }),
+      );
+
+      return true;
+    },
+    discard: (entry) => {
+      if (entry.kind === 'message') state.current.attachments.clear(entry.keys);
+    },
+  }));
 
   const clearText = () => editorRef.current?.update(() => $writePrompt(emptyPrompt));
 
   const fail = (error: unknown) => onError?.(toError(error));
 
-  const runCommand = (command: ComposerCommand, input: string) =>
+  const runCommand = (command: ComposerCommand, input: string) => {
+    const { queue } = state.current;
+
+    if (command.queue && queue) {
+      queue({
+        kind: 'command',
+        command,
+        input,
+        text: input ? `/${command.id} ${input}` : `/${command.id}`,
+      });
+
+      return;
+    }
+
     void Promise.resolve()
       .then(() => command.execute(input))
       .catch(fail);
+  };
+
+  const enqueue = (next: ComposerPrompt) => {
+    const { attachments, queue } = state.current;
+
+    if (!queue) return false;
+
+    const filled = Boolean(next.text.trim()) || attachments.toSend.length > 0;
+
+    if (!filled || attachments.uploading) return true;
+
+    const keys = attachments.items.map(({ key }) => key);
+
+    attachments.hold(keys);
+    history.add(next);
+    clearText();
+    queue({ kind: 'message', prompt: next, attachments: attachments.toSend, keys });
+
+    return true;
+  };
 
   const send = (next: ComposerPrompt) => {
     const current = state.current;
@@ -148,7 +255,7 @@ export function Composer({
 
     const editor = editorRef.current;
 
-    if (!editor || disabled || submitting.current) return;
+    if (!editor || disabled) return;
 
     const next = editor.getEditorState().read($readPrompt);
     const command = matchCommand(next.text, provider?.commands);
@@ -159,6 +266,8 @@ export function Composer({
 
       return;
     }
+
+    if (enqueue(next) || submitting.current) return;
 
     if (!onBeforeSubmit) {
       send(next);
@@ -227,7 +336,7 @@ export function Composer({
       onDrop={(event) => {
         event.preventDefault();
         setDragging(false);
-        if (!disabled && !pending) void attachments.add(Array.from(event.dataTransfer.files));
+        if (!disabled) void attachments.add(Array.from(event.dataTransfer.files));
       }}
     >
       <AttachmentList
@@ -265,21 +374,34 @@ export function Composer({
                   <AttachmentControl
                     accept={acceptFor(modelInputs)}
                     add={(files) => void attachments.add(files)}
-                    disabled={disabled || pending}
+                    disabled={disabled}
                   />
                 )}
                 {startSlot}
               </div>
               <div className="fb-composer__end">
                 {endSlot}
-                {!disabled && !pending && (
-                  <MicControl onWaveformChange={setAudioData} onText={appendText} />
+                {!disabled && <MicControl onWaveformChange={setAudioData} onText={appendText} />}
+                {!disabled && queueing && onQueue && sendable && !attachments.uploading && (
+                  <button
+                    key="queue"
+                    type="button"
+                    onClick={() => submit()}
+                    className="fb-composer__action fb-composer__queue"
+                    aria-label="Queue message"
+                  >
+                    <ArrowUpIcon className="fb-composer__action-icon" />
+                  </button>
                 )}
                 {!disabled &&
                   (pending ? (
                     <button
+                      key="stop"
                       type="button"
-                      onClick={onStop}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        onStop?.();
+                      }}
                       className="fb-composer__action fb-composer__stop"
                       aria-label={typeof stopContent === 'string' ? stopContent : 'Stop response'}
                     >
@@ -288,8 +410,10 @@ export function Composer({
                     </button>
                   ) : (
                     sendable &&
-                    !attachments.uploading && (
+                    !attachments.uploading &&
+                    !(queueing && onQueue) && (
                       <button
+                        key="submit"
                         type="submit"
                         className="fb-composer__action fb-composer__submit"
                         aria-label={typeof submitContent === 'string' ? submitContent : 'Submit'}

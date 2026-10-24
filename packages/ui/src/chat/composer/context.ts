@@ -11,6 +11,8 @@ export interface ComposerCommand {
   description?: string;
   arguments?: boolean;
   disabled?: boolean;
+  /** Mid-turn, waits in the chat's queue as its `/` text instead of running at once. */
+  queue?: boolean;
   execute: (input: string) => void | Promise<void>;
 }
 

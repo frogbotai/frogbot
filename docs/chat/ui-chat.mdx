@@ -112,7 +112,7 @@ import { Chat, ChatDock } from '@frogbotai/ui/chat'
 
 Register `/` commands with [`commands`](/chat/ui-registries#composer-commands) on `ChatProvider`: typing `/` opens a menu of them, and `/id rest` runs one that takes arguments. For anything else, use `onBeforeSubmit`.
 
-`onBeforeSubmit` runs before each message is sent, also while a reply streams, and receives `{ text, mentions, attachments }`. Return `true` and nothing is sent: the text clears and attachments stay in the composer. Return `false` to send as usual; nothing is sent while a reply streams. If it throws or rejects, nothing is sent and the chat shows `Command failed: <message>`. A registered command that matches runs first, and `onBeforeSubmit` isn't called for it.
+`onBeforeSubmit` runs before each message is sent and receives `{ text, mentions, attachments }`. Return `true` and nothing is sent: the text clears and attachments stay in the composer. Return `false` to send as usual. If it throws or rejects, nothing is sent and the chat shows `Command failed: <message>`. A registered command that matches runs first, and `onBeforeSubmit` isn't called for it. While a reply runs, a send is [queued](#queued-messages) without calling it.
 
 ```tsx
 const [pickerOpen, setPickerOpen] = useState(false)
@@ -140,6 +140,14 @@ const values = [model.name, model.id].map((value) => ({
 
 matchesModelSearch('sonnet', values) // true for "Claude Sonnet"
 ```
+
+## Queued messages
+
+While a reply runs, Enter or the **Queue message** button beside Stop adds the prompt, with its attachments, to a list above the composer and clears the composer. Stop only stops the reply; it never sends what you've typed. Attachments, drops and the microphone keep working while a reply runs. A command with [`queue: true`](/chat/ui-registries#command-options) waits in the list as its `/` text; other commands run at once.
+
+Each entry has **Edit**, which moves it back into an empty composer, and **Remove**. When a reply ends normally, with no question waiting, the first entry is sent with the current model, and the next waits for that reply. Stop, a failed reply or switching chats pauses the entries; a prompt you send then goes out first, and **Send now** sends a paused entry. Entries are kept per chat while the page is open and are lost on reload.
+
+With an adapter [`steerMessage`](/chat/ui-provider#adapter-options), a queued message also has **Steer** while a reply runs: it is handed to the running turn and shows **Steering** until the reply takes it, as a [`data-steered`](/chat/ui-registries#data-renderer-options) part, or the turn ends.
 
 ## Errors
 

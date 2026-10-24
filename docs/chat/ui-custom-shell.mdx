@@ -39,10 +39,10 @@ export function CustomShell() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `onSubmit` | `(prompt: ComposerPrompt, attachments: ComposerAttachment[]) => void \| Promise<void>` | Required | Called with the prompt and its [attachments](#composer-attachments) when the user sends. `prompt` is `{ text, mentions }`; see [Composer prompt](#composer-prompt). Only ready and text attachments are included; refused, failed, and too-large files never are. Enter sends; Shift+Enter adds a line; Enter while an input method is composing never sends. Nothing is sent while `pending`, `disabled`, or uploading. Attachments clear when the returned promise resolves. |
+| `onSubmit` | `(prompt: ComposerPrompt, attachments: ComposerAttachment[]) => void \| Promise<void>` | Required | Called with the prompt and its [attachments](#composer-attachments) when the user sends. `prompt` is `{ text, mentions }`; see [Composer prompt](#composer-prompt). Only ready and text attachments are included; refused, failed, and too-large files never are. Enter sends; Shift+Enter adds a line; Enter while an input method is composing never sends. Nothing is sent while `pending` (unless `onQueue` takes it), `disabled`, or uploading. Attachments clear when the returned promise resolves. |
 | `submitContent` | `ReactNode` | Required | Accessible label for the send button. |
 | `stopContent` | `ReactNode` | Required | Accessible label for the stop button. |
-| `onBeforeSubmit` | `(prompt: ComposerSubmission) => boolean \| Promise<boolean>` | — | Called before each send with `{ text, mentions, attachments }`, also while `pending`. Return `true` to handle it yourself: the text clears and attachments stay. See [Typed commands](/chat/ui-chat#typed-commands). |
+| `onBeforeSubmit` | `(prompt: ComposerSubmission) => boolean \| Promise<boolean>` | — | Called before each send with `{ text, mentions, attachments }`, also while `pending` without `onQueue`. Return `true` to handle it yourself: the text clears and attachments stay. See [Typed commands](/chat/ui-chat#typed-commands). |
 | `onError` | `(error: Error) => void` | — | Called when `onBeforeSubmit` or a command rejects. |
 | `defaultValue` | `string` | `''` | Initial text. |
 | `placeholder` | `string` | — | Shown while the input is empty. |
@@ -50,8 +50,12 @@ export function CustomShell() {
 | `autoFocus` | `boolean` | `false` | Focuses the input on mount. |
 | `disabled` | `boolean` | `false` | Makes the input read-only and hides the send, stop and microphone buttons. |
 | `hidden` | `boolean` | `false` | Hides the composer and keeps its text and attachments. |
-| `onStop` | `() => void` | — | Called by the stop button, which replaces the send button while `pending`, and by Escape or Ctrl+G while `pending` with no menu open. |
+| `onStop` | `() => void` | — | Called by the stop button, which replaces the send button while `pending`, and by Escape or Ctrl+G while `pending` with no menu open. The stop button never sends. |
 | `pending` | `boolean` | `false` | A reply is in progress: shows the stop button and blocks sending. |
+| `onQueue` | `(entry: ComposerQueued) => void` | — | Takes each send while `queueing`: Enter and the **Queue message** button pass `{ kind: 'message', prompt, attachments, keys }` and clear the composer, and a command with `queue: true` passes `{ kind: 'command', command, input, text }`. The attachment cards named by `keys` stay hidden in the composer until `ref.discard` or `ref.edit`. |
+| `queueing` | `boolean` | `pending` | Whether sends go to `onQueue`. |
+| `onFilledChange` | `(filled: boolean) => void` | — | Called when the composer gains or loses something to send. |
+| `ref` | `Ref<ComposerHandle>` | — | `edit(entry)` writes a queued entry back into an empty composer and returns `false`, doing nothing, if it has content; `discard(entry)` drops its attachment cards. |
 | `startSlot` | `ReactNode` | — | Controls at the start of the toolbar. |
 | `endSlot` | `ReactNode` | — | Controls at the end of the toolbar, before the microphone and send button. |
 | `adapter` | `ChatPlatformAdapter` | — | With `uploadAttachment`, enables file attachments and stores long pastes as text assets. See [Adapter options](/chat/ui-provider#adapter-options). |

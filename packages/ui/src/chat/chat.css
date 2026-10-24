@@ -63,7 +63,9 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    margin-bottom: 0.5rem;
+    margin: 0 0 0.5rem;
+    padding: 0;
+    list-style: none;
   }
 
   .fb-chat__queued-message {
@@ -92,5 +94,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .fb-chat__queued-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 0.25rem;
+    margin-left: auto;
   }
 }

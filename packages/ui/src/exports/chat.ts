@@ -35,7 +35,12 @@ export type { CodeBlockProps } from '../chat/code-block.js';
 export { CodeBlock } from '../chat/code-block.js';
 export type { CompactionPartData } from '../chat/compaction-part.js';
 export { CompactionPart } from '../chat/compaction-part.js';
-export type { ComposerProps, ComposerSubmission } from '../chat/composer/composer.js';
+export type {
+  ComposerHandle,
+  ComposerProps,
+  ComposerQueued,
+  ComposerSubmission,
+} from '../chat/composer/composer.js';
 export { Composer } from '../chat/composer/composer.js';
 export type { ComposerCommand, MentionItem, MentionSource } from '../chat/composer/context.js';
 export type { ComposerFeature } from '../chat/composer/features.js';
@@ -104,6 +109,8 @@ export { ReasoningPart } from '../chat/reasoning-part.js';
 export type { RenameChatDialogProps } from '../chat/rename-chat-dialog.js';
 export { RenameChatDialog } from '../chat/rename-chat-dialog.js';
 export { SourcePart } from '../chat/source-part.js';
+export type { SteeredPartData } from '../chat/steered-part.js';
+export { SteeredPart } from '../chat/steered-part.js';
 export { TextPart } from '../chat/text-part.js';
 export { TodoToolRender } from '../chat/todo-tool-render.js';
 export type { ToolActions } from '../chat/tool-actions.js';

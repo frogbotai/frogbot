@@ -88,6 +88,8 @@ export type ChatPlatformAdapter = {
     message: UIMessage,
   ) => Record<string, unknown> | Promise<Record<string, unknown>>;
   executeClientTool?: (name: string, input: unknown) => unknown;
+  /** Hands a queued message to the running turn, which takes it at its next step. */
+  steerMessage?: (chatId: ChatId, message: UIMessage) => Promise<void>;
 };
 
 export type ChatAdapterErrorCode = 'conflict' | 'file-unreadable' | 'file-too-large';

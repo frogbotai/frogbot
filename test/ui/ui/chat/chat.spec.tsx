@@ -21,6 +21,7 @@ const state = vi.hoisted(() => ({
   agents: [] as ChatManifest['agents'],
   toolRenderers: [] as ToolRenderer[],
   commands: [] as ComposerCommand[],
+  dataRenderers: [] as DataRenderer[],
   history: {
     messages: [] as UIMessage[],
     queued: [] as UIMessage[],
@@ -43,7 +44,7 @@ vi.mock('../../../../packages/ui/src/chat/provider', () => ({
     loading: false,
     manifest: { defaultAgent: 'support', agents: state.agents, transcribe: false },
     toolRenderers: state.toolRenderers,
-    dataRenderers: [],
+    dataRenderers: state.dataRenderers,
     commands: state.commands,
   }),
 }));
@@ -72,7 +73,9 @@ import { Chat, type ChatSidebarContext } from '../../../../packages/ui/src/chat/
 import { ChatDock } from '../../../../packages/ui/src/chat/chat-dock';
 import { ChatHistory } from '../../../../packages/ui/src/chat/chat-history';
 import type { ComposerCommand } from '../../../../packages/ui/src/chat/composer/context';
+import type { DataRenderer } from '../../../../packages/ui/src/chat/data-part';
 import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
+import { SteeredPart } from '../../../../packages/ui/src/chat/steered-part';
 import type {
   ToolRenderer,
   ToolRendererProps,
@@ -413,7 +416,13 @@ describe('Chat', () => {
     });
 
     act(() => {
-      (state.options as { onFinish?: () => void }).onFinish?.();
+      state.options?.onFinish?.({
+        message,
+        messages: [message],
+        isAbort: false,
+        isDisconnect: false,
+        isError: false,
+      });
     });
 
     expect(chatInit().transport).toBe(transport);
@@ -1168,3 +1177,594 @@ function turnRequestError(code: string) {
     responseBody: JSON.stringify({ error: 'The selected model is unavailable.', code }),
   });
 }
+
+describe('Chat queue', () => {
+  beforeEach(() => {
+    state.status = 'streaming';
+    state.error = undefined;
+    state.messages = [];
+    state.commands = [];
+    state.dataRenderers = [];
+    state.sendMessage.mockReset();
+    state.stop.mockReset();
+    state.history = { messages: [], queued: [], loadedChatId: undefined, loading: false };
+    state.agents = [];
+    state.toolRenderers = [];
+    setAdapter();
+  });
+
+  function deferred() {
+    let resolve!: () => void;
+    let reject!: (error: Error) => void;
+    const promise = new Promise<void>((done, fail) => {
+      resolve = done;
+      reject = fail;
+    });
+
+    return { promise, resolve, reject };
+  }
+
+  function rows() {
+    return [...document.querySelectorAll('[aria-label="Queued messages"] li')].map(
+      (row) =>
+        `${row.querySelector('.fb-chat__queued-label')?.textContent} ${row.querySelector('.fb-chat__queued-text')?.textContent}`,
+    );
+  }
+
+  function row(text: string) {
+    const match = [
+      ...document.querySelectorAll<HTMLElement>('[aria-label="Queued messages"] li'),
+    ].find((candidate) => candidate.querySelector('.fb-chat__queued-text')?.textContent === text);
+
+    if (!match) throw new Error(`No queued row ${text}`);
+
+    return within(match);
+  }
+
+  async function queue(text: string) {
+    type(text);
+    press('Enter');
+
+    await waitFor(() => expect(composerText()).toBe(''));
+  }
+
+  const sentText = (call: number) =>
+    (state.sendMessage.mock.calls[call]?.[0] as { parts: UIMessage['parts'] }).parts.at(-1);
+
+  it('queues sends mid-turn and runs them one at a time after a normal end', async () => {
+    const first = deferred();
+    const { rerender } = render(<Chat {...props} />);
+
+    await queue('One');
+    await queue('Two');
+    await queue('Three');
+
+    expect(rows()).toEqual(['Queued One', 'Queued Two', 'Queued Three']);
+    expect(state.sendMessage).not.toHaveBeenCalled();
+
+    state.sendMessage.mockReturnValueOnce(first.promise);
+    state.status = 'ready';
+    rerender(<Chat {...props} />);
+
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledOnce());
+
+    expect(sentText(0)).toEqual({ type: 'text', text: 'One' });
+    expect(state.sendMessage.mock.calls[0]?.[0]).toMatchObject({ metadata: { source: 'ui' } });
+    expect(rows()).toEqual(['Queued Two', 'Queued Three']);
+
+    await act(() => {
+      first.resolve();
+
+      return first.promise;
+    });
+
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledTimes(3));
+
+    expect(sentText(1)).toEqual({ type: 'text', text: 'Two' });
+    expect(sentText(2)).toEqual({ type: 'text', text: 'Three' });
+    expect(rows()).toEqual([]);
+  });
+
+  it('pauses on Stop, sends a new prompt first, and runs a paused one on Send now', async () => {
+    const { rerender } = render(<Chat {...props} />);
+
+    await queue('Later');
+
+    expect(row('Later').queryByRole('button', { name: 'Send now' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+
+    expect(state.stop).toHaveBeenCalledOnce();
+    expect(rows()).toEqual(['Paused Later']);
+
+    state.status = 'ready';
+    rerender(<Chat {...props} />);
+
+    await act(() => Promise.resolve());
+
+    expect(state.sendMessage).not.toHaveBeenCalled();
+
+    type('Fresh');
+    press('Enter');
+
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledOnce());
+
+    expect(sentText(0)).toEqual({ type: 'text', text: 'Fresh' });
+    expect(rows()).toEqual(['Paused Later']);
+
+    fireEvent.click(row('Later').getByRole('button', { name: 'Send now' }));
+
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledTimes(2));
+
+    expect(sentText(1)).toEqual({ type: 'text', text: 'Later' });
+    expect(rows()).toEqual([]);
+  });
+
+  it('pauses when the turn fails', async () => {
+    const { rerender } = render(<Chat {...props} />);
+
+    await queue('Later');
+
+    act(() => state.options?.onError?.(new Error('Stream failed')));
+    state.status = 'error';
+    rerender(<Chat {...props} />);
+
+    await act(() => Promise.resolve());
+
+    expect(rows()).toEqual(['Paused Later']);
+    expect(state.sendMessage).not.toHaveBeenCalled();
+
+    fireEvent.click(row('Later').getByRole('button', { name: 'Send now' }));
+
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledOnce());
+  });
+
+  it('holds the queue while a docked question waits, then runs it', async () => {
+    state.toolRenderers = [{ kind: 'question', render: Question }];
+
+    const { container, rerender } = render(<Chat {...props} />);
+
+    await queue('Later');
+
+    state.status = 'ready';
+    state.messages = [message, questionMessage('input-available')];
+    rerender(<Chat {...props} />);
+
+    await act(() => Promise.resolve());
+
+    expect(composer(container)?.hidden).toBe(true);
+    expect(state.sendMessage).not.toHaveBeenCalled();
+
+    state.messages = [message, questionMessage('output-available')];
+    rerender(<Chat {...props} />);
+
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledOnce());
+  });
+
+  it('removes an entry, and edits one back into an empty composer only', async () => {
+    const { rerender } = render(<Chat {...props} />);
+
+    await queue('One');
+    await queue('Two');
+
+    fireEvent.click(row('One').getByRole('button', { name: 'Remove' }));
+
+    expect(rows()).toEqual(['Queued Two']);
+
+    type('Draft');
+
+    await waitFor(() =>
+      expect(row('Two').getByRole<HTMLButtonElement>('button', { name: 'Edit' }).disabled).toBe(
+        true,
+      ),
+    );
+
+    press('Enter');
+
+    await waitFor(() => expect(composerText()).toBe(''));
+
+    await waitFor(() =>
+      expect(row('Two').getByRole<HTMLButtonElement>('button', { name: 'Edit' }).disabled).toBe(
+        false,
+      ),
+    );
+
+    fireEvent.click(row('Two').getByRole('button', { name: 'Edit' }));
+
+    await waitFor(() => expect(composerText()).toBe('Two'));
+
+    expect(rows()).toEqual(['Queued Draft']);
+
+    state.status = 'ready';
+    rerender(<Chat {...props} />);
+
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledOnce());
+
+    expect(sentText(0)).toEqual({ type: 'text', text: 'Draft' });
+  });
+
+  it('keeps a chat’s entries, paused, across a chat switch', async () => {
+    render(<Chat {...props} defaultChatId="one" />);
+
+    await queue('Later');
+
+    fireEvent.click(screen.getByText('Untitled'));
+
+    expect(rows()).toEqual([]);
+
+    fireEvent.click(screen.getByText('One'));
+
+    expect(rows()).toEqual(['Paused Later']);
+  });
+
+  it('queues a queue command as its / text, and pauses when it rejects', async () => {
+    const review = vi.fn(() => Promise.reject(new Error('No reviewer')));
+
+    state.commands = [
+      { id: 'review', title: 'Review', arguments: true, queue: true, execute: review },
+      { id: 'plan', title: 'Plan', arguments: true, execute: vi.fn() },
+    ];
+
+    const { rerender } = render(<Chat {...props} />);
+
+    await queue('/review the footer');
+    await queue('/plan on');
+    await queue('After');
+
+    expect(rows()).toEqual(['Queued /review the footer', 'Queued After']);
+    expect(state.commands[1]?.execute).toHaveBeenCalledWith('on');
+
+    state.status = 'ready';
+    rerender(<Chat {...props} />);
+
+    await waitFor(() => expect(review).toHaveBeenCalledWith('the footer'));
+    await waitFor(() => expect(rows()).toEqual(['Paused After']));
+
+    expect(screen.getByRole('alert').textContent).toContain('Command failed: No reviewer');
+    expect(state.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('offers Steer only when the adapter can steer', async () => {
+    render(<Chat {...props} defaultChatId="one" />);
+
+    await queue('Later');
+
+    expect(row('Later').queryByRole('button', { name: 'Steer' })).toBeNull();
+    expect(row('Later').getByRole('button', { name: 'Edit' })).toBeTruthy();
+  });
+
+  it('steers an entry into the turn and drops it when the reply takes it', async () => {
+    const steerMessage = vi.fn((_chatId: unknown, _message: UIMessage) => Promise.resolve());
+
+    state.adapter = { ...state.adapter, steerMessage };
+
+    render(<Chat {...props} defaultChatId="one" />);
+
+    await queue('Skip the footer');
+    await queue('Then this');
+
+    fireEvent.click(row('Skip the footer').getByRole('button', { name: 'Steer' }));
+
+    await waitFor(() => expect(steerMessage).toHaveBeenCalledOnce());
+
+    const [chatId, steered] = steerMessage.mock.calls[0] ?? [];
+
+    expect(chatId).toBe('one');
+    expect(steered).toEqual({
+      id: expect.any(String),
+      role: 'user',
+      parts: [{ type: 'text', text: 'Skip the footer' }],
+      metadata: { source: 'ui' },
+    });
+    expect(rows()).toEqual(['Steering Skip the footer', 'Queued Then this']);
+    expect(row('Skip the footer').queryByRole('button', { name: 'Remove' })).toBeNull();
+
+    act(() =>
+      state.options?.onData?.({
+        type: 'data-steered',
+        id: steered?.id,
+        data: { messageId: steered?.id, text: 'Skip the footer' },
+      }),
+    );
+
+    expect(rows()).toEqual(['Queued Then this']);
+  });
+
+  it('leaves a steer the turn did not reach to the backend', async () => {
+    const steerMessage = vi.fn(() => Promise.resolve());
+
+    state.adapter = { ...state.adapter, steerMessage };
+
+    const { rerender } = render(<Chat {...props} defaultChatId="one" />);
+
+    await queue('Skip the footer');
+
+    fireEvent.click(row('Skip the footer').getByRole('button', { name: 'Steer' }));
+
+    await waitFor(() => expect(steerMessage).toHaveBeenCalledOnce());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+
+    act(() =>
+      state.options?.onFinish?.({
+        message,
+        messages: [message],
+        isAbort: true,
+        isDisconnect: false,
+        isError: false,
+      }),
+    );
+
+    state.status = 'ready';
+    rerender(<Chat {...props} defaultChatId="one" />);
+
+    await act(() => Promise.resolve());
+
+    expect(rows()).toEqual([]);
+    expect(state.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('reports a failed steer and keeps the entry queued', async () => {
+    const onError = vi.fn();
+
+    state.adapter = {
+      ...state.adapter,
+      steerMessage: () => Promise.reject(new Error('Panel closed')),
+    };
+
+    render(<Chat {...props} defaultChatId="one" onError={onError} />);
+
+    await queue('Skip the footer');
+
+    fireEvent.click(row('Skip the footer').getByRole('button', { name: 'Steer' }));
+
+    await waitFor(() => expect(onError).toHaveBeenCalledOnce());
+
+    expect(onError.mock.calls[0]?.[0].message).toBe('Panel closed');
+    expect(rows()).toEqual(['Queued Skip the footer']);
+  });
+
+  it('renders a steered message inside the reply, where the reply took it', () => {
+    state.status = 'ready';
+    state.dataRenderers = [{ kind: 'steered', render: SteeredPart }];
+
+    state.messages = [
+      message,
+      {
+        id: 'assistant-1',
+        role: 'assistant',
+        parts: [
+          { type: 'text', text: 'Reading the page' },
+          { type: 'data-steered', id: 's1', data: { messageId: 's1', text: 'Skip the footer' } },
+          { type: 'data-steered', id: 's2', data: { messageId: 's2' } },
+          { type: 'text', text: 'Done' },
+        ],
+      },
+    ];
+
+    const { container } = render(<Chat {...props} />);
+
+    const reply = container.querySelectorAll('.fb-message')[1] as HTMLElement;
+    const steered = reply.querySelector('[data-part="steered"]') as HTMLElement;
+
+    expect(steered.textContent).toBe('Skip the footer');
+    expect(screen.getByText('Reading the page').compareDocumentPosition(steered)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(steered.compareDocumentPosition(screen.getByText('Done'))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(reply.querySelector('.fb-data-part')?.textContent).toContain('"messageId": "s2"');
+  });
+
+  function captureChatId() {
+    const created: { report?: (chatId: string) => void } = {};
+    const { createTransport } = state.adapter;
+
+    state.adapter = {
+      ...state.adapter,
+      createTransport: (options) => {
+        created.report = options.onChatId;
+
+        return createTransport(options);
+      },
+    };
+
+    return created;
+  }
+
+  const finish = (end: { isAbort?: boolean; isError?: boolean } = {}) =>
+    act(() =>
+      state.options?.onFinish?.({
+        message,
+        messages: [message],
+        isAbort: end.isAbort ?? false,
+        isDisconnect: false,
+        isError: end.isError ?? false,
+      }),
+    );
+
+  it('runs an entry queued in a new chat once the first reply creates the chat', async () => {
+    const created = captureChatId();
+    const { rerender } = render(<Chat {...props} />);
+
+    await queue('Later');
+
+    act(() => created.report?.('c9'));
+    finish();
+    state.status = 'ready';
+    rerender(<Chat {...props} />);
+
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledOnce());
+
+    expect(sentText(0)).toEqual({ type: 'text', text: 'Later' });
+    expect(rows()).toEqual([]);
+  });
+
+  it('runs an entry queued in a new controlled chat once the host takes the new id', async () => {
+    const created = captureChatId();
+    const onChatIdChange = vi.fn();
+    const { rerender } = render(
+      <Chat {...props} chatId={undefined} onChatIdChange={onChatIdChange} />,
+    );
+
+    await queue('Later');
+
+    act(() => created.report?.('c9'));
+    finish();
+
+    expect(onChatIdChange).toHaveBeenCalledWith('c9');
+
+    state.status = 'ready';
+    rerender(<Chat {...props} chatId="c9" onChatIdChange={onChatIdChange} />);
+
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledOnce());
+
+    expect(sentText(0)).toEqual({ type: 'text', text: 'Later' });
+  });
+
+  it('drops a new chat’s entries when the user leaves it before it exists', async () => {
+    render(<Chat {...props} />);
+
+    await queue('Later');
+
+    fireEvent.click(screen.getByText('One'));
+
+    expect(rows()).toEqual([]);
+    expect(state.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('runs nothing after Stop even when the turn ends normally after it', async () => {
+    const { rerender } = render(<Chat {...props} defaultChatId="one" />);
+
+    await queue('Later');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+    finish();
+    state.status = 'ready';
+    rerender(<Chat {...props} defaultChatId="one" />);
+
+    await act(() => Promise.resolve());
+
+    expect(state.sendMessage).not.toHaveBeenCalled();
+    expect(rows()).toEqual(['Paused Later']);
+  });
+
+  it('keeps Edit off while the composer holds only a mention', async () => {
+    render(<Chat {...props} defaultChatId="one" />);
+
+    await queue('Later');
+
+    insertMention({ id: 'doc-1', label: 'Pricing', source: 'docs' });
+
+    await waitFor(() =>
+      expect(row('Later').getByRole<HTMLButtonElement>('button', { name: 'Edit' }).disabled).toBe(
+        true,
+      ),
+    );
+  });
+
+  it('holds the queue while a client tool’s output sends the next step', async () => {
+    state.executeClientTool.mockResolvedValue({ ok: true });
+
+    const { rerender } = render(<Chat {...props} defaultChatId="one" />);
+
+    await queue('Later');
+
+    await act(async () => {
+      await state.options?.onToolCall?.({
+        toolCall: { dynamic: true, toolName: 'page', toolCallId: 't1', input: {} },
+      });
+    });
+
+    state.status = 'ready';
+    rerender(<Chat {...props} defaultChatId="one" />);
+
+    await act(() => Promise.resolve());
+
+    expect(state.addToolOutput).toHaveBeenCalledOnce();
+    expect(state.sendMessage).not.toHaveBeenCalled();
+    expect(rows()).toEqual(['Queued Later']);
+  });
+
+  it('runs entries in order after Send now on a later one', async () => {
+    const first = deferred();
+    const { rerender } = render(<Chat {...props} defaultChatId="one" />);
+
+    await queue('One');
+    await queue('Two');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+    state.status = 'ready';
+    rerender(<Chat {...props} defaultChatId="one" />);
+
+    state.sendMessage.mockReturnValueOnce(first.promise);
+    fireEvent.click(row('Two').getByRole('button', { name: 'Send now' }));
+
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledOnce());
+
+    expect(sentText(0)).toEqual({ type: 'text', text: 'Two' });
+    expect(rows()).toEqual(['Queued One']);
+
+    await act(() => {
+      first.resolve();
+
+      return first.promise;
+    });
+
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledTimes(2));
+
+    expect(sentText(1)).toEqual({ type: 'text', text: 'One' });
+  });
+
+  it('runs an entry queued while a stopped turn winds down, and keeps the earlier one paused', async () => {
+    const { rerender } = render(<Chat {...props} defaultChatId="one" />);
+
+    await queue('Later');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+
+    await queue('Fresh');
+
+    finish({ isAbort: true });
+
+    expect(rows()).toEqual(['Paused Later', 'Queued Fresh']);
+
+    state.status = 'ready';
+    rerender(<Chat {...props} defaultChatId="one" />);
+
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledOnce());
+
+    expect(sentText(0)).toEqual({ type: 'text', text: 'Fresh' });
+    expect(rows()).toEqual(['Paused Later']);
+  });
+
+  it('pauses every entry when a turn aborts without Stop', async () => {
+    render(<Chat {...props} defaultChatId="one" />);
+
+    await queue('Later');
+
+    finish({ isAbort: true });
+
+    expect(rows()).toEqual(['Paused Later']);
+  });
+
+  it('puts a message back, paused, when building its metadata fails', async () => {
+    const { rerender } = render(<Chat {...props} defaultChatId="one" />);
+
+    await queue('One');
+    await queue('Two');
+
+    state.buildMetadata.mockImplementationOnce(() => {
+      throw new Error('No page');
+    });
+
+    state.status = 'ready';
+    rerender(<Chat {...props} defaultChatId="one" />);
+
+    await waitFor(() => expect(rows()).toEqual(['Paused One', 'Paused Two']));
+
+    expect(state.sendMessage).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert').textContent).toContain('No page');
+  });
+});
