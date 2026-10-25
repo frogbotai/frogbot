@@ -291,6 +291,7 @@ describe('sign-in identity matching', () => {
 
     find
       .mockResolvedValueOnce({ docs: [] })
+      .mockResolvedValueOnce({ docs: [] })
       .mockResolvedValueOnce({ docs: [{ id: 2, email: 'person@example.com', _verified: true }] });
 
     create.mockRejectedValue(
@@ -316,6 +317,6 @@ describe('sign-in identity matching', () => {
     create.mockRejectedValue(new Error('denied'));
 
     await expect(resolve()).rejects.toThrow('denied');
-    expect(find).toHaveBeenCalledTimes(1);
+    expect(find).toHaveBeenCalledTimes(2);
   });
 });

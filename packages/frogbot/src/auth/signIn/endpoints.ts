@@ -81,7 +81,14 @@ export function buildSignInEndpoints({
 
   const failure = (status: number, headers: Headers) =>
     Response.json(
-      { error: status === 404 ? 'Sign-in method not found' : 'Sign-in failed' },
+      {
+        error:
+          status === 404
+            ? 'Sign-in method not found'
+            : status === 403
+              ? "This app doesn't let new people sign up. Ask an admin to add you."
+              : 'Sign-in failed',
+      },
       { status, headers },
     );
 
@@ -188,7 +195,10 @@ export function buildSignInEndpoints({
 
           return continueTo(intent.returnTo, headers);
         } catch (error) {
-          return failure(error instanceof OAuthError ? 400 : 500, headers);
+          return failure(
+            error instanceof OAuthError ? (error.code === 'signUp' ? 403 : 400) : 500,
+            headers,
+          );
         }
       },
     },
