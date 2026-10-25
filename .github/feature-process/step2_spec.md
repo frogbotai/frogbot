@@ -69,3 +69,16 @@ The fields, in this order. Card IDs are `D1`, `D2`… within the ticket.
 ````
 
 `Applies to:` names a `decisions.md` topic when the answer should hold beyond this ticket; the answer then also becomes a ruling under that topic.
+
+### Cards in chat
+
+When the coordinator brings cards to the owner in chat, it skips the full card and lists each one in plain words so the owner can answer quickly. Group the cards by ticket. For each card, ask the question in a line, then give one line per option saying what happens and why. Put "(recommended)" on the recommended option itself. Leave out code, paths and the Payload line; those stay in the spec.
+
+```text
+329: honest results
+- D1, when a page swaps the text box right after typing:
+  - A (recommended): find the new box and check the text is in it. "OK" then really means the text went in.
+  - B: don't check at all, like OpenCode.
+```
+
+The owner replies in short form, for example `329 D1: A` or `d2: A`.
