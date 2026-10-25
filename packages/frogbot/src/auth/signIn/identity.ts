@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 
-import { ValidationError } from 'payload';
+import { type AccessResult, executeAccess, ValidationError } from 'payload';
 import { z } from 'zod';
 
 import { OAuthError } from '../../connections/oauth/index.js';
@@ -67,6 +67,34 @@ export async function resolveSignInIdentity({
 
       const existing = await find();
       if (existing) return existing.id;
+
+      signal.throwIfAborted();
+      const payloadReq = toPayloadRequest(req);
+      const first = !(
+        await req.frogbot.db.find({
+          collection: collectionSlug,
+          limit: 1,
+          pagination: false,
+          req: payloadReq,
+        })
+      ).docs.length;
+
+      if (!first) {
+        const user = payloadReq.user;
+        payloadReq.user = null;
+        let allowed: AccessResult;
+        try {
+          allowed = await executeAccess(
+            { slug: collectionSlug, data: { email }, disableErrors: true, req: payloadReq },
+            collection.access.create,
+          );
+        } finally {
+          payloadReq.user = user;
+        }
+
+        if (!allowed) throw new OAuthError('signUp');
+      }
+
       let createdId: string | number | undefined;
       try {
         signal.throwIfAborted();

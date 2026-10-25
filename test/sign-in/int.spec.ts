@@ -38,6 +38,12 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
   const hooks: string[] = [];
   const sendEmail = vi.fn();
   const beforeChange = vi.fn<CollectionBeforeChangeHook>();
+  const domainAccessCalls: { email?: string; user: unknown }[] = [];
+  const domainAccess = ({ data, req }: { data?: { email?: string }; req: { user?: unknown } }) => {
+    domainAccessCalls.push({ email: data?.email, user: req.user });
+
+    return data?.email?.endsWith('@trend.com') === true;
+  };
 
   const request = (path: string | URL, init: RequestInit = {}) =>
     fetch(new URL(path, baseURL), { ...init, redirect: 'manual' });
@@ -199,7 +205,10 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
         ...['users', 'customers'].map((slug) => ({
           slug,
           trash: true,
-          access: { read: ({ req }: { req: { user?: unknown } }) => Boolean(req.user) },
+          access: {
+            create: () => true,
+            read: ({ req }: { req: { user?: unknown } }) => Boolean(req.user),
+          },
           auth: {
             signIn: [method, otherMethod],
             verify: true,
@@ -224,6 +233,13 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
           },
         })),
         { slug: 'password-users', auth: true, fields: [] },
+        { slug: 'members', auth: { signIn: [method] }, fields: [] },
+        {
+          slug: 'domain-members',
+          access: { create: domainAccess },
+          auth: { signIn: [method] },
+          fields: [],
+        },
         {
           slug: 'oauth-only',
           access: { read: ({ req }: { req: { user?: unknown } }) => Boolean(req.user) },
@@ -808,6 +824,154 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
     ).toBe(0);
     expect(JSON.stringify(user)).not.toContain('fresh:');
     expect(JSON.stringify(user)).not.toContain('never-persist-refresh');
+  });
+
+  describe('who can sign up', () => {
+    const refusal = "This app doesn't let new people sign up. Ask an admin to add you.";
+
+    const reset = async (collection: string, emails: string[] = []) => {
+      await frogbot.db.deleteMany({ collection, where: {} });
+
+      for (const email of emails) {
+        await frogbot.create({
+          collection,
+          data: { email, password: 'local-test-password' },
+          overrideAccess: true,
+        });
+      }
+    };
+
+    const count = async (collection: string, email?: string) =>
+      (
+        await frogbot.count({
+          collection,
+          overrideAccess: true,
+          ...(email ? { where: { email: { equals: email } } } : {}),
+        })
+      ).totalDocs;
+
+    const expectRefused = async (response: Response, collection: string, email: string) => {
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({ error: refusal });
+      expect(sessionCookie(response)).toBeUndefined();
+      expect(await count(collection, email)).toBe(0);
+    };
+
+    it('refuses a stranger under default create access and creates nothing', async () => {
+      await reset('members', ['admin@example.com']);
+
+      const response = await callback(
+        await authorize({ collection: 'members', code: 'stranger@example.com' }),
+      );
+
+      await expectRefused(response, 'members', 'stranger@example.com');
+
+      expect(await count('members')).toBe(1);
+    });
+
+    it('still signs in an existing user under default create access', async () => {
+      await reset('members', ['admin@example.com', 'member@example.com']);
+
+      const response = await callback(
+        await authorize({ collection: 'members', code: 'member@example.com' }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(sessionCookie(response)).toBeTruthy();
+      expect(await count('members')).toBe(2);
+    });
+
+    it('lets a stranger in when create access is open', async () => {
+      expect(await count('users')).toBeGreaterThan(0);
+
+      const response = await callback(await authorize({ code: 'open-stranger@example.com' }));
+
+      expect(response.status).toBe(200);
+      expect(await rawUser('open-stranger@example.com')).toMatchObject({ _verified: true });
+    });
+
+    it('applies a create rule that reads the email, with no signed-in user', async () => {
+      await reset('domain-members', ['admin@trend.com']);
+      domainAccessCalls.length = 0;
+
+      const allowed = await callback(
+        await authorize({ collection: 'domain-members', code: 'New@Trend.com' }),
+      );
+
+      expect(allowed.status).toBe(200);
+      expect(await count('domain-members', 'new@trend.com')).toBe(1);
+      expect(domainAccessCalls).toEqual([{ email: 'new@trend.com', user: null }]);
+
+      const refused = await callback(
+        await authorize({ collection: 'domain-members', code: 'outsider@example.com' }),
+      );
+
+      await expectRefused(refused, 'domain-members', 'outsider@example.com');
+    });
+
+    it('lets the first user into an empty collection under default create access', async () => {
+      await reset('members');
+
+      const response = await callback(
+        await authorize({ collection: 'members', code: 'first@example.com' }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(sessionCookie(response)).toBeTruthy();
+      expect(await count('members')).toBe(1);
+    });
+
+    it('lets only one of two concurrent first sign-ins through the first-user exception', async () => {
+      await reset('members');
+
+      const flows = await Promise.all([
+        authorize({ collection: 'members', code: 'first-a@example.com' }),
+        authorize({ collection: 'members', code: 'first-b@example.com' }),
+      ]);
+
+      let releaseCreate!: () => void;
+      const released = new Promise<void>((resolve) => {
+        releaseCreate = resolve;
+      });
+
+      let blocked = false;
+      let contending = false;
+      const create = frogbot.create.bind(frogbot);
+      const createSpy = vi.spyOn(frogbot, 'create').mockImplementation(async (args) => {
+        if (args.collection === 'members' && !blocked) {
+          blocked = true;
+          await released;
+        }
+
+        return create(args);
+      });
+
+      const get = frogbot.kv.get.bind(frogbot.kv);
+      const getSpy = vi.spyOn(frogbot.kv, 'get').mockImplementation((key) => {
+        if (blocked && key === `auth:session:${JSON.stringify(['members'])}`) contending = true;
+
+        return get(key);
+      });
+
+      const pending = [callback(flows[0])];
+
+      onTestFinished(async () => {
+        releaseCreate();
+        await Promise.allSettled(pending);
+        createSpy.mockRestore();
+        getSpy.mockRestore();
+      });
+
+      await vi.waitFor(() => expect(blocked).toBe(true), { timeout: 5000 });
+      pending.push(callback(flows[1]));
+      await vi.waitFor(() => expect(contending).toBe(true), { timeout: 5000 });
+      releaseCreate();
+      const responses = await Promise.all(pending);
+
+      expect(responses.map(({ status }) => status)).toEqual([200, 403]);
+      expect(await count('members')).toBe(1);
+      expect(await count('members', 'first-a@example.com')).toBe(1);
+    });
   });
 
   it('rejects external redirects and leaves connection authorization session-protected', async () => {

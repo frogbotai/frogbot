@@ -5,7 +5,7 @@ description: "Add collection-scoped OAuth login with identity pieces."
 keywords: ["authentication", "sign-in", "OAuth", "Google", "sessions"]
 ---
 
-Add OAuth pieces to a collection's `auth.signIn` array to let users sign in through a provider. FrogBot matches or creates the local user by email and issues that collection's session.
+Add OAuth pieces to a collection's `auth.signIn` array to let users sign in through a provider. FrogBot matches the local user by email, or creates one when the collection's [`create` access](#who-can-sign-up) allows it, and issues that collection's session.
 
 ## Enable Google sign-in
 
@@ -87,7 +87,7 @@ For piece authors, `oauth.account({ tokens, client, req })` returns `{ id, label
 | --- | --- |
 | Existing user, `auth.verify` disabled | Sign in after the normal login checks. |
 | Existing user, `auth.verify` enabled | Require `_verified === true`. OAuth does not verify an existing unverified account. |
-| No matching user | Create a user with the normalized email and, unless the local strategy is off, a random password. When `auth.verify` is enabled, set `_verified: true`; suppress the verification email. |
+| No matching user | If [`create` access](#who-can-sign-up) allows it, create a user with the normalized email and, unless the local strategy is off, a random password. When `auth.verify` is enabled, set `_verified: true`; suppress the verification email. |
 
 User creation runs collection validation and hooks. Give required custom fields defaults or populate them in a hook. If creation fails, sign-in fails. Trashed users are excluded from identity lookup; duplicate or incompatible email identities are rejected.
 
@@ -98,6 +98,25 @@ For collections with sign-in methods, FrogBot coordinates OAuth and password log
 Persisted sessions require transactional storage. SQLite, PostgreSQL, and MongoDB replica sets are supported; session mutations fail rather than falling back to unsafe transactionless writes. Keep login hooks short. For long SQLite transactions, use an independent KV backend so the transaction cannot block renewal of the authentication lock.
 
 The SQLite adapter enables transactions automatically when you configure sign-in methods. Explicitly disabling transactions with sign-in configured produces an initialization error.
+
+## Who can sign up
+
+Creating a user through sign-in follows the collection's `access.create`, the same rule as `POST /api/users`. It runs with no signed-in user, and `data` holds the normalized email. The default `create` access allows only a signed-in user, so **without `access.create`, only people who already have an account can sign in.**
+
+```ts
+// Anyone with a provider account
+access: { create: () => true }
+
+// Only your company's addresses
+access: { create: ({ data }) => data?.email?.endsWith('@trend.com') === true }
+
+// Only people an admin adds (the default)
+access: {}
+```
+
+The rule also governs `POST /api/users`, so an open rule lets anyone create an account there too. An [`allow()`](/plugins/roles) rule needs a signed-in user, so it refuses every new person; open sign-up with a plain function. Refused people get a `403` with "This app doesn't let new people sign up. Ask an admin to add you." and nothing is created.
+
+The first user is the exception, as with the create-first-user screen: while the collection has no users at all, counting trashed ones, the first person to sign in gets an account whatever `access.create` says. Sign-ins to a collection run one at a time, so two people signing in at once can't both become the first user.
 
 ## Collection requirements
 
