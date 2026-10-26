@@ -55,7 +55,10 @@ export function readPayloadTokens(source = SOURCE) {
         page.push(
           ...declarations.filter(([name]) => file !== 'theme.css' || THEME_NAMES.test(name)),
         );
-      } else if (selector.includes("[data-theme='dark']")) {
+      } else if (
+        selector.includes("[data-theme='dark']") &&
+        !selector.includes('[data-enhanced-contrast]')
+      ) {
         dark.push(...declarations);
       }
     }
