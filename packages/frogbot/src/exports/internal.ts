@@ -1,6 +1,8 @@
 export { executeAuthStrategy } from '../auth/executeAuthStrategy.js';
 export { formatCliError } from '../bin/formatCliError.js';
 export { loadEnv } from '../bin/loadEnv.js';
+export type { CascadeDeleteProps } from '../collections/config/cascadeDelete.js';
+export { cascadeDelete } from '../collections/config/cascadeDelete.js';
 export { isInternalCollection } from '../collections/config/internal.js';
 export { attachRegisteredFrogBot } from '../config/attachFrogBot.js';
 export { getPayloadConfig } from '../config/getPayloadConfig.js';

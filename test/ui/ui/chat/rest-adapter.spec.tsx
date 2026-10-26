@@ -222,25 +222,16 @@ describe('createRestChatAdapter', () => {
     ]);
   });
 
-  it('deletes every message before the chat', async () => {
+  it('deletes a chat with one DELETE to the chat', async () => {
     const { adapter, calls } = adapterFor({
-      'GET /turns?depth=0&limit=0&where[chat][equals]=chat-1': () =>
-        Response.json({ docs: [{ id: 'm1' }, { id: 2 }] }),
-      'DELETE /turns/m1': () => new Response(null, { status: 204 }),
-      'DELETE /turns/2': () => new Response(null, { status: 204 }),
       'DELETE /conversations/chat-1': () => new Response(null, { status: 204 }),
     });
 
     await adapter.deleteChat?.('chat-1');
 
-    expect(calls[0]).toMatchObject({ method: 'GET', path: expect.stringMatching(/^\/turns\?/) });
-    expect(
-      calls
-        .slice(1, 3)
-        .map(({ path }) => path)
-        .sort(),
-    ).toEqual(['/turns/2', '/turns/m1']);
-    expect(calls[3]).toMatchObject({ method: 'DELETE', path: '/conversations/chat-1' });
+    expect(calls.map(({ method, path }) => `${method} ${path}`)).toEqual([
+      'DELETE /conversations/chat-1',
+    ]);
   });
 
   it('settles a dismissed tool call and recovers a settlement from a 409', async () => {

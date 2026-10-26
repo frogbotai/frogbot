@@ -190,6 +190,6 @@ FrogBot creates its reserved `connections` collection only when the root list is
 
 Static input and OAuth token sets are encrypted as JSON with AES-256-GCM using a key derived from the root `secret`. Keep that secret stable: changing it makes existing credentials unreadable. Factory `auth` stays in your configuration and is never copied into connection storage.
 
-Collection reads are owner-scoped. Ordinary collection creates, updates, and deletes are disabled; use the connection endpoints. The credential field is hidden and denies field-level reads.
+Collection reads are owner-scoped. Ordinary collection creates, updates, and deletes are disabled; use the connection endpoints. The credential field is hidden and denies field-level reads. Deleting a user also deletes every connection that user owns.
 
 Connections authorize outbound calls to providers. [OAuth sign-in](/authentication/sign-in) establishes a FrogBot session, while [API keys](/plugins/api-keys) authenticate inbound requests to FrogBot.

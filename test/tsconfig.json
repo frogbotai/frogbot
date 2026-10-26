@@ -19,6 +19,7 @@
     "browser/fixtures/live-preview",
     "browser/fixtures/question",
     "browser/fixtures/sign-in",
+    "cascade-delete",
     "chat",
     "collections-rest",
     "config",

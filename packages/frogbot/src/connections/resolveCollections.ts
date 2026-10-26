@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { resolveUserSlug } from '../chat/resolveUserSlug.js';
+import { cascadeDelete } from '../collections/config/cascadeDelete.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { FrogBotConfig } from '../config/types.js';
 import { isPieceInstance, pieceInstanceDefinition } from '../pieces/definePiece.js';
@@ -162,7 +163,14 @@ export function resolveConnectionsCollections(config: FrogBotConfig): {
   base.endpoints = buildConnectionOAuthEndpoints({ connections, userSlug });
 
   return {
-    collections: [...config.collections, base],
+    collections: [
+      ...config.collections.map((collection) =>
+        collection.slug === userSlug
+          ? cascadeDelete(collection, { collection: slug, field: 'owner' })
+          : collection,
+      ),
+      base,
+    ],
     connections,
   };
 }
