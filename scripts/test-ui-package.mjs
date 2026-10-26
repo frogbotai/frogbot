@@ -100,6 +100,7 @@ try {
     .filter((file) => file.endsWith('.css'));
 
   assert.ok(cssFiles.includes('src/layers.css'));
+  assert.ok(cssFiles.includes('src/payload-tokens.css'));
   assert.ok(cssFiles.includes('src/styles.css'));
   assert.ok(cssFiles.includes('src/utilities.css'));
   assert.ok(fs.statSync(path.join(extractedRoot, 'src/styles.css')).size > 0);
@@ -107,7 +108,7 @@ try {
   const css = fs.readFileSync(path.join(extractedRoot, 'src/styles.css'), 'utf8');
   assert.ok(css.startsWith('@import "./layers.css";\n'));
   assert.match(css, /@import "\.\/utilities\.css"/);
-  assert.match(css, /var\(--background\)/);
+  assert.match(css, /var\(--color-text\)/);
 
   const clientEntry = fs.readFileSync(path.join(extractedRoot, 'dist/placeholder.js'), 'utf8');
   assert.equal(clientEntry.split('\n')[0], "'use client';");

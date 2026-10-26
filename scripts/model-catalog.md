@@ -31,7 +31,13 @@ the chat model picker. Every synced provider present in the source dataset gets
 its models.dev `name`; a provider without one fails the sync. `LOGO_ONLY_PROVIDERS`
 in the script adds providers that have a name and logo but no catalog models:
 `ollama` ("Ollama", logo from `ollama-cloud`, because models.dev's `ollama` logo
-is the generic one) and `lmstudio` ("LM Studio").
+is the generic one), `lmstudio` ("LM Studio"), and `frogbot` ("FrogBot").
+
+Temporary: while models.dev still serves FrogBot's Inkscape export (`<style>`,
+`<g transform>`, class fills), the sync falls back to the flat redraw in
+`scripts/logos/frogbot.svg`. Once the upstream PR lands, models.dev's logo
+parses and wins automatically; then delete the file and `FALLBACK_LOGOS`
+([models.dev#10430](https://github.com/anomalyco/models.dev/pull/10430)).
 
 Provider logos come from `https://models.dev/logos/<provider>.svg`. They are
 downloaded only during the sync and bundled as SVG path data; the chat UI makes

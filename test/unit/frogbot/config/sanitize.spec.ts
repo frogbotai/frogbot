@@ -2847,7 +2847,7 @@ describe('frogbot sanitize', () => {
           providers: {
             bedrock: {
               region: 'us-east-1',
-              models: ['zai.glm-4.7-flash'],
+              models: ['zai.glm-5'],
             },
           },
         },
@@ -3562,14 +3562,14 @@ describe('frogbot sanitize', () => {
     });
 
     it('expands wildcard options to only the configured Bedrock chat allowlist', () => {
-      const defaultModel = 'bedrock/zai.glm-4.7-flash';
+      const defaultModel = 'bedrock/zai.glm-5';
 
       const config = makeConfig({
         ai: {
           providers: {
             bedrock: {
               region: 'us-east-1',
-              models: ['zai.glm-4.7-flash', 'amazon.nova-lite-v1:0'],
+              models: ['zai.glm-5', 'amazon.nova-lite-v1:0'],
             },
             openai: undefined,
           },

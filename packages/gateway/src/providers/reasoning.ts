@@ -244,8 +244,10 @@ const deepinfraChat: ReasoningProtocol = (model, option) => {
   return openaiChat()(model, option);
 };
 
+const MISTRAL_NO_EFFORT = new Set(['zai-glm-5-3', 'zai-glm-5-3-flash']);
+
 const mistralChat: ReasoningProtocol = (model, option) => {
-  if (model.id === 'zai-glm-5-3') return [];
+  if (MISTRAL_NO_EFFORT.has(model.id)) return [];
 
   return openaiChat({ accepted: ['none', 'high'] })(model, option);
 };

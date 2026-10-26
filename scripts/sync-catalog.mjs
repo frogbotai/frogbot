@@ -31,6 +31,9 @@ const PROVIDERS = {
   xai: 'xai',
 };
 
+// Workaround: https://github.com/anomalyco/models.dev/pull/10430, remove when models.dev serves the flat FrogBot logo
+const FALLBACK_LOGOS = { frogbot: resolve(root, 'scripts/logos/frogbot.svg') };
+
 const LOGO_ONLY_PROVIDERS = {
   frogbot: { name: 'FrogBot', logo: 'frogbot' },
   lmstudio: { name: 'LM Studio', logo: 'lmstudio' },
@@ -141,7 +144,7 @@ function isPricedLanguageModel(model) {
   return priced && textOnly;
 }
 
-function mapModel({ model, provider }) {
+function mapModel({ model, provider, npm }) {
   const modalities = {
     input: model.modalities.input.filter((modality) => MODALITIES.has(modality)),
     output: model.modalities.output.filter((modality) => MODALITIES.has(modality)),
@@ -177,7 +180,7 @@ function mapModel({ model, provider }) {
       : undefined,
     sdk: model.provider
       ? compact({
-          npm: model.provider.npm,
+          npm: model.provider.npm ?? npm,
           api: model.provider.api,
           shape: model.provider.shape,
         })
@@ -203,9 +206,11 @@ export function buildCatalogs({ overlays, source }) {
 
       if (AGGREGATOR_PROVIDERS.has(provider) && !isPricedLanguageModel(model)) continue;
 
-      if (packages && !packages.has(model.provider?.npm ?? source[sourceProvider].npm)) continue;
+      const npm = model.provider?.npm ?? source[sourceProvider].npm;
 
-      const entry = mapModel({ model, provider });
+      if (packages && !packages.has(npm)) continue;
+
+      const entry = mapModel({ model, provider, npm: source[sourceProvider].npm });
 
       entries.set(entry.id, entry);
       families.set(entry.id, model.family);
@@ -490,6 +495,10 @@ export async function syncCatalog({ fetchImpl = fetch } = {}) {
     try {
       return logoNodes(svg);
     } catch (error) {
+      if (Object.hasOwn(FALLBACK_LOGOS, sourceProvider)) {
+        return logoNodes(await readFile(FALLBACK_LOGOS[sourceProvider], 'utf8'));
+      }
+
       throw new Error(`Invalid models.dev logo for '${sourceProvider}': ${error.message}`, {
         cause: error,
       });
