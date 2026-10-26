@@ -7,12 +7,12 @@
 
   .rating-stars__star {
     flex-shrink: 0;
-    stroke: var(--fb-theme-base-400);
+    stroke: var(--color-icon-tertiary);
     fill: none;
   }
 
   .rating-stars__star--on {
-    color: var(--color-warning);
+    color: var(--color-icon-warning);
     stroke: currentColor;
     fill: currentColor;
   }
@@ -34,7 +34,7 @@
   }
 
   .rating-field__option:has(.rating-field__input:focus-visible) {
-    box-shadow: 0 0 0 2px var(--fb-theme-brand-500);
+    box-shadow: 0 0 0 2px var(--accessibility-focus-color);
   }
 
   .rating-field__input,
@@ -52,12 +52,12 @@
 
   .rating-field__star {
     flex-shrink: 0;
-    stroke: var(--fb-theme-base-400);
+    stroke: var(--color-icon-tertiary);
     fill: none;
   }
 
   .rating-field__star--on {
-    color: var(--color-warning);
+    color: var(--color-icon-warning);
     stroke: currentColor;
     fill: currentColor;
   }

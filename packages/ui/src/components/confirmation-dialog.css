@@ -8,8 +8,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--fb-theme-base-900);
-    background: color-mix(in srgb, var(--fb-theme-base-0) 85%, transparent);
+    color: var(--color-text);
+    background: color-mix(in srgb, var(--color-bg) 85%, transparent);
     border-radius: inherit;
   }
 }

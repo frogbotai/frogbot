@@ -11,12 +11,12 @@
     width: 100%;
     overflow-wrap: anywhere;
     padding: 0.75rem 1.25rem 1rem;
-    border: 1px solid var(--fb-theme-base-500);
+    border: 1px solid var(--field-color-border);
     border-radius: calc(var(--fb-radius-xl) + 0.25rem);
     border-top-right-radius: 0;
     background: transparent;
     color: inherit;
-    font-family: var(--font-payload);
+    font-family: var(--font-body);
     font-size: var(--fb-text-base);
     line-height: var(--fb-text-base--line-height);
     outline: none;
@@ -25,7 +25,7 @@
   .fb-message-editor__input:hover,
   .fb-message-editor__input:focus,
   .fb-message-editor__input:active {
-    border-color: var(--fb-theme-base-600);
+    border-color: var(--field-color-border-hover);
   }
 
   .fb-message-editor__actions {

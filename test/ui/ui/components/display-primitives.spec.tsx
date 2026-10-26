@@ -43,7 +43,7 @@ it('renders staggered shimmers immediately when requested', () => {
 
 it('renders an option pill as a span with its colour modifier and className', () => {
   render(
-    <OptionPill className="x" color="teal">
+    <OptionPill className="x" color="purple">
       Review
     </OptionPill>,
   );
@@ -51,5 +51,5 @@ it('renders an option pill as a span with its colour modifier and className', ()
   const pill = screen.getByText('Review');
 
   expect(pill.tagName).toBe('SPAN');
-  expect(pill.className).toBe('fb-option-pill fb-option-pill--teal x');
+  expect(pill.className).toBe('fb-option-pill fb-option-pill--purple x');
 });

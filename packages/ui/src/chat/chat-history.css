@@ -14,13 +14,13 @@
 
   .fb-chat-history__item:hover,
   .fb-chat-history__item.fb-chat-row-actions__row--open {
-    background-color: var(--fb-theme-base-100);
+    background-color: var(--color-bg-hover);
   }
 
   .fb-chat-history__item--active,
   .fb-chat-history__item--active:hover {
-    color: var(--fb-theme-base-800);
-    background-color: var(--fb-theme-base-150);
+    color: var(--color-text);
+    background-color: var(--color-bg-tertiary);
   }
 
   .fb-chat-history__button {

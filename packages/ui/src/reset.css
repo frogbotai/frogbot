@@ -27,12 +27,15 @@
     border: 0 solid;
   }
 
-  /* Payload sets these on html and body; elsewhere the FrogBot root carries them. */
+  /*
+    Payload sets these on html and body; elsewhere the FrogBot root carries them, from the same
+    --text-body-medium-* tokens styles.css sets.
+  */
   :where([data-fb-ui]):where(:not([data-fb-ui-page] *)) {
     font-family: var(--font-body);
-    font-size: 0.75rem;
+    font-size: var(--text-body-medium-font-size);
     font-weight: 450;
-    line-height: 1rem;
+    line-height: var(--text-body-medium-line-height);
     letter-spacing: -0.001px;
     tab-size: 4;
     font-feature-settings: normal;

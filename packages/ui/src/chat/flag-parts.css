@@ -1,6 +1,6 @@
 @layer frogbot {
   .fb-flag-part {
-    border: 1px solid var(--fb-theme-base-150);
+    border: 1px solid var(--color-border);
     border-radius: var(--fb-radius-lg);
   }
 
@@ -10,8 +10,8 @@
     max-height: 120px;
     margin-bottom: 0.5rem;
     padding: 0.5rem;
-    color: var(--fb-theme-base-900);
-    background-color: var(--fb-theme-base-200);
+    color: var(--color-text);
+    background-color: var(--color-bg-tertiary);
     font-size: var(--fb-text-xs);
     line-height: var(--fb-text-xs--line-height);
   }
@@ -39,8 +39,8 @@
     left: 0.5rem;
     padding: 2px 0.5rem;
     border-radius: 9999px;
-    color: var(--fb-theme-base-300);
-    background-color: var(--fb-theme-base-300);
+    color: var(--color-text);
+    background-color: var(--color-bg-tertiary);
     font-size: 9px;
     font-weight: 600;
     letter-spacing: 0.025em;
@@ -49,7 +49,7 @@
 
   .fb-flag-part--page-context {
     padding: 0.75rem;
-    background-color: var(--fb-theme-base-50);
+    background-color: var(--color-bg-secondary);
   }
 
   .fb-flag-part__header {
@@ -65,7 +65,7 @@
   }
 
   .fb-flag-part__url {
-    color: var(--fb-theme-base-600);
+    color: var(--color-text-secondary);
     font-size: var(--fb-text-xs);
     line-height: var(--fb-text-xs--line-height);
   }

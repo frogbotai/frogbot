@@ -1,6 +1,6 @@
 @layer frogbot {
   .fb-source-part--url {
-    color: var(--fb-theme-base-850);
+    color: var(--color-text);
     font-size: var(--fb-text-sm);
     line-height: var(--fb-text-sm--line-height);
     text-decoration-line: underline;
@@ -11,8 +11,8 @@
     display: inline-flex;
     padding: 0.25rem 0.75rem;
     border-radius: 9999px;
-    background-color: var(--fb-theme-base-50);
-    color: var(--fb-theme-base-750);
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
     font-size: var(--fb-text-xs);
     line-height: var(--fb-text-xs--line-height);
   }

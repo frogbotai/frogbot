@@ -103,7 +103,7 @@ export const Status: Field = {
 }
 ```
 
-`color` is one of ten names: `gray`, `blue`, `cyan`, `teal`, `green`, `yellow`, `orange`, `red`, `pink` and `purple`. Each one has a light and a dark variant that follows the admin theme. The `OptionColor` type holds the same names:
+`color` is one of seven names, the hues of the admin panel's colour system: `gray`, `blue`, `green`, `yellow`, `red`, `pink` and `purple`. Each one follows the admin's light or dark theme. The `OptionColor` type holds the same names:
 
 ```ts
 import type { OptionColor } from 'frogbot'
@@ -121,7 +121,7 @@ The edit form and the List filters keep their usual controls.
 
 Colours are for display only. They don't change stored values, validation, API responses or generated types. A custom `admin.components.Cell` replaces the pills in the List; Board and Calendar cards still show them.
 
-A name outside the list fails the type check, and FrogBot stops at startup with an error that names the field, the option and the allowed colours.
+A name outside the list fails the type check, and FrogBot stops at startup with an error that names the field, the option and the allowed colours. `cyan`, `teal` and `orange` are no longer accepted; use `blue`, `green` or `yellow`.
 
 ## Admin options
 

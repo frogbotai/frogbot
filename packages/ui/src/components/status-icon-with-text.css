@@ -4,23 +4,23 @@
     padding: 0.25rem 0.625rem;
     align-items: center;
     gap: 0.25rem;
-    color: var(--color-accent-foreground);
+    color: var(--color-text);
     font-size: var(--fb-text-xs);
     font-weight: 600;
-    background: var(--color-accent);
+    background: var(--color-bg-hover);
     border-radius: var(--fb-radius-sm);
   }
   .fb-status-icon-text--success {
-    color: var(--success-foreground);
-    background: var(--color-success);
+    color: var(--color-text-success);
+    background: var(--color-bg-success-tertiary);
   }
   .fb-status-icon-text--error {
-    color: var(--fb-theme-red-700);
-    background: color-mix(in srgb, var(--fb-theme-red-500) 15%, transparent);
+    color: var(--color-text-danger);
+    background: var(--color-bg-danger-tertiary);
   }
   .fb-status-icon-text--secondary {
-    color: var(--color-secondary-foreground);
-    background: var(--color-secondary);
+    color: var(--color-text-onbrand);
+    background: var(--color-bg-brand);
   }
   .fb-status-icon-text__icon {
     width: 1rem;

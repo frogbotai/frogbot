@@ -9,7 +9,7 @@
     height: 100%;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: var(--fb-theme-base-200) transparent;
+    scrollbar-color: var(--color-bg-tertiary) transparent;
     scrollbar-gutter: stable;
   }
 
@@ -31,19 +31,19 @@
     align-items: center;
     justify-content: center;
     padding: 0.5rem;
-    border: 1px solid var(--fb-theme-base-150);
+    border: 1px solid var(--color-border);
     border-radius: 9999px;
     cursor: pointer;
-    color: var(--fb-theme-base-700);
-    background-color: var(--fb-theme-base-0);
+    color: var(--color-icon-secondary);
+    background-color: var(--color-bg);
     box-shadow:
       0 1px 3px 0 rgb(0 0 0 / 10%),
       0 1px 2px -1px rgb(0 0 0 / 10%);
   }
 
   .fb-message-list__jump:hover {
-    color: var(--fb-theme-base-1000);
-    background-color: var(--fb-theme-base-50);
+    color: var(--color-icon);
+    background-color: var(--color-bg-hover);
   }
 
   .fb-message-list__jump-icon {

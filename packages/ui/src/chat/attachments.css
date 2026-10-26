@@ -13,17 +13,17 @@
     padding: 0.375rem;
     border: 0;
     border-radius: 9999px;
-    color: var(--fb-theme-base-700);
+    color: var(--color-text-secondary);
     background: transparent;
   }
 
   .fb-attachments__add:hover {
-    color: var(--fb-theme-base-1000);
-    background-color: var(--fb-theme-base-300);
+    color: var(--color-text);
+    background-color: var(--color-bg-transparent-hover);
   }
 
   .fb-attachments__add:active {
-    background-color: var(--fb-theme-base-400);
+    background-color: var(--color-bg-transparent-pressed);
   }
 
   .fb-attachments__add-icon {

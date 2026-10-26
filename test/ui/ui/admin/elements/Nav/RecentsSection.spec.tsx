@@ -119,7 +119,7 @@ describe('RecentsSection', () => {
 
     expect(screen.getByRole('link', { name: 'Latest chat' })).not.toBeNull();
     expect(container.querySelector('.fb-theme')).toBeNull();
-    expect(document.documentElement.dataset.fbTheme).toBeUndefined();
+    expect(document.documentElement.dataset.theme).toBeUndefined();
   });
 
   it('renders the empty state without querying when unauthenticated', async () => {

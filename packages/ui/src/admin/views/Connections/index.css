@@ -1,6 +1,6 @@
 @layer frogbot {
   .frogbot-connections {
-    color: var(--fb-theme-base-900);
+    color: var(--color-text);
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -33,9 +33,9 @@
     justify-content: space-between;
     gap: 16px;
     padding: 16px;
-    border: 1px solid var(--fb-theme-base-300);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
-    background: var(--fb-theme-base-200);
+    background: var(--color-bg-tertiary);
   }
 
   .frogbot-connections__identity {
@@ -50,7 +50,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--fb-theme-base-600);
+    color: var(--color-icon-secondary);
   }
 
   .frogbot-connections__logo {
@@ -71,8 +71,8 @@
   .frogbot-connections__menu:hover,
   .frogbot-connections__menu:focus-visible,
   .frogbot-connections__menu[data-state="open"] {
-    color: var(--fb-theme-base-1000);
-    background: var(--fb-theme-base-400);
+    color: var(--color-text);
+    background: var(--color-bg-transparent-hover);
   }
 
   .frogbot-connections__row strong,
@@ -80,13 +80,13 @@
     display: block;
     font-size: 14px;
     font-weight: 500;
-    color: var(--fb-theme-base-900);
+    color: var(--color-text);
   }
 
   .frogbot-connections__muted {
     display: block;
     margin: 0;
-    color: var(--fb-theme-base-600);
+    color: var(--color-text-secondary);
     font-size: 12px;
   }
 
@@ -96,19 +96,19 @@
     font-size: 12px;
     font-weight: 500;
     text-transform: uppercase;
-    background: color-mix(in srgb, var(--fb-color-red-500) 10%, transparent);
-    color: var(--fb-color-red-500);
+    background: var(--color-bg-danger-tertiary);
+    color: var(--color-text-danger);
   }
 
   .frogbot-connections__status--active {
-    background: color-mix(in srgb, var(--color-brand-500) 10%, transparent);
-    color: var(--fb-theme-brand-600);
+    background: var(--color-bg-success-tertiary);
+    color: var(--color-text-success);
   }
 
   .frogbot-connections__status--expired,
   .frogbot-connections__status--relink {
-    background: color-mix(in srgb, var(--color-orange-350) 10%, transparent);
-    color: var(--fb-theme-base-800);
+    background: var(--color-bg-warning-tertiary);
+    color: var(--color-text-warning);
   }
 
   .frogbot-connections__empty {
@@ -119,7 +119,7 @@
     gap: 12px;
     padding: 48px 16px;
     text-align: center;
-    color: var(--fb-theme-base-600);
+    color: var(--color-text-secondary);
   }
 
   .frogbot-connections__empty p {
@@ -127,7 +127,7 @@
   }
 
   .frogbot-connections__empty--bordered {
-    border: 1px dashed var(--fb-theme-base-400);
+    border: 1px dashed var(--special-border-translucent-strong);
     border-radius: 12px;
   }
 
@@ -168,7 +168,7 @@
   }
 
   .frogbot-connections__piece:hover {
-    background: var(--fb-theme-base-200);
+    background: var(--color-bg-hover);
   }
 
   .frogbot-connections__form,
@@ -203,14 +203,14 @@
     gap: 8px;
     padding: 12px;
     flex: 1;
-    border: 1px solid var(--fb-theme-base-300);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     cursor: pointer;
   }
 
   .frogbot-connections__method:has([data-state="checked"]) {
-    background: var(--fb-theme-base-200);
-    border-color: var(--fb-theme-base-500);
+    background: var(--color-bg-tertiary);
+    border-color: var(--special-border-translucent-strong);
   }
 
   .frogbot-connections__field-heading {
@@ -223,7 +223,7 @@
 
   .frogbot-connections__nested {
     padding-left: 12px;
-    border-left: 1px solid var(--fb-theme-base-300);
+    border-left: 1px solid var(--color-border);
   }
 
   .frogbot-connections__nested > .fb-button {
@@ -246,11 +246,11 @@
     flex-wrap: wrap;
     gap: 12px;
     margin: 0;
-    color: var(--fb-color-red-500);
+    color: var(--color-text-danger);
   }
 
   .frogbot-connections__disconnect {
-    color: var(--fb-color-red-500);
+    color: var(--color-text-danger);
   }
 
   .frogbot-connections__spinner {

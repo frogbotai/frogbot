@@ -5,12 +5,12 @@ description: "Set FrogBot UI colors with CSS variables and switch light and dark
 keywords: ["theme", "white-label", "CSS variables", "ThemeProvider", "cascade layer"]
 ---
 
-Set FrogBot's colors with CSS variables on `:root`. A page-level value reaches every FrogBot component on the page, including menus and dialogs, which render outside your layout.
+FrogBot UI uses the admin panel's color tokens, in the admin and on your own pages. Set them with CSS variables on `:root`. A page-level value reaches every FrogBot component on the page, including menus and dialogs, which render outside your layout.
 
 ```css
 :root {
-  --fb-theme-base-1000: oklch(0.58 0.18 250);
-  --fb-theme-base-50: oklch(0.97 0.01 250);
+  --color-bg-brand: oklch(0.58 0.18 250);
+  --color-bg-brand-hover: oklch(0.5 0.18 250);
 }
 ```
 
@@ -20,26 +20,51 @@ With Tailwind CSS v4, set the same tokens in `@theme static`:
 @import "tailwindcss";
 
 @theme static {
-  --fb-theme-base-1000: oklch(0.58 0.18 250);
-  --fb-theme-base-50: oklch(0.97 0.01 250);
+  --color-bg-brand: oklch(0.58 0.18 250);
 }
 ```
 
-Tailwind drops `@theme` values that no utility uses, so FrogBot tokens need `static`.
+Tailwind drops `@theme` values that no utility uses, so these tokens need `static`.
 
 ## Color tokens
 
-Buttons, menus, dialogs, and most other components read the neutral `--fb-theme-base-*` scale. For example, the default `Button` uses `--fb-theme-base-1000` for its background, menus use `--fb-theme-base-50`, and dialogs use `--fb-theme-base-0`.
+The tokens come in two levels:
 
-`--primary` (and `--color-primary`) colors `Alert` and `Dot` only. It doesn't change buttons, menus, or dialogs.
+- **Ramps** are the raw palette, such as `--ramp-grey-100` to `--ramp-grey-900`, `--ramp-blue-500` or `--ramp-green-600`. Override a ramp to retint everything built on it.
+- **Semantic tokens** say what a color is for. Components only read these:
 
-Use `--fb-theme-base-*` for neutral component colors that should invert between light and dark modes. Use `--fb-base-*` only when a color must remain fixed, such as a dark overlay or fixed-contrast text on a brand surface.
+| Token | Used for |
+| --- | --- |
+| `--color-bg` | Page, navigation, chat and dialog backgrounds |
+| `--color-bg-secondary`, `--color-bg-tertiary` | Raised panels, secondary buttons, tracks |
+| `--color-bg-hover`, `--color-bg-pressed`, `--color-bg-transparent-hover` | Hover and pressed states |
+| `--color-bg-elevated` | Menus, dropdowns and popovers |
+| `--color-bg-inverse`, `--color-text-oninverse` | Default buttons and other solid neutral fills, and their text |
+| `--color-bg-brand`, `--color-text-onbrand`, `--color-text-brand` | Brand accents such as the chat's send button |
+| `--color-text`, `--color-text-secondary`, `--color-text-tertiary` | Text, from strongest to faintest |
+| `--color-border`, `--color-border-strong` | Borders and dividers |
+| `--field-color-*` | Inputs, textareas and select triggers |
+| `--color-*-danger`, `--color-*-success`, `--color-*-warning` | Status colors |
 
-On admin pages `--fb-theme-base-*` and `--fb-base-*` read the admin panel's palette, so FrogBot components match the admin. The admin panel's semantic tokens (`--color-bg`, `--color-text`, `--color-border`) belong to admin styles; reusable `@frogbotai/ui` styles use `--fb-theme-base-*` so they also work outside the admin panel.
+`@frogbotai/ui/styles.css` defines every token with the admin panel's default values, so pages outside the admin look like the admin. In the admin, the admin's own values apply.
+
+For example, to give every grey surface a navy tint, and make brand accents green:
+
+```css
+:root {
+  --ramp-grey-900: #070b16;
+  --ramp-grey-800: #0b1120;
+  --ramp-grey-700: #171d2c;
+  --ramp-grey-600: #232938;
+  --color-bg-brand: #2f964f;
+  --color-bg-brand-hover: #166d30;
+  --color-bg-brand-pressed: #0e5523;
+}
+```
 
 ### Token names your app may already use
 
-FrogBot's tokens include common names such as `--color-*`, `--primary`, `--background`, and `--sidebar-*`. If your app defines a token with the same name for its own use, it restyles FrogBot too. For example, an app theme that sets `--sidebar-background` changes FrogBot's sidebar. Rename your token or scope it to your own elements. On admin pages, the admin panel's semantic tokens (`--color-bg*`, `--color-text*`, `--color-border*`, `--radius-*`, `--spacer-*`) share the same space: overriding one there restyles the admin as well as FrogBot.
+The tokens use common names such as `--color-bg`, `--color-text` and `--color-border`. If your app defines a token with the same name for its own use, it restyles FrogBot too. Rename your token or scope it to your own elements. On admin pages, overriding one restyles the admin as well as FrogBot.
 
 ## Fonts
 
@@ -59,6 +84,15 @@ FrogBot's text uses one token, `--font-body`. Set it on `:root` to change the fo
 
 Outside the admin it defaults to `Inter, sans-serif`. Inter only loads if you import `@frogbotai/ui/fonts.css`; without it, the browser's sans-serif font shows. In the admin panel, Inter is already loaded and `--font-body` already set.
 
+FrogBot sets the regular text size to 14px, in the admin panel (where it raises the admin's 12px default) and on your own pages. To change it, set the text tokens on `:root`:
+
+```css
+:root {
+  --text-body-medium-font-size: 0.8125rem;
+  --text-body-medium-line-height: 1.125rem;
+}
+```
+
 Code in tool results and code blocks uses Roboto Mono, also from `fonts.css`. On pages outside the admin, set `--font-family-mono` on `:root` to use another code font.
 
 ## Glow
@@ -77,19 +111,25 @@ The composer's animated rainbow ring is a reusable block. Put `fb-glow` on a wra
 
 ## Light and dark modes
 
-FrogBot tokens follow the mode of the element that uses them. A value you set on `:root` applies in both modes. To set a different value per mode, write it with `light-dark()`:
+Light values are set on `:root` and dark values on `[data-theme='dark']`. A value you set on `:root` applies in light mode, and in dark mode too unless dark mode sets that token. To set a dark value, set it on `[data-theme='dark']`:
 
 ```css
 :root {
-  --fb-theme-base-1000: light-dark(oklch(0.58 0.18 250), oklch(0.82 0.12 250));
+  --color-bg-brand: oklch(0.58 0.18 250);
+}
+
+[data-theme='dark'] {
+  --color-bg-brand: oklch(0.82 0.12 250);
 }
 ```
 
-If your app sets `:root { color-scheme: light dark }`, FrogBot components outside a `ThemeProvider` follow the operating system's mode.
+A ramp you override on `:root` applies in both modes, because the dark tokens read the same ramps.
+
+On your own pages, `<html data-theme="dark">` turns on dark mode for the whole page. `ThemeProvider` sets it for you.
 
 ### ThemeProvider
 
-`ThemeProvider` sets the light, dark, or system mode for its children. Menus and dialogs opened inside it use the same mode. It doesn't set colors.
+`ThemeProvider` sets the light, dark, or system mode. Without `mode`, it themes the whole page by setting `data-theme` on `<html>`. With `mode`, it themes only its children and the menus and dialogs opened inside it. It doesn't set colors.
 
 ```tsx
 import { ThemeProvider, ThemeScript } from '@frogbotai/ui/theme'
@@ -107,14 +147,14 @@ export function AppTheme({ children }: { children: React.ReactNode }) {
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `ReactNode` | Required | Content that uses the provider's mode. |
-| `mode` | `'light' \| 'dark' \| 'system'` | — | Controlled mode. Without it, the provider starts in `system` and uses the stored preference. |
+| `mode` | `'light' \| 'dark' \| 'system'` | — | Themes only the provider's children and their overlays. Without it, the provider themes the page, starting in `system` and using the stored preference. |
 | `onModeChange` | `(mode: ThemeMode) => void` | — | Called when `setMode` from `useTheme()` changes the mode. |
 | `storage` | `ThemeStorage` | `localStorage` | Reads and saves the preference with `get(key)` and `set(key, mode)`. |
 | `storageKey` | `string` | `'fb-ui-theme'` | Key the preference is stored under. |
 
 `useTheme()` returns `mode`, `resolvedMode` (`light` or `dark`), and `setMode`.
 
-Place `ThemeScript` before themed content during server rendering. It reads the stored `light`, `dark`, or `system` preference before hydration to avoid a mode flash. Pass the same `storageKey` to `ThemeScript` and `ThemeProvider` when using a custom key.
+Place `ThemeScript` before themed content during server rendering. It reads the stored preference, or the operating system's mode for `system`, and sets `data-theme` on `<html>` before hydration to avoid a mode flash. Pass the same `storageKey` to `ThemeScript` and `ThemeProvider` when using a custom key.
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -123,7 +163,7 @@ Place `ThemeScript` before themed content during server rendering. It reads the 
 
 ### Sections
 
-A section of a page can use its own mode: wrap it in `ThemeProvider` with `mode`, and its menus and dialogs follow. Colors set on a section, such as `.billing { --fb-theme-base-50: … }`, apply to the section's own content but not to its menus and dialogs, which render at the end of the page. Set colors on `:root` instead.
+A section of a page can use its own mode: wrap it in `ThemeProvider` with `mode`, and its menus and dialogs follow. Colors set on a section, such as `.billing { --color-bg-secondary: … }`, apply to the section's own content but not to its menus and dialogs, which render at the end of the page. Set colors page-wide instead. A section sets its mode's tokens again, so a semantic token you change on `:root` alone doesn't reach a light section; set it on `:root, [data-theme='light']` (and dark values on `[data-theme='dark']`). Ramps and brand tokens set on `:root` reach every section.
 
 ## Override FrogBot styles
 
@@ -186,11 +226,11 @@ To use Tailwind CSS in the admin, import only its theme and utilities, after `@f
 ```css
 /* Page-level, so it reaches menus and dialogs too */
 :root {
-  --primary: oklch(0.58 0.18 250);
+  --color-bg-brand: oklch(0.58 0.18 250);
 }
 ```
 
-`--primary` colors `Alert` and `Dot` only. If you used it to recolor buttons, menus, or dialogs, set the [`--fb-theme-base-*` token](#color-tokens) they read instead.
+Set the [color tokens](#color-tokens) the components read instead.
 
 To change colors at runtime, for example per tenant, set the CSS variables on `document.documentElement` yourself.
 

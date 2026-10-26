@@ -14,7 +14,7 @@
     padding: 0;
     border: 0;
     border-radius: 9999px;
-    color: var(--fb-theme-base-700);
+    color: var(--color-text-secondary);
     background: transparent;
     transition:
       color 150ms ease,
@@ -23,17 +23,17 @@
   }
 
   .fb-message-actions__button:hover {
-    color: var(--fb-theme-base-1000);
-    background-color: var(--fb-theme-base-300);
+    color: var(--color-text);
+    background-color: var(--color-bg-transparent-hover);
   }
 
   .fb-message-actions__button:active {
-    color: var(--fb-theme-base-1000);
-    background-color: var(--fb-theme-base-400);
+    color: var(--color-text);
+    background-color: var(--color-bg-transparent-pressed);
   }
 
   .fb-message-actions__button:focus-visible {
-    outline: 2px solid var(--fb-theme-base-850);
+    outline: 2px solid var(--accessibility-focus-color);
     outline-offset: 2px;
   }
 
@@ -44,7 +44,7 @@
 
   .fb-message-actions__timestamp {
     padding-inline: 0.375rem;
-    color: var(--fb-theme-base-600);
+    color: var(--color-text-secondary);
     font-size: 0.875rem;
     line-height: 1;
     white-space: nowrap;

@@ -324,6 +324,10 @@ export const picker = (
     /^@layer frogbot-reset,\s*theme,\s*base,\s*components,\s*frogbot,\s*utilities;/,
   );
 
+  assert.match(bundledCss, /html:not\(\[data-fb-ui-page\]\)\)?\s*\{[^}]*--color-bg:/);
+  assert.match(bundledCss, /\[data-theme=["']?dark["']?\]/);
+  assert.doesNotMatch(bundledCss, /--fb-(?:base|theme)-|light-dark\(|data-fb-theme/);
+
   for (const forbidden of [
     'process.env',
     '@payloadcms/',

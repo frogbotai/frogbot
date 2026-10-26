@@ -186,7 +186,7 @@ function Gallery({ theme }: { theme: string }) {
       data-fb-ui=""
       data-theme={theme}
       id="g"
-      style={{ padding: 16, background: 'var(--fb-theme-base-0)' }}
+      style={{ padding: 16, background: 'var(--color-bg)' }}
     >
       <p className="fb-parity-hidden" hidden>
         Hidden

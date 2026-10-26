@@ -1,9 +1,9 @@
 @layer frogbot {
   .fb-glow {
-    --fb-glow-green: var(--color-green-350, #66eb96);
+    --fb-glow-green: #66eb96;
     --fb-glow-blue: #78b6fc;
     --fb-glow-pink: #f598a2;
-    --fb-glow-purple: var(--color-purple-350, #cb9afe);
+    --fb-glow-purple: #cb9afe;
     position: relative;
     filter: drop-shadow(0 0 6px rgba(134, 239, 172, 0.6))
       drop-shadow(0 0 12px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 18px rgba(216, 180, 254, 0.3));

@@ -5,10 +5,10 @@
     width: 7.5rem;
     height: 7.5rem;
     margin-bottom: 0.5rem;
-    border: 1px solid var(--fb-theme-base-150);
+    border: 1px solid var(--color-border);
     border-radius: var(--fb-radius-lg);
-    color: var(--fb-theme-base-900);
-    background-color: var(--fb-theme-base-200);
+    color: var(--color-text);
+    background-color: var(--color-bg-tertiary);
     font-size: var(--fb-text-xs);
     line-height: var(--fb-text-xs--line-height);
   }
@@ -16,13 +16,13 @@
   .fb-attachment-card--refused,
   .fb-attachment-card--failed,
   .fb-attachment-card--too-large {
-    border-color: var(--color-destructive);
-    background-color: color-mix(in srgb, var(--color-destructive) 10%, var(--fb-theme-base-0));
+    border-color: var(--color-border-danger-strong);
+    background-color: var(--color-bg-danger-tertiary);
   }
 
   .fb-attachment-card--large {
-    border-color: var(--color-warning);
-    background-color: color-mix(in srgb, var(--color-warning) 10%, var(--fb-theme-base-0));
+    border-color: var(--color-border-warning-strong);
+    background-color: var(--color-bg-warning-tertiary);
   }
 
   .fb-attachment-card__body,
@@ -59,7 +59,7 @@
   .fb-attachment-card__open:focus-visible,
   .fb-attachment-card__retry:focus-visible,
   .fb-attachment-card__remove:focus-visible {
-    outline: 2px solid var(--fb-theme-base-900);
+    outline: 2px solid var(--accessibility-focus-color);
     outline-offset: 2px;
   }
 
@@ -110,7 +110,7 @@
     flex-shrink: 0;
     width: 0.875rem;
     height: 0.875rem;
-    color: var(--color-destructive);
+    color: var(--color-icon-danger);
   }
 
   .fb-attachment-card__icon > * {
@@ -137,17 +137,17 @@
     gap: 0.25rem;
     margin-top: auto;
     padding: 0.125rem 0.5rem;
-    border: 1px solid var(--color-destructive);
+    border: 1px solid var(--color-border-danger-strong);
     border-radius: 9999px;
     color: inherit;
-    background-color: var(--fb-theme-base-0);
+    background-color: var(--color-bg);
     font: inherit;
     font-weight: 600;
     cursor: pointer;
   }
 
   .fb-attachment-card__retry:hover {
-    background-color: var(--fb-theme-base-150);
+    background-color: var(--color-bg-hover);
   }
 
   .fb-attachment-card__retry-icon,
@@ -162,14 +162,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: color-mix(in srgb, var(--fb-theme-base-0) 50%, transparent);
+    background-color: color-mix(in srgb, var(--color-bg) 50%, transparent);
   }
 
   .fb-attachment-card__spinner {
     flex-shrink: 0;
     width: 1.25rem;
     height: 1.25rem;
-    color: var(--fb-theme-base-500);
+    color: var(--color-icon-tertiary);
     animation: fb-attachment-card-spin 1s linear infinite;
   }
 
@@ -194,12 +194,12 @@
   }
 
   .fb-attachment-card__tag {
-    background-color: var(--fb-theme-base-300);
+    background-color: var(--color-bg-tertiary);
   }
 
   .fb-attachment-card__hint {
-    border: 1px solid var(--color-warning);
-    background-color: color-mix(in srgb, var(--color-warning) 20%, var(--fb-theme-base-0));
+    border: 1px solid var(--color-border-warning-strong);
+    background-color: var(--color-bg-warning-tertiary);
     pointer-events: auto;
   }
 
@@ -216,12 +216,13 @@
     border: 0;
     border-radius: 9999px;
     color: inherit;
-    background-color: var(--fb-theme-base-150);
+    background-color: var(--color-bg);
     cursor: pointer;
   }
 
   .fb-attachment-card__remove:hover {
-    background-color: var(--color-destructive);
+    color: var(--color-icon-ondanger);
+    background-color: var(--color-bg-danger);
   }
 
   .fb-attachment-card__sr-only {

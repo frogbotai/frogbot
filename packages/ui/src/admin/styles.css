@@ -6,7 +6,7 @@
 
 @layer frogbot {
   .frogbot-chat-view {
-    color: var(--fb-theme-base-900);
+    color: var(--color-text);
     height: calc(100dvh - var(--app-header-height));
   }
 

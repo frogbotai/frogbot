@@ -2,13 +2,13 @@
   .fb-tool-card {
     min-width: 0;
     padding: 1rem 1.25rem;
-    border: 1px solid var(--fb-theme-base-300);
+    border: 1px solid var(--color-border);
     border-radius: 1rem;
-    background-color: var(--fb-theme-base-200);
+    background-color: var(--color-bg-tertiary);
     box-shadow:
       0 10px 15px -3px rgb(0 0 0 / 0.1),
       0 4px 6px -4px rgb(0 0 0 / 0.1);
-    color: var(--fb-theme-base-900);
+    color: var(--color-text);
     font-size: var(--fb-text-base);
     line-height: var(--fb-text-base--line-height);
   }
@@ -43,12 +43,12 @@
   }
 
   .fb-tool-card__icon--done {
-    color: var(--fb-color-green-500);
+    color: var(--color-icon-success);
   }
 
   .fb-tool-card__icon--error,
   .fb-tool-card__icon--denied {
-    color: var(--fb-theme-red-500);
+    color: var(--color-icon-danger);
   }
 
   .fb-tool-card__spinner {
@@ -74,7 +74,7 @@
     min-width: 0;
     flex: 1 1 0;
     overflow: hidden;
-    color: var(--fb-theme-base-600);
+    color: var(--color-text-secondary);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -85,7 +85,7 @@
     flex-shrink: 0;
     margin-block: 0.125rem;
     margin-inline-end: -0.5rem;
-    color: var(--fb-theme-base-600);
+    color: var(--color-icon-secondary);
     transform: rotate(90deg);
     transition: transform 150ms ease;
   }
@@ -95,7 +95,7 @@
   }
 
   .fb-tool-card__header:hover .fb-tool-card__chevron {
-    color: var(--fb-theme-base-400);
+    color: var(--color-icon-tertiary);
   }
 
   .fb-tool-card__header[data-state="open"] .fb-tool-card__chevron {

@@ -1,7 +1,7 @@
 @layer frogbot {
   .fb-artifact {
     padding: 0.75rem;
-    border: 1px solid var(--fb-theme-base-150);
+    border: 1px solid var(--color-border);
     border-radius: var(--fb-radius-lg);
   }
 
@@ -25,11 +25,9 @@
     min-width: 20rem;
     overflow: auto;
     resize: horizontal;
-    border-left: 1px solid var(--fb-theme-base-150);
-    background-color: var(--fb-theme-base-0);
-    box-shadow:
-      0 20px 25px -5px rgb(0 0 0 / 10%),
-      0 8px 10px -6px rgb(0 0 0 / 10%);
+    border-left: 1px solid var(--color-border);
+    background-color: var(--color-bg);
+    box-shadow: var(--elevation-500-modal-window);
   }
 
   .fb-artifact__header {
@@ -37,7 +35,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem;
-    border-bottom: 1px solid var(--fb-theme-base-150);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .fb-artifact__actions {

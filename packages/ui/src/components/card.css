@@ -1,8 +1,8 @@
 @layer frogbot {
   .fb-card {
-    color: var(--fb-theme-base-900);
-    background-color: var(--fb-theme-base-0);
-    border: 1px solid var(--fb-theme-base-150);
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
     border-radius: var(--fb-radius-lg);
     box-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%);
   }
@@ -20,7 +20,7 @@
   }
 
   .fb-card__description {
-    color: var(--fb-theme-base-750);
+    color: var(--color-text-secondary);
     font-size: var(--fb-text-sm);
     line-height: var(--fb-text-sm--line-height);
   }

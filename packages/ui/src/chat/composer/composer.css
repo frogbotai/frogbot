@@ -25,9 +25,9 @@
 
   .fb-composer__panel {
     padding: 0.75rem;
-    border: 1px solid var(--fb-theme-base-200);
+    border: 1px solid var(--color-border);
     border-radius: 20px;
-    background-color: var(--fb-theme-base-150);
+    background-color: var(--color-bg-tertiary);
   }
 
   .fb-composer-editor {
@@ -45,8 +45,8 @@
     overflow: hidden;
     padding-top: 0.5rem;
     padding-left: 0.5rem;
-    color: var(--fb-theme-base-500);
-    font-family: var(--font-payload);
+    color: var(--field-color-placeholder);
+    font-family: var(--font-body);
     font-size: var(--fb-text-base);
     line-height: var(--fb-text-base--line-height);
     pointer-events: none;
@@ -65,8 +65,8 @@
     overflow-y: auto;
     border: 0;
     outline: 0;
-    background-color: var(--fb-theme-base-150);
-    font-family: var(--font-payload);
+    background-color: var(--color-bg-tertiary);
+    font-family: var(--font-body);
     font-size: var(--fb-text-base);
     line-height: var(--fb-text-base--line-height);
     overflow-wrap: anywhere;
@@ -87,8 +87,11 @@
   .fb-composer__start {
     display: flex;
     min-width: 0;
-    flex-wrap: wrap;
     gap: 0.25rem;
+  }
+
+  .fb-composer__start > * {
+    flex-shrink: 0;
   }
 
   .fb-composer__end {
@@ -108,27 +111,27 @@
   }
 
   .fb-composer__stop {
-    color: var(--fb-theme-base-700);
-    background-color: var(--fb-theme-base-300);
+    color: var(--color-text-secondary);
+    background-color: var(--color-bg-transparent-pressed);
   }
 
   .fb-composer__stop:hover {
-    color: var(--fb-theme-base-1000);
-    background-color: var(--fb-theme-base-400);
+    color: var(--color-text);
+    background-color: color-mix(in srgb, var(--color-text) 20%, transparent);
   }
 
   .fb-composer__stop:active {
-    color: var(--fb-theme-base-1000);
+    color: var(--color-text);
   }
 
   .fb-composer__queue {
-    color: var(--fb-theme-base-700);
-    background-color: var(--fb-theme-base-200);
+    color: var(--color-text-secondary);
+    background-color: var(--color-bg-transparent-hover);
   }
 
   .fb-composer__queue:hover {
-    color: var(--fb-theme-base-1000);
-    background-color: var(--fb-theme-base-300);
+    color: var(--color-text);
+    background-color: var(--color-bg-transparent-pressed);
   }
 
   .fb-composer__queue .fb-composer__action-icon {
@@ -137,23 +140,23 @@
 
   .fb-composer__submit {
     margin-left: -0.25rem;
-    color: var(--fb-base-1000);
-    background-color: var(--color-brand-500);
+    color: var(--color-text-onbrand);
+    background-color: var(--color-bg-brand);
   }
 
   .fb-composer__submit:hover {
-    background-color: var(--color-brand-600);
+    background-color: var(--color-bg-brand-hover);
   }
 
   .fb-composer__submit:active {
-    background-color: var(--color-brand-300);
+    background-color: var(--color-bg-brand-pressed);
   }
 
   .fb-composer__action-icon {
     display: block;
     width: 1.25rem;
     height: 1.25rem;
-    stroke: var(--fb-theme-base-150);
+    stroke: var(--color-icon-onbrand);
   }
 
   .fb-composer__stop-icon {

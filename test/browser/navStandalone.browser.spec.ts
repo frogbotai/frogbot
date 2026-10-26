@@ -39,7 +39,7 @@ test('the sidebar renders and sizes itself with no Payload code or CSS', async (
   await open(page);
 
   await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
-  await expect(shell(page)).toHaveCSS('width', '238px');
+  await expect(shell(page)).toHaveCSS('width', '272px');
   await expect(page.locator('.fb-app-sidebar__label').first()).toHaveCSS('font-family', /^Inter/);
 
   await page.getByRole('button', { name: 'Close sidebar' }).click();

@@ -10,18 +10,7 @@ export const timesheetsSlug = 'timesheets';
 export const projectsSlug = 'projects';
 export const tagsSlug = 'tags';
 export const labelOptions = (
-  [
-    'gray',
-    'blue',
-    'cyan',
-    'teal',
-    'green',
-    'yellow',
-    'orange',
-    'red',
-    'pink',
-    'purple',
-  ] satisfies OptionColor[]
+  ['gray', 'blue', 'green', 'yellow', 'red', 'pink', 'purple'] satisfies OptionColor[]
 ).map((color) => ({ label: color[0].toUpperCase() + color.slice(1), value: color, color }));
 export const reportsPath = '/reports';
 export const insightsPath = '/insights';

@@ -15,7 +15,7 @@ Read the [root contribution guide](../../CONTRIBUTING.md) first for shared codin
 - `src/admin` holds FrogBot's admin and the curated Payload names, mirroring Payload's folders (`elements`, `fields`, `graphics`, `views`). Only it imports `@payloadcms/*`, `payload` or `frogbot` values, and nothing outside it imports it.
 - Admin code never imports `next`, `@payloadcms/next` or `@frogbotai/next`. Read the URL with Payload's `useRouter()`, `usePathname()` and `useSearchParams()`, and on the server call the view's `server.notFound()` or `server.redirect()` (`req.server` where only the request reaches).
 - Export client components from `src/admin/exports/client.ts` (`./admin`) and server components from `src/admin/exports/rsc.ts` (`./admin/rsc`). Inside `packages/ui`, import other UI modules by relative path.
-- Admin CSS may use Payload 4's semantic tokens (`--color-bg*`, `--color-text*`, `--color-border*`, `--spacer-*`, `--radius-*`) and style Payload's markup. Files imported only from CSS (Nav, Sign-in, Settings, Connections) are listed in `src/admin/styles.css`.
+- Admin CSS may also use Payload's `--spacer-*` and `--radius-*` and style Payload's markup. Files imported only from CSS (Nav, Sign-in, Settings, Connections) are listed in `src/admin/styles.css`.
 
 ## Components
 
@@ -31,7 +31,7 @@ Read the [root contribution guide](../../CONTRIBUTING.md) first for shared codin
 - Do not add Tailwind, variant utilities, styling dependencies, component dark-mode selectors, or media-query theme overrides.
 - Preserve external `className` values with plain string concatenation.
 - Wrap every rule in a new CSS file in `@layer frogbot { … }`.
-- Define tokens only in the `@layer theme.frogbot` `:root` block in `src/styles.css`, with `light-dark()` for values that change with the mode. Don't declare tokens on `[data-fb-ui]` or any other wrapper.
+- Define non-color tokens only in the `@layer theme.frogbot` `:root` block in `src/styles.css`. Colors use the [color tokens](../../CONTRIBUTING.md#domain-rules); dark mode comes from them, never from `light-dark()` or `[data-theme]` selectors in component CSS.
 - Don't add top-level `@layer` order statements outside `src/layers.css`.
 
 ## Firmware Ports

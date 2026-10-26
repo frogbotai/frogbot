@@ -69,9 +69,9 @@ try {
   assert.equal(layerStatements[0], 'frogbot-reset,payload-default,frogbot,payload');
   assert.ok(layerStatements.includes('payload-default,payload'));
   assert.match(css, /\.fb-button/);
-  assert.match(css, /var\(--fb-theme-base-/);
-  assert.match(css, /data-fb-theme/);
-  assert.match(css, /data-fb-ui-page/);
+  assert.match(css, /var\(--color-bg\)/);
+  assert.match(css, /html:not\(\[data-fb-ui-page\]\)\)?\s*\{[^}]*--color-bg:/);
+  assert.doesNotMatch(css, /--fb-(?:base|theme)-|light-dark\(|data-fb-theme/);
 
   assert.doesNotMatch(
     css,

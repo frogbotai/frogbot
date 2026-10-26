@@ -20,7 +20,7 @@
   .fb-markdown__inline-code {
     padding: 0.125rem 0.25rem;
     border-radius: 0.25rem;
-    background-color: var(--fb-theme-base-50);
+    background-color: var(--color-bg-secondary);
     font-family:
       ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
       monospace;
@@ -31,7 +31,7 @@
   .fb-markdown__rule {
     width: 100%;
     margin-block: 1rem;
-    border-color: var(--fb-theme-base-200);
+    border-color: var(--color-border);
   }
 
   .fb-markdown__ordered-list,
@@ -69,7 +69,7 @@
     margin-inline: 0;
     padding-left: 1rem;
     border: 0;
-    border-left: 2px solid var(--fb-theme-brand-400);
+    border-left: 2px solid var(--color-border-brand-strong);
   }
 
   .fb-markdown__strikethrough {
@@ -119,7 +119,7 @@
     overflow-x: auto;
     overflow-y: hidden;
     margin-block: 1rem;
-    border: 1px solid var(--fb-theme-base-300);
+    border: 1px solid var(--color-border);
     border-radius: var(--fb-radius-md);
   }
 
@@ -129,11 +129,11 @@
   }
 
   .fb-markdown__table-head {
-    background-color: var(--fb-theme-base-200);
+    background-color: var(--color-bg-tertiary);
   }
 
   .fb-markdown__table-row {
-    border-bottom: 1px solid var(--fb-theme-base-300);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .fb-markdown__table-row:last-child {
@@ -143,7 +143,7 @@
   .fb-markdown__table-header,
   .fb-markdown__table-cell {
     padding: 0.5rem 1rem;
-    border-right: 1px solid var(--fb-theme-base-300);
+    border-right: 1px solid var(--color-border);
   }
 
   .fb-markdown__table-header {

@@ -35,6 +35,8 @@
   }
 
   .fb-nav-shell__scroll {
+    box-sizing: border-box;
+    height: 100%;
     overflow-x: hidden;
     padding: 8px;
   }
@@ -43,7 +45,7 @@
     background: var(--color-bg);
     color: var(--color-text);
     display: block;
-    height: 100vh;
+    height: 100%;
     min-height: 100%;
     overflow: visible;
     width: 100%;
@@ -191,14 +193,9 @@
     display: block;
     padding: 0.25rem 0.5rem;
     border-radius: 0.3125rem;
-    background-color: var(--fb-base-900);
-    box-shadow:
-      0 0 0.5px 0 light-dark(rgb(0 0 0 / 0.15), transparent),
-      inset 0 0.5px 0 0 light-dark(transparent, rgb(255 255 255 / 0.08)),
-      0 5px 12px 0 light-dark(rgb(0 0 0 / 0.13), rgb(0 0 0 / 0.35)),
-      inset 0 0 0.5px 0 light-dark(transparent, rgb(255 255 255 / 0.3)),
-      0 1px 3px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.5));
-    color: rgb(255 255 255 / 0.9);
+    background-color: var(--color-bg-tooltip);
+    box-shadow: var(--elevation-300-tooltip);
+    color: var(--color-text-ontooltip);
     cursor: default;
     font-family: var(--font-body);
     font-size: 0.75rem;
@@ -227,13 +224,13 @@
   }
 
   .fb-app-sidebar__tooltip-caret-fill {
-    fill: var(--fb-base-900);
-    stroke: var(--fb-base-900);
+    fill: var(--color-bg-tooltip);
+    stroke: var(--color-bg-tooltip);
   }
 
   .fb-app-sidebar__tooltip-caret-stroke {
     fill: none;
-    stroke: var(--fb-base-700);
+    stroke: color-mix(in srgb, var(--color-text-ontooltip) 12%, var(--color-bg-tooltip));
     stroke-width: 1.5px;
   }
 
@@ -590,7 +587,7 @@
   }
 
   .fb-recent-chats__groups {
-    color: var(--fb-theme-base-900);
+    color: var(--color-text);
     gap: 4px;
   }
 

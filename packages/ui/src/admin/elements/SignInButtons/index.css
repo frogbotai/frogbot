@@ -10,7 +10,7 @@
 
   .oauth-login-buttons__separator {
     align-items: center;
-    color: var(--fb-theme-base-500);
+    color: var(--color-text-tertiary);
     display: flex;
     justify-content: center;
     margin-bottom: var(--spacer-2);

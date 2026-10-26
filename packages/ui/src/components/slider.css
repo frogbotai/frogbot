@@ -18,7 +18,7 @@
   .fb-slider__value {
     min-height: var(--fb-text-sm--line-height);
     overflow: hidden;
-    color: var(--fb-theme-base-900);
+    color: var(--color-text);
     font-size: var(--fb-text-sm);
     font-weight: 600;
     line-height: var(--fb-text-sm--line-height);
@@ -36,7 +36,7 @@
   .fb-slider__track {
     position: absolute;
     inset: var(--fb-slider-inset) 0;
-    background-color: var(--fb-theme-base-350);
+    background-color: var(--color-bg-tertiary);
     border-radius: 9999px;
     pointer-events: none;
   }
@@ -49,7 +49,7 @@
     width: calc(
       var(--fb-slider-thumb) + (100% - var(--fb-slider-thumb)) * var(--fb-slider-progress)
     );
-    background-color: var(--fb-theme-base-850);
+    background-color: var(--color-bg-inverse);
     border-radius: 9999px;
   }
 
@@ -62,13 +62,13 @@
     );
     width: var(--fb-slider-dot);
     height: var(--fb-slider-dot);
-    background-color: var(--fb-theme-base-600);
+    background-color: var(--color-icon-tertiary);
     border-radius: 9999px;
     transform: translate(-50%, -50%);
   }
 
   .fb-slider__dot--filled {
-    background-color: var(--fb-theme-base-500);
+    background-color: var(--color-text-oninverse-secondary);
   }
 
   .fb-slider__input {
@@ -110,8 +110,8 @@
     width: var(--fb-slider-thumb);
     height: var(--fb-slider-thumb);
     margin: 0;
-    background: var(--fb-theme-base-0);
-    border: 2px solid var(--fb-theme-base-850);
+    background: var(--color-bg);
+    border: 2px solid var(--color-border-strong);
     border-radius: 9999px;
     appearance: none;
     transition: box-shadow 150ms;
@@ -121,17 +121,17 @@
     box-sizing: border-box;
     width: var(--fb-slider-thumb);
     height: var(--fb-slider-thumb);
-    background: var(--fb-theme-base-0);
-    border: 2px solid var(--fb-theme-base-850);
+    background: var(--color-bg);
+    border: 2px solid var(--color-border-strong);
     border-radius: 9999px;
     transition: box-shadow 150ms;
   }
 
   .fb-slider__input:focus-visible::-webkit-slider-thumb {
-    box-shadow: 0 0 0 3px var(--fb-theme-base-500);
+    box-shadow: 0 0 0 3px var(--accessibility-focus-color);
   }
 
   .fb-slider__input:focus-visible::-moz-range-thumb {
-    box-shadow: 0 0 0 3px var(--fb-theme-base-500);
+    box-shadow: 0 0 0 3px var(--accessibility-focus-color);
   }
 }

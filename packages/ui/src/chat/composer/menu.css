@@ -9,15 +9,15 @@
     margin-bottom: 0.5rem;
     padding: 0.25rem;
     overflow-y: auto;
-    border: 1px solid var(--fb-theme-base-200);
+    border: 1px solid var(--color-border);
     border-radius: var(--fb-radius-xl);
-    background-color: var(--fb-theme-base-100);
-    box-shadow: 0 4px 16px color-mix(in srgb, var(--fb-theme-base-1000) 12%, transparent);
+    background-color: var(--color-bg-elevated);
+    box-shadow: var(--elevation-400-menu-panel);
   }
 
   .fb-composer-menu__heading {
     padding: 0.25rem 0.5rem;
-    color: var(--fb-theme-base-500);
+    color: var(--color-text-tertiary);
     font-size: var(--fb-text-xs);
     line-height: var(--fb-text-xs--line-height);
   }
@@ -28,14 +28,14 @@
     gap: 0.5rem;
     padding: 0.375rem 0.5rem;
     border-radius: var(--fb-radius-lg);
-    color: var(--fb-theme-base-900);
+    color: var(--color-text);
     cursor: pointer;
     font-size: var(--fb-text-sm);
     line-height: var(--fb-text-sm--line-height);
   }
 
   .fb-composer-menu__option[aria-selected="true"] {
-    background-color: var(--fb-theme-base-200);
+    background-color: var(--color-bg-hover);
   }
 
   .fb-composer-menu__icon {
@@ -51,7 +51,7 @@
   .fb-composer-menu__description {
     min-width: 0;
     overflow: hidden;
-    color: var(--fb-theme-base-600);
+    color: var(--color-text-secondary);
     text-overflow: ellipsis;
     white-space: nowrap;
   }

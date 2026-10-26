@@ -6,7 +6,8 @@ const appPage = '/theme-check/layers';
 const buttonOverride = 'rgb(11, 22, 33)';
 const menuOverride = 'rgb(44, 55, 66)';
 const dialogOverride = 'rgb(77, 88, 99)';
-const rootOverride = `:root { --fb-theme-base-1000: ${buttonOverride}; --fb-theme-base-50: ${menuOverride}; --fb-theme-base-0: ${dialogOverride}; }`;
+const rootOverride = `:root { --color-bg-inverse: ${buttonOverride}; --color-bg-elevated: ${menuOverride}; --color-bg: ${dialogOverride}; }`;
+const darkOverride = `[data-theme='dark'] { --color-bg-elevated: ${menuOverride}; }`;
 const probeColor = 'rgb(1, 2, 3)';
 
 function readLayers(page: Page) {
@@ -93,17 +94,29 @@ async function expectOverlayBackground(page: Page, prefix: string, expected: str
 async function expectPageOverride(page: Page) {
   await expectBackground(page.getByTestId('layer-default').first(), buttonOverride);
   await expectOverlayBackground(page, 'layer-menu', menuOverride);
-  await expectOverlayBackground(page, 'layer-dark-menu', menuOverride);
   await page.getByTestId('layer-dialog-trigger').first().click();
 
   const dialog = page.getByTestId('layer-dialog');
 
   await expect(dialog).toBeVisible();
   await expectBackground(dialog, dialogOverride);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+}
+
+async function expectDarkOverride(page: Page) {
+  const menu = await openMenu(page, 'layer-dark-menu');
+
+  expect((await readColors(menu)).backgroundColor).not.toBe(menuOverride);
+  await page.keyboard.press('Escape');
+  await expect(menu).toBeHidden();
+
+  await page.addStyleTag({ content: darkOverride });
+  await expectOverlayBackground(page, 'layer-dark-menu', menuOverride);
 }
 
 async function expectSectionOverrideStaysInline(page: Page) {
-  await page.addStyleTag({ content: `.billing { --fb-theme-base-50: ${menuOverride}; }` });
+  await page.addStyleTag({ content: `.billing { --color-bg-elevated: ${menuOverride}; }` });
 
   const menu = await openMenu(page, 'layer-billing-menu');
 
@@ -170,11 +183,12 @@ test.describe('FrogBot CSS layer in the admin', () => {
     await expectUnlayeredRulesWin(page);
   });
 
-  test('a :root token override reaches buttons, menus, dark sections and dialogs', async ({
+  test("a :root token override reaches buttons, menus and dialogs, a [data-theme='dark'] one dark sections", async ({
     page,
   }) => {
     await page.addStyleTag({ content: rootOverride });
     await expectPageOverride(page);
+    await expectDarkOverride(page);
   });
 
   test('a section token override does not reach its overlays', async ({ page }) => {
@@ -204,12 +218,12 @@ test.describe('FrogBot CSS layer in the admin', () => {
   test('the Connections search keeps the shared search look', async ({ page }) => {
     const search = page.locator('.frogbot-connections__toolbar > .fb-search-input').first();
 
-    await expectBackground(search, await readAdminColor(page, '--fb-theme-base-150'));
+    await expectBackground(search, await readAdminColor(page, '--color-bg-tertiary'));
     await expect(search).toHaveCSS('border-top-width', '0px');
 
     await openPostCreate(page, 'dark');
 
-    await expectBackground(search, await readAdminColor(page, '--fb-theme-base-150'));
+    await expectBackground(search, await readAdminColor(page, '--color-bg-tertiary'));
     await expect(search).toHaveCSS('border-top-width', '0px');
   });
 
@@ -258,12 +272,10 @@ test.describe('FrogBot CSS layer on app pages', () => {
 
   test('Tailwind Preflight does not reset FrogBot buttons', async ({ page }) => {
     await page.goto('/tw/frogbot-first');
-    await expectBackground(page.getByTestId('layer-default'), 'rgb(0, 0, 0)');
+    await expectBackground(page.getByTestId('layer-default'), 'rgb(44, 44, 44)');
   });
 
-  test('a Tailwind @theme static override reaches buttons, menus, dark sections and dialogs', async ({
-    page,
-  }) => {
+  test('a Tailwind @theme static override reaches buttons, menus and dialogs', async ({ page }) => {
     await page.goto('/tw/theme');
     await expectPageOverride(page);
   });
@@ -273,12 +285,13 @@ test.describe('FrogBot CSS layer on app pages', () => {
     await expectUnlayeredRulesWin(page);
   });
 
-  test('a :root token override reaches buttons, menus, dark sections and dialogs', async ({
+  test("a :root token override reaches buttons, menus and dialogs, a [data-theme='dark'] one dark sections", async ({
     page,
   }) => {
     await page.goto(appPage);
     await page.addStyleTag({ content: rootOverride });
     await expectPageOverride(page);
+    await expectDarkOverride(page);
   });
 
   test('a section token override does not reach its overlays', async ({ page }) => {

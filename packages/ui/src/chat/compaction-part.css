@@ -7,14 +7,14 @@
   }
 
   .fb-compaction__divider {
-    color: var(--fb-theme-base-600);
+    color: var(--color-text-secondary);
   }
 
   .fb-compaction__running {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: var(--fb-theme-base-600);
+    color: var(--color-text-secondary);
     font-size: var(--fb-text-sm);
     line-height: var(--fb-text-sm--line-height);
   }
@@ -27,7 +27,7 @@
 
   .fb-compaction__error {
     margin: 0;
-    color: var(--color-destructive);
+    color: var(--color-text-danger);
     font-size: var(--fb-text-sm);
     line-height: var(--fb-text-sm--line-height);
   }

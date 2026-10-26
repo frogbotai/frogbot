@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme static {
-  --fb-theme-base-0: rgb(77, 88, 99);
-  --fb-theme-base-50: rgb(44, 55, 66);
-  --fb-theme-base-1000: rgb(11, 22, 33);
+  --color-bg: rgb(77, 88, 99);
+  --color-bg-elevated: rgb(44, 55, 66);
+  --color-bg-inverse: rgb(11, 22, 33);
 }

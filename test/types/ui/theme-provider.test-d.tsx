@@ -14,7 +14,7 @@ export const brand: BrandConfig = { icon: null, logo: null, productName: 'Acme' 
 
 export const themed = (
   // @ts-expect-error ThemeProvider no longer accepts theme tokens.
-  <ThemeProvider theme={{ '--primary': 'red' }}>
+  <ThemeProvider theme={{ '--color-bg': 'red' }}>
     <div />
   </ThemeProvider>
 );
@@ -35,4 +35,9 @@ export const modeOnly = (
 export function useTokens() {
   // @ts-expect-error useTheme no longer returns tokens.
   return useTheme().tokens;
+}
+
+export function useSection() {
+  // @ts-expect-error useTheme does not expose whether the provider themes a section.
+  return useTheme().section;
 }
