@@ -37,7 +37,7 @@ export function FrogBotNavClient({ items, ...props }: FrogBotNavClientProps) {
       drawer={{ hydrated, open: navOpen, ref: navRef, setOpen: setNavOpen }}
       navigate={(path) => {
         if (/^https?:\/\//.test(path)) window.location.assign(path);
-        else startRouteTransition(() => router.push(path));
+        else void startRouteTransition(() => router.push(path));
       }}
       pathname={pathname}
       preferences={{
