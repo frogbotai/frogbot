@@ -1,8 +1,8 @@
 @layer frogbot {
   .fb-accordion__item {
     overflow: hidden;
-    background: var(--fb-theme-base-200);
-    border: 1px solid var(--fb-theme-base-300);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
     border-radius: var(--fb-radius-xl);
   }
   .fb-accordion__header {
@@ -26,7 +26,7 @@
   .fb-accordion__icon {
     width: 1rem;
     height: 1rem;
-    color: var(--fb-theme-base-500);
+    color: var(--color-icon-tertiary);
     transition: transform 200ms;
   }
   .fb-accordion__trigger[data-state="open"] .fb-accordion__icon {

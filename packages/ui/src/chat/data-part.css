@@ -2,9 +2,9 @@
   .fb-data-part {
     overflow-x: auto;
     padding: 0.75rem;
-    border: 1px solid var(--fb-theme-base-150);
+    border: 1px solid var(--color-border);
     border-radius: var(--fb-radius-lg);
-    background-color: var(--fb-theme-base-50);
+    background-color: var(--color-bg-secondary);
     font-size: var(--fb-text-xs);
     line-height: var(--fb-text-xs--line-height);
   }

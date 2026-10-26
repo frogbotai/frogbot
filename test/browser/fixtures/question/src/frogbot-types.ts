@@ -824,19 +824,7 @@ export interface Task {
   channel?: string | null;
   dueAt?: string | null;
   labels?:
-    | (
-        | 'gray'
-        | 'blue'
-        | 'cyan'
-        | 'teal'
-        | 'green'
-        | 'yellow'
-        | 'orange'
-        | 'red'
-        | 'pink'
-        | 'purple'
-      )[]
-    | null;
+    ('gray' | 'blue' | 'green' | 'yellow' | 'red' | 'pink' | 'purple')[] | null;
   /**
    * Fraction where 1 means 100%, for example 0.42 for 42%
    */

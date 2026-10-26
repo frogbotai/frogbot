@@ -14,15 +14,15 @@
   .fb-tool-selector__chevron {
     width: 1rem;
     height: 1rem;
-    color: var(--fb-theme-base-600);
+    color: var(--color-icon-secondary);
   }
 
   .fb-tool-selector__content {
     width: 220px;
     padding: 0.5rem;
-    border-color: var(--fb-theme-base-300);
+    border-color: var(--color-border);
     border-radius: var(--fb-radius-lg);
-    background-color: var(--fb-theme-base-250);
+    background-color: var(--color-bg-elevated);
   }
 
   .fb-tool-selector__item {
@@ -40,7 +40,7 @@
   }
 
   .fb-tool-selector__item:focus {
-    background-color: var(--fb-theme-base-150);
+    background-color: var(--color-bg-hover);
   }
 
   .fb-tool-selector__name {
@@ -58,6 +58,6 @@
   .fb-tool-selector__check {
     width: 1rem;
     height: 1rem;
-    color: var(--color-brand-500);
+    color: var(--color-icon-brand);
   }
 }

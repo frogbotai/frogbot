@@ -223,7 +223,7 @@ describe('ChatViewClient', () => {
     expect(await screen.findByText('const x = 1')).toBeTruthy();
     expect(container.querySelector('.fb-code-block--user')).not.toBeNull();
     expect(container.querySelector('.fb-theme')).toBeNull();
-    expect(document.documentElement.dataset.fbTheme).toBeUndefined();
+    expect(document.documentElement.dataset.theme).toBeUndefined();
   });
 
   it('moves the URL to the first reported chat through the history Next syncs', async () => {

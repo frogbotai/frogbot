@@ -2,6 +2,16 @@ import { expect, type Locator, type Page } from '@playwright/test';
 
 export type AdminTheme = 'dark' | 'light';
 
+export const optionPillTokens: Record<string, { background: string; text: string }> = {
+  gray: { background: '--color-bg-secondary', text: '--color-text' },
+  blue: { background: '--color-bg-selected', text: '--color-text' },
+  green: { background: '--color-bg-success-tertiary', text: '--color-text' },
+  yellow: { background: '--color-bg-warning-tertiary', text: '--color-text' },
+  red: { background: '--color-bg-danger-tertiary', text: '--color-text' },
+  pink: { background: '--color-bg-assistive-tertiary', text: '--color-text' },
+  purple: { background: '--color-bg-component-tertiary', text: '--color-text' },
+};
+
 export async function setAdminTheme(page: Page, theme: AdminTheme) {
   await page
     .context()

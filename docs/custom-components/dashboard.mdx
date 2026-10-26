@@ -90,13 +90,13 @@ export async function UserStats({ req }: WidgetServerProps) {
 }
 ```
 
-Use FrogBot theme tokens in the widget stylesheet:
+Use the [color tokens](/chat/ui-theming#color-tokens) in the widget stylesheet:
 
 ```css
 .user-stats {
-  background: var(--fb-theme-base-50);
-  border: 1px solid var(--fb-theme-base-200);
-  color: var(--fb-theme-base-900);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
   padding: 1rem;
 }
 ```

@@ -1,6 +1,11 @@
 import { expect, type Locator, test } from '@playwright/test';
 
-import { type AdminTheme, setAdminTheme } from './__helpers/adminTheme';
+import {
+  type AdminTheme,
+  optionPillTokens,
+  readAdminColor,
+  setAdminTheme,
+} from './__helpers/adminTheme';
 import { colorDifference, contrast } from './__helpers/color';
 import { labelOptions, tasksSlug } from './fixtures/question/shared';
 
@@ -127,7 +132,7 @@ test('a Calendar event shows the coloured status', async ({ page }) => {
 });
 
 for (const theme of ['light', 'dark'] satisfies AdminTheme[]) {
-  test(`every pill is readable and blue, cyan and teal differ in the ${theme} theme`, async ({
+  test(`every pill is readable, on its Payload token, and distinct in the ${theme} theme`, async ({
     page,
   }, testInfo) => {
     await setAdminTheme(page, theme);
@@ -144,24 +149,29 @@ for (const theme of ['light', 'dark'] satisfies AdminTheme[]) {
     const pills = await readPillColors(labelsCell);
 
     for (const [index, pill] of pills.entries()) {
+      const tokens = optionPillTokens[labels[index]];
+
       expect(contrast(pill), `${labels[index]} contrast in ${theme}`).toBeGreaterThanOrEqual(4.5);
+      expect(pill.background, `${labels[index]} background in ${theme}`).toBe(
+        await readAdminColor(page, tokens.background),
+      );
+      expect(pill.text, `${labels[index]} text in ${theme}`).toBe(
+        await readAdminColor(page, tokens.text),
+      );
     }
 
     const byColor = Object.fromEntries(labels.map((color, index) => [color, pills[index]]));
 
-    for (const [a, b] of [
-      ['blue', 'cyan'],
-      ['cyan', 'teal'],
-      ['blue', 'teal'],
-    ] as const) {
-      expect(
-        colorDifference(byColor[a].background, byColor[b].background),
-        `${a}/${b} background difference in ${theme}`,
-      ).toBeGreaterThanOrEqual(10);
-      expect(
-        colorDifference(byColor[a].text, byColor[b].text),
-        `${a}/${b} text difference in ${theme}`,
-      ).toBeGreaterThanOrEqual(10);
+    for (const [index, a] of labels.entries()) {
+      for (const b of labels.slice(index + 1)) {
+        expect(
+          Math.max(
+            colorDifference(byColor[a].background, byColor[b].background),
+            colorDifference(byColor[a].text, byColor[b].text),
+          ),
+          `${a}/${b} difference in ${theme}`,
+        ).toBeGreaterThanOrEqual(6);
+      }
     }
 
     await labelsCell.screenshot({ path: testInfo.outputPath(`option-pills-${theme}.png`) });

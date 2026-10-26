@@ -2,8 +2,8 @@
   .fb-composer-mention {
     padding: 0 0.25rem;
     border-radius: var(--fb-radius-md);
-    background-color: var(--fb-theme-base-250);
-    color: var(--fb-theme-base-1000);
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text);
     user-select: none;
     white-space: nowrap;
   }

@@ -26,7 +26,7 @@
   .fb-scroll-area__thumb {
     position: relative;
     flex: 1;
-    background: var(--fb-theme-base-300);
+    background: var(--color-bg-tertiary);
     border-radius: 9999px;
   }
   .fb-scroll-area__gradient {
@@ -36,6 +36,6 @@
     left: 0;
     height: 20%;
     pointer-events: none;
-    background: linear-gradient(to top, var(--color-sidebar), transparent);
+    background: linear-gradient(to top, var(--color-bg), transparent);
   }
 }

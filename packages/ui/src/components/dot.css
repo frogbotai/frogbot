@@ -6,10 +6,10 @@
     border-radius: 50%;
   }
   .fb-dot--destructive {
-    background: var(--color-destructive);
+    background: var(--color-bg-danger);
   }
   .fb-dot--primary {
-    background: var(--color-primary);
+    background: var(--color-bg-inverse);
   }
   .fb-dot--animated {
     animation: fb-dot-pulse 2s infinite;

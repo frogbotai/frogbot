@@ -20,8 +20,8 @@
 
   .fb-mic-control__indicator--active {
     box-shadow:
-      0 0 0 4px var(--fb-theme-base-500),
-      0 0 0 12px var(--fb-theme-base-600);
+      0 0 0 4px var(--special-border-translucent-strong),
+      0 0 0 12px var(--color-border-strong);
     animation: fb-mic-control-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
@@ -29,18 +29,18 @@
     padding: 0.375rem;
     border: 0;
     border-radius: 9999px;
-    color: var(--fb-theme-base-700);
+    color: var(--color-text-secondary);
     background: transparent;
   }
 
   .fb-mic-control__button:hover {
-    color: var(--fb-theme-base-1000);
-    background-color: var(--fb-theme-base-300);
+    color: var(--color-text);
+    background-color: var(--color-bg-transparent-hover);
   }
 
   .fb-mic-control__button:active {
-    color: var(--fb-theme-base-1000);
-    background-color: var(--fb-theme-base-400);
+    color: var(--color-text);
+    background-color: var(--color-bg-transparent-pressed);
   }
 
   .fb-mic-control__button:disabled {
@@ -48,8 +48,8 @@
   }
 
   .fb-mic-control__button--active {
-    color: var(--fb-theme-brand-600);
-    background-color: var(--fb-theme-base-300);
+    color: var(--color-icon-brand);
+    background-color: var(--color-bg-transparent-pressed);
   }
 
   .fb-mic-control__icon {
@@ -58,7 +58,7 @@
   }
 
   .fb-mic-control__error {
-    color: var(--fb-theme-red-500);
+    color: var(--color-text-danger);
     font-size: 0.75rem;
     line-height: 1rem;
   }

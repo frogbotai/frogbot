@@ -16,14 +16,14 @@
   .fb-composer-select__chevron {
     width: 1rem;
     height: 1rem;
-    color: var(--fb-theme-base-600);
+    color: var(--color-icon-secondary);
   }
 
   .fb-composer-select__content {
     width: 200px;
     padding: 0.5rem;
-    background-color: var(--fb-theme-base-250);
-    border-color: var(--fb-theme-base-300);
+    background-color: var(--color-bg-elevated);
+    border-color: var(--color-border);
     border-radius: var(--fb-radius-lg);
   }
 
@@ -56,6 +56,6 @@
     flex-shrink: 0;
     width: 1rem;
     height: 1rem;
-    color: var(--color-brand-500);
+    color: var(--color-icon-brand);
   }
 }

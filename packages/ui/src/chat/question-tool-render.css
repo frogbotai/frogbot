@@ -4,9 +4,9 @@
     flex-direction: column;
     gap: 0.75rem;
     padding: 0.75rem;
-    border: 1px solid var(--fb-theme-base-200);
+    border: 1px solid var(--color-border);
     border-radius: 0.5rem;
-    box-shadow: 0 1px 2px color-mix(in srgb, var(--fb-theme-base-1000) 8%, transparent);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--color-text) 8%, transparent);
     font-size: var(--fb-text-sm);
     line-height: 1.25rem;
   }
@@ -21,7 +21,7 @@
     flex: 0 0 auto;
     width: 1.25rem;
     height: 1.25rem;
-    color: var(--fb-theme-base-600);
+    color: var(--color-icon-secondary);
   }
 
   .fb-question-tool__icon--loading {
@@ -29,7 +29,7 @@
   }
 
   .fb-question-tool--answered .fb-question-tool__icon {
-    color: var(--color-success);
+    color: var(--color-icon-success);
   }
 
   .fb-question-tool__title {
@@ -42,20 +42,20 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.25rem;
-    border-bottom: 1px solid var(--fb-theme-base-200);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .fb-question-tool__tab {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    color: var(--fb-theme-base-750);
+    color: var(--color-text-secondary);
   }
 
   .fb-question-tool__tab-check {
     width: 0.875rem;
     height: 0.875rem;
-    color: var(--color-success);
+    color: var(--color-icon-success);
   }
 
   .fb-question-tool__panel {
@@ -75,7 +75,7 @@
 
   .fb-question-tool__hint {
     margin: 0;
-    color: var(--fb-theme-base-600);
+    color: var(--color-text-secondary);
     font-size: var(--fb-text-xs);
     line-height: var(--fb-text-xs--line-height);
   }
@@ -94,7 +94,7 @@
     padding: 0.5rem 0.75rem;
     border: 1px solid transparent;
     border-radius: var(--fb-radius-lg);
-    background: var(--fb-theme-base-100);
+    background: var(--color-bg-secondary);
     color: inherit;
     font: inherit;
     text-align: left;
@@ -103,11 +103,11 @@
   }
 
   .fb-question-tool__option:hover:not(:disabled) {
-    background: var(--fb-theme-base-300);
+    background: var(--color-bg-secondary-hover);
   }
 
   .fb-question-tool__option:focus-visible {
-    outline: 2px solid var(--fb-theme-base-500);
+    outline: 2px solid var(--accessibility-focus-color);
     outline-offset: 1px;
   }
 
@@ -117,7 +117,7 @@
   }
 
   .fb-question-tool__option--selected {
-    border-color: var(--fb-theme-base-500);
+    border-color: var(--special-border-translucent-strong);
   }
 
   .fb-question-tool__mark {
@@ -125,7 +125,7 @@
     flex: 0 0 auto;
     width: 1rem;
     height: 1rem;
-    border: 1.25px solid var(--fb-theme-base-400);
+    border: 1.25px solid var(--special-border-translucent-strong);
   }
 
   .fb-question-tool__mark--radio {
@@ -137,12 +137,12 @@
   }
 
   .fb-question-tool__option--selected .fb-question-tool__mark {
-    border-color: var(--fb-theme-base-900);
-    background: var(--fb-theme-base-900);
+    border-color: var(--color-bg-inverse);
+    background: var(--color-bg-inverse);
   }
 
   .fb-question-tool__option--selected .fb-question-tool__mark--radio {
-    box-shadow: inset 0 0 0 3px var(--fb-theme-base-0);
+    box-shadow: inset 0 0 0 3px var(--color-bg);
   }
 
   .fb-question-tool__option--selected .fb-question-tool__mark--checkbox::after {
@@ -152,7 +152,7 @@
     width: 0.25rem;
     height: 0.5rem;
     transform: rotate(45deg);
-    border: solid var(--fb-theme-base-0);
+    border: solid var(--color-icon-oninverse);
     border-width: 0 2px 2px 0;
     content: "";
   }
@@ -164,7 +164,7 @@
   }
 
   .fb-question-tool__option-description {
-    color: var(--fb-theme-base-600);
+    color: var(--color-text-secondary);
     font-size: var(--fb-text-xs);
     line-height: var(--fb-text-xs--line-height);
   }
@@ -201,7 +201,7 @@
   }
 
   .fb-question-tool__answer-header {
-    color: var(--fb-theme-base-600);
+    color: var(--color-text-secondary);
   }
 
   .fb-question-tool__answer-value {
@@ -210,13 +210,13 @@
 
   .fb-question-tool__reason {
     margin: 0;
-    color: var(--fb-theme-base-600);
+    color: var(--color-text-secondary);
   }
 
   .fb-question-tool__questions {
     margin: 0;
     padding-left: 1.25rem;
-    color: var(--fb-theme-base-750);
+    color: var(--color-text-secondary);
   }
 
   @keyframes fb-question-tool-spin {

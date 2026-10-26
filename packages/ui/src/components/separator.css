@@ -1,7 +1,7 @@
 @layer frogbot {
   .fb-separator {
     flex-shrink: 0;
-    background: var(--fb-theme-base-300);
+    background: var(--color-border);
   }
   .fb-separator--horizontal {
     width: 100%;
@@ -18,7 +18,7 @@
   }
   .fb-separator-text__line {
     width: 50%;
-    border-top: 1px solid var(--fb-theme-base-300);
+    border-top: 1px solid var(--color-border);
   }
   .fb-separator-text__label {
     margin: 0 0.5rem;

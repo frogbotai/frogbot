@@ -15,19 +15,21 @@ const firmwareComposerBaseline = {
   submit: 'fb-composer__action fb-composer__submit',
 };
 
-it('matches the canonical Firmware theme foundation', () => {
+it("matches the canonical theme foundation on Payload's color tokens", () => {
   const styles = readFileSync(resolve('packages/ui/src/styles.css'), 'utf8');
+  const tokens = readFileSync(resolve('packages/ui/src/payload-tokens.css'), 'utf8');
 
-  expect(styles).toContain('--fb-base-0: #ffffff');
-  expect(styles).toContain('--fb-base-900: #1e1e1e');
-  expect(styles).toContain('--color-brand-500: #2f964f');
-  expect(styles).toContain('--fb-theme-base-0: light-dark(var(--fb-base-0), var(--fb-base-1000))');
-  expect(styles).toContain(
-    '--fb-theme-base-1000: light-dark(var(--fb-base-1000), var(--fb-base-0))',
-  );
+  expect(styles).toContain('@import "./payload-tokens.css";');
+  expect(tokens).toContain('--color-bg: var(--ramp-white-1000)');
+  expect(tokens).toContain('--color-bg: var(--ramp-grey-800)');
+  expect(tokens).toContain('--color-bg-brand: var(--ramp-blue-500)');
   expect(styles).toContain('--fb-radius: 0.5rem');
-  expect(styles).not.toContain('Satoshi');
-  expect(styles).not.toContain('oklch(');
+
+  for (const css of [styles, tokens]) {
+    expect(css).not.toContain('Satoshi');
+    expect(css).not.toContain('oklch(');
+    expect(css).not.toContain('light-dark(');
+  }
 });
 
 it('matches the canonical Firmware composer shell', () => {

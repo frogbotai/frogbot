@@ -28,7 +28,7 @@
   }
 
   .fb-link-list__link:hover {
-    background-color: var(--fb-theme-base-300);
+    background-color: var(--color-bg-transparent-hover);
   }
 
   .fb-link-list__favicon,
@@ -79,7 +79,7 @@
 
   .fb-link-list__host {
     flex-shrink: 2;
-    color: var(--fb-theme-base-600);
+    color: var(--color-text-secondary);
   }
 
   .fb-link-list__open {
@@ -87,13 +87,13 @@
     height: 0.75rem;
     flex-shrink: 0;
     margin-inline-start: -0.5rem;
-    color: var(--fb-theme-base-600);
+    color: var(--color-icon-secondary);
   }
 
   .fb-link-list__snippet {
     display: -webkit-box;
     overflow: hidden;
-    color: var(--fb-theme-base-600);
+    color: var(--color-text-secondary);
     font-size: var(--fb-text-sm);
     line-height: 1.25rem;
     -webkit-box-orient: vertical;

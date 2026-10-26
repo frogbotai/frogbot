@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   DropdownMenu,
@@ -25,7 +25,11 @@ function stubSystemMode(dark: boolean) {
 }
 
 describe('ThemeProvider', () => {
-  it('persists mode changes and sets the dark class', () => {
+  afterEach(() => {
+    delete document.documentElement.dataset.theme;
+  });
+
+  it('persists mode changes and themes the page', () => {
     stubSystemMode(false);
 
     const storage = { get: vi.fn(() => null), set: vi.fn() };
@@ -35,24 +39,54 @@ describe('ThemeProvider', () => {
       </ThemeProvider>,
     );
 
+    expect(document.documentElement.dataset.theme).toBe('light');
+
     fireEvent.click(screen.getByRole('button'));
 
     expect(storage.set).toHaveBeenCalledWith('fb-ui-theme', 'dark');
-    expect(container.firstElementChild?.className).toBe('fb-theme fb-theme--dark');
-    expect(container.firstElementChild?.getAttribute('data-theme')).toBe('dark');
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(container.firstElementChild?.hasAttribute('data-theme')).toBe(false);
   });
 
   it('reads the stored mode before paint', () => {
-    stubSystemMode(true);
+    stubSystemMode(false);
 
     const storage = { get: vi.fn(() => 'dark' as const), set: vi.fn() };
-    const { container } = render(
+
+    render(
       <ThemeProvider storage={storage}>
         <Toggle />
       </ThemeProvider>,
     );
 
+    expect(document.documentElement.dataset.theme).toBe('dark');
+  });
+
+  it('follows the system mode by default', () => {
+    stubSystemMode(true);
+
+    render(
+      <ThemeProvider storage={{ get: () => null, set: vi.fn() }}>
+        <Toggle />
+      </ThemeProvider>,
+    );
+
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(screen.getByRole('button').textContent).toBe('dark');
+  });
+
+  it('themes only its own section when given a mode', () => {
+    stubSystemMode(false);
+    document.documentElement.dataset.theme = 'light';
+
+    const { container } = render(
+      <ThemeProvider mode="dark">
+        <Toggle />
+      </ThemeProvider>,
+    );
+
     expect(container.firstElementChild?.getAttribute('data-theme')).toBe('dark');
+    expect(document.documentElement.dataset.theme).toBe('light');
   });
 
   it('copies the provider mode to portalled overlays', async () => {
@@ -97,6 +131,7 @@ describe('ThemeProvider', () => {
     const { container } = render(<ThemeScript storageKey="custom-theme" />);
 
     expect(container.querySelector('script')?.textContent).toContain('custom-theme');
-    expect(container.querySelector('script')?.textContent).toContain('dataset.fbTheme');
+    expect(container.querySelector('script')?.textContent).toContain('dataset.theme');
+    expect(container.querySelector('script')?.textContent).toContain('prefers-color-scheme: dark');
   });
 });

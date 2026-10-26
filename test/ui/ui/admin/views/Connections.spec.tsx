@@ -275,7 +275,7 @@ describe('linked accounts', () => {
 
     expect(container.querySelector('.frogbot-connections')).not.toBeNull();
     expect(container.querySelector('.fb-theme')).toBeNull();
-    expect(document.documentElement.dataset.fbTheme).toBeUndefined();
+    expect(document.documentElement.dataset.theme).toBeUndefined();
   });
 
   it('searches account metadata and disconnects through the configured prefix', async () => {

@@ -23,6 +23,7 @@ export interface ThemeProviderProps {
 interface ThemeContextValue {
   mode: ThemeMode;
   resolvedMode: ResolvedThemeMode;
+  section: boolean;
   setMode: (mode: ThemeMode) => void;
 }
 
@@ -49,6 +50,14 @@ function getSystemMode(): ResolvedThemeMode {
   return window.matchMedia(mediaQuery).matches ? 'dark' : 'light';
 }
 
+function applyPageMode(mode: ResolvedThemeMode) {
+  document.documentElement.dataset.theme = mode;
+}
+
+/**
+ * Without `mode`, the provider themes the page: it sets `data-theme` on `<html>`, the attribute the
+ * admin panel's color tokens switch on. With `mode`, it themes only its own section and overlays.
+ */
 export function ThemeProvider({
   children,
   mode: controlledMode,
@@ -62,37 +71,35 @@ export function ThemeProvider({
     () => 'light',
   );
 
-  const [internalMode, setInternalMode] = useState<ThemeMode>(controlledMode ?? 'system');
+  const [internalMode, setInternalMode] = useState<ThemeMode>('system');
   const mode = controlledMode ?? internalMode;
   const resolvedMode = mode === 'system' ? systemMode : mode;
 
   useLayoutEffect(() => {
-    if (controlledMode) {
-      document.documentElement.dataset.fbTheme = controlledMode;
-
-      return;
-    }
+    if (controlledMode) return;
 
     const storedMode = (storage ?? browserStorage).get(storageKey);
-    if (storedMode) {
-      document.documentElement.dataset.fbTheme = storedMode;
-      setInternalMode(storedMode);
-    }
+    if (storedMode) setInternalMode(storedMode);
   }, [controlledMode, storage, storageKey]);
+
+  useLayoutEffect(() => {
+    if (!controlledMode) applyPageMode(resolvedMode);
+  }, [controlledMode, resolvedMode]);
 
   const setMode = (nextMode: ThemeMode) => {
     if (!controlledMode) setInternalMode(nextMode);
-    document.documentElement.dataset.fbTheme = nextMode;
     onModeChange?.(nextMode);
     void (storage ?? browserStorage).set(storageKey, nextMode);
   };
 
   return (
-    <ThemeContext.Provider value={{ mode, resolvedMode, setMode }}>
+    <ThemeContext.Provider
+      value={{ mode, resolvedMode, section: Boolean(controlledMode), setMode }}
+    >
       <div
-        className={`fb-theme${mode === 'dark' ? ' fb-theme--dark' : ''}`}
+        className="fb-theme"
         data-fb-ui=""
-        data-theme={mode}
+        data-theme={controlledMode ? resolvedMode : undefined}
       >
         {children}
       </div>
@@ -100,6 +107,7 @@ export function ThemeProvider({
   );
 }
 
+/** Sets `data-theme` on `<html>` from the stored or system mode before the page paints. */
 export function ThemeScript({
   nonce,
   storageKey = 'fb-ui-theme',
@@ -107,7 +115,7 @@ export function ThemeScript({
   nonce?: string;
   storageKey?: string;
 }) {
-  const script = `try{var m=localStorage.getItem(${JSON.stringify(storageKey)});if(m==='light'||m==='dark'||m==='system')document.documentElement.dataset.fbTheme=m}catch(e){}`;
+  const script = `try{var m=localStorage.getItem(${JSON.stringify(storageKey)});if(m!=='light'&&m!=='dark')m=matchMedia(${JSON.stringify(mediaQuery)}).matches?'dark':'light';document.documentElement.dataset.theme=m}catch(e){}`;
 
   return <script dangerouslySetInnerHTML={{ __html: script }} nonce={nonce} />;
 }
@@ -116,14 +124,20 @@ export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) throw new Error('useTheme must be used within ThemeProvider');
 
-  return context;
+  const { mode, resolvedMode, setMode } = context;
+
+  return { mode, resolvedMode, setMode };
 }
 
 export function PortalTheme({ children }: { children: ReactNode }) {
   const context = useContext(ThemeContext);
 
   return (
-    <div className="fb-portal" data-fb-ui="" data-theme={context?.mode ?? 'system'}>
+    <div
+      className="fb-portal"
+      data-fb-ui=""
+      data-theme={context?.section ? context.resolvedMode : undefined}
+    >
       {children}
     </div>
   );

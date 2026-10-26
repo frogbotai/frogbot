@@ -185,21 +185,27 @@ function composerStatus(page: Page) {
 function readCardColors(card: Locator) {
   return card.evaluate((element) => {
     const color = (selector: string) => getComputedStyle(element.querySelector(selector)!).color;
-    const probe = document.createElement('span');
+    const token = (name: string) => {
+      const probe = document.createElement('span');
 
-    probe.style.color = 'var(--fb-theme-base-900)';
-    element.append(probe);
+      probe.style.color = `var(${name})`;
+      element.append(probe);
 
-    const base = getComputedStyle(probe).color;
+      const value = getComputedStyle(probe).color;
 
-    probe.remove();
+      probe.remove();
+
+      return value;
+    };
 
     const style = getComputedStyle(element);
 
     return {
       border: style.borderTopColor,
       background: style.backgroundColor,
-      base,
+      base: token('--color-text'),
+      dangerBorder: token('--color-border-danger-strong'),
+      dangerIcon: token('--color-icon-danger'),
       icon: color('.fb-attachment-card__icon'),
       text: [
         color('.fb-attachment-card__name'),
@@ -816,7 +822,7 @@ test('a file over 10 MB shows the large-file tag with its explanation', async ({
   const warning = await card.evaluate((element) => {
     const probe = document.createElement('span');
 
-    probe.style.color = 'var(--color-warning)';
+    probe.style.color = 'var(--color-border-warning-strong)';
     element.append(probe);
 
     const color = getComputedStyle(probe).color;
@@ -924,8 +930,12 @@ for (const theme of ['light', 'dark'] as const) {
 
     const colors = await readCardColors(card);
 
-    expect(colors.border).toBe('rgb(231, 72, 96)');
-    expect(colors.icon).toBe('rgb(231, 72, 96)');
+    expect(colors.border).toBe(colors.dangerBorder);
+    expect(colors.icon).toBe(colors.dangerIcon);
+
+    const [red, green, blue] = colors.border.match(/\d+/g)!.map(Number);
+
+    expect(red).toBeGreaterThan(Math.max(green, blue));
     expect(colors.text).toEqual([colors.base, colors.base, colors.base]);
     expect(contrast({ text: colors.base, background: colors.background })).toBeGreaterThanOrEqual(
       4.5,

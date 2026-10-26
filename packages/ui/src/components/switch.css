@@ -5,15 +5,15 @@
     height: 1.25rem;
     padding: 2px;
     align-items: center;
-    background: var(--fb-theme-base-300);
+    background: var(--color-bg-tertiary);
     border: 0;
     border-radius: 9999px;
   }
   .fb-switch[data-state="checked"] {
-    background: var(--fb-theme-base-850);
+    background: var(--color-bg-inverse);
   }
   .fb-switch--secondary[data-state="checked"] {
-    background: var(--fb-theme-brand-500);
+    background: var(--color-bg-brand);
   }
   .fb-switch--square {
     border-radius: var(--fb-radius-md);
@@ -36,7 +36,7 @@
     aspect-ratio: 1;
     align-items: center;
     justify-content: center;
-    background: var(--fb-theme-base-100);
+    background: var(--color-bg);
     border-radius: inherit;
     transition: transform 150ms;
   }

@@ -291,11 +291,8 @@ export type Field =
 export const optionColors = [
   'gray',
   'blue',
-  'cyan',
-  'teal',
   'green',
   'yellow',
-  'orange',
   'red',
   'pink',
   'purple',

@@ -5,23 +5,14 @@ import {
   expectBackground,
   openMenu,
   openPostCreate,
+  optionPillTokens,
   readAdminColor,
+  readBackground,
 } from './__helpers/adminTheme';
 import { colorDifference, contrast } from './__helpers/color';
 import { signedOut } from './__helpers/signIn';
 
-const optionColors = [
-  'gray',
-  'blue',
-  'cyan',
-  'teal',
-  'green',
-  'yellow',
-  'orange',
-  'red',
-  'pink',
-  'purple',
-];
+const optionColors = ['gray', 'blue', 'green', 'yellow', 'red', 'pink', 'purple'];
 
 function readRootProperty(page: Page, name: string) {
   return page.evaluate(
@@ -30,46 +21,45 @@ function readRootProperty(page: Page, name: string) {
   );
 }
 
-async function readAdminPalette(page: Page) {
-  return {
-    base0: await readAdminColor(page, '--fb-base-0'),
-    base500: await readAdminColor(page, '--fb-base-500'),
-    base1000: await readAdminColor(page, '--fb-base-1000'),
-  };
+function readColorIn(locator: Locator, token: string) {
+  return locator.evaluate((element, name) => {
+    const sample = document.createElement('div');
+
+    sample.style.backgroundColor = `var(${name})`;
+    element.append(sample);
+
+    const color = getComputedStyle(sample).backgroundColor;
+
+    sample.remove();
+
+    return color;
+  }, token);
 }
 
 test.describe('FrogBot UI in the admin', () => {
-  test('styles admin slot components with the light admin palette', async ({ page }) => {
-    await openPostCreate(page, 'light');
+  for (const theme of ['light', 'dark'] as const) {
+    test(`styles admin slot components with the ${theme} admin's color tokens`, async ({
+      page,
+    }) => {
+      await openPostCreate(page, theme);
 
-    await expectBackground(
-      page.getByTestId('theme-probe-default').first(),
-      await readAdminColor(page, '--fb-base-1000'),
-    );
+      await expectBackground(
+        page.getByTestId('theme-probe-default').first(),
+        await readAdminColor(page, '--color-bg-inverse'),
+      );
 
-    await expectBackground(
-      page.getByTestId('theme-probe-secondary').first(),
-      await readAdminColor(page, '--fb-base-250'),
-    );
-  });
-
-  test('styles admin slot components with the dark admin palette', async ({ page }) => {
-    await openPostCreate(page, 'dark');
-
-    await expectBackground(
-      page.getByTestId('theme-probe-default').first(),
-      await readAdminColor(page, '--fb-base-0'),
-    );
-
-    await expectBackground(
-      page.getByTestId('theme-probe-secondary').first(),
-      await readAdminColor(page, '--fb-base-750'),
-    );
-  });
+      await expectBackground(
+        page.getByTestId('theme-probe-secondary').first(),
+        await readAdminColor(page, '--color-bg-secondary'),
+      );
+    });
+  }
 
   test('follows an admin theme switch without a reload', async ({ page }) => {
     await openPostCreate(page, 'light');
     await expect(page.getByTestId('theme-probe-default').first()).toBeVisible();
+
+    const lightInverse = await readAdminColor(page, '--color-bg-inverse');
 
     await page.evaluate(() => {
       (window as { themeProbeMarker?: boolean }).themeProbeMarker = true;
@@ -77,14 +67,14 @@ test.describe('FrogBot UI in the admin', () => {
 
     await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
 
-    await expectBackground(
-      page.getByTestId('theme-probe-default').first(),
-      await readAdminColor(page, '--fb-base-0'),
-    );
+    const darkInverse = await readAdminColor(page, '--color-bg-inverse');
+
+    expect(darkInverse).not.toBe(lightInverse);
+    await expectBackground(page.getByTestId('theme-probe-default').first(), darkInverse);
 
     await expectBackground(
       page.getByTestId('theme-probe-secondary').first(),
-      await readAdminColor(page, '--fb-base-750'),
+      await readAdminColor(page, '--color-bg-secondary'),
     );
 
     expect(
@@ -99,47 +89,48 @@ test.describe('FrogBot UI in the admin', () => {
     const drawerButton = page.locator('.drawer__content').getByTestId('theme-probe-default');
 
     await expect(drawerButton).toBeVisible();
-    await expectBackground(drawerButton, await readAdminColor(page, '--fb-base-1000'));
+    await expectBackground(drawerButton, await readAdminColor(page, '--color-bg-inverse'));
   });
 
-  for (const theme of ['light', 'dark'] as const) {
-    test(`leaves the ${theme} admin's own palette in place`, async ({ page }) => {
+  for (const [theme, background] of [
+    ['light', 'rgb(255, 255, 255)'],
+    ['dark', 'rgb(44, 44, 44)'],
+  ] as const) {
+    test(`leaves the ${theme} admin's own tokens in place`, async ({ page }) => {
       await openPostCreate(page, theme);
       await expect(page.locator('html')).toHaveAttribute('data-fb-ui-page', '');
       await expect(page.getByTestId('theme-probe-default').first()).toBeVisible();
 
-      expect(await readAdminPalette(page)).toEqual({
-        base0: await readAdminColor(page, '--ramp-white-1000'),
-        base500: await readAdminColor(page, '--ramp-grey-500'),
-        base1000: 'rgb(0, 0, 0)',
-      });
+      expect(await readAdminColor(page, '--color-bg')).toBe(background);
       expect(await readRootProperty(page, '--font-body')).toMatch(/^"Inter",/);
-      await expect(page.locator('html')).toHaveCSS(
-        'background-color',
-        await readAdminColor(page, '--color-bg'),
-      );
+      await expect(page.locator('html')).toHaveCSS('background-color', background);
+
+      for (const removed of ['--fb-base-0', '--fb-theme-base-0', '--background', '--primary']) {
+        expect(await readRootProperty(page, removed), removed).toBe('');
+      }
     });
   }
 
-  test('resolves portal colors to the admin palette', async ({ page }) => {
+  test('resolves portal colors to the admin tokens', async ({ page }) => {
     await openPostCreate(page, 'light');
 
     const menu = await openMenu(page, 'theme-probe-menu');
-    const portalBase0 = await menu.evaluate((element) =>
-      getComputedStyle(element.closest('.fb-portal')!).getPropertyValue('--fb-base-0'),
+    const portal = menu.locator('xpath=ancestor::*[contains(@class, "fb-portal")][1]');
+    const portalElevated = await portal.evaluate((element) =>
+      getComputedStyle(element).getPropertyValue('--color-bg-elevated'),
     );
 
-    expect(portalBase0).not.toBe('');
-    expect(portalBase0).toBe(await readRootProperty(page, '--fb-base-0'));
+    expect(portalElevated).not.toBe('');
+    expect(portalElevated).toBe(await readRootProperty(page, '--color-bg-elevated'));
+    await expect(portal).not.toHaveAttribute('data-theme');
   });
 
-  test('ignores a leftover data-fb-theme value in portals', async ({ page }) => {
+  test('opens page portals in the dark admin theme', async ({ page }) => {
     await openPostCreate(page, 'dark');
-    await page.evaluate(() => document.documentElement.setAttribute('data-fb-theme', 'light'));
 
     const menu = await openMenu(page, 'theme-probe-menu');
 
-    await expectBackground(menu, await readAdminColor(page, '--fb-base-950'));
+    await expectBackground(menu, await readAdminColor(page, '--color-bg-elevated'));
 
     expect(
       await menu.evaluate(
@@ -150,22 +141,41 @@ test.describe('FrogBot UI in the admin', () => {
 
   test('keeps a developer ThemeProvider set to dark inside a light admin', async ({ page }) => {
     await openPostCreate(page, 'light');
-    await expect(page.locator('html')).toHaveAttribute('data-fb-theme', 'dark');
 
-    await expectBackground(
-      page.getByTestId('theme-probe-dark-default').first(),
-      await readAdminColor(page, '--fb-base-0'),
-    );
+    const darkButton = page.getByTestId('theme-probe-dark-default').first();
+    const section = darkButton.locator('xpath=ancestor::*[@data-fb-ui][1]');
+
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await expect(section).toHaveAttribute('data-theme', 'dark');
+
+    const lightInverse = await readAdminColor(page, '--color-bg-inverse');
+    const lightElevated = await readAdminColor(page, '--color-bg-elevated');
+    const darkInverse = await readColorIn(section, '--color-bg-inverse');
+
+    expect(darkInverse).not.toBe(lightInverse);
+    await expectBackground(darkButton, darkInverse);
 
     const darkMenu = await openMenu(page, 'theme-probe-dark-menu');
 
-    await expectBackground(darkMenu, await readAdminColor(page, '--fb-base-950'));
+    await expect(
+      darkMenu.locator('xpath=ancestor::*[contains(@class, "fb-portal")][1]'),
+    ).toHaveAttribute('data-theme', 'dark');
+
+    const darkMenuBackground = await readBackground(darkMenu);
+
     await page.keyboard.press('Escape');
     await expect(darkMenu).toBeHidden();
 
     const pageMenu = await openMenu(page, 'theme-probe-menu');
 
-    await expectBackground(pageMenu, await readAdminColor(page, '--fb-base-50'));
+    await expectBackground(pageMenu, lightElevated);
+    await page.keyboard.press('Escape');
+    await expect(pageMenu).toBeHidden();
+
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+
+    expect(darkInverse).toBe(await readAdminColor(page, '--color-bg-inverse'));
+    expect(darkMenuBackground).toBe(await readAdminColor(page, '--color-bg-elevated'));
   });
 
   test('lets an app override a FrogBot token on :root', async ({ page }) => {
@@ -184,54 +194,55 @@ test.describe('FrogBot UI in the admin', () => {
 
     const code = page.getByTestId('theme-probe-code').first();
 
-    await expectBackground(code, await readAdminColor(page, '--fb-base-50'));
+    await expectBackground(code, await readAdminColor(page, '--color-bg-secondary'));
     await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
-    await expectBackground(code, await readAdminColor(page, '--fb-base-250'));
+    await expectBackground(code, await readAdminColor(page, '--color-bg-secondary'));
   });
 
   test.describe('on a light operating system', () => {
     test.use({ colorScheme: 'light' });
 
-    test('opens dropdown menus with the dark admin palette', async ({ page }) => {
+    test('opens dropdown menus with the dark admin tokens', async ({ page }) => {
       await openPostCreate(page, 'dark');
       await page.getByTestId('theme-probe-menu-trigger').first().click();
 
       const menu = page.getByTestId('theme-probe-menu');
 
       await expect(menu).toBeVisible();
-      await expectBackground(menu, await readAdminColor(page, '--fb-base-950'));
+      await expectBackground(menu, await readAdminColor(page, '--color-bg-elevated'));
     });
   });
 
   test.describe('on a dark operating system', () => {
     test.use({ colorScheme: 'dark' });
 
-    test('opens dropdown menus with the light admin palette', async ({ page }) => {
+    test('opens dropdown menus with the light admin tokens', async ({ page }) => {
       await openPostCreate(page, 'light');
       await page.getByTestId('theme-probe-menu-trigger').first().click();
 
       const menu = page.getByTestId('theme-probe-menu');
 
       await expect(menu).toBeVisible();
-      await expectBackground(menu, await readAdminColor(page, '--fb-base-50'));
+      await expectBackground(menu, await readAdminColor(page, '--color-bg-elevated'));
     });
   });
 });
 
-test("uses the admin's palette on pages outside the admin", async ({ page }) => {
+test("uses the admin's color tokens on pages outside the admin", async ({ page }) => {
   await page.goto('/theme-check');
 
   const button = page.getByTestId('theme-check-default');
 
   await expect(button).toBeVisible();
-  await expectBackground(button, 'rgb(0, 0, 0)');
+  await expectBackground(button, 'rgb(44, 44, 44)');
   await expect(page.locator('html')).not.toHaveAttribute('data-fb-ui-page');
   expect(
     await page.evaluate(() => {
-      const color = (name: string, colorScheme = '') => {
+      const color = (name: string, theme?: string) => {
         const sample = document.createElement('div');
 
-        sample.style.colorScheme = colorScheme;
+        if (theme) sample.dataset.theme = theme;
+
         sample.style.backgroundColor = `var(${name})`;
         document.body.append(sample);
 
@@ -243,34 +254,37 @@ test("uses the admin's palette on pages outside the admin", async ({ page }) => 
       };
 
       return {
-        base0: color('--fb-base-0'),
-        themeBase0: {
-          light: color('--fb-theme-base-0', 'light'),
-          dark: color('--fb-theme-base-0', 'dark'),
-        },
+        bg: { light: color('--color-bg', 'light'), dark: color('--color-bg', 'dark') },
+        brand: color('--color-bg-brand'),
+        removed: getComputedStyle(document.documentElement).getPropertyValue('--fb-base-0'),
       };
     }),
   ).toEqual({
-    base0: 'rgb(255, 255, 255)',
-    themeBase0: { light: 'rgb(255, 255, 255)', dark: 'rgb(0, 0, 0)' },
+    bg: { light: 'rgb(255, 255, 255)', dark: 'rgb(44, 44, 44)' },
+    brand: 'rgb(13, 153, 255)',
+    removed: '',
   });
 });
 
-for (const [colorScheme, userBackground, assistantBackground, grayBackground] of [
-  ['light', 'rgb(245, 245, 245)', 'rgb(245, 245, 245)', 'rgb(217, 217, 217)'],
-  ['dark', 'rgb(217, 217, 217)', 'rgb(18, 18, 18)', 'rgb(44, 44, 44)'],
+for (const [colorScheme, codeBackground, grayBackground] of [
+  ['light', 'rgb(245, 245, 245)', 'rgb(245, 245, 245)'],
+  ['dark', 'rgb(56, 56, 56)', 'rgb(56, 56, 56)'],
 ] as const) {
   test.describe(`on a ${colorScheme} operating system outside the admin`, () => {
     test.use({ colorScheme });
 
-    test('colors code blocks from the system theme', async ({ page }) => {
+    test('themes the page and colors code blocks from the system theme', async ({ page }) => {
       await page.goto('/theme-check/system');
 
-      await expectBackground(page.getByTestId('theme-check-user-code'), userBackground);
-      await expectBackground(page.getByTestId('theme-check-assistant-code'), assistantBackground);
+      await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+      await expect(page.locator('html')).toHaveCSS('color-scheme', colorScheme);
+      await expectBackground(page.getByTestId('theme-check-user-code'), codeBackground);
+      await expectBackground(page.getByTestId('theme-check-assistant-code'), codeBackground);
     });
 
-    test('keeps every option pill readable and blue, cyan and teal distinct', async ({ page }) => {
+    test('keeps every option pill readable, on its Payload token, and distinct', async ({
+      page,
+    }) => {
       await page.goto('/theme-check/pills');
 
       const pills = page.getByTestId('theme-check-pills').locator('.fb-option-pill');
@@ -287,21 +301,28 @@ for (const [colorScheme, userBackground, assistantBackground, grayBackground] of
 
       for (const pill of colors) {
         expect(contrast(pill), `${pill.name} contrast`).toBeGreaterThanOrEqual(4.5);
+        expect(pill.background, `${pill.name} background`).toBe(
+          await readAdminColor(page, optionPillTokens[pill.name].background),
+        );
+        expect(pill.text, `${pill.name} text`).toBe(
+          await readAdminColor(page, optionPillTokens[pill.name].text),
+        );
       }
 
       const byName = Object.fromEntries(colors.map((pill) => [pill.name, pill]));
 
       expect(byName.gray.background).toBe(grayBackground);
 
-      for (const [a, b] of [
-        ['blue', 'cyan'],
-        ['cyan', 'teal'],
-        ['blue', 'teal'],
-      ]) {
-        expect(colorDifference(byName[a].background, byName[b].background)).toBeGreaterThanOrEqual(
-          10,
-        );
-        expect(colorDifference(byName[a].text, byName[b].text)).toBeGreaterThanOrEqual(10);
+      for (const [index, a] of optionColors.entries()) {
+        for (const b of optionColors.slice(index + 1)) {
+          expect(
+            Math.max(
+              colorDifference(byName[a].background, byName[b].background),
+              colorDifference(byName[a].text, byName[b].text),
+            ),
+            `${a}/${b} difference`,
+          ).toBeGreaterThanOrEqual(6);
+        }
       }
     });
   });
@@ -577,29 +598,29 @@ test.describe('asChild links', () => {
         );
 
       for (const suffix of ['button', 'link']) {
-        await expectColor(`button-ghost-${suffix}`, 'var(--fb-theme-base-700)');
-        await expectColor(`button-destructive-${suffix}`, 'var(--fb-base-900)');
-        await expectColor(`tab-active-${suffix}`, 'var(--fb-theme-base-900)');
-        await expectColor(`toggle-on-${suffix}`, 'var(--fb-theme-base-1000)');
+        await expectColor(`button-ghost-${suffix}`, 'var(--color-text-secondary)');
+        await expectColor(`button-destructive-${suffix}`, 'var(--color-text-ondanger)');
+        await expectColor(`tab-active-${suffix}`, 'var(--color-text)');
+        await expectColor(`toggle-on-${suffix}`, 'var(--color-text)');
       }
 
       for (const suffix of ['button', 'link']) {
         const ghost = page.getByTestId(`button-ghost-${suffix}`);
 
         expect((await hoverAndRead(page, ghost)).color, `ghost ${suffix} hover`).toBe(
-          await resolveColor(container, 'var(--fb-theme-base-1000)'),
+          await resolveColor(container, 'var(--color-text)'),
         );
 
         const destructive = page.getByTestId(`button-destructive-${suffix}`);
 
         expect((await hoverAndRead(page, destructive)).color, `destructive ${suffix} hover`).toBe(
-          await resolveColor(container, 'var(--fb-base-900)'),
+          await resolveColor(container, 'var(--color-text-ondanger)'),
         );
 
         const toggle = page.getByTestId(`toggle-${suffix}`);
 
         expect((await hoverAndRead(page, toggle)).color, `toggle ${suffix} hover`).toBe(
-          await resolveColor(container, 'var(--fb-theme-base-1000)'),
+          await resolveColor(container, 'var(--color-text)'),
         );
       }
     });
@@ -611,8 +632,13 @@ test.describe('asChild links', () => {
       const highlighted = await hoverAndRead(page, menuLink);
       const content = page.locator('.fb-dropdown-menu__content');
 
-      expect(highlighted.color).toBe(await resolveColor(content, 'var(--fb-theme-base-800)'));
-      expect(highlighted.color).not.toBe(await readParentColor(menuLink));
+      expect(highlighted.color).toBe(await resolveColor(content, 'var(--color-text)'));
+      expect(highlighted.backgroundColor).toBe(
+        await resolveColor(content, 'var(--color-bg-hover)'),
+      );
+      expect(highlighted.backgroundColor).not.toBe(
+        (await readLinkStyle(page.getByTestId('menu-div'))).backgroundColor,
+      );
     });
   });
 

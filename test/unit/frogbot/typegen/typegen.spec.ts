@@ -538,7 +538,7 @@ describe('frogbot generate:types', () => {
                   type: 'radio',
                   options: [
                     { label: 'Low', value: 'low' },
-                    { label: 'High', value: 'high', ...color('orange') },
+                    { label: 'High', value: 'high', ...color('yellow') },
                   ],
                 },
               ],

@@ -34,7 +34,7 @@ describe('view controls admin styles', () => {
 
     expect(source).toMatch(/--color-bg-success-tertiary/);
     expect(source).toMatch(/--color-border-success/);
-    expect(source).not.toMatch(/--fb-theme-base-/);
+    expect(source).not.toMatch(/--fb-(?:base|theme)-/);
     expect(source).not.toMatch(/--color-blue-/);
   });
 });

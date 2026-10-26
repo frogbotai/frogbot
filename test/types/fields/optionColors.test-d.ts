@@ -2,17 +2,14 @@ import type { Field, Option, OptionColor, RadioField, SelectField } from 'frogbo
 import { expectTypeOf } from 'vitest';
 
 expectTypeOf<OptionColor>().toEqualTypeOf<
-  'gray' | 'blue' | 'cyan' | 'teal' | 'green' | 'yellow' | 'orange' | 'red' | 'pink' | 'purple'
+  'gray' | 'blue' | 'green' | 'yellow' | 'red' | 'pink' | 'purple'
 >();
 
 const palette: Option[] = [
   { label: 'Gray', value: 'gray', color: 'gray' },
   { label: 'Blue', value: 'blue', color: 'blue' },
-  { label: 'Cyan', value: 'cyan', color: 'cyan' },
-  { label: 'Teal', value: 'teal', color: 'teal' },
   { label: 'Green', value: 'green', color: 'green' },
   { label: 'Yellow', value: 'yellow', color: 'yellow' },
-  { label: 'Orange', value: 'orange', color: 'orange' },
   { label: 'Red', value: 'red', color: 'red' },
   { label: 'Pink', value: 'pink', color: 'pink' },
   { label: 'Purple', value: 'purple', color: 'purple' },
@@ -37,6 +34,19 @@ export const misspelled: SelectField = {
       // @ts-expect-error unknown colour names are rejected
       color: 'grene',
     },
+  ],
+};
+
+export const removed: SelectField = {
+  name: 'status',
+  type: 'select',
+  options: [
+    // @ts-expect-error teal is not one of Payload's hues
+    { label: 'Teal', value: 'teal', color: 'teal' },
+    // @ts-expect-error cyan is not one of Payload's hues
+    { label: 'Cyan', value: 'cyan', color: 'cyan' },
+    // @ts-expect-error orange is not one of Payload's hues
+    { label: 'Orange', value: 'orange', color: 'orange' },
   ],
 };
 

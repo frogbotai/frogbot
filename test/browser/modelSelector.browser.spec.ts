@@ -103,7 +103,7 @@ for (const theme of ['light', 'dark'] as const) {
           const style = getComputedStyle(element);
           const color = document.createElement('span');
 
-          color.style.color = 'var(--fb-theme-base-350)';
+          color.style.color = 'var(--color-bg-secondary-pressed)';
           element.append(color);
 
           const thumb = getComputedStyle(color).color;
@@ -793,9 +793,9 @@ function searchBoxStyle(search: Locator) {
   return search.evaluate((element) => {
     const probe = document.createElement('span');
 
-    probe.style.backgroundColor = 'var(--fb-theme-base-200)';
-    probe.style.color = 'var(--fb-theme-base-300)';
-    probe.style.boxShadow = '0 0 0 2px var(--fb-theme-base-400)';
+    probe.style.backgroundColor = 'var(--field-color-bg)';
+    probe.style.color = 'var(--field-color-border)';
+    probe.style.boxShadow = '0 0 0 2px var(--accessibility-focus-color)';
     element.parentElement!.append(probe);
 
     const style = getComputedStyle(element);

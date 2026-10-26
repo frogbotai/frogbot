@@ -30,7 +30,7 @@
   }
 
   .fb-chat-row-actions__trigger:hover {
-    background: var(--fb-theme-base-250);
+    background: var(--color-bg-transparent-hover);
   }
 
   .fb-chat-row-actions__trigger svg {
@@ -39,12 +39,12 @@
   }
 
   .fb-chat-row-actions__delete {
-    color: var(--fb-theme-red-500);
+    color: var(--color-text-danger);
   }
 
   .fb-chat-row-actions__delete:focus,
   .fb-chat-row-actions__delete[data-highlighted] {
-    color: var(--fb-theme-red-500);
-    background: color-mix(in srgb, var(--fb-theme-red-500) 15%, transparent);
+    color: var(--color-text-danger);
+    background: var(--color-bg-danger-tertiary);
   }
 }

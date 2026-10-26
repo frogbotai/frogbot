@@ -3,8 +3,8 @@
     display: inline-flex;
     align-items: center;
     padding: 0.25rem;
-    color: var(--fb-theme-base-750);
-    background: var(--fb-theme-base-150);
+    color: var(--color-text-secondary);
+    background: var(--color-bg-tertiary);
     border-radius: var(--fb-radius-md);
   }
   .fb-tabs__list--outline {
@@ -22,8 +22,8 @@
     text-decoration: none;
   }
   .fb-tabs__trigger[data-state="active"] {
-    color: var(--fb-theme-base-900);
-    background: var(--fb-theme-base-100);
+    color: var(--color-text);
+    background: var(--color-bg-secondary);
     box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
   }
   .fb-tabs__trigger--outline {
@@ -32,7 +32,7 @@
   }
   .fb-tabs__trigger--outline[data-state="active"] {
     background: transparent;
-    border-color: var(--fb-theme-brand-500);
+    border-color: var(--color-border-brand-strong);
     box-shadow: none;
   }
   .fb-tabs__content {

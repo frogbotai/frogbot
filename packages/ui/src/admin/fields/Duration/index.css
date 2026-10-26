@@ -1,6 +1,6 @@
 @layer frogbot {
   .duration-field.error .fb-input {
-    border-color: var(--color-destructive);
+    border-color: var(--field-color-border-error);
   }
 
   .duration-field__value {

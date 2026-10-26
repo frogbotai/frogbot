@@ -6,7 +6,7 @@ import { LayerProbe } from './LayerProbe';
 
 export function LayerProbePage() {
   return (
-    <ThemeProvider mode="light">
+    <ThemeProvider>
       <LayerProbe />
     </ThemeProvider>
   );

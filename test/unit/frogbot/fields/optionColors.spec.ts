@@ -219,7 +219,15 @@ describe('option colors', () => {
     const field = status({ options: [{ label: 'Done', value: 'done', color: 'grene' as never }] });
 
     expect(() => sanitize(config({ fields: [field] }))).toThrow(
-      "[frogbot] Select field 'status' in collection 'tasks': option 'done' has unknown color 'grene'. Use one of: gray, blue, cyan, teal, green, yellow, orange, red, pink, purple.",
+      "[frogbot] Select field 'status' in collection 'tasks': option 'done' has unknown color 'grene'. Use one of: gray, blue, green, yellow, red, pink, purple.",
+    );
+  });
+
+  it.each(['cyan', 'teal', 'orange'])('rejects the removed colour %s', (removed) => {
+    const field = status({ options: [{ label: 'Done', value: 'done', color: removed as never }] });
+
+    expect(() => sanitize(config({ fields: [field] }))).toThrow(
+      `option 'done' has unknown color '${removed}'`,
     );
   });
 

@@ -1348,9 +1348,9 @@ describe('ModelSelector', () => {
     expect(content).not.toContain('max-content');
     expect(content).not.toContain('min-width');
     expect(content).not.toContain('max-width');
-    expect(search).toContain('background-color: var(--fb-theme-base-200)');
-    expect(search).toContain('border: 1px solid var(--fb-theme-base-300)');
-    expect(input).toContain('background: var(--fb-theme-base-150)');
+    expect(search).toContain('background-color: var(--field-color-bg)');
+    expect(search).toContain('border: 1px solid var(--field-color-border)');
+    expect(input).toContain('background: var(--color-bg-tertiary)');
     expect(input).not.toContain('border:');
   });
 });

@@ -4,25 +4,25 @@
     display: flex;
     width: 100%;
     padding: 1rem;
-    color: var(--fb-theme-base-900);
-    background: var(--fb-theme-base-0);
-    border: 1px solid var(--fb-theme-base-300);
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
     border-radius: var(--fb-radius-lg);
   }
   .fb-alert--warning {
-    color: var(--warning-foreground);
-    background: color-mix(in srgb, var(--color-warning) 15%, var(--fb-theme-base-0));
-    border-color: var(--color-warning);
+    color: var(--color-text-warning);
+    background: var(--color-bg-warning-tertiary);
+    border-color: var(--color-border-warning);
   }
   .fb-alert--destructive {
-    color: var(--fb-theme-red-700);
-    background: color-mix(in srgb, var(--color-destructive) 10%, var(--fb-theme-base-0));
-    border-color: var(--color-destructive);
+    color: var(--color-text-danger);
+    background: var(--color-bg-danger-tertiary);
+    border-color: var(--color-border-danger);
   }
   .fb-alert--primary {
-    color: var(--fb-theme-base-900);
-    background: color-mix(in srgb, var(--color-primary) 10%, var(--fb-theme-base-0));
-    border-color: var(--color-primary);
+    color: var(--color-text);
+    background: var(--color-bg-secondary);
+    border-color: var(--color-border-strong);
   }
   .fb-alert__title {
     margin: 0 0 0.25rem;

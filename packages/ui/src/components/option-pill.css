@@ -3,51 +3,33 @@
     display: inline-flex;
     padding: 0.125rem 0.5rem;
     align-items: center;
-    color: var(--fb-option-pill-gray-text);
+    /* Hue is in the background; text stays --color-text so every pill reads at 4.5:1. */
+    color: var(--color-text);
     font-size: var(--fb-text-xs);
     font-weight: 500;
     line-height: var(--fb-text-xs--line-height);
-    background: var(--fb-option-pill-gray-bg);
+    background: var(--color-bg-secondary);
     border-radius: 9999px;
   }
   .fb-option-pill--gray {
-    color: var(--fb-option-pill-gray-text);
-    background: var(--fb-option-pill-gray-bg);
+    background: var(--color-bg-secondary);
   }
   .fb-option-pill--blue {
-    color: var(--fb-option-pill-blue-text);
-    background: var(--fb-option-pill-blue-bg);
-  }
-  .fb-option-pill--cyan {
-    color: var(--fb-option-pill-cyan-text);
-    background: var(--fb-option-pill-cyan-bg);
-  }
-  .fb-option-pill--teal {
-    color: var(--fb-option-pill-teal-text);
-    background: var(--fb-option-pill-teal-bg);
+    background: var(--color-bg-selected);
   }
   .fb-option-pill--green {
-    color: var(--fb-option-pill-green-text);
-    background: var(--fb-option-pill-green-bg);
+    background: var(--color-bg-success-tertiary);
   }
   .fb-option-pill--yellow {
-    color: var(--fb-option-pill-yellow-text);
-    background: var(--fb-option-pill-yellow-bg);
-  }
-  .fb-option-pill--orange {
-    color: var(--fb-option-pill-orange-text);
-    background: var(--fb-option-pill-orange-bg);
+    background: var(--color-bg-warning-tertiary);
   }
   .fb-option-pill--red {
-    color: var(--fb-option-pill-red-text);
-    background: var(--fb-option-pill-red-bg);
+    background: var(--color-bg-danger-tertiary);
   }
   .fb-option-pill--pink {
-    color: var(--fb-option-pill-pink-text);
-    background: var(--fb-option-pill-pink-bg);
+    background: var(--color-bg-assistive-tertiary);
   }
   .fb-option-pill--purple {
-    color: var(--fb-option-pill-purple-text);
-    background: var(--fb-option-pill-purple-bg);
+    background: var(--color-bg-component-tertiary);
   }
 }

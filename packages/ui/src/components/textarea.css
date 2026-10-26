@@ -5,23 +5,23 @@
     min-height: 2.5rem;
     padding: 0.5rem 0.75rem;
     margin: 0;
-    color: var(--fb-theme-base-900);
+    color: var(--field-color-text);
     font: inherit;
     font-size: var(--fb-text-sm);
-    caret-color: var(--fb-theme-base-900);
+    caret-color: var(--field-color-text);
     resize: vertical;
-    background: var(--fb-theme-base-200);
-    border: 1px solid var(--fb-theme-base-300);
+    background: var(--field-color-bg);
+    border: 1px solid var(--field-color-border);
     border-radius: var(--fb-radius-lg);
   }
   .fb-textarea:hover {
-    border-color: var(--fb-theme-base-400);
+    border-color: var(--field-color-border-hover);
   }
   .fb-textarea:focus {
-    border-color: var(--fb-theme-base-500);
+    border-color: var(--field-color-border-focus);
     outline: none;
   }
   .fb-textarea::placeholder {
-    color: var(--fb-theme-base-600);
+    color: var(--field-color-placeholder);
   }
 }
