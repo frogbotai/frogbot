@@ -1,6 +1,6 @@
 import type { MongooseAdapter } from '@payloadcms/db-mongodb';
 import { transform } from '@payloadcms/db-mongodb/internal';
-import { isJobClaim, unleased } from 'frogbot/jobs';
+import { isJobClaim, unleased, yieldHeldKeys } from 'frogbot/jobs';
 
 import { getJobModel, getJobSession, transformJobUpdate } from './jobModel.js';
 
@@ -44,7 +44,7 @@ export function createUpdateJobs(adapter: MongooseAdapter): MongooseAdapter['upd
 
     const update = transformJobUpdate({ adapter, data: { ...args.data } });
 
-    const result: MongoJob[] = [];
+    const claimed: MongoJob[] = [];
 
     for (const candidate of candidates) {
       const candidateQuery = await Model.buildQuery({
@@ -62,8 +62,15 @@ export function createUpdateJobs(adapter: MongooseAdapter): MongooseAdapter['upd
 
       transform({ adapter, data: doc, fields, operation: 'read' });
 
-      result.push(doc);
+      claimed.push(doc);
     }
+
+    const result = await yieldHeldKeys({
+      find: (findArgs) => adapter.find(findArgs),
+      rows: claimed,
+      processingToken: args.data.processingToken,
+      release: (release) => updateJobs.call(adapter, { ...release, req, returning: false }),
+    });
 
     return returning === false ? null : result;
   };

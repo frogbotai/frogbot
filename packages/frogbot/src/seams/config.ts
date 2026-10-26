@@ -27,7 +27,7 @@ type ReshapedConfigKeys =
 type ReshapedCollectionKeys =
   'access' | 'admin' | 'auth' | 'endpoints' | 'fields' | 'hooks' | 'upload';
 
-type ReshapedJobsKeys = 'workflows';
+type ReshapedJobsKeys = 'tasks' | 'workflows';
 
 type ReshapedFieldKeys =
   | 'access'

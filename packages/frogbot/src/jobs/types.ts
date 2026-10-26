@@ -4,6 +4,8 @@ import type {
   JsonObject,
   Payload,
   PayloadRequest,
+  TaskConfig as PayloadTaskConfig,
+  TaskSlug,
   TypedJobs as PayloadTypedJobs,
   WorkflowConfig as PayloadWorkflowConfig,
   WorkflowHandler as PayloadWorkflowHandler,
@@ -13,9 +15,19 @@ import type { FrogBotTypes } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { WaitFor, WaitpointOptions } from './waitpoints/types.js';
 
-export type JobsConfig = Omit<PayloadJobsConfig, 'workflows'> & {
+export type JobsConfig = Omit<PayloadJobsConfig, 'tasks' | 'workflows'> & {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Payload types its task list the same way
+  tasks?: TaskConfig<any>[];
   waitpoints?: Partial<WaitpointOptions>;
   workflows?: WorkflowConfig<Document>[];
+};
+
+type WithoutExclusive<C> = C extends { key: unknown } ? Omit<C, 'exclusive'> : C;
+
+export type TaskConfig<
+  T extends keyof PayloadTypedJobs['tasks'] | { input: object; output: object } = TaskSlug,
+> = Omit<PayloadTaskConfig<T>, 'concurrency'> & {
+  concurrency?: WithoutExclusive<PayloadTaskConfig<T>['concurrency']>;
 };
 
 export type UntypedJobs = {
@@ -39,8 +51,9 @@ export type WorkflowHandler<T extends JobWorkflowSlug | object = object> = (
 
 export type WorkflowConfig<T extends JobWorkflowSlug | object = object> = Omit<
   PayloadWorkflowConfig<WorkflowInput<T>>,
-  'handler' | 'slug'
+  'concurrency' | 'handler' | 'slug'
 > & {
+  concurrency?: WithoutExclusive<PayloadWorkflowConfig<WorkflowInput<T>>['concurrency']>;
   handler:
     | WorkflowHandler<T>
     | Exclude<PayloadWorkflowConfig<string>['handler'], PayloadWorkflowHandler<string>>;

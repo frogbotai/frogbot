@@ -27,7 +27,7 @@ import {
   type SQLiteTable,
   uniqueIndex as sqliteUniqueIndex,
 } from 'drizzle-orm/sqlite-core';
-import type { DatabaseAdapter, Job, PayloadRequest, Sort, Where } from 'payload';
+import type { DatabaseAdapter, Job, PaginatedDocs, PayloadRequest, Sort, Where } from 'payload';
 
 import {
   assertDrizzleAdapter,
@@ -36,7 +36,7 @@ import {
 } from '../database/guards.js';
 import { type JobInsertDatabase, jobInsertOperations } from './insert.js';
 import { type JobLogDatabase, jobLogOperations } from './log.js';
-import { isJobClaim, unleased } from './run.js';
+import { isJobClaim, unleased, yieldHeldKeys } from './run.js';
 
 type JobSQLDialect = 'postgres' | 'sqlite';
 
@@ -45,6 +45,8 @@ type JobDatabase = Awaited<ReturnType<typeof getJobDatabase>>;
 type JobTable = DrizzleAdapter['tables'][string];
 
 type JobSQLiteWriter = Pick<BaseSQLiteDatabase<'async', unknown>, 'delete' | 'update'>;
+
+type ClaimedJobRow = { id: number | string; concurrencyKey: null | string };
 
 const feature = 'FrogBot SQL jobs';
 
@@ -58,17 +60,32 @@ async function claimJobRows({
   table: JobTable;
   data: Record<string, unknown>;
   where: SQL | undefined;
-}): Promise<(number | string)[]> {
-  if (is(db, PgDatabase)) {
-    const rows = await db.update(table).set(data).where(where).returning({ id: table.id });
+}): Promise<ClaimedJobRow[]> {
+  const columns = { id: table.id, concurrencyKey: table.concurrencyKey };
 
-    return rows.map((row) => row.id);
+  if (is(db, PgDatabase)) {
+    return db.update(table).set(data).where(where).returning(columns);
   }
 
   const writer: JobSQLiteWriter = db;
-  const rows = await writer.update(table).set(data).where(where).returning({ id: table.id });
 
-  return rows.map((row) => row.id);
+  return writer.update(table).set(data).where(where).returning(columns);
+}
+
+async function lockClaimedKeys({
+  db,
+  rows,
+}: {
+  db: { execute(query: SQL): Promise<unknown> };
+  rows: ClaimedJobRow[];
+}): Promise<void> {
+  const keys = [...new Set(rows.flatMap((row) => row.concurrencyKey || []))].sort();
+
+  for (const key of keys) {
+    await db.execute(
+      sql`select pg_advisory_xact_lock(hashtext('frogbot.jobs.concurrencyKey'), hashtext(${key}))`,
+    );
+  }
 }
 
 function getJoinedJobQuery({
@@ -372,7 +389,7 @@ export function installSQLJobOperations({
       limit: args.id !== undefined ? 1 : args.limit,
     });
 
-    const ids = await claimJobRows({
+    const claimed = await claimJobRows({
       db,
       table: query.table,
       data,
@@ -383,6 +400,21 @@ export function installSQLJobOperations({
     });
 
     adapter.lastWriteTimestamp = Date.now();
+
+    if (is(db, PgDatabase)) await lockClaimedKeys({ db, rows: claimed });
+
+    const kept = await yieldHeldKeys({
+      find: (findArgs) =>
+        find.call({ ...adapter, drizzle: db, primaryDrizzle: undefined }, findArgs) as Promise<
+          PaginatedDocs<Job>
+        >,
+      rows: claimed,
+      processingToken: args.data.processingToken,
+      release: (release) =>
+        updateJobs.call(database, { ...release, req: args.req, returning: false }),
+    });
+
+    const ids = kept.map((row) => row.id);
 
     if (args.returning === false) return null;
 

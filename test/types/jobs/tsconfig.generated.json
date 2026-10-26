@@ -8,6 +8,7 @@
     "requests.test-d.ts",
     "native.test-d.ts",
     "waitpoints.test-d.ts",
+    "concurrency.test-d.ts",
     "config.ts"
   ]
 }
