@@ -573,8 +573,8 @@ test.describe('asChild links', () => {
       expect(contextCheckLink.backgroundColor).toBe(contextCheckDiv.backgroundColor);
       expect(contextCheckLink.textDecorationLine).toBe('none');
 
-      const contextSubDiv = await hoverAndRead(page, page.getByTestId('context-sub-div'));
       const contextSubLink = await hoverAndRead(page, page.getByTestId('context-sub-link'));
+      const contextSubDiv = await hoverAndRead(page, page.getByTestId('context-sub-div'));
 
       expect(contextSubLink.color).toBe(contextSubDiv.color);
       expect(contextSubLink.backgroundColor).toBe(contextSubDiv.backgroundColor);
