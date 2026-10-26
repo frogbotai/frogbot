@@ -272,6 +272,24 @@ test.describe('nav shell keeps the saved desktop state', () => {
     });
   }
 
+  test('account button shows the avatar on the server and after hydration', async ({ page }) => {
+    await page.setViewportSize(desktop);
+
+    const html = await (await page.request.get('/')).text();
+    const start = html.indexOf('aria-label="Account"');
+
+    expect(start).toBeGreaterThan(-1);
+    expect(html.slice(start, html.indexOf('</button>', start))).not.toContain('lucide-folder-icon');
+
+    await page.goto('/');
+    await waitForNavSettled(page);
+
+    const account = page.locator('button[aria-label="Account"]');
+
+    await expect(account).toBeVisible();
+    await expect(account.locator('.lucide-folder-icon')).toHaveCount(0);
+  });
+
   test('sidebar reloads collapsed and then open at 1280px', async ({ page }) => {
     await page.setViewportSize(laptop);
     await page.goto('/');

@@ -1,9 +1,9 @@
-import { Account } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import type { RootAdminComponents } from 'frogbot';
 import { attachRegisteredFrogBot } from 'frogbot/internal';
 import type { NavPreferences, PayloadRequest, ServerProps } from 'payload';
 import { formatAdminURL, PREFERENCE_KEYS } from 'payload/shared';
+import type { ReactNode } from 'react';
 
 import { buildNavModel } from './buildNavModel.js';
 import { FrogBotNavClient } from './index.client.js';
@@ -30,10 +30,11 @@ async function getNavPreferences(req?: PayloadRequest): Promise<NavPreferences |
   return result.docs[0]?.value as NavPreferences | null;
 }
 
-export type FrogBotNavProps = { req?: PayloadRequest } & ServerProps;
+export type FrogBotNavProps = { CustomAvatar?: ReactNode; req?: PayloadRequest } & ServerProps;
 
 export async function FrogBotNav(props: FrogBotNavProps) {
   const {
+    CustomAvatar,
     documentSubViewType,
     i18n,
     locale,
@@ -132,8 +133,8 @@ export async function FrogBotNav(props: FrogBotNavProps) {
 
   return (
     <FrogBotNavClient
+      CustomAvatar={CustomAvatar}
       accountEmail={accountEmail}
-      accountIcon={<Account />}
       accountName={accountName}
       accountPath={formatAdminURL({ adminRoute: routes.admin, path: admin.routes.account })}
       afterAccountMenu={

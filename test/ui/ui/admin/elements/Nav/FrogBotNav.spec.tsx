@@ -9,6 +9,7 @@ import { CollectionsSection } from '../../../../../../packages/ui/src/admin/elem
 import { FrogBotNav } from '../../../../../../packages/ui/src/admin/elements/Nav/index';
 
 type NavClientProps = {
+  CustomAvatar?: ReactNode;
   afterAccountMenu?: ReactNode;
   beforeAccountMenu?: ReactNode;
   items?: unknown[];
@@ -262,6 +263,21 @@ describe('FrogBotNav', () => {
     expect(render(<>{beforeAccountMenu}</>).container.innerHTML).toBe('');
     expect(render(<>{afterAccountMenu}</>).container.textContent).toBe('attached');
     expect(logout).toBeUndefined();
+  });
+
+  it('forwards CustomAvatar to the client unchanged', async () => {
+    const CustomAvatar = <img alt="custom avatar" />;
+
+    render(await FrogBotNav({ ...props(), CustomAvatar }));
+
+    expect(navClient.mock.calls[0]?.[0].CustomAvatar).toBe(CustomAvatar);
+  });
+
+  it('creates no account icon on the server', async () => {
+    render(await FrogBotNav(props()));
+
+    expect(navClient.mock.calls[0]?.[0]).not.toHaveProperty('accountIcon');
+    expect(navClient.mock.calls[0]?.[0].CustomAvatar).toBeUndefined();
   });
 
   it('passes visible entities to configured navigation sections', async () => {

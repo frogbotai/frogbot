@@ -24,6 +24,26 @@ describe('NavItem', () => {
     expect(screen.getByRole('link', { name: 'Agents' }).getAttribute('aria-current')).toBe('page');
   });
 
+  it('renders a lazy icon as a node', () => {
+    const icon = {
+      $$typeof: Symbol.for('react.lazy'),
+      _init: (payload: React.ReactNode) => payload,
+      _payload: <svg data-testid="lazy-icon" />,
+    } as unknown as React.ReactNode;
+
+    render(<NavItem icon={icon} label="Agents" path="/admin/collections/agents" />);
+
+    expect(screen.getByTestId('lazy-icon')).not.toBeNull();
+  });
+
+  it('creates a component icon with its class and size', () => {
+    render(<NavItem icon={Icon} label="Agents" path="/admin/collections/agents" />);
+    const icon = screen.getByTestId('icon');
+
+    expect(icon.getAttribute('class')).toBe('fb-nav-item__icon-svg');
+    expect(icon.getAttribute('size')).toBe('20');
+  });
+
   it("renders through the adapter's Link", () => {
     const Link = vi.fn(({ children, ...props }: React.ComponentProps<'a'>) => (
       <a data-router="" {...props}>

@@ -3,7 +3,6 @@
 import {
   type ComponentType,
   createElement,
-  isValidElement,
   type MouseEvent,
   type ReactNode,
   useEffect,
@@ -15,6 +14,7 @@ import FolderIcon from '../icons/icons/FolderIcon.js';
 import FrogBotFavicon from '../icons/icons/FrogBotFavicon.js';
 import SidebarLeftIcon from '../icons/icons/SidebarLeftIcon.js';
 import { type IconName, iconRegistry, isIconName } from '../icons/registry.js';
+import { isRenderableNode } from '../lib/isRenderableNode.js';
 import { AccountMenu } from './AccountMenu.js';
 
 export type AppSidebarNavItem = {
@@ -126,7 +126,7 @@ export function AppSidebar({
           onClick={(event) => navigate(event, item.path)}
           type="button"
         >
-          {isValidElement(Icon)
+          {isRenderableNode(Icon)
             ? Icon
             : createElement(Icon as ComponentType<{ className?: string; size: number }>, {
                 className: `${baseClass}__icon`,
@@ -219,7 +219,7 @@ export function AppSidebar({
                 onClick={(event) => event.stopPropagation()}
                 type="button"
               >
-                {isValidElement(accountIcon) ? (
+                {accountIcon != null ? (
                   accountIcon
                 ) : (
                   <FolderIcon className={`${baseClass}__icon`} size={24} />

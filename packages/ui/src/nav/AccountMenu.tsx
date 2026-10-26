@@ -1,6 +1,6 @@
 'use client';
 
-import { type ComponentType, createElement, isValidElement, type ReactNode } from 'react';
+import { type ComponentType, createElement, type ReactNode } from 'react';
 
 import {
   DropdownMenu,
@@ -11,6 +11,7 @@ import {
 } from '../components/dropdown-menu.js';
 import LogoutRightIcon from '../icons/icons/LogoutRightIcon.js';
 import SettingIcon from '../icons/icons/SettingIcon.js';
+import { isRenderableNode } from '../lib/isRenderableNode.js';
 
 export type AccountMenuIcon = ComponentType<{ className?: string; size?: number }> | ReactNode;
 
@@ -38,7 +39,7 @@ const baseClass = 'fb-account-menu';
 
 const renderIcon = (icon: AccountMenuIcon | undefined) => {
   if (!icon) return null;
-  if (isValidElement(icon)) {
+  if (isRenderableNode(icon)) {
     return <span className={`${baseClass}__item-icon`}>{icon}</span>;
   }
 

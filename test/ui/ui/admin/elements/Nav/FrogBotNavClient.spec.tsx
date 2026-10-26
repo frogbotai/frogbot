@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FrogBotNavClient } from '../../../../../../packages/ui/src/admin/elements/Nav/index.client';
@@ -15,6 +15,7 @@ vi.mock('../../../../../../packages/ui/src/hooks/use-mobile.js', () => ({
 }));
 
 vi.mock('@payloadcms/ui', () => ({
+  Account: () => <svg data-testid="payload-account" />,
   usePathname: () => pathname,
   useRouter: () => ({ push: vi.fn() }),
   useNav: () => ({
@@ -29,9 +30,11 @@ vi.mock('@payloadcms/ui', () => ({
 }));
 
 function Harness({
+  CustomAvatar,
   initialNavOpen,
   initialOpen,
 }: {
+  CustomAvatar?: ReactNode;
   initialNavOpen: boolean;
   initialOpen?: boolean;
 }) {
@@ -40,6 +43,7 @@ function Harness({
 
   return (
     <FrogBotNavClient
+      CustomAvatar={CustomAvatar}
       accountPath="/admin/account"
       homePath="/admin"
       initialOpen={initialOpen}
@@ -64,6 +68,22 @@ describe('FrogBotNavClient', () => {
     render(<Harness initialNavOpen />);
 
     expect(shell().className).toBe('fb-nav-shell');
+  });
+
+  it("uses Payload's Account as the account icon without a CustomAvatar", () => {
+    render(<Harness initialNavOpen />);
+    const account = screen.getByRole('button', { name: 'Account' });
+
+    expect(account.querySelector('[data-testid="payload-account"]')).not.toBeNull();
+    expect(account.querySelector('.lucide-folder-icon')).toBeNull();
+  });
+
+  it('uses a CustomAvatar as the account icon', () => {
+    render(<Harness CustomAvatar={<img alt="custom avatar" />} initialNavOpen />);
+    const account = screen.getByRole('button', { name: 'Account' });
+
+    expect(account.querySelector('img[alt="custom avatar"]')).not.toBeNull();
+    expect(account.querySelector('[data-testid="payload-account"]')).toBeNull();
   });
 
   it('exposes desktop-nav-open and desktop-nav-closed on desktop', () => {
