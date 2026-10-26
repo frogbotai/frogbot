@@ -108,10 +108,10 @@ export function AppSidebar({
 
     if (!tooltip || !element) return;
 
-    const { height, width } = element.getBoundingClientRect();
+    const { height } = element.getBoundingClientRect();
 
-    element.style.left = `${tooltip.left - width / 2}px`;
-    element.style.top = `${tooltip.top - height - 10}px`;
+    element.style.left = `${tooltip.left + 10}px`;
+    element.style.top = `${Math.max(4, tooltip.top - height / 2)}px`;
   }, [tooltip]);
 
   const navigate = (event: MouseEvent, path: string) => {
