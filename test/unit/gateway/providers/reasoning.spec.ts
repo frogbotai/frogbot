@@ -316,9 +316,9 @@ describe('resolveReasoningVariants — Vertex', () => {
   });
 
   it('offers Claude the Anthropic presets under the anthropic namespace', () => {
-    const vertex = resolveReasoningVariants(catalogArgs('vertex/claude-sonnet-4-6@default'));
+    const vertex = resolveReasoningVariants(catalogArgs('vertex/claude-sonnet-4-6'));
     const anthropic = resolveReasoningVariants({
-      ...catalogArgs('vertex/claude-sonnet-4-6@default'),
+      ...catalogArgs('vertex/claude-sonnet-4-6'),
       modelId: 'anthropic/claude-sonnet-4-6',
     });
 

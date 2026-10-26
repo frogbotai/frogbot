@@ -11895,6 +11895,41 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['openai'],
   }),
+  model('openai/gpt-6.1-terra', {
+    name: 'GPT-6.1 Terra',
+    created: '2026-10-26',
+    knowledge: '2026-06-01',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 1,
+      output: 5,
+      cache_read: 0.05,
+      cache_write: 1.25,
+    },
+    providers: ['openai'],
+  }),
   model('openai/gpt-daybreak-blue-latest', {
     name: 'Daybreak Blue',
     created: '2026-08-07',
@@ -12365,12 +12400,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 943718,
+      output: 393216,
     },
     cost: {
-      input: 0.02,
-      output: 1,
-      cache_read: 0.015,
+      input: 0.04,
+      output: 0.5,
+      cache_read: 0.03,
     },
     providers: ['openrouter'],
   }),
@@ -12535,9 +12570,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.152,
-      output: 20,
-      cache_read: 0.142,
+      input: 0.151,
+      output: 8.94,
+      cache_read: 0.15,
     },
     providers: ['openrouter'],
   }),
@@ -12707,10 +12742,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 2,
-      output: 12,
-      cache_read: 0.2,
-      cache_write: 2.5,
+      input: 1,
+      output: 5,
+      cache_read: 0.05,
+      cache_write: 1.25,
     },
     providers: ['openrouter'],
   }),
@@ -14265,9 +14300,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 384000,
     },
     cost: {
-      input: 0.775692,
-      output: 1.551384,
-      cache_read: 0.064641,
+      input: 0.730104,
+      output: 1.460208,
+      cache_read: 0.060842,
     },
     providers: ['openrouter'],
   }),
@@ -14328,12 +14363,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 943718,
+      output: 393216,
     },
     cost: {
-      input: 0.02,
-      output: 1,
-      cache_read: 0.015,
+      input: 0.0477,
+      output: 0.1908,
+      cache_read: 0.000954,
     },
     providers: ['openrouter'],
   }),
@@ -14983,9 +15018,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 235929,
     },
     cost: {
-      input: 0.09,
-      output: 0.3,
-      cache_read: 0.05,
+      input: 0.0765,
+      output: 0.255,
+      cache_read: 0.0425,
     },
     providers: ['openrouter'],
   }),
@@ -17028,9 +17063,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.152,
+      input: 0.159,
       output: 20,
-      cache_read: 0.142,
+      cache_read: 0.149,
     },
     providers: ['openrouter'],
   }),
@@ -19037,6 +19072,41 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 10,
       cache_read: 0.1,
       cache_write: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-6.1-terra', {
+    name: 'GPT-6.1 Terra',
+    created: '2026-10-26',
+    knowledge: '2026-06-01',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 1,
+      output: 5,
+      cache_read: 0.05,
+      cache_write: 1.25,
     },
     providers: ['openrouter'],
   }),
@@ -21424,9 +21494,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 0.132,
-      output: 0.528,
-      cache_read: 0.033,
+      input: 0.0825,
+      output: 0.33,
+      cache_read: 0.020625,
     },
     providers: ['openrouter'],
   }),
@@ -21487,9 +21557,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 64000,
     },
     cost: {
-      input: 0.834,
-      output: 2.501,
-      cache_read: 0.042,
+      input: 0.7506,
+      output: 2.2509,
+      cache_read: 0.0378,
     },
     providers: ['openrouter'],
   }),
@@ -29484,6 +29554,74 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['vercel'],
   }),
+  model('vercel/openai/gpt-6.1-terra', {
+    name: 'GPT-6.1 Terra',
+    created: '2026-10-26',
+    knowledge: '2026-06-01',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 1,
+      output: 5,
+      cache_read: 0.05,
+      cache_write: 1.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-6.1-terra-fast', {
+    name: 'GPT-6.1 Terra (Fast)',
+    created: '2026-10-26',
+    knowledge: '2026-06-01',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.1,
+      cache_write: 2.5,
+    },
+    providers: ['vercel'],
+  }),
   model('vercel/openai/gpt-oss-120b', {
     name: 'GPT OSS 120B',
     created: '2025-08-05',
@@ -31344,45 +31482,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['vercel'],
   }),
-  model('vertex/claude-fable-5-1@default', {
-    name: 'Claude Fable 5.1',
-    created: '2026-09-01',
-    knowledge: '2026-06',
-    modalities: {
-      input: ['text', 'image', 'pdf'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'effort',
-          values: ['low', 'medium', 'high', 'xhigh', 'max'],
-        },
-      ],
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 10,
-      output: 50,
-      cache_read: 0.25,
-      cache_write: 12.5,
-    },
-    sdk: {
-      npm: '@ai-sdk/google-vertex/anthropic',
-    },
-    providers: ['vertex'],
-  }),
-  model('vertex/claude-fable-5@default', {
+  model('vertex/claude-fable-5', {
     name: 'Claude Fable 5',
     created: '2026-06-09',
     knowledge: '2026-01-31',
@@ -31413,6 +31513,44 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 10,
       output: 50,
       cache_read: 1,
+      cache_write: 12.5,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/claude-fable-5-1', {
+    name: 'Claude Fable 5.1',
+    created: '2026-09-01',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 0.25,
       cache_write: 12.5,
     },
     sdk: {
@@ -31458,7 +31596,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['vertex'],
   }),
-  model('vertex/claude-haiku-5-5@default', {
+  model('vertex/claude-haiku-5-5', {
     name: 'Claude Haiku 5.5',
     created: '2026-10-07',
     knowledge: '2026-06',
@@ -31541,7 +31679,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['vertex'],
   }),
-  model('vertex/claude-opus-4-6@default', {
+  model('vertex/claude-opus-4-6', {
     name: 'Claude Opus 4.6',
     created: '2026-02-05',
     knowledge: '2025-05-31',
@@ -31583,7 +31721,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['vertex'],
   }),
-  model('vertex/claude-opus-4-7@default', {
+  model('vertex/claude-opus-4-7', {
     name: 'Claude Opus 4.7',
     created: '2026-04-16',
     knowledge: '2026-01-31',
@@ -31621,7 +31759,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['vertex'],
   }),
-  model('vertex/claude-opus-4-8@default', {
+  model('vertex/claude-opus-4-8', {
     name: 'Claude Opus 4.8',
     created: '2026-05-28',
     knowledge: '2026-01',
@@ -31659,45 +31797,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['vertex'],
   }),
-  model('vertex/claude-opus-5-5@default', {
-    name: 'Claude Opus 5.5',
-    created: '2026-09-22',
-    knowledge: '2026-06',
-    modalities: {
-      input: ['text', 'image', 'pdf'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'effort',
-          values: ['low', 'medium', 'high', 'xhigh', 'max'],
-        },
-      ],
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 4,
-      output: 20,
-      cache_read: 0.2,
-      cache_write: 5,
-    },
-    sdk: {
-      npm: '@ai-sdk/google-vertex/anthropic',
-    },
-    providers: ['vertex'],
-  }),
-  model('vertex/claude-opus-5@default', {
+  model('vertex/claude-opus-5', {
     name: 'Claude Opus 5',
     created: '2026-07-24',
     knowledge: '2026-05',
@@ -31735,7 +31835,45 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['vertex'],
   }),
-  model('vertex/claude-sonnet-4-6@default', {
+  model('vertex/claude-opus-5-5', {
+    name: 'Claude Opus 5.5',
+    created: '2026-09-22',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 4,
+      output: 20,
+      cache_read: 0.2,
+      cache_write: 5,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/claude-sonnet-4-6', {
     name: 'Claude Sonnet 4.6',
     created: '2026-02-17',
     knowledge: '2025-08-31',
@@ -31777,45 +31915,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['vertex'],
   }),
-  model('vertex/claude-sonnet-5-5@default', {
-    name: 'Claude Sonnet 5.5',
-    created: '2026-09-28',
-    knowledge: '2026-06',
-    modalities: {
-      input: ['text', 'image', 'pdf'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'effort',
-          values: ['low', 'medium', 'high', 'xhigh', 'max'],
-        },
-      ],
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 2,
-      output: 10,
-      cache_read: 0.1,
-      cache_write: 2.5,
-    },
-    sdk: {
-      npm: '@ai-sdk/google-vertex/anthropic',
-    },
-    providers: ['vertex'],
-  }),
-  model('vertex/claude-sonnet-5@default', {
+  model('vertex/claude-sonnet-5', {
     name: 'Claude Sonnet 5',
     created: '2026-06-30',
     knowledge: '2026-01-31',
@@ -31849,6 +31949,44 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 2,
       output: 10,
       cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/claude-sonnet-5-5', {
+    name: 'Claude Sonnet 5.5',
+    created: '2026-09-28',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.1,
       cache_write: 2.5,
     },
     sdk: {

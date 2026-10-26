@@ -57,12 +57,12 @@ describe('AI config types', () => {
       location: 'global',
       googleAuthOptions: { keyFilename: '/secrets/sa.json' },
       anthropic: { location: 'us-east5' },
-      models: ['gemini-3.5-flash', 'claude-sonnet-4-6@default'],
+      models: ['gemini-3.5-flash', 'claude-sonnet-4-6'],
     };
 
     expectTypeOf(reproduction.providers.vertex).toMatchTypeOf<ProviderConfig['vertex']>();
     expectTypeOf(full).toMatchTypeOf<ProviderConfig['vertex']>();
-    expectTypeOf<'vertex/claude-sonnet-4-6@default'>().toMatchTypeOf<ModelId>();
+    expectTypeOf<'vertex/claude-sonnet-4-6'>().toMatchTypeOf<ModelId>();
   });
 
   it('rejects incomplete or key-based Vertex entries', () => {
@@ -75,6 +75,8 @@ describe('AI config types', () => {
       { project: 'example-project', location: 'global', apiKey: 'key' },
       // @ts-expect-error a Vertex model must be in the vertex catalog
       { project: 'example-project', location: 'global', models: ['gpt-4o'] },
+      // @ts-expect-error Vertex Claude models have no @default suffix
+      { project: 'example-project', location: 'global', models: ['claude-sonnet-4-6@default'] },
       // @ts-expect-error googleAuthOptions are google-auth-library options
       { project: 'example-project', location: 'global', googleAuthOptions: { keyFilename: 1 } },
     ];

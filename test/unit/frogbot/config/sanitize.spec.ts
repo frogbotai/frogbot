@@ -2924,7 +2924,7 @@ describe('frogbot sanitize', () => {
               location: 'global',
               googleAuthOptions: { keyFilename: '/secrets/sa.json' },
               anthropic: { location: 'us-east5' },
-              models: ['gemini-3.5-flash', 'claude-sonnet-4-6@default'],
+              models: ['gemini-3.5-flash', 'claude-sonnet-4-6'],
             },
           },
         },
@@ -2953,6 +2953,10 @@ describe('frogbot sanitize', () => {
       [
         { project: 'p', location: 'global', models: ['gpt-4o'] },
         "Provider 'vertex' models contains unknown model: gpt-4o",
+      ],
+      [
+        { project: 'p', location: 'global', models: ['claude-sonnet-4-6@default'] },
+        "Provider 'vertex' models contains unknown model: claude-sonnet-4-6@default",
       ],
     ])('rejects the Vertex entry %j', (vertex, message) => {
       const config = makeConfig({ ai: { providers: { vertex } } } as never);

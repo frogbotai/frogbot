@@ -86,7 +86,7 @@ describe('vertexProvider.build', () => {
 
     expect(provider.languageModel('gemini-3.5-flash').provider).toBe('google.vertex.chat');
     expect(provider('gemini-3.5-flash').provider).toBe('google.vertex.chat');
-    expect(provider.languageModel('claude-sonnet-4-6@default').provider).toBe(
+    expect(provider.languageModel('claude-sonnet-4-6').provider).toBe(
       'googleVertex.anthropic.messages',
     );
   });
@@ -104,8 +104,8 @@ describe('vertexProvider.build', () => {
     const provider = vertexProvider.build({ apiKey: 'express-key' });
 
     expect(provider.languageModel('gemini-3.5-flash').provider).toBe('google.vertex.chat');
-    expect(() => provider.languageModel('claude-sonnet-4-6@default')).toThrow(ConfigError);
-    expect(() => provider.languageModel('claude-sonnet-4-6@default')).toThrow(
+    expect(() => provider.languageModel('claude-sonnet-4-6')).toThrow(ConfigError);
+    expect(() => provider.languageModel('claude-sonnet-4-6')).toThrow(
       /project and a location for Claude/,
     );
   });
@@ -115,7 +115,7 @@ describe('vertexProvider.build', () => {
 
     const provider = vertexProvider.build({ project: 'acme' });
 
-    expect(() => provider.languageModel('claude-sonnet-4-6@default')).toThrow(ConfigError);
+    expect(() => provider.languageModel('claude-sonnet-4-6')).toThrow(ConfigError);
   });
 
   it('takes the Claude project and location from the environment', () => {
@@ -124,7 +124,7 @@ describe('vertexProvider.build', () => {
 
     const provider = vertexProvider.build({});
 
-    expect(provider.languageModel('claude-sonnet-4-6@default').provider).toBe(
+    expect(provider.languageModel('claude-sonnet-4-6').provider).toBe(
       'googleVertex.anthropic.messages',
     );
   });
@@ -134,7 +134,7 @@ describe('vertexProvider.build', () => {
 
     const provider = vertexProvider.build({ project: 'acme', anthropic: { location: 'us-east5' } });
 
-    expect(provider.languageModel('claude-sonnet-4-6@default').provider).toBe(
+    expect(provider.languageModel('claude-sonnet-4-6').provider).toBe(
       'googleVertex.anthropic.messages',
     );
   });

@@ -143,9 +143,7 @@ describe('model catalog sync', () => {
     );
   });
 
-  it('syncs google-vertex as vertex, keeping only Gemini and Claude models', async () => {
-    const { buildCatalogs } = await loadSync();
-
+  describe('google-vertex', () => {
     const vertexModel = (id: string, extra: Record<string, unknown> = {}) => ({
       id,
       name: id,
@@ -155,36 +153,112 @@ describe('model catalog sync', () => {
       ...extra,
     });
 
-    const { catalog, gateway } = buildCatalogs({
+    const claude = (id: string, extra: Record<string, unknown> = {}) =>
+      vertexModel(id, { provider: { npm: '@ai-sdk/google-vertex/anthropic' }, ...extra });
+
+    const vertexSource = (models: ReturnType<typeof vertexModel>[]) => ({
+      'google-vertex': {
+        id: 'google-vertex',
+        npm: '@ai-sdk/google-vertex',
+        models: Object.fromEntries(models.map((model) => [model.id, model])),
+      },
+    });
+
+    it('syncs as vertex, keeping only Gemini and Claude models', async () => {
+      const { buildCatalogs } = await loadSync();
+
+      const { catalog, gateway } = buildCatalogs({
+        overlays: {},
+        source: vertexSource([
+          vertexModel('gemini-current'),
+          claude('claude-current@default'),
+          claude('claude-old@20250101'),
+          vertexModel('partner-model', {
+            provider: { npm: '@ai-sdk/openai-compatible', api: 'https://example.test/v1' },
+          }),
+          vertexModel('gemini-retired', { status: 'deprecated' }),
+        ]),
+      });
+
+      expect(catalog).toEqual([
+        { id: 'vertex/claude-current', mode: 'chat', provider: 'vertex' },
+        { id: 'vertex/claude-old@20250101', mode: 'chat', provider: 'vertex' },
+        { id: 'vertex/gemini-current', mode: 'chat', provider: 'vertex' },
+      ]);
+      expect(
+        gateway.find(({ id }: { id: string }) => id === 'vertex/claude-current'),
+      ).toMatchObject({
+        providers: ['vertex'],
+        sdk: { npm: '@ai-sdk/google-vertex/anthropic' },
+      });
+    });
+
+    it('rejects an exclude that names the @default ID', async () => {
+      const { buildCatalogs } = await loadSync();
+
+      expect(() =>
+        buildCatalogs({
+          overlays: { vertex: { exclude: ['claude-current@default'] } },
+          source: vertexSource([claude('claude-current@default')]),
+        }),
+      ).toThrow(
+        "Model catalog exclude 'vertex/claude-current@default' for provider 'vertex' is missing from the source",
+      );
+    });
+
+    it('rejects a correction that names the @default ID', async () => {
+      const { buildCatalogs } = await loadSync();
+
+      expect(() =>
+        buildCatalogs({
+          overlays: {
+            vertex: { correct: [{ id: 'vertex/claude-current@default', name: 'Claude' }] },
+          },
+          source: vertexSource([claude('claude-current@default')]),
+        }),
+      ).toThrow(
+        "Model catalog correction 'vertex/claude-current@default' for provider 'vertex' is missing from the synced output",
+      );
+    });
+
+    it('rejects a plain and an @default model that map to one ID', async () => {
+      const { buildCatalogs } = await loadSync();
+
+      expect(() =>
+        buildCatalogs({
+          overlays: {},
+          source: vertexSource([
+            claude('claude-x'),
+            claude('claude-x@default', { status: 'deprecated' }),
+          ]),
+        }),
+      ).toThrow(
+        "Model catalog IDs 'vertex/claude-x' and 'vertex/claude-x@default' both map to 'vertex/claude-x'",
+      );
+    });
+  });
+
+  it('keeps an @default suffix outside google-vertex', async () => {
+    const { buildCatalogs } = await loadSync();
+
+    const { catalog } = buildCatalogs({
       overlays: {},
       source: {
-        'google-vertex': {
-          id: 'google-vertex',
-          npm: '@ai-sdk/google-vertex',
+        anthropic: {
+          ...source.anthropic,
           models: {
-            'gemini-current': vertexModel('gemini-current'),
-            'claude-current@default': vertexModel('claude-current@default', {
-              provider: { npm: '@ai-sdk/google-vertex/anthropic' },
-            }),
-            'partner-model': vertexModel('partner-model', {
-              provider: { npm: '@ai-sdk/openai-compatible', api: 'https://example.test/v1' },
-            }),
-            'gemini-retired': vertexModel('gemini-retired', { status: 'deprecated' }),
+            'claude-current@default': {
+              ...source.anthropic.models['claude-current'],
+              id: 'claude-current@default',
+            },
           },
         },
       },
     });
 
     expect(catalog).toEqual([
-      { id: 'vertex/claude-current@default', mode: 'chat', provider: 'vertex' },
-      { id: 'vertex/gemini-current', mode: 'chat', provider: 'vertex' },
+      { id: 'anthropic/claude-current@default', mode: 'chat', provider: 'anthropic' },
     ]);
-    expect(
-      gateway.find(({ id }: { id: string }) => id === 'vertex/claude-current@default'),
-    ).toMatchObject({
-      providers: ['vertex'],
-      sdk: { npm: '@ai-sdk/google-vertex/anthropic' },
-    });
   });
 
   it('leaves source and overlay fixtures unchanged when applying corrections', async () => {

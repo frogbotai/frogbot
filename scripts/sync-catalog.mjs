@@ -144,7 +144,11 @@ function isPricedLanguageModel(model) {
   return priced && textOnly;
 }
 
-function mapModel({ model, provider, npm }) {
+function catalogModelId(provider, modelId) {
+  return provider === 'vertex' ? modelId.replace(/@default$/, '') : modelId;
+}
+
+function mapModel({ id, model, provider, npm }) {
   const modalities = {
     input: model.modalities.input.filter((modality) => MODALITIES.has(modality)),
     output: model.modalities.output.filter((modality) => MODALITIES.has(modality)),
@@ -161,7 +165,7 @@ function mapModel({ model, provider, npm }) {
   });
 
   return compact({
-    id: `${provider}/${model.id}`,
+    id,
     name: model.name,
     created: model.release_date,
     knowledge: model.knowledge,
@@ -191,7 +195,7 @@ function mapModel({ model, provider, npm }) {
 
 export function buildCatalogs({ overlays, source }) {
   const entries = new Map();
-  const sourceIds = new Set();
+  const sourceIds = new Map();
   const families = new Map();
   const corrected = new Set();
 
@@ -200,7 +204,15 @@ export function buildCatalogs({ overlays, source }) {
     const packages = PROVIDER_PACKAGES[provider];
 
     for (const model of Object.values(models)) {
-      sourceIds.add(`${provider}/${model.id}`);
+      const id = `${provider}/${catalogModelId(provider, model.id)}`;
+      const sourceId = `${provider}/${model.id}`;
+      const twin = sourceIds.get(id);
+
+      if (twin !== undefined) {
+        throw new Error(`Model catalog IDs '${twin}' and '${sourceId}' both map to '${id}'`);
+      }
+
+      sourceIds.set(id, sourceId);
 
       if (model.status === 'deprecated') continue;
 
@@ -210,7 +222,7 @@ export function buildCatalogs({ overlays, source }) {
 
       if (packages && !packages.has(npm)) continue;
 
-      const entry = mapModel({ model, provider, npm: source[sourceProvider].npm });
+      const entry = mapModel({ id, model, provider, npm: source[sourceProvider].npm });
 
       entries.set(entry.id, entry);
       families.set(entry.id, model.family);

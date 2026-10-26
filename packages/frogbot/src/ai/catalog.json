@@ -1875,6 +1875,11 @@
     "mode": "chat"
   },
   {
+    "id": "openai/gpt-6.1-terra",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
     "id": "openai/gpt-daybreak-blue-latest",
     "provider": "openai",
     "mode": "chat"
@@ -3066,6 +3071,11 @@
   },
   {
     "id": "openrouter/openai/gpt-6.1-sol-pro",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/openai/gpt-6.1-terra",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -4770,6 +4780,16 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/openai/gpt-6.1-terra",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-6.1-terra-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/openai/gpt-oss-120b",
     "provider": "vercel",
     "mode": "chat"
@@ -5075,12 +5095,12 @@
     "mode": "chat"
   },
   {
-    "id": "vertex/claude-fable-5-1@default",
+    "id": "vertex/claude-fable-5",
     "provider": "vertex",
     "mode": "chat"
   },
   {
-    "id": "vertex/claude-fable-5@default",
+    "id": "vertex/claude-fable-5-1",
     "provider": "vertex",
     "mode": "chat"
   },
@@ -5090,7 +5110,7 @@
     "mode": "chat"
   },
   {
-    "id": "vertex/claude-haiku-5-5@default",
+    "id": "vertex/claude-haiku-5-5",
     "provider": "vertex",
     "mode": "chat"
   },
@@ -5100,42 +5120,42 @@
     "mode": "chat"
   },
   {
-    "id": "vertex/claude-opus-4-6@default",
+    "id": "vertex/claude-opus-4-6",
     "provider": "vertex",
     "mode": "chat"
   },
   {
-    "id": "vertex/claude-opus-4-7@default",
+    "id": "vertex/claude-opus-4-7",
     "provider": "vertex",
     "mode": "chat"
   },
   {
-    "id": "vertex/claude-opus-4-8@default",
+    "id": "vertex/claude-opus-4-8",
     "provider": "vertex",
     "mode": "chat"
   },
   {
-    "id": "vertex/claude-opus-5-5@default",
+    "id": "vertex/claude-opus-5",
     "provider": "vertex",
     "mode": "chat"
   },
   {
-    "id": "vertex/claude-opus-5@default",
+    "id": "vertex/claude-opus-5-5",
     "provider": "vertex",
     "mode": "chat"
   },
   {
-    "id": "vertex/claude-sonnet-4-6@default",
+    "id": "vertex/claude-sonnet-4-6",
     "provider": "vertex",
     "mode": "chat"
   },
   {
-    "id": "vertex/claude-sonnet-5-5@default",
+    "id": "vertex/claude-sonnet-5",
     "provider": "vertex",
     "mode": "chat"
   },
   {
-    "id": "vertex/claude-sonnet-5@default",
+    "id": "vertex/claude-sonnet-5-5",
     "provider": "vertex",
     "mode": "chat"
   },
