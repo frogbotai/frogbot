@@ -21,7 +21,7 @@ The owner can veto any of these.
   ```ts
   alpha({ old: true });
   ```
-- **Payload does:** no equivalent (searched alpha).
+- **Precedent:** no equivalent (searched alpha).
 - **Options.** **A.** Remove it, simpler. **B.** Keep it, no break.
 - **Recommendation:** A, because breaking changes are fine.
 - **Applies to:** `Process`

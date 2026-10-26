@@ -1,10 +1,10 @@
-import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { parseCards, rulingLine } from '../../../scripts/lib/decisions.mjs';
+import { parseCards, parseReplies, rulingLine } from '../../../scripts/lib/decisions.mjs';
 import { commandDecisions, parseArgs } from '../../../scripts/ticket.mjs';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'decisions', '_process');
@@ -14,6 +14,8 @@ const DATE = '2026-10-05';
 const ALPHA = 'tickets/ticket901_alpha/step2_spec.md';
 
 let main: string;
+
+let log: ReturnType<typeof vi.spyOn>;
 
 const processDir = () => join(main, '.idea', '_process');
 
@@ -32,18 +34,14 @@ const snapshot = () =>
       }),
   );
 
-const run = () => commandDecisions(main, { date: DATE });
+const run = (input = '') => commandDecisions(main, { date: DATE, input });
 
-const answer = (open: string, card: string, text: string) =>
-  open.replace(new RegExp(`(### 901 ${card} [\\s\\S]*?- \\*\\*Answer:\\*\\*)`), `$1 ${text}`);
-
-const editOpen = (edit: (open: string) => string) =>
-  writeFileSync(file('open_decisions.md'), edit(read('open_decisions.md')));
+const printed = () => log.mock.calls.map((call: unknown[]) => String(call[0])).join('\n');
 
 beforeEach(() => {
   main = mkdtempSync(join(tmpdir(), 'ticket-decisions-'));
   cpSync(FIXTURE, processDir(), { recursive: true });
-  vi.spyOn(console, 'log').mockImplementation(() => {});
+  log = vi.spyOn(console, 'log').mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -57,46 +55,36 @@ describe('pnpm ticket decisions', () => {
     expect(parseArgs(['decisions', '5'])).toMatchObject({ error: 'decisions takes no arguments' });
   });
 
-  it('lists open cards verbatim, Following Payload, Approve and ready batches', () => {
-    run();
-
-    const open = read('open_decisions.md');
-    const spec = read(ALPHA);
-    const card = spec.slice(spec.indexOf('### 901 D1'), spec.indexOf('### 901 D2')).trimEnd();
-
-    expect(open).toContain('## 901 — Alpha');
-    expect(open).toContain('Spec: [step2_spec.md](tickets/ticket901_alpha/step2_spec.md)');
-    expect(open).toContain(card);
-    expect(open).toContain('### 901 D2 — Which colour?');
-    expect(open).toContain(
-      '- Fields keep their order (`~/code/payload/packages/payload/src/fields/config/types.ts:10`).',
-    );
-    expect(open).toContain('\nApprove:\n');
-    expect(open).toContain('## Batch 42 plans');
-    expect(open).toContain('- 902: [step3_plan.md](tickets/ticket902_beta/step3_plan.md)');
-    expect(open).toContain('\nGo:\n');
-    expect(open).not.toContain('Batch 41');
-    expect(open).not.toContain('Batch 43');
-  });
-
-  it('changes no file on a rerun with no new answers', () => {
-    run();
-
+  it('with no replies, lists what waits and writes no file', () => {
     const before = snapshot();
 
     run();
 
     expect(snapshot()).toEqual(before);
+    expect(printed()).toBe(
+      [
+        'Waiting for the owner (ask in chat, from each spec’s Brief):',
+        `901 — Alpha (${ALPHA})`,
+        '  D1 — Should alpha keep the old flag?',
+        '  D2 — Which colour?',
+        '  approve',
+        'batch 42: go (902, 903)',
+      ].join('\n'),
+    );
   });
 
-  it('writes answers back verbatim, adds a ruling for a topic, and drops the cards', () => {
+  it('leaves parked tickets out', () => {
     run();
 
-    editOpen((open) =>
-      answer(answer(open, 'D1', 'A, but keep "old" in the docs'), 'D2', 'B\nnavy, not sky'),
-    );
+    expect(printed()).not.toContain('906');
+    expect(printed()).not.toContain('batch 44');
+    expect(() => run('906 D1: A')).toThrow('906 D1: ticket 906 is parked');
+  });
 
-    run();
+  it('writes replies verbatim, adds a ruling for a topic, and is a no-op when repeated', () => {
+    const reply = '901 D1: A, but keep "old" in the docs\n901 d2: B\n  navy, not sky\n';
+
+    run(reply);
 
     const spec = read(ALPHA);
 
@@ -111,69 +99,59 @@ describe('pnpm ticket decisions', () => {
       `- DR-036 "go right to implementation" (2026-10-05) → Process tickets skip the spec. [source](audits/PLAN.md#L68)\n- DR-041 "A, but keep "old" in the docs" (${DATE}) → 901 D1 Should alpha keep the old flag? A: Remove it, simpler. [source](${ALPHA}#L${line})\n\n## Testing`,
     );
     expect(rulings.match(/DR-04\d/g)).toEqual(['DR-041']);
-
-    const open = read('open_decisions.md');
-
-    expect(open).not.toContain('### 901 D1');
-    expect(open).not.toContain('### 901 D2');
-    expect(open).toContain('## 901 — Alpha');
+    expect(printed()).toContain(`901 — Alpha (${ALPHA})\n  approve`);
 
     const after = snapshot();
 
-    run();
+    run(reply);
 
     expect(snapshot()).toEqual(after);
   });
 
-  it('approves with Approve: yes once every card is answered', () => {
-    run();
-    editOpen((open) => answer(open, 'D1', 'A').replace('\nApprove:\n', '\nApprove: yes\n'));
-    run();
-
+  it('approves once every card is answered, in the same message or later', () => {
+    expect(() => run('901 D1: A\n901 approve')).toThrow('901 approve: D2 has no answer yet');
     expect(read(ALPHA)).toContain('Status: Draft');
-    expect(read('open_decisions.md')).toContain('\nApprove: yes\n');
 
-    editOpen((open) => answer(open, 'D2', 'A'));
-    run();
+    run('901 approve\n901 D1: A\n901 D2: A');
 
     expect(read(ALPHA)).toContain(`Status: Approved (${DATE})`);
-    expect(read('open_decisions.md')).not.toContain('## 901');
+    expect(printed()).not.toContain('901 — Alpha');
   });
 
-  it('copies any other Approve text into Owner notes and keeps the spec Draft', () => {
-    run();
-    editOpen((open) => open.replace('\nApprove:\n', '\nApprove: drop the Payload line\n'));
-    run();
+  it('adds a note to Owner notes and keeps the spec Draft', () => {
+    run('901 note: drop the Payload line');
 
     const spec = read(ALPHA);
 
     expect(spec).toContain('Status: Draft');
     expect(spec.endsWith(`\n\n## Owner notes\n\n- ${DATE}: drop the Payload line\n`)).toBe(true);
-    expect(read('open_decisions.md')).toContain('\nApprove:\n');
   });
 
-  it('sets every plan in the batch to Go with Go: yes', () => {
-    run();
-    editOpen((open) => open.replace('\nGo:\n', '\nGo: yes\n'));
-    run();
+  it('sets every plan in the batch to Go', () => {
+    run('go 42');
 
     for (const plan of ['ticket902_beta', 'ticket903_gamma']) {
       expect(read(`tickets/${plan}/step3_plan.md`)).toContain(`Status: Go (${DATE})`);
     }
 
     expect(read('tickets/ticket904_delta/step3_plan.md')).toContain('Status: Draft');
-    expect(read('open_decisions.md')).not.toContain('Batch 42');
+    expect(printed()).not.toContain('batch 42: go');
+    expect(() => run('go 43')).toThrow('go 43: no step3_plan.md yet for 905');
   });
 
-  it('matches cards by ticket and ID, refusing an answer to a card that is gone', () => {
-    run();
-    editOpen((open) => answer(open, 'D1', 'A'));
-    writeFileSync(file(ALPHA), read(ALPHA).replace('### 901 D1', '### 901 D7'));
-
+  it('refuses the whole message for one bad line, writing nothing', () => {
     const before = snapshot();
 
-    expect(run).toThrow('901 D1 is not a card in step2_spec.md');
+    expect(() => run('901 D1: A\n901 D7: B')).toThrow('901 D7 is not a card in step2_spec.md');
+    expect(() => run('901 D1: A\nsounds good')).toThrow('line 2 is not a reply: "sounds good"');
+    expect(() => run('901 D1:')).toThrow("901 D1: no text; write the owner's words");
     expect(snapshot()).toEqual(before);
+  });
+
+  it('refuses an answer that differs from the one already recorded', () => {
+    run('901 D1: A');
+
+    expect(() => run('901 D1: B')).toThrow('901 D1 is already answered differently');
   });
 });
 
@@ -186,6 +164,14 @@ describe('decision helpers', () => {
     expect(cards.map(({ id, title, answer, topic }) => ({ id, title, answer, topic }))).toEqual([
       { id: 'D1', title: 'One?', answer: 'A', topic: null },
       { id: 'D2', title: 'Two?', answer: '', topic: 'Code style' },
+    ]);
+  });
+
+  it('reads reply lines, with following lines continuing an answer', () => {
+    expect(parseReplies('5 D1: A\n  and more\n\n5 approve\ngo 42\n').replies).toEqual([
+      { kind: 'answer', ticket: 5, id: 'D1', text: 'A\nand more' },
+      { kind: 'approve', ticket: 5 },
+      { kind: 'go', batch: '42' },
     ]);
   });
 

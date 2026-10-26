@@ -34,4 +34,4 @@ pnpm test:unit|ui|int:sqlite|e2e <file>   pnpm test:browser --project <p>
 
 ## Communication
 
-Keep replies short and plain; explain unfamiliar terms with an example. A question for the owner is a [decision card](.github/feature-process/step2_spec.md#decision-card).
+Keep replies short and plain; explain unfamiliar terms with an example. A question for the owner is a [decision card](.github/feature-process/step2_spec.md#decision-card), asked in chat in plain words ([Asking the owner](.github/feature-process/step2_spec.md#asking-the-owner)).

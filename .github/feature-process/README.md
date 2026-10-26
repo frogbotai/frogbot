@@ -6,22 +6,22 @@ The owner decides what gets built. Agents do the research, writing and code. Scr
 
 Each role is an OpenCode agent, except the owner. The commands are the normal path; anything else is an exception.
 
-| Role            | Agent and model                       | Starts when                                                          | Runs                                                                                                                                                                  | Hands back                                                                     | Why it exists                                                                      |
-| --------------- | ------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| **Owner**       | you                                   | any time                                                             | `opencode`, `pnpm ticket decisions`, `pnpm ticket status --batch <n>`, `git push`                                                                                     | issues, card answers, spec approvals, **Go**, pushes                           | decides what gets built; the only one who pushes                                   |
-| **Coordinator** | `build`, main model                   | the owner opens a batch                                              | `pnpm ticket next`, `pnpm ticket new <n>`, starts the agents below, `pnpm ticket land <n>` (background shell), `git worktree remove`, `pnpm ticket stats --batch <n>` | a short status per event; cards to the owner                                   | one place that sees every ticket; writes no code, so its context stays small       |
-| **Researcher**  | `research`, Sonnet                    | a ticket has an `issue.md`                                           | reads source and the precedent: `~/code/opencode-v2` for agent-harness work, `~/code/payload` for the rest, `pnpm check ticket-docs <n>`                              | `step1_research.md`: facts with `path:line`, no design                         | facts before design, on a cheaper model                                            |
-| **Worker**      | `general`, main model, fresh per step | research is done (spec), the spec is approved (plan), **Go** (build) | in its worktree: edits, `pnpm test:unit <file>`, `pnpm test:int:sqlite <file>`, the lint agent, one `git commit`                                                      | `step2_spec.md`, `step3_plan.md`, or one commit plus `step4_implementation.md` | one ticket, from its files, not chat history                                       |
-| **Lint agent**  | `lint`, cheap model                   | a worker or the coordinator asks                                     | `pnpm check`, `pnpm check --full`, `pnpm lint:fix`, `pnpm prettier:write`                                                                                             | one line: `check: OK …` or the errors                                          | lint output is long; a cheap model reads it so the worker doesn't                  |
-| **Tester**      | `general`, fresh                      | a full-tier ticket is committed                                      | targeted tests that try to break it, then `pnpm ticket verify` on the final commit                                                                                    | bugs found, or "held"; a `verify` ledger row                                   | the worker doesn't grade its own work; batch 27's testers found 2 real bugs in 248 |
+| Role            | Agent and model                       | Starts when                                                          | Runs                                                                                                                                                                                           | Hands back                                                                     | Why it exists                                                                      |
+| --------------- | ------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| **Owner**       | you                                   | any time                                                             | `opencode`, `pnpm ticket status --batch <n>`, `git push`                                                                                                                                       | issues, then in chat: card answers, "good to go", **Go**; pushes               | decides what gets built; the only one who pushes                                   |
+| **Coordinator** | `build`, main model                   | the owner opens a batch                                              | `pnpm ticket next`, `pnpm ticket new <n>`, `pnpm ticket decisions`, starts the agents below, `pnpm ticket land <n>` (background shell), `git worktree remove`, `pnpm ticket stats --batch <n>` | a short status per event; cards to the owner in chat                           | one place that sees every ticket; writes no code, so its context stays small       |
+| **Researcher**  | `research`, Sonnet                    | a ticket has an `issue.md`                                           | reads source and the precedent: `~/code/opencode-v2` for agent-harness work, `~/code/payload` for the rest, `pnpm check ticket-docs <n>`                                                       | `step1_research.md`: facts with `path:line`, no design                         | facts before design, on a cheaper model                                            |
+| **Worker**      | `general`, main model, fresh per step | research is done (spec), the spec is approved (plan), **Go** (build) | in its worktree: edits, `pnpm test:unit <file>`, `pnpm test:int:sqlite <file>`, the lint agent, one `git commit`                                                                               | `step2_spec.md`, `step3_plan.md`, or one commit plus `step4_implementation.md` | one ticket, from its files, not chat history                                       |
+| **Lint agent**  | `lint`, cheap model                   | a worker or the coordinator asks                                     | `pnpm check`, `pnpm check --full`, `pnpm lint:fix`, `pnpm prettier:write`                                                                                                                      | one line: `check: OK …` or the errors                                          | lint output is long; a cheap model reads it so the worker doesn't                  |
+| **Tester**      | `general`, fresh                      | a full-tier ticket is committed                                      | targeted tests that try to break it, then `pnpm ticket verify` on the final commit                                                                                                             | bugs found, or "held"; a `verify` ledger row                                   | the worker doesn't grade its own work; batch 27's testers found 2 real bugs in 248 |
 
 Never, for any agent: `git push`, `git merge`, `--no-verify`, sleep loops, whole-suite test runs. Inside a worker also never `git stash` (worktrees share it) or a background call (the plugin refuses both).
 
 ### The normal path of a code ticket
 
-1. Coordinator: `pnpm ticket next`, writes `issue.md`.
+1. Coordinator: `pnpm ticket next`, writes `issue.md`, with the owner's request word for word under `## Asked` so the intent can't drift.
 2. Researcher: `step1_research.md`.
-3. Worker: `step2_spec.md` with decision cards. **Owner approves** (`Approve:` in `open_decisions.md`, or in chat).
+3. Worker: `step2_spec.md`, a plain Brief first, then decision cards. **Owner answers and approves in chat** ([Asking the owner](step2_spec.md#asking-the-owner)).
 4. Worker: `step3_plan.md`, at most 3 stages. **Owner says Go** for the batch.
 5. Coordinator: `pnpm ticket new <n>`. Worker: builds, commits, logs.
 6. Full tier: a tester tries to break it, with at most 2 fix rounds, and ends with `pnpm ticket verify`. Light tier: `pnpm ticket verify`.
@@ -34,13 +34,13 @@ A process ticket from an approved PLAN skips steps 3 and 4: the PLAN section is 
 
 Each ticket is a folder, `.idea/_process/tickets/ticket<n>_<slug>/`, filled in step by step:
 
-| Step   | File                             | What it holds                                     | Owner               |
-| ------ | -------------------------------- | ------------------------------------------------- | ------------------- |
-| Intake | `issue.md`                       | the problem, its plan, dependencies and batch     | —                   |
-| 1      | `step1_research.md`              | facts from source, and how Payload does it        | —                   |
-| 2      | `step2_spec.md`                  | what to build, when it's done, decision questions | approves            |
-| 3      | `step3_plan.md`                  | files touched, stages and their tests             | says Go (per batch) |
-| 4      | code + `step4_implementation.md` | one commit, plus the worker's log                 | skims               |
+| Step   | File                             | What it holds                                    | Owner               |
+| ------ | -------------------------------- | ------------------------------------------------ | ------------------- |
+| Intake | `issue.md`                       | the owner's words, the problem, plan and batch   | —                   |
+| 1      | `step1_research.md`              | facts from source, and how the precedent does it | —                   |
+| 2      | `step2_spec.md`                  | a plain Brief, what to build, decision questions | approves            |
+| 3      | `step3_plan.md`                  | files touched, stages and their tests            | says Go (per batch) |
+| 4      | code + `step4_implementation.md` | one commit, plus the worker's log                | skims               |
 
 Stage is read from these files and git, never stored. For small edits the owner says "just do it" and the steps are skipped.
 
@@ -52,7 +52,7 @@ Stage is read from these files and git, never stored. For small edits the owner 
   - `next` gives a ticket number;
   - `new` creates the worktree and branch;
   - `status` shows every ticket's stage;
-  - `decisions` writes the open cards and gates to `.idea/_process/open_decisions.md` and records the owner's answers;
+  - `decisions` lists the cards, approvals and Go gates waiting for the owner, leaving out parked tickets; with the owner's chat replies on stdin (`<n> D<k>: <owner's words>`, `<n> note: …`, `<n> approve`, `go <batch>`) it first writes them word for word into the specs, `decisions.md` and plans. One bad line writes nothing;
   - `land` waits for any other land to finish (one at a time, machine-wide), then rebases, runs the gates, squashes to one commit (the first commit's subject, every body, any `BREAKING CHANGE:` footers) and fast-forwards local `main`, never pushing. If that moved `pnpm-lock.yaml` or a `package.json`, it runs `pnpm install --frozen-lockfile` in the main checkout; a failed install is reported and `main` stays landed. It takes more than 10 minutes when browser specs run, so start it as a background shell and wait for the notification. A docs-only diff skips `test:unit` and `test:ui`, except the unit specs that read Markdown. A known-flaky browser spec (`scripts/lib/flaky.mjs`) is retried once and logged as `flaky` in the ledger;
   - `stats [--batch <n>]` reads `~/.local/share/opencode/opencode.db` (read-only) and shows each ticket's wall and active time, cost, tokens, turns, stage sessions, fix rounds and land attempts;
   - `found [--source <path>] <<'EOF'` reads one `<kind> · <area> · <text>` row from stdin and adds it to `.idea/_process/found.md` with the next free `F-` number. The quoted here-doc keeps backticks from running; text that looks like captured terminal output is refused.
@@ -67,7 +67,6 @@ Stage is read from these files and git, never stored. For small edits the owner 
 | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `.idea/_process/tickets/`                                              | ticket folders                                                                                                                    |
 | `.idea/_process/archive/`                                              | archived tickets (`archive/tickets/`), retired rulings and findings                                                               |
-| `.idea/_process/open_decisions.md`                                     | questions waiting for the owner                                                                                                   |
 | `.idea/_process/decisions.md`                                          | rulings still in force                                                                                                            |
 | `.idea/_process/found.md`                                              | problems found along the way                                                                                                      |
 | `.idea/_process/ledger.tsv`                                            | what each verify and land checked                                                                                                 |
@@ -91,21 +90,21 @@ The process itself is committed code:
 ## Your first batch
 
 1. Run `opencode` in the main checkout and describe the issues.
-2. Answer its decision questions and approve each spec.
+2. Answer its questions in chat; ask for more on any you need.
 3. Say **Go**, then watch `pnpm ticket status --batch <n>`.
 4. Skim each commit on `main`; push when happy.
 5. Close the batch: turn `found.md` into tickets, run the retro.
 
 ## Owner gates
 
-Both gates are answered in `.idea/_process/open_decisions.md`:
+Both gates are answered in chat, and the coordinator records them with `pnpm ticket decisions` ([Asking the owner](step2_spec.md#asking-the-owner)):
 
-- an `Approve:` line per spec sets it to `Status: Approved (<date>)`;
-- a `Go:` line per batch, once all its plans exist, sets each plan to `Status: Go (<date>)`.
+- "good to go" on a spec, once its cards are answered, sets it to `Status: Approved (<date>)`;
+- **Go** for a batch, once all its plans exist, sets each plan to `Status: Go (<date>)`.
 
 At Go, the coordinator plans the landing lanes from `pnpm ticket status`: tickets in different lanes run together, and tickets in one lane share files or depend on each other, so they land in order.
 
-A new decision card found while planning goes back into the spec and the inbox. Nothing else needs the owner.
+A new decision card found while planning goes back into the spec and to the owner in chat. Nothing else needs the owner.
 
 ## Tiers
 

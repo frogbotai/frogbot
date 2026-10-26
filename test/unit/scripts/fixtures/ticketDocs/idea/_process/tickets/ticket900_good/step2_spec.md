@@ -35,7 +35,7 @@ Assets are saved twice ([research](step1_research.md)).
   ```ts
   await saveAsset(doc);
   ```
-- **Payload does:** saves in `afterChange` (`~/code/payload/src/config.ts:2`).
+- **Precedent:** Payload saves in `afterChange` (`~/code/payload/src/config.ts:2`).
 - **Options.** **A.** On create. **B.** On update.
 - **Recommendation:** A, because it is simpler.
 - **Applies to:** Process

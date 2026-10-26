@@ -1,3 +1,0 @@
-# Open decisions
-
-None open.

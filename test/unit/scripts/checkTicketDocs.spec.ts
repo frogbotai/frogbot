@@ -100,6 +100,7 @@ describe('check ticket-docs', () => {
         `${folder}/step1_research.md:3 Status: "research, 2026-10-04. Copied from the process audit; no new…" is not Draft or Done (<date>)`,
         `${folder}/step1_research.md:7 bare "none": write "none (read: <topic>, …)" with the decisions.md headings read`,
         `${folder}/step1_research.md:8 \`src/example.ts:40\`: line 40 is out of range (3 lines)`,
+        `${folder}/step2_spec.md:1 missing "## Brief" (first section of a Draft spec)`,
         `${folder}/step2_spec.md:1 missing "## Rulings" (right after "## Problem")`,
         `${folder}/step2_spec.md:11 banned phrase "legacy path" (allowed only under Out of scope or in a > quote)`,
         `${folder}/step3_plan.md:7 \`src/missing.ts:3\`: no such file`,
@@ -242,6 +243,44 @@ describe('check ticket-docs', () => {
     });
   });
 
+  describe('brief', () => {
+    const draft = (brief: string) => ({
+      [SPEC]: fixture(SPEC)
+        .replace('Status: Approved (2026-10-05)', 'Status: Draft')
+        .replace('## Problem', `${brief}## Problem`),
+    });
+
+    it('needs a Brief on a Draft spec only', () => {
+      expect(problems(draft(''))).toEqual([
+        `.idea/${SPEC}:1 missing "## Brief" (first section of a Draft spec)`,
+      ]);
+      expect(check().code).toBe(0);
+    });
+
+    it('accepts a short plain Brief first', () => {
+      expect(check(draft('## Brief\n\nAssets save twice. After this, once.\n\n')).code).toBe(0);
+    });
+
+    it('rejects code, length and position', () => {
+      const long = Array.from({ length: 101 }, () => 'word').join(' ');
+
+      expect(problems(draft('## Brief\n\nCalls `saveAsset` once.\n\n'))).toEqual([
+        `.idea/${SPEC}:7 Brief is plain words: no code, paths or backticks`,
+      ]);
+      expect(problems(draft(`## Brief\n\n${long}\n\n`))).toEqual([
+        `.idea/${SPEC}:5 Brief is 101 words (max 100)`,
+      ]);
+
+      const late = fixture(SPEC)
+        .replace('Status: Approved (2026-10-05)', 'Status: Draft')
+        .replace('## Rulings', '## Brief\n\nAssets save once.\n\n## Rulings');
+
+      expect(problems({ [SPEC]: late })).toContain(
+        `.idea/${SPEC}:9 "## Brief" must be the first section`,
+      );
+    });
+  });
+
   describe('cards', () => {
     it('rejects a card written from the 55e7e942 D-block template', () => {
       const card = [
@@ -260,34 +299,39 @@ describe('check ticket-docs', () => {
       const text = fixture(SPEC).replace(/### 900 D1[\s\S]*$/, card);
 
       expect(problems({ [SPEC]: text })).toEqual([
-        `.idea/${SPEC}:31 card D1: missing "Situation", "Example", "Payload does", "Options", "Applies to", "Reply", "Answer"`,
+        `.idea/${SPEC}:31 card D1: missing "Situation", "Example", "Precedent", "Options", "Applies to", "Reply", "Answer"`,
       ]);
     });
 
-    it('rejects "Payload does:" with no path:line or searched note', () => {
+    it('rejects "Precedent:" with no path:line, URL or searched note', () => {
       const lines = problems(
         edit(
           SPEC,
-          '- **Payload does:** saves in `afterChange` (`~/code/payload/src/config.ts:2`).',
-          '- **Payload does:** the same thing.',
+          '- **Precedent:** Payload saves in `afterChange` (`~/code/payload/src/config.ts:2`).',
+          '- **Precedent:** Payload does the same thing.',
         ),
       );
 
       expect(lines).toEqual([
-        `.idea/${SPEC}:38 card D1: "Payload does:" needs a \`path:line\` or "no equivalent (searched …)"`,
+        `.idea/${SPEC}:38 card D1: "Precedent:" needs a \`path:line\`, a URL or "no equivalent (searched …)"`,
       ]);
     });
 
-    it('accepts "Payload does: no equivalent (searched …)"', () => {
-      const result = check(
-        edit(
-          SPEC,
-          '- **Payload does:** saves in `afterChange` (`~/code/payload/src/config.ts:2`).',
-          '- **Payload does:** no equivalent (searched `afterChange`, `beforeChange`).',
-        ),
-      );
+    it('accepts "Precedent:" with a URL or "no equivalent (searched …)"', () => {
+      for (const value of [
+        'Claude for Chrome types without a check (https://support.claude.com/en/articles/12012173).',
+        'no equivalent (searched `afterChange`, `beforeChange`).',
+      ]) {
+        const result = check(
+          edit(
+            SPEC,
+            '- **Precedent:** Payload saves in `afterChange` (`~/code/payload/src/config.ts:2`).',
+            `- **Precedent:** ${value}`,
+          ),
+        );
 
-      expect(result.code).toBe(0);
+        expect(result.code).toBe(0);
+      }
     });
 
     it('rejects "Applies to:" naming neither this ticket nor a decisions.md heading', () => {
