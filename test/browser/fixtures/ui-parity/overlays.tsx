@@ -24,9 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
   Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
 } from '../../../../packages/ui/src/index';
 import { ThemeProvider } from '../../../../packages/ui/src/theme/provider';
 
@@ -76,14 +73,9 @@ function Overlays({ open }: { open: Open }) {
           <SelectItem value="b">Beta</SelectItem>
         </SelectContent>
       </Select>
-      <TooltipProvider>
-        <Tooltip open={menus}>
-          <TooltipTrigger asChild>
-            <Button variant="ghost">Tip</Button>
-          </TooltipTrigger>
-          <TooltipContent>Tooltip text</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip label="Tooltip text" open={menus}>
+        <Button variant="ghost">Tip</Button>
+      </Tooltip>
       <Dialog open={open === 'dialogs'}>
         <DialogContent>
           <DialogHeader>

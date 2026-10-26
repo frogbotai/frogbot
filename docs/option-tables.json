@@ -435,6 +435,11 @@
     "type": "import('frogbot').FrogBotComponent"
   },
   {
+    "page": "custom-components/overview",
+    "heading": "Tooltips",
+    "type": "Pick<import('@frogbotai/ui').TooltipProps, 'children' | 'contentClassName' | 'delay' | 'disabled' | 'label' | 'open' | 'side'>"
+  },
+  {
     "page": "custom-components/root-components",
     "heading": "Config Options",
     "type": "import('frogbot').RootAdminComponents"
