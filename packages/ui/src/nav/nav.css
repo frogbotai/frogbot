@@ -180,61 +180,6 @@
     background: var(--color-bg-hover);
   }
 
-  .fb-app-sidebar__tooltip {
-    position: fixed;
-    z-index: 100;
-  }
-
-  /* Placed from its measured size, as Payload's tooltip is, so the text rasterises the same. */
-  .fb-app-sidebar__tooltip-bubble {
-    position: fixed;
-    top: 0;
-    left: 0;
-    display: block;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.3125rem;
-    background-color: var(--color-bg-tooltip);
-    box-shadow: var(--elevation-300-tooltip);
-    color: var(--color-text-ontooltip);
-    cursor: default;
-    font-family: var(--font-body);
-    font-size: 0.75rem;
-    font-weight: 450;
-    letter-spacing: -0.001px;
-    line-height: 1rem;
-    pointer-events: none;
-    transform: translate3d(8px, -50%, 0);
-    white-space: nowrap;
-  }
-
-  .fb-app-sidebar__tooltip-label {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 100%;
-  }
-
-  /* Drawn pointing down, turned to point left at the item the tooltip sits beside. */
-  .fb-app-sidebar__tooltip-caret {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    filter: drop-shadow(2px 0 1px rgb(0 0 0 / 0.15));
-    pointer-events: none;
-    transform: translate(calc(-100% + 1px), -50%) rotate(90deg);
-  }
-
-  .fb-app-sidebar__tooltip-caret-fill {
-    fill: var(--color-bg-tooltip);
-    stroke: var(--color-bg-tooltip);
-  }
-
-  .fb-app-sidebar__tooltip-caret-stroke {
-    fill: none;
-    stroke: color-mix(in srgb, var(--color-text-ontooltip) 12%, var(--color-bg-tooltip));
-    stroke-width: 1.5px;
-  }
-
   .fb-app-sidebar__nav {
     display: flex;
     flex-direction: column;

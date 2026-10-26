@@ -13,9 +13,6 @@ import {
   Input,
   Label,
   Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
 } from '@frogbotai/ui';
 import { useConfig, useListQuery, useRouteCache } from '@frogbotai/ui/admin';
 import { CopyIcon } from '@frogbotai/ui/icons';
@@ -106,37 +103,32 @@ export function ApiKeysManager() {
             <DialogDescription className="api-keys-dialog__warning" role="alert">
               Key generated! Copy it now — you won&apos;t see it again.
             </DialogDescription>
-            <TooltipProvider>
-              <div className="api-keys-dialog__token-row">
-                <Tooltip open={hoveredControl === 'token'}>
-                  <TooltipTrigger asChild>
-                    <button
-                      aria-label="Click to copy API key"
-                      className="api-keys-dialog__token"
-                      type="button"
-                      {...copyHandlers('token')}
-                    >
-                      <code>{token}</code>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>{copied ? 'Copied' : 'Click to copy'}</TooltipContent>
-                </Tooltip>
-                <Tooltip open={hoveredControl === 'icon'}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      aria-label="Copy API key"
-                      size="icon"
-                      type="button"
-                      variant="ghost"
-                      {...copyHandlers('icon')}
-                    >
-                      <CopyIcon />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{copied ? 'Copied' : 'Copy'}</TooltipContent>
-                </Tooltip>
-              </div>
-            </TooltipProvider>
+            <div className="api-keys-dialog__token-row">
+              <Tooltip
+                label={copied ? 'Copied' : 'Click to copy'}
+                open={hoveredControl === 'token'}
+              >
+                <button
+                  aria-label="Click to copy API key"
+                  className="api-keys-dialog__token"
+                  type="button"
+                  {...copyHandlers('token')}
+                >
+                  <code>{token}</code>
+                </button>
+              </Tooltip>
+              <Tooltip label={copied ? 'Copied' : 'Copy'} open={hoveredControl === 'icon'}>
+                <Button
+                  aria-label="Copy API key"
+                  size="icon"
+                  type="button"
+                  variant="ghost"
+                  {...copyHandlers('icon')}
+                >
+                  <CopyIcon />
+                </Button>
+              </Tooltip>
+            </div>
           </>
         ) : (
           <>

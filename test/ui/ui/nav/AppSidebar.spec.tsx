@@ -70,24 +70,23 @@ describe('AppSidebar', () => {
     expect(onNavigate).toHaveBeenCalledWith('/admin');
   });
 
-  it('shows a label tooltip on hover while collapsed', () => {
+  it('shows a label tooltip while collapsed', async () => {
     render(<AppSidebar {...props} open={false} />);
-    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Users' }));
-    const tooltip = document.querySelector('.fb-app-sidebar__tooltip');
+    fireEvent.focus(screen.getByRole('button', { name: 'Users' }));
 
-    expect(tooltip?.querySelector('[role="tooltip"]')?.textContent).toBe('Users');
+    expect((await screen.findByRole('tooltip')).textContent).toBe('Users');
 
-    fireEvent.mouseLeave(screen.getByRole('button', { name: 'Users' }));
+    fireEvent.keyDown(document, { key: 'Escape' });
 
-    expect(document.querySelector('.fb-app-sidebar__tooltip')).toBeNull();
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
   it('shows no tooltip while open', () => {
     render(<AppSidebar {...props} open />);
-    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Users' }));
-    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Home' }));
+    fireEvent.focus(screen.getByRole('button', { name: 'Users' }));
+    fireEvent.focus(screen.getByRole('button', { name: 'Home' }));
 
-    expect(document.querySelector('.fb-app-sidebar__tooltip')).toBeNull();
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
   it('renders no Tailwind utility classes', () => {

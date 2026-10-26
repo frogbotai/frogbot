@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { Tooltip, TooltipContent, TooltipTrigger } from '../components/tooltip.js';
+import { Tooltip } from '../components/tooltip.js';
 import BookOpenIcon from '../icons/icons/BookOpenIcon.js';
 import CheckIcon from '../icons/icons/CheckIcon.js';
 import PlusSignIcon from '../icons/icons/PlusSignIcon.js';
@@ -84,24 +84,19 @@ export function PageContextButton({
 
   return (
     <div className="fb-page-context-button">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            ref={buttonRef}
-            type="button"
-            aria-label="Add tab context"
-            className={`fb-page-context-button__trigger fb-slide-up-1${showMenu ? ' fb-page-context-button__trigger--open' : ''}`}
-            onClick={handleClick}
-            disabled={isLoading}
-          >
-            <BookOpenIcon
-              className={`fb-page-context-button__trigger-icon${isCompact ? '' : ' fb-page-context-button__trigger-icon--expanded'}`}
-            />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent align="center" side="top">
-          Add tab context
-        </TooltipContent>
+      <Tooltip label="Add tab context">
+        <button
+          ref={buttonRef}
+          type="button"
+          aria-label="Add tab context"
+          className={`fb-page-context-button__trigger fb-slide-up-1${showMenu ? ' fb-page-context-button__trigger--open' : ''}`}
+          onClick={handleClick}
+          disabled={isLoading}
+        >
+          <BookOpenIcon
+            className={`fb-page-context-button__trigger-icon${isCompact ? '' : ' fb-page-context-button__trigger-icon--expanded'}`}
+          />
+        </button>
       </Tooltip>
       {showMenu &&
         buttonRef.current &&

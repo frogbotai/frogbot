@@ -161,7 +161,7 @@ export { Tabs, TabsContent, TabsList, TabsTrigger } from './components/tabs.js';
 export { TextWithIcon, type TextWithIconProps } from './components/text-with-icon.js';
 export { Textarea, type TextareaProps } from './components/textarea.js';
 export { Toggle, type ToggleProps } from './components/toggle.js';
-export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './components/tooltip.js';
+export { Tooltip, type TooltipProps } from './components/tooltip.js';
 export { useControlledState } from './hooks/use-controlled-state.js';
 export { useHotkey } from './hooks/use-hotkey.js';
 export { useIsMobile } from './hooks/use-mobile.js';

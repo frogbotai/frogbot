@@ -17,9 +17,6 @@ import {
   SelectValue,
   Skeleton,
   Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
 } from '../../../../packages/ui/src/index';
 
 describe('primitives', () => {
@@ -62,12 +59,9 @@ describe('primitives', () => {
     const user = userEvent.setup();
 
     render(
-      <TooltipProvider delayDuration={0}>
-        <Tooltip>
-          <TooltipTrigger>Help</TooltipTrigger>
-          <TooltipContent>Details</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>,
+      <Tooltip delay={0} label="Details">
+        <button type="button">Help</button>
+      </Tooltip>,
     );
 
     await user.tab();

@@ -1,8 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { TooltipProvider } from '../../../../packages/ui/src/components/tooltip';
-
 async function loadPageContextButton() {
   return (await import('../../../../packages/ui/src/chat/page-context-button')).PageContextButton;
 }
@@ -16,7 +14,7 @@ describe('PageContextButton', () => {
     const openTabs = Promise.resolve({ success: true, tabs: [tab] });
 
     render(
-      <TooltipProvider>
+      <>
         <PageContextButton
           isLoading={false}
           getOpenTabs={() => openTabs}
@@ -25,7 +23,7 @@ describe('PageContextButton', () => {
           selectedTabIds={new Set()}
         />
         <button>Outside</button>
-      </TooltipProvider>,
+      </>,
     );
 
     await act(async () => {
@@ -48,7 +46,7 @@ describe('PageContextButton', () => {
     const removePageContext = vi.fn();
 
     render(
-      <TooltipProvider>
+      <>
         <PageContextButton
           isLoading={false}
           getOpenTabs={vi.fn().mockResolvedValue({ success: true, tabs: [tab] })}
@@ -56,7 +54,7 @@ describe('PageContextButton', () => {
           removePageContext={removePageContext}
           selectedTabIds={new Set([1])}
         />
-      </TooltipProvider>,
+      </>,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Add tab context' }));
@@ -70,7 +68,7 @@ describe('PageContextButton', () => {
     const PageContextButton = await loadPageContextButton();
 
     render(
-      <TooltipProvider>
+      <>
         <PageContextButton
           isLoading={false}
           getOpenTabs={vi.fn().mockResolvedValue({ success: false })}
@@ -78,7 +76,7 @@ describe('PageContextButton', () => {
           removePageContext={vi.fn()}
           selectedTabIds={new Set()}
         />
-      </TooltipProvider>,
+      </>,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Add tab context' }));
@@ -89,7 +87,7 @@ describe('PageContextButton', () => {
     const PageContextButton = await loadPageContextButton();
 
     render(
-      <TooltipProvider>
+      <>
         <PageContextButton
           isLoading
           getOpenTabs={vi.fn()}
@@ -97,7 +95,7 @@ describe('PageContextButton', () => {
           removePageContext={vi.fn()}
           selectedTabIds={new Set()}
         />
-      </TooltipProvider>,
+      </>,
     );
 
     expect(

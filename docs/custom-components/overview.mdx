@@ -278,6 +278,38 @@ Your component CSS beats FrogBot's styles as long as it isn't in a CSS layer. Se
 }
 ```
 
+### Tooltips
+
+Wrap any element in `Tooltip` to label it on hover and keyboard focus. It looks like the admin's own tooltips, follows the theme, and moves to the opposite side when there isn't room:
+
+```tsx
+'use client'
+
+import { Button, Tooltip } from '@frogbotai/ui'
+
+export function ArchiveButton() {
+  return (
+    <Tooltip label="Archive this document" side="bottom">
+      <Button variant="ghost">Archive</Button>
+    </Tooltip>
+  )
+}
+```
+
+The child must accept a ref and pass on hover and focus events, as buttons, links and FrogBot UI components do. `Tooltip` also works inside another component's `asChild` trigger, such as a dropdown menu's.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `ReactNode` | Required | The tooltip's text or content. |
+| `children` | `ReactElement` | Required | The element the tooltip describes. |
+| `side` | `'top' \| 'right' \| 'bottom' \| 'left'` | `'top'` | The side the tooltip prefers. |
+| `delay` | `number` | `500` | Milliseconds to wait on hover before showing. |
+| `open` | `boolean` | — | Shows or hides the tooltip yourself, instead of on hover and focus. |
+| `disabled` | `boolean` | `false` | Never shows the tooltip, keeping `children` as they are. |
+| `contentClassName` | `string` | — | Classes added to the tooltip bubble. |
+
+Other props are passed to `children`. To restyle every tooltip, override the `.fb-tooltip` class in unlayered CSS, or set the tooltip [color tokens](/chat/ui-theming#color-tokens) `--color-bg-tooltip` and `--color-text-ontooltip`.
+
 ## Performance
 
 Keep the server/client boundary narrow. Prefer Server Components, pass only the serializable values a Client Component needs, and avoid broad form subscriptions that cause unrelated updates to re-render your component.

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/tooltip.js';
+import { Tooltip } from '../components/tooltip.js';
 import BranchIcon from '../icons/icons/BranchIcon.js';
 import CopyIcon from '../icons/icons/CopyIcon.js';
 import PencilIcon from '../icons/icons/PencilIcon.js';
@@ -47,20 +47,15 @@ function Action({
   tooltip?: string;
 }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          aria-label={label}
-          onClick={onClick}
-          className="fb-message-actions__button fb-slide-up-1"
-        >
-          {children}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent align="center" side="bottom">
-        {tooltip ?? `${label} Message`}
-      </TooltipContent>
+    <Tooltip label={tooltip ?? `${label} Message`} side="bottom">
+      <button
+        type="button"
+        aria-label={label}
+        onClick={onClick}
+        className="fb-message-actions__button fb-slide-up-1"
+      >
+        {children}
+      </button>
     </Tooltip>
   );
 }
@@ -117,20 +112,18 @@ export function MessageActions({
   const time = timestamp === undefined ? null : <MessageTimestamp value={timestamp} />;
 
   return (
-    <TooltipProvider>
-      <div className="fb-message-actions" aria-label="Message actions">
-        {timestampPlacement === 'start' && time}
-        {(text != null || onCopy) && <CopyMessageAction text={text} onCopy={onCopy} />}
-        {onEdit && <EditMessageAction onEdit={onEdit} />}
-        {onBranch && <BranchMessageAction onBranch={onBranch} />}
+    <div className="fb-message-actions" aria-label="Message actions">
+      {timestampPlacement === 'start' && time}
+      {(text != null || onCopy) && <CopyMessageAction text={text} onCopy={onCopy} />}
+      {onEdit && <EditMessageAction onEdit={onEdit} />}
+      {onBranch && <BranchMessageAction onBranch={onBranch} />}
 
-        {onRegenerate && (
-          <Action label="Regenerate" onClick={onRegenerate}>
-            <RefreshIcon className="fb-message-actions__icon" />
-          </Action>
-        )}
-        {timestampPlacement === 'end' && time}
-      </div>
-    </TooltipProvider>
+      {onRegenerate && (
+        <Action label="Regenerate" onClick={onRegenerate}>
+          <RefreshIcon className="fb-message-actions__icon" />
+        </Action>
+      )}
+      {timestampPlacement === 'end' && time}
+    </div>
   );
 }

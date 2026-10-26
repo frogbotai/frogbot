@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/tooltip.js';
+import { Tooltip } from '../components/tooltip.js';
 import MicIcon from '../icons/icons/MicIcon.js';
 import { useChatProvider } from './provider.js';
 import { useTranscription } from './use-transcription.js';
@@ -31,32 +31,25 @@ export function MicControl({
 
   return (
     <div className="fb-mic-control">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div
-              className={`fb-mic-control__indicator${active ? ' fb-mic-control__indicator--active animate-pulse' : ''}`}
-            >
-              <button
-                type="button"
-                aria-label="Use microphone"
-                disabled={transcription.status === 'transcribing'}
-                onClick={() =>
-                  transcription.status === 'recording'
-                    ? transcription.stop()
-                    : void transcription.start()
-                }
-                className={`fb-mic-control__button${active ? ' fb-mic-control__button--active' : ''}`}
-              >
-                <MicIcon className="fb-mic-control__icon" />
-              </button>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent align="center" side="top">
-            Use microphone
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip label="Use microphone">
+        <div
+          className={`fb-mic-control__indicator${active ? ' fb-mic-control__indicator--active animate-pulse' : ''}`}
+        >
+          <button
+            type="button"
+            aria-label="Use microphone"
+            disabled={transcription.status === 'transcribing'}
+            onClick={() =>
+              transcription.status === 'recording'
+                ? transcription.stop()
+                : void transcription.start()
+            }
+            className={`fb-mic-control__button${active ? ' fb-mic-control__button--active' : ''}`}
+          >
+            <MicIcon className="fb-mic-control__icon" />
+          </button>
+        </div>
+      </Tooltip>
       {transcription.error && (
         <span role="alert" className="fb-mic-control__error">
           {transcription.error}

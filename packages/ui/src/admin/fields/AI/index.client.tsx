@@ -39,12 +39,7 @@ import {
 
 import { Button } from '../../../components/button.js';
 import { Input } from '../../../components/input.js';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '../../../components/tooltip.js';
+import { Tooltip } from '../../../components/tooltip.js';
 import InvalidStepIcon from '../../../icons/icons/InvalidStepIcon.js';
 import LoadingIcon from '../../../icons/icons/LoadingIcon.js';
 import RefreshIcon from '../../../icons/icons/RefreshIcon.js';
@@ -283,30 +278,25 @@ export function AICell(props: DefaultCellComponentProps) {
     return (
       <span className="ai-cell ai-cell--error">
         {drawn}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {canUpdate ? (
-                <Button
-                  aria-label="Retry"
-                  className="ai-cell__action ai-cell__warning"
-                  disabled={busy}
-                  onClick={(event) => stopRowLink(event, regenerate)}
-                  size="icon"
-                  type="button"
-                  variant="ghost"
-                >
-                  <InvalidStepIcon aria-hidden size={14} />
-                </Button>
-              ) : (
-                <span aria-label={message} className="ai-cell__warning" role="img">
-                  <InvalidStepIcon aria-hidden size={14} />
-                </span>
-              )}
-            </TooltipTrigger>
-            <TooltipContent side="top">{message}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip label={message}>
+          {canUpdate ? (
+            <Button
+              aria-label="Retry"
+              className="ai-cell__action ai-cell__warning"
+              disabled={busy}
+              onClick={(event) => stopRowLink(event, regenerate)}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              <InvalidStepIcon aria-hidden size={14} />
+            </Button>
+          ) : (
+            <span aria-label={message} className="ai-cell__warning" role="img">
+              <InvalidStepIcon aria-hidden size={14} />
+            </span>
+          )}
+        </Tooltip>
       </span>
     );
   }

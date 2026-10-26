@@ -33,7 +33,7 @@ const focusFirst = (page: Page) => page.locator('.parity-bare-button').focus();
 
 const overlaysReady: Record<string, (page: Page) => Promise<void>> = {
   'menus, popovers and tooltips': async (page) => {
-    await expect(page.locator('.fb-tooltip__content')).toBeVisible();
+    await expect(page.locator('.fb-tooltip')).toBeVisible();
     await page.getByRole('button', { name: 'Agent' }).click();
     await expect(page.getByRole('menuitem', { name: 'Plan' })).toBeVisible();
     await expect(page.locator('.fb-popover__content')).toBeVisible();

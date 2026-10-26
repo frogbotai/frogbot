@@ -2,7 +2,7 @@
 
 import { type ReactNode, useId } from 'react';
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/tooltip.js';
+import { Tooltip } from '../components/tooltip.js';
 import CloseIcon from '../icons/icons/CloseIcon.js';
 import FileIcon from '../icons/icons/FileIcon.js';
 import InfoCircleIcon from '../icons/icons/InfoCircleIcon.js';
@@ -138,14 +138,9 @@ function MediaPreview({
 
 function LargeFileTag({ hint }: { hint: string }) {
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="fb-attachment-card__hint">Large file</span>
-        </TooltipTrigger>
-        <TooltipContent side="top">{hint}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip label={hint}>
+      <span className="fb-attachment-card__hint">Large file</span>
+    </Tooltip>
   );
 }
 
