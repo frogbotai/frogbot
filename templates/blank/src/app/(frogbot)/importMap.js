@@ -33,8 +33,8 @@ import { CollectionCards as CollectionCards_a9b31afd548db1251f21130da6e46588 } f
 import { CollectionQueryWidget as CollectionQueryWidget_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { QueryPresetsWhereField as QueryPresetsWhereField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { CollectionQuerySortField as CollectionQuerySortField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
-import { RecentlyViewedWidget as RecentlyViewedWidget_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
-import { RecentlyViewedCollectionsField as RecentlyViewedCollectionsField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
+import { ActivityWidget as ActivityWidget_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
+import { CollectionFilter as CollectionFilter_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { UploadDropzoneWidget as UploadDropzoneWidget_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { UploadDropzoneCollectionsField as UploadDropzoneCollectionsField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 
@@ -105,10 +105,10 @@ export const importMap = {
     QueryPresetsWhereField_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin#CollectionQuerySortField':
     CollectionQuerySortField_53ccb9913b2925da8adcdf5fd85e01f4,
-  '@frogbotai/ui/admin/rsc#RecentlyViewedWidget':
-    RecentlyViewedWidget_a9b31afd548db1251f21130da6e46588,
-  '@frogbotai/ui/admin#RecentlyViewedCollectionsField':
-    RecentlyViewedCollectionsField_53ccb9913b2925da8adcdf5fd85e01f4,
+  '@frogbotai/ui/admin/rsc#ActivityWidget':
+    ActivityWidget_a9b31afd548db1251f21130da6e46588,
+  '@frogbotai/ui/admin#CollectionFilter':
+    CollectionFilter_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin/rsc#UploadDropzoneWidget':
     UploadDropzoneWidget_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin#UploadDropzoneCollectionsField':

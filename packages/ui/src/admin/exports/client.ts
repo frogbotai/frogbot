@@ -222,7 +222,7 @@ export { BlockSelector } from '@payloadcms/ui';
 export { SectionTitle } from '@payloadcms/ui';
 export { ItemsDrawer } from '@payloadcms/ui';
 export { CollectionQuerySortField } from '@payloadcms/ui';
-export { RecentlyViewedCollectionsField } from '@payloadcms/ui';
+export { CollectionFilter } from '@payloadcms/ui';
 export { UploadDropzoneCollectionsField } from '@payloadcms/ui';
 export { QueryPresetsHeading } from '@payloadcms/ui';
 export { LLMInstructionsDescription } from '@payloadcms/ui';
