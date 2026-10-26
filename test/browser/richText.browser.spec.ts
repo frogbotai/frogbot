@@ -155,7 +155,7 @@ test('creates and persists an external link through the link drawer', async ({ p
 
   await expect(linkDrawer).toBeVisible();
 
-  const urlField = linkDrawer.locator('#field-url');
+  const urlField = linkDrawer.getByRole('textbox', { name: 'Enter a URL' });
 
   await expect(urlField).toHaveValue('https://');
   await urlField.fill('https://frogbot.ai/docs');
