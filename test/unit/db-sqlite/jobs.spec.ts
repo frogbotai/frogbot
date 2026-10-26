@@ -230,6 +230,48 @@ describe('SQLite atomic jobs', () => {
     expect(rows.docs.find(({ id }) => id === live.id)?.processingToken).toBe('other');
   });
 
+  it('yields a claim whose key another token holds with a live lease', async () => {
+    await create({
+      concurrencyKey: 'shared',
+      processingToken: 'other',
+      processingUntil: '2099-01-01T00:00:00.000Z',
+    });
+
+    const waiting = await create({ concurrencyKey: 'shared', totalTried: 1 });
+    const free = await create({ concurrencyKey: 'free' });
+    const { jobs } = await claim();
+
+    expect(jobs!.map(({ id }) => id)).toEqual([free.id]);
+
+    const rows = await database.find<Job>({
+      collection: 'payload-jobs',
+      where: { id: { equals: waiting.id } },
+    });
+
+    expect(rows.docs[0]).toMatchObject({
+      processingToken: null,
+      processingUntil: null,
+      totalTried: 1,
+    });
+  });
+
+  it('makes no key check when no claimed row has a key', async () => {
+    await create();
+    await create();
+
+    statements.length = 0;
+
+    expect((await claim()).jobs).toHaveLength(2);
+    expect(statements.some((statement) => statement.includes('"concurrency_key" in'))).toBe(false);
+
+    await create({ concurrencyKey: 'keyed' });
+
+    statements.length = 0;
+
+    expect((await claim()).jobs).toHaveLength(1);
+    expect(statements.some((statement) => statement.includes('"concurrency_key" in'))).toBe(true);
+  });
+
   it('claims with returning disabled and handles no eligible jobs', async () => {
     await create();
 

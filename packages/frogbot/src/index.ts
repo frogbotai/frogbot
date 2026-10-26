@@ -384,6 +384,7 @@ export type {
   JobQueueArgs,
   Jobs,
   JobsConfig,
+  TaskConfig,
   WorkflowConfig,
   WorkflowHandler,
 } from './jobs/types.js';

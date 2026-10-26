@@ -103,6 +103,32 @@ describe.each(['postgres', 'vercel-postgres'] as const)('%s atomic SQL', (kind) 
     expect(sort).toEqual(['-createdAt']);
   });
 
+  it('locks each claimed key in order, then checks for a rival holder', async () => {
+    const { database, execute } = await setup();
+
+    execute.mockResolvedValueOnce({
+      rows: [
+        [7, 'b'],
+        [8, 'a'],
+        [9, 'b'],
+      ] as never,
+      rowCount: 3,
+    });
+
+    execute.mockResolvedValue({ rows: [], rowCount: 0 });
+
+    await database.updateJobs({ data: { ...lease }, returning: false, limit: 3, where: {} });
+
+    const [, first, second, check] = execute.mock.calls;
+
+    expect(execute).toHaveBeenCalledTimes(4);
+    expect(first[0].text).toContain('pg_advisory_xact_lock');
+    expect(first[1]).toContain('a');
+    expect(second[1]).toContain('b');
+    expect(check[0].text).toContain('"concurrency_key" in');
+    expect(check[1]).toEqual(expect.arrayContaining(['a', 'b', 'claim-token']));
+  });
+
   it('guards single-ID claims and does not hydrate a losing claim', async () => {
     const { database, execute } = await setup();
 

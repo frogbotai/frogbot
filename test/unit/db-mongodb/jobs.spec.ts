@@ -298,6 +298,33 @@ describe.skipIf(!mongoURL)('Mongo job claims', () => {
     expect(await read(live)).toMatchObject({ processingToken: 'other' });
   });
 
+  it('yields a claim whose key another token holds with a live lease', async () => {
+    await seed({
+      priority: 0,
+      concurrencyKey: 'shared',
+      processingToken: 'other',
+      processingUntil: new Date(Date.now() + 60_000),
+    });
+
+    const waiting = await seed({ priority: 1, concurrencyKey: 'shared', totalTried: 1 });
+    const free = await seed({ priority: 2, concurrencyKey: 'free' });
+    const result = await claim({ limit: 10 });
+
+    expect(result.rows!.map(({ id }) => id)).toEqual([free]);
+    expect(result.ids).toEqual([free]);
+    expect(await read(waiting)).toMatchObject({ processingUntil: null, totalTried: 1 });
+  });
+
+  it('makes no extra find when no claimed row has a key', async () => {
+    await seed({ priority: 1 });
+    await seed({ priority: 2 });
+
+    const find = vi.spyOn(adapter, 'find');
+
+    expect((await claim({ limit: 10 })).ids).toHaveLength(2);
+    expect(find).toHaveBeenCalledOnce();
+  });
+
   it('delegates ordinary updates, including native operators', async () => {
     const id = await seed({ totalTried: 1 });
 

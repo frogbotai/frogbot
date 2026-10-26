@@ -72,7 +72,7 @@ beforeAll(async () => {
   await database.connect();
 
   sqlite.exec(
-    'CREATE TABLE payload_jobs (id INTEGER PRIMARY KEY, processing_until TEXT, processing_token TEXT, updated_at TEXT, created_at TEXT, completed_at TEXT, queue TEXT)',
+    'CREATE TABLE payload_jobs (id INTEGER PRIMARY KEY, processing_until TEXT, processing_token TEXT, updated_at TEXT, created_at TEXT, completed_at TEXT, queue TEXT, concurrency_key TEXT)',
   );
 });
 
@@ -110,7 +110,9 @@ describe('D1 native driver claim', () => {
 
     for (const statement of statements) {
       expect(statement.method).toBe('raw');
-      expect(statement.sql).toMatch(/^update .* in \(select .* limit \?\)\) returning "id"$/);
+      expect(statement.sql).toMatch(
+        /^update .* in \(select .* limit \?\)\) returning "id", "concurrency_key"$/,
+      );
       expect(statement.sql).not.toContain('skip locked');
     }
 

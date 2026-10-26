@@ -270,7 +270,7 @@ Recovery is **at least once**. A crash, database outage, or event-loop stall can
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `tasks` | `TaskConfig[]` | `[]` | Tasks that can be queued or run inside workflows. See [Task options](#task-options). The slug `frogbot-sweep-waitpoints` is reserved. |
+| `tasks` | `TaskConfig[]` (from `frogbot`) | `[]` | Tasks that can be queued or run inside workflows. See [Task options](#task-options). The slug `frogbot-sweep-waitpoints` is reserved. |
 | `workflows` | `WorkflowConfig[]` | `[]` | Workflows that orchestrate tasks. See [Workflow options](#workflow-options). |
 | `access` | `{ queue?, run?, cancel? }` | Signed-in users | Access rules checked when a call sets `overrideAccess: false`. See [Access options](#access-options). |
 | `autoRun` | `AutorunCronConfig[] \| (() => AutorunCronConfig[] \| Promise<AutorunCronConfig[]>)` | No runners | In-process cron runners that claim queued jobs. They do not queue new jobs, apart from handling schedules. FrogBot appends its own all-queues runner when agents have schedules or piece triggers. Avoid on serverless platforms. See [Autorun options](#autorun-options). |
@@ -345,12 +345,11 @@ Each rule receives `{ req }` and returns a boolean or a promise of one.
 
 ### Concurrency options
 
-`concurrency` takes a key function, which makes the key exclusive, or an object:
+`concurrency` takes a key function or an object:
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `key` | `({ input, queue }) => string` | Required | Groups related jobs. Jobs with the same key follow the rules below. |
-| `exclusive` | `boolean` | `true` | Only one job with the key runs at a time; others stay queued until it completes. |
+| `key` | `({ input, queue }) => string` | Required | Only one job with the key runs at a time, across every runner and process. Others wait until it completes, fails, or pauses at `waitFor`. |
 | `supersedes` | `boolean` | `false` | Queuing a job deletes older pending jobs with the same key, including paused workflows, freeing their `jobId`s and closing their waits. Processing jobs are not affected. |
 
 ### Schedule options
