@@ -326,15 +326,15 @@ describe('SQL KV with local SQLite', () => {
       const finishedAt = Date.now();
 
       await released;
-      const [{ expiresAt }] = await adapters[0].drizzle
-        .select({ expiresAt: table.expiresAt })
+      const [{ data, expiresAt }] = await adapters[0].drizzle
+        .select({ data: table.data, expiresAt: table.expiresAt })
         .from(table);
 
       const expiresAtMs = new Date(String(expiresAt)).getTime();
 
       expect(expiresAtMs).toBeGreaterThanOrEqual(startedAt + 600);
       expect(expiresAtMs).toBeLessThanOrEqual(finishedAt + 201);
-      expect(await kv.get('key')).toBe('winner');
+      expect(data).toBe('winner');
     },
   );
 });
