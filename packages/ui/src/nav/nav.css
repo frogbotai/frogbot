@@ -214,13 +214,14 @@
     width: 100%;
   }
 
+  /* Drawn pointing down, turned to point left at the item the tooltip sits beside. */
   .fb-app-sidebar__tooltip-caret {
     position: absolute;
-    top: calc(100% - 0.5px);
-    left: 50%;
-    filter: drop-shadow(0 2px 1px rgb(0 0 0 / 0.15));
+    top: 50%;
+    left: 0;
+    filter: drop-shadow(2px 0 1px rgb(0 0 0 / 0.15));
     pointer-events: none;
-    transform: translateX(-50%);
+    transform: translate(calc(-100% + 1px), -50%) rotate(90deg);
   }
 
   .fb-app-sidebar__tooltip-caret-fill {
