@@ -5,6 +5,7 @@ import { getApiKeyPrefix, hashApiKeyToken } from '@frogbotai/plugin-api-keys';
 import { ensureAutonumbers } from 'frogbot/test';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { RESERVED_TOOL_NAMES } from '../../packages/plugins/plugin-mcp/src/tools.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
@@ -27,6 +28,8 @@ import {
 } from './config.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const mathToolName = 'mathHelper_addNumbers';
 
 const builtInTools = [
   'getConfigInfo',
@@ -52,7 +55,7 @@ type JSONSchema = {
 type ToolsListBody = {
   jsonrpc: '2.0';
   id: number;
-  result: { tools: Array<{ name: string }> };
+  result: { tools: Array<{ name: string; description?: string; inputSchema: JSONSchema }> };
 };
 
 type ToolCallBody = {
@@ -61,7 +64,7 @@ type ToolCallBody = {
   result: {
     content: Array<{ type: 'text'; text: string }>;
     isError?: boolean;
-    structuredContent?: { schema?: JSONSchema };
+    structuredContent?: { schema?: JSONSchema } & Record<string, unknown>;
   };
 };
 
@@ -194,6 +197,49 @@ describe('MCP plugin integration', () => {
     expect(body.result.tools.map(({ name }) => name)).toEqual(
       expect.arrayContaining([...builtInTools, actorToolName]),
     );
+  });
+
+  it('POST /api/mcp lists FrogBot tools with their JSON Schema, and only Payload built-ins besides', async () => {
+    const response = await listTools(apiKeyToken);
+    const { tools } = parseMcpResponse<ToolsListBody>(response.body).result;
+    const frogbotTools = [actorToolName, mathToolName, 'write_todos'];
+
+    expect(tools.find(({ name }) => name === mathToolName)).toMatchObject({
+      description: 'Add the first number and the second number.',
+      inputSchema: {
+        type: 'object',
+        properties: { firstNumber: { type: 'number' }, secondNumber: { type: 'number' } },
+      },
+    });
+    expect(tools.find(({ name }) => name === actorToolName)?.inputSchema.type).toBe('object');
+    expect(
+      tools
+        .map(({ name }) => name)
+        .filter((name) => !frogbotTools.includes(name) && !RESERVED_TOOL_NAMES.has(name)),
+    ).toEqual([]);
+  });
+
+  it('POST /api/mcp runs a piece action as a tool', async () => {
+    const response = await callTool(mathToolName, { firstNumber: 2, secondNumber: 3 });
+
+    expect(toolText(response.body)).toEqual({ isError: false, text: '5' });
+  });
+
+  it('POST /api/mcp rejects input that does not match the schema', async () => {
+    const response = await callTool(mathToolName, { firstNumber: 'two', secondNumber: 3 });
+    const { isError, text } = toolText(response.body);
+
+    expect(isError).toBe(true);
+    expect(text).toContain(`Input validation error: Invalid arguments for tool ${mathToolName}`);
+  });
+
+  it('POST /api/mcp returns an error for a tool that needs a chat', async () => {
+    const response = await callTool('write_todos', { todos: [] });
+
+    expect(toolText(response.body)).toEqual({
+      isError: true,
+      text: '[frogbot] Todo tools require chat persistence and a current chat.',
+    });
   });
 
   it("POST /api/mcp lists the app collections the key's user can read, none of FrogBot's", async () => {
@@ -364,18 +410,17 @@ describe('MCP plugin integration', () => {
 
     expect(body).toMatchObject({ jsonrpc: '2.0', id: 2 });
     expect(body.result.isError).not.toBe(true);
-    expect(body.result.content).toEqual([
-      {
-        type: 'text',
-        text: JSON.stringify({
-          id: ownerId,
-          email: testCredentials.email,
-          collection: usersSlug,
-          strategy: 'api-key',
-          apiKeyId,
-        }),
-      },
-    ]);
+
+    const actor = {
+      id: ownerId,
+      email: testCredentials.email,
+      collection: usersSlug,
+      strategy: 'api-key',
+      apiKeyId,
+    };
+
+    expect(body.result.content).toEqual([{ type: 'text', text: JSON.stringify(actor) }]);
+    expect(body.result.structuredContent).toEqual(actor);
   });
 
   it('POST /api/mcp rejects an invalid key despite an earlier authenticated custom actor', async () => {

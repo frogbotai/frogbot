@@ -1,6 +1,6 @@
 # @frogbotai/plugin-mcp
 
-Expose your app's collections to external MCP clients.
+Expose your app's collections and tools to external MCP clients.
 
 ```ts
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
@@ -20,3 +20,11 @@ export default buildConfig({
 Connect MCP clients to `/api/mcp` with a Bearer token minted by `@frogbotai/plugin-api-keys`. Revoked, malformed, and unknown keys are rejected. The plugin requires `apiKeysPlugin()` earlier in the plugin array.
 
 Every app collection is exposed, and each call runs as the key's owner under the collection's access control. FrogBot's own collections (chats, API keys, logs) are never exposed. SSE is not supported.
+
+Serve FrogBot tools, piece actions and piece instances with `tools`, the same list an agent takes. Each runs as the key's owner, with `ctx.agent.slug` set to `'mcp'`:
+
+```ts
+mcpPlugin({ tools: [lookupTicket, slack] });
+```
+
+A client tool, a duplicate slug, a slug a built-in tool uses, or an input schema MCP can't list (not an object, or not expressible as JSON Schema) is refused when the plugin is created.

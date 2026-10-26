@@ -1,11 +1,11 @@
 ---
 title: "MCP server"
 sidebarTitle: "MCP server"
-description: "Expose your app's collections to external MCP clients."
+description: "Expose your app's collections and tools to external MCP clients."
 keywords: ["MCP", "Model Context Protocol", "plugins", "API keys"]
 ---
 
-The MCP plugin exposes your app's collections to external MCP clients such as Claude Desktop and Cursor. It signs requests in with FrogBot's hashed, revocable API keys, so your app has one key system.
+The MCP plugin exposes your app's collections and tools to external MCP clients such as Claude Desktop and Cursor. It signs requests in with FrogBot's hashed, revocable API keys, so your app has one key system.
 
 ## Install
 
@@ -41,7 +41,7 @@ Revoked, malformed, and unknown keys are rejected with `401`. The MCP endpoint o
 
 ## What clients can reach
 
-Every app collection is exposed by default, through shared tools (`getConfigInfo`, `findDocuments`, `createDocuments`, `updateDocument`, `deleteDocuments`, `getCollectionSchema` and more). Each call runs as the key's owner, with your collections' [access control](/access-control/overview): a key reaches nothing over MCP its owner can't reach over REST. Development's `?overrideAccess=true` is ignored.
+Every app collection is exposed by default, through shared tools (`getConfigInfo`, `findDocuments`, `createDocuments`, `updateDocument`, `deleteDocuments`, `getCollectionSchema` and more). Each call runs as the key's owner, with your collections' [access control](/access-control/overview): a key reaches nothing over MCP its owner can't reach over REST. A `?overrideAccess=true` query is ignored in development and rejected with `400` elsewhere.
 
 FrogBot's own collections (chats, messages, API keys, connections, logs and the like) are never exposed.
 
@@ -58,25 +58,50 @@ mcpPlugin({
 })
 ```
 
-## Custom tools
+## Tools
 
-`defineTool`, `defineCollectionTool`, `defineGlobalTool` and `definePrompt` come from `@frogbotai/plugin-mcp`. They infer the handler's `input` from the schema:
+Pass `tools` the same list an agent's `tools` takes: [tools](/agents/overview#add-tools), piece actions and piece instances (every action). Each one is served under its `slug`, with its `inputSchema` as the JSON Schema clients see. Root `tools` and agents' tools aren't served unless listed here.
 
 ```ts
-import { defineTool, mcpPlugin } from '@frogbotai/plugin-mcp'
+import { createSlack } from '@frogbotai/piece-slack'
+import { mcpPlugin } from '@frogbotai/plugin-mcp'
+import type { Tool } from 'frogbot'
 import { z } from 'zod'
 
-mcpPlugin({
-  tools: {
-    rollDice: defineTool({
-      description: 'Roll a die.',
-      input: z.object({ sides: z.number().int().min(2) }),
-    }).handler(({ input }) => ({
-      content: [{ type: 'text', text: String(1 + Math.floor(Math.random() * input.sides)) }],
-    })),
+const lookupTicket: Tool = {
+  slug: 'lookupTicket',
+  description: 'Look up a support ticket by number.',
+  inputSchema: z.object({ number: z.number().int() }),
+  execute: async ({ number }, { req }) => {
+    const { docs } = await req.frogbot.find({
+      collection: 'tickets',
+      where: { number: { equals: number } },
+      overrideAccess: false,
+      req,
+    })
+
+    return docs[0] ?? { error: `No ticket ${number}.` }
   },
-})
+}
+
+const slack = createSlack()
+
+mcpPlugin({ tools: [lookupTicket, slack] })
 ```
+
+- **Input.** A call is checked against `inputSchema` before `execute` runs; invalid input returns an error result.
+- **Context.** `ctx.req` is the request, signed in as the key's owner, so collection access applies to Local API calls made with it. `ctx.agent` is `{ slug: 'mcp', runId }`, with a new `runId` per call and no `chatId`.
+- **Result.** A string becomes one text block. Anything else becomes its JSON text, and a plain object is also sent as `structuredContent`. `hooks.afterToolCall` sees the result.
+- **Errors.** A thrown error becomes an error result with its message; the server keeps serving.
+- **Refused.** `mcpPlugin` throws for a client tool such as `question`, a duplicate slug, a slug that a built-in tool already uses (`getConfigInfo`, `findDocuments`, `login` and the rest), or an input schema that isn't an object or can't be written as JSON Schema (such as `z.date()`), since one such schema would break `tools/list` for every tool.
+
+<Warning>
+Piece tools resolve credentials as they do in an agent: a piece without `auth` in its config, like `slack` above, acts with the key owner's [connected account](/connections/overview). Tools that need a chat, such as `write_todos` and `read_todos`, always fail over MCP.
+</Warning>
+
+Every listed tool is available to every valid key. To limit a tool to some users, check `ctx.req.user` in `execute` and throw.
+
+`definePrompt` comes from `@frogbotai/plugin-mcp` and infers the handler's `input` from `argsSchema`.
 
 ## Options
 
@@ -84,9 +109,8 @@ FrogBot handles authorization itself, so there's no option to replace it.
 
 | Option | Type | Description |
 | --- | --- | --- |
-| `collections` | `object` | Map keyed by collection slug: `description`, `tools` (turn built-in tools off with `false`, reword them, or add custom ones) and `overrideResponse`. |
-| `globals` | `object` | The same, keyed by global slug. |
-| `tools` | `object` | Custom tools not tied to a collection, keyed by name. |
+| `collections` | `object` | Map keyed by collection slug: `description`, `tools` (turn built-in tools off with `false`, reword them, or turn on auth tools with `true`) and `overrideResponse`. |
+| `tools` | `array` | FrogBot tools, piece actions and piece instances to serve. See [Tools](#tools). |
 | `prompts` | `object` | Custom prompts, keyed by name. |
 | `resources` | `object` | Custom resources, keyed by name. |
 | `disabled` | `boolean` | Skip registering the endpoint. |
@@ -96,6 +120,6 @@ FrogBot handles authorization itself, so there's no option to replace it.
 | `mcp.serverOptions.options` | `object` | Options passed to the underlying MCP server. |
 | `mcp.verboseLogs` | `boolean` | Log the plugin's info and debug messages. Default `false`. |
 
-Custom tools, prompts and resources take an optional `access({ req, permissions })` that hides them from keys it returns `false` for. Without one, any signed-in key can use them.
+Prompts and resources take an optional `access({ req, permissions })` that hides them from keys it returns `false` for. Without one, any signed-in key can use them.
 
 SSE is not supported.

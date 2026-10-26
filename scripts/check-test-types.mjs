@@ -22,7 +22,7 @@ export const MEMORY_SHARE = 0.25;
 
 export const ELSEWHERE = {
   'test/types':
-    'the `typecheck` scripts of `frogbot`, `sdk`, `ui`, `richtext-lexical`, `plugin-seo`',
+    'the `typecheck` scripts of `frogbot`, `sdk`, `ui`, `richtext-lexical`, `plugin-seo`, `plugin-mcp`',
   'test/e2e/fixtures/sdk-frontend': '`test/e2e/sdkPackaging.e2e.spec.ts`',
 };
 

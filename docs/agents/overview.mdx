@@ -195,7 +195,7 @@ Client tools replace `execute` with `outputSchema` and `client`; see [Build a cl
 | --- | --- | --- |
 | `req` | `FrogBotRequest` | The request for the run. |
 | `frogbot` | `FrogBot` | The FrogBot instance. |
-| `agent` | `{ slug: string; runId: string; chatId?: number \| string }` | The running agent, the run ID shared with [hooks](#follow-hooks), and the chat ID when the run belongs to a persisted chat. Direct `generateText` and `streamText` calls use the slug `'direct'`. |
+| `agent` | `{ slug: string; runId: string; chatId?: number \| string }` | The running agent, the run ID shared with [hooks](#follow-hooks), and the chat ID when the run belongs to a persisted chat. Direct `generateText` and `streamText` calls use the slug `'direct'`, and [MCP](/plugins/mcp#tools) calls `'mcp'`, with no `chatId`. |
 
 Attach tools directly to the worker.
 

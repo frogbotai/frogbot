@@ -26,5 +26,8 @@ export {
   wrapPayloadPlugin,
 } from '../seams/config.js';
 export { hasFrogBot, toFrogBotRequest, toPayloadRequest } from '../seams/request.js';
+export { sanitizeToolList } from '../tools/config/sanitize.js';
+export type { AnyTool } from '../tools/types.js';
+export { isClientTool } from '../tools/types.js';
 export type { StorageAdapterOptions, StorageAdapterProps } from '../uploads/storage.js';
 export { storageAdapter } from '../uploads/storage.js';
