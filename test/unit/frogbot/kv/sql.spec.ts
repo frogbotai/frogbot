@@ -317,19 +317,23 @@ describe('SQL KV with local SQLite', () => {
       const released = once(worker, 'message');
       worker.postMessage('release');
 
+      const startedAt = Date.now();
+
       expect(await kv[operation]('key', 'winner', { ttl: 200 })).toBe(
         operation === 'set' ? undefined : true,
       );
 
+      const finishedAt = Date.now();
+
       await released;
-      const [{ remaining }] = await adapters[0].drizzle
-        .select({
-          remaining: sql<number>`(julianday(${table.expiresAt}) - julianday('now')) * 86400000`,
-        })
+      const [{ expiresAt }] = await adapters[0].drizzle
+        .select({ expiresAt: table.expiresAt })
         .from(table);
 
-      expect(remaining).toBeGreaterThan(100);
-      expect(remaining).toBeLessThanOrEqual(201);
+      const expiresAtMs = new Date(String(expiresAt)).getTime();
+
+      expect(expiresAtMs).toBeGreaterThanOrEqual(startedAt + 600);
+      expect(expiresAtMs).toBeLessThanOrEqual(finishedAt + 201);
       expect(await kv.get('key')).toBe('winner');
     },
   );
