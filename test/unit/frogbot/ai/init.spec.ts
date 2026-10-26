@@ -88,13 +88,13 @@ describe('buildGatewayConfig', () => {
   it('preserves Bedrock model allowlists while renaming the provider', () => {
     const config = buildGatewayConfig(
       makeAIConfig({
-        bedrock: { region: 'us-east-1', models: ['zai.glm-4.7-flash'] },
+        bedrock: { region: 'us-east-1', models: ['zai.glm-5'] },
       }),
     );
 
     expect(config.providers.bedrock).toEqual({
       region: 'us-east-1',
-      models: ['zai.glm-4.7-flash'],
+      models: ['zai.glm-5'],
     });
   });
 

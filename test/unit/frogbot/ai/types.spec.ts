@@ -87,7 +87,7 @@ describe('AI config types', () => {
     expectTypeOf<ModelId>().toEqualTypeOf<CatalogModelId>();
     expectTypeOf<NonNullable<AIConfig['defaultModel']>>().toEqualTypeOf<ModelId>();
     expectTypeOf<'openai/gpt-4o'>().toMatchTypeOf<AgentModelId>();
-    expectTypeOf<'bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0'>().toMatchTypeOf<ModelId>();
+    expectTypeOf<'bedrock/us.anthropic.claude-sonnet-4-6'>().toMatchTypeOf<ModelId>();
     expectTypeOf<'anthropic/claude-sonnet-4-5'>().toMatchTypeOf<AgentConfig['model']>();
   });
 
