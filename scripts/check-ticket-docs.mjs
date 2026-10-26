@@ -37,7 +37,7 @@ const BANNED = ['migration guide', 'legacy path', 'backward compat', 'deprecat',
 const CARD_FIELDS = [
   'Situation',
   'Example',
-  'Payload does',
+  'Precedent',
   'Options',
   'Recommendation',
   'Applies to',
@@ -50,6 +50,8 @@ const FOUND_KINDS = ['bug', 'pre-existing failure', 'test gap', 'docs', 'idea'];
 const SUMMARY_LINES = 40;
 
 const WORDS = { spec: 1500, plan: 2000 };
+
+const BRIEF_WORDS = 100;
 
 const MAX_RULINGS = 60;
 
@@ -572,16 +574,17 @@ function checkCards(doc, { decisions, problem }) {
       );
     }
 
-    const payload = fields.get('Payload does');
+    const precedent = fields.get('Precedent');
 
     if (
-      payload &&
-      !/`[^`\s]+:\d+/.test(payload.value) &&
-      !/no equivalent \(searched/i.test(payload.value)
+      precedent &&
+      !/`[^`\s]+:\d+/.test(precedent.value) &&
+      !/https?:\/\//.test(precedent.value) &&
+      !/no equivalent \(searched/i.test(precedent.value)
     ) {
       problem(
-        payload.index + 1,
-        `card ${id}: "Payload does:" needs a \`path:line\` or "no equivalent (searched …)"`,
+        precedent.index + 1,
+        `card ${id}: "Precedent:" needs a \`path:line\`, a URL or "no equivalent (searched …)"`,
       );
     }
 
@@ -601,6 +604,33 @@ function sameSet(a, b) {
   return a.size === b.size && [...a].every((id) => b.has(id));
 }
 
+function checkBrief(doc, problem) {
+  if (!doc.lines.some((line) => /^Status:\s*Draft\b/.test(line))) return;
+
+  const brief = section(doc, 'Brief');
+
+  if (!brief) {
+    problem(1, 'missing "## Brief" (first section of a Draft spec)');
+
+    return;
+  }
+
+  if (brief.previous !== null) problem(brief.index + 1, '"## Brief" must be the first section');
+
+  const body = doc.lines.slice(brief.index + 1, brief.end);
+  const words = body.join(' ').split(/\s+/).filter(Boolean).length;
+
+  if (words > BRIEF_WORDS) {
+    problem(brief.index + 1, `Brief is ${words} words (max ${BRIEF_WORDS})`);
+  }
+
+  body.forEach((line, offset) => {
+    if (line.includes('`')) {
+      problem(brief.index + offset + 2, 'Brief is plain words: no code, paths or backticks');
+    }
+  });
+}
+
 function checkSpec(doc, context, researchIds) {
   const { problem } = context;
   const rulings = section(doc, 'Rulings');
@@ -609,6 +639,7 @@ function checkSpec(doc, context, researchIds) {
   checkCards(doc, context);
   checkBanned(doc, context);
   checkWords(doc, 'spec', problem);
+  checkBrief(doc, problem);
 
   if (!rulings) {
     problem(1, 'missing "## Rulings" (right after "## Problem")');

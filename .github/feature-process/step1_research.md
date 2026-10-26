@@ -2,7 +2,7 @@
 
 A fresh research agent writes `step1_research.md` from `issue.md`. Later agents read only the Summary, so it carries every answer, every decision for the spec, and the citations they rest on.
 
-- Answer each question in `issue.md`, and say what Payload does for each one. For chat and agent work, look at opencode-v2 or Firmware instead.
+- Answer each question in `issue.md`, and say what the precedent does for each one: Payload for app-builder work, OpenCode v2 for agent-harness work (DR-041), and Claude for Chrome as well for Sidekick's browser tools.
 - Cite `path:line`. Write reference paths as `~/code/<repo>/path:line`; a bare path is FrogBot.
 - Read the implementation, its types and its tests, not only search hits. A claim that something doesn't exist needs several searches and a read of the closest module.
 - List choices only the owner can make under "Decisions for the spec", one line each. The spec turns them into cards.
@@ -23,7 +23,7 @@ Status: Draft | Done (<date>)
 - **Rulings:**
   - DR-<nnn> "<quote>" → <rule>. [source](link)
 - **Q1 <question>:** <answer> (`path:line`).
-  - What Payload does: <behaviour> (`~/code/payload/path:line`), or no equivalent (searched <terms>).
+  - What <precedent> does: <behaviour> (`~/code/<repo>/path:line`, or a URL), or no equivalent (searched <terms>).
 - **Decisions for the spec:** <one line each>, or none.
 - **Risks:** <one line each>, or none.
 

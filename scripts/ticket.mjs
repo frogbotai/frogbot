@@ -28,7 +28,7 @@ import {
   levelReached,
   verifyGroups,
 } from './lib/affected.mjs';
-import { recordDecisions } from './lib/decisions.mjs';
+import { recordDecisions, REPLY_USAGE } from './lib/decisions.mjs';
 import { flakyRetry } from './lib/flaky.mjs';
 import { appendFinding, findingProblem } from './lib/found.mjs';
 import { acquireSlot, LAND_LOCK } from './lib/slot.mjs';
@@ -88,7 +88,7 @@ const DEFAULT_TYPE = 'feat';
 const FOUND_USAGE = `pnpm ticket found [--source <path>] <<'EOF' … EOF`;
 
 const USAGE =
-  'usage: pnpm ticket new <n> [--type <type>] | land <n> | status [--batch <n>] | stats [--batch <n>] | found [--source <path>] (row on stdin) | next | decisions | verify [--list]';
+  'usage: pnpm ticket new <n> [--type <type>] | land <n> | status [--batch <n>] | stats [--batch <n>] | found [--source <path>] (row on stdin) | next | decisions (owner replies on stdin) | verify [--list]';
 
 const ENV = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
 
@@ -975,11 +975,18 @@ function commandStatus(main, options) {
   console.log(formatTable(rows).join('\n'));
 }
 
-export function commandDecisions(main, { date = new Date().toLocaleDateString('en-CA') } = {}) {
+export function commandDecisions(
+  main,
+  {
+    date = new Date().toLocaleDateString('en-CA'),
+    input = process.stdin.isTTY ? '' : readFileSync(0, 'utf8'),
+  } = {},
+) {
   const tickets = folders(main).map((folder) => readTicket(main, folder));
-  const { messages, problems } = recordDecisions(path.join(main, PROCESS_DIR), tickets, date);
+  const dir = path.join(main, PROCESS_DIR);
+  const { messages, problems } = recordDecisions(dir, tickets, date, input);
 
-  if (problems.length > 0) refuse(`nothing written:\n${problems.join('\n')}`);
+  if (problems.length > 0) refuse(`nothing written:\n${problems.join('\n')}\n${REPLY_USAGE}`);
 
   console.log(messages.join('\n'));
 }
