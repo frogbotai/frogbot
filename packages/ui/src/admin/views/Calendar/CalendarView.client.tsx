@@ -217,7 +217,7 @@ export function CalendarViewClient({
   const navigate = (key: 'date' | 'mode', value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set(key, value);
-    router.replace(`${pathname}?${params}`);
+    void router.replace(`${pathname}?${params}`);
   };
 
   const request = async (row: Row, nextStart: string, nextEnd: string) => {

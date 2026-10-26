@@ -117,7 +117,7 @@ export function ChatViewClient({
     pathname.startsWith(`${documentPath}/`);
 
   useEffect(() => {
-    if (staleThread) startRouteTransition(() => router.refresh());
+    if (staleThread) void startRouteTransition(() => router.refresh());
   }, [router, staleThread, startRouteTransition]);
 
   const onChatIdChange = (nextChatId: string | number | undefined) => {
@@ -136,7 +136,7 @@ export function ChatViewClient({
       return;
     }
 
-    startRouteTransition(() => router.push(path));
+    void startRouteTransition(() => router.push(path));
   };
 
   return (
