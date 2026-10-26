@@ -1,5 +1,5 @@
 /* FrogBot docs — overrides for Mintlify defaults.
-   Dark mode: the background is a dark navy (#101828), so Mintlify's default
+   Dark mode: the background is FrogBot's brand dark (#0b1120, a darker #101828), so Mintlify's default
    gray-400 secondary text is too dim. Unify secondary text on one brighter
    color in dark mode only, so the sidebar/body don't show mismatched tiers.
    Both modes: restyle the built-in <Prompt> box to match the cards (end of file). */
