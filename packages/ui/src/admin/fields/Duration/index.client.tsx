@@ -15,7 +15,7 @@ import type {
 import { useCallback, useMemo } from 'react';
 
 import { Input } from '../../../components/input.js';
-import { getFieldKind, isEmptyKindValue } from '../kind.js';
+import { getFieldKind, isEmptyKindValue, isKindReadOnly } from '../kind.js';
 import { KindFieldLayout } from '../KindFieldLayout/index.client.js';
 import { parsedInputValidate, useParsedInput } from '../KindFieldLayout/useParsedInput.js';
 
@@ -49,7 +49,8 @@ export function DurationCell(props: DefaultCellComponentProps) {
 }
 
 function DurationFieldComponent(props: NumberFieldClientProps) {
-  const { field, path: pathFromProps, readOnly, validate } = props;
+  const { field, path: pathFromProps, validate } = props;
+  const readOnly = isKindReadOnly(props);
   const { admin, max, min, required } = field;
   const { placeholder } = (admin ?? {}) as DurationFieldAdmin;
 

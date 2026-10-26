@@ -52,6 +52,15 @@ test('API Keys shows Total Cost (USD) as a money amount at two decimals', async 
   await expect(row.locator('td.cell-totalCostUSD')).toHaveText('$0.02');
 });
 
+test('an API key shows Total Cost (USD) as a read-only money amount', async ({ page }) => {
+  await page.goto(`/collections/${apiKeysSlug}/${seeded.apiKeyId}`);
+
+  await expect(page.locator('.field-type.number', { hasText: 'Total Cost (USD)' })).toContainText(
+    '$0.02',
+  );
+  await expect(page.locator('input[name="totalCostUSD"]')).toHaveCount(0);
+});
+
 test("a user's Monthly Spend shows a read-only money amount and Monthly Budget stays editable", async ({
   page,
 }) => {

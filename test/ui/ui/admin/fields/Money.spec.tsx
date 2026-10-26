@@ -193,6 +193,24 @@ describe('MoneyField', () => {
     expect(container.querySelector('input')).toBeNull();
   });
 
+  it('shows the amount as text when the field config is read-only', () => {
+    field.value = 3.25;
+
+    const { container } = renderField({ field: moneyField('USD', { readOnly: true }) });
+
+    expect(container.querySelector('.money-field__value')?.textContent).toBe('$3.25');
+    expect(container.querySelector('input')).toBeNull();
+  });
+
+  it('keeps the input when the field config sets readOnly false', () => {
+    field.value = 3.25;
+
+    const { container } = renderField({ field: moneyField('USD', { readOnly: false }) });
+
+    expect(amountInput(container).value).toBe('3.25');
+    expect(container.querySelector('.money-field__value')).toBeNull();
+  });
+
   it('shows no amount for an empty read-only value', () => {
     const { container } = renderField({ readOnly: true });
 

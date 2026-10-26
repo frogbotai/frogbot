@@ -44,7 +44,7 @@ import InvalidStepIcon from '../../../icons/icons/InvalidStepIcon.js';
 import LoadingIcon from '../../../icons/icons/LoadingIcon.js';
 import RefreshIcon from '../../../icons/icons/RefreshIcon.js';
 import SparkleIcon from '../../../icons/icons/SparkleIcon.js';
-import { getFieldKind } from '../kind.js';
+import { getFieldKind, isKindReadOnly } from '../kind.js';
 import { KindFieldLayout } from '../KindFieldLayout/index.client.js';
 import { hasOptionColors } from '../optionColor.js';
 import { OptionPills } from '../OptionPills/index.client.js';
@@ -469,7 +469,8 @@ function AISelectInput({
 }
 
 function AIFieldComponent(props: AIFieldProps) {
-  const { field, path: pathFromProps, readOnly, validate } = props;
+  const { field, path: pathFromProps, validate } = props;
+  const readOnly = isKindReadOnly(props);
   const { name } = field;
 
   const { collectionSlug = '', data, docPermissions, id } = useDocumentInfo();

@@ -15,7 +15,7 @@ import type {
 import { useCallback } from 'react';
 
 import StarIcon from '../../../icons/icons/StarIcon.js';
-import { getFieldKind, isEmptyKindValue } from '../kind.js';
+import { getFieldKind, isEmptyKindValue, isKindReadOnly } from '../kind.js';
 import { KindFieldLayout } from '../KindFieldLayout/index.client.js';
 
 export type RatingStarsProps = {
@@ -71,7 +71,8 @@ function readOnlyRating({ max, value }: { max: number; value: unknown }) {
 }
 
 function RatingFieldComponent(props: NumberFieldClientProps) {
-  const { field, path: pathFromProps, readOnly, validate } = props;
+  const { field, path: pathFromProps, validate } = props;
+  const readOnly = isKindReadOnly(props);
   const { label, max: fieldMax, min, required } = field;
 
   const { i18n } = useTranslation();

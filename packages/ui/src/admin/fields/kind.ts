@@ -12,6 +12,16 @@ export function getFieldKind(field: ClientField): FieldKind | undefined {
   return kind as FieldKind;
 }
 
+export function isKindReadOnly({
+  field,
+  readOnly,
+}: {
+  field: { admin?: { readOnly?: boolean } };
+  readOnly?: boolean;
+}): boolean {
+  return Boolean(readOnly || field.admin?.readOnly);
+}
+
 export function isEmptyKindValue(value: unknown): boolean {
   return value === null || value === undefined || value === '';
 }
