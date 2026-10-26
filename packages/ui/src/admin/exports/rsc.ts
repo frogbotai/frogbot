@@ -38,6 +38,6 @@ export { HierarchyField } from '@payloadcms/ui/rsc';
 export { HierarchySidebarTabServer } from '@payloadcms/ui/rsc';
 export { HierarchyTypeFieldServer } from '@payloadcms/ui/rsc';
 export { LLMInstructionsCell } from '@payloadcms/ui/rsc';
-export { RecentlyViewedWidget } from '@payloadcms/ui/rsc';
+export { ActivityWidget } from '@payloadcms/ui/rsc';
 export { UploadDropzoneWidget } from '@payloadcms/ui/rsc';
 export { WelcomeWidget } from '@payloadcms/ui/rsc';
