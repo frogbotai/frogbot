@@ -250,7 +250,7 @@ describe('RecentsSection', () => {
     const paths = fetch.mock.calls.map(([input]) => String(input).split('?')[0]);
 
     expect(paths).not.toContain('/api/frogbot');
-    expect(paths).toContain('/api/turns');
+    expect(paths).not.toContain('/api/turns');
 
     vi.unstubAllGlobals();
   });

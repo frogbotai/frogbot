@@ -1,0 +1,9 @@
+export const usersSlug = 'users';
+export const chatsSlug = 'chats';
+export const messagesSlug = 'messages';
+export const apiKeysSlug = 'api-keys';
+export const connectionsSlug = 'connections';
+export const pieceSlug = 'cascade';
+export const refuseMessageID = 'refused-message';
+export const refuseUserDelete = 'refuseUserDelete';
+export const refuseMessageDelete = 'refuseMessageDelete';

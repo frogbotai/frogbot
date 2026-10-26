@@ -1,3 +1,4 @@
+import { cascadeDelete } from '../collections/config/cascadeDelete.js';
 import { resolveMarkedCollection } from '../collections/config/resolveMarkedCollection.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { FrogBotConfig } from '../config/types.js';
@@ -73,7 +74,11 @@ export function resolveChatCollections(config: FrogBotConfig): ResolvedChat {
 
   const withMessages = resolveMarkedCollection({
     collectionLabel: 'chat message',
-    collections: withChats,
+    collections: withChats.map((collection) =>
+      collection.slug === chatsSlug
+        ? cascadeDelete(collection, { collection: messagesSlug, field: 'chat' })
+        : collection,
+    ),
     existing: messageCollection,
     marker: 'message',
     feature: 'chat persistence',

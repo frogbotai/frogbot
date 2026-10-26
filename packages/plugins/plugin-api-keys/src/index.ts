@@ -1,4 +1,5 @@
 import { type CollectionConfig, type FrogBotRequest, type Plugin } from 'frogbot';
+import { cascadeDelete } from 'frogbot/internal';
 
 import { createApiKeysCollection } from './collection.js';
 import { apiKeyMeHook, apiKeyStrategyName, createApiKeyStrategy } from './strategy.js';
@@ -77,11 +78,14 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
       if (item.slug === authCollection) {
         const authConfig = typeof next.auth === 'object' ? next.auth : {};
 
-        next = {
-          ...next,
-          auth: { ...authConfig, strategies: [...(authConfig.strategies ?? []), strategy] },
-          hooks: { ...next.hooks, me: [...(next.hooks?.me ?? []), apiKeyMeHook] },
-        };
+        next = cascadeDelete(
+          {
+            ...next,
+            auth: { ...authConfig, strategies: [...(authConfig.strategies ?? []), strategy] },
+            hooks: { ...next.hooks, me: [...(next.hooks?.me ?? []), apiKeyMeHook] },
+          },
+          { collection: collectionSlug, field: 'owner' },
+        );
       }
 
       if (item === usageLog) next = { ...next, fields: [...next.fields, usageField] };

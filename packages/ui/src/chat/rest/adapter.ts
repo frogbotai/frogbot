@@ -187,24 +187,6 @@ export function createRestChatAdapter(options: RestChatAdapterOptions): ChatPlat
     renameChat: (chatId, title) => patchChat(chatId, { title }),
     updateChatAgent: (chatId, agent) => patchChat(chatId, { agent }),
     deleteChat: async (chatId) => {
-      const messagesPath = `/${encodeURIComponent(await slug('messagesSlug'))}`;
-      const params = new URLSearchParams({
-        depth: '0',
-        limit: '0',
-        'where[chat][equals]': String(chatId),
-      });
-
-      const messages = await chatRequest<PayloadPage<MessageDocument>>(
-        sdk,
-        `${messagesPath}?${params}`,
-      );
-
-      await Promise.all(
-        messages.docs.map((message) =>
-          chatRequest(sdk, `${messagesPath}/${segment(message.id)}`, { method: 'DELETE' }),
-        ),
-      );
-
       await chatRequest(sdk, await chatPath(chatId), { method: 'DELETE' });
     },
     branchChat: async (chatId, messageId) => {
