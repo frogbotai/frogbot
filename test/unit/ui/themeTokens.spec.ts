@@ -19,7 +19,7 @@ interface CssContext {
 
 const root = resolve(import.meta.dirname, '../../..');
 const stylesPath = join(root, 'packages/ui/src/styles.css');
-const skippedDirectories = new Set(['node_modules', '.next', 'dist']);
+const skippedDirectories = new Set(['node_modules', '.next', 'dist', 'test-results']);
 const frogbotLayers = ['@layer frogbot', '@layer theme.frogbot'];
 const layerOrderFiles = [
   join(root, 'packages/ui/src/layers.css'),
