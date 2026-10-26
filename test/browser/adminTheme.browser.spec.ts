@@ -53,6 +53,20 @@ test.describe('FrogBot UI in the admin', () => {
         await readAdminColor(page, '--color-bg-secondary'),
       );
     });
+
+    test(`gives the ${theme} admin's own primary button FrogBot's brand green`, async ({
+      page,
+    }) => {
+      await openPostCreate(page, theme);
+
+      await expect(page.locator('.btn--style-primary').first()).toHaveCSS(
+        'background-color',
+        'rgb(47, 150, 79)',
+      );
+      expect(await readAdminColor(page, '--color-text-brand')).toBe(
+        theme === 'dark' ? 'rgb(103, 194, 133)' : 'rgb(22, 109, 48)',
+      );
+    });
   }
 
   test('follows an admin theme switch without a reload', async ({ page }) => {
@@ -261,7 +275,7 @@ test("uses the admin's color tokens on pages outside the admin", async ({ page }
     }),
   ).toEqual({
     bg: { light: 'rgb(255, 255, 255)', dark: 'rgb(44, 44, 44)' },
-    brand: 'rgb(13, 153, 255)',
+    brand: 'rgb(47, 150, 79)',
     removed: '',
   });
 });

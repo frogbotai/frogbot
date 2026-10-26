@@ -40,7 +40,7 @@ The tokens come in two levels:
 | `--color-bg-hover`, `--color-bg-pressed`, `--color-bg-transparent-hover` | Hover and pressed states |
 | `--color-bg-elevated` | Menus, dropdowns and popovers |
 | `--color-bg-inverse`, `--color-text-oninverse` | Default buttons and other solid neutral fills, and their text |
-| `--color-bg-brand`, `--color-text-onbrand`, `--color-text-brand` | Brand accents such as the chat's send button |
+| `--color-bg-brand`, `--color-text-onbrand`, `--color-text-brand` | Brand accents such as primary buttons, checked checkboxes and the chat's send button |
 | `--color-text`, `--color-text-secondary`, `--color-text-tertiary` | Text, from strongest to faintest |
 | `--color-border`, `--color-border-strong` | Borders and dividers |
 | `--field-color-*` | Inputs, textareas and select triggers |
@@ -48,7 +48,22 @@ The tokens come in two levels:
 
 `@frogbotai/ui/styles.css` defines every token with the admin panel's default values, so pages outside the admin look like the admin. In the admin, the admin's own values apply.
 
-For example, to give every grey surface a navy tint, and make brand accents green:
+The brand tokens default to FrogBot green, in the admin and on your own pages:
+
+| Token | Light | Dark |
+| --- | --- | --- |
+| `--color-bg-brand` | `#2f964f` | `#2f964f` |
+| `--color-bg-brand-hover` | `#166d30` | `#166d30` |
+| `--color-bg-brand-pressed`, `--color-bg-brand-secondary` | `#0e5523` | `#0e5523` |
+| `--color-bg-brand-tertiary` | `#d1f0db` | `#083d19` |
+| `--color-bg-brand-tertiary-hover` | `#a0ddb4` | `#0e5523` |
+| `--color-border-brand` | `#a0ddb4` | `#166d30` |
+| `--color-border-brand-strong` | `#166d30` | `#67c285` |
+| `--color-icon-brand`, `--color-text-brand`, `--color-text-brand-secondary` | `#166d30` | `#67c285` |
+
+Text and icons on a brand fill (`--color-text-onbrand`, `--color-icon-onbrand`) stay white. Focus rings and selected rows use the separate `--color-*-selected` tokens, which stay blue.
+
+For example, to give every grey surface a navy tint, and make brand accents blue:
 
 ```css
 :root {
@@ -56,11 +71,13 @@ For example, to give every grey surface a navy tint, and make brand accents gree
   --ramp-grey-800: #0b1120;
   --ramp-grey-700: #171d2c;
   --ramp-grey-600: #232938;
-  --color-bg-brand: #2f964f;
-  --color-bg-brand-hover: #166d30;
-  --color-bg-brand-pressed: #0e5523;
+  --color-bg-brand: #0d99ff;
+  --color-bg-brand-hover: #007be5;
+  --color-bg-brand-pressed: #0768cf;
 }
 ```
+
+Set the other brand tokens too, light on `:root` and dark on `[data-theme='dark']`, or they keep FrogBot's green.
 
 ### Token names your app may already use
 
@@ -163,7 +180,7 @@ Place `ThemeScript` before themed content during server rendering. It reads the 
 
 ### Sections
 
-A section of a page can use its own mode: wrap it in `ThemeProvider` with `mode`, and its menus and dialogs follow. Colors set on a section, such as `.billing { --color-bg-secondary: … }`, apply to the section's own content but not to its menus and dialogs, which render at the end of the page. Set colors page-wide instead. A section sets its mode's tokens again, so a semantic token you change on `:root` alone doesn't reach a light section; set it on `:root, [data-theme='light']` (and dark values on `[data-theme='dark']`). Ramps and brand tokens set on `:root` reach every section.
+A section of a page can use its own mode: wrap it in `ThemeProvider` with `mode`, and its menus and dialogs follow. Colors set on a section, such as `.billing { --color-bg-secondary: … }`, apply to the section's own content but not to its menus and dialogs, which render at the end of the page. Set colors page-wide instead. A section sets its mode's tokens again, so a semantic token you change on `:root` alone doesn't reach a light section; set it on `:root, [data-theme='light']` (and dark values on `[data-theme='dark']`). Ramps and the brand fills (`--color-bg-brand`, `-hover`, `-pressed`, `-secondary`) set on `:root` reach every section.
 
 ## Override FrogBot styles
 
