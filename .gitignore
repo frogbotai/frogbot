@@ -74,3 +74,5 @@ test/e2e/fixtures/*/AGENTS.md
 
 # Scratch space for e2e/unit fixtures (cleaned per test; leftovers after a killed run)
 test/.tmp/
+
+templates/**/**.db
