@@ -4,7 +4,7 @@ import { DefaultCell, TextField, useField, withCondition } from '@payloadcms/ui'
 import { formatPhone, getPhoneHref } from 'frogbot/fields';
 import type { DefaultCellComponentProps, TextFieldClientProps } from 'payload';
 
-import { isEmptyKindValue } from '../kind.js';
+import { isEmptyKindValue, isKindReadOnly } from '../kind.js';
 import { KindFieldLayout } from '../KindFieldLayout/index.client.js';
 import { KindLink } from '../KindLink/index.client.js';
 
@@ -50,5 +50,5 @@ function PhoneReadOnlyComponent(props: TextFieldClientProps) {
 const PhoneReadOnly = withCondition(PhoneReadOnlyComponent);
 
 export function PhoneField(props: TextFieldClientProps) {
-  return props.readOnly ? <PhoneReadOnly {...props} /> : <TextField {...props} />;
+  return isKindReadOnly(props) ? <PhoneReadOnly {...props} /> : <TextField {...props} />;
 }

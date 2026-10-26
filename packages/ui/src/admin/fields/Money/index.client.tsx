@@ -17,7 +17,7 @@ import type {
 import { type ChangeEvent, useCallback } from 'react';
 
 import { Input } from '../../../components/input.js';
-import { getFieldKind } from '../kind.js';
+import { getFieldKind, isKindReadOnly } from '../kind.js';
 import { KindFieldLayout } from '../KindFieldLayout/index.client.js';
 
 type MoneyFieldAdmin = Pick<
@@ -52,7 +52,8 @@ export function MoneyCell(props: DefaultCellComponentProps) {
 }
 
 function MoneyFieldComponent(props: NumberFieldClientProps) {
-  const { field, path: pathFromProps, readOnly, validate } = props;
+  const { field, path: pathFromProps, validate } = props;
+  const readOnly = isKindReadOnly(props);
   const { admin, max, min, required } = field;
   const { autoComplete, placeholder, step = 'any' } = (admin ?? {}) as MoneyFieldAdmin;
 

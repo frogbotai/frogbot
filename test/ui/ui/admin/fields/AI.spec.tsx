@@ -678,6 +678,28 @@ describe('AIField', () => {
     expect(screen.getByRole('button', { name: 'Regenerate' })).toBeTruthy();
   });
 
+  it('disables the input when the field config is read-only', () => {
+    savedDoc();
+
+    const { container } = renderField({
+      field: { ...summaryField, admin: { ...summaryField.admin, readOnly: true } },
+    });
+
+    expect(container.querySelector('input')?.disabled).toBe(true);
+    expect(container.firstElementChild?.classList.contains('read-only')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Regenerate' })).toBeTruthy();
+  });
+
+  it('keeps the input editable when the field config sets readOnly false', () => {
+    savedDoc();
+
+    const { container } = renderField({
+      field: { ...summaryField, admin: { ...summaryField.admin, readOnly: false } },
+    });
+
+    expect(container.querySelector('input')?.disabled).toBe(false);
+  });
+
   it('shows no status line in the create view', () => {
     Object.assign(documentInfo, { collectionSlug: 'tasks', docPermissions: { update: true } });
 
@@ -890,6 +912,22 @@ describe('AIField for a select', () => {
     renderSelect(typeField, { readOnly: true });
 
     expect(selectProps().disabled).toBe(true);
+  });
+
+  it('disables the select when the field config is read-only', () => {
+    savedIssue();
+
+    renderSelect(selectField({ ...typeField, admin: { ...typeField.admin, readOnly: true } }));
+
+    expect(selectProps().disabled).toBe(true);
+  });
+
+  it('keeps the select enabled when the field config sets readOnly false', () => {
+    savedIssue();
+
+    renderSelect(selectField({ ...typeField, admin: { ...typeField.admin, readOnly: false } }));
+
+    expect(selectProps().disabled).toBe(false);
   });
 
   it('fills an unchanged multiple select from the poller', async () => {

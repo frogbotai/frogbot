@@ -76,13 +76,14 @@ function numberField(
   name: string,
   label: string,
   kind: Record<string, unknown>,
+  admin: Partial<NonNullable<NumberFieldClient['admin']>> = {},
 ): NumberFieldClientProps {
   return {
     field: numberFieldClient({
       name,
       type: 'number',
       label,
-      admin: { custom: { frogbot: { kind } } },
+      admin: { ...admin, custom: { frogbot: { kind } } },
     }),
     path: name,
   };
@@ -96,18 +97,45 @@ function numberFieldClient(
   return field as NumberFieldClient;
 }
 
-const percentProps = numberField('progress', 'Progress', { type: 'percent', precision: 1 });
+type NumberAdmin = Partial<NonNullable<NumberFieldClient['admin']>>;
 
-function durationProps(format: 'h:mm' | 'h:mm:ss') {
-  return numberField('timeSpent', 'Time spent', { type: 'duration', format });
+function percentField(admin?: NumberAdmin) {
+  return numberField('progress', 'Progress', { type: 'percent', precision: 1 }, admin);
 }
 
-const ratingProps = numberField('score', 'Score', { type: 'rating', max: 5 });
+const percentProps = percentField();
 
-const phoneProps = {
-  field: { name: 'phone', type: 'text', label: 'Phone' },
-  path: 'phone',
-} as TextFieldClientProps;
+function durationProps(format: 'h:mm' | 'h:mm:ss', admin?: NumberAdmin) {
+  return numberField('timeSpent', 'Time spent', { type: 'duration', format }, admin);
+}
+
+function ratingField(admin?: NumberAdmin) {
+  return numberField('score', 'Score', { type: 'rating', max: 5 }, admin);
+}
+
+const ratingProps = ratingField();
+
+function phoneField(admin?: { readOnly: boolean }): TextFieldClientProps {
+  return {
+    field: { name: 'phone', type: 'text', label: 'Phone', ...(admin ? { admin } : {}) },
+    path: 'phone',
+  };
+}
+
+const phoneProps = phoneField();
+
+const numberKinds = [
+  ['PercentField', PercentField, percentField, 0.425, '.percent-field__value', '42.5%'],
+  [
+    'DurationField',
+    DurationField,
+    (admin?: NumberAdmin) => durationProps('h:mm', admin),
+    5400,
+    '.duration-field__value',
+    '1:30',
+  ],
+  ['RatingField', RatingField, ratingField, 7, '.rating-field__value', '7'],
+] as const;
 
 function input(): HTMLInputElement {
   return screen.getByRole('textbox');
@@ -130,6 +158,26 @@ beforeEach(() => {
   setValue.mockClear();
   TextField.mockClear();
   useField.mockClear();
+});
+
+describe.each(numberKinds)('%s with admin.readOnly', (_, Field, props, value, selector, text) => {
+  it('shows the value as text when the field config is read-only', () => {
+    form.value = value;
+
+    const { container } = render(<Field {...props({ readOnly: true })} />);
+
+    expect(container.querySelector(selector)?.textContent).toBe(text);
+    expect(container.querySelector('input')).toBeNull();
+  });
+
+  it('keeps the input when the field config sets readOnly false', () => {
+    form.value = value;
+
+    const { container } = render(<Field {...props({ readOnly: false })} />);
+
+    expect(container.querySelector('input')).not.toBeNull();
+    expect(container.querySelector(selector)).toBeNull();
+  });
 });
 
 describe('PercentField', () => {
@@ -416,5 +464,22 @@ describe('PhoneField', () => {
     expect(container.querySelector('.phone-field__value')?.textContent).toBe(text);
     expect(container.querySelector('input')).toBeNull();
     expect(TextField).not.toHaveBeenCalled();
+  });
+
+  it('shows the read-only view when the field config is read-only', () => {
+    form.value = '5551234567';
+
+    const { container } = render(<PhoneField {...phoneField({ readOnly: true })} />);
+
+    expect(container.querySelector('.phone-field__value')?.textContent).toBe('(555) 123-4567');
+    expect(TextField).not.toHaveBeenCalled();
+  });
+
+  it('renders the text field when the field config sets readOnly false', () => {
+    const props = phoneField({ readOnly: false });
+
+    render(<PhoneField {...props} />);
+
+    expect(TextField.mock.lastCall?.[0]).toStrictEqual(props);
   });
 });
