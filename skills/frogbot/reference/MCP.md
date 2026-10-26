@@ -2,7 +2,7 @@
 
 Docs: https://docs.frogbot.ai/mcp/overview and https://docs.frogbot.ai/plugins/mcp
 
-`@frogbotai/plugin-mcp` exposes the app's collections to MCP clients over Streamable HTTP. It authenticates requests with hashed, revocable keys from `@frogbotai/plugin-api-keys`; every call runs as the key's owner, under the collections' access control.
+`@frogbotai/plugin-mcp` exposes the app's collections and tools to MCP clients over Streamable HTTP. It authenticates requests with hashed, revocable keys from `@frogbotai/plugin-api-keys`; every call runs as the key's owner, under the collections' access control.
 
 ## Install
 
@@ -43,7 +43,9 @@ export default buildConfig({
 });
 ```
 
-Every app collection is exposed by default, behind its access control; FrogBot's own collections never are. Turn a collection's built-in tools off with `collections: { posts: { tools: { delete: false } } }`. Options: `collections`, `globals`, `tools`, `prompts`, `resources`, `hooks`, `mcp`. Build custom tools with `defineTool` from `@frogbotai/plugin-mcp`.
+Every app collection is exposed by default, behind its access control; FrogBot's own collections never are. Turn a collection's built-in tools off with `collections: { posts: { tools: { delete: false } } }`. Options: `collections`, `tools`, `prompts`, `resources`, `hooks`, `mcp`, `disabled`.
+
+Serve FrogBot tools with `tools: [...]`, the same list an agent's `tools` takes (tools, piece actions, piece instances): `mcpPlugin({ tools: [lookupTicket, slack] })`. Each is named by its `slug`; `ctx.agent` is `{ slug: 'mcp', runId }` with no `chatId`, so chat-bound tools such as `write_todos` fail. A string result is sent as text; anything else as JSON text, plus `structuredContent` for a plain object. Client tools, duplicate slugs, built-in names (`getConfigInfo`, `findDocuments`…) and input schemas that aren't objects or can't become JSON Schema (`z.date()`) are refused. Every key sees every listed tool; to restrict one, check `ctx.req.user` and throw. There is no record form and no `defineTool`.
 
 ## Connect a client
 

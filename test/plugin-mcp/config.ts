@@ -1,3 +1,4 @@
+import { createMathHelper } from '@frogbotai/piece-math-helper';
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { mcpPlugin } from '@frogbotai/plugin-mcp';
 import { rolesPlugin } from '@frogbotai/plugin-roles';
@@ -7,7 +8,10 @@ import {
   durationField,
   moneyField,
   ratingField,
+  type Tool,
 } from 'frogbot';
+import { write_todos } from 'frogbot/tools';
+import { z } from 'zod';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 
@@ -93,32 +97,25 @@ const Tickets: CollectionConfig = {
   fields: [{ name: 'title', type: 'text' }, autonumberField({ name: 'number' })],
 };
 
+const getMcpActor: Tool = {
+  slug: actorToolName,
+  description: 'Returns the authenticated MCP actor.',
+  inputSchema: z.object({}),
+  execute: (_input, { req }) => ({
+    id: req.user?.id,
+    email: req.user?.email,
+    collection: req.user?.collection,
+    strategy: req.user && '_strategy' in req.user ? req.user._strategy : undefined,
+    apiKeyId: req.user && 'apiKeyId' in req.user ? req.user.apiKeyId : undefined,
+  }),
+};
+
 export default await buildTestConfig({
   admin: { user: usersSlug },
   collections: [Users, Posts, Tickets, Secrets],
   plugins: [
     rolesPlugin(),
     apiKeysPlugin({ authCollection: usersSlug, collectionSlug: apiKeysSlug }),
-    mcpPlugin({
-      tools: {
-        [actorToolName]: {
-          description: 'Returns the authenticated MCP actor.',
-          handler: ({ req }) => ({
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify({
-                  id: req.user?.id,
-                  email: req.user?.email,
-                  collection: req.user?.collection,
-                  strategy: req.user?._strategy,
-                  apiKeyId: req.user && 'apiKeyId' in req.user ? req.user.apiKeyId : undefined,
-                }),
-              },
-            ],
-          }),
-        },
-      },
-    }),
+    mcpPlugin({ tools: [getMcpActor, createMathHelper().addNumbers, write_todos] }),
   ],
 });
