@@ -516,21 +516,24 @@ export function searchesArchive(tool: string, input: unknown): boolean {
   return false;
 }
 
-export function isTicketLand(command: string) {
+const LONG_TICKET_COMMANDS = new Set(['land', 'verify']);
+
+export function isLongTicketCommand(command: string) {
   return simpleCommands(command).some((words) => {
     const name = [commandName(words[0]), ...words.slice(1)];
     const args = name[0] === 'node' ? name.slice(1) : name;
+    const long = (word: string | undefined) => word !== undefined && LONG_TICKET_COMMANDS.has(word);
 
     return (
-      (args[0] === 'pnpm' && args[1] === 'ticket' && args[2] === 'land') ||
-      (args[0] === 'pnpm' && args[1] === 'run' && args[2] === 'ticket' && args[3] === 'land') ||
-      (args[0]?.endsWith('ticket.mjs') && args[1] === 'land')
+      (args[0] === 'pnpm' && args[1] === 'ticket' && long(args[2])) ||
+      (args[0] === 'pnpm' && args[1] === 'run' && args[2] === 'ticket' && long(args[3])) ||
+      (args[0]?.endsWith('ticket.mjs') && long(args[1]))
     );
   });
 }
 
 export function shellTimeout(input: { command: string; timeout: number; background: boolean }) {
-  if (isTicketLand(input.command)) return LONG_SHELL_TIMEOUT_MS;
+  if (isLongTicketCommand(input.command)) return LONG_SHELL_TIMEOUT_MS;
   if (input.timeout === 0) return LONG_SHELL_TIMEOUT_MS;
 
   return Math.min(input.timeout, input.background ? LONG_SHELL_TIMEOUT_MS : SHELL_TIMEOUT_MS);

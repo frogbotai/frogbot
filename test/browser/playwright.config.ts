@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 
 import { testPort, testPortOffset } from '../__helpers/shared/testPorts';
+import { freeStalePorts } from './__helpers/freeStalePorts';
 import type { QuestionOptions } from './__helpers/questionTest';
 import { signedOut as signedOutState, type SignInOptions } from './__helpers/signIn';
 import { stopServersOnSignal } from './__helpers/stopServersOnSignal';
@@ -200,6 +201,18 @@ const servers: Record<string, Server> = {
     env: { SIGN_IN_SETUP: signInOnly },
   },
 };
+
+if (!dev && process.env.TEST_WORKER_INDEX === undefined) {
+  freeStalePorts(
+    [
+      chatProviderPort,
+      ...Object.values(servers).flatMap(({ port, modelPort }) =>
+        modelPort ? [port, modelPort] : [port],
+      ),
+    ],
+    repoRoot,
+  );
+}
 
 const serverFor = (project: string) => (dev && servers[project].devServer) || project;
 

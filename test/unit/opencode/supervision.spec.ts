@@ -301,6 +301,14 @@ describe('shellTimeout', () => {
     ['caps a 20 min foreground command at 10 min', 'pnpm test:ui', 20 * MINUTE, false, 10 * MINUTE],
     ['keeps a 1 min timeout', 'pnpm check', MINUTE, false, MINUTE],
     ['gives pnpm ticket land 30 min', 'pnpm ticket land 219', 2 * MINUTE, false, 30 * MINUTE],
+    ['gives pnpm ticket verify 30 min', 'pnpm ticket verify', 5 * MINUTE, false, 30 * MINUTE],
+    [
+      'gives a backgrounded ticket.mjs verify 30 min',
+      'cd x && node scripts/ticket.mjs verify > log',
+      10 * MINUTE,
+      true,
+      30 * MINUTE,
+    ],
     ['gives an unset timeout 30 min', 'pnpm dev', 0, true, 30 * MINUTE],
     ['caps a background command at 30 min', 'pnpm dev', 60 * MINUTE, true, 30 * MINUTE],
   ])('%s', (_name, command, timeout, background, expected) => {
