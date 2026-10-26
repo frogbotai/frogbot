@@ -1,7 +1,8 @@
 'use client';
 
-import { type ComponentType, createElement, isValidElement, type ReactNode } from 'react';
+import { type ComponentType, createElement, type ReactNode } from 'react';
 
+import { isRenderableNode } from '../lib/isRenderableNode.js';
 import { useNavAdapter } from './adapter.js';
 
 export type NavItemIcon = ComponentType<{ className?: string; size?: number }> | ReactNode;
@@ -34,7 +35,7 @@ export function NavItem({ active = false, className, icon, label, path }: NavIte
     >
       {icon ? (
         <span aria-hidden="true" className={`${baseClass}__icon`}>
-          {isValidElement(icon)
+          {isRenderableNode(icon)
             ? icon
             : createElement(icon as ComponentType<{ className?: string; size?: number }>, {
                 className: `${baseClass}__icon-svg`,

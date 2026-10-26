@@ -1,8 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { AccountMenu } from '../../../../packages/ui/src/nav/AccountMenu';
+import { AccountMenu, AccountMenuItem } from '../../../../packages/ui/src/nav/AccountMenu';
 
 const props = {
   accountPath: '/admin/account',
@@ -78,6 +79,43 @@ describe('AccountMenu', () => {
     expect(screen.getByText('Usage remaining')).toBeTruthy();
     expect(screen.getByText('Sign out').getAttribute('href')).toBe('/custom-logout');
     expect(screen.queryByRole('menuitem', { name: 'Log out' })).toBeNull();
+  });
+
+  it('renders a lazy item icon as a node and creates a component icon', async () => {
+    const user = userEvent.setup();
+    const lazyIcon = {
+      $$typeof: Symbol.for('react.lazy'),
+      _init: (payload: ReactNode) => payload,
+      _payload: <svg data-testid="lazy-icon" />,
+    } as unknown as ReactNode;
+
+    const ComponentIcon = (iconProps: { className?: string; size?: number }) => (
+      <svg data-testid="component-icon" {...iconProps} />
+    );
+
+    render(
+      <AccountMenu
+        {...props}
+        beforeMenuItems={
+          <>
+            <AccountMenuItem icon={lazyIcon} label="Lazy" onSelect={vi.fn()} />
+            <AccountMenuItem icon={ComponentIcon} label="Component" onSelect={vi.fn()} />
+          </>
+        }
+      >
+        <button type="button">Open account</button>
+      </AccountMenu>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Open account' }));
+
+    expect(screen.getByTestId('lazy-icon').parentElement?.className).toBe(
+      'fb-account-menu__item-icon',
+    );
+    expect(screen.getByTestId('component-icon').getAttribute('class')).toBe(
+      'fb-account-menu__item-icon',
+    );
+    expect(screen.getByTestId('component-icon').getAttribute('size')).toBe('20');
   });
 
   it('omits the logout row without a path or override', async () => {

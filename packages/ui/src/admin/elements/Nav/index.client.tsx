@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Account,
   Link,
   useNav,
   usePathname,
@@ -9,12 +10,17 @@ import {
   useRouteTransition,
 } from '@payloadcms/ui';
 import { PREFERENCE_KEYS } from 'payload/shared';
+import type { ReactNode } from 'react';
 
 import { NavAdapterProvider, type NavLinkProps } from '../../../nav/adapter.js';
 import { NavShell, type NavShellProps } from '../../../nav/NavShell.js';
 
-export type FrogBotNavClientProps = Omit<NavShellProps, 'navItems' | 'scrollClassName'> & {
+export type FrogBotNavClientProps = Omit<
+  NavShellProps,
+  'accountIcon' | 'navItems' | 'scrollClassName'
+> & {
   accountPath: string;
+  CustomAvatar?: ReactNode;
   items: NonNullable<NavShellProps['navItems']>;
   settingsPath: string;
 };
@@ -24,7 +30,7 @@ function PayloadLink(props: NavLinkProps) {
 }
 
 /** FrogBot's sidebar on Payload's router, preferences and nav state. */
-export function FrogBotNavClient({ items, ...props }: FrogBotNavClientProps) {
+export function FrogBotNavClient({ CustomAvatar, items, ...props }: FrogBotNavClientProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { getPreference, setPreference } = usePreferences();
@@ -45,7 +51,12 @@ export function FrogBotNavClient({ items, ...props }: FrogBotNavClientProps) {
         set: (key, value) => setPreference(key, value, key === PREFERENCE_KEYS.NAV),
       }}
     >
-      <NavShell {...props} navItems={items} scrollClassName="nav__scroll" />
+      <NavShell
+        {...props}
+        accountIcon={CustomAvatar !== undefined ? CustomAvatar : <Account />}
+        navItems={items}
+        scrollClassName="nav__scroll"
+      />
     </NavAdapterProvider>
   );
 }

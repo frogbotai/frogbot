@@ -1,8 +1,17 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactNode } from 'react';
+import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
 import { AppSidebar } from '../../../../packages/ui/src/nav/AppSidebar';
+
+const lazyNode = (node: ReactNode) =>
+  ({
+    $$typeof: Symbol.for('react.lazy'),
+    _init: (payload: ReactNode) => payload,
+    _payload: node,
+  }) as unknown as ReactNode;
 
 const props = {
   accountIcon: <span />,
@@ -52,6 +61,49 @@ describe('AppSidebar', () => {
 
     expect(icon?.getAttribute('class')).toContain('lucide-key-round-icon');
     expect(icon?.getAttribute('class')).not.toContain('lucide-folder-icon');
+  });
+
+  it('renders a lazy account icon instead of the folder fallback', () => {
+    const sidebar = (
+      <AppSidebar {...props} accountIcon={lazyNode(<img alt="avatar" />)} open={false} />
+    );
+
+    const html = renderToString(sidebar);
+    const serverAccount = html.slice(html.indexOf('aria-label="Account"'));
+
+    render(sidebar);
+    const account = screen.getByRole('button', { name: 'Account' });
+
+    expect(serverAccount).toContain('alt="avatar"');
+    expect(serverAccount).not.toContain('lucide-folder-icon');
+    expect(account.querySelector('img[alt="avatar"]')).not.toBeNull();
+    expect(account.querySelector('.lucide-folder-icon')).toBeNull();
+  });
+
+  it('falls back to the folder icon only without an account icon', () => {
+    render(<AppSidebar {...props} accountIcon={undefined} open={false} />);
+
+    expect(
+      screen.getByRole('button', { name: 'Account' }).querySelector('.lucide-folder-icon'),
+    ).not.toBeNull();
+  });
+
+  it('renders a lazy nav item icon as a node', () => {
+    const sidebar = (
+      <AppSidebar
+        {...props}
+        navItems={[{ icon: lazyNode(<img alt="robot" />), label: 'Robot', path: '/robot' }]}
+        open
+      />
+    );
+
+    expect(renderToString(sidebar)).toContain('alt="robot"');
+
+    render(sidebar);
+
+    expect(
+      screen.getByRole('button', { name: 'Robot' }).querySelector('img[alt="robot"]'),
+    ).not.toBeNull();
   });
 
   it('opens when a collapsed sidebar is clicked anywhere', () => {
