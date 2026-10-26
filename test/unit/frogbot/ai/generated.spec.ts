@@ -30,10 +30,10 @@ describe('generated AI model types', () => {
     const ids = catalog.map(({ id }) => id);
 
     expect(ids).toContain('vertex/gemini-3.5-flash');
-    expect(ids).toContain('vertex/claude-sonnet-4-6@default');
+    expect(ids).toContain('vertex/claude-sonnet-4-6');
 
     expectTypeOf<'vertex/gemini-3.5-flash'>().toExtend<CatalogModelId>();
-    expectTypeOf<'vertex/claude-sonnet-4-6@default'>().toExtend<CatalogModelId>();
+    expectTypeOf<'vertex/claude-sonnet-4-6'>().toExtend<CatalogModelId>();
     expectTypeOf<'vertex'>().toExtend<ProviderSlug>();
   });
 

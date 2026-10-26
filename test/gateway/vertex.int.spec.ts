@@ -6,7 +6,7 @@ import { calculateModelCostUSD } from '../../packages/gateway/src/providers/cost
 import type { VertexConfig } from '../../packages/gateway/src/providers/vertex/index.js';
 
 const GEMINI = 'vertex/gemini-3.5-flash';
-const CLAUDE = 'vertex/claude-sonnet-4-6@default';
+const CLAUDE = 'vertex/claude-sonnet-4-6';
 
 const GEMINI_RESPONSE = {
   candidates: [
@@ -137,7 +137,7 @@ describe('Vertex AI provider — wire integration', () => {
     const [call] = captured;
 
     expect(call?.url).toBe(
-      'https://us-east5-aiplatform.googleapis.com/v1/projects/acme/locations/us-east5/publishers/anthropic/models/claude-sonnet-4-6@default:rawPredict',
+      'https://us-east5-aiplatform.googleapis.com/v1/projects/acme/locations/us-east5/publishers/anthropic/models/claude-sonnet-4-6:rawPredict',
     );
     expect(call?.headers.get('authorization')).toBe('Bearer adc-token');
     expect(call?.body.anthropic_version).toBe('vertex-2023-10-16');

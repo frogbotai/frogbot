@@ -185,7 +185,7 @@ describe('logUsage', () => {
       operation: 'chat.completions',
       startedAt: 1,
       context: { req },
-      model: 'vertex/claude-sonnet-4-6@default',
+      model: 'vertex/claude-sonnet-4-6',
       provider: 'vertex',
       usage: { inputTokens: 1000, outputTokens: 100, totalTokens: 1100 },
     } as never);
@@ -194,7 +194,7 @@ describe('logUsage', () => {
 
     const data = create.mock.calls[0]?.[0].data;
 
-    expect(data.model).toBe('vertex/claude-sonnet-4-6@default');
+    expect(data.model).toBe('vertex/claude-sonnet-4-6');
     expect(data.costUSD).toBeGreaterThan(0);
     expect(data.costUSD).not.toBe(0.001);
   });

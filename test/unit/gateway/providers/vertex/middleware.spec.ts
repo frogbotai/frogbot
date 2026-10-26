@@ -140,7 +140,7 @@ describe('vertexBeforeUpstream', () => {
       ],
     };
 
-    const args = makeArgs('vertex/claude-sonnet-4-6@default', {
+    const args = makeArgs('vertex/claude-sonnet-4-6', {
       messages: [message] as BeforeUpstreamHookArgs['messages'],
       providerOptions: { unknown: { reasoning_effort: 'high', prompt_cache_key: 'k' } },
       params: { maxOutputTokens: 10_000 },
@@ -162,7 +162,7 @@ describe('vertexBeforeUpstream', () => {
 
   it('keeps an explicit anthropic.thinking on Claude', async () => {
     const thinking = { type: 'enabled', budgetTokens: 2048 };
-    const args = makeArgs('vertex/claude-sonnet-4-6@default', {
+    const args = makeArgs('vertex/claude-sonnet-4-6', {
       providerOptions: { unknown: { reasoning_effort: 'high' }, anthropic: { thinking } },
     });
 

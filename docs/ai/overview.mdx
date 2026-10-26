@@ -81,7 +81,7 @@ ai: {
 }
 ```
 
-Call Gemini as `vertex/gemini-3.5-flash` and Claude as `vertex/claude-sonnet-4-6@default`. `vertex: true` reads the project and location from `GOOGLE_VERTEX_PROJECT` and `GOOGLE_VERTEX_LOCATION`. Locally, ADC uses the credentials from `gcloud auth application-default login`. In deployment, it uses the attached service account or workload identity, so no key file is needed. Pass `googleAuthOptions`, such as `{ keyFilename }` or `{ credentials }`, to use another identity. ADC needs Node.js, so the `vertex` provider doesn't run on edge runtimes. Before calling Claude, enable each Claude model for the project in the Vertex AI Model Garden, accepting Anthropic's terms there, and make sure the project has quota for it in the Claude location.
+Call Gemini as `vertex/gemini-3.5-flash` and Claude as `vertex/claude-sonnet-4-6`. `vertex: true` reads the project and location from `GOOGLE_VERTEX_PROJECT` and `GOOGLE_VERTEX_LOCATION`. Locally, ADC uses the credentials from `gcloud auth application-default login`. In deployment, it uses the attached service account or workload identity, so no key file is needed. Pass `googleAuthOptions`, such as `{ keyFilename }` or `{ credentials }`, to use another identity. ADC needs Node.js, so the `vertex` provider doesn't run on edge runtimes. Before calling Claude, enable each Claude model for the project in the Vertex AI Model Garden, accepting Anthropic's terms there, and make sure the project has quota for it in the Claude location.
 
 Add an OpenAI-compatible endpoint with any non-built-in key. Its `models` list is required for validation, and calls use the custom key as the provider prefix.
 
@@ -161,7 +161,7 @@ Pass `true` to read the project and location from the environment, or an object 
 | `location` | `string` | Required | Vertex AI location, such as `global` or `us-central1`. Must be non-empty. |
 | `googleAuthOptions` | `GoogleAuthOptions` | Application Default Credentials | Passed unchanged to `google-auth-library`, such as `{ keyFilename }` or `{ credentials }`. |
 | `anthropic` | `{ location: string }` | `location` | Location for Claude models, which share the project and credentials. Set it when a Claude model isn't served from the shared location. |
-| `models` | `string[]` | Every Vertex catalog model | Allowlist of Vertex catalog model names, such as `gemini-3.5-flash` or `claude-sonnet-4-6@default`, as for [built-in providers](#built-in-provider-options). |
+| `models` | `string[]` | Every Vertex catalog model | Allowlist of Vertex catalog model names, such as `gemini-3.5-flash` or `claude-sonnet-4-6`, as for [built-in providers](#built-in-provider-options). |
 
 An `apiKey` or any other key fails startup: Vertex API keys (express mode) don't work for Claude, and the `google` provider already takes a Gemini API key.
 
