@@ -8,7 +8,7 @@ description: >-
 license: MIT
 metadata:
   author: 'frogbotai'
-  version: '0.34.0'
+  version: '0.35.0'
 ---
 
 # FrogBot Application Development
