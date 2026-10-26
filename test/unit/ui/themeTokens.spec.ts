@@ -38,6 +38,7 @@ const oldTokenPattern = new RegExp(
 
 const pageSelector = ':where(html:not([data-fb-ui-page]))';
 const payloadTokensPath = join(root, 'packages/ui/src/payload-tokens.css');
+const brandColorsPath = join(root, 'packages/ui/src/brand-colors.css');
 
 const removedTokenPattern = new RegExp(
   [
@@ -223,9 +224,10 @@ describe('FrogBot cascade layers', () => {
 
   it('keeps the reset in its own layer, in reset.css only', () => {
     expect(readTopLevelBlocks(resetPath)).toEqual(['@layer frogbot-reset']);
-    expect(readImports(stylesPath).slice(0, 3)).toEqual([
+    expect(readImports(stylesPath).slice(0, 4)).toEqual([
       layerOrderFiles[0],
       payloadTokensPath,
+      brandColorsPath,
       resetPath,
     ]);
   });
@@ -297,7 +299,7 @@ describe('FrogBot theme tokens', () => {
     expect(offenders.map((file) => relative(root, file))).toEqual([]);
   });
 
-  it('declares color tokens only in payload-tokens.css, and only names the admin declares', () => {
+  it('declares color tokens only in payload-tokens.css and brand tokens in brand-colors.css', () => {
     const payloadNames = readDeclaredNames(payloadTokensPath);
     const colorName = (name: string) =>
       payloadNames.has(name) || /^--(?:color|ramp|elevation|special|field-color)-/.test(name);
@@ -307,12 +309,33 @@ describe('FrogBot theme tokens', () => {
       .flatMap((file) =>
         [...readDeclaredNames(file)]
           .filter(colorName)
+          .filter(
+            (name) => file !== brandColorsPath || !/brand/.test(name) || !adminNames.has(name),
+          )
           .map((name) => `${relative(root, file)}: ${name}`),
       );
 
     expect(payloadNames.has('--color-bg')).toBe(true);
     expect([...payloadNames].filter((name) => !adminNames.has(name))).toEqual([]);
     expect(offenders).toEqual([]);
+  });
+
+  it("sets FrogBot's brand on Payload's own brand tokens, light and dark", () => {
+    const rules = parseRules(stripComments(readFileSync(brandColorsPath, 'utf8')));
+    const page = rules.find((rule) => rule.selectors.join() === ':root');
+    const light = rules.find((rule) => rule.selectors.includes('[data-theme="light"]'));
+    const dark = rules.find((rule) => rule.selectors.includes('[data-theme="dark"]'));
+
+    expect(rules.every((rule) => rule.layer === 'theme.frogbot')).toBe(true);
+    expect(light?.selectors).toEqual([':root', '[data-theme="light"]']);
+    expect(page?.declarations.get('--color-bg-brand')).toBe('#2f964f');
+    expect([...(light?.declarations.keys() ?? [])].sort()).toEqual(
+      [...(dark?.declarations.keys() ?? [])].sort(),
+    );
+    expect(dark?.declarations.get('--color-text-brand')).toBe('#67c285');
+    expect([...readDeclaredNames(brandColorsPath)].filter((name) => !/brand/.test(name))).toEqual(
+      [],
+    );
   });
 
   it('declares the Payload tokens outside the admin only, the light section aside', () => {
