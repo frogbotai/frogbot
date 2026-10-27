@@ -1131,9 +1131,10 @@ async function landRound({ main, repo, found, key, dir, branch }) {
         .filter((text) => text.trim()),
     );
 
-  const problem = message && checkCommitMessage(message);
+  const landed = message || (ahead === 1 && gitOut(dir, ['log', '-1', '--format=%B']));
+  const problem = landed && checkCommitMessage(landed);
 
-  if (problem) refuse(`the squash message: ${problem}`);
+  if (problem) refuse(`the ${message ? 'squash' : 'commit'} message: ${problem}`);
 
   const files = lines(gitOut(dir, ['diff', '--name-only', `${MAIN}...HEAD`]));
   const tier = tierOf(found.plan == null ? null : parseTouches(found.plan));
