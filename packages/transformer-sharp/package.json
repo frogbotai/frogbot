@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/transformer-sharp",
-  "version": "0.35.0",
+  "version": "0.36.0",
   "description": "Sharp image resizing for FrogBot uploads.",
   "license": "MIT",
   "author": "Colby Gilbert",

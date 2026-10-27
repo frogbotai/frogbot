@@ -2405,11 +2405,6 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/ibm-granite/granite-4.0-h-micro",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/ibm-granite/granite-4.2-8b",
     "provider": "openrouter",
     "mode": "chat"
@@ -3076,6 +3071,11 @@
   },
   {
     "id": "openrouter/openai/gpt-6.1-terra",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/openai/gpt-6.1-terra-pro",
     "provider": "openrouter",
     "mode": "chat"
   },
