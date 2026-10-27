@@ -41,12 +41,17 @@ export function ensureFrogBotInstance(
   init: () => Promise<FrogBot>,
   config?: FrogBotSanitizedConfig,
 ): Promise<FrogBot> {
+  const registered = instances.get(payload);
   const pending = promises.get(payload);
+
   if (pending) {
+    if (registered && (!config || registered.config === config)) {
+      return Promise.resolve(registered.frogbot);
+    }
+
     return config ? pending.then(() => ensureFrogBotInstance(payload, init, config)) : pending;
   }
 
-  const registered = instances.get(payload);
   const refresh = registered?.refresh;
 
   if (registered && (!config || !registered.config || !refresh || registered.config === config)) {

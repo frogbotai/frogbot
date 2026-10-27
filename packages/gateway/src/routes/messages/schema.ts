@@ -267,6 +267,10 @@ export const messagesRequestSchema = z
 
     tools: z.array(toolDefinitionSchema).nullish(),
     tool_choice: z.unknown().nullish(),
+    providerOptions: z
+      .object({ gateway: z.record(z.string(), z.unknown()).nullish() })
+      .loose()
+      .nullish(),
   })
   .loose();
 

@@ -79,6 +79,66 @@ describe('ensureFrogBotInstance', () => {
     expect(refresh).toHaveBeenCalledWith(secondConfig);
   });
 
+  it('returns the registered instance to a same-config call while its init is pending', async () => {
+    const payload = {};
+    const config = {} as FrogBotSanitizedConfig;
+    const frogbot = {} as FrogBot;
+    let resolve!: () => void;
+    const pending = new Promise<void>((done) => {
+      resolve = done;
+    });
+
+    let inner: Promise<FrogBot> | undefined;
+    const init = vi.fn(async () => {
+      registerFrogBotInstance(payload, frogbot, config, vi.fn());
+      inner = ensureFrogBotInstance(payload, init, config);
+      await pending;
+
+      return frogbot;
+    });
+
+    const outer = ensureFrogBotInstance(payload, init, config);
+
+    await expect(inner).resolves.toBe(frogbot);
+    await expect(ensureFrogBotInstance(payload, init)).resolves.toBe(frogbot);
+
+    resolve();
+
+    await expect(outer).resolves.toBe(frogbot);
+    expect(init).toHaveBeenCalledOnce();
+  });
+
+  it('makes a different-config call wait for the pending init', async () => {
+    const payload = {};
+    const firstConfig = {} as FrogBotSanitizedConfig;
+    const secondConfig = {} as FrogBotSanitizedConfig;
+    const frogbot = {} as FrogBot;
+    let resolve!: () => void;
+    const pending = new Promise<void>((done) => {
+      resolve = done;
+    });
+
+    const refresh = vi.fn(() => Promise.resolve());
+    const init = vi.fn(async () => {
+      registerFrogBotInstance(payload, frogbot, firstConfig, refresh);
+      await pending;
+
+      return frogbot;
+    });
+
+    const first = ensureFrogBotInstance(payload, init, firstConfig);
+    const second = ensureFrogBotInstance(payload, init, secondConfig);
+    await Promise.resolve();
+
+    expect(refresh).not.toHaveBeenCalled();
+
+    resolve();
+
+    await expect(first).resolves.toBe(frogbot);
+    await expect(second).resolves.toBe(frogbot);
+    expect(refresh).toHaveBeenCalledExactlyOnceWith(secondConfig);
+  });
+
   it('refreshes a registered instance through its entry when the instance is not from this module', async () => {
     const payload = {};
     const firstConfig = {} as FrogBotSanitizedConfig;

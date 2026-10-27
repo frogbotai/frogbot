@@ -1,3 +1,4 @@
+import type { JSONValue } from 'ai';
 import { z } from 'zod';
 
 import { RequestValidationError } from '../errors/gatewayError.js';
@@ -11,6 +12,26 @@ export function snakeToCamel(s: string): string {
 /** Convert a camelCase string to snake_case. */
 export function camelToSnake(s: string): string {
   return s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+}
+
+/**
+ * Collect the top-level body keys a route doesn't handle, for `providerOptions.unknown`, so
+ * aggregator routing options such as Vercel's `gateway` or OpenRouter's `provider` reach the
+ * provider hooks.
+ */
+export function collectPassthroughParams(
+  body: Record<string, unknown>,
+  handled: ReadonlySet<string>,
+): Record<string, JSONValue> {
+  const rest: Record<string, JSONValue> = {};
+
+  for (const [key, value] of Object.entries(body)) {
+    if (handled.has(key) || value === undefined || value === null) continue;
+
+    rest[key] = value as JSONValue;
+  }
+
+  return rest;
 }
 
 const EFFORT_BUDGET_FRACTIONS: Record<string, number> = {

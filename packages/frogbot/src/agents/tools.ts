@@ -1,9 +1,13 @@
-import type { ModelMessage, Tool, ToolSet } from 'ai';
+import type { JSONValue, ModelMessage, Tool, ToolSet } from 'ai';
 import { tool as aiTool } from 'ai';
 import { z } from 'zod';
 
-import type { AnyTool, ToolCtx } from '../tools/types.js';
+import type { AnyTool, ToolCtx, ToolOutputLimits } from '../tools/types.js';
 import { isClientTool } from '../tools/types.js';
+
+export const MAX_TOOL_OUTPUT_LINES = 2000;
+
+export const MAX_TOOL_OUTPUT_BYTES = 50 * 1024;
 
 export const SKIPPED_FOR_CLIENT_INPUT = {
   skipped: true,
@@ -48,6 +52,9 @@ export function toAISDKTools(
             contextSchema: z.custom<ToolCtx>(),
             execute: (input, { context, messages }) =>
               skip?.(messages) ? SKIPPED_FOR_CLIENT_INPUT : t.execute(input, context),
+            ...(t.maxOutput !== false && {
+              toModelOutput: ({ output }) => capToolOutput(output, t.maxOutput || {}),
+            }),
           }),
     ]),
   );
@@ -60,4 +67,43 @@ export function toAISDKToolsContext(
   return Object.fromEntries(
     (tools ?? []).filter((t) => !isClientTool(t)).map((t) => [t.slug, ctx]),
   );
+}
+
+function capToolOutput(
+  output: unknown,
+  {
+    lines: maxLines = MAX_TOOL_OUTPUT_LINES,
+    bytes: maxBytes = MAX_TOOL_OUTPUT_BYTES,
+  }: ToolOutputLimits,
+) {
+  const text = typeof output === 'string' ? output : (JSON.stringify(output, null, 2) ?? 'null');
+  const lines = text.split('\n');
+
+  if (text.endsWith('\n')) lines.pop();
+
+  if (lines.length <= maxLines && Buffer.byteLength(text, 'utf8') <= maxBytes) {
+    return typeof output === 'string'
+      ? { type: 'text' as const, value: output }
+      : { type: 'json' as const, value: JSON.parse(text) as JSONValue };
+  }
+
+  const kept: string[] = [];
+  let bytes = 0;
+
+  for (const line of lines.slice(0, maxLines)) {
+    const size = Buffer.byteLength(line, 'utf8') + (kept.length > 0 ? 1 : 0);
+
+    if (bytes + size > maxBytes) break;
+
+    kept.push(line);
+    bytes += size;
+  }
+
+  const shown = kept.length > 0 ? `lines 1-${kept.length}` : '0 lines';
+  const marker = `[showing ${shown} of ${lines.length}; output truncated]`;
+
+  return {
+    type: 'text' as const,
+    value: kept.length > 0 ? `${kept.join('\n')}\n${marker}` : marker,
+  };
 }

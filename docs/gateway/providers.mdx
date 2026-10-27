@@ -192,7 +192,7 @@ createGateway({
 
 For Anthropic, OpenAI, and Google models, reasoning and cache options are translated as they are for the direct provider. For example, chat `reasoning_effort` on a Claude model becomes a thinking budget, and `cache_control` markers become Anthropic cache control.
 
-Pass [AI Gateway routing options](https://vercel.com/docs/ai-gateway/models-and-providers/provider-options) such as `order`, `only`, and `models` in a `gateway` field on `/v1/chat/completions`, or set `providerOptions.gateway` in a [`beforeUpstream` hook](/gateway/hooks). They reach AI Gateway unchanged:
+Pass [AI Gateway routing options](https://vercel.com/docs/ai-gateway/models-and-providers/provider-options) such as `order`, `only`, and `models` in a `gateway` field on `/v1/chat/completions`, `/v1/messages` or `/v1/responses`, or set `providerOptions.gateway` in a [`beforeUpstream` hook](/gateway/hooks). `/v1/messages` also accepts them as `providerOptions.gateway` in the body, as AI Gateway's Anthropic API does. They reach AI Gateway unchanged:
 
 ```json
 {
@@ -246,7 +246,7 @@ providers: {
 
 Reasoning requests from every route become OpenRouter's `reasoning` option: `reasoning_effort` on `/v1/chat/completions`, `thinking` on `/v1/messages`, and `reasoning.effort` on `/v1/responses`. Disabled thinking is sent as effort `none`. Anthropic-style `cache_control` markers on messages and content parts reach OpenRouter unchanged.
 
-On `/v1/chat/completions`, OpenRouter's own request fields pass through unchanged, for example `provider: { order: ['anthropic'], allow_fallbacks: false }`, `models` fallbacks, `plugins`, or a native `reasoning` object, which takes priority over `reasoning_effort`. `/v1/messages` and `/v1/responses` don't forward unknown request fields; use a [`beforeUpstream` hook](/gateway/hooks) to set `providerOptions.openrouter` there.
+On every route, OpenRouter's own request fields pass through unchanged, for example `provider: { order: ['anthropic'], allow_fallbacks: false }`, `models` fallbacks, `plugins`, or, on `/v1/chat/completions`, a native `reasoning` object, which takes priority over `reasoning_effort`.
 
 OpenRouter embeddings are not supported; `/v1/embeddings` with an `openrouter/...` model returns an error.
 

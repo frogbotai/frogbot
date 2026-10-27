@@ -515,3 +515,67 @@ describe('withFrogBot', () => {
     expect(libsqlIncludes(config)).toEqual([]);
   });
 });
+
+describe('withFrogBot cacheComponents', () => {
+  const rule = '**/{layout,page}.{js,jsx,ts,tsx,mjs,mts,cjs,cts}';
+
+  type WebpackRule = { exclude?: RegExp; test?: RegExp; use?: string[] };
+
+  const isFrogBotLoader = (loader: unknown) =>
+    typeof loader === 'string' && /packages[/\\]next[/\\]src[/\\]instantLoader\.js$/.test(loader);
+
+  function webpackRules(config: ReturnType<typeof withFrogBot>): WebpackRule[] {
+    const result = config.webpack?.({ module: { rules: ['user-rule'] }, resolve: { alias: {} } }, {
+      webpack: { IgnorePlugin: class {} },
+    } as never);
+
+    return result?.module?.rules ?? [];
+  }
+
+  it('adds the FrogBot instant loader for Turbopack after the app rules', () => {
+    const config = withFrogBot({
+      cacheComponents: true,
+      turbopack: { rules: { [rule]: { loaders: ['user-loader'] }, '*.svg': ['svg-loader'] } },
+    });
+
+    const rules = config.turbopack?.rules?.[rule] as {
+      condition?: { all: [unknown, { content: RegExp }] };
+      loaders?: string[];
+    }[];
+
+    const frogbot = rules.find(({ loaders }) => loaders?.some(isFrogBotLoader));
+
+    expect(rules[0]).toEqual({ loaders: ['user-loader'] });
+    expect(config.turbopack?.rules?.['*.svg']).toEqual(['svg-loader']);
+    expect(frogbot?.condition?.all[0]).toEqual({ not: 'foreign' });
+    expect(frogbot?.condition?.all[1].content.test(`from '@frogbotai/next/layouts'`)).toBe(true);
+    expect(frogbot?.condition?.all[1].content.test(`from "@frogbotai/next/views"`)).toBe(true);
+    expect(frogbot?.condition?.all[1].content.test(`from '@frogbotai/next/routes'`)).toBe(false);
+  });
+
+  it('adds the FrogBot instant loader for webpack after the app config runs', () => {
+    const webpack = vi.fn((config: { module?: { rules?: unknown[] } }) => ({
+      ...config,
+      module: { rules: [...(config.module?.rules ?? []), 'app-webpack-rule'] },
+    }));
+
+    const config = withFrogBot({ cacheComponents: true, webpack });
+    const rules = webpackRules(config);
+    const frogbot = rules.find(({ use }) => use?.some(isFrogBotLoader));
+
+    expect(webpack).toHaveBeenCalledOnce();
+    expect(rules.slice(0, 2)).toEqual(['user-rule', 'app-webpack-rule']);
+    expect(frogbot).toMatchObject({ enforce: 'pre', exclude: /node_modules/ });
+    expect(frogbot?.test?.test('/app/(frogbot)/layout.tsx')).toBe(true);
+    expect(frogbot?.test?.test('/app/(frogbot)/[[...segments]]/page.ts')).toBe(true);
+    expect(frogbot?.test?.test('/app/(frogbot)/[[...segments]]/not-found.tsx')).toBe(false);
+    expect(frogbot?.exclude?.test('/app/node_modules/@frogbotai/next/dist/layout.js')).toBe(true);
+  });
+
+  it('adds no FrogBot instant loader with cacheComponents off', () => {
+    const config = withFrogBot({ turbopack: { rules: { '*.svg': ['svg-loader'] } } });
+
+    expect(config.turbopack?.rules).toEqual({ '*.svg': ['svg-loader'] });
+    expect(webpackRules(config).some(({ use }) => use?.some(isFrogBotLoader))).toBe(false);
+  });
+});

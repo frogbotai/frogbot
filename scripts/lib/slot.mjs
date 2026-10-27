@@ -14,7 +14,7 @@ export const LAND_LOCK = {
   noun: 'the land lock',
 };
 
-const alive = (pid) => {
+export const alive = (pid) => {
   try {
     return process.kill(pid, 0);
   } catch (error) {

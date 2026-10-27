@@ -328,6 +328,63 @@ describe('responsesRoute', () => {
   });
 });
 
+describe('responsesRoute passthrough', () => {
+  async function callResponses(model: string, modelName: string, body: Record<string, unknown>) {
+    const doGenerate = mockDoGenerate(
+      generateResult({ content: [{ type: 'text', text: 'hello' }] }),
+    );
+
+    const app = createApp({
+      registry: {
+        [model.split('/')[0]]: new MockProviderV4({
+          languageModels: { [modelName]: new MockLanguageModelV4({ doGenerate }) },
+        }),
+      } as unknown as ProviderRegistry,
+    });
+
+    const res = await app.request('/v1/responses', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model, input: 'hi', ...body }),
+    });
+
+    expect(res.status).toBe(200);
+
+    return firstCallOptions(doGenerate).providerOptions;
+  }
+
+  it('moves a top-level gateway field to providerOptions.gateway on Vercel', async () => {
+    const providerOptions = await callResponses('vercel/acme/model', 'acme/model', {
+      gateway: { order: ['bedrock', 'anthropic'] },
+    });
+
+    expect(providerOptions?.gateway).toEqual({ order: ['bedrock', 'anthropic'] });
+  });
+
+  it('forwards OpenRouter provider, models and plugins', async () => {
+    const providerOptions = await callResponses('openrouter/acme/model', 'acme/model', {
+      provider: { order: ['anthropic'], allow_fallbacks: false },
+      models: ['acme/model', 'acme/backup'],
+      plugins: [{ id: 'web' }],
+    });
+
+    expect(providerOptions?.openrouter).toEqual({
+      provider: { order: ['anthropic'], allow_fallbacks: false },
+      models: ['acme/model', 'acme/backup'],
+      plugins: [{ id: 'web' }],
+    });
+  });
+
+  it('keeps reasoning effort out of the passthrough for other providers', async () => {
+    const providerOptions = await callResponses('google/gemini', 'gemini', {
+      reasoning: { effort: 'high' },
+      some_other_field: 'preserved',
+    });
+
+    expect(providerOptions?.google).toEqual({ someOtherField: 'preserved' });
+  });
+});
+
 describe('forwardResponseParams', () => {
   const parse = (body: Record<string, unknown>) =>
     parseResponsesRequest({ model: 'x', input: 'hi', ...body });

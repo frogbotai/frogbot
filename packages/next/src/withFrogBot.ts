@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, realpathSync, symlinkSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { withPayload } from '@payloadcms/next/withPayload';
 import type { NextConfig } from 'next';
@@ -30,6 +31,12 @@ const ALWAYS_SERVER_PACKAGES = ['@frogbotai/gateway'];
 const NATIVE_EXTERNALS = ['@basetenlabs/performance-client'];
 
 const RUNTIME_IMPORT_PACKAGES = ['file-type', 'sharp'];
+
+type TurbopackRules = NonNullable<NonNullable<NextConfig['turbopack']>['rules']>;
+
+type TurbopackRuleEntry = Extract<TurbopackRules[string], unknown[]>[number];
+
+const INSTANT_LOADER_RULE = '**/{layout,page}.{js,jsx,ts,tsx,mjs,mts,cjs,cts}';
 
 type ExternalData = { context?: string; request?: string };
 
@@ -163,6 +170,9 @@ export function withFrogBot(
   options: WithFrogBotOptions = {},
 ): NextConfig {
   const platformPlugin = resolvePlatformPlugin();
+  const instantLoader = nextConfig.cacheComponents
+    ? fileURLToPath(new URL('./instantLoader.js', import.meta.url))
+    : undefined;
 
   const frogbotConfig: NextConfig = {
     ...nextConfig,
@@ -182,6 +192,25 @@ export function withFrogBot(
         '@payloadcms/ui': getProjectRelativePath(PAYLOAD_UI_ROOT),
         ...(platformPlugin && { [PLATFORM_PLUGIN]: getProjectRelativePath(platformPlugin) }),
       },
+      ...(instantLoader && {
+        rules: {
+          ...nextConfig.turbopack?.rules,
+          [INSTANT_LOADER_RULE]: [
+            ...([] as TurbopackRuleEntry[]).concat(
+              nextConfig.turbopack?.rules?.[INSTANT_LOADER_RULE] ?? [],
+            ),
+            {
+              condition: {
+                all: [
+                  { not: 'foreign' },
+                  { content: /['"]@frogbotai\/next\/(?:layouts|views)['"]/ },
+                ],
+              },
+              loaders: [instantLoader],
+            },
+          ],
+        },
+      }),
     },
     outputFileTracingIncludes: {
       ...nextConfig.outputFileTracingIncludes,
@@ -201,6 +230,20 @@ export function withFrogBot(
 
       return {
         ...incoming,
+        ...(instantLoader && {
+          module: {
+            ...incoming?.module,
+            rules: [
+              ...(incoming?.module?.rules || []),
+              {
+                enforce: 'pre',
+                exclude: /node_modules/,
+                test: /[/\\](layout|page)\.(?:[cm]?[jt]s|[jt]sx)$/,
+                use: [instantLoader],
+              },
+            ],
+          },
+        }),
         externals: [
           ...(webpackOptions?.isServer && webpackOptions.nextRuntime === 'nodejs' && outputPath
             ? [runtimeImportExternal(join(dirname(outputPath), 'node_modules'))]
