@@ -385,7 +385,11 @@ describe('chat turns: recovery, access, and forged input', () => {
     expect(status).toBe(200);
     expect(body.status).toBe('completed');
     expect(reply?.parts).toContainEqual(
-      expect.objectContaining({ type: 'tool-lookup', state: 'output-error' }),
+      expect.objectContaining({
+        type: 'tool-lookup',
+        state: 'output-error',
+        errorText: expect.stringContaining(`No results for ${unavailableTopic}.`),
+      }),
     );
     expect(JSON.stringify(toolResult?.content)).toContain(`No results for ${unavailableTopic}.`);
   });

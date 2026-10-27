@@ -14,6 +14,7 @@ import {
   formatTable,
   hasTesterRow,
   installAfterLand,
+  installAfterRebase,
   keyOfWorktree,
   landLevel,
   lanes,
@@ -722,6 +723,26 @@ describe('affectedRuns', () => {
 describe('tail', () => {
   it('keeps the last non-empty lines', () => {
     expect(tail('a\n\nb\nc\n', 2)).toEqual(['b', 'c']);
+  });
+});
+
+describe('installAfterRebase', () => {
+  const install = () => ({ ok: true, output: 'done' });
+
+  it('installs in the worktree when the rebase brought a lockfile or package.json change', () => {
+    expect(installAfterRebase({ files: ['pnpm-lock.yaml'], install })).toEqual({
+      ran: true,
+      ok: true,
+      output: 'done',
+    });
+  });
+
+  it('skips when the rebase brought no dependency change', () => {
+    expect(installAfterRebase({ files: ['scripts/ticket.mjs'], install })).toEqual({
+      ran: false,
+      ok: true,
+      output: '',
+    });
   });
 });
 

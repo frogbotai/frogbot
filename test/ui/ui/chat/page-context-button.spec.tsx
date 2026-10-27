@@ -37,7 +37,7 @@ describe('PageContextButton', () => {
 
     fireEvent.mouseDown(document.body);
 
-    expect(screen.queryByText('Example tab')).toBeNull();
+    await waitFor(() => expect(screen.queryByText('Example tab')).toBeNull());
   });
 
   it('removes selected tab context', async () => {

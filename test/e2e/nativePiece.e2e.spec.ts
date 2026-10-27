@@ -497,7 +497,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
 
     expect(generated.part).toMatchObject({
       state: 'output-error',
-      errorText: 'An error occurred.',
+      errorText: expect.stringContaining("Connection for 'resend' is not linked."),
     });
     expect(generated.body.text).toContain("Connection for 'resend' is not linked.");
     expect(providers.requests.resend).toHaveLength(2);
@@ -591,7 +591,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
 
       expect(generated.part).toMatchObject({
         state: 'output-error',
-        errorText: 'An error occurred.',
+        errorText: expect.stringContaining(result.body.error),
       });
       expect(generated.body.text).toContain(result.body.error);
       expect(providers.requests.resend).toHaveLength(2);
@@ -607,7 +607,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
     const generated = await agent({ user: alice, input });
 
     expect(generated.part.state).toBe('output-error');
-    expect(generated.part.errorText).toBe('An error occurred.');
+    expect(generated.part.errorText).toContain('Invalid input for tool mail_send');
     expect(generated.body.text).toContain('content_type');
     expect(providers.requests.resend).toEqual([]);
   });
@@ -626,7 +626,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
 
       expect(generated.part).toMatchObject({
         state: 'output-error',
-        errorText: 'An error occurred.',
+        errorText: `Error: ${error}`,
       });
       expect(generated.body.text).toContain(error);
       expect(providers.requests.resend).toHaveLength(2);

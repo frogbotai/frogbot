@@ -40,10 +40,12 @@
     "drizzle-orm": "0.45.2"
   },
   "peerDependencies": {
-    "frogbot": "workspace:*"
+    "frogbot": "workspace:*",
+    "payload": "catalog:"
   },
   "devDependencies": {
     "frogbot": "workspace:*",
+    "payload": "catalog:",
     "typescript": "catalog:"
   },
   "publishConfig": {

@@ -218,6 +218,24 @@ describe('AppSidebar', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
+  it('does not expand a collapsed sidebar from a bottom rail click', async () => {
+    const user = userEvent.setup();
+    const onToggle = vi.fn();
+
+    render(
+      <AppSidebar
+        {...props}
+        beforeBottomRail={<button type="button">Theme</button>}
+        onToggle={onToggle}
+        open={false}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Theme' }));
+
+    expect(onToggle).not.toHaveBeenCalled();
+  });
+
   it('renders sections, shell slots, and bottom rail items', () => {
     const { rerender } = render(
       <AppSidebar

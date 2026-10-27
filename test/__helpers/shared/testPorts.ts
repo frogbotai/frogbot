@@ -12,6 +12,9 @@ export const fetchBlockedPorts = new Set([
   995, 1719, 1720, 1723, 2049, 3659, 4045, 4190, 5060, 5061, 6000, 6566, 6665, 6666, 6667, 6668,
   6669, 6679, 6697, 10080,
 ]);
+export const servicePorts = new Set([
+  3100, 3306, 4443, 4566, 5432, 5433, 6379, 10000, 27017, 27018, 27019,
+]);
 const blockedPortShift = 20_000;
 
 export function getTestPortOffset({
@@ -52,7 +55,7 @@ export const testPortOffset = getTestPortOffset({
 export function testPort(base: number, offset = testPortOffset): number {
   const port = base + offset;
 
-  return fetchBlockedPorts.has(port) ? port + blockedPortShift : port;
+  return fetchBlockedPorts.has(port) || servicePorts.has(port) ? port + blockedPortShift : port;
 }
 
 export function testDatabaseName(name: string): string {

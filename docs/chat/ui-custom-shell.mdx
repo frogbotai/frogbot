@@ -43,7 +43,7 @@ export function CustomShell() {
 | `submitContent` | `ReactNode` | Required | Accessible label for the send button. |
 | `stopContent` | `ReactNode` | Required | Accessible label for the stop button. |
 | `onBeforeSubmit` | `(prompt: ComposerSubmission) => boolean \| Promise<boolean>` | — | Called before each send with `{ text, mentions, attachments }`, also while `pending` without `onQueue`. Return `true` to handle it yourself: the text clears and attachments stay. See [Typed commands](/chat/ui-chat#typed-commands). |
-| `onError` | `(error: Error) => void` | — | Called when `onBeforeSubmit` or a command rejects. |
+| `onError` | `(error: Error, source: 'command' \| 'message') => void` | — | Called when a send, `onBeforeSubmit` or a command rejects. `source` is `'message'` for a send and `'command'` for the others. |
 | `defaultValue` | `string` | `''` | Initial text. |
 | `placeholder` | `string` | — | Shown while the input is empty. |
 | `aria-label` | `string` | `'Message'` | Accessible name of the input. |

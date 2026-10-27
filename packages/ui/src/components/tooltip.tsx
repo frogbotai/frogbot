@@ -2,7 +2,7 @@
 
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import type { ComponentPropsWithRef, ReactElement, ReactNode } from 'react';
-import { useId } from 'react';
+import { useId, useState } from 'react';
 
 import { PortalTheme } from '../theme/provider.js';
 
@@ -56,9 +56,14 @@ export function Tooltip({
   side = 'top',
   ...triggerProps
 }: TooltipProps) {
+  const [hovered, setHovered] = useState(false);
+
   return (
     <TooltipPrimitive.Provider delayDuration={delay} disableHoverableContent>
-      <TooltipPrimitive.Root open={disabled ? false : open}>
+      <TooltipPrimitive.Root
+        onOpenChange={(next) => setHovered(next && !disabled)}
+        open={!disabled && (open ?? hovered)}
+      >
         <TooltipPrimitive.Trigger asChild {...triggerProps}>
           {children}
         </TooltipPrimitive.Trigger>

@@ -68,7 +68,8 @@ export interface ComposerProps {
   modelInputs?: readonly ComposerModelInput[];
   modelName?: string;
   onBeforeSubmit?: (prompt: ComposerSubmission) => boolean | Promise<boolean>;
-  onError?: (error: Error) => void;
+  /** Called when a send, `onBeforeSubmit` or a command fails; `source` is `'message'` for a send. */
+  onError?: (error: Error, source: 'command' | 'message') => void;
   onFilledChange?: (filled: boolean) => void;
   /** Takes sends and `queue` commands while `queueing`; without it they wait as before. */
   onQueue?: (entry: ComposerQueued) => void;
@@ -167,7 +168,8 @@ export function Composer({
 
   const clearText = () => editorRef.current?.update(() => $writePrompt(emptyPrompt));
 
-  const fail = (error: unknown) => onError?.(toError(error));
+  const fail = (source: 'command' | 'message') => (error: unknown) =>
+    onError?.(toError(error), source);
 
   const runCommand = (command: ComposerCommand, input: string) => {
     const { queue } = state.current;
@@ -185,7 +187,7 @@ export function Composer({
 
     void Promise.resolve()
       .then(() => command.execute(input))
-      .catch(fail);
+      .catch(fail('command'));
   };
 
   const enqueue = (next: ComposerPrompt) => {
@@ -223,7 +225,7 @@ export function Composer({
       .then(
         () => state.current.attachments.clear(sent),
         (error: unknown) => {
-          fail(error);
+          fail('message')(error);
           restore(next, sent);
         },
       )
@@ -288,7 +290,7 @@ export function Composer({
         },
         (error: unknown) => {
           submitting.current = false;
-          fail(error);
+          fail('command')(error);
         },
       );
   };

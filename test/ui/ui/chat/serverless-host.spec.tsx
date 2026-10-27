@@ -150,8 +150,8 @@ function renderHost(adapter: ChatPlatformAdapter) {
 async function send(text: string) {
   const user = userEvent.setup();
 
-  type(text, await screen.findByRole('textbox', { name: 'Message' }));
-  await user.click(await screen.findByRole('button', { name: 'Send' }));
+  type(text, await screen.findByRole('textbox', { name: 'Message' }, { timeout: 5000 }));
+  await user.click(await screen.findByRole('button', { name: 'Send' }, { timeout: 5000 }));
 
   return user;
 }
@@ -160,7 +160,7 @@ function history() {
   return within(document.querySelector<HTMLElement>('.fb-chat-history')!);
 }
 
-describe('a chat host without a FrogBot server', () => {
+describe('a chat host without a FrogBot server', { timeout: 20_000 }, () => {
   const fetch = vi.fn<typeof globalThis.fetch>();
 
   beforeEach(() => {

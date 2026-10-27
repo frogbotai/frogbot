@@ -27,13 +27,18 @@ import { getTemplate } from '../../../packages/create-frogbot-app/src/templates.
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const template = path.join(repoRoot, 'templates', 'blank');
 const roots: string[] = [];
+const buildOutput = new Set(['.next', 'node_modules']);
 
 function copyTemplate(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'create-frogbot-app-scaffold-'));
   const dest = path.join(root, 'app');
 
   roots.push(root);
-  fs.cpSync(template, dest, { recursive: true });
+
+  fs.cpSync(template, dest, {
+    recursive: true,
+    filter: (source) => !buildOutput.has(path.basename(source)),
+  });
 
   return dest;
 }

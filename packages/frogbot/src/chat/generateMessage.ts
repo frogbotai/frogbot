@@ -3,6 +3,7 @@ import { consumeStream, generateId, toUIMessageStream } from 'ai';
 
 import type { AgentGenerateResult } from '../agents/types.js';
 import { createMessageUsage } from './messagePersistence.js';
+import { toolErrorText } from './toolErrorText.js';
 
 export type GenerateMessageProps = {
   result: AgentGenerateResult;
@@ -23,6 +24,7 @@ export async function generateMessage({
     tools,
     originalMessages,
     generateMessageId: generateId,
+    onError: toolErrorText,
     sendSources: true,
     messageMetadata: ({ part }) =>
       part.type === 'finish' ? { usage: createMessageUsage(part.totalUsage, model) } : undefined,

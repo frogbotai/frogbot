@@ -7,6 +7,7 @@ import { isClientTool } from '../../tools/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { toAgentModelMessages } from '../../uploads/toAgentModelMessages.js';
 import { createMessageUsage, persistAssistantMessage } from '../messagePersistence.js';
+import { toolErrorText } from '../toolErrorText.js';
 import { TurnError } from './errors.js';
 import {
   findMessage,
@@ -140,6 +141,7 @@ export async function streamTurn({
           tools: agent.aiAgent.tools,
           originalMessages: uiMessages,
           generateMessageId: () => messageId,
+          onError: toolErrorText,
           sendSources: true,
           messageMetadata: ({ part }) =>
             part.type === 'finish'

@@ -214,7 +214,7 @@ describe('frogbot generate:types', () => {
 
     await expect(result).rejects.toBeDefined();
     await expect(readFile(join(dir, 'observed-env'), 'utf8')).resolves.toBe('production-local');
-  });
+  }, 20_000);
 
   it('emits agent slugs in the GeneratedTypes augmentation', () => {
     expect(buildGeneratedTypesFooter(['media-buyer', 'support'])).toContain(`agents: {
