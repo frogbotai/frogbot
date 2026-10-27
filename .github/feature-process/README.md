@@ -83,7 +83,7 @@ The process itself is committed code:
 | heavy-test slots, 3 machine-wide                                                 | `scripts/lib/slot.mjs`, `test/heavySlot.ts`                                               |
 | `pnpm check`                                                                     | `scripts/check.mjs`, running each `scripts/check-*.mjs`                                   |
 | lint rules                                                                       | `eslint.config.js`, `.oxlintrc.json`, `scripts/eslint-plugin/`                            |
-| git hooks                                                                        | `.husky/`, calling `scripts/precommit-guard.mjs` and `scripts/commit-msg.mjs`             |
+| git hooks                                                                        | `.husky/pre-commit` runs `scripts/precommit-guard.mjs`; land runs `commit-msg.mjs`        |
 | agent guardrails                                                                 | `.opencode/opencode.jsonc`, `.opencode/plugins/frogbot/`                                  |
 | tests for all of it                                                              | `test/unit/scripts/`, `test/unit/opencode/`                                               |
 
