@@ -1006,6 +1006,16 @@ describe('ModelSelector', () => {
     },
   );
 
+  it('gives every provider logo a visible fill or stroke', () => {
+    const invisible = Object.entries(providers).flatMap(([provider, { logo }]) =>
+      (logo?.nodes ?? [])
+        .filter(([, attrs]) => (attrs.fill ?? 'none') === 'none' && !attrs.stroke)
+        .map(() => provider),
+    );
+
+    expect(invisible).toEqual([]);
+  });
+
   it('renders FrogBot with its own logo, not the fallback', async () => {
     const user = userEvent.setup();
 

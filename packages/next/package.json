@@ -99,6 +99,7 @@
   "peerDependencies": {
     "frogbot": "workspace:*",
     "next": ">=16.4.0 <17.0.0",
+    "payload": "catalog:",
     "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
     "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
   },

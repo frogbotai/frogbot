@@ -405,6 +405,11 @@ export function logoNodes(svg) {
     'fill-rule': 'fillRule',
     'clip-rule': 'clipRule',
     opacity: 'opacity',
+    stroke: 'stroke',
+    'stroke-width': 'strokeWidth',
+    'stroke-linecap': 'strokeLinecap',
+    'stroke-linejoin': 'strokeLinejoin',
+    'stroke-miterlimit': 'strokeMiterlimit',
   };
 
   const nodes = [];

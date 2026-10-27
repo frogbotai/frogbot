@@ -995,7 +995,8 @@ describe('Chat composer parts', () => {
 
     await waitFor(() => expect(onError).toHaveBeenCalledOnce());
 
-    expect(onError.mock.calls[0][0].message).toBe('Command failed: No page');
+    expect(onError.mock.calls[0][0].message).toBe('No page');
+    expect(screen.getByRole('alert').textContent).not.toContain('Command failed');
     expect(state.sendMessage).not.toHaveBeenCalled();
 
     await waitFor(() => expect(composerText()).toBe('Hello'));

@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { failedTests, flakyRetry } from '../../../scripts/lib/flaky.mjs';
+import { failedTests, flakyRetry, KNOWN_FLAKY } from '../../../scripts/lib/flaky.mjs';
 import {
   appendFinding,
   findingLine,
@@ -24,22 +24,30 @@ const summary = (entries: string[], failed = entries.length) =>
   ].join('\n');
 
 const richText =
-  '[rich-text] › test/browser/richText.browser.spec.ts:21:1 › edits, saves and reloads';
+  '[rich-text] › test/browser/richText.browser.spec.ts:21:1 › edits, saves, reloads, and renders rich text through the generated import map';
 
 const viewSelection =
-  '[rich-text] › test/browser/richText.browser.spec.ts:391:1 › view selection preserves saved content';
+  '[rich-text] › test/browser/richText.browser.spec.ts:412:1 › view selection preserves saved content and safely renders editor nodes';
 
 const chat = '[chat-assets] › test/browser/chat.browser.spec.ts:10:1 › uploads a file';
 
 describe('flakyRetry', () => {
   it('reads the failed tests from the summary only', () => {
     expect(failedTests(summary([richText, chat]))).toEqual([
-      { project: 'rich-text', test: 'test/browser/richText.browser.spec.ts:21' },
-      { project: 'chat-assets', test: 'test/browser/chat.browser.spec.ts:10' },
+      {
+        project: 'rich-text',
+        test: 'test/browser/richText.browser.spec.ts:21',
+        title: 'edits, saves, reloads, and renders rich text through the generated import map',
+      },
+      {
+        project: 'chat-assets',
+        test: 'test/browser/chat.browser.spec.ts:10',
+        title: 'uploads a file',
+      },
     ]);
   });
 
-  it('retries known-flaky tests once, by project and line', () => {
+  it('retries known-flaky tests once, matched by title wherever they move', () => {
     expect(flakyRetry(summary([richText, viewSelection]))).toEqual({
       tests: [
         {
@@ -49,13 +57,13 @@ describe('flakyRetry', () => {
         },
         {
           project: 'rich-text',
-          test: 'test/browser/richText.browser.spec.ts:391',
+          test: 'test/browser/richText.browser.spec.ts:412',
           finding: 'F-038',
         },
       ],
       args: [
         'test/browser/richText.browser.spec.ts:21',
-        'test/browser/richText.browser.spec.ts:391',
+        'test/browser/richText.browser.spec.ts:412',
         '--project=rich-text',
       ],
     });
@@ -63,6 +71,18 @@ describe('flakyRetry', () => {
 
   it('does not retry when any failure is not known to be flaky', () => {
     expect(flakyRetry(summary([richText, chat]))).toBeNull();
+  });
+
+  it('does not retry a known file when the failed test is another one', () => {
+    const other = '[rich-text] › test/browser/richText.browser.spec.ts:136:1 › creates a link';
+
+    expect(flakyRetry(summary([other]))).toBeNull();
+  });
+
+  it('names only tests that still exist', () => {
+    for (const { file, title } of KNOWN_FLAKY) {
+      expect(readFileSync(path.join(process.cwd(), file), 'utf8')).toContain(`test('${title}'`);
+    }
   });
 
   it('does not retry a run that failed before any test', () => {

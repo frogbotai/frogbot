@@ -1170,7 +1170,9 @@ describe('Composer', () => {
       type('/model nope');
       press('Enter');
 
-      await waitFor(() => expect(onError).toHaveBeenCalledWith(new Error('No such model')));
+      await waitFor(() =>
+        expect(onError).toHaveBeenCalledWith(new Error('No such model'), 'command'),
+      );
     });
 
     it('sends chips with the offsets of their @label', () => {
@@ -1336,7 +1338,7 @@ describe('Composer send hand-off', () => {
 
     await settle(() => send.reject(new Error('Offline')));
 
-    expect(onError).toHaveBeenCalledWith(new Error('Offline'));
+    expect(onError).toHaveBeenCalledWith(new Error('Offline'), 'message');
 
     await waitFor(() => expect(composerText()).toBe('Hello'));
 
@@ -1368,7 +1370,7 @@ describe('Composer send hand-off', () => {
 
     await settle(() => send.reject(new Error('Offline')));
 
-    expect(onError).toHaveBeenCalledWith(new Error('Offline'));
+    expect(onError).toHaveBeenCalledWith(new Error('Offline'), 'message');
     expect(composerText()).toBe('');
     expect(screen.getAllByTestId('attachment-card')).toHaveLength(1);
     expect(screen.getByRole('group', { name: 'Pasted text, PASTED, ready' })).toBeTruthy();

@@ -69,6 +69,38 @@ describe('primitives', () => {
     expect((await screen.findByRole('tooltip')).textContent).toContain('Details');
   });
 
+  it('toggles disabled without switching between controlled and uncontrolled', async () => {
+    const user = userEvent.setup();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const tooltip = (disabled: boolean) => (
+      <Tooltip delay={0} disabled={disabled} label="Details">
+        <button type="button">Help</button>
+      </Tooltip>
+    );
+
+    const { rerender } = render(tooltip(true));
+
+    await user.tab();
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+
+    rerender(tooltip(false));
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+
+    await user.tab();
+    await user.tab({ shift: true });
+
+    expect((await screen.findByRole('tooltip')).textContent).toContain('Details');
+
+    rerender(tooltip(true));
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    expect(warn).not.toHaveBeenCalled();
+
+    warn.mockRestore();
+  });
+
   it('supports dropdown keyboard focus and Escape', async () => {
     const user = userEvent.setup();
 

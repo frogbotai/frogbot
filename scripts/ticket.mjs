@@ -618,6 +618,14 @@ export function dependenciesChanged(files) {
   );
 }
 
+export function installAfterRebase({ files, install }) {
+  if (!dependenciesChanged(files)) return { ran: false, ok: true, output: '' };
+
+  const { ok, output } = install();
+
+  return { ran: true, ok, output };
+}
+
 export function installAfterLand({ files, checkout, install, log = console.log }) {
   if (!dependenciesChanged(files)) return { ran: false, ok: true };
 
@@ -1096,6 +1104,7 @@ function gatesOf({ repo, dir, files }) {
 }
 
 async function landRound({ main, repo, found, key, dir, branch }) {
+  const base = gitOut(dir, ['merge-base', 'HEAD', MAIN]);
   const rebased = git(dir, ['rebase', MAIN]);
 
   if (!rebased.ok) {
@@ -1139,6 +1148,17 @@ async function landRound({ main, repo, found, key, dir, branch }) {
   const gates = gatesOf({ repo, dir, files });
 
   const log = openLog(main, key);
+
+  const installed = installAfterRebase({
+    files: lines(gitOut(dir, ['diff', '--name-only', base, MAIN])),
+    install: () =>
+      step(log, 'pnpm install --frozen-lockfile', 'pnpm', ['install', '--frozen-lockfile'], dir),
+  });
+
+  if (!installed.ok) {
+    console.log(tail(installed.output).join('\n'));
+    refuse(`pnpm install after the rebase failed in ${dir}; ${MAIN} untouched`);
+  }
 
   if (!REPOS[repo].gates && docsOnly(files)) {
     console.log('docs only: test:unit and test:ui skipped');

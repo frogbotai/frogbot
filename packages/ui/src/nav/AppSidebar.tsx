@@ -195,7 +195,7 @@ export function AppSidebar({
       <div className={`${baseClass}__spacer`} />
       <div
         className={`${baseClass}__bottom`}
-        onClick={open ? (event) => event.stopPropagation() : undefined}
+        onClick={(event) => event.stopPropagation()}
         role="presentation"
       >
         {beforeBottomRail}

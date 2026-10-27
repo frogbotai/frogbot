@@ -398,10 +398,31 @@ describe('provider registry sync', () => {
     const { logoNodes } = await loadSync();
 
     const logo = logoNodes(
-      '<svg viewBox="0 0 40 40" onload="alert(1)"><path d="M0 0" onload="alert(1)" stroke="red" style="fill:red"></path></svg>',
+      '<svg viewBox="0 0 40 40" onload="alert(1)"><path d="M0 0" onload="alert(1)" style="fill:red"></path></svg>',
     );
 
     expect(logo).toEqual({ viewBox: '0 0 40 40', nodes: [['path', { d: 'M0 0' }]] });
+  });
+
+  it('keeps the stroke of an outline logo', async () => {
+    const { logoNodes } = await loadSync();
+
+    const logo = logoNodes(
+      '<svg viewBox="0 0 24 24" fill="none"><path d="M0 0" stroke="currentColor" stroke-width="0.825" stroke-miterlimit="10"/></svg>',
+    );
+
+    expect(logo.nodes).toEqual([
+      [
+        'path',
+        {
+          d: 'M0 0',
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: '0.825',
+          strokeMiterlimit: '10',
+        },
+      ],
+    ]);
   });
 
   it.each(['script', 'image', 'use', 'g', 'linearGradient'])(

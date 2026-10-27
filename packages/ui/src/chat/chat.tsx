@@ -406,8 +406,9 @@ function ChatInner({
     ]);
   }
 
-  function reportComposerError(error: Error) {
-    failAction(new Error(`Command failed: ${error.message}`), 'Command failed');
+  function reportComposerError(error: Error, source: 'command' | 'message') {
+    if (source === 'message') failAction(error, 'Message failed');
+    else failAction(new Error(`Command failed: ${error.message}`), 'Command failed');
   }
 
   async function runEntry(entry: QueueEntry) {
@@ -430,7 +431,11 @@ function ChatInner({
       }
 
       pauseEntries();
-      reportComposerError(error instanceof Error ? error : new Error(String(error)));
+
+      reportComposerError(
+        error instanceof Error ? error : new Error(String(error)),
+        next.kind === 'message' ? 'message' : 'command',
+      );
     } finally {
       runningRef.current = false;
       setRunning(false);

@@ -293,6 +293,15 @@ describe('CHECK_INPUTS', () => {
   it('lists every repo check', () => {
     expect(Object.keys(CHECK_INPUTS).sort()).toEqual(discoverChecks());
   });
+
+  it.each([
+    'packages/frogbot/src/ai/catalog.json',
+    'packages/frogbot/src/admin/views/connections/ConnectionsView.tsx',
+    'packages/ui/src/admin/views/Dashboard.tsx',
+    'packages/next/src/views/Settings/index.tsx',
+  ])('checks generated files when %s changes', (file) => {
+    expect(map([file]).checks).toContain('generated');
+  });
 });
 
 describe('verifyGroups', () => {
