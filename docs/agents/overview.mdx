@@ -186,6 +186,7 @@ export const lookupTicket: Tool<
 | `inputSchema` | `z.ZodType` | Required | Zod schema for the input. The model's arguments are validated against it before `execute` runs. |
 | `execute` | `(input, ctx: ToolCtx) => TResult \| Promise<TResult>` | Required | Runs the tool and returns its result to the model. `ctx` is described in [Tool context](#tool-context). |
 | `component` | `FrogBotComponent` | Generic tool render | Import-map component that renders the tool call in chat. See below. |
+| `maxOutput` | `{ lines?: number; bytes?: number } \| false` | `{ lines: 2000, bytes: 51200 }` | How much of the result the model sees. A longer result is cut to its first whole lines, followed by `[showing lines 1-N of M; output truncated]`; an object result is cut from its indented JSON. `false` sends the whole result. The chat keeps the full result, and errors are never cut. |
 
 Client tools replace `execute` with `outputSchema` and `client`; see [Build a client tool](/chat/questions#build-a-client-tool).
 

@@ -89,7 +89,7 @@ export default defineConfig({
           testTimeout: 90000,
           retry: process.env.CI ? 2 : 0,
           setupFiles: ['./test/vitest.setup.ts'],
-          globalSetup: ['./test/heavySlot.ts'],
+          globalSetup: ['./test/heavySlot.ts', './test/sqliteDatabase.ts'],
         },
       },
       {
@@ -125,7 +125,7 @@ export default defineConfig({
           testTimeout: 90000,
           retry: process.env.CI ? 2 : 0,
           setupFiles: ['./test/vitest.setup.ts'],
-          globalSetup: ['./test/heavySlot.ts'],
+          globalSetup: ['./test/heavySlot.ts', './test/sqliteDatabase.ts'],
         },
       },
       {

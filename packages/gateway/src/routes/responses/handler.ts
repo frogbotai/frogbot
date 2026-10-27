@@ -37,11 +37,12 @@ import { createSseResponse, toSseStream } from '../../shared/toSseStream.js';
 import { createUpstreamSignal, upstreamTimeoutError } from '../../shared/upstreamTimeout.js';
 import { guardedDownload } from '../../utils/downloadGuard.js';
 import { prepareForwardHeaders } from '../../utils/headers.js';
+import { collectPassthroughParams, forwardLanguageParams } from '../../utils/params.js';
 import { parseJsonBody } from '../../utils/parseJsonBody.js';
 import { ensureRequestId } from '../../utils/requestId.js';
 import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
 import { withInstructionsCache } from './instructionsCache.js';
-import { parseResponsesRequest, type ResponsesRequest } from './schema.js';
+import { parseResponsesRequest, type ResponsesRequest, responsesRequestSchema } from './schema.js';
 import {
   createResponsesStreamTransform,
   isStrictResponsesOutput,
@@ -61,6 +62,8 @@ export type ResponsesRouteContext = ProviderModelPolicy & {
   upstreamTimeoutMs?: number;
   telemetry?: AiSdkTelemetry;
 };
+
+const HANDLED_RESPONSES_PARAMS = new Set(Object.keys(responsesRequestSchema.shape));
 
 const operation = 'responses' as const;
 
@@ -143,7 +146,8 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
         resolvedModel: model,
       });
 
-      delete providerOptions.unknown;
+      delete providerOptions.unknown?.reasoning_effort;
+      forwardLanguageParams(providerOptions, resolved.providerName);
 
       const upstream = createUpstreamSignal(c.req.raw.signal, ctx.upstreamTimeoutMs);
       const aiOptions = {
@@ -438,13 +442,20 @@ export function forwardResponseParams(
   };
 
   const providerOptions: Record<string, Record<string, JSONValue>> = {};
+  const passthrough = collectPassthroughParams(body, HANDLED_RESPONSES_PARAMS);
+
+  if (Object.keys(passthrough).length) providerOptions.unknown = passthrough;
+
   if (providerName === 'openai') {
     const openaiOptions = buildOpenAIResponseOptions(body);
     if (Object.keys(openaiOptions).length > 0) {
       providerOptions.openai = openaiOptions;
     }
   } else if (body.reasoning?.effort != null) {
-    providerOptions.unknown = { reasoning_effort: body.reasoning.effort };
+    providerOptions.unknown = {
+      ...providerOptions.unknown,
+      reasoning_effort: body.reasoning.effort,
+    };
   }
 
   return { params, providerOptions };

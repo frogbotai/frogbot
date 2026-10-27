@@ -170,7 +170,7 @@ The following options are available:
 | `trash` | `boolean` | `false` | Turns on soft deletes. [More details](/trash/overview). |
 | `typescript` | `{ interface?: string }` | Derived from `slug` | Name of the generated TypeScript interface. |
 | `upload` | `boolean \| UploadConfig` | `false` | Turns on file uploads. [More details](/upload/overview). |
-| `llmInstructions` | `string` | — | Read-only Markdown instructions for agents, included in this collection's MCP schema. Editors can add their own in the admin's **Edit agent instructions**. |
+| `llmInstructions` | `string` | — | Read-only Markdown instructions for agents. MCP clients get them in this collection's `getCollectionSchema` result through [`@frogbotai/plugin-mcp`](/plugins/mcp); FrogBot agents don't, so pass them on in your own tool's description if an agent needs them. Editors can add their own in the admin's **Edit agent instructions**. |
 | `versions` | `boolean \| VersionsConfig` | `true`, or `false` with `auth` | Keeps a version history of each document; pass an object with `drafts` to add drafts. Collections with `auth` default to `false`, since a version would copy password hashes and sessions. [More details](/versions/overview#collection-config). |
 | `_sanitized` | `boolean` | — | Internal. Set during sanitization; don't set it yourself. |
 

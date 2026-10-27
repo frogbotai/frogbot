@@ -38,6 +38,7 @@ import { createUpstreamSignal, upstreamTimeoutError } from '../../shared/upstrea
 import { guardedDownload } from '../../utils/downloadGuard.js';
 import { prepareForwardHeaders } from '../../utils/headers.js';
 import {
+  collectPassthroughParams,
   forwardLanguageParams,
   forwardMessageProviderOptions,
   parsePromptCachingOptions,
@@ -45,7 +46,7 @@ import {
 import { parseJsonBody } from '../../utils/parseJsonBody.js';
 import { ensureRequestId } from '../../utils/requestId.js';
 import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
-import { type MessagesRequest, parseMessagesRequest } from './schema.js';
+import { type MessagesRequest, messagesRequestSchema, parseMessagesRequest } from './schema.js';
 import type { AnthropicMessage, AnthropicSystemParam } from './translators/index.js';
 import {
   createAnthropicStreamTransform,
@@ -65,6 +66,8 @@ export type MessagesRouteContext = ProviderModelPolicy & {
   upstreamTimeoutMs?: number;
   telemetry?: AiSdkTelemetry;
 };
+
+const HANDLED_MESSAGES_PARAMS = new Set(Object.keys(messagesRequestSchema.shape));
 
 const operation = 'messages' as const;
 
@@ -135,6 +138,14 @@ export function messagesRoute(ctx: MessagesRouteContext) {
       const tools = toAISDKTools(body.tools);
       const toolChoice = toAISDKToolChoice(body.tool_choice);
       const providerOptions: Record<string, Record<string, JSONValue>> = {};
+      const passthrough = collectPassthroughParams(body, HANDLED_MESSAGES_PARAMS);
+
+      if (Object.keys(passthrough).length) providerOptions.unknown = passthrough;
+
+      if (body.providerOptions?.gateway) {
+        providerOptions.gateway = body.providerOptions.gateway as Record<string, JSONValue>;
+      }
+
       applyThinking(providerOptions, body.thinking);
       applyToolChoiceOptions(providerOptions, body.tool_choice);
       applyMcpServers(providerOptions, body.mcp_servers);

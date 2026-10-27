@@ -468,6 +468,7 @@ export type {
   ClientToolValidate,
   Tool,
   ToolCtx,
+  ToolOutputLimits,
 } from './tools/types.js';
 export type {
   ReadTrainingDataOptions,

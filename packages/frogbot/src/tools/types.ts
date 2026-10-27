@@ -18,8 +18,21 @@ type BaseTool<TSchema extends z.ZodType> = {
   inputSchema: TSchema;
 };
 
+/** How much of a tool's result the model sees. Results past either limit are cut to whole lines. */
+export type ToolOutputLimits = {
+  /** @default 2000 */
+  lines?: number;
+  /** UTF-8 bytes. @default 51200 (50 KiB) */
+  bytes?: number;
+};
+
 export type Tool<TSchema extends z.ZodType = z.ZodType, TResult = unknown> = BaseTool<TSchema> & {
   execute: (input: z.infer<TSchema>, ctx: ToolCtx) => TResult | Promise<TResult>;
+  /**
+   * Limits on the result the model sees; `false` sends it whole. The chat keeps the full result.
+   * @default { lines: 2000, bytes: 51200 }
+   */
+  maxOutput?: ToolOutputLimits | false;
 };
 
 export type ClientToolAccess = (args: {

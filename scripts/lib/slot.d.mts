@@ -4,6 +4,8 @@ export const SLOT_DIR: string;
 
 export const LAND_LOCK: { dir: string; slots: number; noun: string };
 
+export function alive(pid: number | undefined): boolean;
+
 export function acquireSlot(
   name: string,
   options?: {

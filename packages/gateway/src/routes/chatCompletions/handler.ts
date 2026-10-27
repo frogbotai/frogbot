@@ -41,6 +41,7 @@ import { createSseResponse, toSseStream } from '../../shared/toSseStream.js';
 import { createUpstreamSignal, upstreamTimeoutError } from '../../shared/upstreamTimeout.js';
 import { prepareForwardHeaders } from '../../utils/headers.js';
 import {
+  collectPassthroughParams,
   forwardLanguageParams,
   forwardMessageProviderOptions,
   parsePromptCachingOptions,
@@ -143,7 +144,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
       }
 
       const unknownOpts: Record<string, JSONValue> = {
-        ...collectPassthroughChatParams(body),
+        ...collectPassthroughParams(body, HANDLED_CHAT_PARAMS),
         ...(cachingOpts ?? {}),
       };
 
@@ -491,20 +492,6 @@ const HANDLED_CHAT_PARAMS = new Set<string>([
   'functions',
   'function_call',
 ]);
-
-function collectPassthroughChatParams(body: Record<string, unknown>): Record<string, JSONValue> {
-  const rest: Record<string, JSONValue> = {};
-
-  for (const [key, value] of Object.entries(body)) {
-    if (HANDLED_CHAT_PARAMS.has(key) || value === undefined || value === null) {
-      continue;
-    }
-
-    rest[key] = value as JSONValue;
-  }
-
-  return rest;
-}
 
 function rejectParam(param: string, message: string): never {
   throw new RequestValidationError({ message, param });
