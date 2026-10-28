@@ -295,6 +295,7 @@ const testProjects = [
       'reasoningSelector.browser.spec.ts',
       'modelSelector.browser.spec.ts',
       'modelAllowlist.browser.spec.ts',
+      'modelChips.browser.spec.ts',
       'channelChat.browser.spec.ts',
       'chatErrors.browser.spec.ts',
       'messagesOverride.browser.spec.ts',

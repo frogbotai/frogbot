@@ -83,4 +83,8 @@
   button[aria-label="Close Menu"]:hover {
     transform: translateX(4px);
   }
+
+  .frogbot-model-select .multi-value-label {
+    max-width: none;
+  }
 }
