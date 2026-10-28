@@ -407,6 +407,16 @@ describe('frogbot buildConfig', () => {
       expect((payloadConfig as any).plugins).toBeUndefined();
     });
 
+    it('FrogBot `cli` key is not present in payload config', async () => {
+      const result = await buildConfig(
+        makeConfig({ cli: { commands: { hello: () => undefined } } }),
+      );
+
+      const payloadConfig = await result._internal.payloadConfig;
+
+      expect(payloadConfig).not.toHaveProperty('cli');
+    });
+
     it('every user collection has a `beforeOperation` hook prepended in payload config', async () => {
       const config = makeConfig({
         collections: [

@@ -1,10 +1,9 @@
 import { createWriteStream } from 'node:fs';
 import { Writable } from 'node:stream';
 
-import { loadConfig } from '../config/load.js';
-import { FrogBot } from '../frogbot.js';
-import type { Where } from '../types/payload.js';
-import { formatCliError } from './formatCliError.js';
+import type { CLICommand, Where } from 'frogbot';
+
+import { exportTrainingData } from '../training/exportTrainingData.js';
 
 type ParsedArgs = {
   where?: Where;
@@ -46,24 +45,14 @@ export function parseExportTrainingDataArgs(args: string[]): ParsedArgs {
   return parsed;
 }
 
-export async function exportTrainingData(args: string[]): Promise<void> {
-  let frogbot: FrogBot | undefined;
+export const exportTrainingDataCommand: CLICommand = async ({ args, getFrogBot }) => {
+  const { where, output, pageSize } = parseExportTrainingDataArgs(args);
+  const frogbot = await getFrogBot({ disableOnInit: true });
 
-  try {
-    const { where, output, pageSize } = parseExportTrainingDataArgs(args);
-    const config = await loadConfig({ cwd: process.cwd() });
-    frogbot = await new FrogBot().init({ config, disableOnInit: true });
+  const stream = exportTrainingData(frogbot, { where, pageSize, overrideAccess: true });
+  const destination = output ? createWriteStream(output) : process.stdout;
 
-    const stream = frogbot.exportTrainingData({ where, pageSize, overrideAccess: true });
-    const destination = output ? createWriteStream(output) : process.stdout;
+  await stream.pipeTo(Writable.toWeb(destination) as WritableStream<Uint8Array>);
 
-    await stream.pipeTo(Writable.toWeb(destination) as WritableStream<Uint8Array>);
-
-    if (output) console.log(`[frogbot] training data written to ${output}`);
-  } catch (err) {
-    console.error(formatCliError(err));
-    process.exitCode = 1;
-  } finally {
-    await frogbot?.destroy();
-  }
-}
+  if (output) process.stdout.write(`[frogbot] training data written to ${output}\n`);
+};

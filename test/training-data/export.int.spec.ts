@@ -1,7 +1,8 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { TrainingDataRecord, UIMessage } from 'frogbot';
+import { exportTrainingData, type TrainingDataRecord } from '@frogbotai/plugin-capture';
+import type { UIMessage } from 'frogbot';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
@@ -125,7 +126,7 @@ describe('training data export', () => {
 
   it('exports filtered conversations losslessly as ordered JSONL', async () => {
     const records = await readRecords(
-      booted.frogbot.exportTrainingData({
+      exportTrainingData(booted.frogbot, {
         where: { agent: { equals: 'support' } },
         overrideAccess: true,
       }),
@@ -144,15 +145,15 @@ describe('training data export', () => {
   });
 
   it('exports every conversation when unfiltered', async () => {
-    const records = await readRecords(booted.frogbot.exportTrainingData({ overrideAccess: true }));
+    const records = await readRecords(exportTrainingData(booted.frogbot, { overrideAccess: true }));
 
     expect(records.map((record) => record.chat.title).sort()).toEqual(['excluded', 'exported']);
   });
 
   it('returns identical output across page sizes', async () => {
     const [single, batched] = await Promise.all([
-      readRecords(booted.frogbot.exportTrainingData({ pageSize: 1, overrideAccess: true })),
-      readRecords(booted.frogbot.exportTrainingData({ pageSize: 100, overrideAccess: true })),
+      readRecords(exportTrainingData(booted.frogbot, { pageSize: 1, overrideAccess: true })),
+      readRecords(exportTrainingData(booted.frogbot, { pageSize: 100, overrideAccess: true })),
     ]);
 
     expect(single).toEqual(batched);
@@ -163,7 +164,7 @@ describe('training data export', () => {
       user: { ...owner, collection: usersSlug },
     } as never);
 
-    const records = await readRecords(booted.frogbot.exportTrainingData({ req }));
+    const records = await readRecords(exportTrainingData(booted.frogbot, { req }));
 
     expect(records).toHaveLength(1);
     expect(records[0].chat.id).toBe(exportedChatId);
@@ -172,7 +173,7 @@ describe('training data export', () => {
   it('surfaces access denial instead of exporting silently', async () => {
     const req = await booted.frogbot.createRequest({});
 
-    await expect(readRecords(booted.frogbot.exportTrainingData({ req }))).rejects.toThrow(
+    await expect(readRecords(exportTrainingData(booted.frogbot, { req }))).rejects.toThrow(
       'You are not allowed to perform this action',
     );
   });

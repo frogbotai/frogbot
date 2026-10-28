@@ -37,8 +37,3 @@ export type CapturePluginOptions = {
   collectionSlug?: string;
   access?: Access;
 };
-
-export type CaptureRegistration = {
-  collectionSlug: string;
-  storage: CaptureStorage;
-};

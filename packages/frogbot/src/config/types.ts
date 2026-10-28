@@ -6,7 +6,7 @@ import type { ConnectionsConfig } from '../connections/types.js';
 import type { DatabaseAdapter } from '../database/types.js';
 import type { Endpoint } from '../endpoints/types.js';
 import type { Block } from '../fields/config/types.js';
-import type { FrogBot } from '../frogbot.js';
+import type { FrogBot, InitOptions } from '../frogbot.js';
 import type { JobsConfig } from '../jobs/types.js';
 import type { MCPServer } from '../mcp/types.js';
 import type { EmailPiece } from '../pieces/email.js';
@@ -20,6 +20,7 @@ import type {
 } from '../types/payload.js';
 import type { FrogBotArgs, FrogBotRequest } from '../types/request.js';
 import type { StorageAdapter } from '../uploads/types.js';
+import type { FrogBotSanitizedConfig } from './sanitized.js';
 
 export type LivePreviewURLType = null | string | undefined;
 
@@ -86,9 +87,25 @@ export type RolesPrewiring = {
   roles?: string[];
 };
 
+/** What `frogbot <name>` hands an app command. */
+export type CLICommandContext = {
+  /** Everything after the command name. */
+  args: string[];
+  /** The name the command was run as. */
+  command: string;
+  /** Resolves to the app config `frogbot` already loaded. */
+  getConfig: () => Promise<FrogBotSanitizedConfig>;
+  /** Boots one FrogBot instance on first call and returns it after; destroyed when the command ends. */
+  getFrogBot: (options?: Omit<InitOptions, 'config'>) => Promise<FrogBot>;
+};
+
+/** A command run by `frogbot <name>`. A thrown error prints and exits 1; otherwise `frogbot` exits with `process.exitCode ?? 0` once it resolves. */
+export type CLICommand = (context: CLICommandContext) => unknown | Promise<unknown>;
+
 type FrogBotOverridden =
   | 'admin'
   | 'blocks'
+  | 'cli'
   | 'collections'
   | 'db'
   | 'email'
@@ -137,6 +154,8 @@ export type FrogBotConfig = Omit<PayloadConfig, FrogBotOverridden> & {
   onInit?: OnInit | OnInit[];
   /** AI configuration — providers, routers, hooks, and access control. */
   ai?: AIConfig;
+  /** Commands `frogbot <name>` runs, keyed by lowercase name. One with a built-in's name replaces it. */
+  cli?: { commands?: Record<string, CLICommand> };
   /**
    * Internal. Payload plugins that run inside Payload's `buildConfig`, for plugins that read
    * themselves back from Payload's `config.plugins` (plugin-mcp). Set by FrogBot plugins.

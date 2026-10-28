@@ -247,6 +247,8 @@ export { buildConfig } from './config/build.js';
 export type { FrogBotSanitizedConfig } from './config/sanitized.js';
 export type {
   AfterErrorHook,
+  CLICommand,
+  CLICommandContext,
   FrogBotConfig,
   GeneratePreviewURL,
   LivePreviewConfig,
@@ -470,11 +472,6 @@ export type {
   ToolCtx,
   ToolOutputLimits,
 } from './tools/types.js';
-export type {
-  ReadTrainingDataOptions,
-  TrainingDataDocument,
-  TrainingDataRecord,
-} from './training/types.js';
 export type { Subscription, SubscriptionEnableProps } from './triggers/subscriptions.js';
 export type { IngressRegistry, TriggerEvent, TriggerSubscriber } from './triggers/types.js';
 export type {

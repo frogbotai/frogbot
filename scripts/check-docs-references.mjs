@@ -86,6 +86,48 @@ export function docsCommands(
   return commands;
 }
 
+export function pluginCommands(source) {
+  const ast = ts.createSourceFile('index.ts', source, ts.ScriptTarget.Latest, true);
+  const commands = [];
+  const keyOf = (node) =>
+    (ts.isPropertyAssignment(node) || ts.isShorthandPropertyAssignment(node)) &&
+    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name))
+      ? node.name.text
+      : undefined;
+
+  function visit(node) {
+    if (
+      keyOf(node) === 'cli' &&
+      node.initializer &&
+      ts.isObjectLiteralExpression(node.initializer)
+    ) {
+      for (const property of node.initializer.properties) {
+        if (keyOf(property) !== 'commands') continue;
+        if (!property.initializer || !ts.isObjectLiteralExpression(property.initializer)) continue;
+
+        for (const command of property.initializer.properties) {
+          const name = keyOf(command);
+          if (name) commands.push(name);
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(ast);
+
+  return commands;
+}
+
+function packageCommands(packages) {
+  return packages.flatMap(({ dir }) => {
+    const index = path.join(dir, 'src/index.ts');
+
+    return existsSync(index) ? pluginCommands(readFileSync(index, 'utf8')) : [];
+  });
+}
+
 export function docsFences(content) {
   const fences = [];
   const outside = [];
@@ -500,7 +542,7 @@ function main() {
   const problems = checkDocsReferences({
     files,
     packages,
-    commands: docsCommands(),
+    commands: [...docsCommands(), ...packageCommands(packages)],
     exportsOf: moduleExports(packages),
     reportStale: !directory,
   });

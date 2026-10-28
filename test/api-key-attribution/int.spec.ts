@@ -207,7 +207,7 @@ describe('API key attribution on usage rows and captures', () => {
   });
 
   it('exports only the captures made with the key given to export:captures --api-key', async () => {
-    const { exportCaptures } = await import('../../packages/frogbot/dist/bin/exportCaptures.js');
+    const exportCaptures = booted.frogbot.config.cli.commands['export:captures'];
     const key = await mint('Export');
     const other = await mint('Other');
 
@@ -219,26 +219,15 @@ describe('API key attribution on usage rows and captures', () => {
 
     const directory = await mkdtemp(path.join(tmpdir(), 'frogbot-export-captures-'));
     const output = path.join(directory, 'captures.jsonl');
-    const env = {
-      FROGBOT_CONFIG_PATH: process.env.FROGBOT_CONFIG_PATH,
-      PAYLOAD_DROP_DATABASE: process.env.PAYLOAD_DROP_DATABASE,
-    };
 
-    onTestFinished(async () => {
-      for (const [name, value] of Object.entries(env)) {
-        if (value === undefined) delete process.env[name];
-        else process.env[name] = value;
-      }
+    onTestFinished(() => rm(directory, { recursive: true, force: true }));
 
-      await rm(directory, { recursive: true, force: true });
+    await exportCaptures({
+      args: ['--api-key', String(key.id), '--output', output],
+      command: 'export:captures',
+      getConfig: () => Promise.resolve(booted.frogbot.config),
+      getFrogBot: () => Promise.resolve(booted.frogbot),
     });
-
-    process.env.FROGBOT_CONFIG_PATH = path.join(dirname, 'config.ts');
-    delete process.env.PAYLOAD_DROP_DATABASE;
-
-    await exportCaptures(['--api-key', String(key.id), '--output', output]);
-
-    expect(process.exitCode ?? 0).toBe(0);
 
     const lines = (await readFile(output, 'utf8')).trim().split('\n');
     const records = lines.map((line) => JSON.parse(line) as Row);

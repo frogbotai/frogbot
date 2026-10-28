@@ -115,6 +115,7 @@ export function buildPayloadConfig({
     _payloadPlugins: payloadPlugins,
     agents: _agents,
     ai: _ai,
+    cli: _cli,
     connections: _connections,
     email: _email,
     onInit: _onInit,

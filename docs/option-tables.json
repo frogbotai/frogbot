@@ -272,7 +272,7 @@
   {
     "page": "chat/training-data",
     "heading": "Export from the Local API",
-    "type": "import('frogbot').ReadTrainingDataOptions"
+    "type": "import('@frogbotai/plugin-capture').ReadTrainingDataOptions"
   },
   {
     "page": "chat/ui-chat",

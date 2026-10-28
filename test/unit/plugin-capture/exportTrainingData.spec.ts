@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseExportTrainingDataArgs } from '../../../../packages/frogbot/src/bin/exportTrainingData.js';
+import { parseExportTrainingDataArgs } from '../../../packages/plugins/plugin-capture/src/commands/exportTrainingData.js';
 
 describe('parseExportTrainingDataArgs', () => {
   it('parses space- and equals-separated options', () => {

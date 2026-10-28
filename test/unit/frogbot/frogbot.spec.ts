@@ -113,6 +113,7 @@ function makeConfig(): FrogBotSanitizedConfig {
     ],
     secret: 'test-secret-min-32-chars-long-for-jwt',
     chat: { enabled: false },
+    cli: { commands: {} },
     connections: {
       enabled: false,
       encryption: createCredentialEncryption({ secret: 'test-secret-min-32-chars-long-for-jwt' }),

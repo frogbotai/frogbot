@@ -59,7 +59,7 @@ Set `retentionDays` to register a daily pruning task. The task deletes each expi
 
 ## Export
 
-Export captures as JSON Lines with the FrogBot CLI:
+`capturePlugin()` adds the `export:captures` and [`export:training-data`](/chat/training-data#export-from-the-cli) commands to the FrogBot CLI, even when `enabled` is `false`. `export:captures` exports captures as JSON Lines:
 
 ```bash
 frogbot export:captures --from 2026-07-01 --to 2026-09-30 --user user-123 --output q3.jsonl

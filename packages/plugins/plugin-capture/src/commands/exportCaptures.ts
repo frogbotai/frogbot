@@ -2,19 +2,13 @@ import { createWriteStream } from 'node:fs';
 import { promisify } from 'node:util';
 import { gunzip } from 'node:zlib';
 
-import { loadConfig } from '../config/load.js';
-import { FrogBot } from '../frogbot.js';
-import type { Where } from '../types/payload.js';
+import type { CLICommand, Where } from 'frogbot';
+
+import type { CaptureStorage } from '../types.js';
 import { type ExportCapturesArgs, parseExportCapturesArgs } from './exportCapturesArgs.js';
 import { writeCaptureLine } from './exportCapturesStream.js';
-import { formatCliError } from './formatCliError.js';
 
 const gunzipAsync = promisify(gunzip);
-
-type CaptureRegistration = {
-  collectionSlug: string;
-  storage: { get(key: string): Promise<Uint8Array> };
-};
 
 function whereFor(args: ExportCapturesArgs): Where | undefined {
   const and: Record<string, unknown>[] = [];
@@ -30,23 +24,23 @@ function whereFor(args: ExportCapturesArgs): Where | undefined {
   return and.length ? ({ and } as Where) : undefined;
 }
 
-export async function exportCaptures(args: string[]): Promise<void> {
-  let frogbot: FrogBot | undefined;
-  let destination: ReturnType<typeof createWriteStream> | undefined;
-  try {
+export function exportCapturesCommand({
+  collectionSlug,
+  storage,
+}: {
+  collectionSlug: string;
+  storage: CaptureStorage;
+}): CLICommand {
+  return async ({ args, getFrogBot }) => {
     const parsed = parseExportCapturesArgs(args);
-    const config = await loadConfig({ cwd: process.cwd() });
-    const payloadConfig = await config._internal.payloadConfig;
-    const registration = payloadConfig.custom?.frogbotCapture as CaptureRegistration | undefined;
-    if (!registration) throw new Error('@frogbotai/plugin-capture is not configured');
-    frogbot = await new FrogBot().init({ config, disableOnInit: true });
-    destination = parsed.output ? createWriteStream(parsed.output) : undefined;
+    const frogbot = await getFrogBot({ disableOnInit: true });
+    const destination = parsed.output ? createWriteStream(parsed.output) : undefined;
     const output = destination ?? process.stdout;
     let page = 1;
 
     while (true) {
       const result = await frogbot.find({
-        collection: registration.collectionSlug,
+        collection: collectionSlug,
         where: whereFor(parsed),
         depth: 0,
         limit: 100,
@@ -57,7 +51,7 @@ export async function exportCaptures(args: string[]): Promise<void> {
 
       for (const value of result.docs) {
         const blobKey = String((value as Record<string, unknown>).blobKey);
-        const json = (await gunzipAsync(await registration.storage.get(blobKey))).toString('utf8');
+        const json = (await gunzipAsync(await storage.get(blobKey))).toString('utf8');
         await writeCaptureLine(output, json);
       }
 
@@ -67,13 +61,8 @@ export async function exportCaptures(args: string[]): Promise<void> {
 
     if (destination) {
       await new Promise<void>((resolve, reject) =>
-        destination!.end((error?: Error) => (error ? reject(error) : resolve())),
+        destination.end((error?: Error) => (error ? reject(error) : resolve())),
       );
     }
-  } catch (err) {
-    console.error(formatCliError(err));
-    process.exitCode = 1;
-  } finally {
-    await frogbot?.destroy();
-  }
+  };
 }

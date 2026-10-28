@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseExportCapturesArgs } from '../../../../packages/frogbot/src/bin/exportCapturesArgs.js';
-import { writeCaptureLine } from '../../../../packages/frogbot/src/bin/exportCapturesStream.js';
+import { parseExportCapturesArgs } from '../../../packages/plugins/plugin-capture/src/commands/exportCapturesArgs.js';
+import { writeCaptureLine } from '../../../packages/plugins/plugin-capture/src/commands/exportCapturesStream.js';
 
 describe('frogbot export:captures', () => {
   it('parses capture filters', () => {

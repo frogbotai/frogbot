@@ -11,7 +11,7 @@ The `frogbot` package installs a `frogbot` command. Run it from your app's root 
 pnpm frogbot generate:types
 ```
 
-Before any command runs, `frogbot` loads `.env*` files from the current directory with Next.js environment-loading rules: development files unless `NODE_ENV` is `production`. Commands that load your app find `frogbot.config.{ts,js,mjs}` in the current directory, its `src` folder, or a parent directory, or at the path in `FROGBOT_CONFIG_PATH`. Command names are not case-sensitive. A missing or unknown command prints the list of commands and exits with code `2`. A command that fails prints the error and exits with code `1`.
+Before any command runs, `frogbot` loads `.env*` files from the current directory with Next.js environment-loading rules: development files unless `NODE_ENV` is `production`. Commands that load your app find `frogbot.config.{ts,js,mjs}` in the current directory, its `src` folder, or a parent directory, or at the path in `FROGBOT_CONFIG_PATH`. Command names are not case-sensitive. A missing command prints the list of commands and exits with code `2`. An unknown command exits with code `2` too, and when your app has a config file it points to [Plugin commands](#plugin-commands). A command that fails prints the error and exits with code `1`.
 
 ## Commands
 
@@ -26,8 +26,6 @@ Before any command runs, `frogbot` loads `.env*` files from the current director
 | `pieces:port` | `<slug>` | Prepares a piece package in the FrogBot repository for porting. See [Port a piece](#port-a-piece). |
 | `jobs:run` | `--cron`, `--limit`, `--queue`, `--all-queues`, `--handle-schedules` | Runs a long-lived jobs worker without Next.js. See [Workers](/jobs-queue/workers). |
 | `channels:run` | — | Holds chat-channel gateway connections, such as Discord's, in their own process. See [Discord](/pieces/discord). |
-| `export:training-data` | `--output`, `--where`, `--page-size` | Exports chats as JSONL training data. See [Training data](/chat/training-data). |
-| `export:captures` | `--output`, `--user`, `--api-key`, `--from`, `--to`, `--operation` | Exports captured AI calls. See [Capture](/plugins/capture). |
 | `migrate` | — | Applies pending database migrations. See [Migrations](/database/migrations). |
 | `migrate:create` | `[name]`, `--name`, `--file`, `--skip-empty`, `--force-accept-warning` | Creates a migration from the current schema. See [Migrations](/database/migrations). |
 | `migrate:status` | — | Lists applied and pending migrations. See [Migrations](/database/migrations). |
@@ -39,6 +37,48 @@ Before any command runs, `frogbot` loads `.env*` files from the current director
 | `pull` | `<app>` | Downloads an app shared with you on Dojo into a new folder. See [`pull`](#pull). |
 | `logs` | `<app>`, `--follow` | Prints an app's recent logs from Dojo, or follows them. See [`logs`](#logs). |
 | `logout` | — | Signs the CLI out of Dojo. See [`logout`](#logout). |
+
+## Plugin commands
+
+Plugins and your config can add commands under `cli.commands`. Each key is a command name, written in lowercase, and each value is a function that runs when you call `frogbot <name>`.
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  // ...
+  cli: {
+    commands: {
+      'users:count': async ({ getFrogBot }) => {
+        const frogbot = await getFrogBot()
+        const { totalDocs } = await frogbot.count({ collection: 'users' })
+
+        console.log(totalDocs)
+      },
+    },
+  },
+})
+```
+
+When your app has a config file, `frogbot` loads it before running any command, so it can find these. The handler gets one argument:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `args` | `string[]` | Everything after the command name. |
+| `command` | `string` | The name the command was run as. |
+| `getConfig` | `() => Promise<FrogBotSanitizedConfig>` | Resolves to the config `frogbot` already loaded. |
+| `getFrogBot` | `(options?) => Promise<FrogBot>` | Boots a FrogBot instance the first time it's called and returns that same instance after. Takes the same options as `init`, without `config`. The instance is destroyed when the command ends. |
+
+A command that throws prints the error and exits with code `1`. Otherwise `frogbot` exits when the command's promise resolves, with `process.exitCode` if the command set one or `0`, so await everything the command starts. A command with the same name as a built-in replaces it. If the config file fails to load, built-in commands still run, and any other command prints the load error and exits with code `1`. A plugin adds commands by spreading the ones already there, so it keeps yours: `cli: { ...config.cli, commands: { ...config.cli?.commands, 'my:command': handler } }`. A name with capitals, or a value that isn't a function, fails the config.
+
+Running a name that's neither built in nor in `cli.commands` prints `[frogbot] "<name>" isn't a command in this app.` with a link here, and exits with code `2`. Check that the plugin that adds the command is in your config's `plugins`.
+
+These commands come from [`capturePlugin()`](/plugins/capture):
+
+| Command | Arguments | Description |
+| --- | --- | --- |
+| `export:training-data` | `--output`, `--where`, `--page-size` | Exports chats as JSONL training data. See [Training data](/chat/training-data). |
+| `export:captures` | `--output`, `--user`, `--api-key`, `--from`, `--to`, `--operation` | Exports captured AI calls. See [Capture](/plugins/capture). |
 
 ## `dev` and `start`
 

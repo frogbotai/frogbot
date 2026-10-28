@@ -1,4 +1,5 @@
-import type { FrogBot } from '../frogbot.js';
+import type { FrogBot } from 'frogbot';
+
 import type { ReadTrainingDataOptions, TrainingDataDocument, TrainingDataRecord } from './types.js';
 
 const DEFAULT_PAGE_SIZE = 100;

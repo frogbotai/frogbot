@@ -1,5 +1,4 @@
-import type { Where } from '../types/payload.js';
-import type { FrogBotRequest } from '../types/request.js';
+import type { FrogBotRequest, Where } from 'frogbot';
 
 export type TrainingDataDocument = Record<string, unknown>;
 

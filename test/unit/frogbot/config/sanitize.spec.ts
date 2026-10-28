@@ -22,6 +22,7 @@ import {
   registerFrogBotInstance,
 } from '../../../../packages/frogbot/src/instanceRegistry.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import type { Plugin } from '../../../../packages/frogbot/src/plugin.js';
 import { makeRequest } from './request.js';
 
 vi.mock('payload', async (importOriginal) => ({
@@ -560,6 +561,31 @@ describe('frogbot sanitize', () => {
         }),
       ),
     ).toThrow("Duplicate settings path 'usage'");
+  });
+
+  it('keeps the `cli.commands` a plugin adds', async () => {
+    const hello = () => undefined;
+    const plugin: Plugin = (config) => ({
+      ...config,
+      cli: { ...config.cli, commands: { ...config.cli?.commands, hello } },
+    });
+
+    const sanitized = await buildConfig(makeConfig({ plugins: [plugin] }));
+
+    expect(sanitized.cli.commands).toEqual({ hello });
+    expect(sanitize(makeConfig()).cli).toEqual({ commands: {} });
+  });
+
+  it('rejects a `cli.commands` key with capitals', () => {
+    expect(() => sanitize(makeConfig({ cli: { commands: { Hello: () => undefined } } }))).toThrow(
+      '[frogbot] cli command "Hello" must be lowercase',
+    );
+  });
+
+  it('rejects a `cli.commands` value that is not a function', () => {
+    expect(() => sanitize(makeConfig({ cli: { commands: { hello: 'nope' as never } } }))).toThrow(
+      '[frogbot] cli command "hello" must be a function',
+    );
   });
 
   it('rejects unknown built-in collection icons', () => {
