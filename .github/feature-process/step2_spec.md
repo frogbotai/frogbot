@@ -5,6 +5,7 @@ A fresh drafter writes `step2_spec.md` from `issue.md` and the research Summary.
 - Start with `## Brief`: at most 100 plain words, with no code or paths. Say what changes for the person using it (before and after), what the owner is asked to choose, and the main risk. Write it the way you'd explain it to a colleague in chat. It is often all the owner reads.
 - Copy the research Summary's rulings into `## Rulings` word for word: the same rows, or the same `none (read: …)` line.
 - Number the requirements, and make each one testable.
+- `## Core changes` lists every change under `packages/frogbot`, or says `None.`. For each, name its generic seam and the existing hook, collection hook, access function or export that can't do the job; decide with [Core or plugin](../../CONTRIBUTING.md#core-or-plugin). `pnpm check ticket-docs` fails a Draft spec without it.
 - Name the precedent that fits the ticket: Payload for app-builder work, OpenCode v2 for agent-harness work (DR-041), and Claude for Chrome as well for Sidekick's browser tools. Where FrogBot does what it does, say so under `## Following <precedent>` with `path:line`; the owner may veto any line. A recommendation equal to the precedent is not a card: it goes there.
 - A card is for a choice only the owner can make. Facts are research: "which modes exist?" is not a card.
 - Write each card so the owner can answer without asking what it means: a concrete situation and public-API code.
@@ -32,6 +33,10 @@ Status: Draft | Approved (<date>)
 ## Requirements
 
 1. <Testable requirement.>
+
+## Core changes
+
+<"None." or one bullet per core change: the change, its generic seam, and the existing hook, collection hook, access function or export that was ruled out.>
 
 ## Following <Payload | OpenCode v2 | Claude for Chrome>
 

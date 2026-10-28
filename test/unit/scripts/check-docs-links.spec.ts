@@ -17,9 +17,10 @@ function createDocs({
   other?: string[];
   redirects?: { destination: string; source: string }[];
 } = {}) {
-  const root = join(tmpdir(), `frogbot-docs-links-${process.pid}-${roots.length}`);
+  const repo = join(tmpdir(), `frogbot-docs-links-${process.pid}-${roots.length}`);
+  const root = join(repo, 'docs');
 
-  roots.push(root);
+  roots.push(repo);
   mkdirSync(root, { recursive: true });
 
   writeFileSync(
@@ -43,6 +44,48 @@ function writePage(root: string, id: string, content = '# Page') {
 
   mkdirSync(join(file, '..'), { recursive: true });
   writeFileSync(file, content);
+}
+
+function writeRepoFile(root: string, name: string, content: string) {
+  const file = join(root, '..', name);
+
+  mkdirSync(join(file, '..'), { recursive: true });
+  writeFileSync(file, content);
+}
+
+function contributing(link: string) {
+  return [
+    '# Contributing',
+    '',
+    '## Design principles',
+    '',
+    '- **Core is an execution engine.** Decide with [Core or plugin](#core-or-plugin).',
+    '',
+    '### Core or plugin',
+    '',
+    `See ${link}.`,
+    '',
+    '```md',
+    '[Ignored](missing-in-fence.md)',
+    '```',
+  ].join('\n');
+}
+
+function repoDocs(link: string) {
+  const root = createDocs({ general: ['index'] });
+
+  writePage(root, 'index');
+  writeRepoFile(root, 'CONTRIBUTING.md', contributing(link));
+
+  writeRepoFile(
+    root,
+    'CLAUDE.md',
+    'Read [Design principles](CONTRIBUTING.md#design-principles) and [the guide](https://example.com/missing) and `~/code/payload`.',
+  );
+
+  writeRepoFile(root, 'test/README.md', '# Tests\n\n## Live tests (real credentials)\n\nRun them.');
+
+  return root;
 }
 
 function run(root: string) {
@@ -84,7 +127,9 @@ describe('check-docs-links', () => {
     const result = run(root);
 
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain('[check-docs-links] OK - 2 General pages scanned.');
+    expect(result.stdout).toContain(
+      '[check-docs-links] OK - 2 General pages and 0 repo files scanned.',
+    );
   });
 
   it('reports missing page and asset targets with file and line', () => {
@@ -157,5 +202,41 @@ describe('check-docs-links', () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('index.mdx:1: /agents/alternate');
     expect(result.stderr).toContain('index.mdx:2: ../outside');
+  });
+
+  it('accepts file links, heading anchors and same-file anchors in CONTRIBUTING.md and CLAUDE.md', () => {
+    const result = run(repoDocs('[live tests](test/README.md#live-tests-real-credentials)'));
+
+    expect(result.stderr).toBe('');
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain(
+      '[check-docs-links] OK - 1 General pages and 2 repo files scanned.',
+    );
+  });
+
+  it('reports a repo-file link to a missing file', () => {
+    const result = run(repoDocs('[missing](test/MISSING.md)'));
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('CONTRIBUTING.md:9: test/MISSING.md');
+  });
+
+  it('reports anchors whose heading was renamed', () => {
+    const root = repoDocs('[live tests](test/README.md#live-tests-real-credentials)');
+
+    writeRepoFile(
+      root,
+      'CONTRIBUTING.md',
+      contributing('it').replace('### Core or plugin', '### Core or plugins'),
+    );
+
+    writeRepoFile(root, 'CLAUDE.md', 'Read [Core or plugin](CONTRIBUTING.md#core-or-plugin).');
+
+    const result = run(root);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('CONTRIBUTING.md:5: #core-or-plugin');
+    expect(result.stderr).toContain('CLAUDE.md:1: CONTRIBUTING.md#core-or-plugin');
+    expect(result.stderr).toContain('[check-docs-links] FAIL - 2 issue(s) found.');
   });
 });

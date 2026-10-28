@@ -37,11 +37,39 @@ Before reading code:
 
 FrogBot is in beta. The goal is the best, most consistent developer experience across all of FrogBot, not the smallest diff. These principles decide between designs that all work.
 
+- **Core is an execution engine.** `packages/frogbot` runs things (operations, agents, tools, hooks, jobs, collections, auth, config) and exposes the seams features build on. It does not contain features. A change belongs in core only when it improves execution for every app, whatever plugins it uses: a new hook argument, a missing seam, a bug in a lifecycle. Budgets, spend counters, per-key or per-user policy, exports for one plugin's data, and fields or jobs injected into an app's schema are features: they go in a plugin. Before changing core for a feature, show in the plan that existing hooks, collection hooks and public exports can't do it. If they can't, add the smallest generic seam, the same for every plugin, and put the feature itself in the plugin. Core never names a plugin, a plugin's collection slug, endpoint or user property. Decide with [Core or plugin](#core-or-plugin).
 - **Payload first, with restraint.** FrogBot users build on Payload's model, so a familiar shape beats a clever one. Before designing an API, lifecycle or runtime flow, find Payload's closest equivalent in [`~/code/payload`](#reference-repos) and follow it unless there is a concrete reason not to; record the reason in the plan. Match Payload; don't exceed it. Agent-harness work (chat turns, agents, tools, sessions, streaming and their SQLite storage) follows OpenCode v2 in `~/code/opencode-v2` the same way. Examples: definitions are config; a hook returns the value core saves (`beforeChange`) instead of keeping its own state; side effects run in `afterChange` on the document that owns the data, so every write path triggers them; a job saves each task's output so a retry skips finished work.
 - **No legacy.** No shims, flags, fallbacks, parallel old and new paths, data migrations, migration guides or upgrade notes. Each one is a second way to do the same thing, and the inconsistency outlives the beta. Delete dead code and buggy compatibility paths instead of keeping them "just in case". Don't ask whether to keep the old behavior.
 - **Breaking changes are fine.** When a better API, schema or extension point needs one, make it and update every caller, piece, plugin, test and doc in the same commit. Mark it with `!` in the subject and a `BREAKING CHANGE:` footer.
 - **One pattern per concept.** Extension points that do the same kind of job (piece hooks, plugin options, adapters, channel renderers) share naming, argument shapes, return shapes and lifecycle. When one integration needs a seam core lacks, change the core seam for every implementation instead of working around it in one package.
 - **Generic where the variation is real.** Put shared behavior in core behind a typed, documented extension point once two implementations need it, and keep platform specifics in their own package. Handle the cases the feature needs: no unused options, abstractions or extension points for needs nobody has yet. Check that a library is installed before using it.
+
+### Core or plugin
+
+A design is better when it scores well on all four of these:
+
+1. **Time to a working app.** A new app gets sensible behavior on day one.
+2. **Room to change it.** An app can replace the behavior without forking FrogBot.
+3. **Safe upgrades.** Upgrading FrogBot never changes an app's schema or behavior unless the app's config asks for it.
+4. **One way.** Each concept has one extension point, not a built-in version plus a plugin version.
+
+Answer these in order. The first "yes" decides.
+
+| Question                                                                                                                                                                                                                                             | If yes                                                                                          |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Is it part of the runtime that every app's requests pass through: auth, the gateway, AI operations, agents, the job runner, usage metering, querying an app's own data (find, lexical and vector search), the hooks and access functions themselves? | Core                                                                                            |
+| Does it name a plugin, or a plugin's slug, endpoint or user property?                                                                                                                                                                                | Plugin                                                                                          |
+| Can existing hooks, collection hooks, access functions or public exports already do it?                                                                                                                                                              | Plugin, with no core change                                                                     |
+| Does it add fields, collections or scheduled jobs to an app's schema for a feature?                                                                                                                                                                  | Plugin. The app opts in by listing it                                                           |
+| Would some apps reasonably want a different policy or business rule (another budget model, credits, per-team limits)? A different backend for a core capability is an adapter, not a plugin.                                                         | Plugin, even when most apps use it                                                              |
+| Does a plugin need something no hook or export gives it?                                                                                                                                                                                             | Core gets the smallest generic seam, the same for every plugin. The feature stays in the plugin |
+| None of the above                                                                                                                                                                                                                                    | Plugin                                                                                          |
+
+Being on by default is not the same as being in core. When most new apps want a plugin, enable it in `templates/blank` and in the examples that use the feature. Don't move it into core.
+
+Keep related behavior in one plugin. For example, model access and budgets are one policy plugin, not two.
+
+Example: AI policy (model allowlists, monthly budgets, spend counters) goes in a plugin enabled by the template. Core keeps the gateway, usage metering and model-aware `ai.access`. A SaaS app can swap the policy plugin for a credits plugin on the same seam.
 
 ## Commands
 
@@ -68,25 +96,26 @@ FrogBot is in beta. The goal is the best, most consistent developer experience a
 
 `pnpm check` runs these; each also runs alone as `pnpm check <name>`.
 
-| Name                 | Fails when                                                                                                                                                                          |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `branding`           | templates, examples, docs, skills or READMEs mention Payload                                                                                                                        |
-| `docs-fences`        | a docs code block has no language, or marks a shell command as plain text                                                                                                           |
-| `docs-links`         | a General docs link, anchor or local asset is broken                                                                                                                                |
-| `docs-references`    | a docs or skill example imports a name `frogbot` or `@frogbotai/*` does not export (its allowlist holds intentional placeholders only)                                              |
-| `option-tables`      | a docs option table does not list exactly its type's properties, or a `\| Option \|` table is missing from `docs/option-tables.json`                                                |
-| `tests`              | a spec sits in `packages/**/src` or in no project, an int suite skips `clearAndSeed`, or scratch files go outside `os.tmpdir()`/`test/.tmp/`                                        |
-| `packages`           | a workspace folder has no tracked `package.json`                                                                                                                                    |
-| `scripts`            | a root script has no row in the command table above (or the reverse), or a package has scripts beyond the three                                                                     |
-| `ui-architecture`    | `packages/ui` uses forbidden imports, globals or strings                                                                                                                            |
-| `package-boundaries` | `@frogbotai/ui` imports Payload or admin code outside `src/admin`, any of it imports Next, another package imports `@payloadcms/ui`, or its manifest installs Payload or names Next |
-| `generated`          | a tracked `importMap.js`, `frogbot-types.ts` or `piece-types.ts` is stale (`--full` only; `--write` rewrites them)                                                                  |
-| `test-types`         | `test/` has a type error beyond `test/typecheck-baseline.json`, or fewer than it lists (`--full` only; `--write` lowers it)                                                         |
-| `typed-lint`         | a changed `.ts` or `.tsx` file breaks a type-aware rule in `.oxlintrc.json` (run on oxlint), or one of its `"warn"` overrides no longer warns (`--all` lints every file)            |
-| `dist-imports`       | a built relative import or entry point does not match a file name exactly, including case                                                                                           |
-| `single-frogbot`     | a package lists `frogbot` as a regular dependency, or `frogbot` has framework peers                                                                                                 |
-| `peer-variants`      | a dependency of several workspace folders installs as two peer variants of one version in `pnpm-lock.yaml`                                                                          |
-| `ticket-docs`        | a ticket folder disagrees with the templates, `.idea/_process/decisions.md` or the plan (main checkout only)                                                                        |
+| Name                 | Fails when                                                                                                                                                                                                            |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `branding`           | templates, examples, docs, skills or READMEs mention Payload                                                                                                                                                          |
+| `core-boundaries`    | `packages/frogbot/src` names a plugin (`@frogbotai/plugin-`, `plugin-<name>` for each `packages/plugins/` folder, `apiKeyId`, `api-keys/`, `frogbotCapture`, `_roles`) beyond `scripts/core-boundaries-baseline.json` |
+| `docs-fences`        | a docs code block has no language, or marks a shell command as plain text                                                                                                                                             |
+| `docs-links`         | a General docs link, anchor or local asset, or a link or anchor in `CONTRIBUTING.md` or `CLAUDE.md`, is broken                                                                                                        |
+| `docs-references`    | a docs or skill example imports a name `frogbot` or `@frogbotai/*` does not export (its allowlist holds intentional placeholders only)                                                                                |
+| `option-tables`      | a docs option table does not list exactly its type's properties, or a `\| Option \|` table is missing from `docs/option-tables.json`                                                                                  |
+| `tests`              | a spec sits in `packages/**/src` or in no project, an int suite skips `clearAndSeed`, or scratch files go outside `os.tmpdir()`/`test/.tmp/`                                                                          |
+| `packages`           | a workspace folder has no tracked `package.json`                                                                                                                                                                      |
+| `scripts`            | a root script has no row in the command table above (or the reverse), or a package has scripts beyond the three                                                                                                       |
+| `ui-architecture`    | `packages/ui` uses forbidden imports, globals or strings                                                                                                                                                              |
+| `package-boundaries` | `@frogbotai/ui` imports Payload or admin code outside `src/admin`, any of it imports Next, another package imports `@payloadcms/ui`, or its manifest installs Payload or names Next                                   |
+| `generated`          | a tracked `importMap.js`, `frogbot-types.ts` or `piece-types.ts` is stale (`--full` only; `--write` rewrites them)                                                                                                    |
+| `test-types`         | `test/` has a type error beyond `test/typecheck-baseline.json`, or fewer than it lists (`--full` only; `--write` lowers it)                                                                                           |
+| `typed-lint`         | a changed `.ts` or `.tsx` file breaks a type-aware rule in `.oxlintrc.json` (run on oxlint), or one of its `"warn"` overrides no longer warns (`--all` lints every file)                                              |
+| `dist-imports`       | a built relative import or entry point does not match a file name exactly, including case                                                                                                                             |
+| `single-frogbot`     | a package lists `frogbot` as a regular dependency, or `frogbot` has framework peers                                                                                                                                   |
+| `peer-variants`      | a dependency of several workspace folders installs as two peer variants of one version in `pnpm-lock.yaml`                                                                                                            |
+| `ticket-docs`        | a ticket folder disagrees with the templates, `.idea/_process/decisions.md` or the plan (main checkout only)                                                                                                          |
 
 ## Code style
 

@@ -1,0 +1,77 @@
+[
+  {
+    "file": "packages/frogbot/src/bin/exportCaptures.ts",
+    "match": "@frogbotai/plugin-",
+    "ticket": "361"
+  },
+  {
+    "file": "packages/frogbot/src/bin/exportCaptures.ts",
+    "match": "frogbotCapture",
+    "ticket": "361"
+  },
+  {
+    "file": "packages/frogbot/src/bin/exportCaptures.ts",
+    "match": "plugin-capture",
+    "ticket": "361"
+  },
+  {
+    "file": "packages/frogbot/src/bin/logout.ts",
+    "match": "api-keys/",
+    "ticket": "362"
+  },
+  {
+    "file": "packages/frogbot/src/bin/logout.ts",
+    "match": "apiKeyId",
+    "ticket": "362"
+  },
+  {
+    "file": "packages/frogbot/src/bin/share/dojo.ts",
+    "match": "apiKeyId",
+    "ticket": "362"
+  },
+  {
+    "file": "packages/frogbot/src/config/build.ts",
+    "match": "_roles",
+    "ticket": "363"
+  },
+  {
+    "file": "packages/frogbot/src/config/build.ts",
+    "match": "plugin-roles",
+    "ticket": "363"
+  },
+  {
+    "file": "packages/frogbot/src/config/rewriteComponentPaths.ts",
+    "match": "@frogbotai/plugin-",
+    "ticket": "364"
+  },
+  {
+    "file": "packages/frogbot/src/config/rewriteComponentPaths.ts",
+    "match": "plugin-import-export",
+    "ticket": "364"
+  },
+  {
+    "file": "packages/frogbot/src/config/rewriteComponentPaths.ts",
+    "match": "plugin-seo",
+    "ticket": "364"
+  },
+  {
+    "file": "packages/frogbot/src/config/sanitize.ts",
+    "match": "_roles",
+    "ticket": "363"
+  },
+  {
+    "file": "packages/frogbot/src/config/types.ts",
+    "match": "_roles",
+    "ticket": "363"
+  },
+  {
+    "file": "packages/frogbot/src/config/types.ts",
+    "match": "plugin-mcp",
+    "ticket": "363"
+  },
+  {
+    "file": "packages/frogbot/src/config/types.ts",
+    "match": "plugin-roles",
+    "ticket": "363"
+  }
+]

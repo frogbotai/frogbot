@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { parkedTickets } from './lib/decisions.mjs';
 import { parseHeader } from './ticket.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -631,6 +632,31 @@ function checkBrief(doc, problem) {
   });
 }
 
+function checkCoreChanges(doc, problem) {
+  if (!doc.lines.some((line) => /^Status:\s*Draft\b/.test(line))) return;
+
+  const core = section(doc, 'Core changes');
+
+  if (!core) {
+    problem(1, 'missing "## Core changes" (right after "## Requirements")');
+
+    return;
+  }
+
+  const next = doc.headings.find(({ level, index }) => level === 2 && index > core.index);
+
+  if (core.previous !== 'Requirements' || (next && !next.title.startsWith('Following'))) {
+    problem(
+      core.index + 1,
+      '"## Core changes" must come right after "## Requirements", before "## Following …"',
+    );
+  }
+
+  if (!doc.lines.slice(core.index + 1, core.end).some((line) => line.trim() !== '')) {
+    problem(core.index + 1, '"## Core changes" is empty: write "None." or one bullet per change');
+  }
+}
+
 function checkSpec(doc, context, researchIds) {
   const { problem } = context;
   const rulings = section(doc, 'Rulings');
@@ -640,6 +666,8 @@ function checkSpec(doc, context, researchIds) {
   checkBanned(doc, context);
   checkWords(doc, 'spec', problem);
   checkBrief(doc, problem);
+
+  if (!context.parked) checkCoreChanges(doc, problem);
 
   if (!rulings) {
     problem(1, 'missing "## Rulings" (right after "## Problem")');
@@ -814,6 +842,7 @@ function checkTicketDocs({ idea, root, home = os.homedir(), only = [] }) {
   const decisionsText = readOptional(path.join(idea, RULINGS));
   const decisions = parseDecisions(decisionsText ?? '');
   const folders = ticketFolders(path.join(idea, TICKETS));
+  const parked = parkedTickets(path.join(idea, PROCESS));
   const archived = new Set(
     ticketFolders(path.join(idea, ARCHIVED_TICKETS)).map(({ ticket }) => ticket),
   );
@@ -895,6 +924,7 @@ function checkTicketDocs({ idea, root, home = os.homedir(), only = [] }) {
     const context = (name) => ({
       decisions,
       resolve,
+      parked: parked.has(folder.ticket),
       problem: at(problems, file(name)),
       warn: at(warnings, file(name)),
     });

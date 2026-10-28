@@ -4,6 +4,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = path.resolve(process.argv[2] ?? 'docs');
+const repoRoot = path.resolve(process.argv[3] ?? path.dirname(root));
+const repoFiles = ['CONTRIBUTING.md', 'CLAUDE.md']
+  .map((name) => path.join(repoRoot, name))
+  .filter((file) => fs.existsSync(file));
+
 const configFile = path.join(root, 'docs.json');
 const generalRoots = new Set([
   'access-control',
@@ -79,7 +84,7 @@ function isOwnedPage(id) {
   return generalRoots.has(directory);
 }
 
-function withoutCode(source) {
+function withoutCode(source, { inline = true } = {}) {
   const lines = source.split('\n');
   let fence;
 
@@ -95,10 +100,46 @@ function withoutCode(source) {
       }
 
       if (fence) return '';
+      if (!inline) return line;
 
       return line.replace(/`[^`\n]*`/g, (match) => ' '.repeat(match.length));
     })
     .join('\n');
+}
+
+function slug(heading) {
+  return heading
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N} _-]/gu, '')
+    .replace(/ /g, '-');
+}
+
+const anchorsByFile = new Map();
+
+function anchorsOf(file) {
+  if (anchorsByFile.has(file)) return anchorsByFile.get(file);
+
+  const counts = new Map();
+  const anchors = new Set();
+
+  for (const line of withoutCode(fs.readFileSync(file, 'utf8'), { inline: false }).split('\n')) {
+    const heading = /^ {0,3}#{1,6}[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$/.exec(line);
+
+    if (!heading) continue;
+
+    const base = slug(heading[1]);
+    const count = counts.get(base) ?? 0;
+
+    counts.set(base, count + 1);
+    anchors.add(count === 0 ? base : `${base}-${count}`);
+  }
+
+  anchorsByFile.set(file, anchors);
+
+  return anchors;
 }
 
 function lineAt(source, index) {
@@ -253,6 +294,35 @@ for (const file of ownedFiles) {
   }
 }
 
+for (const file of repoFiles) {
+  for (const { line, target } of extractTargets(fs.readFileSync(file, 'utf8'))) {
+    if (target.startsWith('~') || target.startsWith('//') || /^[a-z][a-z\d+.-]*:/i.test(target)) {
+      continue;
+    }
+
+    const [pathname, anchor = ''] = target.split('#', 2).map((part) => decodeURIComponent(part));
+    const local = pathname.split('?', 1)[0];
+    let destination = file;
+
+    if (local.startsWith('/')) destination = path.join(repoRoot, local);
+    else if (local !== '') destination = path.resolve(path.dirname(file), local);
+
+    if (!fs.existsSync(destination)) {
+      report(file, line, target);
+      continue;
+    }
+
+    if (
+      anchor !== '' &&
+      destination.endsWith('.md') &&
+      fs.statSync(destination).isFile() &&
+      !anchorsOf(destination).has(anchor)
+    ) {
+      report(file, line, target);
+    }
+  }
+}
+
 if (failures.length > 0) {
   for (const failure of failures) console.error(failure);
 
@@ -260,4 +330,6 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`[check-docs-links] OK - ${ownedFiles.length} General pages scanned.`);
+console.log(
+  `[check-docs-links] OK - ${ownedFiles.length} General pages and ${repoFiles.length} repo files scanned.`,
+);

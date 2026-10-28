@@ -121,6 +121,7 @@ describe('affectedSet on past commits', () => {
     expect(set.browser).toEqual(['question', 'question-webkit', 'blank', 'plugin-seo']);
     expect(set.checks).toEqual([
       'branding',
+      'core-boundaries',
       'dist-imports',
       'docs-fences',
       'docs-links',
@@ -166,7 +167,14 @@ describe('affectedSet on past commits', () => {
 
     expect(set.typecheck).toEqual([]);
     expect(set.specs.unit).toEqual(['test/unit/scripts/checkPackages.spec.ts']);
-    expect(set.checks).toEqual(['packages', 'scripts', 'test-types', 'tests', 'typed-lint']);
+    expect(set.checks).toEqual([
+      'docs-links',
+      'packages',
+      'scripts',
+      'test-types',
+      'tests',
+      'typed-lint',
+    ]);
     expect(set.uncovered).toEqual([]);
   });
 });
@@ -301,6 +309,14 @@ describe('CHECK_INPUTS', () => {
     'packages/next/src/views/Settings/index.tsx',
   ])('checks generated files when %s changes', (file) => {
     expect(map([file]).checks).toContain('generated');
+  });
+
+  it('covers the core-boundaries baseline, but not the source it scans', () => {
+    expect(map(['scripts/core-boundaries-baseline.json'])).toMatchObject({
+      checks: ['core-boundaries'],
+      uncovered: [],
+    });
+    expect(map(['packages/frogbot/src/config/types.ts']).checks).toContain('core-boundaries');
   });
 });
 

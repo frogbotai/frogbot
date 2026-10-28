@@ -35,9 +35,14 @@ const MANIFESTS = ['package.json', '**/package.json'];
 
 export const CHECK_INPUTS = {
   branding: [...DOCS_PAGES, 'templates/**', 'examples/**', 'packages/create-frogbot-app/**'],
+  'core-boundaries': [
+    'packages/frogbot/src/**',
+    'packages/plugins/*/package.json',
+    'scripts/core-boundaries-baseline.json',
+  ],
   'dist-imports': ['packages/**/src/**', ...MANIFESTS],
   'docs-fences': ['docs/**'],
-  'docs-links': ['docs/**', 'skills/**'],
+  'docs-links': ['docs/**', 'skills/**', 'CONTRIBUTING.md', 'CLAUDE.md'],
   'docs-references': [...DOCS_PAGES, 'templates/*/README.md', 'packages/frogbot/src/bin/**'],
   generated: [
     '**/importMap.js',
@@ -63,6 +68,7 @@ export const CHECK_INPUTS = {
 };
 
 const STRUCTURAL_CHECKS = [
+  'core-boundaries',
   'dist-imports',
   'package-boundaries',
   'test-types',
@@ -302,7 +308,9 @@ function checkSet({ files, checks, cover }) {
         (CHECK_INPUTS[name] ?? []).some((glob) => path.posix.matchesGlob(file, glob)),
     );
 
-    if (!STRUCTURAL_CHECKS.includes(name)) read.forEach(cover);
+    read
+      .filter((file) => !STRUCTURAL_CHECKS.includes(name) || file.startsWith('scripts/'))
+      .forEach(cover);
 
     return read.length > 0;
   });

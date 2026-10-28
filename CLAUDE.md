@@ -28,6 +28,7 @@ pnpm test:unit|ui|int:sqlite|e2e <file>   pnpm test:browser --project <p>
 
 - Run `pnpm check` through the `lint` subagent, with the worktree as its workdir.
 - A ticket's code lives in its worktree, `../frogbot-ticket<n>` on `feat/ticket-<n>-<slug>`. Its documents live only in the main checkout's `.idea/_process/tickets/`.
+- Core (`packages/frogbot`) stays an execution engine: features go in plugins. Read [Design principles](CONTRIBUTING.md#design-principles) before changing core.
 - Precedent: agent-harness work (chat turns, agents, tools, sessions, streaming, their SQLite storage) follows OpenCode v2 at `~/code/opencode-v2`; everything else follows Payload at `~/code/payload`. Never read `node_modules/payload`.
 - Never push, merge or open a PR. Never stage `.idea/`. Never `git stash`: the stash is shared across worktrees.
 - Record findings outside the work with `pnpm ticket found` and carry on.
