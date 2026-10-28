@@ -29,7 +29,7 @@ FrogBot is a pnpm monorepo that wraps Payload 3 with an AI-native layer (agents,
 
 Before reading code:
 
-- `packages/frogbot/src/config/sanitize.ts` turns a `FrogBotConfig` into a Payload config. FrogBot-only keys (`agents`, `ai`, `connections`, `tools`, ...) are consumed there and never reach Payload. `rewriteComponentPaths.ts` renames `@payloadcms/*` component paths to `@frogbotai/*` in the generated import map.
+- `packages/frogbot/src/config/sanitize.ts` turns a `FrogBotConfig` into a Payload config. FrogBot-only keys (`agents`, `ai`, `connections`, `tools`, ...) are consumed there and never reach Payload. `rewriteComponentPaths.ts` renames component paths of Payload's own packages (`@payloadcms/ui`, `richtext-lexical`, `storage-*`) to `@frogbotai/*` in the generated import map. A plugin that wraps a Payload plugin maps its own paths with `mapComponentPaths` from `frogbot/internal`.
 - `FrogBotRequest` replaces `req.payload` with `req.frogbot`; user code never sees `payload`.
 - The internal layout mirrors Payload core where a concept matches (see [Project structure](#project-structure)).
 

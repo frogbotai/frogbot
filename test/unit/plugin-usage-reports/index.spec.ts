@@ -73,10 +73,10 @@ describe('usageReportsPlugin', () => {
 
     expect(result.collections.map((item) => item.slug)).toContain('exports');
     expect(usage).toHaveProperty('admin.components.listMenuItems', [
-      expect.objectContaining({ path: '@payloadcms/plugin-import-export/rsc#ExportListMenuItem' }),
+      expect.objectContaining({ path: '@frogbotai/plugin-import-export/rsc#ExportListMenuItem' }),
     ]);
     expect((result.admin?.components as Record<string, unknown>).providers).toEqual([
-      '@payloadcms/plugin-import-export/rsc#ImportExportProvider',
+      '@frogbotai/plugin-import-export/rsc#ImportExportProvider',
     ]);
   });
 

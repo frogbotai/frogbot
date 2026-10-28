@@ -8,6 +8,7 @@ import {
   attachRegisteredFrogBot,
   fromPayloadConfig,
   fromPayloadFields,
+  mapComponentPaths,
   toPayloadConfig,
   toPayloadFields,
 } from 'frogbot/internal';
@@ -109,11 +110,21 @@ export function seoPlugin<const S extends CollectionSlug>(options: SEOPluginOpti
       await payloadSeoPlugin(toPayloadSEOConfig(options, slugs))(toPayloadConfig(config)),
     );
 
-    return {
+    const restored = {
       ...result,
       collections: result.collections?.map(
         (collection) => handPlacedCollections.get(collection.slug) ?? collection,
       ),
     };
+
+    return fromPayloadConfig(mapComponentPaths(toPayloadConfig(restored), toFrogBotPath));
   };
+}
+
+const payloadSpecifier = '@payloadcms/plugin-seo/client';
+
+function toFrogBotPath(path: string): string {
+  return path === payloadSpecifier || path.startsWith(`${payloadSpecifier}#`)
+    ? `@frogbotai/plugin-seo/client${path.slice(payloadSpecifier.length)}`
+    : path;
 }
