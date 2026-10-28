@@ -10,7 +10,7 @@
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--color-bg-tertiary) transparent;
-    scrollbar-gutter: stable;
+    scrollbar-gutter: stable both-edges;
   }
 
   .fb-message-list__content {

@@ -362,7 +362,7 @@ const testProjects = [
     testMatch: ['accountMenu.browser.spec.ts', 'livePreview.browser.spec.ts'],
   }),
   project({ name: 'plugin-seo', testMatch: 'seoFields.browser.spec.ts' }),
-  project({ name: 'dojo', testMatch: 'dojoBadge.browser.spec.ts' }),
+  project({ name: 'dojo', testMatch: ['chatGutter.browser.spec.ts', 'dojoBadge.browser.spec.ts'] }),
   ...[
     { name: 'first-user-blank', grep: /@blank/ },
     { name: 'sign-in-passwords', grep: /@passwords/ },

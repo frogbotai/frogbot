@@ -44,6 +44,7 @@ export default buildConfig({
       handler: async (req) => {
         if (!req.user) return new Response(null, { status: 401 });
 
+        const count = Number(new URL(req.url!).searchParams.get('messages') ?? 6);
         const chat = await req.frogbot.create({
           collection: chatsSlug,
           data: { title: 'Badge chat', user: req.user.id, agent: agentSlug },
@@ -51,7 +52,7 @@ export default buildConfig({
           req,
         });
 
-        for (let index = 0; index < 6; index++) {
+        for (let index = 0; index < count; index++) {
           const role = index % 2 ? 'assistant' : 'user';
           const text = `Message ${index + 1}. `.repeat(role === 'assistant' ? 30 : 3);
 
