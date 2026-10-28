@@ -310,6 +310,7 @@ const testProjects = [
       'aiField.browser.spec.ts',
       'apiKeys.browser.spec.ts',
       'themeTokens.browser.spec.ts',
+      'viewActions.browser.spec.ts',
     ],
   }),
   project({ name: 'question-firefox', browser: 'firefox', testMatch: crossBrowserQuestionSpecs }),

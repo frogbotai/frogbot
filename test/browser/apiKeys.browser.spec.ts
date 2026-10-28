@@ -28,6 +28,31 @@ test.afterEach(() => {
   expect(consoleErrors).toEqual([]);
 });
 
+test('puts Create API key in the page header at its own width', async ({ page }) => {
+  await page.goto(`/collections/${apiKeysSlug}`);
+
+  const button = page.locator('.app-header').getByRole('button', { name: 'Create API key' });
+  const controls = page.locator('.collection-list .list-controls');
+
+  await expect(button).toBeVisible();
+  await expect(
+    page.locator('.collection-list').getByRole('button', { name: 'Create API key' }),
+  ).toHaveCount(0);
+  expect((await button.boundingBox())!.width).toBeLessThan(
+    (await controls.boundingBox())!.width / 2,
+  );
+
+  const nextVisible = await controls.evaluate((element) => {
+    let next = element.nextElementSibling;
+
+    while (next?.classList.contains('sr-only')) next = next.nextElementSibling;
+
+    return next?.className;
+  });
+
+  expect(nextVisible).toMatch(/^(table|no-results)\b/);
+});
+
 for (const theme of ['light', 'dark'] as const) {
   test(`creates, copies and revokes an API key in FrogBot's dialog (${theme})`, async ({
     page,

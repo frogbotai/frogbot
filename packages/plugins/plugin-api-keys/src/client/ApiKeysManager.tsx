@@ -18,9 +18,10 @@ import { useConfig, useListQuery, useRouteCache } from '@frogbotai/ui/admin';
 import { CopyIcon } from '@frogbotai/ui/icons';
 import { useId, useState } from 'react';
 
-export function ApiKeysManager() {
+export function ApiKeysManager(props: { collectionSlug?: string }) {
   const { config } = useConfig();
-  const { collectionSlug } = useListQuery();
+  const listQuery = useListQuery();
+  const collectionSlug = props.collectionSlug ?? listQuery.collectionSlug;
   const { clearRouteCache } = useRouteCache();
   const nameId = useId();
   const [open, setOpen] = useState(false);

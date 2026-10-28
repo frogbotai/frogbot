@@ -16,7 +16,10 @@ import {
   rotateApiKey,
 } from './server/services.js';
 
-const MANAGER_COMPONENT = '@frogbotai/plugin-api-keys/client#ApiKeysManager';
+const managerComponent = (collectionSlug: string) => ({
+  path: '@frogbotai/plugin-api-keys/client#ApiKeysManager',
+  clientProps: { collectionSlug },
+});
 
 type CollectionOptions = {
   authCollection: string;
@@ -50,9 +53,14 @@ function mergeFields(...groups: (Field[] | undefined)[]): Field[] {
 }
 
 function createViews({
+  collectionSlug,
   usageCollection,
   views,
-}: Pick<CollectionOptions, 'usageCollection'> & { views?: CollectionView[] }): CollectionView[] {
+}: Pick<CollectionOptions, 'collectionSlug' | 'usageCollection'> & {
+  views?: CollectionView[];
+}): CollectionView[] {
+  const manager = managerComponent(collectionSlug);
+
   if (!views?.length) {
     return [
       {
@@ -65,7 +73,7 @@ function createViews({
           'revokedAt',
           'actions',
         ],
-        components: { beforeTable: [MANAGER_COMPONENT] },
+        components: { actions: [manager] },
       },
     ];
   }
@@ -78,7 +86,7 @@ function createViews({
           ...view,
           components: {
             ...view.components,
-            beforeTable: [MANAGER_COMPONENT, ...(view.components?.beforeTable ?? [])],
+            actions: [manager, ...(view.components?.actions ?? [])],
           },
         }
       : view,
@@ -285,6 +293,7 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
       ...collection?.admin,
       components: { ...existing?.admin?.components, ...collection?.admin?.components },
       views: createViews({
+        collectionSlug,
         usageCollection,
         views: collection?.admin?.views ?? existing?.admin?.views,
       }),

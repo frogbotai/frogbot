@@ -3,6 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { apiKeysPlugin } from '../../../packages/plugins/plugin-api-keys/src/index.js';
 
+function manager(collectionSlug = 'api-keys') {
+  return {
+    path: '@frogbotai/plugin-api-keys/client#ApiKeysManager',
+    clientProps: { collectionSlug },
+  };
+}
+
 function makeConfig(): FrogBotConfig {
   return {
     secret: 'test',
@@ -65,7 +72,7 @@ describe('API keys collection', () => {
       {
         type: 'list',
         defaultFields: ['name', 'prefix', 'lastUsedAt', 'revokedAt', 'actions'],
-        components: { beforeTable: ['@frogbotai/plugin-api-keys/client#ApiKeysManager'] },
+        components: { actions: [manager()] },
       },
     ]);
     expect(collection.fields.at(-1)).toMatchObject({
@@ -336,8 +343,9 @@ describe('API keys collection', () => {
         type: 'list',
         defaultFields: ['name', 'tenant'],
         components: {
-          beforeTable: ['@frogbotai/plugin-api-keys/client#ApiKeysManager', './TenantControl.js'],
+          beforeTable: ['./TenantControl.js'],
           afterTable: ['./Footer.js'],
+          actions: [manager()],
         },
       },
     ]);
@@ -361,10 +369,27 @@ describe('API keys collection', () => {
       {
         type: 'list',
         slug: 'all',
-        components: {
-          beforeTable: ['@frogbotai/plugin-api-keys/client#ApiKeysManager', './Banner.js'],
-        },
+        components: { beforeTable: ['./Banner.js'], actions: [manager()] },
       },
+    ]);
+  });
+
+  it("puts the manager before an authored list view's own actions", async () => {
+    const collection = await getCollection({
+      collection: { admin: { views: [{ type: 'list', components: { actions: ['./Other.js'] } }] } },
+    });
+
+    expect(collection.admin?.views).toEqual([
+      { type: 'list', components: { actions: [manager(), './Other.js'] } },
+    ]);
+  });
+
+  it('gives the manager a custom collection slug', async () => {
+    const config = await apiKeysPlugin({ collectionSlug: 'credentials' })(makeConfig());
+    const collection = config.collections.find((item) => item.slug === 'credentials')!;
+
+    expect(collection.admin?.views).toEqual([
+      expect.objectContaining({ components: { actions: [manager('credentials')] } }),
     ]);
   });
 
