@@ -25,12 +25,51 @@ async function bumpSteps(): Promise<string[]> {
   });
 }
 
+type Run = (command: string, args: string[]) => { status: number; stdout: string; stderr: string };
+
+function release() {
+  return import('../../../scripts/release.mjs');
+}
+
 async function releaseSteps(resume: boolean): Promise<string[]> {
-  const release = (await import('../../../scripts/release.mjs')) as {
-    releaseSteps: (options: { resume: boolean }) => string[][];
+  return (await release())
+    .releaseSteps({ resume })
+    .map(({ name, run }) => (typeof run === 'function' ? name : run.join(' ')));
+}
+
+const HEAD = 'a'.repeat(40);
+const OTHER = 'b'.repeat(40);
+
+function fakeGit({
+  released = false,
+  local,
+  remote,
+  onMain = true,
+}: {
+  released?: boolean;
+  local?: string;
+  remote?: string;
+  onMain?: boolean;
+}) {
+  const calls: string[] = [];
+
+  const run: Run = (command, args) => {
+    const call = [command, ...args].join(' ');
+    const ok = (stdout = '') => ({ status: 0, stdout, stderr: '' });
+    const no = { status: 1, stdout: '', stderr: 'no' };
+
+    calls.push(call);
+
+    if (call.startsWith('gh release view')) return released ? ok('https://example.com/v1.1.0') : no;
+    if (call.startsWith('git merge-base')) return onMain ? ok() : no;
+    if (call === 'git rev-parse HEAD') return ok(HEAD);
+    if (call.startsWith('git rev-parse -q --verify')) return local ? ok(local) : no;
+    if (call.startsWith('git ls-remote')) return ok(remote ? `${remote}\trefs/tags/v1.1.0` : '');
+
+    return ok(call.startsWith('gh release create') ? 'https://example.com/new' : '');
   };
 
-  return release.releaseSteps({ resume }).map((step) => step.join(' '));
+  return { calls, run };
 }
 
 describe('release scripts', () => {
@@ -49,12 +88,15 @@ describe('release scripts', () => {
       'node scripts/test-ui-package.mjs',
       'node scripts/test-ui-next.mjs',
     ]);
-    expect(bump.slice(services + 1, -1)).toEqual([
+    expect(bump.slice(services + 1, -2)).toEqual([
       'RUN_E2E=1 RUN_COMPILER_CHECKS=1 pnpm test',
       'pnpm test:int:pg test/database/int.spec.ts test/search/postgres',
       'pnpm test:int:mongo test/database/int.spec.ts test/search/mongodb test/kv/mongo-native.int.spec.ts',
     ]);
-    expect(bump.at(-1)).toBe('node scripts/bump.mjs minor');
+    expect(bump.slice(-2)).toEqual([
+      'node scripts/bump.mjs minor',
+      'node scripts/release-changelog.mjs',
+    ]);
   });
 
   it('bump checks for a single frogbot install before building', async () => {
@@ -69,28 +111,79 @@ describe('release scripts', () => {
   });
 
   it.each([false, true])(
-    'release (resume: %s) builds, checks dist imports, then publishes without rerunning the tests bump already ran',
+    'release (resume: %s) checks sign-ins, HEAD and the notes before publishing, posts the GitHub release last, and runs no tests',
     async (resume) => {
       expect(scripts.release).toBe('node scripts/release.mjs');
 
-      const release = await releaseSteps(resume);
-
-      const build = release.indexOf('pnpm build');
-      const check = release.indexOf('pnpm check dist-imports');
-
-      expect(build).toBeGreaterThanOrEqual(0);
-      expect(check).toBe(build + 1);
-      expect(release[check + 1]).toBe(
+      expect(await releaseSteps(resume)).toEqual([
+        'npm whoami',
+        'gh auth status',
+        'git fetch origin main',
+        'check-head',
+        'notes',
+        ...(resume ? [] : ['pnpm install --frozen-lockfile']),
+        'pnpm build',
+        'pnpm check dist-imports',
         'pnpm -r publish --access public --no-git-checks --report-summary',
-      );
-      expect(release.at(-1)).toBe('pnpm release:status');
-      expect(release.some((step) => step.includes('test'))).toBe(false);
+        'pnpm release:status',
+        'github-release',
+      ]);
     },
   );
 
-  it('release --resume skips the install', async () => {
-    expect(await releaseSteps(false)).toContain('pnpm install --frozen-lockfile');
-    expect(await releaseSteps(true)).not.toContain('pnpm install --frozen-lockfile');
+  it('check-head refuses a HEAD that is not on origin/main, or a tag elsewhere', async () => {
+    const { checkHead } = await release();
+
+    expect(() => checkHead({ tag: 'v1.1.0', run: fakeGit({}).run })).not.toThrow();
+    expect(() =>
+      checkHead({ tag: 'v1.1.0', run: fakeGit({ local: HEAD, remote: HEAD }).run }),
+    ).not.toThrow();
+    expect(() => checkHead({ tag: 'v1.1.0', run: fakeGit({ onMain: false }).run })).toThrow(
+      /origin\/main/,
+    );
+    expect(() => checkHead({ tag: 'v1.1.0', run: fakeGit({ local: OTHER }).run })).toThrow(
+      /local tag/,
+    );
+    expect(() => checkHead({ tag: 'v1.1.0', run: fakeGit({ remote: OTHER }).run })).toThrow(
+      /remote tag/,
+    );
+  });
+
+  it('github-release only prints the URL when the release exists', async () => {
+    const { githubRelease } = await release();
+    const { calls, run } = fakeGit({ released: true });
+    const lines: string[] = [];
+
+    githubRelease({ tag: 'v1.1.0', notes: '/tmp/notes.md', run, log: (line) => lines.push(line) });
+
+    expect(calls).toEqual(['gh release view v1.1.0 --json url --jq .url']);
+    expect(lines).toEqual(['v1.1.0 is already released: https://example.com/v1.1.0']);
+  });
+
+  it.each([
+    [{}, ['git tag v1.1.0', 'git push origin v1.1.0']],
+    [{ local: HEAD }, ['git push origin v1.1.0']],
+    [{ local: HEAD, remote: HEAD }, []],
+  ])('github-release with tags %o tags, pushes and publishes the release', async (tags, writes) => {
+    const { githubRelease } = await release();
+    const { calls, run } = fakeGit(tags);
+
+    githubRelease({ tag: 'v1.1.0', notes: '/tmp/notes.md', run, log: () => {} });
+
+    expect(calls.filter((call) => /^git (tag|push)|^gh release create/.test(call))).toEqual([
+      ...writes,
+      'gh release create v1.1.0 --title v1.1.0 --notes-file /tmp/notes.md --verify-tag',
+    ]);
+  });
+
+  it('github-release stops before writing anything when the tag is on another commit', async () => {
+    const { githubRelease } = await release();
+    const { calls, run } = fakeGit({ remote: OTHER });
+
+    expect(() =>
+      githubRelease({ tag: 'v1.1.0', notes: '/tmp/notes.md', run, log: () => {} }),
+    ).toThrow(/remote tag v1.1.0 points at bbbbbbbb/);
+    expect(calls.some((call) => /^git (tag|push)|^gh release create/.test(call))).toBe(false);
   });
 
   it('docker:start starts every service profile and waits for them', () => {

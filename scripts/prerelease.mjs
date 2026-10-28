@@ -39,6 +39,7 @@ export const STEPS = [
     docker: true,
   },
   { name: 'version', run: (bump) => ['node', 'scripts/bump.mjs', bump] },
+  { name: 'notes', run: ['node', 'scripts/release-changelog.mjs'] },
 ];
 
 const DOCKER_WAIT_MS = 120_000;
@@ -156,7 +157,10 @@ function main() {
   }
 
   console.log(`\n✔ Release gate passed in ${Math.round((Date.now() - began) / 1000)}s.`);
-  console.log('  Next: commit the version bump, then run `pnpm release`.\n');
+
+  console.log(
+    '  Next: commit and push the version bump, then run `pnpm release` to publish, tag and post the GitHub release with the notes above.\n',
+  );
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();
