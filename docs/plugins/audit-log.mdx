@@ -28,7 +28,7 @@ export default buildConfig({
 })
 ```
 
-By default, the plugin audits create, update, and delete operations for every configured collection. Add the plugin after plugins that inject collections when those collections also need auditing.
+By default, the plugin audits create, update, and delete operations for every configured collection. The plugin runs with `order: 90`, after plugins that add collections, so those collections are audited too wherever you list it.
 
 Each entry records the collection, operation, document ID, user, API key ID when available, timestamp, and a shallow changed-fields diff. Audit failures are logged without failing the original write.
 

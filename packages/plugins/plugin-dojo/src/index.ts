@@ -1,4 +1,4 @@
-import type { Plugin } from 'frogbot';
+import { definePlugin } from 'frogbot';
 
 import { withDojoAI } from './ai.js';
 import { withDojoBadge, withDojoBadgeImport } from './badge.js';
@@ -11,16 +11,17 @@ import { withDojoStorage } from './storage.js';
  * Dojo, and a "Made with FrogBot" badge. Does nothing unless `DOJO=1`, apart from listing the badge for
  * the import map, and keeps any storage or provider key the app set.
  */
-export function dojo(): Plugin {
-  return (config) => {
+export const dojo = definePlugin({
+  slug: 'plugin-dojo',
+  plugin: ({ config }) => {
     const env = readDojoEnv();
     const listed = withDojoBadgeImport(config);
 
     if (!env) return listed;
 
     return withDojoBadge(withDojoJobs(withDojoAI(withDojoStorage(listed, env), env), env));
-  };
-}
+  },
+});
 
 /** What `frogbot/platform-plugin` resolves to when `FROGBOT_PLATFORM_PLUGIN=@frogbotai/plugin-dojo`. */
 export default dojo();

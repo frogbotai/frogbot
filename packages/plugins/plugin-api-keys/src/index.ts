@@ -1,4 +1,4 @@
-import { type CollectionConfig, type FrogBotRequest, type Plugin } from 'frogbot';
+import { type CollectionConfig, definePlugin, type FrogBotRequest, type Plugin } from 'frogbot';
 import { cascadeDelete } from 'frogbot/internal';
 
 import { createApiKeysCollection } from './collection.js';
@@ -28,10 +28,22 @@ export type ApiKeysPluginOptions = {
   canRevokeAnyKey?: (req: FrogBotRequest) => boolean | Promise<boolean>;
 };
 
-export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
-  return (config) => {
-    const authCollection = options.authCollection ?? 'users';
-    const collectionSlug = options.collectionSlug ?? 'api-keys';
+/** `apiKeysPlugin` options with defaults filled, read by other plugins through `plugins['plugin-api-keys']`. */
+export type ApiKeysResolvedOptions = ApiKeysPluginOptions &
+  Required<
+    Pick<ApiKeysPluginOptions, 'authCollection' | 'collectionSlug' | 'headerNames' | 'tokenPrefix'>
+  >;
+
+declare module 'frogbot' {
+  interface RegisteredPlugins {
+    'plugin-api-keys': ApiKeysResolvedOptions;
+  }
+}
+
+const apiKeys = definePlugin<ApiKeysResolvedOptions>({
+  slug: 'plugin-api-keys',
+  plugin: ({ config, options }) => {
+    const { authCollection, collectionSlug, headerNames, tokenPrefix } = options;
     const auth = config.collections.find((collection) => collection.slug === authCollection);
     if (!auth || auth.auth === undefined || auth.auth === false) {
       throw new Error(
@@ -51,7 +63,7 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
     const collection = createApiKeysCollection({
       authCollection,
       collectionSlug,
-      tokenPrefix: options.tokenPrefix ?? 'fb',
+      tokenPrefix,
       usageCollection: usageLog?.slug,
       canRevokeAnyKey: options.canRevokeAnyKey,
       collection: options.collection,
@@ -61,8 +73,8 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
     const strategy = createApiKeyStrategy({
       authCollection,
       collectionSlug,
-      headerNames: options.headerNames,
-      tokenPrefix: options.tokenPrefix ?? 'fb',
+      headerNames,
+      tokenPrefix,
     });
 
     const usageField = {
@@ -126,5 +138,15 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
         },
       }),
     };
-  };
+  },
+});
+
+export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
+  return apiKeys({
+    ...options,
+    authCollection: options.authCollection ?? 'users',
+    collectionSlug: options.collectionSlug ?? 'api-keys',
+    headerNames: options.headerNames ?? ['x-api-key'],
+    tokenPrefix: options.tokenPrefix ?? 'fb',
+  });
 }

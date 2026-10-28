@@ -1,9 +1,15 @@
-import type { CollectionConfig, Field, FrogBotConfig, Plugin } from 'frogbot';
+import {
+  type CollectionConfig,
+  definePlugin,
+  type Field,
+  type FrogBotConfig,
+  type Plugin,
+} from 'frogbot';
 import { formatLabels } from 'payload';
 
 import { bindCompiledAccess, compiledAccess, isCompiledAccess } from './allow.js';
 import { attachRoleResolver, defaultRoleResolver, resolveRequestRoles } from './resolve.js';
-import type { RoleResolver, RolesPluginOptions } from './types.js';
+import type { NormalizedRole, RoleResolver, RolesPluginOptions } from './types.js';
 import { normalizeRoles } from './types.js';
 
 export { allow } from './allow.js';
@@ -19,6 +25,14 @@ export type {
   RoleSlug,
   RolesPluginOptions,
 } from './types.js';
+
+type RolesResolvedOptions = Omit<RolesPluginOptions, 'roles'> & { roles: NormalizedRole[] };
+
+declare module 'frogbot' {
+  interface RegisteredPlugins {
+    'plugin-roles': RolesResolvedOptions;
+  }
+}
 
 function bindFields(
   fields: Field[],
@@ -283,17 +297,11 @@ function validateCompiledAccess(config: FrogBotConfig, roleSlugs: readonly strin
   }
 }
 
-export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
-  const roles = normalizeRoles(options.roles ?? []);
-  if (options.defaultRole !== undefined) {
-    if (!roles.some(({ slug }) => slug === options.defaultRole)) {
-      throw new Error(
-        `[plugin-roles] defaultRole '${options.defaultRole}' is not listed in rolesPlugin().`,
-      );
-    }
-  }
-
-  return (config) => {
+const rolesPluginDefinition = definePlugin<RolesResolvedOptions>({
+  slug: 'plugin-roles',
+  order: 100,
+  plugin: ({ config, options }) => {
+    const { roles } = options;
     const resolver = options.resolveRoles ?? defaultRoleResolver;
     const roleSlugs = roles.map(({ slug }) => slug);
     if (roles.length === 0) {
@@ -367,5 +375,18 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
     validateCompiledAccess(result, roleSlugs);
 
     return bindAccess(result, roleSlugs, resolver);
-  };
+  },
+});
+
+export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
+  const roles = normalizeRoles(options.roles ?? []);
+  if (options.defaultRole !== undefined) {
+    if (!roles.some(({ slug }) => slug === options.defaultRole)) {
+      throw new Error(
+        `[plugin-roles] defaultRole '${options.defaultRole}' is not listed in rolesPlugin().`,
+      );
+    }
+  }
+
+  return rolesPluginDefinition({ ...options, roles });
 }

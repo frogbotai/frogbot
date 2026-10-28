@@ -21,6 +21,7 @@ vi.mock('../../../../packages/frogbot/src/getFrogBot.js', () => ({
 }));
 
 const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
+const { definePlugin } = await import('../../../../packages/frogbot/src/definePlugin.js');
 
 function makeConfig(overrides?: Partial<FrogBotConfig>): FrogBotConfig {
   return {
@@ -192,6 +193,69 @@ describe('frogbot buildConfig', () => {
       await expect(buildConfig(config)).rejects.toThrowError(
         '[frogbot] plugin at index 2 failed: third died',
       );
+    });
+
+    it('runs plugins by `order`, lowest first, keeping list order for ties', async () => {
+      const ran: string[] = [];
+
+      const plugin = (name: string, order?: number): Plugin =>
+        Object.assign(
+          (c: FrogBotConfig) => {
+            ran.push(name);
+
+            return c;
+          },
+          { order },
+        );
+
+      await buildConfig(
+        makeConfig({ plugins: [plugin('b', 10), plugin('a'), plugin('c', 10), plugin('d', 0)] }),
+      );
+
+      expect(ran).toEqual(['a', 'd', 'b', 'c']);
+    });
+
+    it('names a failing plugin by its slug', async () => {
+      const boom = definePlugin({
+        slug: 'plugin-boom',
+        plugin: () => {
+          throw new Error('boom');
+        },
+      });
+
+      await expect(buildConfig(makeConfig({ plugins: [boom()] }))).rejects.toThrowError(
+        '[frogbot] plugin "plugin-boom" failed: boom',
+      );
+    });
+
+    it('passes `definePlugin` callbacks their options and the other plugins by slug', async () => {
+      const seen: unknown[] = [];
+
+      const first = definePlugin<{ collectionSlug: string }>({
+        slug: 'plugin-first',
+        plugin: ({ config }) => config,
+      });
+
+      const second = definePlugin({
+        slug: 'plugin-second',
+        order: 10,
+        plugin: ({ config, plugins }) => {
+          seen.push(plugins['plugin-first']?.options, Object.keys(plugins));
+
+          return config;
+        },
+      });
+
+      const plugins = [second(), first({ collectionSlug: 'keys' })];
+
+      expect(plugins.map(({ slug, order }) => ({ slug, order }))).toEqual([
+        { slug: 'plugin-second', order: 10 },
+        { slug: 'plugin-first', order: undefined },
+      ]);
+
+      await buildConfig(makeConfig({ plugins }));
+
+      expect(seen).toEqual([{ collectionSlug: 'keys' }, ['plugin-second', 'plugin-first']]);
     });
 
     it('plugin can add fields to a collection', async () => {

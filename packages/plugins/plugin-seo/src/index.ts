@@ -3,7 +3,13 @@ import type {
   GenerateTitle as PayloadGenerateTitle,
   SEOPluginConfig as PayloadSEOPluginConfig,
 } from '@payloadcms/plugin-seo/types';
-import type { CollectionConfig, CollectionSlug, Field, Plugin } from 'frogbot';
+import {
+  type CollectionConfig,
+  type CollectionSlug,
+  definePlugin,
+  type Field,
+  type Plugin,
+} from 'frogbot';
 import {
   attachRegisteredFrogBot,
   fromPayloadConfig,
@@ -24,6 +30,12 @@ export type {
   GenerateURL,
   SEOPluginOptions,
 } from './types.js';
+
+declare module 'frogbot' {
+  interface RegisteredPlugins {
+    'plugin-seo': SEOPluginOptions;
+  }
+}
 
 const seoComponentPaths = new Set([
   '@payloadcms/plugin-seo/client#OverviewComponent',
@@ -94,31 +106,34 @@ function toPayloadSEOConfig<S extends CollectionSlug>(
 }
 
 export function seoPlugin<const S extends CollectionSlug>(options: SEOPluginOptions<S>): Plugin {
-  return async (config) => {
-    const handPlacedCollections = new Map<string, CollectionConfig>();
+  return definePlugin<SEOPluginOptions<S>>({
+    slug: 'plugin-seo',
+    plugin: async ({ config }) => {
+      const handPlacedCollections = new Map<string, CollectionConfig>();
 
-    for (const collection of config.collections ?? []) {
-      if (options.collections?.includes(collection.slug as S) && hasSeoField(collection.fields)) {
-        handPlacedCollections.set(collection.slug, collection);
+      for (const collection of config.collections ?? []) {
+        if (options.collections?.includes(collection.slug as S) && hasSeoField(collection.fields)) {
+          handPlacedCollections.set(collection.slug, collection);
+        }
       }
-    }
 
-    const slugs =
-      options.collections ?? (config.collections ?? []).map((collection) => collection.slug);
+      const slugs =
+        options.collections ?? (config.collections ?? []).map((collection) => collection.slug);
 
-    const result = fromPayloadConfig(
-      await payloadSeoPlugin(toPayloadSEOConfig(options, slugs))(toPayloadConfig(config)),
-    );
+      const result = fromPayloadConfig(
+        await payloadSeoPlugin(toPayloadSEOConfig(options, slugs))(toPayloadConfig(config)),
+      );
 
-    const restored = {
-      ...result,
-      collections: result.collections?.map(
-        (collection) => handPlacedCollections.get(collection.slug) ?? collection,
-      ),
-    };
+      const restored = {
+        ...result,
+        collections: result.collections?.map(
+          (collection) => handPlacedCollections.get(collection.slug) ?? collection,
+        ),
+      };
 
-    return fromPayloadConfig(mapComponentPaths(toPayloadConfig(restored), toFrogBotPath));
-  };
+      return fromPayloadConfig(mapComponentPaths(toPayloadConfig(restored), toFrogBotPath));
+    },
+  })(options);
 }
 
 const payloadSpecifier = '@payloadcms/plugin-seo/client';

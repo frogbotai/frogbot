@@ -1,7 +1,7 @@
 import { isApiKeyStrategy } from '@frogbotai/plugin-api-keys';
 import type { MCPPluginConfig } from '@payloadcms/plugin-mcp';
 import { mcpPlugin as payloadMcpPlugin } from '@payloadcms/plugin-mcp';
-import type { Plugin } from 'frogbot';
+import { definePlugin, type Plugin } from 'frogbot';
 
 import { authorizeMcp } from './access.js';
 import type { AUTH_TOOLS, COLLECTION_TOOLS, McpTool } from './tools.js';
@@ -30,42 +30,51 @@ export type McpPluginOptions = Pick<
   tools?: readonly McpTool[];
 };
 
+declare module 'frogbot' {
+  interface RegisteredPlugins {
+    'plugin-mcp': McpPluginOptions;
+  }
+}
+
 export function mcpPlugin(options: McpPluginOptions = {}): Plugin {
   const { tools = [], ...rest } = options;
   const payloadTools = toPayloadTools(tools);
 
-  return (config) => {
-    const apiKeyStrategy = config.collections
-      .flatMap((collection) => {
-        const auth = typeof collection.auth === 'object' ? collection.auth : undefined;
+  return definePlugin<McpPluginOptions>({
+    slug: 'plugin-mcp',
+    plugin: ({ config }) => {
+      const apiKeyStrategy = config.collections
+        .flatMap((collection) => {
+          const auth = typeof collection.auth === 'object' ? collection.auth : undefined;
 
-        return (auth?.strategies ?? []).map((strategy) => ({
-          collection: collection.slug,
-          strategy,
-        }));
-      })
-      .find(({ strategy }) => isApiKeyStrategy(strategy));
+          return (auth?.strategies ?? []).map((strategy) => ({
+            collection: collection.slug,
+            strategy,
+          }));
+        })
+        .find(({ strategy }) => isApiKeyStrategy(strategy));
 
-    if (!apiKeyStrategy) {
-      throw new Error('[plugin-mcp] apiKeysPlugin must be configured before mcpPlugin.');
-    }
+      if (!apiKeyStrategy) {
+        throw new Error('[plugin-mcp] apiKeysPlugin must be configured before mcpPlugin.');
+      }
 
-    return {
-      ...config,
-      _payloadPlugins: [
-        ...(config._payloadPlugins ?? []),
-        payloadMcpPlugin({
-          ...rest,
-          tools: payloadTools,
-          overrideGetAuthorizedMCP: ({ pluginConfig, req }) =>
-            authorizeMcp({
-              collection: apiKeyStrategy.collection,
-              strategy: apiKeyStrategy.strategy,
-              pluginConfig,
-              req,
-            }),
-        }),
-      ],
-    };
-  };
+      return {
+        ...config,
+        _payloadPlugins: [
+          ...(config._payloadPlugins ?? []),
+          payloadMcpPlugin({
+            ...rest,
+            tools: payloadTools,
+            overrideGetAuthorizedMCP: ({ pluginConfig, req }) =>
+              authorizeMcp({
+                collection: apiKeyStrategy.collection,
+                strategy: apiKeyStrategy.strategy,
+                pluginConfig,
+                req,
+              }),
+          }),
+        ],
+      };
+    },
+  })(options);
 }

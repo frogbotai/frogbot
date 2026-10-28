@@ -285,6 +285,7 @@ export type {
   SearchReadiness,
   SearchReadinessArgs,
 } from './database/types.js';
+export { definePlugin } from './definePlugin.js';
 export type { Endpoint, Handler } from './endpoints/types.js';
 export type { AIFieldArgs, AISelectFieldArgs } from './fields/baseFields/ai/index.js';
 export { aiField } from './fields/baseFields/ai/index.js';
@@ -431,7 +432,7 @@ export type {
   SecondFactor,
   SignInMethod,
 } from './pieces/types.js';
-export type { Plugin } from './plugin.js';
+export type { Plugin, PluginsMap, RegisteredPlugins } from './plugin.js';
 export {
   SearchCapabilityError,
   SearchFilterUnsupportedError,

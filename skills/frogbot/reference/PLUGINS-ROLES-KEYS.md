@@ -17,7 +17,7 @@ const plugins: FrogBotConfig['plugins'] = [
 ];
 ```
 
-Order matters when one plugin needs to inspect or extend another plugin's changes. Preserve the order required by each plugin's documentation.
+Plugins run by `order`, lowest first, then in list order. `rolesPlugin` has `order: 100`, so it binds role clauses on every collection, including those other plugins add, wherever it is listed.
 
 ## Roles
 
@@ -71,4 +71,4 @@ Authenticate with `Authorization: Bearer <token>` or an accepted API-key header.
 
 Server exports include `mintApiKey`, `revokeApiKey`, `rotateApiKey`, token creation/extraction/hash helpers, and `isApiKeyStrategy`. Use these exports instead of inventing collection writes or token formats.
 
-The roles plugin is optional. When composing role-aware access for the generated API-key collection, place `rolesPlugin` after `apiKeysPlugin` so it can bind and validate the role clauses.
+The roles plugin is optional. It runs with `order: 100`, after the other first-party plugins wherever it is listed, so it binds and validates role clauses on the generated API-key collection.

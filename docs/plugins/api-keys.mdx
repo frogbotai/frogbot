@@ -53,6 +53,8 @@ The request authenticates as the user who owns the key. Revoked, malformed, and 
 
 When AI is configured, usage rows include an optional `apiKey` relationship identifying the key that authenticated the request. Cookie-authenticated requests omit it, and the relationship follows a custom `collectionSlug`.
 
+On a key-authenticated request, `req.user` is the owner with `apiKeyId` and `apiKey`, the key document without its hash, so hooks and access functions can read fields other plugins add to keys. Other plugins find the keys collection through `plugins['plugin-api-keys'].options.collectionSlug` ([Order, slug, and options](/plugins/build-your-own#order-slug-and-options)).
+
 ## Configuration options
 
 ```ts
@@ -87,7 +89,7 @@ The plugin has no per-key budgets, rate limits, or model allowlists. A key authe
 
 The plugin does not require a role system. By default, callers read and update only the keys they own, and revoke and rotate are limited to the caller's own keys.
 
-To layer roles on top, install [`@frogbotai/plugin-roles`](/plugins/roles) and list it **after** `apiKeysPlugin()` so it can bind the access clauses:
+To layer roles on top, install [`@frogbotai/plugin-roles`](/plugins/roles) and pass role clauses as the collection access:
 
 ```ts
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys'

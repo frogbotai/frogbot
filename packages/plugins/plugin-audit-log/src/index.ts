@@ -1,8 +1,8 @@
-import type { FrogBotConfig, Plugin } from 'frogbot';
+import { definePlugin, type FrogBotConfig, type Plugin } from 'frogbot';
 
 import { createAuditLogCollection } from './collection.js';
 import { createAfterChangeHook, createAfterDeleteHook } from './hooks.js';
-import type { AuditCollectionSelection, AuditLogPluginOptions, AuditOperation } from './types.js';
+import type { AuditCollectionSelection, AuditLogPluginOptions } from './types.js';
 
 export { computeChanges } from './diff.js';
 export type {
@@ -11,6 +11,15 @@ export type {
   AuditOperation,
   AuditSnapshot,
 } from './types.js';
+
+type AuditLogResolvedOptions = AuditLogPluginOptions &
+  Required<Pick<AuditLogPluginOptions, 'collectionSlug' | 'operations'>>;
+
+declare module 'frogbot' {
+  interface RegisteredPlugins {
+    'plugin-audit-log': AuditLogResolvedOptions;
+  }
+}
 
 function userSlug(config: FrogBotConfig): string {
   const authSlugs = config.collections
@@ -31,19 +40,13 @@ function selected(slug: string, selection: AuditCollectionSelection | undefined)
   return !selection.exclude?.includes(slug);
 }
 
-export function auditLogPlugin(options: AuditLogPluginOptions = {}): Plugin {
-  const auditSlug = options.collectionSlug ?? 'audit-logs';
-  const operations = new Set<AuditOperation>(options.operations ?? ['create', 'update', 'delete']);
-  if (!auditSlug) throw new Error('[plugin-audit-log] collectionSlug is required.');
-  if (operations.size === 0) throw new Error('[plugin-audit-log] operations cannot be empty.');
-  if (
-    options.retention &&
-    (!Number.isInteger(options.retention.days) || options.retention.days < 1)
-  ) {
-    throw new Error('[plugin-audit-log] retention.days must be a positive integer.');
-  }
+const auditLog = definePlugin<AuditLogResolvedOptions>({
+  slug: 'plugin-audit-log',
+  order: 90,
+  plugin: ({ config, options }) => {
+    const auditSlug = options.collectionSlug;
+    const operations = new Set(options.operations);
 
-  return (config) => {
     if (config.collections.some((collection) => collection.slug === auditSlug)) {
       throw new Error(`[plugin-audit-log] Collection slug '${auditSlug}' already exists.`);
     }
@@ -118,5 +121,27 @@ export function auditLogPlugin(options: AuditLogPluginOptions = {}): Plugin {
       collections: [...collections, auditCollection],
       jobs: { ...config.jobs, tasks: [...(config.jobs?.tasks ?? []), task] },
     };
+  },
+});
+
+export function auditLogPlugin(options: AuditLogPluginOptions = {}): Plugin {
+  const resolved: AuditLogResolvedOptions = {
+    ...options,
+    collectionSlug: options.collectionSlug ?? 'audit-logs',
+    operations: options.operations ?? ['create', 'update', 'delete'],
   };
+
+  if (!resolved.collectionSlug) throw new Error('[plugin-audit-log] collectionSlug is required.');
+  if (resolved.operations.length === 0) {
+    throw new Error('[plugin-audit-log] operations cannot be empty.');
+  }
+
+  if (
+    options.retention &&
+    (!Number.isInteger(options.retention.days) || options.retention.days < 1)
+  ) {
+    throw new Error('[plugin-audit-log] retention.days must be a positive integer.');
+  }
+
+  return auditLog(resolved);
 }

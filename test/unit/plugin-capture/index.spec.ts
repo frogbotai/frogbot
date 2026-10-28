@@ -2,9 +2,11 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import type { FrogBotRequest } from 'frogbot';
+import type { FrogBotRequest, Plugin } from 'frogbot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
+import { apiKeysPlugin } from '../../../packages/plugins/plugin-api-keys/src/index.js';
 import {
   captureBlobKey,
   decodeCapture,
@@ -136,7 +138,12 @@ describe('capture hooks', () => {
     const create = vi.fn(() => Promise.resolve({}));
     const logger = { error: vi.fn() };
     const req = request({
-      user: { id: 'user-1', _strategy: 'api-key', apiKeyId: 'key-1', capture: true },
+      user: {
+        id: 'user-1',
+        _strategy: 'api-key',
+        apiKeyId: 'key-1',
+        apiKey: { id: 'key-1', capture: true },
+      },
       frogbot: {
         create,
         logger,
@@ -188,7 +195,12 @@ describe('capture hooks', () => {
     const put = vi.fn(() => Promise.reject(new Error('storage down')));
     const logger = { error: vi.fn() };
     const req = request({
-      user: { id: 'user-1', _strategy: 'api-key', apiKeyId: 'key-1', capture: true },
+      user: {
+        id: 'user-1',
+        _strategy: 'api-key',
+        apiKeyId: 'key-1',
+        apiKey: { id: 'key-1', capture: true },
+      },
       frogbot: { create: vi.fn(), logger },
     });
 
@@ -223,6 +235,34 @@ describe('capture hooks', () => {
 
     expect(put).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ['reads sampling from the API key, not its owner', 'api-key', false],
+    ['reads sampling from a session user', 'local-jwt', true],
+  ])('%s', async (_name, strategy, captured) => {
+    const req = request({
+      user: {
+        id: 'user-1',
+        _strategy: strategy,
+        captureSampleRate: 1,
+        apiKey: { id: 'key-1', capture: 'enabled', captureSampleRate: 0 },
+      },
+      frogbot: { create: vi.fn(), logger: { error: vi.fn() } },
+    });
+
+    const hooks = createCaptureHooks({
+      enabled: true,
+      sampleRate: 1,
+      maxBodyBytes: 10_000,
+      collectionSlug: 'captures',
+      storage: { put: vi.fn(), get: vi.fn(), delete: vi.fn(), async *list() {} },
+    });
+
+    const base = hookBase('request-1', req);
+    await hooks.beforeOperation?.[0]?.({ ...base, phase: 'beforeOperation' });
+
+    expect(base.context.frogbotCapture).toEqual({ enabled: captured });
   });
 
   it.each([
@@ -327,7 +367,7 @@ describe('capture hooks', () => {
 });
 
 describe('capture plugin', () => {
-  it('appends hooks, adds its commands, adds a content-free collection, and softly extends API keys', async () => {
+  it('appends hooks, adds its commands, and adds a content-free collection', async () => {
     const existing = vi.fn();
     const existingBeforeUpstream = vi.fn(() => {
       throw new Error('blocked before upstream');
@@ -340,28 +380,17 @@ describe('capture plugin', () => {
       secret: 'secret',
       db: {} as never,
       cli: { commands: { hello } },
-      collections: [
-        {
-          slug: 'api-keys',
-          fields: [
-            { name: 'prefix', type: 'text' },
-            { name: 'tokenHash', type: 'text' },
-          ],
-        },
-      ],
+      collections: [],
       ai: {
         providers: {},
         hooks: { beforeOperation: [existing], beforeUpstream: [existingBeforeUpstream] },
       },
-    } as never);
+    });
 
     expect(config.ai?.hooks?.beforeOperation?.[0]).toBe(existing);
     expect(config.ai?.hooks?.beforeOperation).toHaveLength(2);
     expect(config.ai?.hooks?.beforeUpstream?.[1]).toBe(existingBeforeUpstream);
-    expect(config.collections.map((collection) => collection.slug)).toContain('ai-captures');
-    expect(
-      config.collections[0].fields.flatMap((field) => ('name' in field ? [field.name] : [])),
-    ).toEqual(expect.arrayContaining(['capture', 'captureSampleRate']));
+    expect(config.collections.map((collection) => collection.slug)).toEqual(['ai-captures']);
     expect(config.cli?.commands?.hello).toBe(hello);
     expect(Object.keys(config.cli?.commands ?? {})).toEqual([
       'hello',
@@ -369,5 +398,31 @@ describe('capture plugin', () => {
       'export:training-data',
     ]);
     expect(config.custom?.frogbotCapture).toBeUndefined();
+  });
+
+  it.each([
+    ['before', (keys: Plugin, capture: Plugin) => [capture, keys]],
+    ['after', (keys: Plugin, capture: Plugin) => [keys, capture]],
+  ])('adds capture fields to API keys when listed %s the API keys plugin', async (_name, list) => {
+    const built = await buildConfig({
+      secret: 'secret',
+      db: {} as never,
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+      ai: { providers: { openai: { apiKey: 'test' } } },
+      plugins: list(
+        apiKeysPlugin({ collectionSlug: 'credentials' }),
+        capturePlugin({ storage: {} as CaptureStorage }),
+      ),
+    });
+
+    const { collections } = await built._internal.payloadConfig;
+
+    const fields = (slug: string) =>
+      collections
+        .find((collection) => collection.slug === slug)
+        ?.fields.flatMap((field) => ('name' in field ? [field.name] : []));
+
+    expect(fields('credentials')).toEqual(expect.arrayContaining(['capture', 'captureSampleRate']));
+    expect(fields('users')).not.toContain('capture');
   });
 });

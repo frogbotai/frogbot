@@ -1,4 +1,11 @@
-import type { Access, AccessResult, Endpoint, FrogBotRequest, Plugin } from 'frogbot';
+import {
+  type Access,
+  type AccessResult,
+  definePlugin,
+  type Endpoint,
+  type FrogBotRequest,
+  type Plugin,
+} from 'frogbot';
 
 export type UsageReportGroup = 'apiKey' | 'day' | 'model' | 'user';
 
@@ -27,6 +34,14 @@ export type UsageReportsPluginOptions = {
   pageSize?: number;
   access?: Access;
 };
+
+type UsageReportsResolvedOptions = UsageReportsPluginOptions & { pageSize: number };
+
+declare module 'frogbot' {
+  interface RegisteredPlugins {
+    'plugin-usage-reports': UsageReportsResolvedOptions;
+  }
+}
 
 const loggedIn: Access = ({ req }) => Boolean(req.user);
 
@@ -196,14 +211,11 @@ function buildReportEndpoint({ slug, pageSize, groups, access }: ReportEndpointO
   };
 }
 
-export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plugin {
-  const pageSize = options.pageSize ?? 5000;
-  if (!Number.isInteger(pageSize) || pageSize < 1) {
-    throw new Error('[plugin-usage-reports] pageSize must be a positive integer.');
-  }
-
-  return (config) => {
+const usageReports = definePlugin<UsageReportsResolvedOptions>({
+  slug: 'plugin-usage-reports',
+  plugin: ({ config, options }) => {
     if (!config.ai) throw new Error('[plugin-usage-reports] AI configuration is required.');
+
     const existing = config.collections.find((collection) => collection.usageLog === true);
     const usage = existing ?? { slug: 'usage-logs', usageLog: true as const, fields: [] };
     const collections = existing
@@ -224,7 +236,7 @@ export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plu
         ...(config.endpoints ?? []),
         buildReportEndpoint({
           slug: usage.slug,
-          pageSize,
+          pageSize: options.pageSize,
           groups,
           access: options.access ?? loggedIn,
         }),
@@ -238,5 +250,14 @@ export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plu
         },
       ],
     };
-  };
+  },
+});
+
+export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plugin {
+  const pageSize = options.pageSize ?? 5000;
+  if (!Number.isInteger(pageSize) || pageSize < 1) {
+    throw new Error('[plugin-usage-reports] pageSize must be a positive integer.');
+  }
+
+  return usageReports({ ...options, pageSize });
 }

@@ -70,7 +70,7 @@ Plugins are changing every day, so be sure to check back often to see what new p
 
 ## Example
 
-A plugin is a function with the type `(config: FrogBotConfig) => FrogBotConfig | Promise<FrogBotConfig>`. FrogBot runs plugins serially in `plugins` array order. There is no ordering, slug, or registration mechanism. See [Build your own plugin](/plugins/build-your-own) for the full guide.
+A plugin is a function with the type `(config: FrogBotConfig) => FrogBotConfig | Promise<FrogBotConfig>`. FrogBot runs plugins serially by their `order`, lowest first, and plugins with the same order run in `plugins` array order. Plugins built with `definePlugin` also have a `slug` and can read each other's options; see [Order, slug, and options](/plugins/build-your-own#order-slug-and-options). See [Build your own plugin](/plugins/build-your-own) for the full guide.
 
 The base [FrogBot Config](/configuration/overview) allows for a `plugins` property which takes an `array` of [Plugin Configs](/plugins/build-your-own).
 

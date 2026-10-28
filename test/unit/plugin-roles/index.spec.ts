@@ -1,6 +1,11 @@
-import type { FrogBotConfig, FrogBotRequest } from 'frogbot';
+import type { FrogBotConfig, FrogBotRequest, Plugin } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
+import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
+import { auditLogPlugin } from '../../../packages/plugins/plugin-audit-log/src/index.js';
+import { capturePlugin } from '../../../packages/plugins/plugin-capture/src/index.js';
+import type { CaptureStorage } from '../../../packages/plugins/plugin-capture/src/types.js';
+import { compiledAccess } from '../../../packages/plugins/plugin-roles/src/allow.js';
 import {
   allow,
   hasRole,
@@ -146,6 +151,61 @@ describe('rolesPlugin', () => {
     )!;
 
     expect('access' in field && field.access?.update).toBe(update);
+  });
+});
+
+describe('plugin order', () => {
+  async function built(plugins: Plugin[]): Promise<FrogBotConfig> {
+    let seen: FrogBotConfig | undefined;
+    const spy: Plugin = Object.assign(
+      (input: FrogBotConfig) => {
+        seen = input;
+
+        return input;
+      },
+      { order: 1000 },
+    );
+
+    await buildConfig({
+      secret: 'secret',
+      db: {} as never,
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+      ai: { providers: { openai: { apiKey: 'test' } } },
+      plugins: [...plugins, spy],
+    });
+
+    return seen!;
+  }
+
+  function binding(result: FrogBotConfig, slug: string): unknown {
+    const read = result.collections.find((collection) => collection.slug === slug)!.access!
+      .read as unknown as Record<symbol, { binding?: unknown }>;
+
+    return read[compiledAccess]?.binding;
+  }
+
+  it('binds allow() on collections from plugins listed after it', async () => {
+    const result = await built([
+      rolesPlugin({ roles: ['admin'] }),
+      auditLogPlugin({ access: { read: allow('admin') } }),
+      capturePlugin({ storage: {} as CaptureStorage, access: allow('admin') }),
+    ]);
+
+    expect(binding(result, 'ai-captures')).toBeDefined();
+    expect(binding(result, 'audit-logs')).toBeDefined();
+  });
+
+  it('runs audit-log after plugins that add collections, wherever it is listed', async () => {
+    const result = await built([
+      auditLogPlugin(),
+      capturePlugin({ storage: {} as CaptureStorage, access: allow('admin') }),
+      rolesPlugin({ roles: ['admin'] }),
+    ]);
+
+    const captures = result.collections.find((collection) => collection.slug === 'ai-captures')!;
+
+    expect(captures.hooks?.afterChange).toHaveLength(1);
+    expect(captures.hooks?.afterDelete).toHaveLength(1);
   });
 });
 

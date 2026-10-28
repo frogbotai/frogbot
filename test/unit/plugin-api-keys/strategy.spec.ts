@@ -38,17 +38,26 @@ describe('API key authentication strategy', () => {
       collection: 'users',
       _strategy: 'api-key',
       apiKeyId: 'key-1',
+      apiKey: { id: 'key-1', owner: 'user-1' },
     });
     expect(frogbot.update).toHaveBeenCalledWith(
       expect.objectContaining({ collection: 'api-keys', id: 'key-1' }),
     );
   });
 
-  it('merges optional capture policy onto the request actor', async () => {
+  it('puts the key document without its hash on the request actor', async () => {
     const frogbot = makeFrogBot();
 
     frogbot.find.mockResolvedValue({
-      docs: [{ id: 'key-1', owner: 'user-1', capture: 'enabled', captureSampleRate: 0.25 }],
+      docs: [
+        {
+          id: 'key-1',
+          owner: 'user-1',
+          tokenHash: 'hash',
+          capture: 'enabled',
+          captureSampleRate: 0.25,
+        },
+      ],
     });
 
     const result = await makeStrategy().authenticate({
@@ -56,9 +65,13 @@ describe('API key authentication strategy', () => {
       frogbot: frogbot as never,
     });
 
-    expect(result.user).toEqual(
-      expect.objectContaining({ capture: 'enabled', captureSampleRate: 0.25 }),
-    );
+    expect(result.user).toMatchObject({
+      apiKeyId: 'key-1',
+      apiKey: { id: 'key-1', owner: 'user-1', capture: 'enabled', captureSampleRate: 0.25 },
+    });
+    expect(result.user).not.toHaveProperty('capture');
+    expect(result.user).not.toHaveProperty('captureSampleRate');
+    expect(result.user).not.toHaveProperty('apiKey.tokenHash');
   });
 
   it.each([

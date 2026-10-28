@@ -43,7 +43,7 @@ The filesystem adapter defaults to `.frogbot/captures`. Production deployments s
 
 `enabled` defaults to `false`. `sampleRate` accepts a value from `0` to `1` and defaults to `1` for enabled traffic.
 
-When the API keys plugin runs before capture, capture adds `capture` and `captureSampleRate` fields to API keys. `capture` accepts `inherit`, `enabled`, or `disabled`; an explicit key setting overrides the global setting. The plugin does not require the API keys plugin.
+When the API keys plugin is also listed, in any order, capture adds `capture` and `captureSampleRate` fields to API keys. `capture` accepts `inherit`, `enabled`, or `disabled`; an explicit key setting overrides the global setting. The plugin does not require the API keys plugin.
 
 ## Privacy and limits
 

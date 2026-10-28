@@ -266,7 +266,7 @@ FrogBot reserves `/agents` and `/agents/*` for its agent API. A collection canno
 
 ## Run plugins
 
-Plugins receive and return `FrogBotConfig`, synchronously or asynchronously. They run one at a time in array order before sanitization.
+Plugins receive and return `FrogBotConfig`, synchronously or asynchronously. They run one at a time before sanitization, by `order`, lowest first; plugins with the same order run in array order. See [Order, slug, and options](/plugins/build-your-own#order-slug-and-options).
 
 ```ts
 import { buildConfig } from 'frogbot'
