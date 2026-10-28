@@ -605,6 +605,5 @@ declare module 'frogbot' {
       assistant: unknown;
     };
     models: 'zen/big-pickle';
-    roles: never;
   }
 }

@@ -393,6 +393,5 @@ declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {};
     models: 'judge' | 'typesafe-ai/jev' | 'typesafe-ai/jev-latest';
-    roles: never;
   }
 }

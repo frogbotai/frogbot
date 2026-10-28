@@ -625,6 +625,5 @@ declare module 'frogbot' {
       | 'test/text-only'
       | 'test/thinker'
       | 'test/writer';
-    roles: never;
   }
 }

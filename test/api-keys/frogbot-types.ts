@@ -113,6 +113,7 @@ export interface Config {
     };
     workflows: unknown;
   };
+  roles: never;
 }
 export interface AccountAuthOperations {
   forgotPassword: {
@@ -646,6 +647,5 @@ declare module 'frogbot' {
       'api-key-policy': unknown;
     };
     models: 'test/allowed' | 'test/blocked';
-    roles: never;
   }
 }

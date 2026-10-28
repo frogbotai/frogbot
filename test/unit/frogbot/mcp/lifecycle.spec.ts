@@ -78,7 +78,6 @@ function makeConfig(mcp: MCPServer[], slugs = ['researcher', 'support']): FrogBo
       entries: {},
     },
     pieces: { instances: [] },
-    roles: [],
     settings: [],
     ai: {
       providers: { openai: { apiKey: 'sk-test' } },

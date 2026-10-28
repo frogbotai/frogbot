@@ -23,7 +23,6 @@ const BANNER = `/* tslint:disable */
 export function buildGeneratedTypesFooter(
   agentSlugs: readonly string[],
   ai?: SanitizedAIConfig,
-  roleSlugs: readonly string[] = [],
 ): string {
   const agents =
     agentSlugs.length === 0
@@ -36,14 +35,10 @@ ${agentSlugs.map((slug) => `      ${JSON.stringify(slug)}: unknown;`).join('\n')
   const models =
     modelIds.length === 0 ? 'never' : modelIds.map((id) => JSON.stringify(id)).join(' | ');
 
-  const roles =
-    roleSlugs.length === 0 ? 'never' : roleSlugs.map((slug) => JSON.stringify(slug)).join(' | ');
-
   return `declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: ${agents};
     models: ${models};
-    roles: ${roles};
   }
 }`;
 }
@@ -187,7 +182,6 @@ async function compileTypes(
   config: SanitizedConfig,
   agentSlugs: readonly string[],
   ai?: SanitizedAIConfig,
-  roleSlugs: readonly string[] = [],
 ): Promise<string> {
   const languages = Object.keys(config.i18n.supportedLanguages) as AcceptedLanguages[];
   const language = languages.includes('en') ? 'en' : config.i18n.fallbackLanguage;
@@ -225,7 +219,7 @@ async function compileTypes(
     compiled = `${compiled.trimEnd()}\n\n${definitions.join('\n\n')}\n`;
   }
 
-  const output = `${compiled.trimEnd()}\n\n\n${buildGeneratedTypesFooter(agentSlugs, ai, roleSlugs)}\n`;
+  const output = `${compiled.trimEnd()}\n\n\n${buildGeneratedTypesFooter(agentSlugs, ai)}\n`;
 
   return format(output, { parser: 'typescript', singleQuote: true });
 }
@@ -240,7 +234,6 @@ export async function writeGeneratedTypes(
     config,
     frogbotConfig.agents?.map((agent) => agent.slug) ?? [],
     frogbotConfig.ai,
-    frogbotConfig.roles,
   );
 
   try {

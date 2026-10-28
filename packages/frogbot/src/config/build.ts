@@ -70,36 +70,6 @@ async function runPlugins(config: FrogBotConfig): Promise<FrogBotConfig> {
   return current;
 }
 
-function validatePluginMarkers(config: FrogBotConfig): FrogBotConfig {
-  if (
-    !config._roles?.configured ||
-    config.collections.some(
-      (collection) => collection.auth !== undefined && collection.auth !== false,
-    )
-  ) {
-    return config;
-  }
-
-  const onInit =
-    config.onInit === undefined
-      ? []
-      : Array.isArray(config.onInit)
-        ? config.onInit
-        : [config.onInit];
-
-  return {
-    ...config,
-    onInit: [
-      ...onInit,
-      (frogbot) => {
-        frogbot.logger.warn(
-          '[plugin-roles] No auth-enabled collection is configured; role assignments are unavailable.',
-        );
-      },
-    ],
-  };
-}
-
 /**
  * Build and validate a FrogBot configuration.
  *
@@ -115,7 +85,7 @@ function validatePluginMarkers(config: FrogBotConfig): FrogBotConfig {
  */
 export async function buildConfig(config: FrogBotConfig): Promise<FrogBotSanitizedConfig> {
   validate(config);
-  const transformed = validatePluginMarkers(stripPluginGlobals(await runPlugins(config)));
+  const transformed = stripPluginGlobals(await runPlugins(config));
 
   return sanitize(transformed);
 }

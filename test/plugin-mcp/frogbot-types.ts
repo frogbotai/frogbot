@@ -110,6 +110,7 @@ export interface Config {
     };
     workflows: unknown;
   };
+  roles: never;
 }
 export interface UserAuthOperations {
   forgotPassword: {
@@ -489,6 +490,5 @@ declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {};
     models: never;
-    roles: never;
   }
 }

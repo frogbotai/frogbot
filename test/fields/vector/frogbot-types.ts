@@ -393,6 +393,5 @@ declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {};
     models: never;
-    roles: never;
   }
 }

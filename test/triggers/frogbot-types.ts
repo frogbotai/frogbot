@@ -733,6 +733,5 @@ declare module 'frogbot' {
       'failing-handler': unknown;
     };
     models: 'test/gpt-4.1-mini';
-    roles: never;
   }
 }

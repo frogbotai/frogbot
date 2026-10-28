@@ -1,7 +1,8 @@
-import type { AccessArgs, FieldAccess, FrogBotRequest, RoleSlug } from 'frogbot';
+import type { AccessArgs, FieldAccess, FrogBotRequest, GeneratedTypes } from 'frogbot';
 import type { Where } from 'payload';
 
-export type { RoleSlug } from 'frogbot';
+/** Union of the configured role slugs, typed by `frogbot generate:types`; `string` without generated types. */
+export type RoleSlug = GeneratedTypes extends { roles: infer R extends string } ? R : string;
 
 export type RoleEntry =
   | string

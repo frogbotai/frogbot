@@ -113,6 +113,7 @@ export interface Config {
     };
     workflows: unknown;
   };
+  roles: 'admin' | 'member' | 'owner';
 }
 export interface UserAuthOperations {
   forgotPassword: {
@@ -637,6 +638,5 @@ declare module 'frogbot' {
       'roles-test': unknown;
     };
     models: 'test/test-model';
-    roles: 'admin' | 'member' | 'owner';
   }
 }

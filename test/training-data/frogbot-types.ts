@@ -603,6 +603,5 @@ declare module 'frogbot' {
       support: unknown;
     };
     models: 'test/test-model';
-    roles: never;
   }
 }

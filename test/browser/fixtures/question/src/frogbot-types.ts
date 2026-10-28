@@ -1941,6 +1941,5 @@ declare module 'frogbot' {
       | 'openrouter/~x-ai/grok-latest'
       | 'openrouter/~z-ai/glm-flash-latest'
       | 'openrouter/~z-ai/glm-latest';
-    roles: never;
   }
 }

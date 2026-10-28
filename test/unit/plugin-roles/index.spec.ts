@@ -34,39 +34,109 @@ function config(): FrogBotConfig {
   };
 }
 
+type SchemaTransform = NonNullable<NonNullable<FrogBotConfig['typescript']>['schema']>[number];
+
+type TransformArgs = Parameters<SchemaTransform>[0];
+
+type JSONSchema4 = TransformArgs['jsonSchema'];
+
+function rolesSchema(result: FrogBotConfig): JSONSchema4 {
+  const transform = result.typescript?.schema?.at(-1);
+  if (!transform) throw new Error('rolesPlugin added no typescript.schema transform');
+
+  return transform({
+    collectionIDFieldTypes: {},
+    config: {} as TransformArgs['config'],
+    i18n: {} as TransformArgs['i18n'],
+    jsonSchema: { properties: {}, required: [] },
+  });
+}
+
+async function runOnInit(result: FrogBotConfig, frogbot: object): Promise<void> {
+  for (const onInit of [result.onInit ?? []].flat()) {
+    await onInit(frogbot as never);
+  }
+}
+
 function req(roles: string[] = ['member'], id = 'user-1'): FrogBotRequest {
   return { user: { id, roles } } as unknown as FrogBotRequest;
 }
 
 describe('rolesPlugin', () => {
-  it('is inert without configured roles', async () => {
-    const input = config();
+  it('types roles through a typescript.schema transform for every role count', async () => {
+    const existing = ({ jsonSchema }: { jsonSchema: JSONSchema4 }) => jsonSchema;
+    const input: FrogBotConfig = {
+      ...config(),
+      typescript: { autoGenerate: false, schema: [existing] },
+    };
 
-    expect((await rolesPlugin()(input))._roles).toEqual({
-      present: true,
-      configured: false,
-      roles: [],
+    const snapshot = JSON.stringify(input);
+
+    const configured = await rolesPlugin({ roles: ['admin', 'member'] })(input);
+    const empty = await rolesPlugin()(input);
+
+    expect(JSON.stringify(input)).toBe(snapshot);
+    expect(input.typescript?.schema).toEqual([existing]);
+
+    for (const result of [configured, empty]) {
+      expect(result.typescript?.autoGenerate).toBe(false);
+      expect(result.typescript?.schema).toHaveLength(2);
+      expect(result.typescript?.schema?.[0]).toBe(existing);
+    }
+
+    expect(rolesSchema(configured)).toEqual({
+      properties: { roles: { type: 'string', enum: ['admin', 'member'] } },
+      required: ['roles'],
     });
-    expect((await rolesPlugin({ roles: [] })(input))._roles).toEqual({
-      present: true,
-      configured: false,
-      roles: [],
+    expect(rolesSchema(empty)).toEqual({
+      properties: { roles: { tsType: 'never' } },
+      required: ['roles'],
+    });
+    expect(rolesSchema(await rolesPlugin({ roles: [] })(config()))).toEqual({
+      properties: { roles: { tsType: 'never' } },
+      required: ['roles'],
+    });
+    expect(empty.onInit).toBeUndefined();
+  });
+
+  it('warns once from onInit when roles are set but no auth users collection exists', async () => {
+    const input = config();
+    input.collections[0] = { slug: 'users', fields: [{ name: 'name', type: 'text' }] };
+    const existing = vi.fn();
+    input.onInit = existing;
+    const snapshot = JSON.stringify(input);
+
+    const result = await rolesPlugin({ roles: ['admin'] })(input);
+    const frogbot = { logger: { warn: vi.fn() } };
+
+    await runOnInit(result, frogbot);
+
+    expect(JSON.stringify(input)).toBe(snapshot);
+    expect(result.collections).toBe(input.collections);
+    expect(Array.isArray(result.onInit) && result.onInit[0]).toBe(existing);
+    expect(existing).toHaveBeenCalledTimes(1);
+    expect(frogbot.logger.warn).toHaveBeenCalledTimes(1);
+    expect(frogbot.logger.warn).toHaveBeenCalledWith(
+      '[plugin-roles] No auth-enabled users collection is configured; role assignments are unavailable.',
+    );
+    expect(rolesSchema(result)).toEqual({
+      properties: { roles: { type: 'string', enum: ['admin'] } },
+      required: ['roles'],
     });
   });
 
-  it('writes marker-only role metadata', async () => {
-    const input = config();
-    const configured = await rolesPlugin({ roles: ['admin', 'member'] })(input);
+  it('adds the roles transform last on the bound path', async () => {
+    const result = await rolesPlugin({ roles: ['admin', 'member'] })(config());
+    const frogbot = {
+      find: vi.fn().mockResolvedValue({ docs: [], hasNextPage: false }),
+      logger: { warn: vi.fn() },
+    };
 
-    expect(configured._roles).toEqual({
-      present: true,
-      configured: true,
-      roles: ['admin', 'member'],
-    });
+    await runOnInit(result, frogbot);
 
-    const result = await rolesPlugin()(input);
-
-    expect(result._roles).toEqual({ present: true, configured: false, roles: [] });
+    expect(frogbot.logger.warn).not.toHaveBeenCalled();
+    expect(result.typescript?.schema).toHaveLength(1);
+    expect(rolesSchema(result)).toMatchObject({ required: ['roles'] });
   });
 
   it('injects a labeled role select without bootstrap hooks', async () => {
@@ -91,12 +161,12 @@ describe('rolesPlugin', () => {
     expect(users.hooks?.beforeChange).toBeUndefined();
   });
 
-  it('rejects duplicate role slugs and auth field collisions', () => {
+  it('rejects duplicate role slugs and auth field collisions', async () => {
     expect(() => rolesPlugin({ roles: ['member', 'member'] })).toThrow(
       /Duplicate role slug 'member'/,
     );
-    expect(rolesPlugin({ roles: ['Admin'] })(config())).toMatchObject({
-      _roles: { roles: ['Admin'] },
+    expect(rolesSchema(await rolesPlugin({ roles: ['Admin'] })(config()))).toMatchObject({
+      properties: { roles: { enum: ['Admin'] } },
     });
 
     const input = config();
@@ -233,9 +303,7 @@ describe('predicates and resolution', () => {
       logger: { warn: vi.fn() },
     };
 
-    for (const onInit of Array.isArray(result.onInit) ? result.onInit : [result.onInit!]) {
-      await onInit(frogbot as never);
-    }
+    await runOnInit(result, frogbot);
 
     const request = { ...req([]), frogbot } as unknown as FrogBotRequest;
 

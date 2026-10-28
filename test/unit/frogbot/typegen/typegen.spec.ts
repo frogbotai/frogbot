@@ -227,18 +227,22 @@ describe('frogbot generate:types', () => {
     expect(buildGeneratedTypesFooter([])).toContain('agents: {};');
   });
 
-  it('emits role slugs in the GeneratedTypes augmentation', () => {
-    expect(buildGeneratedTypesFooter([], undefined, ['admin', 'member'])).toContain(
-      'roles: "admin" | "member";',
-    );
-  });
-
-  it('emits never when no roles are configured', () => {
-    expect(buildGeneratedTypesFooter([])).toContain('roles: never;');
+  it('emits no roles member in the GeneratedTypes augmentation', () => {
+    expect(buildGeneratedTypesFooter(['support'])).not.toContain('roles');
   });
 
   describe('generated output', () => {
     let dir: string;
+
+    function configInterface(output: string): string {
+      const start = output.indexOf('export interface Config {');
+
+      return output.slice(start, output.indexOf('\n}\n', start));
+    }
+
+    function footer(output: string): string {
+      return output.slice(output.indexOf("declare module 'frogbot'"));
+    }
 
     async function generateModelTypes(args: {
       providers: Record<string, unknown>;
@@ -720,7 +724,8 @@ describe('frogbot generate:types', () => {
       const { outputPath } = await writeGeneratedTypes(config, dir);
       const output = await readFile(outputPath, 'utf-8');
 
-      expect(output).toContain("roles: 'admin' | 'member';");
+      expect(configInterface(output)).toContain("roles: 'admin' | 'member';");
+      expect(footer(output)).not.toContain('roles');
     });
 
     it('emits never when roles are explicitly empty', async () => {
@@ -736,10 +741,11 @@ describe('frogbot generate:types', () => {
       const { outputPath } = await writeGeneratedTypes(config, dir);
       const output = await readFile(outputPath, 'utf-8');
 
-      expect(output).toContain('roles: never;');
+      expect(configInterface(output)).toContain('roles: never;');
+      expect(footer(output)).not.toContain('roles');
     });
 
-    it('emits never without the roles plugin', async () => {
+    it('emits no roles member without the roles plugin', async () => {
       dir = await mkdtemp(join(tmpdir(), 'frogbot-types-no-roles-'));
       const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
       const config = await buildConfig({
@@ -751,7 +757,7 @@ describe('frogbot generate:types', () => {
       const { outputPath } = await writeGeneratedTypes(config, dir);
       const output = await readFile(outputPath, 'utf-8');
 
-      expect(output).toContain('roles: never;');
+      expect(output).not.toMatch(/^\s*roles\??:/m);
     });
 
     it('emits only models from configured built-in providers', async () => {
