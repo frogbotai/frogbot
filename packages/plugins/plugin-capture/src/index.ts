@@ -1,21 +1,22 @@
 import type { Field, JobsConfig, Plugin } from 'frogbot';
 
 import { createCapturesCollection } from './collection.js';
+import { exportCapturesCommand } from './commands/exportCaptures.js';
+import { exportTrainingDataCommand } from './commands/exportTrainingData.js';
 import { createCaptureHooks } from './hooks.js';
 import { filesystemCaptureStorage } from './storage/filesystem.js';
-import type { CapturePluginOptions, CaptureRegistration } from './types.js';
+import type { CapturePluginOptions } from './types.js';
 
 export { decodeCapture, encodeCapture } from './blob.js';
 export { createCapturesCollection } from './collection.js';
 export { filesystemCaptureStorage } from './storage/filesystem.js';
+export { exportTrainingData } from './training/exportTrainingData.js';
 export type {
-  CapturePluginOptions,
-  CaptureRecord,
-  CaptureRegistration,
-  CaptureStorage,
-} from './types.js';
-
-export const captureConfigKey = 'frogbotCapture';
+  ReadTrainingDataOptions,
+  TrainingDataDocument,
+  TrainingDataRecord,
+} from './training/types.js';
+export type { CapturePluginOptions, CaptureRecord, CaptureStorage } from './types.js';
 
 function validateRate(value: number, name: string): void {
   if (!Number.isFinite(value) || value < 0 || value > 1) {
@@ -112,9 +113,13 @@ export function capturePlugin(options: CapturePluginOptions = {}): Plugin {
 
     return {
       ...config,
-      custom: {
-        ...config.custom,
-        [captureConfigKey]: { collectionSlug, storage } satisfies CaptureRegistration,
+      cli: {
+        ...config.cli,
+        commands: {
+          ...config.cli?.commands,
+          'export:captures': exportCapturesCommand({ collectionSlug, storage }),
+          'export:training-data': exportTrainingDataCommand,
+        },
       },
       collections: [...collections, createCapturesCollection(collectionSlug, options.access)],
       jobs: task ? { ...config.jobs, tasks: [...(config.jobs?.tasks ?? []), task] } : config.jobs,

@@ -116,6 +116,18 @@ function validateInternalPathReservations(
   }
 }
 
+function validateCLICommands(commands: Record<string, unknown> | undefined): void {
+  for (const [name, command] of Object.entries(commands ?? {})) {
+    if (name !== name.toLowerCase()) {
+      throw new Error(`[frogbot] cli command "${name}" must be lowercase`);
+    }
+
+    if (typeof command !== 'function') {
+      throw new Error(`[frogbot] cli command "${name}" must be a function`);
+    }
+  }
+}
+
 function normalizeOnInit(onInit: OnInit | OnInit[] | undefined): OnInit | undefined {
   if (!Array.isArray(onInit)) return onInit;
   if (onInit.length === 0) return undefined;
@@ -151,6 +163,7 @@ export function sanitize(
   }
 
   validateInternalPathReservations(config);
+  validateCLICommands(config.cli?.commands);
   const settings = sanitizeSettings(config.settings);
   const sanitizedConfigRef: { current?: FrogBotSanitizedConfig } = {};
 
@@ -503,6 +516,7 @@ export function sanitize(
     ai: sanitizedAI && { ...sanitizedAI, usage: { slug: usageSlug } },
     agents,
     chat,
+    cli: { commands: config.cli?.commands ?? {} },
     connections,
     files,
     pieces,

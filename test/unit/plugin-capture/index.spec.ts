@@ -13,7 +13,6 @@ import {
 import { createCapturesCollection } from '../../../packages/plugins/plugin-capture/src/collection.js';
 import { createCaptureHooks } from '../../../packages/plugins/plugin-capture/src/hooks.js';
 import {
-  captureConfigKey,
   capturePlugin,
   filesystemCaptureStorage,
 } from '../../../packages/plugins/plugin-capture/src/index.js';
@@ -328,16 +327,19 @@ describe('capture hooks', () => {
 });
 
 describe('capture plugin', () => {
-  it('appends hooks, registers storage, adds a content-free collection, and softly extends API keys', async () => {
+  it('appends hooks, adds its commands, adds a content-free collection, and softly extends API keys', async () => {
     const existing = vi.fn();
     const existingBeforeUpstream = vi.fn(() => {
       throw new Error('blocked before upstream');
     });
 
+    const hello = vi.fn();
+
     const plugin = capturePlugin({ storage: {} as CaptureStorage, enabled: true });
     const config = await plugin({
       secret: 'secret',
       db: {} as never,
+      cli: { commands: { hello } },
       collections: [
         {
           slug: 'api-keys',
@@ -360,8 +362,12 @@ describe('capture plugin', () => {
     expect(
       config.collections[0].fields.flatMap((field) => ('name' in field ? [field.name] : [])),
     ).toEqual(expect.arrayContaining(['capture', 'captureSampleRate']));
-    expect(config.custom?.[captureConfigKey]).toEqual(
-      expect.objectContaining({ collectionSlug: 'ai-captures' }),
-    );
+    expect(config.cli?.commands?.hello).toBe(hello);
+    expect(Object.keys(config.cli?.commands ?? {})).toEqual([
+      'hello',
+      'export:captures',
+      'export:training-data',
+    ]);
+    expect(config.custom?.frogbotCapture).toBeUndefined();
   });
 });

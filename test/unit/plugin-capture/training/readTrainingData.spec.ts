@@ -1,7 +1,7 @@
+import type { FrogBot } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
-import { readTrainingData } from '../../../../packages/frogbot/src/training/readTrainingData.js';
+import { readTrainingData } from '../../../../packages/plugins/plugin-capture/src/training/readTrainingData.js';
 
 type Page = { docs: Record<string, unknown>[]; hasNextPage: boolean };
 

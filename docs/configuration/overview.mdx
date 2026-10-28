@@ -49,7 +49,7 @@ export default buildConfig({
 | `baseAccess` | `{ collections?: CollectionAccess; globals?: GlobalAccess }` | — | Access rules combined with every collection's and global's own access using AND. |
 | `blocks` | `Block[]` | — | Blocks registered once and referenced by slug from Blocks fields. See [Root block registration](/fields/blocks#root-block-registration). |
 | `bodyParser` | `Partial<BusboyConfig>` | — | Options passed to the [busboy](https://www.npmjs.com/package/busboy) parser for `multipart/form-data` requests, such as `limits`. Experimental. |
-| `cli` | `{ commands?: CLICommands } \| false` | — | Accepted by the type, but the `frogbot` CLI doesn't read it. Use [`frogbot run`](/local-api/outside-nextjs) for your own scripts. |
+| `cli` | `{ commands?: Record<string, CLICommand> }` | — | Adds commands to the `frogbot` CLI, or replaces built-in ones. See [Plugin commands](/getting-started/cli#plugin-commands). |
 | `connections` | `ConnectionsConfig` | — | Providers users can link accounts with. See [Connections](/connections/overview#configure-linking). |
 | `cookiePrefix` | `string` | `'frogbot'` | Prefix for every cookie FrogBot sets, such as `frogbot-token`. |
 | `cors` | `'*' \| string[] \| { origins: '*' \| string[]; headers?: string[] }` | `[]` | Origins allowed to make cross-origin requests. `'*'` allows any origin. The object form also adds allowed request `headers`. See [Cookies](/authentication/cookies). |

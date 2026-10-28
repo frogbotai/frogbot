@@ -80,9 +80,6 @@ import type {
   SearchOptions,
   SearchResult,
 } from './search/types.js';
-import { encodeTrainingData } from './training/encodeTrainingData.js';
-import { readTrainingData } from './training/readTrainingData.js';
-import type { ReadTrainingDataOptions } from './training/types.js';
 import { TriggerSubscriptions } from './triggers/subscriptions.js';
 import { writeGeneratedTypes } from './typegen/index.js';
 import type { CollectionSlug, TypedCollection } from './types/generated.js';
@@ -421,10 +418,6 @@ export class FrogBot {
   evaluate = <const QUESTIONS extends Record<string, EvaluationQuestion>>(
     opts: EvaluateOpts<QUESTIONS>,
   ): Promise<EvaluateResult<QUESTIONS>> => evaluateOperation(aiDeps(this), opts);
-
-  exportTrainingData(options: ReadTrainingDataOptions = {}): ReadableStream<Uint8Array> {
-    return encodeTrainingData(readTrainingData(this, options));
-  }
 }
 
 async function initialize(

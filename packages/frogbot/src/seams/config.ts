@@ -13,6 +13,7 @@ type PayloadPlugin = NonNullable<PayloadConfig['plugins']>[number];
 type ReshapedConfigKeys =
   | 'admin'
   | 'blocks'
+  | 'cli'
   | 'collections'
   | 'db'
   | 'email'

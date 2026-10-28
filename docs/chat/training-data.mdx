@@ -16,7 +16,9 @@ Each line of the output is one conversation: the chat document and its messages 
 ## Export from the Local API
 
 ```ts
-const stream = frogbot.exportTrainingData({
+import { exportTrainingData } from '@frogbotai/plugin-capture'
+
+const stream = exportTrainingData(frogbot, {
   where: { agent: { equals: 'support' } },
   overrideAccess: true,
 })
@@ -35,7 +37,7 @@ Access control is enforced by default. If the caller cannot read the chat or mes
 
 ## Export from the CLI
 
-The CLI runs a trusted export against your configured database and writes JSONL to stdout or a file.
+The `export:training-data` command comes from [`capturePlugin()`](/plugins/capture), so list it in your config's `plugins`. It runs a trusted export against your configured database and writes JSONL to stdout or a file.
 
 ```bash
 frogbot export:training-data --output training.jsonl

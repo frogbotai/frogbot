@@ -1,20 +1,5 @@
 [
   {
-    "file": "packages/frogbot/src/bin/exportCaptures.ts",
-    "match": "@frogbotai/plugin-",
-    "ticket": "361"
-  },
-  {
-    "file": "packages/frogbot/src/bin/exportCaptures.ts",
-    "match": "frogbotCapture",
-    "ticket": "361"
-  },
-  {
-    "file": "packages/frogbot/src/bin/exportCaptures.ts",
-    "match": "plugin-capture",
-    "ticket": "361"
-  },
-  {
     "file": "packages/frogbot/src/bin/logout.ts",
     "match": "api-keys/",
     "ticket": "362"

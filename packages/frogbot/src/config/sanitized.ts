@@ -8,6 +8,7 @@ import type { SanitizedPiecesConfig } from '../pieces/types.js';
 import type { SearchIndexDescriptors } from '../search/types.js';
 import type { IngressRegistry } from '../triggers/types.js';
 import type { SanitizedFilesConfig } from '../uploads/types.js';
+import type { CLICommand } from './types.js';
 
 export type SanitizedCollectionMeta = {
   slug: string;
@@ -28,6 +29,7 @@ export type FrogBotSanitizedConfig = {
   ai?: SanitizedAIConfig;
   agents?: SanitizedAgentConfig[];
   chat: SanitizedChatConfig;
+  cli: { commands: Record<string, CLICommand> };
   connections: SanitizedConnectionsConfig;
   files?: SanitizedFilesConfig;
   pieces: SanitizedPiecesConfig;

@@ -9,6 +9,7 @@ import {
   checkDocsReferences,
   docsCommands,
   moduleExports,
+  pluginCommands,
 } from '../../../scripts/check-docs-references.mjs';
 
 const packages = [
@@ -294,6 +295,20 @@ describe('checkDocsReferences', () => {
     );
 
     expect(result).toEqual(['dev', 'generate:types', 'run']);
+  });
+
+  it('reads the commands a plugin adds to `cli.commands`', () => {
+    const result = pluginCommands(
+      "return { ...config, cli: { ...config.cli, commands: { ...config.cli?.commands, 'export:captures': run, hello } } }",
+    );
+
+    expect(result).toEqual(['export:captures', 'hello']);
+  });
+
+  it('ignores a `commands` literal outside `cli`', () => {
+    expect(
+      pluginCommands('const commands = { dev: handler }; ({ other: { commands: { run } } })'),
+    ).toEqual([]);
   });
 
   it.each(['const other = { dev: handler }', 'const commands = other', 'const commands = {}'])(

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { encodeTrainingData } from '../../../../packages/frogbot/src/training/encodeTrainingData.js';
-import type { TrainingDataRecord } from '../../../../packages/frogbot/src/training/types.js';
+import { encodeTrainingData } from '../../../../packages/plugins/plugin-capture/src/training/encodeTrainingData.js';
+import type { TrainingDataRecord } from '../../../../packages/plugins/plugin-capture/src/training/types.js';
 
 async function readAll(stream: ReadableStream<Uint8Array>): Promise<string> {
   const chunks: Uint8Array[] = [];
