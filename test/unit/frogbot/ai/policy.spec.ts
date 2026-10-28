@@ -64,6 +64,55 @@ describe('AI user policy', () => {
     expect(fields).toHaveLength(5);
   });
 
+  it('gives the models field the chip class and keeps it through overrides', () => {
+    const base = createPolicyFields(['openai/gpt-4o']);
+    const modelsOf = (fields: typeof base) =>
+      fields.find((field) => 'name' in field && field.name === 'models') as {
+        admin?: { className?: string; condition?: unknown; description?: unknown };
+      };
+
+    expect(modelsOf(base).admin?.className).toBe('frogbot-model-select');
+    expect(typeof modelsOf(base).admin?.condition).toBe('function');
+
+    const described = modelsOf(
+      mergePolicyFields(
+        [
+          {
+            name: 'models',
+            type: 'select',
+            hasMany: true,
+            options: [],
+            admin: { description: 'Allowed models' },
+          },
+        ],
+        base,
+      ),
+    );
+
+    expect(described.admin).toMatchObject({
+      className: 'frogbot-model-select',
+      description: 'Allowed models',
+    });
+    expect(typeof described.admin?.condition).toBe('function');
+
+    const restyled = modelsOf(
+      mergePolicyFields(
+        [
+          {
+            name: 'models',
+            type: 'select',
+            hasMany: true,
+            options: [],
+            admin: { className: 'app-models' },
+          },
+        ],
+        base,
+      ),
+    );
+
+    expect(restyled.admin?.className).toBe('app-models');
+  });
+
   it('keeps only the spend integrity lock and allows overriding it', () => {
     const base = createPolicyFields([]);
 

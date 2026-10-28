@@ -19,7 +19,10 @@ export function createPolicyFields(targets: string[]): Field[] {
       type: 'select',
       hasMany: true,
       options: targets,
-      admin: { condition: (_, siblingData) => siblingData?.modelAccess === 'selected' },
+      admin: {
+        className: 'frogbot-model-select',
+        condition: (_, siblingData) => siblingData?.modelAccess === 'selected',
+      },
       validate: (value, { siblingData }) =>
         siblingData?.modelAccess !== 'selected' || (Array.isArray(value) && value.length > 0)
           ? true
