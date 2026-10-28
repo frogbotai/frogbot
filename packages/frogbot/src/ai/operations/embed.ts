@@ -5,7 +5,6 @@ import type { Logger } from '../../frogbot.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';
-import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
 import type { EmbedOpts, SanitizedAIConfig } from '../types.js';
 
@@ -23,15 +22,13 @@ export async function embedOperation(
   const { model: input, req, overrideAccess, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
-  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
-
   const modelId = resolveModel(input, config);
 
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
       req: req as FrogBotRequest,
       method: 'embed',
-      input,
+      model: input,
       config,
     });
   }

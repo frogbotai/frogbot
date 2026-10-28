@@ -21,6 +21,7 @@
   "dependencies": {
     "@frogbotai/db-sqlite": "0.36.0",
     "@frogbotai/next": "0.36.0",
+    "@frogbotai/plugin-ai-policy": "0.36.0",
     "@frogbotai/transformer-sharp": "0.36.0",
     "@frogbotai/ui": "0.36.0",
     "cross-env": "^7.0.3",

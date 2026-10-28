@@ -113,7 +113,7 @@ type EvaluationResponse = {
 
 `model` is the provider-prefixed resolved ID if TypeSafe reports a different version, otherwise the requested ID. `usage` can be `{}` if the provider reports no counts. When available, `providerMetadata.typesafe.confidence` holds per-question confidence separately from answer probabilities. The response excludes raw upstream headers and body. Send provider-prefixed model IDs; `typesafe-ai/jev` resolves to TypeSafe's `jev-latest` upstream. This endpoint uses the AI SDK's experimental evaluation API.
 
-Secure standalone mounts with your own authentication, such as a `beforeOperation` hook; the gateway does not authenticate callers on its own. [FrogBot's `/api/v1/evaluate` mount](/ai/overview#call-over-http) authenticates callers and applies its evaluation access and model policy before forwarding requests. Keep the TypeSafe API key on the server, never in the request body or client code. The gateway does not forward a caller's `Authorization` header to TypeSafe.
+Secure standalone mounts with your own authentication, such as a `beforeOperation` hook; the gateway does not authenticate callers on its own. [FrogBot's `/api/v1/evaluate` mount](/ai/overview#call-over-http) authenticates callers and runs its `ai.access.evaluate` rule with the requested model before forwarding requests. Keep the TypeSafe API key on the server, never in the request body or client code. The gateway does not forward a caller's `Authorization` header to TypeSafe.
 
 ---
 

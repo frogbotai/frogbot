@@ -1,5 +1,5 @@
 import type * as PayloadModule from 'payload';
-import type { Job, Locale, Payload, TaskConfig } from 'payload';
+import type { Locale } from 'payload';
 import { buildConfig as payloadBuildConfig, meOperation, MissingEditorProp } from 'payload';
 import { afterEach, assert, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { z } from 'zod';
@@ -74,29 +74,6 @@ function makePayload(config: unknown) {
     kv: {},
     email: {},
   };
-}
-
-function runTask(task: TaskConfig | undefined, payload: Partial<Payload>) {
-  const handler = task?.handler;
-
-  assert(typeof handler === 'function', 'Expected a task handler');
-
-  const job: Job<string> = {
-    id: 1,
-    input: {},
-    taskStatus: {},
-    totalTried: 0,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
-  };
-
-  return handler({
-    input: {},
-    inlineTask: vi.fn(),
-    job,
-    req: makeRequest(payload),
-    tasks: {},
-  });
 }
 
 function emailWarnings(warn: ReturnType<typeof vi.fn>) {
@@ -1461,104 +1438,6 @@ describe('frogbot sanitize', () => {
       { slug: 'projects', auth: false },
       { slug: 'frogbot-waitpoints', auth: false },
     ]);
-  });
-
-  it('adds policy fields to the injected default users collection', async () => {
-    const result = sanitize(
-      makeConfig({
-        collections: [{ slug: 'posts', fields: [] }],
-        ai: { providers: { openai: { apiKey: 'test' } } },
-      }),
-    );
-
-    const payloadConfig = await result._internal.payloadConfig;
-    const users = payloadConfig.collections?.find(({ slug }) => slug === 'users');
-
-    expect(users?.fields).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ name: 'modelAccess', defaultValue: 'all' }),
-        expect.objectContaining({ name: 'models', hasMany: true }),
-        expect.objectContaining({ name: 'monthlyBudget', min: 0 }),
-        expect.objectContaining({ name: 'spendThisPeriodUSD', defaultValue: 0 }),
-      ]),
-    );
-  });
-
-  it('makes Monthly Budget and Monthly Spend money fields', async () => {
-    const result = sanitize(
-      makeConfig({
-        collections: [{ slug: 'posts', fields: [] }],
-        ai: { providers: { openai: { apiKey: 'test' } } },
-      }),
-    );
-
-    const payloadConfig = await result._internal.payloadConfig;
-    const users = payloadConfig.collections?.find(({ slug }) => slug === 'users');
-    const budget = users?.fields.find((field) => 'name' in field && field.name === 'monthlyBudget');
-    const spend = users?.fields.find(
-      (field) => 'name' in field && field.name === 'spendThisPeriodUSD',
-    );
-
-    const money = {
-      components: {
-        Cell: '@frogbotai/ui/admin#FieldCell',
-        Field: '@frogbotai/ui/admin#MoneyField',
-      },
-      custom: { frogbot: { kind: { type: 'money', currency: 'USD', precision: 'auto' } } },
-    };
-
-    expect(budget).toMatchObject({ type: 'number', min: 0, admin: money });
-    expect(budget).not.toHaveProperty('admin.readOnly', true);
-    expect(budget).not.toHaveProperty('access');
-    expect(spend).toMatchObject({ type: 'number', admin: { ...money, readOnly: true } });
-  });
-
-  it("keeps an app's own Monthly Spend admin components", async () => {
-    const result = sanitize(
-      makeConfig({
-        collections: [
-          {
-            slug: 'users',
-            auth: true,
-            fields: [
-              {
-                name: 'spendThisPeriodUSD',
-                type: 'number',
-                admin: { components: { Cell: '/components/SpendCell#SpendCell' } },
-              },
-            ],
-          },
-        ],
-        ai: { providers: { openai: { apiKey: 'test' } } },
-      }),
-    );
-
-    const payloadConfig = await result._internal.payloadConfig;
-    const users = payloadConfig.collections?.find(({ slug }) => slug === 'users');
-    const spend = users?.fields.find(
-      (field) => 'name' in field && field.name === 'spendThisPeriodUSD',
-    ) as { admin?: { readOnly?: boolean; components?: Record<string, unknown> } } | undefined;
-
-    expect(spend?.admin?.components?.Cell).toBe('/components/SpendCell#SpendCell');
-    expect(spend?.admin?.components?.Field).toBeUndefined();
-    expect(spend?.admin?.readOnly).toBe(true);
-  });
-
-  it('registers a monthly reset that updates the resolved auth collection', async () => {
-    const result = sanitize(makeConfig({ ai: { providers: { openai: { apiKey: 'test' } } } }));
-    const payloadConfig = await result._internal.payloadConfig;
-    const task = payloadConfig.jobs?.tasks?.find(({ slug }) => slug === 'frogbot-reset-ai-budgets');
-    const update = vi.fn();
-    await runTask(task, { update });
-
-    expect(task?.schedule).toEqual([{ cron: '0 0 1 * *', queue: 'frogbot-reset-ai-budgets' }]);
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        collection: 'users',
-        data: { spendThisPeriodUSD: 0 },
-        overrideAccess: true,
-      }),
-    );
   });
 
   it('preserves the secret in the sanitized config', () => {
@@ -3741,32 +3620,6 @@ describe('frogbot sanitize', () => {
       expect(result.agents?.[0]?.model.options).toEqual([agent.model]);
     });
 
-    it('keeps non-chat models and unknown routers in policy field choices', async () => {
-      const config = makeConfig({
-        ai: {
-          providers: {
-            openai: { apiKey: 'test', models: ['gpt-5.4-mini', 'text-embedding-3-small'] },
-          },
-          routers: {
-            fast: { model: agent.model },
-            unknown: { model: 'openai/missing' },
-          },
-        },
-        agents: [{ ...agent, model: { default: agent.model, options: '*' } }],
-      });
-
-      const result = sanitize(config);
-      const payloadConfig = await result._internal.payloadConfig;
-      const users = payloadConfig.collections?.find(({ slug }) => slug === 'users');
-
-      expect(users?.fields).toContainEqual(
-        expect.objectContaining({
-          name: 'models',
-          options: ['fast', agent.model, 'openai/text-embedding-3-small', 'unknown'],
-        }),
-      );
-    });
-
     it.each([
       'embedding',
       'image_generation',
@@ -4693,7 +4546,6 @@ describe('frogbot sanitize', () => {
 
       expect(payloadConfig.jobs.tasks?.map(({ slug }) => slug)).toEqual([
         'user-task',
-        'frogbot-reset-ai-budgets',
         'frogbot-sweep-waitpoints',
         'frogbot-run-agent-schedule',
         'frogbot-cleanup-kv',

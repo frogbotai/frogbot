@@ -112,7 +112,7 @@ export interface Config {
   user: User;
   jobs: {
     tasks: {
-      'frogbot-reset-ai-budgets': TaskFrogBotResetAiBudgets;
+      'plugin-ai-policy-reset-spend': TaskPluginAiPolicyResetSpend;
       'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
@@ -149,7 +149,9 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   name?: string | null;
-  modelAccess?: ('all' | 'selected') | null;
+  /**
+   * Leave empty to allow all models.
+   */
   models?:
     | (
         | 'openai/chatgpt-image-latest'
@@ -541,7 +543,6 @@ export interface FrogBotWaitpoint {
  */
 export interface UsersSelect {
   name?: boolean;
-  modelAccess?: boolean;
   models?: boolean;
   monthlyBudget?: boolean;
   spendThisPeriodUSD?: boolean;
@@ -888,9 +889,9 @@ export interface UploadDropzoneWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBotResetAiBudgets".
+ * via the `definition` "TaskPluginAiPolicyResetSpend".
  */
-export interface TaskFrogBotResetAiBudgets {
+export interface TaskPluginAiPolicyResetSpend {
   input?: unknown;
   output?: unknown;
 }

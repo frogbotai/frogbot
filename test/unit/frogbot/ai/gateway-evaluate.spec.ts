@@ -22,7 +22,7 @@ function makeFrogBot({
   evaluate = () => true,
 }: {
   user?: object | null;
-  evaluate?: () => boolean;
+  evaluate?: (args: { req: unknown; model: string }) => boolean;
 } = {}) {
   const req = { user: null as object | null };
   const handler = vi.fn(() =>
@@ -76,15 +76,25 @@ describe('FrogBot gateway evaluation', () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
-  it('enforces model policy against the requested model before forwarding', async () => {
-    const { frogbot, handler } = makeFrogBot({
-      user: { id: 'user-1', modelAccess: 'selected', models: ['typesafe-ai/jev-latest'] },
+  it('passes the requested model to access and renders its coded error', async () => {
+    const evaluate = vi.fn(({ model }: { model: string }) => {
+      if (model === 'typesafe-ai/jev-latest') return true;
+
+      throw Object.assign(new Error('Model not allowed'), {
+        status: 403,
+        code: 'model_not_allowed',
+      });
     });
+
+    const { frogbot, req, handler } = makeFrogBot({ evaluate });
 
     const response = await createGatewayHandler(frogbot)(makeRequest());
 
     expect(response.status).toBe(403);
-    expect(await response.json()).toMatchObject({ error: { type: 'model_not_allowed' } });
+    expect(await response.json()).toEqual({
+      error: { message: 'Model not allowed', type: 'model_not_allowed' },
+    });
+    expect(evaluate).toHaveBeenCalledExactlyOnceWith({ req, model: 'typesafe-ai/jev' });
     expect(handler).not.toHaveBeenCalled();
   });
 });

@@ -1,3 +1,4 @@
+import { aiPolicyPlugin } from '@frogbotai/plugin-ai-policy';
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { rolesPlugin } from '@frogbotai/plugin-roles';
 import type { CollectionConfig, Plugin } from 'frogbot';
@@ -49,6 +50,7 @@ export default await buildTestConfig({
     },
   ],
   plugins: [
+    aiPolicyPlugin({ authCollection: 'accounts' }),
     rolesPlugin(),
     apiKeysPlugin({
       authCollection: 'accounts',

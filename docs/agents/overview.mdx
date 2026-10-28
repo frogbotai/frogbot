@@ -76,7 +76,7 @@ For a curated selector, replace `'*'` with `['bedrock/amazon.nova-lite-v1:0', 'b
 
 Put a `models` list on OpenRouter and Vercel AI Gateway provider entries to keep the picker focused. Without a list, `'*'` includes their entire chat catalogs, which can contain hundreds of models.
 
-FrogBot validates the default and every explicit option. Unknown models or IDs outside a provider's `models` list fail startup with `is not configured`; configured non-chat models fail with `is not chat-capable`. `frogbot dev` and type generation warn for these model checks instead of throwing. Per-user [model allowlists](/ai/overview#user-model-and-budget-policy) further filter the choices each user sees and may use.
+FrogBot validates the default and every explicit option. Unknown models or IDs outside a provider's `models` list fail startup with `is not configured`; configured non-chat models fail with `is not chat-capable`. `frogbot dev` and type generation warn for these model checks instead of throwing. [`ai.access.generate`](/ai/overview#control-access) further filters the choices each user sees and may use, for example through the [AI policy plugin](/plugins/ai-policy).
 
 `allowModels` has been removed. Configs that still set it fail with a message naming the agent and showing the replacement. Migrate `model: 'provider/id', allowModels: [...]` to `model: { default: 'provider/id', options: [...] }`.
 
@@ -86,7 +86,7 @@ FrogBot saves the chosen model as a user preference and remembers one reasoning 
 
 ### Use the general preset
 
-`general()` provides FrogBot's default general-purpose instructions and the `general` slug. It sets `model: { options: '*' }`, offering every configured chat model with `ai.defaultModel` as the default, subject to per-user model allowlists. Configure that default and its provider. The chat composer shows a model picker whenever more than one model is available.
+`general()` provides FrogBot's default general-purpose instructions and the `general` slug. It sets `model: { options: '*' }`, offering every configured chat model with `ai.defaultModel` as the default, subject to [`ai.access.generate`](/ai/overview#control-access). Configure that default and its provider. The chat composer shows a model picker whenever more than one model is available.
 
 ```ts
 import { buildConfig } from 'frogbot'

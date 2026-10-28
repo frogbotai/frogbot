@@ -1,6 +1,5 @@
 import { listAgents } from '../agents/service.js';
 import { enforceAIAccess } from '../ai/access.js';
-import { isTargetAllowed, resolvePolicy } from '../ai/policy.js';
 import { resolveModel } from '../ai/resolve.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { ManifestResponse } from './types.js';
@@ -16,10 +15,8 @@ async function transcriptionCapability({
 
   const model = resolveModel(ai.transcriptionModel, ai);
 
-  if (!isTargetAllowed(resolvePolicy(req.user), model)) return false;
-
   try {
-    await enforceAIAccess({ req, method: 'transcribe', input: '', config: ai });
+    await enforceAIAccess({ req, method: 'transcribe', model, config: ai });
   } catch {
     return false;
   }

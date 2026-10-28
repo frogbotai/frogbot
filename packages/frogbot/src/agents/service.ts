@@ -1,8 +1,8 @@
 import type { ReasoningVariant } from '@frogbotai/gateway';
 
+import { enforceAIAccess } from '../ai/access.js';
 import { resolveModelInputs } from '../ai/modelInputs.js';
 import { resolveModelName } from '../ai/modelName.js';
-import { isTargetAllowed, resolvePolicy } from '../ai/policy.js';
 import { resolveModelReasoning } from '../ai/reasoning.js';
 import { resolveModel } from '../ai/resolve.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
@@ -84,7 +84,7 @@ export async function canUseAgent({
 }): Promise<{ allowed: true } | { allowed: false; denied: 'access' | 'models' }> {
   if (!(await hasAgentAccess({ req, agent }))) return { allowed: false, denied: 'access' };
 
-  if (userDefaultModel({ agent, user: req.user }) === undefined) {
+  if ((await userDefaultModel({ agent, req })) === undefined) {
     return { allowed: false, denied: 'models' };
   }
 
@@ -124,8 +124,8 @@ export async function getAgentManifest({ req }: { req: FrogBotRequest }): Promis
       continue;
     }
 
-    const models = userAgentModels({ agent, user: req.user });
-    const defaultModel = userDefaultModel({ agent, user: req.user });
+    const models = await userAgentModels({ agent, req });
+    const defaultModel = defaultAgentModel({ agent, models });
 
     if (defaultModel === undefined) continue;
 
@@ -171,18 +171,18 @@ export async function getAgentAuthorizations({
   );
 }
 
-export function assertAgentSelection({
+export async function assertAgentSelection({
   agent,
   config,
   selection,
-  user,
+  req,
 }: {
   agent: AgentInstance;
   config: SanitizedAIConfig;
   selection: AgentSelection;
-  user: FrogBotRequest['user'] | undefined;
-}): ResolvedAgentSelection {
-  const model = selection.model ?? userDefaultModel({ agent, user });
+  req: FrogBotRequest;
+}): Promise<ResolvedAgentSelection> {
+  const model = selection.model ?? (await userDefaultModel({ agent, req }));
 
   if (selection.model !== undefined && !agentModels(agent).includes(selection.model)) {
     throw new AgentServiceError(`Model '${model}' is not allowed for agent '${agent.slug}'`, 403);
@@ -192,7 +192,7 @@ export function assertAgentSelection({
     throw new AgentServiceError(`No model on agent '${agent.slug}' is allowed for this user`, 403);
   }
 
-  if (!isTargetAllowed(resolvePolicy(user), model)) {
+  if (selection.model !== undefined && !(await canUseModel({ req, model }))) {
     throw new AgentServiceError(`Model '${model}' is not allowed for this user`, 403);
   }
 
@@ -216,28 +216,60 @@ function agentModels(agent: AgentInstance): readonly AgentModelId[] {
   return agent.config.model.options;
 }
 
-export function userAgentModels({
-  agent,
-  user,
-}: {
-  agent: AgentInstance;
-  user: FrogBotRequest['user'] | undefined;
-}): AgentModelId[] {
-  const policy = resolvePolicy(user);
+async function canUseModel({ req, model }: { req: FrogBotRequest; model: string }) {
+  const config = req.frogbot.config.ai;
 
-  return agentModels(agent).filter((model) => isTargetAllowed(policy, model));
+  if (!req.user || !config) return true;
+
+  try {
+    await enforceAIAccess({ req, method: 'generateText', model, config });
+
+    return true;
+  } catch (error) {
+    if (isAccessDenial(error)) return false;
+
+    throw error;
+  }
 }
 
-export function userDefaultModel({
+function isAccessDenial(error: unknown): boolean {
+  return error instanceof Error && typeof (error as { status?: unknown }).status === 'number';
+}
+
+export async function userAgentModels({
   agent,
-  user,
+  req,
 }: {
   agent: AgentInstance;
-  user: FrogBotRequest['user'] | undefined;
-}): AgentModelId | undefined {
-  const models = userAgentModels({ agent, user });
+  req: FrogBotRequest;
+}): Promise<AgentModelId[]> {
+  const models: AgentModelId[] = [];
 
+  for (const model of agentModels(agent)) {
+    if (await canUseModel({ req, model })) models.push(model);
+  }
+
+  return models;
+}
+
+function defaultAgentModel({
+  agent,
+  models,
+}: {
+  agent: AgentInstance;
+  models: AgentModelId[];
+}): AgentModelId | undefined {
   return models.includes(agent.config.model.default) ? agent.config.model.default : models[0];
+}
+
+export async function userDefaultModel({
+  agent,
+  req,
+}: {
+  agent: AgentInstance;
+  req: FrogBotRequest;
+}): Promise<AgentModelId | undefined> {
+  return defaultAgentModel({ agent, models: await userAgentModels({ agent, req }) });
 }
 
 function agentNames({

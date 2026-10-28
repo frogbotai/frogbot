@@ -5,7 +5,6 @@ import type { Logger } from '../../frogbot.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';
-import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
 import type { GenerateImageOpts, SanitizedAIConfig } from '../types.js';
 import { toImageSize, toProviderOptions } from './options.js';
@@ -24,14 +23,13 @@ export async function generateImageOperation(
   const { model: input, req, overrideAccess, size, providerOptions, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
-  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
   const modelId = resolveModel(input, config);
 
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
       req: req as FrogBotRequest,
       method: 'generateImage',
-      input,
+      model: input,
       config,
     });
   }

@@ -1,3 +1,4 @@
+import { aiPolicyPlugin } from '@frogbotai/plugin-ai-policy';
 import type { CollectionConfig } from 'frogbot';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
@@ -62,4 +63,5 @@ export default await buildTestConfig({
       ],
     },
   },
+  plugins: [aiPolicyPlugin()],
 });

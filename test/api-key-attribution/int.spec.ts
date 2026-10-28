@@ -74,7 +74,7 @@ describe('API key attribution on usage rows and captures', () => {
 
     const owner = await booted.frogbot.create({
       collection: 'accounts',
-      data: { ...credentials, spendThisPeriodUSD: 0 },
+      data: credentials,
       overrideAccess: true,
     });
 

@@ -1,0 +1,46 @@
+{
+  "name": "@frogbotai/plugin-ai-policy",
+  "version": "0.36.0",
+  "description": "Per-user model allowlists and monthly AI budgets for FrogBot.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/plugins/plugin-ai-policy"
+  },
+  "homepage": "https://github.com/frogbotai/frogbot#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node ../../../scripts/build-package.mjs",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=24.21.0"
+  },
+  "peerDependencies": {
+    "@frogbotai/gateway": "workspace:*",
+    "frogbot": "workspace:*"
+  },
+  "devDependencies": {
+    "@frogbotai/gateway": "workspace:*",
+    "frogbot": "workspace:*",
+    "typescript": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

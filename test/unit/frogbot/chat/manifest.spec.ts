@@ -25,6 +25,10 @@ function makeAgent(
   };
 }
 
+function allowTranscribe(models: string[]) {
+  return { transcribe: ({ model }: { model: string }) => models.includes(model) };
+}
+
 function makeRequest({
   agents = [makeAgent('support')],
   chat = { enabled: true, chatsSlug: 'conversations', messagesSlug: 'turns' } as const,
@@ -215,10 +219,13 @@ describe('manifest endpoint', () => {
     });
   });
 
-  it('reports unavailable transcription when the user allowlist excludes the model', async () => {
+  it('reports unavailable transcription when transcribe access refuses the model', async () => {
     const req = makeRequest({
-      ai: { providers: { openai: true }, transcriptionModel: 'openai/gpt-4o-mini-transcribe' },
-      user: { id: 'user-1', modelAccess: 'selected', models: ['openai/whisper-1'] },
+      ai: {
+        providers: { openai: true },
+        transcriptionModel: 'openai/gpt-4o-mini-transcribe',
+        access: allowTranscribe(['openai/whisper-1']),
+      },
     });
 
     const response = await buildManifestEndpoint().handler(req);
@@ -226,14 +233,14 @@ describe('manifest endpoint', () => {
     expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
   });
 
-  it('reports unavailable transcription when the user allowlist names only the router slug', async () => {
+  it('reports unavailable transcription when transcribe access allows only the router slug', async () => {
     const req = makeRequest({
       ai: {
         providers: { openai: true },
         routers: { stt: { model: 'openai/gpt-4o-mini-transcribe' } },
         transcriptionModel: 'stt',
+        access: allowTranscribe(['stt']),
       },
-      user: { id: 'user-1', modelAccess: 'selected', models: ['stt'] },
     });
 
     const response = await buildManifestEndpoint().handler(req);
@@ -241,14 +248,14 @@ describe('manifest endpoint', () => {
     expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
   });
 
-  it('reports the router target when the user allowlist names it', async () => {
+  it('reports the router target when transcribe access allows it', async () => {
     const req = makeRequest({
       ai: {
         providers: { openai: true },
         routers: { stt: { model: 'openai/gpt-4o-mini-transcribe' } },
         transcriptionModel: 'stt',
+        access: allowTranscribe(['openai/gpt-4o-mini-transcribe']),
       },
-      user: { id: 'user-1', modelAccess: 'selected', models: ['openai/gpt-4o-mini-transcribe'] },
     });
 
     const response = await buildManifestEndpoint().handler(req);
@@ -328,7 +335,7 @@ describe('manifest endpoint', () => {
 
     await buildManifestEndpoint().handler(req);
 
-    expect(transcribe).toHaveBeenCalledWith({ req });
+    expect(transcribe).toHaveBeenCalledWith({ req, model: 'openai/gpt-4o-mini-transcribe' });
   });
 
   it('reports unavailable transcription when the access rule throws synchronously', async () => {
@@ -350,24 +357,12 @@ describe('manifest endpoint', () => {
     expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
   });
 
-  it('reports unavailable transcription when the user allowlist is selected and empty', async () => {
+  it('reports the model when transcribe access allows it', async () => {
     const req = makeRequest({
-      ai: { providers: { openai: true }, transcriptionModel: 'openai/gpt-4o-mini-transcribe' },
-      user: { id: 'user-1', modelAccess: 'selected', models: [] },
-    });
-
-    const response = await buildManifestEndpoint().handler(req);
-
-    expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
-  });
-
-  it('reports the model to a user whose allowlist includes it', async () => {
-    const req = makeRequest({
-      ai: { providers: { openai: true }, transcriptionModel: 'openai/gpt-4o-mini-transcribe' },
-      user: {
-        id: 'user-1',
-        modelAccess: 'selected',
-        models: ['openai/gpt-4o-mini', 'openai/gpt-4o-mini-transcribe'],
+      ai: {
+        providers: { openai: true },
+        transcriptionModel: 'openai/gpt-4o-mini-transcribe',
+        access: allowTranscribe(['openai/gpt-4o-mini', 'openai/gpt-4o-mini-transcribe']),
       },
     });
 

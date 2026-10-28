@@ -97,7 +97,6 @@ export interface Config {
   user: Account;
   jobs: {
     tasks: {
-      'frogbot-reset-ai-budgets': TaskFrogBotResetAiBudgets;
       'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
@@ -133,16 +132,6 @@ export interface AccountAuthOperations {
 export interface Account {
   id: number;
   apiKeyId?: number | null;
-  modelAccess?: ('all' | 'selected') | null;
-  models?: 'test/priced'[] | null;
-  /**
-   * Decimal amount in USD, in whole units, not minor units such as cents
-   */
-  monthlyBudget?: number | null;
-  /**
-   * Decimal amount in USD, in whole units, not minor units such as cents
-   */
-  spendThisPeriodUSD?: number | null;
   createdBy?: {
     relationTo: 'accounts';
     value: number | Account;
@@ -283,10 +272,6 @@ export interface FrogBotWaitpoint {
  */
 export interface AccountsSelect {
   apiKeyId?: boolean;
-  modelAccess?: boolean;
-  models?: boolean;
-  monthlyBudget?: boolean;
-  spendThisPeriodUSD?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
@@ -438,14 +423,6 @@ export interface ActivityWidget {
       ('accounts' | 'credentials' | 'usage-logs' | 'captures')[] | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBotResetAiBudgets".
- */
-export interface TaskFrogBotResetAiBudgets {
-  input?: unknown;
-  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

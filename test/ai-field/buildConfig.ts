@@ -1,3 +1,4 @@
+import { aiPolicyPlugin } from '@frogbotai/plugin-ai-policy';
 import type { CollectionConfig, FrogBotConfig } from 'frogbot';
 import { aiField } from 'frogbot';
 
@@ -156,5 +157,6 @@ export function buildAIFieldConfig(jobs: FrogBotConfig['jobs'] = {}) {
         },
       },
     },
+    plugins: [aiPolicyPlugin()],
   });
 }

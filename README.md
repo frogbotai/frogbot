@@ -159,9 +159,10 @@ This monorepo publishes the following packages:
 
 **Plugins**
 
-| Package                                                            | Description                                      |
-| ------------------------------------------------------------------ | ------------------------------------------------ |
-| [`@frogbotai/plugin-api-keys`](./packages/plugins/plugin-api-keys) | Multiple named, independently revocable API keys |
+| Package                                                              | Description                                      |
+| -------------------------------------------------------------------- | ------------------------------------------------ |
+| [`@frogbotai/plugin-ai-policy`](./packages/plugins/plugin-ai-policy) | Per-user model lists and monthly AI budgets      |
+| [`@frogbotai/plugin-api-keys`](./packages/plugins/plugin-api-keys)   | Multiple named, independently revocable API keys |
 
 **Database adapters**
 

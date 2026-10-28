@@ -21,6 +21,7 @@
   "dependencies": {
     "@frogbotai/db-sqlite": "workspace:*",
     "@frogbotai/next": "workspace:*",
+    "@frogbotai/plugin-ai-policy": "workspace:*",
     "@frogbotai/richtext-lexical": "workspace:*",
     "@frogbotai/transformer-sharp": "workspace:*",
     "@frogbotai/ui": "workspace:*",

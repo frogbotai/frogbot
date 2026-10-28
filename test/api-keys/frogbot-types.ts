@@ -103,7 +103,7 @@ export interface Config {
   user: Account;
   jobs: {
     tasks: {
-      'frogbot-reset-ai-budgets': TaskFrogBotResetAiBudgets;
+      'plugin-ai-policy-reset-spend': TaskPluginAiPolicyResetSpend;
       'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
@@ -139,7 +139,9 @@ export interface AccountAuthOperations {
  */
 export interface Account {
   id: number;
-  modelAccess?: ('all' | 'selected') | null;
+  /**
+   * Leave empty to allow all models.
+   */
   models?: ('test/allowed' | 'test/blocked')[] | null;
   /**
    * Decimal amount in USD, in whole units, not minor units such as cents
@@ -373,7 +375,6 @@ export interface FrogBotWaitpoint {
  * via the `definition` "accounts_select".
  */
 export interface AccountsSelect {
-  modelAccess?: boolean;
   models?: boolean;
   monthlyBudget?: boolean;
   spendThisPeriodUSD?: boolean;
@@ -611,9 +612,9 @@ export interface ActivityWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBotResetAiBudgets".
+ * via the `definition` "TaskPluginAiPolicyResetSpend".
  */
-export interface TaskFrogBotResetAiBudgets {
+export interface TaskPluginAiPolicyResetSpend {
   input?: unknown;
   output?: unknown;
 }

@@ -1,5 +1,4 @@
 import { AIAccessError, enforceAIAccess } from '../ai/access.js';
-import { enforcePolicy } from '../ai/policy.js';
 import type { AIMethod } from '../ai/types.js';
 import type { FrogBot } from '../frogbot.js';
 
@@ -37,7 +36,7 @@ async function readRequestedModel(request: Request): Promise<string | undefined>
     return typeof model === 'string' ? model : undefined;
   }
 
-  const body = (await request.clone().json()) as { model?: unknown };
+  const body = (await request.clone().json()) as { model?: unknown } | null;
 
   return typeof body?.model === 'string' ? body.model : undefined;
 }
@@ -66,10 +65,17 @@ export async function handleGatewayRequest({
   url.pathname = url.pathname.replace(/^\/api(?=\/|$)/, '') || '/';
   const method = methodForPath(url.pathname);
   if (method) {
+    const model = await readRequestedModel(request).catch(() => null);
+
+    if (model === null) {
+      return Response.json(
+        { error: { message: 'Invalid request body.', type: 'invalid_request_error' } },
+        { status: 400 },
+      );
+    }
+
     try {
-      await enforceAIAccess({ req, method, input: '', config: ai });
-      const model = await readRequestedModel(request);
-      if (model) enforcePolicy({ req, target: model });
+      await enforceAIAccess({ req, method, model: model ?? '', config: ai });
     } catch (error) {
       if (error instanceof AIAccessError) {
         return Response.json(

@@ -5,9 +5,6 @@ import { validateAdminIcon } from '../admin/icons.js';
 import { sanitizeAgents } from '../agents/config/sanitize.js';
 import { AGENT_SCHEDULE_TASK_SLUG, resolveScheduleTasks } from '../agents/resolveScheduleTasks.js';
 import { sanitizeAI } from '../ai/config/sanitize.js';
-import { getConfiguredModelIds } from '../ai/models.js';
-import { createPolicyHooks } from '../ai/policy.js';
-import { createPolicyFields, mergePolicyFields } from '../ai/policyFields.js';
 import { resolveUsageCollection } from '../ai/usage/collection.js';
 import { coordinateAuthEndpoints } from '../auth/endpoints.js';
 import { unwrapSessionPayload } from '../auth/operation.js';
@@ -22,7 +19,6 @@ import { buildChatEndpoints } from '../chat/endpoints.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
 import { resolveUserSlug } from '../chat/resolveUserSlug.js';
 import { wrapCollectionAccess } from '../collections/config/sanitize.js';
-import type { CollectionConfig } from '../collections/config/types.js';
 import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
 import { buildSecretEndpoints } from '../connections/secret.js';
 import type { Endpoint } from '../endpoints/types.js';
@@ -201,73 +197,7 @@ export function sanitize(
     return attachFrogBotInstance(req, frogbot);
   };
 
-  let sanitizedAI = config.ai ? sanitizeAI(config.ai, mode) : undefined;
-  if (sanitizedAI) {
-    const authCollection = resolveUserSlug(config);
-    const policyHooks = createPolicyHooks({
-      authCollection,
-      providers: sanitizedAI.providers,
-    });
-
-    sanitizedAI = {
-      ...sanitizedAI,
-      hooks: {
-        ...sanitizedAI.hooks,
-        beforeOperation: [policyHooks.beforeOperation, ...sanitizedAI.hooks.beforeOperation],
-        afterOperation: [...sanitizedAI.hooks.afterOperation, policyHooks.afterOperation],
-      },
-    };
-
-    const policyFields = createPolicyFields(getConfiguredModelIds(config.ai));
-    const hasAuthCollection = config.collections.some(
-      (collection) => collection.slug === authCollection,
-    );
-
-    config = {
-      ...config,
-      collections: [
-        ...config.collections.map((collection) =>
-          collection.slug === authCollection
-            ? { ...collection, fields: mergePolicyFields(collection.fields, policyFields) }
-            : collection,
-        ),
-        ...(hasAuthCollection
-          ? []
-          : [
-              {
-                slug: authCollection,
-                authorship: false,
-                custom: { frogbot: { internal: true } },
-                admin: { useAsTitle: 'name' },
-                auth: { tokenExpiration: 7200 },
-                fields: [{ name: 'name', type: 'text' }, ...policyFields],
-              } as CollectionConfig,
-            ]),
-      ],
-      jobs: {
-        ...config.jobs,
-        tasks: [
-          ...(config.jobs?.tasks ?? []).filter((task) => task.slug !== 'frogbot-reset-ai-budgets'),
-          {
-            slug: 'frogbot-reset-ai-budgets',
-            interfaceName: 'TaskFrogBotResetAiBudgets',
-            schedule: [{ cron: '0 0 1 * *', queue: 'frogbot-reset-ai-budgets' }],
-            handler: async ({ req }) => {
-              await req.payload.update({
-                collection: authCollection,
-                where: { id: { exists: true } },
-                data: { spendThisPeriodUSD: 0 },
-                overrideAccess: true,
-                req,
-              });
-
-              return { output: {} };
-            },
-          },
-        ],
-      },
-    };
-  }
+  const sanitizedAI = config.ai ? sanitizeAI(config.ai, mode) : undefined;
 
   sanitizeAIFields({
     ai: config.ai,

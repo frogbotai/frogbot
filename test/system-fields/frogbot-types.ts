@@ -118,7 +118,6 @@ export interface Config {
       'touch-ticket': TaskTouchTicket;
       createCollectionExport: TaskCreateCollectionExport;
       createCollectionImport: TaskCreateCollectionImport;
-      'frogbot-reset-ai-budgets': TaskFrogBotResetAiBudgets;
       'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
@@ -172,16 +171,6 @@ export interface AdminAuthOperations {
 export interface User {
   id: number;
   name?: string | null;
-  modelAccess?: ('all' | 'selected') | null;
-  models?: 'test/gpt-4.1-mini'[] | null;
-  /**
-   * Decimal amount in USD, in whole units, not minor units such as cents
-   */
-  monthlyBudget?: number | null;
-  /**
-   * Decimal amount in USD, in whole units, not minor units such as cents
-   */
-  spendThisPeriodUSD?: number | null;
   createdBy?:
     | ({
         relationTo: 'users';
@@ -641,10 +630,6 @@ export interface FrogBotAutonumber {
  */
 export interface UsersSelect {
   name?: boolean;
-  modelAccess?: boolean;
-  models?: boolean;
-  monthlyBudget?: boolean;
-  spendThisPeriodUSD?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
@@ -1111,14 +1096,6 @@ export interface TaskCreateCollectionImport {
     defaultVersionStatus?: ('draft' | 'published') | null;
     maxLimit?: number | null;
   };
-  output?: unknown;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBotResetAiBudgets".
- */
-export interface TaskFrogBotResetAiBudgets {
-  input?: unknown;
   output?: unknown;
 }
 /**

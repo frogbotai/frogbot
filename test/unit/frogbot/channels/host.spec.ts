@@ -37,6 +37,15 @@ function activate(messages: Array<Record<string, unknown>>) {
 
 type Fixture = ReturnType<typeof channelFixture>;
 
+function allowOnly(fixture: Fixture, models: string[]) {
+  Object.assign(fixture.frogbot.config, {
+    ai: {
+      routers: {},
+      access: { generate: ({ model }: { model: string }) => models.includes(model) },
+    },
+  });
+}
+
 const lifecycles = {
   registered: {
     initialize: (fixture: Fixture) => initializeChannelHost(fixture.frogbot as never),
@@ -452,12 +461,8 @@ describe('ChannelHost conversation loop', () => {
   it('silently audits an identified user with no usable model', async () => {
     const fixture = channelFixture();
 
-    fixture.identity.mockResolvedValueOnce({
-      id: 'user-1',
-      collection: 'users',
-      modelAccess: 'selected',
-      models: ['openai/other'],
-    });
+    allowOnly(fixture, ['openai/other']);
+    fixture.identity.mockResolvedValueOnce({ id: 'user-1', collection: 'users' });
 
     await fixture.host.initialize(false);
     await fixture.deliver();
@@ -483,12 +488,8 @@ describe('ChannelHost conversation loop', () => {
       model: { default: 'openai/test', options: ['openai/test', 'openai/other'] },
     });
 
-    fixture.identity.mockResolvedValueOnce({
-      id: 'user-1',
-      collection: 'users',
-      modelAccess: 'selected',
-      models: ['openai/other'],
-    });
+    allowOnly(fixture, ['openai/other']);
+    fixture.identity.mockResolvedValueOnce({ id: 'user-1', collection: 'users' });
 
     await fixture.host.initialize(false);
     await fixture.deliver();
@@ -496,11 +497,7 @@ describe('ChannelHost conversation loop', () => {
 
     expect(fixture.streamMessage).toHaveBeenCalledOnce();
     expect(fixture.streamMessage.mock.calls[0][0]).not.toHaveProperty('selection');
-    expect(fixture.streamMessage.mock.calls[0][0].req?.user).toMatchObject({
-      id: 'user-1',
-      modelAccess: 'selected',
-      models: ['openai/other'],
-    });
+    expect(fixture.streamMessage.mock.calls[0][0].req?.user).toMatchObject({ id: 'user-1' });
     expect(fixture.posted).toEqual([{ threadId: 'channel:thread-1', text: 'Hello back' }]);
     expect(fixture.frogbot.logger.info).not.toHaveBeenCalled();
 

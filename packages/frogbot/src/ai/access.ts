@@ -4,16 +4,16 @@ import type { AIAccessConfig, AIMethod, SanitizedAIConfig } from './types.js';
 export type EnforceAccessArgs = {
   req: FrogBotRequest;
   method: AIMethod;
-  input: string;
+  model: string;
   config: SanitizedAIConfig;
 };
 
 export async function enforceAIAccess(args: EnforceAccessArgs): Promise<void> {
-  const { req, method, config } = args;
+  const { req, method, model, config } = args;
 
   const category = methodToCategory(method);
   const baseFn = config.access[category];
-  if (baseFn && !(await baseFn({ req }))) {
+  if (baseFn && !(await baseFn({ req, model }))) {
     throw new AIAccessError(`Access denied for AI ${category}`);
   }
 }

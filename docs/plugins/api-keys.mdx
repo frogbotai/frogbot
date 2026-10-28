@@ -83,7 +83,7 @@ Collection overrides merge with the generated configuration and changes made by 
 
 ## Budgets and limits
 
-The plugin has no per-key budgets, rate limits, or model allowlists. A key authenticates as its owner, so requests made with it use the owner's model access and monthly budget, and their spend counts toward the owner's total. See [User model and budget policy](/ai/overview#user-model-and-budget-policy).
+The plugin has no per-key budgets, rate limits, or model limits. A key authenticates as its owner, so requests made with it pass the owner's [`ai.access`](/ai/overview#control-access) rules. With the [AI policy plugin](/plugins/ai-policy), they use the owner's models and monthly budget, and their spend counts toward the owner's total.
 
 ## Role-aware access
 

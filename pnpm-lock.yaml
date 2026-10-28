@@ -264,6 +264,9 @@ importers:
       '@frogbotai/piece-resend':
         specifier: workspace:*
         version: link:../../packages/pieces/piece-resend
+      '@frogbotai/plugin-ai-policy':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-ai-policy
       '@frogbotai/plugin-api-keys':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-api-keys
@@ -334,6 +337,9 @@ importers:
       '@frogbotai/next':
         specifier: workspace:*
         version: link:../../packages/next
+      '@frogbotai/plugin-ai-policy':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-ai-policy
       '@frogbotai/transformer-sharp':
         specifier: workspace:*
         version: link:../../packages/transformer-sharp
@@ -1575,6 +1581,18 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/plugins/plugin-ai-policy:
+    devDependencies:
+      '@frogbotai/gateway':
+        specifier: workspace:*
+        version: link:../../gateway
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/plugins/plugin-api-keys:
     devDependencies:
       '@frogbotai/gateway':
@@ -2110,6 +2128,9 @@ importers:
       '@frogbotai/next':
         specifier: workspace:*
         version: link:../../packages/next
+      '@frogbotai/plugin-ai-policy':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-ai-policy
       '@frogbotai/richtext-lexical':
         specifier: workspace:*
         version: link:../../packages/richtext-lexical
@@ -2333,6 +2354,9 @@ importers:
       '@frogbotai/piece-zoom':
         specifier: workspace:*
         version: link:../packages/pieces/piece-zoom
+      '@frogbotai/plugin-ai-policy':
+        specifier: workspace:*
+        version: link:../packages/plugins/plugin-ai-policy
       '@frogbotai/plugin-api-keys':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-api-keys

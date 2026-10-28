@@ -234,7 +234,6 @@ describe('API keys plugin integration', () => {
       collection: 'accounts',
       id: owner.id,
       data: {
-        modelAccess: 'selected',
         monthlyBudget: 10,
         models: ['test/allowed'],
         spendThisPeriodUSD: 0,
@@ -306,7 +305,12 @@ describe('API keys plugin integration', () => {
       overrideAccess: true,
     });
 
-    expect((await request('test/allowed')).status).toBe(403);
+    const exhausted = await request('test/allowed');
+
+    expect(exhausted.status).toBe(403);
+    expect(exhausted.body).toMatchObject({
+      error: { code: 'budget_exceeded', message: 'The configured budget has been exhausted.' },
+    });
   });
 
   describe('current user through API keys', () => {
@@ -415,7 +419,6 @@ describe('API keys plugin integration', () => {
         collection: 'accounts',
         data: {
           ...agentCredentials,
-          modelAccess: 'selected',
           models: ['test/allowed'],
           spendThisPeriodUSD: 0,
         },

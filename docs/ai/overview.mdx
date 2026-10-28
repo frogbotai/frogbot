@@ -5,39 +5,7 @@ description: "Configure providers, inference, access, hooks, and HTTP routes."
 keywords: ["AI", "providers", "models", "routers", "hooks", "gateway"]
 ---
 
-## User model and budget policy
-
-When AI is configured, FrogBot adds policy fields to the auth collection. `modelAccess` defaults to `all`, which includes models and routers configured later. `selected` requires at least one exact target in `models`. Granting a router permits that router slug, not direct calls to the model behind it.
-
-Agent chat applies the same list. A user sees only the agent models they may use, and a request without a model runs the agent's default if allowed, otherwise the first allowed model. Agents with no allowed model are hidden from that user and reject their requests. Turns with no user, such as scheduled tasks and anonymous channel messages, have no per-user limit.
-
-`monthlyBudget` is an optional USD limit; leave it empty for no limit. Completed billable usage increments `spendThisPeriodUSD`, including configured custom-provider prices. Both are USD [Money fields](/fields/money). Requests stop when spend reaches the limit, and FrogBot resets spend at midnight UTC on the first day of each month. Counter updates are serialized within one process; deployments with multiple writers should use database-level serialization if exact concurrent accounting is required.
-
-### Customizing the fields
-
-Policy fields have no default access restrictions. Define a same-name field on your auth collection to override labels, admin settings, defaults, or access while FrogBot supplies omitted policy behavior. The money fields keep their money display and agent description unless your override sets its own `admin.components`, `admin.custom`, or `jsonSchema`.
-
-Leave the fields out for fully open field access.
-
-Block updates with your own check:
-
-```ts
-{ name: 'monthlyBudget', type: 'number', access: {
-  update: ({ req }) => req.user?.isAdmin === true,
-} }
-```
-
-Compose access from the roles plugin:
-
-```ts
-{ name: 'monthlyBudget', type: 'number', access: {
-  update: allow('admin'),
-} }
-```
-
-`spendThisPeriodUSD` is update-locked and read-only by default because FrogBot maintains it. A same-name override can replace that access or admin setting when needed.
-
-The `ai` block creates an embedded `@frogbotai/gateway` instance when FrogBot starts. Local operations use AI SDK v7 against that in-process gateway, so no separate proxy service is required.
+The `ai` block creates an embedded `@frogbotai/gateway` instance when FrogBot starts. Local operations use AI SDK v7 against that in-process gateway, so no separate proxy service is required. To limit each user's models and monthly spend, add the [AI policy plugin](/plugins/ai-policy).
 
 ---
 
@@ -182,7 +150,7 @@ An `apiKey` or any other key fails startup: Vertex API keys (express mode) don't
 | `id` | `string` | Yes | Model ID sent to the endpoint. Call it as `<provider key>/<id>`, such as `internal/legal-summary-v2`. Must be non-empty. |
 | `mode` | `'chat' \| 'embedding' \| 'image_generation' \| 'audio_speech' \| 'audio_transcription' \| 'rerank' \| 'evaluate' \| 'video_generation'` | Yes | The kind of model. Only `chat` models can serve an agent, and only they are included by an agent's `model.options: '*'`. |
 | `name` | `string` | No; the picker shows `id` | Display label in the chat model picker and in the agent manifest's `names`. |
-| `cost` | `{ input?: number; output?: number; cache_read?: number }` | No; usage costs `0` | Prices in USD per million tokens. FrogBot uses them for `costUSD` in usage logs and for `monthlyBudget` spend. A missing `input` or `output` price counts as `0`. `cache_read` prices cached input tokens and defaults to the `input` price; cache-write tokens are priced as input. |
+| `cost` | `{ input?: number; output?: number; cache_read?: number }` | No; usage costs `0` | Prices in USD per million tokens. FrogBot uses them for `costUSD` in usage logs and in `calculateUsageCostUSD`, which the [AI policy plugin](/plugins/ai-policy) uses for spend. A missing `input` or `output` price counts as `0`. `cache_read` prices cached input tokens and defaults to the `input` price; cache-write tokens are priced as input. |
 | `reasoningOptions` | `ModelReasoningOption[]` | No; `[{ type: 'effort', values: ['low', 'medium', 'high'] }]` when `reasoning` is `true`, otherwise no reasoning levels | Reasoning levels the endpoint accepts. Custom providers support `{ type: 'effort', values?: string[] }`: each value becomes a level in the chat selector, `values` defaults to `['low', 'medium', 'high']`, and a selected level is sent as `reasoning_effort`. The selector's `Default` level sends nothing. `{ type: 'budget_tokens', min?, max? }` and `{ type: 'toggle' }` are accepted by the type but add no levels for custom providers. Ignored when `reasoning` is `false`. |
 | `limit` | `{ context?: number; input?: number; output?: number }` | No | Token limits for the model's context window, input, and output. Descriptive only: FrogBot does not enforce them or send them to the endpoint. |
 | `modalities` | `{ input: ModelModality[]; output: ModelModality[] }` | No; every file type is sent | Content types the model accepts and produces, each one of `'text'`, `'image'`, `'audio'`, `'video'`, or `'pdf'`. In agent conversations, `input` decides which [chat attachments](/chat/overview#how-attachments-reach-the-agent) are sent: an image, audio, video, or PDF attachment of a type not listed is replaced with a short marker, and text attachments are always sent as text. The chat composer refuses those files when they are picked ([Attachments](/chat/ui-chat#attachments)). Without `modalities`, no attachment is replaced or refused for its type. `output` is descriptive only. Built-in models use the input types listed in the model catalog. |
@@ -280,8 +248,8 @@ Every options type includes these shared options.
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `model` | `ModelId` | Required | Provider-prefixed model ID or router slug. A router slug resolves to its target model. |
-| `req` | `Partial<FrogBotRequest>` | — | Request whose user is checked against [access](#control-access) and the [user model and budget policy](#user-model-and-budget-policy). Hooks receive it as `req`. |
-| `overrideAccess` | `boolean` | `false` when `req` is passed, otherwise `true` | Set `true` to skip access and policy checks for a call with `req`. Checks need a request, so a call without `req` always skips them. |
+| `req` | `Partial<FrogBotRequest>` | — | Request whose user is checked against [access](#control-access). Hooks receive it as `req`. |
+| `overrideAccess` | `boolean` | `false` when `req` is passed, otherwise `true` | Set `true` to skip access checks for a call with `req`. Checks need a request, so a call without `req` always skips them. |
 
 ### Text generation options
 
@@ -475,7 +443,7 @@ FrogBot also re-exports `Output.text`, `Output.array`, `Output.choice`, and `Out
 
 ## Control access
 
-Configure access by operation category. Every category defaults to `Boolean(req.user)`.
+Configure access by operation category. Each rule receives `{ req, model }`, where `model` is the model ID or [alias](#add-aliases) slug the caller asked for. Every category defaults to `Boolean(req.user)`.
 
 ```ts
 ai: {
@@ -483,7 +451,7 @@ ai: {
     openai: true
   },
   access: {
-    generate: ({ req }) => Boolean(req.user),
+    generate: ({ req, model }) => Boolean(req.user) && model !== 'openai/gpt-5.4',
     embed: ({ req }) => Boolean(req.user),
     transcribe: ({ req }) => Boolean(req.user),
     rerank: ({ req }) => Boolean(req.user),
@@ -494,15 +462,19 @@ ai: {
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `generate` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `generateText`, `streamText`, `generateImage`, `generateSpeech`, and `generateVideo`. |
-| `embed` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `embed` and `embedMany`. |
-| `transcribe` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `transcribe`. |
-| `rerank` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `rerank`. |
-| `evaluate` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `evaluate`. |
+| `generate` | `({ req, model }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `generateText`, `streamText`, `generateImage`, `generateSpeech`, and `generateVideo`, and for each agent model offered in chat. |
+| `embed` | `({ req, model }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `embed` and `embedMany`. |
+| `transcribe` | `({ req, model }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `transcribe`, and for the [transcription model](/chat/ui-chat#voice-input) when chat decides whether to show a microphone. |
+| `rerank` | `({ req, model }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `rerank`. |
+| `evaluate` | `({ req, model }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `evaluate`. |
 
-A rule that returns `false` rejects the call with `AIAccessError` (status `403`).
+FrogBot runs the matching rule before every AI operation and [HTTP request](#call-over-http). A rule that returns `false` rejects the call with `AIAccessError` (status `403`). To send your own status and message, throw an error with a numeric `status` and a `code`; HTTP routes return it as `{ error: { message, type: code } }` with that status.
+
+Chat also runs the `generate` rule for each of an agent's models when a signed-in user lists agents or picks a model. A model whose rule returns `false` or throws an error with a numeric `status` is hidden from that user, a request without a model uses the agent's default if allowed or else the first allowed model, and an agent with no allowed model is hidden and rejects their requests.
 
 An in-process call with `req` enforces access unless `overrideAccess: true` is set. A server-side call without `req` bypasses access by default, since there is no user to check.
+
+The [AI policy plugin](/plugins/ai-policy) builds on these rules to limit each user's models and monthly spend. Replace it with your own rules, such as credits, on the same seam.
 
 ---
 
@@ -636,7 +608,7 @@ Each accepted request gets one FrogBot lifecycle around the gateway handler. Fro
 | `POST` | `/api/v1/rerank` |
 | `POST` | `/api/v1/evaluate` |
 
-Pass credentials accepted by your configured auth collection. HTTP bodies use provider-prefixed model IDs because router aliases are resolved by FrogBot's local operation layer, not by the gateway handler. After authentication, mounted operation routes enforce the matching `ai.access` category and user model policy. A denied request receives `403`; discovery routes such as `/models` do not run an operation access callback. Keep the TypeSafe upstream key on the server; clients authenticate to FrogBot instead. See the [evaluation JSON contract](/gateway/overview#evaluate-over-http) for a request and response shape.
+Pass credentials accepted by your configured auth collection. HTTP bodies use provider-prefixed model IDs because router aliases are resolved by FrogBot's local operation layer, not by the gateway handler. After authentication, mounted operation routes run the matching [`ai.access`](#control-access) rule with the body's `model`. A denied request receives `403` with the error `type` `permission_error`, or the status and code of an error the rule throws; discovery routes such as `/models` do not run an operation access callback. Keep the TypeSafe upstream key on the server; clients authenticate to FrogBot instead. See the [evaluation JSON contract](/gateway/overview#evaluate-over-http) for a request and response shape.
 
 ```bash
 curl http://localhost:3000/api/v1/chat/completions \
