@@ -1,7 +1,7 @@
 import { importExportPlugin as payloadImportExportPlugin } from '@payloadcms/plugin-import-export';
 import type { ImportExportPluginConfig } from '@payloadcms/plugin-import-export/types';
 import type { Plugin } from 'frogbot';
-import { wrapPayloadPlugin } from 'frogbot/internal';
+import { mapComponentPaths, wrapPayloadPlugin } from 'frogbot/internal';
 import type { CollectionAfterChangeHook, PayloadRequest } from 'payload';
 
 export type ImportExportPluginOptions = ImportExportPluginConfig;
@@ -25,7 +25,19 @@ export function importExportPlugin(options: ImportExportPluginOptions): Plugin {
     ...(options.collections && { collections: options.collections.map(withCollectionQueues) }),
   };
 
-  return wrapPayloadPlugin(payloadImportExportPlugin(pluginOptions));
+  const payloadPlugin = payloadImportExportPlugin(pluginOptions);
+
+  return wrapPayloadPlugin(async (config) =>
+    mapComponentPaths(await payloadPlugin(config), toFrogBotPath),
+  );
+}
+
+const payloadSpecifier = '@payloadcms/plugin-import-export/rsc';
+
+function toFrogBotPath(path: string): string {
+  return path === payloadSpecifier || path.startsWith(`${payloadSpecifier}#`)
+    ? `@frogbotai/plugin-import-export/rsc${path.slice(payloadSpecifier.length)}`
+    : path;
 }
 
 function withCollectionQueues(collection: PluginCollection): PluginCollection {

@@ -40,21 +40,6 @@
     "ticket": "363"
   },
   {
-    "file": "packages/frogbot/src/config/rewriteComponentPaths.ts",
-    "match": "@frogbotai/plugin-",
-    "ticket": "364"
-  },
-  {
-    "file": "packages/frogbot/src/config/rewriteComponentPaths.ts",
-    "match": "plugin-import-export",
-    "ticket": "364"
-  },
-  {
-    "file": "packages/frogbot/src/config/rewriteComponentPaths.ts",
-    "match": "plugin-seo",
-    "ticket": "364"
-  },
-  {
     "file": "packages/frogbot/src/config/sanitize.ts",
     "match": "_roles",
     "ticket": "363"

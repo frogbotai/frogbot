@@ -2,6 +2,8 @@ import type { CollectionConfig, Field, FrogBotConfig } from 'frogbot';
 import { describe, expect, it } from 'vitest';
 
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
+import type { FrogBot } from '../../../packages/frogbot/src/frogbot.js';
+import { toFrogBotRequest } from '../../../packages/frogbot/src/seams/request.js';
 import {
   MetaDescriptionField,
   MetaImageField,
@@ -11,6 +13,7 @@ import {
 } from '../../../packages/plugins/plugin-seo/src/fields.js';
 import { seoPlugin } from '../../../packages/plugins/plugin-seo/src/index.js';
 import type { SEOPluginOptions } from '../../../packages/plugins/plugin-seo/src/types.js';
+import { makeRequest } from '../frogbot/config/request.js';
 
 const slugs = { posts: 'posts', pages: 'pages', media: 'media', users: 'users' } as const;
 
@@ -44,6 +47,22 @@ function metaTab(fields: Field[] = [MetaTitleField({})]): Field[] {
       ],
     },
   ];
+}
+
+function toFrogBotPaths<T>(value: T): T {
+  return JSON.parse(
+    JSON.stringify(value).replaceAll(
+      '@payloadcms/plugin-seo/client',
+      '@frogbotai/plugin-seo/client',
+    ),
+  );
+}
+
+function componentPaths(value: unknown): string[] {
+  if (typeof value === 'string') return [value];
+  if (!value || typeof value !== 'object') return [];
+
+  return Object.values(value).flatMap(componentPaths);
 }
 
 async function applySEO({
@@ -96,7 +115,7 @@ describe('seoPlugin', () => {
     });
 
     expect(updated).toBe(collection);
-    expect(updated.fields).toEqual(originalFields);
+    expect(updated.fields).toEqual(toFrogBotPaths(originalFields));
     expect(countMeta(updated.fields)).toBe(1);
   });
 
@@ -327,5 +346,41 @@ describe('seoPlugin', () => {
         expect.objectContaining({ method: 'post', path: '/plugin-seo/generate-image' }),
       ]),
     );
+  });
+
+  it('maps the generated meta group to @frogbotai/plugin-seo/client', async () => {
+    const { result } = await applySEO({ fields: [{ name: 'title', type: 'text' }] });
+
+    const paths = componentPaths(result.collections);
+
+    expect(paths.filter((path) => path.startsWith('@payloadcms/plugin-seo'))).toEqual([]);
+    expect(paths).toContain('@frogbotai/plugin-seo/client#MetaTitleComponent');
+  });
+
+  it('maps a hand-placed factory field in place and still authorises its generation', async () => {
+    const title = MetaTitleField({ hasGenerateFn: true });
+    const { collection, result, updated } = await applySEO({
+      fields: [{ name: 'meta', type: 'group', fields: [title] }],
+      options: { generateTitle: () => 'Generated' },
+    });
+
+    expect(updated).toBe(collection);
+    expect(title.admin?.components?.Field).toMatchObject({
+      path: '@frogbotai/plugin-seo/client#MetaTitleComponent',
+      clientProps: { hasGenerateTitleFn: true },
+    });
+
+    const endpoint = result.endpoints?.find(({ path }) => path === '/plugin-seo/generate-title');
+    const req = toFrogBotRequest(
+      Object.assign(makeRequest({ collections: {}, config: { admin: { user: slugs.users } } }), {
+        json: () => Promise.resolve({ collectionSlug: slugs.pages }),
+        user: { collection: slugs.users, id: 1 },
+      }),
+      {} as FrogBot,
+    );
+
+    const response = await endpoint?.handler(req);
+
+    expect(await response?.json()).toEqual({ result: 'Generated' });
   });
 });
