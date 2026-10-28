@@ -24,7 +24,7 @@ FrogBot is a pnpm monorepo that wraps Payload 3 with an AI-native layer (agents,
 | `templates/`, `examples/`                                                                                    | Starters the CLI installs (`blank`), and reference apps that are not installable.                                                                                                                        |
 | `docs/`                                                                                                      | The Mintlify site (`docs.json`).                                                                                                                                                                         |
 | `test/`                                                                                                      | Every test and fixture, one folder per area, plus `test/unit/`, `test/e2e/`, `test/browser/` and the shared harness in `test/__helpers/`. See [test/README.md](test/README.md).                          |
-| `scripts/`                                                                                                   | Repo tooling: `check.mjs` runs every `check-*.mjs`, `ticket.mjs` is `pnpm ticket`, `prerelease.mjs` is the `pnpm bump` release gate.                                                                     |
+| `scripts/`                                                                                                   | Repo tooling: `check.mjs` runs every `check-*.mjs`, `ticket.mjs` is `pnpm ticket`, `prerelease.mjs` is the `pnpm bump` release gate, `release-changelog.mjs` writes the release notes.                   |
 | `.github/feature-process/`                                                                                   | How tickets go from issue to commit. `.idea/` holds local ticket documents and is never committed.                                                                                                       |
 
 Before reading code:
@@ -88,7 +88,7 @@ Example: AI policy (model allowlists, monthly budgets, spend counters) goes in a
 | Sync the AI model catalog and types | `pnpm sync:catalog`                                                                                                                                                                 |
 | Upstream changes to vendored code   | `pnpm vendored [--to <ref>] [--fetch]`                                                                                                                                              |
 | Tickets                             | `pnpm ticket next`, `new <n>`, `status [--batch <n>]`, `decisions`, `found "<row>"`, `stats`, `land <n>` (see [the feature process](.github/feature-process/README.md))             |
-| Release                             | `pnpm bump <major\|minor\|patch>` (`--from <step>` resumes), `pnpm release` (owner only; `--resume` after a partial publish), `pnpm release:status`                                 |
+| Release                             | `pnpm bump <major\|minor\|patch>` (`--from <step>` resumes), `pnpm release` (owner only; publishes, tags, posts the GitHub release; `--resume` resumes), `pnpm release:status`      |
 
 `prepare` and `lint-staged` are git-hook plumbing and have no row. Packages have only `build`, `clean` and `typecheck`.
 
