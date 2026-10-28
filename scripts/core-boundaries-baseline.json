@@ -13,35 +13,5 @@
     "file": "packages/frogbot/src/bin/share/dojo.ts",
     "match": "apiKeyId",
     "ticket": "362"
-  },
-  {
-    "file": "packages/frogbot/src/config/build.ts",
-    "match": "_roles",
-    "ticket": "363"
-  },
-  {
-    "file": "packages/frogbot/src/config/build.ts",
-    "match": "plugin-roles",
-    "ticket": "363"
-  },
-  {
-    "file": "packages/frogbot/src/config/sanitize.ts",
-    "match": "_roles",
-    "ticket": "363"
-  },
-  {
-    "file": "packages/frogbot/src/config/types.ts",
-    "match": "_roles",
-    "ticket": "363"
-  },
-  {
-    "file": "packages/frogbot/src/config/types.ts",
-    "match": "plugin-mcp",
-    "ticket": "363"
-  },
-  {
-    "file": "packages/frogbot/src/config/types.ts",
-    "match": "plugin-roles",
-    "ticket": "363"
   }
 ]

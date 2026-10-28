@@ -752,6 +752,5 @@ declare module 'frogbot' {
       'sdk-agent': unknown;
     };
     models: 'test/test-model';
-    roles: never;
   }
 }

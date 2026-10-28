@@ -393,6 +393,5 @@ declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {};
     models: 'zen/big-pickle' | 'zen/priced';
-    roles: never;
   }
 }

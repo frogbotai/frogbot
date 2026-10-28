@@ -3,6 +3,7 @@ import {
   definePlugin,
   type Field,
   type FrogBotConfig,
+  type OnInit,
   type Plugin,
 } from 'frogbot';
 import { formatLabels } from 'payload';
@@ -11,6 +12,8 @@ import { bindCompiledAccess, compiledAccess, isCompiledAccess } from './allow.js
 import { attachRoleResolver, defaultRoleResolver, resolveRequestRoles } from './resolve.js';
 import type { NormalizedRole, RoleResolver, RolesPluginOptions } from './types.js';
 import { normalizeRoles } from './types.js';
+
+type RolesTypeTransform = NonNullable<NonNullable<FrogBotConfig['typescript']>['schema']>[number];
 
 export { allow } from './allow.js';
 export { hasRole, isLoggedIn, ownRows, rolesOf, viaApiKey } from './predicates.js';
@@ -32,6 +35,32 @@ declare module 'frogbot' {
   interface RegisteredPlugins {
     'plugin-roles': RolesResolvedOptions;
   }
+}
+
+function onInitList(config: FrogBotConfig): OnInit[] {
+  if (config.onInit === undefined) return [];
+
+  return Array.isArray(config.onInit) ? config.onInit : [config.onInit];
+}
+
+function withRolesType(config: FrogBotConfig, roleSlugs: readonly string[]): FrogBotConfig {
+  const transform: RolesTypeTransform = ({ jsonSchema }) => ({
+    ...jsonSchema,
+    properties: {
+      ...jsonSchema.properties,
+      roles:
+        roleSlugs.length === 0 ? { tsType: 'never' } : { type: 'string', enum: [...roleSlugs] },
+    },
+    required: [...(Array.isArray(jsonSchema.required) ? jsonSchema.required : []), 'roles'],
+  });
+
+  return {
+    ...config,
+    typescript: {
+      ...config.typescript,
+      schema: [...(config.typescript?.schema ?? []), transform],
+    },
+  };
 }
 
 function bindFields(
@@ -304,32 +333,26 @@ const rolesPluginDefinition = definePlugin<RolesResolvedOptions>({
     const { roles } = options;
     const resolver = options.resolveRoles ?? defaultRoleResolver;
     const roleSlugs = roles.map(({ slug }) => slug);
-    if (roles.length === 0) {
-      return {
-        ...config,
-        _roles: {
-          present: true,
-          configured: false,
-          roles: [],
-        },
-      };
-    }
-
-    const prewiring: FrogBotConfig['_roles'] = {
-      ...config._roles,
-      present: true,
-      configured: true,
-      roles: roleSlugs,
-    };
+    if (roles.length === 0) return withRolesType(config, roleSlugs);
 
     const authSlug = 'users';
     const fieldName = 'roles';
     const authCollection = config.collections.find(({ slug }) => slug === authSlug);
     if (!authCollection || authCollection.auth === undefined || authCollection.auth === false) {
-      return {
-        ...config,
-        _roles: prewiring,
-      };
+      return withRolesType(
+        {
+          ...config,
+          onInit: [
+            ...onInitList(config),
+            (frogbot) => {
+              frogbot.logger.warn(
+                '[plugin-roles] No auth-enabled users collection is configured; role assignments are unavailable.',
+              );
+            },
+          ],
+        },
+        roleSlugs,
+      );
     }
 
     if (authCollection.fields.some((field) => 'name' in field && field.name === fieldName)) {
@@ -358,23 +381,15 @@ const rolesPluginDefinition = definePlugin<RolesResolvedOptions>({
           },
     );
 
-    const onInit =
-      config.onInit === undefined
-        ? []
-        : Array.isArray(config.onInit)
-          ? config.onInit
-          : [config.onInit];
-
     const result = {
       ...config,
       collections,
-      onInit: [...onInit, (frogbot) => attachRoleResolver(frogbot, resolver)],
-      _roles: prewiring,
+      onInit: [...onInitList(config), (frogbot) => attachRoleResolver(frogbot, resolver)],
     } as FrogBotConfig;
 
     validateCompiledAccess(result, roleSlugs);
 
-    return bindAccess(result, roleSlugs, resolver);
+    return withRolesType(bindAccess(result, roleSlugs, resolver), roleSlugs);
   },
 });
 

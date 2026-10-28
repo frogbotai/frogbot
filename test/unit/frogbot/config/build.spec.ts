@@ -156,15 +156,6 @@ describe('frogbot buildConfig', () => {
       await expect(buildConfig(makeConfig({ plugins: [unrelated] }))).resolves.toBeDefined();
     });
 
-    it('accepts an inert roles marker', async () => {
-      const roles: Plugin = (config) => ({
-        ...config,
-        _roles: { ...config._roles, present: true, configured: false },
-      });
-
-      await expect(buildConfig(makeConfig({ plugins: [roles] }))).resolves.toBeDefined();
-    });
-
     it('surfaces a plugin failure as `[frogbot] plugin at index N failed: <msg>`', async () => {
       const config = makeConfig({
         plugins: [
@@ -545,28 +536,6 @@ describe('frogbot buildConfig', () => {
       await buildConfig(config);
 
       expect(JSON.stringify(config)).toBe(snapshot);
-    });
-  });
-
-  describe('plugin marker validation', () => {
-    it.each([
-      ['single', vi.fn()],
-      ['array', [vi.fn()]],
-    ])('preserves %s app onInit and appends the warning last', async (_name, appOnInit) => {
-      const calls: string[] = [];
-      const callbacks = Array.isArray(appOnInit) ? appOnInit : [appOnInit];
-      callbacks[0].mockImplementation(() => calls.push('app'));
-      const result = await buildConfig(
-        makeConfig({
-          collections: [{ slug: 'posts', fields: [] }],
-          _roles: { configured: true },
-          onInit: appOnInit,
-        }),
-      );
-
-      await result.onInit?.({ logger: { warn: () => calls.push('warning') } } as never);
-
-      expect(calls).toEqual(['app', 'warning']);
     });
   });
 

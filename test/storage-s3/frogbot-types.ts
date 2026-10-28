@@ -812,6 +812,5 @@ declare module 'frogbot' {
       support: unknown;
     };
     models: 'test/vision';
-    roles: never;
   }
 }

@@ -520,7 +520,6 @@ export function sanitize(
     connections,
     files,
     pieces,
-    roles: config._roles?.roles ?? [],
     settings,
     typescript: {
       autoGenerate:

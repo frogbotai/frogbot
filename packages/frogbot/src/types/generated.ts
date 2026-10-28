@@ -16,7 +16,6 @@ export interface UntypedFrogBotTypes {
   };
   jobs: UntypedJobs;
   models: CatalogModelId;
-  roles: string;
   user: Record<string, unknown> & TypeWithID;
   widgets: {
     [slug: string]: unknown;
@@ -43,8 +42,6 @@ export type CollectionSlug = Extract<keyof FrogBotTypes['collections'], string>;
 
 /** Union of every registered agent slug. */
 export type AgentSlug = Extract<keyof FrogBotTypes['agents'], string>;
-
-export type RoleSlug = FrogBotTypes['roles'];
 
 /** Document shape for a given collection slug. */
 export type TypedCollection<TSlug extends CollectionSlug> = FrogBotTypes['collections'][TSlug];

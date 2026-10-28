@@ -81,12 +81,6 @@ export type RootHooks = {
   afterError?: AfterErrorHook[];
 };
 
-export type RolesPrewiring = {
-  present?: true;
-  configured?: boolean;
-  roles?: string[];
-};
-
 /** What `frogbot <name>` hands an app command. */
 export type CLICommandContext = {
   /** Everything after the command name. */
@@ -158,9 +152,7 @@ export type FrogBotConfig = Omit<PayloadConfig, FrogBotOverridden> & {
   cli?: { commands?: Record<string, CLICommand> };
   /**
    * Internal. Payload plugins that run inside Payload's `buildConfig`, for plugins that read
-   * themselves back from Payload's `config.plugins` (plugin-mcp). Set by FrogBot plugins.
+   * themselves back from Payload's `config.plugins`. Set by FrogBot plugins.
    */
   _payloadPlugins?: NonNullable<PayloadConfig['plugins']>;
-  /** Internal. Set by plugin-roles; not authored by users. */
-  _roles?: RolesPrewiring;
 };

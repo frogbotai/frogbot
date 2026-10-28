@@ -636,6 +636,5 @@ declare module 'frogbot' {
       helper: unknown;
     };
     models: 'browser/helper';
-    roles: never;
   }
 }

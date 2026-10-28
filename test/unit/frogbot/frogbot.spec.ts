@@ -120,7 +120,6 @@ function makeConfig(): FrogBotSanitizedConfig {
       entries: {},
     },
     pieces: { instances: [] },
-    roles: [],
     settings: [],
     _internal: {
       payloadConfig: Promise.resolve({} as any),

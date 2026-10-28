@@ -737,6 +737,5 @@ declare module 'frogbot' {
       | 'openai/text-embedding-3-small'
       | 'openai/text-embedding-ada-002'
       | 'openai/whisper-1';
-    roles: never;
   }
 }

@@ -480,7 +480,6 @@ export type {
   CollectionSlug,
   FrogBotTypes,
   GeneratedTypes,
-  RoleSlug,
   TypedCollection,
   TypedUser,
   TypeWithID,

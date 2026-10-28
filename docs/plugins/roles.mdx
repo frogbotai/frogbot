@@ -192,4 +192,6 @@ For application-managed onboarding, add a userland collection hook that derives 
 | `resolveRoles` | `(req: FrogBotRequest) => RoleSlug[]` | Reads `req.user.roles` | Synchronous resolver for a request's roles. See [Custom role sources](#custom-role-sources). |
 | `rolesFieldAccess` | `{ create?: FieldAccess; read?: FieldAccess; update?: FieldAccess }` | Default field access | Access for the injected `roles` field. See [Role field access](#role-field-access). |
 
-The plugin injects the `roles` field into the `users` collection only, and only when that collection has auth enabled. It throws at startup if `users` already has a field named `roles`, or if an `allow()` clause names a role that isn't listed.
+The plugin injects the `roles` field into the `users` collection only, and only when that collection has auth enabled; with roles configured and no auth-enabled `users` collection, it logs a warning at startup. It throws at startup if `users` already has a field named `roles`, or if an `allow()` clause names a role that isn't listed.
+
+`RoleSlug` is imported from `@frogbotai/plugin-roles`. `frogbot generate:types` types it as the union of the configured role slugs, so `resolveRoles` and `hasRole()` reject unknown roles. Without generated types it's `string`.

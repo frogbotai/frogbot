@@ -725,6 +725,5 @@ declare module 'frogbot' {
       'attachment-reader': unknown;
     };
     models: 'browser/attachment-reader' | 'browser/text-reader';
-    roles: never;
   }
 }
