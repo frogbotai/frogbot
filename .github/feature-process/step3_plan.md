@@ -3,6 +3,7 @@
 A fresh planner writes `step3_plan.md` from the approved spec and the research Summary. The owner says **Go** in chat for the batch; each worker is told "follow `step3_plan.md`".
 
 - `touches:` comes first: every path or glob the ticket will change. It sets the [tier](README.md#tiers) and which tickets can run side by side, so make it complete.
+- Every `packages/frogbot/**` path in `touches:` cites its bullet in the spec's `## Core changes` in parentheses, for example `- packages/frogbot/src/plugin.ts (Core changes 1)`. A spec with `None.` has no such path.
 - Name the Payload precedent for the approach, or say it is FrogBot-specific.
 - Give each alternative one line, with why not.
 - Each stage is one fresh worker's job. `Verify:` is the exact command that proves it; `Evidence:` is where the result is kept, a path or a ledger level (`typecheck`, `unit`, `int`, `ui`).

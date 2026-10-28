@@ -14,6 +14,10 @@ Assets are saved twice ([research](step1_research.md)).
 
 1. Saving an asset writes it once.
 
+## Core changes
+
+None.
+
 ## Following Payload
 
 - Saves run in `afterChange` (`~/code/payload/src/config.ts:2`).

@@ -101,6 +101,7 @@ describe('check ticket-docs', () => {
         `${folder}/step1_research.md:7 bare "none": write "none (read: <topic>, …)" with the decisions.md headings read`,
         `${folder}/step1_research.md:8 \`src/example.ts:40\`: line 40 is out of range (3 lines)`,
         `${folder}/step2_spec.md:1 missing "## Brief" (first section of a Draft spec)`,
+        `${folder}/step2_spec.md:1 missing "## Core changes" (right after "## Requirements")`,
         `${folder}/step2_spec.md:1 missing "## Rulings" (right after "## Problem")`,
         `${folder}/step2_spec.md:11 banned phrase "legacy path" (allowed only under Out of scope or in a > quote)`,
         `${folder}/step3_plan.md:7 \`src/missing.ts:3\`: no such file`,
@@ -238,7 +239,7 @@ describe('check ticket-docs', () => {
         .replace('## Out of scope', `## Rulings\n\n${ROW_1}\n\n## Out of scope`);
 
       expect(problems({ [SPEC]: text })).toEqual([
-        `.idea/${SPEC}:17 "## Rulings" must come right after "## Problem"`,
+        `.idea/${SPEC}:21 "## Rulings" must come right after "## Problem"`,
       ]);
     });
   });
@@ -281,6 +282,53 @@ describe('check ticket-docs', () => {
     });
   });
 
+  describe('core changes', () => {
+    const CORE = '## Core changes\n\nNone.\n\n';
+    const draft = (edit: (text: string) => string = (text) => text) => ({
+      [SPEC]: edit(
+        fixture(SPEC)
+          .replace('Status: Approved (2026-10-05)', 'Status: Draft')
+          .replace('## Problem', '## Brief\n\nAssets save once.\n\n## Problem'),
+      ),
+    });
+
+    it('accepts "None." right after Requirements on a Draft spec', () => {
+      expect(check(draft()).code).toBe(0);
+    });
+
+    it('rejects a Draft spec without it, but not an Approved one', () => {
+      expect(problems(draft((text) => text.replace(CORE, '')))).toEqual([
+        `.idea/${SPEC}:1 missing "## Core changes" (right after "## Requirements")`,
+      ]);
+      expect(check(edit(SPEC, CORE, '')).code).toBe(0);
+    });
+
+    it('rejects it after ## Following …', () => {
+      const late = draft((text) =>
+        text.replace(CORE, '').replace('## Out of scope', `${CORE}## Out of scope`),
+      );
+
+      expect(problems(late)).toEqual([
+        `.idea/${SPEC}:25 "## Core changes" must come right after "## Requirements", before "## Following …"`,
+      ]);
+    });
+
+    it('rejects an empty section', () => {
+      expect(problems(draft((text) => text.replace(CORE, '## Core changes\n\n')))).toEqual([
+        `.idea/${SPEC}:21 "## Core changes" is empty: write "None." or one bullet per change`,
+      ]);
+    });
+
+    it('skips a parked ticket, as pnpm ticket decisions does', () => {
+      const parked = {
+        '_process/parked.md':
+          '| Ticket | What |\n| --- | --- |\n| [900](tickets/ticket900_good/) | Good |\n',
+      };
+
+      expect(check({ ...draft((text) => text.replace(CORE, '')), ...parked }).code).toBe(0);
+    });
+  });
+
   describe('cards', () => {
     it('rejects a card written from the 55e7e942 D-block template', () => {
       const card = [
@@ -299,7 +347,7 @@ describe('check ticket-docs', () => {
       const text = fixture(SPEC).replace(/### 900 D1[\s\S]*$/, card);
 
       expect(problems({ [SPEC]: text })).toEqual([
-        `.idea/${SPEC}:31 card D1: missing "Situation", "Example", "Precedent", "Options", "Applies to", "Reply", "Answer"`,
+        `.idea/${SPEC}:35 card D1: missing "Situation", "Example", "Precedent", "Options", "Applies to", "Reply", "Answer"`,
       ]);
     });
 
@@ -313,7 +361,7 @@ describe('check ticket-docs', () => {
       );
 
       expect(lines).toEqual([
-        `.idea/${SPEC}:38 card D1: "Precedent:" needs a \`path:line\`, a URL or "no equivalent (searched …)"`,
+        `.idea/${SPEC}:42 card D1: "Precedent:" needs a \`path:line\`, a URL or "no equivalent (searched …)"`,
       ]);
     });
 
@@ -338,7 +386,7 @@ describe('check ticket-docs', () => {
       const lines = problems(edit(SPEC, '- **Applies to:** Process', '- **Applies to:** Gates'));
 
       expect(lines).toEqual([
-        `.idea/${SPEC}:41 card D1: "Applies to:" is "Gates", not "this ticket" or a decisions.md heading`,
+        `.idea/${SPEC}:45 card D1: "Applies to:" is "Gates", not "this ticket" or a decisions.md heading`,
       ]);
     });
   });
