@@ -51,6 +51,8 @@ export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
 
       if (!user) return { user: null };
 
+      const { tokenHash: _tokenHash, ...apiKey } = key;
+
       await frogbot.update({
         collection: collectionSlug,
         id: key.id,
@@ -64,10 +66,7 @@ export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
           collection: authCollection,
           _strategy: apiKeyStrategyName,
           apiKeyId: key.id,
-          ...(key.capture !== undefined ? { capture: key.capture } : {}),
-          ...(typeof key.captureSampleRate === 'number'
-            ? { captureSampleRate: key.captureSampleRate }
-            : {}),
+          apiKey,
         },
       };
     },

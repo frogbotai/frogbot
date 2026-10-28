@@ -1,10 +1,16 @@
 import { importExportPlugin as payloadImportExportPlugin } from '@payloadcms/plugin-import-export';
 import type { ImportExportPluginConfig } from '@payloadcms/plugin-import-export/types';
-import type { Plugin } from 'frogbot';
+import { definePlugin } from 'frogbot';
 import { mapComponentPaths, wrapPayloadPlugin } from 'frogbot/internal';
 import type { CollectionAfterChangeHook, PayloadRequest } from 'payload';
 
 export type ImportExportPluginOptions = ImportExportPluginConfig;
+
+declare module 'frogbot' {
+  interface RegisteredPlugins {
+    'plugin-import-export': ImportExportPluginOptions;
+  }
+}
 
 type CollectionOverride = NonNullable<ImportExportPluginConfig['overrideImportCollection']>;
 
@@ -17,20 +23,23 @@ const queueHooks: Record<QueueHookKind, { count: number; index: number }> = {
   import: { count: 2, index: 1 },
 };
 
-export function importExportPlugin(options: ImportExportPluginOptions): Plugin {
-  const pluginOptions: ImportExportPluginConfig = {
-    ...options,
-    overrideExportCollection: queueWithRequest('export', options.overrideExportCollection),
-    overrideImportCollection: queueWithRequest('import', options.overrideImportCollection),
-    ...(options.collections && { collections: options.collections.map(withCollectionQueues) }),
-  };
+export const importExportPlugin = definePlugin<ImportExportPluginOptions>({
+  slug: 'plugin-import-export',
+  plugin: ({ config, options }) => {
+    const pluginOptions: ImportExportPluginConfig = {
+      ...options,
+      overrideExportCollection: queueWithRequest('export', options.overrideExportCollection),
+      overrideImportCollection: queueWithRequest('import', options.overrideImportCollection),
+      ...(options.collections && { collections: options.collections.map(withCollectionQueues) }),
+    };
 
-  const payloadPlugin = payloadImportExportPlugin(pluginOptions);
+    const payloadPlugin = payloadImportExportPlugin(pluginOptions);
 
-  return wrapPayloadPlugin(async (config) =>
-    mapComponentPaths(await payloadPlugin(config), toFrogBotPath),
-  );
-}
+    return wrapPayloadPlugin(async (payloadConfig) =>
+      mapComponentPaths(await payloadPlugin(payloadConfig), toFrogBotPath),
+    )(config);
+  },
+});
 
 const payloadSpecifier = '@payloadcms/plugin-import-export/rsc';
 

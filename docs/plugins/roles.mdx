@@ -46,6 +46,8 @@ Roles are literal strings. No slug is reserved, and no role receives implicit ac
 
 `rolesPlugin()` and `rolesPlugin({ roles: [] })` are inert and add no field.
 
+The plugin runs with `order: 100`, after other first-party plugins, so it binds `allow()` clauses on the collections they add wherever you list it.
+
 ## Apply access
 
 `allow(...clauses)` composes role, ownership, and function clauses into a FrogBot access function:

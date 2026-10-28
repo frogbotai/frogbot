@@ -37,7 +37,7 @@ export default config;
 The initialization process goes in the following order:
 
 1. Incoming config is validated
-2. Plugins execute
+2. Plugins execute, by `order` (see [Order, slug, and options](#order-slug-and-options))
 3. Default options are integrated
 4. Sanitization cleans and validates data
 5. Final config gets initialized
@@ -149,6 +149,52 @@ config.onInit = async frogbot => {
   onInitExtension(pluginOptions, frogbot)
 }
 ```
+
+## Order, slug, and options
+
+`definePlugin` builds a plugin factory with a `slug`, an optional `order`, and typed options. Its callback receives the incoming `config`, the `options` the factory was called with, and `plugins`, the app's other plugins keyed by slug:
+
+```ts
+import { definePlugin } from 'frogbot'
+
+export type KeyNotesPluginOptions = {
+  fieldName?: string
+}
+
+export const keyNotesPlugin = definePlugin<KeyNotesPluginOptions | undefined>({
+  slug: 'plugin-key-notes',
+  order: 10,
+  plugin: ({ config, options, plugins }) => {
+    const keys = plugins['plugin-api-keys']?.options?.collectionSlug
+
+    return {
+      ...config,
+      collections: config.collections.map((collection) =>
+        collection.slug === keys
+          ? {
+              ...collection,
+              fields: [...collection.fields, { name: options?.fieldName ?? 'notes', type: 'textarea' }],
+            }
+          : collection,
+      ),
+    }
+  },
+})
+```
+
+FrogBot runs plugins by `order`, lowest first. The default is `0`, and plugins with the same order keep their `plugins` array order. Use `10` when your plugin needs collections or fields another plugin adds, like the API keys collection above, so it runs after that plugin wherever the app lists it. When a plugin with a slug throws, the error names it: `[frogbot] plugin "plugin-key-notes" failed: …`.
+
+Each plugin's `options` are the object its factory was called with. To give other plugins typed access to them, register your slug by augmenting `RegisteredPlugins`:
+
+```ts
+declare module 'frogbot' {
+  interface RegisteredPlugins {
+    'plugin-key-notes': KeyNotesPluginOptions | undefined
+  }
+}
+```
+
+If other plugins need your defaults, fill them in before calling the factory `definePlugin` returns, and pass the resolved object as `options`. The API keys plugin does this, so its `collectionSlug` option is always set.
 
 ## Types
 

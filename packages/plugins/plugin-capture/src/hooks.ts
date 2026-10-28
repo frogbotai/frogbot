@@ -106,7 +106,12 @@ export function createCaptureHooks(options: HookOptions): AIHooks {
         if (!languageOperations.has(args.operation)) return;
         let enabled = options.enabled;
         let sampleRate = options.sampleRate;
-        const actor = args.req?.user as Record<string, unknown> | undefined;
+        const user = args.req?.user as Record<string, unknown> | null | undefined;
+        const actor =
+          user?._strategy === 'api-key' && user.apiKey && typeof user.apiKey === 'object'
+            ? (user.apiKey as Record<string, unknown>)
+            : user;
+
         if (typeof actor?.capture === 'boolean') enabled = actor.capture;
         if (actor?.capture === 'enabled') enabled = true;
         if (actor?.capture === 'disabled') enabled = false;

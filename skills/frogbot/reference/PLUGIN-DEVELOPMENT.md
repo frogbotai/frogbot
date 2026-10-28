@@ -659,7 +659,7 @@ This variant replaces `notesPlugin()`; do not install both. It uses `createNotes
 
 ## Ordering And Errors
 
-Plugins in `plugins` run serially in array order before FrogBot sanitizes the config. Each plugin receives the previous plugin's result.
+Plugins in `plugins` run serially before FrogBot sanitizes the config, by `order`, lowest first (default `0`); plugins with the same order keep their array order. Each plugin receives the previous plugin's result.
 
 ```ts
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
@@ -676,7 +676,50 @@ export default buildConfig({
 });
 ```
 
-Order plugins according to their dependencies. Throw actionable errors with a stable prefix such as `[plugin-notes]`; FrogBot adds the failing plugin's array index. Return the complete config from every path.
+A plugin that needs collections or fields another plugin adds sets `order: 10`, so it runs after that plugin wherever the app lists it. Throw actionable errors with a stable prefix such as `[plugin-notes]`; FrogBot adds the failing plugin's slug, or its array index when it has none. Return the complete config from every path.
+
+## definePlugin
+
+`definePlugin` gives a plugin a `slug`, an `order`, and typed options. Its callback receives `config`, the factory's `options`, and `plugins`, the app's other plugins keyed by slug. Register the slug's options type on `RegisteredPlugins` so other plugins read them typed.
+
+```ts
+import { definePlugin } from 'frogbot';
+
+export type KeyNotesPluginOptions = {
+  fieldName?: string;
+};
+
+declare module 'frogbot' {
+  interface RegisteredPlugins {
+    'plugin-key-notes': KeyNotesPluginOptions | undefined;
+  }
+}
+
+export const keyNotesPlugin = definePlugin<KeyNotesPluginOptions | undefined>({
+  slug: 'plugin-key-notes',
+  order: 10,
+  plugin: ({ config, options, plugins }) => {
+    const keys = plugins['plugin-api-keys']?.options?.collectionSlug;
+
+    return {
+      ...config,
+      collections: config.collections.map((collection) =>
+        collection.slug === keys
+          ? {
+              ...collection,
+              fields: [
+                ...collection.fields,
+                { name: options?.fieldName ?? 'notes', type: 'textarea' },
+              ],
+            }
+          : collection,
+      ),
+    };
+  },
+});
+```
+
+Find another plugin through `plugins[slug]`, never by sniffing its collections or fields. When others need your defaults, fill them in first and pass the resolved object to the factory, as `apiKeysPlugin` does: its `options.collectionSlug` is always set. Validate option shapes in your own exported factory before calling the defined one, so mistakes throw where the plugin is created.
 
 This app example assumes the collection-adding factory lives at `src/plugins/notes/index.ts` and `FROGBOT_SECRET` is set. The package name `@frogbotai/plugin-notes` elsewhere in this guide denotes the package you are authoring, not an existing dependency to install.
 

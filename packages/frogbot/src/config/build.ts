@@ -38,16 +38,20 @@ function stripPluginGlobals(config: FrogBotConfig): FrogBotConfig {
 }
 
 async function runPlugins(config: FrogBotConfig): Promise<FrogBotConfig> {
-  const plugins = config.plugins ?? [];
+  const plugins = (config.plugins ?? [])
+    .map((plugin, index) => ({ plugin, index }))
+    .sort((a, b) => (a.plugin.order ?? 0) - (b.plugin.order ?? 0));
+
   let current = config;
 
-  for (let i = 0; i < plugins.length; i++) {
-    const plugin = plugins[i];
+  for (const { plugin, index } of plugins) {
     try {
       current = await plugin(current);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      throw new Error(`[frogbot] plugin at index ${i} failed: ${message}`);
+      const name = plugin.slug ? `"${plugin.slug}"` : `at index ${index}`;
+
+      throw new Error(`[frogbot] plugin ${name} failed: ${message}`);
     }
   }
 
@@ -102,9 +106,10 @@ function validatePluginMarkers(config: FrogBotConfig): FrogBotConfig {
  * Pipeline:
  *   1. Validate required fields (`secret`, `db`, `collections`), reject
  *      `globals`.
- *   2. Run plugins serially in array order, then the platform plugin
- *      (`frogbot/platform-plugin`) if there is one, then strip the empty
- *      `globals` list some plugins return (a non-empty one is rejected).
+ *   2. Run plugins serially by `order`, lowest first (ties keep array order),
+ *      then the platform plugin (`frogbot/platform-plugin`) if there is one,
+ *      then strip the empty `globals` list some plugins return (a non-empty
+ *      one is rejected).
  *   3. Sanitize — inject the `req.frogbot` bootstrap hook, wrap
  *      endpoints, produce FrogBotSanitizedConfig.
  */

@@ -42,7 +42,7 @@ apiKeysPlugin({
 
 Collection overrides merge with the generated fields, access, endpoints, hooks, admin components, and transforms applied by other plugins. The manager uses the default admin components, and the token dialog ships a small stylesheet built on the admin theme variables.
 
-The plugin has no role system of its own. Keys are owner-scoped. To layer roles on top, install `@frogbotai/plugin-roles`, list it after `apiKeysPlugin()`, and pass `canRevokeAnyKey` and collection access:
+The plugin has no role system of its own. Keys are owner-scoped. To layer roles on top, install `@frogbotai/plugin-roles` and pass `canRevokeAnyKey` and collection access:
 
 ```ts
 import { allow, hasRole } from '@frogbotai/plugin-roles';
