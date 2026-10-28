@@ -124,6 +124,7 @@ export default buildConfig({
               'tagNames',
               aiFieldName,
             ],
+            components: { actions: ['/components/BoardAction#BoardAction'] },
           },
           {
             type: 'calendar',

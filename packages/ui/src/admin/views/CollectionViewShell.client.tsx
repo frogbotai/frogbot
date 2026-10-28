@@ -79,7 +79,7 @@ export function CollectionViewShellClient({
           newDocumentURL={newDocumentURL}
           smallBreak
         />
-        {Actions}
+        {Actions?.length ? <div className="collection-view-shell__actions">{Actions}</div> : null}
         <ViewControls
           collectionConfig={collectionConfig}
           collectionSlug={collectionConfig.slug}

@@ -3,10 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const clearRouteCache = vi.fn();
+const listQuery = vi.hoisted(() => ({ value: { collectionSlug: 'api-keys' } as object }));
 
 vi.mock('@frogbotai/ui/admin', () => ({
   useConfig: () => ({ config: { routes: { api: '/api' } } }),
-  useListQuery: () => ({ collectionSlug: 'api-keys' }),
+  useListQuery: () => listQuery.value,
   useRouteCache: () => ({ clearRouteCache }),
 }));
 
@@ -34,6 +35,7 @@ async function generate(name = 'Deploy') {
 describe('API key controls', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    listQuery.value = { collectionSlug: 'api-keys' };
     vi.stubGlobal('fetch', vi.fn());
 
     Object.defineProperty(navigator, 'clipboard', {
@@ -67,6 +69,17 @@ describe('API key controls', () => {
 
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(clearRouteCache).toHaveBeenCalled();
+  });
+
+  it('mints with its collectionSlug prop outside a list query', async () => {
+    listQuery.value = {};
+    mint();
+    render(<ApiKeysManager collectionSlug="credentials" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Create API key' }));
+
+    await generate();
+
+    expect(fetch).toHaveBeenCalledWith('/api/credentials/mint', expect.anything());
   });
 
   it('starts focus in the key name input', async () => {

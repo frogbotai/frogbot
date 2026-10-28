@@ -23,15 +23,16 @@ vi.mock('@payloadcms/ui', () => ({
 }));
 
 vi.mock('../../../../../packages/ui/src/admin/views/controls/ViewControls.client.js', () => ({
-  ViewControls: () => null,
+  ViewControls: () => <div data-testid="view-controls" />,
 }));
 
 const { CollectionViewShellClient } =
   await import('../../../../../packages/ui/src/admin/views/CollectionViewShell.client');
 
-function shell(collectionSlug: string) {
+function shell(collectionSlug: string, Actions?: React.ReactNode[]) {
   return (
     <CollectionViewShellClient
+      Actions={Actions}
       collectionSlug={collectionSlug}
       hasCreatePermission
       hasDeletePermission
@@ -72,5 +73,24 @@ describe('CollectionViewShellClient', () => {
     rerender(shell('tasks'));
 
     expect(mocks.setStepNav).toHaveBeenCalledWith([{ label: 'Tasks' }]);
+  });
+
+  it('renders actions in their own row before the view controls', () => {
+    const { container, getByRole, getByTestId } = render(
+      shell('tasks', [<button key="a">Act</button>]),
+    );
+
+    const row = container.querySelector('.collection-view-shell__actions')!;
+
+    expect(getByRole('button', { name: 'Act' }).parentElement).toBe(row);
+    expect(
+      row.compareDocumentPosition(getByTestId('view-controls')) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('renders no actions row without actions', () => {
+    const { container } = render(shell('tasks'));
+
+    expect(container.querySelector('.collection-view-shell__actions')).toBeNull();
   });
 });
