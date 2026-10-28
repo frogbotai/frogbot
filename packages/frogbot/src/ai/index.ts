@@ -3,6 +3,4 @@ export { catalog, getAllModelIds, getFilteredCatalog, isKnownModelId } from './c
 export type { CatalogModelId, ProviderSlug } from './generated.js';
 export { toGatewayHooks, toHookUsage } from './hooks.js';
 export { buildGatewayConfig, createAIGateway } from './init.js';
-export type { AIUserPolicy } from './policy.js';
-export { backfillAIUserPolicy, enforcePolicy, isTargetAllowed, resolvePolicy } from './policy.js';
 export { resolveModel } from './resolve.js';

@@ -1,4 +1,5 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
+import { aiPolicyPlugin } from '@frogbotai/plugin-ai-policy';
 import { apiKeysPlugin, mintApiKey } from '@frogbotai/plugin-api-keys';
 import {
   aiField,
@@ -497,5 +498,5 @@ export default buildConfig({
       },
     },
   ],
-  plugins: [apiKeysPlugin()],
+  plugins: [aiPolicyPlugin(), apiKeysPlugin()],
 });

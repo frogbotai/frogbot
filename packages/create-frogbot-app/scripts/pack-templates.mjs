@@ -25,8 +25,9 @@ const skip = new Set([
 
 const resolveVersion = (name) => {
   const dir = name === 'frogbot' ? 'frogbot' : name.replace('@frogbotai/', '');
+  const group = dir.startsWith('plugin-') ? 'plugins' : dir.startsWith('piece-') ? 'pieces' : '';
   const depPkg = JSON.parse(
-    fs.readFileSync(path.join(repoRoot, 'packages', dir, 'package.json'), 'utf8'),
+    fs.readFileSync(path.join(repoRoot, 'packages', group, dir, 'package.json'), 'utf8'),
   );
 
   return `^${depPkg.version}`;

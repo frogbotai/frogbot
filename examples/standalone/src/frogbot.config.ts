@@ -1,4 +1,5 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
+import { aiPolicyPlugin } from '@frogbotai/plugin-ai-policy';
 import type { FrogBotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
 
@@ -17,6 +18,7 @@ const config: FrogBotConfig = {
     },
   },
   agents: [assistant],
+  plugins: [aiPolicyPlugin()],
 };
 
 export default buildConfig(config);

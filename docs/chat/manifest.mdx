@@ -74,7 +74,7 @@ When chat persistence is disabled, `chat` contains only `enabled`. This app also
 | `agents[].label` | `string` | The profile `name`, or the slug. |
 | `agents[].source` | `'config' \| 'collection'` | Where the agent is defined. Agents from `buildConfig` report `'config'`. |
 | `agents[].defaultModel` | `string` | The model a request without `model` uses for this caller. |
-| `agents[].models` | `string[]` | Models this caller may select, after the [user model policy](/ai/overview#user-model-and-budget-policy) is applied. |
+| `agents[].models` | `string[]` | Models this caller may select, after [`ai.access.generate`](/ai/overview#control-access) is applied. |
 | `agents[].names` | `Record<string, string>` | Display names for models that have one. Fall back to the ID for the rest. |
 | `agents[].reasoning` | `Record<string, { key: string; label: string }[]>` | Reasoning options per model, for models that have any. |
 | `agents[].inputs` | `Record<string, ('text' \| 'image' \| 'audio' \| 'video' \| 'pdf')[]>` | Input types per model, for models whose types are known: built-in models from the model catalog, custom models that set [`modalities`](/ai/overview#custom-model-options). A model missing from `inputs` has unknown input types. Omitted when no listed model has known types. |

@@ -151,6 +151,15 @@ function makeConfig(hooks: SanitizedAIConfig['hooks']): SanitizedAIConfig {
   };
 }
 
+function allowOnly(models: string[]): SanitizedAIConfig {
+  const config = makeConfig(emptyHooks());
+
+  return {
+    ...config,
+    access: { ...config.access, generate: ({ model }) => models.includes(model) },
+  };
+}
+
 function emptyHooks(): SanitizedAIConfig['hooks'] {
   return {
     beforeOperation: [],
@@ -218,7 +227,7 @@ function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
 
   const frogbot = {
     config: {
-      ai: { routers: {} },
+      ai: { routers: {}, access: config.access },
       chat: {
         enabled: true,
         chatsSlug: 'chats',
@@ -254,9 +263,7 @@ function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
   } as never;
 }
 
-function makeReq(
-  user: { id: string; modelAccess?: 'selected'; models?: string[] } | null = { id: 'user-1' },
-) {
+function makeReq(user: { id: string } | null = { id: 'user-1' }) {
   return { user, context: {}, payload: { db: {} } } as unknown as FrogBotRequest;
 }
 
@@ -452,14 +459,14 @@ describe('agent generate turns', () => {
   });
 
   it('rejects a stored model blocked for the turn user before generating', async () => {
-    const req = makeReq({ id: 'user-1', modelAccess: 'selected', models: ['openai/gpt-4.1'] });
+    const req = makeReq();
     const agent = createAgentInstance(
       {
         slug: 'support',
         model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o', 'openai/gpt-4.1'] },
         instructions: 'Help',
       },
-      makeDeps(makeConfig(emptyHooks()), req),
+      makeDeps(allowOnly(['openai/gpt-4.1']), req),
     );
 
     turn.resolveChatContext.mockResolvedValue({
@@ -514,8 +521,8 @@ describe('agent generate turns', () => {
   });
 
   it('runs on the user fallback and records it as the main model', async () => {
-    const req = makeReq({ id: 'user-1', modelAccess: 'selected', models: ['openai/gpt-4.1'] });
-    const deps = makeDeps(makeConfig(emptyHooks()), req) as unknown as {
+    const req = makeReq();
+    const deps = makeDeps(allowOnly(['openai/gpt-4.1']), req) as unknown as {
       gateway: { chatModel: ReturnType<typeof vi.fn> };
     };
 

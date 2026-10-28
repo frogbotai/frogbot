@@ -68,7 +68,6 @@ export interface Config {
   blocks: {};
   collections: {
     'trigger-deliveries': TriggerDelivery;
-    users: User;
     chats: Chat;
     messages: Message;
     'frogbot-chat-assets': FrogBotChatAsset;
@@ -76,11 +75,11 @@ export interface Config {
     'usage-logs': UsageLog;
     'frogbot-trigger-subscriptions': FrogBotTriggerSubscription;
     'frogbot-waitpoints': FrogBotWaitpoint;
+    users: User;
   };
   collectionsJoins: {};
   collectionsSelect: {
     'trigger-deliveries': TriggerDeliveriesSelect;
-    users: UsersSelect;
     chats: ChatsSelect;
     messages: MessagesSelect;
     'frogbot-chat-assets': FrogBotChatAssetsSelect;
@@ -88,6 +87,7 @@ export interface Config {
     'usage-logs': UsageLogsSelect;
     'frogbot-trigger-subscriptions': FrogBotTriggerSubscriptionsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
+    users: UsersSelect;
   };
   db: {
     defaultIDType: number;
@@ -105,7 +105,6 @@ export interface Config {
   user: User;
   jobs: {
     tasks: {
-      'frogbot-reset-ai-budgets': TaskFrogBotResetAiBudgets;
       'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-run-agent-trigger': TaskFrogBotRunAgentTrigger;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
@@ -188,16 +187,6 @@ export interface TriggerDelivery {
 export interface User {
   id: number;
   name?: string | null;
-  modelAccess?: ('all' | 'selected') | null;
-  models?: 'test/gpt-4.1-mini'[] | null;
-  /**
-   * Decimal amount in USD, in whole units, not minor units such as cents
-   */
-  monthlyBudget?: number | null;
-  /**
-   * Decimal amount in USD, in whole units, not minor units such as cents
-   */
-  spendThisPeriodUSD?: number | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -442,34 +431,6 @@ export interface TriggerDeliveriesSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
- */
-export interface UsersSelect {
-  name?: boolean;
-  modelAccess?: boolean;
-  models?: boolean;
-  monthlyBudget?: boolean;
-  spendThisPeriodUSD?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-  email?: boolean;
-  resetPasswordToken?: boolean;
-  resetPasswordExpiration?: boolean;
-  salt?: boolean;
-  hash?: boolean;
-  resetPasswordRequestedAt?: boolean;
-  loginAttempts?: boolean;
-  lockUntil?: boolean;
-  sessions?:
-    | boolean
-    | {
-        id?: boolean;
-        createdAt?: boolean;
-        expiresAt?: boolean;
-      };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "chats_select".
  */
 export interface ChatsSelect {
@@ -631,6 +592,30 @@ export interface FrogBotWaitpointsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users_select".
+ */
+export interface UsersSelect {
+  name?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  email?: boolean;
+  resetPasswordToken?: boolean;
+  resetPasswordExpiration?: boolean;
+  salt?: boolean;
+  hash?: boolean;
+  resetPasswordRequestedAt?: boolean;
+  loginAttempts?: boolean;
+  lockUntil?: boolean;
+  sessions?:
+    | boolean
+    | {
+        id?: boolean;
+        createdAt?: boolean;
+        expiresAt?: boolean;
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "welcome_widget".
  */
 export interface WelcomeWidget {
@@ -656,7 +641,7 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection: 'trigger-deliveries' | 'users' | 'chats' | 'usage-logs';
+    relatedCollection: 'trigger-deliveries' | 'chats' | 'usage-logs' | 'users';
     where?:
       | {
           [k: string]: unknown;
@@ -679,17 +664,9 @@ export interface CollectionQueryWidget {
 export interface ActivityWidget {
   data?: {
     excludedCollections?:
-      ('trigger-deliveries' | 'users' | 'chats' | 'usage-logs')[] | null;
+      ('trigger-deliveries' | 'chats' | 'usage-logs' | 'users')[] | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBotResetAiBudgets".
- */
-export interface TaskFrogBotResetAiBudgets {
-  input?: unknown;
-  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

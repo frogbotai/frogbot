@@ -14,7 +14,6 @@ async function openSelectedModels(page: Page): Promise<Locator> {
   const { user } = await me.json();
 
   await page.goto(`/collections/${usersSlug}/${user.id}`);
-  await page.getByText('Selected models', { exact: true }).click();
 
   const field = page.locator('.frogbot-model-select');
 

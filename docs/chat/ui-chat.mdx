@@ -590,7 +590,7 @@ ai: {
 }
 ```
 
-A user may transcribe when `ai.access.transcribe` allows them and their model allowlist includes the model. For an alias, the allowlist must include the model behind the alias, not the alias. Without `transcriptionModel`, or for a user who may not transcribe, the composer shows no microphone.
+A user may transcribe when [`ai.access.transcribe`](/ai/overview#control-access) allows them for the transcription model. For an alias, the rule receives the model behind the alias, so with the [AI policy plugin](/plugins/ai-policy) the user's `models` list must include that model, not the alias. Without `transcriptionModel`, or for a user who may not transcribe, the composer shows no microphone.
 
 Recording uses the browser's supported audio container: Opus in WebM where available, MP4 on Safari, or the browser default. Audio is sent for batch transcription after recording stops; transcription is not streamed.
 

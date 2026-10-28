@@ -1,3 +1,4 @@
+import { aiPolicyPlugin } from '@frogbotai/plugin-ai-policy';
 import type { CollectionConfig, Tool, Where } from 'frogbot';
 import { general } from 'frogbot/agents';
 import { question, todoTools } from 'frogbot/tools';
@@ -113,4 +114,5 @@ export default await buildTestConfig({
     },
     generalAgent,
   ],
+  plugins: [aiPolicyPlugin()],
 });

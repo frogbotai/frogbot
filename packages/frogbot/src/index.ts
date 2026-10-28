@@ -113,6 +113,7 @@ export type {
   AgentStreamOpts,
   AgentStreamResult,
 } from './agents/types.js';
+export { calculateUsageCostUSD } from './ai/cost.js';
 export type { CatalogModelId } from './ai/generated.js';
 export type {
   AIAfterErrorHook,
@@ -129,13 +130,6 @@ export type {
   AIHooks,
 } from './ai/hooks/types.js';
 export { getConfiguredModelIds } from './ai/models.js';
-export type { AIUserPolicy } from './ai/policy.js';
-export {
-  backfillAIUserPolicy,
-  enforcePolicy,
-  isTargetAllowed,
-  resolvePolicy,
-} from './ai/policy.js';
 export type {
   AIAccessFn,
   AIConfig,

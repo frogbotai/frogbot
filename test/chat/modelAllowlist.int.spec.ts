@@ -75,11 +75,7 @@ describe('per-user agent model allowlists', () => {
     await clearData();
     await clearAndSeed(booted.frogbot, 'empty');
 
-    const login = await loginHeaders({
-      email: 'sam@frogbot.local',
-      modelAccess: 'selected',
-      models: ['test/thinker'],
-    });
+    const login = await loginHeaders({ email: 'sam@frogbot.local', models: ['test/thinker'] });
 
     samId = login.id;
     sam = login.jwt;
@@ -130,7 +126,7 @@ describe('per-user agent model allowlists', () => {
     return { status: response.status, body: (await response.json()) as AgentJSON };
   }
 
-  async function loginHeaders(data: Pick<User, 'email' | 'modelAccess' | 'models'>) {
+  async function loginHeaders(data: Pick<User, 'email' | 'models'>) {
     const user = await booted.frogbot.create({
       collection: usersSlug,
       data: { ...data, password },
@@ -200,7 +196,7 @@ describe('per-user agent model allowlists', () => {
     await booted.frogbot.update({
       collection: usersSlug,
       id: samId,
-      data: { modelAccess: 'selected', models },
+      data: { models },
       overrideAccess: true,
     });
   }
@@ -304,6 +300,36 @@ describe('per-user agent model allowlists', () => {
     expect(response.status).toBe(200);
     expect(response.body.status).toBe('completed');
     expect(model.requests.map(({ model }) => model)).toEqual(['thinker']);
+  });
+
+  it('a spent budget keeps agents listed and fails the send with the budget error', async () => {
+    await booted.frogbot.update({
+      collection: usersSlug,
+      id: samId,
+      data: { monthlyBudget: 1, spendThisPeriodUSD: 1 },
+      overrideAccess: true,
+    });
+
+    const result = await manifest(sam);
+
+    expect(result.agents.map(({ slug }) => slug)).toEqual([
+      questionAgentSlug,
+      wildcardAgentSlug,
+      generalAgentSlug,
+    ]);
+
+    const response = await post(`/agents/${questionAgentSlug}`, {
+      prompt: 'Think about paint.',
+      model: 'test/thinker',
+    });
+
+    expect(response).toEqual({
+      status: 403,
+      body: { error: 'The configured budget has been exhausted.' },
+    });
+    expect(model.requests).toEqual([]);
+
+    await clearData();
   });
 
   it('POST without a model runs and records the user fallback', async () => {
@@ -489,11 +515,11 @@ describe('per-user agent model allowlists', () => {
     ).resolves.toBe('idle');
   });
 
-  it.each<{ name: string } & Pick<User, 'modelAccess' | 'models'>>([
-    { name: 'an unrestricted user', modelAccess: 'all', models: ['test/thinker'] },
-    { name: 'a user without a model policy', modelAccess: null, models: null },
-  ])('GET /api/agents shows the full manifest for $name', async ({ modelAccess, models }) => {
-    const login = await loginHeaders({ email: 'unrestricted@frogbot.local', modelAccess, models });
+  it.each<{ name: string } & Pick<User, 'models'>>([
+    { name: 'a user with an empty model list', models: [] },
+    { name: 'a user without a model policy', models: null },
+  ])('GET /api/agents shows the full manifest for $name', async ({ models }) => {
+    const login = await loginHeaders({ email: 'unrestricted@frogbot.local', models });
 
     const result = await manifest(login.jwt);
 

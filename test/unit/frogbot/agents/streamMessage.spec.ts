@@ -88,6 +88,7 @@ const ai = {
     },
   },
   routers: {},
+  access: {},
 };
 
 const LOCAL_THINKER = 'local/thinker' as AgentModelId;
@@ -167,8 +168,9 @@ function toolLoopGenerate(): MockLanguageModelV4['doGenerate'] {
 
 function setup({
   access = () => true,
+  allowed,
   user = 'user-1',
-  owner = typeof user === 'string' ? user : (user?.id ?? null),
+  owner = user,
   doStream = () => Promise.resolve({ stream: modelStream(response()) }),
   doGenerate,
   model: agentModel = 'openai/test' as AgentModelId,
@@ -176,7 +178,8 @@ function setup({
   tools,
 }: {
   access?: AgentAccess;
-  user?: string | { id: string; modelAccess: 'selected'; models: string[] } | null;
+  allowed?: string[];
+  user?: string | null;
   owner?: string | null;
   doStream?: MockLanguageModelV4['doStream'];
   doGenerate?: MockLanguageModelV4['doGenerate'];
@@ -235,7 +238,9 @@ function setup({
   const finish = vi.fn(async () => {});
   const frogbot = {
     config: {
-      ai,
+      ai: allowed
+        ? { ...ai, access: { generate: ({ model }: { model: string }) => allowed.includes(model) } }
+        : ai,
       chat: {
         enabled: true,
         chatsSlug: 'chats',
@@ -287,7 +292,7 @@ function setup({
   };
 
   const req = {
-    user: typeof user === 'string' ? { id: user } : user,
+    user: user === null ? null : { id: user },
     context: { channel: { piece: 'slack', threadId: 'thread-1', author: { id: 'author-1' } } },
     payload: { db: {} },
     frogbot,
@@ -870,7 +875,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
     const { agent, calls, finish, req } = setup({
       model: LOCAL_THINKER,
       options: [LOCAL_WRITER],
-      user: { id: 'user-1', modelAccess: 'selected', models: [LOCAL_WRITER] },
+      allowed: [LOCAL_WRITER],
     });
 
     await expect(
@@ -892,7 +897,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
     const { agent, calls, req } = setup({
       model: LOCAL_THINKER,
       options: [LOCAL_WRITER],
-      user: { id: 'user-1', modelAccess: 'selected', models: [LOCAL_THINKER] },
+      allowed: [LOCAL_THINKER],
       tools: [lookup],
       doStream: toolLoopStream(),
     });
@@ -925,7 +930,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
     const { agent, calls, messages, req } = setup({
       model: LOCAL_THINKER,
       options: [LOCAL_WRITER],
-      user: { id: 'user-1', modelAccess: 'selected', models: [LOCAL_WRITER] },
+      allowed: [LOCAL_WRITER],
     });
 
     const result = await streamMessage(agent, { req, chatId: 'chat-1', prompt: 'Hello' });

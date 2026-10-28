@@ -454,10 +454,7 @@ describe('aiField runs', () => {
     });
 
     it("a user whose models leave out the field's model gets error and no usage row", async () => {
-      const user = await createUser('editor', {
-        modelAccess: 'selected',
-        models: [`test/${otherModel}`],
-      });
+      const user = await createUser('editor', { models: [`test/${otherModel}`] });
 
       const task = await createTask({ notes: 'Paint the fence' }, user);
 

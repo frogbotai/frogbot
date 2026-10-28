@@ -1,4 +1,5 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
+import { aiPolicyPlugin } from '@frogbotai/plugin-ai-policy';
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { rolesPlugin } from '@frogbotai/plugin-roles';
 import { sharpTransformer } from '@frogbotai/transformer-sharp';
@@ -25,6 +26,7 @@ const config: FrogBotConfig = {
   },
   agents: [qaAnalyst, releaseManager],
   plugins: [
+    aiPolicyPlugin(),
     rolesPlugin(),
     apiKeysPlugin({ collection: { admin: { group: 'Security' } } }),
   ],

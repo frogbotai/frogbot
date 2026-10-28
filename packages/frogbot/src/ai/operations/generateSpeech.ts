@@ -4,7 +4,6 @@ import { experimental_generateSpeech as aiGenerateSpeech } from 'ai';
 import type { Logger } from '../../frogbot.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
-import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
 import type { GenerateSpeechOpts, SanitizedAIConfig } from '../types.js';
 import { toProviderOptions } from './options.js';
@@ -23,14 +22,13 @@ export async function generateSpeechOperation(
   const { model: input, req, overrideAccess, providerOptions, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
-  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
   const modelId = resolveModel(input, config);
 
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
       req: req as FrogBotRequest,
       method: 'generateSpeech',
-      input,
+      model: input,
       config,
     });
   }

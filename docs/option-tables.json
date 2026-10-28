@@ -1260,6 +1260,11 @@
     "type": "Parameters<typeof import('@frogbotai/piece-brave-search').createBraveSearch>[0]"
   },
   {
+    "page": "plugins/ai-policy",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-ai-policy').AIPolicyPluginOptions"
+  },
+  {
     "page": "plugins/api-keys",
     "heading": "Configuration options",
     "type": "import('@frogbotai/plugin-api-keys').ApiKeysPluginOptions"

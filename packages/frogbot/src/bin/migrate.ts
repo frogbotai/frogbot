@@ -127,13 +127,6 @@ export async function migrate(args: string[]): Promise<void> {
         }
 
         await adapter.migrate({});
-        if (frogbotConfig.ai) {
-          const { backfillAIUserPolicy } = await import('../ai/policy.js');
-          const authCollection =
-            frogbotConfig.collections.find(({ auth }) => auth)?.slug ?? 'users';
-
-          await backfillAIUserPolicy({ api: payload, authCollection });
-        }
 
         break;
       case 'migrate:create':

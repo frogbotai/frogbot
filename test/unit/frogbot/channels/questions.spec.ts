@@ -349,12 +349,14 @@ describe('channel question delivery', () => {
   it('denies a responder with no usable model and leaves the call pending', async () => {
     const { fixture, hooks } = await askedFixture();
 
-    fixture.identity.mockResolvedValueOnce({
-      id: 'user-2',
-      collection: 'users',
-      modelAccess: 'selected',
-      models: ['openai/other'],
+    Object.assign(fixture.frogbot.config, {
+      ai: {
+        routers: {},
+        access: { generate: ({ model }: { model: string }) => model === 'openai/other' },
+      },
     });
+
+    fixture.identity.mockResolvedValueOnce({ id: 'user-2', collection: 'users' });
 
     await fixture.interact(click('answer', { author: 'user-2' }));
 

@@ -106,7 +106,6 @@ export interface Config {
   user: User;
   jobs: {
     tasks: {
-      'frogbot-reset-ai-budgets': TaskFrogBotResetAiBudgets;
       'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
@@ -142,64 +141,6 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   name?: string | null;
-  modelAccess?: ('all' | 'selected') | null;
-  models?:
-    | (
-        | 'openai/chatgpt-image-latest'
-        | 'openai/gpt-4.1'
-        | 'openai/gpt-4.1-mini'
-        | 'openai/gpt-4o'
-        | 'openai/gpt-4o-2024-08-06'
-        | 'openai/gpt-4o-2024-11-20'
-        | 'openai/gpt-4o-mini'
-        | 'openai/gpt-4o-mini-transcribe'
-        | 'openai/gpt-4o-transcribe'
-        | 'openai/gpt-5'
-        | 'openai/gpt-5-mini'
-        | 'openai/gpt-5-nano'
-        | 'openai/gpt-5-pro'
-        | 'openai/gpt-5.1'
-        | 'openai/gpt-5.2'
-        | 'openai/gpt-5.2-pro'
-        | 'openai/gpt-5.3-codex'
-        | 'openai/gpt-5.3-codex-spark'
-        | 'openai/gpt-5.4'
-        | 'openai/gpt-5.4-mini'
-        | 'openai/gpt-5.4-nano'
-        | 'openai/gpt-5.4-pro'
-        | 'openai/gpt-5.5'
-        | 'openai/gpt-5.5-pro'
-        | 'openai/gpt-5.6'
-        | 'openai/gpt-5.6-luna'
-        | 'openai/gpt-5.6-sol'
-        | 'openai/gpt-5.6-terra'
-        | 'openai/gpt-6-astra'
-        | 'openai/gpt-6-luna'
-        | 'openai/gpt-6-sol'
-        | 'openai/gpt-6.1-sol'
-        | 'openai/gpt-6.1-terra'
-        | 'openai/gpt-daybreak-blue-latest'
-        | 'openai/gpt-daybreak-red-latest'
-        | 'openai/gpt-image-1-mini'
-        | 'openai/gpt-image-1.5'
-        | 'openai/gpt-image-2'
-        | 'openai/gpt-realtime-2.1'
-        | 'openai/o3'
-        | 'openai/o3-pro'
-        | 'openai/text-embedding-3-large'
-        | 'openai/text-embedding-3-small'
-        | 'openai/text-embedding-ada-002'
-        | 'openai/whisper-1'
-      )[]
-    | null;
-  /**
-   * Decimal amount in USD, in whole units, not minor units such as cents
-   */
-  monthlyBudget?: number | null;
-  /**
-   * Decimal amount in USD, in whole units, not minor units such as cents
-   */
-  spendThisPeriodUSD?: number | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -474,10 +415,6 @@ export interface FrogBotWaitpoint {
  */
 export interface UsersSelect {
   name?: boolean;
-  modelAccess?: boolean;
-  models?: boolean;
-  monthlyBudget?: boolean;
-  spendThisPeriodUSD?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
@@ -764,14 +701,6 @@ export interface UploadDropzoneWidget {
     excludedCollections?: 'files'[] | null;
   };
   width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBotResetAiBudgets".
- */
-export interface TaskFrogBotResetAiBudgets {
-  input?: unknown;
-  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

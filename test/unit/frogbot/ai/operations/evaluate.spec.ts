@@ -139,22 +139,33 @@ describe('evaluateOperation', () => {
     expect(finish).toHaveBeenCalledExactlyOnceWith({ error: expect.any(Error) });
   });
 
-  it('enforces the requested alias before resolving the model or contacting the gateway', async () => {
+  it('enforces the requested alias before contacting the gateway', async () => {
     const model = new Experimental_EvaluationMockModelV4();
     const { gateway, operation } = makeGateway(model);
+    const evaluate = vi.fn(({ model: requested }: { model: string }) => {
+      if (requested === 'typesafe-ai/jev') return true;
+
+      throw Object.assign(new Error('Model not allowed'), {
+        status: 403,
+        code: 'model_not_allowed',
+      });
+    });
+
+    const req = { user: { id: 'user-1' } } as never;
 
     await expect(
       evaluateOperation(
-        { gateway, config: makeConfig() },
+        { gateway, config: makeConfig(evaluate) },
         {
           model: 'judge' as never,
           state: 'State',
           questions: { refunded: questions.refunded },
-          req: { user: { modelAccess: 'selected', models: ['typesafe-ai/jev'] } } as never,
+          req,
         },
       ),
     ).rejects.toMatchObject({ status: 403, code: 'model_not_allowed' });
 
+    expect(evaluate).toHaveBeenCalledExactlyOnceWith({ req, model: 'judge' });
     expect(operation).not.toHaveBeenCalled();
   });
 
@@ -195,7 +206,7 @@ describe('evaluateOperation', () => {
         model: 'typesafe-ai/jev',
         state: 'State',
         questions: { refunded: questions.refunded },
-        req: { user: { modelAccess: 'selected', models: [] } } as never,
+        req: { user: { id: 'user-1' } },
         overrideAccess: true,
       },
     );

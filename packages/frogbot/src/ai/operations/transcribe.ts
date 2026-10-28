@@ -4,7 +4,6 @@ import { transcribe as aiTranscribe } from 'ai';
 import type { Logger } from '../../frogbot.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
-import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
 import type { SanitizedAIConfig, TranscribeAudio, TranscribeOpts } from '../types.js';
 import { toProviderOptions } from './options.js';
@@ -32,14 +31,13 @@ export async function transcribeOperation(
 
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
-  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
   const modelId = resolveModel(input, config);
 
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
       req: req as FrogBotRequest,
       method: 'transcribe',
-      input,
+      model: input,
       config,
     });
   }

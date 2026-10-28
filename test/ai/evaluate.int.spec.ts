@@ -343,7 +343,7 @@ describe('booted TypeSafe evaluation', () => {
     const restrictedUser = await booted.frogbot.update({
       collection: usersSlug,
       id: user.id,
-      data: { modelAccess: 'selected', models: ['typesafe-ai/jev-latest'] },
+      data: { models: ['typesafe-ai/jev-latest'] },
       overrideAccess: true,
     });
 
@@ -391,7 +391,7 @@ describe('booted TypeSafe evaluation', () => {
     await booted.frogbot.update({
       collection: usersSlug,
       id: user.id,
-      data: { modelAccess: 'selected', models: ['typesafe-ai/jev-latest'] },
+      data: { models: ['typesafe-ai/jev-latest'] },
       overrideAccess: true,
     });
 

@@ -17,15 +17,7 @@ test.afterAll(async () => {
   await model.close();
 });
 
-async function setModelPolicy({
-  page,
-  modelAccess,
-  models,
-}: {
-  page: Page;
-  modelAccess: 'all' | 'selected';
-  models: string[];
-}) {
+async function setModels(page: Page, models: string[]) {
   const me = await page.request.get(`/api/${usersSlug}/me`);
 
   expect(me.ok()).toBe(true);
@@ -35,19 +27,17 @@ async function setModelPolicy({
   expect(user?.id).toBeDefined();
 
   const response = await page.request.patch(`/api/${usersSlug}/${user.id}`, {
-    data: { modelAccess, models },
+    data: { models },
   });
 
   expect(response.ok()).toBe(true);
-  expect((await response.json()).doc).toMatchObject({ modelAccess, models });
+  expect((await response.json()).doc).toMatchObject({ models });
 }
 
 test.beforeEach(async ({ page }) => {
   model.reset();
 
-  await setModelPolicy({ page, modelAccess: 'all', models: [] });
-
-  await setModelPolicy({ page, modelAccess: 'selected', models: ['browser/thinker'] });
+  await setModels(page, ['browser/thinker']);
 
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
 
@@ -56,7 +46,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.afterEach(async ({ page }) => {
-  await setModelPolicy({ page, modelAccess: 'all', models: [] });
+  await setModels(page, []);
 
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
 });

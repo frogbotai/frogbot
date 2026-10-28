@@ -138,7 +138,7 @@ export const assistant: AgentConfig = {
 
 An agent without `model` uses `ai.defaultModel`. Root tools are inherited unless `inheritTools: false` is set.
 
-Use `model: { default, options: [...] }` for curated choices or `model: { options: '*' }` for every configured chat model; omitted `default` uses `ai.defaultModel`, and the default is included automatically. `general()` uses `'*'`; override its `model` with a string for one choice, subject to per-user model allowlists.
+Use `model: { default, options: [...] }` for curated choices or `model: { options: '*' }` for every configured chat model; omitted `default` uses `ai.defaultModel`, and the default is included automatically. `general()` uses `'*'`; override its `model` with a string for one choice, subject to `ai.access.generate`, which hides models a user may not use.
 
 ### Initialized Instance
 

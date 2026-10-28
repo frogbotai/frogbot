@@ -77,12 +77,14 @@ export async function streamTurn({
   let mainModel: string;
 
   try {
-    mainModel = assertStoredSelection({
-      agent,
-      config: req.frogbot.config.ai!,
-      selection,
-      user: req.user,
-    }).model;
+    mainModel = (
+      await assertStoredSelection({
+        agent,
+        config: req.frogbot.config.ai!,
+        selection,
+        req,
+      })
+    ).model;
 
     const messages = await toAgentModelMessages({
       req,

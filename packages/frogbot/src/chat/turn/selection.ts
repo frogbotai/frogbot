@@ -49,19 +49,19 @@ export async function findGoverningSelection({
   return message ? readSelection(message) : {};
 }
 
-export function assertStoredSelection({
+export async function assertStoredSelection({
   agent,
   config,
   selection,
-  user,
+  req,
 }: {
   agent: AgentInstance;
   config: SanitizedAIConfig;
   selection: AgentSelection;
-  user: FrogBotRequest['user'] | undefined;
-}): ResolvedAgentSelection {
+  req: FrogBotRequest;
+}): Promise<ResolvedAgentSelection> {
   try {
-    return assertAgentSelection({ agent, config, selection, user });
+    return await assertAgentSelection({ agent, config, selection, req });
   } catch (error) {
     if (error instanceof AgentServiceError) {
       throw new TurnError('selection-unavailable', error.message);

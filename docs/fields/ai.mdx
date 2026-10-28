@@ -200,7 +200,7 @@ An answer generated from inputs that have changed since is never saved. See [Job
 
 ### Who a run belongs to
 
-A run belongs to the user who made the save, and its usage is recorded for that user. It follows their [AI policy](/ai/overview#user-model-and-budget-policy), including budget and allowed models, and the [AI access rules](/ai/overview#control-access). A run that a policy refuses is saved as a failure.
+A run belongs to the user who made the save, and its usage is recorded for that user. It follows the [AI access rules](/ai/overview#control-access) for that user, including their budget and allowed models with the [AI policy plugin](/plugins/ai-policy). A run that a policy refuses is saved as a failure.
 
 A user's run reads only the inputs that user can read, so two users can get different answers for the same record. A save with no user, such as a Local API call or a seed, runs with no per-user limits and reads every input.
 
@@ -262,7 +262,7 @@ Each record is regenerated as a single [Regenerate](#regenerate) would do it:
 
 - Drafts stay drafts, and published records stay published.
 - The runs use the List's locale.
-- The runs belong to you and follow your [AI policy](/ai/overview#user-model-and-budget-policy), including your budget and allowed models. See [Who a run belongs to](#who-a-run-belongs-to). A record your policy refuses, for example after your budget runs out partway, shows the failed state. Choose **Only failed** later to retry it.
+- The runs belong to you and follow your [AI access rules](/ai/overview#control-access), such as your budget and allowed models. See [Who a run belongs to](#who-a-run-belongs-to). A record your policy refuses, for example after your budget runs out partway, shows the failed state. Choose **Only failed** later to retry it.
 
 Runs go at the job runner's pace. With the defaults, the web server checks once a minute and runs up to 10 waiting runs, so 500 records take roughly an hour. To go faster, run a [worker](/jobs-queue/workers) with a shorter `--cron` and a higher `--limit`.
 

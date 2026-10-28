@@ -3,7 +3,6 @@ import { experimental_evaluate } from 'ai';
 
 import type { FrogBotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
-import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
 import type {
   EvaluateOpts,
@@ -25,15 +24,13 @@ export async function evaluateOperation<const QUESTIONS extends Record<string, E
   const { model: input, req, overrideAccess, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
-  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
-
   const modelId = resolveModel(input, config);
 
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
       req: req as FrogBotRequest,
       method: 'evaluate',
-      input,
+      model: input,
       config,
     });
   }

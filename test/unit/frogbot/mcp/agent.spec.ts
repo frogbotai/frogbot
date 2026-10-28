@@ -12,7 +12,7 @@ import type { AnyTool } from '../../../../packages/frogbot/src/tools/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import { type Scratch, scratch } from './fixture.js';
 
-const ai = { providers: { openai: { apiKey: 'test' } }, routers: {} };
+const ai = { providers: { openai: { apiKey: 'test' } }, routers: {}, access: {} };
 
 const MODEL = 'openai/test' as AgentModelId;
 

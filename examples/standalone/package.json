@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@frogbotai/db-sqlite": "0.36.0",
+    "@frogbotai/plugin-ai-policy": "0.36.0",
     "@hono/node-server": "^1.13.7",
     "frogbot": "0.36.0",
     "hono": "^4.6.14",

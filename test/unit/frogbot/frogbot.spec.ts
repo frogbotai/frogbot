@@ -533,6 +533,17 @@ describe('FrogBot class', () => {
   });
 
   describe('Gateway HTTP adapter', () => {
+    function allowOnly(models: string[]) {
+      return ({ model }: { model: string }) => {
+        if (models.includes(model)) return true;
+
+        throw Object.assign(new Error(`Model '${model}' is not allowed`), {
+          status: 403,
+          code: 'model_not_allowed',
+        });
+      };
+    }
+
     async function setupGateway(
       access: Partial<NonNullable<FrogBotSanitizedConfig['ai']>['access']>,
     ) {
@@ -636,11 +647,13 @@ describe('FrogBot class', () => {
         transcribe: () => false,
       });
 
+      const body = new FormData();
+
+      body.set('model', 'openai/whisper-1');
+      body.set('file', new Blob(['audio']), 'audio.wav');
+
       const response = await createGatewayHandler(frogbot)(
-        new Request('http://localhost/api/v1/audio/transcriptions', {
-          method: 'POST',
-          body: 'audio',
-        }),
+        new Request('http://localhost/api/v1/audio/transcriptions', { method: 'POST', body }),
       );
 
       expect(response.status).toBe(403);
@@ -648,16 +661,8 @@ describe('FrogBot class', () => {
     });
 
     it('enforces the multipart transcription model', async () => {
-      const { frogbot, handler } = await setupGateway({ transcribe: () => true });
-      const payloadMod = await import('payload');
-      const payload = (
-        payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> }
-      ).__getMockPayload();
-
-      payload.auth.mockResolvedValue({
-        user: { id: 'user-1', modelAccess: 'selected', models: ['openai/whisper-1'] },
-        permissions: {},
-      });
+      const transcribe = vi.fn(allowOnly(['openai/whisper-1']));
+      const { frogbot, handler } = await setupGateway({ transcribe });
 
       const body = new FormData();
       body.set('model', 'openai/gpt-4o-transcribe');
@@ -669,23 +674,18 @@ describe('FrogBot class', () => {
 
       expect(response.status).toBe(403);
       expect(await response.json()).toMatchObject({ error: { type: 'model_not_allowed' } });
+      expect(transcribe).toHaveBeenCalledWith(
+        expect.objectContaining({ model: 'openai/gpt-4o-transcribe' }),
+      );
       expect(handler).not.toHaveBeenCalled();
     });
 
     it('accepts the transcription model the manifest advertises for a router', async () => {
-      const { frogbot, handler } = await setupGateway({ transcribe: () => true });
-      const payloadMod = await import('payload');
-      const payload = (
-        payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> }
-      ).__getMockPayload();
+      const { frogbot, handler } = await setupGateway({
+        transcribe: allowOnly(['openai/gpt-4o-transcribe']),
+      });
 
-      const user = {
-        id: 'user-1',
-        modelAccess: 'selected',
-        models: ['openai/gpt-4o-transcribe'],
-      };
-
-      payload.auth.mockResolvedValue({ user, permissions: {} });
+      const user = { id: 'user-1' };
 
       Object.assign(frogbot.config.ai!, {
         routers: { stt: { model: 'openai/gpt-4o-transcribe' } },
@@ -713,17 +713,9 @@ describe('FrogBot class', () => {
       expect(handler).toHaveBeenCalledOnce();
     });
 
-    it('authorizes a selected router by its raw JSON target', async () => {
-      const { frogbot, handler } = await setupGateway({ generate: () => true });
-      const payloadMod = await import('payload');
-      const payload = (
-        payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> }
-      ).__getMockPayload();
-
-      payload.auth.mockResolvedValue({
-        user: { id: 'user-1', modelAccess: 'selected', models: ['fast'] },
-        permissions: {},
-      });
+    it('authorizes a router by its raw JSON target', async () => {
+      const generate = vi.fn(allowOnly(['fast']));
+      const { frogbot, handler } = await setupGateway({ generate });
 
       const response = await createGatewayHandler(frogbot)(
         new Request('http://localhost/api/v1/chat/completions', {
@@ -734,20 +726,26 @@ describe('FrogBot class', () => {
       );
 
       expect(response.status).toBe(200);
+      expect(generate).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ model: 'fast' }));
       expect(handler).toHaveBeenCalledOnce();
     });
 
-    it('does not forward an unparseable policy-bearing request', async () => {
-      const { frogbot, handler } = await setupGateway({ generate: () => true });
+    it('rejects an unparseable model-bearing request without forwarding it', async () => {
+      const generate = vi.fn(() => true);
+      const { frogbot, handler } = await setupGateway({ generate });
 
-      await expect(
-        createGatewayHandler(frogbot)(
-          new Request('http://localhost/api/v1/chat/completions', {
-            method: 'POST',
-            body: 'not-json',
-          }),
-        ),
-      ).rejects.toBeInstanceOf(SyntaxError);
+      const response = await createGatewayHandler(frogbot)(
+        new Request('http://localhost/api/v1/chat/completions', {
+          method: 'POST',
+          body: 'not-json',
+        }),
+      );
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({
+        error: { message: 'Invalid request body.', type: 'invalid_request_error' },
+      });
+      expect(generate).not.toHaveBeenCalled();
       expect(handler).not.toHaveBeenCalled();
     });
 

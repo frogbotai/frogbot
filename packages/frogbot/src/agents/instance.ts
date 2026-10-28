@@ -141,11 +141,11 @@ export function createAgentInstance(
           const governing = steered.at(-1);
 
           if (governing) {
-            run.selection = assertStoredSelection({
+            run.selection = await assertStoredSelection({
               agent: instance,
               config,
               selection: governing.selection,
-              user: req.user,
+              req,
             });
           }
 
@@ -197,11 +197,11 @@ export function createAgentInstance(
       return { messages: messages as ModelMessage[] };
     }
 
-    const { model } = assertStoredSelection({
+    const { model } = await assertStoredSelection({
       agent: instance,
       config,
       selection: opts.selection ?? {},
-      user: opts.req.user,
+      req: opts.req,
     });
 
     return {
@@ -243,11 +243,11 @@ export function createAgentInstance(
       });
     }
 
-    const selection = assertStoredSelection({
+    const selection = await assertStoredSelection({
       agent: instance,
       config,
       selection: options.selection ?? {},
-      user: req.user,
+      req,
     });
 
     const runId = options.runId ?? generateId();
@@ -499,7 +499,7 @@ export function createAgentInstance(
         }),
       );
 
-      const model = selection.model ?? userDefaultModel({ agent: instance, user: req.user });
+      const model = selection.model ?? (await userDefaultModel({ agent: instance, req }));
 
       if (model === undefined) {
         throw new Error(

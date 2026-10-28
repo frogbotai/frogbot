@@ -120,7 +120,7 @@ Enabling `ai` supplies or merges an AI usage collection. Its reserved base field
 
 `costUSD` is a USD [Money field](/fields/money).
 
-FrogBot also injects `modelAccess`, `models`, `monthlyBudget`, and `spendThisPeriodUSD` into collections selected by AI policy configuration. `models` is required when model access is restricted to selected models; `monthlyBudget` and `spendThisPeriodUSD` are USD [Money fields](/fields/money), and spend is read-only. See [AI](/ai/overview).
+The [AI policy plugin](/plugins/ai-policy) adds `models`, `monthlyBudget`, and `spendThisPeriodUSD` to your auth collection.
 
 ## Admin view fields
 

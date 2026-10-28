@@ -77,11 +77,11 @@ export function buildAgentEndpoints() {
             ...(reasoning ? { reasoning } : {}),
           };
 
-          assertAgentSelection({
+          await assertAgentSelection({
             agent,
             config: req.frogbot.config.ai!,
             selection,
-            user: req.user,
+            req,
           });
 
           const eventStream = acceptsEventStream(req.headers.get('accept'));

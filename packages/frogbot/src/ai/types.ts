@@ -144,7 +144,15 @@ export type RouterConfig = {
   hidden?: boolean;
 };
 
-export type AIAccessFn = (args: { req: FrogBotRequest }) => boolean | Promise<boolean>;
+/**
+ * Decides whether `req` may call `model` (the ID or router slug the caller passed). Return
+ * `false` for a generic 403, or throw an error with a numeric `status` and a `code` to send
+ * your own.
+ */
+export type AIAccessFn = (args: {
+  req: FrogBotRequest;
+  model: string;
+}) => boolean | Promise<boolean>;
 
 export type AIAccessConfig = {
   generate?: AIAccessFn;

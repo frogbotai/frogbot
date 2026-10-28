@@ -1,0 +1,113 @@
+---
+title: AI policy
+description: Limit each user's AI models and monthly spend in FrogBot.
+keywords: ["AI", "policy", "models", "budgets", "spend", "plugins"]
+---
+
+The AI policy plugin gives each user a list of allowed models, an optional monthly budget in USD, and a spend counter. FrogBot checks them on every AI call the user makes, adds the cost of each call to their spend, and resets spend once a month.
+
+## Installation
+
+```bash
+pnpm add @frogbotai/plugin-ai-policy
+```
+
+## Configuration
+
+```ts
+import { aiPolicyPlugin } from '@frogbotai/plugin-ai-policy'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  collections: [{ slug: 'users', auth: true, fields: [] }],
+  ai: {
+    defaultModel: 'openai/gpt-5.4-mini',
+    providers: { openai: true },
+  },
+  plugins: [aiPolicyPlugin()],
+})
+```
+
+The plugin needs an `ai` configuration and fails at startup without one. It adds its fields to your auth collection. With several auth collections, it uses `admin.user`; otherwise set `authCollection`. Users of other auth collections get no model list, budget or spend tracking. When your app has no auth collection, the plugin adds a `users` collection with a `name` field and the policy fields. It runs with `order: 10`.
+
+## Fields
+
+| Field | Label | Description |
+| --- | --- | --- |
+| `models` | Models | Model IDs and [alias](/ai/overview#add-aliases) slugs the user may call, chosen from every configured model and alias. Leave it empty to allow all models, including ones you configure later. |
+| `monthlyBudget` | Monthly Budget (USD) | Spend limit for the month, at least `0`. Leave it empty for no limit. |
+| `spendThisPeriodUSD` | Monthly Spend (USD) | What the user has spent this month. Read-only and starts at `0`; the plugin maintains it. |
+
+`monthlyBudget` and `spendThisPeriodUSD` are USD [Money fields](/fields/money).
+
+An entry in `models` is an exact match: allowing an alias allows calls to the alias, not direct calls to the model behind it.
+
+Define a field with the same name on your auth collection to change it. Your field replaces the plugin's settings it sets, and its `admin` and `access` are merged over the plugin's. For example, let only admins change budgets:
+
+```ts
+{
+  slug: 'users',
+  auth: true,
+  fields: [
+    {
+      name: 'monthlyBudget',
+      type: 'number',
+      access: { update: ({ req }) => req.user?.role === 'admin' },
+    },
+  ],
+}
+```
+
+Apart from the spend counter, the fields have no access rules of their own, so users can edit their own models and budget until you add one. Use [Roles](/plugins/roles) to grant the edit to one role.
+
+## Enforcement
+
+The plugin wraps each [`ai.access`](/ai/overview#control-access) rule (`generate`, `embed`, `transcribe`, `rerank`, `evaluate`). For each call, your own rule runs first; without one, the user must be signed in. When it allows a signed-in user, a non-empty `models` list must include the model or alias the caller asked for. Otherwise the call fails with a `403` and the code `model_not_allowed`: `Model "<id>" is not allowed by this policy.` Over HTTP, this returns `{ "error": { "message": "...", "type": "model_not_allowed" } }`.
+
+The same check shapes chat. A user sees only the agent models they may use, and an agent with none is hidden from them. Chat shows a microphone only when the user may use the [transcription model](/chat/ui-chat#voice-input); for an alias, list the model behind it.
+
+The budget is checked when a call runs, before every AI call a signed-in user makes, agent turns included. When `monthlyBudget` is set and `spendThisPeriodUSD` has reached it, the call fails with a `403` and the code `budget_exceeded`: `The configured budget has been exhausted.` A spent budget doesn't hide agents or models: chat lists them as usual and shows this error when the user sends. Calls without a signed-in user, such as scheduled tasks, have no per-user limit.
+
+## Spend
+
+After each AI call by a signed-in user, the plugin adds its cost to that user's `spendThisPeriodUSD`, priced from the model catalog or your [custom model prices](/ai/overview#custom-model-options). Failed calls and calls that cost nothing add nothing. If the spend update fails, FrogBot logs the error and the call still succeeds.
+
+Spend updates for one user run one at a time within a process. Calls already running when the budget is reached still finish, and several server processes can update the same user at once, so treat the budget as a limit that can be exceeded by a few calls, not an exact cap.
+
+## Monthly reset
+
+The `plugin-ai-policy-reset-spend` task sets every user's `spendThisPeriodUSD` to `0` at midnight on the first day of each month (`0 0 1 * *`), on its own `plugin-ai-policy-reset-spend` queue. Run a [worker](/jobs-queue/workers) that handles schedules for that queue, such as one started with `--all-queues --handle-schedules`.
+
+## Use your own policy
+
+The plugin is built only on `ai.access` and AI hooks, so you can replace it with your own rules, such as prepaid credits. Leave the plugin out and put your check in `ai.access`. Each rule receives `{ req, model }`; return `false` for a generic `403`, or throw an error with a numeric `status` and a `code` to send your own:
+
+```ts
+class OutOfCreditsError extends Error {
+  status = 402
+  code = 'insufficient_credits'
+}
+
+const hasCredits = ({ req }) => {
+  if (!req.user) return false
+  if ((req.user.credits ?? 0) <= 0) throw new OutOfCreditsError('You have no credits left.')
+
+  return true
+}
+
+export default buildConfig({
+  // ...
+  ai: {
+    providers: { openai: true },
+    access: { generate: hasCredits, embed: hasCredits, transcribe: hasCredits },
+  },
+})
+```
+
+To charge for calls, add an `afterOperation` [hook](/ai/overview#observe-calls) that prices the call's usage with `calculateUsageCostUSD({ model, providers, usage })` from `frogbot` and updates the user.
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `authCollection` | `string` | Your only auth collection, or `admin.user` when there are several | Slug of the auth collection that gets the policy fields. Required when you have several auth collections and `admin.user` is not one of them. |

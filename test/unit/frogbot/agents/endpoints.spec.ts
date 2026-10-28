@@ -64,6 +64,7 @@ const ai = {
     },
   },
   routers: {},
+  access: {},
 };
 
 const history: UIMessage[] = [{ id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }];
@@ -122,6 +123,7 @@ function makeTurn({ persistence = Promise.resolve() }: { persistence?: Promise<v
 function makeRequest({
   accept,
   agent = makeAgent(),
+  allowed,
   body = { prompt: 'Hello' },
   authorizations,
   signal,
@@ -131,10 +133,11 @@ function makeRequest({
   accept?: string;
   authorizations?: ReturnType<typeof vi.fn>;
   agent?: AgentInstance;
+  allowed?: string[];
   body?: unknown;
   signal?: AbortSignal;
   slug?: string;
-  user?: { id: string; modelAccess?: 'all' | 'selected'; models?: string[] } | null;
+  user?: { id: string } | null;
 } = {}): FrogBotRequest {
   const headers = new Headers({ 'content-type': 'application/json' });
 
@@ -151,7 +154,14 @@ function makeRequest({
     routeParams: { slug },
     frogbot: {
       agents: { support: agent },
-      config: { ai },
+      config: {
+        ai: allowed
+          ? {
+              ...ai,
+              access: { generate: ({ model }: { model: string }) => allowed.includes(model) },
+            }
+          : ai,
+      },
       connections: authorizations ? { authorizations } : undefined,
       logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
     },
@@ -223,7 +233,7 @@ describe('agent endpoints', () => {
 
     agent.config.model.options = [OPENAI_TEST, LOCAL_THINKER, LOCAL_PLAIN];
 
-    const req = makeRequest({ agent, user: { id: 'user-1', models: ['local/plain'] } });
+    const req = makeRequest({ agent, allowed: ['local/plain'] });
 
     const response = await listHandler()(req);
 
@@ -248,7 +258,7 @@ describe('agent endpoints', () => {
 
     const req = makeRequest({
       agent,
-      user: { id: 'user-1', models: ['local/plain'] },
+      allowed: ['local/plain'],
       body: { prompt: 'Hello', model: 'openai/test' },
     });
 
@@ -269,7 +279,7 @@ describe('agent endpoints', () => {
 
     const req = makeRequest({
       agent,
-      user: { id: 'user-1', models: ['local/plain'] },
+      allowed: ['local/plain'],
       body: { prompt: 'Hello', model: 'local/plain' },
     });
 
@@ -286,20 +296,20 @@ describe('agent endpoints', () => {
 
     agent.config.model.options = [OPENAI_TEST, LOCAL_PLAIN];
 
-    const req = makeRequest({ agent, user: { id: 'user-1', models: ['local/plain'] } });
+    const req = makeRequest({ agent, allowed: ['local/plain'] });
     const runModel = vi.fn();
 
-    streamTurn.mockImplementation(({ agent: current, req: request, selection }) => {
-      const resolved = assertStoredSelection({
+    streamTurn.mockImplementation(async ({ agent: current, req: request, selection }) => {
+      const resolved = await assertStoredSelection({
         agent: current,
         config: request.frogbot.config.ai!,
         selection,
-        user: request.user,
+        req: request,
       });
 
       runModel(resolved.model);
 
-      return Promise.resolve(makeTurn());
+      return makeTurn();
     });
 
     const response = await postHandler()(req);
