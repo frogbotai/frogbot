@@ -1,6 +1,6 @@
 /*
   What FrogBot's components get from Payload's admin CSS (preflight.css and app.css, Payload
-  4.0.0-beta.4), so they render the same on a page without it. It applies only inside
+  4.0.0-beta.5), so they render the same on a page without it. It applies only inside
   [data-fb-ui] and to fb- elements, sits in the first layer so app CSS wins, and skips anything
   inside an admin page (html[data-fb-ui-page]): Payload's preflight covers it there, and admin CSS
   chunks can load before the layer order is declared, which would put this layer last.
