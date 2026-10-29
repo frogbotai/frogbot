@@ -139,7 +139,7 @@ async function send({ page, prompt }: { page: Page; prompt: string }): Promise<M
 
   expect(sent.status()).toBe(200);
 
-  await expect(page.getByText(/^Received \d+ image attachment\.$/)).toBeVisible();
+  await expect(page.getByRole('log').getByText(/^Received \d+ image attachment\.$/)).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`/collections/${chatsSlug}/\\d+$`));
 
   return sent.request().postDataJSON().messages.at(-1).parts;
@@ -318,7 +318,9 @@ test('composer uploads a private chat asset, sends its bytes, and restores the a
     mediaType: 'image/png',
   });
 
-  await expect(page.getByText('Received 1 image attachment.', { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('log').getByText('Received 1 image attachment.', { exact: true }),
+  ).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`/collections/${chatsSlug}/\\d+$`));
   await expect(page.getByRole('button', { name: `Remove ${filename}`, exact: true })).toHaveCount(
     0,
@@ -386,8 +388,10 @@ test('composer uploads a private chat asset, sends its bytes, and restores the a
 
   await page.reload();
 
-  await expect(page.getByText(prompt, { exact: true })).toBeVisible();
-  await expect(page.getByText('Received 1 image attachment.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('log').getByText(prompt, { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('log').getByText('Received 1 image attachment.', { exact: true }),
+  ).toBeVisible();
 
   const download = await page.request.get(asset.url);
 
