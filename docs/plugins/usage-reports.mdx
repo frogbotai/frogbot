@@ -59,7 +59,7 @@ Authenticated callers can request aggregated data directly:
 GET /api/usage/report?groupBy=model&from=2026-07-01T00:00:00.000Z&to=2026-08-01T00:00:00.000Z
 ```
 
-`groupBy` accepts `model`, `user`, or `day`. `apiKey` is accepted only when the usage collection already has an `apiKey` relationship, which `@frogbotai/plugin-api-keys` adds — list `usageReportsPlugin()` after `apiKeysPlugin()` to enable it. Other values return `400`.
+`groupBy` accepts `model`, `user`, or `day`. `apiKey` is also accepted when `@frogbotai/plugin-api-keys` is installed, in any order, or when the usage collection has an `apiKey` relationship. Other values return `400`.
 
 The endpoint allows any authenticated caller by default, matching FrogBot's default access. Pass `access` to narrow it with an ordinary access function. Returning `false` forbids the request; returning a `Where` restricts the rows the report reads:
 

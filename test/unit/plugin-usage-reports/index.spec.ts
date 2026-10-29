@@ -1,7 +1,9 @@
+import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { importExportPlugin } from '@frogbotai/plugin-import-export';
 import type { FrogBotConfig, FrogBotRequest, Plugin } from 'frogbot';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
+import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
 import { usageReportsPlugin } from '../../../packages/plugins/plugin-usage-reports/src/index.js';
 
 function createConfig() {
@@ -161,6 +163,44 @@ describe('usageReportsPlugin', () => {
 
     expect(response.status).toBe(400);
     expect(find).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['before', (keys: Plugin, reports: Plugin) => [reports, keys]],
+    ['after', (keys: Plugin, reports: Plugin) => [keys, reports]],
+  ])('accepts apiKey grouping when listed %s the API keys plugin', async (_name, list) => {
+    let seen: FrogBotConfig | undefined;
+    const spy: Plugin = Object.assign(
+      (input: FrogBotConfig) => {
+        seen = input;
+
+        return input;
+      },
+      { order: 1000 },
+    );
+
+    await buildConfig({
+      secret: 'secret',
+      db: {} as never,
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+      ai: { providers: { openai: { apiKey: 'test' } } },
+      plugins: [...list(apiKeysPlugin(), usageReportsPlugin()), spy],
+    });
+
+    const usage = seen!.collections.find((item) => item.slug === 'usage-logs');
+    const endpoint = seen!.endpoints?.find((item) => item.path === '/usage/report');
+    const find = vi.fn().mockResolvedValue({ docs: [], hasNextPage: false });
+    const response = await endpoint!.handler(
+      request(
+        'http://localhost/api/usage/report?groupBy=apiKey&from=2026-01-01&to=2026-02-01',
+        find,
+      ),
+    );
+
+    expect(usage?.fields.map((field) => ('name' in field ? field.name : undefined))).toContain(
+      'apiKey',
+    );
+    expect(response.status).toBe(200);
   });
 
   it('paginates the resolved collection and aggregates model usage', async () => {

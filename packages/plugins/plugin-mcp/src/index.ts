@@ -42,20 +42,27 @@ export function mcpPlugin(options: McpPluginOptions = {}): Plugin {
 
   return definePlugin<McpPluginOptions>({
     slug: 'plugin-mcp',
-    plugin: ({ config }) => {
-      const apiKeyStrategy = config.collections
-        .flatMap((collection) => {
-          const auth = typeof collection.auth === 'object' ? collection.auth : undefined;
+    order: 10,
+    plugin: ({ config, plugins }) => {
+      const apiKeys = plugins['plugin-api-keys'];
 
-          return (auth?.strategies ?? []).map((strategy) => ({
-            collection: collection.slug,
-            strategy,
-          }));
-        })
-        .find(({ strategy }) => isApiKeyStrategy(strategy));
+      if (!apiKeys) {
+        throw new Error(
+          '[plugin-mcp] mcpPlugin needs apiKeysPlugin(). Add apiKeysPlugin() to plugins.',
+        );
+      }
 
-      if (!apiKeyStrategy) {
-        throw new Error('[plugin-mcp] apiKeysPlugin must be configured before mcpPlugin.');
+      const { authCollection } = apiKeys.options;
+      const auth = config.collections.find(
+        (collection) => collection.slug === authCollection,
+      )?.auth;
+
+      const strategy = (typeof auth === 'object' ? (auth.strategies ?? []) : []).find(
+        isApiKeyStrategy,
+      );
+
+      if (!strategy) {
+        throw new Error(`[plugin-mcp] The API key strategy is missing from '${authCollection}'.`);
       }
 
       return {
@@ -67,8 +74,8 @@ export function mcpPlugin(options: McpPluginOptions = {}): Plugin {
             tools: payloadTools,
             overrideGetAuthorizedMCP: ({ pluginConfig, req }) =>
               authorizeMcp({
-                collection: apiKeyStrategy.collection,
-                strategy: apiKeyStrategy.strategy,
+                collection: authCollection,
+                strategy,
                 pluginConfig,
                 req,
               }),

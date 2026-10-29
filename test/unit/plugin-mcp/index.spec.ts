@@ -1,6 +1,6 @@
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { rolesPlugin } from '@frogbotai/plugin-roles';
-import type { FrogBotConfig, Tool, ToolCtx } from 'frogbot';
+import type { FrogBotConfig, Plugin, Tool, ToolCtx } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -20,18 +20,23 @@ const baseConfig = frogbotConfig({
   collections: [{ slug: 'users', auth: true, fields: [] }],
 });
 
-const authenticatedConfig = () => apiKeysPlugin()(baseConfig);
+const authenticatedConfig = () => {
+  const apiKeys = apiKeysPlugin();
+
+  return apiKeys({ ...baseConfig, plugins: [apiKeys] });
+};
 
 describe('MCP plugin', () => {
-  it('requires the API key authentication strategy', () => {
+  it('requires the API keys plugin', () => {
     expect(() => mcpPlugin({})(baseConfig)).toThrow(
-      '[plugin-mcp] apiKeysPlugin must be configured before mcpPlugin.',
+      '[plugin-mcp] mcpPlugin needs apiKeysPlugin(). Add apiKeysPlugin() to plugins.',
     );
   });
 
   it('rejects an unrelated strategy with the same name', () => {
     const config = {
       ...baseConfig,
+      plugins: [apiKeysPlugin()],
       collections: [
         {
           slug: 'users',
@@ -49,7 +54,7 @@ describe('MCP plugin', () => {
     } as FrogBotConfig;
 
     expect(() => mcpPlugin({})(config)).toThrow(
-      '[plugin-mcp] apiKeysPlugin must be configured before mcpPlugin.',
+      "[plugin-mcp] The API key strategy is missing from 'users'.",
     );
   });
 
@@ -62,7 +67,10 @@ describe('MCP plugin', () => {
     expect(result.endpoints ?? []).toEqual([]);
   });
 
-  it('registers MCP through the FrogBot config pipeline', async () => {
+  it.each([
+    ['before', (keys: Plugin, mcp: Plugin) => [mcp, keys]],
+    ['after', (keys: Plugin, mcp: Plugin) => [keys, mcp]],
+  ])('registers MCP when listed %s the API keys plugin', async (_name, list) => {
     const config = await buildConfig({
       secret: 'test-secret',
       db: { defaultIDType: 'number' } as never,
@@ -70,7 +78,7 @@ describe('MCP plugin', () => {
         { slug: 'users', auth: true, fields: [] },
         { slug: 'posts', fields: [{ name: 'title', type: 'text' }] },
       ],
-      plugins: [rolesPlugin(), apiKeysPlugin(), mcpPlugin()],
+      plugins: [rolesPlugin(), ...list(apiKeysPlugin(), mcpPlugin())],
     } as BuildConfigInput);
 
     const payloadConfig = await config._internal.payloadConfig;

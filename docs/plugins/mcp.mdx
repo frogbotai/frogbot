@@ -15,7 +15,7 @@ pnpm add @frogbotai/plugin-mcp @frogbotai/plugin-api-keys
 
 ## Configure
 
-Add `mcpPlugin()` after `apiKeysPlugin()` in the plugin array.
+Add `mcpPlugin()` and `apiKeysPlugin()` to the plugin array, in any order. MCP needs `apiKeysPlugin()` and fails at startup without it. It runs with `order: 10`.
 
 ```ts
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys'

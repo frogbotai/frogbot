@@ -213,7 +213,7 @@ function buildReportEndpoint({ slug, pageSize, groups, access }: ReportEndpointO
 
 const usageReports = definePlugin<UsageReportsResolvedOptions>({
   slug: 'plugin-usage-reports',
-  plugin: ({ config, options }) => {
+  plugin: ({ config, options, plugins }) => {
     if (!config.ai) throw new Error('[plugin-usage-reports] AI configuration is required.');
 
     const existing = config.collections.find((collection) => collection.usageLog === true);
@@ -225,7 +225,10 @@ const usageReports = definePlugin<UsageReportsResolvedOptions>({
       : [...config.collections, { ...usage, admin: {} }];
 
     const groups = new Set<UsageReportGroup>(['day', 'model', 'user']);
-    if (usage.fields.some((field) => 'name' in field && field.name === 'apiKey')) {
+    if (
+      plugins['plugin-api-keys'] ||
+      usage.fields.some((field) => 'name' in field && field.name === 'apiKey')
+    ) {
       groups.add('apiKey');
     }
 

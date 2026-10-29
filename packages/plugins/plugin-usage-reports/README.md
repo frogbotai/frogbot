@@ -44,4 +44,4 @@ import { allow } from '@frogbotai/plugin-roles';
 usageReportsPlugin({ access: allow('admin', 'finance', 'auditor') });
 ```
 
-`groupBy=apiKey` is accepted only when the usage collection already has an `apiKey` relationship. `@frogbotai/plugin-api-keys` adds it, so list `usageReportsPlugin()` after `apiKeysPlugin()`.
+`groupBy=apiKey` is accepted when `@frogbotai/plugin-api-keys` is installed, in any order, or when the usage collection has an `apiKey` relationship.
