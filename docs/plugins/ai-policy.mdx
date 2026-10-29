@@ -78,6 +78,27 @@ Spend updates for one user run one at a time within a process. Calls already run
 
 The `plugin-ai-policy-reset-spend` task sets every user's `spendThisPeriodUSD` to `0` at midnight on the first day of each month (`0 0 1 * *`), on its own `plugin-ai-policy-reset-spend` queue. Run a [worker](/jobs-queue/workers) that handles schedules for that queue, such as one started with `--all-queues --handle-schedules`.
 
+## API key limits
+
+With the [API keys plugin](/plugins/api-keys) on the same auth collection, each key gets its own limits, inside its owner's. List the plugins in any order.
+
+| Field | Label | Description |
+| --- | --- | --- |
+| `models` | Models | Models the key may call, chosen from the owner's. Leave it empty to use all of the owner's models. |
+| `monthlyBudget` | Monthly Cap (USD) | Spend limit for the key this month, up to the owner's monthly budget. Leave it empty for no cap. |
+| `spendThisPeriodUSD` | Monthly Spend (USD) | What the key has spent this month. Read-only; the plugin maintains it. |
+
+The key's create dialog has a collapsed **Limits** section with the model list and cap, and the keys list shows spend and cap after the prefix. A key's models and cap are checked against its owner when they change, for admins too: `"<id>" isn't allowed for <owner>.` and `Can't exceed <owner>'s monthly budget of $50.00.` Values that didn't change aren't checked again, so lowering the owner's budget doesn't block renaming a key.
+
+Only a signed-in session can change a key's limits. A request authenticated by an API key that changes `models` or `monthlyBudget` on any key gets a `403`: `API keys can't change their own limits. Sign in to change them.`
+
+On a request made with a key, the owner's model list and budget are checked first, then the key's:
+
+- a model outside a non-empty key list fails with a `403`, code `model_not_allowed`: `Model "<id>" is not allowed for API key "<name>".` Chat and agent lists show only the key's models;
+- a spent cap fails with a `403`, code `budget_exceeded`: `API key "<name>" has used its monthly cap of $25.00.`
+
+Both fail before the model is called, so they write no usage row. Each call's cost is added to the key's and the owner's spend, agent runs included, and the monthly reset zeros keys too. Rotating a key keeps its models, cap and spend.
+
 ## Use your own policy
 
 The plugin is built only on `ai.access` and AI hooks, so you can replace it with your own rules, such as prepaid credits. Leave the plugin out and put your check in `ai.access`. Each rule receives `{ req, model }`; return `false` for a generic `403`, or throw an error with a numeric `status` and a `code` to send your own:

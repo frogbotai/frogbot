@@ -23,7 +23,7 @@ X-API-Key: fb_...
 
 Plaintext keys are returned only when created. The collection stores SHA-256 hashes and supports multiple independently revoked keys per user. Minting and rotating need a signed-in session: a request authenticated by an API key gets `403`, so a leaked key can't leave new keys behind. A key can still list, rename, and revoke keys.
 
-A key has no budget or model limits of its own; requests use the owner's AI policy. With AI configured, usage rows include an optional `apiKey` relationship to the authenticating key. Cookie-authenticated requests omit it, and the relationship follows `collectionSlug`.
+The plugin adds no budget or model limits; requests use the owner's AI policy. With `@frogbotai/plugin-ai-policy` on the same auth collection, each key also gets a model list and monthly cap inside its owner's, set in a collapsed Limits section of the create dialog. Other plugins add such fields to the keys collection: `mint` accepts them as `data`, `rotate` copies them from the revoked key, and server components registered under `admin.custom['plugin-api-keys'].createFields` render in the dialog's Limits section, reading and setting values with `useCreateKeyData()` from `@frogbotai/plugin-api-keys/client`. With AI configured, usage rows include an optional `apiKey` relationship to the authenticating key. Cookie-authenticated requests omit it, and the relationship follows `collectionSlug`.
 
 Build and start-only workflows must run `frogbot generate:importmap` after adding the plugin. Add it as a `prebuild` step when CI invokes `next build` directly. If the server console reports a component missing from the import map, run `frogbot generate:importmap` and rebuild, or restart `frogbot dev`.
 

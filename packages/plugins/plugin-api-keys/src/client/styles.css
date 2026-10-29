@@ -10,6 +10,20 @@
     gap: 0.5rem;
   }
 
+  .fb-collapsible__trigger.api-keys-dialog__limits-trigger {
+    width: 100%;
+    cursor: pointer;
+  }
+
+  .fb-collapsible__content.api-keys-dialog__limits-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0.75rem 0.25rem 0;
+    overflow: visible;
+    box-shadow: none;
+  }
+
   .fb-dialog__description.api-keys-dialog__warning {
     color: var(--color-text);
     font-weight: 600;

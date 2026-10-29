@@ -14,6 +14,9 @@ vi.mock('@frogbotai/ui/admin', () => ({
 const { ApiKeysManager, RevokeApiKey } =
   await import('../../../../packages/plugins/plugin-api-keys/src/client/ApiKeysManager.js');
 
+const { useCreateKeyData } =
+  await import('../../../../packages/plugins/plugin-api-keys/src/client/createKeyData.js');
+
 function mint(token = 'frogbot_secret') {
   vi.mocked(fetch).mockResolvedValue({
     ok: true,
@@ -204,9 +207,70 @@ describe('API key controls', () => {
     expect(screen.queryByRole('button', { name: 'Revoke' })).toBeNull();
   });
 
-  it('the client entry exports only the key controls', async () => {
+  it('has no Limits section when no plugin registers create fields', () => {
+    openCreate();
+
+    expect(screen.queryByRole('button', { name: 'Limits' })).toBeNull();
+  });
+
+  it('posts the values registered create fields set as data', async () => {
+    mint();
+
+    function CapField() {
+      const { data, setValue } = useCreateKeyData();
+
+      return (
+        <label>
+          Cap
+          <input
+            value={typeof data.monthlyBudget === 'number' ? String(data.monthlyBudget) : ''}
+            onChange={(event) => setValue('monthlyBudget', Number(event.target.value))}
+          />
+        </label>
+      );
+    }
+
+    render(<ApiKeysManager createFields={[<CapField key="cap" />]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Create API key' }));
+
+    expect(screen.queryByLabelText('Cap')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limits' }));
+    fireEvent.change(screen.getByLabelText('Cap'), { target: { value: '25' } });
+    await generate();
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/api-keys/mint',
+      expect.objectContaining({
+        body: JSON.stringify({ name: 'Deploy', data: { monthlyBudget: 25 } }),
+      }),
+    );
+  });
+
+  it('shows a mint validation error in the dialog', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      json: () => Promise.resolve({ error: "Can't exceed Ada's monthly budget of $50.00." }),
+    } as Response);
+
+    openCreate();
+
+    fireEvent.change(screen.getByLabelText('Key name'), { target: { value: 'Deploy' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      "Can't exceed Ada's monthly budget of $50.00.",
+    );
+    expect(screen.getByRole('dialog')).toBeTruthy();
+  });
+
+  it('the client entry exports the key controls and the create data hook', async () => {
     const entry = await import('../../../../packages/plugins/plugin-api-keys/src/client.js');
 
-    expect(Object.keys(entry).sort()).toEqual(['ApiKeysManager', 'RevokeApiKey']);
+    expect(Object.keys(entry).sort()).toEqual([
+      'ApiKeysManager',
+      'RevokeApiKey',
+      'useCreateKeyData',
+    ]);
   });
 });

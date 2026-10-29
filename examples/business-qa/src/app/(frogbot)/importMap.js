@@ -4,8 +4,10 @@ import { LLMInstructionsMenuItem as LLMInstructionsMenuItem_53ccb9913b2925da8adc
 import { DefaultListView as DefaultListView_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { NullField as NullField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { HierarchyButton as HierarchyButton_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
-import { ApiKeysManager as ApiKeysManager_da5b1e8ed1210a079e514867fb7c4ae9 } from '@frogbotai/plugin-api-keys/client';
+import { ApiKeysManagerServer as ApiKeysManagerServer_86a7e1bdd84856c31e58b39b8522d232 } from '@frogbotai/plugin-api-keys/rsc';
 import { RevokeApiKey as RevokeApiKey_da5b1e8ed1210a079e514867fb7c4ae9 } from '@frogbotai/plugin-api-keys/client';
+import { KeyModelsDescription as KeyModelsDescription_a283bfe2e052b53bfcc520c468446b7c } from '@frogbotai/plugin-ai-policy/rsc';
+import { KeyBudgetDescription as KeyBudgetDescription_a283bfe2e052b53bfcc520c468446b7c } from '@frogbotai/plugin-ai-policy/rsc';
 import { ChatView as ChatView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { ConnectionsView as ConnectionsView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { CustomCollectionView as CustomCollectionView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
@@ -28,6 +30,7 @@ import { ActivityWidget as ActivityWidget_a9b31afd548db1251f21130da6e46588 } fro
 import { CollectionFilter as CollectionFilter_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { UploadDropzoneWidget as UploadDropzoneWidget_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { UploadDropzoneCollectionsField as UploadDropzoneCollectionsField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
+import { KeyLimitsCreateFields as KeyLimitsCreateFields_a283bfe2e052b53bfcc520c468446b7c } from '@frogbotai/plugin-ai-policy/rsc';
 
 /** @type import('frogbot').ImportMap */
 export const importMap = {
@@ -40,10 +43,14 @@ export const importMap = {
   '@frogbotai/ui/admin#NullField': NullField_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin/rsc#HierarchyButton':
     HierarchyButton_a9b31afd548db1251f21130da6e46588,
-  '@frogbotai/plugin-api-keys/client#ApiKeysManager':
-    ApiKeysManager_da5b1e8ed1210a079e514867fb7c4ae9,
+  '@frogbotai/plugin-api-keys/rsc#ApiKeysManagerServer':
+    ApiKeysManagerServer_86a7e1bdd84856c31e58b39b8522d232,
   '@frogbotai/plugin-api-keys/client#RevokeApiKey':
     RevokeApiKey_da5b1e8ed1210a079e514867fb7c4ae9,
+  '@frogbotai/plugin-ai-policy/rsc#KeyModelsDescription':
+    KeyModelsDescription_a283bfe2e052b53bfcc520c468446b7c,
+  '@frogbotai/plugin-ai-policy/rsc#KeyBudgetDescription':
+    KeyBudgetDescription_a283bfe2e052b53bfcc520c468446b7c,
   '@frogbotai/ui/admin/rsc#ChatView': ChatView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin/rsc#ConnectionsView':
     ConnectionsView_a9b31afd548db1251f21130da6e46588,
@@ -86,4 +93,6 @@ export const importMap = {
     UploadDropzoneWidget_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin#UploadDropzoneCollectionsField':
     UploadDropzoneCollectionsField_53ccb9913b2925da8adcdf5fd85e01f4,
+  '@frogbotai/plugin-ai-policy/rsc#KeyLimitsCreateFields':
+    KeyLimitsCreateFields_a283bfe2e052b53bfcc520c468446b7c,
 };

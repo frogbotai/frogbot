@@ -1,8 +1,15 @@
-import { type CollectionConfig, definePlugin, getConfiguredModelIds, type Plugin } from 'frogbot';
+import {
+  type CollectionConfig,
+  definePlugin,
+  type FrogBotConfig,
+  getConfiguredModelIds,
+  type Plugin,
+} from 'frogbot';
 
 import { createPolicyAccess } from './access.js';
 import { createPolicyFields, mergePolicyFields } from './fields.js';
 import { createPolicyHooks } from './hooks.js';
+import { createKeyLimitFields, keyLimitsCreateFields, withKeyLimits } from './keys.js';
 import { createResetTask } from './reset.js';
 
 export type AIPolicyPluginOptions = {
@@ -33,16 +40,45 @@ function resolveAuthCollection(
   throw new Error('[plugin-ai-policy] Set authCollection when multiple auth collections exist.');
 }
 
+type Admin = NonNullable<FrogBotConfig['admin']> & {
+  dependencies?: Record<string, { path: string; type: 'component' }>;
+};
+
+function withCreateFieldsImport(admin: FrogBotConfig['admin']): Admin {
+  const current: Admin | undefined = admin;
+
+  return {
+    ...current,
+    dependencies: {
+      ...current?.dependencies,
+      [keyLimitsCreateFields]: { path: keyLimitsCreateFields, type: 'component' },
+    },
+  };
+}
+
 const aiPolicy = definePlugin<AIPolicyPluginOptions>({
   slug: 'plugin-ai-policy',
   order: 10,
-  plugin: ({ config, options }) => {
+  plugin: ({ config, options, plugins }) => {
     if (!config.ai) throw new Error('[plugin-ai-policy] AI configuration is required.');
 
     const authCollection = resolveAuthCollection(config, options);
-    const fields = createPolicyFields(getConfiguredModelIds(config.ai));
-    const hooks = createPolicyHooks({ authCollection });
-    const hasAuthCollection = config.collections.some(({ slug }) => slug === authCollection);
+    const models = getConfiguredModelIds(config.ai);
+    const fields = createPolicyFields(models);
+    const apiKeys = plugins['plugin-api-keys']?.options as
+      { authCollection?: unknown; collectionSlug?: unknown } | undefined;
+
+    const keysCollection =
+      apiKeys?.authCollection === authCollection && typeof apiKeys.collectionSlug === 'string'
+        ? apiKeys.collectionSlug
+        : undefined;
+
+    const hooks = createPolicyHooks({ authCollection, keysCollection });
+    const auth = config.collections.find(({ slug }) => slug === authCollection);
+    const titleField = auth ? auth.admin?.useAsTitle : 'name';
+    const keyFields = keysCollection
+      ? createKeyLimitFields({ authCollection, titleField, models })
+      : [];
 
     const fallback: CollectionConfig = {
       slug: authCollection,
@@ -57,7 +93,7 @@ const aiPolicy = definePlugin<AIPolicyPluginOptions>({
       ...config,
       ai: {
         ...config.ai,
-        access: createPolicyAccess({ access: config.ai.access, authCollection }),
+        access: createPolicyAccess({ access: config.ai.access, authCollection, keysCollection }),
         hooks: {
           ...config.ai.hooks,
           beforeOperation: [hooks.beforeOperation, ...(config.ai.hooks?.beforeOperation ?? [])],
@@ -65,16 +101,23 @@ const aiPolicy = definePlugin<AIPolicyPluginOptions>({
         },
       },
       collections: [
-        ...config.collections.map((collection) =>
-          collection.slug === authCollection
-            ? { ...collection, fields: mergePolicyFields(collection.fields, fields) }
-            : collection,
-        ),
-        ...(hasAuthCollection ? [] : [fallback]),
+        ...config.collections.map((collection) => {
+          if (collection.slug === authCollection) {
+            return { ...collection, fields: mergePolicyFields(collection.fields, fields) };
+          }
+
+          if (collection.slug === keysCollection) {
+            return withKeyLimits(collection, keyFields, { models, titleField });
+          }
+
+          return collection;
+        }),
+        ...(auth ? [] : [fallback]),
       ],
+      ...(keysCollection && { admin: withCreateFieldsImport(config.admin) }),
       jobs: {
         ...config.jobs,
-        tasks: [...(config.jobs?.tasks ?? []), createResetTask({ authCollection })],
+        tasks: [...(config.jobs?.tasks ?? []), createResetTask({ authCollection, keysCollection })],
       },
     };
   },
@@ -82,7 +125,8 @@ const aiPolicy = definePlugin<AIPolicyPluginOptions>({
 
 /**
  * Adds per-user model allowlists, monthly budgets and spend counters to the auth collection,
- * enforced through `ai.access` and AI hooks.
+ * enforced through `ai.access` and AI hooks. With `apiKeysPlugin()` on the same auth collection,
+ * each API key also gets a model list and monthly cap that narrow its owner's.
  */
 export function aiPolicyPlugin(options: AIPolicyPluginOptions = {}): Plugin {
   return aiPolicy(options);

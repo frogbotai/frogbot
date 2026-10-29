@@ -23,6 +23,11 @@
       "import": "./dist/client.js",
       "types": "./dist/client.d.ts",
       "default": "./dist/client.js"
+    },
+    "./rsc": {
+      "import": "./dist/rsc.js",
+      "types": "./dist/rsc.d.ts",
+      "default": "./dist/rsc.js"
     }
   },
   "files": [
@@ -71,6 +76,11 @@
         "import": "./dist/client.js",
         "types": "./dist/client.d.ts",
         "default": "./dist/client.js"
+      },
+      "./rsc": {
+        "import": "./dist/rsc.js",
+        "types": "./dist/rsc.d.ts",
+        "default": "./dist/rsc.js"
       }
     }
   }

@@ -217,6 +217,15 @@ export interface Credential {
   totalCostUSD?: number | null;
   environment?: string | null;
   tenant?: string | null;
+  models?: ('test/allowed' | 'test/blocked')[] | null;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
+  monthlyBudget?: number | null;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
+  spendThisPeriodUSD?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -431,6 +440,9 @@ export interface CredentialsSelect {
   totalCostUSD?: boolean;
   environment?: boolean;
   tenant?: boolean;
+  models?: boolean;
+  monthlyBudget?: boolean;
+  spendThisPeriodUSD?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }

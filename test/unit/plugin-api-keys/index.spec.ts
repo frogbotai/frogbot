@@ -30,7 +30,7 @@ describe('apiKeysPlugin', () => {
         components: {
           actions: [
             {
-              path: '@frogbotai/plugin-api-keys/client#ApiKeysManager',
+              path: '@frogbotai/plugin-api-keys/rsc#ApiKeysManagerServer',
               clientProps: { collectionSlug: 'api-keys' },
             },
           ],

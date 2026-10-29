@@ -8,6 +8,11 @@ export type MintApiKeyOptions = {
   collectionSlug: string;
   tokenPrefix: string;
   name: string;
+  /**
+   * Values for fields other plugins add to the keys collection. They're written with access
+   * overridden, so their validation and hooks run but their field access doesn't.
+   */
+  data?: Record<string, unknown>;
 };
 
 export type RevokeApiKeyOptions = {
@@ -16,6 +21,8 @@ export type RevokeApiKeyOptions = {
   id: string;
   anyOwner?: boolean;
 };
+
+type KeyDocument = Record<string, unknown>;
 
 export class ApiKeyServiceError extends Error {
   constructor(public readonly code: 'authentication_required' | 'not_found' | 'session_required') {
@@ -35,7 +42,28 @@ function requireSessionOwner(req: FrogBotRequest) {
   return owner;
 }
 
-type MintForOwnerOptions = MintApiKeyOptions & { owner: string | number };
+const ownFields = new Set([
+  'id',
+  'createdAt',
+  'updatedAt',
+  'name',
+  'owner',
+  'prefix',
+  'tokenHash',
+  'lastUsedAt',
+  'revokedAt',
+  'totalCostUSD',
+  'actions',
+]);
+
+function foreignData(data: Record<string, unknown> | undefined): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(data ?? {}).filter(([key]) => !ownFields.has(key)));
+}
+
+type MintForOwnerOptions = MintApiKeyOptions & {
+  owner: string | number;
+  context?: Record<string, unknown>;
+};
 
 async function mintForOwner({
   req,
@@ -43,14 +71,17 @@ async function mintForOwner({
   tokenPrefix,
   name,
   owner,
+  data,
+  context,
 }: MintForOwnerOptions) {
   const token = createApiKeyToken({ tokenPrefix });
   const prefix = getApiKeyPrefix(token);
   const doc = (await req.frogbot.create({
     collection: collectionSlug,
-    data: { name, owner, prefix, tokenHash: hashApiKeyToken(token) },
+    data: { ...foreignData(data), name, owner, prefix, tokenHash: hashApiKeyToken(token) },
     overrideAccess: true,
     req,
+    ...(context && { context }),
   })) as Record<string, unknown>;
 
   return { id: doc.id, name, prefix, token, createdAt: doc.createdAt };
@@ -65,31 +96,13 @@ export async function mintApiKey(options: MintApiKeyOptions) {
     tokenPrefix: options.tokenPrefix,
     name: options.name,
     owner,
+    data: options.data,
   });
 }
 
-export type RotateApiKeyOptions = RevokeApiKeyOptions & { tokenPrefix: string };
+type RevokedKey = KeyDocument & { id: string | number; name: string; owner: string | number };
 
-export async function rotateApiKey({
-  req,
-  collectionSlug,
-  id,
-  tokenPrefix,
-  anyOwner,
-}: RotateApiKeyOptions) {
-  requireSessionOwner(req);
-  const revoked = await revokeApiKey({ req, collectionSlug, id, anyOwner });
-
-  return mintForOwner({
-    req,
-    collectionSlug,
-    tokenPrefix,
-    name: revoked.name,
-    owner: revoked.owner,
-  });
-}
-
-export async function revokeApiKey({ req, collectionSlug, id, anyOwner }: RevokeApiKeyOptions) {
+async function revokeKey({ req, collectionSlug, id, anyOwner }: RevokeApiKeyOptions) {
   const owner = req.user?.id;
   if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
   const result = await req.frogbot.find({
@@ -103,7 +116,7 @@ export async function revokeApiKey({ req, collectionSlug, id, anyOwner }: Revoke
       : { and: [{ id: { equals: id } }, { owner: { equals: owner } }] },
   });
 
-  const key = result.docs[0] as Record<string, unknown> | undefined;
+  const key = result.docs[0] as KeyDocument | undefined;
   if (
     !key ||
     (typeof key.id !== 'string' && typeof key.id !== 'number') ||
@@ -123,5 +136,38 @@ export async function revokeApiKey({ req, collectionSlug, id, anyOwner }: Revoke
     req,
   });
 
+  return { key: key as RevokedKey, revokedAt };
+}
+
+export async function revokeApiKey(options: RevokeApiKeyOptions) {
+  const { key, revokedAt } = await revokeKey(options);
+
   return { id: key.id, name: key.name, owner: key.owner, revokedAt };
+}
+
+export type RotateApiKeyOptions = RevokeApiKeyOptions & { tokenPrefix: string };
+
+/**
+ * Revokes the key, then mints one with its name, owner and every field another plugin added, with
+ * `req.context.apiKeyRotatedFrom` set to the revoked key's ID.
+ */
+export async function rotateApiKey({
+  req,
+  collectionSlug,
+  id,
+  tokenPrefix,
+  anyOwner,
+}: RotateApiKeyOptions) {
+  requireSessionOwner(req);
+  const { key } = await revokeKey({ req, collectionSlug, id, anyOwner });
+
+  return mintForOwner({
+    req,
+    collectionSlug,
+    tokenPrefix,
+    name: key.name,
+    owner: key.owner,
+    data: key,
+    context: { apiKeyRotatedFrom: key.id },
+  });
 }

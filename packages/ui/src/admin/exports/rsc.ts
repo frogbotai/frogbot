@@ -4,6 +4,7 @@ export {
 } from '../elements/Nav/CollectionsSection.js';
 export { FrogBotNav, type FrogBotNavProps } from '../elements/Nav/index.js';
 export { RecentsSection, type RecentsSectionProps } from '../elements/Nav/RecentsSection.js';
+export { RenderServerComponent } from '../elements/RenderServerComponent.js';
 export { SignInButtons } from '../elements/SignInButtons/index.js';
 export { FrogBotIcon } from '../graphics/FrogBotIcon.js';
 export { FrogBotLogo } from '../graphics/FrogBotLogo.js';
