@@ -52,6 +52,7 @@ export const ComposerSelect = memo(function ComposerSelect({
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
+          size="sm"
           aria-label={ariaLabel}
           className={`fb-composer-select__trigger${className ? ` ${className}` : ''}`}
         >

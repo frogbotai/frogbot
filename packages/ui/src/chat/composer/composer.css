@@ -59,7 +59,7 @@
     width: 100%;
     min-height: 2.5rem;
     max-height: calc(75dvh);
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
     padding-top: 0.5rem;
     padding-left: 0.5rem;
     overflow-y: auto;
@@ -184,17 +184,6 @@
     to {
       transform: translateY(0);
       opacity: 1;
-    }
-  }
-
-  @media (min-width: 640px) {
-    .fb-composer__action {
-      padding: 0.5rem;
-    }
-
-    .fb-composer__action-icon {
-      width: 1.5rem;
-      height: 1.5rem;
     }
   }
 }

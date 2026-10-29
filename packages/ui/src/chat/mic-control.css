@@ -63,17 +63,6 @@
     line-height: 1rem;
   }
 
-  @media (min-width: 40rem) {
-    .fb-mic-control__button {
-      padding: 0.5rem;
-    }
-
-    .fb-mic-control__icon {
-      width: 1.5rem;
-      height: 1.5rem;
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .fb-mic-control__indicator,
     .fb-mic-control__indicator--active {
