@@ -3703,12 +3703,22 @@ describe('frogbot sanitize', () => {
     });
 
     it('filters non-chat entries from a built-in provider model list', () => {
+      const imageModel = catalog.find(
+        ({ provider, mode }) => provider === 'openai' && mode === 'image_generation',
+      );
+
+      assert(imageModel, 'the catalog lists no OpenAI image model');
+
       const config = makeConfig({
         ai: {
           providers: {
             openai: {
               apiKey: 'test',
-              models: ['gpt-5.4-mini', 'text-embedding-3-small', 'gpt-image-1.5'],
+              models: [
+                'gpt-5.4-mini',
+                'text-embedding-3-small',
+                imageModel.id.slice('openai/'.length),
+              ],
             },
           },
         },

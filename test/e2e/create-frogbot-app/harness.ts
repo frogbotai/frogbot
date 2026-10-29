@@ -109,21 +109,19 @@ function readPackage(directory: string): PackageJson {
 }
 
 function workspacePackageDirectories(repoRoot: string): Map<string, string> {
-  const directories = new Map<string, string>();
-  const packagesRoot = path.join(repoRoot, 'packages');
+  const listed = spawnSync('pnpm', ['ls', '--recursive', '--depth', '-1', '--json'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: subprocessEnvironment(repoRoot),
+  });
 
-  for (const entry of fs.readdirSync(packagesRoot, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
+  if (listed.status !== 0) throw new Error(`Could not list workspace packages:\n${listed.stderr}`);
 
-    const directory = path.join(packagesRoot, entry.name);
-    const packagePath = path.join(directory, 'package.json');
+  const projects = JSON.parse(listed.stdout) as { name?: string; path: string }[];
 
-    if (!fs.existsSync(packagePath)) continue;
-
-    directories.set(readPackage(directory).name, directory);
-  }
-
-  return directories;
+  return new Map(
+    projects.flatMap(({ name, path: directory }) => (name ? [[name, directory] as const] : [])),
+  );
 }
 
 function workspaceDependencies(pkg: PackageJson): string[] {
