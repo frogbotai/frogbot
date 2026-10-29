@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
 
 import { describe, expect, it, onTestFinished } from 'vitest';
 
-import { createArchive } from '../../../../../packages/frogbot/src/bin/share/archive.js';
+import { createArchive } from '../../../../packages/plugins/plugin-dojo/src/cli/archive.js';
 import { tempDir, writeFiles } from './helpers.js';
 
 const execFileAsync = promisify(execFile);

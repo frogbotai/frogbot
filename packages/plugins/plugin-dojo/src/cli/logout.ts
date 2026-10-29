@@ -1,12 +1,12 @@
-import { readToken, removeToken } from './share/auth.js';
-import { dojoMessage, dojoUrl } from './share/dojo.js';
-import type { ShareIO } from './share/io.js';
-import { processIO, say } from './share/io.js';
+import { readToken, removeToken } from './auth.js';
+import { dojoMessage, dojoUrl } from './dojo.js';
+import type { ShareIO } from './io.js';
+import { say } from './io.js';
 
 /** Runs `frogbot logout`: revokes the stored key in Dojo, then forgets it. Returns the exit code. */
 export async function runLogout(args: string[], io: ShareIO): Promise<number> {
   if (args.length > 0) {
-    io.stderr.write('[frogbot] Usage: frogbot logout\n');
+    io.stderr.write(`[frogbot] Usage: ${io.program} logout\n`);
 
     return 2;
   }
@@ -52,9 +52,4 @@ export async function runLogout(args: string[], io: ShareIO): Promise<number> {
   say(io, `[frogbot] Signed out of ${url}.`);
 
   return 0;
-}
-
-/** `frogbot logout`. */
-export async function logout(args: string[]): Promise<void> {
-  process.exitCode = await runLogout(args, processIO());
 }

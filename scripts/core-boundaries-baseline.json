@@ -1,17 +1,1 @@
-[
-  {
-    "file": "packages/frogbot/src/bin/logout.ts",
-    "match": "api-keys/",
-    "ticket": "362"
-  },
-  {
-    "file": "packages/frogbot/src/bin/logout.ts",
-    "match": "apiKeyId",
-    "ticket": "362"
-  },
-  {
-    "file": "packages/frogbot/src/bin/share/dojo.ts",
-    "match": "apiKeyId",
-    "ticket": "362"
-  }
-]
+[]

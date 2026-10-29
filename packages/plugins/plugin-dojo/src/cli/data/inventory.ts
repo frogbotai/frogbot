@@ -3,13 +3,13 @@ import { mkdtemp, readdir, realpath, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
+import type { DatabaseAdapter, DatabaseSnapshot } from 'frogbot';
+import { isInternalCollection } from 'frogbot/internal';
 import ignore from 'ignore';
 import type { SanitizedCollectionConfig, SanitizedConfig } from 'payload';
 import { formatLabels } from 'payload/shared';
 import toSnakeCase from 'to-snake-case';
 
-import { isInternalCollection } from '../../../collections/config/internal.js';
-import type { DatabaseAdapter, DatabaseSnapshot } from '../../../database/types.js';
 import { neverShared } from '../files.js';
 
 const laptopTables = [

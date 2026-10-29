@@ -14,7 +14,7 @@ import type { AddressInfo } from 'node:net';
 
 import { onTestFinished } from 'vitest';
 
-import { snapshotKey } from '../../../../../packages/frogbot/src/bin/share/data/upload.js';
+import { snapshotKey } from '../../../../packages/plugins/plugin-dojo/src/cli/data/upload.js';
 
 export type FakeRequest = {
   method: string;

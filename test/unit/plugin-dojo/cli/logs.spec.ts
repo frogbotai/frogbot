@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { writeToken } from '../../../../../packages/frogbot/src/bin/share/auth.js';
-import type { LogsFollow } from '../../../../../packages/frogbot/src/bin/share/logs.js';
-import { runLogs } from '../../../../../packages/frogbot/src/bin/share/logs.js';
+import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
+import type { LogsFollow } from '../../../../packages/plugins/plugin-dojo/src/cli/logs.js';
+import { runLogs } from '../../../../packages/plugins/plugin-dojo/src/cli/logs.js';
 import type { FakeDojo } from './fakeDojo.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO } from './helpers.js';

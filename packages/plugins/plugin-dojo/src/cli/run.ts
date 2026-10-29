@@ -25,8 +25,8 @@ import { linkPath, readLink, writeLink } from './link.js';
 import type { SealedKeys, SealingKey } from './seal.js';
 import { sealKeys } from './seal.js';
 
-const usage =
-  'Usage: frogbot share [--data | --no-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys]';
+const usage = (program: string) =>
+  `Usage: ${program} share [--data | --no-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys]`;
 
 type ShareFlags = {
   data?: boolean;
@@ -42,7 +42,7 @@ type Workspace = { id: string | number; name: string; slug: string };
 
 type AppInfo = { started: boolean; level: 'editor' | 'owner' };
 
-function parseShareArgs(argv: string[]): ShareFlags {
+function parseShareArgs(argv: string[], program: string): ShareFlags {
   let parsed;
 
   try {
@@ -62,7 +62,7 @@ function parseShareArgs(argv: string[]): ShareFlags {
       tokens: true,
     });
   } catch (error) {
-    throw new ShareError(`${(error as Error).message} ${usage}`, 2);
+    throw new ShareError(`${(error as Error).message} ${usage(program)}`, 2);
   }
 
   const dataFlags = new Set(
@@ -71,7 +71,9 @@ function parseShareArgs(argv: string[]): ShareFlags {
     ),
   );
 
-  if (dataFlags.size > 1) throw new ShareError(`Use --data or --no-data, not both. ${usage}`, 2);
+  if (dataFlags.size > 1) {
+    throw new ShareError(`Use --data or --no-data, not both. ${usage(program)}`, 2);
+  }
 
   const { values } = parsed;
 
@@ -102,7 +104,7 @@ export async function runShare(argv: string[], io: ShareIO): Promise<number> {
 }
 
 async function share(argv: string[], io: ShareIO): Promise<void> {
-  const flags = parseShareArgs(argv);
+  const flags = parseShareArgs(argv, io.program);
   const root = findAppRoot({ cwd: io.cwd, env: io.env });
 
   checkAppRoot(root);

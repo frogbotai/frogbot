@@ -6,11 +6,11 @@ import { DatabaseSync } from 'node:sqlite';
 import type { SanitizedCollectionConfig } from 'payload';
 import { describe, expect, it } from 'vitest';
 
-import { writeToken } from '../../../../../packages/frogbot/src/bin/share/auth.js';
-import { snapshotKey } from '../../../../../packages/frogbot/src/bin/share/data/upload.js';
-import type { ShareConfig } from '../../../../../packages/frogbot/src/bin/share/io.js';
-import { runShare } from '../../../../../packages/frogbot/src/bin/share/run.js';
-import type { DatabaseSnapshot } from '../../../../../packages/frogbot/src/database/types.js';
+import type { DatabaseSnapshot } from '../../../../packages/frogbot/src/database/types.js';
+import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
+import { snapshotKey } from '../../../../packages/plugins/plugin-dojo/src/cli/data/upload.js';
+import type { ShareConfig } from '../../../../packages/plugins/plugin-dojo/src/cli/io.js';
+import { runShare } from '../../../../packages/plugins/plugin-dojo/src/cli/run.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeApp } from './helpers.js';
 

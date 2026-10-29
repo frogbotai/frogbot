@@ -4,7 +4,8 @@ description: >-
   Builds and maintains FrogBot applications. Use when working with
   frogbot.config.ts, getFrogBot, collections, fields, hooks, access control,
   Local API queries, agents, tools, pieces, connections, jobs, KV, chat or gateway configuration,
-  or when sharing, hosting or deploying a FrogBot app with `frogbot share`.
+  or when sharing, hosting or deploying a FrogBot app with the Dojo plugin's `frogbot share`,
+  `pull` or `logs`.
 license: MIT
 metadata:
   author: 'frogbotai'
@@ -219,7 +220,7 @@ Choose a domain-specific flag and check it before side effects.
 
 ## Sharing The App
 
-`npx frogbot share` takes the app live on Dojo and prints its URL. Run it from anywhere inside the app when the user asks to share, host, publish or deploy it, or to send someone a link. Suggest it, without running it, when the user wants someone else to try the app or asks how to put it online. Don't share without being asked: it uploads the code and keys.
+`npx frogbot share` takes the app live on Dojo and prints its URL. It comes from `dojo()` (`@frogbotai/plugin-dojo`), which new apps list in `plugins`; in an app that doesn't list it, run `npx @frogbotai/plugin-dojo share` instead. Run it from anywhere inside the app when the user asks to share, host, publish or deploy it, or to send someone a link. Suggest it, without running it, when the user wants someone else to try the app or asks how to put it online. Don't share without being asked: it uploads the code and keys.
 
 Your shell has no terminal, so `share` never prompts you. Settle these with the user first:
 
@@ -231,9 +232,9 @@ The first time, `share` prints `[frogbot] Sign in to Dojo: open this link and co
 
 `share` needs a `pnpm-lock.yaml`, `package-lock.json` or `yarn.lock` (not Bun) and an upload under 100 MB. It writes the app's id to `.frogbot/app.json`, so later shares from the folder update the same app; delete that file only when the user wants a new app. It ends with `[frogbot] Share it: <link>` and then the live URL as the last line: give the user both.
 
-When someone shared an app with the user as an editor on Dojo, `npx frogbot pull <slug>` downloads it into a new `./<slug>` folder with an empty database; then run `pnpm install` and `pnpm dev` there, and `share` from that folder ships a new version of the same app. An editor's share brings no keys and has no `Share it:` line, since only the app's owners manage its keys on Dojo.
+When someone shared an app with the user as an editor on Dojo, `npx @frogbotai/plugin-dojo pull <slug>`, run from the folder that should hold it, downloads it into a new `./<slug>` folder with an empty database; then run `pnpm install` and `pnpm dev` there, and `share` from that folder ships a new version of the same app. An editor's share brings no keys and has no `Share it:` line, since only the app's owners manage its keys on Dojo.
 
-When a shared app misbehaves on Dojo, run `npx frogbot logs <slug>` to read its recent logs (key values show as `••••`); add `--follow`, in a background shell, to watch new lines while the user reproduces the problem.
+When a shared app misbehaves on Dojo, run `npx @frogbotai/plugin-dojo logs <slug>` (or `npx frogbot logs <slug>` in an app that lists `dojo()`) to read its recent logs (key values show as `••••`); add `--follow`, in a background shell, to watch new lines while the user reproduces the problem.
 
 | Exit | Meaning                                                                                                      |
 | ---- | ------------------------------------------------------------------------------------------------------------ |

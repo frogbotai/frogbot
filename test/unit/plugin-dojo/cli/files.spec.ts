@@ -3,8 +3,8 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import type { ShareCollection } from '../../../../../packages/frogbot/src/bin/share/files.js';
-import { shareFiles } from '../../../../../packages/frogbot/src/bin/share/files.js';
+import type { ShareCollection } from '../../../../packages/plugins/plugin-dojo/src/cli/files.js';
+import { shareFiles } from '../../../../packages/plugins/plugin-dojo/src/cli/files.js';
 import { git, gitRepo, tempDir, writeFiles } from './helpers.js';
 
 const collections: ShareCollection[] = [

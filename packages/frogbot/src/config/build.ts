@@ -56,8 +56,11 @@ async function runPlugins(config: FrogBotConfig): Promise<FrogBotConfig> {
   }
 
   const platformPlugin = getPlatformPlugin();
+  const listed =
+    platformPlugin?.slug !== undefined &&
+    plugins.some(({ plugin }) => plugin.slug === platformPlugin.slug);
 
-  if (platformPlugin) {
+  if (platformPlugin && !listed) {
     try {
       current = await platformPlugin(current);
     } catch (err) {
@@ -77,9 +80,9 @@ async function runPlugins(config: FrogBotConfig): Promise<FrogBotConfig> {
  *   1. Validate required fields (`secret`, `db`, `collections`), reject
  *      `globals`.
  *   2. Run plugins serially by `order`, lowest first (ties keep array order),
- *      then the platform plugin (`frogbot/platform-plugin`) if there is one,
- *      then strip the empty `globals` list some plugins return (a non-empty
- *      one is rejected).
+ *      then the platform plugin (`frogbot/platform-plugin`) if there is one and
+ *      no listed plugin has its `slug`, then strip the empty `globals` list
+ *      some plugins return (a non-empty one is rejected).
  *   3. Sanitize — inject the `req.frogbot` bootstrap hook, wrap
  *      endpoints, produce FrogBotSanitizedConfig.
  */

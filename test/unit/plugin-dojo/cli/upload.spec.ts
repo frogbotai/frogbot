@@ -3,13 +3,13 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { writeToken } from '../../../../../packages/frogbot/src/bin/share/auth.js';
+import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
 import {
   formatBytes,
   snapshotKey,
   uploadData,
-} from '../../../../../packages/frogbot/src/bin/share/data/upload.js';
-import { createDojo } from '../../../../../packages/frogbot/src/bin/share/dojo.js';
+} from '../../../../packages/plugins/plugin-dojo/src/cli/data/upload.js';
+import { createDojo } from '../../../../packages/plugins/plugin-dojo/src/cli/dojo.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeFiles } from './helpers.js';
 

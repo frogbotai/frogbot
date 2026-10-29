@@ -10,7 +10,7 @@ import type {
   ShareConfig,
   ShareEnv,
   ShareIO,
-} from '../../../../../packages/frogbot/src/bin/share/io.js';
+} from '../../../../packages/plugins/plugin-dojo/src/cli/io.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -97,6 +97,7 @@ export function testIO({
   };
 
   const io: ShareIO = {
+    program: 'frogbot',
     cwd,
     env,
     isTTY,

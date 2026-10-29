@@ -1,0 +1,59 @@
+---
+title: "Dojo"
+description: "Share a FrogBot app on Dojo, pull one down, read its logs, and run it there with no setup."
+keywords: ["Dojo", "share", "pull", "logs", "logout", "plugin-dojo", "plugins"]
+---
+
+The Dojo plugin adds the `share`, `pull`, `logs` and `logout` commands, and runs your app on Dojo with no setup: uploads go to the app's own storage, and AI goes through Dojo's gateway. Apps made with `create-frogbot-app` already list it.
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-dojo
+```
+
+```ts
+import { dojo } from '@frogbotai/plugin-dojo'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  // ...
+  plugins: [dojo()],
+})
+```
+
+`dojo()` takes no options.
+
+## Commands
+
+| Command | Arguments | Description |
+| --- | --- | --- |
+| `share` | `--data`, `--no-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys` | Uploads the app to Dojo, builds it and prints its live URL. See [`share`](/getting-started/cli#share). |
+| `pull` | `<app>` | Downloads an app shared with you on Dojo into a new folder. See [`pull`](/getting-started/cli#pull). |
+| `logs` | `<app>`, `--follow` | Prints an app's recent logs from Dojo, or follows them. See [`logs`](/getting-started/cli#logs). |
+| `logout` | — | Signs the CLI out of Dojo. See [`logout`](/getting-started/cli#logout). |
+
+In an app that lists `dojo()`, run them as [plugin commands](/getting-started/cli#plugin-commands):
+
+```bash
+npx frogbot share
+```
+
+The plugin also installs its own command, so the same four run without an app, or in an app that doesn't list `dojo()`. Pulling an app into an empty folder works this way:
+
+```bash
+npx @frogbotai/plugin-dojo pull deals
+```
+
+Run with no command or an unknown one, it prints `[frogbot] usage: npx @frogbotai/plugin-dojo <share|pull|logs|logout>` and exits with code `2`.
+
+## On Dojo
+
+Dojo adds this plugin itself when it builds an app, after the app's own plugins, so an app runs there without listing it. An app that lists `dojo()` gets it once, not twice. A listed `dojo()` also runs after every other plugin, wherever it is in `plugins`, so it sees the upload collections and AI providers they add.
+
+Outside Dojo, `dojo()` only adds the commands and lists the badge for the import map. On Dojo, where `DOJO=1`, it also changes:
+
+- **Storage.** When the app sets no `storage`, every upload collection is stored in the app's bucket under its slug. Files stay private and are served through the app, so its access rules apply.
+- **AI.** When every provider in `ai.providers` is a built-in one with no key, they are replaced by one `dojo` provider that calls Dojo's gateway. Model IDs such as `openai/gpt-5.4-mini` keep working. Chat, embeddings and images work through the gateway; transcription, speech and video need your own key. An app with no `ai` block, or with any provider key of its own, is left unchanged.
+- **Jobs.** Dojo wakes the app to run due jobs. Everyone else gets the app's own `jobs.access.run`.
+- **Badge.** Every FrogBot page gets a small "Made with FrogBot · Share your own" link in the bottom-left corner. Visitors can close it for the rest of their browser session.

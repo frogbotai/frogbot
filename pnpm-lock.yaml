@@ -515,9 +515,6 @@ importers:
       '@ai-sdk/mcp':
         specifier: 2.0.60
         version: 2.0.60(zod@4.4.3)
-      '@clack/prompts':
-        specifier: 1.8.1
-        version: 1.8.1
       '@frogbotai/gateway':
         specifier: workspace:*
         version: link:../gateway
@@ -545,15 +542,9 @@ importers:
       drizzle-orm:
         specifier: 0.45.2
         version: 0.45.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(pg@8.20.0)
-      eventsource-parser:
-        specifier: 3.1.0
-        version: 3.1.0
       fflate:
         specifier: 0.8.3
         version: 0.8.3
-      ignore:
-        specifier: 7.0.6
-        version: 7.0.6
       json-schema-to-typescript:
         specifier: ^15.0.3
         version: 15.0.4
@@ -569,9 +560,6 @@ importers:
       read-excel-file:
         specifier: 9.3.10
         version: 9.3.10
-      tar:
-        specifier: 7.5.22
-        version: 7.5.22
       to-snake-case:
         specifier: 1.0.0
         version: 1.0.0
@@ -1661,9 +1649,30 @@ importers:
 
   packages/plugins/plugin-dojo:
     dependencies:
+      '@clack/prompts':
+        specifier: 1.8.1
+        version: 1.8.1
       '@frogbotai/storage-s3':
         specifier: workspace:*
         version: link:../../storage-s3
+      '@next/env':
+        specifier: 'catalog:'
+        version: 16.4.2
+      eventsource-parser:
+        specifier: 3.1.0
+        version: 3.1.0
+      ignore:
+        specifier: 7.0.6
+        version: 7.0.6
+      tar:
+        specifier: 7.5.22
+        version: 7.5.22
+      to-snake-case:
+        specifier: 1.0.0
+        version: 1.0.0
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
     devDependencies:
       '@frogbotai/gateway':
         specifier: workspace:*
@@ -1674,6 +1683,9 @@ importers:
       '@types/react':
         specifier: 19.2.14
         version: 19.2.14
+      '@types/to-snake-case':
+        specifier: 1.0.0
+        version: 1.0.0
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
@@ -2143,6 +2155,9 @@ importers:
       '@frogbotai/plugin-ai-policy':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-ai-policy
+      '@frogbotai/plugin-dojo':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-dojo
       '@frogbotai/richtext-lexical':
         specifier: workspace:*
         version: link:../../packages/richtext-lexical

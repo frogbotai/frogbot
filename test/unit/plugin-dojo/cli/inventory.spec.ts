@@ -6,12 +6,12 @@ import { DatabaseSync } from 'node:sqlite';
 import type { SanitizedCollectionConfig, SanitizedConfig } from 'payload';
 import { describe, expect, it, onTestFinished } from 'vitest';
 
+import type { DatabaseSnapshot } from '../../../../packages/frogbot/src/database/types.js';
 import {
   type DataInventory,
   describeData,
   takeInventory,
-} from '../../../../../packages/frogbot/src/bin/share/data/inventory.js';
-import type { DatabaseSnapshot } from '../../../../../packages/frogbot/src/database/types.js';
+} from '../../../../packages/plugins/plugin-dojo/src/cli/data/inventory.js';
 import { tempDir, writeFiles } from './helpers.js';
 
 type TestCollection = Partial<Omit<SanitizedCollectionConfig, 'auth' | 'upload'>> & {

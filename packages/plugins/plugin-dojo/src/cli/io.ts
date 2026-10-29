@@ -3,7 +3,6 @@ import { spawn } from 'node:child_process';
 import * as p from '@clack/prompts';
 import type { SanitizedConfig } from 'payload';
 
-import { loadConfig } from '../../config/load.js';
 import { ShareError } from './error.js';
 
 /** The questions `share` can ask; only called with a TTY. */
@@ -19,6 +18,8 @@ export type ShareEnv = Record<string, string | undefined>;
 
 /** Everything `share` and `logout` touch outside the app folder, so tests can drive them. */
 export type ShareIO = {
+  /** How the command was run, for usage lines: `frogbot` in an app, `npx @frogbotai/plugin-dojo` from the bin. */
+  program: string;
   cwd: string;
   env: ShareEnv;
   stdout: { write: (text: string) => unknown };
@@ -72,14 +73,16 @@ function openBrowser(url: string): void {
 }
 
 async function loadShareConfig(root: string): Promise<ShareConfig> {
+  const { loadConfig } = await import('frogbot/internal');
   const config = await loadConfig({ cwd: root, mode: 'codegen' });
 
   return config._internal.payloadConfig;
 }
 
 /** The real terminal, browser and app config. */
-export function processIO(): ShareIO {
+export function processIO(program: string): ShareIO {
   return {
+    program,
     cwd: process.cwd(),
     env: process.env,
     stdout: process.stdout,

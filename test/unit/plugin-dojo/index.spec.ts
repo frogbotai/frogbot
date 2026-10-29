@@ -103,8 +103,15 @@ const badgeDependency = {
   },
 };
 
+const dojoCommands = {
+  share: expect.any(Function),
+  pull: expect.any(Function),
+  logs: expect.any(Function),
+  logout: expect.any(Function),
+};
+
 describe('dojo() outside Dojo', () => {
-  it('only lists the badge for the import map when DOJO is unset', () => {
+  it('only lists the badge and adds its commands when DOJO is unset', () => {
     vi.stubEnv('DOJO', undefined);
 
     const config = template({ collections: [Users, Files, Media] });
@@ -112,19 +119,41 @@ describe('dojo() outside Dojo', () => {
     expect(apply(config)).toEqual({
       ...template({ collections: [Users, Files, Media] }),
       admin: { dependencies: badgeDependency },
+      cli: { commands: dojoCommands },
     });
   });
 
-  it('only lists the badge for the import map when DOJO is not 1', () => {
+  it('only lists the badge and adds its commands when DOJO is not 1', () => {
     vi.stubEnv('DOJO', 'true');
 
-    expect(apply(template())).toEqual({ ...template(), admin: { dependencies: badgeDependency } });
+    expect(apply(template())).toEqual({
+      ...template(),
+      admin: { dependencies: badgeDependency },
+      cli: { commands: dojoCommands },
+    });
   });
 
   it.each(Object.keys(ENV))('names %s when it is missing on Dojo', (name) => {
     vi.stubEnv(name, undefined);
 
     expect(() => apply(template())).toThrow(`[plugin-dojo] DOJO=1 but ${name} is not set.`);
+  });
+});
+
+describe('dojo() commands', () => {
+  it.each([undefined, '1'])('adds share, pull, logs and logout with DOJO=%s', (value) => {
+    vi.stubEnv('DOJO', value);
+
+    expect(apply(template()).cli?.commands).toEqual(dojoCommands);
+  });
+
+  it('keeps a command the app already has', () => {
+    const hello = vi.fn();
+
+    expect(apply(template({ cli: { commands: { hello } } })).cli?.commands).toEqual({
+      hello,
+      ...dojoCommands,
+    });
   });
 });
 
@@ -144,6 +173,26 @@ describe('dojo() storage', () => {
     expect(prefixDefault(payloadConfig, 'files')).toBe('files');
     expect(prefixDefault(payloadConfig, 'media')).toBe('media');
     expect(prefixDefault(payloadConfig, 'frogbot-chat-assets')).toBe('frogbot-chat-assets');
+  });
+
+  it('runs after plugins with a higher order wherever it is listed', async () => {
+    const { definePlugin } = await import('../../../packages/frogbot/src/definePlugin.js');
+    const providersSeen: string[][] = [];
+
+    const addMedia = definePlugin({
+      slug: 'add-media',
+      order: 100,
+      plugin: ({ config }) => {
+        providersSeen.push(Object.keys(config.ai?.providers ?? {}));
+
+        return { ...config, collections: [...config.collections, Media] };
+      },
+    });
+
+    const sanitized = await buildConfig(template({ plugins: [dojo(), addMedia()] }));
+
+    expect(providersSeen).toEqual([['openai']]);
+    expect(prefixDefault(await sanitized._internal.payloadConfig, 'media')).toBe('media');
   });
 
   it('points the S3 adapter at R2 with path-style URLs and no ACL', () => {

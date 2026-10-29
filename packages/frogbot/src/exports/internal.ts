@@ -7,6 +7,7 @@ export { isInternalCollection } from '../collections/config/internal.js';
 export { attachRegisteredFrogBot } from '../config/attachFrogBot.js';
 export { getPayloadConfig } from '../config/getPayloadConfig.js';
 export { loadConfig } from '../config/load.js';
+export { findConfigFile } from '../config/resolveConfigPath.js';
 export type { ComponentPathMap } from '../config/rewriteComponentPaths.js';
 export { mapComponentPaths } from '../config/rewriteComponentPaths.js';
 export type { PostgresAdapter, SQLiteAdapter } from '../database/guards.js';
