@@ -65,15 +65,4 @@
     white-space: nowrap;
     border: 0;
   }
-
-  @media (min-width: 40rem) {
-    .fb-attachments__add {
-      padding: 0.5rem;
-    }
-
-    .fb-attachments__add-icon {
-      width: 1.5rem;
-      height: 1.5rem;
-    }
-  }
 }
