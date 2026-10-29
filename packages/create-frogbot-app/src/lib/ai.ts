@@ -70,6 +70,7 @@ export function applyAI(dest: string, provider: AIProvider): void {
       'generalImport',
       'toolsImport',
       'assistantImport',
+      'aiPolicyImport',
       'tools',
       'ai',
       'agents',
@@ -77,7 +78,16 @@ export function applyAI(dest: string, provider: AIProvider): void {
       config = replaceOnce(config, CONFIG_ANCHORS[name], '', configPath, name);
     }
 
+    config = replaceOnce(
+      config,
+      CONFIG_ANCHORS.plugins,
+      '  plugins: [dojo()],\n',
+      configPath,
+      'plugins',
+    );
+
     fs.rmSync(path.join(dest, 'src', 'agents'), { recursive: true, force: true });
+    removeAIPolicyDependency(dest);
   } else {
     config = replaceOnce(
       config,
@@ -89,6 +99,17 @@ export function applyAI(dest: string, provider: AIProvider): void {
   }
 
   fs.writeFileSync(configPath, config);
+}
+
+function removeAIPolicyDependency(dest: string): void {
+  const pkgPath = path.join(dest, 'package.json');
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as {
+    dependencies: Record<string, string>;
+  };
+
+  delete pkg.dependencies['@frogbotai/plugin-ai-policy'];
+
+  fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 }
 
 /** Env lines for the provider; the key line is left empty for `.env.example`. */

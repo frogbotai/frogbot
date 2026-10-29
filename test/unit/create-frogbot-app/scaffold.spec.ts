@@ -314,9 +314,17 @@ describe('template reconciliation', () => {
     expect(config).not.toContain('ai:');
     expect(config).not.toContain('agents:');
     expect(config).not.toContain('tools:');
+    expect(config).not.toContain('aiPolicyPlugin');
+    expect(config).toContain('plugins: [dojo()]');
     expect(config).toContain('editor: lexicalEditor()');
     expect(config).toContain('collections: [Users, Files]');
     expect(fs.existsSync(path.join(dest, 'src', 'agents'))).toBe(false);
+
+    const pkg = JSON.parse(fs.readFileSync(path.join(dest, 'package.json'), 'utf8')) as {
+      dependencies: Record<string, string>;
+    };
+
+    expect(pkg.dependencies).not.toHaveProperty('@frogbotai/plugin-ai-policy');
   });
 
   it('writes each provider with a current default model', () => {

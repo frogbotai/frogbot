@@ -7,10 +7,13 @@ export const CONFIG_ANCHORS = {
   tools: '  tools: [...todoTools],\n',
   ai: "  ai: {\n    defaultModel: 'openai/gpt-5.4-mini',\n    providers: { openai: true },\n  },\n",
   agents: '  agents: [general(), assistant],\n',
+  aiPolicyImport: "import { aiPolicyPlugin } from '@frogbotai/plugin-ai-policy';\n",
+  plugins: '  plugins: [aiPolicyPlugin(), dojo()],\n',
 } as const;
 
 export const PACKAGE_DEPENDENCY_ANCHORS = [
   '@frogbotai/db-sqlite',
+  '@frogbotai/plugin-ai-policy',
   'drizzle-kit',
   'libsql',
 ] as const;
