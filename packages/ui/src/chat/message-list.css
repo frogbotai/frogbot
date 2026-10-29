@@ -3,6 +3,7 @@
     position: relative;
     min-height: 0;
     flex: 1 1 0%;
+    container: fb-message-list / inline-size;
   }
 
   .fb-message-list__scroller {

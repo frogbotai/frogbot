@@ -70,6 +70,7 @@
 @import "./chat/message-actions.css";
 @import "./chat/message-editor.css";
 @import "./chat/message-list.css";
+@import "./chat/message-scrubber.css";
 @import "./chat/message.css";
 @import "./chat/mic-control.css";
 @import "./chat/model-selector.css";
