@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   checkAppRoot,
   findAppRoot,
-} from '../../../../../packages/frogbot/src/bin/share/appRoot.js';
+} from '../../../../packages/plugins/plugin-dojo/src/cli/appRoot.js';
 import { tempDir, writeFiles } from './helpers.js';
 
 const app = {

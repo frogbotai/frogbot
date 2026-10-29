@@ -6,7 +6,7 @@ import { ShareError } from './error.js';
 import type { ShareIO } from './io.js';
 import { say } from './io.js';
 
-const usage = 'Usage: frogbot logs <app> [--follow]';
+const usage = (program: string) => `Usage: ${program} logs <app> [--follow]`;
 
 const pollMs = 2000;
 
@@ -42,7 +42,7 @@ async function logs(
   const [app] = rest;
 
   if (rest.length !== 1 || !app || app.startsWith('-') || args.length - rest.length > 1) {
-    throw new ShareError(usage, 2);
+    throw new ShareError(usage(io.program), 2);
   }
 
   const dojo = createDojo(io);

@@ -2,8 +2,8 @@ import { readFile, stat } from 'node:fs/promises';
 
 import { describe, expect, it } from 'vitest';
 
-import { runLogout } from '../../../../../packages/frogbot/src/bin/logout.js';
-import { authPath, writeToken } from '../../../../../packages/frogbot/src/bin/share/auth.js';
+import { authPath, writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
+import { runLogout } from '../../../../packages/plugins/plugin-dojo/src/cli/logout.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO } from './helpers.js';
 

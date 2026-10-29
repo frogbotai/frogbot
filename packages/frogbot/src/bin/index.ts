@@ -11,13 +11,9 @@ import { generatePieceTypesCommand } from './generatePieceTypes.js';
 import { generateTypes } from './generateTypes.js';
 import { jobsRun } from './jobsRun.js';
 import { loadEnv } from './loadEnv.js';
-import { logout } from './logout.js';
-import { logs } from './logs.js';
 import { migrate } from './migrate.js';
 import { piecesPort } from './piecesPort.js';
-import { pull } from './pull.js';
 import { runScript } from './run.js';
-import { share } from './share.js';
 import { start } from './start.js';
 
 type Command = (args: string[], command: string) => Promise<unknown> | unknown;
@@ -41,13 +37,9 @@ const commands: Record<string, Command> = {
   'migrate:refresh': runMigrate,
   'migrate:reset': runMigrate,
   'migrate:status': runMigrate,
-  share: (args) => share(args),
-  pull: (args) => pull(args),
-  logs: (args) => logs(args),
-  logout: (args) => logout(args),
 };
 
-const codegenCommands = new Set(['start', 'dev', 'generate:types', 'generate:importmap', 'share']);
+const codegenCommands = new Set(['start', 'dev', 'generate:types', 'generate:importmap']);
 
 function usage(appCommands: Record<string, CLICommand>): string {
   const names = [
@@ -127,7 +119,7 @@ export async function bin() {
     console.error(
       config
         ? `[frogbot] "${command}" isn't a command in this app. Plugins add commands: see https://docs.frogbot.ai/getting-started/cli#plugin-commands`
-        : usage(appCommands),
+        : `[frogbot] "${command}" isn't a built-in command, and there's no app here to add it. Plugins add commands: see https://docs.frogbot.ai/getting-started/cli#plugin-commands`,
     );
 
     process.exit(2);

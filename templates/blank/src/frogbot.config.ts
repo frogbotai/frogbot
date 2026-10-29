@@ -1,5 +1,6 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { aiPolicyPlugin } from '@frogbotai/plugin-ai-policy';
+import { dojo } from '@frogbotai/plugin-dojo';
 import { lexicalEditor } from '@frogbotai/richtext-lexical';
 import { sharpTransformer } from '@frogbotai/transformer-sharp';
 import type { FrogBotConfig } from 'frogbot';
@@ -25,7 +26,7 @@ const config: FrogBotConfig = {
   },
   admin: {},
   agents: [general(), assistant],
-  plugins: [aiPolicyPlugin()],
+  plugins: [aiPolicyPlugin(), dojo()],
   upload: { transformers: [sharpTransformer()] },
 };
 

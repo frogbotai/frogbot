@@ -5,13 +5,13 @@ import { promisify } from 'node:util';
 
 import { describe, expect, it } from 'vitest';
 
-import { mask } from '../../../../../packages/frogbot/src/bin/share/envKeys.js';
+import { mask } from '../../../../packages/plugins/plugin-dojo/src/cli/envKeys.js';
 import { tempDir, writeFiles } from './helpers.js';
 
 const execFileAsync = promisify(execFile);
 
 const envKeysURL = pathToFileURL(
-  new URL('../../../../../packages/frogbot/src/bin/share/envKeys.ts', import.meta.url).pathname,
+  new URL('../../../../packages/plugins/plugin-dojo/src/cli/envKeys.ts', import.meta.url).pathname,
 ).href;
 
 const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');

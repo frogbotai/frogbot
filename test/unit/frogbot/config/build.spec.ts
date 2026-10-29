@@ -397,6 +397,51 @@ describe('frogbot buildConfig', () => {
         '[frogbot] platform plugin @frogbotai/plugin-dojo failed: DOJO=1 but DOJO_R2_BUCKET is not set.',
       );
     });
+
+    describe('when the app lists a plugin with its slug', () => {
+      const withSlug = (slug: string, plugin: Plugin = (config) => config) =>
+        Object.assign(vi.fn<Plugin>(plugin), { slug });
+
+      it('runs the listed plugin once and skips the platform plugin', async () => {
+        const platform = withSlug('plugin-dojo');
+        const listed = withSlug('plugin-dojo');
+
+        const build = await buildWith(platform);
+        await build(makeConfig({ plugins: [listed] }));
+
+        expect(listed).toHaveBeenCalledTimes(1);
+        expect(platform).not.toHaveBeenCalled();
+      });
+
+      it('still runs the platform plugin once when a listed plugin has another slug', async () => {
+        const platform = withSlug('plugin-dojo');
+        const other = withSlug('plugin-roles');
+
+        const build = await buildWith(platform);
+        await build(makeConfig({ plugins: [other] }));
+
+        expect(other).toHaveBeenCalledTimes(1);
+        expect(platform).toHaveBeenCalledTimes(1);
+      });
+
+      it('runs the platform plugin once when nothing is listed', async () => {
+        const platform = withSlug('plugin-dojo');
+
+        const build = await buildWith(platform);
+        await build(makeConfig());
+
+        expect(platform).toHaveBeenCalledTimes(1);
+      });
+
+      it('never skips a platform plugin without a slug', async () => {
+        const platform = vi.fn<Plugin>((config) => config);
+
+        const build = await buildWith(platform);
+        await build(makeConfig({ plugins: [vi.fn<Plugin>((config) => config)] }));
+
+        expect(platform).toHaveBeenCalledTimes(1);
+      });
+    });
   });
 
   describe('sanitization passthrough', () => {

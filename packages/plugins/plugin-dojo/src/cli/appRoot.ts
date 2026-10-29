@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 
-import { findConfigFile } from '../../config/resolveConfigPath.js';
+import { findConfigFile } from 'frogbot/internal';
+
 import { ShareError } from './error.js';
 import type { ShareEnv } from './io.js';
 

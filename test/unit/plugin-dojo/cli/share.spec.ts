@@ -3,8 +3,8 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { authPath, writeToken } from '../../../../../packages/frogbot/src/bin/share/auth.js';
-import { runShare } from '../../../../../packages/frogbot/src/bin/share/run.js';
+import { authPath, writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
+import { runShare } from '../../../../packages/plugins/plugin-dojo/src/cli/run.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeApp, writeFiles } from './helpers.js';
 

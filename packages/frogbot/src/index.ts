@@ -270,6 +270,7 @@ export type {
   BuildSearchSchema,
   BuildSearchSchemaArgs,
   DatabaseAdapter,
+  DatabaseSnapshot,
   MapVectorField,
   MapVectorFieldArgs,
   SearchAdapter,

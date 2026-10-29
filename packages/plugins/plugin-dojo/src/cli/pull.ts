@@ -13,7 +13,7 @@ import type { ShareIO } from './io.js';
 import { say } from './io.js';
 import { writeLink } from './link.js';
 
-const usage = 'Usage: frogbot pull <app>';
+const usage = (program: string) => `Usage: ${program} pull <app>`;
 
 const slugPattern = /^[a-z0-9][a-z0-9-]*$/;
 
@@ -35,7 +35,9 @@ export async function runPull(args: string[], io: ShareIO): Promise<number> {
 async function pull(args: string[], io: ShareIO): Promise<number> {
   const [name] = args;
 
-  if (args.length !== 1 || !name || name.startsWith('-')) throw new ShareError(usage, 2);
+  if (args.length !== 1 || !name || name.startsWith('-')) {
+    throw new ShareError(usage(io.program), 2);
+  }
 
   const dojo = createDojo(io);
 

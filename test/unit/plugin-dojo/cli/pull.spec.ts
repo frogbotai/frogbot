@@ -5,8 +5,8 @@ import { promisify } from 'node:util';
 
 import { describe, expect, it } from 'vitest';
 
-import { writeToken } from '../../../../../packages/frogbot/src/bin/share/auth.js';
-import { runPull } from '../../../../../packages/frogbot/src/bin/share/pull.js';
+import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
+import { runPull } from '../../../../packages/plugins/plugin-dojo/src/cli/pull.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeFiles } from './helpers.js';
 

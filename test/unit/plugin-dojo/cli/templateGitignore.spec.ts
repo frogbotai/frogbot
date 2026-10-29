@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { git, gitRepo, tempDir, writeFiles } from './helpers.js';
 
 const templateGitignore = fileURLToPath(
-  new URL('../../../../../templates/blank/.gitignore', import.meta.url),
+  new URL('../../../../templates/blank/.gitignore', import.meta.url),
 );
 
 describe('template .gitignore', () => {

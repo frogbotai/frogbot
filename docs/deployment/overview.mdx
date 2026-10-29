@@ -24,7 +24,7 @@ docker run -p 3000:3000 -e FROGBOT_SECRET=... -e DATABASE_URL=... my-frogbot-app
 
 ### Health check
 
-The template answers `GET /api/health` with `200` and `{ "status": "ok" }` once FrogBot has started, and `503` with `{ "status": "error" }` when it can't start, logging why. It needs no sign-in, so point your platform's HTTP health check at it. Dojo, where [`frogbot share`](/getting-started/cli#share) runs apps, checks this path. The route is `src/app/(frogbot)/api/health/route.ts`.
+The template answers `GET /api/health` with `200` and `{ "status": "ok" }` once FrogBot has started, and `503` with `{ "status": "error" }` when it can't start, logging why. It needs no sign-in, so point your platform's HTTP health check at it. Dojo, where the [Dojo plugin](/plugins/dojo)'s [`frogbot share`](/getting-started/cli#share) runs apps, checks this path. The route is `src/app/(frogbot)/api/health/route.ts`.
 
 ## Fly.io
 

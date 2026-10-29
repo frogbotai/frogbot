@@ -13,7 +13,7 @@ import {
   type DataInventory,
   describeData,
   takeInventory,
-} from '../../packages/frogbot/src/bin/share/data/inventory.js';
+} from '../../packages/plugins/plugin-dojo/src/cli/data/inventory.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import {
   appRoot,

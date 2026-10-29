@@ -13,6 +13,9 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "frogbot-dojo": "./bin.js"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -26,7 +29,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "bin.js"
   ],
   "sideEffects": [
     "*.css"
@@ -40,7 +44,14 @@
     "node": ">=24.21.0"
   },
   "dependencies": {
-    "@frogbotai/storage-s3": "workspace:*"
+    "@clack/prompts": "1.8.1",
+    "@frogbotai/storage-s3": "workspace:*",
+    "@next/env": "catalog:",
+    "eventsource-parser": "3.1.0",
+    "ignore": "7.0.6",
+    "tar": "7.5.22",
+    "to-snake-case": "1.0.0",
+    "tsx": "^4.23.15"
   },
   "peerDependencies": {
     "@frogbotai/gateway": "workspace:*",
@@ -53,6 +64,7 @@
     "@frogbotai/gateway": "workspace:*",
     "@testing-library/react": "^16.3.0",
     "@types/react": "19.2.14",
+    "@types/to-snake-case": "1.0.0",
     "frogbot": "workspace:*",
     "payload": "catalog:",
     "react": "catalog:",

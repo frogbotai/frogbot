@@ -21,10 +21,6 @@ const mocks = vi.hoisted(() => ({
   jobsRun: vi.fn(() =>
     Promise.resolve(mocks.calls.push(`jobsRun:${process.env.FROGBOT_TEST_KEY}`)),
   ),
-  logout: vi.fn(() => Promise.resolve(mocks.calls.push(`logout:${process.env.FROGBOT_TEST_KEY}`))),
-  share: vi.fn(() => Promise.resolve(mocks.calls.push(`share:${process.env.FROGBOT_TEST_KEY}`))),
-  pull: vi.fn(() => Promise.resolve(mocks.calls.push(`pull:${process.env.FROGBOT_TEST_KEY}`))),
-  logs: vi.fn(() => Promise.resolve(mocks.calls.push(`logs:${process.env.FROGBOT_TEST_KEY}`))),
   loadEnv: vi.fn(() => {
     mocks.calls.push('loadEnv');
 
@@ -94,10 +90,6 @@ vi.mock('../../../../packages/frogbot/src/bin/piecesPort.js', () => ({
 }));
 
 vi.mock('../../../../packages/frogbot/src/bin/start.js', () => ({ start: mocks.start }));
-vi.mock('../../../../packages/frogbot/src/bin/share.js', () => ({ share: mocks.share }));
-vi.mock('../../../../packages/frogbot/src/bin/pull.js', () => ({ pull: mocks.pull }));
-vi.mock('../../../../packages/frogbot/src/bin/logs.js', () => ({ logs: mocks.logs }));
-vi.mock('../../../../packages/frogbot/src/bin/logout.js', () => ({ logout: mocks.logout }));
 vi.mock('../../../../packages/frogbot/src/bin/run.js', () => ({ runScript: mocks.runScript }));
 
 import { bin } from '../../../../packages/frogbot/src/bin/index.js';
@@ -136,10 +128,6 @@ describe('frogbot bin', () => {
     ['pieces:port', 'piecesPort'],
     ['jobs:run', 'jobsRun'],
     ['channels:run', 'channelsRun'],
-    ['share', 'share'],
-    ['pull', 'pull'],
-    ['logs', 'logs'],
-    ['logout', 'logout'],
   ])('loads env before dispatching `%s`', async (command, handler) => {
     process.argv = ['node', 'frogbot', command];
 
@@ -156,8 +144,8 @@ describe('frogbot bin', () => {
     expect(mocks.calls).toEqual(['loadEnv', `migrate:${command}`]);
   });
 
-  it.each([undefined, 'unknown'])('loads env before rejecting `%s`', async (command) => {
-    process.argv = command ? ['node', 'frogbot', command] : ['node', 'frogbot'];
+  it('loads env before rejecting a missing name with the usage line', async () => {
+    process.argv = ['node', 'frogbot'];
 
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
@@ -169,9 +157,32 @@ describe('frogbot bin', () => {
 
     expect(mocks.calls).toEqual(['loadEnv']);
     expect(error).toHaveBeenCalledWith(
-      '[frogbot] usage: frogbot <start|dev|run|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status|share|pull|logs|logout>',
+      '[frogbot] usage: frogbot <start|dev|run|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status>',
     );
   });
+
+  it.each(['unknown', 'export:captures', 'share'])(
+    'rejects `%s` with no app config, pointing to plugin commands',
+    async (command) => {
+      process.argv = ['node', 'frogbot', command];
+
+      const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      vi.spyOn(process, 'exit').mockImplementation((code) => {
+        throw new Error(`exit:${code}`);
+      });
+
+      await expect(bin()).rejects.toThrow('exit:2');
+
+      expect(mocks.calls).toEqual(['loadEnv']);
+      expect(mocks.loadConfig).not.toHaveBeenCalled();
+      expect(error.mock.calls).toEqual([
+        [
+          `[frogbot] "${command}" isn't a built-in command, and there's no app here to add it. Plugins add commands: see https://docs.frogbot.ai/getting-started/cli#plugin-commands`,
+        ],
+      ]);
+    },
+  );
 
   it('logs one `[frogbot]` prefix and exits 1 when the dispatched command rejects', async () => {
     process.argv = ['node', 'frogbot', 'pieces:port'];
@@ -201,19 +212,6 @@ describe('frogbot bin', () => {
     expect(mocks.jobsRun).toHaveBeenLastCalledWith(args);
   });
 
-  it.each([
-    ['share', ['--no-data', '--workspace', 'colby']],
-    ['pull', ['deals']],
-    ['logs', ['deals', '--follow']],
-    ['logout', []],
-  ] as const)('forwards `%s` arguments unchanged', async (command, args) => {
-    process.argv = ['node', 'frogbot', command, ...args];
-
-    await bin();
-
-    expect(mocks[command]).toHaveBeenLastCalledWith([...args]);
-  });
-
   it('loads env before forwarding script arguments unchanged', async () => {
     const args = ['src/seed.ts', '--count', '5', '--help'];
 
@@ -227,7 +225,7 @@ describe('frogbot bin', () => {
 
   describe('app commands', () => {
     const usage =
-      '[frogbot] usage: frogbot <start|dev|run|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status|share|pull|logs|logout';
+      '[frogbot] usage: frogbot <start|dev|run|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status';
 
     function withConfig(commands: Record<string, CLICommand>): FrogBotSanitizedConfig {
       const config = { cli: { commands } } as unknown as FrogBotSanitizedConfig;
@@ -345,7 +343,7 @@ describe('frogbot bin', () => {
       expect(mocks.loadConfig).toHaveBeenCalledWith({ cwd: process.cwd(), mode });
     });
 
-    it.each(['export:nothing', 'export:captures'])(
+    it.each(['export:nothing', 'export:captures', 'share'])(
       'rejects `%s`, which is neither built in nor in `cli.commands`',
       async (command) => {
         withConfig({});
