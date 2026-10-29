@@ -12,7 +12,7 @@ pnpm add @frogbotai/plugin-mcp @frogbotai/plugin-api-keys
 
 ## Configure
 
-Configure both plugins in `frogbot.config.ts`. `apiKeysPlugin()` must appear before `mcpPlugin()` so the MCP endpoint can use its authentication strategy.
+Configure both plugins in `frogbot.config.ts`, in any order. `mcpPlugin()` needs `apiKeysPlugin()` and fails at startup without it. It runs with `order: 10`.
 
 ```ts
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
