@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { MessageActions } from '../../../../packages/ui/src/chat/message-actions';
@@ -32,6 +32,25 @@ describe('message controls', () => {
     expect(writeText).toHaveBeenCalledWith('Answer');
     expect(regenerate).toHaveBeenCalledOnce();
     expect(edit).toHaveBeenCalledOnce();
+  });
+
+  it('branches from an inline button with the Branch in new chat tooltip', async () => {
+    const branch = vi.fn();
+    const { unmount } = render(<MessageActions text="Answer" onBranch={branch} />);
+    const button = screen.getByRole('button', { name: 'Branch' });
+
+    fireEvent.click(button);
+
+    expect(branch).toHaveBeenCalledOnce();
+
+    act(() => button.focus());
+
+    expect((await screen.findByRole('tooltip')).textContent).toContain('Branch in new chat');
+
+    unmount();
+    render(<MessageActions text="Answer" />);
+
+    expect(screen.queryByRole('button', { name: 'Branch' })).toBeNull();
   });
 
   it('places the timestamp before user actions and after assistant actions', () => {
