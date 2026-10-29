@@ -73,7 +73,7 @@ vi.mock('../../../../../packages/ui/src/chat/provider.js', () => ({
 
 vi.mock('../../../../../packages/ui/src/chat/rest/auth.js', () => {
   const serverManifest = {
-    ai: { transcribe: false },
+    ai: { transcribe: false, speak: false },
     agents: [],
     chat: { enabled: true, chatsSlug: 'conversations', messagesSlug: 'turns' },
   };

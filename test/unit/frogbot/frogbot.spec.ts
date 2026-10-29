@@ -760,6 +760,36 @@ describe('FrogBot class', () => {
       expect(handler).toHaveBeenCalledOnce();
     });
 
+    it('accepts the speech model the manifest advertises, with no voice', async () => {
+      const generate = vi.fn(allowOnly(['mistral/voxtral-mini-tts-latest']));
+      const { frogbot, handler } = await setupGateway({ generate });
+
+      Object.assign(frogbot.config.ai!, {
+        routers: { tts: { model: 'mistral/voxtral-mini-tts-latest' } },
+        speechModel: 'tts',
+      });
+
+      const manifestResponse = await buildManifestEndpoint().handler({
+        frogbot,
+        user: { id: 'user-1' },
+      } as unknown as FrogBotRequest);
+
+      const { ai } = await manifestResponse.json();
+
+      const response = await createGatewayHandler(frogbot)(
+        new Request('http://localhost/api/v1/audio/speech', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ model: ai.speak.model, input: 'Hello' }),
+        }),
+      );
+
+      expect(ai.speak).toEqual({ model: 'mistral/voxtral-mini-tts-latest' });
+      expect(response.status).toBe(200);
+      expect(handler).toHaveBeenCalledOnce();
+      expect(new URL(handler.mock.calls[0][0].url).pathname).toBe('/v1/audio/speech');
+    });
+
     it('authorizes a router by its raw JSON target', async () => {
       const generate = vi.fn(allowOnly(['fast']));
       const { frogbot, handler } = await setupGateway({ generate });

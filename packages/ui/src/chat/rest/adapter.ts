@@ -133,6 +133,7 @@ export function createRestChatAdapter(options: RestChatAdapterOptions): ChatPlat
           return profile ? { ...entry, profile } : entry;
         }),
         transcribe: server.ai.transcribe !== false,
+        speak: server.ai.speak !== false,
       };
     },
     createTransport: ({ agent, request, onChatId }) =>
@@ -294,6 +295,15 @@ export function createRestChatAdapter(options: RestChatAdapterOptions): ChatPlat
       const result = await sdk.ai.transcribe({ file, model: ai.transcribe.model });
 
       return result.text;
+    },
+    speak: async (text, { signal }) => {
+      const { ai } = await loadServerManifest();
+
+      if (!ai.speak) throw new Error('Read aloud is not available');
+
+      const { model, voice } = ai.speak;
+
+      return sdk.ai.speech({ model, input: text, ...(voice && { voice }) }, { signal });
     },
   };
 }

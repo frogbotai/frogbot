@@ -46,6 +46,33 @@ describe('speechRoute', () => {
     );
   });
 
+  it('accepts a request without a voice and passes none upstream', async () => {
+    const doGenerate = vi.fn(() =>
+      Promise.resolve({
+        audio: new Uint8Array([1]),
+        warnings: [],
+        response: { id: 'resp-1', timestamp: new Date(0), modelId: 'tts-1' },
+      }),
+    );
+
+    const app = createApp({
+      registry: {
+        openai: new MockProviderV4({
+          speechModels: { 'tts-1': new MockSpeechModelV4({ doGenerate }) },
+        }),
+      } as unknown as ProviderRegistry,
+    });
+
+    const res = await app.request('/v1/audio/speech', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model: 'openai/tts-1', input: 'Hello' }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(doGenerate).toHaveBeenCalledWith(expect.objectContaining({ voice: undefined }));
+  });
+
   it('maps content type from the requested response_format', async () => {
     const app = createApp({
       registry: {

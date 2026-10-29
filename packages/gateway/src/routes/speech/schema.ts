@@ -8,7 +8,7 @@ const speechRequestSchema = z
   .object({
     model: z.string().min(1, 'model must be a non-empty string'),
     input: z.string().min(1, 'input must be a non-empty string'),
-    voice: z.string().min(1, 'voice must be a non-empty string'),
+    voice: z.string().min(1, 'voice must be a non-empty string').nullish(),
     response_format: z.enum(speechResponseFormats).nullish(),
     speed: z.number().positive().nullish(),
     instructions: z.string().nullish(),

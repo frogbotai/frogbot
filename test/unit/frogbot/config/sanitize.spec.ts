@@ -3259,6 +3259,106 @@ describe('frogbot sanitize', () => {
     });
   });
 
+  describe('ai.speechModel', () => {
+    const speechModel = 'mistral/voxtral-mini-tts-latest';
+    const rejections = [
+      {
+        name: 'a model outside the provider models list',
+        ai: { providers: { mistral: { apiKey: 'k', models: ['mistral-small-latest'] } } },
+        speechModel,
+        message: `[frogbot] ai.speechModel '${speechModel}' is not configured.`,
+      },
+      {
+        name: 'a chat model',
+        ai: { providers: { mistral: true } },
+        speechModel: 'mistral/mistral-small-latest',
+        message: "[frogbot] ai.speechModel 'mistral/mistral-small-latest' is not a speech model.",
+      },
+      {
+        name: 'a router to a chat model',
+        ai: {
+          providers: { mistral: true },
+          routers: { tts: { model: 'mistral/mistral-small-latest' } },
+        },
+        speechModel: 'tts',
+        message: "[frogbot] ai.speechModel 'tts' is not a speech model.",
+      },
+    ];
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('keeps speechModel and speechVoice absent when omitted', () => {
+      const result = sanitize(makeConfig({ ai: { providers: { mistral: true } } }));
+
+      expect(result.ai?.speechModel).toBeUndefined();
+      expect(result.ai?.speechVoice).toBeUndefined();
+    });
+
+    it('preserves a catalog speech model and its voice', () => {
+      const result = sanitize(
+        makeConfig({ ai: { providers: { mistral: true }, speechModel, speechVoice: 'nova' } }),
+      );
+
+      expect(result.ai?.speechModel).toBe(speechModel);
+      expect(result.ai?.speechVoice).toBe('nova');
+    });
+
+    it('preserves a router to a speech model', () => {
+      const result = sanitize(
+        makeConfig({
+          ai: {
+            providers: { mistral: true },
+            routers: { tts: { model: speechModel } },
+            speechModel: 'tts',
+          },
+        } as never),
+      );
+
+      expect(result.ai?.speechModel).toBe('tts');
+    });
+
+    it('preserves a speech model of a custom provider', () => {
+      const result = sanitize(
+        makeConfig({
+          ai: {
+            providers: {
+              internal: {
+                type: 'openai-compatible',
+                baseUrl: 'https://models.test',
+                models: [{ id: 'voice', mode: 'audio_speech' }],
+              },
+            },
+            speechModel: 'internal/voice',
+          },
+        } as never),
+      );
+
+      expect(result.ai?.speechModel).toBe('internal/voice');
+    });
+
+    it.each(rejections)('rejects $name', ({ ai, speechModel: model, message }) => {
+      const config = makeConfig({ ai: { ...ai, speechModel: model } as never });
+
+      expect(() => sanitize(config)).toThrow(message);
+    });
+
+    it.each(rejections)(
+      'warns and keeps $name during codegen',
+      ({ ai, speechModel: model, message }) => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const config = makeConfig({ ai: { ...ai, speechModel: model } as never });
+
+        const result = sanitize(config, { mode: 'codegen' });
+
+        expect(result.ai?.speechModel).toBe(model);
+        expect(warn).toHaveBeenCalledTimes(1);
+        expect(warn).toHaveBeenCalledWith(message);
+      },
+    );
+  });
+
   describe('ai model settings with multi-segment model IDs', () => {
     it('preserves a chat smallModel whose ID has a nested provider path', () => {
       const result = sanitize(

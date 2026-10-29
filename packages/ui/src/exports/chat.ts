@@ -68,6 +68,7 @@ export type {
   EditMessageActionProps,
   MessageActionsProps,
   MessageTimestampProps,
+  ReadAloudMessageActionProps,
 } from '../chat/message-actions.js';
 export {
   BranchMessageAction,
@@ -75,6 +76,7 @@ export {
   EditMessageAction,
   MessageActions,
   MessageTimestamp,
+  ReadAloudMessageAction,
 } from '../chat/message-actions.js';
 export type { MessageEditorProps } from '../chat/message-editor.js';
 export { MessageEditor } from '../chat/message-editor.js';

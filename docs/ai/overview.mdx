@@ -92,6 +92,8 @@ A provider's `models` list decides what the app can use, while an [agent's `mode
 | `defaultModel` | `ModelId` | — | Model or router slug for agents that set no `model` and no `model.default`. Must resolve to a configured provider. |
 | `smallModel` | `ModelId` | A recent low-cost model from the active model's provider | Model or router slug for internal utility calls such as naming chats. Must be a configured chat model. See [Choose a utility model](#choose-a-utility-model). |
 | `transcriptionModel` | `ModelId` | — | Model or router slug the chat composer's microphone uses for speech-to-text. Must be a configured transcription model. Unset: no microphone. See [Voice input](/chat/ui-chat#voice-input). |
+| `speechModel` | `ModelId` | — | Model or router slug that reads AI replies aloud in chat, for example `mistral/voxtral-mini-tts-latest`. Must be a configured speech model. Unset: no read aloud button. See [Read aloud](/chat/ui-chat#read-aloud). |
+| `speechVoice` | `string` | The provider's default voice | Voice name passed to `speechModel`, such as `nova` for OpenAI. |
 | `hooks` | `AIHooks` | No hooks | Lifecycle hooks for every operation. See [Observe calls](#observe-calls). |
 | `access` | `AIAccessConfig` | Every category allows signed-in users | Access rules per operation category. See [Control access](#control-access). |
 | `deploymentId` | `string` | `FROGBOT_DEPLOYMENT_ID`, then `'local'` | Added to every AI span as the `frogbot.deployment` attribute. |
@@ -462,7 +464,7 @@ ai: {
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `generate` | `({ req, model }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `generateText`, `streamText`, `generateImage`, `generateSpeech`, and `generateVideo`, and for each agent model offered in chat. |
+| `generate` | `({ req, model }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `generateText`, `streamText`, `generateImage`, `generateSpeech`, and `generateVideo`, and for each agent model offered in chat and the [speech model](/chat/ui-chat#read-aloud) when chat decides whether to offer read aloud. |
 | `embed` | `({ req, model }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `embed` and `embedMany`. |
 | `transcribe` | `({ req, model }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `transcribe`, and for the [transcription model](/chat/ui-chat#voice-input) when chat decides whether to show a microphone. |
 | `rerank` | `({ req, model }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `rerank`. |
@@ -587,9 +589,14 @@ const response = await sdk.ai.chat({
   model: 'openai/gpt-4o-mini',
   messages: [{ role: 'user', content: 'Hello' }]
 })
+
+const audio = await sdk.ai.speech({
+  model: 'mistral/voxtral-mini-tts-latest',
+  input: 'Hello'
+})
 ```
 
-`transcribe` returns parsed transcription JSON. `chat` returns the raw `Response` so the caller can consume either JSON or an SSE stream.
+`transcribe` returns parsed transcription JSON. `chat` returns the raw `Response` so the caller can consume either JSON or an SSE stream. `speech` returns the audio as a `Blob`; leave out `voice` to use the provider's default.
 
 Each accepted request gets one FrogBot lifecycle around the gateway handler. FrogBot runs the operation hooks, while the gateway handler runs the configured upstream hooks inline.
 

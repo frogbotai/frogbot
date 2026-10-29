@@ -2,7 +2,7 @@ import type { SpeechRequest, SpeechResponseFormat } from '../schema.js';
 
 export type SpeechParams = {
   text: string;
-  voice: string;
+  voice?: string;
   outputFormat: SpeechResponseFormat;
   instructions?: string;
   speed?: number;
@@ -15,7 +15,7 @@ export function toSpeechParams(body: SpeechRequest): SpeechParams {
 
   return {
     text: body.input,
-    voice: body.voice,
+    ...(body.voice != null && { voice: body.voice }),
     outputFormat: format,
     ...(body.instructions != null && { instructions: body.instructions }),
     ...(body.speed != null && { speed: body.speed }),

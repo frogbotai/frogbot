@@ -213,6 +213,10 @@ export type AIConfig = {
   defaultModel?: ModelId;
   smallModel?: ModelId;
   transcriptionModel?: ModelId;
+  /** Text-to-speech model for reading AI replies aloud. Unset: no read aloud. */
+  speechModel?: ModelId;
+  /** Voice for `speechModel`. Unset: the provider's default voice. */
+  speechVoice?: string;
   hooks?: AIHooks;
   access?: AIAccessConfig;
   /** Deployment identifier attached to telemetry spans. Default: `FROGBOT_DEPLOYMENT_ID` env or `'local'`. */
@@ -231,6 +235,8 @@ export type SanitizedAIConfig = {
   defaultModel?: ModelId;
   smallModel?: ModelId;
   transcriptionModel?: ModelId;
+  speechModel?: ModelId;
+  speechVoice?: string;
   hooks: SanitizedAIHooks;
   access: Required<AIAccessConfig>;
   telemetry: SanitizedAITelemetryConfig;

@@ -336,6 +336,48 @@ describe('dojo() AI', () => {
       gateway.transcribeModel(resolveModel('openai/whisper-1', sanitized.ai!)),
     ).toThrowError(expect.objectContaining({ name: 'UnsupportedModalityError' }));
   });
+
+  it('drops a speech model and its voice on a routed provider and warns once at start', async () => {
+    const warn = vi.fn();
+    const sanitized = await buildConfig(
+      template({
+        ai: {
+          defaultModel: 'mistral/mistral-small-latest',
+          speechModel: 'mistral/voxtral-mini-tts-latest',
+          speechVoice: 'nova',
+          providers: { mistral: true },
+        },
+        plugins: [dojo()],
+      }),
+    );
+
+    expect(sanitized.ai?.speechModel).toBeUndefined();
+    expect(sanitized.ai?.speechVoice).toBeUndefined();
+
+    await sanitized.onInit?.({ logger: { warn } } as unknown as FrogBot);
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      "[plugin-dojo] Speech isn't available through Dojo's router; bring a provider key to use it.",
+    );
+  });
+
+  it('keeps a speech model and its voice that are not routed', () => {
+    const { ai, onInit } = apply(
+      template({
+        ai: {
+          defaultModel: 'mistral/mistral-small-latest',
+          speechModel: 'custom/tts' as ModelId,
+          speechVoice: 'nova',
+          providers: { mistral: { apiKey: undefined, models: ['mistral-small-latest'] } },
+        },
+      }),
+    );
+
+    expect(ai?.speechModel).toBe('custom/tts');
+    expect(ai?.speechVoice).toBe('nova');
+    expect(onInit).toBeUndefined();
+  });
 });
 
 describe('dojo() jobs', () => {

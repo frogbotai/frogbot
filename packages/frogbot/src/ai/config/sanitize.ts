@@ -5,6 +5,7 @@ import { isKnownModelId } from '../catalog.js';
 import {
   getConfiguredChatModelIds,
   getConfiguredModelIds,
+  getConfiguredSpeechModelIds,
   getConfiguredTranscriptionModelIds,
 } from '../models.js';
 import { isProviderName } from '../providerNames.js';
@@ -203,6 +204,7 @@ export function sanitizeAI(ai: AIConfig, mode: ValidationMode): SanitizedAIBase 
       new Set(getConfiguredTranscriptionModelIds(ai)),
       'a transcription model',
     ],
+    ['speechModel', new Set(getConfiguredSpeechModelIds(ai)), 'a speech model'],
   ] as const;
 
   for (const [key, modeModelIds, kind] of modelChecks) {
@@ -257,6 +259,8 @@ export function sanitizeAI(ai: AIConfig, mode: ValidationMode): SanitizedAIBase 
     defaultModel: ai.defaultModel,
     smallModel: ai.smallModel,
     transcriptionModel: ai.transcriptionModel,
+    speechModel: ai.speechModel,
+    speechVoice: ai.speechVoice,
     hooks,
     access,
     telemetry,

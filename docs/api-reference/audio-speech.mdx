@@ -31,8 +31,8 @@ curl https://app.frogbot.ai/api/v1/audio/speech \
   The text to synthesize. Maximum length is 4096 characters.
 </ParamField>
 
-<ParamField body="voice" type="string" required>
-  Voice to use for synthesis. OpenAI voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`. ElevenLabs voices map automatically from these names or accept raw voice IDs.
+<ParamField body="voice" type="string">
+  Voice to use for synthesis. Leave it out to use the provider's default voice. OpenAI voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`. ElevenLabs voices map automatically from these names or accept raw voice IDs.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="mp3">

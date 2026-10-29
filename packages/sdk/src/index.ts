@@ -144,6 +144,13 @@ export type AITranscriptionResult = {
   [key: string]: unknown;
 };
 
+export type AISpeechRequest = {
+  model: string;
+  input: string;
+  voice?: string | null;
+  response_format?: 'mp3' | 'opus' | 'aac' | 'flac' | 'wav' | 'pcm' | null;
+};
+
 export type FrogBotErrorDetail = {
   message: string;
   [key: string]: unknown;
@@ -203,6 +210,15 @@ export class FrogBotSDK<T extends FrogBotTypesShape = DefaultTypes> {
       const response = await this.request('/v1/audio/transcriptions', { method: 'POST', body });
 
       return response.json() as Promise<AITranscriptionResult>;
+    },
+    speech: async (input: AISpeechRequest, init: FrogBotRequestInit = {}): Promise<Blob> => {
+      const response = await this.request('/v1/audio/speech', {
+        ...init,
+        method: 'POST',
+        json: input,
+      });
+
+      return response.blob();
     },
   };
 
