@@ -102,7 +102,7 @@ export async function expectChat(app: LiveApp, model: string): Promise<void> {
     max_tokens: MAX_TOKENS,
   });
 
-  expect(status).toBe(200);
+  expect(status, JSON.stringify(body)).toBe(200);
   expect(body.object).toBe('chat.completion');
   expect(typeof body.id).toBe('string');
   const choice = body.choices?.[0];
@@ -156,7 +156,7 @@ export async function expectMessages(app: LiveApp, model: string): Promise<void>
     max_tokens: MAX_TOKENS,
   });
 
-  expect(status).toBe(200);
+  expect(status, JSON.stringify(body)).toBe(200);
   expect(body.type).toBe('message');
   expect(body.role).toBe('assistant');
   const text = (body.content ?? [])
@@ -212,7 +212,7 @@ export async function expectResponses(app: LiveApp, model: string): Promise<void
     max_output_tokens: MAX_TOKENS,
   });
 
-  expect(status).toBe(200);
+  expect(status, JSON.stringify(body)).toBe(200);
   expect(body.object).toBe('response');
   expect(body.status).toBe('completed');
   expect(typeof body.output_text).toBe('string');
@@ -260,7 +260,7 @@ export async function expectEmbeddings(app: LiveApp, model: string): Promise<voi
     ],
   });
 
-  expect(status).toBe(200);
+  expect(status, JSON.stringify(body)).toBe(200);
   expect(body.object).toBe('list');
   expect(body.data?.map((item) => item.index)).toEqual([0, 1, 2]);
 
@@ -301,7 +301,7 @@ export async function expectRerank(app: LiveApp, model: string): Promise<void> {
     top_n: 2,
   });
 
-  expect(status).toBe(200);
+  expect(status, JSON.stringify(body)).toBe(200);
   expect(Array.isArray(body.results)).toBe(true);
   expect(body.results!.length).toBe(2);
 
@@ -356,7 +356,7 @@ export async function expectImages(app: LiveApp, model: string): Promise<void> {
     response_format: 'b64_json',
   });
 
-  expect(status).toBe(200);
+  expect(status, JSON.stringify(body)).toBe(200);
   expect(body.data?.length).toBe(1);
   const image = body.data?.[0];
   expect(typeof image?.b64_json).toBe('string');
@@ -372,7 +372,7 @@ export async function expectVideos(app: LiveApp, model: string): Promise<void> {
     response_format: 'b64_json',
   });
 
-  expect(status).toBe(200);
+  expect(status, JSON.stringify(body)).toBe(200);
   expect(typeof body.id).toBe('string');
   expect(body.data?.length).toBeGreaterThan(0);
   const video = body.data?.[0];
