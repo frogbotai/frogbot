@@ -109,3 +109,26 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(row).toContainText('Revoked');
   });
 }
+
+test('creates an API key with a monthly cap from the Limits section', async ({
+  page,
+}, testInfo) => {
+  const name = `Browser capped key ${Date.now()}`;
+
+  await page.goto(`/collections/${apiKeysSlug}`);
+  await page.getByRole('button', { name: 'Create API key' }).click();
+
+  const create = page.getByRole('dialog', { name: 'Create API Key' });
+
+  await create.getByLabel('Key name').fill(name);
+  await expect(create.getByLabel('Monthly Cap (USD)')).toBeHidden();
+  await create.getByRole('button', { name: 'Limits' }).click();
+  await create.getByLabel('Monthly Cap (USD)').fill('5');
+  await attach(page, testInfo, 'create-dialog-limits');
+
+  await create.getByRole('button', { name: 'Generate' }).click();
+  await expect(create.locator('code')).toHaveText(/^\S{20,}$/);
+  await create.getByRole('button', { name: 'Close' }).click();
+
+  await expect(page.getByRole('row').filter({ hasText: new RegExp(name) })).toContainText('$5.00');
+});

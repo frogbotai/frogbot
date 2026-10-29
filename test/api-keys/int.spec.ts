@@ -498,4 +498,266 @@ describe('API keys plugin integration', () => {
       });
     });
   });
+
+  describe('API key limits', () => {
+    const limitCredentials = {
+      email: 'api-key-limits@frogbot.local',
+      password: 'frogbot-test-password',
+    };
+
+    let ownerId: Account['id'];
+    let session: { Authorization: string };
+
+    beforeEach(async () => {
+      modelCalls.length = 0;
+
+      const owner = await booted.frogbot.create({
+        collection: 'accounts',
+        data: { ...limitCredentials, monthlyBudget: 50 },
+        overrideAccess: true,
+      });
+
+      ownerId = owner.id;
+
+      const login = await booted.restClient.post<{ token: string }>(
+        '/api/accounts/login',
+        limitCredentials,
+      );
+
+      session = { Authorization: `JWT ${login.body.token}` };
+    });
+
+    const mintKey = (data: Record<string, unknown>) =>
+      booted.restClient.post<{ id: number | string; token: string; error?: string }>(
+        '/api/credentials/mint',
+        { name: 'CI bot', data },
+        { headers: session },
+      );
+
+    const setSpend = (collection: 'accounts' | 'credentials', id: number | string, spend: number) =>
+      booted.frogbot.update({
+        collection,
+        id,
+        data: { spendThisPeriodUSD: spend },
+        overrideAccess: true,
+      });
+
+    const spendOf = async (collection: 'accounts' | 'credentials', id: number | string) =>
+      (await booted.frogbot.findByID({ collection, id, overrideAccess: true })).spendThisPeriodUSD;
+
+    const complete = (token: string, model = 'test/allowed') =>
+      booted.restClient.post<{ error: { code?: string; type?: string; message: string } }>(
+        '/api/v1/chat/completions',
+        { model, messages: [{ role: 'user', content: 'Hello' }] },
+        { headers: { 'x-service-key': token } },
+      );
+
+    it('stops a key at its cap, and the owner at their budget first', async () => {
+      const key = await mintKey({ monthlyBudget: 25 });
+
+      expect(key.status, JSON.stringify(key.body)).toBe(201);
+
+      await setSpend('credentials', key.body.id, 25);
+
+      const capped = await complete(key.body.token);
+
+      expect(capped.status).toBe(403);
+      expect(JSON.stringify(capped.body)).toContain('budget_exceeded');
+      expect(capped.body.error.message).toBe(
+        'API key "CI bot" has used its monthly cap of $25.00.',
+      );
+
+      await setSpend('credentials', key.body.id, 0);
+
+      await booted.frogbot.update({
+        collection: 'credentials',
+        id: key.body.id,
+        data: { monthlyBudget: 40 },
+        overrideAccess: true,
+      });
+
+      await setSpend('accounts', ownerId, 50);
+
+      const owner = await complete(key.body.token);
+
+      expect(owner.status).toBe(403);
+      expect(owner.body.error.message).toBe('The configured budget has been exhausted.');
+      expect(modelCalls).toEqual([]);
+    });
+
+    it('limits a key to its models on both gateway routes and in agent lists', async () => {
+      const key = await mintKey({ models: ['test/allowed'] });
+      const headers = { 'x-service-key': key.body.token };
+      const blocked = await complete(key.body.token, 'test/blocked');
+      const messages = await booted.restClient.post<{ error: { message: string } }>(
+        '/api/v1/messages',
+        { model: 'test/blocked', max_tokens: 10, messages: [{ role: 'user', content: 'Hi' }] },
+        { headers },
+      );
+
+      for (const response of [blocked, messages]) {
+        expect(response.status).toBe(403);
+        expect(JSON.stringify(response.body)).toContain('model_not_allowed');
+        expect(response.body.error.message).toBe(
+          'Model "test/blocked" is not allowed for API key "CI bot".',
+        );
+      }
+
+      expect(modelCalls).toEqual([]);
+
+      const logs = await booted.frogbot.count({ collection: 'usage-logs', overrideAccess: true });
+
+      expect(logs.totalDocs).toBe(0);
+
+      const agents = await booted.restClient.get<{ agents: { slug: string; models: string[] }[] }>(
+        '/api/agents',
+        { headers },
+      );
+
+      expect(agents.body.agents.find(({ slug }) => slug === agentSlug)?.models).toEqual([
+        'test/allowed',
+      ]);
+    });
+
+    it('lets only a signed-in session change limits, checked against the owner', async () => {
+      const above = await mintKey({ monthlyBudget: 60 });
+
+      expect(above.status).toBe(400);
+      expect(above.body.error).toContain('monthly budget of $50.00.');
+
+      const key = await mintKey({ monthlyBudget: 25 });
+      const headers = { 'x-service-key': key.body.token };
+      const raised = await booted.restClient.patch(
+        `/api/credentials/${key.body.id}`,
+        { monthlyBudget: 40 },
+        { headers },
+      );
+
+      expect(raised.status).toBe(403);
+
+      await booted.frogbot.update({
+        collection: 'accounts',
+        id: ownerId,
+        data: { monthlyBudget: 10 },
+        overrideAccess: true,
+      });
+
+      const renamed = await booted.restClient.patch(
+        `/api/credentials/${key.body.id}`,
+        { name: 'Renamed' },
+        { headers: session },
+      );
+
+      expect(renamed.status, JSON.stringify(renamed.body)).toBe(200);
+      expect((await complete(key.body.token)).status).toBe(200);
+
+      const stored = await booted.frogbot.findByID({
+        collection: 'credentials',
+        id: key.body.id,
+        overrideAccess: true,
+      });
+
+      expect(stored).toMatchObject({ name: 'Renamed', monthlyBudget: 25 });
+      expect(stored.lastUsedAt).toEqual(expect.any(String));
+    });
+
+    it('refuses a key models value that is not a list', async () => {
+      const minted = await mintKey({ models: 'test/blocked' });
+
+      expect(minted.status, JSON.stringify(minted.body)).toBe(400);
+
+      const key = await mintKey({ models: ['test/allowed'] });
+      const patched = await booted.restClient.patch(
+        `/api/credentials/${key.body.id}`,
+        { models: 'test/blocked' },
+        { headers: session },
+      );
+
+      expect(patched.status, JSON.stringify(patched.body)).toBe(400);
+
+      const stored = await booted.frogbot.findByID({
+        collection: 'credentials',
+        id: key.body.id,
+        overrideAccess: true,
+      });
+
+      expect(stored.models).toEqual(['test/allowed']);
+    });
+
+    it('refuses a key cap that is not a number, with and without an owner budget', async () => {
+      for (const ownerBudget of [50, null]) {
+        await booted.frogbot.update({
+          collection: 'accounts',
+          id: ownerId,
+          data: { monthlyBudget: ownerBudget },
+          overrideAccess: true,
+        });
+
+        for (const monthlyBudget of [true, false, 'abc']) {
+          const minted = await mintKey({ monthlyBudget });
+
+          expect(minted.status, `${ownerBudget} ${String(monthlyBudget)}`).toBe(400);
+          expect(JSON.stringify(minted.body)).toContain('Please enter a valid number.');
+        }
+      }
+    });
+
+    it('adds request and agent run cost to key and owner, resets both and keeps limits on rotation', async () => {
+      const key = await mintKey({ models: ['test/allowed'], monthlyBudget: 25 });
+
+      expect((await complete(key.body.token)).status).toBe(200);
+
+      await vi.waitFor(async () => expect(await spendOf('credentials', key.body.id)).toBe(3));
+
+      expect(await spendOf('accounts', ownerId)).toBe(3);
+
+      const chat = await booted.frogbot.create({
+        collection: 'chats',
+        data: { agent: agentSlug, user: ownerId, title: 'Key spend' },
+        overrideAccess: true,
+      });
+
+      const run = await booted.restClient.post(
+        `/api/agents/${agentSlug}`,
+        { prompt: 'Hello', chatId: chat.id },
+        { headers: { 'x-service-key': key.body.token } },
+      );
+
+      expect(run.status, JSON.stringify(run.body)).toBe(200);
+      expect(modelCalls).toEqual(['allowed', 'allowed']);
+
+      const spent = 6;
+
+      await vi.waitFor(async () => {
+        expect(await spendOf('credentials', key.body.id)).toBe(spent);
+        expect(await spendOf('accounts', ownerId)).toBe(spent);
+      });
+
+      const rotated = await booted.restClient.post<{ id: number | string }>(
+        `/api/credentials/${key.body.id}/rotate`,
+        undefined,
+        { headers: session },
+      );
+
+      expect(rotated.status).toBe(201);
+      expect(
+        await booted.frogbot.findByID({
+          collection: 'credentials',
+          id: rotated.body.id,
+          overrideAccess: true,
+        }),
+      ).toMatchObject({ models: ['test/allowed'], monthlyBudget: 25, spendThisPeriodUSD: spent });
+
+      await booted.payload.jobs.queue({
+        task: 'plugin-ai-policy-reset-spend',
+        input: {},
+        overrideAccess: true,
+      });
+
+      await booted.payload.jobs.run({ queue: 'default', overrideAccess: true });
+
+      expect(await spendOf('credentials', rotated.body.id)).toBe(0);
+      expect(await spendOf('accounts', ownerId)).toBe(0);
+    });
+  });
 });

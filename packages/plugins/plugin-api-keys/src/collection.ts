@@ -1,5 +1,6 @@
 import {
   type Access,
+  APIError,
   type CollectionConfig,
   type CollectionView,
   type Endpoint,
@@ -17,7 +18,7 @@ import {
 } from './server/services.js';
 
 const managerComponent = (collectionSlug: string) => ({
-  path: '@frogbotai/plugin-api-keys/client#ApiKeysManager',
+  path: '@frogbotai/plugin-api-keys/rsc#ApiKeysManagerServer',
   clientProps: { collectionSlug },
 });
 
@@ -36,6 +37,15 @@ const sessionRequired = () =>
     { error: 'An API key cannot mint or rotate API keys. Sign in to manage keys.' },
     { status: 403 },
   );
+
+function describeError(error: APIError): string {
+  const details = (error.data as { errors?: { message?: unknown }[] } | undefined)?.errors;
+  const messages = details
+    ?.map(({ message }) => message)
+    .filter((message) => typeof message === 'string');
+
+  return messages?.length ? messages.join(' ') : error.message;
+}
 
 const ownKeys: Access = ({ req }) => (req.user ? { owner: { equals: req.user.id } } : false);
 
@@ -105,16 +115,37 @@ function createEndpoints({
       handler: async (req) => {
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
         if (isApiKeyRequest(req)) return sessionRequired();
-        const body = ((await req.json?.().catch(() => null)) ?? null) as { name?: unknown } | null;
+        const body = ((await req.json?.().catch(() => null)) ?? null) as {
+          name?: unknown;
+          data?: unknown;
+        } | null;
+
         const name = typeof body?.name === 'string' ? body.name.trim() : '';
         if (!name) return Response.json({ error: 'Name is required' }, { status: 400 });
+
+        const data = body?.data ?? {};
+        if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+          return Response.json({ error: 'data must be an object' }, { status: 400 });
+        }
+
         try {
-          return Response.json(await mintApiKey({ req, collectionSlug, tokenPrefix, name }), {
-            status: 201,
-          });
+          return Response.json(
+            await mintApiKey({
+              req,
+              collectionSlug,
+              tokenPrefix,
+              name,
+              data: data as Record<string, unknown>,
+            }),
+            { status: 201 },
+          );
         } catch (error) {
           if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') {
             return Response.json({ error: 'Authentication required' }, { status: 401 });
+          }
+
+          if (error instanceof APIError && error.status < 500) {
+            return Response.json({ error: describeError(error) }, { status: error.status });
           }
 
           throw error;

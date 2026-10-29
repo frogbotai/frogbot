@@ -55,8 +55,8 @@ describe('api keys import map', () => {
     await generateImportMap(payloadConfig);
     const output = await readFile(join(dir, 'importMap.js'), 'utf8');
 
-    expect(output).toContain("from '@frogbotai/plugin-api-keys/client'");
-    expect(output).toContain("'@frogbotai/plugin-api-keys/client#ApiKeysManager'");
+    expect(output).toContain("from '@frogbotai/plugin-api-keys/rsc'");
+    expect(output).toContain("'@frogbotai/plugin-api-keys/rsc#ApiKeysManagerServer'");
     expect(output).not.toContain('CollectionSettingsRedirect');
     expect(ApiKeysManager).toBeTypeOf('function');
   });

@@ -5,7 +5,7 @@ import { apiKeysPlugin } from '../../../packages/plugins/plugin-api-keys/src/ind
 
 function manager(collectionSlug = 'api-keys') {
   return {
-    path: '@frogbotai/plugin-api-keys/client#ApiKeysManager',
+    path: '@frogbotai/plugin-api-keys/rsc#ApiKeysManagerServer',
     clientProps: { collectionSlug },
   };
 }

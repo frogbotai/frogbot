@@ -83,7 +83,15 @@ Collection overrides merge with the generated configuration and changes made by 
 
 ## Budgets and limits
 
-The plugin has no per-key budgets, rate limits, or model limits. A key authenticates as its owner, so requests made with it pass the owner's [`ai.access`](/ai/overview#control-access) rules. With the [AI policy plugin](/plugins/ai-policy), they use the owner's models and monthly budget, and their spend counts toward the owner's total.
+The plugin has no budgets, rate limits, or model limits of its own. A key authenticates as its owner, so requests made with it pass the owner's [`ai.access`](/ai/overview#control-access) rules. With the [AI policy plugin](/plugins/ai-policy), they use the owner's models and monthly budget, their spend counts toward the owner's total, and each key gets its own model list and monthly cap inside the owner's ([API key limits](/plugins/ai-policy#api-key-limits)).
+
+### Fields from other plugins
+
+Other plugins can add fields to the keys collection, and the plugin keeps them:
+
+- `mint` accepts `data`, fields the plugin didn't define, and passes them to `create`, so their validation runs. The create dialog posts `{ name, data }` and shows validation errors.
+- `rotate` copies every field the plugin didn't define from the revoked key, and runs the create with `req.context.apiKeyRotatedFrom` set to the revoked key's ID.
+- The create dialog renders server components registered under the keys collection's `admin.custom['plugin-api-keys'].createFields` in a collapsed **Limits** section. They read and set the posted `data` with `useCreateKeyData()` from `@frogbotai/plugin-api-keys/client`. With none registered, the dialog has no Limits section.
 
 ## Role-aware access
 

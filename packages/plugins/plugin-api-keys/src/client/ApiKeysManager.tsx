@@ -4,6 +4,9 @@ import './styles.css';
 
 import {
   Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -16,9 +19,17 @@ import {
 } from '@frogbotai/ui';
 import { useConfig, useListQuery, useRouteCache } from '@frogbotai/ui/admin';
 import { CopyIcon } from '@frogbotai/ui/icons';
-import { useId, useState } from 'react';
+import { type ReactNode, useId, useMemo, useState } from 'react';
 
-export function ApiKeysManager(props: { collectionSlug?: string }) {
+import { CreateKeyDataContext } from './createKeyData.js';
+
+export type ApiKeysManagerProps = {
+  collectionSlug?: string;
+  /** Fields other plugins register, shown in the create dialog's Limits section. */
+  createFields?: ReactNode[];
+};
+
+export function ApiKeysManager(props: ApiKeysManagerProps) {
   const { config } = useConfig();
   const listQuery = useListQuery();
   const collectionSlug = props.collectionSlug ?? listQuery.collectionSlug;
@@ -26,6 +37,7 @@ export function ApiKeysManager(props: { collectionSlug?: string }) {
   const nameId = useId();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
+  const [data, setData] = useState<Record<string, unknown>>({});
   const [token, setToken] = useState<string>();
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
@@ -35,6 +47,7 @@ export function ApiKeysManager(props: { collectionSlug?: string }) {
   function changeOpen(next: boolean) {
     if (next) {
       setName('');
+      setData({});
       setToken(undefined);
       setError(undefined);
       setCopied(false);
@@ -55,7 +68,7 @@ export function ApiKeysManager(props: { collectionSlug?: string }) {
     const response = await fetch(`${config.routes.api}/${collectionSlug}/mint`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(Object.keys(data).length > 0 ? { name, data } : { name }),
     });
 
     const result = (await response.json()) as { error?: string; token?: string };
@@ -75,6 +88,15 @@ export function ApiKeysManager(props: { collectionSlug?: string }) {
     await navigator.clipboard.writeText(token);
     setCopied(true);
   }
+
+  const createKeyData = useMemo(
+    () => ({
+      data,
+      setValue: (field: string, value: unknown) =>
+        setData((current) => ({ ...current, [field]: value })),
+    }),
+    [data],
+  );
 
   function copyHandlers(control: 'icon' | 'token') {
     return {
@@ -152,6 +174,18 @@ export function ApiKeysManager(props: { collectionSlug?: string }) {
                 }}
               />
             </div>
+            {props.createFields?.length ? (
+              <Collapsible className="api-keys-dialog__limits">
+                <CollapsibleTrigger className="api-keys-dialog__limits-trigger">
+                  Limits
+                </CollapsibleTrigger>
+                <CollapsibleContent className="api-keys-dialog__limits-content">
+                  <CreateKeyDataContext value={createKeyData}>
+                    {props.createFields}
+                  </CreateKeyDataContext>
+                </CollapsibleContent>
+              </Collapsible>
+            ) : null}
           </>
         )}
         {error ? (
