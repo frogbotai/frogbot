@@ -159,7 +159,6 @@ export interface User {
    */
   models?:
     | (
-        | 'openai/chatgpt-image-latest'
         | 'openai/gpt-4.1'
         | 'openai/gpt-4.1-mini'
         | 'openai/gpt-4o'
@@ -194,8 +193,6 @@ export interface User {
         | 'openai/gpt-6.1-terra'
         | 'openai/gpt-daybreak-blue-latest'
         | 'openai/gpt-daybreak-red-latest'
-        | 'openai/gpt-image-1-mini'
-        | 'openai/gpt-image-1.5'
         | 'openai/gpt-image-2'
         | 'openai/gpt-realtime-2.1'
         | 'openai/o3'
@@ -883,7 +880,6 @@ declare module 'frogbot' {
       assistant: unknown;
     };
     models:
-      | 'openai/chatgpt-image-latest'
       | 'openai/gpt-4.1'
       | 'openai/gpt-4.1-mini'
       | 'openai/gpt-4o'
@@ -918,8 +914,6 @@ declare module 'frogbot' {
       | 'openai/gpt-6.1-terra'
       | 'openai/gpt-daybreak-blue-latest'
       | 'openai/gpt-daybreak-red-latest'
-      | 'openai/gpt-image-1-mini'
-      | 'openai/gpt-image-1.5'
       | 'openai/gpt-image-2'
       | 'openai/gpt-realtime-2.1'
       | 'openai/o3'
