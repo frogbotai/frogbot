@@ -13,6 +13,7 @@ import { describe, expect, it } from 'vitest';
 import {
   toAnthropicErrorResponse,
   toOpenAIErrorResponse,
+  toStatusErrorResponse,
 } from '../../../../packages/gateway/src/errors/envelope.js';
 import {
   BudgetExceededError,
@@ -584,5 +585,68 @@ describe('toAnthropicErrorResponse — RetryError unwrapping', () => {
     expect(status).toBe(502);
     expect(body.error.type).toBe('api_error');
     expect(body.error.message).toBe(retryError.message);
+  });
+});
+
+describe('toStatusErrorResponse', () => {
+  it.each([
+    [401, 'authentication_error', 'invalid_api_key', 'authentication_error'],
+    [403, 'permission_error', 'permission_denied', 'permission_error'],
+    [404, 'not_found_error', 'not_found', 'not_found_error'],
+    [429, 'rate_limit_error', 'rate_limit_exceeded', 'rate_limit_error'],
+    [500, 'server_error', null, 'api_error'],
+  ] as const)(
+    'maps %i to the gateway types and codes',
+    (status, openAIType, code, anthropicType) => {
+      expect(toStatusErrorResponse('openai', { status, message: 'Nope' })).toEqual({
+        body: { error: { message: 'Nope', type: openAIType, code, param: null } },
+        status,
+      });
+      expect(toStatusErrorResponse('anthropic', { status, message: 'Nope' })).toEqual({
+        body: { type: 'error', error: { type: anthropicType, message: 'Nope', param: null } },
+        status,
+      });
+    },
+  );
+
+  it('keeps an explicit code and param', () => {
+    const error = { status: 400, message: 'Bad', code: 'invalid_request_body', param: 'model' };
+
+    expect(toStatusErrorResponse('openai', error)).toEqual({
+      body: {
+        error: {
+          message: 'Bad',
+          type: 'invalid_request_error',
+          code: 'invalid_request_body',
+          param: 'model',
+        },
+      },
+      status: 400,
+    });
+    expect(toStatusErrorResponse('anthropic', error)).toEqual({
+      body: {
+        type: 'error',
+        error: { type: 'invalid_request_error', message: 'Bad', param: 'model' },
+      },
+      status: 400,
+    });
+  });
+
+  it('masks a 500 message in production', () => {
+    const error = { status: 500, message: 'secret detail' };
+    const opts = { production: true, requestId: 'req_1' };
+
+    expect(toStatusErrorResponse('openai', error, opts).body.error.message).toBe(
+      'Internal server error (request_id: req_1).',
+    );
+    expect(toStatusErrorResponse('anthropic', error, opts).body).toEqual({
+      type: 'error',
+      error: {
+        type: 'api_error',
+        message: 'Internal server error (request_id: req_1).',
+        param: null,
+      },
+      request_id: 'req_1',
+    });
   });
 });

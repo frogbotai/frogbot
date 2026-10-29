@@ -589,19 +589,28 @@ describe('API keys plugin integration', () => {
       const key = await mintKey({ models: ['test/allowed'] });
       const headers = { 'x-service-key': key.body.token };
       const blocked = await complete(key.body.token, 'test/blocked');
-      const messages = await booted.restClient.post<{ error: { message: string } }>(
+      const messages = await booted.restClient.post(
         '/api/v1/messages',
         { model: 'test/blocked', max_tokens: 10, messages: [{ role: 'user', content: 'Hi' }] },
         { headers },
       );
 
-      for (const response of [blocked, messages]) {
-        expect(response.status).toBe(403);
-        expect(JSON.stringify(response.body)).toContain('model_not_allowed');
-        expect(response.body.error.message).toBe(
-          'Model "test/blocked" is not allowed for API key "CI bot".',
-        );
-      }
+      const message = 'Model "test/blocked" is not allowed for API key "CI bot".';
+
+      expect(blocked.status).toBe(403);
+      expect(blocked.body).toEqual({
+        error: {
+          message,
+          type: 'invalid_request_error',
+          code: 'model_not_allowed',
+          param: 'model',
+        },
+      });
+      expect(messages.status).toBe(403);
+      expect(messages.body).toEqual({
+        type: 'error',
+        error: { type: 'permission_error', message, param: 'model' },
+      });
 
       expect(modelCalls).toEqual([]);
 

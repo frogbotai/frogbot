@@ -675,6 +675,61 @@ function maskAnthropicResponse(
   };
 }
 
+export type StatusError = {
+  status: number;
+  message: string;
+  code?: string | null | undefined;
+  param?: string | null | undefined;
+};
+
+/** Build a gateway envelope for an error that is not a `GatewayError`, from its status alone. */
+export function toStatusErrorResponse(
+  format: 'openai',
+  error: StatusError,
+  opts?: ErrorResponseOptions,
+): { body: OpenAIErrorEnvelope; status: GatewayHttpStatus };
+export function toStatusErrorResponse(
+  format: 'anthropic',
+  error: StatusError,
+  opts?: ErrorResponseOptions,
+): { body: AnthropicErrorEnvelope; status: GatewayHttpStatus };
+export function toStatusErrorResponse(
+  format: 'openai' | 'anthropic',
+  error: StatusError,
+  opts?: ErrorResponseOptions,
+): { body: OpenAIErrorEnvelope | AnthropicErrorEnvelope; status: GatewayHttpStatus };
+export function toStatusErrorResponse(
+  format: 'openai' | 'anthropic',
+  { status, message, code, param }: StatusError,
+  opts: ErrorResponseOptions = {},
+): { body: OpenAIErrorEnvelope | AnthropicErrorEnvelope; status: GatewayHttpStatus } {
+  const httpStatus = status as GatewayHttpStatus;
+
+  if (format === 'anthropic') {
+    return maskAnthropicResponse(
+      {
+        body: {
+          type: 'error',
+          error: { type: statusToAnthropicType(status), message, param: param ?? null },
+        },
+        status: httpStatus,
+      },
+      opts,
+    );
+  }
+
+  return maskOpenAIResponse(
+    envelope(
+      message,
+      statusToOpenAIType(status),
+      code ?? openAICodeForStatus(status),
+      param ?? null,
+      httpStatus,
+    ),
+    opts,
+  );
+}
+
 function anthropicEnvelope(
   message: string,
   type: AnthropicErrorType,

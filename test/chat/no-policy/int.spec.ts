@@ -79,7 +79,14 @@ describe('app model access without the AI policy plugin', () => {
     const response = await complete(blockedModel);
 
     expect(response.status).toBe(403);
-    expect(response.body).toMatchObject({ error: { type: 'permission_error' } });
+    expect(response.body).toEqual({
+      error: {
+        message: 'Access denied for AI generate',
+        type: 'permission_error',
+        code: 'permission_denied',
+        param: null,
+      },
+    });
     expect(model.titleRequests).toEqual([]);
   });
 

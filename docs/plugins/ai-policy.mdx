@@ -62,7 +62,7 @@ Apart from the spend counter, the fields have no access rules of their own, so u
 
 ## Enforcement
 
-The plugin wraps each [`ai.access`](/ai/overview#control-access) rule (`generate`, `embed`, `transcribe`, `rerank`, `evaluate`). For each call, your own rule runs first; without one, the user must be signed in. When it allows a signed-in user, a non-empty `models` list must include the model or alias the caller asked for. Otherwise the call fails with a `403` and the code `model_not_allowed`: `Model "<id>" is not allowed by this policy.` Over HTTP, this returns `{ "error": { "message": "...", "type": "model_not_allowed" } }`.
+The plugin wraps each [`ai.access`](/ai/overview#control-access) rule (`generate`, `embed`, `transcribe`, `rerank`, `evaluate`). For each call, your own rule runs first; without one, the user must be signed in. When it allows a signed-in user, a non-empty `models` list must include the model or alias the caller asked for. Otherwise the call fails with a `403` and the code `model_not_allowed`: `Model "<id>" is not allowed by this policy.` Over HTTP, this returns `{ "error": { "message": "...", "type": "invalid_request_error", "code": "model_not_allowed", "param": "model" } }`, the same body as a spent budget; on `/api/v1/messages` it is Anthropic's `{ "type": "error", "error": { "type": "permission_error", "message": "...", "param": "model" } }`.
 
 The same check shapes chat. A user sees only the agent models they may use, and an agent with none is hidden from them. Chat shows a microphone only when the user may use the [transcription model](/chat/ui-chat#voice-input); for an alias, list the model behind it.
 
