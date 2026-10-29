@@ -8,7 +8,7 @@ import { CHAT_MUTATION_EVENT } from '../../../../packages/ui/src/chat/use-chats'
 const apiBase = 'https://frogbot.example/api';
 
 const serverManifest = {
-  ai: { transcribe: { model: 'openai/whisper-1' } },
+  ai: { transcribe: { model: 'openai/whisper-1' }, speak: false },
   chat: { enabled: true, chatsSlug: 'conversations', messagesSlug: 'turns', assetsSlug: 'uploads' },
   files: { slug: 'files' },
   agents: [{ slug: 'support', profile: { name: 'Ada', avatar: '/ada.png' } }, { slug: 'sales' }],
@@ -99,6 +99,7 @@ describe('createRestChatAdapter', () => {
         { ...agentManifest.agents[1], profile: { name: 'Ada', avatar: '/ada.png' } },
       ],
       transcribe: true,
+      speak: false,
     });
 
     expect(calls.map(({ path }) => path).sort()).toEqual(['/agents', '/frogbot']);
@@ -357,6 +358,51 @@ describe('createRestChatAdapter', () => {
 
     await expect(adapter.transcribe?.(new File(['voice'], 'voice.webm'))).resolves.toBe('hello');
     expect((calls.at(-1)?.body as FormData).get('model')).toBe('openai/whisper-1');
+  });
+
+  describe('read aloud', () => {
+    const speakingManifest = () =>
+      Response.json({
+        ...serverManifest,
+        ai: { ...serverManifest.ai, speak: { model: 'openai/tts-1', voice: 'nova' } },
+      });
+
+    it('reports speak from /frogbot', async () => {
+      const { adapter } = adapterFor({ 'GET /frogbot': speakingManifest });
+
+      await expect(
+        adapter.loadManifest({ signal: new AbortController().signal }),
+      ).resolves.toMatchObject({ speak: true });
+    });
+
+    it('posts the model, text and voice to /v1/audio/speech and returns the audio', async () => {
+      const backend = adapterFor({
+        'GET /frogbot': speakingManifest,
+        'POST /v1/audio/speech': () => new Response('audio bytes'),
+      });
+
+      const { adapter, calls } = backend;
+      const controller = new AbortController();
+
+      const audio = await adapter.speak?.('Hello', { signal: controller.signal });
+
+      expect(audio).toBeInstanceOf(Blob);
+      expect(await audio?.text()).toBe('audio bytes');
+      expect(calls.at(-1)).toMatchObject({
+        method: 'POST',
+        path: '/v1/audio/speech',
+        body: { model: 'openai/tts-1', input: 'Hello', voice: 'nova' },
+      });
+      expect(backend.fetch.mock.calls.at(-1)?.[1]?.signal).toBe(controller.signal);
+    });
+
+    it('refuses to speak when /frogbot has no speech model', async () => {
+      const { adapter } = adapterFor();
+
+      await expect(
+        adapter.speak?.('Hello', { signal: new AbortController().signal }),
+      ).rejects.toThrow('Read aloud is not available');
+    });
   });
 
   describe('transport', () => {

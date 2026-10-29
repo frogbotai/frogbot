@@ -188,6 +188,37 @@ describe('FrogBotSDK', () => {
     expect(body.getAll('timestamp_granularities[]')).toEqual(['word', 'segment']);
   });
 
+  it('speaks text through the configured fetch and returns the audio', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(
+        new Response(new Uint8Array([1, 2, 3]), { headers: { 'content-type': 'audio/mpeg' } }),
+      ),
+    );
+
+    const sdk = createFrogBotSDK({ baseURL: 'https://frogbot.example/api', fetch });
+    const controller = new AbortController();
+
+    const audio = await sdk.ai.speech(
+      { model: 'openai/tts-1', input: 'Ribbit', voice: 'nova' },
+      { signal: controller.signal },
+    );
+
+    expect(audio).toBeInstanceOf(Blob);
+    expect(new Uint8Array(await audio.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]));
+    expect(fetch.mock.calls[0]?.[0]).toBe('https://frogbot.example/api/v1/audio/speech');
+
+    const init = fetch.mock.calls[0]?.[1];
+
+    expect(init?.method).toBe('POST');
+    expect(init?.signal).toBe(controller.signal);
+    expect(new Headers(init?.headers).get('content-type')).toBe('application/json');
+    expect(JSON.parse(init?.body as string)).toEqual({
+      model: 'openai/tts-1',
+      input: 'Ribbit',
+      voice: 'nova',
+    });
+  });
+
   it('sends chat completion requests through the shared request path', async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(() =>
       Promise.resolve(Response.json({ id: 'chat-1' })),

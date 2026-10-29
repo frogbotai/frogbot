@@ -20,7 +20,8 @@ An enabled chat configuration returns the resolved collection slugs and the agen
 ```json
 {
   "ai": {
-    "transcribe": { "model": "openai/gpt-4o-mini-transcribe" }
+    "transcribe": { "model": "openai/gpt-4o-mini-transcribe" },
+    "speak": { "model": "mistral/voxtral-mini-tts-latest" }
   },
   "chat": {
     "enabled": true,
@@ -46,7 +47,7 @@ When chat persistence is disabled, `chat` contains only `enabled`. This app also
 
 ```json
 {
-  "ai": { "transcribe": false },
+  "ai": { "transcribe": false, "speak": false },
   "chat": { "enabled": false },
   "agents": []
 }
@@ -55,6 +56,7 @@ When chat persistence is disabled, `chat` contains only `enabled`. This app also
 | Field | Type | Description |
 | --- | --- | --- |
 | `ai.transcribe` | `{ model: string } \| false` | The model set in `ai.transcriptionModel`, with an alias resolved to its model, when the caller may transcribe with it; otherwise `false`. The chat composer shows its microphone only when this is set. |
+| `ai.speak` | `{ model: string; voice?: string } \| false` | The model set in `ai.speechModel`, with an alias resolved to its model, and `ai.speechVoice` when set, when the caller may generate with that model; otherwise `false`. AI replies show a read aloud button only when this is set. |
 | `chat.enabled` | `boolean` | Whether chat persistence is enabled. |
 | `chat.chatsSlug` | `string` | Slug of the chats collection. Present when `enabled` is `true`. |
 | `chat.messagesSlug` | `string` | Slug of the messages collection. Present when `enabled` is `true`. |

@@ -40,12 +40,14 @@ import { MessageEditor } from './message-editor.js';
 import { MessageList, type MessageListProps } from './message-list.js';
 import { MessagePart } from './message-part.js';
 import { useChatProvider } from './provider.js';
+import { speechText } from './speech-text.js';
 import { type ToolActions, ToolActionsContext } from './tool-actions.js';
 import { ToolPart } from './tool-part.js';
 import { resolveToolRenderer, type ToolPartValue, type ToolRenderer } from './tool-registry.js';
 import { toChatError, turnErrorCode } from './turn-error.js';
 import { useChatMessages } from './use-chat.js';
 import { emitChatMutation, useChatDocument, useChats } from './use-chats.js';
+import { useReadAloud } from './use-read-aloud.js';
 
 const TURN_SYNC_ATTEMPTS = 120;
 const TURN_SYNC_INTERVAL = 1_000;
@@ -178,6 +180,7 @@ export function Chat(props: ChatProps) {
       chatIdControlled={Object.prototype.hasOwnProperty.call(props, 'chatId')}
       adapter={provider.adapter}
       agents={provider.manifest.agents}
+      speak={provider.manifest.speak ? provider.adapter.speak : undefined}
       toolRenderers={provider.toolRenderers}
     />
   );
@@ -189,6 +192,7 @@ type ChatInnerProps = ChatProps & {
   chatIdControlled: boolean;
   modelInputs?: ComposerModelInput[];
   modelName?: string;
+  speak?: ChatPlatformAdapter['speak'];
   toolRenderers: readonly ToolRenderer[];
 };
 
@@ -226,6 +230,7 @@ function ChatInner({
   submitContent = 'Send',
   chatId: controlledChatId,
   chatIdControlled,
+  speak,
   throttle,
   toolRenderers,
   userName,
@@ -779,6 +784,24 @@ function ChatInner({
 
   const pending = chat.status === 'submitted' || chat.status === 'streaming';
   const lastMessage = chat.messages.at(-1);
+  const readAloud = useReadAloud({ speak });
+  const { activeId: readAloudId, stop: stopReadAloud } = readAloud;
+  const readAloudStartText = useRef<string | undefined>(undefined);
+  const readAloudMessage = chat.messages.find(({ id }) => id === readAloudId);
+  const readAloudText = readAloudMessage ? messageText(readAloudMessage) : undefined;
+
+  useEffect(() => {
+    stopReadAloud();
+  }, [chatKey, stopReadAloud]);
+
+  useEffect(() => {
+    if (editingMessageId !== undefined || pending) stopReadAloud();
+  }, [editingMessageId, pending, stopReadAloud]);
+
+  useEffect(() => {
+    if (readAloudId !== undefined && readAloudText !== readAloudStartText.current) stopReadAloud();
+  }, [readAloudId, readAloudText, stopReadAloud]);
+
   const pendingToolCallIds = useMemo(
     () =>
       new Set(
@@ -897,6 +920,18 @@ function ChatInner({
         }
         onEdit={
           message.role === 'user' && !isReadonly ? () => setEditingMessageId(message.id) : undefined
+        }
+        readAloud={
+          message.role === 'assistant' && speak && speechText(text)
+            ? {
+                active: readAloud.activeId === message.id && readAloud.status !== 'idle',
+                error: readAloud.error?.id === message.id ? readAloud.error.message : undefined,
+                onToggle: () => {
+                  readAloudStartText.current = text;
+                  readAloud.toggle(message.id, text);
+                },
+              }
+            : undefined
         }
       />
     ) : null;

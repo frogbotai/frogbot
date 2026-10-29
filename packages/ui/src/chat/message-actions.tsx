@@ -5,6 +5,8 @@ import BranchIcon from '../icons/icons/BranchIcon.js';
 import CopyIcon from '../icons/icons/CopyIcon.js';
 import PencilIcon from '../icons/icons/PencilIcon.js';
 import RefreshIcon from '../icons/icons/RefreshIcon.js';
+import StopIcon from '../icons/icons/StopIcon.js';
+import VolumeIcon from '../icons/icons/VolumeIcon.js';
 import { copyMarkdown } from './copy-markdown.js';
 import { formatMessageTimestamp } from './format-timestamp.js';
 
@@ -13,6 +15,7 @@ export interface MessageActionsProps {
   onCopy?: () => void;
   onEdit?: () => void;
   onRegenerate?: () => void;
+  readAloud?: ReadAloudMessageActionProps;
   text?: string;
   timestamp?: Date | number | string;
   timestampPlacement?: 'end' | 'start';
@@ -27,6 +30,12 @@ export interface CopyMessageActionProps {
   text?: string;
 }
 
+export interface ReadAloudMessageActionProps {
+  active: boolean;
+  error?: string;
+  onToggle: () => void;
+}
+
 export interface EditMessageActionProps {
   onEdit: () => void;
 }
@@ -39,11 +48,13 @@ function Action({
   children,
   label,
   onClick,
+  pressed,
   tooltip,
 }: {
   children: ReactNode;
   label: string;
   onClick: () => void;
+  pressed?: boolean;
   tooltip?: string;
 }) {
   return (
@@ -51,6 +62,7 @@ function Action({
       <button
         type="button"
         aria-label={label}
+        aria-pressed={pressed}
         onClick={onClick}
         className="fb-message-actions__button fb-slide-up-1"
       >
@@ -70,6 +82,27 @@ export function CopyMessageAction({ onCopy, text }: CopyMessageActionProps) {
     <Action label="Copy" onClick={copy}>
       <CopyIcon className="fb-message-actions__icon" />
     </Action>
+  );
+}
+
+export function ReadAloudMessageAction({ active, error, onToggle }: ReadAloudMessageActionProps) {
+  const label = active ? 'Stop reading' : 'Read aloud';
+
+  return (
+    <>
+      <Action label={label} onClick={onToggle} pressed={active} tooltip={label}>
+        {active ? (
+          <StopIcon className="fb-message-actions__icon" />
+        ) : (
+          <VolumeIcon className="fb-message-actions__icon" />
+        )}
+      </Action>
+      {error && (
+        <span role="alert" className="fb-message-actions__error">
+          {error}
+        </span>
+      )}
+    </>
   );
 }
 
@@ -105,6 +138,7 @@ export function MessageActions({
   onCopy,
   onEdit,
   onRegenerate,
+  readAloud,
   text,
   timestamp,
   timestampPlacement = 'start',
@@ -115,6 +149,7 @@ export function MessageActions({
     <div className="fb-message-actions" aria-label="Message actions">
       {timestampPlacement === 'start' && time}
       {(text != null || onCopy) && <CopyMessageAction text={text} onCopy={onCopy} />}
+      {readAloud && <ReadAloudMessageAction {...readAloud} />}
       {onEdit && <EditMessageAction onEdit={onEdit} />}
       {onBranch && <BranchMessageAction onBranch={onBranch} />}
 

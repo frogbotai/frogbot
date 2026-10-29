@@ -7,7 +7,7 @@ import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
 import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
 
 const manifest = {
-  ai: { transcribe: false as const },
+  ai: { transcribe: false as const, speak: false as const },
   chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
   files: { slug: 'files' },
   agents: [{ slug: 'support', profile: { name: 'Ada', avatar: '/ada.png' } }, { slug: 'sales' }],

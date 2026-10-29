@@ -24,16 +24,39 @@ async function transcriptionCapability({
   return { model };
 }
 
+async function speechCapability({
+  req,
+}: {
+  req: FrogBotRequest;
+}): Promise<ManifestResponse['ai']['speak']> {
+  const ai = req.frogbot.config.ai;
+
+  if (!ai?.speechModel || !req.user) return false;
+
+  const model = resolveModel(ai.speechModel, ai);
+
+  try {
+    await enforceAIAccess({ req, method: 'generateSpeech', model, config: ai });
+  } catch {
+    return false;
+  }
+
+  return { model, ...(ai.speechVoice && { voice: ai.speechVoice }) };
+}
+
 export function buildManifestEndpoint() {
   return {
     path: '/frogbot',
     method: 'get' as const,
     handler: async (req: FrogBotRequest) => {
-      const agents = await listAgents({ req });
-      const transcribe = await transcriptionCapability({ req });
+      const [agents, transcribe, speak] = await Promise.all([
+        listAgents({ req }),
+        transcriptionCapability({ req }),
+        speechCapability({ req }),
+      ]);
 
       const body: ManifestResponse = {
-        ai: { transcribe },
+        ai: { transcribe, speak },
         chat: req.frogbot.config.chat,
         files: req.frogbot.config.files,
         agents,

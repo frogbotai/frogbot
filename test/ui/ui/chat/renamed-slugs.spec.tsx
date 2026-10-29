@@ -19,7 +19,7 @@ vi.mock('@ai-sdk/react', () => ({
 function respond(url: string): Response {
   if (url === 'https://frogbot.example/api/frogbot') {
     return Response.json({
-      ai: { transcribe: false },
+      ai: { transcribe: false, speak: false },
       chat: { enabled: true, chatsSlug: 'conversations', messagesSlug: 'turns' },
       files: { slug: 'assets' },
       agents: [{ slug: 'support' }],

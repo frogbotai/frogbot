@@ -20,6 +20,9 @@ const PROVIDER = 'dojo';
 const TRANSCRIPTION_WARNING =
   "[plugin-dojo] Transcription isn't available through Dojo's router; bring a provider key to use it.";
 
+const SPEECH_WARNING =
+  "[plugin-dojo] Speech isn't available through Dojo's router; bring a provider key to use it.";
+
 function toKeyless(provider: string, entry: unknown): KeylessProvider | undefined {
   const envVar = providerKeyEnvVar(provider);
 
@@ -136,8 +139,13 @@ export function withDojoAI(config: FrogBotConfig, env: DojoEnv): FrogBotConfig {
     routers[slug] = { ...router, model: rename(router.model) };
   }
 
-  const { transcriptionModel, ...rest } = ai;
+  const { transcriptionModel, speechModel, speechVoice, ...rest } = ai;
   const dropTranscription = transcriptionModel !== undefined && moved.has(transcriptionModel);
+  const dropSpeech = speechModel !== undefined && moved.has(speechModel);
+  const warnings = [
+    ...(dropTranscription ? [TRANSCRIPTION_WARNING] : []),
+    ...(dropSpeech ? [SPEECH_WARNING] : []),
+  ];
 
   return {
     ...config,
@@ -155,12 +163,14 @@ export function withDojoAI(config: FrogBotConfig, env: DojoEnv): FrogBotConfig {
       ...(ai.defaultModel !== undefined && { defaultModel: rename(ai.defaultModel) }),
       ...(ai.smallModel !== undefined && { smallModel: rename(ai.smallModel) }),
       ...(transcriptionModel !== undefined && !dropTranscription && { transcriptionModel }),
+      ...(speechModel !== undefined && !dropSpeech && { speechModel }),
+      ...(speechVoice !== undefined && !dropSpeech && { speechVoice }),
     },
-    ...(dropTranscription && {
+    ...(warnings.length > 0 && {
       onInit: [
         ...onInitList(config.onInit),
         (frogbot) => {
-          frogbot.logger.warn(TRANSCRIPTION_WARNING);
+          for (const warning of warnings) frogbot.logger.warn(warning);
         },
       ],
     }),

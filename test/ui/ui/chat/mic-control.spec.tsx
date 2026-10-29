@@ -36,7 +36,7 @@ describe('MicControl', () => {
       Promise.resolve(
         String(input).endsWith('/frogbot')
           ? Response.json({
-              ai: { transcribe: capability },
+              ai: { transcribe: capability, speak: false },
               chat: {
                 enabled: true,
                 chatsSlug: 'chats',

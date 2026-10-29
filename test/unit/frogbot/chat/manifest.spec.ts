@@ -101,7 +101,7 @@ describe('manifest endpoint', () => {
     const response = await buildManifestEndpoint().handler(makeRequest());
 
     expect(await response.json()).toEqual({
-      ai: { transcribe: false },
+      ai: { transcribe: false, speak: false },
       chat: { enabled: true, chatsSlug: 'conversations', messagesSlug: 'turns' },
       files: { slug: 'uploads' },
       agents: [{ slug: 'support' }],
@@ -150,7 +150,7 @@ describe('manifest endpoint', () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
-      ai: { transcribe: false },
+      ai: { transcribe: false, speak: false },
       chat: { enabled: false },
       files: { slug: 'uploads' },
       agents: [{ slug: 'public' }],
@@ -412,5 +412,94 @@ describe('manifest endpoint', () => {
 
     expect(response.headers.get('Cache-Control')).toBe('private, no-store');
     expect(Object.keys(await response.json()).sort()).toEqual(['agents', 'ai', 'chat', 'files']);
+  });
+
+  describe('read aloud', () => {
+    const speechModel = 'mistral/voxtral-mini-tts-latest';
+
+    it('reports unavailable speech when the setting is unset', async () => {
+      const response = await buildManifestEndpoint().handler(
+        makeRequest({ ai: { providers: { mistral: true } } }),
+      );
+
+      expect(await response.json()).toMatchObject({ ai: { speak: false } });
+    });
+
+    it('reports unavailable speech to an anonymous caller', async () => {
+      const generate = vi.fn(() => true);
+      const response = await buildManifestEndpoint().handler(
+        makeRequest({
+          ai: { providers: { mistral: true }, speechModel, access: { generate } },
+          user: null,
+        }),
+      );
+
+      expect(await response.json()).toMatchObject({ ai: { speak: false } });
+      expect(generate).not.toHaveBeenCalled();
+    });
+
+    it('reports unavailable speech when generate access refuses the model', async () => {
+      const response = await buildManifestEndpoint().handler(
+        makeRequest({
+          ai: {
+            providers: { mistral: true },
+            speechModel,
+            access: { generate: ({ model }: { model: string }) => model !== speechModel },
+          },
+        }),
+      );
+
+      expect(await response.json()).toMatchObject({ ai: { speak: false } });
+    });
+
+    it('reports unavailable speech when the generate access rule rejects', async () => {
+      const response = await buildManifestEndpoint().handler(
+        makeRequest({
+          ai: {
+            providers: { mistral: true },
+            speechModel,
+            access: { generate: () => Promise.reject(new Error('access failed')) },
+          },
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({ ai: { speak: false } });
+    });
+
+    it('reports the speech model without a voice when none is set', async () => {
+      const generate = vi.fn(() => true);
+      const req = makeRequest({
+        ai: { providers: { mistral: true }, speechModel, access: { generate } },
+      });
+
+      const response = await buildManifestEndpoint().handler(req);
+      const body = await response.json();
+
+      expect(body.ai.speak).toEqual({ model: speechModel });
+      expect(generate).toHaveBeenCalledWith({ req, model: speechModel });
+    });
+
+    it('reports the speech model and voice', async () => {
+      const response = await buildManifestEndpoint().handler(
+        makeRequest({ ai: { providers: { mistral: true }, speechModel, speechVoice: 'nova' } }),
+      );
+
+      expect((await response.json()).ai.speak).toEqual({ model: speechModel, voice: 'nova' });
+    });
+
+    it('reports the model behind a speech router', async () => {
+      const response = await buildManifestEndpoint().handler(
+        makeRequest({
+          ai: {
+            providers: { mistral: true },
+            routers: { tts: { model: speechModel } },
+            speechModel: 'tts',
+          },
+        }),
+      );
+
+      expect((await response.json()).ai.speak).toEqual({ model: speechModel });
+    });
   });
 });

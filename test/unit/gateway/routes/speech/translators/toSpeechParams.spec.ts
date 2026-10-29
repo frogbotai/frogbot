@@ -36,6 +36,10 @@ describe('toSpeechParams', () => {
     ).toBe('mp3');
   });
 
+  it.each([null, undefined])('leaves voice out when it is %s', (voice) => {
+    expect('voice' in toSpeechParams({ model: 'openai/tts-1', input: 'hello', voice })).toBe(false);
+  });
+
   it.each(['openai', 'elevenlabs', 'lmnt', 'hume', 'fal', 'deepgram', 'google', 'xai'])(
     'does not leak user into speech provider options for %s',
     (providerName) => {

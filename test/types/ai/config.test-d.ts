@@ -23,6 +23,22 @@ const withUnknownTranscriptionModel: AIConfig = {
 
 void withUnknownTranscriptionModel;
 
+const withSpeechModel = {
+  providers: { mistral: true },
+  speechModel: 'mistral/voxtral-mini-tts-latest',
+  speechVoice: 'nova',
+} satisfies AIConfig;
+
+void withSpeechModel;
+
+const withUnknownSpeechModel: AIConfig = {
+  providers: { mistral: true },
+  // @ts-expect-error `speechModel` accepts configured model IDs only.
+  speechModel: 'future/model',
+};
+
+void withUnknownSpeechModel;
+
 const withDefaultRouter: AIConfig = {
   providers: { openai: true },
   routers: { judge: { model: 'openai/gpt-4o-mini' } },

@@ -84,6 +84,8 @@ export type ChatPlatformAdapter = {
   uploadAttachment?: (file: File) => Promise<UploadedAttachment>;
   readAttachment?: (id: ChatId, options: { signal: AbortSignal }) => Promise<StoredAttachment>;
   transcribe?: (file: File) => Promise<string>;
+  /** Turns text into audio for read aloud; the UI plays the returned blob. */
+  speak?: (text: string, options: { signal: AbortSignal }) => Promise<Blob>;
   buildMetadata?: (
     message: UIMessage,
   ) => Record<string, unknown> | Promise<Record<string, unknown>>;

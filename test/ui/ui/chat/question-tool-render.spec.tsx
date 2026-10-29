@@ -369,7 +369,7 @@ describe('QuestionToolRender in Chat', () => {
 
       if (url.pathname === '/api/frogbot') {
         return Response.json({
-          ai: { transcribe: false },
+          ai: { transcribe: false, speak: false },
           chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
           files: { slug: 'files' },
           agents: [{ slug: agent }],

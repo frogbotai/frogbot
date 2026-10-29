@@ -5,7 +5,10 @@ import type { AgentProfile, ManifestResponse } from '../../../../packages/frogbo
 describe('ManifestResponse', () => {
   it('exports the manifest response contract', () => {
     expectTypeOf<ManifestResponse>().toEqualTypeOf<{
-      ai: { transcribe: { model: string } | false };
+      ai: {
+        transcribe: { model: string } | false;
+        speak: { model: string; voice?: string } | false;
+      };
       chat:
         | { enabled: false }
         | { enabled: true; chatsSlug: string; messagesSlug: string; assetsSlug: string };

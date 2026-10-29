@@ -279,7 +279,8 @@ import {
   BranchMessageAction,
   CopyMessageAction,
   EditMessageAction,
-  MessageTimestamp
+  MessageTimestamp,
+  ReadAloudMessageAction
 } from '@frogbotai/ui/chat'
 ```
 
@@ -595,3 +596,18 @@ A user may transcribe when [`ai.access.transcribe`](/ai/overview#control-access)
 Recording uses the browser's supported audio container: Opus in WebM where available, MP4 on Safari, or the browser default. Audio is sent for batch transcription after recording stops; transcription is not streamed.
 
 Permission, access, network, and empty-audio failures appear beside the microphone without clearing the draft. The recording button retains Firmware's pulse and ripple feedback. The separate live waveform is intentionally omitted because local batch recording does not require Firmware's streaming audio analyzer.
+
+## Read aloud
+
+Each AI reply gets a **Read aloud** button next to Copy when the `ChatProvider` adapter has `speak` and its manifest sets `speak`. With the REST adapter, that is when [`ai.speechModel`](/ai/overview#ai-options) is set and the signed-in user may generate with it. Set [`ai.speechVoice`](/ai/overview#ai-options) to pick a voice; without it the provider's default voice is used.
+
+```ts
+ai: {
+  providers: { mistral: true },
+  speechModel: 'mistral/voxtral-mini-tts-latest',
+}
+```
+
+Click the button to hear the reply and again to stop. Starting another reply stops the first, and so do switching chat or editing a message. Markdown formatting, images and code are skipped, and a reply that is only code has no button. Long replies are read in parts of up to 4,000 characters, each fetched while the one before it plays. Replaying the last reply uses the audio already fetched.
+
+Speech spends under [`ai.access.generate`](/ai/overview#control-access), the rule checked for the speech model. For an alias, the rule receives the model behind the alias, so with the [AI policy plugin](/plugins/ai-policy) the user's `models` list must include that model. A failed request shows a short message beside the button.

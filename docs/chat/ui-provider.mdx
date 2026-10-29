@@ -80,7 +80,7 @@ An adapter is a `ChatPlatformAdapter` object. The first five members are require
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `loadManifest` | `({ signal }) => Promise<ChatManifest \| null>` | Required | Returns `{ defaultAgent, agents, transcribe }`, or `null` when chat is disabled. Each agent is an [agent manifest](/chat/manifest) entry with an optional `profile`. |
+| `loadManifest` | `({ signal }) => Promise<ChatManifest \| null>` | Required | Returns `{ defaultAgent, agents, transcribe, speak? }`, or `null` when chat is disabled. Each agent is an [agent manifest](/chat/manifest) entry with an optional `profile`. |
 | `createTransport` | `({ agent, request, onChatId }) => ChatTransport<UIMessage>` | Required | Returns the AI SDK transport for one agent. `request()` returns `{ chatId, model, reasoning }` at send time; `chatId` is `undefined` for a new chat. Call `onChatId(chatId)` for a new chat before its stream ends. The backend behind the transport stores the turn: the UI never saves messages. |
 | `listChats` | `({ agent, page, limit }) => Promise<ChatPage>` | Required | One page of chats, newest first, as `{ docs, page, totalDocs, totalPages, hasNextPage, hasPrevPage }`. |
 | `getChat` | `(chatId) => Promise<ChatDocument>` | Required | One chat's document. |
@@ -96,6 +96,7 @@ An adapter is a `ChatPlatformAdapter` object. The first five members are require
 | `uploadAttachment` | `(file) => Promise<{ id, mediaType, text? }>` | — | Stores a file and returns the ID sent in its `file-reference` part. Without it, the composer has no attach button, ignores dropped and pasted files, and keeps long pastes in the browser. |
 | `readAttachment` | `(id, { signal }) => Promise<StoredAttachment>` | — | Returns a stored file as `{ filename, mediaType, filesize?, text }` or `{ …, blob }`. Without it, a file reference shows "Attachment unavailable". |
 | `transcribe` | `(file) => Promise<string>` | — | Turns recorded audio into text. The microphone shows only with this and `manifest.transcribe`. |
+| `speak` | `(text, { signal }) => Promise<Blob>` | — | Turns text into audio for [read aloud](/chat/ui-chat#read-aloud). AI replies show the button only with this and `manifest.speak`. |
 | `buildMetadata` | `(message: UIMessage) => Record<string, unknown> \| Promise<Record<string, unknown>>` | — | Returns metadata to attach to each message the user sends or edits. |
 | `executeClientTool` | `(name: string, input: unknown) => unknown` | — | Runs a client tool call in the browser as it arrives and submits its return value as the output. Without it, client tools wait for a [tool renderer](/chat/ui-registries#answer-client-tools) to answer. |
 | `steerMessage` | `(chatId: ChatId, message: UIMessage) => Promise<void>` | — | Hands a queued message to the running turn, which takes it at its next step. Without it, queued messages have no **Steer** button. See [Queued messages](/chat/ui-chat#queued-messages). |

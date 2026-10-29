@@ -5,7 +5,10 @@ export type SanitizedChatConfig =
   | { enabled: true; chatsSlug: string; messagesSlug: string; assetsSlug: string };
 
 export type ManifestResponse = {
-  ai: { transcribe: { model: string } | false };
+  ai: {
+    transcribe: { model: string } | false;
+    speak: { model: string; voice?: string } | false;
+  };
   chat: SanitizedChatConfig;
   files?: { slug: string };
   agents: { slug: string; profile?: AgentProfile }[];

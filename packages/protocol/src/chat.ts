@@ -21,4 +21,6 @@ export type ChatManifest<TModel extends string = string> = {
   defaultAgent: string;
   agents: (AgentManifestEntry<TModel> & { profile?: AgentProfile })[];
   transcribe: boolean;
+  /** Read aloud is available: the adapter's `speak` may be called. */
+  speak?: boolean;
 };

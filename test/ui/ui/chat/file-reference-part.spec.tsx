@@ -56,7 +56,7 @@ function createAdapter(routes: Record<string, () => Response | Promise<Response>
 
     if (path === '/frogbot') {
       return Response.json({
-        ai: { transcribe: false },
+        ai: { transcribe: false, speak: false },
         chat: { enabled: true, assetsSlug, chatsSlug: 'chats', messagesSlug: 'messages' },
         files: { slug: 'files' },
         agents: [],
