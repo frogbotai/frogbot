@@ -3,6 +3,7 @@ import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import * as icons from '../../../../packages/ui/src/exports/icons';
+import { branchIcon } from '../../../../packages/ui/src/icons/icons/BranchIcon';
 import type { IconNode, LucideIcon, LucideProps } from '../../../../packages/ui/src/icons/types';
 import {
   excludedIcons,
@@ -180,6 +181,15 @@ describe('firmware icons', () => {
     expect(container.querySelector('circle')).toBeNull();
     expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
     expect(container.querySelector('path')?.getAttribute('d')).toMatch(/Z$/);
+  });
+
+  it('draws BranchIcon as Lucide split', () => {
+    expect(branchIcon).toEqual([
+      ['path', { d: 'M16 3h5v5' }],
+      ['path', { d: 'M8 3H3v5' }],
+      ['path', { d: 'M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3' }],
+      ['path', { d: 'm15 9 6-6' }],
+    ]);
   });
 
   it('supports factory defaults and icon prop overrides', () => {
