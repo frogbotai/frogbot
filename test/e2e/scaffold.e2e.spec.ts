@@ -319,7 +319,12 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
 
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual({
-      error: { message: 'Unauthorized', type: 'authentication_error' },
+      error: {
+        message: 'Unauthorized',
+        type: 'authentication_error',
+        code: 'invalid_api_key',
+        param: null,
+      },
     });
   });
 });

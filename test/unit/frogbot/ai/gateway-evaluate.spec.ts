@@ -72,7 +72,14 @@ describe('FrogBot gateway evaluation', () => {
     const response = await createGatewayHandler(frogbot)(makeRequest());
 
     expect(response.status).toBe(403);
-    expect(await response.json()).toMatchObject({ error: { type: 'permission_error' } });
+    expect(await response.json()).toEqual({
+      error: {
+        message: 'Access denied for AI evaluate',
+        type: 'permission_error',
+        code: 'permission_denied',
+        param: null,
+      },
+    });
     expect(handler).not.toHaveBeenCalled();
   });
 
@@ -92,7 +99,12 @@ describe('FrogBot gateway evaluation', () => {
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({
-      error: { message: 'Model not allowed', type: 'model_not_allowed' },
+      error: {
+        message: 'Model not allowed',
+        type: 'permission_error',
+        code: 'model_not_allowed',
+        param: null,
+      },
     });
     expect(evaluate).toHaveBeenCalledExactlyOnceWith({ req, model: 'typesafe-ai/jev' });
     expect(handler).not.toHaveBeenCalled();

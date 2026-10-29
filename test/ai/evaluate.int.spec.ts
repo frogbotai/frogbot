@@ -380,7 +380,14 @@ describe('booted TypeSafe evaluation', () => {
     const response = await booted.restClient.post('/api/v1/evaluate', body, auth);
 
     expect(response.status).toBe(403);
-    expect(response.body).toMatchObject({ error: { type: 'permission_error' } });
+    expect(response.body).toEqual({
+      error: {
+        message: 'Access denied for AI evaluate',
+        type: 'permission_error',
+        code: 'permission_denied',
+        param: null,
+      },
+    });
     expect(upstreamCalls).toHaveLength(0);
     expect(hookEvents).toHaveLength(0);
   });
@@ -399,10 +406,50 @@ describe('booted TypeSafe evaluation', () => {
     const response = await booted.restClient.post('/api/v1/evaluate', body, auth);
 
     expect(response.status).toBe(403);
-    expect(response.body).toMatchObject({ error: { type: 'model_not_allowed' } });
+    expect(response.body).toEqual({
+      error: {
+        message: 'Model "typesafe-ai/jev" is not allowed by this policy.',
+        type: 'invalid_request_error',
+        code: 'model_not_allowed',
+        param: 'model',
+      },
+    });
     expect(upstreamCalls).toHaveLength(0);
     expect(hookEvents).toHaveLength(0);
     expect(await usageRows()).toHaveLength(0);
+  });
+
+  it('renders a disallowed model in each route envelope before upstream', async () => {
+    const user = await createUser();
+
+    await booted.frogbot.update({
+      collection: usersSlug,
+      id: user.id,
+      data: { models: ['typesafe-ai/jev-latest'] },
+      overrideAccess: true,
+    });
+
+    const auth = await login();
+    const request = { model: 'typesafe-ai/jev', messages: [{ role: 'user', content: 'Hi' }] };
+    const message = 'Model "typesafe-ai/jev" is not allowed by this policy.';
+    const completions = await booted.restClient.post('/api/v1/chat/completions', request, auth);
+    const messages = await booted.restClient.post(
+      '/api/v1/messages',
+      { ...request, max_tokens: 10 },
+      auth,
+    );
+
+    expect(completions.status).toBe(403);
+    expect(completions.body).toEqual({
+      error: { message, type: 'invalid_request_error', code: 'model_not_allowed', param: 'model' },
+    });
+    expect(messages.status).toBe(403);
+    expect(messages.body).toEqual({
+      type: 'error',
+      error: { type: 'permission_error', message, param: 'model' },
+    });
+    expect(upstreamCalls).toHaveLength(0);
+    expect(hookEvents).toHaveLength(0);
   });
 
   it('rejects unknown evaluation models before contacting TypeSafe', async () => {

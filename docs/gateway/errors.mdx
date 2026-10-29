@@ -72,6 +72,17 @@ try {
 
 `toAnthropicErrorResponse` produces the equivalent envelope for the `/v1/messages` route's wire format.
 
+For an error that is not a `GatewayError`, `toStatusErrorResponse` builds the same envelope from a status, taking `type` and a default `code` from the status:
+
+```ts
+import { toStatusErrorResponse } from '@frogbotai/gateway/errors'
+
+const { body, status } = toStatusErrorResponse('openai', { status: 401, message: 'Unauthorized' })
+// 401 { error: { message: 'Unauthorized', type: 'authentication_error', code: 'invalid_api_key', param: null } }
+```
+
+Pass `'anthropic'` for the `/v1/messages` shape, and `code` or `param` to set them.
+
 ---
 
 ## Error classes

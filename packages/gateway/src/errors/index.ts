@@ -4,8 +4,13 @@ export type {
   AnthropicErrorType,
   OpenAIErrorEnvelope,
   OpenAIErrorType,
+  StatusError,
 } from './envelope.js';
-export { toAnthropicErrorResponse, toOpenAIErrorResponse } from './envelope.js';
+export {
+  toAnthropicErrorResponse,
+  toOpenAIErrorResponse,
+  toStatusErrorResponse,
+} from './envelope.js';
 export type { GatewayErrorCode } from './gatewayError.js';
 export {
   BodyTooLargeError,

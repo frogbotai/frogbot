@@ -623,7 +623,24 @@ describe('FrogBot class', () => {
         new Request('http://localhost/api/v1/chat/completions', { method: 'POST', body: '{}' }),
       );
 
+      const messages = await createGatewayHandler(frogbot)(
+        new Request('http://localhost/api/v1/messages', { method: 'POST', body: '{}' }),
+      );
+
       expect(response.status).toBe(401);
+      expect(await response.json()).toEqual({
+        error: {
+          message: 'Unauthorized',
+          type: 'authentication_error',
+          code: 'invalid_api_key',
+          param: null,
+        },
+      });
+      expect(messages.status).toBe(401);
+      expect(await messages.json()).toEqual({
+        type: 'error',
+        error: { type: 'authentication_error', message: 'Unauthorized', param: null },
+      });
       expect(handler).not.toHaveBeenCalled();
     });
 
@@ -636,7 +653,30 @@ describe('FrogBot class', () => {
 
       expect(response.status).toBe(403);
       expect(await response.json()).toEqual({
-        error: { message: 'Access denied for AI generate', type: 'permission_error' },
+        error: {
+          message: 'Access denied for AI generate',
+          type: 'permission_error',
+          code: 'permission_denied',
+          param: null,
+        },
+      });
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('renders a coded error from an access rule with its own status', async () => {
+      const { frogbot, handler } = await setupGateway({
+        generate: () => {
+          throw Object.assign(new Error('Custom denial'), { status: 403, code: 'custom' });
+        },
+      });
+
+      const response = await createGatewayHandler(frogbot)(
+        new Request('http://localhost/api/v1/chat/completions', { method: 'POST', body: '{}' }),
+      );
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        error: { message: 'Custom denial', type: 'permission_error', code: 'custom', param: null },
       });
       expect(handler).not.toHaveBeenCalled();
     });
@@ -673,7 +713,14 @@ describe('FrogBot class', () => {
       );
 
       expect(response.status).toBe(403);
-      expect(await response.json()).toMatchObject({ error: { type: 'model_not_allowed' } });
+      expect(await response.json()).toEqual({
+        error: {
+          message: "Model 'openai/gpt-4o-transcribe' is not allowed",
+          type: 'permission_error',
+          code: 'model_not_allowed',
+          param: null,
+        },
+      });
       expect(transcribe).toHaveBeenCalledWith(
         expect.objectContaining({ model: 'openai/gpt-4o-transcribe' }),
       );
@@ -743,7 +790,12 @@ describe('FrogBot class', () => {
 
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({
-        error: { message: 'Invalid request body.', type: 'invalid_request_error' },
+        error: {
+          message: 'Invalid request body.',
+          type: 'invalid_request_error',
+          code: 'invalid_request_body',
+          param: null,
+        },
       });
       expect(generate).not.toHaveBeenCalled();
       expect(handler).not.toHaveBeenCalled();
