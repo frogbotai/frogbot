@@ -78,7 +78,7 @@ export interface Config {
     users: UsersSelect;
   };
   db: {
-    defaultIDType: number;
+    defaultIDType: string;
   };
   fallbackLocale: null;
   globals: {};
@@ -126,7 +126,7 @@ export interface UserAuthOperations {
  * via the `definition` "vector-documents".
  */
 export interface VectorDocument {
-  id: number;
+  id: string;
   title: string;
   embedding: number[];
   optionalEmbedding?: number[] | null;
@@ -147,11 +147,11 @@ export interface VectorDocument {
   mutated?: number[] | null;
   createdBy?: {
     relationTo: 'users';
-    value: number | User;
+    value: string | User;
   } | null;
   updatedBy?: {
     relationTo: 'users';
-    value: number | User;
+    value: string | User;
   } | null;
   updatedAt: string;
   createdAt: string;
@@ -172,7 +172,7 @@ export interface Note {
  * via the `definition` "users".
  */
 export interface User {
-  id: number;
+  id: string;
   name?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -199,9 +199,9 @@ export interface User {
  * via the `definition` "frogbot-waitpoints".
  */
 export interface FrogBotWaitpoint {
-  id: number;
+  id: string;
   jobId: string;
-  holder?: (number | null) | null;
+  holder?: (string | null) | null;
   name: string;
   token: string;
   kind: 'delay' | 'resumable';
