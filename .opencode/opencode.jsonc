@@ -18,6 +18,9 @@
     { "action": "shell", "resource": "git merge *", "effect": "deny" },
     { "action": "shell", "resource": "git -C * merge *", "effect": "deny" },
     { "action": "shell", "resource": "git -c * merge *", "effect": "deny" },
+    // Fast-forward only: it moves the branch, never makes a merge commit or a conflict.
+    { "action": "shell", "resource": "git merge --ff-only *", "effect": "allow" },
+    { "action": "shell", "resource": "git -C * merge --ff-only *", "effect": "allow" },
 
     { "action": "shell", "resource": "sleep *", "effect": "deny" },
     { "action": "shell", "resource": "kill -0 *", "effect": "deny" },

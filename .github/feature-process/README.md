@@ -15,7 +15,7 @@ Each role is an OpenCode agent, except the owner. The commands are the normal pa
 | **Lint agent**  | `lint`, cheap model                   | a worker or the coordinator asks                                     | `pnpm check`, `pnpm check --full`, `pnpm lint:fix`, `pnpm prettier:write`                                                                                                                      | one line: `check: OK …` or the errors                                          | lint output is long; a cheap model reads it so the worker doesn't                  |
 | **Tester**      | `general`, fresh                      | a full-tier ticket is committed                                      | targeted tests that try to break it, then `pnpm ticket verify` on the final commit                                                                                                             | bugs found, or "held"; a `verify` ledger row                                   | the worker doesn't grade its own work; batch 27's testers found 2 real bugs in 248 |
 
-Never, for any agent: `git push`, `git merge`, `--no-verify`, sleep loops, whole-suite test runs. Inside a worker also never `git stash` (worktrees share it) or a background call (the plugin refuses both).
+Never, for any agent: `git push`, a `git merge` other than `--ff-only`, `--no-verify`, sleep loops, whole-suite test runs. Inside a worker also never `git stash` (worktrees share it) or a background call (the plugin refuses both).
 
 ### The normal path of a code ticket
 
@@ -59,7 +59,7 @@ Stage is read from these files and git, never stored. For small edits the owner 
   - `verify [--list]`, in a ticket worktree, maps the diff against local `main` (`scripts/lib/affected.mjs`, the map `land` uses) to typecheck areas, unit, UI, int and browser specs and repo checks, runs them cheapest first, and prints one line per group, the tier and the changed files nothing covers. It writes a `verify` ledger row at the level reached, or `failed`. `--list` prints the set without running it.
 - **Ticket keys.** A ticket split into parts uses a letter: `pnpm ticket new 210b` makes `frogbot-ticket210b` and `feat/ticket-210b-<slug>`, and its ledger rows say `210b`.
 - **Subagent descriptions** start with the ticket key, for example `211a stage 4: autonumber` or `250 lint: pnpm check`, so `stats` can count the session. A description with no number is fine and counts as "other"; the plugin refuses only one that starts with a number it can't read as a key.
-- **OpenCode config and plugin** (`.opencode/`) block `git push`, `git merge`, `--no-verify`, sleep loops, whole-suite test runs, `git stash` while other worktrees exist, and background calls inside subagents, naming what to use instead. They cap resumes, timeouts and output, and flag stalled agents.
+- **OpenCode config and plugin** (`.opencode/`) block `git push`, `git merge` (except `--ff-only`), `--no-verify`, sleep loops, whole-suite test runs, `git stash` while other worktrees exist, and background calls inside subagents, naming what to use instead. They cap resumes, timeouts and output, and flag stalled agents.
 
 ## Where things live
 

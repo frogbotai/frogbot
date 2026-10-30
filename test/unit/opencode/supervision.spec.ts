@@ -72,7 +72,8 @@ describe('denial', () => {
     ['git -C ../frogbot-ticket1 commit -n -m "fix: x"', 'noVerify'],
     ['git merge feat/x', 'merge'],
     ['git merge', 'merge'],
-    ['git -C ../frogbot merge --ff-only feat/x', 'merge'],
+    ['git -C ../frogbot merge --no-ff feat/x', 'merge'],
+    ['git merge --ff-only --no-ff feat/x', 'merge'],
     ['git -c core.editor=true merge feat/x', 'merge'],
     ['sleep 30', 'poll'],
     ['/bin/sleep 1', 'poll'],
@@ -100,6 +101,8 @@ describe('denial', () => {
     'git -C ../frogbot-ticket219 status --short',
     'git log --oneline -n 5',
     'git merge-base --is-ancestor HEAD main',
+    'git merge --ff-only feat/x',
+    'git -C ../frogbot merge --ff-only feat/x',
     'git stash push -m wip',
     'pnpm check',
     'pnpm check --full',
@@ -123,6 +126,7 @@ describe('denial', () => {
   it('names the alternative for every refusal', () => {
     expect(MESSAGES.push).toContain('ask the owner');
     expect(MESSAGES.noVerify).toContain('fix the hook failure, then commit');
+    expect(MESSAGES.merge).toContain('`git merge --ff-only <branch>`');
     expect(MESSAGES.merge).toContain('`pnpm ticket land <n>`');
     expect(MESSAGES.poll).toContain(
       'run in the foreground with a timeout, or use a background shell and wait for its notification',

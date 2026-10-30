@@ -19,7 +19,8 @@ export const OUTPUT_TAIL = 6_000;
 export const MESSAGES = {
   push: '`git push` is not allowed here: ask the owner.',
   noVerify: '`git commit --no-verify` is not allowed here: fix the hook failure, then commit.',
-  merge: '`git merge` is not allowed here: use `pnpm ticket land <n>`.',
+  merge:
+    '`git merge` is not allowed here: rebase the branch onto `main`, then `git merge --ff-only <branch>`, or use `pnpm ticket land <n>`.',
   poll: '`sleep` and `kill -0` are not allowed here: run in the foreground with a timeout, or use a background shell and wait for its notification.',
   suite:
     'The full test suite is not allowed here: run the affected files or `--project`; the full suite runs in `pnpm ticket land`.',
@@ -251,10 +252,14 @@ function gitDenial(args: string[]): Denial | undefined {
   const { subcommand, rest } = gitSubcommand(args);
 
   if (subcommand === 'push') return 'push';
-  if (subcommand === 'merge') return 'merge';
+  if (subcommand === 'merge' && !fastForwardOnly(rest)) return 'merge';
   if (subcommand === 'commit' && skipsHooks(rest)) return 'noVerify';
 
   return undefined;
+}
+
+function fastForwardOnly(args: string[]) {
+  return args.includes('--ff-only') && !args.some((arg) => arg === '--no-ff' || arg === '--ff');
 }
 
 function skipsHooks(args: string[]) {
