@@ -45,7 +45,7 @@ export function readDojoEnv(): DojoEnv | undefined {
   for (const [key, name] of Object.entries(SIGN_IN_VARIABLES) as [keyof DojoEnv, string][]) {
     const value = process.env[name];
 
-    if (value) env[key] = value;
+    if (value?.trim()) env[key] = value.trim();
   }
 
   return env;

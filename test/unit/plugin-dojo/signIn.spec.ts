@@ -177,6 +177,31 @@ describe('dojo() sign-in off', () => {
     },
   );
 
+  it.each(['DOJO_OAUTH_CLIENT_ID', 'DOJO_OAUTH_CLIENT_SECRET'])(
+    'treats a blank %s as missing rather than failing the start',
+    async (name) => {
+      vi.stubEnv(name, '  ');
+
+      const applied = apply(template([Users]));
+
+      expect(slugs(applied)).toEqual(['google']);
+      expect(() => validateSignIn(collection(applied, 'users'))).not.toThrow();
+      expect(await warnings(applied)).toEqual([off(`${name} is not set`)]);
+    },
+  );
+
+  it.each(['ftp://dojo.example', 'javascript:alert(1)'])(
+    'adds nothing when DOJO_URL is %s, not an http(s) URL',
+    async (url) => {
+      vi.stubEnv('DOJO_URL', url);
+
+      const applied = apply(template([Users]));
+
+      expect(slugs(applied)).toEqual(['google']);
+      expect(await warnings(applied)).toEqual([off('DOJO_URL is not a URL')]);
+    },
+  );
+
   it('adds nothing when DOJO_URL is not a URL', async () => {
     vi.stubEnv('DOJO_URL', 'dojo.example');
 

@@ -15,7 +15,7 @@ import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAd
 const CLIENT_ID = '42';
 const CLIENT_SECRET = 'dojo-oauth-secret';
 
-type Person = { sub: string; email: string; name?: string };
+type Person = { sub: string; email: string; name?: string; email_verified?: boolean };
 
 describe(`Sign in with Dojo [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () => {
   let frogbot: FrogBotInstance;
@@ -121,7 +121,7 @@ describe(`Sign in with Dojo [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =
       const person = tokens.get(req.headers.get('authorization')?.slice('Bearer '.length) ?? '');
       if (!person) return Response.json({ error: 'invalid_token' }, { status: 401 });
 
-      return Response.json({ ...person, email_verified: true });
+      return Response.json({ email_verified: true, ...person });
     }
 
     return new Response(null, { status: 404 });
@@ -231,5 +231,41 @@ describe(`Sign in with Dojo [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =
     expect(response.status).toBe(200);
     expect(session(response)).toBeDefined();
     expect(await users('bob@example.com')).toHaveLength(1);
+  });
+
+  it('signs a password user in by email, whatever case Dojo sends it in', async () => {
+    const own = await frogbot.create({
+      collection: 'users',
+      data: { email: 'cy@example.com', password: 'cy-password-123' },
+      overrideAccess: true,
+    });
+
+    const response = await signIn({ sub: '3', email: 'Cy@Example.COM' });
+
+    expect(response.status).toBe(200);
+
+    const me = await request('/api/users/me', {
+      headers: { cookie: session(response)!, origin: baseURL },
+    });
+
+    expect((await me.json()).user).toMatchObject({ id: own.id, email: 'cy@example.com' });
+    expect(await users('cy@example.com')).toHaveLength(1);
+  });
+
+  it('refuses an email Dojo has not verified, even with open sign-ups', async () => {
+    openSignUps = true;
+
+    const response = await signIn({ sub: '4', email: 'eve@example.com', email_verified: false });
+
+    expect(response.status).not.toBe(200);
+    expect(session(response)).toBeUndefined();
+    expect(await users('eve@example.com')).toEqual([]);
+  });
+
+  it('refuses to sign in as an existing user when Dojo has not verified the email', async () => {
+    const response = await signIn({ sub: '5', email: 'ada@example.com', email_verified: false });
+
+    expect(response.status).not.toBe(200);
+    expect(session(response)).toBeUndefined();
   });
 });
