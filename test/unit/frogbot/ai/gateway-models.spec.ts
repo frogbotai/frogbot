@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
 import { createGatewayHandler } from '../../../../packages/frogbot/src/server/gateway.js';
@@ -49,6 +49,10 @@ async function listedIds(response: Response) {
 }
 
 describe('FrogBot gateway model discovery', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('lists only the models the generate rule allows', async () => {
     const { frogbot } = makeFrogBot({
       access: { generate: ({ model }) => model === 'openai/gpt-4.1' },
@@ -107,6 +111,80 @@ describe('FrogBot gateway model discovery', () => {
     expect(response.status).toBe(500);
     expect(body.error.type).toBe('server_error');
     expect(body.error.message).toEqual(expect.any(String));
+  });
+
+  it('masks the failing rule message in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+
+    const { frogbot } = makeFrogBot({
+      access: {
+        generate: () => {
+          throw new Error('postgres://admin:secret@db/policies unreachable');
+        },
+      },
+    });
+
+    const response = await createGatewayHandler(frogbot)(makeRequest());
+    const body = (await response.json()) as { error: { message: string } };
+
+    expect(response.status).toBe(500);
+    expect(body.error.message).not.toContain('secret');
+  });
+
+  it('fails the whole list when any rule errors, even if others deny with a status', async () => {
+    const { frogbot } = makeFrogBot({
+      access: {
+        generate: ({ model }) => {
+          if (model === 'openai/gpt-4o') throw new Error('Policy store unavailable');
+
+          throw Object.assign(new Error('Model not allowed'), { status: 403 });
+        },
+      },
+    });
+
+    const response = await createGatewayHandler(frogbot)(makeRequest());
+
+    expect(response.status).toBe(500);
+  });
+
+  it('filters a request with a query string', async () => {
+    const { frogbot } = makeFrogBot({
+      access: { generate: () => false, embed: () => false },
+    });
+
+    const response = await createGatewayHandler(frogbot)(
+      new Request('http://localhost/api/v1/models?limit=10', {
+        headers: { authorization: 'Bearer user-token' },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await listedIds(response)).toEqual([]);
+  });
+
+  it("keeps the gateway's headers but not its content-length", async () => {
+    const full = JSON.stringify({ object: 'list', data: models });
+    const { frogbot } = makeFrogBot({
+      access: { generate: ({ model }) => model === 'openai/gpt-4.1' },
+      response: () =>
+        new Response(full, {
+          headers: {
+            'content-type': 'application/json',
+            'content-length': String(full.length),
+            'x-request-id': 'req-1',
+          },
+        }),
+    });
+
+    const response = await createGatewayHandler(frogbot)(makeRequest());
+    const text = await response.text();
+
+    expect(response.headers.get('x-request-id')).toBe('req-1');
+    expect(response.headers.get('content-length')).not.toBe(String(full.length));
+    expect(JSON.parse(text)).toEqual({
+      object: 'list',
+      data: [models[0], models[2]],
+    });
   });
 
   it('checks embedding models with the embed rule, not generate', async () => {
