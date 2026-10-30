@@ -3,7 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createPayloadRequest: vi.fn(),
+  getClientConfig: vi.fn(() => ({ client: true })),
   render: vi.fn(() => 'rendered'),
+}));
+
+vi.mock('@payloadcms/ui/utilities/getClientConfig', () => ({
+  getClientConfig: mocks.getClientConfig,
 }));
 
 vi.mock('payload', async (importOriginal) => ({
@@ -56,6 +61,7 @@ const collectionConfig = {
 
 beforeEach(() => {
   mocks.createPayloadRequest.mockReset();
+  mocks.getClientConfig.mockClear();
   mocks.render.mockClear();
 });
 
@@ -63,7 +69,7 @@ describe('CustomCollectionView', () => {
   it('fills in page props when Payload renders it as the default list view', async () => {
     const req = { user: { id: 1 } };
     mocks.createPayloadRequest.mockResolvedValue(req);
-    const payload = { importMap: { './View#View': () => null } };
+    const payload = { config: { routes: {} }, importMap: { './View#View': () => null } };
     const i18n = { language: 'en' };
     const user = { id: 1 };
 
@@ -84,11 +90,18 @@ describe('CustomCollectionView', () => {
       req: { i18n, query: { page: '2' } },
       user,
     });
+    expect(mocks.getClientConfig).toHaveBeenCalledWith({
+      config: payload.config,
+      i18n,
+      importMap: payload.importMap,
+      user,
+    });
     expect(mocks.render).toHaveBeenCalledWith(
       expect.objectContaining({
         Component: './View#View',
         importMap: payload.importMap,
         serverProps: expect.objectContaining({
+          clientConfig: { client: true },
           importMap: payload.importMap,
           initPageResult: { collectionConfig, permissions: { collections: {} }, req },
         }),
@@ -101,6 +114,7 @@ describe('CustomCollectionView', () => {
     const importMap = {};
 
     await CustomCollectionView({
+      clientConfig: {},
       collectionConfig,
       importMap,
       initPageResult,
@@ -109,6 +123,7 @@ describe('CustomCollectionView', () => {
     } as never);
 
     expect(mocks.createPayloadRequest).not.toHaveBeenCalled();
+    expect(mocks.getClientConfig).not.toHaveBeenCalled();
     expect(mocks.render).toHaveBeenCalledWith(
       expect.objectContaining({
         importMap,

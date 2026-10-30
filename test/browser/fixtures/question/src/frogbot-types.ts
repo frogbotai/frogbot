@@ -880,11 +880,13 @@ export interface Tag {
  */
 export interface Timesheet {
   id: number;
+  _order?: string | null;
   title: string;
   /**
    * Duration in whole seconds, for example 5400 for 1 hour 30 minutes
    */
   logged?: number | null;
+  _order_board?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -1683,8 +1685,10 @@ export interface TagsSelect {
  * via the `definition` "timesheets_select".
  */
 export interface TimesheetsSelect {
+  _order?: boolean;
   title?: boolean;
   logged?: boolean;
+  _order_board?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;

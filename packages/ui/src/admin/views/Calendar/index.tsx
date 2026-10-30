@@ -8,7 +8,7 @@ import type {
 import { getFromImportMap, transformColumnsToSearchParams } from 'payload/shared';
 import type { ComponentType } from 'react';
 
-import { getActiveViewSlug, resolveCollectionViews } from '../collectionViews.js';
+import { getActiveViewSlug, resolveCollectionViews, withPageProps } from '../collectionViews.js';
 import { CollectionViewShell } from '../CollectionViewShell.js';
 import {
   getViewPreferenceKey,
@@ -36,7 +36,8 @@ function canUpdateField(fields: SanitizedFieldsPermissions | undefined, path: st
   return fieldPermission === true || Boolean(fieldPermission?.update);
 }
 
-export async function CalendarView(props: AdminViewServerProps) {
+export async function CalendarView(input: AdminViewServerProps) {
+  const props = await withPageProps(input);
   const { clientConfig, collectionConfig, collectionSlug, importMap, initPageResult, payload } =
     props;
 

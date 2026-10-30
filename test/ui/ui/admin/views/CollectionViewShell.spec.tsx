@@ -4,7 +4,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => {
   const plural: Record<string, string> = { tasks: 'Tasks', notes: 'Notes' };
 
-  return { pathname: '/admin/collections/tasks/board', plural, setStepNav: vi.fn() };
+  return {
+    pathname: '/admin/collections/tasks/board',
+    plural,
+    setStepNav: vi.fn(),
+    smallBreak: false,
+    ViewControls: vi.fn((_props: { beforeActions?: React.ReactNode[] }) => (
+      <div data-testid="view-controls" />
+    )),
+  };
 });
 
 vi.mock('@payloadcms/ui', () => ({
@@ -20,24 +28,25 @@ vi.mock('@payloadcms/ui', () => ({
   }),
   useStepNav: () => ({ setStepNav: mocks.setStepNav }),
   useTranslation: () => ({ i18n: { language: 'en', t: (key: string) => key } }),
+  useWindowInfo: () => ({ breakpoints: { s: mocks.smallBreak } }),
 }));
 
 vi.mock('../../../../../packages/ui/src/admin/views/controls/ViewControls.client.js', () => ({
-  ViewControls: () => <div data-testid="view-controls" />,
+  ViewControls: mocks.ViewControls,
 }));
 
 const { CollectionViewShellClient } =
   await import('../../../../../packages/ui/src/admin/views/CollectionViewShell.client');
 
-function shell(collectionSlug: string, Actions?: React.ReactNode[]) {
+function shell(collectionSlug: string, Toolbar?: React.ReactNode[]) {
   return (
     <CollectionViewShellClient
-      Actions={Actions}
       collectionSlug={collectionSlug}
       hasCreatePermission
       hasDeletePermission
       newDocumentURL={`/admin/collections/${collectionSlug}/create`}
       query={{}}
+      Toolbar={Toolbar}
     >
       <div />
     </CollectionViewShellClient>
@@ -48,6 +57,8 @@ describe('CollectionViewShellClient', () => {
   beforeEach(() => {
     mocks.pathname = '/admin/collections/tasks/board';
     mocks.setStepNav.mockClear();
+    mocks.smallBreak = false;
+    mocks.ViewControls.mockClear();
   });
 
   it('sets the collection plural label as the top-bar label', () => {
@@ -75,22 +86,35 @@ describe('CollectionViewShellClient', () => {
     expect(mocks.setStepNav).toHaveBeenCalledWith([{ label: 'Tasks' }]);
   });
 
-  it('renders actions in their own row before the view controls', () => {
+  it('passes the toolbar to the view controls, before Filters', () => {
+    const toolbar = [<button key="t">Tool</button>];
+    const { container } = render(shell('tasks', toolbar));
+
+    expect(mocks.ViewControls.mock.lastCall?.[0].beforeActions).toBe(toolbar);
+    expect(container.querySelector('.collection-view-shell__toolbar')).toBeNull();
+  });
+
+  it('renders the toolbar in its own row after the view controls on small screens', () => {
+    mocks.smallBreak = true;
+
     const { container, getByRole, getByTestId } = render(
-      shell('tasks', [<button key="a">Act</button>]),
+      shell('tasks', [<button key="t">Tool</button>]),
     );
 
-    const row = container.querySelector('.collection-view-shell__actions')!;
+    const row = container.querySelector('.collection-view-shell__toolbar')!;
 
-    expect(getByRole('button', { name: 'Act' }).parentElement).toBe(row);
+    expect(getByRole('button', { name: 'Tool' }).parentElement).toBe(row);
     expect(
-      row.compareDocumentPosition(getByTestId('view-controls')) & Node.DOCUMENT_POSITION_FOLLOWING,
+      getByTestId('view-controls').compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 
-  it('renders no actions row without actions', () => {
+  it('renders no toolbar row and no page-body actions row without a toolbar', () => {
+    mocks.smallBreak = true;
+
     const { container } = render(shell('tasks'));
 
+    expect(container.querySelector('.collection-view-shell__toolbar')).toBeNull();
     expect(container.querySelector('.collection-view-shell__actions')).toBeNull();
   });
 });

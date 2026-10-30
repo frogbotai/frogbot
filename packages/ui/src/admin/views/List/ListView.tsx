@@ -42,9 +42,10 @@ export function ListView(props: ListViewServerProps) {
 
   if (!toolbar?.length && !CreateButton && !NoResults) return <DefaultListView {...clientProps} />;
 
-  const render = (Component: PayloadComponent | PayloadComponent[]) =>
+  const createProps = { collectionSlug, hasCreatePermission, newDocumentURL };
+  const render = (Component: PayloadComponent | PayloadComponent[], slotProps: object) =>
     RenderServerComponent({
-      clientProps: { collectionSlug, hasCreatePermission, hasDeletePermission, newDocumentURL },
+      clientProps: slotProps,
       Component,
       importMap: payload.importMap,
       serverProps: {
@@ -66,7 +67,7 @@ export function ListView(props: ListViewServerProps) {
 
   const createButton = (key: string) => (
     <div className="fb-create-button" key={key}>
-      {CreateButton ? render(CreateButton) : null}
+      {CreateButton ? render(CreateButton, createProps) : null}
     </div>
   );
 
@@ -90,7 +91,9 @@ export function ListView(props: ListViewServerProps) {
       ? {
           beforeActions: [
             ...(clientProps.beforeActions ?? []),
-            ...(toolbar?.length ? (render(toolbar) as ReactNode[]) : []),
+            ...(toolbar?.length
+              ? (render(toolbar, { ...createProps, hasDeletePermission }) as ReactNode[])
+              : []),
             ...(CreateButton ? [createButton('create-button')] : []),
           ],
         }

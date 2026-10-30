@@ -11,6 +11,7 @@ import {
   usePathname,
   useStepNav,
   useTranslation,
+  useWindowInfo,
 } from '@payloadcms/ui';
 import type { Column, ListQuery } from 'payload';
 import { type ReactNode, useEffect } from 'react';
@@ -18,7 +19,6 @@ import { type ReactNode, useEffect } from 'react';
 import { ViewControls } from './controls/ViewControls.client.js';
 
 export type CollectionViewShellClientProps = {
-  Actions?: ReactNode[];
   BeforeList?: ReactNode;
   BeforeListTable?: ReactNode;
   AfterListTable?: ReactNode;
@@ -34,10 +34,10 @@ export type CollectionViewShellClientProps = {
   manualSortField?: string;
   newDocumentURL: string;
   query: ListQuery;
+  Toolbar?: ReactNode[];
 };
 
 export function CollectionViewShellClient({
-  Actions,
   AfterList,
   AfterListTable,
   BeforeList,
@@ -53,11 +53,16 @@ export function CollectionViewShellClient({
   newDocumentURL,
   enableSort,
   query,
+  Toolbar,
 }: CollectionViewShellClientProps) {
   const { i18n } = useTranslation();
   const { getEntityConfig } = useConfig();
   const { setStepNav } = useStepNav();
   const pathname = usePathname();
+  const {
+    breakpoints: { s: smallBreak },
+  } = useWindowInfo();
+
   const collectionConfig = getEntityConfig({ collectionSlug });
   const pluralLabel = getTranslation(collectionConfig.labels.plural, i18n);
 
@@ -79,8 +84,8 @@ export function CollectionViewShellClient({
           newDocumentURL={newDocumentURL}
           smallBreak
         />
-        {Actions?.length ? <div className="collection-view-shell__actions">{Actions}</div> : null}
         <ViewControls
+          beforeActions={Toolbar}
           collectionConfig={collectionConfig}
           collectionSlug={collectionConfig.slug}
           enableColumns={Boolean(columnState)}
@@ -88,6 +93,9 @@ export function CollectionViewShellClient({
           enableSort={enableSort}
           manualSortField={manualSortField}
         />
+        {smallBreak && Toolbar ? (
+          <div className="collection-view-shell__toolbar">{Toolbar}</div>
+        ) : null}
         {BeforeListTable}
         <div className="collection-view-shell__view">{children}</div>
         {AfterListTable}

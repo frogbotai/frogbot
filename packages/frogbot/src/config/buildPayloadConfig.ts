@@ -239,6 +239,10 @@ export function buildPayloadConfig({
       typeof auth === 'object' && auth.signIn?.length && slug === resolveUserSlug(config),
   );
 
+  const hasViewActions = config.collections.some((collection) =>
+    collection.admin?.views?.slice(1).some((view) => view.components?.actions?.length),
+  );
+
   const toolComponents = Object.fromEntries(
     (config.agents ?? []).flatMap((agent) => {
       const components = Object.fromEntries(
@@ -269,6 +273,14 @@ export function buildPayloadConfig({
     ...(adaptedDashboard ? { dashboard: adaptedDashboard } : {}),
     components: {
       ...admin?.components,
+      ...(hasViewActions
+        ? {
+            actions: [
+              ...(admin?.components?.actions ?? []),
+              '@frogbotai/ui/admin/rsc#CollectionViewActions',
+            ],
+          }
+        : {}),
       ...(hasAdminSignIn
         ? {
             afterLogin: [

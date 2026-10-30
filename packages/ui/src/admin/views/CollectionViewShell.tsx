@@ -46,11 +46,32 @@ export function CollectionViewShell(props: CollectionViewShellProps) {
       : undefined;
 
   const components = collectionConfig.admin.components;
+  const CreateButton = (components as { CreateButton?: PayloadComponent } | undefined)
+    ?.CreateButton;
+
   const listMenuItems = viewComponents?.menuItems ? [render(viewComponents.menuItems)] : undefined;
+  const toolbar = [
+    ...(viewComponents?.toolbar ? [render(viewComponents.toolbar)] : []),
+    ...(CreateButton
+      ? [
+          <div className="fb-create-button" key="create-button">
+            {RenderServerComponent({
+              clientProps: {
+                collectionSlug,
+                hasCreatePermission: clientProps.hasCreatePermission,
+                newDocumentURL: clientProps.newDocumentURL,
+              },
+              Component: CreateButton,
+              importMap,
+              serverProps: props,
+            })}
+          </div>,
+        ]
+      : []),
+  ];
 
   return (
     <CollectionViewShellClient
-      Actions={viewComponents?.actions ? [render(viewComponents.actions)] : undefined}
       AfterList={render(viewComponents?.afterView)}
       AfterListTable={render(viewComponents?.afterColumns ?? viewComponents?.afterCalendar)}
       BeforeList={render(viewComponents?.beforeView)}
@@ -65,6 +86,7 @@ export function CollectionViewShell(props: CollectionViewShellProps) {
       enableSort={props.enableSort}
       manualSortField={props.manualSortField}
       query={props.query ?? initPageResult.req.query ?? {}}
+      Toolbar={toolbar.length ? toolbar : undefined}
     >
       {children}
     </CollectionViewShellClient>

@@ -12,6 +12,7 @@ export { DefaultTemplate, type DefaultTemplateProps } from '../templates/Default
 export { BoardView } from '../views/Board/index.js';
 export { CalendarView } from '../views/Calendar/index.js';
 export { ChatView } from '../views/Chat/index.js';
+export { CollectionViewActions } from '../views/CollectionViewActions.js';
 export { CollectionViewShell } from '../views/CollectionViewShell.js';
 export { CollectionViewSwitcher } from '../views/CollectionViewSwitcher.js';
 export { ConnectionsView } from '../views/Connections/index.js';

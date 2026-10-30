@@ -6,7 +6,7 @@ import type { AdminViewServerProps, PayloadComponent, SanitizedFieldPermissions 
 import { getFromImportMap, transformColumnsToSearchParams } from 'payload/shared';
 import type { ComponentType } from 'react';
 
-import { getActiveViewSlug, resolveCollectionViews } from '../collectionViews.js';
+import { getActiveViewSlug, resolveCollectionViews, withPageProps } from '../collectionViews.js';
 import { CollectionViewShell } from '../CollectionViewShell.js';
 import {
   getViewPreferenceKey,
@@ -23,7 +23,8 @@ import {
 } from './data.js';
 import { resolveBoardField, resolveColumns } from './resolveColumns.js';
 
-export async function BoardView(props: AdminViewServerProps) {
+export async function BoardView(input: AdminViewServerProps) {
+  const props = await withPageProps(input);
   const { clientConfig, collectionConfig, collectionSlug, importMap, initPageResult, payload } =
     props;
 
