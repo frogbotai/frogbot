@@ -192,7 +192,8 @@ test('the working logo pulses below the thread for the whole run and keeps its r
   await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
   await expect(logo).toHaveCSS('visibility', 'hidden');
   await expect(logo).toHaveCSS('animation-name', 'none');
-  await expect(working).toHaveAttribute('aria-hidden', 'true');
+  await expect(working.getByRole('status')).toHaveText('');
+  await expect(logo).toHaveAttribute('aria-hidden', 'true');
 });
 
 test('the working logo stays still under reduced motion', async ({ page }) => {

@@ -1,7 +1,8 @@
 import { act, render } from '@testing-library/react';
-import type { TextUIPart } from 'ai';
+import type { TextUIPart, UIMessage } from 'ai';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { MessageList } from '../../../../packages/ui/src/chat/message-list';
 import { TextPart } from '../../../../packages/ui/src/chat/text-part';
 import { TextSmoother } from '../../../../packages/ui/src/chat/use-paced-text';
 
@@ -124,6 +125,63 @@ describe('paced text', () => {
     expect(container.textContent?.length).toBeGreaterThan(0);
 
     hidden.mockRestore();
+  });
+});
+
+describe('a part left streaming', () => {
+  const thread = (text: string): UIMessage[] => [
+    { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Hi' }] },
+    { id: 'a1', role: 'assistant', parts: [{ type: 'text', text, state: 'streaming' }] },
+  ];
+
+  it('shows in full and stops revealing once the chat stops streaming', () => {
+    const frame = vi.spyOn(globalThis, 'requestAnimationFrame');
+    const { container, rerender } = render(<MessageList messages={thread('Hello')} pending />);
+
+    const reply = () => container.querySelector('[data-message-id="a1"]')!.textContent;
+
+    rerender(<MessageList messages={thread(`Hello ${words}`)} pending />);
+    frames(2);
+
+    expect(reply().length).toBeLessThan(words.length);
+
+    rerender(<MessageList messages={thread(`Hello ${words}`)} />);
+
+    expect(reply()).toBe(`Hello ${words}`);
+
+    frame.mockClear();
+    frames(10);
+
+    expect(frame).not.toHaveBeenCalled();
+  });
+
+  it('renders a saved part still marked streaming in full, with no reveal loop', () => {
+    const frame = vi.spyOn(globalThis, 'requestAnimationFrame');
+    const { container, rerender } = render(<MessageList messages={thread('Saved')} />);
+
+    rerender(<MessageList messages={thread(`Saved ${words}`)} />);
+
+    expect(container.querySelector('[data-message-id="a1"]')!.textContent).toBe(`Saved ${words}`);
+
+    frames(10);
+
+    expect(frame).not.toHaveBeenCalled();
+  });
+
+  it('labels a reasoning part left streaming as Thought outside a pending reply', () => {
+    render(
+      <MessageList
+        messages={[
+          {
+            id: 'a1',
+            role: 'assistant',
+            parts: [{ type: 'reasoning', text: 'Plan', state: 'streaming' }],
+          },
+        ]}
+      />,
+    );
+
+    expect(document.querySelector('.fb-reasoning-part__summary')?.textContent).toBe('Thought');
   });
 });
 

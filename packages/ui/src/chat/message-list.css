@@ -41,16 +41,20 @@
     box-shadow:
       0 1px 3px 0 rgb(0 0 0 / 10%),
       0 1px 2px -1px rgb(0 0 0 / 10%);
+    visibility: hidden;
     opacity: 0;
     pointer-events: none;
-    transition-property: opacity, transform;
-    transition-duration: 200ms;
+    transition-property: opacity, transform, visibility;
+    transition-duration: 200ms, 200ms, 0s;
+    transition-delay: 0s, 0s, 200ms;
     transition-timing-function: ease-out;
   }
 
   .fb-message-list__jump[data-shown] {
+    visibility: visible;
     opacity: 1;
     pointer-events: auto;
+    transition-delay: 0s;
   }
 
   .fb-message-list__jump:hover {

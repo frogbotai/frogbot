@@ -1,7 +1,7 @@
 import type { TextUIPart } from 'ai';
 
 import { Markdown } from './markdown.js';
-import { usePacedText } from './use-paced-text.js';
+import { useLive, usePacedText } from './use-paced-text.js';
 
 export function TextPart({
   part,
@@ -10,7 +10,8 @@ export function TextPart({
   part: TextUIPart;
   role?: 'user' | 'assistant' | 'system';
 }) {
-  const text = usePacedText(part.text, part.state === 'streaming');
+  const live = useLive(part.state);
+  const text = usePacedText(part.text, live);
 
   return (
     <div data-part="text" data-state={part.state}>
