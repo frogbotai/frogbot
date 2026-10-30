@@ -6,7 +6,7 @@ import {
 import { getPayloadConfig } from 'frogbot/internal';
 import type { ComponentProps } from 'react';
 
-import frogbotFavicon from '../assets/frogbot-favicon.png';
+import { appIconURL, appManifestURL } from '../appIcon/urls.js';
 import frogbotOGImage from '../assets/frogbot-og.jpg';
 import type { FrogBotConfigArg } from '../types.js';
 import { brandImportMapErrors } from '../utilities/brandImportMapErrors.js';
@@ -48,6 +48,7 @@ export async function generatePageMetadata(
   const metadata = await payloadGeneratePageMetadata({ ...rest, config: payloadConfig });
   const resolvedConfig = await payloadConfig;
   const meta = resolvedConfig.admin?.meta;
+  const apiRoute = resolvedConfig.routes.api;
 
   const params = await args.params;
   const settingsTitle = await getSettingsTitle({
@@ -66,9 +67,19 @@ export async function generatePageMetadata(
 
   if (!meta?.icons) {
     metadata.icons = [
-      { rel: 'icon', sizes: '32x32', type: 'image/png', url: assetURL(frogbotFavicon) },
+      { rel: 'icon', sizes: '32x32', type: 'image/png', url: appIconURL(apiRoute, 32) },
+      {
+        rel: 'apple-touch-icon',
+        sizes: '180x180',
+        type: 'image/png',
+        url: appIconURL(apiRoute, 180),
+      },
     ];
   }
+
+  if (!meta?.manifest) metadata.manifest = appManifestURL(apiRoute);
+
+  delete (metadata as { appIcon?: string }).appIcon;
 
   if (meta?.defaultOGImageType === 'static' && !meta?.openGraph?.images) {
     metadata.openGraph = {

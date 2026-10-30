@@ -86,7 +86,7 @@
     }
   },
   "scripts": {
-    "build": "node ../../scripts/build-package.mjs --assets css,jpg,png",
+    "build": "node ../../scripts/build-package.mjs --assets css,jpg",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },

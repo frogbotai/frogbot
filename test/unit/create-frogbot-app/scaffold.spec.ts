@@ -14,6 +14,7 @@ import {
 import { HELP, parseArgs } from '../../../packages/create-frogbot-app/src/lib/args.js';
 import { applyDatabase } from '../../../packages/create-frogbot-app/src/lib/db.js';
 import { CliError } from '../../../packages/create-frogbot-app/src/lib/errors.js';
+import { applyMeta } from '../../../packages/create-frogbot-app/src/lib/meta.js';
 import { applyPackageJson } from '../../../packages/create-frogbot-app/src/lib/package-json.js';
 import { installSkill } from '../../../packages/create-frogbot-app/src/lib/skill.js';
 import {
@@ -342,6 +343,24 @@ describe('template reconciliation', () => {
       expect(fs.readFileSync(path.join(dest, 'src', 'frogbot.config.ts'), 'utf8')).toContain(model);
     }
   }, 30000);
+
+  it('names the app after the project in admin.meta.applicationName', () => {
+    const dest = copyTemplate();
+
+    applyMeta(dest, 'my-app');
+
+    const config = fs.readFileSync(path.join(dest, 'src', 'frogbot.config.ts'), 'utf8');
+
+    expect(config).toContain("  admin: { meta: { applicationName: 'my-app' } },\n");
+    expect(config).not.toContain('admin: {},');
+  });
+
+  it('ships a public/ folder for the app icon', () => {
+    expect(fs.statSync(path.join(template, 'public')).isDirectory()).toBe(true);
+    expect(fs.readFileSync(path.join(template, 'Dockerfile'), 'utf8')).toContain(
+      'COPY --from=builder /app/public ./public',
+    );
+  });
 });
 
 describe('skill bundling', () => {

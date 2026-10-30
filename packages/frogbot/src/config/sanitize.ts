@@ -1,6 +1,6 @@
 import { buildConfig as payloadBuildConfig, MissingEditorProp } from 'payload';
 
-import { sanitizeSettings } from '../admin/config/sanitize.js';
+import { sanitizeSettings, validateAppIcon } from '../admin/config/sanitize.js';
 import { validateAdminIcon } from '../admin/icons.js';
 import { sanitizeAgents } from '../agents/config/sanitize.js';
 import { AGENT_SCHEDULE_TASK_SLUG, resolveScheduleTasks } from '../agents/resolveScheduleTasks.js';
@@ -69,7 +69,7 @@ function validateInternalPathReservations(
   for (const [slug, api] of [
     ['agents', 'agent'],
     ['connections', 'connections'],
-    ['frogbot', 'manifest'],
+    ['frogbot', 'FrogBot'],
     ['jobs', 'jobs'],
     [TRIGGER_SUBSCRIPTIONS_SLUG, 'trigger subscriptions'],
     ['v1', 'AI gateway'],
@@ -100,7 +100,7 @@ function validateInternalPathReservations(
 
     if (endpoint.path === '/frogbot' || endpoint.path.startsWith('/frogbot/')) {
       throw new Error(
-        `[frogbot] Endpoint path '${endpoint.path}' is reserved for the manifest API.`,
+        `[frogbot] Endpoint path '${endpoint.path}' is reserved for the FrogBot API.`,
       );
     }
 
@@ -157,6 +157,8 @@ export function sanitize(
   for (const item of config.admin?.components?.navItems ?? []) {
     validateAdminIcon(item.icon);
   }
+
+  validateAppIcon(config.admin?.meta?.appIcon);
 
   validateInternalPathReservations(config);
   validateCLICommands(config.cli?.commands);

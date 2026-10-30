@@ -117,6 +117,28 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     expect(html).not.toMatch(/<title>[^<]*Payload[^<]*<\/title>/);
   });
 
+  it('links and serves the home-screen icons without a cookie', async () => {
+    const html = await (await fetch(`${baseURL}/login`)).text();
+
+    expect(html).toMatch(/<link rel="icon" href="\/api\/frogbot\/app-icon\/32"[^>]*sizes="32x32"/);
+    expect(html).toMatch(
+      /<link rel="apple-touch-icon" href="\/api\/frogbot\/app-icon\/180"[^>]*sizes="180x180"/,
+    );
+    expect(html).toContain('<link rel="manifest" href="/api/frogbot/app-manifest"');
+
+    const icon = await fetch(`${baseURL}/api/frogbot/app-icon/180`);
+    const bytes = Buffer.from(await icon.arrayBuffer());
+
+    expect(icon.status).toBe(200);
+    expect(icon.headers.get('content-type')).toBe('image/png');
+    expect([bytes.readUInt32BE(16), bytes.readUInt32BE(20)]).toEqual([180, 180]);
+
+    const manifest = await fetch(`${baseURL}/api/frogbot/app-manifest`);
+
+    expect(manifest.headers.get('content-type')).toBe('application/manifest+json');
+    expect(await manifest.json()).toMatchObject({ name: 'FrogBot', start_url: '/' });
+  });
+
   it('lists the scaffold agent at /api/agents', async () => {
     const res = await fetch(`${baseURL}/api/agents`, {
       headers: { authorization: `Bearer ${token}` },

@@ -7,9 +7,13 @@ import type { PayloadConfig } from '../types/payload.js';
 import type { IconName } from './icons.js';
 import type { DashboardConfig } from './views/types.js';
 
-/** Metadata for the root admin block: Payload's `MetaConfig`, `{ defaultOGImageType?, titleSuffix? }`
- *  and `Metadata` from `next`. */
+/** Metadata for the root admin block: Payload's `MetaConfig`, `{ defaultOGImageType?, titleSuffix? }`,
+ *  FrogBot's `appIcon` and `Metadata` from `next`. */
 export type RootAdminMetaConfig = {
+  /** URL path of a square PNG, at least 512 px, in the app's `public/` folder, such as
+   *  `'/app-icon.png'`. FrogBot draws the tab and home-screen icons from it. Unset means the
+   *  FrogBot frog. */
+  appIcon?: string;
   defaultOGImageType?: 'dynamic' | 'static' | 'off';
   titleSuffix?: string;
 } & Metadata;
