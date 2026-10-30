@@ -38,6 +38,7 @@ import { CollectionFilter as CollectionFilter_53ccb9913b2925da8adcdf5fd85e01f4 }
 import { UploadDropzoneWidget as UploadDropzoneWidget_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { UploadDropzoneCollectionsField as UploadDropzoneCollectionsField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { DojoBadge as DojoBadge_9ffc089388a556cc3f5fcdbf59693fab } from '@frogbotai/plugin-dojo/client';
+import { SignInButtons as SignInButtons_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 
 /** @type import('frogbot').ImportMap */
 export const importMap = {
@@ -116,4 +117,6 @@ export const importMap = {
     UploadDropzoneCollectionsField_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/plugin-dojo/client#DojoBadge':
     DojoBadge_9ffc089388a556cc3f5fcdbf59693fab,
+  '@frogbotai/ui/admin/rsc#SignInButtons':
+    SignInButtons_a9b31afd548db1251f21130da6e46588,
 };
