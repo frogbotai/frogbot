@@ -69,7 +69,7 @@ describe('aiPolicyPlugin', () => {
     });
     expect(field(result, 'users', 'spendThisPeriodUSD')).toMatchObject({
       defaultValue: 0,
-      admin: { readOnly: true },
+      admin: { readOnly: true, position: 'sidebar' },
     });
   });
 
@@ -123,7 +123,7 @@ describe('aiPolicyPlugin', () => {
                 name: 'spendThisPeriodUSD',
                 type: 'number',
                 access: { update: open },
-                admin: { readOnly: false },
+                admin: { readOnly: false, description: 'Spent this month' },
               },
             ],
           },
@@ -146,7 +146,7 @@ describe('aiPolicyPlugin', () => {
     });
     expect(field(result, 'users', 'spendThisPeriodUSD')).toMatchObject({
       access: { update: open },
-      admin: { readOnly: false },
+      admin: { readOnly: false, description: 'Spent this month', position: 'sidebar' },
     });
   });
 

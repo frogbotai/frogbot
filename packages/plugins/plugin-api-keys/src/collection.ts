@@ -229,6 +229,7 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
       required: true,
       index: true,
       access: { update: () => false },
+      admin: { position: 'sidebar' },
     },
     {
       name: 'prefix',
@@ -236,7 +237,7 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
       required: true,
       index: true,
       access: { update: () => false },
-      admin: { readOnly: true },
+      admin: { readOnly: true, position: 'sidebar' },
     },
     {
       name: 'tokenHash',
@@ -251,14 +252,18 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
       name: 'lastUsedAt',
       type: 'date',
       access: { update: () => false },
-      admin: { readOnly: true },
+      admin: { readOnly: true, position: 'sidebar' },
     },
     {
       name: 'revokedAt',
       type: 'date',
       index: true,
       access: { update: () => false },
-      admin: { readOnly: true, condition: (_, siblingData) => Boolean(siblingData.revokedAt) },
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+        condition: (_, siblingData) => Boolean(siblingData.revokedAt),
+      },
     },
     ...(usageCollection
       ? [
@@ -266,7 +271,7 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
             name: 'totalCostUSD',
             label: 'Total Cost (USD)',
             virtual: true,
-            admin: { readOnly: true },
+            admin: { readOnly: true, position: 'sidebar' },
             hooks: {
               afterRead: [
                 async ({ data, req }: { data?: Record<string, unknown>; req: FrogBotRequest }) => {
