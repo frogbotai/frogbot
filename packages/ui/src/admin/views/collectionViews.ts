@@ -3,6 +3,7 @@ import { getClientConfig } from '@payloadcms/ui/utilities/getClientConfig';
 import type { CollectionView } from 'frogbot';
 import { attachRegisteredFrogBot } from 'frogbot/internal';
 import { type AdminViewServerProps, createPayloadRequest, type PayloadRequest } from 'payload';
+import * as qs from 'qs-esm';
 
 export type RuntimeCollectionView = CollectionView & { slug: string };
 
@@ -93,7 +94,7 @@ export async function withPageProps(props: AdminViewServerProps): Promise<AdminV
           payload: props.payload,
           req: {
             i18n: props.i18n as I18n,
-            query: props.searchParams ?? {},
+            query: qs.parse(qs.stringify(props.searchParams ?? {}), { depth: 10 }),
           },
           user: props.user ?? undefined,
         }),

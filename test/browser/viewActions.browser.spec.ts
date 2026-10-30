@@ -82,6 +82,19 @@ test.describe('list toolbar', () => {
   });
 });
 
+test('keeps the URL filters on a default board', async ({ page }) => {
+  await page.goto(`/collections/${timesheetsSlug}?where[title][equals]=Probe`);
+
+  await expect(page.locator('#toggle-list-filters')).toHaveAttribute('aria-expanded', 'true');
+  await expect
+    .poll(() =>
+      page
+        .locator('.list-controls__where input')
+        .evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value)),
+    )
+    .toContain('Probe');
+});
+
 test('renders the board toolbar before Filters', async ({ page }) => {
   await page.goto(`/collections/${tasksSlug}/board`);
 
