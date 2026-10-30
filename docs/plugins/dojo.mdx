@@ -22,7 +22,11 @@ export default buildConfig({
 })
 ```
 
-`dojo()` takes no options.
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `signIn` | `boolean` | `true` | Adds [Sign in with Dojo](#sign-in-with-dojo) on Dojo. Set `false` to leave the app's sign-in methods alone. |
 
 ## Commands
 
@@ -51,9 +55,29 @@ Run with no command or an unknown one, it prints `[frogbot] usage: npx @frogbota
 
 Dojo adds this plugin itself when it builds an app, after the app's own plugins, so an app runs there without listing it. An app that lists `dojo()` gets it once, not twice. A listed `dojo()` also runs after every other plugin, wherever it is in `plugins`, so it sees the upload collections and AI providers they add.
 
-Outside Dojo, `dojo()` only adds the commands and lists the badge for the import map. On Dojo, where `DOJO=1`, it also changes:
+Outside Dojo, `dojo()` only adds the commands and lists the badge and the sign-in buttons for the import map. On Dojo, where `DOJO=1`, it also changes:
 
 - **Storage.** When the app sets no `storage`, every upload collection is stored in the app's bucket under its slug. Files stay private and are served through the app, so its access rules apply.
 - **AI.** When every provider in `ai.providers` is a built-in one with no key, they are replaced by one `dojo` provider that calls Dojo's gateway. Model IDs such as `openai/gpt-5.4-mini` keep working. Chat, embeddings and images work through the gateway; transcription, speech and video need your own key. An app with no `ai` block, or with any provider key of its own, is left unchanged.
 - **Jobs.** Dojo wakes the app to run due jobs. Everyone else gets the app's own `jobs.access.run`.
+- **Sign-in.** The login page gets "Continue with Dojo". See [Sign in with Dojo](#sign-in-with-dojo).
 - **Badge.** Every FrogBot page gets a small "Made with FrogBot · Share your own" link in the bottom-left corner. Visitors can close it for the rest of their browser session.
+
+### Sign in with Dojo
+
+On Dojo, the plugin adds a `dojo` method, labelled "Dojo", to the user collection's [`auth.signIn`](/authentication/sign-in), after the app's own methods. The user collection is the app's only auth collection, or the one `admin.user` names. Dojo people then sign in with their Dojo account, the way "Continue with Google" works:
+
+- The first time someone signs in to an app, Dojo asks them once to share their name and email address with it. After that it's one click.
+- Someone whose email already has an account signs in as that user.
+- A new email gets an account only when the collection's [`access.create`](/authentication/sign-in#who-can-sign-up) allows it, so by default the button serves people who already have an account. Open sign-ups with `access: { create: () => true }`.
+- While the collection has no users, the [first person](/authentication/sign-in#who-can-sign-up) to sign in gets an account, as with the create-first-user screen.
+
+Turn it off with one line:
+
+```ts
+plugins: [dojo({ signIn: false })]
+```
+
+Dojo gives each app its own OAuth client, in `DOJO_OAUTH_CLIENT_ID`, `DOJO_OAUTH_CLIENT_SECRET` and `DOJO_URL`. Sign-in never stops the app from starting: when one of them is missing, or the collection can't take a sign-in method (see [Collection requirements](/authentication/sign-in#collection-requirements)), the plugin adds nothing and logs why at start, for example `[plugin-dojo] Sign in with Dojo is off for 'users': DOJO_URL is not set.` The same happens when the collection already has a method with the slug `dojo`.
+
+An app with `sqliteAdapter({ transactionOptions: false })` fails to start once the method is added, because sign-in needs transactions. Remove that option, or use `dojo({ signIn: false })`.

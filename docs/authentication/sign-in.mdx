@@ -118,6 +118,8 @@ The rule also governs `POST /api/users`, so an open rule lets anyone create an a
 
 The first user is the exception, as with the create-first-user screen: while the collection has no users at all, counting trashed ones, the first person to sign in gets an account whatever `access.create` says. Sign-ins to a collection run one at a time, so two people signing in at once can't both become the first user.
 
+On Dojo, the [Dojo plugin](/plugins/dojo#sign-in-with-dojo) adds "Continue with Dojo" to the user collection, and it follows these same rules.
+
 ## Collection requirements
 
 - Each sign-in method needs factory OAuth app credentials and a recipe with an `account` function. Method slugs must be URL-safe and unique within the collection.

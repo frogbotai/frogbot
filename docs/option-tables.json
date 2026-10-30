@@ -1280,6 +1280,11 @@
     "type": "import('@frogbotai/plugin-capture').CapturePluginOptions"
   },
   {
+    "page": "plugins/dojo",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-dojo').DojoPluginOptions"
+  },
+  {
     "page": "plugins/import-export",
     "heading": "Options",
     "type": "import('@frogbotai/plugin-import-export').ImportExportPluginOptions"

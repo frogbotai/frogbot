@@ -2,21 +2,27 @@ import type { FrogBotConfig } from 'frogbot';
 
 const BADGE = '@frogbotai/plugin-dojo/client#DojoBadge';
 
+const SIGN_IN_BUTTONS = '@frogbotai/ui/admin/rsc#SignInButtons';
+
 type Admin = NonNullable<FrogBotConfig['admin']> & {
   dependencies?: Record<string, { path: string; type: 'component' }>;
 };
 
 /**
- * Puts the badge in the import map, with or without `DOJO=1`. Dojo generates the import map at build
- * time, when `DOJO=1` isn't set, and a provider missing from the import map renders nothing, children
- * included, so the badge must be there before `withDojoBadge` adds it at runtime.
+ * Puts the badge and the sign-in buttons in the import map, with or without `DOJO=1`. Dojo generates
+ * the import map at build time, when `DOJO=1` isn't set, and a component missing from the import map
+ * renders nothing (a provider, its children too), so both must be there before `DOJO=1` adds them.
  */
-export function withDojoBadgeImport(config: FrogBotConfig): FrogBotConfig {
+export function withDojoImports(config: FrogBotConfig): FrogBotConfig {
   const admin: Admin = { ...config.admin };
+  const missing = [BADGE, SIGN_IN_BUTTONS].filter((path) => !admin.dependencies?.[path]);
 
-  if (admin.dependencies?.[BADGE]) return config;
+  if (missing.length === 0) return config;
 
-  admin.dependencies = { ...admin.dependencies, [BADGE]: { path: BADGE, type: 'component' } };
+  admin.dependencies = {
+    ...admin.dependencies,
+    ...Object.fromEntries(missing.map((path) => [path, { path, type: 'component' as const }])),
+  };
 
   return { ...config, admin };
 }

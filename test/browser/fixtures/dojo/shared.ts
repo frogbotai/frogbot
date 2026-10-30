@@ -18,4 +18,7 @@ export const dojoEnv = {
   DOJO_AI_API_KEY: 'browser-dojo-ai-key',
   DOJO_AI_BASE_URL: 'http://127.0.0.1:9/v1',
   DOJO_JOBS_SECRET: 'browser-dojo-jobs-secret',
+  DOJO_OAUTH_CLIENT_ID: '1',
+  DOJO_OAUTH_CLIENT_SECRET: 'browser-oauth-secret',
+  DOJO_URL: 'http://127.0.0.1:9',
 };

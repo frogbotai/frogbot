@@ -1673,6 +1673,9 @@ importers:
       tsx:
         specifier: ^4.23.15
         version: 4.23.15
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       '@frogbotai/gateway':
         specifier: workspace:*

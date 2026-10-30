@@ -5,6 +5,8 @@ import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
 import type { FrogBotConfig } from '../../../packages/frogbot/src/config/types.js';
 import { dojo } from '../../../packages/plugins/plugin-dojo/src/index.js';
 
+vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
+
 const ENV = {
   DOJO: '1',
   DOJO_R2_ENDPOINT: 'https://account.r2.cloudflarestorage.com',
@@ -14,6 +16,9 @@ const ENV = {
   DOJO_AI_API_KEY: 'fb_router-key',
   DOJO_AI_BASE_URL: 'https://dojo.example/api/v1',
   DOJO_JOBS_SECRET: 'jobs-secret',
+  DOJO_OAUTH_CLIENT_ID: '42',
+  DOJO_OAUTH_CLIENT_SECRET: 'oauth-secret',
+  DOJO_URL: 'https://dojo.example',
 };
 
 type Endpoint = {

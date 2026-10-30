@@ -11,6 +11,8 @@ import { dojo } from '../../../packages/plugins/plugin-dojo/src/index.js';
 
 const badge = '@frogbotai/plugin-dojo/client#DojoBadge';
 
+const signInButtons = '@frogbotai/ui/admin/rsc#SignInButtons';
+
 const dirs: string[] = [];
 
 afterEach(() => {
@@ -22,7 +24,7 @@ afterAll(async () => {
 });
 
 describe('dojo() import map', () => {
-  it('puts the badge in an import map generated without DOJO=1, as Dojo builds images', async () => {
+  it('puts the badge and the sign-in buttons in an import map generated without DOJO=1, as Dojo builds images', async () => {
     vi.stubEnv('DOJO', undefined);
 
     const dir = await mkdtemp(join(tmpdir(), 'frogbot-dojo-importmap-'));
@@ -39,11 +41,13 @@ describe('dojo() import map', () => {
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
 
     expect(payloadConfig.admin.components.providers).not.toContain(badge);
+    expect(payloadConfig.admin.components.afterLogin ?? []).not.toContain(signInButtons);
 
     await generateImportMap(payloadConfig);
     const output = await readFile(join(dir, 'importMap.js'), 'utf8');
 
     expect(output).toContain("from '@frogbotai/plugin-dojo/client'");
     expect(output).toContain(`'${badge}'`);
+    expect(output).toContain(`'${signInButtons}'`);
   });
 });

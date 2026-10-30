@@ -29,4 +29,7 @@ export const dojoEnv = {
   DOJO_AI_API_KEY: 'dojo-app-key',
   DOJO_AI_BASE_URL: `http://127.0.0.1:${gatewayPort}/v1`,
   DOJO_JOBS_SECRET: 'dojo-jobs-secret',
+  DOJO_OAUTH_CLIENT_ID: '1',
+  DOJO_OAUTH_CLIENT_SECRET: 'plugin-dojo-oauth-secret',
+  DOJO_URL: 'http://127.0.0.1:9',
 };
