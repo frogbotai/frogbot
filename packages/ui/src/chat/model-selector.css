@@ -6,7 +6,7 @@
     flex-shrink: 1;
     align-items: center;
     gap: 0.25rem;
-    padding: 0.25rem 0.5rem;
+    padding: 0.125rem 0.5rem;
     color: var(--color-text-secondary);
     font-size: var(--fb-text-sm);
     line-height: var(--fb-text-sm--line-height);
@@ -39,6 +39,12 @@
   }
 
   .fb-model-selector__level {
+    flex-shrink: 0;
+  }
+
+  .fb-model-selector__chevron {
+    width: 0.5625rem;
+    height: 0.5625rem;
     flex-shrink: 0;
   }
 

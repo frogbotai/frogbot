@@ -924,7 +924,7 @@ test('the open Select effort label does not move or wrap the composer from 320 t
 
   await page.keyboard.press('Escape');
 
-  await expect(trigger(page)).toHaveText('o4 · Default');
+  await expect(trigger(page)).toHaveText('o4 Default');
 
   const results = await sweepComposer({ page, label: 'Select effort' });
 

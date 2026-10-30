@@ -20,7 +20,7 @@
   }
 
   .fb-page-context-button__trigger {
-    padding: 0.375rem;
+    padding: 0.3125rem;
     border-radius: 9999px;
     color: var(--color-text-secondary);
     line-height: 1;
@@ -45,8 +45,8 @@
   }
 
   .fb-page-context-button__trigger-icon {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.125rem;
+    height: 1.125rem;
   }
 
   .fb-page-context-button__menu {
@@ -170,16 +170,5 @@
 
   .fb-page-context-button__check {
     color: var(--color-icon-onbrand);
-  }
-
-  @media (min-width: 640px) {
-    .fb-page-context-button__trigger {
-      padding: 9px;
-    }
-
-    .fb-page-context-button__trigger-icon--expanded {
-      width: 22px;
-      height: 22px;
-    }
   }
 }

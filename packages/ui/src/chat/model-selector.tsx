@@ -7,6 +7,7 @@ import { SearchInput } from '../components/search-input.js';
 import { Slider } from '../components/slider.js';
 import { useControlledState } from '../hooks/use-controlled-state.js';
 import CheckIcon from '../icons/icons/CheckIcon.js';
+import ChevronDownIcon from '../icons/icons/ChevronDownIcon.js';
 import ChevronLeftIcon from '../icons/icons/ChevronLeftIcon.js';
 import ChevronRightIcon from '../icons/icons/ChevronRightIcon.js';
 import { compactModelSearch, matchesModelSearch, normalizeModelSearch } from './model-search.js';
@@ -130,9 +131,10 @@ export const ModelSelector = memo(function ModelSelector({
               {hasReasoning ? (
                 <>
                   {' '}
-                  <span className="fb-model-selector__level">· {stops[level]}</span>
+                  <span className="fb-model-selector__level">{stops[level]}</span>
                 </>
               ) : null}
+              <ChevronDownIcon className="fb-model-selector__chevron" aria-hidden="true" />
             </>
           )}
         </button>

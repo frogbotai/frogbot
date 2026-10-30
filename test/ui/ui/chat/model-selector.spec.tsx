@@ -378,7 +378,7 @@ describe('ModelSelector', () => {
 
     render(<Harness choices={[nova]} initialModel={nova.id} />);
 
-    expect(trigger().textContent).toBe(`${nova.name} · Default`);
+    expect(trigger().textContent).toBe(`${nova.name} Default`);
 
     await user.click(trigger());
 
@@ -641,7 +641,7 @@ describe('ModelSelector', () => {
 
     await user.keyboard('{Escape}');
 
-    expect(trigger().textContent).toBe('GPT-5 · Default');
+    expect(trigger().textContent).toBe('GPT-5 Default');
   });
 
   it('closes on Escape after Back even if a query was typed', async () => {
@@ -706,13 +706,13 @@ describe('ModelSelector', () => {
   it('shows the model name and the selected level on the trigger', () => {
     render(<Harness initialReasoning="medium" />);
 
-    expect(trigger().textContent).toBe('GPT-5 · Medium');
+    expect(trigger().textContent).toBe('GPT-5 Medium');
   });
 
   it('shows Default on the trigger when no level is selected', () => {
     render(<Harness />);
 
-    expect(trigger().textContent).toBe('GPT-5 · Default');
+    expect(trigger().textContent).toBe('GPT-5 Default');
   });
 
   it('shows only the name on the trigger for a model without reasoning levels', () => {
@@ -724,7 +724,7 @@ describe('ModelSelector', () => {
   it('shows Default on the trigger for a level the model does not offer', () => {
     render(<Harness initialModel={opus.id} initialReasoning="minimal" />);
 
-    expect(trigger().textContent).toBe('Claude Opus · Default');
+    expect(trigger().textContent).toBe('Claude Opus Default');
   });
 
   it('styles the model name separately from the muted level', () => {
@@ -735,7 +735,21 @@ describe('ModelSelector', () => {
     expect(name.className).toBe('fb-model-selector__name');
     expect(name.textContent).toBe('GPT-5');
     expect(level.className).toBe('fb-model-selector__level');
-    expect(level.textContent).toBe('· Low');
+    expect(level.textContent).toBe('Low');
+  });
+
+  it.each([
+    ['with reasoning levels', gpt.id, 'GPT-5 Default'],
+    ['without reasoning levels', plain.id, 'GPT-4o'],
+  ])('ends the trigger with one hidden chevron %s', (_, initialModel, name) => {
+    render(<Harness initialModel={initialModel} />);
+
+    const closed = screen.getByRole('button', { name, expanded: false });
+
+    expect(closed).toBe(trigger());
+    expect(closed.querySelectorAll('svg')).toHaveLength(1);
+    expect(closed.lastElementChild?.matches('svg.fb-model-selector__chevron')).toBe(true);
+    expect(closed.lastElementChild?.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('renders the trigger as a borderless text button', () => {
@@ -858,7 +872,7 @@ describe('ModelSelector', () => {
 
     await user.keyboard('{Escape}');
 
-    expect(trigger().textContent).toBe('Claude Opus · High · 16k');
+    expect(trigger().textContent).toBe('Claude Opus High · 16k');
   });
 
   it('reports undefined when the slider moves to Default', async () => {
@@ -876,7 +890,7 @@ describe('ModelSelector', () => {
 
     await user.keyboard('{Escape}');
 
-    expect(trigger().textContent).toBe('GPT-5 · Default');
+    expect(trigger().textContent).toBe('GPT-5 Default');
   });
 
   it('switches the popover to the model list from the model name', async () => {
@@ -1142,7 +1156,7 @@ describe('ModelSelector', () => {
 
     render(<Harness />);
 
-    expect(trigger().textContent).toBe('GPT-5 · Default');
+    expect(trigger().textContent).toBe('GPT-5 Default');
 
     await user.click(trigger());
 
@@ -1170,17 +1184,17 @@ describe('ModelSelector', () => {
     await user.click(trigger());
     await user.keyboard('{Escape}');
 
-    expect(trigger().textContent).toBe('GPT-5 · Default');
+    expect(trigger().textContent).toBe('GPT-5 Default');
 
     await user.click(trigger());
     await user.click(document.body);
 
-    expect(trigger().textContent).toBe('GPT-5 · Default');
+    expect(trigger().textContent).toBe('GPT-5 Default');
 
     await user.click(trigger());
     await user.click(openTrigger());
 
-    expect(trigger().textContent).toBe('GPT-5 · Default');
+    expect(trigger().textContent).toBe('GPT-5 Default');
   });
 
   it('keeps the Select effort label while the slider changes level', async () => {
@@ -1204,7 +1218,7 @@ describe('ModelSelector', () => {
 
     render(<Harness />);
 
-    const closed = screen.getByRole('button', { name: 'GPT-5 · Default', expanded: false });
+    const closed = screen.getByRole('button', { name: 'GPT-5 Default', expanded: false });
 
     expect(closed.getAttribute('aria-haspopup')).toBe('dialog');
 
@@ -1302,7 +1316,7 @@ describe('ModelSelector', () => {
     await user.type(searchBox(), 'opus{Enter}');
     await user.keyboard('{Escape}');
 
-    expect(trigger().textContent).toBe('Claude Opus · Default');
+    expect(trigger().textContent).toBe('Claude Opus Default');
 
     await user.click(trigger());
 

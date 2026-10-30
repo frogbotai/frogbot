@@ -10,7 +10,7 @@
   }
 
   .fb-attachments__add {
-    padding: 0.375rem;
+    padding: 0.3125rem;
     border: 0;
     border-radius: 9999px;
     color: var(--color-text-secondary);
@@ -27,8 +27,8 @@
   }
 
   .fb-attachments__add-icon {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.125rem;
+    height: 1.125rem;
   }
 
   .fb-attachments__previews {

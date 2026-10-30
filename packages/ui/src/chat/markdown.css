@@ -155,33 +155,33 @@
     border-right-width: 0;
   }
 
-  .fb-message--assistant .fb-markdown__paragraph,
-  .fb-message--assistant .fb-markdown__ordered-list,
-  .fb-message--assistant .fb-markdown__unordered-list,
-  .fb-message--assistant .fb-markdown__list-item {
-    font-size: 0.875rem;
+  .fb-message .fb-markdown__paragraph,
+  .fb-message .fb-markdown__ordered-list,
+  .fb-message .fb-markdown__unordered-list,
+  .fb-message .fb-markdown__list-item {
+    font-size: var(--fb-text-sm);
     line-height: 160%;
   }
 
-  .fb-message--assistant .fb-markdown__heading-1 {
+  .fb-message .fb-markdown__heading-1 {
     font-size: 1.0625rem;
     line-height: 150%;
   }
 
-  .fb-message--assistant .fb-markdown__heading-2 {
+  .fb-message .fb-markdown__heading-2 {
     font-size: 0.9375rem;
     line-height: 150%;
   }
 
-  .fb-message--assistant .fb-markdown__heading-3,
-  .fb-message--assistant .fb-markdown__heading-4,
-  .fb-message--assistant .fb-markdown__heading-5,
-  .fb-message--assistant .fb-markdown__heading-6 {
+  .fb-message .fb-markdown__heading-3,
+  .fb-message .fb-markdown__heading-4,
+  .fb-message .fb-markdown__heading-5,
+  .fb-message .fb-markdown__heading-6 {
     font-size: 0.8125rem;
     line-height: 150%;
   }
 
-  .fb-message--assistant .fb-markdown__inline-code {
+  .fb-message .fb-markdown__inline-code {
     font-size: 0.8125rem;
     line-height: inherit;
   }

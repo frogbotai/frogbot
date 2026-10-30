@@ -118,7 +118,7 @@ function choices() {
 test('the slider steps through the model levels with the keyboard', async ({ page }) => {
   await chooseModel(page, 'thinker');
 
-  await expect(trigger(page)).toHaveText('thinker · Default');
+  await expect(trigger(page)).toHaveText('thinker Default');
 
   await trigger(page).click();
 
@@ -140,14 +140,14 @@ test('the slider steps through the model levels with the keyboard', async ({ pag
 
   await page.keyboard.press('Escape');
 
-  await expect(trigger(page)).toHaveText('thinker · Low');
+  await expect(trigger(page)).toHaveText('thinker Low');
 });
 
 test('the chosen level reaches the model on every message', async ({ page }) => {
   await chooseModel(page, 'thinker');
   await chooseLevel(page, 'End');
 
-  await expect(trigger(page)).toHaveText('thinker · High');
+  await expect(trigger(page)).toHaveText('thinker High');
 
   model.respond({ text: 'Thought hard.' });
 
@@ -184,7 +184,7 @@ test('a model without levels hides the slider and sends none, and switching back
 
   await chooseModel(page, 'thinker');
 
-  await expect(trigger(page)).toHaveText('thinker · High');
+  await expect(trigger(page)).toHaveText('thinker High');
 
   model.respond({ text: 'Deep reply.' });
 
@@ -217,18 +217,18 @@ test('reloading a chat shows the choice of its latest message, and a new chat th
 
   await chooseLevel(page, 'End');
 
-  await expect(trigger(page)).toHaveText('thinker · High');
+  await expect(trigger(page)).toHaveText('thinker High');
   await expect
     .poll(() => savedPicks(page))
     .toMatchObject({ model: 'browser/thinker', reasoning: { 'browser/thinker': 'high' } });
 
   await page.reload();
 
-  await expect(trigger(page)).toHaveText('thinker · Low');
+  await expect(trigger(page)).toHaveText('thinker Low');
 
   await page.goto(`/collections/${chatsSlug}/create`);
 
-  await expect(trigger(page)).toHaveText('thinker · High');
+  await expect(trigger(page)).toHaveText('thinker High');
   expect(choices()).toEqual([['thinker', 'low']]);
 });
 
@@ -247,7 +247,7 @@ test('a saved level the model no longer offers shows Default and is not sent', a
 
   await page.reload();
 
-  await expect(trigger(page)).toHaveText('thinker · Default');
+  await expect(trigger(page)).toHaveText('thinker Default');
 
   model.respond({ text: 'Default reply.' });
 
