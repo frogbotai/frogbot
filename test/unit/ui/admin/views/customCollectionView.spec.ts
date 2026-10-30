@@ -79,7 +79,11 @@ describe('CustomCollectionView', () => {
         i18n,
         payload,
         permissions: { collections: {} },
-        searchParams: { page: '2' },
+        searchParams: {
+          page: '2',
+          'where[or][0][title][equals]': 'Alpha',
+          'where[or][1][status][in]': ['a', 'b'],
+        },
         user,
         viewType: 'list',
       } as never),
@@ -87,7 +91,13 @@ describe('CustomCollectionView', () => {
 
     expect(mocks.createPayloadRequest).toHaveBeenCalledWith({
       payload,
-      req: { i18n, query: { page: '2' } },
+      req: {
+        i18n,
+        query: {
+          page: '2',
+          where: { or: [{ title: { equals: 'Alpha' } }, { status: { in: ['a', 'b'] } }] },
+        },
+      },
       user,
     });
     expect(mocks.getClientConfig).toHaveBeenCalledWith({

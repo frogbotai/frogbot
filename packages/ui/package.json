@@ -286,6 +286,7 @@
     "date-fns": "^4.1.0",
     "lexical": "0.52.0",
     "markdown-it": "^14.1.0",
+    "qs-esm": "8.0.1",
     "react-markdown": "10.1.0",
     "remark-breaks": "4.0.0",
     "remark-gfm": "4.0.1"
