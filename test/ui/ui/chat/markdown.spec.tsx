@@ -190,6 +190,15 @@ Paragraph with **strong**, *emphasis*, ~~removed~~, [link](https://example.com),
     );
   });
 
+  it('resolves a footnote defined in another block', () => {
+    const { container } = render(
+      <Markdown>{'Text with a note[^1].\n\nMore text.\n\n[^1]: The note.'}</Markdown>,
+    );
+
+    expect(container.textContent).not.toContain('[^1]');
+    expect(container.querySelector('[data-footnotes] li')?.textContent).toContain('The note.');
+  });
+
   it('renders loose lists and indented continuations as one list', () => {
     const { container } = render(
       <Markdown>{'- one\n\n  still one\n\n- two\n\n| A |\n| - |\n| 1 |'}</Markdown>,

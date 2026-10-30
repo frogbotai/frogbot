@@ -2,11 +2,16 @@ import MarkdownIt from 'markdown-it';
 
 const parser = new MarkdownIt({ html: true });
 
+const footnoteDefinition = /^ {0,3}\[\^[^\]\s]+\]:/m;
+
 /**
  * `text` split into its top-level markdown blocks, so a streaming reply re-parses only the block
- * still growing. Text with a reference definition stays whole: a definition serves every block.
+ * still growing. Text with a reference or footnote definition stays whole: a definition serves
+ * every block. markdown-it has no footnotes, so those are found by pattern.
  */
 export function markdownBlocks(text: string): string[] {
+  if (footnoteDefinition.test(text)) return [text];
+
   const env: { references?: Record<string, unknown> } = {};
 
   const starts = parser
