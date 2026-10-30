@@ -2,14 +2,15 @@
   .fb-message-list__scrubber {
     position: absolute;
     top: 0;
-    right: calc(var(--fb-message-scrubber-gutter, 0px) + 0.25rem);
+    left: 1rem;
     bottom: calc(var(--fb-composer-height, 7rem) + 0.75rem);
-    width: 24px;
+    width: 26px;
     display: flex;
     flex-direction: column;
     justify-content: safe center;
     overflow-y: auto;
     scrollbar-width: none;
+    pointer-events: none;
   }
 
   .fb-message-list__scrubber::-webkit-scrollbar {
@@ -20,14 +21,14 @@
     margin: 0;
     padding: 0;
     list-style: none;
+    pointer-events: auto;
   }
 
   .fb-message-list__scrubber-tick {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 10px;
     padding: 0;
     border: 0;
     border-radius: var(--fb-radius-sm);
@@ -42,23 +43,40 @@
 
   .fb-message-list__scrubber-line {
     display: block;
-    width: 8px;
-    height: 1px;
+    width: 6px;
+    height: 2px;
+    border-radius: 1px;
     background-color: var(--color-border-strong);
     transition:
       width 150ms ease,
       background-color 150ms ease;
   }
 
-  .fb-message-list__scrubber-tick:hover .fb-message-list__scrubber-line,
-  .fb-message-list__scrubber-tick:focus-visible .fb-message-list__scrubber-line {
-    width: 14px;
+  .fb-message-list__scrubber-tick[data-in-view] .fb-message-list__scrubber-line {
     background-color: var(--color-text-secondary);
   }
 
-  .fb-message-list__scrubber-tick[aria-current="true"] .fb-message-list__scrubber-line {
-    width: 14px;
+  .fb-message-list__scrubber-tick[data-distance="0"] .fb-message-list__scrubber-line {
+    width: 26px;
     background-color: var(--color-text);
+  }
+
+  .fb-message-list__scrubber-tick[data-distance="1"] .fb-message-list__scrubber-line {
+    width: 20px;
+  }
+
+  .fb-message-list__scrubber-tick[data-distance="2"] .fb-message-list__scrubber-line {
+    width: 14px;
+  }
+
+  .fb-message-list__scrubber-tick[data-distance="3"] .fb-message-list__scrubber-line {
+    width: 10px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fb-message-list__scrubber-line {
+      transition: none;
+    }
   }
 
   @container fb-message-list (width < 640px) {
@@ -69,36 +87,27 @@
 
   .fb-message-list__scrubber-card {
     width: min(20rem, 60vw);
-    max-height: var(--radix-popover-content-available-height);
-    padding: 0.25rem;
-    overflow-y: auto;
-  }
-
-  .fb-message-list__scrubber-row {
-    display: block;
-    width: 100%;
-    padding: 0.375rem 0.5rem;
-    border: 0;
-    border-radius: var(--fb-radius-md);
-    background: transparent;
-    color: var(--color-text-secondary);
+    padding: 0.5rem 0.75rem;
     font-size: var(--fb-text-sm);
     line-height: 1.25rem;
-    text-align: start;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     cursor: pointer;
   }
 
-  .fb-message-list__scrubber-row:hover,
-  .fb-message-list__scrubber-row[data-active] {
+  .fb-message-list__scrubber-label {
+    font-weight: 600;
     color: var(--color-text);
-    background-color: var(--color-bg-hover);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .fb-message-list__scrubber-row[data-current] {
-    font-weight: 700;
-    color: var(--color-text);
+  .fb-message-list__scrubber-reply {
+    display: -webkit-box;
+    margin-top: 0.125rem;
+    color: var(--color-text-secondary);
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 }
