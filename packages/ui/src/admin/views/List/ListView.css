@@ -8,4 +8,11 @@
   .list-controls__actions > #empty-trash-button {
     order: 2;
   }
+
+  /* Payload shows this row on small screens only while rows are selected; toolbar items and the
+     CreateButton live in it there, so keep it whenever it holds them. */
+  .page-controls
+    > .collection-list__list-selection:has(.collection-list__list-selection-actions > *) {
+    display: block;
+  }
 }

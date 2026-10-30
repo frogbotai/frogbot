@@ -39,6 +39,23 @@ describe('collection view resolution', () => {
     expect(denied).toHaveBeenCalledWith({ req });
   });
 
+  it('evaluates access against a request passed without initPageResult', async () => {
+    const access = vi.fn(() => false);
+    const req = { frogbot: {}, user: { id: '1' } };
+    const result = await resolveCollectionViews({
+      collectionConfig: {
+        admin: {
+          custom: { frogbot: { views: [{ label: 'B', path: '', slug: 'b', type: 'board' }] } },
+        },
+        custom: { frogbot: { collectionViews: [{ access, slug: 'b', type: 'board' }] } },
+      },
+      req,
+    } as never);
+
+    expect(result.views).toEqual([]);
+    expect(access).toHaveBeenCalledWith({ req });
+  });
+
   it('resolves root and named routes independently', () => {
     expect(getActiveViewSlug({ viewType: 'list' } as never)).toBeUndefined();
     expect(getActiveViewSlug({ viewType: 'by-stage' } as never)).toBe('by-stage');

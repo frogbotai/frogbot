@@ -129,6 +129,10 @@ export default buildConfig({
               'tagNames',
               aiFieldName,
             ],
+            components: {
+              actions: ['/components/BoardAction#ListAction'],
+              toolbar: ['/components/BoardAction#ListToolbar'],
+            },
           },
           {
             type: 'board',
@@ -149,7 +153,10 @@ export default buildConfig({
               'tagNames',
               aiFieldName,
             ],
-            components: { actions: ['/components/BoardAction#BoardAction'] },
+            components: {
+              actions: ['/components/BoardAction#BoardAction'],
+              toolbar: ['/components/BoardAction#BoardToolbar'],
+            },
           },
           {
             type: 'calendar',
@@ -237,7 +244,12 @@ export default buildConfig({
     { slug: tagsSlug, admin: { useAsTitle: 'name' }, fields: [{ name: 'name', type: 'text' }] },
     {
       slug: timesheetsSlug,
-      admin: { useAsTitle: 'title' },
+      admin: {
+        useAsTitle: 'title',
+        views: [
+          { type: 'board', components: { actions: ['/components/BoardAction#TimesheetAction'] } },
+        ],
+      },
       versions: { drafts: true },
       fields: [
         { name: 'title', type: 'text', required: true },

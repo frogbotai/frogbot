@@ -184,6 +184,49 @@ describe('frogbot sanitize', () => {
     expect(users?.hooks?.beforeChange).toBeUndefined();
   });
 
+  it("appends CollectionViewActions to the root header actions after the app's own", async () => {
+    const result = sanitize(
+      makeConfig({
+        admin: { components: { actions: ['./App#Action'] } },
+        collections: [
+          {
+            slug: 'tasks',
+            fields: [{ name: 'stage', type: 'select', options: [] }],
+            admin: {
+              views: [{ type: 'list' }, { type: 'board', components: { actions: ['./B#B'] } }],
+            },
+          },
+        ],
+      }),
+    );
+
+    expect((await result._internal.payloadConfig).admin?.components?.actions).toEqual([
+      './App#Action',
+      '@frogbotai/ui/admin/rsc#CollectionViewActions',
+    ]);
+  });
+
+  it('adds no root header action when only default views set actions', async () => {
+    const result = sanitize(
+      makeConfig({
+        collections: [
+          {
+            slug: 'tasks',
+            fields: [{ name: 'dueAt', type: 'date' }],
+            admin: {
+              views: [
+                { type: 'board', components: { actions: ['./B#B'] } },
+                { type: 'calendar', slug: 'cal', start: 'dueAt' },
+              ],
+            },
+          },
+        ],
+      }),
+    );
+
+    expect((await result._internal.payloadConfig).admin?.components?.actions).toBeUndefined();
+  });
+
   it('leaves calendar-only collections non-orderable', async () => {
     const result = sanitize(
       makeConfig({

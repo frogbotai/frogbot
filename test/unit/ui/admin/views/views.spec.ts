@@ -282,20 +282,59 @@ describe('FrogBot admin views', () => {
         afterView: ['AfterView'],
         beforeView: ['BeforeView'],
         menuItems: ['Menu'],
+        toolbar: ['Toolbar'],
       },
       views: [{ label: 'Stub', path: '', slug: 'stub', type: 'custom' }],
     } as never);
 
     expect(element?.props).toMatchObject({
       AfterList: 'slot:AfterView',
-      Actions: ['slot:Action'],
+      Toolbar: ['slot:Toolbar'],
       BeforeList: 'slot:BeforeView',
       Description: 'slot:Description',
       hasCreatePermission: true,
       listMenuItems: ['slot:Menu'],
       query: { sort: '-createdAt', where: { status: { equals: 'draft' } } },
     });
+    expect(element?.props).not.toHaveProperty('Actions');
     expect(element?.props.children).toBe(child);
+  });
+
+  it('CollectionViewShell puts the CreateButton after the toolbar', () => {
+    mocks.RenderServerComponent.mockImplementation(({ Component }) => `slot:${String(Component)}`);
+    mocks.RenderServerComponent.mockClear();
+
+    const element = CollectionViewShell({
+      children: null,
+      clientConfig: { routes: { admin: '/admin' } },
+      collectionConfig: { admin: { components: { CreateButton: 'Create' } }, slug: 'posts' },
+      collectionSlug: 'posts',
+      importMap: {},
+      initPageResult: {
+        permissions: { collections: { posts: { create: false, delete: true } } },
+        req: { query: {} },
+      },
+      viewComponents: { toolbar: ['Toolbar'] },
+      views: [],
+      viewSlug: 'board',
+    } as never);
+
+    const [toolbar, create] = element?.props.Toolbar as ReactNode[];
+
+    expect(toolbar).toBe('slot:Toolbar');
+    expect(renderToStaticMarkup(create as never)).toBe(
+      '<div class="fb-create-button">slot:Create</div>',
+    );
+    expect(mocks.RenderServerComponent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clientProps: {
+          collectionSlug: 'posts',
+          hasCreatePermission: false,
+          newDocumentURL: '/admin/collections/posts/create',
+        },
+        Component: 'Create',
+      }),
+    );
   });
 
   it('SettingsView resolves the longest exact or prefix entry and enforces access', async () => {

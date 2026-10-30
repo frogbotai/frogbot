@@ -1,34 +1,8 @@
-import type { I18n } from '@payloadcms/translations';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import type { AdminViewServerProps } from 'payload';
-import { createPayloadRequest } from 'payload';
 
-import { getActiveViewSlug, resolveCollectionViews } from './collectionViews.js';
+import { getActiveViewSlug, resolveCollectionViews, withPageProps } from './collectionViews.js';
 import { CollectionViewShell } from './CollectionViewShell.js';
-
-async function withPageProps(props: AdminViewServerProps): Promise<AdminViewServerProps> {
-  const partial = props as Partial<AdminViewServerProps> & Pick<AdminViewServerProps, 'payload'>;
-  if (partial.importMap && partial.initPageResult) return props;
-
-  return {
-    ...props,
-    importMap: partial.importMap ?? props.payload.importMap,
-    initPageResult:
-      partial.initPageResult ??
-      ({
-        collectionConfig: props.collectionConfig,
-        permissions: props.permissions,
-        req: await createPayloadRequest({
-          payload: props.payload,
-          req: {
-            i18n: props.i18n as I18n,
-            query: props.searchParams ?? {},
-          },
-          user: props.user ?? undefined,
-        }),
-      } as AdminViewServerProps['initPageResult']),
-  };
-}
 
 export async function CustomCollectionView(input: AdminViewServerProps) {
   const props = await withPageProps(input);
