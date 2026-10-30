@@ -64,7 +64,7 @@ Apart from the spend counter, the fields have no access rules of their own, so u
 
 The plugin wraps each [`ai.access`](/ai/overview#control-access) rule (`generate`, `embed`, `transcribe`, `rerank`, `evaluate`). For each call, your own rule runs first; without one, the user must be signed in. When it allows a signed-in user, a non-empty `models` list must include the model or alias the caller asked for. Otherwise the call fails with a `403` and the code `model_not_allowed`: `Model "<id>" is not allowed by this policy.` Over HTTP, this returns `{ "error": { "message": "...", "type": "invalid_request_error", "code": "model_not_allowed", "param": "model" } }`, the same body as a spent budget; on `/api/v1/messages` it is Anthropic's `{ "type": "error", "error": { "type": "permission_error", "message": "...", "param": "model" } }`.
 
-The same check shapes chat. A user sees only the agent models they may use, and an agent with none is hidden from them. Chat shows a microphone only when the user may use the [transcription model](/chat/ui-chat#voice-input), and a read aloud button only when they may use the [speech model](/chat/ui-chat#read-aloud); for an alias, list the model behind it.
+The same check shapes chat. A user sees only the agent models they may use, and an agent with none is hidden from them. `GET /api/v1/models` likewise lists only the models in a non-empty `models` list. Chat shows a microphone only when the user may use the [transcription model](/chat/ui-chat#voice-input), and a read aloud button only when they may use the [speech model](/chat/ui-chat#read-aloud); for an alias, list the model behind it.
 
 The budget is checked when a call runs, before every AI call a signed-in user makes, agent turns included. When `monthlyBudget` is set and `spendThisPeriodUSD` has reached it, the call fails with a `403` and the code `budget_exceeded`: `The configured budget has been exhausted.` A spent budget doesn't hide agents or models: chat lists them as usual and shows this error when the user sends. Calls without a signed-in user, such as scheduled tasks, have no per-user limit.
 
@@ -94,7 +94,7 @@ Only a signed-in session can change a key's limits. A request authenticated by a
 
 On a request made with a key, the owner's model list and budget are checked first, then the key's:
 
-- a model outside a non-empty key list fails with a `403`, code `model_not_allowed`: `Model "<id>" is not allowed for API key "<name>".` Chat and agent lists show only the key's models;
+- a model outside a non-empty key list fails with a `403`, code `model_not_allowed`: `Model "<id>" is not allowed for API key "<name>".` Chat and agent lists, and `GET /api/v1/models`, show only the key's models;
 - a spent cap fails with a `403`, code `budget_exceeded`: `API key "<name>" has used its monthly cap of $25.00.`
 
 Both fail before the model is called, so they write no usage row. Each call's cost is added to the key's and the owner's spend, agent runs included, and the monthly reset zeros keys too. Rotating a key keeps its models, cap and spend.

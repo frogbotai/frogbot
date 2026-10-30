@@ -142,7 +142,15 @@ export interface Account {
   /**
    * Leave empty to allow all models.
    */
-  models?: ('test/allowed' | 'test/blocked')[] | null;
+  models?:
+    | (
+        | 'openai/gpt-4.1'
+        | 'openai/gpt-4.1-mini'
+        | 'openai/gpt-4o'
+        | 'test/allowed'
+        | 'test/blocked'
+      )[]
+    | null;
   /**
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
@@ -217,7 +225,15 @@ export interface Credential {
   totalCostUSD?: number | null;
   environment?: string | null;
   tenant?: string | null;
-  models?: ('test/allowed' | 'test/blocked')[] | null;
+  models?:
+    | (
+        | 'openai/gpt-4.1'
+        | 'openai/gpt-4.1-mini'
+        | 'openai/gpt-4o'
+        | 'test/allowed'
+        | 'test/blocked'
+      )[]
+    | null;
   /**
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
@@ -659,6 +675,11 @@ declare module 'frogbot' {
     agents: {
       'api-key-policy': unknown;
     };
-    models: 'test/allowed' | 'test/blocked';
+    models:
+      | 'openai/gpt-4.1'
+      | 'openai/gpt-4.1-mini'
+      | 'openai/gpt-4o'
+      | 'test/allowed'
+      | 'test/blocked';
   }
 }
