@@ -4,8 +4,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ROOT } from './lib/workspace.mjs';
+import { publishablePackages, ROOT } from './lib/workspace.mjs';
 import { releaseNotes } from './release-changelog.mjs';
+import { packageStatus, releaseStatus } from './release-status.mjs';
 
 function exec(command, args) {
   const result = spawnSync(command, args, { cwd: ROOT, encoding: 'utf8' });
@@ -103,6 +104,83 @@ export function githubRelease({ tag, notes, run = exec, log = console.log }) {
   );
 }
 
+function pnpmPublish(pkg) {
+  return (
+    spawnSync('pnpm', ['publish', '--access', 'public', '--no-git-checks'], {
+      cwd: pkg.dir,
+      stdio: 'inherit',
+    }).status ?? 1
+  );
+}
+
+/**
+ * Publishes each package whose version npm doesn't have yet. Asks the registry directly, past
+ * its cache, so a re-run skips what an earlier run already published instead of failing on it.
+ */
+export async function publish({
+  packages = publishablePackages(),
+  status = packageStatus,
+  publishOne = pnpmPublish,
+  log = console.log,
+} = {}) {
+  const failed = [];
+
+  for (const pkg of packages) {
+    const before = await status(pkg);
+
+    if (before.state === 'error') {
+      failed.push(`${pkg.name} (${before.detail})`);
+      continue;
+    }
+
+    if (before.state === 'published') {
+      log(`  skip ${pkg.name}@${pkg.version}, already on npm`);
+      continue;
+    }
+
+    if (publishOne(pkg) !== 0 && (await status(pkg)).state !== 'published') failed.push(pkg.name);
+  }
+
+  if (failed.length) {
+    throw new Error(
+      `publish failed for ${failed.join(', ')}; fix it, then run pnpm release --resume`,
+    );
+  }
+}
+
+/** Waits until npm lists every package at its new version, checking every `interval` ms. */
+export async function waitForNpm({
+  packages = publishablePackages(),
+  status = packageStatus,
+  timeout = 10 * 60_000,
+  interval = 15_000,
+  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  log = console.log,
+} = {}) {
+  const deadline = Date.now() + timeout;
+
+  for (;;) {
+    const waiting = (await releaseStatus({ packages, status })).filter(
+      (result) => result.state !== 'published',
+    );
+
+    if (!waiting.length) {
+      log(`  all ${packages.length} packages are on npm`);
+
+      return;
+    }
+
+    const names = waiting.map((result) => result.name).join(', ');
+
+    if (Date.now() >= deadline) {
+      throw new Error(`npm still lacks ${names}; run pnpm release --resume`);
+    }
+
+    log(`  waiting for npm: ${waiting.length} not visible yet`);
+    await sleep(interval);
+  }
+}
+
 export function releaseSteps({ resume = false } = {}) {
   const tag = () => `v${version()}`;
 
@@ -118,11 +196,8 @@ export function releaseSteps({ resume = false } = {}) {
     ...(resume ? [] : [{ name: 'install', run: ['pnpm', 'install', '--frozen-lockfile'] }]),
     { name: 'build', run: ['pnpm', 'build'] },
     { name: 'check-dist-imports', run: ['pnpm', 'check', 'dist-imports'] },
-    {
-      name: 'publish',
-      run: ['pnpm', '-r', 'publish', '--access', 'public', '--no-git-checks', '--report-summary'],
-    },
-    { name: 'release-status', run: ['pnpm', 'release:status'] },
+    { name: 'publish', run: () => publish() },
+    { name: 'wait-for-npm', run: () => waitForNpm() },
     {
       name: 'github-release',
       run: () => githubRelease({ tag: tag(), notes: notesFile(tag()) }),
@@ -139,7 +214,7 @@ export function parseArgs(argv) {
   return { resume: args.includes('--resume') };
 }
 
-function main() {
+async function main() {
   const args = parseArgs(process.argv.slice(2));
 
   if (args.error) {
@@ -152,7 +227,7 @@ function main() {
       console.log(`\n▶ ${name}\n`);
 
       try {
-        run();
+        await run();
       } catch (error) {
         console.error(`✖ ${error.message}`);
         process.exit(1);
@@ -169,4 +244,4 @@ function main() {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] === fileURLToPath(import.meta.url)) await main();

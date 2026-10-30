@@ -124,8 +124,8 @@ describe('release scripts', () => {
         ...(resume ? [] : ['pnpm install --frozen-lockfile']),
         'pnpm build',
         'pnpm check dist-imports',
-        'pnpm -r publish --access public --no-git-checks --report-summary',
-        'pnpm release:status',
+        'publish',
+        'wait-for-npm',
         'github-release',
       ]);
     },
@@ -184,6 +184,106 @@ describe('release scripts', () => {
       githubRelease({ tag: 'v1.1.0', notes: '/tmp/notes.md', run, log: () => {} }),
     ).toThrow(/remote tag v1.1.0 points at bbbbbbbb/);
     expect(calls.some((call) => /^git (tag|push)|^gh release create/.test(call))).toBe(false);
+  });
+
+  const pkgs = ['@x/a', '@x/b', '@x/c'].map((name) => ({
+    dir: `/p/${name}`,
+    name,
+    version: '1.1.0',
+  }));
+
+  type State = 'published' | 'missing' | 'error';
+
+  function registry(states: Record<string, State>) {
+    return (pkg: { name: string }) =>
+      Promise.resolve({ ...pkg, state: states[pkg.name] ?? 'missing' });
+  }
+
+  it('publish skips versions npm already has and publishes the rest', async () => {
+    const { publish } = await release();
+    const states: Record<string, State> = { '@x/a': 'published' };
+    const published: string[] = [];
+
+    await publish({
+      packages: pkgs,
+      status: registry(states),
+      publishOne: (pkg: { name: string }) => {
+        published.push(pkg.name);
+        states[pkg.name] = 'published';
+
+        return 0;
+      },
+      log: () => {},
+    });
+
+    expect(published).toEqual(['@x/b', '@x/c']);
+  });
+
+  it('publish counts a failed publish as done when npm has the version, and fails otherwise', async () => {
+    const { publish } = await release();
+    const states: Record<string, State> = {};
+
+    const publishOne = (pkg: { name: string }) => {
+      if (pkg.name === '@x/a') states[pkg.name] = 'published';
+
+      return 1;
+    };
+
+    await expect(
+      publish({ packages: pkgs, status: registry(states), publishOne, log: () => {} }),
+    ).rejects.toThrow(/publish failed for @x\/b, @x\/c; .*pnpm release --resume/);
+  });
+
+  it('wait-for-npm retries until every package is visible', async () => {
+    const { waitForNpm } = await release();
+    let checks = 0;
+    const sleeps: number[] = [];
+
+    await waitForNpm({
+      packages: pkgs,
+      status: (pkg: { name: string }) =>
+        Promise.resolve({ ...pkg, state: checks++ < 4 ? 'missing' : 'published' }),
+      interval: 5,
+      sleep: (ms: number) => {
+        sleeps.push(ms);
+
+        return Promise.resolve();
+      },
+      log: () => {},
+    });
+
+    expect(sleeps).toEqual([5, 5]);
+  });
+
+  it('wait-for-npm gives up after the timeout and names what is missing', async () => {
+    const { waitForNpm } = await release();
+
+    await expect(
+      waitForNpm({
+        packages: pkgs,
+        status: registry({ '@x/a': 'published', '@x/b': 'published' }),
+        timeout: 0,
+        sleep: async () => {},
+        log: () => {},
+      }),
+    ).rejects.toThrow(/npm still lacks @x\/c; run pnpm release --resume/);
+  });
+
+  it('release status reads the registry past its cache', async () => {
+    const { packageStatus } = await import('../../../scripts/release-status.mjs');
+    const urls: string[] = [];
+
+    const result = await packageStatus(pkgs[0], {
+      registry: 'https://registry.test',
+      fetch: (url: string) => {
+        urls.push(url);
+
+        return Promise.resolve(new Response(JSON.stringify({ versions: { '1.1.0': {} } })));
+      },
+    });
+
+    expect(result.state).toBe('published');
+    expect(urls[0]).toMatch(/^https:\/\/registry\.test\/@x%2fa\?t=\d+$/);
   });
 
   it('docker:start starts every service profile and waits for them', () => {
