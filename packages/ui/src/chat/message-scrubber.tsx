@@ -101,9 +101,9 @@ export function MessageScrubber({ messages, onPin, pinned, scrollerRef }: Messag
   const [active, setActive] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
-  const live = useRef({ onPin, pinned });
+  const live = useRef({ focused, onPin, pinned });
 
-  live.current = { onPin, pinned };
+  live.current = { focused, onPin, pinned };
 
   const shown = overflowing && users.length >= 2;
   const current = users.some((user) => user.id === pinned) ? pinned : (onScreen ?? users[0]?.id);
@@ -250,7 +250,13 @@ export function MessageScrubber({ messages, onPin, pinned, scrollerRef }: Messag
     clearTimeout(closeTimer.current);
 
     closeTimer.current = setTimeout(() => {
-      if (hovering.current || railRef.current?.contains(document.activeElement)) return;
+      if (hovering.current) return;
+
+      if (railRef.current?.contains(document.activeElement)) {
+        if (live.current.focused) setActive(live.current.focused);
+
+        return;
+      }
 
       setOpen(false);
       setActive(null);
@@ -300,14 +306,7 @@ export function MessageScrubber({ messages, onPin, pinned, scrollerRef }: Messag
           scheduleClose();
         }}
       >
-        <ol
-          className="fb-message-list__scrubber-list"
-          {...hover}
-          onPointerLeave={() => {
-            hover.onPointerLeave();
-            if (focused) setActive(focused);
-          }}
-        >
+        <ol className="fb-message-list__scrubber-list" {...hover}>
           {users.map((user, index) => {
             const distance = activeIndex >= 0 ? Math.abs(index - activeIndex) : Infinity;
 

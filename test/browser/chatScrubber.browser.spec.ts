@@ -269,3 +269,44 @@ test('the hover card stays open while the pointer moves onto it', async ({ page 
   await page.mouse.move(8, 400, { steps: 4 });
   await expect(card(page)).toBeHidden();
 });
+
+test('after a click, the card keeps the hovered turn while the pointer moves onto it', async ({
+  page,
+}) => {
+  await openTurns(page);
+  await tick(page, 2).click();
+  await settled(page);
+  await tick(page, 5).hover();
+  await expect(card(page)).toContainText('Message 9.');
+
+  const cardBox = await box(card(page));
+
+  await page.mouse.move(cardBox.x + cardBox.width / 2, cardBox.y + cardBox.height / 2, {
+    steps: 8,
+  });
+
+  await expect(
+    expect(card(page)).not.toContainText('Message 9.', { timeout: 300 }),
+  ).rejects.toThrow();
+
+  await card(page).click();
+  await expect(tick(page, 5)).toHaveAttribute('aria-current', 'true');
+});
+
+test('the card centres on the active tick and follows it', async ({ page }) => {
+  await openTurns(page);
+
+  for (const n of [2, 5]) {
+    await tick(page, n).hover();
+
+    const { y } = await centre(page, n);
+
+    await expect
+      .poll(async () => {
+        const { y: top, height } = await box(card(page));
+
+        return Math.abs(top + height / 2 - y);
+      })
+      .toBeLessThanOrEqual(1);
+  }
+});
