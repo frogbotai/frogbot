@@ -28,29 +28,49 @@ test.afterEach(() => {
   expect(consoleErrors).toEqual([]);
 });
 
-test('puts Create API key in the page header at its own width', async ({ page }) => {
+const createButton = (page: Page) =>
+  page.locator('.list-controls__actions').getByRole('button', { name: 'Create API key' });
+
+test('puts Create API key in the toolbar where Create New sits', async ({ page }) => {
   await page.goto(`/collections/${apiKeysSlug}`);
 
-  const button = page.locator('.app-header').getByRole('button', { name: 'Create API key' });
-  const controls = page.locator('.collection-list .list-controls');
+  const button = createButton(page);
 
   await expect(button).toBeVisible();
+  await expect(button).toHaveClass(/\bbtn--style-primary\b/);
+  await expect(button).toHaveClass(/\bbtn--size-medium\b/);
   await expect(
-    page.locator('.collection-list').getByRole('button', { name: 'Create API key' }),
+    page.locator('.app-header').getByRole('button', { name: 'Create API key' }),
   ).toHaveCount(0);
-  expect((await button.boundingBox())!.width).toBeLessThan(
-    (await controls.boundingBox())!.width / 2,
-  );
+  await expect(page.locator('#create-new-doc')).toHaveCount(0);
 
-  const nextVisible = await controls.evaluate((element) => {
-    let next = element.nextElementSibling;
+  const order = await page
+    .locator('.list-controls__actions')
+    .evaluate((actions) =>
+      [...actions.children]
+        .sort((a, b) => a.getBoundingClientRect().x - b.getBoundingClientRect().x)
+        .map((child) =>
+          child.matches('.fb-create-button')
+            ? 'create'
+            : child.querySelector('[role="radiogroup"]') || child.matches('[role="radiogroup"]')
+              ? 'layout'
+              : child.matches('.list-controls__popup')
+                ? 'menu'
+                : 'other',
+        ),
+    );
 
-    while (next?.classList.contains('sr-only')) next = next.nextElementSibling;
+  expect(order.slice(order.indexOf('layout'))).toEqual(['layout', 'create', 'menu']);
+});
 
-    return next?.className;
-  });
+test('shows Create API key in the empty state', async ({ page }) => {
+  await page.goto(`/collections/${apiKeysSlug}?where[name][equals]=no-such-key-${Date.now()}`);
 
-  expect(nextVisible).toMatch(/^(table|no-results)\b/);
+  const empty = page.locator('.no-results');
+
+  await expect(empty.getByRole('button', { name: 'Create API key' })).toBeVisible();
+  await expect(empty.getByRole('link', { name: /Create New/ })).toHaveCount(0);
+  await expect(createButton(page)).toHaveCount(1);
 });
 
 for (const theme of ['light', 'dark'] as const) {
@@ -64,7 +84,7 @@ for (const theme of ['light', 'dark'] as const) {
     await page.goto(`/collections/${apiKeysSlug}`);
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
 
-    await page.getByRole('button', { name: 'Create API key' }).click();
+    await createButton(page).click();
 
     const create = page.getByRole('dialog', { name: 'Create API Key' });
     const keyName = create.getByLabel('Key name');
@@ -116,7 +136,7 @@ test('creates an API key with a monthly cap from the Limits section', async ({
   const name = `Browser capped key ${Date.now()}`;
 
   await page.goto(`/collections/${apiKeysSlug}`);
-  await page.getByRole('button', { name: 'Create API key' }).click();
+  await createButton(page).click();
 
   const create = page.getByRole('dialog', { name: 'Create API Key' });
 

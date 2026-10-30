@@ -10,6 +10,7 @@ import type { FrogBotConfig } from '../../../packages/frogbot/src/config/types.j
 import { apiKeysPlugin } from '../../../packages/plugins/plugin-api-keys/src/index.js';
 
 vi.mock('@frogbotai/ui/admin', () => ({
+  Button: () => null,
   useConfig: () => ({ config: { routes: { api: '/api' } } }),
   useListQuery: () => ({ collectionSlug: 'api-keys' }),
   useRouteCache: () => ({ clearRouteCache: vi.fn() }),

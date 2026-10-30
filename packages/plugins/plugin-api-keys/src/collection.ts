@@ -63,14 +63,11 @@ function mergeFields(...groups: (Field[] | undefined)[]): Field[] {
 }
 
 function createViews({
-  collectionSlug,
   usageCollection,
   views,
-}: Pick<CollectionOptions, 'collectionSlug' | 'usageCollection'> & {
+}: Pick<CollectionOptions, 'usageCollection'> & {
   views?: CollectionView[];
 }): CollectionView[] {
-  const manager = managerComponent(collectionSlug);
-
   if (!views?.length) {
     return [
       {
@@ -83,24 +80,11 @@ function createViews({
           'revokedAt',
           'actions',
         ],
-        components: { actions: [manager] },
       },
     ];
   }
 
-  const index = views.findIndex((view) => view.type === 'list');
-
-  return views.map((view, position) =>
-    position === index && view.type === 'list'
-      ? {
-          ...view,
-          components: {
-            ...view.components,
-            actions: [manager, ...(view.components?.actions ?? [])],
-          },
-        }
-      : view,
-  );
+  return views;
 }
 
 function createEndpoints({
@@ -327,9 +311,12 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
       useAsTitle: 'name',
       ...existing?.admin,
       ...collection?.admin,
-      components: { ...existing?.admin?.components, ...collection?.admin?.components },
+      components: {
+        CreateButton: managerComponent(collectionSlug),
+        ...existing?.admin?.components,
+        ...collection?.admin?.components,
+      },
       views: createViews({
-        collectionSlug,
         usageCollection,
         views: collection?.admin?.views ?? existing?.admin?.views,
       }),

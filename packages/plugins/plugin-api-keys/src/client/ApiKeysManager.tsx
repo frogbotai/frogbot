@@ -17,9 +17,9 @@ import {
   Label,
   Tooltip,
 } from '@frogbotai/ui';
-import { useConfig, useListQuery, useRouteCache } from '@frogbotai/ui/admin';
+import { Button as AdminButton, useConfig, useListQuery, useRouteCache } from '@frogbotai/ui/admin';
 import { CopyIcon } from '@frogbotai/ui/icons';
-import { type ReactNode, useId, useMemo, useState } from 'react';
+import { type ReactNode, useId, useMemo, useRef, useState } from 'react';
 
 import { CreateKeyDataContext } from './createKeyData.js';
 
@@ -35,6 +35,7 @@ export function ApiKeysManager(props: ApiKeysManagerProps) {
   const collectionSlug = props.collectionSlug ?? listQuery.collectionSlug;
   const { clearRouteCache } = useRouteCache();
   const nameId = useId();
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [data, setData] = useState<Record<string, unknown>>({});
@@ -114,12 +115,25 @@ export function ApiKeysManager(props: ApiKeysManagerProps) {
 
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
-      <DialogTrigger asChild>
-        <Button variant="secondary" type="button">
-          Create API key
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="api-keys-dialog" withCloseButton={false}>
+      <AdminButton
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        buttonStyle="primary"
+        onClick={() => changeOpen(true)}
+        ref={triggerRef}
+        size="medium"
+        type="button"
+      >
+        Create API key
+      </AdminButton>
+      <DialogContent
+        className="api-keys-dialog"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          triggerRef.current?.focus();
+        }}
+        withCloseButton={false}
+      >
         <DialogTitle>Create API Key</DialogTitle>
         {token ? (
           <>

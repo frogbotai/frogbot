@@ -6,6 +6,24 @@ const clearRouteCache = vi.fn();
 const listQuery = vi.hoisted(() => ({ value: { collectionSlug: 'api-keys' } as object }));
 
 vi.mock('@frogbotai/ui/admin', () => ({
+  Button: ({
+    buttonStyle,
+    children,
+    onClick,
+    size,
+    ...props
+  }: React.ComponentProps<'button'> & { buttonStyle?: string; size?: string }) => (
+    <button
+      {...props}
+      className={`btn btn--style-${buttonStyle} btn--size-${size}`}
+      onClick={(event) => {
+        event.preventDefault();
+        onClick?.(event);
+      }}
+    >
+      {children}
+    </button>
+  ),
   useConfig: () => ({ config: { routes: { api: '/api' } } }),
   useListQuery: () => listQuery.value,
   useRouteCache: () => ({ clearRouteCache }),
@@ -72,6 +90,29 @@ describe('API key controls', () => {
 
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(clearRouteCache).toHaveBeenCalled();
+  });
+
+  it("opens from Payload's primary medium button and returns focus to it on Escape", async () => {
+    const user = userEvent.setup();
+
+    render(<ApiKeysManager />);
+
+    const trigger = screen.getByRole('button', { name: 'Create API key' });
+
+    expect(trigger.className).toBe('btn btn--style-primary btn--size-medium');
+    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+
+    await user.click(trigger);
+
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    expect(document.activeElement).toBe(trigger);
   });
 
   it('mints with its collectionSlug prop outside a list query', async () => {
