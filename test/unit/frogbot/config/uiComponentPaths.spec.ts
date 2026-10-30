@@ -169,8 +169,8 @@ describe('UI component destinations', () => {
       exportName: 'TextField',
     });
     expect(
-      rewritePayloadComponent({ path: '@payloadcms/ui#TextField', exportName: 'Button' }),
-    ).toEqual({ path: '@payloadcms/ui#TextField', exportName: 'Button' });
+      rewritePayloadComponent({ path: '@payloadcms/ui#TextField', exportName: 'Banner' }),
+    ).toEqual({ path: '@payloadcms/ui#TextField', exportName: 'Banner' });
     expect(rewritePayloadComponent(rewritten)).toEqual(rewritten);
   });
 
@@ -183,7 +183,7 @@ describe('UI component destinations', () => {
             path: '@payloadcms/ui/shared',
             exportName: 'formatDate',
           },
-          '@payloadcms/ui#Button': { type: 'component', path: '@payloadcms/ui#Button' },
+          '@payloadcms/ui#Banner': { type: 'component', path: '@payloadcms/ui#Banner' },
         },
       },
     } as unknown as SanitizedConfig;
@@ -196,7 +196,7 @@ describe('UI component destinations', () => {
         path: '@frogbotai/ui/admin/shared',
         exportName: 'formatDate',
       },
-      '@payloadcms/ui#Button': { type: 'component', path: '@payloadcms/ui#Button' },
+      '@payloadcms/ui#Banner': { type: 'component', path: '@payloadcms/ui#Banner' },
     });
   });
 });

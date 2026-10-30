@@ -24,7 +24,7 @@ import type {
   TypeWithID,
 } from 'payload';
 
-import type { AdminIcon } from '../../admin/types.js';
+import type { AdminIcon, FrogBotComponent } from '../../admin/types.js';
 import type { CollectionView, DocumentTabConfig } from '../../admin/views/types.js';
 import type { AuthConfig } from '../../auth/types.js';
 import type { GeneratePreviewURL, LivePreviewConfig } from '../../config/types.js';
@@ -64,6 +64,8 @@ export type CollectionAdminComponents = Omit<
   | 'listMenuItems'
   | 'views'
 > & {
+  /** Replaces Payload's Create New in the list controls and the list view's empty state. */
+  CreateButton?: FrogBotComponent;
   edit?: NonNullable<PayloadComponents['edit']> & { views?: CollectionEditViews };
 };
 

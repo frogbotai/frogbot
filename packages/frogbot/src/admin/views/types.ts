@@ -20,6 +20,7 @@ export type ViewComponents = {
   afterView?: FrogBotComponent[];
   beforeView?: FrogBotComponent[];
   menuItems?: FrogBotComponent[];
+  toolbar?: FrogBotComponent[];
 };
 
 export type ViewPagination = {
@@ -42,6 +43,7 @@ export type ListView = ViewConfig & {
   components?: ViewComponents & {
     afterTable?: FrogBotComponent[];
     beforeTable?: FrogBotComponent[];
+    NoResults?: FrogBotComponent;
   };
   type: 'list';
 };

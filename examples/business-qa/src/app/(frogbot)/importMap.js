@@ -1,7 +1,7 @@
 import { FieldCell as FieldCell_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { MoneyField as MoneyField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { LLMInstructionsMenuItem as LLMInstructionsMenuItem_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
-import { DefaultListView as DefaultListView_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
+import { ListView as ListView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { NullField as NullField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { HierarchyButton as HierarchyButton_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { ApiKeysManagerServer as ApiKeysManagerServer_86a7e1bdd84856c31e58b39b8522d232 } from '@frogbotai/plugin-api-keys/rsc';
@@ -38,8 +38,7 @@ export const importMap = {
   '@frogbotai/ui/admin#MoneyField': MoneyField_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin#LLMInstructionsMenuItem':
     LLMInstructionsMenuItem_53ccb9913b2925da8adcdf5fd85e01f4,
-  '@frogbotai/ui/admin#DefaultListView':
-    DefaultListView_53ccb9913b2925da8adcdf5fd85e01f4,
+  '@frogbotai/ui/admin/rsc#ListView': ListView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin#NullField': NullField_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin/rsc#HierarchyButton':
     HierarchyButton_a9b31afd548db1251f21130da6e46588,

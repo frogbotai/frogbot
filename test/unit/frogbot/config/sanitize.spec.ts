@@ -2387,7 +2387,7 @@ describe('frogbot sanitize', () => {
       edit: { root: { Component: '@frogbotai/ui/admin/rsc#ChatView' } },
     });
     expect(chats?.admin.components?.views?.list).toEqual({
-      Component: '@frogbotai/ui/admin#DefaultListView',
+      Component: '@frogbotai/ui/admin/rsc#ListView',
     });
   });
 
@@ -2524,7 +2524,7 @@ describe('frogbot sanitize', () => {
       edit: { root: { Component: '@frogbotai/ui/admin/rsc#ChatView' } },
     });
     expect(chats?.admin.components?.views?.list).toEqual({
-      Component: '@frogbotai/ui/admin#DefaultListView',
+      Component: '@frogbotai/ui/admin/rsc#ListView',
     });
   });
 

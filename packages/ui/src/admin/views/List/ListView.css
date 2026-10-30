@@ -1,0 +1,11 @@
+@layer frogbot {
+  .fb-create-button {
+    display: flex;
+    order: 1;
+  }
+
+  .list-controls__actions > .list-controls__popup,
+  .list-controls__actions > #empty-trash-button {
+    order: 2;
+  }
+}

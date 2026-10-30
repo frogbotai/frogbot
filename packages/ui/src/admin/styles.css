@@ -3,6 +3,7 @@
 @import "./views/SettingsView.css";
 @import "./views/CreateFirstUser/index.css";
 @import "./views/Connections/index.css";
+@import "./views/List/ListView.css";
 
 @layer frogbot {
   .frogbot-chat-view {

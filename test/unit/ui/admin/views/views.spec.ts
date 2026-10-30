@@ -4,7 +4,7 @@ import type * as frogbotInternalModule from 'frogbot/internal';
 import type * as payloadModule from 'payload';
 import { type ComponentProps, createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
   const frogbot = { attached: true };
@@ -34,6 +34,7 @@ const mocks = vi.hoisted(() => {
     getPayload: vi.fn(() => Promise.resolve({})),
     headers: vi.fn(() => Promise.resolve(new Headers({ host: 'admin.test' }))),
     i18n,
+    listDrawer: { isInDrawer: false },
     RootPage: vi.fn(() => null),
     NotFoundPage: vi.fn(() => null),
     generatePageMetadata: vi.fn((args: unknown) => Promise.resolve(args)),
@@ -87,7 +88,7 @@ vi.mock('@payloadcms/ui', () => ({
     }),
   }),
   useControllableState: (value: unknown) => [value],
-  useListDrawerContext: () => ({}),
+  useListDrawerContext: () => mocks.listDrawer,
   useListQuery: () => ({ data: { docs: [], totalDocs: 0 } }),
   useModal: () => ({ openModal: vi.fn() }),
   useStepNav: () => ({ setStepNav: vi.fn() }),
@@ -166,6 +167,10 @@ function settingsViewProps(props: object): Parameters<typeof SettingsView>[0] {
 }
 
 describe('FrogBot admin views', () => {
+  afterEach(() => {
+    mocks.listDrawer.isInDrawer = false;
+  });
+
   it('exports DefaultListView', () => {
     expect(DefaultListView).toBeTypeOf('function');
   });
@@ -183,6 +188,52 @@ describe('FrogBot admin views', () => {
     };
 
     renderToStaticMarkup(createElement(DefaultListView, props as never));
+
+    expect(mocks.PayloadDefaultListView).toHaveBeenCalledWith(props, undefined);
+  });
+
+  it('DefaultListView fills the list page slots outside a drawer', () => {
+    mocks.PayloadDefaultListView.mockClear();
+
+    const toolbar = createElement('button', { key: 'toolbar' }, 'Toolbar');
+    const empty = createElement('p', null, 'Empty');
+    const props = {
+      collectionSlug: 'posts',
+      hasCreatePermission: true,
+      newDocumentURL: '/admin/collections/posts/create',
+      viewType: 'list',
+    };
+
+    renderToStaticMarkup(
+      createElement(DefaultListView, {
+        ...props,
+        pageSlots: { beforeActions: [toolbar], hideCreateNew: true, NoResults: empty },
+      } as never),
+    );
+
+    expect(mocks.PayloadDefaultListView).toHaveBeenCalledWith(
+      { ...props, beforeActions: [toolbar], newDocumentURL: '', NoResults: empty },
+      undefined,
+    );
+  });
+
+  it("DefaultListView keeps Payload's own list in a relationship drawer", () => {
+    mocks.PayloadDefaultListView.mockClear();
+    mocks.listDrawer.isInDrawer = true;
+
+    const props = {
+      collectionSlug: 'posts',
+      hasCreatePermission: true,
+      newDocumentURL: '/admin/collections/posts/create',
+      viewType: 'list',
+    };
+
+    renderToStaticMarkup(
+      createElement(DefaultListView, {
+        ...props,
+        pageSlots: { beforeActions: ['toolbar'], hideCreateNew: true, NoResults: 'empty' },
+      } as never),
+    );
 
     expect(mocks.PayloadDefaultListView).toHaveBeenCalledWith(props, undefined);
   });
