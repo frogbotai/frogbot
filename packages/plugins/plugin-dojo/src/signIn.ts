@@ -130,7 +130,9 @@ export function withDojoSignIn(config: FrogBotConfig, env: DojoEnv): FrogBotConf
 
   if (missing) return off(`${missing[1]} is not set`, collection.slug);
 
-  if (!URL.canParse(env.url!)) return off(`${SIGN_IN_VARIABLES.url} is not a URL`, collection.slug);
+  if (!['http:', 'https:'].includes(URL.parse(env.url!)?.protocol ?? '')) {
+    return off(`${SIGN_IN_VARIABLES.url} is not a URL`, collection.slug);
+  }
 
   const auth: Auth = collection.auth === true ? {} : (collection.auth as Auth);
   const problem = signInProblem(collection, auth);
