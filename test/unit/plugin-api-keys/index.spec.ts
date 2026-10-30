@@ -25,18 +25,12 @@ describe('apiKeysPlugin', () => {
     expect(result.collections[0]?.auth).toMatchObject({ strategies: [{ name: 'api-key' }] });
     expect(result.settings).toBeUndefined();
     expect(result.collections.at(-1)?.admin?.views).toEqual([
-      expect.objectContaining({
-        type: 'list',
-        components: {
-          actions: [
-            {
-              path: '@frogbotai/plugin-api-keys/rsc#ApiKeysManagerServer',
-              clientProps: { collectionSlug: 'api-keys' },
-            },
-          ],
-        },
-      }),
+      expect.not.objectContaining({ components: expect.anything() }),
     ]);
+    expect(result.collections.at(-1)?.admin?.components?.CreateButton).toEqual({
+      path: '@frogbotai/plugin-api-keys/rsc#ApiKeysManagerServer',
+      clientProps: { collectionSlug: 'api-keys' },
+    });
   });
 
   it('leaves existing settings unchanged with a custom collection slug', async () => {

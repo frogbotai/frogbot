@@ -72,9 +72,9 @@ describe('API keys collection', () => {
       {
         type: 'list',
         defaultFields: ['name', 'prefix', 'lastUsedAt', 'revokedAt', 'actions'],
-        components: { actions: [manager()] },
       },
     ]);
+    expect(collection.admin?.components?.CreateButton).toEqual(manager());
     expect(collection.fields.at(-1)).toMatchObject({
       name: 'actions',
       admin: { components: { Cell: '@frogbotai/plugin-api-keys/client#RevokeApiKey' } },
@@ -364,52 +364,37 @@ describe('API keys collection', () => {
         components: {
           beforeTable: ['./TenantControl.js'],
           afterTable: ['./Footer.js'],
-          actions: [manager()],
         },
       },
     ]);
     expect(await collection.access?.read?.({ slug: 'test', req: request() })).toBe(true);
   });
 
-  it('prefers explicit override views and injects the manager into the first list view', async () => {
-    const collection = await getCollection({
-      collection: {
-        admin: {
-          views: [
-            { type: 'board', groupBy: 'owner' },
-            { type: 'list', slug: 'all', components: { beforeTable: ['./Banner.js'] } },
-          ],
-        },
-      },
-    });
+  it('keeps explicit override views as written', async () => {
+    const views = [
+      { type: 'board' as const, groupBy: 'owner' },
+      { type: 'list' as const, slug: 'all', components: { actions: ['./Other.js'] } },
+    ];
 
-    expect(collection.admin?.views).toEqual([
-      { type: 'board', groupBy: 'owner' },
-      {
-        type: 'list',
-        slug: 'all',
-        components: { beforeTable: ['./Banner.js'], actions: [manager()] },
-      },
-    ]);
+    const collection = await getCollection({ collection: { admin: { views } } });
+
+    expect(collection.admin?.views).toEqual(views);
+    expect(collection.admin?.components?.CreateButton).toEqual(manager());
   });
 
-  it("puts the manager before an authored list view's own actions", async () => {
+  it("lets an override's own CreateButton win", async () => {
     const collection = await getCollection({
-      collection: { admin: { views: [{ type: 'list', components: { actions: ['./Other.js'] } }] } },
+      collection: { admin: { components: { CreateButton: './Mine.js' } } },
     });
 
-    expect(collection.admin?.views).toEqual([
-      { type: 'list', components: { actions: [manager(), './Other.js'] } },
-    ]);
+    expect(collection.admin?.components?.CreateButton).toBe('./Mine.js');
   });
 
   it('gives the manager a custom collection slug', async () => {
     const config = await apiKeysPlugin({ collectionSlug: 'credentials' })(makeConfig());
     const collection = config.collections.find((item) => item.slug === 'credentials')!;
 
-    expect(collection.admin?.views).toEqual([
-      expect.objectContaining({ components: { actions: [manager('credentials')] } }),
-    ]);
+    expect(collection.admin?.components?.CreateButton).toEqual(manager('credentials'));
   });
 
   it('uses the key-round icon by default', async () => {

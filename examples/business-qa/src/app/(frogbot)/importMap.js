@@ -4,10 +4,10 @@ import { LLMInstructionsMenuItem as LLMInstructionsMenuItem_53ccb9913b2925da8adc
 import { ListView as ListView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { NullField as NullField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { HierarchyButton as HierarchyButton_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
-import { ApiKeysManagerServer as ApiKeysManagerServer_86a7e1bdd84856c31e58b39b8522d232 } from '@frogbotai/plugin-api-keys/rsc';
 import { RevokeApiKey as RevokeApiKey_da5b1e8ed1210a079e514867fb7c4ae9 } from '@frogbotai/plugin-api-keys/client';
 import { KeyModelsDescription as KeyModelsDescription_a283bfe2e052b53bfcc520c468446b7c } from '@frogbotai/plugin-ai-policy/rsc';
 import { KeyBudgetDescription as KeyBudgetDescription_a283bfe2e052b53bfcc520c468446b7c } from '@frogbotai/plugin-ai-policy/rsc';
+import { ApiKeysManagerServer as ApiKeysManagerServer_86a7e1bdd84856c31e58b39b8522d232 } from '@frogbotai/plugin-api-keys/rsc';
 import { ChatView as ChatView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { ConnectionsView as ConnectionsView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { CustomCollectionView as CustomCollectionView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
@@ -42,14 +42,14 @@ export const importMap = {
   '@frogbotai/ui/admin#NullField': NullField_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin/rsc#HierarchyButton':
     HierarchyButton_a9b31afd548db1251f21130da6e46588,
-  '@frogbotai/plugin-api-keys/rsc#ApiKeysManagerServer':
-    ApiKeysManagerServer_86a7e1bdd84856c31e58b39b8522d232,
   '@frogbotai/plugin-api-keys/client#RevokeApiKey':
     RevokeApiKey_da5b1e8ed1210a079e514867fb7c4ae9,
   '@frogbotai/plugin-ai-policy/rsc#KeyModelsDescription':
     KeyModelsDescription_a283bfe2e052b53bfcc520c468446b7c,
   '@frogbotai/plugin-ai-policy/rsc#KeyBudgetDescription':
     KeyBudgetDescription_a283bfe2e052b53bfcc520c468446b7c,
+  '@frogbotai/plugin-api-keys/rsc#ApiKeysManagerServer':
+    ApiKeysManagerServer_86a7e1bdd84856c31e58b39b8522d232,
   '@frogbotai/ui/admin/rsc#ChatView': ChatView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin/rsc#ConnectionsView':
     ConnectionsView_a9b31afd548db1251f21130da6e46588,
