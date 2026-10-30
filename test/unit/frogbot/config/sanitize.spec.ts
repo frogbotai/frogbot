@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { general } from '../../../../packages/frogbot/src/agents/presets/general.js';
 import type { AgentConfig, AgentModelId } from '../../../../packages/frogbot/src/agents/types.js';
 import { catalog } from '../../../../packages/frogbot/src/ai/catalog.js';
+import type { BuiltInProviderEntry } from '../../../../packages/frogbot/src/ai/types.js';
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 import { buildConfig } from '../../../../packages/frogbot/src/config/build.js';
 import { compileCollectionViews } from '../../../../packages/frogbot/src/config/collectionViews.js';
@@ -34,6 +35,8 @@ vi.mock('payload', async (importOriginal) => ({
 }));
 
 const { sanitize } = await import('../../../../packages/frogbot/src/config/sanitize.js');
+
+type OpenAIModel = NonNullable<BuiltInProviderEntry<'openai'>['models']>[number];
 
 const FAST = 'fast' as AgentModelId;
 const STT = 'stt' as AgentModelId;
@@ -3717,7 +3720,7 @@ describe('frogbot sanitize', () => {
               models: [
                 'gpt-5.4-mini',
                 'text-embedding-3-small',
-                imageModel.id.slice('openai/'.length),
+                imageModel.id.slice('openai/'.length) as OpenAIModel,
               ],
             },
           },

@@ -275,8 +275,8 @@ describe('release scripts', () => {
 
     const result = await packageStatus(pkgs[0], {
       registry: 'https://registry.test',
-      fetch: (url: string) => {
-        urls.push(url);
+      fetch: (url: RequestInfo | URL) => {
+        urls.push(String(url));
 
         return Promise.resolve(new Response(JSON.stringify({ versions: { '1.1.0': {} } })));
       },
