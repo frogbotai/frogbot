@@ -6,9 +6,11 @@ import {
   toStatusErrorResponse,
 } from '@frogbotai/gateway/errors';
 
-import { AIAccessError, enforceAIAccess } from '../ai/access.js';
+import { AIAccessError, canUseAIModel, enforceAIAccess } from '../ai/access.js';
+import { methodForModel } from '../ai/catalog.js';
 import type { AIMethod } from '../ai/types.js';
 import type { FrogBot } from '../frogbot.js';
+import type { FrogBotRequest } from '../types/request.js';
 
 type HandleGatewayRequestArgs = {
   frogbot: FrogBot;
@@ -73,6 +75,43 @@ function accessErrorResponse(format: ErrorFormat, error: unknown): Response | un
   }
 }
 
+async function filterModelList({
+  req,
+  response,
+}: {
+  req: FrogBotRequest;
+  response: Response;
+}): Promise<Response> {
+  if (response.status !== 200) return response;
+
+  const body = (await response
+    .clone()
+    .json()
+    .catch(() => null)) as { data?: unknown } | null;
+
+  if (!Array.isArray(body?.data)) return response;
+
+  const entries = body.data as { id: string }[];
+  let allowed: boolean[];
+  try {
+    allowed = await Promise.all(
+      entries.map(({ id }) => canUseAIModel({ req, method: methodForModel(id), model: id })),
+    );
+  } catch (error) {
+    const { body: errorBody, status } = toOpenAIErrorResponse(error);
+
+    return Response.json(errorBody, { status });
+  }
+
+  const headers = new Headers(response.headers);
+  headers.delete('content-length');
+
+  return Response.json(
+    { object: 'list', data: entries.filter((_, index) => allowed[index]) },
+    { status: 200, headers },
+  );
+}
+
 async function readRequestedModel(request: Request): Promise<string | undefined> {
   const contentType = request.headers.get('content-type') ?? '';
   if (contentType.startsWith('multipart/form-data')) {
@@ -128,6 +167,11 @@ export async function handleGatewayRequest({
   }
 
   const forwarded = new Request(url, request);
+  const response = await gateway.handler(forwarded, { context: { req } });
 
-  return gateway.handler(forwarded, { context: { req } });
+  if (request.method === 'GET' && /\/models$/.test(url.pathname)) {
+    return filterModelList({ req, response });
+  }
+
+  return response;
 }

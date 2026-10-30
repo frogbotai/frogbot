@@ -18,6 +18,34 @@ export async function enforceAIAccess(args: EnforceAccessArgs): Promise<void> {
   }
 }
 
+export async function canUseAIModel({
+  req,
+  method,
+  model,
+}: {
+  req: FrogBotRequest;
+  method: AIMethod;
+  model: string;
+}): Promise<boolean> {
+  const config = req.frogbot.config.ai;
+
+  if (!req.user || !config) return true;
+
+  try {
+    await enforceAIAccess({ req, method, model, config });
+
+    return true;
+  } catch (error) {
+    if (isAccessDenial(error)) return false;
+
+    throw error;
+  }
+}
+
+function isAccessDenial(error: unknown): boolean {
+  return error instanceof Error && typeof (error as { status?: unknown }).status === 'number';
+}
+
 export function methodToCategory(method: AIMethod): keyof AIAccessConfig {
   switch (method) {
     case 'generateText':

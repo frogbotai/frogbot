@@ -1,6 +1,6 @@
 import type { ReasoningVariant } from '@frogbotai/gateway';
 
-import { enforceAIAccess } from '../ai/access.js';
+import { canUseAIModel } from '../ai/access.js';
 import { resolveModelInputs } from '../ai/modelInputs.js';
 import { resolveModelName } from '../ai/modelName.js';
 import { resolveModelReasoning } from '../ai/reasoning.js';
@@ -192,7 +192,10 @@ export async function assertAgentSelection({
     throw new AgentServiceError(`No model on agent '${agent.slug}' is allowed for this user`, 403);
   }
 
-  if (selection.model !== undefined && !(await canUseModel({ req, model }))) {
+  if (
+    selection.model !== undefined &&
+    !(await canUseAIModel({ req, method: 'generateText', model }))
+  ) {
     throw new AgentServiceError(`Model '${model}' is not allowed for this user`, 403);
   }
 
@@ -216,26 +219,6 @@ function agentModels(agent: AgentInstance): readonly AgentModelId[] {
   return agent.config.model.options;
 }
 
-async function canUseModel({ req, model }: { req: FrogBotRequest; model: string }) {
-  const config = req.frogbot.config.ai;
-
-  if (!req.user || !config) return true;
-
-  try {
-    await enforceAIAccess({ req, method: 'generateText', model, config });
-
-    return true;
-  } catch (error) {
-    if (isAccessDenial(error)) return false;
-
-    throw error;
-  }
-}
-
-function isAccessDenial(error: unknown): boolean {
-  return error instanceof Error && typeof (error as { status?: unknown }).status === 'number';
-}
-
 export async function userAgentModels({
   agent,
   req,
@@ -246,7 +229,7 @@ export async function userAgentModels({
   const models: AgentModelId[] = [];
 
   for (const model of agentModels(agent)) {
-    if (await canUseModel({ req, model })) models.push(model);
+    if (await canUseAIModel({ req, method: 'generateText', model })) models.push(model);
   }
 
   return models;
