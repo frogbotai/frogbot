@@ -1032,6 +1032,26 @@ describe('frogbot sanitize', () => {
       expect(edit.versions).toEqual(versions);
     });
 
+    it('leaves the source tab condition alone and wraps it once per sanitize', async () => {
+      const condition = vi.fn((args: RecordedArgs) => Boolean(args.req.frogbot));
+      const views = { root: { tab: { condition, label: 'Root' } } };
+      const collection = { admin: { components: { edit: { views } } } };
+
+      const first = await sanitizeRequestFunctions(collection);
+      const second = await sanitizeRequestFunctions(collection);
+
+      expect(views.root.tab.condition).toBe(condition);
+
+      for (const sanitized of [first, second]) {
+        const edit = sanitized.pages.admin.components.views.edit;
+
+        expect(edit).not.toBe(views);
+        expect(edit.root.tab.condition({ permissions: {}, req: sanitized.req })).toBe(true);
+      }
+
+      expect(condition).toHaveBeenCalledTimes(2);
+    });
+
     it('leaves edit views without tab conditions as configured', async () => {
       const collection: Omit<CollectionConfig, 'fields' | 'slug'> = {
         admin: {

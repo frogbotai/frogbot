@@ -83,6 +83,15 @@ describe('CollectionViewSwitcher on the document page', () => {
     expect(mocks.render).not.toHaveBeenCalled();
   });
 
+  it('falls back to the description when the collection is not on payload', async () => {
+    const element = (await CollectionViewSwitcher(
+      toProps({ collectionSlug: 'tasks', description: 'Tasks', payload: { collections: {} } }),
+    )) as ReactElement;
+
+    expect(element.type).toBe(mocks.ViewDescription);
+    expect(mocks.render).not.toHaveBeenCalled();
+  });
+
   it('renders nothing without a collection', async () => {
     expect(await CollectionViewSwitcher(toProps({ description: 'Tasks' }))).toBeNull();
   });
