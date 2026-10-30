@@ -9,6 +9,11 @@ export const KNOWN_FLAKY = [
     title: 'view selection preserves saved content and safely renders editor nodes',
     finding: 'F-038',
   },
+  {
+    file: 'test/browser/modelSelector.browser.spec.ts',
+    title: 'typing sonnet filters about 500 models within 100 ms per key',
+    finding: 'F-169',
+  },
 ];
 
 const SUMMARY = /^\s*\d+ (?:failed|flaky|skipped|passed|interrupted|did not run)\b/;
