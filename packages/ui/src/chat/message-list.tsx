@@ -14,23 +14,22 @@ import ArrowDownIcon from '../icons/icons/ArrowDownIcon.js';
 import { Message } from './message.js';
 import { MessagePart } from './message-part.js';
 import { composerHeight, MessageScrubber } from './message-scrubber.js';
-import { Thinking } from './thinking.js';
 import { onUserScroll, prefersReducedMotion } from './user-scroll.js';
+import { WorkingIndicator } from './working.js';
 
 export interface MessageListProps extends HTMLAttributes<HTMLDivElement> {
+  /** The logo that pulses below the thread while the agent works; defaults to the FrogBot favicon. */
+  icon?: ReactNode;
   messages: UIMessage[];
-  /** A reply is on its way: until its first part arrives, the list shows that it is thinking. */
+  /** The agent is working on a reply: the logo below the thread pulses. */
   pending?: boolean;
   renderMessage?: (message: UIMessage) => ReactNode;
 }
 
-const shows = (part: UIMessage['parts'][number]) =>
-  part.type !== 'step-start' && !(part.type === 'text' && !part.text);
-
 function detached(scroller: HTMLElement) {
-  const last = scroller.querySelector(
-    ':scope > .fb-message-list__content > .fb-message-list__item:last-child',
-  );
+  const last = [
+    ...scroller.querySelectorAll(':scope > .fb-message-list__content > .fb-message-list__item'),
+  ].at(-1);
 
   if (!last) return false;
 
@@ -51,6 +50,7 @@ function glide(scroller: HTMLElement, top: number) {
 
 export function MessageList({
   className,
+  icon,
   messages,
   pending = false,
   renderMessage,
@@ -190,19 +190,6 @@ export function MessageList({
     setShowJump(true);
   };
 
-  const last = messages.at(-1);
-
-  const thinking =
-    pending &&
-    last !== undefined &&
-    (last.role === 'user' || (last.role === 'assistant' && !last.parts.some(shows)));
-
-  const thinkingRow = (
-    <Message role="assistant">
-      <Thinking />
-    </Message>
-  );
-
   return (
     <div className="fb-message-list">
       <div
@@ -215,9 +202,7 @@ export function MessageList({
         <div ref={contentRef} className="fb-message-list__content">
           {messages.map((message) => (
             <div key={message.id} className="fb-message-list__item" data-message-id={message.id}>
-              {thinking && message === last && message.role === 'assistant' ? (
-                thinkingRow
-              ) : renderMessage ? (
+              {renderMessage ? (
                 renderMessage(message)
               ) : (
                 <Message role={message.role}>
@@ -228,9 +213,7 @@ export function MessageList({
               )}
             </div>
           ))}
-          {thinking && last.role === 'user' && (
-            <div className="fb-message-list__item">{thinkingRow}</div>
-          )}
+          <WorkingIndicator active={pending} icon={icon} />
         </div>
       </div>
       <button

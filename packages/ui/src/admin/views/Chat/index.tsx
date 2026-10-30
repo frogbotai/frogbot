@@ -84,6 +84,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
   const clientProps = (component: NonNullable<typeof chatComponents>['Chat']) =>
     component && typeof component === 'object' ? component.clientProps : undefined;
 
+  const graphicsIcon = adminComponents?.graphics?.Icon;
   const graphicsLogo = adminComponents?.graphics?.Logo;
   const chatUser = user as { firstName?: unknown; name?: unknown } | undefined;
   const chatComponentProps = clientProps(chatComponents?.Chat);
@@ -99,6 +100,9 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
     ...(Object.keys(toolRenderersByAgent).length > 0 ? { toolRenderersByAgent } : {}),
     ...(chatComponentProps ? { chatComponentProps } : {}),
     ...(greetingProps ? { greetingProps } : {}),
+    ...(graphicsIcon
+      ? { icon: RenderServerComponent({ Component: graphicsIcon, importMap: payload.importMap }) }
+      : {}),
     ...(graphicsLogo
       ? { logo: RenderServerComponent({ Component: graphicsLogo, importMap: payload.importMap }) }
       : {}),

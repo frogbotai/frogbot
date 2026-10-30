@@ -109,6 +109,8 @@ export type ChatProps = {
   disabledContent?: ReactNode;
   greeting?: ComponentType<GreetingProps> | false;
   logo?: ReactNode;
+  /** The logo that pulses below the thread while the agent works, when the agent has no avatar. */
+  icon?: ReactNode;
   userName?: string;
   loadingContent?: ReactNode;
   headerSlot?: ReactNode;
@@ -211,6 +213,7 @@ function ChatInner({
   fallbackTitle = 'Untitled',
   greeting: GreetingComponent = Greeting,
   headerSlot,
+  icon,
   initialChat,
   initialMessages,
   logo,
@@ -1025,6 +1028,7 @@ function ChatInner({
           </div>
         ) : (
           <MessageList
+            icon={profile?.avatar ? <img src={profile.avatar} alt="" /> : icon}
             messages={chat.messages}
             pending={pending}
             renderMessage={renderMessage ?? defaultRenderMessage}

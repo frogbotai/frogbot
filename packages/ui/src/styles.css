@@ -85,6 +85,7 @@
 @import "./chat/tool-part.css";
 @import "./chat/todo-tool-render.css";
 @import "./chat/tool-selector.css";
+@import "./chat/working.css";
 @import "./nav/nav.css";
 
 @layer theme.frogbot {

@@ -719,23 +719,22 @@ describe('Chat', () => {
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
   });
 
-  it('shows Thinking in the reply’s place until its first part arrives', () => {
+  it('pulses the working logo below the thread for the whole run', () => {
     state.status = 'submitted';
     state.messages = [message];
 
     const { container, rerender } = render(<Chat {...props} />);
 
-    const rows = () => [...container.querySelectorAll('.fb-message-list__item')];
+    const working = () => container.querySelector<HTMLElement>('.fb-working')!;
+    const content = container.querySelector('.fb-message-list__content')!;
 
-    expect(rows()).toHaveLength(2);
-    expect(rows()[1].textContent).toBe('Thinking');
+    expect(content.lastElementChild).toBe(working());
+    expect(container.querySelectorAll('.fb-message-list__item')).toHaveLength(1);
+    expect(working().hasAttribute('data-active')).toBe(true);
+    expect(working().querySelector('[role=status]')?.textContent).toBe('Working');
+    expect(screen.queryByText('Thinking')).toBeNull();
 
     state.status = 'streaming';
-    state.messages = [message, { id: 'a1', role: 'assistant', parts: [{ type: 'step-start' }] }];
-    rerender(<Chat {...props} />);
-
-    expect(rows()).toHaveLength(2);
-    expect(rows()[1].textContent).toBe('Thinking');
 
     state.messages = [
       message,
@@ -748,9 +747,35 @@ describe('Chat', () => {
 
     rerender(<Chat {...props} />);
 
-    expect(rows()).toHaveLength(2);
-    expect(screen.queryByText('Thinking')).toBeNull();
-    expect(rows()[1].textContent).toBe('Hi');
+    expect(working().hasAttribute('data-active')).toBe(true);
+    expect(content.lastElementChild).toBe(working());
+
+    state.status = 'ready';
+    rerender(<Chat {...props} />);
+
+    expect(working().hasAttribute('data-active')).toBe(false);
+    expect(working().getAttribute('aria-hidden')).toBe('true');
+    expect(working().textContent).toBe('');
+  });
+
+  it('uses the agent avatar, then the icon prop, then the FrogBot favicon as the working logo', () => {
+    state.messages = [message];
+
+    const logo = () => document.querySelector('.fb-working__logo')!;
+
+    const { rerender } = render(<Chat {...props} />);
+
+    expect(logo().querySelector('svg')).not.toBeNull();
+
+    rerender(<Chat {...props} icon={<span className="own-icon" />} />);
+
+    expect(logo().querySelector('.own-icon')).not.toBeNull();
+
+    state.agents = [{ ...supportAgent, profile: { name: 'Ada', avatar: '/ada.png' } }];
+    rerender(<Chat {...props} icon={<span className="own-icon" />} />);
+
+    expect(logo().querySelector('img')?.getAttribute('src')).toBe('/ada.png');
+    expect(logo().querySelector('.own-icon')).toBeNull();
   });
 
   it('stops and renders injected abort and stream error content', () => {

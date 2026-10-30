@@ -318,6 +318,10 @@ A chat with no messages shows a greeting above the composer. It renders the acti
 
 `Greeting` receives `avatar`, `logo`, `name`, and `userName`, so an override can reuse those values or ignore them entirely.
 
+## While the agent works
+
+From the moment a message is sent until the reply ends, a logo pulses in a row below the thread. It is the active agent's avatar when the agent profile sets one, and otherwise the icon from `admin.components.graphics.Icon`, the FrogBot favicon by default. The row keeps its height when the agent is idle, so the thread doesn't shift, and the logo stays still when the user prefers reduced motion.
+
 ## Override the chat views
 
 Set document view components under `admin.components.edit.views`. FrogBot only defaults the edit root view on the `chat: true` collection and preserves a configured override.
