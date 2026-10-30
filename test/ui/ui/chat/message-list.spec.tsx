@@ -1,8 +1,15 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import type { UIMessage } from 'ai';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MessageList } from '../../../../packages/ui/src/chat/message-list';
+import { speechText } from '../../../../packages/ui/src/chat/speech-text';
+
+vi.mock('../../../../packages/ui/src/chat/speech-text', async (importOriginal) => {
+  const actual = await importOriginal<{ speechText: typeof speechText }>();
+
+  return { ...actual, speechText: vi.fn(actual.speechText) };
+});
 
 const thread: UIMessage[] = [
   { id: 'u1', role: 'user', parts: [{ type: 'text', text: '\n  First question  \nmore' }] },
@@ -17,6 +24,14 @@ const thread: UIMessage[] = [
   { id: 'a3', role: 'assistant', parts: [{ type: 'text', text: 'Third answer' }] },
 ];
 
+function stubItems(container: HTMLElement, tops: Record<string, number> = {}) {
+  container.querySelectorAll<HTMLElement>('.fb-message-list__item').forEach((item, index) => {
+    const top = tops[item.dataset.messageId!] ?? index * 500;
+
+    item.getBoundingClientRect = () => ({ top, bottom: top + 500 }) as DOMRect;
+  });
+}
+
 function stubLayout(container: HTMLElement, { overflow = true } = {}) {
   const scroller = container.querySelector('.fb-message-list__scroller') as HTMLDivElement;
 
@@ -27,13 +42,13 @@ function stubLayout(container: HTMLElement, { overflow = true } = {}) {
     clientWidth: { value: 1000, configurable: true },
     scrollTop: { value: 0, writable: true, configurable: true },
     scrollTo: { value: vi.fn(), configurable: true },
-    getBoundingClientRect: { value: () => ({ top: 0 }) as DOMRect, configurable: true },
+    getBoundingClientRect: {
+      value: () => ({ top: 0, bottom: 400 }) as DOMRect,
+      configurable: true,
+    },
   });
 
-  container.querySelectorAll<HTMLElement>('.fb-message-list__item').forEach((item, index) => {
-    item.getBoundingClientRect = () => ({ top: index * 500 }) as DOMRect;
-  });
-
+  stubItems(container);
   fireEvent.scroll(scroller);
 
   return scroller;
@@ -41,6 +56,14 @@ function stubLayout(container: HTMLElement, { overflow = true } = {}) {
 
 const ticks = () =>
   within(screen.getByRole('navigation', { name: 'Conversation messages' })).getAllByRole('button');
+
+const inView = () => ticks().filter((tick) => tick.hasAttribute('data-in-view'));
+
+const card = () => document.querySelector<HTMLElement>('.fb-message-list__scrubber-card');
+
+beforeEach(() => {
+  vi.mocked(speechText).mockClear();
+});
 
 describe('MessageList', () => {
   it('renders messages and exposes scroll recovery when detached', () => {
@@ -137,11 +160,11 @@ describe('MessageList', () => {
 
     act(() => first.focus());
 
-    const card = document.querySelector('.fb-message-list__scrubber-card');
-
-    expect(card).toBeTruthy();
-    expect(card?.getAttribute('aria-hidden')).toBe('true');
-    expect(card?.textContent).toContain('chart.png');
+    expect(card()?.getAttribute('aria-hidden')).toBe('true');
+    expect(card()?.textContent).toContain('First question');
+    expect(card()?.textContent).toContain('First answer');
+    expect(card()?.textContent).not.toContain('chart.png');
+    expect(card()?.querySelector('button')).toBeNull();
     expect(document.activeElement).toBe(first);
 
     fireEvent.keyDown(first, { key: 'Escape' });
@@ -189,6 +212,7 @@ describe('MessageList', () => {
       ticks()[1],
     ]);
     expect(scroller.scrollTo).toHaveBeenCalledWith({ top: 984, behavior: 'smooth' });
+    expect(inView()).toContain(ticks()[1]);
     expect(screen.getByRole('button', { name: 'Jump to latest' })).toBeTruthy();
 
     fireEvent.scroll(scroller);
@@ -215,5 +239,100 @@ describe('MessageList', () => {
     fireEvent.scroll(scroller);
 
     expect(scroller.scrollTop).toBe(-40);
+  });
+
+  it('marks the turns on screen above the composer as in view', () => {
+    const { container } = render(<MessageList messages={thread} />);
+
+    const scroller = stubLayout(container);
+
+    expect(inView()).toEqual([ticks()[0]]);
+
+    stubItems(container, { u1: -1000, a1: -500, u2: -100, a2: 400, u3: 900, a3: 1400 });
+    fireEvent.scroll(scroller);
+
+    expect(inView()).toEqual([ticks()[1]]);
+    expect(ticks()[1].getAttribute('aria-current')).toBe('true');
+  });
+
+  it('shows only the label for a tool-only reply or a turn with no reply', () => {
+    const toolOnly: UIMessage[] = [
+      { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Run it' }] },
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          { type: 'reasoning', text: 'Thinking hard' },
+          {
+            type: 'tool-search',
+            toolCallId: 't1',
+            state: 'output-available',
+            input: {},
+            output: 'found',
+          },
+        ],
+      },
+      { id: 'u2', role: 'user', parts: [{ type: 'text', text: 'Anything else?' }] },
+    ];
+
+    const { container } = render(<MessageList messages={toolOnly} />);
+
+    stubLayout(container);
+
+    for (const [index, label] of ['Run it', 'Anything else?'].entries()) {
+      act(() => ticks()[index].focus());
+
+      expect(card()?.textContent).toBe(label);
+      expect(card()?.querySelector('.fb-message-list__scrubber-reply')).toBeNull();
+    }
+  });
+
+  it('previews the reply as plain words without markdown or code', () => {
+    const markdown: UIMessage[] = [
+      { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Show me' }] },
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: '**Bold** words\n\n```js\nconst x = 1;\n```' }],
+      },
+      { id: 'u2', role: 'user', parts: [{ type: 'text', text: 'Thanks' }] },
+    ];
+
+    const { container } = render(<MessageList messages={markdown} />);
+
+    stubLayout(container);
+    act(() => ticks()[0].focus());
+
+    const reply = card()?.querySelector('.fb-message-list__scrubber-reply');
+
+    expect(reply?.textContent).toBe('Bold words');
+    expect(card()?.textContent).not.toContain('const');
+    expect(card()?.textContent).not.toContain('`');
+  });
+
+  it('parses only the open turn’s reply', () => {
+    const { container, rerender } = render(<MessageList messages={thread} />);
+
+    stubLayout(container);
+
+    expect(speechText).not.toHaveBeenCalled();
+
+    act(() => ticks()[0].focus());
+
+    expect(vi.mocked(speechText).mock.calls).toEqual([['First answer']]);
+
+    vi.mocked(speechText).mockClear();
+
+    rerender(
+      <MessageList
+        messages={thread.map((message) =>
+          message.id === 'a2'
+            ? { ...message, parts: [{ type: 'text', text: 'Second answer, streaming' }] }
+            : message,
+        )}
+      />,
+    );
+
+    expect(vi.mocked(speechText).mock.calls.flat().join(' ')).not.toContain('Second');
   });
 });

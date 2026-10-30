@@ -2,7 +2,6 @@
 
 import type { UIMessage } from 'ai';
 import {
-  type CSSProperties,
   type KeyboardEvent,
   type RefObject,
   useEffect,
@@ -13,6 +12,7 @@ import {
 } from 'react';
 
 import { Popover, PopoverAnchor, PopoverContent } from '../components/popover.js';
+import { speechText } from './speech-text.js';
 
 export interface MessageScrubberProps {
   messages: UIMessage[];
@@ -24,6 +24,8 @@ export interface MessageScrubberProps {
 const scrollKeys = new Set(['ArrowDown', 'ArrowUp', 'End', 'Home', 'PageDown', 'PageUp', ' ']);
 
 const closeDelay = 120;
+
+const fisheye = 3;
 
 function labelOf(message: UIMessage, index: number) {
   for (const part of message.parts) {
@@ -54,12 +56,28 @@ function itemsOf(scroller: HTMLElement) {
   return items;
 }
 
-function rightGutter(scroller: HTMLElement) {
-  const gutter = scroller.offsetWidth - scroller.clientWidth;
+function replyOf(messages: UIMessage[], userId: string) {
+  const start = messages.findIndex((message) => message.id === userId);
+  const texts: string[] = [];
 
-  return getComputedStyle(scroller).getPropertyValue('scrollbar-gutter').includes('both-edges')
-    ? gutter / 2
-    : gutter;
+  for (const message of messages.slice(start + 1)) {
+    if (message.role === 'user') break;
+    if (message.role !== 'assistant') continue;
+
+    for (const part of message.parts) if (part.type === 'text') texts.push(part.text);
+  }
+
+  return texts.length ? speechText(texts.join('\n\n')) : '';
+}
+
+function remOf(element: Element) {
+  return parseFloat(getComputedStyle(element).fontSize) || 16;
+}
+
+function composerHeight(scroller: HTMLElement) {
+  const value = getComputedStyle(scroller).getPropertyValue('--fb-composer-height').trim();
+
+  return value.endsWith('px') ? parseFloat(value) : 7 * remOf(document.documentElement);
 }
 
 export function MessageScrubber({ messages, onPin, pinned, scrollerRef }: MessageScrubberProps) {
@@ -72,12 +90,13 @@ export function MessageScrubber({ messages, onPin, pinned, scrollerRef }: Messag
   );
 
   const railRef = useRef<HTMLElement>(null);
+  const activeRef = useRef<HTMLButtonElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const hovering = useRef(false);
   const held = useRef<{ height: number; top: number | null }>({ height: 0, top: null });
   const [overflowing, setOverflowing] = useState(false);
-  const [gutter, setGutter] = useState(0);
   const [onScreen, setOnScreen] = useState<string | null>(null);
+  const [inView, setInView] = useState('');
   const [focused, setFocused] = useState<string | null>(null);
   const [active, setActive] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -88,6 +107,13 @@ export function MessageScrubber({ messages, onPin, pinned, scrollerRef }: Messag
 
   const shown = overflowing && users.length >= 2;
   const current = users.some((user) => user.id === pinned) ? pinned : (onScreen ?? users[0]?.id);
+  const activeIndex = users.findIndex((user) => user.id === active);
+  const visible = useMemo(() => new Set(inView.split(' ')), [inView]);
+
+  const reply = useMemo(
+    () => (open && active ? replyOf(messages, active) : ''),
+    [messages, active, open],
+  );
 
   useLayoutEffect(() => {
     const scroller = scrollerRef.current;
@@ -96,19 +122,29 @@ export function MessageScrubber({ messages, onPin, pinned, scrollerRef }: Messag
 
     const measure = () => {
       setOverflowing(scroller.scrollHeight > scroller.clientHeight);
-      setGutter(rightGutter(scroller));
 
       const items = itemsOf(scroller);
-      const line = scroller.getBoundingClientRect().top + scroller.clientHeight * 0.25;
+      const top = scroller.getBoundingClientRect().top;
+      const line = top + scroller.clientHeight * 0.25;
+      const band = top + scroller.clientHeight - composerHeight(scroller);
+      const last = [...items.values()].at(-1)?.getBoundingClientRect().bottom ?? top;
+      const tops = users.map((user) => items.get(user.id)?.getBoundingClientRect().top);
+      const seen: string[] = [];
       let next: string | null = null;
 
-      for (const user of users) {
-        const item = items.get(user.id);
+      users.forEach((user, index) => {
+        const start = tops[index];
 
-        if (item && item.getBoundingClientRect().top <= line) next = user.id;
-      }
+        if (start === undefined) return;
+
+        const end = tops.slice(index + 1).find((value) => value !== undefined) ?? last;
+
+        if (start <= line) next = user.id;
+        if (Math.min(end, band) - Math.max(start, top) >= 1) seen.push(user.id);
+      });
 
       setOnScreen(next);
+      setInView(seen.join(' '));
     };
 
     const pinnedTop = () => {
@@ -171,7 +207,7 @@ export function MessageScrubber({ messages, onPin, pinned, scrollerRef }: Messag
 
   useEffect(() => {
     const rail = railRef.current;
-    const tick = rail?.querySelector<HTMLElement>('[aria-current="true"]');
+    const tick = rail?.querySelector<HTMLElement>('[data-in-view]');
 
     if (!rail || !tick) return;
 
@@ -181,7 +217,7 @@ export function MessageScrubber({ messages, onPin, pinned, scrollerRef }: Messag
     else if (bottom > rail.scrollTop + rail.clientHeight) {
       rail.scrollTop = bottom - rail.clientHeight;
     }
-  }, [current, shown]);
+  }, [current, inView, shown]);
 
   if (!shown) return null;
 
@@ -191,12 +227,11 @@ export function MessageScrubber({ messages, onPin, pinned, scrollerRef }: Messag
 
     if (!scroller || !item) return;
 
-    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     const top =
       scroller.scrollTop +
       item.getBoundingClientRect().top -
       scroller.getBoundingClientRect().top -
-      rem;
+      remOf(document.documentElement);
 
     const reduce =
       typeof window.matchMedia === 'function' &&
@@ -252,29 +287,40 @@ export function MessageScrubber({ messages, onPin, pinned, scrollerRef }: Messag
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverAnchor asChild>
-        <nav
-          ref={railRef}
-          aria-label="Conversation messages"
-          className="fb-message-list__scrubber"
-          style={{ '--fb-message-scrubber-gutter': `${gutter}px` } as CSSProperties}
-          onBlur={(event) => {
-            if (event.currentTarget.contains(event.relatedTarget)) return;
+    <Popover open={open && activeIndex >= 0} onOpenChange={setOpen}>
+      <PopoverAnchor virtualRef={activeRef} />
+      <nav
+        ref={railRef}
+        aria-label="Conversation messages"
+        className="fb-message-list__scrubber"
+        onBlur={(event) => {
+          if (event.currentTarget.contains(event.relatedTarget)) return;
 
-            setFocused(null);
-            scheduleClose();
-          }}
+          setFocused(null);
+          scheduleClose();
+        }}
+      >
+        <ol
+          className="fb-message-list__scrubber-list"
           {...hover}
+          onPointerLeave={() => {
+            hover.onPointerLeave();
+            if (focused) setActive(focused);
+          }}
         >
-          <ol className="fb-message-list__scrubber-list">
-            {users.map((user, index) => (
+          {users.map((user, index) => {
+            const distance = activeIndex >= 0 ? Math.abs(index - activeIndex) : Infinity;
+
+            return (
               <li key={user.id}>
                 <button
+                  ref={user.id === active ? activeRef : undefined}
                   type="button"
                   aria-current={user.id === current ? 'true' : undefined}
                   aria-label={`Go to message ${index + 1} of ${users.length}: ${user.label}`}
                   className="fb-message-list__scrubber-tick"
+                  data-distance={distance <= fisheye ? distance : undefined}
+                  data-in-view={visible.has(user.id) || user.id === current || undefined}
                   tabIndex={user.id === (focused ?? current) ? 0 : -1}
                   onClick={() => jump(user.id)}
                   onFocus={() => {
@@ -291,36 +337,27 @@ export function MessageScrubber({ messages, onPin, pinned, scrollerRef }: Messag
                   <span className="fb-message-list__scrubber-line" />
                 </button>
               </li>
-            ))}
-          </ol>
-        </nav>
-      </PopoverAnchor>
+            );
+          })}
+        </ol>
+      </nav>
       <PopoverContent
-        align="start"
+        align="center"
         aria-hidden="true"
         className="fb-message-list__scrubber-card"
         collisionPadding={8}
-        side="left"
+        side="right"
+        sideOffset={10}
+        onClick={() => active && jump(active)}
         onCloseAutoFocus={(event) => event.preventDefault()}
         onFocusOutside={insideRail}
+        onMouseDown={(event) => event.preventDefault()}
         onOpenAutoFocus={(event) => event.preventDefault()}
         onPointerDownOutside={insideRail}
         {...hover}
       >
-        {users.map((user) => (
-          <button
-            key={user.id}
-            type="button"
-            className="fb-message-list__scrubber-row"
-            data-active={user.id === active || undefined}
-            data-current={user.id === current || undefined}
-            tabIndex={-1}
-            onClick={() => jump(user.id)}
-            onMouseDown={(event) => event.preventDefault()}
-          >
-            {user.label}
-          </button>
-        ))}
+        <div className="fb-message-list__scrubber-label">{users[activeIndex]?.label}</div>
+        {reply && <div className="fb-message-list__scrubber-reply">{reply}</div>}
       </PopoverContent>
     </Popover>
   );

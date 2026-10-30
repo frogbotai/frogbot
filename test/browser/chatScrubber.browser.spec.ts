@@ -10,6 +10,16 @@ const rail = (page: Page) => page.getByRole('navigation', { name: 'Conversation 
 const ticks = (page: Page) => rail(page).getByRole('button');
 const tick = (page: Page, turn: number) => ticks(page).nth(turn - 1);
 const card = (page: Page) => page.locator('.fb-message-list__scrubber-card');
+const list = (page: Page) => page.locator('.fb-message-list');
+
+const line = (page: Page, turn: number) =>
+  tick(page, turn).locator('.fb-message-list__scrubber-line');
+
+const centre = async (page: Page, turn: number) => {
+  const { x, y, width, height } = await box(tick(page, turn));
+
+  return { x: x + width / 2, y: y + height / 2 };
+};
 
 const turn = (page: Page, n: number) =>
   content(page)
@@ -154,25 +164,79 @@ test('a reply after jumping to the last turn does not re-follow', async ({ page 
   await expect(jump(page)).toBeVisible();
 });
 
-test('the rail overlaps neither the column, the composer, the jump button nor the scrollbar', async ({
-  page,
-}) => {
-  await openChat(page, 12, { classicScrollbars: true });
-  await scroller(page).evaluate((node) => node.scrollTo({ top: 0 }));
-  await expect(jump(page)).toBeVisible();
+const layouts = [
+  { classicScrollbars: false, width: 'auto' },
+  { classicScrollbars: false, width: '640px' },
+  { classicScrollbars: true, width: 'auto' },
+  { classicScrollbars: true, width: '640px' },
+];
 
-  const railBox = await box(rail(page));
+for (const { classicScrollbars, width } of layouts) {
+  test(`the rail sits left of the column, clear of the composer and jump button (classic scrollbars: ${classicScrollbars}, list width: ${width})`, async ({
+    page,
+  }) => {
+    await openChat(page, 12, { classicScrollbars });
+    await page.addStyleTag({ content: `.fb-message-list { width: ${width}; }` });
+    await scroller(page).evaluate((node) => node.scrollTo({ top: 0 }));
+    await expect(jump(page)).toBeVisible();
+    await expect(rail(page)).toBeVisible();
 
-  for (const other of [composer(page), jump(page), content(page)]) {
-    expect(intersects(railBox, await box(other)), String(other)).toBe(false);
+    const railBox = await box(rail(page));
+
+    for (const other of [composer(page), jump(page), content(page)]) {
+      expect(intersects(railBox, await box(other)), String(other)).toBe(false);
+    }
+
+    expect(railBox.x + railBox.width).toBeLessThanOrEqual((await box(content(page))).x);
+    expect(
+      Math.abs((await box(line(page, 1))).x - (await box(list(page))).x - 16),
+    ).toBeLessThanOrEqual(1);
+  });
+}
+
+test('ticks sit at a 10px pitch', async ({ page }) => {
+  await openTurns(page);
+
+  for (let n = 1; n < 6; n++) {
+    const gap = (await centre(page, n + 1)).y - (await centre(page, n)).y;
+
+    expect(Math.abs(gap - 10), `ticks ${n} and ${n + 1}`).toBeLessThanOrEqual(0.5);
   }
+});
 
-  const strip = await scroller(page).evaluate(
-    (node: HTMLElement) =>
-      node.getBoundingClientRect().right - (node.offsetWidth - node.clientWidth) / 2,
-  );
+test('hovering a tick magnifies it and its neighbours', async ({ page }) => {
+  await openTurns(page);
+  await tick(page, 3).hover();
 
-  expect(railBox.x + railBox.width).toBeLessThanOrEqual(strip);
+  await expect
+    .poll(async () =>
+      Promise.all(
+        [1, 2, 3, 4, 5, 6].map(async (n) => Math.round((await box(line(page, n))).width)),
+      ),
+    )
+    .toEqual([14, 20, 26, 20, 14, 10]);
+});
+
+test('only the turns on screen are marked in view', async ({ page }) => {
+  await openTurns(page);
+  await scroller(page).evaluate((node) => node.scrollTo({ top: 0 }));
+
+  await expect(tick(page, 1)).toHaveAttribute('data-in-view', 'true');
+  await expect(tick(page, 6)).not.toHaveAttribute('data-in-view');
+});
+
+test('a click just above or below a tick jumps to that tick', async ({ page }) => {
+  await openTurns(page);
+
+  for (const offset of [-4, 4]) {
+    await tick(page, 1).click();
+    await expect(tick(page, 1)).toHaveAttribute('aria-current', 'true');
+
+    const { x, y } = await centre(page, 4);
+
+    await page.mouse.click(x, y + offset);
+    await expect(tick(page, 4), `offset ${offset}`).toHaveAttribute('aria-current', 'true');
+  }
 });
 
 test('the rail hides when the list is narrower than 640px', async ({ page }) => {
@@ -186,9 +250,18 @@ test('the hover card stays open while the pointer moves onto it', async ({ page 
   await openTurns(page);
   await tick(page, 3).hover();
   await expect(card(page)).toBeVisible();
-  await expect(card(page).getByRole('button', { includeHidden: true })).toHaveCount(6);
+  await expect(card(page).getByRole('button', { includeHidden: true })).toHaveCount(0);
+  await expect(card(page)).toContainText('Message 5.');
+
+  const reply = card(page).locator('.fb-message-list__scrubber-reply');
+  const lineHeight = await reply.evaluate((node) => parseFloat(getComputedStyle(node).lineHeight));
+
+  expect((await box(reply)).height).toBeLessThanOrEqual(3 * lineHeight + 1);
 
   const cardBox = await box(card(page));
+  const railBox = await box(rail(page));
+
+  expect(cardBox.x).toBeGreaterThan(railBox.x + railBox.width);
 
   await page.mouse.move(cardBox.x + cardBox.width / 2, cardBox.y + 8, { steps: 8 });
   await expect(expect(card(page)).toBeHidden({ timeout: 300 })).rejects.toThrow();
