@@ -761,6 +761,8 @@ export interface Chat {
   deletedAt?: string | null;
 }
 /**
+ * Tasks for the team.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "tasks".
  */

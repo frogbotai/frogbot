@@ -3,6 +3,7 @@ import type {
   AuthStrategyResult as PayloadAuthStrategyResult,
   CollectionConfig as PayloadCollectionConfig,
   Config as PayloadConfig,
+  DocumentTabCondition as PayloadDocumentTabCondition,
   Endpoint as PayloadEndpoint,
   LivePreviewConfig as PayloadLivePreviewConfig,
   Payload,
@@ -11,6 +12,7 @@ import type {
   UploadConfig as PayloadUploadConfig,
 } from 'payload';
 
+import type { DocumentTabCondition } from '../admin/views/types.js';
 import { executeAuthStrategy } from '../auth/executeAuthStrategy.js';
 import { unwrapSessionPayload } from '../auth/operation.js';
 import type { AuthEmail, AuthStrategy } from '../auth/types.js';
@@ -120,6 +122,10 @@ export function wrapFormatDocURL(
   formatDocURL: NonNullable<CollectionAdminConfig['formatDocURL']>,
 ): PayloadFormatDocURL {
   return (args) => formatDocURL({ ...args, req: attachRegisteredFrogBot(args.req) });
+}
+
+export function wrapTabCondition(condition: DocumentTabCondition): PayloadDocumentTabCondition {
+  return (args) => condition({ ...args, req: attachRegisteredFrogBot(args.req) });
 }
 
 type PayloadUploadHandler = NonNullable<PayloadUploadConfig['handlers']>[number];

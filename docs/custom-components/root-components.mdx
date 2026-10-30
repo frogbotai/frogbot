@@ -32,6 +32,9 @@ export default buildConfig({
 | `actions` | `FrogBotComponent[]` | `[]` | Components at the top right of the Admin Panel, in array order. |
 | `beforeLogin` | `FrogBotComponent[]` | `[]` | Components before the login form's email and password fields. |
 | `afterLogin` | `FrogBotComponent[]` | `[]` | Components after the login form's fields. When the user collection configures `auth.signIn`, FrogBot appends its sign-in buttons after your components. |
+| `header` | `FrogBotComponent[]` | `[]` | Components above the admin panel's top bar, on every signed-in page. |
+| `beforeDashboard` | `FrogBotComponent[]` | `[]` | Components on the dashboard, above its content. Renders only on the default dashboard, not one replaced with `views.dashboard`. |
+| `afterDashboard` | `FrogBotComponent[]` | `[]` | Components on the dashboard, below its content. Renders only on the default dashboard, not one replaced with `views.dashboard`. |
 | `beforeNavLinks` | `FrogBotComponent[]` | `[]` | Components in the sidebar above the nav links. |
 | `afterNavLinks` | `FrogBotComponent[]` | `[]` | Components in the sidebar below the nav links and sections. |
 | `beforeBottomRail` | `FrogBotComponent[]` | `[]` | Components in the bottom sidebar rail, above Account and Settings. |
@@ -189,7 +192,7 @@ Root component props:
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `req` | `FrogBotRequest` | Optional | The current request. Use `req?.frogbot` to reach FrogBot. Not passed to login page components. |
+| `req` | `FrogBotRequest` | Optional | The current request. Use `req?.frogbot` to reach FrogBot. Not passed to login page components or the dashboard slots. |
 | `user` | `UntypedUser` | Optional | The signed-in user, or `undefined` when nobody is signed in. Use `req.user` for authorization decisions. |
 | `permissions` | `SanitizedPermissions` | Optional | The current user's collection and admin permissions. |
 | `visibleEntities` | `VisibleEntities` | Optional | Slugs of the collections visible to the current user. |
@@ -204,4 +207,4 @@ Root component props:
 `req` is optional:
 
 - Sidebar, account menu, top bar, and custom `Nav` components receive `req`. Use `req?.frogbot` to reach FrogBot.
-- Login page components (`beforeLogin`, `afterLogin`, and `graphics.Logo`) don't receive `req`. Use `getCachedFrogBot()` from `frogbot` instead.
+- Login page components (`beforeLogin`, `afterLogin`, and `graphics.Logo`) and the dashboard slots (`beforeDashboard` and `afterDashboard`) don't receive `req`. Use `getCachedFrogBot()` from `frogbot` instead.

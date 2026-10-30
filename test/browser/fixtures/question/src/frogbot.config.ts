@@ -69,6 +69,9 @@ export default buildConfig({
   admin: {
     importMap: { autoGenerate: false },
     components: {
+      afterDashboard: ['/components/RootSlots#AfterDashboardSlot'],
+      beforeDashboard: ['/components/RootSlots#BeforeDashboardSlot'],
+      header: ['/components/RootSlots#HeaderSlot'],
       navItems: [
         { label: 'New Chat', path: `/collections/${chatsSlug}/create`, icon: 'pencil-edit' },
         { label: 'Reports', path: reportsPath, icon: 'home' },
@@ -90,6 +93,27 @@ export default buildConfig({
     {
       slug: tasksSlug,
       admin: {
+        components: {
+          edit: {
+            views: {
+              hidden: {
+                Component: '/components/TaskTabs#TaskHiddenView',
+                path: '/hidden',
+                tab: { condition: ({ req }) => !req.frogbot, href: '/hidden', label: 'Hidden' },
+              },
+              notes: {
+                Component: '/components/TaskTabs#TaskNotesView',
+                path: '/notes',
+                tab: {
+                  condition: ({ req }) => Boolean(req.frogbot),
+                  href: '/notes',
+                  label: 'Notes',
+                },
+              },
+            },
+          },
+        },
+        description: 'Tasks for the team.',
         useAsTitle: 'title',
         views: [
           {

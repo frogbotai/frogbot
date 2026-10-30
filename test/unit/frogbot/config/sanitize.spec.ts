@@ -985,6 +985,75 @@ describe('frogbot sanitize', () => {
       });
     });
 
+    it('gives every edit view tab condition req.frogbot and returns its boolean', async () => {
+      const shows = vi.fn((args: RecordedArgs) => Boolean(args.req.frogbot));
+      const hides = vi.fn((args: RecordedArgs) => !args.req.frogbot);
+      const api = { tab: { label: 'API' } };
+      const versions = { Component: './Versions#Versions' };
+      const sanitized = await sanitizeRequestFunctions({
+        admin: {
+          components: {
+            edit: {
+              views: {
+                api,
+                default: { tab: { condition: hides } },
+                notes: {
+                  Component: './Notes#Notes',
+                  path: '/notes',
+                  tab: { condition: shows, label: 'Notes' },
+                },
+                versions,
+              },
+            },
+          },
+        },
+      });
+
+      const edit = sanitized.pages.admin.components.views.edit;
+      const args = { collectionConfig: sanitized.pages, permissions: {}, req: sanitized.req };
+
+      expect(sanitized.req).not.toHaveProperty('frogbot');
+      expect(edit.notes.tab.condition(args)).toBe(true);
+      expect(edit.default.tab.condition(args)).toBe(false);
+
+      for (const condition of [shows, hides]) {
+        expect(condition).toHaveBeenCalledExactlyOnceWith({
+          ...args,
+          req: expect.objectContaining({ frogbot: sanitized.frogbot }),
+        });
+      }
+
+      expect(edit.notes).toMatchObject({
+        Component: './Notes#Notes',
+        path: '/notes',
+        tab: { label: 'Notes' },
+      });
+      expect(edit.api).toEqual(api);
+      expect(edit.versions).toEqual(versions);
+    });
+
+    it('leaves edit views without tab conditions as configured', async () => {
+      const collection: Omit<CollectionConfig, 'fields' | 'slug'> = {
+        admin: {
+          components: {
+            edit: {
+              views: {
+                default: { tab: { label: 'Edit' } },
+                notes: { Component: './Notes#Notes', path: '/notes' },
+              },
+            },
+          },
+        },
+      };
+
+      const sanitized = await sanitizeRequestFunctions(collection);
+
+      expect(sanitized.pages.admin.components.views).toEqual(
+        compileCollectionViews({ collection: { slug: 'pages', fields: [], ...collection } })
+          ?.components?.views,
+      );
+    });
+
     it('gives every upload handler req.frogbot and returns its response', async () => {
       const response = new Response('file');
       const first = vi.fn(() => undefined);

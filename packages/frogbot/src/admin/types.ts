@@ -55,6 +55,10 @@ export interface RootAdminComponents {
   beforeSidebarClose?: FrogBotComponent[];
   /** Add components to the sidebar above the nav links. */
   beforeNavLinks?: FrogBotComponent[];
+  /** Add components to the dashboard, below its content. */
+  afterDashboard?: FrogBotComponent[];
+  /** Add components to the dashboard, above its content. */
+  beforeDashboard?: FrogBotComponent[];
   chat?: {
     AssistantMessageActions?: FrogBotComponent;
     Chat?: FrogBotComponent;
@@ -63,6 +67,8 @@ export interface RootAdminComponents {
   };
   /** Component slots for admin branding. */
   graphics?: RootAdminGraphics;
+  /** Add components above the admin panel's top bar, on every signed-in page. */
+  header?: FrogBotComponent[];
   /** Replace the account menu's Log out item. */
   logout?: { Button?: FrogBotComponent };
   /** Replace the entire admin sidebar navigation. */
