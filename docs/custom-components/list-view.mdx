@@ -64,13 +64,16 @@ export const Posts: CollectionConfig = {
         type: 'list',
         components: {
           beforeView: ['/components/ListNotice#ListNotice'],
+          toolbar: ['/components/ExportButton#ExportButton'],
           beforeTable: ['/components/ListSummary#ListSummary'],
           afterTable: ['/components/ListFooter#ListFooter'],
           afterView: ['/components/ListHelp#ListHelp'],
+          NoResults: '/components/NoPosts#NoPosts',
         },
       },
     ],
     components: {
+      CreateButton: '/components/NewPostButton#NewPostButton',
       Description: '/components/PostsDescription#PostsDescription',
     },
   },
@@ -129,6 +132,48 @@ import type { AfterListClientProps } from 'frogbot'
 
 export function ListHelp({ hasCreatePermission }: AfterListClientProps) {
   return hasCreatePermission ? <a href="/collections/posts/create">Create a post</a> : null
+}
+```
+
+### toolbar
+
+The `toolbar` slot renders in the list controls toolbar, before Filters. Below the small breakpoint it moves beside the row-selection controls, which show only when the list has rows. It is not shown in relationship drawers. Each component receives `collectionSlug`, `hasCreatePermission`, `hasDeletePermission` and `newDocumentURL`, plus the list's server props when it is a Server Component.
+
+```tsx
+'use client'
+
+export function ExportButton({ collectionSlug }: { collectionSlug: string }) {
+  return <a href={`/api/${collectionSlug}/export`}>Export</a>
+}
+```
+
+### NoResults
+
+`NoResults` replaces the empty state shown when the list has no documents. It is not shown in relationship drawers.
+
+```tsx
+export function NoPosts() {
+  return <p>No posts yet. Draft one to get started.</p>
+}
+```
+
+### CreateButton
+
+`admin.components.CreateButton` replaces the **Create New** button where it sits: in the toolbar after the layout toggle, before the ⋮ menu, and in the list's empty state (unless the view sets `NoResults`). It does the same on board and calendar views, which have no Create New of their own, and renders in no trash view or relationship drawer. Below the small breakpoint it follows `toolbar`, and on a list with no rows it shows only in the empty state.
+
+It always renders, so it decides what a user without `create` access sees. It receives `collectionSlug`, `hasCreatePermission` and `newDocumentURL`; `create` access still governs REST and GraphQL create, the document view and relationship drawers. To match Create New, use the admin `Button` with `buttonStyle="primary"` and `size="medium"`:
+
+```tsx
+'use client'
+
+import { Button } from '@frogbotai/ui/admin'
+
+export function NewPostButton({ newDocumentURL }: { newDocumentURL: string }) {
+  return (
+    <Button buttonStyle="primary" el="link" size="medium" to={newDocumentURL}>
+      New post
+    </Button>
+  )
 }
 ```
 

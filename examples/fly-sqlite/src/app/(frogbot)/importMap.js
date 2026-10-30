@@ -1,7 +1,7 @@
 import { FieldCell as FieldCell_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { MoneyField as MoneyField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { LLMInstructionsMenuItem as LLMInstructionsMenuItem_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
-import { DefaultListView as DefaultListView_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
+import { ListView as ListView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { ChatView as ChatView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { LLMInstructionsDescription as LLMInstructionsDescription_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { LLMInstructionsCell as LLMInstructionsCell_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
@@ -26,8 +26,7 @@ export const importMap = {
   '@frogbotai/ui/admin#MoneyField': MoneyField_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin#LLMInstructionsMenuItem':
     LLMInstructionsMenuItem_53ccb9913b2925da8adcdf5fd85e01f4,
-  '@frogbotai/ui/admin#DefaultListView':
-    DefaultListView_53ccb9913b2925da8adcdf5fd85e01f4,
+  '@frogbotai/ui/admin/rsc#ListView': ListView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin/rsc#ChatView': ChatView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin#LLMInstructionsDescription':
     LLMInstructionsDescription_53ccb9913b2925da8adcdf5fd85e01f4,

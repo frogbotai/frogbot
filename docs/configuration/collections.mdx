@@ -299,7 +299,8 @@ These shell slots are shared by list, board, calendar, and custom views. Each va
 
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
-| `actions` | `FrogBotComponent[]` | No; `[]` | Renders in the page header on a list view; right-aligned in a row above the view controls on board, calendar and custom views. |
+| `actions` | `FrogBotComponent[]` | No; `[]` | Renders in the page header, top right, on every view type. |
+| `toolbar` | `FrogBotComponent[]` | No; `[]` | Renders in the list controls toolbar, before Filters, on every view type. Below the small breakpoint it moves beside the row-selection controls (list) or into a row under the toolbar (board, calendar). On a list that has no rows, small screens don't show it. Not shown in relationship drawers. |
 | `menuItems` | `FrogBotComponent[]` | No; `[]` | Adds entries to the view menu. |
 | `beforeView` | `FrogBotComponent[]` | No; `[]` | Renders inside the collection shell before the view body. |
 | `afterView` | `FrogBotComponent[]` | No; `[]` | Renders inside the collection shell after the view body. |
@@ -317,6 +318,7 @@ These shell slots are shared by list, board, calendar, and custom views. Each va
 | --- | --- | --- | --- |
 | `beforeTable` | `FrogBotComponent[]` | No; `[]` | Renders after list controls and immediately before the table. |
 | `afterTable` | `FrogBotComponent[]` | No; `[]` | Renders immediately after the table. |
+| `NoResults` | `FrogBotComponent` | No; built-in empty state | Replaces the empty state. Not shown in relationship drawers. |
 
 #### BoardView
 
@@ -366,8 +368,8 @@ See [Collection calendar](/admin/collection-calendar) for modes, date fields, lo
 | --- | --- | --- | --- |
 | `type` | `'custom'` | Yes | Selects a developer-provided view. |
 | `component` | `FrogBotComponent` | Yes | Component that renders the custom view body. |
-| `shell` | `boolean` | No; `true` | When `true`, renders within the collection shell and supports `ViewComponents`. When `false`, replaces the complete collection page and must be the collection's only view. |
-| `components` | `ViewComponents` | No | Configures shared shell slots when the shell is enabled. |
+| `shell` | `boolean` | No; `true` | When `true`, renders within the collection shell and supports `ViewComponents`. When `false`, replaces the complete collection page and must be the collection's only view. A full-page custom view renders only its `component` and header `actions`; `beforeView`, `afterView`, `menuItems` and `toolbar` are rejected. |
+| `components` | `ViewComponents` | No | Configures shared shell slots when the shell is enabled. With `shell: false`, only `actions`. |
 
 ### Custom Components
 
@@ -392,10 +394,11 @@ The following options are available:
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
+| `CreateButton` | `FrogBotComponent` | Built-in Create New | Replaces the **Create New** button in the toolbar and the list view's empty state, on every view type. It renders whatever `create` access says and receives `hasCreatePermission`; `create` access still governs REST and GraphQL create, the document view and relationship drawers. Below the small breakpoint it follows `toolbar`. [More details](/custom-components/list-view#createbutton). |
 | `Description` | `FrogBotComponent` | Built-in description | Replaces the collection description. [More details](/custom-components/list-view#description). |
 | `edit` | `object` | — | Edit View component slots. [More details](#edit-view-options). |
 
-List slots belong to a `type: 'list'` entry in `admin.views`: use `components.beforeView`, `beforeTable`, `afterTable`, and `afterView`. To replace the collection list, use a `type: 'custom'` entry with `component`. See [List View](/custom-components/list-view).
+List slots belong to a `type: 'list'` entry in `admin.views`: use `components.beforeView`, `toolbar`, `beforeTable`, `afterTable`, `afterView`, and `NoResults`. To replace the collection list, use a `type: 'custom'` entry with `component`. See [List View](/custom-components/list-view).
 
 #### Edit View Options
 

@@ -13,6 +13,7 @@ type ExportNames = {
 };
 
 const packageRoot = path.resolve('packages/ui');
+const sharedNames = ['Button'];
 const requireFromUI = createRequire(path.join(packageRoot, 'package.json'));
 const payloadClientEntry = requireFromUI.resolve('@payloadcms/ui');
 const payloadExportsRoot = path.dirname(payloadClientEntry);
@@ -188,7 +189,9 @@ describe('Payload UI export classification', () => {
     for (const collision of collisions) expect(localNames.has(collision), collision).toBe(true);
 
     const clientNames = new Set([...root.tier1.values, ...root.tier2.values]);
-    const duplicates = [...localNames].filter((name) => clientNames.has(name));
+    const duplicates = [...localNames].filter(
+      (name) => clientNames.has(name) && !sharedNames.includes(name),
+    );
 
     expect(duplicates, 'root exports a local name and an upstream name').toEqual([]);
   });

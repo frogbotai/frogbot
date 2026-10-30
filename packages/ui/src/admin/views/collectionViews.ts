@@ -4,7 +4,9 @@ import type { AdminViewServerProps } from 'payload';
 
 export type RuntimeCollectionView = CollectionView & { slug: string };
 
-export function getRuntimeViews(props: AdminViewServerProps): RuntimeCollectionView[] {
+export function getRuntimeViews(
+  props: Pick<AdminViewServerProps, 'collectionConfig'>,
+): RuntimeCollectionView[] {
   return (
     (
       props.collectionConfig?.custom?.frogbot as

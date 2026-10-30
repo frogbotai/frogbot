@@ -33,7 +33,7 @@ export default buildConfig({
 })
 ```
 
-`frogbot dev` generates the admin import map before starting, so the API Keys collection and its key-creation controls appear on the first load. Click **Create API key** in the page header of the API Keys list to create a named key, and copy the token when it is displayed. The plaintext token cannot be retrieved again.
+`frogbot dev` generates the admin import map before starting, so the API Keys collection and its key-creation controls appear on the first load. Click **Create API key** in the API Keys list toolbar, where Create New sits on other collections, to create a named key, and copy the token when it is displayed. The plaintext token cannot be retrieved again.
 
 Build and start-only workflows must run `frogbot generate:importmap` after adding the plugin. The blank template does this automatically during `prebuild`; add the same step to custom CI workflows that invoke `next build` directly. If the server console reports a component missing from the import map, run `frogbot generate:importmap` and rebuild, or restart `frogbot dev`.
 

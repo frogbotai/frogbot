@@ -143,6 +143,18 @@ export function compileCollectionViews({
     );
   }
 
+  if (fullPage) {
+    const shellOnly = (['beforeView', 'afterView', 'menuItems', 'toolbar'] as const).filter(
+      (key) => fullPage.components?.[key] !== undefined,
+    );
+
+    if (shellOnly.length) {
+      throw new Error(
+        `[frogbot] Collection "${collection.slug}" view "${fullPage.slug}" sets shell: false, so ${shellOnly.join(', ')} would never render. Remove them or drop shell: false.`,
+      );
+    }
+  }
+
   for (const view of views) {
     if (
       view.type === 'board' &&
@@ -207,25 +219,31 @@ export function compileCollectionViews({
       slug: view.slug,
     });
 
+    const actions = isDefault && components?.actions ? { actions: components.actions } : {};
+
     if (view.type === 'board') {
       runtimeViews[key] = {
         Component: '@frogbotai/ui/admin/rsc#BoardView',
+        ...actions,
         ...(isDefault ? {} : { exact: true, path }),
       };
     } else if (view.type === 'calendar') {
       runtimeViews[key] = {
         Component: '@frogbotai/ui/admin/rsc#CalendarView',
+        ...actions,
         ...(isDefault ? {} : { exact: true, path }),
       };
     } else if (view.type === 'custom') {
       runtimeViews[key] = {
         Component: '@frogbotai/ui/admin/rsc#CustomCollectionView',
+        ...actions,
         ...(isDefault ? {} : { exact: true, path }),
       };
     } else if (view.type === 'list' && isDefault) {
       runtimeViews.list = {
-        Component: '@frogbotai/ui/admin#DefaultListView',
-        ...(components?.actions ? { actions: components.actions } : {}),
+        Component: '@frogbotai/ui/admin/rsc#ListView',
+        ...actions,
+        ...(view.components?.NoResults ? { NoResults: view.components.NoResults } : {}),
       };
     }
   }

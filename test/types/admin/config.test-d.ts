@@ -5,12 +5,15 @@ import type {
   DocumentTabConfig,
   Field,
   FrogBot,
+  FrogBotComponent,
   FrogBotConfig,
   FrogBotRequest,
   IconName,
+  ListView,
   NavItem,
   RootAdminConfig,
   SettingsEntry,
+  ViewComponents,
   Widget,
 } from 'frogbot';
 import type {
@@ -212,6 +215,14 @@ expectTypeOf<{
   versions: EmptyView;
   livePreview: EmptyView;
 }>().toExtend<EditViews>();
+
+expectTypeOf<ViewComponents['toolbar']>().toEqualTypeOf<FrogBotComponent[] | undefined>();
+
+expectTypeOf<NonNullable<ListView['components']>['NoResults']>().toEqualTypeOf<
+  FrogBotComponent | undefined
+>();
+
+expectTypeOf<AdminComponents['CreateButton']>().toEqualTypeOf<FrogBotComponent | undefined>();
 
 expectTypeOf(dashboard).toMatchTypeOf<DashboardConfig>();
 expectTypeOf(collection).toMatchTypeOf<CollectionConfig>();

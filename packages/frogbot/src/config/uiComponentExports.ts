@@ -188,6 +188,7 @@ export const uiComponentExports: Readonly<Record<string, ReadonlySet<string>>> =
     'QueryPresetsGroupByField',
     'QueryPresetsWhereCell',
     'QueryPresetsWhereField',
+    'Button',
   ]),
   '@payloadcms/ui/shared': new Set([
     'Translation',

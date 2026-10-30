@@ -77,7 +77,7 @@ describe('collection views', () => {
       { type: 'list', slug: 'list', label: 'List', path: '' },
     ]);
     expect(admin?.components?.views?.list).toEqual({
-      Component: '@frogbotai/ui/admin#DefaultListView',
+      Component: '@frogbotai/ui/admin/rsc#ListView',
     });
   });
 
@@ -117,7 +117,7 @@ describe('collection views', () => {
     expect(admin?.components?.Description).toBe('@frogbotai/ui/admin/rsc#CollectionViewSwitcher');
     expect(admin?.components?.beforeList).toBeUndefined();
     expect(admin?.components?.views?.list).toEqual({
-      Component: '@frogbotai/ui/admin#DefaultListView',
+      Component: '@frogbotai/ui/admin/rsc#ListView',
     });
 
     const result = getCustomCollectionViewByRoute({
@@ -292,9 +292,90 @@ describe('collection views', () => {
     });
 
     expect(admin?.components?.views?.list).toEqual({
-      Component: '@frogbotai/ui/admin#DefaultListView',
+      Component: '@frogbotai/ui/admin/rsc#ListView',
       actions,
     });
+  });
+
+  it.each([
+    [
+      'board',
+      { type: 'board' },
+      '@frogbotai/ui/admin/rsc#BoardView',
+      [{ name: 'stage', type: 'select', options: [] }],
+    ],
+    [
+      'calendar',
+      { type: 'calendar', start: 'startsAt' },
+      '@frogbotai/ui/admin/rsc#CalendarView',
+      [{ name: 'startsAt', type: 'date' }],
+    ],
+    [
+      'custom',
+      { type: 'custom', component: './Report' },
+      '@frogbotai/ui/admin/rsc#CustomCollectionView',
+      [],
+    ],
+  ])(
+    'maps the actions of a default %s view to the page header',
+    (_type, view, Component, fields) => {
+      const actions = ['./Header#Action'];
+      const admin = compileCollectionViews({
+        collection: {
+          slug: 'posts',
+          fields: fields as never,
+          admin: { views: [{ ...view, components: { actions } } as never] },
+        },
+      });
+
+      expect(admin?.components?.views?.list).toEqual({ Component, actions });
+    },
+  );
+
+  it('keeps the actions of a non-default view off the list route', () => {
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'posts',
+        fields: [{ name: 'stage', type: 'select', options: [] }],
+        admin: {
+          views: [{ type: 'list' }, { type: 'board', components: { actions: ['./A#A'] } }],
+        },
+      },
+    });
+
+    expect(admin?.components?.views?.list).toEqual({
+      Component: '@frogbotai/ui/admin/rsc#ListView',
+    });
+    expect(admin?.components?.views?.board).toEqual({
+      Component: '@frogbotai/ui/admin/rsc#BoardView',
+      exact: true,
+      path: '/board',
+    });
+  });
+
+  it('maps the list NoResults to the native empty state', () => {
+    const NoResults = './Empty#Empty';
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'posts',
+        fields: [],
+        admin: { views: [{ type: 'list', components: { NoResults } }] },
+      },
+    });
+
+    expect(admin?.components?.views?.list).toEqual({
+      Component: '@frogbotai/ui/admin/rsc#ListView',
+      NoResults,
+    });
+  });
+
+  it('keeps CreateButton on the collection components', () => {
+    const CreateButton = './Create#Button';
+    const admin = compileCollectionViews({
+      collection: { slug: 'posts', fields: [], admin: { components: { CreateButton } } },
+    });
+
+    expect((admin?.components as { CreateButton?: unknown }).CreateButton).toBe(CreateButton);
   });
 
   it('maps list defaults and pagination to the native list contract', () => {
@@ -466,6 +547,46 @@ describe('collection views', () => {
 
     expect(admin?.components?.views?.list).toMatchObject({
       Component: '@frogbotai/ui/admin/rsc#CustomCollectionView',
+    });
+  });
+
+  it('rejects shell-only components on a shell false view, naming them in order', () => {
+    const compile = (components: Record<string, string[]>) =>
+      compileCollectionViews({
+        collection: {
+          slug: 'posts',
+          fields: [],
+          admin: {
+            views: [
+              { type: 'custom', slug: 'report', component: './Report', shell: false, components },
+            ],
+          },
+        },
+      });
+
+    expect(() => compile({ menuItems: ['./Menu'] })).toThrow(
+      '[frogbot] Collection "posts" view "report" sets shell: false, so menuItems would never render. Remove them or drop shell: false.',
+    );
+    expect(() =>
+      compile({ toolbar: ['./T'], menuItems: ['./M'], afterView: ['./A'], beforeView: ['./B'] }),
+    ).toThrow('so beforeView, afterView, menuItems, toolbar would never render.');
+  });
+
+  it('builds a shell false view with only actions and sends them to the page header', () => {
+    const actions = ['./Header#Action'];
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'posts',
+        fields: [],
+        admin: {
+          views: [{ type: 'custom', component: './Report', shell: false, components: { actions } }],
+        },
+      },
+    });
+
+    expect(admin?.components?.views?.list).toEqual({
+      Component: '@frogbotai/ui/admin/rsc#CustomCollectionView',
+      actions,
     });
   });
 });
