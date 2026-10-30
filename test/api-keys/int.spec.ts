@@ -628,6 +628,51 @@ describe('API keys plugin integration', () => {
       ]);
     });
 
+    const setOwnerModels = (models: NonNullable<Account['models']>) =>
+      booted.frogbot.update({
+        collection: 'accounts',
+        id: ownerId,
+        data: { models },
+        overrideAccess: true,
+      });
+
+    const listModels = async (headers: Record<string, string>) => {
+      const response = await booted.restClient.get<{ object: string; data: { id: string }[] }>(
+        '/api/v1/models',
+        { headers },
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.body.object).toBe('list');
+
+      return response.body.data.map(({ id }) => id).sort();
+    };
+
+    it('lists only the models a user may use', async () => {
+      await setOwnerModels(['openai/gpt-4.1', 'openai/gpt-4.1-mini']);
+
+      expect(await listModels(session)).toEqual(['openai/gpt-4.1', 'openai/gpt-4.1-mini']);
+    });
+
+    it("lists only an API key's models", async () => {
+      await setOwnerModels(['openai/gpt-4.1', 'openai/gpt-4.1-mini']);
+
+      const key = await mintKey({ models: ['openai/gpt-4.1'] });
+
+      expect(key.status, JSON.stringify(key.body)).toBe(201);
+      expect(await listModels({ 'x-service-key': key.body.token })).toEqual(['openai/gpt-4.1']);
+    });
+
+    it('lists every configured model for a user with no models list', async () => {
+      await setOwnerModels([]);
+
+      expect(await listModels(session)).toEqual([
+        'openai/gpt-4.1',
+        'openai/gpt-4.1-mini',
+        'openai/gpt-4o',
+      ]);
+    });
+
     it('lets only a signed-in session change limits, checked against the owner', async () => {
       const above = await mintKey({ monthlyBudget: 60 });
 

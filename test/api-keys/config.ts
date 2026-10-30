@@ -30,6 +30,7 @@ export default await buildTestConfig({
   collections: [Accounts, { slug: 'chats', chat: true, fields: [] }],
   ai: {
     providers: {
+      openai: { apiKey: 'test-key', models: ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4o'] },
       test: {
         type: 'openai-compatible',
         baseUrl: `http://127.0.0.1:${upstreamPort}/v1`,
