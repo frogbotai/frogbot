@@ -14,6 +14,7 @@ import ArrowDownIcon from '../icons/icons/ArrowDownIcon.js';
 import { Message } from './message.js';
 import { MessagePart } from './message-part.js';
 import { composerHeight, MessageScrubber } from './message-scrubber.js';
+import { LiveContext } from './use-paced-text.js';
 import { onUserScroll, prefersReducedMotion } from './user-scroll.js';
 import { WorkingIndicator } from './working.js';
 
@@ -39,6 +40,12 @@ function detached(scroller: HTMLElement) {
   return last.getBoundingClientRect().bottom - band > 48;
 }
 
+function blurJump(button: HTMLElement | null, scroller: HTMLElement | null) {
+  if (button && scroller && button.contains(document.activeElement)) {
+    scroller.focus({ preventScroll: true });
+  }
+}
+
 function glide(scroller: HTMLElement, top: number) {
   const reduce = prefersReducedMotion();
   const target = reduce || Math.abs(scroller.scrollTop - top) < 1 ? null : top;
@@ -57,6 +64,7 @@ export function MessageList({
   ...props
 }: MessageListProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const jumpRef = useRef<HTMLButtonElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const follow = useRef(true);
   const moving = useRef<number | null>(null);
@@ -84,13 +92,37 @@ export function MessageList({
       if (moving.current !== null) return;
 
       const away = detached(scroller);
+      const shown = away || pinnedRef.current !== null;
 
       if (away) follow.current = false;
 
-      setShowJump(away || pinnedRef.current !== null);
+      if (!shown) blurJump(jumpRef.current, scroller);
+
+      setShowJump(shown);
     };
 
+    let lastTop = scroller.scrollTop;
+    let lastHeight = scroller.scrollHeight;
+    let inputAt = -Infinity;
+
     const onScroll = () => {
+      const { clientHeight, scrollHeight, scrollTop } = scroller;
+      const up = scrollTop < lastTop;
+      const shrank = scrollHeight < lastHeight;
+
+      lastTop = scrollTop;
+      lastHeight = scrollHeight;
+
+      if (
+        follow.current &&
+        up &&
+        !shrank &&
+        scrollHeight - scrollTop - clientHeight >= 8 &&
+        performance.now() - inputAt < 150
+      ) {
+        follow.current = false;
+      }
+
       const target = moving.current;
 
       if (target !== null) {
@@ -126,6 +158,7 @@ export function MessageList({
     scroller.addEventListener('scrollend', onScrollEnd, { passive: true });
 
     const stop = onUserScroll(scroller, () => {
+      inputAt = performance.now();
       moving.current = null;
     });
 
@@ -167,6 +200,7 @@ export function MessageList({
       content.style.minHeight = `${above + scroller.clientHeight}px`;
       follow.current = false;
       setPinned(null);
+      blurJump(jumpRef.current, scroller);
       setShowJump(false);
       moving.current = glide(scroller, scroller.scrollTop + rowTop - view - offset);
 
@@ -197,38 +231,42 @@ export function MessageList({
         aria-live="polite"
         className={`fb-message-list__scroller${className ? ` ${className}` : ''}`}
         role="log"
+        tabIndex={-1}
         {...props}
       >
         <div ref={contentRef} className="fb-message-list__content">
           {messages.map((message) => (
             <div key={message.id} className="fb-message-list__item" data-message-id={message.id}>
-              {renderMessage ? (
-                renderMessage(message)
-              ) : (
-                <Message role={message.role}>
-                  {message.parts.map((part, index) => (
-                    <MessagePart key={`${message.id}-${index}`} part={part} role={message.role} />
-                  ))}
-                </Message>
-              )}
+              <LiveContext value={pending && message === messages.at(-1)}>
+                {renderMessage ? (
+                  renderMessage(message)
+                ) : (
+                  <Message role={message.role}>
+                    {message.parts.map((part, index) => (
+                      <MessagePart key={`${message.id}-${index}`} part={part} role={message.role} />
+                    ))}
+                  </Message>
+                )}
+              </LiveContext>
             </div>
           ))}
           <WorkingIndicator active={pending} icon={icon} />
         </div>
       </div>
       <button
+        ref={jumpRef}
         type="button"
-        aria-hidden={!showJump || undefined}
         aria-label="Jump to latest"
         className="fb-message-list__jump fb-slide-up-1"
         data-shown={showJump || undefined}
-        tabIndex={showJump ? undefined : -1}
+        inert={!showJump}
         onClick={() => {
           const scroller = ref.current;
 
           follow.current = pending;
           moving.current = null;
           setPinned(null);
+          blurJump(jumpRef.current, scroller);
           setShowJump(false);
 
           if (scroller) scroller.scrollTop = scroller.scrollHeight;

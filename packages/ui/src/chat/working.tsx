@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react';
+'use client';
+
+import { type ReactNode, useEffect, useState } from 'react';
 
 import FrogBotFavicon from '../icons/icons/FrogBotFavicon.js';
 
@@ -9,19 +11,23 @@ export interface WorkingIndicatorProps {
   icon?: ReactNode;
 }
 
-/** A row below the thread that always keeps its height; its logo pulses while the agent works. */
+/**
+ * A row below the thread that always keeps its height; its logo pulses while the agent works.
+ * The status region is always exposed and gets its text only after it is in the tree, so
+ * screen readers announce "Working" once per run.
+ */
 export function WorkingIndicator({ active, icon }: WorkingIndicatorProps) {
+  const [announced, setAnnounced] = useState(false);
+
+  useEffect(() => setAnnounced(active), [active]);
+
   return (
-    <div
-      aria-hidden={active ? undefined : true}
-      className="fb-working"
-      data-active={active || undefined}
-    >
+    <div className="fb-working" data-active={active || undefined}>
       <span aria-hidden className="fb-working__logo">
         {icon ?? <FrogBotFavicon />}
       </span>
       <span className="fb-working__label" role="status">
-        {active ? 'Working' : null}
+        {active && announced ? 'Working' : null}
       </span>
     </div>
   );

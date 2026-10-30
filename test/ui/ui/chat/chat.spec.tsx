@@ -754,7 +754,7 @@ describe('Chat', () => {
     rerender(<Chat {...props} />);
 
     expect(working().hasAttribute('data-active')).toBe(false);
-    expect(working().getAttribute('aria-hidden')).toBe('true');
+    expect(working().hasAttribute('aria-hidden')).toBe(false);
     expect(working().textContent).toBe('');
   });
 

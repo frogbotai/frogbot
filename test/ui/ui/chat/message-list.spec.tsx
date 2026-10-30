@@ -74,7 +74,8 @@ describe('MessageList', () => {
     const { container } = render(<MessageList messages={thread} />);
 
     const scroller = stubLayout(container);
-    const button = () => screen.queryByRole('button', { name: 'Jump to latest' });
+    const button = () =>
+      container.querySelector<HTMLButtonElement>('.fb-message-list__jump[data-shown]:not([inert])');
 
     expect(screen.getByText('First answer')).toBeTruthy();
 
@@ -86,8 +87,7 @@ describe('MessageList', () => {
 
     const hidden = container.querySelector<HTMLButtonElement>('.fb-message-list__jump')!;
 
-    expect(hidden.getAttribute('aria-hidden')).toBe('true');
-    expect(hidden.tabIndex).toBe(-1);
+    expect(hidden.hasAttribute('inert')).toBe(true);
     expect(hidden.hasAttribute('data-shown')).toBe(false);
 
     stubItems(container, { u1: -2800, a1: -2300, u2: -1800, a2: -1300, u3: -800, a3: -300 });
@@ -100,6 +100,62 @@ describe('MessageList', () => {
     fireEvent.scroll(scroller);
 
     expect(button()?.hasAttribute('data-shown')).toBe(true);
+  });
+
+  it('moves focus off the jump button when it hides, and makes it inert', () => {
+    const { container } = render(<MessageList messages={thread} />);
+
+    const scroller = stubLayout(container);
+    const jump = screen.getByRole('button', { name: 'Jump to latest' });
+
+    expect(jump.hasAttribute('inert')).toBe(false);
+
+    act(() => jump.focus());
+    fireEvent.click(jump);
+
+    expect(jump.hasAttribute('inert')).toBe(true);
+    expect(document.activeElement).toBe(scroller);
+  });
+
+  it('stops following after a jump once the user scrolls up 8px from the end', () => {
+    const observers: Array<() => void> = [];
+
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          observers.push(callback);
+        }
+
+        disconnect() {}
+        observe() {}
+        unobserve() {}
+      },
+    );
+
+    const { container } = render(<MessageList messages={thread} pending />);
+
+    const scroller = stubLayout(container);
+    const grow = (height: number) => {
+      Object.defineProperty(scroller, 'scrollHeight', { value: height, configurable: true });
+      act(() => observers.forEach((callback) => callback()));
+      fireEvent.scroll(scroller);
+    };
+
+    fireEvent.click(screen.getByRole('button', { name: 'Jump to latest' }));
+    stubItems(container, { u1: -2800, a1: -2300, u2: -1800, a2: -1300, u3: -800, a3: -300 });
+    grow(3500);
+
+    expect(scroller.scrollTop).toBe(3500);
+
+    fireEvent.wheel(scroller, { deltaY: -8 });
+    scroller.scrollTop = 3500 - 400 - 8;
+    fireEvent.scroll(scroller);
+    grow(3600);
+
+    expect(scroller.scrollTop).toBe(3092);
+
+    vi.unstubAllGlobals();
   });
 
   it('follows the reply after a jump until the stream ends', () => {
@@ -182,7 +238,7 @@ describe('MessageList', () => {
 
     fireEvent.scroll(scroller);
 
-    expect(screen.queryByRole('button', { name: 'Jump to latest' })).toBeNull();
+    expect(container.querySelector('.fb-message-list__jump')?.hasAttribute('inert')).toBe(true);
 
     rerender(
       <MessageList

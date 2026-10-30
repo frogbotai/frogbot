@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { createContext, use, useEffect, useRef, useState } from 'react';
 
 import { prefersReducedMotion } from './user-scroll.js';
 
@@ -98,6 +98,20 @@ export class TextSmoother {
 
     return this.text.slice(0, Math.floor(this.x));
   }
+}
+
+/**
+ * Whether the message around a part is still streaming. `MessageList` sets it to false for
+ * every message except a pending last one, so a part left in state "streaming" by Stop, a stream
+ * error or a reload shows in full. Without a list around it, a part's own state decides.
+ */
+export const LiveContext = createContext(true);
+
+/**
+ * Whether a part in state `state` is still being written: its own state and its message's.
+ */
+export function useLive(state: 'streaming' | 'done' | undefined) {
+  return use(LiveContext) && state === 'streaming';
 }
 
 /**
