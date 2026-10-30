@@ -70,6 +70,7 @@ admin: {
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
+| `appIcon` | `string` | The FrogBot frog | URL path of a square PNG, at least 512 px, in the app's `public/` folder, such as `'/app-icon.png'`. FrogBot draws the tab icon, the home-screen icons and the manifest icons from it; see [Home-screen icons](#home-screen-icons). Anything other than a `/` path ending in `.png` fails at startup. |
 | `titleSuffix` | `string` | `'- FrogBot'` | Appended, after a space, to every admin page title. Custom views without a title show only the site name, without the suffix. Live top-bar titles use it too; see [Top-bar label](/custom-components/custom-views#top-bar-label). An empty string adds no suffix. |
 | `defaultOGImageType` | `'dynamic' \| 'static' \| 'off'` | `'static'` | Open Graph image used when `openGraph.images` is not set. `'static'` uses the FrogBot image. `'dynamic'` renders a 1200×630 image with the page title from the `/api/og` endpoint. `'off'` adds no image and disables the endpoint. |
 
@@ -93,8 +94,8 @@ Every other key comes from the `next` `Metadata` type and is passed through to t
 | `publisher` | `string` | None | `publisher` meta tag. |
 | `robots` | `string \| { index?, follow?, noarchive?, …, googleBot? }` | None | `robots` meta tag, for example `{ index: false, follow: false }` to keep the admin panel out of search engines. |
 | `alternates` | `{ canonical?, languages?, media?, types? }` | None | Canonical and alternate links. |
-| `icons` | `string \| Icon[] \| { icon?, shortcut?, apple?, other? }` | FrogBot favicon | Favicon and touch icons. Setting it replaces the FrogBot favicon. |
-| `manifest` | `string \| URL` | None | Web app manifest link. |
+| `icons` | `string \| Icon[] \| { icon?, shortcut?, apple?, other? }` | FrogBot's, from `appIcon` | Favicon and touch icons. Setting it replaces FrogBot's 32 px icon and 180 px touch icon. |
+| `manifest` | `string \| URL` | FrogBot's, from `appIcon` | Web app manifest link. Setting it replaces FrogBot's manifest. |
 | `openGraph` | Open Graph object | `siteName: 'FrogBot'`, a FrogBot description, the page title with `titleSuffix`, and the image chosen by `defaultOGImageType` | Open Graph tags. Keys you set are merged over the defaults; setting `images` replaces the default image. The dashboard, custom views, and Settings pages use the page title without `titleSuffix` as the Open Graph title; Settings pages always use their section name. |
 | `twitter` | Twitter card object | None | Twitter (X) card tags. |
 | `facebook` | `{ appId } \| { admins }` | None | Facebook app or admin tags. |
@@ -115,3 +116,23 @@ Every other key comes from the `next` `Metadata` type and is passed through to t
 | `metadataBase` | `URL \| null` | Computed from `serverURL` | Accepted for type compatibility. FrogBot always replaces it with a URL built from `serverURL`, so a configured value has no effect. |
 
 Custom root views can override page metadata with their own `meta` key; see [Adding New Views](/custom-components/custom-views#adding-new-views).
+
+## Home-screen icons
+
+When someone adds an app to an iPhone or Android home screen, FrogBot supplies the icon and a web app manifest. With no setup, every app shows the FrogBot frog. To use your own, put a square PNG of at least 512 px in `public/` and name it in `appIcon`:
+
+```ts
+admin: {
+  meta: {
+    applicationName: 'Acme',
+    appIcon: '/app-icon.png',
+  },
+}
+```
+
+FrogBot serves every size from that one file, with no sign-in needed:
+
+- `/api/frogbot/app-icon/{32,180,192,512}`: the tab icon, the iOS touch icon (on white) and the two manifest icons.
+- `/api/frogbot/app-manifest`: the manifest, named after `applicationName` (else `FrogBot`) and opening the admin panel.
+
+Every admin page links to them unless you set `icons` or `manifest` yourself.

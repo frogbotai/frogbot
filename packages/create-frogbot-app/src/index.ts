@@ -10,6 +10,7 @@ import { applyDatabase } from './lib/db.js';
 import { writeEnv } from './lib/env.js';
 import { CliError } from './lib/errors.js';
 import { initializeGit } from './lib/git.js';
+import { applyMeta } from './lib/meta.js';
 import { applyPackageJson, type DatabaseDependencies } from './lib/package-json.js';
 import {
   detectPackageManager,
@@ -76,6 +77,7 @@ export function scaffold(options: ScaffoldOptions): void {
 
   applyDatabase(options.dest, database);
   applyAI(options.dest, ai);
+  applyMeta(options.dest, options.projectName);
 
   applyPackageJson(
     options.dest,

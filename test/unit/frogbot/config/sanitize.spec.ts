@@ -610,6 +610,21 @@ describe('frogbot sanitize', () => {
     expect(() => sanitize(config)).toThrowError("[frogbot] Unknown admin icon 'Robot'. Valid:");
   });
 
+  it('accepts a public PNG path as admin.meta.appIcon', () => {
+    expect(() =>
+      sanitize(makeConfig({ admin: { meta: { appIcon: '/app-icon.png' } } })),
+    ).not.toThrow();
+  });
+
+  it.each(['app-icon.png', '/icon.svg', 'https://x/y.png'])(
+    'rejects %s as admin.meta.appIcon',
+    (appIcon) => {
+      expect(() => sanitize(makeConfig({ admin: { meta: { appIcon } } }))).toThrowError(
+        "[frogbot] admin.meta.appIcon must be a .png path in public/, such as '/app-icon.png'",
+      );
+    },
+  );
+
   it('accepts built-in names and component icons on nav items and settings', () => {
     const config = makeConfig({
       collections: [
@@ -4788,24 +4803,24 @@ describe('frogbot sanitize', () => {
       ).toThrow("[frogbot] Endpoint path '/agents/custom' is reserved for the agent API.");
     });
 
-    it('reserves the manifest collection slug', () => {
+    it('reserves the FrogBot collection slug', () => {
       expect(() =>
         sanitize(
           makeConfig({
             collections: [{ slug: 'frogbot', fields: [] }],
           }),
         ),
-      ).toThrow("[frogbot] Collection slug 'frogbot' is reserved for the manifest API.");
+      ).toThrow("[frogbot] Collection slug 'frogbot' is reserved for the FrogBot API.");
     });
 
-    it.each(['/frogbot', '/frogbot/custom'])('reserves manifest endpoint path %s', (path) => {
+    it.each(['/frogbot', '/frogbot/custom'])('reserves FrogBot endpoint path %s', (path) => {
       expect(() =>
         sanitize(
           makeConfig({
             endpoints: [{ path, method: 'get', handler: () => new Response() }],
           }),
         ),
-      ).toThrow(`[frogbot] Endpoint path '${path}' is reserved for the manifest API.`);
+      ).toThrow(`[frogbot] Endpoint path '${path}' is reserved for the FrogBot API.`);
     });
 
     it('reserves the v1 collection slug', () => {

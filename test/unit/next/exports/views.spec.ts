@@ -158,7 +158,7 @@ const { getSettingsTitle } =
   await import('../../../../packages/next/src/views/Settings/metadata.js');
 
 function makeConfig(admin?: Record<string, unknown>) {
-  const payloadConfig = { admin, collections: [] };
+  const payloadConfig = { admin, collections: [], routes: { api: '/api' } };
   const config = {
     _internal: { payloadConfig: Promise.resolve(payloadConfig) },
   } as unknown as FrogBotSanitizedConfig;
@@ -199,27 +199,40 @@ describe('@frogbotai/next views', () => {
     await expect(forwarded.config).resolves.toBe(payloadConfig);
   });
 
-  it('generatePageMetadata injects the FrogBot favicon when admin.meta.icons is unset', async () => {
-    const { config } = makeConfig({ meta: {} });
+  it('generatePageMetadata points the icons and manifest at the app-icon endpoints when unset', async () => {
+    const { config } = makeConfig({ meta: { appIcon: '/acme.png' } });
 
-    const metadata = (await generatePageMetadata({ config, params, searchParams })) as {
-      icons: Array<{ rel: string; type: string; url: string }>;
-    };
+    mocks.generatePageMetadata.mockResolvedValueOnce({ appIcon: '/acme.png' });
 
-    expect(metadata.icons).toHaveLength(1);
-    expect(metadata.icons[0]).toMatchObject({ rel: 'icon', type: 'image/png' });
-    expect(metadata.icons[0].url).toBeTruthy();
+    const metadata = (await generatePageMetadata({ config, params, searchParams })) as Record<
+      string,
+      unknown
+    >;
+
+    expect(metadata.icons).toEqual([
+      { rel: 'icon', sizes: '32x32', type: 'image/png', url: '/api/frogbot/app-icon/32' },
+      {
+        rel: 'apple-touch-icon',
+        sizes: '180x180',
+        type: 'image/png',
+        url: '/api/frogbot/app-icon/180',
+      },
+    ]);
+    expect(metadata.manifest).toBe('/api/frogbot/app-manifest');
+    expect(metadata).not.toHaveProperty('appIcon');
   });
 
-  it('generatePageMetadata keeps user icons when admin.meta.icons is set', async () => {
+  it('generatePageMetadata keeps user icons and manifest when set', async () => {
     const icons = [{ rel: 'icon', url: '/my-favicon.png' }];
-    const { config } = makeConfig({ meta: { icons } });
+    const { config } = makeConfig({ meta: { icons, manifest: '/my.webmanifest' } });
 
     const metadata = (await generatePageMetadata({ config, params, searchParams })) as {
       icons?: unknown;
+      manifest?: unknown;
     };
 
     expect(metadata.icons).toBeUndefined();
+    expect(metadata.manifest).toBeUndefined();
   });
 
   it('generatePageMetadata injects the FrogBot OG image for static mode without user images', async () => {
@@ -275,6 +288,7 @@ describe('@frogbotai/next views', () => {
       description?: unknown;
       icons?: unknown[];
       keywords?: unknown;
+      manifest?: unknown;
       openGraph?: { images?: unknown[]; title?: unknown };
       title?: unknown;
     };
@@ -291,7 +305,7 @@ describe('@frogbotai/next views', () => {
       return {
         admin: { components: { views }, meta, routes: { account: '/account' }, settings },
         collections: [],
-        routes: { admin: '/admin' },
+        routes: { admin: '/admin', api: '/api' },
       };
     }
 
@@ -475,14 +489,15 @@ describe('@frogbotai/next views', () => {
       expect(mocks.executeAuthStrategies).not.toHaveBeenCalled();
     });
 
-    it('generatePageMetadata keeps the favicon and OG image patches on a Settings route', async () => {
+    it('generatePageMetadata keeps the app-icon and OG image patches on a Settings route', async () => {
       const config = makeSettingsConfig({
         meta: { defaultOGImageType: 'static', titleSuffix: '- FrogBot' },
       });
 
       const metadata = await readMetadata(config, ['settings', 'collections']);
 
-      expect(metadata.icons).toHaveLength(1);
+      expect(metadata.icons).toHaveLength(2);
+      expect(metadata.manifest).toBe('/api/frogbot/app-manifest');
       expect(metadata.openGraph?.images).toHaveLength(1);
       expect(metadata.openGraph?.title).toBe('Collections');
     });

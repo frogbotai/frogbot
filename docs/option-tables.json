@@ -72,12 +72,12 @@
   {
     "page": "admin/overview",
     "heading": "FrogBot metadata options",
-    "type": "Pick<import('frogbot').RootAdminMetaConfig, 'defaultOGImageType' | 'titleSuffix'>"
+    "type": "Pick<import('frogbot').RootAdminMetaConfig, 'appIcon' | 'defaultOGImageType' | 'titleSuffix'>"
   },
   {
     "page": "admin/overview",
     "heading": "Next.js metadata options",
-    "type": "Omit<import('frogbot').RootAdminMetaConfig, 'defaultOGImageType' | 'titleSuffix'>"
+    "type": "Omit<import('frogbot').RootAdminMetaConfig, 'appIcon' | 'defaultOGImageType' | 'titleSuffix'>"
   },
   {
     "page": "agents/overview",
