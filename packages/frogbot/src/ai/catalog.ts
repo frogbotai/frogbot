@@ -1,5 +1,5 @@
 import catalogData from './catalog.json' with { type: 'json' };
-import type { ModelMode } from './types.js';
+import type { AIMethod, ModelMode } from './types.js';
 
 export type CatalogEntry = {
   id: string;
@@ -19,6 +19,25 @@ export function getAllModelIds(configuredProviders: Set<string>): string[] {
 
 export function isKnownModelId(id: string, configuredProviders: Set<string>): boolean {
   return catalog.some((entry) => entry.id === id && configuredProviders.has(entry.provider));
+}
+
+const modeMethods: Record<ModelMode, AIMethod> = {
+  chat: 'generateText',
+  image_generation: 'generateText',
+  audio_speech: 'generateText',
+  video_generation: 'generateText',
+  embedding: 'embed',
+  audio_transcription: 'transcribe',
+  rerank: 'rerank',
+  evaluate: 'evaluate',
+};
+
+const modeById = new Map(catalog.map((entry) => [entry.id, entry.mode]));
+
+export function methodForModel(id: string): AIMethod {
+  const mode = modeById.get(id);
+
+  return mode ? modeMethods[mode] : 'generateText';
 }
 
 export { catalog };

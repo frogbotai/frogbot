@@ -845,17 +845,24 @@ describe('FrogBot class', () => {
       expect(new URL(handler.mock.calls[0][0].url).pathname).toBe('/v1/chat/completions');
     });
 
-    it('forwards model discovery without an access check', async () => {
-      const generate = vi.fn(() => false);
+    it('filters model discovery by access', async () => {
+      const generate = vi.fn(({ model }: { model: string }) => model === 'openai/gpt-4.1');
       const { frogbot, handler } = await setupGateway({ generate });
+
+      handler.mockImplementation(() =>
+        Response.json({
+          object: 'list',
+          data: [{ id: 'openai/gpt-4.1' }, { id: 'openai/gpt-4o' }],
+        }),
+      );
 
       const response = await createGatewayHandler(frogbot)(
         new Request('http://localhost/api/v1/models'),
       );
 
       expect(response.status).toBe(200);
-      expect(generate).not.toHaveBeenCalled();
-      expect(handler).toHaveBeenCalledOnce();
+      expect(await response.json()).toEqual({ object: 'list', data: [{ id: 'openai/gpt-4.1' }] });
+      expect(generate).toHaveBeenCalledTimes(2);
       expect(new URL(handler.mock.calls[0][0].url).pathname).toBe('/v1/models');
     });
   });
