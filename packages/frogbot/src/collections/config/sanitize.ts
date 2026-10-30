@@ -21,6 +21,7 @@ import {
   wrapFormatDocURL,
   wrapLivePreview,
   wrapPreview,
+  wrapTabCondition,
   wrapUploadHandlers,
 } from '../../config/wrapRequest.js';
 import type { MapVectorField } from '../../database/types.js';
@@ -32,7 +33,7 @@ import { toPayloadCollectionConfig, toPayloadFields } from '../../seams/config.j
 import { buildSearchEndpoints } from '../../search/endpoints.js';
 import type { SearchIndexDescriptors } from '../../search/types.js';
 import { isRecord } from '../../utilities/isRecord.js';
-import type { CollectionConfig } from './types.js';
+import type { CollectionAdminComponents, CollectionConfig } from './types.js';
 
 const SAME_SITE = { lax: 'Lax', none: 'None', strict: 'Strict' } as const;
 
@@ -46,6 +47,33 @@ function toPayloadCookies({
 }
 
 type PayloadAuth = Exclude<NonNullable<PayloadCollectionConfig['auth']>, boolean>;
+
+type PayloadEditViews = NonNullable<
+  NonNullable<NonNullable<PayloadCollectionConfig['admin']>['components']>['views']
+>['edit'];
+
+type SourceEditViews = NonNullable<NonNullable<CollectionAdminComponents['edit']>['views']>;
+
+function wrapTabConditions(
+  editViews: NonNullable<PayloadEditViews>,
+  sourceEditViews: SourceEditViews,
+): PayloadEditViews {
+  const conditions = new Map(
+    Object.entries(sourceEditViews).flatMap(([key, view]) =>
+      typeof view?.tab?.condition === 'function' ? [[key, view.tab.condition] as const] : [],
+    ),
+  );
+
+  const wrapped = Object.entries(editViews).flatMap(([key, view]) => {
+    const condition = conditions.get(key);
+
+    return view?.tab && condition
+      ? [[key, { ...view, tab: { ...view.tab, condition: wrapTabCondition(condition) } }]]
+      : [];
+  });
+
+  return wrapped.length ? { ...editViews, ...Object.fromEntries(wrapped) } : editViews;
+}
 
 function toPayloadLoginWithUsername(
   loginWithUsername: NonNullable<AuthConfig['loginWithUsername']>,
@@ -135,6 +163,12 @@ export function sanitizeCollection(
 
   if (admin && typeof c.admin?.formatDocURL === 'function') {
     admin.formatDocURL = wrapFormatDocURL(c.admin.formatDocURL);
+  }
+
+  const editViews = admin?.components?.views?.edit;
+  const sourceEditViews = c.admin?.components?.edit?.views;
+  if (admin?.components?.views && editViews && sourceEditViews) {
+    admin.components.views.edit = wrapTabConditions(editViews, sourceEditViews);
   }
 
   const views = admin?.components?.views;

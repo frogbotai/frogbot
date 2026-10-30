@@ -246,6 +246,23 @@ export const misspelledAccountMenuAdmin: RootAdminConfig = {
   },
 };
 
+const rootSlotsAdmin = {
+  components: {
+    afterDashboard: ['@/components/DashboardFooter'],
+    beforeDashboard: ['@/components/DashboardIntro'],
+    header: ['@/components/Banner', { path: '@/components/Notice', clientProps: { tone: 'info' } }],
+  },
+} satisfies RootAdminConfig;
+
+expectTypeOf(rootSlotsAdmin).toMatchTypeOf<RootAdminConfig>();
+
+export const misspelledRootSlotsAdmin: RootAdminConfig = {
+  components: {
+    // @ts-expect-error Unknown root admin component slots are rejected.
+    headers: ['@/components/Banner'],
+  },
+};
+
 expectTypeOf<RootAdminConfig['autoRefresh']>().toEqualTypeOf<boolean | undefined>();
 
 expectTypeOf<RootAdminConfig['autoLogin']>().toEqualTypeOf<

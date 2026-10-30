@@ -215,7 +215,7 @@ The following options are available:
 | --- | --- | --- | --- |
 | `components` | `CollectionAdminComponents` | — | Swap in your own React components for this collection. [More details](#custom-components). |
 | `custom` | `Record<string, any>` | `{}` | Your own data, sent to the admin panel's client config. |
-| `description` | `string \| Record<string, string> \| (({ t }) => string)` | — | Text shown below the collection label in the List View. It's also used as the JSDoc comment on the generated type. Use `components.Description` to render a component instead. |
+| `description` | `string \| Record<string, string> \| (({ t }) => string)` | — | Text shown below the collection label in the List View and on the document edit page. It's also used as the JSDoc comment on the generated type. Use `components.Description` to render a component instead. |
 | `disableCopyToLocale` | `boolean` | `false` | Hides the **Copy to Locale** button in the Edit View. Only applies when localization is on. |
 | `enableRichTextLink` | `boolean` | `true` | Lets Rich Text links point to documents in this collection. |
 | `enableRichTextRelationship` | `boolean` | `true` | Lets Rich Text relationship blocks reference documents in this collection. |
@@ -460,7 +460,7 @@ Document view configs do not support `exact`; custom `path` values use document-
 | `Pill` | `FrogBotComponent` | — | Adds a component beside the tab label. |
 | `label` | `string \| ({ t }) => string` | — | Sets the tab label. |
 | `href` | `string \| function` | — | Sets or computes the tab destination. |
-| `condition` | `function` | — | Returns whether the tab should be shown for the current request and permissions. |
+| `condition` | `function` | — | Returns whether the tab should be shown for the current request and permissions. Receives `req` with `req.frogbot`. |
 | `isActive` | `boolean \| ({ href }) => boolean` | — | Controls whether the tab is active. |
 | `newTab` | `boolean` | `false` | Opens the destination in a new browser tab. |
 | `order` | `number` | — | Sets the tab's render order. Increments of `100` are recommended. |
