@@ -90,6 +90,25 @@ describe('API keys collection', () => {
     expect(condition?.({}, { revokedAt: '2026-08-02T00:00:00.000Z' }, {} as never)).toBe(true);
   });
 
+  it('puts system-written fields in the sidebar and keeps name in the main column', async () => {
+    const config = makeConfig();
+    config.ai = { providers: { openai: { apiKey: 'test' } } };
+    const result = await apiKeysPlugin()(config);
+    const collection = result.collections.find((item) => item.slug === 'api-keys')!;
+    const admin = (name: string) => {
+      const field = collection.fields.find((item) => 'name' in item && item.name === name);
+
+      return field && 'admin' in field ? field.admin : undefined;
+    };
+
+    for (const name of ['owner', 'prefix', 'lastUsedAt', 'revokedAt', 'totalCostUSD']) {
+      expect(admin(name)).toMatchObject({ position: 'sidebar' });
+    }
+
+    expect(admin('revokedAt')?.condition).toBeTypeOf('function');
+    expect(admin('name')?.position).toBeUndefined();
+  });
+
   it('mints multiple keys while storing only hashes', async () => {
     const collection = await getCollection();
     const create = vi

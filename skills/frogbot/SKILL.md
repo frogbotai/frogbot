@@ -20,31 +20,31 @@ Use FrogBot names, imports, generated types, and request APIs. Check the install
 
 Read the smallest relevant reference before editing:
 
-| Task                                                        | Reference                                                          |
-| ----------------------------------------------------------- | ------------------------------------------------------------------ |
-| Define auth, upload, draft, preview, or managed collections | [COLLECTIONS.md](reference/COLLECTIONS.md)                         |
-| Configure fields, recursive structures, slugs, or rich text | [FIELDS.md](reference/FIELDS.md)                                   |
-| Inspect or traverse field configuration safely              | [FIELD-TYPE-GUARDS.md](reference/FIELD-TYPE-GUARDS.md)             |
-| Add collection or field lifecycle behavior                  | [HOOKS.md](reference/HOOKS.md)                                     |
-| Define collection or field permissions                      | [ACCESS-CONTROL.md](reference/ACCESS-CONTROL.md)                   |
-| Build scoped, role-aware, or reusable permissions           | [ACCESS-CONTROL-ADVANCED.md](reference/ACCESS-CONTROL-ADVANCED.md) |
-| Query through Local, REST, or GraphQL APIs                  | [QUERIES.md](reference/QUERIES.md)                                 |
-| Add root or collection HTTP routes                          | [ENDPOINTS.md](reference/ENDPOINTS.md)                             |
-| Configure database, storage, or email services              | [ADAPTERS.md](reference/ADAPTERS.md)                               |
-| Configure auth, custom admin UI, preview, or localization   | [ADVANCED.md](reference/ADVANCED.md)                               |
-| Author a config-transforming plugin                         | [PLUGIN-DEVELOPMENT.md](reference/PLUGIN-DEVELOPMENT.md)           |
-| Configure and run agents or runtime skills                  | [AGENTS.md](reference/AGENTS.md)                                   |
-| Define and register agent tools                             | [TOOLS.md](reference/TOOLS.md)                                     |
-| Configure AI providers or call model operations             | [AI.md](reference/AI.md)                                           |
-| Render chat in React                                        | [CHAT-UI.md](reference/CHAT-UI.md)                                 |
-| Use or author pieces, actions, and triggers                 | [PIECES.md](reference/PIECES.md)                                   |
-| Store user credentials or configure OAuth flows             | [CONNECTIONS.md](reference/CONNECTIONS.md)                         |
-| Queue tasks, run workflows, or wait for resumption          | [JOBS.md](reference/JOBS.md)                                       |
-| Store expiring values or coordinate with locks              | [KV.md](reference/KV.md)                                           |
-| Expose operations to MCP clients, or call MCP servers       | [MCP.md](reference/MCP.md)                                         |
-| Run or embed the AI gateway                                 | [GATEWAY.md](reference/GATEWAY.md)                                 |
-| Configure roles or API keys                                 | [PLUGINS-ROLES-KEYS.md](reference/PLUGINS-ROLES-KEYS.md)           |
-| Parse typed server environment variables                    | [ENV.md](reference/ENV.md)                                         |
+| Task                                                                          | Reference                                                          |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Define auth, upload, draft, preview, or managed collections                   | [COLLECTIONS.md](reference/COLLECTIONS.md)                         |
+| Configure fields, edit page layout, recursive structures, slugs, or rich text | [FIELDS.md](reference/FIELDS.md)                                   |
+| Inspect or traverse field configuration safely                                | [FIELD-TYPE-GUARDS.md](reference/FIELD-TYPE-GUARDS.md)             |
+| Add collection or field lifecycle behavior                                    | [HOOKS.md](reference/HOOKS.md)                                     |
+| Define collection or field permissions                                        | [ACCESS-CONTROL.md](reference/ACCESS-CONTROL.md)                   |
+| Build scoped, role-aware, or reusable permissions                             | [ACCESS-CONTROL-ADVANCED.md](reference/ACCESS-CONTROL-ADVANCED.md) |
+| Query through Local, REST, or GraphQL APIs                                    | [QUERIES.md](reference/QUERIES.md)                                 |
+| Add root or collection HTTP routes                                            | [ENDPOINTS.md](reference/ENDPOINTS.md)                             |
+| Configure database, storage, or email services                                | [ADAPTERS.md](reference/ADAPTERS.md)                               |
+| Configure auth, custom admin UI, preview, or localization                     | [ADVANCED.md](reference/ADVANCED.md)                               |
+| Author a config-transforming plugin                                           | [PLUGIN-DEVELOPMENT.md](reference/PLUGIN-DEVELOPMENT.md)           |
+| Configure and run agents or runtime skills                                    | [AGENTS.md](reference/AGENTS.md)                                   |
+| Define and register agent tools                                               | [TOOLS.md](reference/TOOLS.md)                                     |
+| Configure AI providers or call model operations                               | [AI.md](reference/AI.md)                                           |
+| Render chat in React                                                          | [CHAT-UI.md](reference/CHAT-UI.md)                                 |
+| Use or author pieces, actions, and triggers                                   | [PIECES.md](reference/PIECES.md)                                   |
+| Store user credentials or configure OAuth flows                               | [CONNECTIONS.md](reference/CONNECTIONS.md)                         |
+| Queue tasks, run workflows, or wait for resumption                            | [JOBS.md](reference/JOBS.md)                                       |
+| Store expiring values or coordinate with locks                                | [KV.md](reference/KV.md)                                           |
+| Expose operations to MCP clients, or call MCP servers                         | [MCP.md](reference/MCP.md)                                         |
+| Run or embed the AI gateway                                                   | [GATEWAY.md](reference/GATEWAY.md)                                 |
+| Configure roles or API keys                                                   | [PLUGINS-ROLES-KEYS.md](reference/PLUGINS-ROLES-KEYS.md)           |
+| Parse typed server environment variables                                      | [ENV.md](reference/ENV.md)                                         |
 
 ## Quick Start
 

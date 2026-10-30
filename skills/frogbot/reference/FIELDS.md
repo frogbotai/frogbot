@@ -245,6 +245,41 @@ export const conditionalCollections: CollectionConfig[] = [Media, FeaturePages];
 
 Register these collections in the root config. Conditions control form visibility, not API permissions. Use field access callbacks, whose context includes `req.user`, to protect reads and writes.
 
+## Edit page layout
+
+Four rules give a collection a good edit page without custom components:
+
+1. Editable fields go in the main column, in the order a user works through them, the setting changed most often first.
+2. Facts the system writes and users can't edit, such as owners, IDs and prefixes, dates, usage and cost, go in `admin.position: 'sidebar'`. A field that is only `readOnly` because the app locked its content stays in the main column.
+3. Use a `row` only for two or three short, related fields. Don't special-case phones: at 1024px and narrower the admin stacks rows into one column and moves the sidebar below the main fields.
+4. Destructive actions, such as revoke, rotate and delete, go in the list's row actions, not on the edit page as fields.
+
+The API keys collection follows them: the settings in the main column, the facts in the sidebar.
+
+```ts
+import type { CollectionConfig } from 'frogbot';
+
+export const ApiKeys: CollectionConfig = {
+  slug: 'api-keys',
+  fields: [
+    { name: 'name', type: 'text', required: true },
+    { name: 'monthlyCap', type: 'number', min: 0 },
+    {
+      name: 'prefix',
+      type: 'text',
+      access: { update: () => false },
+      admin: { readOnly: true, position: 'sidebar' },
+    },
+    {
+      name: 'lastUsedAt',
+      type: 'date',
+      access: { update: () => false },
+      admin: { readOnly: true, position: 'sidebar' },
+    },
+  ],
+};
+```
+
 ## Virtual fields
 
 Use `virtual: true` with an `afterRead` field hook for a computed value, or a relationship path for a linked value. Neither creates a stored copy. The `users` collection below must define the `name` field referenced by `author.name`.

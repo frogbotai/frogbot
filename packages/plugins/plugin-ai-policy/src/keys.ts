@@ -157,7 +157,7 @@ export function createKeyLimitFields(options: KeyLimitsOptions): Field[] {
       label: 'Monthly Spend (USD)',
       defaultValue: 0,
       access: { update: () => false },
-      admin: { readOnly: true },
+      admin: { readOnly: true, position: 'sidebar' },
       hooks: {
         beforeChange: [
           ({ operation, req, value }) =>

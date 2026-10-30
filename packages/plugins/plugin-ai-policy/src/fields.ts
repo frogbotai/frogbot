@@ -20,7 +20,7 @@ export function createPolicyFields(models: string[]): Field[] {
       label: 'Monthly Spend (USD)',
       defaultValue: 0,
       access: { update: () => false },
-      admin: { readOnly: true },
+      admin: { readOnly: true, position: 'sidebar' },
     }),
   ];
 }

@@ -119,8 +119,10 @@ describe('aiPolicyPlugin key limits', () => {
       label: 'Monthly Cap (USD)',
     });
     expect(field(result, 'api-keys', 'spendThisPeriodUSD')).toMatchObject({
-      admin: { readOnly: true },
+      admin: { readOnly: true, position: 'sidebar' },
     });
+    expect(field(result, 'api-keys', 'models')?.admin?.position).toBeUndefined();
+    expect(field(result, 'api-keys', 'monthlyBudget')?.admin?.position).toBeUndefined();
 
     const list = keys?.admin?.views?.find((view) => view.type === 'list') as
       { defaultFields: string[] } | undefined;
