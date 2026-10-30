@@ -1,8 +1,9 @@
 import type { ModelCatalogEntry } from '@frogbotai/gateway';
 import { canonicalizeModelId, DEFAULT_MODEL_CATALOG, providerKeyEnvVar } from '@frogbotai/gateway';
-import type { AIConfig, FrogBotConfig, ModelId, OnInit, RouterConfig } from 'frogbot';
+import type { AIConfig, FrogBotConfig, ModelId, RouterConfig } from 'frogbot';
 
 import type { DojoEnv } from './env.js';
+import { withWarnings } from './onInit.js';
 
 type CustomProviderEntry = Extract<
   NonNullable<AIConfig['providers'][string]>,
@@ -102,12 +103,6 @@ function catalogModels({ provider, models }: KeylessProvider): ModelCatalogEntry
   );
 }
 
-function onInitList(onInit: FrogBotConfig['onInit']): OnInit[] {
-  if (onInit === undefined) return [];
-
-  return Array.isArray(onInit) ? onInit : [onInit];
-}
-
 /**
  * Routes keyless built-in AI providers through Dojo's gateway as one `dojo` provider, keeping
  * their old model IDs as routers. Leaves `ai` unchanged when it is unset or when any provider
@@ -147,7 +142,7 @@ export function withDojoAI(config: FrogBotConfig, env: DojoEnv): FrogBotConfig {
     ...(dropSpeech ? [SPEECH_WARNING] : []),
   ];
 
-  return {
+  const routed: FrogBotConfig = {
     ...config,
     ai: {
       ...rest,
@@ -166,13 +161,7 @@ export function withDojoAI(config: FrogBotConfig, env: DojoEnv): FrogBotConfig {
       ...(speechModel !== undefined && !dropSpeech && { speechModel }),
       ...(speechVoice !== undefined && !dropSpeech && { speechVoice }),
     },
-    ...(warnings.length > 0 && {
-      onInit: [
-        ...onInitList(config.onInit),
-        (frogbot) => {
-          for (const warning of warnings) frogbot.logger.warn(warning);
-        },
-      ],
-    }),
   };
+
+  return withWarnings(routed, warnings);
 }

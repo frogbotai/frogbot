@@ -45,7 +45,7 @@ const { buildConfig } = await import('../../../packages/frogbot/src/config/build
 const { createAIGateway } = await import('../../../packages/frogbot/src/ai/init.js');
 const { dojo } = await import('../../../packages/plugins/plugin-dojo/src/index.js');
 
-const ENV = {
+const REQUIRED_ENV = {
   DOJO_R2_ENDPOINT: 'https://account.r2.cloudflarestorage.com',
   DOJO_R2_BUCKET: 'app-bucket',
   DOJO_R2_ACCESS_KEY_ID: 'r2-key',
@@ -53,6 +53,13 @@ const ENV = {
   DOJO_AI_API_KEY: 'fb_router-key',
   DOJO_AI_BASE_URL: 'https://dojo.example/api/v1',
   DOJO_JOBS_SECRET: 'jobs-secret',
+};
+
+const ENV = {
+  ...REQUIRED_ENV,
+  DOJO_OAUTH_CLIENT_ID: '42',
+  DOJO_OAUTH_CLIENT_SECRET: 'oauth-secret',
+  DOJO_URL: 'https://dojo.example',
 };
 
 const Users: CollectionConfig = { slug: 'users', auth: true, fields: [] };
@@ -72,6 +79,8 @@ const template = (overrides: Partial<FrogBotConfig> = {}): FrogBotConfig => ({
 });
 
 const apply = (config: FrogBotConfig) => dojo()(config) as FrogBotConfig;
+
+const unsignedDojo = () => dojo({ signIn: false });
 
 function prefixDefault(payloadConfig: unknown, slug: string): unknown {
   const { collections } = payloadConfig as {
@@ -96,9 +105,13 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-const badgeDependency = {
+const dojoDependencies = {
   '@frogbotai/plugin-dojo/client#DojoBadge': {
     path: '@frogbotai/plugin-dojo/client#DojoBadge',
+    type: 'component',
+  },
+  '@frogbotai/ui/admin/rsc#SignInButtons': {
+    path: '@frogbotai/ui/admin/rsc#SignInButtons',
     type: 'component',
   },
 };
@@ -118,7 +131,7 @@ describe('dojo() outside Dojo', () => {
 
     expect(apply(config)).toEqual({
       ...template({ collections: [Users, Files, Media] }),
-      admin: { dependencies: badgeDependency },
+      admin: { dependencies: dojoDependencies },
       cli: { commands: dojoCommands },
     });
   });
@@ -128,12 +141,12 @@ describe('dojo() outside Dojo', () => {
 
     expect(apply(template())).toEqual({
       ...template(),
-      admin: { dependencies: badgeDependency },
+      admin: { dependencies: dojoDependencies },
       cli: { commands: dojoCommands },
     });
   });
 
-  it.each(Object.keys(ENV))('names %s when it is missing on Dojo', (name) => {
+  it.each(Object.keys(REQUIRED_ENV))('names %s when it is missing on Dojo', (name) => {
     vi.stubEnv(name, undefined);
 
     expect(() => apply(template())).toThrow(`[plugin-dojo] DOJO=1 but ${name} is not set.`);
@@ -165,7 +178,7 @@ describe('dojo() storage', () => {
     });
 
     const sanitized = await buildConfig(
-      template({ collections: [Users, Files, Chats], plugins: [addMedia, dojo()] }),
+      template({ collections: [Users, Files, Chats], plugins: [addMedia, unsignedDojo()] }),
     );
 
     const payloadConfig = await sanitized._internal.payloadConfig;
@@ -189,7 +202,7 @@ describe('dojo() storage', () => {
       },
     });
 
-    const sanitized = await buildConfig(template({ plugins: [dojo(), addMedia()] }));
+    const sanitized = await buildConfig(template({ plugins: [unsignedDojo(), addMedia()] }));
 
     expect(providersSeen).toEqual([['openai']]);
     expect(prefixDefault(await sanitized._internal.payloadConfig, 'media')).toBe('media');
@@ -279,7 +292,7 @@ describe('dojo() AI', () => {
     expect(ai?.routers?.['openai/gpt-5.4-mini']).toEqual({ model: 'dojo/openai/gpt-5.4-mini' });
     expect(ai?.defaultModel).toBe('dojo/openai/gpt-5.4-mini');
 
-    const sanitized = await buildConfig(template({ plugins: [dojo()] }));
+    const sanitized = await buildConfig(template({ plugins: [unsignedDojo()] }));
 
     expect(sanitized.ai?.defaultModel).toBe('dojo/openai/gpt-5.4-mini');
     expect(resolveModel('openai/gpt-5.4-mini', sanitized.ai!)).toBe('dojo/openai/gpt-5.4-mini');
@@ -317,7 +330,7 @@ describe('dojo() AI', () => {
           transcriptionModel: 'openai/whisper-1',
           providers: { openai: true },
         },
-        plugins: [dojo()],
+        plugins: [unsignedDojo()],
       }),
     );
 
@@ -347,7 +360,7 @@ describe('dojo() AI', () => {
           speechVoice: 'nova',
           providers: { mistral: true },
         },
-        plugins: [dojo()],
+        plugins: [unsignedDojo()],
       }),
     );
 
@@ -452,12 +465,12 @@ describe('dojo() badge', () => {
     const applied = apply(template({ admin: { components: { providers: [own] } } }));
 
     expect(providers(applied)).toEqual([own]);
-    expect((applied.admin as { dependencies?: unknown }).dependencies).toEqual(badgeDependency);
+    expect((applied.admin as { dependencies?: unknown }).dependencies).toEqual(dojoDependencies);
   });
 
   it('lists the badge for the import map too on Dojo', () => {
     expect((apply(template()).admin as { dependencies?: unknown }).dependencies).toEqual(
-      badgeDependency,
+      dojoDependencies,
     );
   });
 
@@ -469,7 +482,7 @@ describe('dojo() badge', () => {
 
     expect((apply(template({ admin })).admin as { dependencies?: unknown }).dependencies).toEqual({
       ...theirs,
-      ...badgeDependency,
+      ...dojoDependencies,
     });
   });
 
@@ -477,11 +490,15 @@ describe('dojo() badge', () => {
     const twice = apply(apply(template()));
 
     expect(providers(twice)).toEqual([badge]);
-    expect((twice.admin as { dependencies?: unknown }).dependencies).toEqual(badgeDependency);
+    expect((twice.admin as { dependencies?: unknown }).dependencies).toEqual(dojoDependencies);
   });
 });
 
 describe('dojo() as the platform plugin', () => {
+  beforeEach(() => {
+    vi.stubEnv('DOJO_OAUTH_CLIENT_ID', undefined);
+  });
+
   it('runs as the platform plugin, after the app plugins, from its default export', async () => {
     const { default: platformPlugin } =
       await import('../../../packages/plugins/plugin-dojo/src/index.js');

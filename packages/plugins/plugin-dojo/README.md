@@ -17,7 +17,7 @@ Dojo adds this plugin when it builds an app, after the app's own plugins, by set
 
 ## What it changes
 
-Apart from the commands and the badge's import map entry, the plugin does nothing unless `DOJO=1`. On Dojo it reads these variables, and boot fails naming any that is missing:
+Apart from the commands and the import map entries for the badge and the sign-in buttons, the plugin does nothing unless `DOJO=1`. On Dojo it reads these variables, and boot fails naming any that is missing:
 
 | Variable                    | Used for                         |
 | --------------------------- | -------------------------------- |
@@ -32,4 +32,5 @@ Apart from the commands and the badge's import map entry, the plugin does nothin
 - **Storage.** When the app sets no `storage`, every upload collection is stored in R2 under its slug (`files/<id>/<filename>`). Files stay private and are served through the app, so its access rules apply.
 - **AI.** When every provider in `ai.providers` is a built-in one with no key, they are replaced by one `dojo` provider that calls Dojo's gateway. Old model IDs such as `openai/gpt-5.4-mini` keep working. Chat, embeddings and images work through the gateway; transcription, speech and video need your own key. An app with no `ai` block, or with any provider key of its own, is left unchanged.
 - **Jobs.** Dojo can run due jobs with `Authorization: Bearer <DOJO_JOBS_SECRET>`. Everyone else gets the app's own `jobs.access.run`.
+- **Sign-in.** Adds "Continue with Dojo" (method `dojo`) after the user collection's own `auth.signIn` methods: OAuth with PKCE against Dojo, using `DOJO_OAUTH_CLIENT_ID`, `DOJO_OAUTH_CLIENT_SECRET` and `DOJO_URL`. New accounts follow the collection's `access.create`. When one of those variables is missing, or core would refuse the method, it adds nothing and logs `[plugin-dojo] Sign in with Dojo is off for '<slug>': <reason>.` at start. `dojo({ signIn: false })` turns it off. Even without `DOJO=1`, the plugin lists `@frogbotai/ui/admin/rsc#SignInButtons` in `admin.dependencies`, for the same reason as the badge.
 - **Badge.** Every FrogBot page, login included, gets a small "Made with FrogBot · Share your own" pill in the bottom-left corner, linking to frogbot.ai with the app's slug as `utm_content`. It's added after the app's own `admin.components.providers`, renders only in the browser after the page has loaded, and makes no request. It stays hidden on collection lists, where it would cover the pagination, and beside the chat input when the window is too narrow. Visitors can close it for the rest of their browser session. Even without `DOJO=1`, the plugin lists the badge in `admin.dependencies`, because Dojo generates the import map at build time, when `DOJO=1` isn't set.
