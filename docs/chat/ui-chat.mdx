@@ -56,6 +56,7 @@ Chat renders no sidebar by default because the FrogBot admin navigation already 
 | `disabledContent` | `ReactNode` | Nothing | Shown when chat persistence is disabled on the server. |
 | `greeting` | `ComponentType<GreetingProps> \| false` | `Greeting` | Component for the empty state. It receives `avatar`, `logo`, `name`, and `userName`. `false` shows nothing. |
 | `logo` | `ReactNode` | — | Passed to the greeting; shown when the agent has no avatar. |
+| `icon` | `ReactNode` | The FrogBot favicon | The logo that pulses below the thread while the agent works, when the agent has no avatar. The admin chat passes `admin.components.graphics.Icon`. The row sizes it to 28px. |
 | `userName` | `string` | — | Passed to the greeting, which appends it to the time-of-day greeting. |
 | `loadingContent` | `ReactNode` | Nothing | Shown while `ChatProvider` loads the manifest. |
 | `headerSlot` | `ReactNode` | — | Content above the messages. |

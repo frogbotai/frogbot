@@ -56,6 +56,7 @@ export type ChatViewClientProps = {
   documentPath: string;
   initialChat?: ChatDocument;
   initialMessages: UIMessage[];
+  icon?: ReactNode;
   initialSelection?: ChatViewSelection;
   logo?: ReactNode;
   toolRenderersByAgent?: Record<string, readonly ToolRenderer[]>;
@@ -78,6 +79,7 @@ export function ChatViewClient({
   initialChat,
   initialMessages,
   initialSelection,
+  icon,
   logo,
   toolRenderersByAgent = {},
   userName,
@@ -159,6 +161,7 @@ export function ChatViewClient({
           ChatComponent={ChatComponent}
           GreetingComponent={GreetingComponent}
           greetingProps={greetingProps}
+          icon={icon}
           logo={logo}
           selectedAgent={selectedAgent}
           setSelectedAgent={setSelectedAgent}
@@ -249,6 +252,7 @@ function ChatViewInner({
   initialChat,
   initialMessages,
   initialSelection,
+  icon,
   logo,
   onChatIdChange,
   selectedAgent,
@@ -422,6 +426,7 @@ function ChatViewInner({
       {...(ChatGreeting ? { greeting: ChatGreeting } : {})}
       {...(initialChat === undefined ? {} : { initialChat })}
       initialMessages={initialMessages}
+      icon={icon}
       logo={logo}
       errorContent={false}
       onError={(error) => toast.error(error.message)}

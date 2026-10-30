@@ -1,0 +1,63 @@
+@layer frogbot {
+  .fb-working {
+    display: flex;
+    height: 2.5rem;
+    align-items: center;
+    padding-block: 0.25rem;
+  }
+
+  .fb-working__logo {
+    display: flex;
+    width: 1.75rem;
+    height: 1.75rem;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: 9999px;
+    visibility: hidden;
+    animation: none;
+  }
+
+  .fb-working__logo > svg,
+  .fb-working__logo > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .fb-working[data-active] .fb-working__logo {
+    visibility: visible;
+    animation: fb-working-pulse 1.6s ease-in-out infinite;
+  }
+
+  .fb-working__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @keyframes fb-working-pulse {
+    0%,
+    100% {
+      transform: scale(0.88);
+      opacity: 0.55;
+    }
+
+    50% {
+      transform: scale(1.14);
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fb-working[data-active] .fb-working__logo {
+      animation: none;
+    }
+  }
+}

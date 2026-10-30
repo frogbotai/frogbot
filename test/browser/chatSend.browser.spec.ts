@@ -161,6 +161,53 @@ test('the jump button shows and hides without a fade under reduced motion', asyn
   await expect(page.locator('.fb-message-list__jump')).toHaveCSS('transition-property', 'none');
 });
 
+test('the working logo pulses below the thread for the whole run and keeps its row when idle', async ({
+  page,
+}) => {
+  await openChat(page, 12);
+  await settled(page);
+
+  const working = page.locator('.fb-working');
+  const logo = working.locator('.fb-working__logo');
+  const idle = await box(working);
+
+  expect(idle.height).toBeGreaterThan(24);
+  await expect(logo).toHaveCSS('visibility', 'hidden');
+  await expect(logo).toHaveCSS('animation-name', 'none');
+
+  const release = await holdSend(page);
+
+  await send(page, 'A question that keeps the agent working');
+  await expect(logo).toHaveCSS('visibility', 'visible');
+  await expect(logo).toHaveCSS('animation-name', 'fb-working-pulse');
+  await expect(logo).toHaveCSS('animation-duration', '1.6s');
+  expect((await box(working)).height).toBe(idle.height);
+
+  const size = await box(logo.locator('svg'));
+
+  expect(Math.round(size.width / 0.88)).toBeLessThanOrEqual(32);
+
+  release(4);
+  await expect(content(page)).toContainText('Reply line 4.');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await expect(logo).toHaveCSS('visibility', 'hidden');
+  await expect(logo).toHaveCSS('animation-name', 'none');
+  await expect(working).toHaveAttribute('aria-hidden', 'true');
+});
+
+test('the working logo stays still under reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openChat(page, 12);
+  await settled(page);
+  await holdSend(page);
+  await send(page, 'A question under reduced motion');
+
+  const logo = page.locator('.fb-working__logo');
+
+  await expect(logo).toHaveCSS('visibility', 'visible');
+  await expect(logo).toHaveCSS('animation-name', 'none');
+});
+
 test('opening a chat lands at the bottom on the first scroll, with no animation', async ({
   page,
 }) => {
