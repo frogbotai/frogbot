@@ -379,7 +379,7 @@ describe('ChatViewClient', () => {
 
     renderChatView();
 
-    expect((await trigger()).textContent).toBe('gpt-5 · Default');
+    expect((await trigger()).textContent).toBe('gpt-5 Default');
   });
 
   it('hides the model selector for a single-model agent without reasoning levels', async () => {
@@ -440,7 +440,7 @@ describe('ChatViewClient', () => {
 
     renderChatView();
 
-    expect((await trigger()).textContent).toBe('opus · Max · 32k');
+    expect((await trigger()).textContent).toBe('opus Max · 32k');
     expect(lastChatProps()).toMatchObject({ model: 'anthropic/opus', reasoning: 'max' });
   });
 
@@ -457,7 +457,7 @@ describe('ChatViewClient', () => {
 
     await chooseModel('opus');
 
-    expect((await trigger()).textContent).toBe('opus · Max · 32k');
+    expect((await trigger()).textContent).toBe('opus Max · 32k');
     expect(lastChatProps()).toMatchObject({ model: 'anthropic/opus', reasoning: 'max' });
   });
 
@@ -474,7 +474,7 @@ describe('ChatViewClient', () => {
 
     await chooseModel('opus');
 
-    expect((await trigger()).textContent).toBe('opus · Default');
+    expect((await trigger()).textContent).toBe('opus Default');
     expect(lastChatProps().reasoning).toBeUndefined();
   });
 
@@ -489,7 +489,7 @@ describe('ChatViewClient', () => {
 
     renderChatView();
 
-    expect((await trigger()).textContent).toBe('gpt-5 · Default');
+    expect((await trigger()).textContent).toBe('gpt-5 Default');
     expect(lastChatProps()).toMatchObject({ model: 'openai/gpt-5' });
     expect(lastChatProps().reasoning).toBeUndefined();
   });
@@ -552,7 +552,7 @@ describe('ChatViewClient', () => {
 
     renderChatView();
 
-    expect((await trigger()).textContent).toBe('gpt-5 · Default');
+    expect((await trigger()).textContent).toBe('gpt-5 Default');
     expect(lastChatProps()).toMatchObject({ model: 'openai/gpt-5' });
   });
 
@@ -562,7 +562,7 @@ describe('ChatViewClient', () => {
 
     renderChatView();
 
-    expect((await trigger()).textContent).toBe('opus · Default');
+    expect((await trigger()).textContent).toBe('opus Default');
   });
 
   it('starts an existing chat at its latest message selection before preferences', async () => {
@@ -579,7 +579,7 @@ describe('ChatViewClient', () => {
       initialSelection: { model: 'anthropic/opus', reasoning: 'high' },
     });
 
-    expect((await trigger()).textContent).toBe('opus · High · 16k');
+    expect((await trigger()).textContent).toBe('opus High · 16k');
     expect(lastChatProps()).toMatchObject({ model: 'anthropic/opus', reasoning: 'high' });
   });
 
@@ -594,7 +594,7 @@ describe('ChatViewClient', () => {
 
     renderChatView({ chatId: 'chat-1', initialSelection: { model: 'openai/gpt-5' } });
 
-    expect((await trigger()).textContent).toBe('gpt-5 · Default');
+    expect((await trigger()).textContent).toBe('gpt-5 Default');
     expect(lastChatProps().reasoning).toBeUndefined();
   });
 
@@ -612,7 +612,7 @@ describe('ChatViewClient', () => {
       initialSelection: { model: 'openai/retired', reasoning: 'high' },
     });
 
-    expect((await trigger()).textContent).toBe('opus · Max · 32k');
+    expect((await trigger()).textContent).toBe('opus Max · 32k');
   });
 
   it('uses the default when narrowing general removes the saved preference model', async () => {
@@ -651,7 +651,7 @@ describe('ChatViewClient', () => {
 
     renderChatView({ initialSelection: { model: 'anthropic/opus', reasoning: 'max' } });
 
-    expect((await trigger()).textContent).toBe('gpt-5 · Default');
+    expect((await trigger()).textContent).toBe('gpt-5 Default');
   });
 
   it('navigates to another chat opened from an existing chat', async () => {

@@ -26,7 +26,7 @@
   }
 
   .fb-mic-control__button {
-    padding: 0.375rem;
+    padding: 0.3125rem;
     border: 0;
     border-radius: 9999px;
     color: var(--color-text-secondary);
@@ -53,8 +53,8 @@
   }
 
   .fb-mic-control__icon {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.125rem;
+    height: 1.125rem;
   }
 
   .fb-mic-control__error {

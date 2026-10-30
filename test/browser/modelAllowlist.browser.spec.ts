@@ -56,7 +56,7 @@ test('a restricted user sees only the allowed model already selected and sends o
 }) => {
   const trigger = page.locator('.fb-model-selector__trigger');
 
-  await expect(trigger).toHaveText('thinker · Default');
+  await expect(trigger).toHaveText('thinker Default');
 
   await trigger.click();
   await page.locator('.fb-model-selector__model').click();

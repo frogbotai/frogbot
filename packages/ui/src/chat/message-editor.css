@@ -17,8 +17,8 @@
     background: transparent;
     color: inherit;
     font-family: var(--font-body);
-    font-size: var(--fb-text-base);
-    line-height: var(--fb-text-base--line-height);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
     outline: none;
   }
 

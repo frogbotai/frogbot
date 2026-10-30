@@ -235,7 +235,7 @@ Pass the [adapter](/chat/ui-provider#adapter-options) to add the same actions to
 
 Completed user messages include Copy and Edit actions. Assistant messages include Copy and Branch; Branch needs the adapter's `branchChat` and is hidden without it. Editing uses the composer's editor with its mention chips; Enter sends and Escape cancels. It preserves the other non-text parts, replaces the text and `data-mention` parts, replaces the selected message, removes later responses, and retries the conversation from that point. Branch creates and opens a separate chat containing the conversation through the selected message.
 
-Assistant message text renders at 14px, with compact headings and 13px inline code. User messages and the composer keep the default Markdown sizes, and apps can override the `.fb-markdown__*` classes with unlayered CSS.
+User and assistant message text, the message editor and the composer render at 14px from the `--fb-text-sm` token, with compact headings and 13px inline code. The sizes are in `rem`, so they follow the app's root font size, and apps can override `--fb-text-sm` or the `.fb-markdown__*` classes with unlayered CSS.
 
 Copy writes rendered HTML and original Markdown to the clipboard. Formatting is preserved when pasted into rich-text editors, while plain-text destinations receive the original Markdown.
 

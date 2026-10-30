@@ -3,7 +3,9 @@ import { createRoot } from 'react-dom/client';
 import { Composer } from '../../../../packages/ui/src/chat/composer/composer';
 import { ComposerSelect } from '../../../../packages/ui/src/chat/composer-select';
 import { ModelSelector } from '../../../../packages/ui/src/chat/model-selector';
+import { PageContextButton } from '../../../../packages/ui/src/chat/page-context-button';
 import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
+import { ToolSelector } from '../../../../packages/ui/src/chat/tool-selector';
 
 const noop = () => {};
 
@@ -36,6 +38,14 @@ const startSlot = (
         { value: 'plan', label: 'Plan', icon: 'check-list' },
       ]}
       onChange={noop}
+    />
+    <ToolSelector tools={[{ id: 'search', name: 'Search' }]} selected={[]} onToolsChange={noop} />
+    <PageContextButton
+      addPageContext={() => Promise.resolve()}
+      getOpenTabs={() => Promise.resolve({ success: true, tabs: [] })}
+      isLoading={false}
+      removePageContext={noop}
+      selectedTabIds={new Set()}
     />
   </>
 );
