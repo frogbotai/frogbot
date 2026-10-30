@@ -693,6 +693,66 @@ describe('Chat', () => {
     expect(screen.getByText('Old agent')).toBeTruthy();
   });
 
+  it('keeps every other row’s actions while a reply streams', () => {
+    state.status = 'streaming';
+
+    state.messages = [
+      { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'First' }] },
+      { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'Answer' }] },
+      { id: 'u2', role: 'user', parts: [{ type: 'text', text: 'Second' }] },
+      {
+        id: 'a2',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Stream', state: 'streaming' }],
+      },
+    ];
+
+    const { container } = render(<Chat {...props} />);
+
+    const actions = (id: string) =>
+      container.querySelector(`[data-message-id="${id}"] .fb-message__actions`);
+
+    expect(actions('u1')).not.toBeNull();
+    expect(actions('a1')).not.toBeNull();
+    expect(actions('u2')).not.toBeNull();
+    expect(actions('a2')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
+  });
+
+  it('shows Thinking in the reply’s place until its first part arrives', () => {
+    state.status = 'submitted';
+    state.messages = [message];
+
+    const { container, rerender } = render(<Chat {...props} />);
+
+    const rows = () => [...container.querySelectorAll('.fb-message-list__item')];
+
+    expect(rows()).toHaveLength(2);
+    expect(rows()[1].textContent).toBe('Thinking');
+
+    state.status = 'streaming';
+    state.messages = [message, { id: 'a1', role: 'assistant', parts: [{ type: 'step-start' }] }];
+    rerender(<Chat {...props} />);
+
+    expect(rows()).toHaveLength(2);
+    expect(rows()[1].textContent).toBe('Thinking');
+
+    state.messages = [
+      message,
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [{ type: 'step-start' }, { type: 'text', text: 'Hi', state: 'streaming' }],
+      },
+    ];
+
+    rerender(<Chat {...props} />);
+
+    expect(rows()).toHaveLength(2);
+    expect(screen.queryByText('Thinking')).toBeNull();
+    expect(rows()[1].textContent).toBe('Hi');
+  });
+
   it('stops and renders injected abort and stream error content', () => {
     state.status = 'streaming';
     state.error = new Error('Stream failed');

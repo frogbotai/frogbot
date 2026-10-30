@@ -1,8 +1,17 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { composerInput } from './__helpers/composer';
-import { box, composer, content, jump, openChat, scroller } from './__helpers/dojoChat';
-import { agentSlug } from './fixtures/dojo/shared';
+import {
+  box,
+  composer,
+  content,
+  holdSend,
+  jump,
+  openChat,
+  pinOffset,
+  scroller,
+  send,
+  settled,
+} from './__helpers/dojoChat';
 
 test.use({ viewport: { width: 1280, height: 800 } });
 
@@ -26,58 +35,9 @@ const turn = (page: Page, n: number) =>
     .locator('.fb-message-list__item')
     .nth(2 * n - 2);
 
-const scrollTop = (page: Page) => scroller(page).evaluate((node) => node.scrollTop);
-
-async function settled(page: Page) {
-  let last = Number.NaN;
-
-  await expect
-    .poll(async () => {
-      const now = await scrollTop(page);
-      const still = Math.abs(now - last) < 0.5;
-
-      last = now;
-
-      return still;
-    })
-    .toBe(true);
-
-  return last;
-}
-
 async function openTurns(page: Page) {
   await openChat(page, 12);
   await expect(ticks(page)).toHaveCount(6);
-}
-
-async function holdSend(page: Page) {
-  let release!: (lines: number) => void;
-  const reply = new Promise<number>((resolve) => (release = resolve));
-
-  await page.route(`**/api/agents/${agentSlug}`, async (route) => {
-    if (route.request().method() !== 'POST') return route.continue();
-
-    const lines = await reply;
-    const text = Array.from({ length: lines }, (_, index) => `Reply line ${index + 1}.`).join(
-      '\n\n',
-    );
-
-    const chunks = [
-      { type: 'start' },
-      { type: 'text-start', id: 'text-0' },
-      { type: 'text-delta', id: 'text-0', delta: text },
-      { type: 'text-end', id: 'text-0' },
-      { type: 'finish' },
-    ];
-
-    await route.fulfill({
-      status: 200,
-      headers: { 'content-type': 'text/event-stream', 'x-vercel-ai-ui-message-stream': 'v1' },
-      body: `${chunks.map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`).join('')}data: [DONE]\n\n`,
-    });
-  });
-
-  return release;
 }
 
 type Box = { x: number; y: number; width: number; height: number };
@@ -89,12 +49,6 @@ const top = async (page: Page, n: number) => (await box(turn(page, n))).y;
 
 const fromBottom = (page: Page) =>
   scroller(page).evaluate((node) => node.scrollHeight - node.scrollTop - node.clientHeight);
-
-async function send(page: Page, text: string) {
-  await composerInput(page).fill(text);
-  await composerInput(page).press('Enter');
-  await expect(content(page)).toContainText(text);
-}
 
 test('clicking a tick scrolls its turn to the top of the list', async ({ page }) => {
   await openTurns(page);
@@ -125,24 +79,22 @@ test('the current tick follows the turn on screen', async ({ page }) => {
   await expect(tick(page, 1)).toHaveAttribute('aria-current', 'true');
 });
 
-test('a send after a jump keeps the jumped turn in place', async ({ page }) => {
+test('a send after a jump puts the sent message at the top', async ({ page }) => {
   await openTurns(page);
   await holdSend(page);
   await tick(page, 2).click();
   await settled(page);
-
-  const before = await top(page, 2);
-
   await send(page, 'A follow-up while reading turn two');
   await settled(page);
 
-  expect(Math.abs((await top(page, 2)) - before)).toBeLessThanOrEqual(2);
-  expect(await fromBottom(page)).toBeGreaterThan(48);
-  await expect(tick(page, 2)).toHaveAttribute('aria-current', 'true');
-  await expect(jump(page)).toBeVisible();
+  const view = (await box(scroller(page))).y + (await pinOffset(page));
+
+  expect(Math.abs((await top(page, 7)) - view)).toBeLessThanOrEqual(2);
+  await expect(tick(page, 7)).toHaveAttribute('aria-current', 'true');
+  await expect(jump(page)).toBeHidden();
 });
 
-test('a reply after jumping to the last turn does not re-follow', async ({ page }) => {
+test('a reply after a send from the last turn stays put as it grows', async ({ page }) => {
   await openTurns(page);
 
   const release = await holdSend(page);
@@ -152,14 +104,14 @@ test('a reply after jumping to the last turn does not re-follow', async ({ page 
   await send(page, 'A follow-up while reading the last turn');
   await settled(page);
 
-  const before = await top(page, 6);
+  const before = await top(page, 7);
 
   release(40);
   await expect(content(page)).toContainText('Reply line 40.');
   await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
   await settled(page);
 
-  expect(Math.abs((await top(page, 6)) - before)).toBeLessThanOrEqual(2);
+  expect(Math.abs((await top(page, 7)) - before)).toBeLessThanOrEqual(2);
   expect(await fromBottom(page)).toBeGreaterThan(48);
   await expect(jump(page)).toBeVisible();
 });

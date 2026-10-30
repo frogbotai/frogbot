@@ -908,21 +908,27 @@ function ChatInner({
 
   const defaultRenderMessage: MessageListProps['renderMessage'] = (message) => {
     const text = messageText(message);
-    const defaultActions = !pending ? (
+    const streaming = pending && message.role === 'assistant' && message.id === lastMessage?.id;
+    const defaultActions = !streaming ? (
       <MessageActions
         text={text}
         timestamp={timestampFor(message)}
         timestampPlacement={message.role === 'user' ? 'start' : 'end'}
         onBranch={
-          message.role === 'assistant' && activeChatId !== undefined && adapter.branchChat
+          message.role === 'assistant' &&
+          !pending &&
+          activeChatId !== undefined &&
+          adapter.branchChat
             ? () => branchMessage(message)
             : undefined
         }
         onEdit={
-          message.role === 'user' && !isReadonly ? () => setEditingMessageId(message.id) : undefined
+          message.role === 'user' && !pending && !isReadonly
+            ? () => setEditingMessageId(message.id)
+            : undefined
         }
         readAloud={
-          message.role === 'assistant' && speak && speechText(text)
+          message.role === 'assistant' && !pending && speak && speechText(text)
             ? {
                 active: readAloud.activeId === message.id && readAloud.status !== 'idle',
                 error: readAloud.error?.id === message.id ? readAloud.error.message : undefined,
@@ -1020,6 +1026,7 @@ function ChatInner({
         ) : (
           <MessageList
             messages={chat.messages}
+            pending={pending}
             renderMessage={renderMessage ?? defaultRenderMessage}
           />
         )}

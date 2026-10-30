@@ -13,6 +13,7 @@ import {
 
 import { Popover, PopoverAnchor, PopoverContent } from '../components/popover.js';
 import { speechText } from './speech-text.js';
+import { onUserScroll, prefersReducedMotion } from './user-scroll.js';
 
 export interface MessageScrubberProps {
   messages: UIMessage[];
@@ -20,8 +21,6 @@ export interface MessageScrubberProps {
   pinned: string | null;
   scrollerRef: RefObject<HTMLDivElement | null>;
 }
-
-const scrollKeys = new Set(['ArrowDown', 'ArrowUp', 'End', 'Home', 'PageDown', 'PageUp', ' ']);
 
 const closeDelay = 120;
 
@@ -74,7 +73,7 @@ function remOf(element: Element) {
   return parseFloat(getComputedStyle(element).fontSize) || 16;
 }
 
-function composerHeight(scroller: HTMLElement) {
+export function composerHeight(scroller: HTMLElement) {
   const value = getComputedStyle(scroller).getPropertyValue('--fb-composer-height').trim();
 
   return value.endsWith('px') ? parseFloat(value) : 7 * remOf(document.documentElement);
@@ -171,31 +170,24 @@ export function MessageScrubber({ messages, onPin, pinned, scrollerRef }: Messag
       measure();
     };
 
-    const release = (event: Event) => {
-      if (!live.current.pinned) return;
-
-      if (event.type === 'pointerdown' && event.target !== scroller) return;
-
-      if (event instanceof globalThis.KeyboardEvent && !scrollKeys.has(event.key)) return;
-
-      live.current.onPin(null);
-    };
-
     const observer = new ResizeObserver(sync);
-    const releaseOn = ['wheel', 'touchmove', 'pointerdown', 'keydown'] as const;
 
     observer.observe(scroller);
 
     if (scroller.firstElementChild) observer.observe(scroller.firstElementChild);
 
     scroller.addEventListener('scroll', sync, { passive: true });
-    releaseOn.forEach((type) => scroller.addEventListener(type, release, { passive: true }));
+
+    const stop = onUserScroll(scroller, () => {
+      if (live.current.pinned) live.current.onPin(null);
+    });
+
     sync();
 
     return () => {
       observer.disconnect();
       scroller.removeEventListener('scroll', sync);
-      releaseOn.forEach((type) => scroller.removeEventListener(type, release));
+      stop();
     };
   }, [scrollerRef, users]);
 
@@ -233,12 +225,8 @@ export function MessageScrubber({ messages, onPin, pinned, scrollerRef }: Messag
       scroller.getBoundingClientRect().top -
       remOf(document.documentElement);
 
-    const reduce =
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
     onPin(id);
-    scroller.scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' });
+    scroller.scrollTo({ top, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   };
 
   const show = () => {

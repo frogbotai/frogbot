@@ -298,6 +298,7 @@ const testProjects = [
       'modelChips.browser.spec.ts',
       'channelChat.browser.spec.ts',
       'chatErrors.browser.spec.ts',
+      'chatPin.browser.spec.ts',
       'messagesOverride.browser.spec.ts',
       'breadcrumbs.browser.spec.ts',
       'topBarPhone.browser.spec.ts',
@@ -339,7 +340,7 @@ const testProjects = [
   }),
   project({
     name: 'chat-assets',
-    testMatch: ['chatAssets.browser.spec.ts', ...composerSpecs],
+    testMatch: ['chatAssets.browser.spec.ts', 'chatPin.browser.spec.ts', ...composerSpecs],
   }),
   afterProject('chat-assets', {
     name: 'chat-assets-firefox',
@@ -370,7 +371,9 @@ const testProjects = [
     name: 'dojo',
     testMatch: [
       'chatGutter.browser.spec.ts',
+      'chatPin.browser.spec.ts',
       'chatScrubber.browser.spec.ts',
+      'chatSend.browser.spec.ts',
       'dojoBadge.browser.spec.ts',
     ],
   }),

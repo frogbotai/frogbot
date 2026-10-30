@@ -1,0 +1,36 @@
+@layer frogbot {
+  .fb-thinking {
+    display: inline-block;
+    color: transparent;
+    background-image: linear-gradient(
+      90deg,
+      var(--color-text-secondary) 35%,
+      var(--color-text) 50%,
+      var(--color-text-secondary) 65%
+    );
+    background-size: 300% 100%;
+    background-clip: text;
+    font-size: var(--fb-text-sm);
+    font-weight: 500;
+    line-height: var(--fb-text-sm--line-height);
+    animation: fb-thinking-shimmer 2s linear infinite;
+  }
+
+  @keyframes fb-thinking-shimmer {
+    from {
+      background-position: 100% 0;
+    }
+
+    to {
+      background-position: 0 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fb-thinking {
+      color: var(--color-text-secondary);
+      background-image: none;
+      animation: none;
+    }
+  }
+}
