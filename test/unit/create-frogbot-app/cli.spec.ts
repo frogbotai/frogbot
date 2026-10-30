@@ -71,7 +71,12 @@ function readScaffoldFiles(directory: string): Record<string, string> {
           return [relativePath, JSON.stringify(pkg)];
         }
 
-        return [relativePath, content.replace(/^FROGBOT_SECRET=.*$/m, 'FROGBOT_SECRET=')];
+        return [
+          relativePath,
+          content
+            .replace(/^FROGBOT_SECRET=.*$/m, 'FROGBOT_SECRET=')
+            .replaceAll(`'${path.basename(directory)}'`, "'<project>'"),
+        ];
       }),
   );
 }
