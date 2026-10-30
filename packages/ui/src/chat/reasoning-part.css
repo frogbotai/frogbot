@@ -1,23 +1,51 @@
 @layer frogbot {
-  .fb-reasoning-part {
-    padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--fb-radius-lg);
-    background-color: color-mix(in srgb, var(--color-bg-secondary) 40%, transparent);
-  }
-
   .fb-reasoning-part__summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     color: var(--color-text-secondary);
     font-size: var(--fb-text-sm);
     font-weight: 500;
     line-height: var(--fb-text-sm--line-height);
+    list-style: none;
     cursor: pointer;
   }
 
+  .fb-reasoning-part__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .fb-reasoning-part__summary:hover {
+    color: var(--color-text);
+  }
+
+  .fb-reasoning-part__chevron {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    color: var(--color-icon-secondary);
+    transform: rotate(-90deg);
+    transition: transform 150ms ease;
+  }
+
+  .fb-reasoning-part__chevron:dir(rtl) {
+    transform: rotate(90deg);
+  }
+
+  .fb-reasoning-part[open] .fb-reasoning-part__chevron {
+    transform: none;
+  }
+
   .fb-reasoning-part__content {
-    margin-top: 0.75rem;
+    margin-top: 0.5rem;
     color: var(--color-text-secondary);
     font-size: var(--fb-text-sm);
     line-height: var(--fb-text-sm--line-height);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fb-reasoning-part__chevron {
+      transition: none;
+    }
   }
 }

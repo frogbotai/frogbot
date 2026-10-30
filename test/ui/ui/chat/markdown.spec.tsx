@@ -161,4 +161,43 @@ Paragraph with **strong**, *emphasis*, ~~removed~~, [link](https://example.com),
 
     expect(container.querySelector('br')).not.toBeNull();
   });
+
+  it('keeps finished blocks’ DOM nodes as a reply grows', () => {
+    let text = 'First paragraph.';
+
+    const { container, rerender } = render(<Markdown>{text}</Markdown>);
+
+    const first = container.querySelector('p');
+
+    for (const chunk of ['\n\nSecond', ' paragraph.\n\n- a list', '\n- item\n\n```js\nconst x']) {
+      text += chunk;
+      rerender(<Markdown>{text}</Markdown>);
+    }
+
+    expect(container.querySelector('p')).toBe(first);
+    expect(container.querySelectorAll('p')).toHaveLength(2);
+    expect(container.querySelectorAll('li')).toHaveLength(2);
+    expect(container.textContent).toContain('const x');
+  });
+
+  it('resolves a reference link defined in another block', () => {
+    render(
+      <Markdown>{'See [the docs][docs].\n\nMore text.\n\n[docs]: https://example.com'}</Markdown>,
+    );
+
+    expect(screen.getByRole('link', { name: 'the docs' }).getAttribute('href')).toBe(
+      'https://example.com',
+    );
+  });
+
+  it('renders loose lists and indented continuations as one list', () => {
+    const { container } = render(
+      <Markdown>{'- one\n\n  still one\n\n- two\n\n| A |\n| - |\n| 1 |'}</Markdown>,
+    );
+
+    expect(container.querySelectorAll('ul')).toHaveLength(1);
+    expect(container.querySelectorAll('ul > li')).toHaveLength(2);
+    expect(container.querySelector('li')?.textContent).toContain('still one');
+    expect(container.querySelector('table')).not.toBeNull();
+  });
 });

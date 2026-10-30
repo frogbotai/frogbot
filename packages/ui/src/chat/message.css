@@ -16,10 +16,12 @@
 
   .fb-message__body {
     min-width: 0;
-    max-width: 85%;
+    flex: 1 1 auto;
   }
 
   .fb-message__body--user {
+    max-width: min(82%, 64ch);
+    flex: 0 1 auto;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -35,6 +37,7 @@
 
   .fb-message--editing .fb-message__body--user {
     width: 100%;
+    max-width: none;
     align-items: stretch;
   }
 

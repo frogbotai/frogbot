@@ -1,9 +1,10 @@
-import { Fragment } from 'react';
+import { Fragment, memo, useMemo } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
 
 import { CodeBlock } from './code-block.js';
+import { markdownBlocks } from './markdown-blocks.js';
 
 type MessageRole = 'user' | 'assistant' | 'system';
 
@@ -103,14 +104,40 @@ const createComponents = (role: MessageRole): Components => ({
   td: ({ node: _, ...props }) => <td className="fb-markdown__table-cell" {...props} />,
 });
 
-export function Markdown({ children, role = 'assistant' }: MarkdownProps) {
+const components: Record<MessageRole, Components> = {
+  assistant: createComponents('assistant'),
+  system: createComponents('system'),
+  user: createComponents('user'),
+};
+
+const remarkPlugins = [remarkGfm, remarkBreaks];
+
+const keepUrl = (url: string) => url;
+
+const MarkdownBlock = memo(function MarkdownBlock({
+  children,
+  role,
+}: {
+  children: string;
+  role: MessageRole;
+}) {
   return (
     <ReactMarkdown
-      components={createComponents(role)}
-      remarkPlugins={[remarkGfm, remarkBreaks]}
-      urlTransform={(url) => url}
+      components={components[role]}
+      remarkPlugins={remarkPlugins}
+      urlTransform={keepUrl}
     >
       {children}
     </ReactMarkdown>
   );
+});
+
+export function Markdown({ children, role = 'assistant' }: MarkdownProps) {
+  const blocks = useMemo(() => markdownBlocks(children), [children]);
+
+  return blocks.map((block, index) => (
+    <MarkdownBlock key={index} role={role}>
+      {block}
+    </MarkdownBlock>
+  ));
 }

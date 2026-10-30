@@ -70,29 +70,133 @@ afterEach(() => {
 });
 
 describe('MessageList', () => {
-  it('renders messages and exposes scroll recovery when detached', () => {
-    const { container } = render(
+  it('shows the jump button when the end is out of view, and jumps there at once', () => {
+    const { container } = render(<MessageList messages={thread} />);
+
+    const scroller = stubLayout(container);
+    const button = () => screen.queryByRole('button', { name: 'Jump to latest' });
+
+    expect(screen.getByText('First answer')).toBeTruthy();
+
+    fireEvent.click(button()!);
+
+    expect(scroller.scrollTop).toBe(3000);
+    expect(scroller.scrollTo).not.toHaveBeenCalled();
+    expect(button()).toBeNull();
+
+    const hidden = container.querySelector<HTMLButtonElement>('.fb-message-list__jump')!;
+
+    expect(hidden.getAttribute('aria-hidden')).toBe('true');
+    expect(hidden.tabIndex).toBe(-1);
+    expect(hidden.hasAttribute('data-shown')).toBe(false);
+
+    stubItems(container, { u1: -2800, a1: -2300, u2: -1800, a2: -1300, u3: -800, a3: -300 });
+    fireEvent.scroll(scroller);
+
+    expect(button()).toBeNull();
+
+    stubItems(container);
+    fireEvent.wheel(scroller);
+    fireEvent.scroll(scroller);
+
+    expect(button()?.hasAttribute('data-shown')).toBe(true);
+  });
+
+  it('follows the reply after a jump until the stream ends', () => {
+    const observers: Array<() => void> = [];
+
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          observers.push(callback);
+        }
+
+        disconnect() {}
+        observe() {}
+        unobserve() {}
+      },
+    );
+
+    const { container, rerender } = render(<MessageList messages={thread} pending />);
+
+    const scroller = stubLayout(container);
+    const grow = (height: number) => {
+      Object.defineProperty(scroller, 'scrollHeight', { value: height, configurable: true });
+      act(() => observers.forEach((callback) => callback()));
+    };
+
+    fireEvent.click(screen.getByRole('button', { name: 'Jump to latest' }));
+    stubItems(container, { u1: -2800, a1: -2300, u2: -1800, a2: -1300, u3: -800, a3: -300 });
+    grow(3500);
+
+    expect(scroller.scrollTop).toBe(3500);
+
+    rerender(<MessageList messages={thread} />);
+    grow(4000);
+
+    expect(scroller.scrollTop).toBe(3500);
+
+    vi.unstubAllGlobals();
+  });
+
+  it('opens another chat at the bottom at once, with no animation', () => {
+    const { container, rerender } = render(<MessageList messages={thread} />);
+
+    const scroller = stubLayout(container);
+
+    rerender(
       <MessageList
-        messages={[{ id: '1', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] }]}
+        messages={[
+          { id: 'other', role: 'user', parts: [{ type: 'text', text: 'Other' }] },
+          ...thread,
+        ]}
       />,
     );
 
-    const scroller = container.querySelector('.fb-message-list__scroller') as HTMLDivElement;
+    expect(scroller.scrollTop).toBe(3000);
+    expect(scroller.scrollTo).not.toHaveBeenCalled();
+  });
 
-    Object.defineProperties(scroller, {
-      scrollHeight: { value: 1000 },
-      clientHeight: { value: 200 },
-      scrollTop: { value: 0, writable: true },
-      scrollTo: { value: vi.fn() },
-    });
+  it('scrolls a sent message to the top once and reserves the space below it', () => {
+    const { container, rerender } = render(<MessageList messages={thread} />);
+
+    const scroller = stubLayout(container);
+    const content = container.querySelector<HTMLElement>('.fb-message-list__content')!;
+
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        return { top: this.dataset.messageId === 'u4' ? 3000 : 0, bottom: 3100 } as DOMRect;
+      });
+
+    const sent: UIMessage[] = [
+      ...thread,
+      { id: 'u4', role: 'user', parts: [{ type: 'text', text: 'Next question' }] },
+    ];
+
+    rerender(<MessageList messages={sent} />);
+
+    expect(scroller.scrollTo).toHaveBeenCalledExactlyOnceWith({ top: 3000, behavior: 'smooth' });
+    expect(content.style.minHeight).toBe('3400px');
 
     fireEvent.scroll(scroller);
 
-    expect(screen.getByText('Hello')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Jump to latest' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Jump to latest' }));
+    rerender(
+      <MessageList
+        messages={[
+          ...sent,
+          { id: 'a4', role: 'assistant', parts: [{ type: 'text', text: 'Reply' }] },
+        ]}
+      />,
+    );
 
-    expect(scroller.scrollTo).toHaveBeenCalled();
+    expect(vi.mocked(scroller.scrollTo).mock.calls).toHaveLength(1);
+    expect(content.style.minHeight).toBe('3400px');
+
+    rect.mockRestore();
   });
 
   it('supports consumer-owned message rendering', () => {
