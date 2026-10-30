@@ -37,6 +37,13 @@
     { "action": "shell", "resource": "pnpm test:browser", "effect": "deny" },
     { "action": "shell", "resource": "pnpm run test:browser", "effect": "deny" },
 
+    // Every agent may read anywhere under ~/code (sibling worktrees, frogbot-platform, reference
+    // repos such as ~/code/firmware and ~/code/extension-refs) without asking. Edits outside this
+    // checkout are allowed only under ~/code/frogbot (ticket worktrees and frogbot-platform).
+    { "action": "external_directory", "resource": "~/code/*", "effect": "allow" },
+    { "action": "edit", "resource": "~/code/*", "effect": "deny" },
+    { "action": "edit", "resource": "~/code/frogbot/*", "effect": "allow" },
+
     // Only the primary agents below may read the archive or start subagents.
     { "action": "read", "resource": ".idea/_process/archive/*", "effect": "deny" },
     { "action": "read", "resource": "*/.idea/_process/archive/*", "effect": "deny" },
