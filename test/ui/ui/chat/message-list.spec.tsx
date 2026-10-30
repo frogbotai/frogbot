@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import type { UIMessage } from 'ai';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MessageList } from '../../../../packages/ui/src/chat/message-list';
 import { speechText } from '../../../../packages/ui/src/chat/speech-text';
@@ -63,6 +63,10 @@ const card = () => document.querySelector<HTMLElement>('.fb-message-list__scrubb
 
 beforeEach(() => {
   vi.mocked(speechText).mockClear();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe('MessageList', () => {
@@ -334,5 +338,59 @@ describe('MessageList', () => {
     );
 
     expect(vi.mocked(speechText).mock.calls.flat().join(' ')).not.toContain('Second');
+  });
+
+  it('shows the open turn’s reply as it streams', () => {
+    const { container, rerender } = render(<MessageList messages={thread} />);
+
+    stubLayout(container);
+    act(() => ticks()[0].focus());
+
+    rerender(
+      <MessageList
+        messages={thread.map((message) =>
+          message.id === 'a1'
+            ? { ...message, parts: [{ type: 'text', text: 'First answer, still streaming' }] }
+            : message,
+        )}
+      />,
+    );
+
+    expect(card()?.textContent).toContain('First answer, still streaming');
+  });
+
+  it('returns the card to the focused tick once the pointer leaves the rail and card', () => {
+    vi.useFakeTimers();
+
+    const { container } = render(<MessageList messages={thread} />);
+
+    stubLayout(container);
+
+    const [first, , third] = ticks();
+    const list = first.closest('ol')!;
+
+    act(() => first.focus());
+    fireEvent.pointerEnter(list);
+    fireEvent.pointerEnter(third);
+
+    expect(card()?.textContent).toContain('Third answer');
+
+    fireEvent.pointerLeave(list);
+    fireEvent.pointerEnter(card()!);
+
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(card()?.textContent).toContain('Third answer');
+
+    fireEvent.pointerLeave(card()!);
+
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(card()?.textContent).toContain('First answer');
+    expect(document.activeElement).toBe(first);
   });
 });
