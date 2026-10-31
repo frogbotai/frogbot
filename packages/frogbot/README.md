@@ -4,7 +4,7 @@
 
 <h1 align="center">FrogBot</h1>
 
-<p align="center"><strong>The config-first AI agent framework, built on the Vercel AI SDK.</strong></p>
+<p align="center"><strong>The open-source lego bricks for AI to build and replace SaaS apps.</strong></p>
 
 <p align="center">
   <a href="https://github.com/frogbotai/frogbot/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=flat-square" /></a>
@@ -26,12 +26,14 @@
 
 <hr/>
 
-Define AI agents, tools, providers, and your entire data layer in one typed `frogbot.config.ts` — then boot a production HTTP server with REST APIs for all of it. No routing code, no glue, no SaaS.
+Define AI agents, tools, providers, 40+ integrations, and your entire data layer in one typed `frogbot.config.ts` — then boot a production Admin UI, database, and HTTP server with REST APIs for all of it. No routing code, no glue, no per-seat SaaS tax.
 
 ## Quickstart
 
+Scaffold a full app with the CLI (or add `frogbot` to an existing project):
+
 ```bash
-pnpm add frogbot @frogbotai/db-sqlite zod
+npx create-frogbot-app@latest my-app --ai openai
 ```
 
 ```ts
@@ -50,7 +52,7 @@ export default buildConfig({
   agents: [
     {
       slug: 'assistant',
-      model: 'openai/gpt-4o-mini',
+      model: 'openai/gpt-4.1-mini',
       instructions: 'You are FrogBot, a concise and friendly assistant.',
       access: ({ req }) => !!req.user,
     },
@@ -75,19 +77,22 @@ curl -s http://localhost:3000/api/agents/assistant \
 - Config-first agents with typed [Zod](https://zod.dev) tool schemas
 - Automatic REST endpoints for every agent, with JSON and SSE streaming responses
 - Per-agent access control functions, down to the request level
-- Full data layer: collections, fields, auth, versions, drafts, and hooks
+- Full data layer & Admin UI: collections, fields, auth, versions, drafts, hooks, plus instant Table, Kanban board, and Calendar views
 - An embeddable, fully MIT open-source [AI gateway](https://www.npmjs.com/package/@frogbotai/gateway) routing to OpenAI, Anthropic, Google, and 30+ more providers
+- 40+ native OAuth pieces & chat channels (Slack, Discord, Linear, GitHub, Gmail, Stripe, Notion, Xero, and more)
+- Durable jobs queue, cron schedules, and background workers
 - Single-command type generation (`frogbot generate:types`) for end-to-end type safety
-- Dev mode with config file watching (`frogbot dev`), production mode with `frogbot start`
+- Dev mode with config file watching (`frogbot dev`), production mode with `frogbot start`, and one-command cloud deploy with `npx frogbot share`
 - Swappable [database](https://www.npmjs.com/package/@frogbotai/db-postgres), [file storage](https://www.npmjs.com/package/@frogbotai/storage-s3), and [KV](https://www.npmjs.com/package/@frogbotai/kv-redis) adapters, with [piece-backed email](https://docs.frogbot.ai/email/overview) through [Resend](https://www.npmjs.com/package/@frogbotai/piece-resend)
 
 ## CLI
 
-| Command                  | Description                                  |
-| ------------------------ | -------------------------------------------- |
-| `frogbot dev`            | Boot the server with config file watching    |
-| `frogbot start`          | Boot the server for production               |
-| `frogbot generate:types` | Generate `frogbot-types.ts` from your config |
+| Command                  | Description                                     |
+| ------------------------ | ----------------------------------------------- |
+| `frogbot dev`            | Boot the server with config file watching       |
+| `frogbot start`          | Boot the server for production                  |
+| `frogbot generate:types` | Generate `frogbot-types.ts` from your config    |
+| `frogbot share`          | Deploy your app and data to Dojo in one command |
 
 ## Documentation
 

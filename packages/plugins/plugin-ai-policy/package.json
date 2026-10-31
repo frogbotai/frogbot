@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-ai-policy",
-  "version": "0.37.0",
+  "version": "0.38.0",
   "description": "Per-user model allowlists and monthly AI budgets for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",

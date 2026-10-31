@@ -31,11 +31,9 @@
             "group": "Start here",
             "pages": [
               "index",
-              "getting-started/setup",
-              "getting-started/coding-agent",
               "getting-started/installation",
-              "getting-started/cli",
-              "getting-started/concepts"
+              "getting-started/concepts",
+              "getting-started/cli"
             ]
           },
           {
@@ -268,6 +266,8 @@
     ]
   },
   "redirects": [
+    { "source": "/getting-started/setup", "destination": "/getting-started/installation" },
+    { "source": "/getting-started/coding-agent", "destination": "/getting-started/installation" },
     { "source": "/configuration/admin-navigation", "destination": "/admin/admin-navigation" },
     { "source": "/configuration/collection-board", "destination": "/admin/collection-board" },
     { "source": "/configuration/collection-calendar", "destination": "/admin/collection-calendar" },
