@@ -1,4 +1,5 @@
 import type { ValidationMode } from '../../config/validationContext.js';
+import type { PieceInstance } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { isRecord } from '../../utilities/isRecord.js';
 import { isKnownModelId } from '../catalog.js';
@@ -25,7 +26,23 @@ function usesFileModality(modalities: unknown): boolean {
 
 export type SanitizedAIBase = Omit<SanitizedAIConfig, 'usage'>;
 
-export function sanitizeAI(ai: AIConfig, mode: ValidationMode): SanitizedAIBase {
+/** `ai` with every linked provider configured; listing the piece in `connections` chooses it. */
+export function linkAIProviders(
+  ai: AIConfig | undefined,
+  linked: Readonly<Record<string, PieceInstance>>,
+): AIConfig {
+  const providers: AIConfig['providers'] = { ...ai?.providers };
+
+  for (const name of Object.keys(linked)) providers[name] ??= true;
+
+  return { ...ai, providers };
+}
+
+export function sanitizeAI(
+  ai: AIConfig,
+  mode: ValidationMode,
+  linked: Readonly<Record<string, PieceInstance>> = {},
+): SanitizedAIBase {
   if (!isRecord(ai.providers)) {
     throw new Error('[frogbot] `ai.providers` is required and must be an object.');
   }
@@ -159,6 +176,8 @@ export function sanitizeAI(ai: AIConfig, mode: ValidationMode): SanitizedAIBase 
       continue;
     }
 
+    if (Object.hasOwn(linked, key) && provider.apiKey === undefined) continue;
+
     if (typeof provider.apiKey !== 'string' || !provider.apiKey.trim()) {
       throw new Error(
         `[frogbot] Provider '${key}' requires a non-empty apiKey when configured with an object.`,
@@ -255,6 +274,7 @@ export function sanitizeAI(ai: AIConfig, mode: ValidationMode): SanitizedAIBase 
 
   return {
     providers: ai.providers,
+    ...(Object.keys(linked).length > 0 && { linkedProviders: linked }),
     routers,
     defaultModel: ai.defaultModel,
     smallModel: ai.smallModel,

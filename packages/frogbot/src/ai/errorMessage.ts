@@ -1,7 +1,8 @@
-import { providerKeyEnvVar } from '@frogbotai/gateway';
+import { providerKeyEnvVar, usedCallCredential } from '@frogbotai/gateway';
 import { isGatewayError } from '@frogbotai/gateway/errors';
 import { APICallError, RetryError } from 'ai';
 
+import { pieceInstanceDefinition } from '../pieces/definePiece.js';
 import type { SanitizedAIConfig } from './types.js';
 
 export type AIErrorMessageProps = {
@@ -18,6 +19,23 @@ export function aiErrorMessage({ error, model, config }: AIErrorMessageProps): s
   if (!APICallError.isInstance(cause)) return undefined;
 
   const { statusCode } = cause;
+  const linked = usedCallCredential(cause) ? linkedPiece({ model, config }) : undefined;
+
+  if (linked) {
+    const { label, provider } = linked;
+
+    if (statusCode === 401 || statusCode === 403) {
+      return `${label} rejected your API key. Update it in Settings → Linked accounts.`;
+    }
+
+    if (statusCode === 429 && isInsufficientQuota(cause)) {
+      const billing = provider?.billingUrl
+        ? `Check billing at ${new URL(provider.billingUrl).host}.`
+        : `Check your ${label} billing.`;
+
+      return `Your ${label} account is out of credit. ${billing}`;
+    }
+  }
 
   if (statusCode === 401 || statusCode === 403) {
     return `The AI provider rejected the API key. ${keyHint({ model, config })}`;
@@ -38,6 +56,19 @@ export function aiErrorMessage({ error, model, config }: AIErrorMessageProps): s
   if (statusCode >= 500) return 'The AI provider is unavailable right now. Try again in a moment.';
 
   return 'The AI provider returned an error. Check the terminal for details.';
+}
+
+function linkedPiece({ model, config }: Omit<AIErrorMessageProps, 'error'>) {
+  const provider = model?.slice(0, Math.max(model.indexOf('/'), 0));
+  const piece = provider ? config?.linkedProviders?.[provider] : undefined;
+
+  return piece ? pieceInstanceDefinition(piece) : undefined;
+}
+
+function isInsufficientQuota(error: APICallError) {
+  const detail = (error.data as { error?: { code?: unknown; type?: unknown } } | undefined)?.error;
+
+  return detail?.code === 'insufficient_quota' || detail?.type === 'insufficient_quota';
 }
 
 function keyHint({ model, config }: Omit<AIErrorMessageProps, 'error'>) {

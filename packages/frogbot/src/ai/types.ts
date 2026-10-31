@@ -14,6 +14,7 @@ import type { experimental_evaluate } from 'ai';
 
 import type { CatalogModelId } from '../ai/generated.js';
 import type { ProviderName } from '../ai/providerNames.js';
+import type { PieceInstance } from '../pieces/types.js';
 import type { Tool } from '../tools/types.js';
 import type { FrogBotTypes } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
@@ -231,6 +232,8 @@ export type SanitizedAITelemetryConfig = {
 
 export type SanitizedAIConfig = {
   providers: ProviderConfig;
+  /** Providers a `connections` piece links to: each user's linked account is their credential. */
+  linkedProviders?: Readonly<Record<string, PieceInstance>>;
   routers: Record<string, RouterConfig>;
   defaultModel?: ModelId;
   smallModel?: ModelId;

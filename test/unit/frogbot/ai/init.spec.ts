@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import { buildGatewayConfig, createAIGateway } from '../../../../packages/frogbot/src/ai/init.js';
 import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/ai/types.js';
 import type { Logger } from '../../../../packages/frogbot/src/frogbot.js';
+import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -221,6 +223,38 @@ function makeLogger(): Logger {
     fatal: vi.fn(),
   };
 }
+
+describe('buildGatewayConfig with a linked provider', () => {
+  const piece = definePiece({
+    slug: 'openai',
+    label: 'OpenAI',
+    auth: z.object({ apiKey: z.string() }),
+    client: ({ auth }: { auth: unknown }) => auth,
+    provider: { name: 'openai', credential: () => ({}) },
+    actions: [],
+  })();
+
+  it('gives the provider a credential and boots with no app key', () => {
+    vi.stubEnv('OPENAI_API_KEY', undefined);
+    const ai = { ...makeAIConfig({ openai: true }), linkedProviders: { openai: piece } };
+
+    expect(buildGatewayConfig(ai).providers.openai).toEqual({ credential: expect.any(Function) });
+    expect(() => createAIGateway(ai)).not.toThrow();
+  });
+
+  it('keeps an explicit app key and models alongside the credential', () => {
+    const ai = {
+      ...makeAIConfig({ openai: { apiKey: 'sk-app', models: ['gpt-4o'] } }),
+      linkedProviders: { openai: piece },
+    };
+
+    expect(buildGatewayConfig(ai).providers.openai).toEqual({
+      apiKey: 'sk-app',
+      models: ['gpt-4o'],
+      credential: expect.any(Function),
+    });
+  });
+});
 
 describe('createAIGateway', () => {
   it('preserves structured fields when gateway errors reach the host logger', async () => {

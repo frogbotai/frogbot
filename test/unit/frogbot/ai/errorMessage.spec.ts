@@ -1,9 +1,12 @@
-import { BudgetExceededError } from '@frogbotai/gateway/errors';
-import { APICallError, RetryError } from 'ai';
-import { describe, expect, it } from 'vitest';
+import { createGateway } from '@frogbotai/gateway';
+import { BudgetExceededError, CallCredentialError } from '@frogbotai/gateway/errors';
+import { APICallError, generateText, RetryError } from 'ai';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import { aiErrorMessage } from '../../../../packages/frogbot/src/ai/errorMessage.js';
 import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/ai/types.js';
+import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 
 const keyFragment = 'sk-inval*****-key';
 
@@ -97,5 +100,99 @@ describe('aiErrorMessage', () => {
 
   it('ignores errors that did not come from the AI provider', () => {
     expect(aiErrorMessage({ error: new Error(`Database failed ${keyFragment}`) })).toBeUndefined();
+  });
+});
+
+describe('aiErrorMessage on a linked account', () => {
+  const MODEL = 'openai/gpt-4o-mini';
+  const linkedConfig = {
+    ...config,
+    linkedProviders: {
+      openai: definePiece({
+        slug: 'openai',
+        label: 'OpenAI',
+        auth: z.object({ apiKey: z.string() }),
+        client: ({ auth }: { auth: unknown }) => auth,
+        provider: {
+          name: 'openai',
+          billingUrl: 'https://platform.openai.com/settings/organization/billing',
+          credential: () => ({}),
+        },
+        actions: [],
+      })(),
+    },
+  } as SanitizedAIConfig;
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  async function upstreamError({
+    status,
+    code,
+    linked = true,
+  }: {
+    status: number;
+    code?: string;
+    linked?: boolean;
+  }) {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          Response.json({ error: { message: 'upstream', type: code, code } }, { status }),
+        ),
+      ),
+    );
+
+    const gateway = createGateway({
+      providers: {
+        openai: {
+          apiKey: 'sk-app',
+          credential: () => (linked ? { settings: { apiKey: 'sk-user' } } : undefined),
+        },
+      },
+    });
+
+    try {
+      await generateText({ model: gateway.chatModel(MODEL), prompt: 'hi', maxRetries: 0 });
+    } catch (error) {
+      return error;
+    }
+
+    throw new Error('expected the call to fail');
+  }
+
+  const message = async (args: Parameters<typeof upstreamError>[0]) =>
+    aiErrorMessage({ error: await upstreamError(args), model: MODEL, config: linkedConfig });
+
+  it.each([401, 403])("says the user's own key was rejected on %i", async (status) => {
+    await expect(message({ status })).resolves.toBe(
+      'OpenAI rejected your API key. Update it in Settings → Linked accounts.',
+    );
+  });
+
+  it('says the account is out of credit on a 429 insufficient_quota', async () => {
+    await expect(message({ status: 429, code: 'insufficient_quota' })).resolves.toBe(
+      'Your OpenAI account is out of credit. Check billing at platform.openai.com.',
+    );
+  });
+
+  it('keeps the app-key messages when the call used the app key', async () => {
+    await expect(message({ status: 401, linked: false })).resolves.toBe(
+      'The AI provider rejected the API key. Check OPENAI_API_KEY in .env.',
+    );
+    await expect(message({ status: 429, code: 'insufficient_quota', linked: false })).resolves.toBe(
+      'The AI provider is rate limiting requests or your quota is used up. Try again shortly, or check your plan and billing.',
+    );
+  });
+
+  it('passes the setup and reconnect messages through', () => {
+    for (const text of [
+      "OpenAI isn't set up. Add your OpenAI key in Settings → Linked accounts.",
+      'Reconnect OpenAI in Settings → Linked accounts.',
+    ]) {
+      expect(aiErrorMessage({ error: new CallCredentialError(text), model: MODEL })).toBe(text);
+    }
   });
 });

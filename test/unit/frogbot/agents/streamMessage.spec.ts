@@ -308,8 +308,12 @@ function setup({
     },
     {
       gateway: {
-        chatModel,
-        operation: () => ({ start: async () => {}, finish }),
+        chatModel: (id: string) => {
+          const outside = () => Promise.reject(new Error(`${id} ran outside the turn operation`));
+
+          return new MockLanguageModelV4({ modelId: id, doStream: outside, doGenerate: outside });
+        },
+        operation: () => ({ start: async () => {}, finish, chatModel }),
       },
       config: ai,
       frogbot,

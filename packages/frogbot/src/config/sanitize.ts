@@ -4,7 +4,7 @@ import { sanitizeSettings, validateAppIcon } from '../admin/config/sanitize.js';
 import { validateAdminIcon } from '../admin/icons.js';
 import { sanitizeAgents } from '../agents/config/sanitize.js';
 import { AGENT_SCHEDULE_TASK_SLUG, resolveScheduleTasks } from '../agents/resolveScheduleTasks.js';
-import { sanitizeAI } from '../ai/config/sanitize.js';
+import { linkAIProviders, sanitizeAI } from '../ai/config/sanitize.js';
 import { resolveUsageCollection } from '../ai/usage/collection.js';
 import { coordinateAuthEndpoints } from '../auth/endpoints.js';
 import { unwrapSessionPayload } from '../auth/operation.js';
@@ -19,7 +19,10 @@ import { buildChatEndpoints } from '../chat/endpoints.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
 import { resolveUserSlug } from '../chat/resolveUserSlug.js';
 import { wrapCollectionAccess } from '../collections/config/sanitize.js';
-import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
+import {
+  resolveConnectionsCollections,
+  resolveLinkedProviders,
+} from '../connections/resolveCollections.js';
 import { buildSecretEndpoints } from '../connections/secret.js';
 import type { Endpoint } from '../endpoints/types.js';
 import { sanitizeAIFields } from '../fields/baseFields/ai/sanitize.js';
@@ -199,7 +202,13 @@ export function sanitize(
     return attachFrogBotInstance(req, frogbot);
   };
 
-  const sanitizedAI = config.ai ? sanitizeAI(config.ai, mode) : undefined;
+  const linkedProviders = resolveLinkedProviders(config);
+
+  if (Object.keys(linkedProviders).length > 0) {
+    config = { ...config, ai: linkAIProviders(config.ai, linkedProviders) };
+  }
+
+  const sanitizedAI = config.ai ? sanitizeAI(config.ai, mode, linkedProviders) : undefined;
 
   sanitizeAIFields({
     ai: config.ai,

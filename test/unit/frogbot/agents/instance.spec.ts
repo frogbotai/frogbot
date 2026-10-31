@@ -187,6 +187,7 @@ function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
     }
   };
 
+  const operationModel = vi.fn((_id?: string) => ({}));
   const operation = vi.fn(
     (opts: { operation: string; model: string; context?: Record<string, unknown> }) => {
       const requestId = `req_${Math.random().toString(36).slice(2)}`;
@@ -220,7 +221,7 @@ function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
             context,
           );
         },
-        chatModel: () => ({}),
+        chatModel: operationModel,
       };
     },
   );
@@ -257,7 +258,7 @@ function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
   };
 
   return {
-    gateway: { chatModel: vi.fn(() => ({})), operation },
+    gateway: { chatModel: vi.fn(() => ({})), operation, operationModel },
     config,
     frogbot,
   } as never;
@@ -429,7 +430,7 @@ describe('agent generate turns', () => {
     req.context = { source: 'schedule' };
 
     const deps = makeDeps(makeConfig(emptyHooks()), req) as unknown as {
-      gateway: { chatModel: ReturnType<typeof vi.fn> };
+      gateway: { operationModel: ReturnType<typeof vi.fn> };
     };
 
     const agent = createAgentInstance(
@@ -444,7 +445,7 @@ describe('agent generate turns', () => {
     const result = await agent.generate({ prompt: 'Run report', req, overrideAccess: true });
 
     expect(result.text).toBe('ok');
-    expect(deps.gateway.chatModel).toHaveBeenLastCalledWith('openai/gpt-4o');
+    expect(deps.gateway.operationModel).toHaveBeenLastCalledWith('openai/gpt-4o');
     expect(turn.persistAssistantMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         req,
@@ -523,7 +524,7 @@ describe('agent generate turns', () => {
   it('runs on the user fallback and records it as the main model', async () => {
     const req = makeReq();
     const deps = makeDeps(allowOnly(['openai/gpt-4.1']), req) as unknown as {
-      gateway: { chatModel: ReturnType<typeof vi.fn> };
+      gateway: { operationModel: ReturnType<typeof vi.fn> };
     };
 
     const agent = createAgentInstance(
@@ -537,7 +538,7 @@ describe('agent generate turns', () => {
 
     await agent.generate({ prompt: 'Hello', req });
 
-    expect(deps.gateway.chatModel).toHaveBeenLastCalledWith('openai/gpt-4.1');
+    expect(deps.gateway.operationModel).toHaveBeenLastCalledWith('openai/gpt-4.1');
     expect(turn.persistAssistantMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         req,

@@ -231,6 +231,15 @@ describe('definePiece', () => {
       definePiece({
         slug: 'invalid',
         label: 'Invalid',
+        actions: [
+          { slug: 'provider', description: 'Invalid', input: z.object({}), async run() {} },
+        ],
+      }),
+    ).toThrow("action slug 'provider' is reserved");
+    expect(() =>
+      definePiece({
+        slug: 'invalid',
+        label: 'Invalid',
         actions: [{ slug: 'client', description: 'Invalid', input: z.object({}), async run() {} }],
       }),
     ).toThrow("action slug 'client' is reserved");
@@ -468,6 +477,49 @@ describe('definePiece', () => {
       slug: 'required',
       piece: 'required',
     });
+  });
+});
+
+describe('definePiece provider', () => {
+  const keyAuth = z.object({ apiKey: z.string() });
+  const provider = {
+    name: 'openai' as const,
+    credential: ({ auth }: { auth: { apiKey: string } }) => auth,
+  };
+
+  const createKeyed = definePiece({
+    slug: 'keyed',
+    label: 'Keyed',
+    auth: keyAuth,
+    client: ({ auth }) => auth,
+    provider,
+    actions: [],
+  });
+
+  it('exposes the provider as a capability', () => {
+    expect(createKeyed()[pieceCapabilities].provider).toBe(provider);
+  });
+
+  it('refuses factory auth, so the app key lives only in ai.providers', () => {
+    expect(() => (createKeyed as (config: object) => object)({ auth: { apiKey: 'sk-x' } })).toThrow(
+      "Piece 'keyed' takes no auth. Set the app key in ai.providers.openai.",
+    );
+  });
+
+  it('requires an auth schema and a credential function', () => {
+    expect(() =>
+      definePiece({ slug: 'no-auth', label: 'No auth', provider, actions: [] } as never),
+    ).toThrow("Piece 'no-auth' declares a provider but no auth schema.");
+    expect(() =>
+      definePiece({
+        slug: 'no-credential',
+        label: 'No credential',
+        auth: keyAuth,
+        client: ({ auth }) => auth,
+        provider: { name: 'openai' } as never,
+        actions: [],
+      }),
+    ).toThrow("Piece 'no-credential' provider requires a name, a credential function");
   });
 });
 

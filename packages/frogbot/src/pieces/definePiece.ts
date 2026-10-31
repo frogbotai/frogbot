@@ -2,6 +2,7 @@ import { createDefaultRequest } from '../getFrogBot.js';
 import type { AnyTool } from '../tools/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { defineCustomApiCall } from './customApiCall.js';
+import { validateProvider } from './provider.js';
 import {
   type DefinedPiece,
   type OAuthApp,
@@ -30,6 +31,7 @@ const reserved = new Set([
   'label',
   'oauth',
   'piece',
+  'provider',
   'slug',
   'triggers',
   'webhook',
@@ -320,6 +322,8 @@ export function definePiece<const T extends PieceDefinition>(
     }
   }
 
+  validateProvider(definition);
+
   function factory<const TConfig extends PieceFactoryOptions<T>>(
     ...args: object extends PieceFactoryOptions<T> ? [config?: TConfig] : [config: TConfig]
   ): DefinedPiece<T, TConfig>;
@@ -361,6 +365,12 @@ export function definePiece<const T extends PieceDefinition>(
     if (oauth && Object.hasOwn(oauth, 'scopes')) {
       throw new Error(
         `[frogbot] Piece '${definition.slug}' OAuth app does not take scopes. Use the factory's scopes option.`,
+      );
+    }
+
+    if (definition.provider && configuredAuth !== undefined) {
+      throw new Error(
+        `[frogbot] Piece '${definition.slug}' takes no auth. Set the app key in ai.providers.${definition.provider.name}.`,
       );
     }
 
@@ -461,6 +471,7 @@ export function definePiece<const T extends PieceDefinition>(
         email: definition.email,
         channel: definition.channel,
         oauth: definition.oauth,
+        provider: definition.provider,
         factoryOAuth: Boolean(oauth),
         signIn: Boolean(oauth && definition.oauth?.account),
         staticAuth: Boolean(definition.auth),

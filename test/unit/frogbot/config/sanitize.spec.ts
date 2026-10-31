@@ -85,6 +85,51 @@ function emailWarnings(warn: ReturnType<typeof vi.fn>) {
   );
 }
 
+const createOpenAIKey = definePiece({
+  slug: 'openai',
+  label: 'OpenAI',
+  auth: z.object({ apiKey: z.string() }),
+  client: ({ auth }: { auth: unknown }) => auth,
+  provider: { name: 'openai', credential: ({ auth }) => auth as Record<string, unknown> },
+  actions: [],
+});
+
+describe('frogbot sanitize: AI providers linked by connections', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('adds the linked provider when the app configures no AI, and boots with no key', () => {
+    vi.stubEnv('OPENAI_API_KEY', undefined);
+    const piece = createOpenAIKey();
+    const config = sanitize(makeConfig({ connections: [{ piece, secret: true }] }));
+
+    expect(config.ai?.providers).toEqual({ openai: true });
+    expect({ ...config.ai?.linkedProviders }).toEqual({ openai: piece });
+  });
+
+  it('keeps a configured provider and accepts it without an apiKey', () => {
+    const piece = createOpenAIKey();
+    const config = sanitize(
+      makeConfig({
+        connections: [{ piece, secret: true }],
+        ai: { providers: { openai: { apiKey: undefined, models: ['gpt-4o'] }, anthropic: true } },
+      }),
+    );
+
+    expect(config.ai?.providers).toEqual({
+      openai: { apiKey: undefined, models: ['gpt-4o'] },
+      anthropic: true,
+    });
+  });
+
+  it('still requires an apiKey on providers no piece links', () => {
+    expect(() =>
+      sanitize(makeConfig({ ai: { providers: { openai: { apiKey: undefined } } } })),
+    ).toThrow("Provider 'openai' requires a non-empty apiKey");
+  });
+});
+
 describe('frogbot sanitize', () => {
   it('rejects rich text fields without an editor before the upstream build', () => {
     expect(() =>

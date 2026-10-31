@@ -2,6 +2,7 @@ import type { Gateway, GatewayConfig } from '@frogbotai/gateway';
 import { createGateway } from '@frogbotai/gateway';
 
 import type { Logger } from '../frogbot.js';
+import { linkedCredential } from './credentials.js';
 import { toGatewayHooks } from './hooks.js';
 import { logUsage } from './logUsage.js';
 import { isProviderName } from './providerNames.js';
@@ -42,6 +43,20 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
 
   for (const [key, entry] of Object.entries(config.providers)) {
     if (entry === undefined) continue;
+
+    const piece = config.linkedProviders?.[key];
+
+    if (piece && isProviderName(key)) {
+      const { apiKey, models } = entry === true ? {} : (entry as Partial<BuiltInProviderEntry>);
+
+      setGatewayProvider(providers, key, {
+        ...(apiKey !== undefined && { apiKey }),
+        ...(models !== undefined && { models }),
+        credential: linkedCredential({ provider: key, piece, apiKey }),
+      });
+
+      continue;
+    }
 
     if (entry === true) {
       if (!isProviderName(key)) {

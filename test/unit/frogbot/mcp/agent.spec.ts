@@ -102,7 +102,11 @@ function setup({
     {
       gateway: {
         chatModel: () => model,
-        operation: () => ({ start: async () => {}, finish: async () => {} }),
+        operation: () => ({
+          start: async () => {},
+          finish: async () => {},
+          chatModel: () => model,
+        }),
       },
       config: ai,
       frogbot,
