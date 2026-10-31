@@ -78,6 +78,7 @@ export function imagesRoute(ctx: ImagesRouteContext) {
         providers: ctx.registry,
         models: ctx.models,
         allowlists: ctx.allowlists,
+        call: { context, via: 'http' },
       });
 
       const model = resolved.instance.imageModel(resolved.modelName);

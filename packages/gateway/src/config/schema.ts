@@ -156,12 +156,24 @@ export function parseGatewayConfig(input: GatewayConfig): GatewayConfig {
       }
     }
 
+    const credential = (cfg as Record<string, unknown>).credential;
+    if (credential !== undefined && typeof credential !== 'function') {
+      issues.push(`providers.${name}.credential must be a function`);
+    }
+
     const credentials = 'credentials' in def ? def.credentials : undefined;
     if (!credentials || credentials.length === 0) {
       continue;
     }
 
-    issues.push(...credentialIssues({ name, config: cfg as Record<string, unknown>, credentials }));
+    issues.push(
+      ...credentialIssues({
+        name,
+        config: cfg as Record<string, unknown>,
+        credentials,
+        optional: typeof credential === 'function',
+      }),
+    );
   }
 
   if (issues.length > 0) {
@@ -175,9 +187,10 @@ type CredentialIssuesArgs = {
   name: string;
   config: Record<string, unknown>;
   credentials: readonly ProviderCredentialForm[];
+  optional: boolean;
 };
 
-function credentialIssues({ name, config, credentials }: CredentialIssuesArgs): string[] {
+function credentialIssues({ name, config, credentials, optional }: CredentialIssuesArgs): string[] {
   const keys = new Set(credentials.flatMap((form) => Object.keys(form)));
   const invalid = [...keys].filter(
     (key) => config[key] !== undefined && !isNonEmptyString(config[key]),
@@ -186,6 +199,8 @@ function credentialIssues({ name, config, credentials }: CredentialIssuesArgs): 
   if (invalid.length > 0) {
     return invalid.map((key) => `providers.${name}.${key} must be a non-empty string`);
   }
+
+  if (optional) return [];
 
   const isSet = (key: string, envVar: string | null): boolean =>
     config[key] !== undefined || (envVar !== null && isNonEmptyString(process.env[envVar]));

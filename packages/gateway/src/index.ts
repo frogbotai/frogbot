@@ -18,6 +18,12 @@ export type {
   Hooks,
   HookUsage,
 } from './hooks.js';
+export type {
+  CallCredential,
+  CallCredentialResult,
+  CallCredentialVia,
+} from './providers/callCredential.js';
+export { usedCallCredential } from './providers/callCredential.js';
 export { DEFAULT_MODEL_CATALOG } from './providers/catalog.data.js';
 export type {
   Modality,

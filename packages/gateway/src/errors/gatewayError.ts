@@ -1,5 +1,6 @@
 export type GatewayErrorCode =
   | 'config_invalid'
+  | 'credential_unavailable'
   | 'invalid_model_id'
   | 'model_not_found'
   | 'model_unsupported_operation'
@@ -35,6 +36,18 @@ export class GatewayError extends Error {
     this.status = args.status;
     this.code = args.code;
     this.param = args.param ?? null;
+  }
+}
+
+/**
+ * Thrown by a provider entry's `credential` when the call has no usable credential, so the call
+ * fails before any request. Maps to 401 with the given message.
+ */
+export class CallCredentialError extends GatewayError {
+  override readonly name: string = 'CallCredentialError';
+
+  constructor(message: string) {
+    super({ message, status: 401, code: 'credential_unavailable' });
   }
 }
 

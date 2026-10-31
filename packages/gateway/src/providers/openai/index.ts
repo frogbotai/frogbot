@@ -1,6 +1,7 @@
 import { createOpenAI, type OpenAIProvider, type OpenAIProviderSettings } from '@ai-sdk/openai';
 
 import type { ProviderDefinition } from '../types.js';
+import { withOpenAIQuota } from './quota.js';
 
 /**
  * Gateway config for the OpenAI provider. Same shape as `OpenAIProviderSettings`
@@ -34,5 +35,5 @@ export const openaiProvider = {
       ...(env.OPENAI_PROJECT && { project: env.OPENAI_PROJECT }),
     };
   },
-  build: (cfg) => createOpenAI(cfg),
+  build: (cfg) => withOpenAIQuota(createOpenAI(cfg)),
 } satisfies ProviderDefinition<'openai', OpenAIConfig, OpenAIProvider>;

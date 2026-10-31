@@ -136,6 +136,29 @@ describe('parseGatewayConfig — provider credentials', () => {
       parseGatewayConfig({ providers: { internal: { baseURL: 'https://models.test/v1' } } }),
     ).toEqual({ providers: { internal: { baseURL: 'https://models.test/v1' } } });
   });
+
+  it('accepts an entry with credential and no key, since each call can bring its own', () => {
+    vi.stubEnv('OPENAI_API_KEY', undefined);
+    const credential = () => undefined;
+
+    expect(parseGatewayConfig({ providers: providerMap({ openai: { credential } }) })).toEqual({
+      providers: { openai: { credential } },
+    });
+  });
+
+  it('still rejects an empty key on an entry with credential', () => {
+    expect(() =>
+      parseGatewayConfig({
+        providers: providerMap({ openai: { apiKey: ' ', credential: () => undefined } }),
+      }),
+    ).toThrow('providers.openai.apiKey must be a non-empty string');
+  });
+
+  it('rejects a credential that is not a function', () => {
+    expect(() =>
+      parseGatewayConfig(JSON.parse('{"providers":{"openai":{"apiKey":"sk","credential":"x"}}}')),
+    ).toThrow('providers.openai.credential must be a function');
+  });
 });
 
 describe('parseGatewayConfig — openai-compatible providers', () => {
