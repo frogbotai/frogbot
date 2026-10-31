@@ -75,7 +75,7 @@ describe(`Linked OpenAI keys stay with their user [${process.env.FROGBOT_DATABAS
       await result.consumeStream();
     };
 
-    const work: Promise<unknown>[] = [];
+    const work: PromiseLike<unknown>[] = [];
 
     for (let i = 0; i < 8; i++) {
       for (const [name, req] of [
