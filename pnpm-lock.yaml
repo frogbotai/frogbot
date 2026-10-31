@@ -1338,6 +1338,9 @@ importers:
 
   packages/pieces/piece-openai:
     dependencies:
+      jose:
+        specifier: ^6.2.12
+        version: 6.2.12
       zod:
         specifier: ^4.3.6
         version: 4.4.3
