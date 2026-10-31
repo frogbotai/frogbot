@@ -220,22 +220,55 @@ export type PieceOAuthScopes<TScope extends string = string> = {
   required?: readonly TScope[];
 };
 
+type PieceOAuthShared<TAuth, TScope extends string> = {
+  scopes: PieceOAuthScopes<TScope>;
+  toAuth?: (args: { tokens: OAuthTokens }) => TAuth;
+  auth?: z.ZodType<TAuth>;
+  revoke?(args: { tokens: OAuthTokens; req: FrogBotRequest }): Promise<void>;
+  label?: string;
+};
+
 export type PieceOAuthRecipe<
   TAuth,
   TClient,
   TAccount extends PieceOAuthAccount = PieceOAuthAccount,
   TScope extends string = string,
-> = {
+> = PieceOAuthShared<TAuth, TScope> & {
   authorizationUrl: string;
   tokenUrl: string;
   tokenEndpointAuthMethod?: 'client_secret_basic' | 'client_secret_post';
-  scopes: PieceOAuthScopes<TScope>;
   scopeSeparator?: ' ' | ',';
   pkce?: boolean;
   params?: Record<string, string>;
-  toAuth?: (args: { tokens: OAuthTokens }) => TAuth;
   account?(args: { tokens: OAuthTokens; client: TClient; req: FrogBotRequest }): Promise<TAccount>;
   refresh?: (args: { tokens: OAuthTokens; req: FrogBotRequest }) => Promise<OAuthTokens>;
+  authorize?: never;
+};
+
+/** Stores a finished piece-run sign-in as the starting user's linked account. */
+export type PieceOAuthSave = (args: {
+  tokens: OAuthTokens;
+  account: PieceOAuthAccount;
+}) => Promise<void>;
+
+/**
+ * An OAuth sign-in the piece runs itself, for providers core's redirect flow can't serve. The
+ * app needs no client ID or secret; the piece handles the provider's callback and calls `save`.
+ */
+export type PieceOAuthSignIn<TAuth, TScope extends string = string> = PieceOAuthShared<
+  TAuth,
+  TScope
+> & {
+  /** Starts a sign-in and returns the URL to send the browser to. `returnTo` is absolute. */
+  authorize(args: { req: FrogBotRequest; returnTo: string; save: PieceOAuthSave }): Promise<string>;
+  refresh(args: { tokens: OAuthTokens; req: FrogBotRequest }): Promise<OAuthTokens>;
+  authorizationUrl?: never;
+  tokenUrl?: never;
+  tokenEndpointAuthMethod?: never;
+  scopeSeparator?: never;
+  pkce?: never;
+  params?: never;
+  account?: never;
 };
 
 export type PieceWebhook<TOptions> = {
@@ -291,6 +324,7 @@ export type PieceCapabilities = {
   oauth?: object;
   provider?: object;
   factoryOAuth: boolean;
+  pieceOAuth: boolean;
   signIn: boolean;
   staticAuth: boolean;
 };
@@ -310,7 +344,7 @@ export type PieceDefinition<TTypes extends PieceTypes = PieceTypes, TClient = un
   slug: string;
   label: string;
   admin?: PieceAdmin;
-  oauth?: PieceOAuthRecipe<TTypes['auth'], TClient>;
+  oauth?: PieceOAuthRecipe<TTypes['auth'], TClient> | PieceOAuthSignIn<TTypes['auth']>;
   options?: z.ZodType<TTypes['options']>;
   actions: readonly {
     [TSlug in keyof TTypes['actions'] & string]: PieceActionDefinition<
@@ -371,6 +405,8 @@ export type PieceScopeName<T> = T extends { oauth: { scopes: { catalog: infer TC
 export type PieceScopes<TName extends string> =
   readonly TName[] | ((args: { defaultScopes: TName[] }) => readonly TName[]);
 
+type AnyFunction = (...args: never[]) => unknown;
+
 export type PieceFactoryOptions<T extends PieceDefinition> = {
   slug?: string;
   auth?: T extends { provider: object }
@@ -378,7 +414,11 @@ export type PieceFactoryOptions<T extends PieceDefinition> = {
     : T extends { auth: infer TAuth extends z.ZodType }
       ? z.input<TAuth>
       : never;
-  oauth?: T extends { oauth: object } ? OAuthApp & { scopes?: never } : never;
+  oauth?: T extends { oauth: { authorize: AnyFunction } }
+    ? never
+    : T extends { oauth: object }
+      ? OAuthApp & { scopes?: never }
+      : never;
   scopes?: T extends { oauth: object } ? PieceScopes<PieceScopeName<T>> : never;
 } & (T extends { options: infer TOptions extends z.ZodType }
   ? z.input<TOptions> extends Record<string, never>
@@ -416,6 +456,7 @@ export type DefinedPiece<T extends PieceDefinition, TConfig> = {
     oauth: DefinedCapability<T, 'oauth'>;
     provider: DefinedCapability<T, 'provider'>;
     factoryOAuth: TConfig extends { oauth: OAuthApp } ? true : false;
+    pieceOAuth: T extends { oauth: { authorize: AnyFunction } } ? true : false;
     staticAuth: T extends { auth: z.ZodType } ? true : false;
     signIn: TConfig extends { oauth: OAuthApp }
       ? T extends { oauth: { account: (...args: never[]) => Promise<{ email: string }> } }

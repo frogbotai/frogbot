@@ -137,6 +137,33 @@ describe('resolveConnectionsCollections', () => {
     ).toThrow('requires factory OAuth clientId and clientSecret');
   });
 
+  it('boots a piece-run sign-in with no OAuth app and carries its label', () => {
+    const piece = definePiece({
+      slug: 'chat',
+      label: 'Chat',
+      auth: z.object({ apiKey: z.string().min(1) }),
+      client: ({ auth }: { auth: unknown }) => auth,
+      oauth: {
+        scopes: { catalog: { plan: 'plan.use' }, defaults: [], required: ['plan'] },
+        authorize: () => Promise.resolve('http://127.0.0.1:1/'),
+        refresh: ({ tokens }) => Promise.resolve(tokens),
+        label: 'Chat plan',
+      },
+      actions: [],
+    })();
+
+    const { connections } = resolveConnectionsCollections(
+      config({ connections: [{ piece, oauth: true, secret: true }] }),
+    );
+
+    expect(connections.entries.chat).toMatchObject({
+      oauth: true,
+      secret: true,
+      scopes: ['plan.use'],
+      oauthLabel: 'Chat plan',
+    });
+  });
+
   it('requires a recipe independently of the OAuth app', () => {
     const piece = definePiece({
       slug: 'static',

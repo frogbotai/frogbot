@@ -6,6 +6,7 @@ import { pieceInstanceRuntime } from '../pieces/definePiece.js';
 import type { PieceInstance, PieceJSON } from '../pieces/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { refreshOAuthConnection } from './oauth/refresh.js';
+import { revokeOAuthConnection } from './oauth/revoke.js';
 import { oauthScopes } from './oauth/scopes.js';
 import { oauthAuth, parseOAuthTokens } from './oauth/tokens.js';
 import { type ConnectionOwner, ConnectionStore } from './store.js';
@@ -240,12 +241,21 @@ export class Connections {
   }
 
   async delete({ req, id }: { req: FrogBotRequest; id: number | string }): Promise<boolean> {
-    const { credentialKeys, frogbot } = connectionsState(this);
+    const { config, credentialKeys, frogbot } = connectionsState(this);
     const owner = await requestOwner(frogbot, req);
     if (!owner) throw new Error('Connections require an owner from the admin user collection.');
     const store = await this.store;
     const row = (await this.list({ req })).find((row) => String(row.id) === String(id));
     if (!row) return false;
+
+    if (row.method === 'oauth') {
+      const entry = Object.hasOwn(config.entries, row.piece)
+        ? config.entries[row.piece]
+        : undefined;
+
+      if (entry) await revokeOAuthConnection({ store, owner, piece: entry.piece, req });
+    }
+
     const deleted = await store.delete({ owner, piece: row.piece, id });
     if (deleted) {
       credentialKeys.delete(JSON.stringify([owner.collection, String(owner.id), row.piece]));

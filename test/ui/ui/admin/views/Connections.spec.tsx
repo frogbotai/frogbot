@@ -351,6 +351,26 @@ describe('linked accounts', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it("names the OAuth method with the piece's label in the picker, form, button and row", () => {
+    const labelled = pieces.map((piece) =>
+      piece.slug === 'mail' ? { ...piece, oauthLabel: 'ChatGPT' } : piece,
+    );
+
+    render(<ConnectionsViewClient {...props} pieces={labelled} />);
+
+    const listed = screen.getByText('Work').closest('.frogbot-connections__row') as HTMLElement;
+
+    expect(within(listed).getByText('ChatGPT')).toBeTruthy();
+    expect(within(listed).queryByText('OAuth')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '+ New Connection' }));
+    fireEvent.click(screen.getByRole('button', { name: /Mail ChatGPT · Static credentials/ }));
+
+    expect(screen.getByRole('radio', { name: 'ChatGPT' })).toBeTruthy();
+    expect(screen.queryByRole('radio', { name: 'OAuth' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Continue with ChatGPT' })).toBeTruthy();
+  });
+
   it('keeps failed forms open and clears credentials when returning to the picker', async () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 400 }));
     render(<ConnectionsViewClient {...props} />);

@@ -27,6 +27,7 @@ import type {
   PieceInstance,
   SignInMethod,
 } from '../../../../packages/frogbot/src/pieces/types.js';
+import { pieceCapabilities } from '../../../../packages/frogbot/src/pieces/types.js';
 import type { TriggerEvent } from '../../../../packages/frogbot/src/triggers/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
@@ -795,5 +796,61 @@ definePiece({
   client: ({ auth }) => auth,
   // @ts-expect-error provider names are built-in AI providers
   provider: { name: 'not-a-provider', credential: ({ auth }) => auth },
+  actions: [],
+});
+
+const createPlanSignIn = definePiece({
+  slug: 'signin',
+  label: 'Sign in',
+  auth: keyAuth,
+  client: ({ auth }) => auth,
+  oauth: {
+    scopes: { catalog: { plan: 'plan.use' }, defaults: [] },
+    auth: z.object({ apiKey: z.string(), plan: z.literal(true) }),
+    toAuth: ({ tokens }) => ({ apiKey: tokens.access_token ?? '', plan: true as const }),
+    authorize: ({ req: request, returnTo, save }) => {
+      expectTypeOf(request).toEqualTypeOf<FrogBotRequest>();
+      expectTypeOf(returnTo).toEqualTypeOf<string>();
+
+      return save({
+        tokens: { access_token: 'token' },
+        account: { id: 'id', label: 'Label' },
+      }).then(() => 'https://provider.test/authorize');
+    },
+    refresh: ({ tokens }) => Promise.resolve(tokens),
+    revoke: () => Promise.resolve(),
+    label: 'Provider',
+  },
+  actions: [],
+});
+
+const planSignInPiece = createPlanSignIn();
+
+expectTypeOf(planSignInPiece[pieceCapabilities].pieceOAuth).toEqualTypeOf<true>();
+expectTypeOf(planSignInPiece[pieceCapabilities].factoryOAuth).toEqualTypeOf<false>();
+
+const planSignInConnection: ConnectionEntry<typeof planSignInPiece> = {
+  piece: planSignInPiece,
+  oauth: true,
+  secret: true,
+};
+
+void planSignInConnection;
+
+// @ts-expect-error a piece-run sign-in takes no OAuth app
+createPlanSignIn({ oauth: { clientId: 'id', clientSecret: 'secret' } });
+
+definePiece({
+  slug: 'mixed',
+  label: 'Mixed',
+  auth: keyAuth,
+  client: ({ auth }) => auth,
+  oauth: {
+    scopes: { catalog: {}, defaults: [] },
+    authorize: () => Promise.resolve('https://provider.test/authorize'),
+    refresh: ({ tokens }) => Promise.resolve(tokens),
+    // @ts-expect-error a piece-run sign-in has no redirect-flow URLs
+    tokenUrl: 'https://provider.test/token',
+  },
   actions: [],
 });

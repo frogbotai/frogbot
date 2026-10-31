@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
+import { urlRecipe } from '../../pieces/oauth.js';
 import type { OAuthTokens, PieceInstance, PieceOAuthAccount } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { OAuthError } from './error.js';
@@ -120,7 +121,7 @@ async function requestTokens({
   params: Record<string, string>;
   signal?: AbortSignal;
 }): Promise<OAuthTokens> {
-  const recipe = pieceInstanceRuntime(piece).definition.oauth;
+  const recipe = urlRecipe(pieceInstanceRuntime(piece).definition);
   const app = piece.oauth;
   if (!recipe || !app) throw new OAuthError('configuration');
 
@@ -181,7 +182,7 @@ export async function exchangeOAuthCode({
   if (
     !code.trim() ||
     (verifier !== undefined && !/^[A-Za-z0-9._~-]{43,128}$/.test(verifier)) ||
-    (pieceInstanceRuntime(piece).definition.oauth?.pkce && !verifier)
+    (urlRecipe(pieceInstanceRuntime(piece).definition)?.pkce && !verifier)
   ) {
     throw new OAuthError('tokens');
   }
@@ -207,8 +208,10 @@ export function oauthAuth({
 }): unknown {
   const { definition } = pieceInstanceRuntime(piece);
   if (!definition.oauth || !definition.auth) throw new OAuthError('configuration');
+  const schema = definition.oauth.auth ?? definition.auth;
+
   try {
-    return definition.auth.parse(
+    return schema.parse(
       definition.oauth.toAuth
         ? definition.oauth.toAuth({ tokens })
         : { accessToken: tokens.access_token },
@@ -216,6 +219,17 @@ export function oauthAuth({
   } catch {
     throw new OAuthError('tokens');
   }
+}
+
+const accountSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  email: z.string().trim().toLowerCase().pipe(z.email()).optional(),
+});
+
+/** Checks an account a recipe returned: a non-empty `id` and `label`, and a valid `email`. */
+export function parseOAuthAccount(account: unknown): PieceOAuthAccount {
+  return accountSchema.parse(account);
 }
 
 export async function lookupOAuthAccount({
@@ -232,7 +246,8 @@ export async function lookupOAuthAccount({
   const { definition, options } = pieceInstanceRuntime(piece);
   const validatedTokens = parseOAuthTokens(tokens);
   const auth = oauthAuth({ piece, tokens: validatedTokens });
-  if (!definition.oauth?.account) return;
+  const account = urlRecipe(definition)?.account;
+  if (!account) return;
   if (!definition.auth) throw new OAuthError('configuration');
 
   try {
@@ -241,19 +256,9 @@ export async function lookupOAuthAccount({
         const client = await definition.client({ auth, options });
         signal.throwIfAborted();
 
-        const account = await definition.oauth!.account!({
-          tokens: validatedTokens,
-          client,
-          req: callbackRequest({ req, signal }),
-        });
-
-        return z
-          .object({
-            id: z.string().min(1),
-            label: z.string().min(1),
-            email: z.string().trim().toLowerCase().pipe(z.email()).optional(),
-          })
-          .parse(account);
+        return parseOAuthAccount(
+          await account({ tokens: validatedTokens, client, req: callbackRequest({ req, signal }) }),
+        );
       },
       signal,
       req.signal,

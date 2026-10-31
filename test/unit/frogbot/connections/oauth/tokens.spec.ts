@@ -4,10 +4,12 @@ import type { AddressInfo } from 'node:net';
 
 import type { RequestContext } from 'payload';
 import { afterEach, assert, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { z } from 'zod';
 
 import {
   exchangeOAuthCode,
   lookupOAuthAccount,
+  oauthAuth,
   oauthTokenMetadata,
   parseOAuthTokens,
   refreshOAuthTokens,
@@ -381,6 +383,31 @@ describe('OAuth token and account transport', () => {
     await expect(
       lookupOAuthAccount({ ...auth, tokens: { access_token: 'fresh' } }),
     ).rejects.toMatchObject({ code: 'tokens' });
+  });
+
+  it('parses OAuth auth with oauth.auth when the recipe sets one', () => {
+    const tokenOnly = z.object({ token: z.string().startsWith('oauth-') });
+    const { piece } = setup({
+      ...definition,
+      oauth: {
+        ...definition.oauth,
+        auth: tokenOnly,
+        toAuth: ({ tokens }) => ({ token: `oauth-${tokens.access_token}` }),
+      },
+    });
+
+    expect(oauthAuth({ piece, tokens: { access_token: 'fresh' } })).toEqual({
+      token: 'oauth-fresh',
+    });
+
+    const strict = setup({
+      ...definition,
+      oauth: { ...definition.oauth, auth: tokenOnly },
+    });
+
+    expect(() => oauthAuth({ piece: strict.piece, tokens: { access_token: 'fresh' } })).toThrow(
+      'OAuth tokens validation failed.',
+    );
   });
 
   it('refreshes using the app and preserves omitted refresh tokens, scope and vendor fields', async () => {
