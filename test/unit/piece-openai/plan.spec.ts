@@ -17,6 +17,7 @@ import {
 import {
   eventStream,
   failedEvent,
+  pausedEventStream,
   textEvents,
   textStream,
 } from '../../__helpers/shared/openaiResponses.js';
@@ -295,6 +296,25 @@ describe('ChatGPT plan errors', () => {
     expect(result.text).toBe('Hello');
     expect(sent).toHaveLength(2);
   });
+
+  it.each([false, true])(
+    'retries a busy plan that fails the response after a pause with no output (streamed: %s)',
+    async (streamed) => {
+      replies.push(() =>
+        pausedEventStream(
+          [...textEvents('x').slice(0, 2), failedEvent('subscription_sharing_user_unavailable')],
+          100,
+        ),
+      );
+
+      const text = streamed
+        ? await streamText({ model: fastModel(), prompt: 'Hi' }).text
+        : (await generateText({ model: fastModel(), prompt: 'Hi' })).text;
+
+      expect(text).toBe('Hello');
+      expect(sent).toHaveLength(2);
+    },
+  );
 
   it('says busy, without retrying, when the plan is busy after output', async () => {
     replies.push(() =>
