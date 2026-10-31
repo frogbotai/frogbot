@@ -153,7 +153,7 @@ Some providers accept more options. Each row is written as `<key>.<option>` and 
 | `vertex.headers` | `Record<string, string \| undefined>`, a promise of one, or a function returning either | — | Extra headers. Unlike other providers, Vertex can resolve them per request. |
 | `vertex.toolResultDownloads` | `{ maxBytes?: number }` | `maxBytes`: 7 MiB | Size limit for each remote file downloaded from tool results before it's sent to Vertex inline. |
 
-Custom `fetch` functions aren't accepted in config. Pass a [pre-built instance](#pre-built-instances) instead.
+Custom `fetch` functions aren't accepted in config. Pass a [pre-built instance](#pre-built-instances) instead, or return one from a [per-call credential](#per-call-credentials).
 
 ---
 
@@ -161,10 +161,10 @@ Custom `fetch` functions aren't accepted in config. Pass a [pre-built instance](
 
 A built-in provider entry can choose the credential for each call. `credential` receives the call's hook [`context`](/gateway/hooks) and `via`: `'http'` for a request to a gateway route, `'app'` for an in-process model or operation. It returns:
 
-- `{ settings }`: provider options for this call, such as `{ apiKey }`, merged over the entry's own. An optional `middleware` (an AI SDK `LanguageModelMiddleware` or an array of them) wraps this call's chat model.
+- `{ settings }`: provider options for this call, such as `{ apiKey }`, merged over the entry's own. Settings may include a function such as `fetch`, which `credential` must return as the same function on every call: the gateway keeps one provider instance per distinct settings, comparing functions by identity. An optional `middleware` (an AI SDK `LanguageModelMiddleware` or an array of them) wraps this call's chat model.
 - `undefined`: the entry's own options, such as its `apiKey` or the provider's environment variable.
 
-A throw fails the call before any request is sent. Throw `CallCredentialError` from `@frogbotai/gateway/errors` to answer HTTP routes with 401 and your message.
+A throw fails the call before any request is sent. Throw `CallCredentialError` from `@frogbotai/gateway/errors` to answer HTTP routes with 401 and your message, or another `GatewayError` for its status.
 
 ```ts
 import { createGateway } from '@frogbotai/gateway'

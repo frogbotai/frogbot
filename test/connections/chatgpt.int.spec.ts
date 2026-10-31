@@ -1,12 +1,17 @@
 import { createOpenAI } from '@frogbotai/piece-openai';
-import type { FrogBotRequest } from 'frogbot';
+import { createGatewayHandler, type FrogBotRequest } from 'frogbot';
 import { getFrogBotPayload } from 'frogbot/test';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { bootLinked } from './aiCredentials.js';
+import { textStream } from '../__helpers/shared/openaiResponses.js';
+import { AGENT_SLUG, bootLinked, lookup } from './aiCredentials.js';
 import { challenge, idToken, signingKey } from './chatgpt.js';
 
 const ORIGIN = 'http://localhost:3000';
+const AGENT_MODELS = ['openai/gpt-5.5', 'openai/gpt-6-sol', 'openai/gpt-4o-mini'];
+const NO_API_ACCESS =
+  "A ChatGPT plan can't be used through this app's API. Paste an OpenAI API key in Settings → Linked accounts to use the API.";
+
 const RETURN_TO = `${ORIGIN}/admin/settings/connections`;
 const PLAN_SCOPES = 'openid profile email offline_access resource.invoke chatgpt.tokens.use.direct';
 
@@ -44,6 +49,48 @@ function tokens(code: string, clientId: string) {
   });
 }
 
+const api = {
+  calls: [] as { url: string; authorization: string | null; body: string }[],
+  planModels: 'list' as 'list' | 'error' | 'empty',
+};
+
+const PLAN_MODELS = [
+  { slug: 'gpt-6-sol', display_name: 'Sol', visibility: 'list', supported_in_api: true },
+  { slug: 'gpt-4o-mini', display_name: 'Mini', visibility: 'hide', supported_in_api: true },
+];
+
+function openaiReply(url: string, authorization: string | null, body: string): Response {
+  if (url.endsWith('/v1/models')) {
+    if (authorization?.startsWith('Bearer sk-')) {
+      return Response.json({ object: 'list', data: [{ id: 'gpt-4o-mini' }, { id: 'gpt-6-sol' }] });
+    }
+
+    if (api.planModels === 'error') return new Response('unavailable', { status: 503 });
+
+    return Response.json({ models: api.planModels === 'empty' ? [] : PLAN_MODELS });
+  }
+
+  if ((JSON.parse(body) as { stream?: boolean }).stream) return textStream('Plan reply');
+
+  return Response.json({
+    id: 'response-1',
+    object: 'response',
+    created_at: 1,
+    model: 'gpt-4o-mini',
+    output: [
+      {
+        id: 'message-1',
+        type: 'message',
+        role: 'assistant',
+        status: 'completed',
+        content: [{ type: 'output_text', text: 'Key reply', annotations: [] }],
+      },
+    ],
+    status: 'completed',
+    usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 },
+  });
+}
+
 function stubAuth() {
   const realFetch = globalThis.fetch;
 
@@ -51,6 +98,15 @@ function stubAuth() {
     'fetch',
     vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
+
+      if (url.startsWith('https://api.openai.com/')) {
+        const authorization = new Headers(init?.headers).get('authorization');
+        const sent = typeof init?.body === 'string' ? init.body : '';
+
+        api.calls.push({ url, authorization, body: sent });
+
+        return Promise.resolve(openaiReply(url, authorization, sent));
+      }
 
       if (!url.startsWith('https://auth.openai.com/')) return realFetch(input, init);
 
@@ -130,6 +186,14 @@ describe(`Continue with ChatGPT [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, 
 
     booted = await bootLinked({
       connections: [{ piece: createOpenAI(), oauth: true, secret: true }],
+      agents: [
+        {
+          slug: AGENT_SLUG,
+          instructions: 'Help.',
+          model: { default: 'openai/gpt-5.5', options: [...AGENT_MODELS] },
+          tools: [lookup],
+        },
+      ],
     });
 
     alice = await booted.member('alice@example.com');
@@ -147,6 +211,8 @@ describe(`Continue with ChatGPT [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, 
     auth.exchanges.length = 0;
     auth.revocations.length = 0;
     auth.revokeFails = false;
+    api.calls.length = 0;
+    api.planModels = 'list';
   });
 
   it('saves the first sign-in for the user who clicked and shows the plan notice once', async () => {
@@ -291,4 +357,100 @@ describe(`Continue with ChatGPT [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, 
       );
     },
   );
+
+  const signIn = async (req: FrogBotRequest, code: string) => {
+    const url = await start(req);
+    const response = await callback(url, {
+      code,
+      state: url.searchParams.get('state')!,
+      client_id: 'oaiapp_alice',
+    });
+
+    expect(response.status).toBeLessThan(400);
+  };
+
+  const apiCall = async (email: string) => {
+    const { token } = await booted.frogbot.login({
+      collection: 'members',
+      data: { email, password: 'password' },
+      overrideAccess: true,
+    });
+
+    return createGatewayHandler(booted.frogbot)(
+      new Request('http://localhost/api/v1/chat/completions', {
+        method: 'POST',
+        headers: { authorization: `JWT ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model: 'openai/gpt-4o-mini',
+          messages: [{ role: 'user', content: `api-${email}` }],
+        }),
+      }),
+    );
+  };
+
+  it("runs a plan user's turn as a streamed plan call on their token", async () => {
+    await signIn(alice, 'turn');
+
+    const result = await booted.turn(alice, 'plan-turn');
+    const [call] = api.calls.filter(({ url }) => url.endsWith('/v1/responses'));
+
+    expect(result.text).toBe('Plan reply');
+    expect(call.url).toBe('https://api.openai.com/v1/responses');
+    expect(call.authorization).toBe('Bearer plan-access-turn');
+    expect(JSON.parse(call.body)).toMatchObject({ model: 'gpt-6-sol', store: false, stream: true });
+  });
+
+  it("refuses a plan user on the app's API with no upstream call, and serves a pasted key", async () => {
+    await signIn(alice, 'api');
+
+    const refused = await apiCall('alice@example.com');
+
+    expect(refused.status).toBe(403);
+    expect(await refused.json()).toMatchObject({ error: { message: NO_API_ACCESS } });
+    expect(api.calls).toEqual([]);
+
+    const linked = await booted.link(bob, { apiKey: 'sk-bob' });
+
+    expect(linked.status).toBe(200);
+
+    const served = await apiCall('bob@example.com');
+
+    expect(served.status).toBe(200);
+    expect(api.calls.at(-1)).toMatchObject({ authorization: 'Bearer sk-bob' });
+  });
+
+  it.each<['list' | 'error' | 'empty', string[]]>([
+    ['list', ['openai/gpt-6-sol']],
+    ['error', ['openai/gpt-5.5', 'openai/gpt-6-sol']],
+    ['empty', ['openai/gpt-5.5', 'openai/gpt-6-sol']],
+  ])(
+    "shows a plan user the plan's models (/models: %s) and the plan notice",
+    async (listing, models) => {
+      api.planModels = listing;
+
+      await signIn(alice, `picker-${listing}`);
+
+      const entry = (await booted.picker(alice)) as { models: string[]; notices?: unknown };
+
+      expect(entry.models).toEqual(models);
+      expect(entry.notices).toEqual({
+        openai: {
+          text: 'Using ChatGPT plan',
+          link: { label: 'Manage usage', url: 'https://chatgpt.com/settings/usage' },
+        },
+      });
+      expect(api.calls.filter(({ url }) => url.endsWith('/v1/models'))).toMatchObject([
+        { authorization: `Bearer plan-access-picker-${listing}` },
+      ]);
+    },
+  );
+
+  it('shows a pasted-key user no plan notice', async () => {
+    await booted.link(bob, { apiKey: 'sk-bob' });
+
+    const entry = (await booted.picker(bob)) as { models: string[]; notices?: unknown };
+
+    expect(entry.models).toEqual(['openai/gpt-6-sol', 'openai/gpt-4o-mini']);
+    expect(entry.notices).toBeUndefined();
+  });
 });

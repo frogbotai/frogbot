@@ -127,6 +127,21 @@ describe(`AI calls on linked OpenAI accounts, with an app key [${process.env.FRO
     expect(rows.docs).toEqual([]);
   });
 
+  it('saves a restricted key that may not list models, and shows that user the full picker', async () => {
+    const hana = await booted.member('hana@example.com');
+    const response = await booted.link(hana, { apiKey: 'sk-restricted' });
+
+    expect(response.status).toBe(200);
+    await expect(booted.picker(hana)).resolves.toMatchObject({
+      models: [...AGENT_MODELS],
+      defaultModel: MODEL,
+    });
+
+    await booted.turn(hana, 'restricted-turn');
+
+    expect(keysFor('restricted-turn')).toEqual(['Bearer sk-restricted']);
+  });
+
   it("narrows a linked user's picker to their key's catalog models, cached until relink", async () => {
     const frank = await booted.member('frank@example.com');
 

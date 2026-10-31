@@ -56,6 +56,9 @@ export function linkedCredential({
       throw new CallCredentialError(`Reconnect ${label} in Settings → Linked accounts.`);
     }
 
-    return { settings: link.credential({ auth, via }) };
+    const settings = link.credential({ auth, via });
+    const middleware = link.middleware?.({ auth });
+
+    return middleware ? { settings, middleware } : { settings };
   };
 }

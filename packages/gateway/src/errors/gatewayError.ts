@@ -14,7 +14,8 @@ export type GatewayErrorCode =
   | 'budget_exceeded'
   | 'model_not_allowed'
   | 'rate_limit_exceeded'
-  | 'structured_output_invalid';
+  | 'structured_output_invalid'
+  | 'upstream_refused';
 
 export const gatewayErrorMarker = Symbol.for('@frogbotai/gateway/GatewayError');
 

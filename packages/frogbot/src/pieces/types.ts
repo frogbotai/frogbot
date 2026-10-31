@@ -1,4 +1,4 @@
-import type { CallCredentialVia } from '@frogbotai/gateway';
+import type { CallCredentialResult, CallCredentialVia } from '@frogbotai/gateway';
 import type { Adapter, Author } from 'chat';
 import type { SendEmailOptions } from 'payload';
 import type { z } from 'zod';
@@ -296,6 +296,9 @@ export type PieceChannel<TAuth, TOptions, TClient> = {
   questions?: PieceChannelQuestions<TClient>;
 };
 
+/** A line shown with a provider's models in the chat model picker, with an optional link. */
+export type PieceProviderNotice = { text: string; link?: { label: string; url: string } };
+
 /**
  * Links a piece to a built-in AI provider. Listing the piece in `connections` makes each user's
  * linked account the credential for their calls to `name`.
@@ -304,17 +307,25 @@ export type PieceProvider<TAuth> = {
   name: ProviderName;
   /** Where a user checks their account's billing, named when the account is out of credit. */
   billingUrl?: string;
-  /** Provider settings for a call on a linked account, merged over `ai.providers[name]`. */
+  /**
+   * Provider settings for a call on a linked account, merged over `ai.providers[name]`. Throw to
+   * fail the call before any request, for example on `via: 'http'`.
+   */
   credential(args: { auth: TAuth; via: CallCredentialVia }): Record<string, unknown>;
   /**
    * The provider's model IDs this account can use. Throw an error with `status` 401 or 403 when
-   * the provider rejects the credential.
+   * the provider rejects the credential; return `undefined` when the account can't list its
+   * models, so the picker shows the app's usual list.
    */
   models?(args: {
     auth: TAuth;
     credential: Record<string, unknown>;
     signal: AbortSignal;
-  }): Promise<string[]>;
+  }): Promise<string[] | undefined>;
+  /** Wraps the account's language models, for providers whose calls need reshaping. */
+  middleware?(args: { auth: TAuth }): CallCredentialResult['middleware'];
+  /** Shown with this provider's models in the model picker for this account. */
+  notice?(args: { auth: TAuth }): PieceProviderNotice | undefined;
 };
 
 export type PieceCapabilities = {

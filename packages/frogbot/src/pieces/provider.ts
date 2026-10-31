@@ -9,10 +9,12 @@ export function validateProvider({ slug, auth, provider }: PieceDefinition): voi
     typeof provider.name !== 'string' ||
     !provider.name ||
     typeof provider.credential !== 'function' ||
-    (provider.models !== undefined && typeof provider.models !== 'function')
+    [provider.models, provider.middleware, provider.notice].some(
+      (hook) => hook !== undefined && typeof hook !== 'function',
+    )
   ) {
     throw new Error(
-      `[frogbot] Piece '${slug}' provider requires a name, a credential function and an optional models function.`,
+      `[frogbot] Piece '${slug}' provider requires a name, a credential function and optional models, middleware and notice functions.`,
     );
   }
 }

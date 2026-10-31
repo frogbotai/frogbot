@@ -5,7 +5,11 @@ import type { AIProvider, GatewayLanguageModel } from './registry.js';
 /** Where a call entered the gateway: an in-process model call, or an HTTP route. */
 export type CallCredentialVia = 'app' | 'http';
 
-/** Provider settings for one call, merged over the entry's own; `middleware` wraps its language model. */
+/**
+ * Provider settings for one call, merged over the entry's own; `middleware` wraps its language
+ * model. Settings are JSON values, or functions such as `fetch`, which compare by identity: return
+ * the same function on every call.
+ */
 export type CallCredentialResult<TSettings = Record<string, unknown>> = {
   settings: TSettings;
   middleware?: LanguageModelMiddleware | LanguageModelMiddleware[];
@@ -121,6 +125,20 @@ function markUsed(error: unknown): void {
   Object.defineProperty(error, usedTag, { value: true, enumerable: false });
 }
 
+const functionIds = new WeakMap<object, number>();
+let lastFunctionId = 0;
+
+function functionId(value: object): number {
+  let id = functionIds.get(value);
+
+  if (id === undefined) {
+    id = ++lastFunctionId;
+    functionIds.set(value, id);
+  }
+
+  return id;
+}
+
 function canonicalSettings(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonicalSettings).join(',')}]`;
 
@@ -132,8 +150,12 @@ function canonicalSettings(value: unknown): string {
       .join(',')}}`;
   }
 
-  if (value === undefined || ['function', 'symbol', 'bigint'].includes(typeof value)) {
-    throw new TypeError('[gateway] credential() settings must contain only JSON values.');
+  if (typeof value === 'function') return `function#${functionId(value)}`;
+
+  if (value === undefined || ['symbol', 'bigint'].includes(typeof value)) {
+    throw new TypeError(
+      '[gateway] credential() settings must contain only JSON values or functions.',
+    );
   }
 
   return JSON.stringify(value);

@@ -29,6 +29,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/provider": "4.0.18",
+    "@frogbotai/gateway": "workspace:*",
     "jose": "^6.2.12",
     "zod": "^4.3.6"
   },

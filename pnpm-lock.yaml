@@ -1338,6 +1338,12 @@ importers:
 
   packages/pieces/piece-openai:
     dependencies:
+      '@ai-sdk/provider':
+        specifier: 4.0.18
+        version: 4.0.18
+      '@frogbotai/gateway':
+        specifier: workspace:*
+        version: link:../../gateway
       jose:
         specifier: ^6.2.12
         version: 6.2.12

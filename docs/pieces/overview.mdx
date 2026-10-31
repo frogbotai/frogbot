@@ -53,7 +53,7 @@ Every piece factory accepts these options. Each piece page lists the full set fo
 | --- | --- | --- | --- |
 | `slug` | `string` | The piece slug, such as `google-sheets` | Instance slug. It prefixes tool slugs and names webhook routes. Must be URL-safe. Give each instance of the same piece its own slug. |
 | `auth` | The piece's auth input | — | Developer credential, validated against the piece's auth schema when the factory runs. Used when the caller has no [connection](/connections/overview) for the piece. Only pieces with an auth schema accept it. |
-| `oauth` | `OAuthApp` | — | Your OAuth app. Only pieces with an OAuth recipe accept it. It enables `oauth: true` connection entries and is exposed as `instance.oauth` for reuse. |
+| `oauth` | `OAuthApp` | — | Your OAuth app. Only pieces with an OAuth recipe accept it, and not pieces that [run their own sign-in](/connections/overview#pieces-that-run-their-own-sign-in). It enables `oauth: true` connection entries and is exposed as `instance.oauth` for reuse. |
 | `scopes` | Scope names, or `({ defaultScopes }) => names` | The piece's default scopes | OAuth scopes for this instance, as names from the piece's catalog. A function receives the defaults, `({ defaultScopes }) => [...defaultScopes, 'gmail.labels']`; an array replaces them. The piece's required scopes are always added. Only pieces with an OAuth recipe accept it. See [Connections](/connections/overview#choose-oauth-scopes). |
 
 `OAuthApp` takes:
@@ -97,6 +97,8 @@ Pass `collection` to `req.frogbot.create` with the file to store it.
 ## Credentials and linked accounts
 
 Pass developer credentials as factory `auth`. To let users link accounts, configure root `connections` entries with `oauth: true`, `secret: true`, or both supported methods. Factory `oauth` holds your app credentials; it does not enable linking by itself. See [Connections](/connections/overview).
+
+A piece's OAuth recipe either describes a redirect flow (`authorizationUrl`, `tokenUrl`) that FrogBot runs with your app, or runs the sign-in itself through `authorize`, as [OpenAI](/pieces/openai#continue-with-chatgpt)'s **Continue with ChatGPT** does. A piece that runs its own sign-in needs no OAuth app. See [Pieces that run their own sign-in](/connections/overview#pieces-that-run-their-own-sign-in).
 
 Use the identity-only `createGoogle` factory for [Google sign-in](/authentication/sign-in). Pass `google.oauth` to `createGoogleSheets`, `createGoogleDrive`, `createGoogleCalendar`, or `createGmail` to share the app credentials. Each product has its own scopes, connection entry, and callback. A Google login or identity connection does not authorize product actions.
 

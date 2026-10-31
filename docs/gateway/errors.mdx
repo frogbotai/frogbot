@@ -39,6 +39,7 @@ Same-provider upstream errors — an invalid OpenAI key on an OpenAI call, for e
 | `invalid_tool_arguments` | Tool call arguments failed to parse |
 | `resource_not_found` | Unknown route |
 | `structured_output_invalid` | A strict JSON-schema reply still didn't match the schema after one retry (502). See [Strict structured output](#strict-structured-output) |
+| `upstream_refused` | The provider refused the call for a reason a retry can't fix, such as a used-up plan, and a credential's middleware named it (the provider's status). See [OpenAI](/pieces/openai#errors-on-a-chatgpt-plan) |
 
 ---
 

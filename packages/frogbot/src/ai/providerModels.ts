@@ -1,6 +1,6 @@
 import { ConnectionError } from '../connections/api.js';
 import { pieceInstanceDefinition } from '../pieces/definePiece.js';
-import type { PieceInstance, PieceProvider } from '../pieces/types.js';
+import type { PieceInstance, PieceProvider, PieceProviderNotice } from '../pieces/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { resolveModel } from './resolve.js';
 import type { SanitizedAIConfig } from './types.js';
@@ -134,4 +134,37 @@ export async function narrowToLinkedModels<T extends string>({
   }
 
   return narrowed;
+}
+
+/** The model-picker notices of the user's linked accounts, by provider name. */
+export async function linkedNotices({
+  req,
+  config,
+}: {
+  req: FrogBotRequest;
+  config: SanitizedAIConfig;
+}): Promise<Record<string, PieceProviderNotice>> {
+  const notices: Record<string, PieceProviderNotice> = {};
+
+  for (const [name, piece] of Object.entries(config.linkedProviders ?? {})) {
+    const provider = linkedProvider(piece);
+
+    if (!provider?.notice) continue;
+
+    let auth: unknown;
+
+    try {
+      ({ auth } = await req.frogbot.connections.resolvePieceCredential({ piece, req }));
+    } catch (error) {
+      if (error instanceof ConnectionError) continue;
+
+      throw error;
+    }
+
+    const notice = provider.notice({ auth });
+
+    if (notice) notices[name] = notice;
+  }
+
+  return notices;
 }

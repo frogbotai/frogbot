@@ -1,9 +1,10 @@
 import type { ReasoningVariant } from '@frogbotai/gateway';
+import type { AgentModelNotice } from '@frogbotai/protocol';
 
 import { canUseAIModel } from '../ai/access.js';
 import { resolveModelInputs } from '../ai/modelInputs.js';
 import { resolveModelName } from '../ai/modelName.js';
-import { narrowToLinkedModels } from '../ai/providerModels.js';
+import { linkedNotices, narrowToLinkedModels } from '../ai/providerModels.js';
 import { resolveModelReasoning } from '../ai/reasoning.js';
 import { resolveModel } from '../ai/resolve.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
@@ -117,6 +118,8 @@ export async function listAgents({
 
 export async function getAgentManifest({ req }: { req: FrogBotRequest }): Promise<AgentManifest> {
   const agents: AgentManifest['agents'] = [];
+  const config = req.frogbot.config.ai;
+  const notices = config?.linkedProviders ? await linkedNotices({ req, config }) : {};
 
   for (const agent of Object.values(req.frogbot.agents)) {
     try {
@@ -133,6 +136,7 @@ export async function getAgentManifest({ req }: { req: FrogBotRequest }): Promis
     const names = agentNames({ config: req.frogbot.config.ai!, models });
     const reasoning = agentReasoning({ config: req.frogbot.config.ai!, models });
     const inputs = agentInputs({ config: req.frogbot.config.ai!, models });
+    const shown = agentNotices({ notices, models });
 
     agents.push({
       slug: agent.slug,
@@ -143,10 +147,27 @@ export async function getAgentManifest({ req }: { req: FrogBotRequest }): Promis
       ...(names ? { names } : {}),
       ...(reasoning ? { reasoning } : {}),
       ...(inputs ? { inputs } : {}),
+      ...(shown ? { notices: shown } : {}),
     });
   }
 
   return { defaultAgent: agents[0]?.slug ?? '', agents };
+}
+
+function agentNotices({
+  notices,
+  models,
+}: {
+  notices: Record<string, AgentModelNotice>;
+  models: readonly AgentModelId[];
+}): AgentManifestEntry['notices'] {
+  const shown = Object.fromEntries(
+    Object.entries(notices).filter(([provider]) =>
+      models.some((model) => model.startsWith(`${provider}/`)),
+    ),
+  );
+
+  return Object.keys(shown).length ? shown : undefined;
 }
 
 export async function getAgentAuthorizations({

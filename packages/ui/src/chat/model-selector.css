@@ -154,6 +154,22 @@
     line-height: var(--fb-text-xs--line-height);
   }
 
+  .fb-model-selector__notice {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+    margin: 0;
+    padding: 0 0.75rem 0.25rem;
+    color: var(--color-text-secondary);
+    font-size: var(--fb-text-xs);
+    line-height: var(--fb-text-xs--line-height);
+  }
+
+  .fb-model-selector__notice a {
+    color: var(--color-text-brand);
+    text-decoration: underline;
+  }
+
   .fb-model-selector__list {
     display: flex;
     max-height: 18rem;

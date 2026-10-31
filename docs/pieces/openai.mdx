@@ -1,10 +1,10 @@
 ---
 title: OpenAI
-description: Let each user run AI on their own OpenAI API key, checked once when they link it.
-keywords: [pieces, openai, api key, connections, linked accounts, credentials, billing]
+description: Let each user run AI on their own OpenAI API key or their ChatGPT plan.
+keywords: [pieces, openai, chatgpt, api key, connections, linked accounts, credentials, billing, sign in with chatgpt]
 ---
 
-`@frogbotai/piece-openai` makes OpenAI a linked account. Each user pastes their OpenAI API key in **Settings → Linked accounts**, and their chats, agent runs and AI calls on OpenAI models run and bill on that key.
+`@frogbotai/piece-openai` makes OpenAI a linked account. In **Settings → Linked accounts**, each user either pastes their OpenAI API key or chooses **Continue with ChatGPT** to use their ChatGPT Go, Plus or Pro plan. Their chats, agent runs and AI calls on OpenAI models then run on that account.
 
 ## Set up
 
@@ -18,11 +18,11 @@ import { buildConfig } from 'frogbot'
 
 export default buildConfig({
   // secret, db, and collections omitted
-  connections: [{ piece: createOpenAI(), secret: true }],
+  connections: [{ piece: createOpenAI(), oauth: true, secret: true }],
 })
 ```
 
-That is the whole setup. Listing the piece in `connections` chooses OpenAI, so FrogBot adds the `openai` provider when [`ai.providers`](/ai/overview#configure-providers) has none. You don't need an `ai` block or an `OPENAI_API_KEY`, and the app boots without one.
+`secret: true` offers the pasted key and `oauth: true` offers **Continue with ChatGPT**; list either or both. That is the whole setup: ChatGPT sign-in needs no client ID or secret. Listing the piece in `connections` chooses OpenAI, so FrogBot adds the `openai` provider when [`ai.providers`](/ai/overview#configure-providers) has none. You don't need an `ai` block or an `OPENAI_API_KEY`, and the app boots without one.
 
 `createOpenAI` takes only `slug` (default `'openai'`). It takes no `auth`: the app's own key goes in `ai.providers.openai.apiKey` or `OPENAI_API_KEY`. See [factory options](/pieces/overview#factory-options).
 
@@ -36,7 +36,7 @@ For each call to an `openai/*` model:
 
 Work without a user, such as jobs and schedules, has no linked key, so it uses the app key or fails the same way. A linked key that can't be used, because it was revoked or can't be read, fails with "Reconnect OpenAI in Settings → Linked accounts." and never falls back to the app key.
 
-This holds for chat and agent turns on every step, for [AI operations](/ai/overview#call-operations) given `req`, and for the [HTTP gateway route](/ai/overview#call-over-http). One user's key is never sent on another user's call.
+This holds for chat and agent turns on every step, for [AI operations](/ai/overview#call-operations) given `req`, and for the [HTTP gateway route](/ai/overview#call-over-http), except that a ChatGPT plan can't be used there (see [Continue with ChatGPT](#continue-with-chatgpt)). One user's key is never sent on another user's call.
 
 ## Link a key
 
@@ -45,15 +45,51 @@ When a user saves a key, FrogBot checks it with one `GET https://api.openai.com/
 | Result | What the user sees | Saved |
 | --- | --- | --- |
 | The key lists models | The linked account | Yes |
-| OpenAI answers 401 or 403 | "OpenAI didn't accept this key." | No |
+| A [restricted key](https://platform.openai.com/api-keys) without the "List models" permission | The linked account; the picker shows the agent's usual models | Yes |
+| OpenAI answers 401 or 403 for any other reason | "OpenAI didn't accept this key." | No |
 | The check fails or takes over 10 seconds | "Couldn't reach OpenAI to check this key. Try again." | No |
 | The key doesn't start with `sk-` | "These credentials were not accepted." | No |
 
-Each user has one linked OpenAI key. Disconnecting deletes the stored key. OpenAI has no API to revoke a pasted key, so tell users to revoke it at [platform.openai.com/api-keys](https://platform.openai.com/api-keys) when they stop using it.
+Each user has one linked OpenAI account, a key or a ChatGPT sign-in; linking one replaces the other. Disconnecting deletes the stored key. OpenAI has no API to revoke a pasted key, so tell users to revoke it at [platform.openai.com/api-keys](https://platform.openai.com/api-keys) when they stop using it.
 
 ## Model picker
 
 For a user with a linked key, the chat model picker offers the agent's OpenAI models that the key can use: the models from `GET /v1/models` that are also in the agent's options and allowed by [`ai.access`](/ai/overview#control-access). Models from other providers are unchanged. FrogBot keeps the list for 15 minutes per linked key; linking a new key fetches it again. When the list can't be fetched, the picker shows the full list. If the agent's default model isn't in the list, the first listed model is the default.
+
+## Continue with ChatGPT
+
+**Continue with ChatGPT** uses OpenAI's sign-in for running apps on a ChatGPT plan, the way OpenCode does. It works when the FrogBot app runs on the user's own computer: the sign-in returns to a one-time listener on `http://127.0.0.1:<random port>/auth/callback`, which the user's browser must reach. A hosted app can't offer it; its users paste a key instead.
+
+1. In **New Connection**, the user picks OpenAI, chooses **ChatGPT**, and selects **Continue with ChatGPT**. FrogBot opens the listener and sends the browser to OpenAI. The listener closes after one answer, after 10 minutes, or when the user starts again.
+2. The first time, OpenAI asks the user to register the app, named FrogBot, and to allow plan use. FrogBot checks the answer, exchanges the code with no client secret, and checks the ID token's signature, issuer, audience, expiry, subject and nonce.
+3. FrogBot saves the tokens, encrypted, for the user who started, and shows OpenAI's **You're using your ChatGPT plan** notice once. **Got it** returns to Linked accounts at the address the user browsed, `localhost` included. Later sign-ins return there directly.
+
+A sign-in without plan use saves nothing: "ChatGPT didn't allow plan use. Sign in again and allow it, or paste an OpenAI API key instead."
+
+FrogBot keeps two IDs in the app's [key-value store](/configuration/overview#key-value-store): one host ID per install, made on the first sign-in, and each user's issued client ID, reused on later sign-ins. A copy of the database copies the host ID, so give each computer its own database. Tokens refresh with the issued client ID; a failed refresh means the user reconnects. **Disconnect** revokes the session at OpenAI, then deletes the tokens even if revoking fails, and keeps both IDs for the next sign-in.
+
+On a plan:
+
+- Calls always stream with `store: false`, send system text as developer messages, and drop the fields and hosted tools the plan route rejects, such as `temperature`, `maxOutputTokens` and image generation. Web search is kept. Calls that don't stream, such as chat titles and AI fields, are built from a stream.
+- Request bodies over 1 MiB are sent zstd-compressed.
+- The model picker lists the plan's models from OpenAI that are in the agent's options, and says **Using ChatGPT plan** with a **Manage usage** link to [ChatGPT's usage settings](https://chatgpt.com/settings/usage). When OpenAI's list fails or is empty, the picker uses a fixed list of plan models.
+- ChatGPT Plus has one five-hour usage limit shared by every app on the plan, FrogBot included.
+- A plan can't be used through the app's [HTTP gateway route](/ai/overview#call-over-http): OpenAI's terms don't allow general API access. Those calls fail before any request with "A ChatGPT plan can't be used through this app's API. Paste an OpenAI API key in Settings → Linked accounts to use the API."
+- The plan covers language models only. Embeddings, images and speech on a plan account fail with the key messages below.
+
+## Errors on a ChatGPT plan
+
+OpenAI's plan errors, at the start of a reply or partway through, show these messages:
+
+| OpenAI answers | Message | Retried |
+| --- | --- | --- |
+| `subscription_sharing_usage_limit_exceeded` | "You've reached your ChatGPT plan's usage limit. Manage usage at https://chatgpt.com/settings/usage." | No |
+| `subscription_sharing_user_not_eligible` | "This ChatGPT account can't use its plan in other apps. Paste an OpenAI API key in Settings → Linked accounts instead." | No |
+| `subscription_sharing_invalid_user`, `chatpass_v2_scope_not_authorized`, `chatpass_v2_invalid_authorization_context`, or a 401 | "Reconnect ChatGPT in Settings → Linked accounts." | No |
+| `subscription_sharing_unsupported_capability`, `subscription_sharing_route_not_supported` | "This request isn't supported on a ChatGPT plan." | No |
+| `subscription_sharing_usage_unavailable`, `subscription_sharing_user_unavailable` | "ChatGPT is busy. Try again in a moment." | Twice, after 1 and 2 seconds, when the reply hasn't started |
+
+Other errors get the messages below.
 
 ## Errors on a user's key
 
