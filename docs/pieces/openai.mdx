@@ -14,9 +14,10 @@ pnpm add @frogbotai/piece-openai
 
 ```ts
 import { createOpenAI } from '@frogbotai/piece-openai'
-import { defineConfig } from 'frogbot'
+import { buildConfig } from 'frogbot'
 
-export default defineConfig({
+export default buildConfig({
+  // secret, db, and collections omitted
   connections: [{ piece: createOpenAI(), secret: true }],
 })
 ```

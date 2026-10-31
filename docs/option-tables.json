@@ -877,7 +877,7 @@
   {
     "page": "gateway/providers",
     "heading": "Built-in provider options",
-    "type": "Pick<Exclude<NonNullable<import('@frogbotai/gateway').GatewayConfig['providers']['openai']>, { languageModel: unknown }>, 'models' | 'apiKey' | 'baseURL' | 'headers'>"
+    "type": "Pick<Exclude<NonNullable<import('@frogbotai/gateway').GatewayConfig['providers']['openai']>, { languageModel: unknown }>, 'models' | 'apiKey' | 'baseURL' | 'headers' | 'credential'>"
   },
   {
     "page": "gateway/providers",
