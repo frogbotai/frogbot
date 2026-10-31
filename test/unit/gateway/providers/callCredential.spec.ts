@@ -204,7 +204,7 @@ describe('provider credential', () => {
     const users = Array.from({ length: 600 }, (_, index) => `user-${index}`);
 
     await Promise.all(
-      [...users, ...users.toReversed()].map((user, index) =>
+      [...users, ...[...users].reverse()].map((user, index) =>
         failure(
           generateText({
             model: gw
@@ -228,7 +228,7 @@ describe('provider credential', () => {
 
   it('never shares an instance between settings that differ', async () => {
     const build = vi.spyOn(openaiProvider, 'build');
-    const settings = [
+    const settings: { apiKey: string; headers?: Record<string, string> }[] = [
       { apiKey: 'sk-a', headers: { x: '1' } },
       { apiKey: 'sk-a', headers: { x: '2' } },
       { apiKey: 'sk-a","headers":{"x":"1"}' },
