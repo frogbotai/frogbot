@@ -77,6 +77,7 @@ export function videosRoute(ctx: VideosRouteContext) {
         providers: ctx.registry,
         models: ctx.models,
         allowlists: ctx.allowlists,
+        call: { context, via: 'http' },
       });
 
       const model = requireVideoModel({

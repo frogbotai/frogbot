@@ -112,6 +112,7 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
         providers: ctx.registry,
         models: ctx.models,
         allowlists: ctx.allowlists,
+        call: { context, via: 'http' },
       });
 
       const model = requireTranscriptionModel({

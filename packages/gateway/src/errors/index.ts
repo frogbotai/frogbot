@@ -15,6 +15,7 @@ export type { GatewayErrorCode } from './gatewayError.js';
 export {
   BodyTooLargeError,
   BudgetExceededError,
+  CallCredentialError,
   ConfigError,
   GatewayError,
   InvalidToolArgumentsError,

@@ -74,6 +74,7 @@ export function evaluateRoute(ctx: EvaluateRouteContext) {
         providers: ctx.registry,
         models: ctx.models,
         allowlists: ctx.allowlists,
+        call: { context, via: 'http' },
       });
 
       const model = requireEvaluationModel({

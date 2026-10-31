@@ -74,6 +74,7 @@ export function embeddingsRoute(ctx: EmbeddingsRouteContext) {
         providers: ctx.registry,
         models: ctx.models,
         allowlists: ctx.allowlists,
+        call: { context, via: 'http' },
       });
 
       const model = resolved.instance.embeddingModel(resolved.modelName);

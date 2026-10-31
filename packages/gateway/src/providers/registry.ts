@@ -34,6 +34,12 @@ import { resolveBedrockModelId } from './bedrock/canonical.js';
 import { bedrockProvider } from './bedrock/index.js';
 import { blackForestLabsProvider } from './black-forest-labs/index.js';
 import { bytedanceProvider } from './bytedance/index.js';
+import {
+  bindCallCredential,
+  type CallCredential,
+  type CallScope,
+  withCallCredential,
+} from './callCredential.js';
 import { type ModelCatalog, type Operation, supportsOperation } from './catalog.js';
 import { cerebrasProvider } from './cerebras/index.js';
 import { cohereProvider } from './cohere/index.js';
@@ -133,8 +139,11 @@ export type GatewayTranscriptionModel = TranscriptionModelV4 | TranscriptionMode
 
 export type GatewayRerankingModel = RerankingModelV4 | RerankingModelV3;
 
-type ConfigOf<K extends ProviderName> = Parameters<(typeof providers)[K]['build']>[0] & {
+type SettingsOf<K extends ProviderName> = Parameters<(typeof providers)[K]['build']>[0];
+
+type ConfigOf<K extends ProviderName> = SettingsOf<K> & {
   models?: string[];
+  credential?: CallCredential<Partial<SettingsOf<K>>>;
 };
 
 type InstanceOf<K extends ProviderName> = ReturnType<(typeof providers)[K]['build']>;
@@ -194,15 +203,25 @@ export type ProviderRegistry = { [K in ProviderName]?: InstanceOf<K> } & {
 };
 
 type ProviderBuilders = {
-  [K in ProviderName]: { build: (config: Omit<ConfigOf<K>, 'models'>) => InstanceOf<K> };
+  [K in ProviderName]: {
+    build: (config: Omit<ConfigOf<K>, 'models' | 'credential'>) => InstanceOf<K>;
+  };
 };
 
 const builders: ProviderBuilders = providers;
 
 function buildOne<K extends ProviderName>(name: K, cfg: ConfigOf<K>): InstanceOf<K> {
-  const { models: _, ...providerConfig } = cfg;
+  const { models: _, credential, ...providerConfig } = cfg;
+  const instance = builders[name].build(providerConfig);
 
-  return builders[name].build(providerConfig);
+  if (credential) {
+    bindCallCredential(instance, {
+      credential,
+      build: (settings) => builders[name].build({ ...providerConfig, ...settings }),
+    });
+  }
+
+  return instance;
 }
 
 /**
@@ -291,6 +310,8 @@ export type ResolveProviderArgs = {
   /** Optional model catalog for operation validation. */
   models?: ModelCatalog;
   allowlists?: ProviderModelAllowlists;
+  /** The call the provider serves, passed to an entry's `credential`. Default: no context, `'app'`. */
+  call?: CallScope;
 };
 
 export type ResolvedProvider = {
@@ -318,7 +339,7 @@ export type ResolvedProvider = {
  *      support the requested operation.
  */
 export function resolveProvider(args: ResolveProviderArgs): ResolvedProvider {
-  const { modelId, operation, providers: registry, models, allowlists } = args;
+  const { modelId, operation, providers: registry, models, allowlists, call } = args;
 
   const configuredProviders = Object.keys(registry).filter(
     (k) => registry[k as keyof ProviderRegistry] != null,
@@ -368,7 +389,7 @@ export function resolveProvider(args: ResolveProviderArgs): ResolvedProvider {
   return {
     providerName,
     modelName: canonicalModelId.slice(slashIndex + 1),
-    instance,
+    instance: withCallCredential(instance, call ?? { context: {}, via: 'app' }),
   };
 }
 

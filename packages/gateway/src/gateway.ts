@@ -93,7 +93,8 @@ export type GatewayOperation = {
    * else values accumulated from upstream rounds. Idempotent.
    */
   finish: (result?: { finishReason?: string; usage?: HookUsage; error?: unknown }) => Promise<void>;
-  chatModel: () => GatewayLanguageModel;
+  /** The operation's chat model, or another `provider/model` ID that joins the same operation. */
+  chatModel: (id?: string) => GatewayLanguageModel;
   embedModel: () => GatewayEmbeddingModel;
   imageModel: () => ImageModelV4;
   videoModel: () => Experimental_VideoModelV4;
@@ -177,6 +178,7 @@ export function buildGateway(config: GatewayConfig): Gateway {
         providers: registry,
         models: catalog,
         allowlists,
+        call: { context: base?.context ?? {}, via: 'app' },
       });
 
       return withLanguageModelHooks(resolved.instance.languageModel(resolved.modelName), {
@@ -195,6 +197,7 @@ export function buildGateway(config: GatewayConfig): Gateway {
         providers: registry,
         models: catalog,
         allowlists,
+        call: { context: base?.context ?? {}, via: 'app' },
       });
 
       return withEmbeddingModelHooks(resolved.instance.embeddingModel(resolved.modelName), {
@@ -213,6 +216,7 @@ export function buildGateway(config: GatewayConfig): Gateway {
         providers: registry,
         models: catalog,
         allowlists,
+        call: { context: base?.context ?? {}, via: 'app' },
       });
 
       return withImageModelHooks(resolved.instance.imageModel(resolved.modelName), {
@@ -231,6 +235,7 @@ export function buildGateway(config: GatewayConfig): Gateway {
         providers: registry,
         models: catalog,
         allowlists,
+        call: { context: base?.context ?? {}, via: 'app' },
       });
 
       const model = requireVideoModel({
@@ -255,6 +260,7 @@ export function buildGateway(config: GatewayConfig): Gateway {
         providers: registry,
         models: catalog,
         allowlists,
+        call: { context: base?.context ?? {}, via: 'app' },
       });
 
       const model = requireSpeechModel({
@@ -283,6 +289,7 @@ export function buildGateway(config: GatewayConfig): Gateway {
         providers: registry,
         models: catalog,
         allowlists,
+        call: { context: base?.context ?? {}, via: 'app' },
       });
 
       const model = requireTranscriptionModel({
@@ -307,6 +314,7 @@ export function buildGateway(config: GatewayConfig): Gateway {
         providers: registry,
         models: catalog,
         allowlists,
+        call: { context: base?.context ?? {}, via: 'app' },
       });
 
       const model = requireRerankingModel({
@@ -335,6 +343,7 @@ export function buildGateway(config: GatewayConfig): Gateway {
         providers: registry,
         models: catalog,
         allowlists,
+        call: { context: base?.context ?? {}, via: 'app' },
       });
 
       const model = requireEvaluationModel({
@@ -447,7 +456,7 @@ export function buildGateway(config: GatewayConfig): Gateway {
             { isolate: true, logger },
           );
         },
-        chatModel: () => resolvers.chatModel(opts.model, hooks, base),
+        chatModel: (id?: string) => resolvers.chatModel(id ?? opts.model, hooks, base),
         embedModel: () => resolvers.embedModel(opts.model, hooks, base),
         imageModel: () => resolvers.imageModel(opts.model, hooks, base),
         videoModel: () => resolvers.videoModel(opts.model, hooks, base),
