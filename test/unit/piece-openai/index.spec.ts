@@ -31,13 +31,18 @@ describe('createOpenAI', () => {
   const definition = pieceInstanceDefinition(piece);
   const provider = definition.provider!;
 
-  it('is an OpenAI secret-key piece with no actions and no OAuth', () => {
+  it('is an OpenAI piece with a pasted key, the ChatGPT sign-in and no actions', () => {
     expect(piece).toMatchObject({ slug: 'openai', piece: 'openai' });
     expect(definition.label).toBe('OpenAI');
     expect(definition.admin?.icon).toMatch(/^data:image\/svg\+xml,/);
-    expect(definition.oauth).toBeUndefined();
+    expect(definition.oauth).toMatchObject({ label: 'ChatGPT' });
     expect(pieceInstanceTools(piece)).toEqual([]);
-    expect(piece[pieceCapabilities]).toMatchObject({ staticAuth: true, provider });
+    expect(piece[pieceCapabilities]).toMatchObject({
+      staticAuth: true,
+      pieceOAuth: true,
+      factoryOAuth: false,
+      provider,
+    });
     expect(provider.name).toBe('openai');
   });
 
