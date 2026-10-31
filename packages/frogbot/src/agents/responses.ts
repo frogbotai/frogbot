@@ -1,6 +1,6 @@
 import { isGatewayError } from '@frogbotai/gateway/errors';
 
-import { aiErrorMessage } from '../ai/errorMessage.js';
+import { aiErrorMessage, type AIErrorMessageProps } from '../ai/errorMessage.js';
 import { TurnError } from '../chat/turn/errors.js';
 import { listPendingCalls } from '../chat/turn/settle.js';
 import type { TurnStream } from '../chat/turn/streamTurn.js';
@@ -38,8 +38,11 @@ export async function agentResult({
   };
 }
 
-export function errorResponse(error: unknown): Response {
-  const aiError = aiErrorMessage({ error });
+export function errorResponse(
+  error: unknown,
+  { model, config }: Omit<AIErrorMessageProps, 'error'> = {},
+): Response {
+  const aiError = aiErrorMessage({ error, model, config });
 
   if (aiError) {
     return Response.json(

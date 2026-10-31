@@ -3,6 +3,7 @@ import { isGatewayError } from '@frogbotai/gateway/errors';
 import { APICallError, RetryError } from 'ai';
 
 import { pieceInstanceDefinition } from '../pieces/definePiece.js';
+import { resolveModel } from './resolve.js';
 import type { SanitizedAIConfig } from './types.js';
 
 export type AIErrorMessageProps = {
@@ -59,7 +60,8 @@ export function aiErrorMessage({ error, model, config }: AIErrorMessageProps): s
 }
 
 function linkedPiece({ model, config }: Omit<AIErrorMessageProps, 'error'>) {
-  const provider = model?.slice(0, Math.max(model.indexOf('/'), 0));
+  const resolved = model && config ? resolveModel(model, config) : model;
+  const provider = resolved?.slice(0, Math.max(resolved.indexOf('/'), 0));
   const piece = provider ? config?.linkedProviders?.[provider] : undefined;
 
   return piece ? pieceInstanceDefinition(piece) : undefined;
