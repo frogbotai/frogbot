@@ -80,6 +80,22 @@ These seven combinations apply to credential-requiring pieces. OAuth combination
 
 “Otherwise” means **no connection row exists**. An existing row must resolve successfully. Invalid credentials, revoked or error states, missing scopes, and expiry that cannot be refreshed throw `ConnectionError` and block fallback.
 
+## Run AI on users' keys
+
+A piece can link an AI provider, so each user's linked account becomes the credential for their AI calls to that provider. [OpenAI](/pieces/openai) is one:
+
+```ts
+import { createOpenAI } from '@frogbotai/piece-openai'
+
+export default defineConfig({
+  connections: [{ piece: createOpenAI(), secret: true }],
+})
+```
+
+Listing the piece chooses its provider: FrogBot adds the provider to `ai.providers` when it isn't there, and the app boots without an app key. Each call uses the asking user's linked account, else the app key (`ai.providers.<name>.apiKey`, then the provider's environment variable), else fails with a setup error before any request. An existing account that can't be used fails the call and never falls back to the app key. Two pieces can't link the same provider, and the provider must be a built-in API-key provider; either mistake fails startup.
+
+Before a key is saved, FrogBot checks it with the piece's model listing, and the model picker offers only the models the user's key can use. See [Link a key](/pieces/openai#link-a-key).
+
 ## Link an account in Settings
 
 1. Sign in to the admin panel and open **Settings → Linked accounts**.

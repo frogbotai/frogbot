@@ -1,3 +1,4 @@
+import { listLinkedModels, seedLinkedModels } from '../ai/providerModels.js';
 import type { Endpoint } from '../endpoints/types.js';
 import { KVLockContentionError } from '../kv/errors.js';
 import { pieceInstanceDefinition } from '../pieces/definePiece.js';
@@ -48,15 +49,30 @@ export function buildSecretEndpoints({
           return Response.json({ error: 'Connection not found' }, { status: 404 });
         }
 
+        const { auth: schema, label, provider } = pieceInstanceDefinition(entry.piece);
         let credential: PieceJSON;
+        let auth: unknown;
         try {
           const input: unknown = await req.json!();
-          const schema = pieceInstanceDefinition(entry.piece).auth;
           if (!schema) throw new Error();
-          schema.parse(input);
+          auth = schema.parse(input);
           credential = input as PieceJSON;
         } catch {
           return Response.json({ error: 'Invalid credentials' }, { status: 400 });
+        }
+
+        let models: string[] | undefined;
+        try {
+          models = provider && (await listLinkedModels({ provider, auth, signal: req.signal }));
+        } catch (error) {
+          const status = (error as { status?: unknown } | undefined)?.status;
+
+          return status === 401 || status === 403
+            ? Response.json({ error: `${label} didn't accept this key.` }, { status: 422 })
+            : Response.json(
+                { error: `Couldn't reach ${label} to check this key. Try again.` },
+                { status: 502 },
+              );
         }
 
         try {
@@ -68,6 +84,10 @@ export function buildSecretEndpoints({
             method: 'secret',
             credential,
           });
+
+          if (models) {
+            await seedLinkedModels({ req, piece: entry.piece, ids: models }).catch(() => undefined);
+          }
 
           return Response.json(metadata);
         } catch (error) {

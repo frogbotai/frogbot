@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
+import { linkedModels } from '../../../../packages/frogbot/src/ai/providerModels.js';
 import { createCredentialEncryption } from '../../../../packages/frogbot/src/connections/encryption.js';
 import { buildSecretEndpoints } from '../../../../packages/frogbot/src/connections/secret.js';
 import { KVLockContentionError } from '../../../../packages/frogbot/src/kv/errors.js';
@@ -162,5 +163,99 @@ describe('static connection endpoints', () => {
 
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({ error: 'Connection is busy' });
+  });
+});
+
+describe('static connection endpoint: provider key check', () => {
+  const keyAuth = z.object({ apiKey: z.string().startsWith('sk-') });
+
+  function setupProvider(models: (args: unknown) => Promise<string[]>) {
+    const listModels = vi.fn(models);
+    const piece = definePiece({
+      slug: 'openai',
+      label: 'OpenAI',
+      auth: keyAuth,
+      client: ({ auth }: { auth: unknown }) => auth,
+      provider: {
+        name: 'openai',
+        credential: ({ auth }: { auth: unknown }) => ({ apiKey: keyAuth.parse(auth).apiKey }),
+        models: listModels,
+      },
+      actions: [],
+    })();
+
+    const upsert = vi
+      .fn()
+      .mockResolvedValue({ id: 'row', piece: 'openai', method: 'secret', status: 'active' });
+
+    const key = {};
+    const resolvePieceCredential = vi.fn().mockResolvedValue({ auth: { apiKey: 'sk-good' }, key });
+    const connections = {
+      enabled: true,
+      slug: 'connections',
+      encryption: createCredentialEncryption({ secret: 'test' }),
+      entries: { openai: { piece, secret: true, oauth: false } },
+    };
+
+    const [link] = buildSecretEndpoints({ connections, userSlug: 'users' });
+    const req = {
+      user: { id: 'owner', collection: 'users' },
+      routeParams: { piece: 'openai' },
+      json: () => Promise.resolve({ apiKey: 'sk-good' }),
+      frogbot: { connections: { store: Promise.resolve({ upsert }), resolvePieceCredential } },
+    };
+
+    return { piece, link, req, upsert, listModels };
+  }
+
+  it('checks the key with one models call, then saves it and seeds the model list', async () => {
+    const { piece, link, req, upsert, listModels } = setupProvider(() =>
+      Promise.resolve(['gpt-4o', 'whisper-1']),
+    );
+
+    const response = await link.handler(req as never);
+
+    expect(response.status).toBe(200);
+    expect(upsert).toHaveBeenCalledOnce();
+    expect(listModels).toHaveBeenCalledOnce();
+    expect(listModels).toHaveBeenCalledWith({
+      auth: { apiKey: 'sk-good' },
+      credential: { apiKey: 'sk-good' },
+      signal: expect.any(AbortSignal),
+    });
+
+    expect(await linkedModels({ req: req as never, piece })).toEqual(
+      new Set(['openai/gpt-4o', 'openai/whisper-1']),
+    );
+    expect(listModels).toHaveBeenCalledOnce();
+  });
+
+  it.each([401, 403])(
+    'refuses a key the provider rejects with %i, saving nothing',
+    async (status) => {
+      const { link, req, upsert } = setupProvider(() =>
+        Promise.reject(Object.assign(new Error('rejected'), { status })),
+      );
+
+      const response = await link.handler(req as never);
+
+      expect(response.status).toBe(422);
+      expect(await response.json()).toEqual({ error: "OpenAI didn't accept this key." });
+      expect(upsert).not.toHaveBeenCalled();
+    },
+  );
+
+  it('saves nothing when the check cannot finish', async () => {
+    const { link, req, upsert } = setupProvider(() =>
+      Promise.reject(new TypeError('fetch failed')),
+    );
+
+    const response = await link.handler(req as never);
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({
+      error: "Couldn't reach OpenAI to check this key. Try again.",
+    });
+    expect(upsert).not.toHaveBeenCalled();
   });
 });

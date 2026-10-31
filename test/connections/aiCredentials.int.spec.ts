@@ -1,10 +1,14 @@
+import type { FrogBotRequest } from 'frogbot';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { FrogBotRequest } from '../../packages/frogbot/src/types/request.js';
 import {
+  AGENT_MODELS,
   AGENT_SLUG,
   bootLinked,
   keysFor,
+  MODEL,
+  modelCalls,
+  modelListings,
   openai,
   RECONNECT_ERROR,
   resetOpenAI,
@@ -103,6 +107,69 @@ describe(`AI calls on linked OpenAI accounts, with an app key [${process.env.FRO
     });
 
     await expect(booted.turn(carol, 'carol-revoked')).rejects.toThrow(RECONNECT_ERROR);
-    expect(openai.requests).toEqual([]);
+    expect(modelCalls()).toEqual([]);
+  });
+
+  it('checks a pasted key once and stores no row when OpenAI rejects it', async () => {
+    const erin = await booted.member('erin@example.com');
+    const response = await booted.link(erin, { apiKey: 'sk-rejected' });
+
+    expect(response.status).toBe(422);
+    expect(await response.json()).toEqual({ error: "OpenAI didn't accept this key." });
+    expect(modelListings()).toHaveLength(1);
+
+    const rows = await booted.frogbot.find({
+      collection: 'connections',
+      where: { owner: { equals: erin.user!.id } },
+      overrideAccess: true,
+    });
+
+    expect(rows.docs).toEqual([]);
+  });
+
+  it("narrows a linked user's picker to their key's catalog models, cached until relink", async () => {
+    const frank = await booted.member('frank@example.com');
+
+    expect((await booted.link(frank, { apiKey: 'sk-frank' })).status).toBe(200);
+
+    const listed = { models: [MODEL, 'openai/gpt-4o'], defaultModel: MODEL };
+
+    await expect(booted.picker(frank)).resolves.toMatchObject(listed);
+    await expect(booted.picker(frank)).resolves.toMatchObject(listed);
+    expect(modelListings()).toHaveLength(1);
+
+    openai.models = ['gpt-4.1'];
+
+    expect((await booted.link(frank, { apiKey: 'sk-frank-2' })).status).toBe(200);
+    await expect(booted.picker(frank)).resolves.toMatchObject({
+      models: ['openai/gpt-4.1'],
+      defaultModel: 'openai/gpt-4.1',
+    });
+    expect(modelListings().map(({ authorization }) => authorization)).toEqual([
+      'Bearer sk-frank',
+      'Bearer sk-frank-2',
+    ]);
+  });
+
+  it('shows the full list to a user without a linked account, or when listing fails', async () => {
+    const full = { models: [...AGENT_MODELS], defaultModel: MODEL };
+
+    await expect(booted.picker(bob)).resolves.toMatchObject(full);
+
+    const gina = await booted.member('gina@example.com');
+
+    await (
+      await booted.frogbot.connections.store
+    ).upsert({
+      owner: { id: gina.user!.id, collection: 'members' },
+      piece: 'openai',
+      method: 'secret',
+      credential: { apiKey: 'sk-gina' },
+    });
+
+    openai.modelsDown = true;
+
+    await expect(booted.picker(gina)).resolves.toMatchObject(full);
+    expect(modelListings().map(({ authorization }) => authorization)).toEqual(['Bearer sk-gina']);
   });
 });

@@ -51,6 +51,7 @@
     "@frogbotai/piece-microsoft-teams": "workspace:*",
     "@frogbotai/piece-monday": "workspace:*",
     "@frogbotai/piece-notion": "workspace:*",
+    "@frogbotai/piece-openai": "workspace:*",
     "@frogbotai/piece-pagerduty": "workspace:*",
     "@frogbotai/piece-pdf": "workspace:*",
     "@frogbotai/piece-posthog": "workspace:*",

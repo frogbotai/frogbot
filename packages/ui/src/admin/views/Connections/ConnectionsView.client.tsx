@@ -26,6 +26,7 @@ import LinkSquareIcon from '../../../icons/icons/LinkSquareIcon.js';
 import LoadingIcon from '../../../icons/icons/LoadingIcon.js';
 import MoreHorizontalIcon from '../../../icons/icons/MoreHorizontalIcon.js';
 import { ConnectionFields } from './ConnectionFields.js';
+import { linkError } from './linkError.js';
 import { PieceLogo } from './PieceLogo.js';
 import { connectionInput, initialConnectionValue } from './schema.js';
 import { connectionStatus } from './status.js';
@@ -102,13 +103,7 @@ function ConnectionForm({
       });
 
       if (!response.ok) {
-        setError(
-          response.status === 401
-            ? 'Your session has expired. Sign in and try again.'
-            : response.status === 400
-              ? 'These credentials were not accepted. Check the values and try again.'
-              : 'Could not create the connection. Please try again.',
-        );
+        setError(await linkError(response));
 
         return;
       }

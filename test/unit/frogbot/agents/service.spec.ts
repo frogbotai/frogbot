@@ -17,6 +17,7 @@ import type {
 import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/ai/types.js';
 import { sanitize as sanitizeConfig } from '../../../../packages/frogbot/src/config/sanitize.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import { ConnectionError } from '../../../../packages/frogbot/src/connections/api.js';
 import {
   definePiece,
   pieceInstanceTools,
@@ -792,5 +793,77 @@ describe('agent service', () => {
     const req = makeRequest({ agents: { support: agent }, allowed: [OPENAI_OTHER] });
 
     await expect(canUseAgent({ req, agent })).resolves.toEqual({ allowed: true });
+  });
+});
+
+describe('model picker for a linked provider account', () => {
+  const keyAuth = z.object({ apiKey: z.string() });
+  const GPT_4O = 'openai/gpt-4o' as AgentModelId;
+  const GPT_41 = 'openai/gpt-4.1' as AgentModelId;
+
+  function linkedRequest({
+    models,
+    linked = true,
+  }: {
+    models: () => Promise<string[]>;
+    linked?: boolean;
+  }) {
+    const listModels = vi.fn(models);
+    const piece = definePiece({
+      slug: 'openai',
+      label: 'OpenAI',
+      auth: keyAuth,
+      client: ({ auth }: { auth: unknown }) => auth,
+      provider: { name: 'openai', credential: () => ({}), models: listModels },
+      actions: [],
+    })();
+
+    const agent = makeAgent({ model: GPT_4O, options: [GPT_41, SMART, LOCAL_THINKER] });
+    const ai = { ...config, linkedProviders: { openai: piece } } as SanitizedAIConfig;
+    const req = makeRequest({ agents: { support: agent }, ai });
+    const key = {};
+    const resolvePieceCredential = vi.fn(() =>
+      linked
+        ? Promise.resolve({ auth: { apiKey: 'sk-user' }, key })
+        : Promise.reject(new ConnectionError('Not linked.', 'missing')),
+    );
+
+    Object.assign(req.frogbot, { connections: { resolvePieceCredential } });
+
+    return { req, listModels };
+  }
+
+  const models = async (req: FrogBotRequest) => (await getAgentManifest({ req })).agents[0];
+
+  it("narrows the provider's options to the account's models and keeps other providers", async () => {
+    const { req } = linkedRequest({ models: () => Promise.resolve(['gpt-4.1', 'gpt-5', 'tts-1']) });
+
+    await expect(models(req)).resolves.toMatchObject({
+      models: [GPT_41, SMART, LOCAL_THINKER],
+      defaultModel: GPT_41,
+    });
+  });
+
+  it('lists the models once within 15 minutes', async () => {
+    const { req, listModels } = linkedRequest({ models: () => Promise.resolve(['gpt-4o']) });
+
+    await models(req);
+    await models(req);
+
+    expect(listModels).toHaveBeenCalledOnce();
+  });
+
+  it('shows the full list when listing fails or the user has no linked account', async () => {
+    const failing = linkedRequest({ models: () => Promise.reject(new Error('offline')) });
+    const unlinked = linkedRequest({ models: () => Promise.resolve([]), linked: false });
+
+    for (const { req } of [failing, unlinked]) {
+      await expect(models(req)).resolves.toMatchObject({
+        models: [GPT_4O, GPT_41, SMART, LOCAL_THINKER],
+        defaultModel: GPT_4O,
+      });
+    }
+
+    expect(unlinked.listModels).not.toHaveBeenCalled();
   });
 });

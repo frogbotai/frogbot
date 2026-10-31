@@ -1336,6 +1336,19 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/pieces/piece-openai:
+    dependencies:
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/pieces/piece-pagerduty:
     dependencies:
       zod:
@@ -2345,6 +2358,9 @@ importers:
       '@frogbotai/piece-notion':
         specifier: workspace:*
         version: link:../packages/pieces/piece-notion
+      '@frogbotai/piece-openai':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-openai
       '@frogbotai/piece-pagerduty':
         specifier: workspace:*
         version: link:../packages/pieces/piece-pagerduty

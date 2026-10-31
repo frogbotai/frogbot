@@ -3,6 +3,7 @@ import type { ReasoningVariant } from '@frogbotai/gateway';
 import { canUseAIModel } from '../ai/access.js';
 import { resolveModelInputs } from '../ai/modelInputs.js';
 import { resolveModelName } from '../ai/modelName.js';
+import { narrowToLinkedModels } from '../ai/providerModels.js';
 import { resolveModelReasoning } from '../ai/reasoning.js';
 import { resolveModel } from '../ai/resolve.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
@@ -232,7 +233,9 @@ export async function userAgentModels({
     if (await canUseAIModel({ req, method: 'generateText', model })) models.push(model);
   }
 
-  return models;
+  const config = req.frogbot.config.ai;
+
+  return config?.linkedProviders ? narrowToLinkedModels({ req, config, models }) : models;
 }
 
 function defaultAgentModel({

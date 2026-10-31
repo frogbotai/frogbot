@@ -27,6 +27,7 @@ Same-provider upstream errors — an invalid OpenAI key on an OpenAI call, for e
 | Code | Cause |
 | --- | --- |
 | `config_invalid` | Config failed validation (missing provider, malformed entry) |
+| `credential_unavailable` | A provider's [`credential`](/gateway/providers#per-call-credentials) threw `CallCredentialError`: the call has no usable credential (401) |
 | `no_providers` | Zero providers configured — nothing to route to |
 | `invalid_model_id` | Malformed model ID (missing or misplaced `/`) |
 | `model_not_found` | Provider segment isn't a known or configured name |
