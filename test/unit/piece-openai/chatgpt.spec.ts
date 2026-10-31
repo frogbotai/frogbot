@@ -3,10 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
 import { pieceInstanceDefinition } from '../../../packages/frogbot/src/pieces/definePiece.js';
-import type {
-  FrogBotRequest,
-  PieceOAuthSignIn,
-} from '../../../packages/frogbot/src/pieces/types.js';
+import type { PieceOAuthSignIn } from '../../../packages/frogbot/src/pieces/types.js';
+import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 import { createOpenAI } from '../../../packages/pieces/piece-openai/src/index.js';
 
 const signIn = pieceInstanceDefinition(createOpenAI()).oauth as PieceOAuthSignIn<unknown>;
