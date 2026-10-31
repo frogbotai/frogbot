@@ -4,7 +4,7 @@ import { createCredentialEncryption } from '../../../../packages/frogbot/src/con
 import { buildConnectionOAuthEndpoints } from '../../../../packages/frogbot/src/connections/endpoints.js';
 import type { SanitizedConnectionsConfig } from '../../../../packages/frogbot/src/connections/types.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
-import type { PieceOAuthSave } from '../../../../packages/frogbot/src/pieces/types.js';
+import type { OAuthTokens, PieceOAuthSave } from '../../../../packages/frogbot/src/pieces/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import { definition, setup } from './oauth/fixtures.js';
 
@@ -544,7 +544,7 @@ describe('piece-run sign-in endpoints', () => {
     });
   });
 
-  it.each<[string, (f: ReturnType<typeof signInFixture>) => void, object]>([
+  it.each<[string, (f: ReturnType<typeof signInFixture>) => void, OAuthTokens]>([
     ['a deleted user', (f) => f.findByID.mockResolvedValue(null), { access_token: 'token' }],
     ['tokens with no access token', () => {}, { refresh_token: 'refresh' }],
   ])('saves nothing for %s', async (_kind, change, tokens) => {

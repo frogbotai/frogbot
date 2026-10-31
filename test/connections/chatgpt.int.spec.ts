@@ -8,7 +8,7 @@ import { AGENT_SLUG, bootLinked, lookup } from './aiCredentials.js';
 import { challenge, idToken, signingKey } from './chatgpt.js';
 
 const ORIGIN = 'http://localhost:3000';
-const AGENT_MODELS = ['openai/gpt-5.5', 'openai/gpt-6-sol', 'openai/gpt-4o-mini'];
+const AGENT_MODELS = ['openai/gpt-5.5', 'openai/gpt-6-sol', 'openai/gpt-4o-mini'] as const;
 const NO_API_ACCESS =
   "A ChatGPT plan can't be used through this app's API. Paste an OpenAI API key in Settings → Linked accounts to use the API.";
 

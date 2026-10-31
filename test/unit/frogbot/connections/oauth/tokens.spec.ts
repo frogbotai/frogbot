@@ -235,7 +235,7 @@ describe('OAuth token and account transport', () => {
         ...definition,
         oauth: {
           ...definition.oauth,
-          account: async (args) => {
+          account: async (args: { req: FrogBotRequest }) => {
             await run(args);
 
             return { id: 'id', label: 'label' };

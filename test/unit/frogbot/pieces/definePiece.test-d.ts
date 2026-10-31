@@ -854,3 +854,23 @@ definePiece({
   },
   actions: [],
 });
+
+definePiece({
+  slug: 'redirect-account',
+  label: 'Redirect account',
+  auth: keyAuth,
+  client: ({ auth }) => auth,
+  oauth: {
+    authorizationUrl: 'https://provider.test/authorize',
+    tokenUrl: 'https://provider.test/token',
+    scopes: { catalog: {}, defaults: [] },
+    account: ({ tokens, req: request }) => {
+      expectTypeOf(tokens).toEqualTypeOf<OAuthTokens>();
+      expectTypeOf(request).toEqualTypeOf<FrogBotRequest>();
+
+      return Promise.resolve({ id: 'id', label: 'Label' });
+    },
+    refresh: ({ tokens }) => Promise.resolve(tokens),
+  },
+  actions: [],
+});
