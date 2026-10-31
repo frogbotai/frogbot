@@ -1,48 +1,66 @@
 ---
 title: "What is FrogBot?"
 sidebarTitle: "What is FrogBot?"
-description: "FrogBot is an open-source AI agent framework you configure in one TypeScript file, then deploy anywhere or run as a Docker image."
+description: "FrogBot is the open-source lego bricks for AI to build and replace SaaS apps in one typed TypeScript config."
 ---
 
 import StarterPrompt from '/snippets/starter-prompt.mdx';
 
-**Define your AI agents, tools, and entire data layer in one typed `frogbot.config.ts` — FrogBot boots the production agent backend for all of it.** No routing code, no glue, no SaaS.
+**FrogBot is the open-source lego bricks for AI to build and replace SaaS apps.**
 
-That one file gives you a hosted UI, agent runtime, chat, skills, flows, integrations, model routing, file storage, authentication, REST and GraphQL APIs, and a job system — all in one MIT open-source TypeScript codebase you own and deploy anywhere.
+Define AI agents, tools, providers, 40+ integrations, and your entire data layer in one typed `frogbot.config.ts` — FrogBot boots the production Admin UI, database, and HTTP server for all of it. No routing code, no glue, no per-seat SaaS tax.
+
+## Why AI needs FrogBot
+
+Prompting an AI from scratch produces 15,000 lines of fragile glue code for auth, database tables, permissions, and background queues. FrogBot gives Claude Code, Cursor, Codex, and OpenCode established, declarative foundations so your agent writes a compact config file instead of rebuilding backend plumbing.
+
+Every FrogBot app is a standard MIT-licensed TypeScript codebase you own forever. Run it anywhere Docker or Node.js runs, or deploy to [Dojo](/plugins/dojo) in one command with [`npx frogbot share`](/getting-started/cli#share).
 
 ## Start here
 
-Paste this prompt into Codex, Claude Code, Cursor, or another coding agent, and it sets up FrogBot for you:
+Paste this prompt into Claude Code, Cursor, Codex, or OpenCode to scaffold and boot a FrogBot app with the [FrogBot coding-agent skill](/skills/coding-agents):
 
 <StarterPrompt />
 
+Prefer the terminal? Scaffold an app directly with the CLI:
+
+```bash
+npx create-frogbot-app@latest my-app --ai openai
+cd my-app
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to create your first admin user, explore your collections, and start a chat. See [Installation](/getting-started/installation) for every setup flag.
+
+## What's in the box
+
+- **Full data layer & Admin UI** — [collections](/configuration/collections), [fields](/fields/overview), [authentication](/authentication/overview), [access control](/access-control/overview), [versions](/versions/overview), [drafts](/versions/drafts), and [hooks](/hooks/overview), with instant Table, [Kanban board](/admin/collection-board), and [Calendar](/admin/collection-calendar) views
+- **Config-first AI agents** — [agents](/agents/overview) with typed [Zod](https://zod.dev) tool schemas, per-request access control functions, server-owned [chat history](/chat/overview), and automatic JSON and SSE streaming endpoints
+- **Embeddable MIT AI gateway** — route to OpenAI, Anthropic, Google, and 30+ more providers through a single self-hosted [AI gateway](/gateway/overview)
+- **40+ native OAuth pieces & chat channels** — connect [Slack](/pieces/slack), [Discord](/pieces/discord), [Linear](/pieces/linear), [GitHub](/pieces/github), [Teams](/pieces/teams), [Telegram](/pieces/telegram), Gmail, Stripe, Notion, Xero, and more with [managed OAuth connections](/connections/overview) and [channel questions](/pieces/channel-questions)
+- **Durable jobs & schedules** — [jobs queues](/jobs-queue/overview), cron schedules, retries, and dedicated [workers](/jobs-queue/workers)
+- **Single-command type generation** — `frogbot generate:types` produces [end-to-end TypeScript types](/typescript/generating-types) for your collections, agents, and pieces
+- **Swappable adapters & 1-command deploy** — swap [SQLite](/database/sqlite), [Postgres](/database/postgres), or [MongoDB](/database/mongodb), [object storage](/upload/storage-adapters), and Redis KV adapters anytime, or deploy with [`npx frogbot share`](/getting-started/cli#share)
+
+## Explore the docs
+
 <CardGroup cols={2}>
-  <Card title="Step-by-step setup" icon="list-check" href="/getting-started/setup">
-    Go from nothing installed to your first chat, one plain-language step at a time.
-  </Card>
-  <Card title="Start with a coding agent" icon="robot" href="/getting-started/coding-agent">
-    What the prompt asks your agent to do, and what it will ask you.
-  </Card>
   <Card title="Installation" icon="download" href="/getting-started/installation">
-    Create a project with `npx create-frogbot-app@latest` and choose its database and AI provider.
+    Scaffold a new app with a coding agent or `npx create-frogbot-app@latest`.
   </Card>
   <Card title="Concepts" icon="lightbulb" href="/getting-started/concepts">
-    The high-level building blocks: config, models, pieces, skills, agents, flows, plugins, and content directories.
+    How config, collections, views, agents, pieces, and jobs fit together.
   </Card>
   <Card title="Configuration" icon="gear" href="/configuration/overview">
-    The `frogbot.config.ts` file that controls every part of the framework.
+    The `frogbot.config.ts` file that controls every part of your application.
   </Card>
-  <Card title="Deployment" icon="rocket" href="/deployment/overview">
-    Run your app in production with Docker or Fly.io.
+  <Card title="Collections & Views" icon="database" href="/configuration/collections">
+    Define your database schema, permissions, Kanban boards, and calendars.
+  </Card>
+  <Card title="Agents & Tools" icon="robot" href="/agents/overview">
+    Build tool-calling agents with request-scoped access to your data and pieces.
+  </Card>
+  <Card title="Coding Agent Skill" icon="sparkles" href="/skills/coding-agents">
+    Install the 24-file FrogBot skill for Claude Code, Cursor, Codex, and OpenCode.
   </Card>
 </CardGroup>
-
-## What it gives you
-
-- An AI workspace UI for chats, agents, skills, flows, and connections
-- A file-based defaults system for skills, agents, MCPs, and flows
-- A pieces system for integrations (Slack, Gmail, Notion, GitHub, and more)
-- A piece connector layer that handles managed OAuth without per-piece OAuth apps
-- A job system for triggers, polling, scheduled flows, and waitpoints
-- Web, desktop, and browser extension clients sharing the same React app shell
-  - A plugin system that extends the framework through config transforms

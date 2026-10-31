@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-dojo",
-  "version": "0.37.0",
+  "version": "0.38.0",
   "description": "File storage and AI for FrogBot apps running on Dojo.",
   "license": "MIT",
   "author": "Colby Gilbert",

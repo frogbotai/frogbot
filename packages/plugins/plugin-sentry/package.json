@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-sentry",
-  "version": "0.37.0",
+  "version": "0.38.0",
   "description": "Payload Sentry integration for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",

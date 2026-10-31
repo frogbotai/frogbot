@@ -1205,11 +1205,6 @@
     "mode": "chat"
   },
   {
-    "id": "deepinfra/stepfun-ai/Step-5-Preview",
-    "provider": "deepinfra",
-    "mode": "chat"
-  },
-  {
     "id": "deepinfra/tencent/Hy4-preview",
     "provider": "deepinfra",
     "mode": "chat"
@@ -1661,6 +1656,11 @@
   },
   {
     "id": "mistral/mistral-large-4",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/mistral-large-4-0-8",
     "provider": "mistral",
     "mode": "chat"
   },
@@ -3515,11 +3515,6 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/upstage/solar-pro-3",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/upstage/solar-pro4",
     "provider": "openrouter",
     "mode": "chat"
@@ -3975,11 +3970,6 @@
     "mode": "chat"
   },
   {
-    "id": "vercel/arcee-ai/trinity-large-thinking",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
     "id": "vercel/bytedance/seed-1.6",
     "provider": "vercel",
     "mode": "chat"
@@ -4191,6 +4181,11 @@
   },
   {
     "id": "vercel/inclusionai/ling-3.1-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/inclusionai/ling-3.1-flash-1019",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -4786,11 +4781,6 @@
   },
   {
     "id": "vercel/poolside/laguna-s-2.1",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/poolside/laguna-s-2.1-free",
     "provider": "vercel",
     "mode": "chat"
   },

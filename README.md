@@ -4,7 +4,7 @@
 
 <h1 align="center">FrogBot</h1>
 
-<p align="center"><strong>The config-first AI agent framework</strong></p>
+<p align="center"><strong>The open-source lego bricks for AI to build and replace SaaS apps</strong></p>
 
 <p align="center">
   <a href="https://github.com/frogbotai/frogbot/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=flat-square" /></a>
@@ -23,6 +23,8 @@
 <h4 align="center">
   <a href="#start-with-a-coding-agent"><strong>Start with a coding agent</strong></a>
   &nbsp;·&nbsp;
+  <a href="#quickstart"><strong>Quickstart</strong></a>
+  &nbsp;·&nbsp;
   <a href="https://docs.frogbot.ai"><strong>Explore the Docs</strong></a>
   &nbsp;·&nbsp;
   <a href="https://discord.com/invite/JBZF7syAnU"><strong>Join the Discord</strong></a>
@@ -32,64 +34,41 @@
 
 <hr/>
 
-**Define your AI agents, tools, providers, and your entire data layer in one typed `frogbot.config.ts` — FrogBot boots the production agent backend for all of it.** No routing code, no glue, no SaaS.
+**Define AI agents, tools, providers, 40+ integrations, and your entire data layer in one typed `frogbot.config.ts` — FrogBot boots the production Admin UI, database, and HTTP server for all of it.** No routing code, no glue, no per-seat SaaS tax.
 
-It ships with a full data layer (collections, auth, access control, hooks) and its own embeddable, fully MIT open-source [AI gateway](./packages/gateway).
+Prompting an AI from scratch produces 15,000 lines of fragile glue code for auth, tables, permissions, and background queues. FrogBot gives your coding agent established, declarative building blocks in one MIT-licensed TypeScript codebase you own forever.
 
 ## Start with a coding agent
 
-Paste this prompt into Codex, Claude Code, Cursor, or another coding agent, and it sets up FrogBot for you. The agent may ask for permission to run commands or use the internet; allow it so the setup can finish. Prefer to do it yourself? Follow the [step-by-step setup](https://docs.frogbot.ai/getting-started/setup).
+Paste this prompt into Claude Code, Cursor, Codex, or OpenCode to scaffold a FrogBot app with the bundled [FrogBot skill](https://docs.frogbot.ai/skills/coding-agents):
 
 ```text
-Help me set up FrogBot, an open-source AI agent app, on this computer. I am not a programmer. Do the work yourself, explain each step in one short sentence, and stop to ask me when you need something from me.
+Set up a new FrogBot app on this machine and help me build with it:
 
-1. Check that Node.js 24.21 or newer is installed by running node --version. If it is missing or older, give me the link https://nodejs.org/en/download, wait until I say it is installed, then check again.
-2. Ask me which AI key I have: OpenAI, Anthropic, or Google. If I have none, send me to https://platform.openai.com/api-keys to create an OpenAI key, and wait.
-3. Create the app in the current folder, or in a folder I name. If the current folder is already another project (it has a package.json), ask me where to put it instead and suggest my Documents folder. Use this command:
-npx create-frogbot-app@latest my-frogbot --yes --ai YOUR_PROVIDER --agents YOUR_AGENT
-Replace YOUR_AGENT with the value for the tool you are: codex for Codex, claude for Claude Code, cursor for Cursor, opencode for opencode, copilot for GitHub Copilot, or gemini for Gemini CLI. Replace YOUR_PROVIDER with openai, anthropic, or google, for the key I have. This command also installs the FrogBot skill into the project. If a my-frogbot folder already exists there, ask me for another name and use it instead of my-frogbot from here on.
-4. Go into the my-frogbot folder and read the FrogBot skill before changing anything. AGENTS.md tells you where it is (CLAUDE.md for Claude Code, GEMINI.md for Gemini CLI, .github/copilot-instructions.md for GitHub Copilot). If the skill is missing, run npx skills add frogbotai/frogbot --skill frogbot --yes in that folder.
-5. The app needs my AI provider key in the .env file in my-frogbot (OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_GENERATIVE_AI_API_KEY). Ask me how I want to set it up.
-6. Start the app by running npm run dev in my-frogbot and keep it running. If you cannot keep it running, tell me exactly how to run it myself in a terminal.
-7. When it is ready, tell me to open http://localhost:3000 and create my admin account. Then I open Chats in the sidebar and create a new chat to send my first message.
-
-If anything fails, explain the error in plain words and fix it. For FrogBot questions, use the skill first, then https://docs.frogbot.ai/llms.txt.
+1. Verify Node.js >= 24.21 (node --version). If missing, give me https://nodejs.org/en/download and wait.
+2. Ask which AI provider key I want to use (openai, anthropic, or google) and where to create the project folder.
+3. Run: npx create-frogbot-app@latest my-frogbot --yes --ai <PROVIDER> --agents <AGENT>
+   (Use claude, codex, cursor, opencode, copilot, or gemini for <AGENT>.)
+4. Read the installed FrogBot skill inside my-frogbot (.claude/skills/frogbot/SKILL.md or .agents/skills/frogbot/SKILL.md) before editing any files.
+5. Help me add my provider API key to my-frogbot/.env, start the dev server (npm run dev), and open http://localhost:3000.
+6. Ask what app or SaaS tool I want to build or replace, then configure collections, views, pieces, and agents in src/frogbot.config.ts.
 ```
-
-## Why FrogBot
-
-- **One config file** — agents, tools, collections, providers, storage, and email all live in `frogbot.config.ts`
-- **Fully typed** — `frogbot generate:types` produces types for your entire config, including your data shapes
-- **Auth, access control, and hooks out of the box** — a complete data layer, no separate backend needed
-- **Bring your own model** — route to OpenAI, Anthropic, Google, and more through a single self-hosted gateway
-- **Streaming built in** — every agent endpoint speaks JSON or SSE, your choice per request
-- **No vendor lock-in** — MIT licensed, self-hostable, swap any adapter at any time
-- **Deploy anywhere** — Node, serverless, or the edge, with adapters for the databases and storage you already use
 
 ## Quickstart
 
-You need Node.js 24.21 or newer and an [OpenAI API key](https://platform.openai.com/api-keys). Create a project:
+You need Node.js 24.21 or newer and an AI provider key ([OpenAI](https://platform.openai.com/api-keys), Anthropic, or Google). Create and boot a project:
 
 ```bash
-npx create-frogbot-app@latest my-agent --ai openai
-cd my-agent
-```
-
-The scaffolder installs dependencies, sets up Git, and writes a `.env` with a generated `FROGBOT_SECRET`. The starter agents run on OpenAI, so they need `OPENAI_API_KEY`: paste your key when the scaffolder asks, or add it to `.env` before you start the app. Pass `--ai anthropic` or `--ai google` instead to use another provider.
-
-Start the app:
-
-```bash
+npx create-frogbot-app@latest my-app --ai openai
+cd my-app
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and create your admin account. The dashboard lists your collections; open **Chats** in the sidebar and select **Create New** to talk to an agent.
-
-That gives you a `users` auth collection, SQLite storage, and two agents (`general` and `assistant`) — no Docker, no external database. New to all this? The [step-by-step setup](https://docs.frogbot.ai/getting-started/setup) explains each step. To call agents from your own code, see the [REST API](https://docs.frogbot.ai/rest-api/overview).
+Open [http://localhost:3000](http://localhost:3000) to create your admin account, view your collections, and open **Chats** to talk to your agent. See [Installation](https://docs.frogbot.ai/getting-started/installation) for every CLI flag.
 
 ## How it works
 
-Everything lives in one file. Define an agent with a tool, pick a database, and you're done:
+Everything lives in one typed configuration file—database collections, Admin UI views, AI providers, tools, and agents:
 
 ```ts
 // frogbot.config.ts
@@ -98,23 +77,41 @@ import { buildConfig } from 'frogbot';
 import type { Tool } from 'frogbot';
 import { z } from 'zod';
 
-const getTimeSchema = z.object({
-  timezone: z.string().optional().describe('An IANA timezone. Defaults to UTC.'),
+const lookupDealSchema = z.object({
+  dealId: z.string().describe('The deal ID to look up.'),
 });
 
-const getTime: Tool<typeof getTimeSchema> = {
-  slug: 'get_time',
-  description: 'Get the current date and time.',
-  inputSchema: getTimeSchema,
-  execute: ({ timezone }) => ({
-    iso: new Date().toISOString(),
-    timezone: timezone ?? 'UTC',
-  }),
+const lookupDeal: Tool<typeof lookupDealSchema> = {
+  slug: 'lookup_deal',
+  description: 'Fetch a deal record using the signed-in user permissions.',
+  inputSchema: lookupDealSchema,
+  execute: ({ dealId }, ctx) =>
+    ctx.frogbot.findByID({
+      collection: 'deals',
+      id: dealId,
+      req: ctx.req,
+      overrideAccess: false,
+    }),
 };
 
 export default buildConfig({
   secret: process.env.FROGBOT_SECRET!,
   db: sqliteAdapter({ client: { url: 'file:./frogbot.db' } }),
+  collections: [
+    {
+      slug: 'deals',
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        {
+          name: 'stage',
+          type: 'select',
+          options: ['lead', 'qualified', 'proposal', 'won'],
+          defaultValue: 'lead',
+        },
+        { name: 'value', type: 'number' },
+      ],
+    },
+  ],
   ai: {
     providers: {
       openai: {},
@@ -123,46 +120,66 @@ export default buildConfig({
   agents: [
     {
       slug: 'assistant',
-      model: 'openai/gpt-4o-mini',
-      instructions: 'You are FrogBot, a concise and friendly assistant.',
-      tools: [getTime],
+      model: 'openai/gpt-4.1-mini',
+      instructions: 'You are FrogBot, a concise sales and operations assistant.',
+      tools: [lookupDeal],
       access: ({ req }) => !!req.user,
     },
   ],
 });
 ```
 
-Boot it with `frogbot dev`, then send a request to `POST /api/agents/:slug`. Ask for `accept: text/event-stream` to stream instead. FrogBot registers `GET /api/agents` and `POST /api/agents/:slug` automatically — you never write routing code.
-
-See the [simple example](./examples/simple) for the full walkthrough.
+Boot locally with `frogbot dev`, generate end-to-end TypeScript types with `frogbot generate:types`, or deploy to the cloud in one command with `npx frogbot share`.
 
 ## Features
 
-- Config-first agents with typed [Zod](https://zod.dev) tool schemas
-- Automatic REST endpoints for every agent, with JSON and SSE streaming responses
-- Per-agent access control functions, down to the request level
-- Full data layer: collections, fields, auth, versions, drafts, and hooks
-- An embeddable, fully MIT open-source AI gateway with a unified `provider/model` catalog across vendors
-- Single-command type generation (`frogbot generate:types`) for end-to-end type safety
-- Dev mode with config file watching (`frogbot dev`), production mode with `frogbot start`
-- Swappable database, file storage, and KV adapters, with [piece-backed email](https://docs.frogbot.ai/email/overview)
+- **Full data layer & Admin UI** — collections, fields, auth, access control, versions, drafts, and hooks, with instant Table, Kanban board, and Calendar views
+- **Config-first AI agents** — typed [Zod](https://zod.dev) tool schemas, per-agent and per-request access control functions, and server-owned chat history
+- **Automatic REST & streaming endpoints** — every agent (`POST /api/agents/:slug`) and collection (`/api/:slug`) gets instant HTTP endpoints with JSON and SSE streaming
+- **Embeddable MIT AI gateway** — route to OpenAI, Anthropic, Google, and 30+ more providers through one self-hosted [AI gateway](./packages/gateway)
+- **40+ native OAuth pieces & chat channels** — connect Slack, Discord, Linear, GitHub, Teams, Telegram, Gmail, Stripe, Notion, Xero, and more with managed OAuth and human-in-the-loop channel approvals
+- **Durable jobs & schedules** — background queues, cron schedules, retries, and workers backed by your database
+- **Single-command type generation** — `frogbot generate:types` produces end-to-end TypeScript types for your collections, agents, and pieces
+- **Own & deploy anywhere** — MIT licensed; swap SQLite, Postgres, or MongoDB and S3/R2/GCS/Azure/Vercel Blob adapters anytime, or deploy in one command with `npx frogbot share`
 
 ## Packages
 
 This monorepo publishes the following packages:
 
-| Package                                      | Description                                                                                                                                        |
-| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`frogbot`](./packages/frogbot)              | FrogBot core: typed configuration surface, agent runtime, CLI, and HTTP server                                                                     |
-| [`@frogbotai/gateway`](./packages/gateway)   | The embeddable, self-hostable AI gateway built on the Vercel AI SDK — fully MIT open source. Run it standalone or drop it into any existing server |
-| [`@frogbotai/protocol`](./packages/protocol) | Types-only contract shared by the FrogBot server and its clients, with no dependencies                                                             |
+| Package                                                      | Description                                                                                       |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| [`frogbot`](./packages/frogbot)                              | FrogBot core: typed configuration surface, collections, agent runtime, jobs, CLI, and HTTP server |
+| [`create-frogbot-app`](./packages/create-frogbot-app)        | CLI scaffolder for new FrogBot apps and coding-agent skills                                       |
+| [`@frogbotai/next`](./packages/next)                         | Next.js App Router integration for the Admin UI, REST API, and GraphQL endpoints                  |
+| [`@frogbotai/ui`](./packages/ui)                             | React UI components, Table/Kanban/Calendar views, and Chat UI library                             |
+| [`@frogbotai/gateway`](./packages/gateway)                   | Embeddable, self-hostable MIT AI gateway built on the Vercel AI SDK                               |
+| [`@frogbotai/sdk`](./packages/sdk)                           | Typed client SDK for calling FrogBot APIs from external frontends and services                    |
+| [`@frogbotai/protocol`](./packages/protocol)                 | Zero-dependency types contract shared by the FrogBot server and its clients                       |
+| [`@frogbotai/richtext-lexical`](./packages/richtext-lexical) | Lexical rich-text editor and field adapter                                                        |
+| [`@frogbotai/graphql`](./packages/graphql)                   | GraphQL helper types and schema generator CLI                                                     |
 
 **Plugins**
 
-| Package                                                              | Description                                      |
-| -------------------------------------------------------------------- | ------------------------------------------------ |
-| [`@frogbotai/plugin-ai-policy`](./packages/plugins/plugin-ai-policy) | Per-user model lists and monthly AI budgets      |
-| [`@frogbotai/plugin-api-keys`](./packages/plugins/plugin-api-keys)   | Multiple named, independently revocable API keys |
+| Package                                                                      | Description                                                           |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| [`@frogbotai/plugin-dojo`](./packages/plugins/plugin-dojo)                   | One-command cloud deploy (`frogbot share`), `pull`, and `logs`        |
+| [`@frogbotai/plugin-roles`](./packages/plugins/plugin-roles)                 | Role-based access control (RBAC) collections and permission helpers   |
+| [`@frogbotai/plugin-audit-log`](./packages/plugins/plugin-audit-log)         | Immutable audit trail for collection and auth operations              |
+| [`@frogbotai/plugin-mcp`](./packages/plugins/plugin-mcp)                     | Expose collections and tools as a Model Context Protocol (MCP) server |
+| [`@frogbotai/plugin-ai-policy`](./packages/plugins/plugin-ai-policy)         | Per-user model allowlists and monthly AI budgets                      |
+| [`@frogbotai/plugin-api-keys`](./packages/plugins/plugin-api-keys)           | Multiple named, independently revocable API keys                      |
+| [`@frogbotai/plugin-capture`](./packages/plugins/plugin-capture)             | Capture AI calls and export JSONL chat training data                  |
+| [`@frogbotai/plugin-usage-reports`](./packages/plugins/plugin-usage-reports) | AI token and cost usage reporting                                     |
+| [`@frogbotai/plugin-import-export`](./packages/plugins/plugin-import-export) | CSV and JSON collection import and export                             |
+| [`@frogbotai/plugin-stripe`](./packages/plugins/plugin-stripe)               | Stripe webhooks and billing sync                                      |
+| [`@frogbotai/plugin-nested-docs`](./packages/plugins/plugin-nested-docs)     | Hierarchical parent/child document trees and breadcrumbs              |
+| [`@frogbotai/plugin-redirects`](./packages/plugins/plugin-redirects)         | URL redirect management collection                                    |
+| [`@frogbotai/plugin-seo`](./packages/plugins/plugin-seo)                     | SEO metadata fields and preview helpers                               |
+| [`@frogbotai/plugin-sentry`](./packages/plugins/plugin-sentry)               | Sentry error reporting integration                                    |
+
+**Pieces (40+ Integrations & Channels)**
+
+See [`packages/pieces`](./packages/pieces) for all 40 native integrations, including [`@frogbotai/piece-slack`](./packages/pieces/piece-slack), [`@frogbotai/piece-discord`](./packages/pieces/piece-discord), [`@frogbotai/piece-linear`](./packages/pieces/piece-linear), [`@frogbotai/piece-github`](./packages/pieces/piece-github), [`@frogbotai/piece-microsoft-teams`](./packages/pieces/piece-microsoft-teams), [`@frogbotai/piece-telegram-bot`](./packages/pieces/piece-telegram-bot), [`@frogbotai/piece-gmail`](./packages/pieces/piece-gmail), [`@frogbotai/piece-google-sheets`](./packages/pieces/piece-google-sheets), [`@frogbotai/piece-notion`](./packages/pieces/piece-notion), [`@frogbotai/piece-airtable`](./packages/pieces/piece-airtable), [`@frogbotai/piece-stripe`](./packages/pieces/piece-stripe), [`@frogbotai/piece-xero`](./packages/pieces/piece-xero), and [`@frogbotai/piece-resend`](./packages/pieces/piece-resend).
 
 **Database adapters**
 
@@ -174,42 +191,18 @@ This monorepo publishes the following packages:
 | [`@frogbotai/db-vercel-postgres`](./packages/db-vercel-postgres) | Vercel Postgres |
 | [`@frogbotai/db-d1-sqlite`](./packages/db-d1-sqlite)             | Cloudflare D1   |
 
-**Storage adapters**
+**Storage, KV, Image & Live Preview adapters**
 
-| Package                                                            | Description          |
-| ------------------------------------------------------------------ | -------------------- |
-| [`@frogbotai/storage-s3`](./packages/storage-s3)                   | Amazon S3            |
-| [`@frogbotai/storage-r2`](./packages/storage-r2)                   | Cloudflare R2        |
-| [`@frogbotai/storage-gcs`](./packages/storage-gcs)                 | Google Cloud Storage |
-| [`@frogbotai/storage-azure`](./packages/storage-azure)             | Azure Blob Storage   |
-| [`@frogbotai/storage-vercel-blob`](./packages/storage-vercel-blob) | Vercel Blob          |
-
-**Image processing**
-
-| Package                                                        | Description                      |
-| -------------------------------------------------------------- | -------------------------------- |
-| [`@frogbotai/transformer-sharp`](./packages/transformer-sharp) | Image sizes and resizing (Sharp) |
-
-**Live preview**
-
-| Package                                                          | Description             |
-| ---------------------------------------------------------------- | ----------------------- |
-| [`@frogbotai/live-preview`](./packages/live-preview)             | JavaScript live preview |
-| [`@frogbotai/live-preview-react`](./packages/live-preview-react) | React live preview SDK  |
-| [`@frogbotai/live-preview-vue`](./packages/live-preview-vue)     | Vue live preview SDK    |
-
-**GraphQL**
-
-| Package                                    | Description                                       |
-| ------------------------------------------ | ------------------------------------------------- |
-| [`@frogbotai/graphql`](./packages/graphql) | GraphQL helper types and the schema generator CLI |
-
-**Email pieces & KV adapters**
-
-| Package                                                     | Description        |
-| ----------------------------------------------------------- | ------------------ |
-| [`@frogbotai/piece-resend`](./packages/pieces/piece-resend) | Resend email piece |
-| [`@frogbotai/kv-redis`](./packages/kv-redis)                | Redis KV store     |
+| Package                                                            | Description                                                                        |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| [`@frogbotai/storage-s3`](./packages/storage-s3)                   | Amazon S3                                                                          |
+| [`@frogbotai/storage-r2`](./packages/storage-r2)                   | Cloudflare R2                                                                      |
+| [`@frogbotai/storage-gcs`](./packages/storage-gcs)                 | Google Cloud Storage                                                               |
+| [`@frogbotai/storage-azure`](./packages/storage-azure)             | Azure Blob Storage                                                                 |
+| [`@frogbotai/storage-vercel-blob`](./packages/storage-vercel-blob) | Vercel Blob                                                                        |
+| [`@frogbotai/kv-redis`](./packages/kv-redis)                       | Redis KV store                                                                     |
+| [`@frogbotai/transformer-sharp`](./packages/transformer-sharp)     | Image resizing and optimization (Sharp)                                            |
+| [`@frogbotai/live-preview`](./packages/live-preview)               | Live preview core (`@frogbotai/live-preview-react`, `@frogbotai/live-preview-vue`) |
 
 ## Examples
 
@@ -217,7 +210,7 @@ The [`examples/`](./examples) directory shows how to set up FrogBot in different
 
 - [**Simple**](./examples/simple) — the smallest possible setup: one config, one agent, one tool, SQLite. No Docker, no external database.
 - [**Tailwind CSS**](./examples/tailwind) — Tailwind CSS 4 in custom admin components without replacing admin base styles.
-- [**Business QA**](./examples/business-qa) — a comprehensive release-readiness showcase with authenticated agents, curated integration tools, OAuth, API keys, uploads, and connections.
+- [**Business QA**](./examples/business-qa) — a comprehensive showcase with authenticated agents, curated integration tools, OAuth, API keys, uploads, and connections.
 
 ## Development
 
@@ -234,11 +227,11 @@ pnpm docker:start
 pnpm test:int:sqlite   # or test:int:pg / test:int:mongo
 ```
 
-Requires Node ≥ 22 and [pnpm](https://pnpm.io).
+Requires Node ≥ 24.21 and [pnpm](https://pnpm.io).
 
 ## Contributing
 
-Contributions are welcome! Read through existing patterns in the codebase before opening a PR, keep changes focused, and make sure `pnpm test`, `pnpm lint`, and `pnpm typecheck` pass.
+Contributions are welcome! Read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a PR, keep changes focused, and make sure `pnpm check` and relevant tests pass.
 
 ## Need help?
 
@@ -246,8 +239,6 @@ Contributions are welcome! Read through existing patterns in the codebase before
 - [Discord](https://discord.com/invite/JBZF7syAnU)
 - [GitHub Issues](https://github.com/frogbotai/frogbot/issues)
 - [GitHub Discussions](https://github.com/frogbotai/frogbot/discussions)
-
-## Like what we're doing? Give us a star
 
 ## License
 

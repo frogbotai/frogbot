@@ -1,17 +1,31 @@
 ---
 title: "Installation"
 sidebarTitle: "Installation"
-description: "Create and run a FrogBot app with create-frogbot-app."
+description: "Scaffold and run a FrogBot app with a coding agent or create-frogbot-app."
 ---
 
-New to this? Follow the [step-by-step setup](/getting-started/setup), or let a [coding agent](/getting-started/coding-agent) do it for you.
+import StarterPrompt from '/snippets/starter-prompt.mdx';
 
-## Create an app
+You can scaffold a FrogBot app by pasting a prompt into your coding agent or by running `create-frogbot-app` in your terminal.
 
-Scaffold a new FrogBot project with everything wired up:
+## Start with a coding agent
+
+Open Claude Code, Cursor, Codex, or OpenCode in the folder where you want your project and paste this prompt. Your agent checks Node.js, runs `create-frogbot-app` with the bundled [FrogBot skill](/skills/coding-agents), configures `.env`, and boots the dev server:
+
+<StarterPrompt />
+
+Point your agent at the documentation index anytime it needs to look up a FrogBot page:
+
+```text
+https://docs.frogbot.ai/llms.txt
+```
+
+## Create an app from the CLI
+
+Scaffold a new FrogBot project interactively:
 
 ```bash
-npx create-frogbot-app@latest my-agent-platform
+npx create-frogbot-app@latest my-app
 ```
 
 The setup asks you to choose a database, an AI provider, the provider's API key (or whether to use the one already set in your environment), and any coding agents that should receive the FrogBot skill. The blank template is selected automatically while it is the only available template. Your current package manager is detected. Dependencies are installed first, then a Git repository is created with an initial commit that includes the lockfile, so the project is ready to run when the command finishes. Pass `--no-install` to skip installing dependencies, or `--no-git` to skip Git. If the install fails, the command stops before Git and exits with an error.
@@ -21,10 +35,10 @@ See [Coding agents](/skills/coding-agents) for skill installation options, agent
 For a non-interactive setup with the defaults, use `--yes`:
 
 ```bash
-npx create-frogbot-app@latest my-agent-platform --yes
+npx create-frogbot-app@latest my-app --yes --ai openai --agents claude,cursor,codex,opencode
 ```
 
-The defaults create a Next.js app using SQLite with no AI provider, agents, or chat. Choose a provider with `--ai zen`, `--ai openai`, `--ai anthropic`, `--ai google`, or `--ai bedrock`. Pass the key with `--api-key` to write it to `.env`. Without prompts, a key already set in your environment is not copied into the app; the scaffolder tells you it found the key and did not copy it. Select another database with `--db sqlite`, `--db postgres`, or `--db mongodb`.
+`--yes` by itself creates a Next.js app using SQLite with no AI provider, agents, or chat. Choose a provider with `--ai zen`, `--ai openai`, `--ai anthropic`, `--ai google`, or `--ai bedrock`. Pass the key with `--api-key` to write it to `.env`. Without prompts, a key already set in your environment is not copied into the app; the scaffolder tells you it found the key and did not copy it. Select another database with `--db sqlite`, `--db postgres`, or `--db mongodb`.
 
 ## Command options
 
@@ -56,11 +70,11 @@ An unknown option or a missing value exits with an error. An invalid choice exit
 `create-frogbot-app` writes a `.env` file with a generated `FROGBOT_SECRET`, the connection string for your selected database, and your provider key if you entered one. Otherwise, add the key to `.env` (for example `OPENAI_API_KEY=...`). With OpenAI, Anthropic, or Google, add it before starting the app; the app does not start without it. Bedrock and Zen apps start without a key, but chat needs one.
 
 ```bash
-cd my-agent-platform
+cd my-app
 npm run dev
 ```
 
-Use the equivalent dev command if you selected pnpm, yarn, or bun. Then open [http://localhost:3000](http://localhost:3000). On the first visit, you create the first admin user. The dashboard then shows a card for each collection; open **Chats** in the sidebar and select **Create New** to talk to your agent. To change app behavior, edit `src/frogbot.config.ts`; see [Configuration](/configuration/overview) for the full schema. See [CLI](/getting-started/cli) for every `frogbot` command.
+Use the equivalent dev command if you selected pnpm, yarn, or bun. Then open [http://localhost:3000](http://localhost:3000). On the first visit, you create the first admin user. The dashboard then shows a card for each collection; open **Chats** in the sidebar and select **Create New** to talk to your agent. To change app behavior, edit `src/frogbot.config.ts`; see [Configuration](/configuration/overview) for the full schema. See [CLI](/getting-started/cli) for every `frogbot` command, including `npx frogbot share` to deploy to [Dojo](/plugins/dojo).
 
 ## Software requirements
 
@@ -68,7 +82,7 @@ Use the equivalent dev command if you selected pnpm, yarn, or bun. Then open [ht
 - TypeScript 6.0.3 or newer
 - npm, pnpm, yarn, or bun
 - SQLite, PostgreSQL, or MongoDB — see [Database](/database/overview)
-- Optional: an object store (S3, GCS, Azure, R2, or Vercel Blob) — see [Configuration](/configuration/overview#storage)
+- Optional: an object store (S3, GCS, Azure, R2, or Vercel Blob) — see [Upload](/upload/storage-adapters)
 
 ## Monorepos
 
@@ -85,10 +99,10 @@ Use the same `frogbot` version in every package. If `pnpm why frogbot` still sho
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Configuration" icon="settings" href="/configuration/overview">
-    Configure app identity, auth, models, pieces, storage, and plugins.
+  <Card title="Concepts" icon="lightbulb" href="/getting-started/concepts">
+    See how collections, views, agents, pieces, and jobs fit together.
   </Card>
-  <Card title="Database" icon="database" href="/database/overview">
-    Choose a database adapter and review the core collections FrogBot registers.
+  <Card title="Configuration" icon="gear" href="/configuration/overview">
+    Configure app identity, auth, models, pieces, storage, and plugins.
   </Card>
 </CardGroup>

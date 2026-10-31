@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/protocol",
-  "version": "0.37.0",
+  "version": "0.38.0",
   "description": "Types-only contract shared by the FrogBot server and its clients.",
   "license": "MIT",
   "author": "Colby Gilbert",

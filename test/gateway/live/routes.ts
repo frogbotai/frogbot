@@ -14,14 +14,19 @@ import type { LiveProviderEntry } from './matrix.js';
 
 export type LiveApp = Hono;
 
-export function makeLiveApp(entry: LiveProviderEntry): LiveApp {
+export type LiveAppOptions = {
+  /** Abort a stalled upstream call with a 504 so `withRetry` can try again. */
+  upstreamTimeoutMs?: number;
+};
+
+export function makeLiveApp(entry: LiveProviderEntry, options: LiveAppOptions = {}): LiveApp {
   if (entry.compat) {
     const apiKey = process.env[entry.compat.apiKeyEnv];
     const registry = buildProviderRegistry({
       [entry.label]: { baseURL: entry.compat.baseURL, apiKey },
     });
 
-    return createApp({ registry });
+    return createApp({ registry, ...options });
   }
 
   const name = entry.provider;
@@ -40,7 +45,7 @@ export function makeLiveApp(entry: LiveProviderEntry): LiveApp {
   (cfgMap as Record<string, unknown>)[name] = cfg;
   const registry = buildProviderRegistry(cfgMap);
 
-  return createApp({ registry });
+  return createApp({ registry, ...options });
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -55,7 +60,7 @@ async function withRetry<T extends { status: number; headers: Headers }>(
     last = await fn();
     const retryAfter = Number(last.headers.get('retry-after'));
     const rateLimited = last.status === 429 && Number.isFinite(retryAfter) && retryAfter > 0;
-    if (!rateLimited && ![503, 529].includes(last.status)) {
+    if (!rateLimited && ![503, 504, 529].includes(last.status)) {
       return last;
     }
 
