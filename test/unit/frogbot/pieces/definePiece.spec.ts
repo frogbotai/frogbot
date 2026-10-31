@@ -484,7 +484,7 @@ describe('definePiece provider', () => {
   const keyAuth = z.object({ apiKey: z.string() });
   const provider = {
     name: 'openai' as const,
-    credential: ({ auth }: { auth: { apiKey: string } }) => auth,
+    credential: ({ auth }: { auth: unknown }) => keyAuth.parse(auth),
   };
 
   const createKeyed = definePiece({
