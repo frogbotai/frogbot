@@ -52,6 +52,7 @@ A built-in provider entry takes a config object, an empty object `{}` to use the
 | `apiKey` | `string` | The provider's credential variable below | The provider's API key. For providers marked "Startup check", startup fails when neither `apiKey` nor that variable is set and the provider accepts no other credential form, or when `apiKey` is an empty string. Not accepted by `replicate`, which uses `apiToken`. |
 | `baseURL` | `string` | The provider's public API URL | URL prefix for API calls, for example a proxy or regional endpoint. Not accepted by `assemblyai`, `deepgram`, `elevenlabs`, `gladia`, `hume`, or `lmnt`. |
 | `headers` | `Record<string, string>` | — | Extra headers sent with every request to the provider. |
+| `credential` | `(context, { via }) => { settings, middleware? } \| undefined` | — | Picks this call's credential. See [Per-call credentials](#per-call-credentials). An entry with `credential` skips the startup credential check. |
 
 Each provider's environment variables are listed below. The first one is its credential. The CLI builds a provider from these variables when they're set; see [Auto-discover from env](/gateway/configuration#auto-discover-from-env).
 
@@ -155,6 +156,40 @@ Some providers accept more options. Each row is written as `<key>.<option>` and 
 Custom `fetch` functions aren't accepted in config. Pass a [pre-built instance](#pre-built-instances) instead.
 
 ---
+
+## Per-call credentials
+
+A built-in provider entry can choose the credential for each call. `credential` receives the call's hook [`context`](/gateway/hooks) and `via`: `'http'` for a request to a gateway route, `'app'` for an in-process model or operation. It returns:
+
+- `{ settings }`: provider options for this call, such as `{ apiKey }`, merged over the entry's own. An optional `middleware` (an AI SDK `LanguageModelMiddleware` or an array of them) wraps this call's chat model.
+- `undefined`: the entry's own options, such as its `apiKey` or the provider's environment variable.
+
+A throw fails the call before any request is sent. Throw `CallCredentialError` from `@frogbotai/gateway/errors` to answer HTTP routes with 401 and your message.
+
+```ts
+import { createGateway } from '@frogbotai/gateway'
+import { CallCredentialError } from '@frogbotai/gateway/errors'
+
+const gw = createGateway({
+  providers: {
+    openai: {
+      credential: async (context) => {
+        const apiKey = await keys.forUser(context.userId)
+
+        if (!apiKey) throw new CallCredentialError('Add your OpenAI key first.')
+
+        return { settings: { apiKey } }
+      }
+    }
+  }
+})
+
+const response = await gw.handler(request, { context: { userId: 'user-123' } })
+```
+
+The gateway keeps one provider instance per distinct `settings`, up to 256, so concurrent calls with different keys never share one. `usedCallCredential(error)` from `@frogbotai/gateway` tells whether a failed call ran on a `credential` result rather than the entry's options. FrogBot sets `credential` for providers a [connections piece links](/connections/overview#run-ai-on-users-keys).
+
+An OpenAI `429` with `insufficient_quota` is not retried, on any key; other `429`s still are.
 
 ## TypeSafe AI evaluation
 

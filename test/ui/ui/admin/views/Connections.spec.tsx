@@ -370,6 +370,20 @@ describe('linked accounts', () => {
     expect(screen.getByLabelText('Credential')).toHaveProperty('value', '');
   });
 
+  it.each([
+    [422, "OpenAI didn't accept this key."],
+    [502, "Couldn't reach OpenAI to check this key. Try again."],
+  ])("shows the server's message when the key check answers %i", async (status, message) => {
+    fetchMock.mockResolvedValueOnce(Response.json({ error: message }, { status }));
+    render(<ConnectionsViewClient {...props} />);
+    fireEvent.click(screen.getByRole('button', { name: '+ New Connection' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Static Static credentials/ }));
+    fireEvent.change(screen.getByLabelText('Credential'), { target: { value: 'sk-bad' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent', message);
+  });
+
   it('recovers from an initial loading error', async () => {
     fetchMock.mockResolvedValueOnce(Response.json({ docs: [row] }));
 
