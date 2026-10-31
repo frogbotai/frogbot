@@ -800,13 +800,16 @@ describe('model picker for a linked provider account', () => {
   const keyAuth = z.object({ apiKey: z.string() });
   const GPT_4O = 'openai/gpt-4o' as AgentModelId;
   const GPT_41 = 'openai/gpt-4.1' as AgentModelId;
+  const USAGE = 'https://chatgpt.com/settings/usage';
 
   function linkedRequest({
     models,
     linked = true,
+    auth = { apiKey: 'sk-user' },
   }: {
-    models: () => Promise<string[]>;
+    models: () => Promise<string[] | undefined>;
     linked?: boolean;
+    auth?: { apiKey: string; plan?: true };
   }) {
     const listModels = vi.fn(models);
     const piece = definePiece({
@@ -814,7 +817,15 @@ describe('model picker for a linked provider account', () => {
       label: 'OpenAI',
       auth: keyAuth,
       client: ({ auth }: { auth: unknown }) => auth,
-      provider: { name: 'openai', credential: () => ({}), models: listModels },
+      provider: {
+        name: 'openai',
+        credential: () => ({}),
+        models: listModels,
+        notice: ({ auth }) =>
+          (auth as { plan?: true }).plan
+            ? { text: 'Using ChatGPT plan', link: { label: 'Manage usage', url: USAGE } }
+            : undefined,
+      },
       actions: [],
     })();
 
@@ -824,7 +835,7 @@ describe('model picker for a linked provider account', () => {
     const key = {};
     const resolvePieceCredential = vi.fn(() =>
       linked
-        ? Promise.resolve({ auth: { apiKey: 'sk-user' }, key })
+        ? Promise.resolve({ auth, key })
         : Promise.reject(new ConnectionError('Not linked.', 'missing')),
     );
 
@@ -865,5 +876,37 @@ describe('model picker for a linked provider account', () => {
     }
 
     expect(unlinked.listModels).not.toHaveBeenCalled();
+  });
+
+  it("shows the provider's notice to a plan user only", async () => {
+    const plan = linkedRequest({
+      models: () => Promise.resolve(['gpt-4o']),
+      auth: { apiKey: 'plan-token', plan: true },
+    });
+
+    const keyed = linkedRequest({ models: () => Promise.resolve(['gpt-4o']) });
+    const unlinked = linkedRequest({ models: () => Promise.resolve([]), linked: false });
+
+    await expect(models(plan.req)).resolves.toMatchObject({
+      notices: {
+        openai: { text: 'Using ChatGPT plan', link: { label: 'Manage usage', url: USAGE } },
+      },
+    });
+
+    for (const { req } of [keyed, unlinked]) {
+      expect(await models(req)).not.toHaveProperty('notices');
+    }
+  });
+
+  it('shows the full list for an account that may not list its models', async () => {
+    const { req, listModels } = linkedRequest({ models: () => Promise.resolve(undefined) });
+
+    await expect(models(req)).resolves.toMatchObject({
+      models: [GPT_4O, GPT_41, SMART, LOCAL_THINKER],
+    });
+
+    await models(req);
+
+    expect(listModels).toHaveBeenCalledOnce();
   });
 });

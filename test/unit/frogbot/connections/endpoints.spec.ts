@@ -440,6 +440,7 @@ describe('piece-run sign-in endpoints', () => {
       serverURL: 'https://configured.test',
       routes: { api: '/api', admin: '/admin' },
     };
+
     const connections: SanitizedConnectionsConfig = {
       enabled: true,
       slug: 'connections',
@@ -550,6 +551,7 @@ describe('piece-run sign-in endpoints', () => {
     const f = signInFixture();
 
     change(f);
+
     await f.endpoints[0].handler(
       f.request('http://localhost:3000/api/connections/example/authorize'),
     );

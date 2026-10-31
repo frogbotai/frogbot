@@ -27,8 +27,16 @@ export type ModelSelectorModel = {
   reasoning?: readonly ModelSelectorReasoning[];
 };
 
+/** A line shown with one provider's models, such as "Using ChatGPT plan" and a link. */
+export type ModelSelectorNotice = {
+  text: string;
+  link?: { label: string; url: string };
+};
+
 export type ModelSelectorProps = {
   models?: readonly ModelSelectorModel[];
+  /** Notices by provider, shown with that provider's models. */
+  notices?: Partial<Record<string, ModelSelectorNotice>>;
   selectedModelId: string;
   selectedReasoning?: string;
   onModelChange: (id: string) => void;
@@ -55,6 +63,7 @@ function groupLabel(models: readonly ModelSelectorModel[], provider: string | un
 
 export const ModelSelector = memo(function ModelSelector({
   models,
+  notices,
   selectedModelId,
   selectedReasoning,
   onModelChange,
@@ -163,6 +172,7 @@ export const ModelSelector = memo(function ModelSelector({
         ) : (
           <ModelSelectorList
             models={models}
+            notices={notices}
             selectedModelId={selectedModelId}
             query={query}
             onQueryChange={setQuery}
@@ -214,8 +224,24 @@ function ModelSelectorControls({
   );
 }
 
+function ModelSelectorNoticeLine({ notice }: { notice: ModelSelectorNotice | undefined }) {
+  if (!notice) return null;
+
+  return (
+    <p className="fb-model-selector__notice">
+      <span>{notice.text}</span>
+      {notice.link ? (
+        <a href={notice.link.url} target="_blank" rel="noreferrer">
+          {notice.link.label}
+        </a>
+      ) : null}
+    </p>
+  );
+}
+
 function ModelSelectorList({
   models,
+  notices,
   selectedModelId,
   query,
   onQueryChange,
@@ -223,6 +249,7 @@ function ModelSelectorList({
   onChoose,
 }: {
   models: readonly ModelSelectorModel[];
+  notices?: Partial<Record<string, ModelSelectorNotice>>;
   selectedModelId: string;
   query: string;
   onQueryChange: (query: string) => void;
@@ -403,10 +430,17 @@ function ModelSelectorList({
                 <span id={`${groupId}-${index}`} className="fb-model-selector__group-label">
                   {labels.get(provider)}
                 </span>
+                <ModelSelectorNoticeLine notice={provider ? notices?.[provider] : undefined} />
                 {providerModels.map(renderOption)}
               </div>
             ))
-          : filteredModels.map(renderOption)}
+          : [
+              <ModelSelectorNoticeLine
+                key="notice"
+                notice={models[0]?.provider ? notices?.[models[0].provider] : undefined}
+              />,
+              ...filteredModels.map(renderOption),
+            ]}
         {count ? null : <div className="fb-model-selector__empty">No models found</div>}
       </div>
       <div role="status" aria-live="polite" className="fb-model-selector__status">

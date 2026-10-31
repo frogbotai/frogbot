@@ -11,6 +11,12 @@ export type AgentReasoningOption = {
   label: string;
 };
 
+/** A line shown with one provider's models in the model picker, such as "Using ChatGPT plan". */
+export type AgentModelNotice = {
+  text: string;
+  link?: { label: string; url: string };
+};
+
 /** One agent in the chat manifest. `TModel` narrows model ids to an app's generated union. */
 export type AgentManifestEntry<TModel extends string = string> = {
   slug: string;
@@ -21,4 +27,6 @@ export type AgentManifestEntry<TModel extends string = string> = {
   names?: Partial<Record<TModel, string>>;
   reasoning?: Partial<Record<TModel, AgentReasoningOption[]>>;
   inputs?: Partial<Record<TModel, ModelModality[]>>;
+  /** Notices by provider, the part of a model ID before `/`, for the user's linked accounts. */
+  notices?: Partial<Record<string, AgentModelNotice>>;
 };

@@ -391,6 +391,7 @@ function ChatViewInner({
               reasoning: reasoning?.[id],
             };
           })}
+          notices={entry.notices}
           selectedModelId={activeModel}
           selectedReasoning={activeReasoning}
           onModelChange={changeModel}

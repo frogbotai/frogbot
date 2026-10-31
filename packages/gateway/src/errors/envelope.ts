@@ -102,6 +102,7 @@ const GATEWAY_CODE_TO_TYPE: Record<GatewayErrorCode, OpenAIErrorType> = {
   request_entity_too_large: 'invalid_request_error',
   resource_not_found: 'not_found_error',
   structured_output_invalid: 'server_error',
+  upstream_refused: 'invalid_request_error',
 };
 
 function openAICodeForStatus(status: number): string | null {

@@ -160,4 +160,49 @@ describe('linked provider credential', () => {
     expect(error).toBe(credentialError);
     expect(authorizations).toEqual([]);
   });
+
+  it("wraps the linked account's model in the piece's middleware", async () => {
+    const createWrapped = definePiece({
+      slug: 'openai',
+      label: 'OpenAI',
+      auth: keyAuth,
+      client: ({ auth }: { auth: unknown }) => auth,
+      provider: {
+        name: 'openai',
+        credential: ({ auth }) => ({ apiKey: keyAuth.parse(auth).apiKey }),
+        middleware: ({ auth }) => ({
+          specificationVersion: 'v4',
+          transformParams: ({ params }) =>
+            Promise.resolve({
+              ...params,
+              headers: { ...params.headers, 'x-account': keyAuth.parse(auth).apiKey },
+            }),
+        }),
+      },
+      actions: [],
+    });
+
+    const headers: (string | null)[] = [];
+
+    vi.mocked(globalThis.fetch).mockImplementation((_input, init) => {
+      headers.push(new Headers(init?.headers).get('x-account'));
+
+      return Promise.resolve(Response.json({ error: { message: 'bad key' } }, { status: 401 }));
+    });
+
+    const gateway = createAIGateway(aiConfig(createWrapped(), 'sk-app'));
+    const call = (req?: object) =>
+      generateText({
+        model: gateway
+          .operation({ operation: 'chat.completions', model: MODEL, context: { req } })
+          .chatModel(),
+        prompt: 'hi',
+        maxRetries: 0,
+      }).catch(() => undefined);
+
+    await call(linked('sk-user'));
+    await call(failing('missing'));
+
+    expect(headers).toEqual(['sk-user', null]);
+  });
 });

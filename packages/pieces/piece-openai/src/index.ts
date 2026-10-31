@@ -1,7 +1,10 @@
 import { definePiece, type PieceDefinition } from 'frogbot/pieces';
 
 import { chatgptSignIn } from './chatgpt/index.js';
-import { type OpenAIAuth, openaiAuth } from './config.js';
+import { chatgptMiddleware } from './chatgpt/middleware.js';
+import { listPlanModels } from './chatgpt/models.js';
+import { chatgptCredential, chatgptNotice } from './chatgpt/provider.js';
+import { isChatGPT, type OpenAIAuth, openaiAuth } from './config.js';
 import { openaiIcon } from './icon.js';
 import { listOpenAIModels } from './models.js';
 
@@ -31,12 +34,20 @@ export const createOpenAI = definePiece({
   provider: {
     name: 'openai',
     billingUrl: 'https://platform.openai.com/settings/organization/billing',
-    credential: ({ auth }) => ({ apiKey: auth.apiKey }),
-    models: ({ auth, signal }) => listOpenAIModels({ apiKey: auth.apiKey, signal }),
+    credential: ({ auth, via }) =>
+      isChatGPT(auth) ? chatgptCredential({ auth, via }) : { apiKey: auth.apiKey },
+    models: ({ auth, signal }) =>
+      isChatGPT(auth)
+        ? listPlanModels({ apiKey: auth.apiKey, signal })
+        : listOpenAIModels({ apiKey: auth.apiKey, signal }),
+    middleware: ({ auth }) => (isChatGPT(auth) ? chatgptMiddleware : undefined),
+    notice: ({ auth }) => (isChatGPT(auth) ? chatgptNotice : undefined),
   },
   actions: [],
 } satisfies PieceDefinition<OpenAITypes, OpenAIAuth>);
 
+export { createChatGPTMiddleware } from './chatgpt/middleware.js';
+export { listPlanModels, PLAN_FALLBACK_MODELS } from './chatgpt/models.js';
 export {
   type ChatGPTAuth,
   chatgptAuth,

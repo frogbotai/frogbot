@@ -20,7 +20,8 @@ export type Upstream = { url: string; authorization: string | null; body: string
 
 /**
  * The fake api.openai.com: every request it got, the model replies to send next (default: text
- * "ok"), and what `GET /v1/models` lists. The key `sk-rejected` gets a 401 there.
+ * "ok"), and what `GET /v1/models` lists. There the key `sk-rejected` gets a 401, and
+ * `sk-restricted`, a restricted key without "List models", a 401 for a missing permission.
  */
 export const openai = {
   requests: [] as Upstream[],
@@ -42,6 +43,19 @@ export function modelListings(): Upstream[] {
 function modelsReply(authorization: string | null): Response {
   if (authorization === 'Bearer sk-rejected') {
     return Response.json({ error: { message: 'Incorrect API key.' } }, { status: 401 });
+  }
+
+  if (authorization === 'Bearer sk-restricted') {
+    return Response.json(
+      {
+        error: {
+          message:
+            'You have insufficient permissions for this operation. Missing scopes: api.model.read.',
+          type: 'invalid_request_error',
+        },
+      },
+      { status: 401 },
+    );
   }
 
   if (openai.modelsDown) return new Response('unavailable', { status: 503 });

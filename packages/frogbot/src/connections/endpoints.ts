@@ -172,6 +172,17 @@ export function buildConnectionOAuthEndpoints({
             throw new OAuthError('tokens');
           }
 
+          const owner = intent.owner!;
+          const user = await req.frogbot.findByID({
+            collection: owner.collection,
+            id: owner.id,
+            depth: 0,
+            overrideAccess: true,
+            disableErrors: true,
+          });
+
+          if (!user) throw new OAuthError('state');
+
           const tokens = await exchangeOAuthCode({
             piece: entry.piece,
             code: params.get('code')!,
@@ -180,7 +191,7 @@ export function buildConnectionOAuthEndpoints({
             signal: req.signal,
           });
 
-          await saveOAuthConnection({ req, piece: entry.piece, owner: intent.owner!, tokens });
+          await saveOAuthConnection({ req, piece: entry.piece, owner, tokens });
 
           headers.set('location', intent.returnTo);
 

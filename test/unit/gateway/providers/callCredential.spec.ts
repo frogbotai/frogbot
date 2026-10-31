@@ -265,6 +265,43 @@ describe('provider credential', () => {
     expect(sent.map(({ headers }) => headers.get('x'))).toEqual(['1', '2', null, null, null]);
   });
 
+  it('passes a fetch from the settings through, sharing an instance per function', async () => {
+    const build = vi.spyOn(openaiProvider, 'build');
+    const tagged = (tag: string) => (input: string | URL | Request, init?: RequestInit) => {
+      const headers = new Headers(init?.headers);
+
+      headers.set('x-fetch', tag);
+
+      return globalThis.fetch(input, { ...init, headers });
+    };
+
+    const fetches = { one: tagged('one'), two: tagged('two') };
+    const gw = createGateway({
+      providers: {
+        openai: {
+          credential: (context) => ({
+            settings: { apiKey: 'sk-a', fetch: fetches[context.tag as 'one' | 'two'] },
+          }),
+        },
+      },
+    });
+
+    for (const tag of ['one', 'two', 'one']) {
+      await failure(
+        generateText({
+          model: gw
+            .operation({ operation: 'chat.completions', model: MODEL, context: { tag } })
+            .chatModel(),
+          prompt: 'hi',
+          maxRetries: 0,
+        }),
+      );
+    }
+
+    expect(sent.map(({ headers }) => headers.get('x-fetch'))).toEqual(['one', 'two', 'one']);
+    expect(build).toHaveBeenCalledTimes(3);
+  });
+
   it('wraps the call model in the returned middleware, sharing the instance by settings', async () => {
     const build = vi.spyOn(openaiProvider, 'build');
     const credential: CallCredential = (context) => ({

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -52,12 +52,14 @@ const models = [gpt, mini, plain, opus];
 
 function Harness({
   choices = models,
+  notices,
   initialModel = gpt.id,
   initialReasoning,
   onModelChange,
   onReasoningChange,
 }: {
   choices?: readonly ModelSelectorModel[];
+  notices?: Parameters<typeof ModelSelector>[0]['notices'];
   initialModel?: string;
   initialReasoning?: string;
   onModelChange?: (id: string) => void;
@@ -69,6 +71,7 @@ function Harness({
   return (
     <ModelSelector
       models={choices}
+      notices={notices}
       selectedModelId={model}
       selectedReasoning={reasoning}
       onModelChange={(id) => {
@@ -125,7 +128,47 @@ function rowNames() {
   );
 }
 
+const planNotice = {
+  openai: {
+    text: 'Using ChatGPT plan',
+    link: { label: 'Manage usage', url: 'https://chatgpt.com/settings/usage' },
+  },
+};
+
 describe('ModelSelector', () => {
+  it("shows a provider's notice and link under that provider's group only", async () => {
+    const user = userEvent.setup();
+
+    render(<Harness notices={planNotice} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+
+    const openai = screen.getByRole('group', { name: 'OpenAI' });
+    const link = within(openai).getByRole('link', { name: 'Manage usage' });
+
+    expect(within(openai).getByText('Using ChatGPT plan')).toBeTruthy();
+    expect(link.getAttribute('href')).toBe('https://chatgpt.com/settings/usage');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(
+      within(screen.getByRole('group', { name: 'Anthropic' })).queryByText('Using ChatGPT plan'),
+    ).toBeNull();
+  });
+
+  it('shows the notice above an ungrouped list of one provider', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness choices={[gpt, plain]} notices={planNotice} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+
+    expect(screen.queryByRole('group')).toBeNull();
+    expect(screen.getByText('Using ChatGPT plan')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Manage usage' })).toBeTruthy();
+    expect(rowNames()).toEqual(['GPT-5', 'GPT-4o']);
+  });
+
   it('always shows a non-autofocused search field even for two models', async () => {
     const user = userEvent.setup();
 
