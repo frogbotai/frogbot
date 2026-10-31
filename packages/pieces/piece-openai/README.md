@@ -6,8 +6,10 @@ OpenAI as a linked account: each user runs FrogBot's AI on their own OpenAI API 
 
 ```ts
 import { createOpenAI } from '@frogbotai/piece-openai';
+import { buildConfig } from 'frogbot';
 
-export default defineConfig({
+export default buildConfig({
+  // secret, db, and collections omitted
   connections: [{ piece: createOpenAI(), secret: true }],
 });
 ```

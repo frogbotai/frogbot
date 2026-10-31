@@ -86,8 +86,10 @@ A piece can link an AI provider, so each user's linked account becomes the crede
 
 ```ts
 import { createOpenAI } from '@frogbotai/piece-openai'
+import { buildConfig } from 'frogbot'
 
-export default defineConfig({
+export default buildConfig({
+  // secret, db, and collections omitted
   connections: [{ piece: createOpenAI(), secret: true }],
 })
 ```
