@@ -271,10 +271,52 @@ async function collect(
   return generated;
 }
 
+const PREAMBLE = new Set(['stream-start', 'response-metadata', 'raw']);
+
+async function untilOutput(
+  result: LanguageModelV4StreamResult,
+): Promise<LanguageModelV4StreamResult> {
+  const reader = result.stream.getReader();
+  const head: LanguageModelV4StreamPart[] = [];
+
+  for (;;) {
+    const { done, value: part } = await reader.read();
+
+    if (done) break;
+
+    if (part.type === 'error' && matchPlanError(part.error)?.busy) {
+      await reader.cancel().catch(() => undefined);
+      throw part.error;
+    }
+
+    head.push(part);
+    if (!PREAMBLE.has(part.type)) break;
+  }
+
+  return {
+    ...result,
+    stream: new ReadableStream<LanguageModelV4StreamPart>({
+      start(controller) {
+        for (const part of head) controller.enqueue(part);
+      },
+      async pull(controller) {
+        const { done, value } = await reader.read();
+
+        if (done) controller.close();
+        else controller.enqueue(value);
+      },
+      cancel: (reason) => reader.cancel(reason),
+    }),
+  };
+}
+
 /**
  * The middleware for language models on a ChatGPT plan. It reshapes each call for the plan route,
  * always streams (building non-streamed calls from the stream), and turns OpenAI's plan errors
- * into messages: the seven refusal codes fail at once, the two busy codes retry after each delay.
+ * into messages: the seven refusal codes fail at once, the two busy codes retry after each delay
+ * while no output has arrived. That includes a busy error OpenAI sends after
+ * `response.in_progress`, past the SDK's own early-error check, so each stream is read up to its
+ * first output part before it is returned.
  */
 export function createChatGPTMiddleware({
   retryDelays = [1000, 2000],
@@ -285,7 +327,7 @@ export function createChatGPTMiddleware({
   ) => {
     for (let attempt = 0; ; attempt++) {
       try {
-        return mapStreamErrors(await doStream());
+        return mapStreamErrors(await untilOutput(await doStream()));
       } catch (error) {
         const known = matchPlanError(error);
 

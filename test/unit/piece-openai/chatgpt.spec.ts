@@ -1,3 +1,5 @@
+import { connect } from 'node:net';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
@@ -70,6 +72,7 @@ function stubFetch(handler: (url: string, body: URLSearchParams) => Response) {
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -135,6 +138,37 @@ describe('Continue with ChatGPT', () => {
     await authorize(req);
 
     await expect(fetch(first.searchParams.get('redirect_uri')!)).rejects.toThrow();
+  });
+
+  it('closes an unused listener after 10 minutes', async () => {
+    const reachable = (port: number) =>
+      new Promise<boolean>((resolve) => {
+        const socket = connect({ host: '127.0.0.1', port });
+
+        socket.once('connect', () => {
+          socket.destroy();
+          resolve(true);
+        });
+
+        socket.once('error', () => resolve(false));
+      });
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+    const { req } = request();
+    const url = new URL(
+      await signIn.authorize({ req, returnTo: 'http://localhost:3000/admin', save: vi.fn() }),
+    );
+
+    const port = Number(new URL(url.searchParams.get('redirect_uri')!).port);
+
+    vi.advanceTimersByTime(10 * 60 * 1000 - 1);
+
+    expect(await reachable(port)).toBe(true);
+
+    vi.advanceTimersByTime(1);
+
+    expect(await reachable(port)).toBe(false);
   });
 
   it('refreshes with the issued client ID and the resource', async () => {

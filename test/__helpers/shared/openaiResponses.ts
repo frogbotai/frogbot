@@ -61,3 +61,23 @@ export function eventStream(events: ResponsesEvent[]): Response {
 export function textStream(text: string): Response {
   return eventStream([...textEvents(text), completedEvent]);
 }
+
+/** A streamed reply that sends one of `events` every `gapMs`, as a slow network does. */
+export function pausedEventStream(events: ResponsesEvent[], gapMs: number): Response {
+  const encoder = new TextEncoder();
+  const frames = events.map((event) => encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+
+  return new Response(
+    new ReadableStream({
+      async pull(controller) {
+        await new Promise((resolve) => setTimeout(resolve, gapMs));
+
+        const frame = frames.shift();
+
+        if (frame) controller.enqueue(frame);
+        else controller.close();
+      },
+    }),
+    { headers: { 'content-type': 'text/event-stream' } },
+  );
+}
