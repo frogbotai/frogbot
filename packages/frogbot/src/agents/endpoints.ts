@@ -42,6 +42,7 @@ export function buildAgentEndpoints() {
       method: 'post' as const,
       handler: async (req: FrogBotRequest) => {
         const slug = req.routeParams?.slug as string | undefined;
+        let model: string | undefined;
         try {
           const agent = getAgent({ req, slug });
           await assertAgentAccess({ req, agent });
@@ -52,7 +53,8 @@ export function buildAgentEndpoints() {
             return Response.json({ error: describeIssue(parsed.error.issues[0]) }, { status: 400 });
           }
 
-          const { chatId, model, reasoning, delivery, prompt, messages } = parsed.data;
+          const { chatId, reasoning, delivery, prompt, messages } = parsed.data;
+          const requested = parsed.data.model;
 
           let body: AgentRequestBody;
 
@@ -73,16 +75,16 @@ export function buildAgentEndpoints() {
           }
 
           const selection: AgentSelection = {
-            ...(model ? { model: model as AgentModelId } : {}),
+            ...(requested ? { model: requested as AgentModelId } : {}),
             ...(reasoning ? { reasoning } : {}),
           };
 
-          await assertAgentSelection({
+          ({ model } = await assertAgentSelection({
             agent,
             config: req.frogbot.config.ai!,
             selection,
             req,
-          });
+          }));
 
           const eventStream = acceptsEventStream(req.headers.get('accept'));
 
@@ -130,7 +132,7 @@ export function buildAgentEndpoints() {
           if (req.signal?.aborted) return new Response(null, { status: 499 });
           req.frogbot.logger.error({ err: error, agent: slug }, '[frogbot] Agent request failed');
 
-          return errorResponse(error);
+          return errorResponse(error, { model, config: req.frogbot.config.ai });
         }
       },
     },

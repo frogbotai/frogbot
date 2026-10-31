@@ -179,6 +179,92 @@ describe('provider credential', () => {
     expect(build).toHaveBeenCalledTimes(259);
   });
 
+  it("sends each user's own key while the instance cache evicts under concurrent load", async () => {
+    const seen: { prompt: string; authorization: string | null }[] = [];
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+        seen.push({
+          prompt: String(init?.body),
+          authorization: new Headers(init?.headers).get('authorization'),
+        });
+
+        return Promise.resolve(unauthorized());
+      }),
+    );
+
+    const credential: CallCredential = async (context) => {
+      await new Promise((resolve) => setImmediate(resolve));
+
+      return { settings: { apiKey: `sk-${String(context.user)}` } };
+    };
+
+    const gw = createGateway({ providers: { openai: { credential } } });
+    const users = Array.from({ length: 600 }, (_, index) => `user-${index}`);
+
+    await Promise.all(
+      [...users, ...users.toReversed()].map((user, index) =>
+        failure(
+          generateText({
+            model: gw
+              .operation({ operation: 'chat.completions', model: MODEL, context: { user } })
+              .chatModel(),
+            prompt: `marker:${user}:${index}:`,
+            maxRetries: 0,
+          }),
+        ),
+      ),
+    );
+
+    expect(seen).toHaveLength(1200);
+
+    for (const { prompt, authorization } of seen) {
+      const user = /marker:(user-\d+):/.exec(prompt)![1];
+
+      expect(authorization).toBe(`Bearer sk-${user}`);
+    }
+  });
+
+  it('never shares an instance between settings that differ', async () => {
+    const build = vi.spyOn(openaiProvider, 'build');
+    const settings = [
+      { apiKey: 'sk-a', headers: { x: '1' } },
+      { apiKey: 'sk-a', headers: { x: '2' } },
+      { apiKey: 'sk-a","headers":{"x":"1"}' },
+      { apiKey: 'sk-a', headers: { 'x-1': '' } },
+      { apiKey: 'sk-b' },
+    ];
+
+    const gw = createGateway({
+      providers: {
+        openai: { credential: (context) => ({ settings: settings[Number(context.index)] }) },
+      },
+    });
+
+    for (const index of settings.keys()) {
+      await failure(
+        generateText({
+          model: gw
+            .operation({ operation: 'chat.completions', model: MODEL, context: { index } })
+            .chatModel(),
+          prompt: 'hi',
+          maxRetries: 0,
+        }),
+      );
+    }
+
+    expect(build).toHaveBeenCalledTimes(1 + settings.length);
+    expect(sent.map(({ authorization }) => authorization)).toEqual([
+      'Bearer sk-a',
+      'Bearer sk-a',
+      'Bearer sk-a","headers":{"x":"1"}',
+      'Bearer sk-a',
+      'Bearer sk-b',
+    ]);
+    expect(sent.map(({ headers }) => headers.get('x'))).toEqual(['1', '2', null, null, null]);
+  });
+
   it('wraps the call model in the returned middleware, sharing the instance by settings', async () => {
     const build = vi.spyOn(openaiProvider, 'build');
     const credential: CallCredential = (context) => ({

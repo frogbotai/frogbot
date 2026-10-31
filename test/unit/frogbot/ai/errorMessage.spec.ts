@@ -187,6 +187,21 @@ describe('aiErrorMessage on a linked account', () => {
     );
   });
 
+  it("says the user's own key was rejected when the model is a router", async () => {
+    const routed = {
+      ...linkedConfig,
+      routers: { fast: { model: MODEL } },
+    } as unknown as SanitizedAIConfig;
+
+    expect(
+      aiErrorMessage({
+        error: await upstreamError({ status: 401 }),
+        model: 'fast',
+        config: routed,
+      }),
+    ).toBe('OpenAI rejected your API key. Update it in Settings → Linked accounts.');
+  });
+
   it('passes the setup and reconnect messages through', () => {
     for (const text of [
       "OpenAI isn't set up. Add your OpenAI key in Settings → Linked accounts.",
