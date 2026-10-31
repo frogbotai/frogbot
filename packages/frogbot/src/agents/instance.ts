@@ -1,4 +1,4 @@
-import type { Gateway } from '@frogbotai/gateway';
+import type { Gateway, GatewayOperation } from '@frogbotai/gateway';
 import type {
   AgentCallParameters,
   AgentStreamParameters,
@@ -57,6 +57,7 @@ export type AgentInstanceDeps = {
 };
 
 type AgentRun = {
+  op: GatewayOperation;
   selection: ResolvedAgentSelection;
   models: string[];
   hashes: AttachmentHashes;
@@ -108,7 +109,7 @@ export function createAgentInstance(
 
       return {
         ...call,
-        model: gateway.chatModel(run.selection.model),
+        model: run.op.chatModel(run.selection.model),
         runtimeContext: { agent: ctx.agent },
         ...(mcpToolNames.length === 0 ? {} : { tools: { ...tools, ...run.mcpTools } }),
         toolsContext: toAISDKToolsContext(agentConfig.tools, ctx),
@@ -168,7 +169,7 @@ export function createAgentInstance(
           const { inputs, provider } = resolveModelInputs({ config, model });
 
           return {
-            model: gateway.chatModel(model),
+            model: run.op.chatModel(model),
             ...(variant ? { providerOptions: variant.providerOptions } : {}),
             messages: toModelInput({
               messages: steeredMessages.length === 0 ? messages : [...messages, ...steeredMessages],
@@ -264,7 +265,17 @@ export function createAgentInstance(
             logger: frogbot.logger,
           });
 
-    const run: AgentRun = { selection, models: [], hashes: new Map(), mcpTools };
+    const op = gateway.operation({
+      operation: 'chat.completions',
+      model: selection.model,
+      context: {
+        req,
+        agent: { slug: agentConfig.slug, runId, chatId: options.chatId },
+        trackUsage: false,
+      },
+    });
+
+    const run: AgentRun = { op, selection, models: [], hashes: new Map(), mcpTools };
 
     runs.set(preparedOptions, run);
 
@@ -314,20 +325,8 @@ export function createAgentInstance(
 
   const runGenerate = async (call: Call): Promise<AgentGenerateResult> => {
     const { req, runId, run, call: preparedCall } = await prepareRun(call);
+    const { op } = run;
     const model = run.selection.model;
-    const op = gateway.operation({
-      operation: 'chat.completions',
-      model,
-      context: {
-        req,
-        agent: {
-          slug: agentConfig.slug,
-          runId,
-          chatId: preparedCall.options.chatId,
-        },
-        trackUsage: false,
-      },
-    });
 
     await op.start();
 
@@ -356,20 +355,8 @@ export function createAgentInstance(
 
   const runStream = async (call: StreamCall): Promise<AgentStreamResult> => {
     const { req, runId, run, call: preparedCall } = await prepareRun(call);
+    const { op } = run;
     const model = run.selection.model;
-    const op = gateway.operation({
-      operation: 'chat.completions',
-      model,
-      context: {
-        req,
-        agent: {
-          slug: agentConfig.slug,
-          runId,
-          chatId: preparedCall.options.chatId,
-        },
-        trackUsage: false,
-      },
-    });
 
     const userEnd = call.onEnd ?? call.onFinish;
     const finishOperation = (() => {

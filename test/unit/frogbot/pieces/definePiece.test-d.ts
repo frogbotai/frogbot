@@ -750,3 +750,50 @@ const invalidTriggerDefinition = {
 } satisfies PieceDefinition<TriggerTypes, undefined>;
 
 void invalidTriggerDefinition;
+
+const keyAuth = z.object({ apiKey: z.string() });
+
+type KeyedTypes = {
+  auth: z.output<typeof keyAuth>;
+  options: Record<string, never>;
+  actions: Record<string, never>;
+  triggers: Record<string, never>;
+};
+
+const createKeyed = definePiece({
+  slug: 'keyed',
+  label: 'Keyed',
+  auth: keyAuth,
+  client: ({ auth }) => auth,
+  provider: {
+    name: 'openai',
+    credential: ({ auth, via }) => {
+      expectTypeOf(auth).toEqualTypeOf<{ apiKey: string }>();
+      expectTypeOf(via).toEqualTypeOf<'app' | 'http'>();
+
+      return { apiKey: auth.apiKey };
+    },
+    models: ({ auth, credential, signal }) => {
+      expectTypeOf(auth).toEqualTypeOf<{ apiKey: string }>();
+      expectTypeOf(credential).toEqualTypeOf<Record<string, unknown>>();
+      expectTypeOf(signal).toEqualTypeOf<AbortSignal>();
+
+      return Promise.resolve([]);
+    },
+  },
+  actions: [],
+} satisfies PieceDefinition<KeyedTypes, KeyedTypes['auth']>);
+
+createKeyed();
+// @ts-expect-error a provider piece takes its app key from ai.providers, not the factory
+createKeyed({ auth: { apiKey: 'sk-app' } });
+
+definePiece({
+  slug: 'unknown-provider',
+  label: 'Unknown provider',
+  auth: keyAuth,
+  client: ({ auth }) => auth,
+  // @ts-expect-error provider names are built-in AI providers
+  provider: { name: 'not-a-provider', credential: ({ auth }) => auth },
+  actions: [],
+});

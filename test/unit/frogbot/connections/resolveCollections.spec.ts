@@ -6,6 +6,7 @@ import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/type
 import {
   DEFAULT_CONNECTIONS_SLUG,
   resolveConnectionsCollections,
+  resolveLinkedProviders,
 } from '../../../../packages/frogbot/src/connections/resolveCollections.js';
 import type { ConnectionEntry } from '../../../../packages/frogbot/src/connections/types.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
@@ -314,5 +315,54 @@ describe('resolveConnectionsCollections', () => {
     );
 
     expect(connections.entries.static?.icon).toBe(expected);
+  });
+});
+
+describe('resolveLinkedProviders', () => {
+  const providerPiece = (slug: string, name: string) =>
+    definePiece({
+      slug,
+      label: slug,
+      auth: z.object({ apiKey: z.string() }),
+      client: ({ auth }: { auth: unknown }) => auth,
+      provider: { name: name as 'openai', credential: () => ({}) },
+      actions: [],
+    })();
+
+  it('maps each provider to the piece that links it', () => {
+    const openai = providerPiece('openai', 'openai');
+    const linked = resolveLinkedProviders(
+      config({
+        connections: [
+          { piece: createPiece(), secret: true },
+          { piece: openai, secret: true },
+        ],
+      }),
+    );
+
+    expect({ ...linked }).toEqual({ openai });
+  });
+
+  it('rejects two pieces linking one provider', () => {
+    expect(() =>
+      resolveLinkedProviders(
+        config({
+          connections: [
+            { piece: providerPiece('openai', 'openai'), secret: true },
+            { piece: providerPiece('openai-team', 'openai'), secret: true },
+          ],
+        }),
+      ),
+    ).toThrow("Pieces 'openai' and 'openai-team' both link the AI provider 'openai'.");
+  });
+
+  it('rejects a provider that is not a built-in API-key provider', () => {
+    for (const name of ['acme', 'bedrock']) {
+      expect(() =>
+        resolveLinkedProviders(
+          config({ connections: [{ piece: providerPiece('ai', name), secret: true }] }),
+        ),
+      ).toThrow(`Piece 'ai' provider '${name}' is not a built-in API-key AI provider.`);
+    }
   });
 });

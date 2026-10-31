@@ -1,7 +1,9 @@
+import type { CallCredentialVia } from '@frogbotai/gateway';
 import type { Adapter, Author } from 'chat';
 import type { SendEmailOptions } from 'payload';
 import type { z } from 'zod';
 
+import type { ProviderName } from '../ai/providerNames.js';
 import type { PieceChannelQuestions } from '../channels/questions/types.js';
 import type { TriggerEvent } from '../triggers/types.js';
 import type { TypedUser } from '../types/generated.js';
@@ -261,11 +263,33 @@ export type PieceChannel<TAuth, TOptions, TClient> = {
   questions?: PieceChannelQuestions<TClient>;
 };
 
+/**
+ * Links a piece to a built-in AI provider. Listing the piece in `connections` makes each user's
+ * linked account the credential for their calls to `name`.
+ */
+export type PieceProvider<TAuth> = {
+  name: ProviderName;
+  /** Where a user checks their account's billing, named when the account is out of credit. */
+  billingUrl?: string;
+  /** Provider settings for a call on a linked account, merged over `ai.providers[name]`. */
+  credential(args: { auth: TAuth; via: CallCredentialVia }): Record<string, unknown>;
+  /**
+   * The provider's model IDs this account can use. Throw an error with `status` 401 or 403 when
+   * the provider rejects the credential.
+   */
+  models?(args: {
+    auth: TAuth;
+    credential: Record<string, unknown>;
+    signal: AbortSignal;
+  }): Promise<string[]>;
+};
+
 export type PieceCapabilities = {
   webhook?: object;
   email?: object;
   channel?: object;
   oauth?: object;
+  provider?: object;
   factoryOAuth: boolean;
   signIn: boolean;
   staticAuth: boolean;
@@ -309,6 +333,7 @@ export type PieceDefinition<TTypes extends PieceTypes = PieceTypes, TClient = un
   webhook?: PieceWebhook<TTypes['options']>;
   email?: PieceEmail<TTypes['options'], TClient>;
   channel?: PieceChannel<TTypes['auth'], TTypes['options'], TClient>;
+  provider?: PieceProvider<TTypes['auth']>;
 } & (
   | {
       auth?: undefined;
@@ -348,7 +373,11 @@ export type PieceScopes<TName extends string> =
 
 export type PieceFactoryOptions<T extends PieceDefinition> = {
   slug?: string;
-  auth?: T extends { auth: infer TAuth extends z.ZodType } ? z.input<TAuth> : never;
+  auth?: T extends { provider: object }
+    ? never
+    : T extends { auth: infer TAuth extends z.ZodType }
+      ? z.input<TAuth>
+      : never;
   oauth?: T extends { oauth: object } ? OAuthApp & { scopes?: never } : never;
   scopes?: T extends { oauth: object } ? PieceScopes<PieceScopeName<T>> : never;
 } & (T extends { options: infer TOptions extends z.ZodType }
@@ -385,6 +414,7 @@ export type DefinedPiece<T extends PieceDefinition, TConfig> = {
     email: DefinedCapability<T, 'email'>;
     channel: DefinedCapability<T, 'channel'>;
     oauth: DefinedCapability<T, 'oauth'>;
+    provider: DefinedCapability<T, 'provider'>;
     factoryOAuth: TConfig extends { oauth: OAuthApp } ? true : false;
     staticAuth: T extends { auth: z.ZodType } ? true : false;
     signIn: TConfig extends { oauth: OAuthApp }

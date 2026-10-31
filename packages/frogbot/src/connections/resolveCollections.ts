@@ -1,10 +1,13 @@
+import { providerKeyEnvVar } from '@frogbotai/gateway';
 import { z } from 'zod';
 
+import { isProviderName } from '../ai/providerNames.js';
 import { resolveUserSlug } from '../chat/resolveUserSlug.js';
 import { cascadeDelete } from '../collections/config/cascadeDelete.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { FrogBotConfig } from '../config/types.js';
 import { isPieceInstance, pieceInstanceDefinition } from '../pieces/definePiece.js';
+import type { PieceInstance } from '../pieces/types.js';
 import { defaultConnectionsCollection } from './collection.js';
 import { createCredentialEncryption } from './encryption.js';
 import { buildConnectionOAuthEndpoints } from './endpoints.js';
@@ -128,6 +131,37 @@ function resolveEntries(config: FrogBotConfig): SanitizedConnectionsConfig['entr
   }
 
   return entries;
+}
+
+/** The AI providers that `connections` pieces link to, each with its piece. */
+export function resolveLinkedProviders(config: FrogBotConfig): Record<string, PieceInstance> {
+  const linked: Record<string, PieceInstance> = Object.create(null);
+
+  for (const entry of Array.isArray(config.connections) ? config.connections : []) {
+    if (!isPieceInstance(entry?.piece)) continue;
+
+    const provider = pieceInstanceDefinition(entry.piece).provider;
+
+    if (!provider) continue;
+
+    if (!isProviderName(provider.name) || !providerKeyEnvVar(provider.name)) {
+      throw new Error(
+        `[frogbot] Piece '${entry.piece.piece}' provider '${provider.name}' is not a built-in API-key AI provider.`,
+      );
+    }
+
+    const existing = linked[provider.name];
+
+    if (existing) {
+      throw new Error(
+        `[frogbot] Pieces '${existing.piece}' and '${entry.piece.piece}' both link the AI provider '${provider.name}'.`,
+      );
+    }
+
+    linked[provider.name] = entry.piece;
+  }
+
+  return linked;
 }
 
 export function resolveConnectionsCollections(config: FrogBotConfig): {

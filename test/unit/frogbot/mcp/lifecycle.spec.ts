@@ -29,30 +29,32 @@ vi.mock('payload', () => ({
   handleEndpoints: vi.fn(),
 }));
 
+const finishedModel = () =>
+  new MockLanguageModelV4({
+    doStream: () =>
+      Promise.resolve({
+        stream: new ReadableStream({
+          start(controller) {
+            controller.enqueue({
+              type: 'finish',
+              finishReason: { unified: 'stop', raw: 'stop' },
+              usage: {
+                inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+                outputTokens: { total: 0, text: 0, reasoning: 0 },
+              },
+            });
+
+            controller.close();
+          },
+        }),
+      }),
+  });
+
 vi.mock('../../../../packages/frogbot/src/ai/index.js', async (importOriginal) => ({
   ...(await importOriginal<typeof AIIndex>()),
   createAIGateway: () => ({
-    chatModel: () =>
-      new MockLanguageModelV4({
-        doStream: () =>
-          Promise.resolve({
-            stream: new ReadableStream({
-              start(controller) {
-                controller.enqueue({
-                  type: 'finish',
-                  finishReason: { unified: 'stop', raw: 'stop' },
-                  usage: {
-                    inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
-                    outputTokens: { total: 0, text: 0, reasoning: 0 },
-                  },
-                });
-
-                controller.close();
-              },
-            }),
-          }),
-      }),
-    operation: () => ({ start: async () => {}, finish: async () => {} }),
+    chatModel: finishedModel,
+    operation: () => ({ start: async () => {}, finish: async () => {}, chatModel: finishedModel }),
   }),
 }));
 
