@@ -2,6 +2,7 @@ import { createDefaultRequest } from '../getFrogBot.js';
 import type { AnyTool } from '../tools/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { defineCustomApiCall } from './customApiCall.js';
+import { isPieceSignIn, validateOAuthRecipe } from './oauth.js';
 import { validateProvider } from './provider.js';
 import {
   type DefinedPiece,
@@ -14,7 +15,6 @@ import {
   type PieceFactoryOptions,
   type PieceHelpers,
   type PieceInstance,
-  type PieceOAuthScopes,
 } from './types.js';
 
 const actionMetadata = Symbol('pieceAction');
@@ -263,65 +263,7 @@ export function definePiece<const T extends PieceDefinition>(
     throw new Error(`[frogbot] Piece '${definition.slug}' declares auth but no client.`);
   }
 
-  if (definition.oauth) {
-    if (!definition.auth) {
-      throw new Error(`[frogbot] Piece '${definition.slug}' declares OAuth but no auth schema.`);
-    }
-
-    for (const [field, value] of [
-      ['authorizationUrl', definition.oauth.authorizationUrl],
-      ['tokenUrl', definition.oauth.tokenUrl],
-    ] as const) {
-      try {
-        const url = new URL(value);
-        if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error();
-      } catch {
-        throw new Error(`[frogbot] Piece '${definition.slug}' OAuth ${field} must be an HTTP URL.`);
-      }
-    }
-
-    const {
-      catalog,
-      defaults,
-      required = [],
-    }: Partial<PieceOAuthScopes> = definition.oauth.scopes ?? {};
-
-    if (
-      !catalog ||
-      typeof catalog !== 'object' ||
-      !Array.isArray(defaults) ||
-      !Array.isArray(required) ||
-      Object.entries(catalog).some(
-        ([name, value]) => !name.trim() || typeof value !== 'string' || !value.trim(),
-      )
-    ) {
-      throw new Error(
-        `[frogbot] Piece '${definition.slug}' OAuth scopes require a catalog of non-empty strings, defaults and required names.`,
-      );
-    }
-
-    for (const name of [...defaults, ...required]) {
-      if (!Object.hasOwn(catalog, name)) {
-        throw new Error(
-          `[frogbot] Piece '${definition.slug}' scope '${String(name)}' is not in its catalog.`,
-        );
-      }
-
-      if (defaults.includes(name) && required.includes(name)) {
-        throw new Error(
-          `[frogbot] Piece '${definition.slug}' scope '${name}' is both a default and required.`,
-        );
-      }
-    }
-
-    if (
-      definition.oauth.params &&
-      Object.values(definition.oauth.params).some((value) => typeof value !== 'string')
-    ) {
-      throw new Error(`[frogbot] Piece '${definition.slug}' OAuth params must contain strings.`);
-    }
-  }
-
+  validateOAuthRecipe(definition);
   validateProvider(definition);
 
   function factory<const TConfig extends PieceFactoryOptions<T>>(
@@ -330,6 +272,12 @@ export function definePiece<const T extends PieceDefinition>(
   function factory(config: Record<string, unknown> = {}): Record<string | symbol, unknown> {
     if ((config.oauth || config.scopes !== undefined) && !definition.oauth) {
       throw new Error(`[frogbot] Piece '${definition.slug}' does not declare OAuth.`);
+    }
+
+    if (config.oauth && isPieceSignIn(definition.oauth)) {
+      throw new Error(
+        `[frogbot] Piece '${definition.slug}' runs its own sign-in and takes no OAuth app.`,
+      );
     }
 
     const {
@@ -473,6 +421,7 @@ export function definePiece<const T extends PieceDefinition>(
         oauth: definition.oauth,
         provider: definition.provider,
         factoryOAuth: Boolean(oauth),
+        pieceOAuth: isPieceSignIn(definition.oauth),
         signIn: Boolean(oauth && definition.oauth?.account),
         staticAuth: Boolean(definition.auth),
       },

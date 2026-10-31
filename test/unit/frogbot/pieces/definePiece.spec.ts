@@ -523,6 +523,87 @@ describe('definePiece provider', () => {
   });
 });
 
+describe('definePiece piece-run sign-in', () => {
+  const signIn = {
+    scopes: { catalog: { plan: 'plan.use' }, defaults: [], required: ['plan'] },
+    authorize: () => Promise.resolve('https://provider.test/authorize'),
+    refresh: ({ tokens }: { tokens: object }) =>
+      Promise.resolve({ access_token: 'next', ...tokens }),
+    label: 'Provider',
+  };
+
+  const createSignIn = definePiece({
+    slug: 'signin',
+    label: 'Sign in',
+    auth: tokenAuth,
+    client: ({ auth }) => auth,
+    oauth: signIn,
+    actions: [],
+  });
+
+  it('accepts a recipe with authorize and needs no OAuth app', () => {
+    const piece = createSignIn();
+
+    expect(piece[pieceCapabilities]).toMatchObject({
+      oauth: signIn,
+      factoryOAuth: false,
+      pieceOAuth: true,
+      signIn: false,
+    });
+    expect(oauthScopes(piece)).toEqual(['plan.use']);
+  });
+
+  it('refuses a factory OAuth app', () => {
+    expect(() =>
+      (createSignIn as (config: object) => object)({
+        oauth: { clientId: 'id', clientSecret: 'secret' },
+      }),
+    ).toThrow("Piece 'signin' runs its own sign-in and takes no OAuth app.");
+  });
+
+  it.each<[string, object, string]>([
+    [
+      'redirect-flow fields',
+      { tokenUrl: 'https://provider.test/token' },
+      'OAuth authorize runs its own sign-in and takes no authorizationUrl, tokenUrl, pkce, params, account.',
+    ],
+    ['no refresh', { refresh: undefined }, 'OAuth authorize requires a refresh function.'],
+    ['an empty label', { label: ' ' }, 'OAuth label must be a non-empty string.'],
+    ['a revoke that is no function', { revoke: 'yes' }, 'OAuth revoke must be a function.'],
+    ['an auth that is no schema', { auth: {} }, 'OAuth auth must be a schema.'],
+  ])('refuses %s', (_kind, change, message) => {
+    expect(() =>
+      definePiece({
+        slug: 'bad',
+        label: 'Bad',
+        auth: tokenAuth,
+        client: ({ auth }) => auth,
+        oauth: { ...signIn, ...change } as never,
+        actions: [],
+      }),
+    ).toThrow(`Piece 'bad' ${message}`);
+  });
+
+  it('keeps redirect-flow pieces off pieceOAuth', () => {
+    const createRedirect = definePiece({
+      slug: 'redirect',
+      label: 'Redirect',
+      auth: accessTokenAuth,
+      client: ({ auth }) => auth,
+      oauth: {
+        authorizationUrl: 'https://example.com/authorize',
+        tokenUrl: 'https://example.com/token',
+        scopes: { catalog: {}, defaults: [] },
+      },
+      actions: [],
+    });
+
+    expect(
+      createRedirect({ oauth: { clientId: 'id', clientSecret: 'secret' } })[pieceCapabilities],
+    ).toMatchObject({ factoryOAuth: true, pieceOAuth: false });
+  });
+});
+
 describe('createPieceHelpers', () => {
   it('returns each definition unchanged', () => {
     const { defineAction, defineAppTrigger, definePollingTrigger, defineWebhookTrigger } =

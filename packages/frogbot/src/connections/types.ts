@@ -4,7 +4,8 @@ import type { CredentialEncryption } from '../connections/encryption.js';
 import type { pieceCapabilities, PieceInstance } from '../pieces/types.js';
 
 type OAuthConnectionPiece = PieceInstance & {
-  readonly [pieceCapabilities]: { factoryOAuth: true; oauth: object };
+  readonly [pieceCapabilities]:
+    { factoryOAuth: true; oauth: object } | { pieceOAuth: true; oauth: object };
 };
 
 type SecretConnectionPiece = PieceInstance & {
@@ -30,6 +31,8 @@ export type SanitizedConnectionEntry = {
   oauth: boolean;
   secret: boolean;
   scopes?: string[];
+  /** The OAuth method's name in Linked accounts, from the recipe's `label`. */
+  oauthLabel?: string;
   secretSchema?: ConnectionSchema;
   icon?: string;
 };

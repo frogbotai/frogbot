@@ -1,14 +1,15 @@
 import type { Endpoint } from '../endpoints/types.js';
+import { pieceInstanceDefinition } from '../pieces/definePiece.js';
+import { isPieceSignIn } from '../pieces/oauth.js';
 import type { FrogBotRequest } from '../types/request.js';
 import {
   consumeOAuthState,
   createOAuthState,
   exchangeOAuthCode,
-  lookupOAuthAccount,
   OAuthError,
-  oauthScopes,
-  oauthTokenMetadata,
 } from './oauth/index.js';
+import { saveOAuthConnection } from './oauth/save.js';
+import { safeReturnTo } from './oauth/state.js';
 import type { SanitizedConnectionsConfig } from './types.js';
 
 async function routeURLs({
@@ -88,6 +89,27 @@ export function buildConnectionOAuthEndpoints({
           const urls = await routeURLs({ req, slug: connections.slug!, piece: entry.piece.piece });
           const params = new URL(req.url!).searchParams;
           if (params.getAll('returnTo').length > 1) throw new OAuthError('state');
+          const returnTo = params.get('returnTo') ?? urls.returnTo;
+          const recipe = pieceInstanceDefinition(entry.piece).oauth;
+
+          if (isPieceSignIn(recipe)) {
+            const origin = new URL(req.url!).origin;
+            const owner = { id: req.user.id, collection: req.user.collection };
+            const piece = entry.piece;
+
+            headers.set(
+              'location',
+              await recipe.authorize({
+                req,
+                returnTo: new URL(safeReturnTo(returnTo, origin), origin).href,
+                save: ({ tokens, account }) =>
+                  saveOAuthConnection({ req, piece, owner, tokens, account }),
+              }),
+            );
+
+            return new Response(null, { status: 302, headers });
+          }
+
           const started = await createOAuthState({
             kv: req.frogbot.kv,
             encryption: connections.encryption,
@@ -96,7 +118,7 @@ export function buildConnectionOAuthEndpoints({
             collection: userSlug,
             callbackUrl: urls.callbackUrl,
             cookiePrefix: urls.cookiePrefix,
-            returnTo: params.get('returnTo') ?? urls.returnTo,
+            returnTo,
             req,
           });
 
@@ -118,7 +140,9 @@ export function buildConnectionOAuthEndpoints({
       handler: async (req) => {
         const headers = new Headers({ 'cache-control': 'no-store' });
         const entry = entryFor(req);
-        if (!entry) return failure(404, headers, 'Connection not found');
+        if (!entry || isPieceSignIn(pieceInstanceDefinition(entry.piece).oauth)) {
+          return failure(404, headers, 'Connection not found');
+        }
 
         try {
           const { callbackUrl, cookiePrefix } = await routeURLs({
@@ -148,17 +172,6 @@ export function buildConnectionOAuthEndpoints({
             throw new OAuthError('tokens');
           }
 
-          const owner = intent.owner!;
-          const user = await req.frogbot.findByID({
-            collection: owner.collection,
-            id: owner.id,
-            depth: 0,
-            overrideAccess: true,
-            disableErrors: true,
-          });
-
-          if (!user) throw new OAuthError('state');
-
           const tokens = await exchangeOAuthCode({
             piece: entry.piece,
             code: params.get('code')!,
@@ -167,28 +180,7 @@ export function buildConnectionOAuthEndpoints({
             signal: req.signal,
           });
 
-          const metadata = oauthTokenMetadata({
-            tokens,
-            scopes: oauthScopes(entry.piece),
-          });
-
-          const account = await lookupOAuthAccount({
-            piece: entry.piece,
-            tokens,
-            req,
-            signal: req.signal,
-          });
-
-          await (
-            await req.frogbot.connections.store
-          ).upsert({
-            owner,
-            piece: entry.piece.piece,
-            method: 'oauth',
-            credential: tokens,
-            account,
-            ...metadata,
-          });
+          await saveOAuthConnection({ req, piece: entry.piece, owner: intent.owner!, tokens });
 
           headers.set('location', intent.returnTo);
 

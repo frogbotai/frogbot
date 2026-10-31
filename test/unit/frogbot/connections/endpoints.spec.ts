@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { createCredentialEncryption } from '../../../../packages/frogbot/src/connections/encryption.js';
 import { buildConnectionOAuthEndpoints } from '../../../../packages/frogbot/src/connections/endpoints.js';
 import type { SanitizedConnectionsConfig } from '../../../../packages/frogbot/src/connections/types.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import type { PieceOAuthSave } from '../../../../packages/frogbot/src/pieces/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import { definition, setup } from './oauth/fixtures.js';
 
@@ -407,5 +409,154 @@ describe('OAuth linking endpoints', () => {
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
     expect(f.upsert).not.toHaveBeenCalled();
     expect(await response.json()).toEqual({ error: 'Connection operation failed' });
+  });
+});
+
+describe('piece-run sign-in endpoints', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function signInFixture() {
+    const authorize = vi.fn(
+      (_args: { req: FrogBotRequest; returnTo: string; save: PieceOAuthSave }) =>
+        Promise.resolve('http://127.0.0.1:1455/provider'),
+    );
+
+    const piece = definePiece({
+      ...definition,
+      oauth: {
+        scopes: { catalog: { read: 'read' }, defaults: ['read'] },
+        toAuth: ({ tokens }) => ({ token: tokens.access_token }),
+        authorize,
+        refresh: ({ tokens }) => Promise.resolve(tokens),
+      },
+    })();
+
+    const upsert = vi.fn().mockResolvedValue({ id: 'connection' });
+    const findByID = vi.fn().mockResolvedValue({ id: 'owner' });
+    const fetch = vi.fn();
+    const config = {
+      serverURL: 'https://configured.test',
+      routes: { api: '/api', admin: '/admin' },
+    };
+    const connections: SanitizedConnectionsConfig = {
+      enabled: true,
+      slug: 'connections',
+      encryption: createCredentialEncryption({ secret: 'state-secret' }),
+      entries: { example: { piece, oauth: true, secret: false } },
+    };
+
+    vi.stubGlobal('fetch', fetch);
+
+    const endpoints = buildConnectionOAuthEndpoints({ connections, userSlug: 'users' });
+    const request = (url: string) =>
+      ({
+        url,
+        user: { id: 'owner', collection: 'users' },
+        routeParams: { piece: 'example' },
+        headers: new Headers(),
+        frogbot: {
+          config: { _internal: { payloadConfig: Promise.resolve(config) } },
+          connections: { store: Promise.resolve({ upsert }) },
+          findByID,
+        },
+      }) as unknown as FrogBotRequest;
+
+    return { authorize, upsert, findByID, fetch, endpoints, request };
+  }
+
+  it('calls authorize with an absolute returnTo at the request origin and redirects', async () => {
+    const f = signInFixture();
+    const response = await f.endpoints[0].handler(
+      f.request('http://localhost:3000/api/connections/example/authorize?returnTo=%2Fadmin%2Fx'),
+    );
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('http://127.0.0.1:1455/provider');
+    expect(response.headers.get('set-cookie')).toBeNull();
+    expect(f.authorize).toHaveBeenCalledWith(
+      expect.objectContaining({ returnTo: 'http://localhost:3000/admin/x' }),
+    );
+    expect(f.fetch).not.toHaveBeenCalled();
+  });
+
+  it('defaults returnTo to the Linked accounts page', async () => {
+    const f = signInFixture();
+
+    await f.endpoints[0].handler(
+      f.request('http://localhost:3000/api/connections/example/authorize'),
+    );
+
+    expect(f.authorize.mock.calls[0][0].returnTo).toBe(
+      'http://localhost:3000/admin/settings/connections',
+    );
+  });
+
+  it.each(['https://evil.test/', '//evil.test/', 'https://configured.test/admin'])(
+    'refuses returnTo %s on another origin',
+    async (returnTo) => {
+      const f = signInFixture();
+      const response = await f.endpoints[0].handler(
+        f.request(
+          `http://localhost:3000/api/connections/example/authorize?returnTo=${encodeURIComponent(returnTo)}`,
+        ),
+      );
+
+      expect(response.status).toBe(400);
+      expect(f.authorize).not.toHaveBeenCalled();
+    },
+  );
+
+  it('answers 404 on the core callback route', async () => {
+    const f = signInFixture();
+    const response = await f.endpoints[1].handler(
+      f.request('http://localhost:3000/api/connections/example/callback?state=x&code=y'),
+    );
+
+    expect(response.status).toBe(404);
+  });
+
+  it("saves the starting user's row through save", async () => {
+    const f = signInFixture();
+
+    await f.endpoints[0].handler(
+      f.request('http://localhost:3000/api/connections/example/authorize'),
+    );
+
+    await f.authorize.mock.calls[0][0].save({
+      tokens: { access_token: 'signed-in', scope: 'read' },
+      account: { id: 'sub', label: 'user@example.com', email: 'User@Example.com' },
+    });
+
+    expect(f.findByID).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'users', id: 'owner' }),
+    );
+    expect(f.upsert).toHaveBeenCalledWith({
+      owner: { id: 'owner', collection: 'users' },
+      piece: 'example',
+      method: 'oauth',
+      credential: { access_token: 'signed-in', scope: 'read' },
+      account: { id: 'sub', label: 'user@example.com', email: 'user@example.com' },
+      scopes: ['read'],
+      expiresAt: null,
+    });
+  });
+
+  it.each<[string, (f: ReturnType<typeof signInFixture>) => void, object]>([
+    ['a deleted user', (f) => f.findByID.mockResolvedValue(null), { access_token: 'token' }],
+    ['tokens with no access token', () => {}, { refresh_token: 'refresh' }],
+  ])('saves nothing for %s', async (_kind, change, tokens) => {
+    const f = signInFixture();
+
+    change(f);
+    await f.endpoints[0].handler(
+      f.request('http://localhost:3000/api/connections/example/authorize'),
+    );
+
+    await expect(
+      f.authorize.mock.calls[0][0].save({ tokens, account: { id: 'sub', label: 'Account' } }),
+    ).rejects.toThrow('OAuth');
+    expect(f.upsert).not.toHaveBeenCalled();
   });
 });

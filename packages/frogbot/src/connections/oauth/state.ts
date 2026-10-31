@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import type { KV } from '../../kv/types.js';
 import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
+import { urlRecipe } from '../../pieces/oauth.js';
 import type { PieceInstance } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import type { CredentialEncryption } from '../encryption.js';
@@ -59,7 +60,8 @@ function callbackURL(value: string): URL {
   return url;
 }
 
-function safeReturnTo(value: string, callbackUrl: string): string {
+/** `value` as a path on `callbackUrl`'s origin; throws `OAuthError('state')` for any other origin. */
+export function safeReturnTo(value: string, callbackUrl: string): string {
   const base = callbackURL(callbackUrl);
   const url = new URL(value, base.origin);
   if (
@@ -106,8 +108,7 @@ export async function createOAuthState({
     returnTo: string;
     req: Pick<FrogBotRequest, 'user'>;
   }): Promise<{ state: string; authorizationUrl: string; setCookie: string }> {
-  const { definition } = pieceInstanceRuntime(piece);
-  const recipe = definition.oauth;
+  const recipe = urlRecipe(pieceInstanceRuntime(piece).definition);
   const app = piece.oauth;
   if (!recipe || !app) throw new OAuthError('configuration');
 
@@ -219,7 +220,8 @@ export async function consumeOAuthState({
       intent.expiresAt <= now ||
       intent.expiresAt <= intent.issuedAt ||
       intent.expiresAt - intent.issuedAt > lifetime ||
-      Boolean(intent.verifier) !== Boolean(pieceInstanceRuntime(piece).definition.oauth?.pkce) ||
+      Boolean(intent.verifier) !==
+        Boolean(urlRecipe(pieceInstanceRuntime(piece).definition)?.pkce) ||
       (flow === 'login' && intent.owner) ||
       (flow === 'link' && (!intent.owner || intent.owner.collection !== collection))
     ) {

@@ -7,6 +7,7 @@ import { cascadeDelete } from '../collections/config/cascadeDelete.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { FrogBotConfig } from '../config/types.js';
 import { isPieceInstance, pieceInstanceDefinition } from '../pieces/definePiece.js';
+import { isPieceSignIn } from '../pieces/oauth.js';
 import type { PieceInstance } from '../pieces/types.js';
 import { defaultConnectionsCollection } from './collection.js';
 import { createCredentialEncryption } from './encryption.js';
@@ -93,6 +94,7 @@ function resolveEntries(config: FrogBotConfig): SanitizedConnectionsConfig['entr
     const app = entry.piece.oauth;
     if (
       oauth &&
+      !isPieceSignIn(definition.oauth) &&
       (typeof app?.clientId !== 'string' ||
         !app.clientId.trim() ||
         typeof app.clientSecret !== 'string' ||
@@ -125,6 +127,7 @@ function resolveEntries(config: FrogBotConfig): SanitizedConnectionsConfig['entr
       oauth,
       secret,
       ...(oauth ? { scopes: oauthScopes(entry.piece) } : {}),
+      ...(oauth && definition.oauth?.label ? { oauthLabel: definition.oauth.label.trim() } : {}),
       ...(secret ? { secretSchema } : {}),
       ...(typeof icon === 'string' && icon.trim() ? { icon: icon.trim() } : {}),
     };

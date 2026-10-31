@@ -21,12 +21,13 @@ export async function ConnectionsView({ initPageResult, payload }: AdminViewServ
       : undefined;
 
   const pieces: ConnectionPiece[] = Object.values(connections.entries).map(
-    ({ piece, oauth, secret, scopes, secretSchema, icon }) => ({
+    ({ piece, oauth, secret, scopes, oauthLabel, secretSchema, icon }) => ({
       slug: piece.piece,
       label: piece.piece.replace(/[-_]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
       oauth,
       secret,
       ...(scopes ? { scopes } : {}),
+      ...(oauthLabel ? { oauthLabel } : {}),
       ...(icon ? { icon } : {}),
       ...(secret && secretSchema ? { secretSchema: projectConnectionSchema(secretSchema) } : {}),
     }),

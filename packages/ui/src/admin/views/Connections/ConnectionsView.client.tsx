@@ -160,7 +160,7 @@ function ConnectionForm({
           >
             <Label className="frogbot-connections__method" htmlFor={`${id}-oauth`}>
               <RadioGroupItem id={`${id}-oauth`} value="oauth" />
-              OAuth
+              {piece.oauthLabel ?? 'OAuth'}
             </Label>
             <Label className="frogbot-connections__method" htmlFor={`${id}-secret`}>
               <RadioGroupItem id={`${id}-secret`} value="secret" />
@@ -193,7 +193,7 @@ function ConnectionForm({
               ? 'Redirecting…'
               : 'Connecting…'
             : method === 'oauth'
-              ? `Continue with ${piece.label}`
+              ? `Continue with ${piece.oauthLabel ?? piece.label}`
               : 'Connect'}
         </Button>
       </DialogFooter>
@@ -284,7 +284,10 @@ function NewConnectionDialog({
                   <span>
                     <strong>{piece.label}</strong>
                     <span className="frogbot-connections__muted">
-                      {[piece.oauth && 'OAuth', piece.secret && 'Static credentials']
+                      {[
+                        piece.oauth && (piece.oauthLabel ?? 'OAuth'),
+                        piece.secret && 'Static credentials',
+                      ]
                         .filter(Boolean)
                         .join(' · ')}
                     </span>
@@ -302,6 +305,7 @@ function NewConnectionDialog({
 function ConnectionRow({
   connection,
   label,
+  oauthLabel = 'OAuth',
   icon,
   scopes,
   busy,
@@ -309,6 +313,7 @@ function ConnectionRow({
 }: {
   connection: ConnectionItem;
   label: string;
+  oauthLabel?: string;
   icon?: string;
   scopes?: string[];
   busy: boolean;
@@ -335,7 +340,7 @@ function ConnectionRow({
           {status === 'relink' ? 'needs re-link' : status}
         </span>
         <span className="frogbot-connections__muted">
-          {connection.method === 'oauth' ? 'OAuth' : 'Static credentials'}
+          {connection.method === 'oauth' ? oauthLabel : 'Static credentials'}
         </span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -382,6 +387,7 @@ export function ConnectionsViewClient({
   const removing = useRef(false);
   const labels = new Map(pieces.map((piece) => [piece.slug, piece.label]));
   const icons = new Map(pieces.map((piece) => [piece.slug, piece.icon]));
+  const oauthLabels = new Map(pieces.map((piece) => [piece.slug, piece.oauthLabel]));
   const scopes = new Map(pieces.map((piece) => [piece.slug, piece.scopes]));
   const query = search.trim().toLowerCase();
   const filtered = connections.filter((connection) =>
@@ -500,6 +506,7 @@ export function ConnectionsViewClient({
               key={connection.id}
               connection={connection}
               label={labels.get(connection.piece) ?? connection.piece}
+              oauthLabel={oauthLabels.get(connection.piece)}
               icon={icons.get(connection.piece)}
               scopes={scopes.get(connection.piece)}
               busy={deleting === connection.id}

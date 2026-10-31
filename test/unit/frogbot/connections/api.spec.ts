@@ -429,3 +429,71 @@ describe('connections API', () => {
     expect(find).not.toHaveBeenCalled();
   });
 });
+
+describe('connections API piece-run sign-in', () => {
+  const planAuth = z.object({ token: z.string().min(1), plan: z.literal(true) });
+  const revoke = vi.fn((_args: { tokens: object; req: FrogBotRequest }) => Promise.resolve());
+
+  const signInDefinition = {
+    ...definition,
+    oauth: {
+      scopes: { catalog: { read: 'read' }, defaults: ['read'] },
+      auth: planAuth,
+      toAuth: ({ tokens }) => ({ token: `plan-${tokens.access_token}`, plan: true }),
+      authorize: () => Promise.resolve('http://127.0.0.1:1455/provider'),
+      refresh: ({ tokens }) => Promise.resolve(tokens),
+      revoke,
+    },
+  } satisfies PieceDefinition;
+
+  async function signInSetup(row: Partial<ConnectionRow> & { value?: unknown }) {
+    const fixture = await setup({ pieceDefinition: signInDefinition, row });
+    const warn = vi.fn();
+    const deleted = vi.spyOn(await fixture.api.store, 'delete').mockResolvedValue(true);
+
+    Object.assign(fixture.req.frogbot, { logger: { warn } });
+    revoke.mockReset().mockResolvedValue(undefined);
+
+    return { ...fixture, warn, deleted };
+  }
+
+  const oauthRow = { method: 'oauth' as const, scopes: ['read'], value: { access_token: 'abc' } };
+
+  it('resolves an OAuth row through oauth.auth, which differs from the pasted-key schema', async () => {
+    const { api, req, piece } = await signInSetup(oauthRow);
+
+    expect(await api.resolve({ piece, req })).toEqual({ token: 'plan-abc', plan: true });
+  });
+
+  it('revokes an OAuth row before deleting it', async () => {
+    const { api, req, deleted } = await signInSetup(oauthRow);
+
+    deleted.mockImplementation(() => {
+      expect(revoke).toHaveBeenCalledTimes(1);
+
+      return Promise.resolve(true);
+    });
+
+    expect(await api.delete({ req, id: 'connection' })).toBe(true);
+    expect(revoke.mock.calls[0][0].tokens).toEqual({ access_token: 'abc' });
+    expect(deleted).toHaveBeenCalledTimes(1);
+  });
+
+  it('still deletes, and logs, when revoking fails', async () => {
+    const { api, req, deleted, warn } = await signInSetup(oauthRow);
+
+    revoke.mockRejectedValue(new Error('provider down'));
+
+    expect(await api.delete({ req, id: 'connection' })).toBe(true);
+    expect(deleted).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('provider down'));
+  });
+
+  it('never revokes a pasted-key row', async () => {
+    const { api, req, deleted } = await signInSetup({});
+
+    expect(await api.delete({ req, id: 'connection' })).toBe(true);
+    expect(revoke).not.toHaveBeenCalled();
+    expect(deleted).toHaveBeenCalledTimes(1);
+  });
+});

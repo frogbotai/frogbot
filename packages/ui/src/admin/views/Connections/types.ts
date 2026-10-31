@@ -19,6 +19,8 @@ export type ConnectionPiece = {
   oauth: boolean;
   secret: boolean;
   scopes?: string[];
+  /** Names the OAuth method, in place of "OAuth". */
+  oauthLabel?: string;
   icon?: string;
   secretSchema?: ConnectionField;
 };
