@@ -87,7 +87,7 @@ describe('frogbot share: sign-in', () => {
 
     expect(result.code).toBe(0);
     expect(result.stdout()).toEqual(
-      expect.arrayContaining([`${dojo.url}/device?user_code=BCDF-GHJK`, 'BCDF-GHJK']),
+      expect.arrayContaining([`${dojo.url}/device?user_code=BCDF-GHJK`, 'Code: BCDF-GHJK']),
     );
     expect(result.opened).toEqual([]);
     expect((await stat(authPath(env))).mode & 0o777).toBe(0o600);

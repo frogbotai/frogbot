@@ -61,6 +61,10 @@ export type FakeDojo = {
   projects: { id: number; name: string; slug: string; workspace: number }[];
   /** Polls answered `authorization_pending` before the sign-in is approved. */
   pendingPolls: number;
+  /** Device codes whose first poll answers `expired_token`, counted from the first one issued. */
+  expiredCodes: number;
+  /** `POST /api/cli/device/code` leaves out `verification_uri_complete`, as RFC 8628 allows. */
+  noCompleteUri?: boolean;
   build: FakeBuild;
   /** Apps whose deployments get 403. */
   forbidden: Set<number>;
@@ -155,6 +159,7 @@ async function readBody(req: IncomingMessage): Promise<Buffer> {
 export async function startFakeDojo(): Promise<FakeDojo> {
   let keys = 0;
   let polls = 0;
+  let codes = 0;
   let logConnections = 0;
   const sealing = generateKeyPairSync('x25519');
 
@@ -165,6 +170,7 @@ export async function startFakeDojo(): Promise<FakeDojo> {
     workspaces: [{ id: 1, name: 'Trend Capital', slug: 'trend-capital' }],
     projects: [],
     pendingPolls: 1,
+    expiredCodes: 0,
     build: { lines: ['step 1', 'step 2'], status: 'ready' },
     forbidden: new Set(),
     sealingPrivateKey: sealing.privateKey,
@@ -242,17 +248,27 @@ export async function startFakeDojo(): Promise<FakeDojo> {
     }
 
     if (route === 'POST /api/cli/device/code') {
+      codes += 1;
+
       return json(res, 200, {
-        device_code: 'device-1',
+        device_code: `device-${codes}`,
         user_code: 'BCDF-GHJK',
         verification_uri: `${dojo.url}/device`,
-        verification_uri_complete: `${dojo.url}/device?user_code=BCDF-GHJK`,
-        expires_in: 600,
+        ...(dojo.noCompleteUri
+          ? {}
+          : { verification_uri_complete: `${dojo.url}/device?user_code=BCDF-GHJK` }),
+        expires_in: 900,
         interval: 0,
       });
     }
 
     if (route === 'POST /api/cli/device/token') {
+      const { device_code: deviceCode } = JSON.parse(body.toString()) as { device_code: string };
+
+      if (Number(deviceCode.slice('device-'.length)) <= dojo.expiredCodes) {
+        return json(res, 400, { error: 'expired_token' });
+      }
+
       polls += 1;
 
       if (polls <= dojo.pendingPolls) return json(res, 400, { error: 'authorization_pending' });
