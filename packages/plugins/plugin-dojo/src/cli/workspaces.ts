@@ -29,7 +29,7 @@ export async function chooseWorkspace({
   io: ShareIO;
   slug?: string;
 }): Promise<Workspace> {
-  const create = `${dojo.url}/admin/collections/workspaces/create`;
+  const create = `${dojo.url}/collections/workspaces/create`;
 
   for (let shown = false; ; shown = true) {
     const workspaces = await listWorkspaces(dojo);
