@@ -2,7 +2,7 @@ import React from 'react';
 
 const themeCss = `
 .frogbot-graphic-logo .fb-body{fill:#3acf6a}
-.frogbot-graphic-logo .fb-eye{fill:#ffffff}
+.frogbot-graphic-logo .fb-eye{fill:var(--color-bg,#ffffff)}
 .frogbot-graphic-logo .fb-text{fill:#3acf6a}
 `;
 
