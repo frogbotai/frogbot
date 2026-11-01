@@ -1,7 +1,6 @@
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { homedir, hostname } from 'node:os';
 import { dirname, join } from 'node:path';
-import { setTimeout as sleep } from 'node:timers/promises';
 
 import { ShareError } from './error.js';
 import type { ShareEnv, ShareIO } from './io.js';
@@ -78,8 +77,35 @@ async function post(url: string, body: Record<string, string>): Promise<Response
   });
 }
 
-/** Signs in with Dojo's device flow (RFC 8628) and stores the token. */
+const maxCodes = 3;
+
+/** Signs in with Dojo's device flow (RFC 8628) and stores the token; an expired code makes way for a new one. */
 export async function deviceLogin(io: ShareIO, dojoUrl: string): Promise<string> {
+  for (let codes = 1; ; codes += 1) {
+    const token = await approvedToken(io, dojoUrl);
+
+    if (token) {
+      await writeToken(io.env, dojoUrl, token);
+      say(io, '[frogbot] Signed in.');
+
+      return token;
+    }
+
+    if (io.isTTY) {
+      say(io, '[frogbot] The sign-in code expired.');
+
+      if (await io.prompts.confirm('Get a new code?')) continue;
+    } else if (codes < maxCodes) {
+      say(io, "[frogbot] The sign-in code expired. Here's a new one.");
+
+      continue;
+    }
+
+    throw new ShareError('The sign-in code expired. Run the command again.');
+  }
+}
+
+async function approvedToken(io: ShareIO, dojoUrl: string): Promise<string | undefined> {
   const start = await post(`${dojoUrl}/api/cli/device/code`, {
     client_id: clientId,
     device_name: hostname(),
@@ -90,9 +116,15 @@ export async function deviceLogin(io: ShareIO, dojoUrl: string): Promise<string>
   const code = (await start.json()) as DeviceCode;
   const link = code.verification_uri_complete || code.verification_uri;
 
-  say(io, '[frogbot] Sign in to Dojo: open this link and confirm the code.');
+  say(
+    io,
+    code.verification_uri_complete
+      ? '[frogbot] Sign in to Dojo: open this link and confirm the code.'
+      : '[frogbot] Sign in to Dojo: open this link and enter the code.',
+  );
+
   say(io, link);
-  say(io, code.user_code);
+  say(io, `Code: ${code.user_code}`);
 
   if (io.isTTY) io.openBrowser(link);
 
@@ -100,7 +132,7 @@ export async function deviceLogin(io: ShareIO, dojoUrl: string): Promise<string>
   let interval = (code.interval ?? 5) * 1000;
 
   while (Date.now() < deadline) {
-    await sleep(interval);
+    await io.wait(interval);
 
     const reply = await post(`${dojoUrl}/api/cli/device/token`, {
       grant_type: grantType,
@@ -113,12 +145,7 @@ export async function deviceLogin(io: ShareIO, dojoUrl: string): Promise<string>
       error?: string;
     };
 
-    if (reply.ok && body.access_token) {
-      await writeToken(io.env, dojoUrl, body.access_token);
-      say(io, '[frogbot] Signed in.');
-
-      return body.access_token;
-    }
+    if (reply.ok && body.access_token) return body.access_token;
 
     if (body.error === 'authorization_pending') continue;
 
@@ -130,10 +157,10 @@ export async function deviceLogin(io: ShareIO, dojoUrl: string): Promise<string>
 
     if (body.error === 'access_denied') throw new ShareError('Sign-in was denied.');
 
-    if (body.error === 'expired_token') break;
+    if (body.error === 'expired_token') return undefined;
 
     throw new ShareError(`Sign-in failed: ${body.error ?? reply.status}.`);
   }
 
-  throw new ShareError('The sign-in code expired. Run the command again.');
+  return undefined;
 }

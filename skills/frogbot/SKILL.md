@@ -228,7 +228,7 @@ Your shell has no terminal, so `share` never prompts you. Settle these with the 
 - **Keys.** Every key in the `.env` files comes along without asking (`DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT` and `HOSTNAME` never do). Leave keys out with `--skip-key NAME` (repeatable, case-sensitive) or `--no-keys`. On later shares, keys whose local value differs from live keep their live value unless you pass `--update-keys`.
 - **Workspace and name.** With more than one Dojo workspace, pass `--workspace <slug>`. The address is `https://<name>.frogbot.app`, named from `package.json`; when that's taken, rerun with `--name <another name>`.
 
-The first time, `share` prints `[frogbot] Sign in to Dojo: open this link and confirm the code.`, then the link and the code on their own lines, and waits until the user confirms. Run it where you can read its output while it waits, such as a background shell, and pass the link and code on.
+The first time, `share` prints `[frogbot] Sign in to Dojo: open this link and confirm the code.`, then the link and `Code: <code>` on their own lines, and waits until the user confirms. Run it where you can read its output while it waits, such as a background shell, and pass the link and code on. When the code expires, it prints `[frogbot] The sign-in code expired. Here's a new one.` and a new link and code (up to three codes); pass the new ones on.
 
 When the workspace's Dojo plan doesn't cover the app yet, `share` prints why, then the upgrade link on its own line, and waits up to 30 minutes for the payment before it carries on; pass the link on.
 
