@@ -5,7 +5,7 @@ description: "Understand the building blocks of a FrogBot app: config, collectio
 keywords: ["concepts", "configuration", "collections", "agents", "tools", "chat", "pieces", "jobs"]
 ---
 
-FrogBot is built around a small set of declarative building blocks in one typed TypeScript file (`frogbot.config.ts`). Instead of generating thousands of lines of custom backend and UI glue code, you or your coding agent assemble these building blocks and FrogBot runs the application.
+FrogBot is built around a small set of declarative building blocks in one config (`frogbot.config.ts`). Instead of generating thousands of lines of custom backend and UI glue code, you or your coding agent assemble these building blocks and FrogBot runs the application.
 
 <CardGroup cols={2}>
   <Card title="Configuration" icon="file-cog" href="/configuration/overview">
@@ -134,4 +134,4 @@ The server owns chat history: a client sends `chatId` and only the new user mess
 `FrogBotRequest` carries `req.user`, `req.frogbot`, active database transactions, and locale across every layer of your app:
 
 - **HTTP endpoints** (`/api/...` and `/api/agents/:slug`) enforce collection and agent access rules automatically.
-- **Local API calls** (`frogbot.find`, `frogbot.update`) run as trusted server code by default. Pass `req: ctx.req` and `overrideAccess: false` inside agent tools or custom endpoints whenever running on behalf of a signed-in user.
+- **Local API calls** (`frogbot.find`, `frogbot.update`) enforce access control by default (`overrideAccess: false`). Pass `req: ctx.req` and `overrideAccess: false` when acting for a signed-in user, or `overrideAccess: true` for trusted server work such as scripts, seeds, and jobs.

@@ -175,7 +175,7 @@ const posts = await frogbot.find({
 });
 ```
 
-Use the default override only for deliberate trusted server work. Field access returns booleans; collection access may also return query constraints.
+Use `overrideAccess: true` only for deliberate trusted server work. Field access returns booleans; collection access may also return query constraints.
 
 ### Lost Request And Transaction Context
 

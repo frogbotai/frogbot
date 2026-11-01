@@ -322,7 +322,7 @@ Also accepts the [shared options](#shared-storage-options).
 | `baseURL` | `string` | Required | Base URL of the storage account. File URLs are built as `<baseURL>/<containerName>/<key>`. |
 | `allowContainerCreate` | `boolean` | Required | Creates the container on startup if it doesn't exist. |
 | `containerAccess` | `'private' \| 'blob' \| 'container'` | `'private'` | Public access level for a container the adapter creates. Applies only with `allowContainerCreate`. |
-| `clientUploads` | `boolean \| { access?: ClientUploadsAccess; chunkLargeFiles?: boolean }` | `false` | Client uploads, as in the [shared options](#shared-storage-options). `chunkLargeFiles` uploads in blocks to lift the roughly 5 GB single-request limit, and needs CORS that allows `OPTIONS`, `PUT`, and `x-ms-*` headers. Client uploads apply only to collections with [`upload.allowRestrictedFileTypes: true`](/upload/overview). |
+| `clientUploads` | `boolean \| { access?: UploadInstructionsAccess; chunkLargeFiles?: boolean }` | `false` | Client uploads, as in the [shared options](#shared-storage-options). `chunkLargeFiles` uploads in blocks to lift the roughly 5 GB single-request limit, and needs CORS that allows `OPTIONS`, `PUT`, and `x-ms-*` headers. Client uploads apply only to collections with [`upload.allowRestrictedFileTypes: true`](/upload/overview). |
 | `clientCacheKey` | `string` | — | Accepted but not read. |
 
 ## Google Cloud Storage
@@ -431,7 +431,7 @@ Every storage adapter accepts these options, except where noted.
 | --- | --- | --- | --- |
 | `collections` | `Record<string, true \| false \| CollectionOptions>` | `{}` | Your own upload collections that use the adapter, keyed by slug. The collection marked `file: true`, if any, and `frogbot-chat-assets` are [included automatically](#configuration) in the first adapter. Use `true` for the defaults, an object of [collection-specific options](#collection-specific-options), or `false` to keep one of FrogBot's collections on local disk. Each slug _must_ match an existing upload collection. |
 | `enabled` | `boolean` | `true` | Set `false` to turn the adapter off. When it's off, the collections keep using local storage. |
-| `clientUploads` | `boolean \| { access?: ClientUploadsAccess }` | `false` | Uploads files directly from the browser to storage, bypassing server upload limits such as Vercel's 4.5 MB. The user must be signed in and able to create or update documents in the collection. `access` is `({ collectionSlug, req }) => boolean \| Promise<boolean>` and adds a further check. Azure accepts extra keys. |
+| `clientUploads` | `boolean \| { access?: UploadInstructionsAccess }` | `false` | Uploads files directly from the browser to storage, bypassing server upload limits such as Vercel's 4.5 MB. The user must be signed in and able to create or update documents in the collection. `access` is `({ collectionSlug, req }) => boolean \| Promise<boolean>` and adds a further check. Azure accepts extra keys. |
 | `useCompositePrefixes` | `boolean` | `false` | Stores the document prefix relative to the collection prefix. See [Prefix composition](#prefix-composition). |
 
 ## Collection-specific options
@@ -441,7 +441,7 @@ Every storage adapter accepts these options, except where noted.
 | `prefix` | `string` | — | Folder in the bucket for this collection's files, such as `media/images`. |
 | `disableLocalStorage` | `boolean` | `true` | Set `false` to also keep a local copy of each file. |
 | `disablePayloadAccessControl` | `true` | — | Serves files straight from your storage provider instead of through FrogBot's access control. See [FrogBot Access Control](#frogbot-access-control). |
-| `generateFileURL` | `({ collection, filename, prefix, size }) => string \| Promise<string>` | — | Returns the file URL to store, instead of the generated one. `size` is set for image sizes. |
+| `generateFileURL` | `({ collection, filename, prefix, size }) => string \| Promise<string>` | — | Returns the file URL to store, instead of the generated one. `size` is set for image variants. |
 | `signedDownloads` | `boolean \| SignedDownloadsConfig` | The adapter's `signedDownloads` | S3 only. Overrides [signed downloads](#signed-downloads) for this collection. |
 
 ## Prefix Composition

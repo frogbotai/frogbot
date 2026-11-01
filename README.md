@@ -4,7 +4,7 @@
 
 <h1 align="center">FrogBot</h1>
 
-<p align="center"><strong>The open-source lego bricks for AI to build and replace SaaS apps</strong></p>
+<p align="center"><strong>The open-source lego bricks for AI to build internal apps, automate workflows, and replace SaaS apps</strong></p>
 
 <p align="center">
   <a href="https://github.com/frogbotai/frogbot/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=flat-square" /></a>
@@ -34,9 +34,9 @@
 
 <hr/>
 
-**Define AI agents, tools, providers, 40+ integrations, and your entire data layer in one typed `frogbot.config.ts` — FrogBot boots the production Admin UI, database, and HTTP server for all of it.** No routing code, no glue, no per-seat SaaS tax.
+**Define agents, tools, integrations, and your entire data layer in one config — FrogBot turns it into a sleek production UI, database, and backend.**
 
-Prompting an AI from scratch produces 15,000 lines of fragile glue code for auth, tables, permissions, and background queues. FrogBot gives your coding agent established, declarative building blocks in one MIT-licensed TypeScript codebase you own forever.
+FrogBot is the fastest way to vibe code production-grade applications in the AI era. Prompting an AI from scratch produces 15,000 lines of fragile glue code for auth, tables, permissions, and background queues. FrogBot gives your coding agent established, declarative building blocks in one MIT codebase you own forever.
 
 ## Start with a coding agent
 
@@ -179,7 +179,7 @@ This monorepo publishes the following packages:
 
 **Pieces (40+ Integrations & Channels)**
 
-See [`packages/pieces`](./packages/pieces) for all 40 native integrations, including [`@frogbotai/piece-slack`](./packages/pieces/piece-slack), [`@frogbotai/piece-discord`](./packages/pieces/piece-discord), [`@frogbotai/piece-linear`](./packages/pieces/piece-linear), [`@frogbotai/piece-github`](./packages/pieces/piece-github), [`@frogbotai/piece-microsoft-teams`](./packages/pieces/piece-microsoft-teams), [`@frogbotai/piece-telegram-bot`](./packages/pieces/piece-telegram-bot), [`@frogbotai/piece-gmail`](./packages/pieces/piece-gmail), [`@frogbotai/piece-google-sheets`](./packages/pieces/piece-google-sheets), [`@frogbotai/piece-notion`](./packages/pieces/piece-notion), [`@frogbotai/piece-airtable`](./packages/pieces/piece-airtable), [`@frogbotai/piece-stripe`](./packages/pieces/piece-stripe), [`@frogbotai/piece-xero`](./packages/pieces/piece-xero), and [`@frogbotai/piece-resend`](./packages/pieces/piece-resend).
+See [`packages/pieces`](./packages/pieces) for all 40+ native integrations, including [`@frogbotai/piece-openai`](./packages/pieces/piece-openai), [`@frogbotai/piece-slack`](./packages/pieces/piece-slack), [`@frogbotai/piece-discord`](./packages/pieces/piece-discord), [`@frogbotai/piece-linear`](./packages/pieces/piece-linear), [`@frogbotai/piece-github`](./packages/pieces/piece-github), [`@frogbotai/piece-microsoft-teams`](./packages/pieces/piece-microsoft-teams), [`@frogbotai/piece-telegram-bot`](./packages/pieces/piece-telegram-bot), [`@frogbotai/piece-gmail`](./packages/pieces/piece-gmail), [`@frogbotai/piece-google-sheets`](./packages/pieces/piece-google-sheets), [`@frogbotai/piece-notion`](./packages/pieces/piece-notion), [`@frogbotai/piece-airtable`](./packages/pieces/piece-airtable), [`@frogbotai/piece-stripe`](./packages/pieces/piece-stripe), [`@frogbotai/piece-xero`](./packages/pieces/piece-xero), and [`@frogbotai/piece-resend`](./packages/pieces/piece-resend).
 
 **Database adapters**
 

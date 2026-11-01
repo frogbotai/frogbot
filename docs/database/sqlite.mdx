@@ -152,7 +152,12 @@ A write that waits longer than `writeLockTimeout` fails with an error saying how
 ```ts
 afterChange: [
   async ({ req }) => {
-    await req.payload.create({ collection: 'audit-logs', data: { event: 'saved' }, req })
+    await req.frogbot.create({
+      collection: 'audit-logs',
+      data: { event: 'saved' },
+      overrideAccess: true,
+      req,
+    })
   },
 ],
 ```

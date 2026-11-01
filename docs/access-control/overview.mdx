@@ -18,7 +18,7 @@ There are many use cases for Access Control, including:
 - Restricting a user to only be able to see their own orders, but no-one else's
 - Allowing users that belong to a certain organization to access only that organization's resources
 
-There are three main types of Access Control in FrogBot:
+There are two main types of Access Control in FrogBot:
 
 - [Collection Access Control](/access-control/collections)
 - [Field Access Control](/access-control/fields)
@@ -32,7 +32,7 @@ This means that adding a second [Authentication](/authentication/overview)-enabl
 Here is the default Access Control that FrogBot provides:
 
 ```ts
-const defaultPayloadAccess = ({ req: { frogbot, user } }) => {
+const defaultAccess = ({ req: { frogbot, user } }) => {
   // Return `true` only if a user is found
   // and that user belongs to the admin user collection
   return Boolean(user) && user.collection === frogbot.config.admin.user
@@ -40,10 +40,10 @@ const defaultPayloadAccess = ({ req: { frogbot, user } }) => {
 ```
 
 <Warning>
-  In the [Local API](/local-api/overview), all Access Control is _skipped_ by
-  default. This allows your server to have full control over your application.
-  To opt back in, you can set the `overrideAccess` option to `false` in your
-  requests.
+  In the [Local API](/local-api/overview), operations enforce Access Control by
+  default (`overrideAccess: false`) based on the passed `user` or `req.user`. Set
+  `overrideAccess: true` only when the operation should bypass Access Control for
+  trusted server work. See [Local API Access Control](/local-api/access-control).
 </Warning>
 
 ## The Access Operation

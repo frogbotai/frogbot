@@ -79,7 +79,7 @@ On PostgreSQL and SQLite, polymorphic or many-valued relationships normally use 
 | `sanitizedMany` | `JoinField[]` | — | Internal. Set by FrogBot for polymorphic joins; don't set it yourself. |
 | `index` | `undefined` | — | Not supported. |
 | `defaultValue` | `undefined` | — | Not supported. |
-| `graphQL` | `{ complexity?: number }` | `{ complexity: 10 }` | Query complexity used only when an application mounts its own GraphQL executor. FrogBot does not ship a GraphQL endpoint. |
+| `graphQL` | `{ complexity?: number }` | `{ complexity: 10 }` | Query complexity for this field in [GraphQL](/graphql/overview). |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
 | `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |

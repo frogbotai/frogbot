@@ -120,7 +120,7 @@ Nested field callbacks can inspect `siblingData` for values at the same level. D
 
 ## Local API enforcement
 
-Local API operations override access control by default. Passing a user does not change that default. Set `overrideAccess: false` whenever an operation must enforce that user's permissions.
+Local API operations enforce access control by default (`overrideAccess: false`) for the `user` or `req` they receive (or as an anonymous caller when neither is passed). Pass `overrideAccess` explicitly on every call: `false` with `user` or `req` when acting for a signed-in user, and `true` for trusted server work.
 
 ```ts
 const result = await frogbot.find({
@@ -140,7 +140,7 @@ const result = await req.frogbot.find({
 });
 ```
 
-Use `overrideAccess: true` only for deliberate trusted server work. Treat a missing `overrideAccess: false` on user-scoped Local API calls as a security defect.
+Use `overrideAccess: true` only for deliberate trusted server work such as scripts, seeds, jobs, and system hooks.
 
 ## Cross-collection checks
 

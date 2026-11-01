@@ -79,7 +79,7 @@ Authentication supplies the email and password fields. Add application-specific 
 
 ## Uploads and the file role
 
-A normal upload collection limits its file types and adds its own metadata. FrogBot keeps uploads as they are: it has no image sizes or resizing.
+A normal upload collection limits its file types and adds its own metadata. Register `sharpTransformer` from `@frogbotai/transformer-sharp` under `upload.transformers` when you need image `variants` or resizing.
 
 ```ts
 import type { CollectionConfig } from 'frogbot';
@@ -214,4 +214,4 @@ export const Pages: CollectionConfig = {
 
 - Put reusable lifecycle behavior in the [hooks documentation](https://docs.frogbot.ai/hooks/overview).
 - Enforce document and field permissions with the [access control documentation](https://docs.frogbot.ai/access-control/overview).
-- Local API calls skip access checks unless `overrideAccess: false` is set.
+- Local API calls enforce access checks by default (`overrideAccess: false`); pass `overrideAccess: true` only for trusted server work.

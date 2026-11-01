@@ -208,7 +208,7 @@ This is done by adding `index: true` to the Field Config for that field:
 ```ts
 // In your collection configuration
 {
-  name: 'posts',
+  slug: 'posts',
   fields: [
     {
       name: 'title',
@@ -277,6 +277,7 @@ const posts = await frogbot.find({
   select: {
     title: true,
   },
+})
 ```
 
 This is a basic example, but there are many ways to use the Select API, including selecting specific fields, excluding fields, etc.

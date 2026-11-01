@@ -78,7 +78,7 @@ const Customer: CollectionConfig = {
           collection: 'customers',
           id: doc.id,
           data: {
-            ...(await fetchCustomerData(data.customerID)),
+            ...(await fetchCustomerData(doc.customerID)),
           },
         })
       },
@@ -107,11 +107,11 @@ const MyCollection: CollectionConfig = {
           return
         }
         await req.frogbot.update({
-          collection: contextHooksSlug,
+          collection: 'slug',
           overrideAccess: true,
           id: doc.id,
           data: {
-            ...(await fetchCustomerData(data.customerID)),
+            ...(await fetchCustomerData(doc.customerID)),
           },
           context: {
             // set a flag to prevent from running again

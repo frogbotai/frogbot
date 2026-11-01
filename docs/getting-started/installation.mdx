@@ -22,23 +22,51 @@ https://docs.frogbot.ai/llms.txt
 
 ## Create an app from the CLI
 
-Scaffold a new FrogBot project interactively:
+<Steps>
+  <Step title="Scaffold the project">
+    Run `create-frogbot-app` interactively, or pass flags with `--yes` for a non-interactive setup:
 
-```bash
-npx create-frogbot-app@latest my-app
-```
+    <Tabs>
+      <Tab title="Interactive">
+        ```bash
+        npx create-frogbot-app@latest my-app
+        ```
 
-The setup asks you to choose a database, an AI provider, the provider's API key (or whether to use the one already set in your environment), and any coding agents that should receive the FrogBot skill. The blank template is selected automatically while it is the only available template. Your current package manager is detected. Dependencies are installed first, then a Git repository is created with an initial commit that includes the lockfile, so the project is ready to run when the command finishes. Pass `--no-install` to skip installing dependencies, or `--no-git` to skip Git. If the install fails, the command stops before Git and exits with an error.
+        Prompts you to choose a database (`sqlite`, `postgres`, or `mongodb`), an AI provider, your provider API key, and which coding agents should receive the [FrogBot skill](/skills/coding-agents).
+      </Tab>
+      <Tab title="Non-interactive (--yes)">
+        ```bash
+        npx create-frogbot-app@latest my-app --yes --ai openai --agents claude,cursor,codex,opencode
+        ```
 
-See [Coding agents](/skills/coding-agents) for skill installation options, agent selection flags, and project paths.
+        `--yes` accepts defaults for any flag you omit (`sqlite` database, `blank` template, detected package manager, and `--ai none` unless `--ai` is passed).
+      </Tab>
+    </Tabs>
 
-For a non-interactive setup with the defaults, use `--yes`:
+    The scaffolder installs dependencies first, then initializes a Git repository with an initial commit that includes the lockfile.
+  </Step>
+  <Step title="Check your .env file">
+    `create-frogbot-app` writes `my-app/.env` with a generated `FROGBOT_SECRET`, your database `DATABASE_URL`, and your AI provider key if you entered one during setup.
 
-```bash
-npx create-frogbot-app@latest my-app --yes --ai openai --agents claude,cursor,codex,opencode
-```
+    If you skipped the key prompt (or ran with `--yes` without `--api-key`), add your key to `my-app/.env` before starting the app:
 
-`--yes` by itself creates a Next.js app using SQLite with no AI provider, agents, or chat. Choose a provider with `--ai zen`, `--ai openai`, `--ai anthropic`, `--ai google`, or `--ai bedrock`. Pass the key with `--api-key` to write it to `.env`. Without prompts, a key already set in your environment is not copied into the app; the scaffolder tells you it found the key and did not copy it. Select another database with `--db sqlite`, `--db postgres`, or `--db mongodb`.
+    ```bash
+    OPENAI_API_KEY=sk-...
+    ```
+
+    <Note>
+      OpenAI, Anthropic, and Google apps require their key in `.env` before the server starts (unless you configure [`@frogbotai/piece-openai`](/pieces/openai) so users sign in with **Continue with ChatGPT** or link their own key in the UI). Bedrock and Zen apps start without a key, but require one before chatting.
+    </Note>
+  </Step>
+  <Step title="Start the dev server">
+    ```bash
+    cd my-app
+    npm run dev
+    ```
+
+    Open [http://localhost:3000](http://localhost:3000) to create your first admin user. From the dashboard, open **Chats** in the sidebar and select **Create New** to talk to your agent, or edit `src/frogbot.config.ts` to add collections, views, pieces, and tools.
+  </Step>
+</Steps>
 
 ## Command options
 
@@ -46,55 +74,48 @@ npx create-frogbot-app@latest my-app --yes --ai openai --agents claude,cursor,co
 npx create-frogbot-app@latest [project-name] [options]
 ```
 
-Any setup choice you pass as a flag is not asked. The command also skips every prompt when `--yes` is set or when it doesn't run in an interactive terminal, and uses the defaults below for anything you didn't pass.
+Any choice passed as a flag skips its interactive prompt. Passing `--yes` (or running without an interactive terminal) skips all prompts and uses the defaults below. Unknown options, missing values, or invalid choices exit with an error.
 
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
-| `[project-name]`, `-n`, `--name` | name | Prompted; required without prompts | Name of the project and of the directory created for it in the current directory. Use lowercase letters, numbers, dots, dashes, or underscores, starting with a letter or number. Pass it once, either positionally or with `--name`. The directory must not exist yet. |
-| `-t`, `--template` | `blank` | `blank` | Starter template. `blank` is the only template, so the setup doesn't ask for one. |
-| `-d`, `--db` | `sqlite`, `postgres`, or `mongodb` | `sqlite` | Database adapter and connection string written to the app. See [Database](/database/overview). |
-| `--ai` | `zen`, `openai`, `anthropic`, `google`, `bedrock`, or `none` | `none` | AI provider configured in `src/frogbot.config.ts`. `none` leaves out the AI provider, the default agent, and its tools. |
-| `--api-key` | string | Prompted | The provider's API key, written to `.env`. Without it, prompts offer a matching key from your environment (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `AWS_BEARER_TOKEN_BEDROCK`, or `OPENCODE_API_KEY`), then ask for one. Ignored with `--ai none`. |
-| `--agents` | comma-separated `claude`, `codex`, `cursor`, `opencode`, `copilot`, `gemini` | Prompted; none without prompts | Coding agents that receive the FrogBot skill. Spaces around each name are ignored; quote the list if it contains spaces, as in `--agents "claude, codex"`. See [Coding agents](/skills/coding-agents). |
-| `--no-agents` | flag | off | Installs no coding-agent skill and skips the agents prompt. Overrides `--agents`. |
-| `--use-npm`, `--use-pnpm`, `--use-yarn`, `--use-bun` | flag | The package manager that ran the command, or npm | Package manager for installing dependencies and for the printed dev command. Pass at most one. `--use-pnpm` also writes a `pnpm-workspace.yaml`. |
-| `--no-install`, `--no-deps` | flag | off | Skips installing dependencies. `--no-deps` is an alias. |
-| `--no-git` | flag | off | Skips creating a Git repository and the initial commit. |
-| `-y`, `--yes` | flag | off | Accepts the defaults for every choice you didn't pass, without prompts. |
+| `[project-name]`, `-n`, `--name` | name | Prompted | Project and folder name (required with `--yes`). Lowercase letters, numbers, `.`, `-`, or `_`. |
+| `-t`, `--template` | `blank` | `blank` | Starter template (`blank` is selected automatically). |
+| `-d`, `--db` | `sqlite` \| `postgres` \| `mongodb` | `sqlite` | Database adapter and connection string. See [Database](/database/overview). |
+| `--ai` | `zen` \| `openai` \| `anthropic` \| `google` \| `bedrock` \| `none` | `none` | AI provider configured in `src/frogbot.config.ts`. |
+| `--api-key` | string | Prompted | Provider API key written to `.env` (ignored with `--ai none`). |
+| `--agents` | `claude`, `codex`, `cursor`, `opencode`, `copilot`, `gemini` | Prompted | Coding agents that receive the [FrogBot skill](/skills/coding-agents). |
+| `--no-agents` | flag | off | Skips installing coding-agent skills and overrides `--agents`. |
+| `--use-npm`, `--use-pnpm`, `--use-yarn`, `--use-bun` | flag | Detected | Package manager for installing dependencies (`--use-pnpm` also writes `pnpm-workspace.yaml`). |
+| `--no-install`, `--no-deps` | flag | off | Skips installing dependencies (and skips the initial Git commit). |
+| `--no-git` | flag | off | Skips initializing a Git repository and initial commit. |
+| `-y`, `--yes` | flag | off | Accepts defaults for all unspecified flags without prompts. |
 | `-h`, `--help` | flag | off | Prints usage and exits. |
 
-An unknown option or a missing value exits with an error. An invalid choice exits with an error that lists the valid values.
-
-## Run the app
-
-`create-frogbot-app` writes a `.env` file with a generated `FROGBOT_SECRET`, the connection string for your selected database, and your provider key if you entered one. Otherwise, add the key to `.env` (for example `OPENAI_API_KEY=...`). With OpenAI, Anthropic, or Google, add it before starting the app; the app does not start without it. Bedrock and Zen apps start without a key, but chat needs one.
-
-```bash
-cd my-app
-npm run dev
-```
-
-Use the equivalent dev command if you selected pnpm, yarn, or bun. Then open [http://localhost:3000](http://localhost:3000). On the first visit, you create the first admin user. The dashboard then shows a card for each collection; open **Chats** in the sidebar and select **Create New** to talk to your agent. To change app behavior, edit `src/frogbot.config.ts`; see [Configuration](/configuration/overview) for the full schema. See [CLI](/getting-started/cli) for every `frogbot` command, including `npx frogbot share` to deploy to [Dojo](/plugins/dojo).
+<Accordion title="Project naming, environment key detection, and quoting rules">
+  - **Project name:** Pass the project name once (either positionally or with `--name`). Must start with a letter or number, and the target folder must not exist yet.
+  - **Environment keys:** In interactive mode without `--api-key`, the scaffolder checks your environment for a matching variable (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `AWS_BEARER_TOKEN_BEDROCK`, or `OPENCODE_API_KEY`) and offers to copy it into `.env`.
+  - **Agent list quoting:** Spaces around agent names are ignored; quote the list if it includes spaces (for example `--agents "claude, codex"`). With `--yes`, no coding agents are selected unless `--agents` is passed.
+</Accordion>
 
 ## Software requirements
 
-- Node.js 24.21 or newer
-- TypeScript 6.0.3 or newer
-- npm, pnpm, yarn, or bun
-- SQLite, PostgreSQL, or MongoDB — see [Database](/database/overview)
-- Optional: an object store (S3, GCS, Azure, R2, or Vercel Blob) — see [Upload](/upload/storage-adapters)
+- **Node.js** `24.21` or newer
+- **TypeScript** `6.0.3` or newer
+- **Package manager:** npm, pnpm, yarn, or bun
+- **Database:** SQLite, PostgreSQL, or MongoDB — see [Database](/database/overview)
+- **Object storage (optional):** S3, R2, GCS, Azure Blob, or Vercel Blob — see [Upload](/upload/storage-adapters)
 
 ## Monorepos
 
-Keep one copy of `frogbot` in a workspace. Each copy has its own types, so a block, field, or collection exported from a shared package fails to typecheck in an app that resolves a different copy. Check which copies are installed:
+Keep a single copy of `frogbot` across a workspace so shared blocks, fields, and collections resolve identical TypeScript types:
 
 ```bash
 pnpm why frogbot
 ```
 
-A shared package lists `frogbot` under `peerDependencies`, plus `devDependencies` so it can build and run its own tests. Never list it under `dependencies`, which installs a separate copy for that package.
-
-Use the same `frogbot` version in every package. If `pnpm why frogbot` still shows more than one copy, run `pnpm dedupe`. An optional peer that only some packages install, such as `@ai-sdk/otel`, can also split `frogbot` into two copies; install it in every package that installs `frogbot`, or in none of them.
+- List `frogbot` under `peerDependencies` (and `devDependencies` for local build/test) in shared packages—never under `dependencies`.
+- Keep the exact same `frogbot` version across every workspace package and run `pnpm dedupe` if multiple copies appear.
+- Install optional peers such as `@ai-sdk/otel` in every package that depends on `frogbot`, or in none of them, so the package graph does not split `frogbot` into separate instances.
 
 ## Next steps
 

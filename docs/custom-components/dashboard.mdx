@@ -109,7 +109,7 @@ Use the [color tokens](/chat/ui-theming#color-tokens) in the widget stylesheet:
 | `widgetSlug` | `string` | Required | Slug of the widget being rendered. [Generated widget types](#generated-widget-types) narrow it to the widget's slug. |
 | `widgetData` | `Record<string, unknown>` | Optional | Values saved from the widget's `fields`, or the `data` from its layout item. Generated widget types narrow it to the widget's data shape. |
 | `permissions` | `SanitizedPermissions` | Required | The current user's permissions. |
-| `user` | `UntypedUser \| null` | Optional | The signed-in user. |
+| `user` | `User \| null` | Optional | The signed-in user. |
 | `locale` | `Locale` | Optional | The current content locale when localization is enabled. |
 | `cookies` | `Map<string, string>` | Required | Cookies sent with the request. |
 

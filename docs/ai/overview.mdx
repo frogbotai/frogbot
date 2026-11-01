@@ -1,6 +1,6 @@
 ---
 title: "AI"
-sidebarTitle: "AI"
+sidebarTitle: "Overview"
 description: "Configure providers, inference, access, hooks, and HTTP routes."
 keywords: ["AI", "providers", "models", "routers", "hooks", "gateway"]
 ---
@@ -32,7 +32,7 @@ Built-in keys are `openai`, `anthropic`, `google`, `bedrock`, `vertex`, `groq`, 
 
 Model IDs use `<provider>/<model>`, where `<provider>` is the exact key you used under `ai.providers`, such as `bedrock/...` or `togetherai/...`. Replicate's `apiKey` maps to its `apiToken` option. Bedrock uses bearer tokens first, then explicit SigV4 keys, then the AWS default credential chain.
 
-To have each user's AI calls run on their own key, list a provider piece such as [OpenAI](/pieces/openai) in `connections`; FrogBot adds its provider here when missing, and the app needs no key of its own. See [Run AI on users' keys](/connections/overview#run-ai-on-users-keys).
+To have each user's AI calls run on their own key or ChatGPT plan, list a provider piece such as [OpenAI](/pieces/openai) in `connections`; FrogBot adds its provider here when missing, and the app needs no key of its own. See [Run AI on users' keys](/connections/overview#run-ai-on-users-keys).
 
 Use `{ apiKey: process.env.CUSTOM_KEY }` only for an alternate credential. Explicit keys must be non-empty. Bedrock accepts `true`, `{ region }`, paired `{ accessKeyId, secretAccessKey, sessionToken? }` overrides, or a custom `credentialProvider`. In Node.js, the default chain supports AWS profiles and IAM Identity Center, web identity, ECS task roles, and EC2 instance profiles. Install the optional `@aws-sdk/credential-providers` peer dependency to use this fallback. Edge runtimes must provide an edge-compatible `credentialProvider` instead.
 

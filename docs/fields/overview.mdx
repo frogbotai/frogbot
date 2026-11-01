@@ -51,9 +51,24 @@ Data fields have a `name` and ordinarily store their value in the database.
 - [Rich Text](/fields/rich-text) for structured rich content
 - [Select](/fields/select) for one or more values from a choice list
 - [Tabs](/fields/tabs) for named groups displayed as tabs
-- [Text](/fields/text) for single-line strings
+- [Text](/fields/text) for single-line strings (plus `slugField()` for URL slugs)
 - [Textarea](/fields/textarea) for multi-line strings
 - [Upload](/fields/upload) for references to file collections
+- [Vector](/fields/vector) for float embedding vectors
+
+### Field kinds (`frogbot/fields`)
+
+Pre-built field factories exported from `frogbot/fields`:
+
+- [AI](/fields/ai) (`aiTextField`, `aiTextareaField`, `aiSelectField`) for AI-generated fields from sibling inputs
+- [Autonumber](/fields/autonumber) (`autonumberField`) for sequential record numbers
+- [Barcode](/fields/barcode) (`barcodeField`) for GTIN, EAN, UPC, and ISBN codes
+- [Duration](/fields/duration) (`durationField`) for elapsed time values
+- [Money](/fields/money) (`moneyField`) for currency amounts stored in minor units
+- [Percent](/fields/percent) (`percentField`) for percentage values
+- [Phone](/fields/phone) (`phoneField`) for E.164 phone numbers
+- [Rating](/fields/rating) (`ratingField`) for star and numeric ratings
+- [URL](/fields/url) (`urlField`) for validated HTTP/HTTPS links
 
 ### Layout fields
 

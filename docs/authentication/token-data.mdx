@@ -84,16 +84,17 @@ export const Invoices: CollectionConfig = {
   access: {
     read: ({ req, data }) => {
       if (!req?.user) return false
-      if ({ req.user?.role === 'super-admin'}) {
+      if (req.user?.role === 'super-admin') {
         return true
       }
-      return data.owner === req.user.id
-    }
-  }
+      return data?.owner === req.user.id
+    },
+  },
   fields: [
     {
       name: 'owner',
-      relationTo: 'users'
+      type: 'relationship',
+      relationTo: 'users',
     },
     // ... other fields
   ],

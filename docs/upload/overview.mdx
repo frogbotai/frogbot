@@ -11,13 +11,6 @@ keywords: uploads, images, media, overview, documentation, Content Management Sy
   control](#access-control).
 </Banner>
 
-<LightDarkImage
-  srcLight="https://frogbot.com/images/docs/uploads-overview.jpg"
-  srcDark="https://frogbot.com/images/docs/uploads-overview.jpg"
-  alt="Shows an Upload enabled collection in the FrogBot Admin Panel"
-  caption="Admin Panel screenshot depicting a Media Collection with Upload enabled"
-/>
-
 **Here are some common use cases of Uploads:**
 
 - Creating a "Media Library" that contains images for use throughout your site or app
@@ -26,7 +19,7 @@ keywords: uploads, images, media, overview, documentation, Content Management Sy
 
 **By simply enabling Upload functionality on a Collection, FrogBot will automatically transform your Collection into a robust file management / storage solution. The following modifications will be made:**
 
-1. `filename`, `mimeType`, and `filesize` fields will be automatically added to your Collection. Optionally, if you declare image sizes as `variants` on [`sharpTransformer`](#image-sizes), a [`variants`](#image-sizes) group will also be added containing auto-resized image sizes and filenames.
+1. `filename`, `mimeType`, `filesize`, `original`, `prefix`, and `_objectKey` fields will be automatically added to your Collection. Optionally, if you declare image variants as `variants` on [`sharpTransformer`](#image-sizes), a [`variants`](#image-sizes) group will also be added containing auto-resized image variants and filenames.
 1. The Admin Panel will modify its built-in `List` component to show a thumbnail for each upload within the List View
 1. The Admin Panel will modify its `Edit` view(s) to add a new set of corresponding Upload UI which will allow for file upload
 1. The `create`, `update`, and `delete` Collection operations will be modified to support file upload, re-upload, and deletion
@@ -321,14 +314,14 @@ The focal point selector is shown only when the collection has `variants` or ima
 
 ## Disabling Local Upload Storage
 
-If you are using a plugin to send your files off to a third-party file storage host or CDN, like Amazon S3 or similar, you may not want to store your files locally at all. You can prevent FrogBot from writing files to disk by specifying `disableLocalStorage: true` on your collection's upload config.
+If you are using a [storage adapter](/upload/storage-adapters) under the root `storage` option to send your files to a third-party file storage host or CDN (like Amazon S3, Cloudflare R2, or Google Cloud Storage), you may not want to store your files locally at all. Storage adapters disable local storage automatically, or you can prevent FrogBot from writing files to disk manually by specifying `disableLocalStorage: true` on your collection's upload config.
 
 <Banner type="warning">
   **Note:**
 
-This is a fairly advanced feature. If you do disable local file storage, by default, your admin
-panel's thumbnails will be broken as you will not have stored a file. It will be totally up to you
-to use either a plugin or your own hooks to store your files in a permanent manner, as well as
+This is a fairly advanced feature when configured manually. If you disable local file storage without a storage adapter, your admin
+panel's thumbnails will be broken as you will not have stored a file. It will be up to you
+to use either a [storage adapter](/upload/storage-adapters) or your own hooks to store your files in a permanent manner, as well as
 provide your own admin thumbnail using **upload.adminThumbnail**.
 
 </Banner>

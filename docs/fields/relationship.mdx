@@ -31,7 +31,7 @@ export const ProductField: Field = {
 | `minRows` | `number` | — | Minimum number of relationships when a value is present. Only with `hasMany: true`. |
 | `maxRows` | `number` | — | Maximum number of relationships when a value is present. Only with `hasMany: true`. |
 | `maxDepth` | `number` | Request depth | Maximum population depth for this field, regardless of the remaining request depth. See [depth](/queries/depth#max-depth). |
-| `graphQL` | `{ complexity?: number }` | `{ complexity: 10 }` | Query complexity used only when an application mounts its own GraphQL executor. FrogBot does not ship a GraphQL request handler. |
+| `graphQL` | `{ complexity?: number }` | `{ complexity: 10 }` | Query complexity for this field in [GraphQL](/graphql/overview). |
 | `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
 | `required` | `boolean` | `false` | Rejects an empty value in the default validation. |
 | `unique` | `boolean` | `false` | Creates a unique database index for the field path. See [indexes](/database/indexes). |
