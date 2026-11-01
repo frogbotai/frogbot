@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { setTimeout } from 'node:timers/promises';
 
 import * as p from '@clack/prompts';
 import type { SanitizedConfig } from 'payload';
@@ -28,6 +29,8 @@ export type ShareIO = {
   isTTY: boolean;
   prompts: SharePrompts;
   openBrowser: (url: string) => void;
+  /** Waits between polls of Dojo. */
+  wait: (ms: number) => Promise<unknown>;
   loadConfig: (root: string) => Promise<ShareConfig>;
 };
 
@@ -90,6 +93,7 @@ export function processIO(program: string): ShareIO {
     isTTY: Boolean(process.stdin.isTTY && process.stdout.isTTY),
     prompts: clackPrompts,
     openBrowser,
+    wait: setTimeout,
     loadConfig: loadShareConfig,
   };
 }

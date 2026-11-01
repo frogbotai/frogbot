@@ -22,6 +22,7 @@ import { say } from './io.js';
 import type { LiveKeys } from './keys.js';
 import { chooseFirstKeys, compareLiveKeys } from './keys.js';
 import { linkPath, readLink, writeLink } from './link.js';
+import { whenPaid } from './payment.js';
 import type { SealedKeys, SealingKey } from './seal.js';
 import { sealKeys } from './seal.js';
 import { chooseWorkspace } from './workspaces.js';
@@ -184,6 +185,7 @@ async function share(argv: string[], io: ShareIO): Promise<void> {
 
     const deploymentId = await deploy({
       dojo,
+      io,
       appId,
       archive,
       keys: data && secret ? [...keys, { name: 'FROGBOT_SECRET', value: secret }] : keys,
@@ -309,11 +311,13 @@ async function createApp({
   const name = await appName(root);
   const slug = toSlug(flags.name ?? name);
 
-  const created = await dojo.request('/api/projects?depth=0', () => ({
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name, slug, workspace: workspace.id }),
-  }));
+  const created = await whenPaid(dojo, io, () =>
+    dojo.request('/api/projects?depth=0', () => ({
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name, slug, workspace: workspace.id }),
+    })),
+  );
 
   if (!created.ok) {
     const { body, message } = await dojoError(created);
@@ -392,6 +396,7 @@ async function refusedApp(appId: string | number, response: Response): Promise<v
 
 async function deploy({
   dojo,
+  io,
   appId,
   archive,
   keys,
@@ -399,6 +404,7 @@ async function deploy({
   data,
 }: {
   dojo: DojoClient;
+  io: ShareIO;
   appId: string | number;
   archive: ShareArchive;
   keys: EnvKey[];
@@ -410,20 +416,22 @@ async function deploy({
       ? JSON.stringify({ ...(await sealedKeys(dojo, keys)), ...(updateKeys ? { updateKeys } : {}) })
       : undefined;
 
-  const response = await dojo.request(`/api/apps/${appId}/deployments`, async () => {
-    const form = new FormData();
+  const response = await whenPaid(dojo, io, () =>
+    dojo.request(`/api/apps/${appId}/deployments`, async () => {
+      const form = new FormData();
 
-    form.append(
-      'source',
-      await openAsBlob(archive.path, { type: 'application/gzip' }),
-      'source.tar.gz',
-    );
+      form.append(
+        'source',
+        await openAsBlob(archive.path, { type: 'application/gzip' }),
+        'source.tar.gz',
+      );
 
-    if (keysPart) form.append('keys', keysPart);
-    if (data !== undefined) form.append('data', String(data));
+      if (keysPart) form.append('keys', keysPart);
+      if (data !== undefined) form.append('data', String(data));
 
-    return { method: 'POST', body: form };
-  });
+      return { method: 'POST', body: form };
+    }),
+  );
 
   await refusedApp(appId, response);
 

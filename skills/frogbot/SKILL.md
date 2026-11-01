@@ -230,6 +230,8 @@ Your shell has no terminal, so `share` never prompts you. Settle these with the 
 
 The first time, `share` prints `[frogbot] Sign in to Dojo: open this link and confirm the code.`, then the link and the code on their own lines, and waits until the user confirms. Run it where you can read its output while it waits, such as a background shell, and pass the link and code on.
 
+When the workspace's Dojo plan doesn't cover the app yet, `share` prints why, then the upgrade link on its own line, and waits up to 30 minutes for the payment before it carries on; pass the link on.
+
 `share` needs a `pnpm-lock.yaml`, `package-lock.json` or `yarn.lock` (not Bun) and an upload under 100 MB. It writes the app's id to `.frogbot/app.json`, so later shares from the folder update the same app; delete that file only when the user wants a new app. It ends with `[frogbot] Share it: <link>` and then the live URL as the last line: give the user both.
 
 When someone shared an app with the user as an editor on Dojo, `npx @frogbotai/plugin-dojo pull <slug>`, run from the folder that should hold it, downloads it into a new `./<slug>` folder with an empty database; then run `pnpm install` and `pnpm dev` there, and `share` from that folder ships a new version of the same app. An editor's share brings no keys and has no `Share it:` line, since only the app's owners manage its keys on Dojo.

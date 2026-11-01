@@ -109,6 +109,7 @@ export function testIO({
       multiselect: (message) => Promise.resolve(answer(message, multiselect)),
     },
     openBrowser: (url) => opened.push(url),
+    wait: () => Promise.resolve(),
     loadConfig: () => Promise.resolve(config),
   };
 
