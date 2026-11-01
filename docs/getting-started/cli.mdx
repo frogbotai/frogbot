@@ -122,7 +122,7 @@ Uploads the app in the current folder to Dojo, streams `[build]` logs, and print
   <Accordion title="First share vs. subsequent updates">
     - **First share:** Creates a Dojo app named after `package.json`'s `name` (or `--name`), writes the app ID to `.frogbot/app.json`, and adds `/.frogbot` to `.gitignore`.
     - **Later shares:** Deploying again from the same folder ships a new version of the linked app. Delete `.frogbot/app.json` to deploy as a brand-new app.
-    - **Name collisions & workspaces:** If the app name is taken on Dojo, `share` prompts you to rerun with `--name <another name>`. If you belong to multiple workspaces in a non-interactive shell, pass `--workspace`.
+    - **Name collisions & workspaces:** If the app name is taken on Dojo, `share` prompts you to rerun with `--name <another name>`. If you belong to multiple workspaces in a non-interactive shell, pass `--workspace`. With no workspace yet, `share` says where to create one; in an interactive terminal it opens that page and checks again when you press Enter.
   </Accordion>
   <Accordion title="Bringing local database & upload files (--data)">
     - **First share only:** On the first share of a local `file:` SQLite app, `share` asks `Bring your data? 42 deals, 3 users, 12 files` (or requires `--data` / `--no-data` when non-interactive). Once a version of the app has started on Dojo, later shares deploy code only and never overwrite live data.
