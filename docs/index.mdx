@@ -1,18 +1,18 @@
 ---
 title: "What is FrogBot?"
 sidebarTitle: "What is FrogBot?"
-description: "FrogBot is the open-source lego bricks for AI to build and replace SaaS apps in one typed TypeScript config."
+description: "FrogBot is the open-source lego bricks for AI to build internal apps, automate workflows, and replace SaaS apps."
 ---
 
 import StarterPrompt from '/snippets/starter-prompt.mdx';
 
-**FrogBot is the open-source lego bricks for AI to build and replace SaaS apps.**
+**Define agents, tools, integrations, and your entire data layer in one config — FrogBot turns it into a sleek production UI, database, and backend.**
 
-Define AI agents, tools, providers, 40+ integrations, and your entire data layer in one typed `frogbot.config.ts` — FrogBot boots the production Admin UI, database, and HTTP server for all of it. No routing code, no glue, no per-seat SaaS tax.
+FrogBot is the fastest way to vibe code production-grade applications in the AI era.
 
 ## Why AI needs FrogBot
 
-Prompting an AI from scratch produces 15,000 lines of fragile glue code for auth, database tables, permissions, and background queues. FrogBot gives Claude Code, Cursor, Codex, and OpenCode established, declarative foundations so your agent writes a compact config file instead of rebuilding backend plumbing.
+Prompting an AI from scratch produces 15,000 lines of fragile glue code for auth, database tables, permissions, and background queues. FrogBot gives Claude Code, Cursor, Codex, and OpenCode established, declarative foundations so your agent writes one `frogbot.config.ts` instead of rebuilding backend plumbing.
 
 Every FrogBot app is a standard MIT-licensed TypeScript codebase you own forever. Run it anywhere Docker or Node.js runs, or deploy to [Dojo](/plugins/dojo) in one command with [`npx frogbot share`](/getting-started/cli#share).
 
@@ -34,13 +34,15 @@ Open [http://localhost:3000](http://localhost:3000) to create your first admin u
 
 ## What's in the box
 
-- **Full data layer & Admin UI** — [collections](/configuration/collections), [fields](/fields/overview), [authentication](/authentication/overview), [access control](/access-control/overview), [versions](/versions/overview), [drafts](/versions/drafts), and [hooks](/hooks/overview), with instant Table, [Kanban board](/admin/collection-board), and [Calendar](/admin/collection-calendar) views
-- **Config-first AI agents** — [agents](/agents/overview) with typed [Zod](https://zod.dev) tool schemas, per-request access control functions, server-owned [chat history](/chat/overview), and automatic JSON and SSE streaming endpoints
-- **Embeddable MIT AI gateway** — route to OpenAI, Anthropic, Google, and 30+ more providers through a single self-hosted [AI gateway](/gateway/overview)
-- **40+ native OAuth pieces & chat channels** — connect [Slack](/pieces/slack), [Discord](/pieces/discord), [Linear](/pieces/linear), [GitHub](/pieces/github), [Teams](/pieces/teams), [Telegram](/pieces/telegram), Gmail, Stripe, Notion, Xero, and more with [managed OAuth connections](/connections/overview) and [channel questions](/pieces/channel-questions)
-- **Durable jobs & schedules** — [jobs queues](/jobs-queue/overview), cron schedules, retries, and dedicated [workers](/jobs-queue/workers)
-- **Single-command type generation** — `frogbot generate:types` produces [end-to-end TypeScript types](/typescript/generating-types) for your collections, agents, and pieces
-- **Swappable adapters & 1-command deploy** — swap [SQLite](/database/sqlite), [Postgres](/database/postgres), or [MongoDB](/database/mongodb), [object storage](/upload/storage-adapters), and Redis KV adapters anytime, or deploy with [`npx frogbot share`](/getting-started/cli#share)
+| Building block | What you get out of the box |
+| --- | --- |
+| **[Data layer & Admin UI](/configuration/collections)** | Collections, fields, auth, access control, versions, drafts, and hooks, with instant Table, Kanban board, and Calendar views. |
+| **[Config-first AI agents](/agents/overview)** | Typed Zod tool schemas, per-request access control functions, server-owned chat history, and automatic JSON and SSE streaming endpoints. |
+| **[Embeddable MIT AI gateway](/gateway/overview)** | Route to OpenAI, Anthropic, Google, and 30+ more providers through a single self-hosted `provider/model` catalog. |
+| **[40+ OAuth pieces & channels](/pieces/overview)** | Connect Slack, Discord, Linear, GitHub, Teams, Telegram, Gmail, Stripe, Notion, Xero, and more with managed OAuth and channel approvals. |
+| **[Durable jobs & schedules](/jobs-queue/overview)** | Background queues, cron schedules, automatic retries, and dedicated workers backed by your database. |
+| **[End-to-end TypeScript](/typescript/generating-types)** | Single-command type generation (`frogbot generate:types`) across your collections, agents, and pieces. |
+| **[Swappable adapters & Dojo](/deployment/overview)** | Swap SQLite, Postgres, or MongoDB, S3/R2/GCS storage, and Redis KV anytime, or deploy in one command with `npx frogbot share`. |
 
 ## Explore the docs
 

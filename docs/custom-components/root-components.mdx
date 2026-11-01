@@ -193,7 +193,7 @@ Root component props:
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `req` | `FrogBotRequest` | Optional | The current request. Use `req?.frogbot` to reach FrogBot. Not passed to login page components or the dashboard slots. |
-| `user` | `UntypedUser` | Optional | The signed-in user, or `undefined` when nobody is signed in. Use `req.user` for authorization decisions. |
+| `user` | `User` | Optional | The signed-in user, or `undefined` when nobody is signed in. Use `req.user` for authorization decisions. |
 | `permissions` | `SanitizedPermissions` | Optional | The current user's collection and admin permissions. |
 | `visibleEntities` | `VisibleEntities` | Optional | Slugs of the collections visible to the current user. |
 | `i18n` | `I18nClient` | Required | Translation helpers and the current admin language. |

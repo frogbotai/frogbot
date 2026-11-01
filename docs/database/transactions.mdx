@@ -76,12 +76,12 @@ FrogBot uses the `req` object to pass the transaction ID through to the database
 Example:
 
 ```ts
-import frogbot from 'frogbot'
+import { getFrogBot } from 'frogbot'
 import config from './frogbot.config'
 
 const standaloneFrogBotScript = async () => {
   // initialize FrogBot
-  await frogbot.init({ config })
+  const frogbot = await getFrogBot({ config })
 
   const transactionID = await frogbot.db.beginTransaction()
 

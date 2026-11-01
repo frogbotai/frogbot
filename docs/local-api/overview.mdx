@@ -107,9 +107,10 @@ const post = await frogbot.find({
 ```
 
 <Warning>
-  By default, all access control checks are disabled in the Local API, but you
-  can re-enable them if you'd like, as well as pass a specific user to run the
-  operation with.
+  Local API operations enforce [Access Control](/local-api/access-control) by
+  default (`overrideAccess: false`). Pass `overrideAccess: true` only when
+  skipping access checks for trusted server-side work such as cron jobs, seed
+  scripts, and migrations.
 </Warning>
 
 ## Collections

@@ -1,8 +1,24 @@
 ---
 title: "Deployment"
 sidebarTitle: "Deployment"
-description: "Deploy a FrogBot app to production with Docker or Fly.io, and avoid the common cold-start and dependency gotchas."
+description: "Deploy a FrogBot app in one command with Dojo, or self-host with Docker or Fly.io."
 ---
+
+You can deploy a FrogBot app to [Dojo](/plugins/dojo) in one command, or self-host it anywhere Docker or Node.js runs.
+
+## Deploy to Dojo
+
+Apps created with `create-frogbot-app` include the [`dojo()`](/plugins/dojo) plugin out of the box. Deploy from your project root:
+
+```bash
+npx frogbot share
+```
+
+- On your first deploy, `share` prompts to bring your local SQLite data and files (`--data` / `--no-data`), encrypts your `.env` keys, builds the app on Dojo, and prints your live `https://<name>.frogbot.app` URL.
+- On Dojo, [`dojo()`](/plugins/dojo) automatically configures private R2 file storage, Dojo AI routing, scheduled job execution, and **Continue with Dojo** sign-in.
+- Pull a shared app locally with `npx @frogbotai/plugin-dojo pull <app>` or stream live logs with `npx @frogbotai/plugin-dojo logs <app> --follow`. See the [`share` CLI reference](/getting-started/cli#share).
+
+## Self-hosting (Docker & Node.js)
 
 FrogBot apps are Next.js applications. They build like a standard Next.js app, but two things differ from a plain Next.js project:
 

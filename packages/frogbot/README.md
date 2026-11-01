@@ -4,7 +4,7 @@
 
 <h1 align="center">FrogBot</h1>
 
-<p align="center"><strong>The open-source lego bricks for AI to build and replace SaaS apps.</strong></p>
+<p align="center"><strong>The open-source lego bricks for AI to build internal apps, automate workflows, and replace SaaS apps.</strong></p>
 
 <p align="center">
   <a href="https://github.com/frogbotai/frogbot/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=flat-square" /></a>
@@ -26,7 +26,7 @@
 
 <hr/>
 
-Define AI agents, tools, providers, 40+ integrations, and your entire data layer in one typed `frogbot.config.ts` — then boot a production Admin UI, database, and HTTP server with REST APIs for all of it. No routing code, no glue, no per-seat SaaS tax.
+Define agents, tools, integrations, and your entire data layer in one config — FrogBot turns it into a sleek production UI, database, and backend. FrogBot is the fastest way to vibe code production-grade applications in the AI era.
 
 ## Quickstart
 

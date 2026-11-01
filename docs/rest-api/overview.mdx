@@ -135,11 +135,10 @@ export const Orders: CollectionConfig = {
         const data = await req.json()
         await req.frogbot.update({
           collection: 'tracking',
+          id: req.routeParams.id as string,
           overrideAccess: false,
           req,
-          data: {
-            // data to update the document with
-          },
+          data,
         })
         return Response.json({
           message: 'successfully updated tracking info',
@@ -191,11 +190,10 @@ import { addDataAndFileToRequest } from 'frogbot'
     await addDataAndFileToRequest(req)
     await req.frogbot.update({
       collection: 'tracking',
+      id: req.routeParams.id as string,
       overrideAccess: false,
       req,
-      data: {
-        // data to update the document with
-      }
+      data: req.data,
     })
     return Response.json({
       message: 'successfully updated tracking info'

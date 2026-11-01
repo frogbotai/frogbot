@@ -118,8 +118,6 @@ The [List](/admin/overview) cell shows the value with its state:
 
 The buttons need update access to the record. Without it, the cell shows the value, the spinner and the warning only. Generating cells update on their own: while any are visible, the page re-reads them in one request every 3 seconds, and stops once none are generating.
 
-If the collection sets `admin.enableListViewSelectAPI`, the List shows the plain value, with no state and no buttons.
-
 ### Board and Calendar
 
 [Board](/admin/collection-board) cards and [Calendar](/admin/collection-calendar) events show the value, dimmed while generating, and a warning icon after a failure. They have no buttons. Board can group by an AI select field.

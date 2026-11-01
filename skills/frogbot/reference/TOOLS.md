@@ -45,7 +45,7 @@ export const getProjectStatus: Tool<typeof inputSchema, { status: string }> = {
 
 Collection slugs and returned document fields are typed from the generated `frogbot-types.ts` file. Before type generation, document fields are `unknown`; the status guard keeps this example usable in that context too. The `projects` collection must define a text `status` field.
 
-For agent-supplied IDs and queries, pass both `req` and `overrideAccess: false` to Local API calls so collection and field permissions apply. Passing `req` alone does not disable the Local API's access bypass.
+For agent-supplied IDs and queries, pass `req` and `overrideAccess: false` to Local API calls so collection and field permissions apply for the signed-in user and the call shares the request transaction.
 
 ## Register tools
 

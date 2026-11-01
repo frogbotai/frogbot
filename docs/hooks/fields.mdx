@@ -89,7 +89,7 @@ Field Hooks receive the following arguments. Optional values depend on the hook 
 | `siblingFields` | `(Field \| TabAsField)[]` | See description | The sibling field configurations. Required in `afterRead`, `beforeChange`, `beforeDuplicate`, and `beforeValidate`; not provided in `afterChange`. |
 | `value` | `unknown` | — | The value of the [Field](/fields/overview). |
 
-`collection` is `null` for a Global field. `siblingFields` is optional in the base `FieldHookArgs` type because `afterChange` does not receive it.
+`siblingFields` is optional in the base `FieldHookArgs` type because `afterChange` does not receive it.
 
 <Tip>
   It's a good idea to conditionally scope your logic based on which operation is

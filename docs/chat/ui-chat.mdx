@@ -205,19 +205,21 @@ Pass the [adapter](/chat/ui-provider#adapter-options) to add the same actions to
 | `adapter` | `ChatPlatformAdapter` | Required | Renames and deletes the chat. A missing `renameChat` or `deleteChat` hides its menu item. |
 | `onDeleted` | `(chat: ChatDocument) => void` | — | Called after the chat is deleted. |
 
-`ChatRowActions` adds the hover menu button and right-click menu to a row without any requests of its own. Leave out a handler to hide its item; with neither, the row is rendered without a menu:
+`ChatRowActions` adds the hover menu button and right-click menu to a row without any requests of its own. Leave out a handler to hide its item; with none, the row is rendered without a menu:
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `ReactElement<{ children?: ReactNode; className?: string }>` | Required | The row element. Its `className` is kept. |
 | `onRename` | `() => void` | — | Called when Rename is selected. Without it, Rename is hidden. |
+| `onExport` | `() => void` | — | Called when Export is selected. Without it, Export is hidden. |
 | `onDelete` | `() => void` | — | Called when Delete is selected. Without it, Delete is hidden. |
 
-`ChatRowMenuItems` renders the Rename and Delete items for a menu you build yourself:
+`ChatRowMenuItems` renders the Rename, Export, and Delete items for a menu you build yourself:
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `onRename` | `() => void` | — | Called when Rename is selected. Without it, Rename is hidden. |
+| `onExport` | `() => void` | — | Called when Export is selected. Without it, Export is hidden. |
 | `onDelete` | `() => void` | — | Called when Delete is selected. Without it, Delete is hidden. |
 | `context` | `boolean` | `false` | Render context-menu items instead of dropdown-menu items. |
 

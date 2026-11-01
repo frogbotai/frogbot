@@ -228,7 +228,7 @@ Pass `req` to preserve the transaction and cache. Avoid external network calls i
 ## Verification checklist
 
 - Test anonymous, each role, owner, non-owner, and API-key paths that the rule supports.
-- Test Local API calls with `overrideAccess: false`; a user argument alone does not enforce permissions.
+- Test Local API calls with `user` (or `req`) and `overrideAccess: false`; use `overrideAccess: true` only for trusted server work.
 - Confirm denied collection rows are absent and denied field reads are omitted.
 - Confirm account creation and role updates cannot grant privilege outside `rolesFieldAccess`.
 - Keep ownership and organization fields indexed when they appear in common constraints.
