@@ -28,8 +28,14 @@
     margin: 0 var(--spacer-2);
   }
 
+  /* Payload 4's `round` makes a square icon-only button, and its icon gap is 2px: the full-width button
+     sets its own gap so the logo doesn't touch the label. */
   .oauth-login-buttons .btn {
     margin: 0;
     width: 100%;
+  }
+
+  .oauth-login-buttons .btn .btn__content {
+    gap: var(--spacer-2);
   }
 }
