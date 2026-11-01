@@ -24,6 +24,7 @@ import { chooseFirstKeys, compareLiveKeys } from './keys.js';
 import { linkPath, readLink, writeLink } from './link.js';
 import type { SealedKeys, SealingKey } from './seal.js';
 import { sealKeys } from './seal.js';
+import { chooseWorkspace } from './workspaces.js';
 
 const usage = (program: string) =>
   `Usage: ${program} share [--data | --no-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys]`;
@@ -37,8 +38,6 @@ type ShareFlags = {
   yes: boolean;
   updateKeys: boolean;
 };
-
-type Workspace = { id: string | number; name: string; slug: string };
 
 type AppInfo = { started: boolean; level: 'editor' | 'owner' };
 
@@ -306,14 +305,7 @@ async function createApp({
   flags: ShareFlags;
   root: string;
 }): Promise<string | number> {
-  const listed = await dojo.request('/api/workspaces?depth=0&limit=100');
-
-  if (!listed.ok) {
-    throw new ShareError(`Couldn't list your workspaces: ${await dojoMessage(listed)}`);
-  }
-
-  const { docs } = (await listed.json()) as { docs: Workspace[] };
-  const workspace = await pickWorkspace({ workspaces: docs, flags, io, dojoUrl: dojo.url });
+  const workspace = await chooseWorkspace({ dojo, io, slug: flags.workspace });
   const name = await appName(root);
   const slug = toSlug(flags.name ?? name);
 
@@ -342,51 +334,6 @@ async function createApp({
   say(io, `[frogbot] Created ${doc.slug} in ${workspace.name}, linked in ${linkPath}.`);
 
   return doc.id;
-}
-
-async function pickWorkspace({
-  workspaces,
-  flags,
-  io,
-  dojoUrl,
-}: {
-  workspaces: Workspace[];
-  flags: ShareFlags;
-  io: ShareIO;
-  dojoUrl: string;
-}): Promise<Workspace> {
-  const slugs = workspaces.map((workspace) => workspace.slug).join(', ');
-
-  if (flags.workspace) {
-    const chosen = workspaces.find((workspace) => workspace.slug === flags.workspace);
-
-    if (!chosen) {
-      throw new ShareError(`No workspace "${flags.workspace}" in Dojo. Yours: ${slugs}.`);
-    }
-
-    return chosen;
-  }
-
-  const [only] = workspaces;
-
-  if (!only) {
-    throw new ShareError(`You have no workspace in ${dojoUrl}. Create one there, then rerun.`);
-  }
-
-  if (workspaces.length === 1) return only;
-
-  if (!io.isTTY) {
-    throw new ShareError(
-      `Ask the person which workspace to share in (${slugs}), then rerun with --workspace <slug>.`,
-    );
-  }
-
-  const slug = await io.prompts.select(
-    'Which workspace?',
-    workspaces.map((workspace) => ({ value: workspace.slug, label: workspace.name })),
-  );
-
-  return workspaces.find((workspace) => workspace.slug === slug) ?? only;
 }
 
 async function laterKeys({
