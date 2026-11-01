@@ -91,6 +91,8 @@ export type FakeDojo = {
   logs: { at: string; message: string }[];
   /** The status `GET /api/apps/:app/logs` answers with, in the contract's words, instead of the lines. */
   logsStatus?: 403 | 404 | 502;
+  /** Dojo's billing (320), off when unset: a first deploy needs a paying plan with a paid app free, or answers 402. */
+  billing?: { subscriptionStatus?: string; paidApps: number; owner?: boolean };
   /** Runs after each request is answered, as `METHOD /path`. */
   afterRequest?: (route: string) => void;
   paths: () => string[];
@@ -103,6 +105,8 @@ const json = (res: ServerResponse, status: number, body: unknown) => {
 
 const payloadError = (res: ServerResponse, status: number, message: string) =>
   json(res, status, { errors: [{ message }] });
+
+const payingStatuses = new Set(['active', 'trialing', 'past_due']);
 
 const logsRefusals = {
   403: "You can't share to this app. Only its editors and owners can.",
@@ -275,10 +279,50 @@ export async function startFakeDojo(): Promise<FakeDojo> {
       return json(res, 200, { docs: dojo.workspaces, totalDocs: dojo.workspaces.length });
     }
 
+    const workspace = /^\/api\/workspaces\/(\d+)$/.exec(url.pathname);
+
+    if (req.method === 'GET' && workspace) {
+      const found = dojo.workspaces.find(({ id }) => id === Number(workspace[1]));
+
+      if (!found) return payloadError(res, 404, 'Not Found');
+
+      return json(res, 200, {
+        ...found,
+        subscriptionStatus: dojo.billing?.subscriptionStatus ?? null,
+        paidApps: dojo.billing?.paidApps ?? 0,
+      });
+    }
+
+    const slotRefusal = (workspaceId: number) => {
+      const { billing } = dojo;
+      const apps = 1;
+
+      if (!billing) return false;
+      if (payingStatuses.has(billing.subscriptionStatus ?? '') && billing.paidApps >= apps) {
+        return false;
+      }
+
+      const upgrade = `${dojo.url}/billing/upgrade?workspace=${workspaceId}&apps=${apps}`;
+      const next =
+        billing.owner === false
+          ? `Ask a workspace owner to open ${upgrade}, then share again.`
+          : `Pay for it at ${upgrade}, then share again.`;
+
+      payloadError(
+        res,
+        402,
+        `This workspace has no plan yet. Each app is $29 a month on Pro or $79 on Business. ${next}`,
+      );
+
+      return true;
+    };
+
     if (route === 'POST /api/projects') {
       if (dojo.projectReply) return json(res, dojo.projectReply.status, dojo.projectReply.body);
 
       const data = JSON.parse(body.toString()) as { name: string; slug: string; workspace: number };
+
+      if (slotRefusal(data.workspace)) return;
       const project = { id: dojo.projects.length + 1, ...data };
 
       dojo.projects.push(project);
@@ -449,6 +493,10 @@ export async function startFakeDojo(): Promise<FakeDojo> {
     }
 
     if (req.method === 'POST' && app?.[2] === 'deployments') {
+      const project = dojo.projects.find(({ id }) => id === appId);
+
+      if (!dojo.data.started && slotRefusal(project?.workspace ?? 1)) return;
+
       const part = form?.get('keys');
       const data = form?.get('data');
 

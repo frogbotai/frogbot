@@ -121,6 +121,7 @@ Uploads the app in the current folder to Dojo, streams `[build]` logs, and print
   </Accordion>
   <Accordion title="First share vs. subsequent updates">
     - **First share:** Creates a Dojo app named after `package.json`'s `name` (or `--name`), writes the app ID to `.frogbot/app.json`, and adds `/.frogbot` to `.gitignore`.
+    - **Paying for the app:** When the workspace's Dojo plan doesn't cover the app yet, `share` prints Dojo's upgrade link (and opens it in interactive terminals), waits up to 30 minutes for the payment, then carries on with the same share.
     - **Later shares:** Deploying again from the same folder ships a new version of the linked app. Delete `.frogbot/app.json` to deploy as a brand-new app.
     - **Name collisions & workspaces:** If the app name is taken on Dojo, `share` prompts you to rerun with `--name <another name>`. If you belong to multiple workspaces in a non-interactive shell, pass `--workspace`. With no workspace yet, `share` says where to create one; in an interactive terminal it opens that page and checks again when you press Enter.
   </Accordion>
