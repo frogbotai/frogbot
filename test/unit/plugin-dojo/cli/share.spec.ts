@@ -33,7 +33,7 @@ async function setup(files?: Record<string, string>) {
 }
 
 const shareLink = (url: string, id: number) =>
-  `[frogbot] Share it: ${url}/admin/collections/projects/${id}?share=1`;
+  `[frogbot] Share it: ${url}/collections/projects/${id}?share=1`;
 
 describe('frogbot share: pre-checks', () => {
   it.each([

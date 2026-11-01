@@ -206,7 +206,7 @@ async function share(argv: string[], io: ShareIO): Promise<void> {
     }
 
     if (!editor) {
-      say(io, `[frogbot] Share it: ${dojo.url}/admin/collections/projects/${appId}?share=1`);
+      say(io, `[frogbot] Share it: ${dojo.url}/collections/projects/${appId}?share=1`);
     }
 
     if (build.url) say(io, build.url);

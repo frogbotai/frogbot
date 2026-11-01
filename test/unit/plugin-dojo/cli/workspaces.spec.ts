@@ -61,7 +61,7 @@ describe('frogbot share: no workspace', () => {
 
     expect(result.code).toBe(1);
     expect(result.stderr()).toEqual([
-      `[frogbot] Your Dojo account has no workspace yet. Create one at ${dojo.url}/admin/collections/workspaces/create, then rerun.`,
+      `[frogbot] Your Dojo account has no workspace yet. Create one at ${dojo.url}/collections/workspaces/create, then rerun.`,
     ]);
     expect(dojo.paths()).not.toContain('POST /api/projects');
     await expect(stat(join(root, '.frogbot'))).rejects.toThrow();
@@ -77,7 +77,7 @@ describe('frogbot share: no workspace', () => {
     };
 
     const result = await run({ isTTY: true, confirm: true });
-    const create = `${dojo.url}/admin/collections/workspaces/create`;
+    const create = `${dojo.url}/collections/workspaces/create`;
 
     expect(result.code).toBe(0);
     expect(result.stdout().slice(0, 2)).toEqual([
@@ -100,7 +100,7 @@ describe('frogbot share: no workspace', () => {
 
     expect(result.code).toBe(1);
     expect(result.stderr()).toEqual([
-      `[frogbot] No workspace to share in. Create one at ${dojo.url}/admin/collections/workspaces/create, then rerun.`,
+      `[frogbot] No workspace to share in. Create one at ${dojo.url}/collections/workspaces/create, then rerun.`,
     ]);
     expect(dojo.paths()).not.toContain('POST /api/projects');
   });
