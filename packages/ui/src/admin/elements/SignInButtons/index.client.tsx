@@ -57,10 +57,9 @@ export function SignInButtonsClient({
           <Button
             buttonStyle="secondary"
             el="anchor"
-            icon={Icon ? <Icon aria-hidden="true" size={20} /> : undefined}
+            icon={Icon ? <Icon aria-hidden="true" size={16} /> : undefined}
             iconPosition="left"
             key={method.slug}
-            round
             size="large"
             url={`${authorizePath.replace(/\/+$/, '')}/${encodeURIComponent(method.slug)}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`}
           >
