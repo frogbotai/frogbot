@@ -176,6 +176,7 @@ export function withFrogBot(
 
   const frogbotConfig: NextConfig = {
     ...nextConfig,
+    ...(process.env.FROGBOT_DIST_DIR && { distDir: process.env.FROGBOT_DIST_DIR }),
     serverExternalPackages: [
       ...new Set([
         ...(nextConfig.serverExternalPackages || []),

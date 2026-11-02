@@ -8,6 +8,7 @@ packages:
   - 'test/e2e/fixtures/rich-text'
   - 'test/e2e/fixtures/plugin-wrappers'
   - 'test/e2e/fixtures/platform-plugin'
+  - 'test/e2e/fixtures/service-app'
   - 'test/browser/fixtures/live-preview'
   - 'test/browser/fixtures/custom-field'
   - 'examples/business-qa'

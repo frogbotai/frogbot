@@ -1,0 +1,7 @@
+/.apps
+/.frogbot
+*.db
+*.db-*
+next-env.d.ts
+importMap.js
+*.tsbuildinfo
