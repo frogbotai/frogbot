@@ -165,7 +165,7 @@
     line-height: var(--fb-text-xs--line-height);
   }
 
-  .fb-model-selector__notice a {
+  .fb-model-selector__notice-link {
     color: var(--color-text-brand);
     text-decoration: underline;
   }

@@ -231,7 +231,12 @@ function ModelSelectorNoticeLine({ notice }: { notice: ModelSelectorNotice | und
     <p className="fb-model-selector__notice">
       <span>{notice.text}</span>
       {notice.link ? (
-        <a href={notice.link.url} target="_blank" rel="noreferrer">
+        <a
+          className="fb-model-selector__notice-link"
+          href={notice.link.url}
+          target="_blank"
+          rel="noreferrer"
+        >
           {notice.link.label}
         </a>
       ) : null}

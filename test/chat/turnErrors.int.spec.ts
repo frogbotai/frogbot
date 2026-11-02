@@ -76,9 +76,7 @@ describe('chat turns: provider errors', () => {
     const body = await response.text();
 
     expect(response.status).toBe(502);
-    expect(JSON.parse(body)).toEqual({
-      error: "The AI provider rejected the API key. Check your AI provider's API key.",
-    });
+    expect(JSON.parse(body)).toEqual({ error: keyMessage });
     expect(body).not.toContain(keyFragment);
   });
 });
