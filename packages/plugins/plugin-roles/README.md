@@ -40,7 +40,7 @@ export default buildConfig({
 
 Configured roles are stored as slugs in a `roles` select field on the `users` collection. No field is added when `roles` is omitted or empty. Roles have no reserved or implicit behavior: `allow('finance')` grants only `finance`.
 
-`allow()` accepts role slugs, ownership clauses, and native access functions. Boolean-only clauses work in collection, field, and agent access slots. Ownership or `Where` clauses work only in collection access slots.
+`allow()` accepts role slugs, ownership clauses, and native access functions. Boolean-only clauses work in collection and field access slots. Ownership or `Where` clauses work only in collection access slots. In agent and AI access slots, check roles with `hasRole(req, ...)`.
 
 ## Predicates
 
