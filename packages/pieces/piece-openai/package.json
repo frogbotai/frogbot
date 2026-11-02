@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/piece-openai",
-  "version": "0.38.0",
+  "version": "0.39.0",
   "description": "OpenAI accounts for FrogBot: each user runs AI on their own OpenAI API key or ChatGPT plan.",
   "license": "MIT",
   "author": "Colby Gilbert",
