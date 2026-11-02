@@ -9,6 +9,7 @@ import {
 import { installSQLJobOperations } from 'frogbot/jobs';
 import { sqliteSearchAdapter } from 'frogbot/search';
 
+import { syncSchema } from './schema/sync.js';
 import { sqliteSnapshot } from './snapshot.js';
 import { connectionPragmas, installWriteLock, takeCommitError } from './writeLock.js';
 
@@ -80,6 +81,7 @@ export function sqliteAdapter({ writeLockTimeout = 5000, ...args }: SQLiteAdapte
     },
     search: sqliteSearchAdapter,
     ...(isFileDatabase(args.client?.url) && { snapshot: sqliteSnapshot(args.client) }),
+    ...(isFileDatabase(args.client?.url) && args.prodMigrations === undefined && { syncSchema }),
   };
 }
 

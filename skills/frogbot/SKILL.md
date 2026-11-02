@@ -246,6 +246,10 @@ When a shared app misbehaves on Dojo, run `npx @frogbotai/plugin-dojo logs <slug
 
 On Dojo the app runs as it does with `frogbot start`. Jobs run in the web server, and Dojo wakes a sleeping app when a task or agent schedule is due, so add no worker, external cron or `jobs.access.run` rule for Dojo. Dojo checks `GET /api/health` (`src/app/(frogbot)/api/health/route.ts`, `200` once FrogBot starts, `503` when it can't); keep that route. See the [CLI reference](https://docs.frogbot.ai/getting-started/cli#share).
 
+## Running The App In The Background
+
+`frogbot up` runs the app as a production build in the background and prints its URL; it rebuilds and swaps in each edit by itself, so don't restart it after editing. After an edit, check `frogbot status`: `update failed` means the last edit didn't build or start and the previous version is still serving; read `LAST ERROR` and the end of `.frogbot/service.log`, fix the cause, and the next save rebuilds. `building` means the update isn't live yet. With SQLite and no `prodMigrations`, new fields reach the database on the next update; a change that would delete data stops the update instead. `frogbot down` stops it. See the [CLI reference](https://docs.frogbot.ai/getting-started/cli#run-in-the-background).
+
 ## Project Layout
 
 ```text

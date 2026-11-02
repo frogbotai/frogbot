@@ -5,6 +5,7 @@ import type { CLICommand } from '../config/types.js';
 import type { FrogBot } from '../frogbot.js';
 import { channelsRun } from './channelsRun.js';
 import { dev } from './dev.js';
+import { down } from './down.js';
 import { formatCliError } from './formatCliError.js';
 import { generateImportMap } from './generateImportMap.js';
 import { generatePieceTypesCommand } from './generatePieceTypes.js';
@@ -15,6 +16,8 @@ import { migrate } from './migrate.js';
 import { piecesPort } from './piecesPort.js';
 import { runScript } from './run.js';
 import { start } from './start.js';
+import { status } from './status.js';
+import { up } from './up.js';
 
 type Command = (args: string[], command: string) => Promise<unknown> | unknown;
 
@@ -23,6 +26,9 @@ const runMigrate: Command = (args, command) => migrate([command, ...args]);
 const commands: Record<string, Command> = {
   start: (args) => start(args),
   dev: (args) => dev(args),
+  up: (args) => up(args),
+  down: (args) => down(args),
+  status: () => status(),
   run: (args) => runScript(args),
   'generate:types': () => generateTypes(),
   'generate:piece-types': (args) => generatePieceTypesCommand(args),
@@ -41,6 +47,8 @@ const commands: Record<string, Command> = {
 
 const codegenCommands = new Set(['start', 'dev', 'generate:types', 'generate:importmap']);
 
+const serviceCommands = new Set(['up', 'down', 'status']);
+
 function usage(appCommands: Record<string, CLICommand>): string {
   const names = [
     ...Object.keys(commands),
@@ -56,6 +64,7 @@ async function readConfig(
   const cwd = process.cwd();
 
   try {
+    if (command && serviceCommands.has(command)) return {};
     if (!(resolveEnvConfigPath(cwd) ?? findConfigFile(cwd))) return {};
 
     const mode = command && codegenCommands.has(command) ? 'codegen' : 'runtime';

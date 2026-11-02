@@ -273,12 +273,14 @@ export type {
   DatabaseSnapshot,
   MapVectorField,
   MapVectorFieldArgs,
+  SchemaSyncResult,
   SearchAdapter,
   SearchCapabilities,
   SearchCapabilitiesArgs,
   SearchCapability,
   SearchReadiness,
   SearchReadinessArgs,
+  SyncSchema,
 } from './database/types.js';
 export { definePlugin } from './definePlugin.js';
 export type { Endpoint, Handler } from './endpoints/types.js';

@@ -6,6 +6,7 @@ import type {
   Where,
 } from 'payload';
 
+import type { FrogBotSanitizedConfig } from '../config/sanitized.js';
 import type {
   SearchCollection,
   SearchHitComponents,
@@ -114,6 +115,17 @@ export type SnapshotDatabase = (
   args: DatabaseSnapshotArgs,
 ) => Promise<DatabaseSnapshot | undefined>;
 
+/** What a schema sync applied (`applied`), the removed tables and columns it kept (`kept`), and why it refused. */
+export type SchemaSyncResult =
+  | { ok: true; applied: string[]; kept: string[] }
+  | { ok: false; error: string; applied: string[]; kept: string[] };
+
+/**
+ * Brings the database's schema up to the config's without deleting data: adds tables, columns and indexes,
+ * keeps removed ones, and applies nothing that would drop a table, a column or rows.
+ */
+export type SyncSchema = (args: { config: FrogBotSanitizedConfig }) => Promise<SchemaSyncResult>;
+
 export type DatabaseAdapter = {
   init: (args: { payload: Payload }) => unknown;
   defaultIDType: 'number' | 'text';
@@ -122,4 +134,6 @@ export type DatabaseAdapter = {
   mapVectorField?: MapVectorField;
   search?: SearchAdapter;
   snapshot?: SnapshotDatabase;
+  /** Set when the adapter syncs its own schema; `frogbot up` runs it before each new server. */
+  syncSchema?: SyncSchema;
 };

@@ -36,6 +36,9 @@ const mocks = vi.hoisted(() => ({
     Promise.resolve(mocks.calls.push(`runScript:${process.env.FROGBOT_TEST_KEY}`)),
   ),
   start: vi.fn(() => mocks.calls.push(`start:${process.env.FROGBOT_TEST_KEY}`)),
+  up: vi.fn(() => Promise.resolve(mocks.calls.push(`up:${process.env.FROGBOT_TEST_KEY}`))),
+  down: vi.fn(() => Promise.resolve(mocks.calls.push(`down:${process.env.FROGBOT_TEST_KEY}`))),
+  status: vi.fn(() => mocks.calls.push(`status:${process.env.FROGBOT_TEST_KEY}`)),
   findConfigFile: vi.fn((): string | null => null),
   resolveEnvConfigPath: vi.fn((): string | null => null),
   loadConfig: vi.fn(),
@@ -91,6 +94,9 @@ vi.mock('../../../../packages/frogbot/src/bin/piecesPort.js', () => ({
 
 vi.mock('../../../../packages/frogbot/src/bin/start.js', () => ({ start: mocks.start }));
 vi.mock('../../../../packages/frogbot/src/bin/run.js', () => ({ runScript: mocks.runScript }));
+vi.mock('../../../../packages/frogbot/src/bin/up.js', () => ({ up: mocks.up }));
+vi.mock('../../../../packages/frogbot/src/bin/down.js', () => ({ down: mocks.down }));
+vi.mock('../../../../packages/frogbot/src/bin/status.js', () => ({ status: mocks.status }));
 
 import { bin } from '../../../../packages/frogbot/src/bin/index.js';
 
@@ -128,6 +134,9 @@ describe('frogbot bin', () => {
     ['pieces:port', 'piecesPort'],
     ['jobs:run', 'jobsRun'],
     ['channels:run', 'channelsRun'],
+    ['up', 'up'],
+    ['down', 'down'],
+    ['status', 'status'],
   ])('loads env before dispatching `%s`', async (command, handler) => {
     process.argv = ['node', 'frogbot', command];
 
@@ -135,6 +144,19 @@ describe('frogbot bin', () => {
 
     expect(mocks.calls).toEqual(['loadEnv', `${handler}:loaded`]);
   });
+
+  it.each(['up', 'down', 'status'])(
+    'runs `%s` without loading the app config, so it works from any folder',
+    async (command) => {
+      process.argv = ['node', 'frogbot', command];
+      mocks.findConfigFile.mockReturnValue('/app/src/frogbot.config.ts');
+
+      await bin();
+
+      expect(mocks.loadConfig).not.toHaveBeenCalled();
+      expect(mocks.calls).toEqual(['loadEnv', `${command}:loaded`]);
+    },
+  );
 
   it.each(['migrate', 'migrate:status'])('loads env before dispatching `%s`', async (command) => {
     process.argv = ['node', 'frogbot', command];
@@ -157,7 +179,7 @@ describe('frogbot bin', () => {
 
     expect(mocks.calls).toEqual(['loadEnv']);
     expect(error).toHaveBeenCalledWith(
-      '[frogbot] usage: frogbot <start|dev|run|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status>',
+      '[frogbot] usage: frogbot <start|dev|up|down|status|run|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status>',
     );
   });
 
@@ -225,7 +247,7 @@ describe('frogbot bin', () => {
 
   describe('app commands', () => {
     const usage =
-      '[frogbot] usage: frogbot <start|dev|run|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status';
+      '[frogbot] usage: frogbot <start|dev|up|down|status|run|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status';
 
     function withConfig(commands: Record<string, CLICommand>): FrogBotSanitizedConfig {
       const config = { cli: { commands } } as unknown as FrogBotSanitizedConfig;

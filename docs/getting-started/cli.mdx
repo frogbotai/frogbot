@@ -2,7 +2,7 @@
 title: "CLI"
 sidebarTitle: "CLI"
 description: "Every frogbot command, its arguments, and where each one is documented."
-keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot run", "frogbot share", "plugin-dojo", "pull", "logs", "commands"]
+keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot up", "frogbot down", "frogbot status", "background", "frogbot run", "frogbot share", "plugin-dojo", "pull", "logs", "commands"]
 ---
 
 The `frogbot` package installs a `frogbot` command. Run it from your app's root directory through your package manager, for example `pnpm frogbot dev` or `npx frogbot dev`.
@@ -21,6 +21,9 @@ pnpm frogbot generate:types
 | --- | --- | --- |
 | `dev` | Next.js `dev` arguments | Generates the admin import map, then starts the Next.js development server. See [`dev` and `start`](#dev-and-start). |
 | `start` | Next.js `start` arguments | Warns when the admin import map is stale, then starts the Next.js production server. See [`dev` and `start`](#dev-and-start). |
+| `up` | `--port <n>`, `--autostart` | Runs the app in the background, rebuilding and swapping in each edit. See [Run in the background](#run-in-the-background). |
+| `down` | `[folder]` | Stops the app that `up` started. See [Run in the background](#run-in-the-background). |
+| `status` | — | Lists every app `up` started on this computer. See [Run in the background](#run-in-the-background). |
 | `run` | `<file> [args...]` | Runs a TypeScript or JavaScript file with your app's environment and config alias. See [Outside Next.js](/local-api/outside-nextjs). |
 | `generate:types` | — | Writes `frogbot-types.ts` from your config. See [Generating types](/typescript/generating-types). |
 | `generate:importmap` | — | Writes the admin import map for the custom components your config references. See [Custom components](/custom-components/overview). |
@@ -188,6 +191,56 @@ frogbot dev --port 4000
 | Any Next.js argument | Next.js `dev` or `start` arguments | — | Forwarded to Next.js unchanged (for example `--port 4000` or `--webpack`). |
 
 Requires `next.config.{ts,mjs,js,cjs}` and `next` in the current directory (`typescript` is also required at startup when using `next.config.ts`). Forwards `SIGINT`/`SIGTERM` and exits with Next.js's exit code.
+
+## Run in the background
+
+```bash
+frogbot up
+# [frogbot] /Users/me/crm is up at http://127.0.0.1:3000
+# [frogbot] log: /Users/me/crm/.frogbot/service.log
+```
+
+`frogbot up` builds the app for production and keeps it running after the terminal closes, so it stays up while you or a coding agent edit it. It waits until the app answers, prints its URL and log, and exits `0`. If the first build or start fails, it prints the error, leaves nothing running, and exits `1`. Run it again in a folder that is already up and it prints the same URL.
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `--port <n>` | number | the app's last port, else the first free one from `3000` | Serve on this port; fails when it is taken. |
+| `--autostart` | flag | off | macOS only: also start the app at login (see below). Elsewhere it exits `1`. |
+
+The app listens on `127.0.0.1` only. Each app gets its own port, so several apps run side by side:
+
+```bash
+frogbot status
+# FOLDER          URL                    STATE    UPTIME  LAST ERROR
+# /Users/me/crm   http://127.0.0.1:3000  running  2h 5m
+# /Users/me/hr    http://127.0.0.1:3001  running  12m
+```
+
+`frogbot status` works from any folder. The states are `starting`, `running`, `building` (an update is on its way; the current version still serves), `update failed` (the last edit didn't build or start; the previous version still serves, and `LAST ERROR` says why), `crashed` (restarting) and `stopped`. `frogbot down` stops the app in the current folder, or in the folder you name, and removes its builds; on an app that isn't up it prints `not running` and exits `0`.
+
+### Updates
+
+While it runs, `up` watches `src/`, `public/`, `frogbot.config.*`, `next.config.*`, `tsconfig.json`, `package.json`, the lockfile and `.env*`. 1.5 seconds after the last change it builds the new version beside the one serving, starts it, and switches traffic over once it answers; requests already open, such as a streaming chat reply, finish on the old version (up to 30 seconds). Changes made during a build start one more build when it ends. A build or start that fails keeps the old version serving.
+
+Builds go in `.frogbot/builds/a` and `.frogbot/builds/b`, which take turns. `next build` lists their type folders in `tsconfig.json`'s `include` once; new apps already have those lines.
+
+A server that crashes restarts on the same build after 1 second, waiting twice as long after each crash up to 30 seconds, and back to 1 second once it has stayed up for a minute.
+
+### Database schema
+
+With SQLite and no `prodMigrations`, each update brings the database's schema up to the new code before the new version starts: it adds tables, columns and indexes, adds a new required field as a nullable column so existing rows keep working, and keeps removed fields and collections (their data stays, hidden, until you add them back). It never deletes data: when a change would drop a table, a column or rows, the update stops as `update failed` and the old version keeps serving. Nothing is written to `payload_migrations`, so you can still adopt [migrations](/database/migrations) later. With `prodMigrations` set, the update runs your migrations on connect instead, as `frogbot start` does.
+
+### Log
+
+`.frogbot/service.log` holds timestamped lines from the supervisor, each build, the schema sync and the server. At 10 MB it moves to `service.log.1` and a new one starts.
+
+### Start at login
+
+```bash
+frogbot up --autostart
+```
+
+On macOS, `--autostart` installs `~/Library/LaunchAgents/ai.frogbot.<id>.plist`, which starts the app at login and restarts it if it fails; `frogbot down` removes it. The LaunchAgent records the absolute paths of `node` and of FrogBot, so after upgrading either, run `frogbot down` and `frogbot up --autostart` again.
 
 ## Generate piece types
 

@@ -199,6 +199,19 @@ describe('withFrogBot', () => {
     expect(isAbsolute(webpackAlias as string)).toBe(true);
   });
 
+  it('builds into FROGBOT_DIST_DIR when it is set, as `frogbot up` sets it', () => {
+    vi.stubEnv('FROGBOT_DIST_DIR', '.frogbot/builds/a');
+
+    expect(withFrogBot({ distDir: 'out' }).distDir).toBe('.frogbot/builds/a');
+  });
+
+  it("keeps the app's distDir when FROGBOT_DIST_DIR is unset", () => {
+    vi.stubEnv('FROGBOT_DIST_DIR', '');
+
+    expect(withFrogBot({ distDir: 'out' }).distDir).toBe('out');
+    expect(withFrogBot().distDir).toBeUndefined();
+  });
+
   it('adds no platform plugin alias when FROGBOT_PLATFORM_PLUGIN is unset', () => {
     vi.stubEnv('FROGBOT_PLATFORM_PLUGIN', undefined);
 
