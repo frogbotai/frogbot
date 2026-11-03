@@ -77,6 +77,12 @@ async function seed(): Promise<void> {
 
     const deals = [];
 
+    await payload.create({
+      collection: 'payload-migrations',
+      data: { name: 'dev', batch: -1 },
+      overrideAccess: true,
+    });
+
     for (let index = 0; index < 43; index++) {
       deals.push(
         await payload.create({

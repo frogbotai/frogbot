@@ -166,6 +166,25 @@ describe('frogbot bin', () => {
     expect(mocks.calls).toEqual(['loadEnv', `migrate:${command}`]);
   });
 
+  it.each(['help', '--help', '-h'])(
+    'prints the usage line for `%s` and exits 0',
+    async (command) => {
+      process.argv = ['node', 'frogbot', command];
+
+      const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      vi.spyOn(process, 'exit').mockImplementation((code) => {
+        throw new Error(`exit:${code}`);
+      });
+
+      await expect(bin()).rejects.toThrow('exit:0');
+
+      expect(log).toHaveBeenCalledWith(
+        expect.stringMatching(/^\[frogbot\] usage: frogbot <start\|/),
+      );
+    },
+  );
+
   it('loads env before rejecting a missing name with the usage line', async () => {
     process.argv = ['node', 'frogbot'];
 

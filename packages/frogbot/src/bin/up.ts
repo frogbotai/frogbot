@@ -6,18 +6,33 @@ import nextEnvImport from '@next/env';
 import { findNextConfig } from './runNext.js';
 import {
   installLaunchAgent,
+  launchAgentBin,
   launchAgentFile,
   uninstallLaunchAgent,
 } from './service/launchAgent.js';
 import { appDir, appPaths, registrationFile, serviceId } from './service/paths.js';
-import { choosePort, parsePort } from './service/ports.js';
-import { isAlive, listRegistrations, readRegistration } from './service/registration.js';
+import {
+  choosePort,
+  HOST,
+  parsePort,
+  parsePortNumber,
+  readSavedPort,
+  writeSavedPort,
+} from './service/ports.js';
+import {
+  isAlive,
+  listRegistrations,
+  readRegistration,
+  type Registration,
+} from './service/registration.js';
 import { frogbotBin } from './service/runtime.js';
-import { BOOT_FAILED, supervise } from './service/supervisor.js';
+import { stopLeftServer } from './service/stop.js';
+import { BOOT_FAILED, MOVE_SIGNAL, supervise } from './service/supervisor.js';
 
 const STDERR_LIMIT = 8 * 1024;
 const POLL_MS = 200;
 const LAUNCHD_REGISTER_MS = 30_000;
+const MOVE_MS = 10_000;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -31,7 +46,7 @@ function shellEnv(): NodeJS.ProcessEnv {
   return env;
 }
 
-export type UpOptions = { port?: number; autostart: boolean };
+export type UpOptions = { port?: number | 'auto'; autostart: boolean };
 
 export function parseUpArgs(args: string[]): UpOptions {
   const options: UpOptions = { autostart: false };
@@ -44,7 +59,7 @@ export function parseUpArgs(args: string[]): UpOptions {
     else if (arg.startsWith('--port=')) options.port = parsePort(arg.slice('--port='.length));
     else {
       throw new Error(
-        `[frogbot] usage: frogbot up [--port <n>] [--autostart]; "${arg}" isn't one of them`,
+        `[frogbot] usage: frogbot up [--port <n|auto>] [--autostart]; "${arg}" isn't one of them`,
       );
     }
   }
@@ -52,22 +67,29 @@ export function parseUpArgs(args: string[]): UpOptions {
   return options;
 }
 
-function savedPort(dir: string): number | undefined {
-  try {
-    return parsePort(readFileSync(appPaths(dir).port, 'utf8').trim());
-  } catch {
-    return undefined;
-  }
-}
-
-function pickPort(dir: string, id: string, requested?: number): Promise<number> {
-  const taken = new Set(
+const otherPorts = (id: string) =>
+  new Set(
     listRegistrations()
       .filter((registration) => registration.id !== id && isAlive(registration.pid))
       .map((registration) => registration.port),
   );
 
-  return choosePort({ requested, saved: savedPort(dir), taken });
+async function pickPort(
+  dir: string,
+  id: string,
+  requested?: number | 'auto',
+): Promise<{ port: number; chosen: boolean }> {
+  const saved = readSavedPort(appPaths(dir).port);
+  const taken = otherPorts(id);
+
+  if (typeof requested === 'number') {
+    return { port: await choosePort({ requested, taken }), chosen: true };
+  }
+
+  const fallback = saved && requested === 'auto' ? { ...saved, chosen: false } : saved;
+  const port = await choosePort({ saved: fallback, taken });
+
+  return { port, chosen: Boolean(fallback?.chosen) };
 }
 
 function readTail(file: string, from = 0): string {
@@ -107,7 +129,9 @@ async function superviseHere(): Promise<void> {
 
   process.stderr.on('error', () => {});
 
-  const port = parsePort(process.env.FROGBOT_SERVICE_PORT) ?? (await pickPort(dir, id));
+  await stopLeftServer(found?.serverPid, dir);
+
+  const port = parsePortNumber(process.env.FROGBOT_SERVICE_PORT) ?? (await pickPort(dir, id)).port;
 
   await supervise({
     dir,
@@ -131,15 +155,12 @@ async function schemaStep(): Promise<void> {
     ? await syncSchema({ config })
     : { ok: true as const, applied: [], kept: [] };
 
-  for (const statement of result.applied) process.stderr.write(`${statement}\n`);
-
-  for (const kept of result.kept) process.stderr.write(`[frogbot] ${kept}\n`);
-
   process.stdout.write(
     `\n${JSON.stringify({
       frogbot: 'schema',
       ok: result.ok,
       applied: result.applied.length,
+      kept: result.kept,
       ...(!result.ok && { error: result.error }),
     })}\n`,
   );
@@ -206,15 +227,21 @@ export async function up(args: string[] = [], deps: Deps = {}): Promise<void> {
   const paths = appPaths(dir);
 
   if (found && isAlive(found.pid)) {
-    log(`[frogbot] ${dir} is already up at ${found.url}`);
     if (options.autostart && !found.autostart) {
-      log('[frogbot] it has no autostart; run `frogbot down`, then `frogbot up --autostart`');
+      throw new Error(
+        `[frogbot] ${dir} is already up at ${found.url}, without autostart; run \`frogbot down\`, then \`frogbot up --autostart\``,
+      );
     }
+
+    await keepRunning(found, options.port, log);
 
     return;
   }
 
-  const port = await pickPort(dir, id, options.port);
+  const { port, chosen } = await pickPort(dir, id, options.port);
+
+  writeSavedPort(paths.port, { port, chosen });
+
   const env: NodeJS.ProcessEnv = {
     ...shellEnv(),
     FROGBOT_SERVICE: 'supervise',
@@ -230,7 +257,8 @@ export async function up(args: string[] = [], deps: Deps = {}): Promise<void> {
   if (options.autostart) {
     const from = sizeOf(paths.launchdLog);
     const keep = (key: string) =>
-      key.startsWith('FROGBOT_') || ['PATH', 'XDG_STATE_HOME', 'NODE_OPTIONS'].includes(key);
+      (key.startsWith('FROGBOT_') && key !== 'FROGBOT_SERVICE_PORT') ||
+      ['PATH', 'XDG_STATE_HOME', 'NODE_OPTIONS'].includes(key);
 
     const variables = Object.fromEntries(
       Object.entries(env).filter(
@@ -244,7 +272,7 @@ export async function up(args: string[] = [], deps: Deps = {}): Promise<void> {
       id,
       dir,
       node: process.execPath,
-      bin: frogbotBin,
+      bin: launchAgentBin(dir, frogbotBin),
       log: paths.launchdLog,
       env: variables,
     });
@@ -305,6 +333,47 @@ export async function up(args: string[] = [], deps: Deps = {}): Promise<void> {
   log(`[frogbot] ${registration.dir} is up at ${registration.url}`);
   log(`[frogbot] log: ${registration.log}`);
   if (options.autostart) log(`[frogbot] starts at login: ${launchAgentFile(id)}`);
+}
+
+async function keepRunning(
+  found: Registration,
+  requested: number | 'auto' | undefined,
+  log: (line: string) => void,
+): Promise<void> {
+  const file = appPaths(found.dir).port;
+
+  if (requested === 'auto' || requested === found.port) {
+    writeSavedPort(file, { port: found.port, chosen: requested !== 'auto' });
+  }
+
+  if (requested === undefined || requested === 'auto' || requested === found.port) {
+    log(`[frogbot] ${found.dir} is already up at ${found.url}`);
+
+    return;
+  }
+
+  await choosePort({ requested, taken: otherPorts(found.id) });
+  writeSavedPort(file, { port: requested, chosen: true });
+  process.kill(found.pid, MOVE_SIGNAL);
+
+  const registration = registrationFile(found.id);
+  const deadline = Date.now() + MOVE_MS;
+
+  for (;;) {
+    const moved = readRegistration(registration);
+
+    if (moved?.port === requested) break;
+
+    if (Date.now() > deadline || !moved || !isAlive(moved.pid)) {
+      throw new Error(
+        `[frogbot] couldn't move ${found.dir} to port ${requested}${moved?.lastError ? `: ${moved.lastError}` : ''}; see ${found.log}`,
+      );
+    }
+
+    await sleep(POLL_MS);
+  }
+
+  log(`[frogbot] moved ${found.dir} to http://${HOST}:${requested}`);
 }
 
 async function waitUntilUp(file: string, failed: () => string | undefined): Promise<void> {

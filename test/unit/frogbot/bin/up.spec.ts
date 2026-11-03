@@ -72,6 +72,25 @@ describe('frogbot up', () => {
     expect(spawnSupervisor).not.toHaveBeenCalled();
   });
 
+  it('exits 1 for --autostart on an app already up without it', async () => {
+    writeRegistration(registrationFile(serviceId(dir)), {
+      id: serviceId(dir),
+      dir,
+      url: 'http://127.0.0.1:9696',
+      port: 9696,
+      pid: process.pid,
+      frogbot: '0.39.0',
+      startedAt: new Date().toISOString(),
+      state: 'running',
+      log: join(dir, '.frogbot', 'service.log'),
+      autostart: false,
+    });
+
+    await expect(up(['--autostart'], { log, platform: 'darwin' })).rejects.toThrow(
+      /already up at http:\/\/127\.0\.0\.1:9696, without autostart; run `frogbot down`, then `frogbot up --autostart`/,
+    );
+  });
+
   it('refuses --autostart off macOS before anything else', async () => {
     const spawnSupervisor = vi.fn();
     const install = vi.fn();
@@ -104,6 +123,7 @@ describe('frogbot up', () => {
   it('reads --port and --autostart', () => {
     expect(parseUpArgs(['--port', '3100', '--autostart'])).toEqual({ port: 3100, autostart: true });
     expect(parseUpArgs(['--port=3101'])).toEqual({ port: 3101, autostart: false });
+    expect(parseUpArgs(['--port', 'auto'])).toEqual({ port: 'auto', autostart: false });
     expect(() => parseUpArgs(['--watch'])).toThrow(/usage: frogbot up/);
   });
 });

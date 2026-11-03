@@ -58,98 +58,148 @@ const quote = (name: string) => `"${name.replaceAll('"', '""')}"`;
 
 type Row = Record<string, unknown>;
 
-/** Reads every table push compares, without writing: an empty map when there is no database yet. */
-export function readLiveSchema(path: string | undefined): LiveSchema {
-  const schema: LiveSchema = new Map();
-  if (!path || !existsSync(path)) return schema;
+/** Runs one read-only query on the database file. */
+export type Query = (sql: string, args?: string[]) => Promise<Row[]>;
+
+/**
+ * Runs `read` on a read-only `node:sqlite` connection to the file at `path`, or with none when there is
+ * no file yet. Only for before the adapter connects: closing it while libSQL holds locks on the same file
+ * in this process would drop them, so once connected, read through `clientQuery`.
+ */
+export async function withDatabase<T>(
+  path: string | undefined,
+  read: (query: Query | undefined) => Promise<T>,
+): Promise<T> {
+  if (!path || !existsSync(path)) return read(undefined);
 
   const db = new DatabaseSync(path, { readOnly: true });
+
   try {
-    const all = (sql: string) => db.prepare(sql).all() as Row[];
-    const tables = all(`SELECT name, sql FROM sqlite_master WHERE type = 'table' ORDER BY name`);
-
-    for (const { name, sql } of tables) {
-      const table = String(name);
-      if (isUnmanagedTable(table)) continue;
-
-      const columns = all(`PRAGMA table_xinfo(${quote(table)})`)
-        .filter((column) => Number(column.hidden) === 0)
-        .map((column): LiveColumn => ({
-          name: String(column.name),
-          type: String(column.type ?? '').toLowerCase(),
-          notNull: Number(column.notnull) === 1,
-          default: column.dflt_value === null ? null : String(column.dflt_value),
-          primaryKey: Number(column.pk) > 0,
-        }));
-
-      const keys = new Map<number, LiveForeignKey>();
-
-      for (const fk of all(`PRAGMA foreign_key_list(${quote(table)})`)) {
-        const id = Number(fk.id);
-        const entry = keys.get(id) ?? {
-          columns: [],
-          table: String(fk.table),
-          foreignColumns: [],
-          onDelete: String(fk.on_delete).toLowerCase(),
-          onUpdate: String(fk.on_update).toLowerCase(),
-        };
-
-        entry.columns.push(String(fk.from));
-        entry.foreignColumns.push(String(fk.to));
-        keys.set(id, entry);
-      }
-
-      const indexes: LiveIndex[] = [];
-
-      for (const index of all(`PRAGMA index_list(${quote(table)})`)) {
-        if (index.origin !== 'c' || Number(index.partial) === 1) continue;
-        const parts = all(`PRAGMA index_info(${quote(String(index.name))})`);
-        if (parts.some((part) => part.name === null)) continue;
-
-        indexes.push({
-          name: String(index.name),
-          columns: parts.map((part) => String(part.name)),
-          unique: Number(index.unique) === 1,
-        });
-      }
-
-      const indexSql = new Map(
-        db
-          .prepare(
-            `SELECT name, sql FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND sql IS NOT NULL`,
-          )
-          .all(table)
-          .map((row) => [String(row.name), String(row.sql)] as const),
-      );
-
-      const [{ rows }] = all(`SELECT count(*) AS rows FROM ${quote(table)}`);
-
-      schema.set(table, {
-        name: table,
-        columns,
-        foreignKeys: [...keys.values()],
-        indexes,
-        autoIncrement: /\bautoincrement\b/i.test(String(sql)),
-        rows: Number(rows),
-        indexSql,
-      });
-    }
+    return await read((sql, args = []) => Promise.resolve(db.prepare(sql).all(...args) as Row[]));
   } finally {
     db.close();
+  }
+}
+
+type Client = {
+  execute: (statement: { sql: string; args: string[] }) => Promise<{ rows: Row[] }>;
+};
+
+/** Reads on the adapter's own libSQL connection. */
+export const clientQuery =
+  (client: Client): Query =>
+  async (sql, args = []) =>
+    (await client.execute({ sql, args })).rows;
+
+/** Reads every table push compares, without writing: an empty map when there is no database yet. */
+export async function readLiveSchema(query: Query | undefined): Promise<LiveSchema> {
+  const schema: LiveSchema = new Map();
+
+  if (!query) return schema;
+
+  const tables = await query(
+    `SELECT name, sql FROM sqlite_master WHERE type = 'table' ORDER BY name`,
+  );
+
+  for (const { name, sql } of tables) {
+    const table = String(name);
+
+    if (isUnmanagedTable(table)) continue;
+
+    const columns = (await query(`PRAGMA table_xinfo(${quote(table)})`))
+      .filter((column) => Number(column.hidden) === 0)
+      .map((column): LiveColumn => ({
+        name: String(column.name),
+        type: String(column.type ?? '').toLowerCase(),
+        notNull: Number(column.notnull) === 1,
+        default: column.dflt_value === null ? null : String(column.dflt_value),
+        primaryKey: Number(column.pk) > 0,
+      }));
+
+    const keys = new Map<number, LiveForeignKey>();
+
+    for (const fk of await query(`PRAGMA foreign_key_list(${quote(table)})`)) {
+      const id = Number(fk.id);
+      const entry = keys.get(id) ?? {
+        columns: [],
+        table: String(fk.table),
+        foreignColumns: [],
+        onDelete: String(fk.on_delete).toLowerCase(),
+        onUpdate: String(fk.on_update).toLowerCase(),
+      };
+
+      entry.columns.push(String(fk.from));
+      entry.foreignColumns.push(String(fk.to));
+      keys.set(id, entry);
+    }
+
+    const indexes: LiveIndex[] = [];
+
+    for (const index of await query(`PRAGMA index_list(${quote(table)})`)) {
+      if (index.origin !== 'c' || Number(index.partial) === 1) continue;
+
+      const parts = await query(`PRAGMA index_info(${quote(String(index.name))})`);
+
+      if (parts.some((part) => part.name === null)) continue;
+
+      indexes.push({
+        name: String(index.name),
+        columns: parts.map((part) => String(part.name)),
+        unique: Number(index.unique) === 1,
+      });
+    }
+
+    const indexSql = new Map(
+      (
+        await query(
+          `SELECT name, sql FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND sql IS NOT NULL`,
+          [table],
+        )
+      ).map((row) => [String(row.name), String(row.sql)] as const),
+    );
+
+    const [{ rows }] = await query(`SELECT count(*) AS rows FROM ${quote(table)}`);
+
+    schema.set(table, {
+      name: table,
+      columns,
+      foreignKeys: [...keys.values()],
+      indexes,
+      autoIncrement: /\bautoincrement\b/i.test(String(sql)),
+      rows: Number(rows),
+      indexSql,
+    });
   }
 
   return schema;
 }
 
 /** How many rows of `table` hold a value in `column`. */
-export function countValues(path: string | undefined, table: string, column: string): number {
-  if (!path || !existsSync(path)) return 0;
-  const db = new DatabaseSync(path, { readOnly: true });
-  try {
-    const row = db.prepare(`SELECT count(${quote(column)}) AS n FROM ${quote(table)}`).get() as Row;
+export async function countValues(
+  query: Query | undefined,
+  table: string,
+  column: string,
+): Promise<number> {
+  if (!query) return 0;
 
-    return Number(row.n);
-  } finally {
-    db.close();
-  }
+  const [row] = await query(`SELECT count(${quote(column)}) AS n FROM ${quote(table)}`);
+
+  return Number(row.n);
+}
+
+const number = /^\s*[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?\s*$/i;
+
+/** How many rows of `table` hold text or a blob in `column` that SQLite wouldn't store as a number. */
+export async function countNonNumbers(
+  query: Query | undefined,
+  table: string,
+  column: string,
+): Promise<number> {
+  if (!query) return 0;
+
+  const rows = await query(
+    `SELECT ${quote(column)} AS v FROM ${quote(table)} WHERE typeof(${quote(column)}) IN ('text', 'blob')`,
+  );
+
+  return rows.filter((row) => typeof row.v !== 'string' || !number.test(row.v)).length;
 }

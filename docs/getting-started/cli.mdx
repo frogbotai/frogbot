@@ -21,7 +21,7 @@ pnpm frogbot generate:types
 | --- | --- | --- |
 | `dev` | Next.js `dev` arguments | Generates the admin import map, then starts the Next.js development server. See [`dev` and `start`](#dev-and-start). |
 | `start` | Next.js `start` arguments | Warns when the admin import map is stale, then starts the Next.js production server. See [`dev` and `start`](#dev-and-start). |
-| `up` | `--port <n>`, `--autostart` | Runs the app in the background, rebuilding and swapping in each edit. See [Run in the background](#run-in-the-background). |
+| `up` | `--port <n\|auto>`, `--autostart` | Runs the app in the background, rebuilding and swapping in each edit. See [Run in the background](#run-in-the-background). |
 | `down` | `[folder]` | Stops the app that `up` started. See [Run in the background](#run-in-the-background). |
 | `status` | — | Lists every app `up` started on this computer. See [Run in the background](#run-in-the-background). |
 | `run` | `<file> [args...]` | Runs a TypeScript or JavaScript file with your app's environment and config alias. See [Outside Next.js](/local-api/outside-nextjs). |
@@ -192,11 +192,15 @@ frogbot dev --port 4000
 
 Requires `next.config.{ts,mjs,js,cjs}` and `next` in the current directory (`typescript` is also required at startup when using `next.config.ts`). Forwards `SIGINT`/`SIGTERM` and exits with Next.js's exit code.
 
+With SQLite, `frogbot dev` and `frogbot run` keep the database's schema in step with your config the same way `frogbot up` does: outside production, FrogBot adds tables, columns and indexes and never drops data or asks; removed fields stay hidden; a change that would lose data is skipped with an error line. See [Prototyping in development mode](/database/sqlite#prototyping-in-development-mode). `withFrogBot` also turns off the rules Next.js writes into `AGENTS.md` during `next dev`, unless you set `agentRules` in `next.config`.
+
+`frogbot help`, `frogbot --help` and `frogbot -h` print the list of commands.
+
 ## Run in the background
 
 ```bash
 frogbot up
-# [frogbot] /Users/me/crm is up at http://127.0.0.1:3000
+# [frogbot] /Users/me/crm is up at http://127.0.0.1:9696
 # [frogbot] log: /Users/me/crm/.frogbot/service.log
 ```
 
@@ -204,35 +208,45 @@ frogbot up
 
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
-| `--port <n>` | number | the app's last port, else the first free one from `3000` | Serve on this port; fails when it is taken. |
-| `--autostart` | flag | off | macOS only: also start the app at login (see below). Elsewhere it exits `1`. |
+| `--port <n\|auto>` | number or `auto` | the app's last port, else the first free one from `9696` | Serve on this port from now on. See [Port](#port). |
+| `--autostart` | flag | off | macOS only: also start the app at login (see below). Elsewhere it exits `1`, and on an app already up without it, it exits `1` and tells you to run `down` first. |
 
-The app listens on `127.0.0.1` only. Each app gets its own port, so several apps run side by side:
+The app listens on `127.0.0.1` and `::1`, so `localhost` reaches it whichever address it resolves to; it isn't reachable from other computers. Each app gets its own port, so several apps run side by side:
 
 ```bash
 frogbot status
-# FOLDER          URL                    STATE    UPTIME  LAST ERROR
-# /Users/me/crm   http://127.0.0.1:3000  running  2h 5m
-# /Users/me/hr    http://127.0.0.1:3001  running  12m
+# FOLDER          URL                    STATE          UPTIME  LAST ERROR
+# /Users/me/crm   http://127.0.0.1:9696  running        2h 5m
+# /Users/me/hr    http://127.0.0.1:9697  update failed  12m     build failed (exit 1): src/hr.ts(3,7): error TS2322: Type 'number' is not assignable to type 'string'.
 ```
 
-`frogbot status` works from any folder. The states are `starting`, `running`, `building` (an update is on its way; the current version still serves), `update failed` (the last edit didn't build or start; the previous version still serves, and `LAST ERROR` says why), `crashed` (restarting) and `stopped`. `frogbot down` stops the app in the current folder, or in the folder you name, and removes its builds; on an app that isn't up it prints `not running` and exits `0`.
+`frogbot status` works from any folder. The states are `starting`, `running`, `building` (an update is on its way; the current version still serves), `update failed` (the last edit didn't build or start; the previous version still serves), `crashed` (restarting) and `stopped`. `LAST ERROR` is the line of the failed step's output that says why: a TypeScript error, else the thrown error, else its last meaningful line; the log has the full output. `frogbot down` stops the app in the current folder, or in the folder you name, and removes its builds; on an app that isn't up it prints `not running` and exits `0`.
+
+### Port
+
+The first `up` picks the first free port from `9696`, and later ones keep it while it stays free. `frogbot up --port 4000` picks the port yourself: FrogBot remembers it in `.frogbot/port` and every later `up` uses it. If something else holds it, `up` exits `1` and names the process, for example `port 4000 is taken by node (pid 123); pick another with --port`, instead of moving the app. `frogbot up --port auto` goes back to picking.
+
+On an app that is already up, `frogbot up --port 4000` moves it to the new port without a rebuild and prints `moved … to http://127.0.0.1:4000`. A port below 1024 needs admin rights, and `up` says so.
+
+### Processes
+
+`up` starts one background supervisor per app, which holds the port and starts each build, schema sync and server. Every one of them stops when the supervisor stops, even when it is killed with `SIGKILL` or crashes, so an app never leaves a server running beside the next `up`. If an older FrogBot left one, the next `up` or `down` stops it, and `status` shows `stopped (server left running, pid N)` until then.
 
 ### Updates
 
-While it runs, `up` watches `src/`, `public/`, `frogbot.config.*`, `next.config.*`, `tsconfig.json`, `package.json`, the lockfile and `.env*`. 1.5 seconds after the last change it builds the new version beside the one serving, starts it, and switches traffic over once it answers; requests already open, such as a streaming chat reply, finish on the old version (up to 30 seconds). Changes made during a build start one more build when it ends. A build or start that fails keeps the old version serving.
+While it runs, `up` watches `src/`, `public/`, `frogbot.config.*`, `next.config.*`, `tsconfig.json`, `package.json`, the lockfile and `.env*`. 1.5 seconds after the last change it builds the new version beside the one serving, starts it, and switches traffic over once it answers; requests already open, such as a streaming chat reply, finish on the old version (up to 30 seconds). Changes made during a build start one more build when it ends. A new version goes live only once `/` and `/admin` answer below 500, `/api/health` answers 200 (skipped when the app has no health route) and a request through the API, `/api/access`, answers below 500. A build or start that fails any of these keeps the old version serving.
 
-Builds go in `.frogbot/builds/a` and `.frogbot/builds/b`, which take turns. `next build` lists their type folders in `tsconfig.json`'s `include` once; new apps already have those lines.
+Builds go in `.frogbot/builds/a` and `.frogbot/builds/b`, which take turns. Each build type-checks with its own generated `.frogbot/builds/<a|b>.tsconfig.json`, which extends your `tsconfig.json` and includes only that build's route types, so deleting a route never breaks the next update. Apps made with FrogBot 0.39 list both build folders in `tsconfig.json`'s `include`; remove those four `.frogbot/builds/…` lines, or `tsc` still reads the old routes, and the log reminds you once per start.
 
 A server that crashes restarts on the same build after 1 second, waiting twice as long after each crash up to 30 seconds, and back to 1 second once it has stayed up for a minute.
 
 ### Database schema
 
-With SQLite and no `prodMigrations`, each update brings the database's schema up to the new code before the new version starts: it adds tables, columns and indexes, adds a new required field as a nullable column so existing rows keep working, and keeps removed fields and collections (their data stays, hidden, until you add them back). It never deletes data: when a change would drop a table, a column or rows, the update stops as `update failed` and the old version keeps serving. Nothing is written to `payload_migrations`, so you can still adopt [migrations](/database/migrations) later. With `prodMigrations` set, the update runs your migrations on connect instead, as `frogbot start` does.
+With SQLite and no `prodMigrations`, each update brings the database's schema up to the new code before the new version starts, with the same rule as `frogbot dev` (see [Prototyping in development mode](/database/sqlite#prototyping-in-development-mode)): it adds tables, columns and indexes, adds a new required field as a nullable column so existing rows keep working, and keeps removed fields and collections (their data stays, hidden, until you add them back). It never deletes data and never asks: when a change would drop a table, a column or rows, or change a field's type while it holds values the new type can't read (text that isn't a number, for a `number` field), the update stops as `update failed` and the old version keeps serving. Nothing is written to `payload_migrations`, so you can still adopt [migrations](/database/migrations) later. With `prodMigrations` set, the update runs your migrations on connect instead, as `frogbot start` does.
 
 ### Log
 
-`.frogbot/service.log` holds timestamped lines from the supervisor, each build, the schema sync and the server. At 10 MB it moves to `service.log.1` and a new one starts.
+`.frogbot/service.log` holds timestamped lines from the supervisor, each build, the schema sync and the server, without colour codes. The schema sync logs how many statements it applied and each hidden field once per start. The supervisor logs `server back up (pid N)` after a crashed server answers again. Once the file reaches 10 MB it moves to `service.log.1` and a new one starts.
 
 ### Start at login
 
@@ -240,7 +254,7 @@ With SQLite and no `prodMigrations`, each update brings the database's schema up
 frogbot up --autostart
 ```
 
-On macOS, `--autostart` installs `~/Library/LaunchAgents/ai.frogbot.<id>.plist`, which starts the app at login and restarts it if it fails; `frogbot down` removes it. The LaunchAgent records the absolute paths of `node` and of FrogBot, so after upgrading either, run `frogbot down` and `frogbot up --autostart` again.
+On macOS, `--autostart` installs `~/Library/LaunchAgents/ai.frogbot.<id>.plist`, which starts the app at login and restarts it if it fails; `frogbot down` removes it. The LaunchAgent runs your app's `node_modules/frogbot/bin.js` with the absolute path of `node`, so reinstalling or upgrading FrogBot keeps it working; after upgrading Node, run `frogbot down` and `frogbot up --autostart` again.
 
 ## Generate piece types
 

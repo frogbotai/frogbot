@@ -9,6 +9,7 @@ import {
 import { installSQLJobOperations } from 'frogbot/jobs';
 import { sqliteSearchAdapter } from 'frogbot/search';
 
+import { installDevSync, syncInDev } from './schema/dev.js';
 import { syncSchema } from './schema/sync.js';
 import { sqliteSnapshot } from './snapshot.js';
 import { connectionPragmas, installWriteLock, takeCommitError } from './writeLock.js';
@@ -23,11 +24,19 @@ export type SQLiteAdapterArgs = PayloadSQLiteAdapterArgs & {
   writeLockTimeout?: number;
 };
 
+/**
+ * Payload's SQLite adapter with FrogBot's write lock and job operations. On a file database without
+ * `prodMigrations`, its schema sync replaces Payload's dev push: outside production it adds tables,
+ * columns and indexes, never drops data and never asks.
+ */
 export function sqliteAdapter({ writeLockTimeout = 5000, ...args }: SQLiteAdapterArgs) {
+  const sync = isFileDatabase(args.client?.url) && args.prodMigrations === undefined;
+  const devSync = sync && args.push !== false;
   const adapterArgs = {
     ...args,
     busyTimeout: args.busyTimeout ?? 1000,
     wal: args.wal ?? isFileDatabase(args.client?.url),
+    ...(devSync && { push: false }),
   };
 
   const adapter = createSQLiteAdapter(adapterArgs);
@@ -72,8 +81,12 @@ export function sqliteAdapter({ writeLockTimeout = 5000, ...args }: SQLiteAdapte
             pragmas: connectionPragmas(this),
             timeout: writeLockTimeout,
           });
+
+          if (devSync) await syncInDev(this);
         };
       }
+
+      if (devSync) installDevSync(database);
 
       installSQLJobOperations({ adapter: database, dialect: 'sqlite' });
 
@@ -81,7 +94,7 @@ export function sqliteAdapter({ writeLockTimeout = 5000, ...args }: SQLiteAdapte
     },
     search: sqliteSearchAdapter,
     ...(isFileDatabase(args.client?.url) && { snapshot: sqliteSnapshot(args.client) }),
-    ...(isFileDatabase(args.client?.url) && args.prodMigrations === undefined && { syncSchema }),
+    ...(sync && { syncSchema }),
   };
 }
 

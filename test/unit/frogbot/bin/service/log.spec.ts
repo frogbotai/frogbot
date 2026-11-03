@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -47,5 +47,34 @@ describe('service log', () => {
     expect(existsSync(`${file}.1`)).toBe(true);
     expect(statSync(`${file}.1`).size).toBeGreaterThanOrEqual(100);
     expect(readFileSync(file, 'utf8').split('\n')).toHaveLength(2);
+  });
+
+  it('writes child output without colour codes, spinner frames or blank lines', () => {
+    const file = join(dir, 'service.log');
+    const schema = createLog(file, { now }).stream('schema');
+
+    schema('\u001b[2K\u001b[1G[⣷] Pulling schema from database...');
+    schema('\u001b[2K\u001b[1G[✓] Pulling schema from database...\n\n');
+    schema('\u001b[33mwarn\u001b[39m done\r\n');
+
+    expect(readFileSync(file, 'utf8')).toBe(
+      [
+        '2026-11-01T12:00:00.000Z [schema] [✓] Pulling schema from database...',
+        '2026-11-01T12:00:00.000Z [schema] warn done',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('rotates on the size on disk, counting what other writers appended', () => {
+    const file = join(dir, 'service.log');
+    const log = createLog(file, { now, maxBytes: 100 });
+
+    log.write('supervisor', 'first');
+    appendFileSync(file, 'x'.repeat(200));
+    log.write('supervisor', 'second');
+
+    expect(readFileSync(`${file}.1`, 'utf8')).toContain('first');
+    expect(readFileSync(file, 'utf8')).toBe('2026-11-01T12:00:00.000Z [supervisor] second\n');
   });
 });

@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { withPayload } from '@payloadcms/next/withPayload';
 import type { NextConfig } from 'next';
 
+import { writeSlotTsconfig } from './slotTsconfig.js';
+
 type WithFrogBotOptions = {
   devBundleServerPackages?: boolean;
 };
@@ -174,9 +176,16 @@ export function withFrogBot(
     ? fileURLToPath(new URL('./instantLoader.js', import.meta.url))
     : undefined;
 
+  const distDir = process.env.FROGBOT_DIST_DIR;
+  const tsconfigPath = distDir
+    ? writeSlotTsconfig(distDir, nextConfig.typescript?.tsconfigPath)
+    : undefined;
+
   const frogbotConfig: NextConfig = {
     ...nextConfig,
-    ...(process.env.FROGBOT_DIST_DIR && { distDir: process.env.FROGBOT_DIST_DIR }),
+    agentRules: nextConfig.agentRules ?? false,
+    ...(distDir && { distDir }),
+    ...(tsconfigPath && { typescript: { ...nextConfig.typescript, tsconfigPath } }),
     serverExternalPackages: [
       ...new Set([
         ...(nextConfig.serverExternalPackages || []),

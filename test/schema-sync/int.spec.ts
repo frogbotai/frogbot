@@ -114,6 +114,58 @@ describe('syncSchema on a SQLite file', () => {
     expect(count(db, 'SELECT count(company) FROM deals')).toBe(10);
   });
 
+  it("refuses a type change that would hide text that isn't a number, applying nothing", async () => {
+    const db = await seeded();
+    const before = schemaDump(db);
+    const result = await sync(db, [deals(title, { name: 'company', type: 'number' }), notes]);
+
+    expect(result).toMatchObject({
+      ok: false,
+      applied: [],
+      error:
+        "The schema sync changed nothing: deals.company holds 10 text values that aren't numbers; change the field back, or clear those values, then save again.",
+    });
+    expect(schemaDump(db)).toEqual(before);
+  });
+
+  it('leaves the version tables of a collection that turned versions off exactly as they are', async () => {
+    const db = join(dir, 'versions-off.db');
+    const fields: Field[] = [
+      title,
+      { name: 'url', type: 'text', required: true },
+      { name: 'score', type: 'number' },
+      { name: 'done', type: 'checkbox' },
+      { name: 'due', type: 'date' },
+      { name: 'meta', type: 'json' },
+      { name: 'stage', type: 'select', options: ['lead', 'won'], defaultValue: 'lead' },
+      { name: 'tags', type: 'text', hasMany: true },
+      { name: 'kinds', type: 'select', hasMany: true, options: ['a', 'b'] },
+      { name: 'note', type: 'relationship', relationTo: 'notes' },
+      {
+        name: 'patterns',
+        type: 'array',
+        fields: [{ name: 'label', type: 'text', required: true }],
+      },
+    ];
+
+    const versioned: CollectionConfig = { slug: 'deals', fields, versions: true };
+
+    expect(await sync(db, [versioned, notes])).toMatchObject({ ok: true });
+
+    const conn = new DatabaseSync(db);
+
+    conn.prepare('INSERT INTO _deals_v (version_title, version_url) VALUES (?, ?)').run('v1', 'u');
+    conn.close();
+
+    const before = schemaDump(db).filter(({ name }) => String(name).includes('_deals_v'));
+    const result = await sync(db, [{ slug: 'deals', fields, versions: false }, notes]);
+
+    expect(result).toMatchObject({ ok: true });
+    expect(result.applied.filter((statement) => statement.includes('_deals_v'))).toEqual([]);
+    expect(schemaDump(db).filter(({ name }) => String(name).includes('_deals_v'))).toEqual(before);
+    expect(count(db, 'SELECT count(*) FROM _deals_v')).toBe(1);
+  });
+
   it('builds and keeps the search tables of a search-enabled collection', async () => {
     const db = join(dir, 'search.db');
     const articles: CollectionConfig = {

@@ -1,12 +1,33 @@
 import type { FrogBotSanitizedConfig, SchemaSyncResult } from 'frogbot';
 import { BasePayload } from 'payload';
 
-import { findLosses, type Loss, withoutNoOps } from './guard.js';
-import { countValues, databasePath, type LiveSchema, readLiveSchema } from './live.js';
+import {
+  findLosses,
+  findTypeChanges,
+  type Loss,
+  withoutKeptTables,
+  withoutNoOps,
+} from './guard.js';
+import {
+  clientQuery,
+  countNonNumbers,
+  countValues,
+  databasePath,
+  type LiveSchema,
+  type Query,
+  readLiveSchema,
+  withDatabase,
+} from './live.js';
 import { type Kept, type RawTable, reconcile } from './reconcile.js';
 
-type Adapter = {
-  client?: { close: () => void };
+export type SchemaAdapter = {
+  client?: {
+    close: () => void;
+    execute: (statement: {
+      sql: string;
+      args: string[];
+    }) => Promise<{ rows: Record<string, unknown>[] }>;
+  };
   clientConfig?: { url?: string };
   prodMigrations?: unknown;
   push?: boolean;
@@ -28,15 +49,18 @@ type Adapter = {
   };
 };
 
-type SchemaHook = (args: { adapter: Adapter; schema: unknown }) => unknown;
+type SchemaHook = (args: { adapter: SchemaAdapter; schema: unknown }) => unknown;
+
+/** What the reconcile saw before the drizzle tables were built: the live schema and what it kept. */
+export type Reconciled = { live: LiveSchema; path: string | undefined; kept: Kept[] };
 
 class SchemaRefusal extends Error {}
 
-function isSQLiteAdapter(db: object): db is Adapter {
+export function isSQLiteAdapter(db: object): db is SchemaAdapter {
   return 'rawTables' in db && 'requireDrizzleKit' in db && 'execute' in db;
 }
 
-function sqliteAdapterOf(db: object): Adapter {
+function sqliteAdapterOf(db: object): SchemaAdapter {
   if (isSQLiteAdapter(db)) return db;
 
   throw new SchemaRefusal('the schema sync needs a SQLite database adapter');
@@ -44,12 +68,12 @@ function sqliteAdapterOf(db: object): Adapter {
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
-function keptMessage(item: Kept, path: string | undefined): string {
+async function keptMessage(item: Kept, query: Query | undefined): Promise<string> {
   if (item.kind === 'table') {
     return `${item.table} is gone from the code; its ${plural(item.rows, 'row stays', 'rows stay')} hidden. Add the collection back to show them.`;
   }
 
-  const values = countValues(path, item.table, item.column);
+  const values = await countValues(query, item.table, item.column);
   const held = values
     ? `its ${plural(values, 'value stays', 'values stay')} hidden`
     : 'its column stays, empty';
@@ -68,9 +92,18 @@ function shown(item: Kept, kept: Kept[]): boolean {
   );
 }
 
-function lossText(loss: Loss, live: LiveSchema, path: string | undefined) {
+/** One line per kept table or column a user would recognize; version and internal tables stay quiet. */
+export function keptMessages(adapter: SchemaAdapter, { kept }: Reconciled): Promise<string[]> {
+  const query = adapter.client && clientQuery(adapter.client);
+
+  return Promise.all(
+    kept.filter((item) => shown(item, kept)).map((item) => keptMessage(item, query)),
+  );
+}
+
+async function lossText(loss: Loss, live: LiveSchema, query: Query | undefined) {
   if (loss.kind === 'column') {
-    const n = countValues(path, loss.table, loss.column);
+    const n = await countValues(query, loss.table, loss.column);
 
     return `${loss.table}.${loss.column} (${plural(n, 'value', 'values')})`;
   }
@@ -83,10 +116,158 @@ function lossText(loss: Loss, live: LiveSchema, path: string | undefined) {
 }
 
 /**
- * Payload's dev push (`pushDevSchema`), made additive-only and without its prompt: the adapter's schema is
- * reconciled with the live database before drizzle tables are built, push is computed through the adapter's
- * `requireDrizzleKit()` (so FrogBot's search tables keep their handling), and nothing is applied when a
- * statement would delete data. `payload_migrations` is never written.
+ * A beforeSchemaInit hook that, `when` it returns true, reads the live database (none when `PAYLOAD_DROP_DATABASE` is about to empty it) and adds what the code
+ * lacks to the raw schema, so the drizzle tables built from it keep every live table and column.
+ */
+export function keepLive(
+  adapter: SchemaAdapter,
+  onReconciled: (state: Reconciled) => void,
+  when: () => boolean = () => true,
+) {
+  const hook: SchemaHook = async ({ adapter: built, schema }) => {
+    if (!when()) return schema;
+
+    const path = databasePath(adapter.clientConfig?.url);
+    const live =
+      process.env.PAYLOAD_DROP_DATABASE === 'true'
+        ? new Map()
+        : adapter.client
+          ? await readLiveSchema(clientQuery(adapter.client))
+          : await withDatabase(path, readLiveSchema);
+
+    onReconciled({ live, path, kept: reconcile(built.rawTables, live) });
+
+    return schema;
+  };
+
+  adapter.beforeSchemaInit = [...(adapter.beforeSchemaInit ?? []), hook];
+}
+
+async function typeRefusals(
+  statements: string[],
+  live: LiveSchema,
+  query: Query | undefined,
+): Promise<string[]> {
+  const refusals: string[] = [];
+
+  for (const { table, column } of findTypeChanges(statements, live)) {
+    const n = await countNonNumbers(query, table, column);
+
+    if (!n) continue;
+
+    const what =
+      n === 1 ? "1 text value that isn't a number" : `${n} text values that aren't numbers`;
+
+    refusals.push(
+      `${table}.${column} holds ${what}; change the field back, or clear those values, then save again.`,
+    );
+  }
+
+  return refusals;
+}
+
+/**
+ * Pushes the adapter's schema through its `requireDrizzleKit()` (so FrogBot's search tables keep their
+ * handling), one transaction per pass, and applies nothing when a statement would delete data or a type
+ * change would hide stored values. Never prompts and never writes `payload_migrations`.
+ */
+export function pushAdditive(
+  adapter: SchemaAdapter,
+  reconciled: Reconciled,
+): Promise<{ ok: true; applied: string[] } | { ok: false; error: string; applied: string[] }> {
+  return pushPasses(adapter, reconciled, adapter.client && clientQuery(adapter.client));
+}
+
+async function pushPasses(
+  adapter: SchemaAdapter,
+  reconciled: Reconciled,
+  query: Query | undefined,
+): Promise<{ ok: true; applied: string[] } | { ok: false; error: string; applied: string[] }> {
+  const { pushSchema } = adapter.requireDrizzleKit();
+  const applied: string[] = [];
+  const keptTables = new Set(
+    reconciled.kept.flatMap((item) => (item.kind === 'table' ? [item.table] : [])),
+  );
+
+  let live = query ? await readLiveSchema(query) : reconciled.live;
+
+  for (let pass = 0; pass < 3; pass++) {
+    const push = await pushSchema(
+      adapter.schema,
+      adapter.drizzle,
+      adapter.schemaName ? [adapter.schemaName] : undefined,
+      adapter.tablesFilter,
+    );
+
+    const statements = push.statementsToExecute;
+
+    statements.splice(
+      0,
+      statements.length,
+      ...withoutKeptTables(withoutNoOps(statements, live), keptTables, live),
+    );
+
+    if (!statements.length) break;
+
+    const losses = findLosses(statements, live);
+    const changed = applied.length
+      ? `stopped after ${plural(applied.length, 'change', 'changes')}`
+      : 'changed nothing';
+
+    if (losses.length) {
+      const what = (await Promise.all(losses.map((loss) => lossText(loss, live, query)))).join(
+        ', ',
+      );
+
+      return {
+        ok: false,
+        error: `The schema sync ${changed}: this version would delete ${what}. Keep it in the code, or write a migration.`,
+        applied,
+      };
+    }
+
+    const refusals = await typeRefusals(statements, live, query);
+
+    if (refusals.length) {
+      return { ok: false, error: `The schema sync ${changed}: ${refusals.join(' ')}`, applied };
+    }
+
+    const run = (raw: string) => adapter.execute({ drizzle: adapter.drizzle, raw });
+
+    await run('PRAGMA foreign_keys=OFF');
+    await run('BEGIN');
+
+    try {
+      await push.apply();
+      await run('COMMIT');
+    } catch (error) {
+      await run('ROLLBACK').catch(() => {});
+
+      const reason = error instanceof Error ? error.message : String(error);
+
+      return {
+        ok: false,
+        error: `The schema sync ${changed}: SQLite refused this version's schema (${reason.split('\n')[0]}).`,
+        applied,
+      };
+    } finally {
+      await run('PRAGMA foreign_keys=ON');
+    }
+
+    applied.push(...statements);
+    live = await readLiveSchema(query);
+  }
+
+  return { ok: true, applied };
+}
+
+/** Marks an adapter whose connect must not sync, because `syncSchema` runs the sync itself. */
+export const syncing = new WeakSet<object>();
+
+/**
+ * Payload's dev push (`pushDevSchema`), made additive-only and without its prompt, in a fresh Payload
+ * on `config`: the adapter's schema is reconciled with the live database before drizzle tables are built,
+ * then pushed with `pushAdditive`. `frogbot up` runs it in a child process before each new server starts.
  */
 export async function syncSchema({
   config,
@@ -95,9 +276,7 @@ export async function syncSchema({
 }): Promise<SchemaSyncResult> {
   const payloadConfig = await config._internal.payloadConfig;
   const db = payloadConfig.db;
-  let live: LiveSchema = new Map();
-  let path: string | undefined;
-  let kept: Kept[] = [];
+  let reconciled: Reconciled = { live: new Map(), path: undefined, kept: [] };
 
   payloadConfig.db = {
     ...db,
@@ -112,16 +291,8 @@ export async function syncSchema({
       }
 
       adapter.push = false;
-      path = databasePath(adapter.clientConfig?.url);
-
-      const keep: SchemaHook = ({ adapter: built, schema }) => {
-        live = readLiveSchema(path);
-        kept = reconcile(built.rawTables, live);
-
-        return schema;
-      };
-
-      adapter.beforeSchemaInit = [...(adapter.beforeSchemaInit ?? []), keep];
+      syncing.add(database);
+      keepLive(adapter, (state) => (reconciled = state));
 
       return database;
     },
@@ -143,71 +314,10 @@ export async function syncSchema({
     }
 
     const adapter = sqliteAdapterOf(payload.db);
-    const { pushSchema } = adapter.requireDrizzleKit();
-    const keptMessages = kept
-      .filter((item) => shown(item, kept))
-      .map((item) => keptMessage(item, path));
+    const kept = await keptMessages(adapter, reconciled);
+    const result = await pushAdditive(adapter, reconciled);
 
-    const applied: string[] = [];
-
-    for (let pass = 0; pass < 3; pass++) {
-      const push = await pushSchema(
-        adapter.schema,
-        adapter.drizzle,
-        adapter.schemaName ? [adapter.schemaName] : undefined,
-        adapter.tablesFilter,
-      );
-
-      const statements = push.statementsToExecute;
-
-      statements.splice(0, statements.length, ...withoutNoOps(statements, live));
-
-      if (!statements.length) break;
-
-      const losses = findLosses(statements, live);
-      const changed = applied.length
-        ? `stopped after ${plural(applied.length, 'change', 'changes')}`
-        : 'changed nothing';
-
-      if (losses.length) {
-        const what = losses.map((loss) => lossText(loss, live, path)).join(', ');
-
-        return {
-          ok: false,
-          error: `The schema sync ${changed}: this version would delete ${what}. Keep it in the code, or write a migration.`,
-          applied,
-          kept: keptMessages,
-        };
-      }
-
-      const run = (raw: string) => adapter.execute({ drizzle: adapter.drizzle, raw });
-
-      await run('PRAGMA foreign_keys=OFF');
-      await run('BEGIN');
-
-      try {
-        await push.apply();
-        await run('COMMIT');
-      } catch (error) {
-        await run('ROLLBACK').catch(() => {});
-
-        const reason = error instanceof Error ? error.message : String(error);
-
-        return {
-          ok: false,
-          error: `The schema sync ${changed}: SQLite refused this version's schema (${reason.split('\n')[0]}).`,
-          applied,
-          kept: keptMessages,
-        };
-      } finally {
-        await run('PRAGMA foreign_keys=ON');
-      }
-
-      applied.push(...statements);
-      live = readLiveSchema(path);
-    }
-
-    return { ok: true, applied, kept: keptMessages };
+    return { ...result, kept };
   } finally {
     const client = payload.db && isSQLiteAdapter(payload.db) ? payload.db.client : undefined;
 

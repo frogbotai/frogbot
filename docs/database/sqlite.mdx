@@ -123,7 +123,7 @@ Search tables, indexes, and triggers are part of your schema. Development push c
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `client` | `Config` | Required | [libSQL client options](https://orm.drizzle.team/docs/get-started-sqlite#turso) passed to `createClient` from `@libsql/client`, such as `url` and `authToken`. |
-| `push` | `boolean` | `true` | Pushes schema changes to the database with Drizzle's [`db push`](https://orm.drizzle.team/kit-docs/overview#prototyping-with-db-push) on startup. Push never runs when `NODE_ENV` is `production` or during migration commands. Set `false` to rely on migrations only. |
+| `push` | `boolean` | `true` | Keeps the database's schema in step with your config on startup outside production, never during migration commands. On a file database without `prodMigrations` this is FrogBot's schema sync (see [Prototyping in development mode](#prototyping-in-development-mode)); elsewhere it is Drizzle's [`db push`](https://orm.drizzle.team/kit-docs/overview#prototyping-with-db-push). Set `false` to rely on migrations only. |
 | `migrationDir` | `string` | First of `src/migrations`, `dist/migrations`, or `migrations` that exists | Directory migrations are written to and read from. See [Migrations](/database/migrations#migrations-directory). |
 | `prodMigrations` | `{ name: string; up: (args: MigrateUpArgs) => Promise<void>; down: (args: MigrateDownArgs) => Promise<void> }[]` | — | Migrations to run on connect when `NODE_ENV` is `production`. See [Running migrations in production](/database/migrations#running-migrations-in-production). |
 | `idType` | `'number' \| 'uuid' \| 'uuidv7'` | `'number'` | Column type for document IDs. `number` IDs are integers; `uuid` and `uuidv7` IDs are strings. |
@@ -204,13 +204,16 @@ In addition to exposing Drizzle directly, all of the tables and Drizzle relation
 
 ## Prototyping in development mode
 
-Drizzle exposes two ways to work locally in development mode.
+Outside production, FrogBot adds tables, columns and indexes and never drops data or asks; removed fields stay hidden; a change that would lose data is skipped with an error line.
 
-The first is [`db push`](https://orm.drizzle.team/kit-docs/overview#prototyping-with-db-push), which automatically pushes changes you make to your FrogBot Config (and therefore, Drizzle schema) to your database so you don't have to manually migrate every time you change your FrogBot Config. This only works in development mode, and should not be mixed with manually running [`migrate`](/database/migrations) commands.
+This schema sync runs whenever FrogBot connects to a file database without `prodMigrations` and with `push` left on: `frogbot dev`, `frogbot run`, scripts and tests, and each update under [`frogbot up`](/getting-started/cli#database-schema). In detail:
 
-You will be warned if any changes that you make will entail data loss while in development mode. Push is enabled by default, but you can opt out if you'd like.
+- A new field becomes a new column, and a new required field a nullable one, so existing rows keep working.
+- A field or collection you remove keeps its column or table. Its values stay, hidden, and come back when you add the field back. FrogBot logs one line for each, once per process, such as `deals.company is gone from the code; its 10 values stay hidden. Add "company" back to show them.`
+- A change that would delete data is skipped: dropping a column, a table or rows, or changing a field's type while it holds values the new type can't read, such as text that isn't a number for a `number` field. FrogBot logs one error that names the column and what to do, for example `deals.company holds 3 text values that aren't numbers; change the field back, or clear those values, then save again.`, and the app keeps starting on the current schema. Under `frogbot up` the update stops as `update failed` instead.
+- It never prompts, so it works without a terminal, and it never writes to `payload_migrations`.
 
-Alternatively, you can disable `push` and rely solely on migrations to keep your local database in sync with your FrogBot Config.
+To rename a field or change its type while keeping its data, or to drop data on purpose, write a [migration](/database/migrations). Set `push: false` to turn the sync off and rely on migrations only; with `prodMigrations` set, migrations run on connect instead.
 
 ## Migration workflows
 

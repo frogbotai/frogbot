@@ -1,5 +1,5 @@
 import { type ChildProcess, spawn } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { resolveNextBin } from '../runNext.js';
 import type { Log } from './log.js';
@@ -39,39 +39,69 @@ export class StepError extends Error {
 /** FrogBot's own `bin.js`, run with this Node. */
 export const frogbotBin = fileURLToPath(new URL('../../../bin.js', import.meta.url));
 
-const TAIL_BYTES = 8 * 1024;
+const TAIL_BYTES = 32 * 1024;
 
-/** Runs a child to its end, its output in the log; a failure carries the output's tail. */
+const lifeline = pathToFileURL(fileURLToPath(new URL('./lifeline.js', import.meta.url))).href;
+
+/**
+ * A child's stdio and env with a lifeline: fd 3 is a pipe only the supervisor holds, and a preload
+ * exits the child when it closes, so a supervisor killed with `SIGKILL` leaves no process behind.
+ */
+export function withLifeline(env: NodeJS.ProcessEnv): {
+  env: NodeJS.ProcessEnv;
+  stdio: ['ignore', 'pipe', 'pipe', 'pipe'];
+} {
+  return {
+    env: {
+      ...env,
+      FROGBOT_LIFELINE_FD: '3',
+      NODE_OPTIONS: [env.NODE_OPTIONS, `--import=${lifeline}`].filter(Boolean).join(' '),
+    },
+    stdio: ['ignore', 'pipe', 'pipe', 'pipe'],
+  };
+}
+
+/** Keeps the last `TAIL_BYTES` of a child's output. */
+export function outputTail(child: ChildProcess): () => string {
+  let output = '';
+  const keep = (chunk: Buffer) => {
+    output = (output + String(chunk)).slice(-TAIL_BYTES);
+  };
+
+  child.stdout?.on('data', keep);
+  child.stderr?.on('data', keep);
+
+  return () => output;
+}
+
+/**
+ * Runs a child to its end, its output in the log unless `quiet`; a failure carries the output's tail.
+ */
 export function runStep(
   app: App,
   name: string,
   args: string[],
   env: NodeJS.ProcessEnv,
+  { quiet = false } = {},
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, args, {
-      cwd: app.dir,
-      env,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    const child = spawn(process.execPath, args, { cwd: app.dir, ...withLifeline(env) });
+    const tail = outputTail(child);
 
-    let output = '';
-    const keep = (chunk: Buffer) => {
-      output = (output + String(chunk)).slice(-TAIL_BYTES);
-    };
+    if (!quiet) {
+      const toLog = app.log.stream(name);
 
-    const toLog = app.log.stream(name);
-
-    child.stdout.on('data', keep).on('data', toLog);
-    child.stderr.on('data', keep).on('data', toLog);
+      child.stdout?.on('data', toLog);
+      child.stderr?.on('data', toLog);
+    }
 
     child.on('error', (error) =>
-      reject(new StepError(`${name} could not start: ${error.message}`, output)),
+      reject(new StepError(`${name} could not start: ${error.message}`, tail())),
     );
 
     child.on('close', (code, signal) => {
-      if (code === 0) resolve(output);
-      else reject(new StepError(`${name} failed (${signal ?? `exit ${code}`})`, output));
+      if (code === 0) resolve(tail());
+      else reject(new StepError(`${name} failed (${signal ?? `exit ${code}`})`, tail()));
     });
   });
 }
@@ -102,12 +132,7 @@ export const nextRuntime: AppRuntime = {
     const child = spawn(
       process.execPath,
       [resolveNextBin(app.dir), 'start', '-p', String(port), '-H', HOST],
-      {
-        cwd: app.dir,
-        env: productionEnv(app, slot),
-        detached: true,
-        stdio: ['ignore', 'pipe', 'pipe'],
-      },
+      { cwd: app.dir, detached: true, ...withLifeline(productionEnv(app, slot)) },
     );
 
     const toLog = app.log.stream(`server ${slot}`);
