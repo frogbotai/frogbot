@@ -25,6 +25,4 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: mkdir -p .idea/tmp
-      - run: pnpm prettier
-      - run: pnpm typecheck
-      - run: pnpm lint
+      - run: pnpm check --full
