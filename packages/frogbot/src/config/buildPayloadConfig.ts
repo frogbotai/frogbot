@@ -14,7 +14,10 @@ import { buildManifestEndpoint } from '../chat/manifest.js';
 import { resolveUserSlug } from '../chat/resolveUserSlug.js';
 import { sanitizeCollection } from '../collections/config/sanitize.js';
 import type { Endpoint } from '../endpoints/types.js';
-import { defaultAutonumbersCollection } from '../fields/baseFields/autonumber/collection.js';
+import {
+  defaultAutonumberKeysCollection,
+  defaultAutonumbersCollection,
+} from '../fields/baseFields/autonumber/collection.js';
 import { sanitizeVectorFields } from '../fields/config/sanitizeVector.js';
 import { wrapFieldRequestFunctions } from '../fields/config/wrapRequestFunctions.js';
 import { buildResumeEndpoints } from '../jobs/endpoints/resume.js';
@@ -22,7 +25,7 @@ import { pieceEmailAdapter } from '../pieces/email.js';
 import { toPayloadConfig, toPayloadFields } from '../seams/config.js';
 import { buildSearchQueries } from '../search/graphQL.js';
 import type { SearchCollection } from '../search/types.js';
-import type { AutonumberEntry } from './sanitized.js';
+import type { AutonumberEntry, AutonumberKeyDeclaration } from './sanitized.js';
 import { resolveSourceDir } from './sourceDir.js';
 import type { FrogBotConfig } from './types.js';
 import { wrapGraphQLExtension } from './wrapGraphQLExtension.js';
@@ -57,6 +60,7 @@ export function buildPayloadConfig({
   resolveFrogBot,
   searchCollections = [],
   autonumbers = [],
+  autonumberKeys = [],
   storage = [],
 }: {
   config: FrogBotConfig;
@@ -66,6 +70,7 @@ export function buildPayloadConfig({
   resolveFrogBot: ResolveFrogBot;
   searchCollections?: SearchCollection[];
   autonumbers?: AutonumberEntry[];
+  autonumberKeys?: AutonumberKeyDeclaration[];
   storage?: NonNullable<PayloadConfig['storage']>;
 }): PayloadConfig {
   const mapVectorField = config.db.mapVectorField;
@@ -78,7 +83,10 @@ export function buildPayloadConfig({
       attachFrogBot,
       {
         mapVectorField,
-        onAutonumber: (path) => autonumbers.push({ collection: collection.slug, path }),
+        onAutonumber: (path, scope) =>
+          autonumbers.push({ collection: collection.slug, path, ...(scope ? { scope } : {}) }),
+        onAutonumberKey: (path, key) =>
+          autonumberKeys.push({ collection: collection.slug, path, ...key }),
         resolveFrogBot,
         search: searchCollections.find(({ slug }) => slug === collection.slug)?.search,
       },
@@ -105,6 +113,15 @@ export function buildPayloadConfig({
   if (autonumbers.length) {
     collections.push(
       sanitizeCollection(defaultAutonumbersCollection(), attachFrogBot, {
+        mapVectorField,
+        resolveFrogBot,
+      }),
+    );
+  }
+
+  if (autonumberKeys.length) {
+    collections.push(
+      sanitizeCollection(defaultAutonumberKeysCollection(), attachFrogBot, {
         mapVectorField,
         resolveFrogBot,
       }),

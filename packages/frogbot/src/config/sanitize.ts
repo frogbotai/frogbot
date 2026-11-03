@@ -28,7 +28,11 @@ import { buildSecretEndpoints } from '../connections/secret.js';
 import type { Endpoint } from '../endpoints/types.js';
 import { sanitizeAIFields } from '../fields/baseFields/ai/sanitize.js';
 import { resolveAIFieldTask } from '../fields/baseFields/ai/task.js';
-import { AUTONUMBERS_SLUG } from '../fields/baseFields/autonumber/collection.js';
+import {
+  AUTONUMBER_KEYS_SLUG,
+  AUTONUMBERS_SLUG,
+} from '../fields/baseFields/autonumber/collection.js';
+import { resolveAutonumberKeys } from '../fields/baseFields/autonumber/key.js';
 import { assertRichTextEditor } from '../fields/config/assertRichTextEditor.js';
 import { initFrogBotFromPayload } from '../frogbot.js';
 import { seedFrogBotCache } from '../getFrogBot.js';
@@ -60,6 +64,8 @@ import { hideBuiltInGraphQL } from './hideBuiltInGraphQL.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
 import type {
   AutonumberEntry,
+  AutonumberKeyDeclaration,
+  AutonumberKeyEntry,
   FrogBotSanitizedConfig,
   SanitizedCollectionMeta,
 } from './sanitized.js';
@@ -313,6 +319,12 @@ export function sanitize(
     );
   }
 
+  if (config.collections.some(({ slug }) => slug === AUTONUMBER_KEYS_SLUG)) {
+    throw new Error(
+      `FrogBot collection '${AUTONUMBER_KEYS_SLUG}' is reserved for old autonumber keys.`,
+    );
+  }
+
   const chatResult = resolveChatCollections({ ...config, agents });
   const { collections: usageCollections, slug: usageSlug } = resolveUsageCollection(
     { ...config, agents, collections: chatResult.collections },
@@ -401,6 +413,8 @@ export function sanitize(
   );
 
   const autonumbers: AutonumberEntry[] = [];
+  const autonumberKeyDeclarations: AutonumberKeyDeclaration[] = [];
+  const autonumberKeys: AutonumberKeyEntry[] = [];
 
   const payloadConfig = buildPayloadConfig({
     config: { ...config, agents, collections: payloadCollections, jobs, kv, settings },
@@ -428,6 +442,7 @@ export function sanitize(
     resolveFrogBot,
     searchCollections,
     autonumbers,
+    autonumberKeys: autonumberKeyDeclarations,
     storage,
   });
 
@@ -447,6 +462,14 @@ export function sanitize(
         wrapCollectionAccess(collection, attachFrogBot);
         coordinateAuthEndpoints({ collection, attachFrogBot });
       }
+
+      autonumberKeys.push(
+        ...resolveAutonumberKeys({
+          autonumbers,
+          collections: built.collections,
+          declarations: autonumberKeyDeclarations,
+        }),
+      );
 
       hideBuiltInGraphQL(built);
 
@@ -490,6 +513,7 @@ export function sanitize(
       noEmail: !config.email,
       triggers,
       autonumbers,
+      autonumberKeys,
     },
   };
 

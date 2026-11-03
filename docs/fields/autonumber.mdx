@@ -2,10 +2,10 @@
 title: Autonumber Field
 sidebarTitle: Autonumber
 description: Give every record a short unique number, such as ticket 42, set by FrogBot and read-only to people and agents.
-keywords: autonumber, auto increment, serial, sequence, record number, ticket number, counter, number, fields, collections, configuration
+keywords: autonumber, auto increment, serial, sequence, record number, ticket number, counter, per project, scope, issue key, APP-123, autonumberKeyField, findByAutonumberKey, number, fields, collections, configuration
 ---
 
-`autonumberField` returns a [Number field](/fields/number) that FrogBot sets to the next number when a record is created: 1, 2, 3 and so on. Numbers are unique within the field, even when many records are created at the same moment, and are never reused. People and agents can't write them, and agents and generated types are told that FrogBot sets them.
+`autonumberField` returns a [Number field](/fields/number) that FrogBot sets to the next number when a record is created: 1, 2, 3 and so on. Numbers are unique within the field, even when many records are created at the same moment, and are never reused. People and agents can't write them, and agents and generated types are told that FrogBot sets them. A field can also [count per project](#numbering-per-project), with [keys like APP-123](#keys-like-app-123).
 
 ```ts
 import { autonumberField } from 'frogbot'
@@ -20,17 +20,18 @@ export const Tickets: CollectionConfig = {
 }
 ```
 
-The result is a plain `number` field with a unique index. It works at the top level and inside groups, tabs, rows and collapsibles, but not inside arrays or blocks, where a per-row number has no meaning.
+The result is a plain `number` field with a unique index, or with [`scope`](#numbering-per-project) a number unique within each scope. It works at the top level and inside groups, tabs, rows and collapsibles, but not inside arrays or blocks, where a per-row number has no meaning.
 
 ## Config options
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `scope` | `string` | — | Name of a sibling required relationship to one collection. Each related record counts from 1 on its own, and the number is unique within it instead of across the collection. See [Numbering per project](#numbering-per-project). |
 | `min` | `number` | — | Minimum accepted value, checked by the built-in validator against the number FrogBot assigns. |
 | `max` | `number` | — | Maximum accepted value, checked by the built-in validator against the number FrogBot assigns. A create whose number would be higher fails with an error naming the field. |
 | `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
-| `index` | `boolean` | `false` | Creates a database index. The field is always unique, which already creates one. |
+| `index` | `boolean` | `false` | Creates a database index. The field is always unique, alone or with its `scope`, which already creates one. |
 | `validate` | `Validate` | Built-in validator | Replaces the built-in validator. It checks the number FrogBot assigns. See [validation](/fields/overview#validation). |
 | `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. Your `beforeChange` and `beforeDuplicate` hooks run after the field's own. See [field hooks](/hooks/fields). |
 | `access` | `{ read }` | Allowed | `FieldAccess` function that decides who can read the number. Nobody can create or update it through access-controlled requests. See [field access control](/access-control/fields). |
@@ -59,8 +60,9 @@ A field inside an array or blocks also fails at startup:
 - Each autonumber field counts on its own. A collection can have more than one, and a field in a group, such as `details.ref`, has its own count.
 - Numbers are unique within the field on SQLite, Postgres and MongoDB, even when many records are created at the same moment.
 - Numbers are never reused. Deleting record 2 leaves a gap, and the next record still gets the next new number.
+- A field with `scope` counts each scope on its own. See [Numbering per project](#numbering-per-project).
 
-Updates, autosaves, drafts, bulk updates and version restores keep the number. A number sent with an update is ignored, including through the Local API.
+Updates, autosaves, drafts, bulk updates and version restores keep the number, unless they [move the record to another scope](#moving-a-record). A number sent with an update is ignored, including through the Local API.
 
 ### Failed saves and transactions
 
@@ -70,6 +72,105 @@ How a failed save affects the count depends on whether the save runs in a databa
 - **MongoDB, and SQLite or Postgres without transactions:** the number is taken on its own, outside the save. A save that fails after its number was taken can leave a gap.
 
 Postgres runs transactions unless you set `transactionOptions: false`. SQLite runs them when you pass an object such as `transactionOptions: {}`, or when a collection uses [sign-in](/authentication/sign-in) and you leave `transactionOptions` unset. See [SQLite options](/database/sqlite#options).
+
+## Numbering per project
+
+With `scope`, each related record has its own count. Issues in two projects are numbered 1, 2, 3 in each, as in Jira, instead of sharing one count:
+
+```ts
+import { autonumberField, autonumberKeyField } from 'frogbot'
+import type { CollectionConfig } from 'frogbot'
+
+export const Projects: CollectionConfig = {
+  slug: 'projects',
+  fields: [{ name: 'key', type: 'text', required: true, unique: true }],
+}
+
+export const Issues: CollectionConfig = {
+  slug: 'issues',
+  admin: { useAsTitle: 'key' },
+  fields: [
+    { name: 'project', type: 'relationship', relationTo: 'projects', required: true },
+    autonumberField({ name: 'number', scope: 'project' }),
+    autonumberKeyField({ name: 'key', number: 'number', prefix: 'key' }),
+  ],
+}
+```
+
+The first issue in APP is 1 and the first in WEB is also 1. `autonumberKeyField` is optional; it adds the key `APP-1`, described in [Keys like APP-123](#keys-like-app-123).
+
+`scope` names a field beside the number, in the same group or row. It must be a relationship to one collection that is `required`, not `localized` and not `hasMany`. Anything else fails at startup:
+
+```text
+[frogbot] Autonumber field 'number' in collection 'issues' has scope 'project', which must be a required relationship to one collection, not localized or hasMany.
+```
+
+A scoped number isn't unique on its own. FrogBot adds a unique index on the scope and the number together instead, so two issues in one project never share a number. Everything in [How numbers are assigned](#how-numbers-are-assigned) applies within each scope: parallel creates, transactions, gaps and seeds. On SQLite and Postgres with transactions, the first issues created at the same moment in a new project are numbered 1 and 2, and a create that rolls back gives its number back.
+
+A seed's supplied number raises only its own project's count. A number another issue in the same project already has fails with `Value must be unique`; the same number in another project is fine.
+
+### Moving a record
+
+Changing a record's scope gives it the next number in the new scope. Moving APP-5 to WEB, which has WEB-1 to WEB-9, makes it WEB-10. Its old number isn't given out again in APP. This applies to updates, bulk updates and restoring a version from another scope. With a key field, the old key still finds the record through [`findByAutonumberKey`](#finding-a-record-by-key).
+
+### Adding, changing or removing `scope`
+
+Adding `scope` to a field that already has numbers keeps every number. At the next start, each scope's count continues after the highest number in it, and records without a number are numbered oldest first within their scope. Changing `scope` to another field does the same.
+
+Removing `scope` makes the number unique across the collection again. If two scopes hold the same number, the field's unique index can't be built and the change fails at the database, in the migration or when the schema is pushed at startup. Renumber the records first, or keep the scope.
+
+## Keys like APP-123
+
+`autonumberKeyField` returns a [Text field](/fields/text) that FrogBot sets to the scope's prefix, a dash and the number, such as `APP-123`. The key is stored on the record, so it filters, sorts, works in list search and [search indexes](/search/overview), and can be `useAsTitle`:
+
+```ts
+const { docs } = await frogbot.find({ collection: 'issues', where: { key: { equals: 'APP-123' } } })
+```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `number` | `string` | Required | Name of a sibling `autonumberField` that has a `scope`. |
+| `prefix` | `string` | Required | Name of a text field on the scope's collection, such as a project's `key`. It must be `required` and `unique`, not `localized` and not `hasMany`. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. |
+| `index` | `boolean` | `false` | Creates a database index. The key is always unique, which already creates one. |
+| `minLength` | `number` | — | Minimum length, checked by the built-in validator against the key FrogBot builds. |
+| `maxLength` | `number` | — | Maximum length, checked by the built-in validator against the key FrogBot builds. |
+| `validate` | `Validate` | Built-in validator | Replaces the built-in validator. It checks the key FrogBot builds. |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. Your `beforeChange` and `beforeDuplicate` hooks run after the field's own. |
+| `access` | `{ read }` | Allowed | `FieldAccess` function that decides who can read the key. Nobody can create or update it through access-controlled requests. |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated. A duplicate always gets a new key either way. |
+| `admin` | `object` | — | The Text field's admin options. `admin.readOnly` is always `true`. |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. |
+| `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by type generation and agents. They run after the field's own entry. |
+
+Like the number, the key doesn't accept `hasMany`, `minRows`, `maxRows`, `localized`, `defaultValue`, `required`, `unique`, `virtual`, `access.create` or `access.update`. A `number` that isn't a scoped `autonumberField`, or a `prefix` that isn't a required, unique text field, fails at startup:
+
+```text
+[frogbot] Autonumber key field 'key' in collection 'issues' has prefix 'key', which must be a required, unique text field in collection 'projects', not localized or hasMany.
+```
+
+FrogBot sets the key when the record is created and whenever its number changes, reading the prefix from the scope's record. A key sent by people, agents or trusted server code is dropped; a seed that supplies number 7 gets `APP-7`. A duplicate gets the key of its new number. Records that have a number but no key, such as records numbered before the key field was added, get their key at the next start.
+
+### Renaming a prefix
+
+Changing a project's prefix from APP to APX rewrites the key of every issue in that project in the same save: APP-1 to APP-400 become APX-1 to APX-400. Other projects are untouched. The rewrite doesn't run hooks or change `updatedAt`. In a transaction, a rewrite that fails rolls back the rename. A project with many issues makes that save slower, once.
+
+### Finding a record by key
+
+`findByAutonumberKey` finds a record by its key, including a key it held before a [move](#moving-a-record) or a [prefix rename](#renaming-a-prefix):
+
+```ts
+import { findByAutonumberKey } from 'frogbot'
+
+const issue = await findByAutonumberKey(frogbot, { collection: 'issues', key: 'APP-5' })
+```
+
+It returns the record that holds the key now. Otherwise it returns the record that held it last, or `null` if no record did. It takes the same options as [`findByID`](/local-api/overview#collection-find-by-id), such as `depth`, `req` and `overrideAccess: false`. With access checked, a record the user can't read gives `null`, whether it holds the key now or held it before; a key now held by a hidden record never falls back to its earlier holder. A collection without a key field fails with `[frogbot] Collection 'tickets' has no autonumberKeyField.`
+
+Old keys are kept in a hidden `frogbot-autonumber-keys` collection, added when a key field exists. Deleting a record removes its old keys. The collection behaves like the [counters collection](#counters), its slug is reserved, and generated types include it as `FrogBotAutonumberKey`.
 
 ## Read-only to people and agents
 
@@ -128,7 +229,7 @@ Existing records are still being numbered. Try again in a moment.
 
 ## Counters
 
-FrogBot keeps each field's count in a hidden `frogbot-autonumbers` collection, with one record per field keyed by collection and field path, such as `tickets.number` or `tickets.details.ref`. The collection is added only when an autonumber field exists. It doesn't appear in the admin panel or GraphQL, and access-controlled requests can't read or change it. Generated types include it as `FrogBotAutonumber`.
+FrogBot keeps each field's count in a hidden `frogbot-autonumbers` collection, with one record per field keyed by collection and field path, such as `tickets.number` or `tickets.details.ref`. A scoped field has one record per scope, such as `issues.number[project=12]`, plus `issues.number[project]`, which marks that existing records have been numbered. The collection is added only when an autonumber field exists. It doesn't appear in the admin panel or GraphQL, and access-controlled requests can't read or change it. Generated types include it as `FrogBotAutonumber`.
 
 The slug is reserved. A collection of your own with that slug fails at startup:
 
@@ -177,6 +278,13 @@ An autonumber field describes itself to agents using FrogBot's [MCP tools](/plug
 
 ```text
 Unique number set by FrogBot when the record is created; read-only
+```
+
+A scoped number names its scope, and a key field names its prefix and number:
+
+```text
+Number set by FrogBot when the record is created, unique within each project; read-only
+Unique key set by FrogBot as <key>-<number>, like APP-123; read-only
 ```
 
 The MCP plugin's tools also give the value the type `integer`, so agents see that it is a whole number.

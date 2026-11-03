@@ -126,6 +126,7 @@ function makeConfig(): FrogBotSanitizedConfig {
       noEmail: true,
       triggers: {},
       autonumbers: [],
+      autonumberKeys: [],
     },
   };
 }

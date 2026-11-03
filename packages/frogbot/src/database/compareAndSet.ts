@@ -1,4 +1,4 @@
-import { buildQuery } from '@payloadcms/drizzle';
+import { buildQuery, type DrizzleAdapter } from '@payloadcms/drizzle';
 import { is, type SQL } from 'drizzle-orm';
 import { PgDatabase } from 'drizzle-orm/pg-core';
 import type { BaseSQLiteDatabase, SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
@@ -70,11 +70,7 @@ export async function compareAndSet({
     }
   }
 
-  const transactionID = await req.transactionID;
-  const db =
-    (transactionID && adapter.sessions[transactionID]?.db) ||
-    adapter.primaryDrizzle ||
-    adapter.drizzle;
+  const db = await sessionDatabase(adapter, req);
 
   const rows: unknown[] = is(db, PgDatabase)
     ? await db.update(table).set(columns).where(query.where).returning({ id: table.id })
@@ -114,11 +110,24 @@ async function updateSQLite({
   return db.update(table).set(columns).where(where).returning({ id: table.id });
 }
 
-function getDatabase(req: FrogBotRequest | PayloadRequest): DatabaseAdapter {
+export function getDatabase(req: FrogBotRequest | PayloadRequest): DatabaseAdapter {
   return 'frogbot' in req ? req.frogbot.db : req.payload.db;
 }
 
-function toColumns({
+export async function sessionDatabase(
+  adapter: DrizzleAdapter,
+  req: FrogBotRequest | PayloadRequest,
+): Promise<DrizzleAdapter['drizzle'] | DrizzleAdapter['sessions'][string]['db']> {
+  const transactionID = await req.transactionID;
+
+  return (
+    (transactionID && adapter.sessions[transactionID]?.db) ||
+    adapter.primaryDrizzle ||
+    adapter.drizzle
+  );
+}
+
+export function toColumns({
   data,
   fields,
 }: {

@@ -5387,6 +5387,8 @@ describe('frogbot sanitize', () => {
 
       const counters = (await payloadCollection(withAutonumber))('frogbot-autonumbers');
 
+      expect((await payloadCollection(withAutonumber))('frogbot-autonumber-keys')).toBeUndefined();
+
       expect(counters).toMatchObject({
         slug: 'frogbot-autonumbers',
         admin: { hidden: true },
@@ -5407,6 +5409,16 @@ describe('frogbot sanitize', () => {
         sanitize(makeConfig({ collections: [{ slug: 'frogbot-autonumbers', fields: [] }] })),
       ).toThrow(
         new Error("FrogBot collection 'frogbot-autonumbers' is reserved for autonumber counters."),
+      );
+    });
+
+    it('reserves the old keys collection slug', () => {
+      expect(() =>
+        sanitize(makeConfig({ collections: [{ slug: 'frogbot-autonumber-keys', fields: [] }] })),
+      ).toThrow(
+        new Error(
+          "FrogBot collection 'frogbot-autonumber-keys' is reserved for old autonumber keys.",
+        ),
       );
     });
   });

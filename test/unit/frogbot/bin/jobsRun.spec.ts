@@ -123,6 +123,7 @@ describe('jobs:run lifecycle', () => {
         noEmail: true,
         triggers: {},
         autonumbers: [],
+        autonumberKeys: [],
       },
       onInit,
     } as unknown as FrogBotSanitizedConfig;

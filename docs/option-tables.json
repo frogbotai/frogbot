@@ -530,6 +530,11 @@
     "type": "Omit<NonNullable<import('frogbot').AutonumberFieldArgs['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
   },
   {
+    "page": "fields/autonumber",
+    "heading": "Keys like APP-123",
+    "type": "import('frogbot').AutonumberKeyFieldArgs"
+  },
+  {
     "page": "fields/barcode",
     "heading": "Config options",
     "type": "import('frogbot').BarcodeFieldArgs"

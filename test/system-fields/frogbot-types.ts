@@ -71,6 +71,8 @@ export interface Config {
     users: User;
     admins: Admin;
     tickets: Ticket;
+    projects: Project;
+    issues: Issue;
     chats: Chat;
     'api-keys': ApiKey;
     'usage-logs': UsageLog;
@@ -81,12 +83,15 @@ export interface Config {
     'frogbot-chat-turns': FrogBotChatTurn;
     'frogbot-waitpoints': FrogBotWaitpoint;
     'frogbot-autonumbers': FrogBotAutonumber;
+    'frogbot-autonumber-keys': FrogBotAutonumberKey;
   };
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect;
     admins: AdminsSelect;
     tickets: TicketsSelect;
+    projects: ProjectsSelect;
+    issues: IssuesSelect;
     chats: ChatsSelect;
     'api-keys': ApiKeysSelect;
     'usage-logs': UsageLogsSelect;
@@ -97,6 +102,7 @@ export interface Config {
     'frogbot-chat-turns': FrogBotChatTurnsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
     'frogbot-autonumbers': FrogBotAutonumbersSelect;
+    'frogbot-autonumber-keys': FrogBotAutonumberKeysSelect;
   };
   db: {
     defaultIDType: number;
@@ -293,6 +299,71 @@ export interface Ticket {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "projects".
+ */
+export interface Project {
+  id: number;
+  key: string;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'admins';
+        value: number | Admin;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'admins';
+        value: number | Admin;
+      } | null);
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "issues".
+ */
+export interface Issue {
+  id: number;
+  title: string;
+  project: number | Project;
+  /**
+   * Number set by FrogBot when the record is created, unique within each project; read-only
+   */
+  number?: number | null;
+  /**
+   * Unique key set by FrogBot as <key>-<number>, like APP-123; read-only
+   */
+  key?: string | null;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'admins';
+        value: number | Admin;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'admins';
+        value: number | Admin;
+      } | null);
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -626,6 +697,19 @@ export interface FrogBotAutonumber {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-autonumber-keys".
+ */
+export interface FrogBotAutonumberKey {
+  id: number;
+  collection: string;
+  path: string;
+  key: string;
+  record: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect {
@@ -694,6 +778,31 @@ export interface TicketsSelect {
   updatedAt?: boolean;
   createdAt?: boolean;
   _status?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "projects_select".
+ */
+export interface ProjectsSelect {
+  key?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "issues_select".
+ */
+export interface IssuesSelect {
+  title?: boolean;
+  project?: boolean;
+  number?: boolean;
+  key?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -949,6 +1058,18 @@ export interface FrogBotAutonumbersSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-autonumber-keys_select".
+ */
+export interface FrogBotAutonumberKeysSelect {
+  collection?: boolean;
+  path?: boolean;
+  key?: boolean;
+  record?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "welcome_widget".
  */
 export interface WelcomeWidget {
@@ -978,6 +1099,8 @@ export interface CollectionQueryWidget {
       | 'users'
       | 'admins'
       | 'tickets'
+      | 'projects'
+      | 'issues'
       | 'chats'
       | 'api-keys'
       | 'usage-logs'
@@ -1009,6 +1132,8 @@ export interface ActivityWidget {
           | 'users'
           | 'admins'
           | 'tickets'
+          | 'projects'
+          | 'issues'
           | 'chats'
           | 'api-keys'
           | 'usage-logs'
@@ -1053,6 +1178,8 @@ export interface TaskCreateCollectionExport {
       | 'users'
       | 'admins'
       | 'tickets'
+      | 'projects'
+      | 'issues'
       | 'chats'
       | 'api-keys'
       | 'usage-logs'

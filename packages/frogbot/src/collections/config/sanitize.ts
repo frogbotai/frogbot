@@ -27,6 +27,11 @@ import {
 } from '../../config/wrapRequest.js';
 import type { MapVectorField } from '../../database/types.js';
 import { withAIFieldSelect } from '../../fields/baseFields/ai/select.js';
+import {
+  type ScopedAutonumber,
+  scopedAutonumberIndexes,
+} from '../../fields/baseFields/autonumber/scope.js';
+import type { OnAutonumber, OnAutonumberKey } from '../../fields/config/sanitizeSystemKinds.js';
 import { sanitizeVectorFields } from '../../fields/config/sanitizeVector.js';
 import { wrapFieldRequestFunctions } from '../../fields/config/wrapRequestFunctions.js';
 import { pieceInstanceDefinition } from '../../pieces/definePiece.js';
@@ -136,11 +141,13 @@ export function sanitizeCollection(
   {
     mapVectorField,
     onAutonumber,
+    onAutonumberKey,
     search,
     resolveFrogBot,
   }: {
     mapVectorField?: MapVectorField;
-    onAutonumber?: (path: string) => void;
+    onAutonumber?: OnAutonumber;
+    onAutonumberKey?: OnAutonumberKey;
     search?: SearchIndexDescriptors;
     resolveFrogBot: ResolveFrogBot;
   },
@@ -184,6 +191,12 @@ export function sanitizeCollection(
   } = c;
 
   const base = toPayloadCollectionConfig(collection);
+  const scopedAutonumbers: ScopedAutonumber[] = [];
+  const collectAutonumber: OnAutonumber = (path, scope) => {
+    if (scope) scopedAutonumbers.push({ path, scope });
+    onAutonumber?.(path, scope);
+  };
+
   const select = withAIFieldSelect(c.fields, base.select);
   const existingHooks = base.hooks ?? {};
   const out: PayloadCollectionConfig = {
@@ -194,7 +207,8 @@ export function sanitizeCollection(
           collection: c.slug,
           fields: [...c.fields, ...orderFieldNames.map(buildBoardOrderField)],
           mapVectorField,
-          onAutonumber,
+          onAutonumber: collectAutonumber,
+          onAutonumberKey,
         }),
       ),
     ),
@@ -230,6 +244,10 @@ export function sanitizeCollection(
         }
       : {}),
   };
+
+  const scopedIndexes = scopedAutonumberIndexes({ collection: out, entries: scopedAutonumbers });
+
+  if (scopedIndexes.length) out.indexes = [...(out.indexes ?? []), ...scopedIndexes];
 
   const auth = c.auth !== undefined && c.auth !== false;
 
