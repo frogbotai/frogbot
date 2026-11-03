@@ -14,11 +14,7 @@ export const ALLOWLIST = [
   },
 ];
 
-const SCAFFOLD_ROOTS = [
-  'templates/blank',
-  'packages/create-frogbot-app/dist/templates/blank',
-  'examples',
-];
+const SCAFFOLD_ROOTS = ['templates', 'packages/create-frogbot-app/dist/templates', 'examples'];
 
 const SCAFFOLD_PATTERN = /Payload|@payloadcms\//;
 

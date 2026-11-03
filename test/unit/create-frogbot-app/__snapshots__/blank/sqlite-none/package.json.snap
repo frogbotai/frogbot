@@ -1,0 +1,48 @@
+{
+  "name": "my-app",
+  "version": "0.39.0",
+  "private": true,
+  "description": "A blank template to get started with FrogBot.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "frogbot dev",
+    "prebuild": "frogbot generate:importmap",
+    "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
+    "start": "frogbot start",
+    "generate:types": "frogbot generate:types",
+    "generate:importmap": "frogbot generate:importmap",
+    "migrate": "frogbot migrate",
+    "migrate:create": "frogbot migrate:create",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@frogbotai/db-sqlite": "workspace:*",
+    "@frogbotai/next": "workspace:*",
+    "@frogbotai/plugin-dojo": "workspace:*",
+    "@frogbotai/richtext-lexical": "workspace:*",
+    "@frogbotai/transformer-sharp": "workspace:*",
+    "@frogbotai/ui": "workspace:*",
+    "@payloadcms/db-sqlite": "4.0.0",
+    "cross-env": "^7.0.3",
+    "drizzle-kit": "^0.31.7",
+    "frogbot": "workspace:*",
+    "graphql": "^16.8.1",
+    "json-schema-to-typescript": "^15.0.3",
+    "libsql": "^0.4.7",
+    "next": "16.4.2",
+    "pino": "^9.14.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.3",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "prettier": "^3.2.5",
+    "typescript": "6.0.3"
+  }
+}

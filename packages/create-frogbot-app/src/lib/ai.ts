@@ -1,8 +1,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { Node, SyntaxKind } from 'ts-morph';
+
 import type { AIProvider, ScaffoldPlan } from '../types.js';
-import { CONFIG_ANCHORS, replaceOnce } from './anchors.js';
+import {
+  CONFIG_FILE,
+  type ConfigFile,
+  getProperty,
+  importSource,
+  removeProperty,
+  setProperty,
+} from './config.js';
 
 export const AI_PROVIDERS: Record<
   Exclude<AIProvider, 'none'>,
@@ -15,7 +24,8 @@ export const AI_PROVIDERS: Record<
     env: string[];
     label: string;
     hint?: string;
-    snippet: string;
+    /** The `ai` value written to `frogbot.config.ts`. */
+    config: string;
   }
 > = {
   openai: {
@@ -23,23 +33,22 @@ export const AI_PROVIDERS: Record<
     keyEnv: 'OPENAI_API_KEY',
     keyRequiredToStart: true,
     env: [],
-    snippet: CONFIG_ANCHORS.ai,
+    config: "{\n  defaultModel: 'openai/gpt-5.4-mini',\n  providers: { openai: true },\n}",
   },
   anthropic: {
     label: 'Anthropic',
     keyEnv: 'ANTHROPIC_API_KEY',
     keyRequiredToStart: true,
     env: [],
-    snippet:
-      "  ai: {\n    defaultModel: 'anthropic/claude-haiku-4-5',\n    providers: { anthropic: true },\n  },\n",
+    config:
+      "{\n  defaultModel: 'anthropic/claude-haiku-4-5',\n  providers: { anthropic: true },\n}",
   },
   google: {
     label: 'Google Gemini',
     keyEnv: 'GOOGLE_GENERATIVE_AI_API_KEY',
     keyRequiredToStart: true,
     env: [],
-    snippet:
-      "  ai: {\n    defaultModel: 'google/gemini-3.5-flash',\n    providers: { google: true },\n  },\n",
+    config: "{\n  defaultModel: 'google/gemini-3.5-flash',\n  providers: { google: true },\n}",
   },
   bedrock: {
     label: 'AWS Bedrock',
@@ -47,8 +56,8 @@ export const AI_PROVIDERS: Record<
     keyEnv: 'AWS_BEARER_TOKEN_BEDROCK',
     keyRequiredToStart: false,
     env: ['AWS_REGION=us-east-1'],
-    snippet:
-      "  ai: {\n    defaultModel: 'bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0',\n    providers: { bedrock: { region: process.env.AWS_REGION || 'us-east-1' } },\n  },\n",
+    config:
+      "{\n  defaultModel: 'bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0',\n  providers: { bedrock: { region: process.env.AWS_REGION || 'us-east-1' } },\n}",
   },
   zen: {
     label: 'OpenCode Zen',
@@ -56,58 +65,62 @@ export const AI_PROVIDERS: Record<
     keyEnv: 'OPENCODE_API_KEY',
     keyRequiredToStart: false,
     env: [],
-    snippet:
-      "  ai: {\n    defaultModel: 'zen/deepseek-v4.1-flash',\n    providers: {\n      zen: {\n        type: 'openai-compatible',\n        baseUrl: 'https://opencode.ai/zen/v1',\n        apiKey: process.env.OPENCODE_API_KEY,\n        models: [{ id: 'deepseek-v4.1-flash', mode: 'chat' }],\n      },\n    },\n  },\n",
+    config:
+      "{\n  defaultModel: 'zen/deepseek-v4.1-flash',\n  providers: {\n    zen: {\n      type: 'openai-compatible',\n      baseUrl: 'https://opencode.ai/zen/v1',\n      apiKey: process.env.OPENCODE_API_KEY,\n      models: [{ id: 'deepseek-v4.1-flash', mode: 'chat' }],\n    },\n  },\n}",
   },
 };
 
-export function applyAI(dest: string, provider: AIProvider): void {
-  const configPath = path.join(dest, 'src', 'frogbot.config.ts');
-  let config = fs.readFileSync(configPath, 'utf8');
+/** Packages whose plugins only make sense with an AI provider; `--ai none` drops them. */
+export const AI_ONLY_PACKAGES = ['@frogbotai/plugin-ai-policy'];
 
-  if (provider === 'none') {
-    for (const name of [
-      'generalImport',
-      'toolsImport',
-      'assistantImport',
-      'aiPolicyImport',
-      'tools',
-      'ai',
-      'agents',
-    ] as const) {
-      config = replaceOnce(config, CONFIG_ANCHORS[name], '', configPath, name);
-    }
+const AI_PROPERTIES = ['ai', 'agents', 'tools'];
 
-    config = replaceOnce(
-      config,
-      CONFIG_ANCHORS.plugins,
-      '  plugins: [dojo()],\n',
-      configPath,
-      'plugins',
-    );
+export function applyAI(config: ConfigFile, provider: AIProvider, aiPaths: string[]): void {
+  if (provider !== 'none') {
+    setProperty(config.object, 'ai', AI_PROVIDERS[provider].config);
 
-    fs.rmSync(path.join(dest, 'src', 'agents'), { recursive: true, force: true });
-    removeAIPolicyDependency(dest);
-  } else {
-    config = replaceOnce(
-      config,
-      CONFIG_ANCHORS.ai,
-      AI_PROVIDERS[provider].snippet,
-      configPath,
-      'ai',
-    );
+    return;
   }
 
-  fs.writeFileSync(configPath, config);
+  for (const name of AI_PROPERTIES) removeProperty(config.object, name);
+
+  config.removedModule = (moduleSpecifier) => isAIOnly(moduleSpecifier, aiPaths);
+
+  const plugins = getProperty(config.object, 'plugins')
+    ?.asKind(SyntaxKind.PropertyAssignment)
+    ?.getInitializerIfKind(SyntaxKind.ArrayLiteralExpression);
+
+  for (const element of plugins?.getElements() ?? []) {
+    const callee = Node.isCallExpression(element) ? element.getExpression() : element;
+    const source = Node.isIdentifier(callee)
+      ? importSource(config.file, callee.getText())
+      : undefined;
+
+    if (source && isAIOnly(source, aiPaths)) plugins?.removeElement(element);
+  }
 }
 
-function removeAIPolicyDependency(dest: string): void {
+function isAIOnly(moduleSpecifier: string, aiPaths: string[]): boolean {
+  if (AI_ONLY_PACKAGES.includes(moduleSpecifier)) return true;
+  if (!moduleSpecifier.startsWith('.')) return false;
+
+  const file = path.posix.join(path.posix.dirname(CONFIG_FILE), moduleSpecifier);
+
+  return aiPaths.some((aiPath) => file === aiPath || file.startsWith(`${aiPath}/`));
+}
+
+/** Deletes the template's AI-only files and dependencies, for `--ai none`. */
+export function removeAIFiles(dest: string, aiPaths: string[]): void {
+  for (const aiPath of aiPaths) {
+    fs.rmSync(path.join(dest, aiPath), { recursive: true, force: true });
+  }
+
   const pkgPath = path.join(dest, 'package.json');
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as {
-    dependencies: Record<string, string>;
+    dependencies?: Record<string, string>;
   };
 
-  delete pkg.dependencies['@frogbotai/plugin-ai-policy'];
+  for (const name of AI_ONLY_PACKAGES) delete pkg.dependencies?.[name];
 
   fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 }

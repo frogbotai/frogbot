@@ -55,10 +55,15 @@ async function run() {
     .map((f) => path.resolve(dirname, f.name))
     .filter((dir) => fs.existsSync(path.resolve(dir, 'config.ts')));
 
+  const templatesDir = path.resolve(repoRoot, 'templates');
+
   const suites = [
     ...testSuites,
     path.resolve(repoRoot, 'examples/business-qa'),
-    path.resolve(repoRoot, 'templates/blank'),
+    ...fs
+      .readdirSync(templatesDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => path.resolve(templatesDir, entry.name)),
   ];
 
   process.stdout.write(`[generate:types] found ${suites.length} suites\n\n`);

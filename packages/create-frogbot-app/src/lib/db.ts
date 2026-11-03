@@ -1,9 +1,7 @@
 import { createHash } from 'node:crypto';
-import fs from 'node:fs';
-import path from 'node:path';
 
 import type { Database } from '../types.js';
-import { CONFIG_ANCHORS, replaceOnce } from './anchors.js';
+import { type ConfigFile, setImport, setProperty } from './config.js';
 
 function mongoDatabaseName(name: string): string {
   if (/^[a-z0-9_-]{1,63}$/.test(name)) return name;
@@ -16,43 +14,41 @@ function mongoDatabaseName(name: string): string {
 
 const DATABASES: Record<
   Database,
-  { block: string; import: string; url: (name: string) => string }
+  { adapter: string; db: string; package: string; url: (name: string) => string }
 > = {
   sqlite: {
-    block: CONFIG_ANCHORS.db,
-    import: CONFIG_ANCHORS.dbImport,
+    adapter: 'sqliteAdapter',
+    db: "sqliteAdapter({\n  client: { url: process.env.DATABASE_URL || '' },\n})",
+    package: '@frogbotai/db-sqlite',
     url: () => 'file:./frogbot.db',
   },
   postgres: {
-    block:
-      "  db: postgresAdapter({\n    pool: { connectionString: process.env.DATABASE_URL || '' },\n  }),\n",
-    import: "import { postgresAdapter } from '@frogbotai/db-postgres';\n",
+    adapter: 'postgresAdapter',
+    db: "postgresAdapter({\n  pool: { connectionString: process.env.DATABASE_URL || '' },\n})",
+    package: '@frogbotai/db-postgres',
     url: (name) => `postgres://postgres:postgres@127.0.0.1:5432/${name}`,
   },
   mongodb: {
-    block: "  db: mongooseAdapter({\n    url: process.env.DATABASE_URL || '',\n  }),\n",
-    import: "import { mongooseAdapter } from '@frogbotai/db-mongodb';\n",
+    adapter: 'mongooseAdapter',
+    db: "mongooseAdapter({\n  url: process.env.DATABASE_URL || '',\n})",
+    package: '@frogbotai/db-mongodb',
     url: (name) => `mongodb://127.0.0.1:27017/${mongoDatabaseName(name)}`,
   },
 };
 
 export const DATABASE_CHOICES = Object.keys(DATABASES) as Database[];
 
-export function applyDatabase(dest: string, database: Database): void {
-  const configPath = path.join(dest, 'src', 'frogbot.config.ts');
-  let config = fs.readFileSync(configPath, 'utf8');
+export function applyDatabase(config: ConfigFile, database: Database): void {
+  const chosen = DATABASES[database];
 
-  config = replaceOnce(
-    config,
-    CONFIG_ANCHORS.dbImport,
-    DATABASES[database].import,
-    configPath,
-    'dbImport',
+  setProperty(config.object, 'db', chosen.db);
+
+  setImport(
+    config.file,
+    chosen.adapter,
+    chosen.package,
+    Object.values(DATABASES).map((entry) => entry.package),
   );
-
-  config = replaceOnce(config, CONFIG_ANCHORS.db, DATABASES[database].block, configPath, 'db');
-
-  fs.writeFileSync(configPath, config);
 }
 
 export function databaseUrl(database: Database, projectName: string): string {

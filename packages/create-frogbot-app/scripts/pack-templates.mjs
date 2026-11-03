@@ -7,9 +7,6 @@ import { catalogVersion } from '../../../scripts/lib/workspace.mjs';
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(dirname, '..');
 const repoRoot = path.resolve(packageRoot, '..', '..');
-const { CONFIG_ANCHORS, ENV_ANCHORS, PACKAGE_DEPENDENCY_ANCHORS } =
-  await import('../dist/lib/anchors.js');
-
 const { TEMPLATES } = await import('../dist/templates.js');
 
 const skip = new Set([
@@ -54,32 +51,8 @@ for (const template of TEMPLATES) {
 
   fs.renameSync(path.join(dest, '.gitignore'), path.join(dest, 'gitignore'));
 
-  const config = fs.readFileSync(path.join(dest, 'src', 'frogbot.config.ts'), 'utf8');
-
-  for (const [name, anchor] of Object.entries(CONFIG_ANCHORS)) {
-    if (config.split(anchor).length !== 2) {
-      throw new Error(`Expected exactly one ${name} anchor in templates/${template.dir}.`);
-    }
-  }
-
   const pkgPath = path.join(dest, 'package.json');
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-
-  for (const dependency of PACKAGE_DEPENDENCY_ANCHORS) {
-    if (typeof pkg.dependencies?.[dependency] !== 'string') {
-      throw new Error(
-        `Expected package dependency ${dependency} anchor in templates/${template.dir}.`,
-      );
-    }
-  }
-
-  const env = fs.readFileSync(path.join(dest, '.env.example'), 'utf8');
-
-  for (const anchor of ENV_ANCHORS) {
-    if (env.split(anchor).length !== 2) {
-      throw new Error(`Expected exactly one environment anchor in templates/${template.dir}.`);
-    }
-  }
 
   for (const deps of [pkg.dependencies, pkg.devDependencies]) {
     if (!deps) continue;
@@ -122,6 +95,11 @@ fs.writeFileSync(
 );
 
 console.log('[create-frogbot-app] wrote dist/database-dependencies.json');
+
+const { scaffoldMatrix } = await import('../dist/matrix.js');
+
+scaffoldMatrix(TEMPLATES, path.join(packageRoot, 'dist', 'templates'));
+console.log('[create-frogbot-app] scaffolded every template × database × openai/none');
 
 const skillSource = path.join(repoRoot, 'skills', 'frogbot');
 const skillDest = path.join(packageRoot, 'dist', 'skills', 'frogbot');

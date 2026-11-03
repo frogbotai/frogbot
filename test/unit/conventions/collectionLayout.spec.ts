@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -81,9 +81,12 @@ function importProblems({ file, root }: { file: string; root: string }): string[
 }
 
 describe('collection file layout', () => {
-  it('finds the starter template among the apps it checks', () => {
-    expect(appRoots).toContain('templates/blank');
-  });
+  it.each(readdirSync(path.join(repoRoot, 'templates')))(
+    'finds templates/%s among the apps it checks',
+    (template) => {
+      expect(appRoots).toContain(`templates/${template}`);
+    },
+  );
 
   it.each(appRoots)('%s has no src/collections/index.ts', (root) => {
     expect(collectionEntries(root)).not.toContain('index.ts');

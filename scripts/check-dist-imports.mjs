@@ -56,8 +56,14 @@ function isFile(file) {
   }
 }
 
+const APP_EXTENSIONS = ['', '.ts', '.tsx', '.js', '.jsx', '/index.ts', '/index.tsx', '/index.js'];
+
 function candidates(from, specifier) {
   const target = path.resolve(path.dirname(from), specifier.split(/[?#]/)[0]);
+
+  if (from.includes(`${path.sep}dist${path.sep}templates${path.sep}`)) {
+    return APP_EXTENSIONS.map((extension) => `${target}${extension}`);
+  }
 
   if (!from.endsWith('.d.ts')) return [target];
 

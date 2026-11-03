@@ -711,6 +711,7 @@ describe('affectedRuns', () => {
     [['packages/ui/src/components/button.tsx'], ['test:int:sqlite', 'test:browser']],
     [['test/browser/chat.spec.ts'], ['test:browser']],
     [['templates/blank/src/app.tsx'], ['test:browser']],
+    [['templates/projects/src/seed/index.ts'], ['test:browser']],
     [['test/jobs/fixture.ts'], ['test:int:sqlite']],
     [['test/__helpers/shared/bootFrogBot.ts'], ['test:int:sqlite']],
     [['test/unit/frogbot/jobs/queue.spec.ts', 'test/types/jobs/native.test-d.ts'], []],

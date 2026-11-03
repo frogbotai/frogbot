@@ -1,20 +1,25 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import { type ConfigFile, getProperty, objectProperty, quote, setProperty } from './config.js';
+import { CliError } from './errors.js';
 
-import { CONFIG_ANCHORS, replaceOnce } from './anchors.js';
+export function applyMeta(config: ConfigFile, projectName: string): void {
+  const name = quote(projectName);
+  const admin = objectProperty(config.object, 'admin');
+  const meta = admin && objectProperty(admin, 'meta');
 
-export function applyMeta(dest: string, projectName: string): void {
-  const configPath = path.join(dest, 'src', 'frogbot.config.ts');
-  const config = fs.readFileSync(configPath, 'utf8');
+  if (
+    (!admin && getProperty(config.object, 'admin')) ||
+    (admin && !meta && getProperty(admin, 'meta'))
+  ) {
+    throw new CliError(
+      `Can't set admin.meta.applicationName in ${config.path}: admin and admin.meta must be object literals.`,
+    );
+  }
 
-  fs.writeFileSync(
-    configPath,
-    replaceOnce(
-      config,
-      CONFIG_ANCHORS.admin,
-      `  admin: { meta: { applicationName: '${projectName}' } },\n`,
-      configPath,
-      'admin',
-    ),
-  );
+  if (!admin || admin.getProperties().length === 0) {
+    setProperty(config.object, 'admin', `{ meta: { applicationName: ${name} } }`);
+  } else if (!meta || meta.getProperties().length === 0) {
+    setProperty(admin, 'meta', `{ applicationName: ${name} }`);
+  } else {
+    setProperty(meta, 'applicationName', name);
+  }
 }

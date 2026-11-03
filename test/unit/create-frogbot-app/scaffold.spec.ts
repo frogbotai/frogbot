@@ -3,45 +3,73 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import prettier from 'prettier';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { applyAI } from '../../../packages/create-frogbot-app/src/lib/ai.js';
-import {
-  CONFIG_ANCHORS,
-  ENV_ANCHORS,
-  PACKAGE_DEPENDENCY_ANCHORS,
-} from '../../../packages/create-frogbot-app/src/lib/anchors.js';
+import { applyTemplate } from '../../../packages/create-frogbot-app/src/index.js';
 import { HELP, parseArgs } from '../../../packages/create-frogbot-app/src/lib/args.js';
-import { applyDatabase } from '../../../packages/create-frogbot-app/src/lib/db.js';
+import { DATABASE_CHOICES } from '../../../packages/create-frogbot-app/src/lib/db.js';
 import { CliError } from '../../../packages/create-frogbot-app/src/lib/errors.js';
-import { applyMeta } from '../../../packages/create-frogbot-app/src/lib/meta.js';
 import { applyPackageJson } from '../../../packages/create-frogbot-app/src/lib/package-json.js';
 import { installSkill } from '../../../packages/create-frogbot-app/src/lib/skill.js';
+import { scaffoldMatrix } from '../../../packages/create-frogbot-app/src/matrix.js';
 import {
   PromptCancelledError,
   resolvePlan,
   resolvePromptValue,
   validateValue,
 } from '../../../packages/create-frogbot-app/src/prompts.js';
-import { getTemplate } from '../../../packages/create-frogbot-app/src/templates.js';
+import { getTemplate, TEMPLATES } from '../../../packages/create-frogbot-app/src/templates.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
-const template = path.join(repoRoot, 'templates', 'blank');
+const template = templatePath('blank');
 const roots: string[] = [];
 const buildOutput = new Set(['.next', 'node_modules']);
+const DATABASE_DEPENDENCIES = {
+  mongodb: { '@payloadcms/db-mongodb': '4.0.0' },
+  postgres: { '@payloadcms/db-postgres': '4.0.0' },
+  sqlite: { '@payloadcms/db-sqlite': '4.0.0' },
+};
 
-function copyTemplate(): string {
+function templatePath(name: string): string {
+  return path.join(repoRoot, 'templates', getTemplate(name).dir);
+}
+
+function copyTemplate(source = template): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'create-frogbot-app-scaffold-'));
   const dest = path.join(root, 'app');
 
   roots.push(root);
 
-  fs.cpSync(template, dest, {
+  fs.cpSync(source, dest, {
     recursive: true,
     filter: (source) => !buildOutput.has(path.basename(source)),
   });
 
   return dest;
+}
+
+const templateOptions = {
+  ai: 'none',
+  database: 'sqlite',
+  databaseDependencies: DATABASE_DEPENDENCIES,
+  projectName: 'my-app',
+  template: getTemplate('blank'),
+  version: '0.39.0',
+} as const;
+
+function writeConfig(dest: string, source: string): void {
+  fs.writeFileSync(path.join(dest, 'src', 'frogbot.config.ts'), source);
+}
+
+function readConfig(dest: string): string {
+  return fs.readFileSync(path.join(dest, 'src', 'frogbot.config.ts'), 'utf8');
+}
+
+function readPackage(dest: string): { dependencies: Record<string, string> } {
+  return JSON.parse(fs.readFileSync(path.join(dest, 'package.json'), 'utf8')) as {
+    dependencies: Record<string, string>;
+  };
 }
 
 afterEach(() => {
@@ -208,69 +236,275 @@ describe('CLI arguments and plans', () => {
   });
 });
 
-describe('template reconciliation', () => {
-  it('contains every controlled anchor exactly once', () => {
-    const config = fs.readFileSync(path.join(template, 'src', 'frogbot.config.ts'), 'utf8');
-    const env = fs.readFileSync(path.join(template, '.env.example'), 'utf8');
-    const pkg = JSON.parse(fs.readFileSync(path.join(template, 'package.json'), 'utf8')) as {
-      dependencies: Record<string, string>;
-    };
+describe('blank scaffold output', () => {
+  const providers = ['none', 'zen', 'openai', 'anthropic', 'google', 'bedrock'] as const;
+  const cases = DATABASE_CHOICES.flatMap((database) => providers.map((ai) => ({ ai, database })));
 
-    for (const anchor of Object.values(CONFIG_ANCHORS)) {
-      expect(config.split(anchor)).toHaveLength(2);
-    }
+  it.each(cases)('matches the snapshot for $database × $ai', async ({ ai, database }) => {
+    const dest = copyTemplate();
 
-    for (const anchor of ENV_ANCHORS) {
-      expect(env.split(anchor)).toHaveLength(2);
-    }
+    applyTemplate(dest, { ...templateOptions, ai, database });
 
-    for (const dependency of PACKAGE_DEPENDENCY_ANCHORS) {
-      expect(pkg.dependencies[dependency]).toBeTypeOf('string');
+    for (const file of ['src/frogbot.config.ts', 'package.json', '.env.example']) {
+      const filepath = path.join(dest, file);
+      const source = fs.readFileSync(filepath, 'utf8');
+      const output = file.endsWith('.env.example')
+        ? source
+        : await prettier.format(source, {
+            ...(await prettier.resolveConfig(filepath)),
+            filepath,
+          });
+
+      await expect(output).toMatchFileSnapshot(
+        `__snapshots__/blank/${database}-${ai}/${path.basename(file)}.snap`,
+      );
     }
+  });
+});
+
+describe('config edits', () => {
+  it('keeps other plugins and agents, and swaps only the AI parts for none', () => {
+    const dest = copyTemplate();
+
+    writeConfig(
+      dest,
+      `import { sqliteAdapter } from '@frogbotai/db-sqlite';
+import { aiPolicyPlugin } from '@frogbotai/plugin-ai-policy';
+import { dojo } from '@frogbotai/plugin-dojo';
+import { seoPlugin } from '@frogbotai/plugin-seo';
+import { buildConfig } from 'frogbot';
+import { general } from 'frogbot/agents';
+
+import { Posts } from './collections/Posts';
+import { writer } from './agents/writer';
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET || '',
+  db: sqliteAdapter({ client: { url: '' } }),
+  collections: [Posts],
+  ai: { defaultModel: 'openai/gpt-5.4-mini', providers: { openai: true } },
+  agents: [general(), writer],
+  plugins: [seoPlugin({ collections: ['posts'] }), aiPolicyPlugin(), dojo()],
+});
+`,
+    );
+
+    const withAI = copyTemplate();
+
+    fs.cpSync(dest, withAI, { recursive: true });
+    applyTemplate(withAI, { ...templateOptions, ai: 'anthropic' });
+
+    const kept = readConfig(withAI);
+
+    expect(kept).toContain("defaultModel: 'anthropic/claude-haiku-4-5'");
+    expect(kept).toContain('agents: [general(), writer]');
+    expect(kept).toContain(
+      "plugins: [seoPlugin({ collections: ['posts'] }), aiPolicyPlugin(), dojo()]",
+    );
+    expect(fs.existsSync(path.join(withAI, 'src', 'agents'))).toBe(true);
+
+    applyTemplate(dest, { ...templateOptions, ai: 'none' });
+
+    const config = readConfig(dest);
+
+    expect(config).toContain("plugins: [seoPlugin({ collections: ['posts'] }), dojo()]");
+    expect(config).toContain("import { seoPlugin } from '@frogbotai/plugin-seo';");
+    expect(config).toContain("import { Posts } from './collections/Posts';");
+    expect(config).not.toMatch(/aiPolicyPlugin|general|writer|agents|ai:/);
+    expect(fs.existsSync(path.join(dest, 'src', 'agents'))).toBe(false);
+    expect(readPackage(dest).dependencies).not.toHaveProperty('@frogbotai/plugin-ai-policy');
+  });
+
+  it('inserts db, ai and admin into an inline buildConfig without them', () => {
+    const dest = copyTemplate();
+
+    writeConfig(
+      dest,
+      `import { buildConfig } from 'frogbot';
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET || '',
+  collections: [],
+});
+`,
+    );
+
+    applyTemplate(dest, { ...templateOptions, ai: 'openai', database: 'postgres' });
+
+    const config = readConfig(dest);
+
+    expect(config).toContain("import { postgresAdapter } from '@frogbotai/db-postgres';");
+    expect(config).toContain('db: postgresAdapter({');
+    expect(config).toContain("defaultModel: 'openai/gpt-5.4-mini'");
+    expect(config).toContain("admin: { meta: { applicationName: 'my-app' } }");
+  });
+
+  it('sets the application name without dropping other admin settings', () => {
+    const dest = copyTemplate();
+    const source = fs
+      .readFileSync(path.join(dest, 'src', 'frogbot.config.ts'), 'utf8')
+      .replace('  admin: {},', "  admin: { user: 'users', meta: { titleSuffix: ' - Frog' } },");
+
+    writeConfig(dest, source);
+    applyTemplate(dest, templateOptions);
+
+    expect(readConfig(dest)).toMatch(
+      /admin: \{ user: 'users', meta: \{ titleSuffix: ' - Frog',\s+applicationName: 'my-app'\s+\} \}/,
+    );
+  });
+
+  it('deletes a template’s own aiPaths and the plugins imported from them for none', () => {
+    const dest = copyTemplate();
+
+    fs.mkdirSync(path.join(dest, 'src', 'ai'));
+
+    fs.writeFileSync(
+      path.join(dest, 'src', 'ai', 'plugin.ts'),
+      'export const helper = () => {};\n',
+    );
+
+    writeConfig(
+      dest,
+      `import { dojo } from '@frogbotai/plugin-dojo';
+import { buildConfig } from 'frogbot';
+
+import { helper } from './ai/plugin';
+
+const config = {
+  secret: '',
+  plugins: [helper(), dojo()],
+};
+
+export default buildConfig(config);
+`,
+    );
+
+    applyTemplate(dest, {
+      ...templateOptions,
+      template: { ...getTemplate('blank'), aiPaths: ['src/ai'] },
+    });
+
+    const config = readConfig(dest);
+
+    expect(config).toContain('plugins: [dojo()]');
+    expect(config).not.toContain('helper');
+    expect(fs.existsSync(path.join(dest, 'src', 'ai'))).toBe(false);
+    expect(fs.existsSync(path.join(dest, 'src', 'agents'))).toBe(true);
   });
 
   it.each([
-    {
-      absent: [],
-      adapter: 'sqliteAdapter',
-      database: 'sqlite',
-      dependency: '@frogbotai/db-sqlite',
-    },
-    {
-      absent: ['libsql'],
-      adapter: 'postgresAdapter',
-      database: 'postgres',
-      dependency: '@frogbotai/db-postgres',
-    },
-    {
-      absent: ['drizzle-kit', 'libsql'],
-      adapter: 'mongooseAdapter',
-      database: 'mongodb',
-      dependency: '@frogbotai/db-mongodb',
-    },
-  ] as const)(
-    'applies the $database database without changing the lexical editor',
-    ({ absent, adapter, database, dependency }) => {
-      const dest = copyTemplate();
+    ['no buildConfig', 'export default { secret: "" };\n'],
+    [
+      'a let config',
+      "import { buildConfig } from 'frogbot';\nlet config = {};\nexport default buildConfig(config);\n",
+    ],
+    [
+      'a computed config',
+      "import { buildConfig } from 'frogbot';\nexport default buildConfig(makeConfig());\n",
+    ],
+  ])('refuses %s without changing any file', (_, source) => {
+    const dest = copyTemplate();
 
-      applyDatabase(dest, database);
-      applyPackageJson(dest, 'my-app', database, '0.24.0');
+    writeConfig(dest, source);
 
-      const config = fs.readFileSync(path.join(dest, 'src', 'frogbot.config.ts'), 'utf8');
-      const pkg = JSON.parse(fs.readFileSync(path.join(dest, 'package.json'), 'utf8')) as {
-        dependencies: Record<string, string>;
-      };
+    const pkg = fs.readFileSync(path.join(dest, 'package.json'), 'utf8');
 
-      expect(config).toContain(adapter);
-      expect(config).toContain('editor: lexicalEditor()');
-      expect(pkg.dependencies[dependency]).toBeDefined();
-      expect(pkg.dependencies['@frogbotai/richtext-lexical']).toBeDefined();
+    expect(() => applyTemplate(dest, templateOptions)).toThrow(CliError);
+    expect(() => applyTemplate(dest, templateOptions)).toThrow(
+      'expected `export default buildConfig({ ... })`, or `export default buildConfig(config)` with `const config = { ... }`.',
+    );
+    expect(readConfig(dest)).toBe(source);
+    expect(fs.readFileSync(path.join(dest, 'package.json'), 'utf8')).toBe(pkg);
+    expect(fs.existsSync(path.join(dest, 'src', 'agents'))).toBe(true);
+  });
 
-      for (const name of absent) {
-        expect(pkg.dependencies[name]).toBeUndefined();
-      }
-    },
-  );
+  it('keeps a header comment above the swapped database import', () => {
+    const dest = copyTemplate();
+    const source = `/**
+ * App config.
+ */
+${fs.readFileSync(path.join(dest, 'src', 'frogbot.config.ts'), 'utf8')}`;
+
+    writeConfig(dest, source);
+    applyTemplate(dest, { ...templateOptions, database: 'postgres' });
+
+    expect(readConfig(dest)).toMatch(
+      /^\/\*\*\n \* App config\.\n \*\/\nimport \{ postgresAdapter \} from '@frogbotai\/db-postgres';\n/,
+    );
+  });
+
+  it('edits quoted property names in place', () => {
+    const dest = copyTemplate();
+
+    writeConfig(
+      dest,
+      `import { buildConfig } from 'frogbot';
+
+export default buildConfig({
+  'secret': '',
+  'ai': { defaultModel: 'openai/gpt-5.4-mini' },
+  'admin': { 'meta': { 'applicationName': 'old' } },
+});
+`,
+    );
+
+    applyTemplate(dest, templateOptions);
+
+    const config = readConfig(dest);
+
+    expect(config).not.toMatch(/'ai'|old/);
+    expect(config.match(/admin/g)).toHaveLength(1);
+    expect(config).toContain("applicationName: 'my-app'");
+  });
+
+  it.each([
+    [
+      'an adapter used outside db',
+      "import { sqliteAdapter } from '@frogbotai/db-sqlite';\nimport { buildConfig } from 'frogbot';\nconst db = sqliteAdapter({});\nexport default buildConfig({ db, secret: '' });\n",
+      'postgres',
+      '`sqliteAdapter`',
+    ],
+    [
+      'another name from the replaced adapter package',
+      "import { sqliteAdapter, sqliteHelper } from '@frogbotai/db-sqlite';\nimport { buildConfig } from 'frogbot';\nexport default buildConfig({ db: sqliteAdapter({}), secret: sqliteHelper() });\n",
+      'postgres',
+      '`sqliteHelper`',
+    ],
+    [
+      'an agent used outside agents',
+      "import { buildConfig } from 'frogbot';\nimport { other } from 'other';\nimport { writer } from './agents/writer';\nexport default buildConfig({ secret: '', agents: [writer], plugins: [other({ agent: writer })] });\n",
+      'sqlite',
+      "'./agents/writer'",
+    ],
+    [
+      'an AI-only plugin outside the plugins list',
+      "import { aiPolicyPlugin } from '@frogbotai/plugin-ai-policy';\nimport { buildConfig } from 'frogbot';\nexport default buildConfig({ secret: '', plugins: [...(process.env.X ? [aiPolicyPlugin()] : [])] });\n",
+      'sqlite',
+      "'@frogbotai/plugin-ai-policy'",
+    ],
+  ] as const)('refuses %s that the edits would leave broken', (_, source, database, named) => {
+    const dest = copyTemplate();
+
+    writeConfig(dest, source);
+
+    expect(() => applyTemplate(dest, { ...templateOptions, database })).toThrow(CliError);
+    expect(() => applyTemplate(dest, { ...templateOptions, database })).toThrow(named);
+    expect(readConfig(dest)).toBe(source);
+    expect(fs.existsSync(path.join(dest, 'src', 'agents'))).toBe(true);
+  });
+
+  it('refuses an admin that is not an object literal', () => {
+    const dest = copyTemplate();
+    const source = fs
+      .readFileSync(path.join(dest, 'src', 'frogbot.config.ts'), 'utf8')
+      .replace('  admin: {},', '  admin: adminSettings,');
+
+    writeConfig(dest, source);
+
+    expect(() => applyTemplate(dest, templateOptions)).toThrow(
+      'admin and admin.meta must be object literals',
+    );
+  });
 
   it('declares the adapter runtime dependencies directly so they resolve from the app root', () => {
     const dest = copyTemplate();
@@ -280,9 +514,7 @@ describe('template reconciliation', () => {
       postgres: { '@payloadcms/db-postgres': '3.90.1' },
     });
 
-    const pkg = JSON.parse(fs.readFileSync(path.join(dest, 'package.json'), 'utf8')) as {
-      dependencies: Record<string, string>;
-    };
+    const pkg = readPackage(dest);
 
     expect(pkg.dependencies['@payloadcms/db-mongodb']).toBe('3.90.1');
     expect(pkg.dependencies.payload).toBe('3.90.1');
@@ -292,74 +524,82 @@ describe('template reconciliation', () => {
     );
   });
 
-  it('names a drifted anchor without leaving a partially rewritten config', () => {
-    const dest = copyTemplate();
-    const configPath = path.join(dest, 'src', 'frogbot.config.ts');
-    const config = fs
-      .readFileSync(configPath, 'utf8')
-      .replace(CONFIG_ANCHORS.db, '  db: brokenAdapter(),\n');
-
-    fs.writeFileSync(configPath, config);
-
-    expect(() => applyDatabase(dest, 'postgres')).toThrow('db anchor');
-    expect(fs.readFileSync(configPath, 'utf8')).toBe(config);
-  });
-
-  it('removes all AI and agent wiring for none while preserving collections and editor', () => {
-    const dest = copyTemplate();
-
-    applyAI(dest, 'none');
-
-    const config = fs.readFileSync(path.join(dest, 'src', 'frogbot.config.ts'), 'utf8');
-
-    expect(config).not.toContain('ai:');
-    expect(config).not.toContain('agents:');
-    expect(config).not.toContain('tools:');
-    expect(config).not.toContain('aiPolicyPlugin');
-    expect(config).toContain('plugins: [dojo()]');
-    expect(config).toContain('editor: lexicalEditor()');
-    expect(config).toContain('collections: [Users, Files]');
-    expect(fs.existsSync(path.join(dest, 'src', 'agents'))).toBe(false);
-
-    const pkg = JSON.parse(fs.readFileSync(path.join(dest, 'package.json'), 'utf8')) as {
-      dependencies: Record<string, string>;
-    };
-
-    expect(pkg.dependencies).not.toHaveProperty('@frogbotai/plugin-ai-policy');
-  });
-
-  it('writes each provider with a current default model', () => {
-    for (const [provider, model] of [
-      ['openai', 'openai/gpt-5.4-mini'],
-      ['anthropic', 'anthropic/claude-haiku-4-5'],
-      ['google', 'google/gemini-3.5-flash'],
-      ['bedrock', 'bedrock/global.anthropic.claude-haiku-4-5'],
-      ['zen', 'apiKey: process.env.OPENCODE_API_KEY'],
-    ] as const) {
-      const dest = copyTemplate();
-
-      applyAI(dest, provider);
-
-      expect(fs.readFileSync(path.join(dest, 'src', 'frogbot.config.ts'), 'utf8')).toContain(model);
-    }
-  }, 30000);
-
-  it('names the app after the project in admin.meta.applicationName', () => {
-    const dest = copyTemplate();
-
-    applyMeta(dest, 'my-app');
-
-    const config = fs.readFileSync(path.join(dest, 'src', 'frogbot.config.ts'), 'utf8');
-
-    expect(config).toContain("  admin: { meta: { applicationName: 'my-app' } },\n");
-    expect(config).not.toContain('admin: {},');
-  });
-
   it('ships a public/ folder for the app icon', () => {
     expect(fs.statSync(path.join(template, 'public')).isDirectory()).toBe(true);
     expect(fs.readFileSync(path.join(template, 'Dockerfile'), 'utf8')).toContain(
       'COPY --from=builder /app/public ./public',
     );
+  });
+});
+
+describe('projects scaffold output', () => {
+  const projects = { ...templateOptions, template: getTemplate('projects') };
+
+  it('keeps the agent, the AI policy plugin and the seed with a provider', () => {
+    const dest = copyTemplate(templatePath('projects'));
+
+    applyTemplate(dest, { ...projects, ai: 'openai' });
+
+    const config = readConfig(dest);
+
+    expect(config).toContain('agents: [general(), assistant]');
+    expect(config).toContain('plugins: [aiPolicyPlugin(), dojo()]');
+    expect(config).toContain('endpoints: [seedEndpoint()]');
+    expect(fs.existsSync(path.join(dest, 'src', 'agents', 'assistant.ts'))).toBe(true);
+    expect(readPackage(dest).dependencies).toHaveProperty('@frogbotai/plugin-ai-policy');
+  });
+
+  it('drops the AI parts and keeps the seed, its endpoint and the panel for none', () => {
+    const dest = copyTemplate(templatePath('projects'));
+
+    applyTemplate(dest, projects);
+
+    const config = readConfig(dest);
+
+    expect(config).not.toMatch(/aiPolicyPlugin|assistant|agents|ai:|tools:/);
+    expect(config).toContain('plugins: [dojo()]');
+    expect(config).toContain('collections: [Projects, Tasks, Users, Files]');
+    expect(config).toContain('endpoints: [seedEndpoint()]');
+    expect(config).toContain("import { seedEndpoint } from './seed/endpoint';");
+    expect(config).toContain("beforeDashboard: ['/components/SeedPanel#SeedPanel']");
+    expect(config).toContain("applicationName: 'my-app'");
+    expect(fs.existsSync(path.join(dest, 'src', 'agents'))).toBe(false);
+    expect(fs.existsSync(path.join(dest, 'src', 'seed', 'index.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(dest, 'src', 'components', 'SeedPanel.tsx'))).toBe(true);
+    expect(readPackage(dest).dependencies).not.toHaveProperty('@frogbotai/plugin-ai-policy');
+  });
+
+  it('seeds without importing anything that --ai none deletes', () => {
+    const seedDir = path.join(templatePath('projects'), 'src', 'seed');
+
+    for (const file of fs.readdirSync(seedDir)) {
+      expect(fs.readFileSync(path.join(seedDir, file), 'utf8')).not.toMatch(/agents/);
+    }
+  });
+});
+
+describe('packing matrix', () => {
+  it('scaffolds every registry template', () => {
+    const templates = path.join(copyTemplate(), '..', 'templates');
+
+    for (const entry of TEMPLATES) {
+      fs.cpSync(path.join(repoRoot, 'templates', entry.dir), path.join(templates, entry.dir), {
+        recursive: true,
+        filter: (source) => !buildOutput.has(path.basename(source)),
+      });
+    }
+
+    expect(() => scaffoldMatrix(TEMPLATES, templates)).not.toThrow();
+  });
+
+  it('names the template, database and provider that failed', () => {
+    const blank = copyTemplate();
+
+    writeConfig(blank, 'export default {};\n');
+
+    expect(() =>
+      scaffoldMatrix([{ ...getTemplate('blank'), dir: 'app' }], path.dirname(blank)),
+    ).toThrow(/^templates\/app × sqlite × openai: Can't edit .*frogbot\.config\.ts: expected/);
   });
 });
 

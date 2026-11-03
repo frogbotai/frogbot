@@ -134,4 +134,26 @@ describe('checkDistImports', () => {
 
     expect(problems).toEqual([]);
   });
+
+  it('resolves extensionless imports in packed templates as a bundler does, letter case included', () => {
+    manifest();
+    write('dist/templates/app/src/components/SeedPanel.tsx', '');
+    write('dist/templates/app/src/seed/index.ts', '');
+
+    write(
+      'dist/templates/app/src/app/importMap.js',
+      [
+        "import { SeedPanel } from '../components/SeedPanel';",
+        "import { seed } from '../seed';",
+        "import { Other } from '../components/seedPanel';",
+        '',
+      ].join('\n'),
+    );
+
+    const problems = check();
+
+    expect(problems).toEqual([
+      { file: 'dist/templates/app/src/app/importMap.js', specifier: '../components/seedPanel' },
+    ]);
+  });
 });

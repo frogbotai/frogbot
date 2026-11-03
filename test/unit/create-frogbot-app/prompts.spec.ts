@@ -1,7 +1,7 @@
 import * as p from '@clack/prompts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { parseArgs } from '../../../packages/create-frogbot-app/src/lib/args.js';
+import { HELP, parseArgs } from '../../../packages/create-frogbot-app/src/lib/args.js';
 import { resolvePlan } from '../../../packages/create-frogbot-app/src/prompts.js';
 
 vi.mock('@clack/prompts', () => ({
@@ -11,7 +11,16 @@ vi.mock('@clack/prompts', () => ({
   select: vi.fn(),
 }));
 
-const args = parseArgs(['my-app', '--db', 'sqlite', '--ai', 'openai', '--no-agents']);
+const args = parseArgs([
+  'my-app',
+  '--template',
+  'blank',
+  '--db',
+  'sqlite',
+  '--ai',
+  'openai',
+  '--no-agents',
+]);
 
 function resolveInteractivePlan(env: Record<string, string>) {
   return resolvePlan({ args, cwd: '/tmp', detectedPackageManager: 'npm', env, tty: true });
@@ -19,6 +28,47 @@ function resolveInteractivePlan(env: Record<string, string>) {
 
 afterEach(() => {
   vi.resetAllMocks();
+});
+
+describe('template prompt', () => {
+  function resolveTemplatePlan(argv: string[]) {
+    return resolvePlan({
+      args: parseArgs(['my-app', '--db', 'sqlite', '--ai', 'none', '--no-agents', ...argv]),
+      cwd: '/tmp',
+      detectedPackageManager: 'npm',
+      env: {},
+      tty: true,
+    });
+  }
+
+  it('offers blank first, then projects, and asks nothing else', async () => {
+    vi.mocked(p.select).mockResolvedValue('projects');
+
+    const plan = await resolveTemplatePlan([]);
+
+    expect(p.select).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(p.select).mock.calls[0][0]).toMatchObject({
+      message: 'Template',
+      options: [
+        { label: 'blank', value: 'blank' },
+        { label: 'projects', value: 'projects' },
+      ],
+    });
+    expect(p.confirm).not.toHaveBeenCalled();
+    expect(plan.template.name).toBe('projects');
+  });
+
+  it('resolves --template projects without the prompt', async () => {
+    const plan = await resolveTemplatePlan(['--template', 'projects']);
+
+    expect(p.select).not.toHaveBeenCalled();
+    expect(plan.template).toMatchObject({ dir: 'projects', aiPaths: ['src/agents'] });
+  });
+
+  it('has no seed flag or option', () => {
+    expect(HELP).not.toMatch(/seed|sample|demo/i);
+    expect(() => parseArgs(['my-app', '--seed'])).toThrow("Unknown option '--seed'");
+  });
 });
 
 describe('AI provider prompt', () => {
@@ -32,7 +82,7 @@ describe('AI provider prompt', () => {
 
   function resolveAIProviderPlan() {
     return resolvePlan({
-      args: parseArgs(['my-app', '--db', 'sqlite', '--no-agents']),
+      args: parseArgs(['my-app', '--template', 'blank', '--db', 'sqlite', '--no-agents']),
       cwd: '/tmp',
       detectedPackageManager: 'npm',
       env: {},
@@ -119,6 +169,8 @@ describe('provider key found in the environment', () => {
     const plan = await resolvePlan({
       args: parseArgs([
         'my-app',
+        '--template',
+        'blank',
         '--ai',
         'openai',
         '--db',
