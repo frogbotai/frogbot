@@ -48,6 +48,8 @@
     "@frogbotai/piece-image-helper": "workspace:*",
     "@frogbotai/piece-linear": "workspace:*",
     "@frogbotai/piece-math-helper": "workspace:*",
+    "@frogbotai/piece-microsoft": "workspace:*",
+    "@frogbotai/piece-microsoft-outlook": "workspace:*",
     "@frogbotai/piece-microsoft-teams": "workspace:*",
     "@frogbotai/piece-monday": "workspace:*",
     "@frogbotai/piece-notion": "workspace:*",

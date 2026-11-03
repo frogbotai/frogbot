@@ -1,4 +1,10 @@
 import {
+  microsoftClouds,
+  type MicrosoftEnvironment,
+  microsoftEnvironment,
+  microsoftOAuth,
+} from '@frogbotai/piece-microsoft';
+import {
   definePiece,
   findUserByEmail,
   type PieceChannel,
@@ -9,15 +15,8 @@ import { z } from 'zod';
 import { microsoftTeamsActionDefinitions } from './actions.js';
 import { FrogBotTeamsAdapter } from './adapter.js';
 import { createMicrosoftTeamsClient } from './client.js';
-import {
-  microsoftTeamsAuth,
-  microsoftTeamsClouds,
-  microsoftTeamsEnvironment,
-  microsoftTeamsOptions,
-  microsoftTeamsScopes,
-} from './config.js';
+import { microsoftTeamsAuth, microsoftTeamsOptions, microsoftTeamsScopes } from './config.js';
 import { teamsQuestions } from './questions/index.js';
-import { user } from './schemas.js';
 import { microsoftTeamsTriggerDefinitions } from './triggers.js';
 import { microsoftTeamsWebhook } from './webhook.js';
 
@@ -52,18 +51,17 @@ export const microsoftTeamsTriggers = [
 ];
 export { microsoftTeamsScopes };
 
-export function defineMicrosoftTeams(environment?: z.input<typeof microsoftTeamsEnvironment>) {
-  const settings = microsoftTeamsEnvironment.parse(environment ?? {});
-  const cloud = microsoftTeamsClouds[settings.cloud];
-  const tenant = encodeURIComponent(settings.tenantId);
+export function defineMicrosoftTeams(environment?: MicrosoftEnvironment) {
+  const settings = microsoftEnvironment.parse(environment ?? {});
+  const cloud = microsoftClouds[settings.cloud];
+  const recipe = microsoftOAuth(settings);
   const environmentAuth = microsoftTeamsAuth.extend({
     cloud: z.literal(cloud.loginHost).default(cloud.loginHost),
     tenantId: z.literal(settings.tenantId).default(settings.tenantId),
   });
 
   const oauth = {
-    authorizationUrl: `https://${cloud.loginHost}/${tenant}/oauth2/v2.0/authorize`,
-    tokenUrl: `https://${cloud.loginHost}/${tenant}/oauth2/v2.0/token`,
+    ...recipe,
     scopes: {
       catalog: microsoftTeamsScopes,
       defaults: [
@@ -82,22 +80,13 @@ export function defineMicrosoftTeams(environment?: z.input<typeof microsoftTeams
         'OnlineMeetingTranscript.Read.All',
         'OnlineMeetingRecording.Read.All',
       ],
-      required: ['offline_access', 'User.Read'],
+      required: recipe.scopes.required,
     },
-    params: { prompt: 'select_account' },
     toAuth: ({ tokens }) => ({
       accessToken: tokens.access_token ?? '',
       cloud: cloud.loginHost,
       tenantId: settings.tenantId,
     }),
-    async account({ client }) {
-      const account = await client.request('/v1.0/me', user);
-      const email = account.mail ?? account.userPrincipalName;
-
-      if (!email) throw new Error('Microsoft did not return an account email address.');
-
-      return { id: account.id, label: account.displayName ?? email, email };
-    },
   } satisfies PieceOAuthRecipe<
     z.output<typeof environmentAuth>,
     ReturnType<typeof createMicrosoftTeamsClient>

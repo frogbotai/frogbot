@@ -1,3 +1,4 @@
+import { microsoftScopes } from '@frogbotai/piece-microsoft';
 import { z } from 'zod';
 
 export const microsoftTeamsAuth = z.object({
@@ -10,10 +11,6 @@ export const microsoftTeamsAuth = z.object({
     .meta({ label: 'Cloud environment' }),
   tenantId: z.string().trim().min(1).default('common').meta({ label: 'Tenant ID' }),
 });
-export const microsoftTeamsEnvironment = z.object({
-  cloud: z.enum(['commercial', 'usGovernment']).default('commercial'),
-  tenantId: z.string().trim().min(1).default('common'),
-});
 
 export const microsoftTeamsOptions = z.object({
   botAppType: z.enum(['MultiTenant', 'SingleTenant']).default('MultiTenant'),
@@ -24,23 +21,8 @@ export const microsoftTeamsOptions = z.object({
 
 export type MicrosoftTeamsOptions = z.output<typeof microsoftTeamsOptions>;
 
-export const microsoftTeamsClouds = {
-  commercial: {
-    loginHost: 'login.microsoftonline.com',
-    graphUrl: 'https://graph.microsoft.com',
-  },
-  usGovernment: {
-    loginHost: 'login.microsoftonline.us',
-    graphUrl: 'https://graph.microsoft.us',
-  },
-};
-
 export const microsoftTeamsScopes = {
-  openid: 'openid',
-  email: 'email',
-  profile: 'profile',
-  offline_access: 'offline_access',
-  'User.Read': 'User.Read',
+  ...microsoftScopes,
   'Channel.Create': 'Channel.Create',
   'Channel.ReadBasic.All': 'Channel.ReadBasic.All',
   'ChannelMessage.Send': 'ChannelMessage.Send',

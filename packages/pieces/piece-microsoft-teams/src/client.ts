@@ -1,7 +1,8 @@
+import { microsoftCloud } from '@frogbotai/piece-microsoft';
 import type { FrogBotRequest } from 'frogbot';
 import { z } from 'zod';
 
-import { microsoftTeamsAuth, microsoftTeamsClouds } from './config.js';
+import { microsoftTeamsAuth } from './config.js';
 import { type GraphPage, page } from './schemas.js';
 
 type RequestOptions = {
@@ -16,13 +17,7 @@ export type MicrosoftTeamsClient = ReturnType<typeof createMicrosoftTeamsClient>
 
 export function createMicrosoftTeamsClient({ auth }: { auth: unknown }) {
   const credential = microsoftTeamsAuth.parse(auth);
-  const environment = Object.values(microsoftTeamsClouds).find(
-    (value) => value.loginHost === credential.cloud,
-  );
-
-  if (!environment) throw new Error('Microsoft Teams cloud environment is unsupported.');
-
-  const baseUrl = environment.graphUrl;
+  const baseUrl = microsoftCloud(credential.cloud).graphUrl;
 
   function accessToken() {
     if (!credential.accessToken) {
