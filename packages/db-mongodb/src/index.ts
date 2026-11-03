@@ -1,9 +1,11 @@
 import type { Args, MongooseAdapter } from '@payloadcms/db-mongodb';
 import { mongooseAdapter as createMongooseAdapter } from '@payloadcms/db-mongodb';
+import type { AggregateAdapter } from 'frogbot/aggregate';
 import type { JobLogDatabase } from 'frogbot/jobs';
 import { jobLogOperations } from 'frogbot/jobs';
 import type { SearchAdapter } from 'frogbot/search';
 
+import { mongooseAggregateAdapter } from './aggregate/index.js';
 import { installJobIndexes } from './jobIndexes.js';
 import { pruneJobLogs } from './jobLogs.js';
 import { mongooseSearchAdapter } from './search/index.js';
@@ -14,11 +16,15 @@ export { compatibilityOptions } from '@payloadcms/db-mongodb';
 
 export const mongooseAdapter = (
   args: Args,
-): ReturnType<typeof createMongooseAdapter> & { search: SearchAdapter } => {
+): ReturnType<typeof createMongooseAdapter> & {
+  aggregate: AggregateAdapter;
+  search: SearchAdapter;
+} => {
   const { init, ...adapter } = createMongooseAdapter(args);
 
   return {
     ...adapter,
+    aggregate: mongooseAggregateAdapter,
     search: mongooseSearchAdapter,
     init(initArgs) {
       const database = init(initArgs) as MongooseAdapter &

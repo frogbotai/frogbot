@@ -113,6 +113,20 @@ export type {
   AgentStreamOpts,
   AgentStreamResult,
 } from './agents/types.js';
+export { AggregateCapabilityError, AggregateValidationError } from './aggregate/errors.js';
+export type {
+  AggregateDateGroup,
+  AggregateDateUnit,
+  AggregateFieldPath,
+  AggregateGroup,
+  AggregateGroupBy,
+  AggregateOperation,
+  AggregateOptions,
+  AggregateResult,
+  AggregateValue,
+  AggregateValueResult,
+  AggregateValues,
+} from './aggregate/types.js';
 export { calculateUsageCostUSD } from './ai/cost.js';
 export type { CatalogModelId } from './ai/generated.js';
 export type {
@@ -263,10 +277,15 @@ export type {
   SanitizedConnectionsConfig,
 } from './connections/types.js';
 export type {
+  AdapterAggregate,
+  AdapterAggregateArgs,
+  AdapterAggregateResult,
+  AdapterAggregateRow,
   AdapterSearch,
   AdapterSearchArgs,
   AdapterSearchResult,
   AdapterSearchRow,
+  AggregateAdapter,
   BuildSearchSchema,
   BuildSearchSchemaArgs,
   DatabaseAdapter,

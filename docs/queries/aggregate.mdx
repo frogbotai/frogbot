@@ -1,0 +1,198 @@
+---
+title: Aggregate
+sidebarTitle: Aggregate
+description: Count, sum, average, and find the minimum and maximum of documents per group, with access control, on every database.
+keywords: [aggregate, group by, totals, sum, average, count, reports, dashboards]
+---
+
+`frogbot.aggregate()` totals the documents of one collection per group: deal value per stage, tickets per status and assignee, or story points per sprint. Grouping and totals run in the database, so no document is loaded into memory. It runs the collection's read access the same way `find` does, so a total never includes a document the caller can't read.
+
+The [Postgres, Vercel Postgres](/database/postgres), [SQLite, Cloudflare D1](/database/sqlite), and [MongoDB](/database/mongodb) adapters implement aggregate, and every option on this page behaves the same way on each. Any other adapter fails the call with `AggregateCapabilityError` (`501`).
+
+## Query
+
+Name each total in `values`. The names come back in each group's `values` and can be used in `sort`:
+
+```ts
+import type { FrogBotRequest } from 'frogbot';
+
+export async function pipeline(req: FrogBotRequest) {
+  const { groups } = await req.frogbot.aggregate({
+    collection: 'deals',
+    groupBy: 'stage',
+    values: {
+      deals: { count: true },
+      value: { sum: 'amount' },
+      average: { avg: 'amount' },
+      firstClose: { min: 'closedAt' },
+    },
+    where: { closedAt: { greater_than_equal: '2026-01-01T00:00:00.000Z' } },
+    sort: '-value',
+    req,
+  });
+
+  // [
+  //   { group: { stage: 'won' }, values: { deals: 2, value: 900, average: 450, firstClose: '2026-01-04T09:00:00.000Z' } },
+  //   { group: { stage: 'lead' }, values: { deals: 3, value: 300, average: 100, firstClose: '2026-02-11T15:30:00.000Z' } },
+  // ]
+  return groups;
+}
+```
+
+Each value is one of:
+
+| Value | Field | Result |
+| --- | --- | --- |
+| `{ count: true }` | — | The number of documents in the group. |
+| `{ sum: 'field' }` | number | The sum; `0` when no document has a value. |
+| `{ avg: 'field' }` | number | The average of the documents that have a value; `null` when none does. |
+| `{ min: 'field' }` | number or date | The smallest value; `null` when none. Dates come back as ISO strings. |
+| `{ max: 'field' }` | number or date | The largest value; `null` when none. Dates come back as ISO strings. |
+
+A value's field must hold one value per document: a field on the document itself or inside a group, not across a relationship, inside an array, or a `hasMany` number. That way every document adds to a total once.
+
+A value name can't equal a `groupBy` path or start with `-`. The result types keep your names: `values.value` is a `number`, `values.average` is `number | null`.
+
+### Aggregate options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `groupBy` | `AggregateGroupBy \| AggregateGroupBy[]` | Required | The field, date bucket, or list of them to group by. See [Group by](#group-by). |
+| `values` | `AggregateValues` | Required | The named totals to compute per group, at least one. |
+| `where` | `Where` | — | A [query](/queries/overview) that limits the documents. |
+| `sort` | `Sort` | Every key ascending | `groupBy` paths and value names, with `-` for descending. |
+| `limit` | `number` | — | Groups per page. Leave it out, or pass `0`, to return every group. |
+| `page` | `number` | `1` | The page of groups to return. |
+| `depth` | `number` | `0` | How many levels to populate relationship keys. See [Relationship keys](#relationship-keys). |
+| `populate` | `PopulateType` | — | Which fields to include from populated relationship keys, per collection. |
+| `draft` | `boolean` | `false` | Include drafts. By default only published documents count. Has no effect unless the collection has [drafts](/versions/drafts). |
+| `trash` | `boolean` | `false` | Include trashed documents. Has no effect unless the collection has `trash` enabled. |
+| `locale` | `string` | — | The locale of localized fields. `'all'` is refused. |
+| `fallbackLocale` | `false \| TypedLocale` | — | The locale to fall back to when populating relationship keys. |
+| `context` | `RequestContext` | — | Passed to the request. |
+| `disableErrors` | `boolean` | `false` | Return no groups instead of a `403` when the caller can't read the collection. |
+| `overrideAccess` | `boolean` | `false` | Skip access control. Without it, `req` is required. |
+| `req` | `FrogBotRequest` | — | The request to run as. Required unless `overrideAccess: true`. |
+
+Any other option fails with `AggregateValidationError`.
+
+## Group by
+
+`groupBy` takes three forms:
+
+```ts
+// A field path. Dot paths reach into groups, arrays, and related documents.
+groupBy: 'owner.team'
+
+// A date bucket.
+groupBy: { field: 'closedAt', by: 'month' }
+
+// Several keys at once: one group per combination.
+groupBy: ['stage', { field: 'closedAt', by: 'quarter' }]
+// → { group: { stage: 'won', closedAt: '2026-01-01T00:00:00.000Z' }, values: { ... } }
+```
+
+You can group by text, select, radio, email, number, checkbox, date, and single-collection relationship and upload fields. Polymorphic relationships, JSON, rich text, and blocks fail with `AggregateValidationError`.
+
+Each group's `group` object is keyed by the `groupBy` path, or the date field's name for a date bucket.
+
+### Date buckets
+
+`by` is `day`, `week`, `month`, `quarter`, or `year`. Weeks are ISO weeks, starting on Monday. Every bucket is in UTC, and its key is the bucket's start as an ISO timestamp, such as `2026-01-05T00:00:00.000Z` for the week of 5 January 2026.
+
+A deal closed at 6 pm on Monday in California falls on Tuesday in UTC. Shift `where` ranges, or group by a stored local date field, when you need local days.
+
+### Missing values
+
+Documents without a value for a key form one group whose key is `null`. The `null` group always sorts last, whichever direction you sort the key.
+
+### Many values per document
+
+A document with several values for a key, such as a `hasMany` select or relationship, or a field inside an array, joins one group per distinct value. A deal tagged `hot` and `big` counts once under `hot` and once under `big`, so group counts can add up to more than `count`. A value the document repeats, such as two array rows with the same `sku`, still counts once.
+
+### Relationship keys
+
+Relationship keys come back as IDs. With `depth` of `1` or more, each key is replaced with the related document, shaped by `populate`. A related document the caller can't read stays an ID.
+
+## Results and paging
+
+The result has the same paging keys as `findDistinct`, with the groups in `groups`:
+
+```ts
+const result = await frogbot.aggregate({
+  collection: 'deals',
+  groupBy: 'owner',
+  values: { value: { sum: 'amount' } },
+  sort: '-value',
+  limit: 10,
+  page: 2,
+  req,
+});
+
+// {
+//   groups: [{ group: { owner: 7 }, values: { value: 1200 } }, ...],
+//   totalDocs: 34, // the number of groups
+//   limit: 10,
+//   page: 2,
+//   totalPages: 4,
+//   hasNextPage: true,
+//   hasPrevPage: true,
+//   nextPage: 3,
+//   prevPage: 1,
+//   pagingCounter: 11,
+// }
+```
+
+Results are numbers on every database. Text keys sort alphabetically everywhere, select fields included.
+
+## Access
+
+Aggregate runs as `req.user` unless `overrideAccess: true`:
+
+- **Collection read.** `false` fails with `403`, or returns no groups with `disableErrors: true`. A `Where` narrows the documents that count.
+- **Related read.** A `groupBy` path through a relationship applies the related collection's read rule: a `Where` narrows the documents to those whose related document it allows, plus those with no related document, which stay in the `null` group. `false` fails with `QueryError` (`400`), as a `where` on that path would, or returns no groups with `disableErrors: true`. So does a `Where` on a path through a `hasMany` relationship or an array, such as `partners.tier`: a document can link both a readable and an unreadable account, and its groups would show the unreadable one's `tier`.
+- **Field read.** A field with its own `access.read` rule fails with `403` in `groupBy`, `values`, or `where` unless `overrideAccess: true`, because a total can't leave out the values a rule would hide. Run admin reports from your own endpoint with `overrideAccess: true` after checking the user.
+- **Hidden fields.** A field with `hidden: true` fails with `403` in `groupBy` and `values`, even with `overrideAccess: true`, as `findDistinct` does. In `where`, it fails only without `overrideAccess`.
+
+Collection `beforeOperation` and `afterOperation` hooks don't run for aggregate.
+
+## Drafts and locales
+
+On a collection with drafts, only published documents count unless `draft: true`. On a localized collection, the published check uses the requested locale, so a document published only in `en` is left out of an `fr` aggregate. Localized fields in `groupBy` and `values` read the requested `locale`.
+
+## REST API
+
+Every collection has a `POST /api/{collection-slug}/aggregate` endpoint. The JSON body accepts the same options as `frogbot.aggregate()` except `collection`, `overrideAccess`, `req`, and `context`: the endpoint always runs as the requesting user with access enforced.
+
+```ts
+const response = await fetch('/api/deals/aggregate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',
+  body: JSON.stringify({
+    groupBy: 'stage',
+    values: { deals: { count: true }, value: { sum: 'amount' } },
+    sort: '-value',
+  }),
+});
+
+const { groups } = await response.json();
+```
+
+From a frontend, the [SDK](/rest-api/overview#frogbot-rest-api-sdk) has a typed `aggregate(options, init?)`.
+
+## Errors
+
+| Error | Status | Meaning |
+| --- | --- | --- |
+| `AggregateValidationError` | `400` | An unknown option or field, a field of the wrong type, a value name that clashes, an unknown `by`, `locale: 'all'`, or a missing `req`. |
+| `QueryError` | `400` | A `where` or `groupBy` path the caller can't query. |
+| `Forbidden` | `403` | The caller can't read the collection, or a field is `hidden` or read-guarded. |
+| `AggregateCapabilityError` | `501` | The database adapter has no aggregate implementation. |
+
+Both aggregate errors are exported from `frogbot`. The REST endpoint returns the same statuses.
+
+## Adapter integration
+
+A database adapter adds aggregate through an `aggregate` object, beside `search`. FrogBot checks options, runs access, and resolves fields first, so the adapter receives a `Where` with access already applied, the group and value fields with their stored types, and the sort. It returns one row per group with raw keys and totals, plus the group count; FrogBot turns them into numbers and ISO dates. The SQL adapters use `sqliteAggregateAdapter` and `postgresAggregateAdapter` from `frogbot/aggregate`.

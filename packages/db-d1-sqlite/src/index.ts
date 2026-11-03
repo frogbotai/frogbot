@@ -2,6 +2,7 @@ import {
   type SQLiteAdapterArgs,
   sqliteD1Adapter as createSQLiteD1Adapter,
 } from '@payloadcms/db-d1-sqlite';
+import { sqliteAggregateAdapter } from 'frogbot/aggregate';
 import { installSQLJobOperations } from 'frogbot/jobs';
 import { sqliteD1SearchAdapter } from 'frogbot/search';
 
@@ -27,6 +28,7 @@ export function sqliteD1Adapter(args: SQLiteAdapterArgs) {
 
       return database;
     },
+    aggregate: sqliteAggregateAdapter,
     search: sqliteD1SearchAdapter,
   };
 }

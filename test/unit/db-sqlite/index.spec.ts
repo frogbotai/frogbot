@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { sql, sqliteAdapter } from '../../../packages/db-sqlite/src/index';
+import { sqliteAggregateAdapter } from '../../../packages/frogbot/src/exports/aggregate.js';
 import { sqliteSearchAdapter } from '../../../packages/frogbot/src/exports/search.js';
 
 vi.mock('frogbot/jobs', () => import('../../../packages/frogbot/src/exports/jobs.js'));
+vi.mock('frogbot/aggregate', () => import('../../../packages/frogbot/src/exports/aggregate.js'));
 vi.mock('frogbot/search', () => import('../../../packages/frogbot/src/exports/search.js'));
 
 describe('@frogbotai/db-sqlite exports', () => {
@@ -17,5 +19,9 @@ describe('@frogbotai/db-sqlite exports', () => {
 
   it('declares the SQLite search adapter', () => {
     expect(sqliteAdapter({ client: { url: ':memory:' } }).search).toBe(sqliteSearchAdapter);
+  });
+
+  it('declares the SQLite aggregate adapter', () => {
+    expect(sqliteAdapter({ client: { url: ':memory:' } }).aggregate).toBe(sqliteAggregateAdapter);
   });
 });

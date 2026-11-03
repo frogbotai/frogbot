@@ -12,6 +12,7 @@ import type { LiveSchema, LiveTable } from '../../../packages/db-sqlite/src/sche
 import { type RawTable, reconcile } from '../../../packages/db-sqlite/src/schema/reconcile';
 
 vi.mock('frogbot/jobs', () => import('../../../packages/frogbot/src/exports/jobs.js'));
+vi.mock('frogbot/aggregate', () => import('../../../packages/frogbot/src/exports/aggregate.js'));
 vi.mock('frogbot/search', () => import('../../../packages/frogbot/src/exports/search.js'));
 
 const now = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";

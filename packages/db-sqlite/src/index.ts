@@ -6,6 +6,7 @@ import {
   sqliteAdapter as createSQLiteAdapter,
   type SQLiteAdapterArgs as PayloadSQLiteAdapterArgs,
 } from '@payloadcms/db-sqlite';
+import { sqliteAggregateAdapter } from 'frogbot/aggregate';
 import { installSQLJobOperations } from 'frogbot/jobs';
 import { sqliteSearchAdapter } from 'frogbot/search';
 
@@ -92,6 +93,7 @@ export function sqliteAdapter({ writeLockTimeout = 5000, ...args }: SQLiteAdapte
 
       return database;
     },
+    aggregate: sqliteAggregateAdapter,
     search: sqliteSearchAdapter,
     ...(isFileDatabase(args.client?.url) && { snapshot: sqliteSnapshot(args.client) }),
     ...(sync && { syncSchema }),

@@ -39,6 +39,11 @@
       "import": "./dist/exports/migrations-upgrade-0.34.js",
       "default": "./dist/exports/migrations-upgrade-0.34.js"
     },
+    "./aggregate": {
+      "types": "./dist/exports/aggregate.d.ts",
+      "import": "./dist/exports/aggregate.js",
+      "default": "./dist/exports/aggregate.js"
+    },
     "./search": {
       "types": "./dist/exports/search.d.ts",
       "import": "./dist/exports/search.js",
@@ -181,6 +186,11 @@
         "types": "./dist/exports/migrations-upgrade-0.34.d.ts",
         "import": "./dist/exports/migrations-upgrade-0.34.js",
         "default": "./dist/exports/migrations-upgrade-0.34.js"
+      },
+      "./aggregate": {
+        "types": "./dist/exports/aggregate.d.ts",
+        "import": "./dist/exports/aggregate.js",
+        "default": "./dist/exports/aggregate.js"
       },
       "./search": {
         "types": "./dist/exports/search.d.ts",

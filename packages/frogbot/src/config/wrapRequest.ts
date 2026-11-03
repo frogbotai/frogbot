@@ -198,15 +198,6 @@ export function wrapLocalization(
   };
 }
 
-export function wrapEndpoints(
-  endpoints: Endpoint[] | false | undefined,
-  attachFrogBot: AttachFrogBot,
-): PayloadEndpoint[] | false | undefined {
-  if (!endpoints) return endpoints;
-
-  return wrapEndpointList(endpoints, attachFrogBot);
-}
-
 export function wrapEndpointList(
   endpoints: Endpoint[],
   attachFrogBot: AttachFrogBot,

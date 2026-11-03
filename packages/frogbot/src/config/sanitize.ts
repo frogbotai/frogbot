@@ -4,6 +4,7 @@ import { sanitizeSettings, validateAppIcon } from '../admin/config/sanitize.js';
 import { validateAdminIcon } from '../admin/icons.js';
 import { sanitizeAgents } from '../agents/config/sanitize.js';
 import { AGENT_SCHEDULE_TASK_SLUG, resolveScheduleTasks } from '../agents/resolveScheduleTasks.js';
+import { withAggregateRuntime } from '../aggregate/runtime.js';
 import { linkAIProviders, sanitizeAI } from '../ai/config/sanitize.js';
 import { resolveUsageCollection } from '../ai/usage/collection.js';
 import { coordinateAuthEndpoints } from '../auth/endpoints.js';
@@ -430,10 +431,13 @@ export function sanitize(
     storage,
   });
 
-  payloadConfig.db = withSearchRuntime({
-    adapter: withJobsRuntime({ adapter: payloadConfig.db }),
-    collections: searchCollections,
-    search: config.db.search,
+  payloadConfig.db = withAggregateRuntime({
+    adapter: withSearchRuntime({
+      adapter: withJobsRuntime({ adapter: payloadConfig.db }),
+      collections: searchCollections,
+      search: config.db.search,
+    }),
+    aggregate: config.db.aggregate,
   });
 
   const payloadSanitizedPromise = payloadBuildConfig(payloadConfig)

@@ -2,6 +2,7 @@ import {
   postgresAdapter as createPostgresAdapter,
   type PostgresAdapterArgs,
 } from '@payloadcms/db-postgres';
+import { postgresAggregateAdapter } from 'frogbot/aggregate';
 import { installSQLJobOperations } from 'frogbot/jobs';
 import { postgresSearchAdapter } from 'frogbot/search';
 
@@ -24,6 +25,7 @@ export function postgresAdapter(args: PostgresAdapterArgs) {
 
       return database;
     },
+    aggregate: postgresAggregateAdapter,
     search: postgresSearchAdapter,
   };
 }

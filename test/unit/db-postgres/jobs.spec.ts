@@ -8,6 +8,7 @@ import { vercelPostgresAdapter } from '../../../packages/db-vercel-postgres/src/
 import { resolveJobsConfig } from '../../../packages/frogbot/src/jobs/config.js';
 
 vi.mock('frogbot/jobs', () => import('../../../packages/frogbot/src/exports/jobs.js'));
+vi.mock('frogbot/aggregate', () => import('../../../packages/frogbot/src/exports/aggregate.js'));
 vi.mock('frogbot/search', () => import('../../../packages/frogbot/src/exports/search.js'));
 
 describe.each(['postgres', 'vercel-postgres'] as const)('%s atomic SQL', (kind) => {

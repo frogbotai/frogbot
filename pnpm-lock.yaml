@@ -2451,6 +2451,9 @@ importers:
       '@frogbotai/plugin-stripe':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-stripe
+      '@frogbotai/plugin-usage-reports':
+        specifier: workspace:*
+        version: link:../packages/plugins/plugin-usage-reports
       '@frogbotai/protocol':
         specifier: workspace:*
         version: link:../packages/protocol

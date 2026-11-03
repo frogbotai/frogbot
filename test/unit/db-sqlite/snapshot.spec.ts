@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sqliteAdapter } from '../../../packages/db-sqlite/src/index';
 
 vi.mock('frogbot/jobs', () => import('../../../packages/frogbot/src/exports/jobs.js'));
+vi.mock('frogbot/aggregate', () => import('../../../packages/frogbot/src/exports/aggregate.js'));
 vi.mock('frogbot/search', () => import('../../../packages/frogbot/src/exports/search.js'));
 
 describe('sqliteAdapter snapshot', () => {

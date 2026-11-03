@@ -4,6 +4,8 @@ import { createPayloadRequest, getPayload, handleEndpoints, resetPasswordOperati
 
 import { createAgentInstance } from './agents/instance.js';
 import type { AgentRegistry } from './agents/types.js';
+import { aggregateOperation } from './aggregate/operation.js';
+import type { AggregateOptions, AggregateResult, AggregateValues } from './aggregate/types.js';
 import { createAIGateway } from './ai/index.js';
 import { embedOperation } from './ai/operations/embed.js';
 import { embedManyOperation } from './ai/operations/embedMany.js';
@@ -414,6 +416,10 @@ export class FrogBot {
   searchMany = <const C extends readonly CollectionSlug[]>(
     options: SearchManyOptions<C>,
   ): Promise<SearchManyResult<C>> => searchManyOperation(this, state(this).payload, options);
+
+  aggregate = <T extends CollectionSlug, const V extends AggregateValues<T>>(
+    options: AggregateOptions<T, V>,
+  ): Promise<AggregateResult<T, V>> => aggregateOperation(this, state(this).payload, options);
 
   evaluate = <const QUESTIONS extends Record<string, EvaluationQuestion>>(
     opts: EvaluateOpts<QUESTIONS>,
