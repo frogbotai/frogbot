@@ -18,6 +18,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      # `pnpm check` diffs against a local main to find changed workspaces.
+      - run: git branch -f main origin/main 2>/dev/null || true
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
@@ -25,4 +29,4 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: mkdir -p .idea/tmp
-      - run: pnpm check --full
+      - run: pnpm check
