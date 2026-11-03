@@ -6,20 +6,26 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { detectPackageManager, scaffold } from '../../../packages/create-frogbot-app/src/index.js';
+import type { TemplateRegistryEntry } from '../../../packages/create-frogbot-app/src/templates.js';
+import { getTemplate, TEMPLATES } from '../../../packages/create-frogbot-app/src/templates.js';
 
 const packageRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../../../packages/create-frogbot-app',
 );
 
-const templateDir = path.join(packageRoot, 'dist', 'templates', 'blank');
+const templateDir = packedDir(getTemplate('blank'));
 const roots: string[] = [];
 
-function createDest(projectName = 'test-app'): { dest: string; projectName: string } {
+function packedDir(template: TemplateRegistryEntry) {
+  return path.join(packageRoot, 'dist', 'templates', template.dir);
+}
+
+function createDest(template = getTemplate('blank'), projectName = 'test-app') {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'create-frogbot-app-'));
   roots.push(root);
 
-  return { dest: path.join(root, projectName), projectName };
+  return { dest: path.join(root, projectName), projectName, template };
 }
 
 afterEach(() => {
@@ -30,7 +36,7 @@ afterEach(() => {
 
 describe('scaffold', () => {
   it('creates the packed blank template with formatting and the canonical src layout', () => {
-    const options = createDest('frog.test-app');
+    const options = createDest(undefined, 'frog.test-app');
 
     scaffold({ ...options, ai: 'openai', templateDir });
 
@@ -72,40 +78,6 @@ describe('scaffold', () => {
     expect(readme).toContain('To use a root layout instead');
   });
 
-  it('does not expose Payload branding in generated source files', () => {
-    const options = createDest();
-    scaffold({ ...options, templateDir });
-
-    const files = fs.readdirSync(options.dest, { recursive: true, withFileTypes: true });
-
-    for (const file of files) {
-      if (!file.isFile()) continue;
-      const content = fs.readFileSync(path.join(file.parentPath, file.name), 'utf8');
-
-      expect(content).not.toContain('@payloadcms/');
-    }
-  });
-
-  it('packs only versions a generated app can install outside the workspace', () => {
-    const databaseDependencies = JSON.parse(
-      fs.readFileSync(path.join(packageRoot, 'dist', 'database-dependencies.json'), 'utf8'),
-    ) as Record<string, Record<string, string>>;
-
-    const pkg = JSON.parse(fs.readFileSync(path.join(templateDir, 'package.json'), 'utf8')) as {
-      dependencies: Record<string, string>;
-      devDependencies: Record<string, string>;
-    };
-
-    const versions = [
-      ...Object.values(databaseDependencies).flatMap(Object.values),
-      ...Object.values(pkg.dependencies),
-      ...Object.values(pkg.devDependencies),
-    ];
-
-    expect(Object.keys(databaseDependencies).sort()).toEqual(['mongodb', 'postgres', 'sqlite']);
-    expect(versions.filter((version) => /^(catalog|workspace):/.test(version))).toEqual([]);
-  });
-
   it('writes a .env with a generated secret alongside the untouched .env.example', () => {
     const options = createDest();
     scaffold({ ...options, templateDir });
@@ -118,26 +90,6 @@ describe('scaffold', () => {
     expect(fs.readFileSync(path.join(options.dest, '.env.example'), 'utf8')).toContain(
       'FROGBOT_SECRET=YOUR_SECRET_HERE',
     );
-  });
-
-  it('scaffolds no AI provider by default, never the Zen free tier', () => {
-    const options = createDest();
-
-    scaffold({ ...options, templateDir });
-
-    const config = fs.readFileSync(path.join(options.dest, 'src', 'frogbot.config.ts'), 'utf8');
-    const env = fs.readFileSync(path.join(options.dest, '.env'), 'utf8');
-    const example = fs.readFileSync(path.join(options.dest, '.env.example'), 'utf8');
-
-    expect(config).not.toContain('ai:');
-    expect(config).not.toContain('agents:');
-    expect(config).not.toContain('tools:');
-    expect(config).not.toContain("apiKey: 'public'");
-    expect(fs.existsSync(path.join(options.dest, 'src', 'agents'))).toBe(false);
-    expect(env).not.toContain('OPENAI_API_KEY');
-    expect(env).not.toContain('OPENCODE_API_KEY');
-    expect(example).not.toContain('OPENAI_API_KEY');
-    expect(example).not.toContain('OPENCODE_API_KEY');
   });
 
   it('writes the provider key to .env only, keeping .env.example secret-free', () => {
@@ -204,5 +156,63 @@ describe('scaffold', () => {
     expect(detectPackageManager('bun/1.3.13 npm/? node/v24.22.0')).toBe('bun');
     expect(detectPackageManager('npm/10.9.0 node/v24.22.0')).toBe('npm');
     expect(detectPackageManager('')).toBe('npm');
+  });
+});
+
+describe.each(TEMPLATES)('packed $name template', (template) => {
+  it('does not expose Payload branding in generated source files', () => {
+    const options = createDest(template);
+    scaffold({ ...options, templateDir: packedDir(template) });
+
+    const files = fs.readdirSync(options.dest, { recursive: true, withFileTypes: true });
+
+    for (const file of files) {
+      if (!file.isFile()) continue;
+      const content = fs.readFileSync(path.join(file.parentPath, file.name), 'utf8');
+
+      expect(content).not.toContain('@payloadcms/');
+    }
+  });
+
+  it('packs only versions a generated app can install outside the workspace', () => {
+    const databaseDependencies = JSON.parse(
+      fs.readFileSync(path.join(packageRoot, 'dist', 'database-dependencies.json'), 'utf8'),
+    ) as Record<string, Record<string, string>>;
+
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(packedDir(template), 'package.json'), 'utf8'),
+    ) as {
+      dependencies: Record<string, string>;
+      devDependencies: Record<string, string>;
+    };
+
+    const versions = [
+      ...Object.values(databaseDependencies).flatMap(Object.values),
+      ...Object.values(pkg.dependencies),
+      ...Object.values(pkg.devDependencies),
+    ];
+
+    expect(Object.keys(databaseDependencies).sort()).toEqual(['mongodb', 'postgres', 'sqlite']);
+    expect(versions.filter((version) => /^(catalog|workspace):/.test(version))).toEqual([]);
+  });
+
+  it('scaffolds no AI provider by default, never the Zen free tier', () => {
+    const options = createDest(template);
+
+    scaffold({ ...options, templateDir: packedDir(template) });
+
+    const config = fs.readFileSync(path.join(options.dest, 'src', 'frogbot.config.ts'), 'utf8');
+    const env = fs.readFileSync(path.join(options.dest, '.env'), 'utf8');
+    const example = fs.readFileSync(path.join(options.dest, '.env.example'), 'utf8');
+
+    expect(config).not.toContain('ai:');
+    expect(config).not.toContain('agents:');
+    expect(config).not.toContain('tools:');
+    expect(config).not.toContain("apiKey: 'public'");
+    expect(fs.existsSync(path.join(options.dest, 'src', 'agents'))).toBe(false);
+    expect(env).not.toContain('OPENAI_API_KEY');
+    expect(env).not.toContain('OPENCODE_API_KEY');
+    expect(example).not.toContain('OPENAI_API_KEY');
+    expect(example).not.toContain('OPENCODE_API_KEY');
   });
 });

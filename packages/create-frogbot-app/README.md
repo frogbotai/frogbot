@@ -26,7 +26,7 @@ npx create-frogbot-app@latest [project-name] [options]
 | Option                      | Description                                                      |
 | --------------------------- | ---------------------------------------------------------------- |
 | `-n, --name <name>`         | Project name                                                     |
-| `-t, --template <template>` | Template (default: blank)                                        |
+| `-t, --template <template>` | blank or projects (default: blank)                               |
 | `-d, --db <database>`       | sqlite, postgres, or mongodb                                     |
 | `--ai <provider>`           | zen, openai, anthropic, google, bedrock, or none                 |
 | `--api-key <key>`           | API key for the chosen provider (written to .env)                |

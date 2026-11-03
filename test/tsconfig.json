@@ -55,6 +55,7 @@
     "storage-s3",
     "storage-vercel-blob",
     "system-fields",
+    "template-projects",
     "training-data",
     "triggers",
     "triggers-polling",

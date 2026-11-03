@@ -3,7 +3,7 @@ packages:
   - 'packages/pieces/*'
   - 'packages/plugins/*'
   - 'test'
-  - 'templates/blank'
+  - 'templates/*'
   - 'test/e2e/fixtures/tool-agent'
   - 'test/e2e/fixtures/rich-text'
   - 'test/e2e/fixtures/plugin-wrappers'

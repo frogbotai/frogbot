@@ -1,0 +1,41 @@
+import { sqliteAdapter } from '@frogbotai/db-sqlite';
+import { aiPolicyPlugin } from '@frogbotai/plugin-ai-policy';
+import { dojo } from '@frogbotai/plugin-dojo';
+import { lexicalEditor } from '@frogbotai/richtext-lexical';
+import { sharpTransformer } from '@frogbotai/transformer-sharp';
+import type { FrogBotConfig } from 'frogbot';
+import { buildConfig } from 'frogbot';
+import { general } from 'frogbot/agents';
+import { todoTools } from 'frogbot/tools';
+
+import { assistant } from './agents/assistant';
+import { Files } from './collections/Files';
+import { Projects } from './collections/Projects';
+import { Tasks } from './collections/Tasks';
+import { Users } from './collections/Users';
+import { seedEndpoint } from './seed/endpoint';
+
+const config: FrogBotConfig = {
+  secret: process.env.FROGBOT_SECRET || '',
+  db: sqliteAdapter({
+    client: { url: process.env.DATABASE_URL || '' },
+  }),
+  editor: lexicalEditor(),
+  collections: [Projects, Tasks, Users, Files],
+  endpoints: [seedEndpoint()],
+  tools: [...todoTools],
+  ai: {
+    defaultModel: 'openai/gpt-5.4-mini',
+    providers: { openai: true },
+  },
+  admin: {
+    components: {
+      beforeDashboard: ['/components/SeedPanel#SeedPanel'],
+    },
+  },
+  agents: [general(), assistant],
+  plugins: [aiPolicyPlugin(), dojo()],
+  upload: { transformers: [sharpTransformer()] },
+};
+
+export default buildConfig(config);

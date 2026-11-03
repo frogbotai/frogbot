@@ -35,8 +35,13 @@ const cliPackage = JSON.parse(
 const postgresAvailable = RUN_E2E ? await serviceAvailable(5433) : false;
 const mongodbAvailable = RUN_E2E ? await serviceAvailable(27018) : false;
 
-async function expectAppBoots(directory: string, databaseUrl?: string): Promise<void> {
+async function expectAppBoots(
+  directory: string,
+  databaseUrl?: string,
+  use?: (base: string, output: () => string) => Promise<void>,
+): Promise<void> {
   const port = await getFreePort();
+  const base = `http://127.0.0.1:${port}`;
   const child = spawnServer(
     process.execPath,
     [
@@ -63,7 +68,7 @@ async function expectAppBoots(directory: string, databaseUrl?: string): Promise<
     await waitForServer(
       child,
       async () => {
-        const response = await fetch(`http://127.0.0.1:${port}/api/users/me`, {
+        const response = await fetch(`${base}/api/users/me`, {
           signal: AbortSignal.timeout(10000),
         }).catch(() => undefined);
 
@@ -71,12 +76,15 @@ async function expectAppBoots(directory: string, databaseUrl?: string): Promise<
       },
       { name: 'Generated app', timeout: 90000, interval: 500, output: () => output },
     );
+
+    await use?.(base, () => output);
   } finally {
     await terminateProcess(child);
   }
 }
 
 interface AppCase {
+  template: 'blank' | 'projects';
   ai: 'none' | 'zen';
   database: 'mongodb' | 'postgres' | 'sqlite';
   name: string;
@@ -92,6 +100,7 @@ const noAIConfig = ['  ai:', '  agents:'];
 
 const cases: AppCase[] = [
   {
+    template: 'blank',
     ai: 'zen',
     database: 'sqlite',
     name: 'sqlite-zen',
@@ -102,6 +111,7 @@ const cases: AppCase[] = [
     absentPaths: [],
   },
   {
+    template: 'blank',
     ai: 'none',
     database: 'sqlite',
     name: 'sqlite-none',
@@ -112,6 +122,7 @@ const cases: AppCase[] = [
     absentPaths: ['src/agents'],
   },
   {
+    template: 'blank',
     ai: 'none',
     database: 'postgres',
     name: 'postgres-none',
@@ -122,6 +133,7 @@ const cases: AppCase[] = [
     absentPaths: ['src/agents'],
   },
   {
+    template: 'blank',
     ai: 'none',
     database: 'mongodb',
     name: 'mongodb-none',
@@ -129,6 +141,21 @@ const cases: AppCase[] = [
     configExcludes: noAIConfig,
     envIncludes: [],
     absentDependencies: ['libsql', 'drizzle-kit'],
+    absentPaths: ['src/agents'],
+  },
+  {
+    template: 'projects',
+    ai: 'none',
+    database: 'sqlite',
+    name: 'projects-sqlite-none',
+    configIncludes: [
+      'sqliteAdapter',
+      'endpoints: [seedEndpoint()]',
+      "beforeDashboard: ['/components/SeedPanel#SeedPanel']",
+    ],
+    configExcludes: [...noAIConfig, 'aiPolicyPlugin', './agents/'],
+    envIncludes: sqliteEnv,
+    absentDependencies: ['@frogbotai/plugin-ai-policy'],
     absentPaths: ['src/agents'],
   },
 ];
@@ -172,6 +199,8 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
           '--yes',
           '--no-git',
           '--no-install',
+          '--template',
+          appCase.template,
           '--db',
           appCase.database,
           '--ai',
@@ -288,6 +317,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
   it.each([
     { name: 'sqlite-zen', generated: ["models: 'zen/deepseek-v4.1-flash'"] },
     { name: 'sqlite-none', generated: [] },
+    { name: 'projects-sqlite-none', generated: ['projects: Project;', 'tasks: Task;'] },
   ])(
     'loads config and generates types for $name',
     ({ name, generated }) => {
@@ -711,6 +741,57 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
     120000,
   );
 
+  it('boots the generated projects application and seeds it from POST /api/seed', async () => {
+    await expectAppBoots(
+      appDirectories.get('projects-sqlite-none')!,
+      undefined,
+      async (base, output) => {
+        const json = { 'content-type': 'application/json' };
+        const registration = await fetch(`${base}/api/users/first-register`, {
+          method: 'POST',
+          headers: json,
+          body: JSON.stringify({ email: 'owner@projects.test', password: 'projects-e2e' }),
+        });
+
+        expect(registration.status, output()).toBe(200);
+
+        const auth = {
+          authorization: `Bearer ${((await registration.json()) as { token: string }).token}`,
+        };
+
+        const seeded = await fetch(`${base}/api/seed`, { method: 'POST', headers: auth });
+
+        expect(seeded.status, output()).toBe(200);
+        expect(await seeded.json()).toEqual({ success: true });
+
+        const find = async (slug: string) => {
+          const response = await fetch(`${base}/api/${slug}?limit=100&sort=key`, { headers: auth });
+
+          expect(response.status, output()).toBe(200);
+
+          return (await response.json()) as { docs: Array<{ key: string }> };
+        };
+
+        expect((await find('projects')).docs.map(({ key }) => key)).toEqual(['MOB', 'OPS', 'WEB']);
+
+        const { docs: tasks } = await find('tasks');
+
+        expect(tasks).toHaveLength(12);
+        expect(tasks.map(({ key }) => key)).toEqual(
+          expect.arrayContaining(['WEB-1', 'WEB-5', 'MOB-4', 'OPS-3']),
+        );
+
+        const demo = await fetch(`${base}/api/users/login`, {
+          method: 'POST',
+          headers: json,
+          body: JSON.stringify({ email: 'admin@test.com', password: 'password' }),
+        });
+
+        expect(demo.status, output()).toBe(200);
+      },
+    );
+  }, 120000);
+
   it.skipIf(!postgresAvailable)(
     'boots the generated Postgres application',
     async () => {
@@ -828,7 +909,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app CLI', () => {
   it.each([
     [
       ['invalid-template', '--yes', '--no-git', '--no-install', '--template', 'missing'],
-      'Valid templates: blank',
+      'Valid templates: blank, projects',
     ],
     [
       ['invalid-database', '--yes', '--no-git', '--no-install', '--db', 'oracle'],

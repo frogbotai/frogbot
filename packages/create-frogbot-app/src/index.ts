@@ -4,8 +4,9 @@ import { fileURLToPath } from 'node:url';
 
 import * as p from '@clack/prompts';
 
-import { applyAI, missingKeyWarning } from './lib/ai.js';
+import { applyAI, missingKeyWarning, removeAIFiles } from './lib/ai.js';
 import { HELP, parseArgs } from './lib/args.js';
+import { openConfig, saveConfig } from './lib/config.js';
 import { applyDatabase } from './lib/db.js';
 import { writeEnv } from './lib/env.js';
 import { CliError } from './lib/errors.js';
@@ -19,6 +20,7 @@ import {
 } from './lib/package-manager.js';
 import { installSkill } from './lib/skill.js';
 import { PromptCancelledError, resolvePlan } from './prompts.js';
+import type { TemplateRegistryEntry } from './templates.js';
 import type { AgentTarget, AIProvider, Database, PackageManager, ScaffoldPlan } from './types.js';
 
 export { CliError } from './lib/errors.js';
@@ -41,7 +43,8 @@ interface ScaffoldOptions {
   dest: string;
   packageManager?: PackageManager;
   projectName: string;
-  templateDir: string;
+  template: TemplateRegistryEntry;
+  templateDir?: string;
 }
 
 function readVersion(): string {
@@ -60,6 +63,38 @@ function readDatabaseDependencies(): DatabaseDependencies {
     : {};
 }
 
+interface TemplateOptions {
+  ai: AIProvider;
+  apiKey?: string;
+  database: Database;
+  databaseDependencies: DatabaseDependencies;
+  projectName: string;
+  template: TemplateRegistryEntry;
+  version: string;
+}
+
+/** Turns a copied template into the chosen app: config, package.json and env files. */
+export function applyTemplate(dest: string, options: TemplateOptions): void {
+  const config = openConfig(dest);
+
+  applyDatabase(config, options.database);
+  applyAI(config, options.ai, options.template.aiPaths);
+  applyMeta(config, options.projectName);
+  saveConfig(config);
+
+  if (options.ai === 'none') removeAIFiles(dest, options.template.aiPaths);
+
+  applyPackageJson(
+    dest,
+    options.projectName,
+    options.database,
+    options.version,
+    options.databaseDependencies,
+  );
+
+  writeEnv(dest, options);
+}
+
 export function scaffold(options: ScaffoldOptions): void {
   const packageManager = options.packageManager ?? detectPackageManager();
   const database = options.database ?? 'sqlite';
@@ -69,38 +104,32 @@ export function scaffold(options: ScaffoldOptions): void {
     throw new CliError(`Directory "${options.projectName}" already exists.`);
   }
 
-  fs.cpSync(options.templateDir, options.dest, { recursive: true });
+  fs.cpSync(
+    options.templateDir ?? path.join(dirname, 'templates', options.template.dir),
+    options.dest,
+    {
+      recursive: true,
+    },
+  );
 
   const gitignore = path.join(options.dest, 'gitignore');
 
   if (fs.existsSync(gitignore)) fs.renameSync(gitignore, path.join(options.dest, '.gitignore'));
 
-  applyDatabase(options.dest, database);
-  applyAI(options.dest, ai);
-  applyMeta(options.dest, options.projectName);
-
-  applyPackageJson(
-    options.dest,
-    options.projectName,
-    database,
-    readVersion(),
-    readDatabaseDependencies(),
-  );
-
-  const envPlan = {
+  applyTemplate(options.dest, {
     ai,
     apiKey: options.apiKey,
     database,
+    databaseDependencies: readDatabaseDependencies(),
     projectName: options.projectName,
-  };
+    template: options.template,
+    version: readVersion(),
+  });
 
-  writeEnv(options.dest, envPlan);
   writePnpmWorkspace(options.dest, packageManager);
 }
 
 function scaffoldPlan(plan: ScaffoldPlan): boolean {
-  const templateDir = path.join(dirname, 'templates', plan.template.dir);
-
   scaffold({
     agents: plan.agents,
     ai: plan.ai,
@@ -109,7 +138,7 @@ function scaffoldPlan(plan: ScaffoldPlan): boolean {
     dest: plan.dest,
     packageManager: plan.packageManager,
     projectName: plan.projectName,
-    templateDir,
+    template: plan.template,
   });
 
   return installSkill(plan.dest, path.join(dirname, 'skills', 'frogbot'), plan.agents);

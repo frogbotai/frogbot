@@ -1,0 +1,23 @@
+import { mongooseAdapter } from '@frogbotai/db-mongodb';
+import { dojo } from '@frogbotai/plugin-dojo';
+import { lexicalEditor } from '@frogbotai/richtext-lexical';
+import { sharpTransformer } from '@frogbotai/transformer-sharp';
+import type { FrogBotConfig } from 'frogbot';
+import { buildConfig } from 'frogbot';
+
+import { Files } from './collections/Files';
+import { Users } from './collections/Users';
+
+const config: FrogBotConfig = {
+  secret: process.env.FROGBOT_SECRET || '',
+  db: mongooseAdapter({
+    url: process.env.DATABASE_URL || '',
+  }),
+  editor: lexicalEditor(),
+  collections: [Users, Files],
+  admin: { meta: { applicationName: 'my-app' } },
+  plugins: [dojo()],
+  upload: { transformers: [sharpTransformer()] },
+};
+
+export default buildConfig(config);

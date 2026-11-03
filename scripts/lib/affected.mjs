@@ -12,7 +12,7 @@ const RUNS = [
       'packages/next/',
       'packages/db-',
       'test/browser/',
-      'templates/blank/',
+      'templates/',
       'test/e2e/fixtures/',
       'test/e2e/create-frogbot-app/harness.ts',
       'test/e2e/skill-distribution/hosting/',
