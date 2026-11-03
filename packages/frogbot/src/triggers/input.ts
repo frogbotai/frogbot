@@ -40,6 +40,19 @@ export function encodeSubscriptionInput(input: unknown): SubscriptionInput {
   return input === undefined ? {} : { value: normalize(input) };
 }
 
+/**
+ * Polling rows keep the cursor in the same `{ value }` envelope as input: Payload's `json` field
+ * rejects a bare string that isn't JSON text. `{}` marks a polled row whose trigger has no cursor.
+ */
+export const encodeSubscriptionCursor = encodeSubscriptionInput;
+
+/** Reads a polling row's stored cursor as JSON, or `undefined` when it has none. */
+export function decodeSubscriptionCursor(state: unknown): JSONValue | undefined {
+  if (!state || typeof state !== 'object' || !Object.hasOwn(state, 'value')) return undefined;
+
+  return normalize(Reflect.get(state, 'value'));
+}
+
 export function parseSubscriptionInput({
   schema,
   input,

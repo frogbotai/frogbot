@@ -204,7 +204,11 @@ export type PieceTriggerReference = Readonly<
       event: string;
     })
   | (PieceTriggerBase<z.ZodType, z.ZodType | undefined> & {
-      type: 'polling' | 'webhook';
+      type: 'polling';
+      schedule?: string;
+    })
+  | (PieceTriggerBase<z.ZodType, z.ZodType | undefined> & {
+      type: 'webhook';
     })
 >;
 

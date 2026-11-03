@@ -84,5 +84,5 @@ FrogBot validates `x-xero-signature` against the untouched request body with HMA
 ## Limitations
 
 - Webhook creation and deletion remain manual because Xero does not provide a vendor registration API.
-- Polling requests at most five pages per run, then persists the next page and original modification window until all pages have been drained. It retains the latest 5,000 identifiers for overlap deduplication.
+- Polling requests at most five pages per run, then persists the next page and original modification window until all pages have been drained. It retains the latest 5,000 identifiers for overlap deduplication. Until the first full pass has drained, polls only record existing records and emit nothing.
 - The custom action is restricted to the Xero accounting API and cannot set `Authorization`. It takes no `tenantId` input; send `Xero-Tenant-Id` in `headers`.

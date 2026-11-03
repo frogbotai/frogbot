@@ -493,12 +493,29 @@ describe('trello', () => {
       definition.run({
         client,
         input: { boardId: 'board', timeUnit: 'hours', timeBeforeDue: 24 },
+        cursor: 0,
       } as never),
     ).resolves.toEqual({
       events: [{ id: 'due', name: 'Due', due, dueComplete: false }],
       cursor: Date.parse(due),
     });
     expect(client.listAll).toHaveBeenCalledWith('boards/board/cards');
+
+    vi.useRealTimers();
+  });
+
+  it('starts deadline polling at the end of the warning window without listing cards', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-13T00:00:00.000Z'));
+    const client = { listAll: vi.fn() };
+
+    await expect(
+      cardDeadline.run({
+        client,
+        input: { boardId: 'board', timeUnit: 'minutes', timeBeforeDue: 30 },
+      } as never),
+    ).resolves.toEqual({ events: [], cursor: Date.parse('2026-09-13T00:30:00.000Z') });
+    expect(client.listAll).not.toHaveBeenCalled();
 
     vi.useRealTimers();
   });

@@ -167,7 +167,7 @@ function pollingTrigger<const TSlug extends string>({
         values: current.values,
       };
 
-      return { events: records, cursor: next as PieceJSON };
+      return { events: current.modifiedAfter ? records : [], cursor: next as PieceJSON };
     },
   });
 }

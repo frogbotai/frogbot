@@ -262,4 +262,26 @@ describe('twilio', () => {
 
     expect(tied.events).toEqual([{ sid: 'CA2', status: 'completed', date_created: date }]);
   });
+
+  it('establishes an inbound SMS baseline without emitting existing messages', async () => {
+    const date = '2026-01-02T00:00:00Z';
+
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          json({ messages: [{ sid: 'SM1', direction: 'inbound', date_created: date }] }),
+        ),
+    );
+
+    await expect(
+      createTwilio({ auth }).triggers.incomingSms.run({
+        client: createTwilioClient({ auth, options: {} }),
+        input: { phoneNumber: '+15550000000' },
+        options: {},
+        req,
+      }),
+    ).resolves.toEqual({ events: [], cursor: { date: Date.parse(date), sid: 'SM1' } });
+  });
 });

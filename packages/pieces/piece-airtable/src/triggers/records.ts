@@ -36,11 +36,13 @@ export const newRecord = definePollingTrigger({
   output: recordSchema,
   sample: { id: 'recExample', fields: { Name: 'Example' } },
   async run({ cursor, ...args }) {
-    const since = typeof cursor === 'number' ? cursor : undefined;
     const now = Date.now();
+
+    if (typeof cursor !== 'number') return { events: [], cursor: now };
+
     const records = await listRecords(args);
     const events = records.filter(({ createdTime }) => {
-      return !since || (createdTime !== undefined && Date.parse(createdTime) > since);
+      return createdTime !== undefined && Date.parse(createdTime) > cursor;
     });
 
     return { events, cursor: now };
@@ -61,7 +63,10 @@ export const newOrUpdatedRecord = definePollingTrigger({
   sample: { id: 'recExample', fields: { Name: 'Example' } },
   async run({ client, input, cursor, req }) {
     const now = Date.now();
-    const since = new Date(typeof cursor === 'number' ? cursor : now - 86_400_000).toISOString();
+
+    if (typeof cursor !== 'number') return { events: [], cursor: now };
+
+    const since = new Date(cursor).toISOString();
     const records = await listRecords({
       client,
       input,

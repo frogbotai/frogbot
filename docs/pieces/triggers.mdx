@@ -1,10 +1,10 @@
 ---
 title: Triggers
-description: Receive webhook events in FrogBot agents.
-keywords: [pieces, triggers, webhooks, subscriptions]
+description: Receive webhook events and poll providers in FrogBot agents.
+keywords: [pieces, triggers, webhooks, polling, subscriptions]
 ---
 
-Pieces declare `webhook` and `app` triggers. Mount a trigger on an agent using its instance reference.
+Pieces declare `webhook`, `app`, and `polling` triggers. Mount a trigger on an agent using its instance reference.
 
 ## Mount a trigger
 
@@ -40,10 +40,11 @@ Add `ops` to your configuration's `agents` array. Use `AgentConfig<typeof piece.
 | `trigger` | `PieceTriggerReference` | Required | A trigger from a piece instance, such as `linear.triggers.issueCreated`. Its instance is registered from this mount. |
 | `input` | `z.input<trigger.input>` | Required when the trigger's input schema has required fields | Subscription input, validated against the trigger's schema. |
 | `handler` | `({ event, agent, req }) => void \| Promise<void>` | Required | Runs for each delivered event. `event` is the parsed event data, `agent` is the owning agent instance, and `req` carries `req.context.trigger`. |
+| `schedule` | `{ every: '1h' } \| { cron: '0 * * * *' }` | The trigger's own `schedule`, else `*/5 * * * *` | Polling triggers only: how often FrogBot checks the provider for new items. Same shape as [schedule runs](/agents/overview#schedule-runs); cron schedules use UTC. |
 
 Piece trigger entries have no `type`; schedule triggers use `type: 'schedule'`. See [Schedule runs](/agents/overview#schedule-runs).
 
-Instance slugs default to the piece slug. Give distinct instances unique slugs when they receive webhooks, including channel mounts. You can share one instance across agents.
+Instance slugs default to the piece slug. Give distinct instances unique slugs when they receive webhooks or poll, including channel mounts. You can share one instance across agents.
 
 ## Routes and lifecycle
 
@@ -51,6 +52,7 @@ Instance slugs default to the piece slug. Give distinct instances unique slugs w
 | --- | --- | --- |
 | `webhook` | `/api/webhooks/<instance-slug>/<subscription-id>` | Set `serverURL`; FrogBot creates provider subscriptions during boot reconciliation. |
 | `app` | `/api/webhooks/<instance-slug>` | Register the public URL with the provider. |
+| `polling` | None | Nothing. FrogBot polls the provider on the jobs queue and needs no `serverURL`. |
 
 Both paths use your configured `routes.api` prefix instead of `/api` when customized. Generated subscription URLs combine `serverURL`, that prefix, and the instance slug.
 
@@ -60,7 +62,46 @@ Boot reconciliation and the subscription ledger exist only while an agent declar
 
 If registration succeeds but saving its state fails, FrogBot attempts provider cleanup and retains recovery state when cleanup fails. An unresolved registration blocks another enable attempt rather than creating a duplicate. A process crash before state is persisted can require manual provider cleanup.
 
-Polling triggers and automatic subscription renewal are not supported yet.
+Automatic subscription renewal is not supported yet.
+
+## Polling
+
+Each mounted polling trigger gets its own job schedule on the queue `frogbot-poll:<agent>:<instance>:<trigger>`, so polls of one subscription never overlap. The mount's `schedule` sets how often it runs; without one, the trigger's own `schedule` applies, else every 5 minutes. An invalid schedule fails boot and names the agent and trigger.
+
+```ts
+import { createTwilio } from '@frogbotai/piece-twilio'
+import type { AgentConfig } from 'frogbot'
+
+const twilio = createTwilio({
+  auth: {
+    accountSid: process.env.TWILIO_ACCOUNT_SID!,
+    authToken: process.env.TWILIO_AUTH_TOKEN!,
+  },
+})
+
+export const sms: AgentConfig<typeof twilio.triggers.incomingSms> = {
+  slug: 'sms',
+  instructions: 'Answer incoming text messages.',
+  triggers: [
+    {
+      trigger: twilio.triggers.incomingSms,
+      input: { phoneNumber: process.env.TWILIO_PHONE_NUMBER! },
+      schedule: { every: '1m' },
+      async handler({ event }) {
+        console.log(event)
+      },
+    },
+  ],
+}
+```
+
+A poll calls the trigger's `run({ input, cursor, client, options, req })` with the subscription's input and stored cursor, and a request carrying `req.context.trigger`. It returns `{ events, cursor }`, where the cursor is any JSON value. The cursor is stored on the subscription entry only after every event is queued, so a poll that fails partway replays its events and they're deduped. A poll whose entry was deleted, or whose input changed, while it ran doesn't write its cursor.
+
+The first poll has no cursor. It only records a starting point: FrogBot queues none of its events, so mounting a trigger never replays a provider's history. Piece authors should return `{ events: [], cursor }` on that run, with the same kind of cursor later polls use (such as "now" or the newest ID), without side effects like uploads. A new input resets the cursor, and the next poll starts again from "now". A trigger that never returns a cursor gets none on every poll; FrogBot queues its events from the second poll on and relies on dedupe.
+
+A poll has no signed-in user, so it uses the instance's app-level credential; there's no per-user polling yet. A poll that fails, for example because no credential is linked or the provider errors, sets the entry's `status` to `'error'` and logs one warning naming the agent, instance, trigger, and error. The job isn't retried; the next scheduled poll tries again, and a successful poll sets `status` back to `'active'`.
+
+Each event's `dedupeKey` is a hash of the subscription ID and the event's JSON, tracked for the same 24 hours as webhook events.
 
 ## Delivery and retries
 
@@ -72,7 +113,7 @@ Delivery is not exactly once: if enqueue succeeds but persisting the dedupe mark
 
 ## Runtime subscriptions
 
-Use `frogbot.triggers` to manage mounted `webhook` subscriptions. It works only while an agent declares a trigger or channel; without one, its methods reject.
+Use `frogbot.triggers` to manage mounted `webhook` and `polling` subscriptions. It works only while an agent declares a trigger or channel; without one, its methods reject.
 
 ```ts
 const subscription = await frogbot.triggers.enable({
@@ -89,7 +130,7 @@ await frogbot.triggers.disable(subscription.id)
 | Method | Behavior |
 | --- | --- |
 | `enable({ agent, instance, trigger, input? })` | Requires an existing agent mount. Uses the mount's input when omitted; validates supplied input. Returns the existing unchanged subscription or replaces it when needed. |
-| `disable(id)` | Runs provider cleanup, then deletes the ledger entry. A missing ID is a no-op; cleanup failures retain the entry and reject the call. |
+| `disable(id)` | Runs provider cleanup for webhooks, then deletes the ledger entry. A missing ID is a no-op; cleanup failures retain the entry and reject the call. |
 | `list()` | Returns all persisted subscription entries, including errors and pending cleanup. |
 
 Subscription entries store raw input as `{ value: input }`, or `{}` when input was omitted. Input must be JSON data; FrogBot reapplies the trigger schema before each callback so schema transforms are preserved.

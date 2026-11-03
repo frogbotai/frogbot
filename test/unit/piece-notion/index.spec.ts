@@ -337,6 +337,31 @@ describe('native Notion', () => {
     }
   });
 
+  it('records a baseline cursor for every polling trigger without calling Notion', async () => {
+    const { requests } = installTransport();
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-09-13T12:00:00.000Z'));
+
+    const { piece, req } = request();
+    const client = await piece.client({ req });
+    const context = { client, options: {}, req };
+    const before = requests.length;
+    const runs = [
+      () => newDatabaseItem.run({ ...context, input: { databaseId: 'database1' } }),
+      () => updatedDatabaseItem.run({ ...context, input: { databaseId: 'database1' } }),
+      () => newComment.run({ ...context, input: { pageId: 'page1' } }),
+      () => updatedPage.run({ ...context, input: {} }),
+    ];
+
+    for (const run of runs) {
+      await expect(run()).resolves.toEqual({
+        events: [],
+        cursor: Date.parse('2026-09-13T12:00:00.000Z'),
+      });
+    }
+
+    expect(requests).toHaveLength(before);
+  });
+
   it('maps exact and contains database filters and omits empty fields', async () => {
     const { requests } = installTransport();
     const { piece, req } = request();

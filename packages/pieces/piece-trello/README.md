@@ -34,8 +34,8 @@ Create an application at [Trello's Power-Up administration page](https://trello.
 
 ## Triggers
 
-| Upstream trigger slug | Native trigger    | Type      | Notes                                   |
-| --------------------- | ----------------- | --------- | --------------------------------------- |
-| `new_card`            | `cardCreated`     | `webhook` | Board or optional list scope.           |
-| `card_moved_to_list`  | `cardMovedToList` | `webhook` | Registers against the destination list. |
-| `deadline`            | `cardDeadline`    | `polling` | Polls every five minutes.               |
+| Upstream trigger slug | Native trigger    | Type      | Notes                                                                                                     |
+| --------------------- | ----------------- | --------- | --------------------------------------------------------------------------------------------------------- |
+| `new_card`            | `cardCreated`     | `webhook` | Board or optional list scope.                                                                             |
+| `card_moved_to_list`  | `cardMovedToList` | `webhook` | Registers against the destination list.                                                                   |
+| `deadline`            | `cardDeadline`    | `polling` | Polls every five minutes. Cards already inside the warning window when the trigger is enabled don't fire. |

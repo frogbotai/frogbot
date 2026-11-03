@@ -327,4 +327,19 @@ describe('gmail', () => {
 
     expect(call?.[0].params.q).toBe('from:sender@example.com after:1700000000');
   });
+
+  it('records a baseline cursor with no Gmail call or upload when there is no cursor', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000);
+
+    const { gmail, client, transport } = await fixture();
+    const trigger = gmail.triggers.newEmail;
+
+    await expect(
+      trigger.run({ client, input: trigger.input.parse({}), options: {}, req }),
+    ).resolves.toEqual({ events: [], cursor: 1_700_000_000_000 });
+    expect(transport).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
+
+    vi.mocked(Date.now).mockRestore();
+  });
 });

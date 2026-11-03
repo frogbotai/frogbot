@@ -26,7 +26,7 @@ export const ELSEWHERE = {
   'test/e2e/fixtures/sdk-frontend': '`test/e2e/sdkPackaging.e2e.spec.ts`',
 };
 
-const ALWAYS_EXCLUDED = ['node_modules', 'dist', '.tmp'];
+const ALWAYS_EXCLUDED = ['node_modules', 'dist', '.tmp', '.apps'];
 
 export const WRITE_LINE = `run \`pnpm check test-types --write\` to lower ${BASELINE}`;
 
