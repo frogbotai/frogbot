@@ -2,6 +2,8 @@
 
 The owner decides what gets built. Agents do the research, writing and code. Scripts, hooks and the OpenCode config enforce the rules, so nobody has to remember them.
 
+Cloud agents run the same steps from GitHub issues and labels, and open a PR instead of landing: see [the cloud process](cloud.md).
+
 ## Who does what
 
 Each role is an OpenCode agent, except the owner. The commands are the normal path; anything else is an exception.
