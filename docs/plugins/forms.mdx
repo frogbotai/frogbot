@@ -1,0 +1,126 @@
+---
+title: Forms
+description: Let anyone with a link create records in a FrogBot collection through a form built in the admin.
+keywords: ["forms", "public forms", "leads", "submissions", "plugins"]
+---
+
+The forms plugin lets people who aren't app users create records: leads, tickets, applications. You list which collections may take submissions; admins build a form for one of them in the `forms` collection; anyone with the link fills it in. Each response is a normal record in that collection, checked by its fields, validation, access and hooks.
+
+The collection stays config. A form only picks which of its fields to ask for, with what wording, in which order and steps, and when it closes. A new question means a new field in config.
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-forms
+```
+
+```ts
+import { formsPlugin } from '@frogbotai/plugin-forms'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET!,
+  db: databaseAdapter,
+  collections: [
+    { slug: 'users', auth: true, fields: [] },
+    {
+      slug: 'leads',
+      access: { create: ({ req }) => Boolean(req.user) },
+      fields: [
+        { name: 'email', type: 'email', required: true },
+        { name: 'company', type: 'text' },
+        { name: 'interest', type: 'select', options: ['sales', 'support'] },
+        { name: 'source', type: 'text' },
+      ],
+    },
+  ],
+  plugins: [formsPlugin({ collections: ['leads'] })],
+})
+```
+
+A collection that isn't listed is never touched, and listing one that doesn't exist fails at boot.
+
+## Building a form
+
+A document in the `forms` collection has:
+
+- `title`, and a unique `slug` of lowercase letters, numbers and hyphens.
+- `collection`: one of the listed collections. Each response creates a record there.
+- `steps`, each with an optional `title` and its `questions`. A question names a field of the collection and can override its `label`, `description` and `placeholder`.
+- `hiddenParams`: URL parameters, like `utm_source`, saved to a field of the record.
+- `confirmation`: a `message`, or a `redirect` to a path such as `/thanks` or an `http(s)` URL.
+- `status` (`open` or `closed`), `closesAt` and `maxResponses`.
+
+A question can use any top-level field, including fields in unnamed rows, collapsibles, groups and tabs, of type `text`, `textarea`, `email`, `number`, `select`, `radio`, `checkbox` or `date`. Saving a form is refused, naming the field at fault, when a question:
+
+- uses another field type, a list (`hasMany` text or number), or a hidden or virtual field;
+- repeats a field already on the form;
+- names a field whose `access.create` denies a form submission;
+
+or when the form leaves out a field that is `required` and has no `defaultValue`, since no response could then be saved. A form saved as `closed` skips these checks, so it can always be closed, or drafted before it opens.
+
+## Who can open a form
+
+Like any collection, `forms` is readable by anyone and writable by signed-in users unless you pass `access`, which is merged over those defaults. A visitor who can't read a form gets the same 404 as for a form that doesn't exist:
+
+```ts
+formsPlugin({
+  collections: ['leads'],
+  access: {
+    read: ({ req }) => (req.user ? true : { slug: { not_equals: 'staff-time-off' } }),
+  },
+})
+```
+
+## How a response passes access
+
+Every listed collection's `access.create` is wrapped as `isFormSubmission(req, slug) || yourRule(args)`. A collection with no `create` rule keeps FrogBot's default, admin users only, behind the same check. The record is created with `overrideAccess: false`, so field access and the collection's hooks still run.
+
+While the record is created, `req.context.form` holds `{ form, collection }`. Use `isFormSubmission` in your own hooks or access to tell responses apart:
+
+```ts
+import { isFormSubmission } from '@frogbotai/plugin-forms'
+
+const leads = {
+  slug: 'leads',
+  hooks: {
+    beforeChange: [
+      ({ data, req }) => (isFormSubmission(req, 'leads') ? { ...data, status: 'new' } : data),
+    ],
+  },
+  fields: [],
+}
+```
+
+Only the plugin's submit endpoint can set the flag, and it names one collection, so a hook that creates a document elsewhere with the same `req` isn't admitted there.
+
+## Endpoints
+
+Both endpoints are public and check the form's `read` access as the visitor.
+
+```http
+GET /api/forms/contact/definition
+```
+
+Returns what a page needs to show the form: its title, steps, questions (`key`, `type`, `label`, `description`, `placeholder`, `required`, `options`, `hasMany`, `defaultValue`), hidden parameter names, confirmation and whether it's `closed`. It never returns the collection's other fields.
+
+```http
+POST /api/forms/contact/submit
+Content-Type: application/json
+
+{ "data": { "email": "ada@example.com", "interest": "sales" }, "params": { "utm_source": "newsletter" } }
+```
+
+- Keys that aren't questions on the form are dropped, as are undeclared parameters. A declared parameter is cut to 500 characters.
+- A form that is closed, past `closesAt` or at `maxResponses` answers `410`.
+- On success the response is `{ "confirmation": { "type": "message", "message": "…" } }` or `{ "confirmation": { "type": "redirect", "url": "/thanks" } }`, never the record.
+- When the collection refuses the record, the response is `400` with `{ "errors": [{ "field": "email", "message": "…" }] }`.
+
+With `maxResponses` set, responses are counted under a per-form lock in the app's KV store, so two visitors submitting at once never pass the limit. Without it, the count is kept but not locked.
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collections` | `CollectionSlug[]` | Required | Collections forms may create records in. |
+| `access` | `CollectionAccess` | Anyone reads, signed-in users write | Access for the `forms` collection, merged over the defaults. |

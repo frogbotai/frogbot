@@ -1730,6 +1730,18 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/plugins/plugin-forms:
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      payload:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.5(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/plugins/plugin-import-export:
     dependencies:
       '@payloadcms/plugin-import-export':
@@ -2512,6 +2524,9 @@ importers:
       '@frogbotai/plugin-dojo':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-dojo
+      '@frogbotai/plugin-forms':
+        specifier: workspace:*
+        version: link:../packages/plugins/plugin-forms
       '@frogbotai/plugin-import-export':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-import-export
