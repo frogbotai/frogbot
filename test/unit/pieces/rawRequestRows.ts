@@ -11,6 +11,7 @@ import { createGmail } from '../../../packages/pieces/piece-gmail/src/index.js';
 import { createGoogleCalendar } from '../../../packages/pieces/piece-google-calendar/src/index.js';
 import { createGoogleDrive } from '../../../packages/pieces/piece-google-drive/src/index.js';
 import { createGoogleSheets } from '../../../packages/pieces/piece-google-sheets/src/index.js';
+import { createMicrosoftOutlook } from '../../../packages/pieces/piece-microsoft-outlook/src/index.js';
 import { createMicrosoftTeams } from '../../../packages/pieces/piece-microsoft-teams/src/index.js';
 import { createNotion } from '../../../packages/pieces/piece-notion/src/index.js';
 import { createPagerduty } from '../../../packages/pieces/piece-pagerduty/src/index.js';
@@ -100,6 +101,12 @@ export const rawRequestRows: RawRequestRow[] = [
     auth: google,
     safe: '/spreadsheets/sheet-id',
     origins: ['https://sheets.googleapis.com'],
+  },
+  {
+    factory: createMicrosoftOutlook,
+    auth: { accessToken: 'outlook-token' },
+    safe: '/me/messages',
+    origins: ['https://graph.microsoft.com'],
   },
   {
     factory: createMicrosoftTeams,
