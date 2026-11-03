@@ -6,6 +6,7 @@ import { jobLogOperations } from 'frogbot/jobs';
 import type { SearchAdapter } from 'frogbot/search';
 
 import { mongooseAggregateAdapter } from './aggregate/index.js';
+import { installPartialCompoundIndexes } from './compoundIndexes.js';
 import { installJobIndexes } from './jobIndexes.js';
 import { pruneJobLogs } from './jobLogs.js';
 import { mongooseSearchAdapter } from './search/index.js';
@@ -33,6 +34,7 @@ export const mongooseAdapter = (
       database.packageName = '@frogbotai/db-mongodb';
 
       installJobIndexes(database);
+      installPartialCompoundIndexes(database);
 
       database.updateJobs = createUpdateJobs(database);
 

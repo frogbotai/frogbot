@@ -5,7 +5,12 @@ import type { MapVectorField } from '../../database/types.js';
 import { fromPayloadField, toPayloadField } from '../../seams/config.js';
 import { validateVector } from '../validations.js';
 import { FIELD_CELL_PATH, sanitizeOptionColors } from './sanitizeOptionColors.js';
-import { getSystemKind, sanitizeSystemKind } from './sanitizeSystemKinds.js';
+import {
+  getSystemKind,
+  type OnAutonumber,
+  type OnAutonumberKey,
+  sanitizeSystemKind,
+} from './sanitizeSystemKinds.js';
 import type { Field, JSONField, JSONSchemaTransform, VectorField } from './types.js';
 
 type VectorOwner =
@@ -14,7 +19,8 @@ type VectorOwner =
 type SanitizeVectorFieldsArgs = VectorOwner & {
   fields: readonly Field[];
   mapVectorField?: MapVectorField;
-  onAutonumber?: (path: string) => void;
+  onAutonumber?: OnAutonumber;
+  onAutonumberKey?: OnAutonumberKey;
 };
 
 type SanitizeVectorFieldArgs = VectorOwner & {
@@ -137,7 +143,7 @@ function sanitizeFields(
     const systemKind = getSystemKind(field);
 
     if (systemKind) {
-      return sanitizeSystemKind({ ...args, ...systemKind, field, path, repeated });
+      return sanitizeSystemKind({ ...args, ...systemKind, field, parent, path, repeated });
     }
 
     if (field.type === 'vector') {

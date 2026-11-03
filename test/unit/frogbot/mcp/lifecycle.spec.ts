@@ -113,6 +113,7 @@ function makeConfig(mcp: MCPServer[], slugs = ['researcher', 'support']): FrogBo
       noEmail: true,
       triggers: {},
       autonumbers: [],
+      autonumberKeys: [],
     },
   } as unknown as FrogBotSanitizedConfig;
 }

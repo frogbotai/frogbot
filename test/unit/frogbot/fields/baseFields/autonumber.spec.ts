@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { sanitizeCollection } from '../../../../../packages/frogbot/src/collections/config/sanitize.js';
+import type { CollectionConfig } from '../../../../../packages/frogbot/src/collections/config/types.js';
 import { ensureAutonumbers } from '../../../../../packages/frogbot/src/fields/baseFields/autonumber/counter.js';
 import { autonumberField } from '../../../../../packages/frogbot/src/fields/baseFields/autonumber/index.js';
 import type { FrogBot } from '../../../../../packages/frogbot/src/frogbot.js';
@@ -78,6 +80,106 @@ describe('autonumberField', () => {
   });
 });
 
+describe('autonumberField with a scope', () => {
+  const description =
+    'Number set by FrogBot when the record is created, unique within each project; read-only';
+
+  function sanitizeIssues(fields: CollectionConfig['fields']) {
+    const onAutonumber = vi.fn();
+    const collection = sanitizeCollection({ slug: 'issues', fields }, vi.fn(), {
+      onAutonumber,
+      resolveFrogBot: vi.fn(),
+    });
+
+    return { collection, onAutonumber };
+  }
+
+  const project = {
+    name: 'project',
+    type: 'relationship',
+    relationTo: 'projects',
+    required: true,
+  } as const;
+
+  it('marks the kind with its scope and drops the unique column', () => {
+    const field = autonumberField({ name: 'number', scope: 'project' });
+
+    expect(field.unique).toBe(false);
+    expect(field).not.toHaveProperty('scope');
+    expect(field.admin?.custom).toEqual({
+      frogbot: { kind: { type: 'autonumber', scope: 'project' } },
+    });
+  });
+
+  it('tells agents the number is unique within each scope', () => {
+    const field = autonumberField({ name: 'number', scope: 'project' });
+
+    expect(runSchema(field, { type: ['number', 'null'] })).toEqual({
+      type: ['integer', 'null'],
+      description,
+    });
+  });
+
+  it('adds a unique index on the scope and the number', () => {
+    const { collection, onAutonumber } = sanitizeIssues([
+      { name: 'title', type: 'text' },
+      project,
+      autonumberField({ name: 'number', scope: 'project' }),
+    ]);
+
+    expect(collection.indexes).toEqual([{ fields: ['project', 'number'], unique: true }]);
+    expect(onAutonumber).toHaveBeenCalledWith('number', { name: 'project', path: 'project' });
+  });
+
+  it('finds the scope beside the number inside a group and a row', () => {
+    const { collection, onAutonumber } = sanitizeIssues([
+      {
+        name: 'details',
+        type: 'group',
+        fields: [
+          { type: 'row', fields: [project] },
+          autonumberField({ name: 'ref', scope: 'project' }),
+        ],
+      },
+    ]);
+
+    expect(collection.indexes).toEqual([
+      { fields: ['details.project', 'details.ref'], unique: true },
+    ]);
+    expect(onAutonumber).toHaveBeenCalledWith('details.ref', {
+      name: 'project',
+      path: 'details.project',
+    });
+  });
+
+  it('leaves an unscoped field without an index', () => {
+    const { collection, onAutonumber } = sanitizeIssues([autonumberField({ name: 'number' })]);
+
+    expect(collection.indexes).toBeUndefined();
+    expect(onAutonumber).toHaveBeenCalledWith('number', undefined);
+  });
+
+  it.each([
+    ['missing', []],
+    ['optional', [{ ...project, required: false }]],
+    ['hasMany', [{ ...project, hasMany: true }]],
+    ['localized', [{ ...project, localized: true }]],
+    ['polymorphic', [{ ...project, relationTo: ['projects', 'teams'] }]],
+    ['not a relationship', [{ name: 'project', type: 'text', required: true }]],
+  ])('fails at startup when the scope is %s', (_label, fields) => {
+    expect(() =>
+      sanitizeIssues([
+        ...(fields as CollectionConfig['fields']),
+        autonumberField({ name: 'number', scope: 'project' }),
+      ]),
+    ).toThrow(
+      new Error(
+        "[frogbot] Autonumber field 'number' in collection 'issues' has scope 'project', which must be a required relationship to one collection, not localized or hasMany.",
+      ),
+    );
+  });
+});
+
 describe('autonumberField option errors', () => {
   it.each([
     [{ hasMany: true }, 'hasMany is not supported'],
@@ -107,6 +209,7 @@ describe('ensureAutonumbers', () => {
             { collection: 'tickets', path: 'number' },
             { collection: 'orders', path: 'ref' },
           ],
+          autonumberKeys: [],
         },
       },
       db: { findOne },

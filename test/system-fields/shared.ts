@@ -19,6 +19,8 @@ export const importsDir = path.join(tmpdir(), 'frogbot-system-fields-imports');
 export const usersSlug = 'users';
 export const adminsSlug = 'admins';
 export const ticketsSlug = 'tickets';
+export const projectsSlug = 'projects';
+export const issuesSlug = 'issues';
 export const chatsSlug = 'chats';
 export const messagesSlug = 'messages';
 export const apiKeysSlug = 'api-keys';
@@ -30,3 +32,6 @@ export const createTicketToolSlug = 'create-ticket';
 export const touchTicketTaskSlug = 'touch-ticket';
 export const modelPort = testPort(3990);
 export const countersSlug = 'frogbot-autonumbers';
+export const oldKeysSlug = 'frogbot-autonumber-keys';
+/** Issues with this title are hidden from reads without `overrideAccess`. */
+export const hiddenIssueTitle = 'Hidden';
