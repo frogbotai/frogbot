@@ -315,6 +315,34 @@ export function LogoutButton({ user }: RootComponentServerProps) {
 
 Account menu components receive the request as `req`. Use `req?.frogbot` to reach FrogBot. See [Component props](/custom-components/root-components#component-props) for the full list.
 
+## Search with Cmd+K
+
+Press Cmd+K (Ctrl+K on Windows and Linux) anywhere in the admin, outside a drawer, to open the command palette. It lists the sidebar's entries, with the same labels and order, and filters them as you type. Enter opens the highlighted entry, and Cmd+Enter opens a collection's create page when you can create in it. Press Cmd+K again, Esc, or click outside to close it.
+
+As you type, the palette also lists matching records, grouped by collection in sidebar order, at most 5 per collection. Enter or a click opens the record. Each collection the sidebar shows and you can read is searched in two ways:
+
+- **Contains:** like the list view's search box, records whose `admin.listSearchableFields` contain the text, or whose `admin.useAsTitle` field does when that's unset. Partial words match, so "acm" finds "Acme Corp".
+- **Search index:** when the collection declares a [search index](/search/overview), the first one with a `lexical` component adds whole-word matches from any of its fields, after the "contains" matches. The palette skips vector-only indexes, and indexes whose fields have field-level `access.read`.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Tickets: CollectionConfig = {
+  slug: 'tickets',
+  admin: { useAsTitle: 'subject' },
+  fields: [
+    { name: 'subject', type: 'text', required: true },
+    { name: 'body', type: 'textarea' },
+  ],
+  // "printer" now finds a ticket that mentions it only in its body.
+  search: { content: { lexical: { fields: ['subject', 'body'] } } },
+}
+```
+
+Each record shows its `useAsTitle` field, or its ID when that's empty. Every result comes from the REST API as the signed-in user, so collection and document read access apply: the palette never lists a collection the user can't read, and a request that fails hides only that collection's group.
+
+The palette is part of FrogBot's default sidebar. If you [replace the sidebar](#replace-the-sidebar), Cmd+K opens the built-in admin palette instead, which goes to collections and create pages but doesn't search records.
+
 ## Replace the sidebar
 
 Set `admin.components.Nav` to replace the default sidebar. Your component receives the standard admin server props, including the current user, permissions, and visible collections.

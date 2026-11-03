@@ -72,6 +72,7 @@ export interface Config {
     tasks: Task;
     projects: Project;
     tags: Tag;
+    secrets: Secret;
     timesheets: Timesheet;
     'api-keys': ApiKey;
     'usage-logs': UsageLog;
@@ -88,6 +89,7 @@ export interface Config {
     tasks: TasksSelect;
     projects: ProjectsSelect;
     tags: TagsSelect;
+    secrets: SecretsSelect;
     timesheets: TimesheetsSelect;
     'api-keys': ApiKeysSelect;
     'usage-logs': UsageLogsSelect;
@@ -860,6 +862,24 @@ export interface Project {
  * via the `definition` "tags".
  */
 export interface Tag {
+  id: number;
+  name?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "secrets".
+ */
+export interface Secret {
   id: number;
   name?: string | null;
   createdBy?: {
@@ -1680,6 +1700,17 @@ export interface TagsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "secrets_select".
+ */
+export interface SecretsSelect {
+  name?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "timesheets_select".
  */
 export interface TimesheetsSelect {
@@ -1863,6 +1894,7 @@ export interface CollectionQueryWidget {
       | 'tasks'
       | 'projects'
       | 'tags'
+      | 'secrets'
       | 'timesheets'
       | 'api-keys'
       | 'usage-logs'
@@ -1895,6 +1927,7 @@ export interface ActivityWidget {
           | 'tasks'
           | 'projects'
           | 'tags'
+          | 'secrets'
           | 'timesheets'
           | 'api-keys'
           | 'usage-logs'

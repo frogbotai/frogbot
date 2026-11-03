@@ -58,6 +58,13 @@ export {
 export { Checkbox, type CheckboxProps } from './components/checkbox.js';
 export { Collapsible, CollapsibleContent, CollapsibleTrigger } from './components/collapsible.js';
 export {
+  CommandMenu,
+  type CommandMenuGroup,
+  type CommandMenuItem,
+  type CommandMenuProps,
+  type CommandMenuSelectOptions,
+} from './components/command-menu.js';
+export {
   ConfirmationDialog,
   type ConfirmationDialogProps,
 } from './components/confirmation-dialog.js';

@@ -14,6 +14,8 @@ import type { ReactNode } from 'react';
 
 import { NavAdapterProvider, type NavLinkProps } from '../../../nav/adapter.js';
 import { NavShell, type NavShellProps } from '../../../nav/NavShell.js';
+import type { PaletteModel } from '../CommandPalette/buildPaletteModel.js';
+import { RecordPalette } from '../CommandPalette/index.client.js';
 
 export type FrogBotNavClientProps = Omit<
   NavShellProps,
@@ -22,6 +24,7 @@ export type FrogBotNavClientProps = Omit<
   accountPath: string;
   CustomAvatar?: ReactNode;
   items: NonNullable<NavShellProps['navItems']>;
+  palette: PaletteModel;
   settingsPath: string;
 };
 
@@ -30,7 +33,12 @@ function PayloadLink(props: NavLinkProps) {
 }
 
 /** FrogBot's sidebar on Payload's router, preferences and nav state. */
-export function FrogBotNavClient({ CustomAvatar, items, ...props }: FrogBotNavClientProps) {
+export function FrogBotNavClient({
+  CustomAvatar,
+  items,
+  palette,
+  ...props
+}: FrogBotNavClientProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { getPreference, setPreference } = usePreferences();
@@ -57,6 +65,7 @@ export function FrogBotNavClient({ CustomAvatar, items, ...props }: FrogBotNavCl
         navItems={items}
         scrollClassName="nav__scroll"
       />
+      <RecordPalette {...palette} />
     </NavAdapterProvider>
   );
 }
