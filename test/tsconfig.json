@@ -40,6 +40,7 @@
     "hooks-access",
     "kv",
     "plugin-dojo",
+    "plugin-import-export",
     "plugin-mcp",
     "plugin-seo",
     "plugin-usage-reports",

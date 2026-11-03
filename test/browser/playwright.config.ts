@@ -183,6 +183,12 @@ const servers: Record<string, Server> = {
     database: 'plugin-wrappers.browser.db',
     readyPath: '/admin',
   },
+  'plugin-import-export': {
+    fixture: 'plugin-wrappers',
+    port: testPort(3142),
+    database: 'plugin-import-export.browser.db',
+    readyPath: '/admin',
+  },
   dojo: { fixture: 'dojo', port: testPort(3138), database: 'frogbot.db', env: dojoEnv },
   'first-user-blank': {
     fixture: 'blank',
@@ -285,6 +291,7 @@ const composerSpecs = ['composer.browser.spec.ts', 'composerEdges.browser.spec.t
 const signInOptions: Record<string, SignInOptions> = {
   'rich-text': { adminRoute: '/admin' },
   'plugin-seo': { adminRoute: '/admin' },
+  'plugin-import-export': { adminRoute: '/admin' },
 };
 
 const testProjects = [
@@ -368,6 +375,7 @@ const testProjects = [
     testMatch: ['accountMenu.browser.spec.ts', 'livePreview.browser.spec.ts'],
   }),
   project({ name: 'plugin-seo', testMatch: 'seoFields.browser.spec.ts' }),
+  project({ name: 'plugin-import-export', testMatch: 'importMapping.browser.spec.ts' }),
   project({
     name: 'dojo',
     testMatch: [

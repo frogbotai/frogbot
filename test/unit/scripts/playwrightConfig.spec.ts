@@ -18,6 +18,7 @@ const allProjects = [
   'question-firefox',
   'question-webkit',
   'plugin-seo',
+  'plugin-import-export',
   'dojo',
   'first-user-blank',
   'sign-in-passwords',
@@ -30,6 +31,7 @@ const dependencyURLs: Record<string, string[]> = {
 
 const readyPaths: Record<string, string> = {
   'plugin-seo': '/admin',
+  'plugin-import-export': '/admin',
 };
 
 function serverURL(baseURL: string | undefined, name: string) {

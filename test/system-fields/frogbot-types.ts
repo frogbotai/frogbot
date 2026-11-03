@@ -532,6 +532,16 @@ export interface Import {
       | boolean
       | null;
   };
+  columnMap?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  headerKey?: string | null;
   createdBy?:
     | ({
         relationTo: 'users';
@@ -922,6 +932,8 @@ export interface ImportsSelect {
         issues?: boolean;
         issueDetails?: boolean;
       };
+  columnMap?: boolean;
+  headerKey?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
