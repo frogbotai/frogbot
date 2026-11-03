@@ -1,0 +1,23 @@
+name: automerge
+
+# Adding `ticket:automerge` to a PR turns on GitHub auto-merge (squash). GitHub then
+# merges the PR once the required `ci` check passes. Agents can't do this themselves:
+# enabling auto-merge is GraphQL-only, and cloud sessions can't call GraphQL.
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  arm:
+    if: github.event.label.name == 'ticket:automerge' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh pr merge --auto --squash "$PR" --repo "$REPO"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
