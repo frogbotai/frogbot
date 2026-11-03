@@ -1,0 +1,27 @@
+name: Ticket
+description: Work for FrogBot's agents. The owner adds a `ticket:*` label to start it.
+title: '<short title>'
+body:
+  - type: textarea
+    id: asked
+    attributes:
+      label: Asked
+      description: What you want, in your own words. Agents copy it word for word into the ticket and never edit it.
+    validations:
+      required: true
+  - type: dropdown
+    id: repo
+    attributes:
+      label: Repo
+      description: Where the code change goes.
+      options:
+        - frogbot
+        - sidekick
+        - frogbot and sidekick
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Links, errors, screenshots, or anything else that helps. Optional.
