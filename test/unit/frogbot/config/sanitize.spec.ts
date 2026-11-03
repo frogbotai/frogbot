@@ -4373,6 +4373,45 @@ describe('frogbot sanitize', () => {
       ).toMatchObject({ admin: { hidden: true } });
     });
 
+    it('wires the poll task and reserves its slug for polling mounts', async () => {
+      const createPolling = definePiece({
+        slug: 'polling',
+        label: 'Polling',
+        actions: [],
+        triggers: [
+          {
+            slug: 'polled',
+            type: 'polling',
+            description: 'Polled',
+            input: z.object({}),
+            run: () => Promise.resolve({ events: [] }),
+          },
+        ],
+      });
+
+      const polling = createPolling({});
+      const polled = {
+        ...agent,
+        triggers: [{ trigger: polling.triggers.polled, handler: vi.fn() }],
+      };
+
+      const payloadConfig = await sanitize(makeConfig({ ai, agents: [polled] }))._internal
+        .payloadConfig;
+
+      expect(payloadConfig.jobs.tasks?.map(({ slug }) => slug)).toEqual(
+        expect.arrayContaining(['frogbot-run-agent-trigger', 'frogbot-poll-trigger']),
+      );
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai,
+            agents: [polled],
+            jobs: { tasks: [{ slug: 'frogbot-poll-trigger', handler: () => ({ output: {} }) }] },
+          }),
+        ),
+      ).toThrow("Job task slug 'frogbot-poll-trigger' is reserved for polling triggers.");
+    });
+
     it('keeps the subscription ledger for an agent with only a channel', async () => {
       const channel = createChannel({ auth: { token: 'secret' } });
       const result = sanitize(makeConfig({ ai, agents: [{ ...agent, channels: [channel] }] }));

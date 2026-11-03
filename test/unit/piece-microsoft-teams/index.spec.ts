@@ -107,7 +107,7 @@ type TeamsPiece = ReturnType<typeof createMicrosoftTeams>;
 type DeltaArgs = {
   client: Awaited<ReturnType<TeamsPiece['client']>>;
   req: PieceRequest;
-  cursor?: { since: string; deltaLink: string };
+  cursor?: { since: string; deltaLink?: string };
 };
 
 const deltaTriggers = {
@@ -592,31 +592,39 @@ describe('native Microsoft Teams actions', () => {
 });
 
 describe('native Microsoft Teams polling', () => {
-  it('runs initial and subsequent channel and chat creation polls', async () => {
+  it('records a baseline without calling Graph, then polls channel and chat creation', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-13T12:00:00.000Z'));
+
     const piece = createMicrosoftTeams({ auth });
     const request = req();
     const client = await piece.client({ req: request });
+    const baseline = { events: [], cursor: { since: '2026-09-13T12:00:00.000Z' } };
 
-    const firstChannel = await piece.triggers.channelCreated.run({
-      client,
-      input: { teamId: 'team' },
-      options: teamsOptions,
-      req: request,
-    });
+    calls.length = 0;
 
+    await expect(
+      piece.triggers.channelCreated.run({
+        client,
+        input: { teamId: 'team' },
+        options: teamsOptions,
+        req: request,
+      }),
+    ).resolves.toEqual(baseline);
+    await expect(
+      piece.triggers.chatCreated.run({ client, input: {}, options: teamsOptions, req: request }),
+    ).resolves.toEqual(baseline);
+    expect(calls).toEqual([]);
+
+    vi.useRealTimers();
+
+    const cursor = { since: '2026-09-13T09:00:00Z' };
     const nextChannel = await piece.triggers.channelCreated.run({
       client,
       input: { teamId: 'team' },
       options: teamsOptions,
       req: request,
-      cursor: firstChannel.cursor,
-    });
-
-    const firstChat = await piece.triggers.chatCreated.run({
-      client,
-      input: {},
-      options: teamsOptions,
-      req: request,
+      cursor,
     });
 
     const nextChat = await piece.triggers.chatCreated.run({
@@ -624,15 +632,12 @@ describe('native Microsoft Teams polling', () => {
       input: {},
       options: teamsOptions,
       req: request,
-      cursor: firstChat.cursor,
+      cursor,
     });
 
-    expect(firstChannel.events).toEqual([channel]);
-    expect(nextChannel.events).toEqual([]);
-    expect(firstChat.events).toEqual([chat]);
-    expect(nextChat.events).toEqual([]);
+    expect(nextChannel).toEqual({ events: [channel], cursor: { since: channel.createdDateTime } });
+    expect(nextChat).toEqual({ events: [chat], cursor: { since: chat.createdDateTime } });
     expect(calls.some((call) => call.url.includes('%24filter=createdDateTime'))).toBe(true);
-    expect(calls.some((call) => call.url.includes('%24top=10'))).toBe(true);
   });
 
   it.each([
@@ -649,6 +654,12 @@ describe('native Microsoft Teams polling', () => {
       transport = (url) => Promise.resolve(deltaFixture(url, root));
 
       const first = await run(piece, { client, req: request });
+      const started = await run(piece, {
+        client,
+        req: request,
+        cursor: { since: '2026-09-13T10:30:00Z' },
+      });
+
       const resumed = await run(piece, {
         client,
         req: request,
@@ -658,7 +669,13 @@ describe('native Microsoft Teams polling', () => {
         },
       });
 
-      expect(first.events).toEqual([message]);
+      expect(first.events).toEqual([]);
+      expect(started.events).toMatchObject([{ id: 'new' }, { id: 'newer' }]);
+      expect(started.cursor).toEqual({
+        since: '2026-09-13T12:00:00Z',
+        deltaLink: `https://graph.microsoft.com/v1.0${root}/delta?$deltatoken=next`,
+      });
+      expect(calls.some((call) => call.url.endsWith(`${root}/delta`))).toBe(true);
       expect(resumed.events).toMatchObject([{ id: 'new' }, { id: 'newer' }]);
       expect(resumed.cursor).toEqual({
         since: '2026-09-13T12:00:00Z',

@@ -326,6 +326,25 @@ describe('front', () => {
     ).resolves.toEqual({ events: [], cursor: 2_000 });
   });
 
+  it.each([
+    ['commentCreated', { conversationId: 'cnv' }],
+    ['inboundMessageCreated', {}],
+    ['outboundMessageCreated', {}],
+    ['conversationTagAdded', { conversationId: 'cnv' }],
+    ['conversationStatusChanged', { conversationId: 'cnv', status: 'archived' }],
+  ] as const)('records a baseline for %s without calling Front', async (slug, input) => {
+    vi.spyOn(Date, 'now').mockReturnValue(5_000);
+
+    const client = { request: vi.fn() };
+
+    await expect(
+      pollingTrigger(slug).run({ client, input, options: {}, req: req() }),
+    ).resolves.toEqual({ events: [], cursor: 5_000 });
+    expect(client.request).not.toHaveBeenCalled();
+
+    vi.mocked(Date.now).mockRestore();
+  });
+
   it('keeps Front failures useful', async () => {
     vi.stubGlobal(
       'fetch',

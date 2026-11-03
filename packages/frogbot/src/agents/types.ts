@@ -82,7 +82,8 @@ export type AgentPieceTrigger<TTrigger extends PieceTriggerReference = PieceTrig
           agent: AgentInstance;
           req: FrogBotRequest;
         }): Promise<void> | void;
-      } & AgentPieceTriggerInput<TTrigger['input']>
+      } & AgentPieceTriggerInput<TTrigger['input']> &
+        (TTrigger extends { type: 'polling' } ? { schedule?: AgentSchedule } : { schedule?: never })
     : never;
 
 export type { AgentProfile, AgentReasoningOption };

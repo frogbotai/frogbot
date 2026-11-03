@@ -61,7 +61,9 @@ function eventsTrigger<const TSlug extends string, TInput extends z.ZodObject>({
     input,
     output: eventOutput,
     async run({ client, input, cursor }) {
-      const since = typeof cursor === 'number' ? cursor : 0;
+      if (typeof cursor !== 'number') return { events: [], cursor: Date.now() };
+
+      const since = cursor;
 
       const params = new URLSearchParams({ 'q[types]': type, limit: String(limit) });
       if (input.inboxId) params.set('q[inboxes]', String(input.inboxId));
@@ -124,7 +126,9 @@ export const conversationStatusChanged = definePollingTrigger({
   }),
   output: eventOutput,
   async run({ client, input, cursor }) {
-    const since = typeof cursor === 'number' ? cursor : 0;
+    if (typeof cursor !== 'number') return { events: [], cursor: Date.now() };
+
+    const since = cursor;
 
     const conversation = await client.request('GET', `/conversations/${input.conversationId}`);
     const parsed = conversationRecord.safeParse(conversation);

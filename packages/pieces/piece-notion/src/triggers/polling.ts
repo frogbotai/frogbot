@@ -17,11 +17,11 @@ function databaseTrigger<const TSlug extends string>(
     output: notionPage,
     sample: { object: 'page', id: 'example' },
     async run({ client, input, cursor, req }) {
-      const since = typeof cursor === 'number' ? cursor : undefined;
       const now = Date.now();
-      const filter = since
-        ? { timestamp, [timestamp]: { on_or_after: new Date(since).toISOString() } }
-        : undefined;
+
+      if (typeof cursor !== 'number') return { events: [], cursor: now };
+
+      const filter = { timestamp, [timestamp]: { on_or_after: new Date(cursor).toISOString() } };
 
       const pages = z.array(notionPage).parse(
         await client.listAll({
@@ -35,7 +35,7 @@ function databaseTrigger<const TSlug extends string>(
       const events = pages.filter((page) => {
         const time = page[timestamp];
 
-        if (seen.has(page.id) || (since && (time === undefined || Date.parse(time) <= since))) {
+        if (seen.has(page.id) || time === undefined || Date.parse(time) <= cursor) {
           return false;
         }
 
@@ -61,8 +61,10 @@ export const newComment = definePollingTrigger({
   output: notionComment,
   sample: { object: 'comment', id: 'example', created_time: '2026-01-01T00:00:00.000Z' },
   async run({ client, input, cursor, req }) {
-    const since = typeof cursor === 'number' ? cursor : undefined;
     const now = Date.now();
+
+    if (typeof cursor !== 'number') return { events: [], cursor: now };
+
     const comments = z.array(notionComment).parse(
       await client.listAll({
         path: '/comments',
@@ -73,7 +75,7 @@ export const newComment = definePollingTrigger({
 
     const seen = new Set<string>();
     const events = comments.filter((comment) => {
-      if (seen.has(comment.id) || (since && Date.parse(comment.created_time) <= since)) {
+      if (seen.has(comment.id) || Date.parse(comment.created_time) <= cursor) {
         return false;
       }
 
@@ -95,8 +97,10 @@ export const updatedPage = definePollingTrigger({
   output: notionPage,
   sample: { object: 'page', id: 'example' },
   async run({ client, cursor, req }) {
-    const since = typeof cursor === 'number' ? cursor : undefined;
     const now = Date.now();
+
+    if (typeof cursor !== 'number') return { events: [], cursor: now };
+
     const pages = z.array(notionPage).parse(
       await client.listAll({
         path: '/search',
@@ -112,8 +116,8 @@ export const updatedPage = definePollingTrigger({
     const events = pages.filter((page) => {
       if (
         seen.has(page.id) ||
-        (since &&
-          (page.last_edited_time === undefined || Date.parse(page.last_edited_time) <= since))
+        page.last_edited_time === undefined ||
+        Date.parse(page.last_edited_time) <= cursor
       ) {
         return false;
       }

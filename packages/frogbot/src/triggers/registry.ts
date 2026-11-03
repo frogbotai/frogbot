@@ -1,7 +1,10 @@
-import type { AgentConfig } from '../agents/types.js';
+import { assertCron, resolveScheduleCron } from '../agents/resolveScheduleTasks.js';
+import type { AgentConfig, AgentPieceTrigger } from '../agents/types.js';
 import { pieceInstanceRuntime, pieceTriggerInstance } from '../pieces/definePiece.js';
-import type { PieceInstance } from '../pieces/types.js';
+import type { PieceInstance, PieceTriggerReference } from '../pieces/types.js';
 import type { IngressRegistry } from './types.js';
+
+const DEFAULT_POLL_CRON = '*/5 * * * *';
 
 export function requiresAdapterVerification(entry: IngressRegistry[string]): boolean {
   const { definition } = pieceInstanceRuntime(entry.instance);
@@ -14,6 +17,25 @@ export function requiresAdapterVerification(entry: IngressRegistry[string]): boo
   );
 }
 
+function pollCron(
+  { trigger, schedule }: AgentPieceTrigger & { trigger: PieceTriggerReference },
+  agentSlug: string,
+): string | undefined {
+  const label = `Trigger '${trigger.slug}' in agent '${agentSlug}'`;
+
+  if (trigger.type !== 'polling') {
+    if (schedule !== undefined) {
+      throw new Error(`[frogbot] ${label} sets a schedule, but only polling triggers take one.`);
+    }
+
+    return undefined;
+  }
+
+  if (schedule !== undefined) return resolveScheduleCron(schedule, label);
+
+  return assertCron(trigger.schedule ?? DEFAULT_POLL_CRON, label);
+}
+
 export function buildIngressRegistry({
   agents,
 }: {
@@ -21,18 +43,35 @@ export function buildIngressRegistry({
   instances?: readonly PieceInstance[];
 }): IngressRegistry {
   const registry: IngressRegistry = Object.create(null);
-  const mounts = new Map<string, { instance: PieceInstance; agentSlug: string }>();
-  const register = ({ instance, agentSlug }: { instance: PieceInstance; agentSlug: string }) => {
+  const mounts = new Map<
+    string,
+    { instance: PieceInstance; agentSlug: string; polling: boolean }
+  >();
+
+  const register = ({
+    instance,
+    agentSlug,
+    polling = false,
+  }: {
+    instance: PieceInstance;
+    agentSlug: string;
+    polling?: boolean;
+  }) => {
     const existing = mounts.get(instance.slug);
     if (existing && existing.instance !== instance) {
       const { definition } = pieceInstanceRuntime(instance);
       const label = existing.instance.piece === instance.piece ? definition.label : 'piece';
+      const conflict = `Ingress slug '${instance.slug}' is shared by agents '${existing.agentSlug}' and '${agentSlug}'.`;
+
       throw new Error(
-        `[frogbot] Two ${label} instances receive webhooks; give each a slug. Ingress slug '${instance.slug}' is shared by agents '${existing.agentSlug}' and '${agentSlug}'.`,
+        existing.polling || polling
+          ? `[frogbot] Two ${label} instances are mounted; give each a slug. ${conflict}`
+          : `[frogbot] Two ${label} instances receive webhooks; give each a slug. ${conflict}`,
       );
     }
 
-    if (!existing) mounts.set(instance.slug, { instance, agentSlug });
+    if (existing) existing.polling ||= polling;
+    else mounts.set(instance.slug, { instance, agentSlug, polling });
   };
 
   for (const agent of agents ?? []) {
@@ -52,11 +91,7 @@ export function buildIngressRegistry({
         throw new Error(`[frogbot] Unknown trigger reference in agent '${agent.slug}'.`);
       }
 
-      if (trigger.trigger.type === 'polling') {
-        throw new Error(
-          `[frogbot] Polling trigger '${trigger.trigger.slug}' in agent '${agent.slug}' is not supported.`,
-        );
-      }
+      const cron = pollCron(trigger, agent.slug);
 
       const { definition } = pieceInstanceRuntime(instance);
       if (trigger.trigger.type === 'app' && !definition.webhook) {
@@ -81,9 +116,31 @@ export function buildIngressRegistry({
         );
       }
 
-      register({ instance, agentSlug: agent.slug });
+      register({ instance, agentSlug: agent.slug, polling: cron !== undefined });
+
       const entry = registry[instance.slug] ?? { instance, subscribers: [] };
-      entry.subscribers.push({ agentSlug: agent.slug, piece: instance, trigger, input });
+
+      if (
+        cron !== undefined &&
+        entry.subscribers.some(
+          (subscriber) =>
+            subscriber.agentSlug === agent.slug &&
+            subscriber.trigger.trigger.slug === trigger.trigger.slug,
+        )
+      ) {
+        throw new Error(
+          `[frogbot] Trigger '${instance.slug}/${trigger.trigger.slug}' is mounted twice in agent '${agent.slug}'. Each polling mount keeps one cursor, so mount it once or use a second instance with its own slug.`,
+        );
+      }
+
+      entry.subscribers.push({
+        agentSlug: agent.slug,
+        piece: instance,
+        trigger,
+        input,
+        ...(cron === undefined ? {} : { cron }),
+      });
+
       registry[instance.slug] = entry;
     }
   }

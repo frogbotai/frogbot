@@ -1,6 +1,8 @@
+import { Cron } from 'croner';
 import type { JobsConfig, TaskConfig } from 'payload';
 
 import { getFrogBotInstance } from '../instanceRegistry.js';
+import { isRecord } from '../utilities/isRecord.js';
 import type { AgentConfig, AgentScheduleTrigger } from './types.js';
 
 export const AGENT_SCHEDULE_TASK_SLUG = 'frogbot-run-agent-schedule';
@@ -37,6 +39,43 @@ export function everyToCron(every: string): string {
   if (unit === 'h') return value === 24 ? '0 0 * * *' : `0 */${value} * * *`;
 
   return '0 0 * * *';
+}
+
+/** Checks a cron expression, naming `label` (such as `Trigger 'x' in agent 'y'`) on failure. */
+export function assertCron(cron: string, label: string): string {
+  try {
+    new Cron(cron);
+  } catch {
+    throw new Error(`[frogbot] ${label} has an invalid cron expression: '${cron}'.`);
+  }
+
+  return cron;
+}
+
+/** Validates an `AgentSchedule` and returns its cron, naming `label` on failure. */
+export function resolveScheduleCron(schedule: unknown, label: string): string {
+  if (!isRecord(schedule)) throw new Error(`[frogbot] ${label} requires a schedule.`);
+
+  const hasEvery = typeof schedule.every === 'string';
+  const hasCron = typeof schedule.cron === 'string';
+
+  if (hasEvery === hasCron) {
+    throw new Error(`[frogbot] ${label} schedule requires exactly one of every or cron.`);
+  }
+
+  if (schedule.timezone !== undefined) {
+    throw new Error(`[frogbot] ${label} timezone is not yet supported. Cron schedules use UTC.`);
+  }
+
+  if (hasCron) return assertCron(schedule.cron as string, label);
+
+  try {
+    return assertCron(everyToCron(schedule.every as string), label);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
+    throw new Error(`[frogbot] ${label}: ${message.replace(/^\[frogbot\] /, '')}`);
+  }
 }
 
 export function resolveScheduleTasks({

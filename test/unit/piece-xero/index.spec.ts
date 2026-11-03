@@ -527,7 +527,7 @@ describe('xero webhook', () => {
 });
 
 describe('xero polling', () => {
-  it('continues capped pages without advancing the modification window', async () => {
+  it('seeds capped pages without emitting, then emits only unseen records', async () => {
     const definition = trigger('paymentCreated');
 
     const client = {
@@ -543,7 +543,7 @@ describe('xero polling', () => {
     const input = { tenantId: 'tenant-1', statuses: [], types: [], pageSize: 1 };
     const first = await definition.run({ input, client, options: {}, req: request() });
 
-    expect(first.events).toHaveLength(5);
+    expect(first.events).toEqual([]);
     expect(first.cursor).toMatchObject({ nextPage: 6, modifiedAfter: undefined });
 
     const second = await definition.run({
@@ -559,6 +559,26 @@ describe('xero polling', () => {
     expect(cursorValue(second.cursor, 'modifiedAfter')).toBe(
       cursorValue(first.cursor, 'windowStarted'),
     );
+
+    client.request.mockResolvedValue({
+      Payments: [{ PaymentID: 'payment-1' }, { PaymentID: 'payment-new' }],
+    });
+
+    const third = await definition.run({
+      input,
+      cursor: second.cursor,
+      client,
+      options: {},
+      req: request(),
+    });
+
+    expect(third.events).toEqual([{ PaymentID: 'payment-new' }]);
+    expect(client.request).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        headers: { 'If-Modified-Since': cursorValue(second.cursor, 'modifiedAfter') },
+      }),
+      expect.anything(),
+    );
   });
 
   it('tracks reconciliation transitions and applies the ACCPAY bill selector', async () => {
@@ -571,6 +591,7 @@ describe('xero polling', () => {
       listTenants: vi.fn(),
       request: vi
         .fn()
+        .mockResolvedValueOnce({ Payments: [{ PaymentID: 'payment-1', IsReconciled: false }] })
         .mockResolvedValue({ Payments: [{ PaymentID: 'payment-1', IsReconciled: true }] }),
     };
 
@@ -589,8 +610,17 @@ describe('xero polling', () => {
       req: request(),
     });
 
-    expect(first.events).toHaveLength(1);
-    expect(second.events).toHaveLength(0);
+    const third = await reconciled.run({
+      input,
+      cursor: second.cursor,
+      client: paymentClient,
+      options: {},
+      req: request(),
+    });
+
+    expect(first.events).toHaveLength(0);
+    expect(second.events).toHaveLength(1);
+    expect(third.events).toHaveLength(0);
 
     const billClient = {
       authorize: vi.fn(),
@@ -603,7 +633,13 @@ describe('xero polling', () => {
       }),
     };
 
-    const result = await bills.run({ input, client: billClient, options: {}, req: request() });
+    const result = await bills.run({
+      input,
+      cursor: { modifiedAfter: '2026-09-13T00:00:00.000Z' },
+      client: billClient,
+      options: {},
+      req: request(),
+    });
 
     expect(result.events).toEqual([{ InvoiceID: 'bill', Type: 'ACCPAY' }]);
     expect(billClient.request).toHaveBeenCalledWith(

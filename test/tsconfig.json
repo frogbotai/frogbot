@@ -55,6 +55,7 @@
     "system-fields",
     "training-data",
     "triggers",
+    "triggers-polling",
     "ui",
     "unit",
     "usage-logs"

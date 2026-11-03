@@ -48,6 +48,7 @@ import {
   TRIGGER_SUBSCRIPTIONS_SLUG,
 } from '../triggers/collection.js';
 import { buildTriggerEndpoints } from '../triggers/endpoints.js';
+import { resolvePollTasks, TRIGGER_POLL_TASK_SLUG } from '../triggers/poll.js';
 import { buildIngressRegistry, requiresAdapterVerification } from '../triggers/registry.js';
 import { AGENT_TRIGGER_TASK_SLUG, resolveTriggerTasks } from '../triggers/task.js';
 import { resolveFilesCollection } from '../uploads/resolveCollections.js';
@@ -255,6 +256,17 @@ export function sanitize(
     );
   }
 
+  if (
+    Object.values(triggers).some(({ subscribers }) =>
+      subscribers.some(({ cron }) => cron !== undefined),
+    ) &&
+    config.jobs?.tasks?.some((task) => task.slug === TRIGGER_POLL_TASK_SLUG)
+  ) {
+    throw new Error(
+      `[frogbot] Job task slug '${TRIGGER_POLL_TASK_SLUG}' is reserved for polling triggers.`,
+    );
+  }
+
   const reservedChannelTask = agents?.some((agent) => agent.channels?.length)
     ? config.jobs?.tasks?.find(
         (task) =>
@@ -281,7 +293,10 @@ export function sanitize(
       ...resolveKVCleanupTask({
         kv,
         jobs: Object.keys(triggers).length
-          ? resolveTriggerTasks(resolveScheduleTasks({ agents, jobs: channelJobs }))
+          ? resolvePollTasks({
+              registry: triggers,
+              jobs: resolveTriggerTasks(resolveScheduleTasks({ agents, jobs: channelJobs })),
+            })
           : resolveScheduleTasks({ agents, jobs: channelJobs }),
       }),
     },

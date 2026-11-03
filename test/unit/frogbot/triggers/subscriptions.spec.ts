@@ -110,6 +110,46 @@ function createHarness({ serverURL = 'https://frog.test/', api = '/api' } = {}) 
   return { instance, hooks, subscriber, docs, config, frogbot, subscriptions, target };
 }
 
+function createPollingHarness() {
+  const harness = createHarness({ serverURL: '' });
+  const client = vi.fn(() => ({}));
+  const instance = definePiece({
+    slug: 'poll',
+    label: 'Poll',
+    actions: [],
+    client,
+    triggers: [
+      {
+        slug: 'polled',
+        type: 'polling',
+        description: 'Polled',
+        input: z.object({ folder: z.string() }),
+        run({ cursor }) {
+          return Promise.resolve({ events: [], cursor });
+        },
+      },
+    ],
+  })();
+
+  const subscriber = {
+    agentSlug: 'ops',
+    piece: instance,
+    trigger: { trigger: instance.triggers.polled, input: { folder: 'inbox' }, handler: vi.fn() },
+    input: { folder: 'inbox' },
+    cron: '*/5 * * * *',
+  };
+
+  harness.config._internal.triggers = { poll: { instance, subscribers: [subscriber] } };
+
+  return {
+    ...harness,
+    client,
+    instance,
+    subscriber,
+    target: { agent: 'ops', instance: 'poll', trigger: 'polled' },
+  };
+}
+
 const removeThrough = {
   disable: (subscriptions: TriggerSubscriptions) => subscriptions.disable(42),
   reconcile: (subscriptions: TriggerSubscriptions) => subscriptions.reconcile(),
@@ -758,5 +798,102 @@ describe('trigger subscriptions', () => {
 
     expect(disable).toHaveBeenCalledTimes(1);
     expect(docs).toEqual([]);
+  });
+
+  describe('polling', () => {
+    it('enables without serverURL, a client, a request or a webhook URL', async () => {
+      const { subscriptions, docs, client, frogbot } = createPollingHarness();
+
+      await subscriptions.reconcile();
+
+      expect(docs).toEqual([
+        expect.objectContaining({
+          agent: 'ops',
+          piece: 'poll',
+          instance: 'poll',
+          trigger: 'polled',
+          input: { value: { folder: 'inbox' } },
+          state: null,
+          webhookUrl: null,
+          status: 'active',
+        }),
+      ]);
+      expect(client).not.toHaveBeenCalled();
+      expect(frogbot.createRequest).not.toHaveBeenCalled();
+      expect(frogbot.logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('keeps the cursor on an unchanged reconcile, even after a failed poll', async () => {
+      const { subscriptions, docs } = createPollingHarness();
+
+      await subscriptions.reconcile();
+      Object.assign(docs[0], { state: { since: 'cursor-1' }, status: 'error' });
+
+      await subscriptions.reconcile();
+
+      await subscriptions.enable({
+        agent: 'ops',
+        instance: 'poll',
+        trigger: 'polled',
+        input: { folder: 'inbox' },
+      });
+
+      expect(docs).toEqual([
+        expect.objectContaining({ id: 42, state: { since: 'cursor-1' }, status: 'error' }),
+      ]);
+    });
+
+    it('resets the cursor when the input changes', async () => {
+      const { subscriptions, docs, target } = createPollingHarness();
+
+      await subscriptions.reconcile();
+      const { inputHash } = docs[0];
+      Object.assign(docs[0], { state: { since: 'cursor-1' }, status: 'error' });
+
+      await subscriptions.enable({ ...target, input: { folder: 'sent' } });
+
+      expect(docs).toEqual([
+        expect.objectContaining({
+          id: 42,
+          input: { value: { folder: 'sent' } },
+          state: null,
+          status: 'active',
+        }),
+      ]);
+      expect(docs[0].inputHash).not.toBe(inputHash);
+    });
+
+    it('rejects input the trigger schema refuses', async () => {
+      const { subscriptions, target, docs } = createPollingHarness();
+
+      await expect(subscriptions.enable({ ...target, input: { folder: 7 } })).rejects.toThrow();
+      expect(docs).toEqual([]);
+    });
+
+    it('deletes rows on disable and when the mount is removed, with no client or hooks', async () => {
+      const { subscriptions, docs, config, client, frogbot } = createPollingHarness();
+
+      await subscriptions.reconcile();
+      Object.assign(docs[0], { state: { since: 'cursor-1' } });
+      await subscriptions.disable(42);
+
+      expect(docs).toEqual([]);
+
+      await subscriptions.reconcile();
+      config._internal.triggers = {};
+      await subscriptions.reconcile();
+
+      expect(docs).toEqual([]);
+      expect(client).not.toHaveBeenCalled();
+      expect(frogbot.logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('names a missing polling mount without calling it a webhook', async () => {
+      const { subscriptions } = createPollingHarness();
+
+      await expect(
+        subscriptions.enable({ agent: 'ops', instance: 'poll', trigger: 'missing' }),
+      ).rejects.toThrow(/^\[frogbot\] Trigger 'poll\/missing' is not mounted on agent 'ops'\.$/);
+    });
   });
 });

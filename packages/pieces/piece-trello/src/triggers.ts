@@ -126,12 +126,14 @@ export const cardDeadline = definePollingTrigger({
   input: deadlineInput,
   output: cardOutput,
   async run({ client, input, cursor }) {
-    const since = typeof cursor === 'number' ? cursor : 0;
-
-    const path = input.listId ? `lists/${input.listId}/cards` : `boards/${input.boardId}/cards`;
-    const cards = await client.listAll<z.output<typeof cardOutput>>(path);
     const now = Date.now();
     const range = input.timeBeforeDue * (input.timeUnit === 'minutes' ? 60_000 : 3_600_000);
+
+    if (typeof cursor !== 'number') return { events: [], cursor: now + range };
+
+    const since = cursor;
+    const path = input.listId ? `lists/${input.listId}/cards` : `boards/${input.boardId}/cards`;
+    const cards = await client.listAll<z.output<typeof cardOutput>>(path);
     const events = cards.filter((card) => {
       const due = card.due ? Date.parse(card.due) : Number.NaN;
 

@@ -399,4 +399,25 @@ describe('native Airtable', () => {
       }),
     ).resolves.toEqual({ events: [record], cursor: Date.parse('2026-09-13T12:00:00.000Z') });
   });
+
+  it('records a baseline cursor without listing records when there is no cursor', async () => {
+    const { transport } = installTransport();
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-09-13T12:00:00.000Z'));
+
+    const { piece, req } = request();
+    const client = await piece.client({ req });
+    const calls = transport.mock.calls.length;
+    const inputs = {
+      newRecord: { baseId: 'app1', tableId: 'tbl1' },
+      newOrUpdatedRecord: { baseId: 'app1', tableId: 'tbl1', modifiedTimeField: 'Modified' },
+    } as const;
+
+    for (const slug of ['newRecord', 'newOrUpdatedRecord'] as const) {
+      await expect(
+        piece.triggers[slug].run({ input: inputs[slug], client, options: {}, req } as never),
+      ).resolves.toEqual({ events: [], cursor: Date.parse('2026-09-13T12:00:00.000Z') });
+    }
+
+    expect(transport.mock.calls).toHaveLength(calls);
+  });
 });

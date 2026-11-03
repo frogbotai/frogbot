@@ -5,6 +5,7 @@ import type { Adapter } from '../../../../packages/frogbot/node_modules/chat/dis
 import type {
   AgentConfig,
   AgentPieceTrigger,
+  AgentSchedule,
 } from '../../../../packages/frogbot/src/agents/types.js';
 import {
   definePiece,
@@ -16,16 +17,20 @@ import type { PieceTriggerReference } from '../../../../packages/frogbot/src/pie
 import { buildIngressRegistry } from '../../../../packages/frogbot/src/triggers/registry.js';
 import { createEchoPiece } from './fixtures/createEchoPiece.js';
 
-function isAppTrigger(
+function isTriggerType<TType extends PieceTriggerReference['type']>(
   trigger: PieceTriggerReference,
-): trigger is Extract<PieceTriggerReference, { type: 'app' }> {
-  return Reflect.get(Object(trigger), 'type') === 'app';
+  type: TType,
+): trigger is Extract<PieceTriggerReference, { type: TType }> {
+  return Reflect.get(Object(trigger), 'type') === type;
 }
 
 function subscription(trigger: PieceTriggerReference, input: unknown): AgentPieceTrigger {
   const handler = vi.fn();
 
-  return isAppTrigger(trigger) ? { trigger, input, handler } : { trigger, input, handler };
+  if (isTriggerType(trigger, 'app')) return { trigger, input, handler };
+  if (isTriggerType(trigger, 'polling')) return { trigger, input, handler };
+
+  return { trigger, input, handler };
 }
 
 function agent(trigger: PieceTriggerReference, slug = 'ops', input?: unknown): AgentConfig {
@@ -34,6 +39,26 @@ function agent(trigger: PieceTriggerReference, slug = 'ops', input?: unknown): A
     instructions: 'Handle events',
     triggers: [subscription(trigger, input)],
   };
+}
+
+function createPolling({ schedule }: { schedule?: string } = {}) {
+  return definePiece({
+    slug: 'polling',
+    label: 'Polling',
+    actions: [],
+    triggers: [
+      {
+        slug: 'polled',
+        type: 'polling',
+        description: 'Polled',
+        input: z.object({}),
+        ...(schedule === undefined ? {} : { schedule }),
+        run() {
+          return Promise.resolve({ events: [] });
+        },
+      },
+    ],
+  })();
 }
 
 const createChannel = definePiece({
@@ -180,32 +205,140 @@ describe('trigger ingress registry', () => {
     expect(registry.subscribed.subscribers).toHaveLength(1);
   });
 
-  it('rejects polling mounts until polling dispatch is supported', () => {
-    const instance = definePiece({
-      slug: 'polling',
-      label: 'Polling',
-      actions: [],
-      webhook: {
-        verify() {
-          return Promise.resolve(true);
-        },
+  it('accepts polling mounts with the default five-minute cron', () => {
+    const instance = createPolling();
+    const ops = agent(instance.triggers.polled);
+    const registry = buildIngressRegistry({ agents: [ops] });
+
+    expect(registry.polling.subscribers).toEqual([
+      {
+        agentSlug: 'ops',
+        piece: instance,
+        trigger: ops.triggers![0],
+        input: {},
+        cron: '*/5 * * * *',
       },
-      triggers: [
+    ]);
+  });
+
+  it.each([
+    { name: 'mount every', schedule: { every: '1h' }, cron: '0 */1 * * *' },
+    { name: 'mount cron', schedule: { cron: '15 * * * *' }, cron: '15 * * * *' },
+    { name: 'trigger schedule', pieceSchedule: '*/10 * * * *', cron: '*/10 * * * *' },
+  ] satisfies {
+    name: string;
+    schedule?: AgentSchedule;
+    pieceSchedule?: string;
+    cron: string;
+  }[])('takes the cron from the $name', ({ schedule, pieceSchedule = '*/10 * * * *', cron }) => {
+    const instance = createPolling({ schedule: pieceSchedule });
+    const registry = buildIngressRegistry({
+      agents: [
         {
-          slug: 'polled',
-          type: 'polling',
-          description: 'Polled',
-          input: z.object({}),
-          run() {
-            return Promise.resolve({ events: [] });
-          },
+          slug: 'ops',
+          instructions: 'Handle events',
+          triggers: [{ trigger: instance.triggers.polled, schedule, handler: vi.fn() }],
         },
       ],
-    })();
+    });
+
+    expect(registry.polling.subscribers[0].cron).toBe(cron);
+  });
+
+  it.each([
+    { schedule: { every: '7m' }, error: /Trigger 'polled' in agent 'ops'.*does not divide evenly/ },
+    {
+      schedule: { every: '0m' },
+      error: /Trigger 'polled' in agent 'ops'.*Invalid schedule duration/,
+    },
+    {
+      schedule: { cron: 'not a cron' },
+      error: /Trigger 'polled' in agent 'ops' has an invalid cron expression: 'not a cron'/,
+    },
+    {
+      schedule: { cron: '0 * * * *', timezone: 'Europe/London' },
+      error: /Trigger 'polled' in agent 'ops' timezone is not yet supported/,
+    },
+    {
+      schedule: { cron: '0 * * * *', every: '1h' },
+      error: /Trigger 'polled' in agent 'ops' schedule requires exactly one of every or cron/,
+    },
+  ])('rejects the mount schedule $schedule at boot', ({ schedule, error }) => {
+    const instance = createPolling();
+
+    expect(() =>
+      buildIngressRegistry({
+        agents: [
+          {
+            slug: 'ops',
+            instructions: 'Handle events',
+            triggers: [
+              {
+                trigger: instance.triggers.polled,
+                schedule: schedule as AgentSchedule,
+                handler: vi.fn(),
+              },
+            ],
+          },
+        ],
+      }),
+    ).toThrow(error);
+  });
+
+  it("rejects a trigger's invalid cron at boot", () => {
+    const instance = createPolling({ schedule: 'every five minutes' });
 
     expect(() => buildIngressRegistry({ agents: [agent(instance.triggers.polled)] })).toThrow(
-      /Polling trigger 'polled' in agent 'ops' is not supported/,
+      /Trigger 'polled' in agent 'ops' has an invalid cron expression: 'every five minutes'/,
     );
+  });
+
+  it('rejects a schedule on a webhook mount', () => {
+    const instance = createEchoPiece({ prefix: '' });
+    const trigger = {
+      trigger: instance.triggers.subscribed,
+      input: { channel: 'alerts' },
+      schedule: { every: '1h' },
+      handler: vi.fn(),
+    };
+
+    expect(() =>
+      buildIngressRegistry({
+        agents: [{ slug: 'ops', instructions: 'Handle events', triggers: [trigger as never] }],
+      }),
+    ).toThrow(
+      /Trigger 'subscribed' in agent 'ops' sets a schedule, but only polling triggers take one/,
+    );
+  });
+
+  it('asks unslugged polling instances for slugs without mentioning webhooks', () => {
+    const first = createPolling();
+    const second = createPolling();
+
+    expect(() =>
+      buildIngressRegistry({
+        agents: [agent(first.triggers.polled), agent(second.triggers.polled, 'audit')],
+      }),
+    ).toThrow(
+      /^\[frogbot\] Two Polling instances are mounted; give each a slug\. Ingress slug 'polling' is shared by agents 'ops' and 'audit'\.$/,
+    );
+  });
+
+  it('rejects one polling trigger mounted twice in an agent', () => {
+    const instance = createPolling();
+    const mount = subscription(instance.triggers.polled, {});
+
+    expect(() =>
+      buildIngressRegistry({
+        agents: [{ slug: 'ops', instructions: 'Handle events', triggers: [mount, mount] }],
+      }),
+    ).toThrow(/^\[frogbot\] Trigger 'polling\/polled' is mounted twice in agent 'ops'\./);
+
+    expect(() =>
+      buildIngressRegistry({
+        agents: [agent(instance.triggers.polled), agent(instance.triggers.polled, 'audit')],
+      }),
+    ).not.toThrow();
   });
 
   it.each([undefined, null, {}, { channel: 42 }])('rejects invalid input %j at boot', (input) => {

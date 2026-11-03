@@ -1,5 +1,3 @@
-import { Cron } from 'croner';
-
 import { defaultAccessFn, type SanitizedAIBase } from '../../ai/config/sanitize.js';
 import { getConfiguredChatModelIds, getConfiguredModelIds } from '../../ai/models.js';
 import type { ValidationMode } from '../../config/validationContext.js';
@@ -12,7 +10,7 @@ import { buildSkillTools } from '../../skills/tools.js';
 import { sanitizeToolList } from '../../tools/config/sanitize.js';
 import type { AnyTool } from '../../tools/types.js';
 import { isRecord } from '../../utilities/isRecord.js';
-import { everyToCron } from '../resolveScheduleTasks.js';
+import { resolveScheduleCron } from '../resolveScheduleTasks.js';
 import type { AgentConfig, AgentModelId, SanitizedAgentConfig } from '../types.js';
 
 export function sanitizeAgents({
@@ -306,37 +304,7 @@ export function sanitizeAgents({
           );
         }
 
-        if (!isRecord(trigger.schedule)) {
-          throw new Error(
-            `[frogbot] Trigger '${trigger.slug}' in agent '${agent.slug}' requires a schedule.`,
-          );
-        }
-
-        const hasEvery = typeof trigger.schedule.every === 'string';
-        const hasCron = typeof trigger.schedule.cron === 'string';
-        if (hasEvery === hasCron) {
-          throw new Error(
-            `[frogbot] Trigger '${trigger.slug}' in agent '${agent.slug}' schedule requires exactly one of every or cron.`,
-          );
-        }
-
-        if (trigger.schedule.timezone !== undefined) {
-          throw new Error(
-            `[frogbot] Trigger '${trigger.slug}' in agent '${agent.slug}' timezone is not yet supported. Cron schedules use UTC.`,
-          );
-        }
-
-        const cron = hasEvery
-          ? everyToCron(trigger.schedule.every as string)
-          : (trigger.schedule.cron as string);
-
-        try {
-          new Cron(cron);
-        } catch {
-          throw new Error(
-            `[frogbot] Trigger '${trigger.slug}' in agent '${agent.slug}' has an invalid cron expression: '${cron}'.`,
-          );
-        }
+        resolveScheduleCron(trigger.schedule, `Trigger '${trigger.slug}' in agent '${agent.slug}'`);
       }
     }
 

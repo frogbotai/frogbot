@@ -8,6 +8,8 @@ export type TriggerSubscriber = {
   piece: PieceInstance;
   trigger: AgentPieceTrigger & { trigger: PieceTriggerReference };
   input: unknown;
+  /** The poll schedule as a cron expression, set only for polling triggers. */
+  cron?: string;
 };
 
 export type IngressRegistry = Record<

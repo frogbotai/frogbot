@@ -24,9 +24,11 @@ function newest(values: { createdDateTime?: string | null }[], fallback: string)
   }, fallback);
 }
 
-function after<T extends { createdDateTime?: string | null }>(values: T[], since?: string) {
-  if (!since) return values;
+function baseline() {
+  return { events: [], cursor: { since: new Date().toISOString() } };
+}
 
+function after<T extends { createdDateTime?: string | null }>(values: T[], since: string) {
   return values.filter(
     (value) => value.createdDateTime && Date.parse(value.createdDateTime) > Date.parse(since),
   );
@@ -44,10 +46,9 @@ export const channelCreated = definePollingTrigger({
   async run({ client, input, cursor: stored, req }) {
     const cursor = readCursor(stored);
 
-    const query: Record<string, string | number> = {};
+    if (!cursor) return baseline();
 
-    if (cursor) query['$filter'] = `createdDateTime gt ${cursor.since}`;
-
+    const query = { $filter: `createdDateTime gt ${cursor.since}` };
     const values = await client.list(
       `/v1.0/teams/${encodeURIComponent(input.teamId)}/channels`,
       channel,
@@ -57,8 +58,8 @@ export const channelCreated = definePollingTrigger({
       },
     );
 
-    const events = after(values, cursor?.since);
-    const since = newest(values, cursor?.since ?? new Date(0).toISOString());
+    const events = after(values, cursor.since);
+    const since = newest(values, cursor.since);
 
     return { events, cursor: { since } };
   },
@@ -76,18 +77,12 @@ export const channelMessageCreated = definePollingTrigger({
   async run({ client, input, cursor: stored, req }) {
     const cursor = readCursor(stored);
 
+    if (!cursor) return baseline();
+
     const root = `/v1.0/teams/${encodeURIComponent(input.teamId)}/channels/${encodeURIComponent(input.channelId)}/messages`;
-    const requestPath = cursor?.deltaLink ?? (cursor ? `${root}/delta` : root);
-    const result = await client.page(
-      requestPath,
-      message,
-      cursor
-        ? { signal: signal(req) }
-        : {
-            query: { $top: 5 },
-            signal: signal(req),
-          },
-    );
+    const result = await client.page(cursor.deltaLink ?? `${root}/delta`, message, {
+      signal: signal(req),
+    });
 
     const values = [...result.value];
     let next = result['@odata.nextLink'];
@@ -101,8 +96,8 @@ export const channelMessageCreated = definePollingTrigger({
       deltaLink = page['@odata.deltaLink'] ?? deltaLink;
     }
 
-    const events = after(values, cursor?.since);
-    const since = newest(values, cursor?.since ?? new Date(0).toISOString());
+    const events = after(values, cursor.since);
+    const since = newest(values, cursor.since);
     const nextCursor: PieceJSON = deltaLink ? { since, deltaLink } : { since };
 
     return { events, cursor: nextCursor };
@@ -121,14 +116,12 @@ export const chatCreated = definePollingTrigger({
   async run({ client, cursor: stored, req }) {
     const cursor = readCursor(stored);
 
-    const query: Record<string, string | number> = {};
+    if (!cursor) return baseline();
 
-    if (cursor) query['$filter'] = `createdDateTime gt ${cursor.since}`;
-    else query['$top'] = 10;
-
+    const query = { $filter: `createdDateTime gt ${cursor.since}` };
     const values = await client.list('/v1.0/chats', chat, { query, signal: signal(req) });
-    const events = after(values, cursor?.since);
-    const since = newest(values, cursor?.since ?? new Date(0).toISOString());
+    const events = after(values, cursor.since);
+    const since = newest(values, cursor.since);
 
     return { events, cursor: { since } };
   },
@@ -146,18 +139,12 @@ export const chatMessageCreated = definePollingTrigger({
   async run({ client, input, cursor: stored, req }) {
     const cursor = readCursor(stored);
 
+    if (!cursor) return baseline();
+
     const root = `/v1.0/chats/${encodeURIComponent(input.chatId)}/messages`;
-    const requestPath = cursor?.deltaLink ?? (cursor ? `${root}/delta` : root);
-    const result = await client.page(
-      requestPath,
-      message,
-      cursor
-        ? { signal: signal(req) }
-        : {
-            query: { $top: 5 },
-            signal: signal(req),
-          },
-    );
+    const result = await client.page(cursor.deltaLink ?? `${root}/delta`, message, {
+      signal: signal(req),
+    });
 
     const values = [...result.value];
     let next = result['@odata.nextLink'];
@@ -171,8 +158,8 @@ export const chatMessageCreated = definePollingTrigger({
       deltaLink = page['@odata.deltaLink'] ?? deltaLink;
     }
 
-    const events = after(values, cursor?.since);
-    const since = newest(values, cursor?.since ?? new Date(0).toISOString());
+    const events = after(values, cursor.since);
+    const since = newest(values, cursor.since);
     const nextCursor: PieceJSON = deltaLink ? { since, deltaLink } : { since };
 
     return { events, cursor: nextCursor };

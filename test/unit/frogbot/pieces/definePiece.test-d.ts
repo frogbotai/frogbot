@@ -6,6 +6,7 @@ import type {
   AgentConfig,
   AgentInstance,
   AgentPieceTrigger,
+  AgentSchedule,
 } from '../../../../packages/frogbot/src/agents/types.js';
 import type {
   ConnectionEntry as DomainConnectionEntry,
@@ -466,6 +467,58 @@ expectTypeOf<{
 }>().not.toExtend<CreatedBinding>();
 
 expectTypeOf<Omit<CreatedBinding, 'input'>>().not.toExtend<CreatedBinding>();
+
+const createPolling = definePiece({
+  slug: 'polling',
+  label: 'Polling',
+  actions: [],
+  triggers: [
+    {
+      slug: 'polled',
+      type: 'polling',
+      description: 'Polled',
+      input: empty,
+      schedule: '*/5 * * * *',
+      run({ cursor }) {
+        return Promise.resolve({ events: [], cursor });
+      },
+    },
+  ],
+});
+
+const polling = createPolling();
+
+const pollingAgent: AgentConfig = {
+  slug: 'polling-agent',
+  instructions: 'Poll',
+  triggers: [
+    { trigger: polling.triggers.polled, schedule: { every: '1h' }, handler: () => {} },
+    { trigger: polling.triggers.polled, schedule: { cron: '0 * * * *' }, handler: () => {} },
+    { trigger: polling.triggers.polled, handler: () => {} },
+  ],
+};
+
+void pollingAgent;
+
+expectTypeOf<AgentPieceTrigger<typeof polling.triggers.polled>['schedule']>().toEqualTypeOf<
+  AgentSchedule | undefined
+>();
+
+const webhookScheduleAgent: AgentConfig = {
+  slug: 'webhook-schedule-agent',
+  instructions: 'Trigger',
+  triggers: [
+    // @ts-expect-error only polling triggers take a schedule
+    {
+      trigger: trigger.triggers.created,
+      input: { project: 'project' },
+      schedule: { every: '1h' },
+      handler: () => {},
+    },
+  ],
+};
+
+void webhookScheduleAgent;
 
 const unparameterizedAgent: AgentConfig = {
   slug: 'unparameterized',

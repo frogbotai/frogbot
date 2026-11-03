@@ -22,9 +22,12 @@ export const newEmail = definePollingTrigger({
   output: emailOutput,
   async run({ client, input, cursor, req }) {
     const now = Date.now();
+
+    if (typeof cursor !== 'number') return { events: [], cursor: now };
+
     const list = await client.users.messages.list({
       userId: 'me',
-      q: searchQuery(input, typeof cursor === 'number' ? cursor : undefined),
+      q: searchQuery(input, cursor),
       labelIds: input.labelIds,
       maxResults: input.maxResults,
       includeSpamTrash: input.includeSpamTrash,

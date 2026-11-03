@@ -79,7 +79,7 @@ describe('check test-types', () => {
   it('requires each program to exclude exactly the programs nearest inside it', () => {
     const programs = [
       { config: 'test/tsconfig.json', exclude: ['node_modules', 'types', 'chat', 'gone'] },
-      { config: 'test/chat/tsconfig.json', exclude: [] },
+      { config: 'test/chat/tsconfig.json', exclude: ['.apps'] },
       { config: 'test/unit/tsconfig.json', exclude: ['frogbot'] },
       { config: 'test/unit/frogbot/tsconfig.json', exclude: [] },
       { config: 'test/unit/roles/tsconfig.json', exclude: [] },

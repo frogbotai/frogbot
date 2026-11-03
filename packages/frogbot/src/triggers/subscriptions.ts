@@ -19,7 +19,7 @@ export type Subscription = {
   input: SubscriptionInput;
   inputHash: string;
   state?: unknown;
-  webhookUrl?: string;
+  webhookUrl?: string | null;
   status: 'active' | 'error';
   cleanupPending?: boolean;
   enablePending?: boolean;
@@ -99,7 +99,7 @@ export class TriggerSubscriptions {
 
       if (!subscriber) {
         throw new Error(
-          `[frogbot] Webhook trigger '${instance}/${trigger}' is not mounted on agent '${agent}'.`,
+          `[frogbot] Trigger '${instance}/${trigger}' is not mounted on agent '${agent}'.`,
         );
       }
 
@@ -107,7 +107,7 @@ export class TriggerSubscriptions {
         Object.hasOwn(args, 'input') ? args.input : subscriber.trigger.input,
       );
 
-      const baseURL = await callbackBase(triggers);
+      const baseURL = isWebhook(subscriber) ? await callbackBase(triggers) : '';
       const prior = (await listSubscriptions(triggers)).find((entry) => matches(entry, subscriber));
 
       return enableSubscription(triggers, { subscriber, input, prior, baseURL, signal });
@@ -132,7 +132,7 @@ export class TriggerSubscriptions {
     try {
       await lock(triggers, async ({ signal }) => {
         const declared = subscribers(triggers);
-        const baseURL = declared.length ? await callbackBase(triggers) : '';
+        const baseURL = declared.some(isWebhook) ? await callbackBase(triggers) : '';
         const existing = await listSubscriptions(triggers);
 
         for (const subscriber of declared) {
@@ -183,9 +183,11 @@ function lock<T>(triggers: TriggerState, fn: KVLockCallback<T>): Promise<T> {
 
 function subscribers(triggers: TriggerState): TriggerSubscriber[] {
   return Object.values(triggers.frogbot.config._internal.triggers).flatMap(({ subscribers }) =>
-    subscribers.filter(({ trigger }) => trigger.trigger.type === 'webhook'),
+    subscribers.filter(({ trigger }) => trigger.trigger.type !== 'app'),
   );
 }
+
+const isWebhook = (subscriber: TriggerSubscriber) => subscriber.trigger.trigger.type === 'webhook';
 
 async function callbackBase(triggers: TriggerState): Promise<string> {
   const config = await triggers.frogbot.config._internal.payloadConfig;
@@ -202,18 +204,23 @@ function lifecycle(instance: PieceInstance, slug: string) {
   const runtime = pieceInstanceRuntime(instance);
   const trigger = runtime.definition.triggers?.find((candidate) => candidate.slug === slug);
 
+  if (trigger?.type === 'polling') return { runtime, trigger };
+
   if (
     trigger?.type !== 'webhook' ||
     typeof trigger.onEnable !== 'function' ||
     typeof trigger.onDisable !== 'function'
   ) {
-    throw new Error(
-      `[frogbot] Lifecycle hooks for trigger '${instance.slug}/${slug}' are unavailable; subscription retained.`,
-    );
+    throw lifecycleUnavailable(instance, slug);
   }
 
   return { runtime, trigger };
 }
+
+const lifecycleUnavailable = (instance: PieceInstance, slug: string) =>
+  new Error(
+    `[frogbot] Lifecycle hooks for trigger '${instance.slug}/${slug}' are unavailable; subscription retained.`,
+  );
 
 async function enableSubscription(
   triggers: TriggerState,
@@ -240,6 +247,38 @@ async function enableSubscription(
   const { runtime, trigger } = lifecycle(instance, subscriber.trigger.trigger.slug);
   const parsedInput = parseSubscriptionInput({ schema: trigger.input, input });
   const inputHash = hash(input);
+
+  if (trigger.type === 'polling') {
+    if (
+      prior &&
+      !prior.webhookUrl &&
+      prior.piece === instance.piece &&
+      prior.inputHash === inputHash
+    ) {
+      return prior;
+    }
+
+    if (prior) await cleanup(triggers, { subscription: prior, signal });
+
+    return write(triggers, {
+      id: prior?.id,
+      data: {
+        agent: subscriber.agentSlug,
+        piece: instance.piece,
+        instance: instance.slug,
+        trigger: trigger.slug,
+        input,
+        inputHash,
+        state: null,
+        webhookUrl: null,
+        status: 'active',
+        cleanupPending: false,
+        enablePending: false,
+      },
+      signal,
+    });
+  }
+
   const url = (id: Subscription['id']) =>
     `${baseURL}/${encodeURIComponent(instance.slug)}/${encodeURIComponent(String(id))}`;
 
@@ -451,9 +490,8 @@ async function cleanup(
   assertResolved(subscription);
 
   if (
-    subscription.status === 'error' &&
-    !subscription.cleanupPending &&
-    subscription.state == null
+    !subscription.webhookUrl ||
+    (subscription.status === 'error' && !subscription.cleanupPending && subscription.state == null)
   ) {
     return;
   }
@@ -481,6 +519,8 @@ async function cleanup(
   }
 
   const { runtime, trigger } = lifecycle(instance, subscription.trigger);
+
+  if (trigger.type === 'polling') throw lifecycleUnavailable(instance, subscription.trigger);
   const input = parseSubscriptionInput({ schema: trigger.input, input: subscription.input });
   const req = await triggers.frogbot.createRequest();
 

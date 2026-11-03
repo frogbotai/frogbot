@@ -525,6 +525,8 @@ A handler receives:
 | `req` | `FrogBotRequest` | A request without a user. `req.context` holds `source`, `agentSlug`, `triggerSlug`, and `jobId`. |
 | `job` | `{ id: DocID; scheduledFor: Date }` | The job record ID and the time the occurrence was scheduled for. |
 
+A schedule trigger runs the agent on a clock. A [polling piece trigger](/pieces/triggers#polling) takes the same `schedule` shape, but there it sets how often FrogBot checks the provider for new items; its handler runs only when there are some.
+
 FrogBot runs schedules and skips an occurrence while the same trigger already has an active or runnable scheduled job. User-defined jobs, workflows, queues, and automatic runners remain configured alongside FrogBot schedules.
 
 Each prompt trigger creates a fresh chat with `user: null` and persists its user and assistant messages. A handler may invoke the owning agent, another agent, or no agent. Every handler receives `{ frogbot, agent, req, job }`, and `req.context` contains `source`, `agentSlug`, `triggerSlug`, and `jobId`. Removing an agent or trigger makes already-queued work for it complete without running.
