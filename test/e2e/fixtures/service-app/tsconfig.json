@@ -27,5 +27,5 @@
     ".frogbot/builds/b/types/**/*.ts",
     ".frogbot/builds/b/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", ".apps"]
+  "exclude": ["node_modules"]
 }
