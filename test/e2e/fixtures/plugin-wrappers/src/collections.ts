@@ -13,9 +13,18 @@ export const Users: CollectionConfig = {
   fields: [],
 };
 
+export const Companies: CollectionConfig = {
+  slug: 'companies',
+  admin: { useAsTitle: 'name' },
+  fields: [{ name: 'name', type: 'text', required: true }],
+};
+
 export const Posts: CollectionConfig = {
   slug: 'posts',
-  fields: [{ name: 'title', type: 'text', required: true }],
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    { name: 'company', type: 'relationship', relationTo: Companies.slug },
+  ],
 };
 
 export const Media: CollectionConfig = {

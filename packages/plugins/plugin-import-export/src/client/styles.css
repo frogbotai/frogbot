@@ -1,0 +1,72 @@
+@layer frogbot {
+  .import-columns {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .import-columns__heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .import-columns__description {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fb-text-sm);
+  }
+
+  .import-columns__table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .import-columns__table th,
+  .import-columns__table td {
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  .import-columns__table thead th {
+    color: var(--color-text-secondary);
+    font-size: var(--fb-text-sm);
+    font-weight: 500;
+  }
+
+  .import-columns__table tbody th {
+    font-weight: 400;
+  }
+
+  .import-columns__header {
+    display: block;
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  .import-columns__samples {
+    display: block;
+    max-width: 18rem;
+    overflow: hidden;
+    color: var(--color-text-secondary);
+    font-size: var(--fb-text-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .import-columns__summary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .import-columns__summary .import-columns__header {
+    display: inline;
+  }
+}

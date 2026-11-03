@@ -62,6 +62,104 @@ The adapter preserves FrogBot's collection selection, import and export controls
 | `limit` | `number \| ({ req }) => number \| Promise<number>` | Plugin `importLimit` | Maximum documents per import. `0` is unlimited. |
 | `defaultVersionStatus` | `'draft' \| 'published'` | Plugin `defaultVersionStatus` | Status for imported documents that have no `_status` value. |
 | `disableJobsQueue` | `boolean` | `false` | Runs imports synchronously instead of as jobs. |
-| `hooks.before` | `(args) => Partial<Doc>[] \| Promise<…>` | — | Runs before each batch is written to the database. Receives `batchNumber`, `totalBatches`, `format`, `data` (the documents to write), `originalData` (the parsed file rows), and `req`. The returned array replaces `data`. |
+| `hooks.before` | `(args) => Partial<Doc>[] \| Promise<…>` | — | Runs before each batch is written to the database. Receives `batchNumber`, `totalBatches`, `format`, `data` (the documents to write, after [column mapping](#map-columns)), `originalData` (the parsed file rows), and `req`. The returned array replaces `data`. |
 | `hooks.after` | `(args) => void \| Promise<void>` | — | Runs after each batch is written. Receives `batchNumber`, `totalBatches`, `format`, `originalData`, `req`, and `result` (`{ imported, updated, total, errors }` for the batch). Its return value is ignored. |
 | `overrideCollection` | `({ collection }) => CollectionConfig \| Promise<CollectionConfig>` | — | Overrides the import collection for this collection only. Returning a new slug creates a separate import collection; returning `imports` merges into the shared one. |
+
+## Map columns
+
+After you choose a file on the import form, the **Columns** section lists each column in the file next to a field picker. A column can import into a top-level field, a field inside a group or named tab, or a relationship to one collection. Choose **Skip** to leave a column out. Columns you skip, and columns you don't map, aren't imported.
+
+FrogBot fills in the pickers before you change anything:
+
+- A column whose header is a field's name or label maps to that field. Case, spaces, `_`, `-` and `.` are ignored, so `Full Name`, `full_name` and `fullName` all match a field named `fullName`.
+- A column named like a FrogBot export, such as `title`, `details_city` or `items_0_name`, maps to itself, so a file exported from FrogBot imports as it is.
+- When you imported a file with the same headers before, in any order, the pickers start from that import's mapping instead. Only imports you can read are used.
+
+A relationship column that allows several records takes a comma-separated list, such as `Acme, Globex`. The preview below the Columns section shows the rows as they will be imported. The mapping is saved with the import and can't be changed after the import starts.
+
+### Match related records
+
+A relationship column has a **Match by** picker that lists the related collection's text and email fields, plus **ID**. It starts on the related collection's `admin.useAsTitle` field, or on ID when there isn't one. A column whose header is the relationship's own name, as in a FrogBot export, starts on ID.
+
+Each cell must equal one record exactly. Matching runs as the importing user, so a record they can't read counts as no match. In the preview, a cell shows `Acme Corp · linked`, `Acme Corp · will create` or the reason it fails.
+
+Turn on **Create missing** to create the related record, with the match-by field set to the cell's value, when no record matches. It creates one record per distinct value per import, as the importing user. It isn't available when matching by ID.
+
+### Failed rows
+
+A row fails, and the other rows still import, when a relationship cell can't be linked. The import then ends `partial`, and its **Issue Details** name the column, the value and the lookup:
+
+| Cause | Message |
+| --- | --- |
+| No record matches | `Company "Acme Inc": no companies record with name "Acme Inc"` |
+| Several records match | `Company "Twin": 2 companies records with name "Twin"` |
+| **Create missing** failed | `Company "Broken Co": could not create companies record with name "Broken Co": <reason>` |
+
+Every row that needs a record whose creation failed fails with the same message.
+
+CSV rows whose cells are all empty are skipped, which can shift the rows after one. A mapped row that can't be lined up with its line in the file fails with `This row could not be lined up with the file because of an empty row above it. Remove the empty rows and import the file again.` rather than taking another line's values. Empty rows at the end of the file are harmless.
+
+### Suggest with AI
+
+When the app sets `ai.smallModel` or `ai.defaultModel`, the Columns section adds a **Suggest with AI** button. It sends the headers of the columns still on **Skip**, up to 3 values from each, and the fields not yet used to the small model (the default model when no small model is set), as the importing user. It fills only the columns on **Skip**, with fields the collection has; you can change its picks before importing. If the model call fails, the mapping stays as it was and the error is shown. Without an AI model the button is hidden and no model is called.
+
+### Imports from the API
+
+An import created through the REST or Local API without a `columnMap` imports the file's columns as field names, as before. To map columns, set `columnMap` on the import:
+
+```ts
+await frogbot.create({
+  collection: 'imports',
+  data: {
+    collectionSlug: 'contacts',
+    importMode: 'create',
+    columnMap: {
+      headers: ['Full Name', 'Account Name'],
+      columns: [
+        { header: 'Full Name', field: 'name' },
+        { header: 'Account Name', field: 'company', matchBy: 'name', createMissing: true },
+      ],
+    },
+  },
+  file: { data, mimetype: 'text/csv', name: 'contacts.csv', size: data.length },
+  user,
+})
+```
+
+Each entry in `columns`:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `header` | `string` | The column's header, exactly as in the file. |
+| `field` | `string \| null` | The field's path, such as `name` or `details.city`, or `null` to skip the column. |
+| `matchBy` | `string` | For a relationship, the related collection's field to match the cell against. Without it the cell must hold IDs. |
+| `createMissing` | `boolean` | For a relationship, create the related record when no record matches. |
+
+Columns are mapped before a collection's own `import.hooks.before` runs, so that hook receives rows keyed by field names. A row that can't be linked carries its message in a `__frogbotImportError` key, which fails the row when it is written; a hook that builds new row objects must copy that key, or the row imports without its link.
+
+### Link records from code
+
+Importers that read another tool's API instead of a file can link records by the same rules with `resolveRelationship`:
+
+```ts
+import { ImportLookupError, resolveRelationship } from '@frogbotai/plugin-import-export'
+
+const company = await resolveRelationship({
+  req,
+  collection: 'companies',
+  field: 'hubspotId',
+  value: deal.companyId,
+  createMissing: true,
+})
+```
+
+It returns the matching record's ID. When it can't link one it throws an `ImportLookupError` whose message is the lookup part of the messages above, such as `no companies record with name "Acme Inc"`. It reads and creates as `req.user`, without overriding access. Calls with the same collection, field and value on one `req` share one lookup, so they create at most one record.
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `req` | `PayloadRequest` | The request to look up and create as. Its user's access applies. |
+| `collection` | `string` | The related collection's slug. |
+| `field` | `string` | The field to match, such as `name`, `email` or `id`. |
+| `value` | `unknown` | The value to match exactly. |
+| `createMissing` | `boolean` | Create the record, with `field` set to `value`, when none matches. Defaults to `false`. |

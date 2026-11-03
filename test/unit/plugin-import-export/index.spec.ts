@@ -74,6 +74,29 @@ async function runAfterChange(collection: CollectionConfig | undefined, doc: obj
   return { queue, req };
 }
 
+type ImportBeforeArgs = {
+  data: Record<string, unknown>[];
+  originalData: Record<string, unknown>[];
+  importDoc: Record<string, unknown>;
+};
+
+function importBefore(collection: CollectionConfig | undefined) {
+  const custom = collection?.custom?.['plugin-import-export'] as {
+    importHooks: { before: (args: Record<string, unknown>) => Promise<unknown> };
+  };
+
+  return (args: ImportBeforeArgs) =>
+    custom.importHooks.before({
+      ...args,
+      batchNumber: 1,
+      format: 'csv',
+      req: { payload: { collections: { posts: { config: { flattenedFields: postFields } } } } },
+      totalBatches: 1,
+    });
+}
+
+const postFields = [{ name: 'title', type: 'text' }];
+
 describe('importExportPlugin', () => {
   afterEach(() => {
     vi.doUnmock('@payloadcms/plugin-import-export');
@@ -116,6 +139,81 @@ describe('importExportPlugin', () => {
       expect(queue.mock.calls[0][0].req).toBe(req);
     },
   );
+
+  it.each(setups)(
+    'the import collection on $name keeps 2 afterChange hooks and gains the column fields',
+    async ({ options, slugs }) => {
+      const collections = await buildCollections(options);
+      const imports = collections.find(({ slug }) => slug === slugs[0]);
+      const names = imports?.fields.map((field) => ('name' in field ? field.name : undefined));
+
+      expect(imports?.hooks?.afterChange).toHaveLength(2);
+      expect(names).toEqual(expect.arrayContaining(['columnMap', 'headerKey']));
+      expect(names?.indexOf('columnMap')).toBe(names!.indexOf('preview') - 2);
+    },
+  );
+
+  it.each([
+    { ai: undefined, expected: false },
+    { ai: { defaultModel: 'openai/gpt-5' }, expected: true },
+    { ai: { smallModel: 'openai/gpt-5-mini' }, expected: true },
+  ])('the Columns field gets the client component with ai $expected', async ({ ai, expected }) => {
+    const config = await importExportPlugin({ collections: [] })({
+      secret: 'test',
+      db: {},
+      ...(ai && { ai }),
+      collections: [{ slug: 'posts', fields: [{ name: 'title', type: 'text' }] }],
+    } as unknown as FrogBotConfig);
+
+    const imports = config.collections?.find(({ slug }) => slug === 'imports');
+    const columnMap = imports?.fields.find(
+      (field) => 'name' in field && field.name === 'columnMap',
+    );
+
+    expect(columnMap?.admin?.components).toEqual({
+      Field: {
+        path: '@frogbotai/plugin-import-export/client#ImportColumnsField',
+        clientProps: { ai: expected },
+      },
+    });
+  });
+
+  it('the all-collections default rewrites rows on every collection', async () => {
+    const collections = await buildCollections({ collections: [] });
+    const posts = collections.find(({ slug }) => slug === 'posts');
+
+    const rows = await importBefore(posts)({
+      data: [{ 'Post Title': 'Hello' }],
+      originalData: [{ 'Post Title': 'Hello' }],
+      importDoc: {
+        columnMap: { headers: ['Post Title'], columns: [{ header: 'Post Title', field: 'title' }] },
+      },
+    });
+
+    expect(rows).toEqual([{ title: 'Hello' }]);
+    expect(posts?.hooks?.beforeOperation).toHaveLength(1);
+  });
+
+  it("the app's hooks.before runs after the rewrite and sees FrogBot keys", async () => {
+    const appBefore = vi.fn(({ data }: { data: unknown[] }) => [...data, { title: 'Added' }]);
+
+    const collections = await buildCollections({
+      collections: [{ slug: 'posts', import: { hooks: { before: appBefore as never } } }],
+    });
+
+    const posts = collections.find(({ slug }) => slug === 'posts');
+
+    const rows = await importBefore(posts)({
+      data: [{ Headline: 'Hello' }],
+      originalData: [{ Headline: 'Hello' }],
+      importDoc: {
+        columnMap: { headers: ['Headline'], columns: [{ header: 'Headline', field: 'title' }] },
+      },
+    });
+
+    expect(appBefore.mock.calls[0][0].data).toEqual([{ title: 'Hello' }]);
+    expect(rows).toEqual([{ title: 'Hello' }, { title: 'Added' }]);
+  });
 
   it.each([
     { kind: 'import', option: 'overrideImportCollection', expected: 2 },

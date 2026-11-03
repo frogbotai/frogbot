@@ -69,8 +69,7 @@ export async function bootFrogBot(
   }
 
   const app = createTestServer(frogbot);
-  const port = await getEphemeralPort();
-  const closeServer = await listen(app, port);
+  const { port, close: closeServer } = await listen(app);
   const baseUrl = `http://127.0.0.1:${port}`;
   const restClient = new FrogBotRESTClient(baseUrl);
 
@@ -95,39 +94,18 @@ function createTestServer(frogbot: FrogBotInstance): Hono {
   return app;
 }
 
-function listen(app: Hono, port: number): Promise<() => Promise<void>> {
-  const server = serve({ fetch: app.fetch, port });
-
-  return Promise.resolve(
-    () =>
-      new Promise<void>((resolve, reject) => {
-        server.close((err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        });
-      }),
-  );
-}
-
-async function getEphemeralPort(): Promise<number> {
-  const net = await import('net');
-
+function listen(app: Hono): Promise<{ port: number; close: () => Promise<void> }> {
   return new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.unref();
-    server.on('error', reject);
+    const server = serve({ fetch: app.fetch, hostname: '127.0.0.1', port: 0 }, ({ port }) =>
+      resolve({
+        port,
+        close: () =>
+          new Promise<void>((done, fail) => {
+            server.close((err) => (err ? fail(err) : done()));
+          }),
+      }),
+    );
 
-    server.listen(0, () => {
-      const address = server.address();
-      if (typeof address === 'object' && address) {
-        const port = address.port;
-        server.close(() => resolve(port));
-      } else {
-        reject(new Error('[test] could not resolve ephemeral port'));
-      }
-    });
+    server.once('error', reject);
   });
 }
