@@ -14,8 +14,17 @@ vi.mock('../../../../../../packages/ui/src/hooks/use-mobile.js', () => ({
   useIsMobile: () => isMobile,
 }));
 
+let modalState: Record<string, { isOpen: boolean }> = {};
+const closeModal = (slug: string) => {
+  modalState = { ...modalState, [slug]: { isOpen: false } };
+};
+
 vi.mock('@payloadcms/ui', () => ({
   Account: () => <svg data-testid="payload-account" />,
+  commandPaletteSlug: 'command-palette',
+  useConfig: () => ({ config: { routes: { admin: '/admin', api: '/api' } } }),
+  useModal: () => ({ closeModal, modalState }),
+  useTranslation: () => ({ t: (key: string) => key }),
   usePathname: () => pathname,
   useRouter: () => ({ push: vi.fn() }),
   useNav: () => ({
@@ -48,6 +57,10 @@ function Harness({
       homePath="/admin"
       initialOpen={initialOpen}
       items={[{ label: 'Users', path: '/admin/collections/users' }]}
+      palette={{
+        collections: [],
+        rows: [{ group: null, label: 'Users', path: '/admin/collections/users' }],
+      }}
       settingsPath="/admin/settings"
     />
   );
@@ -60,8 +73,21 @@ describe('FrogBotNavClient', () => {
   beforeEach(() => {
     hydrated = true;
     isMobile = false;
+    modalState = {};
     pathname = '/admin';
     setPreference.mockReset();
+  });
+
+  it('mounts the record palette, which opens with Payload’s Cmd+K', () => {
+    const { rerender } = render(<Harness initialNavOpen />);
+
+    expect(document.querySelector('.fb-record-palette-marker')).not.toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    modalState = { 'command-palette': { isOpen: true } };
+    rerender(<Harness initialNavOpen />);
+
+    expect(screen.getByRole('option', { name: 'Users' })).not.toBeNull();
   });
 
   it('does not reuse Payload nav classes on the shell', () => {

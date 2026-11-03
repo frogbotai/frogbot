@@ -9,6 +9,7 @@ export const aiFieldName = 'summary';
 export const timesheetsSlug = 'timesheets';
 export const projectsSlug = 'projects';
 export const tagsSlug = 'tags';
+export const secretsSlug = 'secrets';
 export const labelOptions = (
   ['gray', 'blue', 'green', 'yellow', 'red', 'pink', 'purple'] satisfies OptionColor[]
 ).map((color) => ({ label: color[0].toUpperCase() + color.slice(1), value: color, color }));

@@ -328,7 +328,7 @@ const response = await fetch('/api/articles/search', {
 const { mode, ranking, hits } = await response.json();
 ```
 
-The response body is the same `{ mode, ranking, hits }` object that `frogbot.search()` returns. See the [REST API](/rest-api/overview) for authentication.
+The response body is the same `{ mode, ranking, hits }` object that `frogbot.search()` returns. See the [REST API](/rest-api/overview) for authentication. The admin's [Cmd+K palette](/admin/admin-navigation#search-with-cmdk) calls this endpoint to find records.
 
 `POST /api/frogbot/search` runs [`frogbot.searchMany()`](#search-several-collections). It exists when at least one collection has a search index. The body accepts `collections`, `query`, `limit`, `draft`, `locale`, and `fallbackLocale`, and each entry accepts the same keys as in `searchMany()`; any other key fails with `400`. It also searches as the requesting user with access enforced, and a collection that user can't read fails the whole request with `403`.
 

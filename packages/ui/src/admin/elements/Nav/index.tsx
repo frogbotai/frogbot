@@ -5,6 +5,7 @@ import type { NavPreferences, PayloadRequest, ServerProps } from 'payload';
 import { formatAdminURL, PREFERENCE_KEYS } from 'payload/shared';
 import type { ReactNode } from 'react';
 
+import { buildPaletteModel } from '../CommandPalette/buildPaletteModel.js';
 import { buildNavModel } from './buildNavModel.js';
 import { FrogBotNavClient } from './index.client.js';
 import { renderNavIcon } from './renderNavIcon.js';
@@ -54,12 +55,9 @@ export async function FrogBotNav(props: FrogBotNavProps) {
 
   const { admin, routes } = payload.config;
   const shellComponents = admin.components as typeof admin.components & RootAdminComponents;
-  const navModel = buildNavModel({
-    config: payload.config,
-    i18n,
-    permissions,
-    visibleEntities,
-  });
+  const modelProps = { config: payload.config, i18n, permissions, visibleEntities };
+  const navModel = buildNavModel(modelProps);
+  const palette = buildPaletteModel(modelProps);
 
   const navPreferences = await getNavPreferences(req);
   const serverProps = {
@@ -155,6 +153,7 @@ export async function FrogBotNav(props: FrogBotNavProps) {
       logo={logo}
       logout={logout}
       logoutPath={formatAdminURL({ adminRoute: routes.admin, path: admin.routes.logout })}
+      palette={palette}
       sections={renderMany(shellComponents.navSections, 'nav-section')}
       settingsPath={formatAdminURL({ adminRoute: routes.admin, path: '/settings' })}
     />

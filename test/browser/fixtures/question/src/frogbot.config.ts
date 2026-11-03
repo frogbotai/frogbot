@@ -44,6 +44,7 @@ import {
   reasoningModels,
   reportsPath,
   robotSettings,
+  secretsSlug,
   tagsSlug,
   tasksSlug,
   timesheetsSlug,
@@ -231,6 +232,7 @@ export default buildConfig({
           model: 'browser/questioner',
         }),
       ],
+      search: { content: { lexical: { fields: ['title', 'notes'] } } },
     },
     {
       slug: projectsSlug,
@@ -242,6 +244,12 @@ export default buildConfig({
       ],
     },
     { slug: tagsSlug, admin: { useAsTitle: 'name' }, fields: [{ name: 'name', type: 'text' }] },
+    {
+      slug: secretsSlug,
+      access: { read: () => false },
+      admin: { useAsTitle: 'name' },
+      fields: [{ name: 'name', type: 'text' }],
+    },
     {
       slug: timesheetsSlug,
       admin: {

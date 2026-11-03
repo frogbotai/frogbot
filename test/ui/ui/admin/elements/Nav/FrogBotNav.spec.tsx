@@ -14,6 +14,7 @@ type NavClientProps = {
   beforeAccountMenu?: ReactNode;
   items?: unknown[];
   logout?: ReactNode;
+  palette?: unknown;
   sections?: ReactNode;
 };
 
@@ -352,5 +353,21 @@ describe('FrogBotNav', () => {
 
     expect(screen.queryByRole('link', { name: 'Posts' })).toBeNull();
     expect(navClient.mock.calls[0]?.[0].items).toEqual([]);
+  });
+
+  it('passes the command palette model for the collections the user can read', async () => {
+    render(
+      await FrogBotNav(
+        defaultSectionProps({
+          collections: { chats: { read: true }, posts: { read: false } },
+          globals: {},
+        }),
+      ),
+    );
+
+    expect(navClient.mock.calls[0]?.[0].palette).toEqual({
+      collections: [{ label: 'Chats', searchFields: ['id'], slug: 'chats', titleField: 'id' }],
+      rows: [{ group: 'general:collections', label: 'Chats', path: '/admin/collections/chats' }],
+    });
   });
 });
