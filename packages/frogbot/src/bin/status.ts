@@ -1,4 +1,5 @@
 import { isAlive, listRegistrations, type Registration } from './service/registration.js';
+import { leftServer } from './service/stop.js';
 
 function uptime(since: string, now: number): string {
   const seconds = Math.max(0, Math.floor((now - Date.parse(since)) / 1000));
@@ -12,6 +13,12 @@ function uptime(since: string, now: number): string {
   return `${Math.floor(seconds / 86_400)}d ${Math.floor((seconds % 86_400) / 3600)}h`;
 }
 
+function stoppedState(registration: Registration): string {
+  const left = leftServer(registration.serverPid, registration.dir);
+
+  return left ? `stopped (server left running, pid ${left})` : 'stopped';
+}
+
 /** One row per registered app; one whose supervisor is gone is `stopped`. */
 export function statusRows(registrations: Registration[], now = Date.now()): string[][] {
   return registrations.map((registration) => {
@@ -20,7 +27,7 @@ export function statusRows(registrations: Registration[], now = Date.now()): str
     return [
       registration.dir,
       registration.url,
-      alive ? registration.state : 'stopped',
+      alive ? registration.state : stoppedState(registration),
       alive ? uptime(registration.startedAt, now) : '-',
       (registration.lastError ?? '')
         .split('\n')
@@ -43,7 +50,9 @@ export function formatTable(rows: string[][]): string {
     .join('\n');
 }
 
-export function status(): void {
+export function status(args: string[] = []): void {
+  if (args.length) throw new Error('[frogbot] usage: frogbot status');
+
   const rows = statusRows(listRegistrations());
 
   if (!rows.length) {

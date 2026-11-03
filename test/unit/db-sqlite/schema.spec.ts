@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { sqliteAdapter } from '../../../packages/db-sqlite/src/index';
-import { findLosses, withoutNoOps } from '../../../packages/db-sqlite/src/schema/guard';
+import {
+  affinity,
+  findLosses,
+  findTypeChanges,
+  withoutKeptTables,
+  withoutNoOps,
+} from '../../../packages/db-sqlite/src/schema/guard';
 import type { LiveSchema, LiveTable } from '../../../packages/db-sqlite/src/schema/live';
 import { type RawTable, reconcile } from '../../../packages/db-sqlite/src/schema/reconcile';
 
@@ -205,6 +211,75 @@ describe('findLosses', () => {
       { kind: 'table', table: 'notes' },
       { kind: 'rows', table: 'deals' },
     ]);
+  });
+});
+
+describe('findTypeChanges', () => {
+  const rebuild = (columns: string) =>
+    `CREATE TABLE \`__new_deals\` (\n\t\`id\` integer PRIMARY KEY NOT NULL,\n${columns},\n\tFOREIGN KEY (\`owner_id\`) REFERENCES \`users\`(\`id\`) ON UPDATE no action ON DELETE set null\n);\n`;
+
+  it('finds a text column a rebuild makes numeric', () => {
+    expect(
+      findTypeChanges(
+        [rebuild('\t`company` numeric,\n\t`title` text NOT NULL,\n\t`owner_id` integer')],
+        live,
+      ),
+    ).toEqual([{ table: 'deals', column: 'company', from: 'text', to: 'numeric' }]);
+  });
+
+  it('lets a number become text, and ignores tables that are not live', () => {
+    const schema: LiveSchema = new Map([
+      [
+        'deals',
+        liveTable({ name: 'deals', columns: [col('id', 'integer'), col('company', 'numeric')] }),
+      ],
+    ]);
+
+    expect(findTypeChanges([rebuild('\t`company` text')], schema)).toEqual([]);
+    expect(findTypeChanges([rebuild('\t`company` numeric')], new Map())).toEqual([]);
+  });
+
+  it("follows SQLite's affinity rules", () => {
+    expect(['integer', 'text(36)', 'numeric', 'real', 'blob', 'varchar(9)'].map(affinity)).toEqual([
+      'integer',
+      'text',
+      'numeric',
+      'real',
+      'blob',
+      'text',
+    ]);
+  });
+});
+
+describe('withoutKeptTables', () => {
+  it('leaves a kept table alone: no rebuild, no index statements, no empty pragma pair', () => {
+    const schema: LiveSchema = new Map([
+      [
+        '_deals_v',
+        liveTable({
+          name: '_deals_v',
+          indexSql: new Map([['_deals_v_parent_idx', 'CREATE INDEX x']]),
+        }),
+      ],
+    ]);
+
+    const statements = [
+      'PRAGMA foreign_keys=OFF;',
+      'CREATE TABLE `__new__deals_v` (`id` integer);',
+      'INSERT INTO `__new__deals_v`("id") SELECT "id" FROM `_deals_v`;',
+      'DROP TABLE `_deals_v`;',
+      'ALTER TABLE `__new__deals_v` RENAME TO `_deals_v`;',
+      'PRAGMA foreign_keys=ON;',
+      'DROP INDEX `_deals_v_parent_idx`;',
+      'CREATE INDEX `_deals_v_parent_idx` ON `_deals_v` (`parent_id`);',
+      'ALTER TABLE `deals` ADD `region` text;',
+    ];
+
+    expect(withoutKeptTables(statements, new Set(['_deals_v']), schema)).toEqual([
+      'ALTER TABLE `deals` ADD `region` text;',
+    ]);
+    expect(withoutKeptTables(statements.slice(0, 6), new Set(['_deals_v']), schema)).toEqual([]);
+    expect(withoutKeptTables(statements, new Set(), schema)).toEqual(statements);
   });
 });
 

@@ -26,11 +26,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    ".frogbot/builds/a/types/**/*.ts",
-    ".frogbot/builds/a/dev/types/**/*.ts",
-    ".frogbot/builds/b/types/**/*.ts",
-    ".frogbot/builds/b/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }

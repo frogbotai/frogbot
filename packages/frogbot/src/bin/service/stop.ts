@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+
 import { isAlive } from './registration.js';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -33,4 +35,35 @@ export async function stopProcess(
   for (let waited = 0; waited < 1000 && isAlive(pid); waited += interval) await sleep(interval);
 
   return 'killed';
+}
+
+function commandLine(pid: number): string {
+  try {
+    return execFileSync('ps', ['-o', 'command=', '-p', String(pid)], { encoding: 'utf8' });
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * `pid` when it is still alive and still the app's server: its command line names `next-server` or
+ * the app's folder, so a pid the OS has given to another program is never touched.
+ */
+export function leftServer(pid: number | undefined, dir: string): number | undefined {
+  if (!pid || !isAlive(pid)) return undefined;
+
+  const command = commandLine(pid);
+
+  return command.includes('next-server') || command.includes(dir) ? pid : undefined;
+}
+
+/** Stops a server a previous supervisor of `dir` left running, with its process group. */
+export async function stopLeftServer(pid: number | undefined, dir: string): Promise<boolean> {
+  const left = leftServer(pid, dir);
+
+  if (!left) return false;
+
+  await stopProcess(left, { group: true });
+
+  return true;
 }

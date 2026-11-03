@@ -13,10 +13,20 @@ export const launchAgentLabel = (id: string) => `ai.frogbot.${id}`;
 export const launchAgentFile = (id: string, home = homedir()) =>
   join(home, 'Library', 'LaunchAgents', `${launchAgentLabel(id)}.plist`);
 
+/** The app's own `node_modules/frogbot/bin.js`, which a reinstall keeps, unlike its real path. */
+export function launchAgentBin(dir: string, fallback: string): string {
+  const bin = join(dir, 'node_modules', 'frogbot', 'bin.js');
+
+  return existsSync(bin) ? bin : fallback;
+}
+
 export type LaunchAgent = {
   id: string;
   dir: string;
-  /** Absolute paths of `node` and FrogBot's `bin.js`; upgrading either needs `up --autostart` again. */
+  /**
+   * Absolute paths of `node` and of the app's `node_modules/frogbot/bin.js`, which a reinstall keeps;
+   * a new Node needs `up --autostart` again.
+   */
   node: string;
   bin: string;
   log: string;

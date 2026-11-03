@@ -1,6 +1,8 @@
 import { appendFileSync, mkdirSync, renameSync, statSync } from 'node:fs';
 import { dirname } from 'node:path';
 
+import { plainText } from './lastError.js';
+
 export const MAX_LOG_BYTES = 10 * 1024 * 1024;
 
 export type Log = {
@@ -10,33 +12,36 @@ export type Log = {
   stream: (source: string) => (chunk: Buffer | string) => void;
 };
 
-/** Timestamped lines appended to `file`, which is renamed to `<file>.1` once it reaches `maxBytes`. */
+/**
+ * Timestamped lines, without colour codes or spinner frames, appended to `file`, which is renamed to
+ * `<file>.1` once its size on disk reaches `maxBytes`.
+ */
 export function createLog(
   file: string,
   { maxBytes = MAX_LOG_BYTES, now = () => new Date() } = {},
 ): Log {
   mkdirSync(dirname(file), { recursive: true });
 
-  let size = sizeOf(file);
-
   function append(text: string) {
-    if (size >= maxBytes) {
+    if (sizeOf(file) >= maxBytes) {
       try {
         renameSync(file, `${file}.1`);
       } catch {}
-
-      size = 0;
     }
 
     try {
       appendFileSync(file, text);
-      size += Buffer.byteLength(text);
     } catch {}
   }
 
   function write(source: string, text: string) {
     const stamp = now().toISOString();
-    const lines = text.replace(/\n$/, '').split('\n');
+    const lines = plainText(text)
+      .replace(/\n$/, '')
+      .split('\n')
+      .filter((line) => line.trim());
+
+    if (!lines.length) return;
 
     append(lines.map((line) => `${stamp} [${source}] ${line}\n`).join(''));
   }

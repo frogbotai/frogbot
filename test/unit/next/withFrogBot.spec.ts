@@ -1,6 +1,7 @@
 import {
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   readlinkSync,
   realpathSync,
   rmSync,
@@ -200,9 +201,56 @@ describe('withFrogBot', () => {
   });
 
   it('builds into FROGBOT_DIST_DIR when it is set, as `frogbot up` sets it', () => {
+    vi.spyOn(process, 'cwd').mockReturnValue(createFixtureRoot());
     vi.stubEnv('FROGBOT_DIST_DIR', '.frogbot/builds/a');
 
     expect(withFrogBot({ distDir: 'out' }).distDir).toBe('.frogbot/builds/a');
+  });
+
+  it('type-checks a build against its own types only, through a tsconfig beside it', () => {
+    const root = createFixtureRoot();
+
+    vi.spyOn(process, 'cwd').mockReturnValue(root);
+    vi.stubEnv('FROGBOT_DIST_DIR', '.frogbot/builds/b');
+
+    writeFileSync(
+      join(root, 'tsconfig.json'),
+      `{
+  // comments are allowed
+  "compilerOptions": { "strict": true },
+  "include": ["next-env.d.ts", "**/*.ts", ".next/types/**/*.ts", ".frogbot/builds/a/types/**/*.ts"],
+}
+`,
+    );
+
+    const config = withFrogBot({ typescript: { ignoreBuildErrors: false } });
+
+    expect(config.typescript).toEqual({
+      ignoreBuildErrors: false,
+      tsconfigPath: '.frogbot/builds/b.tsconfig.json',
+    });
+    expect(JSON.parse(readFileSync(join(root, '.frogbot/builds/b.tsconfig.json'), 'utf8'))).toEqual(
+      {
+        extends: '../../tsconfig.json',
+        include: ['../../next-env.d.ts', '../../**/*.ts', 'b/types/**/*.ts', 'b/dev/types/**/*.ts'],
+      },
+    );
+  });
+
+  it('leaves tsconfigPath alone outside `frogbot up` and when there is no tsconfig', () => {
+    vi.spyOn(process, 'cwd').mockReturnValue(createFixtureRoot());
+    vi.stubEnv('FROGBOT_DIST_DIR', '');
+
+    expect(withFrogBot().typescript).toBeUndefined();
+
+    vi.stubEnv('FROGBOT_DIST_DIR', '.frogbot/builds/a');
+
+    expect(withFrogBot().typescript).toBeUndefined();
+  });
+
+  it("turns Next's AGENTS.md rules off unless the app sets agentRules", () => {
+    expect(withFrogBot().agentRules).toBe(false);
+    expect(withFrogBot({ agentRules: true }).agentRules).toBe(true);
   });
 
   it("keeps the app's distDir when FROGBOT_DIST_DIR is unset", () => {

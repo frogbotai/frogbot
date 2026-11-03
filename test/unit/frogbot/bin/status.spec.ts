@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -92,5 +93,22 @@ describe('frogbot status', () => {
     expect(log).toHaveBeenCalledWith(
       '[frogbot] no apps are up; start one with `frogbot up` in its folder',
     );
+  });
+
+  it('prints its usage for any argument', () => {
+    expect(() => status(['--json'])).toThrow('[frogbot] usage: frogbot status');
+  });
+
+  it("says when a stopped app's server is still running", () => {
+    const left = spawnSync(process.execPath, ['-e', ''], { stdio: 'ignore' });
+    const rows = statusRows([
+      registration({ pid: 2 ** 22 + 12_345, serverPid: process.pid, dir: process.cwd() }),
+      registration({ pid: 2 ** 22 + 12_345, serverPid: left.pid }),
+    ]);
+
+    expect(rows.map((row) => row[2])).toEqual([
+      `stopped (server left running, pid ${process.pid})`,
+      'stopped',
+    ]);
   });
 });

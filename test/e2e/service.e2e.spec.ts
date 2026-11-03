@@ -1,15 +1,17 @@
-import { execFile } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
 import {
   cpSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -25,6 +27,7 @@ type Registration = {
   id: string;
   dir: string;
   url: string;
+  port: number;
   pid: number;
   serverPid?: number;
   state: string;
@@ -89,7 +92,43 @@ async function get(url: string): Promise<{ status: number; text: string }> {
   return { status: response.status, text: await response.text() };
 }
 
-const write = (dir: string, file: string, text: string) => writeFileSync(join(dir, file), text);
+const write = (dir: string, file: string, text: string) => {
+  mkdirSync(dirname(join(dir, file)), { recursive: true });
+  writeFileSync(join(dir, file), text);
+};
+
+const catchAll = 'src/app/(frogbot)/api/[...slug]/route.ts';
+
+function serversIn(dir: string): number[] {
+  const pids = execFileSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8' })
+    .split('\n')
+    .filter((line) => line.includes('next-server'))
+    .map((line) => Number.parseInt(line, 10));
+
+  return pids.filter((pid) => {
+    try {
+      const cwd = execFileSync('lsof', ['-a', '-p', String(pid), '-d', 'cwd', '-Fn'], {
+        encoding: 'utf8',
+      });
+
+      return cwd.split('\n').includes(`n${dir}`);
+    } catch {
+      return false;
+    }
+  });
+}
+
+function unusedPort(): Promise<number> {
+  return new Promise((done) => {
+    const server = createServer().listen(0, '127.0.0.1', () => {
+      const { port } = server.address() as { port: number };
+
+      server.close(() => done(port));
+    });
+  });
+}
+
+const serviceLog = (dir: string) => readFileSync(join(dir, '.frogbot', 'service.log'), 'utf8');
 const setText = (dir: string, value: string) =>
   write(dir, 'src/text.ts', `export const text: string = ${value};\n`);
 
@@ -155,7 +194,9 @@ describe('frogbot up, status and down', { timeout: 600_000 }, () => {
     const b = registrationOf(two)!;
 
     expect(a.url).not.toBe(b.url);
+    expect(a.port).toBeGreaterThanOrEqual(9696);
     expect(await get(`${a.url}/text`)).toEqual({ status: 200, text: 'first' });
+    expect(await get(`http://[::1]:${a.port}/text`)).toEqual({ status: 200, text: 'first' });
     expect(await get(`${b.url}/text`)).toEqual({ status: 200, text: 'first' });
 
     const again = await frogbot(one, 'up');
@@ -200,8 +241,13 @@ describe('frogbot up, status and down', { timeout: 600_000 }, () => {
     setText(one, '42');
     await vi.waitFor(() => expect(registrationOf(one)?.state).toBe('update failed'), BUILD);
 
-    expect(registrationOf(one)?.lastError).toMatch(/build failed/);
+    expect(registrationOf(one)?.lastError).toMatch(/^build failed \(exit 1\): .*src\/text\.ts/);
+    expect(registrationOf(one)?.lastError).toMatch(/error TS2322|Type error/);
     expect(await get(`${url}/text`)).toEqual({ status: 200, text: 'second' });
+
+    const listed = await frogbot(tmpdir(), 'status');
+
+    expect(listed.output).toMatch(/update failed .*src\/text\.ts/);
 
     setText(one, "'third'");
     await vi.waitFor(async () => expect((await get(`${url}/text`)).text).toBe('third'), BUILD);
@@ -243,6 +289,92 @@ export const noteFields: NonNullable<CollectionConfig['fields']> = [
     read.close();
   });
 
+  it('keeps updating after a route is deleted', async () => {
+    const { url } = registrationOf(one)!;
+
+    write(one, 'src/app/gone/route.ts', "export const GET = () => new Response('here');\n");
+    await vi.waitFor(async () => expect((await get(`${url}/gone`)).text).toBe('here'), BUILD);
+
+    rmSync(join(one, 'src', 'app', 'gone'), { recursive: true });
+    await vi.waitFor(async () => expect((await get(`${url}/gone`)).status).toBe(404), BUILD);
+
+    expect(registrationOf(one)).toMatchObject({ state: 'running' });
+
+    setText(one, "'fourth'");
+    await vi.waitFor(async () => expect((await get(`${url}/text`)).text).toBe('fourth'), BUILD);
+
+    setText(one, "'third'");
+    await vi.waitFor(async () => expect((await get(`${url}/text`)).text).toBe('third'), BUILD);
+  });
+
+  it('keeps the old version when the new one answers the API with an error', async () => {
+    const { url } = registrationOf(one)!;
+    const original = readFileSync(join(one, catchAll), 'utf8');
+
+    expect((await get(`${url}/api/access`)).status).toBe(200);
+
+    write(
+      one,
+      catchAll,
+      "export function GET(): Response {\n  throw new Error('smoke: api blew up');\n}\n",
+    );
+
+    setText(one, "'broken api'");
+    await vi.waitFor(() => expect(registrationOf(one)?.state).toBe('update failed'), BUILD);
+
+    expect(registrationOf(one)?.lastError).toMatch(
+      /\/api\/(health|access) with 500: Error: smoke: api blew up/,
+    );
+    expect(await get(`${url}/text`)).toEqual({ status: 200, text: 'third' });
+
+    write(one, catchAll, original);
+    setText(one, "'third'");
+    await vi.waitFor(() => expect(registrationOf(one)?.state).toBe('running'), BUILD);
+  });
+
+  it('runs a `frogbot run` script without a terminal after a field was removed under `up`', async () => {
+    const { url } = registrationOf(one)!;
+
+    write(
+      one,
+      'src/fields.ts',
+      `import type { CollectionConfig } from 'frogbot';
+
+export const noteFields: NonNullable<CollectionConfig['fields']> = [{ name: 'title', type: 'text' }];
+`,
+    );
+
+    setText(one, "'no due date'");
+
+    await vi.waitFor(
+      async () => expect((await get(`${url}/text`)).text).toBe('no due date'),
+      BUILD,
+    );
+
+    expect(serviceLog(one)).toMatch(/notes\.due_date is gone from the code/);
+    expect(serviceLog(one)).not.toMatch(/ALTER TABLE/);
+    expect(serviceLog(one)).not.toContain('\u001b[');
+
+    write(
+      one,
+      'scripts/save.ts',
+      `import { getFrogBot } from 'frogbot';
+
+import config from '../src/frogbot.config';
+
+const frogbot = await getFrogBot({ config });
+
+await frogbot.create({ collection: 'notes', data: { title: 'saved' }, overrideAccess: true });
+`,
+    );
+
+    const saved = await frogbot(one, 'run', 'scripts/save.ts');
+
+    expect(saved.code, saved.output).toBe(0);
+    expect(saved.output).not.toMatch(/data loss|unsettled top-level await/i);
+    expect(columns(join(one, 'frogbot.db')).map((c) => c.name)).toContain('due_date');
+  });
+
   it('restarts a killed server on the same build: `crashed`, then `running` within 2 s', async () => {
     const before = registrationOf(one)!;
 
@@ -262,7 +394,46 @@ export const noteFields: NonNullable<CollectionConfig['fields']> = [
 
     expect(Date.now() - crashedAt).toBeLessThan(2000);
     expect(registrationOf(one)?.serverPid).not.toBe(before.serverPid);
-    expect(await get(`${before.url}/text`)).toEqual({ status: 200, text: 'third' });
+    expect(await get(`${before.url}/text`)).toEqual({ status: 200, text: 'no due date' });
+    expect(serviceLog(one)).toContain(`server back up (pid ${registrationOf(one)?.serverPid})`);
+  });
+
+  it('moves a running app to `--port <n>` without a rebuild, and keeps `n` after `down` and `up`', async () => {
+    const port = await unusedPort();
+    const moved = await frogbot(one, 'up', '--port', String(port));
+
+    expect(moved.code, moved.output).toBe(0);
+    expect(moved.output).toContain(`moved ${one} to http://127.0.0.1:${port}`);
+    expect(await get(`http://127.0.0.1:${port}/text`)).toEqual({
+      status: 200,
+      text: 'no due date',
+    });
+
+    expect((await frogbot(one, 'down')).code).toBe(0);
+
+    const again = await frogbot(one, 'up');
+
+    expect(again.code, again.output).toBe(0);
+    expect(registrationOf(one)?.url).toBe(`http://127.0.0.1:${port}`);
+  });
+
+  it('leaves no server behind when the supervisor is killed, and the next `up` starts one', async () => {
+    const before = registrationOf(one)!;
+
+    expect(serversIn(one)).toEqual([before.serverPid]);
+
+    process.kill(before.pid, 'SIGKILL');
+
+    await vi.waitFor(() => expect(serversIn(one)).toEqual([]), { timeout: 2000, interval: 50 });
+
+    const listed = await frogbot(tmpdir(), 'status');
+
+    expect(listed.output).toMatch(new RegExp(`${one}\\s+\\S+\\s+stopped\\s`));
+
+    const again = await frogbot(one, 'up');
+
+    expect(again.code, again.output).toBe(0);
+    expect(serversIn(one)).toEqual([registrationOf(one)?.serverPid]);
   });
 
   it('stops a supervisor whose registration another one overwrote within 10 s', async () => {
@@ -297,6 +468,10 @@ export const noteFields: NonNullable<CollectionConfig['fields']> = [
     expect(await frogbot(one, 'down')).toEqual({
       code: 0,
       output: expect.stringContaining('is not running'),
+    });
+    expect(await frogbot(one, 'down', '--bogus')).toEqual({
+      code: 1,
+      output: expect.stringContaining('unknown option --bogus; usage: frogbot down [folder]'),
     });
   });
 });

@@ -28,7 +28,7 @@ const commands: Record<string, Command> = {
   dev: (args) => dev(args),
   up: (args) => up(args),
   down: (args) => down(args),
-  status: () => status(),
+  status: (args) => status(args),
   run: (args) => runScript(args),
   'generate:types': () => generateTypes(),
   'generate:piece-types': (args) => generatePieceTypesCommand(args),
@@ -48,6 +48,8 @@ const commands: Record<string, Command> = {
 const codegenCommands = new Set(['start', 'dev', 'generate:types', 'generate:importmap']);
 
 const serviceCommands = new Set(['up', 'down', 'status']);
+
+const helpCommands = new Set(['help', '--help', '-h']);
 
 function usage(appCommands: Record<string, CLICommand>): string {
   const names = [
@@ -110,6 +112,12 @@ export async function bin() {
     command && Object.hasOwn(appCommands, command) ? appCommands[command] : undefined;
 
   const handler = command && Object.hasOwn(commands, command) ? commands[command] : undefined;
+
+  if (command && helpCommands.has(command) && !appCommand) {
+    console.log(usage(appCommands));
+
+    process.exit(0);
+  }
 
   if (!command) {
     console.error(usage(appCommands));

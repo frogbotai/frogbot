@@ -1,4 +1,12 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -6,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   installLaunchAgent,
+  launchAgentBin,
   launchAgentFile,
   launchAgentPlist,
   uninstallLaunchAgent,
@@ -17,7 +26,7 @@ const agent = {
   node: '/usr/local/bin/node',
   bin: '/Users/me/apps/crm/node_modules/frogbot/bin.js',
   log: '/Users/me/apps/crm/.frogbot/launchd.log',
-  env: { FROGBOT_SERVICE: 'supervise', FROGBOT_SERVICE_PORT: '3000', PATH: '/usr/bin' },
+  env: { FROGBOT_SERVICE: 'supervise', PATH: '/usr/bin' },
 };
 
 describe('LaunchAgent', () => {
@@ -85,5 +94,18 @@ describe('LaunchAgent', () => {
       ['launchctl', ['bootout', 'gui/501/ai.frogbot.abc123def456']],
     ]);
     expect(existsSync(launchAgentFile(agent.id, home))).toBe(false);
+  });
+
+  it("runs the app's node_modules/frogbot/bin.js, which a reinstall keeps, not its store path", () => {
+    const app = join(home, 'app');
+    const bin = join(app, 'node_modules', 'frogbot', 'bin.js');
+    const store = '/store/frogbot@0.39.0_hash/node_modules/frogbot/bin.js';
+
+    expect(launchAgentBin(app, store)).toBe(store);
+
+    mkdirSync(join(app, 'node_modules', 'frogbot'), { recursive: true });
+    writeFileSync(bin, '');
+
+    expect(launchAgentBin(app, store)).toBe(bin);
   });
 });

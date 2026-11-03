@@ -1,7 +1,13 @@
-import { createServer, type IncomingMessage, request, type Server } from 'node:http';
+import {
+  createServer,
+  type IncomingMessage,
+  request,
+  type Server,
+  type ServerResponse,
+} from 'node:http';
 import { connect, type Socket } from 'node:net';
 
-import { HOST } from './ports.js';
+import { HOST, HOSTS, listenError } from './ports.js';
 
 export type Upstream = { port: number; inFlight: number; onIdle?: () => void };
 
@@ -28,7 +34,7 @@ function rawHead(req: IncomingMessage): string {
 export function createProxy() {
   let current: Upstream | undefined;
 
-  const server: Server = createServer((req, res) => {
+  const onRequest = (req: IncomingMessage, res: ServerResponse) => {
     const upstream = current;
 
     if (!upstream) {
@@ -81,9 +87,9 @@ export function createProxy() {
     });
 
     req.pipe(forward);
-  });
+  };
 
-  server.on('upgrade', (req, socket: Socket, head: Buffer) => {
+  const onUpgrade = (req: IncomingMessage, socket: Socket, head: Buffer) => {
     const upstream = current;
 
     if (!upstream) {
@@ -112,22 +118,66 @@ export function createProxy() {
 
     target.on('error', close).on('close', close);
     socket.on('error', close).on('close', close);
-  });
+  };
 
-  server.requestTimeout = 0;
-  server.headersTimeout = 60_000;
+  let servers: Server[] = [];
+
+  function listenOn(port: number, host: string): Promise<Server | undefined> {
+    const server = createServer(onRequest);
+
+    server.on('upgrade', onUpgrade);
+    server.requestTimeout = 0;
+    server.headersTimeout = 60_000;
+
+    return new Promise((resolve, reject) => {
+      server.once('error', (error: NodeJS.ErrnoException) => {
+        if (host !== HOST && ['EADDRNOTAVAIL', 'EAFNOSUPPORT'].includes(error.code ?? '')) {
+          resolve(undefined);
+        } else {
+          reject(listenError(port, error));
+        }
+      });
+
+      server.listen({ port, host, exclusive: true }, () => resolve(server));
+    });
+  }
+
+  async function open(port: number): Promise<{ servers: Server[]; skipped: string[] }> {
+    const opened: Server[] = [];
+    const skipped: string[] = [];
+
+    try {
+      for (const host of HOSTS) {
+        const server = await listenOn(port, host);
+
+        if (server) opened.push(server);
+        else skipped.push(host);
+      }
+    } catch (error) {
+      await Promise.all(opened.map(closeServer));
+      throw error;
+    }
+
+    return { servers: opened, skipped };
+  }
 
   return {
-    server,
-    listen(port: number): Promise<void> {
-      return new Promise((resolve, reject) => {
-        server.once('error', reject);
+    async listen(port: number): Promise<string[]> {
+      const { servers: opened, skipped } = await open(port);
 
-        server.listen({ port, host: HOST, exclusive: true }, () => {
-          server.off('error', reject);
-          resolve();
-        });
-      });
+      servers = opened;
+
+      return skipped;
+    },
+    async move(port: number): Promise<string[]> {
+      const { servers: opened, skipped } = await open(port);
+      const old = servers;
+
+      servers = opened;
+
+      for (const server of old) void closeServer(server);
+
+      return skipped;
     },
     get current(): Upstream | undefined {
       return current;
@@ -139,13 +189,25 @@ export function createProxy() {
 
       return previous;
     },
-    close(): Promise<void> {
-      return new Promise((resolve) => {
-        server.close(() => resolve());
-        server.closeAllConnections();
-      });
+    async close(): Promise<void> {
+      await Promise.all(
+        servers.map((server) => {
+          const closed = closeServer(server);
+
+          server.closeAllConnections();
+
+          return closed;
+        }),
+      );
     },
   };
+}
+
+function closeServer(server: Server): Promise<void> {
+  return new Promise((resolve) => {
+    server.close(() => resolve());
+    server.closeIdleConnections();
+  });
 }
 
 /** Resolves once `upstream` has no request open, or after `timeout` ms. */

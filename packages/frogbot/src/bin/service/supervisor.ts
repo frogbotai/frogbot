@@ -1,11 +1,14 @@
 import type { ChildProcess } from 'node:child_process';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { readFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { FROGBOT_VERSION } from '../../version.js';
 import { createBackoff } from './backoff.js';
+import { checkHealth } from './health.js';
+import { pickError } from './lastError.js';
 import { createLog, type Log } from './log.js';
 import { appPaths, registrationFile, serviceId, type Slot } from './paths.js';
-import { freePort, HOST } from './ports.js';
+import { freePort, HOST, readSavedPort, writeSavedPort } from './ports.js';
 import { createProxy, drained, type Upstream } from './proxy.js';
 import { createBuildQueue } from './queue.js';
 import {
@@ -19,6 +22,7 @@ import {
   type AppRuntime,
   frogbotBin,
   nextRuntime,
+  outputTail,
   runStep,
   StepError,
 } from './runtime.js';
@@ -28,8 +32,8 @@ import { watchApp } from './watch.js';
 export const BOOT_FAILED = '[frogbot] up failed:';
 
 const DRAIN_MS = 30_000;
-const HEALTH_MS = 60_000;
 const ERROR_TAIL_LINES = 30;
+const MAX_ERROR = 200;
 
 type Server = {
   slot: Slot;
@@ -39,9 +43,27 @@ type Server = {
   upstream?: Upstream;
 };
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+/** Sent by `frogbot up --port <n>` after it saves the new port in `.frogbot/port`. */
+export const MOVE_SIGNAL = 'SIGUSR2';
 
 const tail = (text: string) => text.trimEnd().split('\n').slice(-ERROR_TAIL_LINES).join('\n');
+
+function summarize(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  const why = error instanceof StepError ? pickError(error.output) : undefined;
+
+  const text = why && !message.includes(why) ? `${message}: ${why}` : message;
+
+  return text.length > MAX_ERROR ? `${text.slice(0, MAX_ERROR - 1)}…` : text;
+}
+
+function includesBuilds(dir: string): boolean {
+  try {
+    return readFileSync(join(dir, 'tsconfig.json'), 'utf8').includes('.frogbot/builds/');
+  } catch {
+    return false;
+  }
+}
 
 function exited(child: ChildProcess): Promise<void> {
   if (child.exitCode !== null || child.signalCode !== null) return Promise.resolve();
@@ -68,70 +90,52 @@ async function stopServer(child: ChildProcess): Promise<void> {
   clearTimeout(timer);
 }
 
-async function healthy(port: number, child: ChildProcess, timeout = HEALTH_MS): Promise<void> {
-  const deadline = Date.now() + timeout;
-  let gone = false;
+type SchemaLine = {
+  frogbot: 'schema';
+  ok: boolean;
+  applied: number;
+  kept?: string[];
+  error?: string;
+};
 
-  void exited(child).then(() => (gone = true));
-
-  for (const path of ['/', '/admin']) {
-    for (;;) {
-      if (gone) {
-        throw new Error(`the server exited (${child.signalCode ?? `exit ${child.exitCode}`})`);
-      }
-
-      if (Date.now() > deadline) {
-        throw new Error(`the server didn't answer ${path} within ${timeout / 1000} s`);
-      }
-
-      const status = await fetch(`http://${HOST}:${port}${path}`, {
-        redirect: 'manual',
-        signal: AbortSignal.timeout(10_000),
-      }).then(
-        async (response) => {
-          await response.body?.cancel();
-
-          return response.status;
-        },
-        () => undefined,
-      );
-
-      if (status !== undefined && status < 500) break;
-      if (status !== undefined) throw new Error(`the server answered ${path} with ${status}`);
-
-      await sleep(200);
-    }
-  }
-}
-
-type SchemaLine = { frogbot: 'schema'; ok: boolean; applied: number; error?: string };
-
-async function syncSchema(app: App): Promise<void> {
+async function syncSchema(app: App, reported: Set<string>): Promise<void> {
   let output: string;
 
   try {
-    output = await runStep(app, 'schema', [frogbotBin, 'up'], {
-      ...app.env,
-      NODE_ENV: 'production',
-      FROGBOT_SERVICE: 'schema',
-    });
+    output = await runStep(
+      app,
+      'schema',
+      [frogbotBin, 'up'],
+      { ...app.env, NODE_ENV: 'production', FROGBOT_SERVICE: 'schema' },
+      { quiet: true },
+    );
   } catch (error) {
-    const line = error instanceof StepError ? parseSchemaLine(error.output) : undefined;
+    const stepOutput = error instanceof StepError ? error.output : '';
+    const line = parseSchemaLine(stepOutput);
 
-    if (line?.error) {
-      throw new StepError(
-        `schema sync refused: ${line.error}`,
-        error instanceof StepError ? error.output : '',
-      );
-    }
+    app.log.write('schema', stepOutput);
+
+    if (line?.error) throw new StepError(`schema sync refused: ${line.error}`, '');
 
     throw error;
   }
 
   const line = parseSchemaLine(output);
 
-  if (!line) throw new StepError('schema sync printed no result', output);
-  if (!line.ok) throw new StepError(`schema sync refused: ${line.error}`, output);
+  if (!line) {
+    app.log.write('schema', output);
+
+    throw new StepError('schema sync printed no result', output);
+  }
+
+  for (const kept of line.kept ?? []) {
+    if (reported.has(kept)) continue;
+
+    reported.add(kept);
+    app.log.write('schema', kept);
+  }
+
+  if (!line.ok) throw new StepError(`schema sync refused: ${line.error}`, '');
   if (line.applied) app.log.write('supervisor', `schema sync applied ${line.applied} statements`);
 }
 
@@ -178,13 +182,16 @@ export async function supervise({
   const proxy = createProxy();
   const backoff = createBackoff();
   const draining = new Map<Slot, ChildProcess>();
+  const reported = new Set<string>();
   let current: Server | undefined;
   let booted = false;
   let stopping = false;
 
-  await proxy.listen(port);
-  mkdirSync(paths.root, { recursive: true });
-  writeFileSync(paths.port, `${port}\n`);
+  const skipped = await proxy.listen(port);
+  const saved = readSavedPort(paths.port);
+  let chosen = saved?.port === port && saved.chosen;
+
+  writeSavedPort(paths.port, { port, chosen });
 
   const registration: Registration = {
     id,
@@ -212,16 +219,26 @@ export async function supervise({
     `up at ${registration.url} (pid ${process.pid}, FrogBot ${FROGBOT_VERSION})`,
   );
 
+  for (const host of skipped) log.write('supervisor', `not listening on ${host}: no IPv6 here`);
+
+  if (includesBuilds(dir)) {
+    log.write(
+      'supervisor',
+      'tsconfig.json includes .frogbot/builds/…; remove those lines or a deleted route breaks `tsc`',
+    );
+  }
+
   async function launch(slot: Slot): Promise<Server> {
     const serverPort = await freePort();
     const child = runtime.start(app, slot, serverPort);
+    const output = outputTail(child);
     const server: Server = { slot, port: serverPort, child, startedAt: Date.now() };
 
     try {
-      await healthy(serverPort, child);
+      await checkHealth(serverPort, child);
     } catch (error) {
       await stopServer(child);
-      throw error;
+      throw new StepError((error as Error).message, output());
     }
 
     return server;
@@ -275,13 +292,19 @@ export async function supervise({
 
       launch(server.slot).then(
         (next) => {
-          if (!stopping && current === server) swap(next);
-          else void stopServer(next.child);
+          if (stopping || current !== server) {
+            void stopServer(next.child);
+
+            return;
+          }
+
+          swap(next);
+          log.write('supervisor', `server back up (pid ${next.child.pid})`);
         },
         (error: unknown) => {
           if (stopping || current !== server) return;
 
-          const message = `restart failed: ${error instanceof Error ? error.message : String(error)}`;
+          const message = `restart failed: ${summarize(error)}`;
 
           save({ lastError: message });
           restart(server, Date.now(), message);
@@ -304,7 +327,7 @@ export async function supervise({
       rmSync(paths.build(slot), { recursive: true, force: true });
       await runtime.prepare(app);
       await runtime.build(app, slot);
-      await syncSchema(app);
+      await syncSchema(app, reported);
 
       const server = await launch(slot);
 
@@ -324,13 +347,14 @@ export async function supervise({
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const output = error instanceof StepError ? tail(error.output) : '';
-      const lastError = output ? `${message}\n${output}` : message;
 
-      log.write('supervisor', `update failed: ${message}`);
+      log.write('supervisor', `update failed: ${summarize(error)}`);
 
-      if (!booted) throw Object.assign(new Error(lastError), { boot: true });
+      if (!booted) {
+        throw Object.assign(new Error(output ? `${message}\n${output}` : message), { boot: true });
+      }
 
-      save({ state: current ? 'update failed' : 'crashed', lastError });
+      save({ state: current ? 'update failed' : 'crashed', lastError: summarize(error) });
     }
   }
 
@@ -359,6 +383,31 @@ export async function supervise({
   process.on('SIGTERM', () => void shutdown('SIGTERM'));
   process.on('SIGINT', () => void shutdown('SIGINT'));
   process.on('SIGHUP', () => void shutdown('SIGHUP'));
+  process.on(MOVE_SIGNAL, () => void move());
+
+  async function move() {
+    const next = readSavedPort(paths.port);
+
+    if (stopping || !next || next.port === registration.port) return;
+
+    try {
+      const skippedHosts = await proxy.move(next.port);
+
+      for (const host of skippedHosts) {
+        log.write('supervisor', `not listening on ${host}: no IPv6 here`);
+      }
+    } catch (error) {
+      log.write('supervisor', `couldn't move to port ${next.port}: ${summarize(error)}`);
+      writeSavedPort(paths.port, { port: registration.port, chosen });
+      save({ lastError: `couldn't move to port ${next.port}: ${summarize(error)}` });
+
+      return;
+    }
+
+    chosen = next.chosen;
+    save({ port: next.port, url: `http://${HOST}:${next.port}` });
+    log.write('supervisor', `moved to ${registration.url}`);
+  }
 
   stopOwnership = watchOwnership({
     file,

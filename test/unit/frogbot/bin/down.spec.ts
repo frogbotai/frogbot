@@ -85,4 +85,39 @@ describe('frogbot down', () => {
     expect(existsSync(join(dir, '.frogbot', 'builds'))).toBe(false);
     expect(lines).toEqual([`[frogbot] stopped ${dir}`]);
   });
+
+  it('rejects an option instead of reading it as a folder', async () => {
+    const untouched = vi.fn(() => Promise.resolve(false));
+
+    await expect(down(['--bogus'], { log, uninstall: untouched })).rejects.toThrow(
+      '[frogbot] unknown option --bogus; usage: frogbot down [folder]',
+    );
+    expect(untouched).not.toHaveBeenCalled();
+  });
+
+  it('stops a server its dead supervisor left running, and only that server', async () => {
+    child = spawn(
+      process.execPath,
+      [
+        '-e',
+        "process.title = 'next-server (v16)'; console.log('ready'); setInterval(() => {}, 1000)",
+      ],
+      { stdio: ['ignore', 'pipe', 'ignore'], detached: true },
+    );
+
+    await new Promise((resolve) => child!.stdout!.once('data', resolve));
+
+    const file = registrationFile(serviceId(dir));
+
+    writeRegistration(file, { ...registration(2 ** 22 + 12_345), serverPid: process.pid });
+    await down([dir], { log, uninstall });
+
+    expect(isAlive(process.pid)).toBe(true);
+
+    writeRegistration(file, { ...registration(2 ** 22 + 12_345), serverPid: child.pid });
+    await down([dir], { log, uninstall });
+
+    expect(isAlive(child.pid)).toBe(false);
+    expect(readRegistration(file)).toBeUndefined();
+  });
 });

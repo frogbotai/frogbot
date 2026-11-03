@@ -8,6 +8,7 @@ import {
   type SchemaSyncResult,
   type SyncSchema,
 } from 'frogbot';
+import { BasePayload } from 'payload';
 
 export type Field = NonNullable<CollectionConfig['fields']>[number];
 
@@ -68,3 +69,56 @@ export const tables = (db: string) =>
 
 export const schemaDump = (db: string) =>
   query(db, `SELECT type, name, sql FROM sqlite_master ORDER BY name`);
+
+export type Logs = { info: string[]; error: string[] };
+
+function captureLogger(logs: Logs) {
+  const text = (value: unknown) =>
+    typeof value === 'string' ? value : String((value as { msg?: unknown })?.msg ?? '');
+
+  const logger = {
+    info: (value: unknown) => logs.info.push(text(value)),
+    error: (value: unknown) => logs.error.push(text(value)),
+    warn: () => {},
+    debug: () => {},
+    trace: () => {},
+    fatal: () => {},
+    child: () => logger,
+  };
+
+  return logger;
+}
+
+/** Starts Payload on `db` as `frogbot dev` and `frogbot run` do, with its log lines captured. */
+export async function connect(
+  db: string,
+  collections: CollectionConfig[],
+): Promise<{ payload: BasePayload; logs: Logs; close: () => Promise<void> }> {
+  const config = await buildConfig({
+    secret: 'schema-sync-test',
+    db: sqliteAdapter({ client: { url: `file:${db}` } }),
+    typescript: { autoGenerate: false },
+    collections,
+  });
+
+  const payloadConfig = await config._internal.payloadConfig;
+  const logs: Logs = { info: [], error: [] };
+
+  payloadConfig.logger = captureLogger(logs) as unknown as typeof payloadConfig.logger;
+  payloadConfig.jobs = { ...payloadConfig.jobs, autoRun: [] };
+
+  const payload = new BasePayload();
+
+  await payload.init({ config: payloadConfig, cron: false, disableOnInit: true });
+
+  return {
+    payload,
+    logs,
+    close: async () => {
+      const { client } = payload.db as unknown as { client?: { close: () => void } };
+
+      await payload.destroy();
+      client?.close();
+    },
+  };
+}

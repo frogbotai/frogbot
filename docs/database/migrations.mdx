@@ -123,7 +123,7 @@ adapter.
 | `--force-accept-warning` | `migrate:create`, `migrate:fresh` | Answers yes to confirmation prompts. `migrate:fresh` drops the database without asking, and on Postgres and SQLite `migrate:create` writes a blank migration when there are no changes. |
 | `--help`, `-h` | Every command | Prints usage. |
 
-When `frogbot migrate` runs without an interactive terminal, such as in CI, it fails if the database has schema changes pushed in development mode. Run it interactively to confirm those changes first.
+When `frogbot migrate` runs without an interactive terminal, such as in CI, it fails if Drizzle's development push has marked the database (on Postgres, or on a SQLite database an earlier FrogBot pushed). Run it interactively to confirm those changes first. FrogBot's [SQLite schema sync](/database/sqlite#prototyping-in-development-mode) leaves no such mark.
 
 ### Migrate
 
@@ -226,6 +226,8 @@ FrogBot uses Drizzle ORM's powerful `push` mode to automatically sync data chang
 You can disable this setting and solely use migrations to manage your local development database (pass `push: false` to your Postgres adapter), but if you do disable it, you may see frequent errors while running development mode. This is because FrogBot will have updated to your new data shape, but your local database will not have updated.
 
 For this reason, we suggest that you leave `push` as its default setting and treat your local dev database as a sandbox.
+
+On a SQLite file database, push is FrogBot's [schema sync](/database/sqlite#prototyping-in-development-mode): it adds tables, columns and indexes, keeps removed fields hidden, and skips any change that would lose data with an error line instead of asking.
 
 For more information about push mode and prototyping in development, [click here](/database/postgres#prototyping-in-development-mode).
 
