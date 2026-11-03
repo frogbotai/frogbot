@@ -1,6 +1,7 @@
 import type { CollectionConfig as PayloadCollectionConfig, PayloadRequest } from 'payload';
 
 import type { CollectionView } from '../../admin/views/types.js';
+import { buildAggregateEndpoints } from '../../aggregate/endpoints.js';
 import { buildSignInEndpoints } from '../../auth/signIn/endpoints.js';
 import { buildSignInStrategy } from '../../auth/signIn/strategy.js';
 import { validateSignIn } from '../../auth/signIn/validate.js';
@@ -17,7 +18,7 @@ import {
   type ResolveFrogBot,
   wrapAuthEmail,
   wrapAuthStrategies,
-  wrapEndpoints,
+  wrapEndpointList,
   wrapFormatDocURL,
   wrapLivePreview,
   wrapPreview,
@@ -320,22 +321,15 @@ export function sanitizeCollection(
     ...(afterError?.length ? { afterError: [setupFrogBot, ...afterError] } : {}),
   };
 
-  const searchEndpoints = search ? buildSearchEndpoints({ collection: c.slug }) : [];
-
-  if (c.endpoints !== undefined || signIn.length || searchEndpoints.length) {
-    out.endpoints = wrapEndpoints(
-      signIn.length || searchEndpoints.length
-        ? [
-            ...(signIn.length
-              ? buildSignInEndpoints({ collectionSlug: c.slug, methods: signIn })
-              : []),
-            ...(c.endpoints || []),
-            ...searchEndpoints,
-          ]
-        : c.endpoints,
-      attachFrogBot,
-    );
-  }
+  out.endpoints = wrapEndpointList(
+    [
+      ...(signIn.length ? buildSignInEndpoints({ collectionSlug: c.slug, methods: signIn }) : []),
+      ...(c.endpoints || []),
+      ...(search ? buildSearchEndpoints({ collection: c.slug }) : []),
+      ...buildAggregateEndpoints({ collection: c.slug }),
+    ],
+    attachFrogBot,
+  );
 
   return out;
 }

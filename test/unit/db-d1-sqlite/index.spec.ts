@@ -2,11 +2,13 @@ import type { Payload } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 
 import { sql, sqliteD1Adapter } from '../../../packages/db-d1-sqlite/src/index';
+import { sqliteAggregateAdapter } from '../../../packages/frogbot/src/exports/aggregate.js';
 import { sqliteD1SearchAdapter } from '../../../packages/frogbot/src/exports/search.js';
 import { assertSearchCapability } from '../../../packages/frogbot/src/search/runtime.js';
 import type { SearchIndexDescriptor } from '../../../packages/frogbot/src/search/types.js';
 
 vi.mock('frogbot/jobs', () => import('../../../packages/frogbot/src/exports/jobs.js'));
+vi.mock('frogbot/aggregate', () => import('../../../packages/frogbot/src/exports/aggregate.js'));
 vi.mock('frogbot/search', () => import('../../../packages/frogbot/src/exports/search.js'));
 
 const capabilities = (index: Partial<SearchIndexDescriptor>) =>
@@ -42,6 +44,10 @@ describe('@frogbotai/db-d1-sqlite exports', () => {
 
   it('declares the D1 search adapter', () => {
     expect(sqliteD1Adapter({ binding: {} as never }).search).toBe(sqliteD1SearchAdapter);
+  });
+
+  it('declares the D1 aggregate adapter', () => {
+    expect(sqliteD1Adapter({ binding: {} as never }).aggregate).toBe(sqliteAggregateAdapter);
   });
 });
 

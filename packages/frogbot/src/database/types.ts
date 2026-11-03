@@ -6,6 +6,11 @@ import type {
   Where,
 } from 'payload';
 
+import type {
+  AggregateGroupDescriptor,
+  AggregateSortDescriptor,
+  AggregateValueDescriptor,
+} from '../aggregate/types.js';
 import type { FrogBotSanitizedConfig } from '../config/sanitized.js';
 import type {
   SearchCollection,
@@ -82,6 +87,42 @@ export type SearchAdapter = {
   search: AdapterSearch;
 };
 
+/**
+ * One aggregate query. `where` already holds every access, trash and draft rule; the adapter only
+ * translates it. Each document counts once per group, whatever joins the paths need.
+ */
+export type AdapterAggregateArgs = {
+  collection: string;
+  db: Payload['db'];
+  groupBy: AggregateGroupDescriptor[];
+  values: AggregateValueDescriptor[];
+  sort: AggregateSortDescriptor[];
+  /** Groups per page; `undefined` returns every group. */
+  limit?: number;
+  page: number;
+  locale: string | null | undefined;
+  req: PayloadRequest;
+  where: Where;
+};
+
+/** One group: its keys in `groupBy` order and its totals in `values` order, as the database returns them. */
+export type AdapterAggregateRow = {
+  group: unknown[];
+  values: unknown[];
+};
+
+export type AdapterAggregateResult = {
+  rows: AdapterAggregateRow[];
+  /** The number of groups across every page. */
+  totalDocs: number;
+};
+
+export type AdapterAggregate = (args: AdapterAggregateArgs) => Promise<AdapterAggregateResult>;
+
+export type AggregateAdapter = {
+  aggregate: AdapterAggregate;
+};
+
 export type MapVectorFieldArgs = {
   block?: string;
   collection?: string;
@@ -131,6 +172,7 @@ export type DatabaseAdapter = {
   defaultIDType: 'number' | 'text';
   name?: string;
   allowIDOnCreate?: boolean;
+  aggregate?: AggregateAdapter;
   mapVectorField?: MapVectorField;
   search?: SearchAdapter;
   snapshot?: SnapshotDatabase;

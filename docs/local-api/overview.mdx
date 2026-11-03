@@ -90,7 +90,7 @@ You can specify more options within the Local API vs. REST or GraphQL due to the
 | `showHiddenFields` | `boolean` | `false` | Opt-in to receiving hidden fields. By default, they are hidden from returned documents in accordance to your config. |
 | `user` | `object` | `req.user` | The user to check access against when `overrideAccess` is `false`. |
 
-Every operation below accepts these options, except that auth operations and `restoreVersion` don't accept `select`.
+Every operation below accepts these options, except that auth operations and `restoreVersion` don't accept `select`, and `aggregate` takes only the [options it lists](/queries/aggregate#aggregate-options).
 
 Each operation below lists the options it adds.
 
@@ -289,6 +289,32 @@ Accepts the [common options](#local-options-available) plus:
 | `limit` | `number` | — | Values per page. |
 | `page` | `number` | `1` | The page to return. |
 | `pagination` | `boolean` | `true` | Set `false` to return every value. |
+
+### Aggregate#collection-aggregate
+
+```ts
+// Result will be an object with:
+// {
+//   groups: [{ group: { stage: 'won' }, values: { deals: 2, value: 900 } }], // one per group
+//   totalDocs: 1, // count of the groups
+//   limit: 0, // groups per page; 0 when every group is returned
+//   page: 1,
+//   totalPages: 1,
+//   hasNextPage: false,
+//   hasPrevPage: false,
+//   pagingCounter: 1,
+// }
+const result = await frogbot.aggregate({
+  collection: 'deals', // required
+  groupBy: 'stage', // required
+  values: { deals: { count: true }, value: { sum: 'amount' } }, // required
+  where: {}, // pass a `where` query here
+  sort: '-value',
+  req,
+})
+```
+
+Counts, sums, averages, minimums, and maximums per group, computed in the database with the collection's read access applied. `req` is required unless `overrideAccess: true`. See [Aggregate](/queries/aggregate) for every option, date buckets, access, and errors.
 
 ### Update by ID#collection-update-by-id
 

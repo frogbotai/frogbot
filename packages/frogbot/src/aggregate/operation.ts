@@ -1,0 +1,371 @@
+import type {
+  AccessResult,
+  Collection,
+  Payload,
+  PayloadRequest,
+  SanitizedCollectionConfig,
+  Where,
+} from 'payload';
+import {
+  createPayloadRequest,
+  executeAccess,
+  Forbidden,
+  QueryError,
+  validateQueryPaths,
+} from 'payload';
+
+import type { FrogBot } from '../frogbot.js';
+import { toFrogBotRequest, toPayloadRequest } from '../seams/request.js';
+import type { CollectionSlug } from '../types/generated.js';
+import { AggregateValidationError, describeAggregate } from './errors.js';
+import {
+  type AggregateFieldHop,
+  getWherePaths,
+  resolveAggregateField,
+  type ResolvedAggregateField,
+} from './resolveField.js';
+import { getAggregatePage, getEmptyAggregate, toAggregateValue, toGroupKey } from './results.js';
+import { getAggregateAdapter } from './runtime.js';
+import type {
+  AggregateGroupDescriptor,
+  AggregateOptions,
+  AggregateResult,
+  AggregateSortDescriptor,
+  AggregateValueDescriptor,
+  AggregateValues,
+} from './types.js';
+import { assertAggregateKeys, parseAggregateOptions, type ParsedAggregate } from './validate.js';
+
+type ResolvedGroup = AggregateGroupDescriptor & {
+  hops: AggregateFieldHop[];
+  relationTo?: string;
+};
+
+type Scope = {
+  collection: SanitizedCollectionConfig;
+  label: string;
+  overrideAccess: boolean;
+  payload: Payload;
+  req: PayloadRequest;
+};
+
+async function createAggregateRequest(
+  frogbot: FrogBot,
+  payload: Payload,
+  { context, fallbackLocale, locale, overrideAccess, req }: AggregateOptions,
+): Promise<PayloadRequest> {
+  if (overrideAccess !== true && !req) {
+    throw new AggregateValidationError(
+      'Aggregate requires req unless overrideAccess: true is explicit.',
+    );
+  }
+
+  const payloadReq = await createPayloadRequest({
+    payload,
+    req: toPayloadRequest(req ?? (await frogbot.createRequest())),
+    context,
+    locale,
+    fallbackLocale,
+  });
+
+  return toPayloadRequest(toFrogBotRequest(payloadReq, frogbot));
+}
+
+function resolve(scope: Scope, path: string): ResolvedAggregateField {
+  const resolved = resolveAggregateField({
+    collection: scope.collection,
+    path,
+    payload: scope.payload,
+  });
+
+  if (!resolved) throw new AggregateValidationError(`${scope.label} has no field '${path}'.`);
+
+  if (resolved.hidden || (resolved.readGuarded && !scope.overrideAccess)) {
+    throw new Forbidden(scope.req.t);
+  }
+
+  return resolved;
+}
+
+function resolveGroups(scope: Scope, { groupBy }: ParsedAggregate): ResolvedGroup[] {
+  return groupBy.map(({ by, path }) => {
+    const { field, hops, type } = resolve(scope, path);
+
+    if (!type) {
+      throw new AggregateValidationError(
+        `${scope.label} cannot group by '${path}': its field type has no single stored value.`,
+      );
+    }
+
+    if (by && type !== 'date') {
+      throw new AggregateValidationError(
+        `${scope.label} cannot group '${path}' by ${by}: it is not a date field.`,
+      );
+    }
+
+    const relationTo =
+      (field.type === 'relationship' || field.type === 'upload') &&
+      typeof field.relationTo === 'string'
+        ? field.relationTo
+        : undefined;
+
+    return { path, type, hops, ...(by ? { by } : {}), ...(relationTo ? { relationTo } : {}) };
+  });
+}
+
+function resolveValues(scope: Scope, { values }: ParsedAggregate): AggregateValueDescriptor[] {
+  return values.map(({ name, operation, path }) => {
+    if (operation === 'count' || !path) return { operation: 'count' };
+
+    const { hops, many, type } = resolve(scope, path);
+
+    if (hops.length || many) {
+      throw new AggregateValidationError(
+        `${scope.label} cannot ${operation} '${path}' for value '${name}': it must hold one value per document.`,
+      );
+    }
+
+    if (type !== 'number' && (type !== 'date' || operation === 'sum' || operation === 'avg')) {
+      throw new AggregateValidationError(
+        `${scope.label} cannot ${operation} '${path}' for value '${name}': ${
+          operation === 'sum' || operation === 'avg'
+            ? 'it needs a number field'
+            : 'it needs a number or date field'
+        }.`,
+      );
+    }
+
+    return { operation, path, type };
+  });
+}
+
+function getSort(
+  { sort, values }: ParsedAggregate,
+  groups: ResolvedGroup[],
+): AggregateSortDescriptor[] {
+  const descriptors: AggregateSortDescriptor[] = sort.map(({ direction, name }) => {
+    const group = groups.findIndex(({ path }) => path === name);
+
+    return group === -1
+      ? { target: 'value', index: values.findIndex((value) => value.name === name), direction }
+      : { target: 'group', index: group, direction };
+  });
+
+  for (const [index] of groups.entries()) {
+    if (!descriptors.some((item) => item.target === 'group' && item.index === index)) {
+      descriptors.push({ target: 'group', index, direction: 'asc' });
+    }
+  }
+
+  return descriptors;
+}
+
+function prefixWhere(prefix: string, where: Where): Where {
+  return Object.fromEntries(
+    Object.entries(where).map(([key, value]) =>
+      ['and', 'or'].includes(key.toLowerCase()) && Array.isArray(value)
+        ? [key, value.map((item: Where) => prefixWhere(prefix, item))]
+        : [`${prefix}.${key}`, value],
+    ),
+  );
+}
+
+async function getRelatedAccess(
+  scope: Scope,
+  groups: ResolvedGroup[],
+): Promise<{ clauses: Where[]; denied?: string }> {
+  const accessByCollection = new Map<string, AccessResult>();
+  const clauses: Where[] = [];
+
+  for (const { hops, path } of groups) {
+    for (const [index, { collection, many, prefix }] of hops.entries()) {
+      if (!accessByCollection.has(collection)) {
+        const access = await executeAccess(
+          { slug: collection, disableErrors: true, req: scope.req },
+          scope.payload.collections[collection].config.access.read,
+        );
+
+        accessByCollection.set(collection, access);
+      }
+
+      const access = accessByCollection.get(collection);
+
+      if (access === false || (many && typeof access === 'object')) {
+        return { clauses, denied: path };
+      }
+
+      if (typeof access === 'object') {
+        const missing = hops
+          .slice(0, index + 1)
+          .map((hop): Where => ({ [hop.prefix]: { exists: false } }));
+
+        clauses.push({ or: [...missing, prefixWhere(prefix, access)] });
+      }
+    }
+  }
+
+  return { clauses };
+}
+
+async function populateGroups({
+  depth,
+  groups,
+  options,
+  rows,
+  scope,
+}: {
+  depth: number;
+  groups: ResolvedGroup[];
+  options: AggregateOptions;
+  rows: AggregateResult['groups'];
+  scope: Scope;
+}): Promise<void> {
+  for (const { path, relationTo } of groups) {
+    if (!relationTo) continue;
+
+    const ids = [...new Set(rows.map(({ group }) => group[path]).filter((id) => id !== null))] as (
+      number | string
+    )[];
+
+    if (!ids.length) continue;
+
+    const { docs } = await scope.payload.find({
+      collection: relationTo,
+      where: { id: { in: ids } },
+      depth: depth - 1,
+      draft: false,
+      disableErrors: true,
+      overrideAccess: scope.overrideAccess,
+      pagination: false,
+      populate: options.populate,
+      req: scope.req,
+      select: options.populate?.[relationTo],
+    });
+
+    const docsByID = new Map(docs.map((doc) => [String(doc.id), doc]));
+
+    for (const { group } of rows) {
+      const doc = group[path] === null ? undefined : docsByID.get(String(group[path]));
+
+      if (doc) group[path] = doc;
+    }
+  }
+}
+
+/** Totals per group over the documents the request can read, on any database. */
+export async function aggregateOperation<
+  T extends CollectionSlug,
+  const V extends AggregateValues<T>,
+>(
+  frogbot: FrogBot,
+  payload: Payload,
+  incoming: AggregateOptions<T, V>,
+): Promise<AggregateResult<T, V>> {
+  const input: unknown = incoming;
+
+  assertAggregateKeys(input);
+
+  const entity: Collection | undefined = payload.collections[input.collection];
+
+  if (!entity) {
+    throw new AggregateValidationError(
+      `${describeAggregate(String(input.collection))} cannot run: the collection does not exist.`,
+    );
+  }
+
+  const collection = entity.config;
+  const parsed = parseAggregateOptions(input);
+  const req = await createAggregateRequest(frogbot, payload, input);
+  const label = describeAggregate(collection.slug);
+  const adapter = getAggregateAdapter(payload.db, collection.slug);
+  const scope: Scope = { collection, label, overrideAccess: parsed.overrideAccess, payload, req };
+
+  const access = parsed.overrideAccess
+    ? true
+    : await executeAccess(
+        { slug: collection.slug, disableErrors: parsed.disableErrors, req },
+        collection.access.read,
+      );
+
+  if (access === false) return getEmptyAggregate(parsed.limit) as AggregateResult<T, V>;
+
+  const clauses: Where[] = [];
+
+  if (parsed.where) clauses.push(parsed.where);
+
+  if (typeof access === 'object') clauses.push(access);
+
+  if (collection.trash && !parsed.trash) clauses.push({ deletedAt: { exists: false } });
+
+  if (collection.versions?.drafts && !parsed.draft) {
+    clauses.push({ _status: { equals: 'published' } });
+  }
+
+  for (const path of getWherePaths(parsed.where)) {
+    const field = resolveAggregateField({ collection, path, payload });
+
+    if (field && !parsed.overrideAccess && (field.hidden || field.readGuarded)) {
+      throw new Forbidden(req.t);
+    }
+  }
+
+  await validateQueryPaths({
+    collectionConfig: collection,
+    overrideAccess: parsed.overrideAccess,
+    req,
+    where: parsed.where ?? {},
+  });
+
+  const groups = resolveGroups(scope, parsed);
+  const values = resolveValues(scope, parsed);
+
+  if (!parsed.overrideAccess) {
+    const related = await getRelatedAccess(scope, groups);
+
+    if (related.denied !== undefined) {
+      if (parsed.disableErrors) return getEmptyAggregate(parsed.limit) as AggregateResult<T, V>;
+
+      throw new QueryError([{ path: related.denied }]);
+    }
+
+    clauses.push(...related.clauses);
+  }
+
+  const result = await adapter.aggregate({
+    collection: collection.slug,
+    db: payload.db,
+    groupBy: groups.map(({ by, path, type }) => ({ path, type, ...(by ? { by } : {}) })),
+    values,
+    sort: getSort(parsed, groups),
+    limit: parsed.limit,
+    page: parsed.page,
+    locale: req.locale,
+    req,
+    where: clauses.length ? { and: clauses } : {},
+  });
+
+  const rows: AggregateResult['groups'] = result.rows.map((row) => ({
+    group: Object.fromEntries(
+      groups.map(({ path, type }, index) => [path, toGroupKey(row.group[index], type, label)]),
+    ),
+    values: Object.fromEntries(
+      parsed.values.map(({ name }, index) => [
+        name,
+        toAggregateValue(row.values[index], values[index], label),
+      ]),
+    ),
+  }));
+
+  if (parsed.depth > 0) {
+    await populateGroups({ depth: parsed.depth, groups, options: input, rows, scope });
+  }
+
+  const page = getAggregatePage({
+    groups: rows,
+    limit: parsed.limit,
+    page: parsed.page,
+    totalDocs: result.totalDocs,
+  });
+
+  return page as AggregateResult<T, V>;
+}

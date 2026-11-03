@@ -167,6 +167,7 @@
                 "expanded": false,
                 "pages": [
                   "queries/overview",
+                  "queries/aggregate",
                   "queries/depth",
                   "queries/pagination",
                   "queries/select",

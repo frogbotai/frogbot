@@ -1372,6 +1372,11 @@
   {
     "page": "rest-api/overview",
     "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').AggregateOptions<any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
     "type": "import('@frogbotai/sdk').CreateOptions<any, any, any>"
   },
   {
@@ -1623,6 +1628,11 @@
     "page": "rich-text/views",
     "heading": "Node overrides",
     "type": "import('@frogbotai/richtext-lexical/client').NodeMapValue | NonNullable<NonNullable<import('@frogbotai/richtext-lexical/client').LexicalEditorNodeMap['blocks']>[string]>"
+  },
+  {
+    "page": "queries/aggregate",
+    "heading": "Aggregate options",
+    "type": "import('frogbot').AggregateOptions"
   },
   {
     "page": "search/overview",

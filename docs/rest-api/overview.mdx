@@ -49,6 +49,7 @@ Note: Collection slugs must be formatted in kebab-case
 | Find           | `GET`    | `/api/{collection-slug}`       | Find paginated documents                      |
 | Find By ID     | `GET`    | `/api/{collection-slug}/{id}`  | Find a specific document by ID                |
 | Count          | `GET`    | `/api/{collection-slug}/count` | Count the documents                           |
+| Aggregate      | `POST`   | `/api/{collection-slug}/aggregate` | Count, sum, average, minimum and maximum per group ([Aggregate](/queries/aggregate)) |
 | Create         | `POST`   | `/api/{collection-slug}`       | Create a new document                         |
 | Update         | `PATCH`  | `/api/{collection-slug}`       | Update all documents matching the where query |
 | Update By ID   | `PATCH`  | `/api/{collection-slug}/{id}`  | Update a document by ID                       |
@@ -443,6 +444,19 @@ const version = await sdk.findVersionByID({ collection: 'posts', id: versions.do
 await sdk.restoreVersion({ collection: 'posts', id: version.id })
 ```
 
+Total documents per group with `aggregate`. The values keep your names and number types:
+
+```ts
+const { groups } = await sdk.aggregate({
+  collection: 'posts',
+  groupBy: { field: 'publishedAt', by: 'month' },
+  values: { posts: { count: true }, words: { sum: 'wordCount' } },
+  sort: '-publishedAt',
+})
+
+groups[0]?.values.words
+```
+
 Run a [search](/search/overview) against one of the collection's search indexes. Hits are typed documents with their score:
 
 ```ts
@@ -611,6 +625,27 @@ Every method's last argument, `init`, takes standard `RequestInit` options that 
 | `locale` | `'all' \| TypedLocale` | — | The locale of the returned documents. |
 | `trash` | `boolean` | `false` | Include trashed documents in the count. Has no effect unless the collection has `trash` enabled. |
 | `where` | `Where` | — | A filter query. |
+
+**`aggregate(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to aggregate. |
+| `groupBy` | `AggregateGroupBy \| AggregateGroupBy[]` | Required | The field path, date bucket `{ field, by }`, or list of them to group by. |
+| `values` | `AggregateValues` | Required | The named totals per group: `{ count: true }`, `{ sum }`, `{ avg }`, `{ min }` or `{ max }`. |
+| `where` | `Where` | — | A filter query. |
+| `sort` | `Sort` | Every key ascending | `groupBy` paths and value names, with `-` for descending. |
+| `limit` | `number` | — | Groups per page. Leave it out to return every group. |
+| `page` | `number` | `1` | The page of groups to return. |
+| `depth` | `number` | `0` | How many levels to populate relationship keys. |
+| `populate` | `PopulateType` | — | Which fields to include from populated relationship keys, per collection. |
+| `draft` | `boolean` | `false` | Include drafts. |
+| `trash` | `boolean` | `false` | Include trashed documents. Has no effect unless the collection has `trash` enabled. |
+| `locale` | `string` | — | The locale of localized fields. |
+| `fallbackLocale` | `false \| TypedLocale` | — | The locale to fall back to when a localized field has no value. |
+| `disableErrors` | `boolean` | `false` | Return no groups instead of a `403` when the caller can't read the collection. |
+
+See [Aggregate](/queries/aggregate) for the result shape and errors.
 
 **`create(options, init?)`**
 

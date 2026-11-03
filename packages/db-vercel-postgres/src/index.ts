@@ -2,6 +2,7 @@ import {
   vercelPostgresAdapter as createVercelPostgresAdapter,
   type VercelPostgresAdapterArgs,
 } from '@payloadcms/db-vercel-postgres';
+import { postgresAggregateAdapter } from 'frogbot/aggregate';
 import { installSQLJobOperations } from 'frogbot/jobs';
 import { postgresSearchAdapter } from 'frogbot/search';
 
@@ -24,6 +25,7 @@ export function vercelPostgresAdapter(args: VercelPostgresAdapterArgs) {
 
       return database;
     },
+    aggregate: postgresAggregateAdapter,
     search: postgresSearchAdapter,
   };
 }

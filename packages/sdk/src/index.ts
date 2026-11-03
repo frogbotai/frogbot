@@ -1,5 +1,11 @@
 import type { ApplyDisableErrors, PaginatedDocs, SelectType, TypeWithVersion } from 'frogbot';
 
+import {
+  aggregate,
+  type AggregateOptions,
+  type AggregateResult,
+  type AggregateValues,
+} from './aggregate.js';
 import { forgotPassword, type ForgotPasswordOptions } from './auth/forgotPassword.js';
 import { login, type LoginOptions, type LoginResult } from './auth/login.js';
 import { me, type MeOptions, type MeResult } from './auth/me.js';
@@ -50,6 +56,16 @@ import type {
 } from './types.js';
 import { buildSearchParams } from './utilities/buildSearchParams.js';
 
+export type {
+  AggregateFieldPath,
+  AggregateGroup,
+  AggregateGroupBy,
+  AggregateOptions,
+  AggregateResult,
+  AggregateValue,
+  AggregateValueResult,
+  AggregateValues,
+} from './aggregate.js';
 export type { ForgotPasswordOptions } from './auth/forgotPassword.js';
 export type { LoginOptions, LoginResult } from './auth/login.js';
 export type { MeOptions, MeResult } from './auth/me.js';
@@ -274,6 +290,13 @@ export class FrogBotSDK<T extends FrogBotTypesShape = DefaultTypes> {
     const result = (await response.json()) as FrogBotUploadResponse;
 
     return result.doc;
+  }
+
+  aggregate<TSlug extends CollectionSlug<T>, const V extends AggregateValues<T, TSlug>>(
+    options: AggregateOptions<T, TSlug, V>,
+    init?: RequestInit,
+  ): Promise<AggregateResult<T, TSlug, V>> {
+    return aggregate(this.#send, options, init);
   }
 
   count<TSlug extends CollectionSlug<T>>(

@@ -31,17 +31,27 @@ export type UsageReport = {
 };
 
 export type UsageReportsPluginOptions = {
-  pageSize?: number;
   access?: Access;
 };
 
-type UsageReportsResolvedOptions = UsageReportsPluginOptions & { pageSize: number };
-
 declare module 'frogbot' {
   interface RegisteredPlugins {
-    'plugin-usage-reports': UsageReportsResolvedOptions;
+    'plugin-usage-reports': UsageReportsPluginOptions;
   }
 }
+
+type UsageTotals = UsageReport['totals'];
+
+const METRICS = [
+  'requestCount',
+  'inputTokens',
+  'outputTokens',
+  'cachedInputTokens',
+  'cacheWriteTokens',
+  'reasoningTokens',
+  'totalTokens',
+  'costUSD',
+] as const satisfies readonly (keyof UsageTotals)[];
 
 const loggedIn: Access = ({ req }) => Boolean(req.user);
 
@@ -61,34 +71,25 @@ function idAndLabel(value: unknown): { key: string; label: string } | undefined 
   return { key, label: String(labelValue) };
 }
 
-function groupValue(doc: Record<string, unknown>, groupBy: UsageReportGroup) {
+function groupValue(value: unknown, groupBy: UsageReportGroup) {
   if (groupBy === 'day') {
-    const date = new Date(String(doc.requestedAt));
-    if (Number.isNaN(date.getTime())) return;
-    const key = date.toISOString().slice(0, 10);
+    if (typeof value !== 'string') return;
+    const key = value.slice(0, 10);
 
     return { key, label: key };
   }
 
   if (groupBy === 'model') {
-    const key = typeof doc.model === 'string' && doc.model ? doc.model : 'unknown';
+    const key = typeof value === 'string' && value ? value : 'unknown';
 
     return { key, label: key };
   }
 
-  return idAndLabel(doc[groupBy]);
+  return idAndLabel(value);
 }
 
-function number(doc: Record<string, unknown>, field: string): number {
-  const value = Number(doc[field] ?? 0);
-
-  return Number.isFinite(value) ? value : 0;
-}
-
-function emptyRow(key: string, label: string): UsageReportRow {
+function emptyTotals(): UsageTotals {
   return {
-    key,
-    label,
     requestCount: 0,
     inputTokens: 0,
     outputTokens: 0,
@@ -100,15 +101,8 @@ function emptyRow(key: string, label: string): UsageReportRow {
   };
 }
 
-function addDoc(row: UsageReportRow, doc: Record<string, unknown>): void {
-  row.requestCount += 1;
-  row.inputTokens += number(doc, 'inputTokens');
-  row.outputTokens += number(doc, 'outputTokens');
-  row.cachedInputTokens += number(doc, 'cachedInputTokens');
-  row.cacheWriteTokens += number(doc, 'cacheWriteTokens');
-  row.reasoningTokens += number(doc, 'reasoningTokens');
-  row.totalTokens += number(doc, 'totalTokens');
-  row.costUSD += number(doc, 'costUSD');
+function addTotals(target: UsageTotals, source: UsageTotals): void {
+  for (const metric of METRICS) target[metric] += source[metric];
 }
 
 function parseRequest(req: FrogBotRequest, groups: ReadonlySet<UsageReportGroup>) {
@@ -131,12 +125,11 @@ function parseRequest(req: FrogBotRequest, groups: ReadonlySet<UsageReportGroup>
 
 type ReportEndpointOptions = {
   slug: string;
-  pageSize: number;
   groups: ReadonlySet<UsageReportGroup>;
   access: Access;
 };
 
-function buildReportEndpoint({ slug, pageSize, groups, access }: ReportEndpointOptions): Endpoint {
+function buildReportEndpoint({ slug, groups, access }: ReportEndpointOptions): Endpoint {
   return {
     method: 'get',
     path: '/usage/report',
@@ -147,39 +140,41 @@ function buildReportEndpoint({ slug, pageSize, groups, access }: ReportEndpointO
       const scope: Exclude<AccessResult, boolean>[] = permitted === true ? [] : [permitted];
       const query = parseRequest(req, groups);
       if (!query) return Response.json({ error: 'Invalid groupBy or date range' }, { status: 400 });
+      const path = query.groupBy === 'day' ? 'requestedAt' : query.groupBy;
+
+      const result = await req.frogbot.aggregate({
+        collection: slug,
+        groupBy: query.groupBy === 'day' ? { field: 'requestedAt', by: 'day' } : query.groupBy,
+        values: {
+          requestCount: { count: true },
+          inputTokens: { sum: 'inputTokens' },
+          outputTokens: { sum: 'outputTokens' },
+          cachedInputTokens: { sum: 'cachedInputTokens' },
+          cacheWriteTokens: { sum: 'cacheWriteTokens' },
+          reasoningTokens: { sum: 'reasoningTokens' },
+          totalTokens: { sum: 'totalTokens' },
+          costUSD: { sum: 'costUSD' },
+        },
+        where: {
+          and: [
+            { requestedAt: { greater_than_equal: query.from } },
+            { requestedAt: { less_than_equal: query.to } },
+            ...scope,
+          ],
+        },
+        depth: 1,
+        overrideAccess: true,
+        req,
+      });
+
       const rows = new Map<string, UsageReportRow>();
-      let page = 1;
 
-      while (true) {
-        const result = await req.frogbot.find({
-          collection: slug,
-          where: {
-            and: [
-              { requestedAt: { greater_than_equal: query.from } },
-              { requestedAt: { less_than_equal: query.to } },
-              ...scope,
-            ],
-          },
-          page,
-          limit: pageSize,
-          depth: 1,
-          sort: 'requestedAt',
-          overrideAccess: true,
-          req,
-        });
-
-        for (const value of result.docs) {
-          const doc = value as Record<string, unknown>;
-          const group = groupValue(doc, query.groupBy);
-          if (!group) continue;
-          const row = rows.get(group.key) ?? emptyRow(group.key, group.label);
-          if (row.label === row.key && group.label !== group.key) row.label = group.label;
-          addDoc(row, doc);
-          rows.set(group.key, row);
-        }
-
-        if (!result.hasNextPage) break;
-        page = result.nextPage ?? page + 1;
+      for (const { group, values } of result.groups) {
+        const value = groupValue(group[path], query.groupBy);
+        if (!value) continue;
+        const row = rows.get(value.key) ?? { ...value, ...emptyTotals() };
+        addTotals(row, values);
+        rows.set(value.key, row);
       }
 
       const reportRows = [...rows.values()].sort(
@@ -187,31 +182,20 @@ function buildReportEndpoint({ slug, pageSize, groups, access }: ReportEndpointO
           b.costUSD - a.costUSD || b.totalTokens - a.totalTokens || a.label.localeCompare(b.label),
       );
 
-      const totals = emptyRow('', '');
+      const totals = emptyTotals();
 
-      for (const row of reportRows) {
-        totals.requestCount += row.requestCount;
-        totals.inputTokens += row.inputTokens;
-        totals.outputTokens += row.outputTokens;
-        totals.cachedInputTokens += row.cachedInputTokens;
-        totals.cacheWriteTokens += row.cacheWriteTokens;
-        totals.reasoningTokens += row.reasoningTokens;
-        totals.totalTokens += row.totalTokens;
-        totals.costUSD += row.costUSD;
-      }
-
-      const { key: _key, label: _label, ...reportTotals } = totals;
+      for (const row of reportRows) addTotals(totals, row);
 
       return Response.json({
         ...query,
         rows: reportRows,
-        totals: reportTotals,
+        totals,
       } satisfies UsageReport);
     },
   };
 }
 
-const usageReports = definePlugin<UsageReportsResolvedOptions>({
+const usageReports = definePlugin<UsageReportsPluginOptions>({
   slug: 'plugin-usage-reports',
   plugin: ({ config, options, plugins }) => {
     if (!config.ai) throw new Error('[plugin-usage-reports] AI configuration is required.');
@@ -239,7 +223,6 @@ const usageReports = definePlugin<UsageReportsResolvedOptions>({
         ...(config.endpoints ?? []),
         buildReportEndpoint({
           slug: usage.slug,
-          pageSize: options.pageSize,
           groups,
           access: options.access ?? loggedIn,
         }),
@@ -257,10 +240,5 @@ const usageReports = definePlugin<UsageReportsResolvedOptions>({
 });
 
 export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plugin {
-  const pageSize = options.pageSize ?? 5000;
-  if (!Number.isInteger(pageSize) || pageSize < 1) {
-    throw new Error('[plugin-usage-reports] pageSize must be a positive integer.');
-  }
-
-  return usageReports({ ...options, pageSize });
+  return usageReports(options);
 }

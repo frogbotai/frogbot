@@ -2087,7 +2087,10 @@ describe('frogbot sanitize', () => {
     const users = (payloadConfig as any).collections.find((c: any) => c.slug === 'users');
     const endpoints = users.endpoints as any[];
 
-    expect(endpoints).toHaveLength(1);
+    expect(endpoints.map(({ method, path }) => `${method} ${path}`)).toEqual([
+      'get /test',
+      'post /aggregate',
+    ]);
     expect(endpoints[0].handler).not.toBe(handler);
   });
 
