@@ -216,7 +216,7 @@ describe('associations', () => {
     toObjectType: 'companies',
     associationType: '9',
     toObjectIds: Array.from({ length: 150 }, (_, index) => String(index + 1)),
-  };
+  } as const;
 
   it('createAssociations looks up the category and creates in batches of 100', async () => {
     stubHubSpot((call) =>
