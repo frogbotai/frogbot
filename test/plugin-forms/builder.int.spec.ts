@@ -2,7 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { FormDocument, FormMode } from '@frogbotai/plugin-forms';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   fieldRefusal,
@@ -13,6 +13,7 @@ import { loadRuntime } from '../../packages/plugins/plugin-forms/src/lookup.js';
 import { listQuestionFields } from '../../packages/plugins/plugin-forms/src/questions.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import { leadsSlug, ticketsSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -30,6 +31,10 @@ describe(`form builder field lists [${adapterLabel}]`, () => {
 
   afterAll(async () => {
     await booted.shutdown();
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
   });
 
   async function fieldsOf(slug: string): Promise<FormFieldInfo[]> {

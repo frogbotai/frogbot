@@ -15,6 +15,8 @@ const signedIn: Access = ({ req }) => Boolean(req.user);
 
 export const RUNTIME_KEY = 'plugin-forms';
 
+const FORM_BUILDER_FIELD = '@frogbotai/plugin-forms/rsc#FormBuilderField';
+
 export function createFormsCollection({
   runtime,
   access,
@@ -99,90 +101,109 @@ export function createFormsCollection({
         },
       },
       {
-        name: 'steps',
-        type: 'array',
-        required: true,
-        minRows: 1,
-        fields: [
-          { name: 'title', type: 'text' },
+        type: 'tabs',
+        tabs: [
           {
-            name: 'questions',
-            type: 'array',
-            required: true,
-            minRows: 1,
+            label: 'Questions',
             fields: [
               {
-                name: 'field',
-                type: 'text',
+                name: 'steps',
+                type: 'array',
                 required: true,
-                admin: { description: 'The name of a field in the collection.' },
-              },
-              { name: 'label', type: 'text' },
-              { name: 'description', type: 'textarea' },
-              { name: 'placeholder', type: 'text' },
-              {
-                name: 'maxFileSize',
-                type: 'number',
-                min: 1,
-                admin: {
-                  description:
-                    "File questions: the largest file, in bytes. Defaults to the app's upload limit.",
-                },
-              },
-              {
-                name: 'maxFiles',
-                type: 'number',
-                min: 1,
-                max: 5,
-                admin: { description: 'File questions: how many files, up to 5. Defaults to 1.' },
-              },
-              {
-                name: 'mimeTypes',
-                type: 'text',
-                hasMany: true,
-                admin: {
-                  description: 'File questions: accepted types, like application/pdf or image/*.',
-                },
+                minRows: 1,
+                admin: { components: { Field: FORM_BUILDER_FIELD } },
+                fields: [
+                  { name: 'title', type: 'text', label: 'Step title' },
+                  {
+                    name: 'questions',
+                    type: 'array',
+                    required: true,
+                    minRows: 1,
+                    fields: [
+                      {
+                        name: 'field',
+                        type: 'text',
+                        required: true,
+                        admin: { description: 'The name of a field in the collection.' },
+                      },
+                      { name: 'label', type: 'text' },
+                      { name: 'description', type: 'textarea' },
+                      { name: 'placeholder', type: 'text' },
+                      {
+                        name: 'maxFileSize',
+                        type: 'number',
+                        min: 1,
+                        admin: {
+                          description:
+                            "File questions: the largest file, in bytes. Defaults to the app's upload limit.",
+                        },
+                      },
+                      {
+                        name: 'maxFiles',
+                        type: 'number',
+                        min: 1,
+                        max: 5,
+                        admin: {
+                          description: 'File questions: how many files, up to 5. Defaults to 1.',
+                        },
+                      },
+                      {
+                        name: 'mimeTypes',
+                        type: 'text',
+                        hasMany: true,
+                        admin: {
+                          description:
+                            'File questions: accepted types, like application/pdf or image/*.',
+                        },
+                      },
+                    ],
+                  },
+                ],
               },
             ],
           },
-        ],
-      },
-      {
-        name: 'hiddenParams',
-        type: 'array',
-        admin: {
-          description:
-            'URL parameters, like utm_source, saved to a text field of the record. Others are dropped.',
-        },
-        fields: [
-          { name: 'name', type: 'text', required: true },
-          { name: 'field', type: 'text', required: true },
-        ],
-      },
-      {
-        name: 'confirmation',
-        type: 'group',
-        fields: [
           {
-            name: 'type',
-            type: 'radio',
-            options: ['message', 'redirect'],
-            defaultValue: 'message',
-          },
-          {
-            name: 'message',
-            type: 'textarea',
-            defaultValue: DEFAULT_CONFIRMATION,
-            admin: { condition: (_, sibling) => sibling?.type !== 'redirect' },
-          },
-          {
-            name: 'redirect',
-            type: 'text',
-            admin: {
-              condition: (_, sibling) => sibling?.type === 'redirect',
-              description: 'A path like /thanks, or an http(s) URL.',
-            },
+            label: 'Settings',
+            fields: [
+              {
+                name: 'hiddenParams',
+                type: 'array',
+                admin: {
+                  description:
+                    'URL parameters, like utm_source, saved to a text field of the record. Others are dropped.',
+                },
+                fields: [
+                  { name: 'name', type: 'text', required: true },
+                  { name: 'field', type: 'text', required: true },
+                ],
+              },
+              {
+                name: 'confirmation',
+                type: 'group',
+                fields: [
+                  {
+                    name: 'type',
+                    type: 'radio',
+                    options: ['message', 'redirect'],
+                    defaultValue: 'message',
+                  },
+                  {
+                    name: 'message',
+                    type: 'textarea',
+                    defaultValue: DEFAULT_CONFIRMATION,
+                    admin: { condition: (_, sibling) => sibling?.type !== 'redirect' },
+                  },
+                  {
+                    name: 'redirect',
+                    type: 'text',
+                    admin: {
+                      condition: (_, sibling) => sibling?.type === 'redirect',
+                      description: 'A path like /thanks, or an http(s) URL.',
+                    },
+                  },
+                ],
+              },
+            ],
           },
         ],
       },
