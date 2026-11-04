@@ -30,3 +30,9 @@ expectTypeOf<Awaited<typeof _page>['data'][number]['gid']>().toEqualTypeOf<strin
 
 // @ts-expect-error createTask needs a project
 void asana.createTask({ input: { workspaceGid: '1', name: 'Ship', notes: '' } });
+
+expectTypeOf<keyof typeof asana.triggers>().toEqualTypeOf<
+  'taskCreated' | 'taskChanged' | 'taskCompleted' | 'commentAdded'
+>();
+
+expectTypeOf(asana.triggers.taskCreated.type).toEqualTypeOf<'webhook'>();
