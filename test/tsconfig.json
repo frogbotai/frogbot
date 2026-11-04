@@ -17,6 +17,7 @@
     "browser/fixtures/chat-assets",
     "browser/fixtures/custom-field",
     "browser/fixtures/dojo",
+    "browser/fixtures/forms",
     "browser/fixtures/live-preview",
     "browser/fixtures/question",
     "browser/fixtures/sign-in",
