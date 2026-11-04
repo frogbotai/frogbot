@@ -39,3 +39,30 @@ void hubspot.listRecords({ input: {} });
 
 // @ts-expect-error a custom object type is a 2- type ID
 void hubspot.listRecords({ input: { objectType: 'cars' } });
+
+expectTypeOf<Parameters<typeof hubspot.createDeal>[0]['input']>().toEqualTypeOf<{
+  dealname: string;
+  pipelineId: string;
+  pipelineStageId: string;
+  objectProperties?: Record<string, string | number | boolean | string[]>;
+  additionalPropertiesToRetrieve?: string[];
+}>();
+
+expectTypeOf<Parameters<typeof hubspot.updateDeal>[0]['input']>().toEqualTypeOf<{
+  dealId: string;
+  dealname?: string;
+  pipelineId?: string;
+  pipelineStageId?: string;
+  objectProperties?: Record<string, string | number | boolean | string[]>;
+  additionalPropertiesToRetrieve?: string[];
+}>();
+
+expectTypeOf<Parameters<typeof hubspot.getCustomObject>[0]['input']>().toEqualTypeOf<{
+  customObjectType: string;
+  customObjectId: string;
+  additionalPropertiesToRetrieve?: string[];
+}>();
+
+const _owner = hubspot.getOwnerByEmail({ input: { email: 'sam@acme.com' } });
+
+expectTypeOf<Awaited<typeof _owner>>().toExtend<{ id: string } | null>();
