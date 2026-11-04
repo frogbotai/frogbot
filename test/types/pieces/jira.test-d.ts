@@ -34,3 +34,17 @@ createJira({ oauth: app, scopes: ({ defaultScopes }) => [...defaultScopes, 'read
 
 // @ts-expect-error manage:jira-configuration is not a Jira scope name
 createJira({ oauth: app, scopes: ['manage:jira-configuration'] });
+
+expectTypeOf<keyof typeof jira.triggers>().toEqualTypeOf<
+  | 'issueCreated'
+  | 'issueUpdated'
+  | 'issueStatusChanged'
+  | 'commentAdded'
+  | 'issueAssigned'
+  | 'attachmentAdded'
+  | 'issueTypeCreated'
+  | 'projectCreated'
+  | 'priorityCreated'
+>();
+
+expectTypeOf(jira.triggers.issueCreated.type).toEqualTypeOf<'polling'>();

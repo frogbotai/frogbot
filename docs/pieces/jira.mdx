@@ -1,0 +1,152 @@
+---
+title: Jira
+description: Create, search and update Jira Cloud issues and comments, page through a whole site for imports, and react to new and changed issues.
+keywords: [pieces, jira, atlassian, jira cloud, issues, sprints, boards, jql]
+---
+
+`@frogbotai/piece-jira` works with Jira Cloud through its REST API. Agents create, update, transition and comment on issues; imports page through projects, issues, sprints, history and attachments; polling triggers react to new and changed issues.
+
+## Connect Jira
+
+```bash
+pnpm add @frogbotai/piece-jira
+```
+
+Each piece instance works with one Jira Cloud site, set by `siteUrl`. People connect with a pasted Atlassian API token, with **Sign in with Atlassian**, or either:
+
+```ts
+import { createJira } from '@frogbotai/piece-jira'
+import type { ConnectionEntry } from 'frogbot'
+
+export const jira = createJira({
+  siteUrl: 'https://acme.atlassian.net',
+  oauth: {
+    clientId: process.env.ATLASSIAN_CLIENT_ID!,
+    clientSecret: process.env.ATLASSIAN_CLIENT_SECRET!,
+  },
+})
+
+export const connections: ConnectionEntry[] = [{ piece: jira, secret: true, oauth: true }]
+```
+
+Drop `oauth` and `oauth: true` to offer tokens only. Atlassian recommends sign-in over pasted tokens, since a token acts with all of its owner's access.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | `'jira'` | Instance slug. It prefixes tool slugs, such as `jira_createIssue`. |
+| `siteUrl` | `string` | — | Your Jira Cloud site, `https://<name>.atlassian.net`. Anything else, including a path, port or another host, is refused, so credentials never leave Atlassian. API tokens need it; sign-in uses it to pick the site when an account reaches several. |
+| `auth.email` | `string` | — | With `apiToken`, the Atlassian account the token belongs to. |
+| `auth.apiToken` | `string` | — | An [Atlassian API token](#make-an-api-token), sent with Basic auth. |
+| `auth.accessToken` | `string` | — | An Atlassian OAuth access token. A sign-in connection supplies one. |
+| `oauth` | `OAuthApp` | — | Your [Atlassian OAuth app](#register-an-atlassian-oauth-app). Enables `oauth: true` connection entries. |
+| `scopes` | Jira scope names, or `({ defaultScopes }) => names` | `write:jira-work`, `read:board-scope:jira-software`, `read:sprint:jira-software`, `read:project:jira` | Scopes for sign-in connections. `offline_access`, `read:jira-work` and `read:jira-user` are always requested. See [Choose OAuth scopes](/connections/overview#choose-oauth-scopes). |
+
+See [factory options](/pieces/overview#factory-options) for the shared options. Jira Cloud only: Jira Server and Data Center aren't supported.
+
+### Make an API token
+
+1. Sign in to Atlassian as the account FrogBot should act as, and open [API tokens](https://id.atlassian.com/manage-profile/security/api-tokens).
+2. Choose **Create API token**, name it, and copy it.
+3. Connect with that account's email as `email` and the token as `apiToken`.
+
+### Register an Atlassian OAuth app
+
+1. In the [Atlassian developer console](https://developer.atlassian.com/console/myapps/), choose **Create → OAuth 2.0 integration**.
+2. Under **Authorization**, add **OAuth 2.0 (3LO)** with the instance's callback URL: `https://your-app.example.com/api/connections/jira/callback` (use your instance slug).
+3. Under **Permissions → Jira API**, add the classic scopes `read:jira-work`, `write:jira-work` and `read:jira-user`. For boards and sprints, also add the granular scopes `read:board-scope:jira-software`, `read:sprint:jira-software` and `read:project:jira`.
+4. Under **Settings**, copy the client ID and secret into `oauth`.
+5. To let people outside your own Atlassian account sign in, set **Distribution** to sharing.
+
+A sign-in can reach several sites. FrogBot looks the account's sites up once per connection and uses the one matching `siteUrl`, or the only one. With several sites and no `siteUrl`, or no match, the call fails and lists the sites the account can reach.
+
+## Actions
+
+| Action | What it does |
+| --- | --- |
+| `createIssue` | Creates an issue in a project with a summary, description, assignee, priority, parent and labels. Any other field goes in `fields` by Jira field id, such as `{ customfield_10016: 3 }`. Returns the new issue. |
+| `updateIssue` | Updates the same fields, optionally running a workflow transition first. |
+| `getIssue` | Gets one issue by key or id, optionally expanding rendered fields, transitions, edit metadata or changelog, and keying fields by name. |
+| `searchIssues` | Searches with JQL, one page at a time. |
+| `assignIssue` | Sets an issue's assignee. |
+| `transitionIssue` | Moves an issue through a workflow transition, with an optional comment. |
+| `findUser` | Finds users by name or email, to get the `accountId` other actions take. |
+| `addComment`, `updateComment`, `deleteComment` | Adds, replaces or deletes a comment. |
+| `listComments` | Lists an issue's comments, one page at a time. |
+| `addAttachment` | Attaches a FrogBot file to an issue. |
+| `getAttachment` | Gets an attachment's metadata. |
+| `downloadAttachment` | Saves an attachment into your files collection as the caller. Redirects are refused. |
+| `addWatcher` | Adds a watcher to an issue. |
+| `linkIssues` | Links two issues with a link type such as Blocks; the first issue blocks the second. |
+| `markdownToAdf` | Converts markdown to Jira's document format. |
+| `customApiCall` | Any Jira REST request under `/rest/api/3` or `/rest/agile/1.0`, such as `/rest/api/3/myself`. |
+
+Issue actions take an issue key such as `OPS-12`, or its numeric id.
+
+### Write formatted text
+
+Jira stores rich text, such as descriptions and comments, in its own JSON format, ADF. Every rich-text input takes markdown, and FrogBot converts it:
+
+```ts
+await jira.addComment({ input: { issueKey: 'OPS-12', body: '**Blocked** by `api`, see [PR](https://github.com/acme/api/pull/7)' }, req })
+```
+
+Paragraphs, headings, bold, italic, strikethrough, inline code, code blocks, links, bullet and numbered lists, quotes and horizontal rules convert. Anything else, such as tables and images, stays as plain text. An ADF document, as an object or a JSON string, is sent unchanged. Reads return Jira's ADF.
+
+### Page through a site
+
+These actions return one page at a time, for imports:
+
+| Action | Lists |
+| --- | --- |
+| `listProjects` | Projects, with lead and description. |
+| `listIssueTypes` | Issue types, all or one project's. |
+| `listStatuses`, `listPriorities` | Workflow statuses and priorities. |
+| `listFields` | System and custom fields with their `schema`, to spot sprint and rich-text fields. |
+| `listIssueLinkTypes` | Link types. |
+| `listUsers` | Users, people and apps. |
+| `listVersions`, `listComponents` | A project's versions and components. |
+| `listBoards`, `listSprints` | Jira Software boards, and a board's sprints. |
+| `searchIssues` | Issues by JQL, with `fields` and `expand`, such as `changelog`. |
+| `listComments`, `listWorklogs`, `listWatchers` | An issue's comments, worklogs and watchers. |
+| `listChangelogs` | Change history for up to 1,000 issues per call. |
+
+```ts
+let cursor: string | undefined
+do {
+  const page = await jira.searchIssues({ input: { jql: 'project = OPS ORDER BY key', fields: ['*all'], limit: 100, cursor }, req })
+  // save page.data
+  cursor = page.pagination.nextCursor ?? undefined
+} while (cursor)
+```
+
+Each takes `limit` (1–100, default 50) and `cursor`, the previous page's `pagination.nextCursor`, which is `null` on the last page. Keep the other inputs the same between pages. Epics are issues whose children point to them through `parent`, so `searchIssues` reads them.
+
+Jira errors keep Jira's messages and status. When Jira rate-limits a request, which a large import can, FrogBot waits for its `Retry-After` and retries up to 3 times, stopping early if the request is aborted.
+
+## Triggers
+
+| Trigger | Emits |
+| --- | --- |
+| `issueCreated` | Each new issue. |
+| `issueUpdated` | Each issue update. |
+| `issueStatusChanged` | Each status change, with the old and new status. |
+| `issueAssigned` | Each assignee change, optionally only to one `assignee` or with `assignedToMe`. |
+| `commentAdded` | Each new comment, with its issue. |
+| `attachmentAdded` | Each new attachment's metadata, with its issue. |
+| `projectCreated` | Each new project. |
+| `issueTypeCreated` | Each new issue type in a project. |
+| `priorityCreated` | Each new priority. |
+
+The issue and comment triggers take an optional `jql` filter, such as `project = OPS`. All nine are [polling triggers](/pieces/triggers#polling) that check every 5 minutes. The first poll only records where to start, so nothing already in Jira is emitted. Issue polls look 15 minutes past the previous one, since Jira's search can lag, and skip what they already emitted.
+
+A poll has no signed-in person, so it uses the instance's factory `auth`. Give the instance an API token, ideally for a dedicated Jira account:
+
+```ts
+export const jiraBot = createJira({
+  slug: 'jira-bot',
+  siteUrl: 'https://acme.atlassian.net',
+  auth: { email: process.env.JIRA_EMAIL!, apiToken: process.env.JIRA_API_TOKEN! },
+})
+```
+
+Triggers see what that account can see. `assignedToMe` watches assignments to it.

@@ -109,3 +109,25 @@ export function slicePage<T>(items: T[], { limit, cursor }: { limit: number; cur
 
   return listPage(data, limit, next < items.length ? String(next) : null);
 }
+
+/** Every page of a `startAt` list of `values`, for pickers and id-watching triggers. */
+export async function allValues<T>(
+  client: JiraClient,
+  item: z.ZodType<T>,
+  { path, signal }: { path: string; signal?: AbortSignal },
+) {
+  const values: T[] = [];
+
+  for (let startAt = 0; ; startAt += 100) {
+    const result = await client.request(offsetMeta.passthrough(), {
+      path,
+      query: { startAt, maxResults: 100 },
+      signal,
+    });
+
+    const page = z.array(item).parse(result.values);
+
+    values.push(...page);
+    if (result.isLast !== false || page.length === 0) return values;
+  }
+}
