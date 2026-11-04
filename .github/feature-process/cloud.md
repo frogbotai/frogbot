@@ -55,14 +55,16 @@ Keep it short enough to read on a phone. Detail belongs in the linked files.
   - Every finding comes with the command that shows it. A finding without one is dropped, and the tester reports how many it dropped.
   - A finding outside the ticket's intent is not a fix round. It goes to [findings](#findings).
   - The tester ends with `PASS`, `PASS+NOTES` or `FAIL`, naming the commit SHA it checked. At most 2 fix rounds, then the PR is opened with the `FAIL` verdict and the owner decides.
-- Open the PR with `Closes <issue URL>` and this body, readable in a minute:
-  - **Why**: one or two lines from the Brief.
-  - **What changed**: the user-visible change, then the main files.
+- Every PR is squash-merged, and GitHub builds that one commit from the PR's title and description. So write both as the commit that lands on `main`, following [Commits](../../CONTRIBUTING.md#commits):
+  - **Title**: a Conventional Commit subject, such as `fix(ui): keep the board's columns when switching to List`. The `pr-message` check refuses anything else.
+  - **Description**: the commit body. Plain prose, wrapped at 72 characters, saying what changed and why, in the style of the bodies on `main`. No headings, no `Co-authored-by:` or "Generated with" lines, no session links. End with `Closes <issue URL>` on its own line.
+- Post the review briefing as the PR's first comment, starting with the agent marker. It has to fit in a minute on a phone:
   - **Scope**: what this PR doesn't do.
   - **Tradeoffs**: choices made without the owner, each labelled measured, inferred or guessed.
   - **Blast radius**: what else could break, and what checked it.
   - **Verification**: the verify summary and the tester's verdict with its SHA.
   - **Noticed, not done**: findings that didn't meet the bar for an issue. Empty is fine.
+  - The session link.
 - If the issue has `ticket:automerge` and the verdict is `PASS` on the PR's head, add `ticket:automerge` to the PR. Before pushing anything else to a PR that has the label, remove it. Add it again only after a new `PASS`.
 
 ## Findings
@@ -71,7 +73,7 @@ Don't append to `found.md` in a cloud session. Each finding takes one of three r
 
 1. **It blocks the ticket or serves its goal.** Fix it in its own small PR, then return to the ticket.
 2. **It's confirmed and outside the ticket.** You saw it happen, or you can point at the line. Open an issue in `frogbotai/process` with the labels `found` and `area:<area>`, a one-line title, the command or `path:line` that shows it, and a severity. Search the open `found` issues first, and comment on a match instead of opening a duplicate.
-3. **Anything else.** One line under **Noticed, not done** in the PR body. It isn't written anywhere else.
+3. **Anything else.** One line under **Noticed, not done** in the review briefing. It isn't written anywhere else.
 
 ## What needs the owner
 
