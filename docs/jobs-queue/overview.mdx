@@ -122,7 +122,7 @@ Configured retries and checkpoint restoration remain supported. By default, a pr
 
 Job execution uses atomic claims and direct job-record updates at depth 0. It does not run jobs collection hooks. Ordinary application collection hooks, including those invoked by collection operations inside a task, remain supported.
 
-Task handlers, `onSuccess` and `onFail`, workflow handlers, and `inlineTask` callbacks receive a `FrogBotRequest`, so `req.frogbot` is set, as in hooks and endpoints. Handlers named by file path are loaded by Payload and do not get it.
+Task handlers, `onSuccess` and `onFail`, workflow handlers, and `inlineTask` callbacks receive a `FrogBotRequest`, so `req.frogbot` is set, as in hooks and endpoints. Handlers given as a file path do not get it.
 
 ## Durable workflow waits
 

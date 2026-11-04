@@ -1,4 +1,4 @@
-import type { Payload, Where } from 'payload';
+import type { Payload, Where, WorkflowHandler as PayloadWorkflowHandler } from 'payload';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveJobsConfig } from '../../../packages/frogbot/src/jobs/config.js';
@@ -93,7 +93,7 @@ function workflowArgs(replay?: WaitpointReplay): Parameters<WorkflowHandler>[0] 
     },
     inlineTask: vi.fn(),
     tasks: {},
-  } as unknown as Parameters<WorkflowHandler>[0];
+  } as unknown as Parameters<PayloadWorkflowHandler>[0];
 }
 
 async function run(handler: WorkflowHandler | string, args = workflowArgs()) {

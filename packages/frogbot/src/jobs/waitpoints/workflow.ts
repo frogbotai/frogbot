@@ -1,7 +1,7 @@
 import type { WorkflowConfig as PayloadWorkflowConfig } from 'payload';
 import { dynamicImport } from 'payload';
 
-import { attachRegisteredFrogBot } from '../../config/attachFrogBot.js';
+import { asAttachedRequest } from '../../seams/request.js';
 import { getJobRunContext } from '../run.js';
 import type { JobsConfig, WorkflowHandler } from '../types.js';
 import type { WaitpointOptions } from './types.js';
@@ -39,7 +39,7 @@ export function wrapWorkflow({
       const { waitFor, isWaiting, getReArm } = createWaitFor({ ...args, config });
 
       try {
-        await run({ ...args, req: attachRegisteredFrogBot(args.req), waitFor });
+        await run({ ...args, req: asAttachedRequest(args.req), waitFor });
       } catch (error) {
         if (!isWaiting(error)) throw error;
 
