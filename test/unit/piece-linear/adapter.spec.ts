@@ -114,4 +114,26 @@ describe('Linear channel adapter', () => {
     expect(response.status).toBeGreaterThanOrEqual(400);
     expect(messages).toEqual([]);
   });
+
+  it('shows a typing status as a thought and skips an empty one', async () => {
+    const adapter = new LinearChannelAdapter({
+      accessToken: 'linear-access-token',
+      webhookSecret,
+      mode: 'agent-sessions',
+      apiUrl: api.graphqlUrl,
+      logger: silentLinearLogger,
+    });
+
+    await adapter.initialize({ processMessage: vi.fn() } as never);
+    await adapter.startTyping('linear:issue-1:s:session-1', 'is thinking…');
+    await adapter.startTyping('linear:issue-1:s:session-1', '');
+
+    expect(api.thoughts).toEqual([
+      {
+        agentSessionId: 'session-1',
+        content: { type: 'thought', body: 'is thinking…' },
+        ephemeral: true,
+      },
+    ]);
+  });
 });

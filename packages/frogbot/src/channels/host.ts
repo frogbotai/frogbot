@@ -446,6 +446,8 @@ export class ChannelHost {
     await thread.subscribe();
 
     const controller = new AbortController();
+    const { tools } = binding.agent.config;
+    const { logger } = this.frogbot;
 
     const result = await binding.agent.streamMessage({
       chatId,
@@ -463,7 +465,7 @@ export class ChannelHost {
       abortSignal: AbortSignal.any([thread.signal, controller.signal]),
     });
 
-    if (!('status' in result)) await postTurn({ thread, result, controller });
+    if (!('status' in result)) await postTurn({ thread, result, controller, tools, logger });
 
     await renderPendingQuestions({ binding, chatId, frogbot: this.frogbot, thread });
   }
@@ -532,6 +534,8 @@ export class ChannelHost {
       thread,
       result: { stream: turn.result.stream, persistence: turn.persistence },
       controller,
+      tools: binding.agent.config.tools,
+      logger: this.frogbot.logger,
     });
 
     await renderPendingQuestions({ binding, chatId: chat.id, frogbot: this.frogbot, thread });

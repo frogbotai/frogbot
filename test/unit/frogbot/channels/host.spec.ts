@@ -214,6 +214,9 @@ describe('ChannelHost conversation loop', () => {
     expect(first.values.get('channels:support:slack:subscription:channel:thread-1')).toBe(true);
     expect(second.values.has('channels:support:slack:subscription:channel:thread-1')).toBe(false);
     expect(first.posted).toEqual([{ threadId: 'channel:thread-1', text: 'Hello back' }]);
+    expect(first.adapter.startTyping.mock.calls.map(([, status]) => status)).toEqual([
+      'is thinking…',
+    ]);
 
     const opts = first.streamMessage.mock.calls[0][0];
     const chat = first.frogbot.create.mock.calls[0][0].data;
@@ -312,8 +315,14 @@ describe('ChannelHost conversation loop', () => {
       createdAt: '2026-09-24T00:00:00.000Z',
     });
 
+    fixture.adapter.startTyping.mockClear();
+
     await runQueuedTurn({ frogbot: fixture.frogbot as never, chatId: 'chat-1' });
 
+    expect(fixture.adapter.startTyping).toHaveBeenCalledExactlyOnceWith(
+      'channel:thread-1',
+      'is thinking…',
+    );
     expect(fixture.messages[0]).toMatchObject({ status: 'active', delivery: null });
     expect(streamTurn).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({
@@ -441,6 +450,7 @@ describe('ChannelHost conversation loop', () => {
     expect(fixture.frogbot.logger.info).toHaveBeenCalledOnce();
     expect(fixture.streamMessage).not.toHaveBeenCalled();
     expect(fixture.frogbot.find).not.toHaveBeenCalled();
+    expect(fixture.adapter.startTyping).not.toHaveBeenCalled();
 
     await expect(
       fixture.host.run({ ...fixture.inputs[0], instanceSlug: 'missing' }),

@@ -93,6 +93,10 @@ When a question is answered, the session shows the reply and the agent continues
 
 Questions are answered only in Linear. The FrogBot admin chat shows the conversation [read-only](/chat/questions#channel-conversations).
 
+### While the agent works
+
+While the agent works, the session shows a thought, `is thinking…`, or `is using <label>…` while a tool runs, such as `is using Exa: Search…`, until the agent's next activity replaces it. A tool's [`label`](/agents/overview#tool-options) sets the name; a tool without one shows its slug.
+
 ## Who can answer
 
 FrogBot matches the Linear user who replies to a FrogBot user by email, then runs the agent's `access` check for that user. Anyone in the session who passes can answer, not only the person who started it. A Linear user with no matching FrogBot account has no FrogBot user; the default agent access denies them. Write an `access` function if they should be able to answer.

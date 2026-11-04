@@ -37,6 +37,7 @@ const timestamp = '2026-09-25T12:00:00.000Z';
 
 export async function startLinearApi({ users }: { users: LinearUser[] }) {
   const activities: LinearActivity[] = [];
+  const thoughts: LinearActivityInput[] = [];
   const operations: string[] = [];
   const unexpected: string[] = [];
   const people = new Map(users.map((user) => [user.id, user]));
@@ -74,9 +75,19 @@ export async function startLinearApi({ users }: { users: LinearUser[] }) {
         return { agentActivityCreate: { success: false, lastSyncId: 0, agentActivity: null } };
       }
 
+      const input = variables.input as LinearActivityInput;
+
+      if (input.content.type === 'thought') {
+        thoughts.push(input);
+
+        return {
+          agentActivityCreate: { success: true, lastSyncId: 1, agentActivity: { id: 'thought' } },
+        };
+      }
+
       const activity = {
         id: `activity-${activities.length + 1}`,
-        input: variables.input as LinearActivityInput,
+        input,
       };
 
       activities.push(activity);
@@ -144,6 +155,7 @@ export async function startLinearApi({ users }: { users: LinearUser[] }) {
     url,
     graphqlUrl: `${url}/graphql`,
     activities,
+    thoughts,
     operations,
     unexpected,
     failures,
@@ -151,6 +163,7 @@ export async function startLinearApi({ users }: { users: LinearUser[] }) {
       activities.filter(({ input }) => input.agentSessionId === session),
     reset() {
       activities.length = 0;
+      thoughts.length = 0;
       operations.length = 0;
       unexpected.length = 0;
       failures.activity = 0;

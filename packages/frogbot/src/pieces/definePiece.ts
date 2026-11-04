@@ -174,6 +174,18 @@ function resolveScopes(definition: PieceDefinition, configured: unknown): string
   return [...new Set([...required, ...names].map((name) => catalog[name]))];
 }
 
+function sentenceCase(slug: string): string {
+  const sentence = slug
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((word) => (word === word.toUpperCase() ? word : word.toLowerCase()))
+    .join(' ');
+
+  return sentence.charAt(0).toUpperCase() + sentence.slice(1);
+}
+
 export function createPieceHelpers<
   TClient = undefined,
   TOptions = Record<string, never>,
@@ -398,6 +410,7 @@ export function definePiece<const T extends PieceDefinition>(
 
       const tool: AnyTool = {
         slug: `${slug}_${action.slug}`,
+        label: `${definition.label}: ${action.label ?? sentenceCase(action.slug)}`,
         description: action.description,
         inputSchema: action.input,
         execute: (input, context) => invoke({ input, req: context.req }),

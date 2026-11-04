@@ -47,6 +47,7 @@ export type QuestionOutput = z.output<typeof QuestionOutput>;
 export const question: ClientTool<typeof QuestionInput, typeof QuestionOutput> = {
   component: '@frogbotai/ui/chat#QuestionToolRender',
   slug: 'question',
+  label: 'Ask a question',
   description: [
     'Ask the user one or more structured questions and wait for the answer.',
     'Use it when you need a decision or missing information before continuing; do not guess.',
