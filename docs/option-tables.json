@@ -1240,6 +1240,11 @@
     "type": "Parameters<typeof import('@frogbotai/piece-slack').createSlack>[0]"
   },
   {
+    "page": "pieces/asana",
+    "heading": "Connect Asana",
+    "type": "Parameters<typeof import('@frogbotai/piece-asana').createAsana>[0]"
+  },
+  {
     "page": "pieces/jira",
     "heading": "Connect Jira",
     "type": "Parameters<typeof import('@frogbotai/piece-jira').createJira>[0]"

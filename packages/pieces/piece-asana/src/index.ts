@@ -20,6 +20,7 @@ import {
 import { type AsanaClient, createAsanaClient } from './client.js';
 import { type AsanaAuth, asanaAuth } from './config.js';
 import { commentAdded } from './triggers/commentAdded.js';
+import { projectChanged } from './triggers/projectChanged.js';
 import { taskChanged } from './triggers/taskChanged.js';
 import { taskCompleted } from './triggers/taskCompleted.js';
 import { taskCreated } from './triggers/taskCreated.js';
@@ -88,5 +89,5 @@ export const createAsana = definePiece({
     createTask,
     customApiCall,
   ],
-  triggers: [taskCreated, taskChanged, taskCompleted, commentAdded],
+  triggers: [taskCreated, taskChanged, taskCompleted, commentAdded, projectChanged],
 });

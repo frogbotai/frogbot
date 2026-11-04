@@ -32,7 +32,9 @@ expectTypeOf<Awaited<typeof _page>['data'][number]['gid']>().toEqualTypeOf<strin
 void asana.createTask({ input: { workspaceGid: '1', name: 'Ship', notes: '' } });
 
 expectTypeOf<keyof typeof asana.triggers>().toEqualTypeOf<
-  'taskCreated' | 'taskChanged' | 'taskCompleted' | 'commentAdded'
+  'taskCreated' | 'taskChanged' | 'taskCompleted' | 'commentAdded' | 'projectChanged'
 >();
 
 expectTypeOf(asana.triggers.taskCreated.type).toEqualTypeOf<'webhook'>();
+
+expectTypeOf(asana.triggers.projectChanged.type).toEqualTypeOf<'polling'>();
