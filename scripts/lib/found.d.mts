@@ -1,14 +1,10 @@
-export function findingIds(text: string): number[];
-
-export function nextFindingId(texts: string[]): string;
-
-export function findingLine(options: { id: string; text: string; source?: string }): string;
+export const FINDING_REPOS: string[];
 
 export function findingProblem(text: string): string | null;
 
-export function appendFinding(options: {
-  file: string;
-  archive?: string;
-  text: string;
-  source?: string;
-}): { id: string; line: string };
+export function parseFinding(text: string): { kind: string; area: string; title: string } | null;
+
+export function findingIssue(
+  finding: { kind: string; area: string; title: string },
+  source?: string,
+): { title: string; body: string; labels: string[] };

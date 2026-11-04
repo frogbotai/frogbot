@@ -93,7 +93,7 @@ describe('findings', () => {
       area: 'land',
       title: '`pnpm test:ui` flakes',
     });
-    expect(findingIssue(finding, 'https://example.com/log')).toEqual({
+    expect(findingIssue(finding!, 'https://example.com/log')).toEqual({
       title: '`pnpm test:ui` flakes',
       body: 'Kind: pre-existing failure\n\nSource: https://example.com/log',
       labels: ['found', 'area:land'],
