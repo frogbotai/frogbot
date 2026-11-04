@@ -43,15 +43,14 @@ place() {
   fi
 }
 
-# 1. Ticket documents: .idea is a clone of frogbotai/process.
+# 1. Ticket documents: the process repo sits beside this checkout and .idea links to it, as locally.
 if git -C "$root/.idea" remote get-url origin 2>/dev/null | grep -q 'frogbotai/process'; then
   echo "cloud-setup: .idea is the process repo"
 else
-  [ -e "$root/.idea" ] && mv "$root/.idea" "$root/.idea.before-cloud-setup"
-  if found=$(checkout_of process); then
+  if found=$(checkout_of process) || { [ -e "$parent/process" ] || git clone -q https://github.com/frogbotai/process "$parent/process"; }; then
+    found=${found:-$parent/process}
+    [ -e "$root/.idea" ] || [ -L "$root/.idea" ] && mv "$root/.idea" "$root/.idea.before-cloud-setup"
     ln -s "$found" "$root/.idea" && echo "cloud-setup: linked .idea -> $found"
-  elif git clone -q https://github.com/frogbotai/process "$root/.idea"; then
-    echo "cloud-setup: cloned frogbotai/process into .idea"
   else
     echo "cloud-setup: can't reach frogbotai/process; attach it to the session or project" >&2
     status=1
@@ -63,7 +62,7 @@ git -C "$root/.idea" pull -q --ff-only 2>/dev/null || true
 # 2. Sibling checkouts, where scripts/ticket.mjs and sidekick's .frogbot link look for them.
 [ "$(basename "$root")" = "frogbot" ] || place frogbot frogbot
 place sidekick sidekick
-place platform frogbot-platform
+place platform platform
 
 # 3. A local main for `pnpm ticket verify`, which diffs against it.
 git -C "$root" fetch -q --depth=200 origin main:refs/remotes/origin/main || status=1
@@ -77,7 +76,7 @@ if [ "$major" -lt 24 ]; then
   echo "cloud-setup: node $(node --version) is older than the repo's >=24.21; the environment setup script installs 24" >&2
   status=1
 fi
-for dir in "$root" "$parent/sidekick" "$parent/frogbot-platform"; do
+for dir in "$root" "$parent/sidekick" "$parent/platform"; do
   [ -f "$dir/package.json" ] || continue
   echo "cloud-setup: pnpm install in $dir"
   (cd "$dir" && pnpm install --frozen-lockfile --reporter=silent) || status=1
