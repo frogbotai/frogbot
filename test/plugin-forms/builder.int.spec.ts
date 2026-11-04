@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { FormDocument, FormMode } from '@frogbotai/plugin-forms';
 import { FormPreviewView } from '@frogbotai/plugin-forms/rsc';
-import { type AdminViewServerProps, getAccessResults } from 'payload';
+import { type AdminViewServerProps, getAccessResults, type PayloadRequest } from 'payload';
 import { isValidElement, type ReactElement } from 'react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -158,9 +158,9 @@ describe(`form builder field lists [${adapterLabel}]`, () => {
     };
 
     async function preview(user?: { id: number; name: string }) {
-      const req = await booted.frogbot.createRequest(
+      const req = (await booted.frogbot.createRequest(
         user ? { user: { ...user, collection: 'users' } } : {},
-      );
+      )) as unknown as PayloadRequest;
 
       const permissions = await getAccessResults({ req });
 
