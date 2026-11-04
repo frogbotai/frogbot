@@ -224,6 +224,106 @@ describe('trigger endpoints', () => {
     expect(frogbot.queue).toHaveBeenCalledTimes(1);
   });
 
+  function replying({ reply, fails = false }: { reply?: () => Response; fails?: boolean }) {
+    const replyFn = reply && vi.fn(reply);
+    const instance = definePiece({
+      slug: 'replying',
+      label: 'Replying',
+      actions: [],
+      triggers: [
+        defineWebhookTrigger({
+          slug: 'received',
+          type: 'webhook',
+          description: 'Receive events the provider wants answered',
+          input: z.object({}),
+          output: z.object({ id: z.string() }),
+          onEnable() {
+            return Promise.resolve({ token: 'state' });
+          },
+          async onDisable() {},
+          run({ req }) {
+            if (fails) return Promise.reject(new Error('run failed'));
+
+            return Promise.resolve([
+              { dedupeKey: 'one', data: { id: (req.data as { id: string }).id } },
+            ]);
+          },
+          ...(replyFn ? { reply: replyFn } : {}),
+        }),
+      ],
+    })();
+
+    const subscriber = {
+      agentSlug: 'ops',
+      piece: instance,
+      trigger: { trigger: instance.triggers.received, handler: vi.fn() },
+      input: {},
+    };
+
+    const frogbot = {
+      config: { _internal: { triggers: { replying: { instance, subscribers: [subscriber] } } } },
+      find: vi.fn().mockResolvedValue({
+        docs: [
+          {
+            ...subscriptionRow,
+            instance: 'replying',
+            trigger: 'received',
+            input: { value: {} },
+            state: { token: 'state' },
+          },
+        ],
+      }),
+      kv: kv(),
+      queue: vi.fn(),
+    };
+
+    const req = Object.assign(request({ id: 'one' }, '42'), {
+      frogbot,
+      routeParams: { instance: 'replying', subscription: '42' },
+    });
+
+    return { req, frogbot, reply: replyFn };
+  }
+
+  it('answers a subscription delivery with the trigger reply after dispatch', async () => {
+    const { req, frogbot, reply } = replying({
+      reply: () =>
+        new Response('<Ack>true</Ack>', { status: 202, headers: { 'content-type': 'text/xml' } }),
+    });
+
+    const response = await subscribedPost.handler(req as never);
+
+    expect(response.status).toBe(202);
+    expect(response.headers.get('content-type')).toBe('text/xml');
+    expect(await response.text()).toBe('<Ack>true</Ack>');
+    expect(frogbot.queue).toHaveBeenCalledTimes(1);
+    expect(reply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: {},
+        state: { token: 'state' },
+        events: [{ dedupeKey: 'one', data: { id: 'one' } }],
+      }),
+    );
+  });
+
+  it('answers { ok: true } when the trigger has no reply', async () => {
+    const { req } = replying({});
+    const response = await subscribedPost.handler(req as never);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
+  });
+
+  it('never calls reply when run throws', async () => {
+    const { req, frogbot, reply } = replying({ reply: () => new Response('ack'), fails: true });
+
+    await expect(subscribedPost.handler(req as never)).rejects.toThrow(
+      'App trigger ingress failed',
+    );
+    expect(reply).not.toHaveBeenCalled();
+    expect(frogbot.queue).not.toHaveBeenCalled();
+  });
+
   it.each([
     { method: 'POST', endpoint: post },
     { method: 'GET', endpoint: buildTriggerEndpoints().find(({ method }) => method === 'get')! },

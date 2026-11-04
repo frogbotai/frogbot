@@ -189,15 +189,17 @@ async function dispatchWebhookTriggers({
         req: triggerReq,
       };
 
-      let events;
-
       if (trigger.type === 'webhook') {
         if (!row) return;
 
-        events = await trigger.run({ ...context, state: row.state });
-      } else {
-        events = await trigger.run(context);
+        const events = await trigger.run({ ...context, state: row.state });
+
+        await dispatchTriggerEvents({ events, frogbot: req.frogbot, subscribers: [candidate] });
+
+        return trigger.reply?.({ ...context, state: row.state, events });
       }
+
+      const events = await trigger.run(context);
 
       await dispatchTriggerEvents({ events, frogbot: req.frogbot, subscribers: [candidate] });
     }),
@@ -209,7 +211,12 @@ async function dispatchWebhookTriggers({
     throw new AggregateError(errors, '[frogbot] App trigger ingress failed.');
   }
 
-  return Response.json({ ok: true });
+  const reply = results.find(
+    (result): result is PromiseFulfilledResult<Response> =>
+      result.status === 'fulfilled' && result.value instanceof Response,
+  );
+
+  return reply?.value ?? Response.json({ ok: true });
 }
 
 export function buildTriggerEndpoints(): Endpoint[] {

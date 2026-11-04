@@ -1,3 +1,4 @@
+import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import type { OAuthTokens, PieceInstance, PieceOAuthAccount } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import type { ConnectionOwner } from '../store.js';
@@ -43,7 +44,11 @@ export async function saveOAuthConnection({
 
   oauthAuth({ piece, tokens: credential });
 
-  const metadata = oauthTokenMetadata({ tokens: credential, scopes: oauthScopes(piece) });
+  const metadata = oauthTokenMetadata({
+    tokens: credential,
+    scopes: oauthScopes(piece),
+    lifetime: pieceInstanceRuntime(piece).definition.oauth?.tokenLifetime,
+  });
 
   let linked: PieceOAuthAccount | undefined;
 

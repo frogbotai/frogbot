@@ -93,6 +93,13 @@ function validateShared(slug: string, recipe: AnyRecipe): void {
   if (recipe.auth !== undefined && typeof recipe.auth?.parse !== 'function') {
     throw new Error(`[frogbot] Piece '${slug}' OAuth auth must be a schema.`);
   }
+
+  if (
+    recipe.tokenLifetime !== undefined &&
+    (!Number.isSafeInteger(recipe.tokenLifetime) || recipe.tokenLifetime <= 0)
+  ) {
+    throw new Error(`[frogbot] Piece '${slug}' OAuth tokenLifetime must be a positive integer.`);
+  }
 }
 
 export function validateOAuthRecipe({ slug, auth, oauth }: PieceDefinition): void {
