@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 import {
   agentSlug,
+  approvedCalls,
+  approverAgentSlug,
   chatsSlug,
   lookupCalls,
   modelPort,
@@ -34,6 +36,32 @@ const lookup: Tool<typeof lookupInput, string> = {
     if (topic === unavailableTopic) throw new Error(`No results for ${topic}.`);
 
     return `Found ${topic}.`;
+  },
+};
+
+const ticketInput = z.object({ ticket: z.string() });
+
+const closeTicket: Tool<typeof ticketInput, string> = {
+  slug: 'close_ticket',
+  description: 'Close a ticket.',
+  inputSchema: ticketInput,
+  approval: 'ask',
+  execute: ({ ticket }) => {
+    approvedCalls.push({ tool: 'close_ticket', input: { ticket } });
+
+    return `Closed ${ticket}.`;
+  },
+};
+
+const deleteTicket: Tool<typeof ticketInput, string> = {
+  slug: 'delete_ticket',
+  description: 'Delete a ticket.',
+  inputSchema: ticketInput,
+  approval: () => ({ mode: 'required', reason: 'Deleting cannot be undone.' }),
+  execute: ({ ticket }) => {
+    approvedCalls.push({ tool: 'delete_ticket', input: { ticket } });
+
+    return `Deleted ${ticket}.`;
   },
 };
 
@@ -111,6 +139,13 @@ export default await buildTestConfig({
       instructions: 'Help the user.',
       access: () => true,
       tools: [...todoTools],
+    },
+    {
+      slug: approverAgentSlug,
+      model: 'test/gpt-4.1-mini',
+      instructions: 'Ask before changing tickets.',
+      access: () => true,
+      tools: [closeTicket, deleteTicket, question],
     },
     generalAgent,
   ],

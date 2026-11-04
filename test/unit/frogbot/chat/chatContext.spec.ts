@@ -898,7 +898,10 @@ describe('resolveChatContext', () => {
           incoming: [{ id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'Hi' }] }],
           tools: {},
         }),
-      ).rejects.toMatchObject({ message: 'Submit a tool output for a pending call.', status: 400 });
+      ).rejects.toMatchObject({
+        message: 'Submit a tool output or approval for a pending call.',
+        status: 400,
+      });
       expect(settleCall).not.toHaveBeenCalled();
     });
 

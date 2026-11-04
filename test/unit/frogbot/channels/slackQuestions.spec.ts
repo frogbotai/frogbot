@@ -268,6 +268,44 @@ describe('Slack native questions', () => {
     await fixture.host.shutdown();
   });
 
+  it('asks for an approval with Approve and Deny buttons and settles each', async () => {
+    const approval: PendingCall = {
+      ...pendingCall(),
+      toolName: 'close_ticket',
+      input: { ticket: 'T-1' },
+      approval: {},
+    };
+
+    const fixture = await askedFixture(approval);
+    const card = JSON.stringify(lastCall('chat.postMessage')?.blocks);
+
+    expect(card).toContain('Approve close_ticket?');
+    expect(card).toContain('frogbot:question:choose:call-1:0:0');
+    expect(card).toContain('frogbot:question:choose:call-1:0:1');
+
+    await fixture.host.webhook(
+      'slack',
+      blockAction({ actionId: 'frogbot:question:choose:call-1:0:0', value: '0' }),
+    );
+
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({ approved: true });
+
+    await fixture.host.shutdown();
+
+    settleClientToolCall.mockClear();
+
+    const denied = await askedFixture(approval);
+
+    await denied.host.webhook(
+      'slack',
+      blockAction({ actionId: 'frogbot:question:choose:call-1:0:1', value: '1' }),
+    );
+
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({ approved: false });
+
+    await denied.host.shutdown();
+  });
+
   it('sends a denied responder an ephemeral notice', async () => {
     const fixture = await askedFixture();
 

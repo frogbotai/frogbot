@@ -22,6 +22,13 @@ import { allClientTools } from './streamTurn.js';
 const settleSchema = z.union([
   z.object({ toolCallId: z.string().min(1), output: z.unknown() }).strict(),
   z.object({ toolCallId: z.string().min(1), dismissed: z.literal(true) }).strict(),
+  z
+    .object({
+      toolCallId: z.string().min(1),
+      approved: z.boolean(),
+      reason: z.string().max(10_000).optional(),
+    })
+    .strict(),
 ]);
 
 const queuedMessageSchema = z
@@ -65,19 +72,17 @@ export function buildTurnEndpoints(): Endpoint[] {
 
           if (!body.success) {
             return Response.json(
-              { error: 'Body must include `toolCallId` and either `output` or `dismissed: true`' },
+              {
+                error:
+                  'Body must include `toolCallId` and one of `output`, `dismissed: true` or `approved`',
+              },
               { status: 400 },
             );
           }
 
           const { toolCallId, ...outcome } = body.data;
 
-          const settlement = await settleClientToolCall({
-            req,
-            chatId,
-            toolCallId,
-            outcome: 'dismissed' in outcome ? { dismissed: true } : { output: outcome.output },
-          });
+          const settlement = await settleClientToolCall({ req, chatId, toolCallId, outcome });
 
           if (settlement.status === 'already-settled') {
             return Response.json(
@@ -88,6 +93,10 @@ export function buildTurnEndpoints(): Endpoint[] {
 
           if ('dismissed' in outcome) {
             return Response.json({ status: 'dismissed', chatId, settlement });
+          }
+
+          if (settlement.part.state === 'output-denied') {
+            return Response.json({ status: 'denied', chatId, settlement });
           }
 
           if (!settlement.allSettled) {

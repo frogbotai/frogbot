@@ -293,11 +293,15 @@ async function resumeChat({
   }
 
   const outputs = message.parts.filter(
-    (part) => isToolPart(part) && part.state === 'output-available',
+    (part) =>
+      isToolPart(part) &&
+      (part.state === 'output-available' || part.state === 'approval-responded'),
   );
 
   if (outputs.length === 0) {
-    throw Object.assign(new Error('Submit a tool output for a pending call.'), { status: 400 });
+    throw Object.assign(new Error('Submit a tool output or approval for a pending call.'), {
+      status: 400,
+    });
   }
 
   const pending = new Set(
@@ -315,14 +319,38 @@ async function resumeChat({
   let allSettled = false;
 
   for (const part of answers) {
-    if (!isToolPart(part) || part.state !== 'output-available') continue;
+    if (!isToolPart(part)) continue;
+
+    if (
+      part.state === 'approval-responded' &&
+      !part.approval.approved &&
+      !part.approval.reason?.trim()
+    ) {
+      throw Object.assign(
+        new Error('Deny without a reason through the settle endpoint, which ends the turn.'),
+        { status: 400 },
+      );
+    }
+  }
+
+  for (const part of answers) {
+    if (!isToolPart(part)) continue;
+
+    const outcome =
+      part.state === 'approval-responded'
+        ? { approved: part.approval.approved, reason: part.approval.reason }
+        : part.state === 'output-available'
+          ? { output: part.output }
+          : undefined;
+
+    if (!outcome) continue;
 
     const settlement = await settleCall({
       req,
       agentSlug,
       chat,
       toolCallId: part.toolCallId,
-      outcome: { output: part.output },
+      outcome,
       actor: actorFromRequest(req),
     });
 
