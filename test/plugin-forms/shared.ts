@@ -52,3 +52,39 @@ export const Leads: CollectionConfig = {
     { name: 'meta', type: 'json' },
   ],
 };
+
+export const ticketsSlug = 'tickets';
+export const ticketFilesSlug = 'ticket-files';
+
+/** A private upload collection: only signed-in users read its files. */
+export function ticketFiles({
+  staticDir,
+  hooks,
+}: {
+  staticDir: string;
+  hooks?: CollectionConfig['hooks'];
+}): CollectionConfig {
+  return {
+    slug: ticketFilesSlug,
+    upload: { staticDir },
+    access: { read: ({ req }) => Boolean(req.user) },
+    ...(hooks ? { hooks } : {}),
+    fields: [{ name: 'note', type: 'text' }],
+  };
+}
+
+export const Tickets: CollectionConfig = {
+  slug: ticketsSlug,
+  access: { read: ({ req }) => Boolean(req.user) },
+  fields: [
+    {
+      name: 'subject',
+      type: 'text',
+      required: true,
+      validate: (value: unknown) =>
+        typeof value === 'string' && value.length >= 3 ? true : 'Use at least 3 characters.',
+    },
+    { name: 'screenshot', type: 'upload', relationTo: ticketFilesSlug },
+    { name: 'attachments', type: 'upload', relationTo: ticketFilesSlug, hasMany: true },
+  ],
+};

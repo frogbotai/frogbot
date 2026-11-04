@@ -46,7 +46,7 @@ export type FormsRateLimitOptions = {
 };
 
 export type FormQuestionType =
-  'checkbox' | 'date' | 'email' | 'number' | 'radio' | 'select' | 'text' | 'textarea';
+  'checkbox' | 'date' | 'email' | 'number' | 'radio' | 'select' | 'text' | 'textarea' | 'upload';
 
 export type FormQuestionConfig = {
   id?: string | null;
@@ -54,6 +54,12 @@ export type FormQuestionConfig = {
   label?: string | null;
   description?: string | null;
   placeholder?: string | null;
+  /** File questions: the largest file accepted, in bytes. Defaults to the app's per-file upload limit. */
+  maxFileSize?: number | null;
+  /** File questions: how many files one response may attach, up to 5. Defaults to 1. */
+  maxFiles?: number | null;
+  /** File questions: accepted types, like `application/pdf` or `image/*`. Empty accepts any. */
+  mimeTypes?: string[] | null;
 };
 
 export type FormStepConfig = {
@@ -101,6 +107,12 @@ export type FormQuestion = {
   options?: FormOption[];
   hasMany?: boolean;
   defaultValue?: unknown;
+  /** File questions: how many files may be attached. */
+  maxFiles?: number;
+  /** File questions: the largest file accepted, in bytes. */
+  maxFileSize?: number;
+  /** File questions: accepted types, like `image/*`. Absent accepts any. */
+  mimeTypes?: string[];
 };
 
 export type FormStep = {
@@ -123,7 +135,11 @@ export type FormDefinition = {
   turnstile?: { siteKey: string };
 };
 
-/** The submit body: answers by question key, URL parameters by name, and the spam checks. */
+/**
+ * The submit body: answers by question key, URL parameters by name, and the spam checks. With
+ * files, send `multipart/form-data` with this object as JSON in the `_payload` part and each file
+ * as a part named after its question.
+ */
 export type FormSubmitBody = {
   data?: Record<string, unknown>;
   params?: Record<string, unknown>;

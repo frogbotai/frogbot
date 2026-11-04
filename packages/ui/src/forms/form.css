@@ -68,6 +68,17 @@
     border-color: var(--color-border-danger);
   }
 
+  .fb-form__files {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0;
+    padding-inline-start: 1.25rem;
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+    overflow-wrap: anywhere;
+  }
+
   .fb-form__error {
     margin: 0;
     overflow-wrap: break-word;

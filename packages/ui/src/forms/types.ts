@@ -1,5 +1,5 @@
 export type FormQuestionType =
-  'checkbox' | 'date' | 'email' | 'number' | 'radio' | 'select' | 'text' | 'textarea';
+  'checkbox' | 'date' | 'email' | 'number' | 'radio' | 'select' | 'text' | 'textarea' | 'upload';
 
 export type FormOption = { label: string; value: string };
 
@@ -13,6 +13,12 @@ export type FormQuestion = {
   options?: FormOption[];
   hasMany?: boolean;
   defaultValue?: unknown;
+  /** File questions: how many files may be attached. */
+  maxFiles?: number;
+  /** File questions: the largest file accepted, in bytes. */
+  maxFileSize?: number;
+  /** File questions: accepted types, like `image/*`. */
+  mimeTypes?: string[];
 };
 
 export type FormStep = {
@@ -40,4 +46,4 @@ export type FormFieldError = { field?: string; message: string };
 export type FormSubmitResponse =
   { confirmation: FormConfirmation } | { errors: FormFieldError[] } | { error: string };
 
-export type FormValue = boolean | string | string[];
+export type FormValue = boolean | File[] | string | string[];

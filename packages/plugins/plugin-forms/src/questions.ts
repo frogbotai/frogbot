@@ -8,6 +8,14 @@ import {
 
 import { createFormSubmission } from './access.js';
 import type { FormDocument, FormQuestionType } from './types.js';
+import {
+  checkUploadQuestion,
+  checkUploadTotals,
+  DEFAULT_UPLOAD_LIMITS,
+  type UploadLimits,
+  type UploadRules,
+  uploadRules,
+} from './uploads.js';
 
 export const QUESTION_TYPES = [
   'checkbox',
@@ -18,6 +26,7 @@ export const QUESTION_TYPES = [
   'select',
   'text',
   'textarea',
+  'upload',
 ] as const satisfies readonly FormQuestionType[];
 
 const PARAM_TYPES = new Set<FormQuestionType>(['email', 'text', 'textarea']);
@@ -34,6 +43,8 @@ export type FieldCatalog = Map<string, FieldEntry>;
 export type FormTarget = {
   slug: string;
   fields: FieldCatalog;
+  /** True for an upload collection, which file questions can store files in. */
+  upload?: boolean;
 };
 
 export type FormError = { path: string; message: string };
@@ -52,6 +63,10 @@ function refusal(field: Field): string | undefined {
   if (!isQuestionType(field.type)) return `has type ${field.type}, which forms can't ask for`;
   if ((field.type === 'text' || field.type === 'number') && field.hasMany) {
     return "holds a list, which forms can't ask for";
+  }
+
+  if (field.type === 'upload' && typeof field.relationTo !== 'string') {
+    return "takes files from several collections, which forms can't ask for";
   }
 }
 
@@ -130,10 +145,13 @@ export async function checkForm({
   form,
   targets,
   req,
+  limits = DEFAULT_UPLOAD_LIMITS,
 }: {
   form: Partial<FormDocument>;
   targets: Map<string, FormTarget>;
   req: FrogBotRequest;
+  /** The app's upload limits, which file questions must fit in. */
+  limits?: UploadLimits;
 }): Promise<FormError[]> {
   const errors: FormError[] = [];
 
@@ -171,7 +189,11 @@ export async function checkForm({
   const visitor = formRequest(req, form, target.slug);
   const used = new Set<string>();
 
-  const usable = async (path: string, name: string, types?: Set<FormQuestionType>) => {
+  const usable = async (
+    path: string,
+    name: string,
+    types?: Set<FormQuestionType>,
+  ): Promise<QuestionField | undefined> => {
     const entry = target.fields.get(name);
 
     if (!entry) {
@@ -205,14 +227,30 @@ export async function checkForm({
         path,
         message: `"${name}" can't be filled from a form: its create access denies form submissions.`,
       });
+
+      return;
     }
+
+    return entry.field;
   };
+
+  const files: { name: string; rules: UploadRules }[] = [];
 
   for (const [stepIndex, step] of (form.steps ?? []).entries()) {
     for (const [index, question] of (step.questions ?? []).entries()) {
-      await usable(`steps.${stepIndex}.questions.${index}.field`, question.field);
+      const path = `steps.${stepIndex}.questions.${index}`;
+      const field = await usable(`${path}.field`, question.field);
+
+      if (field?.type !== 'upload') continue;
+
+      const refused = checkUploadQuestion({ path, question, field, targets, limits });
+
+      errors.push(...refused);
+      if (!refused.length) files.push({ name: field.name, rules: uploadRules(question, limits) });
     }
   }
+
+  errors.push(...checkUploadTotals(files, limits));
 
   const asked = new Set(used);
   const params = new Set<string>();

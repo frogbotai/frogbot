@@ -46,16 +46,17 @@ A document in the `forms` collection has:
 
 - `title`, and a unique `slug` of lowercase letters, numbers and hyphens.
 - `collection`: one of the listed collections. Each response creates a record there.
-- `steps`, each with an optional `title` and its `questions`. A question names a field of the collection and can override its `label`, `description` and `placeholder`.
+- `steps`, each with an optional `title` and its `questions`. A question names a field of the collection and can override its `label`, `description` and `placeholder`. A file question also has `maxFileSize`, `maxFiles` and `mimeTypes`; see [File uploads](#file-uploads).
 - `hiddenParams`: URL parameters, like `utm_source`, saved to a field of the record.
 - `confirmation`: a `message`, or a `redirect` to a path such as `/thanks` or an `http(s)` URL.
 - `status` (`open` or `closed`), `closesAt` and `maxResponses`.
 
-A question can use any top-level field, including fields in unnamed rows, collapsibles, groups and tabs, of type `text`, `textarea`, `email`, `number`, `select`, `radio`, `checkbox` or `date`. Saving a form is refused, naming the field at fault, when a question:
+A question can use any top-level field, including fields in unnamed rows, collapsibles, groups and tabs, of type `text`, `textarea`, `email`, `number`, `select`, `radio`, `checkbox`, `date` or `upload`. Saving a form is refused, naming the field at fault, when a question:
 
 - uses another field type, a list (`hasMany` text or number), or a hidden or virtual field;
 - repeats a field already on the form;
 - names a field whose `access.create` denies a form submission;
+- asks for files that could pass the app's upload limits, or stores them somewhere a form can't (see [File uploads](#file-uploads));
 
 or when the form leaves out a field that is `required` and has no `defaultValue`, since no response could then be saved. A form saved as `closed` skips these checks, so it can always be closed, or drafted before it opens.
 
@@ -94,6 +95,105 @@ const leads = {
 
 Only the plugin's submit endpoint can set the flag, and it names one collection, so a hook that creates a document elsewhere with the same `req` isn't admitted there.
 
+## File uploads
+
+An `upload` field makes a file question: visitors attach files, and the record points at them. The files go into an upload collection that you also list in `collections`, and nobody gets them back: the response holds no file, URL or ID, and the upload collection's own `read` rule decides who sees them.
+
+```ts
+const ticketFiles: CollectionConfig = {
+  slug: 'ticket-files',
+  upload: true,
+  access: { read: ({ req }) => Boolean(req.user) },
+  fields: [],
+}
+
+const tickets: CollectionConfig = {
+  slug: 'tickets',
+  fields: [
+    { name: 'subject', type: 'text', required: true },
+    { name: 'attachments', type: 'upload', relationTo: 'ticket-files', hasMany: true },
+  ],
+}
+
+formsPlugin({ collections: ['tickets', 'ticket-files'] })
+```
+
+Each file question takes, on the form:
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `maxFileSize` | The app's per-file limit | The largest file accepted, in bytes. |
+| `maxFiles` | `1` | How many files one response may attach, up to 5. Above 1 needs a `hasMany` field. |
+| `mimeTypes` | Any | Accepted types, like `application/pdf` or `image/*`. The page's file picker uses them too. |
+
+These checks use the type the browser sends. The upload collection then checks the file's contents: it refuses executables and scripts unless you set `upload.allowRestrictedFileTypes`, and with `upload.mimeTypes` set it also refuses files whose detected type isn't listed.
+
+### Upload limits
+
+Every file arrives in one request, under the app's upload limits: by default 20 MB per file, 3 files and 50 MB per request. Saving a form is refused, naming the question, when one file could be larger than the per-file limit, or when its file questions together could take more files, or more bytes plus 1 MB for the answers, than one request allows. An upload collection that requires a field with no default is refused too, since a form only sends the file.
+
+For bigger files, raise the limits in your config:
+
+```ts
+export default buildConfig({
+  // …
+  upload: {
+    limits: { fileSize: 60 * 1024 * 1024, files: 5 },
+    requestSizeLimit: 320 * 1024 * 1024,
+  },
+})
+```
+
+Files are held in memory while the request is read. With large limits, set `upload.useTempFiles: true` to write them to a temporary folder instead. Your host may cap request bodies too; Vercel, for example, refuses bodies over 4.5 MB.
+
+### How files are saved
+
+A submit with files is `multipart/form-data`: the usual body as JSON in a `_payload` part, and each file as a part named after its question. Parts named after anything else are ignored. A value in `data` for a file question, such as the ID of a file already in the app, answers `400`: visitors can attach files, never point at existing ones.
+
+Before anything is saved, each question's count, size and types are checked, and a required question with no file answers `400`. Then each file is created in its upload collection the way the record is, flagged as this form's submission and with `overrideAccess: false`, so its hooks run. The record comes last. When a file or the record is refused, the plugin deletes the files it made for that submit, and only those, and answers `400` with the error on its question.
+
+### Scanning files
+
+FrogBot doesn't scan files itself. Add a `beforeChange` hook to the upload collection that scans `req.file` and throws when it's unsafe. The file is written to storage only after the collection's `beforeChange` hooks, so when the hook throws, nothing is kept. Boot logs a warning for each listed upload collection without a `beforeChange` hook.
+
+This one uses [ClamAV](https://www.clamav.net/) through the [`clamscan`](https://www.npmjs.com/package/clamscan) package and a `clamd` server, which needs about 4 GB of memory:
+
+```ts
+import { Readable } from 'node:stream'
+
+import NodeClam from 'clamscan'
+import { APIError, type CollectionConfig } from 'frogbot'
+
+const clamav = new NodeClam().init({
+  clamdscan: { host: process.env.CLAMD_HOST, port: 3310 },
+})
+
+export const ticketFiles: CollectionConfig = {
+  slug: 'ticket-files',
+  upload: true,
+  access: { read: ({ req }) => Boolean(req.user) },
+  hooks: {
+    beforeChange: [
+      async ({ data, req }) => {
+        if (!req.file) return data
+
+        const scanner = await clamav
+        const { isInfected } = req.file.tempFilePath
+          ? await scanner.scanFile(req.file.tempFilePath)
+          : await scanner.scanStream(Readable.from(req.file.data))
+
+        if (isInfected) throw new APIError('This file failed a virus scan.', 400)
+
+        return data
+      },
+    ],
+  },
+  fields: [],
+}
+```
+
+An `APIError` below 500 reaches the visitor as the question's error. Any other error answers `500` and is logged.
+
 ## The form page
 
 Every form has a public page at `/forms/<slug>` under the admin route, `/forms/contact` with FrogBot's default admin at `/`. It renders without the admin's sidebar and header, follows the app's theme, and works for visitors who aren't signed in. The page loads the form as the visitor, so a form they can't read, or one that doesn't exist, shows the not-found page. A closed form shows that it's closed.
@@ -129,7 +229,7 @@ Both endpoints are public and check the form's `read` access as the visitor.
 GET /api/forms/contact/definition
 ```
 
-Returns what a page needs to show the form: its title, steps, questions (`key`, `type`, `label`, `description`, `placeholder`, `required`, `options`, `hasMany`, `defaultValue`), hidden parameter names, confirmation, whether it's `closed`, the `honeypot` input's name and, with Turnstile on, `turnstile.siteKey`. It never returns the collection's other fields.
+Returns what a page needs to show the form: its title, steps, questions (`key`, `type`, `label`, `description`, `placeholder`, `required`, `options`, `hasMany`, `defaultValue`, and for files `maxFiles`, `maxFileSize` and `mimeTypes`), hidden parameter names, confirmation, whether it's `closed`, the `honeypot` input's name and, with Turnstile on, `turnstile.siteKey`. It never returns the collection's other fields.
 
 ```http
 POST /api/forms/contact/submit
@@ -142,6 +242,7 @@ Content-Type: application/json
 - A form that is closed, past `closesAt` or at `maxResponses` answers `410`.
 - On success the response is `{ "confirmation": { "type": "message", "message": "…" } }` or `{ "confirmation": { "type": "redirect", "url": "/thanks" } }`, never the record.
 - When the collection refuses the record, the response is `400` with `{ "errors": [{ "field": "email", "message": "…" }] }`.
+- With files, send `multipart/form-data` as described in [How files are saved](#how-files-are-saved). Files over the app's upload limits answer `413`.
 - A missing or refused Turnstile token answers `400`, and too many submits from one address answer `429` with a `Retry-After` header. See [Spam protection](#spam-protection).
 
 With `maxResponses` set, responses are counted under a per-form lock in the app's KV store, so two visitors submitting at once never pass the limit. Without it, the count is kept but not locked.

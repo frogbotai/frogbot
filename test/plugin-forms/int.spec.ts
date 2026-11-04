@@ -8,10 +8,11 @@ import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { buildTestConfig } from '../__helpers/shared/buildTestConfig.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
-import { hookMarkerPrefix, leadsSlug, staffFormSlug } from './shared.js';
+import { hookMarkerPrefix, leadsSlug, staffFormSlug, ticketsSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const adapterLabel = process.env.FROGBOT_DATABASE || 'sqlite';
+const MiB = 1024 * 1024;
 
 type Lead = {
   id: number | string;
@@ -136,6 +137,25 @@ describe(`forms plugin [${adapterLabel}]`, () => {
     expect(
       await saveErrors({ confirmation: { type: 'redirect', redirect: 'javascript:alert(1)' } }),
     ).toEqual([expect.objectContaining({ path: 'confirmation.redirect' })]);
+  });
+
+  it("refuses a file question over the app's default upload limits, naming the key", async () => {
+    const errors = await saveErrors({
+      collection: ticketsSlug,
+      steps: [
+        { questions: [{ field: 'subject' }, { field: 'screenshot', maxFileSize: 50 * MiB }] },
+      ],
+      hiddenParams: [],
+    });
+
+    expect(errors).toEqual([
+      expect.objectContaining({
+        path: 'steps.0.questions.1.maxFileSize',
+        message: expect.stringMatching(
+          /^"screenshot" accepts files up to 50 MB, over the app's 20 MB/,
+        ),
+      }),
+    ]);
   });
 
   it('serves the render definition without the target collection', async () => {

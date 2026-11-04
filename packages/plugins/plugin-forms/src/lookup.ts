@@ -5,11 +5,13 @@ import { buildDefinition } from './definition.js';
 import type { FormTarget } from './questions.js';
 import { HONEYPOT_FIELD, type SpamOptions } from './spam.js';
 import type { FormDefinition, FormDocument } from './types.js';
+import type { UploadLimits } from './uploads.js';
 
 /** What the endpoints and the page share, kept on the `forms` collection's `custom['plugin-forms']`. */
 export type FormsRuntime = {
   targets: Map<string, FormTarget>;
   spam: SpamOptions;
+  uploads: UploadLimits;
 };
 
 export type FoundForm = {
@@ -55,6 +57,7 @@ export async function definitionFor(
       fields: target.fields,
       closed: await formIsClosed(req.frogbot, form),
       language: req.i18n?.language,
+      limits: runtime.uploads,
     }),
     honeypot: HONEYPOT_FIELD,
     ...(turnstile ? { turnstile: { siteKey: turnstile.siteKey } } : {}),
