@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 
 import { pieceFactoryDefinition } from '../../../packages/frogbot/src/pieces/definePiece.js';
 import { createAirtable } from '../../../packages/pieces/piece-airtable/src/index.js';
+import { createAsana } from '../../../packages/pieces/piece-asana/src/index.js';
 import { createAttio } from '../../../packages/pieces/piece-attio/src/index.js';
 import { createBraveSearch } from '../../../packages/pieces/piece-brave-search/src/index.js';
 import { createDiscord } from '../../../packages/pieces/piece-discord/src/index.js';
@@ -46,6 +47,12 @@ export const rawRequestRows: RawRequestRow[] = [
     auth: { personalAccessToken: 'airtable-token' },
     safe: '/meta/bases',
     origins: ['https://api.airtable.com'],
+  },
+  {
+    factory: createAsana,
+    auth: { accessToken: 'asana-token' },
+    safe: '/users/me',
+    origins: ['https://app.asana.com'],
   },
   {
     factory: createAttio,
