@@ -113,7 +113,7 @@ Example: AI policy (model allowlists, monthly budgets, spend counters) goes in a
 | Regenerate a test suite's types     | `pnpm generate:types <suite>` (needs built packages)                                                                                                                                |
 | Sync the AI model catalog and types | `pnpm sync:catalog`                                                                                                                                                                 |
 | Upstream changes to vendored code   | `pnpm vendored [--to <ref>] [--fetch]`                                                                                                                                              |
-| Tickets                             | `pnpm ticket next`, `new <n>`, `status [--batch <n>]`, `decisions`, `found "<row>"`, `stats`, `land <n>` (see [the feature process](.github/feature-process/README.md))             |
+| Tickets                             | `pnpm ticket next`, `new <n>`, `status [--batch <n>]`, `decisions`, `found`, `stats`, `land <n>` (see [the feature process](.github/feature-process/README.md))                     |
 | Release                             | `pnpm bump <major\|minor\|patch>` (`--from <step>` resumes), `pnpm release` (owner only; publishes, tags, posts the GitHub release; `--resume` resumes), `pnpm release:status`      |
 
 `prepare` and `lint-staged` are git-hook plumbing and have no row. Packages have only `build`, `clean` and `typecheck`.
@@ -222,7 +222,7 @@ A failing test shows behavior to understand; it doesn't by itself decide what th
 
 - **Fix now** when it breaks a requirement or supported behavior, however rare. Rerun the affected checks.
 - **Document** an agreed limitation: what users need to know and how to handle it.
-- **Defer** anything that adds behavior or guarantees beyond the agreed work: add a row to `.idea/_process/found.md` with `pnpm ticket found` and carry on.
+- **Defer** anything that adds behavior or guarantees beyond the agreed work: file it with `pnpm ticket found` and carry on.
 
 Raise security and data-loss findings right away, even when the fix is out of scope: what can happen to a user, how, how likely, and the simpler alternatives. A fix that needs a different core library or a substantial redesign waits for the owner; a new problem is not permission to redesign. Never patch a dependency or work around one with architecture; record the limitation and continue.
 

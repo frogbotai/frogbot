@@ -96,10 +96,12 @@ Keep it short enough to read on a phone. Detail belongs in the linked files.
 
 ## Findings
 
-Don't append to `found.md` in a cloud session. Each finding takes one of three routes:
+A finding is an issue in the repo whose code it is about, labeled `found` and `area:<area>`. Frogbot and Sidekick code are public issues in `frogbotai/frogbot`, platform code is a private issue in `frogbotai/platform`, and only findings about the process itself go in `frogbotai/process`. The issue is the finding: adding a stage label to it starts work on it directly, with nothing copied. `pnpm ticket found` files one (`gh api repos/...` works in a cloud session). Don't append to `found.md`.
+
+Each finding takes one of three routes:
 
 1. **It blocks the ticket or serves its goal.** Fix it in its own small PR, then return to the ticket.
-2. **It's confirmed and outside the ticket.** You saw it happen, or you can point at the line. Open an issue in `frogbotai/process` with the labels `found` and `area:<area>`, a one-line title, the command or `path:line` that shows it, and a severity. Search the open `found` issues first, and comment on a match instead of opening a duplicate.
+2. **It's confirmed and outside the ticket.** You saw it happen, or you can point at the line. File it with `pnpm ticket found`: a one-line title, the command or `path:line` that shows it as `--source`, and a severity in the text. Search the open `found` issues in that repo first, and comment on a match instead of opening a duplicate.
 3. **Anything else.** One line under **Noticed, not done** in the PR description. It isn't written anywhere else.
 
 ## What needs the owner
