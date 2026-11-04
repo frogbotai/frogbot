@@ -1,0 +1,40 @@
+name: pr-message
+
+# PRs are squash-merged with the PR title as the whole commit message. This checks the title
+# with frogbot's scripts/commit-msg.mjs, the subject rule `pnpm ticket land` applied, and
+# refuses commits with Co-authored-by or "Generated with" lines, which GitHub would carry
+# into the squash.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  pr-message:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: frogbotai/frogbot
+          sparse-checkout: scripts/commit-msg.mjs
+          sparse-checkout-cone-mode: false
+      - run: |
+          printf '%s\n' "$TITLE" > "$RUNNER_TEMP/message"
+          node scripts/commit-msg.mjs "$RUNNER_TEMP/message"
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+      - run: |
+          found=$(gh api "repos/$REPO/pulls/$PR/commits?per_page=100" --jq '.[] | .sha[0:7] + " " + .commit.message' | grep -iE '^co-authored-by:|generated with' || true)
+          if [ -n "$found" ]; then
+            echo "pr-message: these commits carry attribution lines; rewrite them without Co-authored-by or Generated with:"
+            gh api "repos/$REPO/pulls/$PR/commits?per_page=100" --jq '.[] | select(.commit.message | test("(?im)^co-authored-by:|generated with")) | .sha[0:7] + " " + (.commit.message | split("\n")[0])'
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
