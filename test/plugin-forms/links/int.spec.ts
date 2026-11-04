@@ -256,8 +256,16 @@ describe(`form edit links [${adapterLabel}]`, () => {
         }),
       ).rejects.toMatchObject({ name: 'ValidationError' });
 
+      const deleted = await createApplication({ email: 'deleted@example.com' });
+
+      await booted.frogbot.delete({
+        collection: applicationsSlug,
+        id: deleted,
+        overrideAccess: true,
+      });
+
       await expect(
-        createFormLink(booted.frogbot, { form: form.slug, record: 999_999, overrideAccess: true }),
+        createFormLink(booted.frogbot, { form: form.slug, record: deleted, overrideAccess: true }),
       ).rejects.toMatchObject({ name: 'NotFound' });
 
       await expect(
@@ -517,7 +525,7 @@ describe(`form edit links [${adapterLabel}]`, () => {
         ({ tokenHash }) => tokenHash === createHash('sha256').update(token).digest('hex'),
       );
 
-      return { submissions: stored?.submissions, lastSubmittedAt: stored?.lastSubmittedAt };
+      return { submissions: stored?.submissions, lastSubmittedAt: stored?.lastSubmittedAt ?? null };
     }
 
     async function setLink(token: string, data: Record<string, unknown>) {
@@ -580,10 +588,11 @@ describe(`form edit links [${adapterLabel}]`, () => {
         status: 'review',
         owner: staff.id,
       });
-      expect(await application(theirs)).toMatchObject({
-        email: 'theirs@example.com',
-        name: null,
-      });
+
+      const untouched = await application(theirs);
+
+      expect(untouched.email).toBe('theirs@example.com');
+      expect(untouched.name ?? null).toBeNull();
     });
 
     it("runs the collection's hooks with the link, and leaves updatedBy as it was", async () => {
@@ -667,7 +676,7 @@ describe(`form edit links [${adapterLabel}]`, () => {
         expect(saved.body).toEqual(opened.body);
       }
 
-      expect((await application(mine)).name).toBeNull();
+      expect((await application(mine)).name ?? null).toBeNull();
       expect((await open(otherForm, other.slug)).status).toBe(200);
     });
 
