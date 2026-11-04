@@ -1,7 +1,7 @@
 import type { FrogBot, FrogBotRequest } from 'frogbot';
 import { getPayloadConfig } from 'frogbot/internal';
 
-import { formIsClosed } from './closing.js';
+import { formIsClosed, isClosed } from './closing.js';
 import { buildDefinition } from './definition.js';
 import type { LinkLimits } from './links/token.js';
 import type { FormTarget } from './questions.js';
@@ -55,21 +55,32 @@ export async function findForm(
   return form && target ? { form, target } : undefined;
 }
 
+/**
+ * The render definition. Through an edit link (`values`), it carries the record's answers and no
+ * URL parameters, and `maxResponses` doesn't close it, since it counts new records only.
+ */
 export async function definitionFor(
   req: FrogBotRequest,
   runtime: FormsRuntime,
   { form, target }: FoundForm,
+  values?: (keys: string[]) => Promise<Record<string, unknown>>,
 ): Promise<FormDefinition> {
   const { turnstile } = runtime.spam;
+  const definition = buildDefinition({
+    form,
+    fields: target.fields,
+    closed: values ? isClosed(form, 0) : await formIsClosed(req.frogbot, form),
+    language: req.i18n?.language,
+    limits: runtime.uploads,
+  });
+
+  const keys = definition.steps.flatMap(({ questions }) =>
+    questions.flatMap(({ key, type }) => (type === 'upload' ? [] : [key])),
+  );
 
   return {
-    ...buildDefinition({
-      form,
-      fields: target.fields,
-      closed: await formIsClosed(req.frogbot, form),
-      language: req.i18n?.language,
-      limits: runtime.uploads,
-    }),
+    ...definition,
+    ...(values ? { hiddenParams: [], values: await values(keys) } : {}),
     honeypot: HONEYPOT_FIELD,
     ...(turnstile ? { turnstile: { siteKey: turnstile.siteKey } } : {}),
   };

@@ -1,7 +1,7 @@
 import { definePlugin, type OnInit, type Plugin } from 'frogbot';
 import type { AdminViewConfig } from 'payload';
 
-import { wrapCreateAccess } from './access.js';
+import { wrapCreateAccess, wrapLinkAccess } from './access.js';
 import { createFormsCollection, FORMS_SLUG } from './collection.js';
 import { FORM_LINKS_SLUG } from './links/access.js';
 import { createFormLinksCollection } from './links/collection.js';
@@ -98,6 +98,8 @@ const forms = definePlugin<FormsPluginOptions>({
         access: {
           ...collection.access,
           create: wrapCreateAccess(collection.slug, collection.access?.create),
+          read: wrapLinkAccess(collection.slug, collection.access?.read),
+          update: wrapLinkAccess(collection.slug, collection.access?.update),
         },
       };
     });
