@@ -3,18 +3,20 @@ import { z } from 'zod';
 import { signal } from '../client.js';
 import { defineAction } from '../define.js';
 import { mapFieldNames } from '../fields.js';
+import { listOutput, listPage, pageInput } from '../pagination.js';
 import { issue } from '../records.js';
 
 const searchPage = z.object({
   issues: z.array(issue),
-  nextPageToken: z.string().optional(),
+  nextPageToken: z.string().nullish(),
+  isLast: z.boolean().optional(),
   names: z.record(z.string(), z.string()).optional(),
 });
 
 export const searchIssues = defineAction({
   slug: 'searchIssues',
   description:
-    'Search Jira issues with JQL, following pages up to maxResults. Choose fields to keep large results small.',
+    'Search Jira issues with JQL, one page at a time. Choose fields to keep pages small, and expand changelog or renderedFields when needed.',
   input: z.object({
     jql: z
       .string()
@@ -25,14 +27,17 @@ export const searchIssues = defineAction({
       description:
         'Field ids to return, such as summary or customfield_10016. *all returns every field, *navigable (the default) the standard ones, and -description leaves one out.',
     }),
+    expand: z
+      .array(z.enum(['renderedFields', 'names', 'schema', 'transitions', 'changelog']))
+      .optional(),
     mapNames: z.boolean().default(false).meta({ description: 'Key fields by their names.' }),
-    maxResults: z.number().int().min(1).max(5000).default(50),
     sanitizeJql: z
       .boolean()
-      .default(true)
-      .meta({ description: "Run the query through Jira's JQL sanitizer first." }),
+      .default(false)
+      .meta({ description: "Run the query through Jira's JQL sanitizer first, on every page." }),
+    ...pageInput,
   }),
-  output: z.array(issue),
+  output: listOutput(issue),
   idempotent: true,
   async run({ client, input, req }) {
     const jql = input.sanitizeJql
@@ -50,35 +55,29 @@ export const searchIssues = defineAction({
       : input.jql;
 
     const fields = input.fields?.filter((field) => field.trim()) ?? [];
-    const issues: z.output<typeof issue>[] = [];
-    let nextPageToken: string | undefined;
+    const expand = new Set(input.expand);
 
-    while (issues.length < input.maxResults) {
-      const page = await client.request(searchPage, {
-        method: 'POST',
-        path: '/search/jql',
-        body: {
-          jql,
-          maxResults: Math.min(100, input.maxResults - issues.length),
-          fields: fields.length ? fields : ['*navigable'],
-          ...(input.mapNames ? { expand: 'names' } : {}),
-          ...(nextPageToken ? { nextPageToken } : {}),
-        },
-        signal: signal(req),
-      });
+    if (input.mapNames) expand.add('names');
 
-      for (const item of page.issues) {
-        issues.push(
-          input.mapNames && item.fields
-            ? { ...item, fields: mapFieldNames(item.fields, page.names ?? {}) }
-            : item,
-        );
-      }
+    const page = await client.request(searchPage, {
+      method: 'POST',
+      path: '/search/jql',
+      body: {
+        jql,
+        maxResults: input.limit,
+        fields: fields.length ? fields : ['*navigable'],
+        ...(expand.size ? { expand: [...expand].join(',') } : {}),
+        ...(input.cursor ? { nextPageToken: input.cursor } : {}),
+      },
+      signal: signal(req),
+    });
 
-      nextPageToken = page.nextPageToken;
-      if (!nextPageToken || page.issues.length === 0) break;
-    }
+    const issues = input.mapNames
+      ? page.issues.map((item) =>
+          item.fields ? { ...item, fields: mapFieldNames(item.fields, page.names ?? {}) } : item,
+        )
+      : page.issues;
 
-    return issues;
+    return listPage(issues, input.limit, page.isLast ? null : (page.nextPageToken ?? null));
   },
 });

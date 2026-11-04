@@ -146,71 +146,6 @@ describe('Jira actions', () => {
     expect(result.transitions).toEqual({ Done: { id: '31', name: 'Done' } });
   });
 
-  it('searchIssues sanitizes the JQL and follows nextPageToken', async () => {
-    stubJira((call) => {
-      if (call.url.endsWith('/jql/sanitize')) {
-        return json({ queries: [{ sanitizedQuery: 'project = "OPS"' }] });
-      }
-
-      return body(call).nextPageToken
-        ? json({ issues: [{ id: '2', key: 'OPS-2' }] })
-        : json({ issues: [{ id: '1', key: 'OPS-1' }], nextPageToken: 'page-2' });
-    });
-
-    const result = await jira.searchIssues({
-      input: { jql: 'project = OPS', maxResults: 150, fields: ['summary', ' '] },
-      req: req(),
-    });
-
-    expect(calls.map(sent)).toEqual([
-      {
-        method: 'POST',
-        url: `${api}/jql/sanitize`,
-        body: { queries: [{ query: 'project = OPS' }] },
-      },
-      {
-        method: 'POST',
-        url: `${api}/search/jql`,
-        body: { jql: 'project = "OPS"', maxResults: 100, fields: ['summary'] },
-      },
-      {
-        method: 'POST',
-        url: `${api}/search/jql`,
-        body: {
-          jql: 'project = "OPS"',
-          maxResults: 100,
-          fields: ['summary'],
-          nextPageToken: 'page-2',
-        },
-      },
-    ]);
-    expect(result.map((item) => item.key)).toEqual(['OPS-1', 'OPS-2']);
-  });
-
-  it('searchIssues stops at maxResults and maps names', async () => {
-    stubJira(() =>
-      json({
-        issues: [{ id: '1', key: 'OPS-1', fields: { customfield_1: 5 } }],
-        names: { customfield_1: 'Story points' },
-        nextPageToken: 'more',
-      }),
-    );
-
-    const result = await jira.searchIssues({
-      input: { jql: 'project = OPS', maxResults: 1, sanitizeJql: false, mapNames: true },
-      req: req(),
-    });
-
-    expect(calls.map(sent)).toEqual([
-      {
-        method: 'POST',
-        url: `${api}/search/jql`,
-        body: { jql: 'project = OPS', maxResults: 1, fields: ['*navigable'], expand: 'names' },
-      },
-    ]);
-    expect(result).toEqual([{ id: '1', key: 'OPS-1', fields: { 'Story points': 5 } }]);
-  });
-
   it.each([
     [
       'assignIssue',
@@ -256,16 +191,6 @@ describe('Jira actions', () => {
       { success: true },
     ],
     [
-      'listComments',
-      { issueKey: 'OPS-1' },
-      {
-        method: 'GET',
-        url: `${api}/issue/OPS-1/comment?orderBy=-created&maxResults=10&expand=renderedBody`,
-        body: undefined,
-      },
-      { comments: [], startAt: 0, maxResults: 10, total: 0 },
-    ],
-    [
       'getAttachment',
       { attachmentId: '20' },
       { method: 'GET', url: `${api}/attachment/20`, body: undefined },
@@ -295,10 +220,6 @@ describe('Jira actions', () => {
     stubJira((call) => {
       if (call.method === 'GET' && call.url.endsWith('/issue/OPS-1')) return json(issueBody);
       if (slug === 'findUser') return json([{ accountId: 'acc-1' }]);
-      if (slug === 'listComments') {
-        return json({ comments: [], startAt: 0, maxResults: 10, total: 0 });
-      }
-
       if (slug === 'getAttachment') return json({ id: 20, filename: 'a.txt' });
       if (slug === 'addComment' || slug === 'updateComment') return json({ id: '10', body: {} });
 

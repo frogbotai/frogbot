@@ -8,11 +8,26 @@ import { assignIssue } from './actions/assignIssue.js';
 import { createIssue } from './actions/createIssue.js';
 import { customApiCall } from './actions/customApiCall.js';
 import { deleteComment } from './actions/deleteComment.js';
+import { downloadAttachment } from './actions/downloadAttachment.js';
 import { findUser } from './actions/findUser.js';
 import { getAttachment } from './actions/getAttachment.js';
 import { getIssue } from './actions/getIssue.js';
 import { linkIssues } from './actions/linkIssues.js';
+import { listBoards } from './actions/listBoards.js';
+import { listChangelogs } from './actions/listChangelogs.js';
 import { listComments } from './actions/listComments.js';
+import { listComponents } from './actions/listComponents.js';
+import { listFields } from './actions/listFields.js';
+import { listIssueLinkTypes } from './actions/listIssueLinkTypes.js';
+import { listIssueTypes } from './actions/listIssueTypes.js';
+import { listPriorities } from './actions/listPriorities.js';
+import { listProjects } from './actions/listProjects.js';
+import { listSprints } from './actions/listSprints.js';
+import { listStatuses } from './actions/listStatuses.js';
+import { listUsers } from './actions/listUsers.js';
+import { listVersions } from './actions/listVersions.js';
+import { listWatchers } from './actions/listWatchers.js';
+import { listWorklogs } from './actions/listWorklogs.js';
 import { markdownToAdf } from './actions/markdownToAdf.js';
 import { searchIssues } from './actions/searchIssues.js';
 import { transitionIssue } from './actions/transitionIssue.js';
@@ -38,6 +53,21 @@ export const jiraActions = [
   'addWatcher',
   'linkIssues',
   'markdownToAdf',
+  'downloadAttachment',
+  'listProjects',
+  'listIssueTypes',
+  'listStatuses',
+  'listPriorities',
+  'listFields',
+  'listIssueLinkTypes',
+  'listUsers',
+  'listVersions',
+  'listComponents',
+  'listBoards',
+  'listSprints',
+  'listWorklogs',
+  'listWatchers',
+  'listChangelogs',
   'customApiCall',
 ] as const;
 
@@ -120,6 +150,21 @@ export const createJira = definePiece({
     addWatcher,
     linkIssues,
     markdownToAdf,
+    downloadAttachment,
+    listProjects,
+    listIssueTypes,
+    listStatuses,
+    listPriorities,
+    listFields,
+    listIssueLinkTypes,
+    listUsers,
+    listVersions,
+    listComponents,
+    listBoards,
+    listSprints,
+    listWorklogs,
+    listWatchers,
+    listChangelogs,
     customApiCall,
   ],
 });
