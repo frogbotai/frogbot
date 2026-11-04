@@ -6,6 +6,8 @@ import { FORMS_SLUG, RUNTIME_KEY } from './collection.js';
 import { openLinkLimited } from './links/resolve.js';
 import { definitionFor, findForm, type FormsRuntime } from './lookup.js';
 
+export { FormBuilderField } from './builder/FormBuilderField.js';
+
 function LinkGone() {
   return (
     <main>
