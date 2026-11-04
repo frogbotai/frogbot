@@ -21,6 +21,15 @@ const FORM_VIEW: AdminViewConfig = {
   meta: { title: 'Form' },
 };
 
+const PREVIEW_PATH = '/forms-preview';
+
+const PREVIEW_VIEW: AdminViewConfig = {
+  Component: '@frogbotai/plugin-forms/rsc#FormPreviewView',
+  exact: true,
+  path: PREVIEW_PATH,
+  meta: { title: 'Form preview' },
+};
+
 export { isFormSubmission } from './access.js';
 export { FORMS_SLUG } from './collection.js';
 export { FORM_LINKS_SLUG } from './links/access.js';
@@ -82,6 +91,7 @@ const forms = definePlugin<FormsPluginOptions>({
       }
     }
 
+    const adminRoute = config.routes?.admin ?? '/';
     const spam = resolveSpamOptions(options);
     const links = resolveLinkLimits(options.links);
     const targets = new Map<string, FormTarget>();
@@ -146,14 +156,22 @@ const forms = definePlugin<FormsPluginOptions>({
       ...config,
       collections: [
         ...collections,
-        createFormsCollection({ runtime, access: options.access }),
+        createFormsCollection({
+          runtime,
+          access: options.access,
+          previewUrl: `${adminRoute === '/' ? '' : adminRoute}${PREVIEW_PATH}`,
+        }),
         createFormLinksCollection({ targets: [...allowed], access: options.links?.access }),
       ],
       admin: {
         ...config.admin,
         components: {
           ...config.admin?.components,
-          views: { ...config.admin?.components?.views, form: FORM_VIEW },
+          views: {
+            ...config.admin?.components?.views,
+            form: FORM_VIEW,
+            formPreview: PREVIEW_VIEW,
+          },
         },
       },
       ...(warnings.length

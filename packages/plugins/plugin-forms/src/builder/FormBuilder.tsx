@@ -8,6 +8,7 @@ import {
   DraggableSortableItem,
   RenderFields,
   useAllFormFields,
+  useDocumentInfo,
   useForm,
 } from '@frogbotai/ui/admin';
 import type {
@@ -339,6 +340,7 @@ export function FormBuilder({
 }: FormBuilderProps) {
   const [state] = useAllFormFields();
   const { addFieldRow, moveFieldRow, removeFieldRow } = useForm();
+  const { id } = useDocumentInfo();
   const [removing, setRemoving] = useState<number>();
 
   const collection = text(state, 'collection');
@@ -430,6 +432,9 @@ export function FormBuilder({
 
   return (
     <div className="fb-form-builder">
+      {id === undefined && (
+        <p className="fb-form-builder__note">Save the form to see it in Live Preview.</p>
+      )}
       {!collection && (
         <p className="fb-form-builder__note">Pick a collection to add questions from its fields.</p>
       )}

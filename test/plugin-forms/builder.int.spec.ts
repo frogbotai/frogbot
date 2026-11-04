@@ -2,6 +2,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { FormDocument, FormMode } from '@frogbotai/plugin-forms';
+import { FormPreviewView } from '@frogbotai/plugin-forms/rsc';
+import { type AdminViewServerProps, getAccessResults } from 'payload';
+import { isValidElement, type ReactElement } from 'react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -14,7 +17,7 @@ import { listQuestionFields } from '../../packages/plugins/plugin-forms/src/ques
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
-import { leadsSlug, ticketsSlug } from './shared.js';
+import { leadsSlug, ticketsSlug, viewerName } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const adapterLabel = process.env.FROGBOT_DATABASE || 'sqlite';
@@ -147,5 +150,45 @@ describe(`form builder field lists [${adapterLabel}]`, () => {
     ]);
 
     expect(await save(leadsSlug, 'update', ['firstName'])).toEqual([]);
+  });
+
+  describe('/forms-preview', () => {
+    const notFound = () => {
+      throw new Error('not found');
+    };
+
+    async function preview(user?: { id: number; name: string }) {
+      const req = await booted.frogbot.createRequest(
+        user ? { user: { ...user, collection: 'users' } } : {},
+      );
+
+      const permissions = await getAccessResults({ req });
+
+      return FormPreviewView({
+        initPageResult: { permissions, req },
+        payload: req.payload,
+        server: { notFound },
+      } as unknown as AdminViewServerProps);
+    }
+
+    it('is not found signed out', async () => {
+      await expect(preview()).rejects.toThrow('not found');
+    });
+
+    it('is not found for a user who can neither create nor update forms', async () => {
+      await expect(preview({ id: 1, name: viewerName })).rejects.toThrow('not found');
+    });
+
+    it("gives a forms editor the targets' field lists", async () => {
+      const element = await preview({ id: 2, name: 'editor' });
+
+      expect(isValidElement(element)).toBe(true);
+
+      const { fields } = (element as ReactElement<{ fields: Record<string, FormFieldInfo[]> }>)
+        .props;
+
+      expect(Object.keys(fields)).toEqual([leadsSlug, ticketsSlug, 'ticket-files']);
+      expect(fields[leadsSlug]?.map(({ name }) => name)).toContain('email');
+    });
   });
 });

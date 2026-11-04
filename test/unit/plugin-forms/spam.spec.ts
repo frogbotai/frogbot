@@ -117,7 +117,7 @@ describe('resolveSpamOptions', () => {
 });
 
 describe('formsPlugin page and warnings', () => {
-  it('adds the public page view and keeps the app’s own views', async () => {
+  it('adds the public page and preview views and keeps the app’s own views', async () => {
     const result = await formsPlugin({ collections: ['leads'] })(
       config({
         admin: { components: { views: { reports: { Component: '/Reports', path: '/reports' } } } },
@@ -130,6 +130,11 @@ describe('formsPlugin page and warnings', () => {
         Component: '@frogbotai/plugin-forms/rsc#FormView',
         path: '/forms',
         exact: false,
+      }),
+      formPreview: expect.objectContaining({
+        Component: '@frogbotai/plugin-forms/rsc#FormPreviewView',
+        path: '/forms-preview',
+        exact: true,
       }),
     });
   });

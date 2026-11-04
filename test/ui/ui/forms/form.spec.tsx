@@ -374,6 +374,31 @@ describe('Form', () => {
     ]);
   });
 
+  it('sends nothing without a submit URL, and shows the confirmation, as a preview does', async () => {
+    const user = userEvent.setup();
+    const fetch = respond({});
+
+    render(<Form definition={definition} />);
+    await fillFirstStep(user);
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+
+    expect(screen.getByRole('status').textContent).toBe('Thanks!');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('shows a preview where a redirect would go', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <Form definition={{ ...definition, confirmation: { type: 'redirect', url: '/thanks' } }} />,
+    );
+
+    await fillFirstStep(user);
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+
+    expect(screen.getByRole('status').textContent).toBe('Visitors go to /thanks after sending.');
+  });
+
   it('shows a closed form’s notice instead of its questions', () => {
     render(<Form definition={{ ...definition, closed: true }} submitUrl="/submit" />);
 

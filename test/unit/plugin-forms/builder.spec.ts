@@ -1,4 +1,4 @@
-import type { Field, FrogBotRequest } from 'frogbot';
+import type { CollectionConfig, Field, FrogBotConfig, FrogBotRequest } from 'frogbot';
 import { describe, expect, it } from 'vitest';
 
 import { resolveQuestionMove } from '../../../packages/plugins/plugin-forms/src/builder/move.js';
@@ -8,6 +8,7 @@ import {
   type FormFieldInfo,
   missingRequired,
 } from '../../../packages/plugins/plugin-forms/src/definition.js';
+import { formsPlugin } from '../../../packages/plugins/plugin-forms/src/index.js';
 import {
   checkForm,
   collectFields,
@@ -218,12 +219,16 @@ describe('buildDefinition from a field list', () => {
     ]);
   });
 
-  it('tolerates an unsaved form with empty rows', () => {
-    const form = { steps: [{ questions: [{}] }] } as unknown as FormDocument;
+  it('reads unsaved admin data, where an empty array is a row count', () => {
+    const form = {
+      steps: [{ questions: [{}] }, { questions: 0 }],
+      hiddenParams: 0,
+    } as unknown as FormDocument;
 
-    expect(buildDefinition({ form, fields: list, closed: false }).steps).toEqual([
-      { questions: [] },
-    ]);
+    const definition = buildDefinition({ form, fields: list, closed: false });
+
+    expect(definition.steps).toEqual([{ questions: [] }, { questions: [] }]);
+    expect(definition.hiddenParams).toEqual([]);
   });
 });
 
@@ -287,5 +292,32 @@ describe('resolveQuestionMove', () => {
     expect(resolveQuestionMove(counts, 1, 1)).toBeUndefined();
     expect(resolveQuestionMove(counts, 1, 9)).toBeUndefined();
     expect(resolveQuestionMove(counts, 1, 0)).toBeUndefined();
+  });
+});
+
+describe('the forms Live Preview', () => {
+  async function livePreview(admin?: string) {
+    const result = await formsPlugin({ collections: ['leads'] })({
+      secret: 'test',
+      db: {},
+      collections: [{ slug: 'leads', fields: [{ name: 'email', type: 'email' }] }],
+      ...(admin ? { routes: { admin } } : {}),
+    } as unknown as FrogBotConfig);
+
+    const forms = result.collections?.find(({ slug }) => slug === 'forms') as CollectionConfig;
+
+    return forms.admin?.livePreview;
+  }
+
+  it('opens the preview page by default, with a Phone size', async () => {
+    expect(await livePreview()).toEqual({
+      url: '/forms-preview',
+      openByDefault: true,
+      breakpoints: [{ name: 'phone', label: 'Phone', width: 390, height: 844 }],
+    });
+  });
+
+  it('puts the preview page under the admin route', async () => {
+    expect((await livePreview('/admin'))?.url).toBe('/admin/forms-preview');
   });
 });

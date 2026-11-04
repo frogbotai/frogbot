@@ -80,6 +80,10 @@ export function missingRequired(
   );
 }
 
+function rows<T>(value: T[] | null | undefined): T[] {
+  return Array.isArray(value) ? value : [];
+}
+
 function buildQuestion(
   config: FormQuestionConfig,
   field: UsableFieldInfo,
@@ -128,7 +132,8 @@ export function buildConfirmation(form: Pick<FormDocument, 'confirmation'>): For
 /**
  * The render definition of a form: its steps and questions, never the target's other fields.
  * Questions whose field no form can ask for are left out. Client-safe, like this whole module,
- * since the builder and the preview use it.
+ * since the builder and the preview use it; unsaved admin data, where an empty array is a row
+ * count, is read as no rows.
  */
 export function buildDefinition({
   form,
@@ -146,8 +151,8 @@ export function buildDefinition({
     fields.flatMap((field) => ('refusal' in field ? [] : [[field.name, field] as const])),
   );
 
-  const steps = (form.steps ?? []).map((step) => {
-    const questions = (step.questions ?? []).flatMap((config) => {
+  const steps = rows(form.steps).map((step) => {
+    const questions = rows(step.questions).flatMap((config) => {
       const field = usable.get(config.field);
 
       return field ? [buildQuestion(config, field, limits)] : [];
@@ -160,7 +165,7 @@ export function buildDefinition({
     slug: form.slug,
     title: form.title,
     steps,
-    hiddenParams: (form.hiddenParams ?? []).map(({ name }) => name),
+    hiddenParams: rows(form.hiddenParams).map(({ name }) => name),
     confirmation: buildConfirmation(form),
     closed,
   };

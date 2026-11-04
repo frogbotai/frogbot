@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FormFieldInfo } from '../../../packages/plugins/plugin-forms/src/definition.js';
 
 const form = vi.hoisted(() => ({
+  id: 1 as number | undefined,
   state: {} as FormState,
   addFieldRow: vi.fn(),
   moveFieldRow: vi.fn(),
@@ -32,6 +33,7 @@ vi.mock('@frogbotai/ui/admin', async (importActual) => {
       </div>
     ),
     useAllFormFields: () => [form.state, vi.fn()],
+    useDocumentInfo: () => ({ id: form.id }),
     useForm: () => ({
       addFieldRow: form.addFieldRow,
       moveFieldRow: form.moveFieldRow,
@@ -124,6 +126,15 @@ function openPicker(index = 0) {
 describe('FormBuilder', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    form.id = 1;
+  });
+
+  it('says a new form shows in Live Preview once saved', () => {
+    form.id = undefined;
+    setState([]);
+    renderBuilder();
+
+    expect(screen.getByText('Save the form to see it in Live Preview.')).toBeTruthy();
   });
 
   it('lists usable fields with type and required mark, greys refused ones and hides used ones', () => {

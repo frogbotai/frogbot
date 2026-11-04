@@ -25,6 +25,10 @@ export default buildConfig({
 
 Admins build forms in the `forms` collection: a slug, the target collection, steps of questions (each one a field of the collection), hidden URL parameters, a confirmation message or redirect, and closing rules (`status`, `closesAt`, `maxResponses`). Saving refuses a form that couldn't create a record, naming the field at fault.
 
+![The form builder beside the Live Preview of a two-step form](https://raw.githubusercontent.com/frogbotai/frogbot/main/docs/images/forms-builder.png)
+
+- Building a form: the edit page's **Questions** tab picks questions from the collection's usable fields (refused ones greyed with the reason), warns about required fields the form leaves out, edits each question's wording, groups questions into steps, and reorders them by drag or keyboard. Once saved, Live Preview shows the form as visitors get it while you type, with a **Phone** size; nothing is sent from it.
+
 Each listed collection's `access.create` becomes `isFormSubmission(req, slug) || yourRule(args)`, and the record is created with `overrideAccess: false`, so field access and hooks still run.
 
 - `/forms/<slug>` is the public page, without the admin's chrome. `@frogbotai/ui/forms` exports the same `<Form>` renderer for other frontends.

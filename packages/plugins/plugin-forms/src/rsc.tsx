@@ -7,6 +7,7 @@ import { openLinkLimited } from './links/resolve.js';
 import { definitionFor, findForm, type FormsRuntime } from './lookup.js';
 
 export { FormBuilderField } from './builder/FormBuilderField.js';
+export { FormPreviewView } from './preview/FormPreviewView.js';
 
 function LinkGone() {
   return (

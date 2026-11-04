@@ -1,0 +1,11 @@
+@layer frogbot {
+  .fb-form-preview__note {
+    margin: 0;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+    text-align: center;
+  }
+}

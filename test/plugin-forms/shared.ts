@@ -5,6 +5,8 @@ import { openAccess } from '../__helpers/shared/buildTestConfig.js';
 export const leadsSlug = 'leads';
 export const hookMarkerPrefix = 'test:lead-hook:';
 export const staffFormSlug = 'staff-leave';
+/** A signed-in user the forms collection lets read forms but not create or update them. */
+export const viewerName = 'viewer';
 
 export const Users: CollectionConfig = {
   slug: 'users',
