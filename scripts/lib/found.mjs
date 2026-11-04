@@ -1,24 +1,8 @@
-import { closeSync, existsSync, openSync, readFileSync, rmSync, writeSync } from 'node:fs';
-
-const ID = /^- F-(\d+)\b/gm;
-
-const LOCK_TRIES = 20;
-
 const VITEST_OUTPUT = /\bTest Files\s|\bstderr \|/;
 
-export function findingIds(text) {
-  return [...text.matchAll(ID)].map(([, id]) => Number(id));
-}
+const ROW = /^(\S+(?: \S+)*?) · ([a-z0-9][a-z0-9-]*) · (.+)$/;
 
-export function nextFindingId(texts) {
-  const highest = Math.max(0, ...texts.flatMap(findingIds));
-
-  return `F-${String(highest + 1).padStart(3, '0')}`;
-}
-
-export function findingLine({ id, text, source }) {
-  return `- ${id} ${text.trim()}${source ? ` [source](${source})` : ''}`;
-}
+export const FINDING_REPOS = ['frogbot', 'platform', 'process'];
 
 export function findingProblem(text) {
   const lines = text.trim().split('\n');
@@ -35,45 +19,20 @@ export function findingProblem(text) {
   return null;
 }
 
-function withLock(file, callback) {
-  const lock = `${file}.lock`;
+export function parseFinding(text) {
+  const match = ROW.exec(text.trim());
 
-  for (let attempt = 0; attempt < LOCK_TRIES; attempt++) {
-    let fd;
+  if (!match) return null;
 
-    try {
-      fd = openSync(lock, 'wx');
-    } catch (error) {
-      if (error.code !== 'EEXIST') throw error;
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
-      continue;
-    }
+  const [, kind, area, title] = match;
 
-    try {
-      return callback();
-    } finally {
-      closeSync(fd);
-      rmSync(lock, { force: true });
-    }
-  }
-
-  throw new Error(`${lock} is held; remove it if no other "ticket found" is running`);
+  return { kind, area, title };
 }
 
-export function appendFinding({ file, archive, text, source }) {
-  return withLock(file, () => {
-    const current = existsSync(file) ? readFileSync(file, 'utf8') : '';
-    const archived = archive && existsSync(archive) ? readFileSync(archive, 'utf8') : '';
-    const id = nextFindingId([current, archived]);
-    const line = findingLine({ id, text, source });
-    const fd = openSync(file, 'a');
-
-    try {
-      writeSync(fd, `${current === '' || current.endsWith('\n') ? '' : '\n'}${line}\n`);
-    } finally {
-      closeSync(fd);
-    }
-
-    return { id, line };
-  });
+export function findingIssue({ kind, area, title }, source) {
+  return {
+    title,
+    body: `Kind: ${kind}${source ? `\n\nSource: ${source}` : ''}`,
+    labels: ['found', `area:${area}`],
+  };
 }
