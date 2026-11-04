@@ -8,7 +8,7 @@ import { crmRecord } from '../records.js';
 
 const searchLimit = 200;
 
-const propertyName = z.string().regex(/^[\w-]+$/, 'Use a HubSpot property internal name.');
+export const propertyName = z.string().regex(/^[\w-]+$/, 'Use a HubSpot property internal name.');
 
 const propertyValue = z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]);
 
@@ -18,7 +18,7 @@ export const objectProperties = z.record(propertyName, propertyValue).optional()
     "Property values by internal name. An array becomes HubSpot's semicolon-separated multi-select value. listProperties lists the names.",
 });
 
-const additionalPropertiesToRetrieve = z.array(propertyName).optional().meta({
+export const additionalPropertiesToRetrieve = z.array(propertyName).optional().meta({
   label: 'Additional properties to retrieve',
   description: 'Returned with the default properties.',
 });

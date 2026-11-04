@@ -66,3 +66,7 @@ expectTypeOf<Parameters<typeof hubspot.getCustomObject>[0]['input']>().toEqualTy
 const _owner = hubspot.getOwnerByEmail({ input: { email: 'sam@acme.com' } });
 
 expectTypeOf<Awaited<typeof _owner>>().toExtend<{ id: string } | null>();
+
+expectTypeOf(hubspot.triggers.newContact.type).toEqualTypeOf<'polling'>();
+
+expectTypeOf(hubspot.triggers.newEngagement.type).toEqualTypeOf<'polling'>();

@@ -12,11 +12,16 @@ export type Values = Record<string, unknown>;
 
 export type Option = (args: { client: HubSpotClient; input: Values }) => Promise<PieceOption[]>;
 
-/** A CRM object an action works on: its type, the input that picks it, and its default properties. */
+/**
+ * A CRM object an action or trigger works on: its type, the input that picks it, its default
+ * properties, and the properties that hold its created and last modified times.
+ */
 export type CrmObject<TInput extends z.ZodRawShape = z.ZodRawShape> = {
   input: TInput;
   objectType(input: Values): string;
   defaults: readonly string[];
+  created: string;
+  modified: string;
   properties: Option;
   options?: Record<string, Option>;
 };
@@ -24,43 +29,50 @@ export type CrmObject<TInput extends z.ZodRawShape = z.ZodRawShape> = {
 function standard(
   objectType: string,
   defaults: readonly string[],
+  { created = 'createdate', modified = 'hs_lastmodifieddate' } = {},
 ): CrmObject<Record<never, never>> {
   return {
     input: {},
     objectType: () => objectType,
     defaults,
+    created,
+    modified,
     properties: propertyOptions(objectType),
   };
 }
 
-export const contacts = standard('contacts', [
-  'firstname',
-  'lastname',
-  'email',
-  'company',
-  'website',
-  'mobilephone',
-  'phone',
-  'fax',
-  'address',
-  'city',
-  'state',
-  'zip',
-  'salutation',
-  'country',
-  'jobtitle',
-  'hs_createdate',
-  'hs_email_domain',
-  'hs_object_id',
-  'lastmodifieddate',
-  'hs_persona',
-  'hs_language',
-  'lifecyclestage',
-  'createdate',
-  'numemployees',
-  'annualrevenue',
-  'industry',
-]);
+export const contacts = standard(
+  'contacts',
+  [
+    'firstname',
+    'lastname',
+    'email',
+    'company',
+    'website',
+    'mobilephone',
+    'phone',
+    'fax',
+    'address',
+    'city',
+    'state',
+    'zip',
+    'salutation',
+    'country',
+    'jobtitle',
+    'hs_createdate',
+    'hs_email_domain',
+    'hs_object_id',
+    'lastmodifieddate',
+    'hs_persona',
+    'hs_language',
+    'lifecyclestage',
+    'createdate',
+    'numemployees',
+    'annualrevenue',
+    'industry',
+  ],
+  { modified: 'lastmodifieddate' },
+);
 
 export const companies = standard('companies', [
   'name',
@@ -158,6 +170,27 @@ export const products = standard('products', [
   'hs_lastmodifieddate',
 ]);
 
+export const tasks = standard(
+  'tasks',
+  [
+    'hs_task_body',
+    'hubspot_owner_id',
+    'hs_task_subject',
+    'hs_task_status',
+    'hs_task_priority',
+    'hs_task_type',
+    'hs_created_by',
+    'hs_repeat_status',
+    'hs_task_completion_date',
+    'hs_task_is_completed',
+    'hs_timestamp',
+    'hs_queue_membership_ids',
+    'hs_lastmodifieddate',
+    'hs_createdate',
+  ],
+  { created: 'hs_createdate' },
+);
+
 export const customObjects = {
   input: {
     customObjectType: z
@@ -167,6 +200,8 @@ export const customObjects = {
   },
   objectType: (input: Values) => String(input.customObjectType),
   defaults: ['hs_object_id', 'hs_lastmodifieddate', 'hs_createdate'],
+  created: 'hs_createdate',
+  modified: 'hs_lastmodifieddate',
   properties: customPropertyOptions,
   options: { customObjectType: customObjectTypeOptions },
 } satisfies CrmObject;
