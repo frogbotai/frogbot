@@ -72,11 +72,11 @@ const lookupTicket: Tool = {
   slug: 'lookupTicket',
   description: 'Look up a support ticket by number.',
   inputSchema: z.object({ number: z.number().int() }),
-  execute: async ({ number }, { req }) => {
+  execute: async ({ number }, { req, overrideAccess }) => {
     const { docs } = await req.frogbot.find({
       collection: 'tickets',
       where: { number: { equals: number } },
-      overrideAccess: false,
+      overrideAccess,
       req,
     })
 
@@ -90,7 +90,7 @@ mcpPlugin({ tools: [lookupTicket, slack] })
 ```
 
 - **Input.** A call is checked against `inputSchema` before `execute` runs; invalid input returns an error result.
-- **Context.** `ctx.req` is the request, signed in as the key's owner, so collection access applies to Local API calls made with it. `ctx.agent` is `{ slug: 'mcp', runId }`, with a new `runId` per call and no `chatId`.
+- **Context.** `ctx.req` is the request, signed in as the key's owner, so collection access applies to Local API calls made with it. `ctx.agent` is `{ slug: 'mcp', runId }`, with a new `runId` per call and no `chatId`. `ctx.overrideAccess` is always `false`, so a tool that forwards it runs as the key's owner over MCP and stays trusted in an agent's trusted runs.
 - **Result.** A string becomes one text block. Anything else becomes its JSON text, and a plain object is also sent as `structuredContent`. `hooks.afterToolCall` sees the result.
 - **Errors.** A thrown error becomes an error result with its message; the server keeps serving.
 - **Approval.** Nobody can approve a call over MCP, so a tool whose [`approval`](/chat/tool-approval) asks returns an error result, `Not run: this tool needs a person's approval, and nobody can approve it in this run.`, without running.

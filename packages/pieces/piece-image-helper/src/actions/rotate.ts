@@ -16,8 +16,8 @@ export const rotate = defineAction({
   description: 'Rotate an image clockwise.',
   input: inputSchema,
   output: savedImage,
-  async run({ input, req }) {
-    const source = await loadImage(req, input.image);
+  async run({ input, req, overrideAccess }) {
+    const source = await loadImage(req, input.image, overrideAccess);
     const image = await Jimp.read(source.data);
 
     image.rotate(-input.degrees);
@@ -26,6 +26,7 @@ export const rotate = defineAction({
 
     return saveImage({
       req,
+      overrideAccess,
       data,
       name: `${input.resultFileName ?? 'image'}.${image.getExtension()}`,
       mimeType: image.getMIME(),

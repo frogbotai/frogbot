@@ -1,4 +1,6 @@
+import { MockLanguageModelV4 } from 'ai/test';
 import { describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import { embedOperation } from '../../../../../packages/frogbot/src/ai/operations/embed.js';
 import { embedManyOperation } from '../../../../../packages/frogbot/src/ai/operations/embedMany.js';
@@ -50,4 +52,80 @@ describe('AI operation access', () => {
       expect(deny).toHaveBeenCalledExactlyOnceWith({ req, model: 'smart' });
     },
   );
+});
+
+describe('direct tool context', () => {
+  const usage = {
+    inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+    outputTokens: { total: 1, text: 1, reasoning: 0 },
+  };
+
+  function setup() {
+    let step = 0;
+    const model = new MockLanguageModelV4({
+      doGenerate: () =>
+        Promise.resolve(
+          step++ === 0
+            ? {
+                content: [
+                  { type: 'tool-call', toolCallId: 'call-1', toolName: 'lookup', input: '{}' },
+                ],
+                finishReason: { unified: 'tool-calls', raw: 'tool_calls' },
+                usage,
+                warnings: [],
+              }
+            : {
+                content: [{ type: 'text', text: 'done' }],
+                finishReason: { unified: 'stop', raw: 'stop' },
+                usage,
+                warnings: [],
+              },
+        ) as never,
+    });
+
+    const execute = vi.fn((_input: unknown, ctx: { overrideAccess: boolean }) => ({
+      trusted: ctx.overrideAccess,
+    }));
+
+    const req = { user: { id: 'user-1' } };
+    const deps = {
+      gateway: {
+        operation: () => ({
+          start: async () => {},
+          finish: async () => {},
+          chatModel: () => model,
+        }),
+      },
+      config: { routers: {}, access: { generate: () => true } },
+      frogbot: { createRequest: (value: unknown) => Promise.resolve(value) },
+    };
+
+    const tools = [{ slug: 'lookup', description: 'Look up', inputSchema: z.object({}), execute }];
+
+    return { deps, execute, req, tools };
+  }
+
+  it.each([
+    [undefined, false],
+    [false, false],
+    [true, true],
+  ] as const)('gives tools overrideAccess %s as %s', async (overrideAccess, expected) => {
+    const { deps, execute, req, tools } = setup();
+
+    await generateTextOperation(
+      deps as never,
+      {
+        model: 'openai/gpt-4o',
+        prompt: 'Hello',
+        req,
+        tools,
+        ...(overrideAccess === undefined ? {} : { overrideAccess }),
+      } as never,
+    );
+
+    expect(execute).toHaveBeenCalledExactlyOnceWith(
+      {},
+      expect.objectContaining({ overrideAccess: expected }),
+    );
+  });
 });

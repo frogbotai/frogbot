@@ -240,10 +240,36 @@ describe('definePiece', () => {
     await expect(
       tool.execute(
         { value: 'hi' },
-        { req, frogbot: {} as never, agent: { slug: 'a', runId: 'r' } },
+        { req, frogbot: {} as never, agent: { slug: 'a', runId: 'r' }, overrideAccess: false },
       ),
     ).resolves.toEqual({ input: { value: 'hi' }, client: { auth: { token: 'resolved' } } });
     expect(resolvePieceCredential).toHaveBeenCalledWith({ piece, req });
+  });
+
+  it("gives an action's run the tool run's overrideAccess, and false on a direct call", async () => {
+    const run = vi.fn(({ overrideAccess }: { overrideAccess: boolean }) =>
+      Promise.resolve(overrideAccess),
+    );
+
+    const createTrusted = definePiece({
+      slug: 'trusted',
+      label: 'Trusted',
+      actions: [{ slug: 'read', description: 'Read', input: z.object({}), run }],
+    });
+
+    const piece = createTrusted();
+    const { req } = request();
+    const ctx = (overrideAccess: boolean) => ({
+      req,
+      frogbot: {} as never,
+      agent: { slug: 'a', runId: 'r' },
+      overrideAccess,
+    });
+
+    await expect(piece.read.execute({}, ctx(true))).resolves.toBe(true);
+    await expect(piece.read.execute({}, ctx(false))).resolves.toBe(false);
+    await expect(piece.read({ input: {}, req })).resolves.toBe(false);
+    await expect(piece.read({ input: {}, req, overrideAccess: true })).resolves.toBe(true);
   });
 
   it('labels each action tool with the piece and action names', () => {

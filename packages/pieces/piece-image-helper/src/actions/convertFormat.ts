@@ -32,8 +32,8 @@ export const convertFormat = defineAction({
   description: 'Convert an image to JPEG, PNG, TIFF, BMP, or AVIF.',
   input: inputSchema,
   output,
-  async run({ input, req }) {
-    const source = await loadImage(req, input.image);
+  async run({ input, req, overrideAccess }) {
+    const source = await loadImage(req, input.image, overrideAccess);
     const sourceData = ['image/heic', 'image/heif'].includes(source.mimeType)
       ? Buffer.from(await convertHeic({ buffer: source.data, format: 'PNG' }))
       : source.data;
@@ -57,6 +57,7 @@ export const convertFormat = defineAction({
 
     const file = await saveImage({
       req,
+      overrideAccess,
       data,
       name: `${input.resultFileName ?? 'image'}.${extension}`,
       mimeType,

@@ -119,7 +119,9 @@ function makeConfig(mcp: MCPServer[], slugs = ['researcher', 'support']): FrogBo
 }
 
 async function run(frogbot: FrogBot, slug: string) {
-  await (await frogbot.agents[slug].stream({ prompt: 'Hello' })).consumeStream();
+  await (
+    await frogbot.agents[slug].stream({ prompt: 'Hello', overrideAccess: true })
+  ).consumeStream();
 }
 
 describe('MCP connections over the FrogBot lifecycle', () => {

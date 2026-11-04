@@ -2,7 +2,7 @@ import { generateId } from 'ai';
 import type { Adapter, Message as ChatMessage, Thread } from 'chat';
 import { Message } from 'chat';
 
-import { canUseAgent } from '../agents/service.js';
+import { canUseAgent, withAgentAccessChecked } from '../agents/service.js';
 import type { AgentInstance } from '../agents/types.js';
 import type { ChatDocument } from '../chat/findChat.js';
 import type { TurnRunnerArgs } from '../chat/turn/queue.js';
@@ -449,21 +449,23 @@ export class ChannelHost {
     const { tools } = binding.agent.config;
     const { logger } = this.frogbot;
 
-    const result = await binding.agent.streamMessage({
-      chatId,
-      channelAccess: createChannelThreadAccess({ binding, chatId, req, thread }),
-      clientTools: getQuestionClientTools({ binding, frogbot: this.frogbot, thread }),
-      messages: [
-        {
-          id: message.id || generateId(),
-          role: 'user',
-          parts: [{ type: 'text', text: message.text }],
-        },
-      ],
-      req,
-      overrideAccess: true,
-      abortSignal: AbortSignal.any([thread.signal, controller.signal]),
-    });
+    const result = await binding.agent.streamMessage(
+      withAgentAccessChecked({
+        chatId,
+        channelAccess: createChannelThreadAccess({ binding, chatId, req, thread }),
+        clientTools: getQuestionClientTools({ binding, frogbot: this.frogbot, thread }),
+        messages: [
+          {
+            id: message.id || generateId(),
+            role: 'user',
+            parts: [{ type: 'text', text: message.text }],
+          },
+        ],
+        req,
+        overrideAccess: false,
+        abortSignal: AbortSignal.any([thread.signal, controller.signal]),
+      }),
+    );
 
     if (!('status' in result)) await postTurn({ thread, result, controller, tools, logger });
 

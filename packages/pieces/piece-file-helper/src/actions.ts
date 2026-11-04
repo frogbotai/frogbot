@@ -60,10 +60,10 @@ export const createFile = defineAction({
   description: 'Create a file from content',
   input: createFileInput,
   output: savedFile,
-  async run({ input, req }) {
+  async run({ input, req, overrideAccess }) {
     const data = Buffer.from(input.content, input.encoding);
 
-    return saveFile({ req, data, filename: input.fileName });
+    return saveFile({ req, overrideAccess, data, filename: input.fileName });
   },
 });
 
@@ -76,8 +76,8 @@ export const readFile = defineAction({
     z.object({ text: z.string() }),
     z.object({ base64: z.string(), base64WithMimeType: z.string() }),
   ]),
-  async run({ input, req }) {
-    const file = await loadFile({ req, id: input.file });
+  async run({ input, req, overrideAccess }) {
+    const file = await loadFile({ req, overrideAccess, id: input.file });
 
     if (input.format === 'text') return { text: file.data.toString('utf8') };
 
@@ -93,8 +93,8 @@ export const getFileName = defineAction({
   description: 'Get the name of a file',
   input: getFileNameInput,
   output: z.object({ fileName: z.string() }),
-  async run({ input, req }) {
-    const file = await loadFile({ req, id: input.file });
+  async run({ input, req, overrideAccess }) {
+    const file = await loadFile({ req, overrideAccess, id: input.file });
 
     return { fileName: file.filename };
   },
@@ -106,8 +106,8 @@ export const checkFileType = defineAction({
   description: 'Check whether a file matches a MIME type',
   input: checkFileTypeInput,
   output: z.object({ mimeType: z.string(), isMatch: z.boolean() }),
-  async run({ input, req }) {
-    const file = await loadFile({ req, id: input.file });
+  async run({ input, req, overrideAccess }) {
+    const file = await loadFile({ req, overrideAccess, id: input.file });
     const mimeType = lookup(file.filename) || 'application/octet-stream';
 
     return { mimeType, isMatch: mimeType === input.mimeType };
@@ -120,12 +120,12 @@ export const changeFileEncoding = defineAction({
   description: 'Change the encoding of a file',
   input: changeFileEncodingInput,
   output: savedFile,
-  async run({ input, req }) {
-    const file = await loadFile({ req, id: input.inputFile });
+  async run({ input, req, overrideAccess }) {
+    const file = await loadFile({ req, overrideAccess, id: input.inputFile });
     const decoded = file.data.toString(input.inputEncoding);
     const data = Buffer.from(decoded, input.outputEncoding);
 
-    return saveFile({ req, data, filename: input.outputFileName });
+    return saveFile({ req, overrideAccess, data, filename: input.outputFileName });
   },
 });
 
@@ -135,7 +135,7 @@ export const zipFiles = defineAction({
   description: 'Create a compressed ZIP file from one or more files',
   input: zipFilesInput,
   output: savedFile,
-  async run({ input, req }) {
+  async run({ input, req, overrideAccess }) {
     const writer = new BlobWriter('application/zip');
     const zip = new ZipWriter(writer);
     const options: { password?: string; zipCrypto?: boolean; encryptionStrength?: 3 } = {};
@@ -151,7 +151,7 @@ export const zipFiles = defineAction({
 
     try {
       for (const item of input.files) {
-        const file = await loadFile({ req, id: item.file });
+        const file = await loadFile({ req, overrideAccess, id: item.file });
         const path = item.filePath ?? file.filename;
 
         await zip.add(path, new BlobReader(new Blob([file.data])), options);
@@ -166,7 +166,13 @@ export const zipFiles = defineAction({
 
     const data = Buffer.from(await (await writer.getData()).arrayBuffer());
 
-    return saveFile({ req, data, filename: input.outputFileName, mimeType: 'application/zip' });
+    return saveFile({
+      req,
+      overrideAccess,
+      data,
+      filename: input.outputFileName,
+      mimeType: 'application/zip',
+    });
   },
 });
 
@@ -176,8 +182,8 @@ export const unzipFile = defineAction({
   description: 'Extract files from a compressed ZIP file',
   input: unzipFileInput,
   output: z.array(z.object({ file: savedFile, filePath: z.string() })),
-  async run({ input, req }) {
-    const file = await loadFile({ req, id: input.file });
+  async run({ input, req, overrideAccess }) {
+    const file = await loadFile({ req, overrideAccess, id: input.file });
     const reader = new ZipReader(new BlobReader(new Blob([file.data])));
 
     try {
@@ -205,6 +211,7 @@ export const unzipFile = defineAction({
         const filename = entry.filename.split('/').pop() || entry.filename;
         const saved = await saveFile({
           req,
+          overrideAccess,
           data,
           filename,
           mimeType: getMimeType(entry.filename),

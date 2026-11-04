@@ -19,7 +19,7 @@ import {
 } from '../../../../packages/frogbot/src/channels/conversation.js';
 import { createChannelChatAccess } from '../../../../packages/frogbot/src/chat/channelAccess.js';
 import { question } from '../../../../packages/frogbot/src/tools/question.js';
-import type { AnyTool } from '../../../../packages/frogbot/src/tools/types.js';
+import type { AnyTool, ToolCtx } from '../../../../packages/frogbot/src/tools/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 type StoredMessage = UIMessage & { chat: string; version: number; status?: string };
@@ -381,6 +381,34 @@ describe('agent persisted stream with the installed AI SDK', () => {
     expect(frogbot.create).not.toHaveBeenCalled();
     expect(model.doStreamCalls).toEqual([]);
   });
+
+  it.each([false, true])(
+    'checks agent access once and gives tools overrideAccess %s',
+    async (overrideAccess) => {
+      const access = vi.fn(() => true);
+      const execute = vi.fn((_input: unknown, ctx: ToolCtx) => ({ trusted: ctx.overrideAccess }));
+      const { agent, req } = setup({
+        access,
+        tools: [{ ...lookup, execute }],
+        doStream: toolLoopStream(),
+      });
+
+      const result = await streamMessage(agent, {
+        req,
+        chatId: 'chat-1',
+        prompt: 'Find it',
+        overrideAccess,
+      });
+
+      await result.persistence;
+
+      expect(access).toHaveBeenCalledTimes(overrideAccess ? 0 : 1);
+      expect(execute).toHaveBeenCalledExactlyOnceWith(
+        {},
+        expect.objectContaining({ overrideAccess }),
+      );
+    },
+  );
 
   it('streams and persists a complete assistant turn', async () => {
     const { agent, chat, messages, req } = setup();

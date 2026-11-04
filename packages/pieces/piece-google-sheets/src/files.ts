@@ -13,18 +13,20 @@ export async function saveFile({
   data,
   name,
   mimeType,
+  overrideAccess,
 }: {
   req: FrogBotRequest;
   data: Buffer;
   name: string;
   mimeType: string;
+  overrideAccess: boolean;
 }) {
   filesCollectionSlug(req, 'Google Sheets');
 
   req.signal?.throwIfAborted();
   const doc = await createPieceFile(req, 'Google Sheets', {
     req,
-    overrideAccess: false,
+    overrideAccess,
     file: { data, name, mimetype: mimeType, size: data.length },
   });
 

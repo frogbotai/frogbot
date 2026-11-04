@@ -14,8 +14,8 @@ export const imageToBase64 = defineAction({
   description: 'Convert an image to a Base64 data URL.',
   input: inputSchema,
   output: z.string().regex(/^data:[^;,]+;base64,[A-Za-z0-9+/]*={0,2}$/),
-  async run({ input, req }) {
-    const image = await loadImage(req, input.image);
+  async run({ input, req, overrideAccess }) {
+    const image = await loadImage(req, input.image, overrideAccess);
 
     return `data:${input.mimeType ?? image.mimeType};base64,${image.data.toString('base64')}`;
   },

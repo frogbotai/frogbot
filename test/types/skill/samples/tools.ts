@@ -10,12 +10,12 @@ export const getProjectStatus: Tool<typeof inputSchema, { status: string }> = {
   slug: 'get_project_status',
   description: 'Return the current status of a project.',
   inputSchema,
-  async execute({ projectId }, { frogbot, req }) {
+  async execute({ projectId }, { frogbot, req, overrideAccess }) {
     const project = await frogbot.findByID({
       collection: 'projects',
       id: projectId,
       req,
-      overrideAccess: false,
+      overrideAccess,
     });
 
     if (typeof project.status !== 'string') {

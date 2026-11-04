@@ -73,6 +73,8 @@ export const createExample = definePiece({
 });
 ```
 
+`run` receives `{ input, client, options, req, overrideAccess }`. `overrideAccess` is the agent run's trust flag (`false` when a person chats, `true` on schedules); forward it to every Local API call, such as `req.frogbot.create` for a file, instead of hard-coding one.
+
 `defineAction` also takes `approval` (`'ask'`, `'required'`, or a function of `{ input, req, agent, tool }`) when a person should approve each call; see [tool approval](https://docs.frogbot.ai/chat/tool-approval). An app sets or changes it per agent by spreading the action, `{ ...gmail.sendEmail, approval: 'ask' }`: a spread keeps `execute` and the connection, and replaces the piece's tool with the same slug.
 
 `defineAction` types `run` and `options` callbacks with the piece's client and the parsed input, and keeps the slug literal so `piece.lookup` accepts only its own input. Pass the options type second when the piece has an `options` schema, for example `createPieceHelpers<ExampleClient, ExampleOptions>()`. Wrap triggers in `defineAppTrigger`, `definePollingTrigger`, or `defineWebhookTrigger` from the same call; a webhook trigger's `state` is inferred from `onEnable`. Callbacks written directly in `definePiece`, such as `client`, still receive `unknown` values; parse them with the declared schemas.

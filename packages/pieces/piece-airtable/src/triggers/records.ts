@@ -16,7 +16,7 @@ async function listRecords({
   input,
   req,
   query,
-}: PieceRunArgs<z.output<typeof newRecordInput>, object, AirtableClient> & {
+}: Omit<PieceRunArgs<z.output<typeof newRecordInput>, object, AirtableClient>, 'overrideAccess'> & {
   query?: Record<string, string | undefined>;
 }) {
   return client.listAll<z.output<typeof recordSchema>>({

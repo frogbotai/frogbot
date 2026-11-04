@@ -14,8 +14,8 @@ export const addAttachment = defineAction({
   output: z.array(attachment),
   idempotent: false,
   options: { issueKey: issueOptions },
-  async run({ client, input, req }) {
-    const file = await loadFile(req, input.file);
+  async run({ client, input, req, overrideAccess }) {
+    const file = await loadFile(req, input.file, overrideAccess);
     const form = new FormData();
 
     form.append('file', new Blob([file.data], { type: file.mimeType }), file.name);

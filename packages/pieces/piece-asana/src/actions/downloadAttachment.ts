@@ -27,7 +27,7 @@ export const downloadAttachment = defineAction({
     link: z.string().nullable(),
   }),
   idempotent: false,
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     filesCollectionSlug(req, 'Asana');
 
     const meta = await client.data(attachment, {
@@ -66,7 +66,7 @@ export const downloadAttachment = defineAction({
     const doc = await createPieceFile(req, 'Asana', {
       file: { data, mimetype: mimeType, name, size: data.length },
       req,
-      overrideAccess: false,
+      overrideAccess,
     });
 
     return {

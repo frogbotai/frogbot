@@ -51,7 +51,11 @@ export const newAttachment = definePollingTrigger({
 
         attachments.push({
           attachmentId: attachment.id,
-          ...(await saveAttachment(req, { ...attachment, contentBytes: attachment.contentBytes })),
+          ...(await saveAttachment(
+            req,
+            { ...attachment, contentBytes: attachment.contentBytes },
+            false,
+          )),
         });
       }
 

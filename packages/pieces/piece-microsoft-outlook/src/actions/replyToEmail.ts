@@ -21,7 +21,7 @@ export const replyToEmail = defineAction({
   }),
   output: z.object({ draft: message, sent: z.boolean() }),
   idempotent: false,
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     const path = messagePath(client.mailbox, input.messageId);
     const reply = await client.request(
       `${path}/${input.replyAll ? 'createReplyAll' : 'createReply'}`,
@@ -33,7 +33,7 @@ export const replyToEmail = defineAction({
           message: {
             ccRecipients: addresses(input.cc),
             bccRecipients: addresses(input.bcc),
-            attachments: await attachments(req, input.attachments),
+            attachments: await attachments(req, input.attachments, overrideAccess),
           },
         },
         signal: signal(req),

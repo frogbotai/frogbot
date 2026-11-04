@@ -1,6 +1,7 @@
 import type { UIMessage, UIMessageChunk } from 'ai';
 import { consumeStream, createUIMessageStream, generateId, toUIMessageStream } from 'ai';
 
+import { withAgentAccessChecked } from '../../agents/service.js';
 import type { AgentInstance, AgentSelection, AgentStreamResult } from '../../agents/types.js';
 import { aiErrorMessage } from '../../ai/errorMessage.js';
 import { isClientTool } from '../../tools/types.js';
@@ -28,6 +29,8 @@ export type StreamTurnProps = {
   strictAttachments?: boolean;
   selection: AgentSelection;
   clientTools?: ClientToolsOption;
+  /** Whether the turn is trusted. Every caller has already checked agent access. */
+  overrideAccess?: boolean;
   autoApprove?: boolean;
   abortSignal?: AbortSignal;
   onError?: (error: unknown) => string;
@@ -59,6 +62,7 @@ export async function streamTurn({
   strictAttachments,
   selection,
   clientTools,
+  overrideAccess = false,
   autoApprove,
   abortSignal,
   onError,
@@ -100,15 +104,15 @@ export async function streamTurn({
 
     result = await agent.aiAgent.stream({
       messages,
-      options: {
+      options: withAgentAccessChecked({
         req,
-        overrideAccess: true,
+        overrideAccess,
         chatId,
         replyCreatedAt,
         selection,
         clientTools,
         ...(autoApprove === undefined ? {} : { autoApprove }),
-      },
+      }),
       abortSignal: AbortSignal.any(signals),
     });
   } catch (error) {

@@ -194,12 +194,12 @@ const uploadInput = z.object({
   filename: z.string().optional().meta({ label: 'File name' }),
 });
 
-async function loadFile(req: FrogBotRequest, fileId: string | number) {
+async function loadFile(req: FrogBotRequest, fileId: string | number, overrideAccess: boolean) {
   const doc = await findPieceFile(req, 'Airtable', {
     id: fileId,
     depth: 0,
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   if (typeof doc.url !== 'string') throw new Error(`File '${fileId}' is unavailable.`);
@@ -245,8 +245,8 @@ export const uploadAttachment = defineAction({
     ...recordsOptions,
     attachmentFieldId: attachmentOptions,
   },
-  async run({ client, input, req }) {
-    const file = await loadFile(req, input.fileId);
+  async run({ client, input, req, overrideAccess }) {
+    const file = await loadFile(req, input.fileId, overrideAccess);
 
     return client.request({
       method: 'POST',

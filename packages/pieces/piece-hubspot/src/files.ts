@@ -7,14 +7,18 @@ export const fileInput = z.object({
 });
 
 /** Reads a FrogBot file, forwarding the caller's credentials only to FrogBot's own origin. */
-export async function loadFile(req: FrogBotRequest, value: z.output<typeof fileInput>) {
+export async function loadFile(
+  req: FrogBotRequest,
+  value: z.output<typeof fileInput>,
+  overrideAccess: boolean,
+) {
   req.signal?.throwIfAborted();
 
   const doc = await findPieceFile(req, 'HubSpot', {
     id: value.fileId,
     depth: 0,
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   if (typeof doc.url !== 'string') throw new Error(`File '${value.fileId}' is unavailable.`);

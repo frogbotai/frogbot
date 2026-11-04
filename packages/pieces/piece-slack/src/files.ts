@@ -7,12 +7,16 @@ export const slackFile = z.object({
   name: z.string().optional(),
 });
 
-export async function loadSlackFile(req: FrogBotRequest, value: z.output<typeof slackFile>) {
+export async function loadSlackFile(
+  req: FrogBotRequest,
+  value: z.output<typeof slackFile>,
+  overrideAccess: boolean,
+) {
   const file = await findPieceFile(req, 'Slack', {
     id: value.fileId,
     depth: 0,
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   const config = await req.frogbot.config._internal.payloadConfig;

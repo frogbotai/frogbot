@@ -319,6 +319,7 @@ describe('Slack native piece', () => {
         client: createSlackClient({ auth: { botToken: 'xoxb-test' } }),
         input: { file: { fileId: 'local-file' } },
         options: {},
+        overrideAccess: false,
         req,
       }),
     ).resolves.toMatchObject({ ok: true });
@@ -365,6 +366,7 @@ describe('Slack native piece', () => {
       input: { fileId: 'F1' },
       options: {},
       req,
+      overrideAccess: true,
     });
 
     expect(create).toHaveBeenCalledWith({
@@ -377,7 +379,7 @@ describe('Slack native piece', () => {
         size: 9,
       },
       req,
-      overrideAccess: false,
+      overrideAccess: true,
     });
     expect(result.data).toEqual({
       id: 'saved',

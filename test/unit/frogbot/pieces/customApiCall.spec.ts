@@ -424,6 +424,20 @@ describe('defineCustomApiCall', () => {
     );
   });
 
+  it('saves a binary response trusted when the call is trusted', async () => {
+    respond(new Uint8Array([1]), { headers: { 'content-type': 'application/pdf' } });
+    const create = vi.fn((_args: Record<string, unknown>) => Promise.resolve({ id: 9 }));
+    const req = request({ config: { files: { slug: 'files' } }, create });
+
+    await piece().customApiCall({
+      input: { method: 'GET', path: '/files/report.pdf', responseType: 'binary' } as never,
+      req,
+      overrideAccess: true,
+    });
+
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ overrideAccess: true, req }));
+  });
+
   it('keeps a malformed percent-encoded segment as the file name', async () => {
     respond(new Uint8Array([1]));
     const create = vi.fn(() => Promise.resolve({ id: 8 }));

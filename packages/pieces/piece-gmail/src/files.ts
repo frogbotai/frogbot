@@ -7,12 +7,16 @@ export const attachment = z.object({
   name: z.string().optional(),
 });
 
-export async function loadFileAttachment(req: FrogBotRequest, value: z.output<typeof attachment>) {
+export async function loadFileAttachment(
+  req: FrogBotRequest,
+  value: z.output<typeof attachment>,
+  overrideAccess: boolean,
+) {
   const doc = await findPieceFile(req, 'Gmail', {
     id: value.fileId,
     depth: 0,
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   if (typeof doc.url !== 'string') {

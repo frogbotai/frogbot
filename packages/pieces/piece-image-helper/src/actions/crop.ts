@@ -19,8 +19,8 @@ export const crop = defineAction({
   description: 'Crop a rectangular region from an image.',
   input: inputSchema,
   output: savedImage,
-  async run({ input, req }) {
-    const source = await loadImage(req, input.image);
+  async run({ input, req, overrideAccess }) {
+    const source = await loadImage(req, input.image, overrideAccess);
     const image = await Jimp.read(source.data);
 
     image.crop(input.left, input.top, input.width, input.height);
@@ -29,6 +29,7 @@ export const crop = defineAction({
 
     return saveImage({
       req,
+      overrideAccess,
       data,
       name: `${input.resultFileName ?? 'image'}.${image.getExtension()}`,
       mimeType: image.getMIME(),

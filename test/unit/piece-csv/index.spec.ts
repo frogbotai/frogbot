@@ -138,7 +138,7 @@ describe('csv', () => {
 
     vi.stubGlobal('fetch', fetch);
 
-    await loadFile(req, 'workbook');
+    await loadFile(req, 'workbook', false);
 
     expect(findByID).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'workbook', req, overrideAccess: false }),
@@ -158,7 +158,7 @@ describe('csv', () => {
 
       vi.stubGlobal('fetch', fetch);
 
-      await expect(loadFile(req, 'workbook')).rejects.toThrow('Invalid file URL.');
+      await expect(loadFile(req, 'workbook', false)).rejects.toThrow('Invalid file URL.');
 
       expect(fetch).not.toHaveBeenCalled();
     },

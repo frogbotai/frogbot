@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import type { Adapter } from '../../../../packages/frogbot/node_modules/chat/dist/index.js';
+import { isAgentAccessChecked } from '../../../../packages/frogbot/src/agents/service.js';
 import { hasChannelChatAccess } from '../../../../packages/frogbot/src/chat/channelAccess.js';
 import { asyncChunks, channelFixture, deferred } from './helpers.js';
 
@@ -221,7 +222,9 @@ describe('ChannelHost conversation loop', () => {
     const opts = first.streamMessage.mock.calls[0][0];
     const chat = first.frogbot.create.mock.calls[0][0].data;
 
-    expect(opts.overrideAccess).toBe(true);
+    expect(opts.overrideAccess).toBe(false);
+    expect(isAgentAccessChecked(opts)).toBe(true);
+    expect(first.access).toHaveBeenCalledOnce();
     expect(
       hasChannelChatAccess({
         access: opts.channelAccess!,

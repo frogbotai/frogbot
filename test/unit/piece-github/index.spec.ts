@@ -310,7 +310,13 @@ describe('github', () => {
       assignees: ['octocat'],
     });
 
-    const result = await createIssue.run({ client, input, options: {}, req: request() });
+    const result = await createIssue.run({
+      client,
+      input,
+      options: {},
+      overrideAccess: false,
+      req: request(),
+    });
 
     expect(result).toMatchObject({ id: 10, number: 7, title: 'Bug' });
     expect(new URL(String(fetch.mock.calls[0][0])).pathname).toBe(
@@ -325,7 +331,9 @@ describe('github', () => {
 
     vi.mocked(fetch).mockResolvedValueOnce(json({ id: 'wrong', number: 7, title: 'Bug' }));
 
-    await expect(createIssue.run({ client, input, options: {}, req: request() })).rejects.toThrow();
+    await expect(
+      createIssue.run({ client, input, options: {}, overrideAccess: false, req: request() }),
+    ).rejects.toThrow();
   });
 
   it('loads paginated options and maps branch creation', async () => {
@@ -360,7 +368,7 @@ describe('github', () => {
       newBranchName: 'feature',
     });
 
-    await createBranch.run({ client, input, options: {}, req: request() });
+    await createBranch.run({ client, input, options: {}, overrideAccess: false, req: request() });
 
     expect(JSON.parse(fetch.mock.calls[3][1].body)).toEqual({
       ref: 'refs/heads/feature',
@@ -401,6 +409,7 @@ describe('github', () => {
       client: createGithubClient({ auth }),
       input,
       options: {},
+      overrideAccess: false,
       req: request(),
     });
 

@@ -16,8 +16,8 @@ const output = z.discriminatedUnion('success', [
   z.object({ success: z.literal(false), error: z.string().min(1) }),
 ]);
 
-async function loadFile(req: FrogBotRequest, id: string | number) {
-  const doc = await findPieceFile(req, 'Crypto', { id, depth: 0, req, overrideAccess: false });
+async function loadFile(req: FrogBotRequest, id: string | number, overrideAccess: boolean) {
+  const doc = await findPieceFile(req, 'Crypto', { id, depth: 0, req, overrideAccess });
 
   if (typeof doc.url !== 'string') throw new Error(`File '${id}' is unavailable.`);
 
@@ -59,9 +59,9 @@ export const encryptFile = defineAction({
   description: 'Encrypt a file with an ASCII-armored OpenPGP public key.',
   input: inputSchema,
   output,
-  async run({ input, req }) {
+  async run({ input, req, overrideAccess }) {
     try {
-      const source = await loadFile(req, input.file);
+      const source = await loadFile(req, input.file, overrideAccess);
       const publicKey = await readKey({ armoredKey: input.publicKey });
       const encrypted = await encrypt({
         message: await createMessage({ binary: source.data }),
@@ -78,7 +78,7 @@ export const encryptFile = defineAction({
       const doc = await createPieceFile(req, 'Crypto', {
         req,
         file: { data, mimetype: 'application/pgp-encrypted', name: filename, size: data.length },
-        overrideAccess: false,
+        overrideAccess,
       });
 
       return { success: true, filename, file: doc.id };

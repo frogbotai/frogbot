@@ -10,10 +10,10 @@ export const sendEmail = defineAction({
   input: z.object({ ...recipients, subject: z.string(), ...content }),
   output: z.object({ sent: z.literal(true) }),
   idempotent: false,
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     await client.request(`${client.mailbox}/sendMail`, z.unknown(), {
       method: 'POST',
-      body: { message: await newMessage(req, input), saveToSentItems: true },
+      body: { message: await newMessage(req, input, overrideAccess), saveToSentItems: true },
       signal: signal(req),
     });
 

@@ -147,7 +147,7 @@ export const exportReport = defineAction({
   }),
   idempotent: false,
   options: { reportId: reports },
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     const described = await client.request(
       z.object({ reportMetadata: z.object({ name: z.string().optional() }) }),
       { path: `${dataRoot}/analytics/reports/${input.reportId}/describe`, signal: signal(req) },
@@ -167,7 +167,7 @@ export const exportReport = defineAction({
     const doc = await createPieceFile(req, 'Salesforce', {
       file: { data, mimetype: xlsx, name, size: data.length },
       req,
-      overrideAccess: false,
+      overrideAccess,
     });
 
     return {

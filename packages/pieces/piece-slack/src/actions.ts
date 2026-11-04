@@ -148,11 +148,11 @@ export const sendChannelMessage = defineAction({
   output: slackResponse,
   idempotent: false,
   options: { channel: channelOptions },
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     const token = input.sendAsBot ? 'bot' : 'user';
 
     if (input.file) {
-      const file = await loadSlackFile(req, input.file);
+      const file = await loadSlackFile(req, input.file, overrideAccess);
 
       return upload({
         client,
@@ -226,11 +226,12 @@ export const uploadFile = defineAction({
   output: slackResponse,
   idempotent: false,
   options: { channel: channelOptions },
-  async run({ client, input, req }) {
-    const loaded = await loadSlackFile(req, {
-      ...input.file,
-      name: input.filename ?? input.file.name,
-    });
+  async run({ client, input, req, overrideAccess }) {
+    const loaded = await loadSlackFile(
+      req,
+      { ...input.file, name: input.filename ?? input.file.name },
+      overrideAccess,
+    );
 
     return upload({
       client,
@@ -250,7 +251,7 @@ export const getFile = defineAction({
   input: getFileInput,
   output: slackValue,
   idempotent: true,
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     const response = await client.request('files.info', { file: input.fileId });
     const file = response.file;
 
@@ -296,7 +297,7 @@ export const getFile = defineAction({
     const saved = await createPieceFile(req, 'Slack', {
       file: { data, name, mimetype: mimeType, size: data.length },
       req,
-      overrideAccess: false,
+      overrideAccess,
     });
 
     return {

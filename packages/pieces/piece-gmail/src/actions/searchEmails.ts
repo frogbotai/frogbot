@@ -19,7 +19,7 @@ export const searchEmails = defineAction({
   input: inputSchema,
   output: z.array(emailOutput),
   idempotent: true,
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     const list = await client.users.messages.list({
       userId: 'me',
       q: searchQuery(input),
@@ -30,7 +30,7 @@ export const searchEmails = defineAction({
 
     return Promise.all(
       (list.data.messages ?? []).map(async ({ id }) =>
-        id ? saveAttachments(client, req, await getOriginal(client, id)) : {},
+        id ? saveAttachments(client, req, await getOriginal(client, id), overrideAccess) : {},
       ),
     );
   },

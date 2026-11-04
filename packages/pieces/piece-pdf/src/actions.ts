@@ -72,7 +72,7 @@ export const createPdfFromText = defineAction({
   description: 'Create an A4 PDF document from text.',
   input: createPdfFromTextInput,
   output: pdfOutput,
-  async run({ input, req }) {
+  async run({ input, req, overrideAccess }) {
     try {
       const document = await PDFDocument.create();
       const font = await document.embedFont(StandardFonts.Helvetica);
@@ -118,6 +118,7 @@ export const createPdfFromText = defineAction({
 
       return saveFile({
         req,
+        overrideAccess,
         data: await document.save(),
         name: 'text.pdf',
         mimeType: 'application/pdf',
@@ -136,9 +137,9 @@ export const createPdfFromImage = defineAction({
   description: 'Create an A4 PDF from a PNG or JPEG image.',
   input: createPdfFromImageInput,
   output: pdfOutput,
-  async run({ input, req }) {
+  async run({ input, req, overrideAccess }) {
     try {
-      const image = await loadFile(req, input.image);
+      const image = await loadFile(req, input.image, overrideAccess);
       const document = await PDFDocument.create();
       const embedded =
         image.mimeType === 'image/png'
@@ -161,6 +162,7 @@ export const createPdfFromImage = defineAction({
 
       return saveFile({
         req,
+        overrideAccess,
         data: await document.save(),
         name: `${image.name}.pdf`,
         mimeType: 'application/pdf',
@@ -182,12 +184,12 @@ export const mergePdfFiles = defineAction({
   description: 'Merge two or more PDF documents in order.',
   input: mergePdfFilesInput,
   output: pdfOutput,
-  async run({ input, req }) {
+  async run({ input, req, overrideAccess }) {
     try {
       const merged = await PDFDocument.create();
 
       for (const reference of input.files) {
-        const file = await loadFile(req, reference);
+        const file = await loadFile(req, reference, overrideAccess);
         const source = await PDFDocument.load(file.data);
         const pages = await merged.copyPages(source, source.getPageIndices());
 
@@ -196,6 +198,7 @@ export const mergePdfFiles = defineAction({
 
       return saveFile({
         req,
+        overrideAccess,
         data: await merged.save(),
         name: `${input.outputFileName}.pdf`,
         mimeType: 'application/pdf',
@@ -214,8 +217,8 @@ export const extractPdfText = defineAction({
   description: 'Extract text from all pages of a PDF.',
   input: extractPdfTextInput,
   output: z.string(),
-  async run({ input, req }) {
-    const file = await loadFile(req, input.file);
+  async run({ input, req, overrideAccess }) {
+    const file = await loadFile(req, input.file, overrideAccess);
     const document = await getDocumentProxy(new Uint8Array(file.data));
     const result = await extractText(document, { mergePages: true });
 
@@ -231,9 +234,9 @@ export const countPdfPages = defineAction({
   description: 'Count the pages in a PDF document.',
   input: countPdfPagesInput,
   output: z.number().int().nonnegative(),
-  async run({ input, req }) {
+  async run({ input, req, overrideAccess }) {
     try {
-      const file = await loadFile(req, input.file);
+      const file = await loadFile(req, input.file, overrideAccess);
       const document = await PDFDocument.load(file.data);
 
       return document.getPageCount();
@@ -254,9 +257,9 @@ export const extractPdfPages = defineAction({
   description: 'Extract or rearrange inclusive page ranges.',
   input: extractPdfPagesInput,
   output: pdfOutput,
-  async run({ input, req }) {
+  async run({ input, req, overrideAccess }) {
     try {
-      const file = await loadFile(req, input.file);
+      const file = await loadFile(req, input.file, overrideAccess);
       const source = await PDFDocument.load(file.data);
       const indexes = input.pageRanges.flatMap(({ startPage, endPage }) =>
         pageIndexes(startPage, endPage, source.getPageCount()),
@@ -269,6 +272,7 @@ export const extractPdfPages = defineAction({
 
       return saveFile({
         req,
+        overrideAccess,
         data: await extracted.save(),
         name: file.name,
         mimeType: 'application/pdf',
@@ -298,9 +302,9 @@ export const stampPdfText = defineAction({
   description: 'Place text at exact distances from the visual top-left corner.',
   input: stampPdfTextInput,
   output: pdfOutput,
-  async run({ input, req }) {
+  async run({ input, req, overrideAccess }) {
     try {
-      const file = await loadFile(req, input.file);
+      const file = await loadFile(req, input.file, overrideAccess);
       const document = await PDFDocument.load(file.data);
       const pages = document.getPages();
       const fonts = new Map<string, Awaited<ReturnType<typeof document.embedFont>>>();
@@ -341,6 +345,7 @@ export const stampPdfText = defineAction({
 
       return saveFile({
         req,
+        overrideAccess,
         data: await document.save(),
         name: `text_stamped_${file.name}`,
         mimeType: 'application/pdf',
@@ -368,14 +373,14 @@ export const stampPdfImages = defineAction({
   description: 'Place PNG or JPEG images at exact distances from the visual top-left corner.',
   input: stampPdfImagesInput,
   output: pdfOutput,
-  async run({ input, req }) {
+  async run({ input, req, overrideAccess }) {
     try {
-      const file = await loadFile(req, input.file);
+      const file = await loadFile(req, input.file, overrideAccess);
       const document = await PDFDocument.load(file.data);
       const pages = document.getPages();
 
       for (const [index, item] of input.items.entries()) {
-        const image = await loadFile(req, item.image);
+        const image = await loadFile(req, item.image, overrideAccess);
         const embedded =
           image.mimeType === 'image/png'
             ? await document.embedPng(image.data)
@@ -418,6 +423,7 @@ export const stampPdfImages = defineAction({
 
       return saveFile({
         req,
+        overrideAccess,
         data: await document.save(),
         name: `image_stamped_${file.name}`,
         mimeType: 'application/pdf',

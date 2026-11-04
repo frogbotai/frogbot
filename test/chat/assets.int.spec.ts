@@ -312,6 +312,7 @@ describe('chat assets', () => {
       req,
       frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-hash', chatId },
+      overrideAccess: false,
     };
 
     const asset = await saveChatAsset({
@@ -462,6 +463,7 @@ describe('chat assets', () => {
       req,
       frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-1', chatId },
+      overrideAccess: false,
     };
 
     const asset = await saveChatAsset({
@@ -486,6 +488,7 @@ describe('chat assets', () => {
       req,
       frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-2' },
+      overrideAccess: false,
     };
 
     await expect(
@@ -728,6 +731,7 @@ describe('chat assets', () => {
       req,
       frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-office', chatId },
+      overrideAccess: false,
     };
 
     const asset = await saveChatAsset({
@@ -750,6 +754,7 @@ describe('chat assets', () => {
       req,
       frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-office-then-upload', chatId },
+      overrideAccess: false,
     };
 
     await saveChatAsset({

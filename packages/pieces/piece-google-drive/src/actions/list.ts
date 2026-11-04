@@ -107,7 +107,7 @@ export const listFiles = defineAction({
   input: listFilesInput,
   output: listFilesOutput,
   idempotent: false,
-  async run({ client, input, req }): Promise<ListFilesOutput> {
+  async run({ client, input, req, overrideAccess }): Promise<ListFilesOutput> {
     const result: ListFilesOutput = { files: [], incompleteSearch: false };
     const pending = [{ folderId: input.folderId, level: 1 }];
     const visited = new Set<string>();
@@ -148,6 +148,7 @@ export const listFiles = defineAction({
             await downloadDriveFile({
               client,
               req,
+              overrideAccess,
               fileId: file.id,
               metadata: file,
               includeSharedDrives: input.includeSharedDrives,

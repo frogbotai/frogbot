@@ -467,12 +467,12 @@ const uploadAttachment = defineAction({
   label: 'Upload attachment',
   description: 'Upload an attachment to a Xero resource.',
   input: uploadAttachmentInput,
-  async run({ input, client, req }) {
+  async run({ input, client, req, overrideAccess }) {
     const file = await findPieceFile(req, 'Xero', {
       id: input.file,
       depth: 0,
       req,
-      overrideAccess: false,
+      overrideAccess,
     });
 
     const urlValue = typeof file.url === 'string' ? file.url : undefined;

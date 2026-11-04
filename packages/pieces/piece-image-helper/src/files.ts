@@ -20,14 +20,18 @@ export type LoadedImage = {
   mimeType: string;
 };
 
-export async function loadImage(req: FrogBotRequest, id: string | number): Promise<LoadedImage> {
+export async function loadImage(
+  req: FrogBotRequest,
+  id: string | number,
+  overrideAccess: boolean,
+): Promise<LoadedImage> {
   req.signal?.throwIfAborted();
 
   const doc = await findPieceFile(req, 'Image Helper', {
     id,
     depth: 0,
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   if (typeof doc.url !== 'string') {
@@ -87,18 +91,20 @@ export async function saveImage({
   data,
   name,
   mimeType,
+  overrideAccess,
 }: {
   req: FrogBotRequest;
   data: Buffer;
   name: string;
   mimeType: string;
+  overrideAccess: boolean;
 }) {
   req.signal?.throwIfAborted();
 
   const doc = await createPieceFile(req, 'Image Helper', {
     file: { data, name, mimetype: mimeType, size: data.length },
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   return {

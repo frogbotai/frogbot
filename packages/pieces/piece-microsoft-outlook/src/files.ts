@@ -17,12 +17,16 @@ export const savedFile = z.object({
 });
 
 /** Reads a FrogBot file as a Graph `fileAttachment`, forwarding the caller's credentials only to FrogBot's own origin. */
-export async function fileAttachment(req: FrogBotRequest, value: z.output<typeof fileInput>) {
+export async function fileAttachment(
+  req: FrogBotRequest,
+  value: z.output<typeof fileInput>,
+  overrideAccess: boolean,
+) {
   const doc = await findPieceFile(req, label, {
     id: value.fileId,
     depth: 0,
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   if (typeof doc.url !== 'string') throw new Error(`File '${value.fileId}' is unavailable.`);
@@ -65,6 +69,7 @@ export async function fileAttachment(req: FrogBotRequest, value: z.output<typeof
 export async function saveAttachment(
   req: FrogBotRequest,
   attachment: { name?: string | null; contentType?: string | null; contentBytes: string },
+  overrideAccess: boolean,
 ): Promise<z.output<typeof savedFile>> {
   req.signal?.throwIfAborted();
 
@@ -74,7 +79,7 @@ export async function saveAttachment(
   const doc = await createPieceFile(req, label, {
     file: { data, mimetype: mimeType, name, size: data.length },
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   return {

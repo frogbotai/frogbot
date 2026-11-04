@@ -60,6 +60,17 @@ export async function assertAgentAccess({
   throw new AgentServiceError(`Access denied for agent '${agent.slug}'`, 403);
 }
 
+const agentAccessChecked = Symbol('frogbot.agentAccessChecked');
+
+/** Marks inner run options whose entry point already ran `assertAgentAccess`. */
+export function withAgentAccessChecked<T extends object>(options: T): T {
+  return { ...options, [agentAccessChecked]: true };
+}
+
+export function isAgentAccessChecked(options: object): boolean {
+  return (options as { [agentAccessChecked]?: true })[agentAccessChecked] === true;
+}
+
 export async function hasAgentAccess({
   req,
   agent,

@@ -480,12 +480,11 @@ Local generation is stateless unless you provide an existing chat ID.
 const result = await frogbot.agents.support.generate({
   prompt: 'Check the latest campaign changes',
   chatId,
-  req,
-  overrideAccess: false
+  req
 })
 ```
 
-`generate({ chatId })` persists the new user message, loads stored history, runs the agent, and stores the resulting assistant message. Local `stream()` calls remain stateless.
+The call runs as `req`'s user and checks the agent's [`access`](/agents/overview#control-access) rule. `generate({ chatId })` persists the new user message, loads stored history, runs the agent, and stores the resulting assistant message. Local `stream()` calls remain stateless.
 
 ## Understand durability
 
