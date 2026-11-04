@@ -1,8 +1,7 @@
 name: pr-message
 
-# PRs are squash-merged, and GitHub builds the commit from the PR's title and description.
-# This checks them with frogbot's scripts/commit-msg.mjs, the same rules `pnpm ticket land`
-# applied: a Conventional Commit subject, and no Co-authored-by or "Generated with" lines.
+# PRs are squash-merged with the PR title as the whole commit message. This checks the title
+# with frogbot's scripts/commit-msg.mjs, the subject rule `pnpm ticket land` applied.
 on:
   pull_request:
     types: [opened, edited, reopened, synchronize]
@@ -21,8 +20,7 @@ jobs:
           sparse-checkout: scripts/commit-msg.mjs
           sparse-checkout-cone-mode: false
       - run: |
-          printf '%s\n\n%s\n' "$TITLE" "$BODY" > "$RUNNER_TEMP/message"
+          printf '%s\n' "$TITLE" > "$RUNNER_TEMP/message"
           node scripts/commit-msg.mjs "$RUNNER_TEMP/message"
         env:
           TITLE: ${{ github.event.pull_request.title }}
-          BODY: ${{ github.event.pull_request.body }}
