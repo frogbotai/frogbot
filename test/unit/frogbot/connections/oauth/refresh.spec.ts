@@ -117,6 +117,27 @@ describe('lazy connection refresh', () => {
     expect(fetch).toHaveBeenCalledOnce();
   });
 
+  it.each([
+    [{ access_token: 'fresh' }, '2026-01-01T00:15:00.000Z'],
+    [{ access_token: 'fresh', expires_in: 3600 }, '2026-01-01T01:00:00.000Z'],
+  ])(
+    'sets the refreshed expiry from expires_in, else the recipe tokenLifetime (%j)',
+    async (tokens, expiresAt) => {
+      vi.useFakeTimers({ now: Date.parse('2026-01-01T00:00:00Z'), toFake: ['Date'] });
+      const fixture = await connectionSetup({
+        ...definition,
+        oauth: {
+          ...definition.oauth,
+          tokenLifetime: 15 * 60,
+          refresh: () => Promise.resolve(tokens),
+        },
+      });
+
+      await expect(fixture.api.resolve(fixture)).resolves.toEqual({ token: 'fresh' });
+      expect(fixture.row()?.expiresAt).toBe(expiresAt);
+    },
+  );
+
   it.each(['provider', 'invalid', 'expired', 'auth', 'missing-refresh'])(
     'marks %s refresh failure as error without factory fallback or retry',
     async (failure) => {

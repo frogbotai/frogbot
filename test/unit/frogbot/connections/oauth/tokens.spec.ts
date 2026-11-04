@@ -6,6 +6,7 @@ import type { RequestContext } from 'payload';
 import { afterEach, assert, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { z } from 'zod';
 
+import { saveOAuthConnection } from '../../../../../packages/frogbot/src/connections/oauth/save.js';
 import {
   exchangeOAuthCode,
   lookupOAuthAccount,
@@ -16,7 +17,7 @@ import {
 } from '../../../../../packages/frogbot/src/connections/oauth/tokens.js';
 import type { OAuthTokens } from '../../../../../packages/frogbot/src/pieces/types.js';
 import type { FrogBotRequest } from '../../../../../packages/frogbot/src/types/request.js';
-import { definition, setup } from './fixtures.js';
+import { connectionSetup, definition, setup } from './fixtures.js';
 
 describe('OAuth token and account transport', () => {
   afterEach(() => {
@@ -479,6 +480,35 @@ describe('OAuth token and account transport', () => {
       ]);
     }
   });
+
+  it.each([
+    [{ access_token: 'fresh', refresh_token: 'refresh' }, '2026-01-01T00:15:00.000Z'],
+    [
+      { access_token: 'fresh', refresh_token: 'refresh', expires_in: 60 },
+      '2026-01-01T00:01:00.000Z',
+    ],
+  ])(
+    'saves the expiry from expires_in, else the recipe tokenLifetime (%j)',
+    async (tokens, expiresAt) => {
+      vi.useFakeTimers({ now: Date.parse('2026-01-01T00:00:00Z'), toFake: ['Date'] });
+      const fixture = await connectionSetup({
+        ...definition,
+        oauth: { ...definition.oauth, tokenLifetime: 15 * 60 },
+      });
+
+      Object.assign(fixture.frogbot, { findByID: vi.fn(() => Promise.resolve({ id: 'owner' })) });
+
+      await saveOAuthConnection({
+        req: fixture.req,
+        piece: fixture.piece,
+        owner: { id: 'owner', collection: 'users' },
+        tokens,
+        account: { id: 'account', label: 'Account' },
+      });
+
+      expect(fixture.row()?.expiresAt).toBe(expiresAt);
+    },
+  );
 
   it('refreshes with HTTP Basic app credentials outside the request body', async () => {
     const fixture = setup(

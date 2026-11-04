@@ -361,6 +361,24 @@ describe('definePiece', () => {
     ).toThrow("duplicate trigger 'same'");
   });
 
+  it.each([0, -1, 1.5, '900', Infinity])('refuses OAuth tokenLifetime %j', (tokenLifetime) => {
+    expect(() =>
+      definePiece({
+        slug: 'lifetime',
+        label: 'Lifetime',
+        auth: accessTokenAuth,
+        client: ({ auth }) => auth,
+        oauth: {
+          authorizationUrl: 'https://example.com/authorize',
+          tokenUrl: 'https://example.com/token',
+          scopes: { catalog: {}, defaults: [] },
+          tokenLifetime: tokenLifetime as number,
+        },
+        actions: [],
+      }),
+    ).toThrow("Piece 'lifetime' OAuth tokenLifetime must be a positive integer.");
+  });
+
   it('resolves factory scopes against the recipe catalog', () => {
     const recipe = (scopes: object) =>
       ({

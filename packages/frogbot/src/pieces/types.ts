@@ -104,6 +104,16 @@ export type PieceWebhookTrigger<
   run(
     args: PieceRunArgs<z.output<TInput>, TOptions, TClient> & { state: TState },
   ): Promise<TriggerEvent<TOutput extends z.ZodType ? z.output<TOutput> : PieceJSON>[]>;
+  /**
+   * The answer to the provider once `run`'s events are dispatched, for providers that expect a set
+   * body. Not called when `run` throws. @default `{ ok: true }` as JSON
+   */
+  reply?(
+    args: PieceRunArgs<z.output<TInput>, TOptions, TClient> & {
+      state: TState;
+      events: TriggerEvent<TOutput extends z.ZodType ? z.output<TOutput> : PieceJSON>[];
+    },
+  ): Response | Promise<Response>;
 };
 
 export type PieceAppTrigger<
@@ -234,6 +244,7 @@ type PieceOAuthShared<TAuth, TScope extends string> = {
   auth?: z.ZodType<TAuth>;
   revoke?(args: { tokens: OAuthTokens; req: FrogBotRequest }): Promise<void>;
   label?: string;
+  tokenLifetime?: number;
 };
 
 export type PieceOAuthRecipe<

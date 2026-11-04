@@ -43,12 +43,15 @@ export function parseOAuthTokens(value: unknown): OAuthTokens {
 export function oauthTokenMetadata({
   tokens,
   scopes = [],
+  lifetime,
 }: {
   tokens: OAuthTokens;
   scopes?: readonly string[];
+  /** Seconds the token lives when `expires_in` is missing: the recipe's `tokenLifetime`. */
+  lifetime?: number;
 }): { scopes: string[]; expiresAt: string | null } {
-  const expiry =
-    tokens.expires_in === undefined ? undefined : Date.now() + tokens.expires_in * 1000;
+  const seconds = tokens.expires_in ?? lifetime;
+  const expiry = seconds === undefined ? undefined : Date.now() + seconds * 1000;
 
   if (
     expiry !== undefined &&

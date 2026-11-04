@@ -145,6 +145,14 @@ Webhook trigger runs also receive the state returned by `trigger.onEnable`:
 | -------- | ------------ | --------------------------------------------------- |
 | `state`  | enable state | Identifies the persisted subscription registration. |
 
+### `trigger.reply` for `webhook`
+
+Optional. Takes the `trigger.run` arguments plus the `events` that `run` returned, once they are dispatched, and returns the `Response` the provider gets instead of `{ ok: true }` as JSON. Use it for a provider that expects a set body on success, such as a SOAP acknowledgement. It is not called when `run` throws, so the provider retries.
+
+| Argument | Type           | Why it earns its keep                   |
+| -------- | -------------- | --------------------------------------- |
+| `events` | emitted events | Shapes the answer to what was accepted. |
+
 ### `trigger.run` for `polling`
 
 | Argument  | Type             | Why it earns its keep                    |
@@ -255,6 +263,10 @@ Return the matched user with its `collection`, or `null` when the platform ident
 | -------- | ---------------- | -------------------------------------------------- |
 | `tokens` | `OAuthTokens`    | Supplies the current refresh token and token set.  |
 | `req`    | `FrogBotRequest` | Synthetic request with local configuration access. |
+
+### `oauth.tokenLifetime`
+
+Not a callback: a number of seconds. Set it when the provider's token reply has no `expires_in`, so core still records an expiry and refreshes the connection after that long. A reply's `expires_in` always wins.
 
 ## Contract mapping
 

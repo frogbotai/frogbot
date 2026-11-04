@@ -1,6 +1,7 @@
 import { setTimeout } from 'node:timers/promises';
 
 import { KVLockContentionError } from '../../kv/errors.js';
+import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import type { PieceInstance } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import type { ConnectionOwner, ConnectionStore, ConnectionStoredValue } from '../store.js';
@@ -55,7 +56,13 @@ export async function refreshOAuthConnection({
             });
 
             oauthAuth({ piece, tokens: credential });
-            metadata = oauthTokenMetadata({ tokens: credential, scopes: row.scopes });
+
+            metadata = oauthTokenMetadata({
+              tokens: credential,
+              scopes: row.scopes,
+              lifetime: pieceInstanceRuntime(piece).definition.oauth?.tokenLifetime,
+            });
+
             if (metadata.expiresAt && Date.parse(metadata.expiresAt) <= Date.now()) {
               throw new OAuthError('refresh');
             }
