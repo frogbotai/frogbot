@@ -13,7 +13,7 @@ import type {
 
 import type { FrogBotTypes } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
-import type { WaitFor, WaitpointOptions } from './waitpoints/types.js';
+import type { Foreach, Parallel, WaitFor, WaitpointOptions } from './waitpoints/types.js';
 
 export type JobsConfig = Omit<PayloadJobsConfig, 'tasks' | 'workflows'> & {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Payload types its task list the same way
@@ -69,6 +69,8 @@ type WorkflowInput<T extends JobWorkflowSlug | object> = T extends JobWorkflowSl
 export type WorkflowHandler<T extends JobWorkflowSlug | object = object> = (
   args: WithFrogBotRequest<Parameters<PayloadWorkflowHandler<WorkflowInput<T>>>[0]> & {
     waitFor: WaitFor;
+    foreach: Foreach;
+    parallel: Parallel;
   },
 ) => ReturnType<PayloadWorkflowHandler<WorkflowInput<T>>>;
 

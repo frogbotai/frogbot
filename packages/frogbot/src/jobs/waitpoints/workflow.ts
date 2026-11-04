@@ -4,6 +4,7 @@ import { dynamicImport } from 'payload';
 import { asAttachedRequest } from '../../seams/request.js';
 import { getJobRunContext } from '../run.js';
 import type { JobsConfig, WorkflowHandler } from '../types.js';
+import { createSteps } from './steps.js';
 import type { WaitpointOptions } from './types.js';
 import { createWaitFor } from './waitFor.js';
 
@@ -37,9 +38,10 @@ export function wrapWorkflow({
     handler: async (args) => {
       const run = typeof handler === 'string' ? await importWorkflowHandler(handler) : handler;
       const { waitFor, isWaiting, getReArm } = createWaitFor({ ...args, config });
+      const { foreach, parallel } = createSteps(args);
 
       try {
-        await run({ ...args, req: asAttachedRequest(args.req), waitFor });
+        await run({ ...args, req: asAttachedRequest(args.req), waitFor, foreach, parallel });
       } catch (error) {
         if (!isWaiting(error)) throw error;
 
