@@ -31,8 +31,8 @@ export const convertExcelToCsv = defineAction({
   description: 'Convert an Excel workbook into CSV text.',
   input: inputSchema,
   output,
-  async run({ input, req }) {
-    const buffer = await loadFile(req, input.fileId);
+  async run({ input, req, overrideAccess }) {
+    const buffer = await loadFile(req, input.fileId, overrideAccess);
     const isXlsx = buffer[0] === 0x50 && buffer[1] === 0x4b;
     const isXls = buffer[0] === 0xd0 && buffer[1] === 0xcf;
 

@@ -43,6 +43,7 @@ export async function generateTextOperation(
         req: toolReq,
         frogbot,
         agent: { slug: 'direct', runId: generateId() },
+        overrideAccess: overrideAccess === true,
       })
     : undefined;
 

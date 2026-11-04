@@ -1,3 +1,6 @@
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -416,5 +419,22 @@ describe('pieceConformance', () => {
     await expect(pieceConformance(createChannel(), verification)).rejects.toThrow(
       'channel webhook verification returned an unexpected result',
     );
+  });
+});
+
+describe('built-in pieces', () => {
+  it('forward the run overrideAccess instead of hard-coding it', () => {
+    const root = join(import.meta.dirname, '../../../../packages/pieces');
+    const hardCoded = readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => join(root, entry.name, 'src'))
+      .filter((src) => existsSync(src))
+      .flatMap((src) =>
+        readdirSync(src, { recursive: true, encoding: 'utf8' }).map((file) => join(src, file)),
+      )
+      .filter((file) => file.endsWith('.ts'))
+      .filter((file) => /overrideAccess:\s*(true|false)\b/.test(readFileSync(file, 'utf8')));
+
+    expect(hardCoded).toEqual([]);
   });
 });

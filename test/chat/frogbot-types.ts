@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     users: User;
     chats: Chat;
+    notes: Note;
     messages: Message;
     'frogbot-chat-assets': FrogBotChatAsset;
     'frogbot-chat-turns': FrogBotChatTurn;
@@ -79,6 +80,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect;
     chats: ChatsSelect;
+    notes: NotesSelect;
     messages: MessagesSelect;
     'frogbot-chat-assets': FrogBotChatAssetsSelect;
     'frogbot-chat-turns': FrogBotChatTurnsSelect;
@@ -103,6 +105,7 @@ export interface Config {
     tasks: {
       'plugin-ai-policy-reset-spend': TaskPluginAiPolicyResetSpend;
       'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
+      'frogbot-run-agent-schedule': TaskFrogBotRunAgentSchedule;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
         input: unknown;
@@ -207,6 +210,24 @@ export interface Chat {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notes".
+ */
+export interface Note {
+  id: number;
+  text?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -409,6 +430,17 @@ export interface ChatsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notes_select".
+ */
+export interface NotesSelect {
+  text?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "messages_select".
  */
 export interface MessagesSelect {
@@ -555,7 +587,7 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection: 'users' | 'chats' | 'usage-logs';
+    relatedCollection: 'users' | 'chats' | 'notes' | 'usage-logs';
     where?:
       | {
           [k: string]: unknown;
@@ -577,7 +609,7 @@ export interface CollectionQueryWidget {
  */
 export interface ActivityWidget {
   data?: {
-    excludedCollections?: ('users' | 'chats' | 'usage-logs')[] | null;
+    excludedCollections?: ('users' | 'chats' | 'notes' | 'usage-logs')[] | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
@@ -594,6 +626,14 @@ export interface TaskPluginAiPolicyResetSpend {
  * via the `definition` "TaskFrogBotSweepWaitpoints".
  */
 export interface TaskFrogBotSweepWaitpoints {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogBotRunAgentSchedule".
+ */
+export interface TaskFrogBotRunAgentSchedule {
   input?: unknown;
   output?: unknown;
 }
@@ -620,6 +660,7 @@ declare module 'frogbot' {
       questioner: unknown;
       wildcard: unknown;
       approver: unknown;
+      reader: unknown;
       general: unknown;
     };
     models:

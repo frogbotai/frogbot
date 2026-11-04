@@ -395,7 +395,15 @@ export function definePiece<const T extends PieceDefinition>(
     const tools: AnyTool[] = [];
 
     for (const action of definition.actions) {
-      const invoke = async ({ input, req }: { input: unknown; req?: FrogBotRequest }) => {
+      const invoke = async ({
+        input,
+        req,
+        overrideAccess = false,
+      }: {
+        input: unknown;
+        req?: FrogBotRequest;
+        overrideAccess?: boolean;
+      }) => {
         const resolvedReq = await request(req);
         const parsedInput = action.input.parse(input);
         const result = await action.run({
@@ -403,6 +411,7 @@ export function definePiece<const T extends PieceDefinition>(
           client: await client({ req: resolvedReq }),
           options,
           req: resolvedReq,
+          overrideAccess,
         });
 
         return action.output ? action.output.parse(result) : result;
@@ -413,7 +422,8 @@ export function definePiece<const T extends PieceDefinition>(
         label: `${definition.label}: ${action.label ?? sentenceCase(action.slug)}`,
         description: action.description,
         inputSchema: action.input,
-        execute: (input, context) => invoke({ input, req: context.req }),
+        execute: (input, context) =>
+          invoke({ input, req: context.req, overrideAccess: context.overrideAccess }),
         ...(action.approval === undefined ? {} : { approval: action.approval }),
       };
 

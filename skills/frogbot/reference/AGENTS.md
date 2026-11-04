@@ -44,12 +44,13 @@ import config from './frogbot.config';
 const frogbot = await getFrogBot({ config });
 const result = await frogbot.agents.assistant.generate({
   prompt: "Summarize today's open tasks.",
+  overrideAccess: true,
 });
 
 console.log(result.text);
 ```
 
-`generate` and `stream` accept either `prompt` or `messages`. Pass `req` when the run needs the current user or request context. Programmatic calls override agent access by default; set `overrideAccess: false` to enforce the agent's `access` function.
+`generate` and `stream` accept either `prompt` or `messages`. Pass `req` when the run needs the current user or request context. Programmatic calls run as `req`'s user and check the agent's `access` function, so a call with no user is refused with `403` by default. Server code with nobody signed in, such as a schedule `handler` or piece trigger `handler`, passes `overrideAccess: true` to run trusted; tools then see `ctx.overrideAccess: true` and tool `access` rules are skipped.
 
 ## Tools
 

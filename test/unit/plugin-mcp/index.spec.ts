@@ -131,7 +131,7 @@ describe('MCP plugin tools', () => {
     await expect(result).resolves.toEqual({ content: [{ type: 'text', text: 'hi' }] });
     expect(echo.execute).toHaveBeenCalledWith(
       { text: 'hi' },
-      { req, frogbot, agent: { slug: 'mcp', runId: expect.any(String) } },
+      { req, frogbot, agent: { slug: 'mcp', runId: expect.any(String) }, overrideAccess: false },
     );
     expect(vi.mocked(echo.execute).mock.calls[0]?.[1].agent).not.toHaveProperty('chatId');
   });

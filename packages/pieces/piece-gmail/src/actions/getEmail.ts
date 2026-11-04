@@ -14,12 +14,15 @@ export const getEmail = defineAction({
   input: inputSchema,
   output: emailOutput,
   idempotent: true,
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     const message = (
       await client.users.messages.get({ userId: 'me', id: input.messageId, format: input.format })
     ).data;
 
-    const email = input.format === 'full' ? await saveAttachments(client, req, message) : message;
+    const email =
+      input.format === 'full'
+        ? await saveAttachments(client, req, message, overrideAccess)
+        : message;
 
     return email as z.output<typeof emailOutput>;
   },

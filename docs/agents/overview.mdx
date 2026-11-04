@@ -200,6 +200,21 @@ Client tools replace `execute` with `outputSchema` and `client`; see [Build a cl
 | `req` | `FrogBotRequest` | The request for the run. |
 | `frogbot` | `FrogBot` | The FrogBot instance. |
 | `agent` | `{ slug: string; runId: string; chatId?: number \| string }` | The running agent, the run ID shared with [hooks](#follow-hooks), and the chat ID when the run belongs to a persisted chat. Direct `generateText` and `streamText` calls use the slug `'direct'`, and [MCP](/plugins/mcp#tools) calls `'mcp'`, with no `chatId`. |
+| `overrideAccess` | `boolean` | Whether the run is trusted. `false` when a person chats, over MCP, and on local calls by default; `true` on [prompt schedules](#schedule-runs) and local calls that pass it. |
+
+Forward `ctx.overrideAccess` to Local API calls, so one tool acts as the user in chat and stays trusted on a schedule, where there is no user:
+
+```ts
+execute: async ({ ticket }, ctx) =>
+  ctx.frogbot.find({
+    collection: 'tickets',
+    where: { number: { equals: ticket } },
+    req: ctx.req,
+    overrideAccess: ctx.overrideAccess
+  })
+```
+
+Hard-coding `overrideAccess: true` would also skip the user's access in chat.
 
 Attach tools directly to the worker.
 
@@ -286,7 +301,7 @@ export const refund: Tool<typeof refundInput, string> = {
 }
 ```
 
-The rule receives `{ req, agent, tool }`, may be async, and runs once per run, before the first model call, with the run's request; a change to the user applies from their next message. It runs in every run, local calls with `overrideAccess` included. A rule that returns `false` or throws hides the tool, and a throw is logged. Answering an [approval](#ask-before-a-tool-runs) also needs the answerer to pass the tool's `access`, else `403`, and a run whose user fails the rule denies an already approved call instead of running it. Over [MCP](/plugins/mcp#tools), a key whose owner fails the rule isn't shown the tool.
+The rule receives `{ req, agent, tool }`, may be async, and runs once per run, before the first model call, with the run's request; a change to the user applies from their next message. Trusted runs (`overrideAccess: true`) skip it and are offered every tool. A rule that returns `false` or throws hides the tool, and a throw is logged. Answering an [approval](#ask-before-a-tool-runs) also needs the answerer to pass the tool's `access`, else `403`, and a run whose user fails the rule denies an already approved call instead of running it. Over [MCP](/plugins/mcp#tools), a key whose owner fails the rule isn't shown the tool.
 
 Four options decide who can do what:
 
@@ -493,7 +508,8 @@ Registered instances live at `frogbot.agents[slug]` and expose `generate` and `s
 
 ```ts
 const result = await frogbot.agents.support.generate({
-  prompt: 'What is the status of ticket SUP-42?'
+  prompt: 'What is the status of ticket SUP-42?',
+  req
 })
 
 console.log(result.text)
@@ -509,7 +525,8 @@ const result = await frogbot.agents.support.stream({
       role: 'user',
       parts: [{ type: 'text', text: 'Help with ticket SUP-42' }]
     }
-  ]
+  ],
+  req
 })
 
 for await (const text of result.textStream) {
@@ -517,13 +534,17 @@ for await (const text of result.textStream) {
 }
 ```
 
-Local calls default to `overrideAccess: true`. To enforce the configured rule, pass a request and `overrideAccess: false`.
+Local calls run as `req`'s user and check the agent's [`access`](#control-access) rule, like the Local API with `overrideAccess: false`. With no user, the default rule refuses the call with `403`. Server code with nobody signed in, such as a job, passes `overrideAccess: true` to run trusted: the rule is skipped, tool `access` is skipped, and tools see `ctx.overrideAccess: true`.
 
 ```ts
 await frogbot.agents.support.generate({
   prompt: 'Review ticket SUP-42',
-  req,
-  overrideAccess: false
+  req
+})
+
+await frogbot.agents.support.generate({
+  prompt: 'Summarise open tickets',
+  overrideAccess: true
 })
 ```
 
@@ -533,8 +554,7 @@ Local calls are stateless by default. Pass an existing `chatId` to `generate` to
 await frogbot.agents.support.generate({
   prompt: 'Review ticket SUP-42 again',
   chatId,
-  req,
-  overrideAccess: false
+  req
 })
 ```
 
@@ -549,7 +569,7 @@ Chat persistence accepts prompts or `UIMessage[]`; it does not accept `ModelMess
 | `prompt` | `string` | Required unless `messages` is set | A single user message. Can't be combined with `messages`. |
 | `messages` | `UIMessage[] \| ModelMessage[]` | Required unless `prompt` is set | The conversation to continue. UI messages are validated and converted before inference. |
 | `req` | `FrogBotRequest` | A request without a user | Request for the run. Tools, hooks, and the access rule receive it. |
-| `overrideAccess` | `boolean` | `true` | Set `false` to enforce the agent's `access` rule against `req`. |
+| `overrideAccess` | `boolean` | `false` | Set `true` to run trusted: skips the agent's and tools' `access` rules, and tools receive it as `ctx.overrideAccess`. |
 | `abortSignal` | `AbortSignal` | — | Cancels the run. |
 | `chatId` | `DocID` | — | `generate` only. Persists the new user message and the reply in this existing chat. |
 | `autoApprove` | `boolean` | The chat's `autoApprove`, else `false` | Runs `approval: 'ask'` tools without asking. `'required'` tools still need a person. |
@@ -579,7 +599,8 @@ export const reportingAgent: AgentConfig = {
       handler: async ({ agent, req, job }) => {
         await agent.generate({
           prompt: `Prepare the rollup scheduled for ${job.scheduledFor.toISOString()}`,
-          req
+          req,
+          overrideAccess: true
         })
       }
     }
@@ -676,9 +697,9 @@ See [Chat persistence](/chat/overview) for collection customization and durabili
 access: ({ req }) => Boolean(req.user)
 ```
 
-HTTP POST calls always set `overrideAccess: false`. The GET endpoint evaluates each worker's rule and omits denied entries or entries whose rule throws.
+The rule runs once per run, and a rule that returns `false` or throws refuses it with `403`. HTTP calls, channels and local calls check it; only local calls that pass `overrideAccess: true`, and prompt schedules, skip it. The GET endpoint evaluates each worker's rule and omits denied entries or entries whose rule throws.
 
-Custom rules may allow anonymous requests by returning `true`. Local calls bypass the rule unless you explicitly set `overrideAccess: false` with a request.
+Custom rules may allow anonymous requests by returning `true`.
 
 ---
 

@@ -11,8 +11,15 @@ import {
   approverAgentSlug,
   chatsSlug,
   lookupCalls,
+  memberName,
   modelPort,
+  notesSlug,
   questionAgentSlug,
+  readerAccessCalls,
+  readerAgentSlug,
+  readerHandlerRuns,
+  readerHandlerSlug,
+  readerScheduleSlug,
   refunderName,
   unavailableTopic,
   usersSlug,
@@ -96,13 +103,44 @@ const Chats: CollectionConfig = {
   fields: [{ name: 'sharedWith', type: 'relationship', relationTo: usersSlug, hasMany: true }],
 };
 
+const Notes: CollectionConfig = {
+  slug: notesSlug,
+  access: { read: ({ req }) => (req.user as { name?: string } | null)?.name === memberName },
+  fields: [{ name: 'text', type: 'text' }],
+};
+
+const notesInput = z.object({});
+
+const readNotes: Tool<typeof notesInput, string> = {
+  slug: 'read_notes',
+  description: 'Read the members-only notes.',
+  inputSchema: notesInput,
+  execute: async (_input, ctx) => {
+    const { docs } = await ctx.frogbot.find({
+      collection: notesSlug,
+      depth: 0,
+      req: ctx.req,
+      overrideAccess: ctx.overrideAccess,
+    });
+
+    return docs.map((doc) => String((doc as { text?: string }).text)).join(', ');
+  },
+};
+
+const readNotesApproved: Tool<typeof notesInput, string> = {
+  ...readNotes,
+  slug: 'read_notes_approved',
+  description: 'Read the members-only notes once approved.',
+  approval: 'ask',
+};
+
 const generalAgent = general({ tools: [...todoTools] });
 
 export const generalAgentSlug = generalAgent.slug;
 export const wildcardAgentSlug = 'wildcard';
 
 export default await buildTestConfig({
-  collections: [Users, Chats],
+  collections: [Users, Chats, Notes],
   ai: {
     defaultModel: 'test/gpt-4.1-mini',
     providers: {
@@ -160,6 +198,40 @@ export default await buildTestConfig({
       instructions: 'Ask before changing tickets.',
       access: () => true,
       tools: [closeTicket, deleteTicket, refundTicket, question],
+    },
+    {
+      slug: readerAgentSlug,
+      model: 'test/gpt-4.1-mini',
+      instructions: 'Summarise the notes.',
+      access: ({ req }) => {
+        readerAccessCalls.push(req.user?.id ?? null);
+
+        return !!req.user;
+      },
+      tools: [readNotes, readNotesApproved],
+      triggers: [
+        {
+          type: 'schedule',
+          slug: readerScheduleSlug,
+          schedule: { every: '1d' },
+          prompt: 'Summarise the notes.',
+        },
+        {
+          type: 'schedule',
+          slug: readerHandlerSlug,
+          schedule: { every: '1d' },
+          handler: async ({ agent, req }) => {
+            for (const opts of [{}, { overrideAccess: true }]) {
+              try {
+                await agent.generate({ prompt: 'Summarise the notes.', req, ...opts });
+                readerHandlerRuns.push('ok');
+              } catch (error) {
+                readerHandlerRuns.push((error as { status?: number }).status ?? 'error');
+              }
+            }
+          },
+        },
+      ],
     },
     generalAgent,
   ],

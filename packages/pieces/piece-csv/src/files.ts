@@ -1,12 +1,16 @@
 import type { FrogBotRequest } from 'frogbot';
 import { findPieceFile } from 'frogbot/pieces';
 
-export async function loadFile(req: FrogBotRequest, fileId: string | number) {
+export async function loadFile(
+  req: FrogBotRequest,
+  fileId: string | number,
+  overrideAccess: boolean,
+) {
   const file = await findPieceFile(req, 'CSV', {
     id: fileId,
     depth: 0,
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   if (typeof file.url !== 'string') {

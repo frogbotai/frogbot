@@ -16,7 +16,7 @@ export const downloadAttachment = defineAction({
   }),
   output: savedFile.extend({ attachmentId: z.string() }),
   idempotent: false,
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     filesCollectionSlug(req, 'Jira');
 
     const id = encodeURIComponent(input.attachmentId);
@@ -36,14 +36,18 @@ export const downloadAttachment = defineAction({
 
     return {
       attachmentId: meta.id,
-      ...(await saveFile(req, {
-        data,
-        name: input.name ?? meta.filename,
-        mimeType:
-          meta.mimeType ??
-          content.headers.get('content-type')?.split(';')[0]?.trim() ??
-          'application/octet-stream',
-      })),
+      ...(await saveFile(
+        req,
+        {
+          data,
+          name: input.name ?? meta.filename,
+          mimeType:
+            meta.mimeType ??
+            content.headers.get('content-type')?.split(';')[0]?.trim() ??
+            'application/octet-stream',
+        },
+        overrideAccess,
+      )),
     };
   },
 });

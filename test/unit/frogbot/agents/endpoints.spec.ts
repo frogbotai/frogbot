@@ -788,12 +788,15 @@ describe('agent endpoints', () => {
 
   it('runs anonymous turns after agent access succeeds', async () => {
     const agent = makeAgent();
-    agent.config.access = () => true;
+    const access = vi.fn(() => true);
+    agent.config.access = access;
 
     const response = await postHandler()(makeRequest({ agent, user: null }));
 
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ chatId: 'chat-1', authorizations: [] });
+    expect(access).toHaveBeenCalledOnce();
+    expect(streamTurn).toHaveBeenCalledWith(expect.not.objectContaining({ overrideAccess: true }));
   });
 
   it('returns a bodyless 499 when the inbound request is aborted', async () => {

@@ -128,6 +128,7 @@ export function toPayloadTools(tools: readonly McpTool[]): Record<string, Payloa
             req: frogbotReq,
             frogbot: frogbotReq.frogbot,
             agent,
+            overrideAccess: false,
           });
 
           return toResponse(result);

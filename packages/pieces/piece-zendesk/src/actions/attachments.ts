@@ -24,7 +24,7 @@ export const downloadAttachment = defineAction({
   input: z.object({ attachmentId: zendeskId('Attachment ID') }),
   output: z.object({ attachment, file: savedFile }),
   idempotent: false,
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     filesCollectionSlug(req, 'Zendesk');
 
     const meta = await client.data(z.object({ attachment }), {
@@ -78,7 +78,7 @@ export const downloadAttachment = defineAction({
     const doc = await createPieceFile(req, 'Zendesk', {
       file: { data, mimetype: mimeType, name, size: data.length },
       req,
-      overrideAccess: false,
+      overrideAccess,
     });
 
     return {

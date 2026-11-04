@@ -24,7 +24,7 @@ export const downloadAttachment = defineAction({
   input: z.object({ messageId: identifier, attachmentId: identifier.optional() }),
   output: z.array(savedFile.extend({ attachmentId: z.string() })),
   idempotent: false,
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     filesCollectionSlug(req, 'Microsoft Outlook');
 
     const path = `${messagePath(client.mailbox, input.messageId)}/attachments`;
@@ -43,7 +43,11 @@ export const downloadAttachment = defineAction({
 
       saved.push({
         attachmentId: item.id,
-        ...(await saveAttachment(req, { ...item, contentBytes: item.contentBytes })),
+        ...(await saveAttachment(
+          req,
+          { ...item, contentBytes: item.contentBytes },
+          overrideAccess,
+        )),
       });
     }
 

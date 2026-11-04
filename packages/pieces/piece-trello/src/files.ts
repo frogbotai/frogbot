@@ -4,12 +4,13 @@ import { findPieceFile } from 'frogbot/pieces';
 export async function loadAttachment(
   req: FrogBotRequest,
   value: { fileId: number | string; name?: string },
+  overrideAccess: boolean,
 ) {
   const doc = await findPieceFile(req, 'Trello', {
     id: value.fileId,
     depth: 0,
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   const fileUrl = doc.url;

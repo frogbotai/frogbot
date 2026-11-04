@@ -18,12 +18,12 @@ export const getProjectStatus: Tool<typeof inputSchema, { status: string }> = {
   slug: 'get_project_status',
   description: 'Return the current status of a project.',
   inputSchema,
-  async execute({ projectId }, { frogbot, req }) {
+  async execute({ projectId }, { frogbot, req, overrideAccess }) {
     const project = await frogbot.findByID({
       collection: 'projects',
       id: projectId,
       req,
-      overrideAccess: false,
+      overrideAccess,
     });
 
     if (typeof project.status !== 'string') {
@@ -37,15 +37,16 @@ export const getProjectStatus: Tool<typeof inputSchema, { status: string }> = {
 
 `execute` receives validated input and a context containing:
 
-| Property  | Value                                                    |
-| --------- | -------------------------------------------------------- |
-| `frogbot` | The initialized FrogBot instance                         |
-| `req`     | The current `FrogBotRequest`                             |
-| `agent`   | The current agent `slug`, `runId`, and optional `chatId` |
+| Property         | Value                                                                         |
+| ---------------- | ----------------------------------------------------------------------------- |
+| `frogbot`        | The initialized FrogBot instance                                              |
+| `req`            | The current `FrogBotRequest`                                                  |
+| `agent`          | The current agent `slug`, `runId`, and optional `chatId`                      |
+| `overrideAccess` | Whether the run is trusted: `false` in chat and over MCP, `true` on schedules |
 
 Collection slugs and returned document fields are typed from the generated `frogbot-types.ts` file. Before type generation, document fields are `unknown`; the status guard keeps this example usable in that context too. The `projects` collection must define a text `status` field.
 
-For agent-supplied IDs and queries, pass `req` and `overrideAccess: false` to Local API calls so collection and field permissions apply for the signed-in user and the call shares the request transaction.
+Pass `req` and the context's `overrideAccess` to Local API calls: in chat, collection and field permissions apply for the signed-in user, on a schedule with no user the call stays trusted, and either way it shares the request transaction. Hard-coding `true` would skip the user's access in chat.
 
 ## Register tools
 

@@ -10,12 +10,13 @@ export const discordAttachment = z.object({
 export async function loadDiscordAttachment(
   req: FrogBotRequest,
   attachment: z.output<typeof discordAttachment>,
+  overrideAccess: boolean,
 ) {
   const file = await findPieceFile(req, 'Discord', {
     id: attachment.fileId,
     depth: 0,
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   if (typeof file.url !== 'string') {

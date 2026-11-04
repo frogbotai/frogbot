@@ -13,12 +13,16 @@ const storedFile = z.object({
   name: z.string().optional(),
 });
 
-export async function loadTelegramFile(req: FrogBotRequest, value: z.output<typeof telegramFile>) {
+export async function loadTelegramFile(
+  req: FrogBotRequest,
+  value: z.output<typeof telegramFile>,
+  overrideAccess: boolean,
+) {
   const result = await findPieceFile(req, 'Telegram', {
     id: value.fileId,
     depth: 0,
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   const file = storedFile.safeParse(result);

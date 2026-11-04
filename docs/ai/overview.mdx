@@ -264,7 +264,7 @@ Every options type includes these shared options.
 | `prompt` | `string` | Required unless `messages` is set | A single user prompt. Can't be combined with `messages`. |
 | `messages` | `ModelMessage[]` | Required unless `prompt` is set | The conversation to continue. Can't be combined with `prompt`. |
 | `instructions` | `string` | — | System instructions sent before the prompt or messages. |
-| `tools` | `Tool[]` | — | FrogBot [tools](/agents/overview#tool-options) the model may call. Each runs with a [`ToolCtx`](/agents/overview#tool-context) whose `agent.slug` is `'direct'` and whose `runId` is new for the call. |
+| `tools` | `Tool[]` | — | FrogBot [tools](/agents/overview#tool-options) the model may call. Each runs with a [`ToolCtx`](/agents/overview#tool-context) whose `agent.slug` is `'direct'`, whose `runId` is new for the call, and whose `overrideAccess` is `true` only when the call passes `overrideAccess: true`. |
 | `toolChoice` | `ToolChoice<ToolSet>` | `'auto'` | Whether and which tool the model must call: `'auto'`, `'none'`, `'required'`, or `{ type: 'tool', toolName }`. |
 | `output` | `AIOutput` | Text | An `Output` specification for structured results. Read the parsed value from `result.output`. See [Request output](#request-output). |
 | `stopWhen` | `StopCondition<ToolSet> \| StopCondition<ToolSet>[]` | `isStepCount(1)` | When to stop the tool loop. With the default, tool results do not trigger another model call. |

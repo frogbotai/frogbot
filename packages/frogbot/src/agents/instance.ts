@@ -37,7 +37,12 @@ import { toAgentModelMessages } from '../uploads/toAgentModelMessages.js';
 import type { AttachmentHashes } from '../uploads/toModelInput.js';
 import { toModelInput } from '../uploads/toModelInput.js';
 import type { ResolvedAgentSelection } from './service.js';
-import { userDefaultModel } from './service.js';
+import {
+  assertAgentAccess,
+  isAgentAccessChecked,
+  userDefaultModel,
+  withAgentAccessChecked,
+} from './service.js';
 import { toAISDKTools, toAISDKToolsContext } from './tools.js';
 import type {
   AgentCallOptions,
@@ -94,7 +99,6 @@ export function createAgentInstance(
 
   const asks = approvals.size > 0 || mcpServers.some((server) => server.tools !== undefined);
 
-  const access = agentConfig.access ?? (({ req }) => !!req.user);
   const guardedTools = (agentConfig.tools ?? []).filter(
     (tool) => !isClientTool(tool) && tool.access !== undefined,
   );
@@ -125,6 +129,7 @@ export function createAgentInstance(
           runId: options.runId!,
           chatId: options.chatId,
         },
+        overrideAccess: options.overrideAccess === true,
       };
 
       const kinds = new Set(options.clientTools?.kinds ?? []);
@@ -268,18 +273,20 @@ export function createAgentInstance(
 
   const buildCall = async (
     opts: AgentStreamOpts & Pick<AgentCallOptions, 'chatId' | 'selection'>,
+    { accessChecked = false }: { accessChecked?: boolean } = {},
   ) => {
     const req = await frogbot.createRequest(opts.req);
+    const options: AgentCallOptions = {
+      req,
+      overrideAccess: opts.overrideAccess === true,
+      ...('chatId' in opts && opts.chatId !== undefined ? { chatId: opts.chatId } : {}),
+      ...(opts.selection ? { selection: opts.selection } : {}),
+      ...(opts.autoApprove === undefined ? {} : { autoApprove: opts.autoApprove }),
+    };
 
     return {
       ...(await buildPrompt({ ...opts, req })),
-      options: {
-        req,
-        overrideAccess: opts.overrideAccess ?? true,
-        ...('chatId' in opts && opts.chatId !== undefined ? { chatId: opts.chatId } : {}),
-        ...(opts.selection ? { selection: opts.selection } : {}),
-        ...(opts.autoApprove === undefined ? {} : { autoApprove: opts.autoApprove }),
-      },
+      options: accessChecked ? withAgentAccessChecked(options) : options,
       abortSignal: opts.abortSignal,
     };
   };
@@ -287,11 +294,10 @@ export function createAgentInstance(
   const prepareRun = async <T extends Call>(call: T) => {
     const options = call.options;
     const req = await frogbot.createRequest(options.req);
-    const overrideAccess = options.overrideAccess ?? true;
-    if (!overrideAccess && !(await access({ req, agent: instance }))) {
-      throw Object.assign(new Error(`Access denied for agent '${agentConfig.slug}'`), {
-        status: 403,
-      });
+    const overrideAccess = options.overrideAccess === true;
+
+    if (!overrideAccess && !isAgentAccessChecked(options)) {
+      await assertAgentAccess({ req, agent: instance });
     }
 
     const selection = await assertStoredSelection({
@@ -315,7 +321,7 @@ export function createAgentInstance(
             abortSignal: call.abortSignal,
             logger: frogbot.logger,
           }),
-      deniedTools({ req, agent }),
+      overrideAccess ? new Set<string>() : deniedTools({ req, agent }),
     ]);
 
     const op = gateway.operation({
@@ -514,12 +520,9 @@ export function createAgentInstance(
   const generate = async (opts: AgentGenerateOpts): Promise<AgentGenerateResult> => {
     const { chatId, ...runOpts } = opts;
     const req = await frogbot.createRequest(runOpts.req);
+    const overrideAccess = runOpts.overrideAccess === true;
 
-    if (runOpts.overrideAccess === false && !(await access({ req, agent: instance }))) {
-      throw Object.assign(new Error(`Access denied for agent '${agentConfig.slug}'`), {
-        status: 403,
-      });
-    }
+    if (!overrideAccess) await assertAgentAccess({ req, agent: instance });
 
     const incoming = await toPersistentMessages(runOpts, tools);
 
@@ -541,18 +544,21 @@ export function createAgentInstance(
 
     try {
       const result = await aiAgent.generate(
-        await buildCall({
-          messages: uiMessages,
-          req,
-          overrideAccess: true,
-          chatId: context.chatId,
-          selection,
-          autoApprove: runOpts.autoApprove,
-          abortSignal: AbortSignal.any([
-            lease.signal,
-            ...(runOpts.abortSignal ? [runOpts.abortSignal] : []),
-          ]),
-        }),
+        await buildCall(
+          {
+            messages: uiMessages,
+            req,
+            overrideAccess,
+            chatId: context.chatId,
+            selection,
+            autoApprove: runOpts.autoApprove,
+            abortSignal: AbortSignal.any([
+              lease.signal,
+              ...(runOpts.abortSignal ? [runOpts.abortSignal] : []),
+            ]),
+          },
+          { accessChecked: true },
+        ),
       );
 
       const model = selection.model ?? (await userDefaultModel({ agent: instance, req }));
@@ -598,11 +604,10 @@ export function createAgentInstance(
   ): Promise<AgentStreamMessageResult | AgentStreamMessageQueuedResult> => {
     const { chatId, channelAccess, clientTools, delivery, ...runOpts } = opts;
     const req = await frogbot.createRequest(runOpts.req);
+    const overrideAccess = runOpts.overrideAccess === true;
 
-    if (runOpts.overrideAccess === false && !(await access({ req, agent: instance }))) {
-      throw Object.assign(new Error(`Access denied for agent '${agentConfig.slug}'`), {
-        status: 403,
-      });
+    if (!overrideAccess && !isAgentAccessChecked(opts)) {
+      await assertAgentAccess({ req, agent: instance });
     }
 
     runOpts.abortSignal?.throwIfAborted();
@@ -628,6 +633,7 @@ export function createAgentInstance(
       uiMessages: context.uiMessages,
       selection: context.selection,
       clientTools,
+      overrideAccess,
       autoApprove: runOpts.autoApprove,
       abortSignal: runOpts.abortSignal,
       onError: (error) => {

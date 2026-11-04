@@ -260,8 +260,8 @@ export const attachFileToTicket = defineAction({
   }),
   output: z.object({ ticket, attachment, uploadToken: z.string() }),
   idempotent: false,
-  async run({ client, input, req }) {
-    const file = await loadFile(req, input.file);
+  async run({ client, input, req, overrideAccess }) {
+    const file = await loadFile(req, input.file, overrideAccess);
     const { upload } = await client.data(uploadOutput, {
       method: 'POST',
       path: '/api/v2/uploads',

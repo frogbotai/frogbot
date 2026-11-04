@@ -12,9 +12,11 @@ export const fileReference = z.object({
 export async function loadFile({
   req,
   file,
+  overrideAccess,
 }: {
   req: FrogBotRequest;
   file: z.output<typeof fileReference>;
+  overrideAccess: boolean;
 }): Promise<Buffer> {
   req.signal?.throwIfAborted();
 
@@ -22,7 +24,7 @@ export async function loadFile({
     id: file.fileId,
     depth: 0,
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   if (typeof doc.url !== 'string') throw new Error('[frogbot] File is unavailable.');
@@ -63,18 +65,20 @@ export async function saveFile({
   data,
   name,
   mimeType,
+  overrideAccess,
 }: {
   req: FrogBotRequest;
   data: Buffer;
   name: string;
   mimeType: string;
+  overrideAccess: boolean;
 }): Promise<SavedFile> {
   req.signal?.throwIfAborted();
 
   const doc = await createPieceFile(req, 'Dropbox', {
     file: { data, name, mimetype: mimeType, size: data.length },
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   return {

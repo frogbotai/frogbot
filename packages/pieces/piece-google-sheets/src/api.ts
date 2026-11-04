@@ -18,7 +18,7 @@ export const exportWorksheet = defineAction({
     z.object({ file: savedFile, format: z.enum(['csv', 'tsv']) }),
   ]),
   idempotent: true,
-  async run({ client, req, input }) {
+  async run({ client, req, input, overrideAccess }) {
     let url = new URL(
       `https://docs.google.com/spreadsheets/d/${encodeURIComponent(input.spreadsheetId)}/export`,
     );
@@ -68,6 +68,7 @@ export const exportWorksheet = defineAction({
       return {
         file: await saveFile({
           req,
+          overrideAccess,
           data,
           name,
           mimeType: input.format === 'csv' ? 'text/csv' : 'text/tab-separated-values',

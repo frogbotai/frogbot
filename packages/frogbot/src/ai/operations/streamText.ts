@@ -63,6 +63,7 @@ export async function streamTextOperation(
         req: toolReq,
         frogbot,
         agent: { slug: 'direct', runId: generateId() },
+        overrideAccess: overrideAccess === true,
       })
     : undefined;
 

@@ -67,6 +67,7 @@ export async function saveAttachments(
   client: Gmail,
   req: FrogBotRequest,
   message: gmail_v1.Schema$Message,
+  overrideAccess: boolean,
 ) {
   if (!message.id) return message;
 
@@ -108,7 +109,7 @@ export async function saveAttachments(
           size: data.length,
         },
         req,
-        overrideAccess: false,
+        overrideAccess,
       });
 
       return {
@@ -126,6 +127,7 @@ export async function saveAttachments(
 export async function createRawMessage({
   input,
   req,
+  overrideAccess,
   extraHeaders = [],
 }: {
   input: {
@@ -141,11 +143,12 @@ export async function createRawMessage({
     to: string[];
   };
   req: FrogBotRequest;
+  overrideAccess: boolean;
   extraHeaders?: string[];
 }) {
   const boundary = `frogbot-${crypto.randomUUID()}`;
   const files = await Promise.all(
-    (input.attachments ?? []).map((value) => loadFileAttachment(req, value)),
+    (input.attachments ?? []).map((value) => loadFileAttachment(req, value, overrideAccess)),
   );
 
   const lines = [

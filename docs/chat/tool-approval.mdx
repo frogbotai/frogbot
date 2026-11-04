@@ -38,7 +38,7 @@ The chats collection's `update` access decides who can change it. On a new chat,
 A run started in code reads the chat's `autoApprove` unless it sets its own:
 
 ```ts
-await frogbot.agents.support.generate({ prompt: 'Close SUP-42', chatId, autoApprove: true })
+await frogbot.agents.support.generate({ prompt: 'Close SUP-42', chatId, req, autoApprove: true })
 ```
 
 ## Nobody to ask

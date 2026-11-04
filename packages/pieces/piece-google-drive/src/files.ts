@@ -15,10 +15,12 @@ type FileContent = { data: Buffer; name: string; mimeType: string };
 export async function loadFile({
   req,
   file,
+  overrideAccess,
   signal = req.signal ?? undefined,
 }: {
   req: FrogBotRequest;
   file: z.output<typeof fileReference>;
+  overrideAccess: boolean;
   signal?: AbortSignal;
 }): Promise<FileContent> {
   signal?.throwIfAborted();
@@ -26,7 +28,7 @@ export async function loadFile({
     id: file.fileId,
     depth: 0,
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   if (typeof doc.url !== 'string') throw new Error('[frogbot] File is unavailable.');
@@ -74,12 +76,13 @@ async function saveFile({
   data,
   name,
   mimeType,
-}: FileContent & { req: FrogBotRequest }): Promise<SavedFile> {
+  overrideAccess,
+}: FileContent & { req: FrogBotRequest; overrideAccess: boolean }): Promise<SavedFile> {
   req.signal?.throwIfAborted();
   const doc = await createPieceFile(req, 'Google Drive', {
     file: { data, name, mimetype: mimeType, size: data.length },
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   return {
@@ -123,9 +126,11 @@ export async function downloadDriveFile({
   name,
   includeSharedDrives,
   metadata,
+  overrideAccess,
 }: {
   client: GoogleDriveClient;
   req: FrogBotRequest;
+  overrideAccess: boolean;
   fileId: string;
   name?: string;
   includeSharedDrives: boolean;
@@ -174,5 +179,6 @@ export async function downloadDriveFile({
     data: contentBytes(response.data),
     name: filename,
     mimeType: format?.mimeType ?? file.mimeType ?? 'application/octet-stream',
+    overrideAccess,
   });
 }

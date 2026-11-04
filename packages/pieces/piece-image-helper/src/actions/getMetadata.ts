@@ -18,8 +18,8 @@ export const getMetadata = defineAction({
       description: z.string().optional(),
     }),
   ),
-  async run({ input, req }) {
-    const image = await loadImage(req, input.image);
+  async run({ input, req, overrideAccess }) {
+    const image = await loadImage(req, input.image, overrideAccess);
 
     return ExifReader.load(image.data);
   },

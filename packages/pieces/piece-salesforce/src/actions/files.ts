@@ -13,8 +13,8 @@ export const uploadFile = defineAction({
   input: z.object({ recordId: recordId('Record ID'), file: fileInput }),
   output: created,
   idempotent: false,
-  async run({ client, input, req }) {
-    const file = await loadFile(req, input.file);
+  async run({ client, input, req, overrideAccess }) {
+    const file = await loadFile(req, input.file, overrideAccess);
 
     return client.request(created, {
       method: 'POST',
@@ -38,8 +38,8 @@ export const createAttachment = defineAction({
   input: z.object({ parentId: recordId('Record ID'), file: fileInput }),
   output: created,
   idempotent: false,
-  async run({ client, input, req }) {
-    const file = await loadFile(req, input.file);
+  async run({ client, input, req, overrideAccess }) {
+    const file = await loadFile(req, input.file, overrideAccess);
 
     return client.request(created, {
       method: 'POST',

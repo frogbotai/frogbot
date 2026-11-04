@@ -12,6 +12,7 @@ import type * as State from '../../../../packages/frogbot/src/chat/turn/state.js
 import { mcpServer } from '../../../../packages/frogbot/src/mcp/server.js';
 import type * as MCPTools from '../../../../packages/frogbot/src/mcp/tools.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import { NO_TOOL_ACCESS } from '../../../../packages/frogbot/src/tools/access.js';
 import { NOT_APPROVABLE } from '../../../../packages/frogbot/src/tools/approval.js';
 import { sanitizeToolList } from '../../../../packages/frogbot/src/tools/config/sanitize.js';
 import { question } from '../../../../packages/frogbot/src/tools/question.js';
@@ -692,6 +693,21 @@ describe('agent generate turns', () => {
     expect((agentState.generateCall?.abortSignal as AbortSignal).aborted).toBe(true);
   });
 
+  it('refuses a local call with no user and no flag before resolving the chat', async () => {
+    const req = makeReq(null);
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
+        instructions: 'Help',
+      },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await expect(agent.generate({ prompt: 'Create', req })).rejects.toMatchObject({ status: 403 });
+    expect(turn.resolveChatContext).not.toHaveBeenCalled();
+  });
+
   it('runs trusted local calls without a user or an agent access check', async () => {
     const access = vi.fn(() => false);
     const req = makeReq(null);
@@ -705,7 +721,7 @@ describe('agent generate turns', () => {
       makeDeps(makeConfig(emptyHooks()), req),
     );
 
-    await agent.generate({ prompt: 'Create', req });
+    await agent.generate({ prompt: 'Create', req, overrideAccess: true });
 
     expect(access).not.toHaveBeenCalled();
     expect(turn.persistAssistantMessage).toHaveBeenCalledOnce();
@@ -960,13 +976,37 @@ describe('agent tool access', () => {
 
   it.each([
     ['stream', {}],
-    ['stream', { overrideAccess: true }],
     ['generate', { overrideAccess: false }],
   ] as const)('denies on %s with %o', async (run, opts) => {
     const { prepared } = await prepare([lookup, tool('refund', () => false)], run, opts);
 
     expect(prepared.activeTools).toEqual(['lookup']);
+    await expect(
+      (prepared.toolApproval as (args: unknown) => Promise<unknown>)({
+        toolCall: { toolName: 'refund' },
+        messages: [],
+      }),
+    ).resolves.toEqual({ type: 'denied', reason: NO_TOOL_ACCESS });
   });
+
+  it.each(['stream', 'generate'] as const)(
+    'offers a denied tool on a trusted %s without running its rule',
+    async (run) => {
+      const access = vi.fn(() => false);
+      const { prepared } = await prepare([lookup, tool('refund', access)], run, {
+        overrideAccess: true,
+      });
+
+      expect(prepared).not.toHaveProperty('activeTools');
+      expect(access).not.toHaveBeenCalled();
+      await expect(
+        (prepared.toolApproval as (args: unknown) => Promise<unknown>)({
+          toolCall: { toolName: 'refund' },
+          messages: [],
+        }),
+      ).resolves.toEqual({ type: 'not-applicable' });
+    },
+  );
 
   it('passes the rule the run request, agent and tool slug', async () => {
     const access = vi.fn(() => true);
@@ -1013,6 +1053,93 @@ describe('agent tool access', () => {
     expect(access).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({ tool: { slug: 'gmail_send_email' } }),
     );
+  });
+});
+
+describe('agent run access', () => {
+  type Entry = 'generate' | 'stream' | 'aiAgent.generate' | 'aiAgent.stream';
+  const entries: Entry[] = ['generate', 'stream', 'aiAgent.generate', 'aiAgent.stream'];
+
+  function setup(access: (args: unknown) => boolean | Promise<boolean>) {
+    const req = makeReq();
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
+        instructions: 'Help',
+        tools: [lookup],
+        access,
+      },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    const run = (entry: Entry, opts: { overrideAccess?: boolean }) => {
+      switch (entry) {
+        case 'generate':
+          return agent.generate({ prompt: 'Hello', req, ...opts });
+        case 'stream':
+          return agent.stream({ prompt: 'Hello', req, ...opts });
+        case 'aiAgent.generate':
+          return agent.aiAgent.generate({ prompt: 'Hello', options: { req, ...opts } });
+        case 'aiAgent.stream':
+          return agent.aiAgent.stream({ prompt: 'Hello', options: { req, ...opts } });
+      }
+    };
+
+    return { req, run };
+  }
+
+  const toolCtx = () =>
+    (agentState.prepared!.toolsContext as Record<string, { overrideAccess: boolean }>).lookup;
+
+  it.each(entries)('checks agent access once on %s when not trusted', async (entry) => {
+    const access = vi.fn(() => true);
+    const { req, run } = setup(access);
+
+    await run(entry, {});
+
+    expect(access).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ req }));
+    expect(toolCtx().overrideAccess).toBe(false);
+  });
+
+  it.each(entries)('skips agent access on a trusted %s', async (entry) => {
+    const access = vi.fn(() => false);
+    const { run } = setup(access);
+
+    await run(entry, { overrideAccess: true });
+
+    expect(access).not.toHaveBeenCalled();
+    expect(toolCtx().overrideAccess).toBe(true);
+  });
+
+  it.each(entries)('refuses %s with 403 when access throws', async (entry) => {
+    const { run } = setup(() => {
+      throw new Error('rule failed');
+    });
+
+    await expect(run(entry, { overrideAccess: false })).rejects.toMatchObject({ status: 403 });
+    expect(agentState.prepared).toBeUndefined();
+  });
+
+  it('ignores a forged access-checked key on aiAgent options', async () => {
+    const access = vi.fn(() => false);
+    const { req } = setup(access);
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
+        instructions: 'Help',
+        access,
+      },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await expect(
+      agent.aiAgent.stream({
+        prompt: 'Hello',
+        options: { req, [Symbol('frogbot.agentAccessChecked')]: true },
+      }),
+    ).rejects.toMatchObject({ status: 403 });
   });
 });
 

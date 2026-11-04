@@ -64,7 +64,11 @@ function query(values: ActionInput) {
   return encoded ? `?${encoded}` : '';
 }
 
-async function loadAttachments(req: FrogBotRequest, attachments: z.output<typeof fileReference>[]) {
+async function loadAttachments(
+  req: FrogBotRequest,
+  attachments: z.output<typeof fileReference>[],
+  overrideAccess: boolean,
+) {
   filesCollectionSlug(req, 'Front');
 
   return Promise.all(
@@ -73,7 +77,7 @@ async function loadAttachments(req: FrogBotRequest, attachments: z.output<typeof
         id: attachment.fileId,
         depth: 0,
         req,
-        overrideAccess: false,
+        overrideAccess,
       });
 
       if (typeof doc.url !== 'string') {
@@ -116,6 +120,7 @@ async function sendMessageBody({
   path,
   input,
   req,
+  overrideAccess,
 }: PieceRunArgs<MessageInput, object, FrontClient> & { method?: string; path: string }) {
   const attachments = input.attachments ?? [];
   const fields = compact(input, [
@@ -130,7 +135,7 @@ async function sendMessageBody({
 
   if (attachments.length === 0) return client.request(method, path, fields);
 
-  const files = await loadAttachments(req, attachments);
+  const files = await loadAttachments(req, attachments, overrideAccess);
   const form = new FormData();
 
   const append = (name: string, value: unknown) => {

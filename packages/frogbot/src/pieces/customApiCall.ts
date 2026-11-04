@@ -219,6 +219,7 @@ async function saveBinary(
   input: Input,
   pathname: string,
   req: FrogBotRequest,
+  overrideAccess: boolean,
 ): Promise<CustomApiCallFile> {
   const fileName = input.fileName ?? fileNameFrom(pathname);
   const mimeType =
@@ -228,7 +229,7 @@ async function saveBinary(
   const doc = await createPieceFile(req, name, {
     file: { data, mimetype: mimeType, name: fileName, size: data.length },
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   return {
@@ -257,7 +258,7 @@ export function defineCustomApiCall<TOptions, TClient>(
     input: customApiCallInput,
     output: customApiCallOutput,
     idempotent: false,
-    async run({ client, input, req }): Promise<CustomApiCallOutput> {
+    async run({ client, input, req, overrideAccess }): Promise<CustomApiCallOutput> {
       const { pathname, search } = requestTarget(name, input.path, config.path);
 
       if (input.responseType === 'binary') filesCollectionSlug(req, name);
@@ -318,7 +319,7 @@ export function defineCustomApiCall<TOptions, TClient>(
         return {
           status: response.status,
           headers: responseHeaders,
-          body: await saveBinary(name, response, data, input, pathname, req),
+          body: await saveBinary(name, response, data, input, pathname, req, overrideAccess),
         };
       }
 

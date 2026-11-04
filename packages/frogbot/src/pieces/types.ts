@@ -41,7 +41,17 @@ export type PieceRunArgs<TInput, TOptions, TClient> = {
   client: TClient;
   options: TOptions;
   req: FrogBotRequest;
+  /**
+   * Whether the run is trusted: the agent run's flag when an agent calls the action, the call's
+   * `overrideAccess` (default `false`) on a direct call. Forward it to Local API calls.
+   */
+  overrideAccess: boolean;
 };
+
+type PieceTriggerArgs<TInput, TOptions, TClient> = Omit<
+  PieceRunArgs<TInput, TOptions, TClient>,
+  'overrideAccess'
+>;
 
 export type PieceActionDefinition<
   TInput extends z.ZodType = z.ZodType,
@@ -87,29 +97,29 @@ export type PieceWebhookTrigger<
 > = PieceTriggerBase<TInput, TOutput> & {
   type: 'webhook';
   onEnable(
-    args: PieceRunArgs<z.output<TInput>, TOptions, TClient> & { webhookUrl: string },
+    args: PieceTriggerArgs<z.output<TInput>, TOptions, TClient> & { webhookUrl: string },
   ): Promise<TState>;
   onDisable(
-    args: PieceRunArgs<z.output<TInput>, TOptions, TClient> & { state: TState },
+    args: PieceTriggerArgs<z.output<TInput>, TOptions, TClient> & { state: TState },
   ): Promise<void>;
   renew?: {
     schedule: string;
     run(
-      args: PieceRunArgs<z.output<TInput>, TOptions, TClient> & {
+      args: PieceTriggerArgs<z.output<TInput>, TOptions, TClient> & {
         state: TState;
         webhookUrl: string;
       },
     ): Promise<TState>;
   };
   run(
-    args: PieceRunArgs<z.output<TInput>, TOptions, TClient> & { state: TState },
+    args: PieceTriggerArgs<z.output<TInput>, TOptions, TClient> & { state: TState },
   ): Promise<TriggerEvent<TOutput extends z.ZodType ? z.output<TOutput> : PieceJSON>[]>;
   /**
    * The answer to the provider once `run`'s events are dispatched, for providers that expect a set
    * body. Not called when `run` throws. @default `{ ok: true }` as JSON
    */
   reply?(
-    args: PieceRunArgs<z.output<TInput>, TOptions, TClient> & {
+    args: PieceTriggerArgs<z.output<TInput>, TOptions, TClient> & {
       state: TState;
       events: TriggerEvent<TOutput extends z.ZodType ? z.output<TOutput> : PieceJSON>[];
     },
@@ -125,7 +135,7 @@ export type PieceAppTrigger<
   type: 'app';
   event: string;
   run(
-    args: PieceRunArgs<z.output<TInput>, TOptions, TClient>,
+    args: PieceTriggerArgs<z.output<TInput>, TOptions, TClient>,
   ): Promise<TriggerEvent<TOutput extends z.ZodType ? z.output<TOutput> : PieceJSON>[]>;
 };
 
@@ -138,7 +148,7 @@ export type PiecePollingTrigger<
 > = PieceTriggerBase<TInput, TOutput> & {
   type: 'polling';
   schedule?: string;
-  run(args: PieceRunArgs<z.output<TInput>, TOptions, TClient> & { cursor?: TCursor }): Promise<{
+  run(args: PieceTriggerArgs<z.output<TInput>, TOptions, TClient> & { cursor?: TCursor }): Promise<{
     events: Array<TOutput extends z.ZodType ? z.output<TOutput> : PieceJSON>;
     cursor?: TCursor;
   }>;

@@ -54,10 +54,11 @@ export function addresses(list: string[] | undefined) {
 export async function attachments(
   req: FrogBotRequest,
   files: z.output<typeof fileInput>[] | undefined,
+  overrideAccess: boolean,
 ) {
   if (!files?.length) return undefined;
 
-  return Promise.all(files.map((file) => fileAttachment(req, file)));
+  return Promise.all(files.map((file) => fileAttachment(req, file, overrideAccess)));
 }
 
 /** The Graph `message` body for a new email or draft. */
@@ -72,6 +73,7 @@ export async function newMessage(
     bodyType: 'text' | 'html';
     attachments?: z.output<typeof fileInput>[];
   },
+  overrideAccess: boolean,
 ) {
   return {
     subject: input.subject,
@@ -79,7 +81,7 @@ export async function newMessage(
     toRecipients: addresses(input.to),
     ccRecipients: addresses(input.cc),
     bccRecipients: addresses(input.bcc),
-    attachments: await attachments(req, input.attachments),
+    attachments: await attachments(req, input.attachments, overrideAccess),
   };
 }
 

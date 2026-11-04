@@ -126,8 +126,8 @@ export const uploadFile = defineAction({
   input: uploadFileInput,
   output: uploadResult,
   idempotent: false,
-  async run({ client, input, req }) {
-    const body = await loadFile({ req, file: input.file });
+  async run({ client, input, req, overrideAccess }) {
+    const body = await loadFile({ req, file: input.file, overrideAccess });
 
     return client.content({
       path: 'files/upload',
@@ -151,7 +151,7 @@ export const downloadFile = defineAction({
   input: pathInput,
   output: z.object({ file: savedFile }),
   idempotent: true,
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     const response = await client.request('https://content.dropboxapi.com/2/files/download', {
       headers: {
         'content-type': 'application/octet-stream',
@@ -166,6 +166,7 @@ export const downloadFile = defineAction({
       data: responseBytes(response.body),
       name,
       mimeType: response.headers['content-type']?.split(';')[0] ?? 'application/octet-stream',
+      overrideAccess,
     });
 
     return { file };

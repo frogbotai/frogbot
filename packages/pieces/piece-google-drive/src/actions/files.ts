@@ -97,8 +97,8 @@ export const uploadFile = defineAction({
   output: fileOutput,
   idempotent: false,
   options: { parentFolderId: folderOptions },
-  async run({ client, input, req }): Promise<DriveFile> {
-    const file = await loadFile({ req, file: input.file });
+  async run({ client, input, req, overrideAccess }): Promise<DriveFile> {
+    const file = await loadFile({ req, file: input.file, overrideAccess });
 
     return fileOutput.parse(
       (
@@ -130,8 +130,8 @@ export const downloadFile = defineAction({
   input: downloadFileInput,
   output: savedFileOutput,
   idempotent: false,
-  async run({ client, input, req }): Promise<SavedFile> {
-    return downloadDriveFile({ client, req, ...input });
+  async run({ client, input, req, overrideAccess }): Promise<SavedFile> {
+    return downloadDriveFile({ client, req, overrideAccess, ...input });
   },
 });
 

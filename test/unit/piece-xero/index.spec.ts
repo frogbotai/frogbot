@@ -242,6 +242,7 @@ describe('xero transport and actions', () => {
       },
       client,
       options: {},
+      overrideAccess: false,
       req: request(),
     });
 
@@ -278,6 +279,7 @@ describe('xero transport and actions', () => {
       },
       client,
       options: {},
+      overrideAccess: false,
       req: request(),
     });
 
@@ -330,6 +332,7 @@ describe('xero transport and actions', () => {
         },
         client: { authorize: vi.fn(), listTenants: vi.fn(), request: vi.fn() },
         options: {},
+        overrideAccess: false,
         req,
       }),
     ).rejects.toThrow('unsafe');
@@ -373,6 +376,7 @@ describe('xero transport and actions', () => {
       client,
       options: {},
       req,
+      overrideAccess: false,
     });
 
     expect(findByID).toHaveBeenCalledWith(

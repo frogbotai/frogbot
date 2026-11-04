@@ -125,7 +125,7 @@ export const setPublicAccess = defineAction({
   input: setPublicAccessInput,
   output: setPublicAccessOutput,
   idempotent: false,
-  async run({ client, input, req }): Promise<SetPublicAccessOutput> {
+  async run({ client, input, req, overrideAccess }): Promise<SetPublicAccessOutput> {
     const permission = permissionOutput.parse(
       (
         await client.permissions.create(
@@ -159,6 +159,7 @@ export const setPublicAccess = defineAction({
         : await downloadDriveFile({
             client,
             req,
+            overrideAccess,
             fileId: input.fileId,
             metadata: file,
             includeSharedDrives: input.includeSharedDrives,

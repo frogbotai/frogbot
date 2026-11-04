@@ -23,6 +23,7 @@ export async function runAgent() {
   const frogbot = await getFrogBot({ config });
   const result = await frogbot.agents.assistant.generate({
     prompt: "Summarize today's open tasks.",
+    overrideAccess: true,
   });
 
   frogbot.logger.info(result.text);

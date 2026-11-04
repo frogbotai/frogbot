@@ -67,13 +67,13 @@ export const sendMessage = defineAction({
   output: discordObject,
   idempotent: false,
   options: { channelId: channelOptions },
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     const form = new FormData();
 
     if (input.message !== undefined) form.set('content', input.message);
 
     const attachments = await Promise.all(
-      input.attachments.map((attachment) => loadDiscordAttachment(req, attachment)),
+      input.attachments.map((attachment) => loadDiscordAttachment(req, attachment, overrideAccess)),
     );
 
     attachments.forEach((attachment, index) => {

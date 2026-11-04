@@ -10,10 +10,10 @@ export const createDraftEmail = defineAction({
   input: z.object({ ...recipients, subject: z.string(), ...content }),
   output: message,
   idempotent: false,
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     return client.request(`${client.mailbox}/messages`, message, {
       method: 'POST',
-      body: await newMessage(req, input),
+      body: await newMessage(req, input, overrideAccess),
       signal: signal(req),
     });
   },

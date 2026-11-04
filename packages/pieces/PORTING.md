@@ -112,12 +112,13 @@ There is no `req`; clients are memoized per credential.
 
 ### `action.run`
 
-| Argument  | Type             | Why it earns its keep                                        |
-| --------- | ---------------- | ------------------------------------------------------------ |
-| `input`   | inferred input   | Validated action input.                                      |
-| `client`  | client           | Calls the vendor without exposing auth.                      |
-| `options` | inferred options | Factory defaults needed by the action.                       |
-| `req`     | `FrogBotRequest` | Acting user, local API, files, KV, context, and transaction. |
+| Argument         | Type             | Why it earns its keep                                                               |
+| ---------------- | ---------------- | ----------------------------------------------------------------------------------- |
+| `input`          | inferred input   | Validated action input.                                                             |
+| `client`         | client           | Calls the vendor without exposing auth.                                             |
+| `options`        | inferred options | Factory defaults needed by the action.                                              |
+| `req`            | `FrogBotRequest` | Acting user, local API, files, KV, context, and transaction.                        |
+| `overrideAccess` | `boolean`        | Whether the run is trusted. Forward it to every local API call; never hard-code it. |
 
 ### `action.options[key]`
 
@@ -338,7 +339,7 @@ Apply `required`, defaults, bounds, and labels from the source. Optional propert
 
 Credential methods are capabilities declared by `auth`, `oauth`, and factory configuration. Never infer them from field names or token-shaped values.
 
-For file-backed actions, preserve the caller's request and access context on local API reads and writes. Forward cookies or authorization only to same-origin FrogBot file URLs, reject unsafe URL schemes and embedded credentials, reject redirects, and propagate cancellation.
+For file-backed actions, preserve the caller's request and access context on local API reads and writes: pass `req` and the run's `overrideAccess`. Forward cookies or authorization only to same-origin FrogBot file URLs, reject unsafe URL schemes and embedded credentials, reject redirects, and propagate cancellation.
 
 ## Trigger mapping
 

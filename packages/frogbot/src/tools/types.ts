@@ -10,6 +10,11 @@ export type ToolCtx = {
   req: FrogBotRequest;
   frogbot: FrogBot;
   agent: { slug: string; runId: string; chatId?: number | string };
+  /**
+   * Whether the run is trusted: `true` on code-started runs such as schedules, `false` when a
+   * person is chatting. Forward it to Local API calls so they skip access only on trusted runs.
+   */
+  overrideAccess: boolean;
 };
 
 type BaseTool<TSchema extends z.ZodType> = {
@@ -44,7 +49,8 @@ export type Tool<TSchema extends z.ZodType = z.ZodType, TResult = unknown> = Bas
   approval?: ToolApprovalOption;
   /**
    * Whether the run's user is offered this tool. Checked once per run, before the first model
-   * call; a tool it denies, or whose rule throws, is left out and can't be called.
+   * call; a tool it denies, or whose rule throws, is left out and can't be called. Trusted runs
+   * (`overrideAccess: true`) skip it.
    */
   access?: ToolAccess;
 };

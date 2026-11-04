@@ -120,8 +120,8 @@ export const addCardAttachment = defineAction({
   }),
   output: attachmentOutput,
   idempotent: false,
-  async run({ client, input, req }) {
-    const attachment = await loadAttachment(req, input.attachment);
+  async run({ client, input, req, overrideAccess }) {
+    const attachment = await loadAttachment(req, input.attachment, overrideAccess);
     const form = new FormData();
 
     form.append('file', attachment.data, attachment.name);

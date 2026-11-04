@@ -20,7 +20,7 @@ export const send = defineAction({
   input: inputSchema,
   output: messageOutput,
   idempotent: false,
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     let threadId: string | undefined;
     const extraHeaders: string[] = [];
     if (input.inReplyTo) {
@@ -31,7 +31,11 @@ export const send = defineAction({
           .data.messages?.[0]?.threadId ?? undefined;
     }
 
-    const message = { threadId, raw: await createRawMessage({ input, req, extraHeaders }) };
+    const message = {
+      threadId,
+      raw: await createRawMessage({ input, req, overrideAccess, extraHeaders }),
+    };
+
     const sent = input.draft
       ? ((await client.users.drafts.create({ userId: 'me', requestBody: { message } })).data
           .message ?? {})

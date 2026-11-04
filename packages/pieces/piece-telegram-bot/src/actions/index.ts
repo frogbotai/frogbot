@@ -72,6 +72,7 @@ async function callWithFile(
   method: string,
   body: Input,
   field: string,
+  overrideAccess: boolean,
 ) {
   const source = body[field];
 
@@ -79,7 +80,7 @@ async function callWithFile(
     return response.parse(await client.call(method, telegramValue(body)));
   }
 
-  const file = await loadTelegramFile(req, telegramFile.parse(source));
+  const file = await loadTelegramFile(req, telegramFile.parse(source), overrideAccess);
   const values = z
     .record(z.string(), jsonValue)
     .parse(telegramValue({ ...body, [field]: undefined }));
@@ -142,7 +143,7 @@ export const sendMedia = defineAction({
   }),
   output: response,
   idempotent: false,
-  async run({ client, input, req }) {
+  async run({ client, input, req, overrideAccess }) {
     const { mediaType, media, message, ...options } = input;
     const method = {
       photo: 'sendPhoto',
@@ -153,7 +154,7 @@ export const sendMedia = defineAction({
 
     const body = { ...options, [mediaType]: media, caption: message };
 
-    return callWithFile(client, req, method, body, mediaType);
+    return callWithFile(client, req, method, body, mediaType, overrideAccess);
   },
 });
 
@@ -169,8 +170,8 @@ export const sendDocument = defineAction({
   }),
   output: response,
   idempotent: false,
-  async run({ client, input, req }) {
-    return callWithFile(client, req, 'sendDocument', input, 'document');
+  async run({ client, input, req, overrideAccess }) {
+    return callWithFile(client, req, 'sendDocument', input, 'document', overrideAccess);
   },
 });
 
@@ -190,8 +191,8 @@ export const sendAudio = defineAction({
   }),
   output: response,
   idempotent: false,
-  async run({ client, input, req }) {
-    return callWithFile(client, req, 'sendAudio', input, 'audio');
+  async run({ client, input, req, overrideAccess }) {
+    return callWithFile(client, req, 'sendAudio', input, 'audio', overrideAccess);
   },
 });
 

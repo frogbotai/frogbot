@@ -19,6 +19,7 @@ import {
   messagesSlug,
   modelPort,
   questionAgentSlug,
+  readerAgentSlug,
   turnsSlug,
   usersSlug,
 } from './shared.js';
@@ -529,6 +530,7 @@ describe('per-user agent model allowlists', () => {
       questionAgentSlug,
       wildcardAgentSlug,
       approverAgentSlug,
+      readerAgentSlug,
       generalAgentSlug,
     ]);
     expect(result.agents.find(({ slug }) => slug === questionAgentSlug)).toMatchObject({

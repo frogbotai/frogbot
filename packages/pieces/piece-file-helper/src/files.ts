@@ -19,12 +19,20 @@ function resolveMimeType(value: unknown, filename: string) {
   return typeof detected === 'string' ? detected : 'application/octet-stream';
 }
 
-export async function loadFile({ req, id }: { req: FrogBotRequest; id: string | number }) {
+export async function loadFile({
+  req,
+  id,
+  overrideAccess,
+}: {
+  req: FrogBotRequest;
+  id: string | number;
+  overrideAccess: boolean;
+}) {
   const doc = await findPieceFile(req, 'Files Helper', {
     id,
     depth: 0,
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   if (typeof doc.url !== 'string') throw new Error(`File '${id}' is unavailable.`);
@@ -66,11 +74,13 @@ export async function saveFile({
   data,
   filename,
   mimeType,
+  overrideAccess,
 }: {
   req: FrogBotRequest;
   data: Buffer;
   filename: string;
   mimeType?: string;
+  overrideAccess: boolean;
 }) {
   filesCollectionSlug(req, 'Files Helper');
 
@@ -80,7 +90,7 @@ export async function saveFile({
 
   const doc = await createPieceFile(req, 'Files Helper', {
     req,
-    overrideAccess: false,
+    overrideAccess,
     file: { data, name: filename, mimetype: resolvedMimeType, size: data.length },
   });
 

@@ -22,7 +22,7 @@ const createQrCodeAction = defineAction({
   input: inputSchema,
   output: outputSchema,
   idempotent: false,
-  async run({ input, req }) {
+  async run({ input, req, overrideAccess }) {
     filesCollectionSlug(req, 'QR Code');
 
     req.signal?.throwIfAborted();
@@ -36,7 +36,7 @@ const createQrCodeAction = defineAction({
     const file = await createPieceFile(req, 'QR Code', {
       file: { data, name, mimetype: mimeType, size: data.length },
       req,
-      overrideAccess: false,
+      overrideAccess,
     });
 
     return {

@@ -22,6 +22,7 @@ async function replyMessage({
   client,
   input,
   req,
+  overrideAccess,
   draft,
 }: PieceRunArgs<z.output<typeof inputSchema>, object, Gmail> & { draft: boolean }) {
   const original = await getOriginal(client, input.messageId);
@@ -43,6 +44,7 @@ async function replyMessage({
     raw: await createRawMessage({
       input: { ...input, to, cc, subject: `Re: ${subject}` },
       req,
+      overrideAccess,
       extraHeaders: [`In-Reply-To: ${messageId}`, `References: ${messageId}`],
     }),
   };

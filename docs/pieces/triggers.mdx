@@ -33,7 +33,7 @@ export const ops: AgentConfig<typeof linear.triggers.issueCreated> = {
 }
 ```
 
-Add `ops` to your configuration's `agents` array. Use `AgentConfig<typeof piece.triggers.ref>` for contextual inference from the trigger's input and output schemas. Plain `AgentConfig` leaves the handler's `event` as `unknown`. The handler receives the emitted event's `data`, the agent, and a request with `{ piece, trigger, agent }` in `req.context.trigger`; `piece` is the instance slug.
+Add `ops` to your configuration's `agents` array. Use `AgentConfig<typeof piece.triggers.ref>` for contextual inference from the trigger's input and output schemas. Plain `AgentConfig` leaves the handler's `event` as `unknown`. The handler receives the emitted event's `data`, the agent, and a request with `{ piece, trigger, agent }` in `req.context.trigger`; `piece` is the instance slug. The request has no user, so a handler that runs the agent passes `overrideAccess: true`: `await agent.generate({ prompt, req, overrideAccess: true })`.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |

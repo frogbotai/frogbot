@@ -133,7 +133,7 @@ export const downloadRecording = defineAction({
     mimeType: z.string(),
     url: z.string().optional(),
   }),
-  async run({ input, client, req }) {
+  async run({ input, client, req, overrideAccess }) {
     const data = await client.request({
       path: `/2010-04-01/Accounts/${client.accountSid}/Recordings/${encodeURIComponent(input.recordingSid)}.${input.format}`,
       query: { RequestedChannels: input.channels },
@@ -148,7 +148,7 @@ export const downloadRecording = defineAction({
     const doc = await createPieceFile(req, 'Twilio', {
       file: { data: bytes, name, mimetype: mimeType, size: bytes.length },
       req,
-      overrideAccess: false,
+      overrideAccess,
     });
 
     return { id: doc.id, name, mimeType, url: typeof doc.url === 'string' ? doc.url : undefined };

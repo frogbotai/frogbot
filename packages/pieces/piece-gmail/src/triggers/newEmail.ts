@@ -35,7 +35,7 @@ export const newEmail = definePollingTrigger({
 
     const events = await Promise.all(
       (list.data.messages ?? []).map(async ({ id }) =>
-        id ? saveAttachments(client, req, await getOriginal(client, id)) : {},
+        id ? saveAttachments(client, req, await getOriginal(client, id), false) : {},
       ),
     );
 
