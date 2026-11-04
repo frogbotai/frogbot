@@ -639,6 +639,25 @@ describe('check ticket-docs', () => {
       ]);
     });
 
+    it('names both folders that share an issue key', () => {
+      const lines = problems({
+        '_process/tickets/frogbot-300_one/step1_research.md': 'Issue: x\n',
+        '_process/tickets/frogbot-300_two/step1_research.md': 'Issue: x\n',
+      });
+
+      expect(lines).toContain(
+        '.idea/_process/tickets:1 ticket frogbot-300 has 2 folders: frogbot-300_one, frogbot-300_two',
+      );
+    });
+
+    it('lets old and issue-keyed folders sit together', () => {
+      const result = check({
+        '_process/tickets/frogbot-301_new/step3_plan.md': '# Plan\n',
+      });
+
+      expect(result.lines.join('\n')).not.toContain('frogbot-301_new/issue.md');
+    });
+
     it('counts an archived folder as present and does not check it', () => {
       const result = check({
         '_process/archive/tickets/ticket903_later/issue.md': '# Ticket 903 — no header\n',

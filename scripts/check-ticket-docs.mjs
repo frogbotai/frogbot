@@ -62,7 +62,13 @@ const SYMBOL_WINDOW = 3;
 
 const QUOTE_LENGTH = 60;
 
-const FOLDER = /^ticket(\d+)_.+$/;
+const FOLDER = /^(?:ticket(\d+)|((?:frogbot|sidekick|platform|process)-\d+))_.+$/;
+
+const keyOfFolder = (name) => {
+  const match = FOLDER.exec(name);
+
+  return match[2] ?? Number(match[1]);
+};
 
 const FENCE = /^\s*(`{3,}|~{3,})/;
 
@@ -820,7 +826,7 @@ function ticketFolders(dir) {
 
   return readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && FOLDER.test(entry.name))
-    .map((entry) => ({ name: entry.name, ticket: Number(FOLDER.exec(entry.name)[1]) }));
+    .map((entry) => ({ name: entry.name, ticket: keyOfFolder(entry.name) }));
 }
 
 function planFiles(idea) {
@@ -848,6 +854,23 @@ function checkTicketDocs({ idea, root, home = os.homedir(), only = [] }) {
   );
 
   const filtered = only.length > 0;
+
+  const seen = new Map();
+
+  for (const { name, ticket } of folders) {
+    seen.set(ticket, [...(seen.get(ticket) ?? []), name]);
+  }
+
+  for (const [ticket, names] of seen) {
+    if (names.length > 1) {
+      problems.push({
+        file: TICKETS,
+        line: 1,
+        message: `ticket ${ticket} has ${names.length} folders: ${names.join(', ')}`,
+      });
+    }
+  }
+
   const rows = new Map();
 
   for (const planFile of planFiles(idea)) {
@@ -911,15 +934,17 @@ function checkTicketDocs({ idea, root, home = os.homedir(), only = [] }) {
 
     const file = (name) => path.join(TICKETS, folder.name, name);
 
-    checkIssue(
-      {
-        text: readOptional(path.join(dir, 'issue.md')),
-        ticket: folder.ticket,
-        row: row?.section ? row : null,
-        planFile: row?.planFile,
-      },
-      at(problems, file('issue.md')),
-    );
+    if (typeof folder.ticket === 'number') {
+      checkIssue(
+        {
+          text: readOptional(path.join(dir, 'issue.md')),
+          ticket: folder.ticket,
+          row: row?.section ? row : null,
+          planFile: row?.planFile,
+        },
+        at(problems, file('issue.md')),
+      );
+    }
 
     const context = (name) => ({
       decisions,

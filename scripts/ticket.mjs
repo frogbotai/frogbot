@@ -90,7 +90,7 @@ const DEFAULT_TYPE = 'feat';
 const FOUND_USAGE = `pnpm ticket found [--source <path>] <<'EOF' … EOF`;
 
 const USAGE =
-  'usage: pnpm ticket new <n> [--type <type>] | land <n> | status [--batch <n>] | stats [--batch <n>] | found [--source <path>] (row on stdin) | next | decisions (owner replies on stdin) | verify [--list]';
+  'usage: pnpm ticket new <slug> [--repo <repo>] [--type <type>] | new <n> [--type <type>] | new --issue <repo>#<n> [--type <type>] | land <n> | status [--batch <n>] | stats [--batch <n>] | found [--source <path>] (row on stdin) | decisions (owner replies on stdin) | verify [--list]';
 
 const ENV = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
 
@@ -103,6 +103,14 @@ const BATCH = /^(?:\d+|none|deferred)$/;
 const FOLDER = /^ticket(\d+)_(.+)$/;
 
 const TICKET_KEY = /^(\d+)([a-z])?$/i;
+
+const ISSUE_KEY = new RegExp(`^(${Object.keys(REPOS).join('|')})-(\\d+)$`);
+
+const ISSUE_REF = new RegExp(`^(${Object.keys(REPOS).join('|')})#(\\d+)$`);
+
+const SLUG = /^[a-z][a-z0-9_]*$/;
+
+const GITHUB_OWNER = 'frogbotai';
 
 const BRANCH_TICKET = /(?:^|\/)ticket-?(\d+)([a-z])?(?=-|$)/i;
 
@@ -138,7 +146,13 @@ export function parseArgs(argv) {
       continue;
     }
 
-    const flag = { '--type': 'type', '--batch': 'batch', '--source': 'source' }[arg];
+    const flag = {
+      '--type': 'type',
+      '--batch': 'batch',
+      '--source': 'source',
+      '--repo': 'repo',
+      '--issue': 'issue',
+    }[arg];
 
     if (!flag) {
       if (arg.startsWith('-')) return { error: `unknown argument "${arg}"` };
@@ -155,12 +169,11 @@ export function parseArgs(argv) {
   }
 
   const allowed = {
-    new: { ticket: true, flags: ['type'] },
+    new: { ticket: false, flags: ['type', 'repo', 'issue'], optional: true },
     land: { ticket: true, flags: [] },
     status: { ticket: false, flags: ['batch'] },
     stats: { ticket: false, flags: ['batch'] },
     found: { ticket: false, stdin: true, flags: ['source'] },
-    next: { ticket: false, flags: [] },
     decisions: { ticket: false, flags: [] },
     verify: { ticket: false, flags: ['list'] },
   }[command];
@@ -173,7 +186,41 @@ export function parseArgs(argv) {
 
   if (extra) return { error: `${command} takes no --${extra}` };
 
-  if (positional.length !== (allowed.ticket ? 1 : 0)) {
+  if (command === 'new') {
+    if (options.issue !== undefined) {
+      const ref = ISSUE_REF.exec(options.issue);
+
+      if (!ref) return { error: `--issue "${options.issue}" is not <repo>#<n>, like frogbot#212` };
+
+      if (positional.length > 0 || options.repo) {
+        return { error: 'new --issue takes no slug or --repo' };
+      }
+
+      options.key = `${ref[1]}-${ref[2]}`;
+    } else if (positional.length !== 1) {
+      return { error: 'new needs a slug, a ticket number or --issue <repo>#<n>' };
+    } else if (ISSUE_KEY.test(positional[0])) {
+      options.key = positional[0];
+      options.issue = positional[0];
+    } else if (TICKET_KEY.test(positional[0])) {
+      const key = TICKET_KEY.exec(positional[0]);
+
+      options.ticket = Number(key[1]);
+
+      if (key[2]) options.part = key[2].toLowerCase();
+    } else if (SLUG.test(positional[0])) {
+      options.slug = positional[0];
+      options.repo ??= DEFAULT_REPO;
+
+      if (!Object.hasOwn(REPOS, options.repo)) {
+        return { error: `--repo "${options.repo}" is not one of ${Object.keys(REPOS).join(', ')}` };
+      }
+    } else {
+      return { error: `"${positional[0]}" is not a slug like add_thing or a ticket number` };
+    }
+
+    positional.length = 0;
+  } else if (positional.length !== (allowed.ticket ? 1 : 0)) {
     return {
       error: allowed.ticket
         ? `${command} needs one ticket number`
@@ -411,7 +458,11 @@ export function repoCheckout(main, repo = DEFAULT_REPO) {
 }
 
 export function worktreePath(main, ticket, repo = DEFAULT_REPO) {
-  return path.join(path.dirname(path.dirname(main)), WORKTREES, `${REPOS[repo].prefix}${ticket}`);
+  return path.join(
+    path.dirname(path.dirname(main)),
+    WORKTREES,
+    `${REPOS[repo].prefix}${typeof ticket === 'string' && ISSUE_KEY.test(ticket) ? '-' : ''}${ticket}`,
+  );
 }
 
 export function repoGates(gates, scripts) {
@@ -448,14 +499,16 @@ export function keyOfWorktree({ path: dir, branch }) {
   return keyOf(WORKTREE_TICKET.exec(dir)) ?? keyOf(BRANCH_TICKET.exec(branch ?? ''));
 }
 
-export function nextNumber({ folders, branches, worktrees }) {
-  const numbers = [
-    ...folders.map((folder) => number(FOLDER.exec(folder)?.[1])),
-    ...branches.map(ticketOfBranch),
-    ...worktrees.map(ticketOfWorktree),
-  ].filter((n) => n !== null);
+export function issueFolder({ repo, issue, slug }) {
+  return `${repo}-${issue}_${slug}`;
+}
 
-  return Math.max(0, ...numbers) + 1;
+export function parseIssueUrl(text) {
+  const match = /github\.com\/[^/\s]+\/([^/\s]+)\/issues\/(\d+)/.exec(text ?? '');
+
+  return match && Object.hasOwn(REPOS, match[1])
+    ? { repo: match[1], issue: Number(match[2]) }
+    : null;
 }
 
 export function parseWorktrees(porcelain) {
@@ -890,18 +943,6 @@ function readLedger(main) {
   return parseLedger(readOptional(path.join(main, LEDGER)) ?? '');
 }
 
-function commandNext(main) {
-  const repos = presentRepos(main).map((repo) => repoCheckout(main, repo));
-
-  console.log(
-    nextNumber({
-      folders: folders(main),
-      branches: repos.flatMap(branches),
-      worktrees: repos.flatMap(worktrees),
-    }),
-  );
-}
-
 function batchTickets(main, options) {
   const tickets = folders(main)
     .map((folder) => readTicket(main, folder))
@@ -1050,12 +1091,93 @@ function setupSteps(repo, dir) {
   ];
 }
 
-function commandNew(main, { ticket, part, type }) {
+function gh(args, input) {
+  const result = spawnSync('gh', args, { encoding: 'utf8', env: ENV, input });
+
+  if (result.error || result.status !== 0) {
+    refuse(
+      `cannot reach GitHub with gh (${(result.error?.message ?? result.stderr ?? '').trim().split('\n')[0] || 'failed'}); nothing was created`,
+    );
+  }
+
+  return result.stdout.trim();
+}
+
+function openIssue({ repo, slug }) {
+  const url = gh(
+    [
+      'issue',
+      'create',
+      '-R',
+      `${GITHUB_OWNER}/${repo}`,
+      '--title',
+      slug.replaceAll('_', ' '),
+      '--body-file',
+      '-',
+    ],
+    '',
+  );
+
+  const parsed = parseIssueUrl(url);
+
+  if (!parsed) refuse(`gh issue create returned no issue URL: ${url}`);
+
+  return { ...parsed, url };
+}
+
+function issueTicket(main, { slug, repo, key, issue }) {
+  const created = issue === undefined ? openIssue({ repo, slug }) : null;
+  const ref = created ? `${created.repo}-${created.issue}` : key;
+  const [ticketRepo, number] = ISSUE_KEY.exec(ref).slice(1);
+  const dir = ticketsDir(main);
+  const existing = existsSync(dir)
+    ? readdirSync(dir).find((name) => name.startsWith(`${ref}_`))
+    : null;
+
+  if (existing) refuse(`ticket ${ref} already has a folder: ${existing}`);
+
+  const title =
+    slug ??
+    gh(['api', `repos/${GITHUB_OWNER}/${ticketRepo}/issues/${number}`, '--jq', '.title'])
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 48);
+
+  const url = created?.url ?? `https://github.com/${GITHUB_OWNER}/${ticketRepo}/issues/${number}`;
+  const folder = issueFolder({ repo: ticketRepo, issue: number, slug: title || 'ticket' });
+
+  mkdirSync(path.join(dir, folder), { recursive: true });
+  appendFileSync(path.join(dir, folder, 'step1_research.md'), `Issue: ${url}\n`);
+
+  console.log(`ticket ${ref}: ${path.relative(main, path.join(dir, folder))}`);
+
+  return { key: ref, repo: ticketRepo, slug: (title || 'ticket').replaceAll('_', '-') };
+}
+
+function commandNew(main, options) {
+  if (options.slug !== undefined || options.key !== undefined) {
+    const made = issueTicket(main, options);
+
+    if (process.env.CLAUDE_CODE_REMOTE === 'true') return;
+
+    return startWorktree(main, { ...made, type: options.type });
+  }
+
+  const { ticket, part, type } = options;
   const found = findTicket(main, ticket);
-  const repo = repoOf(found);
+
+  return startWorktree(main, {
+    key: ticketKeyOf({ ticket, part }),
+    repo: repoOf(found),
+    slug: slugOf(found.folder),
+    type,
+  });
+}
+
+function startWorktree(main, { key, repo, slug, type }) {
   const checkout = checkoutOf(main, repo);
-  const key = ticketKeyOf({ ticket, part });
-  const branch = branchName({ type, ticket: key, slug: slugOf(found.folder) });
+  const branch = branchName({ type, ticket: key, slug });
   const dir = worktreePath(main, key, repo);
 
   if (git(checkout, ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`]).ok) {
@@ -1399,7 +1521,6 @@ async function main() {
       status: commandStatus,
       stats: commandStats,
       found: commandFound,
-      next: commandNext,
       decisions: commandDecisions,
       verify: commandVerify,
     };
