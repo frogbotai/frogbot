@@ -1330,6 +1330,11 @@
     "type": "import('@frogbotai/plugin-forms').FormsPluginOptions"
   },
   {
+    "page": "plugins/forms",
+    "heading": "Rendering a form in your own frontend",
+    "type": "import('@frogbotai/ui/forms').FormProps"
+  },
+  {
     "page": "plugins/import-export",
     "heading": "Options",
     "type": "import('@frogbotai/plugin-import-export').ImportExportPluginOptions"

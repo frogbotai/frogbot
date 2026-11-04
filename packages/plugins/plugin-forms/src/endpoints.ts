@@ -1,15 +1,11 @@
-import {
-  addDataAndFileToRequest,
-  APIError,
-  type Endpoint,
-  type FrogBotRequest,
-  KVLockContentionError,
-} from 'frogbot';
+import { addDataAndFileToRequest, APIError, type Endpoint, KVLockContentionError } from 'frogbot';
 
 import { createFormSubmission } from './access.js';
 import { countResponse, formIsClosed } from './closing.js';
-import { buildConfirmation, buildDefinition } from './definition.js';
+import { buildConfirmation } from './definition.js';
+import { definitionFor, findForm, type FormsRuntime } from './lookup.js';
 import type { FormTarget, QuestionField } from './questions.js';
+import { clientIp, takeRateLimit, verifyTurnstile } from './spam.js';
 import type { FormDocument, FormFieldError, FormSubmitResponse } from './types.js';
 
 export const PARAM_MAX_LENGTH = 500;
@@ -20,23 +16,13 @@ const notFound = () =>
 const closed = () =>
   Response.json({ error: 'This form is closed.' } satisfies FormSubmitResponse, { status: 410 });
 
-async function loadForm(req: FrogBotRequest): Promise<FormDocument | undefined> {
-  const slug = req.routeParams?.slug;
-  if (typeof slug !== 'string' || !slug) return;
+const failure = (status: number, error: string, headers?: HeadersInit) =>
+  Response.json({ error } satisfies FormSubmitResponse, { status, headers });
 
-  const result = await req.frogbot.find({
-    collection: 'forms',
-    where: { slug: { equals: slug } },
-    limit: 1,
-    depth: 0,
-    pagination: false,
-    disableErrors: true,
-    overrideAccess: false,
-    req,
-  });
+const busy = () => failure(503, 'This form is busy. Try again.');
 
-  return result.docs[0] as FormDocument | undefined;
-}
+const confirmed = (form: FormDocument) =>
+  Response.json({ confirmation: buildConfirmation(form) } satisfies FormSubmitResponse);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -103,50 +89,74 @@ function fieldErrors(error: unknown): FormFieldError[] | undefined {
   }));
 }
 
-export function createDefinitionEndpoint(targets: Map<string, FormTarget>): Endpoint {
+export function createDefinitionEndpoint(runtime: FormsRuntime): Endpoint {
   return {
     method: 'get',
     path: '/:slug/definition',
     handler: async (req) => {
-      const form = await loadForm(req);
-      const target = form && targets.get(form.collection);
-      if (!form || !target) return notFound();
+      const found = await findForm(req, runtime, req.routeParams?.slug);
+      if (!found) return notFound();
 
-      const definition = buildDefinition({
-        form,
-        fields: target.fields,
-        closed: await formIsClosed(req.frogbot, form),
-        language: req.i18n?.language,
-      });
-
-      return Response.json(definition);
+      return Response.json(await definitionFor(req, runtime, found));
     },
   };
 }
 
-export function createSubmitEndpoint(targets: Map<string, FormTarget>): Endpoint {
+export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
+  const { spam } = runtime;
+
   return {
     method: 'post',
     path: '/:slug/submit',
     handler: async (req) => {
-      const form = await loadForm(req);
-      const target = form && targets.get(form.collection);
-      if (!form || !target) return notFound();
+      const ip = clientIp(req.headers, spam.trustProxy);
+
+      try {
+        const limit = ip ? await takeRateLimit(req.frogbot, ip, spam.rateLimit) : undefined;
+
+        if (limit && !limit.allowed) {
+          return failure(429, 'Too many submissions. Try again later.', {
+            'Retry-After': String(limit.retryAfter),
+          });
+        }
+      } catch (error) {
+        if (error instanceof KVLockContentionError) return busy();
+
+        throw error;
+      }
+
+      const found = await findForm(req, runtime, req.routeParams?.slug);
+      if (!found) return notFound();
+
+      const { form, target } = found;
 
       if (await formIsClosed(req.frogbot, form)) return closed();
 
       try {
         await addDataAndFileToRequest(req);
       } catch {
-        return Response.json(
-          { error: 'The request body is invalid.' } satisfies FormSubmitResponse,
-          {
-            status: 400,
-          },
-        );
+        return failure(400, 'The request body is invalid.');
       }
 
-      const data = pickSubmission(form, target, req.data);
+      const body = isRecord(req.data) ? req.data : {};
+
+      if (typeof body.honeypot === 'string' && body.honeypot) return confirmed(form);
+
+      if (spam.turnstile) {
+        const verified = await verifyTurnstile({
+          secretKey: spam.turnstile.secretKey,
+          token: body.turnstile,
+          ip,
+        }).catch((error: unknown) => {
+          req.frogbot.logger.warn({ err: error }, '[plugin-forms] Turnstile check failed');
+
+          return false;
+        });
+
+        if (!verified) return failure(400, "We couldn't verify you're human. Try again.");
+      }
+
+      const data = pickSubmission(form, target, body);
 
       try {
         const outcome = await countResponse(req.frogbot, form, async () => {
@@ -167,33 +177,20 @@ export function createSubmitEndpoint(targets: Map<string, FormTarget>): Endpoint
 
         if (outcome.closed) return closed();
 
-        return Response.json({
-          confirmation: buildConfirmation(form),
-        } satisfies FormSubmitResponse);
+        return confirmed(form);
       } catch (error) {
         const errors = fieldErrors(error);
         if (errors) return Response.json({ errors } satisfies FormSubmitResponse, { status: 400 });
 
         if (error instanceof APIError && error.status < 500) {
-          return Response.json({ error: error.message } satisfies FormSubmitResponse, {
-            status: error.status,
-          });
+          return failure(error.status, error.message);
         }
 
-        if (error instanceof KVLockContentionError) {
-          return Response.json(
-            { error: 'This form is busy. Try again.' } satisfies FormSubmitResponse,
-            {
-              status: 503,
-            },
-          );
-        }
+        if (error instanceof KVLockContentionError) return busy();
 
         req.frogbot.logger.error({ err: error, form: form.slug }, '[plugin-forms] Submit failed');
 
-        return Response.json({ error: 'Something went wrong.' } satisfies FormSubmitResponse, {
-          status: 500,
-        });
+        return failure(500, 'Something went wrong.');
       }
     },
   };

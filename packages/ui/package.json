@@ -59,6 +59,11 @@
       "import": "./src/exports/chat-artifacts.ts",
       "default": "./src/exports/chat-artifacts.ts"
     },
+    "./forms": {
+      "types": "./src/exports/forms.ts",
+      "import": "./src/exports/forms.ts",
+      "default": "./src/exports/forms.ts"
+    },
     "./lexical": {
       "types": "./src/exports/lexical.ts",
       "import": "./src/exports/lexical.ts",
@@ -208,6 +213,11 @@
         "types": "./dist/exports/chat-artifacts.d.ts",
         "import": "./dist/exports/chat-artifacts.js",
         "default": "./dist/exports/chat-artifacts.js"
+      },
+      "./forms": {
+        "types": "./dist/exports/forms.d.ts",
+        "import": "./dist/exports/forms.js",
+        "default": "./dist/exports/forms.js"
       },
       "./lexical": {
         "types": "./dist/exports/lexical.d.ts",

@@ -92,7 +92,7 @@ export function buildDefinition({
   fields: FieldCatalog;
   closed: boolean;
   language?: string;
-}): FormDefinition {
+}): Omit<FormDefinition, 'honeypot' | 'turnstile'> {
   const steps = (form.steps ?? []).map((step) => {
     const questions = (step.questions ?? []).flatMap((config) => {
       const entry = fields.get(config.field);

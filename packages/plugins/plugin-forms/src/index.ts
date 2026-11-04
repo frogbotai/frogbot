@@ -1,9 +1,19 @@
-import { definePlugin, type Plugin } from 'frogbot';
+import { definePlugin, type OnInit, type Plugin } from 'frogbot';
+import type { AdminViewConfig } from 'payload';
 
 import { wrapCreateAccess } from './access.js';
 import { createFormsCollection, FORMS_SLUG } from './collection.js';
+import type { FormsRuntime } from './lookup.js';
 import { collectFields, type FormTarget } from './questions.js';
+import { resolveSpamOptions, spamWarnings } from './spam.js';
 import type { FormsPluginOptions } from './types.js';
+
+const FORM_VIEW: AdminViewConfig = {
+  Component: '@frogbotai/plugin-forms/rsc#FormView',
+  exact: false,
+  path: '/forms',
+  meta: { title: 'Form' },
+};
 
 export { isFormSubmission } from './access.js';
 export { FORMS_SLUG } from './collection.js';
@@ -16,7 +26,9 @@ export type {
   FormQuestion,
   FormQuestionType,
   FormsPluginOptions,
+  FormsRateLimitOptions,
   FormStep,
+  FormsTurnstileOptions,
   FormSubmission,
   FormSubmitBody,
   FormSubmitResponse,
@@ -52,6 +64,7 @@ const forms = definePlugin<FormsPluginOptions>({
       }
     }
 
+    const spam = resolveSpamOptions(options);
     const targets = new Map<string, FormTarget>();
 
     const collections = config.collections.map((collection) => {
@@ -71,17 +84,35 @@ const forms = definePlugin<FormsPluginOptions>({
       };
     });
 
+    const runtime: FormsRuntime = { targets, spam };
+    const warnings = spamWarnings(spam);
+
+    const warn: OnInit = (frogbot) => {
+      for (const warning of warnings) frogbot.logger.warn(warning);
+    };
+
     return {
       ...config,
-      collections: [...collections, createFormsCollection({ targets, access: options.access })],
+      collections: [...collections, createFormsCollection({ runtime, access: options.access })],
+      admin: {
+        ...config.admin,
+        components: {
+          ...config.admin?.components,
+          views: { ...config.admin?.components?.views, form: FORM_VIEW },
+        },
+      },
+      ...(warnings.length
+        ? { onInit: [...(config.onInit === undefined ? [] : [config.onInit].flat()), warn] }
+        : {}),
     };
   },
 });
 
 /**
- * Adds a `forms` collection whose forms create records in the listed collections, a public
- * definition endpoint (`GET /api/forms/:slug/definition`) and a submit endpoint
- * (`POST /api/forms/:slug/submit`).
+ * Adds a `forms` collection whose forms create records in the listed collections, a public page
+ * at `/forms/<slug>`, a definition endpoint (`GET /api/forms/:slug/definition`) and a submit
+ * endpoint (`POST /api/forms/:slug/submit`) with a honeypot, optional Turnstile and a per-visitor
+ * rate limit.
  */
 export function formsPlugin(options: FormsPluginOptions): Plugin {
   return forms(options);

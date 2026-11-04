@@ -18,6 +18,11 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./rsc": {
+      "import": "./dist/rsc.js",
+      "types": "./dist/rsc.d.ts",
+      "default": "./dist/rsc.js"
     }
   },
   "files": [
@@ -32,12 +37,19 @@
     "node": ">=24.21.0"
   },
   "peerDependencies": {
-    "frogbot": "workspace:*",
-    "payload": "catalog:"
-  },
-  "devDependencies": {
+    "@frogbotai/ui": "workspace:*",
     "frogbot": "workspace:*",
     "payload": "catalog:",
+    "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
+    "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
+  },
+  "devDependencies": {
+    "@frogbotai/ui": "workspace:*",
+    "@types/react": "19.2.14",
+    "frogbot": "workspace:*",
+    "payload": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "typescript": "catalog:"
   },
   "publishConfig": {

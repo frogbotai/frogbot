@@ -27,10 +27,11 @@ export async function formIsClosed(frogbot: FrogBot, form: FormDocument): Promis
   return isClosed(form, typeof form.maxResponses === 'number' ? await readCount(frogbot, form) : 0);
 }
 
-async function withFormLock<T>(frogbot: FrogBot, form: FormDocument, fn: () => Promise<T>) {
+/** Runs `fn` under a KV lock, retrying for about 5 seconds while another request holds it. */
+export async function withLock<T>(frogbot: FrogBot, key: string, fn: () => Promise<T>) {
   for (let attempt = 1; ; attempt += 1) {
     try {
-      return await frogbot.kv.lock(`plugin-forms:form:${form.id}`, LOCK_TTL, fn);
+      return await frogbot.kv.lock(key, LOCK_TTL, fn);
     } catch (error) {
       if (!(error instanceof KVLockContentionError) || attempt >= LOCK_ATTEMPTS) throw error;
 
@@ -61,5 +62,7 @@ export async function countResponse<T>(
     return { closed: false as const, result };
   };
 
-  return typeof form.maxResponses === 'number' ? withFormLock(frogbot, form, run) : run();
+  return typeof form.maxResponses === 'number'
+    ? withLock(frogbot, `plugin-forms:form:${form.id}`, run)
+    : run();
 }
