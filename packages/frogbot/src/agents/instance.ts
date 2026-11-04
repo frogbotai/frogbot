@@ -27,6 +27,7 @@ import { validateChatMessages } from '../chat/validateMessages.js';
 import type { FrogBot } from '../frogbot.js';
 import type { MCPConnections } from '../mcp/connections.js';
 import { resolveMCPTools } from '../mcp/tools.js';
+import { canUseTool, NO_TOOL_ACCESS } from '../tools/access.js';
 import type { ToolApprovalOption } from '../tools/approval.js';
 import { resolveToolApproval, toApprovalStatus } from '../tools/approval.js';
 import type { ToolCtx } from '../tools/types.js';
@@ -66,6 +67,7 @@ type AgentRun = {
   mcpTools: ToolSet;
   mcpApprovals: ReadonlyMap<string, ToolApprovalOption>;
   autoApprove: boolean;
+  denied: ReadonlySet<string>;
 };
 
 export function createAgentInstance(
@@ -93,6 +95,18 @@ export function createAgentInstance(
   const asks = approvals.size > 0 || mcpServers.some((server) => server.tools !== undefined);
 
   const access = agentConfig.access ?? (({ req }) => !!req.user);
+  const guardedTools = (agentConfig.tools ?? []).filter(
+    (tool) => !isClientTool(tool) && tool.access !== undefined,
+  );
+
+  const deniedTools = async ({ req, agent }: { req: FrogBotRequest; agent: ToolCtx['agent'] }) => {
+    const allowed = await Promise.all(
+      guardedTools.map((tool) => canUseTool({ tool, req, agent, logger: frogbot.logger })),
+    );
+
+    return new Set(guardedTools.filter((_, index) => !allowed[index]).map(({ slug }) => slug));
+  };
+
   const runs = new WeakMap<AgentCallOptions, AgentRun>();
   let instance: AgentInstance;
 
@@ -126,18 +140,22 @@ export function createAgentInstance(
         runtimeContext: { agent: ctx.agent },
         ...(mcpToolNames.length === 0 ? {} : { tools: { ...tools, ...run.mcpTools } }),
         toolsContext: toAISDKToolsContext(agentConfig.tools, ctx),
-        ...(clientTools.length === 0
+        ...(clientTools.length === 0 && run.denied.size === 0
           ? {}
           : {
               activeTools: [
                 ...(agentConfig.tools ?? [])
-                  .filter((tool) => !isClientTool(tool) || kinds.has(tool.client.kind))
+                  .filter((tool) =>
+                    isClientTool(tool) ? kinds.has(tool.client.kind) : !run.denied.has(tool.slug),
+                  )
                   .map(({ slug }) => slug),
                 ...mcpToolNames,
               ],
             }),
         toolApproval: async ({ toolCall, messages }) => {
           if (clientToolSlugs.has(toolCall.toolName)) clientSteps.add(messages);
+
+          if (run.denied.has(toolCall.toolName)) return { type: 'denied', reason: NO_TOOL_ACCESS };
 
           const approval =
             approvals.get(toolCall.toolName) ?? run.mcpApprovals.get(toolCall.toolName);
@@ -285,24 +303,27 @@ export function createAgentInstance(
 
     const runId = options.runId ?? generateId();
     const preparedOptions = { ...options, req, overrideAccess, runId };
-    const mcp =
+    const agent = { slug: agentConfig.slug, runId, chatId: options.chatId };
+    const [mcp, denied] = await Promise.all([
       mcpServers.length === 0
         ? { tools: {}, approvals: new Map<string, ToolApprovalOption>() }
-        : await resolveMCPTools({
+        : resolveMCPTools({
             agent: agentConfig.slug,
             servers: mcpServers,
             connections: deps.mcp,
             reserved: toolSlugs,
             abortSignal: call.abortSignal,
             logger: frogbot.logger,
-          });
+          }),
+      deniedTools({ req, agent }),
+    ]);
 
     const op = gateway.operation({
       operation: 'chat.completions',
       model: selection.model,
       context: {
         req,
-        agent: { slug: agentConfig.slug, runId, chatId: options.chatId },
+        agent,
         trackUsage: false,
       },
     });
@@ -321,6 +342,7 @@ export function createAgentInstance(
       mcpTools: mcp.tools,
       mcpApprovals: mcp.approvals,
       autoApprove,
+      denied,
     };
 
     runs.set(preparedOptions, run);

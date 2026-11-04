@@ -496,6 +496,7 @@ export type {
   ClientToolConfig,
   ClientToolValidate,
   Tool,
+  ToolAccess,
   ToolCtx,
   ToolOutputLimits,
 } from './tools/types.js';

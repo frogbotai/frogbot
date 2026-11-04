@@ -53,7 +53,7 @@ The run keeps going. `'ask'` tools run when the run sets `autoApprove: true` or 
 
 ## Who can answer
 
-Whoever can continue the chat can answer, the same as for [questions](/chat/questions#who-can-answer): over HTTP, the chat's owner; in a channel conversation, any participant who passes the agent's `access` check. Someone who can read the chat but not continue it gets `404`, and the call keeps waiting. FrogBot records each answer, who gave it and when, in the message's `settlements` field, with the outcome `approved` or `denied`.
+Whoever can continue the chat can answer, the same as for [questions](/chat/questions#who-can-answer): over HTTP, the chat's owner; in a channel conversation, any participant who passes the agent's `access` check. Someone who can read the chat but not continue it gets `404`, and the call keeps waiting. Someone who can continue it but fails the tool's [`access`](/agents/overview#limit-who-gets-a-tool) gets `403`, and the call keeps waiting too. FrogBot records each answer, who gave it and when, in the message's `settlements` field, with the outcome `approved` or `denied`.
 
 ## Over HTTP
 

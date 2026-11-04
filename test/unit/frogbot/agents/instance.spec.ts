@@ -9,8 +9,11 @@ import type { AgentModelId } from '../../../../packages/frogbot/src/agents/types
 import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/ai/types.js';
 import type * as MessagePersistence from '../../../../packages/frogbot/src/chat/messagePersistence.js';
 import type * as State from '../../../../packages/frogbot/src/chat/turn/state.js';
+import { mcpServer } from '../../../../packages/frogbot/src/mcp/server.js';
+import type * as MCPTools from '../../../../packages/frogbot/src/mcp/tools.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import { NOT_APPROVABLE } from '../../../../packages/frogbot/src/tools/approval.js';
+import { sanitizeToolList } from '../../../../packages/frogbot/src/tools/config/sanitize.js';
 import { question } from '../../../../packages/frogbot/src/tools/question.js';
 import type { AnyTool, Tool } from '../../../../packages/frogbot/src/tools/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
@@ -29,6 +32,7 @@ const turn = vi.hoisted(() => ({
   promoteSteerMessages: vi.fn(),
   releaseTurn: vi.fn(),
   resolveChatContext: vi.fn(),
+  resolveMCPTools: vi.fn(),
   stop: vi.fn(),
 }));
 
@@ -119,6 +123,11 @@ vi.mock('../../../../packages/frogbot/src/chat/turn/state.js', async (importOrig
 vi.mock('../../../../packages/frogbot/src/chat/turn/queue.js', () => ({
   promoteQueuedMessage: turn.promoteQueuedMessage,
   promoteSteerMessages: turn.promoteSteerMessages,
+}));
+
+vi.mock('../../../../packages/frogbot/src/mcp/tools.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof MCPTools>()),
+  resolveMCPTools: turn.resolveMCPTools,
 }));
 
 const { createAgentInstance } = await import('../../../../packages/frogbot/src/agents/instance.js');
@@ -251,7 +260,7 @@ function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
     ),
     findByID: vi.fn(() => Promise.resolve({ id: 'chat-1', user: req.user?.id ?? null })),
     generateText: vi.fn(() => Promise.resolve({ text: 'Chat title' })),
-    logger: { error: vi.fn() },
+    logger: { error: vi.fn(), warn: vi.fn() },
     update: vi.fn(() => Promise.resolve({ id: 'chat-1' })),
     createRequest: vi.fn(() => {
       Object.assign(req, { frogbot });
@@ -289,6 +298,7 @@ beforeEach(() => {
   turn.promoteQueuedMessage.mockReset();
   turn.promoteSteerMessages.mockReset().mockResolvedValue([]);
   turn.releaseTurn.mockReset().mockResolvedValue(true);
+  turn.resolveMCPTools.mockReset().mockResolvedValue({ tools: {}, approvals: new Map() });
 
   turn.resolveChatContext.mockReset().mockResolvedValue({
     status: 'ready',
@@ -820,6 +830,189 @@ describe('agent client tool gate', () => {
       } as never),
     ).toEqual({ found: true });
     expect(lookup.execute).toHaveBeenCalledExactlyOnceWith({ query: 'b' }, {});
+  });
+
+  const docs = mcpServer({ name: 'docs', type: 'remote', url: 'http://localhost/mcp' });
+  const docsTools = { docs_search: { description: 'Search' }, docs_read: { description: 'Read' } };
+
+  async function runWithMCP(tools: AnyTool[], options: Record<string, unknown> = {}) {
+    turn.resolveMCPTools.mockResolvedValue({ tools: docsTools, approvals: new Map() });
+
+    const req = makeReq();
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
+        instructions: 'Help',
+        tools,
+        mcp: [docs],
+      },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await agent.aiAgent.stream({ prompt: 'Hello', options: { req, ...options } });
+
+    return agentState.prepared!;
+  }
+
+  it('activates every MCP tool next to server and rendered client tools', async () => {
+    const prepared = await runWithMCP([lookup, question], { clientTools: { kinds: ['question'] } });
+
+    expect(prepared.activeTools).toEqual(['lookup', 'question', 'docs_search', 'docs_read']);
+  });
+
+  it('adds MCP tools without activeTools when the agent has no client tools', async () => {
+    const prepared = await runWithMCP([lookup]);
+
+    expect(prepared).not.toHaveProperty('activeTools');
+    expect(Object.keys(prepared.tools as object)).toEqual(['lookup', 'docs_search', 'docs_read']);
+  });
+
+  it('keeps every MCP tool and allowed server tool when one is denied', async () => {
+    const prepared = await runWithMCP([lookup, { ...lookup, slug: 'refund', access: () => false }]);
+
+    expect(prepared.activeTools).toEqual(['lookup', 'docs_search', 'docs_read']);
+  });
+
+  it('applies client kinds and MCP names next to a denial', async () => {
+    const prepared = await runWithMCP(
+      [lookup, question, { ...lookup, slug: 'refund', access: () => false }],
+      { clientTools: { kinds: [] } },
+    );
+
+    expect(prepared.activeTools).toEqual(['lookup', 'docs_search', 'docs_read']);
+  });
+});
+
+describe('agent tool access', () => {
+  const tool = (slug: string, access?: Tool['access']): Tool => ({
+    ...lookup,
+    slug,
+    ...(access ? { access } : {}),
+  });
+
+  async function prepare(tools: AnyTool[], run: 'stream' | 'generate' = 'stream', opts = {}) {
+    const req = makeReq();
+    const deps = makeDeps(makeConfig(emptyHooks()), req);
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
+        instructions: 'Help',
+        tools,
+      },
+      deps,
+    );
+
+    if (run === 'generate') {
+      await agent.generate({ prompt: 'Hello', req, ...opts });
+    } else {
+      await agent.aiAgent.stream({ prompt: 'Hello', options: { req, ...opts } });
+    }
+
+    return {
+      prepared: agentState.prepared!,
+      req,
+      logger: (deps as { frogbot: { logger: { warn: ReturnType<typeof vi.fn> } } }).frogbot.logger,
+    };
+  }
+
+  it('leaves a denied tool out of activeTools and keeps an allowed one', async () => {
+    const { prepared } = await prepare([
+      tool('open', () => true),
+      tool('refund', () => false),
+      lookup,
+    ]);
+
+    expect(prepared.activeTools).toEqual(['open', 'lookup']);
+  });
+
+  it('awaits an async rule', async () => {
+    const { prepared } = await prepare([
+      tool('open', () => Promise.resolve(true)),
+      tool('refund', () => Promise.resolve(false)),
+    ]);
+
+    expect(prepared.activeTools).toEqual(['open']);
+  });
+
+  it('denies a tool whose rule throws, and logs it', async () => {
+    const failure = new Error('lookup failed');
+    const { prepared, logger } = await prepare([
+      lookup,
+      tool('refund', () => {
+        throw failure;
+      }),
+    ]);
+
+    expect(prepared.activeTools).toEqual(['lookup']);
+    expect(logger.warn).toHaveBeenCalledExactlyOnceWith(
+      { err: failure, tool: 'refund', agent: 'support' },
+      "[frogbot] Tool 'refund' access threw; the tool is hidden.",
+    );
+  });
+
+  it('leaves activeTools unset when every rule allows', async () => {
+    const { prepared } = await prepare([lookup, tool('open', () => true)]);
+
+    expect(prepared).not.toHaveProperty('activeTools');
+  });
+
+  it.each([
+    ['stream', {}],
+    ['stream', { overrideAccess: true }],
+    ['generate', { overrideAccess: false }],
+  ] as const)('denies on %s with %o', async (run, opts) => {
+    const { prepared } = await prepare([lookup, tool('refund', () => false)], run, opts);
+
+    expect(prepared.activeTools).toEqual(['lookup']);
+  });
+
+  it('passes the rule the run request, agent and tool slug', async () => {
+    const access = vi.fn(() => true);
+    const { prepared, req } = await prepare([tool('refund', access)], 'stream', {
+      chatId: 'chat-1',
+    });
+
+    const { agent } = prepared.runtimeContext as { agent: { runId: string } };
+
+    expect(access).toHaveBeenCalledExactlyOnceWith({
+      req,
+      agent: { slug: 'support', runId: agent.runId, chatId: 'chat-1' },
+      tool: { slug: 'refund' },
+    });
+  });
+
+  it('hides only the spread piece tool given a rule', async () => {
+    const createGmail = definePiece({
+      slug: 'gmail',
+      label: 'Gmail',
+      actions: [
+        {
+          slug: 'send_email',
+          description: 'Send',
+          input: z.object({}),
+          run: () => Promise.resolve('sent'),
+        },
+        {
+          slug: 'read_email',
+          description: 'Read',
+          input: z.object({}),
+          run: () => Promise.resolve('read'),
+        },
+      ],
+    });
+
+    const gmail = createGmail();
+    const access = vi.fn(() => false);
+    const { prepared } = await prepare(
+      sanitizeToolList([gmail, { ...gmail.send_email, access }], "Agent 'support'"),
+    );
+
+    expect(prepared.activeTools).toEqual(['gmail_read_email']);
+    expect(access).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ tool: { slug: 'gmail_send_email' } }),
+    );
   });
 });
 

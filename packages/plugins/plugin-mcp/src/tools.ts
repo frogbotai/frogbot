@@ -5,6 +5,7 @@ import type { PieceAction, PieceInstance } from 'frogbot';
 import type { AnyTool } from 'frogbot/internal';
 import {
   attachRegisteredFrogBot,
+  canUseTool,
   isClientTool,
   NOT_APPROVABLE,
   resolveToolApproval,
@@ -87,6 +88,20 @@ export function toPayloadTools(tools: readonly McpTool[]): Record<string, Payloa
     payloadTools[tool.slug] = {
       description: tool.description,
       input: tool.inputSchema,
+      ...(tool.access === undefined
+        ? {}
+        : {
+            access: ({ req }) => {
+              const frogbotReq = attachRegisteredFrogBot(req);
+
+              return canUseTool({
+                tool,
+                req: frogbotReq,
+                agent: { slug: 'mcp', runId: randomUUID() },
+                logger: frogbotReq.frogbot.logger,
+              });
+            },
+          }),
       handler: async ({ input, req }) => {
         try {
           const frogbotReq = attachRegisteredFrogBot(req);

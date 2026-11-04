@@ -42,7 +42,19 @@ export type Tool<TSchema extends z.ZodType = z.ZodType, TResult = unknown> = Bas
    * @default false
    */
   approval?: ToolApprovalOption;
+  /**
+   * Whether the run's user is offered this tool. Checked once per run, before the first model
+   * call; a tool it denies, or whose rule throws, is left out and can't be called.
+   */
+  access?: ToolAccess;
 };
+
+/** Decides whether a run is offered a server tool. */
+export type ToolAccess = (args: {
+  req: FrogBotRequest;
+  agent: ToolCtx['agent'];
+  tool: { slug: string };
+}) => boolean | Promise<boolean>;
 
 export type ClientToolAccess = (args: {
   req: FrogBotRequest;
@@ -67,6 +79,7 @@ export type ClientTool<
   client: ClientToolConfig;
   execute?: never;
   approval?: never;
+  access?: never;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- a type-erased container, like the AI SDK ToolSet

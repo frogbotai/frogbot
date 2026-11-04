@@ -94,7 +94,7 @@ Every role must be written where it should apply. For example, `allow('finance')
 
 An ownership clause names a relationship field. On create, FrogBot stamps that field when the matching role grants access. On read, update, and delete, it returns an ownership query. Function clauses returning `false` abstain rather than vetoing another clause.
 
-Ownership and `Where` clauses are for collection access. Boolean role and function clauses also work in field access. In agent and AI access, check roles with `hasRole`, for example `access: ({ req }) => hasRole(req, 'admin')`.
+Ownership and `Where` clauses are for collection access. Boolean role and function clauses also work in field access. In agent, tool and AI access, check roles with `hasRole`, for example `access: ({ req }) => hasRole(req, 'admin')`. A [tool's `access`](/agents/overview#limit-who-gets-a-tool) with `hasRole` hides the tool from everyone without the role.
 
 ## Request helpers
 

@@ -100,7 +100,7 @@ mcpPlugin({ tools: [lookupTicket, slack] })
 Piece tools resolve credentials as they do in an agent: a piece without `auth` in its config, like `slack` above, acts with the key owner's [connected account](/connections/overview). Tools that need a chat, such as `write_todos` and `read_todos`, always fail over MCP.
 </Warning>
 
-Every listed tool is available to every valid key. To limit a tool to some users, check `ctx.req.user` in `execute` and throw.
+Every listed tool is available to every valid key. To limit a tool to some users, give it an [`access`](/agents/overview#limit-who-gets-a-tool) rule: it runs on each MCP request with the key owner's request, and a key that fails it, or whose rule throws, isn't shown the tool and can't call it.
 
 `definePrompt` comes from `@frogbotai/plugin-mcp` and infers the handler's `input` from `argsSchema`.
 

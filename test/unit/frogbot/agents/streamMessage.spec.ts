@@ -783,6 +783,176 @@ describe('agent persisted stream with the installed AI SDK', () => {
     });
   });
 
+  it('never offers a denied tool, and a call to it is invalid and never runs', async () => {
+    const execute = vi.fn(() => ({ refunded: true }));
+    const access = vi.fn(() => false);
+    let step = 0;
+
+    const { agent, model, req } = setup({
+      tools: [
+        lookup,
+        { slug: 'refund', description: 'Refund', inputSchema: z.object({}), execute, access },
+      ],
+      doStream: () =>
+        Promise.resolve({
+          stream: modelStream(
+            step++ === 0
+              ? [
+                  { type: 'stream-start', warnings: [] },
+                  { type: 'tool-call', toolCallId: 'call-1', toolName: 'refund', input: '{}' },
+                  {
+                    type: 'finish',
+                    finishReason: { unified: 'tool-calls', raw: 'tool_calls' },
+                    usage,
+                  },
+                ]
+              : response('Done'),
+          ),
+        }),
+    });
+
+    const result = await agent.aiAgent.stream({ prompt: 'Refund it', options: { req } });
+    const parts = await Array.fromAsync(result.fullStream);
+
+    expect(model.doStreamCalls).toHaveLength(2);
+    expect(model.doStreamCalls.map(({ tools }) => tools?.map(({ name }) => name))).toEqual([
+      ['lookup'],
+      ['lookup'],
+    ]);
+    expect(parts).toContainEqual(
+      expect.objectContaining({ type: 'tool-call', toolName: 'refund', invalid: true }),
+    );
+    expect(execute).not.toHaveBeenCalled();
+    expect(access).toHaveBeenCalledOnce();
+  });
+
+  it('checks a rule once per run when a steered message joins a later step', async () => {
+    const access = vi.fn(() => Promise.resolve(true));
+
+    const { agent, model, req } = setup({
+      tools: [
+        lookup,
+        {
+          slug: 'refund',
+          description: 'Refund',
+          inputSchema: z.object({}),
+          execute: () => 'refunded',
+          access,
+        },
+      ],
+      doStream: toolLoopStream(),
+    });
+
+    turn.promoteSteerMessages.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      {
+        message: { id: 'steer-1', role: 'user', parts: [{ type: 'text', text: 'Also refund' }] },
+        selection: {},
+      },
+    ]);
+
+    const result = await agent.aiAgent.stream({
+      prompt: 'Find it',
+      options: { req, chatId: 'chat-1' },
+    });
+
+    await Array.fromAsync(result.fullStream);
+
+    expect(model.doStreamCalls.map(({ tools }) => tools?.map(({ name }) => name))).toEqual([
+      ['lookup', 'refund'],
+      ['lookup', 'refund'],
+    ]);
+    expect(access).toHaveBeenCalledOnce();
+  });
+
+  it('checks a rule once more on the run that resumes an approved call', async () => {
+    const execute = vi.fn(() => 'refunded');
+    const access = vi.fn(() => true);
+
+    const { agent, req } = setup({
+      tools: [
+        {
+          slug: 'refund',
+          description: 'Refund',
+          inputSchema: z.object({}),
+          execute,
+          approval: 'ask',
+          access,
+        },
+      ],
+    });
+
+    const result = await agent.aiAgent.stream({
+      messages: [
+        { role: 'user', content: 'Refund it' },
+        {
+          role: 'assistant',
+          content: [
+            { type: 'tool-call', toolCallId: 'call-1', toolName: 'refund', input: {} },
+            { type: 'tool-approval-request', approvalId: 'approval-1', toolCallId: 'call-1' },
+          ],
+        },
+        {
+          role: 'tool',
+          content: [{ type: 'tool-approval-response', approvalId: 'approval-1', approved: true }],
+        },
+      ],
+      options: { req, clientTools: { kinds: [], approval: true } },
+    });
+
+    await Array.fromAsync(result.fullStream);
+
+    expect(access).toHaveBeenCalledOnce();
+    expect(execute).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ['an approval tool', 'ask' as const],
+    ['a tool without approval', undefined],
+  ])(
+    'never runs an approved call to a denied tool carried in from history, for %s',
+    async (_, approval) => {
+      const execute = vi.fn(() => 'refunded');
+
+      const { agent, req } = setup({
+        tools: [
+          {
+            slug: 'refund',
+            description: 'Refund',
+            inputSchema: z.object({}),
+            execute,
+            ...(approval ? { approval } : {}),
+            access: () => false,
+          },
+        ],
+      });
+
+      const result = await agent.aiAgent.stream({
+        messages: [
+          { role: 'user', content: 'Refund it' },
+          {
+            role: 'assistant',
+            content: [
+              { type: 'tool-call', toolCallId: 'call-1', toolName: 'refund', input: {} },
+              { type: 'tool-approval-request', approvalId: 'approval-1', toolCallId: 'call-1' },
+            ],
+          },
+          {
+            role: 'tool',
+            content: [{ type: 'tool-approval-response', approvalId: 'approval-1', approved: true }],
+          },
+        ],
+        options: { req, clientTools: { kinds: [], approval: true } },
+      });
+
+      const parts = await Array.fromAsync(result.fullStream);
+
+      expect(execute).not.toHaveBeenCalled();
+      expect(parts).toContainEqual(
+        expect.objectContaining({ type: 'tool-output-denied', toolCallId: 'call-1' }),
+      );
+    },
+  );
+
   it('queues the message without calling the model while another turn is running', async () => {
     turn.claimTurn.mockResolvedValue(undefined);
 

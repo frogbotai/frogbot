@@ -1,9 +1,10 @@
 import type { UIMessage } from 'ai';
-import { getToolName } from 'ai';
+import { generateId, getToolName } from 'ai';
 
 import { assertAgentAccess, getAgent } from '../../agents/service.js';
 import type { DocID } from '../../collections/config/types.js';
 import { updateIfVersion } from '../../database/compareAndSet.js';
+import { canUseTool } from '../../tools/access.js';
 import type { ClientTool } from '../../tools/types.js';
 import { isClientTool } from '../../tools/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
@@ -131,6 +132,24 @@ export async function settleCall({
 
     if (tool?.client.access && !(await tool.client.access({ req, call }))) {
       throw new TurnError('forbidden', 'You cannot settle this call.');
+    }
+
+    if (part.state === 'approval-requested') {
+      const serverTool = (agent.config.tools ?? []).find(
+        (candidate) => !isClientTool(candidate) && candidate.slug === getToolName(part),
+      );
+
+      if (
+        serverTool &&
+        !(await canUseTool({
+          tool: serverTool,
+          req,
+          agent: { slug: agentSlug, runId: generateId(), chatId },
+          logger: req.frogbot.logger,
+        }))
+      ) {
+        throw new TurnError('forbidden', 'You cannot answer this approval.');
+      }
     }
 
     const settledPart = await settledPartFor({ tool, part, outcome });
