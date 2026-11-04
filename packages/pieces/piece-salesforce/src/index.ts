@@ -40,6 +40,17 @@ import {
   salesforceAuth,
   type SalesforceSettings,
 } from './config.js';
+import { newOutboundMessage } from './triggers/outboundMessage.js';
+import {
+  newCaseAttachment,
+  newCaseInQueue,
+  newContact,
+  newFieldHistoryEvent,
+  newLead,
+  newOrUpdatedFile,
+  newOrUpdatedRecord,
+  newRecord,
+} from './triggers/records.js';
 
 export { SalesforceError } from './client.js';
 export type { SalesforceSettings } from './config.js';
@@ -146,6 +157,17 @@ export function defineSalesforce(settings: SalesforceSettings = {}) {
       runReport,
       exportReport,
       customApiCall,
+    ],
+    triggers: [
+      newRecord,
+      newOrUpdatedRecord,
+      newContact,
+      newLead,
+      newFieldHistoryEvent,
+      newOrUpdatedFile,
+      newCaseAttachment,
+      newCaseInQueue,
+      newOutboundMessage,
     ],
   });
 }
