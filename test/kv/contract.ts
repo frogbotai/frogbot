@@ -32,6 +32,15 @@ export function kvContract({
       expect(await b.keys()).toEqual([]);
     });
 
+    it('returns strings that look like JSON as strings', async () => {
+      const [a, b] = clients();
+
+      for (const value of ['12', 'true', 'null', '{"a":1}', '"quoted"']) {
+        await a.set('json-like', value);
+        expect(await b.get('json-like')).toBe(value);
+      }
+    });
+
     it('hides expired values from get, has and keys without cleanup', async () => {
       const [a, b] = clients();
       await a.set('expiring', 'old', { ttl: expiryTTL });

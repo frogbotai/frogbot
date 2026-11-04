@@ -261,13 +261,16 @@ export function createSQLKV({
       return ownership({ lock, expiresAt });
     },
     async get<T extends KVStoreValue>(key: string): Promise<T | null> {
+      const data = sqlite ? table.data : sql<string>`${table.data}::text`;
       const rows = await primary()
-        .select({ data: table.data })
+        .select({ data })
         .from(table)
         .where(and(sql`${table.key} = ${key}`, readable))
         .limit(1);
 
-      return rows.length ? (rows[0].data as T) : null;
+      if (!rows.length) return null;
+
+      return (sqlite ? rows[0].data : JSON.parse(rows[0].data as string)) as T;
     },
     async has(key) {
       const rows = await primary()
