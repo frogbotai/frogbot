@@ -68,13 +68,14 @@ const capture = definePlugin<CaptureResolvedOptions>({
         : collection,
     );
 
-    const task: NonNullable<JobsConfig['tasks']>[number] | undefined = options.retentionDays
+    const retention = options.retention;
+    const task: NonNullable<JobsConfig['tasks']>[number] | undefined = retention
       ? {
-          slug: 'frogbot-prune-ai-captures',
-          interfaceName: 'TaskFrogBotPruneAiCaptures',
-          schedule: [{ cron: '0 3 * * *', queue: 'frogbot-prune-ai-captures' }],
+          slug: `frogbot-prune-${collectionSlug}`,
+          interfaceName: `TaskFrogBot-prune-${collectionSlug}`,
+          schedule: [{ cron: retention.cron ?? '0 0 * * *', queue: 'default' }],
           handler: async ({ req }) => {
-            const cutoff = new Date(Date.now() - options.retentionDays! * 86_400_000).toISOString();
+            const cutoff = new Date(Date.now() - retention.days * 86_400_000).toISOString();
 
             while (true) {
               const result = await req.frogbot.find({
@@ -82,6 +83,7 @@ const capture = definePlugin<CaptureResolvedOptions>({
                 where: { requestedAt: { less_than: cutoff } },
                 limit: 100,
                 sort: 'requestedAt',
+                depth: 0,
                 overrideAccess: true,
                 req,
               });
@@ -94,6 +96,7 @@ const capture = definePlugin<CaptureResolvedOptions>({
                 await req.frogbot.delete({
                   collection: collectionSlug,
                   id: doc.id,
+                  depth: 0,
                   overrideAccess: true,
                   req,
                 });
@@ -149,10 +152,10 @@ export function capturePlugin(options: CapturePluginOptions = {}): Plugin {
   }
 
   if (
-    options.retentionDays !== undefined &&
-    (!Number.isInteger(options.retentionDays) || options.retentionDays < 1)
+    options.retention &&
+    (!Number.isInteger(options.retention.days) || options.retention.days < 1)
   ) {
-    throw new Error('[plugin-capture] retentionDays must be a positive integer.');
+    throw new Error('[plugin-capture] retention.days must be a positive integer.');
   }
 
   return capture({

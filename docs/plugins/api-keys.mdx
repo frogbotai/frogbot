@@ -51,7 +51,7 @@ X-API-Key: fb_...
 
 The request authenticates as the user who owns the key. Revoked, malformed, and unknown keys do not authenticate. A Bearer key takes precedence; when the `Authorization` header holds something other than an API key, such as a session token, FrogBot reads the key from the key headers instead. The auth collection's `/me` endpoint returns the key owner and never echoes the key back.
 
-When AI is configured, usage rows include an optional `apiKey` relationship identifying the key that authenticated the request. Cookie-authenticated requests omit it, and the relationship follows a custom `collectionSlug`.
+When AI is configured, usage rows include an optional `apiKey` relationship identifying the key that authenticated the request. Cookie-authenticated requests omit it, and the relationship follows a custom `collectionSlug`. A key's **Total Cost (USD)** field sums its usage rows, so when [usage retention](/plugins/usage-reports#retention) is on, it covers only the rows still kept.
 
 On a key-authenticated request, `req.user` is the owner with `apiKeyId` and `apiKey`, the key document without its hash, so hooks and access functions can read fields other plugins add to keys. Other plugins find the keys collection through `plugins['plugin-api-keys'].options.collectionSlug` ([Order, slug, and options](/plugins/build-your-own#order-slug-and-options)).
 

@@ -2,7 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { UsageReport } from '@frogbotai/plugin-usage-reports';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
@@ -31,6 +31,8 @@ describe(`usage reports [${adapterLabel}]`, () => {
   afterAll(async () => {
     await booted.shutdown();
   });
+
+  afterEach(() => vi.restoreAllMocks());
 
   async function createUsage(data: Usage, index: number): Promise<void> {
     await booted.frogbot.create({
@@ -223,5 +225,70 @@ describe(`usage reports [${adapterLabel}]`, () => {
     const response = await booted.restClient.get(`/api/usage/report?groupBy=model&${range}`);
 
     expect(response.status).toBe(401);
+  });
+
+  it('prunes usage older than the retention window', async () => {
+    const expired = new Date(Date.now() - 31 * 86_400_000).toISOString();
+
+    for (let index = 0; index < 250; index++) {
+      await createUsage({ model: 'openai/old', requestedAt: expired }, 1000 + index);
+    }
+
+    await createUsage({ model: 'openai/new', requestedAt: new Date().toISOString() }, 2000);
+
+    const job = await booted.frogbot.jobs.queue({
+      task: 'frogbot-prune-usage-logs',
+      input: {},
+      overrideAccess: true,
+    });
+
+    await booted.frogbot.jobs.runByID({ id: job.id, overrideAccess: true });
+
+    const remaining = await booted.frogbot.find({
+      collection: 'usage-logs',
+      limit: 0,
+      overrideAccess: true,
+    });
+
+    expect(remaining.docs.map((doc) => doc.model)).toEqual(['openai/new']);
+  });
+
+  it('keeps usage at the cutoff and leaves other collections alone', async () => {
+    const now = Date.now();
+    const cutoff = now - 30 * 86_400_000;
+
+    const rows = [
+      { model: 'openai/before', at: cutoff - 1 },
+      { model: 'openai/at', at: cutoff },
+      { model: 'openai/after', at: cutoff + 1 },
+    ];
+
+    for (const [index, { model, at }] of rows.entries()) {
+      await createUsage({ model, requestedAt: new Date(at).toISOString() }, 3000 + index);
+    }
+
+    const job = await booted.frogbot.jobs.queue({
+      task: 'frogbot-prune-usage-logs',
+      input: {},
+      overrideAccess: true,
+    });
+
+    vi.spyOn(Date, 'now').mockReturnValue(now);
+    await booted.frogbot.jobs.runByID({ id: job.id, overrideAccess: true });
+
+    const remaining = await booted.frogbot.find({
+      collection: 'usage-logs',
+      limit: 0,
+      sort: 'requestedAt',
+      overrideAccess: true,
+    });
+
+    expect(remaining.docs.map((doc) => doc.model)).toEqual(['openai/at', 'openai/after']);
+
+    const users = await booted.frogbot.count({ collection: 'users', overrideAccess: true });
+    const keys = await booted.frogbot.count({ collection: 'api-keys', overrideAccess: true });
+
+    expect(users.totalDocs).toBe(2);
+    expect(keys.totalDocs).toBe(1);
   });
 });

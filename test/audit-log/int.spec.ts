@@ -163,14 +163,28 @@ describe('audit log plugin integration', () => {
   });
 
   it('prunes expired entries through the retention task', async () => {
-    const old = await booted.frogbot.create({
+    for (let index = 0; index < 101; index++) {
+      await booted.frogbot.create({
+        collection: 'audit-logs',
+        data: {
+          collection: 'posts',
+          operation: 'create',
+          documentId: `expired-${index}`,
+          changes: {},
+          timestamp: '2000-01-01T00:00:00.000Z',
+        },
+        overrideAccess: true,
+      });
+    }
+
+    const recent = await booted.frogbot.create({
       collection: 'audit-logs',
       data: {
         collection: 'posts',
         operation: 'create',
-        documentId: 'expired',
+        documentId: 'recent',
         changes: {},
-        timestamp: '2000-01-01T00:00:00.000Z',
+        timestamp: new Date().toISOString(),
       },
       overrideAccess: true,
     });
@@ -183,12 +197,73 @@ describe('audit log plugin integration', () => {
 
     await booted.frogbot.jobs.runByID({ id: job.id, overrideAccess: true });
 
-    await expect(
-      booted.frogbot.findByID({
-        collection: 'audit-logs',
-        id: old.id,
-        overrideAccess: true,
-      }),
-    ).rejects.toThrow();
+    const remaining = await booted.frogbot.find({
+      collection: 'audit-logs',
+      limit: 0,
+      overrideAccess: true,
+    });
+
+    expect(remaining.docs.map((doc) => doc.id)).toEqual([recent.id]);
+  });
+
+  it('schedules pruning on the default queue alongside a job left on the old queue', async () => {
+    const post = await booted.frogbot.create({
+      collection: 'posts',
+      data: { title: 'Kept' },
+      overrideAccess: true,
+    });
+
+    await booted.frogbot.create({
+      collection: 'audit-logs',
+      data: {
+        collection: 'posts',
+        operation: 'create',
+        documentId: 'expired',
+        changes: {},
+        timestamp: '2000-01-01T00:00:00.000Z',
+      },
+      overrideAccess: true,
+    });
+
+    const leftover = await booted.frogbot.jobs.queue({
+      task: 'frogbot-prune-audit-logs',
+      queue: 'frogbot-prune-audit-logs',
+      input: {},
+      overrideAccess: true,
+    });
+
+    const oldQueue = await booted.frogbot.jobs.handleSchedules({
+      queue: 'frogbot-prune-audit-logs',
+    });
+
+    const defaultQueue = await booted.frogbot.jobs.handleSchedules({ queue: 'default' });
+
+    expect(oldQueue.queued).toEqual([]);
+    expect(defaultQueue.errored).toEqual([]);
+
+    const scheduled = await booted.payload.find({
+      collection: 'payload-jobs',
+      where: { taskSlug: { equals: 'frogbot-prune-audit-logs' }, id: { not_equals: leftover.id } },
+      limit: 0,
+      overrideAccess: true,
+    });
+
+    expect(scheduled.docs).toEqual([
+      expect.objectContaining({ queue: 'default', meta: { scheduled: true } }),
+    ]);
+
+    await booted.frogbot.jobs.runByID({ id: leftover.id, overrideAccess: true });
+
+    const remaining = await booted.frogbot.find({
+      collection: 'audit-logs',
+      limit: 0,
+      overrideAccess: true,
+    });
+
+    expect(remaining.docs.map((doc) => doc.documentId)).toEqual([String(post.id)]);
+    expect(
+      (await booted.frogbot.findByID({ collection: 'posts', id: post.id, overrideAccess: true }))
+        .title,
+    ).toBe('Kept');
   });
 });

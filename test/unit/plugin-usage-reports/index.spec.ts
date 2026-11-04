@@ -404,3 +404,92 @@ describe('usageReportsPlugin', () => {
     });
   });
 });
+
+describe('usage retention', () => {
+  type Task = NonNullable<NonNullable<FrogBotConfig['jobs']>['tasks']>[number];
+
+  async function pruneTask(
+    options: Parameters<typeof usageReportsPlugin>[0],
+    config = createConfig(),
+  ): Promise<Task | undefined> {
+    return (await usageReportsPlugin(options)(config)).jobs?.tasks?.at(-1);
+  }
+
+  async function run(task: Task | undefined, req: object): Promise<void> {
+    const handler = task?.handler;
+
+    if (typeof handler !== 'function') throw new Error('Expected an inline task handler.');
+
+    await handler({ req } as unknown as Parameters<typeof handler>[0]);
+  }
+
+  it('registers no task by default', async () => {
+    expect(await pruneTask({})).toBeUndefined();
+    expect(await pruneTask({ retention: false })).toBeUndefined();
+  });
+
+  it('schedules on the default queue at midnight for the resolved usage collection', async () => {
+    const task = await pruneTask({ retention: { days: 30 } });
+
+    expect(task?.slug).toBe('frogbot-prune-ai-usage');
+    expect(task?.schedule).toEqual([{ cron: '0 0 * * *', queue: 'default' }]);
+  });
+
+  it('falls back to usage-logs when no usage collection is configured', async () => {
+    const config = createConfig();
+    config.collections = config.collections.filter((collection) => !collection.usageLog);
+
+    expect((await pruneTask({ retention: { days: 30 } }, config))?.slug).toBe(
+      'frogbot-prune-usage-logs',
+    );
+  });
+
+  it('keeps a custom cron', async () => {
+    expect((await pruneTask({ retention: { days: 30, cron: '0 4 * * *' } }))?.schedule).toEqual([
+      { cron: '0 4 * * *', queue: 'default' },
+    ]);
+  });
+
+  it.each([0, 1.5])('rejects retention.days of %s', (days) => {
+    expect(() => usageReportsPlugin({ retention: { days } })).toThrow(
+      '[plugin-usage-reports] retention.days must be a positive integer.',
+    );
+  });
+
+  it('deletes expired rows in batches by id', async () => {
+    const find = vi
+      .fn()
+      .mockResolvedValueOnce({ docs: [{ id: 1 }, { id: 2 }] })
+      .mockResolvedValueOnce({ docs: [] });
+
+    const remove = vi.fn().mockResolvedValue({ docs: [], errors: [] });
+
+    await run(await pruneTask({ retention: { days: 30 } }), { frogbot: { find, delete: remove } });
+
+    expect(find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'ai-usage',
+        where: { requestedAt: { less_than: expect.any(String) } },
+        limit: 100,
+        sort: 'requestedAt',
+        depth: 0,
+        overrideAccess: true,
+      }),
+    );
+    expect(remove).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ collection: 'ai-usage', where: { id: { in: [1, 2] } } }),
+    );
+  });
+
+  it('fails the prune when a batch delete reports errors', async () => {
+    const find = vi.fn().mockResolvedValue({ docs: [{ id: 1 }] });
+    const remove = vi
+      .fn()
+      .mockResolvedValue({ docs: [], errors: [{ id: 1, message: 'delete refused' }] });
+
+    await expect(
+      run(await pruneTask({ retention: { days: 30 } }), { frogbot: { find, delete: remove } }),
+    ).rejects.toThrow('delete refused');
+    expect(find).toHaveBeenCalledTimes(1);
+  });
+});

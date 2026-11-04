@@ -1,6 +1,7 @@
 import type { FrogBotConfig } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
+import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
 import { auditLogPlugin } from '../../../packages/plugins/plugin-audit-log/src/index.js';
 
 type Task = NonNullable<NonNullable<FrogBotConfig['jobs']>['tasks']>[number];
@@ -82,21 +83,90 @@ describe('auditLogPlugin', () => {
     );
   });
 
-  it('registers and runs retention', async () => {
-    const result = await apply({ retention: { days: 30, cron: '0 1 * * *' } });
-    const task = result.jobs?.tasks?.at(-1);
-    const remove = vi.fn().mockResolvedValue({});
+  it('registers no retention task by default', async () => {
+    expect((await apply()).jobs?.tasks ?? []).toHaveLength(0);
+    expect((await apply({ retention: false })).jobs?.tasks ?? []).toHaveLength(0);
+  });
 
-    expect(task?.schedule).toEqual([{ cron: '0 1 * * *', queue: 'frogbot-prune-audit-logs' }]);
+  it('schedules retention on the default queue at midnight', async () => {
+    const task = (await apply({ retention: { days: 30 } })).jobs?.tasks?.at(-1);
 
-    await runTask(task, { payload: { delete: remove } });
+    expect(task?.slug).toBe('frogbot-prune-audit-logs');
+    expect(task?.schedule).toEqual([{ cron: '0 0 * * *', queue: 'default' }]);
+  });
 
-    expect(remove).toHaveBeenCalledWith(
+  it('keeps a custom retention cron', async () => {
+    const task = (await apply({ retention: { days: 30, cron: '0 1 * * *' } })).jobs?.tasks?.at(-1);
+
+    expect(task?.schedule).toEqual([{ cron: '0 1 * * *', queue: 'default' }]);
+  });
+
+  it.each([0, 1.5])('rejects retention.days of %s', (days) => {
+    expect(() => auditLogPlugin({ retention: { days } })).toThrow(
+      '[plugin-audit-log] retention.days must be a positive integer.',
+    );
+  });
+
+  it('rejects an invalid retention.cron when the config is built', async () => {
+    await expect(
+      buildConfig({
+        ...config(),
+        plugins: [auditLogPlugin({ retention: { days: 30, cron: 'nightly' } })],
+      }),
+    ).rejects.toThrow(
+      "[frogbot] Task 'frogbot-prune-audit-logs' schedule 0 has an invalid cron expression: 'nightly'.",
+    );
+  });
+
+  it('prunes expired entries in batches by id', async () => {
+    const task = (await apply({ retention: { days: 30 } })).jobs?.tasks?.at(-1);
+    const find = vi
+      .fn()
+      .mockResolvedValueOnce({ docs: [{ id: 1 }, { id: 2 }] })
+      .mockResolvedValueOnce({ docs: [{ id: 3 }] })
+      .mockResolvedValueOnce({ docs: [] });
+
+    const remove = vi.fn().mockResolvedValue({ docs: [], errors: [] });
+
+    await runTask(task, { frogbot: { find, delete: remove } });
+
+    expect(find).toHaveBeenCalledTimes(3);
+    expect(find).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'audit-logs',
-        overrideAccess: true,
         where: { timestamp: { less_than: expect.any(String) } },
+        limit: 100,
+        sort: 'timestamp',
+        depth: 0,
+        overrideAccess: true,
       }),
     );
+    expect(new Set(find.mock.calls.map(([args]) => args.where.timestamp.less_than)).size).toBe(1);
+    expect(remove).toHaveBeenCalledTimes(2);
+    expect(remove).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        collection: 'audit-logs',
+        where: { id: { in: [1, 2] } },
+        overrideAccess: true,
+      }),
+    );
+    expect(remove).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ where: { id: { in: [3] } } }),
+    );
+  });
+
+  it('fails the prune when a batch delete reports errors', async () => {
+    const task = (await apply({ retention: { days: 30 } })).jobs?.tasks?.at(-1);
+    const find = vi.fn().mockResolvedValue({ docs: [{ id: 1 }] });
+    const remove = vi
+      .fn()
+      .mockResolvedValue({ docs: [], errors: [{ id: 1, message: 'delete refused' }] });
+
+    await expect(runTask(task, { frogbot: { find, delete: remove } })).rejects.toThrow(
+      'delete refused',
+    );
+    expect(find).toHaveBeenCalledTimes(1);
   });
 });
