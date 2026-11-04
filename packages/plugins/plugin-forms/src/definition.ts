@@ -1,75 +1,107 @@
-import { type Option, optionIsObject } from 'frogbot';
-
-import type { FieldCatalog, QuestionField } from './questions.js';
 import type {
   FormConfirmation,
   FormDefinition,
   FormDocument,
+  FormMode,
   FormOption,
   FormQuestion,
   FormQuestionConfig,
+  FormQuestionType,
 } from './types.js';
-import { DEFAULT_UPLOAD_LIMITS, type UploadLimits, uploadRules } from './uploads.js';
 
 export const DEFAULT_CONFIRMATION = 'Thanks, your response has been sent.';
 
-type Label = string | Record<string, string> | false | ((...args: never[]) => unknown) | undefined;
+const MiB = 1024 * 1024;
 
-function staticText(value: Label, language: string | undefined): string | undefined {
-  if (typeof value === 'string') return value || undefined;
-  if (!value || typeof value !== 'object') return;
+/** The app's multipart limits, per file, files per request and bytes per request. */
+export type UploadLimits = { fileSize: number; files: number; requestSize: number };
 
-  return (language ? value[language] : undefined) ?? Object.values(value)[0];
-}
+/** Payload's defaults when the app sets none. */
+export const DEFAULT_UPLOAD_LIMITS: UploadLimits = {
+  fileSize: 20 * MiB,
+  files: 3,
+  requestSize: 50 * MiB,
+};
 
-function humanize(name: string): string {
-  return name
-    .replace(/([a-z\d])([A-Z])/g, '$1 $2')
-    .split(/[\s_-]+/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
+export type UploadRules = { maxFiles: number; maxFileSize: number; mimeTypes: string[] };
 
-function toOption(option: Option, language: string | undefined): FormOption {
-  if (!optionIsObject(option)) return { label: option, value: option };
-
+export function uploadRules(question: FormQuestionConfig, limits: UploadLimits): UploadRules {
   return {
-    label: staticText(option.label as Label, language) ?? option.value,
-    value: option.value,
+    maxFiles: question.maxFiles ?? 1,
+    maxFileSize: question.maxFileSize ?? limits.fileSize,
+    mimeTypes: question.mimeTypes ?? [],
   };
+}
+
+type FieldInfoBase = {
+  name: string;
+  label: string;
+  required: boolean;
+  hasDefault: boolean;
+};
+
+/** A field a question may use, with what the renderer needs from its config. */
+export type UsableFieldInfo = FieldInfoBase & {
+  type: FormQuestionType;
+  description?: string;
+  placeholder?: string;
+  options?: FormOption[];
+  hasMany?: boolean;
+  defaultValue?: unknown;
+  /** Why a form that creates records can't ask for it, after its name. */
+  createRefusal?: string;
+  /** Why a form that edits records through links can't ask for it, after its name. */
+  editRefusal?: string;
+};
+
+/** A field no form can ask for, with why, after its name. */
+export type RefusedFieldInfo = FieldInfoBase & { type: string; refusal: string };
+
+/** A top-level data field of a target collection, as the save check, builder and renderer see it. */
+export type FormFieldInfo = RefusedFieldInfo | UsableFieldInfo;
+
+/** Why a form in `mode` can't ask for `field`, after its name, or `undefined` when it can. */
+export function fieldRefusal(field: FormFieldInfo, mode: FormMode): string | undefined {
+  if ('refusal' in field) return field.refusal;
+  if (mode !== 'update' && field.createRefusal) return field.createRefusal;
+  if (mode !== 'create' && field.editRefusal) return field.editRefusal;
+}
+
+/** Fields a form in `mode` must ask for, since creating a record needs them: required, no default. */
+export function missingRequired(
+  fields: FormFieldInfo[],
+  asked: Set<string>,
+  mode: FormMode,
+): FormFieldInfo[] {
+  if (mode === 'update') return [];
+
+  return fields.filter(
+    ({ name, required, hasDefault }) => required && !hasDefault && !asked.has(name),
+  );
 }
 
 function buildQuestion(
   config: FormQuestionConfig,
-  field: QuestionField,
-  language: string | undefined,
+  field: UsableFieldInfo,
   limits: UploadLimits,
 ): FormQuestion {
-  const admin = (field.admin ?? {}) as { description?: Label; placeholder?: Label };
-
   const question: FormQuestion = {
     key: field.name,
     type: field.type,
-    label: config.label || staticText(field.label, language) || humanize(field.name),
-    required: field.required === true,
+    label: config.label || field.label,
+    required: field.required,
   };
 
-  const description = config.description || staticText(admin.description, language);
-  const placeholder = config.placeholder || staticText(admin.placeholder, language);
+  const description = config.description || field.description;
+  const placeholder = config.placeholder || field.placeholder;
 
   if (description) question.description = description;
   if (placeholder) question.placeholder = placeholder;
-
-  if (field.type === 'select' || field.type === 'radio') {
-    question.options = field.options.map((option) => toOption(option, language));
-  }
-
-  if (field.type === 'select' && field.hasMany) question.hasMany = true;
+  if (field.options) question.options = field.options;
+  if (field.hasMany) question.hasMany = true;
 
   if (field.type === 'upload') {
     const { maxFiles, maxFileSize, mimeTypes } = uploadRules(config, limits);
-
-    if (field.hasMany) question.hasMany = true;
 
     question.maxFiles = maxFiles;
     if (Number.isFinite(maxFileSize)) question.maxFileSize = maxFileSize;
@@ -78,14 +110,12 @@ function buildQuestion(
     return question;
   }
 
-  if (field.defaultValue !== undefined && typeof field.defaultValue !== 'function') {
-    question.defaultValue = field.defaultValue;
-  }
+  if (field.defaultValue !== undefined) question.defaultValue = field.defaultValue;
 
   return question;
 }
 
-export function buildConfirmation(form: FormDocument): FormConfirmation {
+export function buildConfirmation(form: Pick<FormDocument, 'confirmation'>): FormConfirmation {
   const { confirmation } = form;
 
   if (confirmation?.type === 'redirect' && confirmation.redirect) {
@@ -95,28 +125,32 @@ export function buildConfirmation(form: FormDocument): FormConfirmation {
   return { type: 'message', message: confirmation?.message || DEFAULT_CONFIRMATION };
 }
 
-/** The render definition of a saved form: its steps and questions, never the target's other fields. */
+/**
+ * The render definition of a form: its steps and questions, never the target's other fields.
+ * Questions whose field no form can ask for are left out. Client-safe, like this whole module,
+ * since the builder and the preview use it.
+ */
 export function buildDefinition({
   form,
   fields,
   closed,
-  language,
   limits = DEFAULT_UPLOAD_LIMITS,
 }: {
   form: FormDocument;
-  fields: FieldCatalog;
+  fields: FormFieldInfo[];
   closed: boolean;
-  language?: string;
   /** The app's upload limits, which set a file question's default size. */
   limits?: UploadLimits;
 }): Omit<FormDefinition, 'honeypot' | 'turnstile'> {
+  const usable = new Map(
+    fields.flatMap((field) => ('refusal' in field ? [] : [[field.name, field] as const])),
+  );
+
   const steps = (form.steps ?? []).map((step) => {
     const questions = (step.questions ?? []).flatMap((config) => {
-      const entry = fields.get(config.field);
+      const field = usable.get(config.field);
 
-      return entry && 'field' in entry
-        ? [buildQuestion(config, entry.field, language, limits)]
-        : [];
+      return field ? [buildQuestion(config, field, limits)] : [];
     });
 
     return step.title ? { title: step.title, questions } : { questions };

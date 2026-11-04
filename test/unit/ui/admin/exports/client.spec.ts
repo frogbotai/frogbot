@@ -48,6 +48,10 @@ describe('@frogbotai/ui/admin client export', () => {
     expect(source).toContain(`export { ${names} } from '../fields/${folder}/index.client.js'`);
   });
 
+  it.each(['DraggableSortable', 'DraggableSortableItem'])('exports Payload %s', (name) => {
+    expect(source).toContain(`export { ${name} } from '@payloadcms/ui'`);
+  });
+
   it('does not export the CostUSD components', () => {
     expect(source).not.toContain('CostUSD');
   });

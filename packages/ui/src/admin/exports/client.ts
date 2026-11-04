@@ -239,3 +239,5 @@ export { QueryPresetsWhereCell } from '@payloadcms/ui';
 export { QueryPresetsWhereField } from '@payloadcms/ui';
 export { Button } from '@payloadcms/ui';
 export { PopupList } from '@payloadcms/ui';
+export { DraggableSortable } from '@payloadcms/ui';
+export { DraggableSortableItem } from '@payloadcms/ui';

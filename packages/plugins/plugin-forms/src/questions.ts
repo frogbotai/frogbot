@@ -3,19 +3,24 @@ import {
   fieldAffectsData,
   fieldIsVirtual,
   type FrogBotRequest,
+  type Option,
+  optionIsObject,
   tabHasName,
 } from 'frogbot';
 
 import { createFormLinkContext, createFormSubmission } from './access.js';
-import type { FormDocument, FormQuestionType } from './types.js';
 import {
-  checkUploadQuestion,
-  checkUploadTotals,
   DEFAULT_UPLOAD_LIMITS,
+  fieldRefusal,
+  type FormFieldInfo,
+  missingRequired,
   type UploadLimits,
   type UploadRules,
   uploadRules,
-} from './uploads.js';
+  type UsableFieldInfo,
+} from './definition.js';
+import type { FormDocument, FormOption, FormQuestionType } from './types.js';
+import { checkUploadQuestion, checkUploadTotals, uploadStoreRefusal } from './uploads.js';
 
 export const QUESTION_TYPES = [
   'checkbox',
@@ -33,10 +38,13 @@ const PARAM_TYPES = new Set<FormQuestionType>(['email', 'text', 'textarea']);
 
 export type QuestionField = Extract<Field, { type: FormQuestionType }>;
 
-/** A top-level data field of a target collection: usable as a question, or refused with a reason. */
+/**
+ * A top-level data field of a target collection: usable as a question, or refused with a reason.
+ * `required` means required with no default. A refused entry keeps its field, if it has one.
+ */
 export type FieldEntry =
   | { name: string; field: QuestionField; required: boolean }
-  | { name: string; reason: string; required: boolean };
+  | { name: string; reason: string; required: boolean; source?: Field };
 
 export type FieldCatalog = Map<string, FieldEntry>;
 
@@ -106,11 +114,97 @@ export function collectFields(fields: Field[], catalog: FieldCatalog = new Map()
       field.name,
       reason === undefined
         ? { name: field.name, field: field as QuestionField, required }
-        : { name: field.name, reason, required },
+        : { name: field.name, reason, required, source: field },
     );
   }
 
   return catalog;
+}
+
+type Label = string | Record<string, string> | false | ((...args: never[]) => unknown) | undefined;
+
+function staticText(value: unknown, language: string | undefined): string | undefined {
+  if (typeof value === 'string') return value || undefined;
+  if (!value || typeof value !== 'object') return;
+
+  const text = value as Record<string, string>;
+
+  return (language ? text[language] : undefined) ?? Object.values(text)[0];
+}
+
+function humanize(name: string): string {
+  return name
+    .replace(/([a-z\d])([A-Z])/g, '$1 $2')
+    .split(/[\s_-]+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+function toOption(option: Option, language: string | undefined): FormOption {
+  if (!optionIsObject(option)) return { label: option, value: option };
+
+  return {
+    label: staticText(option.label, language) ?? option.value,
+    value: option.value,
+  };
+}
+
+function describeUsable(field: QuestionField, language: string | undefined): UsableFieldInfo {
+  const admin = (field.admin ?? {}) as { description?: Label; placeholder?: Label };
+  const info: UsableFieldInfo = {
+    name: field.name,
+    label: staticText(field.label, language) || humanize(field.name),
+    type: field.type,
+    required: field.required === true,
+    hasDefault: field.defaultValue !== undefined,
+  };
+
+  const description = staticText(admin.description, language);
+  const placeholder = staticText(admin.placeholder, language);
+
+  if (description) info.description = description;
+  if (placeholder) info.placeholder = placeholder;
+
+  if (field.type === 'select' || field.type === 'radio') {
+    info.options = field.options.map((option) => toOption(option, language));
+  }
+
+  if ((field.type === 'select' || field.type === 'upload') && field.hasMany) info.hasMany = true;
+
+  if (
+    field.type !== 'upload' &&
+    field.defaultValue !== undefined &&
+    typeof field.defaultValue !== 'function'
+  ) {
+    info.defaultValue = field.defaultValue;
+  }
+
+  return info;
+}
+
+/**
+ * The target's fields as the renderer sees them, without the access checks: enough to render a
+ * form, which leaves out the questions no form can ask for.
+ */
+export function describeFields(
+  target: Pick<FormTarget, 'fields'>,
+  language?: string,
+): FormFieldInfo[] {
+  return [...target.fields.values()].map((entry) => {
+    if ('field' in entry) return describeUsable(entry.field, language);
+
+    const source = entry.source as
+      { type: string; label?: unknown; required?: boolean; defaultValue?: unknown } | undefined;
+
+    return {
+      name: entry.name,
+      label: staticText(source?.label, language) || humanize(entry.name),
+      type: source?.type ?? 'tab',
+      required: source?.required === true,
+      hasDefault: source?.defaultValue !== undefined,
+      refusal: entry.reason,
+    };
+  });
 }
 
 function formRequest(req: FrogBotRequest, form: Partial<FormDocument>, collection: string) {
@@ -143,6 +237,54 @@ async function canEdit(field: QuestionField, req: FrogBotRequest): Promise<boole
   }
 
   return true;
+}
+
+/**
+ * The fields a question may use and the ones it may not, with reasons: the one list the save
+ * check, the builder and the preview share, so the builder never offers a field saving refuses.
+ * Access is probed as a signed-out form submission, and through an edit link, as visitors are.
+ */
+export async function listQuestionFields({
+  target,
+  targets,
+  req,
+  form = {},
+}: {
+  target: FormTarget;
+  /** Every target, for the upload collections file questions store files in. */
+  targets: Map<string, FormTarget>;
+  req: FrogBotRequest;
+  /** The form being saved, which access rules see on the flag. */
+  form?: Partial<FormDocument>;
+}): Promise<FormFieldInfo[]> {
+  const visitor = formRequest(req, { ...form, collection: target.slug }, target.slug);
+  const fields = describeFields(target, req.i18n?.language);
+
+  return Promise.all(
+    fields.map(async (info) => {
+      const entry = target.fields.get(info.name);
+      if ('refusal' in info || !entry || !('field' in entry)) return info;
+
+      const { field } = entry;
+      const store = field.type === 'upload' ? uploadStoreRefusal(field, targets) : undefined;
+
+      if (!(await canCreate(field, visitor))) {
+        info.createRefusal =
+          "can't be filled from a form: its create access denies form submissions";
+      } else if (store) {
+        info.createRefusal = store;
+      }
+
+      if (!(await canEdit(field, visitor))) {
+        info.editRefusal =
+          "can't be changed through an edit link: its read or update access denies form links";
+      } else if (field.type === 'upload') {
+        info.editRefusal = "is a file question, which edit links can't change yet";
+      }
+
+      return info;
+    }),
+  );
 }
 
 function isSafeRedirect(url: string): boolean {
@@ -204,70 +346,50 @@ export async function checkForm({
 
   const mode = form.mode ?? 'create';
   const creates = mode !== 'update';
-  const edits = mode !== 'create';
 
-  if (edits && target.drafts) {
+  if (mode !== 'create' && target.drafts) {
     errors.push({
       path: 'mode',
       message: `${target.slug} keeps drafts, which edit links can't save yet. Use the create mode.`,
     });
   }
 
-  const visitor = formRequest(req, form, target.slug);
+  const list = await listQuestionFields({ target, targets, req, form });
+  const fields = new Map(list.map((info) => [info.name, info]));
   const used = new Set<string>();
 
-  const usable = async (
-    path: string,
-    name: string,
-    types?: Set<FormQuestionType>,
-  ): Promise<QuestionField | undefined> => {
-    const entry = target.fields.get(name);
+  const usable = (path: string, name: string, types?: Set<FormQuestionType>): boolean => {
+    const info = fields.get(name);
 
-    if (!entry) {
+    if (!info) {
       errors.push({ path, message: `"${name}" isn't a top-level field of ${target.slug}.` });
 
-      return;
+      return false;
     }
 
     if (used.has(name)) {
       errors.push({ path, message: `"${name}" is already on this form.` });
 
-      return;
+      return false;
     }
 
     used.add(name);
 
-    if ('reason' in entry) {
-      errors.push({ path, message: `"${name}" ${entry.reason}.` });
-
-      return;
-    }
-
-    if (types && !types.has(entry.field.type)) {
+    if (types && !('refusal' in info) && !types.has(info.type)) {
       errors.push({ path, message: `"${name}" must be a text, textarea or email field.` });
 
-      return;
+      return false;
     }
 
-    if (creates && !(await canCreate(entry.field, visitor))) {
-      errors.push({
-        path,
-        message: `"${name}" can't be filled from a form: its create access denies form submissions.`,
-      });
+    const reason = fieldRefusal(info, types ? 'create' : mode);
 
-      return;
+    if (reason) {
+      errors.push({ path, message: `"${name}" ${reason}.` });
+
+      return false;
     }
 
-    if (edits && !types && !(await canEdit(entry.field, visitor))) {
-      errors.push({
-        path,
-        message: `"${name}" can't be changed through an edit link: its read or update access denies form links.`,
-      });
-
-      return;
-    }
-
-    return entry.field;
+    return true;
   };
 
   const files: { name: string; rules: UploadRules }[] = [];
@@ -275,20 +397,13 @@ export async function checkForm({
   for (const [stepIndex, step] of (form.steps ?? []).entries()) {
     for (const [index, question] of (step.questions ?? []).entries()) {
       const path = `steps.${stepIndex}.questions.${index}`;
-      const field = await usable(`${path}.field`, question.field);
+      const entry = target.fields.get(question.field);
 
-      if (field?.type !== 'upload') continue;
+      if (!usable(`${path}.field`, question.field) || !entry || !('field' in entry)) continue;
+      if (entry.field.type !== 'upload') continue;
 
-      if (edits) {
-        errors.push({
-          path: `${path}.field`,
-          message: `"${field.name}" is a file question, which edit links can't change yet.`,
-        });
-
-        continue;
-      }
-
-      const refused = checkUploadQuestion({ path, question, field, targets, limits });
+      const { field } = entry;
+      const refused = checkUploadQuestion({ path, question, field, limits });
 
       errors.push(...refused);
       if (!refused.length) files.push({ name: field.name, rules: uploadRules(question, limits) });
@@ -309,16 +424,14 @@ export async function checkForm({
     }
 
     params.add(param.name);
-    await usable(`hiddenParams.${index}.field`, param.field, PARAM_TYPES);
+    usable(`hiddenParams.${index}.field`, param.field, PARAM_TYPES);
   }
 
-  for (const entry of creates ? target.fields.values() : []) {
-    if (entry.required && !asked.has(entry.name)) {
-      errors.push({
-        path: 'steps',
-        message: `"${entry.name}" is required by ${target.slug} and has no default, so the form must ask for it.`,
-      });
-    }
+  for (const { name } of missingRequired(list, asked, mode)) {
+    errors.push({
+      path: 'steps',
+      message: `"${name}" is required by ${target.slug} and has no default, so the form must ask for it.`,
+    });
   }
 
   return errors;

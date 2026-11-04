@@ -5,6 +5,7 @@ import { buildDefinition } from '../../../packages/plugins/plugin-forms/src/defi
 import {
   checkForm,
   collectFields,
+  describeFields,
   type FormTarget,
 } from '../../../packages/plugins/plugin-forms/src/questions.js';
 import type { FormDocument } from '../../../packages/plugins/plugin-forms/src/types.js';
@@ -244,7 +245,11 @@ describe('buildDefinition', () => {
 
   it('builds steps and questions from the form and its fields', () => {
     expect(
-      buildDefinition({ form: saved, fields: catalog, closed: false, language: 'de' }),
+      buildDefinition({
+        form: saved,
+        fields: describeFields({ fields: catalog }, 'de'),
+        closed: false,
+      }),
     ).toEqual({
       slug: 'sign-up',
       title: 'Sign up',
@@ -320,7 +325,7 @@ describe('buildDefinition', () => {
         steps: [{ questions: [{ field: 'owner' }, { field: 'gone' }] }],
         confirmation: null,
       },
-      fields: catalog,
+      fields: describeFields({ fields: catalog }),
       closed: true,
     });
 

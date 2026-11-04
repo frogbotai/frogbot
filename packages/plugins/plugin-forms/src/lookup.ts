@@ -2,12 +2,11 @@ import type { FrogBot, FrogBotRequest } from 'frogbot';
 import { getPayloadConfig } from 'frogbot/internal';
 
 import { formIsClosed, isClosed } from './closing.js';
-import { buildDefinition } from './definition.js';
+import { buildDefinition, type UploadLimits } from './definition.js';
 import type { LinkLimits } from './links/token.js';
-import type { FormTarget } from './questions.js';
+import { describeFields, type FormTarget } from './questions.js';
 import { HONEYPOT_FIELD, type SpamOptions } from './spam.js';
 import type { FormDefinition, FormDocument } from './types.js';
-import type { UploadLimits } from './uploads.js';
 
 /** What the endpoints and the page share, kept on the `forms` collection's `custom['plugin-forms']`. */
 export type FormsRuntime = {
@@ -68,9 +67,8 @@ export async function definitionFor(
   const { turnstile } = runtime.spam;
   const definition = buildDefinition({
     form,
-    fields: target.fields,
+    fields: describeFields(target, req.i18n?.language),
     closed: values ? isClosed(form, 0) : await formIsClosed(req.frogbot, form),
-    language: req.i18n?.language,
     limits: runtime.uploads,
   });
 
