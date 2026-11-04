@@ -4,6 +4,7 @@ import type { FrogBotSanitizedConfig } from '../config/sanitized.js';
 import type { CLICommand } from '../config/types.js';
 import type { FrogBot } from '../frogbot.js';
 import { channelsRun } from './channelsRun.js';
+import { check } from './check.js';
 import { dev } from './dev.js';
 import { down } from './down.js';
 import { formatCliError } from './formatCliError.js';
@@ -30,6 +31,7 @@ const commands: Record<string, Command> = {
   down: (args) => down(args),
   status: (args) => status(args),
   run: (args) => runScript(args),
+  check: (args) => check(args),
   'generate:types': () => generateTypes(),
   'generate:piece-types': (args) => generatePieceTypesCommand(args),
   'pieces:port': (args) => piecesPort(args),

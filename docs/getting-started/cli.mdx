@@ -2,7 +2,7 @@
 title: "CLI"
 sidebarTitle: "CLI"
 description: "Every frogbot command, its arguments, and where each one is documented."
-keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot up", "frogbot down", "frogbot status", "background", "frogbot run", "frogbot share", "plugin-dojo", "pull", "logs", "commands"]
+keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot up", "frogbot down", "frogbot status", "background", "frogbot run", "frogbot check", "frogbot share", "plugin-dojo", "pull", "logs", "commands"]
 ---
 
 The `frogbot` package installs a `frogbot` command. Run it from your app's root directory through your package manager, for example `pnpm frogbot dev` or `npx frogbot dev`.
@@ -25,6 +25,7 @@ pnpm frogbot generate:types
 | `down` | `[folder]` | Stops the app that `up` started. See [Run in the background](#run-in-the-background). |
 | `status` | — | Lists every app `up` started on this computer. See [Run in the background](#run-in-the-background). |
 | `run` | `<file> [args...]` | Runs a TypeScript or JavaScript file with your app's environment and config alias. See [Outside Next.js](/local-api/outside-nextjs). |
+| `check` | `--json` | Loads your config as the running app does, with no server or database, and lists every problem it finds. See [Check your config](#check-your-config). |
 | `generate:types` | — | Writes `frogbot-types.ts` from your config. See [Generating types](/typescript/generating-types). |
 | `generate:importmap` | — | Writes the admin import map for the custom components your config references. See [Custom components](/custom-components/overview). |
 | `generate:piece-types` | `<module>`, `--export`, `--output`, `--check` | Writes the TypeScript types for a piece's actions and triggers. See [Generate piece types](#generate-piece-types). |
@@ -38,6 +39,58 @@ pnpm frogbot generate:types
 | `migrate:refresh` | — | Rolls back every migration, then applies them all again. See [Migrations](/database/migrations). |
 | `migrate:reset` | — | Rolls back every migration. See [Migrations](/database/migrations). |
 | `migrate:fresh` | `--force-accept-warning` | Drops every table, then applies all migrations. See [Migrations](/database/migrations). |
+
+## Check your config
+
+`frogbot check` loads your config in runtime mode, the way `start` and the running app do, and waits for it to finish sanitizing. It starts no server, runs no `onInit`, opens no database and writes no file, so it's safe to run after every edit. It exits `0` when everything passes and `1` when it finds a problem.
+
+```bash
+$ pnpm frogbot check
+[frogbot] TYPES_STALE frogbot-types.ts: out of date; run `frogbot generate:types`
+[frogbot] 1 issue found
+```
+
+Each problem is one line on stderr, `[frogbot] <code> <path>: <message>`, followed by a count:
+
+| Code | Means | Fix |
+| --- | --- | --- |
+| `CONFIG_INVALID` | The config failed to load or sanitize, for example an agent model no provider serves or a duplicate collection slug. The message is the error the running app would throw. The checks below need a loaded config, so they're skipped. | Fix the error, then run `check` again. Config errors show one at a time. |
+| `INVALID_CRON` | A task or workflow `schedule[].cron` isn't a valid cron expression. The path names it, for example `jobs.tasks.sendDigest.schedule.0.cron`. | Fix the expression. |
+| `UNKNOWN_TASK` | A workflow whose `handler` is an array of steps has a step whose `task` isn't in `jobs.tasks`. | Add the task, or fix the slug. |
+| `TYPES_STALE` | `frogbot-types.ts` is missing or doesn't match your config. | Run `frogbot generate:types`. |
+| `IMPORT_MAP_STALE` | The admin import map doesn't match the components your config references. Skipped when `admin.importMap.autoGenerate` is `false` or the app has no admin folder. | Run `frogbot generate:importmap`. |
+
+`INVALID_CRON` and `UNKNOWN_TASK` are config errors, so `dev` and `start` fail on them too.
+
+`check` doesn't run TypeScript or look at the database. When it passes, it says so: run your app's `typecheck` script for type errors, and `frogbot migrate:status` for pending migrations.
+
+### JSON output
+
+With `--json`, `check` writes exactly one JSON object to stdout and sends everything else, including your config's own logs, to stderr:
+
+```json
+{ "command": "check", "success": true }
+```
+
+```json
+{
+  "command": "check",
+  "success": false,
+  "error": {
+    "code": "CHECK_FAILED",
+    "message": "1 issue found",
+    "issues": [
+      {
+        "code": "INVALID_CRON",
+        "path": "jobs.tasks.sendDigest.schedule.0.cron",
+        "message": "Task 'sendDigest' schedule 0 has an invalid cron expression: 'nope'."
+      }
+    ]
+  }
+}
+```
+
+An issue has no `path` when it isn't tied to one place in the config, as with `CONFIG_INVALID`.
 
 ## Plugin commands
 
