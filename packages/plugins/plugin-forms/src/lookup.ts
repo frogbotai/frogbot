@@ -1,7 +1,9 @@
-import type { FrogBotRequest } from 'frogbot';
+import type { FrogBot, FrogBotRequest } from 'frogbot';
+import { getPayloadConfig } from 'frogbot/internal';
 
 import { formIsClosed } from './closing.js';
 import { buildDefinition } from './definition.js';
+import type { LinkLimits } from './links/token.js';
 import type { FormTarget } from './questions.js';
 import { HONEYPOT_FIELD, type SpamOptions } from './spam.js';
 import type { FormDefinition, FormDocument } from './types.js';
@@ -12,7 +14,16 @@ export type FormsRuntime = {
   targets: Map<string, FormTarget>;
   spam: SpamOptions;
   uploads: UploadLimits;
+  links: LinkLimits;
 };
+
+/** The runtime the plugin put on the `forms` collection. */
+export async function loadRuntime(frogbot: FrogBot): Promise<FormsRuntime | undefined> {
+  const config = await getPayloadConfig(frogbot.config);
+  const forms = config.collections.find(({ slug }) => slug === 'forms');
+
+  return forms?.custom?.['plugin-forms'] as FormsRuntime | undefined;
+}
 
 export type FoundForm = {
   form: FormDocument;

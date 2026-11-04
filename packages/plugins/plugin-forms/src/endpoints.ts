@@ -116,7 +116,7 @@ export function createDefinitionEndpoint(runtime: FormsRuntime): Endpoint {
     path: '/:slug/definition',
     handler: async (req) => {
       const found = await findForm(req, runtime, req.routeParams?.slug);
-      if (!found) return notFound();
+      if (!found || found.form.mode === 'update') return notFound();
 
       return Response.json(await definitionFor(req, runtime, found));
     },
@@ -147,7 +147,7 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
       }
 
       const found = await findForm(req, runtime, req.routeParams?.slug);
-      if (!found) return notFound();
+      if (!found || found.form.mode === 'update') return notFound();
 
       const { form, target } = found;
 

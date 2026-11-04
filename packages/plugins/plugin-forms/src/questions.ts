@@ -6,7 +6,7 @@ import {
   tabHasName,
 } from 'frogbot';
 
-import { createFormSubmission } from './access.js';
+import { createFormLinkContext, createFormSubmission } from './access.js';
 import type { FormDocument, FormQuestionType } from './types.js';
 import {
   checkUploadQuestion,
@@ -45,6 +45,8 @@ export type FormTarget = {
   fields: FieldCatalog;
   /** True for an upload collection, which file questions can store files in. */
   upload?: boolean;
+  /** True when the collection keeps drafts, which edit links can't save yet. */
+  drafts?: boolean;
 };
 
 export type FormError = { path: string; message: string };
@@ -112,7 +114,11 @@ export function collectFields(fields: Field[], catalog: FieldCatalog = new Map()
 }
 
 function formRequest(req: FrogBotRequest, form: Partial<FormDocument>, collection: string) {
-  const context = { ...req.context, form: createFormSubmission(form as FormDocument, collection) };
+  const context = {
+    ...req.context,
+    form: createFormSubmission(form as FormDocument, collection),
+    formLink: createFormLinkContext({ id: '', collection, record: '' }),
+  };
 
   return new Proxy(req, {
     get: (target, property) => {
@@ -131,6 +137,14 @@ async function canCreate(field: QuestionField, req: FrogBotRequest): Promise<boo
   return Boolean(await create({ req, data: {}, siblingData: {} }));
 }
 
+async function canEdit(field: QuestionField, req: FrogBotRequest): Promise<boolean> {
+  for (const rule of [field.access?.read, field.access?.update]) {
+    if (rule && !(await rule({ req, data: {}, siblingData: {}, doc: {} }))) return false;
+  }
+
+  return true;
+}
+
 function isSafeRedirect(url: string): boolean {
   if (url.startsWith('/')) return !url.startsWith('//') && !url.startsWith('/\\');
 
@@ -140,6 +154,8 @@ function isSafeRedirect(url: string): boolean {
 /**
  * The reasons a form can't be saved, each with the path of the form field at fault. A closed
  * form skips the question checks, so it can always be closed, or drafted before it opens.
+ * Creating forms must be able to create a record; editing forms (`update`, `both`) must be able
+ * to read and update each question's field through a link.
  */
 export async function checkForm({
   form,
@@ -186,6 +202,17 @@ export async function checkForm({
 
   if (form.status === 'closed') return errors;
 
+  const mode = form.mode ?? 'create';
+  const creates = mode !== 'update';
+  const edits = mode !== 'create';
+
+  if (edits && target.drafts) {
+    errors.push({
+      path: 'mode',
+      message: `${target.slug} keeps drafts, which edit links can't save yet. Use the create mode.`,
+    });
+  }
+
   const visitor = formRequest(req, form, target.slug);
   const used = new Set<string>();
 
@@ -222,10 +249,19 @@ export async function checkForm({
       return;
     }
 
-    if (!(await canCreate(entry.field, visitor))) {
+    if (creates && !(await canCreate(entry.field, visitor))) {
       errors.push({
         path,
         message: `"${name}" can't be filled from a form: its create access denies form submissions.`,
+      });
+
+      return;
+    }
+
+    if (edits && !types && !(await canEdit(entry.field, visitor))) {
+      errors.push({
+        path,
+        message: `"${name}" can't be changed through an edit link: its read or update access denies form links.`,
       });
 
       return;
@@ -243,6 +279,15 @@ export async function checkForm({
 
       if (field?.type !== 'upload') continue;
 
+      if (edits) {
+        errors.push({
+          path: `${path}.field`,
+          message: `"${field.name}" is a file question, which edit links can't change yet.`,
+        });
+
+        continue;
+      }
+
       const refused = checkUploadQuestion({ path, question, field, targets, limits });
 
       errors.push(...refused);
@@ -255,7 +300,7 @@ export async function checkForm({
   const asked = new Set(used);
   const params = new Set<string>();
 
-  for (const [index, param] of (form.hiddenParams ?? []).entries()) {
+  for (const [index, param] of (creates ? (form.hiddenParams ?? []) : []).entries()) {
     if (params.has(param.name)) {
       errors.push({
         path: `hiddenParams.${index}.name`,
@@ -267,7 +312,7 @@ export async function checkForm({
     await usable(`hiddenParams.${index}.field`, param.field, PARAM_TYPES);
   }
 
-  for (const entry of target.fields.values()) {
+  for (const entry of creates ? target.fields.values() : []) {
     if (entry.required && !asked.has(entry.name)) {
       errors.push({
         path: 'steps',

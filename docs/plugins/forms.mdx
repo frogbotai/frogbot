@@ -286,3 +286,4 @@ A hook on the collection that emails the person who submitted, such as a "we got
 | `turnstile` | `{ siteKey: string; secretKey: string }` | None | Cloudflare Turnstile keys. When set, every submit needs a token Cloudflare accepts. |
 | `rateLimit` | `{ max?: number; window?: number }` | `{ max: 10, window: 600 }` | Submits allowed from one visitor address per window, in seconds, across forms. Counted only with `trustProxy`. |
 | `trustProxy` | `boolean` | `false` | Read the visitor's address from the `x-forwarded-for` (last entry) or `x-real-ip` header your proxy sets. Off, submits aren't rate-limited and boot warns. |
+| `links` | `{ defaultExpiry?; maxExpiry?; access? }` | `{ defaultExpiry: '7d', maxExpiry: '30d' }` | Edit links: how long they last, as seconds or a length like `'7d'`, and access for the `form-links` collection, merged over the default (people who can update a record manage its links). |
