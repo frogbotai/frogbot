@@ -1,4 +1,5 @@
 import { microsoftCloud } from '@frogbotai/piece-microsoft';
+import type { FrogBotRequest } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { microsoftOutlookAuth } from './config.js';
@@ -233,8 +234,22 @@ export function createMicrosoftOutlookClient(auth: unknown, tokens: AppTokenCach
     return { value: result.value, nextLink: result['@odata.nextLink'] ?? null };
   }
 
-  async function bytes(path: string, options?: RequestOptions) {
-    return Buffer.from(await (await raw(path, options)).arrayBuffer());
+  async function list<T>(path: string, item: z.ZodType<T>, options?: RequestOptions) {
+    const items: T[] = [];
+    let next: string | null = path;
+
+    while (next) {
+      const result: { value: T[]; nextLink: string | null } = await page(
+        next,
+        item,
+        next === path ? options : { signal: options?.signal },
+      );
+
+      items.push(...result.value);
+      next = result.nextLink;
+    }
+
+    return items;
   }
 
   return {
@@ -242,7 +257,7 @@ export function createMicrosoftOutlookClient(auth: unknown, tokens: AppTokenCach
     mailbox,
     request,
     page,
-    bytes,
+    list,
     async authorize(target: URL, headers: Headers, signal?: AbortSignal) {
       if (target.origin !== baseUrl || target.username || target.password) {
         throw new Error('Microsoft Graph URL must stay within the configured cloud.');
@@ -251,4 +266,10 @@ export function createMicrosoftOutlookClient(auth: unknown, tokens: AppTokenCach
       headers.set('authorization', `Bearer ${await accessToken(signal)}`);
     },
   };
+}
+
+export function signal(req: FrogBotRequest) {
+  req.signal?.throwIfAborted();
+
+  return req.signal ?? undefined;
 }

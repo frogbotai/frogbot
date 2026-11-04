@@ -66,3 +66,27 @@ export function req(credential: unknown = delegated, extra: Record<string, unkno
     ...extra,
   } as unknown as FrogBotRequest;
 }
+
+/** A request whose app has a `files` collection, with `create` and `findByID` spies. */
+export function filesReq(credential: unknown = delegated) {
+  const create = vi.fn(({ file }: { file: { name: string } }) =>
+    Promise.resolve({ id: `file-${file.name}`, url: `/api/files/file/${file.name}` }),
+  );
+
+  const findByID = vi.fn();
+  const request = req(credential, {
+    headers: new Headers({ cookie: 'session=1' }),
+    url: 'https://app.test/api',
+  }) as unknown as { frogbot: Record<string, unknown> };
+
+  Object.assign(request.frogbot, {
+    config: {
+      files: { slug: 'files' },
+      _internal: { payloadConfig: Promise.resolve({ serverURL: 'https://app.test' }) },
+    },
+    create,
+    findByID,
+  });
+
+  return { req: request as unknown as FrogBotRequest, create, findByID };
+}
