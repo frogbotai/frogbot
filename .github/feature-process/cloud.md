@@ -56,15 +56,25 @@ Keep it short enough to read on a phone. Detail belongs in the linked files.
   - A finding outside the ticket's intent is not a fix round. It goes to [findings](#findings).
   - The tester ends with `PASS`, `PASS+NOTES` or `FAIL`, naming the commit SHA it checked. At most 2 fix rounds, then the PR is opened with the `FAIL` verdict and the owner decides.
 - Every PR is squash-merged, and the commit on `main` is the PR title alone, with GitHub's `(#<n>)` added. So the title is the commit subject: a Conventional Commit, as in [Commits](../../CONTRIBUTING.md#commits), for example `fix(ui): keep the board's columns when switching to List`. The `pr-message` check refuses anything else.
+- A PR that changes what someone sees (the marketing site, the admin UI in core or plugins, Sidekick, the docs' styling or layout) embeds before and after screenshots in its description, at 375px and 1280px wide, and in dark mode too where the page has it. See [Screenshots](#screenshots).
 - The description is for review, not history. Start with `Closes <issue URL>`, then a briefing that fits in a minute on a phone:
   - **Why**: one or two lines from the Brief.
   - **What changed**: the user-visible change, then the main files.
   - **Scope**: what this PR doesn't do.
   - **Tradeoffs**: choices made without the owner, each labelled measured, inferred or guessed.
   - **Blast radius**: what else could break, and what checked it.
+  - **Screenshots**: for a visual change, the before and after images, labelled by width and theme. Otherwise omit the section.
   - **Verification**: the verify summary and the tester's verdict with its SHA.
   - **Noticed, not done**: findings that didn't meet the bar for an issue. Empty is fine.
 - If the issue has `ticket:automerge` and the verdict is `PASS` on the PR's head, add `ticket:automerge` to the PR. Before pushing anything else to a PR that has the label, remove it. Add it again only after a new `PASS`.
+
+## Screenshots
+
+- Take them with Playwright on the running app or page, before the change (from `main`) and after. When the full app can't run in the cloud (no database, for example), screenshot the closest real render you can, and say in the PR what it is.
+- Host them on the `claude/pr-assets` branch of the repo that owns the PR: an orphan branch, never merged, with each PNG at `<pr-branch>/<name>.png`. Push it with `git push origin claude/pr-assets` (create it with `git checkout --orphan` in a scratch clone, not this checkout).
+- Embed each with `https://github.com/frogbotai/<repo>/blob/claude/pr-assets/<pr-branch>/<name>.png?raw=true`. Images from a private repo render only for people with access, which is fine for platform.
+- After opening the PR, check that the images render on the PR page and on GitHub mobile. If they don't, pick a hosting method that works and change this section.
+- A ticket comment that links the PR says "screenshots in the PR".
 
 ## Findings
 
