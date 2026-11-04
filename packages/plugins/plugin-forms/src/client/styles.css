@@ -1,0 +1,18 @@
+@layer frogbot {
+  .fb-dialog__content.fb-form-links-dialog {
+    gap: 1rem;
+  }
+
+  .fb-form-links-dialog__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .fb-form-links-dialog__error {
+    margin: 0;
+    color: var(--color-text-danger);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+  }
+}

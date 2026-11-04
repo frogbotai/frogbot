@@ -12,6 +12,8 @@ import { resolveSpamOptions, spamWarnings } from './spam.js';
 import type { FormsPluginOptions } from './types.js';
 import { resolveUploadLimits, uploadWarnings } from './uploads.js';
 
+const EDIT_LINK_MENU_ITEM = '@frogbotai/plugin-forms/client#EditLinkMenuItem';
+
 const FORM_VIEW: AdminViewConfig = {
   Component: '@frogbotai/plugin-forms/rsc#FormView',
   exact: false,
@@ -81,6 +83,7 @@ const forms = definePlugin<FormsPluginOptions>({
     }
 
     const spam = resolveSpamOptions(options);
+    const links = resolveLinkLimits(options.links);
     const targets = new Map<string, FormTarget>();
 
     const collections = config.collections.map((collection) => {
@@ -93,8 +96,27 @@ const forms = definePlugin<FormsPluginOptions>({
         drafts: typeof collection.versions === 'object' && Boolean(collection.versions.drafts),
       });
 
+      const edit = collection.admin?.components?.edit;
+
       return {
         ...collection,
+        ...(collection.upload
+          ? {}
+          : {
+              admin: {
+                ...collection.admin,
+                components: {
+                  ...collection.admin?.components,
+                  edit: {
+                    ...edit,
+                    editMenuItems: [
+                      ...(edit?.editMenuItems ?? []),
+                      { path: EDIT_LINK_MENU_ITEM, clientProps: links },
+                    ],
+                  },
+                },
+              },
+            }),
         access: {
           ...collection.access,
           create: wrapCreateAccess(collection.slug, collection.access?.create),
@@ -108,7 +130,7 @@ const forms = definePlugin<FormsPluginOptions>({
       targets,
       spam,
       uploads: resolveUploadLimits(config),
-      links: resolveLinkLimits(options.links),
+      links,
     };
 
     const warnings = [

@@ -31,6 +31,7 @@ Each listed collection's `access.create` becomes `isFormSubmission(req, slug) ||
 - `GET /api/forms/:slug/definition` returns the render definition.
 - `POST /api/forms/:slug/submit` takes `{ data, params, honeypot?, turnstile? }`, keeps only the form's questions and declared parameters, and returns the confirmation or field errors, never the record.
 - File questions: an `upload` field into a listed upload collection, with `maxFileSize`, `maxFiles` (up to 5) and `mimeTypes`, under the app's `upload` limits. Files are sent as multipart, created like the record, deleted when the submit fails, and never returned. Scan them in the upload collection's `beforeChange` hook; boot warns when there's none.
+- Edit links: a form in `update` or `both` mode edits one record through a link made with **Create edit link** in the record's menu, `createFormLink(frogbot, { form, record, expiresIn?, maxSubmissions?, req })` or `POST /api/form-links`. The page opens prefilled with the form's questions only and saves through the collection's validation and hooks. Links are random, stored as a hash, last 7 days by default and at most 30 (`links`), and are revoked from the **Edit links** list. Anyone with the URL can edit the record until then.
 - Spam protection: a honeypot, optional Cloudflare Turnstile (`turnstile: { siteKey, secretKey }`), and a per-visitor rate limit (`rateLimit`, 10 per 10 minutes) that needs `trustProxy: true` behind a proxy that sets `x-forwarded-for`.
 
 See the [forms documentation](https://docs.frogbot.ai/plugins/forms).

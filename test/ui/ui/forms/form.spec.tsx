@@ -137,6 +137,44 @@ describe('Form', () => {
     });
   });
 
+  it('starts from an edit link’s saved answers and posts them back with the link', async () => {
+    const fetch = respond({ confirmation: { type: 'message', message: 'Saved.' } });
+    const user = userEvent.setup();
+    const edit: FormDefinition = {
+      ...definition,
+      steps: [
+        {
+          questions: [
+            { key: 'email', type: 'email', label: 'Work email', required: true },
+            { key: 'firstName', type: 'text', label: 'First name', required: false },
+            { key: 'startsOn', type: 'date', label: 'Start date', required: false },
+          ],
+        },
+      ],
+      hiddenParams: [],
+      values: { email: 'ada@example.com', firstName: null, startsOn: '2026-12-01T12:00:00.000Z' },
+    };
+
+    render(<Form definition={edit} submitUrl="/api/forms/contact/submit?link=abc" />);
+
+    expect(screen.getByLabelText(/Work email/)).toHaveProperty('value', 'ada@example.com');
+    expect(screen.getByLabelText('First name')).toHaveProperty('value', '');
+    expect(screen.getByLabelText('Start date')).toHaveProperty('value', '2026-12-01');
+
+    await user.clear(screen.getByLabelText(/Work email/));
+    await user.type(screen.getByLabelText(/Work email/), 'ada@lovelace.dev');
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+
+    expect(await screen.findByRole('status')).toHaveProperty('textContent', 'Saved.');
+    expect(sent(fetch)).toEqual({
+      url: '/api/forms/contact/submit?link=abc',
+      body: {
+        data: { email: 'ada@lovelace.dev', firstName: '', startsOn: '2026-12-01' },
+        params: {},
+      },
+    });
+  });
+
   it('shows server errors on their fields, back on the step that holds them', async () => {
     respond(
       { errors: [{ field: 'email', message: 'Enter a valid email.' }, { message: 'Nope.' }] },

@@ -1335,6 +1335,11 @@
     "type": "import('@frogbotai/ui/forms').FormProps"
   },
   {
+    "page": "plugins/forms",
+    "heading": "Making a link",
+    "type": "import('@frogbotai/plugin-forms').CreateFormLinkOptions"
+  },
+  {
     "page": "plugins/import-export",
     "heading": "Options",
     "type": "import('@frogbotai/plugin-import-export').ImportExportPluginOptions"

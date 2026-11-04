@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'frogbot';
+import type { CollectionConfig, FieldHook } from 'frogbot';
 import { APIError, Forbidden } from 'payload';
 
 import type { FormLinkDocument, FormLinkDuration, FormLinkStatus } from '../types.js';
@@ -20,6 +20,33 @@ export function linkStatus(
 }
 
 const fixed = { update: never };
+
+const STATUS_FIELDS = ['expiresAt', 'maxSubmissions', 'revokedAt', 'submissions'] as const;
+
+const readStatus: FieldHook = async ({ originalDoc, req, siblingData }) => {
+  const row = { ...(originalDoc as object), ...(siblingData as object) } as Record<string, unknown>;
+
+  if (STATUS_FIELDS.some((name) => row[name] === undefined) && isId(row.id)) {
+    Object.assign(
+      row,
+      await req.frogbot.findByID({
+        collection: FORM_LINKS_SLUG,
+        id: row.id,
+        select: Object.fromEntries(STATUS_FIELDS.map((name) => [name, true])),
+        depth: 0,
+        disableErrors: true,
+        overrideAccess: true,
+        req,
+      }),
+    );
+  }
+
+  return linkStatus(row as FormLinkDocument);
+};
+
+function isId(value: unknown): value is number | string {
+  return typeof value === 'number' || (typeof value === 'string' && value !== '');
+}
 
 export function createFormLinksCollection({
   targets,
@@ -43,6 +70,7 @@ export function createFormLinksCollection({
         {
           type: 'list',
           defaultFields: ['label', 'status', 'expiresAt', 'submissions', 'createdBy'],
+          components: { menuItems: ['@frogbotai/plugin-forms/client#RevokeLinksMenuItem'] },
         },
       ],
     },
@@ -137,9 +165,7 @@ export function createFormLinksCollection({
         type: 'text',
         virtual: true,
         admin: { readOnly: true },
-        hooks: {
-          afterRead: [({ siblingData }) => linkStatus(siblingData as FormLinkDocument)],
-        },
+        hooks: { afterRead: [readStatus] },
       },
       {
         name: 'expiresAt',

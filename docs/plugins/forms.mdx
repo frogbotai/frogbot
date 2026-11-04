@@ -46,6 +46,7 @@ A document in the `forms` collection has:
 
 - `title`, and a unique `slug` of lowercase letters, numbers and hyphens.
 - `collection`: one of the listed collections. Each response creates a record there.
+- `mode`: `create` (the default) takes new records, `update` edits one record through an [edit link](#edit-links), and `both` does either.
 - `steps`, each with an optional `title` and its `questions`. A question names a field of the collection and can override its `label`, `description` and `placeholder`. A file question also has `maxFileSize`, `maxFiles` and `mimeTypes`; see [File uploads](#file-uploads).
 - `hiddenParams`: URL parameters, like `utm_source`, saved to a field of the record.
 - `confirmation`: a `message`, or a `redirect` to a path such as `/thanks` or an `http(s)` URL.
@@ -58,7 +59,7 @@ A question can use any top-level field, including fields in unnamed rows, collap
 - names a field whose `access.create` denies a form submission;
 - asks for files that could pass the app's upload limits, or stores them somewhere a form can't (see [File uploads](#file-uploads));
 
-or when the form leaves out a field that is `required` and has no `defaultValue`, since no response could then be saved. A form saved as `closed` skips these checks, so it can always be closed, or drafted before it opens.
+or when the form leaves out a field that is `required` and has no `defaultValue`, since no response could then be saved. An `update` form skips that last rule and the `access.create` check, and has its own; see [Edit links](#edit-links). A form saved as `closed` skips these checks, so it can always be closed, or drafted before it opens.
 
 ## Who can open a form
 
@@ -217,7 +218,7 @@ Load `@frogbotai/ui/styles.css` once for its styles. They sit in the `frogbot` c
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `definition` | `FormDefinition` | Required | The form's render definition, from `GET /api/forms/<slug>/definition`. |
-| `submitUrl` | `string` | Required | Where answers are posted. |
+| `submitUrl` | `string` | Required | Where answers are posted. For an edit link, add `?link=<token>`. |
 | `onSubmitted` | `(confirmation: FormConfirmation) => void` | None | Called with the confirmation after a successful submit. When set, a redirect confirmation is left to you. |
 | `className` | `string` | None | Added to the form's root element. |
 
@@ -245,7 +246,99 @@ Content-Type: application/json
 - With files, send `multipart/form-data` as described in [How files are saved](#how-files-are-saved). Files over the app's upload limits answer `413`.
 - A missing or refused Turnstile token answers `400`, and too many submits from one address answer `429` with a `Retry-After` header. See [Spam protection](#spam-protection).
 
+Both take `?link=<token>` for an [edit link](#edit-links): the definition then carries the record's answers as `values`, and the submit updates that record. An `update` form answers `404` without a link.
+
 With `maxResponses` set, responses are counted under a per-form lock in the app's KV store, so two visitors submitting at once never pass the limit. Without it, the count is kept but not locked.
+
+## Edit links
+
+An edit link lets someone without an account change one record through one form: a customer fixing their phone number, an applicant updating their answers. Set the form's `mode` to `update`, or `both` to keep taking new records too, then make a link for a record. Whoever opens it sees that record's answers filled in, changes the form's questions and saves; the collection's validation and hooks run as for any update.
+
+### Making a link
+
+In the admin, open a record and choose **Create edit link** from its menu. The item shows when an `update` or `both` form targets the collection and you can update the record. Pick the form, how long the link lasts and how many saves it allows, then copy the URL. It is shown once: only a hash of it is stored, so a lost link is replaced, not copied again.
+
+From code, call `createFormLink` as the user who sends it:
+
+```ts
+import { createFormLink } from '@frogbotai/plugin-forms'
+
+const { url, expiresAt } = await createFormLink(req.frogbot, {
+  form: 'update-application',
+  record: application.id,
+  expiresIn: '3d',
+  req,
+})
+```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `form` | `string \| number` | Required | The form's slug or ID. Its `mode` must be `update` or `both`. |
+| `record` | `string \| number` | Required | The ID of the record in the form's collection. |
+| `expiresIn` | `number \| string` | `links.defaultExpiry` | Seconds, or a length like `'30m'`, `'12h'`, `'7d'` or `'2w'`, up to `links.maxExpiry`. |
+| `maxSubmissions` | `number \| null` | None | Saves the link allows. Unset, it works until it expires or is revoked. |
+| `req` | `FrogBotRequest` | None | The request whose user makes the link. |
+| `overrideAccess` | `boolean` | `false` | Skip the check that the user can update the record. |
+
+It returns `{ url, id, expiresAt }`. Without `overrideAccess`, the user must pass the collection's own `access.update` for that record, or it throws `Forbidden`; a form that only creates, a bad length or use limit throws `ValidationError`. `POST /api/form-links` with the same options as JSON makes a link as the signed-in user.
+
+An agent can send links through a tool that calls it as the agent's user, so the collection's update rule still decides:
+
+```ts
+import { createFormLink } from '@frogbotai/plugin-forms'
+import type { Tool } from 'frogbot'
+import { z } from 'zod'
+
+const sendEditLinkInput = z.object({ application: z.string() })
+
+export const sendEditLink: Tool<typeof sendEditLinkInput, { url: string; expiresAt: string }> = {
+  slug: 'send-edit-link',
+  description: 'Make a link that lets an applicant update their application.',
+  inputSchema: sendEditLinkInput,
+  approval: 'ask',
+  execute: async ({ application }, { frogbot, req }) => {
+    const { url, expiresAt } = await createFormLink(frogbot, {
+      form: 'update-application',
+      record: application,
+      req,
+    })
+
+    return { url, expiresAt }
+  },
+}
+```
+
+### How long links last
+
+Links last 7 days unless `expiresIn` says otherwise, and at most 30 days. Change both in the plugin options:
+
+```ts
+formsPlugin({
+  collections: ['applications'],
+  links: { defaultExpiry: '14d', maxExpiry: '60d' },
+})
+```
+
+A link works for any number of saves until it expires; set `maxSubmissions: 1` for a single-use link. Opening a link never counts, only saving.
+
+### What a link can do
+
+- It opens one form for one record. `/forms/<slug>?link=<token>` shows the record's current answers to the form's questions and nothing else, read with `overrideAccess: false`.
+- Saving keeps only the form's questions, ignores URL parameters, and updates the record with `overrideAccess: false`. Emptying an answer clears its field. The response is the confirmation or field errors, never the record.
+- While a link is used, each listed collection's `access.read` and `access.update` admit only the link's record. `req.context.formLink` holds `{ id, collection, record }`, so your hooks can tell link saves apart; only the plugin can set it, and a hook that writes another collection or record with the same `req` isn't admitted there.
+- `updatedBy` stays as it was, since nobody is signed in. The link's `submissions` and `lastSubmittedAt` record each save. A save the collection refuses spends no use.
+- An unknown, expired, revoked or used-up link, or another form's, shows one "This link is no longer valid" page, and the endpoints answer `410` with no detail. With `trustProxy`, each such link counts toward the visitor's [rate limit](#spam-protection).
+- The token is random, not signed, so it never signs anyone in, and changing `FROGBOT_SECRET` doesn't break links.
+
+Saving an `update` or `both` form is refused, naming the field, when a question's `access.read` or `access.update` denies a signed-out request, or when it's a file question. Collections with drafts can't take edit links yet. To fix a value a person may not change, such as the record's owner, set it in a `beforeChange` hook when `req.context.formLink` is present.
+
+### Revoking links
+
+Links live in the **Edit links** collection (`form-links`), with each link's status: active, expired, used up or revoked. **View edit links** in a record's menu lists that record's links; select some and choose **Revoke selected**. Setting `revokedAt`, or deleting the link, stops it at once, and a revoked link stays revoked. Deleting a form deletes its links. People who can update a record can see, revoke and delete its links; `links.access` overrides that.
+
+<Warning>
+Anyone who has the URL can change the record's answers until the link expires or is revoked. Send links only to the person they're for, keep `maxExpiry` short, and revoke a link that may have leaked.
+</Warning>
 
 ## Spam protection
 

@@ -39,6 +39,8 @@ export type FormDefinition = {
   closed: boolean;
   honeypot: string;
   turnstile?: { siteKey: string };
+  /** Through an edit link: the record's current answers, which the form starts from. */
+  values?: Record<string, unknown>;
 };
 
 export type FormFieldError = { field?: string; message: string };

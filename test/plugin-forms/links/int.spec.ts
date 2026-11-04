@@ -404,6 +404,13 @@ describe(`form edit links [${adapterLabel}]`, () => {
       await booted.restClient.patch(`/api/form-links/${link.id}`, { revokedAt: null }, { headers });
 
       expect((await storedLinks())[0].status).toBe('revoked');
+
+      const listed = await booted.restClient.get<{ docs: { status?: string }[] }>(
+        '/api/form-links?select[label]=true&select[status]=true',
+        { headers },
+      );
+
+      expect(listed.body.docs).toEqual([expect.objectContaining({ status: 'revoked' })]);
     });
 
     it('lists, revokes and deletes only the links of records the user can update', async () => {

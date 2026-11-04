@@ -17,7 +17,7 @@ import type {
 export type FormProps = {
   /** The form's render definition, from `GET /api/forms/<slug>/definition`. */
   definition: FormDefinition;
-  /** Where answers are posted, such as `/api/forms/<slug>/submit`. */
+  /** Where answers are posted, such as `/api/forms/<slug>/submit`, with `?link=<token>` for an edit link. */
   submitUrl: string;
   /** Called with the confirmation after a successful submit. When set, a redirect is left to you. */
   onSubmitted?: (confirmation: FormConfirmation) => void;
@@ -27,8 +27,10 @@ export type FormProps = {
 const REQUIRED = 'This field is required.';
 const FAILED = 'Something went wrong. Try again.';
 
-function initialValue(question: Question): FormValue {
-  const { defaultValue, hasMany, type } = question;
+function initialValue(question: Question, values: Record<string, unknown> | undefined): FormValue {
+  const { hasMany, type } = question;
+  const saved = values && Object.hasOwn(values, question.key);
+  const defaultValue = saved ? values[question.key] : question.defaultValue;
 
   if (type === 'checkbox') return defaultValue === true;
 
@@ -40,7 +42,9 @@ function initialValue(question: Question): FormValue {
       : [];
   }
 
-  if (typeof defaultValue === 'string') return defaultValue;
+  if (typeof defaultValue === 'string') {
+    return type === 'date' && saved ? defaultValue.slice(0, 10) : defaultValue;
+  }
 
   return typeof defaultValue === 'number' ? String(defaultValue) : '';
 }
@@ -108,7 +112,9 @@ export function Form({ definition, submitUrl, onSubmitted, className }: FormProp
   const questions = useMemo(() => steps.flatMap((step) => step.questions), [steps]);
 
   const [values, setValues] = useState<Record<string, FormValue>>(() =>
-    Object.fromEntries(questions.map((question) => [question.key, initialValue(question)])),
+    Object.fromEntries(
+      questions.map((question) => [question.key, initialValue(question, definition.values)]),
+    ),
   );
 
   const [stepIndex, setStepIndex] = useState(0);

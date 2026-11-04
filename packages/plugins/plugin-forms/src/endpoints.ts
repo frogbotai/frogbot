@@ -8,10 +8,16 @@ import {
 
 import { countResponse, formIsClosed, isClosed } from './closing.js';
 import { buildConfirmation } from './definition.js';
-import { asFormLink, openLink, type ResolvedLink, resolveLink, spendUse } from './links/resolve.js';
+import {
+  asFormLink,
+  openLinkLimited,
+  type ResolvedLink,
+  resolveLink,
+  spendUse,
+} from './links/resolve.js';
 import { definitionFor, findForm, type FormsRuntime } from './lookup.js';
 import type { FormTarget, QuestionField } from './questions.js';
-import { checkRateLimit, clientIp, takeRateLimit, verifyTurnstile } from './spam.js';
+import { clientIp, takeRateLimit, verifyTurnstile } from './spam.js';
 import type { FormDocument, FormFieldError, FormSubmitResponse } from './types.js';
 import {
   asSubmission,
@@ -148,24 +154,13 @@ export function createDefinitionEndpoint(runtime: FormsRuntime): Endpoint {
         return Response.json(await definitionFor(req, runtime, found));
       }
 
-      const ip = clientIp(req.headers, runtime.spam.trustProxy);
-
       try {
-        const limit = ip
-          ? await checkRateLimit(req.frogbot, ip, runtime.spam.rateLimit)
-          : undefined;
+        const opening = await openLinkLimited(req, runtime, req.routeParams?.slug, token);
 
-        if (limit && !limit.allowed) return tooMany(limit.retryAfter);
+        if (opening.status === 'limited') return tooMany(opening.retryAfter);
+        if (opening.status === 'gone') return linkGone();
 
-        const opened = await openLink(req, runtime, req.routeParams?.slug, token);
-
-        if (!opened) {
-          if (ip) await takeRateLimit(req.frogbot, ip, runtime.spam.rateLimit);
-
-          return linkGone();
-        }
-
-        return Response.json(opened.definition);
+        return Response.json(opening.definition);
       } catch (error) {
         if (error instanceof KVLockContentionError) return busy();
 

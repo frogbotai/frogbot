@@ -238,3 +238,4 @@ export { QueryPresetsGroupByField } from '@payloadcms/ui';
 export { QueryPresetsWhereCell } from '@payloadcms/ui';
 export { QueryPresetsWhereField } from '@payloadcms/ui';
 export { Button } from '@payloadcms/ui';
+export { PopupList } from '@payloadcms/ui';

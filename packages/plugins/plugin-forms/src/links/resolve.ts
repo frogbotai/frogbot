@@ -3,6 +3,7 @@ import { APIError, type FrogBotRequest } from 'frogbot';
 import { createFormLinkContext, createFormSubmission } from '../access.js';
 import { withLock } from '../closing.js';
 import { definitionFor, findForm, type FormsRuntime, type FoundForm } from '../lookup.js';
+import { checkRateLimit, clientIp, takeRateLimit } from '../spam.js';
 import type { FormDefinition, FormDocument, FormLinkContext, FormLinkDocument } from '../types.js';
 import { FORM_LINKS_SLUG } from './access.js';
 import { linkStatus } from './collection.js';
@@ -217,4 +218,33 @@ export async function openLink(
 
     throw error;
   }
+}
+
+export type LinkOpening =
+  | { status: 'open'; found: FoundForm; definition: FormDefinition }
+  | { status: 'gone' }
+  | { status: 'limited'; retryAfter: number };
+
+/**
+ * `openLink` behind the per-visitor limit: with `trustProxy`, a visitor over the limit opens no
+ * link, and each link that doesn't open counts toward it.
+ */
+export async function openLinkLimited(
+  req: FrogBotRequest,
+  runtime: FormsRuntime,
+  slug: unknown,
+  token: unknown,
+): Promise<LinkOpening> {
+  const { rateLimit, trustProxy } = runtime.spam;
+  const ip = clientIp(req.headers, trustProxy);
+  const limit = ip ? await checkRateLimit(req.frogbot, ip, rateLimit) : undefined;
+
+  if (limit && !limit.allowed) return { status: 'limited', retryAfter: limit.retryAfter };
+
+  const opened = await openLink(req, runtime, slug, token);
+
+  if (opened) return { status: 'open', ...opened };
+  if (ip) await takeRateLimit(req.frogbot, ip, rateLimit);
+
+  return { status: 'gone' };
 }

@@ -1,13 +1,17 @@
 import type { Field, FrogBotRequest } from 'frogbot';
 import { describe, expect, it } from 'vitest';
 
+import {
+  expiryChoices,
+  linksListPath,
+} from '../../../packages/plugins/plugin-forms/src/client/links.js';
 import { linksWhere } from '../../../packages/plugins/plugin-forms/src/links/access.js';
 import { linkStatus } from '../../../packages/plugins/plugin-forms/src/links/collection.js';
+import { parseDuration } from '../../../packages/plugins/plugin-forms/src/links/duration.js';
 import {
   createLinkToken,
   hashLinkToken,
   linkLifetime,
-  parseDuration,
   resolveLinkLimits,
 } from '../../../packages/plugins/plugin-forms/src/links/token.js';
 import {
@@ -175,5 +179,27 @@ describe('form modes on save', () => {
         message: expect.stringContaining('"cv" is a file question'),
       }),
     ]);
+  });
+});
+
+describe('the link dialog', () => {
+  it('offers lengths up to the maximum, marking the default', () => {
+    expect(expiryChoices(7 * DAY, 30 * DAY)).toEqual([
+      { seconds: 3600, label: '1 hour' },
+      { seconds: DAY, label: '1 day' },
+      { seconds: 3 * DAY, label: '3 days' },
+      { seconds: 7 * DAY, label: '1 week (default)' },
+      { seconds: 14 * DAY, label: '2 weeks' },
+      { seconds: 30 * DAY, label: '30 days' },
+    ]);
+    expect(expiryChoices(2 * 3600, 5 * 3600).map(({ seconds }) => seconds)).toEqual([
+      3600, 7200, 18_000,
+    ]);
+  });
+
+  it("links to one record's links", () => {
+    expect(decodeURIComponent(linksListPath('applications', 4))).toBe(
+      '/collections/form-links?where[and][0][collection][equals]=applications&where[and][1][recordId][equals]=4',
+    );
   });
 });
