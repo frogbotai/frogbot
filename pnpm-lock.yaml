@@ -1652,6 +1652,19 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/pieces/piece-zendesk:
+    dependencies:
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/pieces/piece-zoom:
     dependencies:
       zod:
@@ -2592,6 +2605,9 @@ importers:
       '@frogbotai/piece-xml':
         specifier: workspace:*
         version: link:../packages/pieces/piece-xml
+      '@frogbotai/piece-zendesk':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-zendesk
       '@frogbotai/piece-zoom':
         specifier: workspace:*
         version: link:../packages/pieces/piece-zoom
