@@ -441,7 +441,9 @@ const result = await req.frogbot.generateText({
 const ticket = result.output
 ```
 
-FrogBot also re-exports `Output.text`, `Output.array`, `Output.choice`, and `Output.json` through the same `Output` object.
+`result.output` is typed from the schema, here `{ ticket: string; priority: 'low' | 'medium' | 'high' }`. Without `output` it is the response text. `streamText` works the same way: `await result.output` resolves to the parsed value.
+
+FrogBot also re-exports `Output.text`, `Output.array`, `Output.choice`, and `Output.json` through the same `Output` object. To get structured output from an agent, with its tools and instructions, pass `output` to [`agent.generate()` or `agent.stream()`](/agents/overview#return-structured-output).
 
 ---
 

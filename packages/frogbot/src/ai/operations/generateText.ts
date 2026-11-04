@@ -1,4 +1,5 @@
 import type { Gateway } from '@frogbotai/gateway';
+import type { GenerateTextResult, Output, ToolSet } from 'ai';
 import { generateId, generateText as aiGenerateText } from 'ai';
 
 import { toAISDKTools, toAISDKToolsContext } from '../../agents/tools.js';
@@ -7,7 +8,7 @@ import type { FrogBotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';
 import { resolveModel } from '../resolve.js';
-import type { GenerateTextOpts, SanitizedAIConfig } from '../types.js';
+import type { AIOutput, GenerateTextOpts, SanitizedAIConfig } from '../types.js';
 import { toProviderOptions } from './options.js';
 
 export type GenerateTextDeps = {
@@ -17,10 +18,10 @@ export type GenerateTextDeps = {
   logger: Logger;
 };
 
-export async function generateTextOperation(
+export async function generateTextOperation<O extends AIOutput = Output.Output<string, string>>(
   deps: GenerateTextDeps,
-  opts: GenerateTextOpts,
-): Promise<Awaited<ReturnType<typeof aiGenerateText>>> {
+  opts: GenerateTextOpts<O>,
+): Promise<GenerateTextResult<ToolSet, Record<string, unknown>, O>> {
   const { gateway, config, frogbot } = deps;
   const { model: input, req, overrideAccess, tools, providerOptions, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);

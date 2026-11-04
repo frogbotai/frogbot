@@ -1,4 +1,5 @@
 import type { Gateway } from '@frogbotai/gateway';
+import type { Output } from 'ai';
 import type { Payload } from 'payload';
 import { createPayloadRequest, getPayload, handleEndpoints, resetPasswordOperation } from 'payload';
 
@@ -18,6 +19,7 @@ import { rerankOperation } from './ai/operations/rerank.js';
 import { streamTextOperation } from './ai/operations/streamText.js';
 import { transcribeOperation } from './ai/operations/transcribe.js';
 import type {
+  AIOutput,
   EmbedManyOpts,
   EmbedOpts,
   EvaluateOpts,
@@ -390,11 +392,13 @@ export class FrogBot {
     return state(this).payload.getAPIURL();
   }
 
-  generateText = (opts: GenerateTextOpts): ReturnType<typeof generateTextOperation> =>
-    generateTextOperation(aiDeps(this), opts);
+  generateText = <O extends AIOutput = Output.Output<string, string>>(
+    opts: GenerateTextOpts<O>,
+  ): ReturnType<typeof generateTextOperation<O>> => generateTextOperation(aiDeps(this), opts);
 
-  streamText = (opts: StreamTextOpts): ReturnType<typeof streamTextOperation> =>
-    streamTextOperation(aiDeps(this), opts);
+  streamText = <O extends AIOutput = Output.Output<string, string, never>>(
+    opts: StreamTextOpts<O>,
+  ): ReturnType<typeof streamTextOperation<O>> => streamTextOperation(aiDeps(this), opts);
 
   embed = (opts: EmbedOpts) => embedOperation(aiDeps(this), opts);
 

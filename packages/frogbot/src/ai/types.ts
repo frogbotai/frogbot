@@ -20,7 +20,7 @@ import type { FrogBotTypes } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { AIHooks, SanitizedAIHooks } from './hooks/types.js';
 
-export type AIOutput = ReturnType<(typeof Output)[keyof typeof Output]>;
+export type AIOutput = Output.Output;
 
 type ProviderModelName<
   P extends ProviderName,
@@ -259,12 +259,12 @@ export type BaseAIOpts = {
   overrideAccess?: boolean;
 };
 
-export type GenerateTextOpts = BaseAIOpts &
+export type GenerateTextOpts<O extends AIOutput = AIOutput> = BaseAIOpts &
   ({ prompt: string; messages?: never } | { prompt?: never; messages: ModelMessage[] }) & {
     instructions?: string;
     tools?: Tool[];
     toolChoice?: ToolChoice<ToolSet>;
-    output?: AIOutput;
+    output?: O;
     stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];
     maxOutputTokens?: number;
     temperature?: number;
@@ -282,7 +282,7 @@ export type GenerateTextOpts = BaseAIOpts &
     onStepEnd?: (event: unknown) => void | Promise<void>;
   };
 
-export type StreamTextOpts = GenerateTextOpts & {
+export type StreamTextOpts<O extends AIOutput = AIOutput> = GenerateTextOpts<O> & {
   onFinish?: (event: unknown) => void | Promise<void>;
   onEnd?: (event: unknown) => void | Promise<void>;
   onError?: (event: { error: unknown }) => void | Promise<void>;

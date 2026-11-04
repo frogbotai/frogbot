@@ -3,7 +3,8 @@ import type {
   LanguageModelV4GenerateResult,
   LanguageModelV4StreamPart,
 } from '@ai-sdk/provider';
-import type { UIMessage } from 'ai';
+import type { StopCondition, ToolSet, UIMessage } from 'ai';
+import { isStepCount, NoObjectGeneratedError, NoOutputGeneratedError, Output } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -18,6 +19,7 @@ import {
   resolveChannelChat,
 } from '../../../../packages/frogbot/src/channels/conversation.js';
 import { createChannelChatAccess } from '../../../../packages/frogbot/src/chat/channelAccess.js';
+import { NOT_APPROVABLE } from '../../../../packages/frogbot/src/tools/approval.js';
 import { question } from '../../../../packages/frogbot/src/tools/question.js';
 import type { AnyTool, ToolCtx } from '../../../../packages/frogbot/src/tools/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
@@ -128,7 +130,7 @@ function modelStream(parts: LanguageModelV4StreamPart[]) {
   });
 }
 
-function toolLoopStream(): MockLanguageModelV4['doStream'] {
+function toolLoopStream(answer = 'Found it'): MockLanguageModelV4['doStream'] {
   let step = 0;
 
   return () =>
@@ -140,25 +142,28 @@ function toolLoopStream(): MockLanguageModelV4['doStream'] {
               { type: 'tool-call', toolCallId: 'call-1', toolName: 'lookup', input: '{}' },
               { type: 'finish', finishReason: { unified: 'tool-calls', raw: 'tool_calls' }, usage },
             ]
-          : response('Found it'),
+          : response(answer),
       ),
     });
 }
 
-function toolLoopGenerate(): MockLanguageModelV4['doGenerate'] {
+function toolLoopGenerate(
+  answer = 'Found it',
+  toolName = 'lookup',
+): MockLanguageModelV4['doGenerate'] {
   let step = 0;
 
   return () =>
     Promise.resolve<LanguageModelV4GenerateResult>(
       step++ === 0
         ? {
-            content: [{ type: 'tool-call', toolCallId: 'call-1', toolName: 'lookup', input: '{}' }],
+            content: [{ type: 'tool-call', toolCallId: 'call-1', toolName, input: '{}' }],
             finishReason: { unified: 'tool-calls', raw: 'tool_calls' },
             usage,
             warnings: [],
           }
         : {
-            content: [{ type: 'text', text: 'Found it' }],
+            content: [{ type: 'text', text: answer }],
             finishReason: { unified: 'stop', raw: 'stop' },
             usage,
             warnings: [],
@@ -176,6 +181,7 @@ function setup({
   model: agentModel = 'openai/test' as AgentModelId,
   options = [],
   tools,
+  stopWhen,
 }: {
   access?: AgentAccess;
   allowed?: string[];
@@ -186,11 +192,14 @@ function setup({
   model?: AgentModelId;
   options?: readonly AgentModelId[];
   tools?: AnyTool[];
+  stopWhen?: StopCondition<ToolSet>;
 } = {}) {
   const calls: Array<{
     model: string;
     providerOptions: LanguageModelV4CallOptions['providerOptions'];
   }> = [];
+
+  const formats: LanguageModelV4CallOptions['responseFormat'][] = [];
 
   const models = new Map<string, MockLanguageModelV4>();
 
@@ -203,6 +212,7 @@ function setup({
       modelId: id,
       doStream: async (options) => {
         calls.push({ model: id, providerOptions: options.providerOptions });
+        formats.push(options.responseFormat);
 
         return doStream(options);
       },
@@ -210,6 +220,7 @@ function setup({
         ? {
             doGenerate: async (options: LanguageModelV4CallOptions) => {
               calls.push({ model: id, providerOptions: options.providerOptions });
+              formats.push(options.responseFormat);
 
               return doGenerate(options);
             },
@@ -282,7 +293,7 @@ function setup({
         messages.push({ version: 0, ...structuredClone(data) } as StoredMessage);
       }
 
-      return Promise.resolve(data);
+      return Promise.resolve(collection === 'chats' ? { id: 'chat-2', ...data } : data);
     }),
     update: vi.fn(({ data }: { data: Record<string, unknown> }) =>
       Promise.resolve(Object.assign(chat, data)),
@@ -305,6 +316,7 @@ function setup({
       model: { default: agentModel, options: [...new Set([agentModel, ...options])] },
       access,
       tools,
+      stopWhen,
     },
     {
       gateway: {
@@ -322,7 +334,7 @@ function setup({
 
   turn.messages = messages;
 
-  return { agent, calls, chat, finish, frogbot, messages, model, req };
+  return { agent, calls, chat, finish, formats, frogbot, messages, model, req };
 }
 
 async function streamMessage(
@@ -1370,4 +1382,360 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
       ).toEqual([LOCAL_THINKER, LOCAL_WRITER]);
     });
   });
+});
+
+describe('structured agent runs with the installed AI SDK', () => {
+  const triage = Output.object({
+    schema: z.object({ priority: z.enum(['low', 'high']), team: z.string() }),
+  });
+
+  const answer = '{"priority":"high","team":"billing"}';
+  const json = expect.objectContaining({
+    type: 'json',
+    schema: expect.objectContaining({ required: ['priority', 'team'] }),
+  });
+
+  const usageRows = (frogbot: ReturnType<typeof setup>['frogbot']) =>
+    frogbot.create.mock.calls.filter(([{ collection }]) => collection === 'usage-logs');
+
+  beforeEach(() => {
+    turn.claimTurn.mockReset().mockResolvedValue(claim);
+
+    turn.holdTurn
+      .mockReset()
+      .mockReturnValue({ signal: new AbortController().signal, stop: vi.fn() });
+
+    turn.promoteQueuedMessage.mockReset();
+    turn.promoteSteerMessages.mockReset().mockResolvedValue([]);
+    turn.releaseTurn.mockReset().mockResolvedValue(true);
+  });
+
+  it.each([
+    ['a new chat', undefined, 'chat-2'],
+    ['the given chat', 'chat-1', 'chat-1'],
+  ])(
+    'returns the parsed object from a tool loop and saves the reply as text in %s',
+    async (_, chatId, saved) => {
+      const execute = vi.fn(() => ({ found: true }));
+      const { agent, finish, formats, frogbot, messages, req } = setup({
+        tools: [{ ...lookup, execute }],
+        doGenerate: toolLoopGenerate(answer),
+      });
+
+      const result = await agent.generate({ prompt: 'Classify', req, chatId, output: triage });
+
+      expect(result.output).toEqual({ priority: 'high', team: 'billing' });
+      expect(execute).toHaveBeenCalledOnce();
+      expect(formats).toEqual([json, json]);
+      expect(finish).toHaveBeenCalledOnce();
+      expect(usageRows(frogbot)).toHaveLength(2);
+      expect(
+        frogbot.create.mock.calls.filter(([{ collection }]) => collection === 'chats'),
+      ).toHaveLength(chatId === undefined ? 1 : 0);
+      expect(messages.map(({ chat, role }) => [chat, role])).toEqual([
+        [saved, 'user'],
+        [saved, 'assistant'],
+      ]);
+      expect(messages[1].parts).toContainEqual(expect.objectContaining({ text: answer }));
+    },
+  );
+
+  it('throws NoOutputGeneratedError on reading output when stopWhen ends on a tool step', async () => {
+    const { agent, formats, req } = setup({
+      tools: [lookup],
+      doGenerate: toolLoopGenerate(answer),
+      stopWhen: isStepCount(1),
+    });
+
+    const result = await agent.generate({ prompt: 'Classify', req, output: triage });
+
+    expect(formats).toEqual([json]);
+    expect(() => result.output).toThrow(NoOutputGeneratedError);
+  });
+
+  it('rejects a structured stream that ends on a tool step with NoObjectGeneratedError', async () => {
+    const { agent, finish, req } = setup({
+      tools: [lookup],
+      doStream: toolLoopStream(answer),
+      stopWhen: isStepCount(1),
+    });
+
+    const result = await agent.stream({ prompt: 'Classify', req, output: triage });
+
+    await expect(result.output).rejects.toMatchObject({
+      name: 'AI_NoObjectGeneratedError',
+      finishReason: 'tool-calls',
+    });
+
+    await vi.waitFor(() => {
+      expect(finish).toHaveBeenCalledOnce();
+    });
+  });
+
+  it('rejects with NoObjectGeneratedError when the answer fails the schema', async () => {
+    const { agent, finish, messages, req } = setup({
+      tools: [lookup],
+      doGenerate: toolLoopGenerate('{"priority":"urgent"}'),
+    });
+
+    await expect(agent.generate({ prompt: 'Classify', req, output: triage })).rejects.toSatisfy(
+      NoObjectGeneratedError.isInstance,
+    );
+    expect(finish).toHaveBeenCalledExactlyOnceWith({ error: expect.any(NoObjectGeneratedError) });
+    expect(messages.map(({ role }) => role)).toEqual(['user']);
+  });
+
+  it('logs usage for every step when the answer fails the schema', async () => {
+    const { agent, frogbot, req } = setup({
+      tools: [lookup],
+      doGenerate: toolLoopGenerate('{"priority":"urgent"}'),
+    });
+
+    await expect(agent.generate({ prompt: 'Classify', req, output: triage })).rejects.toSatisfy(
+      NoObjectGeneratedError.isInstance,
+    );
+
+    expect(usageRows(frogbot)).toHaveLength(2);
+  });
+
+  it('still calls the caller onEnd of an aiAgent generate once', async () => {
+    const onEnd = vi.fn();
+    const { agent, frogbot, req } = setup({ tools: [lookup], doGenerate: toolLoopGenerate() });
+
+    const result = await agent.aiAgent.generate({ prompt: 'Find it', options: { req }, onEnd });
+
+    expect(result.text).toBe('Found it');
+    expect(onEnd).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ steps: expect.arrayContaining([expect.anything()]) }),
+    );
+    expect(usageRows(frogbot)).toHaveLength(2);
+  });
+
+  const refund = (overrides: Partial<AnyTool> = {}): AnyTool => ({
+    slug: 'refund',
+    description: 'Refund',
+    inputSchema: z.object({}),
+    execute: () => 'refunded',
+    approval: 'ask',
+    ...overrides,
+  });
+
+  const approvedHistory = [
+    { role: 'user' as const, content: 'Refund it' },
+    {
+      role: 'assistant' as const,
+      content: [
+        { type: 'tool-call' as const, toolCallId: 'call-1', toolName: 'refund', input: {} },
+        { type: 'tool-approval-request' as const, approvalId: 'approval-1', toolCallId: 'call-1' },
+      ],
+    },
+    {
+      role: 'tool' as const,
+      content: [
+        { type: 'tool-approval-response' as const, approvalId: 'approval-1', approved: true },
+      ],
+    },
+  ];
+
+  it.each([
+    [true, 1],
+    [false, 0],
+  ])(
+    'resumes an approved call from history on a structured stream as a plain one, autoApprove %s',
+    async (autoApprove, ran) => {
+      const run = async (output?: typeof triage) => {
+        const execute = vi.fn(() => 'refunded');
+        const access = vi.fn(() => true);
+        const { agent, formats, req } = setup({
+          tools: [refund({ execute, access })],
+          doStream: () => Promise.resolve({ stream: modelStream(response(answer)) }),
+        });
+
+        const result = await agent.stream({ messages: approvedHistory, req, autoApprove, output });
+        const parts = await Array.fromAsync(result.fullStream);
+
+        return {
+          tools: parts.filter(({ type }) => type.startsWith('tool')),
+          executed: execute.mock.calls.length,
+          checked: access.mock.calls.length,
+          formats,
+          output: output ? await result.output : undefined,
+        };
+      };
+
+      const [plain, structured] = [await run(), await run(triage)];
+
+      expect(structured.tools).toEqual(plain.tools);
+      expect(structured.executed).toBe(ran);
+      expect(plain.executed).toBe(ran);
+      expect(structured.checked).toBe(1);
+      expect(structured.formats).toEqual([json]);
+      expect(structured.output).toEqual({ priority: 'high', team: 'billing' });
+    },
+  );
+
+  it.each([
+    ['an approval tool', 'ask' as const],
+    ['a tool without approval', undefined],
+  ])(
+    'never runs an approved call to a denied tool from history on a structured stream, for %s',
+    async (_, approval) => {
+      const execute = vi.fn(() => 'refunded');
+      const { agent, calls, req } = setup({
+        tools: [refund({ execute, approval, access: () => false })],
+        doStream: () => Promise.resolve({ stream: modelStream(response(answer)) }),
+      });
+
+      const result = await agent.stream({ messages: approvedHistory, req, output: triage });
+      const parts = await Array.fromAsync(result.fullStream);
+
+      expect(execute).not.toHaveBeenCalled();
+      expect(parts).toContainEqual(
+        expect.objectContaining({ type: 'tool-output-denied', toolCallId: 'call-1' }),
+      );
+      await expect(result.output).resolves.toEqual({ priority: 'high', team: 'billing' });
+      expect(calls).toHaveLength(1);
+    },
+  );
+
+  it.each([
+    [true, 'refunded'],
+    [false, undefined],
+  ])('applies approval to a structured generate with autoApprove %s', async (autoApprove, ran) => {
+    const execute = vi.fn(() => 'refunded');
+    const { agent, model, req } = setup({
+      tools: [refund({ execute })],
+      doGenerate: toolLoopGenerate(answer, 'refund'),
+    });
+
+    const result = await agent.generate({ prompt: 'Refund', req, autoApprove, output: triage });
+
+    expect(result.output).toEqual({ priority: 'high', team: 'billing' });
+    expect(execute).toHaveBeenCalledTimes(ran ? 1 : 0);
+    expect(model.doGenerateCalls[1].prompt.at(-1)).toMatchObject({
+      role: 'tool',
+      content: [
+        ran
+          ? expect.objectContaining({ output: { type: 'text', value: 'refunded' } })
+          : expect.objectContaining({
+              output: expect.objectContaining({ type: 'execution-denied', reason: NOT_APPROVABLE }),
+            }),
+      ],
+    });
+  });
+
+  it.each([
+    [true, ['lookup', 'refund'], 0, { type: 'json', value: { trusted: true } }],
+    [
+      false,
+      ['lookup'],
+      1,
+      { type: 'error-text', value: expect.stringContaining("unavailable tool 'refund'") },
+    ],
+  ])(
+    'gives a structured run with overrideAccess %s the tool access of a plain run',
+    async (overrideAccess, offered, checks, toolOutput) => {
+      const execute = vi.fn((_input: unknown, ctx: ToolCtx) => ({ trusted: ctx.overrideAccess }));
+      const access = vi.fn(() => false);
+      const { agent, model, req } = setup({
+        tools: [lookup, refund({ execute, approval: undefined, access })],
+        doGenerate: toolLoopGenerate(answer, 'refund'),
+      });
+
+      const result = await agent.generate({
+        prompt: 'Refund',
+        req,
+        overrideAccess,
+        output: triage,
+      });
+
+      expect(result.output).toEqual({ priority: 'high', team: 'billing' });
+      expect(model.doGenerateCalls[0].tools?.map(({ name }) => name)).toEqual(offered);
+      expect(access).toHaveBeenCalledTimes(checks);
+      expect(model.doGenerateCalls[1].prompt.at(-1)).toMatchObject({
+        role: 'tool',
+        content: [expect.objectContaining({ output: toolOutput })],
+      });
+    },
+  );
+
+  it('streams a tool loop to the parsed object and finishes the operation once', async () => {
+    const execute = vi.fn(() => ({ found: true }));
+    const { agent, finish, formats, frogbot, messages, req } = setup({
+      tools: [{ ...lookup, execute }],
+      doStream: toolLoopStream(answer),
+    });
+
+    const result = await agent.stream({ prompt: 'Classify', req, output: triage });
+
+    await expect(result.output).resolves.toEqual({ priority: 'high', team: 'billing' });
+
+    await vi.waitFor(() => {
+      expect(finish).toHaveBeenCalledOnce();
+    });
+
+    expect(finish).toHaveBeenCalledWith(expect.objectContaining({ finishReason: 'stop' }));
+    expect(execute).toHaveBeenCalledOnce();
+    expect(formats).toEqual([json, json]);
+    expect(usageRows(frogbot)).toHaveLength(2);
+    expect(messages).toEqual([]);
+  });
+
+  it('finishes an aborted structured stream once', async () => {
+    const abort = new AbortController();
+    const { agent, finish, req } = setup({
+      doStream: () =>
+        Promise.resolve({
+          stream: new ReadableStream<LanguageModelV4StreamPart>({
+            start(controller) {
+              controller.enqueue({ type: 'stream-start', warnings: [] });
+              controller.enqueue({ type: 'text-start', id: 'text-1' });
+              controller.enqueue({ type: 'text-delta', id: 'text-1', delta: '{"prio' });
+
+              abort.signal.addEventListener('abort', () => controller.error(abort.signal.reason), {
+                once: true,
+              });
+            },
+          }),
+        }),
+    });
+
+    const result = await agent.stream({
+      prompt: 'Classify',
+      req,
+      output: triage,
+      abortSignal: abort.signal,
+    });
+
+    for await (const part of result.fullStream) {
+      if (part.type === 'text-delta') abort.abort();
+    }
+
+    await expect(result.output).rejects.toThrow();
+
+    await vi.waitFor(() => {
+      expect(finish).toHaveBeenCalled();
+    });
+
+    expect(finish).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ finishReason: 'abort' }),
+    );
+  });
+
+  it.each(['generate', 'stream'] as const)(
+    'refuses a structured %s with 403 before any model call',
+    async (entry) => {
+      const access = vi.fn(() => false);
+      const { agent, calls, finish, messages, req } = setup({ access });
+
+      await expect(
+        agent[entry]({ prompt: 'Classify', req, overrideAccess: false, output: triage }),
+      ).rejects.toMatchObject({ status: 403 });
+
+      expect(access).toHaveBeenCalledOnce();
+      expect(calls).toEqual([]);
+      expect(finish).not.toHaveBeenCalled();
+      expect(messages).toEqual([]);
+    },
+  );
 });

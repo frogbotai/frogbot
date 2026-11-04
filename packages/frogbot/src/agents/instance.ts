@@ -4,6 +4,7 @@ import type {
   AgentStreamParameters,
   ModelMessage,
   TextStreamPart,
+  ToolLoopAgentSettings,
   ToolSet,
   UIMessage,
 } from 'ai';
@@ -13,7 +14,7 @@ import { toHookUsage } from '../ai/hooks.js';
 import { logUsage } from '../ai/logUsage.js';
 import { resolveModelInputs } from '../ai/modelInputs.js';
 import { resolveModel } from '../ai/resolve.js';
-import type { SanitizedAIConfig } from '../ai/types.js';
+import type { AIOutput, SanitizedAIConfig } from '../ai/types.js';
 import { resolveChatContext } from '../chat/chatContext.js';
 import { generateMessage } from '../chat/generateMessage.js';
 import { persistAssistantMessage } from '../chat/messagePersistence.js';
@@ -114,12 +115,15 @@ export function createAgentInstance(
   const runs = new WeakMap<AgentCallOptions, AgentRun>();
   let instance: AgentInstance;
 
-  const baseAgent = new ToolLoopAgent<AgentCallOptions, typeof tools, Record<string, unknown>>({
+  const agentSettings = <O extends AIOutput = never>(
+    output?: O,
+  ): ToolLoopAgentSettings<AgentCallOptions, typeof tools, Record<string, unknown>, O> => ({
     id: agentConfig.slug,
     model: gateway.chatModel(resolveModel(agentConfig.model.default, config)),
     instructions: agentConfig.instructions,
     tools,
     stopWhen: agentConfig.stopWhen,
+    ...(output === undefined ? {} : { output }),
     prepareCall: ({ options, ...call }) => {
       const ctx: ToolCtx = {
         req: options.req!,
@@ -236,6 +240,13 @@ export function createAgentInstance(
       };
     },
   });
+
+  const baseAgent = new ToolLoopAgent(agentSettings());
+
+  const agentFor = <O extends AIOutput>(
+    output?: O,
+  ): ToolLoopAgent<AgentCallOptions, typeof tools, Record<string, unknown>, O> =>
+    output === undefined ? baseAgent : new ToolLoopAgent(agentSettings(output));
 
   type Call = AgentCallParameters<AgentCallOptions, typeof tools, Record<string, unknown>>;
   type StreamCall = AgentStreamParameters<AgentCallOptions, typeof tools, Record<string, unknown>>;
@@ -397,23 +408,45 @@ export function createAgentInstance(
     }
   };
 
-  const runGenerate = async (call: Call): Promise<AgentGenerateResult> => {
+  const runGenerate = async <O extends AIOutput = never>(
+    call: Call,
+    output?: O,
+  ): Promise<AgentGenerateResult<O>> => {
     const { req, runId, run, call: preparedCall } = await prepareRun(call);
     const { op } = run;
     const model = run.selection.model;
+    const userEnd = call.onEnd ?? call.onFinish;
+    let unlogged: Parameters<typeof finishSteps>[0] | undefined;
+
+    const logSteps = async () => {
+      const steps = unlogged;
+      unlogged = undefined;
+
+      if (steps) {
+        await finishSteps(steps, {
+          req,
+          runId,
+          chatId: preparedCall.options.chatId,
+          model,
+          models: run.models,
+        });
+      }
+    };
 
     await op.start();
 
     try {
-      const result = await baseAgent.generate(preparedCall);
+      const result = await agentFor(output).generate({
+        ...preparedCall,
+        onEnd: async (event) => {
+          unlogged = event.steps;
 
-      await finishSteps(result.steps, {
-        req,
-        runId,
-        chatId: preparedCall.options.chatId,
-        model,
-        models: run.models,
+          if (userEnd) await userEnd(event);
+        },
       });
+
+      unlogged = result.steps;
+      await logSteps();
 
       await op.finish({
         finishReason: result.finishReason,
@@ -422,12 +455,19 @@ export function createAgentInstance(
 
       return result;
     } catch (error) {
+      await logSteps().catch((logError: unknown) => {
+        frogbot.logger.error({ error: logError }, '[frogbot] Failed to log agent run usage.');
+      });
+
       await op.finish({ error });
       throw error;
     }
   };
 
-  const runStream = async (call: StreamCall): Promise<AgentStreamResult> => {
+  const runStream = async <O extends AIOutput = never>(
+    call: StreamCall,
+    output?: O,
+  ): Promise<AgentStreamResult<O>> => {
     const { req, runId, run, call: preparedCall } = await prepareRun(call);
     const { op } = run;
     const model = run.selection.model;
@@ -464,7 +504,7 @@ export function createAgentInstance(
     }
 
     try {
-      return await baseAgent.stream({
+      return await agentFor(output).stream({
         ...preparedCall,
         experimental_transform: [
           ...(Array.isArray(transforms) ? transforms : transforms ? [transforms] : []),
@@ -517,8 +557,10 @@ export function createAgentInstance(
     stream: runStream,
   } as AgentInstance['aiAgent'];
 
-  const generate = async (opts: AgentGenerateOpts): Promise<AgentGenerateResult> => {
-    const { chatId, ...runOpts } = opts;
+  const generate = async <O extends AIOutput = never>(
+    opts: AgentGenerateOpts<O>,
+  ): Promise<AgentGenerateResult<O>> => {
+    const { chatId, output, ...runOpts } = opts;
     const req = await frogbot.createRequest(runOpts.req);
     const overrideAccess = runOpts.overrideAccess === true;
 
@@ -543,7 +585,7 @@ export function createAgentInstance(
     const lease = holdTurn({ req, claim });
 
     try {
-      const result = await aiAgent.generate(
+      const result = await runGenerate(
         await buildCall(
           {
             messages: uiMessages,
@@ -559,6 +601,7 @@ export function createAgentInstance(
           },
           { accessChecked: true },
         ),
+        output,
       );
 
       const model = selection.model ?? (await userDefaultModel({ agent: instance, req }));
@@ -596,8 +639,10 @@ export function createAgentInstance(
     }
   };
 
-  const stream = async (opts: AgentStreamOpts): Promise<AgentStreamResult> =>
-    aiAgent.stream(await buildCall(opts));
+  const stream = async <O extends AIOutput = never>({
+    output,
+    ...opts
+  }: AgentStreamOpts<O>): Promise<AgentStreamResult<O>> => runStream(await buildCall(opts), output);
 
   const streamMessage = async (
     opts: AgentStreamMessageOpts,

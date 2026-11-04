@@ -1,5 +1,5 @@
 import type { Gateway } from '@frogbotai/gateway';
-import type { LanguageModelUsage } from 'ai';
+import type { LanguageModelUsage, Output, StreamTextResult, ToolSet } from 'ai';
 import { generateId, streamText as aiStreamText } from 'ai';
 
 import { toAISDKTools, toAISDKToolsContext } from '../../agents/tools.js';
@@ -8,7 +8,7 @@ import type { FrogBotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';
 import { resolveModel } from '../resolve.js';
-import type { SanitizedAIConfig, StreamTextOpts } from '../types.js';
+import type { AIOutput, SanitizedAIConfig, StreamTextOpts } from '../types.js';
 import { toProviderOptions } from './options.js';
 
 export type StreamTextDeps = {
@@ -18,10 +18,12 @@ export type StreamTextDeps = {
   logger: Logger;
 };
 
-export async function streamTextOperation(
+export async function streamTextOperation<
+  O extends AIOutput = Output.Output<string, string, never>,
+>(
   deps: StreamTextDeps,
-  opts: StreamTextOpts,
-): Promise<ReturnType<typeof aiStreamText>> {
+  opts: StreamTextOpts<O>,
+): Promise<StreamTextResult<ToolSet, Record<string, unknown>, O>> {
   const { gateway, config, frogbot } = deps;
   const {
     model: input,
