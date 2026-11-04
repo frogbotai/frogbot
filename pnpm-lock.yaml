@@ -1244,6 +1244,19 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/pieces/piece-hubspot:
+    dependencies:
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/pieces/piece-image-helper:
     dependencies:
       exifreader:
@@ -2507,6 +2520,9 @@ importers:
       '@frogbotai/piece-http':
         specifier: workspace:*
         version: link:../packages/pieces/piece-http
+      '@frogbotai/piece-hubspot':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-hubspot
       '@frogbotai/piece-image-helper':
         specifier: workspace:*
         version: link:../packages/pieces/piece-image-helper
