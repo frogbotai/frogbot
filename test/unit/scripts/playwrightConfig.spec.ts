@@ -19,6 +19,7 @@ const allProjects = [
   'question-webkit',
   'plugin-seo',
   'plugin-import-export',
+  'forms',
   'dojo',
   'first-user-blank',
   'sign-in-passwords',
