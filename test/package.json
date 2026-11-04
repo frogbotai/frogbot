@@ -62,6 +62,7 @@
     "@frogbotai/piece-posthog": "workspace:*",
     "@frogbotai/piece-qrcode": "workspace:*",
     "@frogbotai/piece-resend": "workspace:*",
+    "@frogbotai/piece-salesforce": "workspace:*",
     "@frogbotai/piece-slack": "workspace:*",
     "@frogbotai/piece-stripe": "workspace:*",
     "@frogbotai/piece-telegram-bot": "workspace:*",

@@ -1509,6 +1509,22 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/pieces/piece-salesforce:
+    dependencies:
+      csv-parse:
+        specifier: ^5.6.0
+        version: 5.6.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/pieces/piece-slack:
     dependencies:
       '@chat-adapter/slack':
@@ -2581,6 +2597,9 @@ importers:
       '@frogbotai/piece-resend':
         specifier: workspace:*
         version: link:../packages/pieces/piece-resend
+      '@frogbotai/piece-salesforce':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-salesforce
       '@frogbotai/piece-slack':
         specifier: workspace:*
         version: link:../packages/pieces/piece-slack

@@ -20,6 +20,7 @@ import { createNotion } from '../../../packages/pieces/piece-notion/src/index.js
 import { createPagerduty } from '../../../packages/pieces/piece-pagerduty/src/index.js';
 import { createPosthog } from '../../../packages/pieces/piece-posthog/src/index.js';
 import { createResend } from '../../../packages/pieces/piece-resend/src/index.js';
+import { createSalesforce } from '../../../packages/pieces/piece-salesforce/src/index.js';
 import { createSlack } from '../../../packages/pieces/piece-slack/src/index.js';
 import { createStripe } from '../../../packages/pieces/piece-stripe/src/index.js';
 import { createTelegramBot } from '../../../packages/pieces/piece-telegram-bot/src/index.js';
@@ -160,6 +161,12 @@ export const rawRequestRows: RawRequestRow[] = [
     auth: { apiKey: 'resend-token' },
     safe: '/emails',
     origins: ['https://api.resend.com'],
+  },
+  {
+    factory: createSalesforce,
+    auth: { accessToken: 'salesforce-token', instanceUrl: 'https://acme.my.salesforce.com' },
+    safe: '/limits',
+    origins: ['https://acme.my.salesforce.com'],
   },
   {
     factory: createSlack,
