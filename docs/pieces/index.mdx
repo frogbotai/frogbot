@@ -11,6 +11,7 @@ Install the package for your integration and create an instance with its factory
 
 | Piece | Package | Factory | Credential options |
 | --- | --- | --- | --- |
+| Asana | `@frogbotai/piece-asana` | `createAsana` | OAuth app or `{ accessToken }`, a personal access token. |
 | Google | `@frogbotai/piece-google` | `createGoogle` | Identity-only OAuth for [sign-in](/authentication/sign-in); no actions. |
 | Google Sheets | `@frogbotai/piece-google-sheets` | `createGoogleSheets` | OAuth app or `{ accessToken, refreshToken? }`. |
 | Google Drive | `@frogbotai/piece-google-drive` | `createGoogleDrive` | OAuth app or `{ accessToken, refreshToken? }`. |
@@ -33,7 +34,7 @@ Install the package for your integration and create an instance with its factory
 | `oauth` | `OAuthApp` | — | Your Google OAuth app, usually `google.oauth`. Enables `oauth: true` connection entries. |
 | `scopes` | Scope names, or `({ defaultScopes }) => names` | The product's default scopes | OAuth scopes for this instance, such as `({ defaultScopes }) => [...defaultScopes, 'gmail.labels']`. The identity scopes are always requested. See [Choose OAuth scopes](/connections/overview#choose-oauth-scopes). |
 
-`createGoogle` accepts `slug` (default `'google'`), `oauth` for [sign-in](/authentication/sign-in), and `auth: { accessToken }`. It has no actions, so its `auth` is not used for API calls. See [factory options](/pieces/overview#factory-options) for the shared options. Jira, Linear and Resend options are on the [Jira](/pieces/jira#connect-jira), [Linear](/pieces/linear#connect-an-agent) and [Email](/email/overview#configure-resend) pages.
+`createGoogle` accepts `slug` (default `'google'`), `oauth` for [sign-in](/authentication/sign-in), and `auth: { accessToken }`. It has no actions, so its `auth` is not used for API calls. See [factory options](/pieces/overview#factory-options) for the shared options. Asana, Jira, Linear and Resend options are on the [Asana](/pieces/asana#connect-asana), [Jira](/pieces/jira#connect-jira), [Linear](/pieces/linear#connect-an-agent) and [Email](/email/overview#configure-resend) pages.
 
 ### Link Linear
 
@@ -134,7 +135,7 @@ Each shipped package is a native FrogBot piece and defines its own actions, trig
 | Category | Packages under `@frogbotai/` |
 | --- | --- |
 | Communication | `piece-slack`, `piece-discord`, `piece-telegram-bot`, `piece-microsoft-teams`, `piece-microsoft-outlook`, `piece-twilio`, `piece-front`, `piece-zoom` |
-| Productivity | `piece-notion`, `piece-airtable`, `piece-jira`, `piece-monday`, `piece-trello`, `piece-dropbox` |
+| Productivity | `piece-notion`, `piece-airtable`, [`piece-asana`](/pieces/asana), `piece-jira`, `piece-monday`, `piece-trello`, `piece-dropbox` |
 | Business and development | `piece-attio`, `piece-stripe`, `piece-xero`, `piece-github`, `piece-pagerduty`, `piece-posthog` |
 | Search | `piece-brave-search`, `piece-exa` |
 

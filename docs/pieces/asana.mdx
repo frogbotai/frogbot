@@ -1,0 +1,137 @@
+---
+title: Asana
+description: Page through a whole Asana workspace for imports, copy attachments into FrogBot files, create tasks, and react to task changes.
+keywords: [pieces, asana, tasks, projects, import, webhooks, events api]
+---
+
+`@frogbotai/piece-asana` works with Asana through its REST API. Imports page through workspaces, teams, projects, sections, tasks, subtasks, dependencies, custom fields, comments, attachments and users; agents create tasks; triggers react to new, changed, completed and commented tasks.
+
+## Connect Asana
+
+```bash
+pnpm add @frogbotai/piece-asana
+```
+
+People connect with a pasted personal access token, with **Sign in with Asana**, or either:
+
+```ts
+import { createAsana } from '@frogbotai/piece-asana'
+import type { ConnectionEntry } from 'frogbot'
+
+export const asana = createAsana({
+  oauth: {
+    clientId: process.env.ASANA_CLIENT_ID!,
+    clientSecret: process.env.ASANA_CLIENT_SECRET!,
+  },
+})
+
+export const connections: ConnectionEntry[] = [{ piece: asana, secret: true, oauth: true }]
+```
+
+Drop `oauth` and `oauth: true` to offer tokens only. Both kinds of token are sent the same way, as a bearer token.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | `'asana'` | Instance slug. It prefixes tool slugs, such as `asana_listTasks`. |
+| `auth.accessToken` | `string` | — | A [personal access token](#make-a-personal-access-token), or an OAuth access token. Triggers use this one. |
+| `oauth` | `OAuthApp` | — | Your [Asana app](#register-an-asana-app). Enables `oauth: true` connection entries. |
+| `scopes` | Asana scope names, or `({ defaultScopes }) => names` | — | Asana's `default` scope, full permissions, is always requested: Asana's narrower scopes don't cover sections or the Events API. See [Choose OAuth scopes](/connections/overview#choose-oauth-scopes). |
+
+See [factory options](/pieces/overview#factory-options) for the shared options.
+
+### Make a personal access token
+
+1. Sign in to Asana as the account FrogBot should act as, and open the [developer console](https://app.asana.com/0/my-apps).
+2. Choose **Create new token**, name it, and copy it.
+3. Use it as `auth.accessToken`, or paste it when connecting.
+
+### Register an Asana app
+
+1. In the [developer console](https://app.asana.com/0/my-apps), choose **Create new app**.
+2. Under **OAuth**, add the instance's redirect URL: `https://your-app.example.com/api/connections/asana/callback` (use your instance slug).
+3. Under **OAuth → Permission scopes**, choose **Full permissions**.
+4. Copy the client ID and secret into `oauth`.
+
+Sign-in uses PKCE. Asana's access tokens last an hour, and FrogBot refreshes them with the stored refresh token. The connected account is named from the sign-in itself, with no extra call.
+
+## Actions
+
+| Action | Description |
+| --- | --- |
+| `createTask` | Creates a task in a project, with notes, a due date (`dueOn`, `YYYY-MM-DD`), tags and an assignee. Tags are matched by gid or name; an unknown tag fails the call. |
+| `downloadAttachment` | Copies an Asana-hosted attachment into your files collection as the caller, and returns `{ attachment, file, link }`. Attachments stored elsewhere, such as Google Drive, Dropbox or Box, aren't copied: `file` is `null` and `link` points at them. |
+| `customApiCall` | Any Asana REST request under `https://app.asana.com/api/1.0`, such as `/users/me`. Request bodies go in Asana's `{ data }` envelope. |
+
+Inputs that name an Asana object take its gid, such as `1203456789012345`.
+
+### Page through a workspace
+
+These actions return one page at a time, for imports:
+
+| Action | Lists |
+| --- | --- |
+| `listWorkspaces` | Workspaces and organizations. |
+| `listTeams` | An organization's teams. |
+| `listProjects` | A workspace's projects, optionally one `teamGid`'s, and only archived or active ones with `archived`. |
+| `listSections` | A project's sections. |
+| `listUsers` | A workspace's users, with emails. |
+| `listTasks` | A project's or a section's tasks, with assignee, dates, memberships, tags and custom field values. |
+| `listSubtasks` | A task's subtasks, with the same fields. |
+| `listDependencies` | The tasks a task is blocked by. |
+| `listCustomFields` | A project's custom fields, with their type and enum options. |
+| `listStories` | A task's comments and activity, told apart by `resource_subtype`, such as `comment_added`. |
+| `listAttachments` | A task's attachments, with host, size and URLs. |
+
+```ts
+let cursor: string | undefined
+do {
+  const page = await asana.listTasks({ input: { projectGid: '1203456789012345', limit: 100, cursor }, req })
+  // upsert page.data by gid
+  cursor = page.pagination.nextCursor ?? undefined
+} while (cursor)
+```
+
+Each takes `limit` (1–100, default 50) and `cursor`, the previous page's `pagination.nextCursor`, which is `null` on the last page. Keep the other inputs the same between pages.
+
+An attachment's `download_url` lasts two minutes, so an import that pages through hundreds of attachments shouldn't save the URLs for later. Call `downloadAttachment` per attachment instead: it fetches a fresh URL first.
+
+### Rate limits
+
+Asana allows 150 requests a minute on free workspaces and 1,500 on paid ones. When Asana rate-limits a request, FrogBot waits for its `Retry-After` and retries up to 3 times, stopping early if the request is aborted. Errors keep Asana's messages and status.
+
+## Triggers
+
+| Trigger | Type | Emits |
+| --- | --- | --- |
+| `taskCreated` | webhook | Each task or subtask added to the project, with the full task. |
+| `taskChanged` | webhook | Each changed task field, with the task; `event.change.field` names the field. |
+| `taskCompleted` | webhook | Each task marked complete. A task that's reopened isn't emitted. |
+| `commentAdded` | webhook | Each comment, with its story and task. |
+| `projectChanged` | polling | Every added, changed, removed or deleted task, section and comment since the last poll. |
+
+Each takes a `projectGid`. The four webhook triggers each register an Asana webhook on that project, so the app needs a public `serverURL` (see [Triggers](/pieces/triggers)). Asana checks the URL when it registers the webhook, and FrogBot answers that check before the subscription goes live. Every delivery is signed, and an unsigned or wrongly signed one is refused.
+
+Asana sends small events, so a webhook trigger fetches the full task (and comment) before emitting. When it can't, for example because the task was deleted, it emits the event as Asana sent it, without `task`.
+
+### Credential
+
+Triggers run with no signed-in person, so they use the instance's factory `auth`, and Asana ties each webhook to the token that created it. Give the instance a token, ideally for a dedicated Asana account:
+
+```ts
+export const asanaBot = createAsana({
+  slug: 'asana-bot',
+  auth: { accessToken: process.env.ASANA_TOKEN! },
+})
+```
+
+Triggers see what that account can see.
+
+### Missed changes
+
+Asana delivers each webhook event at most once, and deletes a webhook after 24 hours of failed deliveries, without telling FrogBot: the subscription still looks active. If the app may be down that long, for example while switching over from Asana, mount `projectChanged` too.
+
+`projectChanged` is a [polling trigger](/pieces/triggers#polling) on Asana's Events API, every 5 minutes by default. The first poll only records where to start. Each poll reads up to 10 pages of events, and the rest wait for the next poll. Events carry names (`resource.name`, `user.name`) but not the full record. Asana's position marker expires after 24 hours without a poll; the next poll then emits one `{ type: 'resync', projectGid, detectedAt }` event, meaning changes may have been missed, so re-import the project.
+
+### Duplicates
+
+A change can arrive twice: once from a webhook and once from `projectChanged`, or on both sides of a resync. Upsert everything by `gid` so a repeat is harmless.
