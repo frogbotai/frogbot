@@ -5,7 +5,7 @@ description: Store supplied numerical vectors on ordinary collection records.
 keywords: [vector, embeddings, fields, collections, validation]
 ---
 
-A vector field stores a fixed-length array of numbers. You can create, read, replace, and delete its value through ordinary collection operations without configuring a search index or an AI provider. FrogBot does not generate the vector for you.
+A vector field stores a fixed-length array of numbers. You can create, read, replace, and delete its value through ordinary collection operations without configuring a search index or an AI provider. FrogBot does not generate the vector unless you add [`embedFrom`](#embed-on-save) to the field.
 
 ## Configure a vector field
 
@@ -113,7 +113,55 @@ await frogbot.destroy();
   saved without validation, including in drafts.
 </Warning>
 
-Matching dimensions do not guarantee two embeddings use the same model or embedding space. Updating or deleting the record does not regenerate embeddings. See [Search](/search/overview) for the index and query API's current availability.
+Matching dimensions do not guarantee two embeddings use the same model or embedding space. Without [`embedFrom`](#embed-on-save), updating a record does not regenerate its embedding. See [Search](/search/overview) for the index and query API's current availability.
+
+## Embed on save
+
+`embedFrom` returns a `beforeChange` hook that fills the vector from the record's own text with [`frogbot.embed`](/ai/overview#embedding-options). Add it to the vector field and name the model; nothing is picked by default. This needs an [`ai` config](/ai/overview#configure-providers) with that embedding model.
+
+```ts
+import { embedFrom } from 'frogbot/search';
+
+{
+  name: 'embedding',
+  type: 'vector',
+  dimensions: 1536,
+  hooks: {
+    beforeChange: [embedFrom({ fields: ['title', 'body'], model: 'openai/text-embedding-3-small' })],
+  },
+}
+```
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `model` | `ModelId` | Required. A configured embedding model or a router to one. |
+| `fields` | `string[]` | Sibling `text`, `textarea`, `email` or `code` fields, not `hasMany`. Their trimmed values are joined in order with a blank line; empty ones are left out. |
+| `text` | `(doc) => string \| null \| undefined` | Builds the text yourself instead. `doc` is the saved record merged with the incoming data, at the vector field's level. |
+
+Set exactly one of `fields` or `text`. FrogBot checks the options at startup: the hook must be in the `beforeChange` hooks of a vector field, every `fields` entry must be a sibling text-like field holding one string, and the model must be a configured embedding model. A bad model only warns while generating types.
+
+On each save, the hook builds the text from the saved record merged with the incoming data, so a partial update sees the whole record:
+
+- Empty text stores `null`, with no model call.
+- A create, a change in the text, or a missing stored vector calls the model and stores the result.
+- Otherwise the stored vector is kept, with no model call, so saves that don't touch the text cost nothing.
+- A vector you send yourself, different from the stored one, is kept as sent. Sending back the unchanged stored vector, as the admin panel does, doesn't count.
+
+The field's dimension check runs on the result, so a model that returns the wrong size fails the save with a validation error.
+
+**Drafts.** Draft saves, autosave included, make no model call. Publishing compares the text against the published record and embeds when it changed. Publishing a record again after unpublishing it always embeds.
+
+**Access.** The call uses the save's own `overrideAccess`. A save that checks access, such as a REST request, also checks [`ai.access.embed`](/ai/overview#control-access), which by default needs a signed-in user. A Local API save that skips access skips it too. Usage is logged like any other `frogbot.embed` call.
+
+**Failures.** If the call fails, or AI access is denied, the save fails with that error and nothing is written. To save without the vector instead, wrap the hook in your own `try`/`catch` and return `null`; the next save then retries because the vector is missing.
+
+**Localization.** A `localized` vector field gets one vector per locale, built from that locale's text. If any `fields` source is localized, the vector field must be localized too. A write with `locale: 'all'` fails; save one locale at a time.
+
+The model call runs while the save's transaction is open, so a slow provider makes saves slow. `embedFrom` does not:
+
+- embed existing records: each one is embedded on its next save that has text;
+- notice a model change: records keep vectors from the old model until their text changes;
+- split long text into chunks, or store more than one vector per record.
 
 ## Storage
 
