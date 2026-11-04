@@ -107,6 +107,12 @@ describe('todo tools', () => {
     }
   });
 
+  it('labels the todo tools for people', async () => {
+    const { todoTools } = await loadTools();
+
+    expect(todoTools.map(({ label }: AnyTool) => label)).toEqual(['Update to-dos', 'Read to-dos']);
+  });
+
   it('ships the todo renderer on both tools', async () => {
     const { todoTools } = await loadTools();
 

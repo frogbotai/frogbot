@@ -181,6 +181,7 @@ export function channelFixture({
     ),
     channelIdFromThreadId: (id: string) => id.split(':')[0],
     isDM: (id: string) => id.startsWith('dm'),
+    startTyping: vi.fn((_threadId: string, _status?: string) => Promise.resolve()),
     stream: vi.fn(async (threadId: string, stream: AsyncIterable<string>) => {
       let text = '';
 
@@ -274,7 +275,7 @@ export function channelFixture({
 
       return Promise.resolve(row);
     }),
-    logger: { debug: vi.fn(), info: vi.fn(), error: vi.fn() },
+    logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     kv,
     queue,
   };

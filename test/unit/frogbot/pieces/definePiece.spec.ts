@@ -15,6 +15,7 @@ import {
 } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import { generatePieceTypes } from '../../../../packages/frogbot/src/pieces/generateTypes.js';
 import { pieceCapabilities } from '../../../../packages/frogbot/src/pieces/types.js';
+import { sanitizeToolList } from '../../../../packages/frogbot/src/tools/config/sanitize.js';
 
 const tokenAuth = z.object({ token: z.string() });
 const accessTokenAuth = z.object({ accessToken: z.string() });
@@ -243,6 +244,56 @@ describe('definePiece', () => {
       ),
     ).resolves.toEqual({ input: { value: 'hi' }, client: { auth: { token: 'resolved' } } });
     expect(resolvePieceCredential).toHaveBeenCalledWith({ piece, req });
+  });
+
+  it('labels each action tool with the piece and action names', () => {
+    const exa = definePiece({
+      slug: 'exa',
+      label: 'Exa',
+      actions: [
+        {
+          slug: 'search',
+          label: 'Search',
+          description: 'Search',
+          input: z.object({}),
+          async run() {},
+        },
+      ],
+    })();
+
+    const slack = definePiece({
+      slug: 'slack',
+      label: 'Slack',
+      actions: [
+        { slug: 'send_message', description: 'Send', input: z.object({}), async run() {} },
+        { slug: 'addCardAttachment', description: 'Add', input: z.object({}), async run() {} },
+        { slug: 'sendSMS', description: 'SMS', input: z.object({}), async run() {} },
+        { slug: 'getHTTPResponse', description: 'Get', input: z.object({}), async run() {} },
+        { slug: 'GET_URL', description: 'URL', input: z.object({}), async run() {} },
+        { slug: 'list_v2_items', description: 'List', input: z.object({}), async run() {} },
+        { slug: 'getID', description: 'ID', input: z.object({}), async run() {} },
+      ],
+    })();
+
+    expect(pieceActionTool(exa.search)?.label).toBe('Exa: Search');
+    expect(pieceInstanceTools(slack)?.map(({ label }) => label)).toEqual([
+      'Slack: Send message',
+      'Slack: Add card attachment',
+      'Slack: Send SMS',
+      'Slack: Get HTTP response',
+      'Slack: GET URL',
+      'Slack: List v2 items',
+      'Slack: Get ID',
+    ]);
+    expect({ ...exa.search }.label).toBe('Exa: Search');
+    expect(
+      sanitizeToolList([{ ...exa.search, slug: 'exa_search_spread' }, exa.search], 'Agent').map(
+        ({ label }) => label,
+      ),
+    ).toEqual(['Exa: Search', 'Exa: Search']);
+    expect(
+      sanitizeToolList([{ ...exa.search, approval: 'required' as const }], 'Agent')[0].label,
+    ).toBe('Exa: Search');
   });
 
   it('isolates and reuses clients by runtime and credential', async () => {

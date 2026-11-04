@@ -81,6 +81,10 @@ When a question is answered, the card is replaced with the answer and `Answered 
 
 Questions are answered only in Slack. The FrogBot admin chat shows the conversation [read-only](/chat/questions#channel-conversations).
 
+### While the agent works
+
+While the agent works, the thread shows `<App> is thinking…`, and `<App> is using <label>…` while a tool runs, such as `FrogBot is using Exa: Search…`. The status goes away when the reply posts, and FrogBot clears it when a turn ends without one, for example when it only asks a question. A tool's [`label`](/agents/overview#tool-options) sets the name; a tool without one shows its slug.
+
 ## Limits and failures
 
 | Situation | What happens |

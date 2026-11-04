@@ -267,6 +267,11 @@ describe('channel question delivery', () => {
     await fixture.host.run(fixture.inputs[0]);
 
     expect(fixture.posted).toEqual([]);
+    expect(fixture.adapter.startTyping.mock.calls.map(([, status]) => status)).toEqual([
+      'is thinking…',
+      'is using question…',
+      '',
+    ]);
 
     await fixture.host.shutdown();
   });
@@ -308,8 +313,11 @@ describe('channel question delivery', () => {
       responder: { userId: 'user-2' },
     });
 
+    fixture.adapter.startTyping.mockClear();
+
     await fixture.host.run(JSON.parse(JSON.stringify(fixture.inputs[1])));
 
+    expect(fixture.adapter.startTyping).toHaveBeenCalledExactlyOnceWith(thread, 'is thinking…');
     expect(continueTurn).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: 'chat-1',

@@ -28,6 +28,8 @@ export type ToolOutputLimits = {
 };
 
 export type Tool<TSchema extends z.ZodType = z.ZodType, TResult = unknown> = BaseTool<TSchema> & {
+  /** The name people see, such as `Exa: Search`. Defaults to `slug`. */
+  label?: string;
   execute: (input: z.infer<TSchema>, ctx: ToolCtx) => TResult | Promise<TResult>;
   /**
    * Limits on the result the model sees; `false` sends it whole. The chat keeps the full result.
@@ -59,6 +61,8 @@ export type ClientTool<
   TSchema extends z.ZodType = z.ZodType,
   TOutputSchema extends z.ZodType = z.ZodType,
 > = BaseTool<TSchema> & {
+  /** The name people see, such as `Ask a question`. Defaults to `slug`. */
+  label?: string;
   outputSchema: TOutputSchema;
   client: ClientToolConfig;
   execute?: never;

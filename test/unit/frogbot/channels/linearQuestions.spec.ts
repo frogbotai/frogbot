@@ -197,6 +197,16 @@ describe('Linear questions through the channel host', () => {
       revision: 0,
     });
 
+    await vi.waitFor(() =>
+      expect(api.thoughts).toEqual([
+        {
+          agentSessionId: 'session-1',
+          content: { type: 'thought', body: 'is thinking…' },
+          ephemeral: true,
+        },
+      ]),
+    );
+
     await fixture.host.shutdown();
   });
 

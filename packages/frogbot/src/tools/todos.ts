@@ -24,6 +24,7 @@ function chat(ctx: ToolCtx): { id: number | string; slug: string } {
 export const write_todos: Tool<typeof writeTodosInput, void> = {
   component: '@frogbotai/ui/chat#TodoToolRender',
   slug: 'write_todos',
+  label: 'Update to-dos',
   description:
     'Replace the full todo list for the current chat. Keep exactly one todo in progress at a time and mark completed work promptly.',
   inputSchema: writeTodosInput,
@@ -43,6 +44,7 @@ export const write_todos: Tool<typeof writeTodosInput, void> = {
 export const read_todos: Tool<typeof readTodosInput, TodoItem[]> = {
   component: '@frogbotai/ui/chat#TodoToolRender',
   slug: 'read_todos',
+  label: 'Read to-dos',
   description: 'Read the full todo list for the current chat.',
   inputSchema: readTodosInput,
   async execute(_, ctx) {

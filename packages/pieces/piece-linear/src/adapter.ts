@@ -4,6 +4,12 @@ import type { AgentSessionEventWebhookPayload } from '@linear/sdk/webhooks';
 export type LinearChannelRawMessage = LinearRawMessage & { agentActivitySignal?: string };
 
 export class LinearChannelAdapter extends LinearAdapter {
+  override async startTyping(threadId: string, status?: string): Promise<void> {
+    if (status === '') return;
+
+    await super.startTyping(threadId, status);
+  }
+
   protected override parseMessageFromAgentSessionEvent(payload: AgentSessionEventWebhookPayload) {
     const message = super.parseMessageFromAgentSessionEvent(payload);
     const signal = payload.action === 'prompted' ? payload.agentActivity?.signal : undefined;

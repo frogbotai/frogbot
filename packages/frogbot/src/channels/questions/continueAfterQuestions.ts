@@ -47,6 +47,13 @@ export async function continueAfterQuestions({
     return;
   }
 
-  await postTurn({ thread, result, controller });
+  await postTurn({
+    thread,
+    result,
+    controller,
+    tools: binding.agent.config.tools,
+    logger: frogbot.logger,
+  });
+
   await renderPendingQuestions({ binding, chatId: input.chatId, frogbot, thread });
 }
