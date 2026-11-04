@@ -13,6 +13,7 @@ import {
   Tickets,
   ticketsSlug,
   Users,
+  viewerName,
 } from './shared.js';
 
 export default buildTestConfig({
@@ -27,6 +28,8 @@ export default buildTestConfig({
       collections: [leadsSlug, ticketsSlug, ticketFilesSlug],
       access: {
         read: ({ req }) => (req.user ? true : { slug: { not_equals: staffFormSlug } }),
+        create: ({ req }) => Boolean(req.user) && req.user?.name !== viewerName,
+        update: ({ req }) => Boolean(req.user) && req.user?.name !== viewerName,
       },
     }),
   ],

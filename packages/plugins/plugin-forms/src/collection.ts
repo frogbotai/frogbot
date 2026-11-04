@@ -17,12 +17,18 @@ export const RUNTIME_KEY = 'plugin-forms';
 
 const FORM_BUILDER_FIELD = '@frogbotai/plugin-forms/rsc#FormBuilderField';
 
+/** Payload's Live Preview sizes for forms: the responsive frame, and a phone. */
+export const PREVIEW_BREAKPOINTS = [{ name: 'phone', label: 'Phone', width: 390, height: 844 }];
+
 export function createFormsCollection({
   runtime,
   access,
+  previewUrl,
 }: {
   runtime: FormsRuntime;
   access?: CollectionAccess;
+  /** The admin's `/forms-preview` page. A string, since Payload skips a function URL on create. */
+  previewUrl: string;
 }): CollectionConfig {
   const { targets, uploads: limits } = runtime;
 
@@ -31,6 +37,7 @@ export function createFormsCollection({
     custom: { [RUNTIME_KEY]: runtime },
     admin: {
       useAsTitle: 'title',
+      livePreview: { url: previewUrl, openByDefault: true, breakpoints: PREVIEW_BREAKPOINTS },
       views: [{ type: 'list', defaultFields: ['title', 'slug', 'collection', 'status'] }],
     },
     access: {

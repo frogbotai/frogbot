@@ -17,8 +17,12 @@ import type {
 export type FormProps = {
   /** The form's render definition, from `GET /api/forms/<slug>/definition`. */
   definition: FormDefinition;
-  /** Where answers are posted, such as `/api/forms/<slug>/submit`, with `?link=<token>` for an edit link. */
-  submitUrl: string;
+  /**
+   * Where answers are posted, such as `/api/forms/<slug>/submit`, with `?link=<token>` for an edit
+   * link. Without it nothing is sent: the last step checks the answers and shows the confirmation,
+   * as a preview does.
+   */
+  submitUrl?: string;
   /** Called with the confirmation after a successful submit. When set, a redirect is left to you. */
   onSubmitted?: (confirmation: FormConfirmation) => void;
   className?: string;
@@ -191,7 +195,7 @@ export function Form({ definition, submitUrl, onSubmitted, className }: FormProp
     if (first !== -1) setStepIndex(first);
   };
 
-  const submit = async () => {
+  const submit = async (url: string) => {
     if (definition.turnstile && !turnstile.token) {
       setFormErrors(['Complete the check above to send the form.']);
 
@@ -214,7 +218,7 @@ export function Form({ definition, submitUrl, onSubmitted, className }: FormProp
       });
 
       const result = await post(
-        submitUrl,
+        url,
         {
           data,
           params: readParams(definition.hiddenParams),
@@ -266,7 +270,19 @@ export function Form({ definition, submitUrl, onSubmitted, className }: FormProp
       return;
     }
 
-    void submit();
+    if (submitUrl === undefined) {
+      const { confirmation } = definition;
+
+      setMessage(
+        confirmation.type === 'message'
+          ? confirmation.message
+          : `Visitors go to ${confirmation.url} after sending.`,
+      );
+
+      return;
+    }
+
+    void submit(submitUrl);
   };
 
   return (

@@ -44,6 +44,9 @@
   "engines": {
     "node": ">=24.21.0"
   },
+  "dependencies": {
+    "@frogbotai/live-preview-react": "workspace:*"
+  },
   "peerDependencies": {
     "@frogbotai/ui": "workspace:*",
     "frogbot": "workspace:*",

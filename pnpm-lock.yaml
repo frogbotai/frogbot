@@ -1834,6 +1834,10 @@ importers:
         version: 6.0.3
 
   packages/plugins/plugin-forms:
+    dependencies:
+      '@frogbotai/live-preview-react':
+        specifier: workspace:*
+        version: link:../../live-preview-react
     devDependencies:
       '@frogbotai/ui':
         specifier: workspace:*

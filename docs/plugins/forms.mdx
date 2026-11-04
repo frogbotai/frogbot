@@ -42,7 +42,13 @@ A collection that isn't listed is never touched, and listing one that doesn't ex
 
 ## Building a form
 
-A document in the `forms` collection has:
+Admins build forms on the `forms` edit page. The **Questions** tab is a builder: **Add question** lists the fields of the form's collection that a question can use, with their type and a required mark, greys out the ones it can't with the reason, and hides the ones already on the form. A field that is `required` with no `defaultValue` and isn't on the form shows the warning saving would give. Open a question with **Edit** to change its label, help text and placeholder; the field's own values show as placeholder text. **Add step** splits the form into steps, and a step that still has questions asks before it's removed. Drag a question by its handle, or focus the handle and press Space, the arrow keys and Space, to move it within or across steps. The other settings are in the **Settings** tab and the sidebar. The builder never changes the collection's fields; to ask for something new, add a field in config.
+
+![The form builder beside the Live Preview of a two-step form](/images/forms-builder.png)
+
+Once a form is saved, [Live Preview](/live-preview/overview) opens beside it and shows the form as visitors get it while you type, before you save again. **Phone** in its toolbar shows it at 390 px wide. Nothing is sent from the preview: its last step shows the confirmation. Live Preview is off on a new document, so a new form shows it after its first save. The preview is the admin page `/forms-preview`, which only users who can create or update forms can open.
+
+Saving works as on any edit page. A document in the `forms` collection has:
 
 - `title`, and a unique `slug` of lowercase letters, numbers and hyphens.
 - `collection`: one of the listed collections. Each response creates a record there.
@@ -218,7 +224,7 @@ Load `@frogbotai/ui/styles.css` once for its styles. They sit in the `frogbot` c
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `definition` | `FormDefinition` | Required | The form's render definition, from `GET /api/forms/<slug>/definition`. |
-| `submitUrl` | `string` | Required | Where answers are posted. For an edit link, add `?link=<token>`. |
+| `submitUrl` | `string` | None | Where answers are posted. For an edit link, add `?link=<token>`. Without it nothing is sent: the last step checks the answers and shows the confirmation, as a preview does. |
 | `onSubmitted` | `(confirmation: FormConfirmation) => void` | None | Called with the confirmation after a successful submit. When set, a redirect confirmation is left to you. |
 | `className` | `string` | None | Added to the form's root element. |
 
