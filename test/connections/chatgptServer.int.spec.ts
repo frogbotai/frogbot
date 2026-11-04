@@ -630,6 +630,60 @@ describe(`ChatGPT sign-in and plan calls against a fake OpenAI server [${process
       });
     });
 
+    const triage = Output.object({
+      schema: z.object({ priority: z.enum(['low', 'high']), team: z.string() }),
+    });
+
+    it('returns a structured agent.generate answer through the plan route', async () => {
+      fake.responses.push(say('{"priority":"high","team":"billing"}'));
+
+      const result = await booted.frogbot.agents[AGENT_SLUG].generate({
+        prompt: 'agent-triage',
+        req: alice,
+        overrideAccess: true,
+        output: triage,
+      });
+
+      const body = sentBody('agent-triage');
+
+      expect(result.output).toEqual({ priority: 'high', team: 'billing' });
+      expect(body).toMatchObject({
+        stream: true,
+        text: {
+          format: {
+            type: 'json_schema',
+            schema: { properties: { priority: { enum: ['low', 'high'] }, team: {} } },
+          },
+        },
+      });
+
+      for (const field of ['max_output_tokens', 'temperature']) {
+        expect(body, field).not.toHaveProperty(field);
+      }
+    });
+
+    it('fails a structured agent.generate the plan refuses after one call', async () => {
+      fake.responses.push(
+        json(400, {
+          error: {
+            code: 'subscription_sharing_unsupported_capability',
+            message: 'unsupported',
+            type: 'invalid_request_error',
+          },
+        }),
+      );
+
+      await expect(
+        booted.frogbot.agents[AGENT_SLUG].generate({
+          prompt: 'agent-refused',
+          req: alice,
+          overrideAccess: true,
+          output: triage,
+        }),
+      ).rejects.toThrow(UNSUPPORTED);
+      expect(callsFor('agent-refused')).toHaveLength(1);
+    });
+
     it('runs an agent.generate turn with a tool call, each step a streamed call', async () => {
       fake.responses.push(
         sse([

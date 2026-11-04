@@ -14,7 +14,7 @@ import { streamTextOperation } from '../../../../../packages/frogbot/src/ai/oper
 import { transcribeOperation } from '../../../../../packages/frogbot/src/ai/operations/transcribe.js';
 
 describe('AI operation access', () => {
-  const operations = [
+  const operations: ((deps: never, opts: never) => Promise<unknown>)[] = [
     embedOperation,
     embedManyOperation,
     evaluateOperation,

@@ -1,6 +1,7 @@
 import type * as Gateway from '@frogbotai/gateway';
 import type * as AI from 'ai';
 import type { ModelMessage, UIMessage } from 'ai';
+import { Output } from 'ai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -19,7 +20,13 @@ import { question } from '../../../../packages/frogbot/src/tools/question.js';
 import type { AnyTool, Tool } from '../../../../packages/frogbot/src/tools/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
+type AgentRecord = {
+  settings: Record<string, unknown>;
+  prepared?: Record<string, unknown>;
+};
+
 const agentState = vi.hoisted(() => ({
+  agents: [] as AgentRecord[],
   prepared: undefined as Record<string, unknown> | undefined,
   generateCall: undefined as Record<string, unknown> | undefined,
   generateError: undefined as Error | undefined,
@@ -48,9 +55,17 @@ vi.mock('ai', async (importOriginal) => {
     ...original,
     ToolLoopAgent: class {
       readonly settings: MockSettings;
+      readonly record: AgentRecord;
 
       constructor(settings: MockSettings) {
         this.settings = settings;
+        this.record = { settings };
+        agentState.agents.push(this.record);
+      }
+
+      async prepare(call: Record<string, unknown>) {
+        agentState.prepared = await this.settings.prepareCall({ ...this.settings, ...call });
+        this.record.prepared = agentState.prepared;
       }
 
       get tools() {
@@ -58,7 +73,9 @@ vi.mock('ai', async (importOriginal) => {
       }
 
       async generate(call: Record<string, unknown>) {
-        agentState.prepared = await this.settings.prepareCall({ ...this.settings, ...call });
+        const { onEnd: _onEnd, onFinish: _onFinish, ...options } = call;
+
+        await this.prepare(options);
         agentState.generateCall = call;
 
         if (agentState.generateError) throw agentState.generateError;
@@ -74,7 +91,7 @@ vi.mock('ai', async (importOriginal) => {
       }
 
       async stream(call: Record<string, unknown>) {
-        agentState.prepared = await this.settings.prepareCall({ ...this.settings, ...call });
+        await this.prepare(call);
         agentState.streamCall = call;
 
         return {};
@@ -200,7 +217,7 @@ function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
     }
   };
 
-  const operationModel = vi.fn((_id?: string) => ({}));
+  const operationModel = vi.fn((id?: string) => ({ modelId: id }));
   const operation = vi.fn(
     (opts: { operation: string; model: string; context?: Record<string, unknown> }) => {
       const requestId = `req_${Math.random().toString(36).slice(2)}`;
@@ -282,6 +299,7 @@ function makeReq(user: { id: string } | null = { id: 'user-1' }) {
 }
 
 beforeEach(() => {
+  agentState.agents = [];
   agentState.prepared = undefined;
   agentState.generateCall = undefined;
   agentState.generateError = undefined;
@@ -1494,5 +1512,271 @@ describe('agent model input pass', () => {
       await execute({ query: 'a' }, { toolCallId: 'call-1', messages, context: {} } as never),
     ).toEqual(SKIPPED_FOR_CLIENT_INPUT);
     expect(lookup.execute).not.toHaveBeenCalled();
+  });
+});
+
+describe('agent setup', () => {
+  const THINKER = 'local/thinker' as AgentModelId;
+  const docs = mcpServer({ name: 'docs', type: 'remote', url: 'http://localhost/mcp' });
+  const docsTools = { docs_search: { description: 'Search' }, docs_read: { description: 'Read' } };
+  const selection = { model: THINKER, reasoning: 'high' };
+
+  function thinkerConfig(): SanitizedAIConfig {
+    return {
+      ...makeConfig(emptyHooks()),
+      providers: {
+        local: {
+          type: 'openai-compatible',
+          baseUrl: 'http://localhost:11434/v1',
+          models: [
+            {
+              id: 'thinker',
+              mode: 'chat',
+              reasoningOptions: [{ type: 'effort', values: ['low', 'high'] }],
+            },
+          ],
+        },
+      },
+    };
+  }
+
+  function representative() {
+    turn.resolveMCPTools.mockResolvedValue({
+      tools: docsTools,
+      approvals: new Map([['docs_read', 'ask']]),
+    });
+
+    turn.resolveChatContext.mockResolvedValue({
+      status: 'ready',
+      chatId: 'chat-1',
+      uiMessages: history,
+      claim,
+      selection,
+    });
+
+    const req = makeReq();
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model: { default: THINKER, options: [THINKER] },
+        instructions: 'Help',
+        tools: [
+          lookup,
+          question,
+          { ...lookup, slug: 'refund', access: () => false },
+          { ...lookup, slug: 'plain', approval: 'ask' },
+        ],
+        mcp: [docs],
+      },
+      makeDeps(thinkerConfig(), req),
+    );
+
+    return { agent, req };
+  }
+
+  type Prepared = Record<string, unknown> & {
+    runtimeContext: { agent: { runId: string } };
+    toolApproval: (args: {
+      toolCall: { toolName: string; input?: unknown };
+      messages: ModelMessage[];
+    }) => Promise<unknown>;
+    prepareStep: (args: { messages: ModelMessage[]; stepNumber: number }) => Promise<unknown>;
+  };
+
+  function pinned({
+    agent,
+    req,
+    prepared,
+    chatId,
+    input,
+    activeTools,
+  }: {
+    agent: ReturnType<typeof representative>['agent'];
+    req: FrogBotRequest;
+    prepared: Prepared;
+    chatId?: string;
+    input: Record<string, unknown>;
+    activeTools: string[];
+  }) {
+    const { runId } = prepared.runtimeContext.agent;
+    const ctx = {
+      req,
+      frogbot: req.frogbot,
+      agent: { slug: 'support', runId, chatId },
+      overrideAccess: false,
+    };
+
+    return {
+      id: 'support',
+      model: { modelId: THINKER },
+      instructions: 'Help',
+      tools: { ...agent.aiAgent.tools, ...docsTools },
+      stopWhen: undefined,
+      prepareCall: expect.any(Function),
+      ...input,
+      runtimeContext: { agent: ctx.agent },
+      toolsContext: { lookup: ctx, refund: ctx, plain: ctx },
+      activeTools,
+      toolApproval: expect.any(Function),
+      prepareStep: expect.any(Function),
+    };
+  }
+
+  const streamed = { experimental_transform: [expect.any(Function)], onEnd: expect.any(Function) };
+
+  const userMessage: ModelMessage[] = [
+    { role: 'user', content: [{ type: 'text', text: 'Hello' }] },
+  ];
+
+  async function approvals(prepared: Prepared, agent: ReturnType<typeof representative>['agent']) {
+    const clientStep: ModelMessage[] = [];
+    const serverStep: ModelMessage[] = [];
+    const approve = (toolName: string, messages: ModelMessage[] = serverStep) =>
+      prepared.toolApproval({ toolCall: { toolName, input: { query: 'a' } }, messages });
+
+    const results = {
+      question: await approve('question', clientStep),
+      lookup: await approve('lookup'),
+      refund: await approve('refund'),
+      plain: await approve('plain'),
+      docs_read: await approve('docs_read'),
+    };
+
+    const execute = agent.aiAgent.tools.lookup.execute!;
+    const skipped = (messages: ModelMessage[]) =>
+      execute({ query: 'a' }, { toolCallId: 'call-1', messages, context: {} } as never);
+
+    return {
+      ...results,
+      clientStepSkipped: await skipped(clientStep),
+      serverStepSkipped: await skipped(serverStep),
+    };
+  }
+
+  const structured = Output.object({ schema: z.object({ team: z.string() }) });
+
+  function runAgents(output: typeof structured | undefined) {
+    const [base, run, ...rest] = agentState.agents;
+
+    expect(rest).toEqual([]);
+    expect(base.settings).not.toHaveProperty('output');
+
+    if (output === undefined) {
+      expect(run).toBeUndefined();
+
+      return { prepared: base.prepared as Prepared, settings: {} };
+    }
+
+    expect(base.prepared).toBeUndefined();
+    expect(run.settings.output).toBe(output);
+
+    return { prepared: run.prepared as Prepared, settings: { output } };
+  }
+
+  it.each([
+    ['text', undefined],
+    ['structured', structured],
+  ])('pins a chat generate run (%s)', async (_, output) => {
+    const { agent, req } = representative();
+
+    await agent.generate({ prompt: 'Hello', req, output });
+
+    const { prepared, settings } = runAgents(output);
+
+    expect(prepared).toEqual({
+      ...pinned({
+        agent,
+        req,
+        prepared,
+        chatId: 'chat-1',
+        input: { messages: userMessage, abortSignal: expect.any(AbortSignal) },
+        activeTools: ['lookup', 'plain', 'docs_search', 'docs_read'],
+      }),
+      ...settings,
+    });
+    expect(await approvals(prepared, agent)).toEqual({
+      question: { type: 'not-applicable' },
+      lookup: { type: 'not-applicable' },
+      refund: { type: 'denied', reason: NO_TOOL_ACCESS },
+      plain: { type: 'denied', reason: NOT_APPROVABLE },
+      docs_read: { type: 'denied', reason: NOT_APPROVABLE },
+      clientStepSkipped: SKIPPED_FOR_CLIENT_INPUT,
+      serverStepSkipped: { found: true },
+    });
+    await expect(prepared.prepareStep({ messages: userMessage, stepNumber: 0 })).resolves.toEqual({
+      model: { modelId: THINKER },
+      providerOptions: { local: { reasoningEffort: 'high' } },
+      messages: userMessage,
+    });
+  });
+
+  it.each([
+    ['text', undefined],
+    ['structured', structured],
+  ])('pins a stream run without a chat (%s)', async (_, output) => {
+    const { agent, req } = representative();
+
+    await agent.stream({ prompt: 'Hello', req, output });
+
+    const { prepared, settings } = runAgents(output);
+
+    expect(prepared).toEqual({
+      ...pinned({
+        agent,
+        req,
+        prepared,
+        input: { prompt: 'Hello', abortSignal: undefined },
+        activeTools: ['lookup', 'plain', 'docs_search', 'docs_read'],
+      }),
+      ...streamed,
+      ...settings,
+    });
+    expect(await approvals(prepared, agent)).toEqual({
+      question: { type: 'not-applicable' },
+      lookup: { type: 'not-applicable' },
+      refund: { type: 'denied', reason: NO_TOOL_ACCESS },
+      plain: { type: 'denied', reason: NOT_APPROVABLE },
+      docs_read: { type: 'denied', reason: NOT_APPROVABLE },
+      clientStepSkipped: SKIPPED_FOR_CLIENT_INPUT,
+      serverStepSkipped: { found: true },
+    });
+    await expect(prepared.prepareStep({ messages: userMessage, stepNumber: 0 })).resolves.toEqual({
+      model: { modelId: THINKER },
+      messages: userMessage,
+    });
+  });
+
+  it('pins a chat turn run with rendered client tools', async () => {
+    const { agent, req } = representative();
+    const options = {
+      chatId: 'chat-1',
+      selection,
+      clientTools: { kinds: ['question'], approval: true },
+    };
+
+    await agent.aiAgent.stream({ prompt: 'Hello', options: { req, ...options } });
+
+    const prepared = agentState.prepared as Prepared;
+
+    expect(prepared).toEqual({
+      ...pinned({
+        agent,
+        req,
+        prepared,
+        chatId: 'chat-1',
+        input: { prompt: 'Hello', abortSignal: undefined },
+        activeTools: ['lookup', 'question', 'plain', 'docs_search', 'docs_read'],
+      }),
+      ...streamed,
+    });
+    expect(await approvals(prepared, agent)).toEqual({
+      question: { type: 'not-applicable' },
+      lookup: { type: 'not-applicable' },
+      refund: { type: 'denied', reason: NO_TOOL_ACCESS },
+      plain: { type: 'user-approval' },
+      docs_read: { type: 'user-approval' },
+      clientStepSkipped: SKIPPED_FOR_CLIENT_INPUT,
+      serverStepSkipped: { found: true },
+    });
   });
 });

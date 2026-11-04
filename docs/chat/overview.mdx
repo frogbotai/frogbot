@@ -474,7 +474,7 @@ FrogBot rejects a chat owned by another user. It also rejects client-supplied as
 
 ## Persist local generation
 
-Local generation is stateless unless you provide an existing chat ID.
+Every local `generate()` call saves a chat. Pass an existing chat ID to continue it; without one, FrogBot creates a new chat.
 
 ```ts
 const result = await frogbot.agents.support.generate({

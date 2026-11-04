@@ -3,5 +3,11 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["config.test-d.ts", "evaluate.test-d.ts", "transcribe.test-d.ts"]
+  "include": [
+    "agentOutput.test-d.ts",
+    "config.test-d.ts",
+    "evaluate.test-d.ts",
+    "generateTextOutput.test-d.ts",
+    "transcribe.test-d.ts"
+  ]
 }

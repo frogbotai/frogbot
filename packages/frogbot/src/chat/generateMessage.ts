@@ -2,11 +2,12 @@ import type { TextStreamPart, ToolSet, UIMessage } from 'ai';
 import { consumeStream, generateId, toUIMessageStream } from 'ai';
 
 import type { AgentGenerateResult } from '../agents/types.js';
+import type { AIOutput } from '../ai/types.js';
 import { createMessageUsage } from './messagePersistence.js';
 import { toolErrorText } from './toolErrorText.js';
 
 export type GenerateMessageProps = {
-  result: AgentGenerateResult;
+  result: AgentGenerateResult<AIOutput>;
   originalMessages: UIMessage[];
   tools: ToolSet;
   model: string;
@@ -39,7 +40,9 @@ export async function generateMessage({
   return responseMessage;
 }
 
-function streamResult(result: AgentGenerateResult): ReadableStream<TextStreamPart<ToolSet>> {
+function streamResult(
+  result: AgentGenerateResult<AIOutput>,
+): ReadableStream<TextStreamPart<ToolSet>> {
   const parts: TextStreamPart<ToolSet>[] = [{ type: 'start' }];
 
   for (const step of result.steps) {

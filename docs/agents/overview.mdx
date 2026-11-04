@@ -548,7 +548,7 @@ await frogbot.agents.support.generate({
 })
 ```
 
-Local calls are stateless by default. Pass an existing `chatId` to `generate` to persist the new user message and assistant response against server-owned history.
+Every `generate()` call saves a chat: the user message and the reply are stored, so the run shows in the admin. Without `chatId` it creates a new chat; pass an existing `chatId` to continue that chat's server-owned history.
 
 ```ts
 await frogbot.agents.support.generate({
@@ -558,7 +558,32 @@ await frogbot.agents.support.generate({
 })
 ```
 
-Chat persistence accepts prompts or `UIMessage[]`; it does not accept `ModelMessage[]`. Local `stream()` calls remain stateless.
+`generate()` accepts prompts or `UIMessage[]`; it does not accept `ModelMessage[]`. `stream()` never saves a chat; use it for runs that should leave no record.
+
+### Return structured output
+
+Pass an `Output` specification as `output` to get a typed object back instead of text. The agent keeps its instructions, tools, model selection, and access checks; the model is asked for JSON on every step, and FrogBot parses the final step's answer against the schema.
+
+```ts
+import { Output } from 'frogbot'
+import { z } from 'zod'
+
+const { output } = await frogbot.agents.triage.generate({
+  prompt: `Classify ticket ${ticket.id}`,
+  output: Output.object({
+    schema: z.object({ priority: z.enum(['low', 'high']), team: z.string() })
+  }),
+  overrideAccess: true
+})
+// output: { priority: 'low' | 'high'; team: string }
+```
+
+`stream()` takes `output` too: `await result.output` resolves to the parsed object, and `result.partialOutputStream` yields partial objects as they arrive. `generate()` still saves a chat, with the JSON answer stored as the reply's text. Chat turns (`streamMessage`) always reply in text and take no `output`.
+
+There are two ways a structured run ends without an object, and FrogBot doesn't retry either:
+
+- The run stops before a final answer, for example when `stopWhen` stops on a tool step. After `generate()`, reading `result.output` throws AI SDK's `NoOutputGeneratedError`. After `stream()`, `await result.output` rejects with `NoObjectGeneratedError` whose `finishReason` is `'tool-calls'`.
+- The final answer doesn't match the schema. `generate()` rejects, and `await result.output` from `stream()` rejects, with `NoObjectGeneratedError`. Its `text` holds the raw answer.
 
 ### Run options
 
@@ -571,7 +596,8 @@ Chat persistence accepts prompts or `UIMessage[]`; it does not accept `ModelMess
 | `req` | `FrogBotRequest` | A request without a user | Request for the run. Tools, hooks, and the access rule receive it. |
 | `overrideAccess` | `boolean` | `false` | Set `true` to run trusted: skips the agent's and tools' `access` rules, and tools receive it as `ctx.overrideAccess`. |
 | `abortSignal` | `AbortSignal` | — | Cancels the run. |
-| `chatId` | `DocID` | — | `generate` only. Persists the new user message and the reply in this existing chat. |
+| `output` | `AIOutput` | Text | An `Output` specification. `result.output` is typed from it. See [Return structured output](#return-structured-output). |
+| `chatId` | `DocID` | A new chat | `generate` only. The chat to save the user message and the reply in. `stream()` never saves. |
 | `autoApprove` | `boolean` | The chat's `autoApprove`, else `false` | Runs `approval: 'ask'` tools without asking. `'required'` tools still need a person. |
 
 ---

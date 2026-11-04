@@ -15,6 +15,7 @@ import type {
 } from 'ai';
 import type { z } from 'zod';
 
+import type { AIOutput } from '../ai/types.js';
 import type { ChannelChatAccess } from '../chat/channelAccess.js';
 import type { ClientToolsOption, MessageDelivery } from '../chat/turn/types.js';
 import type { DocID } from '../collections/config/types.js';
@@ -130,9 +131,12 @@ type AgentRunOpts = (
   autoApprove?: boolean;
 };
 
-export type AgentGenerateOpts = AgentRunOpts & { chatId?: DocID };
+export type AgentGenerateOpts<O extends AIOutput = never> = AgentRunOpts & {
+  chatId?: DocID;
+  output?: O;
+};
 
-export type AgentStreamOpts = AgentRunOpts;
+export type AgentStreamOpts<O extends AIOutput = never> = AgentRunOpts & { output?: O };
 
 export type AgentStreamMessageOpts = AgentRunOpts & {
   chatId: DocID;
@@ -141,9 +145,17 @@ export type AgentStreamMessageOpts = AgentRunOpts & {
   delivery?: MessageDelivery;
 };
 
-export type AgentGenerateResult = GenerateTextResult<ToolSet, Record<string, unknown>, never>;
+export type AgentGenerateResult<O extends AIOutput = never> = GenerateTextResult<
+  ToolSet,
+  Record<string, unknown>,
+  O
+>;
 
-export type AgentStreamResult = StreamTextResult<ToolSet, Record<string, unknown>, never>;
+export type AgentStreamResult<O extends AIOutput = never> = StreamTextResult<
+  ToolSet,
+  Record<string, unknown>,
+  O
+>;
 
 export type AgentStreamMessageResult = AgentStreamResult & {
   chatId: DocID;
@@ -173,8 +185,10 @@ export type AgentInstance = {
   slug: string;
   config: SanitizedAgentConfig;
   aiAgent: Agent<AgentCallOptions, ToolSet, Record<string, unknown>, never>;
-  generate: (opts: AgentGenerateOpts) => Promise<AgentGenerateResult>;
-  stream: (opts: AgentStreamOpts) => Promise<AgentStreamResult>;
+  generate: <O extends AIOutput = never>(
+    opts: AgentGenerateOpts<O>,
+  ) => Promise<AgentGenerateResult<O>>;
+  stream: <O extends AIOutput = never>(opts: AgentStreamOpts<O>) => Promise<AgentStreamResult<O>>;
   streamMessage: (
     opts: AgentStreamMessageOpts,
   ) => Promise<AgentStreamMessageResult | AgentStreamMessageQueuedResult>;
