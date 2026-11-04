@@ -813,6 +813,63 @@ describe('frogbot generate:types', () => {
       await expect(writeGeneratedTypes(config, dir)).resolves.toMatchObject({ changed: false });
     });
 
+    it('reports stale types under dryRun without writing them', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-types-dry-run-'));
+      const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [{ slug: 'users', auth: true, fields: [] }],
+      });
+
+      const outputPath = join(dir, 'frogbot-types.ts');
+
+      await expect(writeGeneratedTypes(config, dir, { dryRun: true })).resolves.toEqual({
+        changed: true,
+        outputPath,
+      });
+      await expect(readFile(outputPath, 'utf-8')).rejects.toMatchObject({ code: 'ENOENT' });
+
+      await writeGeneratedTypes(config, dir);
+      const written = await readFile(outputPath, 'utf-8');
+      await writeFile(outputPath, `${written} `);
+
+      await expect(writeGeneratedTypes(config, dir, { dryRun: true })).resolves.toMatchObject({
+        changed: true,
+      });
+      await expect(readFile(outputPath, 'utf-8')).resolves.toBe(`${written} `);
+    });
+
+    it("formats with the app's Prettier config, unless .prettierignore lists the types file", async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-types-prettier-'));
+      const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [{ slug: 'users', auth: true, fields: [] }],
+      });
+
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      const defaultOutput = await readFile(outputPath, 'utf-8');
+      const prettierConfig = { semi: false };
+
+      await writeFile(join(dir, '.prettierrc'), JSON.stringify(prettierConfig));
+      await writeGeneratedTypes(config, dir);
+      const output = await readFile(outputPath, 'utf-8');
+      const { format } = await import('prettier');
+
+      expect(defaultOutput).toContain(';\n');
+      expect(output).not.toMatch(/;$/m);
+      await expect(format(output, { ...prettierConfig, filepath: outputPath })).resolves.toBe(
+        output,
+      );
+
+      await writeFile(join(dir, '.prettierignore'), 'frogbot-types.ts\n');
+      await writeGeneratedTypes(config, dir);
+
+      await expect(readFile(outputPath, 'utf-8')).resolves.toBe(defaultOutput);
+    });
+
     it('writes into the config directory rather than a nested src directory', async () => {
       dir = await mkdtemp(join(tmpdir(), 'frogbot-types-config-dir-'));
       await mkdir(join(dir, 'src'));

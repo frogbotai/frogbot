@@ -11,6 +11,7 @@ import type { BuiltInProviderEntry } from '../../../../packages/frogbot/src/ai/t
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 import { buildConfig } from '../../../../packages/frogbot/src/config/build.js';
 import { compileCollectionViews } from '../../../../packages/frogbot/src/config/collectionViews.js';
+import { ConfigIssueError } from '../../../../packages/frogbot/src/config/issue.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import { autonumberField } from '../../../../packages/frogbot/src/fields/baseFields/autonumber/index.js';
 import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
@@ -5142,6 +5143,104 @@ describe('frogbot sanitize', () => {
           }),
         ),
       ).toThrow("[frogbot] Agent slug 'support/admin' is not URL-safe.");
+    });
+  });
+
+  describe('jobs', () => {
+    const handler = () => ({ output: {} });
+
+    function sanitizeError(jobs: FrogBotConfig['jobs']): unknown {
+      try {
+        sanitize(makeConfig({ jobs }));
+      } catch (error) {
+        return error;
+      }
+
+      throw new Error('sanitize did not throw');
+    }
+
+    it('rejects an invalid task cron with INVALID_CRON at its path', () => {
+      const error = sanitizeError({
+        tasks: [{ slug: 'sendDigest', handler, schedule: [{ cron: 'nope', queue: 'default' }] }],
+      });
+
+      expect(error).toBeInstanceOf(ConfigIssueError);
+      expect(error).toMatchObject({
+        code: 'INVALID_CRON',
+        path: 'jobs.tasks.sendDigest.schedule.0.cron',
+        message: "[frogbot] Task 'sendDigest' schedule 0 has an invalid cron expression: 'nope'.",
+      });
+      expect((error as Error).cause).toBeInstanceOf(Error);
+    });
+
+    it('rejects an invalid workflow cron with INVALID_CRON at its path', () => {
+      const error = sanitizeError({
+        workflows: [
+          {
+            slug: 'nightly',
+            handler: async () => {},
+            schedule: [
+              { cron: '0 0 * * *', queue: 'default' },
+              { cron: '0 9 * * MONN', queue: 'default' },
+            ],
+          },
+        ],
+      });
+
+      expect(error).toMatchObject({
+        code: 'INVALID_CRON',
+        path: 'jobs.workflows.nightly.schedule.1.cron',
+        message:
+          "[frogbot] Workflow 'nightly' schedule 1 has an invalid cron expression: '0 9 * * MONN'.",
+      });
+    });
+
+    it('rejects a WorkflowJSON step that names a missing task with UNKNOWN_TASK', () => {
+      const error = sanitizeError({
+        tasks: [{ slug: 'fetch', handler }],
+        workflows: [
+          {
+            slug: 'pipeline',
+            handler: [
+              { id: 'one', task: 'fetch', input: () => ({}) },
+              { id: 'two', task: 'missing', input: () => ({}) },
+            ] as never,
+          },
+        ],
+      });
+
+      expect(error).toBeInstanceOf(ConfigIssueError);
+      expect(error).toMatchObject({
+        code: 'UNKNOWN_TASK',
+        path: 'jobs.workflows.pipeline.handler.1.task',
+        message:
+          "[frogbot] Workflow 'pipeline' step 'two' names task 'missing', which isn't in jobs.tasks.",
+      });
+    });
+
+    it('accepts valid crons and WorkflowJSON steps naming defined tasks or inline tasks', async () => {
+      const result = sanitize(
+        makeConfig({
+          jobs: {
+            tasks: [
+              { slug: 'fetch', handler, schedule: [{ cron: '*/5 * * * *', queue: 'default' }] },
+            ],
+            workflows: [
+              {
+                slug: 'pipeline',
+                handler: [
+                  { id: 'one', task: 'fetch', input: () => ({}) },
+                  { id: 'two', inlineTask: () => ({ output: {} }) },
+                ] as never,
+              },
+            ],
+          },
+        }),
+      );
+
+      const payloadConfig = await result._internal.payloadConfig;
+
+      expect(payloadConfig.jobs.workflows?.map(({ slug }) => slug)).toEqual(['pipeline']);
     });
   });
 

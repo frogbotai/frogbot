@@ -15,7 +15,9 @@ Run the following command in a FrogBot project to generate types based on your F
 frogbot generate:types
 ```
 
-You can run this command whenever you need to regenerate your types. The single generated `frogbot-types.ts` file augments FrogBot with generated collection and agent types.
+You can run this command whenever you need to regenerate your types. The single generated `frogbot-types.ts` file augments FrogBot with generated collection and agent types. Run `frogbot check` to find out whether the file is out of date without writing it.
+
+The file is formatted with your app's Prettier config for its path, so `prettier --write .` leaves it unchanged. If your `.prettierignore` lists the file, or you have no Prettier config, FrogBot's default style is used.
 
 ## Type generation options
 

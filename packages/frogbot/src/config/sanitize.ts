@@ -70,6 +70,7 @@ import type {
   FrogBotSanitizedConfig,
   SanitizedCollectionMeta,
 } from './sanitized.js';
+import { assertJobs } from './sanitizeJobs.js';
 import type { FrogBotConfig, OnInit } from './types.js';
 import type { ValidationMode } from './validationContext.js';
 import { getValidationMode } from './validationContext.js';
@@ -309,6 +310,8 @@ export function sanitize(
       }),
     },
   });
+
+  assertJobs(jobs);
 
   if (config.collections.some(({ slug }) => slug === WAITPOINTS_SLUG)) {
     throw new Error(`FrogBot collection '${WAITPOINTS_SLUG}' is reserved for durable waits.`);

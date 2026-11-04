@@ -1,12 +1,13 @@
 import fs from 'node:fs/promises';
-import { isAbsolute, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 
 import type { AcceptedLanguages } from '@payloadcms/translations';
 import { initI18n } from '@payloadcms/translations';
 import { compile } from 'json-schema-to-typescript';
 import type { SanitizedConfig } from 'payload';
 import { configToJSONSchema } from 'payload';
-import { format } from 'prettier';
+import type { Options } from 'prettier';
+import { format, getFileInfo, resolveConfig } from 'prettier';
 
 import { getConfiguredModelIds } from '../ai/models.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
@@ -178,8 +179,38 @@ function resolveOutputPath(config: SanitizedConfig, dir: string): string {
   return join(resolve(dir), DEFAULT_FILENAME);
 }
 
+async function findPrettierIgnore(outputPath: string): Promise<string | undefined> {
+  for (let dir = dirname(outputPath); ; dir = dirname(dir)) {
+    const candidate = join(dir, '.prettierignore');
+
+    if (
+      await fs.access(candidate).then(
+        () => true,
+        () => false,
+      )
+    ) {
+      return candidate;
+    }
+
+    if (dirname(dir) === dir) return undefined;
+  }
+}
+
+async function formatOptions(outputPath: string): Promise<Options> {
+  const ignorePath = await findPrettierIgnore(outputPath);
+  const { ignored } = await getFileInfo(outputPath, ignorePath ? { ignorePath } : {});
+
+  return {
+    ...((ignored ? null : await resolveConfig(outputPath, { useCache: false })) ?? {
+      singleQuote: true,
+    }),
+    parser: 'typescript',
+  };
+}
+
 async function compileTypes(
   config: SanitizedConfig,
+  outputPath: string,
   agentSlugs: readonly string[],
   ai?: SanitizedAIConfig,
 ): Promise<string> {
@@ -221,17 +252,19 @@ async function compileTypes(
 
   const output = `${compiled.trimEnd()}\n\n\n${buildGeneratedTypesFooter(agentSlugs, ai)}\n`;
 
-  return format(output, { parser: 'typescript', singleQuote: true });
+  return format(output, await formatOptions(outputPath));
 }
 
 export async function writeGeneratedTypes(
   frogbotConfig: FrogBotSanitizedConfig,
   configDir: string,
+  { dryRun = false }: { dryRun?: boolean } = {},
 ): Promise<{ outputPath: string; changed: boolean }> {
   const config = await frogbotConfig._internal.payloadConfig;
   const outputPath = resolveOutputPath(config, configDir);
   const compiled = await compileTypes(
     config,
+    outputPath,
     frogbotConfig.agents?.map((agent) => agent.slug) ?? [],
     frogbotConfig.ai,
   );
@@ -243,7 +276,7 @@ export async function writeGeneratedTypes(
     }
   } catch {}
 
-  await fs.writeFile(outputPath, compiled);
+  if (!dryRun) await fs.writeFile(outputPath, compiled);
 
   return { outputPath, changed: true };
 }

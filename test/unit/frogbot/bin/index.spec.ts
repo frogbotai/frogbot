@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   channelsRun: vi.fn(() =>
     Promise.resolve(mocks.calls.push(`channelsRun:${process.env.FROGBOT_TEST_KEY}`)),
   ),
+  check: vi.fn(() => Promise.resolve(mocks.calls.push(`check:${process.env.FROGBOT_TEST_KEY}`))),
   dev: vi.fn(() => mocks.calls.push(`dev:${process.env.FROGBOT_TEST_KEY}`)),
   generateImportMap: vi.fn(() =>
     Promise.resolve(mocks.calls.push(`generateImportMap:${process.env.FROGBOT_TEST_KEY}`)),
@@ -72,6 +73,8 @@ vi.mock('../../../../packages/frogbot/src/bin/channelsRun.js', () => ({
   channelsRun: mocks.channelsRun,
 }));
 
+vi.mock('../../../../packages/frogbot/src/bin/check.js', () => ({ check: mocks.check }));
+
 vi.mock('../../../../packages/frogbot/src/bin/generateImportMap.js', () => ({
   generateImportMap: mocks.generateImportMap,
 }));
@@ -128,6 +131,7 @@ describe('frogbot bin', () => {
     ['start', 'start'],
     ['DEV', 'dev'],
     ['run', 'runScript'],
+    ['check', 'check'],
     ['generate:types', 'generateTypes'],
     ['generate:piece-types', 'generatePieceTypes'],
     ['generate:importmap', 'generateImportMap'],
@@ -198,7 +202,7 @@ describe('frogbot bin', () => {
 
     expect(mocks.calls).toEqual(['loadEnv']);
     expect(error).toHaveBeenCalledWith(
-      '[frogbot] usage: frogbot <start|dev|up|down|status|run|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status>',
+      '[frogbot] usage: frogbot <start|dev|up|down|status|run|check|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status>',
     );
   });
 
@@ -264,9 +268,21 @@ describe('frogbot bin', () => {
     expect(mocks.runScript).toHaveBeenLastCalledWith(args);
   });
 
+  it('forwards `check --json` and pre-loads the config in runtime mode', async () => {
+    process.argv = ['node', 'frogbot', 'check', '--json'];
+    mocks.findConfigFile.mockReturnValue('/app/frogbot.config.ts');
+    mocks.loadConfig.mockResolvedValue({ cli: { commands: {} } });
+
+    await bin();
+
+    expect(mocks.loadConfig).toHaveBeenCalledWith({ cwd: process.cwd(), mode: 'runtime' });
+    expect(mocks.check).toHaveBeenLastCalledWith(['--json']);
+    expect(mocks.init).not.toHaveBeenCalled();
+  });
+
   describe('app commands', () => {
     const usage =
-      '[frogbot] usage: frogbot <start|dev|up|down|status|run|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status';
+      '[frogbot] usage: frogbot <start|dev|up|down|status|run|check|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status';
 
     function withConfig(commands: Record<string, CLICommand>): FrogBotSanitizedConfig {
       const config = { cli: { commands } } as unknown as FrogBotSanitizedConfig;
