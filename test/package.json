@@ -46,6 +46,7 @@
     "@frogbotai/piece-google-sheets": "workspace:*",
     "@frogbotai/piece-graphql": "workspace:*",
     "@frogbotai/piece-http": "workspace:*",
+    "@frogbotai/piece-hubspot": "workspace:*",
     "@frogbotai/piece-image-helper": "workspace:*",
     "@frogbotai/piece-jira": "workspace:*",
     "@frogbotai/piece-linear": "workspace:*",

@@ -12,6 +12,7 @@ import { createGmail } from '../../../packages/pieces/piece-gmail/src/index.js';
 import { createGoogleCalendar } from '../../../packages/pieces/piece-google-calendar/src/index.js';
 import { createGoogleDrive } from '../../../packages/pieces/piece-google-drive/src/index.js';
 import { createGoogleSheets } from '../../../packages/pieces/piece-google-sheets/src/index.js';
+import { createHubSpot } from '../../../packages/pieces/piece-hubspot/src/index.js';
 import { createJira } from '../../../packages/pieces/piece-jira/src/index.js';
 import { createMicrosoftOutlook } from '../../../packages/pieces/piece-microsoft-outlook/src/index.js';
 import { createMicrosoftTeams } from '../../../packages/pieces/piece-microsoft-teams/src/index.js';
@@ -109,6 +110,12 @@ export const rawRequestRows: RawRequestRow[] = [
     auth: google,
     safe: '/spreadsheets/sheet-id',
     origins: ['https://sheets.googleapis.com'],
+  },
+  {
+    factory: createHubSpot,
+    auth: { accessToken: 'hubspot-token' },
+    safe: '/crm/v3/owners',
+    origins: ['https://api.hubapi.com'],
   },
   {
     factory: createJira,
