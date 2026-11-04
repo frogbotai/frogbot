@@ -12,6 +12,10 @@ const VITEST_CONFIG = 'vitest.config.ts';
 const PLAYWRIGHT_CONFIGS = ['test/browser/playwright.config.ts'];
 
 export const READ_ONLY = {
+  'test/database/mongo-startup-index/mongoStartup.int.spec.ts':
+    'checks that startup rejects, and no document is written',
+  'test/database/mongo-startup-seeds/mongoStartup.int.spec.ts':
+    'counts the documents onInit seeded on a fresh database',
   'test/frogbot-instance/boot.int.spec.ts': 'checks the booted collections and a 404 route',
   'test/frogbot-instance/properties.int.spec.ts': 'checks instance properties',
   'test/graphql/disabled/int.spec.ts': 'checks that GraphQL routes are off',

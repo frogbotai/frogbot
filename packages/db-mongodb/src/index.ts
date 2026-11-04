@@ -33,6 +33,13 @@ export const mongooseAdapter = (
 
       database.packageName = '@frogbotai/db-mongodb';
 
+      const { connect } = database;
+
+      database.connect = async (...connectArgs) => {
+        await connect?.call(database, ...connectArgs);
+        await awaitModels(database);
+      };
+
       installJobIndexes(database);
       installPartialCompoundIndexes(database);
 
@@ -45,4 +52,19 @@ export const mongooseAdapter = (
       return database;
     },
   };
+};
+
+const awaitModels = async (database: MongooseAdapter): Promise<void> => {
+  await Promise.all(
+    Object.entries(database.connection.models).map(async ([slug, model]) => {
+      try {
+        await model.init();
+      } catch (error) {
+        throw new Error(
+          `Could not create the collection or indexes for "${slug}": ${error instanceof Error ? error.message : String(error)}`,
+          { cause: error },
+        );
+      }
+    }),
+  );
 };

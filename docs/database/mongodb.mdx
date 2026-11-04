@@ -121,6 +121,10 @@ Hybrid search takes up to the [resolved candidate count](/search/overview#candid
 - Search indexes update shortly after a write, not in the same transaction, so a new or changed document can take a moment to appear in results. A deleted document can stay in the index briefly, but ranked documents are read back before they are returned, so deleted and no-longer-readable documents are left out and `hits` may be shorter than `limit`.
 - Search does not read uncommitted writes from the request's transaction.
 
+## Startup
+
+The adapter waits for every collection and its indexes to exist before the connection finishes, so `onInit` can write to a new collection, including a versions collection, on a fresh database. If a collection or index cannot be built, for example a unique index that existing data breaks, startup fails with an error naming the collection.
+
 ## Options
 
 | Option | Type | Default | Description |

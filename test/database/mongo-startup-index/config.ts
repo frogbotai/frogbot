@@ -10,6 +10,7 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 const adapterRequire = createRequire(
   path.resolve(dirname, '../../../packages/db-mongodb/package.json'),
 );
+
 const payloadAdapterRequire = createRequire(adapterRequire.resolve('@payloadcms/db-mongodb'));
 const mongoose = payloadAdapterRequire('mongoose');
 
