@@ -373,6 +373,23 @@ describe('chat tool approval', () => {
     expect(paused.body.pending?.map(({ toolCallId }) => toolCallId)).toEqual(['call-delete']);
   });
 
+  it('a new chat started with autoApprove stores it and runs an ask tool', async () => {
+    model.respond({ toolCalls: [close()] }, { text: 'Closed.' });
+
+    const response = await start({ autoApprove: true });
+
+    expect(response.body.status).toBe('completed');
+    expect(approvedCalls).toEqual([{ tool: 'close_ticket', input: { ticket: 'T-1' } }]);
+    await expect(
+      booted.frogbot.findByID({
+        collection: chatsSlug,
+        id: response.body.chatId,
+        depth: 0,
+        overrideAccess: true,
+      }),
+    ).resolves.toMatchObject({ autoApprove: true });
+  });
+
   it('generate() has nobody to ask, so it denies with feedback and finishes', async () => {
     model.respond({ toolCalls: [close()] }, { text: 'I could not close it.' });
 

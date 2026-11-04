@@ -73,6 +73,8 @@ export const createExample = definePiece({
 });
 ```
 
+`defineAction` also takes `approval` (`'ask'`, `'required'`, or a function of `{ input, req, agent, tool }`) when a person should approve each call; see [tool approval](https://docs.frogbot.ai/chat/tool-approval). An app sets or changes it per agent by spreading the action, `{ ...gmail.sendEmail, approval: 'ask' }`: a spread keeps `execute` and the connection, and replaces the piece's tool with the same slug.
+
 `defineAction` types `run` and `options` callbacks with the piece's client and the parsed input, and keeps the slug literal so `piece.lookup` accepts only its own input. Pass the options type second when the piece has an `options` schema, for example `createPieceHelpers<ExampleClient, ExampleOptions>()`. Wrap triggers in `defineAppTrigger`, `definePollingTrigger`, or `defineWebhookTrigger` from the same call; a webhook trigger's `state` is inferred from `onEnable`. Callbacks written directly in `definePiece`, such as `client`, still receive `unknown` values; parse them with the declared schemas.
 
 On TypeScript 6, a `run()` with no parameters is checked before `output` is inferred, so a literal it returns widens to `string` and fails a `z.literal` output. Add `as const` to the literal:

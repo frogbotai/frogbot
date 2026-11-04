@@ -6,12 +6,14 @@ import {
   generateId,
   getToolName,
   isToolUIPart,
+  lastAssistantMessageIsCompleteWithApprovalResponses,
   lastAssistantMessageIsCompleteWithToolCalls,
   type UIMessage,
 } from 'ai';
 import { type ComponentType, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '../components/button.js';
+import { Switch } from '../components/switch.js';
 import { useControlledState } from '../hooks/use-controlled-state.js';
 import {
   ChatAdapterError,
@@ -277,6 +279,7 @@ function ChatInner({
   const [entries, setEntryState] = useState<QueueEntry[]>([]);
   const [running, setRunning] = useState(false);
   const [filled, setFilled] = useState(false);
+  const [autoApproveChoice, setAutoApproveChoice] = useState<{ key: string; value: boolean }>();
   const entriesRef = useRef(entries);
   const runningRef = useRef(false);
   const stopped = useRef(false);
@@ -284,8 +287,13 @@ function ChatInner({
   const queuedRequest = useRef(false);
   const toolOutputAdded = useRef(false);
   const turnSync = useRef<AbortController | undefined>(undefined);
-  const request = useRef({ chatId: activeChatId, model, reasoning });
-  request.current = { chatId: activeChatId, model, reasoning };
+  const autoApprove =
+    autoApproveChoice?.key === chatKey
+      ? autoApproveChoice.value
+      : activeChat.chat?.autoApprove === true;
+
+  const request = useRef({ chatId: activeChatId, model, reasoning, autoApprove });
+  request.current = { chatId: activeChatId, model, reasoning, autoApprove };
   const transport = useMemo(
     () =>
       adapter.createTransport({
@@ -305,7 +313,13 @@ function ChatInner({
     transport,
     experimental_throttle: throttle,
     sendAutomaticallyWhen: ({ messages }) => {
-      if (!toolOutputAdded.current || !lastAssistantMessageIsCompleteWithToolCalls({ messages })) {
+      if (
+        !toolOutputAdded.current ||
+        !(
+          lastAssistantMessageIsCompleteWithToolCalls({ messages }) ||
+          lastAssistantMessageIsCompleteWithApprovalResponses({ messages })
+        )
+      ) {
         return false;
       }
 
@@ -818,18 +832,44 @@ function ChatInner({
     [lastMessage, pending],
   );
 
+  const approvalToolCallIds = useMemo(
+    () =>
+      new Set(
+        !pending && lastMessage?.role === 'assistant'
+          ? lastMessage.parts
+              .filter(isToolUIPart)
+              .filter(
+                (part) => part.state === 'approval-requested' && part.approval.isAutomatic !== true,
+              )
+              .map(({ toolCallId }) => toolCallId)
+          : [],
+      ),
+    [lastMessage, pending],
+  );
+
+  const waitingCount = pendingToolCallIds.size + approvalToolCallIds.size;
+
   const dockedParts = useMemo(
     () =>
-      pendingToolCallIds.size > 0 && lastMessage && !aborted && chat.status !== 'error'
+      waitingCount > 0 && lastMessage && !aborted && chat.status !== 'error'
         ? lastMessage.parts
             .filter(isToolUIPart)
             .filter(
               (part) =>
-                pendingToolCallIds.has(part.toolCallId) &&
-                resolveToolRenderer(toolRenderers, getToolName(part)) !== undefined,
+                approvalToolCallIds.has(part.toolCallId) ||
+                (pendingToolCallIds.has(part.toolCallId) &&
+                  resolveToolRenderer(toolRenderers, getToolName(part)) !== undefined),
             )
         : [],
-    [aborted, chat.status, lastMessage, pendingToolCallIds, toolRenderers],
+    [
+      aborted,
+      approvalToolCallIds,
+      chat.status,
+      lastMessage,
+      pendingToolCallIds,
+      toolRenderers,
+      waitingCount,
+    ],
   );
 
   const dockedToolCallIds = useMemo(
@@ -840,7 +880,7 @@ function ChatInner({
   const visibleEntries = entries.filter((entry) => entry.chatKey === chatKey);
   const nextEntry = visibleEntries.find(({ paused, steering }) => !paused && !steering);
   const busy = pending || running || isReadonly || dockBlocking || dockedParts.length > 0;
-  const drainBlocked = busy || chat.status !== 'ready' || pendingToolCallIds.size > 0;
+  const drainBlocked = busy || chat.status !== 'ready' || waitingCount > 0;
 
   useEffect(() => {
     if (drainBlocked || !nextEntry || toolOutputAdded.current || runningRef.current) return;
@@ -858,7 +898,7 @@ function ChatInner({
     try {
       const settlement = await adapter.dismissToolCall(agent, chatId, toolCallId);
 
-      if (pendingToolCallIds.size > 1) await reloadMessages();
+      if (waitingCount > 1) await reloadMessages();
       else applyToolPart(settlement.part);
 
       if (queued.length > 0) void syncTurn();
@@ -873,9 +913,87 @@ function ChatInner({
     }
   };
 
+  const answerPendingApproval = async (
+    toolCallId: string,
+    { approved, reason }: { approved: boolean; reason?: string },
+  ) => {
+    const part = lastMessage?.parts
+      .filter(isToolUIPart)
+      .find((candidate) => candidate.toolCallId === toolCallId);
+
+    if (part?.state !== 'approval-requested') return;
+
+    setActionError(undefined);
+
+    if (approved || reason) {
+      toolOutputAdded.current = true;
+
+      await chat.addToolApprovalResponse({ id: part.approval.id, approved, reason });
+
+      return;
+    }
+
+    const chatId = request.current.chatId;
+
+    if (chatId === undefined || !adapter.answerApproval) return;
+
+    try {
+      const settlement = await adapter.answerApproval(agent, chatId, toolCallId, {
+        approved: false,
+      });
+
+      if (waitingCount > 1) await reloadMessages();
+      else applyToolPart(settlement.part);
+
+      if (queued.length > 0) void syncTurn();
+    } catch (error) {
+      if (error instanceof ChatAdapterError && error.code === 'conflict') {
+        await recoverTurn();
+
+        return;
+      }
+
+      failAction(error, 'Failed to deny');
+    }
+  };
+
+  const toggleAutoApprove = async (value: boolean) => {
+    const previous = autoApprove;
+    const chatId = request.current.chatId;
+
+    setAutoApproveChoice({ key: chatKey, value });
+
+    if (chatId === undefined || !adapter.setAutoApprove) return;
+
+    try {
+      await adapter.setAutoApprove(chatId, value);
+      activeChat.refresh();
+    } catch (error) {
+      setAutoApproveChoice({ key: chatKey, value: previous });
+      failAction(error, 'Failed to change Auto-approve');
+    }
+  };
+
+  const approvalSwitch =
+    agents.find(({ slug }) => slug === agent)?.approval &&
+    !isReadonly &&
+    (activeChatId === undefined || adapter.setAutoApprove) ? (
+      <label className="fb-chat__auto-approve">
+        <Switch
+          size="sm"
+          checked={autoApprove}
+          onCheckedChange={(value) => void toggleAutoApprove(value)}
+          aria-label="Auto-approve"
+        />
+        <span>Auto-approve</span>
+      </label>
+    ) : undefined;
+
   const dockActions: ToolActions = {
     addToolOutput,
     dismissToolCall: adapter.dismissToolCall ? dismissPendingToolCall : undefined,
+    answerApproval: answerPendingApproval,
+    denyWithoutReason: Boolean(adapter.answerApproval),
     pendingToolCallIds,
     isReadonly,
     channelLabel,
@@ -1145,7 +1263,16 @@ function ChatInner({
               onStop={stop}
               onSubmit={submit}
               placeholder={placeholder}
-              startSlot={composerStartSlot}
+              startSlot={
+                approvalSwitch ? (
+                  <>
+                    {composerStartSlot}
+                    {approvalSwitch}
+                  </>
+                ) : (
+                  composerStartSlot
+                )
+              }
               endSlot={composerEndSlot}
               submitContent={submitContent}
               stopContent={stopContent}

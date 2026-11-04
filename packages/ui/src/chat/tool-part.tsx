@@ -2,6 +2,7 @@ import { type DynamicToolUIPart, getToolName, type ToolUIPart, type UITools } fr
 
 import { useChatProvider } from './provider.js';
 import { useToolActions } from './tool-actions.js';
+import { ToolApproval } from './tool-approval.js';
 import { ToolCard, toolCardStatus } from './tool-card.js';
 import type { ToolRenderer } from './tool-registry.js';
 import { resolveToolRenderer } from './tool-registry.js';
@@ -137,6 +138,19 @@ export function ToolPart({
   }
 
   const summary = summarize(part.input);
+  const { answerApproval } = actions ?? {};
+
+  const footer =
+    part.state === 'approval-requested' &&
+    part.approval.isAutomatic !== true &&
+    answerApproval &&
+    !actions?.isReadonly ? (
+      <ToolApproval
+        reason={part.approval.requestReason}
+        reasonRequired={!actions?.denyWithoutReason}
+        onAnswer={(answer) => answerApproval(part.toolCallId, answer)}
+      />
+    ) : undefined;
 
   return (
     <ToolCard
@@ -146,6 +160,7 @@ export function ToolPart({
       status={toolCardStatus(part)}
       title={name}
       subtitle={summary}
+      footer={footer}
     >
       <div className="fb-tool-part__body">
         {part.input !== undefined && (

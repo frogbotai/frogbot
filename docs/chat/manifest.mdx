@@ -80,6 +80,7 @@ When chat persistence is disabled, `chat` contains only `enabled`. This app also
 | `agents[].names` | `Record<string, string>` | Display names for models that have one. Fall back to the ID for the rest. |
 | `agents[].reasoning` | `Record<string, { key: string; label: string }[]>` | Reasoning options per model, for models that have any. |
 | `agents[].inputs` | `Record<string, ('text' \| 'image' \| 'audio' \| 'video' \| 'pdf')[]>` | Input types per model, for models whose types are known: built-in models from the model catalog, custom models that set [`modalities`](/ai/overview#custom-model-options). A model missing from `inputs` has unknown input types. Omitted when no listed model has known types. |
+| `agents[].approval` | `true` | Set when a tool of the agent, or an MCP server `tools` entry, sets [`approval`](/chat/tool-approval), so a client can show the Auto-approve switch. Omitted otherwise. |
 
 Agents the caller can't access, and agents with no model the caller may use, are left out.
 

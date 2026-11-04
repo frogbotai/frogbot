@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
-import { ToolCard, toolCard } from '../../../../packages/ui/src/chat/tool-card';
+import { ToolCard, toolCard, toolCardStatus } from '../../../../packages/ui/src/chat/tool-card';
 import type { ToolPartValue } from '../../../../packages/ui/src/chat/tool-registry';
 
 const adapter = { loadManifest: () => new Promise(() => undefined) } as never;
@@ -48,6 +48,27 @@ describe('toolCard', () => {
     expect(container.querySelector('.fb-tool-card')?.getAttribute('data-status')).toBe('running');
     expect(container.querySelector('.lucide-web')).toBeNull();
     expect(container.querySelector('.fb-tool-card__chevron')).toBeNull();
+  });
+
+  it('shows a waiting approval in the awaiting colour with an always-visible footer', () => {
+    const { container } = render(
+      <ToolCard icon="wrench" status="awaiting" title="close_ticket" footer={<p>Approve?</p>}>
+        Body
+      </ToolCard>,
+    );
+
+    expect(container.querySelector('.fb-tool-card')?.getAttribute('data-status')).toBe('awaiting');
+    expect(container.querySelector('.fb-tool-card__icon--awaiting')).toBeTruthy();
+    expect(container.querySelector('.fb-tool-card__footer')?.textContent).toBe('Approve?');
+    expect(screen.queryByText('Body')).toBeNull();
+    expect(screen.queryByLabelText('Running')).toBeNull();
+  });
+
+  it('maps an approval request to awaiting unless it was automatic', () => {
+    expect(toolCardStatus(part('approval-requested', { approval: { id: 'a' } }))).toBe('awaiting');
+    expect(
+      toolCardStatus(part('approval-requested', { approval: { id: 'a', isAutomatic: true } })),
+    ).toBe('running');
   });
 
   it("shows the tool's icon in the done colour with its title and subtitle", () => {

@@ -261,6 +261,39 @@ describe('createRestChatAdapter', () => {
     });
   });
 
+  it('answers an approval through settle and saves Auto-approve on the chat', async () => {
+    const part = { type: 'tool-close', toolCallId: 'call-1', state: 'output-denied' };
+    const { adapter, calls } = adapterFor({
+      'POST /agents/support/chats/chat-1/settle': () =>
+        Response.json({ settlement: { status: 'settled', allSettled: true, part } }),
+      'PATCH /conversations/chat-1': () =>
+        Response.json({ id: 'chat-1', agent: 'support', autoApprove: true }),
+    });
+
+    await expect(
+      adapter.answerApproval?.('support', 'chat-1', 'call-1', { approved: false }),
+    ).resolves.toEqual({ status: 'settled', allSettled: true, part });
+
+    await adapter.answerApproval?.('support', 'chat-1', 'call-1', {
+      approved: false,
+      reason: 'No',
+    });
+
+    await expect(adapter.setAutoApprove?.('chat-1', true)).resolves.toMatchObject({
+      autoApprove: true,
+    });
+
+    expect(calls.map(({ method, path, body }) => [method, path, body])).toEqual([
+      ['POST', '/agents/support/chats/chat-1/settle', { toolCallId: 'call-1', approved: false }],
+      [
+        'POST',
+        '/agents/support/chats/chat-1/settle',
+        { toolCallId: 'call-1', approved: false, reason: 'No' },
+      ],
+      ['PATCH', '/conversations/chat-1', { autoApprove: true }],
+    ]);
+  });
+
   it('throws a conflict for a 409 without a settlement', async () => {
     const { adapter } = adapterFor({
       'POST /agents/support/chats/chat-1/settle': sdkError(409, {

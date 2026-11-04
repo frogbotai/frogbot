@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({
   stop: vi.fn(),
   setMessages: vi.fn(),
   addToolOutput: vi.fn(),
+  addToolApprovalResponse: vi.fn(),
   clearError: vi.fn(),
   options: undefined as ChatInit<UIMessage> | undefined,
   refresh: vi.fn(),
@@ -1020,6 +1021,154 @@ describe('Chat dock', () => {
 
     expect(container.querySelector('.fb-chat__dock')).toBeNull();
     expect(composer(container)?.hidden).toBe(false);
+  });
+});
+
+describe('Chat tool approval', () => {
+  const approvalMessage = (approval: Record<string, unknown>): UIMessage => ({
+    id: 'assistant-1',
+    role: 'assistant',
+    parts: [
+      { type: 'step-start' },
+      {
+        type: 'dynamic-tool',
+        toolName: 'close_ticket',
+        toolCallId: 'call-1',
+        state: 'approval-requested',
+        input: { ticket: 'T-1' },
+        approval: { id: 'approval-1', ...approval },
+      },
+    ],
+  });
+
+  beforeEach(() => {
+    state.status = 'ready';
+    state.error = undefined;
+    state.messages = [];
+    state.addToolApprovalResponse.mockReset();
+    state.fetch.mockReset();
+    state.history = { messages: [], queued: [], loadedChatId: undefined, loading: false };
+    state.agents = [];
+    state.toolRenderers = [];
+    setAdapter();
+  });
+
+  it('docks a waiting approval with its reason, holds the composer, and approves', async () => {
+    state.messages = [message, approvalMessage({ requestReason: 'Closes for good.' })];
+
+    const { container } = render(<Chat agent="support" />);
+    const dock = container.querySelector('.fb-chat__dock') as HTMLElement;
+
+    expect(dock.querySelector('[data-status="awaiting"]')).toBeTruthy();
+    expect(within(dock).getByText('Closes for good.')).toBeTruthy();
+    expect(container.querySelector('.fb-message-list [data-part="tool"]')).toBeNull();
+    expect(composer(container)?.hidden).toBe(true);
+
+    fireEvent.click(within(dock).getByRole('button', { name: 'Approve' }));
+
+    await waitFor(() =>
+      expect(state.addToolApprovalResponse).toHaveBeenCalledWith({
+        id: 'approval-1',
+        approved: true,
+        reason: undefined,
+      }),
+    );
+
+    const answered = approvalMessage({ approved: true });
+
+    Object.assign(answered.parts[1], { state: 'approval-responded' });
+
+    expect(state.options?.sendAutomaticallyWhen?.({ messages: [message, answered] })).toBe(true);
+  });
+
+  it('denies with a reason through the AI SDK', async () => {
+    state.messages = [message, approvalMessage({})];
+
+    render(<Chat agent="support" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Deny' }));
+
+    fireEvent.change(screen.getByLabelText('Reason for denying'), {
+      target: { value: 'Not today' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Deny' }));
+
+    await waitFor(() =>
+      expect(state.addToolApprovalResponse).toHaveBeenCalledWith({
+        id: 'approval-1',
+        approved: false,
+        reason: 'Not today',
+      }),
+    );
+  });
+
+  it('denies without a reason through settle and applies the returned part', async () => {
+    state.messages = [message, approvalMessage({})];
+
+    state.fetch.mockResolvedValue(
+      Response.json({
+        status: 'denied',
+        settlement: {
+          status: 'settled',
+          allSettled: true,
+          part: { ...approvalMessage({}).parts[1], state: 'output-denied' },
+        },
+      }),
+    );
+
+    render(<Chat agent="support" defaultChatId="chat-1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Deny' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Deny' }));
+
+    await waitFor(() => expect(state.setMessages).toHaveBeenCalled());
+
+    const [url, init] = state.fetch.mock.calls.at(-1)!;
+
+    expect(String(url)).toContain('/agents/support/chats/chat-1/settle');
+    expect(JSON.parse(init.body as string)).toEqual({ toolCallId: 'call-1', approved: false });
+    expect(state.addToolApprovalResponse).not.toHaveBeenCalled();
+  });
+
+  it('shows the Auto-approve switch only for an agent with approval tools', () => {
+    const { unmount } = render(<Chat agent="support" />);
+
+    expect(screen.queryByRole('switch', { name: 'Auto-approve' })).toBeNull();
+
+    unmount();
+    state.agents = [{ ...supportAgent, approval: true }];
+
+    render(<Chat agent="support" />);
+
+    expect(screen.getByRole('switch', { name: 'Auto-approve' })).toBeTruthy();
+  });
+
+  it('sends autoApprove when a new chat starts with the switch on', async () => {
+    state.agents = [{ ...supportAgent, approval: true }];
+
+    render(<Chat agent="support" />);
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Auto-approve' }));
+
+    expect(await sendTransportMessage()).toEqual({ messages: [message], autoApprove: true });
+  });
+
+  it('saves the switch on an existing chat', async () => {
+    state.agents = [{ ...supportAgent, approval: true }];
+    state.fetch.mockResolvedValue(Response.json({ id: 'chat-1', agent: 'support' }));
+
+    render(<Chat agent="support" defaultChatId="chat-1" />);
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Auto-approve' }));
+
+    await waitFor(() => expect(state.fetch).toHaveBeenCalled());
+
+    const [url, init] = state.fetch.mock.calls[0];
+
+    expect(String(url)).toContain('/chats/chat-1');
+    expect(init.method).toBe('PATCH');
+    expect(JSON.parse(init.body as string)).toEqual({ autoApprove: true });
   });
 });
 

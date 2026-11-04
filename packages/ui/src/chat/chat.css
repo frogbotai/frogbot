@@ -59,6 +59,17 @@
     margin-bottom: 0.5rem;
   }
 
+  .fb-chat__auto-approve {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: var(--color-text-secondary);
+    font-size: var(--fb-text-xs);
+    line-height: var(--fb-text-xs--line-height);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
   .fb-chat__queued {
     display: flex;
     flex-direction: column;

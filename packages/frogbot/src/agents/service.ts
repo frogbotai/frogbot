@@ -10,6 +10,7 @@ import { resolveModel } from '../ai/resolve.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
 import type { ManifestResponse } from '../chat/types.js';
 import { pieceToolInstance } from '../pieces/definePiece.js';
+import { isClientTool } from '../tools/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type {
   AgentInstance,
@@ -148,10 +149,20 @@ export async function getAgentManifest({ req }: { req: FrogBotRequest }): Promis
       ...(reasoning ? { reasoning } : {}),
       ...(inputs ? { inputs } : {}),
       ...(shown ? { notices: shown } : {}),
+      ...(asksApproval(agent) ? { approval: true as const } : {}),
     });
   }
 
   return { defaultAgent: agents[0]?.slug ?? '', agents };
+}
+
+function asksApproval(agent: AgentInstance): boolean {
+  return (
+    (agent.config.tools ?? []).some((tool) => !isClientTool(tool) && !!tool.approval) ||
+    (agent.config.mcp ?? []).some((server) =>
+      Object.values(server.tools ?? {}).some(({ approval }) => !!approval),
+    )
+  );
 }
 
 function agentNotices({

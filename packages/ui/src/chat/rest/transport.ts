@@ -21,6 +21,7 @@ type ChatRequestFields = {
   chatId?: ChatRequestValue<string | number>;
   model?: ChatRequestValue<string>;
   reasoning?: ChatRequestValue<string>;
+  autoApprove?: () => boolean | undefined;
 };
 
 function resolveRequestValue<T extends string | number>(
@@ -33,6 +34,7 @@ export function prepareChatRequest<UI_MESSAGE extends UIMessage>({
   chatId,
   model,
   reasoning,
+  autoApprove,
 }: ChatRequestFields = {}): PrepareSendMessagesRequest<UI_MESSAGE> {
   return ({ messages }) => {
     const unsafe = messages.some((message) =>
@@ -46,6 +48,7 @@ export function prepareChatRequest<UI_MESSAGE extends UIMessage>({
     const resolvedChatId = resolveRequestValue(chatId);
     const resolvedModel = resolveRequestValue(model);
     const resolvedReasoning = resolveRequestValue(reasoning);
+    const resolvedAutoApprove = resolvedChatId === undefined ? autoApprove?.() : undefined;
 
     return {
       body: {
@@ -53,6 +56,7 @@ export function prepareChatRequest<UI_MESSAGE extends UIMessage>({
         ...(resolvedChatId === undefined ? {} : { chatId: resolvedChatId }),
         ...(resolvedModel === undefined ? {} : { model: resolvedModel }),
         ...(resolvedReasoning === undefined ? {} : { reasoning: resolvedReasoning }),
+        ...(resolvedAutoApprove ? { autoApprove: true } : {}),
       },
     };
   };

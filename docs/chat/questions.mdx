@@ -123,7 +123,7 @@ curl http://localhost:3000/api/agents/planner/chats/CHAT_ID/settle \
   --data '{ "toolCallId": "call_1", "output": { "answers": [{ "header": "Color", "selected": ["Blue"] }] } }'
 ```
 
-When that answer settles the last pending call in the step, FrogBot continues the turn and responds with the same JSON shape as the original request, plus the `settlement`. If other calls in the step are still waiting, the response has `status: "awaiting-input"` and the remaining `pending` calls. Send `{ "toolCallId": "call_1", "dismissed": true }` instead of `output` to dismiss.
+When that answer settles the last pending call in the step, FrogBot continues the turn and responds with the same JSON shape as the original request, plus the `settlement`. If other calls in the step are still waiting, the response has `status: "awaiting-input"` and the remaining `pending` calls. Send `{ "toolCallId": "call_1", "dismissed": true }` instead of `output` to dismiss. A call waiting for [tool approval](/chat/tool-approval#over-http) has an `approval` object and takes `{ "toolCallId", "approved", "reason"? }` instead.
 
 | Status | `code` | Meaning |
 | --- | --- | --- |
@@ -135,7 +135,7 @@ When that answer settles the last pending call in the step, FrogBot continues th
 | `409` | `not-awaiting` | The chat is not waiting for input |
 | `409` | `write-conflict` | The message kept changing while FrogBot tried to save the answer; retry |
 
-A body without `toolCallId` and exactly one of `output` or `dismissed: true` returns `400` without a `code`. When the chat UI resubmits answers, the same codes apply, plus `pending-calls` while other calls in the step still need an answer and `turn-in-progress` when another request already continued the turn.
+A body without `toolCallId` and exactly one of `output`, `dismissed: true` or `approved` returns `400` without a `code`. When the chat UI resubmits answers, the same codes apply, plus `pending-calls` while other calls in the step still need an answer and `turn-in-progress` when another request already continued the turn.
 
 The first valid answer wins. Answers from two tabs or two participants settle once and continue once.
 

@@ -1200,6 +1200,11 @@
     "type": "import('frogbot/tools').MCPServerOptions"
   },
   {
+    "page": "mcp/overview",
+    "heading": "Tool options",
+    "type": "import('frogbot/tools').MCPServerToolOptions"
+  },
+  {
     "page": "pieces/discord",
     "heading": "Connect an agent",
     "type": "Parameters<typeof import('@frogbotai/piece-discord').createDiscord>[0]"
