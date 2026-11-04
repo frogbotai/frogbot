@@ -26,6 +26,7 @@
     "@frogbotai/live-preview-react": "workspace:*",
     "@frogbotai/next": "workspace:*",
     "@frogbotai/piece-airtable": "workspace:*",
+    "@frogbotai/piece-asana": "workspace:*",
     "@frogbotai/piece-attio": "workspace:*",
     "@frogbotai/piece-brave-search": "workspace:*",
     "@frogbotai/piece-crypto": "workspace:*",
