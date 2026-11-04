@@ -59,11 +59,13 @@ export const REPOS = {
     gates: ['check', 'test:unit', 'test:e2e'],
   },
   platform: {
-    dir: 'frogbot-platform',
+    dir: 'platform',
     prefix: 'platform-ticket',
     gates: ['check', 'test:unit', 'test:int'],
   },
 };
+
+export const WORKTREES = 'frogbot-worktrees';
 
 export const LAND = 'land';
 
@@ -409,7 +411,7 @@ export function repoCheckout(main, repo = DEFAULT_REPO) {
 }
 
 export function worktreePath(main, ticket, repo = DEFAULT_REPO) {
-  return path.join(path.dirname(main), `${REPOS[repo].prefix}${ticket}`);
+  return path.join(path.dirname(path.dirname(main)), WORKTREES, `${REPOS[repo].prefix}${ticket}`);
 }
 
 export function repoGates(gates, scripts) {

@@ -10,6 +10,31 @@ FrogBot is a pnpm monorepo that wraps Payload 3 with an AI-native layer (agents,
 - Examples run against the local packages with `pnpm --filter <example-name> dev`.
 - Docker services are needed only for database integration and storage adapter tests. First browser run: `pnpm exec playwright install chromium firefox webkit`.
 
+## Local layout
+
+`~/code/frogbot/` holds only checkouts named after their `frogbotai/<repo>`. Ticket worktrees live outside it.
+
+```
+~/code/frogbot/
+  frogbot/    (frogbot/.idea -> ../process)
+  sidekick/
+  platform/
+  process/
+~/code/frogbot-worktrees/
+  <repo>-ticket<n>/
+```
+
+One-time migration on a machine that has the old layout (`frogbot-platform`, `*-ticket<n>` beside the repos):
+
+```
+cd ~/code/frogbot
+mv frogbot-platform platform
+mkdir -p ../frogbot-worktrees
+for r in frogbot sidekick platform; do git -C $r worktree list; done   # note each *-ticket<n>
+git -C <repo> worktree move ~/code/frogbot/<repo>-ticket<n> ~/code/frogbot-worktrees/<repo>-ticket<n>   # per open worktree
+for r in frogbot sidekick platform; do git -C $r worktree prune; done
+```
+
 ## Repository map
 
 | Path                                                                                                         | Contents                                                                                                                                                                                                 |

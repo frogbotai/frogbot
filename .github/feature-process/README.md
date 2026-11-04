@@ -134,9 +134,9 @@ A separate tester agent that tries to break every change is slow and costly, and
 
 ## Tickets in another repo
 
-Sidekick's code lives in `~/code/frogbot/sidekick`, but its tickets, decisions and ledger stay here. `Repo: sidekick` on an issue's header line (`Plan: … · Depends on: … · Batch: … · Repo: sidekick`) routes the ticket; no field means frogbot. The repos are the `REPOS` table in `scripts/ticket.mjs`. The Dojo platform repo, `~/code/frogbot/frogbot-platform`, works the same way under `Repo: platform`, with `platform-ticket<n>` worktrees and gates `check`, `test:unit` and `test:int`.
+Sidekick's code lives in `~/code/frogbot/sidekick`, but its tickets, decisions and ledger stay here. `Repo: sidekick` on an issue's header line (`Plan: … · Depends on: … · Batch: … · Repo: sidekick`) routes the ticket; no field means frogbot. The repos are the `REPOS` table in `scripts/ticket.mjs`. The Dojo platform repo, `~/code/frogbot/platform`, works the same way under `Repo: platform`, with `platform-ticket<n>` worktrees (all worktrees live in `~/code/frogbot-worktrees/`) and gates `check`, `test:unit` and `test:int`.
 
-- `new` makes `~/code/frogbot/sidekick-ticket<n>` from the sidekick repo's `main` and runs `pnpm install`.
+- `new` makes `~/code/frogbot-worktrees/sidekick-ticket<n>` from the sidekick repo's `main` and runs `pnpm install`.
 - `status`, `next` and `stats` read both repos, so numbers never collide; `status` has a `repo` column.
 - `verify`, in the sidekick worktree, runs that repo's gates, `pnpm check` then `pnpm test:unit` (and `pnpm test:e2e` once it exists), with no affected map. Its `package.json` runs this checkout's script: `"ticket": "node ../frogbot/scripts/ticket.mjs"`.
 - `land <n>`, from here, follows the same rules against the sidekick repo and its gates, and prints the `git -C` commands that remove the worktree.
