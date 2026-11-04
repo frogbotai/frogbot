@@ -1,4 +1,4 @@
-import { findPieceFile, type FrogBotRequest } from 'frogbot/pieces';
+import { createPieceFile, findPieceFile, type FrogBotRequest } from 'frogbot/pieces';
 import { z } from 'zod';
 
 const label = 'Jira';
@@ -51,5 +51,35 @@ export async function loadFile(req: FrogBotRequest, value: z.output<typeof fileI
     data: await response.arrayBuffer(),
     name: value.name ?? String(doc.filename ?? 'attachment'),
     mimeType: typeof doc.mimeType === 'string' ? doc.mimeType : 'application/octet-stream',
+  };
+}
+
+export const savedFile = z.object({
+  fileId: z.union([z.string(), z.number()]),
+  name: z.string(),
+  mimeType: z.string(),
+  size: z.number(),
+  url: z.string().nullable(),
+});
+
+/** Saves bytes into the app's files collection as the caller. */
+export async function saveFile(
+  req: FrogBotRequest,
+  file: { data: Buffer; name: string; mimeType: string },
+): Promise<z.output<typeof savedFile>> {
+  req.signal?.throwIfAborted();
+
+  const doc = await createPieceFile(req, label, {
+    file: { data: file.data, mimetype: file.mimeType, name: file.name, size: file.data.length },
+    req,
+    overrideAccess: false,
+  });
+
+  return {
+    fileId: doc.id,
+    name: file.name,
+    mimeType: file.mimeType,
+    size: file.data.length,
+    url: typeof doc.url === 'string' ? doc.url : null,
   };
 }

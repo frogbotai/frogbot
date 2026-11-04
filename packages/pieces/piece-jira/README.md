@@ -50,3 +50,29 @@ Rich-text inputs (descriptions, comments, transition comments) take markdown or 
 | custom API call        | `customApiCall`   | Paths under `/rest/api/3` or `/rest/agile/1.0`.                         |
 
 Issue actions take an issue key or id. Their pickers list the 100 most recently updated issues, so there is no project input just for the picker.
+
+## Import reads
+
+These are FrogBot additions for moving a whole site. Each takes `limit` (1–100, default 50) and `cursor`, and returns `{ data, pagination: { count, hasMore, nextCursor, limit } }`. Pass `nextCursor` back as `cursor` until it is `null`.
+
+| Action               | Reads                                                                    |
+| -------------------- | ------------------------------------------------------------------------ |
+| `searchIssues`       | Issues by JQL, with `fields` and `expand` (such as `changelog`).         |
+| `listProjects`       | Projects, with lead and description.                                     |
+| `listIssueTypes`     | Issue types, all or one project's.                                       |
+| `listStatuses`       | Workflow statuses.                                                       |
+| `listPriorities`     | Priorities.                                                              |
+| `listFields`         | System and custom fields, with `schema`.                                 |
+| `listIssueLinkTypes` | Link types.                                                              |
+| `listUsers`          | Users, people and apps.                                                  |
+| `listVersions`       | A project's versions.                                                    |
+| `listComponents`     | A project's components.                                                  |
+| `listBoards`         | Jira Software boards.                                                    |
+| `listSprints`        | A board's sprints.                                                       |
+| `listComments`       | An issue's comments.                                                     |
+| `listWorklogs`       | An issue's worklogs.                                                     |
+| `listWatchers`       | An issue's watchers.                                                     |
+| `listChangelogs`     | Change history for up to 1,000 issues per call.                          |
+| `downloadAttachment` | Not a list: saves one attachment into FrogBot files, refusing redirects. |
+
+Epics are issues whose children point to them through `parent`, so `searchIssues` reads them.
