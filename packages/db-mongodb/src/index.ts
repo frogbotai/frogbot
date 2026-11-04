@@ -55,6 +55,8 @@ export const mongooseAdapter = (
 };
 
 const awaitModels = async (database: MongooseAdapter): Promise<void> => {
+  if (!database.connection) return;
+
   await Promise.all(
     Object.entries(database.connection.models).map(async ([slug, model]) => {
       try {
