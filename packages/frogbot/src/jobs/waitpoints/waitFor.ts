@@ -11,6 +11,7 @@ import {
   findWaitpoint,
   markWaitpointReady,
 } from './operations.js';
+import { runningStep } from './steps.js';
 import type { WaitFor, Waitpoint, WaitpointOptions, WaitpointReplay } from './types.js';
 
 type WaitOptions =
@@ -100,6 +101,10 @@ export function createWaitFor({
   let waiting: string;
 
   const waitFor = async (name: string, options: WaitOptions) => {
+    const step = runningStep(String(job.id));
+
+    if (step) throw new Error(`FrogBot waitFor can't run inside ${step}.`);
+
     if (typeof name !== 'string' || !name.trim()) {
       throw new Error('FrogBot waitFor name must be a nonempty string.');
     }

@@ -1,3 +1,5 @@
+import type { RunInlineTaskFunction } from 'payload';
+
 export type WaitpointResult<T = unknown> = { expired: false; data: T } | { expired: true };
 
 export type WaitpointReplay = {
@@ -37,6 +39,34 @@ export type WaitFor = {
     },
   ): Promise<WaitpointResult<T>>;
 };
+
+export type StepTaskArgs = Omit<
+  Parameters<Parameters<RunInlineTaskFunction>[1]['task']>[0],
+  'input'
+>;
+
+export type StepRetries = Parameters<RunInlineTaskFunction>[1]['retries'];
+
+type StepResult<TOutput extends object> = { output: TOutput } | Promise<{ output: TOutput }>;
+
+export type Foreach = <TItem, TOutput extends object>(
+  name: string,
+  items: readonly TItem[],
+  options: {
+    key: (item: TItem) => string | number;
+    task: (args: StepTaskArgs & { item: TItem }) => StepResult<TOutput>;
+    concurrency?: number;
+    retries?: StepRetries;
+  },
+) => Promise<TOutput[]>;
+
+export type Parallel = <
+  TBranches extends Record<string, (args: StepTaskArgs) => StepResult<object>>,
+>(
+  name: string,
+  branches: TBranches,
+  options?: { retries?: StepRetries },
+) => Promise<{ [K in keyof TBranches]: Awaited<ReturnType<TBranches[K]>>['output'] }>;
 
 export type WaitpointOptions = {
   defaultExpiresIn: number;

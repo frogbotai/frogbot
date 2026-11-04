@@ -251,6 +251,43 @@ All durations are positive safe-integer milliseconds. The default must not excee
 
 Expiry continues the same job with `{ expired: true }`, even if nobody attempts to resume it. Its `jobId` stays reserved if it waits again, until the workflow completes, fails for good, is cancelled, or is deleted. Runners can pick it up after its expiry `waitUntil` passes; the scheduled `frogbot-sweep-waitpoints` task also expires waits and wakes their jobs. A racing response and expiry have one winner. Keep scheduling and execution running for `default`, plus workers for the workflow's original queue; see [Workers for durable waits](/jobs-queue/workers#workers-for-durable-waits). A stopped worker does not extend token validity, but it delays expiry handling and execution.
 
+### Loops and parallel steps
+
+Use `foreach` to run a step per item and `parallel` to run a few named steps at once. Both are workflow-handler arguments beside `waitFor`. Each item or branch runs as an `inlineTask` with the ID `` `${name}:${key}` ``, so a retry or a resumed run returns its saved output without running it again.
+
+```ts
+const handler: WorkflowHandler<{ invoices: Invoice[] }> = async ({ job, foreach, parallel }) => {
+  const pushed = await foreach('push-invoice', job.input.invoices, {
+    key: (invoice) => invoice.id,
+    concurrency: 5,
+    task: async ({ item }) => ({ output: await xero.push(item) }),
+  });
+
+  const { crm, billing } = await parallel('notify', {
+    crm: async () => ({ output: await crm.note(pushed) }),
+    billing: async () => ({ output: await billing.sync(pushed) }),
+  });
+};
+```
+
+| Call | Result |
+| --- | --- |
+| `foreach(name, items, { key, task, concurrency?, retries? })` | `Promise<Output[]>`, in the order of `items` |
+| `parallel(name, branches, { retries? })` | `Promise<{ [branch]: Output }>` |
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `key` | `(item) => string \| number` | Required | The item's stable identity. Empty, non-finite and duplicate keys throw before any item runs. |
+| `task` | `({ item, job, req, inlineTask, tasks }) => { output } \| Promise<…>` | Required | Runs one item, like an `inlineTask` handler. |
+| `concurrency` | `number` | `1` | Most items running at once, a positive integer. A new item starts as soon as one finishes. |
+| `retries` | `number \| RetryConfig` | inherited from the workflow | Passed to each item's `inlineTask`. The workflow's own `retries` still caps the job, so with `retries: 0` on the workflow one failed item fails it for good. |
+
+- **Names and keys.** A `name` is a nonempty string without `:`, used once per run across `foreach` and `parallel`. Restore is by key, not position, so a reordered or shorter list restores the right outputs and runs only new keys. Branch names are `parallel`'s keys. A helper called inside an item or branch nests under it, with the ID `` `${itemID}:${name}:${key}` ``, so its name only has to be unique within that item.
+- **Concurrency.** `foreach` runs one item at a time unless you raise `concurrency`; `parallel` starts every branch at once. The limit is per call and in-process: it doesn't count against `jobs.run({ limit })` or workflow `concurrency` keys, so 10 jobs running `concurrency: 10` can mean 100 calls in flight.
+- **Failure.** When an item or branch throws, no new items start, the running ones finish and save, and the first error fails the run. Its retry skips the saved items. To carry on past a bad item, catch inside `task` and return an error in `output`.
+- **No waits inside items.** `waitFor` inside an item or branch throws `FrogBot waitFor can't run inside foreach '<name>' item '<key>'.`; wait before, between or after helper calls instead, or use a plain loop of `waitFor` calls.
+- **Storage.** Every output is saved on the job row's `log`, so a long list makes the job record large. Keep outputs small, such as IDs.
+
 ## Leases and crash recovery
 
 Each run claims jobs with a fresh `processingToken` and a `processingUntil` lease, and renews the lease while the jobs run. Task and workflow handlers need no heartbeat code. A job whose lease has passed can be claimed by any worker; an old worker can't update a job once a successor holds it. FrogBot's SQL adapters claim with `FOR UPDATE SKIP LOCKED` on Postgres, so concurrent workers take different jobs.
@@ -326,7 +363,7 @@ Each rule receives `{ req }` and returns a boolean or a promise of one.
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `slug` | `string` | Required | Unique among all tasks and workflows. |
-| `handler` | `WorkflowHandler \| WorkflowJSON \| string` | Required | A function receiving `job`, `req`, `tasks`, `inlineTask`, and [`waitFor`](#durable-workflow-waits); a string module path, `'path#exportName'`, loaded when the workflow runs; or a JSON array of task steps, which has no `waitFor`. |
+| `handler` | `WorkflowHandler \| WorkflowJSON \| string` | Required | A function receiving `job`, `req`, `tasks`, `inlineTask`, [`waitFor`](#durable-workflow-waits), and [`foreach` and `parallel`](#loops-and-parallel-steps); a string module path, `'path#exportName'`, loaded when the workflow runs; or a JSON array of task steps, which has none of these helpers. |
 | `inputSchema` | `Field[]` | — | Fields describing `input`, used for generated types. |
 | `interfaceName` | `string` | `Workflow` plus the capitalized slug | Name of the generated input interface. |
 | `label` | `string` | — | Human-friendly name for the task or workflow. |

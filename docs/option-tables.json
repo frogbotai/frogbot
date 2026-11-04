@@ -1036,6 +1036,11 @@
   },
   {
     "page": "jobs-queue/overview",
+    "heading": "Loops and parallel steps",
+    "type": "Parameters<Parameters<import('frogbot').WorkflowHandler>[0]['foreach']>[2]"
+  },
+  {
+    "page": "jobs-queue/overview",
     "heading": "Expiry",
     "type": "{ jobs: { waitpoints: NonNullable<import('frogbot').JobsConfig['waitpoints']> } }"
   },
