@@ -34,3 +34,20 @@ expectTypeOf<Awaited<typeof _comments>['pagination']['limit']>().toEqualTypeOf<n
 
 // @ts-expect-error listTicketComments needs a ticket
 void zendesk.listTicketComments({ input: {} });
+
+expectTypeOf<keyof typeof zendesk.triggers>().toEqualTypeOf<
+  | 'ticketCreated'
+  | 'ticketUpdated'
+  | 'ticketTagAdded'
+  | 'ticketCommentAdded'
+  | 'organizationCreated'
+  | 'userCreated'
+  | 'userTagAdded'
+  | 'ticketInView'
+  | 'groupCreated'
+  | 'suspendedTicketCreated'
+>();
+
+expectTypeOf(zendesk.triggers.ticketCreated.type).toEqualTypeOf<'webhook'>();
+
+expectTypeOf(zendesk.triggers.ticketInView.type).toEqualTypeOf<'polling'>();

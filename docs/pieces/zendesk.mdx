@@ -1,0 +1,127 @@
+---
+title: Zendesk
+description: Export a whole Zendesk account and its help center, manage tickets, users and organizations, and react to Zendesk events.
+keywords: [pieces, zendesk, tickets, help center, support, import, webhooks, incremental export]
+---
+
+`@frogbotai/piece-zendesk` works with Zendesk Support and Help Center through their REST APIs. Imports export tickets, users, organizations, ticket events and articles, and list comments, groups, fields, help-center categories and sections, macros, views and SLA policies; agents create and update tickets, comments, users and organizations; triggers react to new and changed tickets, comments, users and organizations.
+
+## Connect Zendesk
+
+```bash
+pnpm add @frogbotai/piece-zendesk
+```
+
+```ts
+import { createZendesk } from '@frogbotai/piece-zendesk'
+import type { ConnectionEntry } from 'frogbot'
+
+export const zendesk = createZendesk({
+  auth: {
+    subdomain: 'acme', // https://acme.zendesk.com
+    email: 'admin@acme.com',
+    apiToken: process.env.ZENDESK_API_TOKEN!,
+  },
+})
+
+export const connections: ConnectionEntry[] = [{ piece: zendesk, secret: true }]
+```
+
+`secret: true` lets each person paste their own subdomain, email and token when connecting; the factory `auth` is used when they haven't, and by triggers.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | `'zendesk'` | Instance slug. It prefixes tool slugs, such as `zendesk_exportTickets`. |
+| `auth.subdomain` | `string` | — | The first part of the Zendesk address: `acme` for `https://acme.zendesk.com`. Letters, digits and dashes only. |
+| `auth.email` | `string` | — | The email of the user who made the token. |
+| `auth.apiToken` | `string` | — | A Zendesk [API token](#make-an-api-token). Triggers use this one. |
+
+Every request goes to `https://<subdomain>.zendesk.com` with `Authorization: Basic base64(<email>/token:<apiToken>)`, and nowhere else. See [factory options](/pieces/overview#factory-options) for the shared options.
+
+### Make an API token
+
+Exports and webhooks need an admin, so make the token as one, ideally a dedicated admin account:
+
+1. In **Admin Center**, open **Apps and integrations → APIs → API tokens** (on older accounts, **Zendesk API**), and turn on **Token access**.
+2. Choose **Add API token**, describe it, and copy it. Zendesk shows it only once.
+3. Use it as `auth.apiToken`, with that admin's email as `auth.email`.
+
+Sign-in with Zendesk isn't offered: a Zendesk OAuth client works for one account only.
+
+## Export an account
+
+Exports page through everything that changed since a time, oldest first, for imports and later syncs:
+
+| Action | Exports |
+| --- | --- |
+| `exportTickets` | Tickets, including closed and archived ones. `excludeDeleted` leaves out deleted ones. |
+| `exportUsers` | End users, agents and admins. |
+| `exportOrganizations` | Organizations. |
+| `exportTicketEvents` | Ticket events, with every public reply and internal note in `child_events`. |
+| `exportArticles` | Help-center articles. |
+
+Each takes `startTime` (an ISO time, such as `1970-01-01T00:00:00Z` for everything) on the first call, or `cursor` to continue, never both, and returns `{ data, pagination: { count, hasMore, nextCursor } }`. Call again with `nextCursor` until `hasMore` is `false`, then keep the last `nextCursor` and pass it next time to get only what changed since.
+
+- Zendesk allows **10 export requests a minute** (20 for `exportUsers`) per account. A big first import takes a while: about 1,000 tickets a request, so 100,000 tickets is about 10 minutes of requests.
+- Exports never include **the last minute**: `startTime` must be at least a minute ago, and the newest changes appear on a later call.
+- When Zendesk rate-limits a request, FrogBot waits for its `Retry-After` and retries up to 3 times, stopping early if the request is aborted. Errors keep Zendesk's message and status.
+
+### Lists
+
+| Action | Lists |
+| --- | --- |
+| `listTicketComments` | A ticket's public replies and internal notes (`public: false`), each with its attachments. |
+| `listGroups` | Agent groups. |
+| `listTicketFields`, `listUserFields`, `listOrganizationFields` | Field definitions, with each custom field's id, key and options. |
+| `listCategories`, `listSections` | Help-center categories and sections. |
+| `listMacros`, `listViews`, `listSlaPolicies` | Macros, views and SLA policies, as Zendesk stores them. |
+| `downloadAttachment` | Copies an attachment into your files collection as the caller, and returns `{ attachment, file }`. |
+
+Lists take `limit` (1–100, default 100) and `cursor`, and return `{ data, pagination: { count, hasMore, nextCursor, limit } }`. `listSlaPolicies` returns every policy at once. `downloadAttachment` follows Zendesk's redirect to its file storage without the API token: the token goes only to the account's own address.
+
+## Actions
+
+| Action | Description |
+| --- | --- |
+| `createTicket` | Creates a ticket with its first comment, public or internal. Requester, assignee, CCs and followers are given by email; a requester Zendesk doesn't know becomes an end user. |
+| `updateTicket` | Changes only the fields given, and can add a comment. `updatedStamp` (the ticket's `updated_at`) makes Zendesk refuse the change if the ticket changed since. |
+| `addTagToTicket`, `removeTagFromTicket` | Add or remove tags, and return the ticket's tags. |
+| `addCommentToTicket` | Adds a public reply, which Zendesk emails to the requester, or an internal note with `public: false`. |
+| `attachFileToTicket` | Uploads a file from your files collection and adds it to the ticket on a comment. |
+| `createOrganization`, `updateOrganization` | Organizations, with domains, tags and custom field values. |
+| `createUser`, `updateUser`, `deleteUser` | Users of any role, with custom field values. |
+| `findTickets`, `findUser`, `findOrganization` | Zendesk search, where every input given must match. `query` adds raw [search syntax](https://support.zendesk.com/hc/en-us/articles/4408886879258), such as `created>2026-01-01`. |
+| `findAgent`, `findGroup`, `findLatestComment` | One agent by email or name, one group by name, or a ticket's newest comment; `null` when none matches. |
+| `customApiCall` | Any request under `https://<subdomain>.zendesk.com/api/v2`, such as `/tickets/1`. |
+
+Inputs that name a Zendesk record take its numeric id. Custom fields take the ids or keys from the field lists.
+
+## Triggers
+
+| Trigger | Type | Emits |
+| --- | --- | --- |
+| `ticketCreated` | webhook | Each new ticket; optionally only one `organizationId`'s. |
+| `ticketUpdated` | webhook | Each ticket change: a field, status, assignee, tags, a comment, a merge, spam, a delete or a restore. One update can emit several. Filters: `organizationId`, `ticketId`. |
+| `ticketTagAdded` | webhook | Tags added to a ticket, in `tagsAdded`; optionally only when `tag` is. Removals alone emit nothing. |
+| `ticketCommentAdded` | webhook | Each comment; `isPublic` is `false` for an internal note. Filters: `organizationId`, `ticketId`. |
+| `organizationCreated` | webhook | Each new organization. |
+| `userCreated` | webhook | Each new user; optionally only one `role`. |
+| `userTagAdded` | webhook | Tags added to a user, in `tagsAdded`. |
+| `ticketInView` | polling | Each ticket that newly appears in a view (`viewId`). Only the view's first 500 tickets are watched. |
+| `groupCreated` | polling | Each new agent group. |
+| `suspendedTicketCreated` | polling | Each new suspended ticket. Zendesk has no event for these. |
+
+Each webhook event carries `{ id, type, time, detail, event }`: `detail` is the ticket, user or organization as it is now, and `event` is what changed. Zendesk sends ids in `detail` as strings. Upsert by `id` so a repeated event is harmless.
+
+### Webhooks
+
+Each mounted webhook trigger creates its own Zendesk webhook, subscribed to Zendesk's built-in events, so nothing has to be set up in Zendesk, and deletes it when unmounted. The app needs a public `serverURL` (see [Triggers](/pieces/triggers)). Every delivery is signed with that webhook's secret, and an unsigned or wrongly signed one is refused.
+
+- One Zendesk webhook per mounted trigger: trial accounts allow only 10 webhooks.
+- If Zendesk turns off a webhook after failed deliveries, FrogBot isn't told and the subscription still looks active. Re-export with the last cursors to catch up.
+
+Triggers run with no signed-in person, so they use the instance's factory `auth`.
+
+### Polling
+
+The polling triggers run every 5 minutes by default (see [polling](/pieces/triggers#polling)). The first poll only records what already exists, and emits nothing.
