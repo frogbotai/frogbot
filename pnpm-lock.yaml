@@ -1265,6 +1265,19 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/pieces/piece-jira:
+    dependencies:
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/pieces/piece-linear:
     dependencies:
       '@chat-adapter/linear':
@@ -2481,6 +2494,9 @@ importers:
       '@frogbotai/piece-image-helper':
         specifier: workspace:*
         version: link:../packages/pieces/piece-image-helper
+      '@frogbotai/piece-jira':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-jira
       '@frogbotai/piece-linear':
         specifier: workspace:*
         version: link:../packages/pieces/piece-linear
