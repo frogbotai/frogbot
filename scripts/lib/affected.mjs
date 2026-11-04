@@ -336,8 +336,24 @@ export function affectedSet({ files, packages, vitest = [], related = [], browse
     checks: checkSet({ files, checks, cover }),
     specs,
     browser: browserSet({ files, packages, browser, runs, cover }),
+    databases: databaseSet({ files, cover }),
     uncovered: files.filter((file) => !covered.has(file)),
   };
+}
+
+const DATABASE_RUNS = [
+  { prefix: 'packages/db-mongodb/', script: 'test:int:mongo' },
+  { prefix: 'packages/db-postgres/', script: 'test:int:pg' },
+];
+
+function databaseSet({ files, cover }) {
+  return DATABASE_RUNS.filter(({ prefix }) => files.some((file) => file.startsWith(prefix))).map(
+    ({ prefix, script }) => {
+      files.filter((file) => file.startsWith(prefix)).forEach(cover);
+
+      return script;
+    },
+  );
 }
 
 function projectCommand(project, specs) {
@@ -368,6 +384,10 @@ export function verifyGroups(set) {
         ? [['pnpm', 'test:browser', ...set.browser.flatMap((name) => ['--project', name])]]
         : [],
   };
+
+  const databaseRuns = (set.databases ?? []).map((script) => ['pnpm', script, 'test/database']);
+
+  if (databaseRuns.length > 0) commands.int = databaseRuns;
 
   for (const [project, specs] of Object.entries(set.specs)) {
     if (specs.length === 0) continue;
