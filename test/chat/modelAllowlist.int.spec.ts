@@ -13,6 +13,7 @@ import { generalAgentSlug, wildcardAgentSlug } from './config.js';
 import type { Chat, User } from './frogbot-types.js';
 import {
   agentSlug,
+  approverAgentSlug,
   chatsSlug,
   lookupCalls,
   messagesSlug,
@@ -527,6 +528,7 @@ describe('per-user agent model allowlists', () => {
       agentSlug,
       questionAgentSlug,
       wildcardAgentSlug,
+      approverAgentSlug,
       generalAgentSlug,
     ]);
     expect(result.agents.find(({ slug }) => slug === questionAgentSlug)).toMatchObject({

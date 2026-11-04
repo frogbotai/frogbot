@@ -15,6 +15,7 @@ import { createChannelRequest, createInternalChannelRequest } from '../createCha
 import { deserializeThread } from '../deserializeThread.js';
 import { queueChannelTask } from '../queueChannelTask.js';
 import type { ChannelConversationBinding, ChannelQuestionsBinding } from '../types.js';
+import { approvalAnswer, approvalOutcome } from './approvalQuestion.js';
 import { applyQuestionChange, toQuestionRecord } from './questionRecord.js';
 import type {
   QuestionChange,
@@ -150,7 +151,7 @@ export async function handleQuestionInteraction({
         req: channel.req,
         chatId: current.chatId,
         toolCallId: current.call.toolCallId,
-        outcome,
+        outcome: current.call.approval ? approvalOutcome(outcome) : outcome,
         actor,
         channelAccess: createChannelThreadAccess({
           binding,
@@ -198,7 +199,10 @@ export async function handleQuestionInteraction({
     };
 
     if (settlement.status === 'already-settled') {
-      const settled = await settle({ actor: null, outcome: outcomeFromPart(settlement.part) });
+      const settled = await settle({
+        actor: null,
+        outcome: outcomeFromPart(settlement.part, current.call.approval !== undefined),
+      });
 
       await notify('stale', settled, channel);
 
@@ -208,7 +212,7 @@ export async function handleQuestionInteraction({
     return {
       status: 'settled',
       allSettled: settlement.allSettled,
-      dismissed: 'dismissed' in outcome,
+      dismissed: 'dismissed' in outcome || settlement.part.state === 'output-denied',
       question: await settle({ actor, outcome }),
     };
   });
@@ -439,7 +443,13 @@ function settleFailure(
   throw error;
 }
 
-function outcomeFromPart(part: ToolPart): QuestionOutcome {
+function outcomeFromPart(part: ToolPart, approval: boolean): QuestionOutcome {
+  if (approval && part.approval?.approved !== undefined) {
+    return {
+      output: approvalAnswer({ approved: part.approval.approved, reason: part.approval.reason }),
+    };
+  }
+
   return part.state === 'output-available'
     ? { output: part.output as QuestionOutput }
     : { dismissed: true };

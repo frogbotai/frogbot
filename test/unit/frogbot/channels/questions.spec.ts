@@ -893,3 +893,162 @@ describe('channel question delivery', () => {
     await fixture.host.shutdown();
   });
 });
+
+describe('channel tool approvals', () => {
+  const approve = { answers: [{ header: 'Approval', selected: ['Approve'] }] };
+  const deny = { answers: [{ header: 'Approval', selected: ['Deny'] }] };
+
+  function approvalCall(): PendingCall {
+    return {
+      ...pendingCall(),
+      toolName: 'delete_ticket',
+      input: { ticket: 'T-2' },
+      approval: { reason: 'Deleting cannot be undone.' },
+    };
+  }
+
+  function approvalHooks() {
+    const hooks = questionHooks();
+
+    hooks.parse.mockImplementation(({ interaction }) => {
+      if (interaction.type === 'action') {
+        return {
+          kind: 'answer',
+          output: interaction.event.actionId === 'approve' ? approve : deny,
+        };
+      }
+
+      if (interaction.type === 'message' && interaction.message.text.startsWith('No:')) {
+        return {
+          kind: 'answer',
+          output: {
+            answers: [{ header: 'Approval', selected: [], custom: interaction.message.text }],
+          },
+        };
+      }
+
+      return { kind: 'ignore' };
+    });
+
+    return hooks;
+  }
+
+  async function approvalFixture() {
+    const hooks = approvalHooks();
+    const fixture = channelFixture({ questions: hooks });
+
+    fixture.identity.mockResolvedValue({ id: 'user-1', collection: 'users' });
+
+    await fixture.host.initialize(false);
+    await fixture.deliver();
+
+    listPendingCalls.mockResolvedValueOnce([approvalCall()]);
+
+    await fixture.host.run(fixture.inputs[0]);
+
+    return { fixture, hooks };
+  }
+
+  beforeEach(() => {
+    listPendingCalls.mockReset().mockResolvedValue([]);
+
+    settleClientToolCall.mockReset().mockResolvedValue({
+      status: 'settled',
+      part: { state: 'approval-responded' },
+      allSettled: true,
+    });
+
+    continueTurn.mockReset();
+  });
+
+  it('renders an approval as a question with Approve and Deny', async () => {
+    const { fixture, hooks } = await approvalFixture();
+
+    expect(hooks.render.mock.calls[0][0].calls).toEqual([
+      expect.objectContaining({
+        toolCallId: 'call-1',
+        approval: { reason: 'Deleting cannot be undone.' },
+        input: {
+          questions: [
+            {
+              header: 'Approval',
+              question: 'Approve delete_ticket? Deleting cannot be undone.',
+              options: [{ label: 'Approve' }, { label: 'Deny' }],
+              custom: true,
+            },
+          ],
+        },
+      }),
+    ]);
+
+    await fixture.host.shutdown();
+  });
+
+  it('settles Approve as an approval and continues the turn', async () => {
+    const { fixture, hooks } = await approvalFixture();
+
+    await fixture.interact(click('approve'));
+
+    expect(settleClientToolCall.mock.calls[0][0]).toMatchObject({
+      toolCallId: 'call-1',
+      outcome: { approved: true },
+    });
+    expect(hooks.settled).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: { output: approve } }),
+    );
+    expect(fixture.inputs.at(-1)).toMatchObject({ kind: 'continue', chatId: 'chat-1' });
+
+    await fixture.host.shutdown();
+  });
+
+  it('settles Deny as a denial that stops the turn', async () => {
+    settleClientToolCall.mockResolvedValue({
+      status: 'settled',
+      part: { state: 'output-denied' },
+      allSettled: true,
+    });
+
+    const { fixture } = await approvalFixture();
+
+    await fixture.interact(click('deny'));
+
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({ approved: false });
+    expect(fixture.inputs).toHaveLength(1);
+
+    await fixture.host.shutdown();
+  });
+
+  it('settles typed text as a denial with that reason', async () => {
+    const { fixture } = await approvalFixture();
+
+    await fixture.deliver('message-2', thread, { mention: false, text: 'No: keep it.' });
+    await fixture.host.run(fixture.inputs[1]);
+
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
+      approved: false,
+      reason: 'No: keep it.',
+    });
+    expect(fixture.inputs.at(-1)).toMatchObject({ kind: 'continue' });
+
+    await fixture.host.shutdown();
+  });
+
+  it('reports an approval answered elsewhere from the stored part', async () => {
+    settleClientToolCall.mockResolvedValue({
+      status: 'already-settled',
+      part: { state: 'output-available', approval: { id: 'a-1', approved: true } },
+      allSettled: true,
+    });
+
+    const { fixture, hooks } = await approvalFixture();
+
+    await fixture.interact(click('deny'));
+
+    expect(hooks.settled).toHaveBeenCalledWith(
+      expect.objectContaining({ actor: null, outcome: { output: approve } }),
+    );
+    expect(hooks.stale).toHaveBeenCalledOnce();
+
+    await fixture.host.shutdown();
+  });
+});

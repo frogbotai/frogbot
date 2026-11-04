@@ -51,6 +51,11 @@ export function getPendingCalls({
     toolCallId: part.toolCallId,
     toolName: getToolName(part),
     input: part.input,
+    ...(part.state === 'approval-requested'
+      ? {
+          approval: part.approval.requestReason ? { reason: part.approval.requestReason } : {},
+        }
+      : {}),
     messageId: message.id,
     chatId,
     agentSlug,
@@ -243,7 +248,8 @@ function isPendingPart({
 ) => part is ToolPart {
   return (part): part is ToolPart =>
     isToolPart(part) &&
-    part.state === 'input-available' &&
+    (part.state === 'input-available' ||
+      (part.state === 'approval-requested' && part.approval.isAutomatic !== true)) &&
     part.providerExecuted !== true &&
     !settlements?.[part.toolCallId];
 }
@@ -265,7 +271,21 @@ function preserveSettledParts({
 
   if (settled.size === 0) return parts;
 
-  return parts.map((part) => (isToolPart(part) && settled.get(part.toolCallId)) || part);
+  return parts.map((part) => {
+    if (!isToolPart(part)) return part;
+
+    const stored = settled.get(part.toolCallId);
+
+    return stored && !(stored.state === 'approval-responded' && isFinished(part)) ? stored : part;
+  });
+}
+
+function isFinished(part: ToolPart): boolean {
+  return (
+    part.state === 'output-available' ||
+    part.state === 'output-error' ||
+    part.state === 'output-denied'
+  );
 }
 
 function splitMetadata(metadata: unknown): { metadata?: unknown; usage?: StoredMessageUsage } {

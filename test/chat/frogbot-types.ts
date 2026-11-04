@@ -619,6 +619,7 @@ declare module 'frogbot' {
       support: unknown;
       questioner: unknown;
       wildcard: unknown;
+      approver: unknown;
       general: unknown;
     };
     models:

@@ -24,7 +24,10 @@ export const CANCELLED_TOOL_ERROR = 'Cancelled because the user dismissed a rela
 
 const MAX_SETTLE_ATTEMPTS = 5;
 
-export type SettleOutcome = { output: unknown; dismissed?: never } | { dismissed: true };
+export type SettleOutcome =
+  | { output: unknown; dismissed?: never; approved?: never }
+  | { dismissed: true; output?: never; approved?: never }
+  | { approved: boolean; reason?: string; output?: never; dismissed?: never };
 
 export type SettleClientToolCallProps = {
   req: FrogBotRequest;
@@ -130,23 +133,13 @@ export async function settleCall({
       throw new TurnError('forbidden', 'You cannot settle this call.');
     }
 
-    const settledPart =
-      'dismissed' in outcome && outcome.dismissed
-        ? terminal(part, DISMISSED_TOOL_ERROR)
-        : ({
-            ...part,
-            state: 'output-available',
-            output: await validateOutput({ tool, part, output: outcome.output }),
-          } as ToolPart);
+    const settledPart = await settledPartFor({ tool, part, outcome });
+    const closes = settledPart.state === 'output-error' || settledPart.state === 'output-denied';
 
     const at = new Date().toISOString();
     const settlements: Record<string, ClientToolSettlement> = {
       ...message.settlements,
-      [toolCallId]: {
-        outcome: settledPart.state === 'output-error' ? 'dismissed' : 'answered',
-        actor,
-        at,
-      },
+      [toolCallId]: { outcome: settlementOutcome(settledPart), actor, at },
     };
 
     const parts = message.parts.map((candidate) => {
@@ -154,7 +147,7 @@ export async function settleCall({
 
       if (candidate.toolCallId === toolCallId) return settledPart;
 
-      if (settledPart.state !== 'output-error') return candidate;
+      if (!closes) return candidate;
 
       if (!pending.some(({ toolCallId: id }) => id === candidate.toolCallId)) return candidate;
 
@@ -173,9 +166,9 @@ export async function settleCall({
 
     if (!written) continue;
 
-    const allSettled = pending.length === 1 || settledPart.state === 'output-error';
+    const allSettled = pending.length === 1 || closes;
 
-    if (settledPart.state === 'output-error' && (await closeAwaitingTurn({ req, chatId }))) {
+    if (closes && (await closeAwaitingTurn({ req, chatId }))) {
       await promoteQueuedMessage({ req, chatId });
     }
 
@@ -201,6 +194,57 @@ async function findSettlementMessage({
   }
 
   return undefined;
+}
+
+async function settledPartFor({
+  tool,
+  part,
+  outcome,
+}: {
+  tool?: ClientTool;
+  part: ToolPart;
+  outcome: SettleOutcome;
+}): Promise<ToolPart> {
+  if (outcome.dismissed) return terminal(part, DISMISSED_TOOL_ERROR);
+
+  if (part.state === 'approval-requested') {
+    if (outcome.approved === undefined) {
+      throw new TurnError('invalid-output', `Tool '${getToolName(part)}' needs an approval.`);
+    }
+
+    const reason = outcome.reason?.trim();
+    const approval = {
+      ...part.approval,
+      approved: outcome.approved,
+      ...(reason ? { reason } : {}),
+    };
+
+    return (
+      outcome.approved || reason
+        ? { ...part, state: 'approval-responded', approval }
+        : { ...part, state: 'output-denied', approval }
+    ) as ToolPart;
+  }
+
+  if (outcome.approved !== undefined) {
+    throw new TurnError('invalid-output', `Tool '${getToolName(part)}' is not awaiting approval.`);
+  }
+
+  return {
+    ...part,
+    state: 'output-available',
+    output: await validateOutput({ tool, part, output: outcome.output }),
+  } as ToolPart;
+}
+
+function settlementOutcome(part: ToolPart): ClientToolSettlement['outcome'] {
+  if (part.state === 'output-error') return 'dismissed';
+
+  if (part.state === 'approval-responded') return part.approval.approved ? 'approved' : 'denied';
+
+  if (part.state === 'output-denied') return 'denied';
+
+  return 'answered';
 }
 
 async function validateOutput({

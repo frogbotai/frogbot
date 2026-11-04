@@ -21,7 +21,7 @@ export type TurnActor = {
 };
 
 export type ClientToolSettlement = {
-  outcome: 'answered' | 'dismissed' | 'cancelled';
+  outcome: 'answered' | 'dismissed' | 'cancelled' | 'approved' | 'denied';
   actor: TurnActor;
   at: string;
 };
@@ -30,6 +30,8 @@ export type PendingCall = {
   toolCallId: string;
   toolName: string;
   input: unknown;
+  /** Set when the call waits for a person to approve it, with the tool's reason. */
+  approval?: { reason?: string };
   messageId: string;
   chatId: DocID;
   agentSlug: string;

@@ -10,6 +10,7 @@ import { isClientTool } from '../../tools/types.js';
 import { createChannelThreadAccess } from '../conversation.js';
 import { serializeThread } from '../deserializeThread.js';
 import type { ChannelConversationBinding } from '../types.js';
+import { approvalQuestion } from './approvalQuestion.js';
 import type { ChannelQuestionCall, StoredQuestion } from './types.js';
 
 export async function renderPendingQuestions({
@@ -98,6 +99,8 @@ function toQuestionCall({
   binding: ChannelConversationBinding;
   call: PendingCall;
 }): ChannelQuestionCall[] {
+  if (call.approval) return [{ ...call, input: approvalQuestion(call) }];
+
   const tool = (binding.agent.config.tools ?? []).find(
     (candidate) => isClientTool(candidate) && candidate.slug === call.toolName,
   );
