@@ -75,7 +75,11 @@ describe('parseArgs', () => {
 
   it('reads stats and found', () => {
     expect(parseArgs(['stats', '--batch', '27'])).toEqual({ command: 'stats', batch: 27 });
-    expect(parseArgs(['found', '--source', 'x.md'])).toEqual({ command: 'found', source: 'x.md' });
+    expect(parseArgs(['found', '--repo', 'platform', '--source', 'x.md'])).toEqual({
+      command: 'found',
+      repo: 'platform',
+      source: 'x.md',
+    });
   });
 
   it('reads verify and its --list switch', () => {

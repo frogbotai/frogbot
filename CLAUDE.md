@@ -32,7 +32,7 @@ pnpm test:unit|ui|int:sqlite|e2e <file>   pnpm test:browser --project <p>
 - Precedent: agent-harness work (chat turns, agents, tools, sessions, streaming, their SQLite storage) follows OpenCode v2 at `~/code/opencode-v2`; everything else follows Payload at `~/code/payload`. Never read `node_modules/payload`.
 - Never push or open a PR. Merge only with `git merge --ff-only` after a rebase; otherwise `pnpm ticket land`. Never stage `.idea/`. Never `git stash`: the stash is shared across worktrees.
 - Agents read anywhere under `~/code` without asking (`.opencode/opencode.jsonc`). Edits outside this checkout are allowed only under `~/code/frogbot` and `~/code/frogbot-worktrees`.
-- Record findings outside the work with `pnpm ticket found` and carry on.
+- Record findings outside the work with `pnpm ticket found` and carry on. It files an issue labeled `found` in the repo whose code it is about.
 
 ## Cloud sessions
 
