@@ -72,3 +72,23 @@ Inputs are camelCase and sent snake_case. Upstream's ticket, user, group and org
 | `find-group`             | `findGroup`           | `null` when none matches.                                                                                                                                                      |
 | `find-latest-comment`    | `findLatestComment`   | `null` when the ticket has none.                                                                                                                                               |
 | custom API call          | `customApiCall`       | Paths under `https://<subdomain>.zendesk.com/api/v2`.                                                                                                                          |
+
+## Triggers
+
+Upstream's ticket webhooks subscribe to `conditional_ticket_events`, which send nothing until an admin builds a Zendesk Trigger by hand. These subscribe to Zendesk's built-in `zen:event-type:*` events instead (399 D1), so they work with no setup. Each webhook trigger creates its own Zendesk webhook in `onEnable`, keeps its signing secret, and checks `X-Zendesk-Webhook-Signature` on every delivery; `onDisable` deletes the webhook. Events emit `{ id, type, time, detail, event }`, keyed by the event id.
+
+| Upstream trigger       | Native trigger           | Type      | Notes                                                                                                                             |
+| ---------------------- | ------------------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `new_ticket`           | `ticketCreated`          | `webhook` | `ticket.created`; optional `organizationId`.                                                                                      |
+| `updated_ticket`       | `ticketUpdated`          | `webhook` | Every `ticket.*_changed` event plus comment added, merged, soft deleted, undeleted and marked as spam; optional `organizationId`. |
+| `new_action_on_ticket` | `ticketUpdated`          | `webhook` | Its `ticketId` filter replaces this trigger.                                                                                      |
+| `tag_added_to_ticket`  | `ticketTagAdded`         | `webhook` | `ticket.tags_changed` with tags added; optional `tag`. Emits `tagsAdded`.                                                         |
+| —                      | `ticketCommentAdded`     | `webhook` | FrogBot addition: `ticket.comment_added`, with `isPublic`.                                                                        |
+| `new_organization`     | `organizationCreated`    | `webhook` | `organization.created`.                                                                                                           |
+| `new_user`             | `userCreated`            | `webhook` | `user.created`; optional `role`.                                                                                                  |
+| `tag_added_to_user`    | `userTagAdded`           | `webhook` | `user.tags_changed` with tags added. Emits `tagsAdded`.                                                                           |
+| `new_suspended_ticket` | `suspendedTicketCreated` | `polling` | Zendesk has no suspended-ticket event, so this polls `/suspended_tickets`; the cursor is the highest id seen.                     |
+| `new_ticket_in_view`   | `ticketInView`           | `polling` | The cursor holds the view's first 500 ticket ids, instead of upstream's last item.                                                |
+| `new_group`            | `groupCreated`           | `polling` | The cursor holds the newest `created_at` and the ids at it.                                                                       |
+
+The polling triggers run every 5 minutes, and their first poll only records a baseline.

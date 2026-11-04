@@ -103,3 +103,14 @@ export const named = z.looseObject({
   title: optional.string,
   ...timestamps,
 });
+
+export const suspendedTicket = z.looseObject({
+  id: z.number(),
+  subject: optional.string,
+  cause: optional.string,
+  ticket_id: optional.number,
+  author: z
+    .looseObject({ id: optional.number, name: optional.string, email: optional.string })
+    .nullish(),
+  ...timestamps,
+});

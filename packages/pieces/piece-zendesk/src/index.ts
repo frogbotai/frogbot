@@ -41,6 +41,16 @@ import {
 import { createUser, deleteUser, updateUser } from './actions/users.js';
 import { createZendeskClient } from './client.js';
 import { zendeskAuth } from './config.js';
+import { groupCreated, suspendedTicketCreated, ticketInView } from './triggers/polling.js';
+import {
+  organizationCreated,
+  ticketCommentAdded,
+  ticketCreated,
+  ticketTagAdded,
+  ticketUpdated,
+  userCreated,
+  userTagAdded,
+} from './triggers/webhook.js';
 
 export { ZendeskError } from './client.js';
 
@@ -89,5 +99,17 @@ export const createZendesk = definePiece({
     findGroup,
     findLatestComment,
     customApiCall,
+  ],
+  triggers: [
+    ticketCreated,
+    ticketUpdated,
+    ticketTagAdded,
+    ticketCommentAdded,
+    organizationCreated,
+    userCreated,
+    userTagAdded,
+    ticketInView,
+    groupCreated,
+    suspendedTicketCreated,
   ],
 });
