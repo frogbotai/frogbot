@@ -1,0 +1,142 @@
+---
+title: Microsoft Outlook
+description: Send and file Outlook mail, manage calendar events, page through mail, events and contacts, and react to new mail.
+keywords: [pieces, microsoft outlook, outlook, microsoft 365, email, calendar, contacts, graph]
+---
+
+`@frogbotai/piece-microsoft-outlook` works with Microsoft 365 mail, calendars and contacts through Microsoft Graph. One linked Microsoft account covers mail and calendar, so a rep connects once.
+
+## Connect Outlook
+
+```bash
+pnpm add @frogbotai/piece-microsoft-outlook
+```
+
+Each person links their own Microsoft account through an [OAuth connection](/connections/overview):
+
+```ts
+import { createMicrosoftOutlook } from '@frogbotai/piece-microsoft-outlook'
+import type { ConnectionEntry } from 'frogbot'
+
+export const outlook = createMicrosoftOutlook({
+  oauth: {
+    clientId: process.env.MICROSOFT_CLIENT_ID!,
+    clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
+  },
+})
+
+export const connections: ConnectionEntry[] = [{ piece: outlook, oauth: true }]
+```
+
+Or read one company mailbox, such as `sales@acme.com`, with the app's own secret and no signed-in person. See [Read a company mailbox](#read-a-company-mailbox).
+
+```ts
+export const salesMailbox = createMicrosoftOutlook({
+  slug: 'sales-mailbox',
+  auth: {
+    tenantId: process.env.MICROSOFT_TENANT_ID!,
+    clientId: process.env.MICROSOFT_CLIENT_ID!,
+    clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
+    mailbox: 'sales@acme.com',
+  },
+})
+```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | `'microsoft-outlook'` | Instance slug. It prefixes tool slugs, such as `microsoft-outlook_sendEmail`. |
+| `auth.accessToken` | `string` | — | A delegated Graph access token. A user OAuth connection supplies one; calls go to `/me`. |
+| `auth.refreshToken` | `string` | — | Stored with OAuth connections, which FrogBot refreshes. |
+| `auth.clientId` | `string` | — | With `clientSecret` and `mailbox`, reads one mailbox with app-only access. |
+| `auth.clientSecret` | `string` | — | A client secret for that Entra app. |
+| `auth.mailbox` | `string` | — | The mailbox app-only access reads; calls go to `/users/<mailbox>`. |
+| `auth.tenantId` | `string` | The factory's tenant | Your directory tenant, required for app-only access. |
+| `auth.cloud` | `'login.microsoftonline.com'` | The factory's cloud | Sign-in host. Each factory accepts only its own cloud. |
+| `oauth` | `OAuthApp` | — | Your Microsoft Entra app. Enables `oauth: true` connection entries. |
+| `scopes` | Graph permission names, or `({ defaultScopes }) => names` | `Mail.ReadWrite`, `Mail.Send`, `Calendars.ReadWrite`, `Contacts.Read` | Delegated permissions for OAuth connections. `offline_access`, `User.Read`, `openid`, `email` and `profile` are always requested; `Mail.Read` and `Calendars.Read` are also available. See [Choose OAuth scopes](/connections/overview#choose-oauth-scopes). |
+
+See [factory options](/pieces/overview#factory-options) for the shared options.
+
+## Register the Entra app
+
+1. In the Microsoft Entra admin center, open **App registrations → New registration**. For sign-in from any organization, choose a multi-tenant account type, and include personal accounts if you need them.
+2. Add a **Web** redirect URI: the instance's OAuth callback, `https://your-app.example.com/api/connections/microsoft-outlook/callback` (use your instance slug).
+3. Under **Certificates & secrets**, create a client secret. Use the application ID as `clientId` and the secret value as `clientSecret`.
+4. Under **API permissions → Microsoft Graph → Delegated**, add the scopes you request. Users consent when they link their account.
+
+### Clouds and tenants
+
+`createMicrosoftOutlook` signs in at the commercial cloud and the `common` tenant. For US Government (GCC High), or to limit sign-in to one tenant, define your own factory:
+
+```ts
+import { defineMicrosoftOutlook } from '@frogbotai/piece-microsoft-outlook'
+
+const createGovOutlook = defineMicrosoftOutlook({
+  cloud: 'usGovernment',
+  tenantId: 'contoso.onmicrosoft.us',
+})
+```
+
+The cloud picks the sign-in host (`login.microsoftonline.com` or `.us`) and the Graph origin (`graph.microsoft.com` or `.us`). Every request, including `customApiCall` and list cursors, must stay on that Graph origin. `@frogbotai/piece-microsoft-teams` uses the same settings.
+
+## Read a company mailbox
+
+App-only access signs in with client credentials, as the app rather than a person. FrogBot reuses its token until 5 minutes before it expires.
+
+1. In the same Entra app, under **API permissions → Microsoft Graph → Application**, add `Mail.ReadWrite`, `Mail.Send`, `Calendars.ReadWrite` and `Contacts.Read`, then select **Grant admin consent**. Only an admin can grant these.
+2. Application permissions reach every mailbox in the tenant. Limit the app to the mailboxes it needs with an Exchange Online [ApplicationAccessPolicy](https://learn.microsoft.com/en-us/graph/auth-limit-mailbox-access), for example:
+
+   ```powershell
+   New-ApplicationAccessPolicy -AppId <clientId> -PolicyScopeGroupId sales@acme.com -AccessRight RestrictAccess -Description "FrogBot sales mailbox"
+   ```
+
+3. Set `auth.tenantId` to your directory tenant ID or domain; `common`, `organizations` and `consumers` are refused.
+
+## Actions
+
+| Action | What it does |
+| --- | --- |
+| `sendEmail` | Sends an email and saves it to Sent Items. `attachments` are FrogBot file ids. |
+| `replyToEmail` | Replies, or replies all, above the quoted thread. `draft: true` keeps the reply as a draft. |
+| `forwardEmail` | Forwards an email with its attachments and an optional comment. |
+| `createDraftEmail`, `sendDraft` | Saves a new email as a draft, and sends a draft. |
+| `moveEmail` | Moves an email to a folder id or a well-known name such as `archive`. The moved email has a new id. |
+| `addCategory`, `removeCategory` | Adds or removes Outlook categories, the colored labels. |
+| `searchEmails` | Searches with Outlook search syntax, such as `from:dana@acme.com subject:invoice`, newest first. |
+| `downloadAttachment` | Saves an email's file attachments into your files collection. |
+| `createEvent` | Creates an event and invites attendees. Times with an offset are sent in UTC; local times use `timeZone`. The end defaults to 30 minutes after the start. |
+| `deleteEvent` | Deletes an event. An event already gone returns `found: false`. |
+| `listCalendars` | Lists every calendar in the mailbox. |
+| `findFreeBusyPeriods` | Returns each person's busy periods between `start` and `end`. Work or school accounts only; a personal account gets a clear error. |
+| `customApiCall` | Any Microsoft Graph v1.0 request. |
+
+Upstream's approval-by-email action isn't included: ask a person with the [question tool](/chat/questions) instead.
+
+### Page through mail, events and contacts
+
+`listMailFolders`, `listEmails`, `listEvents` and `listContacts` return one page at a time, for imports:
+
+```ts
+let cursor: string | undefined
+do {
+  const page = await outlook.listEmails({ input: { folderId: 'inbox', limit: 100, cursor }, req })
+  // save page.data
+  cursor = page.pagination.nextCursor ?? undefined
+} while (cursor)
+```
+
+Each takes `limit` (1–100, default 50) and `cursor`, the previous page's `pagination.nextCursor`, which is `null` on the last page. `listEmails` lists newest first with full bodies, recipients and conversation ids, optionally `receivedAfter` a time. `listEvents` needs `start` and `end` and lists each occurrence of a recurring event.
+
+Graph errors keep Graph's code, message and status. When Graph throttles a request, FrogBot waits for its `Retry-After` and retries up to 3 times.
+
+## Triggers
+
+| Trigger | Emits |
+| --- | --- |
+| `newEmail` | Each new email in the inbox, optionally only `from` a sender or `to` a recipient. |
+| `newEmailInFolder` | Each new email in one folder. |
+| `newAttachment` | Each new email with file attachments, after saving them into your files collection. |
+
+All three are [polling triggers](/pieces/triggers#polling) that check every 5 minutes. The first poll only records the current time, so mail already in the mailbox isn't emitted and no files are saved.
+
+A poll has no signed-in person, so it reads the mailbox of the instance's factory `auth`: use [a company mailbox](#read-a-company-mailbox). Watching each rep's own inbox isn't supported yet.
