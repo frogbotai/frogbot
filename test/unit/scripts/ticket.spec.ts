@@ -301,21 +301,21 @@ describe('naming', () => {
     );
   });
 
-  it('puts the worktree next to the main checkout, ending in the number', () => {
-    expect(worktreePath('/code/frogbot/frogbot', 999)).toBe('/code/frogbot/frogbot-ticket999');
+  it('puts the worktree in frogbot-worktrees, ending in the number', () => {
+    expect(worktreePath('/code/frogbot/frogbot', 999)).toBe(
+      '/code/frogbot-worktrees/frogbot-ticket999',
+    );
   });
 
-  it('puts a ticket in another repo next to that repo, under its own prefix', () => {
+  it('keeps another repo beside the main checkout and its worktree under its own prefix', () => {
     expect(repoCheckout('/code/frogbot/frogbot')).toBe('/code/frogbot/frogbot');
     expect(repoCheckout('/code/frogbot/frogbot', 'sidekick')).toBe('/code/frogbot/sidekick');
     expect(worktreePath('/code/frogbot/frogbot', 265, 'sidekick')).toBe(
-      '/code/frogbot/sidekick-ticket265',
+      '/code/frogbot-worktrees/sidekick-ticket265',
     );
-    expect(repoCheckout('/code/frogbot/frogbot', 'platform')).toBe(
-      '/code/frogbot/frogbot-platform',
-    );
+    expect(repoCheckout('/code/frogbot/frogbot', 'platform')).toBe('/code/frogbot/platform');
     expect(worktreePath('/code/frogbot/frogbot', 299, 'platform')).toBe(
-      '/code/frogbot/platform-ticket299',
+      '/code/frogbot-worktrees/platform-ticket299',
     );
   });
 
@@ -323,7 +323,9 @@ describe('naming', () => {
     const key = ticketKeyOf({ ticket: 210, part: 'b' });
 
     expect(branchName({ type: 'feat', ticket: key, slug: 'kinds' })).toBe('feat/ticket-210b-kinds');
-    expect(worktreePath('/code/frogbot/frogbot', key)).toBe('/code/frogbot/frogbot-ticket210b');
+    expect(worktreePath('/code/frogbot/frogbot', key)).toBe(
+      '/code/frogbot-worktrees/frogbot-ticket210b',
+    );
     expect(ticketKeyOf({ ticket: 210, part: undefined })).toBe('210');
   });
 
@@ -335,7 +337,7 @@ describe('naming', () => {
     [{ path: '/c/sidekick-ticket265', branch: null }, '265'],
     [{ path: '/c/sidekick', branch: 'main' }, null],
     [{ path: '/c/platform-ticket299', branch: null }, '299'],
-    [{ path: '/c/frogbot-platform', branch: 'main' }, null],
+    [{ path: '/c/platform', branch: 'main' }, null],
   ])('%j has key %s', (tree, key) => {
     expect(keyOfWorktree(tree)).toBe(key);
   });
