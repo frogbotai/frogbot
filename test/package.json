@@ -46,6 +46,7 @@
     "@frogbotai/piece-graphql": "workspace:*",
     "@frogbotai/piece-http": "workspace:*",
     "@frogbotai/piece-image-helper": "workspace:*",
+    "@frogbotai/piece-jira": "workspace:*",
     "@frogbotai/piece-linear": "workspace:*",
     "@frogbotai/piece-math-helper": "workspace:*",
     "@frogbotai/piece-microsoft": "workspace:*",
