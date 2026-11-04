@@ -1255,6 +1255,16 @@
     "type": "Parameters<typeof import('@frogbotai/piece-zendesk').createZendesk>[0]"
   },
   {
+    "page": "pieces/salesforce",
+    "heading": "Connect Salesforce",
+    "type": "Parameters<typeof import('@frogbotai/piece-salesforce').createSalesforce>[0]"
+  },
+  {
+    "page": "pieces/salesforce",
+    "heading": "Production, sandboxes and My Domain",
+    "type": "import('@frogbotai/piece-salesforce').SalesforceSettings"
+  },
+  {
     "page": "pieces/jira",
     "heading": "Connect Jira",
     "type": "Parameters<typeof import('@frogbotai/piece-jira').createJira>[0]"

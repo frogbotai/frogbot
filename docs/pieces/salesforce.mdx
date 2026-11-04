@@ -1,0 +1,138 @@
+---
+title: Salesforce
+description: Import a Salesforce org with SOQL paging and Bulk API queries, create and update records, run reports, and react to record changes and Outbound Messages.
+keywords: [pieces, salesforce, crm, soql, bulk api, import, outbound messages, sandbox]
+---
+
+`@frogbotai/piece-salesforce` works with Salesforce through its REST API v68.0. Imports page through any object, standard or custom, and use Bulk API 2.0 for large ones; agents create, update and find records, cases, contacts, leads, opportunities and tasks, and run reports; triggers poll for new and changed records and receive Outbound Messages.
+
+## Connect Salesforce
+
+```bash
+pnpm add @frogbotai/piece-salesforce
+```
+
+People connect with **Sign in with Salesforce**:
+
+```ts
+import { createSalesforce } from '@frogbotai/piece-salesforce'
+import type { ConnectionEntry } from 'frogbot'
+
+export const salesforce = createSalesforce({
+  oauth: {
+    clientId: process.env.SALESFORCE_CLIENT_ID!,
+    clientSecret: process.env.SALESFORCE_CLIENT_SECRET!,
+  },
+})
+
+export const connections: ConnectionEntry[] = [{ piece: salesforce, oauth: true }]
+```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | `'salesforce'` | Instance slug. It prefixes tool slugs, such as `salesforce_query`. |
+| `auth.accessToken` | `string` | — | An access token. A sign-in connection supplies one. |
+| `auth.instanceUrl` | `string` | — | The org's `https://` address, such as `https://acme.my.salesforce.com`. Every request goes there. |
+| `auth.identityUrl` | `string` | — | The sign-in's identity URL. It names the account and the org, which `newOutboundMessage` needs. |
+| `oauth` | `OAuthApp` | — | Your [External Client App](#create-an-external-client-app)'s consumer key and secret. Enables `oauth: true` connection entries. |
+| `scopes` | Salesforce scope names, or `({ defaultScopes }) => names` | `api` | Scopes for sign-in. `refresh_token` and `id` are always requested; `full` is also available. See [Choose OAuth scopes](/connections/overview#choose-oauth-scopes). |
+
+See [factory options](/pieces/overview#factory-options) for the shared options.
+
+### Production, sandboxes and My Domain
+
+`createSalesforce` signs in at `login.salesforce.com`. For a sandbox or a My Domain, define the piece for that login host with `defineSalesforce`:
+
+```ts
+import { defineSalesforce } from '@frogbotai/piece-salesforce'
+
+export const salesforceSandbox = defineSalesforce({ loginHost: 'test.salesforce.com' })({
+  slug: 'salesforce-sandbox',
+  oauth: { clientId: process.env.SALESFORCE_CLIENT_ID!, clientSecret: process.env.SALESFORCE_CLIENT_SECRET! },
+})
+```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `loginHost` | `string` | `'login.salesforce.com'` | `login.salesforce.com`, `test.salesforce.com`, or a My Domain host such as `acme.my.salesforce.com` or `acme--uat.sandbox.my.salesforce.com`. Anything else throws when the piece is defined. |
+
+One definition signs in at one host. To connect production and a sandbox side by side, use two definitions with different slugs.
+
+### Create an External Client App
+
+Salesforce no longer lets you create new Connected Apps, so use an External Client App:
+
+1. In **Setup**, open **External Client App Manager** and choose **New External Client App**.
+2. Under **API (Enable OAuth Settings)**, turn on OAuth, and add the instance's callback URL: `https://your-app.example.com/api/connections/salesforce/callback` (use your instance slug).
+3. Add the OAuth scopes **Manage user data via APIs (`api`)**, **Perform requests at any time (`refresh_token`, `offline_access`)** and **Access the identity URL service (`id`)**.
+4. Turn on **Require Proof Key for Code Exchange (PKCE)** and leave the flow as the authorization code flow.
+5. Save, then copy the **Consumer Key** and **Consumer Secret** into `oauth`.
+
+Sign-in keeps the token's `instance_url`, and every call goes to `<instance_url>/services/data/v68.0`. A path outside `/services/data/`, including a `nextRecordsUrl`, is refused before any request, so the token never goes anywhere else.
+
+Salesforce's sign-in reply doesn't say when the token expires: it lasts until the org's session timeout, 15 minutes at the shortest. FrogBot treats every token as 15 minutes old at most and refreshes it after that, so connections keep working whatever the org's setting.
+
+## Import an org
+
+Reads go one page per call, so a job can drive a large import a step at a time:
+
+| Action | Reads |
+| --- | --- |
+| `query` | One page of a SOQL query, such as `SELECT Id, Name, OwnerId FROM Account ORDER BY Id`. `queryAll` includes deleted and merged records; `batchSize` asks for 200 to 2,000 records a page. Returns `{ records, totalSize, done, nextRecordsUrl }`; pass `nextRecordsUrl` back for the next page until it is `null`. |
+| `listObjects` | Every object, standard and custom, with whether it can be queried. |
+| `describeObject` | One object's fields: `name`, `label`, `type`, `custom`, `createable`, and for lookups the objects they point to (`referenceTo`) and the relationship name. Also its `childRelationships`. With `ifModifiedSince`, an unchanged object returns `{ notModified: true }`. |
+| `createQueryJob` | Starts a Bulk API 2.0 query job. |
+| `getQueryJob` | The job's `state`; read its results once it is `JobComplete`. |
+| `getQueryJobResults` | One page of the job's records, `maxRecords` at a time, as `{ records, locator }`; pass `locator` back until it is `null`. Values are strings, empty when blank. |
+
+Build the field list from `describeObject` and name the fields in the query: `FIELDS(ALL)` only works with `LIMIT 200` and not at all in Bulk queries. Lookup fields such as `AccountId`, `WhoId`, `WhatId` and `OwnerId` keep the links between records.
+
+Use a Bulk query job for objects over about 2,000 records: Salesforce runs it in the background and it uses far fewer API calls. Bulk queries don't support `FIELDS()`, `OFFSET`, `GROUP BY`, aggregates or parent-to-child subqueries; child-to-parent lookups such as `Account.Name` work. The piece never waits on a job: check it with `getQueryJob` from a later job step.
+
+## Actions
+
+| Action | Description |
+| --- | --- |
+| `createRecord`, `updateRecord`, `deleteRecord` | Any object's records, with field values by API name. Updates change only the fields given. |
+| `getRecordByField` | Up to 200 records whose field equals a value exactly. The value is escaped, so it can't change the query. |
+| `searchRecords` | Up to 200 records matching a SOQL `WHERE` clause. |
+| `listChildRecords` | One page of a record's children through a child relationship, such as an Account's `Contacts`. |
+| `upsertRecords` | Inserts or updates up to 200 records matched on an external ID field; each succeeds or fails on its own. |
+| `upsertRecordsBulk` | Inserts or updates many records from CSV through a Bulk ingest job, and returns `{ id, state }` once the CSV is uploaded. |
+| `createCase`, `createContact`, `updateContact`, `createLead`, `updateLead`, `createOpportunity`, `deleteOpportunity`, `createTask`, `createNote` | Common records, with named inputs and `fields` for any other field by API name. |
+| `addContactToCampaign`, `addLeadToCampaign` | Adds a Contact or Lead to a Campaign with a member status. |
+| `sendEmail` | Logs an email to a Contact or Lead as a sent EmailMessage on the activity timeline. Salesforce doesn't deliver it. |
+| `uploadFile`, `createAttachment` | Puts a file from your files collection on a record, as a Salesforce File or a classic Attachment. |
+| `listAttachments` | A record's classic Attachments and Files, without their contents. |
+| `runReport` | Runs a report and returns its rows keyed by column label, with each row's grouping; `filters` replace its saved filters. |
+| `exportReport` | Saves a report as an Excel file in your files collection. |
+| `customApiCall` | Any request under `<instance_url>/services/data/v68.0`, such as `/limits`. |
+
+Errors keep Salesforce's `errorCode`, message and HTTP status, as a `SalesforceError`.
+
+## Triggers
+
+| Trigger | Type | Emits |
+| --- | --- | --- |
+| `newRecord` | polling | Each new record of an object, optionally matching `conditions`. |
+| `newOrUpdatedRecord` | polling | Each new or changed record of an object, by `SystemModstamp`, optionally matching `conditions`. |
+| `newContact`, `newLead` | polling | Each new Contact or Lead. |
+| `newFieldHistoryEvent` | polling | Each change to a history-tracked field of an object. Field history tracking must be on. |
+| `newOrUpdatedFile` | polling | Each new or changed Salesforce File. |
+| `newCaseAttachment` | polling | Each Attachment or File added to a Case, with `attachmentType` `Classic` or `File`. |
+| `newCaseInQueue` | polling | Each Case created in a queue or moved into it. |
+| `newOutboundMessage` | webhook | Each record an Outbound Message sends: `{ notificationId, actionId, organizationId, object, record }`. |
+
+### Polling
+
+The polling triggers run every 5 minutes by default (see [polling](/pieces/triggers#polling)). The first poll only records the time and emits nothing. Each poll reads up to 200 records, ordered by time and then `Id`, and the next poll continues after the last one, so records sharing a timestamp and backlogs of any size come through once each.
+
+### Outbound Messages
+
+`newOutboundMessage` emits changes as soon as Salesforce sends them, without waiting for a poll. The app needs a public `serverURL` (see [Triggers](/pieces/triggers)).
+
+1. Mount the trigger and copy its subscription's webhook URL, `/api/webhooks/<instance-slug>/<subscription-id>`.
+2. In Salesforce **Setup**, create an **Outbound Message** for the object, with that URL as the **Endpoint URL** and the fields to send.
+3. Send it from a record-triggered Flow (or a workflow rule).
+
+FrogBot answers each delivery with the SOAP acknowledgement Salesforce expects, so it doesn't resend it. A message from another org, or one already received, is acknowledged and dropped. Each Outbound Message is set up per object in Salesforce, and the trigger needs a sign-in connection, which names the org.

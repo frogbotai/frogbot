@@ -1514,6 +1514,9 @@ importers:
       csv-parse:
         specifier: ^5.6.0
         version: 5.6.0
+      fast-xml-parser:
+        specifier: 5.7.0
+        version: 5.7.0
       zod:
         specifier: ^4.3.6
         version: 4.4.3
