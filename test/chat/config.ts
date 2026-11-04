@@ -13,6 +13,7 @@ import {
   lookupCalls,
   modelPort,
   questionAgentSlug,
+  refunderName,
   unavailableTopic,
   usersSlug,
 } from './shared.js';
@@ -62,6 +63,19 @@ const deleteTicket: Tool<typeof ticketInput, string> = {
     approvedCalls.push({ tool: 'delete_ticket', input: { ticket } });
 
     return `Deleted ${ticket}.`;
+  },
+};
+
+const refundTicket: Tool<typeof ticketInput, string> = {
+  slug: 'refund_ticket',
+  description: 'Refund a ticket.',
+  inputSchema: ticketInput,
+  approval: 'ask',
+  access: ({ req }) => (req.user as { name?: string } | null)?.name === refunderName,
+  execute: ({ ticket }) => {
+    approvedCalls.push({ tool: 'refund_ticket', input: { ticket } });
+
+    return `Refunded ${ticket}.`;
   },
 };
 
@@ -145,7 +159,7 @@ export default await buildTestConfig({
       model: 'test/gpt-4.1-mini',
       instructions: 'Ask before changing tickets.',
       access: () => true,
-      tools: [closeTicket, deleteTicket, question],
+      tools: [closeTicket, deleteTicket, refundTicket, question],
     },
     generalAgent,
   ],

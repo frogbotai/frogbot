@@ -70,6 +70,12 @@ export function sanitizeToolList(
         );
       }
 
+      if ((tool as { access?: unknown }).access !== undefined) {
+        throw new Error(
+          `[frogbot] Client tool '${tool.slug}' in ${context} can't take \`access\`; use \`client.access\`.`,
+        );
+      }
+
       if (
         !tool.inputSchema ||
         !tool.outputSchema ||
@@ -93,6 +99,12 @@ export function sanitizeToolList(
     }
 
     assertToolApproval(tool.approval, `Tool '${tool.slug}' in ${context}`);
+
+    if (tool.access !== undefined && typeof tool.access !== 'function') {
+      throw new Error(
+        `[frogbot] Tool '${tool.slug}' in ${context}: \`access\` must be a function.`,
+      );
+    }
 
     toolSlugs.add(tool.slug);
 

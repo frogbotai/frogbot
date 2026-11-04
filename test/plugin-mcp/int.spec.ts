@@ -14,11 +14,13 @@ import {
   apiKeyHeader,
   apiKeysSlug,
   apiKeyToken,
+  customActorApiKeyToken,
   customActorCredentials,
   customStrategyHeader,
   customStrategyName,
   mcpEndpoint,
   postsSlug,
+  restrictedToolName,
   secretsSlug,
   strategyFailureMessage,
   testCredentials,
@@ -154,14 +156,14 @@ describe('MCP plugin integration', () => {
     );
   }
 
-  function callTool(name: string, args: Record<string, unknown>) {
+  function callTool(name: string, args: Record<string, unknown>, token = apiKeyToken) {
     return booted.restClient.post<ToolCallBody | string>(
       mcpEndpoint,
       { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name, arguments: args } },
       {
         headers: {
           accept: 'application/json, text/event-stream',
-          Authorization: `Bearer ${apiKeyToken}`,
+          Authorization: `Bearer ${token}`,
         },
       },
     );
@@ -217,6 +219,36 @@ describe('MCP plugin integration', () => {
         .map(({ name }) => name)
         .filter((name) => !frogbotTools.includes(name) && !RESERVED_TOOL_NAMES.has(name)),
     ).toEqual([]);
+  });
+
+  it("POST /api/mcp neither lists nor runs a tool whose access rule the key's owner fails", async () => {
+    await booted.frogbot.create({
+      collection: apiKeysSlug,
+      data: {
+        name: 'MCP custom actor',
+        owner: customActorId as number,
+        prefix: getApiKeyPrefix(customActorApiKeyToken),
+        tokenHash: hashApiKeyToken(customActorApiKeyToken),
+      },
+      overrideAccess: true,
+    });
+
+    const names = async (token: string) =>
+      parseMcpResponse<ToolsListBody>((await listTools(token)).body).result.tools.map(
+        ({ name }) => name,
+      );
+
+    expect(await names(apiKeyToken)).not.toContain(restrictedToolName);
+    expect(await names(customActorApiKeyToken)).toContain(restrictedToolName);
+
+    const denied = await callTool(restrictedToolName, {});
+
+    expect(parseMcpResponse(denied.body)).toMatchObject({
+      error: { message: `Tool ${restrictedToolName} not found` },
+    });
+    expect(toolText((await callTool(restrictedToolName, {}, customActorApiKeyToken)).body)).toEqual(
+      { isError: false, text: 'the secret' },
+    );
   });
 
   it('POST /api/mcp runs a piece action as a tool', async () => {

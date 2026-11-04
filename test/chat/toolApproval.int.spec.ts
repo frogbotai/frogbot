@@ -16,6 +16,7 @@ import {
   chatsSlug,
   messagesSlug,
   modelPort,
+  refunderName,
   usersSlug,
 } from './shared.js';
 
@@ -367,6 +368,227 @@ describe('chat tool approval', () => {
     expect(response.status).toBe(404);
     expect(approvedCalls).toEqual([]);
     await expect(turnState(paused.body.chatId)).resolves.toBe('awaiting');
+  });
+
+  it("refuses an approval from the chat's owner once they fail the tool's access rule", async () => {
+    const owner = await booted.frogbot.create({
+      collection: usersSlug,
+      data: {
+        email: 'refunder@frogbot.local',
+        password: 'frogbot-int-password',
+        name: refunderName,
+      },
+      overrideAccess: true,
+    });
+
+    const login = await post(`/${usersSlug}/login`, {
+      email: 'refunder@frogbot.local',
+      password: 'frogbot-int-password',
+    });
+
+    const headers = { Authorization: `JWT ${(login.body as unknown as { token: string }).token}` };
+    const rename = (name: string) =>
+      booted.frogbot.update({
+        collection: usersSlug,
+        id: owner.id,
+        data: { name },
+        overrideAccess: true,
+      });
+
+    model.respond({
+      toolCalls: [{ id: 'call-refund', name: 'refund_ticket', input: close().input }],
+    });
+
+    const paused = await post(`/agents/${approverAgentSlug}`, { prompt: 'Refund T-1.' }, headers);
+
+    expect(paused.body.pending?.map(({ toolName }) => toolName)).toEqual(['refund_ticket']);
+
+    await titled(paused.body.chatId);
+    await rename('Former refunder');
+
+    const approve = await settle(
+      paused.body.chatId,
+      { toolCallId: 'call-refund', approved: true },
+      headers,
+    );
+
+    const deny = await settle(
+      paused.body.chatId,
+      { toolCallId: 'call-refund', approved: false, reason: 'No.' },
+      headers,
+    );
+
+    expect([approve.status, approve.body.code]).toEqual([403, 'forbidden']);
+    expect([deny.status, deny.body.code]).toEqual([403, 'forbidden']);
+    expect(approvedCalls).toEqual([]);
+    await expect(turnState(paused.body.chatId)).resolves.toBe('awaiting');
+
+    const [, assistant] = await storedMessages(paused.body.chatId);
+
+    expect(toolPart(assistant, 'call-refund')).toMatchObject({ state: 'approval-requested' });
+
+    await rename(refunderName);
+    model.respond({ text: 'Refunded it.' });
+
+    const allowed = await settle(
+      paused.body.chatId,
+      { toolCallId: 'call-refund', approved: true },
+      headers,
+    );
+
+    expect(allowed.status).toBe(200);
+    expect(approvedCalls).toEqual([{ tool: 'refund_ticket', input: { ticket: 'T-1' } }]);
+  });
+
+  it('never offers a tool to a user who fails its rule, and a call to it never runs', async () => {
+    model.respond({
+      toolCalls: [{ id: 'call-refund', name: 'refund_ticket', input: close().input }],
+    });
+
+    model.respond({ text: 'Cannot.' });
+
+    const response = await post(`/agents/${approverAgentSlug}`, { prompt: 'Refund T-1.' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.pending ?? []).toEqual([]);
+    expect(model.requests[0]?.tools?.map(({ function: { name } }) => name)).toEqual(
+      expect.not.arrayContaining(['refund_ticket']),
+    );
+    expect(model.requests[0]?.tools?.map(({ function: { name } }) => name)).toContain(
+      'close_ticket',
+    );
+    expect(approvedCalls).toEqual([]);
+  });
+
+  it("refuses a resume or dismiss from the owner once they fail the tool's rule", async () => {
+    const owner = await booted.frogbot.create({
+      collection: usersSlug,
+      data: {
+        email: 'refunder-resume@frogbot.local',
+        password: 'frogbot-int-password',
+        name: refunderName,
+      },
+      overrideAccess: true,
+    });
+
+    const login = await post(`/${usersSlug}/login`, {
+      email: 'refunder-resume@frogbot.local',
+      password: 'frogbot-int-password',
+    });
+
+    const headers = { Authorization: `JWT ${(login.body as unknown as { token: string }).token}` };
+
+    model.respond({
+      toolCalls: [{ id: 'call-refund', name: 'refund_ticket', input: close().input }],
+    });
+
+    const paused = await post(`/agents/${approverAgentSlug}`, { prompt: 'Refund T-1.' }, headers);
+
+    expect(paused.body.pending?.map(({ toolName }) => toolName)).toEqual(['refund_ticket']);
+    expect(model.requests[0]?.tools?.map(({ function: { name } }) => name)).toContain(
+      'refund_ticket',
+    );
+
+    await titled(paused.body.chatId);
+
+    await booted.frogbot.update({
+      collection: usersSlug,
+      id: owner.id,
+      data: { name: 'Former refunder' },
+      overrideAccess: true,
+    });
+
+    const [, assistant] = await storedMessages(paused.body.chatId);
+    const resume = await post(
+      `/agents/${approverAgentSlug}`,
+      {
+        chatId: paused.body.chatId,
+        messages: [
+          {
+            ...assistant,
+            parts: assistant.parts.map((part) =>
+              part.toolCallId === 'call-refund'
+                ? {
+                    ...part,
+                    state: 'approval-responded',
+                    approval: { ...part.approval, approved: true },
+                  }
+                : part,
+            ),
+          },
+        ],
+      },
+      headers,
+    );
+
+    const dismiss = await settle(
+      paused.body.chatId,
+      { toolCallId: 'call-refund', dismissed: true },
+      headers,
+    );
+
+    expect([resume.status, resume.body.code]).toEqual([403, 'forbidden']);
+    expect([dismiss.status, dismiss.body.code]).toEqual([403, 'forbidden']);
+    expect(approvedCalls).toEqual([]);
+    await expect(turnState(paused.body.chatId)).resolves.toBe('awaiting');
+  });
+
+  it('does not run an approved call whose rule the user fails by the time the run resumes', async () => {
+    const owner = await booted.frogbot.create({
+      collection: usersSlug,
+      data: {
+        email: 'refunder-later@frogbot.local',
+        password: 'frogbot-int-password',
+        name: refunderName,
+      },
+      overrideAccess: true,
+    });
+
+    const login = await post(`/${usersSlug}/login`, {
+      email: 'refunder-later@frogbot.local',
+      password: 'frogbot-int-password',
+    });
+
+    const headers = { Authorization: `JWT ${(login.body as unknown as { token: string }).token}` };
+
+    model.respond({
+      toolCalls: [{ id: 'call-refund', name: 'refund_ticket', input: close().input }, close()],
+    });
+
+    const paused = await post(`/agents/${approverAgentSlug}`, { prompt: 'Refund T-1.' }, headers);
+
+    expect(paused.body.pending?.map(({ toolName }) => toolName).sort()).toEqual([
+      'close_ticket',
+      'refund_ticket',
+    ]);
+
+    await titled(paused.body.chatId);
+
+    const refund = await settle(
+      paused.body.chatId,
+      { toolCallId: 'call-refund', approved: true },
+      headers,
+    );
+
+    expect([refund.status, refund.body.status]).toEqual([200, 'awaiting-input']);
+
+    await booted.frogbot.update({
+      collection: usersSlug,
+      id: owner.id,
+      data: { name: 'Former refunder' },
+      overrideAccess: true,
+    });
+
+    model.respond({ text: 'Closed it.' });
+
+    const closed = await settle(
+      paused.body.chatId,
+      { toolCallId: 'call-close', approved: true },
+      headers,
+    );
+
+    expect(closed.status).toBe(200);
+    expect(approvedCalls).toEqual([{ tool: 'close_ticket', input: { ticket: 'T-1' } }]);
   });
 
   it("with the chat's autoApprove on, an ask tool runs and a required tool still pauses", async () => {

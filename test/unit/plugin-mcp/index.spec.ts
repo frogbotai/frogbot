@@ -217,6 +217,25 @@ describe('MCP plugin tools', () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+  it("gives Payload the tool's access rule only when it has one", async () => {
+    const access = vi.fn(() => false);
+    const { guarded, open } = toPayloadTools([
+      { ...returning('guarded', null), access },
+      returning('open', null),
+    ]);
+
+    expect(open).not.toHaveProperty('access');
+
+    const req = { payload: {}, frogbot: { config: {} } };
+
+    await expect(guarded.access?.({ req } as never)).resolves.toBe(false);
+    expect(access).toHaveBeenCalledExactlyOnceWith({
+      req,
+      agent: { slug: 'mcp', runId: expect.any(String) },
+      tool: { slug: 'guarded' },
+    });
+  });
+
   it('expands a piece instance into one tool per action', () => {
     const math = createMathHelper();
 

@@ -189,6 +189,7 @@ export const lookupTicket: Tool<
 | `component` | `FrogBotComponent` | Generic tool render | Import-map component that renders the tool call in chat. See below. |
 | `maxOutput` | `{ lines?: number; bytes?: number } \| false` | `{ lines: 2000, bytes: 51200 }` | How much of the result the model sees. A longer result is cut to its first whole lines, followed by `[showing lines 1-N of M; output truncated]`; an object result is cut from its indented JSON. `false` sends the whole result. The chat keeps the full result, and errors are never cut. |
 | `approval` | `false \| 'ask' \| 'required' \| ToolApproval` | `false` | Whether a person approves each call before `execute` runs. `'ask'` pauses for Approve or Deny unless the chat auto-approves, `'required'` always pauses, and a function `({ input, req, agent, tool }) => false \| 'ask' \| 'required' \| { mode, reason? }` decides per call. |
+| `access` | `ToolAccess` | Offered to every run | `({ req, agent, tool }) => boolean \| Promise<boolean>`, checked once per run before the first model call. A tool it denies, or whose rule throws, is left out of the run: the model never sees it and can't call it. |
 
 Client tools replace `execute` with `outputSchema` and `client`; see [Build a client tool](/chat/questions#build-a-client-tool).
 
@@ -270,6 +271,33 @@ A function receives `{ input, req, agent, tool }` for each call, may be async, a
 | Deny, no reason | The reply stops, as Dismiss does |
 
 A denial with feedback tells the model: `Not run: this tool needs a person's approval, and nobody can approve it in this run.` See [Tool approval](/chat/tool-approval) for Auto-approve, who can answer, the HTTP API and channels.
+
+### Limit who gets a tool
+
+Set `access` to offer a tool only to some users. A user it denies never sees the tool, and the model can't call it.
+
+```ts
+export const refund: Tool<typeof refundInput, string> = {
+  slug: 'refund',
+  description: 'Refund an order',
+  inputSchema: refundInput,
+  access: ({ req }) => req.user?.role === 'manager',
+  execute: refundOrder
+}
+```
+
+The rule receives `{ req, agent, tool }`, may be async, and runs once per run, before the first model call, with the run's request; a change to the user applies from their next message. It runs in every run, local calls with `overrideAccess` included. A rule that returns `false` or throws hides the tool, and a throw is logged. Answering an [approval](#ask-before-a-tool-runs) also needs the answerer to pass the tool's `access`, else `403`, and a run whose user fails the rule denies an already approved call instead of running it. Over [MCP](/plugins/mcp#tools), a key whose owner fails the rule isn't shown the tool.
+
+Four options decide who can do what:
+
+| Rule | Decides |
+| --- | --- |
+| Tool `access` | Whether a run is offered the tool |
+| Agent [`access`](#control-access) | Whether the agent runs at all |
+| Client tool `client.access` | Who may answer a [client tool](/chat/questions#build-a-client-tool) call |
+| Tool `approval` | Whether an offered call runs, once a person approves it |
+
+A piece's tools take a rule by [spreading](#change-a-tool-you-didnt-write): `tools: [gmail, { ...gmail.sendEmail, access: isAdmin }]` offers the rest of Gmail to everyone and sending only to admins. A client tool takes `client.access` instead, and `access` on one, or an `access` that isn't a function, fails at startup.
 
 ### Change a tool you didn't write
 

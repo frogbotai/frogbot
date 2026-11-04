@@ -4575,6 +4575,54 @@ describe('frogbot sanitize', () => {
       ).toThrow("[frogbot] Duplicate tool slug 'approvals_send' in agent 'support'.");
     });
 
+    it('requires a tool access rule to be a function and keeps it', () => {
+      const isAdmin = () => true;
+      const result = sanitize(
+        makeConfig({ ai, agents: [{ ...agent, tools: [{ ...makeTool('ok'), access: isAdmin }] }] }),
+      );
+
+      expect(result.agents?.[0].tools?.[0]).toHaveProperty('access', isAdmin);
+
+      const inherited = sanitize(
+        makeConfig({ ai, agents: [agent], tools: [{ ...makeTool('root'), access: isAdmin }] }),
+      );
+
+      expect(inherited.agents?.[0].tools?.find(({ slug }) => slug === 'root')).toHaveProperty(
+        'access',
+        isAdmin,
+      );
+
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai,
+            agents: [{ ...agent, tools: [{ ...makeTool('x'), access: 'admin' as never }] }],
+          }),
+        ),
+      ).toThrow("[frogbot] Tool 'x' in agent 'support': `access` must be a function.");
+
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai,
+            agents: [agent],
+            tools: [{ ...makeTool('x'), access: 'admin' as never }],
+          }),
+        ),
+      ).toThrow("[frogbot] Tool 'x' in root: `access` must be a function.");
+
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai,
+            agents: [{ ...agent, tools: [{ ...question, access: isAdmin } as never] }],
+          }),
+        ),
+      ).toThrow(
+        "[frogbot] Client tool 'question' in agent 'support' can't take `access`; use `client.access`.",
+      );
+    });
+
     it('sanitizes agents, defaults access, registers endpoints, and removes agents from Payload', async () => {
       const result = sanitize(makeConfig({ ai, agents: [agent] }));
       const payloadConfig = await result._internal.payloadConfig;
