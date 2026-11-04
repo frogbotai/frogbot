@@ -1,5 +1,4 @@
 import type { JobsConfig, TaskConfig, WorkflowConfig } from 'frogbot';
-import type { TaskConfig as PayloadTaskConfig } from 'payload';
 
 type Input = { input: { pageId: number }; output: object };
 
@@ -35,9 +34,7 @@ export const keyedWorkflow: WorkflowConfig<{ pageId: number }> = {
   handler: async () => {},
 };
 
-declare const payloadTask: PayloadTaskConfig<Input>;
-
 export const jobs: JobsConfig = {
-  tasks: [keyed, superseding, payloadTask],
+  tasks: [keyed, superseding],
   workflows: [keyedWorkflow],
 };

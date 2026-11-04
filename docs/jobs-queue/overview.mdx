@@ -122,6 +122,8 @@ Configured retries and checkpoint restoration remain supported. By default, a pr
 
 Job execution uses atomic claims and direct job-record updates at depth 0. It does not run jobs collection hooks. Ordinary application collection hooks, including those invoked by collection operations inside a task, remain supported.
 
+Task handlers, `onSuccess` and `onFail`, workflow handlers, and `inlineTask` callbacks receive a `FrogBotRequest`, so `req.frogbot` is set, as in hooks and endpoints. Handlers named by file path are loaded by Payload and do not get it.
+
 ## Durable workflow waits
 
 Use `waitFor` from a `jobs.workflows[].handler` to wait for an approval, an external reply, or a date. FrogBot saves the wait and pauses the same job in its original queue; there is no separate continuation job. It stays pending with a future `waitUntil`: `until` for a delay, or the expiry for a resumable wait. Waiting holds no worker and consumes no retry. `waitFor` is a workflow-handler argument; it is not available to task handlers, piece actions, agent tools, or chat handlers.

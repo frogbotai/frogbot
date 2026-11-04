@@ -102,7 +102,7 @@ const auditLog = definePlugin<AuditLogResolvedOptions>({
         },
       ],
       handler: async ({ req }) => {
-        await req.payload.delete({
+        await req.frogbot.delete({
           collection: auditSlug,
           where: {
             timestamp: {

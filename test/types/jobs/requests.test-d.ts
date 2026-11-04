@@ -1,4 +1,5 @@
-import type { Endpoint, FrogBot } from 'frogbot';
+import type { Endpoint, FrogBot, FrogBotRequest, JobsConfig } from 'frogbot';
+import { expectTypeOf } from 'vitest';
 
 export const jobsEndpoint: Endpoint = {
   path: '/jobs-type-fixture',
@@ -41,3 +42,28 @@ export async function jobsWithCreatedRequest(frogbot: FrogBot) {
   await frogbot.jobs.handleSchedules();
   await frogbot.jobs.handleSchedules(undefined);
 }
+
+export const handlerRequests: JobsConfig = {
+  tasks: [
+    {
+      slug: 'request-task',
+      handler: async ({ req }) => {
+        expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
+        await req.frogbot.find({ collection: 'users', limit: 1 });
+
+        return { output: {} };
+      },
+      onFail: ({ req }) => void expectTypeOf(req).toEqualTypeOf<FrogBotRequest>(),
+      onSuccess: ({ req }) => void expectTypeOf(req).toEqualTypeOf<FrogBotRequest>(),
+    },
+  ],
+  workflows: [
+    {
+      slug: 'request-workflow',
+      handler: async ({ req, inlineTask }) => {
+        expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
+        await inlineTask('step', { task: () => ({ output: {} }) });
+      },
+    },
+  ],
+};

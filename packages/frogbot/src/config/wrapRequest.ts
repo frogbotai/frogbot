@@ -5,6 +5,7 @@ import type {
   Config as PayloadConfig,
   DocumentTabCondition as PayloadDocumentTabCondition,
   Endpoint as PayloadEndpoint,
+  JobsConfig as PayloadJobsConfig,
   LivePreviewConfig as PayloadLivePreviewConfig,
   Payload,
   PayloadHandler,
@@ -206,4 +207,50 @@ export function wrapEndpointList(
     ...e,
     handler: wrapEndpointHandler(e.handler, attachFrogBot),
   }));
+}
+
+type PayloadTaskCallback = NonNullable<
+  NonNullable<PayloadJobsConfig['tasks']>[number]['onSuccess']
+>;
+
+export function wrapJobs(jobs: PayloadJobsConfig, attachFrogBot: AttachFrogBot): PayloadJobsConfig {
+  const withFrogBot = async (req: PayloadRequest) => {
+    await attachFrogBot(req);
+
+    return req;
+  };
+
+  const wrapCallback = (callback: PayloadTaskCallback): PayloadTaskCallback => {
+    return async (args) => callback({ ...args, req: await withFrogBot(args.req) });
+  };
+
+  return {
+    ...jobs,
+    tasks: jobs.tasks?.map((task) => {
+      const { handler, onFail, onSuccess } = task;
+
+      return {
+        ...task,
+        ...(typeof handler === 'function'
+          ? {
+              handler: async (args: Parameters<typeof handler>[0]) =>
+                handler({ ...args, req: await withFrogBot(args.req) }),
+            }
+          : {}),
+        ...(onFail ? { onFail: wrapCallback(onFail) } : {}),
+        ...(onSuccess ? { onSuccess: wrapCallback(onSuccess) } : {}),
+      };
+    }),
+    workflows: jobs.workflows?.map((workflow) => {
+      const { handler } = workflow;
+
+      return typeof handler === 'function'
+        ? {
+            ...workflow,
+            handler: async (args: Parameters<typeof handler>[0]) =>
+              handler({ ...args, req: await withFrogBot(args.req) }),
+          }
+        : workflow;
+    }),
+  };
 }

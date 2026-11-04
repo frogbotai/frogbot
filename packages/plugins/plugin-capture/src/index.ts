@@ -77,7 +77,7 @@ const capture = definePlugin<CaptureResolvedOptions>({
             const cutoff = new Date(Date.now() - options.retentionDays! * 86_400_000).toISOString();
 
             while (true) {
-              const result = await req.payload.find({
+              const result = await req.frogbot.find({
                 collection: collectionSlug,
                 where: { requestedAt: { less_than: cutoff } },
                 limit: 100,
@@ -91,7 +91,7 @@ const capture = definePlugin<CaptureResolvedOptions>({
               for (const doc of result.docs as { id: string | number; blobKey: string }[]) {
                 await storage.delete(doc.blobKey);
 
-                await req.payload.delete({
+                await req.frogbot.delete({
                   collection: collectionSlug,
                   id: doc.id,
                   overrideAccess: true,

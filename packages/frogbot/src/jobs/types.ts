@@ -26,9 +26,30 @@ type WithoutExclusive<C> = C extends { key: unknown } ? Omit<C, 'exclusive'> : C
 
 export type TaskConfig<
   T extends keyof PayloadTypedJobs['tasks'] | { input: object; output: object } = TaskSlug,
-> = Omit<PayloadTaskConfig<T>, 'concurrency'> & {
+> = Omit<PayloadTaskConfig<T>, 'concurrency' | 'handler' | 'onFail' | 'onSuccess'> & {
   concurrency?: WithoutExclusive<PayloadTaskConfig<T>['concurrency']>;
+  handler: string | TaskHandler<T>;
+  onFail?: TaskCallback;
+  onSuccess?: TaskCallback;
 };
+
+type WithFrogBotRequest<A> = A extends { req: PayloadRequest }
+  ? Omit<A, 'req'> & { req: FrogBotRequest }
+  : A;
+
+type PayloadTaskHandler<
+  T extends keyof PayloadTypedJobs['tasks'] | { input: object; output: object },
+> = Exclude<PayloadTaskConfig<T>['handler'], string>;
+
+export type TaskHandler<
+  T extends keyof PayloadTypedJobs['tasks'] | { input: object; output: object } = TaskSlug,
+> = (
+  args: WithFrogBotRequest<Parameters<PayloadTaskHandler<T>>[0]>,
+) => ReturnType<PayloadTaskHandler<T>>;
+
+export type TaskCallback = (
+  args: WithFrogBotRequest<Parameters<NonNullable<PayloadTaskConfig['onSuccess']>>[0]>,
+) => ReturnType<NonNullable<PayloadTaskConfig['onSuccess']>>;
 
 export type UntypedJobs = {
   tasks: Record<string, { input?: JsonObject; output?: JsonObject }>;
@@ -46,7 +67,9 @@ type WorkflowInput<T extends JobWorkflowSlug | object> = T extends JobWorkflowSl
   : T;
 
 export type WorkflowHandler<T extends JobWorkflowSlug | object = object> = (
-  args: Parameters<PayloadWorkflowHandler<WorkflowInput<T>>>[0] & { waitFor: WaitFor },
+  args: WithFrogBotRequest<Parameters<PayloadWorkflowHandler<WorkflowInput<T>>>[0]> & {
+    waitFor: WaitFor;
+  },
 ) => ReturnType<PayloadWorkflowHandler<WorkflowInput<T>>>;
 
 export type WorkflowConfig<T extends JobWorkflowSlug | object = object> = Omit<
