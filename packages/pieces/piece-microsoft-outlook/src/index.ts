@@ -27,6 +27,9 @@ import { sendDraft } from './actions/sendDraft.js';
 import { sendEmail } from './actions/sendEmail.js';
 import { type AppTokenCache, createMicrosoftOutlookClient } from './client.js';
 import { microsoftOutlookAuth, microsoftOutlookScopes } from './config.js';
+import { newAttachment } from './triggers/newAttachment.js';
+import { newEmail } from './triggers/newEmail.js';
+import { newEmailInFolder } from './triggers/newEmailInFolder.js';
 
 export const microsoftOutlookActions = [
   'sendEmail',
@@ -49,6 +52,7 @@ export const microsoftOutlookActions = [
   'listContacts',
   'customApiCall',
 ] as const;
+export const microsoftOutlookTriggers = ['newEmail', 'newEmailInFolder', 'newAttachment'] as const;
 export { microsoftOutlookScopes };
 export { MicrosoftGraphError } from './client.js';
 
@@ -106,6 +110,7 @@ export function defineMicrosoftOutlook(environment?: MicrosoftEnvironment) {
       listContacts,
       customApiCall,
     ],
+    triggers: [newEmail, newEmailInFolder, newAttachment],
   });
 }
 

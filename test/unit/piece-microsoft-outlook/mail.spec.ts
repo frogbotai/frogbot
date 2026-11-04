@@ -29,7 +29,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('Outlook mail actions', () => {
   it('registers every action named in microsoftOutlookActions', () => {
-    expect(pieceInstanceTools(outlook).map((tool) => tool.slug)).toEqual(
+    expect(pieceInstanceTools(outlook)?.map((tool) => tool.slug)).toEqual(
       microsoftOutlookActions.map((slug) => `microsoft-outlook_${slug}`),
     );
   });

@@ -69,3 +69,13 @@ Upstream splits mail (`microsoft-outlook`) and calendar (`microsoft-outlook-cale
 | —                          | `listContacts`        | Paged with `cursor`; the default contacts folder                                               |
 
 The list actions take `limit` (1–100, default 50) and `cursor`, and return `{ data, pagination: { count, hasMore, nextCursor, limit } }`. Pass `nextCursor` back as `cursor` for the next page; it is `null` on the last page. A cursor off the configured Graph origin is refused.
+
+## Triggers
+
+| Upstream trigger slug | Native trigger     | Type      | Notes                                                                         |
+| --------------------- | ------------------ | --------- | ----------------------------------------------------------------------------- |
+| `newEmail`            | `newEmail`         | `polling` | Inbox; optional `from` and `to` filters                                       |
+| `newEmailInFolder`    | `newEmailInFolder` | `polling` | One folder                                                                    |
+| `newAttachment`       | `newAttachment`    | `polling` | Saves each file attachment into FrogBot files; optional folder, default inbox |
+
+All three poll every 5 minutes. The cursor is the newest `receivedDateTime` seen plus the ids received at that instant, so mail arriving in the same second isn't missed or repeated. The first poll emits nothing, saves no files, and starts the cursor at now. Polls run without a signed-in person, so they read the factory `auth` mailbox; watching each rep's own inbox isn't supported yet.

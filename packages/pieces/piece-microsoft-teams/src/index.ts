@@ -53,7 +53,7 @@ export { microsoftTeamsScopes };
 
 export function defineMicrosoftTeams(environment?: MicrosoftEnvironment) {
   const settings = microsoftEnvironment.parse(environment ?? {});
-  const cloud = microsoftClouds[settings.cloud];
+  const cloud: { loginHost: string; graphUrl: string } = microsoftClouds[settings.cloud];
   const recipe = microsoftOAuth(settings);
   const environmentAuth = microsoftTeamsAuth.extend({
     cloud: z.literal(cloud.loginHost).default(cloud.loginHost),

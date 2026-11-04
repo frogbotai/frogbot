@@ -1240,6 +1240,11 @@
     "type": "Parameters<typeof import('@frogbotai/piece-slack').createSlack>[0]"
   },
   {
+    "page": "pieces/microsoft-outlook",
+    "heading": "Connect Outlook",
+    "type": "Parameters<typeof import('@frogbotai/piece-microsoft-outlook').createMicrosoftOutlook>[0]"
+  },
+  {
     "page": "pieces/teams",
     "heading": "Connect an agent",
     "type": "Parameters<typeof import('@frogbotai/piece-microsoft-teams').createMicrosoftTeams>[0]"
