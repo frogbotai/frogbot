@@ -9,6 +9,7 @@ import type {
   FormQuestion,
   FormQuestionConfig,
 } from './types.js';
+import { DEFAULT_UPLOAD_LIMITS, type UploadLimits, uploadRules } from './uploads.js';
 
 export const DEFAULT_CONFIRMATION = 'Thanks, your response has been sent.';
 
@@ -42,6 +43,7 @@ function buildQuestion(
   config: FormQuestionConfig,
   field: QuestionField,
   language: string | undefined,
+  limits: UploadLimits,
 ): FormQuestion {
   const admin = (field.admin ?? {}) as { description?: Label; placeholder?: Label };
 
@@ -63,6 +65,18 @@ function buildQuestion(
   }
 
   if (field.type === 'select' && field.hasMany) question.hasMany = true;
+
+  if (field.type === 'upload') {
+    const { maxFiles, maxFileSize, mimeTypes } = uploadRules(config, limits);
+
+    if (field.hasMany) question.hasMany = true;
+
+    question.maxFiles = maxFiles;
+    if (Number.isFinite(maxFileSize)) question.maxFileSize = maxFileSize;
+    if (mimeTypes.length) question.mimeTypes = mimeTypes;
+
+    return question;
+  }
 
   if (field.defaultValue !== undefined && typeof field.defaultValue !== 'function') {
     question.defaultValue = field.defaultValue;
@@ -87,17 +101,22 @@ export function buildDefinition({
   fields,
   closed,
   language,
+  limits = DEFAULT_UPLOAD_LIMITS,
 }: {
   form: FormDocument;
   fields: FieldCatalog;
   closed: boolean;
   language?: string;
+  /** The app's upload limits, which set a file question's default size. */
+  limits?: UploadLimits;
 }): Omit<FormDefinition, 'honeypot' | 'turnstile'> {
   const steps = (form.steps ?? []).map((step) => {
     const questions = (step.questions ?? []).flatMap((config) => {
       const entry = fields.get(config.field);
 
-      return entry && 'field' in entry ? [buildQuestion(config, entry.field, language)] : [];
+      return entry && 'field' in entry
+        ? [buildQuestion(config, entry.field, language, limits)]
+        : [];
     });
 
     return step.title ? { title: step.title, questions } : { questions };

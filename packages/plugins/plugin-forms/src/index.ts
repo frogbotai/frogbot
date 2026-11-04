@@ -7,6 +7,7 @@ import type { FormsRuntime } from './lookup.js';
 import { collectFields, type FormTarget } from './questions.js';
 import { resolveSpamOptions, spamWarnings } from './spam.js';
 import type { FormsPluginOptions } from './types.js';
+import { resolveUploadLimits, uploadWarnings } from './uploads.js';
 
 const FORM_VIEW: AdminViewConfig = {
   Component: '@frogbotai/plugin-forms/rsc#FormView',
@@ -73,6 +74,7 @@ const forms = definePlugin<FormsPluginOptions>({
       targets.set(collection.slug, {
         slug: collection.slug,
         fields: collectFields(collection.fields),
+        upload: Boolean(collection.upload),
       });
 
       return {
@@ -84,8 +86,11 @@ const forms = definePlugin<FormsPluginOptions>({
       };
     });
 
-    const runtime: FormsRuntime = { targets, spam };
-    const warnings = spamWarnings(spam);
+    const runtime: FormsRuntime = { targets, spam, uploads: resolveUploadLimits(config) };
+    const warnings = [
+      ...spamWarnings(spam),
+      ...uploadWarnings(config.collections.filter(({ slug }) => allowed.has(slug))),
+    ];
 
     const warn: OnInit = (frogbot) => {
       for (const warning of warnings) frogbot.logger.warn(warning);
@@ -112,7 +117,7 @@ const forms = definePlugin<FormsPluginOptions>({
  * Adds a `forms` collection whose forms create records in the listed collections, a public page
  * at `/forms/<slug>`, a definition endpoint (`GET /api/forms/:slug/definition`) and a submit
  * endpoint (`POST /api/forms/:slug/submit`) with a honeypot, optional Turnstile and a per-visitor
- * rate limit.
+ * rate limit. File questions store visitors' files in listed upload collections.
  */
 export function formsPlugin(options: FormsPluginOptions): Plugin {
   return forms(options);

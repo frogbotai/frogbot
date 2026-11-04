@@ -1,12 +1,20 @@
 import { addDataAndFileToRequest, APIError, type Endpoint, KVLockContentionError } from 'frogbot';
 
-import { createFormSubmission } from './access.js';
 import { countResponse, formIsClosed } from './closing.js';
 import { buildConfirmation } from './definition.js';
 import { definitionFor, findForm, type FormsRuntime } from './lookup.js';
 import type { FormTarget, QuestionField } from './questions.js';
 import { clientIp, takeRateLimit, verifyTurnstile } from './spam.js';
 import type { FormDocument, FormFieldError, FormSubmitResponse } from './types.js';
+import {
+  asSubmission,
+  checkFiles,
+  type CreatedFile,
+  createUploads,
+  deleteUploads,
+  FileRejected,
+  uploadQuestions,
+} from './uploads.js';
 
 export const PARAM_MAX_LENGTH = 500;
 
@@ -20,6 +28,9 @@ const failure = (status: number, error: string, headers?: HeadersInit) =>
   Response.json({ error } satisfies FormSubmitResponse, { status, headers });
 
 const busy = () => failure(503, 'This form is busy. Try again.');
+
+const invalid = (errors: FormFieldError[]) =>
+  Response.json({ errors } satisfies FormSubmitResponse, { status: 400 });
 
 const confirmed = (form: FormDocument) =>
   Response.json({ confirmation: buildConfirmation(form) } satisfies FormSubmitResponse);
@@ -62,6 +73,7 @@ export function pickSubmission(
     for (const { field: name } of step.questions ?? []) {
       const entry = target.fields.get(name);
       if (!entry || !('field' in entry) || !Object.hasOwn(answers, name)) continue;
+      if (entry.field.type === 'upload') continue;
 
       const value = cleanAnswer(entry.field, answers[name]);
       if (value !== undefined) data[name] = value;
@@ -87,6 +99,15 @@ function fieldErrors(error: unknown): FormFieldError[] | undefined {
     ...(typeof path === 'string' ? { field: path } : {}),
     message: typeof message === 'string' ? message : 'This value is invalid.',
   }));
+}
+
+function fileErrors(rejected: FileRejected): FormFieldError[] | undefined {
+  const errors = fieldErrors(rejected.reason);
+  if (errors) return errors.map(({ message }) => ({ field: rejected.field, message }));
+
+  if (rejected.reason instanceof APIError && rejected.reason.status < 500) {
+    return [{ field: rejected.field, message: rejected.reason.message }];
+  }
 }
 
 export function createDefinitionEndpoint(runtime: FormsRuntime): Endpoint {
@@ -134,7 +155,11 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
 
       try {
         await addDataAndFileToRequest(req);
-      } catch {
+      } catch (error) {
+        if (error instanceof APIError && error.status === 413) {
+          return failure(413, 'The files are too large, or there are too many.');
+        }
+
         return failure(400, 'The request body is invalid.');
       }
 
@@ -156,22 +181,33 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
         if (!verified) return failure(400, "We couldn't verify you're human. Try again.");
       }
 
+      const files = uploadQuestions(form, target, runtime.uploads);
+      const refused = checkFiles(files, isRecord(body.data) ? body.data : {}, req.files);
+
+      if (refused.length) return invalid(refused);
+
       const data = pickSubmission(form, target, body);
 
       try {
         const outcome = await countResponse(req.frogbot, form, async () => {
-          req.context.form = createFormSubmission(form, target.slug);
+          const created: CreatedFile[] = [];
 
           try {
-            await req.frogbot.create({
-              collection: target.slug,
-              data,
-              depth: 0,
-              overrideAccess: false,
-              req,
-            });
-          } finally {
-            delete req.context.form;
+            const uploaded = await createUploads({ req, form, questions: files, created });
+
+            await asSubmission(req, form, target.slug, () =>
+              req.frogbot.create({
+                collection: target.slug,
+                data: { ...data, ...uploaded },
+                depth: 0,
+                overrideAccess: false,
+                req,
+              }),
+            );
+          } catch (error) {
+            await deleteUploads(req, created);
+
+            throw error;
           }
         });
 
@@ -179,8 +215,20 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
 
         return confirmed(form);
       } catch (error) {
+        if (error instanceof FileRejected) {
+          const errors = fileErrors(error);
+          if (errors) return invalid(errors);
+
+          req.frogbot.logger.error(
+            { err: error.reason, form: form.slug, field: error.field },
+            '[plugin-forms] Saving a file failed',
+          );
+
+          return failure(500, 'Something went wrong.');
+        }
+
         const errors = fieldErrors(error);
-        if (errors) return Response.json({ errors } satisfies FormSubmitResponse, { status: 400 });
+        if (errors) return invalid(errors);
 
         if (error instanceof APIError && error.status < 500) {
           return failure(error.status, error.message);

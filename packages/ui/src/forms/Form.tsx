@@ -2,6 +2,7 @@
 import { type FormEvent, useMemo, useState } from 'react';
 
 import { Button } from '../components/button.js';
+import { fileProblem } from './files.js';
 import { FormQuestion } from './FormQuestion.js';
 import { useTurnstile } from './turnstile.js';
 import type {
@@ -30,6 +31,8 @@ function initialValue(question: Question): FormValue {
   const { defaultValue, hasMany, type } = question;
 
   if (type === 'checkbox') return defaultValue === true;
+
+  if (type === 'upload') return [];
 
   if (type === 'select' && hasMany) {
     return Array.isArray(defaultValue)
@@ -62,12 +65,35 @@ function readParams(names: string[]): Record<string, string> {
   );
 }
 
-async function post(url: string, body: unknown): Promise<FormSubmitResponse> {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+function isFiles(value: FormValue | undefined): value is File[] {
+  return Array.isArray(value) && value.some((item) => typeof item !== 'string');
+}
+
+async function post(
+  url: string,
+  body: unknown,
+  files: [string, File[]][],
+): Promise<FormSubmitResponse> {
+  const attached = files.filter(([, list]) => list.length);
+  let init: RequestInit;
+
+  if (attached.length) {
+    const form = new FormData();
+
+    form.set('_payload', JSON.stringify(body));
+
+    for (const [key, list] of attached) for (const file of list) form.append(key, file);
+
+    init = { method: 'POST', body: form };
+  } else {
+    init = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    };
+  }
+
+  const response = await fetch(url, init);
 
   return (
     ((await response.json().catch(() => undefined)) as FormSubmitResponse | undefined) ?? {
@@ -124,16 +150,20 @@ export function Form({ definition, submitUrl, onSubmitted, className }: FormProp
   };
 
   const checkStep = (): boolean => {
-    const missing = step.questions.filter(
-      (question) => question.required && isEmpty(values[question.key] ?? ''),
-    );
+    const problems = step.questions.flatMap((question): [string, string][] => {
+      const value = values[question.key] ?? '';
 
-    if (missing.length === 0) return true;
+      if (question.required && isEmpty(value)) return [[question.key, REQUIRED]];
 
-    setErrors((current) => ({
-      ...current,
-      ...Object.fromEntries(missing.map(({ key }) => [key, REQUIRED])),
-    }));
+      const problem =
+        question.type === 'upload' && isFiles(value) ? fileProblem(question, value) : undefined;
+
+      return problem ? [[question.key, problem]] : [];
+    });
+
+    if (problems.length === 0) return true;
+
+    setErrors((current) => ({ ...current, ...Object.fromEntries(problems) }));
 
     return false;
   };
@@ -166,12 +196,27 @@ export function Form({ definition, submitUrl, onSubmitted, className }: FormProp
     setFormErrors([]);
 
     try {
-      const result = await post(submitUrl, {
-        data: values,
-        params: readParams(definition.hiddenParams),
-        ...(trap ? { honeypot: trap } : {}),
-        ...(definition.turnstile ? { turnstile: turnstile.token } : {}),
+      const uploads = new Set(
+        questions.filter(({ type }) => type === 'upload').map(({ key }) => key),
+      );
+
+      const data = Object.fromEntries(Object.entries(values).filter(([key]) => !uploads.has(key)));
+      const files = [...uploads].map((key): [string, File[]] => {
+        const value = values[key];
+
+        return [key, isFiles(value) ? value : []];
       });
+
+      const result = await post(
+        submitUrl,
+        {
+          data,
+          params: readParams(definition.hiddenParams),
+          ...(trap ? { honeypot: trap } : {}),
+          ...(definition.turnstile ? { turnstile: turnstile.token } : {}),
+        },
+        files,
+      );
 
       if ('confirmation' in result) {
         onSubmitted?.(result.confirmation);

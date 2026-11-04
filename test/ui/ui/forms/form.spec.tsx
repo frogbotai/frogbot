@@ -258,6 +258,84 @@ describe('Form', () => {
     expect(reset).toHaveBeenCalledWith('widget-1');
   });
 
+  it('sends chosen files as multipart parts named after their question', async () => {
+    const fetch = respond({ confirmation: { type: 'message', message: 'Got it.' } });
+    const user = userEvent.setup();
+
+    render(
+      <Form
+        definition={{
+          ...definition,
+          hiddenParams: [],
+          steps: [
+            {
+              questions: [
+                { key: 'subject', type: 'text', label: 'Subject', required: true },
+                {
+                  key: 'attachments',
+                  type: 'upload',
+                  label: 'Attachments',
+                  required: true,
+                  hasMany: true,
+                  maxFiles: 2,
+                  maxFileSize: 1024 * 1024,
+                  mimeTypes: ['image/*'],
+                },
+              ],
+            },
+          ],
+        }}
+        submitUrl="/submit"
+      />,
+    );
+
+    const input = screen.getByLabelText(/Attachments/) as HTMLInputElement;
+    const image = (name: string, size = 4) =>
+      new File([new Uint8Array(size)], name, { type: 'image/png' });
+
+    expect(input.type).toBe('file');
+    expect(input.multiple).toBe(true);
+    expect(input.accept).toBe('image/*');
+    expect(screen.getByText('Up to 2 files, 1 MB each.')).toBeTruthy();
+
+    await user.type(screen.getByLabelText(/Subject/), 'Broken page');
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+
+    expect(screen.getByText('This field is required.')).toBeTruthy();
+
+    await user.upload(input, [image('a.png'), image('b.png'), image('c.png')]);
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+
+    expect(screen.getByText('Attach up to 2 files.')).toBeTruthy();
+
+    await user.upload(input, [image('big.png', 2 * 1024 * 1024)]);
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+
+    expect(screen.getByText('"big.png" is larger than 1 MB.')).toBeTruthy();
+    expect(fetch).not.toHaveBeenCalled();
+
+    await user.upload(input, [image('a.png'), image('b.png')]);
+
+    expect(screen.getByRole('list', { name: 'Chosen files' }).textContent).toBe('a.pngb.png');
+
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+    await screen.findByText('Got it.');
+
+    const [, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+    const body = init.body as FormData;
+
+    expect(body).toBeInstanceOf(FormData);
+    expect(init.headers).toBeUndefined();
+    expect(JSON.parse(String(body.get('_payload')))).toEqual({
+      data: { subject: 'Broken page' },
+      params: {},
+    });
+    expect(body.getAll('attachments').map((file) => (file as File).name)).toEqual([
+      'a.png',
+      'b.png',
+    ]);
+  });
+
   it('shows a closed form’s notice instead of its questions', () => {
     render(<Form definition={{ ...definition, closed: true }} submitUrl="/submit" />);
 

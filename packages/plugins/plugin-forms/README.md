@@ -30,6 +30,7 @@ Each listed collection's `access.create` becomes `isFormSubmission(req, slug) ||
 - `/forms/<slug>` is the public page, without the admin's chrome. `@frogbotai/ui/forms` exports the same `<Form>` renderer for other frontends.
 - `GET /api/forms/:slug/definition` returns the render definition.
 - `POST /api/forms/:slug/submit` takes `{ data, params, honeypot?, turnstile? }`, keeps only the form's questions and declared parameters, and returns the confirmation or field errors, never the record.
+- File questions: an `upload` field into a listed upload collection, with `maxFileSize`, `maxFiles` (up to 5) and `mimeTypes`, under the app's `upload` limits. Files are sent as multipart, created like the record, deleted when the submit fails, and never returned. Scan them in the upload collection's `beforeChange` hook; boot warns when there's none.
 - Spam protection: a honeypot, optional Cloudflare Turnstile (`turnstile: { siteKey, secretKey }`), and a per-visitor rate limit (`rateLimit`, 10 per 10 minutes) that needs `trustProxy: true` behind a proxy that sets `x-forwarded-for`.
 
 See the [forms documentation](https://docs.frogbot.ai/plugins/forms).

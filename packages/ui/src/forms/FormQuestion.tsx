@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '../components/select.js';
 import { Textarea } from '../components/textarea.js';
+import { fileHint } from './files.js';
 import type { FormQuestion as Question, FormValue } from './types.js';
 
 export type FormQuestionProps = {
@@ -114,8 +115,34 @@ export function FormQuestion({ question, value, error, onChange }: FormQuestionP
         ))}
       </RadioGroup>
     );
+  } else if (question.type === 'upload') {
+    const files = Array.isArray(value)
+      ? value.filter((item): item is File => typeof item !== 'string')
+      : [];
+
+    control = (
+      <>
+        <Input
+          {...shared}
+          accept={question.mimeTypes?.join(',')}
+          multiple={(question.maxFiles ?? 1) > 1}
+          type="file"
+          onChange={(event) => onChange(Array.from(event.target.files ?? []))}
+        />
+        <p className="fb-form__description">{fileHint(question)}</p>
+        {files.length ? (
+          <ul aria-label="Chosen files" className="fb-form__files">
+            {files.map((file, index) => (
+              <li key={`${file.name}-${index}`}>{file.name}</li>
+            ))}
+          </ul>
+        ) : null}
+      </>
+    );
   } else if (question.type === 'select' && question.hasMany) {
-    const selected = Array.isArray(value) ? value : [];
+    const selected = Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === 'string')
+      : [];
 
     control = (
       <Options describedBy={describedBy} labelId={labelId}>

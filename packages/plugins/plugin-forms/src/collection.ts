@@ -21,7 +21,7 @@ export function createFormsCollection({
   runtime: FormsRuntime;
   access?: CollectionAccess;
 }): CollectionConfig {
-  const { targets } = runtime;
+  const { targets, uploads: limits } = runtime;
 
   return {
     slug: FORMS_SLUG,
@@ -42,7 +42,7 @@ export function createFormsCollection({
       beforeValidate: [
         async ({ data, originalDoc, req }) => {
           const form = { ...originalDoc, ...data } as Partial<FormDocument>;
-          const errors = await checkForm({ form, targets, req });
+          const errors = await checkForm({ form, targets, req, limits });
 
           if (errors.length) throw new ValidationError({ collection: FORMS_SLUG, errors });
 
@@ -94,6 +94,30 @@ export function createFormsCollection({
               { name: 'label', type: 'text' },
               { name: 'description', type: 'textarea' },
               { name: 'placeholder', type: 'text' },
+              {
+                name: 'maxFileSize',
+                type: 'number',
+                min: 1,
+                admin: {
+                  description:
+                    "File questions: the largest file, in bytes. Defaults to the app's upload limit.",
+                },
+              },
+              {
+                name: 'maxFiles',
+                type: 'number',
+                min: 1,
+                max: 5,
+                admin: { description: 'File questions: how many files, up to 5. Defaults to 1.' },
+              },
+              {
+                name: 'mimeTypes',
+                type: 'text',
+                hasMany: true,
+                admin: {
+                  description: 'File questions: accepted types, like application/pdf or image/*.',
+                },
+              },
             ],
           },
         ],
