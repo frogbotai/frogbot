@@ -8,6 +8,7 @@ import {
 } from '../../pieces/definePiece.js';
 import type { PieceAction, PieceInstance } from '../../pieces/types.js';
 import { isRecord } from '../../utilities/isRecord.js';
+import { assertToolApproval } from '../approval.js';
 import type { AnyTool } from '../types.js';
 import { isClientTool } from '../types.js';
 
@@ -17,28 +18,39 @@ export function sanitizeToolList(
 ): AnyTool[] {
   const context = `${contextLabel[0].toLowerCase()}${contextLabel.slice(1)}`;
   const toolSlugs = new Set<string>();
-  const expanded: AnyTool[] = [];
+  const expanded: { tool: AnyTool; fromPiece: boolean }[] = [];
 
   for (const configuredTool of tools) {
     if (isMCPServer(configuredTool)) continue;
 
     if (isPieceInstance(configuredTool)) {
-      const instanceTools = pieceInstanceTools(configuredTool);
-      if (instanceTools) expanded.push(...instanceTools);
+      const instanceTools = pieceInstanceTools(configuredTool) ?? [];
+
+      expanded.push(...instanceTools.map((tool) => ({ tool, fromPiece: true })));
       continue;
     }
 
     if (isPieceAction(configuredTool)) {
       const actionTool = pieceActionTool(configuredTool);
-      if (actionTool) expanded.push(actionTool);
+
+      if (actionTool) expanded.push({ tool: actionTool, fromPiece: true });
       continue;
     }
 
-    expanded.push(configuredTool);
+    expanded.push({ tool: configuredTool, fromPiece: false });
   }
 
-  return expanded.map((configuredTool) => {
-    const tool = configuredTool;
+  const explicitSlugs = new Set(
+    expanded.flatMap(({ tool, fromPiece }) =>
+      fromPiece ? [] : [(tool as { slug?: unknown }).slug],
+    ),
+  );
+
+  const kept = expanded.filter(
+    ({ tool, fromPiece }) => !fromPiece || !explicitSlugs.has(tool.slug),
+  );
+
+  return kept.map(({ tool }) => {
     if (!isRecord(tool) || typeof tool.slug !== 'string' || !tool.slug.trim()) {
       throw new Error(`[frogbot] A tool in ${context} is missing a \`slug\`.`);
     }
@@ -52,6 +64,12 @@ export function sanitizeToolList(
     }
 
     if (isClientTool(tool)) {
+      if ((tool as { approval?: unknown }).approval !== undefined) {
+        throw new Error(
+          `[frogbot] Client tool '${tool.slug}' in ${context} can't take \`approval\`: a person already answers it.`,
+        );
+      }
+
       if (
         !tool.inputSchema ||
         !tool.outputSchema ||
@@ -74,7 +92,10 @@ export function sanitizeToolList(
       );
     }
 
+    assertToolApproval(tool.approval, `Tool '${tool.slug}' in ${context}`);
+
     toolSlugs.add(tool.slug);
+
     const sanitizedTool: AnyTool = {
       ...tool,
       description: tool.description,

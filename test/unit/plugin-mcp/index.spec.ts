@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
+import { NOT_APPROVABLE } from '../../../packages/frogbot/src/tools/approval.js';
 import { question } from '../../../packages/frogbot/src/tools/question.js';
 import { createMathHelper } from '../../../packages/pieces/piece-math-helper/src/index.js';
 import { mcpPlugin } from '../../../packages/plugins/plugin-mcp/src/index.js';
@@ -195,6 +196,25 @@ describe('MCP plugin tools', () => {
       content: [{ type: 'text', text: 'No ticket 42.' }],
       isError: true,
     });
+  });
+
+  it('denies a tool that needs approval, since nobody can approve over MCP', async () => {
+    const execute = vi.fn(() => 'sent');
+    const { ask, required, open } = toPayloadTools([
+      { ...returning('ask', null), execute, approval: 'ask' },
+      { ...returning('required', null), execute, approval: 'required' },
+      { ...returning('open', 'ran'), approval: () => false },
+    ]);
+
+    for (const tool of [ask, required]) {
+      await expect(call(tool).result).resolves.toEqual({
+        content: [{ type: 'text', text: NOT_APPROVABLE }],
+        isError: true,
+      });
+    }
+
+    await expect(call(open).result).resolves.toEqual({ content: [{ type: 'text', text: 'ran' }] });
+    expect(execute).not.toHaveBeenCalled();
   });
 
   it('expands a piece instance into one tool per action', () => {

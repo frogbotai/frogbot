@@ -29,6 +29,7 @@ import type {
   SignInMethod,
 } from '../../../../packages/frogbot/src/pieces/types.js';
 import { pieceCapabilities } from '../../../../packages/frogbot/src/pieces/types.js';
+import type { AnyTool } from '../../../../packages/frogbot/src/tools/types.js';
 import type { TriggerEvent } from '../../../../packages/frogbot/src/triggers/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
@@ -190,6 +191,12 @@ expectTypeOf(developer.getValue({ input: { id: 'id' } })).toEqualTypeOf<
 >();
 
 expectTypeOf(developer.client({})).toEqualTypeOf<Promise<TokenClient>>();
+
+const askFirst = { ...developer.getValue, approval: 'ask' as const };
+
+expectTypeOf(askFirst).toExtend<AnyTool>();
+expectTypeOf(askFirst.slug).toEqualTypeOf<string>();
+expectTypeOf([askFirst]).toExtend<NonNullable<AgentConfig['tools']>>();
 const connected = createCredentialed();
 const undefinedAuth = createCredentialed({ auth: undefined });
 

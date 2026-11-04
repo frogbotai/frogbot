@@ -255,6 +255,7 @@ export interface Chat {
   channelThread?: import('frogbot').ChannelThreadReference;
   channelLabel?: string | null;
   lastMessageAt?: string | null;
+  autoApprove?: boolean | null;
   todos?: import('frogbot/tools').TodoItem[];
   updatedAt: string;
   createdAt: string;
@@ -498,6 +499,7 @@ export interface ChatsSelect {
   channelThread?: boolean;
   channelLabel?: boolean;
   lastMessageAt?: boolean;
+  autoApprove?: boolean;
   todos?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;

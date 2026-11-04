@@ -468,7 +468,10 @@ describe('Teams native questions through the channel host', () => {
 
       await fixture.host.run(JSON.parse(JSON.stringify(fixture.inputs[0])));
 
-      expect(fixture.streamMessage.mock.calls[0][0].clientTools).toEqual({ kinds: ['question'] });
+      expect(fixture.streamMessage.mock.calls[0][0].clientTools).toEqual({
+        kinds: ['question'],
+        approval: true,
+      });
 
       await fixture.host.shutdown();
     },

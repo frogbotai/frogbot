@@ -18,7 +18,9 @@ export function getQuestionClientTools({
   if (!hooks) return { kinds: [] };
 
   try {
-    return hooks.supports?.({ thread }) === false ? { kinds: [] } : { kinds: ['question'] };
+    return hooks.supports?.({ thread }) === false
+      ? { kinds: [] }
+      : { kinds: ['question'], approval: true };
   } catch (error) {
     frogbot.logger.error(
       { err: error, piece: binding.instance.slug, thread: thread.id },

@@ -18,7 +18,7 @@ import { resolveChatContext } from '../chat/chatContext.js';
 import { generateMessage } from '../chat/generateMessage.js';
 import { persistAssistantMessage } from '../chat/messagePersistence.js';
 import { actorFromRequest } from '../chat/turn/actor.js';
-import { repairInterruptedParts } from '../chat/turn/messages.js';
+import { messagesConfig, repairInterruptedParts } from '../chat/turn/messages.js';
 import { promoteQueuedMessage, promoteSteerMessages } from '../chat/turn/queue.js';
 import { assertStoredSelection } from '../chat/turn/selection.js';
 import { holdTurn, releaseTurn } from '../chat/turn/state.js';
@@ -27,6 +27,8 @@ import { validateChatMessages } from '../chat/validateMessages.js';
 import type { FrogBot } from '../frogbot.js';
 import type { MCPConnections } from '../mcp/connections.js';
 import { resolveMCPTools } from '../mcp/tools.js';
+import type { ToolApprovalOption } from '../tools/approval.js';
+import { resolveToolApproval, toApprovalStatus } from '../tools/approval.js';
 import type { ToolCtx } from '../tools/types.js';
 import { isClientTool } from '../tools/types.js';
 import type { FrogBotRequest } from '../types/request.js';
@@ -62,6 +64,8 @@ type AgentRun = {
   models: string[];
   hashes: AttachmentHashes;
   mcpTools: ToolSet;
+  mcpApprovals: ReadonlyMap<string, ToolApprovalOption>;
+  autoApprove: boolean;
 };
 
 export function createAgentInstance(
@@ -78,6 +82,15 @@ export function createAgentInstance(
 
   const mcpServers = agentConfig.mcp ?? [];
   const toolSlugs = new Set(Object.keys(tools));
+  const approvals = new Map(
+    (agentConfig.tools ?? []).flatMap((tool) =>
+      !isClientTool(tool) && tool.approval !== undefined && tool.approval !== false
+        ? [[tool.slug, tool.approval] as const]
+        : [],
+    ),
+  );
+
+  const asks = approvals.size > 0 || mcpServers.some((server) => server.tools !== undefined);
 
   const access = agentConfig.access ?? (({ req }) => !!req.user);
   const runs = new WeakMap<AgentCallOptions, AgentRun>();
@@ -122,12 +135,30 @@ export function createAgentInstance(
                   .map(({ slug }) => slug),
                 ...mcpToolNames,
               ],
-              toolApproval: ({ toolCall, messages }) => {
-                if (clientToolSlugs.has(toolCall.toolName)) clientSteps.add(messages);
-
-                return 'not-applicable';
-              },
             }),
+        toolApproval: async ({ toolCall, messages }) => {
+          if (clientToolSlugs.has(toolCall.toolName)) clientSteps.add(messages);
+
+          const approval =
+            approvals.get(toolCall.toolName) ?? run.mcpApprovals.get(toolCall.toolName);
+
+          if (approval === undefined) return { type: 'not-applicable' };
+
+          const resolved = await resolveToolApproval({
+            approval,
+            input: toolCall.input,
+            req,
+            agent: ctx.agent,
+            tool: { slug: toolCall.toolName },
+            logger: frogbot.logger,
+          });
+
+          return toApprovalStatus({
+            ...resolved,
+            autoApprove: run.autoApprove,
+            canAsk: options.clientTools?.approval === true,
+          });
+        },
         prepareStep: async ({ messages, stepNumber }) => {
           const steered =
             chatId === undefined
@@ -229,6 +260,7 @@ export function createAgentInstance(
         overrideAccess: opts.overrideAccess ?? true,
         ...('chatId' in opts && opts.chatId !== undefined ? { chatId: opts.chatId } : {}),
         ...(opts.selection ? { selection: opts.selection } : {}),
+        ...(opts.autoApprove === undefined ? {} : { autoApprove: opts.autoApprove }),
       },
       abortSignal: opts.abortSignal,
     };
@@ -253,9 +285,9 @@ export function createAgentInstance(
 
     const runId = options.runId ?? generateId();
     const preparedOptions = { ...options, req, overrideAccess, runId };
-    const mcpTools =
+    const mcp =
       mcpServers.length === 0
-        ? {}
+        ? { tools: {}, approvals: new Map<string, ToolApprovalOption>() }
         : await resolveMCPTools({
             agent: agentConfig.slug,
             servers: mcpServers,
@@ -275,7 +307,21 @@ export function createAgentInstance(
       },
     });
 
-    const run: AgentRun = { op, selection, models: [], hashes: new Map(), mcpTools };
+    const autoApprove =
+      options.autoApprove ??
+      (asks && options.chatId !== undefined
+        ? await readAutoApprove({ req, chatId: options.chatId })
+        : false);
+
+    const run: AgentRun = {
+      op,
+      selection,
+      models: [],
+      hashes: new Map(),
+      mcpTools: mcp.tools,
+      mcpApprovals: mcp.approvals,
+      autoApprove,
+    };
 
     runs.set(preparedOptions, run);
 
@@ -479,6 +525,7 @@ export function createAgentInstance(
           overrideAccess: true,
           chatId: context.chatId,
           selection,
+          autoApprove: runOpts.autoApprove,
           abortSignal: AbortSignal.any([
             lease.signal,
             ...(runOpts.abortSignal ? [runOpts.abortSignal] : []),
@@ -559,6 +606,7 @@ export function createAgentInstance(
       uiMessages: context.uiMessages,
       selection: context.selection,
       clientTools,
+      autoApprove: runOpts.autoApprove,
       abortSignal: runOpts.abortSignal,
       onError: (error) => {
         throw error;
@@ -582,6 +630,25 @@ export function createAgentInstance(
   };
 
   return instance;
+}
+
+async function readAutoApprove({
+  req,
+  chatId,
+}: {
+  req: FrogBotRequest;
+  chatId: number | string;
+}): Promise<boolean> {
+  const chat = (await req.frogbot.findByID({
+    collection: messagesConfig(req).chatsSlug,
+    id: chatId,
+    depth: 0,
+    disableErrors: true,
+    req,
+    overrideAccess: true,
+  })) as { autoApprove?: boolean | null } | null;
+
+  return chat?.autoApprove === true;
 }
 
 async function toPersistentMessages(

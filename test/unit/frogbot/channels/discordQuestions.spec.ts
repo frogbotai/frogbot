@@ -243,7 +243,10 @@ describe('Discord native questions through the channel host', () => {
     const { fixture, messageId } = await asked({ location });
     const [card] = api.cards(location.threadId);
 
-    expect(fixture.streamMessage.mock.calls[0][0].clientTools).toEqual({ kinds: ['question'] });
+    expect(fixture.streamMessage.mock.calls[0][0].clientTools).toEqual({
+      kinds: ['question'],
+      approval: true,
+    });
     expect(messageId).toMatch(/^\d+$/);
     expect(card.body).toMatchObject({ flags: 32768, allowed_mentions: { parse: [] } });
     expect(JSON.stringify(card.body)).toContain(control('option', 1));

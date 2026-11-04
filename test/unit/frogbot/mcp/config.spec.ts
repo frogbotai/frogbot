@@ -130,6 +130,21 @@ describe('mcpServer config', () => {
       { timeout: { connect: 10 } },
       "[frogbot] MCP server 'browser' in agent 'support' `timeout` takes only startup, catalog and execution.",
     ],
+    [
+      'a tools map that is not an object',
+      { tools: ['click'] },
+      "[frogbot] MCP server 'browser' in agent 'support' `tools` must map tool names to options.",
+    ],
+    [
+      'an unknown tool option',
+      { tools: { click: { access: true } } },
+      "[frogbot] MCP server 'browser' in agent 'support' `tools['click']` takes only approval.",
+    ],
+    [
+      'a bad approval',
+      { tools: { '*': { approval: 'always' } } },
+      "[frogbot] MCP server 'browser' in agent 'support' `tools['*']` `approval` must be false, 'ask', 'required' or a function.",
+    ],
   ])('rejects %s', (_, overrides, message) => {
     const server = mcpServer({ ...browser, ...overrides } as MCPServerOptions);
 

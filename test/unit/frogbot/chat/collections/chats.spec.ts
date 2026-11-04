@@ -40,6 +40,7 @@ describe('defaultChatsCollection', () => {
       'channelThread',
       'channelLabel',
       'lastMessageAt',
+      'autoApprove',
       'todos',
     ]);
     expect(collection.fields.find((f) => 'name' in f && f.name === 'channelKey')).toMatchObject({

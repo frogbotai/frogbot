@@ -11,6 +11,7 @@ import {
   definePiece,
   pieceActionTool,
   pieceInstanceTools,
+  pieceToolInstance,
 } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import { generatePieceTypes } from '../../../../packages/frogbot/src/pieces/generateTypes.js';
 import { pieceCapabilities } from '../../../../packages/frogbot/src/pieces/types.js';
@@ -203,6 +204,45 @@ describe('definePiece', () => {
       'example_run',
       'example_other',
     ]);
+  });
+
+  it('spreads an action into a tool that keeps execute and its connection', async () => {
+    const createApproved = definePiece({
+      slug: 'approved',
+      label: 'Approved',
+      auth: tokenAuth,
+      client: ({ auth }) => ({ auth }),
+      actions: [
+        {
+          slug: 'send',
+          description: 'Send',
+          input: z.object({ value: z.string() }),
+          approval: 'ask',
+          run({ input, client }) {
+            return Promise.resolve({ input, client });
+          },
+        },
+      ],
+    });
+
+    const piece = createApproved({ auth: { token: 'factory' } });
+    const tool = { ...piece.send, approval: 'required' as const };
+    const { req, resolvePieceCredential } = request();
+
+    expect(pieceActionTool(piece.send)?.approval).toBe('ask');
+    expect(tool).toMatchObject({
+      slug: 'approved_send',
+      description: 'Send',
+      approval: 'required',
+    });
+    expect(pieceToolInstance(tool)).toBe(piece);
+    await expect(
+      tool.execute(
+        { value: 'hi' },
+        { req, frogbot: {} as never, agent: { slug: 'a', runId: 'r' } },
+      ),
+    ).resolves.toEqual({ input: { value: 'hi' }, client: { auth: { token: 'resolved' } } });
+    expect(resolvePieceCredential).toHaveBeenCalledWith({ piece, req });
   });
 
   it('isolates and reuses clients by runtime and credential', async () => {

@@ -106,6 +106,7 @@ describe('resolveChatCollections', () => {
       'channelThread',
       'channelLabel',
       'lastMessageAt',
+      'autoApprove',
       'todos',
     ]);
   });

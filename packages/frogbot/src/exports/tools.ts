@@ -7,6 +7,13 @@ export type {
   MCPServerOptions,
   MCPServerRemoteOptions,
   MCPServerTimeout,
+  MCPServerTools,
 } from '../mcp/types.js';
+export type {
+  ToolApproval,
+  ToolApprovalMode,
+  ToolApprovalOption,
+  ToolApprovalResult,
+} from '../tools/approval.js';
 export { question, QuestionInput, QuestionOutput } from '../tools/question.js';
 export { read_todos, TodoItem, todoTools, write_todos } from '../tools/todos.js';

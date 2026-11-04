@@ -187,6 +187,7 @@ export const lookupTicket: Tool<
 | `execute` | `(input, ctx: ToolCtx) => TResult \| Promise<TResult>` | Required | Runs the tool and returns its result to the model. `ctx` is described in [Tool context](#tool-context). |
 | `component` | `FrogBotComponent` | Generic tool render | Import-map component that renders the tool call in chat. See below. |
 | `maxOutput` | `{ lines?: number; bytes?: number } \| false` | `{ lines: 2000, bytes: 51200 }` | How much of the result the model sees. A longer result is cut to its first whole lines, followed by `[showing lines 1-N of M; output truncated]`; an object result is cut from its indented JSON. `false` sends the whole result. The chat keeps the full result, and errors are never cut. |
+| `approval` | `false \| 'ask' \| 'required' \| ToolApproval` | `false` | Whether a person approves each call before `execute` runs. `'ask'` pauses for Approve or Deny unless the chat auto-approves, `'required'` always pauses, and a function `({ input, req, agent, tool }) => false \| 'ask' \| 'required' \| { mode, reason? }` decides per call. |
 
 Client tools replace `execute` with `outputSchema` and `client`; see [Build a client tool](/chat/questions#build-a-client-tool).
 
@@ -466,6 +467,7 @@ Chat persistence accepts prompts or `UIMessage[]`; it does not accept `ModelMess
 | `overrideAccess` | `boolean` | `true` | Set `false` to enforce the agent's `access` rule against `req`. |
 | `abortSignal` | `AbortSignal` | — | Cancels the run. |
 | `chatId` | `DocID` | — | `generate` only. Persists the new user message and the reply in this existing chat. |
+| `autoApprove` | `boolean` | The chat's `autoApprove`, else `false` | Runs `approval: 'ask'` tools without asking. `'required'` tools still need a person. |
 
 ---
 

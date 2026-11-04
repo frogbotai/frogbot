@@ -485,6 +485,12 @@ export type { GatewayHandler } from './server/gateway.js';
 export { createGatewayHandler } from './server/gateway.js';
 export type { SkillConfig, SkillContent, SkillCtx, SkillResource } from './skills/types.js';
 export type {
+  ToolApproval,
+  ToolApprovalMode,
+  ToolApprovalOption,
+  ToolApprovalResult,
+} from './tools/approval.js';
+export type {
   ClientTool,
   ClientToolAccess,
   ClientToolConfig,

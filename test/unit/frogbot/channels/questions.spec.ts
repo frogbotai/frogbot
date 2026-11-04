@@ -311,7 +311,10 @@ describe('channel question delivery', () => {
     await fixture.host.run(JSON.parse(JSON.stringify(fixture.inputs[1])));
 
     expect(continueTurn).toHaveBeenCalledWith(
-      expect.objectContaining({ chatId: 'chat-1', clientTools: { kinds: ['question'] } }),
+      expect.objectContaining({
+        chatId: 'chat-1',
+        clientTools: { kinds: ['question'], approval: true },
+      }),
     );
     expect(fixture.posted.at(-1)).toEqual({ threadId: thread, text: 'Continued' });
     expect(listPendingCalls).toHaveBeenCalledTimes(2);

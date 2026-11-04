@@ -401,7 +401,12 @@ export function definePiece<const T extends PieceDefinition>(
         description: action.description,
         inputSchema: action.input,
         execute: (input, context) => invoke({ input, req: context.req }),
+        ...(action.approval === undefined ? {} : { approval: action.approval }),
       };
+
+      for (const [key, value] of Object.entries(tool)) {
+        Object.defineProperty(invoke, key, { value, enumerable: true });
+      }
 
       Object.defineProperty(invoke, actionMetadata, { value: { definition: action, tool } });
       Object.defineProperty(instance, action.slug, { value: invoke, enumerable: true });

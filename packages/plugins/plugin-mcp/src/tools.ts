@@ -3,7 +3,14 @@ import { randomUUID } from 'node:crypto';
 import type { MCPPluginConfig } from '@payloadcms/plugin-mcp';
 import type { PieceAction, PieceInstance } from 'frogbot';
 import type { AnyTool } from 'frogbot/internal';
-import { attachRegisteredFrogBot, isClientTool, sanitizeToolList } from 'frogbot/internal';
+import {
+  attachRegisteredFrogBot,
+  isClientTool,
+  NOT_APPROVABLE,
+  resolveToolApproval,
+  sanitizeToolList,
+  toApprovalStatus,
+} from 'frogbot/internal';
 
 type PayloadTool = NonNullable<MCPPluginConfig['tools']>[string];
 
@@ -75,7 +82,7 @@ export function toPayloadTools(tools: readonly McpTool[]): Record<string, Payloa
 
     assertListableSchema(tool.slug, tool.inputSchema);
 
-    const { execute } = tool;
+    const { execute, approval, slug } = tool;
 
     payloadTools[tool.slug] = {
       description: tool.description,
@@ -83,10 +90,29 @@ export function toPayloadTools(tools: readonly McpTool[]): Record<string, Payloa
       handler: async ({ input, req }) => {
         try {
           const frogbotReq = attachRegisteredFrogBot(req);
+          const agent = { slug: 'mcp', runId: randomUUID() };
+
+          const status = toApprovalStatus({
+            ...(await resolveToolApproval({
+              approval,
+              input,
+              req: frogbotReq,
+              agent,
+              tool: { slug },
+              logger: frogbotReq.frogbot.logger,
+            })),
+            autoApprove: false,
+            canAsk: false,
+          });
+
+          if (status.type === 'denied') {
+            return { content: [{ type: 'text', text: NOT_APPROVABLE }], isError: true };
+          }
+
           const result: unknown = await execute(input, {
             req: frogbotReq,
             frogbot: frogbotReq.frogbot,
-            agent: { slug: 'mcp', runId: randomUUID() },
+            agent,
           });
 
           return toResponse(result);
