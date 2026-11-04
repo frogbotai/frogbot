@@ -70,6 +70,7 @@
     "@frogbotai/piece-twilio": "workspace:*",
     "@frogbotai/piece-xero": "workspace:*",
     "@frogbotai/piece-xml": "workspace:*",
+    "@frogbotai/piece-zendesk": "workspace:*",
     "@frogbotai/piece-zoom": "workspace:*",
     "@frogbotai/plugin-ai-policy": "workspace:*",
     "@frogbotai/plugin-api-keys": "workspace:*",

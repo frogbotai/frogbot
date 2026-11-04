@@ -26,6 +26,7 @@ import { createTelegramBot } from '../../../packages/pieces/piece-telegram-bot/s
 import { createTrello } from '../../../packages/pieces/piece-trello/src/index.js';
 import { createTwilio } from '../../../packages/pieces/piece-twilio/src/index.js';
 import { createXero } from '../../../packages/pieces/piece-xero/src/index.js';
+import { createZendesk } from '../../../packages/pieces/piece-zendesk/src/index.js';
 import { createZoom } from '../../../packages/pieces/piece-zoom/src/index.js';
 
 export type RawAction = (args: { input: unknown; req: unknown }) => Promise<unknown>;
@@ -197,6 +198,12 @@ export const rawRequestRows: RawRequestRow[] = [
     input: { headers: { 'Xero-Tenant-Id': 'tenant-1' } },
     safe: '/Invoices',
     origins: ['https://api.xero.com'],
+  },
+  {
+    factory: createZendesk,
+    auth: { subdomain: 'acme', email: 'admin@acme.com', apiToken: 'zendesk-token' },
+    safe: '/tickets',
+    origins: ['https://acme.zendesk.com'],
   },
   {
     factory: createZoom,
