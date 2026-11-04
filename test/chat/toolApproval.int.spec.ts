@@ -2,8 +2,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { findTurnState } from 'frogbot/test';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { placeholderChatTitle } from '../../packages/frogbot/src/chat/title.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
@@ -110,6 +111,21 @@ describe('chat tool approval', () => {
 
   async function turnState(chatId: number | string) {
     return findTurnState({ req: await booted.frogbot.createRequest({}), chatId });
+  }
+
+  async function titled(chatId: number | string) {
+    await vi.waitFor(async () => {
+      const chat = await booted.frogbot.findByID({
+        collection: chatsSlug,
+        id: chatId,
+        depth: 0,
+        overrideAccess: true,
+      });
+
+      if (!chat.title || chat.title === placeholderChatTitle(await storedMessages(chatId))) {
+        throw new Error('The chat title is still being generated');
+      }
+    });
   }
 
   function toolPart(message: StoredMessage, toolCallId: string) {
@@ -333,6 +349,8 @@ describe('chat tool approval', () => {
 
     const paused = await start();
 
+    await titled(paused.body.chatId);
+
     await booted.frogbot.update({
       collection: chatsSlug,
       id: paused.body.chatId,
@@ -355,6 +373,8 @@ describe('chat tool approval', () => {
     model.respond({ text: 'Hello.' });
 
     const first = await start({ prompt: 'Hi.' });
+
+    await titled(first.body.chatId);
 
     await booted.frogbot.update({
       collection: chatsSlug,
