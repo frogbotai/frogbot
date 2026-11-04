@@ -1,4 +1,4 @@
-import type { CollectionAccess, CollectionSlug } from 'frogbot';
+import type { CollectionAccess, CollectionSlug, FrogBotRequest } from 'frogbot';
 
 export type FormsPluginOptions<S extends CollectionSlug = CollectionSlug> = {
   /** Collections that forms may create records in. Others are left untouched. */
@@ -21,6 +21,31 @@ export type FormsPluginOptions<S extends CollectionSlug = CollectionSlug> = {
    * @default false
    */
   trustProxy?: boolean;
+  /** Edit links: how long they last, and who manages them. */
+  links?: FormsLinksOptions;
+};
+
+/** A length of time: seconds, or a string like `'30m'`, `'12h'`, `'7d'` or `'2w'`. */
+export type FormLinkDuration = number | `${number}${'s' | 'm' | 'h' | 'd' | 'w'}`;
+
+export type FormsLinksOptions = {
+  /**
+   * How long a link lasts when `createFormLink` sets no `expiresIn`.
+   *
+   * @default '7d'
+   */
+  defaultExpiry?: FormLinkDuration;
+  /**
+   * The longest a link may last.
+   *
+   * @default '30d'
+   */
+  maxExpiry?: FormLinkDuration;
+  /**
+   * Access for the `form-links` collection, merged over the default: people who can update a
+   * record read, revoke and delete its links. Links are only made by `createFormLink`.
+   */
+  access?: Pick<CollectionAccess, 'delete' | 'read' | 'update'>;
 };
 
 export type FormsTurnstileOptions = {
@@ -80,6 +105,8 @@ export type FormDocument = {
   title: string;
   slug: string;
   collection: string;
+  /** `create` takes new records, `update` edits one through an edit link, `both` does either. */
+  mode?: FormMode | null;
   steps?: FormStepConfig[] | null;
   hiddenParams?: FormHiddenParamConfig[] | null;
   confirmation?: {
@@ -157,3 +184,63 @@ export type FormSubmission = {
   readonly form: FormDocument;
   readonly collection: string;
 };
+
+export type FormMode = 'both' | 'create' | 'update';
+
+/** `req.context.formLink` while an edit link reads or updates its record. */
+export type FormLinkContext = {
+  /** The `form-links` row. */
+  readonly id: number | string;
+  readonly collection: string;
+  readonly record: number | string;
+};
+
+/** A `form-links` row. Its token is never stored, only its hash, which no response carries. */
+export type FormLinkDocument = {
+  id: number | string;
+  label?: string | null;
+  form: number | string | FormDocument;
+  collection: string;
+  recordId: string;
+  expiresAt: string;
+  maxSubmissions?: number | null;
+  submissions?: number | null;
+  lastSubmittedAt?: string | null;
+  revokedAt?: string | null;
+  status?: FormLinkStatus;
+};
+
+export type FormLinkStatus = 'active' | 'expired' | 'revoked' | 'used up';
+
+export type CreateFormLinkOptions = {
+  /** The form's slug or ID. Its mode must be `update` or `both`. */
+  form: number | string;
+  /** The ID of the record in the form's collection that the link edits. */
+  record: number | string;
+  /** How long the link lasts, up to `links.maxExpiry`. Defaults to `links.defaultExpiry`. */
+  expiresIn?: FormLinkDuration;
+  /** How many saves the link allows. Unset, it works until it expires or is revoked. */
+  maxSubmissions?: number | null;
+  /** The request whose user makes the link. */
+  req?: FrogBotRequest;
+  /**
+   * Skip the check that the user can update the record.
+   *
+   * @default false
+   */
+  overrideAccess?: boolean;
+};
+
+export type CreatedFormLink = {
+  /** The page that opens the link. Shown once: only its hash is stored. */
+  url: string;
+  id: number | string;
+  expiresAt: string;
+};
+
+declare module 'payload' {
+  interface RequestContext {
+    /** Set by `@frogbotai/plugin-forms` while an edit link reads or updates its record. */
+    formLink?: FormLinkContext;
+  }
+}

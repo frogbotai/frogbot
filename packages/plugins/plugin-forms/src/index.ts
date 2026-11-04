@@ -3,6 +3,9 @@ import type { AdminViewConfig } from 'payload';
 
 import { wrapCreateAccess } from './access.js';
 import { createFormsCollection, FORMS_SLUG } from './collection.js';
+import { FORM_LINKS_SLUG } from './links/access.js';
+import { createFormLinksCollection } from './links/collection.js';
+import { resolveLinkLimits } from './links/token.js';
 import type { FormsRuntime } from './lookup.js';
 import { collectFields, type FormTarget } from './questions.js';
 import { resolveSpamOptions, spamWarnings } from './spam.js';
@@ -18,14 +21,24 @@ const FORM_VIEW: AdminViewConfig = {
 
 export { isFormSubmission } from './access.js';
 export { FORMS_SLUG } from './collection.js';
+export { FORM_LINKS_SLUG } from './links/access.js';
+export { createFormLink } from './links/create.js';
 export type {
+  CreatedFormLink,
+  CreateFormLinkOptions,
   FormConfirmation,
   FormDefinition,
   FormDocument,
   FormFieldError,
+  FormLinkContext,
+  FormLinkDocument,
+  FormLinkDuration,
+  FormLinkStatus,
+  FormMode,
   FormOption,
   FormQuestion,
   FormQuestionType,
+  FormsLinksOptions,
   FormsPluginOptions,
   FormsRateLimitOptions,
   FormStep,
@@ -53,8 +66,10 @@ const forms = definePlugin<FormsPluginOptions>({
       );
     }
 
-    if (config.collections.some(({ slug }) => slug === FORMS_SLUG)) {
-      throw new Error(`[plugin-forms] Collection slug '${FORMS_SLUG}' already exists.`);
+    for (const taken of [FORMS_SLUG, FORM_LINKS_SLUG]) {
+      if (config.collections.some(({ slug }) => slug === taken)) {
+        throw new Error(`[plugin-forms] Collection slug '${taken}' already exists.`);
+      }
     }
 
     for (const slug of allowed) {
@@ -75,6 +90,7 @@ const forms = definePlugin<FormsPluginOptions>({
         slug: collection.slug,
         fields: collectFields(collection.fields),
         upload: Boolean(collection.upload),
+        drafts: typeof collection.versions === 'object' && Boolean(collection.versions.drafts),
       });
 
       return {
@@ -86,7 +102,13 @@ const forms = definePlugin<FormsPluginOptions>({
       };
     });
 
-    const runtime: FormsRuntime = { targets, spam, uploads: resolveUploadLimits(config) };
+    const runtime: FormsRuntime = {
+      targets,
+      spam,
+      uploads: resolveUploadLimits(config),
+      links: resolveLinkLimits(options.links),
+    };
+
     const warnings = [
       ...spamWarnings(spam),
       ...uploadWarnings(config.collections.filter(({ slug }) => allowed.has(slug))),
@@ -98,7 +120,11 @@ const forms = definePlugin<FormsPluginOptions>({
 
     return {
       ...config,
-      collections: [...collections, createFormsCollection({ runtime, access: options.access })],
+      collections: [
+        ...collections,
+        createFormsCollection({ runtime, access: options.access }),
+        createFormLinksCollection({ targets: [...allowed], access: options.links?.access }),
+      ],
       admin: {
         ...config.admin,
         components: {
@@ -117,7 +143,8 @@ const forms = definePlugin<FormsPluginOptions>({
  * Adds a `forms` collection whose forms create records in the listed collections, a public page
  * at `/forms/<slug>`, a definition endpoint (`GET /api/forms/:slug/definition`) and a submit
  * endpoint (`POST /api/forms/:slug/submit`) with a honeypot, optional Turnstile and a per-visitor
- * rate limit. File questions store visitors' files in listed upload collections.
+ * rate limit. File questions store visitors' files in listed upload collections. Forms in the
+ * `update` or `both` mode edit one record through edit links that `createFormLink` makes.
  */
 export function formsPlugin(options: FormsPluginOptions): Plugin {
   return forms(options);

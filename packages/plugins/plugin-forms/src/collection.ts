@@ -4,6 +4,7 @@ import { ValidationError } from 'payload';
 import { countKey } from './closing.js';
 import { DEFAULT_CONFIRMATION } from './definition.js';
 import { createDefinitionEndpoint, createSubmitEndpoint } from './endpoints.js';
+import { FORM_LINKS_SLUG } from './links/access.js';
 import type { FormsRuntime } from './lookup.js';
 import { checkForm } from './questions.js';
 import type { FormDocument } from './types.js';
@@ -49,6 +50,16 @@ export function createFormsCollection({
           return data;
         },
       ],
+      beforeDelete: [
+        async ({ id, req }) => {
+          await req.frogbot.delete({
+            collection: FORM_LINKS_SLUG,
+            where: { form: { equals: id } },
+            overrideAccess: true,
+            req,
+          });
+        },
+      ],
       afterDelete: [
         async ({ doc, req }) => {
           await req.frogbot.kv.delete(countKey(doc as FormDocument));
@@ -70,7 +81,22 @@ export function createFormsCollection({
         type: 'select',
         required: true,
         options: [...targets.keys()],
-        admin: { description: 'Each response creates a record here.' },
+        admin: { description: 'Each response creates or edits a record here.' },
+      },
+      {
+        name: 'mode',
+        type: 'select',
+        required: true,
+        defaultValue: 'create',
+        options: [
+          { label: 'Create records', value: 'create' },
+          { label: 'Edit records through edit links', value: 'update' },
+          { label: 'Both', value: 'both' },
+        ],
+        admin: {
+          position: 'sidebar',
+          description: 'Edit links open one record in this form, prefilled, for someone to change.',
+        },
       },
       {
         name: 'steps',

@@ -1,9 +1,32 @@
 import type { Access, FrogBotRequest } from 'frogbot';
 import { getPayloadConfig } from 'frogbot/internal';
 
-import type { FormDocument, FormSubmission } from './types.js';
+import type { FormDocument, FormLinkContext, FormSubmission } from './types.js';
 
 const submissions = new WeakSet<object>();
+const links = new WeakSet<object>();
+
+/** Marks `req.context.formLink` as one the plugin set, so only the plugin can admit a link. */
+export function createFormLinkContext(link: FormLinkContext): FormLinkContext {
+  const context = Object.freeze({ id: link.id, collection: link.collection, record: link.record });
+  links.add(context);
+
+  return context;
+}
+
+/** The request's edit link when the plugin set it for `collection`, else `undefined`. */
+export function formLinkFor(
+  req: Pick<FrogBotRequest, 'context'>,
+  collection: string,
+): FormLinkContext | undefined {
+  const value: unknown = req.context?.formLink;
+
+  if (typeof value !== 'object' || value === null || !links.has(value)) return;
+
+  const link = value as FormLinkContext;
+
+  return link.collection === collection ? link : undefined;
+}
 
 export function createFormSubmission(form: FormDocument, collection: string): FormSubmission {
   const submission = Object.freeze({ form, collection });

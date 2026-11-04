@@ -20,7 +20,7 @@ export async function FormView(props: AdminViewServerProps) {
   const found =
     runtime && segments.length === 2 ? await findForm(req, runtime, segments[1]) : undefined;
 
-  if (!runtime || !found) return props.server.notFound();
+  if (!runtime || !found || found.form.mode === 'update') return props.server.notFound();
 
   const definition = await definitionFor(req, runtime, found);
   const submitUrl = `${payload.config.routes.api}/${FORMS_SLUG}/${encodeURIComponent(found.form.slug)}/submit`;
