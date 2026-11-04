@@ -54,6 +54,33 @@ import { uploadFile } from './actions/uploadFile.js';
 import { createHubSpotClient, type HubSpotClient, HubSpotError, signal } from './client.js';
 import { type HubSpotAuth, hubspotAuth } from './config.js';
 import { owner } from './records.js';
+import {
+  newEmailEvent,
+  newEmailSubscriptionsTimeline,
+  newFormSubmission,
+} from './triggers/marketing.js';
+import { newContactInList } from './triggers/newContactInList.js';
+import { newEngagement } from './triggers/newEngagement.js';
+import {
+  dealStageUpdated,
+  newCompany,
+  newCompanyPropertyChange,
+  newContact,
+  newContactPropertyChange,
+  newCustomObject,
+  newCustomObjectPropertyChange,
+  newDeal,
+  newDealPropertyChange,
+  newLineItem,
+  newOrUpdatedCompany,
+  newOrUpdatedContact,
+  newOrUpdatedLineItem,
+  newOrUpdatedProduct,
+  newProduct,
+  newTask,
+  newTicket,
+  newTicketPropertyChange,
+} from './triggers/records.js';
 
 export { HubSpotError } from './client.js';
 
@@ -213,5 +240,30 @@ export const createHubSpot = definePiece({
     addContactToWorkflow,
     removeEmailSubscription,
     customApiCall,
+  ],
+  triggers: [
+    newContact,
+    newOrUpdatedContact,
+    newContactPropertyChange,
+    newContactInList,
+    newCompany,
+    newOrUpdatedCompany,
+    newCompanyPropertyChange,
+    newDeal,
+    newDealPropertyChange,
+    dealStageUpdated,
+    newTicket,
+    newTicketPropertyChange,
+    newLineItem,
+    newOrUpdatedLineItem,
+    newProduct,
+    newOrUpdatedProduct,
+    newTask,
+    newCustomObject,
+    newCustomObjectPropertyChange,
+    newEngagement,
+    newFormSubmission,
+    newEmailEvent,
+    newEmailSubscriptionsTimeline,
   ],
 });
