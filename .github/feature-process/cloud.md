@@ -6,14 +6,14 @@ Cloud agents run the same steps as [the local process](README.md), started from 
 
 Only the owner adds labels. A run never adds a stage label, because runs act as the owner's GitHub account and a label added by a run would start another run.
 
-| Label               | Stage               | The run writes                                                              | It ends with                                                                                     |
-| ------------------- | ------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `ticket:research`   | research, then spec | `issue.md`, `step1_research.md`, then `step2_spec.md` from a fresh subagent | a comment with the Brief and the cards, as in [Asking the owner](step2_spec.md#asking-the-owner) |
-| `ticket:revise`     | spec revision       | the owner's answers and notes, then a revised `step2_spec.md`               | the revised Brief and the cards still open                                                       |
-| `ticket:approve`    | plan                | the owner's answers and approval, then `step3_plan.md`                      | the plan's stages, tier and `touches:`                                                           |
-| `ticket:go`         | implement           | code on the ticket branch, `step4_implementation.md`, the tester's verdict  | a PR that closes the issue                                                                       |
-| `ticket:just-do-it` | implement, no spec  | code and `step4_implementation.md`                                          | a PR that closes the issue                                                                       |
-| `ticket:automerge`  | none                | nothing. The implement run copies it to the PR after a PASS verdict         | GitHub merges the PR once `ci` passes                                                            |
+| Label               | Stage               | The run writes                                                              | It ends with                                                                                                                   |
+| ------------------- | ------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `ticket:research`   | research, then spec | `issue.md`, `step1_research.md`, then `step2_spec.md` from a fresh subagent | a comment that opens with `Your call:`, then the Brief and the cards, as in [Asking the owner](step2_spec.md#asking-the-owner) |
+| `ticket:revise`     | spec revision       | the owner's answers and notes, then a revised `step2_spec.md`               | the revised Brief and the cards still open                                                                                     |
+| `ticket:approve`    | plan                | the owner's answers and approval, then `step3_plan.md`                      | the plan's stages, tier and `touches:`                                                                                         |
+| `ticket:go`         | implement           | code on the ticket branch, `step4_implementation.md`, the tester's verdict  | a PR that closes the issue                                                                                                     |
+| `ticket:just-do-it` | implement, no spec  | code and `step4_implementation.md`                                          | a PR that closes the issue                                                                                                     |
+| `ticket:automerge`  | none                | nothing. The implement run copies it to the PR after a PASS verdict         | GitHub merges the PR once `ci` passes                                                                                          |
 
 `ticket:approve` with no answer comment accepts every recommended option. `ticket:go` on a ticket with no approved plan plans first, then implements.
 
@@ -38,13 +38,30 @@ The comment starts with the agent marker, a hidden HTML comment, and then a head
 **Ticket 424 · research done**
 ```
 
+The very next line is the owner's call, in bold, so the owner sees it before anything else, even when it is "none":
+
+```markdown
+**Your call:** none. Add `ticket:approve` to continue.
+```
+
+The line by stage:
+
+```markdown
+spec, no cards: **Your call:** none. Add ticket:approve to continue.
+spec, cards open: **Your call:** 2 decisions (D1, D2) below. Reply, then add ticket:approve or ticket:revise.
+plan: **Your call:** none. Add ticket:go to build it.
+implement, PR: **Your call:** review and merge PR #n.
+blocked or failed: **Your call:** what is needed, for example "reply to the question below, then add ticket:revise."
+```
+
 Then, in this order:
 
 - What happened, in at most 3 lines.
 - For the spec: the Brief and the open cards. At most 5 cards, each with a recommended option. A question that research can answer with a fact is not a card: answer it. Cards with an `Applies to:` topic say so, because the answer becomes a ruling.
 - Links to the ticket files on the process repo's `main`, and to the PR when there is one.
-- One last line saying exactly what the owner can do next, for example "Reply `D1: A` (or anything else), then add `ticket:approve`. `ticket:approve` with no reply accepts the recommendations."
-- Then a final line with the Claude session link, `Session: https://claude.ai/code/session_…`, so the owner can reopen the session from the comment. `strip-footer.yml` removes the "Generated by Claude Code" footer from comments and PR descriptions and keeps this line.
+- A final line with the Claude session link, `Session: https://claude.ai/code/session_…`, in every stage comment, so the owner can reopen the session from the comment. `strip-footer.yml` removes the "Generated by Claude Code" footer from comments and PR descriptions and keeps this line.
+
+`ticket:approve` with no reply accepts every recommended option, and the call line says so when cards are open.
 
 Keep it short enough to read on a phone. Detail belongs in the linked files.
 
