@@ -7,7 +7,7 @@ import { createHubSpot } from '../../../packages/pieces/piece-hubspot/src/index.
 import { body, type Call, calls, json, path, query, req, stubHubSpot } from './fixtures.js';
 
 const hubspot = createHubSpot({});
-const { triggers } = pieceFactoryDefinition(createHubSpot);
+const triggers = pieceFactoryDefinition(createHubSpot).triggers ?? [];
 
 type Cursor = { since: number; start: number; seen: string[] };
 
@@ -152,14 +152,17 @@ const recordTriggers: Array<[string, string, string, Record<string, unknown>]> =
 ];
 
 describe.each(recordTriggers)('%s', (slug, type, time, input) => {
-  const extra = slug === 'dealStageUpdated' ? { pipeline: 'default', dealstage: 'closedwon' } : {};
-  const record = (id: string, offset: number) => ({
+  const extra: Record<string, string> =
+    slug === 'dealStageUpdated' ? { pipeline: 'default', dealstage: 'closedwon' } : {};
+
+  const record = (id: string, offset: number): Stored => ({
     id,
     properties: { [time]: iso(offset), ...extra },
   });
 
   it('starts at now, then emits only records newer than the previous poll', async () => {
-    const store: Record<string, Stored[]> = { [type]: [record('1', -minute)] };
+    const records = [record('1', -minute)];
+    const store: Record<string, Stored[]> = { [type]: records };
 
     stubHubSpot(crm(store));
 
@@ -168,7 +171,7 @@ describe.each(recordTriggers)('%s', (slug, type, time, input) => {
     expect(first).toEqual({ events: [], cursor: { since: t0, start: t0, seen: [] } });
     expect(calls).toHaveLength(0);
 
-    store[type].push(record('2', minute));
+    records.push(record('2', minute));
     at(10 * minute);
 
     const second = await run(slug, input, first.cursor);
@@ -186,7 +189,7 @@ describe.each(recordTriggers)('%s', (slug, type, time, input) => {
       value: String(t0),
     });
 
-    store[type].push(record('3', 11 * minute));
+    records.push(record('3', 11 * minute));
     at(20 * minute);
 
     const third = await run(slug, input, second.cursor);
