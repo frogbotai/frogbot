@@ -10,7 +10,7 @@ export type HubSpotRequest = {
   /** A path under the API root, such as `/crm/v3/owners`. */
   path: string;
   query?: Query;
-  /** Sent as JSON. */
+  /** JSON, or `FormData` sent as multipart. */
   body?: unknown;
   signal?: AbortSignal;
 };
@@ -110,6 +110,8 @@ export function createHubSpotClient({ auth }: { auth: unknown }) {
 
   async function json(request: HubSpotRequest): Promise<unknown> {
     const target = url(request);
+    const multipart = request.body instanceof FormData;
+    const isJson = request.body !== undefined && !multipart;
 
     for (let attempt = 0; ; attempt++) {
       const result = await fetch(target, {
@@ -117,9 +119,13 @@ export function createHubSpotClient({ auth }: { auth: unknown }) {
         headers: {
           authorization,
           accept: 'application/json',
-          ...(request.body === undefined ? {} : { 'content-type': 'application/json' }),
+          ...(isJson ? { 'content-type': 'application/json' } : {}),
         },
-        body: request.body === undefined ? undefined : JSON.stringify(request.body),
+        body: multipart
+          ? (request.body as FormData)
+          : isJson
+            ? JSON.stringify(request.body)
+            : undefined,
         redirect: 'error',
         signal: request.signal,
       });

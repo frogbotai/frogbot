@@ -1,7 +1,46 @@
 import { definePiece, type PieceOAuthAccount, type PieceOAuthRecipe } from 'frogbot/pieces';
 import { z } from 'zod';
 
+import {
+  createAssociations,
+  findAssociations,
+  removeAssociations,
+} from './actions/associations.js';
+import { createOrUpdateContact } from './actions/createOrUpdateContact.js';
+import {
+  createCompany,
+  createContact,
+  createCustomObject,
+  createDeal,
+  createLineItem,
+  createProduct,
+  createTicket,
+  findCompany,
+  findContact,
+  findCustomObject,
+  findDeal,
+  findLineItem,
+  findProduct,
+  findTicket,
+  getCompany,
+  getContact,
+  getCustomObject,
+  getDeal,
+  getLineItem,
+  getProduct,
+  getTicket,
+  updateCompany,
+  updateContact,
+  updateCustomObject,
+  updateDeal,
+  updateLineItem,
+  updateProduct,
+  updateTicket,
+} from './actions/crm.js';
 import { customApiCall } from './actions/customApiCall.js';
+import { addContactToList, removeContactFromList } from './actions/lists.js';
+import { getOwnerByEmail, getOwnerById, getPipelineStageDetails } from './actions/lookups.js';
+import { addContactToWorkflow, removeEmailSubscription } from './actions/marketing.js';
 import {
   listAssociations,
   listListMembers,
@@ -11,6 +50,7 @@ import {
   listProperties,
   listRecords,
 } from './actions/reads.js';
+import { uploadFile } from './actions/uploadFile.js';
 import { createHubSpotClient, type HubSpotClient, HubSpotError, signal } from './client.js';
 import { type HubSpotAuth, hubspotAuth } from './config.js';
 import { owner } from './records.js';
@@ -118,7 +158,7 @@ export const createHubSpot = definePiece({
   label: 'HubSpot',
   admin: {
     description:
-      'Import HubSpot contacts, companies, deals, tickets, activities, lists, owners and pipelines',
+      'Import, create, update and find HubSpot contacts, companies, deals, tickets, activities and lists',
     group: 'Sales and CRM',
   },
   auth: hubspotAuth,
@@ -132,6 +172,46 @@ export const createHubSpot = definePiece({
     listOwners,
     listPipelines,
     listProperties,
+    createContact,
+    updateContact,
+    getContact,
+    findContact,
+    createOrUpdateContact,
+    createCompany,
+    updateCompany,
+    getCompany,
+    findCompany,
+    createDeal,
+    updateDeal,
+    getDeal,
+    findDeal,
+    createTicket,
+    updateTicket,
+    getTicket,
+    findTicket,
+    createLineItem,
+    updateLineItem,
+    getLineItem,
+    findLineItem,
+    createProduct,
+    updateProduct,
+    getProduct,
+    findProduct,
+    createCustomObject,
+    updateCustomObject,
+    getCustomObject,
+    findCustomObject,
+    createAssociations,
+    removeAssociations,
+    findAssociations,
+    addContactToList,
+    removeContactFromList,
+    getOwnerByEmail,
+    getOwnerById,
+    getPipelineStageDetails,
+    uploadFile,
+    addContactToWorkflow,
+    removeEmailSubscription,
     customApiCall,
   ],
 });
