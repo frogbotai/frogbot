@@ -105,6 +105,11 @@ const fixtures = {
     cli: 'next',
     env: { FROGBOT_SECRET: 'browser-sign-in-secret' },
   },
+  forms: {
+    dir: path.join(dirname, 'fixtures', 'forms'),
+    cli: 'frogbot',
+    env: { FROGBOT_SECRET: 'browser-forms-secret' },
+  },
 } satisfies Record<string, Fixture>;
 
 type Server = {
@@ -206,6 +211,7 @@ const servers: Record<string, Server> = {
     database: 'frogbot.sign-in-only.db',
     env: { SIGN_IN_SETUP: signInOnly },
   },
+  forms: { fixture: 'forms', port: testPort(3143), database: 'frogbot.forms.db' },
 };
 
 if (!dev && process.env.TEST_WORKER_INDEX === undefined) {
@@ -376,6 +382,7 @@ const testProjects = [
   }),
   project({ name: 'plugin-seo', testMatch: 'seoFields.browser.spec.ts' }),
   project({ name: 'plugin-import-export', testMatch: 'importMapping.browser.spec.ts' }),
+  project({ name: 'forms', testMatch: 'forms.browser.spec.ts' }),
   project({
     name: 'dojo',
     testMatch: [

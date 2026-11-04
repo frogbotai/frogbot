@@ -94,6 +94,33 @@ const leads = {
 
 Only the plugin's submit endpoint can set the flag, and it names one collection, so a hook that creates a document elsewhere with the same `req` isn't admitted there.
 
+## The form page
+
+Every form has a public page at `/forms/<slug>` under the admin route, `/forms/contact` with FrogBot's default admin at `/`. It renders without the admin's sidebar and header, follows the app's theme, and works for visitors who aren't signed in. The page loads the form as the visitor, so a form they can't read, or one that doesn't exist, shows the not-found page. A closed form shows that it's closed.
+
+The page reads the form's hidden parameters from its own URL, so `/forms/contact?utm_source=newsletter` saves `newsletter` to the field `utm_source` maps to. A required question must be answered before **Next** moves on, and errors from the collection's validation are shown on their questions.
+
+## Rendering a form in your own frontend
+
+The same renderer is a React component in `@frogbotai/ui/forms`. It imports nothing from FrogBot's server or Next.js, so it works in any React app. Fetch the definition, then render it against the submit endpoint:
+
+```tsx
+import { Form, type FormDefinition } from '@frogbotai/ui/forms'
+
+export function ContactForm({ definition }: { definition: FormDefinition }) {
+  return <Form definition={definition} submitUrl="https://app.example.com/api/forms/contact/submit" />
+}
+```
+
+Load `@frogbotai/ui/styles.css` once for its styles. They sit in the `frogbot` cascade layer, so your own CSS overrides them without extra specificity. The form's root is `.fb-form`.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `definition` | `FormDefinition` | Required | The form's render definition, from `GET /api/forms/<slug>/definition`. |
+| `submitUrl` | `string` | Required | Where answers are posted. |
+| `onSubmitted` | `(confirmation: FormConfirmation) => void` | None | Called with the confirmation after a successful submit. When set, a redirect confirmation is left to you. |
+| `className` | `string` | None | Added to the form's root element. |
+
 ## Endpoints
 
 Both endpoints are public and check the form's `read` access as the visitor.
@@ -102,21 +129,52 @@ Both endpoints are public and check the form's `read` access as the visitor.
 GET /api/forms/contact/definition
 ```
 
-Returns what a page needs to show the form: its title, steps, questions (`key`, `type`, `label`, `description`, `placeholder`, `required`, `options`, `hasMany`, `defaultValue`), hidden parameter names, confirmation and whether it's `closed`. It never returns the collection's other fields.
+Returns what a page needs to show the form: its title, steps, questions (`key`, `type`, `label`, `description`, `placeholder`, `required`, `options`, `hasMany`, `defaultValue`), hidden parameter names, confirmation, whether it's `closed`, the `honeypot` input's name and, with Turnstile on, `turnstile.siteKey`. It never returns the collection's other fields.
 
 ```http
 POST /api/forms/contact/submit
 Content-Type: application/json
 
-{ "data": { "email": "ada@example.com", "interest": "sales" }, "params": { "utm_source": "newsletter" } }
+{ "data": { "email": "ada@example.com", "interest": "sales" }, "params": { "utm_source": "newsletter" }, "turnstile": "<token>" }
 ```
 
 - Keys that aren't questions on the form are dropped, as are undeclared parameters. A declared parameter is cut to 500 characters.
 - A form that is closed, past `closesAt` or at `maxResponses` answers `410`.
 - On success the response is `{ "confirmation": { "type": "message", "message": "…" } }` or `{ "confirmation": { "type": "redirect", "url": "/thanks" } }`, never the record.
 - When the collection refuses the record, the response is `400` with `{ "errors": [{ "field": "email", "message": "…" }] }`.
+- A missing or refused Turnstile token answers `400`, and too many submits from one address answer `429` with a `Retry-After` header. See [Spam protection](#spam-protection).
 
 With `maxResponses` set, responses are counted under a per-form lock in the app's KV store, so two visitors submitting at once never pass the limit. Without it, the count is kept but not locked.
+
+## Spam protection
+
+A public form is a public write path, so every submit goes through these checks, in this order:
+
+1. **Rate limit.** With `trustProxy` on, each visitor address gets `rateLimit.max` submits per `rateLimit.window` seconds across all forms, 10 per 10 minutes by default. The next one answers `429` before the body is read. Counts live in the app's KV store.
+2. **Honeypot.** The page has a hidden input that people never see or reach with the keyboard. A submit that fills it gets the normal confirmation, and nothing is saved or counted.
+3. **Turnstile.** With `turnstile` set, the page shows Cloudflare's [Turnstile](https://developers.cloudflare.com/turnstile/) widget and the plugin checks its token with Cloudflare before saving. A missing, invalid, expired or reused token answers `400`. Tokens last 300 seconds and work once.
+
+```ts
+formsPlugin({
+  collections: ['leads'],
+  turnstile: {
+    siteKey: process.env.TURNSTILE_SITE_KEY!,
+    secretKey: process.env.TURNSTILE_SECRET_KEY!,
+  },
+  rateLimit: { max: 5, window: 600 },
+  trustProxy: true,
+})
+```
+
+### Visitor addresses and `trustProxy`
+
+The server can't see a visitor's address on its own; behind a proxy or load balancer, it gets it from the `x-forwarded-for` header the proxy sets. A visitor can send that header too, so the plugin reads it only when you set `trustProxy: true`, and then uses its last entry, the one your proxy appended, or `x-real-ip` when there's none.
+
+Set `trustProxy: true` only when every request reaches the app through a proxy that sets those headers, such as Fly.io, Vercel, Cloudflare or nginx with `proxy_add_x_forwarded_for`. With it off, submits aren't rate-limited at all, since counting every visitor together would refuse real people on a busy day, and boot logs a warning. The honeypot and Turnstile still run.
+
+### Email hooks can relay spam
+
+A hook on the collection that emails the person who submitted, such as a "we got your request" reply, sends mail to any address a bot types in. Bots use this to relay spam through your domain. Turn on Turnstile for forms whose collection sends mail to the submitted address, or send those emails only after a person reviews the record.
 
 ## Options
 
@@ -124,3 +182,6 @@ With `maxResponses` set, responses are counted under a per-form lock in the app'
 | --- | --- | --- | --- |
 | `collections` | `CollectionSlug[]` | Required | Collections forms may create records in. |
 | `access` | `CollectionAccess` | Anyone reads, signed-in users write | Access for the `forms` collection, merged over the defaults. |
+| `turnstile` | `{ siteKey: string; secretKey: string }` | None | Cloudflare Turnstile keys. When set, every submit needs a token Cloudflare accepts. |
+| `rateLimit` | `{ max?: number; window?: number }` | `{ max: 10, window: 600 }` | Submits allowed from one visitor address per window, in seconds, across forms. Counted only with `trustProxy`. |
+| `trustProxy` | `boolean` | `false` | Read the visitor's address from the `x-forwarded-for` (last entry) or `x-real-ip` header your proxy sets. Off, submits aren't rate-limited and boot warns. |

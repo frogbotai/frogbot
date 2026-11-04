@@ -8,7 +8,7 @@ import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { buildTestConfig } from '../__helpers/shared/buildTestConfig.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
-import { hookMarkerPrefix, leadsSlug, staffFormSlug } from './config.js';
+import { hookMarkerPrefix, leadsSlug, staffFormSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const adapterLabel = process.env.FROGBOT_DATABASE || 'sqlite';
@@ -177,6 +177,7 @@ describe(`forms plugin [${adapterLabel}]`, () => {
       hiddenParams: ['utm_source'],
       confirmation: { type: 'message', message: 'Thanks!' },
       closed: false,
+      honeypot: expect.any(String),
     });
   });
 
@@ -301,5 +302,45 @@ describe(`forms plugin [${adapterLabel}]`, () => {
 
     expect(results.map(({ status }) => status).sort()).toEqual([200, 200, 410]);
     expect(await leads()).toHaveLength(2);
+  });
+
+  it('answers a filled honeypot with the confirmation, creating and counting nothing', async () => {
+    await createForm({ maxResponses: 1 });
+
+    const { body: definition } = await booted.restClient.get<FormDefinition>(
+      '/api/forms/contact/definition',
+    );
+
+    const trapped = await submit('contact', {
+      data: { email: 'bot@example.com' },
+      honeypot: 'https://spam.example',
+    });
+
+    expect(definition.honeypot).toMatch(/\S/);
+    expect(definition.turnstile).toBeUndefined();
+    expect(trapped).toMatchObject({ status: 200, body: { confirmation: { message: 'Thanks!' } } });
+    expect(await leads()).toEqual([]);
+
+    expect((await submit('contact', { data: { email: 'ada@example.com' } })).status).toBe(200);
+    expect(await leads()).toHaveLength(1);
+  });
+
+  it('keeps no per-address count without trustProxy, whatever x-forwarded-for says', async () => {
+    await createForm();
+
+    const statuses = [];
+
+    for (let index = 0; index < 12; index += 1) {
+      const { status } = await booted.restClient.post(
+        '/api/forms/contact/submit',
+        { data: { email: `visitor${index}@example.com` } },
+        { headers: { 'x-forwarded-for': index % 2 ? '203.0.113.9' : `198.51.100.${index}` } },
+      );
+
+      statuses.push(status);
+    }
+
+    expect(statuses).toEqual(Array(12).fill(200));
+    expect(await leads()).toHaveLength(12);
   });
 });

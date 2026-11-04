@@ -44,6 +44,7 @@
 @import "./components/text-with-icon.css";
 @import "./components/tooltip.css";
 @import "./components/toggle.css";
+@import "./forms/form.css";
 @import "./chat/artifact.css";
 @import "./chat/attachment-card.css";
 @import "./chat/attachment-viewer.css";

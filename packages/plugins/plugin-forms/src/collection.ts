@@ -4,22 +4,28 @@ import { ValidationError } from 'payload';
 import { countKey } from './closing.js';
 import { DEFAULT_CONFIRMATION } from './definition.js';
 import { createDefinitionEndpoint, createSubmitEndpoint } from './endpoints.js';
-import { checkForm, type FormTarget } from './questions.js';
+import type { FormsRuntime } from './lookup.js';
+import { checkForm } from './questions.js';
 import type { FormDocument } from './types.js';
 
 export const FORMS_SLUG = 'forms';
 
 const signedIn: Access = ({ req }) => Boolean(req.user);
 
+export const RUNTIME_KEY = 'plugin-forms';
+
 export function createFormsCollection({
-  targets,
+  runtime,
   access,
 }: {
-  targets: Map<string, FormTarget>;
+  runtime: FormsRuntime;
   access?: CollectionAccess;
 }): CollectionConfig {
+  const { targets } = runtime;
+
   return {
     slug: FORMS_SLUG,
+    custom: { [RUNTIME_KEY]: runtime },
     admin: {
       useAsTitle: 'title',
       views: [{ type: 'list', defaultFields: ['title', 'slug', 'collection', 'status'] }],
@@ -31,7 +37,7 @@ export function createFormsCollection({
       delete: signedIn,
       ...access,
     },
-    endpoints: [createDefinitionEndpoint(targets), createSubmitEndpoint(targets)],
+    endpoints: [createDefinitionEndpoint(runtime), createSubmitEndpoint(runtime)],
     hooks: {
       beforeValidate: [
         async ({ data, originalDoc, req }) => {

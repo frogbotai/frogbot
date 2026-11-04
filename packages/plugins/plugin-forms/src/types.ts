@@ -5,6 +5,44 @@ export type FormsPluginOptions<S extends CollectionSlug = CollectionSlug> = {
   collections: S[];
   /** Access for the `forms` collection, merged over the defaults: anyone reads, signed-in users write. */
   access?: CollectionAccess;
+  /** Cloudflare Turnstile keys. When set, every submit needs a token that Cloudflare accepts. */
+  turnstile?: FormsTurnstileOptions;
+  /**
+   * Submits allowed from one visitor address per window, counted across forms. Counted only with
+   * `trustProxy`.
+   *
+   * @default { max: 10, window: 600 }
+   */
+  rateLimit?: FormsRateLimitOptions;
+  /**
+   * Read the visitor's address from the `x-forwarded-for` (last entry) or `x-real-ip` header your
+   * proxy sets. Off, submits aren't rate-limited and boot warns, since anyone can send those headers.
+   *
+   * @default false
+   */
+  trustProxy?: boolean;
+};
+
+export type FormsTurnstileOptions = {
+  /** The widget's site key, sent to the page. */
+  siteKey: string;
+  /** The secret key, used only on the server to verify tokens. */
+  secretKey: string;
+};
+
+export type FormsRateLimitOptions = {
+  /**
+   * Submits allowed per window.
+   *
+   * @default 10
+   */
+  max?: number;
+  /**
+   * Window length in seconds.
+   *
+   * @default 600
+   */
+  window?: number;
 };
 
 export type FormQuestionType =
@@ -79,12 +117,18 @@ export type FormDefinition = {
   hiddenParams: string[];
   confirmation: FormConfirmation;
   closed: boolean;
+  /** Name of the hidden input people never see. Send its value as `honeypot`; a bot that fills it gets the confirmation and nothing is saved. */
+  honeypot: string;
+  /** Set when the app uses Cloudflare Turnstile. Send the widget's token as `turnstile`. */
+  turnstile?: { siteKey: string };
 };
 
-/** The submit body: answers by question key, and URL parameters by name. */
+/** The submit body: answers by question key, URL parameters by name, and the spam checks. */
 export type FormSubmitBody = {
   data?: Record<string, unknown>;
   params?: Record<string, unknown>;
+  honeypot?: string;
+  turnstile?: string;
 };
 
 export type FormFieldError = { field?: string; message: string };

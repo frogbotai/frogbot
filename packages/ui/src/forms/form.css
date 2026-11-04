@@ -1,0 +1,113 @@
+@layer frogbot {
+  .fb-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    width: min(100%, 36rem);
+    margin-inline: auto;
+    padding: 3rem 1.5rem;
+    color: var(--color-text);
+  }
+
+  .fb-form__title {
+    margin: 0;
+    font-size: var(--fb-text-2xl);
+    line-height: var(--fb-text-2xl--line-height);
+    font-weight: 600;
+  }
+
+  .fb-form__progress {
+    margin: -0.75rem 0 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+  }
+
+  .fb-form__step-title {
+    margin: 0;
+    font-size: var(--fb-text-lg);
+    line-height: var(--fb-text-lg--line-height);
+    font-weight: 600;
+  }
+
+  .fb-form__question {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .fb-form__required {
+    margin-inline-start: 0.125rem;
+    color: var(--color-text-danger);
+  }
+
+  .fb-form__description {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+  }
+
+  .fb-form__options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .fb-form__option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .fb-form__option .fb-label {
+    font-weight: 400;
+  }
+
+  .fb-form__question [aria-invalid="true"] {
+    border-color: var(--color-border-danger);
+  }
+
+  .fb-form__error {
+    margin: 0;
+    overflow-wrap: break-word;
+    color: var(--color-text-danger);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+    font-weight: 500;
+  }
+
+  .fb-form__alert {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border-danger);
+    border-radius: var(--fb-radius-lg);
+    background: var(--color-bg-danger-tertiary);
+    color: var(--color-text-danger);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+  }
+
+  .fb-form__alert p {
+    margin: 0;
+  }
+
+  .fb-form__notice {
+    margin: 0;
+    white-space: pre-line;
+  }
+
+  .fb-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  .fb-form__trap {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
