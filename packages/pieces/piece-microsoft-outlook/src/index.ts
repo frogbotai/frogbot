@@ -7,11 +7,48 @@ import {
 import { definePiece } from 'frogbot/pieces';
 import { z } from 'zod';
 
+import { addCategory, removeCategory } from './actions/categories.js';
+import { createDraftEmail } from './actions/createDraftEmail.js';
+import { createEvent } from './actions/createEvent.js';
 import { customApiCall } from './actions/customApiCall.js';
+import { deleteEvent } from './actions/deleteEvent.js';
+import { downloadAttachment } from './actions/downloadAttachment.js';
+import { findFreeBusyPeriods } from './actions/findFreeBusyPeriods.js';
+import { forwardEmail } from './actions/forwardEmail.js';
+import { listCalendars } from './actions/listCalendars.js';
+import { listContacts } from './actions/listContacts.js';
+import { listEmails } from './actions/listEmails.js';
+import { listEvents } from './actions/listEvents.js';
+import { listMailFolders } from './actions/listMailFolders.js';
+import { moveEmail } from './actions/moveEmail.js';
+import { replyToEmail } from './actions/replyToEmail.js';
+import { searchEmails } from './actions/searchEmails.js';
+import { sendDraft } from './actions/sendDraft.js';
+import { sendEmail } from './actions/sendEmail.js';
 import { type AppTokenCache, createMicrosoftOutlookClient } from './client.js';
 import { microsoftOutlookAuth, microsoftOutlookScopes } from './config.js';
 
-export const microsoftOutlookActions = ['customApiCall'] as const;
+export const microsoftOutlookActions = [
+  'sendEmail',
+  'replyToEmail',
+  'forwardEmail',
+  'createDraftEmail',
+  'sendDraft',
+  'moveEmail',
+  'addCategory',
+  'removeCategory',
+  'searchEmails',
+  'downloadAttachment',
+  'createEvent',
+  'deleteEvent',
+  'listCalendars',
+  'findFreeBusyPeriods',
+  'listMailFolders',
+  'listEmails',
+  'listEvents',
+  'listContacts',
+  'customApiCall',
+] as const;
 export { microsoftOutlookScopes };
 export { MicrosoftGraphError } from './client.js';
 
@@ -48,7 +85,27 @@ export function defineMicrosoftOutlook(environment?: MicrosoftEnvironment) {
         tenantId: settings.tenantId,
       }),
     },
-    actions: [customApiCall],
+    actions: [
+      sendEmail,
+      replyToEmail,
+      forwardEmail,
+      createDraftEmail,
+      sendDraft,
+      moveEmail,
+      addCategory,
+      removeCategory,
+      searchEmails,
+      downloadAttachment,
+      createEvent,
+      deleteEvent,
+      listCalendars,
+      findFreeBusyPeriods,
+      listMailFolders,
+      listEmails,
+      listEvents,
+      listContacts,
+      customApiCall,
+    ],
   });
 }
 

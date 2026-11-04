@@ -34,3 +34,5 @@ export const microsoftOutlookScopes = {
   'Calendars.ReadWrite': 'Calendars.ReadWrite',
   'Contacts.Read': 'Contacts.Read',
 } as const;
+
+export const identifier = z.string().trim().min(1);

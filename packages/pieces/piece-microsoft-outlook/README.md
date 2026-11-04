@@ -43,6 +43,29 @@ Graph errors keep Graph's code, message and status. A 429 or 503 waits for `Retr
 
 ## Actions
 
-| Upstream action slug | Native action   | Notes                            |
-| -------------------- | --------------- | -------------------------------- |
-| `custom_api_call`    | `customApiCall` | Any Microsoft Graph v1.0 request |
+Upstream splits mail (`microsoft-outlook`) and calendar (`microsoft-outlook-calendar`) into two pieces; here one linked account covers both.
+
+| Upstream action slug       | Native action         | Notes                                                                                          |
+| -------------------------- | --------------------- | ---------------------------------------------------------------------------------------------- |
+| `send-email`               | `sendEmail`           | Attachments are FrogBot file ids                                                               |
+| `reply-email`              | `replyToEmail`        | Text goes above the quoted thread; adds `replyAll`; `draft` saves without sending              |
+| `forwardEmail`             | `forwardEmail`        | Graph's forward keeps the original attachments                                                 |
+| `createDraftEmail`         | `createDraftEmail`    |                                                                                                |
+| `sendDraftEmail`           | `sendDraft`           |                                                                                                |
+| `moveEmailToFolder`        | `moveEmail`           | Returns the moved email, which has a new id                                                    |
+| `addLabelToEmail`          | `addCategory`         | Upstream labels are Outlook categories                                                         |
+| `removeLabelFromEmail`     | `removeCategory`      |                                                                                                |
+| `findEmail`                | `searchEmails`        | Returns the matching emails, newest first                                                      |
+| `downloadAttachment`       | `downloadAttachment`  | Saves into FrogBot files; one attachment by id, or all                                         |
+| `request_approval_in_mail` | Dropped               | Waiting for a reply belongs to workflows; ask a person with tool approval (ticket 389) instead |
+| `create_event`             | `createEvent`         | Adds attendees and body; the end defaults to 30 minutes after the start                        |
+| `delete_event`             | `deleteEvent`         | An event that is already gone counts as deleted                                                |
+| `list_events`              | `listEvents`          | Uses `calendarView` between `start` and `end`, so recurring events expand; paged with `cursor` |
+| `custom_api_call`          | `customApiCall`       | Any Microsoft Graph v1.0 request                                                               |
+| —                          | `listCalendars`       | Every calendar in the mailbox                                                                  |
+| —                          | `findFreeBusyPeriods` | Graph `getSchedule`; work or school accounts only                                              |
+| —                          | `listMailFolders`     | Paged with `cursor`                                                                            |
+| —                          | `listEmails`          | Paged with `cursor`; newest first, optional `receivedAfter`                                    |
+| —                          | `listContacts`        | Paged with `cursor`; the default contacts folder                                               |
+
+The list actions take `limit` (1–100, default 50) and `cursor`, and return `{ data, pagination: { count, hasMore, nextCursor, limit } }`. Pass `nextCursor` back as `cursor` for the next page; it is `null` on the last page. A cursor off the configured Graph origin is refused.
