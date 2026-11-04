@@ -29,6 +29,7 @@ export default await buildTestConfig({
   plugins: [
     apiKeysPlugin({ authCollection: 'users' }),
     usageReportsPlugin({
+      retention: { days: 30 },
       access: ({ req }) => {
         const user = req.user as { id: number | string; role?: string } | null | undefined;
 

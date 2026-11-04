@@ -98,19 +98,35 @@ const auditLog = definePlugin<AuditLogResolvedOptions>({
       schedule: [
         {
           cron: retention.cron ?? '0 0 * * *',
-          queue: `frogbot-prune-${auditSlug}`,
+          queue: 'default',
         },
       ],
       handler: async ({ req }) => {
-        await req.frogbot.delete({
-          collection: auditSlug,
-          where: {
-            timestamp: {
-              less_than: new Date(Date.now() - retention.days * 86_400_000).toISOString(),
-            },
-          },
-          overrideAccess: true,
-        });
+        const cutoff = new Date(Date.now() - retention.days * 86_400_000).toISOString();
+
+        while (true) {
+          const { docs } = await req.frogbot.find({
+            collection: auditSlug,
+            where: { timestamp: { less_than: cutoff } },
+            limit: 100,
+            sort: 'timestamp',
+            depth: 0,
+            overrideAccess: true,
+            req,
+          });
+
+          if (!docs.length) break;
+
+          const { errors } = await req.frogbot.delete({
+            collection: auditSlug,
+            where: { id: { in: docs.map((doc) => doc.id) } },
+            depth: 0,
+            overrideAccess: true,
+            req,
+          });
+
+          if (errors.length) throw new Error(errors[0].message);
+        }
 
         return { output: {} };
       },

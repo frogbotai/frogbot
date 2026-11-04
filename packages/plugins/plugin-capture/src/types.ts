@@ -31,7 +31,7 @@ export type CapturePluginOptions = {
   enabled?: boolean;
   storage?: CaptureStorage;
   storageRoot?: string;
-  retentionDays?: number;
+  retention?: false | { days: number; cron?: string };
   sampleRate?: number;
   maxBodyBytes?: number;
   collectionSlug?: string;

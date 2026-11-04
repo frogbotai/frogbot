@@ -3,6 +3,7 @@ import {
   type AccessResult,
   definePlugin,
   type Endpoint,
+  type FrogBotConfig,
   type FrogBotRequest,
   type Plugin,
 } from 'frogbot';
@@ -32,6 +33,7 @@ export type UsageReport = {
 
 export type UsageReportsPluginOptions = {
   access?: Access;
+  retention?: false | { days: number; cron?: string };
 };
 
 declare module 'frogbot' {
@@ -216,9 +218,49 @@ const usageReports = definePlugin<UsageReportsPluginOptions>({
       groups.add('apiKey');
     }
 
+    const retention = options.retention;
+    const task: NonNullable<NonNullable<FrogBotConfig['jobs']>['tasks']>[number] | undefined =
+      retention
+        ? {
+            slug: `frogbot-prune-${usage.slug}`,
+            interfaceName: `TaskFrogBot-prune-${usage.slug}`,
+            schedule: [{ cron: retention.cron ?? '0 0 * * *', queue: 'default' }],
+            handler: async ({ req }) => {
+              const cutoff = new Date(Date.now() - retention.days * 86_400_000).toISOString();
+
+              while (true) {
+                const { docs } = await req.frogbot.find({
+                  collection: usage.slug,
+                  where: { requestedAt: { less_than: cutoff } },
+                  limit: 100,
+                  sort: 'requestedAt',
+                  depth: 0,
+                  overrideAccess: true,
+                  req,
+                });
+
+                if (!docs.length) break;
+
+                const { errors } = await req.frogbot.delete({
+                  collection: usage.slug,
+                  where: { id: { in: docs.map((doc) => doc.id) } },
+                  depth: 0,
+                  overrideAccess: true,
+                  req,
+                });
+
+                if (errors.length) throw new Error(errors[0].message);
+              }
+
+              return { output: {} };
+            },
+          }
+        : undefined;
+
     return {
       ...config,
       collections,
+      jobs: task ? { ...config.jobs, tasks: [...(config.jobs?.tasks ?? []), task] } : config.jobs,
       endpoints: [
         ...(config.endpoints ?? []),
         buildReportEndpoint({
@@ -240,5 +282,12 @@ const usageReports = definePlugin<UsageReportsPluginOptions>({
 });
 
 export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plugin {
+  if (
+    options.retention &&
+    (!Number.isInteger(options.retention.days) || options.retention.days < 1)
+  ) {
+    throw new Error('[plugin-usage-reports] retention.days must be a positive integer.');
+  }
+
   return usageReports(options);
 }

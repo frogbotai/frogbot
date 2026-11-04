@@ -107,7 +107,7 @@ auditLogPlugin({
 })
 ```
 
-The cron defaults to midnight daily. FrogBot jobs must be running for scheduled pruning to execute.
+The task `frogbot-prune-<collectionSlug>` runs at midnight daily unless you set `cron`, and it is scheduled on the `default` queue, so a jobs runner that covers `default` prunes without extra setup. Each run deletes entries whose `timestamp` is older than `days`, 100 at a time, and fails the job if any entry can't be deleted.
 
 ## Options
 
@@ -120,4 +120,4 @@ The cron defaults to midnight daily. FrogBot jobs must be running for scheduled 
 | `ipAddress` | `boolean` | `false` | Records user agent and trusted forwarded IP metadata. |
 | `trustProxy` | `boolean` | `false` | Trusts forwarded IP headers when IP capture is enabled. |
 | `snapshot` | `'never' \| 'delete' \| 'always'` | `'never'` | Controls full document snapshots. |
-| `retention` | `false \| { days: number; cron?: string }` | `false` | Schedules deletion of old entries. |
+| `retention` | `false \| { days: number; cron?: string }` | `false` | Schedules deletion of entries older than `days` on the `default` queue. `days` must be a positive integer. |

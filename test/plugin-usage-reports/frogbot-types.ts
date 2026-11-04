@@ -95,6 +95,7 @@ export interface Config {
   user: User;
   jobs: {
     tasks: {
+      'frogbot-prune-usage-logs': TaskFrogBotPruneUsageLogs;
       'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
@@ -383,6 +384,14 @@ export interface ActivityWidget {
     excludedCollections?: ('users' | 'api-keys' | 'usage-logs')[] | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogBot-prune-usage-logs".
+ */
+export interface TaskFrogBotPruneUsageLogs {
+  input?: unknown;
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

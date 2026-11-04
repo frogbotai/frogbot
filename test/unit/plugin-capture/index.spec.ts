@@ -2,7 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import type { FrogBotRequest, Plugin } from 'frogbot';
+import type { FrogBotConfig, FrogBotRequest, Plugin } from 'frogbot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
@@ -19,6 +19,7 @@ import {
   filesystemCaptureStorage,
 } from '../../../packages/plugins/plugin-capture/src/index.js';
 import type {
+  CapturePluginOptions,
   CaptureRecord,
   CaptureStorage,
 } from '../../../packages/plugins/plugin-capture/src/types.js';
@@ -424,5 +425,190 @@ describe('capture plugin', () => {
 
     expect(fields('credentials')).toEqual(expect.arrayContaining(['capture', 'captureSampleRate']));
     expect(fields('users')).not.toContain('capture');
+  });
+});
+
+describe('capture retention', () => {
+  type Task = NonNullable<NonNullable<FrogBotConfig['jobs']>['tasks']>[number];
+  type Row = { id: number; blobKey: string; requestedAt: string };
+
+  async function pruneTask(
+    retention: CapturePluginOptions['retention'],
+    storage: CaptureStorage = {} as CaptureStorage,
+  ): Promise<Task | undefined> {
+    const config = await capturePlugin({ storage, retention })({
+      secret: 'secret',
+      db: {} as never,
+      collections: [],
+      ai: { providers: {} },
+    });
+
+    return config.jobs?.tasks?.at(-1);
+  }
+
+  async function run(task: Task | undefined, req: object): Promise<void> {
+    const handler = task?.handler;
+
+    if (typeof handler !== 'function') throw new Error('Expected an inline task handler.');
+
+    await handler({ req } as unknown as Parameters<typeof handler>[0]);
+  }
+
+  function memoryStorage(keys: string[]): CaptureStorage & { keys: Set<string> } {
+    const stored = new Set(keys);
+
+    return {
+      keys: stored,
+      put: vi.fn(),
+      get: vi.fn(),
+      delete: vi.fn((key: string) => {
+        stored.delete(key);
+
+        return Promise.resolve();
+      }),
+      async *list() {},
+    };
+  }
+
+  function memoryPayload(rows: Row[]) {
+    return {
+      find: vi.fn((args: { where: { requestedAt: { less_than: string } }; limit: number }) =>
+        Promise.resolve({
+          docs: rows
+            .filter((row) => row.requestedAt < args.where.requestedAt.less_than)
+            .slice(0, args.limit),
+        }),
+      ),
+      delete: vi.fn((args: { id: number }) => {
+        rows.splice(
+          rows.findIndex((row) => row.id === args.id),
+          1,
+        );
+
+        return Promise.resolve({});
+      }),
+    };
+  }
+
+  it('registers no task by default', async () => {
+    expect(await pruneTask(undefined)).toBeUndefined();
+    expect(await pruneTask(false)).toBeUndefined();
+  });
+
+  it('schedules on the default queue at midnight', async () => {
+    const task = await pruneTask({ days: 30 });
+
+    expect(task?.slug).toBe('frogbot-prune-ai-captures');
+    expect(task?.schedule).toEqual([{ cron: '0 0 * * *', queue: 'default' }]);
+  });
+
+  it('keeps a custom cron', async () => {
+    expect((await pruneTask({ days: 30, cron: '0 3 * * *' }))?.schedule).toEqual([
+      { cron: '0 3 * * *', queue: 'default' },
+    ]);
+  });
+
+  it.each([0, 1.5])('rejects retention.days of %s', (days) => {
+    expect(() => capturePlugin({ retention: { days } })).toThrow(
+      '[plugin-capture] retention.days must be a positive integer.',
+    );
+  });
+
+  it('deletes expired blobs and rows and keeps recent ones', async () => {
+    const recent = new Date().toISOString();
+    const rows: Row[] = [
+      { id: 1, blobKey: 'old/a', requestedAt: '2000-01-01T00:00:00.000Z' },
+      { id: 2, blobKey: 'old/b', requestedAt: '2000-01-02T00:00:00.000Z' },
+      { id: 3, blobKey: 'new/c', requestedAt: recent },
+    ];
+
+    const storage = memoryStorage(rows.map((row) => row.blobKey));
+    const payload = memoryPayload(rows);
+
+    await run(await pruneTask({ days: 30 }, storage), { frogbot: payload });
+
+    expect(rows.map((row) => row.id)).toEqual([3]);
+    expect([...storage.keys]).toEqual(['new/c']);
+    expect(payload.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'ai-captures',
+        limit: 100,
+        sort: 'requestedAt',
+        depth: 0,
+        overrideAccess: true,
+      }),
+    );
+  });
+
+  it('fails the run when a blob delete throws', async () => {
+    const rows: Row[] = [{ id: 1, blobKey: 'old/a', requestedAt: '2000-01-01T00:00:00.000Z' }];
+    const storage = memoryStorage(['old/a']);
+    vi.mocked(storage.delete).mockRejectedValueOnce(new Error('storage down'));
+    const payload = memoryPayload(rows);
+
+    await expect(run(await pruneTask({ days: 30 }, storage), { frogbot: payload })).rejects.toThrow(
+      'storage down',
+    );
+    expect(payload.delete).not.toHaveBeenCalled();
+    expect(rows).toHaveLength(1);
+  });
+
+  it('finishes on retry after a row delete fails once its blob is gone', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'frogbot-capture-'));
+    roots.push(root);
+    const storage = filesystemCaptureStorage(root);
+    const rows: Row[] = [
+      { id: 1, blobKey: 'old/a.json.gz', requestedAt: '2000-01-01T00:00:00.000Z' },
+      { id: 2, blobKey: 'old/b.json.gz', requestedAt: '2000-01-02T00:00:00.000Z' },
+    ];
+
+    for (const row of rows) await storage.put(row.blobKey, new Uint8Array([1]));
+
+    const payload = memoryPayload(rows);
+    vi.mocked(payload.delete).mockRejectedValueOnce(new Error('database down'));
+    const task = await pruneTask({ days: 30 }, storage);
+
+    await expect(run(task, { frogbot: payload })).rejects.toThrow('database down');
+    expect(rows.map((row) => row.id)).toEqual([1, 2]);
+    await expect(storage.get('old/a.json.gz')).rejects.toThrow();
+
+    await run(task, { frogbot: payload });
+
+    expect(rows).toEqual([]);
+    await expect(storage.get('old/b.json.gz')).rejects.toThrow();
+  });
+
+  it('keeps finding batches until no expired row is left', async () => {
+    const rows: Row[] = Array.from({ length: 101 }, (_, index) => ({
+      id: index,
+      blobKey: `old/${index}`,
+      requestedAt: '2000-01-01T00:00:00.000Z',
+    }));
+
+    const storage = memoryStorage(rows.map((row) => row.blobKey));
+    const payload = memoryPayload(rows);
+
+    await run(await pruneTask({ days: 30 }, storage), { frogbot: payload });
+
+    expect(rows).toEqual([]);
+    expect(storage.keys.size).toBe(0);
+    expect(payload.find).toHaveBeenCalledTimes(3);
+  });
+
+  it('follows a custom collectionSlug', async () => {
+    const config = await capturePlugin({
+      storage: {} as CaptureStorage,
+      collectionSlug: 'captures',
+      retention: { days: 30 },
+    })({ secret: 'secret', db: {} as never, collections: [], ai: { providers: {} } });
+
+    expect(config.jobs?.tasks?.at(-1)?.slug).toBe('frogbot-prune-captures');
+  });
+
+  it('no longer accepts retentionDays', () => {
+    // @ts-expect-error retentionDays was replaced by retention.
+    const options: CapturePluginOptions = { retentionDays: 30 };
+
+    expect(options).toEqual({ retentionDays: 30 });
   });
 });
