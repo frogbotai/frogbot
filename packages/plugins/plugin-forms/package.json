@@ -19,6 +19,11 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
     "./rsc": {
       "import": "./dist/rsc.js",
       "types": "./dist/rsc.d.ts",
@@ -28,8 +33,11 @@
   "files": [
     "dist"
   ],
+  "sideEffects": [
+    "*.css"
+  ],
   "scripts": {
-    "build": "node ../../../scripts/build-package.mjs",
+    "build": "node ../../../scripts/build-package.mjs --assets css",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },

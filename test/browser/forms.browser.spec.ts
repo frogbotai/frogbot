@@ -1,7 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 
 import { signedOut } from './__helpers/signIn';
-import { leadsSlug } from './fixtures/forms/shared';
+import { applicationsSlug, leadsSlug } from './fixtures/forms/shared';
 
 async function waitForHydratedForm(page: Page) {
   await page.waitForFunction(() => {
@@ -96,6 +96,106 @@ test('an unknown form shows visitors the not-found page', async ({ browser }) =>
     await expect(page.getByRole('heading', { name: 'Nothing found' })).toBeVisible();
     expect(new URL(page.url()).pathname).toBe(path);
   }
+
+  await visitor.close();
+});
+
+test('an admin sends an edit link; signed out it opens prefilled and saves, and revoked it closes', async ({
+  browser,
+  page,
+}) => {
+  const slug = `update-${Date.now()}`;
+  const email = `${slug}@example.com`;
+
+  const form = await page.request.post('/api/forms', {
+    data: {
+      title: 'Update your application',
+      slug,
+      collection: applicationsSlug,
+      mode: 'update',
+      steps: [
+        {
+          questions: [
+            { field: 'name', label: 'Name' },
+            { field: 'phone', label: 'Phone' },
+          ],
+        },
+      ],
+      confirmation: { type: 'message', message: 'Your application is updated.' },
+    },
+  });
+
+  expect(form.ok()).toBe(true);
+
+  const created = await page.request.post(`/api/${applicationsSlug}`, {
+    data: { email, name: 'Ada', phone: '555-0100' },
+  });
+
+  const { doc } = (await created.json()) as { doc: { id: number } };
+
+  await page.goto(`/collections/${applicationsSlug}/${doc.id}`);
+  await page.getByRole('button', { name: 'More options' }).click();
+  await page.getByRole('menuitem', { name: 'Create edit link' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Create edit link' });
+
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Create link' }).click();
+
+  const field = dialog.getByLabel('Edit link');
+
+  await expect(field).toHaveValue(/\/forms\/.+\?link=/);
+
+  const url = await field.inputValue();
+
+  expect(new URL(url).pathname).toBe(`/forms/${slug}`);
+  await dialog.getByRole('button', { name: 'Done' }).click();
+
+  const visitor = await browser.newContext({ storageState: signedOut });
+  const editor = await visitor.newPage();
+  const errors: string[] = [];
+
+  editor.on('pageerror', (error) => errors.push(error.message));
+
+  await editor.goto(url);
+  await waitForHydratedForm(editor);
+
+  await expect(editor.getByLabel('Name')).toHaveValue('Ada');
+  await expect(editor.getByLabel('Phone')).toHaveValue('555-0100');
+  await expect(editor.getByText(email)).toHaveCount(0);
+
+  await editor.getByLabel('Phone').fill('555-0199');
+  await editor.getByRole('button', { name: 'Submit' }).click();
+
+  await expect(editor.locator('.fb-form').getByRole('status')).toHaveText(
+    'Your application is updated.',
+  );
+  expect(errors).toEqual([]);
+
+  await page.goto(`/collections/${applicationsSlug}/${doc.id}`);
+  await expect(page.locator('#field-phone')).toHaveValue('555-0199');
+
+  await page.getByRole('button', { name: 'More options' }).click();
+  await page.getByRole('menuitem', { name: 'View edit links' }).click();
+
+  const row = page.locator('tr', { has: page.locator('td.cell-status', { hasText: 'active' }) });
+
+  await expect(row).toHaveCount(1);
+  await row.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'More options' }).click();
+  await page.getByRole('menuitem', { name: 'Revoke selected' }).click();
+
+  await page
+    .getByRole('dialog', { name: 'Revoke this link?' })
+    .getByRole('button', { name: 'Revoke' })
+    .click();
+
+  await expect(page.locator('td.cell-status', { hasText: 'revoked' })).toHaveCount(1);
+
+  await editor.goto(url);
+
+  await expect(editor.getByRole('heading', { name: 'This link is no longer valid' })).toBeVisible();
+  await expect(editor.locator('form.fb-form')).toHaveCount(0);
 
   await visitor.close();
 });

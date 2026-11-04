@@ -2,7 +2,7 @@ import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { formsPlugin } from '@frogbotai/plugin-forms';
 import { buildConfig } from 'frogbot';
 
-import { leadsSlug } from '../shared';
+import { applicationsSlug, leadsSlug } from '../shared';
 
 export default buildConfig({
   secret: process.env.FROGBOT_SECRET || 'browser-forms-secret',
@@ -22,6 +22,15 @@ export default buildConfig({
         { name: 'source', type: 'text' },
       ],
     },
+    {
+      slug: applicationsSlug,
+      admin: { useAsTitle: 'email' },
+      fields: [
+        { name: 'email', type: 'email', required: true },
+        { name: 'name', type: 'text' },
+        { name: 'phone', type: 'text' },
+      ],
+    },
   ],
-  plugins: [formsPlugin({ collections: [leadsSlug] })],
+  plugins: [formsPlugin({ collections: [leadsSlug, applicationsSlug] })],
 });
