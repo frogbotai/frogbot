@@ -3,33 +3,10 @@ import { z } from 'zod';
 import { signal } from '../client.js';
 import { defineAction } from '../define.js';
 import { listOutput, pageInput, tokenPage } from '../pagination.js';
-import { user } from '../records.js';
+import { changeHistory } from '../records.js';
 
 const item = z
-  .object({
-    issueId: z.string(),
-    changeHistories: z.array(
-      z
-        .object({
-          id: z.string(),
-          author: user.optional(),
-          created: z.string(),
-          items: z.array(
-            z
-              .object({
-                field: z.string(),
-                fieldId: z.string().optional(),
-                from: z.string().nullish(),
-                fromString: z.string().nullish(),
-                to: z.string().nullish(),
-                toString: z.string().nullish(),
-              })
-              .passthrough(),
-          ),
-        })
-        .passthrough(),
-    ),
-  })
+  .object({ issueId: z.string(), changeHistories: z.array(changeHistory) })
   .passthrough();
 
 export const listChangelogs = defineAction({

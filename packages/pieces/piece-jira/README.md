@@ -76,3 +76,19 @@ These are FrogBot additions for moving a whole site. Each takes `limit` (1–100
 | `downloadAttachment` | Not a list: saves one attachment into FrogBot files, refusing redirects. |
 
 Epics are issues whose children point to them through `parent`, so `searchIssues` reads them.
+
+## Triggers
+
+| Upstream trigger slug  | Native trigger       | Type      | Notes                                                                 |
+| ---------------------- | -------------------- | --------- | --------------------------------------------------------------------- |
+| `new_issue`            | `issueCreated`       | `polling` |                                                                       |
+| `updated_issue`        | `issueUpdated`       | `polling` |                                                                       |
+| `updated_issue_status` | `issueStatusChanged` | `polling` | Reads status changes from the changelog, with the old and new status. |
+| `issue_assigned`       | `issueAssigned`      | `polling` |                                                                       |
+| `new_comment`          | `commentAdded`       | `polling` |                                                                       |
+| `new_attachment`       | `attachmentAdded`    | `polling` |                                                                       |
+| `new_issue_type`       | `issueTypeCreated`   | `polling` | Keeps the highest id seen instead of every id.                        |
+| `new_project`          | `projectCreated`     | `polling` | Keeps the highest id seen instead of every id.                        |
+| `new_priority`         | `priorityCreated`    | `polling` | Keeps the highest id seen instead of every id.                        |
+
+Issue triggers keep the previous poll's time and the events emitted in the last 15 minutes, in place of upstream's 2,000-key ledger. Polls use the factory `auth`, so triggers need an API token there.

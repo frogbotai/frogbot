@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import type { JiraClient } from '../client.js';
+import { allValues } from '../pagination.js';
 import { issuePath } from '../records.js';
 
 type Args = { client: JiraClient; input: Record<string, unknown> };
@@ -24,23 +25,13 @@ const searchPage = z.object({
   ),
 });
 
-async function allValues<T>(client: JiraClient, path: string, item: z.ZodType<T>) {
-  const page = z.object({ values: z.array(item), isLast: z.boolean().optional() });
-  const values: T[] = [];
-
-  for (let startAt = 0; ; startAt += 100) {
-    const result = await client.request(page, { path, query: { startAt, maxResults: 100 } });
-
-    values.push(...result.values);
-    if (result.isLast !== false || result.values.length === 0) return values;
-  }
-}
-
 export async function projectOptions({ client }: Args) {
   const projects = await allValues(
     client,
-    '/project/search',
     z.object({ id: z.string(), key: z.string(), name: z.string() }),
+    {
+      path: '/project/search',
+    },
   );
 
   return projects.map((project) => ({
@@ -100,7 +91,7 @@ export async function userOptions({ client }: Args) {
 }
 
 export async function priorityOptions({ client }: Args) {
-  const priorities = await allValues(client, '/priority/search', named);
+  const priorities = await allValues(client, named, { path: '/priority/search' });
 
   return priorities.map((priority) => ({ label: priority.name, value: priority.id }));
 }

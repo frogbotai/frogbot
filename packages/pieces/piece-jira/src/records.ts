@@ -52,3 +52,28 @@ export function issueRef(value: string) {
 export function issuePath(value: string, rest = '') {
   return `/issue/${encodeURIComponent(value)}${rest}`;
 }
+
+const changeValue = z
+  .unknown()
+  .transform((value) => (typeof value === 'string' ? value : null))
+  .optional();
+
+export const changelogItem = z
+  .object({
+    field: z.string(),
+    fieldId: z.string().optional(),
+    from: changeValue,
+    fromString: changeValue,
+    to: changeValue,
+    toString: changeValue,
+  })
+  .passthrough();
+
+export const changeHistory = z
+  .object({
+    id: z.string(),
+    author: user.optional(),
+    created: z.string(),
+    items: z.array(changelogItem),
+  })
+  .passthrough();

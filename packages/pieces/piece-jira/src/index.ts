@@ -35,6 +35,15 @@ import { updateComment } from './actions/updateComment.js';
 import { updateIssue } from './actions/updateIssue.js';
 import { createJiraClient, type JiraClient } from './client.js';
 import { type JiraAuth, jiraAuth, jiraOptions } from './config.js';
+import { attachmentAdded } from './triggers/attachmentAdded.js';
+import { commentAdded } from './triggers/commentAdded.js';
+import { issueAssigned } from './triggers/issueAssigned.js';
+import { issueCreated } from './triggers/issueCreated.js';
+import { issueStatusChanged } from './triggers/issueStatusChanged.js';
+import { issueTypeCreated } from './triggers/issueTypeCreated.js';
+import { issueUpdated } from './triggers/issueUpdated.js';
+import { priorityCreated } from './triggers/priorityCreated.js';
+import { projectCreated } from './triggers/projectCreated.js';
 
 export const jiraActions = [
   'createIssue',
@@ -69,6 +78,18 @@ export const jiraActions = [
   'listWatchers',
   'listChangelogs',
   'customApiCall',
+] as const;
+
+export const jiraTriggers = [
+  'issueCreated',
+  'issueUpdated',
+  'issueStatusChanged',
+  'commentAdded',
+  'issueAssigned',
+  'attachmentAdded',
+  'issueTypeCreated',
+  'projectCreated',
+  'priorityCreated',
 ] as const;
 
 export const jiraScopes = {
@@ -166,5 +187,16 @@ export const createJira = definePiece({
     listWatchers,
     listChangelogs,
     customApiCall,
+  ],
+  triggers: [
+    issueCreated,
+    issueUpdated,
+    issueStatusChanged,
+    commentAdded,
+    issueAssigned,
+    attachmentAdded,
+    issueTypeCreated,
+    projectCreated,
+    priorityCreated,
   ],
 });
