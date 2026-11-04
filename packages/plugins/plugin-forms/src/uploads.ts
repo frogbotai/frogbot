@@ -1,6 +1,12 @@
 import type { FrogBotConfig, FrogBotRequest, UploadField } from 'frogbot';
 
 import { createFormSubmission } from './access.js';
+import {
+  DEFAULT_UPLOAD_LIMITS,
+  type UploadLimits,
+  type UploadRules,
+  uploadRules,
+} from './definition.js';
 import type { FormError, FormTarget } from './questions.js';
 import type { FormDocument, FormFieldError, FormQuestionConfig } from './types.js';
 
@@ -13,18 +19,6 @@ export const MAX_FILES = 5;
 export const ANSWERS_ALLOWANCE = MiB;
 
 const MIME_PATTERN = /^[\w!#$&^.+-]+\/(?:\*|[\w!#$&^.+-]+)$/;
-
-/** The app's multipart limits, per file, files per request and bytes per request. */
-export type UploadLimits = { fileSize: number; files: number; requestSize: number };
-
-/** Payload's defaults when the app sets none. */
-export const DEFAULT_UPLOAD_LIMITS: UploadLimits = {
-  fileSize: 20 * MiB,
-  files: 3,
-  requestSize: 50 * MiB,
-};
-
-export type UploadRules = { maxFiles: number; maxFileSize: number; mimeTypes: string[] };
 
 /** A file from `req.files`, as Payload's multipart parser leaves it. */
 export type RequestFile = {
@@ -68,14 +62,6 @@ export function resolveUploadLimits(
   };
 }
 
-export function uploadRules(question: FormQuestionConfig, limits: UploadLimits): UploadRules {
-  return {
-    maxFiles: question.maxFiles ?? 1,
-    maxFileSize: question.maxFileSize ?? limits.fileSize,
-    mimeTypes: question.mimeTypes ?? [],
-  };
-}
-
 export function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes)) return 'any size';
   if (bytes < MiB) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
@@ -96,40 +82,38 @@ export function matchesMimeType(type: string, patterns: string[]): boolean {
   });
 }
 
-/** The save checks for one file question: where its files go and whether the app's limits allow them. */
+/** Why no form can store files through `field`, after its name, or `undefined` when one can. */
+export function uploadStoreRefusal(
+  field: UploadField,
+  targets: Map<string, FormTarget>,
+): string | undefined {
+  const store = typeof field.relationTo === 'string' ? targets.get(field.relationTo) : undefined;
+
+  if (!store?.upload) {
+    return `stores files in ${String(field.relationTo)}, which isn't an upload collection listed in formsPlugin({ collections })`;
+  }
+
+  for (const entry of store.fields.values()) {
+    if (entry.required) {
+      return `stores files in ${store.slug}, which requires "${entry.name}" with no default, so a form can't save a file there`;
+    }
+  }
+}
+
+/** The save checks for one file question's settings against the app's limits. */
 export function checkUploadQuestion({
   path,
   question,
   field,
-  targets,
   limits,
 }: {
   path: string;
   question: FormQuestionConfig;
   field: UploadField;
-  targets: Map<string, FormTarget>;
   limits: UploadLimits;
 }): FormError[] {
   const errors: FormError[] = [];
   const { name } = field;
-  const store = typeof field.relationTo === 'string' ? targets.get(field.relationTo) : undefined;
-
-  if (!store?.upload) {
-    errors.push({
-      path: `${path}.field`,
-      message: `"${name}" stores files in ${String(field.relationTo)}, which isn't an upload collection listed in formsPlugin({ collections }).`,
-    });
-  } else {
-    for (const entry of store.fields.values()) {
-      if (!entry.required) continue;
-
-      errors.push({
-        path: `${path}.field`,
-        message: `"${name}" stores files in ${store.slug}, which requires "${entry.name}" with no default, so a form can't save a file there.`,
-      });
-    }
-  }
-
   const { maxFiles, maxFileSize, mimeTypes } = question;
 
   if (maxFiles !== undefined && maxFiles !== null) {

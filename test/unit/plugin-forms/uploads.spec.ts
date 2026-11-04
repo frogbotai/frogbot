@@ -1,11 +1,15 @@
 import type { CollectionConfig, Field, FrogBot, FrogBotConfig, FrogBotRequest } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
-import { buildDefinition } from '../../../packages/plugins/plugin-forms/src/definition.js';
+import {
+  buildDefinition,
+  DEFAULT_UPLOAD_LIMITS,
+} from '../../../packages/plugins/plugin-forms/src/definition.js';
 import { formsPlugin } from '../../../packages/plugins/plugin-forms/src/index.js';
 import {
   checkForm,
   collectFields,
+  describeFields,
   type FormTarget,
 } from '../../../packages/plugins/plugin-forms/src/questions.js';
 import type {
@@ -14,7 +18,6 @@ import type {
 } from '../../../packages/plugins/plugin-forms/src/types.js';
 import {
   checkFiles,
-  DEFAULT_UPLOAD_LIMITS,
   matchesMimeType,
   resolveUploadLimits,
   uploadQuestions,
@@ -193,7 +196,7 @@ describe('file questions in the definition', () => {
         id: 1,
         title: 'Support',
       },
-      fields: tickets.fields,
+      fields: describeFields(tickets),
       closed: false,
     });
 
