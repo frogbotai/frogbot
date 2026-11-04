@@ -99,22 +99,22 @@ Example: AI policy (model allowlists, monthly budgets, spend counters) goes in a
 
 ## Commands
 
-| Task                                | Command                                                                                                                                                                             |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Build every package                 | `pnpm build`                                                                                                                                                                        |
-| Static checks                       | `pnpm check` (format, lint, stale-package build, fixture import maps, changed-workspace typecheck, every `scripts/check-*.mjs`; never tests or servers); `--full` checks everything |
-| One check                           | `pnpm check <name>`, where name is a `scripts/check-<name>.mjs` file (see [Checks](#checks))                                                                                        |
-| Format and lint                     | `pnpm prettier`, `pnpm lint` (report only); `pnpm prettier:write`, `pnpm lint:fix`; after fixing a baselined violation, `pnpm lint --prune-suppressions`                            |
-| Typecheck                           | `pnpm --filter <workspace> typecheck` (`frogbot` also takes area names: `pnpm --filter frogbot typecheck jobs`); `pnpm typecheck` builds and checks every workspace                 |
-| Tests                               | `pnpm test` (every project), `pnpm test:unit`, `pnpm test:ui`, `pnpm test:int`, `pnpm test:gateway`, `pnpm test:e2e`, `pnpm test:browser --project <name>`; pass files to narrow    |
-| Integration tests on one database   | `pnpm test:int:sqlite`, `pnpm test:int:pg`, `pnpm test:int:mongo` (`pnpm test:int:pg test/database`)                                                                                |
-| Docker services                     | `pnpm docker:start` (Postgres, Redis, MongoDB, MongoDB search, storage emulators), `pnpm docker:clean` (removes containers and volumes)                                             |
-| Live tests with real credentials    | `pnpm test:live` (see [Live tests](test/README.md#live-tests-real-credentials))                                                                                                     |
-| Regenerate a test suite's types     | `pnpm generate:types <suite>` (needs built packages)                                                                                                                                |
-| Sync the AI model catalog and types | `pnpm sync:catalog`                                                                                                                                                                 |
-| Upstream changes to vendored code   | `pnpm vendored [--to <ref>] [--fetch]`                                                                                                                                              |
-| Tickets                             | `pnpm ticket next`, `new <n>`, `status [--batch <n>]`, `decisions`, `found`, `stats`, `land <n>` (see [the feature process](.github/feature-process/README.md))                     |
-| Release                             | `pnpm bump <major\|minor\|patch>` (`--from <step>` resumes), `pnpm release` (owner only; publishes, tags, posts the GitHub release; `--resume` resumes), `pnpm release:status`      |
+| Task                                | Command                                                                                                                                                                                         |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build every package                 | `pnpm build`                                                                                                                                                                                    |
+| Static checks                       | `pnpm check` (format, lint, stale-package build, fixture import maps, changed-workspace typecheck, every `scripts/check-*.mjs`; never tests or servers); `--full` checks everything             |
+| One check                           | `pnpm check <name>`, where name is a `scripts/check-<name>.mjs` file (see [Checks](#checks))                                                                                                    |
+| Format and lint                     | `pnpm prettier`, `pnpm lint` (report only); `pnpm prettier:write`, `pnpm lint:fix`; after fixing a baselined violation, `pnpm lint --prune-suppressions`                                        |
+| Typecheck                           | `pnpm --filter <workspace> typecheck` (`frogbot` also takes area names: `pnpm --filter frogbot typecheck jobs`); `pnpm typecheck` builds and checks every workspace                             |
+| Tests                               | `pnpm test` (every project), `pnpm test:unit`, `pnpm test:ui`, `pnpm test:int`, `pnpm test:gateway`, `pnpm test:e2e`, `pnpm test:browser --project <name>`; pass files to narrow                |
+| Integration tests on one database   | `pnpm test:int:sqlite`, `pnpm test:int:pg`, `pnpm test:int:mongo` (`pnpm test:int:pg test/database`)                                                                                            |
+| Docker services                     | `pnpm docker:start` (Postgres, Redis, MongoDB, MongoDB search, storage emulators), `pnpm docker:clean` (removes containers and volumes)                                                         |
+| Live tests with real credentials    | `pnpm test:live` (see [Live tests](test/README.md#live-tests-real-credentials))                                                                                                                 |
+| Regenerate a test suite's types     | `pnpm generate:types <suite>` (needs built packages)                                                                                                                                            |
+| Sync the AI model catalog and types | `pnpm sync:catalog`                                                                                                                                                                             |
+| Upstream changes to vendored code   | `pnpm vendored [--to <ref>] [--fetch]`                                                                                                                                                          |
+| Tickets                             | `pnpm ticket new <slug>`, `new --issue <repo>#<n>`, `new <n>`, `status [--batch <n>]`, `decisions`, `found`, `stats`, `land <n>` (see [the feature process](.github/feature-process/README.md)) |
+| Release                             | `pnpm bump <major\|minor\|patch>` (`--from <step>` resumes), `pnpm release` (owner only; publishes, tags, posts the GitHub release; `--resume` resumes), `pnpm release:status`                  |
 
 `prepare` and `lint-staged` are git-hook plumbing and have no row. Packages have only `build`, `clean` and `typecheck`.
 

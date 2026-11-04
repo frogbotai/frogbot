@@ -17,7 +17,7 @@ Build the best version, not the usual one. Subtract what doesn't earn its place,
 
 ```
 pnpm check [name] [--full]           static only: format, lint, typecheck, scripts/check-*.mjs; never tests or servers
-pnpm ticket next | new <n> [--type fix] | status [--batch <n>] | decisions
+pnpm ticket new <slug> [--repo r] | new --issue <repo>#<n> | new <n> [--type fix] | status [--batch <n>] | decisions
 pnpm ticket verify [--list]          run the checks and tests the diff needs; list changed files nothing covers
 pnpm ticket verify --ui <path>       production fixture, sign-in, screenshots, console errors, failed requests
 pnpm ticket land <n>                 one land at a time: rebase, full gate, squash to one commit, fast-forward local main; never pushes

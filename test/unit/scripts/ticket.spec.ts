@@ -15,13 +15,14 @@ import {
   hasTesterRow,
   installAfterLand,
   installAfterRebase,
+  issueFolder,
   keyOfWorktree,
   landLevel,
   lanes,
   ledgerLine,
-  nextNumber,
   parseArgs,
   parseHeader,
+  parseIssueUrl,
   parseLedger,
   parseReflogMerges,
   parseTouches,
@@ -60,8 +61,6 @@ describe('parseArgs', () => {
       command: 'status',
       batch: 'deferred',
     });
-
-    expect(parseArgs(['next'])).toEqual({ command: 'next' });
   });
 
   it('reads a part key, in either case', () => {
@@ -95,12 +94,12 @@ describe('parseArgs', () => {
   it.each([
     [[], 'no command'],
     [['bogus'], 'unknown command "bogus"'],
-    [['new'], 'new needs one ticket number'],
-    [['new', 'abc'], '"abc" is not a ticket number'],
+    [['new'], 'new needs a slug, a ticket number or --issue'],
+    [['new', 'Abc Def'], '"Abc Def" is not a slug like add_thing or a ticket number'],
     [['new', '999', '--type', 'feature'], '--type "feature" is not one of'],
     [['land', '999', '--type', 'fix'], 'land takes no --type'],
     [['land', '999', '-m', 'chore: scratch'], 'unknown argument "-m"'],
-    [['next', '5'], 'next takes no arguments'],
+    [['next', '5'], 'unknown command "next"'],
     [['status', '--batch', 'soon'], '--batch "soon" is not a batch'],
     [['status', '--all'], 'unknown argument "--all"'],
     [['land', '210bc'], '"210bc" is not a ticket number'],
@@ -358,26 +357,31 @@ describe('naming', () => {
   });
 });
 
-describe('nextNumber', () => {
-  it('is one more than the highest folder, branch or worktree', () => {
-    const folders = ['ticket9_a', 'ticket246_b', 'ticket21_c', 'notes'];
+describe('issue keys', () => {
+  it('names the folder from the repo and issue number', () => {
+    expect(issueFolder({ repo: 'frogbot', issue: 300, slug: 'add_thing' })).toBe(
+      'frogbot-300_add_thing',
+    );
+  });
 
-    expect(nextNumber({ folders, branches: ['main'], worktrees: [] })).toBe(247);
-    expect(nextNumber({ folders, branches: ['fix/ticket-250-x'], worktrees: [] })).toBe(251);
-    expect(
-      nextNumber({
-        folders,
-        branches: [],
-        worktrees: [{ path: '/c/frogbot-ticket300', branch: null }],
-      }),
-    ).toBe(301);
-    expect(
-      nextNumber({
-        folders,
-        branches: [],
-        worktrees: [{ path: '/c/sidekick-ticket310', branch: 'feat/ticket-310-loop' }],
-      }),
-    ).toBe(311);
+  it('reads the repo and number from an issue URL', () => {
+    expect(parseIssueUrl('https://github.com/frogbotai/sidekick/issues/7\n')).toEqual({
+      repo: 'sidekick',
+      issue: 7,
+    });
+    expect(parseIssueUrl('https://github.com/frogbotai/other/issues/7')).toBeNull();
+    expect(parseIssueUrl('no url')).toBeNull();
+  });
+
+  it('parses new for a slug, an old number, a key and an issue ref', () => {
+    expect(parseArgs(['new', 'add_thing', '--repo', 'sidekick'])).toMatchObject({
+      slug: 'add_thing',
+      repo: 'sidekick',
+    });
+    expect(parseArgs(['new', '--issue', 'frogbot#212'])).toMatchObject({ key: 'frogbot-212' });
+    expect(parseArgs(['new', 'platform-4'])).toMatchObject({ key: 'platform-4' });
+    expect(parseArgs(['new', '--issue', 'nope#1'])).toHaveProperty('error');
+    expect(parseArgs(['next'])).toHaveProperty('error');
   });
 });
 
