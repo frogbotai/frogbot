@@ -1,0 +1,101 @@
+---
+title: "Tool approval"
+sidebarTitle: "Tool approval"
+description: "Pause a tool call until a person approves it, in the chat, over HTTP or in a channel."
+keywords: ["approval", "approve", "deny", "auto-approve", "human in the loop", "settle", "needsApproval"]
+---
+
+A tool with [`approval`](/agents/overview#ask-before-a-tool-runs) pauses the reply before `execute` runs. The call is saved with the chat as waiting for approval, the turn stops as `awaiting`, and the reply continues in the same assistant message once someone answers. Other calls in the same step still run.
+
+```ts
+export const closeTicket: Tool<typeof ticketInput, string> = {
+  slug: 'close-ticket',
+  description: 'Close a support ticket',
+  inputSchema: ticketInput,
+  approval: 'ask',
+  execute: closeTicketNow
+}
+```
+
+## In the chat
+
+The admin chat docks the waiting call above the composer, which stays hidden until every waiting call is answered. The card shows the tool, its input, the rule's `reason` when there is one, and **Approve** and **Deny**. Deny opens an optional reason for the agent.
+
+| Answer | Result |
+| --- | --- |
+| Approve | Runs the model's input; the reply continues |
+| Deny with a reason | The model reads the reason and goes on |
+| Deny, no reason | The reply stops, as Dismiss does |
+
+An approved call runs the input the model sent, as stored with the chat. An answer can't change it.
+
+## Auto-approve
+
+When an agent has a tool, or an MCP server `tools` entry, that sets `approval`, the composer shows an **Auto-approve** switch. While it's on, `'ask'` calls run without asking; `'required'` calls still pause. The switch is saved on the chat as its `autoApprove` checkbox, so it applies to every later turn and to a turn resumed after an answer. Turning it on doesn't answer calls that are already waiting.
+
+The chats collection's `update` access decides who can change it. On a new chat, the switch is sent as `autoApprove` with the first message and saved when the chat is created.
+
+A run started in code reads the chat's `autoApprove` unless it sets its own:
+
+```ts
+await frogbot.agents.support.generate({ prompt: 'Close SUP-42', chatId, autoApprove: true })
+```
+
+## Nobody to ask
+
+`agent.generate()`, workflows, jobs, the [MCP plugin](/plugins/mcp#tools) and channels whose piece can't ask questions can't pause. There, a call that needs approval is denied and the model reads:
+
+```text
+Not run: this tool needs a person's approval, and nobody can approve it in this run.
+```
+
+The run keeps going. `'ask'` tools run when the run sets `autoApprove: true` or the chat has it on; `'required'` tools are always denied.
+
+## Who can answer
+
+Whoever can continue the chat can answer, the same as for [questions](/chat/questions#who-can-answer): over HTTP, the chat's owner; in a channel conversation, any participant who passes the agent's `access` check. Someone who can read the chat but not continue it gets `404`, and the call keeps waiting. FrogBot records each answer, who gave it and when, in the message's `settlements` field, with the outcome `approved` or `denied`.
+
+## Over HTTP
+
+A turn that pauses responds with `status: "awaiting-input"`. A waiting approval has an `approval` object, with the rule's `reason` when it gave one:
+
+```json
+{
+  "status": "awaiting-input",
+  "chatId": "CHAT_ID",
+  "pending": [
+    {
+      "toolCallId": "call_1",
+      "toolName": "refund",
+      "input": { "order": "A-1", "amount": 5000 },
+      "approval": { "reason": "Refund $5000" },
+      "messageId": "MESSAGE_ID",
+      "chatId": "CHAT_ID",
+      "agentSlug": "support",
+      "createdAt": "2026-11-03T12:00:00.000Z"
+    }
+  ]
+}
+```
+
+Answer it through the settle endpoint:
+
+```bash
+curl http://localhost:3000/api/agents/support/chats/CHAT_ID/settle \
+  --request POST \
+  --header "Authorization: Bearer $FROGBOT_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{ "toolCallId": "call_1", "approved": false, "reason": "Refund half instead." }'
+```
+
+Approving, or denying with a `reason`, continues the turn and responds like the original request, plus the `settlement`. Denying without a `reason` ends the turn and responds with `{ "status": "denied", "chatId", "settlement" }`. Errors are the same as for [questions](/chat/questions#answer-over-http); sending an `output` for an approval, or `approved` for a question, is `400` with `code: "invalid-output"`, and a second answer is `409` with `code: "already-settled"`.
+
+A chat UI built on the AI SDK can also answer with `addToolApprovalResponse` and resubmit the assistant message. FrogBot reads only each part's `toolCallId`, `approval.approved` and `approval.reason`, and settles them against the stored call. A resubmitted denial needs a `reason`; deny without one through settle.
+
+## In channels
+
+A channel piece that supports [questions](/pieces/channel-questions) asks for approval with the same controls, so no piece needs changes. The approval is posted as a question with the header `Approval`, the text `Approve <tool>?` and the rule's reason, and the options **Approve** and **Deny**:
+
+- **Approve** approves the call.
+- **Deny** denies it with no reason, which ends the turn.
+- A typed answer denies it, with the text as the reason the model reads.

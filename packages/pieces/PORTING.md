@@ -269,6 +269,7 @@ Build the inventory from the upstream piece's registered `actions` and `triggers
 | `action.test`, `requireAuth`, `audience`                                             | Drop.                                                                                                         |
 | `errorHandlingOptions`                                                               | Drop; retries and continuation are workflow settings.                                                         |
 | `outputSchema`, `aiMetadata.idempotent`                                              | Re-author a real `output` schema when useful; map idempotence to `idempotent`.                                |
+| No Activepieces equivalent                                                           | `approval` on an action asks a person before each call; apps set it by spreading the action.                  |
 | `ctx.auth`, `ctx.propsValue`                                                         | `client`, `input`; auth is passed only to `client`.                                                           |
 | `ctx.store`                                                                          | Trigger `state` or polling `cursor`; actions may use `req.frogbot.kv`.                                        |
 | `ctx.files.write`                                                                    | `req.frogbot.create` on `filesCollectionSlug(req, '<Piece label>')`, which throws without a files collection. |

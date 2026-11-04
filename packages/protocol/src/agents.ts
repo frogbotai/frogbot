@@ -29,4 +29,6 @@ export type AgentManifestEntry<TModel extends string = string> = {
   inputs?: Partial<Record<TModel, ModelModality[]>>;
   /** Notices by provider, the part of a model ID before `/`, for the user's linked accounts. */
   notices?: Partial<Record<string, AgentModelNotice>>;
+  /** Set when a tool of the agent, or an MCP `tools` entry, may ask for approval. */
+  approval?: true;
 };

@@ -51,6 +51,14 @@
     color: var(--color-icon-danger);
   }
 
+  .fb-tool-card__icon--awaiting {
+    color: var(--color-icon-warning);
+  }
+
+  .fb-tool-card__footer {
+    margin-top: 0.75rem;
+  }
+
   .fb-tool-card__spinner {
     animation: fb-tool-card-spin 1s linear infinite;
   }

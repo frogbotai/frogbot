@@ -10,8 +10,13 @@ export type MCPServerTimeout = {
   execution?: number;
 };
 
+export type MCPServerToolOptions = {
+  /** Whether a person approves each call first. @default false */
+  approval?: ToolApprovalOption;
+};
+
 /** Options for the server's tools, by the name the server lists, or `'*'` for every tool. */
-export type MCPServerTools = Record<string, { approval?: ToolApprovalOption }>;
+export type MCPServerTools = Record<string, MCPServerToolOptions>;
 
 export type MCPServerLocalOptions = {
   name: string;

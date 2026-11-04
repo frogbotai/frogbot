@@ -93,6 +93,7 @@ mcpPlugin({ tools: [lookupTicket, slack] })
 - **Context.** `ctx.req` is the request, signed in as the key's owner, so collection access applies to Local API calls made with it. `ctx.agent` is `{ slug: 'mcp', runId }`, with a new `runId` per call and no `chatId`.
 - **Result.** A string becomes one text block. Anything else becomes its JSON text, and a plain object is also sent as `structuredContent`. `hooks.afterToolCall` sees the result.
 - **Errors.** A thrown error becomes an error result with its message; the server keeps serving.
+- **Approval.** Nobody can approve a call over MCP, so a tool whose [`approval`](/chat/tool-approval) asks returns an error result, `Not run: this tool needs a person's approval, and nobody can approve it in this run.`, without running.
 - **Refused.** `mcpPlugin` throws for a client tool such as `question`, a duplicate slug, a slug that a built-in tool already uses (`getConfigInfo`, `findDocuments`, `login` and the rest), or an input schema that isn't an object or can't be written as JSON Schema (such as `z.date()`), since one such schema would break `tools/list` for every tool.
 
 <Warning>

@@ -43,6 +43,8 @@ export type ResolveChatContextProps = {
   channelAccess?: ChannelChatAccess;
   delivery?: MessageDelivery;
   queue?: boolean;
+  /** Stored on a chat this call creates. */
+  autoApprove?: boolean;
 };
 
 export async function resolveChatContext({
@@ -55,6 +57,7 @@ export async function resolveChatContext({
   channelAccess,
   delivery = 'queue',
   queue = true,
+  autoApprove,
 }: ResolveChatContextProps): Promise<ChatContext> {
   const newMessages = chatId !== undefined ? incoming.slice(-1) : incoming;
   const last = newMessages.at(-1);
@@ -80,7 +83,7 @@ export async function resolveChatContext({
 
   const resolvedChatId = chat
     ? chat.id
-    : await createChat({ req, agentSlug, messages: newMessages });
+    : await createChat({ req, agentSlug, messages: newMessages, autoApprove });
 
   const claim = await claimTurn({ req, chatId: resolvedChatId, from: 'idle' });
 
@@ -115,10 +118,12 @@ async function createChat({
   req,
   agentSlug,
   messages,
+  autoApprove,
 }: {
   req: FrogBotRequest;
   agentSlug: string;
   messages: UIMessage[];
+  autoApprove?: boolean;
 }): Promise<DocID> {
   const title = placeholderChatTitle(messages);
 
@@ -129,6 +134,7 @@ async function createChat({
       agent: agentSlug,
       lastMessageAt: new Date().toISOString(),
       ...(title ? { title } : {}),
+      ...(autoApprove ? { autoApprove } : {}),
     },
     req,
     overrideAccess: true,

@@ -9,8 +9,8 @@ import { type IconName, iconRegistry } from '../icons/registry.js';
 import { LinkList, type LinkListItem } from './link-list.js';
 import type { ToolPartValue, ToolRenderer, ToolRendererProps } from './tool-registry.js';
 
-/** Where a tool call is: running, finished, failed, or refused by the user. */
-export type ToolCardStatus = 'running' | 'done' | 'error' | 'denied';
+/** Where a tool call is: running, waiting for approval, finished, failed, or refused. */
+export type ToolCardStatus = 'running' | 'awaiting' | 'done' | 'error' | 'denied';
 
 export type ToolCardProps = Omit<ComponentProps<typeof Collapsible>, 'title' | 'children'> & {
   /** The tool's icon, by its registry name; green when done, red when failed or denied. */
@@ -20,6 +20,8 @@ export type ToolCardProps = Omit<ComponentProps<typeof Collapsible>, 'title' | '
   subtitle?: ReactNode;
   /** The collapsible body; without it the card has no chevron. */
   children?: ReactNode;
+  /** Always shown below the header and body, such as the actions a person must take. */
+  footer?: ReactNode;
 };
 
 const PREFIX: Partial<Record<ToolCardStatus, string>> = {
@@ -31,6 +33,7 @@ const PREFIX: Partial<Record<ToolCardStatus, string>> = {
 export function ToolCard({
   children,
   className,
+  footer,
   icon,
   status,
   subtitle,
@@ -74,6 +77,9 @@ export function ToolCard({
         <div className="fb-tool-card__header">{header}</div>
       )}
       {body && <CollapsibleContent className="fb-tool-card__body">{children}</CollapsibleContent>}
+      {footer !== undefined && footer !== null && (
+        <div className="fb-tool-card__footer">{footer}</div>
+      )}
     </Collapsible>
   );
 }
@@ -83,6 +89,7 @@ export function toolCardStatus(part: ToolPartValue): ToolCardStatus {
   if (part.state === 'output-available') return 'done';
   if (part.state === 'output-error') return 'error';
   if (part.state === 'output-denied') return 'denied';
+  if (part.state === 'approval-requested' && part.approval.isAutomatic !== true) return 'awaiting';
 
   return 'running';
 }

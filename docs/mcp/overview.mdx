@@ -65,7 +65,24 @@ A server in root `tools` reaches every agent, as root tools do. An agent with `i
 | `timeout.startup` | `number` | `30000` | Milliseconds to start the server and finish the handshake. |
 | `timeout.catalog` | `number` | `30000` | Milliseconds to list the server's tools on each run. |
 | `timeout.execution` | `number` | 12 hours | Milliseconds one tool call may run. |
-| `tools` | `Record<string, { approval?: ToolApprovalOption }>` | — | Options for the server's tools, keyed by the name the server lists, or `'*'` for every tool. A name beats `'*'`; a name the server doesn't list is warned about once. |
+| `tools` | `Record<string, MCPServerToolOptions>` | — | Options for the server's tools, keyed by the name the server lists, or `'*'` for every tool. A name beats `'*'`; a name the server doesn't list is warned about once. See [Tool options](#tool-options). |
+
+### Tool options
+
+Each entry of a server's `tools` map takes:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `approval` | `false \| 'ask' \| 'required' \| ToolApproval` | `false` | Whether a person approves each call first, as for an agent's own [tools](/agents/overview#ask-before-a-tool-runs). |
+
+```ts
+mcpServer({
+  name: 'crm',
+  type: 'remote',
+  url: 'https://crm.example.com/mcp',
+  tools: { '*': { approval: 'ask' }, search: { approval: false } }
+})
+```
 
 ## Tool names
 

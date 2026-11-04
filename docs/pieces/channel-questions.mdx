@@ -12,6 +12,8 @@ A channel conversation is answered only in its channel. The admin chat shows it 
 
 FrogBot offers the question tool to an agent in a channel conversation only when the piece defines `questions` and `supports({ thread })` does not return `false`. Use `supports` to turn questions off where a platform surface cannot show controls. If `supports` throws, FrogBot logs the error and does not offer questions for that turn.
 
+The same hooks ask for [tool approval](/chat/tool-approval#in-channels). FrogBot hands `render` an approval as a question call with `call.approval` set and the input `{ questions: [{ header: 'Approval', question: 'Approve <tool>?', options: [{ label: 'Approve' }, { label: 'Deny' }], custom: true }] }`, and turns the parsed answer into the approval: Approve approves, Deny denies, and a typed answer denies with that reason. Draw and parse it like any other question. Where `supports` returns `false`, a call that needs approval is denied.
+
 ## The question record
 
 FrogBot keeps one record per question call. Every hook after `render` receives it as `question`:

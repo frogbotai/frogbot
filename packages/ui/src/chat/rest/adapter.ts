@@ -116,6 +116,28 @@ export function createRestChatAdapter(options: RestChatAdapterOptions): ChatPlat
       headers: JSON_HEADERS,
     });
 
+  const settle = async (agent: string, chatId: ChatId, body: Record<string, unknown>) => {
+    const path = `/agents/${encodeURIComponent(agent)}/chats/${segment(chatId)}/settle`;
+
+    const result = await chatRequest<{ settlement: ToolCallSettlement }>(sdk, path, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: JSON_HEADERS,
+    }).catch(async (error: unknown) => {
+      if (!(error instanceof FrogBotSDKError) || error.status !== 409) throw error;
+
+      const conflict = (await error.response.json()) as { settlement?: ToolCallSettlement };
+
+      if (!conflict.settlement) {
+        throw new ChatAdapterError('conflict', error.message, { cause: error });
+      }
+
+      return { settlement: conflict.settlement };
+    });
+
+    return result.settlement;
+  };
+
   return {
     loadManifest: async ({ signal }): Promise<ChatManifest | null> => {
       const [server, agents] = await Promise.all([
@@ -145,6 +167,7 @@ export function createRestChatAdapter(options: RestChatAdapterOptions): ChatPlat
           chatId: () => request().chatId,
           model: () => request().model,
           reasoning: () => request().reasoning,
+          autoApprove: () => request().autoApprove,
         }),
       }),
     listChats: async ({ agent, page, limit }) => {
@@ -216,27 +239,11 @@ export function createRestChatAdapter(options: RestChatAdapterOptions): ChatPlat
 
       return state;
     },
-    dismissToolCall: async (agent, chatId, toolCallId) => {
-      const path = `/agents/${encodeURIComponent(agent)}/chats/${segment(chatId)}/settle`;
-
-      const result = await chatRequest<{ settlement: ToolCallSettlement }>(sdk, path, {
-        method: 'POST',
-        body: JSON.stringify({ toolCallId, dismissed: true }),
-        headers: JSON_HEADERS,
-      }).catch(async (error: unknown) => {
-        if (!(error instanceof FrogBotSDKError) || error.status !== 409) throw error;
-
-        const body = (await error.response.json()) as { settlement?: ToolCallSettlement };
-
-        if (!body.settlement) {
-          throw new ChatAdapterError('conflict', error.message, { cause: error });
-        }
-
-        return { settlement: body.settlement };
-      });
-
-      return result.settlement;
-    },
+    dismissToolCall: (agent, chatId, toolCallId) =>
+      settle(agent, chatId, { toolCallId, dismissed: true }),
+    answerApproval: (agent, chatId, toolCallId, { approved, reason }) =>
+      settle(agent, chatId, { toolCallId, approved, ...(reason ? { reason } : {}) }),
+    setAutoApprove: (chatId, autoApprove) => patchChat(chatId, { autoApprove }),
     uploadAttachment: async (file) => {
       try {
         const uploaded = await sdk.upload(await slug('assetsSlug'), file);

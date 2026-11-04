@@ -13,6 +13,7 @@ export type ChatDocument = {
   channel?: string | null;
   channelLabel?: string | null;
   channelThread?: ChannelThreadReference | null;
+  autoApprove?: boolean | null;
 };
 
 export type ChatPage = {
@@ -33,6 +34,8 @@ export type ChatRequestState = {
   chatId?: ChatId;
   model?: string;
   reasoning?: string;
+  /** Sent when the request creates a chat, to start it with Auto-approve on. */
+  autoApprove?: boolean;
 };
 
 export type ChatTransportOptions = {
@@ -81,6 +84,14 @@ export type ChatPlatformAdapter = {
     chatId: ChatId,
     toolCallId: string,
   ) => Promise<ToolCallSettlement>;
+  /** Answers a tool approval through the server; the UI uses it for a denial without a reason. */
+  answerApproval?: (
+    agent: string,
+    chatId: ChatId,
+    toolCallId: string,
+    answer: { approved: boolean; reason?: string },
+  ) => Promise<ToolCallSettlement>;
+  setAutoApprove?: (chatId: ChatId, autoApprove: boolean) => Promise<ChatDocument>;
   uploadAttachment?: (file: File) => Promise<UploadedAttachment>;
   readAttachment?: (id: ChatId, options: { signal: AbortSignal }) => Promise<StoredAttachment>;
   transcribe?: (file: File) => Promise<string>;

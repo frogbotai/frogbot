@@ -1,0 +1,24 @@
+@layer frogbot {
+  .fb-tool-approval {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .fb-tool-approval__reason {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fb-text-sm);
+    line-height: 1.25rem;
+  }
+
+  .fb-tool-approval__denial {
+    min-height: 4rem;
+  }
+
+  .fb-tool-approval__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+}

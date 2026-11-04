@@ -26,6 +26,7 @@ const bodySchema = z
     model: z.string().min(1).optional(),
     reasoning: z.string().min(1).optional(),
     delivery: z.enum(['queue', 'steer']).optional(),
+    autoApprove: z.boolean().optional(),
   })
   .strict()
   .refine((body) => (body.prompt === undefined) !== (body.messages === undefined), {
@@ -53,7 +54,7 @@ export function buildAgentEndpoints() {
             return Response.json({ error: describeIssue(parsed.error.issues[0]) }, { status: 400 });
           }
 
-          const { chatId, reasoning, delivery, prompt, messages } = parsed.data;
+          const { chatId, reasoning, delivery, prompt, messages, autoApprove } = parsed.data;
           const requested = parsed.data.model;
 
           let body: AgentRequestBody;
@@ -96,6 +97,7 @@ export function buildAgentEndpoints() {
             selection,
             tools: agent.aiAgent.tools,
             delivery,
+            autoApprove,
           });
 
           if (context.status === 'queued') return queuedResponse({ context, eventStream });

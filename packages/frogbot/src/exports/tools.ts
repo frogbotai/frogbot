@@ -7,6 +7,7 @@ export type {
   MCPServerOptions,
   MCPServerRemoteOptions,
   MCPServerTimeout,
+  MCPServerToolOptions,
   MCPServerTools,
 } from '../mcp/types.js';
 export type {

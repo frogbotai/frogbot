@@ -228,6 +228,62 @@ The component receives `{ part }`, including the tool input, output, state, and 
 
 Components resolve from the selected agent's effective tools. When an agent tool shadows an inherited root slug, the agent's component wins and FrogBot logs both definitions during initialization. Omitting `component` on the shadowing tool intentionally restores the generic render for that agent.
 
+### Ask before a tool runs
+
+Set `approval` when a person should approve each call before `execute` runs, for a tool that updates a deal, closes a ticket or emails a customer. The reply pauses on the call, the chat shows **Approve** and **Deny**, and the turn continues once someone answers.
+
+```ts
+export const closeTicket: Tool<typeof ticketInput, string> = {
+  slug: 'close-ticket',
+  description: 'Close a support ticket',
+  inputSchema: ticketInput,
+  approval: 'required',
+  execute: closeTicketNow
+}
+
+export const refund: Tool<typeof refundInput, string> = {
+  slug: 'refund',
+  description: 'Refund an order',
+  inputSchema: refundInput,
+  approval: ({ input }) =>
+    input.amount > 1000 ? { mode: 'required', reason: `Refund $${input.amount}` } : false,
+  execute: refundOrder
+}
+```
+
+What each value does depends on the run. A chat can turn on **Auto-approve**, and a run with nobody to ask, such as `agent.generate()`, a workflow or a job, can't pause:
+
+| `approval` | Chat | Chat, Auto-approve on | Nobody to ask |
+| --- | --- | --- | --- |
+| `false` | Runs | Runs | Runs |
+| `'ask'` | Pauses for Approve / Deny | Runs | Denied with feedback; runs with `autoApprove: true` |
+| `'required'` | Pauses | Pauses | Denied with feedback |
+| `{ mode, reason }` | As `mode`, showing `reason` | As `mode` | As `mode` |
+
+A function receives `{ input, req, agent, tool }` for each call, may be async, and returns `false`, `'ask'`, `'required'`, or `{ mode, reason? }`; the `reason` is shown next to Approve and Deny. A function that throws or returns anything else counts as `'required'`, and FrogBot logs the error. Any other `approval` value, or `approval` on a client tool, fails at startup.
+
+| Answer | Result |
+| --- | --- |
+| Approve | Runs the model's input; the reply continues |
+| Deny with a reason | The model reads the reason and goes on |
+| Deny, no reason | The reply stops, as Dismiss does |
+
+A denial with feedback tells the model: `Not run: this tool needs a person's approval, and nobody can approve it in this run.` See [Tool approval](/chat/tool-approval) for Auto-approve, who can answer, the HTTP API and channels.
+
+### Change a tool you didn't write
+
+There is no `defineTool()`: a tool is a plain object, like a collection config, so you change one by spreading it. A spread tool with the same slug as a piece's tool replaces that tool in the list, so `tools: [gmail, { ...gmail.sendEmail, approval: 'ask' }]` keeps the rest of Gmail and asks before sending.
+
+```ts
+tools: [
+  { ...closeTicket, approval: 'ask' },
+  { ...gmail.sendEmail, approval: 'ask' },
+  mcpServer({ name: 'crm', type: 'remote', url, tools: { '*': { approval: 'ask' } } })
+]
+```
+
+A spread piece action keeps its `execute` and its connection. MCP tools take options through the server's [`tools`](/mcp/overview#server-options) map, by the name the server lists or `'*'`.
+
 ---
 
 ## Add skills

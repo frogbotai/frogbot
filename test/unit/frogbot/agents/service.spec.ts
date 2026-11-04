@@ -365,6 +365,36 @@ describe('agent service', () => {
     });
   });
 
+  it('flags an agent whose tools or MCP servers may ask for approval', async () => {
+    const tool = (approval?: false | 'ask') => ({
+      slug: 'close',
+      description: 'Close',
+      inputSchema: {} as never,
+      execute: vi.fn(),
+      ...(approval === undefined ? {} : { approval }),
+    });
+
+    const plain = makeAgent({ slug: 'plain' });
+    const off = makeAgent({ slug: 'off' });
+    const asks = makeAgent({ slug: 'asks' });
+    const mcp = makeAgent({ slug: 'mcp' });
+
+    off.config.tools = [tool(false)];
+    asks.config.tools = [tool('ask')];
+    mcp.config.mcp = [{ name: 'crm', tools: { '*': { approval: 'ask' } } } as never];
+
+    const manifest = await getAgentManifest({
+      req: makeRequest({ agents: { plain, off, asks, mcp } }),
+    });
+
+    expect(manifest.agents.map(({ slug, approval }) => [slug, approval])).toEqual([
+      ['plain', undefined],
+      ['off', undefined],
+      ['asks', true],
+      ['mcp', true],
+    ]);
+  });
+
   it('advertises the configured name of a custom model', async () => {
     const req = makeRequest({
       agents: { support: makeAgent({ model: MY_LOCAL_THINKER, options: [MY_LOCAL_PLAIN] }) },
