@@ -5,6 +5,8 @@ import type { z } from 'zod';
 
 import type { ProviderName } from '../ai/providerNames.js';
 import type { PieceChannelQuestions } from '../channels/questions/types.js';
+import type { ToolApprovalOption } from '../tools/approval.js';
+import type { Tool } from '../tools/types.js';
 import type { TriggerEvent } from '../triggers/types.js';
 import type { TypedUser } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
@@ -54,6 +56,8 @@ export type PieceActionDefinition<
   input: TInput;
   output?: TOutput;
   idempotent?: boolean;
+  /** Whether a person approves each call when an agent runs this action. @default false */
+  approval?: ToolApprovalOption;
   options?: Partial<{
     [TKey in keyof z.output<TInput>]: (args: {
       input: Partial<z.output<TInput>>;
@@ -480,11 +484,17 @@ export type DefinedPiece<T extends PieceDefinition, TConfig> = {
       : false;
   };
 } & {
-  [TAction in T['actions'][number] as TAction['slug']]: (
+  [TAction in T['actions'][number] as TAction['slug']]: ((
     args: PieceCallArgs<z.input<TAction['input']>, RequiresRequest<TConfig>>,
   ) => TAction extends { output: infer TOutput extends z.ZodType }
     ? Promise<z.output<TOutput>>
-    : ReturnType<TAction['run']>;
+    : ReturnType<TAction['run']>) &
+    Tool<
+      TAction['input'],
+      TAction extends { output: infer TOutput extends z.ZodType }
+        ? z.output<TOutput>
+        : Awaited<ReturnType<TAction['run']>>
+    >;
 };
 
 export type PieceFactory<T extends PieceDefinition> = <

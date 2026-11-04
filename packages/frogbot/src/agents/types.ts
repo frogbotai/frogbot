@@ -127,6 +127,7 @@ type AgentRunOpts = (
   req?: FrogBotRequest;
   overrideAccess?: boolean;
   abortSignal?: AbortSignal;
+  autoApprove?: boolean;
 };
 
 export type AgentGenerateOpts = AgentRunOpts & { chatId?: DocID };
@@ -165,6 +166,7 @@ export type AgentCallOptions = {
   replyCreatedAt?: string;
   selection?: AgentSelection;
   clientTools?: ClientToolsOption;
+  autoApprove?: boolean;
 };
 
 export type AgentInstance = {

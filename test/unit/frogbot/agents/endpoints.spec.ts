@@ -504,7 +504,7 @@ describe('agent endpoints', () => {
         uiMessages: history,
         strictAttachments: true,
         selection: {},
-        clientTools: { kinds: ['question'] },
+        clientTools: { kinds: ['question'], approval: true },
         abortSignal: req.signal,
       }),
     );

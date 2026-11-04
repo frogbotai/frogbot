@@ -25,7 +25,7 @@ afterEach(async () => {
   await fixture.cleanup();
 });
 
-function resolve(
+async function resolve(
   servers: MCPServer[],
   {
     agent = 'researcher',
@@ -33,7 +33,8 @@ function resolve(
     abortSignal,
   }: { agent?: string; reserved?: Set<string>; abortSignal?: AbortSignal } = {},
 ) {
-  return resolveMCPTools({ agent, servers, connections, reserved, abortSignal, logger });
+  return (await resolveMCPTools({ agent, servers, connections, reserved, abortSignal, logger }))
+    .tools;
 }
 
 function run(tool: Tool | undefined, input: unknown, abortSignal?: AbortSignal) {

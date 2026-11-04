@@ -28,6 +28,7 @@ export type StreamTurnProps = {
   strictAttachments?: boolean;
   selection: AgentSelection;
   clientTools?: ClientToolsOption;
+  autoApprove?: boolean;
   abortSignal?: AbortSignal;
   onError?: (error: unknown) => string;
 };
@@ -46,6 +47,7 @@ export function allClientTools(agent: AgentInstance): ClientToolsOption {
     kinds: [
       ...new Set((agent.config.tools ?? []).filter(isClientTool).map((tool) => tool.client.kind)),
     ],
+    approval: true,
   };
 }
 
@@ -57,6 +59,7 @@ export async function streamTurn({
   strictAttachments,
   selection,
   clientTools,
+  autoApprove,
   abortSignal,
   onError,
 }: StreamTurnProps): Promise<TurnStream> {
@@ -97,7 +100,15 @@ export async function streamTurn({
 
     result = await agent.aiAgent.stream({
       messages,
-      options: { req, overrideAccess: true, chatId, replyCreatedAt, selection, clientTools },
+      options: {
+        req,
+        overrideAccess: true,
+        chatId,
+        replyCreatedAt,
+        selection,
+        clientTools,
+        ...(autoApprove === undefined ? {} : { autoApprove }),
+      },
       abortSignal: AbortSignal.any(signals),
     });
   } catch (error) {

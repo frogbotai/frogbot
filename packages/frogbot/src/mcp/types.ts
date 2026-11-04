@@ -1,3 +1,4 @@
+import type { ToolApprovalOption } from '../tools/approval.js';
 import type { mcpServerMarker } from './server.js';
 
 export type MCPServerTimeout = {
@@ -9,6 +10,9 @@ export type MCPServerTimeout = {
   execution?: number;
 };
 
+/** Options for the server's tools, by the name the server lists, or `'*'` for every tool. */
+export type MCPServerTools = Record<string, { approval?: ToolApprovalOption }>;
+
 export type MCPServerLocalOptions = {
   name: string;
   type: 'local';
@@ -18,6 +22,7 @@ export type MCPServerLocalOptions = {
   /** Added to FrogBot's own environment. */
   environment?: Record<string, string>;
   timeout?: MCPServerTimeout;
+  tools?: MCPServerTools;
 };
 
 export type MCPServerRemoteOptions = {
@@ -27,6 +32,7 @@ export type MCPServerRemoteOptions = {
   url: string;
   headers?: Record<string, string>;
   timeout?: MCPServerTimeout;
+  tools?: MCPServerTools;
 };
 
 export type MCPServerOptions = MCPServerLocalOptions | MCPServerRemoteOptions;

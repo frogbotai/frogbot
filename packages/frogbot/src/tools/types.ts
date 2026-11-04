@@ -4,6 +4,7 @@ import type { FrogBotComponent } from '../admin/types.js';
 import type { PendingCall } from '../chat/turn/types.js';
 import type { FrogBot } from '../frogbot.js';
 import type { FrogBotRequest } from '../types/request.js';
+import type { ToolApprovalOption } from './approval.js';
 
 export type ToolCtx = {
   req: FrogBotRequest;
@@ -33,6 +34,12 @@ export type Tool<TSchema extends z.ZodType = z.ZodType, TResult = unknown> = Bas
    * @default { lines: 2000, bytes: 51200 }
    */
   maxOutput?: ToolOutputLimits | false;
+  /**
+   * Whether a person approves each call before `execute` runs: `'ask'` pauses unless the chat
+   * auto-approves, `'required'` always pauses, and a function decides per call.
+   * @default false
+   */
+  approval?: ToolApprovalOption;
 };
 
 export type ClientToolAccess = (args: {
@@ -55,6 +62,7 @@ export type ClientTool<
   outputSchema: TOutputSchema;
   client: ClientToolConfig;
   execute?: never;
+  approval?: never;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- a type-erased container, like the AI SDK ToolSet

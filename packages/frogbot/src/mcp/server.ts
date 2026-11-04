@@ -1,3 +1,4 @@
+import { assertToolApproval } from '../tools/approval.js';
 import { isRecord } from '../utilities/isRecord.js';
 import type { MCPServer, MCPServerOptions } from './types.js';
 
@@ -79,6 +80,20 @@ export function sanitizeMCPServers(tools: readonly unknown[], contextLabel: stri
         ) {
           throw new Error(`[frogbot] ${label} \`timeout.${key}\` must be a positive number of ms.`);
         }
+      }
+    }
+
+    if (server.tools !== undefined) {
+      if (!isRecord(server.tools)) {
+        throw new Error(`[frogbot] ${label} \`tools\` must map tool names to options.`);
+      }
+
+      for (const [tool, options] of Object.entries(server.tools)) {
+        if (!isRecord(options) || Object.keys(options).some((key) => key !== 'approval')) {
+          throw new Error(`[frogbot] ${label} \`tools['${tool}']\` takes only approval.`);
+        }
+
+        assertToolApproval(options.approval, `${label} \`tools['${tool}']\``);
       }
     }
 

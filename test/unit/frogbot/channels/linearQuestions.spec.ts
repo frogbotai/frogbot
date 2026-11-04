@@ -176,7 +176,10 @@ describe('Linear questions through the channel host', () => {
   it('offers the question tool in a session and posts only the elicitation for a question-only step', async () => {
     const fixture = await asked();
 
-    expect(fixture.streamMessage.mock.calls[0][0].clientTools).toEqual({ kinds: ['question'] });
+    expect(fixture.streamMessage.mock.calls[0][0].clientTools).toEqual({
+      kinds: ['question'],
+      approval: true,
+    });
     expect(api.activities).toEqual([
       {
         id: 'activity-1',
@@ -232,7 +235,10 @@ describe('Linear questions through the channel host', () => {
 
     await fixture.host.run(clone(queued[0]));
 
-    expect(continueTurn.mock.calls[0][0].clientTools).toEqual({ kinds: ['question'] });
+    expect(continueTurn.mock.calls[0][0].clientTools).toEqual({
+      kinds: ['question'],
+      approval: true,
+    });
     expect(api.sessionActivities('session-1').at(-1)?.input.content).toEqual({
       type: 'response',
       body: 'Painting it blue.',

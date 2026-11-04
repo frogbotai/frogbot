@@ -233,7 +233,10 @@ describe('GitHub native questions through the channel host', () => {
   ])('offers the question tool and posts the question comment in %s', async (_, location) => {
     const { fixture, posted, question: comment } = await asked({ location });
 
-    expect(fixture.streamMessage.mock.calls[0][0].clientTools).toEqual({ kinds: ['question'] });
+    expect(fixture.streamMessage.mock.calls[0][0].clientTools).toEqual({
+      kinds: ['question'],
+      approval: true,
+    });
     expect(posted.map(({ body }) => body)).toEqual([
       'Hello back',
       expect.stringContaining('### Color'),

@@ -97,6 +97,7 @@ export function defaultChatsCollection({
         },
       },
       { name: 'lastMessageAt', type: 'date', index: true },
+      { name: 'autoApprove', type: 'checkbox', defaultValue: false },
       {
         name: 'todos',
         type: 'json',

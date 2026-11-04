@@ -130,6 +130,11 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
       "type": "date",
     },
     {
+      "defaultValue": false,
+      "name": "autoApprove",
+      "type": "checkbox",
+    },
+    {
       "jsonSchema": [
         [Function],
       ],

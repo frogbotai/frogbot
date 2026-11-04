@@ -3,6 +3,7 @@ import type { JSONValue, Tool, ToolExecutionOptions, ToolSet, UIMessage } from '
 import { dynamicTool, jsonSchema } from 'ai';
 
 import type { Logger } from '../frogbot.js';
+import type { ToolApprovalOption } from '../tools/approval.js';
 import { isRecord } from '../utilities/isRecord.js';
 import type { MCPConnections } from './connections.js';
 import { errorMessage } from './connections.js';
@@ -26,6 +27,12 @@ export type ResolveMCPToolsProps = {
   logger: Pick<Logger, 'warn'>;
 };
 
+export type ResolvedMCPTools = {
+  tools: ToolSet;
+  /** Each tool's `approval` from its server's `tools` map, by prefixed name. */
+  approvals: Map<string, ToolApprovalOption>;
+};
+
 /** Lists each server's tools for one run. A server that fails is left out with a warning. */
 export async function resolveMCPTools({
   agent,
@@ -34,7 +41,7 @@ export async function resolveMCPTools({
   reserved,
   abortSignal,
   logger,
-}: ResolveMCPToolsProps): Promise<ToolSet> {
+}: ResolveMCPToolsProps): Promise<ResolvedMCPTools> {
   const catalogs = await Promise.all(
     servers.map(async (server) => {
       try {
@@ -44,6 +51,7 @@ export async function resolveMCPTools({
           return {
             server,
             tools: client.toolsFromDefinitions(await listAll(client, server, abortSignal)),
+            failed: false,
           };
         } catch (error) {
           if (!abortSignal?.aborted) await connections.discard(agent, server, client);
@@ -57,15 +65,28 @@ export async function resolveMCPTools({
           );
         }
 
-        return { server, tools: {} as ToolSet };
+        return { server, tools: {} as ToolSet, failed: true };
       }
     }),
   );
 
   const tools: ToolSet = {};
+  const approvals = new Map<string, ToolApprovalOption>();
 
-  for (const { server, tools: listed } of catalogs) {
+  for (const { server, tools: listed, failed } of catalogs) {
     const execution = server.timeout?.execution ?? DEFAULT_EXECUTION_TIMEOUT;
+    const options = server.tools ?? {};
+
+    if (!failed) {
+      for (const key of Object.keys(options)) {
+        if (key === '*' || Object.hasOwn(listed, key)) continue;
+
+        connections.warnOnce(
+          `${agent}\0${server.name}\0tools\0${key}`,
+          `[frogbot] Agent '${agent}' MCP server '${server.name}' lists no tool '${key}' for its \`tools\` option.`,
+        );
+      }
+    }
 
     for (const [toolName, tool] of Object.entries(listed)) {
       const name = mcpToolName(server.name, toolName);
@@ -78,6 +99,11 @@ export async function resolveMCPTools({
 
         continue;
       }
+
+      const approval = (Object.hasOwn(options, toolName) ? options[toolName] : options['*'])
+        ?.approval;
+
+      if (approval !== undefined) approvals.set(name, approval);
 
       const execute = tool.execute!;
 
@@ -96,7 +122,7 @@ export async function resolveMCPTools({
     }
   }
 
-  return tools;
+  return { tools, approvals };
 }
 
 async function listAll(

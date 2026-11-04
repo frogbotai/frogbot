@@ -24,6 +24,7 @@ import {
 } from '../../../../packages/frogbot/src/instanceRegistry.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import type { Plugin } from '../../../../packages/frogbot/src/plugin.js';
+import { question } from '../../../../packages/frogbot/src/tools/question.js';
 import { makeRequest } from './request.js';
 
 vi.mock('payload', async (importOriginal) => ({
@@ -4513,6 +4514,64 @@ describe('frogbot sanitize', () => {
           }),
         ),
       ).toThrow("[frogbot] Duplicate tool slug 'same' in agent 'support'.");
+    });
+
+    it('checks approval and lets an explicit tool replace a piece tool', () => {
+      const createExample = definePiece({
+        slug: 'approvals',
+        label: 'Approvals',
+        actions: [
+          { slug: 'send', description: 'Send', input: z.object({}), async run() {} },
+          { slug: 'read', description: 'Read', input: z.object({}), async run() {} },
+        ],
+      });
+
+      const example = createExample({});
+      const result = sanitize(
+        makeConfig({
+          ai,
+          agents: [{ ...agent, tools: [example, { ...example.send, approval: 'ask' }] }],
+        }),
+      );
+
+      expect(
+        result.agents?.[0].tools?.map((tool) => [
+          tool.slug,
+          'approval' in tool ? tool.approval : undefined,
+        ]),
+      ).toEqual([
+        ['approvals_read', undefined],
+        ['approvals_send', 'ask'],
+      ]);
+
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai,
+            agents: [{ ...agent, tools: [{ ...makeTool('bad'), approval: 'always' as never }] }],
+          }),
+        ),
+      ).toThrow(
+        "[frogbot] Tool 'bad' in agent 'support' `approval` must be false, 'ask', 'required' or a function.",
+      );
+
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai,
+            agents: [{ ...agent, tools: [{ ...question, approval: 'ask' } as never] }],
+          }),
+        ),
+      ).toThrow("[frogbot] Client tool 'question' in agent 'support' can't take `approval`");
+
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai,
+            agents: [{ ...agent, tools: [{ ...example.send }, { ...example.send }] }],
+          }),
+        ),
+      ).toThrow("[frogbot] Duplicate tool slug 'approvals_send' in agent 'support'.");
     });
 
     it('sanitizes agents, defaults access, registers endpoints, and removes agents from Payload', async () => {

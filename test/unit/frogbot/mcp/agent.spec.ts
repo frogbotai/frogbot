@@ -7,6 +7,7 @@ import { createAgentInstance } from '../../../../packages/frogbot/src/agents/ins
 import type { AgentModelId } from '../../../../packages/frogbot/src/agents/types.js';
 import { MCPConnections } from '../../../../packages/frogbot/src/mcp/connections.js';
 import type { MCPServer } from '../../../../packages/frogbot/src/mcp/types.js';
+import { NOT_APPROVABLE } from '../../../../packages/frogbot/src/tools/approval.js';
 import { question } from '../../../../packages/frogbot/src/tools/question.js';
 import type { AnyTool } from '../../../../packages/frogbot/src/tools/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
@@ -160,6 +161,44 @@ describe('agents with MCP servers', () => {
       expect.arrayContaining(['fixture_echo']),
     );
     expect(model.doStreamCalls[0].tools?.map(({ name }) => name)).not.toContain('question');
+  });
+
+  it('applies the tools map: a name beats `*`, and an unknown name warns once', async () => {
+    const server = fixture.server({
+      tools: { '*': { approval: 'ask' }, shot: { approval: false }, nope: { approval: 'ask' } },
+    });
+
+    const { agent, model } = setup({
+      mcp: [server],
+      steps: [
+        [
+          { type: 'stream-start', warnings: [] },
+          { type: 'tool-call', toolCallId: 'call-1', toolName: 'fixture_shot', input: '{}' },
+          { type: 'tool-call', toolCallId: 'call-2', toolName: 'fixture_fail', input: '{}' },
+          { type: 'finish', finishReason: { unified: 'tool-calls', raw: 'tool_calls' }, usage },
+        ],
+        reply('Done'),
+      ],
+    });
+
+    await (await agent.stream({ prompt: 'Go' })).consumeStream();
+    await (await agent.stream({ prompt: 'Again' })).consumeStream();
+
+    const results = toolResults(model.doStreamCalls[1]);
+
+    expect(results).toEqual([
+      expect.objectContaining({
+        toolName: 'fixture_shot',
+        output: expect.objectContaining({ type: 'content' }),
+      }),
+      expect.objectContaining({
+        toolName: 'fixture_fail',
+        output: { type: 'execution-denied', reason: NOT_APPROVABLE },
+      }),
+    ]);
+    expect(logger.warn).toHaveBeenCalledExactlyOnceWith(
+      "[frogbot] Agent 'researcher' MCP server 'fixture' lists no tool 'nope' for its `tools` option.",
+    );
   });
 
   it('runs on without a server that fails, with one warning', async () => {

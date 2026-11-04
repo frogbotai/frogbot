@@ -38,6 +38,8 @@ export type PendingCall = {
 
 export type ClientToolsOption = {
   kinds: readonly string[];
+  /** Someone in this run can answer a tool's approval request. */
+  approval?: boolean;
 };
 
 export type MessageDelivery = 'queue' | 'steer';

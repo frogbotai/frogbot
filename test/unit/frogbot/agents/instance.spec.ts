@@ -9,7 +9,10 @@ import type { AgentModelId } from '../../../../packages/frogbot/src/agents/types
 import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/ai/types.js';
 import type * as MessagePersistence from '../../../../packages/frogbot/src/chat/messagePersistence.js';
 import type * as State from '../../../../packages/frogbot/src/chat/turn/state.js';
+import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import { NOT_APPROVABLE } from '../../../../packages/frogbot/src/tools/approval.js';
 import { question } from '../../../../packages/frogbot/src/tools/question.js';
+import type { AnyTool, Tool } from '../../../../packages/frogbot/src/tools/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const agentState = vi.hoisted(() => ({
@@ -770,7 +773,7 @@ describe('agent client tool gate', () => {
     await agent.generate({ prompt: 'Hello', req });
 
     expect(agentState.prepared).not.toHaveProperty('activeTools');
-    expect(agentState.prepared).not.toHaveProperty('toolApproval');
+    expect(agentState.prepared?.toolApproval).toBeTypeOf('function');
   });
 
   it('skips server tools called in the same step as a client tool', async () => {
@@ -790,18 +793,18 @@ describe('agent client tool gate', () => {
     const toolApproval = agentState.prepared?.toolApproval as (args: {
       toolCall: { toolName: string };
       messages: ModelMessage[];
-    }) => string;
+    }) => Promise<unknown>;
 
     const execute = agent.aiAgent.tools.lookup.execute!;
     const clientStep: ModelMessage[] = [];
     const serverStep: ModelMessage[] = [];
 
-    expect(toolApproval({ toolCall: { toolName: 'question' }, messages: clientStep })).toBe(
-      'not-applicable',
-    );
-    expect(toolApproval({ toolCall: { toolName: 'lookup' }, messages: serverStep })).toBe(
-      'not-applicable',
-    );
+    expect(
+      await toolApproval({ toolCall: { toolName: 'question' }, messages: clientStep }),
+    ).toEqual({ type: 'not-applicable' });
+    expect(await toolApproval({ toolCall: { toolName: 'lookup' }, messages: serverStep })).toEqual({
+      type: 'not-applicable',
+    });
     expect(
       await execute({ query: 'a' }, {
         toolCallId: 'call-1',
@@ -817,6 +820,120 @@ describe('agent client tool gate', () => {
       } as never),
     ).toEqual({ found: true });
     expect(lookup.execute).toHaveBeenCalledExactlyOnceWith({ query: 'b' }, {});
+  });
+});
+
+describe('agent tool approval', () => {
+  const createMail = definePiece({
+    slug: 'mail',
+    label: 'Mail',
+    actions: [
+      {
+        slug: 'send',
+        description: 'Send',
+        input: z.object({}),
+        run: () => Promise.resolve('sent'),
+      },
+    ],
+  });
+
+  const mail = createMail();
+
+  const rule: Tool = {
+    ...lookup,
+    slug: 'rule',
+    approval: ({ input }) =>
+      (input as { query: string }).query === 'big' ? { mode: 'ask', reason: 'Big one' } : false,
+  };
+
+  const tools: AnyTool[] = [
+    { ...lookup, slug: 'plain', approval: 'ask' },
+    { ...lookup, slug: 'spread', approval: 'required' },
+    { ...mail.send, approval: 'ask' },
+    rule,
+  ];
+
+  async function approvalFor({
+    toolName,
+    input = { query: 'a' },
+    options = {},
+    chat,
+  }: {
+    toolName: string;
+    input?: unknown;
+    options?: Record<string, unknown>;
+    chat?: { autoApprove?: boolean };
+  }) {
+    const req = makeReq();
+    const deps = makeDeps(makeConfig(emptyHooks()), req) as {
+      frogbot: { findByID: ReturnType<typeof vi.fn> };
+    };
+
+    if (chat) deps.frogbot.findByID.mockResolvedValue({ id: 'chat-1', ...chat });
+
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
+        instructions: 'Help',
+        tools: [lookup, ...tools],
+      },
+      deps as never,
+    );
+
+    await agent.aiAgent.stream({ prompt: 'Hello', options: { req, ...options } });
+
+    const toolApproval = agentState.prepared?.toolApproval as (args: {
+      toolCall: { toolName: string; input: unknown };
+      messages: ModelMessage[];
+    }) => Promise<unknown>;
+
+    return toolApproval({ toolCall: { toolName, input }, messages: [] });
+  }
+
+  const ask = { clientTools: { kinds: [], approval: true } };
+
+  it.each([
+    ['lookup', ask, { type: 'not-applicable' }],
+    ['plain', ask, { type: 'user-approval' }],
+    ['plain', { ...ask, autoApprove: true }, { type: 'approved' }],
+    ['plain', {}, { type: 'denied', reason: NOT_APPROVABLE }],
+    ['plain', { autoApprove: true }, { type: 'approved' }],
+    ['spread', { ...ask, autoApprove: true }, { type: 'user-approval' }],
+    ['spread', { autoApprove: true }, { type: 'denied', reason: NOT_APPROVABLE }],
+    ['mail_send', ask, { type: 'user-approval' }],
+    ['mail_send', { ...ask, autoApprove: true }, { type: 'approved' }],
+    ['mail_send', {}, { type: 'denied', reason: NOT_APPROVABLE }],
+  ])('resolves %s with %o to %o', async (toolName, options, expected) => {
+    expect(await approvalFor({ toolName, options })).toEqual(expected);
+  });
+
+  it('runs a rule per call and shows its reason', async () => {
+    expect(await approvalFor({ toolName: 'rule', options: ask })).toEqual({
+      type: 'not-applicable',
+    });
+    expect(await approvalFor({ toolName: 'rule', input: { query: 'big' }, options: ask })).toEqual({
+      type: 'user-approval',
+      reason: 'Big one',
+    });
+  });
+
+  it("reads the chat's autoApprove unless the run sets it", async () => {
+    const chat = { autoApprove: true };
+
+    expect(
+      await approvalFor({ toolName: 'plain', options: { ...ask, chatId: 'chat-1' }, chat }),
+    ).toEqual({ type: 'approved' });
+    expect(
+      await approvalFor({
+        toolName: 'plain',
+        options: { ...ask, chatId: 'chat-1', autoApprove: false },
+        chat,
+      }),
+    ).toEqual({ type: 'user-approval' });
+    expect(
+      await approvalFor({ toolName: 'spread', options: { ...ask, chatId: 'chat-1' }, chat }),
+    ).toEqual({ type: 'user-approval' });
   });
 });
 
@@ -1044,13 +1161,13 @@ describe('agent model input pass', () => {
     const toolApproval = agentState.prepared?.toolApproval as (args: {
       toolCall: { toolName: string };
       messages: ModelMessage[];
-    }) => string;
+    }) => Promise<unknown>;
 
     const execute = agent.aiAgent.tools.lookup.execute!;
 
     const { messages } = await prepareStep({ messages: [photo], stepNumber: 0 });
 
-    toolApproval({ toolCall: { toolName: 'question' }, messages });
+    await toolApproval({ toolCall: { toolName: 'question' }, messages });
 
     expect(messages).not.toEqual([photo]);
     expect(
