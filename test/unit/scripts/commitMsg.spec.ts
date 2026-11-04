@@ -51,6 +51,20 @@ describe('checkCommitMessage', () => {
     expect(checkCommitMessage(message)).toBeNull();
   });
 
+  it('accepts the Claude-Session trailer', () => {
+    expect(
+      checkCommitMessage('fix: x\n\nClaude-Session: https://claude.ai/code/session_01ABC\n'),
+    ).toBeNull();
+  });
+
+  it('still refuses Co-authored-by beside the trailer', () => {
+    expect(
+      checkCommitMessage(
+        'fix: x\n\nClaude-Session: https://claude.ai/code/session_01ABC\nCo-authored-by: Bot <b@x>\n',
+      ),
+    ).toMatch(/attribution line/);
+  });
+
   it.each([
     'Co-authored-by: Bot <b@x>',
     'co-authored-by: Bot <b@x>',

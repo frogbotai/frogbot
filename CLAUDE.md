@@ -44,6 +44,7 @@ When `CLAUDE_CODE_REMOTE` is `true`, these rules replace the ones above that con
 - Commit ticket documents in `.idea` and push them to the process repo's `main`. Never copy them into a public repo.
 - Run `pnpm check` yourself. The `lint` subagent doesn't exist here.
 - Commits carry no `Co-authored-by:` or "Generated with" lines, and are authored as the owner (the environment sets `GIT_AUTHOR_*` and `GIT_COMMITTER_*`). PRs are squash-merged to their title, so the title is the commit.
+- Keep the Claude session link, which lets the owner reopen the session from a phone: end every commit with the trailer `Claude-Session: https://claude.ai/code/session_…`, every PR body with the bare link on its own last line, and every issue comment with `Session: https://claude.ai/code/session_…`. The link is the one attribution the repo wants.
 - The `.opencode` plugin doesn't run here, so keep its rules yourself: no whole-suite test runs (`pnpm test`, bare `vitest run`, `playwright test`, `pnpm test:browser` without `--project`), no `sleep` loops, no `--no-verify`, and `git merge` only with `--ff-only`.
 - Visual changes (marketing, admin UI, Sidekick, docs styling) put before and after screenshots in the PR body: see [Screenshots](.github/feature-process/cloud.md#screenshots).
 - A reference repo missing from `~/code` is a public clone away: `git clone --depth 1 https://github.com/<owner>/<repo> ~/code/<name>`. `~/code/firmware` is private and isn't available here, so say so instead of guessing.
