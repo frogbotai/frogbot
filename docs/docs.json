@@ -328,8 +328,11 @@
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/frogbot_ai",
-      "linkedin": "https://www.linkedin.com/company/frogbotai"
+      "x": "https://x.com/frogbotai",
+      "discord": "https://discord.com/invite/JBZF7syAnU",
+      "youtube": "https://www.youtube.com/@frogbotai",
+      "linkedin": "https://www.linkedin.com/company/frogbotai",
+      "github": "https://github.com/frogbotai/frogbot"
     }
   }
 }
