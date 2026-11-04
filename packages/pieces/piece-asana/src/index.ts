@@ -19,6 +19,11 @@ import {
 } from './actions/lists.js';
 import { type AsanaClient, createAsanaClient } from './client.js';
 import { type AsanaAuth, asanaAuth } from './config.js';
+import { commentAdded } from './triggers/commentAdded.js';
+import { taskChanged } from './triggers/taskChanged.js';
+import { taskCompleted } from './triggers/taskCompleted.js';
+import { taskCreated } from './triggers/taskCreated.js';
+import { asanaWebhook } from './webhook.js';
 
 export { AsanaError } from './client.js';
 
@@ -59,12 +64,14 @@ export const createAsana = definePiece({
   slug: 'asana',
   label: 'Asana',
   admin: {
-    description: 'Import and create Asana workspaces, projects, tasks, comments and attachments',
+    description:
+      'Import Asana workspaces, projects, tasks, comments and attachments, create tasks, and react to task changes',
     group: 'Productivity',
   },
   auth: asanaAuth,
   oauth: asanaOAuth,
   client: createAsanaClient,
+  webhook: asanaWebhook,
   actions: [
     listWorkspaces,
     listTeams,
@@ -81,4 +88,5 @@ export const createAsana = definePiece({
     createTask,
     customApiCall,
   ],
+  triggers: [taskCreated, taskChanged, taskCompleted, commentAdded],
 });

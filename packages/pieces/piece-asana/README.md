@@ -46,3 +46,14 @@ FrogBot additions for moving a whole workspace. Each takes `limit` (1–100, def
 | `listStories`        | A task's comments and activity, told apart by `resource_subtype`.       |
 | `listAttachments`    | A task's attachments; `download_url` lasts two minutes.                 |
 | `downloadAttachment` | Saves an Asana-hosted file into FrogBot files; other hosts stay a link. |
+
+## Triggers
+
+Upstream has no Asana triggers. Each of these takes a `projectGid` and registers one filtered Asana webhook on that project. A delivery is checked against the `X-Hook-Signature` secret Asana returned at registration; each event is emitted with its full task (and comment), or as delivered when Asana can't return them.
+
+| Native trigger  | Type      | Fires when                                          |
+| --------------- | --------- | --------------------------------------------------- |
+| `taskCreated`   | `webhook` | A task or subtask is added to the project.          |
+| `taskChanged`   | `webhook` | A task field changes, once per field.               |
+| `taskCompleted` | `webhook` | A task is marked complete (not when it's reopened). |
+| `commentAdded`  | `webhook` | Someone comments on a task.                         |

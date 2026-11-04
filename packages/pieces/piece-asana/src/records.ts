@@ -65,6 +65,7 @@ export const story = compact.extend({
   text: z.string().nullish(),
   created_at: z.string().nullish(),
   created_by: person.nullish(),
+  target: compact.nullish(),
 });
 
 export const attachment = compact.extend({
