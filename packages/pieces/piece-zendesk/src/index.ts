@@ -10,6 +10,14 @@ import {
   exportUsers,
 } from './actions/export.js';
 import {
+  findAgent,
+  findGroup,
+  findLatestComment,
+  findOrganization,
+  findTickets,
+  findUser,
+} from './actions/find.js';
+import {
   listCategories,
   listGroups,
   listMacros,
@@ -21,6 +29,16 @@ import {
   listUserFields,
   listViews,
 } from './actions/lists.js';
+import { createOrganization, updateOrganization } from './actions/organizations.js';
+import {
+  addCommentToTicket,
+  addTagToTicket,
+  attachFileToTicket,
+  createTicket,
+  removeTagFromTicket,
+  updateTicket,
+} from './actions/tickets.js';
+import { createUser, deleteUser, updateUser } from './actions/users.js';
 import { createZendeskClient } from './client.js';
 import { zendeskAuth } from './config.js';
 
@@ -53,6 +71,23 @@ export const createZendesk = definePiece({
     listViews,
     listSlaPolicies,
     downloadAttachment,
+    createTicket,
+    updateTicket,
+    addTagToTicket,
+    removeTagFromTicket,
+    attachFileToTicket,
+    addCommentToTicket,
+    createOrganization,
+    updateOrganization,
+    createUser,
+    updateUser,
+    deleteUser,
+    findOrganization,
+    findTickets,
+    findUser,
+    findAgent,
+    findGroup,
+    findLatestComment,
     customApiCall,
   ],
 });

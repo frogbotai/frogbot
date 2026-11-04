@@ -50,6 +50,25 @@ Lists take `limit` (1–100, default 100) and `cursor`, and return `{ data, pagi
 
 ## Actions
 
-| Upstream action slug | Native action   | Notes                  |
-| -------------------- | --------------- | ---------------------- |
-| custom API call      | `customApiCall` | Paths under `/api/v2`. |
+Inputs are camelCase and sent snake_case. Upstream's ticket, user, group and organization dropdowns become id inputs; the list and find actions return the ids. Custom fields take ids or keys from `listTicketFields`, `listUserFields` and `listOrganizationFields` instead of upstream's dynamic properties.
+
+| Upstream action slug     | Native action         | Notes                                                                                                                                                                          |
+| ------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `create-ticket`          | `createTicket`        | Requester, assignee, CCs and followers by email, as Zendesk takes them, with no lookups first; a new requester becomes an end user. `forum_topic_id` dropped: deprecated.      |
+| `update-ticket`          | `updateTicket`        | Requester by `requesterId`. `updatedStamp` turns on Zendesk's safe update.                                                                                                     |
+| `add-tag-to-ticket`      | `addTagToTicket`      | Returns the ticket's tags. `updatedStamp` replaces `safe_update` + `updated_stamp`.                                                                                            |
+| `remove-tag-from-ticket` | `removeTagFromTicket` | Returns the ticket's tags.                                                                                                                                                     |
+| `attach-file-to-ticket`  | `attachFileToTicket`  | Takes a FrogBot file, uploads it to `/uploads`, then adds it on a comment. Optional `body` and `public`.                                                                       |
+| `add-comment-to-ticket`  | `addCommentToTicket`  | Public by default; `public: false` for an internal note. Author by `authorId` instead of an email lookup.                                                                      |
+| `create-organization`    | `createOrganization`  |                                                                                                                                                                                |
+| `update-organization`    | `updateOrganization`  |                                                                                                                                                                                |
+| `create-user`            | `createUser`          | `identities`, `shared_agent`, `moderator`, `report_csv` and `agent_brand_ids` dropped: rare; send them with `customApiCall`. `active` and `shared` dropped: Zendesk sets them. |
+| `update-user`            | `updateUser`          | Takes every `createUser` field.                                                                                                                                                |
+| `delete-user`            | `deleteUser`          | No confirmation input.                                                                                                                                                         |
+| `find-organization`      | `findOrganization`    | One search where every input given must match, instead of a search-type selector; `query` adds raw search syntax.                                                              |
+| `find-tickets`           | `findTickets`         | As `findOrganization`. Date filters go in `query`, such as `created>2026-01-01`.                                                                                               |
+| `find-user`              | `findUser`            | As `findOrganization`.                                                                                                                                                         |
+| `find-agent`             | `findAgent`           | Searches agents and admins instead of paging every agent; `null` when none matches.                                                                                            |
+| `find-group`             | `findGroup`           | `null` when none matches.                                                                                                                                                      |
+| `find-latest-comment`    | `findLatestComment`   | `null` when the ticket has none.                                                                                                                                               |
+| custom API call          | `customApiCall`       | Paths under `https://<subdomain>.zendesk.com/api/v2`.                                                                                                                          |
