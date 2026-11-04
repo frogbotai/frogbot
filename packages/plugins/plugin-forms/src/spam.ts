@@ -59,6 +59,13 @@ export function clientIp(headers: Headers, trustProxy: boolean): string | undefi
   return forwarded || headers.get('x-real-ip')?.trim() || undefined;
 }
 
+function rateWindow(ip: string, window: number, now: number) {
+  const length = window * 1000;
+  const start = Math.floor(now / length) * length;
+
+  return { key: `plugin-forms:rate:${ip}:${start}`, remaining: start + length - now };
+}
+
 /** Counts one submit for `ip` in the current fixed window, refusing it once `max` is reached. */
 export async function takeRateLimit(
   frogbot: FrogBot,
@@ -66,10 +73,7 @@ export async function takeRateLimit(
   { max, window }: SpamOptions['rateLimit'],
   now = Date.now(),
 ): Promise<RateLimitResult> {
-  const length = window * 1000;
-  const start = Math.floor(now / length) * length;
-  const remaining = start + length - now;
-  const key = `plugin-forms:rate:${ip}:${start}`;
+  const { key, remaining } = rateWindow(ip, window, now);
 
   return withLock(frogbot, `plugin-forms:rate-lock:${ip}`, async () => {
     const stored = await frogbot.kv.get(key);
@@ -81,6 +85,22 @@ export async function takeRateLimit(
 
     return { allowed: true };
   });
+}
+
+/** Whether `ip` has used up the current window, without counting this request. */
+export async function checkRateLimit(
+  frogbot: FrogBot,
+  ip: string,
+  { max, window }: SpamOptions['rateLimit'],
+  now = Date.now(),
+): Promise<RateLimitResult> {
+  const { key, remaining } = rateWindow(ip, window, now);
+  const stored = await frogbot.kv.get(key);
+  const count = typeof stored === 'number' ? stored : 0;
+
+  return count >= max
+    ? { allowed: false, retryAfter: Math.ceil(remaining / 1000) }
+    : { allowed: true };
 }
 
 /** Asks Cloudflare whether a Turnstile token is valid. Tokens work once and expire after 300 s. */

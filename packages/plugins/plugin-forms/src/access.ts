@@ -68,3 +68,17 @@ export function wrapCreateAccess(slug: string, create: Access | undefined): Acce
 
   return (args) => (isFormSubmission(args.req, slug) ? true : fallback(args));
 }
+
+/**
+ * Wraps a collection's `access.read` or `access.update`: while an edit link for this collection
+ * runs, only its record; otherwise the collection's own rule.
+ */
+export function wrapLinkAccess(slug: string, rule: Access | undefined): Access {
+  const fallback = rule ?? adminUsers;
+
+  return (args) => {
+    const link = formLinkFor(args.req, slug);
+
+    return link ? { id: { equals: link.record } } : fallback(args);
+  };
+}

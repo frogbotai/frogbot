@@ -160,6 +160,8 @@ export type FormDefinition = {
   honeypot: string;
   /** Set when the app uses Cloudflare Turnstile. Send the widget's token as `turnstile`. */
   turnstile?: { siteKey: string };
+  /** Through an edit link: the record's current answers, by question key. */
+  values?: Record<string, unknown>;
 };
 
 /**

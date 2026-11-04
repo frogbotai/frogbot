@@ -1,5 +1,5 @@
 import { formsPlugin } from '@frogbotai/plugin-forms';
-import type { Access, CollectionConfig } from 'frogbot';
+import { type Access, APIError, type CollectionConfig, type FrogBotRequest } from 'frogbot';
 
 import { buildTestConfig } from '../../__helpers/shared/buildTestConfig.js';
 
@@ -7,6 +7,12 @@ export const applicationsSlug = 'applications';
 export const draftedSlug = 'drafted';
 export const notesSlug = 'notes';
 export const hookMarkerPrefix = 'test:application-hook:';
+export const updateCountPrefix = 'test:application-updates:';
+export const reachPrefix = 'test:application-reach:';
+export const noteIdKey = 'test:note-id';
+export const otherApplicationKey = 'test:other-application';
+export const failingName = 'explode';
+export const reachingName = 'reach';
 export const serverURL = 'https://apply.example.com';
 
 type Role = 'admin' | 'staff' | 'viewer';
@@ -19,6 +25,41 @@ const editApplications: Access = ({ req }) => {
 
   return false;
 };
+
+async function attempt(fn: () => Promise<unknown>): Promise<string> {
+  try {
+    await fn();
+
+    return 'allowed';
+  } catch (error) {
+    return (error as { name?: string }).name ?? 'failed';
+  }
+}
+
+async function reach(req: FrogBotRequest) {
+  const note = await req.frogbot.kv.get(noteIdKey);
+  const other = await req.frogbot.kv.get(otherApplicationKey);
+
+  return {
+    note: await attempt(() =>
+      req.frogbot.update({
+        collection: notesSlug,
+        id: note as number | string,
+        data: { body: 'changed through a link' },
+        overrideAccess: false,
+        req,
+      }),
+    ),
+    other: await attempt(() =>
+      req.frogbot.findByID({
+        collection: applicationsSlug,
+        id: other as number | string,
+        overrideAccess: false,
+        req,
+      }),
+    ),
+  };
+}
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -39,13 +80,26 @@ export const Applications: CollectionConfig = {
     delete: ({ req }) => role(req.user) === 'admin',
   },
   hooks: {
+    beforeChange: [
+      ({ data }) => {
+        if (data.name === failingName) throw new APIError('The CRM refused this change.', 400);
+
+        return data;
+      },
+    ],
     afterChange: [
       async ({ doc, operation, req }) => {
         if (operation !== 'update') return;
 
         const link = req.context.formLink;
+        const count = await req.frogbot.kv.get(`${updateCountPrefix}${doc.id}`);
 
         await req.frogbot.kv.set(`${hookMarkerPrefix}${doc.id}`, link ? String(link.id) : 'none');
+        await req.frogbot.kv.set(`${updateCountPrefix}${doc.id}`, (Number(count) || 0) + 1);
+
+        if (doc.name === reachingName) {
+          await req.frogbot.kv.set(`${reachPrefix}${doc.id}`, await reach(req));
+        }
       },
     ],
   },
@@ -74,5 +128,7 @@ export const Notes: CollectionConfig = {
 export default buildTestConfig({
   serverURL,
   collections: [Users, Applications, Drafted, Notes],
-  plugins: [formsPlugin({ collections: [applicationsSlug, draftedSlug, notesSlug] })],
+  plugins: [
+    formsPlugin({ collections: [applicationsSlug, draftedSlug, notesSlug], trustProxy: true }),
+  ],
 });
