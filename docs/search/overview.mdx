@@ -35,7 +35,7 @@ export const Articles: CollectionConfig = {
 };
 ```
 
-`dimensions` belongs to the vector field, not the index. When an index includes both components, supplying both query inputs selects hybrid mode with configured reciprocal-rank fusion (`rrf`). FrogBot does not calculate embeddings; your application supplies stored vectors and query vectors. The adapter creates any native indexes as part of the database schema.
+`dimensions` belongs to the vector field, not the index. When an index includes both components, supplying both query inputs selects hybrid mode with configured reciprocal-rank fusion (`rrf`). Your application supplies query vectors. Stored vectors come from your application too, or from [`embedFrom`](/fields/vector#embed-on-save), which fills a vector field from the record's text on save. The adapter creates any native indexes as part of the database schema.
 
 ### Index options
 

@@ -48,6 +48,7 @@ import { fromPayloadJobs } from '../seams/config.js';
 import { buildSearchManyEndpoint } from '../search/endpoints.js';
 import { withSearchRuntime } from '../search/runtime.js';
 import { sanitizeSearchIndexes } from '../search/sanitize.js';
+import { sanitizeEmbedFrom } from '../search/sanitizeEmbedFrom.js';
 import { sanitizeToolList } from '../tools/config/sanitize.js';
 import {
   defaultTriggerSubscriptionsCollection,
@@ -221,6 +222,13 @@ export function sanitize(
   const sanitizedAI = config.ai ? sanitizeAI(config.ai, mode, linkedProviders) : undefined;
 
   sanitizeAIFields({
+    ai: config.ai,
+    blocks: config.blocks,
+    collections: config.collections,
+    mode,
+  });
+
+  sanitizeEmbedFrom({
     ai: config.ai,
     blocks: config.blocks,
     collections: config.collections,

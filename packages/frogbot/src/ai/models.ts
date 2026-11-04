@@ -67,6 +67,14 @@ export function getConfiguredChatModelIds(ai: AIConfig | SanitizedAIConfig | und
     .map(({ id }) => id);
 }
 
+export function getConfiguredEmbeddingModelIds(
+  ai: AIConfig | SanitizedAIConfig | undefined,
+): string[] {
+  return configuredModels(ai)
+    .filter(({ mode }) => mode === 'embedding')
+    .map(({ id }) => id);
+}
+
 export function getConfiguredTranscriptionModelIds(
   ai: AIConfig | SanitizedAIConfig | undefined,
 ): string[] {

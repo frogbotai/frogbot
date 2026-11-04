@@ -850,6 +850,11 @@
     "type": "Omit<NonNullable<import('frogbot').VectorField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
   },
   {
+    "page": "fields/vector",
+    "heading": "Embed on save",
+    "type": "import('frogbot/search').EmbedFromOptions"
+  },
+  {
     "page": "gateway/configuration",
     "heading": "Config options",
     "type": "import('@frogbotai/gateway').GatewayConfig"
