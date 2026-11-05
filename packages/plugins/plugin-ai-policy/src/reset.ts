@@ -17,7 +17,7 @@ export function createResetTask({
       for (const collection of keysCollection
         ? [authCollection, keysCollection]
         : [authCollection]) {
-        await req.payload.update({
+        await req.frogbot.update({
           collection,
           where: { id: { exists: true } },
           data: { spendThisPeriodUSD: 0 },

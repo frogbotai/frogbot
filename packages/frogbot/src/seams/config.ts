@@ -1,3 +1,4 @@
+import type { JobsConfig as PayloadJobsConfig } from 'payload';
 import { flattenTopLevelFields as flattenPayloadFields } from 'payload/shared';
 
 import type { COLLECTION_MARKERS, CollectionConfig } from '../collections/config/types.js';
@@ -67,6 +68,14 @@ export type _ConfigChecks = [
 
 export function toPayloadConfig(config: FrogBotConfig): PayloadConfig {
   return config as unknown as PayloadConfig;
+}
+
+export function toPayloadJobs(jobs: JobsConfig): PayloadJobsConfig {
+  return jobs as unknown as PayloadJobsConfig;
+}
+
+export function fromPayloadJobs(jobs: PayloadJobsConfig): JobsConfig {
+  return jobs as unknown as JobsConfig;
 }
 
 export function fromPayloadConfig(config: PayloadConfig): FrogBotConfig {

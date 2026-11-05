@@ -1,5 +1,6 @@
 import type { Field, JobsConfig as PayloadJobsConfig } from 'payload';
 
+import { toPayloadJobs } from '../seams/config.js';
 import { withJobRun } from './run.js';
 import type { JobsConfig } from './types.js';
 import { sweepWaitpoints } from './waitpoints/operations.js';
@@ -76,11 +77,11 @@ export function resolveJobsConfig(jobs: JobsConfig = {}): PayloadJobsConfig & {
   ];
 
   return {
-    ...jobs,
+    ...toPayloadJobs(jobs),
     waitpoints,
     workflows: jobs.workflows?.map((workflow) => wrapWorkflow({ workflow, config: waitpoints })),
     tasks: [
-      ...(jobs.tasks ?? []),
+      ...(toPayloadJobs(jobs).tasks ?? []),
       {
         slug: WAITPOINT_SWEEP_TASK_SLUG,
         interfaceName: 'TaskFrogBotSweepWaitpoints',

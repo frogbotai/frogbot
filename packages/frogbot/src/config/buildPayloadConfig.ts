@@ -22,7 +22,7 @@ import { sanitizeVectorFields } from '../fields/config/sanitizeVector.js';
 import { wrapFieldRequestFunctions } from '../fields/config/wrapRequestFunctions.js';
 import { buildResumeEndpoints } from '../jobs/endpoints/resume.js';
 import { pieceEmailAdapter } from '../pieces/email.js';
-import { toPayloadConfig, toPayloadFields } from '../seams/config.js';
+import { toPayloadConfig, toPayloadFields, toPayloadJobs } from '../seams/config.js';
 import { buildSearchQueries } from '../search/graphQL.js';
 import type { SearchCollection } from '../search/types.js';
 import type { AutonumberEntry, AutonumberKeyDeclaration } from './sanitized.js';
@@ -33,6 +33,7 @@ import {
   type AttachFrogBot,
   type ResolveFrogBot,
   wrapEndpointList,
+  wrapJobs,
   wrapLivePreview,
   wrapLocalization,
   wrapRootHooks,
@@ -163,6 +164,7 @@ export function buildPayloadConfig({
       : {}),
     collections,
     hooks: wrapRootHooks(config.hooks, attachFrogBot),
+    ...(config.jobs ? { jobs: wrapJobs(toPayloadJobs(config.jobs), attachFrogBot) } : {}),
     ...(config.localization !== undefined
       ? { localization: wrapLocalization(config.localization, attachFrogBot) }
       : {}),
