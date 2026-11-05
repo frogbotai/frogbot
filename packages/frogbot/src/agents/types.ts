@@ -132,12 +132,14 @@ type AgentRunOpts = (
   autoApprove?: boolean;
 };
 
-export type AgentGenerateOpts<O extends AIOutput = never> = AgentRunOpts & {
-  chatId?: DocID;
-  output?: O;
-};
+export type AgentGenerateOpts<O extends AIOutput = never> = AgentRunOpts &
+  AgentSelection & {
+    chatId?: DocID;
+    output?: O;
+  };
 
-export type AgentStreamOpts<O extends AIOutput = never> = AgentRunOpts & { output?: O };
+export type AgentStreamOpts<O extends AIOutput = never> = AgentRunOpts &
+  AgentSelection & { output?: O };
 
 export type AgentStreamMessageOpts = AgentRunOpts & {
   chatId: DocID;

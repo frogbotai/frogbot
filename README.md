@@ -169,6 +169,7 @@ This monorepo publishes the following packages:
 | [`@frogbotai/plugin-ai-policy`](./packages/plugins/plugin-ai-policy)         | Per-user model allowlists and monthly AI budgets                      |
 | [`@frogbotai/plugin-api-keys`](./packages/plugins/plugin-api-keys)           | Multiple named, independently revocable API keys                      |
 | [`@frogbotai/plugin-capture`](./packages/plugins/plugin-capture)             | Capture AI calls and export JSONL chat training data                  |
+| [`@frogbotai/plugin-evals`](./packages/plugins/plugin-evals)                 | Score agents on saved test cases, from the admin or CI                |
 | [`@frogbotai/plugin-usage-reports`](./packages/plugins/plugin-usage-reports) | AI token and cost usage reporting                                     |
 | [`@frogbotai/plugin-import-export`](./packages/plugins/plugin-import-export) | CSV and JSON collection import and export                             |
 | [`@frogbotai/plugin-stripe`](./packages/plugins/plugin-stripe)               | Stripe webhooks and billing sync                                      |

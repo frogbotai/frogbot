@@ -554,6 +554,103 @@ describe('agent generate turns', () => {
     expect(turn.releaseTurn).toHaveBeenCalledWith({ req, claim, state: 'idle' });
   });
 
+  it('runs a stream on the model it is given', async () => {
+    const req = makeReq();
+    const deps = makeDeps(makeConfig(emptyHooks()), req) as unknown as {
+      gateway: { operationModel: ReturnType<typeof vi.fn> };
+      frogbot: { create: ReturnType<typeof vi.fn> };
+    };
+
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o', 'openai/gpt-4.1'] },
+        instructions: 'Help',
+      },
+      deps as never,
+    );
+
+    await agent.stream({ prompt: 'Hello', req, model: 'openai/gpt-4.1' as AgentModelId });
+
+    expect(deps.gateway.operationModel).toHaveBeenLastCalledWith('openai/gpt-4.1');
+    expect(turn.resolveChatContext).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      name: 'a model not on the agent list',
+      opts: { model: 'openai/gpt-4.1' as AgentModelId },
+      message: "Model 'openai/gpt-4.1' is not allowed for agent 'support'",
+    },
+    {
+      name: 'an unknown reasoning option',
+      opts: { reasoning: 'max' },
+      message: "Reasoning option 'max' is not available for model 'openai/gpt-4o'",
+    },
+  ])('refuses $name before any model call', async ({ opts, message }) => {
+    const req = makeReq();
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
+        instructions: 'Help',
+      },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await expect(agent.stream({ prompt: 'Hello', req, ...opts })).rejects.toMatchObject({
+      code: 'selection-unavailable',
+      message,
+    });
+    await expect(agent.generate({ prompt: 'Hello', req, ...opts })).rejects.toMatchObject({
+      code: 'selection-unavailable',
+      message,
+    });
+
+    expect(agentState.streamCall).toBeUndefined();
+    expect(agentState.generateCall).toBeUndefined();
+    expect(turn.resolveChatContext).not.toHaveBeenCalled();
+  });
+
+  it("runs generate on the given model over the chat's selection and saves no selection", async () => {
+    const req = makeReq();
+    const deps = makeDeps(makeConfig(emptyHooks()), req) as unknown as {
+      gateway: { operationModel: ReturnType<typeof vi.fn> };
+    };
+
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o', 'openai/gpt-4.1'] },
+        instructions: 'Help',
+      },
+      deps as never,
+    );
+
+    turn.resolveChatContext.mockResolvedValue({
+      status: 'ready',
+      chatId: 'chat-1',
+      uiMessages: history,
+      claim,
+      selection: { model: 'openai/gpt-4o' },
+    });
+
+    await agent.generate({
+      prompt: 'Hello',
+      chatId: 'chat-1',
+      req,
+      model: 'openai/gpt-4.1' as AgentModelId,
+    });
+
+    expect(deps.gateway.operationModel).toHaveBeenLastCalledWith('openai/gpt-4.1');
+    expect(turn.resolveChatContext).toHaveBeenCalledWith(
+      expect.not.objectContaining({ selection: expect.anything() }),
+    );
+    expect(turn.persistAssistantMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ mainModel: 'openai/gpt-4.1' }),
+    );
+  });
+
   it('runs on the user fallback and records it as the main model', async () => {
     const req = makeReq();
     const deps = makeDeps(allowOnly(['openai/gpt-4.1']), req) as unknown as {
