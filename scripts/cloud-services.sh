@@ -21,9 +21,6 @@ if ! docker info >/dev/null 2>&1; then
   docker info >/dev/null 2>&1 || { echo "cloud-services: dockerd did not start; see /tmp/dockerd.log" >&2; exit 1; }
 fi
 
-# The proxy blocks ghcr.io image layers; Docker Hub works. This image has PostGIS but no pgvector.
-export FROGBOT_POSTGRES_IMAGE=${FROGBOT_POSTGRES_IMAGE:-postgis/postgis:16-3.4}
-
 profiles=()
 for name in "$@"; do profiles+=(--profile "$name"); done
 

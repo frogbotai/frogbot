@@ -60,7 +60,7 @@ services:
   # Connection: postgres://frogbot:frogbot@localhost:5433/frogbot
   postgres:
     profiles: [all, postgres]
-    image: ${FROGBOT_POSTGRES_IMAGE:-ghcr.io/payloadcms/postgis-vector:latest}
+    image: ghcr.io/payloadcms/postgis-vector:latest
     container_name: postgres-frogbot-test
     ports:
       - '5433:5432'
