@@ -285,9 +285,20 @@ Use `frogbot.config.ts` as the configuration entry, `req.frogbot` in request cal
 - Use `depth: 0` when relationship IDs are sufficient and `select` when only specific fields are needed.
 - Remember that `select` changes returned data but does not narrow the TypeScript return type.
 - Configure an editor for every rich text field; nested rich text fields need their own editor.
-- Run `frogbot generate:types` after changing collections, fields, jobs, or other generated schemas.
 - Keep coding-agent reference files separate from runtime skills configured on an application agent.
 - Preserve existing config arrays and nested objects when writing plugins; plugin order is behavior.
+
+## Before You Finish
+
+Run these steps, in order, before you say a task is done:
+
+1. After changing collections, fields, jobs, or other generated schemas, run `frogbot generate:types`.
+2. Run `frogbot check`, and fix what it reports until it passes.
+3. Run the app's `typecheck` script.
+4. Run the app's `test` script, if it has one.
+5. Run each job you added or changed once, with a run-once script like the one in [JOBS.md](reference/JOBS.md#workflow-waits), and say what it did.
+
+Then report one line per step: passed, failed, or not run and why, for example "not run: no test script" or "not run: no AI provider configured".
 
 ## Reference Files
 

@@ -1,7 +1,6 @@
-import type { AgentConfig, FrogBotConfig, SkillConfig, Tool } from 'frogbot';
+import type { AgentConfig, FrogBotConfig, SkillConfig } from 'frogbot';
 import { buildConfig, getFrogBot } from 'frogbot';
 import { general } from 'frogbot/agents';
-import { z } from 'zod';
 
 import { ai } from './ai.js';
 import { domainConfig } from './domain-context.js';
@@ -30,31 +29,6 @@ export async function runAgent() {
 
   return result;
 }
-
-const searchInput = z.object({ query: z.string() });
-
-const searchProjects: Tool<typeof searchInput> = {
-  slug: 'search_projects',
-  description: 'Search projects by title.',
-  inputSchema: searchInput,
-  async execute({ query }, { frogbot, req }) {
-    const projects = await frogbot.find({
-      collection: 'projects',
-      where: { title: { contains: query } },
-      req,
-      overrideAccess: false,
-    });
-
-    return projects.docs;
-  },
-};
-
-export const toolAssistant: AgentConfig = {
-  slug: 'assistant',
-  instructions: 'Answer with the available project data.',
-  tools: [searchProjects],
-  inheritTools: false,
-};
 
 const supportPolicy: SkillConfig = {
   slug: 'support-policy',

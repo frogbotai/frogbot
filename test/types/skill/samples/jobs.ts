@@ -1,8 +1,9 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import type { FrogBotInstance } from 'frogbot';
 import { buildConfig } from 'frogbot';
-import type { JobsConfig, WorkflowConfig, WorkflowHandler } from 'frogbot/jobs';
+import type { JobsConfig } from 'frogbot/jobs';
 
+import { approvalWorkflow } from '../scaffolds/jobs/src/jobs/approvalWorkflow.js';
 import { domainConfig } from './domain-context.js';
 
 export const config = buildConfig({
@@ -31,31 +32,6 @@ export async function queueReport(frogbot: FrogBotInstance) {
     overrideAccess: true,
   });
 }
-
-export async function waitForApproval(waitFor: Parameters<WorkflowHandler>[0]['waitFor']) {
-  const result = await waitFor<{ approved: boolean }>('approval', {
-    expiresIn: 86_400_000,
-    async onWait({ resumeUrl }) {
-      await fetch('https://example.com/approvals', {
-        method: 'POST',
-        body: JSON.stringify({ resumeUrl }),
-      });
-    },
-  });
-
-  if (result.expired) return { output: { approved: false } };
-
-  return { output: { approved: result.data.approved } };
-}
-
-export const approvalWorkflow: WorkflowConfig = {
-  slug: 'approval',
-  async handler({ waitFor }) {
-    const { output } = await waitForApproval(waitFor);
-
-    if (!output.approved) throw new Error('Approval was denied or expired');
-  },
-};
 
 export const workflowConfig = buildConfig({
   ...domainConfig,
