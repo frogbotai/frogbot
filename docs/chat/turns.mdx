@@ -2,7 +2,7 @@
 title: "Turns and queued messages"
 sidebarTitle: "Turns and queues"
 description: "How FrogBot runs one agent turn per chat and handles messages that arrive during a turn."
-keywords: ["turn", "queue", "steer", "concurrency", "lease", "awaiting"]
+keywords: ["turn", "queue", "steer", "concurrency", "lease", "awaiting", "compaction", "context window"]
 ---
 
 A turn is one run of the agent in response to a user message, from the first model step to the final reply. FrogBot runs at most one turn per chat at a time, whether the message comes from the admin chat, `@frogbotai/ui`, an HTTP client, a channel, or `agent.generate()`.
@@ -68,6 +68,34 @@ curl http://localhost:3000/api/agents/support/chats/CHAT_ID/messages/MESSAGE_ID 
 ```
 
 Send `parts`, `delivery`, or both. A `DELETE` request to the same path removes the message and returns `204 No Content`. Both return `403` for anyone other than the author, and `409` with `code: "not-queued"` once the message has been promoted.
+
+## Compaction
+
+Every turn sends the chat's messages to the model, so a long chat eventually outgrows the model's context window. Before each model step, FrogBot estimates the prompt size: the prompt tokens the provider measured for the previous step, or for the chat's latest reply, plus about one token per four characters of everything since. When the estimate reaches the ceiling, the context window less [`ai.compaction.buffer`](/ai/overview#compaction-options), FrogBot summarizes the older messages first. A provider "too long" rejection also compacts once and retries the step; a second rejection ends the turn with `This chat is too long for <model ID>.`
+
+Compaction works the same for the admin chat, HTTP clients, channels, and `agent.generate({ chatId })`. Runs without a `chatId` never compact. A model with no known window, neither a catalog entry nor a custom model's `limit.input` or `limit.context`, compacts only on a "too long" rejection.
+
+The summary is written by the chat's own model, through `req.frogbot.generateText`, so AI hooks and usage logging see it. It follows a fixed template (objective, requirements, decisions, work state, next move, relevant records and links, important context). The summary request has no tools, so the older messages' tool calls and results reach it as text. After compaction the model gets:
+
+1. One user message holding the summary in a `<conversation-checkpoint>`.
+2. The newest messages, about [`keep`](/ai/overview#compaction-options) tokens' worth, whole, with their files and tool results. They start at a user message and always include the latest exchange.
+3. Everything after them, including this turn's steps, steered messages, and an answered question or tool approval.
+
+A later compaction summarizes the previous summary with the messages since. Stored messages don't change: the admin chat, the messages collection, and [branches](/chat/ui-chat#message-actions) still show every message.
+
+The summary is saved as a `data-compaction` part, with `status` (`running`, `completed` or `failed`), `reason` (`auto` or `manual`), `summary`, `error`, `tokens` and `keepFrom`, the ID of the first kept message. An automatic compaction is part of the reply it ran for, streamed from `running` to its result between that reply's steps. If the summary fails, the part is saved as `failed` and the turn ends with its error; the next turn tries again. Channels post only the reply, never the summary.
+
+Compact a chat now with `/compact` in the admin chat, or with a request. It works with `auto: false`, needs [write access](/chat/overview#who-can-write-a-chat) to the chat, and saves an assistant message that holds only the `manual` part:
+
+```bash
+curl http://localhost:3000/api/frogbot/chat/compact \
+  --request POST \
+  --header "Authorization: Bearer $FROGBOT_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{ "chatId": "CHAT_ID" }'
+```
+
+It returns `{ "message": … }`. A chat whose turn is running or waiting for an answer returns `409` with `code: "turn-in-progress"`, and one with only a single exchange returns `409` with `code: "nothing-to-compact"`. Neither writes anything.
 
 ## Channels
 

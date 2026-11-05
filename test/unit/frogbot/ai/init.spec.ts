@@ -14,6 +14,7 @@ function makeAIConfig(providers: SanitizedAIConfig['providers']): SanitizedAICon
   return {
     providers,
     routers: {},
+    compaction: { auto: true, keep: 15_000 },
     hooks: {
       beforeOperation: [],
       beforeUpstream: [],

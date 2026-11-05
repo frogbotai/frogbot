@@ -15,6 +15,7 @@ import {
   agentSlug,
   approverAgentSlug,
   chatsSlug,
+  compactorAgentSlug,
   lookupCalls,
   messagesSlug,
   modelPort,
@@ -531,6 +532,7 @@ describe('per-user agent model allowlists', () => {
       wildcardAgentSlug,
       approverAgentSlug,
       readerAgentSlug,
+      compactorAgentSlug,
       generalAgentSlug,
     ]);
     expect(result.agents.find(({ slug }) => slug === questionAgentSlug)).toMatchObject({
@@ -566,6 +568,7 @@ describe('per-user agent model allowlists', () => {
             'test/gpt-4.1-mini',
             'test/media',
             'test/reasoner',
+            'test/small-window',
             'test/text-only',
             'test/thinker',
             'test/writer',

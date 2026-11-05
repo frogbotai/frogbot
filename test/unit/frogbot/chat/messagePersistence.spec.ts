@@ -112,6 +112,32 @@ describe('assistant message persistence', () => {
     });
   });
 
+  it("replaces the stored last step's prompt tokens instead of adding to them", async () => {
+    const { req } = makeReq({
+      stored: {
+        id: 'assistant-1',
+        role: 'assistant',
+        parts: [],
+        version: 1,
+        usage: { inputTokens: 5, lastStepInputTokens: 5 },
+      },
+    });
+
+    await persistAssistantMessage({
+      req,
+      chatId: 'chat-1',
+      message: { ...message, metadata: { usage: { inputTokens: 9, lastStepInputTokens: 9 } } },
+    });
+
+    expect(updateIfVersion).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          usage: expect.objectContaining({ inputTokens: 14, lastStepInputTokens: 9 }),
+        }),
+      }),
+    );
+  });
+
   it('does not bump the chat when the message write keeps conflicting', async () => {
     updateIfVersion.mockResolvedValue(false);
 
@@ -165,6 +191,7 @@ describe('assistant message persistence', () => {
           raw: undefined,
         },
         'anthropic/claude-test',
+        3,
       ),
     ).toEqual({
       inputTokens: 4,
@@ -172,6 +199,7 @@ describe('assistant message persistence', () => {
       totalTokens: 7,
       reasoningTokens: 1,
       cachedInputTokens: 2,
+      lastStepInputTokens: 3,
       model: 'anthropic/claude-test',
       provider: 'anthropic',
     });

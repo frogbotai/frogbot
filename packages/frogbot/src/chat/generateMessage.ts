@@ -1,8 +1,9 @@
 import type { TextStreamPart, ToolSet, UIMessage } from 'ai';
-import { consumeStream, generateId, toUIMessageStream } from 'ai';
+import { consumeStream, createUIMessageStream, generateId, toUIMessageStream } from 'ai';
 
 import type { AgentGenerateResult } from '../agents/types.js';
 import type { AIOutput } from '../ai/types.js';
+import type { CompactionParts } from './compaction/stream.js';
 import { createMessageUsage } from './messagePersistence.js';
 import { toolErrorText } from './toolErrorText.js';
 
@@ -11,6 +12,8 @@ export type GenerateMessageProps = {
   originalMessages: UIMessage[];
   tools: ToolSet;
   model: string;
+  /** Compaction parts the run emitted, put back between the steps they ran before. */
+  compaction?: CompactionParts;
 };
 
 export async function generateMessage({
@@ -18,18 +21,36 @@ export async function generateMessage({
   originalMessages,
   tools,
   model,
+  compaction,
 }: GenerateMessageProps): Promise<UIMessage> {
   let responseMessage: UIMessage | undefined;
-  const stream = toUIMessageStream({
+  const messageId = generateId();
+  const replay = toUIMessageStream({
     stream: streamResult(result),
     tools,
     originalMessages,
-    generateMessageId: generateId,
+    generateMessageId: () => messageId,
     onError: toolErrorText,
     sendSources: true,
     messageMetadata: ({ part }) =>
-      part.type === 'finish' ? { usage: createMessageUsage(part.totalUsage, model) } : undefined,
-    onFinish: ({ responseMessage: message }) => {
+      part.type === 'finish'
+        ? {
+            usage: createMessageUsage(
+              part.totalUsage,
+              model,
+              result.steps.at(-1)?.usage?.inputTokens,
+            ),
+          }
+        : undefined,
+  });
+
+  const stream = createUIMessageStream({
+    originalMessages,
+    generateId: () => messageId,
+    execute: ({ writer }) => {
+      writer.merge(compaction ? compaction.wrap(replay) : replay);
+    },
+    onEnd: ({ responseMessage: message }) => {
       responseMessage = message;
     },
   });

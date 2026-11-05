@@ -12,6 +12,8 @@ export type MessageUsage = {
   totalTokens?: number;
   reasoningTokens?: number;
   cachedInputTokens?: number;
+  /** The prompt tokens of the reply's last step; the other counts add up every step. */
+  lastStepInputTokens?: number;
   model?: string;
   provider?: string;
 };
@@ -28,6 +30,7 @@ export type PersistAssistantMessageProps = {
 export function createMessageUsage(
   usage: LanguageModelUsage,
   model: string,
+  lastStepInputTokens?: number,
 ): MessageUsage | undefined {
   const tokens = toHookUsage(usage);
   if (!tokens) return undefined;
@@ -38,6 +41,7 @@ export function createMessageUsage(
     totalTokens: tokens.totalTokens,
     reasoningTokens: tokens.reasoningTokens,
     cachedInputTokens: tokens.cachedInputTokens,
+    ...(lastStepInputTokens === undefined ? {} : { lastStepInputTokens }),
     model,
     provider: model.split('/', 1)[0],
   };

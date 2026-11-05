@@ -6,7 +6,9 @@ import type { AgentInstance, AgentSelection, AgentStreamResult } from '../../age
 import { aiErrorMessage } from '../../ai/errorMessage.js';
 import { isClientTool } from '../../tools/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
-import { toAgentModelMessages } from '../../uploads/toAgentModelMessages.js';
+import { toCompactedModelMessages } from '../compaction/history.js';
+import { createCompactionParts } from '../compaction/stream.js';
+import { CompactionError } from '../compaction/summarize.js';
 import { createMessageUsage, persistAssistantMessage } from '../messagePersistence.js';
 import { toolErrorText } from '../toolErrorText.js';
 import { TurnError } from './errors.js';
@@ -82,6 +84,7 @@ export async function streamTurn({
 
   let result: AgentStreamResult;
   let mainModel: string;
+  const compaction = createCompactionParts();
 
   try {
     mainModel = (
@@ -93,7 +96,7 @@ export async function streamTurn({
       })
     ).model;
 
-    const messages = await toAgentModelMessages({
+    const messages = await toCompactedModelMessages({
       req,
       messages: uiMessages,
       chatId,
@@ -111,6 +114,7 @@ export async function streamTurn({
         replyCreatedAt,
         selection,
         clientTools,
+        compaction: { history: uiMessages, emit: compaction.emit },
         ...(autoApprove === undefined ? {} : { autoApprove }),
       }),
       abortSignal: AbortSignal.any(signals),
@@ -125,6 +129,8 @@ export async function streamTurn({
     throw error;
   }
 
+  let lastStepInputTokens: number | undefined;
+
   const source = result.stream.pipeThrough(
     new TransformStream({
       transform: (part, controller) => {
@@ -133,6 +139,8 @@ export async function streamTurn({
 
           return;
         }
+
+        if (part.type === 'finish-step') lastStepInputTokens = part.usage.inputTokens;
 
         controller.enqueue(part);
       },
@@ -145,7 +153,9 @@ export async function streamTurn({
     onError ??
     ((error: unknown) =>
       aiErrorMessage({ error, model: mainModel, config: req.frogbot.config.ai }) ??
-      (error instanceof TurnError ? error.message : TURN_ERROR_MESSAGE));
+      (error instanceof TurnError || error instanceof CompactionError
+        ? error.message
+        : TURN_ERROR_MESSAGE));
 
   const stream = createUIMessageStream({
     originalMessages: uiMessages,
@@ -153,18 +163,20 @@ export async function streamTurn({
     onError: errorText,
     execute: ({ writer }) => {
       writer.merge(
-        toUIMessageStream({
-          stream: source,
-          tools: agent.aiAgent.tools,
-          originalMessages: uiMessages,
-          generateMessageId: () => messageId,
-          onError: toolErrorText,
-          sendSources: true,
-          messageMetadata: ({ part }) =>
-            part.type === 'finish'
-              ? { usage: createMessageUsage(part.totalUsage, mainModel) }
-              : undefined,
-        }),
+        compaction.wrap(
+          toUIMessageStream({
+            stream: source,
+            tools: agent.aiAgent.tools,
+            originalMessages: uiMessages,
+            generateMessageId: () => messageId,
+            onError: toolErrorText,
+            sendSources: true,
+            messageMetadata: ({ part }) =>
+              part.type === 'finish'
+                ? { usage: createMessageUsage(part.totalUsage, mainModel, lastStepInputTokens) }
+                : undefined,
+          }),
+        ),
       );
     },
     onStepEnd: async ({ responseMessage }) => {

@@ -9,7 +9,17 @@ import { generateChatTitle } from '../../packages/frogbot/dist/chat/title.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
-import { agentSlug, chatsSlug, messagesSlug, usersSlug } from './shared.js';
+import type { StubChatModel } from '../__helpers/shared/StubChatModel';
+import { startStubChatModel } from '../__helpers/shared/StubChatModel';
+import {
+  agentSlug,
+  chatsSlug,
+  lookupCalls,
+  messagesSlug,
+  modelPort,
+  questionAgentSlug,
+  usersSlug,
+} from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -19,9 +29,11 @@ function userMessage(text: string, id: string): UIMessage {
 
 describe('chat persistence: chat context', () => {
   let booted: BootedFrogBot;
+  let model: StubChatModel;
   let owner: Awaited<ReturnType<typeof createOwner>>;
 
   beforeAll(async () => {
+    model = await startStubChatModel(modelPort);
     booted = await bootFrogBot(dirname);
   });
 
@@ -41,10 +53,13 @@ describe('chat persistence: chat context', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    model.reset();
+    lookupCalls.length = 0;
   });
 
   afterAll(async () => {
     await booted.shutdown();
+    await model.close();
   });
 
   async function makeOwnerReq() {
@@ -747,5 +762,38 @@ describe('chat persistence: chat context', () => {
 
     expect(await countDocs(chatsSlug)).toBe(chatsBefore);
     expect(await countDocs(messagesSlug)).toBe(messagesBefore);
+  });
+
+  it("stores a two-step reply's summed usage and its last step's prompt tokens", async () => {
+    model.respond(
+      {
+        toolCalls: [{ id: 'call-lookup', name: 'lookup', input: { topic: 'frogs' } }],
+        usage: { prompt_tokens: 3, completion_tokens: 2 },
+      },
+      { text: 'Frogs sing.', usage: { prompt_tokens: 7, completion_tokens: 2 } },
+    );
+
+    const response = await fetch(`${booted.baseUrl}/api/agents/${questionAgentSlug}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ prompt: 'Why do frogs sing?' }),
+    });
+
+    const { chatId } = (await response.json()) as { chatId: number | string };
+    const { docs } = await booted.frogbot.find({
+      collection: messagesSlug,
+      where: { and: [{ chat: { equals: chatId } }, { role: { equals: 'assistant' } }] },
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    expect(response.status).toBe(200);
+    expect(docs).toHaveLength(1);
+    expect((docs[0] as { usage?: unknown }).usage).toMatchObject({
+      inputTokens: 10,
+      outputTokens: 4,
+      totalTokens: 14,
+      lastStepInputTokens: 7,
+    });
   });
 });

@@ -11,6 +11,7 @@ export type TurnErrorCode =
   | 'not-awaiting'
   | 'not-found'
   | 'not-queued'
+  | 'nothing-to-compact'
   | 'pending-calls'
   | 'selection-unavailable'
   | 'turn-in-progress'

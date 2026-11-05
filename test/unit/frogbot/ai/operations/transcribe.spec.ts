@@ -12,6 +12,7 @@ const bytes = new Uint8Array([82, 73, 70, 70, 1, 2, 3]);
 const config = {
   providers: {},
   routers: {},
+  compaction: { auto: true, keep: 15_000 },
   hooks: {
     beforeOperation: [],
     beforeUpstream: [],

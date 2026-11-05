@@ -17,6 +17,7 @@ import type { z } from 'zod';
 
 import type { AIOutput } from '../ai/types.js';
 import type { ChannelChatAccess } from '../chat/channelAccess.js';
+import type { CompactionOptions } from '../chat/compaction/run.js';
 import type { ClientToolsOption, MessageDelivery } from '../chat/turn/types.js';
 import type { DocID } from '../collections/config/types.js';
 import type { FrogBot } from '../frogbot.js';
@@ -179,6 +180,8 @@ export type AgentCallOptions = {
   selection?: AgentSelection;
   clientTools?: ClientToolsOption;
   autoApprove?: boolean;
+  /** Set by chat turns: compacts the chat's history when it nears the model's window. */
+  compaction?: CompactionOptions;
 };
 
 export type AgentInstance = {

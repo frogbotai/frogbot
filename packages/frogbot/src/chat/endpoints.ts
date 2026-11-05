@@ -1,7 +1,9 @@
+import { errorResponse } from '../agents/responses.js';
 import type { DocID } from '../collections/config/types.js';
 import type { Endpoint } from '../endpoints/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { branchChat } from './branchChat.js';
+import { compactChat } from './compaction/compactChat.js';
 import { suggestChatTitleForChat } from './title.js';
 
 export function buildChatEndpoints(): Endpoint[] {
@@ -27,6 +29,23 @@ export function buildChatEndpoints(): Endpoint[] {
         return Response.json(
           await branchChat({ req, chatId: body.chatId!, messageId: body.messageId! }),
         );
+      },
+    },
+    {
+      path: '/frogbot/chat/compact',
+      method: 'post',
+      handler: async (req: FrogBotRequest) => {
+        if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        const body = (await req.json?.().catch(() => null)) as { chatId?: DocID } | null;
+        if (body === null || !['string', 'number'].includes(typeof body.chatId)) {
+          return Response.json({ error: 'chatId is required' }, { status: 400 });
+        }
+
+        try {
+          return Response.json(await compactChat({ req, chatId: body.chatId! }));
+        } catch (error) {
+          return errorResponse(error);
+        }
       },
     },
     {

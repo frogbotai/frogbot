@@ -33,6 +33,7 @@ import {
   type ComposerQueued,
   type ComposerSubmission,
 } from './composer/composer.js';
+import type { ComposerCommand } from './composer/context.js';
 import { type ComposerMention, composerParts, type ComposerPrompt } from './composer/prompt.js';
 import { isFlagPart, renderFlagPart } from './flag-parts.js';
 import { Greeting, type GreetingProps } from './greeting.js';
@@ -186,6 +187,7 @@ export function Chat(props: ChatProps) {
       agents={provider.manifest.agents}
       speak={provider.manifest.speak ? provider.adapter.speak : undefined}
       toolRenderers={provider.toolRenderers}
+      commands={provider.commands}
     />
   );
 }
@@ -194,6 +196,7 @@ type ChatInnerProps = ChatProps & {
   adapter: ChatPlatformAdapter;
   agents: ChatManifest['agents'];
   chatIdControlled: boolean;
+  commands?: readonly ComposerCommand[];
   modelInputs?: ComposerModelInput[];
   modelName?: string;
   speak?: ChatPlatformAdapter['speak'];
@@ -205,6 +208,7 @@ function ChatInner({
   adapter,
   agent,
   agents,
+  commands: providerCommands,
   composerEndSlot,
   composerStartSlot,
   defaultChatId,
@@ -518,6 +522,29 @@ function ChatInner({
 
     setActionError(actionError);
     onError?.(actionError);
+  }
+
+  async function compactChat() {
+    const chatId = request.current.chatId;
+
+    if (chatId === undefined || !adapter.compactChat) return;
+
+    const id = `compaction-${generateId()}`;
+
+    chat.setMessages([
+      ...chat.messages,
+      {
+        id,
+        role: 'assistant',
+        parts: [{ type: 'data-compaction', id, data: { status: 'running', reason: 'manual' } }],
+      },
+    ]);
+
+    try {
+      await adapter.compactChat(chatId);
+    } finally {
+      await reloadMessages();
+    }
   }
 
   async function reloadMessages() {
@@ -880,6 +907,21 @@ function ChatInner({
   const visibleEntries = entries.filter((entry) => entry.chatKey === chatKey);
   const nextEntry = visibleEntries.find(({ paused, steering }) => !paused && !steering);
   const busy = pending || running || isReadonly || dockBlocking || dockedParts.length > 0;
+  const compactCommand: ComposerCommand | undefined =
+    adapter.compactChat && activeChatId !== undefined
+      ? {
+          id: 'compact',
+          title: 'Compact',
+          description: 'Summarize older messages to make room',
+          disabled: pending || running || isReadonly,
+          execute: compactChat,
+        }
+      : undefined;
+
+  const commands = compactCommand
+    ? [...(providerCommands ?? []), compactCommand]
+    : providerCommands;
+
   const drainBlocked = busy || chat.status !== 'ready' || waitingCount > 0;
 
   useEffect(() => {
@@ -1251,6 +1293,7 @@ function ChatInner({
             <Composer
               ref={composerHandle}
               adapter={adapter}
+              commands={commands}
               modelInputs={modelInputs}
               modelName={modelName}
               hidden={dockBlocking || dockedParts.length > 0}

@@ -333,6 +333,43 @@ describe('ChatViewClient', () => {
     await waitFor(() => expect(mocks.provider.mock.calls.at(-1)?.[0].toolRenderers).toBe(sales));
   });
 
+  it('renders a stored compaction as a divider with its summary', async () => {
+    useManifest(agentEntry('general'));
+
+    renderChatView();
+
+    await waitFor(() => expect(mocks.provider).toHaveBeenCalled());
+
+    const [renderer] = mocks.provider.mock.calls.at(-1)![0].dataRenderers as Array<{
+      kind: string;
+      render: (props: { part: unknown }) => ReactNode;
+    }>;
+
+    expect(renderer.kind).toBe('compaction');
+
+    const { container } = render(
+      <>
+        {renderer.render({
+          part: {
+            type: 'data-compaction',
+            id: 'part-1',
+            data: {
+              status: 'completed',
+              reason: 'auto',
+              summary: '## Objective\n- Talk about frogs.',
+              tokens: { input: 4_100, output: 12 },
+              keepFrom: 'user-2',
+            },
+          },
+        })}
+      </>,
+    );
+
+    expect(container.querySelector('[data-part="compaction"]')).toBeTruthy();
+    expect(container.textContent).toContain('Chat compacted');
+    expect(container.textContent).toContain('Talk about frogs.');
+  });
+
   it('moves an existing chat to another agent and announces the change', async () => {
     const mutated = vi.fn();
 

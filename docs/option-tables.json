@@ -126,6 +126,11 @@
   },
   {
     "page": "ai/overview",
+    "heading": "Compaction options",
+    "type": "NonNullable<import('frogbot').AIConfig['compaction']>"
+  },
+  {
+    "page": "ai/overview",
     "heading": "Built-in provider options",
     "type": "Exclude<NonNullable<NonNullable<import('frogbot').AIConfig['providers']>['openai']>, true>"
   },

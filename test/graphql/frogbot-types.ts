@@ -255,6 +255,7 @@ export interface Message {
     totalTokens?: number | null;
     reasoningTokens?: number | null;
     cachedInputTokens?: number | null;
+    lastStepInputTokens?: number | null;
     model?: string | null;
     provider?: string | null;
   };
@@ -430,6 +431,7 @@ export interface MessagesSelect {
         totalTokens?: boolean;
         reasoningTokens?: boolean;
         cachedInputTokens?: boolean;
+        lastStepInputTokens?: boolean;
         model?: boolean;
         provider?: boolean;
       };

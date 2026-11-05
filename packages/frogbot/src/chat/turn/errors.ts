@@ -11,6 +11,7 @@ const statuses: Record<TurnErrorCode, 400 | 403 | 404 | 409> = {
   'not-awaiting': 409,
   'not-found': 404,
   'not-queued': 409,
+  'nothing-to-compact': 409,
   'pending-calls': 409,
   'selection-unavailable': 409,
   'turn-in-progress': 409,

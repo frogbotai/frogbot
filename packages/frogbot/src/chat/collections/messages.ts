@@ -11,6 +11,7 @@ export type StoredMessageUsage = Record<string, unknown> & {
   totalTokens?: number;
   reasoningTokens?: number;
   cachedInputTokens?: number;
+  lastStepInputTokens?: number;
 };
 
 export function mergeUsage(
@@ -192,6 +193,7 @@ export function defaultMessagesCollection({
           { name: 'totalTokens', type: 'number' },
           { name: 'reasoningTokens', type: 'number' },
           { name: 'cachedInputTokens', type: 'number' },
+          { name: 'lastStepInputTokens', type: 'number' },
           { name: 'model', type: 'text' },
           { name: 'provider', type: 'text' },
         ],

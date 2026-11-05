@@ -61,6 +61,8 @@ export interface ComposerProps {
   'aria-label'?: string;
   autoFocus?: boolean;
   className?: string;
+  /** The `/` commands; defaults to the `ChatProvider`'s. */
+  commands?: readonly ComposerCommand[];
   defaultValue?: string;
   disabled?: boolean;
   endSlot?: ReactNode;
@@ -94,6 +96,7 @@ export function Composer({
   'aria-label': ariaLabel = 'Message',
   autoFocus,
   className,
+  commands: ownCommands,
   defaultValue = '',
   disabled,
   endSlot,
@@ -115,6 +118,7 @@ export function Composer({
   submitContent,
 }: ComposerProps) {
   const provider = useChatProvider();
+  const commands = ownCommands ?? provider?.commands;
   const editorRef = useRef<LexicalEditor>(null);
   const [initialValue] = useState<ComposerPrompt>(() => ({ text: defaultValue, mentions: [] }));
   const [prompt, setPrompt] = useState(initialValue);
@@ -260,7 +264,7 @@ export function Composer({
     if (!editor || disabled) return;
 
     const next = editor.getEditorState().read($readPrompt);
-    const command = matchCommand(next.text, provider?.commands);
+    const command = matchCommand(next.text, commands);
 
     if (command) {
       clearText();
@@ -297,7 +301,7 @@ export function Composer({
 
   const context: ComposerEditorContextValue = {
     submit,
-    commands: provider?.commands,
+    commands,
     runCommand,
     mentionSources: provider?.mentionSources,
     escape: () => {

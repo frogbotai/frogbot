@@ -31,8 +31,12 @@ describe('generateMessage', () => {
               output: 'found',
             },
           ],
+          usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
         },
-        { content: [{ type: 'text', text: 'Found it' }] },
+        {
+          content: [{ type: 'text', text: 'Found it' }],
+          usage: { inputTokens: 2, outputTokens: 1, totalTokens: 3 },
+        },
       ],
     } as unknown as AgentGenerateResult;
 
@@ -57,7 +61,12 @@ describe('generateMessage', () => {
       { type: 'text', text: 'Found it', state: 'done' },
     ]);
     expect(message.metadata).toEqual({
-      usage: expect.objectContaining({ totalTokens: 5, model: 'openai/test', provider: 'openai' }),
+      usage: expect.objectContaining({
+        totalTokens: 5,
+        lastStepInputTokens: 2,
+        model: 'openai/test',
+        provider: 'openai',
+      }),
     });
   });
 });

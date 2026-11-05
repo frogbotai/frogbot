@@ -101,6 +101,20 @@ describe('aiErrorMessage', () => {
   it('ignores errors that did not come from the AI provider', () => {
     expect(aiErrorMessage({ error: new Error(`Database failed ${keyFragment}`) })).toBeUndefined();
   });
+
+  it('says the chat is too long for the model on a context overflow', () => {
+    const error = new APICallError({
+      message: "This model's maximum context length is 128000 tokens.",
+      url: 'https://api.openai.com/v1/responses',
+      requestBodyValues: {},
+      statusCode: 400,
+      isRetryable: false,
+    });
+
+    expect(aiErrorMessage({ error, model: 'openai/gpt-4o-mini', config })).toBe(
+      'This chat is too long for openai/gpt-4o-mini.',
+    );
+  });
 });
 
 describe('aiErrorMessage on a linked account', () => {
