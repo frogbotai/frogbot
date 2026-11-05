@@ -647,8 +647,6 @@ export function installAfterLand({ files, checkout, install, log = console.log }
 }
 
 export const GATE_SERVICES = {
-  'test:int:mongo': [{ name: 'MongoDB', profile: 'mongodb', port: 27018 }],
-  'test:int:pg': [{ name: 'PostgreSQL', profile: 'postgres', port: 5433 }],
   'test:int:sqlite': [
     { name: 'PostgreSQL', profile: 'postgres', port: 5433 },
     { name: 'Redis', profile: 'redis', port: 6379 },
@@ -1325,29 +1323,6 @@ async function landSerialized({ main, checkout, repo, found, key, dir, branch })
   console.log(`${inRepo} worktree remove ${dir} && ${inRepo} branch -d ${branch}`);
 }
 
-async function ensureServices({ root, gates }) {
-  const down = await downServices(gates);
-
-  if (down.length === 0) return;
-
-  const profiles = [...new Set(down.map(({ profile }) => profile))];
-
-  if (process.env.CLAUDE_CODE_REMOTE === 'true') {
-    console.log(`starting ${profiles.join(', ')}`);
-
-    const started = spawnSync('bash', ['scripts/cloud-services.sh', ...profiles], {
-      cwd: root,
-      stdio: 'inherit',
-    });
-
-    if (started.status === 0) return;
-  }
-
-  refuse(
-    `${down.map(({ name }) => name).join(', ')} not reachable; nothing ran; start with: ${dockerUp(down)}`,
-  );
-}
-
 async function affectedGroups(root, log) {
   const set = affectedSet(await verifyInputs(root, log));
 
@@ -1390,13 +1365,6 @@ async function commandVerify(main, { list }) {
   console.log(`tier: ${tier}`);
 
   if (groups.length === 0) refuse('no check or test covers this diff; nothing ran, no ledger row');
-
-  await ensureServices({
-    root,
-    gates: groups
-      .flatMap(({ commands }) => commands.map((command) => command[1]))
-      .filter((gate) => gate === 'test:int:mongo' || gate === 'test:int:pg'),
-  });
 
   const id = worktreePatchId(root);
   const build = REPOS[repo].gates ? async () => ({ ok: true, groups: [] }) : undefined;

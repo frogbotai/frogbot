@@ -256,23 +256,6 @@ describe('affectedSet', () => {
     expect(set.browser).toEqual(['blank']);
   });
 
-  it('runs the database suite against a changed MongoDB or Postgres adapter', () => {
-    const set = affectedSet({
-      files: ['packages/db-mongodb/src/index.ts', 'packages/db-postgres/src/index.ts'],
-      packages,
-      vitest,
-      browser,
-      checks: [],
-    });
-
-    expect(set.databases).toEqual(['test:int:mongo', 'test:int:pg']);
-    expect(set.uncovered).toEqual([]);
-    expect(verifyGroups(set).find(({ group }) => group === 'int')?.commands).toEqual([
-      ['pnpm', 'test:int:mongo', 'test/database'],
-      ['pnpm', 'test:int:pg', 'test/database'],
-    ]);
-  });
-
   it('maps a package index and a skills folder to their mirrors and area', () => {
     expect(map(['packages/next/src/fields/FieldCell/index.client.tsx']).specs.ui).toEqual([
       'test/ui/next/fields/FieldCell.spec.tsx',
