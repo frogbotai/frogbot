@@ -454,6 +454,26 @@ describe('createResumeCap', () => {
 
     expect((await resume(restarted, 'call_3'))?.message).toMatch(/^Resume #3 /);
   });
+
+  it('never asks to resume the lint agent, and keeps the cap for other agents', async () => {
+    const store = memory();
+    const cap = createResumeCap(store, child);
+
+    for (const call of ['lint_1', 'lint_2', 'lint_3']) {
+      cap.record(call, { agent: 'lint', prompt: 'pnpm check', sessionID: 'ses_lint' });
+
+      expect(await cap.evaluate(call)).toBeUndefined();
+
+      await cap.settle(call, { status: 'completed' });
+    }
+
+    expect(store.values.has('resumes/ses_lint')).toBe(false);
+
+    await resume(cap, 'call_1');
+    await cap.settle('call_1', { status: 'completed' });
+
+    expect((await resume(cap, 'call_2'))?.effect).toBe('ask');
+  });
 });
 
 describe('createWatchdog', () => {

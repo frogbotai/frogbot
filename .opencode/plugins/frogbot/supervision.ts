@@ -1,5 +1,7 @@
 export const FREE_RESUMES = 1;
 
+export const UNCAPPED_AGENT = 'lint';
+
 export const STALL_MS = 20 * 60_000;
 
 export const STALL_CHECK_MS = 30_000;
@@ -622,11 +624,12 @@ export function createResumeCap(store: ResumeStore, child: ChildSession) {
 
   return {
     record(callID: string, input: unknown) {
-      const target =
+      const { agent, sessionID: target } =
         typeof input === 'object' && input !== null
-          ? (input as { sessionID?: unknown }).sessionID
-          : undefined;
+          ? (input as { agent?: unknown; sessionID?: unknown })
+          : {};
 
+      if (agent === UNCAPPED_AGENT) return;
       if (typeof target === 'string' && target !== '') calls.set(callID, target);
     },
 
