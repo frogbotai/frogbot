@@ -16,7 +16,7 @@ describe.runIf(process.env.FROGBOT_DATABASE === 'mongodb')('mongodb startup', ()
   });
 
   afterAll(async () => {
-    await booted.shutdown();
+    await booted?.shutdown();
   });
 
   it('lets onInit write to a new versions collection on a fresh database', async () => {

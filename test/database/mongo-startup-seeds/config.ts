@@ -1,3 +1,4 @@
+import { mongooseAdapter } from '@frogbotai/db-mongodb';
 import type { CollectionConfig } from 'frogbot';
 
 import { buildTestConfig, openAccess } from '../../__helpers/shared/buildTestConfig.js';
@@ -17,6 +18,7 @@ const Seeds: CollectionConfig = {
 };
 
 export default await buildTestConfig({
+  db: mongooseAdapter({ url: process.env.MONGODB_URI as string }),
   collections: [Users, Seeds],
   onInit: async (frogbot) => {
     for (const keyword of ['a', 'b', 'c']) {
