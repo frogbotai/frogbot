@@ -28,6 +28,37 @@ const result = await piece.lookup({
 
 Pass a request when credentials may come from the signed-in user's connection. Static-auth pieces can use their configured credential when no user connection exists.
 
+## Give an agent piece tools
+
+Each action of a piece instance is a tool, and so is the whole instance: put either straight into an agent's `tools`. The tool's slug is the instance slug and the action joined by `_`, so `gmail.send` is `gmail_send`. Spread an action to change it for one agent. This whole file is an agent that searches Gmail and asks before each send:
+
+```ts
+// src/agents/inboxAssistant.ts
+import { createGmail } from '@frogbotai/piece-gmail';
+import type { AgentConfig } from 'frogbot';
+
+export const gmail = createGmail({
+  oauth: {
+    clientId: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+  },
+});
+
+export const inboxAssistant: AgentConfig = {
+  slug: 'inbox-assistant',
+  instructions: 'Find emails and write replies. Send only what the user asks you to send.',
+  tools: [gmail.searchEmails, { ...gmail.send, approval: 'ask' }],
+};
+```
+
+Register it in `frogbot.config.ts`, and add `connections` when users link their own Gmail account ([Connections](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/CONNECTIONS.md)):
+
+```ts
+import { inboxAssistant } from './agents/inboxAssistant';
+
+const agents: FrogBotConfig['agents'] = [general(), inboxAssistant];
+```
+
 ## Author a piece
 
 Create the piece's typed helpers once, in `src/define.ts`:
@@ -75,7 +106,7 @@ export const createExample = definePiece({
 
 `run` receives `{ input, client, options, req, overrideAccess }`. `overrideAccess` is the agent run's trust flag (`false` when a person chats, `true` on schedules); forward it to every Local API call, such as `req.frogbot.create` for a file, instead of hard-coding one.
 
-`defineAction` also takes `approval` (`'ask'`, `'required'`, or a function of `{ input, req, agent, tool }`) when a person should approve each call; see [tool approval](https://docs.frogbot.ai/chat/tool-approval). An app sets or changes it per agent by spreading the action, `{ ...gmail.sendEmail, approval: 'ask' }`: a spread keeps `execute` and the connection, and replaces the piece's tool with the same slug.
+`defineAction` also takes `approval` (`'ask'`, `'required'`, or a function of `{ input, req, agent, tool }`) when a person should approve each call; see [tool approval](https://docs.frogbot.ai/chat/tool-approval). An app sets or changes it per agent by spreading the action, `{ ...gmail.send, approval: 'ask' }`: a spread keeps `execute` and the connection, and replaces the piece's tool with the same slug.
 
 `defineAction` types `run` and `options` callbacks with the piece's client and the parsed input, and keeps the slug literal so `piece.lookup` accepts only its own input. Pass the options type second when the piece has an `options` schema, for example `createPieceHelpers<ExampleClient, ExampleOptions>()`. Wrap triggers in `defineAppTrigger`, `definePollingTrigger`, or `defineWebhookTrigger` from the same call; a webhook trigger's `state` is inferred from `onEnable`. Callbacks written directly in `definePiece`, such as `client`, still receive `unknown` values; parse them with the declared schemas.
 

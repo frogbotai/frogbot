@@ -56,13 +56,46 @@ console.log(result.text);
 
 Root `tools` are inherited by every agent unless `inheritTools: false` is set. Agent-local tools are added with `tools`; an agent-local tool with the same slug shadows the root tool.
 
+This whole file is an agent with its own tool. The tool passes `req` and the run's `overrideAccess` to the Local API, so in chat it reads only what the user may read, and its `access` rule offers it only to signed-in users. It assumes a `projects` collection with a text `title` field:
+
 ```ts
-export const assistant: AgentConfig = {
-  slug: 'assistant',
-  instructions: 'Answer with the available project data.',
+// src/agents/projectAssistant.ts
+import type { AgentConfig, Tool } from 'frogbot';
+import { z } from 'zod';
+
+const searchInput = z.object({ query: z.string() });
+
+export const searchProjects: Tool<typeof searchInput> = {
+  slug: 'search_projects',
+  description: 'Search projects by title.',
+  inputSchema: searchInput,
+  access: ({ req }) => Boolean(req.user),
+  async execute({ query }, { frogbot, req, overrideAccess }) {
+    const projects = await frogbot.find({
+      collection: 'projects',
+      where: { title: { contains: query } },
+      req,
+      overrideAccess,
+    });
+
+    return projects.docs;
+  },
+};
+
+export const projectAssistant: AgentConfig = {
+  slug: 'project-assistant',
+  instructions: 'Answer questions about projects. Search before you answer.',
   tools: [searchProjects],
   inheritTools: false,
 };
+```
+
+Register it in `frogbot.config.ts`. It has no `model`, so the app needs an `ai` config with a `defaultModel`:
+
+```ts
+import { projectAssistant } from './agents/projectAssistant';
+
+const agents: FrogBotConfig['agents'] = [general(), projectAssistant];
 ```
 
 See the [Tools skill reference](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/TOOLS.md) for the `Tool` contract.

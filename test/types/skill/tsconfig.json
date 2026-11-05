@@ -7,5 +7,5 @@
     "noEmit": true
   },
   "files": [],
-  "include": ["skill-samples.test-d.ts", "samples/**/*.ts", "samples/**/*.tsx"]
+  "include": ["skill-samples.test-d.ts", "samples/**/*.ts", "samples/**/*.tsx", "scaffolds/**/*.ts"]
 }

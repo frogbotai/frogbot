@@ -46,36 +46,83 @@ Recovery is at least once: make external side effects idempotent.
 
 ## Workflow waits
 
-Workflow handlers receive `waitFor` and return no output. Use a helper to compute an approval result, then consume it inside the handler. Register `approvalWorkflow` in `jobs.workflows`:
+Workflow handlers receive `job`, `inlineTask` and `waitFor`, and return no output. Wrap each side effect in a named `inlineTask`, so a resumed run returns its saved output instead of running it again. This whole file is a workflow that waits for approval:
 
 ```ts
-import type { WorkflowConfig, WorkflowHandler } from 'frogbot/jobs';
+// src/jobs/approvalWorkflow.ts
+import type { WorkflowConfig } from 'frogbot/jobs';
 
-async function waitForApproval(waitFor: Parameters<WorkflowHandler>[0]['waitFor']) {
-  const result = await waitFor<{ approved: boolean }>('approval', {
-    expiresIn: 86_400_000,
-    async onWait({ resumeUrl }) {
-      await fetch('https://example.com/approvals', {
-        method: 'POST',
-        body: JSON.stringify({ resumeUrl }),
-      });
-    },
-  });
-
-  if (result.expired) return { output: { approved: false } };
-
-  return { output: { approved: result.data.approved } };
-}
-
-export const approvalWorkflow: WorkflowConfig = {
+export const approvalWorkflow: WorkflowConfig<{ requestId: string }> = {
   slug: 'approval',
-  async handler({ waitFor }) {
-    const { output } = await waitForApproval(waitFor);
+  inputSchema: [{ name: 'requestId', type: 'text', required: true }],
+  async handler({ job, inlineTask, waitFor }) {
+    const { requestId } = job.input;
 
-    console.log(output.approved);
+    await inlineTask('prepare-request', {
+      task: () => ({ output: { requestId, preparedAt: new Date().toISOString() } }),
+    });
+
+    const result = await waitFor<{ approved: boolean }>('approval', {
+      expiresIn: 24 * 60 * 60 * 1000,
+      onWait({ resumeUrl }) {
+        // Send this link to the approver instead, by email or chat.
+        console.log(`[approval] ${requestId} waits for approval: ${resumeUrl}`);
+      },
+    });
+
+    if (result.expired) {
+      await inlineTask('record-expired', {
+        task: () => ({ output: { requestId, approved: false } }),
+      });
+
+      return;
+    }
+
+    await inlineTask('record-approval', {
+      task: () => ({ output: { requestId, approved: result.data.approved } }),
+    });
   },
 };
 ```
+
+Register it in `frogbot.config.ts`. A resumable wait needs `serverURL` to build its resume URL:
+
+```ts
+import { approvalWorkflow } from './jobs/approvalWorkflow';
+
+const config: FrogBotConfig = {
+  // ...the rest of your config
+  serverURL: process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000',
+  jobs: { workflows: [approvalWorkflow] },
+};
+```
+
+To run a workflow once, queue it and run that job from a script. Nobody is signed in there, so both calls pass `overrideAccess: true`:
+
+```ts
+// scripts/runApprovalOnce.ts
+import { getFrogBot } from 'frogbot';
+
+import config from '../src/frogbot.config';
+
+const frogbot = await getFrogBot({ config });
+
+const job = await frogbot.jobs.queue({
+  workflow: 'approval',
+  input: { requestId: 'test' },
+  overrideAccess: true,
+});
+
+await frogbot.jobs.runByID({ id: job.id, overrideAccess: true });
+
+console.log(`[approval] ran job ${job.id}`);
+```
+
+```bash
+pnpm exec frogbot run scripts/runApprovalOnce.ts
+```
+
+`frogbot run` runs the file, closes FrogBot and exits. `runByID` returns when the job finishes or pauses; this one logs its resume URL and pauses at `waitFor`, with `waitUntil` set to the expiry and no `completedAt`. To loop over items or run steps at once, use `foreach` and `parallel` ([loops and parallel steps](https://docs.frogbot.ai/jobs-queue/overview#loops-and-parallel-steps)).
 
 Use `{ until: date }` for a delay, or `onWait` with optional `expiresIn` for external resumption. Resumable waits require `serverURL` to produce `/api/jobs/:token/resume`. Resume through `frogbot.jobs.resume({ token, data })` or the generated URL.
 

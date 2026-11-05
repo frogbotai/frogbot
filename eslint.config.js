@@ -316,7 +316,7 @@ export default tseslint.config(
     rules: { 'no-console': 'off' },
   },
   {
-    files: ['templates/**', 'examples/**'],
+    files: ['templates/**', 'examples/**', 'test/types/skill/scaffolds/**'],
     rules: { 'no-console': 'off' },
   },
   {
@@ -328,7 +328,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['templates/**', 'examples/**'],
+    files: ['templates/**', 'examples/**', 'test/types/skill/scaffolds/**'],
     rules: { 'frogbot/no-comments': 'off' },
   },
   {

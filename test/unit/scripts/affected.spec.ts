@@ -281,6 +281,15 @@ describe('affectedSet', () => {
       { name: 'frogbot', areas: ['source', 'skill'] },
     ]);
   });
+
+  it('runs the scaffold check and the skill area for a skill or scaffold copy change', () => {
+    expect(map(['skills/frogbot/reference/JOBS.md']).checks).toContain('skill-scaffolds');
+
+    const set = map(['test/types/skill/scaffolds/jobs/src/jobs/approvalWorkflow.ts']);
+
+    expect(set.checks).toContain('skill-scaffolds');
+    expect(set.typecheck).toEqual([{ name: 'frogbot', areas: ['skill'] }]);
+  });
 });
 
 describe('typecheck areas', () => {
