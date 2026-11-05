@@ -18,7 +18,7 @@ export function installJobIndexes(database: MongooseAdapter) {
   database.connect = async (options) => {
     await connect.call(database, options);
 
-    if (!database.connection || !database.collections['payload-jobs']) return;
+    if (database.url === false || !database.collections['payload-jobs']) return;
 
     const { Model } = getJobModel(database);
 
