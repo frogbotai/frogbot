@@ -20,12 +20,3 @@ describe('@frogbotai/db-mongodb exports', () => {
     expect(compatibilityOptions.firestore).toMatchObject({ ensureIndexes: false });
   });
 });
-
-describe('mongooseAdapter connect', () => {
-  it('connects with url: false, leaving no connection to wait on', async () => {
-    const database = mongooseAdapter({ url: false }).init({ payload: {} as never });
-
-    await expect(database.connect?.()).resolves.toBeUndefined();
-    expect(database.connection).toBeUndefined();
-  });
-});

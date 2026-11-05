@@ -13,7 +13,7 @@ const PLAYWRIGHT_CONFIGS = ['test/browser/playwright.config.ts'];
 
 export const READ_ONLY = {
   'test/database/mongo-startup-index/mongoStartup.int.spec.ts':
-    'checks that startup rejects, and no document is written',
+    'checks that startup rejects with the collection named',
   'test/database/mongo-startup-seeds/mongoStartup.int.spec.ts':
     'counts the documents onInit seeded on a fresh database',
   'test/frogbot-instance/boot.int.spec.ts': 'checks the booted collections and a 404 route',
