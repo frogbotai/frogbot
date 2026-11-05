@@ -55,6 +55,7 @@ import type {
   AgentGenerateOpts,
   AgentGenerateResult,
   AgentInstance,
+  AgentSelection,
   AgentStreamMessageOpts,
   AgentStreamMessageQueuedResult,
   AgentStreamMessageResult,
@@ -600,11 +601,17 @@ export function createAgentInstance(
   const generate = async <O extends AIOutput = never>(
     opts: AgentGenerateOpts<O>,
   ): Promise<AgentGenerateResult<O>> => {
-    const { chatId, output, ...runOpts } = opts;
+    const { chatId, output, model: runModel, reasoning, ...runOpts } = opts;
     const req = await frogbot.createRequest(runOpts.req);
     const overrideAccess = runOpts.overrideAccess === true;
 
     if (!overrideAccess) await assertAgentAccess({ req, agent: instance });
+
+    const requested = runSelection({ model: runModel, reasoning });
+
+    if (requested) {
+      await assertStoredSelection({ agent: instance, config, selection: requested, req });
+    }
 
     const incoming = await toPersistentMessages(runOpts, tools);
 
@@ -621,7 +628,8 @@ export function createAgentInstance(
       throw new Error(`[frogbot] Chat '${context.chatId}' could not start a turn.`);
     }
 
-    const { claim, uiMessages, selection } = context;
+    const { claim, uiMessages } = context;
+    const selection = requested ?? context.selection;
     const lease = holdTurn({ req, claim });
     const compaction = createCompactionParts();
 
@@ -695,8 +703,14 @@ export function createAgentInstance(
 
   const stream = async <O extends AIOutput = never>({
     output,
+    model,
+    reasoning,
     ...opts
-  }: AgentStreamOpts<O>): Promise<AgentStreamResult<O>> => runStream(await buildCall(opts), output);
+  }: AgentStreamOpts<O>): Promise<AgentStreamResult<O>> => {
+    const selection = runSelection({ model, reasoning });
+
+    return runStream(await buildCall(selection ? { ...opts, selection } : opts), output);
+  };
 
   const streamMessage = async (
     opts: AgentStreamMessageOpts,
@@ -757,6 +771,15 @@ export function createAgentInstance(
   };
 
   return instance;
+}
+
+function runSelection({ model, reasoning }: AgentSelection): AgentSelection | undefined {
+  if (model === undefined && reasoning === undefined) return undefined;
+
+  return {
+    ...(model === undefined ? {} : { model }),
+    ...(reasoning === undefined ? {} : { reasoning }),
+  };
 }
 
 async function persistCompactionParts({

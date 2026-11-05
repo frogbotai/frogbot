@@ -78,6 +78,7 @@
     "@frogbotai/plugin-audit-log": "workspace:*",
     "@frogbotai/plugin-capture": "workspace:*",
     "@frogbotai/plugin-dojo": "workspace:*",
+    "@frogbotai/plugin-evals": "workspace:*",
     "@frogbotai/plugin-forms": "workspace:*",
     "@frogbotai/plugin-import-export": "workspace:*",
     "@frogbotai/plugin-mcp": "workspace:*",

@@ -3,8 +3,11 @@ import { z } from 'zod';
 
 import type {
   AgentConfig,
+  AgentGenerateOpts,
   AgentModelId,
   AgentModelOptions,
+  AgentStreamMessageOpts,
+  AgentStreamOpts,
   SanitizedAgentConfig,
 } from '../../../../packages/frogbot/src/agents/types.js';
 import type { Tool, ToolCtx } from '../../../../packages/frogbot/src/tools/types.js';
@@ -42,6 +45,14 @@ describe('agent types', () => {
       AgentModelId | AgentModelOptions | undefined
     >();
     expectTypeOf<'allowModels'>().not.toMatchTypeOf<keyof AgentConfig>();
+  });
+
+  it('takes a model on generate and stream runs but not on chat turns', () => {
+    expectTypeOf<AgentGenerateOpts['model']>().toEqualTypeOf<AgentModelId | undefined>();
+    expectTypeOf<AgentStreamOpts['model']>().toEqualTypeOf<AgentModelId | undefined>();
+    expectTypeOf<AgentStreamOpts['reasoning']>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<'model'>().not.toMatchTypeOf<keyof AgentStreamMessageOpts>();
+    expectTypeOf<'reasoning'>().not.toMatchTypeOf<keyof AgentStreamMessageOpts>();
   });
 
   it('infers annotated tool input and context', () => {

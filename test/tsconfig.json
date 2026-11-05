@@ -41,6 +41,7 @@
     "hooks-access",
     "kv",
     "plugin-dojo",
+    "plugin-evals",
     "plugin-forms",
     "plugin-import-export",
     "plugin-mcp",

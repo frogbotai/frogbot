@@ -597,6 +597,8 @@ There are two ways a structured run ends without an object, and FrogBot doesn't 
 | `overrideAccess` | `boolean` | `false` | Set `true` to run trusted: skips the agent's and tools' `access` rules, and tools receive it as `ctx.overrideAccess`. |
 | `abortSignal` | `AbortSignal` | — | Cancels the run. |
 | `output` | `AIOutput` | Text | An `Output` specification. `result.output` is typed from it. See [Return structured output](#return-structured-output). |
+| `model` | `AgentModelId` | The user's default for the agent | The model for this run only. It must be in the agent's `model.options` and allowed for the user by `ai.access`, else the run fails with `selection-unavailable` before any model call. Saved messages keep their own model. |
+| `reasoning` | `string` | The model's default | A reasoning option of the run's model, as in the chat picker. An unknown key fails like a bad `model`. |
 | `chatId` | `DocID` | A new chat | `generate` only. The chat to save the user message and the reply in. `stream()` never saves. |
 | `autoApprove` | `boolean` | The chat's `autoApprove`, else `false` | Runs `approval: 'ask'` tools without asking. `'required'` tools still need a person. |
 

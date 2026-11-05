@@ -1340,6 +1340,11 @@
     "type": "import('@frogbotai/plugin-dojo').DojoPluginOptions"
   },
   {
+    "page": "plugins/evals",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-evals').EvalsPluginOptions"
+  },
+  {
     "page": "plugins/forms",
     "heading": "Options",
     "type": "import('@frogbotai/plugin-forms').FormsPluginOptions"
