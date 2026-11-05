@@ -17,4 +17,6 @@ export type {
   ToolApprovalResult,
 } from '../tools/approval.js';
 export { question, QuestionInput, QuestionOutput } from '../tools/question.js';
+export type { SearchToolHit, SearchToolOptions } from '../tools/search.js';
+export { searchTool } from '../tools/search.js';
 export { read_todos, TodoItem, todoTools, write_todos } from '../tools/todos.js';
