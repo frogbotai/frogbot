@@ -86,6 +86,13 @@ Keep it short enough to read on a phone. Detail belongs in the linked files.
   - **Noticed, not done**: findings that didn't meet the bar for an issue. Empty is fine.
 - If the issue has `ticket:automerge` and the verdict is `PASS` on the PR's head, add `ticket:automerge` to the PR. Before pushing anything else to a PR that has the label, remove it. Add it again only after a new `PASS`.
 
+## Test services
+
+The cloud container has Docker, but `dockerd` isn't running at the start. `CLAUDE_CODE_REMOTE=true bash scripts/cloud-services.sh mongodb postgres` starts it and the `test/docker-compose.yml` profiles you name, then waits until they are healthy. Then run the matching suite, for example `pnpm test:int:mongo <file>` or `pnpm test:int:pg <file>`, and `pnpm test:browser --project <p>`; browser tests need nothing extra (Chromium is preinstalled).
+
+- Every profile but `mongodb-search` starts in the cloud: `mongodb`, `postgres` (with pgvector), `redis` and `storage`.
+- Start only what the diff needs, and run only the files and projects it touches.
+
 ## Screenshots
 
 - Take them with Playwright on the running app or page, before the change (from `main`) and after. When the full app can't run in the cloud (no database, for example), screenshot the closest real render you can, and say in the PR what it is.
