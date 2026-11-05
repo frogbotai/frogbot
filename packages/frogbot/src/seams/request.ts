@@ -21,6 +21,11 @@ export function toFrogBotRequest(req: PayloadRequest, frogbot: FrogBot): FrogBot
   return Object.assign(req, { frogbot });
 }
 
+/** For code that runs inside `wrapJobs`, which has already attached `frogbot` to the request. */
+export function asAttachedRequest(req: PayloadRequest): FrogBotRequest {
+  return req as unknown as FrogBotRequest;
+}
+
 export function hasFrogBot(req: PayloadRequest): req is PayloadRequest & { frogbot: FrogBot } {
   return 'frogbot' in req && Boolean(req.frogbot);
 }

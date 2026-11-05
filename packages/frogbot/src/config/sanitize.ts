@@ -44,6 +44,7 @@ import { databaseKVAdapter } from '../kv/adapters/DatabaseKVAdapter.js';
 import { resolveKVCleanupTask } from '../kv/resolveCleanupTask.js';
 import { sanitizeMCPServers } from '../mcp/server.js';
 import { collectPieceInstances } from '../pieces/config/sanitize.js';
+import { fromPayloadJobs } from '../seams/config.js';
 import { buildSearchManyEndpoint } from '../search/endpoints.js';
 import { withSearchRuntime } from '../search/runtime.js';
 import { sanitizeSearchIndexes } from '../search/sanitize.js';
@@ -417,7 +418,14 @@ export function sanitize(
   const autonumberKeys: AutonumberKeyEntry[] = [];
 
   const payloadConfig = buildPayloadConfig({
-    config: { ...config, agents, collections: payloadCollections, jobs, kv, settings },
+    config: {
+      ...config,
+      agents,
+      collections: payloadCollections,
+      jobs: fromPayloadJobs(jobs),
+      kv,
+      settings,
+    },
     onInit: async (payload) => {
       const sanitizedConfig = sanitizedConfigRef.current;
       if (!sanitizedConfig) {
