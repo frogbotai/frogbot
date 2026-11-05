@@ -50,6 +50,7 @@
     "rich-text",
     "roles",
     "sdk",
+    "search/tool",
     "select",
     "storage",
     "storage-azure",

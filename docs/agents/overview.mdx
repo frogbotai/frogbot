@@ -149,7 +149,7 @@ Accessible profiles appear in both `GET /api/agents` and the [chat manifest](/ch
 
 Agents accept FrogBot `Tool` objects, not raw AI SDK tools. FrogBot converts them internally and supplies request, runtime, slug, and run ID context to every execution.
 
-To add integration actions, pass individual piece actions or a whole piece instance. To add current web results, use the [web search pieces](/pieces/web-search). To give an agent the tools of an MCP server, such as Sidekick's browser, add an [`mcpServer()`](/mcp/overview).
+To add integration actions, pass individual piece actions or a whole piece instance. To let an agent search your app's records, use [`searchTool()`](/search/overview#search-from-an-agent). To add current web results, use the [web search pieces](/pieces/web-search). To give an agent the tools of an MCP server, such as Sidekick's browser, add an [`mcpServer()`](/mcp/overview).
 
 ```ts
 import type { Tool } from 'frogbot'

@@ -1716,6 +1716,11 @@
   },
   {
     "page": "search/overview",
+    "heading": "Search tool options",
+    "type": "import('frogbot/tools').SearchToolOptions"
+  },
+  {
+    "page": "search/overview",
     "heading": "Search many options",
     "type": "import('frogbot').SearchManyOptions"
   },
