@@ -90,7 +90,7 @@ Keep it short enough to read on a phone. Detail belongs in the linked files.
 
 The cloud container has Docker, but `dockerd` isn't running at the start. `CLAUDE_CODE_REMOTE=true bash scripts/cloud-services.sh mongodb postgres` starts it and the `test/docker-compose.yml` profiles you name, then waits until they are healthy. Then run the matching suite, for example `pnpm test:int:mongo <file>` or `pnpm test:int:pg <file>`, and `pnpm test:browser --project <p>`; browser tests need nothing extra (Chromium is preinstalled).
 
-- Docker Hub works, `ghcr.io` image layers don't. So `redis` and `storage` can't start yet, and Postgres uses `postgis/postgis`, which has no pgvector: vector-field tests won't pass.
+- Every profile but `mongodb-search` starts in the cloud: `mongodb`, `postgres` (with pgvector), `redis` and `storage`.
 - Start only what the diff needs, and run only the files and projects it touches.
 
 ## Screenshots
