@@ -208,11 +208,28 @@ export type AITelemetryConfig = {
   enrichSpan?: AIEnrichSpan;
 };
 
+export type AICompactionConfig = {
+  /** Summarize older messages when a chat nears its model's context window. Default: `true`. */
+  auto?: boolean;
+  /** Tokens kept free below the window. Default: 10% of the window, at least 16,000 when it fits. */
+  buffer?: number;
+  /** Tokens of the newest messages kept whole after the summary. Default: `15_000`. */
+  keep?: number;
+};
+
+export type SanitizedAICompactionConfig = {
+  auto: boolean;
+  buffer?: number;
+  keep: number;
+};
+
 export type AIConfig = {
   providers: ProviderConfig;
   routers?: Record<string, RouterConfig>;
   defaultModel?: ModelId;
   smallModel?: ModelId;
+  /** How long chats are summarized to fit the model's context window. */
+  compaction?: AICompactionConfig;
   transcriptionModel?: ModelId;
   /** Text-to-speech model for reading AI replies aloud. Unset: no read aloud. */
   speechModel?: ModelId;
@@ -237,6 +254,7 @@ export type SanitizedAIConfig = {
   routers: Record<string, RouterConfig>;
   defaultModel?: ModelId;
   smallModel?: ModelId;
+  compaction: SanitizedAICompactionConfig;
   transcriptionModel?: ModelId;
   speechModel?: ModelId;
   speechVoice?: string;

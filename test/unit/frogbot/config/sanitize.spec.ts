@@ -3255,6 +3255,46 @@ describe('frogbot sanitize', () => {
     });
   });
 
+  describe('ai.compaction', () => {
+    it('defaults to automatic compaction keeping 15,000 tokens', () => {
+      const result = sanitize(makeConfig({ ai: { providers: { openai: true } } }));
+
+      expect(result.ai?.compaction).toEqual({ auto: true, keep: 15_000 });
+    });
+
+    it('keeps the values it is given', () => {
+      const result = sanitize(
+        makeConfig({
+          ai: { providers: { openai: true }, compaction: { auto: false, buffer: 0, keep: 200 } },
+        }),
+      );
+
+      expect(result.ai?.compaction).toEqual({ auto: false, buffer: 0, keep: 200 });
+    });
+
+    it.each([
+      ['keep', -1],
+      ['buffer', 1.5],
+      ['keep', '200'],
+    ])('rejects %s: %s', (key, value) => {
+      const config = makeConfig({
+        ai: { providers: { openai: true }, compaction: { [key]: value } },
+      });
+
+      expect(() => sanitize(config)).toThrow(
+        `[frogbot] \`ai.compaction.${key}\` must be a non-negative integer.`,
+      );
+    });
+
+    it('rejects an auto that is not a boolean', () => {
+      const config = makeConfig({
+        ai: { providers: { openai: true }, compaction: { auto: 'yes' } as never },
+      });
+
+      expect(() => sanitize(config)).toThrow('[frogbot] `ai.compaction.auto` must be a boolean.');
+    });
+  });
+
   describe('ai.transcriptionModel', () => {
     const rejections = [
       {
@@ -4647,6 +4687,7 @@ describe('frogbot sanitize', () => {
         'get /agents/:slug/authorizations',
         'get /agents',
         'post /frogbot/chat/branch',
+        'post /frogbot/chat/compact',
         'post /frogbot/chat/suggest-title',
       ]);
     });

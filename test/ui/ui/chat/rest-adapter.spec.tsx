@@ -181,6 +181,7 @@ describe('createRestChatAdapter', () => {
   it('sends each request with the method, path, query and body the server expects', async () => {
     const { adapter, calls } = adapterFor({
       'POST /frogbot/chat/branch': () => Response.json({ chatId: 'branched' }),
+      'POST /frogbot/chat/compact': () => Response.json({ message: { id: 'compaction-1' } }),
       'POST /frogbot/chat/suggest-title': () => Response.json({ suggestion: 'Night frogs' }),
       'GET /agents/support agent/chats/chat 1/pending': () => Response.json({ state: 'awaiting' }),
       'GET /turns?depth=0&limit=0&sort=createdAt&where[chat][equals]=chat+1': () =>
@@ -204,6 +205,7 @@ describe('createRestChatAdapter', () => {
     await adapter.updateChatAgent?.('chat 1', 'sales');
 
     await expect(adapter.branchChat?.('chat 1', 'message-1')).resolves.toBe('branched');
+    await expect(adapter.compactChat?.('chat 1')).resolves.toBeUndefined();
     await expect(adapter.suggestChatTitle?.('chat 1')).resolves.toBe('Night frogs');
     await expect(adapter.loadTurnState?.('support agent', 'chat 1')).resolves.toBe('awaiting');
 
@@ -218,6 +220,7 @@ describe('createRestChatAdapter', () => {
       ['PATCH', '/conversations/chat 1', { title: 'New' }],
       ['PATCH', '/conversations/chat 1', { agent: 'sales' }],
       ['POST', '/frogbot/chat/branch', { chatId: 'chat 1', messageId: 'message-1' }],
+      ['POST', '/frogbot/chat/compact', { chatId: 'chat 1' }],
       ['POST', '/frogbot/chat/suggest-title', { chatId: 'chat 1' }],
       ['GET', '/agents/support agent/chats/chat 1/pending', undefined],
     ]);

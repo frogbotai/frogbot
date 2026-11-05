@@ -19,6 +19,7 @@ function makeConfig(evaluate: SanitizedAIConfig['access']['evaluate'] = () => tr
   return {
     providers: { 'typesafe-ai': { apiKey: 'ts-test' } },
     routers: { judge: { model: 'typesafe-ai/jev' } },
+    compaction: { auto: true, keep: 15_000 },
     hooks: {
       beforeOperation: [],
       beforeUpstream: [],

@@ -105,7 +105,7 @@ When chat is configured, FrogBot supplies or merges fields into the default or m
 | Chats | `title`, `user`, `agent`, `channel`, `externalId`, `channelKey`, `lastMessageAt`, `autoApprove`, `todos` |
 | Messages | `id`, `chat`, `role`, `parts`, `metadata`, `usage` |
 
-Message `usage` contains `inputTokens`, `outputTokens`, `totalTokens`, `reasoningTokens`, `cachedInputTokens`, `model`, and `provider`. These fields are present only on collections serving the corresponding chat role. See [Chat](/chat/overview).
+Message `usage` contains `inputTokens`, `outputTokens`, `totalTokens`, `reasoningTokens`, `cachedInputTokens`, `lastStepInputTokens`, `model`, and `provider`. The token counts add up every step of the reply, except `lastStepInputTokens`, the last step's prompt tokens, which [compaction](/chat/turns#compaction) starts its estimate from. These fields are present only on collections serving the corresponding chat role. See [Chat](/chat/overview).
 
 ## AI fields
 

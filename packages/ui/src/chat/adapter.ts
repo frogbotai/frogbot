@@ -77,6 +77,8 @@ export type ChatPlatformAdapter = {
   exportChat?: (chatId: ChatId) => Promise<void>;
   updateChatAgent?: (chatId: ChatId, agent: string) => Promise<ChatDocument>;
   branchChat?: (chatId: ChatId, messageId: string) => Promise<ChatId>;
+  /** Summarizes the chat's older messages now; the UI reloads the messages after. */
+  compactChat?: (chatId: ChatId) => Promise<void>;
   suggestChatTitle?: (chatId: ChatId) => Promise<string | undefined>;
   loadTurnState?: (agent: string, chatId: ChatId) => Promise<TurnState>;
   dismissToolCall?: (

@@ -8,7 +8,7 @@ import type {
   ToolSet,
   UIMessage,
 } from 'ai';
-import { generateId, ToolLoopAgent } from 'ai';
+import { generateId, ToolLoopAgent, wrapLanguageModel } from 'ai';
 
 import { toHookUsage } from '../ai/hooks.js';
 import { logUsage } from '../ai/logUsage.js';
@@ -16,6 +16,11 @@ import { resolveModelInputs } from '../ai/modelInputs.js';
 import { resolveModel } from '../ai/resolve.js';
 import type { AIOutput, SanitizedAIConfig } from '../ai/types.js';
 import { resolveChatContext } from '../chat/chatContext.js';
+import { toCompactedModelMessages } from '../chat/compaction/history.js';
+import type { CompactionRun } from '../chat/compaction/run.js';
+import { compactionStep, createCompactionRun, overflowRetry } from '../chat/compaction/run.js';
+import type { CompactionParts } from '../chat/compaction/stream.js';
+import { createCompactionParts } from '../chat/compaction/stream.js';
 import { generateMessage } from '../chat/generateMessage.js';
 import { persistAssistantMessage } from '../chat/messagePersistence.js';
 import { actorFromRequest } from '../chat/turn/actor.js';
@@ -74,6 +79,7 @@ type AgentRun = {
   mcpApprovals: ReadonlyMap<string, ToolApprovalOption>;
   autoApprove: boolean;
   denied: ReadonlySet<string>;
+  compaction?: CompactionRun;
 };
 
 export function createAgentInstance(
@@ -186,7 +192,7 @@ export function createAgentInstance(
             canAsk: options.clientTools?.approval === true,
           });
         },
-        prepareStep: async ({ messages, stepNumber }) => {
+        prepareStep: async ({ messages, stepNumber, steps = [], initialMessages = messages }) => {
           const steered =
             chatId === undefined
               ? []
@@ -225,16 +231,33 @@ export function createAgentInstance(
                 });
 
           const { inputs, provider } = resolveModelInputs({ config, model });
+          const shape = (stepMessages: ModelMessage[]) =>
+            toModelInput({ messages: stepMessages, inputs, provider, hashes: run.hashes });
+
+          const stepMessages = run.compaction
+            ? await compactionStep({
+                run: run.compaction,
+                messages,
+                initialMessages,
+                steps,
+                stepNumber,
+                model,
+                steered: steeredMessages,
+                shape,
+              })
+            : steeredMessages.length === 0
+              ? messages
+              : [...messages, ...steeredMessages];
+
+          const stepModel = run.op.chatModel(model);
 
           return {
-            model: run.op.chatModel(model),
+            model:
+              run.compaction && config.compaction.auto
+                ? wrapLanguageModel({ model: stepModel, middleware: overflowRetry(run.compaction) })
+                : stepModel,
             ...(variant ? { providerOptions: variant.providerOptions } : {}),
-            messages: toModelInput({
-              messages: steeredMessages.length === 0 ? messages : [...messages, ...steeredMessages],
-              inputs,
-              provider,
-              hashes: run.hashes,
-            }),
+            messages: shape(stepMessages),
           };
         },
       };
@@ -270,20 +293,24 @@ export function createAgentInstance(
       req: opts.req,
     });
 
+    const props = {
+      req: opts.req,
+      messages: messages as UIMessage[],
+      chatId: opts.chatId,
+      model,
+      tools,
+      onUnavailable: 'marker' as const,
+    };
+
     return {
-      messages: await toAgentModelMessages({
-        req: opts.req,
-        messages: messages as UIMessage[],
-        chatId: opts.chatId,
-        model,
-        tools,
-        onUnavailable: 'marker',
-      }),
+      messages: await (opts.chatId === undefined
+        ? toAgentModelMessages(props)
+        : toCompactedModelMessages(props)),
     };
   };
 
   const buildCall = async (
-    opts: AgentStreamOpts & Pick<AgentCallOptions, 'chatId' | 'selection'>,
+    opts: AgentStreamOpts & Pick<AgentCallOptions, 'chatId' | 'selection' | 'compaction'>,
     { accessChecked = false }: { accessChecked?: boolean } = {},
   ) => {
     const req = await frogbot.createRequest(opts.req);
@@ -292,6 +319,7 @@ export function createAgentInstance(
       overrideAccess: opts.overrideAccess === true,
       ...('chatId' in opts && opts.chatId !== undefined ? { chatId: opts.chatId } : {}),
       ...(opts.selection ? { selection: opts.selection } : {}),
+      ...(opts.compaction ? { compaction: opts.compaction } : {}),
       ...(opts.autoApprove === undefined ? {} : { autoApprove: opts.autoApprove }),
     };
 
@@ -360,6 +388,18 @@ export function createAgentInstance(
       mcpApprovals: mcp.approvals,
       autoApprove,
       denied,
+      ...(options.chatId !== undefined && options.compaction
+        ? {
+            compaction: createCompactionRun({
+              req,
+              chatId: options.chatId,
+              config,
+              tools,
+              options: options.compaction,
+              abortSignal: call.abortSignal,
+            }),
+          }
+        : {}),
     };
 
     runs.set(preparedOptions, run);
@@ -583,6 +623,7 @@ export function createAgentInstance(
 
     const { claim, uiMessages, selection } = context;
     const lease = holdTurn({ req, claim });
+    const compaction = createCompactionParts();
 
     try {
       const result = await runGenerate(
@@ -594,6 +635,7 @@ export function createAgentInstance(
             chatId: context.chatId,
             selection,
             autoApprove: runOpts.autoApprove,
+            compaction: { history: uiMessages, emit: compaction.emit },
             abortSignal: AbortSignal.any([
               lease.signal,
               ...(runOpts.abortSignal ? [runOpts.abortSignal] : []),
@@ -602,7 +644,18 @@ export function createAgentInstance(
           { accessChecked: true },
         ),
         output,
-      );
+      ).catch(async (error: unknown) => {
+        await persistCompactionParts({ req, chatId: context.chatId, uiMessages, compaction }).catch(
+          (persistError: unknown) => {
+            frogbot.logger.error(
+              { error: persistError },
+              '[frogbot] Failed to save the compaction of a failed run.',
+            );
+          },
+        );
+
+        throw error;
+      });
 
       const model = selection.model ?? (await userDefaultModel({ agent: instance, req }));
 
@@ -619,6 +672,7 @@ export function createAgentInstance(
         originalMessages: uiMessages,
         tools,
         model: mainModel,
+        compaction,
       });
 
       await persistAssistantMessage({
@@ -703,6 +757,30 @@ export function createAgentInstance(
   };
 
   return instance;
+}
+
+async function persistCompactionParts({
+  req,
+  chatId,
+  uiMessages,
+  compaction,
+}: {
+  req: FrogBotRequest;
+  chatId: number | string;
+  uiMessages: UIMessage[];
+  compaction: CompactionParts;
+}): Promise<void> {
+  const parts = compaction.parts();
+
+  if (parts.length === 0) return;
+
+  const last = uiMessages.at(-1);
+  const message: UIMessage =
+    last?.role === 'assistant'
+      ? { ...last, parts: [...last.parts, ...parts] }
+      : { id: generateId(), role: 'assistant', parts };
+
+  await persistAssistantMessage({ req, chatId, message });
 }
 
 async function readAutoApprove({

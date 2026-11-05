@@ -7,6 +7,8 @@ export const messagesSlug = 'messages';
 export const questionAgentSlug = 'questioner';
 export const lookupCalls: unknown[] = [];
 export const approverAgentSlug = 'approver';
+/** An agent on `test/small-window`, the one model whose context window is known. */
+export const compactorAgentSlug = 'compactor';
 export const approvedCalls: Array<{ tool: string; input: unknown }> = [];
 /** The only user name `refund_ticket`'s access rule allows. */
 export const refunderName = 'Refunder';

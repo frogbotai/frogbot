@@ -148,6 +148,7 @@ export interface User {
         | 'test/gpt-4.1-mini'
         | 'test/media'
         | 'test/reasoner'
+        | 'test/small-window'
         | 'test/text-only'
         | 'test/thinker'
         | 'test/writer'
@@ -260,6 +261,7 @@ export interface Message {
     totalTokens?: number | null;
     reasoningTokens?: number | null;
     cachedInputTokens?: number | null;
+    lastStepInputTokens?: number | null;
     model?: string | null;
     provider?: string | null;
   };
@@ -464,6 +466,7 @@ export interface MessagesSelect {
         totalTokens?: boolean;
         reasoningTokens?: boolean;
         cachedInputTokens?: boolean;
+        lastStepInputTokens?: boolean;
         model?: boolean;
         provider?: boolean;
       };
@@ -661,12 +664,14 @@ declare module 'frogbot' {
       wildcard: unknown;
       approver: unknown;
       reader: unknown;
+      compactor: unknown;
       general: unknown;
     };
     models:
       | 'test/gpt-4.1-mini'
       | 'test/media'
       | 'test/reasoner'
+      | 'test/small-window'
       | 'test/text-only'
       | 'test/thinker'
       | 'test/writer';

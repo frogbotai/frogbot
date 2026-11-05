@@ -2,6 +2,7 @@ import { providerKeyEnvVar, usedCallCredential } from '@frogbotai/gateway';
 import { isGatewayError } from '@frogbotai/gateway/errors';
 import { APICallError, RetryError } from 'ai';
 
+import { isOverflowError } from '../chat/compaction/overflow.js';
 import { pieceInstanceDefinition } from '../pieces/definePiece.js';
 import { resolveModel } from './resolve.js';
 import type { SanitizedAIConfig } from './types.js';
@@ -14,6 +15,10 @@ export type AIErrorMessageProps = {
 
 export function aiErrorMessage({ error, model, config }: AIErrorMessageProps): string | undefined {
   const cause = RetryError.isInstance(error) ? error.lastError : error;
+
+  if (isOverflowError(cause)) {
+    return `This chat is too long for ${model ? model : 'the selected model'}.`;
+  }
 
   if (isGatewayError(cause)) return cause.message;
 

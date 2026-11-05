@@ -173,6 +173,10 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
           "type": "number",
         },
         {
+          "name": "lastStepInputTokens",
+          "type": "number",
+        },
+        {
           "name": "model",
           "type": "text",
         },

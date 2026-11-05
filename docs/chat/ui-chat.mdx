@@ -113,6 +113,8 @@ import { Chat, ChatDock } from '@frogbotai/ui/chat'
 
 Register `/` commands with [`commands`](/chat/ui-registries#composer-commands) on `ChatProvider`: typing `/` opens a menu of them, and `/id rest` runs one that takes arguments. For anything else, use `onBeforeSubmit`.
 
+`Chat` adds a built-in `/compact` after them when the adapter has [`compactChat`](/chat/ui-provider#adapter-options) and a chat is open. It summarizes the chat's older messages now, as described in [Compaction](/chat/turns#compaction), shows a running divider, and reloads the messages when it's done. It's left out of the menu while a reply runs and in a channel conversation. Show the stored divider and summary by registering `CompactionPart` for `compaction` data parts, as FrogBot's admin chat does; see [Message data parts](#message-data-parts).
+
 `onBeforeSubmit` runs before each message is sent and receives `{ text, mentions, attachments }`. Return `true` and nothing is sent: the text clears and attachments stay in the composer. Return `false` to send as usual. If it throws or rejects, nothing is sent and the chat shows `Command failed: <message>`. A registered command that matches runs first, and `onBeforeSubmit` isn't called for it. While a reply runs, a send is [queued](#queued-messages) without calling it.
 
 ```tsx

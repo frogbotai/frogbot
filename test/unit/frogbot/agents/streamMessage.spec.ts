@@ -90,6 +90,7 @@ const ai = {
     },
   },
   routers: {},
+  compaction: { auto: true, keep: 15_000 },
   access: {},
 };
 

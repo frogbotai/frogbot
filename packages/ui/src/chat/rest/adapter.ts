@@ -222,6 +222,13 @@ export function createRestChatAdapter(options: RestChatAdapterOptions): ChatPlat
 
       return result.chatId;
     },
+    compactChat: async (chatId) => {
+      await chatRequest(sdk, '/frogbot/chat/compact', {
+        method: 'POST',
+        body: JSON.stringify({ chatId }),
+        headers: JSON_HEADERS,
+      });
+    },
     suggestChatTitle: async (chatId) => {
       const result = await chatRequest<{ suggestion: string | null }>(
         sdk,

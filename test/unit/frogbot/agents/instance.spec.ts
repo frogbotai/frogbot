@@ -167,6 +167,7 @@ function makeConfig(hooks: SanitizedAIConfig['hooks']): SanitizedAIConfig {
   return {
     providers: { openai: { apiKey: 'test' } },
     routers: {},
+    compaction: { auto: true, keep: 15_000 },
     hooks,
     access: {
       generate: () => true,
@@ -1362,6 +1363,205 @@ describe('agent steer messages', () => {
   });
 });
 
+describe('agent compaction', () => {
+  const SMALL = 'local/small' as AgentModelId;
+  const long = (text: string) => `${text} ${'x'.repeat(8_000)}`;
+  const chatHistory: UIMessage[] = [
+    { id: 'u1', role: 'user', parts: [{ type: 'text', text: long('First') }] },
+    { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: long('Answer') }] },
+    { id: 'u2', role: 'user', parts: [{ type: 'text', text: 'Next' }] },
+  ];
+
+  const summary = '## Objective\n- Talk about frogs.';
+  const kept: ModelMessage = { role: 'user', content: [{ type: 'text', text: 'Next' }] };
+  const reply: ModelMessage[] = [{ role: 'assistant', content: [{ type: 'text', text: 'Done' }] }];
+
+  type Step = (args: {
+    messages: ModelMessage[];
+    initialMessages: ModelMessage[];
+    stepNumber: number;
+    steps: unknown[];
+  }) => Promise<{ model: Record<string, unknown>; messages: ModelMessage[] }>;
+
+  function smallConfig(): SanitizedAIConfig {
+    return {
+      ...makeConfig(emptyHooks()),
+      compaction: { auto: true, keep: 200 },
+      providers: {
+        local: {
+          type: 'openai-compatible',
+          baseUrl: 'http://localhost:11434/v1',
+          models: [{ id: 'small', mode: 'chat', limit: { context: 4_000 } }],
+        },
+      },
+    };
+  }
+
+  function setup() {
+    turn.resolveChatContext.mockResolvedValue({
+      status: 'ready',
+      chatId: 'chat-1',
+      uiMessages: chatHistory,
+      claim,
+      selection: {},
+    });
+
+    const req = makeReq();
+    const deps = makeDeps(smallConfig(), req) as unknown as {
+      frogbot: { generateText: ReturnType<typeof vi.fn> };
+    };
+
+    deps.frogbot.generateText.mockResolvedValue({
+      text: summary,
+      usage: { inputTokens: 4_100, outputTokens: 12 },
+    });
+
+    const agent = createAgentInstance(
+      { slug: 'support', model: { default: SMALL, options: [SMALL] }, instructions: 'Help' },
+      deps as never,
+    );
+
+    return { agent, req, generateText: deps.frogbot.generateText };
+  }
+
+  async function chatRun() {
+    const { agent, req, generateText } = setup();
+
+    await agent.generate({ prompt: 'Next', req });
+
+    const initialMessages = agentState.generateCall!.messages as ModelMessage[];
+
+    return {
+      initialMessages,
+      prepareStep: agentState.prepared!.prepareStep as Step,
+      generateText,
+    };
+  }
+
+  const checkpoint = expect.objectContaining({
+    role: 'user',
+    content: [{ type: 'text', text: expect.stringContaining(`<summary>\n${summary}\n</summary>`) }],
+  });
+
+  it('sends the whole history when the chat is under the ceiling', async () => {
+    const { initialMessages, prepareStep, generateText } = await chatRun();
+    const short = initialMessages.slice(-1);
+
+    const step = await prepareStep({
+      messages: short,
+      initialMessages: short,
+      stepNumber: 0,
+      steps: [],
+    });
+
+    expect(step.messages).toBe(short);
+    expect(generateText).not.toHaveBeenCalled();
+  });
+
+  it('compacts before the first step when the history is over the ceiling', async () => {
+    const { initialMessages, prepareStep, generateText } = await chatRun();
+
+    const step = await prepareStep({
+      messages: initialMessages,
+      initialMessages,
+      stepNumber: 0,
+      steps: [],
+    });
+
+    expect(step.messages).toEqual([checkpoint, kept]);
+    expect(generateText).toHaveBeenCalledTimes(1);
+    expect(generateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: SMALL,
+        maxOutputTokens: 32_000,
+        messages: [
+          ...initialMessages.slice(0, 2),
+          { role: 'user', content: expect.stringContaining('<template>') },
+        ],
+      }),
+    );
+  });
+
+  it("compacts before a later step from the previous step's prompt tokens", async () => {
+    const { initialMessages, prepareStep } = await chatRun();
+    const short = initialMessages;
+
+    const step = await prepareStep({
+      messages: [...short, ...reply],
+      initialMessages: short,
+      stepNumber: 2,
+      steps: [{ usage: { inputTokens: 3_700 }, response: { messages: reply } }],
+    });
+
+    expect(step.messages).toEqual([checkpoint, kept, ...reply]);
+  });
+
+  it('keeps steered messages after the compacted prefix', async () => {
+    const { initialMessages, prepareStep } = await chatRun();
+
+    turn.promoteSteerMessages.mockResolvedValue([
+      {
+        message: { id: 'steer-1', role: 'user', parts: [{ type: 'text', text: 'Faster' }] },
+        selection: {},
+      },
+    ]);
+
+    const step = await prepareStep({
+      messages: [...initialMessages, ...reply],
+      initialMessages,
+      stepNumber: 2,
+      steps: [{ usage: { inputTokens: 3_700 }, response: { messages: reply } }],
+    });
+
+    expect(step.messages).toEqual([
+      checkpoint,
+      kept,
+      ...reply,
+      { role: 'user', content: [{ type: 'text', text: 'Faster' }] },
+    ]);
+  });
+
+  it('swaps the carried prefix for the checkpoint on the steps after a compaction', async () => {
+    const { initialMessages, prepareStep } = await chatRun();
+
+    const first = await prepareStep({
+      messages: initialMessages,
+      initialMessages,
+      stepNumber: 0,
+      steps: [],
+    });
+
+    const second = await prepareStep({
+      messages: [...first.messages, ...reply],
+      initialMessages,
+      stepNumber: 1,
+      steps: [{ usage: { inputTokens: 40 }, response: { messages: reply } }],
+    });
+
+    expect(second.messages).toEqual([checkpoint, kept, ...reply]);
+  });
+
+  it('never compacts a run without a chat', async () => {
+    const { agent, req, generateText } = setup();
+
+    await agent.aiAgent.stream({ prompt: 'Hello', options: { req } });
+
+    const prepareStep = agentState.prepared!.prepareStep as Step;
+    const messages: ModelMessage[] = [{ role: 'user', content: long('Hello') }];
+
+    const step = await prepareStep({
+      messages,
+      initialMessages: messages,
+      stepNumber: 1,
+      steps: [{ usage: { inputTokens: 3_900 }, response: { messages: [] } }],
+    });
+
+    expect(step.messages).toBe(messages);
+    expect(step.model).not.toHaveProperty('doStream');
+    expect(generateText).not.toHaveBeenCalled();
+  });
+});
+
 describe('agent model input pass', () => {
   type PrepareStep = (args: {
     messages: ModelMessage[];
@@ -1704,7 +1904,7 @@ describe('agent setup', () => {
       serverStepSkipped: { found: true },
     });
     await expect(prepared.prepareStep({ messages: userMessage, stepNumber: 0 })).resolves.toEqual({
-      model: { modelId: THINKER },
+      model: expect.objectContaining({ modelId: THINKER, specificationVersion: 'v4' }),
       providerOptions: { local: { reasoningEffort: 'high' } },
       messages: userMessage,
     });

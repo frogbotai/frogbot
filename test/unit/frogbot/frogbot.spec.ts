@@ -135,6 +135,7 @@ function withAI(config: FrogBotSanitizedConfig): FrogBotSanitizedConfig {
   config.ai = {
     providers: { openai: { apiKey: 'sk-test' } },
     routers: {},
+    compaction: { auto: true, keep: 15_000 },
     hooks: {
       beforeOperation: [],
       beforeUpstream: [],

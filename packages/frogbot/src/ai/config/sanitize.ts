@@ -10,7 +10,12 @@ import {
   getConfiguredTranscriptionModelIds,
 } from '../models.js';
 import { isProviderName } from '../providerNames.js';
-import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../types.js';
+import type {
+  AIConfig,
+  RouterConfig,
+  SanitizedAICompactionConfig,
+  SanitizedAIConfig,
+} from '../types.js';
 
 export const defaultAccessFn = ({ req }: { req: FrogBotRequest }) => !!req.user;
 
@@ -25,6 +30,32 @@ function usesFileModality(modalities: unknown): boolean {
 }
 
 export type SanitizedAIBase = Omit<SanitizedAIConfig, 'usage'>;
+
+const DEFAULT_COMPACTION_KEEP = 15_000;
+
+function sanitizeCompaction(compaction: unknown): SanitizedAICompactionConfig {
+  if (compaction === undefined) return { auto: true, keep: DEFAULT_COMPACTION_KEEP };
+
+  if (!isRecord(compaction)) throw new Error('[frogbot] `ai.compaction` must be an object.');
+
+  if (compaction.auto !== undefined && typeof compaction.auto !== 'boolean') {
+    throw new Error('[frogbot] `ai.compaction.auto` must be a boolean.');
+  }
+
+  for (const key of ['buffer', 'keep'] as const) {
+    const value = compaction[key];
+
+    if (value !== undefined && !(Number.isInteger(value) && (value as number) >= 0)) {
+      throw new Error(`[frogbot] \`ai.compaction.${key}\` must be a non-negative integer.`);
+    }
+  }
+
+  return {
+    auto: compaction.auto !== false,
+    ...(compaction.buffer === undefined ? {} : { buffer: compaction.buffer as number }),
+    keep: (compaction.keep as number | undefined) ?? DEFAULT_COMPACTION_KEEP,
+  };
+}
 
 /** `ai` with every linked provider configured; listing the piece in `connections` chooses it. */
 export function linkAIProviders(
@@ -278,6 +309,7 @@ export function sanitizeAI(
     routers,
     defaultModel: ai.defaultModel,
     smallModel: ai.smallModel,
+    compaction: sanitizeCompaction(ai.compaction),
     transcriptionModel: ai.transcriptionModel,
     speechModel: ai.speechModel,
     speechVoice: ai.speechVoice,

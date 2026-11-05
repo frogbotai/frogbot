@@ -40,6 +40,7 @@ function aiConfig(piece: PieceInstance, apiKey?: string): SanitizedAIConfig {
     providers: { openai: apiKey ? { apiKey } : true },
     linkedProviders: { openai: piece },
     routers: {},
+    compaction: { auto: true, keep: 15_000 },
     hooks: {
       beforeOperation: [],
       beforeUpstream: [],

@@ -841,6 +841,110 @@ describe('Chat', () => {
   });
 });
 
+describe('Chat /compact', () => {
+  const options = () => screen.queryAllByRole('option').map((option) => option.textContent ?? '');
+
+  beforeEach(() => {
+    state.status = 'ready';
+    state.error = undefined;
+    state.messages = [message];
+    state.commands = [];
+    state.setMessages.mockReset();
+    state.fetch.mockReset();
+    state.history = { messages: [], queued: [], loadedChatId: undefined, loading: false };
+    state.agents = [];
+    state.toolRenderers = [];
+    setAdapter();
+  });
+
+  it('compacts the open chat, shows a running part, then reloads its messages', async () => {
+    state.fetch.mockImplementation((input) =>
+      Promise.resolve(
+        String(input).startsWith('/api/messages?')
+          ? Response.json({ docs: [] })
+          : Response.json({ message: {} }),
+      ),
+    );
+
+    render(<Chat agent="support" defaultChatId="one" />);
+
+    type('/comp');
+
+    await waitFor(() =>
+      expect(options()).toEqual(['/compactCompact: Summarize older messages to make room']),
+    );
+
+    press('Enter');
+
+    await waitFor(() => expect(state.setMessages).toHaveBeenCalledTimes(2));
+
+    const [url, init] = state.fetch.mock.calls[0] as [string, RequestInit];
+
+    expect(url).toBe('/api/frogbot/chat/compact');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body as string)).toEqual({ chatId: 'one' });
+    expect(state.setMessages.mock.calls[0][0]).toEqual([
+      message,
+      {
+        id: expect.stringMatching(/^compaction-/),
+        role: 'assistant',
+        parts: [
+          {
+            type: 'data-compaction',
+            id: expect.stringMatching(/^compaction-/),
+            data: { status: 'running', reason: 'manual' },
+          },
+        ],
+      },
+    ]);
+    expect(String(state.fetch.mock.calls[1][0])).toMatch(/^\/api\/messages\?/);
+    expect(state.setMessages.mock.calls[1][0]).toEqual([]);
+  });
+
+  it('keeps the provider commands next to /compact', async () => {
+    state.commands = [{ id: 'clear', title: 'Clear chat', execute: vi.fn() }];
+
+    render(<Chat agent="support" defaultChatId="one" />);
+
+    type('/');
+
+    await waitFor(() =>
+      expect(options()).toEqual([
+        '/clearClear chat',
+        '/compactCompact: Summarize older messages to make room',
+      ]),
+    );
+  });
+
+  it.each([
+    ['without an open chat', () => render(<Chat agent="support" />)],
+    [
+      'while a reply runs',
+      () => {
+        state.status = 'streaming';
+
+        return render(<Chat agent="support" defaultChatId="one" />);
+      },
+    ],
+    [
+      'when the adapter cannot compact',
+      () => {
+        setAdapter(undefined, ['uploadAttachment', 'compactChat']);
+
+        return render(<Chat agent="support" defaultChatId="one" />);
+      },
+    ],
+  ])('offers no /compact %s', async (_, renderChat) => {
+    state.commands = [{ id: 'clear', title: 'Clear chat', execute: vi.fn() }];
+
+    renderChat();
+
+    type('/');
+
+    await waitFor(() => expect(options()).toEqual(['/clearClear chat']));
+  });
+});
+
 function composer(container: HTMLElement) {
   return container.querySelector<HTMLFormElement>('.fb-composer');
 }

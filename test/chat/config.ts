@@ -10,6 +10,7 @@ import {
   approvedCalls,
   approverAgentSlug,
   chatsSlug,
+  compactorAgentSlug,
   lookupCalls,
   memberName,
   modelPort,
@@ -143,6 +144,7 @@ export default await buildTestConfig({
   collections: [Users, Chats, Notes],
   ai: {
     defaultModel: 'test/gpt-4.1-mini',
+    compaction: { keep: 200 },
     providers: {
       test: {
         type: 'openai-compatible',
@@ -150,6 +152,7 @@ export default await buildTestConfig({
         apiKey: 'test-key',
         models: [
           { id: 'gpt-4.1-mini', mode: 'chat' },
+          { id: 'small-window', mode: 'chat', limit: { context: 4_000 } },
           {
             id: 'thinker',
             mode: 'chat',
@@ -232,6 +235,13 @@ export default await buildTestConfig({
           },
         },
       ],
+    },
+    {
+      slug: compactorAgentSlug,
+      model: 'test/small-window',
+      instructions: 'Help the user.',
+      access: () => true,
+      tools: [lookup, question, closeTicket],
     },
     generalAgent,
   ],

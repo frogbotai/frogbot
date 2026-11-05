@@ -90,6 +90,7 @@ An adapter is a `ChatPlatformAdapter` object. The first five members are require
 | `exportChat` | `(chatId) => Promise<void>` | — | Shows an Export row action between Rename and Delete. The adapter saves the file; a rejected export is ignored. Without it, the Export action is hidden. |
 | `updateChatAgent` | `(chatId, agent) => Promise<ChatDocument>` | — | Moves a chat to another agent. FrogBot's admin chat uses it when the agent selector changes. |
 | `branchChat` | `(chatId, messageId) => Promise<ChatId>` | — | Copies the chat through a message and returns the new chat's ID. Without it, the Branch actions are hidden. |
+| `compactChat` | `(chatId) => Promise<void>` | — | Summarizes the chat's older messages now; `Chat` reloads the messages after. The REST adapter calls `POST /api/frogbot/chat/compact`. Without it, the composer has no [`/compact`](/chat/ui-chat#typed-commands) command. |
 | `suggestChatTitle` | `(chatId) => Promise<string \| undefined>` | — | Without it, the rename dialog shows no suggestion. |
 | `loadTurnState` | `(agent, chatId) => Promise<TurnState>` | — | Lets `Chat` poll a turn that runs elsewhere. Without it, `Chat` reloads the messages once instead of polling. |
 | `dismissToolCall` | `(agent, chatId, toolCallId) => Promise<ToolCallSettlement>` | — | Dismisses a pending client tool call. Without it, tool renderers receive `dismiss: undefined`. Throw `ChatAdapterError('conflict')` when the call is already settled. |

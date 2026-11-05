@@ -18,6 +18,8 @@ import type { ChatDocument } from '../../../chat/adapter.js';
 import { AgentSelector } from '../../../chat/agent-selector.js';
 import type { ChatProps, MessageActionsSlotProps } from '../../../chat/chat.js';
 import { Chat } from '../../../chat/chat.js';
+import { CompactionPart } from '../../../chat/compaction-part.js';
+import type { DataRenderer } from '../../../chat/data-part.js';
 import type { GreetingProps } from '../../../chat/greeting.js';
 import { ModelSelector } from '../../../chat/model-selector.js';
 import { ChatProvider, useChatProvider } from '../../../chat/provider.js';
@@ -29,6 +31,7 @@ import { shallowRouteState } from '../../utilities/shallowRoute.js';
 
 const adapter = createRestChatAdapter({ fetch: cookieFetch() });
 const chatPicksPreference = 'frogbot-chat-picks';
+const DATA_RENDERERS: readonly DataRenderer[] = [{ kind: 'compaction', render: CompactionPart }];
 
 type ChatPicks = {
   agent: string;
@@ -143,7 +146,11 @@ export function ChatViewClient({
 
   return (
     <div className="frogbot-chat-view">
-      <ChatProvider adapter={adapter} toolRenderers={toolRenderersByAgent[selectedAgent]}>
+      <ChatProvider
+        adapter={adapter}
+        dataRenderers={DATA_RENDERERS}
+        toolRenderers={toolRenderersByAgent[selectedAgent]}
+      >
         <ChatStepNav
           chatId={labelChatId}
           chatsSlug={chatsSlug}

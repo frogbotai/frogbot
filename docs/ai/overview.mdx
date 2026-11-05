@@ -93,6 +93,7 @@ A provider's `models` list decides what the app can use, while an [agent's `mode
 | `routers` | `Record<string, RouterConfig>` | `{}` | Aliases from a slug to one model ID. See [Router options](#router-options). |
 | `defaultModel` | `ModelId` | — | Model or router slug for agents that set no `model` and no `model.default`. Must resolve to a configured provider. |
 | `smallModel` | `ModelId` | A recent low-cost model from the active model's provider | Model or router slug for internal utility calls such as naming chats. Must be a configured chat model. See [Choose a utility model](#choose-a-utility-model). |
+| `compaction` | `AICompactionConfig` | `{ auto: true, keep: 15_000 }` | How long chats are summarized to fit the model's context window. See [Compaction options](#compaction-options) and [Compaction](/chat/turns#compaction). |
 | `transcriptionModel` | `ModelId` | — | Model or router slug the chat composer's microphone uses for speech-to-text. Must be a configured transcription model. Unset: no microphone. See [Voice input](/chat/ui-chat#voice-input). |
 | `speechModel` | `ModelId` | — | Model or router slug that reads AI replies aloud in chat, for example `mistral/voxtral-mini-tts-latest`. Must be a configured speech model. Unset: no read aloud button. See [Read aloud](/chat/ui-chat#read-aloud). |
 | `speechVoice` | `string` | The provider's default voice | Voice name passed to `speechModel`, such as `nova` for OpenAI. |
@@ -100,6 +101,14 @@ A provider's `models` list decides what the app can use, while an [agent's `mode
 | `access` | `AIAccessConfig` | Every category allows signed-in users | Access rules per operation category. See [Control access](#control-access). |
 | `deploymentId` | `string` | `FROGBOT_DEPLOYMENT_ID`, then `'local'` | Added to every AI span as the `frogbot.deployment` attribute. |
 | `telemetry` | `AITelemetryConfig` | Enabled | Span registration settings. See [Trace calls](#trace-calls). |
+
+### Compaction options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `auto` | `boolean` | `true` | Summarize a chat's older messages before a model step whose prompt would reach the ceiling, and once when the provider rejects a prompt as too long. `false` leaves only [`/compact`](/chat/ui-chat#typed-commands) and `POST /api/frogbot/chat/compact`. |
+| `buffer` | `number` | 10% of the window, at least `16_000` when the window is `32_000` or more | Tokens kept free below the model's context window. The ceiling is the window less this. A non-negative integer. |
+| `keep` | `number` | `15_000` | About how many tokens of the newest messages stay whole after the summary. The latest exchange always stays. A non-negative integer. |
 
 ### Built-in provider options
 

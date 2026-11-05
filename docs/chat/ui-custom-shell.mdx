@@ -44,6 +44,7 @@ export function CustomShell() {
 | `stopContent` | `ReactNode` | Required | Accessible label for the stop button. |
 | `onBeforeSubmit` | `(prompt: ComposerSubmission) => boolean \| Promise<boolean>` | — | Called before each send with `{ text, mentions, attachments }`, also while `pending` without `onQueue`. Return `true` to handle it yourself: the text clears and attachments stay. See [Typed commands](/chat/ui-chat#typed-commands). |
 | `onError` | `(error: Error, source: 'command' \| 'message') => void` | — | Called when a send, `onBeforeSubmit` or a command rejects. `source` is `'message'` for a send and `'command'` for the others. |
+| `commands` | `readonly ComposerCommand[]` | The `ChatProvider`'s [`commands`](/chat/ui-registries#composer-commands) | The `/` commands the menu offers and a send runs. `<Chat>` passes the provider's, plus [`/compact`](/chat/ui-chat#typed-commands) when it applies. |
 | `defaultValue` | `string` | `''` | Initial text. |
 | `placeholder` | `string` | — | Shown while the input is empty. |
 | `aria-label` | `string` | `'Message'` | Accessible name of the input. |
