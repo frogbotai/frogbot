@@ -240,6 +240,7 @@ Contributions are welcome! Read [CONTRIBUTING.md](./CONTRIBUTING.md) before open
 - [Discord](https://discord.com/invite/JBZF7syAnU)
 - [GitHub Issues](https://github.com/frogbotai/frogbot/issues)
 - [GitHub Discussions](https://github.com/frogbotai/frogbot/discussions)
+- [Report a vulnerability](./SECURITY.md) privately, not in an issue
 
 ## License
 
