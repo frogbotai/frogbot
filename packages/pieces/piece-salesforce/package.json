@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/piece-salesforce",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "description": "Salesforce records, SOQL and Bulk API queries, reports and record-change triggers for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",

@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-evals",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "description": "Datasets, scorers and scored runs for FrogBot agents.",
   "license": "MIT",
   "author": "Colby Gilbert",
