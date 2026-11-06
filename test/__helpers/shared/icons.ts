@@ -48,7 +48,6 @@ export const excludedIcons: Record<string, number | null> = {
   SlackIcon: 0,
   StopIcon: 2,
   StripeIcon: 0,
-  TwitterIcon: 1,
   VisaIcon: 2,
   XIcon: 0,
   XeroIcon: 0,
