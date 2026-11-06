@@ -1,7 +1,7 @@
 {
   "name": "frogbot-monorepo",
   "private": true,
-  "version": "0.39.0",
+  "version": "0.40.0",
   "type": "module",
   "scripts": {
     "build": "pnpm -r --filter '!./templates/*' build && FROGBOT_SECRET=build-secret pnpm -r --filter './templates/*' build --webpack",

@@ -2425,6 +2425,11 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/inclusionai/ling-3.0-tiny",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/inclusionai/ling-3.1-flash",
     "provider": "openrouter",
     "mode": "chat"
@@ -2550,27 +2555,7 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/minimax/minimax-01",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/minimax/minimax-m1",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/minimax/minimax-m2",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/minimax/minimax-m2-her",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/minimax/minimax-m2.1",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3370,6 +3355,11 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/ricursiveai/ripple-65b-preview",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/sakana/fugu-max",
     "provider": "openrouter",
     "mode": "chat"
@@ -3406,6 +3396,11 @@
   },
   {
     "id": "openrouter/scaledown/summarize",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/stealth/crouton-alpha",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3455,6 +3450,11 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/tencent/hy4",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/tencent/hy4-preview",
     "provider": "openrouter",
     "mode": "chat"
@@ -3481,16 +3481,6 @@
   },
   {
     "id": "openrouter/thinkingmachines/inkling-small",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/thinkingmachines/inkling-small:free",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/thinkingmachines/inkling:free",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3645,6 +3635,11 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/z-ai/glm-5.3-flashx-legal",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/z-ai/glm-5.3-prime",
     "provider": "openrouter",
     "mode": "chat"
@@ -3676,6 +3671,11 @@
   },
   {
     "id": "togetherai/moonshotai/Kimi-K3",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/moonshotai/Kimi-K3.1-Pro",
     "provider": "togetherai",
     "mode": "chat"
   },
@@ -4210,7 +4210,7 @@
     "mode": "chat"
   },
   {
-    "id": "vercel/meituan/longcat-2.5-preview",
+    "id": "vercel/meituan/longcat-2.5",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -4915,6 +4915,11 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/tencent/hy4",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/tencent/hy4-preview",
     "provider": "vercel",
     "mode": "chat"
@@ -4926,16 +4931,6 @@
   },
   {
     "id": "vercel/thinkingmachines/inkling-small",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/xiaomi/mimo-v2.5",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/xiaomi/mimo-v2.5-pro",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -5031,6 +5026,11 @@
   },
   {
     "id": "vercel/zai/glm-5.3-flashx",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-5.3-flashx-legal",
     "provider": "vercel",
     "mode": "chat"
   },

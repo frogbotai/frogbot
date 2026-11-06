@@ -1,6 +1,6 @@
 {
   "name": "projects",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "private": true,
   "description": "A FrogBot project tracker with tasks on a board and sample data.",
   "license": "MIT",

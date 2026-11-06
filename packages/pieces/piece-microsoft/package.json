@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/piece-microsoft",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "description": "Shared Microsoft sign-in setup for FrogBot pieces.",
   "license": "MIT",
   "author": "Colby Gilbert",

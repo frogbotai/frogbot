@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/sdk",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "description": "Framework-agnostic FrogBot API client.",
   "license": "MIT",
   "author": "Colby Gilbert",

@@ -1,1 +1,1 @@
-export const FROGBOT_VERSION = '0.39.0';
+export const FROGBOT_VERSION = '0.40.0';
