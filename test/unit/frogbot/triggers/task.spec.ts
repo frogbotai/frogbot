@@ -11,7 +11,9 @@ import { createEchoPiece } from './fixtures/createEchoPiece.js';
 
 describe('agent trigger task', () => {
   it('installs an automatic all-queues runner for trigger-only configs', () => {
-    expect(resolveTriggerTasks().autoRun).toEqual([{ allQueues: true, cron: '* * * * *' }]);
+    expect(resolveTriggerTasks().autoRun).toEqual([
+      { allQueues: true, cron: '* * * * *', silent: { info: true } },
+    ]);
   });
 
   it('preserves user tasks and runners', async () => {
@@ -20,7 +22,10 @@ describe('agent trigger task', () => {
     const jobs = resolveTriggerTasks({ tasks: [task], autoRun: [runner] });
 
     expect(jobs.tasks).toContain(task);
-    expect(jobs.autoRun).toEqual([runner, { allQueues: true, cron: '* * * * *' }]);
+    expect(jobs.autoRun).toEqual([
+      runner,
+      { allQueues: true, cron: '* * * * *', silent: { info: true } },
+    ]);
 
     const autoRun = vi.fn().mockResolvedValue([runner]);
     const dynamic = resolveTriggerTasks({ autoRun }).autoRun;
@@ -31,7 +36,7 @@ describe('agent trigger task', () => {
 
     expect(await (dynamic as typeof autoRun)(payload)).toEqual([
       runner,
-      { allQueues: true, cron: '* * * * *' },
+      { allQueues: true, cron: '* * * * *', silent: { info: true } },
     ]);
     expect(autoRun).toHaveBeenCalledWith(payload);
   });
@@ -50,14 +55,15 @@ describe('agent trigger task', () => {
 
     const resolved = resolveTriggerTasks(jobs);
 
-    expect(resolved.autoRun).toBe(jobs!.autoRun);
-
     const runners =
       typeof resolved.autoRun === 'function'
         ? await resolved.autoRun({} as never)
         : resolved.autoRun;
 
-    expect(runners).toEqual([runner, { allQueues: true, cron: '* * * * *' }]);
+    expect(runners).toEqual([
+      runner,
+      { allQueues: true, cron: '* * * * *', silent: { info: true } },
+    ]);
   });
 
   it('delivers event data and a trigger request to the addressed handler', async () => {

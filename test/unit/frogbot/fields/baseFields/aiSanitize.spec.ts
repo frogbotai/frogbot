@@ -294,7 +294,7 @@ describe('resolveAIFieldModel', () => {
 });
 
 describe('AI field task', () => {
-  const everyMinute = { allQueues: true, cron: '* * * * *' };
+  const everyMinute = { allQueues: true, cron: '* * * * *', silent: { info: true } };
 
   async function jobsOf(config: FrogBotConfig) {
     const payloadConfig = await sanitize(config)._internal.payloadConfig;

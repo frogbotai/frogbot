@@ -13,6 +13,7 @@ import { buildConfig } from '../../../../packages/frogbot/src/config/build.js';
 import { compileCollectionViews } from '../../../../packages/frogbot/src/config/collectionViews.js';
 import { ConfigIssueError } from '../../../../packages/frogbot/src/config/issue.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import { aiField } from '../../../../packages/frogbot/src/fields/baseFields/ai/index.js';
 import { autonumberField } from '../../../../packages/frogbot/src/fields/baseFields/autonumber/index.js';
 import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
 import {
@@ -4383,6 +4384,69 @@ describe('frogbot sanitize', () => {
       expect(removed.pieces.instances).toContain(example);
     });
 
+    it('adds one silent runner when schedules, triggers and AI fields all need it', async () => {
+      const createExample = definePiece({
+        slug: 'runner-example',
+        label: 'Runner example',
+        actions: [],
+        webhook: { verify: () => Promise.resolve(true), parse: () => ({ event: 'created' }) },
+        triggers: [
+          {
+            slug: 'created',
+            type: 'app',
+            event: 'created',
+            description: 'Created',
+            input: z.object({}),
+            run: () => Promise.resolve([]),
+          },
+        ],
+      });
+
+      const example = createExample({});
+
+      const result = sanitize(
+        makeConfig({
+          ai,
+          collections: [
+            {
+              slug: 'notes',
+              fields: [
+                { name: 'title', type: 'text' },
+                aiField({
+                  name: 'summary',
+                  inputs: ['title'],
+                  prompt: 'Summarize.',
+                  model: 'openai/gpt-5-nano',
+                }),
+              ],
+            },
+          ],
+          agents: [
+            {
+              ...agent,
+              triggers: [
+                { trigger: example.triggers.created, handler: vi.fn() },
+                { type: 'schedule', slug: 'run', schedule: { every: '1h' }, prompt: 'Run' },
+              ],
+            },
+          ],
+        }),
+      );
+
+      const payloadConfig = await result._internal.payloadConfig;
+
+      expect(payloadConfig.jobs.tasks?.map(({ slug }) => slug)).toEqual(
+        expect.arrayContaining([
+          'frogbot-run-agent-schedule',
+          'frogbot-run-agent-trigger',
+          'frogbot-run-ai-field',
+        ]),
+      );
+      expect(payloadConfig.jobs.autoRun).toEqual([
+        { allQueues: true, cron: '* * * * *', silent: { info: true } },
+      ]);
+    });
+
     it('adds the subscription ledger for an agent trigger', async () => {
       const createExample = definePiece({
         slug: 'trigger-example',
@@ -5048,7 +5112,7 @@ describe('frogbot sanitize', () => {
       ]);
       expect(payloadConfig.jobs.autoRun).toEqual([
         { queue: 'user' },
-        { allQueues: true, cron: '* * * * *' },
+        { allQueues: true, cron: '* * * * *', silent: { info: true } },
       ]);
       expect(() =>
         sanitize(
