@@ -51,7 +51,7 @@ export default buildConfig({
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `widgets` | `Widget[]` | Required | Widgets users can add to the dashboard. The built-in `collections` widget is always available in addition to these. |
+| `widgets` | `Widget[]` | Required | Widgets users can add to the dashboard. The [built-in widgets](#built-in-widgets) are always available in addition to these. |
 | `defaultLayout` | `WidgetInstance[] \| ({ req }) => WidgetInstance[] \| Promise<WidgetInstance[]>` | Full-width `welcome`, `activity`, then `collections` | Layout shown until a user saves their own. The function receives the current `FrogBotRequest`. See [Default Layout](#default-layout). |
 
 Each entry in `widgets` is a `Widget`:
@@ -240,6 +240,8 @@ admin: {
   },
 },
 ```
+
+With SQLite, documents with no `dueDate` sort before dated ones in ascending order, so undated tasks lead this list.
 
 A collection with `admin.group: false` gets no card in `collections` and no entries in `activity`. Settings → Collections still lists it.
 
