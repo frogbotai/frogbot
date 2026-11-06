@@ -79,7 +79,7 @@ export default buildConfig({
 | `serverURL` | `string` | `''` | Absolute URL of your app, such as `https://example.com`, with no path. Used for links in emails and file URLs, and added to `csrf`. |
 | `settings` | `SettingsEntry[]` | — | Pages added to the admin Settings area. See [Register a settings page](/admin/admin-navigation#register-a-settings-page). |
 | `storage` | `StorageAdapter[]` | — | File storage adapters from `@frogbotai/storage-*`. The first also serves FrogBot's own upload collections. See [Storage adapters](/upload/storage-adapters). |
-| `telemetry` | `boolean` | `true` | Sends anonymous usage events when the app starts and the admin panel loads. Set `false` to turn it off. See [Control telemetry](#control-telemetry) for what is sent and where. |
+| `telemetry` | `boolean` | `true` | Sends anonymous usage events when the app starts and when `/api/access` is called. Set `false` to turn it off. See [Control telemetry](#control-telemetry) for what is sent and where. |
 | `tools` | `readonly (AnyTool \| MCPServer)[]` | — | Tools and [MCP servers](/mcp/overview) attached to every agent. See [Share tools across agents](/agents/overview#share-tools-across-agents). |
 | `typescript` | `TypeScriptConfig` | See [Type generation options](/typescript/generating-types#type-generation-options) | Type generation options. |
 | `upload` | `FetchAPIFileUploadOptions` | `{}` | Options for parsing uploaded files on every upload collection, and the `transformers` that process them, such as `sharpTransformer()`. See [Uploads](/upload/overview#frogbot-wide-upload-options). |
@@ -341,9 +341,9 @@ FrogBot sends anonymous usage events unless you set `telemetry: false`. Each eve
 | Event | Sent when |
 | --- | --- |
 | `server-init` | The app starts, in development and in production. |
-| `admin-init` | The admin panel loads its permissions (`GET /api/access`). |
+| `admin-init` | Any `GET /api/access` request. `frogbot start` makes one in its health check on every start and restart, and API clients that read permissions make one too. Loading the admin panel doesn't. |
 
-Every event carries these fields. Each ID is a SHA-256 hash salted with your `secret`, so the receiver can't recover the value behind it.
+Every event carries these fields. `projectID`, `domainID` and `userID` are SHA-256 hashes salted with your `secret`, so the receiver can't recover the value behind them.
 
 | Field | Holds |
 | --- | --- |
@@ -361,7 +361,7 @@ Every event carries these fields. Each ID is a SHA-256 hash salted with your `se
 
 Events never include documents, field values, collection names, emails, file contents, or your `secret`. The receiver sees your server's IP address, as with any HTTPS request.
 
-Run with `PAYLOAD_TELEMETRY_DEBUG=1` to log each event in full instead of sending it. To turn telemetry off:
+Run with `PAYLOAD_TELEMETRY_DEBUG=1` to log each event instead of sending it. The log adds a local `packageJSONPath` that is never sent. To turn telemetry off:
 
 ```ts
 export default buildConfig({

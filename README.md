@@ -243,7 +243,7 @@ Contributions are welcome! Read [CONTRIBUTING.md](./CONTRIBUTING.md) before open
 
 ## Telemetry
 
-FrogBot apps send anonymous usage events when they start and when the admin panel loads: counts and flags about your config, never your content. [See what is sent and where](https://docs.frogbot.ai/configuration/overview#control-telemetry), or set `telemetry: false` in your config to turn it off.
+FrogBot apps send anonymous usage events when they start and when `/api/access` is called: counts and flags about your config, never your content. [See what is sent and where](https://docs.frogbot.ai/configuration/overview#control-telemetry), or set `telemetry: false` in your config to turn it off.
 
 ## License
 
