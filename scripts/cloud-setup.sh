@@ -82,5 +82,25 @@ for dir in "$root" "$parent/sidekick" "$parent/platform"; do
   (cd "$dir" && pnpm install --frozen-lockfile --reporter=silent) || status=1
 done
 
+# 5. Commits are the owner's alone. The cloud image sets git's identity to Claude, and the
+#    harness asks for Co-Authored-By and Claude-Session lines; GitHub would list Claude as a
+#    contributor. Each checkout commits as the owner, and a commit-msg hook strips the lines.
+#    Husky repos (core.hooksPath set) run .husky/commit-msg, which does the same.
+owner_name=${FROGBOT_GIT_NAME:-Colby Gilbert}
+owner_email=${FROGBOT_GIT_EMAIL:-colby@frogbot.ai}
+strip="$root/scripts/commit-msg.mjs"
+for dir in "$root" "$root/.idea" "$parent/sidekick" "$parent/platform"; do
+  [ -e "$dir/.git" ] || continue
+  git -C "$dir" config user.name "$owner_name"
+  git -C "$dir" config user.email "$owner_email"
+  if [ -z "$(git -C "$dir" config core.hooksPath)" ]; then
+    hook="$(cd "$dir" && git rev-parse --absolute-git-dir)/hooks/commit-msg"
+    mkdir -p "$(dirname "$hook")"
+    printf '#!/bin/sh\nexec node "%s" --strip "$1"\n' "$strip" > "$hook"
+    chmod +x "$hook"
+  fi
+  echo "cloud-setup: $(basename "$(cd "$dir" && pwd -P)") commits as $owner_name, attribution lines stripped"
+done
+
 [ "$status" -eq 0 ] && echo "cloud-setup: ready" || echo "cloud-setup: finished with problems (above)" >&2
 exit "$status"
