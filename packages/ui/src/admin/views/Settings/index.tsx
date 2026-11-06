@@ -56,7 +56,16 @@ export async function SettingsView(props: SettingsViewProps) {
       ? splitNavGroups({
           entities: payload.config.collections
             .filter(({ slug }) => initPageResult.visibleEntities.collections.includes(slug))
-            .map((entity) => ({ entity, type: EntityType.collection }) satisfies EntityToGroup),
+            .map(
+              (entity) =>
+                ({
+                  entity:
+                    entity.admin.group === false
+                      ? { ...entity, admin: { ...entity.admin, group: undefined } }
+                      : entity,
+                  type: EntityType.collection,
+                }) satisfies EntityToGroup,
+            ),
           i18n: req.i18n,
           permissions: initPageResult.permissions,
         })

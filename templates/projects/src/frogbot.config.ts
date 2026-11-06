@@ -32,6 +32,26 @@ const config: FrogBotConfig = {
     components: {
       beforeDashboard: ['/components/SeedPanel#SeedPanel'],
     },
+    dashboard: {
+      widgets: [],
+      defaultLayout: [
+        { widgetSlug: 'welcome', width: 'full' },
+        {
+          widgetSlug: 'collection-query',
+          width: 'full',
+          data: {
+            title: 'Open tasks',
+            relatedCollection: 'tasks',
+            where: { status: { not_equals: 'done' } },
+            sortField: 'dueDate',
+            sortDirection: 'asc',
+            limit: 5,
+          },
+        },
+        { widgetSlug: 'activity', width: 'full' },
+        { widgetSlug: 'collections', width: 'full' },
+      ],
+    },
   },
   agents: [general(), assistant],
   plugins: [aiPolicyPlugin(), dojo()],

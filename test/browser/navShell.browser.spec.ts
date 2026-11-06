@@ -79,22 +79,38 @@ test.describe('nav shell on desktop', () => {
     await noHorizontalOverflow(page);
   });
 
-  test('collections section links to the configured collections', async ({ page }) => {
+  test('collections section links to the configured collections, without Users', async ({
+    page,
+  }) => {
     await loadWithSidebarOpen(page);
 
-    await expect(
-      page.locator('#frogbot-nav-section-collections').getByRole('link', { name: 'Users' }),
-    ).toHaveAttribute('href', '/collections/users');
+    const section = page.locator('#frogbot-nav-section-collections');
+
+    await expect(section.getByRole('link', { name: 'Files' })).toHaveAttribute(
+      'href',
+      '/collections/files',
+    );
+    await expect(section.getByRole('link', { name: 'Users' })).toHaveCount(0);
   });
 
-  test('home page shows collection cards instead of chat', async ({ page }) => {
+  test('home page shows collection cards instead of chat, without Users', async ({ page }) => {
     await page.goto('/');
+
+    await expect(page.locator('#card-files .card__click')).toHaveAttribute(
+      'href',
+      '/collections/files',
+    );
+    await expect(page.locator('#card-users')).toHaveCount(0);
+    await expect(page.locator('.fb-composer')).toHaveCount(0);
+  });
+
+  test('Settings → Collections lists Users, which the sidebar leaves out', async ({ page }) => {
+    await page.goto('/settings/collections');
 
     await expect(page.locator('#card-users .card__click')).toHaveAttribute(
       'href',
       '/collections/users',
     );
-    await expect(page.locator('.fb-composer')).toHaveCount(0);
   });
 
   test('home page lists built-in collection cards under one Collections heading', async ({
@@ -226,7 +242,7 @@ test.describe('nav shell on desktop', () => {
 
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
 
-      for (const slug of ['chats', 'users', 'files']) {
+      for (const slug of ['chats', 'files']) {
         await expectTwoPixelStroke(collectionNavIcon(page, slug));
       }
     });
@@ -359,10 +375,10 @@ test.describe('nav shell keeps the saved desktop state', () => {
 
     await page
       .locator('#frogbot-nav-section-collections')
-      .getByRole('link', { name: 'Users' })
+      .getByRole('link', { name: 'Files' })
       .click();
 
-    await page.waitForURL((url) => url.pathname === '/collections/users');
+    await page.waitForURL((url) => url.pathname === '/collections/files');
     await waitForNavSettled(page);
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
@@ -377,8 +393,8 @@ test.describe('nav shell keeps the saved desktop state', () => {
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
 
     await page.locator('button[aria-label="Close sidebar"]').click();
-    await page.locator('#card-users .card__click').click();
-    await page.waitForURL((url) => url.pathname === '/collections/users');
+    await page.locator('#card-files .card__click').click();
+    await page.waitForURL((url) => url.pathname === '/collections/files');
     await waitForNavSettled(page);
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
@@ -477,10 +493,10 @@ test.describe('nav shell across breakpoints and fast toggles', () => {
 
     await page
       .locator('#frogbot-nav-section-collections')
-      .getByRole('link', { name: 'Users' })
+      .getByRole('link', { name: 'Files' })
       .click();
 
-    await page.waitForURL((url) => url.pathname === '/collections/users');
+    await page.waitForURL((url) => url.pathname === '/collections/files');
     await waitForNavSettled(page);
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
@@ -507,8 +523,8 @@ test.describe('nav shell across breakpoints and fast toggles', () => {
       await page.setViewportSize(laptop);
       await page.goto('/');
       await waitForNavSettled(page);
-      await page.locator('#card-users .card__click').click();
-      await page.waitForURL((url) => url.pathname === '/collections/users');
+      await page.locator('#card-files .card__click').click();
+      await page.waitForURL((url) => url.pathname === '/collections/files');
       await waitForNavSettled(page);
 
       const collapseSaved = waitForNavPreferenceSave(page);

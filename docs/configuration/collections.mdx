@@ -220,7 +220,7 @@ The following options are available:
 | `enableRichTextLink` | `boolean` | `true` | Lets Rich Text links point to documents in this collection. |
 | `enableRichTextRelationship` | `boolean` | `true` | Lets Rich Text relationship blocks reference documents in this collection. |
 | `formatDocURL` | `(args) => string \| null` | Default edit URL | Customizes document links in the List View. [More details](#format-document-urls). |
-| `group` | `string \| Record<string, string> \| false \| null` | Collections group | Text or localized object used to group the navigation link. `null` makes it a top-level link; `false` hides the link but keeps its routes. |
+| `group` | `string \| Record<string, string> \| false \| null` | Collections group | Text or localized object used to group the navigation link. `null` makes it a top-level link; `false` keeps its routes but leaves it out of the sidebar, the dashboard's collection cards, Recents and Pinned, and the command palette. Settings → Collections still lists it. |
 | `hidden` | `boolean \| (({ user }) => boolean)` | `false` | Leaves this collection out of navigation and admin routes. A function receives the current user. |
 | `icon` | `AdminIcon` | `'people'` for auth collections | Built-in kebab-case icon name or component path for the navigation link. See [Collection icons](/admin/admin-navigation#collection-icons-and-placement). |
 | `livePreview` | `LivePreviewConfig` | — | Live Preview for this collection. See [Live Preview](/live-preview/overview). |
