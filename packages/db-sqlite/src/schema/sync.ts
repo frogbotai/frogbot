@@ -68,19 +68,6 @@ function sqliteAdapterOf(db: object): SchemaAdapter {
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
-async function keptMessage(item: Kept, query: Query | undefined): Promise<string> {
-  if (item.kind === 'table') {
-    return `${item.table} is gone from the code; its ${plural(item.rows, 'row stays', 'rows stay')} hidden. Add the collection back to show them.`;
-  }
-
-  const values = await countValues(query, item.table, item.column);
-  const held = values
-    ? `its ${plural(values, 'value stays', 'values stay')} hidden`
-    : 'its column stays, empty';
-
-  return `${item.table}.${item.column} is gone from the code; ${held}. Add "${item.column}" back to show them.`;
-}
-
 function shown(item: Kept, kept: Kept[]): boolean {
   if (/^(payload|frogbot)_|^_.+_v(_|$)/.test(item.table)) return false;
 
@@ -92,13 +79,29 @@ function shown(item: Kept, kept: Kept[]): boolean {
   );
 }
 
-/** One line per kept table or column a user would recognize; version and internal tables stay quiet. */
-export function keptMessages(adapter: SchemaAdapter, { kept }: Reconciled): Promise<string[]> {
-  const query = adapter.client && clientQuery(adapter.client);
+/**
+ * One line naming every kept table and column a user would recognize, or none. Version and internal
+ * tables stay quiet. It carries no counts, so it changes only when the kept set does.
+ */
+export function keptSummary({ kept }: Reconciled): string[] {
+  const items = kept.filter((item) => shown(item, kept));
 
-  return Promise.all(
-    kept.filter((item) => shown(item, kept)).map((item) => keptMessage(item, query)),
+  if (!items.length) return [];
+
+  const columns = items.filter((item) => item.kind === 'column').length;
+  const tables = items.length - columns;
+  const counts = [
+    ...(columns ? [plural(columns, 'removed column', 'removed columns')] : []),
+    ...(tables ? [plural(tables, 'removed table', 'removed tables')] : []),
+  ];
+
+  const names = items.map((item) =>
+    item.kind === 'table' ? item.table : `${item.table}.${item.column}`,
   );
+
+  return [
+    `Schema sync kept ${counts.join(' and ')} with their data, hidden: ${names.join(', ')}. Nothing is deleted; a field or collection added back shows its data again.`,
+  ];
 }
 
 async function lossText(loss: Loss, live: LiveSchema, query: Query | undefined) {
@@ -314,7 +317,7 @@ export async function syncSchema({
     }
 
     const adapter = sqliteAdapterOf(payload.db);
-    const kept = await keptMessages(adapter, reconciled);
+    const kept = keptSummary(reconciled);
     const result = await pushAdditive(adapter, reconciled);
 
     return { ...result, kept };

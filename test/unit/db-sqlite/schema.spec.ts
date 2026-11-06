@@ -111,7 +111,7 @@ describe('reconcile', () => {
     expect(kept).toEqual([
       { kind: 'column', table: 'deals', column: 'company' },
       { kind: 'column', table: 'deals', column: 'owner_id' },
-      { kind: 'table', table: 'notes', rows: 12 },
+      { kind: 'table', table: 'notes' },
     ]);
     expect(tables.deals.columns.__frogbot_kept_company).toEqual({
       name: 'company',

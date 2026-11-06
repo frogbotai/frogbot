@@ -77,7 +77,7 @@ describe('syncSchema on a SQLite file', () => {
       ok: true,
       applied: [],
       kept: [
-        'deals.company is gone from the code; its 10 values stay hidden. Add "company" back to show them.',
+        'Schema sync kept 1 removed column with their data, hidden: deals.company. Nothing is deleted; a field or collection added back shows its data again.',
       ],
     });
     expect(count(db, 'SELECT count(company) FROM deals')).toBe(10);
@@ -89,11 +89,23 @@ describe('syncSchema on a SQLite file', () => {
 
     expect(result.applied.filter((s) => !/`(__new_)?_?notes(_v)?_rels`/.test(s))).toEqual([]);
     expect(result).toMatchObject({ ok: true });
-    expect(result.kept).toContain(
-      'notes is gone from the code; its 10 rows stay hidden. Add the collection back to show them.',
-    );
+    expect(result.kept).toEqual([
+      'Schema sync kept 1 removed table with their data, hidden: notes. Nothing is deleted; a field or collection added back shows its data again.',
+    ]);
     expect(count(db, 'SELECT count(*) FROM notes')).toBe(10);
     expect((await sync(db, [deals(title, company)])).applied).toEqual([]);
+  });
+
+  it('names every kept column and table in one line and keeps their data', async () => {
+    const db = await seeded();
+    const result = await sync(db, [deals()]);
+
+    expect(result.kept).toEqual([
+      'Schema sync kept 2 removed columns and 1 removed table with their data, hidden: deals.title, deals.company, notes. Nothing is deleted; a field or collection added back shows its data again.',
+    ]);
+    expect(result.kept.join()).not.toMatch(/back to show/);
+    expect(count(db, 'SELECT count(title) + count(company) FROM deals')).toBe(20);
+    expect(count(db, 'SELECT count(*) FROM notes')).toBe(10);
   });
 
   it('applies nothing and names the data when a change would delete it', async () => {

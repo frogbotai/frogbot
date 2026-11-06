@@ -34,8 +34,7 @@ export type RawTable = {
 };
 
 export type Kept =
-  | { kind: 'table'; table: string; rows: number }
-  | { kind: 'column'; table: string; column: string };
+  { kind: 'table'; table: string } | { kind: 'column'; table: string; column: string };
 
 const nowDefault = /^\(?strftime\('%Y-%m-%dT%H:%M:%fZ', 'now'\)\)?$/;
 
@@ -173,7 +172,7 @@ export function reconcile(tables: Record<string, RawTable>, live: LiveSchema): K
 
     tables[liveTable.name] = table;
     byName.set(liveTable.name, table);
-    kept.push({ kind: 'table', table: liveTable.name, rows: liveTable.rows });
+    kept.push({ kind: 'table', table: liveTable.name });
   }
 
   for (const liveTable of live.values()) {

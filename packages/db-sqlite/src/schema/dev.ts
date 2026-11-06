@@ -1,7 +1,7 @@
 import {
   isSQLiteAdapter,
   keepLive,
-  keptMessages,
+  keptSummary,
   pushAdditive,
   type Reconciled,
   type SchemaAdapter,
@@ -54,7 +54,7 @@ export async function syncInDev(adapter: object): Promise<void> {
 
   const { logger } = adapter.payload;
 
-  for (const message of await keptMessages(adapter, state)) {
+  for (const message of keptSummary(state)) {
     if (reported.has(message)) continue;
 
     reported.add(message);

@@ -2,6 +2,7 @@ import { Cron } from 'croner';
 import type { JobsConfig, TaskConfig } from 'payload';
 
 import { getFrogBotInstance } from '../instanceRegistry.js';
+import { withFrogBotAutoRun } from '../jobs/autoRun.js';
 import { isRecord } from '../utilities/isRecord.js';
 import type { AgentConfig, AgentScheduleTrigger } from './types.js';
 
@@ -10,8 +11,6 @@ export const AGENT_SCHEDULE_TASK_SLUG = 'frogbot-run-agent-schedule';
 type ScheduledAgentJob = { agentSlug: string; triggerSlug: string };
 
 type ScheduledAgentTask = { input: ScheduledAgentJob; output: Record<string, never> };
-
-type AutorunCronConfig = Extract<NonNullable<JobsConfig['autoRun']>, unknown[]>[number];
 
 function scheduleCron(trigger: AgentScheduleTrigger): string {
   return 'every' in trigger.schedule ? everyToCron(trigger.schedule.every!) : trigger.schedule.cron;
@@ -153,15 +152,9 @@ export function resolveScheduleTasks({
     },
   };
 
-  const autoRun = jobs?.autoRun;
-  const frogAutoRun: AutorunCronConfig = { allQueues: true, cron: '* * * * *' };
-
   return {
     ...jobs,
     tasks: [...(jobs?.tasks ?? []), task],
-    autoRun:
-      typeof autoRun === 'function'
-        ? async (payload) => [...(await autoRun(payload)), frogAutoRun]
-        : [...(autoRun ?? []), frogAutoRun],
+    autoRun: withFrogBotAutoRun(jobs?.autoRun),
   };
 }

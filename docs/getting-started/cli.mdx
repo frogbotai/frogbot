@@ -299,7 +299,7 @@ With SQLite and no `prodMigrations`, each update brings the database's schema up
 
 ### Log
 
-`.frogbot/service.log` holds timestamped lines from the supervisor, each build, the schema sync and the server, without colour codes. The schema sync logs how many statements it applied and each hidden field once per start. The supervisor logs `server back up (pid N)` after a crashed server answers again. Once the file reaches 10 MB it moves to `service.log.1` and a new one starts.
+`.frogbot/service.log` holds timestamped lines from the supervisor, each build, the schema sync and the server, without colour codes. The schema sync logs how many statements it applied, and one line naming the removed fields and collections it keeps hidden, again only when that list changes. The supervisor logs `server back up (pid N)` after a crashed server answers again. Once the file reaches 10 MB it moves to `service.log.1` and a new one starts.
 
 ### Start at login
 
