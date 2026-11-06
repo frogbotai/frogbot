@@ -26,16 +26,17 @@ Then open [http://localhost:3000](http://localhost:3000) and create your admin a
 
 ## Sample data
 
-The dashboard shows a **Seed your database** panel. Its button calls `POST /api/seed`, which
-loads three projects with tasks and creates a demo login:
+While you develop, the dashboard shows a **Seed your database** panel. Its button calls
+`POST /api/seed`, which loads three projects with tasks and creates a demo login:
 
 - Email: `admin@test.com`
 - Password: `password`
 
 > **Warning:** seeding deletes every project and task, then creates the samples again. It also
 > deletes and recreates `admin@test.com`, unless you are signed in as that user. Any signed-in
-> user can run it, in every environment. Before you deploy, remove the panel and the endpoint
-> from `src/frogbot.config.ts`, or delete the demo user.
+> user can run it. In production (`npm start`, the `Dockerfile` and `frogbot share` all set
+> `NODE_ENV=production`) the panel is hidden and the endpoint answers `404`. A demo user already
+> seeded into a database you deploy stays, so delete it first.
 
 The seed is plain code in `src/seed/index.ts`; edit it to change the sample data.
 

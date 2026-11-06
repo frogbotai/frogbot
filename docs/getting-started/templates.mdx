@@ -20,7 +20,7 @@ Every template works with SQLite, PostgreSQL and MongoDB, and with every AI prov
 
 ## Loading the sample data
 
-A template with sample data shows a **Seed your database** panel at the top of the dashboard. Its button calls `POST /api/seed`, which:
+While you develop, a template with sample data shows a **Seed your database** panel at the top of the dashboard. Its button calls `POST /api/seed`, which:
 
 1. deletes every record in the template's own collections, such as projects and tasks. It never deletes your users;
 2. creates the sample records;
@@ -29,7 +29,7 @@ A template with sample data shows a **Seed your database** panel at the top of t
 You can press it again at any time to get the samples back. Anything you changed in those collections is lost.
 
 <Warning>
-Any signed-in user can run the seed, in every environment, including production. Before you deploy, remove the panel and the endpoint from `src/frogbot.config.ts`, or at least delete the demo user.
+Any signed-in user can run the seed while you develop. In production (`NODE_ENV=production`, which `frogbot start`, the template's `Dockerfile` and `frogbot share` all set) the panel is hidden and the endpoint answers `404`. A demo user already seeded into a database you deploy stays, so delete it first.
 </Warning>
 
 ## How a seed is built
@@ -40,11 +40,11 @@ The seed is plain code in your app, in three files you can change or delete:
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
 | `src/seed/index.ts`            | `seed({ frogbot, req })` deletes and recreates the sample records through the [Local API](/local-api/overview). |
 | `src/seed/endpoint.ts`         | `seedEndpoint()`, the `POST /api/seed` [root endpoint](/rest-api/overview#custom-endpoints).                  |
-| `src/components/SeedPanel.tsx` | The dashboard panel, registered in `admin.components.beforeDashboard`.                                       |
+| `src/components/SeedPanel.tsx` | The dashboard panel, registered in `admin.components.beforeDashboard`. It renders nothing in production.     |
 
 The seed passes `overrideAccess: true` and the request to each call, so it can write fields people can't, such as [autonumber](/fields/autonumber#seeds-and-migrations) numbers. It doesn't import anything from `src/agents`, so it keeps working when the app has no AI.
 
-The endpoint refuses a request with no signed-in user with `403`. If the seed throws, it logs the error and answers `500`; otherwise it answers `{ "success": true }`:
+In production the endpoint answers `404` and changes nothing. It refuses a request with no signed-in user with `403`. If the seed throws, it logs the error and answers `500`; otherwise it answers `{ "success": true }`:
 
 ```ts
 import type { Endpoint } from 'frogbot'
@@ -56,6 +56,10 @@ export function seedEndpoint(): Endpoint {
     path: '/seed',
     method: 'post',
     handler: async (req) => {
+      if (process.env.NODE_ENV === 'production') {
+        return Response.json({ error: 'Seeding is off in production.' }, { status: 404 })
+      }
+
       if (!req.user) {
         return Response.json({ error: 'Sign in to seed the database.' }, { status: 403 })
       }

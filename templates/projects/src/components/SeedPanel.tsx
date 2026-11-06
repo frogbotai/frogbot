@@ -9,6 +9,12 @@ type SeedState =
   | { status: 'failed'; error: string };
 
 export function SeedPanel() {
+  if (process.env.NODE_ENV === 'production') return null;
+
+  return <SeedForm />;
+}
+
+function SeedForm() {
   const { config } = useConfig();
   const router = useRouter();
   const [state, setState] = useState<SeedState>({ status: 'idle' });
