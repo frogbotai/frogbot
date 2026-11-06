@@ -157,10 +157,10 @@ describe('file references', () => {
       [metadataPath]: () =>
         Response.json({
           id: 'asset-1',
-          filename: 'report-original.pdf',
+          filename: 'report.pdf',
           mimeType: 'application/pdf',
         }),
-      [`/${assetsSlug}/file/report-original.pdf`]: () =>
+      [`/${assetsSlug}/file/report.pdf`]: () =>
         new Response('%PDF-1.7', { headers: { 'content-type': 'application/pdf' } }),
     });
 

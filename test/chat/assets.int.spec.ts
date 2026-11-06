@@ -506,7 +506,7 @@ describe('chat assets', () => {
 
     expect(response.status).toBe(201);
     expect(doc).toMatchObject({
-      filename: 'report-original.docx',
+      filename: 'report.docx',
       mimeType: DOCX_TYPE,
       text: reportText,
     });
@@ -524,7 +524,7 @@ describe('chat assets', () => {
 
     expect(response.status).toBe(201);
     expect(doc).toMatchObject({
-      filename: 'budget-original.xlsx',
+      filename: 'budget.xlsx',
       mimeType: XLSX_TYPE,
       text: budgetText,
     });
@@ -622,9 +622,9 @@ describe('chat assets', () => {
       { headers: { authorization: `JWT ${ownerToken}` } },
     );
 
-    expect(record).toMatchObject({ id: doc.id, filename: 'selected-original.docx' });
+    expect(record).toMatchObject({ id: doc.id, filename: 'selected.docx' });
     expect(record).not.toHaveProperty('text');
-    expect(selected).toMatchObject({ id: doc.id, filename: 'selected-original.docx' });
+    expect(selected).toMatchObject({ id: doc.id, filename: 'selected.docx' });
     expect(selected).not.toHaveProperty('text');
   });
 
@@ -796,7 +796,7 @@ describe('chat assets', () => {
       .catch((error: unknown) => error);
 
     expect(uploaded).toMatchObject({
-      filename: 'sdk-original.docx',
+      filename: 'sdk.docx',
       mimeType: DOCX_TYPE,
       text: reportText,
     });

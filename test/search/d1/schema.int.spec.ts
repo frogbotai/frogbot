@@ -21,9 +21,8 @@ describe('D1 search schema push', () => {
   const push = async () => {
     const { db } = booted.payload;
 
-    const result = (await db
-      .requireDrizzleKit()
-      .pushSchema(db.schema, db.drizzle as never)) as PushResult;
+    const kit = await db.requireDrizzleKit();
+    const result = (await kit.pushSchema(db.schema, db.drizzle as never)) as PushResult;
 
     await result.apply();
 

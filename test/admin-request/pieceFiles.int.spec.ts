@@ -77,7 +77,7 @@ describe('customApiCall binary responses', () => {
     const doc = await booted.frogbot.findByID({ collection: filesSlug, id, overrideAccess: true });
 
     expect(doc).toMatchObject({
-      filename: 'q3-original.pdf',
+      filename: 'q3.pdf',
       mimeType: 'application/pdf',
       filesize: 4,
     });

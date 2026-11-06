@@ -38,7 +38,7 @@ export type SchemaAdapter = {
   tablesFilter?: string[];
   drizzle: unknown;
   execute: (args: { drizzle: unknown; raw: string }) => Promise<unknown>;
-  requireDrizzleKit: () => {
+  requireDrizzleKit: () => Promise<{
     pushSchema: (
       schema: Record<string, unknown>,
       drizzle: unknown,
@@ -46,7 +46,7 @@ export type SchemaAdapter = {
       tablesFilter?: string[],
       extensions?: string[],
     ) => Promise<{ statementsToExecute: string[]; apply: () => Promise<void> }>;
-  };
+  }>;
 };
 
 type SchemaHook = (args: { adapter: SchemaAdapter; schema: unknown }) => unknown;
@@ -183,7 +183,7 @@ async function pushPasses(
   reconciled: Reconciled,
   query: Query | undefined,
 ): Promise<{ ok: true; applied: string[] } | { ok: false; error: string; applied: string[] }> {
-  const { pushSchema } = adapter.requireDrizzleKit();
+  const { pushSchema } = await adapter.requireDrizzleKit();
   const applied: string[] = [];
   const keptTables = new Set(
     reconciled.kept.flatMap((item) => (item.kind === 'table' ? [item.table] : [])),

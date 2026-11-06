@@ -54,7 +54,11 @@ describe('Payload plugin adapters', () => {
         '@frogbotai/plugin-import-export/rsc#ImportExportProvider',
       ]),
     );
-    expect(config.jobs?.tasks).toEqual(expect.arrayContaining([appTask]));
+    expect(config.jobs?.tasks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ slug: 'app-task', inputSchema: [], outputSchema: [] }),
+      ]),
+    );
     expect(config.jobs?.tasks?.map(({ slug }) => slug)).toEqual(
       expect.arrayContaining(['app-task', 'frogbot-sweep-waitpoints', 'frogbot-cleanup-kv']),
     );

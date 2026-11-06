@@ -251,7 +251,7 @@ describe('aiPolicyPlugin', () => {
 
     const task = result.jobs!.tasks!.find(({ slug }) => slug === 'plugin-ai-policy-reset-spend');
     const update = vi.fn();
-    const req = { payload: { update } };
+    const req = { frogbot: { update } };
 
     expect(result.jobs!.tasks!.map(({ slug }) => slug)).toEqual([
       'other',

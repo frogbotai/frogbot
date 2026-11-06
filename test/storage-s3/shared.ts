@@ -7,7 +7,7 @@ export const messagesSlug = 'messages';
 export const filesSlug = 'files';
 export const chatAssetsSlug = 'frogbot-chat-assets';
 export const agentSlug = 'support';
-export const modelPort = testPort(3988);
+export const modelPort = testPort(3998);
 
 export const bucket = 'frogbot-test-bucket';
 

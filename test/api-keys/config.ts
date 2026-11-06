@@ -8,7 +8,7 @@ import { testPort } from '../__helpers/shared/testPorts.js';
 
 export const agentSlug = 'api-key-policy';
 
-export const upstreamPort = testPort(3988);
+export const upstreamPort = testPort(3999);
 
 export const addTenant: Plugin = (config) => ({
   ...config,

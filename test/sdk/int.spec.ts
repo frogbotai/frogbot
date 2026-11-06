@@ -184,7 +184,7 @@ describe('FrogBot SDK against a running app', () => {
 
       expect(media).toMatchObject({
         alt: 'A frog',
-        filename: 'frog-original.txt',
+        filename: 'frog.txt',
         mimeType: 'text/plain',
       });
     });

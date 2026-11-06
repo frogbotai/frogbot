@@ -129,7 +129,7 @@ describe('SQLite search migrations', () => {
   });
 
   it('adds search objects to a populated database and removes them on the way down', async () => {
-    const kit = db.requireDrizzleKit();
+    const kit = await db.requireDrizzleKit();
     const current = (await kit.generateDrizzleJson(db.schema)) as Snapshot;
     const { frogbot: _search, ...base } = current;
 
@@ -167,7 +167,7 @@ describe('SQLite search migrations', () => {
   });
 
   it('rebuilds only the search objects of tables the schema migration changes', async () => {
-    const kit = db.requireDrizzleKit();
+    const kit = await db.requireDrizzleKit();
     const current = (await kit.generateDrizzleJson(db.schema)) as Snapshot;
     const previous = structuredClone(current);
 
@@ -192,7 +192,7 @@ describe('SQLite search migrations', () => {
   });
 
   it('rebuilds a search index whose definition changed', async () => {
-    const kit = db.requireDrizzleKit();
+    const kit = await db.requireDrizzleKit();
     const current = (await kit.generateDrizzleJson(db.schema)) as Snapshot;
     const previous = structuredClone(current);
     const group = 'frogbot_search_search_pages_content';
