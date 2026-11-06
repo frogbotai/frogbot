@@ -77,9 +77,9 @@ test('no stroked icon draws outside its box', async ({ page }) => {
   expect(overflowing).toEqual([]);
 });
 
-test('InvalidStepIcon, StoplightIcon and XIcon are centred', async ({ page }) => {
+test('InvalidStepIcon, StoplightIcon, TwitterIcon and XIcon are centred', async ({ page }) => {
   const geometry = await measureIcons(page);
-  const centred = ['InvalidStepIcon', 'StoplightIcon', 'XIcon'];
+  const centred = ['InvalidStepIcon', 'StoplightIcon', 'TwitterIcon', 'XIcon'];
 
   const offCentre = geometry
     .filter(({ name }) => centred.includes(name))
