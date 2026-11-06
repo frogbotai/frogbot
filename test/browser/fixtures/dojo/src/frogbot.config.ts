@@ -1,4 +1,5 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
+import { dojo } from '@frogbotai/plugin-dojo';
 import { buildConfig } from 'frogbot';
 
 import { agentSlug, chatsSlug, messagesSlug, notesSlug, usersSlug } from '../shared';
@@ -19,6 +20,7 @@ export default buildConfig({
       ],
     },
   ],
+  plugins: [dojo({ badge: true })],
   ai: {
     providers: {
       browser: {

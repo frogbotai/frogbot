@@ -448,21 +448,33 @@ describe('dojo() badge', () => {
 
   const providers = (config: FrogBotConfig) => config.admin?.components?.providers;
 
-  it("adds the badge after the app's own providers", () => {
+  const withBadge = (config: FrogBotConfig) => dojo({ badge: true })(config) as FrogBotConfig;
+
+  it('adds no badge by default', () => {
     expect(providers(apply(template({ admin: { components: { providers: [own] } } })))).toEqual([
       own,
-      badge,
     ]);
+    expect(providers(dojo({})(template()) as FrogBotConfig)).toBeUndefined();
   });
 
-  it('adds the badge to an app with no admin config', () => {
-    expect(providers(apply(template()))).toEqual([badge]);
+  it('adds no badge with badge: false', () => {
+    expect(providers(dojo({ badge: false })(template()) as FrogBotConfig)).toBeUndefined();
+  });
+
+  it("adds the badge after the app's own providers with badge: true", () => {
+    expect(providers(withBadge(template({ admin: { components: { providers: [own] } } })))).toEqual(
+      [own, badge],
+    );
+  });
+
+  it('adds the badge to an app with no admin config with badge: true', () => {
+    expect(providers(withBadge(template()))).toEqual([badge]);
   });
 
   it('lists the badge for the import map, but adds no provider, without DOJO=1', () => {
     vi.stubEnv('DOJO', undefined);
 
-    const applied = apply(template({ admin: { components: { providers: [own] } } }));
+    const applied = withBadge(template({ admin: { components: { providers: [own] } } }));
 
     expect(providers(applied)).toEqual([own]);
     expect((applied.admin as { dependencies?: unknown }).dependencies).toEqual(dojoDependencies);
@@ -487,7 +499,7 @@ describe('dojo() badge', () => {
   });
 
   it('adds the badge once when dojo() runs twice', () => {
-    const twice = apply(apply(template()));
+    const twice = withBadge(withBadge(template()));
 
     expect(providers(twice)).toEqual([badge]);
     expect((twice.admin as { dependencies?: unknown }).dependencies).toEqual(dojoDependencies);
