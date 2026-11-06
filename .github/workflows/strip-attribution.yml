@@ -103,43 +103,59 @@ jobs:
 
 
           TRUSTED = {'OWNER', 'MEMBER', 'COLLABORATOR'}
+          # The Actions token can't see private org membership, so members can show up as CONTRIBUTOR.
+          # Trust named logins, then fall back to the author's permission on the repo.
+          LOGINS = set(os.environ.get('TRUSTED_LOGINS', 'cgilly2fast').split())
+          _perm = {}
+
+
+          def trusted(item):
+              login = (item.get('user') or {}).get('login', '')
+              if item.get('author_association') in TRUSTED or login in LOGINS:
+                  return True
+              if login not in _perm:
+                  out = subprocess.run(['gh', 'api', f'repos/{repo}/collaborators/{login}/permission', '--jq', '.permission'],
+                                       capture_output=True, text=True)
+                  _perm[login] = out.returncode == 0 and out.stdout.strip() in ('admin', 'maintain', 'write')
+              return _perm[login]
+
           repo = os.environ['REPO']
           event = json.load(open(os.environ['GITHUB_EVENT_PATH']))
           name = os.environ['EVENT']
 
           if name == 'issues':
               it = event['issue']
-              if it['author_association'] in TRUSTED:
+              if trusted(it):
                   fix(f"repos/{repo}/issues/{it['number']}", it['body'])
           elif name == 'issue_comment':
               c = event['comment']
-              if c['author_association'] in TRUSTED:
+              if trusted(c):
                   fix(f"repos/{repo}/issues/comments/{c['id']}", c['body'])
           elif name == 'pull_request_target':
               pr = event['pull_request']
-              if pr['author_association'] in TRUSTED:
+              if trusted(pr):
                   fix(f"repos/{repo}/pulls/{pr['number']}", pr['body'])
           elif name == 'pull_request_review':
               r = event['review']
-              if r['author_association'] in TRUSTED:
+              if trusted(r):
                   fix(f"repos/{repo}/pulls/{event['pull_request']['number']}/reviews/{r['id']}", r['body'], 'PUT')
           elif name == 'pull_request_review_comment':
               c = event['comment']
-              if c['author_association'] in TRUSTED:
+              if trusted(c):
                   fix(f"repos/{repo}/pulls/comments/{c['id']}", c['body'])
           elif name == 'workflow_dispatch':
               for it in items(f"repos/{repo}/issues?state=all&per_page=100"):
-                  if it['author_association'] in TRUSTED:
+                  if trusted(it):
                       fix(f"repos/{repo}/issues/{it['number']}", it['body'])
                   if 'pull_request' in it:
                       for r in items(f"repos/{repo}/pulls/{it['number']}/reviews?per_page=100"):
-                          if r['author_association'] in TRUSTED:
+                          if trusted(r):
                               fix(f"repos/{repo}/pulls/{it['number']}/reviews/{r['id']}", r['body'], 'PUT')
               for c in items(f"repos/{repo}/issues/comments?per_page=100"):
-                  if c['author_association'] in TRUSTED:
+                  if trusted(c):
                       fix(f"repos/{repo}/issues/comments/{c['id']}", c['body'])
               for c in items(f"repos/{repo}/pulls/comments?per_page=100"):
-                  if c['author_association'] in TRUSTED:
+                  if trusted(c):
                       fix(f"repos/{repo}/pulls/comments/{c['id']}", c['body'])
           PY
           python3 strip.py
