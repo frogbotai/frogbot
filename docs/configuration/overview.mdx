@@ -79,7 +79,7 @@ export default buildConfig({
 | `serverURL` | `string` | `''` | Absolute URL of your app, such as `https://example.com`, with no path. Used for links in emails and file URLs, and added to `csrf`. |
 | `settings` | `SettingsEntry[]` | — | Pages added to the admin Settings area. See [Register a settings page](/admin/admin-navigation#register-a-settings-page). |
 | `storage` | `StorageAdapter[]` | — | File storage adapters from `@frogbotai/storage-*`. The first also serves FrogBot's own upload collections. See [Storage adapters](/upload/storage-adapters). |
-| `telemetry` | `boolean` | `true` | Sends anonymous usage events. Set `false` to turn it off. |
+| `telemetry` | `boolean` | `true` | Sends anonymous usage events when the app starts and the admin panel loads. Set `false` to turn it off. See [Control telemetry](#control-telemetry) for what is sent and where. |
 | `tools` | `readonly (AnyTool \| MCPServer)[]` | — | Tools and [MCP servers](/mcp/overview) attached to every agent. See [Share tools across agents](/agents/overview#share-tools-across-agents). |
 | `typescript` | `TypeScriptConfig` | See [Type generation options](/typescript/generating-types#type-generation-options) | Type generation options. |
 | `upload` | `FetchAPIFileUploadOptions` | `{}` | Options for parsing uploaded files on every upload collection, and the `transformers` that process them, such as `sharpTransformer()`. See [Uploads](/upload/overview#frogbot-wide-upload-options). |
@@ -331,3 +331,41 @@ Startup applies the configuration in this order.
 8. Run configured `onInit` callbacks.
 
 When workers are configured, sanitization also mounts `GET /api/agents` and `POST /api/agents/:slug`. The standalone server mounts authenticated gateway traffic under `/api/v1/*` before forwarding other `/api/*` requests to FrogBot.
+
+---
+
+## Control telemetry
+
+FrogBot sends anonymous usage events unless you set `telemetry: false`. Each event is one HTTPS `POST` of JSON to `https://telemetry.payloadcms.com/events`, a server run by the maintainers of Payload, the open-source framework FrogBot is built on. FrogBot's own servers don't receive them. A failed send is ignored and never slows a request.
+
+| Event | Sent when |
+| --- | --- |
+| `server-init` | The app starts, in development and in production. |
+| `admin-init` | The admin panel loads its permissions (`GET /api/access`). |
+
+Every event carries these fields. Each ID is a SHA-256 hash salted with your `secret`, so the receiver can't recover the value behind it.
+
+| Field | Holds |
+| --- | --- |
+| `type` | `server-init` or `admin-init`. |
+| `envID` | A random ID made on the first send and kept in `payload-nodejs/config.json` under your user config folder, such as `~/.config` on Linux. Repeat events from one machine share it. |
+| `projectID`, `projectIDSource` | A hash of the git remote URL, or else the `package.json` name, `serverURL` or the working directory, and which of the four it used. |
+| `domainID` | `admin-init` only. A hash of the request's `Host` header. |
+| `userID` | `admin-init` only, when someone is signed in. A hash of their user ID. |
+| `nodeEnv`, `nodeVersion`, `isCI`, `ciName` | `NODE_ENV`, the Node.js version, and the CI provider when running in CI. |
+| `dbAdapter`, `emailAdapter`, `uploadAdapters` | Adapter names, such as `sqlite`. |
+| `plugins` | Slugs starting with `@payloadcms/`. Your own plugins are never listed. |
+| `localizationEnabled`, `locales`, `localizationDefaultLocale` | Whether localization is on, and its locale codes. |
+| `payloadVersion`, `frameworkAdapter`, `projectCohorts`, `figmaProduct` | Values the receiver uses to group projects. A FrogBot app sends `''`, `'unknown'` and `['oss']`, and leaves out `figmaProduct`. |
+| `basicDenominators`, `authentication`, `adminCustomization`, `jobsAndQueues`, `versionsAndDrafts`, `uploadAndMedia`, `previewAndLivePreview`, `i18n`, `richTextFeatures`, `hierarchyCollectionCount`, `orderableCollectionCount`, `queryPresetCollectionCount`, `trashCollectionCount` | Counts and on/off flags describing your config, such as how many collections, auth collections, custom admin views, jobs tasks and draft collections it has, and which rich text features (`blocks`, `relationship`, `table`, `upload`) it uses. Never names or slugs. |
+
+Events never include documents, field values, collection names, emails, file contents, or your `secret`. The receiver sees your server's IP address, as with any HTTPS request.
+
+Run with `PAYLOAD_TELEMETRY_DEBUG=1` to log each event in full instead of sending it. To turn telemetry off:
+
+```ts
+export default buildConfig({
+  // required options omitted
+  telemetry: false
+})
+```

@@ -241,6 +241,10 @@ Contributions are welcome! Read [CONTRIBUTING.md](./CONTRIBUTING.md) before open
 - [GitHub Issues](https://github.com/frogbotai/frogbot/issues)
 - [GitHub Discussions](https://github.com/frogbotai/frogbot/discussions)
 
+## Telemetry
+
+FrogBot apps send anonymous usage events when they start and when the admin panel loads: counts and flags about your config, never your content. [See what is sent and where](https://docs.frogbot.ai/configuration/overview#control-telemetry), or set `telemetry: false` in your config to turn it off.
+
 ## License
 
 [MIT](./LICENSE) © Colby Gilbert

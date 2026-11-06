@@ -12,6 +12,11 @@ export const ALLOWLIST = [
     heading: '## Wrapping Payload field factories',
     reason: 'plugin authors wrap upstream field factories',
   },
+  {
+    file: 'docs/configuration/overview.mdx',
+    heading: '## Control telemetry',
+    reason: 'a privacy disclosure names who receives the usage events',
+  },
 ];
 
 const SCAFFOLD_ROOTS = ['templates', 'packages/create-frogbot-app/dist/templates', 'examples'];

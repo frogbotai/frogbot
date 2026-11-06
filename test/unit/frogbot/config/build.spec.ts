@@ -517,6 +517,12 @@ describe('frogbot buildConfig', () => {
       expect(payloadConfig).not.toHaveProperty('cli');
     });
 
+    it('passes `telemetry: false` through, so the usage events are not sent', async () => {
+      const result = await buildConfig(makeConfig({ telemetry: false }));
+
+      expect((await result._internal.payloadConfig).telemetry).toBe(false);
+    });
+
     it('every user collection has a `beforeOperation` hook prepended in payload config', async () => {
       const config = makeConfig({
         collections: [
