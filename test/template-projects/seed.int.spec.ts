@@ -143,12 +143,16 @@ describe('projects template seed', () => {
     );
   });
 
-  it('seeds in production too', async () => {
+  it('refuses in production and changes nothing', async () => {
     const { headers } = await signUp(ownerCredentials);
 
     vi.stubEnv('NODE_ENV', 'production');
 
-    expect((await seed(headers)).body).toEqual({ success: true });
-    expect(await counts()).toEqual({ projects: 3, tasks: 12 });
+    const response = await seed(headers);
+
+    expect(response.status).toBe(404);
+    expect(response.body.error).toBe('Seeding is off in production.');
+    expect(await counts()).toEqual({ projects: 0, tasks: 0 });
+    expect((await signIn({ email: DEMO_EMAIL, password: DEMO_PASSWORD })).status).toBe(401);
   });
 });
