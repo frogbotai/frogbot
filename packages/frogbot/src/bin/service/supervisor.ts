@@ -98,7 +98,20 @@ type SchemaLine = {
   error?: string;
 };
 
-async function syncSchema(app: App, reported: Set<string>): Promise<void> {
+/** Writes the schema step's kept line when it differs from the last one; returns it as the new last. */
+export function reportKept(
+  kept: string[],
+  last: string | undefined,
+  write: (line: string) => void,
+): string {
+  const line = kept.join('\n');
+
+  if (line && line !== last) write(line);
+
+  return line;
+}
+
+async function syncSchema(app: App, reported: { kept?: string }): Promise<void> {
   let output: string;
 
   try {
@@ -128,12 +141,9 @@ async function syncSchema(app: App, reported: Set<string>): Promise<void> {
     throw new StepError('schema sync printed no result', output);
   }
 
-  for (const kept of line.kept ?? []) {
-    if (reported.has(kept)) continue;
-
-    reported.add(kept);
-    app.log.write('schema', kept);
-  }
+  reported.kept = reportKept(line.kept ?? [], reported.kept, (kept) =>
+    app.log.write('schema', kept),
+  );
 
   if (!line.ok) throw new StepError(`schema sync refused: ${line.error}`, '');
   if (line.applied) app.log.write('supervisor', `schema sync applied ${line.applied} statements`);
@@ -182,7 +192,7 @@ export async function supervise({
   const proxy = createProxy();
   const backoff = createBackoff();
   const draining = new Map<Slot, ChildProcess>();
-  const reported = new Set<string>();
+  const reported: { kept?: string } = {};
   let current: Server | undefined;
   let booted = false;
   let stopping = false;

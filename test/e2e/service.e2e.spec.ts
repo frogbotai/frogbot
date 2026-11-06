@@ -351,7 +351,7 @@ export const noteFields: NonNullable<CollectionConfig['fields']> = [{ name: 'tit
       BUILD,
     );
 
-    expect(serviceLog(one)).toMatch(/notes\.due_date is gone from the code/);
+    expect(serviceLog(one)).toMatch(/Schema sync kept .*notes\.due_date/);
     expect(serviceLog(one)).not.toMatch(/ALTER TABLE/);
     expect(serviceLog(one)).not.toContain('\u001b[');
 

@@ -70,7 +70,7 @@ describe('the schema sync when Payload connects outside production', () => {
 
     expect(docs[0]).not.toHaveProperty('company');
     expect(removed.logs.info).toContain(
-      '[db-sqlite] deals.company is gone from the code; its 3 values stay hidden. Add "company" back to show them.',
+      '[db-sqlite] Schema sync kept 1 removed column with their data, hidden: deals.company. Nothing is deleted; a field or collection added back shows its data again.',
     );
     expect(removed.logs.error).toEqual([]);
 
@@ -86,7 +86,7 @@ describe('the schema sync when Payload connects outside production', () => {
     });
 
     expect(shown.docs.map((doc) => doc.company)).toEqual(['Co 0', 'Co 1', 'Co 2']);
-    expect(back.logs.info.filter((line) => line.includes('is gone'))).toEqual([]);
+    expect(back.logs.info.filter((line) => line.includes('Schema sync kept'))).toEqual([]);
 
     await back.close();
   });
