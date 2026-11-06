@@ -2,8 +2,9 @@ name: pr-message
 
 # PRs are squash-merged with the PR title as the whole commit message. This checks the title
 # with frogbot's scripts/commit-msg.mjs, the subject rule `pnpm ticket land` applied, and
-# refuses commits with Co-authored-by or "Generated with" lines, which GitHub would carry
-# into the squash.
+# refuses commits that carry attribution lines (Co-authored-by, Claude-Session, "Generated
+# with", claude.ai links) or are authored as Claude: GitHub turns other commit authors and
+# Co-authored-by lines into co-author credit on the squash commit.
 on:
   pull_request:
     types: [opened, edited, reopened, synchronize]
@@ -28,10 +29,13 @@ jobs:
         env:
           TITLE: ${{ github.event.pull_request.title }}
       - run: |
-          found=$(gh api "repos/$REPO/pulls/$PR/commits?per_page=100" --jq '.[] | .sha[0:7] + " " + .commit.message' | grep -iE '^co-authored-by:|generated with' || true)
-          if [ -n "$found" ]; then
-            echo "pr-message: these commits carry attribution lines; rewrite them without Co-authored-by or Generated with:"
-            gh api "repos/$REPO/pulls/$PR/commits?per_page=100" --jq '.[] | select(.commit.message | test("(?im)^co-authored-by:|generated with")) | .sha[0:7] + " " + (.commit.message | split("\n")[0])'
+          commits=$(gh api "repos/$REPO/pulls/$PR/commits?per_page=100")
+          lines=$(jq -r '.[] | .sha[0:7] as $s | .commit.message | split("\n")[] | select(test("^\\s*(co-authored-by:|claude-session:|(🤖\\s*)?_?generated (with|by)\\b|(written|contributed|authored) (by|with) claude)|claude\\.ai/code"; "i")) | $s + " " + .' <<<"$commits")
+          authors=$(jq -r '.[] | select([.commit.author.email, .commit.committer.email] | any(test("anthropic\\.com$"; "i"))) | .sha[0:7] + " " + .commit.author.name + " <" + .commit.author.email + ">"' <<<"$commits")
+          if [ -n "$lines" ] || [ -n "$authors" ]; then
+            [ -n "$lines" ] && printf 'pr-message: attribution lines in commits (GitHub would carry Co-authored-by into the squash):\n%s\n' "$lines"
+            [ -n "$authors" ] && printf 'pr-message: commits authored or committed as Claude (the squash would credit Claude as a co-author):\n%s\n' "$authors"
+            echo "Rewrite them as the owner with no attribution lines, e.g. git rebase -x 'git commit --amend --no-edit --reset-author' origin/main"
             exit 1
           fi
         env:
