@@ -528,4 +528,13 @@ describe('dojo() as the platform plugin', () => {
 
     expect(prefixDefault(await sanitized._internal.payloadConfig, 'media')).toBe('media');
   });
+
+  it('adds no badge from its default export', async () => {
+    const { default: platformPlugin } =
+      await import('../../../packages/plugins/plugin-dojo/src/index.js');
+
+    expect(
+      (platformPlugin(template()) as FrogBotConfig).admin?.components?.providers,
+    ).toBeUndefined();
+  });
 });
