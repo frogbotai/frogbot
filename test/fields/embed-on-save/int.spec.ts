@@ -63,7 +63,16 @@ describe('embed on save', () => {
     return booted.frogbot.create({ collection: articlesSlug, data, draft, overrideAccess: true });
   }
 
+  // Workaround: https://github.com/payloadcms/payload/issues/17216, remove when two draft saves in one millisecond no longer both stay latest
+  function nextMillisecond(): void {
+    const start = Date.now();
+
+    while (Date.now() === start);
+  }
+
   function updateArticle(id: Article['id'], data: Partial<Article>, draft?: boolean) {
+    nextMillisecond();
+
     return booted.frogbot.update({
       collection: articlesSlug,
       id,

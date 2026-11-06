@@ -39,16 +39,6 @@ function text(label: string, model: string, features: LiveFeature[]): LiveProvid
   return { model: models(label, 'text', [model])[0], features };
 }
 
-function bedrockKeys(): string[] {
-  if (process.env.AWS_PROFILE) return ['AWS_PROFILE'];
-
-  if (process.env.AWS_ACCESS_KEY_ID) {
-    return ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_REGION'];
-  }
-
-  return ['AWS_BEARER_TOKEN_BEDROCK'];
-}
-
 const USER_FEATURES: LiveFeature[] = ['tools', 'vision', 'pdf', 'json', 'cache'];
 
 export const LIVE_MATRIX: LiveProviderEntry[] = [
@@ -121,12 +111,6 @@ export const LIVE_MATRIX: LiveProviderEntry[] = [
     keys: ['VOYAGE_API_KEY'],
     embeddings: models('voyage', 'embeddings', ['voyage-3']),
     rerank: models('voyage', 'rerank', ['rerank-2.5']),
-  },
-  {
-    label: 'bedrock',
-    provider: 'bedrock',
-    keys: bedrockKeys(),
-    text: text('bedrock', 'global.anthropic.claude-sonnet-5', [...USER_FEATURES, 'thinking']),
   },
   {
     label: 'vertex',

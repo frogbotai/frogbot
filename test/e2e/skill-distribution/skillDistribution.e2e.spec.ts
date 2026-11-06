@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { TEMPLATES } from '../../../packages/create-frogbot-app/src/templates.js';
 import {
   canonicalSkill,
   claudeClient,
@@ -291,20 +292,23 @@ describe('skill distribution local installation', () => {
       if (preparation) fs.rmSync(preparation.root, { recursive: true, force: true });
     });
 
-    it('packs all 24 unchanged skill files, the blank template, bin and synchronized version', () => {
+    it('packs all 24 unchanged skill files, every template, bin and synchronized version', () => {
       expectFullSkill(path.join(packed, 'dist/skills/frogbot'));
 
       expect(readJSON<{ version: string }>(path.join(packed, 'package.json')).version).toBe(
         packageVersion,
       );
       expect(fs.statSync(path.join(packed, 'bin.js')).isFile()).toBe(true);
-      expect(fs.readdirSync(path.join(packed, 'dist/templates'))).toEqual(['blank']);
-      expect(
-        fs.statSync(path.join(packed, 'dist/templates/blank/src/frogbot.config.ts')).isFile(),
-      ).toBe(true);
-      expect(fs.statSync(path.join(packed, 'dist/templates/blank/package.json')).isFile()).toBe(
-        true,
+      expect(fs.readdirSync(path.join(packed, 'dist/templates')).sort()).toEqual(
+        TEMPLATES.map(({ dir }) => dir).sort(),
       );
+
+      for (const { dir } of TEMPLATES) {
+        const template = path.join(packed, 'dist/templates', dir);
+
+        expect(fs.statSync(path.join(template, 'src/frogbot.config.ts')).isFile()).toBe(true);
+        expect(fs.statSync(path.join(template, 'package.json')).isFile()).toBe(true);
+      }
 
       const help = successful(fixture, process.execPath, [path.join(packed, 'bin.js'), '--help']);
 

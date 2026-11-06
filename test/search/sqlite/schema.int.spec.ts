@@ -25,7 +25,8 @@ describe('SQLite search schema push', () => {
     );
 
   const push = async () => {
-    const result = (await db.requireDrizzleKit().pushSchema(db.schema, db.drizzle as never)) as {
+    const kit = await db.requireDrizzleKit();
+    const result = (await kit.pushSchema(db.schema, db.drizzle as never)) as {
       apply: () => Promise<void>;
       hasDataLoss: boolean;
       statementsToExecute: string[];

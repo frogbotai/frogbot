@@ -3,7 +3,9 @@ import type { RequireDrizzleKit } from '@payloadcms/drizzle';
 import type { SearchObjectGroup, SearchSchema } from '../types.js';
 import { getCreateStatements, getDropStatements } from './statements.js';
 
-type DrizzleSnapshotJSON = Parameters<ReturnType<RequireDrizzleKit>['generateMigration']>[0];
+type DrizzleSnapshotJSON = Parameters<
+  Awaited<ReturnType<RequireDrizzleKit>>['generateMigration']
+>[0];
 
 type SearchSnapshot = DrizzleSnapshotJSON & { frogbot?: { search?: SearchSchema } };
 

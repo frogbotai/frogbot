@@ -24,8 +24,8 @@ export function createSchemaBuilder({
     const checkPrerequisites = async () => assertPrerequisites?.({ adapter, collections });
     const getSchema = () => getSearchSchema({ adapter, collections });
 
-    adapter.requireDrizzleKit = (() => {
-      const kit = requireDrizzleKit();
+    adapter.requireDrizzleKit = (async () => {
+      const kit = await requireDrizzleKit();
 
       return {
         ...kit,

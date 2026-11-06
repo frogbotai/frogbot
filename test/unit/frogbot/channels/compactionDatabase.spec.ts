@@ -36,7 +36,7 @@ const lookup = {
 vi.mock('frogbot/pieces', () => import('../../../../packages/frogbot/src/exports/pieces.js'));
 
 const signingSecret = 'compaction-database-secret';
-const modelPort = testPort(3996);
+const modelPort = testPort(4000);
 const slackCalls: Array<{ method: string; body: Record<string, unknown> }> = [];
 let slackTs = 0;
 let eventId = 0;

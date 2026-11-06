@@ -132,7 +132,7 @@ async function readLatestSnapshot(adapter: DrizzleAdapter): Promise<Snapshot | u
 
   if (!latest) return undefined;
 
-  const { generateDrizzleJson, upSnapshot } = adapter.requireDrizzleKit();
+  const { generateDrizzleJson, upSnapshot } = await adapter.requireDrizzleKit();
   const current = (await generateDrizzleJson(adapter.schema)).version;
   const snapshot: Snapshot = JSON.parse(
     readFileSync(path.join(adapter.migrationDir, latest), 'utf8'),
@@ -296,7 +296,9 @@ function unionSnapshot(previous: Snapshot, next: Snapshot): Snapshot {
   return union;
 }
 
-type GenerateMigration = ReturnType<DrizzleAdapter['requireDrizzleKit']>['generateMigration'];
+type GenerateMigration = Awaited<
+  ReturnType<DrizzleAdapter['requireDrizzleKit']>
+>['generateMigration'];
 
 type KitSnapshot = Parameters<GenerateMigration>[0];
 
@@ -341,7 +343,7 @@ export const dynamic: DynamicMigrationTemplate = async ({ filePath, payload }) =
     );
   }
 
-  const { generateDrizzleJson, generateMigration } = adapter.requireDrizzleKit();
+  const { generateDrizzleJson, generateMigration } = await adapter.requireDrizzleKit();
   const next = (await generateDrizzleJson(adapter.schema)) as Snapshot;
   const columns = droppedAuthorColumns({ adapter, previous, next });
   const kept = keepColumns({ columns, previous, next });
