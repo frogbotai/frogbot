@@ -1,6 +1,7 @@
 import type { Field, JobsConfig as PayloadJobsConfig } from 'payload';
 
 import { toPayloadJobs } from '../seams/config.js';
+import { deleteOrphanJobs } from './orphans.js';
 import { withJobRun } from './run.js';
 import type { JobsConfig } from './types.js';
 import { sweepWaitpoints } from './waitpoints/operations.js';
@@ -87,6 +88,7 @@ export function resolveJobsConfig(jobs: JobsConfig = {}): PayloadJobsConfig & {
         interfaceName: 'TaskFrogBotSweepWaitpoints',
         schedule: [{ cron: '* * * * *', queue: 'default' }],
         handler: async ({ req }) => {
+          await deleteOrphanJobs({ req });
           await sweepWaitpoints({ req });
 
           return { output: {} };

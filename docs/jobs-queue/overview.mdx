@@ -299,7 +299,7 @@ Each run claims jobs with a fresh `processingToken` and a `processingUntil` leas
 
 Choose a duration with headroom for event-loop pauses and database delays; it is not a maximum job runtime.
 
-**Keep a scheduler and worker running that cover the `default` queue**, or use `allQueues: true` for both scheduling and execution. They can share one process. The `default` queue runs the `frogbot-sweep-waitpoints` task, which expires waits and wakes their jobs.
+**Keep a scheduler and worker running that cover the `default` queue**, or use `allQueues: true` for both scheduling and execution. They can share one process. The `default` queue runs the `frogbot-sweep-waitpoints` task, which expires waits and wakes their jobs. It also deletes failed scheduled jobs whose task is no longer registered, such as one an upgrade removed; the schedule queues a fresh job if the task comes back.
 
 Recovery is **at least once**. A crash, database outage, or event-loop stall can lose the lease after an external action has already happened. The lease protects job updates, not external effects. Make external operations idempotent, for example with the destination service's idempotency key.
 
