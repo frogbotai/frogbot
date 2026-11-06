@@ -78,7 +78,10 @@ describe('agent schedule tasks', () => {
 
     expect(first?.tasks?.[0]).toBe(userTask);
     expect(first?.workflows).toEqual([]);
-    expect(first?.autoRun).toEqual([userAutoRun, { allQueues: true, cron: '* * * * *' }]);
+    expect(first?.autoRun).toEqual([
+      userAutoRun,
+      { allQueues: true, cron: '* * * * *', silent: { info: true } },
+    ]);
     expect(task(first).schedule?.map(({ queue }) => queue)).toEqual([
       'frogbot-schedule:reporter:hourly',
       'frogbot-schedule:reporter:daily',
@@ -124,7 +127,7 @@ describe('agent schedule tasks', () => {
 
     expect(await autoRun(payload)).toEqual([
       { queue: 'user' },
-      { allQueues: true, cron: '* * * * *' },
+      { allQueues: true, cron: '* * * * *', silent: { info: true } },
     ]);
   });
 

@@ -8,6 +8,7 @@ import type { AIConfig, ModelId, SanitizedAIConfig } from '../../../ai/types.js'
 import type { CollectionConfig } from '../../../collections/config/types.js';
 import type { FrogBot } from '../../../frogbot.js';
 import { getFrogBotInstance } from '../../../instanceRegistry.js';
+import { withFrogBotAutoRun } from '../../../jobs/autoRun.js';
 import { flattenTopLevelFields } from '../../../seams/config.js';
 import type { FrogBotRequest } from '../../../types/request.js';
 import type { Field } from '../../config/types.js';
@@ -21,8 +22,6 @@ import {
 import { aiFieldPaths, type AIKind } from './state.js';
 
 type AIFieldTask = { input: AIFieldRunInput; output: Record<string, never> };
-
-type AutorunCronConfig = Extract<NonNullable<JobsConfig['autoRun']>, unknown[]>[number];
 
 type RunDoc = Record<string, unknown> & { _status?: unknown };
 
@@ -282,19 +281,6 @@ async function runAIField({ input, req }: { input: AIFieldRunInput; req: Payload
   }
 }
 
-function withAutoRun(autoRun: JobsConfig['autoRun']): JobsConfig['autoRun'] {
-  const entry: AutorunCronConfig = { allQueues: true, cron: '* * * * *' };
-
-  const append = (entries: AutorunCronConfig[]) =>
-    entries.some((candidate) => isDeepStrictEqual(candidate, entry))
-      ? entries
-      : [...entries, entry];
-
-  if (typeof autoRun === 'function') return async (payload) => append(await autoRun(payload));
-
-  return append(autoRun ?? []);
-}
-
 export function resolveAIFieldTask<T extends JobsConfig>({
   collections,
   jobs,
@@ -326,6 +312,6 @@ export function resolveAIFieldTask<T extends JobsConfig>({
   return {
     ...jobs,
     tasks: [...(jobs.tasks ?? []), task],
-    autoRun: withAutoRun(jobs.autoRun),
+    autoRun: withFrogBotAutoRun(jobs.autoRun),
   };
 }
