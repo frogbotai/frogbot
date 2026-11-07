@@ -15,6 +15,7 @@ describe('iconRegistry', () => {
     expect(iconNames).toContain('calendar');
     expect(iconNames).toContain('shopping-cart');
     expect(iconNames).toContain('chart-bar');
+    expect(iconNames).toContain('map-pin');
     expect(iconNames).not.toContain('create-lucide');
     expect(iconNames).toEqual(configuredIconNames);
   });

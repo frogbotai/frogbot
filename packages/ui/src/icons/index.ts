@@ -77,6 +77,7 @@ export { default as LockIcon } from './icons/LockIcon.js';
 export { default as LogoutRightIcon } from './icons/LogoutRightIcon.js';
 export { default as MagicWandIcon } from './icons/MagicWandIcon.js';
 export { default as MailIcon } from './icons/MailIcon.js';
+export { default as MapPinIcon } from './icons/MapPinIcon.js';
 export { default as MastercardIcon } from './icons/MastercardIcon.js';
 export { default as McpIcon } from './icons/McpIcon.js';
 export { default as MegaphoneIcon } from './icons/MegaphoneIcon.js';

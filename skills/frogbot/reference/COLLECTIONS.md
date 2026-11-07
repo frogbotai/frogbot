@@ -12,6 +12,7 @@ import type { CollectionConfig } from 'frogbot';
 export const Posts: CollectionConfig = {
   slug: 'posts',
   admin: {
+    icon: 'newspaper',
     useAsTitle: 'title',
   },
   fields: [
@@ -47,6 +48,22 @@ export default buildConfig({
 });
 ```
 
+## Icons
+
+Set `admin.icon` on every collection that shows in the sidebar. Without one it shows a folder, and `frogbot check` warns `MISSING_ICON`. Auth collections default to `people`, but write it out. Collections with `admin.hidden` or `admin.group: false` don't need one.
+
+| Kind     | Names                                                                                                     |
+| -------- | --------------------------------------------------------------------------------------------------------- |
+| People   | `people`, `profile`, `user-add`, `ai-user`, `mail`                                                        |
+| Content  | `file`, `newspaper`, `book-open`, `bookmark`, `scroll`, `pencil-edit`, `message-square-text`, `megaphone` |
+| Media    | `image`, `video`, `palette`, `layers`                                                                     |
+| Work     | `briefcase`, `check-list`, `calendar`, `clock`, `flag`, `ticket`, `lightbulb`, `robot`                    |
+| Commerce | `receipt`, `coins`, `shopping-cart`, `package`, `tag`, `chart-bar`                                        |
+| Places   | `map-pin`, `building`, `home`, `web`                                                                      |
+| Settings | `setting`, `shield`, `key-round`, `lock`, `database`, `link-square`, `code`                               |
+
+Your editor autocompletes every built-in name, and an unknown name stops startup with the full list. For anything else, point at a component: `icon: './src/components/LeadsIcon#LeadsIcon'`.
+
 ## Authentication
 
 Set `auth: true` for FrogBot defaults or provide auth options.
@@ -63,6 +80,7 @@ export const Users: CollectionConfig = {
     verify: true,
   },
   admin: {
+    icon: 'people',
     useAsTitle: 'email',
   },
   fields: [
