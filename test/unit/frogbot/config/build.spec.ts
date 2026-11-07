@@ -517,8 +517,8 @@ describe('frogbot buildConfig', () => {
       expect(payloadConfig).not.toHaveProperty('cli');
     });
 
-    it('passes `telemetry: false` through, so the usage events are not sent', async () => {
-      const result = await buildConfig(makeConfig({ telemetry: false }));
+    it("never sends the engine's usage events", async () => {
+      const result = await buildConfig(makeConfig({}));
 
       expect((await result._internal.payloadConfig).telemetry).toBe(false);
     });

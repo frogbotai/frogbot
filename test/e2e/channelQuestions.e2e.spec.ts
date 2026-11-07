@@ -838,7 +838,6 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
 
     config = await buildConfig({
       secret: 'channel-questions-e2e-secret',
-      telemetry: false,
       db: sqliteAdapter({ client: { url: `file:${join(dataDir, 'channel.db')}` } }),
       typescript: { autoGenerate: false },
       jobs: { deleteJobOnComplete: false },

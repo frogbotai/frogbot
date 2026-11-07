@@ -53,7 +53,6 @@ async function bootRuntime(overrides: Partial<FrogBotConfig>) {
     admin: { user: usersSlug, importMap: { autoGenerate: false } },
     collections: [Users],
     serverURL: 'https://email.example.com',
-    telemetry: false,
     ...overrides,
   });
 
@@ -417,7 +416,6 @@ describe('email piece boot and runtime isolation', () => {
       }),
       admin: { user: usersSlug, importMap: { autoGenerate: false } },
       collections: [Users],
-      telemetry: false,
       email: Promise.resolve(email) as FrogBotConfig['email'],
     });
 

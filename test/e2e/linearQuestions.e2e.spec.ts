@@ -199,7 +199,6 @@ describe.skipIf(!RUN_E2E)(
 
       const config = await buildConfig({
         secret: 'linear-questions-e2e-secret',
-        telemetry: false,
         db: sqliteAdapter({ client: { url: `file:${join(dataDir, 'linear.db')}` } }),
         typescript: { autoGenerate: false },
         collections: [{ slug: 'users', auth: true, fields: [] }],

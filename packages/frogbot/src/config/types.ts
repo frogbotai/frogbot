@@ -111,7 +111,8 @@ type FrogBotOverridden =
   | 'onInit'
   | 'plugins'
   | 'secret'
-  | 'storage';
+  | 'storage'
+  | 'telemetry';
 
 export type OnInit = (frogbot: FrogBot) => Promise<void> | void;
 

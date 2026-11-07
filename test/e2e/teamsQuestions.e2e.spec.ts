@@ -125,7 +125,6 @@ describe.skipIf(!RUN_E2E)('Teams questions e2e — signed webhooks to a persiste
 
     const config = await buildConfig({
       secret: 'teams-questions-e2e-secret',
-      telemetry: false,
       db: sqliteAdapter({ client: { url: `file:${join(dataDir, 'teams.db')}` } }),
       typescript: { autoGenerate: false },
       admin: { user: 'users' },
