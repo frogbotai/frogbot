@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { appSlug, buildArgs, parseTargetArgs, splitVariables, usesFileDatabase } from '../app.js';
-import { checkLogin, findTool } from '../preflight.js';
+import { checkLocalUploads, checkLogin, findTool, readVariable } from '../preflight.js';
 import type { DeployContext, DeployTarget, PreflightIssue } from '../types.js';
 
 const usage = '[--app <name>] [--region <region>]';
@@ -66,6 +66,40 @@ function hasMount(root: string): boolean {
   return /^\[\[?mounts\]\]?/m.test(toml) && /destination\s*=\s*['"]\/data['"]/.test(toml);
 }
 
+const unquotedHash = (text: string) => {
+  const hash = text.indexOf('#');
+
+  return hash >= 0 && text.slice(0, hash).split('"').length % 2 === 1;
+};
+
+/**
+ * One `fly secrets import` entry that flyctl reads back as `value`, or `undefined` when none can.
+ * flyctl strips one pair of quotes and unescapes nothing, a `#` after an even number of `"` starts a
+ * comment, and `"""` wraps a value with newlines.
+ */
+export function flySecretLine(name: string, value: string): string | undefined {
+  if (value.includes('\n')) {
+    const lines = value.split('\n');
+    const closesEarly = lines.slice(0, -1).some((line) => /("""|\r)$/.test(line));
+
+    return closesEarly || unquotedHash(`"""${lines[0]}`) ? undefined : `${name}="""${value}"""`;
+  }
+
+  const double = `"${value}"`;
+
+  if (!double.startsWith('"""') && !unquotedHash(double)) return `${name}=${double}`;
+
+  return unquotedHash(`'${value}'`) ? undefined : `${name}='${value}'`;
+}
+
+function flyVariables(context: DeployContext): ReturnType<typeof splitVariables> {
+  const variables = splitVariables(context);
+
+  if (usesFileDatabase(context)) variables.secrets.DATABASE_URL = fileDatabaseUrl;
+
+  return variables;
+}
+
 async function flyCommand(context: DeployContext): Promise<string> {
   return (await context.io.which('fly')) ? 'fly' : 'flyctl';
 }
@@ -115,6 +149,31 @@ export const flyTarget: DeployTarget = {
       });
     }
 
+    if (readVariable(context, 'DATABASE_URL') === ':memory:') {
+      issues.push({
+        code: 'LOCAL_DATABASE',
+        message:
+          'DATABASE_URL is :memory:, so the database empties whenever the machine restarts or stops.',
+        fix: 'Set DATABASE_URL to a SQLite file, such as file:./frogbot.db, which deploy fly keeps on a volume, or to a hosted database.',
+      });
+    }
+
+    const uploads = checkLocalUploads(context.config, '@frogbotai/storage-s3');
+
+    if (uploads) issues.push(uploads);
+
+    const unsupported = Object.entries(flyVariables(context).secrets)
+      .filter(([name, value]) => flySecretLine(name, value) === undefined)
+      .map(([name]) => name);
+
+    if (unsupported.length > 0) {
+      issues.push({
+        code: 'FLY_SECRET_UNSUPPORTED',
+        message: `\`fly secrets import\` can't carry the value of ${unsupported.join(', ')} as written.`,
+        fix: 'Change the value, or set it yourself with `fly secrets set`.',
+      });
+    }
+
     const login = await checkLogin(context.io, command, ['auth', 'whoami'], 'fly auth login');
 
     return login ? [login, ...issues] : issues;
@@ -147,13 +206,11 @@ export const flyTarget: DeployTarget = {
       ]);
     }
 
-    const { secrets, build } = splitVariables(context);
-
-    if (fileDatabase) secrets.DATABASE_URL = fileDatabaseUrl;
+    const { secrets, build } = flyVariables(context);
 
     await context.run(fly, ['secrets', 'import', '--app', app, '--stage'], {
       input: Object.entries(secrets)
-        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
+        .map(([name, value]) => flySecretLine(name, value))
         .join('\n'),
     });
 

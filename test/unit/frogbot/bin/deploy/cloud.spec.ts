@@ -382,6 +382,33 @@ describe('deploy azure', () => {
     );
   });
 
+  it('names each secret in the pattern Container Apps accepts', async () => {
+    const { code, commands } = await deployWith(azureTarget, 'azure', [], {
+      programs: { az },
+      files: { '.env': 'FROGBOT_SECRET=x\nDATABASE_URL=postgres://u:p@db/app\n_INTERNAL=three\n' },
+    });
+
+    expect(code).toBe(0);
+    expect(commands()).toContain(
+      'az containerapp secret set --name deals-app --resource-group deals-app-rg --secrets frogbot-secret=x database-url=postgres://u:p@db/app internal=three',
+    );
+  });
+
+  it('refuses two variables that would share one secret name, before changing anything', async () => {
+    const { code, commands, stderr } = await deployWith(azureTarget, 'azure', [], {
+      programs: { az },
+      files: {
+        '.env': 'FROGBOT_SECRET=x\nDATABASE_URL=postgres://u:p@db/app\nApi_Key=one\nAPI_KEY=two\n',
+      },
+    });
+
+    expect(code).toBe(1);
+    expect(stderr()[0]).toBe(
+      '[frogbot] AZURE_SECRET_NAME_CLASH Api_Key and API_KEY would both be the Container Apps secret api-key.',
+    );
+    expect(commands()).toEqual(['az account show']);
+  });
+
   it('reports LOCAL_UPLOADS with Azure storage and NOT_LOGGED_IN', async () => {
     const { code, stderr } = await deployWith(azureTarget, 'azure', [], {
       programs: { az: () => ({ code: 1 }) },

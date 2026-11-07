@@ -132,9 +132,11 @@ export async function sharePreflight(context: DeployContext): Promise<PreflightI
   });
 }
 
-/** Sends the app to Dojo: `share`'s and `deploy dojo`'s body. */
+/** Sends the app to Dojo: `share`'s and `deploy dojo`'s body. Under `--json` its progress goes to stderr. */
 export async function shareToDojo(context: DeployContext): Promise<Record<string, unknown>> {
-  return asDeployStop(() => share(context));
+  const io = context.flags.json ? { ...context.io, stdout: context.io.stderr } : context.io;
+
+  return asDeployStop(() => share({ ...context, io }));
 }
 
 async function share(context: DeployContext): Promise<Record<string, unknown>> {

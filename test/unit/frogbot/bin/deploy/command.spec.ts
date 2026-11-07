@@ -68,6 +68,18 @@ describe('frogbot deploy', () => {
     expect(io.stderr().some((line) => line.trim().startsWith('dojo'))).toBe(true);
   });
 
+  it('prints one JSON result on stdout for an unknown target under --json', async () => {
+    const io = testIO({ cwd: await tempDir() });
+
+    expect(await deploy(['nope', '--json'], { config: appConfig(), io: io.io })).toBe(2);
+    expect(io.stdout()).toHaveLength(1);
+    expect(JSON.parse(io.stdout()[0] ?? '')).toMatchObject({
+      target: 'nope',
+      ok: false,
+      issues: [{ code: 'UNKNOWN_TARGET' }],
+    });
+  });
+
   it("prints the load error and exits 2 for a target it can't find when the config failed to load", async () => {
     const io = testIO({ cwd: await tempDir() });
 

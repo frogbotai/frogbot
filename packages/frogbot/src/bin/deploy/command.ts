@@ -50,11 +50,25 @@ export async function deploy(
   const stderr = io?.stderr ?? process.stderr;
 
   if (!target || !name) {
+    const message = name ? `"${name}" isn't a deploy target.` : 'No deploy target named.';
+
     if (loadError) stderr.write(`${formatCliError(loadError)}\n`);
 
     stderr.write(
-      `${name ? `[frogbot] "${name}" isn't a deploy target.\n` : ''}[frogbot] usage: frogbot deploy <target> ${sharedUsage}\nTargets:\n${targetList(targets)}\n`,
+      `${name ? `[frogbot] ${message}\n` : ''}[frogbot] usage: frogbot deploy <target> ${sharedUsage}\nTargets:\n${targetList(targets)}\n`,
     );
+
+    if (args.includes('--json')) {
+      const issue = {
+        code: 'UNKNOWN_TARGET',
+        message,
+        fix: `Name one of: ${Object.keys(targets).join(', ')}.`,
+      };
+
+      (io?.stdout ?? process.stdout).write(
+        `${JSON.stringify({ target: name ?? null, ok: false, dryRun: args.includes('--dry-run'), issues: [issue], result: null })}\n`,
+      );
+    }
 
     return 2;
   }

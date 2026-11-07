@@ -1,7 +1,7 @@
 import { splitVariables } from '../app.js';
 import { cloudIssues, readCloudFlags, stringFlag, warnIdleJobs } from '../cloud.js';
 import { checkLogin, findTool } from '../preflight.js';
-import type { DeployContext, DeployTarget } from '../types.js';
+import type { DeployContext, DeployTarget, PreflightIssue } from '../types.js';
 
 const options = { 'resource-group': { type: 'string' } } as const;
 
@@ -28,9 +28,36 @@ function flagsOf(context: DeployContext) {
   };
 }
 
-/** The Container Apps secret name for one of the app's variables: lowercase, dashes for underscores. */
+/**
+ * The Container Apps secret name for one of the app's variables: lowercase, dashes for underscores,
+ * starting and ending with a letter or digit as Azure requires.
+ */
 export function azureSecretName(name: string): string {
-  return name.toLowerCase().replace(/_/g, '-');
+  return name
+    .toLowerCase()
+    .replace(/_/g, '-')
+    .replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '');
+}
+
+function checkSecretNames(context: DeployContext): PreflightIssue[] {
+  const owners = new Map<string, string>();
+  const issues: PreflightIssue[] = [];
+
+  for (const name of Object.keys(splitVariables(context).secrets)) {
+    const secret = azureSecretName(name);
+    const owner = owners.get(secret);
+
+    if (owner === undefined) owners.set(secret, name);
+    else {
+      issues.push({
+        code: 'AZURE_SECRET_NAME_CLASH',
+        message: `${owner} and ${name} would both be the Container Apps secret ${secret}.`,
+        fix: 'Rename one of them, so they differ by more than case and leading or trailing underscores.',
+      });
+    }
+  }
+
+  return issues;
 }
 
 /** `frogbot deploy azure`: built in Azure by `az containerapp up --source .`, keys as Container Apps secrets, one replica. */
@@ -39,7 +66,11 @@ export const azureTarget: DeployTarget = {
   preflight: async (context) => {
     flagsOf(context);
 
-    const issues = cloudIssues(context, '@frogbotai/storage-azure');
+    const issues = [
+      ...cloudIssues(context, '@frogbotai/storage-azure'),
+      ...checkSecretNames(context),
+    ];
+
     const { command, issue } = await findTool(
       context.io,
       ['az'],

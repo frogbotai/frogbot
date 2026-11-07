@@ -53,6 +53,22 @@ describe('deploy dojo', () => {
     expect(shared.paths).toContain('POST /api/apps/1/deployments');
   });
 
+  it('writes only the JSON result on stdout under --json, the progress on stderr', async () => {
+    const root = await tempDir();
+    const fake = await startFakeDojo();
+    const io = testIO({
+      cwd: root,
+      env: { XDG_CONFIG_HOME: await tempDir(), FROGBOT_DOJO_URL: fake.url },
+    });
+
+    await writeApp(root, { '.env': 'OPENAI_API_KEY=sk-test-1234567890\n' });
+
+    expect(await runShare(['--json', '--no-data'], io.io)).toBe(0);
+    expect(io.stdout()).toHaveLength(1);
+    expect(JSON.parse(io.stdout()[0] ?? '')).toMatchObject({ target: 'dojo', ok: true });
+    expect(io.stderr().some((line) => line.startsWith('[build] '))).toBe(true);
+  });
+
   it('dry-runs: lists files, size and keys and makes no request', async () => {
     const root = await tempDir();
     const fake = await startFakeDojo();

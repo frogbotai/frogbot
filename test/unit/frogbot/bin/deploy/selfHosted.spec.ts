@@ -7,23 +7,78 @@ import { describe, expect, it } from 'vitest';
 import { runDeploy } from '../../../../../packages/frogbot/src/bin/deploy/run.js';
 import { dockerTarget } from '../../../../../packages/frogbot/src/bin/deploy/targets/docker.js';
 import { flyTarget } from '../../../../../packages/frogbot/src/bin/deploy/targets/fly.js';
-import type { DeployTarget } from '../../../../../packages/frogbot/src/bin/deploy/types.js';
-import { type FakeProgram, tempDir, testIO, writeApp } from './helpers.js';
+import type {
+  DeployConfig,
+  DeployTarget,
+} from '../../../../../packages/frogbot/src/bin/deploy/types.js';
+import { deployConfig, type FakeProgram, tempDir, testIO, writeApp } from './helpers.js';
 
 async function deployWith(
   target: DeployTarget,
   name: string,
   args: string[],
-  { programs, files }: { programs: Record<string, FakeProgram>; files?: Record<string, string> },
+  {
+    programs,
+    files,
+    config,
+  }: {
+    programs: Record<string, FakeProgram>;
+    files?: Record<string, string>;
+    config?: DeployConfig;
+  },
 ) {
   const root = await tempDir();
-  const io = testIO({ cwd: root, programs });
+  const io = testIO({ cwd: root, programs, config });
 
   await writeApp(root, files);
 
   const code = await runDeploy(target, args, io.io, { name, image: true });
 
   return { root, code, ...io };
+}
+
+function flyParseSecrets(input: string): Record<string, string> {
+  const secrets: Record<string, string> = {};
+  let multiline = false;
+  let key = '';
+  let value = '';
+
+  for (const line of input.split(/\r?\n/)) {
+    if (!multiline) {
+      if (line.startsWith('#') || line.trim() === '') continue;
+
+      const eq = line.indexOf('=');
+
+      if (eq < 0) throw new Error(`invalid line ${line}`);
+
+      const name = line.slice(0, eq).trim();
+      let v = line.slice(eq + 1).replace(/^ +/, '');
+      const hash = v.indexOf('#');
+
+      if (hash >= 0) {
+        const l = v.slice(0, hash);
+
+        if ((l.match(/"/g)?.length ?? 0) % 2 === 0) v = l.replace(/ +$/, '');
+      }
+
+      if (v.startsWith('"""') && v.endsWith('"""') && v.length >= 6) secrets[name] = v.slice(3, -3);
+      else if (v.startsWith('"""')) {
+        multiline = true;
+        key = name;
+        value = `${v.slice(3)}\n`;
+      } else {
+        if (v.length >= 2 && v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1);
+        else if (v.length >= 2 && v.startsWith("'") && v.endsWith("'")) v = v.slice(1, -1);
+
+        secrets[name] = v;
+      }
+    } else if (line.endsWith('"""')) {
+      secrets[key] = value + line.slice(0, -3);
+      multiline = false;
+    } else value += `${line}\n`;
+  }
+
+  return secrets;
 }
 
 describe('deploy docker', () => {
@@ -205,6 +260,71 @@ describe('deploy fly', () => {
       await runDeploy(flyTarget, ['--app', 'other'], mismatch.io, { name: 'fly', image: true }),
     ).toBe(1);
     expect(mismatch.stderr()[0]).toMatch(/^\[frogbot\] FLY_APP_MISMATCH /);
+  });
+
+  it('stores secret values on Fly exactly as written in .env', async () => {
+    const { code, calls } = await deployWith(flyTarget, 'fly', [], {
+      programs: { fly },
+      files: {
+        '.env': [
+          'FROGBOT_SECRET=s3cret',
+          'DATABASE_URL=postgres://u:p@db.example.com/app',
+          String.raw`DB_PASSWORD=pa\ss`,
+          'QUOTED=\'say "hi"\'',
+          'PEM="line1\\nline2"',
+          "TOKEN='a\"b#c'",
+          'HASH="a#b"',
+          'PADDED=" x "',
+          '',
+        ].join('\n'),
+      },
+    });
+
+    expect(code).toBe(0);
+
+    const input = calls.find((call) => call.args[0] === 'secrets')?.input ?? '';
+
+    expect(flyParseSecrets(input)).toEqual({
+      FROGBOT_SECRET: 's3cret',
+      DATABASE_URL: 'postgres://u:p@db.example.com/app',
+      DB_PASSWORD: String.raw`pa\ss`,
+      QUOTED: 'say "hi"',
+      PEM: 'line1\nline2',
+      TOKEN: 'a"b#c',
+      HASH: 'a#b',
+      PADDED: ' x ',
+    });
+  });
+
+  it('refuses a secret value fly secrets import cannot carry', async () => {
+    const { code, commands, stderr } = await deployWith(flyTarget, 'fly', [], {
+      programs: { fly },
+      files: { '.env': 'FROGBOT_SECRET=x\nDATABASE_URL=postgres://db/app\nTOKEN=\'""#x\'\n' },
+    });
+
+    expect(code).toBe(1);
+    expect(stderr()[0]).toMatch(/^\[frogbot\] FLY_SECRET_UNSUPPORTED .*TOKEN/);
+    expect(commands()).toEqual(['fly auth whoami']);
+  });
+
+  it('refuses local uploads on Fly, whose machine disk is replaced on every deploy', async () => {
+    const { code, stderr } = await deployWith(flyTarget, 'fly', [], {
+      programs: { fly },
+      config: deployConfig({ uploads: [{ slug: 'media' }] }),
+    });
+
+    expect(code).toBe(1);
+    expect(stderr()[0]).toMatch(/^\[frogbot\] LOCAL_UPLOADS /);
+  });
+
+  it('refuses an in-memory database on Fly', async () => {
+    const { code, stderr } = await deployWith(flyTarget, 'fly', [], {
+      programs: { fly },
+      files: { '.env': 'FROGBOT_SECRET=x\nDATABASE_URL=:memory:\n' },
+    });
+
+    expect(code).toBe(1);
+    expect(stderr()[0]).toMatch(/^\[frogbot\] LOCAL_DATABASE /);
   });
 
   it('exits 2 on an unknown flag even without fly installed', async () => {

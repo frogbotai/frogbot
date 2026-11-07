@@ -24,7 +24,7 @@ pnpm frogbot deploy azure
 | `aws` | on this computer | Secrets Manager | ECS Express Mode (Fargate behind HTTPS) | `aws` CLI v2, Docker, two IAM roles |
 | `azure` | Azure Container Registry | Container Apps secrets | Azure Container Apps | `az`, logged in |
 
-Run `frogbot deploy` with no target and no `dojo()` to list the targets. An unknown target lists them too and exits `2`.
+Run `frogbot deploy` with no target and no `dojo()` to list the targets. An unknown target lists them too and exits `2`; with `--json` it also prints a result whose issue is `UNKNOWN_TARGET`.
 
 ### Flags every target takes
 
@@ -55,11 +55,13 @@ Every failing check prints together, `[frogbot] <code> <message>` with a `fix:` 
 | `MIGRATIONS_NOT_WIRED` | all but `dojo` | The database adapter has no `prodMigrations`, so the deployed database gets no tables. See [Migrations](#migrations). Dojo syncs the schema itself. MongoDB isn't checked. |
 | `SECRET_MISSING` | all but `dojo` | `FROGBOT_SECRET` is empty. |
 | `DOCKERFILE_MISSING` | all but `dojo` | The app has no `Dockerfile`. In a terminal, the deploy offers to write FrogBot's template `Dockerfile` when this is the only problem. |
-| `LOCAL_DATABASE` | `gcp`, `aws`, `azure` | `DATABASE_URL` is empty or a `file:` SQLite database, which the cloud wipes on every restart. Use a hosted database: Postgres with [`@frogbotai/db-postgres`](/database/postgres) (Neon, Supabase, Cloud SQL, RDS), or Turso (`libsql://`) with [`@frogbotai/db-sqlite`](/database/sqlite). The deploy never creates one. |
-| `LOCAL_UPLOADS` | `gcp`, `aws`, `azure` | An upload collection saves files on the container's disk. Add a [storage adapter](/upload/storage-adapters): `@frogbotai/storage-gcs`, `@frogbotai/storage-s3` or `@frogbotai/storage-azure`. The deploy never edits your config. |
+| `LOCAL_DATABASE` | `gcp`, `aws`, `azure`, `fly` | `DATABASE_URL` is empty or a `file:` SQLite database, which the cloud wipes on every restart. On `fly`, only `:memory:` stops the deploy, since a SQLite file goes on a volume. Use a hosted database: Postgres with [`@frogbotai/db-postgres`](/database/postgres) (Neon, Supabase, Cloud SQL, RDS), or Turso (`libsql://`) with [`@frogbotai/db-sqlite`](/database/sqlite). The deploy never creates one. |
+| `LOCAL_UPLOADS` | `gcp`, `aws`, `azure`, `fly` | An upload collection saves files on the container's disk. Add a [storage adapter](/upload/storage-adapters): `@frogbotai/storage-gcs`, `@frogbotai/storage-s3` or `@frogbotai/storage-azure`. The deploy never edits your config. |
 | `NO_PROJECT` | `gcp` | No `--project` and no `gcloud config set project`. |
 | `NO_REGION`, `AWS_ROLE_MISSING` | `aws` | No region, or one of the two IAM roles ECS Express Mode needs is missing. |
 | `FLY_NO_MOUNT`, `FLY_APP_MISMATCH` | `fly` | Your `fly.toml` mounts no volume at `/data` while `DATABASE_URL` is a SQLite file, or names a different app than `--app`. |
+| `FLY_SECRET_UNSUPPORTED` | `fly` | A value `fly secrets import` can't read back as written, such as one starting with `""` and holding a `#`. Set it with `fly secrets set`. |
+| `AZURE_SECRET_NAME_CLASH` | `azure` | Two variables, such as `API_KEY` and `Api_Key`, would get the same Container Apps secret name, which is lowercase. |
 
 ### Variables
 
