@@ -65,8 +65,11 @@ async function loadOwner(
     .catch(() => undefined);
 }
 
-const isRotation = (req: FrogBotRequest) =>
-  req.context?.apiKeyRotatedFrom !== undefined && !policyKey(req.user);
+const isRotated = (req: FrogBotRequest) => req.context?.apiKeyRotatedFrom !== undefined;
+
+const isRotation = (req: FrogBotRequest) => isRotated(req) && !policyKey(req.user);
+
+const bounded = { 'plugin-api-keys': { inherit: false } };
 
 function parentName(key: PolicyKey): string {
   return `API key "${typeof key.name === 'string' ? key.name : String(key.id)}"`;
@@ -149,6 +152,7 @@ export function createKeyLimitFields(options: KeyLimitsOptions): Field[] {
       hasMany: true,
       options: models,
       validate: createModelsValidate(options),
+      custom: bounded,
       filterOptions: async ({ data, options: choices, req }) => {
         const owner = await loadOwner(req, authCollection, data);
         const allowed = owner ? readPolicy(owner).models : [];
@@ -169,6 +173,7 @@ export function createKeyLimitFields(options: KeyLimitsOptions): Field[] {
       label: 'Monthly Cap (USD)',
       min: 0,
       validate: createBudgetValidate(options),
+      custom: bounded,
       admin: {
         components: { Description: { path: `${rsc}#KeyBudgetDescription`, serverProps } },
       },
@@ -179,10 +184,11 @@ export function createKeyLimitFields(options: KeyLimitsOptions): Field[] {
       defaultValue: 0,
       access: { update: () => false },
       admin: { readOnly: true, position: 'sidebar' },
+      custom: bounded,
       hooks: {
         beforeChange: [
           ({ operation, req, value }) =>
-            operation === 'create' && !isRotation(req) ? 0 : (value as unknown),
+            operation === 'create' && !isRotated(req) ? 0 : (value as unknown),
         ],
       },
     }),

@@ -86,20 +86,22 @@ With the [API keys plugin](/plugins/api-keys) on the same auth collection, each 
 | --- | --- | --- |
 | `models` | Models | Models the key may call, chosen from the owner's. Leave it empty to use all of the owner's models. |
 | `monthlyBudget` | Monthly Cap (USD) | Spend limit for the key this month, up to the owner's monthly budget. Leave it empty for no cap. |
-| `spendThisPeriodUSD` | Monthly Spend (USD) | What the key has spent this month. Read-only; the plugin maintains it. |
+| `spendThisPeriodUSD` | Monthly Spend (USD) | What the key and the keys below it have spent this month. Read-only; the plugin maintains it. |
 
 The key's create dialog has a collapsed **Limits** section with the model list and cap, and the keys list shows spend and cap after the prefix. A key's models and cap are checked against its owner when they change, for admins too: `"<id>" isn't allowed for <owner>.` and `Can't exceed <owner>'s monthly budget of $50.00.` Values that didn't change aren't checked again, so lowering the owner's budget doesn't block renaming a key.
 
 Only a signed-in session can change a key's limits. A request authenticated by an API key that changes `models` or `monthlyBudget` on any key gets a `403`: `API keys can't change their own limits. Sign in to change them.`
 
-A key with `canMint` sets the limits of the keys it [mints](/plugins/api-keys#keys-that-mint-keys), inside its own: a list or cap the new key leaves empty is the parent's, and a wider one fails with `"<id>" isn't allowed for API key "<name>".` or `Can't exceed API key "<name>"'s monthly cap of $20.00.` A key it rotates is checked the same way. Each key's spend is its own, so the owner's budget is what bounds a parent and its children together.
+A key with `canMint` sets the limits of the keys it [mints](/plugins/api-keys#keys-that-mint-keys), inside its own: a list or cap the new key leaves empty is the parent's, and a wider one fails with `"<id>" isn't allowed for API key "<name>".` or `Can't exceed API key "<name>"'s monthly cap of $20.00.` A key it rotates is checked the same way, and a refused rotation leaves the old key working.
+
+A key's spend counts against every key above it: each call's cost is added to the key, to the key that minted it, and so on up to the key a session minted. So a parent capped at $10 and all the keys below it together spend at most $10 a month, however many children each has. A parent's **Monthly Spend** is its own spend plus everything below it.
 
 On a request made with a key, the owner's model list and budget are checked first, then the key's:
 
 - a model outside a non-empty key list fails with a `403`, code `model_not_allowed`: `Model "<id>" is not allowed for API key "<name>".` Chat and agent lists, and `GET /api/v1/models`, show only the key's models;
-- a spent cap fails with a `403`, code `budget_exceeded`: `API key "<name>" has used its monthly cap of $25.00.`
+- a spent cap, the key's own or that of any key above it, fails with a `403`, code `budget_exceeded`: `API key "<name>" has used its monthly cap of $25.00.`, naming the key whose cap is spent.
 
-Both fail before the model is called, so they write no usage row. Each call's cost is added to the key's and the owner's spend, agent runs included, and the monthly reset zeros keys too. Rotating a key keeps its models, cap and spend.
+Both fail before the model is called, so they write no usage row. Each call's cost is added to the key's, its parents' and the owner's spend, agent runs included, and the monthly reset zeros keys too. Rotating a key, from a session or with the key itself, keeps its models, cap and spend.
 
 ## Use your own policy
 

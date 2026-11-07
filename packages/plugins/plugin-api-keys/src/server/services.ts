@@ -1,4 +1,11 @@
-import type { FrogBotRequest, Where } from 'frogbot';
+import { isDeepStrictEqual } from 'node:util';
+
+import {
+  APIError,
+  type CollectionBeforeValidateHook,
+  type FrogBotRequest,
+  type Where,
+} from 'frogbot';
 
 import { apiKeyStrategyName } from '../strategy.js';
 import { createApiKeyToken, getApiKeyPrefix, hashApiKeyToken } from './token.js';
@@ -10,7 +17,8 @@ export type MintApiKeyOptions = {
   name: string;
   /**
    * Values for fields other plugins add to the keys collection. They're written with access
-   * overridden, so their validation and hooks run but their field access doesn't.
+   * overridden, so their validation and hooks run but their field access doesn't. A key minted by a
+   * key takes its parent's values for them instead.
    */
   data?: Record<string, unknown>;
 };
@@ -23,6 +31,8 @@ export type RevokeApiKeyOptions = {
 };
 
 type KeyDocument = Record<string, unknown>;
+
+type KeyID = string | number;
 
 export class ApiKeyServiceError extends Error {
   constructor(public readonly code: 'authentication_required' | 'not_found' | 'session_required') {
@@ -41,6 +51,9 @@ export function canMintKeys(req: FrogBotRequest): boolean {
   return (req.user as { apiKey?: { canMint?: unknown } }).apiKey?.canMint === true;
 }
 
+const keyID = (value: unknown): KeyID | null =>
+  typeof value === 'string' || typeof value === 'number' ? value : null;
+
 function requireMinter(req: FrogBotRequest) {
   const owner = req.user?.id;
   if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
@@ -48,10 +61,7 @@ function requireMinter(req: FrogBotRequest) {
 
   const parent = isApiKeyRequest(req) ? (req.user as { apiKeyId?: unknown }).apiKeyId : undefined;
 
-  return {
-    owner,
-    mintedBy: typeof parent === 'string' || typeof parent === 'number' ? parent : null,
-  };
+  return { owner, mintedBy: keyID(parent) };
 }
 
 const ownFields = new Set([
@@ -74,9 +84,65 @@ function foreignData(data: Record<string, unknown> | undefined): Record<string, 
   return Object.fromEntries(Object.entries(data ?? {}).filter(([key]) => !ownFields.has(key)));
 }
 
+type InheritField = {
+  name: string;
+  type: string;
+  virtual?: unknown;
+  custom?: Record<string, unknown>;
+};
+
+const inherits = ({ name, type, virtual, custom }: InheritField) =>
+  !ownFields.has(name) &&
+  type !== 'ui' &&
+  type !== 'join' &&
+  !virtual &&
+  (custom?.['plugin-api-keys'] as { inherit?: unknown } | undefined)?.inherit !== false;
+
+const keyName = (key: KeyDocument) =>
+  `API key "${typeof key.name === 'string' ? key.name : String(key.id)}"`;
+
+/**
+ * Keeps keys inside the fields other plugins add to the keys collection: a key minted by a key
+ * takes its parent's values, and a request made with a key can't change them on any key. A field
+ * that sets `custom['plugin-api-keys'].inherit` to `false` is left to the plugin that adds it.
+ */
+export const keyScopeBeforeValidate: CollectionBeforeValidateHook = ({
+  collection,
+  data,
+  operation,
+  originalDoc,
+  req,
+}) => {
+  const parent = isApiKeyRequest(req) ? (req.user as { apiKey?: KeyDocument }).apiKey : undefined;
+
+  if (!data || !parent) return data;
+
+  const names = ((collection as { flattenedFields?: InheritField[] }).flattenedFields ?? [])
+    .filter(inherits)
+    .map(({ name }) => name);
+
+  if (operation === 'create') {
+    return { ...data, ...Object.fromEntries(names.map((name) => [name, parent[name] ?? null])) };
+  }
+
+  const original = (originalDoc ?? {}) as KeyDocument;
+  const changed = names.find(
+    (name) => name in data && !isDeepStrictEqual(data[name] ?? null, original[name] ?? null),
+  );
+
+  if (changed) {
+    throw new APIError(
+      `${keyName(parent)} can't change "${changed}" on a key. Sign in to change it.`,
+      403,
+    );
+  }
+
+  return data;
+};
+
 type MintForOwnerOptions = MintApiKeyOptions & {
-  owner: string | number;
-  mintedBy: string | number | null;
+  owner: KeyID;
+  mintedBy: KeyID | null;
   context?: Record<string, unknown>;
 };
 
@@ -121,7 +187,7 @@ async function mintForOwner({
 
 /**
  * Mints a key for the signed-in user. A request made with an API key needs that key's `canMint`,
- * and the new key records it as `mintedBy`.
+ * and the new key records it as `mintedBy` and copies its fields from other plugins.
  */
 export async function mintApiKey(options: MintApiKeyOptions) {
   const { owner, mintedBy } = requireMinter(options.req);
@@ -137,13 +203,13 @@ export async function mintApiKey(options: MintApiKeyOptions) {
   });
 }
 
-type RevokedKey = KeyDocument & { id: string | number; name: string; owner: string | number };
+type RevokedKey = KeyDocument & { id: KeyID; name: string; owner: KeyID };
 
-type RevokeKeyOptions = RevokeApiKeyOptions & {
-  rotator?: string | number | null;
+type FindKeyOptions = RevokeApiKeyOptions & {
+  rotator?: KeyID | null;
 };
 
-async function revokeKey({ req, collectionSlug, id, anyOwner, rotator }: RevokeKeyOptions) {
+async function findKey({ req, collectionSlug, id, anyOwner, rotator }: FindKeyOptions) {
   const owner = req.user?.id;
   if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
 
@@ -174,6 +240,10 @@ async function revokeKey({ req, collectionSlug, id, anyOwner, rotator }: RevokeK
     throw new ApiKeyServiceError('not_found');
   }
 
+  return key as RevokedKey;
+}
+
+async function markRevoked(req: FrogBotRequest, collectionSlug: string, key: RevokedKey) {
   const revokedAt = typeof key.revokedAt === 'string' ? key.revokedAt : new Date().toISOString();
 
   await req.frogbot.update({
@@ -184,11 +254,41 @@ async function revokeKey({ req, collectionSlug, id, anyOwner, rotator }: RevokeK
     req,
   });
 
-  return { key: key as RevokedKey, revokedAt };
+  return revokedAt;
 }
 
+async function revokeMinted(
+  req: FrogBotRequest,
+  collectionSlug: string,
+  id: KeyID,
+  revokedAt: string,
+) {
+  const seen = new Set<KeyID>([id]);
+
+  for (let parents = [id]; parents.length > 0;) {
+    const { docs } = await req.frogbot.update({
+      collection: collectionSlug,
+      where: { and: [{ mintedBy: { in: parents } }, { revokedAt: { exists: false } }] },
+      data: { revokedAt },
+      depth: 0,
+      overrideAccess: true,
+      req,
+    });
+
+    parents = docs
+      .map((doc) => (doc as KeyDocument).id as KeyID)
+      .filter((child) => !seen.has(child));
+
+    parents.forEach((child) => seen.add(child));
+  }
+}
+
+/** Revokes the key and every key it minted, down the whole `mintedBy` tree. */
 export async function revokeApiKey(options: RevokeApiKeyOptions) {
-  const { key, revokedAt } = await revokeKey(options);
+  const key = await findKey(options);
+  const revokedAt = await markRevoked(options.req, options.collectionSlug, key);
+
+  await revokeMinted(options.req, options.collectionSlug, key.id, revokedAt);
 
   return { id: key.id, name: key.name, owner: key.owner, revokedAt };
 }
@@ -196,10 +296,10 @@ export async function revokeApiKey(options: RevokeApiKeyOptions) {
 export type RotateApiKeyOptions = RevokeApiKeyOptions & { tokenPrefix: string };
 
 /**
- * Revokes the key, then mints one with its name, owner, `canMint` and every field another plugin
- * added, with `req.context.apiKeyRotatedFrom` set to the revoked key's ID. The new key's
- * `mintedBy` is the key that rotated it, or empty for a session. A key rotates only itself and the
- * keys it minted; any other key is not found, so nothing is revoked.
+ * Mints a key with the old key's name, owner, `canMint`, `mintedBy` and every field another plugin
+ * added, with `req.context.apiKeyRotatedFrom` set to the old key's ID, then moves the keys the old
+ * one minted to the new one and revokes the old one. A refused mint leaves the old key working. A
+ * key rotates only itself and the keys it minted; any other key is not found.
  */
 export async function rotateApiKey({
   req,
@@ -208,17 +308,30 @@ export async function rotateApiKey({
   tokenPrefix,
   anyOwner,
 }: RotateApiKeyOptions) {
-  const { mintedBy } = requireMinter(req);
-  const { key } = await revokeKey({ req, collectionSlug, id, anyOwner, rotator: mintedBy });
+  const { mintedBy: rotator } = requireMinter(req);
+  const key = await findKey({ req, collectionSlug, id, anyOwner, rotator });
 
-  return mintForOwner({
+  const minted = await mintForOwner({
     req,
     collectionSlug,
     tokenPrefix,
     name: key.name,
     owner: key.owner,
-    mintedBy,
+    mintedBy: keyID(key.mintedBy),
     data: key,
     context: { apiKeyRotatedFrom: key.id },
   });
+
+  await req.frogbot.update({
+    collection: collectionSlug,
+    where: { mintedBy: { equals: key.id } },
+    data: { mintedBy: minted.id },
+    depth: 0,
+    overrideAccess: true,
+    req,
+  });
+
+  await markRevoked(req, collectionSlug, key);
+
+  return minted;
 }

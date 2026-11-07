@@ -12,6 +12,7 @@ import {
 import {
   ApiKeyServiceError,
   canMintKeys,
+  keyScopeBeforeValidate,
   mintApiKey,
   revokeApiKey,
   rotateApiKey,
@@ -199,6 +200,10 @@ function createEndpoints({
             return Response.json({ error: 'API key not found' }, { status: 404 });
           }
 
+          if (error instanceof APIError && error.status < 500) {
+            return Response.json({ error: describeError(error) }, { status: error.status });
+          }
+
           throw error;
         }
       },
@@ -354,6 +359,10 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
     hooks: {
       ...existing?.hooks,
       ...collection?.hooks,
+      beforeValidate: [
+        keyScopeBeforeValidate,
+        ...(collection?.hooks?.beforeValidate ?? existing?.hooks?.beforeValidate ?? []),
+      ],
     },
   };
 }

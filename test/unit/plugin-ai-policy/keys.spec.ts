@@ -292,21 +292,21 @@ describe('aiPolicyPlugin key limits', () => {
 
     const run = (req: FrogBotRequest) => beforeOperation?.({ req } as never);
 
-    expect(() => run(user({ monthlyBudget: 25, spendThisPeriodUSD: 25 }))).toThrow(
+    await expect(run(user({ monthlyBudget: 25, spendThisPeriodUSD: 25 }))).rejects.toThrow(
       expect.objectContaining({
         message: 'API key "CI" has used its monthly cap of $25.00.',
         status: 403,
         code: 'budget_exceeded',
       }),
     );
-    expect(() =>
+    await expect(
       run(
         user(
           { monthlyBudget: 100, spendThisPeriodUSD: 40 },
           { monthlyBudget: 50, spendThisPeriodUSD: 50 },
         ),
       ),
-    ).toThrow('The configured budget has been exhausted.');
-    expect(() => run(user({ monthlyBudget: 25, spendThisPeriodUSD: 10 }))).not.toThrow();
+    ).rejects.toThrow('The configured budget has been exhausted.');
+    await expect(run(user({ monthlyBudget: 25, spendThisPeriodUSD: 10 }))).resolves.toBeUndefined();
   });
 });

@@ -100,12 +100,17 @@ describe('API key services', () => {
     );
   });
 
-  it('revokes an owned scalar-owner key at depth zero', async () => {
+  it('revokes an owned scalar-owner key at depth zero, then the keys it minted', async () => {
     const find = vi
       .fn()
       .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] });
 
-    const update = vi.fn().mockResolvedValue({});
+    const update = vi
+      .fn()
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ docs: [{ id: 'key-2' }] })
+      .mockResolvedValueOnce({ docs: [] });
+
     const req = request({ frogbot: { find, update } });
 
     await expect(
@@ -121,7 +126,11 @@ describe('API key services', () => {
         where: { and: [{ id: { equals: 'key-1' } }, { owner: { equals: 'user-1' } }] },
       }),
     );
-    expect(update).toHaveBeenCalledOnce();
+    expect(update.mock.calls.map(([args]) => args.id ?? args.where)).toEqual([
+      'key-1',
+      { and: [{ mintedBy: { in: ['key-1'] } }, { revokedAt: { exists: false } }] },
+      { and: [{ mintedBy: { in: ['key-2'] } }, { revokedAt: { exists: false } }] },
+    ]);
   });
 
   it('drops owner scoping only when anyOwner is set', async () => {
@@ -131,7 +140,7 @@ describe('API key services', () => {
 
     const req = request({
       user: { id: 'support-1', roles: ['support'] },
-      frogbot: { find, update: vi.fn() },
+      frogbot: { find, update: vi.fn().mockResolvedValue({ docs: [] }) },
     });
 
     await revokeApiKey({ req, collectionSlug: 'credentials', id: 'key-1', anyOwner: true });
@@ -141,16 +150,16 @@ describe('API key services', () => {
     );
   });
 
-  it('rotates through revoke then mint while preserving name and owner', async () => {
+  it('rotates by minting, moving the minted keys, then revoking, keeping name, owner and mintedBy', async () => {
     const operations: string[] = [];
-    const find = vi
-      .fn()
-      .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] });
+    const find = vi.fn().mockResolvedValue({
+      docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1', mintedBy: 'key-0' }],
+    });
 
-    const update = vi.fn().mockImplementation(() => {
-      operations.push('revoke');
+    const update = vi.fn().mockImplementation((args: { id?: string }) => {
+      operations.push(args.id ? 'revoke' : 'move');
 
-      return Promise.resolve();
+      return Promise.resolve({ docs: [] });
     });
 
     const create = vi.fn().mockImplementation(() => {
@@ -168,13 +177,37 @@ describe('API key services', () => {
       tokenPrefix: 'fb',
     });
 
-    expect(operations).toEqual(['revoke', 'mint']);
+    expect(operations).toEqual(['mint', 'move', 'revoke']);
     expect(result.id).toBe('key-2');
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ name: 'Deploy', owner: 'user-1' }),
+        data: expect.objectContaining({ name: 'Deploy', owner: 'user-1', mintedBy: 'key-0' }),
       }),
     );
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { mintedBy: { equals: 'key-1' } },
+        data: { mintedBy: 'key-2' },
+      }),
+    );
+  });
+
+  it('leaves the old key alone when the rotated mint fails', async () => {
+    const update = vi.fn();
+    const req = request({
+      frogbot: {
+        find: vi
+          .fn()
+          .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
+        update,
+        create: vi.fn().mockRejectedValue(new Error('invalid')),
+      },
+    });
+
+    await expect(
+      rotateApiKey({ req, collectionSlug: 'credentials', id: 'key-1', tokenPrefix: 'fb' }),
+    ).rejects.toThrow('invalid');
+    expect(update).not.toHaveBeenCalled();
   });
 
   it.each([

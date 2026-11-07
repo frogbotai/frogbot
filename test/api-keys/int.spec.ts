@@ -903,4 +903,335 @@ describe('API keys plugin integration', () => {
       expect(await spendOf('accounts', ownerId)).toBe(0);
     });
   });
+
+  describe('keys minted by keys', () => {
+    const minterCredentials = {
+      email: 'api-key-minter@frogbot.local',
+      password: 'frogbot-test-password',
+    };
+
+    type Minted = { id: number | string; token: string; mintedBy?: unknown; error?: string };
+
+    let ownerId: Account['id'];
+    let session: { Authorization: string };
+
+    beforeEach(async () => {
+      modelCalls.length = 0;
+
+      const owner = await booted.frogbot.create({
+        collection: 'accounts',
+        data: minterCredentials,
+        overrideAccess: true,
+      });
+
+      ownerId = owner.id;
+
+      const login = await booted.restClient.post<{ token: string }>(
+        '/api/accounts/login',
+        minterCredentials,
+      );
+
+      session = { Authorization: `JWT ${login.body.token}` };
+    });
+
+    const mint = (headers: Record<string, string>, name: string, data?: Record<string, unknown>) =>
+      booted.restClient.post<Minted>(
+        '/api/credentials/mint',
+        { name, ...(data && { data }) },
+        { headers },
+      );
+
+    const rotate = (headers: Record<string, string>, id: number | string) =>
+      booted.restClient.post<Minted>(`/api/credentials/${id}/rotate`, undefined, { headers });
+
+    const revoke = (headers: Record<string, string>, id: number | string) =>
+      booted.restClient.post(`/api/credentials/${id}/revoke`, undefined, { headers });
+
+    const asKey = (token: string) => ({ 'x-service-key': token });
+
+    const stored = (id: number | string) =>
+      booted.frogbot.findByID({ collection: 'credentials', id, depth: 0, overrideAccess: true });
+
+    const active = async () =>
+      (
+        await booted.frogbot.find({
+          collection: 'credentials',
+          depth: 0,
+          overrideAccess: true,
+          pagination: false,
+          where: { revokedAt: { exists: false } },
+        })
+      ).docs.map((doc) => doc.id);
+
+    const setSpend = (id: number | string, spend: number) =>
+      booted.frogbot.update({
+        collection: 'credentials',
+        id,
+        data: { spendThisPeriodUSD: spend },
+        overrideAccess: true,
+      });
+
+    const complete = (token: string) =>
+      booted.restClient.post<{ error: { message: string } }>(
+        '/api/v1/chat/completions',
+        { model: 'test/allowed', messages: [{ role: 'user', content: 'Hello' }] },
+        { headers: asKey(token) },
+      );
+
+    it('refuses a child with models outside the parent list', async () => {
+      const parent = await mint(session, 'P', { canMint: true, models: ['test/allowed'] });
+      const child = await mint(asKey(parent.body.token), 'C', { models: ['test/blocked'] });
+
+      expect(child.status, JSON.stringify(child.body)).toBe(400);
+    });
+
+    it('keeps a grandchild inside the grandparent cap, through a canMint child', async () => {
+      const parent = await mint(session, 'P', { canMint: true, monthlyBudget: 5 });
+      const child = await mint(asKey(parent.body.token), 'C', { canMint: true });
+
+      expect(child.status, JSON.stringify(child.body)).toBe(201);
+      expect(await stored(child.body.id)).toMatchObject({ canMint: true, monthlyBudget: 5 });
+
+      const grandchild = await mint(asKey(child.body.token), 'G', { monthlyBudget: 50 });
+
+      expect(grandchild.status, JSON.stringify(grandchild.body)).toBe(400);
+
+      const unlimited = await mint(asKey(child.body.token), 'G2', { monthlyBudget: null });
+
+      expect(unlimited.status, JSON.stringify(unlimited.body)).toBe(201);
+      expect(await stored(unlimited.body.id)).toMatchObject({ monthlyBudget: 5 });
+    });
+
+    it('mints for the key owner only, ignoring owner, mintedBy and spend in data', async () => {
+      const other = await booted.frogbot.create({
+        collection: 'accounts',
+        data: { email: 'api-key-other@frogbot.local', password: 'frogbot-test-password' },
+        overrideAccess: true,
+      });
+
+      const parent = await mint(session, 'P', { canMint: true, monthlyBudget: 5 });
+      const child = await mint(asKey(parent.body.token), 'C', {
+        owner: other.id,
+        mintedBy: null,
+        spendThisPeriodUSD: -100,
+        revokedAt: null,
+      });
+
+      expect(child.status, JSON.stringify(child.body)).toBe(201);
+      expect(await stored(child.body.id)).toMatchObject({
+        owner: ownerId,
+        mintedBy: parent.body.id,
+        spendThisPeriodUSD: 0,
+      });
+    });
+
+    it('refuses to mint with a revoked canMint parent', async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+
+      await revoke(session, parent.body.id);
+
+      expect([401, 403]).toContain((await mint(asKey(parent.body.token), 'C')).status);
+    });
+
+    it('refuses REST create and ignores PATCH of canMint and mintedBy', async () => {
+      const created = await booted.restClient.post(
+        '/api/credentials',
+        { name: 'raw', canMint: true, prefix: 'x', tokenHash: 'y', owner: ownerId },
+        { headers: session },
+      );
+
+      expect(created.status).toBe(403);
+
+      const plain = await mint(session, 'Plain');
+      const parent = await mint(session, 'P', { canMint: true });
+
+      await booted.restClient.patch(
+        `/api/credentials/${plain.body.id}`,
+        { canMint: true, mintedBy: parent.body.id },
+        { headers: session },
+      );
+
+      await booted.restClient.patch(
+        `/api/credentials/${plain.body.id}`,
+        { canMint: true },
+        { headers: asKey(plain.body.token) },
+      );
+
+      expect(await stored(plain.body.id)).toMatchObject({ canMint: false, mintedBy: null });
+      expect((await mint(asKey(plain.body.token), 'X')).status).toBe(403);
+    });
+
+    it('refuses a parent key widening its child through PATCH', async () => {
+      const parent = await mint(session, 'P', { canMint: true, monthlyBudget: 5 });
+      const child = await mint(asKey(parent.body.token), 'C');
+      const widened = await booted.restClient.patch(
+        `/api/credentials/${child.body.id}`,
+        { monthlyBudget: 500 },
+        { headers: asKey(parent.body.token) },
+      );
+
+      expect(widened.status).toBe(403);
+      expect(await stored(child.body.id)).toMatchObject({ monthlyBudget: 5 });
+    });
+
+    it("copies the parent's fields from other plugins, and a key can't change them", async () => {
+      const parent = await mint(session, 'P', {
+        canMint: true,
+        tenant: 'acme',
+        environment: 'staging',
+      });
+
+      const child = await mint(asKey(parent.body.token), 'C', {
+        tenant: 'globex',
+        environment: 'production',
+      });
+
+      expect(child.status, JSON.stringify(child.body)).toBe(201);
+      expect(await stored(child.body.id)).toMatchObject({
+        tenant: 'acme',
+        environment: 'staging',
+      });
+
+      for (const id of [parent.body.id, child.body.id]) {
+        const widened = await booted.restClient.patch<{ errors: { message: string }[] }>(
+          `/api/credentials/${id}`,
+          { tenant: 'globex' },
+          { headers: asKey(parent.body.token) },
+        );
+
+        expect(widened.status).toBe(403);
+        expect(widened.body.errors[0]?.message).toBe(
+          'API key "P" can\'t change "tenant" on a key. Sign in to change it.',
+        );
+      }
+
+      const renamed = await booted.restClient.patch(
+        `/api/credentials/${child.body.id}`,
+        { name: 'C2', tenant: 'acme' },
+        { headers: asKey(parent.body.token) },
+      );
+
+      expect(renamed.status).toBe(200);
+
+      const bySession = await booted.restClient.patch(
+        `/api/credentials/${child.body.id}`,
+        { tenant: 'globex' },
+        { headers: session },
+      );
+
+      expect(bySession.status).toBe(200);
+      expect(await stored(child.body.id)).toMatchObject({ name: 'C2', tenant: 'globex' });
+    });
+
+    it('keeps monthly spend when a key is rotated by a session or by itself', async () => {
+      const parent = await mint(session, 'P', { canMint: true, monthlyBudget: 5 });
+
+      await setSpend(parent.body.id, 5);
+
+      const bySession = await rotate(session, parent.body.id);
+
+      expect(bySession.status, JSON.stringify(bySession.body)).toBe(201);
+      expect((await stored(bySession.body.id)).spendThisPeriodUSD).toBe(5);
+
+      const byKey = await rotate(asKey(bySession.body.token), bySession.body.id);
+
+      expect(byKey.status, JSON.stringify(byKey.body)).toBe(201);
+      expect((await stored(byKey.body.id)).spendThisPeriodUSD).toBe(5);
+      expect((await complete(byKey.body.token)).status).toBe(403);
+    });
+
+    it('keeps the lineage and the minted keys when a minted key rotates itself', async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const child = await mint(asKey(parent.body.token), 'C', { canMint: true });
+      const grandchild = await mint(asKey(child.body.token), 'G');
+      const rotated = await rotate(asKey(child.body.token), child.body.id);
+
+      expect(rotated.status, JSON.stringify(rotated.body)).toBe(201);
+      expect(rotated.body.mintedBy).toBe(parent.body.id);
+      expect(await stored(rotated.body.id)).toMatchObject({ mintedBy: parent.body.id });
+      expect(await stored(grandchild.body.id)).toMatchObject({
+        mintedBy: rotated.body.id,
+        revokedAt: null,
+      });
+      expect(await active()).not.toContain(child.body.id);
+    });
+
+    it('leaves the child working when a rotation by its narrowed parent is refused', async () => {
+      const parent = await mint(session, 'P', { canMint: true, monthlyBudget: 5 });
+      const child = await mint(asKey(parent.body.token), 'C');
+
+      expect(await stored(child.body.id)).toMatchObject({ monthlyBudget: 5 });
+
+      const narrowed = await booted.restClient.patch(
+        `/api/credentials/${parent.body.id}`,
+        { monthlyBudget: 2 },
+        { headers: session },
+      );
+
+      expect(narrowed.status, JSON.stringify(narrowed.body)).toBe(200);
+
+      const rotated = await rotate(asKey(parent.body.token), child.body.id);
+
+      expect(rotated.status).toBe(400);
+      expect(rotated.body.error).toContain('Can\'t exceed API key "P"\'s monthly cap of $2.00.');
+      expect(new Set(await active())).toEqual(new Set([parent.body.id, child.body.id]));
+      expect(
+        (await booted.restClient.get('/api/credentials', { headers: asKey(child.body.token) }))
+          .status,
+      ).toBe(200);
+    });
+
+    it('refuses a canMint key rotating its grandchild or its parent', async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const child = await mint(asKey(parent.body.token), 'C', { canMint: true });
+      const grandchild = await mint(asKey(child.body.token), 'G');
+
+      expect((await rotate(asKey(child.body.token), parent.body.id)).status).toBe(404);
+      expect((await rotate(asKey(parent.body.token), grandchild.body.id)).status).toBe(404);
+      expect(await active()).toEqual(
+        expect.arrayContaining([parent.body.id, child.body.id, grandchild.body.id]),
+      );
+    });
+
+    it('revokes every key a revoked key minted, all the way down', async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const child = await mint(asKey(parent.body.token), 'C', { canMint: true });
+      const grandchild = await mint(asKey(child.body.token), 'G');
+      const sibling = await mint(session, 'S');
+
+      expect((await revoke(session, parent.body.id)).status).toBe(200);
+      expect(await active()).toEqual([sibling.body.id]);
+
+      for (const token of [child.body.token, grandchild.body.token]) {
+        expect(
+          (await booted.restClient.get('/api/credentials', { headers: asKey(token) })).status,
+        ).toBe(403);
+      }
+    });
+
+    it("counts a key's spend against every key above it", async () => {
+      const parent = await mint(session, 'P', { canMint: true, monthlyBudget: 10 });
+      const child = await mint(asKey(parent.body.token), 'C', { canMint: true });
+      const grandchild = await mint(asKey(child.body.token), 'G');
+      const sibling = await mint(asKey(parent.body.token), 'S');
+
+      expect((await complete(grandchild.body.token)).status).toBe(200);
+      expect((await complete(sibling.body.token)).status).toBe(200);
+
+      await vi.waitFor(async () => {
+        expect((await stored(grandchild.body.id)).spendThisPeriodUSD).toBe(3);
+        expect((await stored(child.body.id)).spendThisPeriodUSD).toBe(3);
+        expect((await stored(sibling.body.id)).spendThisPeriodUSD).toBe(3);
+        expect((await stored(parent.body.id)).spendThisPeriodUSD).toBe(6);
+      });
+
+      await setSpend(parent.body.id, 10);
+
+      const capped = await complete(grandchild.body.token);
+
+      expect(capped.status).toBe(403);
+      expect(capped.body.error.message).toBe('API key "P" has used its monthly cap of $10.00.');
+      expect(modelCalls).toEqual(['allowed', 'allowed']);
+    });
+  });
 });
