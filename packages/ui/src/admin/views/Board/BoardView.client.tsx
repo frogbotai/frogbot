@@ -1,33 +1,31 @@
 'use client';
 
-import { getTranslation } from '@payloadcms/translations';
 import {
   RelationshipProvider,
   toast,
   useConfig,
-  useDocumentDrawer,
   useListQuery,
   useTableColumns,
-  useTranslation,
 } from '@payloadcms/ui';
-import { formatDocTitle } from '@payloadcms/ui/shared';
-import type { ClientCollectionConfig, Column } from 'payload';
 import { type ComponentType, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Board } from '../../../board/Board.js';
-import { BoardCard } from '../../../board/BoardCard.js';
-import { FieldCell } from '../../fields/FieldCell/index.client.js';
-import { appendQuery, getPath, setPath, toCellData } from '../cells.js';
+import { Board, type BoardColumnState } from '../../../board/Board.js';
+import { appendQuery, getPath, setPath } from '../cells.js';
 import { getViewCardColumns } from '../preferences.js';
-import { buildBoardReorderBody, buildColumnWhere, getBoardColumnKey } from './data.js';
+import { BoardDocumentCard, type BoardRow } from './BoardDocumentCard.js';
+import { buildBoardReorderBody, buildColumnWhere } from './data.js';
 import type { ResolvedBoardColumn } from './resolveColumns.js';
+import { getBoardGroupKey } from './totals.js';
+import { useBoardColumnState } from './useBoardColumnState.js';
+import { useBoardTotals } from './useBoardTotals.js';
 
-type Row = Record<string, unknown> & { id: number | string };
+type Row = BoardRow;
 
 export type BoardViewClientProps = {
   Card?: ComponentType<{ disabled: boolean; row: Row }>;
   ColumnHeader?: ComponentType<{ column: ResolvedBoardColumn; count: number }>;
   collectionSlug: string;
+  columnState: BoardColumnState;
   columns: ResolvedBoardColumn[];
   cover?: string;
   filter?: Record<string, unknown>;
@@ -35,69 +33,8 @@ export type BoardViewClientProps = {
   limit: number;
   orderField: string;
   canUpdate: boolean;
+  viewSlug: string;
 };
-
-function BoardDocumentCard({
-  cardColumns,
-  collectionConfig,
-  collectionSlug,
-  cover,
-  disabled,
-  row,
-}: Pick<BoardViewClientProps, 'collectionSlug' | 'cover'> & {
-  cardColumns: Column[];
-  collectionConfig: ClientCollectionConfig;
-  disabled: boolean;
-  row: Row;
-}) {
-  const [DocumentDrawer, , drawer] = useDocumentDrawer({ collectionSlug, id: String(row.id) });
-  const { i18n } = useTranslation();
-  const {
-    config: {
-      admin: { dateFormat },
-    },
-  } = useConfig();
-
-  const title = formatDocTitle({
-    collectionConfig,
-    data: row,
-    dateFormat,
-    i18n,
-  });
-
-  return (
-    <>
-      <BoardCard disabled={disabled} id={String(row.id)} onClick={drawer.openDrawer}>
-        {cover ? (
-          <img
-            alt=""
-            className="collection-board__cover"
-            src={String((getPath(row, cover) as { url?: unknown } | undefined)?.url ?? '')}
-          />
-        ) : null}
-        <div className="collection-board__title">{title}</div>
-        {cardColumns.map(({ accessor, field }) => (
-          <div className="collection-board__field" key={accessor}>
-            <span className="collection-board__field-label">
-              {getTranslation(('label' in field ? field.label : undefined) || accessor, i18n)}
-            </span>
-            <div className="collection-board__field-value">
-              <FieldCell
-                cellData={getPath(row, accessor)}
-                collectionSlug={collectionSlug}
-                field={field}
-                link={false}
-                rowData={row}
-                viewType="board"
-              />
-            </div>
-          </div>
-        ))}
-      </BoardCard>
-      <DocumentDrawer />
-    </>
-  );
-}
 
 export function BoardViewClient(props: BoardViewClientProps) {
   const Card = props.Card;
@@ -119,6 +56,21 @@ export function BoardViewClient(props: BoardViewClientProps) {
   const [rows, setRows] = useState<Row[]>([]);
   const [pages, setPages] = useState<Record<string, number>>({});
   const [hasMore, setHasMore] = useState<Record<string, boolean>>({});
+  const where = props.filter ? { and: [props.filter, query.where].filter(Boolean) } : query.where;
+  const totals = useBoardTotals({
+    api: config.routes.api,
+    collectionSlug: props.collectionSlug,
+    groupBy: props.groupBy,
+    where,
+  });
+
+  const [boardColumns, setBoardColumns] = useBoardColumnState({
+    collectionSlug: props.collectionSlug,
+    initial: props.columnState,
+    viewSlug: props.viewSlug,
+  });
+
+  const groupKey = (row: Row) => getBoardGroupKey(getPath(row, props.groupBy));
 
   const fetchColumn = async (key: string, page: number, replace = false) => {
     const value = props.columns.find((column) => column.key === key)?.value;
@@ -128,7 +80,6 @@ export function BoardViewClient(props: BoardViewClientProps) {
       page: String(page),
     });
 
-    const where = props.filter ? { and: [props.filter, query.where].filter(Boolean) } : query.where;
     appendQuery(params, 'where', buildColumnWhere(where, props.groupBy, value));
     appendQuery(params, 'sort', query.sort);
     const response = await fetch(`${config.routes.api}/${props.collectionSlug}?${params}`, {
@@ -140,16 +91,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
 
     setRows((current) =>
       replace
-        ? [
-            ...current.filter((row) => {
-              const value = toCellData(getPath(row, props.groupBy));
-
-              return (
-                (value === null || value === undefined ? '' : getBoardColumnKey(value)) !== key
-              );
-            }),
-            ...result.docs,
-          ]
+        ? [...current.filter((row) => groupKey(row) !== key), ...result.docs]
         : [...current, ...result.docs.filter((doc) => !current.some(({ id }) => id === doc.id))],
     );
 
@@ -160,9 +102,10 @@ export function BoardViewClient(props: BoardViewClientProps) {
   const loadBoard = () => {
     setRows([]);
 
-    void Promise.all(
-      [...props.columns.map(({ key }) => key), ''].map((key) => fetchColumn(key, 1, true)),
-    ).catch((error) =>
+    void Promise.all([
+      ...[...props.columns.map(({ key }) => key), ''].map((key) => fetchColumn(key, 1, true)),
+      totals.refresh(),
+    ]).catch((error) =>
       toast.error(error instanceof Error ? error.message : 'Failed to load board'),
     );
   };
@@ -235,15 +178,35 @@ export function BoardViewClient(props: BoardViewClientProps) {
     if (from !== to) {
       const value = props.columns.find((column) => column.key === to)?.value ?? null;
 
+      totals.adjust(from ?? '', -1);
+      totals.adjust(to ?? '', 1);
+
       await request(`/${props.collectionSlug}/${row.id}`, {
         body: JSON.stringify(setPath(props.groupBy, value)),
         method: 'PATCH',
+      }).catch((error: unknown) => {
+        void totals.refresh();
+        throw error;
       });
     }
 
     const target = before ?? after;
     if (isManual && target) await reorder(row, target, Boolean(before));
-    await Promise.all([...new Set([from ?? '', to ?? ''])].map((key) => fetchColumn(key, 1, true)));
+
+    await Promise.all([
+      ...[...new Set([from ?? '', to ?? ''])].map((key) => fetchColumn(key, 1, true)),
+      ...(from === to ? [] : [totals.refresh()]),
+    ]);
+  };
+
+  const replaceRow = (doc: Row) => {
+    setRows((current) => current.map((row) => (row.id === doc.id ? doc : row)));
+    void totals.refresh();
+  };
+
+  const removeRow = (doc: Row) => {
+    setRows((current) => current.filter((row) => row.id !== doc.id));
+    void totals.refresh();
   };
 
   return (
@@ -251,14 +214,12 @@ export function BoardViewClient(props: BoardViewClientProps) {
       <div className="collection-board">
         <Board
           allowReorder={isManual}
+          columnState={boardColumns}
           columns={props.columns}
           getId={(row) => String(row.id)}
-          groupBy={(row) => {
-            const value = toCellData(getPath(row, props.groupBy));
-
-            return value === null || value === undefined ? null : getBoardColumnKey(value);
-          }}
+          groupBy={(row) => groupKey(row) || null}
           hasMore={hasMore}
+          onColumnStateChange={setBoardColumns}
           renderColumnHeader={
             ColumnHeader
               ? (column, count) => (
@@ -284,11 +245,14 @@ export function BoardViewClient(props: BoardViewClientProps) {
                 collectionSlug={props.collectionSlug}
                 cover={props.cover}
                 disabled={!props.canUpdate}
+                onDelete={removeRow}
+                onSave={replaceRow}
                 row={row}
               />
             )
           }
           rows={rows}
+          totals={totals.totals}
         />
       </div>
     </RelationshipProvider>

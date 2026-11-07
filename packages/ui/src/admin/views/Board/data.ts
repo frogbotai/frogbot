@@ -102,10 +102,23 @@ export function resolveBoardGroupBy({
 }
 
 export type BoardPreferenceValue = {
+  collapsed?: string[];
   columns?: ColumnPreference[];
+  hidden?: string[];
   groupBy?: string;
   sort?: string;
 };
+
+/** Reads collapsed and hidden column keys from a stored preference, dropping anything malformed. */
+export function getBoardColumnState(value?: BoardPreferenceValue): {
+  collapsed: string[];
+  hidden: string[];
+} {
+  const keys = (list: unknown) =>
+    Array.isArray(list) ? list.filter((key): key is string => typeof key === 'string') : [];
+
+  return { collapsed: keys(value?.collapsed), hidden: keys(value?.hidden) };
+}
 
 export type BoardColumnsSource = ColumnPreference[] | string | string[] | undefined;
 

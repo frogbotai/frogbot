@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { Board, type BoardProps } from '../../../packages/ui/src/index';
@@ -61,5 +61,75 @@ describe('Board column headers', () => {
       { color: undefined, key: '', label: 'Uncategorized' },
       0,
     );
+  });
+});
+
+describe('Board totals, collapse, hide and empty columns', () => {
+  const renderWith = (props: Partial<BoardProps<Row>>) =>
+    render(
+      <Board<Row>
+        columns={columns}
+        getId={(row) => row.id}
+        groupBy={(row) => row.status}
+        renderCard={(row) => row.id}
+        rows={[{ id: 'a', status: 'done' }]}
+        {...props}
+      />,
+    );
+
+  it('shows the total, not the loaded rows, in the default and custom headers', () => {
+    const renderColumnHeader = vi.fn(() => null);
+    const { container } = renderWith({ totals: { done: 120 } });
+
+    expect(getHeaders(container)[0].querySelector('.frog-board__column-count')?.textContent).toBe(
+      '120',
+    );
+
+    renderWith({ renderColumnHeader, totals: { done: 120 } });
+
+    expect(renderColumnHeader).toHaveBeenCalledWith(expect.objectContaining({ key: 'done' }), 120);
+  });
+
+  it('marks an empty column without hiding the loaded ones', () => {
+    const { container } = renderWith({});
+    const empty = Array.from(container.querySelectorAll('.frog-board__column')).map((column) =>
+      Boolean(column.querySelector('.frog-board__empty')),
+    );
+
+    expect(empty).toEqual([false, true, true]);
+    expect(container.querySelector('.frog-board__empty')?.textContent).toBe('No cards');
+  });
+
+  it('draws a collapsed column as a strip that expands on click', () => {
+    const onColumnStateChange = vi.fn();
+    const { container, getByRole } = renderWith({
+      columnState: { collapsed: ['done'], hidden: [] },
+      onColumnStateChange,
+      totals: { done: 7 },
+    });
+
+    const strip = getByRole('button', { name: 'Expand Done' });
+
+    expect(container.querySelector('.frog-board__column--collapsed')?.textContent).toContain('7');
+
+    fireEvent.click(strip);
+
+    expect(onColumnStateChange).toHaveBeenCalledWith({ collapsed: [], hidden: [] });
+  });
+
+  it('leaves hidden columns out and counts them in the restore control', () => {
+    const { container, getByRole } = renderWith({
+      columnState: { collapsed: [], hidden: ['backlog', ''] },
+      onColumnStateChange: vi.fn(),
+    });
+
+    expect(container.querySelectorAll('.frog-board__column')).toHaveLength(1);
+    expect(getByRole('button', { name: 'Hidden · 2' })).toBeTruthy();
+  });
+
+  it('offers no column menu without onColumnStateChange', () => {
+    const { container } = renderWith({});
+
+    expect(container.querySelector('.frog-board__column-menu')).toBeNull();
   });
 });

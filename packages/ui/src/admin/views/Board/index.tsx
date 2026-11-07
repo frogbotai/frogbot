@@ -17,6 +17,7 @@ import { BoardPreference } from './BoardPreference.client.js';
 import { BoardViewClient, type BoardViewClientProps } from './BoardView.client.js';
 import {
   type BoardPreferenceValue,
+  getBoardColumnState,
   getBoardGroupBy,
   resolveBoardGroupBy,
   resolveBoardSort,
@@ -223,12 +224,14 @@ export async function BoardView(input: AdminViewServerProps) {
       {preferenceWriter}
       <BoardViewClient
         collectionSlug={collectionSlug}
+        columnState={getBoardColumnState(preferenceValue)}
         columns={columns}
         cover={board.cover}
         filter={filter}
         groupBy={groupBy}
         limit={board.pagination?.defaultLimit ?? 50}
         orderField={orderField}
+        viewSlug={board.slug}
         canUpdate={Boolean(
           permissions?.update &&
           (fieldPermission === true || (fieldPermission && fieldPermission.update)),
