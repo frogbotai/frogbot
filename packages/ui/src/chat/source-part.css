@@ -36,16 +36,16 @@
     line-height: var(--fb-text-xs--line-height);
   }
 
-  a.fb-source-part--document {
+  .fb-source-part--link {
     text-decoration: none;
   }
 
-  a.fb-source-part--document:hover {
+  .fb-source-part--link:hover {
     background-color: var(--color-bg-hover);
     color: var(--color-text);
   }
 
-  a.fb-source-part--document:focus-visible {
+  .fb-source-part--link:focus-visible {
     outline: 2px solid var(--accessibility-focus-color);
     outline-offset: 2px;
   }

@@ -48,11 +48,12 @@ function createMockPayload() {
       collections: [
         {
           slug: 'posts',
+          admin: { useAsTitle: 'title' },
           custom: { frogbot: { auth: false } },
         },
-        { slug: 'users', custom: { frogbot: { auth: true } } },
-        { slug: 'payload-preferences', custom: {} },
-        { slug: 'payload-migrations', custom: {} },
+        { slug: 'users', admin: { useAsTitle: 'id' }, custom: { frogbot: { auth: true } } },
+        { slug: 'payload-preferences', admin: { useAsTitle: 'id' }, custom: {} },
+        { slug: 'payload-migrations', admin: { useAsTitle: 'id' }, custom: {} },
       ],
       serverURL: 'http://localhost:3000',
     },
@@ -216,6 +217,13 @@ describe('FrogBot class', () => {
       expect(frogbot.collections['users'].auth).toBe(true);
     });
 
+    it("copies each collection's useAsTitle onto its entry", async () => {
+      const frogbot = await setup();
+
+      expect(frogbot.collections['posts'].useAsTitle).toBe('title');
+      expect(frogbot.collections['users'].useAsTitle).toBe('id');
+    });
+
     it('sets secret from Payload', async () => {
       const frogbot = await setup();
 
@@ -306,7 +314,7 @@ describe('FrogBot class', () => {
       expect(frogbot.agents.assistant).toBe(firstAgent);
 
       payload.config.collections = [
-        { slug: 'articles', custom: { frogbot: { auth: false } } },
+        { slug: 'articles', admin: { useAsTitle: 'id' }, custom: { frogbot: { auth: false } } },
         { slug: 'payload-preferences', custom: {} },
       ];
 

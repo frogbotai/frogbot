@@ -54,7 +54,7 @@ export function SourcePart({ part }: { part: SourcePartValue }) {
       <a
         data-part="source-document"
         href={sourceHref(record)}
-        className="fb-source-part fb-source-part--document"
+        className="fb-source-part fb-source-part--document fb-source-part--link"
       >
         {label}
       </a>
