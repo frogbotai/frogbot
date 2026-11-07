@@ -578,9 +578,12 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       expect(style).not.toContain('#');
     });
 
-    it('takes admin.theme over the theme cookie', async () => {
+    it.each([
+      ['dark', 'light', '#2c2c2c'],
+      ['light', 'dark', '#ffffff'],
+    ] as const)('takes admin.theme %s over a %s theme cookie', async (theme, cookie, bg) => {
       const { admin } = await frogbot.config._internal.payloadConfig;
-      admin.theme = 'dark';
+      admin.theme = theme;
 
       onTestFinished(() => {
         admin.theme = 'all';
@@ -588,10 +591,12 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
 
       const flow = await authorize();
       const response = await request(flow.callback, {
-        headers: { cookie: `${flow.cookie}; identity-theme=light` },
+        headers: { cookie: `${flow.cookie}; identity-theme=${cookie}` },
       });
 
-      expect((await page(response)).style).toContain('html{color-scheme:dark;background:#2c2c2c;');
+      expect((await page(response)).style).toContain(
+        `html{color-scheme:${theme};background:${bg};`,
+      );
     });
   });
 
