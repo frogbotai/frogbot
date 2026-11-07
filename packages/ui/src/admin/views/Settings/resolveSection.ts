@@ -17,6 +17,27 @@ export function getSettingsRoutePath(segments: readonly string[]): string {
   return settingsSegments.join('/');
 }
 
+/** Whether the app uses FrogBot's Settings view rather than its own `views.settings`. */
+export function usesFrogBotSettings(config: SanitizedConfig): boolean {
+  const views = config.admin.components?.views as
+    Record<string, { Component?: unknown }> | undefined;
+
+  return views?.settings?.Component === '@frogbotai/ui/admin/rsc#SettingsView';
+}
+
+export function getSettingsEntries(config: SanitizedConfig): SettingsEntry[] | undefined {
+  return (config.admin as typeof config.admin & { settings?: SettingsEntry[] }).settings;
+}
+
+/** The collections whose `admin.settings` moves them into FrogBot's Settings. */
+export function getSettingsCollections(config: SanitizedConfig) {
+  if (!usesFrogBotSettings(config)) return [];
+
+  return config.collections.filter(
+    (collection) => (collection.admin as { settings?: boolean } | undefined)?.settings === true,
+  );
+}
+
 type ResolvedSettingsSection = {
   accessible: SettingsEntry[];
   matched: SettingsEntry | undefined;
@@ -67,17 +88,10 @@ export async function resolveSettingsTitle({
   getRequest: () => Promise<FrogBotRequest>;
   segments: readonly string[];
 }): Promise<string | undefined> {
-  if (segments[0] !== 'settings') return undefined;
-
-  const views = config.admin.components?.views as
-    Record<string, { Component?: unknown }> | undefined;
-
-  if (views?.settings?.Component !== '@frogbotai/ui/admin/rsc#SettingsView') return undefined;
-
-  const entries = (config.admin as typeof config.admin & { settings?: SettingsEntry[] }).settings;
+  if (segments[0] !== 'settings' || !usesFrogBotSettings(config)) return undefined;
 
   const { title } = await resolveSettingsSection({
-    entries,
+    entries: getSettingsEntries(config),
     req: await getRequest(),
     routePath: getSettingsRoutePath(segments),
   });

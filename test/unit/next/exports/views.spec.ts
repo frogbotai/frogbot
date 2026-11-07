@@ -70,6 +70,7 @@ vi.mock('@payloadcms/ui', () => ({
   RenderCustomComponent: () => null,
   SelectionProvider: ({ children }: ComponentProps<'div'>) => children,
   SelectMany: () => null,
+  SetStepNav: () => null,
   StickyToolbar: ({ children }: ComponentProps<'div'>) => children,
   TableColumnsProvider: ({ children }: ComponentProps<'div'>) => children,
   useAuth: () => ({}),
@@ -112,6 +113,10 @@ vi.mock('@payloadcms/ui/utilities/reduceFieldsToOptions', () => ({}));
 
 vi.mock('@frogbotai/ui/admin/rsc', async () => ({
   ...(await import('../../../../packages/ui/src/admin/views/Settings/resolveSection.js')),
+}));
+
+vi.mock('../../../../packages/ui/src/admin/templates/Default/index.js', () => ({
+  DefaultTemplate: ({ children }: ComponentProps<'div'>) => children,
 }));
 
 vi.mock('../../../../packages/ui/src/admin/views/controls/ViewControls.client.js', () => ({
@@ -506,7 +511,7 @@ describe('@frogbotai/next views', () => {
       ['Collections', ['settings', 'collections'], 'Collections'],
       ['an entry', ['settings', 'billing'], 'Billing'],
       ['a denied entry', ['settings', 'vault'], 'Settings'],
-    ])('SettingsView header matches the Settings tab title for %s', async (_, segments, text) => {
+    ])('SettingsView step nav matches the Settings tab title for %s', async (_, segments, text) => {
       const config = makeSettingsConfig({
         settings: [
           { Component: 'Billing', label: 'Billing', path: 'billing' },
@@ -528,10 +533,9 @@ describe('@frogbotai/next views', () => {
 
       const title = await getSettingsTitle({ config: config as never, segments });
 
-      const header = element.props.children[1].props.children[0];
+      const stepNav = element.props.children[0];
 
-      expect(header.props.className).toBe('frogbot-settings-template__header');
-      expect(header.props.children).toBe(title);
+      expect(stepNav.props.nav).toEqual([{ label: title }]);
       expect(title).toBe(text);
     });
   });
