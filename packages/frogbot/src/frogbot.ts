@@ -492,6 +492,8 @@ async function initialize(
   }
 
   if (!options.disableOnInit) {
+    await payload.config.onInit?.(payload);
+
     if (Object.keys(frogbot.config._internal.triggers).length) {
       void frogbot.triggers.reconcile().catch((error: unknown) => {
         frogbot.logger.warn(
