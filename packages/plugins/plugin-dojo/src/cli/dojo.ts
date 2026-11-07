@@ -1,11 +1,12 @@
 import { createParser } from 'eventsource-parser';
+import type { DeployEnv } from 'frogbot';
 
 import { deviceLogin, readToken, removeToken } from './auth.js';
 import { ShareError } from './error.js';
-import type { ShareEnv, ShareIO } from './io.js';
+import type { DojoIO } from './io.js';
 
 /** `FROGBOT_DOJO_URL`, or Dojo itself. */
-export function dojoUrl(env: ShareEnv): string {
+export function dojoUrl(env: DeployEnv): string {
   return (env.FROGBOT_DOJO_URL || 'https://dojo.frogbot.ai').replace(/\/+$/, '');
 }
 
@@ -48,7 +49,7 @@ export type DojoClient = {
 };
 
 /** A Dojo client that signs in with the stored token, or the device flow when it has none. */
-export function createDojo(io: ShareIO): DojoClient {
+export function createDojo(io: DojoIO): DojoClient {
   const url = dojoUrl(io.env);
   let token: string | undefined;
 

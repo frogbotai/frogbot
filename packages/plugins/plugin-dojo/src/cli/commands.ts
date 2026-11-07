@@ -1,10 +1,10 @@
-import type { ShareIO } from './io.js';
+import type { DojoIO } from './io.js';
 import { processIO } from './io.js';
 
-type Run = (args: string[], io: ShareIO) => Promise<number>;
+type Run = (args: string[], io: DojoIO) => Promise<number>;
 
 const commands = {
-  share: async () => (await import('./run.js')).runShare,
+  share: async () => (await import('./run.js')).runShareCommand,
   pull: async () => (await import('./pull.js')).runPull,
   logs: async () => (await import('./logs.js')).runLogs,
   logout: async () => (await import('./logout.js')).runLogout,

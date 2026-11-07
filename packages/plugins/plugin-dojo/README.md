@@ -1,19 +1,19 @@
 # @frogbotai/plugin-dojo
 
-Adds the `share`, `pull`, `logs` and `logout` commands, and runs a FrogBot app on Dojo with no setup: uploads go to the app's R2 bucket, and AI goes through Dojo's gateway. Docs: https://docs.frogbot.ai/plugins/dojo
+Adds the `dojo` target to `frogbot deploy` and the `share`, `pull`, `logs` and `logout` commands, and runs a FrogBot app on Dojo with no setup: uploads go to the app's R2 bucket, and AI goes through Dojo's gateway. Docs: https://docs.frogbot.ai/plugins/dojo
 
 Dojo adds this plugin when it builds an app, after the app's own plugins, by setting `FROGBOT_PLATFORM_PLUGIN=@frogbotai/plugin-dojo` for `next build` and `frogbot` commands. An app that lists `dojo()` itself gets it once: core skips the platform plugin when a listed plugin has the same slug.
 
 ## Commands
 
-| Command  | Arguments                                                                                           | Does                                                       |
-| -------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `share`  | `--data`, `--no-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys` | uploads the app to Dojo, builds it and prints its URL      |
-| `pull`   | `<app>`                                                                                             | downloads an app shared with you into a new folder         |
-| `logs`   | `<app>`, `--follow`                                                                                 | prints an app's recent logs, or follows them               |
-| `logout` | —                                                                                                   | revokes the CLI's Dojo key and removes it from `auth.json` |
+| Command  | Arguments                                                                                           | Does                                                                                     |
+| -------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `share`  | `--data`, `--no-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys` | uploads the app to Dojo, builds it and prints its URL; the same as `frogbot deploy dojo` |
+| `pull`   | `<app>`                                                                                             | downloads an app shared with you into a new folder                                       |
+| `logs`   | `<app>`, `--follow`                                                                                 | prints an app's recent logs, or follows them                                             |
+| `logout` | —                                                                                                   | revokes the CLI's Dojo key and removes it from `auth.json`                               |
 
-`dojo()` adds them to `cli.commands`, so an app that lists it runs `frogbot share`. The package's `frogbot-dojo` bin runs the same four anywhere, with or without an app: `npx @frogbotai/plugin-dojo pull deals` works in an empty folder. Each usage line names the form that was run. With no command or an unknown one, the bin prints its usage and exits 2.
+`dojo()` adds them to `cli.commands`, so an app that lists it runs `frogbot share`, and adds `dojo` to `cli.deployTargets`, so `frogbot deploy` runs the same code. The package's `frogbot-dojo` bin runs the same four anywhere, with or without an app: `npx @frogbotai/plugin-dojo pull deals` works in an empty folder. Each usage line names the form that was run. With no command or an unknown one, the bin prints its usage and exits 2.
 
 ## What it changes
 
