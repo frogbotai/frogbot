@@ -1,3 +1,4 @@
+import type { SanitizedConfig } from 'payload';
 import { generatePayloadCookie } from 'payload/shared';
 
 import {
@@ -11,6 +12,7 @@ import type { Endpoint } from '../../endpoints/types.js';
 import type { SignInMethod } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { issueSession } from '../session.js';
+import { continueLook, continuePage } from './continuePage.js';
 import { resolveSignInIdentity } from './identity.js';
 
 async function routeURLs({
@@ -53,19 +55,33 @@ async function routeURLs({
   };
 }
 
-const escapeHTML = (value: string) =>
-  value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
-
-function continueTo(returnTo: string, headers: Headers): Response {
-  const url = escapeHTML(returnTo);
+function continueTo({
+  req,
+  config,
+  collectionSlug,
+  returnTo,
+  headers,
+}: {
+  req: FrogBotRequest;
+  config: SanitizedConfig;
+  collectionSlug: string;
+  returnTo: string;
+  headers: Headers;
+}): Response {
+  const { body, csp } = continuePage({
+    returnTo,
+    look: continueLook({ config, collectionSlug, returnTo, headers: req.headers }),
+    lang: req.i18n.language,
+    loading: req.t('general:loading'),
+    next: req.t('general:next'),
+  });
 
   headers.set('content-type', 'text/html; charset=utf-8');
   headers.set('referrer-policy', 'no-referrer');
+  headers.set('x-content-type-options', 'nosniff');
+  headers.set('content-security-policy', csp);
 
-  return new Response(
-    `<!doctype html><meta http-equiv="refresh" content="0;url=${url}"><a href="${url}">Continue</a>`,
-    { headers },
-  );
+  return new Response(body, { headers });
 }
 
 export function buildSignInEndpoints({
@@ -193,7 +209,13 @@ export function buildSignInEndpoints({
             }),
           );
 
-          return continueTo(intent.returnTo, headers);
+          return continueTo({
+            req,
+            config,
+            collectionSlug,
+            returnTo: intent.returnTo,
+            headers,
+          });
         } catch (error) {
           return failure(
             error instanceof OAuthError ? (error.code === 'signUp' ? 403 : 400) : 500,
