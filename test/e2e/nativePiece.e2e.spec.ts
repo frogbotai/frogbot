@@ -235,7 +235,6 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
     dataDir = mkdtempSync(join(tmpdir(), 'frogbot-native-piece-'));
     const config = await buildConfig({
       secret: 'native-piece-e2e-secret',
-      telemetry: false,
       db: sqliteAdapter({ client: { url: `file:${join(dataDir, 'piece.db')}` } }),
       typescript: { autoGenerate: false },
       collections: [{ slug: 'users', auth: true, fields: [] }],

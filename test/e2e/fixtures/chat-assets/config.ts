@@ -55,7 +55,6 @@ const providerUrl = process.env.CHAT_ASSETS_E2E_PROVIDER_URL;
 if (!dataDir || !providerUrl) throw new Error('Missing chat assets E2E environment');
 
 const config = await buildTestConfig({
-  telemetry: false,
   db: sqliteAdapter({ client: { url: `file:${join(dataDir, 'assets.db')}` } }),
   collections: [{ slug: usersSlug, auth: true, access: { create: () => true }, fields: [] }, chats],
   ai: {

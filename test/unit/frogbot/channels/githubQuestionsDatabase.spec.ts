@@ -84,7 +84,6 @@ async function boot(directory: string): Promise<FrogBot> {
 
   const config = await buildConfig({
     secret: 'github-questions-test-secret',
-    telemetry: false,
     db: sqliteAdapter({ client: { url: `file:${directory}/questions.db` }, push: true }),
     typescript: { autoGenerate: false },
     admin: { importMap: { autoGenerate: false } },

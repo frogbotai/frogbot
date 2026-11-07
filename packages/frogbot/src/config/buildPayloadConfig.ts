@@ -172,6 +172,7 @@ export function buildPayloadConfig({
       ...config.routes,
       admin: config.routes?.admin ?? '/',
     },
+    telemetry: false,
   };
 
   if (collections.some((collection) => collection.custom?.frogbot?.signIn?.length)) {

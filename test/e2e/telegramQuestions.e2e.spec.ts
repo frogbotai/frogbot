@@ -174,7 +174,6 @@ describe.skipIf(!RUN_E2E)(
 
       const config = await buildConfig({
         secret: 'telegram-questions-e2e-secret',
-        telemetry: false,
         db: sqliteAdapter({ client: { url: `file:${join(dataDir, 'telegram.db')}` } }),
         typescript: { autoGenerate: false },
         collections: [
