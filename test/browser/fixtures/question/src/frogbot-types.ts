@@ -832,7 +832,6 @@ export interface Task {
    * Set by FrogBot: the error message from the last failed run
    */
   _summary_error?: string | null;
-  _order_board?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -907,7 +906,6 @@ export interface Timesheet {
    * Duration in whole seconds, for example 5400 for 1 hour 30 minutes
    */
   logged?: number | null;
-  _order_board?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -1673,7 +1671,6 @@ export interface TasksSelect {
   summary?: boolean;
   _summary_status?: boolean;
   _summary_error?: boolean;
-  _order_board?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -1720,7 +1717,6 @@ export interface TimesheetsSelect {
   _order?: boolean;
   title?: boolean;
   logged?: boolean;
-  _order_board?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;

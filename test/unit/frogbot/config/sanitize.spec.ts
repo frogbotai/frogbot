@@ -188,7 +188,7 @@ describe('frogbot sanitize', () => {
     ).toThrow("Collection slug 'frogbot-trigger-subscriptions' is reserved");
   });
 
-  it('makes board collections orderable with per-view fields and a hook', async () => {
+  it('makes board collections orderable on the Payload _order field', async () => {
     const result = sanitize(
       makeConfig({
         collections: [
@@ -210,14 +210,12 @@ describe('frogbot sanitize', () => {
     const posts = payloadConfig.collections?.find(({ slug }) => slug === 'posts');
 
     expect(posts?.orderable).toBe(true);
-    expect(posts?.fields).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ name: '_order_by_stage', type: 'text', index: true }),
-      ]),
+    expect(posts?.fields.some((field) => 'name' in field && field.name.startsWith('_order'))).toBe(
+      false,
     );
-    expect(posts?.hooks?.beforeChange).toHaveLength(1);
+    expect(posts?.hooks?.beforeChange ?? []).toHaveLength(0);
     expect(posts?.admin.defaultSort).toBe('-createdAt');
-    expect(posts?.admin.custom?.frogbot.views[1].orderField).toBe('_order_by_stage');
+    expect(posts?.admin.custom?.frogbot.views[1].orderField).toBe('_order');
   });
 
   it('leaves collections without boards non-orderable', async () => {
