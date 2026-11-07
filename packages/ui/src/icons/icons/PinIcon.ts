@@ -21,6 +21,6 @@ export const pinIcon: IconNode = [
   ],
 ];
 
-const PinIcon = createLucideIcon('PinIcon', pinIcon);
+const PinIcon = createLucideIcon('PinIcon', pinIcon, undefined, '0 0 16 16');
 
 export default PinIcon;

@@ -2,7 +2,12 @@ import { expect, type Page, test } from '@playwright/test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import { excludedIcons, type LoadedIcon, loadIcons } from '../__helpers/shared/icons';
+import {
+  excludedIcons,
+  type LoadedIcon,
+  loadIcons,
+  offCentreIcons,
+} from '../__helpers/shared/icons';
 
 type IconGeometry = { name: string; overflow: number; offset: { x: number; y: number } };
 
@@ -65,7 +70,7 @@ async function measureIcons(page: Page): Promise<IconGeometry[]> {
   );
 }
 
-const round = (units: number) => Number(units.toFixed(2));
+const round = (units: number) => Number(units.toFixed(2)) + 0;
 
 test('no stroked icon draws outside its box', async ({ page }) => {
   const geometry = await measureIcons(page);
@@ -77,14 +82,15 @@ test('no stroked icon draws outside its box', async ({ page }) => {
   expect(overflowing).toEqual([]);
 });
 
-test('InvalidStepIcon, StoplightIcon, TwitterIcon and XIcon are centred', async ({ page }) => {
+test('every stroked icon is centred, apart from the recorded ones', async ({ page }) => {
   const geometry = await measureIcons(page);
-  const centred = ['InvalidStepIcon', 'StoplightIcon', 'TwitterIcon', 'XIcon'];
 
-  const offCentre = geometry
-    .filter(({ name }) => centred.includes(name))
-    .filter(({ offset }) => Math.abs(offset.x) > tolerance || Math.abs(offset.y) > tolerance)
-    .map(({ name, offset }) => `${name} is off centre by (${round(offset.x)}, ${round(offset.y)})`);
+  const offsets = Object.fromEntries(
+    geometry
+      .filter(({ name }) => !(name in excludedIcons))
+      .filter(({ offset }) => Math.abs(offset.x) > tolerance || Math.abs(offset.y) > tolerance)
+      .map(({ name, offset }) => [name, { x: round(offset.x), y: round(offset.y) }]),
+  );
 
-  expect(offCentre).toEqual([]);
+  expect(offsets).toEqual(offCentreIcons);
 });
