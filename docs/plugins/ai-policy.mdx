@@ -92,6 +92,8 @@ The key's create dialog has a collapsed **Limits** section with the model list a
 
 Only a signed-in session can change a key's limits. A request authenticated by an API key that changes `models` or `monthlyBudget` on any key gets a `403`: `API keys can't change their own limits. Sign in to change them.`
 
+A key with `canMint` sets the limits of the keys it [mints](/plugins/api-keys#keys-that-mint-keys), inside its own: a list or cap the new key leaves empty is the parent's, and a wider one fails with `"<id>" isn't allowed for API key "<name>".` or `Can't exceed API key "<name>"'s monthly cap of $20.00.` A key it rotates is checked the same way. Each key's spend is its own, so the owner's budget is what bounds a parent and its children together.
+
 On a request made with a key, the owner's model list and budget are checked first, then the key's:
 
 - a model outside a non-empty key list fails with a `403`, code `model_not_allowed`: `Model "<id>" is not allowed for API key "<name>".` Chat and agent lists, and `GET /api/v1/models`, show only the key's models;

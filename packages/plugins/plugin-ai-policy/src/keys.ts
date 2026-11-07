@@ -10,7 +10,7 @@ import {
 } from 'frogbot';
 
 import { mergePolicyFields } from './fields.js';
-import { formatUSD, policyKey, readPolicy } from './policy.js';
+import { formatUSD, type PolicyKey, policyKey, readPolicy } from './policy.js';
 
 export type KeyLimitsOptions = {
   authCollection: string;
@@ -65,7 +65,12 @@ async function loadOwner(
     .catch(() => undefined);
 }
 
-const isRotation = (req: FrogBotRequest) => req.context?.apiKeyRotatedFrom !== undefined;
+const isRotation = (req: FrogBotRequest) =>
+  req.context?.apiKeyRotatedFrom !== undefined && !policyKey(req.user);
+
+function parentName(key: PolicyKey): string {
+  return `API key "${typeof key.name === 'string' ? key.name : String(key.id)}"`;
+}
 
 const toList = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
 
@@ -83,6 +88,15 @@ function createModelsValidate({ authCollection, titleField, models }: KeyLimitsO
     if (added.some((model) => typeof model !== 'string' || !models.includes(model))) {
       return req.t('validation:invalidSelection');
     }
+
+    const parent = policyKey(req.user);
+    const parentModels = parent ? readPolicy(parent).models : [];
+    const outside =
+      parent &&
+      parentModels.length > 0 &&
+      added.find((model) => !parentModels.includes(model as string));
+
+    if (outside) return `"${String(outside)}" isn't allowed for ${parentName(parent)}.`;
 
     const owner = await loadOwner(req, authCollection, data);
     const allowed = owner ? readPolicy(owner).models : [];
@@ -106,6 +120,13 @@ function createBudgetValidate({ authCollection, titleField }: KeyLimitsOptions):
 
     if (value < 0) {
       return req.t('validation:lessThanMin', { label: 'Monthly Cap (USD)', min: 0, value });
+    }
+
+    const parent = policyKey(req.user);
+    const cap = parent ? readPolicy(parent).monthlyBudgetUSD : undefined;
+
+    if (parent && cap !== undefined && value > cap) {
+      return `Can't exceed ${parentName(parent)}'s monthly cap of ${formatUSD(cap)}.`;
     }
 
     const owner = await loadOwner(req, authCollection, data);
@@ -175,13 +196,31 @@ const sameList = (a: unknown, b: unknown) => {
   return left.length === right.length && left.every((item) => right.includes(item));
 };
 
-/** D2: a request made with an API key can't change any key's limits. */
+function inheritLimits(data: Record<string, unknown>, parent: PolicyKey): Record<string, unknown> {
+  const { models, monthlyBudgetUSD } = readPolicy(parent);
+
+  return {
+    ...data,
+    ...(models.length > 0 && toList(data.models).length === 0 && { models }),
+    ...(monthlyBudgetUSD !== undefined &&
+      typeof data.monthlyBudget !== 'number' && { monthlyBudget: monthlyBudgetUSD }),
+  };
+}
+
+/**
+ * D2: a request made with an API key can't change any key's limits. A key that mints keys sets
+ * the new key's limits, inside its own.
+ */
 export const keyLimitsBeforeValidate: CollectionBeforeValidateHook = ({
   data,
+  operation,
   originalDoc,
   req,
 }) => {
-  if (!data || !policyKey(req.user)) return data;
+  const parent = policyKey(req.user);
+
+  if (!data || !parent) return data;
+  if (operation === 'create') return inheritLimits(data, parent);
 
   const original = (originalDoc ?? {}) as Record<string, unknown>;
   const changed =

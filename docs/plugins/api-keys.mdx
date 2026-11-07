@@ -127,4 +127,14 @@ plugins: [
 - Keys are revoked individually without affecting the owning user's other authentication methods.
 - Deleting a user also deletes every key that user owns.
 - Collection reads and writes, revoke, and rotate are owner-scoped until you widen them.
-- Minting and rotating need a signed-in session. A request authenticated by an API key gets `403`, so a leaked key can't create keys that outlive revoking it. A key can still list, rename, and revoke keys, including itself.
+- Minting and rotating need a signed-in session, or a key with `canMint`. A request authenticated by any other key gets `403`, so a leaked key can't create keys that outlive revoking it. Every key has `canMint` off unless whoever minted it set it. A key can still list, rename, and revoke keys, including itself.
+
+## Keys that mint keys
+
+A session can mint a key with `canMint`, by posting `{ name, data: { canMint: true } }` to `mint`. Requests made with that key can then mint and rotate keys, for a CLI or agent that sets up its own automation without a browser. A key minted by a key is never broader than its parent:
+
+- It records the parent as `mintedBy`, shown in the keys list. Keys a session mints or rotates leave it empty.
+- It can have `canMint` only because its parent has it.
+- With the [AI policy plugin](/plugins/ai-policy#api-key-limits), its model list and monthly cap stay inside the parent's as well as the owner's. A list or cap it leaves empty is the parent's.
+
+Revoking a parent doesn't revoke the keys it minted.

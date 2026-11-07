@@ -225,6 +225,44 @@ describe('aiPolicyPlugin key limits', () => {
     ).toEqual({ monthlyBudget: 40 });
   });
 
+  it('starts a key minted by a key from its parent limits and keeps it inside them', async () => {
+    const result = await apply();
+    const hook = collection(result, 'api-keys')?.hooks?.beforeValidate?.at(-1) as (
+      args: Record<string, unknown>,
+    ) => unknown;
+
+    const parent = { id: 7, name: 'CI', models: ['openai/gpt-4o'], monthlyBudget: 20 };
+    const keyUser = { id: 1, collection: 'users', apiKey: parent };
+    const models = validate(result, 'models');
+    const budget = validate(result, 'monthlyBudget');
+
+    expect(hook({ data: { name: 'child' }, operation: 'create', req: request(keyUser) })).toEqual({
+      name: 'child',
+      models: ['openai/gpt-4o'],
+      monthlyBudget: 20,
+    });
+    expect(
+      hook({
+        data: { name: 'child', models: ['openai/gpt-4o'], monthlyBudget: 5 },
+        operation: 'create',
+        req: request(keyUser),
+      }),
+    ).toEqual({ name: 'child', models: ['openai/gpt-4o'], monthlyBudget: 5 });
+    await expect(models(['smart'], undefined, request(keyUser), 2)).resolves.toBe(
+      '"smart" isn\'t allowed for API key "CI".',
+    );
+    await expect(budget(30, undefined, request(keyUser))).resolves.toBe(
+      'Can\'t exceed API key "CI"\'s monthly cap of $20.00.',
+    );
+    await expect(budget(15, undefined, request(keyUser))).resolves.toBe(true);
+    await expect(
+      budget(30, undefined, request(keyUser, { apiKeyRotatedFrom: 3 })),
+    ).resolves.toMatch('monthly cap of $20.00');
+    await expect(
+      budget(60, undefined, request({ id: 1, collection: 'users' }, { apiKeyRotatedFrom: 3 })),
+    ).resolves.toBe(true);
+  });
+
   it('checks the key models and cap after the owner', async () => {
     const result = await apply();
     const generate = result.ai?.access?.generate;

@@ -39,6 +39,8 @@ describe('API keys collection', () => {
       'tokenHash',
       'lastUsedAt',
       'revokedAt',
+      'canMint',
+      'mintedBy',
       'actions',
     ]);
     expect(
@@ -62,7 +64,15 @@ describe('API keys collection', () => {
     expect(await collection.access?.read?.({ slug: 'test', req: request() })).toBe(false);
     expect(await collection.access?.update?.({ slug: 'test', req: request() })).toBe(false);
 
-    for (const name of ['owner', 'prefix', 'tokenHash', 'lastUsedAt', 'revokedAt']) {
+    for (const name of [
+      'owner',
+      'prefix',
+      'tokenHash',
+      'lastUsedAt',
+      'revokedAt',
+      'canMint',
+      'mintedBy',
+    ]) {
       const field = collection.fields.find((item) => 'name' in item && item.name === name);
 
       expect('access' in field! && field.access?.update?.({} as never)).toBe(false);
@@ -71,9 +81,12 @@ describe('API keys collection', () => {
     expect(collection.admin?.views).toEqual([
       {
         type: 'list',
-        defaultFields: ['name', 'prefix', 'lastUsedAt', 'revokedAt', 'actions'],
+        defaultFields: ['name', 'prefix', 'mintedBy', 'lastUsedAt', 'revokedAt', 'actions'],
       },
     ]);
+    expect(
+      collection.fields.find((item) => 'name' in item && item.name === 'mintedBy'),
+    ).toMatchObject({ type: 'relationship', relationTo: 'api-keys' });
     expect(collection.admin?.components?.CreateButton).toEqual(manager());
     expect(collection.fields.at(-1)).toMatchObject({
       name: 'actions',
@@ -146,14 +159,14 @@ describe('API keys collection', () => {
     }
   });
 
-  it('refuses mint and rotate for API-key requests without writing', async () => {
+  it('refuses mint and rotate for API-key requests without canMint, without writing', async () => {
     const collection = await getCollection();
     const create = vi.fn();
     const update = vi.fn();
     const req = {
       user: { id: 'user-1', _strategy: 'api-key', apiKeyId: 'key-1' },
       routeParams: { id: 'key-1' },
-      json: () => Promise.resolve({ name: 'Persist' }),
+      json: () => Promise.resolve({ name: 'Persist', data: { canMint: true } }),
       frogbot: {
         find: vi
           .fn()
@@ -169,12 +182,74 @@ describe('API keys collection', () => {
 
       expect(response.status).toBe(403);
       expect(await response.json()).toEqual({
-        error: 'An API key cannot mint or rotate API keys. Sign in to manage keys.',
+        error:
+          "This API key can't mint or rotate API keys. Sign in, or use a key that can mint keys.",
       });
     }
 
     expect(create).not.toHaveBeenCalled();
     expect(update).not.toHaveBeenCalled();
+  });
+
+  it('lets a canMint key mint and rotate, recording itself as mintedBy', async () => {
+    const collection = await getCollection();
+    const create = vi.fn().mockResolvedValue({ id: 'key-2', createdAt: 'now' });
+    const update = vi.fn();
+    const req = {
+      user: {
+        id: 'user-1',
+        _strategy: 'api-key',
+        apiKeyId: 'key-1',
+        apiKey: { id: 'key-1', canMint: true },
+      },
+      routeParams: { id: 'key-3' },
+      json: () => Promise.resolve({ name: 'CI', data: { canMint: true } }),
+      frogbot: {
+        find: vi.fn().mockResolvedValue({
+          docs: [{ id: 'key-3', name: 'Old', owner: 'user-1', canMint: false, mintedBy: null }],
+        }),
+        create,
+        update,
+      },
+    } as unknown as FrogBotRequest;
+
+    const mint = collection.endpoints!.find((item) => item.path === '/mint')!;
+    const minted = await mint.handler(req);
+
+    expect(minted.status).toBe(201);
+    expect(await minted.json()).toMatchObject({ id: 'key-2', canMint: true, mintedBy: 'key-1' });
+    expect(create.mock.calls[0][0].data).toMatchObject({
+      name: 'CI',
+      owner: 'user-1',
+      canMint: true,
+      mintedBy: 'key-1',
+    });
+
+    const rotate = collection.endpoints!.find((item) => item.path === '/:id/rotate')!;
+    const rotated = await rotate.handler(req);
+
+    expect(rotated.status).toBe(201);
+    expect(create.mock.calls[1][0].data).toMatchObject({
+      name: 'Old',
+      canMint: false,
+      mintedBy: 'key-1',
+    });
+    expect(create.mock.calls[1][0].context).toEqual({ apiKeyRotatedFrom: 'key-3' });
+  });
+
+  it('records no mintedBy for a session and refuses data that sets it', async () => {
+    const collection = await getCollection();
+    const create = vi.fn().mockResolvedValue({ id: 'key-2', createdAt: 'now' });
+    const req = {
+      user: { id: 'user-1' },
+      json: () => Promise.resolve({ name: 'CI', data: { mintedBy: 'key-9' } }),
+      frogbot: { create },
+    } as unknown as FrogBotRequest;
+
+    const mint = collection.endpoints!.find((item) => item.path === '/mint')!;
+
+    expect((await mint.handler(req)).status).toBe(201);
+    expect(create.mock.calls[0][0].data).toMatchObject({ canMint: false, mintedBy: null });
   });
 
   it('shows attributed usage cost in list and document views', async () => {

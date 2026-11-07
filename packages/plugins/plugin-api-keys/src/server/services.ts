@@ -34,12 +34,24 @@ export function isApiKeyRequest(req: FrogBotRequest): boolean {
   return (req.user as { _strategy?: unknown } | null | undefined)?._strategy === apiKeyStrategyName;
 }
 
-function requireSessionOwner(req: FrogBotRequest) {
+/** True when the request is a signed-in session, or an API key with `canMint`. */
+export function canMintKeys(req: FrogBotRequest): boolean {
+  if (!isApiKeyRequest(req)) return true;
+
+  return (req.user as { apiKey?: { canMint?: unknown } }).apiKey?.canMint === true;
+}
+
+function requireMinter(req: FrogBotRequest) {
   const owner = req.user?.id;
   if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
-  if (isApiKeyRequest(req)) throw new ApiKeyServiceError('session_required');
+  if (!canMintKeys(req)) throw new ApiKeyServiceError('session_required');
 
-  return owner;
+  const parent = isApiKeyRequest(req) ? (req.user as { apiKeyId?: unknown }).apiKeyId : undefined;
+
+  return {
+    owner,
+    mintedBy: typeof parent === 'string' || typeof parent === 'number' ? parent : null,
+  };
 }
 
 const ownFields = new Set([
@@ -52,6 +64,8 @@ const ownFields = new Set([
   'tokenHash',
   'lastUsedAt',
   'revokedAt',
+  'canMint',
+  'mintedBy',
   'totalCostUSD',
   'actions',
 ]);
@@ -62,6 +76,7 @@ function foreignData(data: Record<string, unknown> | undefined): Record<string, 
 
 type MintForOwnerOptions = MintApiKeyOptions & {
   owner: string | number;
+  mintedBy: string | number | null;
   context?: Record<string, unknown>;
 };
 
@@ -71,6 +86,7 @@ async function mintForOwner({
   tokenPrefix,
   name,
   owner,
+  mintedBy,
   data,
   context,
 }: MintForOwnerOptions) {
@@ -78,17 +94,37 @@ async function mintForOwner({
   const prefix = getApiKeyPrefix(token);
   const doc = (await req.frogbot.create({
     collection: collectionSlug,
-    data: { ...foreignData(data), name, owner, prefix, tokenHash: hashApiKeyToken(token) },
+    data: {
+      ...foreignData(data),
+      name,
+      owner,
+      prefix,
+      tokenHash: hashApiKeyToken(token),
+      canMint: data?.canMint === true,
+      mintedBy,
+    },
     overrideAccess: true,
     req,
     ...(context && { context }),
   })) as Record<string, unknown>;
 
-  return { id: doc.id, name, prefix, token, createdAt: doc.createdAt };
+  return {
+    id: doc.id,
+    name,
+    prefix,
+    token,
+    canMint: data?.canMint === true,
+    mintedBy,
+    createdAt: doc.createdAt,
+  };
 }
 
+/**
+ * Mints a key for the signed-in user. A request made with an API key needs that key's `canMint`,
+ * and the new key records it as `mintedBy`.
+ */
 export async function mintApiKey(options: MintApiKeyOptions) {
-  const owner = requireSessionOwner(options.req);
+  const { owner, mintedBy } = requireMinter(options.req);
 
   return mintForOwner({
     req: options.req,
@@ -96,6 +132,7 @@ export async function mintApiKey(options: MintApiKeyOptions) {
     tokenPrefix: options.tokenPrefix,
     name: options.name,
     owner,
+    mintedBy,
     data: options.data,
   });
 }
@@ -148,8 +185,9 @@ export async function revokeApiKey(options: RevokeApiKeyOptions) {
 export type RotateApiKeyOptions = RevokeApiKeyOptions & { tokenPrefix: string };
 
 /**
- * Revokes the key, then mints one with its name, owner and every field another plugin added, with
- * `req.context.apiKeyRotatedFrom` set to the revoked key's ID.
+ * Revokes the key, then mints one with its name, owner, `canMint` and every field another plugin
+ * added, with `req.context.apiKeyRotatedFrom` set to the revoked key's ID. The new key's
+ * `mintedBy` is the key that rotated it, or empty for a session.
  */
 export async function rotateApiKey({
   req,
@@ -158,7 +196,7 @@ export async function rotateApiKey({
   tokenPrefix,
   anyOwner,
 }: RotateApiKeyOptions) {
-  requireSessionOwner(req);
+  const { mintedBy } = requireMinter(req);
   const { key } = await revokeKey({ req, collectionSlug, id, anyOwner });
 
   return mintForOwner({
@@ -167,6 +205,7 @@ export async function rotateApiKey({
     tokenPrefix,
     name: key.name,
     owner: key.owner,
+    mintedBy,
     data: key,
     context: { apiKeyRotatedFrom: key.id },
   });
