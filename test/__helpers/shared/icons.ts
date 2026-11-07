@@ -37,6 +37,7 @@ export const excludedIcons: Record<string, number | null> = {
   GoogleIcon: 0,
   InstagramIcon: 0,
   LinkedInIcon: 2,
+  LockIcon: 0,
   MastercardIcon: 2,
   McpIcon: 4.312,
   MicrosoftIcon: 0,

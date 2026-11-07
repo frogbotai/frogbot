@@ -163,6 +163,7 @@ const iconNames = [
   'ClipboardIcon',
   'CloudIcon',
   'CreditCardIcon',
+  'DollarIcon',
   'DashboardIcon',
   'DumbbellIcon',
   'FlaskIcon',
@@ -174,6 +175,7 @@ const iconNames = [
   'IdCardIcon',
   'InboxIcon',
   'KanbanIcon',
+  'LockCheckIcon',
   'MapIcon',
   'MusicIcon',
   'NoteIcon',
@@ -493,13 +495,15 @@ describe('icon stroke defaults', () => {
     expect(strokeOf(icons.FileIcon, { viewBox: '0 0 48 48' })).toBe('4.8');
   });
 
-  it('fills XIcon with no outline', () => {
-    const { svg, unmount } = renderSvg(icons.XIcon);
-    const fills = [...svg.querySelectorAll('path')].map((path) => path.getAttribute('fill'));
+  it('fills LockIcon and XIcon with no outline', () => {
+    for (const Component of [icons.LockIcon, icons.XIcon]) {
+      const { svg, unmount } = renderSvg(Component);
+      const fills = [...svg.querySelectorAll('path')].map((path) => path.getAttribute('fill'));
 
-    expect(svg.getAttribute('stroke-width')).toBe('0');
-    expect(new Set(fills)).toEqual(new Set(['currentColor']));
+      expect(svg.getAttribute('stroke-width')).toBe('0');
+      expect(new Set(fills)).toEqual(new Set(['currentColor']));
 
-    unmount();
+      unmount();
+    }
   });
 });

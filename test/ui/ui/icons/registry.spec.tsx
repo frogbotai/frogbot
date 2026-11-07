@@ -21,6 +21,8 @@ describe('iconRegistry', () => {
     expect(iconNames).toContain('id-card');
     expect(iconNames).toContain('branch');
     expect(iconNames).toContain('volume');
+    expect(iconNames).toContain('dollar');
+    expect(iconNames).toContain('lock-check');
     expect(iconNames).not.toContain('create-lucide');
     expect(iconNames).toEqual(configuredIconNames);
   });
