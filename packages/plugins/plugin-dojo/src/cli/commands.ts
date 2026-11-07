@@ -78,7 +78,7 @@ async function runCommand(
   args: string[],
   io: ShareIO,
 ): Promise<number> {
-  if (args.some((arg) => helpFlags.has(arg))) {
+  if (args.some((arg) => arg === '--help' || arg === '-h')) {
     print(io, verbHelp(io.program, name, verb), 'stdout');
 
     return 0;

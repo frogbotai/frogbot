@@ -53,9 +53,29 @@ export const deployments: Noun = {
       },
     },
     logs: {
-      summary: "Print a deployment's build log, following it until the build ends.",
+      summary: "Print the end of a deployment's build log, or follow it until the build ends.",
       args: '<id>',
-      run: async ({ io, dojo, positionals: [id = ''] }) => {
+      flags: { follow: { type: 'boolean', help: 'Stream new lines until the build ends.' } },
+      run: async ({ io, dojo, positionals: [id = ''], values }) => {
+        if (values.follow !== true) {
+          const deployment = await dojoJSON<Deployment & { logTail?: unknown }>(
+            dojo(),
+            `/api/deployments/${encodeURIComponent(id)}?depth=0`,
+            { what: `Couldn't read deployment ${id}`, needs: editorNeeded },
+          );
+
+          const lines = Array.isArray(deployment.logTail) ? deployment.logTail.map(String) : [];
+          const running = deployment.status === 'queued' || deployment.status === 'building';
+
+          done(io, { id, status: deployment.status, error: deployment.error ?? null, lines }, [
+            ...lines,
+            `[frogbot] ${deployment.status}${deployment.error ? `: ${deployment.error}` : ''}`,
+            ...(running ? ['Add --follow to watch the build.'] : []),
+          ]);
+
+          return;
+        }
+
         const lines: string[] = [];
 
         const build = await followBuild({

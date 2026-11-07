@@ -135,6 +135,7 @@ A session can mint a key with `canMint`, by posting `{ name, data: { canMint: tr
 
 - It records the parent as `mintedBy`, shown in the keys list. Keys a session mints or rotates leave it empty.
 - It can have `canMint` only because its parent has it.
+- A key rotates only itself and the keys it minted. Rotating any other key answers `404` and revokes nothing.
 - With the [AI policy plugin](/plugins/ai-policy#api-key-limits), its model list and monthly cap stay inside the parent's as well as the owner's. A list or cap it leaves empty is the parent's.
 
 Revoking a parent doesn't revoke the keys it minted.

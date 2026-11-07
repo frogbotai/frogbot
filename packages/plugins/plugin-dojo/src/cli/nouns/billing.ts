@@ -44,7 +44,7 @@ export const billing: Noun = {
 
         const status = {
           workspace: slug,
-          plan: plan.plan ?? null,
+          plan: plan.plan && plan.plan !== 'none' ? plan.plan : null,
           status: plan.subscriptionStatus ?? null,
           paidApps: plan.paidApps ?? 0,
           renews: plan.currentPeriodEnd ?? null,

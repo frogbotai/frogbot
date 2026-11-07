@@ -96,7 +96,22 @@ const cases: Case[] = [
       },
     },
   },
-  { args: ['deployments', 'logs', '7'], route: 'GET /api/deployments/7/logs' },
+  { args: ['deployments', 'logs', '7', '--follow'], route: 'GET /api/deployments/7/logs' },
+  {
+    args: ['deployments', 'logs', '7'],
+    route: 'GET /api/deployments/7',
+    replies: {
+      'GET /api/deployments/7': {
+        body: {
+          id: 7,
+          status: 'failed',
+          error: 'Build failed',
+          logTail: ['step 1'],
+          createdAt: 'x',
+        },
+      },
+    },
+  },
   { args: ['env', 'list', 'deals'], route: 'GET /api/apps/7/keys' },
   {
     args: ['env', 'set', 'deals', 'STRIPE_KEY=sk_live_1=2', 'MODE=live'],
@@ -282,6 +297,29 @@ describe('frogbot dojo <noun> <verb>', () => {
 
     expect(await runDojo(['keys', 'create', 'ci', '--json'], json.io)).toBe(0);
     expect(JSON.parse(json.stdout().join('\n'))).toMatchObject({ token: 'fb_cd_secret' });
+  });
+
+  it('runs a command whose argument is the word help', async () => {
+    const { dojo, env, cwd } = await setup({
+      'POST /api/workspaces': { status: 201, body: { doc: { ...workspace, name: 'help' } } },
+    });
+
+    expect(await runDojo(['workspaces', 'create', 'help'], testIO({ cwd, env }).io)).toBe(0);
+    expect(dojo.paths()).toContain('POST /api/workspaces');
+  });
+
+  it('links to the upgrade page when the plan is none', async () => {
+    const { dojo, env, cwd } = await setup({
+      'GET /api/workspaces/1': { body: { ...workspace, plan: 'none', paidApps: 0 } },
+    });
+
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(['billing', 'status'], result.io)).toBe(0);
+    expect(result.stdout()).toEqual([
+      'trend-capital: no plan, 0 paid apps',
+      `Choose a plan at ${dojo.url}/billing/upgrade?workspace=1`,
+    ]);
   });
 
   it('shows the CNAME record while a domain waits for DNS', async () => {

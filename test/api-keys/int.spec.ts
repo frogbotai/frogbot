@@ -281,6 +281,39 @@ describe('API keys plugin integration', () => {
     );
 
     expect(grandchild.status).toBe(403);
+
+    const sibling = await booted.restClient.post<{ id: number | string }>(
+      '/api/credentials/mint',
+      { name: 'Wide sibling', data: { monthlyBudget: 50 } },
+      { headers: { Authorization: `JWT ${login.body.token}` } },
+    );
+
+    expect(sibling.status, JSON.stringify(sibling.body)).toBe(201);
+
+    const rotatedSibling = await booted.restClient.post(
+      `/api/credentials/${sibling.body.id}/rotate`,
+      undefined,
+      { headers: parentHeaders },
+    );
+
+    expect(rotatedSibling.status, JSON.stringify(rotatedSibling.body)).toBe(404);
+    expect(
+      await booted.frogbot.findByID({
+        collection: 'credentials',
+        id: sibling.body.id,
+        depth: 0,
+        overrideAccess: true,
+      }),
+    ).toMatchObject({ revokedAt: null });
+
+    const rotatedChild = await booted.restClient.post<{ mintedBy: number | string }>(
+      `/api/credentials/${child.body.id}/rotate`,
+      undefined,
+      { headers: parentHeaders },
+    );
+
+    expect(rotatedChild.status).toBe(201);
+    expect(rotatedChild.body.mintedBy).toBe(parent.body.id);
   });
 
   it('enforces user model and budget policy and records spend', async () => {

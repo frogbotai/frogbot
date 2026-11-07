@@ -58,7 +58,7 @@ npx @frogbotai/plugin-dojo apps pull deals
 | `apps rename` | `<app> <name>` | Renames an app; its address stays. |
 | `apps delete` | `<app>`, `--yes` | Deletes an app and everything in it. |
 | `deployments list` | `<app>` | Lists an app's deployments, newest first. |
-| `deployments logs` | `<id>` | Prints a deployment's build log until the build ends. |
+| `deployments logs` | `<id>`, `--follow` | Prints the end of a deployment's build log, or follows it until the build ends. |
 | `env list` | `<app>` | Lists an app's environment keys, masked. |
 | `env set` | `<app> KEY=value…` | Sets keys; the app restarts once. |
 | `env unset` | `<app> KEY…`, `--yes` | Removes keys; the app restarts once. |

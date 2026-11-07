@@ -1,4 +1,4 @@
-import type { FrogBotRequest } from 'frogbot';
+import type { FrogBotRequest, Where } from 'frogbot';
 
 import { apiKeyStrategyName } from '../strategy.js';
 import { createApiKeyToken, getApiKeyPrefix, hashApiKeyToken } from './token.js';
@@ -139,18 +139,29 @@ export async function mintApiKey(options: MintApiKeyOptions) {
 
 type RevokedKey = KeyDocument & { id: string | number; name: string; owner: string | number };
 
-async function revokeKey({ req, collectionSlug, id, anyOwner }: RevokeApiKeyOptions) {
+type RevokeKeyOptions = RevokeApiKeyOptions & {
+  rotator?: string | number | null;
+};
+
+async function revokeKey({ req, collectionSlug, id, anyOwner, rotator }: RevokeKeyOptions) {
   const owner = req.user?.id;
   if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
+
+  const scope: Where[] = [
+    { id: { equals: id } },
+    ...(anyOwner ? [] : [{ owner: { equals: owner } }]),
+    ...(rotator == null
+      ? []
+      : [{ or: [{ id: { equals: rotator } }, { mintedBy: { equals: rotator } }] }]),
+  ];
+
   const result = await req.frogbot.find({
     collection: collectionSlug,
     depth: 0,
     limit: 1,
     overrideAccess: true,
     req,
-    where: anyOwner
-      ? { id: { equals: id } }
-      : { and: [{ id: { equals: id } }, { owner: { equals: owner } }] },
+    where: scope.length === 1 ? scope[0] : { and: scope },
   });
 
   const key = result.docs[0] as KeyDocument | undefined;
@@ -187,7 +198,8 @@ export type RotateApiKeyOptions = RevokeApiKeyOptions & { tokenPrefix: string };
 /**
  * Revokes the key, then mints one with its name, owner, `canMint` and every field another plugin
  * added, with `req.context.apiKeyRotatedFrom` set to the revoked key's ID. The new key's
- * `mintedBy` is the key that rotated it, or empty for a session.
+ * `mintedBy` is the key that rotated it, or empty for a session. A key rotates only itself and the
+ * keys it minted; any other key is not found, so nothing is revoked.
  */
 export async function rotateApiKey({
   req,
@@ -197,7 +209,7 @@ export async function rotateApiKey({
   anyOwner,
 }: RotateApiKeyOptions) {
   const { mintedBy } = requireMinter(req);
-  const { key } = await revokeKey({ req, collectionSlug, id, anyOwner });
+  const { key } = await revokeKey({ req, collectionSlug, id, anyOwner, rotator: mintedBy });
 
   return mintForOwner({
     req,
