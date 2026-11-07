@@ -4,6 +4,7 @@ const authenticated = ({ req }: { req: FrogBotRequest }) => Boolean(req.user);
 
 export const Media: CollectionConfig = {
   slug: 'media',
+  admin: { icon: 'image' },
   file: true,
   access: {
     create: authenticated,

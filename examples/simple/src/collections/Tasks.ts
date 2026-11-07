@@ -3,6 +3,7 @@ import type { CollectionConfig } from 'frogbot';
 export const Tasks: CollectionConfig = {
   slug: 'tasks',
   admin: {
+    icon: 'check-list',
     useAsTitle: 'title',
     views: [
       {
