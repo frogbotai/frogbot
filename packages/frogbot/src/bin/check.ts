@@ -1,8 +1,7 @@
 import { relative } from 'node:path';
 import { parseArgs } from 'node:util';
 
-import type { SanitizedConfig } from 'payload';
-
+import { collectionsWithoutIcon } from '../admin/icons.js';
 import { ConfigIssueError } from '../config/issue.js';
 import { loadConfig, resolveConfigDir } from '../config/load.js';
 import { writeGeneratedTypes } from '../typegen/index.js';
@@ -81,21 +80,13 @@ async function findIssues(cwd: string): Promise<CheckResult> {
     }
   }
 
-  return { issues, warnings: findMissingIcons(payloadConfig) };
-}
+  const warnings = collectionsWithoutIcon(payloadConfig.collections).map((slug) => ({
+    code: 'MISSING_ICON',
+    path: `collections.${slug}`,
+    message: `no admin.icon, so the sidebar shows a folder; pick one: ${iconDocs}`,
+  }));
 
-function findMissingIcons(payloadConfig: SanitizedConfig): CheckIssue[] {
-  return payloadConfig.collections
-    .filter(({ admin }) => {
-      const { group, hidden, icon } = admin as typeof admin & { icon?: unknown };
-
-      return !icon && !hidden && group !== false;
-    })
-    .map(({ slug }) => ({
-      code: 'MISSING_ICON',
-      path: `collections.${slug}`,
-      message: `no admin.icon, so the sidebar shows a folder; pick one: ${iconDocs}`,
-    }));
+  return { issues, warnings };
 }
 
 function logToStderr(): () => void {
