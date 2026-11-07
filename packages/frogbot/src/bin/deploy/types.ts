@@ -80,7 +80,10 @@ export type DeployContext = {
   flags: DeployFlags;
   /** The arguments left after the shared flags, for the target to parse. */
   args: string[];
-  /** The app's production variables: `--env-file`, or the `.env` files `frogbot start` loads. */
+  /**
+   * The app's production variables: `--env-file` alone, or the `.env` files `frogbot start` loads plus
+   * `FROGBOT_SECRET` and `DATABASE_URL` from the shell when no file sets them.
+   */
   env: Record<string, string>;
   io: DeployIO;
   /** Prints one line: stdout, or stderr with `--json`. */

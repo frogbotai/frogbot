@@ -33,7 +33,7 @@ Run `frogbot deploy` with no target and no `dojo()` to list the targets. An unkn
 | `--dry-run` | Runs the checks, then prints each file it would write and each command it would run, in order, and changes nothing. Exits `0` when the checks pass. Read-only queries (such as "does this repository exist?") still run. |
 | `--json` | Prints one result on stdout, `{ "target", "ok", "dryRun", "issues", "result" }`, and everything else on stderr. Never prompts. On a dry run, `result.steps` lists the files and commands. |
 | `--no-interactive` | Never prompts. Where a prompt would have asked, the deploy stops and names the flag to pass instead. Without a terminal, every deploy behaves this way. |
-| `--env-file <path>` | Reads the app's production variables from this file only. By default they come from the `.env` files `frogbot start` loads (`.env.production.local`, `.env.local`, `.env.production`, `.env`), then the shell. |
+| `--env-file <path>` | Reads the app's production variables from this file only. By default they come from the `.env` files `frogbot start` loads (`.env.production.local`, `.env.local`, `.env.production`, `.env`), never the development ones; `FROGBOT_SECRET` and `DATABASE_URL` also come from the shell when no file sets them, which suits CI. |
 
 `gcp`, `aws` and `azure` also take:
 
@@ -59,6 +59,7 @@ Every failing check prints together, `[frogbot] <code> <message>` with a `fix:` 
 | `LOCAL_UPLOADS` | `gcp`, `aws`, `azure` | An upload collection saves files on the container's disk. Add a [storage adapter](/upload/storage-adapters): `@frogbotai/storage-gcs`, `@frogbotai/storage-s3` or `@frogbotai/storage-azure`. The deploy never edits your config. |
 | `NO_PROJECT` | `gcp` | No `--project` and no `gcloud config set project`. |
 | `NO_REGION`, `AWS_ROLE_MISSING` | `aws` | No region, or one of the two IAM roles ECS Express Mode needs is missing. |
+| `FLY_NO_MOUNT`, `FLY_APP_MISMATCH` | `fly` | Your `fly.toml` mounts no volume at `/data` while `DATABASE_URL` is a SQLite file, or names a different app than `--app`. |
 
 ### Variables
 
@@ -116,7 +117,7 @@ pnpm frogbot deploy fly --region sjc
 
 - **What it creates:** without a `fly.toml`, it writes one in the shape of the [`fly-sqlite` example](https://github.com/frogbotai/frogbot/tree/main/examples/fly-sqlite) (one machine, stopped when idle, a health check on `/api/health`) and runs `fly apps create`. With a SQLite file database it adds the `frogbot_data` volume at `/data` and sets `DATABASE_URL=file:/data/frogbot.db`; a hosted `DATABASE_URL` gets no volume.
 - **Then:** `fly secrets import --stage` with your variables, and `fly deploy --ha=false`, which keeps one machine so SQLite on a volume works. It prints `https://<app>.fly.dev`.
-- **Re-runs:** an existing `fly.toml` names the app and region, and the volume is created only once. `--app` names a new app.
+- **Re-runs:** an existing `fly.toml` names the app and region, and the volume is created only once. `--app` names a new app; `fly.toml` is written only after `fly apps create` succeeds, so a taken name can be retried with another `--app`.
 - **Teardown:** `fly apps destroy <app>`.
 
 Fly uses your `Dockerfile` instead of generating its default Next.js two-phase build, so your app gets a fast, single-phase cold start.

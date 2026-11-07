@@ -27,15 +27,13 @@ export function checkMigrations(config: DeployConfig): PreflightIssue | undefine
   };
 }
 
-/** A variable from `--env-file` or the `.env` files, then the shell. */
-export function readVariable(context: Pick<DeployContext, 'env' | 'io'>, name: string): string {
-  return context.env[name] ?? context.io.env[name] ?? '';
+/** A production variable: see `DeployContext.env`. */
+export function readVariable(context: Pick<DeployContext, 'env'>, name: string): string {
+  return context.env[name] ?? '';
 }
 
 /** `SECRET_MISSING`: `FROGBOT_SECRET` signs sessions and seals stored connections. */
-export function checkSecret(
-  context: Pick<DeployContext, 'env' | 'io'>,
-): PreflightIssue | undefined {
+export function checkSecret(context: Pick<DeployContext, 'env'>): PreflightIssue | undefined {
   if (readVariable(context, 'FROGBOT_SECRET')) return undefined;
 
   return {

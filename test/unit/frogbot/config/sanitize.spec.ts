@@ -681,9 +681,12 @@ describe('frogbot sanitize', () => {
     );
   });
 
-  it('rejects a `cli.deployTargets` value without preflight and run', () => {
+  it.each([
+    ['preflight and run', { describe: 'x' }],
+    ['describe', { preflight: () => [], run: () => undefined }],
+  ])('rejects a `cli.deployTargets` value without %s', (_, target) => {
     expect(() =>
-      sanitize(makeConfig({ cli: { deployTargets: { host: { describe: 'x' } as never } } })),
+      sanitize(makeConfig({ cli: { deployTargets: { host: target as never } } })),
     ).toThrow('[frogbot] cli deploy target "host" must have `describe`, `preflight` and `run`');
   });
 

@@ -128,7 +128,9 @@ describe('deploy fly', () => {
   });
 
   it('re-runs against the existing fly.toml and volume, and adds no volume for a hosted database', async () => {
-    const existing = "app = 'deals-prod'\nprimary_region = 'ams'\n";
+    const existing =
+      "app = 'deals-prod'\nprimary_region = 'ams'\n\n[mounts]\n  source = 'frogbot_data'\n  destination = '/data'\n";
+
     const sqlite = await deployWith(flyTarget, 'fly', [], {
       programs: {
         fly: (args) => (args[1] === 'list' ? { stdout: '[{"name":"frogbot_data"}]' } : undefined),
@@ -161,6 +163,48 @@ describe('deploy fly', () => {
     expect(stdout()).toContain(
       '[dry-run] $ fly deploy --app deals-app --ha=false --build-arg NEXT_PUBLIC_SITE=https://deals.example.com',
     );
+  });
+
+  it('stops when an existing fly.toml mounts no volume for a SQLite file', async () => {
+    const { code, commands, stderr } = await deployWith(flyTarget, 'fly', [], {
+      programs: { fly },
+      files: {
+        '.env': 'FROGBOT_SECRET=x\nDATABASE_URL=file:./frogbot.db\n',
+        'fly.toml': "app = 'deals'\nprimary_region = 'iad'\n",
+      },
+    });
+
+    expect(code).toBe(1);
+    expect(stderr()[0]).toMatch(/^\[frogbot\] FLY_NO_MOUNT /);
+    expect(commands()).toEqual(['fly auth whoami']);
+  });
+
+  it('creates the app again after a failed first run, and refuses an --app fly.toml disagrees with', async () => {
+    const root = await tempDir();
+
+    await writeApp(root);
+
+    const taken = testIO({
+      cwd: root,
+      programs: { fly: (args) => (args[0] === 'apps' ? { code: 1 } : undefined) },
+    });
+
+    expect(await runDeploy(flyTarget, [], taken.io, { name: 'fly', image: true })).toBe(1);
+    expect(existsSync(join(root, 'fly.toml'))).toBe(false);
+
+    const renamed = testIO({ cwd: root, programs: { fly } });
+
+    expect(
+      await runDeploy(flyTarget, ['--app', 'deals-2'], renamed.io, { name: 'fly', image: true }),
+    ).toBe(0);
+    expect(renamed.commands()).toContain('fly apps create deals-2');
+
+    const mismatch = testIO({ cwd: root, programs: { fly } });
+
+    expect(
+      await runDeploy(flyTarget, ['--app', 'other'], mismatch.io, { name: 'fly', image: true }),
+    ).toBe(1);
+    expect(mismatch.stderr()[0]).toMatch(/^\[frogbot\] FLY_APP_MISMATCH /);
   });
 
   it('reports NOT_LOGGED_IN with the login command', async () => {

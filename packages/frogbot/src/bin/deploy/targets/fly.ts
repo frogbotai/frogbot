@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { appSlug, buildArgs, parseTargetArgs, splitVariables, usesFileDatabase } from '../app.js';
 import { checkLogin, findTool } from '../preflight.js';
-import type { DeployContext, DeployTarget } from '../types.js';
+import type { DeployContext, DeployTarget, PreflightIssue } from '../types.js';
 
 const usage = '[--app <name>] [--region <region>]';
 
@@ -60,6 +60,12 @@ function readToml(root: string, key: string): string | undefined {
   return new RegExp(`^${key}\\s*=\\s*['"]([^'"]+)['"]`, 'm').exec(readFileSync(path, 'utf8'))?.[1];
 }
 
+function hasMount(root: string): boolean {
+  const toml = readFileSync(join(root, 'fly.toml'), 'utf8');
+
+  return /^\[\[?mounts\]\]?/m.test(toml) && /destination\s*=\s*['"]\/data['"]/.test(toml);
+}
+
 async function flyCommand(context: DeployContext): Promise<string> {
   return (await context.io.which('fly')) ? 'fly' : 'flyctl';
 }
@@ -80,8 +86,6 @@ async function hasVolume(context: DeployContext, fly: string, app: string): Prom
 export const flyTarget: DeployTarget = {
   describe: 'Deploy to Fly.io with your fly login (one machine, SQLite on a volume)',
   preflight: async (context) => {
-    parseTargetArgs(context, { target: 'fly', usage, options });
-
     const { command, issue } = await findTool(
       context.io,
       ['fly', 'flyctl'],
@@ -90,9 +94,30 @@ export const flyTarget: DeployTarget = {
 
     if (!command) return issue ? [issue] : [];
 
+    const issues: PreflightIssue[] = [];
+    const flags = parseTargetArgs(context, { target: 'fly', usage, options });
+    const existing = readToml(context.root, 'app');
+
+    if (existing && flags.app && flags.app !== existing) {
+      issues.push({
+        code: 'FLY_APP_MISMATCH',
+        message: `fly.toml deploys the app ${existing}, not ${flags.app}.`,
+        fix: `Drop --app, or delete fly.toml to deploy ${flags.app} as a new app.`,
+      });
+    }
+
+    if (existing && usesFileDatabase(context) && !hasMount(context.root)) {
+      issues.push({
+        code: 'FLY_NO_MOUNT',
+        message:
+          'DATABASE_URL is a SQLite file, but fly.toml mounts no volume at /data, so the data would vanish on every restart.',
+        fix: `Add \`[mounts]\` with \`source = '${volume}'\` and \`destination = '/data'\` to fly.toml, or point DATABASE_URL at a hosted database.`,
+      });
+    }
+
     const login = await checkLogin(context.io, command, ['auth', 'whoami'], 'fly auth login');
 
-    return login ? [login] : [];
+    return login ? [login, ...issues] : issues;
   },
   run: async (context) => {
     const flags = parseTargetArgs(context, { target: 'fly', usage, options });
@@ -103,8 +128,8 @@ export const flyTarget: DeployTarget = {
     const fileDatabase = usesFileDatabase(context);
 
     if (!existing) {
-      await context.writeFile('fly.toml', flyToml({ app, region, mount: fileDatabase }));
       await context.run(fly, ['apps', 'create', app]);
+      await context.writeFile('fly.toml', flyToml({ app, region, mount: fileDatabase }));
     }
 
     if (fileDatabase && !(existing && (await hasVolume(context, fly, app)))) {

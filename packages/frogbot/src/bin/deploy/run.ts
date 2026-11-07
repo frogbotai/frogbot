@@ -133,13 +133,13 @@ export async function runDeploy(
 
     const interactive = io.isTTY && !flags.noInteractive && !flags.json;
     const root = findAppRoot({ cwd: io.cwd, env: io.env });
-    const env = readDeployEnv(root, flags.envFile);
+    const env = readDeployEnv(root, { envFile: flags.envFile, shell: io.env });
     const { config, issue: configIssue } = await loadIssues(io, root);
 
     const issues = [checkLockfile(root), configIssue].filter(isIssue);
     const dockerfileMissing = image && !hasDockerfile(root);
 
-    if (image) issues.push(...[checkSecret({ env, io })].filter(isIssue));
+    if (image) issues.push(...[checkSecret({ env })].filter(isIssue));
 
     if (dockerfileMissing) {
       issues.push({

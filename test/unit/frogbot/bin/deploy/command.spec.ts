@@ -68,12 +68,13 @@ describe('frogbot deploy', () => {
     expect(io.stderr().some((line) => line.trim().startsWith('dojo'))).toBe(true);
   });
 
-  it('prints the load error for a plugin target when the config failed to load', async () => {
+  it("prints the load error and exits 2 for a target it can't find when the config failed to load", async () => {
     const io = testIO({ cwd: await tempDir() });
 
     expect(
       await deploy(['dojo'], { loadError: new Error('[frogbot] broken config'), io: io.io }),
-    ).toBe(1);
+    ).toBe(2);
     expect(io.stderr()[0]).toContain('broken config');
+    expect(io.stderr()[1]).toBe('[frogbot] "dojo" isn\'t a deploy target.');
   });
 });

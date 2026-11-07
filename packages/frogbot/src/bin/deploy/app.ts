@@ -78,10 +78,7 @@ export function usesFileDatabase(context: DeployContext): boolean {
   return !url || url.startsWith('file:');
 }
 
-/**
- * The app's variables split for a host: `NEXT_PUBLIC_*` go in at build time; the rest are secrets,
- * always with `FROGBOT_SECRET` and `DATABASE_URL` when the shell has them.
- */
+/** The app's variables split for a host: `NEXT_PUBLIC_*` go in at build time; the rest are secrets. */
 export function splitVariables(context: DeployContext): {
   secrets: Record<string, string>;
   build: Record<string, string>;
@@ -94,12 +91,6 @@ export function splitVariables(context: DeployContext): {
 
     if (name.startsWith('NEXT_PUBLIC_')) build[name] = value;
     else secrets[name] = value;
-  }
-
-  for (const name of ['FROGBOT_SECRET', 'DATABASE_URL']) {
-    const value = readVariable(context, name);
-
-    if (value && !(name in secrets)) secrets[name] = value;
   }
 
   return { secrets, build };

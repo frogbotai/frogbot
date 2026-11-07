@@ -10,8 +10,16 @@ const { loadEnvConfig } = nextEnvImport;
 
 const silentLog = { info: () => {}, error: () => {} };
 
-/** The app's production variables: `envFile` alone, or the `.env` files `frogbot start` loads, first file winning. */
-export function readDeployEnv(root: string, envFile?: string): Record<string, string> {
+const fromShell = ['FROGBOT_SECRET', 'DATABASE_URL'];
+
+/**
+ * The app's production variables: `envFile` alone, or the `.env` files `frogbot start` loads (first
+ * file winning) plus `FROGBOT_SECRET` and `DATABASE_URL` from `shell` when no file sets them.
+ */
+export function readDeployEnv(
+  root: string,
+  { envFile, shell }: { envFile?: string; shell: Record<string, string | undefined> },
+): Record<string, string> {
   if (envFile) {
     const path = resolve(root, envFile);
     let text: string;
@@ -32,6 +40,12 @@ export function readDeployEnv(root: string, envFile?: string): Record<string, st
     for (const [name, value] of Object.entries(defined(file.env))) {
       if (!(name in env)) env[name] = value;
     }
+  }
+
+  for (const name of fromShell) {
+    const value = shell[name];
+
+    if (!env[name] && value) env[name] = value;
   }
 
   return env;

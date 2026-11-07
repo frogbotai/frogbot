@@ -1,3 +1,5 @@
+import nextEnvImport from '@next/env';
+
 import type { FrogBotSanitizedConfig } from '../../config/sanitized.js';
 import { formatCliError } from '../formatCliError.js';
 import { processDeployIO } from './io.js';
@@ -48,11 +50,7 @@ export async function deploy(
   const stderr = io?.stderr ?? process.stderr;
 
   if (!target || !name) {
-    if (loadError && name) {
-      stderr.write(`${formatCliError(loadError)}\n`);
-
-      return 1;
-    }
+    if (loadError) stderr.write(`${formatCliError(loadError)}\n`);
 
     stderr.write(
       `${name ? `[frogbot] "${name}" isn't a deploy target.\n` : ''}[frogbot] usage: frogbot deploy <target> ${sharedUsage}\nTargets:\n${targetList(targets)}\n`,
@@ -69,10 +67,22 @@ export async function deploy(
       : new Error('[frogbot] no frogbot.config.ts found');
   };
 
-  return runDeploy(
-    target,
-    targetArgs,
-    io ?? processDeployIO({ program: 'frogbot', loadConfig: payloadConfig }),
-    { name, image: Object.hasOwn(coreDeployTargets, name) },
-  );
+  const image = Object.hasOwn(coreDeployTargets, name);
+
+  return runDeploy(target, targetArgs, io ?? realIO({ image, loadConfig: payloadConfig }), {
+    name,
+    image,
+  });
+}
+
+function realIO({
+  image,
+  loadConfig,
+}: {
+  image: boolean;
+  loadConfig: DeployIO['loadConfig'];
+}): DeployIO {
+  const io = processDeployIO({ program: 'frogbot', loadConfig });
+
+  return image ? { ...io, env: nextEnvImport.initialEnv ?? process.env } : io;
 }

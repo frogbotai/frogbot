@@ -152,9 +152,13 @@ function validateDeployTargets(targets: Record<string, unknown> | undefined): vo
       throw new Error(`[frogbot] cli deploy target "${name}" is a core target's name`);
     }
 
-    const { preflight, run } = (target ?? {}) as Partial<DeployTarget>;
+    const { describe, preflight, run } = (target ?? {}) as Partial<DeployTarget>;
 
-    if (typeof preflight !== 'function' || typeof run !== 'function') {
+    if (
+      typeof describe !== 'string' ||
+      typeof preflight !== 'function' ||
+      typeof run !== 'function'
+    ) {
       throw new Error(
         `[frogbot] cli deploy target "${name}" must have \`describe\`, \`preflight\` and \`run\``,
       );

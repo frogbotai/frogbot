@@ -198,6 +198,43 @@ describe('runDeploy', () => {
     ).toBe(0);
   });
 
+  it('reads --env-file alone, ignoring .env and the shell', async () => {
+    const root = await tempDir();
+    const io = testIO({ cwd: root, env: { FROGBOT_SECRET: 'from-shell' } });
+
+    await writeApp(root, { 'prod.env': 'DATABASE_URL=postgres://db.example.com/app\n' });
+
+    expect(
+      await runDeploy(recordingTarget().target, ['--env-file', 'prod.env'], io.io, {
+        name: 'test',
+        image: true,
+      }),
+    ).toBe(1);
+    expect(io.stderr()[0]).toBe('[frogbot] SECRET_MISSING FROGBOT_SECRET is empty.');
+  });
+
+  it('takes the production .env files and the shell, never .env.development', async () => {
+    const root = await tempDir();
+    const dev = testIO({ cwd: root });
+
+    await writeApp(root, { '.env': '', '.env.development': 'FROGBOT_SECRET=dev-only\n' });
+
+    expect(
+      await runDeploy(recordingTarget().target, [], dev.io, { name: 'test', image: true }),
+    ).toBe(1);
+    expect(dev.stderr()[0]).toBe('[frogbot] SECRET_MISSING FROGBOT_SECRET is empty.');
+
+    const shell = testIO({
+      cwd: root,
+      env: { FROGBOT_SECRET: 'from-shell' },
+      programs: { tool: () => undefined },
+    });
+
+    expect(
+      await runDeploy(recordingTarget().target, [], shell.io, { name: 'test', image: true }),
+    ).toBe(0);
+  });
+
   it('exits 2 when --env-file names a missing file', async () => {
     const root = await tempDir();
     const io = testIO({ cwd: root });
