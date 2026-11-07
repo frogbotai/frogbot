@@ -152,6 +152,68 @@ const iconNames = [
   'ShieldIcon',
   'ShoppingCartIcon',
   'TicketIcon',
+  'ActivityIcon',
+  'AirplaneIcon',
+  'ArchiveIcon',
+  'AtIcon',
+  'BedIcon',
+  'BrainIcon',
+  'BranchIcon',
+  'BugIcon',
+  'CarIcon',
+  'ClipboardIcon',
+  'CloudIcon',
+  'CreditCardIcon',
+  'DollarIcon',
+  'DashboardIcon',
+  'DumbbellIcon',
+  'FlaskIcon',
+  'GiftIcon',
+  'GraduationCapIcon',
+  'HeadsetIcon',
+  'HierarchyIcon',
+  'HistoryIcon',
+  'IdCardIcon',
+  'InboxIcon',
+  'KanbanIcon',
+  'LockCheckIcon',
+  'MapIcon',
+  'MusicIcon',
+  'NoteIcon',
+  'PawIcon',
+  'PercentIcon',
+  'PhoneIcon',
+  'PlugIcon',
+  'QrCodeIcon',
+  'RocketIcon',
+  'ScaleIcon',
+  'ServerIcon',
+  'SignpostIcon',
+  'StethoscopeIcon',
+  'StoreIcon',
+  'TableIcon',
+  'TargetIcon',
+  'TerminalIcon',
+  'TransferIcon',
+  'TrophyIcon',
+  'TruckIcon',
+  'UserShieldIcon',
+  'UtensilsIcon',
+  'VolumeIcon',
+  'WalletIcon',
+  'WorkflowIcon',
+  'AwardIcon',
+  'BadgeCheckIcon',
+  'CrownIcon',
+  'FlameIcon',
+  'GemIcon',
+  'HandCoinsIcon',
+  'MedalIcon',
+  'MoneyBagIcon',
+  'PodiumIcon',
+  'SparklesIcon',
+  'TrendingDownIcon',
+  'TrendingUpIcon',
 ] as const;
 
 describe('firmware icons', () => {
@@ -210,13 +272,16 @@ describe('firmware icons', () => {
     expect(container.querySelector('path')?.getAttribute('d')).toMatch(/Z$/);
   });
 
-  it('draws BranchIcon as Lucide split', () => {
-    expect(branchIcon).toEqual([
-      ['path', { d: 'M16 3h5v5' }],
-      ['path', { d: 'M8 3H3v5' }],
-      ['path', { d: 'M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3' }],
-      ['path', { d: 'm15 9 6-6' }],
+  it('draws BranchIcon as a split on the 20 grid', () => {
+    expect(branchIcon.map(([, attributes]) => attributes.d)).toEqual([
+      'M17.5 7.0833V5.5C17.5 4.0858 17.5 3.3787 17.0607 2.9393 16.6213 2.5 15.9143 2.5 14.5 2.5H12.9167M16.6667 3.3333L12.0833 7.9167',
+      'M2.5 7.0833V5.5C2.5 4.0858 2.5 3.3787 2.9393 2.9393 3.3787 2.5 4.0858 2.5 5.5 2.5H7.0833M3.3333 3.3333L8.0474 8.0474C9.0108 9.0108 9.4925 9.4925 9.7462 10.1051 10 10.7177 10 11.3989 10 12.7614V17.5',
     ]);
+    expect(
+      render(createElement(icons.BranchIcon))
+        .container.querySelector('svg')
+        ?.getAttribute('viewBox'),
+    ).toBe('0 0 20 20');
   });
 
   it('supports factory defaults and icon prop overrides', () => {
@@ -348,14 +413,7 @@ describe('icon line weight', () => {
     const names = loadedIcons.map(({ name }) => name);
 
     expect(names).toEqual(
-      expect.arrayContaining([
-        ...iconNames,
-        'BranchIcon',
-        'CheckIcon',
-        'MenuIcon',
-        'SquareIcon',
-        'StarIcon',
-      ]),
+      expect.arrayContaining([...iconNames, 'CheckIcon', 'MenuIcon', 'SquareIcon', 'StarIcon']),
     );
     expect(names).toEqual(
       expect.arrayContaining([...Object.keys(excludedIcons), ...Object.keys(shapeStrokes)]),

@@ -15,6 +15,16 @@ describe('iconRegistry', () => {
     expect(iconNames).toContain('calendar');
     expect(iconNames).toContain('shopping-cart');
     expect(iconNames).toContain('chart-bar');
+    expect(iconNames).toContain('headset');
+    expect(iconNames).toContain('user-shield');
+    expect(iconNames).toContain('qr-code');
+    expect(iconNames).toContain('id-card');
+    expect(iconNames).toContain('branch');
+    expect(iconNames).toContain('volume');
+    expect(iconNames).toContain('dollar');
+    expect(iconNames).toContain('lock-check');
+    expect(iconNames).toContain('trending-up');
+    expect(iconNames).toContain('money-bag');
     expect(iconNames).toContain('map-pin');
     expect(iconNames).not.toContain('create-lucide');
     expect(iconNames).toEqual(configuredIconNames);

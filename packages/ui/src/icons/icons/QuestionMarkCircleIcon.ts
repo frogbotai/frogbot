@@ -28,6 +28,11 @@ export const questionMarkCircleIcon: IconNode = [
   ],
 ];
 
-const QuestionMarkCircleIcon = createLucideIcon('QuestionMarkCircleIcon', questionMarkCircleIcon);
+const QuestionMarkCircleIcon = createLucideIcon(
+  'QuestionMarkCircleIcon',
+  questionMarkCircleIcon,
+  undefined,
+  '0 0 20 20',
+);
 
 export default QuestionMarkCircleIcon;
