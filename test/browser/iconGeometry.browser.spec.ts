@@ -82,12 +82,12 @@ test('no stroked icon draws outside its box', async ({ page }) => {
   expect(overflowing).toEqual([]);
 });
 
-test('every stroked icon is centred, apart from the recorded ones', async ({ page }) => {
+test('every stroked icon and XIcon is centred, apart from the recorded ones', async ({ page }) => {
   const geometry = await measureIcons(page);
 
   const offsets = Object.fromEntries(
     geometry
-      .filter(({ name }) => !(name in excludedIcons))
+      .filter(({ name }) => !(name in excludedIcons) || name === 'XIcon')
       .filter(({ offset }) => Math.abs(offset.x) > tolerance || Math.abs(offset.y) > tolerance)
       .map(({ name, offset }) => [name, { x: round(offset.x), y: round(offset.y) }]),
   );
