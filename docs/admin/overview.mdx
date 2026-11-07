@@ -70,7 +70,7 @@ admin: {
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `appIcon` | `string` | The FrogBot frog | URL path of a square PNG, at least 512 px, in the app's `public/` folder, such as `'/app-icon.png'`. FrogBot draws the tab icon, the home-screen icons and the manifest icons from it; see [Home-screen icons](#home-screen-icons). Anything other than a `/` path ending in `.png` fails at startup. |
+| `appIcon` | `string` | The FrogBot frog | URL path of an opaque square PNG, at least 512 px, in the app's `public/` folder, such as `'/app-icon.png'`. FrogBot serves it as the tab icon, the home-screen icons and the manifest icons; see [Home-screen icons](#home-screen-icons). Anything other than a `/` path ending in `.png` fails at startup. |
 | `titleSuffix` | `string` | `'- FrogBot'` | Appended, after a space, to every admin page title. Custom views without a title show only the site name, without the suffix. Live top-bar titles use it too; see [Top-bar label](/custom-components/custom-views#top-bar-label). An empty string adds no suffix. |
 | `defaultOGImageType` | `'dynamic' \| 'static' \| 'off'` | `'static'` | Open Graph image used when `openGraph.images` is not set. `'static'` uses the FrogBot image. `'dynamic'` renders a 1200×630 image with the page title from the `/api/og` endpoint. `'off'` adds no image and disables the endpoint. |
 
@@ -119,7 +119,7 @@ Custom root views can override page metadata with their own `meta` key; see [Add
 
 ## Home-screen icons
 
-When someone adds an app to an iPhone or Android home screen, FrogBot supplies the icon and a web app manifest. With no setup, every app shows the FrogBot frog. To use your own, put a square PNG of at least 512 px in `public/` and name it in `appIcon`:
+When someone adds an app to an iPhone or Android home screen, FrogBot supplies the icon and a web app manifest. With no setup, every app shows the FrogBot frog. To use your own, put an opaque square PNG of at least 512 px in `public/` and name it in `appIcon`:
 
 ```ts
 admin: {
@@ -130,9 +130,23 @@ admin: {
 }
 ```
 
-FrogBot serves every size from that one file, with no sign-in needed:
+FrogBot serves that one file, unchanged, at every icon URL, with no sign-in needed, and the browser scales it:
 
-- `/api/frogbot/app-icon/{32,180,192,512}`: the tab icon, the iOS touch icon (on white) and the two manifest icons.
+- `/api/frogbot/app-icon/{32,180,192,512}`: the tab icon, the iOS touch icon and the two manifest icons. The default frog is pre-sized, with the iOS one on white.
 - `/api/frogbot/app-manifest`: the manifest, named after `applicationName` (else `FrogBot`) and opening the admin panel.
 
-Every admin page links to them unless you set `icons` or `manifest` yourself.
+Every admin page links to them unless you set `icons` or `manifest` yourself. The endpoints are part of the config, so they work however the app starts, including when `instrumentation.ts` starts FrogBot first.
+
+iOS shows transparent pixels as black on the home screen, so use an icon with an opaque background. To give iPhones a different icon, set `icons.apple`; it replaces FrogBot's links, so name the tab icon too:
+
+```ts
+admin: {
+  meta: {
+    appIcon: '/app-icon.png',
+    icons: {
+      icon: [{ url: '/api/frogbot/app-icon/32', sizes: '32x32', type: 'image/png' }],
+      apple: '/apple-icon.png',
+    },
+  },
+}
+```
