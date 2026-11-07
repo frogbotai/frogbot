@@ -15,7 +15,10 @@ export type NavShellProps = Omit<
   AppSidebarProps,
   'currentPath' | 'onNavigate' | 'onToggle' | 'open'
 > & {
-  /** Replaces `AppSidebar`, such as a Settings sidebar; the rail then never collapses on desktop. */
+  /**
+   * Replaces `AppSidebar`, such as a Settings sidebar. The rail then never collapses on desktop,
+   * and the host's open state follows `initialOpen`, so `AppSidebar` returns as it was saved.
+   */
   children?: ReactNode;
   /** The saved desktop state; the sidebar starts open without it. */
   initialOpen?: boolean;
@@ -38,13 +41,17 @@ export function NavShell({ children, initialOpen, scrollClassName, ...sidebar }:
     hydrated && !isMobile && hostDrawer ? drawerOpen : (initialOpen ?? true),
   );
 
-  const railOpen = children !== undefined || desktopOpen;
-  const open = isMobile ? drawerOpen : railOpen;
+  const replaced = children !== undefined;
+  const open = isMobile ? drawerOpen : replaced || desktopOpen;
   const navState = getNavShellState(isMobile, open);
 
+  const hostOpen = replaced ? initialOpen : desktopOpen;
+
   useLayoutEffect(() => {
-    if (hydrated && !isMobile && drawerOpen !== railOpen) setDrawerOpen(railOpen);
-  }, [railOpen, hydrated, isMobile, drawerOpen, setDrawerOpen]);
+    if (hydrated && !isMobile && hostOpen !== undefined && drawerOpen !== hostOpen) {
+      setDrawerOpen(hostOpen);
+    }
+  }, [hostOpen, hydrated, isMobile, drawerOpen, setDrawerOpen]);
 
   useEffect(() => {
     if (isMobile) setDrawerOpen(false);

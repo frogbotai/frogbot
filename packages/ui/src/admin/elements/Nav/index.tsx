@@ -105,6 +105,7 @@ export async function FrogBotNav(props: FrogBotNavProps) {
   };
 
   if (frogbotReq && isSettingsPage({ collectionSlug, config: payload.config, params, viewType })) {
+    const navPreferences = await getNavPreferences(req);
     const settings = await buildSettingsNav({
       config: payload.config,
       permissions,
@@ -122,6 +123,7 @@ export async function FrogBotNav(props: FrogBotNavProps) {
       <FrogBotSettingsNavClient
         accountHref={settings.accountHref}
         backHref={settings.backHref}
+        initialOpen={navPreferences?.open}
         items={settings.items.map(({ href, icon, kind, label }) => ({
           href,
           icon:

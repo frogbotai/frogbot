@@ -67,6 +67,22 @@ describe('NavShell', () => {
     expect(screen.queryByRole('button', { name: 'Close sidebar' })).toBeNull();
   });
 
+  it("keeps the host's open state at the saved value while children replace the sidebar", () => {
+    const setOpen = vi.fn();
+
+    render(
+      <NavAdapterProvider drawer={{ hydrated: true, open: true, setOpen }}>
+        <NavShell homePath="/" initialOpen={false}>
+          <nav aria-label="Settings">Settings items</nav>
+        </NavShell>
+      </NavAdapterProvider>,
+    );
+
+    expect(shell().dataset.navState).toBe('desktop-nav-open');
+    expect(setOpen).toHaveBeenCalledWith(false);
+    expect(setOpen).not.toHaveBeenCalledWith(true);
+  });
+
   it('opens and closes its children as the mobile drawer', () => {
     isMobile = true;
 

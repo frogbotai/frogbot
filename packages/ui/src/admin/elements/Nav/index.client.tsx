@@ -29,7 +29,10 @@ export type FrogBotNavClientProps = Omit<
   settingsPath: string;
 };
 
-export type FrogBotSettingsNavClientProps = SettingsNavProps & { palette: PaletteModel };
+export type FrogBotSettingsNavClientProps = SettingsNavProps & {
+  initialOpen?: boolean;
+  palette: PaletteModel;
+};
 
 function PayloadLink(props: NavLinkProps) {
   return <Link {...props} prefetch={false} />;
@@ -82,10 +85,18 @@ export function FrogBotNavClient({
 }
 
 /** The Settings sidebar in the same shell and drawer as FrogBot's sidebar. */
-export function FrogBotSettingsNavClient({ palette, ...settings }: FrogBotSettingsNavClientProps) {
+export function FrogBotSettingsNavClient({
+  initialOpen,
+  palette,
+  ...settings
+}: FrogBotSettingsNavClientProps) {
   return (
     <PayloadNavAdapter>
-      <NavShell homePath={settings.backHref} scrollClassName="nav__scroll">
+      <NavShell
+        homePath={settings.backHref}
+        initialOpen={initialOpen}
+        scrollClassName="nav__scroll"
+      >
         <SettingsNav {...settings} />
       </NavShell>
       <RecordPalette {...palette} />
