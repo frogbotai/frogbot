@@ -124,6 +124,63 @@ describe('check ticket-docs', () => {
     expect(check({}, { argv: ['--all'] }).code).toBe(2);
   });
 
+  describe('issue-keyed tickets', () => {
+    const keyed = (folder: string, from = '', to = '') => ({
+      [`_process/tickets/${folder}/step1_research.md`]: fixture(RESEARCH).replace(from, to),
+    });
+
+    it('checks only the named keyed ticket, by key or by folder', () => {
+      const files = {
+        ...keyed('frogbot-950_keyed'),
+        ...keyed('frogbot-951_other', '`src/example.ts:1`', '`src/missing.ts:1`'),
+      };
+
+      for (const arg of [
+        'frogbot-950',
+        'frogbot-950_keyed',
+        '.idea/_process/tickets/frogbot-950_keyed/',
+      ]) {
+        expect(check(files, { argv: [arg] })).toEqual({
+          code: 0,
+          lines: ['ticket-docs: OK · 1 ticket'],
+        });
+      }
+
+      expect(check(files, { argv: ['frogbot-951'] }).code).toBe(1);
+      expect(check(files, { argv: ['frogbot-'] }).code).toBe(2);
+    });
+
+    it("resolves a sidekick ticket's bare citations in the sidekick checkout", () => {
+      const sidekick = (span: string) =>
+        check(keyed('sidekick-950_keyed', '- **Risks:** none.', `- **Risks:** see \`${span}\`.`), {
+          argv: ['sidekick-950'],
+        }).lines;
+
+      const research = '_process/tickets/sidekick-950_keyed/step1_research.md';
+
+      expect(sidekick('src/panel.ts:2')).toEqual([
+        `.idea/${research}:9 \`src/example.ts:1\`: no such file`,
+      ]);
+      expect(
+        check(
+          keyed('frogbot-950_keyed', '- **Risks:** none.', '- **Risks:** see `src/panel.ts:2`.'),
+        ).lines,
+      ).toContain(
+        `.idea/_process/tickets/frogbot-950_keyed/step1_research.md:12 \`src/panel.ts:2\`: no such file`,
+      );
+    });
+
+    it('warns once and passes when the ticket repo has no checkout', () => {
+      expect(check(keyed('platform-950_keyed'), { argv: ['platform-950'] })).toEqual({
+        code: 0,
+        lines: [
+          `.idea/_process/tickets/platform-950_keyed/step1_research.md:9 warning: the platform checkout is missing; its citations are not checked`,
+          'ticket-docs: OK · 1 ticket',
+        ],
+      });
+    });
+  });
+
   describe('status', () => {
     it('rejects a research Status that is not Draft or Done', () => {
       const lines = problems(

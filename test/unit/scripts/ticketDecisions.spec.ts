@@ -1,4 +1,12 @@
-import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 
@@ -148,6 +156,41 @@ describe('pnpm ticket decisions', () => {
     expect(snapshot()).toEqual(before);
   });
 
+  it('records replies to an issue-keyed ticket by its key', () => {
+    const keyed = 'tickets/frogbot-907_keyed/step2_spec.md';
+
+    mkdirSync(join(processDir(), 'tickets', 'frogbot-907_keyed'));
+
+    writeFileSync(
+      file(keyed),
+      read(ALPHA)
+        .replace('# Ticket 901 — Alpha', '# Ticket frogbot-907 — Keyed')
+        .replace('### 901 D1', '### frogbot-907 D1')
+        .replace('### 901 D2', '### 907 D2'),
+    );
+
+    run();
+
+    expect(printed()).toContain(
+      `frogbot-907 — Keyed (${keyed})\n  D1 — Should alpha keep the old flag?\n  D2 — Which colour?`,
+    );
+    expect(() => run('907 D1: A')).toThrow('907 D1: ticket 907 has no step2_spec.md');
+
+    run(
+      'frogbot-907 D1: A\nFROGBOT-907 D2: B\nfrogbot-907 note: keep it short\nfrogbot-907 approve',
+    );
+
+    const spec = read(keyed);
+    const line = spec.split('\n').indexOf('- **Answer:** A') + 1;
+
+    expect(spec).toContain('- **Answer:** B\n');
+    expect(spec).toContain(`Status: Approved (${DATE})`);
+    expect(spec).toContain(`## Owner notes\n\n- ${DATE}: keep it short\n`);
+    expect(read('decisions.md')).toContain(
+      `- DR-041 "A" (${DATE}) → frogbot-907 D1 Should alpha keep the old flag? A: Remove it, simpler. [source](${keyed}#L${line})`,
+    );
+  });
+
   it('refuses an answer that differs from the one already recorded', () => {
     run('901 D1: A');
 
@@ -168,9 +211,12 @@ describe('decision helpers', () => {
   });
 
   it('reads reply lines, with following lines continuing an answer', () => {
-    expect(parseReplies('5 D1: A\n  and more\n\n5 approve\ngo 42\n').replies).toEqual([
+    expect(
+      parseReplies('5 D1: A\n  and more\n\n5 approve\nsidekick-6 note: x\ngo 42\n').replies,
+    ).toEqual([
       { kind: 'answer', ticket: 5, id: 'D1', text: 'A\nand more' },
       { kind: 'approve', ticket: 5 },
+      { kind: 'note', ticket: 'sidekick-6', text: 'x' },
       { kind: 'go', batch: '42' },
     ]);
   });
