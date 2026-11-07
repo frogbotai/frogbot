@@ -10,6 +10,7 @@ import type { ComposerCommand, MentionSource } from './composer/context.js';
 import type { ComposerFeature } from './composer/features.js';
 import type { ComposerHistoryStorage } from './composer/history.js';
 import type { DataRenderer } from './data-part.js';
+import type { SourceRecord } from './source-part.js';
 import type { ToolRenderer } from './tool-registry.js';
 
 export type ChatProviderValue = {
@@ -24,6 +25,7 @@ export type ChatProviderValue = {
   composerFeatures?: readonly ComposerFeature[];
   composerHistory?: ComposerHistoryStorage;
   faviconUrl?: (pageUrl: string) => string | undefined;
+  sourceHref?: (source: SourceRecord) => string | undefined;
 };
 
 const ChatContext = createContext<ChatProviderValue | undefined>(undefined);
@@ -39,6 +41,7 @@ export function ChatProvider({
   dataRenderers = [],
   faviconUrl,
   mentionSources,
+  sourceHref,
   toolRenderers = [],
 }: {
   adapter: ChatPlatformAdapter;
@@ -52,6 +55,8 @@ export function ChatProvider({
   /** The favicon to show for a page in `LinkList`; without it, no favicon is requested. */
   faviconUrl?: (pageUrl: string) => string | undefined;
   mentionSources?: readonly MentionSource[];
+  /** The link for a record a tool cited, such as its admin edit page; without it, sources are plain text. */
+  sourceHref?: (source: SourceRecord) => string | undefined;
   toolRenderers?: readonly ToolRenderer[];
 }) {
   const [state, setState] = useState<Pick<ChatProviderValue, 'manifest' | 'error' | 'loading'>>({
@@ -90,6 +95,7 @@ export function ChatProvider({
         composerFeatures,
         composerHistory,
         faviconUrl,
+        sourceHref,
       }}
     >
       <ArtifactProvider persistence={artifactPersistence} registry={artifactKinds}>
