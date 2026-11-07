@@ -1,6 +1,7 @@
 import type { SettingsEntry } from '../admin/types.js';
 import type { SanitizedAgentConfig } from '../agents/types.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
+import type { DeployTarget } from '../bin/deploy/types.js';
 import type { SanitizedChatConfig } from '../chat/types.js';
 import type { SanitizedConnectionsConfig } from '../connections/types.js';
 import type { FrogBot } from '../frogbot.js';
@@ -29,7 +30,7 @@ export type FrogBotSanitizedConfig = {
   ai?: SanitizedAIConfig;
   agents?: SanitizedAgentConfig[];
   chat: SanitizedChatConfig;
-  cli: { commands: Record<string, CLICommand> };
+  cli: { commands: Record<string, CLICommand>; deployTargets: Record<string, DeployTarget> };
   connections: SanitizedConnectionsConfig;
   files?: SanitizedFilesConfig;
   pieces: SanitizedPiecesConfig;

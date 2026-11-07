@@ -3,9 +3,9 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
-  checkAppRoot,
+  checkLockfile,
   findAppRoot,
-} from '../../../../packages/plugins/plugin-dojo/src/cli/appRoot.js';
+} from '../../../../../packages/frogbot/src/bin/deploy/appRoot.js';
 import { tempDir, writeFiles } from './helpers.js';
 
 const app = {
@@ -48,19 +48,19 @@ describe('findAppRoot', () => {
     const root = await tempDir();
 
     expect(() => findAppRoot({ cwd: root, env: {} })).toThrow(
-      'No frogbot.config.ts here or in any parent folder. Run share from inside the app.',
+      'No frogbot.config.ts here or in any parent folder. Run this from inside the app.',
     );
   });
 });
 
-describe('checkAppRoot', () => {
+describe('checkLockfile', () => {
   it('passes with a package.json and a supported lockfile', async () => {
     for (const lockfile of ['pnpm-lock.yaml', 'package-lock.json', 'yarn.lock']) {
       const root = await tempDir();
 
       await writeFiles(root, { 'package.json': '{}', [lockfile]: '', 'bun.lock': '' });
 
-      expect(() => checkAppRoot(root)).not.toThrow();
+      expect(checkLockfile(root)).toBeUndefined();
     }
   });
 
@@ -69,7 +69,10 @@ describe('checkAppRoot', () => {
 
     await writeFiles(root, { 'pnpm-lock.yaml': '' });
 
-    expect(() => checkAppRoot(root)).toThrow(`No package.json in ${root}.`);
+    expect(checkLockfile(root)).toMatchObject({
+      code: 'NO_PACKAGE_JSON',
+      message: `No package.json in ${root}.`,
+    });
   });
 
   it.each(['bun.lock', 'bun.lockb'])('stops on %s alone', async (lockfile) => {
@@ -77,9 +80,11 @@ describe('checkAppRoot', () => {
 
     await writeFiles(root, { 'package.json': '{}', [lockfile]: '' });
 
-    expect(() => checkAppRoot(root)).toThrow(
-      "Bun isn't supported yet; run `pnpm install` to make a lockfile.",
-    );
+    expect(checkLockfile(root)).toEqual({
+      code: 'NO_LOCKFILE',
+      message: "Bun isn't supported yet.",
+      fix: 'Run `pnpm install` to make a lockfile.',
+    });
   });
 
   it('stops with no lockfile', async () => {
@@ -87,6 +92,10 @@ describe('checkAppRoot', () => {
 
     await writeFiles(root, { 'package.json': '{}' });
 
-    expect(() => checkAppRoot(root)).toThrow('No lockfile: run `pnpm install` first.');
+    expect(checkLockfile(root)).toEqual({
+      code: 'NO_LOCKFILE',
+      message: 'No lockfile.',
+      fix: 'Run `pnpm install` first.',
+    });
   });
 });

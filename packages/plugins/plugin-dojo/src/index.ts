@@ -3,6 +3,7 @@ import { type CLICommand, definePlugin } from 'frogbot';
 import { withDojoAI } from './ai.js';
 import { withDojoBadge, withDojoImports } from './badge.js';
 import type { DojoCommandName } from './cli/commands.js';
+import { dojoTarget } from './deploy.js';
 import { readDojoEnv } from './env.js';
 import { withDojoJobs } from './jobs.js';
 import { withDojoSignIn } from './signIn.js';
@@ -20,8 +21,8 @@ export type DojoPluginOptions = {
 
 /**
  * Runs a FrogBot app on Dojo: R2 file storage, AI through Dojo's gateway, scheduled jobs woken by
- * Dojo, "Continue with Dojo" sign-in and a "Made with FrogBot" badge. Adds the `share`, `pull`, `logs`
- * and `logout` commands. Does nothing else unless `DOJO=1`, apart from listing the badge and sign-in
+ * Dojo, "Continue with Dojo" sign-in and a "Made with FrogBot" badge. Adds the `dojo` deploy target,
+ * which `frogbot deploy` runs by default, and the `share`, `pull`, `logs` and `logout` commands. Does nothing else unless `DOJO=1`, apart from listing the badge and sign-in
  * buttons for the import map, and keeps any storage or provider key the app set. Runs after every
  * other plugin, as Dojo's platform plugin does, so it sees the collections and AI providers they add.
  */
@@ -41,6 +42,7 @@ export const dojo = definePlugin<DojoPluginOptions | undefined>({
           logs: dojoCommand('logs'),
           logout: dojoCommand('logout'),
         },
+        deployTargets: { ...config.cli?.deployTargets, dojo: dojoTarget },
       },
     });
 

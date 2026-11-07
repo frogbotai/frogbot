@@ -1,7 +1,7 @@
 import type { DojoClient } from './dojo.js';
 import { dojoMessage } from './dojo.js';
 import { ShareError } from './error.js';
-import type { ShareIO } from './io.js';
+import type { DojoIO } from './io.js';
 import { say } from './io.js';
 
 const pollMs = 5000;
@@ -54,7 +54,7 @@ async function paid(dojo: DojoClient, paywall: Paywall): Promise<boolean> {
   );
 }
 
-function showPaywall(io: ShareIO, paywall: Paywall): void {
+function showPaywall(io: DojoIO, paywall: Paywall): void {
   say(io, `[frogbot] ${paywall.why}`);
 
   say(
@@ -75,7 +75,7 @@ function showPaywall(io: ShareIO, paywall: Paywall): void {
  */
 export async function whenPaid(
   dojo: DojoClient,
-  io: ShareIO,
+  io: DojoIO,
   send: () => Promise<Response>,
 ): Promise<Response> {
   let polls = 0;

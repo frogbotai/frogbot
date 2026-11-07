@@ -10,6 +10,8 @@ import { resolveUsageCollection } from '../ai/usage/collection.js';
 import { coordinateAuthEndpoints } from '../auth/endpoints.js';
 import { unwrapSessionPayload } from '../auth/operation.js';
 import { validateSignIn, validateSignInFields } from '../auth/signIn/validate.js';
+import { coreDeployTargetNames } from '../bin/deploy/names.js';
+import type { DeployTarget } from '../bin/deploy/types.js';
 import { buildChannelGatewayEndpoints } from '../channels/endpoints.js';
 import {
   CHANNEL_QUESTION_UPDATE_TASK_SLUG,
@@ -138,6 +140,28 @@ function validateCLICommands(commands: Record<string, unknown> | undefined): voi
   }
 }
 
+function validateDeployTargets(targets: Record<string, unknown> | undefined): void {
+  for (const [name, target] of Object.entries(targets ?? {})) {
+    if (!/^[a-z][a-z0-9-]*$/.test(name)) {
+      throw new Error(
+        `[frogbot] cli deploy target "${name}" must be lowercase letters, digits and dashes`,
+      );
+    }
+
+    if ((coreDeployTargetNames as readonly string[]).includes(name)) {
+      throw new Error(`[frogbot] cli deploy target "${name}" is a core target's name`);
+    }
+
+    const { preflight, run } = (target ?? {}) as Partial<DeployTarget>;
+
+    if (typeof preflight !== 'function' || typeof run !== 'function') {
+      throw new Error(
+        `[frogbot] cli deploy target "${name}" must have \`describe\`, \`preflight\` and \`run\``,
+      );
+    }
+  }
+}
+
 function normalizeOnInit(onInit: OnInit | OnInit[] | undefined): OnInit | undefined {
   if (!Array.isArray(onInit)) return onInit;
   if (onInit.length === 0) return undefined;
@@ -176,6 +200,7 @@ export function sanitize(
 
   validateInternalPathReservations(config);
   validateCLICommands(config.cli?.commands);
+  validateDeployTargets(config.cli?.deployTargets);
   const settings = sanitizeSettings(config.settings);
   const sanitizedConfigRef: { current?: FrogBotSanitizedConfig } = {};
 
@@ -518,7 +543,7 @@ export function sanitize(
     ai: sanitizedAI && { ...sanitizedAI, usage: { slug: usageSlug } },
     agents,
     chat,
-    cli: { commands: config.cli?.commands ?? {} },
+    cli: { commands: config.cli?.commands ?? {}, deployTargets: config.cli?.deployTargets ?? {} },
     connections,
     files,
     pieces,

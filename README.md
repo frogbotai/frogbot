@@ -129,7 +129,7 @@ export default buildConfig({
 });
 ```
 
-Boot locally with `frogbot dev`, generate end-to-end TypeScript types with `frogbot generate:types`, or deploy to the cloud in one command with `npx frogbot share`.
+Boot locally with `frogbot dev`, generate end-to-end TypeScript types with `frogbot generate:types`, or deploy in one command with `npx frogbot deploy` (Dojo, Docker, Fly.io, Google Cloud, AWS or Azure).
 
 ## Features
 
@@ -140,7 +140,7 @@ Boot locally with `frogbot dev`, generate end-to-end TypeScript types with `frog
 - **40+ native OAuth pieces & chat channels** — connect Slack, Discord, Linear, GitHub, Teams, Telegram, Gmail, Stripe, Notion, Xero, and more with managed OAuth and human-in-the-loop channel approvals
 - **Durable jobs & schedules** — background queues, cron schedules, retries, and workers backed by your database
 - **Single-command type generation** — `frogbot generate:types` produces end-to-end TypeScript types for your collections, agents, and pieces
-- **Own & deploy anywhere** — MIT licensed; swap SQLite, Postgres, or MongoDB and S3/R2/GCS/Azure/Vercel Blob adapters anytime, or deploy in one command with `npx frogbot share`
+- **Own & deploy anywhere** — MIT licensed; swap SQLite, Postgres, or MongoDB and S3/R2/GCS/Azure/Vercel Blob adapters anytime, or deploy in one command with `npx frogbot deploy`
 
 ## Packages
 
@@ -162,7 +162,7 @@ This monorepo publishes the following packages:
 
 | Package                                                                      | Description                                                           |
 | ---------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| [`@frogbotai/plugin-dojo`](./packages/plugins/plugin-dojo)                   | One-command cloud deploy (`frogbot share`), `pull`, and `logs`        |
+| [`@frogbotai/plugin-dojo`](./packages/plugins/plugin-dojo)                   | Dojo deploys (`frogbot deploy`, `share`), `pull`, and `logs`          |
 | [`@frogbotai/plugin-roles`](./packages/plugins/plugin-roles)                 | Role-based access control (RBAC) collections and permission helpers   |
 | [`@frogbotai/plugin-audit-log`](./packages/plugins/plugin-audit-log)         | Immutable audit trail for collection and auth operations              |
 | [`@frogbotai/plugin-mcp`](./packages/plugins/plugin-mcp)                     | Expose collections and tools as a Model Context Protocol (MCP) server |

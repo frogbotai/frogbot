@@ -178,4 +178,6 @@ export type DatabaseAdapter = {
   snapshot?: SnapshotDatabase;
   /** Set when the adapter syncs its own schema; `frogbot up` runs it before each new server. */
   syncSchema?: SyncSchema;
+  /** The adapter's `prodMigrations`, or `null` without them; `frogbot deploy` checks they're wired. */
+  prodMigrations?: readonly unknown[] | null;
 };

@@ -6,10 +6,10 @@ import { DatabaseSync } from 'node:sqlite';
 import type { SanitizedCollectionConfig } from 'payload';
 import { describe, expect, it } from 'vitest';
 
+import type { DeployConfig } from '../../../../packages/frogbot/src/bin/deploy/types.js';
 import type { DatabaseSnapshot } from '../../../../packages/frogbot/src/database/types.js';
 import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
 import { snapshotKey } from '../../../../packages/plugins/plugin-dojo/src/cli/data/upload.js';
-import type { ShareConfig } from '../../../../packages/plugins/plugin-dojo/src/cli/io.js';
 import { runShare } from '../../../../packages/plugins/plugin-dojo/src/cli/run.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeApp } from './helpers.js';
@@ -62,7 +62,7 @@ function sqliteApp() {
     });
   };
 
-  const config = { collections, db: { snapshot } } as unknown as ShareConfig;
+  const config = { collections, db: { snapshot } } as unknown as DeployConfig;
 
   return { config, copies, local };
 }
@@ -71,7 +71,7 @@ async function setup({
   config = sqliteApp().config,
   dotenv = 'FROGBOT_SECRET=local-secret-0123456789\nSTRIPE_KEY=sk_test_4242424242\n',
   files = uploads,
-}: { config?: ShareConfig; dotenv?: string; files?: Record<string, string> } = {}) {
+}: { config?: DeployConfig; dotenv?: string; files?: Record<string, string> } = {}) {
   const root = await tempDir();
   const dojo = await startFakeDojo();
   const env = { XDG_CONFIG_HOME: await tempDir(), FROGBOT_DOJO_URL: dojo.url };
@@ -268,7 +268,7 @@ describe('frogbot share: bringing data', () => {
 
   it('shares code only, with one line, when the database adapter cannot snapshot', async () => {
     const { run, dataRequests } = await setup({
-      config: { collections, db: {} } as unknown as ShareConfig,
+      config: { collections, db: {} } as unknown as DeployConfig,
     });
 
     const result = await run([]);
@@ -284,7 +284,7 @@ describe('frogbot share: bringing data', () => {
     const empty = {
       collections,
       db: { snapshot: () => Promise.resolve(undefined) },
-    } as unknown as ShareConfig;
+    } as unknown as DeployConfig;
 
     const { run, dataRequests } = await setup({ config: empty });
 

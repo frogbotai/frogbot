@@ -4,7 +4,7 @@ description: "Share a FrogBot app on Dojo, pull one down, read its logs, and run
 keywords: ["Dojo", "share", "pull", "logs", "logout", "plugin-dojo", "plugins"]
 ---
 
-The Dojo plugin adds the `share`, `pull`, `logs` and `logout` commands, and runs your app on Dojo with no setup: uploads go to the app's own storage, and AI goes through Dojo's gateway. Apps made with `create-frogbot-app` already list it.
+The Dojo plugin adds the `dojo` target to [`frogbot deploy`](/deployment/overview) and the `share`, `pull`, `logs` and `logout` commands, and runs your app on Dojo with no setup: uploads go to the app's own storage, and AI goes through Dojo's gateway. Apps made with `create-frogbot-app` already list it.
 
 ## Install
 
@@ -32,7 +32,7 @@ export default buildConfig({
 
 | Command | Arguments | Description |
 | --- | --- | --- |
-| `share` | `--data`, `--no-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys` | Uploads the app to Dojo, builds it and prints its live URL. See [`share`](/getting-started/cli#share). |
+| `share` | `--data`, `--no-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys` | Uploads the app to Dojo, builds it and prints its live URL; the same as `frogbot deploy dojo`. See [`share`](/getting-started/cli#share). |
 | `pull` | `<app>` | Downloads an app shared with you on Dojo into a new folder. See [`pull`](/getting-started/cli#pull). |
 | `logs` | `<app>`, `--follow` | Prints an app's recent logs from Dojo, or follows them. See [`logs`](/getting-started/cli#logs). |
 | `logout` | — | Signs the CLI out of Dojo. See [`logout`](/getting-started/cli#logout). |
@@ -42,6 +42,8 @@ In an app that lists `dojo()`, run them as [plugin commands](/getting-started/cl
 ```bash
 npx frogbot share
 ```
+
+`frogbot deploy` with no target runs the same deploy, because `dojo()` registers `dojo` as a [deploy target](/getting-started/cli#plugin-deploy-targets).
 
 The plugin also installs its own command, so the same four run without an app, or in an app that doesn't list `dojo()`. Pulling an app into an empty folder works this way:
 

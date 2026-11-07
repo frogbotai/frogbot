@@ -118,6 +118,7 @@
   },
   "dependencies": {
     "@ai-sdk/mcp": "2.0.60",
+    "@clack/prompts": "1.8.1",
     "@frogbotai/gateway": "workspace:*",
     "@frogbotai/protocol": "workspace:*",
     "@next/env": "catalog:",
