@@ -265,7 +265,7 @@ It leaves the main sidebar, the dashboard's collection cards and activity, Recen
 
 On narrow screens, the Settings sidebar is the same drawer as the main sidebar, opened by the same menu button.
 
-Settings collections need FrogBot's Settings view and sidebar. When the app replaces `admin.components.views.settings`, `settings: true` does nothing and the collection stays in the main sidebar. A [custom `Nav`](#replace-the-sidebar) draws on Settings pages too.
+Settings collections need FrogBot's Settings view and sidebar. When the app replaces `admin.components.views.settings` with its own view, `settings: true` does nothing and the collection stays in the main sidebar. A [custom `Nav`](#replace-the-sidebar) draws on Settings pages too.
 
 Registry entries add pages within FrogBot's default Settings shell; they do not override its core routes. To replace the entire Settings surface, configure a custom root view:
 
@@ -299,7 +299,7 @@ admin: {
 
 ## Customize the account menu
 
-Select Account in the bottom rail to open the account menu. Its items appear in this order:
+Select Account in the bottom rail, or at the foot of the Settings sidebar, to open the account menu. Its items appear in this order, and the Settings sidebar's menu leaves out Settings:
 
 1. Your name and email, which open the account page
 2. `admin.components.beforeAccountMenu`

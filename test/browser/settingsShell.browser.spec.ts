@@ -55,7 +55,8 @@ test.describe('Settings shell', () => {
 
     const links = settingsNav(page).getByRole('link');
 
-    await expect(links).toHaveText(['Back to app', 'Collections', 'Users', 'Account']);
+    await expect(links).toHaveText(['Back to app', 'Collections', 'Users']);
+    await expect(settingsNav(page).getByRole('button', { name: 'Account' })).toBeVisible();
     await expect(settingsNav(page).getByRole('link', { name: 'Users' })).toHaveAttribute(
       'href',
       '/collections/users',
@@ -91,6 +92,15 @@ test.describe('Settings shell', () => {
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
 
     await setNavPreference(page, true);
+  });
+
+  test('Account opens the account menu with Log out', async ({ page }) => {
+    await page.goto('/account');
+    await waitForShell(page);
+
+    await settingsNav(page).getByRole('button', { name: 'Account' }).click();
+
+    await expect(page.getByRole('menuitem', { name: 'Log out' })).toBeVisible();
   });
 
   test('Back to app returns to the main sidebar', async ({ page }) => {

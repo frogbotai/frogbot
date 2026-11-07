@@ -104,6 +104,42 @@ export async function FrogBotNav(props: FrogBotNavProps) {
     visibleEntities,
   };
 
+  const clientProps = { documentSubViewType, viewType };
+  const render = (
+    Component: Parameters<typeof RenderServerComponent>[0]['Component'],
+    key?: string,
+  ) =>
+    RenderServerComponent({
+      Component,
+      clientProps,
+      importMap: payload.importMap,
+      key,
+      serverProps,
+    });
+
+  const renderMany = (
+    components: Parameters<typeof RenderServerComponent>[0]['Component'][] | undefined,
+    key: string,
+  ) => components?.map((component, index) => render(component, `${key}-${index}`));
+
+  const settingsMenu = Array.isArray(admin.components.settingsMenu)
+    ? admin.components.settingsMenu.map((component, index) =>
+        render(component, `settings-${index}`),
+      )
+    : [];
+
+  const accountMenu = {
+    afterAccountMenu: (
+      <>
+        {renderMany(shellComponents.afterAccountMenu, 'after-account-menu')}
+        {settingsMenu}
+      </>
+    ),
+    beforeAccountMenu: renderMany(shellComponents.beforeAccountMenu, 'before-account-menu'),
+    logout: admin.components.logout?.Button ? render(admin.components.logout.Button) : undefined,
+    logoutPath: formatAdminURL({ adminRoute: routes.admin, path: admin.routes.logout }),
+  };
+
   if (frogbotReq && isSettingsPage({ collectionSlug, config: payload.config, params, viewType })) {
     const navPreferences = await getNavPreferences(req);
     const settings = await buildSettingsNav({
@@ -121,6 +157,7 @@ export async function FrogBotNav(props: FrogBotNavProps) {
 
     return (
       <FrogBotSettingsNavClient
+        {...accountMenu}
         accountHref={settings.accountHref}
         backHref={settings.backHref}
         initialOpen={navPreferences?.open}
@@ -138,18 +175,6 @@ export async function FrogBotNav(props: FrogBotNavProps) {
 
   const navModel = buildNavModel(modelProps);
   const navPreferences = await getNavPreferences(req);
-  const clientProps = { documentSubViewType, viewType };
-  const render = (
-    Component: Parameters<typeof RenderServerComponent>[0]['Component'],
-    key?: string,
-  ) =>
-    RenderServerComponent({
-      Component,
-      clientProps,
-      importMap: payload.importMap,
-      key,
-      serverProps,
-    });
 
   const configuredItems = navModel.items.map((item) => ({
     ...item,
@@ -170,46 +195,21 @@ export async function FrogBotNav(props: FrogBotNavProps) {
     render(component, `after-nav-${index}`),
   );
 
-  const settings = Array.isArray(admin.components.settingsMenu)
-    ? admin.components.settingsMenu.map((component, index) =>
-        render(component, `settings-${index}`),
-      )
-    : [];
-
-  const logout = admin.components.logout?.Button
-    ? RenderServerComponent({
-        Component: admin.components.logout.Button,
-        clientProps,
-        importMap: payload.importMap,
-        serverProps,
-      })
-    : undefined;
-
   const accountUser = user as { email?: unknown; name?: unknown } | undefined;
   const accountEmail = typeof accountUser?.email === 'string' ? accountUser.email : undefined;
   const accountName = typeof accountUser?.name === 'string' ? accountUser.name : undefined;
   const logo = render(admin.components.graphics?.Icon);
   const homePath = formatAdminURL({ adminRoute: routes.admin, path: '' });
-  const renderMany = (
-    components: Parameters<typeof RenderServerComponent>[0]['Component'][] | undefined,
-    key: string,
-  ) => components?.map((component, index) => render(component, `${key}-${index}`));
 
   return (
     <FrogBotNavClient
+      {...accountMenu}
       CustomAvatar={CustomAvatar}
       accountEmail={accountEmail}
       accountName={accountName}
       accountPath={formatAdminURL({ adminRoute: routes.admin, path: admin.routes.account })}
-      afterAccountMenu={
-        <>
-          {renderMany(shellComponents.afterAccountMenu, 'after-account-menu')}
-          {settings}
-        </>
-      }
       afterBottomRail={renderMany(shellComponents.afterBottomRail, 'after-bottom-rail')}
       afterNavLinks={afterNavLinks}
-      beforeAccountMenu={renderMany(shellComponents.beforeAccountMenu, 'before-account-menu')}
       beforeBottomRail={renderMany(shellComponents.beforeBottomRail, 'before-bottom-rail')}
       beforeNavLinks={beforeNavLinks}
       beforeSidebarClose={renderMany(shellComponents.beforeSidebarClose, 'before-sidebar-close')}
@@ -217,8 +217,6 @@ export async function FrogBotNav(props: FrogBotNavProps) {
       initialOpen={navPreferences?.open}
       items={configuredItems}
       logo={logo}
-      logout={logout}
-      logoutPath={formatAdminURL({ adminRoute: routes.admin, path: admin.routes.logout })}
       palette={palette}
       sections={renderMany(shellComponents.navSections, 'nav-section')}
       settingsPath={formatAdminURL({ adminRoute: routes.admin, path: '/settings' })}

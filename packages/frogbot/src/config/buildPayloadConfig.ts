@@ -3,6 +3,7 @@ import type { Config as PayloadConfig, PayloadEmailAdapter } from 'payload';
 import {
   CREATE_FIRST_USER_VIEW,
   fillViewMeta,
+  isFrogBotSettingsView,
   navSections,
   sanitizeSettings,
   SETTINGS_VIEW,
@@ -76,7 +77,9 @@ export function buildPayloadConfig({
 }): PayloadConfig {
   const mapVectorField = config.db.mapVectorField;
 
-  const settingsView = !config.admin?.components?.views?.settings;
+  const settingsView = isFrogBotSettingsView(
+    config.admin?.components?.views?.settings ?? SETTINGS_VIEW,
+  );
 
   const withAdminDefaults = (collection: FrogBotConfig['collections'][number]) => {
     const defaults = {

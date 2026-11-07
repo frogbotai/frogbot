@@ -110,7 +110,7 @@ export function buildPaletteModel(props: BuildNavModelProps): PaletteModel {
           visibleEntities.collections.includes(slug) && permissions.collections?.[slug]?.read,
       )
       .map(({ labels, slug }) => ({
-        group: 'Settings',
+        group: i18n.t('general:settings'),
         label: getTranslation(labels.plural, i18n),
         path: formatAdminURL({ adminRoute, path: `/collections/${slug}` }),
       })),

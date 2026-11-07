@@ -78,4 +78,12 @@
     margin-top: auto;
     padding-top: 0.75rem;
   }
+
+  :where(.frogbot-settings-nav__footer button) {
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font-family: inherit;
+    width: 100%;
+  }
 }

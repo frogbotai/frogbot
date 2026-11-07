@@ -1,4 +1,5 @@
 import { FolderIcon, RobotIcon, SettingIcon, TileIcon } from '@frogbotai/ui/icons';
+import type * as frogbotInternalModule from 'frogbot/internal';
 import { createElement, isValidElement, type ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -12,7 +13,8 @@ vi.mock('@payloadcms/ui/elements/RenderServerComponent', () => ({
   RenderServerComponent: vi.fn(() => null),
 }));
 
-vi.mock('frogbot/internal', () => ({
+vi.mock('frogbot/internal', async (importOriginal) => ({
+  ...(await importOriginal<typeof frogbotInternalModule>()),
   attachRegisteredFrogBot: (req: object) => req,
 }));
 

@@ -1,6 +1,7 @@
 import { getTranslation } from '@payloadcms/translations';
 import type { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import type { AdminIcon, FrogBotRequest } from 'frogbot';
+import { isFrogBotSettingsView } from 'frogbot/internal';
 import type { SanitizedConfig } from 'payload';
 
 export type SettingsEntry = {
@@ -22,7 +23,7 @@ export function usesFrogBotSettings(config: SanitizedConfig): boolean {
   const views = config.admin.components?.views as
     Record<string, { Component?: unknown }> | undefined;
 
-  return views?.settings?.Component === '@frogbotai/ui/admin/rsc#SettingsView';
+  return isFrogBotSettingsView(views?.settings);
 }
 
 export function getSettingsEntries(config: SanitizedConfig): SettingsEntry[] | undefined {

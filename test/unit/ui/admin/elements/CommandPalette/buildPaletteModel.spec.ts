@@ -12,6 +12,7 @@ const i18n = {
     ({
       'general:collections': 'Collections',
       'general:globals': 'Globals',
+      'general:settings': 'Settings',
     })[key] ?? key,
 } as ServerProps['i18n'];
 
@@ -183,6 +184,33 @@ describe('buildPaletteModel', () => {
       },
     ]);
     expect(result.collections.at(-1)?.slug).toBe('members');
+  });
+
+  it('translates the Settings group label', () => {
+    const withSettings = config();
+
+    (withSettings.admin.components as { views?: unknown }).views = {
+      settings: { Component: '@frogbotai/ui/admin/rsc#SettingsView' },
+    };
+
+    withSettings.collections.push(
+      collection('members', { admin: { group: false, settings: true } }) as never,
+    );
+
+    const result = buildPaletteModel({
+      config: withSettings,
+      i18n: {
+        ...i18n,
+        t: (key: string) => (key === 'general:settings' ? 'Réglages' : i18n.t(key)),
+      },
+      permissions: permissionsFor({ ...permissions.collections, members: { read: true } }),
+      visibleEntities: {
+        ...visibleEntities,
+        collections: [...visibleEntities.collections, 'members'],
+      },
+    });
+
+    expect(result.rows.find(({ label }) => label === 'Members')?.group).toBe('Réglages');
   });
 });
 

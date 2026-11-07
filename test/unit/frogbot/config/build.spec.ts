@@ -480,6 +480,39 @@ describe('frogbot buildConfig', () => {
       expect(replaced.users).toMatchObject({ group: 'Team', settings: true });
     });
 
+    it('treats an explicit FrogBot Settings view as the FrogBot Settings view', async () => {
+      const payloadConfig = await (
+        await buildConfig(
+          makeConfig({
+            admin: {
+              components: {
+                views: {
+                  settings: {
+                    Component: '@frogbotai/ui/admin/rsc#SettingsView',
+                    exact: false,
+                    meta: { title: 'Preferences' },
+                    path: '/settings',
+                  },
+                },
+              },
+            },
+            collections: [
+              {
+                slug: 'users',
+                admin: { group: 'Team', settings: true },
+                auth: true,
+                fields: [{ name: 'name', type: 'text' }],
+              },
+            ],
+          }),
+        )
+      )._internal.payloadConfig;
+
+      expect(
+        payloadConfig.collections.find((collection) => collection.slug === 'users')?.admin,
+      ).toMatchObject({ group: false });
+    });
+
     it('runs onInit arrays sequentially and shares the FrogBot instance', async () => {
       const order: number[] = [];
       const config = makeConfig({

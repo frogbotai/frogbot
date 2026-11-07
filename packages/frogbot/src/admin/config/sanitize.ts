@@ -115,6 +115,11 @@ export const SETTINGS_VIEW: AdminViewConfig = {
   meta: { title: 'Settings' },
 };
 
+/** Whether a `views.settings` entry is FrogBot's Settings view, which `admin.settings` collections move into. */
+export function isFrogBotSettingsView(view: { Component?: unknown } | undefined): boolean {
+  return view?.Component === SETTINGS_VIEW.Component;
+}
+
 export function fillViewMeta(
   view: AdminViewConfig,
   adminMeta: RootAdminMetaConfig,
