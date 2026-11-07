@@ -28,7 +28,7 @@ import {
   levelReached,
   verifyGroups,
 } from './lib/affected.mjs';
-import { recordDecisions, REPLY_USAGE } from './lib/decisions.mjs';
+import { ISSUE_TICKET, recordDecisions, REPLY_USAGE, ticketKey } from './lib/decisions.mjs';
 import { flakyRetry } from './lib/flaky.mjs';
 import { FINDING_REPOS, findingIssue, findingProblem, parseFinding } from './lib/found.mjs';
 import { acquireSlot, LAND_LOCK } from './lib/slot.mjs';
@@ -101,6 +101,8 @@ const DEPENDS = /^\d+(?:\s*,\s*\d+)*$/;
 const BATCH = /^(?:\d+|none|deferred)$/;
 
 const FOLDER = /^ticket(\d+)_(.+)$/;
+
+const KEYED_FOLDER = new RegExp(`^(${ISSUE_TICKET})_(.+)$`);
 
 const TICKET_KEY = /^(\d+)([a-z])?$/i;
 
@@ -810,13 +812,17 @@ function ticketsDir(main) {
   return path.join(main, TICKETS_DIR);
 }
 
-function folders(main) {
+function folders(main, { keyed = false } = {}) {
   const dir = ticketsDir(main);
 
   if (!existsSync(dir)) return [];
 
   return readdirSync(dir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && FOLDER.test(entry.name))
+    .filter(
+      (entry) =>
+        entry.isDirectory() &&
+        (FOLDER.test(entry.name) || (keyed && KEYED_FOLDER.test(entry.name))),
+    )
     .map((entry) => entry.name);
 }
 
@@ -830,7 +836,7 @@ function readTicket(main, folder) {
   const header = issue === null ? null : parseHeader(issue);
 
   return {
-    ticket: Number(FOLDER.exec(folder)[1]),
+    ticket: ticketKey((FOLDER.exec(folder) ?? KEYED_FOLDER.exec(folder))[1]),
     folder,
     issue: path.relative(main, path.join(dir, 'issue.md')),
     header,
@@ -1035,7 +1041,7 @@ export function commandDecisions(
     input = process.stdin.isTTY ? '' : readFileSync(0, 'utf8'),
   } = {},
 ) {
-  const tickets = folders(main).map((folder) => readTicket(main, folder));
+  const tickets = folders(main, { keyed: true }).map((folder) => readTicket(main, folder));
   const dir = path.join(main, PROCESS_DIR);
   const { messages, problems } = recordDecisions(dir, tickets, date, input);
 
