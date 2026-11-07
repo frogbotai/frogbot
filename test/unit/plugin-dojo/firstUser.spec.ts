@@ -35,9 +35,11 @@ async function boot(
   config: FrogBotConfig,
   { existing = 0, fail }: { existing?: number; fail?: Error } = {},
 ) {
-  const create = vi.fn(() => (fail ? Promise.reject(fail) : Promise.resolve({ id: 1 })));
+  const create = vi.fn((_args: Record<string, unknown>) =>
+    fail ? Promise.reject(fail) : Promise.resolve({ id: 1 }),
+  );
 
-  const find = vi.fn(() =>
+  const find = vi.fn((_args: Record<string, unknown>) =>
     Promise.resolve({ docs: Array.from({ length: existing }, (_, id) => ({ id })) }),
   );
 
@@ -47,8 +49,8 @@ async function boot(
   for (const onInit of [config.onInit ?? []].flat()) await onInit(frogbot);
 
   return {
-    created: create.mock.calls.map(([args]) => args as Record<string, unknown>),
-    found: find.mock.calls.map(([args]) => args as Record<string, unknown>),
+    created: create.mock.calls.map(([args]) => args),
+    found: find.mock.calls.map(([args]) => args),
     warnings: warn.mock.calls.map(([message]) => message as string),
   };
 }
