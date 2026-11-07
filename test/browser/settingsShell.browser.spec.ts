@@ -1,5 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 
+import { setNavPreference } from './__helpers/sidebar';
+
 const mobile = { width: 390, height: 844 };
 const desktop = { width: 1280, height: 800 };
 
@@ -69,6 +71,26 @@ test.describe('Settings shell', () => {
     await expect(appSidebar(page)).toBeVisible();
     await expect(shell(page).getByRole('link', { name: 'Users' })).toHaveCount(0);
     await expect(settingsNav(page)).toHaveCount(0);
+  });
+
+  test('a collapsed main sidebar stays collapsed after a Settings round trip', async ({ page }) => {
+    await setNavPreference(page, false);
+    await page.goto('/collections/chats');
+    await waitForShell(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
+
+    await page.goto('/settings/collections');
+    await waitForShell(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+
+    await settingsNav(page).getByRole('link', { name: 'Back to app' }).click();
+
+    await expect(appSidebar(page)).toBeVisible();
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
+
+    await setNavPreference(page, true);
   });
 
   test('Back to app returns to the main sidebar', async ({ page }) => {
