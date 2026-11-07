@@ -4,7 +4,7 @@ import { Readable } from 'node:stream';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 import type { DojoClient } from '../dojo.js';
-import { dojoMessage } from '../dojo.js';
+import { dojoMessage, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
 import type { ShareIO } from '../io.js';
 import type { DataFile, DataInventory } from './inventory.js';
@@ -65,7 +65,7 @@ export async function uploadData({
     objects.reduce((sum, object) => sum + object.size, 0),
   );
 
-  const base = `/api/apps/${appId}/data-uploads`;
+  const base = `/api/apps/${segment(appId)}/data-uploads`;
 
   try {
     for (const batch of batches(objects)) {
