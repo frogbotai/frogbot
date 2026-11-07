@@ -1,5 +1,5 @@
 import type { Noun } from '../command.js';
-import { dojoJSON } from '../dojo.js';
+import { dojoJSON, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
 import { done } from '../io.js';
 import { count, findApp, whereEquals } from './resolve.js';
@@ -25,7 +25,7 @@ export const sharing: Noun = {
         const app = await findApp(dojo(), ref);
         const reply = await dojoJSON<SharingReply>(
           dojo(),
-          `/api/projects/${encodeURIComponent(String(app.id))}/sharing`,
+          `/api/projects/${segment(app.id)}/sharing`,
           { what: `Couldn't read who ${app.slug} is shared with`, needs: ownerNeeded },
         );
 
@@ -66,7 +66,7 @@ export const sharing: Noun = {
         const app = await findApp(dojo(), ref);
         const reply = await dojoJSON<InviteReply>(
           dojo(),
-          `/api/projects/${encodeURIComponent(String(app.id))}/invite`,
+          `/api/projects/${segment(app.id)}/invite`,
           {
             method: 'POST',
             body: { emails: emails.join(', '), level },
@@ -97,7 +97,7 @@ export const sharing: Noun = {
 
         if (!app) throw new ShareError(`No app "${ref}" is shared with you.`);
 
-        await dojoJSON(dojo(), `/api/projects/${encodeURIComponent(String(app.id))}/sharing/me`, {
+        await dojoJSON(dojo(), `/api/projects/${segment(app.id)}/sharing/me`, {
           method: 'DELETE',
           what: `Couldn't leave ${app.slug}`,
         });

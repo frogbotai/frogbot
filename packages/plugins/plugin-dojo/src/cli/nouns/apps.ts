@@ -1,6 +1,6 @@
 import { nameTaken, toSlug } from '../appSlug.js';
 import type { Noun, Verb } from '../command.js';
-import { dojoError, dojoJSON } from '../dojo.js';
+import { dojoError, dojoJSON, dojoList, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
 import { done } from '../io.js';
 import { whenPaid } from '../payment.js';
@@ -71,7 +71,7 @@ export const apps: Noun = {
         const workspace = slug ? await findWorkspace({ dojo: dojo(), io, slug }) : undefined;
         const filter = workspace ? `&${whereEquals('workspace', workspace.id)}` : '';
 
-        const { docs } = await dojoJSON<{ docs: Project[] }>(
+        const docs = await dojoList<Project>(
           dojo(),
           `/api/projects?depth=0&limit=100&sort=name${filter}`,
           { what: "Couldn't list your apps" },
@@ -107,9 +107,9 @@ export const apps: Noun = {
         workspace: { type: 'string', value: 'slug', help: 'Needed when you are in more than one.' },
       },
       run: async ({ io, dojo, positionals: [name = ''], values }) => {
+        const appSlug = toSlug(name);
         const slug = typeof values.workspace === 'string' ? values.workspace : undefined;
         const workspace = await findWorkspace({ dojo: dojo(), io, slug });
-        const appSlug = toSlug(name);
 
         const created = await whenPaid(dojo(), io, () =>
           dojo().request('/api/projects?depth=0', () => ({
@@ -142,7 +142,7 @@ export const apps: Noun = {
 
         const { doc } = await dojoJSON<{ doc: Project }>(
           dojo(),
-          `/api/projects/${encodeURIComponent(String(app.id))}?depth=0`,
+          `/api/projects/${segment(app.id)}?depth=0`,
           {
             method: 'PATCH',
             body: { name },
@@ -157,12 +157,13 @@ export const apps: Noun = {
     delete: {
       summary: 'Delete an app, its versions and its data.',
       args: '<app>',
-      confirm: ({ positionals: [ref] }) =>
-        `Delete ${ref} and everything in it? This can't be undone.`,
-      run: async ({ io, dojo, positionals: [ref = ''] }) => {
+      confirm: true,
+      run: async ({ io, dojo, confirm, positionals: [ref = ''] }) => {
         const app = await findApp(dojo(), ref);
 
-        await dojoJSON(dojo(), `/api/projects/${encodeURIComponent(String(app.id))}`, {
+        await confirm(`Delete ${app.slug} and everything in it? This can't be undone.`);
+
+        await dojoJSON(dojo(), `/api/projects/${segment(app.id)}`, {
           method: 'DELETE',
           what: "Dojo couldn't delete the app",
           needs: ownerNeeded,

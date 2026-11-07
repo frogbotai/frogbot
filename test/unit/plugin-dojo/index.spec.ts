@@ -11,6 +11,9 @@ import type { Plugin } from '../../../packages/frogbot/src/plugin.js';
 import { gcsStorage } from '../../../packages/storage-gcs/src/index.js';
 
 const s3Options = vi.hoisted(() => [] as unknown[]);
+const runShare = vi.hoisted(() => vi.fn(() => Promise.resolve(0)));
+
+vi.mock('../../../packages/plugins/plugin-dojo/src/cli/run.js', () => ({ runShare }));
 
 vi.mock('@frogbotai/storage-s3', async (importOriginal) => {
   const actual = await importOriginal<typeof S3Module>();
@@ -116,7 +119,7 @@ const dojoDependencies = {
   },
 };
 
-const dojoCommands = { dojo: expect.any(Function) };
+const dojoCommands = { dojo: expect.any(Function), share: expect.any(Function) };
 
 describe('dojo() outside Dojo', () => {
   it('only lists the badge and adds its commands when DOJO is unset', () => {
@@ -155,12 +158,26 @@ describe('dojo() commands', () => {
     expect(apply(template()).cli?.commands).toEqual(dojoCommands);
   });
 
-  it('leaves share, pull, logs and logout to frogbot dojo', () => {
+  it('leaves pull, logs and logout to frogbot dojo', () => {
     const commands = apply(template()).cli?.commands ?? {};
 
-    for (const name of ['share', 'pull', 'logs', 'logout']) {
+    for (const name of ['pull', 'logs', 'logout']) {
       expect(commands).not.toHaveProperty(name);
     }
+  });
+
+  it('runs frogbot share as frogbot dojo apps share, with its flags', async () => {
+    const share = apply(template()).cli?.commands?.share;
+    const exitCode = process.exitCode;
+
+    await share?.({ args: ['--data', '--name', 'Deals'] } as never);
+
+    process.exitCode = exitCode;
+
+    expect(runShare).toHaveBeenCalledWith(
+      ['--data', '--name', 'Deals'],
+      expect.objectContaining({ program: 'frogbot dojo' }),
+    );
   });
 
   it('keeps a command the app already has', () => {

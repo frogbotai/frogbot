@@ -51,7 +51,7 @@ Cloudflare D1 has no native vector search, so an index with `vector` fails setup
 
 ### SQLite (`@frogbotai/db-sqlite`)
 
-SQLite is the default in `create-frogbot-app` and stores your entire database in a single local file (`file:./frogbot.db`) or a remote LibSQL/Turso database—with zero external database servers to run locally. When deploying to [Dojo](/plugins/dojo), `npx frogbot dojo apps share` can bring your local SQLite data along on the first deploy.
+SQLite is the default in `create-frogbot-app` and stores your entire database in a single local file (`file:./frogbot.db`) or a remote LibSQL/Turso database—with zero external database servers to run locally. When deploying to [Dojo](/plugins/dojo), `npx frogbot share` can bring your local SQLite data along on the first deploy.
 
 ```ts
 import { sqliteAdapter } from '@frogbotai/db-sqlite'

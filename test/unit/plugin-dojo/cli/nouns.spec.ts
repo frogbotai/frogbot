@@ -137,6 +137,7 @@ const cases: Case[] = [
     route: 'PUT /api/apps/7/domain',
     body: { domain: 'crm.acme.com' },
     replies: {
+      'GET /api/apps/7/domain': { body: { domain: null, record: null, status: null } },
       'PUT /api/apps/7/domain': {
         body: {
           domain: 'crm.acme.com',
@@ -147,7 +148,7 @@ const cases: Case[] = [
     },
   },
   {
-    args: ['domains', 'clear', 'deals'],
+    args: ['domains', 'clear', 'deals', '--yes'],
     route: 'PUT /api/apps/7/domain',
     body: { domain: null },
     replies: { 'PUT /api/apps/7/domain': { body: { domain: null, record: null, status: null } } },
@@ -346,6 +347,12 @@ describe('frogbot dojo <noun> <verb>', () => {
     ],
     [['apps', 'get'], 'Usage: frogbot apps get <app> [--json]'],
     [['apps', 'get', 'deals', '--nope'], "Unknown option '--nope'"],
+    [['apps', 'create', '2024'], '"2024" would make the slug "2024", which reads as an app id.'],
+    [['apps', 'get', '..'], '".." can\'t name anything on Dojo.'],
+    [['keys', 'revoke', '..', '--yes'], '".." can\'t name anything on Dojo.'],
+    [['keys', 'revoke', '.', '--yes'], '"." can\'t name anything on Dojo.'],
+    [['deployments', 'logs', '..'], '".." can\'t name anything on Dojo.'],
+    [['deployments', 'logs', '..', '--follow'], '".." can\'t name anything on Dojo.'],
   ])('exits 2 before calling Dojo for %j', async (args, message) => {
     const { dojo, env, cwd } = await setup();
     const result = testIO({ cwd, env });
@@ -353,5 +360,66 @@ describe('frogbot dojo <noun> <verb>', () => {
     expect(await runDojo(args, result.io)).toBe(2);
     expect(result.stderr()[0]).toContain(message);
     expect(dojo.requests.filter(({ path }) => path !== '/api/apps/deals')).toEqual([]);
+  });
+
+  it.each([
+    [['apps', 'get', 'a/b?c'], 'GET /api/apps/a%2Fb%3Fc'],
+    [['deployments', 'logs', '7?x=1', '--follow'], 'GET /api/deployments/7%3Fx%3D1/logs'],
+    [
+      ['deployments', 'logs', '../projects/7', '--follow'],
+      'GET /api/deployments/..%2Fprojects%2F7/logs',
+    ],
+  ])('keeps %j inside its route', async (args, route) => {
+    const { dojo, env, cwd } = await setup();
+
+    await runDojo(args, testIO({ cwd, env }).io);
+
+    expect(dojo.paths()).toEqual([route]);
+    expect(dojo.requests.map(({ search }) => search)).toEqual(['']);
+  });
+
+  it("refuses digits that are one app's id and another app's slug", async () => {
+    const { dojo, env, cwd } = await setup();
+
+    dojo.projects.push({ id: 2024, name: 'Production', slug: 'prod', workspace: 1 });
+    dojo.projects.push({ id: 9, name: '2024', slug: '2024', workspace: 1 });
+
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(['apps', 'delete', '2024', '--yes'], result.io)).toBe(1);
+    expect(result.stderr()).toEqual([
+      '[frogbot] "2024" is the id of prod and the slug of another app. Name that app by its id.',
+    ]);
+    expect(dojo.paths().filter((route) => !route.startsWith('GET '))).toEqual([]);
+  });
+
+  it.each([
+    ['apps', '/api/projects'],
+    ['keys', '/api/api-keys'],
+    ['members', '/api/members'],
+    ['workspaces', '/api/workspaces'],
+  ])('%s list reads every page', async (noun, route) => {
+    const { dojo, env, cwd } = await setup();
+    const served = () => dojo.requests.filter(({ path }) => path === route);
+
+    const page = (n: number) => ({
+      body: {
+        docs: [{ ...project, ...member, ...workspace, id: n, slug: `s${n}`, createdAt: 'x' }],
+        hasNextPage: n < 3,
+      },
+    });
+
+    dojo.replies.set(`GET ${route}`, page(1));
+    dojo.afterRequest = () => dojo.replies.set(`GET ${route}`, page(served().length + 1));
+
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo([noun, 'list', '--json'], result.io)).toBe(0);
+    expect(JSON.parse(result.stdout().join('\n'))).toHaveLength(3);
+    expect(served().map(({ search }) => new URLSearchParams(search).get('page'))).toEqual([
+      '1',
+      '2',
+      '3',
+    ]);
   });
 });

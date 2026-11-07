@@ -21,6 +21,8 @@ export type VerbInput = {
   values: Record<string, string | boolean | (string | boolean)[] | undefined>;
   /** One client for the whole command, made on first use. */
   dojo: () => DojoClient;
+  /** Asks with a terminal and stops on "no"; passes with `--yes`; stops with exit 2 without either. */
+  confirm: (message: string) => Promise<void>;
 };
 
 /** One command: `apps delete`, or `login`. */
@@ -29,8 +31,11 @@ export type Verb = {
   /** Positionals in help and checks: `<app>` required, `[name]` optional, `<KEY>...` one or more. */
   args?: string;
   flags?: Record<string, VerbFlag>;
-  /** Destructive: asks this with a terminal, and needs `--yes` without one. */
-  confirm?: (input: VerbInput) => string;
+  /**
+   * Destructive: asks this with a terminal, and needs `--yes` without one. `true` when `run` asks
+   * itself, once it has looked up what it acts on.
+   */
+  confirm?: ((input: VerbInput) => string) | true;
   run: (input: VerbInput) => Promise<number | void>;
 };
 
@@ -42,7 +47,8 @@ export type RawVerb = Omit<Verb, 'run' | 'confirm'> & {
 /** A noun's verbs: `apps` → `list`, `delete`, … */
 export type Noun = { summary: string; verbs: Record<string, Verb | RawVerb> };
 
-const yesFlag: VerbFlag = {
+/** `--yes`, which every destructive verb gets. */
+export const yesFlag: VerbFlag = {
   type: 'boolean',
   help: 'Skip the confirmation. Needed without a terminal.',
 };
@@ -125,18 +131,31 @@ export async function runVerb(
   }
 
   let client: DojoClient | undefined;
-  const input: VerbInput = { io, positionals, values, dojo: () => (client ??= createDojo(io)) };
+  const confirmed = values.yes === true;
 
-  if (verb.confirm && values.yes !== true) {
-    if (!io.isTTY) {
+  const refuseWithoutTerminal = () => {
+    if (!confirmed && !io.isTTY) {
       throw new ShareError(
         `There's no terminal to confirm in: rerun with --yes. Usage: ${usage}`,
         2,
       );
     }
+  };
 
-    if (!(await io.prompts.confirm(verb.confirm(input)))) throw new ShareError('Cancelled.');
-  }
+  const input: VerbInput = {
+    io,
+    positionals,
+    values,
+    dojo: () => (client ??= createDojo(io)),
+    confirm: async (message) => {
+      refuseWithoutTerminal();
+
+      if (!confirmed && !(await io.prompts.confirm(message))) throw new ShareError('Cancelled.');
+    },
+  };
+
+  if (verb.confirm) refuseWithoutTerminal();
+  if (typeof verb.confirm === 'function') await input.confirm(verb.confirm(input));
 
   return (await verb.run(input)) ?? 0;
 }

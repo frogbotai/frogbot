@@ -13,7 +13,7 @@ import type { DataInventory } from './data/inventory.js';
 import { describeData } from './data/inventory.js';
 import { formatBytes, uploadData } from './data/upload.js';
 import type { DojoClient } from './dojo.js';
-import { createDojo, dojoError, dojoMessage, followBuild } from './dojo.js';
+import { createDojo, dojoError, dojoMessage, followBuild, segment } from './dojo.js';
 import type { EnvKey } from './envKeys.js';
 import { envKeys, readEnvFiles } from './envKeys.js';
 import { ShareError } from './error.js';
@@ -259,7 +259,7 @@ function checkSkipKeys(skipKey: string[], keys: EnvKey[]): void {
 }
 
 async function appInfo(dojo: DojoClient, appId: string | number): Promise<AppInfo> {
-  const response = await dojo.request(`/api/apps/${appId}`);
+  const response = await dojo.request(`/api/apps/${segment(appId)}`);
 
   await refusedApp(appId, response);
 
@@ -337,7 +337,7 @@ async function laterKeys({
 }): Promise<EnvKey[]> {
   if (keys.length === 0) return [];
 
-  const response = await dojo.request(`/api/apps/${appId}/keys`);
+  const response = await dojo.request(`/api/apps/${segment(appId)}/keys`);
 
   await refusedApp(appId, response);
 
@@ -399,7 +399,7 @@ async function deploy({
       : undefined;
 
   const response = await whenPaid(dojo, io, () =>
-    dojo.request(`/api/apps/${appId}/deployments`, async () => {
+    dojo.request(`/api/apps/${segment(appId)}/deployments`, async () => {
       const form = new FormData();
 
       form.append(

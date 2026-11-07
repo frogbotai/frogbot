@@ -158,6 +158,34 @@ export async function dojoJSON<T>(
   throw new ShareError(`${what}: ${message}${level}`);
 }
 
+/** Every doc of a Dojo list, page by page. `path` must already have a query: pages go after it. */
+export async function dojoList<T>(dojo: DojoClient, path: string, call: DojoCall): Promise<T[]> {
+  const docs: T[] = [];
+
+  for (let page = 1; ; page += 1) {
+    const reply = await dojoJSON<{ docs: T[]; hasNextPage?: boolean }>(
+      dojo,
+      `${path}&page=${page}`,
+      call,
+    );
+
+    docs.push(...reply.docs);
+
+    if (reply.hasNextPage !== true || reply.docs.length === 0) return docs;
+  }
+}
+
+/** One path segment, encoded. Refuses empty, `.` and `..`, which a URL resolves out of their route. */
+export function segment(value: string | number): string {
+  const text = String(value);
+
+  if (text === '' || text === '.' || text === '..') {
+    throw new ShareError(`"${text}" can't name anything on Dojo.`, 2);
+  }
+
+  return encodeURIComponent(text);
+}
+
 /** The last `status` event of a build. */
 export type BuildStatus = {
   status: string;
@@ -196,7 +224,7 @@ export async function followBuild({
       },
     });
 
-    const response = await dojo.request(`/api/deployments/${deploymentId}/logs`, () => ({
+    const response = await dojo.request(`/api/deployments/${segment(deploymentId)}/logs`, () => ({
       headers: { accept: 'text/event-stream', ...(lastId ? { 'last-event-id': lastId } : {}) },
     }));
 

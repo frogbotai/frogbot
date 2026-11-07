@@ -1,5 +1,5 @@
 import type { Noun } from '../command.js';
-import { dojoJSON } from '../dojo.js';
+import { dojoJSON, segment } from '../dojo.js';
 import { done } from '../io.js';
 import type { Workspace } from '../workspaces.js';
 import { findWorkspace, listWorkspaces } from '../workspaces.js';
@@ -43,7 +43,7 @@ export const workspaces: Noun = {
         const workspace = await findWorkspace({ dojo: dojo(), io, slug });
         const { doc } = await dojoJSON<DocReply>(
           dojo(),
-          `/api/workspaces/${encodeURIComponent(String(workspace.id))}?depth=0`,
+          `/api/workspaces/${segment(workspace.id)}?depth=0`,
           {
             method: 'PATCH',
             body: { name },

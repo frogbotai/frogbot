@@ -1,5 +1,5 @@
 import type { Noun } from '../command.js';
-import { dojoJSON, followBuild } from '../dojo.js';
+import { dojoJSON, followBuild, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
 import { done, say } from '../io.js';
 import { findApp, whereEquals } from './resolve.js';
@@ -60,7 +60,7 @@ export const deployments: Noun = {
         if (values.follow !== true) {
           const deployment = await dojoJSON<Deployment & { logTail?: unknown }>(
             dojo(),
-            `/api/deployments/${encodeURIComponent(id)}?depth=0`,
+            `/api/deployments/${segment(id)}?depth=0`,
             { what: `Couldn't read deployment ${id}`, needs: editorNeeded },
           );
 

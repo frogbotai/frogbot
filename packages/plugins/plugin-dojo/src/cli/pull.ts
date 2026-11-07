@@ -7,7 +7,7 @@ import type { ReadableStream } from 'node:stream/web';
 
 import { x } from 'tar';
 
-import { createDojo, dojoMessage } from './dojo.js';
+import { createDojo, dojoMessage, segment } from './dojo.js';
 import { ShareError } from './error.js';
 import type { ShareIO } from './io.js';
 import { done, say } from './io.js';
@@ -43,7 +43,7 @@ async function pull(args: string[], io: ShareIO): Promise<number> {
 
   await dojo.signIn();
 
-  const looked = await dojo.request(`/api/apps/${encodeURIComponent(name)}`);
+  const looked = await dojo.request(`/api/apps/${segment(name)}`);
 
   if (!looked.ok) throw new ShareError(await dojoMessage(looked));
 
@@ -64,7 +64,7 @@ async function pull(args: string[], io: ShareIO): Promise<number> {
     throw new ShareError(`./${slug} already exists; pull somewhere else or remove it.`);
   }
 
-  const source = await dojo.request(`/api/apps/${encodeURIComponent(String(id))}/source`, () => ({
+  const source = await dojo.request(`/api/apps/${segment(id)}/source`, () => ({
     headers: { accept: 'application/gzip' },
   }));
 

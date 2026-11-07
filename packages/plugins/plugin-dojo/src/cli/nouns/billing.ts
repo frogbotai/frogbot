@@ -1,5 +1,5 @@
 import type { Noun, VerbInput } from '../command.js';
-import { dojoJSON } from '../dojo.js';
+import { dojoJSON, segment } from '../dojo.js';
 import { done } from '../io.js';
 import type { Workspace } from '../workspaces.js';
 import { findWorkspace } from '../workspaces.js';
@@ -36,11 +36,9 @@ export const billing: Noun = {
       flags: workspaceFlag,
       run: async (input) => {
         const { id, slug } = await workspace(input);
-        const plan = await dojoJSON<Plan>(
-          input.dojo(),
-          `/api/workspaces/${encodeURIComponent(String(id))}?depth=0`,
-          { what: `Couldn't read the plan of ${slug}` },
-        );
+        const plan = await dojoJSON<Plan>(input.dojo(), `/api/workspaces/${segment(id)}?depth=0`, {
+          what: `Couldn't read the plan of ${slug}`,
+        });
 
         const status = {
           workspace: slug,

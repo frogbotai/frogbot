@@ -353,6 +353,19 @@ export async function startFakeDojo(): Promise<FakeDojo> {
       return json(res, 201, { doc: project, message: 'Project successfully created.' });
     }
 
+    if (route === 'GET /api/projects') {
+      const slug = url.searchParams.get('where[slug][equals]');
+      const found = dojo.projects.filter((project) => slug === null || project.slug === slug);
+      const limit = Number(url.searchParams.get('limit') ?? 10);
+      const page = Number(url.searchParams.get('page') ?? 1);
+
+      return json(res, 200, {
+        docs: found.slice((page - 1) * limit, page * limit),
+        totalDocs: found.length,
+        hasNextPage: page * limit < found.length,
+      });
+    }
+
     if (route === 'GET /api/cli/sealing-key') {
       const publicKey = createPublicKey(dojo.sealingPrivateKey).export({ format: 'jwk' }).x;
 

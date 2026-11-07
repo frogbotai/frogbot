@@ -82,17 +82,17 @@ curl -s http://localhost:3000/api/agents/assistant \
 - 40+ native OAuth pieces & chat channels (Slack, Discord, Linear, GitHub, Gmail, Stripe, Notion, Xero, and more)
 - Durable jobs queue, cron schedules, and background workers
 - Single-command type generation (`frogbot generate:types`) for end-to-end type safety
-- Dev mode with config file watching (`frogbot dev`), production mode with `frogbot start`, and one-command cloud deploy with `npx frogbot dojo apps share`
+- Dev mode with config file watching (`frogbot dev`), production mode with `frogbot start`, and one-command cloud deploy with `npx frogbot share`
 - Swappable [database](https://www.npmjs.com/package/@frogbotai/db-postgres), [file storage](https://www.npmjs.com/package/@frogbotai/storage-s3), and [KV](https://www.npmjs.com/package/@frogbotai/kv-redis) adapters, with [piece-backed email](https://docs.frogbot.ai/email/overview) through [Resend](https://www.npmjs.com/package/@frogbotai/piece-resend)
 
 ## CLI
 
-| Command                   | Description                                     |
-| ------------------------- | ----------------------------------------------- |
-| `frogbot dev`             | Boot the server with config file watching       |
-| `frogbot start`           | Boot the server for production                  |
-| `frogbot generate:types`  | Generate `frogbot-types.ts` from your config    |
-| `frogbot dojo apps share` | Deploy your app and data to Dojo in one command |
+| Command                  | Description                                     |
+| ------------------------ | ----------------------------------------------- |
+| `frogbot dev`            | Boot the server with config file watching       |
+| `frogbot start`          | Boot the server for production                  |
+| `frogbot generate:types` | Generate `frogbot-types.ts` from your config    |
+| `frogbot share`          | Deploy your app and data to Dojo in one command |
 
 ## Documentation
 

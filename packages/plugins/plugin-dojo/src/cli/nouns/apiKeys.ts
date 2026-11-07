@@ -1,5 +1,5 @@
 import type { Noun } from '../command.js';
-import { dojoJSON, dojoMessage } from '../dojo.js';
+import { dojoJSON, dojoList, dojoMessage, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
 import { done } from '../io.js';
 
@@ -25,7 +25,7 @@ export const apiKeys: Noun = {
     list: {
       summary: 'List your keys that are not revoked, with the key that made each one.',
       run: async ({ io, dojo }) => {
-        const { docs } = await dojoJSON<{ docs: ApiKey[] }>(
+        const docs = await dojoList<ApiKey>(
           dojo(),
           '/api/api-keys?depth=0&limit=100&sort=-createdAt&where[revokedAt][exists]=false',
           { what: "Couldn't list your API keys" },
@@ -94,7 +94,7 @@ export const apiKeys: Noun = {
       run: async ({ io, dojo, positionals: [id = ''] }) => {
         const revoked = await dojoJSON<{ id: string | number; revokedAt: string }>(
           dojo(),
-          `/api/api-keys/${encodeURIComponent(id)}/revoke`,
+          `/api/api-keys/${segment(id)}/revoke`,
           { method: 'POST', what: `Couldn't revoke key ${id}` },
         );
 

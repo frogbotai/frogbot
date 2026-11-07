@@ -214,6 +214,18 @@ describe('frogbot share: the link', () => {
     );
   });
 
+  it('never uploads the Dojo sign-in from .env as an app key', async () => {
+    const { dojo, run, signIn } = await setup({
+      '.env':
+        'STRIPE_KEY=sk_test_aaaa4242\nFROGBOT_DOJO_TOKEN=fb_ci_secret_token\nFROGBOT_DOJO_URL=https://dojo.example\n',
+    });
+
+    await signIn();
+
+    expect((await run(['--no-data'])).code).toBe(0);
+    expect(Object.keys(dojo.opened[0]?.values ?? {})).toEqual(['STRIPE_KEY']);
+  });
+
   it('names the symlinks it leaves out', async () => {
     const { root, run, signIn } = await setup();
 
@@ -389,6 +401,20 @@ describe('frogbot share: the name', () => {
     expect(result.stdout()[0]).toBe(
       '[frogbot] Created deals in Trend Capital, linked in .frogbot/app.json.',
     );
+  });
+
+  it('refuses a name whose slug is all digits, before creating anything', async () => {
+    const { dojo, run, signIn } = await setup();
+
+    await signIn();
+
+    const result = await run(['--no-data', '--name', '2024']);
+
+    expect(result.code).toBe(2);
+    expect(result.stderr()).toEqual([
+      '[frogbot] "2024" would make the slug "2024", which reads as an app id. Add a letter.',
+    ]);
+    expect(dojo.projects).toEqual([]);
   });
 
   it.each([

@@ -1,6 +1,6 @@
 import type { Noun } from '../command.js';
 import type { DojoClient } from '../dojo.js';
-import { dojoJSON } from '../dojo.js';
+import { dojoJSON, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
 import { done } from '../io.js';
 import { count, findApp } from './resolve.js';
@@ -46,16 +46,12 @@ async function change(
   values: Record<string, string | null>,
 ): Promise<ChangeReply & { app: string }> {
   const app = await findApp(dojo, ref);
-  const reply = await dojoJSON<ChangeReply>(
-    dojo,
-    `/api/apps/${encodeURIComponent(String(app.id))}/keys`,
-    {
-      method: 'PUT',
-      body: { values },
-      what: `Couldn't change the keys of ${app.slug}`,
-      needs: ownerNeeded,
-    },
-  );
+  const reply = await dojoJSON<ChangeReply>(dojo, `/api/apps/${segment(app.id)}/keys`, {
+    method: 'PUT',
+    body: { values },
+    what: `Couldn't change the keys of ${app.slug}`,
+    needs: ownerNeeded,
+  });
 
   return { app: app.slug, ...reply };
 }
@@ -75,11 +71,10 @@ export const env: Noun = {
       args: '<app>',
       run: async ({ io, dojo, positionals: [ref = ''] }) => {
         const app = await findApp(dojo(), ref);
-        const { keys } = await dojoJSON<KeysReply>(
-          dojo(),
-          `/api/apps/${encodeURIComponent(String(app.id))}/keys`,
-          { what: `Couldn't read the keys of ${app.slug}`, needs: ownerNeeded },
-        );
+        const { keys } = await dojoJSON<KeysReply>(dojo(), `/api/apps/${segment(app.id)}/keys`, {
+          what: `Couldn't read the keys of ${app.slug}`,
+          needs: ownerNeeded,
+        });
 
         const listed = keys.map(({ name, last4, source, setBy, setAt }) => ({
           name,

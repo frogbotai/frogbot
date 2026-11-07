@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
 import { runDojo } from '../../../../packages/plugins/plugin-dojo/src/cli/commands.js';
+import type { FakeDojo } from './fakeDojo.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeApp } from './helpers.js';
 
@@ -36,8 +37,12 @@ describe('FROGBOT_DOJO_TOKEN', () => {
     expect(dojo.requests.map(({ headers }) => headers.authorization)).toEqual(['Bearer fb_env']);
   });
 
-  it('fails on a 401 without starting the device flow', async () => {
-    const { dojo, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_revoked' });
+  it('fails on a 401 without falling back to the stored token or the device flow', async () => {
+    const { dojo, env, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_revoked' });
+
+    dojo.tokens.set('fb_stored', 100);
+    await writeToken(env, dojo.url, 'fb_stored');
+
     const result = await run(['apps', 'get', 'deals']);
 
     expect(result.code).toBe(1);
@@ -78,32 +83,148 @@ describe('signing in', () => {
   });
 });
 
-describe('destructive verbs', () => {
-  it.each([
-    [['apps', 'delete', 'deals']],
-    [['members', 'remove', 'ada@example.com']],
-    [['keys', 'revoke', '4']],
-    [['sharing', 'leave', 'deals']],
-    [['env', 'unset', 'deals', 'MODE']],
-  ])('%j exits 2 naming --yes without a terminal', async (args) => {
-    const { dojo, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_env' });
-    const result = await run(args);
+const member = { id: 3, email: 'ada@example.com', role: 'member' };
+const liveDomain = { domain: 'crm.acme.com', record: null, status: 'live' };
 
-    expect(result.code).toBe(2);
-    expect(result.stderr()[0]).toMatch(
-      /^\[frogbot\] There's no terminal to confirm in: rerun with --yes\./,
-    );
-    expect(dojo.requests).toEqual([]);
+const destructive: { args: string[]; asked: string; replies?: Record<string, unknown> }[] = [
+  {
+    args: ['apps', 'delete', 'deals'],
+    asked: "Delete deals and everything in it? This can't be undone.",
+  },
+  {
+    args: ['members', 'remove', 'ada@example.com'],
+    asked: 'Remove ada@example.com from the workspace?',
+    replies: { 'GET /api/members': { docs: [member] } },
+  },
+  { args: ['keys', 'revoke', '4'], asked: 'Revoke key 4?' },
+  {
+    args: ['sharing', 'leave', 'deals'],
+    asked: "Leave deals? You'll need a new invite to get back.",
+  },
+  { args: ['env', 'unset', 'deals', 'MODE'], asked: 'Remove MODE from deals?' },
+  {
+    args: ['domains', 'clear', 'deals'],
+    asked: 'Remove the custom domain of deals? It stops reaching the app.',
+  },
+  {
+    args: ['domains', 'set', 'deals', 'www.acme.com'],
+    asked: 'Replace crm.acme.com with www.acme.com on deals?',
+    replies: { 'GET /api/apps/7/domain': liveDomain },
+  },
+];
+
+const changes = (dojo: FakeDojo) => dojo.paths().filter((route) => !route.startsWith('GET '));
+
+describe('destructive verbs', () => {
+  it.each(destructive)(
+    '$args exits 2 naming --yes without a terminal',
+    async ({ args, replies = {} }) => {
+      const { dojo, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_env' });
+
+      dojo.tokens.set('fb_env', 50);
+
+      for (const [route, body] of Object.entries(replies)) dojo.replies.set(route, { body });
+
+      for (const extra of [[], ['--json']]) {
+        const result = await run([...args, ...extra]);
+
+        expect(result.code).toBe(2);
+        expect(result.stderr()[0]).toMatch(
+          /^\[frogbot\] There's no terminal to confirm in: rerun with --yes\./,
+        );
+      }
+
+      expect(changes(dojo)).toEqual([]);
+    },
+  );
+
+  it.each(destructive)(
+    '$args asks with a terminal and stops when the answer is no',
+    async ({ args, asked, replies = {} }) => {
+      const { dojo, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_env' });
+
+      dojo.tokens.set('fb_env', 50);
+
+      dojo.replies.set('GET /api/projects', {
+        body: { docs: [{ id: 7, slug: 'deals', name: 'Deals' }] },
+      });
+
+      for (const [route, body] of Object.entries(replies)) dojo.replies.set(route, { body });
+
+      const result = await run(args, { isTTY: true, confirm: false });
+
+      expect(result.code).toBe(1);
+      expect(result.asked).toEqual([asked]);
+      expect(result.stderr()).toEqual(['[frogbot] Cancelled.']);
+      expect(changes(dojo)).toEqual([]);
+    },
+  );
+
+  it('sets a first domain without asking', async () => {
+    const { dojo, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_env' });
+
+    dojo.tokens.set('fb_env', 50);
+
+    dojo.replies.set('GET /api/apps/7/domain', {
+      body: { domain: null, record: null, status: null },
+    });
+
+    dojo.replies.set('PUT /api/apps/7/domain', { body: liveDomain });
+
+    const result = await run(['domains', 'set', 'deals', 'crm.acme.com']);
+
+    expect(result.code).toBe(0);
+    expect(result.asked).toEqual([]);
+    expect(changes(dojo)).toEqual(['PUT /api/apps/7/domain']);
   });
 
-  it('asks with a terminal and stops when the answer is no', async () => {
+  it('names the app it found in the delete question, and deletes that app by id', async () => {
     const { dojo, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_env' });
-    const result = await run(['apps', 'delete', 'deals'], { isTTY: true, confirm: false });
 
-    expect(result.code).toBe(1);
+    dojo.tokens.set('fb_env', 50);
+    dojo.replies.set('DELETE /api/projects/7', { body: { doc: { id: 7, slug: 'deals' } } });
+
+    const result = await run(['apps', 'delete', '7'], { isTTY: true, confirm: true });
+
+    expect(result.code).toBe(0);
     expect(result.asked).toEqual(["Delete deals and everything in it? This can't be undone."]);
-    expect(result.stderr()).toEqual(['[frogbot] Cancelled.']);
-    expect(dojo.requests).toEqual([]);
+    expect(changes(dojo)).toEqual(['DELETE /api/projects/7']);
+  });
+});
+
+describe('secrets', () => {
+  it('never prints the sign-in token or a key value, with or without --json', async () => {
+    const { dojo, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_env' });
+
+    dojo.tokens.set('fb_env', 100);
+
+    dojo.replies.set('PUT /api/apps/7/keys', {
+      body: { changed: ['STRIPE_KEY'], retrying: false },
+    });
+
+    dojo.replies.set('GET /api/api-keys', {
+      body: { docs: [{ id: 100, name: 'CLI', prefix: 'fb_e', canMint: true, createdAt: 'x' }] },
+    });
+
+    const commands = [
+      ['env', 'set', 'deals', 'STRIPE_KEY=sk_live_supersecret'],
+      ['env', 'list', 'deals'],
+      ['whoami'],
+      ['login'],
+      ['logout'],
+      ['keys', 'list'],
+      ['apps', 'get', 'deals'],
+    ];
+
+    for (const args of commands) {
+      for (const extra of [[], ['--json']]) {
+        const result = await run([...args, ...extra]);
+        const printed = [...result.stdout(), ...result.stderr()].join('\n');
+
+        expect(printed, args.join(' ')).not.toContain('fb_env');
+        expect(printed, args.join(' ')).not.toContain('sk_live_supersecret');
+      }
+    }
   });
 });
 

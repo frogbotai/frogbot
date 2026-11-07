@@ -1,5 +1,5 @@
 import type { DojoClient } from './dojo.js';
-import { dojoMessage } from './dojo.js';
+import { dojoList } from './dojo.js';
 import { ShareError } from './error.js';
 import type { ShareIO } from './io.js';
 import { say } from './io.js';
@@ -8,13 +8,9 @@ export type Workspace = { id: string | number; name: string; slug: string };
 
 /** Every workspace the signed-in person is in. */
 export async function listWorkspaces(dojo: DojoClient): Promise<Workspace[]> {
-  const listed = await dojo.request('/api/workspaces?depth=0&limit=100');
-
-  if (!listed.ok) {
-    throw new ShareError(`Couldn't list your workspaces: ${await dojoMessage(listed)}`);
-  }
-
-  return ((await listed.json()) as { docs: Workspace[] }).docs;
+  return dojoList<Workspace>(dojo, '/api/workspaces?depth=0&limit=100', {
+    what: "Couldn't list your workspaces",
+  });
 }
 
 /**

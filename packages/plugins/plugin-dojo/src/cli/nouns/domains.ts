@@ -1,7 +1,9 @@
 import type { Noun } from '../command.js';
+import { yesFlag } from '../command.js';
 import type { DojoClient } from '../dojo.js';
-import { dojoJSON } from '../dojo.js';
+import { dojoJSON, segment } from '../dojo.js';
 import { done } from '../io.js';
+import type { DojoApp } from './resolve.js';
 import { findApp } from './resolve.js';
 
 type DomainReply = {
@@ -20,19 +22,14 @@ const statuses = {
 
 async function domainCall(
   dojo: DojoClient,
-  ref: string,
+  app: DojoApp,
   domain?: string | null,
 ): Promise<DomainReply & { app: string }> {
-  const app = await findApp(dojo, ref);
-  const reply = await dojoJSON<DomainReply>(
-    dojo,
-    `/api/apps/${encodeURIComponent(String(app.id))}/domain`,
-    {
-      ...(domain !== undefined && { method: 'PUT', body: { domain } }),
-      what: `Couldn't ${domain === undefined ? 'read' : 'change'} the domain of ${app.slug}`,
-      needs: ownerNeeded,
-    },
-  );
+  const reply = await dojoJSON<DomainReply>(dojo, `/api/apps/${segment(app.id)}/domain`, {
+    ...(domain !== undefined && { method: 'PUT', body: { domain } }),
+    what: `Couldn't ${domain === undefined ? 'read' : 'change'} the domain of ${app.slug}`,
+    needs: ownerNeeded,
+  });
 
   return { app: app.slug, ...reply };
 }
@@ -56,16 +53,25 @@ export const domains: Noun = {
       summary: "Show an app's domain, its DNS record and certificate status.",
       args: '<app>',
       run: async ({ io, dojo, positionals: [ref = ''] }) => {
-        const reply = await domainCall(dojo(), ref);
+        const reply = await domainCall(dojo(), await findApp(dojo(), ref));
 
         done(io, reply, domainLines(reply));
       },
     },
     set: {
-      summary: 'Point a domain you own at the app. Then add the CNAME record it prints.',
+      summary:
+        'Point a domain you own at the app. Then add the CNAME record it prints. Asks before replacing one.',
       args: '<app> <host>',
-      run: async ({ io, dojo, positionals: [ref = '', host = ''] }) => {
-        const reply = await domainCall(dojo(), ref, host);
+      flags: { yes: yesFlag },
+      run: async ({ io, dojo, confirm, positionals: [ref = '', host = ''] }) => {
+        const app = await findApp(dojo(), ref);
+        const current = await domainCall(dojo(), app);
+
+        if (current.domain && current.domain !== host) {
+          await confirm(`Replace ${current.domain} with ${host} on ${app.slug}?`);
+        }
+
+        const reply = await domainCall(dojo(), app, host);
 
         done(io, reply, domainLines(reply));
       },
@@ -73,8 +79,13 @@ export const domains: Noun = {
     clear: {
       summary: "Remove the app's custom domain. Its frogbot.app address stays.",
       args: '<app>',
-      run: async ({ io, dojo, positionals: [ref = ''] }) => {
-        const reply = await domainCall(dojo(), ref, null);
+      confirm: true,
+      run: async ({ io, dojo, confirm, positionals: [ref = ''] }) => {
+        const app = await findApp(dojo(), ref);
+
+        await confirm(`Remove the custom domain of ${app.slug}? It stops reaching the app.`);
+
+        const reply = await domainCall(dojo(), app, null);
 
         done(io, reply, domainLines(reply));
       },

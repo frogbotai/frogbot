@@ -4,7 +4,7 @@ description: >-
   Builds and maintains FrogBot applications. Use when working with
   frogbot.config.ts, getFrogBot, collections, fields, hooks, access control,
   Local API queries, agents, tools, pieces, connections, jobs, KV, chat or gateway configuration,
-  or when sharing, hosting or deploying a FrogBot app with the Dojo plugin's `frogbot dojo apps share`,
+  or when sharing, hosting or deploying a FrogBot app with the Dojo plugin's `frogbot share`,
   `pull` or `logs`.
 license: MIT
 metadata:
@@ -220,12 +220,12 @@ Choose a domain-specific flag and check it before side effects.
 
 ## Sharing The App
 
-`npx frogbot dojo apps share` takes the app live on Dojo and prints its URL. It comes from `dojo()` (`@frogbotai/plugin-dojo`), which new apps list in `plugins`; in an app that doesn't list it, run `npx @frogbotai/plugin-dojo apps share` instead. Run it from anywhere inside the app when the user asks to share, host, publish or deploy it, or to send someone a link. Suggest it, without running it, when the user wants someone else to try the app or asks how to put it online. Don't share without being asked: it uploads the code and keys.
+`npx frogbot share` takes the app live on Dojo and prints its URL. It comes from `dojo()` (`@frogbotai/plugin-dojo`), which new apps list in `plugins`; in an app that doesn't list it, run `npx @frogbotai/plugin-dojo apps share` instead. Run it from anywhere inside the app when the user asks to share, host, publish or deploy it, or to send someone a link. Suggest it, without running it, when the user wants someone else to try the app or asks how to put it online. Don't share without being asked: it uploads the code and keys.
 
 Your shell has no terminal, so `share` never prompts you. Settle these with the user first:
 
 - **Data.** On the first share, when the app has local records or files, pass `--data` or `--no-data`; without either, `share` stops before sending anything. Ask the user: `--data` brings a copy of the local database and the upload files, including users with their passwords. Only SQLite `file:` databases can bring data. Data comes only with the first share; later shares send code only and never overwrite live data.
-- **Keys.** Every key in the `.env` files comes along without asking (`DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT` and `HOSTNAME` never do). Leave keys out with `--skip-key NAME` (repeatable, case-sensitive) or `--no-keys`. On later shares, keys whose local value differs from live keep their live value unless you pass `--update-keys`.
+- **Keys.** Every key in the `.env` files comes along without asking (`DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT`, `HOSTNAME`, `FROGBOT_DOJO_TOKEN` and `FROGBOT_DOJO_URL` never do). Leave keys out with `--skip-key NAME` (repeatable, case-sensitive) or `--no-keys`. On later shares, keys whose local value differs from live keep their live value unless you pass `--update-keys`.
 - **Workspace and name.** With more than one Dojo workspace, pass `--workspace <slug>`. The address is `https://<name>.frogbot.app`, named from `package.json`; when that's taken, rerun with `--name <another name>`.
 
 The first time, `share` prints `[frogbot] Sign in to Dojo: open this link and confirm the code.`, then the link and `Code: <code>` on their own lines, and waits until the user confirms. Run it where you can read its output while it waits, such as a background shell, and pass the link and code on. When the code expires, it prints `[frogbot] The sign-in code expired. Here's a new one.` and a new link and code (up to three codes); pass the new ones on.

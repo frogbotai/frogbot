@@ -1,7 +1,7 @@
 import { setTimeout } from 'node:timers/promises';
 
 import type { DojoClient } from './dojo.js';
-import { createDojo, dojoMessage } from './dojo.js';
+import { createDojo, dojoMessage, segment } from './dojo.js';
 import { ShareError } from './error.js';
 import type { ShareIO } from './io.js';
 import { done, say } from './io.js';
@@ -88,7 +88,7 @@ async function logs(
 
 async function read(dojo: DojoClient, app: string, after: string | null): Promise<LogsReply> {
   const query = after ? `?after=${encodeURIComponent(after)}` : '';
-  const response = await dojo.request(`/api/apps/${encodeURIComponent(app)}/logs${query}`);
+  const response = await dojo.request(`/api/apps/${segment(app)}/logs${query}`);
 
   if (!response.ok) throw new ShareError(await dojoMessage(response));
 

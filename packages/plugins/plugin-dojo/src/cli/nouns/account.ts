@@ -1,21 +1,12 @@
 import type { RawVerb, Verb } from '../command.js';
 import type { DojoClient, DojoUser } from '../dojo.js';
-import { dojoJSON } from '../dojo.js';
 import { ShareError } from '../error.js';
 import type { ShareIO } from '../io.js';
 import { done } from '../io.js';
-import type { Workspace } from '../workspaces.js';
+import { listWorkspaces } from '../workspaces.js';
 
 async function showMe(io: ShareIO, dojo: DojoClient, user: DojoUser): Promise<void> {
-  const { docs } = await dojoJSON<{ docs: Workspace[] }>(
-    dojo,
-    '/api/workspaces?depth=0&limit=100',
-    {
-      what: "Couldn't list your workspaces",
-    },
-  );
-
-  const workspaces = docs.map(({ slug, name }) => ({ slug, name }));
+  const workspaces = (await listWorkspaces(dojo)).map(({ slug, name }) => ({ slug, name }));
 
   done(io, { email: user.email ?? null, url: dojo.url, workspaces }, [
     `[frogbot] Signed in to ${dojo.url} as ${user.email ?? 'an account with no email'}.`,

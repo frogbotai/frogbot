@@ -1,6 +1,6 @@
 import type { Noun, VerbFlag, VerbInput } from '../command.js';
 import type { DojoClient } from '../dojo.js';
-import { dojoJSON } from '../dojo.js';
+import { dojoJSON, dojoList, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
 import { done } from '../io.js';
 import type { Workspace } from '../workspaces.js';
@@ -39,13 +39,11 @@ async function inWorkspace({ io, dojo, values }: VerbInput): Promise<Workspace> 
 }
 
 async function listMembers(dojo: DojoClient, workspace: Workspace): Promise<Member[]> {
-  const { docs } = await dojoJSON<{ docs: Member[] }>(
+  return dojoList<Member>(
     dojo,
     `/api/members?depth=0&limit=100&sort=email&${whereEquals('workspace', workspace.id)}`,
     { what: `Couldn't list the members of ${workspace.slug}` },
   );
-
-  return docs;
 }
 
 async function findMember(dojo: DojoClient, workspace: Workspace, email: string): Promise<Member> {
@@ -117,7 +115,7 @@ export const members: Noun = {
 
         const { doc } = await dojoJSON<{ doc: Member }>(
           input.dojo(),
-          `/api/members/${encodeURIComponent(String(member.id))}?depth=0`,
+          `/api/members/${segment(member.id)}?depth=0`,
           {
             method: 'PATCH',
             body: { role },
@@ -139,7 +137,7 @@ export const members: Noun = {
         const workspace = await inWorkspace(input);
         const member = await findMember(input.dojo(), workspace, email);
 
-        await dojoJSON(input.dojo(), `/api/members/${encodeURIComponent(String(member.id))}`, {
+        await dojoJSON(input.dojo(), `/api/members/${segment(member.id)}`, {
           method: 'DELETE',
           what: `Couldn't remove ${email}`,
           needs: ownerNeeded,

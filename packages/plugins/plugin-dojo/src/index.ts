@@ -10,6 +10,9 @@ import { withDojoStorage } from './storage.js';
 const dojoCommand: CLICommand = async ({ args }) =>
   (await import('./cli/commands.js')).runDojoCommand(args, 'frogbot dojo');
 
+const shareCommand: CLICommand = async ({ args }) =>
+  (await import('./cli/commands.js')).runDojoCommand(['apps', 'share', ...args], 'frogbot dojo');
+
 export type DojoPluginOptions = {
   /** Adds "Continue with Dojo" to the user collection's sign-in methods on Dojo. Default `true`. */
   signIn?: boolean;
@@ -17,7 +20,7 @@ export type DojoPluginOptions = {
 
 /**
  * Runs a FrogBot app on Dojo: R2 file storage, AI through Dojo's gateway, scheduled jobs woken by
- * Dojo, "Continue with Dojo" sign-in and a "Made with FrogBot" badge. Adds the `frogbot dojo` commands. Does nothing else unless `DOJO=1`, apart from listing the badge and sign-in
+ * Dojo, "Continue with Dojo" sign-in and a "Made with FrogBot" badge. Adds the `frogbot dojo` commands, and `frogbot share` for `frogbot dojo apps share`. Does nothing else unless `DOJO=1`, apart from listing the badge and sign-in
  * buttons for the import map, and keeps any storage or provider key the app set. Runs after every
  * other plugin, as Dojo's platform plugin does, so it sees the collections and AI providers they add.
  */
@@ -33,6 +36,7 @@ export const dojo = definePlugin<DojoPluginOptions | undefined>({
         commands: {
           ...config.cli?.commands,
           dojo: dojoCommand,
+          share: shareCommand,
         },
       },
     });

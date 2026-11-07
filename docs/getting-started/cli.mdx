@@ -160,7 +160,7 @@ Every command takes `--json`, which prints one JSON value on stdout, and reads `
 npx frogbot dojo apps share --no-data
 ```
 
-Uploads the app in the current folder to Dojo, streams `[build]` logs, and prints a share link followed by the live `https://<name>.frogbot.app` URL. Run it from the folder containing `frogbot.config.ts` (or its parent when the config is inside `src/`). In an app without `dojo()`, run `npx @frogbotai/plugin-dojo apps share`.
+Uploads the app in the current folder to Dojo, streams `[build]` logs, and prints a share link followed by the live `https://<name>.frogbot.app` URL. `npx frogbot share` is the same command, with the same flags. Run it from the folder containing `frogbot.config.ts` (or its parent when the config is inside `src/`). In an app without `dojo()`, run `npx @frogbotai/plugin-dojo apps share`.
 
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -192,7 +192,7 @@ Uploads the app in the current folder to Dojo, streams `[build]` logs, and print
     - **Upload collections:** Files inside upload directories within your project root are uploaded with progress output and automatic 3x retries. `.env*`, `.git`, `node_modules`, and database files inside upload folders are excluded.
   </Accordion>
   <Accordion title="Environment keys (--no-keys, --skip-key, --update-keys)">
-    - **Encryption & masking:** Keys from `.env*` files are masked in terminal output (`STRIPE_KEY ••••4242`) and sealed to Dojo's public key before leaving your machine. Platform variables (`DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT`, `HOSTNAME`) are managed by Dojo automatically.
+    - **Encryption & masking:** Keys from `.env*` files are masked in terminal output (`STRIPE_KEY ••••4242`) and sealed to Dojo's public key before leaving your machine. Platform variables (`DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT`, `HOSTNAME`) are managed by Dojo automatically, and the Dojo sign-in (`FROGBOT_DOJO_TOKEN`, `FROGBOT_DOJO_URL`) never leaves your machine.
     - **First vs. later shares:** The first share lets you untick any keys interactively (or uploads all keys when non-interactive). Later shares add newly introduced keys automatically and keep existing live values unless you pass `--update-keys`.
     - **Editors:** Collaborators with editor access (such as from [`dojo apps pull`](#dojo-apps-pull)) deploy code only; key changes are restricted to workspace owners.
   </Accordion>

@@ -6,7 +6,7 @@ Dojo adds this plugin when it builds an app, after the app's own plugins, by set
 
 ## Commands
 
-Every command runs as `frogbot dojo <command>` in an app that lists `dojo()`, and as `npx @frogbotai/plugin-dojo <command>` anywhere, with or without an app. Both run the same command list.
+Every command runs as `frogbot dojo <command>` in an app that lists `dojo()`, and as `npx @frogbotai/plugin-dojo <command>` anywhere, with or without an app. Both run the same command list. `frogbot share` is `frogbot dojo apps share`, with the same flags.
 
 | Command                                                                          | Example                                                         | Does                                                                              |
 | -------------------------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------- |
