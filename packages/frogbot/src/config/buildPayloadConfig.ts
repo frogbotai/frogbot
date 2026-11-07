@@ -1,5 +1,6 @@
 import type { Config as PayloadConfig, PayloadEmailAdapter } from 'payload';
 
+import { buildAppIconEndpoints } from '../admin/appIcon/endpoints.js';
 import {
   CREATE_FIRST_USER_VIEW,
   fillViewMeta,
@@ -203,6 +204,7 @@ export function buildPayloadConfig({
     ...buildResumeEndpoints(),
     ...(Array.isArray(userEndpoints) ? (config.endpoints ?? []) : []),
     buildManifestEndpoint(),
+    ...buildAppIconEndpoints(),
     ...agentEndpoints,
     ...internalEndpoints,
   ];
