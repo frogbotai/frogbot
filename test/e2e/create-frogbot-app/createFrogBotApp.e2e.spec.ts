@@ -781,13 +781,18 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
           expect.arrayContaining(['WEB-1', 'WEB-5', 'MOB-4', 'OPS-3']),
         );
 
-        const demo = await fetch(`${base}/api/users/login`, {
-          method: 'POST',
-          headers: json,
-          body: JSON.stringify({ email: 'admin@test.com', password: 'password' }),
-        });
+        const again = await fetch(`${base}/api/seed`, { method: 'POST', headers: auth });
 
-        expect(demo.status, output()).toBe(200);
+        expect(again.status, output()).toBe(409);
+
+        const users = await fetch(`${base}/api/users`, { headers: auth });
+
+        expect(
+          ((await users.json()) as { docs: Array<{ email: string }> }).docs.map(
+            ({ email }) => email,
+          ),
+          output(),
+        ).toEqual(['owner@projects.test']);
       },
     );
   }, 120000);
