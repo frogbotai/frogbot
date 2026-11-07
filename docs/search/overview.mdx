@@ -208,6 +208,8 @@ export default buildConfig({
 
 The model's input is `{ query: string }`, and it can't set anything else. The result is `{ hits: [{ id, score, ...selected fields }] }` in ranked order, at depth `0`, for example `{ hits: [{ id: 12, score: 0.03, title: 'Account recovery', body: '…' }] }`. No match is `{ hits: [] }`.
 
+In the admin chat, each hit shows as a source under the answer: the record's title, from the collection's `admin.useAsTitle`, linking to its edit page. When `select` leaves the title field out, the tool reads it with the run's access, so a record the user can't read gets no source. The model sees only `hits`.
+
 ### Search tool options
 
 | Option | Type | Default | Description |
