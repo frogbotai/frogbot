@@ -127,6 +127,21 @@ describe('sign-in continue page', () => {
     expect((await render('plain')).body).not.toContain('background:');
   });
 
+  it('adds one ellipsis when the translation already ends with one', async () => {
+    for (const loading of ['Laddar...', 'Laddar…']) {
+      const response = continuePage({
+        returnTo: '/admin',
+        look: 'light',
+        lang: 'sv',
+        t: ((key: string) =>
+          key === 'general:loading' ? loading : 'Nästa') as FrogBotRequest['t'],
+        headers: new Headers(),
+      });
+
+      expect(await response.text()).toContain('<title>Laddar…</title>');
+    }
+  });
+
   it('continues by refresh and link, translated, with every value escaped', async () => {
     const { body } = await render('light', `/admin?a="<x>"&b='y'`, 'en"><script>');
     const url = '/admin?a=&#34;&#60;x&#62;&#34;&#38;b=&#39;y&#39;';

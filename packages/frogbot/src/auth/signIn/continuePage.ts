@@ -100,7 +100,7 @@ export function continuePage({
   headers: Headers;
 }): Response {
   const url = escapeHTML(returnTo);
-  const loading = escapeHTML(`${t('general:loading')}…`);
+  const loading = escapeHTML(`${t('general:loading').replace(/(?:\.{3}|…)$/, '')}…`);
   const { css, csp } = styles[look];
 
   headers.set('content-type', 'text/html; charset=utf-8');
