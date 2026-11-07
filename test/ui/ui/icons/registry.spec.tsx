@@ -12,6 +12,9 @@ describe('iconRegistry', () => {
     expect(iconNames).toContain('bubble-chat');
     expect(iconNames).toContain('key-round');
     expect(iconNames).toContain('message-square-text');
+    expect(iconNames).toContain('calendar');
+    expect(iconNames).toContain('shopping-cart');
+    expect(iconNames).toContain('chart-bar');
     expect(iconNames).not.toContain('create-lucide');
     expect(iconNames).toEqual(configuredIconNames);
   });
