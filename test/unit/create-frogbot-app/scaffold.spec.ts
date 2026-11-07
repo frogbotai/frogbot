@@ -566,6 +566,7 @@ describe('projects scaffold output', () => {
     expect(fs.existsSync(path.join(dest, 'src', 'agents'))).toBe(false);
     expect(fs.existsSync(path.join(dest, 'src', 'seed', 'index.ts'))).toBe(true);
     expect(fs.existsSync(path.join(dest, 'src', 'components', 'SeedPanel.tsx'))).toBe(true);
+    expect(fs.existsSync(path.join(dest, 'src', 'components', 'SeedButton.tsx'))).toBe(true);
     expect(readPackage(dest).dependencies).not.toHaveProperty('@frogbotai/plugin-ai-policy');
   });
 

@@ -741,7 +741,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
     120000,
   );
 
-  it('boots the generated projects application and seeds it from POST /api/seed', async () => {
+  it('boots the generated projects application and seeds it once from POST /api/seed', async () => {
     await expectAppBoots(
       appDirectories.get('projects-sqlite-none')!,
       undefined,
@@ -781,13 +781,10 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
           expect.arrayContaining(['WEB-1', 'WEB-5', 'MOB-4', 'OPS-3']),
         );
 
-        const demo = await fetch(`${base}/api/users/login`, {
-          method: 'POST',
-          headers: json,
-          body: JSON.stringify({ email: 'admin@test.com', password: 'password' }),
-        });
+        const again = await fetch(`${base}/api/seed`, { method: 'POST', headers: auth });
 
-        expect(demo.status, output()).toBe(200);
+        expect(again.status, output()).toBe(409);
+        expect((await find('tasks')).docs).toHaveLength(12);
       },
     );
   }, 120000);

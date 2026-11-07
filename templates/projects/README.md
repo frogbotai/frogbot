@@ -1,8 +1,7 @@
 # FrogBot Projects Template
 
 A small project tracker: projects, tasks with keys such as `WEB-12` on a board grouped by status,
-an `assistant` agent that knows the layout, and a **Seed your database** button that loads sample
-data. It runs on SQLite, PostgreSQL or MongoDB. No Docker is required.
+an `assistant` agent that knows the layout, and an **Add sample data** button for trying it out. It runs on SQLite, PostgreSQL or MongoDB. No Docker is required.
 
 ## Quick Start
 
@@ -26,16 +25,11 @@ Then open [http://localhost:3000](http://localhost:3000) and create your admin a
 
 ## Sample data
 
-The dashboard shows a **Seed your database** panel. Its button calls `POST /api/seed`, which
-loads three projects with tasks and creates a demo login:
-
-- Email: `admin@test.com`
-- Password: `password`
-
-> **Warning:** seeding deletes every project and task, then creates the samples again. It also
-> deletes and recreates `admin@test.com`, unless you are signed in as that user. Any signed-in
-> user can run it, in every environment. Before you deploy, remove the panel and the endpoint
-> from `src/frogbot.config.ts`, or delete the demo user.
+While the app has no projects, the dashboard shows an **Add sample data** panel. Its button calls
+`POST /api/seed`, which adds three projects with tasks, every task assigned to you. It makes no
+other user and deletes nothing. Once the app has a project, the panel hides and the endpoint
+answers `409`, so it is safe to leave in a deployed app. To seed again locally, delete the
+database.
 
 The seed is plain code in `src/seed/index.ts`; edit it to change the sample data.
 
@@ -47,7 +41,8 @@ The seed is plain code in `src/seed/index.ts`; edit it to change the sample data
 | `src/collections/Projects.ts`   | Projects, each with a key such as `WEB`                          |
 | `src/collections/Tasks.ts`      | Tasks with numbered keys, a list view and a board view           |
 | `src/seed/`                     | The sample data and the `POST /api/seed` endpoint                |
-| `src/components/SeedPanel.tsx`  | The dashboard panel with the seed button                         |
+| `src/components/SeedPanel.tsx`  | The dashboard panel, shown while the app has no projects         |
+| `src/components/SeedButton.tsx` | The panel's button                                               |
 | `src/agents/`                   | The `assistant` agent (removed with `--ai none`)                 |
 | `src/app/(frogbot)/`            | Admin panel + API routes (owned by FrogBot, safe to leave alone) |
 | `src/app/(frogbot)/api/health/` | Health check, `GET /api/health`, for hosting                     |

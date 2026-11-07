@@ -1,8 +1,11 @@
 import type { Endpoint } from 'frogbot';
 
-import { seed } from './index';
+import { hasRecords, seed } from './index';
 
-/** `POST /api/seed`: replaces the sample data for a signed-in user. */
+/**
+ * `POST /api/seed`: adds the sample data for the signed-in user, only while the
+ * app has none of the starter's records.
+ */
 export function seedEndpoint(run: typeof seed = seed): Endpoint {
   return {
     path: '/seed',
@@ -12,6 +15,13 @@ export function seedEndpoint(run: typeof seed = seed): Endpoint {
         return Response.json(
           { error: 'Sign in to seed the database.' },
           { status: 403 },
+        );
+      }
+
+      if (await hasRecords(req.frogbot)) {
+        return Response.json(
+          { error: 'This app already has data, so there is nothing to seed.' },
+          { status: 409 },
         );
       }
 

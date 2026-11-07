@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 import { ensureAutonumbers } from 'frogbot/test';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DEMO_EMAIL, DEMO_PASSWORD } from '../../templates/projects/src/seed/index.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
@@ -74,16 +73,17 @@ describe('projects template seed', () => {
     expect(await counts()).toEqual({ projects: 0, tasks: 0 });
   });
 
-  it('replaces the sample data when run twice, and every task has a key', async () => {
+  it('adds the sample data once, with a key on every task, and refuses a second run', async () => {
     const { headers } = await signUp(ownerCredentials);
 
     expect((await seed(headers)).body).toEqual({ success: true });
+    expect(await counts()).toEqual({ projects: 3, tasks: 12 });
 
-    const first = await counts();
+    const again = await seed(headers);
 
-    expect((await seed(headers)).body).toEqual({ success: true });
-    expect(first).toEqual({ projects: 3, tasks: 12 });
-    expect(await counts()).toEqual(first);
+    expect(again.status).toBe(409);
+    expect(again.body.error).toBe('This app already has data, so there is nothing to seed.');
+    expect(await counts()).toEqual({ projects: 3, tasks: 12 });
 
     const { docs } = await booted.frogbot.find({
       collection: 'tasks',
@@ -95,38 +95,40 @@ describe('projects template seed', () => {
     for (const task of docs) expect(task.key).toMatch(/^[A-Z]+-\d+$/);
   });
 
-  it('creates a demo user that can sign in, without touching the signed-in user', async () => {
+  it('assigns every task to the signed-in user and makes no other user', async () => {
     const owner = await signUp(ownerCredentials);
 
     await seed(owner.headers);
-    await seed(owner.headers);
 
-    const demo = await signIn({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
-    const ownerAgain = await signIn(ownerCredentials);
-
-    expect(demo.status).toBe(200);
-    expect(ownerAgain.body.user?.id).toBe(owner.id);
-
-    const { totalDocs } = await booted.frogbot.count({
-      collection: 'users',
-      where: { email: { equals: DEMO_EMAIL } },
+    const { docs } = await booted.frogbot.find({
+      collection: 'tasks',
+      limit: 0,
+      depth: 0,
       overrideAccess: true,
     });
 
-    expect(totalDocs).toBe(1);
+    expect(docs.map(({ assignee }) => assignee)).toEqual(docs.map(() => owner.id));
+
+    const users = await booted.frogbot.find({
+      collection: 'users',
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    expect(users.docs.map(({ email }) => email)).toEqual([ownerCredentials.email]);
   });
 
-  it('keeps the demo user as is when it is the signed-in user', async () => {
-    const own = { email: DEMO_EMAIL, password: 'my-own-password' };
-    const { headers, id } = await signUp(own);
+  it("leaves an app's own records alone", async () => {
+    const { headers } = await signUp(ownerCredentials);
 
-    expect((await seed(headers)).status).toBe(200);
+    await booted.frogbot.create({
+      collection: 'projects',
+      data: { key: 'OWN', name: 'Our own work', status: 'active' },
+      overrideAccess: true,
+    });
 
-    const again = await signIn(own);
-
-    expect(again.status).toBe(200);
-    expect(again.body.user?.id).toBe(id);
-    expect((await signIn({ email: DEMO_EMAIL, password: DEMO_PASSWORD })).status).toBe(401);
+    expect((await seed(headers)).status).toBe(409);
+    expect(await counts()).toEqual({ projects: 1, tasks: 0 });
   });
 
   it('logs a failing seed and answers 500', async () => {

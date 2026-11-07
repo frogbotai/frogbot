@@ -1,9 +1,5 @@
 import type { FrogBotInstance, FrogBotRequest } from 'frogbot';
 
-export const DEMO_EMAIL = 'admin@test.com';
-
-export const DEMO_PASSWORD = 'password';
-
 type TaskStatus = 'todo' | 'in-progress' | 'in-review' | 'done';
 
 type SampleProject = {
@@ -77,9 +73,19 @@ const PROJECTS: SampleProject[] = [
 
 const DAY = 24 * 60 * 60 * 1000;
 
+/** Whether the app has any of the starter's records, so Seed has nothing to add to. */
+export async function hasRecords(frogbot: FrogBotInstance): Promise<boolean> {
+  const { totalDocs } = await frogbot.count({
+    collection: 'projects',
+    overrideAccess: true,
+  });
+
+  return totalDocs > 0;
+}
+
 /**
- * Replaces every project and task with sample data, and recreates the demo user
- * `admin@test.com` / `password` unless it is the signed-in user.
+ * Adds the sample projects and tasks, every task assigned to the signed-in
+ * user. It deletes nothing; the endpoint runs it only while `hasRecords` is false.
  */
 export async function seed({
   frogbot,
@@ -88,24 +94,6 @@ export async function seed({
   frogbot: FrogBotInstance;
   req: FrogBotRequest;
 }) {
-  await frogbot.delete({
-    collection: 'tasks',
-    where: {},
-    overrideAccess: true,
-    req,
-  });
-
-  await frogbot.delete({
-    collection: 'projects',
-    where: {},
-    overrideAccess: true,
-    req,
-  });
-
-  const demoUser = await recreateDemoUser({ frogbot, req });
-  const assignees = [demoUser.id, req.user?.id ?? demoUser.id];
-  let index = 0;
-
   for (const { tasks, ...data } of PROJECTS) {
     const project = await frogbot.create({
       collection: 'projects',
@@ -120,7 +108,7 @@ export async function seed({
         data: {
           ...task,
           project: project.id,
-          assignee: assignees[index % assignees.length],
+          assignee: req.user?.id,
           dueDate:
             dueInDays === undefined
               ? undefined
@@ -129,32 +117,6 @@ export async function seed({
         overrideAccess: true,
         req,
       });
-
-      index++;
     }
   }
-}
-
-async function recreateDemoUser({
-  frogbot,
-  req,
-}: {
-  frogbot: FrogBotInstance;
-  req: FrogBotRequest;
-}) {
-  if (req.user?.email === DEMO_EMAIL) return req.user;
-
-  await frogbot.delete({
-    collection: 'users',
-    where: { email: { equals: DEMO_EMAIL } },
-    overrideAccess: true,
-    req,
-  });
-
-  return frogbot.create({
-    collection: 'users',
-    data: { email: DEMO_EMAIL, password: DEMO_PASSWORD, name: 'Demo Admin' },
-    overrideAccess: true,
-    req,
-  });
 }
