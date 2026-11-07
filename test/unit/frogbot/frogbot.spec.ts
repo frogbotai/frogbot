@@ -12,7 +12,7 @@ import {
 import { buildManifestEndpoint } from '../../../packages/frogbot/src/chat/manifest.js';
 import type { FrogBotSanitizedConfig } from '../../../packages/frogbot/src/config/sanitized.js';
 import { createCredentialEncryption } from '../../../packages/frogbot/src/connections/encryption.js';
-import { FrogBot } from '../../../packages/frogbot/src/frogbot.js';
+import { FrogBot, initFrogBotFromPayload } from '../../../packages/frogbot/src/frogbot.js';
 import { definePiece } from '../../../packages/frogbot/src/pieces/definePiece.js';
 import { createGatewayHandler } from '../../../packages/frogbot/src/server/gateway.js';
 import { TriggerSubscriptions } from '../../../packages/frogbot/src/triggers/subscriptions.js';
@@ -97,6 +97,18 @@ function createMockPayload() {
     getAPIURL: vi.fn(() => 'http://localhost:3000/api'),
     destroy: vi.fn(),
   };
+}
+
+async function mockPayload() {
+  const payloadMod = await import('payload');
+
+  return (
+    payloadMod as unknown as {
+      __getMockPayload: () => ReturnType<typeof createMockPayload> & {
+        config: { onInit?: (payload: unknown) => Promise<void> | void };
+      };
+    }
+  ).__getMockPayload();
 }
 
 function emailWarnings(warn: ReturnType<typeof vi.fn>) {
@@ -367,6 +379,43 @@ describe('FrogBot class', () => {
       expect(optionOnInit).not.toHaveBeenCalled();
       expect(configOnInit).not.toHaveBeenCalled();
     });
+
+    it('does not run the built Payload config onInit when disableOnInit is true', async () => {
+      const payloadOnInit = vi.fn();
+
+      (await mockPayload()).config.onInit = payloadOnInit;
+
+      await new FrogBot().init({ config: makeConfig(), disableOnInit: true });
+
+      expect(payloadOnInit).not.toHaveBeenCalled();
+    });
+
+    it('does not run the built Payload config onInit again when Payload starts FrogBot', async () => {
+      const payload = await mockPayload();
+      const payloadOnInit = vi.fn();
+      const configOnInit = vi.fn();
+      const config = makeConfig();
+
+      config.onInit = configOnInit;
+      payload.config.onInit = payloadOnInit;
+
+      await initFrogBotFromPayload(payload as never, config);
+
+      expect(payloadOnInit).not.toHaveBeenCalled();
+      expect(configOnInit).toHaveBeenCalledOnce();
+    });
+
+    it('rejects init when the built Payload config onInit throws', async () => {
+      const error = new Error('ContainerNotFound');
+      const configOnInit = vi.fn();
+      const config = makeConfig();
+
+      config.onInit = configOnInit;
+      (await mockPayload()).config.onInit = () => Promise.reject(error);
+
+      await expect(new FrogBot().init({ config })).rejects.toBe(error);
+      expect(configOnInit).not.toHaveBeenCalled();
+    });
   });
 
   describe('trigger reconciliation', () => {
@@ -455,6 +504,36 @@ describe('FrogBot class', () => {
       await new FrogBot().init({ config, onInit: () => void order.push('onInit') });
 
       expect(order).toEqual(['autonumbers', 'onInit', 'config onInit']);
+    });
+
+    it('runs the built Payload config onInit first, once', async () => {
+      const order: string[] = [];
+      const payload = await mockPayload();
+
+      ensureAutonumbers.mockImplementationOnce(() => {
+        order.push('autonumbers');
+
+        return Promise.resolve();
+      });
+
+      payload.config.onInit = vi.fn(async (received: unknown) => {
+        await Promise.resolve();
+
+        expect(received).toBe(payload);
+
+        order.push('payload onInit');
+      });
+
+      const config = withAutonumber();
+
+      config.onInit = () => {
+        order.push('config onInit');
+      };
+
+      await new FrogBot().init({ config, onInit: () => void order.push('onInit') });
+
+      expect(order).toEqual(['payload onInit', 'autonumbers', 'onInit', 'config onInit']);
+      expect(payload.config.onInit).toHaveBeenCalledOnce();
     });
 
     it('skips the run without autonumber fields', async () => {

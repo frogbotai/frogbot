@@ -77,6 +77,7 @@ describe('channels:run lifecycle', () => {
     expect(mocks.host.runGatewayListener.mock.calls[0][0].signal.aborted).toBe(true);
     expect(mocks.destroy).toHaveBeenCalledOnce();
     expect(mocks.initFrogBot).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+      runPayloadOnInit: true,
       startChannelGateway: false,
     });
   });

@@ -108,6 +108,7 @@ export async function jobsRun(args: string[]): Promise<void> {
 
         if (!stopping) {
           frogbot = await initFrogBotFromPayload(runtime, config, {
+            runPayloadOnInit: true,
             startChannelGateway: false,
           });
 

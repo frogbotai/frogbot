@@ -122,7 +122,9 @@ type FrogBotCustom = {
   auth?: boolean;
 };
 
-type PayloadInitOptions = Pick<InitOptions, 'disableOnInit' | 'onInit' | 'startChannelGateway'>;
+type PayloadInitOptions = Pick<InitOptions, 'disableOnInit' | 'onInit' | 'startChannelGateway'> & {
+  runPayloadOnInit?: boolean;
+};
 
 type FrogBotState = {
   kv: KV;
@@ -196,7 +198,9 @@ export class FrogBot {
       disableOnInit: true,
     });
 
-    return ensureFrogBotInstance(payload, () => initialize(this, payload, config, options), config);
+    const owned = { ...options, runPayloadOnInit: true };
+
+    return ensureFrogBotInstance(payload, () => initialize(this, payload, config, owned), config);
   }
 
   async destroy(): Promise<void> {
@@ -206,10 +210,7 @@ export class FrogBot {
   }
 
   async handleRequest(request: Request): Promise<Response> {
-    return handleEndpoints({
-      config: state(this).payload.config,
-      request,
-    });
+    return handleEndpoints({ config: state(this).payload.config, request });
   }
 
   async createRequest(req?: Partial<FrogBotRequest>): Promise<FrogBotRequest> {
@@ -492,6 +493,8 @@ async function initialize(
   }
 
   if (!options.disableOnInit) {
+    if (options.runPayloadOnInit) await payload.config.onInit?.(payload);
+
     if (Object.keys(frogbot.config._internal.triggers).length) {
       void frogbot.triggers.reconcile().catch((error: unknown) => {
         frogbot.logger.warn(
