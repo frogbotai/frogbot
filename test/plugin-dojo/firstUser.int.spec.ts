@@ -13,6 +13,8 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const sharer = 'sam@example.com';
 
+type SignInRequest = Parameters<typeof resolveSignInIdentity>[0]['req'];
+
 describe('dojo() on an app shared to Dojo empty', () => {
   const previousEnv = { ...process.env };
   let booted: BootedFrogBot;
@@ -35,7 +37,7 @@ describe('dojo() on an app shared to Dojo empty', () => {
 
   const signIn = async (email: string) =>
     resolveSignInIdentity({
-      req: await booted.frogbot.createRequest(),
+      req: (await booted.frogbot.createRequest()) as SignInRequest,
       collectionSlug: usersSlug,
       email,
     });
