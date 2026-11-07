@@ -2,7 +2,7 @@ import type { CollectionConfig } from 'frogbot';
 
 export const Projects: CollectionConfig = {
   slug: 'projects',
-  admin: { useAsTitle: 'name' },
+  admin: { icon: 'briefcase', useAsTitle: 'name' },
   fields: [
     { name: 'name', type: 'text', required: true },
     {

@@ -44,7 +44,7 @@ Chats are grouped under Today, Yesterday, Previous 7 days, Previous 30 days, and
 
 ## Collection icons and placement
 
-Set `admin.icon` on a collection to a built-in kebab-case icon name or a component import path. Your editor autocompletes every built-in name, including `robot`, `bubble-chat`, `file`, `link-square`, `ai-search`, and `people`.
+Set `admin.icon` on a collection to a built-in kebab-case icon name or a component import path. Your editor autocompletes every built-in name, including `robot`, `bubble-chat`, `file`, `link-square`, `ai-search`, and `people`. A collection with no icon shows a folder, and `frogbot check` warns about each one that shows in the sidebar (`MISSING_ICON`) without failing.
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -52,7 +52,7 @@ import type { CollectionConfig } from 'frogbot'
 export const Projects: CollectionConfig = {
   slug: 'projects',
   admin: {
-    icon: 'robot',
+    icon: 'briefcase',
     group: null,
   },
   fields: [],
@@ -60,6 +60,18 @@ export const Projects: CollectionConfig = {
 ```
 
 Use `group: null` to list a collection as a top-level link above the sections. Leave `group` undefined to list it directly under the Collections heading, as FrogBot's built-in collections are, provide a string or localized value to list it under a named group label, or use `false` to keep the collection's routes but leave it out of the sidebar, the dashboard's collection cards, Recents and Pinned, and the command palette. Settings → Collections still lists a `false` collection, so it's one click away. For Users and other admin collections, use [`settings: true`](#settings-collections) instead. Both options are listed with the other collection admin settings in [Admin Options](/configuration/collections#admin-options).
+
+These built-in names suit a sidebar link, grouped by the kind of collection they fit:
+
+| Kind     | Names                                                                                                     |
+| -------- | --------------------------------------------------------------------------------------------------------- |
+| People   | `people`, `profile`, `user-add`, `ai-user`, `mail`                                                        |
+| Content  | `file`, `newspaper`, `book-open`, `bookmark`, `scroll`, `pencil-edit`, `message-square-text`, `megaphone` |
+| Media    | `image`, `video`, `palette`, `layers`                                                                     |
+| Work     | `briefcase`, `check-list`, `calendar`, `clock`, `flag`, `ticket`, `lightbulb`, `robot`                    |
+| Commerce | `receipt`, `coins`, `shopping-cart`, `package`, `tag`, `chart-bar`                                        |
+| Places   | `map-pin`, `building`, `home`, `web`                                                                      |
+| Settings | `setting`, `shield`, `key-round`, `lock`, `database`, `link-square`, `code`                               |
 
 Component icons receive `size` and `className` props and are added to the generated import map:
 

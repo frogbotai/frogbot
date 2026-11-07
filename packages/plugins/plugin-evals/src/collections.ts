@@ -138,7 +138,7 @@ export function createEvalCollections({
       slug: DATASETS,
       ...shared,
       labels: { singular: 'Eval dataset', plural: 'Eval datasets' },
-      admin: { group, useAsTitle: 'name' },
+      admin: { group, icon: 'database', useAsTitle: 'name' },
       fields: [
         { name: 'name', type: 'text', required: true, unique: true },
         { name: 'agent', type: 'select', required: true, options: [...agents] },
@@ -149,7 +149,7 @@ export function createEvalCollections({
       slug: CASES,
       ...shared,
       labels: { singular: 'Eval case', plural: 'Eval cases' },
-      admin: { group, useAsTitle: 'input' },
+      admin: { group, icon: 'check-list', useAsTitle: 'input' },
       fields: [
         {
           name: 'dataset',
@@ -170,6 +170,7 @@ export function createEvalCollections({
       labels: { singular: 'Eval run', plural: 'Eval runs' },
       admin: {
         group,
+        icon: 'chart-bar',
         views: [
           {
             type: 'list',
@@ -214,7 +215,7 @@ export function createEvalCollections({
       ...shared,
       authorship: false,
       labels: { singular: 'Eval result', plural: 'Eval results' },
-      admin: { group },
+      admin: { group, icon: 'checkmark-circle' },
       fields: [
         { name: 'run', type: 'relationship', relationTo: RUNS, required: true, index: true },
         { name: 'case', type: 'relationship', relationTo: CASES, index: true },

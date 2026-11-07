@@ -218,4 +218,92 @@ describe('frogbot check', () => {
     expect(result.stdout).toHaveLength(1);
     expect(JSON.parse(result.stdout[0])).toEqual({ command: 'check', success: true });
   });
+
+  describe('MISSING_ICON', () => {
+    const ICON_DOCS =
+      'https://docs.frogbot.ai/admin/admin-navigation#collection-icons-and-placement';
+
+    const warning = (slug: string) => ({
+      code: 'MISSING_ICON',
+      path: `collections.${slug}`,
+      message: `no admin.icon, so the sidebar shows a folder; pick one: ${ICON_DOCS}`,
+    });
+
+    const collections = (...entries: string[]) =>
+      `  collections: [{ slug: 'users', auth: true, fields: [] }, ${entries.join(', ')}],`;
+
+    it('warns by slug about a sidebar collection with no icon and still passes', async () => {
+      const fixture = await makeFixture(
+        collections("{ slug: 'invoices', fields: [] }", "{ slug: 'leads', fields: [] }"),
+      );
+
+      await writeTypes(fixture);
+
+      const result = await runCheck();
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toEqual(
+        ['invoices', 'leads'].map(
+          (slug) => `[frogbot] warning MISSING_ICON collections.${slug}: ${warning(slug).message}`,
+        ),
+      );
+      expect(result.stdout).toEqual([
+        PASSED.replace('check passed', 'check passed with 2 warnings'),
+      ]);
+    });
+
+    it('skips collections with an icon, hidden ones, group: false and auth collections', async () => {
+      const fixture = await makeFixture(
+        collections(
+          "{ slug: 'invoices', admin: { icon: 'receipt' }, fields: [] }",
+          "{ slug: 'drafts', admin: { hidden: true }, fields: [] }",
+          "{ slug: 'internal', admin: { hidden: () => true }, fields: [] }",
+          "{ slug: 'archive', admin: { group: false }, fields: [] }",
+          "{ slug: 'members', auth: true, fields: [] }",
+        ),
+      );
+
+      await writeTypes(fixture);
+
+      const result = await runCheck();
+
+      expect(result).toEqual({ exitCode: 0, stderr: [], stdout: [PASSED], writes: 0 });
+    });
+
+    it('carries warnings in --json output with success: true', async () => {
+      const fixture = await makeFixture(collections("{ slug: 'invoices', fields: [] }"));
+      await writeTypes(fixture);
+
+      const result = await runCheck(['--json']);
+
+      expect(result.exitCode).toBe(0);
+      expect(JSON.parse(result.stdout[0])).toEqual({
+        command: 'check',
+        success: true,
+        warnings: [warning('invoices')],
+      });
+    });
+
+    it('keeps both an error and a warning, and exits 1 for the error', async () => {
+      const fixture = await makeFixture(collections("{ slug: 'invoices', fields: [] }"));
+      await writeTypes(fixture);
+      const types = await readFile(fixture.typesPath, 'utf-8');
+      await writeFile(fixture.typesPath, types.replace('interface', 'interfacE'));
+
+      const text = await runCheck();
+      const json = await runCheck(['--json']);
+
+      expect(text.exitCode).toBe(1);
+      expect(text.stderr).toEqual([
+        `[frogbot] warning MISSING_ICON collections.invoices: ${warning('invoices').message}`,
+        '[frogbot] TYPES_STALE frogbot-types.ts: out of date; run `frogbot generate:types`',
+        '[frogbot] 1 issue found',
+      ]);
+      expect(JSON.parse(json.stdout[0])).toMatchObject({
+        success: false,
+        error: { issues: [{ code: 'TYPES_STALE' }] },
+        warnings: [warning('invoices')],
+      });
+    });
+  });
 });

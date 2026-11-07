@@ -5,7 +5,7 @@ export const coinsIcon: IconNode = [
   [
     'path',
     {
-      d: 'M7.5 9.1667A5.4167 1.6667 0 1 0 18.3333 9.1667 5.4167 1.6667 0 1 0 7.5 9.1667Z',
+      d: 'M14.4388 13.6739A5.5 2.5 0 1 1 5.5598 15.2572',
       strokeLinecap: 'round',
       strokeLinejoin: 'round',
     },
@@ -13,7 +13,7 @@ export const coinsIcon: IconNode = [
   [
     'path',
     {
-      d: 'M18.3333 12.9167C18.3333 13.8372 15.9083 14.5833 12.9167 14.5833 9.9251 14.5833 7.5 13.8372 7.5 12.9167',
+      d: 'M13.9705 11.6163A5.5 2.5 0 1 1 5.4516 9.7941',
       strokeLinecap: 'round',
       strokeLinejoin: 'round',
     },
@@ -21,7 +21,7 @@ export const coinsIcon: IconNode = [
   [
     'path',
     {
-      d: 'M18.3333 9.1667V16.5C18.3333 17.5125 15.9083 18.3333 12.9167 18.3333 9.9251 18.3333 7.5 17.5125 7.5 16.5V9.1667',
+      d: 'M14.9388 6.1739A5.5 2.5 0 1 1 6.0598 7.7572',
       strokeLinecap: 'round',
       strokeLinejoin: 'round',
     },
@@ -29,31 +29,7 @@ export const coinsIcon: IconNode = [
   [
     'path',
     {
-      d: 'M1.6667 3.3333A5.4167 1.6667 0 1 0 12.5 3.3333 5.4167 1.6667 0 1 0 1.6667 3.3333Z',
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-    },
-  ],
-  [
-    'path',
-    {
-      d: 'M5 9.1667C3.4235 8.9748 1.9749 8.4787 1.6667 7.5M5 13.3333C3.4235 13.1415 1.9749 12.6454 1.6667 11.6667',
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-    },
-  ],
-  [
-    'path',
-    {
-      d: 'M5 17.5C3.4235 17.3082 1.9749 16.8121 1.6667 15.8333V3.3333',
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-    },
-  ],
-  [
-    'path',
-    {
-      d: 'M12.5 5V3.3333',
+      d: 'M3.5 4.375A5.5 2.5 0 1 0 14.5 4.375A5.5 2.5 0 1 0 3.5 4.375Z',
       strokeLinecap: 'round',
       strokeLinejoin: 'round',
     },
