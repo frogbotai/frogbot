@@ -1,6 +1,27 @@
 import type { SourceDocumentUIPart, SourceUrlUIPart } from 'ai';
 
+import { useChatProvider } from './provider.js';
+
+/** The record a tool source points at, from its `providerMetadata.frogbot`. */
+export type SourceRecord = { collection: string; id: number | string };
+
+export function sourceRecord(part: SourceDocumentUIPart): SourceRecord | undefined {
+  const record = part.providerMetadata?.frogbot;
+
+  if (!record || typeof record !== 'object' || Array.isArray(record)) return undefined;
+
+  const { collection, id } = record;
+
+  if (typeof collection !== 'string' || (typeof id !== 'string' && typeof id !== 'number')) {
+    return undefined;
+  }
+
+  return { collection, id };
+}
+
 export function SourcePart({ part }: { part: SourceDocumentUIPart | SourceUrlUIPart }) {
+  const sourceHref = useChatProvider()?.sourceHref;
+
   if (part.type === 'source-url') {
     return (
       <a
@@ -15,10 +36,30 @@ export function SourcePart({ part }: { part: SourceDocumentUIPart | SourceUrlUIP
     );
   }
 
-  return (
-    <span data-part="source-document" className="fb-source-part fb-source-part--document">
+  const record = sourceRecord(part);
+  const href = record && sourceHref?.(record);
+  const label = (
+    <>
       {part.title}
       {part.filename ? ` (${part.filename})` : ''}
+    </>
+  );
+
+  if (href) {
+    return (
+      <a
+        data-part="source-document"
+        href={href}
+        className="fb-source-part fb-source-part--document fb-source-part--record"
+      >
+        {label}
+      </a>
+    );
+  }
+
+  return (
+    <span data-part="source-document" className="fb-source-part fb-source-part--document">
+      {label}
     </span>
   );
 }

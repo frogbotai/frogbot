@@ -11,7 +11,7 @@ import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
 import type { StubEmbeddingModel } from '../../__helpers/shared/StubEmbeddingModel.js';
 import { startStubEmbeddingModel } from '../../__helpers/shared/StubEmbeddingModel.js';
 import { articlesSlug, noNotesTenant, notesSlug, usersSlug } from '../sqlite/shared.js';
-import { articleMeaning, articleWords, noteWords, ratedArticles } from './config.js';
+import { articleBodies, articleMeaning, articleWords, noteWords, ratedArticles } from './config.js';
 import type { SearchArticle, SearchUser } from './frogbot-types.js';
 import { agentSlug, databasePath, dimensions, embedderModel, modelPort } from './shared.js';
 
@@ -149,6 +149,27 @@ describe('searchTool', () => {
     const { hits } = await articleWords.execute({ query: 'frog' }, await ctx(tenantA));
 
     expect(hits.map(({ id }) => id)).toEqual([own.id]);
+  });
+
+  it('titles each source by useAsTitle when select leaves it out', async () => {
+    const article = await createArticle({ title: 'Frog care', body: 'Frogs need ponds' });
+    const runCtx = await ctx(tenantA);
+    const result = await articleBodies.execute({ query: 'frogs' }, runCtx);
+
+    expect(Object.keys(result.hits[0]).sort()).toEqual(['body', 'id', 'score']);
+    expect(await articleBodies.sources!(result, runCtx)).toEqual([
+      { collection: articlesSlug, id: article.id, title: 'Frog care' },
+    ]);
+  });
+
+  it("gives no source for a record the run's user can't read", async () => {
+    const other = await createArticle({ title: 'Frog care', body: 'Ponds', tenant: 'b' });
+    const hits = [{ id: other.id, score: 1, body: 'Ponds' }];
+
+    expect(await articleBodies.sources!({ hits }, await ctx(tenantA))).toEqual([]);
+    expect(await articleBodies.sources!({ hits }, await ctx(tenantA, true))).toEqual([
+      { collection: articlesSlug, id: other.id, title: 'Frog care' },
+    ]);
   });
 
   it("follows the run's overrideAccess when there is no user", async () => {
