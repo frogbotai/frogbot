@@ -254,6 +254,12 @@ export function sanitizeCollection(
   if (auth && c.versions === undefined) out.versions = false;
 
   if (typeof c.auth === 'object') {
+    if (Object.hasOwn(c.auth, 'useAPIKey')) {
+      throw new Error(
+        `[frogbot] Collection '${c.slug}' auth has no built-in API keys. Remove useAPIKey and see https://docs.frogbot.ai/authentication/api-keys.`,
+      );
+    }
+
     const {
       signIn: _signIn,
       strategies,
