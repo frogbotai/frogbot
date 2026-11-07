@@ -4,12 +4,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { parkedTickets } from './lib/decisions.mjs';
-import { parseHeader } from './ticket.mjs';
+import { ISSUE_TICKET, parkedTickets, ticketKey } from './lib/decisions.mjs';
+import { parseHeader, repoCheckout, REPOS } from './ticket.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-const USAGE = 'Usage: pnpm check ticket-docs [<ticket number or folder>...]';
+const USAGE = 'Usage: pnpm check ticket-docs [<ticket number, key or folder>...]';
 
 const PROCESS = '_process';
 
@@ -62,7 +62,9 @@ const SYMBOL_WINDOW = 3;
 
 const QUOTE_LENGTH = 60;
 
-const FOLDER = /^(?:ticket(\d+)|((?:frogbot|sidekick|platform|process)-\d+))_.+$/;
+const FOLDER = new RegExp(`^(?:ticket(\\d+)|(${ISSUE_TICKET}))_.+$`);
+
+const TICKET_ARG = new RegExp(`^(?:.*/)?(?:ticket)?(\\d+|${ISSUE_TICKET})(?:_[^/]*)?/?$`, 'i');
 
 const keyOfFolder = (name) => {
   const match = FOLDER.exec(name);
@@ -286,13 +288,22 @@ function parsePlanTable(text) {
   return rows;
 }
 
+function ticketRepo(ticket) {
+  const repo = typeof ticket === 'string' ? ticket.split('-')[0] : null;
+
+  return Object.hasOwn(REPOS, repo) ? repo : null;
+}
+
 function resolver({ root, home }) {
   const cache = new Map();
 
-  return (repo, file) => {
-    const base = repo ? path.join(home, 'code', repo) : root;
+  return (repo, file, ticket) => {
+    const own = repo ? null : ticketRepo(ticket);
+    const base = repo ? path.join(home, 'code', repo) : own ? repoCheckout(root, own) : root;
 
-    if (repo && !existsSync(base)) return { missing: `~/code/${repo}` };
+    if (repo && !existsSync(base)) return { missing: `reference repo ~/code/${repo}` };
+
+    if (own && !existsSync(base)) return { missing: `the ${own} checkout` };
 
     const absolute = path.join(base, file);
 
@@ -317,7 +328,7 @@ function symbolName(span) {
   return name.split('.').at(-1);
 }
 
-function checkCitations(doc, { resolve, problem, warn }) {
+function checkCitations(doc, { resolve, ticket, problem, warn }) {
   const warned = new Set();
 
   doc.lines.forEach((line, index) => {
@@ -344,7 +355,7 @@ function checkCitations(doc, { resolve, problem, warn }) {
 
       if (!file.includes('/') && !/\.[A-Za-z]\w*$/.test(file)) continue;
 
-      const found = resolve(repo, file);
+      const found = resolve(repo, file, ticket);
 
       last = found.lines ? [repo, file] : null;
 
@@ -352,10 +363,7 @@ function checkCitations(doc, { resolve, problem, warn }) {
         if (!warned.has(found.missing)) {
           warned.add(found.missing);
 
-          warn(
-            index + 1,
-            `reference repo ${found.missing} is missing; its citations are not checked`,
-          );
+          warn(index + 1, `${found.missing} is missing; its citations are not checked`);
         }
 
         continue;
@@ -949,6 +957,7 @@ function checkTicketDocs({ idea, root, home = os.homedir(), only = [] }) {
     const context = (name) => ({
       decisions,
       resolve,
+      ticket: folder.ticket,
       parked: parked.has(folder.ticket),
       problem: at(problems, file(name)),
       warn: at(warnings, file(name)),
@@ -983,11 +992,11 @@ function parseTickets(argv) {
   const tickets = [];
 
   for (const arg of argv) {
-    const match = /^(?:.*\/)?(?:ticket)?(\d+)(?:_[^/]*)?\/?$/.exec(arg);
+    const match = TICKET_ARG.exec(arg);
 
-    if (!match) return { error: `"${arg}" is not a ticket number or folder` };
+    if (!match) return { error: `"${arg}" is not a ticket number, key or folder` };
 
-    tickets.push(Number(match[1]));
+    tickets.push(ticketKey(match[1]));
   }
 
   return { tickets };

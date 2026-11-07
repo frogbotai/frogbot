@@ -7,9 +7,14 @@ const ARCHIVED_RULINGS = path.join('archive', 'decisions.md');
 
 const PARKED = 'parked.md';
 
-const PARKED_ROW = /^\|\s*\[(\d+)\]/gm;
+/** An issue-keyed ticket, named by its repo and issue number: `frogbot-225`. */
+export const ISSUE_TICKET = '(?:frogbot|sidekick|platform|process)-\\d+';
 
-const CARD = /^### (?:(\d+) )?(D\d+)\b\s*(?:—\s*)?(.*)$/;
+const PARKED_ROW = new RegExp(`^\\|\\s*\\[(\\d+|${ISSUE_TICKET})\\]`, 'gim');
+
+const TICKET = `(\\d+|${ISSUE_TICKET})`;
+
+const CARD = new RegExp(`^### (?:${TICKET} )?(D\\d+)\\b\\s*(?:—\\s*)?(.*)$`);
 
 const ANSWER = /^(\s*(?:-\s*)?)(?:\*\*Answer:\*\*|Answer:)(.*)$/;
 
@@ -24,14 +29,25 @@ const RULING_ID = /^- DR-(\d+)\b/gm;
 const THIS_TICKET = /^this ticket\.?$/i;
 
 const REPLIES = [
-  ['answer', /^(\d+) ([Dd]\d+):\s*(.*)$/],
-  ['approve', /^(\d+) approve$/i],
-  ['note', /^(\d+) note:\s*(.*)$/i],
+  ['answer', new RegExp(`^${TICKET} (D\\d+):\\s*(.*)$`, 'i')],
+  ['approve', new RegExp(`^${TICKET} approve$`, 'i')],
+  ['note', new RegExp(`^${TICKET} note:\\s*(.*)$`, 'i')],
   ['go', /^go (\d+)$/i],
 ];
 
 export const REPLY_USAGE =
-  "pnpm ticket decisions <<'EOF' with one reply per line: `<n> D<k>: <owner's words>` (indent any further lines), `<n> note: <owner's words>`, `<n> approve`, `go <batch>`";
+  "pnpm ticket decisions <<'EOF' with one reply per line: `<n> D<k>: <owner's words>` (indent any further lines), `<n> note: <owner's words>`, `<n> approve`, `go <batch>`; an issue-keyed ticket's <n> is its key, like frogbot-225";
+
+/** A ticket's key as written in a reply or folder name: a number, or a lowercase `<repo>-<n>`. */
+export function ticketKey(text) {
+  return /^\d+$/.test(text) ? Number(text) : text.toLowerCase();
+}
+
+function byKey(a, b) {
+  if (typeof a === 'number' && typeof b === 'number') return a - b;
+
+  return String(a).localeCompare(String(b), 'en', { numeric: true });
+}
 
 function statusOf(text) {
   return STATUS.exec(text ?? '')?.[1].trim() ?? '';
@@ -130,12 +146,13 @@ export function parseReplies(text) {
       const [kind, match] = found;
 
       if (kind === 'go') replies.push({ kind, batch: match[1] });
-      else if (kind === 'approve') replies.push({ kind, ticket: Number(match[1]) });
-      else if (kind === 'note') replies.push({ kind, ticket: Number(match[1]), lines: [match[2]] });
-      else {
+      else if (kind === 'approve') replies.push({ kind, ticket: ticketKey(match[1]) });
+      else if (kind === 'note') {
+        replies.push({ kind, ticket: ticketKey(match[1]), lines: [match[2]] });
+      } else {
         replies.push({
           kind,
-          ticket: Number(match[1]),
+          ticket: ticketKey(match[1]),
           id: match[2].toUpperCase(),
           lines: [match[3]],
         });
@@ -269,7 +286,9 @@ function read(file) {
 
 export function parkedTickets(processDir) {
   return new Set(
-    [...(read(path.join(processDir, PARKED)) ?? '').matchAll(PARKED_ROW)].map(([, n]) => +n),
+    [...(read(path.join(processDir, PARKED)) ?? '').matchAll(PARKED_ROW)].map(([, key]) =>
+      ticketKey(key),
+    ),
   );
 }
 
@@ -307,16 +326,16 @@ export function recordDecisions(processDir, tickets, date, input = '') {
   const planPath = (ticket) => path.join(processDir, relative(ticket.folder, 'step3_plan.md'));
   const specOf = (ticket) => files.get(specPath(ticket)) ?? ticket.spec;
   const planOf = (ticket) => files.get(planPath(ticket)) ?? ticket.plan;
-  const byNumber = new Map(tickets.map((ticket) => [ticket.ticket, ticket]));
+  const byTicket = new Map(tickets.map((ticket) => [ticket.ticket, ticket]));
   const rulingsPath = path.join(processDir, RULINGS);
   let rulings = read(rulingsPath);
   let nextId = nextRulingId(rulings, read(path.join(processDir, ARCHIVED_RULINGS)));
 
-  const draftTicket = (number, label) => {
-    const ticket = byNumber.get(number);
+  const draftTicket = (key, label) => {
+    const ticket = byTicket.get(key);
 
-    if (!ticket?.spec) problems.push(`${label}: ticket ${number} has no step2_spec.md`);
-    else if (parked.has(number)) problems.push(`${label}: ticket ${number} is parked`);
+    if (!ticket?.spec) problems.push(`${label}: ticket ${key} has no step2_spec.md`);
+    else if (parked.has(key)) problems.push(`${label}: ticket ${key} is parked`);
     else return ticket;
 
     return null;
@@ -447,7 +466,7 @@ export function recordDecisions(processDir, tickets, date, input = '') {
 
   const specs = live
     .filter((ticket) => ticket.spec != null && isDraft(specOf(ticket)))
-    .sort((a, b) => a.ticket - b.ticket)
+    .sort((a, b) => byKey(a.ticket, b.ticket))
     .map((ticket) => ({
       ticket: ticket.ticket,
       folder: ticket.folder,
@@ -474,7 +493,7 @@ export function recordDecisions(processDir, tickets, date, input = '') {
     .sort(([a], [b]) => Number(a) - Number(b))
     .map(([batch, members]) => ({
       batch,
-      plans: [...members].sort((a, b) => a.ticket - b.ticket),
+      plans: [...members].sort((a, b) => byKey(a.ticket, b.ticket)),
     }));
 
   return { messages: [...messages, ...renderWaiting({ specs, batches })], problems };
