@@ -521,6 +521,90 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
     expect(await load('same-origin')).toMatchObject({ email: 'person@example.com' });
   });
 
+  describe('continue page', () => {
+    const page = async (flow: Promise<{ callback: URL; cookie: string }>, theme?: string) => {
+      const { callback: url, cookie } = await flow;
+      const response = await request(url, {
+        headers: { cookie: theme ? `${cookie}; identity-theme=${theme}` : cookie },
+      });
+
+      const body = await response.text();
+      const css = /<style>([\s\S]*?)<\/style>/.exec(body)?.[1] ?? '';
+
+      return { response, body, css };
+    };
+
+    it('serves one hashed style, no script, and no caching or sniffing', async () => {
+      const { response, body, css } = await page(authorize());
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+      expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+      expect(response.headers.get('content-security-policy')).toBe(
+        `default-src 'none'; base-uri 'none'; frame-ancestors 'none'; style-src 'sha256-${createHash('sha256').update(css).digest('base64')}'`,
+      );
+      expect(body.match(/<style>/g)).toHaveLength(1);
+      expect(body).not.toMatch(/<script/i);
+      expect(body).toContain('<html lang="en">');
+      expect(body).toContain('<title>Loading…</title>');
+      expect(body).toContain('<a href="/control">Next</a>');
+    });
+
+    it("takes the admin's background from the theme cookie, or the system without one", async () => {
+      const auto = await page(authorize());
+
+      expect(auto.css).toContain('html { color-scheme: light; background: #ffffff;');
+      expect(auto.css).toContain(
+        '@media (prefers-color-scheme: dark) { html { color-scheme: dark; background: #2c2c2c;',
+      );
+
+      const dark = await page(authorize(), 'dark');
+
+      expect(dark.css).toContain('background: #2c2c2c');
+      expect(dark.css).not.toContain('background: #ffffff');
+      expect(dark.css).not.toContain('@media');
+
+      const light = await page(authorize(), 'light');
+
+      expect(light.css).toContain('background: #ffffff');
+      expect(light.css).not.toContain('background: #2c2c2c');
+
+      expect((await page(authorize(), 'junk')).css).toContain(
+        '@media (prefers-color-scheme: dark)',
+      );
+    });
+
+    it("lets the config's admin theme win over the cookie", async () => {
+      const config = await frogbot.config._internal.payloadConfig;
+      const theme = config.admin.theme;
+      config.admin.theme = 'dark';
+
+      onTestFinished(() => {
+        config.admin.theme = theme;
+      });
+
+      const { css } = await page(authorize(), 'light');
+
+      expect(css).toContain('background: #2c2c2c');
+      expect(css).not.toContain('background: #ffffff');
+    });
+
+    it("uses the browser's colours when it continues to an app's own site", async () => {
+      const { body, css } = await page(authorize({ collection: 'customers' }), 'dark');
+
+      expect(css).toContain('html { color-scheme: light dark; }');
+      expect(css).not.toContain('background:');
+      expect(body).toContain('<a href="/">Next</a>');
+    });
+
+    it("uses the browser's colours for a returnTo outside the admin", async () => {
+      const { css } = await page(authorize({ returnTo: '/rest/v1/users/me' }), 'dark');
+
+      expect(css).not.toContain('background:');
+    });
+  });
+
   it('sets a usable session on a collection with the local strategy off, and keeps password operations off', async () => {
     const response = await callback(
       await authorize({ collection: 'oauth-only', code: 'oauth-only@example.com' }),
