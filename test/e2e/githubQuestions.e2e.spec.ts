@@ -197,7 +197,6 @@ describe.skipIf(!RUN_E2E)('GitHub questions e2e — webhook to continuation over
 
     const config = await buildConfig({
       secret: 'github-questions-e2e-secret',
-      telemetry: false,
       db: sqliteAdapter({ client: { url: `file:${join(dataDir, 'github.db')}` } }),
       typescript: { autoGenerate: false },
       jobs: { deleteJobOnComplete: false },

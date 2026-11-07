@@ -264,7 +264,6 @@ describe.skipIf(!RUN_E2E)('Discord questions e2e — webhook to continuation ove
 
     const config = await buildConfig({
       secret: 'discord-questions-e2e-secret',
-      telemetry: false,
       db: sqliteAdapter({ client: { url: `file:${join(dataDir, 'discord.db')}` } }),
       typescript: { autoGenerate: false },
       jobs: { deleteJobOnComplete: false },

@@ -28,5 +28,4 @@ export default await buildTestConfig({
   connections: [{ piece: resend, secret: true }],
   email: resend,
   serverURL: 'https://email.example.com',
-  telemetry: false,
 });
