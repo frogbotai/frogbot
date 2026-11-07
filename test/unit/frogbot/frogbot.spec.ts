@@ -12,7 +12,7 @@ import {
 import { buildManifestEndpoint } from '../../../packages/frogbot/src/chat/manifest.js';
 import type { FrogBotSanitizedConfig } from '../../../packages/frogbot/src/config/sanitized.js';
 import { createCredentialEncryption } from '../../../packages/frogbot/src/connections/encryption.js';
-import { FrogBot } from '../../../packages/frogbot/src/frogbot.js';
+import { FrogBot, initFrogBotFromPayload } from '../../../packages/frogbot/src/frogbot.js';
 import { definePiece } from '../../../packages/frogbot/src/pieces/definePiece.js';
 import { createGatewayHandler } from '../../../packages/frogbot/src/server/gateway.js';
 import { TriggerSubscriptions } from '../../../packages/frogbot/src/triggers/subscriptions.js';
@@ -388,6 +388,21 @@ describe('FrogBot class', () => {
       await new FrogBot().init({ config: makeConfig(), disableOnInit: true });
 
       expect(payloadOnInit).not.toHaveBeenCalled();
+    });
+
+    it('does not run the built Payload config onInit again when Payload starts FrogBot', async () => {
+      const payload = await mockPayload();
+      const payloadOnInit = vi.fn();
+      const configOnInit = vi.fn();
+      const config = makeConfig();
+
+      config.onInit = configOnInit;
+      payload.config.onInit = payloadOnInit;
+
+      await initFrogBotFromPayload(payload as never, config);
+
+      expect(payloadOnInit).not.toHaveBeenCalled();
+      expect(configOnInit).toHaveBeenCalledOnce();
     });
 
     it('rejects init when the built Payload config onInit throws', async () => {
