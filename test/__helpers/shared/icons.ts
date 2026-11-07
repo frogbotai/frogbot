@@ -37,14 +37,11 @@ export const excludedIcons: Record<string, number | null> = {
   GoogleIcon: 0,
   InstagramIcon: 0,
   LinkedInIcon: 2,
-  LockIcon: 0,
   MastercardIcon: 2,
   McpIcon: 4.312,
   MicrosoftIcon: 0,
   NotionIcon: 0,
-  PawnIcon: 0,
   RedditIcon: 1.5,
-  RookIcon: 0,
   SlackIcon: 0,
   StopIcon: 2,
   StripeIcon: 0,
@@ -53,6 +50,20 @@ export const excludedIcons: Record<string, number | null> = {
   XeroIcon: 0,
   YoutubeIcon: 0,
   ZoomIcon: 0,
+};
+
+export const offCentreIcons: Record<string, { x: number; y: number }> = {
+  AiUserIcon: { x: 0.1, y: 0.04 },
+  ArrowDownIcon: { x: 0, y: -0.52 },
+  ArrowUpIcon: { x: 0, y: 0.52 },
+  CheckIcon: { x: 0, y: -0.5 },
+  ChevronLeftIcon: { x: -6, y: 0 },
+  ChevronRightIcon: { x: 6, y: 0 },
+  ComputerIcon: { x: 0, y: 1 },
+  CursorIcon: { x: 0.07, y: 0.07 },
+  MagicWandIcon: { x: -1, y: -1 },
+  MessageSquareTextIcon: { x: 0, y: 0.5 },
+  StarIcon: { x: 0, y: -0.46 },
 };
 
 export const shapeStrokes: Record<string, number> = {

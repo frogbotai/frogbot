@@ -37,7 +37,7 @@ export const coinsIcon: IconNode = [
   [
     'path',
     {
-      d: 'M5 9.1667C3.4235 8.9748 1.9749 8.4787 1.6667 7.5M5 13.3333C3.4235 13.1415 1.9749 12.6454 1.6667 11.6667',
+      d: 'M5 9.1667C3.4235 8.9748 1.9749 8.4787 1.6667 7.5',
       strokeLinecap: 'round',
       strokeLinejoin: 'round',
     },

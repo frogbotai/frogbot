@@ -20,6 +20,6 @@ export const bellIcon: IconNode = [
   ],
 ];
 
-const BellIcon = createLucideIcon('BellIcon', bellIcon);
+const BellIcon = createLucideIcon('BellIcon', bellIcon, undefined, '0 0 16 16');
 
 export default BellIcon;
