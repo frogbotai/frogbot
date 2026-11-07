@@ -208,7 +208,7 @@ export default buildConfig({
 
 The model's input is `{ query: string }`, and it can't set anything else. The result is `{ hits: [{ id, score, ...selected fields }] }` in ranked order, at depth `0`, for example `{ hits: [{ id: 12, score: 0.03, title: 'Account recovery', body: '…' }] }`. No match is `{ hits: [] }`.
 
-In the admin chat, each hit shows as a source under the agent's answer: the record's [`admin.useAsTitle`](https://payloadcms.com/docs/configuration/collections#admin-options) field, linking to its edit page. When `select` leaves that field out, FrogBot reads it with the run's access, so a record the user can't read gets no source. The model never sees the sources.
+In the admin chat, each hit shows as a source under the agent's answer: the record's [`admin.useAsTitle`](https://payloadcms.com/docs/configuration/collections#admin-options) field, linking to its edit page. FrogBot checks each hit with the run's access, so a record the user can't read gets no source, and reads the title when `select` leaves that field out. The model never sees the sources.
 
 ### Search tool options
 
