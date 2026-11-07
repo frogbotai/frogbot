@@ -11,7 +11,12 @@ import type { DashboardConfig } from '../views/types.js';
 export function validateAppIcon(appIcon: unknown): void {
   if (appIcon === undefined) return;
 
-  if (typeof appIcon !== 'string' || !appIcon.startsWith('/') || !appIcon.endsWith('.png')) {
+  if (
+    typeof appIcon !== 'string' ||
+    !appIcon.startsWith('/') ||
+    !appIcon.endsWith('.png') ||
+    appIcon.split(/[/\\]/).includes('..')
+  ) {
     throw new Error(
       "[frogbot] admin.meta.appIcon must be a .png path in public/, such as '/app-icon.png'",
     );

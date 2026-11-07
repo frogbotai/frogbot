@@ -707,14 +707,18 @@ describe('frogbot sanitize', () => {
     ).not.toThrow();
   });
 
-  it.each(['app-icon.png', '/icon.svg', 'https://x/y.png'])(
-    'rejects %s as admin.meta.appIcon',
-    (appIcon) => {
-      expect(() => sanitize(makeConfig({ admin: { meta: { appIcon } } }))).toThrowError(
-        "[frogbot] admin.meta.appIcon must be a .png path in public/, such as '/app-icon.png'",
-      );
-    },
-  );
+  it.each([
+    'app-icon.png',
+    '/icon.svg',
+    'https://x/y.png',
+    '/../secret.png',
+    '/icons/../../x.png',
+    '/..\\secret.png',
+  ])('rejects %s as admin.meta.appIcon', (appIcon) => {
+    expect(() => sanitize(makeConfig({ admin: { meta: { appIcon } } }))).toThrowError(
+      "[frogbot] admin.meta.appIcon must be a .png path in public/, such as '/app-icon.png'",
+    );
+  });
 
   it('accepts built-in names and component icons on nav items and settings', () => {
     const config = makeConfig({
