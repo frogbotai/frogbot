@@ -1,6 +1,6 @@
 import type { Gateway } from '@frogbotai/gateway';
 import type { Output } from 'ai';
-import type { Payload } from 'payload';
+import type { Payload, SanitizedCollectionConfig } from 'payload';
 import { createPayloadRequest, getPayload, handleEndpoints, resetPasswordOperation } from 'payload';
 
 import { createAgentInstance } from './agents/instance.js';
@@ -596,7 +596,7 @@ async function registerAITelemetry(ai: SanitizedAIConfig): Promise<void> {
   );
 }
 
-function toCollection(frogbot: FrogBot, c: { slug: string; custom?: unknown }): Collection {
+function toCollection(frogbot: FrogBot, c: SanitizedCollectionConfig): Collection {
   const custom = (c.custom as { frogbot?: FrogBotCustom } | undefined) ?? {};
   const fb = custom.frogbot ?? {};
   const search = frogbot.config.collections.find(({ slug }) => slug === c.slug)?.search;
@@ -604,6 +604,7 @@ function toCollection(frogbot: FrogBot, c: { slug: string; custom?: unknown }): 
   return {
     slug: c.slug,
     auth: fb.auth ?? false,
+    useAsTitle: c.admin.useAsTitle ?? 'id',
     ...(search ? { search } : {}),
   };
 }

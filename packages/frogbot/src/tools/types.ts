@@ -3,6 +3,7 @@ import type { z } from 'zod';
 import type { FrogBotComponent } from '../admin/types.js';
 import type { PendingCall } from '../chat/turn/types.js';
 import type { FrogBot } from '../frogbot.js';
+import type { CollectionSlug } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { ToolApprovalOption } from './approval.js';
 
@@ -53,6 +54,19 @@ export type Tool<TSchema extends z.ZodType = z.ZodType, TResult = unknown> = Bas
    * (`overrideAccess: true`) skip it.
    */
   access?: ToolAccess;
+  /**
+   * The records a finished call drew on. Each shows under the chat's answer as a source that
+   * links to the record; the model never sees them. Runs once per call that returned, with the
+   * same `ctx` as `execute`. A record listed twice in a message shows once.
+   */
+  sources?: (result: TResult, ctx: ToolCtx) => ToolSource[] | Promise<ToolSource[]>;
+};
+
+/** A record a tool call drew on. `title` defaults to the `id`. */
+export type ToolSource = {
+  collection: CollectionSlug;
+  id: number | string;
+  title?: string;
 };
 
 /** Decides whether a run is offered a server tool. */

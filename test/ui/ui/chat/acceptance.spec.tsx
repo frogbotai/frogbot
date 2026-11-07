@@ -30,6 +30,13 @@ const conversation: UIMessage[] = [
         title: 'Report',
       },
       {
+        type: 'source-document',
+        sourceId: 'articles:1',
+        mediaType: 'application/json',
+        title: 'Frog care',
+        providerMetadata: { frogbot: { collection: 'articles', id: 1 } },
+      },
+      {
         type: 'file',
         mediaType: 'application/pdf',
         filename: 'report.pdf',

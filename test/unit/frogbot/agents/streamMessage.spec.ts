@@ -824,6 +824,68 @@ describe('agent persisted stream with the installed AI SDK', () => {
     });
   });
 
+  it('streams and saves one source per record a tool lists, with the run context', async () => {
+    let step = 0;
+    let executeCtx: ToolCtx | undefined;
+    const sources = vi.fn((_result: unknown, ctx: ToolCtx) => {
+      expect(ctx).toMatchObject({ overrideAccess: false, agent: executeCtx!.agent });
+
+      return [
+        { collection: 'articles', id: 1, title: 'Frog care' },
+        { collection: 'articles', id: 1, title: 'Frog care' },
+      ];
+    });
+
+    const { agent, messages, req } = setup({
+      tools: [
+        {
+          slug: 'lookup',
+          description: 'Look up data',
+          inputSchema: z.object({}),
+          execute: (_input: unknown, ctx: ToolCtx) => {
+            executeCtx = ctx;
+
+            return { found: true };
+          },
+          sources,
+        },
+      ],
+      doStream: () =>
+        Promise.resolve({
+          stream: modelStream(
+            step++ === 0
+              ? [
+                  { type: 'stream-start', warnings: [] },
+                  { type: 'tool-call', toolCallId: 'call-1', toolName: 'lookup', input: '{}' },
+                  {
+                    type: 'finish',
+                    finishReason: { unified: 'tool-calls', raw: 'tool_calls' },
+                    usage,
+                  },
+                ]
+              : response('Found it'),
+          ),
+        }),
+    });
+
+    const result = await streamMessage(agent, { req, chatId: 'chat-1', prompt: 'Find it' });
+
+    await result.persistence;
+
+    const source = {
+      type: 'source-document',
+      sourceId: 'articles:1',
+      mediaType: 'application/json',
+      title: 'Frog care',
+      providerMetadata: { frogbot: { collection: 'articles', id: 1 } },
+    };
+
+    expect(sources).toHaveBeenCalledWith({ found: true }, expect.anything());
+    expect(messages[1].parts.filter((part) => part.type === 'source-document')).toEqual([
+      expect.objectContaining(source),
+    ]);
+  });
+
   it('never offers a denied tool, and a call to it is invalid and never runs', async () => {
     const execute = vi.fn(() => ({ refunded: true }));
     const access = vi.fn(() => false);

@@ -92,6 +92,10 @@ import { LinkList } from '@frogbotai/ui/chat/tools'
 
 Site icons come from `ChatProvider`'s [`faviconUrl`](/chat/ui-provider#provider-props). Without it, each row shows the host's first letter and no request leaves the page.
 
+## Sources
+
+`<Chat>` and `MessageList` show a message's `source-url` and `source-document` parts as one list under its answer, outside any tool card. A tool adds record sources with its [`sources`](/agents/overview#tool-options) option, and each holds `providerMetadata.frogbot: { collection, id }`. With `ChatProvider`'s [`sourceHref`](/chat/ui-provider#provider-props), a record source links to the URL it returns; the admin chat links to the record's edit page. A custom `renderMessage` that renders parts with `MessagePart` adds `<SourceList parts={message.parts} />` after them, since `MessagePart` renders nothing for a source part.
+
 ## Tool renderer options
 
 | Option | Type | Default | Description |

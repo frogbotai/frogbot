@@ -24,7 +24,11 @@ export type ChatProviderValue = {
   composerFeatures?: readonly ComposerFeature[];
   composerHistory?: ComposerHistoryStorage;
   faviconUrl?: (pageUrl: string) => string | undefined;
+  sourceHref?: (record: SourceRecord) => string;
 };
+
+/** The record a tool's source points to, from its `providerMetadata.frogbot`. */
+export type SourceRecord = { collection: string; id: number | string };
 
 const ChatContext = createContext<ChatProviderValue | undefined>(undefined);
 
@@ -39,6 +43,7 @@ export function ChatProvider({
   dataRenderers = [],
   faviconUrl,
   mentionSources,
+  sourceHref,
   toolRenderers = [],
 }: {
   adapter: ChatPlatformAdapter;
@@ -52,6 +57,8 @@ export function ChatProvider({
   /** The favicon to show for a page in `LinkList`; without it, no favicon is requested. */
   faviconUrl?: (pageUrl: string) => string | undefined;
   mentionSources?: readonly MentionSource[];
+  /** The link for a source that names a record; without it, record sources show as plain text. */
+  sourceHref?: (record: SourceRecord) => string;
   toolRenderers?: readonly ToolRenderer[];
 }) {
   const [state, setState] = useState<Pick<ChatProviderValue, 'manifest' | 'error' | 'loading'>>({
@@ -90,6 +97,7 @@ export function ChatProvider({
         composerFeatures,
         composerHistory,
         faviconUrl,
+        sourceHref,
       }}
     >
       <ArtifactProvider persistence={artifactPersistence} registry={artifactKinds}>

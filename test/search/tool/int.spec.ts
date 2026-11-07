@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { ToolCtx } from 'frogbot';
+import { searchTool } from 'frogbot/tools';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
@@ -178,5 +179,35 @@ describe('searchTool', () => {
       ratedArticles.inputSchema.safeParse({ query: 'frog', where: { rating: { less_than: 2 } } })
         .success,
     ).toBe(false);
+  });
+
+  it('titles each hit as a source, reading titles the hits lack as the run user', async () => {
+    const article = await createArticle({ title: 'Frog care', body: 'Frogs need water' });
+    const bodies = searchTool({
+      collection: articlesSlug,
+      index: 'content',
+      select: { body: true },
+    });
+
+    const run = await ctx(tenantA);
+    const result = await bodies.execute({ query: 'frogs' }, run);
+
+    expect(result.hits).toEqual([
+      { id: article.id, score: expect.any(Number), body: 'Frogs need water' },
+    ]);
+    await expect(bodies.sources!(result, run)).resolves.toEqual([
+      { collection: articlesSlug, id: article.id, title: 'Frog care' },
+    ]);
+  });
+
+  it("gives no source for a record the run user can't read", async () => {
+    const article = await createArticle({ title: 'Frog care', tenant: 'a' });
+    const tenantB = await createUser('b@frogbot.test', 'b');
+    const hits = [{ id: article.id, score: 1 }];
+
+    await expect(articleWords.sources!({ hits }, await ctx(tenantB))).resolves.toEqual([]);
+    await expect(articleWords.sources!({ hits }, await ctx(tenantA))).resolves.toEqual([
+      { collection: articlesSlug, id: article.id, title: 'Frog care' },
+    ]);
   });
 });

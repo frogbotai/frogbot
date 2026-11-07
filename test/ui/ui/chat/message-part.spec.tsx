@@ -24,4 +24,14 @@ describe('MessagePart', () => {
 
     expect(screen.getByText('custom')).toBeTruthy();
   });
+
+  it('renders nothing for a source part, which SourceList shows instead', () => {
+    const { container } = render(
+      <MessagePart
+        part={{ type: 'source-url', sourceId: 'u', url: 'https://frogs.example', title: 'Frogs' }}
+      />,
+    );
+
+    expect(container.innerHTML).toBe('');
+  });
 });

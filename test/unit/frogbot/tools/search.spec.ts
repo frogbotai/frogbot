@@ -22,7 +22,7 @@ const indexes = {
   both: { name: 'both', lexical, vector, hybrid, filterFields: {} },
 };
 
-function makeCtx({ overrideAccess = false } = {}) {
+function makeCtx({ overrideAccess = false, useAsTitle = 'title' } = {}) {
   const search = vi.fn().mockResolvedValue({
     mode: 'lexical',
     ranking: { method: 'bm25', higherIsBetter: true, approximate: false },
@@ -37,10 +37,12 @@ function makeCtx({ overrideAccess = false } = {}) {
   });
 
   const embed = vi.fn().mockResolvedValue({ embedding: [0.1, 0.2, 0.3] });
+  const find = vi.fn().mockResolvedValue({ docs: [{ id: 3, title: 'Third' }] });
   const frogbot = {
-    collections: { posts: { slug: 'posts', auth: false, search: indexes } },
+    collections: { posts: { slug: 'posts', auth: false, useAsTitle, search: indexes } },
     search,
     embed,
+    find,
   };
 
   const ctx = {
@@ -50,7 +52,7 @@ function makeCtx({ overrideAccess = false } = {}) {
     overrideAccess,
   } as unknown as ToolCtx;
 
-  return { ctx, embed, search };
+  return { ctx, embed, search, find };
 }
 
 const base = { collection: 'posts', index: 'words', select: { title: true } } as const;
@@ -259,5 +261,69 @@ describe('searchTool', () => {
     expect(() => sanitizeToolList([words, searchTool(base)], 'Agent support')).toThrow(
       "Duplicate tool slug 'search_posts_words'",
     );
+  });
+
+  describe('sources', () => {
+    const hits = [
+      { id: 2, score: 0.9, title: 'Second' },
+      { id: 3, score: 0.5, body: 'Text' },
+      { id: 4, score: 0.1, body: 'Hidden' },
+    ];
+
+    it('lists each hit, reading only the titles the hits lack, with the run access', async () => {
+      const { ctx, find } = makeCtx();
+
+      await expect(searchTool(base).sources!({ hits }, ctx)).resolves.toEqual([
+        { collection: 'posts', id: 2, title: 'Second' },
+        { collection: 'posts', id: 3, title: 'Third' },
+      ]);
+      expect(find).toHaveBeenCalledWith({
+        collection: 'posts',
+        where: { id: { in: [3, 4] } },
+        select: { title: true },
+        depth: 0,
+        limit: 2,
+        pagination: false,
+        req: ctx.req,
+        overrideAccess: false,
+      });
+    });
+
+    it('reads nothing when every hit holds its title', async () => {
+      const { ctx, find } = makeCtx();
+
+      await expect(searchTool(base).sources!({ hits: hits.slice(0, 1) }, ctx)).resolves.toEqual([
+        { collection: 'posts', id: 2, title: 'Second' },
+      ]);
+      expect(find).not.toHaveBeenCalled();
+    });
+
+    it('titles hits by id when the collection has no title field', async () => {
+      const { ctx, find } = makeCtx({ useAsTitle: 'id' });
+
+      await expect(searchTool(base).sources!({ hits }, ctx)).resolves.toEqual([
+        { collection: 'posts', id: 2, title: '2' },
+        { collection: 'posts', id: 3, title: '3' },
+        { collection: 'posts', id: 4, title: '4' },
+      ]);
+      expect(find).not.toHaveBeenCalled();
+    });
+
+    it('lists nothing for a skipped call', async () => {
+      const { ctx } = makeCtx();
+
+      await expect(searchTool(base).sources!({ skipped: true } as never, ctx)).resolves.toEqual([]);
+    });
+
+    it('keeps the hits the model sees unchanged', async () => {
+      const { ctx } = makeCtx();
+
+      await expect(searchTool(base).execute({ query: 'frogs' }, ctx)).resolves.toEqual({
+        hits: [
+          { id: 2, title: 'Second', score: 0.9 },
+          { id: 1, title: 'First', score: 0.4 },
+        ],
+      });
+    });
   });
 });
