@@ -75,7 +75,7 @@ describe('frogbot share: pre-checks', () => {
     const result = await run(['--nope']);
 
     expect(result.code).toBe(2);
-    expect(result.stderr()[0]).toContain('Usage: frogbot share');
+    expect(result.stderr()[0]).toContain('Usage: frogbot apps share');
     expect(dojo.requests).toEqual([]);
   });
 });
@@ -326,7 +326,7 @@ describe('frogbot share: workspace', () => {
 
     expect(result.code).toBe(1);
     expect(result.stderr()).toEqual([
-      '[frogbot] Ask the person which workspace to share in (trend-capital, colby), then rerun with --workspace <slug>.',
+      '[frogbot] Ask the person which workspace to use (trend-capital, colby), then rerun with --workspace <slug>.',
     ]);
     expect(dojo.paths()).not.toContain('POST /api/projects');
     await expect(stat(join(root, '.frogbot'))).rejects.toThrow();

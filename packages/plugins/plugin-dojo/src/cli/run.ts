@@ -4,6 +4,7 @@ import { basename, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
 import { checkAppRoot, findAppRoot } from './appRoot.js';
+import { nameTaken, toSlug } from './appSlug.js';
 import type { ShareArchive } from './archive.js';
 import { createArchive } from './archive.js';
 import { authPath } from './auth.js';
@@ -11,14 +12,14 @@ import { askData } from './data/ask.js';
 import type { DataInventory } from './data/inventory.js';
 import { describeData } from './data/inventory.js';
 import { formatBytes, uploadData } from './data/upload.js';
-import type { DojoClient, DojoErrorBody } from './dojo.js';
+import type { DojoClient } from './dojo.js';
 import { createDojo, dojoError, dojoMessage, followBuild } from './dojo.js';
 import type { EnvKey } from './envKeys.js';
 import { envKeys, readEnvFiles } from './envKeys.js';
 import { ShareError } from './error.js';
 import { shareFiles } from './files.js';
 import type { ShareIO } from './io.js';
-import { say } from './io.js';
+import { done, say } from './io.js';
 import type { LiveKeys } from './keys.js';
 import { chooseFirstKeys, compareLiveKeys } from './keys.js';
 import { linkPath, readLink, writeLink } from './link.js';
@@ -28,7 +29,7 @@ import { sealKeys } from './seal.js';
 import { chooseWorkspace } from './workspaces.js';
 
 const usage = (program: string) =>
-  `Usage: ${program} share [--data | --no-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys]`;
+  `Usage: ${program} apps share [--data | --no-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys]`;
 
 type ShareFlags = {
   data?: boolean;
@@ -88,10 +89,10 @@ function parseShareArgs(argv: string[], program: string): ShareFlags {
   };
 }
 
-/** Runs `frogbot share` and returns its exit code; known stops print one `[frogbot]` line. */
+/** Runs `frogbot dojo apps share` and returns its exit code; known stops print one `[frogbot]` line. */
 export async function runShare(argv: string[], io: ShareIO): Promise<number> {
   try {
-    await share(argv, io);
+    done(io, await share(argv, io));
 
     return 0;
   } catch (error) {
@@ -103,7 +104,9 @@ export async function runShare(argv: string[], io: ShareIO): Promise<number> {
   }
 }
 
-async function share(argv: string[], io: ShareIO): Promise<void> {
+type ShareResult = { appId: string | number; url: string | null; shareLink: string | null };
+
+async function share(argv: string[], io: ShareIO): Promise<ShareResult> {
   const flags = parseShareArgs(argv, io.program);
   const root = findAppRoot({ cwd: io.cwd, env: io.env });
 
@@ -205,11 +208,12 @@ async function share(argv: string[], io: ShareIO): Promise<void> {
       );
     }
 
-    if (!editor) {
-      say(io, `[frogbot] Share it: ${dojo.url}/collections/projects/${appId}?share=1`);
-    }
+    const shareLink = editor ? null : `${dojo.url}/collections/projects/${appId}?share=1`;
 
+    if (shareLink) say(io, `[frogbot] Share it: ${shareLink}`);
     if (build.url) say(io, build.url);
+
+    return { appId, url: build.url ?? null, shareLink };
   } finally {
     await archive?.remove();
     await data?.dispose();
@@ -272,28 +276,6 @@ async function appName(root: string): Promise<string> {
   return typeof pkg.name === 'string' && pkg.name
     ? pkg.name.replace(/^@[^/]+\//, '')
     : basename(root);
-}
-
-function toSlug(name: string): string {
-  const slug = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .slice(0, 63)
-    .replace(/^-+|-+$/g, '');
-
-  return slug || 'app';
-}
-
-function nameTaken(status: number, body: DojoErrorBody | undefined): boolean {
-  if (status === 409 && body?.error === 'name_taken') return true;
-
-  return (
-    body?.errors?.some((error) =>
-      error.data?.errors?.some(
-        (field) => field.path === 'slug' && field.message === 'Value must be unique',
-      ),
-    ) ?? false
-  );
 }
 
 async function createApp({

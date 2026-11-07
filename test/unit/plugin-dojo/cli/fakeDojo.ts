@@ -97,6 +97,8 @@ export type FakeDojo = {
   logsStatus?: 403 | 404 | 502;
   /** Dojo's billing (320), off when unset: a first deploy needs a paying plan with a paid app free, or answers 402. */
   billing?: { subscriptionStatus?: string; paidApps: number; owner?: boolean };
+  /** Replies to routes the fake doesn't model, by `METHOD /path`, checked right after sign-in. */
+  replies: Map<string, { status?: number; body: unknown }>;
   /** Runs after each request is answered, as `METHOD /path`. */
   afterRequest?: (route: string) => void;
   paths: () => string[];
@@ -187,6 +189,7 @@ export async function startFakeDojo(): Promise<FakeDojo> {
       sent: [],
     },
     logs: [],
+    replies: new Map(),
     paths: () => dojo.requests.map((request) => `${request.method} ${request.path}`),
   };
 
@@ -290,6 +293,10 @@ export async function startFakeDojo(): Promise<FakeDojo> {
     }
 
     if (!signedIn) return payloadError(res, 401, 'You are not allowed to perform this action.');
+
+    const reply = dojo.replies.get(route);
+
+    if (reply) return json(res, reply.status ?? 200, reply.body);
 
     if (route === 'GET /api/workspaces') {
       return json(res, 200, { docs: dojo.workspaces, totalDocs: dojo.workspaces.length });

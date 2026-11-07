@@ -45,12 +45,18 @@ export type DojoClient = {
   request: (path: string, init?: () => RequestInit | Promise<RequestInit>) => Promise<Response>;
   /** The signed-in user, signing in first when there is no working token. */
   signIn: () => Promise<DojoUser>;
+  /** The signed-in user, or `undefined` when there is no working token; never signs in. */
+  currentUser: () => Promise<DojoUser | undefined>;
 };
 
-/** A Dojo client that signs in with the stored token, or the device flow when it has none. */
+/**
+ * A Dojo client that signs in with `FROGBOT_DOJO_TOKEN`, then the stored token, then the device flow.
+ * A refused `FROGBOT_DOJO_TOKEN` fails instead of starting the device flow.
+ */
 export function createDojo(io: ShareIO): DojoClient {
   const url = dojoUrl(io.env);
-  let token: string | undefined;
+  const envToken = io.env.FROGBOT_DOJO_TOKEN || undefined;
+  let token = envToken;
 
   const send = (path: string, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);
@@ -62,6 +68,12 @@ export function createDojo(io: ShareIO): DojoClient {
   };
 
   const login = async () => {
+    if (envToken) {
+      throw new ShareError(
+        `Dojo didn't accept FROGBOT_DOJO_TOKEN at ${url}; it may be revoked. Set a working key, or unset it to sign in with a browser.`,
+      );
+    }
+
     await removeToken(io.env, url);
     token = await deviceLogin(io, url);
   };
@@ -106,7 +118,44 @@ export function createDojo(io: ShareIO): DojoClient {
     return signedIn;
   };
 
-  return { url, request, signIn };
+  const currentUser = async () => {
+    token ??= await readToken(io.env, url);
+
+    return token ? me() : undefined;
+  };
+
+  return { url, request, signIn, currentUser };
+}
+
+/** What a call needs, named when Dojo refuses it with 403: `owner access to the app`. */
+export type DojoCall = {
+  method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+  body?: unknown;
+  /** The failure's lead-in: `Couldn't list your apps`. */
+  what: string;
+  needs?: string;
+};
+
+/** A signed-in JSON call. A refusal stops with Dojo's words, and a 403 says what the call needs. */
+export async function dojoJSON<T>(
+  dojo: DojoClient,
+  path: string,
+  { method = 'GET', body, what, needs }: DojoCall,
+): Promise<T> {
+  const response = await dojo.request(path, () => ({
+    method,
+    ...(body !== undefined && {
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+  }));
+
+  if (response.ok) return (await response.json()) as T;
+
+  const message = await dojoMessage(response);
+  const level = response.status === 403 && needs ? ` It needs ${needs}.` : '';
+
+  throw new ShareError(`${what}: ${message}${level}`);
 }
 
 /** The last `status` event of a build. */
