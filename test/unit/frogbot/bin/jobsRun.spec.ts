@@ -176,9 +176,18 @@ describe('jobs:run lifecycle', () => {
       return Promise.resolve();
     });
 
+    const payloadOnInit = vi.fn(() => {
+      expect(initialized).toBe(false);
+
+      return Promise.resolve();
+    });
+
+    Object.assign(mocks.payload.config, { onInit: payloadOnInit });
+
     mocks.payload.jobs.run.mockImplementation(async (args) => {
       const { req } = args as { req: PayloadRequest & { frogbot: FrogBot } };
 
+      expect(payloadOnInit).toHaveBeenCalledOnce();
       expect(initialized).toBe(true);
       expect(req.frogbot).toBe(onInit.mock.calls[0][0]);
       expect(req.frogbot.jobs).toBe(mocks.payload.jobs);
