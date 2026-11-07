@@ -76,22 +76,29 @@ export function buildPayloadConfig({
 }): PayloadConfig {
   const mapVectorField = config.db.mapVectorField;
 
+  const settingsView = !config.admin?.components?.views?.settings;
+
+  const withAdminDefaults = (collection: FrogBotConfig['collections'][number]) => {
+    const defaults = {
+      ...(collection.auth && !collection.admin?.icon ? { icon: 'people' } : {}),
+      ...(settingsView && collection.admin?.settings ? { group: false as const } : {}),
+    };
+
+    return Object.keys(defaults).length > 0
+      ? { ...collection, admin: { ...collection.admin, ...defaults } }
+      : collection;
+  };
+
   const collections = config.collections.map((collection) =>
-    sanitizeCollection(
-      collection.auth && !collection.admin?.icon
-        ? { ...collection, admin: { ...collection.admin, icon: 'people' } }
-        : collection,
-      attachFrogBot,
-      {
-        mapVectorField,
-        onAutonumber: (path, scope) =>
-          autonumbers.push({ collection: collection.slug, path, ...(scope ? { scope } : {}) }),
-        onAutonumberKey: (path, key) =>
-          autonumberKeys.push({ collection: collection.slug, path, ...key }),
-        resolveFrogBot,
-        search: searchCollections.find(({ slug }) => slug === collection.slug)?.search,
-      },
-    ),
+    sanitizeCollection(withAdminDefaults(collection), attachFrogBot, {
+      mapVectorField,
+      onAutonumber: (path, scope) =>
+        autonumbers.push({ collection: collection.slug, path, ...(scope ? { scope } : {}) }),
+      onAutonumberKey: (path, key) =>
+        autonumberKeys.push({ collection: collection.slug, path, ...key }),
+      resolveFrogBot,
+      search: searchCollections.find(({ slug }) => slug === collection.slug)?.search,
+    }),
   );
 
   if (!collections.some((collection) => Boolean(collection.auth))) {

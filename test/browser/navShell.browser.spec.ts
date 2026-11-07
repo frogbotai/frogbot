@@ -104,13 +104,14 @@ test.describe('nav shell on desktop', () => {
     await expect(page.locator('.fb-composer')).toHaveCount(0);
   });
 
-  test('Settings → Collections lists Users, which the sidebar leaves out', async ({ page }) => {
+  test('Settings lists Users in its sidebar, which the main sidebar leaves out', async ({
+    page,
+  }) => {
     await page.goto('/settings/collections');
 
-    await expect(page.locator('#card-users .card__click')).toHaveAttribute(
-      'href',
-      '/collections/users',
-    );
+    await expect(
+      page.locator('.frogbot-settings-nav').getByRole('link', { name: 'Users' }),
+    ).toHaveAttribute('href', '/collections/users');
   });
 
   test('home page lists built-in collection cards under one Collections heading', async ({
@@ -279,7 +280,7 @@ test.describe('nav shell keeps the saved desktop state', () => {
     test(`sidebar loads open at ${width}px when saved open`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 });
 
-      await page.goto('/collections/users');
+      await page.goto('/collections/chats');
       await waitForNavSettled(page);
 
       await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
@@ -334,7 +335,7 @@ test.describe('nav shell keeps the saved desktop state', () => {
 
   test('sidebar stays open when resized from 1600px to 1280px and 1024px', async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 800 });
-    await page.goto('/collections/users');
+    await page.goto('/collections/chats');
     await waitForNavSettled(page);
 
     await page.setViewportSize(laptop);
@@ -351,7 +352,7 @@ test.describe('nav shell keeps the saved desktop state', () => {
 
   test('sidebar stays collapsed when resized from 1280px to 1600px', async ({ page }) => {
     await page.setViewportSize(laptop);
-    await page.goto('/collections/users');
+    await page.goto('/collections/chats');
     await waitForNavSettled(page);
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
@@ -437,7 +438,7 @@ test.describe('nav shell across breakpoints and fast toggles', () => {
     expect(deleted.ok()).toBe(true);
 
     await page.setViewportSize(laptop);
-    await page.goto('/collections/users');
+    await page.goto('/collections/chats');
     await waitForNavSettled(page);
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
@@ -451,7 +452,7 @@ test.describe('nav shell across breakpoints and fast toggles', () => {
     await setNavPreference(page, false);
     await page.setViewportSize(laptop);
 
-    await page.goto('/collections/users');
+    await page.goto('/collections/chats');
     await waitForNavSettled(page);
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');

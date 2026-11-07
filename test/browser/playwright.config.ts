@@ -349,6 +349,7 @@ const testProjects = [
       'messageSize.browser.spec.ts',
       'navShell.browser.spec.ts',
       'navStandalone.browser.spec.ts',
+      'settingsShell.browser.spec.ts',
       'uiParity.browser.spec.ts',
     ],
   }),

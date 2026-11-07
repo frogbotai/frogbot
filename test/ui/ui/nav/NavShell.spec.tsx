@@ -55,6 +55,38 @@ describe('NavShell', () => {
     expect(shell().dataset.navState).toBe('mobile-nav-closed');
   });
 
+  it('draws its children in place of the sidebar, never collapsed on desktop even when saved closed', () => {
+    render(
+      <NavShell homePath="/" initialOpen={false}>
+        <nav aria-label="Settings">Settings items</nav>
+      </NavShell>,
+    );
+
+    expect(shell().dataset.navState).toBe('desktop-nav-open');
+    expect(screen.getByRole('navigation', { name: 'Settings' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Close sidebar' })).toBeNull();
+  });
+
+  it('opens and closes its children as the mobile drawer', () => {
+    isMobile = true;
+
+    render(
+      <NavShell homePath="/">
+        <nav aria-label="Settings">Settings items</nav>
+      </NavShell>,
+    );
+
+    expect(shell().dataset.navState).toBe('mobile-nav-closed');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+
+    expect(shell().dataset.navState).toBe('mobile-nav-open');
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(shell().dataset.navState).toBe('mobile-nav-closed');
+  });
+
   it("navigates through the adapter and marks the adapter's path active", () => {
     const navigate = vi.fn();
 

@@ -243,7 +243,7 @@ admin: {
 
 With SQLite, documents with no `dueDate` sort before dated ones in ascending order, so undated tasks lead this list.
 
-A collection with `admin.group: false` gets no card in `collections` and no entries in `activity`. Settings → Collections still lists it.
+A collection with `admin.group: false` or `admin.settings: true` gets no card in `collections` and no entries in `activity`. Settings → Collections still lists a `group: false` collection, and a [Settings collection](/admin/admin-navigation#settings-collections) has its own Settings sidebar item.
 
 ## User Customization
 
