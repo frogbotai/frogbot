@@ -64,7 +64,7 @@ const QUOTE_LENGTH = 60;
 
 const FOLDER = new RegExp(`^(?:ticket(\\d+)|(${ISSUE_TICKET}))_.+$`);
 
-const TICKET_ARG = new RegExp(`^(?:.*/)?(?:ticket)?(\\d+|${ISSUE_TICKET})(?:_[^/]*)?/?$`);
+const TICKET_ARG = new RegExp(`^(?:.*/)?(?:ticket)?(\\d+|${ISSUE_TICKET})(?:_[^/]*)?/?$`, 'i');
 
 const keyOfFolder = (name) => {
   const match = FOLDER.exec(name);

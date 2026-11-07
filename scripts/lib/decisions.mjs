@@ -7,10 +7,10 @@ const ARCHIVED_RULINGS = path.join('archive', 'decisions.md');
 
 const PARKED = 'parked.md';
 
-const PARKED_ROW = /^\|\s*\[(\d+)\]/gm;
-
 /** An issue-keyed ticket, named by its repo and issue number: `frogbot-225`. */
 export const ISSUE_TICKET = '(?:frogbot|sidekick|platform|process)-\\d+';
+
+const PARKED_ROW = new RegExp(`^\\|\\s*\\[(\\d+|${ISSUE_TICKET})\\]`, 'gim');
 
 const TICKET = `(\\d+|${ISSUE_TICKET})`;
 
@@ -286,7 +286,9 @@ function read(file) {
 
 export function parkedTickets(processDir) {
   return new Set(
-    [...(read(path.join(processDir, PARKED)) ?? '').matchAll(PARKED_ROW)].map(([, n]) => +n),
+    [...(read(path.join(processDir, PARKED)) ?? '').matchAll(PARKED_ROW)].map(([, key]) =>
+      ticketKey(key),
+    ),
   );
 }
 

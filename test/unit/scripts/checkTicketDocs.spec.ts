@@ -137,6 +137,7 @@ describe('check ticket-docs', () => {
 
       for (const arg of [
         'frogbot-950',
+        'FROGBOT-950',
         'frogbot-950_keyed',
         '.idea/_process/tickets/frogbot-950_keyed/',
       ]) {

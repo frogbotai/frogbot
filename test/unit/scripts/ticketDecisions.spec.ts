@@ -176,6 +176,15 @@ describe('pnpm ticket decisions', () => {
     );
     expect(() => run('907 D1: A')).toThrow('907 D1: ticket 907 has no step2_spec.md');
 
+    writeFileSync(
+      file('parked.md'),
+      `${read('parked.md')}| [frogbot-907](tickets/frogbot-907_keyed/) | Keyed |\n`,
+    );
+
+    expect(() => run('frogbot-907 D1: A')).toThrow('frogbot-907 D1: ticket frogbot-907 is parked');
+
+    writeFileSync(file('parked.md'), read('parked.md').replace(/^.*frogbot-907.*\n/m, ''));
+
     run(
       'frogbot-907 D1: A\nFROGBOT-907 D2: B\nfrogbot-907 note: keep it short\nfrogbot-907 approve',
     );
