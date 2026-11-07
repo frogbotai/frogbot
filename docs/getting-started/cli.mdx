@@ -62,6 +62,12 @@ Each problem is one line on stderr, `[frogbot] <code> <path>: <message>`, follow
 
 `INVALID_CRON` and `UNKNOWN_TASK` are config errors, so `dev` and `start` fail on them too.
 
+`check` also prints warnings, as `[frogbot] warning <code> <path>: <message>`. They don't change the exit code, and a passing run ends with `check passed with N warnings`:
+
+| Code | Means | Fix |
+| --- | --- | --- |
+| `MISSING_ICON` | A collection that shows in the sidebar has no `admin.icon`, so it shows a folder. Hidden, `group: false` and auth collections are skipped. | Set `admin.icon` to a name from [Collection icons](/admin/admin-navigation#collection-icons-and-placement). |
+
 `check` doesn't run TypeScript or look at the database. When it passes, it says so: run your app's `typecheck` script for type errors, and `frogbot migrate:status` for pending migrations.
 
 ### JSON output
@@ -91,6 +97,22 @@ With `--json`, `check` writes exactly one JSON object to stdout and sends everyt
 ```
 
 An issue has no `path` when it isn't tied to one place in the config, as with `CONFIG_INVALID`.
+
+Warnings go in a top-level `warnings` array, in the same shape as `issues`, whether or not the check passed. It's left out when there are none:
+
+```json
+{
+  "command": "check",
+  "success": true,
+  "warnings": [
+    {
+      "code": "MISSING_ICON",
+      "path": "collections.invoices",
+      "message": "no admin.icon, so the sidebar shows a folder; pick one: https://docs.frogbot.ai/admin/admin-navigation#collection-icons-and-placement"
+    }
+  ]
+}
+```
 
 ## Plugin commands
 
