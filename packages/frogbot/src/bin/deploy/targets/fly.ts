@@ -86,6 +86,7 @@ async function hasVolume(context: DeployContext, fly: string, app: string): Prom
 export const flyTarget: DeployTarget = {
   describe: 'Deploy to Fly.io with your fly login (one machine, SQLite on a volume)',
   preflight: async (context) => {
+    const flags = parseTargetArgs(context, { target: 'fly', usage, options });
     const { command, issue } = await findTool(
       context.io,
       ['fly', 'flyctl'],
@@ -95,7 +96,6 @@ export const flyTarget: DeployTarget = {
     if (!command) return issue ? [issue] : [];
 
     const issues: PreflightIssue[] = [];
-    const flags = parseTargetArgs(context, { target: 'fly', usage, options });
     const existing = readToml(context.root, 'app');
 
     if (existing && flags.app && flags.app !== existing) {

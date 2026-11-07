@@ -207,6 +207,13 @@ describe('deploy fly', () => {
     expect(mismatch.stderr()[0]).toMatch(/^\[frogbot\] FLY_APP_MISMATCH /);
   });
 
+  it('exits 2 on an unknown flag even without fly installed', async () => {
+    const { code, stderr } = await deployWith(flyTarget, 'fly', ['--bogus'], { programs: {} });
+
+    expect(code).toBe(2);
+    expect(stderr().join('\n')).toContain('Usage: frogbot deploy fly');
+  });
+
   it('reports NOT_LOGGED_IN with the login command', async () => {
     const { code, stderr } = await deployWith(flyTarget, 'fly', [], {
       programs: { flyctl: () => ({ code: 1 }) },
