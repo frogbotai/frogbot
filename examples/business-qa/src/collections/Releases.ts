@@ -5,6 +5,7 @@ const authenticated = ({ req }: { req: FrogBotRequest }) => Boolean(req.user);
 export const Releases: CollectionConfig = {
   slug: 'releases',
   admin: {
+    icon: 'package',
     useAsTitle: 'name',
     views: [
       {

@@ -13,5 +13,11 @@ declare module 'frogbot' {
 
 export const redirectsPlugin = definePlugin<RedirectsPluginOptions>({
   slug: 'plugin-redirects',
-  plugin: ({ config, options }) => wrapPayloadPlugin(payloadRedirectsPlugin(options))(config),
+  plugin: ({ config, options }) => {
+    const admin = { icon: 'link-square', ...options.overrides?.admin };
+
+    return wrapPayloadPlugin(
+      payloadRedirectsPlugin({ ...options, overrides: { ...options.overrides, admin } }),
+    )(config);
+  },
 });

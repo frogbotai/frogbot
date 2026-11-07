@@ -12,6 +12,7 @@ import type { CollectionConfig } from 'frogbot';
 export const Posts: CollectionConfig = {
   slug: 'posts',
   admin: {
+    icon: 'newspaper',
     useAsTitle: 'title',
   },
   fields: [
@@ -46,6 +47,22 @@ export default buildConfig({
   collections: [Users, Posts],
 });
 ```
+
+## Icons
+
+Set `admin.icon` on every collection that shows in the sidebar; without one it shows a folder, and `frogbot check` warns `MISSING_ICON`. Collections with `admin.hidden` or `admin.group: false` don't need one, and auth collections default to `people`. Pick the closest built-in name:
+
+| Kind of collection | Names                                                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| People             | `people`, `profile`, `user-add`, `ai-user`, `robot`                                                                      |
+| Content            | `file`, `newspaper`, `book-open`, `scroll`, `bookmark`, `pencil-edit`, `bubble-chat`, `message-square-text`, `megaphone` |
+| Media              | `image`, `video`, `mic`, `palette`                                                                                       |
+| Work               | `briefcase`, `check-list`, `calendar`, `clock`, `timer`, `flag`, `ticket`, `lightbulb`, `layers`                         |
+| Commerce           | `receipt`, `coins`, `shopping-cart`, `package`, `tag`, `chart-bar`                                                       |
+| Places             | `map-pin`, `building`, `home`, `web`                                                                                     |
+| Settings and data  | `setting`, `key-round`, `shield`, `database`, `code`, `wrench`, `link-square`, `bell`                                    |
+
+For anything else, point at a component that takes `size` and `className`: `icon: './src/components/InvoiceIcon#InvoiceIcon'`. An unknown built-in name stops startup and prints the full list. Docs: https://docs.frogbot.ai/admin/admin-navigation#collection-icons-and-placement
 
 ## Authentication
 
