@@ -43,6 +43,7 @@ import { MessageEditor } from './message-editor.js';
 import { MessageList, type MessageListProps } from './message-list.js';
 import { MessagePart } from './message-part.js';
 import { useChatProvider } from './provider.js';
+import { SourceList } from './source-list.js';
 import { speechText } from './speech-text.js';
 import { type ToolActions, ToolActionsContext } from './tool-actions.js';
 import { ToolPart } from './tool-part.js';
@@ -1150,13 +1151,16 @@ function ChatInner({
             onSubmit={(prompt) => editMessage(message, prompt)}
           />
         ) : (
-          message.parts.map((part, index) => (
-            <MessagePart
-              key={`${message.id}-${index}`}
-              part={part}
-              renderData={isFlagPart(part) ? renderFlagPart : undefined}
-            />
-          ))
+          <>
+            {message.parts.map((part, index) => (
+              <MessagePart
+                key={`${message.id}-${index}`}
+                part={part}
+                renderData={isFlagPart(part) ? renderFlagPart : undefined}
+              />
+            ))}
+            <SourceList parts={message.parts} />
+          </>
         )}
       </Message>
     );

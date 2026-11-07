@@ -14,6 +14,7 @@ import ArrowDownIcon from '../icons/icons/ArrowDownIcon.js';
 import { Message } from './message.js';
 import { MessagePart } from './message-part.js';
 import { composerHeight, MessageScrubber } from './message-scrubber.js';
+import { SourceList } from './source-list.js';
 import { LiveContext } from './use-paced-text.js';
 import { onUserScroll, prefersReducedMotion } from './user-scroll.js';
 import { WorkingIndicator } from './working.js';
@@ -245,6 +246,7 @@ export function MessageList({
                     {message.parts.map((part, index) => (
                       <MessagePart key={`${message.id}-${index}`} part={part} role={message.role} />
                     ))}
+                    <SourceList parts={message.parts} />
                   </Message>
                 )}
               </LiveContext>

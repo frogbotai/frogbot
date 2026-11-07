@@ -31,7 +31,7 @@ export function CustomShell() {
 }
 ```
 
-`Message`, `MessagePart`, `TextPart`, `ReasoningPart`, `ToolPart`, `FilePart`, `SourcePart`, `DataPart`, `ChatHistory`, `ChatShell`, and `ChatStatus` are also exported from `@frogbotai/ui/chat` for deeper composition.
+`Message`, `MessagePart`, `TextPart`, `ReasoningPart`, `ToolPart`, `FilePart`, `SourcePart`, `SourceList`, `DataPart`, `ChatHistory`, `ChatShell`, and `ChatStatus` are also exported from `@frogbotai/ui/chat` for deeper composition.
 
 ## Composer props
 
@@ -108,7 +108,7 @@ A `PasteAttachment` is pasted text kept in the browser because the composer has 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `messages` | `UIMessage[]` | Required | Messages to render, in order. The list scrolls to the newest message while the reader is at the bottom. |
-| `renderMessage` | `(message: UIMessage) => ReactNode` | Each part rendered with `MessagePart` | Replaces how each message renders. |
+| `renderMessage` | `(message: UIMessage) => ReactNode` | Each part rendered with `MessagePart`, then a `SourceList` | Replaces how each message renders. |
 
 If custom message parts can appear, pass a `fallback` to `MessagePart`. Unknown standard parts otherwise render a safe unsupported-part fallback.
 
