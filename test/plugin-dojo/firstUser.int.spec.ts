@@ -15,6 +15,8 @@ const sharer = 'sam@example.com';
 
 type SignInRequest = Parameters<typeof resolveSignInIdentity>[0]['req'];
 
+const asSignInRequest = (req: object) => req as SignInRequest;
+
 describe('dojo() on an app shared to Dojo empty', () => {
   const previousEnv = { ...process.env };
   let booted: BootedFrogBot;
@@ -37,7 +39,7 @@ describe('dojo() on an app shared to Dojo empty', () => {
 
   const signIn = async (email: string) =>
     resolveSignInIdentity({
-      req: (await booted.frogbot.createRequest()) as SignInRequest,
+      req: asSignInRequest(await booted.frogbot.createRequest()),
       collectionSlug: usersSlug,
       email,
     });
