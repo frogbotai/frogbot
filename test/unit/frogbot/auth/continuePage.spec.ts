@@ -128,7 +128,7 @@ describe('sign-in continue page', () => {
   });
 
   it('adds one ellipsis when the translation already ends with one', async () => {
-    for (const loading of ['Laddar...', 'Laddar…']) {
+    for (const loading of ['Laddar...', 'Laddar…', 'Laddar... ', 'Laddar..', 'Laddar …']) {
       const response = continuePage({
         returnTo: '/admin',
         look: 'light',
@@ -142,13 +142,18 @@ describe('sign-in continue page', () => {
     }
   });
 
+  it('sets the text direction from the language', async () => {
+    expect((await render('light', '/admin', 'ar')).body).toContain('<html lang="ar" dir="rtl">');
+    expect((await render('light', '/admin', 'en')).body).toContain('<html lang="en" dir="ltr">');
+  });
+
   it('continues by refresh and link, translated, with every value escaped', async () => {
     const { body } = await render('light', `/admin?a="<x>"&b='y'`, 'en"><script>');
     const url = '/admin?a=&#34;&#60;x&#62;&#34;&#38;b=&#39;y&#39;';
 
     expect(body).toContain(`<meta http-equiv="refresh" content="0;url=${url}">`);
     expect(body).toContain(`<a href="${url}">Next</a>`);
-    expect(body).toContain('<html lang="en&#34;&#62;&#60;script&#62;">');
+    expect(body).toContain('<html lang="en&#34;&#62;&#60;script&#62;" dir="ltr">');
     expect(body).toContain('<title>Loading…</title>');
     expect(body).toContain('<main><p>Loading…</p>');
   });

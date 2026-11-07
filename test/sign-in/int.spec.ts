@@ -546,7 +546,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       );
       expect(body.match(/<style>/g)).toHaveLength(1);
       expect(body).not.toMatch(/<script/i);
-      expect(body).toContain('<html lang="en">');
+      expect(body).toContain('<html lang="en" dir="ltr">');
       expect(body).toContain('<title>Loading…</title>');
       expect(body).toContain('<a href="/control">Next</a>');
     });

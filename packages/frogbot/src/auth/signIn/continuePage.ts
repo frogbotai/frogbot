@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 
+import { rtlLanguages } from '@payloadcms/translations';
 import type { SanitizedConfig } from 'payload';
 import { parseCookies } from 'payload/shared';
 
@@ -100,8 +101,9 @@ export function continuePage({
   headers: Headers;
 }): Response {
   const url = escapeHTML(returnTo);
-  const loading = escapeHTML(`${t('general:loading').replace(/(?:\.{3}|…)$/, '')}…`);
+  const loading = escapeHTML(`${t('general:loading').replace(/[\s.…]+$/u, '')}…`);
   const { css, csp } = styles[look];
+  const dir = (rtlLanguages as readonly string[]).includes(lang) ? 'rtl' : 'ltr';
 
   headers.set('content-type', 'text/html; charset=utf-8');
   headers.set('referrer-policy', 'no-referrer');
@@ -109,7 +111,7 @@ export function continuePage({
   headers.set('content-security-policy', csp);
 
   return new Response(
-    `<!doctype html><html lang="${escapeHTML(lang)}"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${url}"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${loading}</title><style>${css}</style></head><body><main><p>${loading}</p><a href="${url}">${escapeHTML(t('general:next'))}</a></main></body></html>`,
+    `<!doctype html><html lang="${escapeHTML(lang)}" dir="${dir}"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${url}"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${loading}</title><style>${css}</style></head><body><main><p>${loading}</p><a href="${url}">${escapeHTML(t('general:next'))}</a></main></body></html>`,
     { headers },
   );
 }
