@@ -3,6 +3,7 @@ import { definePiece, type PieceOAuthAccount, type PieceOAuthRecipe } from 'frog
 import { z } from 'zod';
 
 import { type DojoEnv, SIGN_IN_VARIABLES } from './env.js';
+import { withDojoFirstUser } from './firstUser.js';
 import { withWarnings } from './onInit.js';
 
 const METHOD = 'dojo';
@@ -111,8 +112,9 @@ function signInProblem(collection: CollectionConfig, auth: Auth): string | undef
 }
 
 /**
- * Adds "Continue with Dojo" after the user collection's own sign-in methods, once. Where core would
- * refuse the method, or a variable is missing, adds nothing and logs why at start instead.
+ * Adds "Continue with Dojo" after the user collection's own sign-in methods, once, and makes the app's
+ * Dojo creator its first user when it starts empty. Where core would refuse the method, or a variable
+ * is missing, adds nothing and logs why at start instead.
  */
 export function withDojoSignIn(config: FrogBotConfig, env: DojoEnv): FrogBotConfig {
   const off = (reason: string, slug?: string) =>
@@ -145,12 +147,17 @@ export function withDojoSignIn(config: FrogBotConfig, env: DojoEnv): FrogBotConf
     url: env.url!,
   });
 
-  return {
-    ...config,
-    collections: config.collections.map((entry) =>
-      entry === collection
-        ? { ...entry, auth: { ...auth, signIn: [...(auth.signIn ?? []), method] } }
-        : entry,
-    ),
+  const signedIn: CollectionConfig = {
+    ...collection,
+    auth: { ...auth, signIn: [...(auth.signIn ?? []), method] },
   };
+
+  const withMethod = {
+    ...config,
+    collections: config.collections.map((entry) => (entry === collection ? signedIn : entry)),
+  };
+
+  return env.firstUserEmail
+    ? withDojoFirstUser(withMethod, signedIn, env.firstUserEmail)
+    : withMethod;
 }

@@ -70,7 +70,7 @@ On Dojo, the plugin adds a `dojo` method, labelled "Dojo", to the user collectio
 - The first time someone signs in to an app, Dojo asks them once to share their name and email address with it. After that it's one click.
 - Someone whose email already has an account signs in as that user.
 - A new email gets an account only when the collection's [`access.create`](/authentication/sign-in#who-can-sign-up) allows it, so by default the button serves people who already have an account. Open sign-ups with `access: { create: () => true }`.
-- While the collection has no users, the [first person](/authentication/sign-in#who-can-sign-up) to sign in gets an account, as with the create-first-user screen.
+- A shared app starts with its sharer as the first user. See [The first user on Dojo](#the-first-user-on-dojo).
 
 Turn it off with one line:
 
@@ -79,5 +79,13 @@ plugins: [dojo({ signIn: false })]
 ```
 
 Dojo gives each app its own OAuth client, in `DOJO_OAUTH_CLIENT_ID`, `DOJO_OAUTH_CLIENT_SECRET` and `DOJO_URL`. Sign-in never stops the app from starting: when one of them is missing, or the collection can't take a sign-in method (see [Collection requirements](/authentication/sign-in#collection-requirements)), the plugin adds nothing and logs why at start, for example `[plugin-dojo] Sign in with Dojo is off for 'users': DOJO_URL is not set.` The same happens when the collection already has a method with the slug `dojo`.
+
+#### The first user on Dojo
+
+Dojo passes the email of the Dojo account that created the app, by its first `share` or from a template, as `DOJO_FIRST_USER_EMAIL`. When the app starts with no users, counting trashed ones, the plugin makes that email its first user, verified and with a random password. The sharer clicks "Continue with Dojo" and is in, and nobody else can sign in first and claim the app, even after you make it public.
+
+- It only fills an empty collection. An app shared with `share --data` brings its own users, so nobody is added: sign in as your local user, or add your Dojo email first.
+- It runs only when "Continue with Dojo" is on, so `dojo({ signIn: false })` adds nobody.
+- If the user can't be made, for example because the collection has a required field besides email, the app still starts and logs why, such as `[plugin-dojo] Couldn't add sam@example.com as the first user of 'users': The following field is invalid: Name`. The [first person](/authentication/sign-in#who-can-sign-up) to sign in then becomes the first user, so sign in before you make the app public.
 
 An app with `sqliteAdapter({ transactionOptions: false })` fails to start once the method is added, because sign-in needs transactions. Remove that option, or use `dojo({ signIn: false })`.

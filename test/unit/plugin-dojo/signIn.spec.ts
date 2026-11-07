@@ -162,6 +162,54 @@ describe('dojo() sign-in on Dojo', () => {
   });
 });
 
+describe('dojo() first user', () => {
+  const users = (): CollectionConfig => ({ slug: 'users', auth: true, fields: [] });
+
+  async function run(config: FrogBotConfig) {
+    const create = vi.fn();
+    const warn = vi.fn();
+    const frogbot = { db: { find: () => Promise.resolve({ docs: [] }) }, create, logger: { warn } };
+
+    for (const onInit of [config.onInit ?? []].flat()) {
+      await onInit(frogbot as unknown as FrogBot);
+    }
+
+    return { created: create.mock.calls.map(([args]) => args.data.email), warn };
+  }
+
+  beforeEach(() => {
+    vi.stubEnv('DOJO_FIRST_USER_EMAIL', 'Sam@Example.com');
+  });
+
+  it('makes the lowercased DOJO_FIRST_USER_EMAIL the first user of an empty app', async () => {
+    expect((await run(apply(template([users()])))).created).toEqual(['sam@example.com']);
+  });
+
+  it('makes no one with `signIn: false`', () => {
+    expect(apply(template([users()]), { signIn: false }).onInit).toBeUndefined();
+  });
+
+  it('makes no one when sign-in is off', async () => {
+    vi.stubEnv('DOJO_URL', undefined);
+
+    const { created, warn } = await run(apply(template([users()])));
+
+    expect(created).toEqual([]);
+    expect(warn).toHaveBeenCalledWith(off('DOJO_URL is not set'));
+  });
+
+  it('makes no one without DOJO_FIRST_USER_EMAIL or DOJO=1', () => {
+    vi.stubEnv('DOJO_FIRST_USER_EMAIL', ' ');
+
+    expect(apply(template([users()])).onInit).toBeUndefined();
+
+    vi.stubEnv('DOJO_FIRST_USER_EMAIL', 'sam@example.com');
+    vi.stubEnv('DOJO', undefined);
+
+    expect(apply(template([users()])).onInit).toBeUndefined();
+  });
+});
+
 describe('dojo() sign-in off', () => {
   const Users: CollectionConfig = { slug: 'users', auth: { signIn: [google] }, fields: [] };
 

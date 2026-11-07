@@ -9,6 +9,7 @@ export type DojoEnv = {
   oauthClientId?: string;
   oauthClientSecret?: string;
   url?: string;
+  firstUserEmail?: string;
 };
 
 /** Sign in with Dojo's variables. A missing one turns sign-in off instead of failing the start. */
@@ -18,6 +19,8 @@ export const SIGN_IN_VARIABLES = {
   url: 'DOJO_URL',
 } as const;
 
+const FIRST_USER_VARIABLE = 'DOJO_FIRST_USER_EMAIL';
+
 const VARIABLES = {
   r2Endpoint: 'DOJO_R2_ENDPOINT',
   r2Bucket: 'DOJO_R2_BUCKET',
@@ -26,7 +29,10 @@ const VARIABLES = {
   aiApiKey: 'DOJO_AI_API_KEY',
   aiBaseUrl: 'DOJO_AI_BASE_URL',
   jobsSecret: 'DOJO_JOBS_SECRET',
-} as const satisfies Record<Exclude<keyof DojoEnv, keyof typeof SIGN_IN_VARIABLES>, string>;
+} as const satisfies Record<
+  Exclude<keyof DojoEnv, keyof typeof SIGN_IN_VARIABLES | 'firstUserEmail'>,
+  string
+>;
 
 /** Dojo's env when the app runs on Dojo (`DOJO=1`), otherwise `undefined`. */
 export function readDojoEnv(): DojoEnv | undefined {
@@ -47,6 +53,10 @@ export function readDojoEnv(): DojoEnv | undefined {
 
     if (value?.trim()) env[key] = value.trim();
   }
+
+  const firstUserEmail = process.env[FIRST_USER_VARIABLE]?.trim().toLowerCase();
+
+  if (firstUserEmail) env.firstUserEmail = firstUserEmail;
 
   return env;
 }
