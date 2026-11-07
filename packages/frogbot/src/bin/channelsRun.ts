@@ -30,7 +30,11 @@ export async function channelsRun(): Promise<void> {
 
     await runtime.init({ config: payloadConfig, cron: false, disableOnInit: true });
 
-    frogbot = await initFrogBotFromPayload(runtime, config, { startChannelGateway: false });
+    frogbot = await initFrogBotFromPayload(runtime, config, {
+      runPayloadOnInit: true,
+      startChannelGateway: false,
+    });
+
     const host = getChannelHost(frogbot);
 
     if (!host?.hasGatewayAdapters()) {
