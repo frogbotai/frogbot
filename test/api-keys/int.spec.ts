@@ -200,7 +200,7 @@ describe('API keys plugin integration', () => {
     );
 
     expect(minted.status).toBe(403);
-    expect(minted.body.error).toMatch(/cannot mint or rotate/);
+    expect(minted.body.error).toMatch(/can't mint or rotate/);
 
     const rotated = await booted.restClient.post(
       `/api/credentials/${mint.body.id}/rotate`,
@@ -225,6 +225,62 @@ describe('API keys plugin integration', () => {
     );
 
     expect(revoked.status).toBe(200);
+  });
+
+  it('lets a canMint key mint keys inside its own limits, recording itself as mintedBy', async () => {
+    await createOwner();
+    const login = await booted.restClient.post<{ token: string }>(
+      '/api/accounts/login',
+      credentials,
+    );
+
+    const parent = await booted.restClient.post<{ id: number | string; token: string }>(
+      '/api/credentials/mint',
+      { name: 'CLI', data: { canMint: true, models: ['test/allowed'], monthlyBudget: 5 } },
+      { headers: { Authorization: `JWT ${login.body.token}` } },
+    );
+
+    expect(parent.status).toBe(201);
+
+    const parentHeaders = { 'x-service-key': parent.body.token };
+    const child = await booted.restClient.post<{ id: number | string; token: string }>(
+      '/api/credentials/mint',
+      { name: 'CI' },
+      { headers: parentHeaders },
+    );
+
+    expect(child.status).toBe(201);
+
+    const stored = await booted.frogbot.findByID({
+      collection: 'credentials',
+      id: child.body.id,
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    expect(stored).toMatchObject({
+      canMint: false,
+      mintedBy: parent.body.id,
+      models: ['test/allowed'],
+      monthlyBudget: 5,
+    });
+
+    const wider = await booted.restClient.post<{ error: string }>(
+      '/api/credentials/mint',
+      { name: 'Wide', data: { monthlyBudget: 50 } },
+      { headers: parentHeaders },
+    );
+
+    expect(wider.status).toBe(400);
+    expect(wider.body.error).toContain('Can\'t exceed API key "CLI"\'s monthly cap of $5.00.');
+
+    const grandchild = await booted.restClient.post<{ error: string }>(
+      '/api/credentials/mint',
+      { name: 'Deeper' },
+      { headers: { 'x-service-key': child.body.token } },
+    );
+
+    expect(grandchild.status).toBe(403);
   });
 
   it('enforces user model and budget policy and records spend', async () => {
