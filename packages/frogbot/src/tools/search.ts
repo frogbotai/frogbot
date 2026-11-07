@@ -5,7 +5,7 @@ import { describeSearchIndex, SearchValidationError } from '../search/errors.js'
 import type { SearchOptions, SearchQuery } from '../search/types.js';
 import type { CollectionSlug } from '../types/generated.js';
 import { isRecord } from '../utilities/isRecord.js';
-import type { Tool } from './types.js';
+import type { Tool, ToolCtx, ToolSource } from './types.js';
 
 export type SearchToolOptions<T extends CollectionSlug = CollectionSlug> = {
   collection: T;
@@ -81,10 +81,57 @@ function checkOptions(options: unknown): asserts options is SearchToolOptions {
   }
 }
 
+function isTitle(value: unknown): value is number | string {
+  return isText(value) || (typeof value === 'number' && Number.isFinite(value));
+}
+
+async function hitSources(
+  collection: CollectionSlug,
+  hits: readonly SearchToolHit[],
+  ctx: ToolCtx,
+): Promise<ToolSource[]> {
+  const field = ctx.req.frogbot.collections[collection]?.useAsTitle ?? 'id';
+  const titles = new Map<string, number | string>();
+
+  for (const hit of hits) {
+    const title = field === 'id' ? hit.id : hit[field];
+
+    if (isTitle(title)) titles.set(String(hit.id), title);
+  }
+
+  const missing = hits.filter(({ id }) => !titles.has(String(id))).map(({ id }) => id);
+
+  if (missing.length > 0) {
+    const { docs } = await ctx.req.frogbot.find({
+      collection,
+      where: { id: { in: missing } },
+      select: { [field]: true },
+      depth: 0,
+      limit: missing.length,
+      pagination: false,
+      req: ctx.req,
+      overrideAccess: ctx.overrideAccess,
+    });
+
+    for (const doc of docs as Record<string, unknown>[]) {
+      const title = doc[field];
+
+      titles.set(String(doc.id), isTitle(title) ? title : String(doc.id));
+    }
+  }
+
+  return hits.flatMap(({ id }) => {
+    const title = titles.get(String(id));
+
+    return title === undefined ? [] : [{ collection, id, title: String(title) }];
+  });
+}
+
 /**
  * A tool that searches one index of one collection. The model sends `{ query }`; it gets back
  * `{ hits }`, each the hit's `id`, `score` and `select`ed fields. Search and the query embedding
- * run as the run's user, unless the run is trusted (`overrideAccess`).
+ * run as the run's user, unless the run is trusted (`overrideAccess`). Each hit shows as a source
+ * under the answer, titled by the collection's `admin.useAsTitle`.
  */
 export function searchTool<T extends CollectionSlug>(
   options: SearchToolOptions<T>,
@@ -146,5 +193,7 @@ export function searchTool<T extends CollectionSlug>(
         hits: result.hits.map(({ doc, score }) => ({ ...doc, id: doc.id, score })),
       };
     },
+    sources: (result, ctx) =>
+      Array.isArray(result?.hits) ? hitSources(collection, result.hits, ctx) : [],
   };
 }
