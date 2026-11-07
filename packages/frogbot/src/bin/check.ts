@@ -1,6 +1,8 @@
 import { relative } from 'node:path';
 import { parseArgs } from 'node:util';
 
+import type { SanitizedConfig } from 'payload';
+
 import { ConfigIssueError } from '../config/issue.js';
 import { loadConfig, resolveConfigDir } from '../config/load.js';
 import { writeGeneratedTypes } from '../typegen/index.js';
@@ -9,7 +11,13 @@ import { generateImportMap } from './generateImportMap/index.js';
 
 type CheckIssue = { code: string; path?: string; message: string };
 
+type CheckResult = { issues: CheckIssue[]; warnings: CheckIssue[] };
+
 const prefix = '[frogbot] ';
+
+const iconDocs = 'https://docs.frogbot.ai/admin/admin-navigation#collection-icons-and-placement';
+
+const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
 function stripPrefix(message: string): string {
   return message.startsWith(prefix) ? message.slice(prefix.length) : message;
@@ -27,21 +35,24 @@ function findIssueError(error: unknown): ConfigIssueError | undefined {
   return undefined;
 }
 
-async function collectIssues(cwd: string): Promise<CheckIssue[]> {
+async function collectIssues(cwd: string): Promise<CheckResult> {
   try {
     return await findIssues(cwd);
   } catch (error) {
     const issue = findIssueError(error);
 
-    return [
-      issue
-        ? { code: issue.code, path: issue.path, message: stripPrefix(issue.message) }
-        : { code: 'CONFIG_INVALID', message: stripPrefix(formatCliError(error)) },
-    ];
+    return {
+      issues: [
+        issue
+          ? { code: issue.code, path: issue.path, message: stripPrefix(issue.message) }
+          : { code: 'CONFIG_INVALID', message: stripPrefix(formatCliError(error)) },
+      ],
+      warnings: [],
+    };
   }
 }
 
-async function findIssues(cwd: string): Promise<CheckIssue[]> {
+async function findIssues(cwd: string): Promise<CheckResult> {
   const config = await loadConfig({ cwd, mode: 'runtime' });
   const payloadConfig = await config._internal.payloadConfig;
   const issues: CheckIssue[] = [];
@@ -70,7 +81,21 @@ async function findIssues(cwd: string): Promise<CheckIssue[]> {
     }
   }
 
-  return issues;
+  return { issues, warnings: findMissingIcons(payloadConfig) };
+}
+
+function findMissingIcons(payloadConfig: SanitizedConfig): CheckIssue[] {
+  return payloadConfig.collections
+    .filter(({ admin }) => {
+      const { group, hidden, icon } = admin as typeof admin & { icon?: unknown };
+
+      return !icon && !hidden && group !== false;
+    })
+    .map(({ slug }) => ({
+      code: 'MISSING_ICON',
+      path: `collections.${slug}`,
+      message: `no admin.icon, so the sidebar shows a folder; pick one: ${iconDocs}`,
+    }));
 }
 
 function logToStderr(): () => void {
@@ -85,37 +110,45 @@ function logToStderr(): () => void {
 export async function check(args: string[] = []): Promise<void> {
   const { values } = parseArgs({ args, options: { json: { type: 'boolean' } } });
   const restore = values.json ? logToStderr() : () => undefined;
-  let issues: CheckIssue[];
+  let result: CheckResult;
 
   try {
-    issues = await collectIssues(process.cwd());
+    result = await collectIssues(process.cwd());
   } finally {
     restore();
   }
 
+  const { issues, warnings } = result;
+  const withWarnings = warnings.length ? { warnings } : {};
+
   if (issues.length) process.exitCode = 1;
 
   if (values.json) {
-    const result = issues.length
+    const output = issues.length
       ? {
           command: 'check',
           success: false,
           error: {
             code: 'CHECK_FAILED',
-            message: `${issues.length} ${issues.length === 1 ? 'issue' : 'issues'} found`,
+            message: `${plural(issues.length, 'issue')} found`,
             issues,
           },
+          ...withWarnings,
         }
-      : { command: 'check', success: true };
+      : { command: 'check', success: true, ...withWarnings };
 
-    process.stdout.write(`${JSON.stringify(result)}\n`);
+    process.stdout.write(`${JSON.stringify(output)}\n`);
 
     return;
   }
 
+  for (const { code, path, message } of warnings) {
+    console.error(`${prefix}warning ${code} ${path}: ${message}`);
+  }
+
   if (!issues.length) {
     console.log(
-      '[frogbot] check passed. Not checked: TypeScript (run your typecheck script) and migrations (run `frogbot migrate:status`).',
+      `[frogbot] check passed${warnings.length ? ` with ${plural(warnings.length, 'warning')}` : ''}. Not checked: TypeScript (run your typecheck script) and migrations (run \`frogbot migrate:status\`).`,
     );
 
     return;
@@ -125,5 +158,5 @@ export async function check(args: string[] = []): Promise<void> {
     console.error(`${prefix}${code} ${path ? `${path}: ` : ''}${message}`);
   }
 
-  console.error(`${prefix}${issues.length} ${issues.length === 1 ? 'issue' : 'issues'} found`);
+  console.error(`${prefix}${plural(issues.length, 'issue')} found`);
 }

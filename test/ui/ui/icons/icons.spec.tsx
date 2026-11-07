@@ -142,6 +142,7 @@ const iconNames = [
   'LayersIcon',
   'LightbulbIcon',
   'MailIcon',
+  'MapPinIcon',
   'MegaphoneIcon',
   'NewspaperIcon',
   'PackageIcon',
