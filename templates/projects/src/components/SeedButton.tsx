@@ -8,7 +8,8 @@ type SeedState =
   | { status: 'idle' | 'seeding' | 'seeded' }
   | { status: 'failed'; error: string };
 
-export function SeedPanel() {
+/** The dashboard's Seed button; `SeedPanel` renders it only while the app has no sample data. */
+export function SeedButton() {
   const { config } = useConfig();
   const router = useRouter();
   const [state, setState] = useState<SeedState>({ status: 'idle' });
@@ -54,9 +55,9 @@ export function SeedPanel() {
         <AlertTitle>Seed your database</AlertTitle>
         <AlertDescription>
           <p>
-            Load three sample projects with tasks on a board, and the demo login
-            admin@test.com with the password &quot;password&quot;. This replaces
-            every project and task.
+            Fill this app with three sample projects and their tasks on a board,
+            all assigned to you. It works only while the app has no projects,
+            and changes nothing else.
           </p>
           <Button
             disabled={state.status === 'seeding'}

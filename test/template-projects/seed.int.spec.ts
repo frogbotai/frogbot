@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 import { ensureAutonumbers } from 'frogbot/test';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DEMO_EMAIL, DEMO_PASSWORD } from '../../templates/projects/src/seed/index.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
@@ -74,16 +73,11 @@ describe('projects template seed', () => {
     expect(await counts()).toEqual({ projects: 0, tasks: 0 });
   });
 
-  it('replaces the sample data when run twice, and every task has a key', async () => {
-    const { headers } = await signUp(ownerCredentials);
+  it('adds the sample data once, every task assigned to the caller and keyed', async () => {
+    const { headers, id } = await signUp(ownerCredentials);
 
     expect((await seed(headers)).body).toEqual({ success: true });
-
-    const first = await counts();
-
-    expect((await seed(headers)).body).toEqual({ success: true });
-    expect(first).toEqual({ projects: 3, tasks: 12 });
-    expect(await counts()).toEqual(first);
+    expect(await counts()).toEqual({ projects: 3, tasks: 12 });
 
     const { docs } = await booted.frogbot.find({
       collection: 'tasks',
@@ -92,41 +86,38 @@ describe('projects template seed', () => {
       overrideAccess: true,
     });
 
-    for (const task of docs) expect(task.key).toMatch(/^[A-Z]+-\d+$/);
+    for (const task of docs) {
+      expect(task.key).toMatch(/^[A-Z]+-\d+$/);
+      expect(task.assignee).toBe(id);
+    }
   });
 
-  it('creates a demo user that can sign in, without touching the signed-in user', async () => {
-    const owner = await signUp(ownerCredentials);
+  it('refuses a second seed with 409 and changes nothing', async () => {
+    const { headers } = await signUp(ownerCredentials);
 
-    await seed(owner.headers);
-    await seed(owner.headers);
+    await seed(headers);
+    const first = await counts();
+    const response = await seed(headers);
 
-    const demo = await signIn({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
-    const ownerAgain = await signIn(ownerCredentials);
+    expect(response.status).toBe(409);
+    expect(response.body.error).toBe(
+      'This app already has projects, so the sample data was not added.',
+    );
+    expect(await counts()).toEqual(first);
+  });
 
-    expect(demo.status).toBe(200);
-    expect(ownerAgain.body.user?.id).toBe(owner.id);
+  it('creates no user: the signed-in person is the only one', async () => {
+    const { headers } = await signUp(ownerCredentials);
 
-    const { totalDocs } = await booted.frogbot.count({
+    await seed(headers);
+
+    const { docs } = await booted.frogbot.find({
       collection: 'users',
-      where: { email: { equals: DEMO_EMAIL } },
+      depth: 0,
       overrideAccess: true,
     });
 
-    expect(totalDocs).toBe(1);
-  });
-
-  it('keeps the demo user as is when it is the signed-in user', async () => {
-    const own = { email: DEMO_EMAIL, password: 'my-own-password' };
-    const { headers, id } = await signUp(own);
-
-    expect((await seed(headers)).status).toBe(200);
-
-    const again = await signIn(own);
-
-    expect(again.status).toBe(200);
-    expect(again.body.user?.id).toBe(id);
-    expect((await signIn({ email: DEMO_EMAIL, password: DEMO_PASSWORD })).status).toBe(401);
+    expect(docs.map(({ email }) => email)).toEqual([ownerCredentials.email]);
   });
 
   it('logs a failing seed and answers 500', async () => {
@@ -143,12 +134,13 @@ describe('projects template seed', () => {
     );
   });
 
-  it('seeds in production too', async () => {
+  it('seeds in production too, and refuses a second seed there', async () => {
     const { headers } = await signUp(ownerCredentials);
 
     vi.stubEnv('NODE_ENV', 'production');
 
     expect((await seed(headers)).body).toEqual({ success: true });
     expect(await counts()).toEqual({ projects: 3, tasks: 12 });
+    expect((await seed(headers)).status).toBe(409);
   });
 });
