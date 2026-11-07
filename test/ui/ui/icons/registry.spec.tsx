@@ -25,6 +25,7 @@ describe('iconRegistry', () => {
     expect(iconNames).toContain('lock-check');
     expect(iconNames).toContain('trending-up');
     expect(iconNames).toContain('money-bag');
+    expect(iconNames).toContain('map-pin');
     expect(iconNames).not.toContain('create-lucide');
     expect(iconNames).toEqual(configuredIconNames);
   });

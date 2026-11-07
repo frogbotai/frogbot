@@ -106,6 +106,7 @@ export const adminIconExports = [
   'MagicWandIcon',
   'MailIcon',
   'MapIcon',
+  'MapPinIcon',
   'MastercardIcon',
   'McpIcon',
   'MedalIcon',
@@ -226,3 +227,14 @@ export function validateAdminIcon(icon: unknown): void {
 
   throw new Error(`[frogbot] Unknown admin icon '${icon}'. Valid: ${iconNames.join(', ')}`);
 }
+
+type IconCollection = {
+  slug: string;
+  admin?: { group?: unknown; hidden?: unknown; icon?: unknown };
+};
+
+/** Slugs of the collections that show in the sidebar with no `admin.icon`, so they fall back to the folder. */
+export const collectionsWithoutIcon = (collections: readonly IconCollection[]): string[] =>
+  collections
+    .filter(({ admin }) => !admin?.icon && !admin?.hidden && admin?.group !== false)
+    .map(({ slug }) => slug);

@@ -62,6 +62,12 @@ Each problem is one line on stderr, `[frogbot] <code> <path>: <message>`, follow
 
 `INVALID_CRON` and `UNKNOWN_TASK` are config errors, so `dev` and `start` fail on them too.
 
+`check` also warns about things that don't stop your app. A warning is one line on stderr, `[frogbot] warning <code> <path>: <message>`, and doesn't change the exit code; a passing run says `check passed with N warnings`:
+
+| Code | Means | Fix |
+| --- | --- | --- |
+| `MISSING_ICON` | A collection that shows in the sidebar has no `admin.icon`, so it shows a folder. Collections with `admin.hidden`, `admin.group: false` or `auth` are skipped. The path names it, for example `collections.invoices`. | Set `admin.icon` to one of the [built-in names](/admin/admin-navigation#collection-icons-and-placement). |
+
 `check` doesn't run TypeScript or look at the database. When it passes, it says so: run your app's `typecheck` script for type errors, and `frogbot migrate:status` for pending migrations.
 
 ### JSON output
@@ -71,6 +77,8 @@ With `--json`, `check` writes exactly one JSON object to stdout and sends everyt
 ```json
 { "command": "check", "success": true }
 ```
+
+When there are warnings, a `warnings` array of `{ code, path, message }` entries sits beside `success`, whether it's `true` or `false`.
 
 ```json
 {

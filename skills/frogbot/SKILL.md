@@ -93,6 +93,7 @@ import type { CollectionConfig } from 'frogbot';
 export const Posts: CollectionConfig = {
   slug: 'posts',
   admin: {
+    icon: 'newspaper',
     useAsTitle: 'title',
   },
   fields: [
@@ -272,6 +273,8 @@ src/
 └── frogbot.config.ts
 ```
 
+Give every collection that shows in the sidebar an `admin.icon` that says what it holds, Users included; without one the sidebar shows a folder. Pick from the names in [COLLECTIONS.md](reference/COLLECTIONS.md#icons).
+
 Each collection is a TitleCase file with a named export, imported by its own path; when it grows hooks, access rules, or endpoints, move it to `<Name>/index.ts` — the config import doesn't change.
 
 Use `frogbot.config.ts` as the configuration entry, `req.frogbot` in request callbacks, and `frogbot-types.ts` for generated application types.
@@ -293,7 +296,7 @@ Use `frogbot.config.ts` as the configuration entry, `req.frogbot` in request cal
 Run these steps, in order, before you say a task is done:
 
 1. After changing collections, fields, jobs, or other generated schemas, run `frogbot generate:types`.
-2. Run `frogbot check`, and fix what it reports until it passes.
+2. Run `frogbot check`, and fix what it reports until it passes, including `MISSING_ICON` warnings.
 3. Run the app's `typecheck` script.
 4. Run the app's `test` script, if it has one.
 5. Run each job you added or changed once, with a run-once script like the one in [JOBS.md](reference/JOBS.md#workflow-waits), and say what it did.

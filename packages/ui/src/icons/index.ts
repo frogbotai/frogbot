@@ -109,6 +109,7 @@ export { default as LogoutRightIcon } from './icons/LogoutRightIcon.js';
 export { default as MagicWandIcon } from './icons/MagicWandIcon.js';
 export { default as MailIcon } from './icons/MailIcon.js';
 export { default as MapIcon } from './icons/MapIcon.js';
+export { default as MapPinIcon } from './icons/MapPinIcon.js';
 export { default as MastercardIcon } from './icons/MastercardIcon.js';
 export { default as McpIcon } from './icons/McpIcon.js';
 export { default as MedalIcon } from './icons/MedalIcon.js';
