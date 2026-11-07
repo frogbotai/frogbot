@@ -201,6 +201,18 @@ const iconNames = [
   'VolumeIcon',
   'WalletIcon',
   'WorkflowIcon',
+  'AwardIcon',
+  'BadgeCheckIcon',
+  'CrownIcon',
+  'FlameIcon',
+  'GemIcon',
+  'HandCoinsIcon',
+  'MedalIcon',
+  'MoneyBagIcon',
+  'PodiumIcon',
+  'SparklesIcon',
+  'TrendingDownIcon',
+  'TrendingUpIcon',
 ] as const;
 
 describe('firmware icons', () => {

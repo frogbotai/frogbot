@@ -23,6 +23,8 @@ describe('iconRegistry', () => {
     expect(iconNames).toContain('volume');
     expect(iconNames).toContain('dollar');
     expect(iconNames).toContain('lock-check');
+    expect(iconNames).toContain('trending-up');
+    expect(iconNames).toContain('money-bag');
     expect(iconNames).not.toContain('create-lucide');
     expect(iconNames).toEqual(configuredIconNames);
   });
