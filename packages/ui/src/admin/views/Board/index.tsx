@@ -22,6 +22,7 @@ import {
   resolveBoardGroupBy,
   resolveBoardSort,
 } from './data.js';
+import { getInlineAdd } from './inlineAdd.js';
 import { resolveBoardField, resolveColumns } from './resolveColumns.js';
 
 export async function BoardView(input: AdminViewServerProps) {
@@ -232,6 +233,8 @@ export async function BoardView(input: AdminViewServerProps) {
         limit={board.pagination?.defaultLimit ?? 50}
         orderField={orderField}
         viewSlug={board.slug}
+        canCreate={Boolean(permissions?.create)}
+        inlineAdd={getInlineAdd({ collectionConfig, groupBy, permissions })}
         canUpdate={Boolean(
           permissions?.update &&
           (fieldPermission === true || (fieldPermission && fieldPermission.update)),

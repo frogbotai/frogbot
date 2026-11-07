@@ -4,20 +4,24 @@ import {
   RelationshipProvider,
   toast,
   useConfig,
+  useDocumentDrawer,
   useListQuery,
   useTableColumns,
 } from '@payloadcms/ui';
 import { type ComponentType, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Board, type BoardColumnState } from '../../../board/Board.js';
+import { BoardAddButton, InlineAddCard } from '../../../board/InlineAddCard.js';
 import { appendQuery, getPath, setPath } from '../cells.js';
 import { getViewCardColumns } from '../preferences.js';
 import { BoardDocumentCard, type BoardRow } from './BoardDocumentCard.js';
 import { buildBoardReorderBody, buildColumnWhere } from './data.js';
+import type { BoardInlineAdd } from './inlineAdd.js';
 import type { ResolvedBoardColumn } from './resolveColumns.js';
 import { getBoardGroupKey } from './totals.js';
 import { useBoardColumnState } from './useBoardColumnState.js';
 import { useBoardTotals } from './useBoardTotals.js';
+import { useInlineAdd } from './useInlineAdd.js';
 
 type Row = BoardRow;
 
@@ -32,7 +36,9 @@ export type BoardViewClientProps = {
   groupBy: string;
   limit: number;
   orderField: string;
+  canCreate: boolean;
   canUpdate: boolean;
+  inlineAdd: BoardInlineAdd;
   viewSlug: string;
 };
 
@@ -120,7 +126,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
     loadBoardRef.current();
   }, [query.sort, query.where]);
 
-  const request = async (path: string, init: RequestInit) => {
+  const request = async (path: string, init: RequestInit, notify = true) => {
     const response = await fetch(`${config.routes.api}${path}`, {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -136,7 +142,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
         result.errors?.[0]?.message ?? result.error ?? result.message ?? response.statusText,
       );
 
-      toast.error(message);
+      if (notify) toast.error(message);
       throw new Error(message);
     }
 
@@ -199,14 +205,56 @@ export function BoardViewClient(props: BoardViewClientProps) {
     ]);
   };
 
-  const replaceRow = (doc: Row) => {
-    setRows((current) => current.map((row) => (row.id === doc.id ? doc : row)));
-    void totals.refresh();
+  const upsertRow = (doc: Row) => {
+    setRows((current) =>
+      current.some((row) => row.id === doc.id)
+        ? current.map((row) => (row.id === doc.id ? doc : row))
+        : [...current, doc],
+    );
   };
 
   const removeRow = (doc: Row) => {
     setRows((current) => current.filter((row) => row.id !== doc.id));
     void totals.refresh();
+  };
+
+  const groupData = (key: string) => {
+    const value = props.columns.find((column) => column.key === key)?.value;
+
+    return value === undefined ? {} : setPath(props.groupBy, value);
+  };
+
+  const inline = useInlineAdd({
+    create: async ({ columnKey, title }) => {
+      const result = await request(
+        `/${props.collectionSlug}?depth=1`,
+        {
+          body: JSON.stringify({ ...groupData(columnKey), [useAsTitle ?? 'id']: title }),
+          method: 'POST',
+        },
+        false,
+      );
+
+      return result.doc as Row;
+    },
+    onCreated: upsertRow,
+    onTotal: totals.adjust,
+  });
+
+  const [CreateDrawer, , createDrawer] = useDocumentDrawer({
+    collectionSlug: props.collectionSlug,
+  });
+
+  const [form, setForm] = useState<{ data: Record<string, unknown>; draftId?: string }>();
+
+  const openForm = (key: string, data: Record<string, unknown> = {}, draftId?: string) => {
+    setForm({ data: { ...data, ...groupData(key) }, draftId });
+    createDrawer.openDrawer();
+  };
+
+  const add = (key: string) => {
+    if (props.inlineAdd.inline && !(key === '' && props.inlineAdd.groupRequired)) inline.open(key);
+    else openForm(key);
   };
 
   return (
@@ -220,6 +268,29 @@ export function BoardViewClient(props: BoardViewClientProps) {
           groupBy={(row) => groupKey(row) || null}
           hasMore={hasMore}
           onColumnStateChange={setBoardColumns}
+          renderColumnEnd={({ key }) =>
+            inline.drafts
+              .filter((draft) => draft.columnKey === key)
+              .map((draft) => (
+                <InlineAddCard
+                  error={draft.error}
+                  key={draft.id}
+                  onCancel={() => inline.remove(draft.id)}
+                  onChange={(title) => inline.change(draft.id, title)}
+                  onOpenForm={() =>
+                    openForm(draft.columnKey, { [useAsTitle ?? 'id']: draft.title }, draft.id)
+                  }
+                  onSubmit={(next) => inline.submit(draft.id, next)}
+                  saving={draft.saving}
+                  value={draft.title}
+                />
+              ))
+          }
+          renderColumnFooter={
+            props.canCreate
+              ? (column) => <BoardAddButton label={column.label} onClick={() => add(column.key)} />
+              : undefined
+          }
           renderColumnHeader={
             ColumnHeader
               ? (column, count) => (
@@ -246,7 +317,10 @@ export function BoardViewClient(props: BoardViewClientProps) {
                 cover={props.cover}
                 disabled={!props.canUpdate}
                 onDelete={removeRow}
-                onSave={replaceRow}
+                onSave={(doc) => {
+                  upsertRow(doc);
+                  void totals.refresh();
+                }}
                 row={row}
               />
             )
@@ -255,6 +329,16 @@ export function BoardViewClient(props: BoardViewClientProps) {
           totals={totals.totals}
         />
       </div>
+      {props.canCreate ? (
+        <CreateDrawer
+          initialData={form?.data}
+          onSave={({ doc }) => {
+            upsertRow(doc);
+            if (form?.draftId) inline.remove(form.draftId);
+            void totals.refresh();
+          }}
+        />
+      ) : null}
     </RelationshipProvider>
   );
 }

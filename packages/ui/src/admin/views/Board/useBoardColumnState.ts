@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import type { BoardColumnState } from '../../../board/Board.js';
 import { getViewPreferenceKey } from '../preferences.js';
+import type { BoardPreferenceValue } from './data.js';
 
 /** Collapsed and hidden columns, remembered per user in the board's view preference. */
 export function useBoardColumnState({
@@ -21,7 +22,11 @@ export function useBoardColumnState({
 
   const change = (next: BoardColumnState) => {
     setState(next);
-    void setPreference(getViewPreferenceKey(collectionSlug, viewSlug), next, true);
+
+    void setPreference<BoardPreferenceValue>(
+      getViewPreferenceKey(collectionSlug, viewSlug),
+      (current) => ({ ...current, ...next }),
+    );
   };
 
   return [state, change] as const;

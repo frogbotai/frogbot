@@ -1,6 +1,7 @@
 import { fireEvent, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { InlineAddCard } from '../../../packages/ui/src/board/InlineAddCard';
 import { Board, type BoardProps } from '../../../packages/ui/src/index';
 
 type Row = { id: string; status?: string };
@@ -131,5 +132,70 @@ describe('Board totals, collapse, hide and empty columns', () => {
     const { container } = renderWith({});
 
     expect(container.querySelector('.frog-board__column-menu')).toBeNull();
+  });
+});
+
+describe('InlineAddCard', () => {
+  const renderCard = (value: string, extra: Partial<Parameters<typeof InlineAddCard>[0]> = {}) => {
+    const props = { onCancel: vi.fn(), onChange: vi.fn(), onSubmit: vi.fn(), value, ...extra };
+    const view = render(<InlineAddCard {...props} />);
+
+    return { ...props, input: view.getByRole('textbox', { name: 'Card title' }), view };
+  };
+
+  it('focuses the title and saves on Enter, asking for the next card', () => {
+    const { input, onSubmit } = renderCard('Write tests');
+
+    expect(document.activeElement).toBe(input);
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(onSubmit).toHaveBeenCalledWith(true);
+  });
+
+  it('removes an empty card on Enter or blur and discards text on Escape', () => {
+    const empty = renderCard('');
+
+    fireEvent.keyDown(empty.input, { key: 'Enter' });
+    fireEvent.blur(empty.input);
+
+    expect(empty.onCancel).toHaveBeenCalledTimes(2);
+    expect(empty.onSubmit).not.toHaveBeenCalled();
+
+    empty.view.unmount();
+    const typed = renderCard('Draft');
+
+    fireEvent.keyDown(typed.input, { key: 'Escape' });
+
+    expect(typed.onCancel).toHaveBeenCalledTimes(1);
+    expect(typed.onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('saves typed text on blur without asking for another card', () => {
+    const { input, onSubmit } = renderCard('Draft');
+
+    fireEvent.blur(input);
+
+    expect(onSubmit).toHaveBeenCalledWith(false);
+  });
+
+  it('shows a failed save with Open form, and retries on Enter', () => {
+    const onOpenForm = vi.fn();
+    const { input, onSubmit, view } = renderCard('Draft', {
+      error: 'Owner is required',
+      onOpenForm,
+    });
+
+    expect(view.getByRole('alert').textContent).toContain('Owner is required');
+
+    fireEvent.click(view.getByRole('button', { name: 'Open form' }));
+    fireEvent.blur(input);
+
+    expect(onOpenForm).toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(onSubmit).toHaveBeenCalledWith(true);
   });
 });

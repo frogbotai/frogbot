@@ -383,13 +383,23 @@ export default buildConfig({
           projectsSlug,
           tagsSlug,
           timesheetsSlug,
+          storiesSlug,
+          approvalsSlug,
         ] as const) {
           await req.frogbot.delete({ collection, where: {}, overrideAccess: true, req });
         }
 
         await req.frogbot.db.deleteMany({
           collection: 'payload-preferences',
-          where: { key: { in: [chatPicksPreference, `collection-${tasksSlug}`] } },
+          where: {
+            key: {
+              in: [
+                chatPicksPreference,
+                `collection-${tasksSlug}`,
+                `collection-${storiesSlug}-view-board`,
+              ],
+            },
+          },
         });
 
         return Response.json({ reset: true });
