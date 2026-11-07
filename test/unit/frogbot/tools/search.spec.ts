@@ -276,8 +276,8 @@ describe('searchTool sources', () => {
     return { ctx, find };
   }
 
-  it('gives one source per hit, titled from the hit, without a lookup', async () => {
-    const { ctx, find } = sourcesCtx();
+  it('gives one source per readable hit, titled from the hit', async () => {
+    const { ctx, find } = sourcesCtx({ docs: [{ id: 2, title: 'Stale' }] });
     const hits = [
       { id: 2, score: 0.9, title: 'Second' },
       { id: 1, score: 0.4, title: 'First' },
@@ -285,9 +285,10 @@ describe('searchTool sources', () => {
 
     expect(await searchTool(base).sources!({ hits }, ctx)).toEqual([
       { collection: 'posts', id: 2, title: 'Second' },
-      { collection: 'posts', id: 1, title: 'First' },
     ]);
-    expect(find).not.toHaveBeenCalled();
+    expect(find).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: { in: [2, 1] } }, overrideAccess: false }),
+    );
   });
 
   it('reads titles select left out with the run access, and drops records it cannot read', async () => {
@@ -316,7 +317,7 @@ describe('searchTool sources', () => {
     expect(
       await searchTool(base).sources!(
         { hits: [{ id: 7, score: 1 }] },
-        sourcesCtx({ useAsTitle: 'id' }).ctx,
+        sourcesCtx({ useAsTitle: 'id', docs: [{ id: 7 }] }).ctx,
       ),
     ).toEqual([{ collection: 'posts', id: 7, title: '7' }]);
 

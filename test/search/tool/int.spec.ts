@@ -172,6 +172,13 @@ describe('searchTool', () => {
     ]);
   });
 
+  it("gives no source for a hit that carries its title but the run's user can't read", async () => {
+    const other = await createArticle({ title: 'Frog care', body: 'Ponds', tenant: 'b' });
+    const hits = [{ id: other.id, score: 1, title: 'Frog care' }];
+
+    expect(await articleWords.sources!({ hits }, await ctx(tenantA))).toEqual([]);
+  });
+
   it("follows the run's overrideAccess when there is no user", async () => {
     await createArticle({ title: 'Lily pads', embedding: model.vectorFor('frogs') });
 

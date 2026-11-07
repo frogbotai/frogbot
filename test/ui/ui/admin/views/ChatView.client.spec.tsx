@@ -44,7 +44,10 @@ vi.mock('@payloadcms/ui', () => ({
   usePathname: () => mocks.pathname,
   useRouter: () => ({ push: mocks.push, refresh: mocks.refresh }),
   toast: { error: mocks.toastError },
-  useConfig: () => ({ getEntityConfig: mocks.getEntityConfig }),
+  useConfig: () => ({
+    config: { routes: { admin: '/admin' } },
+    getEntityConfig: mocks.getEntityConfig,
+  }),
   usePreferences: () => ({
     getPreference: mocks.getPreference,
     setPreference: mocks.setPreference,
@@ -206,6 +209,7 @@ describe('ChatViewClient', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it('renders chat code blocks without a FrogBot theme wrapper', async () => {
@@ -331,6 +335,23 @@ describe('ChatViewClient', () => {
     fireEvent.click(await screen.findByText('Sales'));
 
     await waitFor(() => expect(mocks.provider.mock.calls.at(-1)?.[0].toolRenderers).toBe(sales));
+  });
+
+  it('links a source to its admin page under the Next basePath', async () => {
+    vi.stubEnv('NEXT_BASE_PATH', '/app');
+    useManifest(agentEntry('general'));
+
+    renderChatView();
+
+    await waitFor(() => expect(mocks.provider).toHaveBeenCalled());
+
+    const { sourceHref } = mocks.provider.mock.calls.at(-1)![0] as {
+      sourceHref: (source: { collection: string; id: number | string }) => string;
+    };
+
+    expect(sourceHref({ collection: 'posts', id: 'a b' })).toBe(
+      '/app/admin/collections/posts/a%20b',
+    );
   });
 
   it('renders a stored compaction as a divider with its summary', async () => {

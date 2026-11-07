@@ -90,40 +90,33 @@ async function hitSources(
   hits: readonly SearchToolHit[],
   ctx: ToolCtx,
 ): Promise<ToolSource[]> {
+  if (hits.length === 0) return [];
+
   const field = ctx.req.frogbot.collections[collection]?.useAsTitle ?? 'id';
-  const titles = new Map<string, number | string>();
 
-  for (const hit of hits) {
-    const title = field === 'id' ? hit.id : hit[field];
+  const { docs } = await ctx.req.frogbot.find({
+    collection,
+    where: { id: { in: hits.map(({ id }) => id) } },
+    select: { [field]: true },
+    depth: 0,
+    limit: hits.length,
+    pagination: false,
+    req: ctx.req,
+    overrideAccess: ctx.overrideAccess,
+  });
 
-    if (isTitle(title)) titles.set(String(hit.id), title);
-  }
+  const readable = new Map(
+    (docs as Record<string, unknown>[]).map((doc) => [String(doc.id), doc[field]]),
+  );
 
-  const missing = hits.filter(({ id }) => !titles.has(String(id))).map(({ id }) => id);
+  return hits.flatMap((hit) => {
+    if (!readable.has(String(hit.id))) return [];
 
-  if (missing.length > 0) {
-    const { docs } = await ctx.req.frogbot.find({
-      collection,
-      where: { id: { in: missing } },
-      select: { [field]: true },
-      depth: 0,
-      limit: missing.length,
-      pagination: false,
-      req: ctx.req,
-      overrideAccess: ctx.overrideAccess,
-    });
+    const title = [field === 'id' ? hit.id : hit[field], readable.get(String(hit.id))].find(
+      isTitle,
+    );
 
-    for (const doc of docs as Record<string, unknown>[]) {
-      const title = doc[field];
-
-      titles.set(String(doc.id), isTitle(title) ? title : String(doc.id));
-    }
-  }
-
-  return hits.flatMap(({ id }) => {
-    const title = titles.get(String(id));
-
-    return title === undefined ? [] : [{ collection, id, title: String(title) }];
+    return [{ collection, id: hit.id, title: String(title ?? hit.id) }];
   });
 }
 

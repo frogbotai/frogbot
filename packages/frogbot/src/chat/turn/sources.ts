@@ -14,6 +14,12 @@ export function sourceId({ collection, id }: Pick<ToolSource, 'collection' | 'id
   return `${collection}:${id}`;
 }
 
+function isToolSource(source: unknown): source is ToolSource {
+  const { collection, id } = (source ?? {}) as Partial<Record<keyof ToolSource, unknown>>;
+
+  return typeof collection === 'string' && (typeof id === 'string' || typeof id === 'number');
+}
+
 /** The ids of the tool sources already on a message. */
 export function messageSourceIds(message: UIMessage | undefined): string[] {
   return (message?.parts ?? []).flatMap((part) =>
@@ -42,7 +48,7 @@ export function toolSources<TOOLS extends ToolSet>({
     try {
       const listed = await sources(output, ctx);
 
-      return Array.isArray(listed) ? listed : [];
+      return Array.isArray(listed) ? listed.filter(isToolSource) : [];
     } catch (error) {
       ctx.frogbot.logger.error(
         { error, tool: toolName },
@@ -75,7 +81,7 @@ export function toolSources<TOOLS extends ToolSet>({
           sourceType: 'document',
           id,
           mediaType: 'application/json',
-          title: source.title ?? String(source.id),
+          title: source.title || String(source.id),
           providerMetadata: { frogbot: { collection: source.collection, id: source.id } },
         });
       }

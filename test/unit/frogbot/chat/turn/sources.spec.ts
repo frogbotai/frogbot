@@ -115,6 +115,41 @@ describe('toolSources', () => {
     expect(parts[1]).toMatchObject({ type: 'source', title: 'abc' });
   });
 
+  it('titles a source by its id when the tool gives an empty title', async () => {
+    const { ctx } = makeCtx();
+    const blank = tool('find', () => [{ collection: 'posts', id: 7, title: '' }]);
+    const parts = await run([result('find', {})], { tools: [blank], ctx });
+
+    expect(parts[1]).toMatchObject({ type: 'source', title: '7' });
+  });
+
+  it('skips malformed sources entries and keeps streaming', async () => {
+    const { ctx } = makeCtx();
+    const malformed = tool(
+      'malformed',
+      () =>
+        [
+          null,
+          'posts:1',
+          { collection: 'posts' },
+          { collection: 1, id: 2 },
+          { collection: 'posts', id: {} },
+          { collection: 'posts', id: 3 },
+        ] as never,
+    );
+
+    const parts = await run(
+      [result('malformed', {}), { type: 'text-delta', id: 't', text: 'Answer' }],
+      { tools: [malformed], ctx },
+    );
+
+    expect(parts.map((part) => (part.type === 'source' ? part.id : part.type))).toEqual([
+      'tool-result',
+      'posts:3',
+      'text-delta',
+    ]);
+  });
+
   it('adds nothing for a failed call, a preliminary result or a tool without sources', async () => {
     const { ctx } = makeCtx();
     const error = {

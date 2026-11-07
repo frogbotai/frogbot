@@ -154,6 +154,7 @@ export function ChatViewClient({
         sourceHref={({ collection, id }) =>
           formatAdminURL({
             adminRoute: config.routes.admin,
+            includeBasePath: true,
             path: `/collections/${collection}/${encodeURIComponent(String(id))}`,
           })
         }
