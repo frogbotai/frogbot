@@ -663,7 +663,7 @@ describe('FrogBot admin views', () => {
     expect(html).not.toContain('Hidden');
   });
 
-  it('SettingsView excludes collections hidden from canonical navigation groups', async () => {
+  it('SettingsView lists collections hidden from the sidebar with group false, but not admin.hidden ones', async () => {
     const i18n = {
       t: (key: string) =>
         ({ 'general:collections': 'Collections', 'general:globals': 'Globals' })[key] ?? key,
@@ -672,16 +672,25 @@ describe('FrogBot admin views', () => {
     const element = await SettingsView({
       importMap: {},
       initPageResult: {
-        permissions: { collections: { internal: { read: true }, posts: { read: true } } },
+        permissions: {
+          collections: {
+            hidden: { read: true },
+            posts: { read: true },
+            users: { read: true },
+            media: { read: true },
+          },
+        },
         req: { i18n, user: { id: 'user-1' } },
-        visibleEntities: { collections: ['internal', 'posts'], globals: [] },
+        visibleEntities: { collections: ['media', 'users', 'posts'], globals: [] },
       },
       payload: {
         config: {
           admin: { routes: { account: '/account' }, settings: [] },
           collections: [
-            { admin: { group: false }, labels: { plural: 'Internal' }, slug: 'internal' },
-            { admin: {}, labels: { plural: 'Posts' }, slug: 'posts' },
+            { admin: {}, labels: { plural: 'Media' }, slug: 'media' },
+            { admin: { group: 'Content' }, labels: { plural: 'Posts' }, slug: 'posts' },
+            { admin: { group: false }, labels: { plural: 'Users' }, slug: 'users' },
+            { admin: { hidden: true }, labels: { plural: 'Hidden' }, slug: 'hidden' },
           ],
           routes: { admin: '/admin' },
         },
@@ -692,8 +701,11 @@ describe('FrogBot admin views', () => {
     const content = element.props.children[1].props.children[1].props.children;
     const html = renderToStaticMarkup(content);
 
-    expect(html).toContain('href="/admin/collections/posts"');
-    expect(html).not.toContain('Internal');
+    expect(html).toContain('id="card-posts"');
+    expect(html).toContain('id="card-users"');
+    expect(html).not.toContain('Hidden');
+    expect(html.indexOf('id="card-media"')).toBeLessThan(html.indexOf('id="card-users"'));
+    expect(html.indexOf('id="card-users"')).toBeLessThan(html.indexOf('<h2>Content</h2>'));
   });
 
   it('ChatView prefetches bounded, access-filtered messages for the document route', async () => {

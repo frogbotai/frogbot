@@ -11,7 +11,7 @@ keywords: dashboard, widgets, custom components, admin, react
   release.
 </Warning>
 
-Without `admin.dashboard` or a custom dashboard view, the Admin Panel opens on a dashboard with a card for each collection the user can read. Configuring `admin.dashboard` adds your widgets and layouts to that dashboard. An explicit `admin.components.views.dashboard` always takes precedence over the widget configuration.
+Without `admin.dashboard` or a custom dashboard view, the Admin Panel opens on a Welcome widget, a Recents and Pinned widget, and a card for each collection the user can read and that the sidebar lists. Configuring `admin.dashboard` adds your widgets and layouts to that dashboard. An explicit `admin.components.views.dashboard` always takes precedence over the widget configuration.
 
 ## Defining Widgets
 
@@ -51,8 +51,8 @@ export default buildConfig({
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `widgets` | `Widget[]` | Required | Widgets users can add to the dashboard. The built-in `collections` widget is always available in addition to these. |
-| `defaultLayout` | `WidgetInstance[] \| ({ req }) => WidgetInstance[] \| Promise<WidgetInstance[]>` | One full-width `collections` widget | Layout shown until a user saves their own. The function receives the current `FrogBotRequest`. See [Default Layout](#default-layout). |
+| `widgets` | `Widget[]` | Required | Widgets users can add to the dashboard. The [built-in widgets](#built-in-widgets) are always available in addition to these. |
+| `defaultLayout` | `WidgetInstance[] \| ({ req }) => WidgetInstance[] \| Promise<WidgetInstance[]>` | Full-width `welcome`, `activity`, then `collections` | Layout shown until a user saves their own. The function receives the current `FrogBotRequest`. See [Default Layout](#default-layout). |
 
 Each entry in `widgets` is a `Widget`:
 
@@ -202,9 +202,48 @@ export function SalesSummary({
 
 Generated types constrain `widgetSlug`, `data`, and `width` in `defaultLayout` to the corresponding widget definition.
 
-## Built-in Widget
+## Built-in Widgets
 
-The modular dashboard includes a `collections` widget. When you do not provide `defaultLayout`, the dashboard starts with this widget. Its component path is `@frogbotai/ui/admin/rsc#CollectionCards` when you need to reference it explicitly.
+Every dashboard can use these widgets alongside the ones in `widgets`:
+
+| Slug | Shows | `data` |
+| --- | --- | --- |
+| `welcome` | A greeting for the signed-in user. Full width only. | None |
+| `activity` | Recents and Pinned: the documents the user opened last and the ones they pinned. | `excludedCollections` |
+| `collections` | A card for each collection the sidebar lists. | None |
+| `collection-query` | A short list of one collection's documents. | `title`, `relatedCollection`, `where`, `sortField`, `sortDirection`, `limit` |
+| `upload-dropzone` | A drop target for files. Offered only when an upload collection exists. | `excludedCollections` |
+
+When you do not provide `defaultLayout`, the dashboard shows `welcome`, `activity` and `collections`, each full width. To put the app's main work first, repeat that layout with your own widgets inserted. This layout adds open tasks below the greeting:
+
+```ts
+admin: {
+  dashboard: {
+    widgets: [],
+    defaultLayout: [
+      { widgetSlug: 'welcome', width: 'full' },
+      {
+        widgetSlug: 'collection-query',
+        width: 'full',
+        data: {
+          title: 'Open tasks',
+          relatedCollection: 'tasks',
+          where: { status: { not_equals: 'done' } },
+          sortField: 'dueDate',
+          sortDirection: 'asc',
+          limit: 5,
+        },
+      },
+      { widgetSlug: 'activity', width: 'full' },
+      { widgetSlug: 'collections', width: 'full' },
+    ],
+  },
+},
+```
+
+With SQLite, documents with no `dueDate` sort before dated ones in ascending order, so undated tasks lead this list.
+
+A collection with `admin.group: false` gets no card in `collections` and no entries in `activity`. Settings → Collections still lists it.
 
 ## User Customization
 

@@ -31,7 +31,7 @@ Read the smallest relevant reference before editing:
 | Query through Local, REST, or GraphQL APIs                                    | [QUERIES.md](reference/QUERIES.md)                                 |
 | Add root or collection HTTP routes                                            | [ENDPOINTS.md](reference/ENDPOINTS.md)                             |
 | Configure database, storage, or email services                                | [ADAPTERS.md](reference/ADAPTERS.md)                               |
-| Configure auth, custom admin UI, preview, or localization                     | [ADVANCED.md](reference/ADVANCED.md)                               |
+| Configure auth, admin UI, dashboard, navigation, preview, or localization     | [ADVANCED.md](reference/ADVANCED.md)                               |
 | Author a config-transforming plugin                                           | [PLUGIN-DEVELOPMENT.md](reference/PLUGIN-DEVELOPMENT.md)           |
 | Configure and run agents or runtime skills                                    | [AGENTS.md](reference/AGENTS.md)                                   |
 | Define and register agent tools                                               | [TOOLS.md](reference/TOOLS.md)                                     |

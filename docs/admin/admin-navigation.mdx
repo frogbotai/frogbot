@@ -59,7 +59,7 @@ export const Projects: CollectionConfig = {
 }
 ```
 
-Use `group: null` to list a collection as a top-level link above the sections. Leave `group` undefined to list it directly under the Collections heading, as FrogBot's built-in collections are, provide a string or localized value to list it under a named group label, or use `false` to hide only the navigation link. Both options are listed with the other collection admin settings in [Admin Options](/configuration/collections#admin-options).
+Use `group: null` to list a collection as a top-level link above the sections. Leave `group` undefined to list it directly under the Collections heading, as FrogBot's built-in collections are, provide a string or localized value to list it under a named group label, or use `false` to keep the collection's routes but leave it out of the sidebar, the dashboard's collection cards, Recents and Pinned, and the command palette. Settings → Collections still lists a `false` collection, so it's one click away. Set it on Users and other collections people open rarely. Both options are listed with the other collection admin settings in [Admin Options](/configuration/collections#admin-options).
 
 Component icons receive `size` and `className` props and are added to the generated import map:
 

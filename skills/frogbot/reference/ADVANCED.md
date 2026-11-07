@@ -57,6 +57,52 @@ See the [custom endpoints skill reference](https://raw.githubusercontent.com/fro
 
 ## Custom Admin UI
 
+### First screen and navigation
+
+Shape the first screen and the sidebar around the app's main work in every app you build. Without this, the admin opens on one card per collection, Users included, and the sidebar lists Users beside the real work.
+
+- List the app's main collections in the sidebar. With more than a handful, group them with `admin.group: 'Label'`.
+- Set `admin.group: false` on Users and other collections people open rarely. They leave the sidebar, the dashboard's collection cards, Recents and Pinned, and the command palette, keep their routes, and stay one click away in Settings → Collections. Use `admin.hidden` only for collections nobody should open in the admin.
+- Set `admin.dashboard.defaultLayout` so the first screen shows the work people come for, such as open tasks or new orders, then Recents and Pinned and the collection cards.
+
+```ts
+export const Users: CollectionConfig = {
+  slug: 'users',
+  admin: { group: false },
+  auth: true,
+  fields: [{ name: 'name', type: 'text' }],
+};
+```
+
+```ts
+admin: {
+  dashboard: {
+    widgets: [],
+    defaultLayout: [
+      { widgetSlug: 'welcome', width: 'full' },
+      {
+        widgetSlug: 'collection-query',
+        width: 'full',
+        data: {
+          title: 'Open tasks',
+          relatedCollection: 'tasks',
+          where: { status: { not_equals: 'done' } },
+          sortField: 'dueDate',
+          sortDirection: 'asc',
+          limit: 5,
+        },
+      },
+      { widgetSlug: 'activity', width: 'full' },
+      { widgetSlug: 'collections', width: 'full' },
+    ],
+  },
+},
+```
+
+The built-in widgets are `welcome`, `collection-query` (a short filtered list of one collection), `activity` (Recents and Pinned), `collections` (the cards) and, with an upload collection, `upload-dropzone`. Add your own in `widgets`. A user who saves their own layout from the dashboard editor keeps it, so changes to `defaultLayout` reach only users who haven't saved one or who reset theirs. See the [dashboard docs](https://docs.frogbot.ai/custom-components/dashboard).
+
+### Components and views
+
 Component references are import paths. A path can name an export with `#ExportName`. This example places `Welcome` above the sidebar links using `beforeNavLinks` and registers a reports view:
 
 ```ts
