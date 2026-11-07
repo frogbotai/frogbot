@@ -11,8 +11,8 @@ Only the owner adds labels. A run never adds a stage label, because runs act as 
 | `ticket:research`   | research, then spec | `step1_research.md`, then `step2_spec.md` from a fresh subagent            | a comment that opens with `Your call:`, then the Brief and the cards, as in [Asking the owner](step2_spec.md#asking-the-owner) |
 | `ticket:revise`     | spec revision       | the owner's answers and notes, then a revised `step2_spec.md`              | the revised Brief and the cards still open                                                                                     |
 | `ticket:approve`    | plan                | the owner's answers and approval, then `step3_plan.md`                     | the plan's stages, tier and `touches:`                                                                                         |
-| `ticket:go`         | implement           | code on the ticket branch, `step4_implementation.md`, the tester's verdict | a PR that closes the issue                                                                                                     |
-| `ticket:just-do-it` | implement, no spec  | code and `step4_implementation.md`                                         | a PR that closes the issue                                                                                                     |
+| `ticket:go`         | implement           | code on the ticket branch, `step4_implementation.md`, the review's verdict | a PR that closes the issue                                                                                                     |
+| `ticket:just-do-it` | implement, no spec  | code, `step4_implementation.md`, the review's verdict                      | a PR that closes the issue                                                                                                     |
 | `ticket:automerge`  | none                | nothing. The implement run copies it to the PR after a PASS verdict        | GitHub merges the PR once `ci` passes                                                                                          |
 
 `ticket:approve` with no answer comment accepts every recommended option. `ticket:go` on a ticket with no approved plan plans first, then implements.
@@ -69,10 +69,7 @@ Keep it short enough to read on a phone. Detail belongs in the linked files.
 
 - Branch `claude/ticket-<n>-<slug>` from `main`, in this checkout. Stages, commits and logging follow [Step 4](step4_implementation.md). A bug fix commits its failing test before the fix.
 - Verify with `pnpm ticket verify`. It diffs against the local `main` that `cloud-setup.sh` made, and writes its ledger row to `.idea/_process/ledger.tsv`.
-- Every tier gets a tester: a fresh subagent that sees only the diff, the spec's Brief and requirements, and the rulings they cite, never the implementer's notes. Its job is to break the change against the ticket's intent.
-  - Every finding comes with the command that shows it. A finding without one is dropped, and the tester reports how many it dropped.
-  - A finding outside the ticket's intent is not a fix round. It goes to [findings](#findings).
-  - The tester ends with `PASS`, `PASS+NOTES` or `FAIL`, naming the commit SHA it checked. At most 2 fix rounds, then the PR is opened with the `FAIL` verdict and the owner decides.
+- Before the PR, a fresh subagent reviews the change and tries to break it: see [Review before the PR](#review-before-the-pr). Its verdict, with the commit SHA it checked, goes in the log and the PR.
 - Every PR is squash-merged, and the commit on `main` is the PR title alone, with GitHub's `(#<n>)` added. So the title is the commit subject: a Conventional Commit, as in [Commits](../../CONTRIBUTING.md#commits), for example `fix(ui): keep the board's columns when switching to List`. The `pr-message` check refuses anything else.
 - A PR that changes what someone sees (the marketing site, the admin UI in core or plugins, Sidekick, the docs' styling or layout) embeds before and after screenshots in its description, at 375px and 1280px wide, and in dark mode too where the page has it. See [Screenshots](#screenshots).
 - The description is for review, not history. Start with `Closes <issue URL>`, then a briefing that fits in a minute on a phone, and end with the bare session link on its own line. No "Generated with Claude Code" line, no "Requested by" line, no other attribution. Commits carry no trailers at all (the commit-msg hook strips `Co-authored-by:` and `Claude-Session:`):
@@ -82,9 +79,45 @@ Keep it short enough to read on a phone. Detail belongs in the linked files.
   - **Tradeoffs**: choices made without the owner, each labelled measured, inferred or guessed.
   - **Blast radius**: what else could break, and what checked it.
   - **Screenshots**: for a visual change, the before and after images, labelled by width and theme. Otherwise omit the section.
-  - **Verification**: the verify summary and the tester's verdict with its SHA.
+  - **Verification**: the verify summary and the review line from [Logging the review](#logging-the-review).
   - **Noticed, not done**: findings that didn't meet the bar for an issue. Empty is fine.
 - If the issue has `ticket:automerge` and the verdict is `PASS` on the PR's head, add `ticket:automerge` to the PR. Before pushing anything else to a PR that has the label, remove it. Add it again only after a new `PASS`.
+
+## Review before the PR
+
+Every implement run ends with one review by a fresh subagent that didn't write the code. It sees the diff against `main`, the issue, the spec's Brief and requirements and the rulings they cite, never the implementer's notes. It reviews the code first, then tries to break the change against the ticket's intent. The run picks the review by risk:
+
+| The change                                                                                    | Review                                    | Subagent       | Model  |
+| --------------------------------------------------------------------------------------------- | ----------------------------------------- | -------------- | ------ |
+| `ticket:just-do-it`, and no changed file matches `FULL_TIER` in `scripts/ticket.mjs`          | quick: reads the diff and runs no tests   | `quick-review` | Sonnet |
+| `ticket:go`, light tier                                                                       | full: reviews, then attacks with commands | `tester`       | Opus   |
+| full tier, or a just-do-it diff that matches `FULL_TIER`                                      | full                                      | `tester`       | Opus   |
+| any change that adds stored state, concurrency, parsing of user input, or rewrites user files | full, whatever the tier says              | `tester`       | Opus   |
+
+Why the split: a tester on a large or risky change finds a real bug most of the time, and on a small one it rarely does. The last row is there because path globs miss risky work: a light-tier change that adds a polling cursor or rewrites a user's config file needs the full review too.
+
+The two subagents are defined in `.claude/agents/`, with their model. Start them with only the ticket key, the issue URL and the commit to check. The rules below live in their definitions.
+
+- **Findings are correctness and requirement gaps only.** Style, naming and anything `pnpm check` catches are not findings.
+- **Every finding has evidence.** A behavior finding comes with the command that shows it: a failing test, or a command and its output. A requirement or docs gap comes with `path:line` and the requirement it misses. Anything else is dropped, and the reviewer reports how many it dropped.
+- **A finding outside the ticket's intent is not a fix round.** It goes to [findings](#findings).
+- **The verdict** is `PASS`, `PASS+NOTES` or `FAIL`, naming the commit SHA it checked.
+- **Budget.** The `tester` picks at most 6 attack cases, riskiest first, and stops after about 60 tool calls with what it reached. It runs only the spec files and projects the diff touches plus its own scratch tests, and starts [test services](#test-services) only when a case needs them. `quick-review` stops after about 20 tool calls and runs no tests.
+
+### Fix rounds
+
+- A `FAIL` gets at most 2 fix rounds. Then the PR opens with the `FAIL` verdict and the owner decides.
+- A re-check is a fresh `tester` given only the earlier findings and the fix diff. It re-runs each finding's command and checks the case next to it. It does not review the whole change again.
+- A repro that found a real bug becomes a regression test in the PR.
+- Notes fixed without changing runtime behavior (docs, comments, types) need no re-check. The verdict stays `PASS+NOTES` at the earlier SHA, and the log names the fix commit.
+
+### Logging the review
+
+One line in `step4_implementation.md` and in the PR's **Verification**, so the yield of each kind of review can be counted later:
+
+```markdown
+- Review: tester (Opus) · PASS+NOTES @ 1a2b3c4 · 5 cases · 2 findings fixed, 1 dropped · 1 fix round
+```
 
 ## Test services
 
