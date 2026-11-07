@@ -91,8 +91,9 @@ export async function hasSampleData({
 }
 
 /**
- * Adds three sample projects with tasks, every task assigned to the signed-in user. It deletes
- * nothing and creates no user: the endpoint runs it only on an app with no projects.
+ * Adds three sample projects with tasks, every task assigned to the signed-in user. It creates no
+ * user, and the endpoint runs it only on an app with no projects. If it fails partway it deletes
+ * what it added, so the app is empty again and Seed can be retried.
  */
 export async function seed({
   frogbot,
@@ -102,30 +103,55 @@ export async function seed({
   req: FrogBotRequest;
 }) {
   const assignee = req.user?.id;
+  const created: Array<number | string> = [];
 
-  for (const { tasks, ...data } of PROJECTS) {
-    const project = await frogbot.create({
-      collection: 'projects',
-      data,
-      overrideAccess: true,
-      req,
-    });
+  try {
+    for (const { tasks, ...data } of PROJECTS) {
+      const project = await frogbot.create({
+        collection: 'projects',
+        data,
+        overrideAccess: true,
+        req,
+      });
 
-    for (const { dueInDays, ...task } of tasks) {
-      await frogbot.create({
+      created.push(project.id);
+
+      for (const { dueInDays, ...task } of tasks) {
+        await frogbot.create({
+          collection: 'tasks',
+          data: {
+            ...task,
+            project: project.id,
+            assignee,
+            dueDate:
+              dueInDays === undefined
+                ? undefined
+                : new Date(Date.now() + dueInDays * DAY).toISOString(),
+          },
+          overrideAccess: true,
+          req,
+        });
+      }
+    }
+  } catch (err) {
+    if (created.length > 0) {
+      const project = { in: created };
+
+      await frogbot.delete({
         collection: 'tasks',
-        data: {
-          ...task,
-          project: project.id,
-          assignee,
-          dueDate:
-            dueInDays === undefined
-              ? undefined
-              : new Date(Date.now() + dueInDays * DAY).toISOString(),
-        },
+        where: { project },
+        overrideAccess: true,
+        req,
+      });
+
+      await frogbot.delete({
+        collection: 'projects',
+        where: { id: project },
         overrideAccess: true,
         req,
       });
     }
+
+    throw err;
   }
 }

@@ -134,6 +134,28 @@ describe('projects template seed', () => {
     );
   });
 
+  it('undoes a seed that fails midway, so a retry adds the full sample data', async () => {
+    const { headers } = await signUp(ownerCredentials);
+    const create = booted.frogbot.create.bind(booted.frogbot);
+    let taskCreates = 0;
+
+    vi.spyOn(booted.frogbot, 'create').mockImplementation((args) => {
+      if (args.collection === 'tasks' && ++taskCreates === 3) {
+        return Promise.reject(new Error('connection lost mid-seed'));
+      }
+
+      return create(args);
+    });
+
+    expect((await seed(headers)).status).toBe(500);
+    expect(await counts()).toEqual({ projects: 0, tasks: 0 });
+
+    vi.restoreAllMocks();
+
+    expect((await seed(headers)).status).toBe(200);
+    expect(await counts()).toEqual({ projects: 3, tasks: 12 });
+  });
+
   it('seeds in production too, and refuses a second seed there', async () => {
     const { headers } = await signUp(ownerCredentials);
 
