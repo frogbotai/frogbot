@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   expandToCells,
+  getFloatingRange,
   getRangeDays,
   getVisibleRange,
   layoutLanes,
@@ -50,6 +51,34 @@ describe('calendar core', () => {
       '2026-08-30',
       '2026-08-31',
     ]);
+  });
+
+  it("keeps the viewer's visible days for date-only values, as UTC midnights", () => {
+    const range = getVisibleRange({
+      date: '2026-09-06T05:00:00Z',
+      mode: 'week',
+      timeZone: 'America/Los_Angeles',
+    });
+
+    expect(getFloatingRange(range)).toEqual({
+      end: '2026-09-06T00:00:00.000Z',
+      start: '2026-08-30T00:00:00.000Z',
+      timeZone: 'UTC',
+    });
+  });
+
+  it('reads a yyyy-MM-dd date as that day in the calendar zone', () => {
+    const range = getVisibleRange({
+      date: '2026-09-06',
+      mode: 'day',
+      timeZone: 'America/Los_Angeles',
+    });
+
+    expect(range.start).toBe('2026-09-06T00:00:00.000-07:00');
+  });
+
+  it('snaps on the local clock in half-hour zones', () => {
+    expect(snapTo('2026-09-07T05:40:00.000Z', 60, 'Asia/Kolkata')).toBe('2026-09-07T05:30:00.000Z');
   });
 
   it('expands and clips multi-day events into visible cells', () => {
@@ -106,6 +135,7 @@ describe('useCalendar interactions', () => {
       moveCalendarEvent(event, {
         end: '2026-09-07T15:30:00.000Z',
         key: '2026-09-07',
+        kind: 'time',
         start: '2026-09-07T14:00:00.000Z',
       }),
     ).toEqual({
@@ -113,6 +143,97 @@ describe('useCalendar interactions', () => {
       event,
       start: '2026-09-07T14:00:00.000Z',
     });
+  });
+
+  const toDay = (key: string) => ({
+    end: `${key}T07:00:00.000Z`,
+    key,
+    kind: 'day' as const,
+    start: `${key}T07:00:00.000Z`,
+  });
+
+  const timeZone = 'America/Los_Angeles';
+
+  it('keeps the local time of day when a day cell moves an event', () => {
+    const meeting = { end: '2026-09-05T22:00:00.000Z', id: 'm', start: '2026-09-05T21:00:00.000Z' };
+
+    expect(moveCalendarEvent(meeting, toDay('2026-09-10'), { timeZone })).toMatchObject({
+      end: '2026-09-10T22:00:00.000Z',
+      start: '2026-09-10T21:00:00.000Z',
+    });
+  });
+
+  it('keeps the wall-clock hour when a day move crosses a DST change', () => {
+    const meeting = { end: '2026-10-30T22:00:00.000Z', id: 'm', start: '2026-10-30T21:00:00.000Z' };
+
+    expect(moveCalendarEvent(meeting, toDay('2026-11-03'), { timeZone })).toMatchObject({
+      end: '2026-11-03T23:00:00.000Z',
+      start: '2026-11-03T22:00:00.000Z',
+    });
+  });
+
+  it('shifts a multi-day event by the days between the cell it left and the cell it landed in', () => {
+    const trip = { end: '2026-09-08T18:00:00.000Z', id: 't', start: '2026-09-06T17:00:00.000Z' };
+
+    expect(
+      moveCalendarEvent(trip, toDay('2026-09-09'), { from: '2026-09-08', timeZone }),
+    ).toMatchObject({ end: '2026-09-09T18:00:00.000Z', start: '2026-09-07T17:00:00.000Z' });
+    expect(isCalendarNoopDrop(trip, toDay('2026-09-08'), { from: '2026-09-08', timeZone })).toBe(
+      true,
+    );
+  });
+
+  it('moves a date-only value to noon UTC on the target day', () => {
+    expect(
+      moveCalendarEvent({ id: 'd', start: '2026-09-07T00:00:00.000Z' }, toDay('2026-09-10'), {
+        dateOnly: true,
+      }),
+    ).toMatchObject({ end: '2026-09-10T12:00:00.000Z', start: '2026-09-10T12:00:00.000Z' });
+  });
+
+  it('moves a date-only value dropped on a time slot to noon UTC on that day', () => {
+    expect(
+      moveCalendarEvent(
+        { id: 'd', start: '2026-09-07T12:00:00.000Z' },
+        {
+          end: '2026-09-10T15:00:00.000Z',
+          key: '2026-09-10',
+          kind: 'time',
+          start: '2026-09-10T14:30:00.000Z',
+        },
+        { dateOnly: true },
+      ),
+    ).toMatchObject({ end: '2026-09-10T12:00:00.000Z', start: '2026-09-10T12:00:00.000Z' });
+  });
+
+  it('resizes and creates on the local clock in half-hour zones', () => {
+    const kolkata = { end: '2026-09-07T04:30:00.000Z', id: 'k', start: '2026-09-07T03:30:00.000Z' };
+
+    expect(
+      resizeCalendarEvent({
+        edge: 'end',
+        event: kolkata,
+        instant: '2026-09-07T05:30:00.000Z',
+        snap: 60,
+        timeZone: 'Asia/Kolkata',
+      }).end,
+    ).toBe('2026-09-07T05:30:00.000Z');
+    expect(
+      createCalendarRange(
+        '2026-09-07T03:30:00.000Z',
+        '2026-09-07T04:30:00.000Z',
+        60,
+        'Asia/Kolkata',
+      ),
+    ).toEqual({ end: '2026-09-07T04:30:00.000Z', start: '2026-09-07T03:30:00.000Z' });
+  });
+
+  it('moves an event with no end as a point in time', () => {
+    expect(
+      moveCalendarEvent({ id: 'p', start: '2026-09-05T21:00:00.000Z' }, toDay('2026-09-06'), {
+        timeZone,
+      }),
+    ).toMatchObject({ end: '2026-09-06T21:00:00.000Z', start: '2026-09-06T21:00:00.000Z' });
   });
 
   it('clamps resize to one snapped interval', () => {
@@ -152,6 +273,7 @@ describe('useCalendar interactions', () => {
       isCalendarNoopDrop(event, {
         end: event.end,
         key: '2026-09-06',
+        kind: 'time',
         start: event.start,
       }),
     ).toBe(true);
@@ -159,9 +281,12 @@ describe('useCalendar interactions', () => {
       isCalendarNoopDrop(event, {
         end: '2026-09-06T12:00:00.000Z',
         key: '2026-09-06',
+        kind: 'time',
         start: '2026-09-06T10:30:00.000Z',
       }),
     ).toBe(false);
+    expect(isCalendarNoopDrop(event, toDay('2026-09-06'), { timeZone })).toBe(true);
+    expect(isCalendarNoopDrop(event, toDay('2026-09-07'), { timeZone })).toBe(false);
   });
 
   it('resolves a drop from the final drag event without a prior placement', () => {
@@ -176,6 +301,7 @@ describe('useCalendar interactions', () => {
           slotAt: (clientX, clientY) => ({
             end: '2026-09-10T00:30:00.000Z',
             key: `${clientX}:${clientY}`,
+            kind: 'time',
             start: '2026-09-10T00:00:00.000Z',
           }),
         },
@@ -184,7 +310,27 @@ describe('useCalendar interactions', () => {
     ).toEqual({
       end: '2026-09-10T00:30:00.000Z',
       key: '40:60',
+      kind: 'time',
       start: '2026-09-10T00:00:00.000Z',
     });
+  });
+
+  it('skips an event that ends exactly at the first visible local midnight', () => {
+    const range = getVisibleRange({ date: '2026-03-08', mode: 'week', timeZone });
+    const late = { end: '2026-03-08T08:00:00.000Z', id: 'late', start: '2026-03-08T06:00:00.000Z' };
+
+    expect(expandToCells([late], range)).toEqual([]);
+  });
+
+  it('keeps a timed end on a move when only the start is date-only', () => {
+    const event = { end: '2026-09-08T18:30:00.000Z', id: 'c', start: '2026-09-07T12:00:00.000Z' };
+
+    expect(
+      moveCalendarEvent(event, toDay('2026-09-09'), {
+        dateOnly: true,
+        from: '2026-09-07',
+        timeZone: 'UTC',
+      }),
+    ).toEqual({ end: '2026-09-10T18:30:00.000Z', event, start: '2026-09-09T12:00:00.000Z' });
   });
 });

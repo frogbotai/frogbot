@@ -1,9 +1,10 @@
 import { getColumns, renderTable } from '@payloadcms/ui/rsc';
 import { attachRegisteredFrogBot } from 'frogbot/internal';
-import type {
-  AdminViewServerProps,
-  SanitizedFieldPermissions,
-  SanitizedFieldsPermissions,
+import {
+  type AdminViewServerProps,
+  getFieldByPath,
+  type SanitizedFieldPermissions,
+  type SanitizedFieldsPermissions,
 } from 'payload';
 import { getFromImportMap, transformColumnsToSearchParams } from 'payload/shared';
 import type { ComponentType } from 'react';
@@ -17,7 +18,12 @@ import {
 } from '../preferences.js';
 import { CalendarPreference } from './CalendarPreference.client.js';
 import { CalendarViewClient } from './CalendarView.client.js';
-import { type CalendarPreferenceValue, resolveCalendarDate, resolveCalendarMode } from './data.js';
+import {
+  type CalendarPreferenceValue,
+  isDateOnly,
+  resolveCalendarDate,
+  resolveCalendarMode,
+} from './data.js';
 
 function canUpdateField(fields: SanitizedFieldsPermissions | undefined, path: string): boolean {
   let fieldPermission: SanitizedFieldPermissions | undefined;
@@ -182,6 +188,17 @@ export async function CalendarView(input: AdminViewServerProps) {
         collectionSlug={collectionSlug}
         color={calendar.color}
         date={date}
+        dateOnly={isDateOnly(
+          getFieldByPath({ fields: collectionConfig.flattenedFields, path: calendar.start })?.field,
+        )}
+        endDateOnly={
+          calendar.end
+            ? isDateOnly(
+                getFieldByPath({ fields: collectionConfig.flattenedFields, path: calendar.end })
+                  ?.field,
+              )
+            : false
+        }
         filter={filter}
         mode={mode}
         modes={calendar.modes}

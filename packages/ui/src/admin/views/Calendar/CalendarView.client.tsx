@@ -20,7 +20,8 @@ import type { ComponentType } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Calendar } from '../../../calendar/Calendar.js';
-import { getVisibleRange } from '../../../calendar/core/index.js';
+import { getFloatingRange, getVisibleRange } from '../../../calendar/core/index.js';
+import { useBrowserTimeZone } from '../../../calendar/useBrowserTimeZone.js';
 import { FieldCell } from '../../fields/FieldCell/index.client.js';
 import { appendQuery, getPath, setPath } from '../cells.js';
 import { getViewCardColumns } from '../preferences.js';
@@ -112,7 +113,9 @@ export function CalendarViewClient({
   collectionSlug,
   color,
   date,
+  dateOnly,
   end,
+  endDateOnly,
   Event,
   filter,
   mode,
@@ -125,7 +128,9 @@ export function CalendarViewClient({
   collectionSlug: string;
   color?: string;
   date: string;
+  dateOnly?: boolean;
   end?: string;
+  endDateOnly?: boolean;
   Event?: ComponentType<{ row: Row }>;
   filter?: Record<string, unknown>;
   mode: CalendarMode;
@@ -149,7 +154,9 @@ export function CalendarViewClient({
   const [truncated, setTruncated] = useState(false);
   const [createRange, setCreateRange] = useState<{ end: string; start: string }>();
   const [CreateDrawer, , createDrawer] = useDocumentDrawer({ collectionSlug });
-  const range = getVisibleRange({ date, mode });
+  const timeZone = useBrowserTimeZone();
+  const zonedRange = timeZone ? getVisibleRange({ date, mode, timeZone }) : undefined;
+  const range = zonedRange && dateOnly ? getFloatingRange(zonedRange) : zonedRange;
   const whereKey = JSON.stringify(query.where ?? null);
   const searchKey = String(query.search ?? '');
   const normalizeRow = (row: Record<string, unknown>): Row => ({
@@ -161,6 +168,7 @@ export function CalendarViewClient({
   });
 
   const load = async (signal?: AbortSignal) => {
+    if (!range) return;
     const params = new URLSearchParams({ depth: '1', limit: '1000', pagination: 'false' });
     const rangeWhere = {
       and: [
@@ -212,7 +220,7 @@ export function CalendarViewClient({
     });
 
     return () => controller.abort();
-  }, [collectionSlug, date, mode, searchKey, whereKey]);
+  }, [collectionSlug, date, mode, searchKey, timeZone, whereKey]);
 
   const navigate = (key: 'date' | 'mode', value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -242,7 +250,7 @@ export function CalendarViewClient({
 
     setRows((current) =>
       current.map((item) =>
-        item.id === row.id ? { ...item, end: nextEnd, start: nextStart } : item,
+        item.id === row.id ? { ...item, ...(end ? { end: nextEnd } : {}), start: nextStart } : item,
       ),
     );
   };
@@ -255,42 +263,50 @@ export function CalendarViewClient({
             Showing the first 1000 events in this range.
           </div>
         ) : null}
-        <Calendar
-          canEdit={() => canUpdate}
-          date={date}
-          events={rows}
-          mode={mode}
-          modes={modes}
-          onCreate={
-            canCreate
-              ? (value) => {
-                  setCreateRange(value);
-                  createDrawer.openDrawer();
+        {timeZone ? (
+          <Calendar
+            canEdit={() => canUpdate}
+            canResize={Boolean(end)}
+            date={date}
+            dateOnly={dateOnly}
+            endDateOnly={endDateOnly}
+            events={rows}
+            mode={mode}
+            modes={modes}
+            onCreate={
+              canCreate
+                ? (value) => {
+                    setCreateRange(value);
+                    createDrawer.openDrawer();
+                  }
+                : undefined
+            }
+            onMove={({ end: nextEnd, event, start: nextStart }) =>
+              request(event, nextStart, nextEnd)
+            }
+            onNavigate={(value) => navigate('date', value)}
+            onResize={({ end: nextEnd, event, start: nextStart }) =>
+              request(event, nextStart, nextEnd)
+            }
+            onSetMode={(value) => navigate('mode', value)}
+            renderEvent={(row) => (
+              <CalendarDocumentEvent
+                Event={Event}
+                cardColumns={cardColumns}
+                collectionConfig={collectionConfig}
+                collectionSlug={collectionSlug}
+                onSave={(saved) =>
+                  setRows((current) =>
+                    current.map((item) => (item.id === saved.id ? normalizeRow(saved) : item)),
+                  )
                 }
-              : undefined
-          }
-          onMove={({ end: nextEnd, event, start: nextStart }) => request(event, nextStart, nextEnd)}
-          onNavigate={(value) => navigate('date', value)}
-          onResize={({ end: nextEnd, event, start: nextStart }) =>
-            request(event, nextStart, nextEnd)
-          }
-          onSetMode={(value) => navigate('mode', value)}
-          renderEvent={(row) => (
-            <CalendarDocumentEvent
-              Event={Event}
-              cardColumns={cardColumns}
-              collectionConfig={collectionConfig}
-              collectionSlug={collectionSlug}
-              onSave={(saved) =>
-                setRows((current) =>
-                  current.map((item) => (item.id === saved.id ? normalizeRow(saved) : item)),
-                )
-              }
-              row={row}
-            />
-          )}
-          snap={snap}
-        />
+                row={row}
+              />
+            )}
+            snap={snap}
+            timeZone={timeZone}
+          />
+        ) : null}
         <CreateDrawer
           initialData={
             createRange

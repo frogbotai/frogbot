@@ -21,6 +21,7 @@ export function Calendar<T extends CalendarEvent>(props: CalendarProps<T>) {
         modes={props.modes}
         navigate={navigation.navigate}
         setMode={navigation.setMode}
+        timeZone={props.timeZone}
       />
       {props.mode === 'month' ? <MonthGrid {...props} /> : <TimeGrid {...props} />}
     </section>

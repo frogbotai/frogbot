@@ -15,7 +15,7 @@ See the complete [Collection views reference](/configuration/collections#collect
 | `slug` | `string` | No; defaults to `'calendar'` | Unique normalized route and preference key. The first view uses the collection's root route. |
 | `label` | `string` | No; defaults to `'Calendar'` | Label shown in the view switcher. |
 | `start` | `string` | Yes | Dot path to the date field used as each event's start. |
-| `end` | `string` | No | Dot path to the date field used as each event's end. Without it, events use the start as their end. |
+| `end` | `string` | No | Dot path to the date field used as each event's end. Without it, events use the start as their end and can't be resized. |
 | `color` | `string` | No | Dot path to a select or radio field whose value colors each event. |
 | `modes` | `CalendarMode[]` | No; `['month', 'week', 'day']` | Available modes in display order. The first mode is the default. |
 | `snap` | `number` | No | Minute interval used when creating, moving, or resizing events. |
@@ -62,15 +62,21 @@ export const Pipelines: CollectionConfig = {
     { name: 'title', type: 'text', required: true },
     { name: 'stage', type: 'select', options: ['Backlog', 'Review', 'Done'] },
     { name: 'owner', type: 'relationship', relationTo: 'users' },
-    { name: 'dueDate', type: 'date' },
+    { name: 'dueDate', type: 'date', admin: { date: { pickerAppearance: 'dayOnly' } } },
   ],
 }
 ```
 
 The `start` and `end` paths must resolve to date fields. Nested date fields use dot paths such as `schedule.startsAt`.
 
+## Time zones and all-day dates
+
+The calendar shows events in the viewer's browser time zone: a meeting saved at `2026-09-06T02:00:00Z` shows at 7pm on September 5 for someone in Los Angeles. An event that crosses midnight shows in every day it touches. Dragging an event to another day in month view, or in the all-day row, keeps its time of day, even across a daylight-saving change.
+
+A `start` field with `pickerAppearance` `'dayOnly'` or `'monthOnly'` is a date, not a moment. Its events show in the all-day row on their saved date, the same day for every viewer, and moving or creating one saves noon UTC on the day. Every other date field is a moment shown at its time of day, including a plain `type: 'date'` field, because it can hold any instant, such as `createdAt` or a timestamp a hook writes. The `end` field is read the same way on its own, so a date-only `start` with a timed `end` keeps the end's time when an event moves.
+
 Calendar queries are limited to the visible range and include the collection view's filter and current search. A range displays at most 1000 events.
 
-Dragging or resizing an event performs a normal collection update, including access checks, validation, and hooks. Creating a range opens the document drawer with the configured date fields prefilled. Users without update access can view events but cannot move or resize them.
+Dragging or resizing an event performs a normal collection update, including access checks, validation, and hooks. When a day has more events than fit in month view, **+N more** opens a list of all of them. Creating a range opens the document drawer with the configured date fields prefilled. Users without update access can view events but cannot move or resize them.
 
 The selected mode, date, and event fields are saved per user and view. URL values take precedence over saved preferences, which take precedence over the configured defaults.
