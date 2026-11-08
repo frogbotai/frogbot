@@ -9,7 +9,7 @@ import {
 import { formatLabels } from 'payload';
 
 import { bindCompiledAccess, compiledAccess, isCompiledAccess } from './allow.js';
-import { attachRoleResolver, defaultRoleResolver, resolveRequestRoles } from './resolve.js';
+import { defaultRoleResolver, resolveRequestRoles, withRoleResolver } from './resolve.js';
 import type { NormalizedRole, RoleResolver, RolesPluginOptions } from './types.js';
 import { normalizeRoles } from './types.js';
 
@@ -384,7 +384,7 @@ const rolesPluginDefinition = definePlugin<RolesResolvedOptions>({
     const result = {
       ...config,
       collections,
-      onInit: [...onInitList(config), (frogbot) => attachRoleResolver(frogbot, resolver)],
+      custom: withRoleResolver(config.custom, resolver),
     } as FrogBotConfig;
 
     validateCompiledAccess(result, roleSlugs);

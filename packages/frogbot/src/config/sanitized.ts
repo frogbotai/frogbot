@@ -38,6 +38,8 @@ export type FrogBotSanitizedConfig = {
   typescript?: {
     autoGenerate?: boolean;
   };
+  /** The config's `custom`, unchanged: server-only data plugins keep for themselves. */
+  custom?: Record<string, unknown>;
 
   /** @internal — not part of the public API. */
   _internal: {
