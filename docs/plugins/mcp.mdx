@@ -37,7 +37,7 @@ Configure your MCP client to send Streamable HTTP requests to `/api/mcp` with a 
 Authorization: Bearer fb_...
 ```
 
-The API key is tried first. Without a valid key, the request goes through the same sign-in as the rest of the app: every [auth strategy](/authentication/custom-strategies) on your auth collections, and the built-in login token. The first one that returns a user signs the request in, and a strategy that throws is logged and skipped. When nobody signs in, the response is `401`.
+The API key is tried first. Without a valid key, the request goes through the same sign-in as the rest of the app: every [auth strategy](/authentication/custom-strategies) on your auth collections, and the built-in login token. The first one that returns a user signs the request in, and a strategy that throws is logged and skipped. When nobody signs in, the response is `401`. A revoked or unknown key doesn't stop the request there: sent with a valid session cookie, it signs in as the cookie's user.
 
 ### Sign in with your own OAuth server
 
@@ -81,6 +81,8 @@ Every `401` from `/api/mcp` then carries the link, so the client can find your s
 HTTP/1.1 401 Unauthorized
 WWW-Authenticate: Bearer resource_metadata="https://app.example.com/.well-known/oauth-protected-resource"
 ```
+
+Your strategy must set `collection` on the user it returns, as above. FrogBot doesn't fill it in, so a user without one fails every access rule that checks `req.user.collection`, over MCP as over REST.
 
 Running the OAuth server and serving the metadata document are up to your app. The strategy also signs REST and admin requests in, as any strategy on the collection does.
 
@@ -158,7 +160,7 @@ FrogBot handles authorization itself, so there's no option to replace it.
 | --- | --- | --- |
 | `collections` | `object` | Map keyed by collection slug: `description`, `tools` (turn built-in tools off with `false`, reword them, or turn on auth tools with `true`) and `overrideResponse`. |
 | `tools` | `array` | FrogBot tools, piece actions and piece instances to serve. See [Tools](#tools). |
-| `resourceMetadataURL` | `string` | Absolute `http(s)` URL of your OAuth protected resource metadata, sent on every `401` as `WWW-Authenticate: Bearer resource_metadata="<url>"`. Anything else throws at startup. See [Sign in with your own OAuth server](#sign-in-with-your-own-oauth-server). |
+| `resourceMetadataURL` | `string` | Absolute `http(s)` URL of your OAuth protected resource metadata, sent on every `401` as `WWW-Authenticate: Bearer resource_metadata="<url>"`. Anything else, or a URL containing `"` or `\`, throws at startup. See [Sign in with your own OAuth server](#sign-in-with-your-own-oauth-server). |
 | `prompts` | `object` | Custom prompts, keyed by name. |
 | `resources` | `object` | Custom resources, keyed by name. |
 | `disabled` | `boolean` | Skip registering the endpoint. |

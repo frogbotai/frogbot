@@ -45,7 +45,9 @@ export async function authorizeMcp({
     user = null;
   }
 
-  if (!user) {
+  if (user) {
+    user = { ...user, collection: user.collection ?? collection };
+  } else {
     const headers = new Headers(req.headers);
 
     headers.set('DisableAutologin', 'true');
@@ -65,7 +67,7 @@ export async function authorizeMcp({
     throw new UnauthorizedError();
   }
 
-  req.user = { ...user, collection: user.collection ?? collection };
+  req.user = user as PayloadRequest['user'];
 
   const internal = new Set(
     req.payload.config.collections.filter(isInternalCollection).map(({ slug }) => slug),

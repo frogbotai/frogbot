@@ -471,9 +471,11 @@ export function definePiece<const T extends PieceDefinition>(
 function actionAnnotations({ annotations, idempotent }: PieceActionDefinition): {
   annotations?: ToolAnnotations;
 } {
-  const merged = {
+  const merged: ToolAnnotations = {
     ...(idempotent === undefined ? {} : { idempotentHint: idempotent }),
-    ...annotations,
+    ...Object.fromEntries(
+      Object.entries(annotations ?? {}).filter(([, value]) => value !== undefined),
+    ),
   };
 
   return Object.keys(merged).length === 0 ? {} : { annotations: merged };

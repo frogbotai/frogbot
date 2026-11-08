@@ -143,7 +143,7 @@ describe('authorizeMcp', () => {
       expect(headers.get('DisableAutologin')).toBe('true');
     });
 
-    it('give a user without a collection the API-key auth collection', async () => {
+    it('leave a user without a collection without one, as REST does', async () => {
       const { frogbot, request, strategy } = setup();
       const req = request(bearer);
 
@@ -151,7 +151,7 @@ describe('authorizeMcp', () => {
 
       await authorizeMcp({ collection: 'users', strategy, pluginConfig, req });
 
-      expect(req).toMatchObject({ user: { id: 'user-2', collection: 'users' } });
+      expect(req.user).toEqual({ id: 'user-2' });
     });
 
     it('run only after the API key, and not when it signs in', async () => {

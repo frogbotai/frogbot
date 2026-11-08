@@ -350,11 +350,18 @@ describe('MCP plugin tools', () => {
     '/.well-known/oauth-protected-resource',
     'ftp://app.example.com/meta',
     'javascript:alert(1)',
-    'https://app"example.com/.well-known/oauth-protected-resource',
   ])('rejects resourceMetadataURL %s', (resourceMetadataURL) => {
     expect(() => mcpPlugin({ resourceMetadataURL })).toThrow(
       '[plugin-mcp] resourceMetadataURL must be an absolute http(s) URL',
     );
+  });
+
+  it('rejects a resourceMetadataURL that would break the quoted WWW-Authenticate value', () => {
+    expect(() =>
+      mcpPlugin({
+        resourceMetadataURL: 'https://app"example.com/.well-known/oauth-protected-resource',
+      }),
+    ).toThrow('[plugin-mcp] resourceMetadataURL must not contain " or \\');
   });
 
   it('accepts an absolute http(s) resourceMetadataURL', async () => {

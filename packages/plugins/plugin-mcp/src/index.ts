@@ -102,5 +102,9 @@ function toResourceMetadataURL(value: string): string {
     throw new Error('[plugin-mcp] resourceMetadataURL must be an absolute http(s) URL');
   }
 
+  if (/["\\]/.test(url.href)) {
+    throw new Error('[plugin-mcp] resourceMetadataURL must not contain " or \\');
+  }
+
   return url.href;
 }
