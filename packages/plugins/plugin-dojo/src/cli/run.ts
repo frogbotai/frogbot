@@ -7,6 +7,7 @@ import type { DeployConfig, DeployContext, DeployIO, PreflightIssue } from 'frog
 import { DeployError, loadConfig, processDeployIO, runDeploy } from 'frogbot/internal';
 
 import { dojoTarget } from '../deploy.js';
+import { type AppInfo, appInfo, refusedApp } from './appInfo.js';
 import { nameTaken, toSlug } from './appSlug.js';
 import type { ShareArchive } from './archive.js';
 import { createArchive } from './archive.js';
@@ -14,6 +15,7 @@ import { authPath } from './auth.js';
 import { askData } from './data/ask.js';
 import type { DataInventory } from './data/inventory.js';
 import { describeData, takeInventory } from './data/inventory.js';
+import { askReplace, replaceMessages } from './data/replace.js';
 import { formatBytes, uploadData } from './data/upload.js';
 import type { DojoClient } from './dojo.js';
 import { createDojo, dojoError, dojoMessage, followBuild, segment } from './dojo.js';
@@ -33,10 +35,11 @@ import { sealKeys } from './seal.js';
 import { chooseWorkspace } from './workspaces.js';
 
 const usage = (program: string) =>
-  `Usage: ${/dojo$/.test(program) ? `${program} apps share` : `${program} deploy dojo`} [--data | --no-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys]`;
+  `Usage: ${/dojo$/.test(program) ? `${program} apps share` : `${program} deploy dojo`} [--data | --no-data | --replace-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys]`;
 
 type ShareFlags = {
   data?: boolean;
+  replaceData: boolean;
   workspace?: string;
   name?: string;
   keys: boolean;
@@ -44,8 +47,6 @@ type ShareFlags = {
   yes: boolean;
   updateKeys: boolean;
 };
-
-type AppInfo = { started: boolean; level: 'editor' | 'owner' };
 
 function parseShareArgs(argv: string[], program: string): ShareFlags {
   let parsed;
@@ -55,6 +56,7 @@ function parseShareArgs(argv: string[], program: string): ShareFlags {
       args: argv,
       options: {
         data: { type: 'boolean' },
+        'replace-data': { type: 'boolean', default: false },
         workspace: { type: 'string' },
         name: { type: 'string' },
         keys: { type: 'boolean', default: true },
@@ -84,6 +86,7 @@ function parseShareArgs(argv: string[], program: string): ShareFlags {
 
   return {
     data: values.data,
+    replaceData: values['replace-data'],
     workspace: values.workspace,
     name: values.name,
     keys: values.keys,
@@ -152,17 +155,22 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
   }
 
   const dojo = createDojo(io);
-  const { started, level }: AppInfo = link
+  const { started, level, slug }: AppInfo = link
     ? await appInfo(dojo, link.appId)
     : { started: false, level: 'owner' };
 
   const editor = level === 'editor';
 
-  if (started && flags.data) {
-    say(io, '[frogbot] Data comes only with the first share; sharing code only.');
-  }
+  const replacing = started && flags.replaceData;
 
-  const data = started ? undefined : await askData({ data: flags.data, root, config, io });
+  if (started && flags.data && !replacing) say(io, `[frogbot] ${replaceMessages.firstShareOnly}`);
+
+  const data = replacing
+    ? await askReplace({ slug: slug ?? String(link?.appId), level, root, config, io })
+    : started
+      ? undefined
+      : await askData({ data: flags.replaceData || flags.data, root, config, io });
+
   let archive: ShareArchive | undefined;
 
   try {
@@ -213,7 +221,7 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
         );
       }
 
-      await uploadData({ dojo, appId, inventory: data, io });
+      await uploadData({ dojo, appId, inventory: data, io, replace: replacing });
     }
 
     say(io, `[frogbot] ${archive.summary}`);
@@ -225,7 +233,7 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
       archive,
       keys: data && secret ? [...keys, { name: 'FROGBOT_SECRET', value: secret }] : keys,
       updateKeys: !editor && flags.updateKeys,
-      data: started ? undefined : Boolean(data),
+      data: replacing ? 'replace' : started ? undefined : Boolean(data),
     });
 
     const build = await followBuild({
@@ -337,18 +345,6 @@ function checkSkipKeys(skipKey: string[], keys: EnvKey[]): void {
   );
 }
 
-async function appInfo(dojo: DojoClient, appId: string | number): Promise<AppInfo> {
-  const response = await dojo.request(`/api/apps/${segment(appId)}`);
-
-  await refusedApp(appId, response);
-
-  if (!response.ok) throw new ShareError(`Couldn't read the app: ${await dojoMessage(response)}`);
-
-  const app = (await response.json()) as { started?: boolean; level?: string };
-
-  return { started: app.started === true, level: app.level === 'editor' ? 'editor' : 'owner' };
-}
-
 async function appName(root: string): Promise<string> {
   const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8')) as { name?: unknown };
 
@@ -447,14 +443,6 @@ async function sealedKeys(dojo: DojoClient, keys: EnvKey[]): Promise<SealedKeys>
   return sealKeys(Object.fromEntries(keys.map((key) => [key.name, key.value])), sealingKey);
 }
 
-async function refusedApp(appId: string | number, response: Response): Promise<void> {
-  if (response.status !== 403 && response.status !== 404) return;
-
-  throw new ShareError(
-    `You can't share to the app in ${linkPath} (${appId}): ${await dojoMessage(response)} Delete ${linkPath} to share as a new app.`,
-  );
-}
-
 async function deploy({
   dojo,
   io,
@@ -470,7 +458,7 @@ async function deploy({
   archive: ShareArchive;
   keys: EnvKey[];
   updateKeys: boolean;
-  data: boolean | undefined;
+  data: boolean | 'replace' | undefined;
 }): Promise<string | number> {
   const keysPart =
     keys.length > 0

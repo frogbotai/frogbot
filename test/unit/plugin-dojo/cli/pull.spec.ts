@@ -3,6 +3,7 @@ import { lstat, readdir, readFile, rm, stat, symlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 
+import { strToU8, zipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 
 import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
@@ -75,7 +76,7 @@ describe('frogbot pull', () => {
     expect(result.code).toBe(0);
     expect(dojo.paths()).toEqual([
       'GET /api/users/me',
-      'GET /api/apps/deals',
+      'GET /api/apps/deals/cli',
       'GET /api/apps/7/source',
     ]);
     expect(await readdir(cwd)).toEqual(['deals']);
@@ -130,7 +131,7 @@ describe('frogbot pull', () => {
     dojo.source = await appTarball();
 
     expect((await run(['7'])).code).toBe(0);
-    expect(dojo.paths()).toContain('GET /api/apps/7');
+    expect(dojo.paths()).toContain('GET /api/apps/7/cli');
     expect(await readdir(cwd)).toEqual(['deals']);
   });
 
@@ -141,7 +142,7 @@ describe('frogbot pull', () => {
       const result = await run(args);
 
       expect(result.code).toBe(2);
-      expect(result.stderr()).toEqual(['[frogbot] Usage: frogbot apps pull <app>']);
+      expect(result.stderr()).toEqual(['[frogbot] Usage: frogbot apps pull <app> [--data]']);
       expect(dojo.requests).toEqual([]);
     },
   );
@@ -255,5 +256,83 @@ describe('frogbot pull', () => {
     expect(result.code).toBe(1);
     expect(result.stderr()).toHaveLength(1);
     expect(await readdir(cwd)).toEqual([]);
+  });
+
+  describe('--data', () => {
+    const zipOf = (files: Record<string, string>) =>
+      Buffer.from(
+        zipSync(Object.fromEntries(Object.entries(files).map(([n, t]) => [n, strToU8(t)]))),
+      );
+
+    it("AC 3: an owner's pull writes the database, the files and the app's secret", async () => {
+      const { cwd, dojo, run } = await setup();
+
+      dojo.level = 'owner';
+      dojo.source = await appTarball();
+      dojo.keys.set(7, { FROGBOT_SECRET: 'a'.repeat(48) });
+
+      dojo.dataZip = zipOf({
+        'frogbot.db': 'SQLite format 3\0',
+        'media/a.png': 'png',
+        'media/sizes/a-200.webp': 'webp',
+      });
+
+      const result = await run(['deals', '--data']);
+      const dest = join(cwd, 'deals');
+
+      expect(result.code).toBe(0);
+      expect(dojo.paths()).toEqual([
+        'GET /api/users/me',
+        'GET /api/apps/deals/cli',
+        'GET /api/apps/7/source',
+        'GET /api/apps/7/data',
+      ]);
+      expect(dojo.requests[1].search).toBe('?secret=1');
+      expect(await readFile(join(dest, 'frogbot.db'), 'utf8')).toBe('SQLite format 3\0');
+      expect(await readFile(join(dest, 'media/a.png'), 'utf8')).toBe('png');
+      expect(await readFile(join(dest, 'media/sizes/a-200.webp'), 'utf8')).toBe('webp');
+      expect(await readFile(join(dest, '.env'), 'utf8')).toBe(
+        `DATABASE_URL=file:./frogbot.db\nFROGBOT_SECRET=${'a'.repeat(48)}\n`,
+      );
+      await expect(stat(join(dest, '.frogbot-data.zip'))).rejects.toThrow();
+      expect(result.stdout()[0]).toBe(
+        '[frogbot] Pulled deals into ./deals with its data: the database (16 B) and 2 files.',
+      );
+    });
+
+    it("AC 3: an editor's pull prints the 403, writes no data and keeps the code", async () => {
+      const { cwd, dojo, run } = await setup();
+
+      dojo.source = await appTarball();
+      dojo.keys.set(7, { FROGBOT_SECRET: 'a'.repeat(48) });
+      dojo.dataZip = zipOf({ 'frogbot.db': 'SQLite format 3\0' });
+
+      const result = await run(['deals', '--data']);
+      const dest = join(cwd, 'deals');
+
+      expect(result.code).toBe(0);
+      await expect(stat(join(dest, 'frogbot.db'))).rejects.toThrow();
+      expect(await readFile(join(dest, '.env'), 'utf8')).not.toContain('a'.repeat(48));
+      expect(result.stdout().slice(0, 2)).toEqual([
+        "[frogbot] Only this app's Admins can download its data. Pulling the code only.",
+        '[frogbot] Pulled deals into ./deals. It starts with an empty database; production keys stay on Dojo.',
+      ]);
+    });
+
+    it('refuses a zip naming a file outside the folder, leaving nothing', async () => {
+      const { cwd, dojo, run } = await setup();
+
+      dojo.level = 'owner';
+      dojo.source = await appTarball();
+      dojo.dataZip = zipOf({ 'frogbot.db': 'x', '../escape.txt': 'bad' });
+
+      const result = await run(['deals', '--data']);
+
+      expect(result.code).toBe(1);
+      expect(result.stderr()).toEqual([
+        "[frogbot] Couldn't unpack the app's data: it names a file outside the folder: ../escape.txt.",
+      ]);
+      expect(await readdir(cwd)).toEqual([]);
+    });
   });
 });

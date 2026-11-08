@@ -232,7 +232,7 @@ describe('frogbot share: bringing data', () => {
 
     expect(flagged.code).toBe(0);
     expect(flagged.stdout()[0]).toBe(
-      '[frogbot] Data comes only with the first share; sharing code only.',
+      "[frogbot] Data comes only with the first share. To replace the live data with this computer's, rerun with --replace-data.",
     );
     expect(app.copies).toEqual([]);
     expect(dataRequests()).toEqual([]);
@@ -379,5 +379,76 @@ describe('frogbot share: bringing data', () => {
     expect(result.code).toBe(2);
     expect(result.stderr()[0]).toContain('Use --data or --no-data, not both.');
     expect(dojo.requests).toEqual([]);
+  });
+});
+
+describe('frogbot share --replace-data', () => {
+  const started = async () => {
+    const setupResult = await setup();
+
+    expect((await setupResult.run(['--no-data'])).code).toBe(0);
+
+    setupResult.dojo.data.started = true;
+
+    const slug = setupResult.dojo.projects[0].slug;
+    const before = setupResult.dojo.requests.length;
+    const after = () => setupResult.dojo.requests.slice(before);
+
+    return { ...setupResult, slug, after };
+  };
+
+  const confirmText = (slug: string) =>
+    `This replaces all of ${slug}'s live data with this computer's (${summary}). Anything written live since will be lost. Type ${slug} to confirm:`;
+
+  it('AC 4: without a terminal it exits 1 and sends nothing', async () => {
+    const { run, after } = await started();
+    const result = await run(['--replace-data']);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr()).toContain(
+      '[frogbot] Replacing live data needs a person at a terminal.',
+    );
+    expect(after().filter(({ path }) => path.includes('/data-uploads'))).toEqual([]);
+    expect(after().some(({ path }) => path.endsWith('/deployments'))).toBe(false);
+  });
+
+  it('AC 4: an editor gets the refusal and uploads nothing', async () => {
+    const { dojo, run, after } = await started();
+
+    dojo.level = 'editor';
+
+    const result = await run(['--replace-data'], { isTTY: true, text: 'whatever' });
+
+    expect(result.code).toBe(1);
+    expect(result.stderr()).toContain(
+      "[frogbot] Only this app's Admins can replace its live data.",
+    );
+    expect(result.asked).toEqual([]);
+    expect(after().filter(({ path }) => path.includes('/data-uploads'))).toEqual([]);
+  });
+
+  it("req. 8: an owner who types the app's name replaces the data with the new version", async () => {
+    const { dojo, run, slug, after, uploadedDeals } = await started();
+    const result = await run(['--replace-data'], { isTTY: true, text: slug });
+
+    expect(result.code).toBe(0);
+    expect(result.asked).toEqual([confirmText(slug)]);
+
+    const uploads = after().filter(({ path }) => path.endsWith('/data-uploads'));
+
+    expect(uploads.length).toBeGreaterThan(0);
+    expect(uploads.every(({ body }) => JSON.parse(body.toString()).replace === true)).toBe(true);
+    expect(dojo.data.sent.at(-1)).toBe('replace');
+    expect(await uploadedDeals()).toBe(42);
+    expect(dojo.opened.at(-1)?.values.FROGBOT_SECRET).toBe('local-secret-0123456789');
+  });
+
+  it('a wrong name replaces nothing', async () => {
+    const { run, after } = await started();
+    const result = await run(['--replace-data'], { isTTY: true, text: 'deals?' });
+
+    expect(result.code).toBe(1);
+    expect(result.stderr()[0]).toContain('nothing was replaced');
+    expect(after().filter(({ path }) => path.includes('/data-uploads'))).toEqual([]);
   });
 });

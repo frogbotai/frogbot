@@ -51,8 +51,8 @@ npx @frogbotai/plugin-dojo apps pull deals
 | `members add` | `<email>`, `--role owner\|member`, `--workspace` | Adds someone by email; they join when they sign in with it. |
 | `members role` | `<email> <role>`, `--workspace` | Changes a member's role. |
 | `members remove` | `<email>`, `--workspace`, `--yes` | Removes a member, or yourself. |
-| `apps share` | `--data`, `--no-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys` | Uploads the app in this folder to Dojo, builds it and prints its live URL. See [`dojo apps share`](/getting-started/cli#dojo-apps-share). |
-| `apps pull` | `<app>` | Downloads an app you own or edit into a new folder. See [`dojo apps pull`](/getting-started/cli#dojo-apps-pull). |
+| `apps share` | `--data`, `--no-data`, `--replace-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys` | Uploads the app in this folder to Dojo, builds it and prints its live URL. See [`dojo apps share`](/getting-started/cli#dojo-apps-share). |
+| `apps pull` | `<app>`, `--data` | Downloads an app you own or edit into a new folder; owners can bring its data with `--data`. See [`dojo apps pull`](/getting-started/cli#dojo-apps-pull). |
 | `apps logs` | `<app>`, `--follow` | Prints an app's recent logs, or follows them. See [`dojo apps logs`](/getting-started/cli#dojo-apps-logs). |
 | `apps list` | `--workspace` | Lists every app you can see. |
 | `apps get` | `<app>` | Shows an app's address, whether it has started, and your access. |

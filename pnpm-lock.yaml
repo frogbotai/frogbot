@@ -1780,6 +1780,12 @@ importers:
 
   packages/plugins/plugin-dojo:
     dependencies:
+      '@aws-sdk/client-s3':
+        specifier: 3.1090.0
+        version: 3.1090.0
+      '@aws-sdk/lib-storage':
+        specifier: 3.1090.0
+        version: 3.1090.0(@aws-sdk/client-s3@3.1090.0)
       '@clack/prompts':
         specifier: 1.8.1
         version: 1.8.1
