@@ -64,14 +64,16 @@ export function canMintKeys(req: FrogBotRequest): boolean {
 const keyID = (value: unknown): KeyID | null =>
   typeof value === 'string' || typeof value === 'number' ? value : null;
 
+function requestKey(req: FrogBotRequest) {
+  return isApiKeyRequest(req) ? keyID((req.user as { apiKeyId?: unknown }).apiKeyId) : null;
+}
+
 function requireMinter(req: FrogBotRequest) {
   const owner = req.user?.id;
   if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
   if (!canMintKeys(req)) throw new ApiKeyServiceError('session_required');
 
-  const parent = isApiKeyRequest(req) ? (req.user as { apiKeyId?: unknown }).apiKeyId : undefined;
-
-  return { owner, mintedBy: keyID(parent) };
+  return { owner, mintedBy: requestKey(req) };
 }
 
 const ownFields = new Set([
@@ -276,9 +278,16 @@ type FindKeyOptions = RevokeApiKeyOptions & {
   rotator?: KeyID | null;
 };
 
-async function findKey({ req, collectionSlug, id, anyOwner, rotator }: FindKeyOptions) {
+async function findKey({
+  req,
+  collectionSlug,
+  id,
+  anyOwner,
+  rotator = requestKey(req),
+}: FindKeyOptions) {
   const owner = req.user?.id;
   if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
+  if (isApiKeyRequest(req) && rotator == null) throw new ApiKeyServiceError('not_found');
 
   const scope: Where[] = [
     { id: { equals: id } },
@@ -353,7 +362,10 @@ async function liveMinted(req: FrogBotRequest, collectionSlug: string, id: KeyID
   return live;
 }
 
-/** Counts the keys a cascading revoke of the key would also revoke. */
+/**
+ * Counts the keys a cascading revoke of the key would also revoke. A key counts only for itself
+ * and the keys it minted; any other key is not found.
+ */
 export async function countMintedApiKeys(options: RevokeApiKeyOptions) {
   const key = await findKey(options);
 
@@ -363,7 +375,8 @@ export async function countMintedApiKeys(options: RevokeApiKeyOptions) {
 /**
  * Revokes the key and, unless `cascade` is `false`, every live key below it in the `mintedBy`
  * tree, including keys under a key that was revoked on its own earlier. Those keys get the time of
- * this revoke.
+ * this revoke. A key revokes only itself and the keys it minted; any other key is not found. A
+ * signed-in session revokes any of its owner's keys.
  */
 export async function revokeApiKey(options: RevokeApiKeyOptions) {
   const { req, collectionSlug } = options;
