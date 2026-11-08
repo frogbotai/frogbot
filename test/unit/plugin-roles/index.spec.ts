@@ -311,6 +311,18 @@ describe('predicates and resolution', () => {
     expect(rolesOf(request)).toEqual(['finance']);
     expect(resolveRoles).toHaveBeenCalledTimes(1);
   });
+
+  it('uses a custom resolver when onInit never ran', async () => {
+    const sanitized = await buildConfig({
+      ...config(),
+      plugins: [rolesPlugin({ roles: ['staff'], resolveRoles: () => ['staff'] })],
+    });
+
+    const request = { ...req([]), frogbot: { config: sanitized } } as unknown as FrogBotRequest;
+
+    expect(rolesOf(request)).toEqual(['staff']);
+    expect(hasRole(request, 'staff')).toBe(true);
+  });
 });
 
 describe('allow', () => {
