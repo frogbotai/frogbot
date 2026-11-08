@@ -38,6 +38,22 @@ describe('iconRegistry', () => {
     expect(iconNames).not.toContain('visa');
   });
 
+  it.each(iconNames.filter((name) => name.startsWith('brand-')))(
+    'paints %s with a fill or a stroke, so it shows as an admin icon',
+    (name) => {
+      const { container } = render(createElement(iconRegistry[name], { size: 24 }));
+      const svg = container.querySelector('svg')!;
+      const stroked = Number(svg.getAttribute('stroke-width') ?? 2) > 0;
+      const filled = [...svg.querySelectorAll('*')].some((element) => {
+        const fill = element.getAttribute('fill');
+
+        return fill !== null && fill !== 'none';
+      });
+
+      expect(stroked || filled).toBe(true);
+    },
+  );
+
   it('renders registered icons', () => {
     const { container } = render(createElement(iconRegistry.robot, { size: 24 }));
 
