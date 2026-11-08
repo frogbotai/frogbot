@@ -16,6 +16,7 @@ import SidebarLeftIcon from '../icons/icons/SidebarLeftIcon.js';
 import { type IconName, iconRegistry, isIconName } from '../icons/registry.js';
 import { isRenderableNode } from '../lib/isRenderableNode.js';
 import { AccountMenu } from './AccountMenu.js';
+import { useActiveLink } from './activeLink.js';
 
 export type AppSidebarNavItem = {
   icon?: ComponentType<{ className?: string; size: number }> | IconName | ReactNode;
@@ -54,20 +55,52 @@ const baseClass = 'fb-app-sidebar';
 
 const classes = (...values: (false | string | undefined)[]) => values.filter(Boolean).join(' ');
 
-const matches = (path: string, currentPath: string, homePath: string) =>
-  path === homePath
-    ? currentPath === path
-    : currentPath === path || (path !== '/' && currentPath.startsWith(`${path}/`));
+function SidebarNavItem({
+  currentPath,
+  exact,
+  item,
+  labelsVisible,
+  onClick,
+  open,
+}: {
+  currentPath: string;
+  exact: boolean;
+  item: AppSidebarNavItem;
+  labelsVisible: boolean;
+  onClick: (event: MouseEvent) => void;
+  open: boolean;
+}) {
+  const active = useActiveLink(item.path, currentPath, { exact });
+  const Icon =
+    typeof item.icon === 'string'
+      ? isIconName(item.icon)
+        ? iconRegistry[item.icon]
+        : FolderIcon
+      : (item.icon ?? FolderIcon);
 
-const activeItemIndex = (items: AppSidebarNavItem[], currentPath: string, homePath: string) =>
-  items.reduce(
-    (active, { path }, index) =>
-      matches(path, currentPath, homePath) &&
-      (active === -1 || path.length > items[active].path.length)
-        ? index
-        : active,
-    -1,
+  return (
+    <Tooltip delay={0} disabled={open} label={item.label} side="right">
+      <button
+        aria-label={item.label}
+        className={classes(
+          `${baseClass}__item`,
+          'fb-slide-right-1',
+          active && `${baseClass}__item--active`,
+        )}
+        onClick={onClick}
+        type="button"
+      >
+        {isRenderableNode(Icon)
+          ? Icon
+          : createElement(Icon as ComponentType<{ className?: string; size: number }>, {
+              className: `${baseClass}__icon`,
+              size: 24,
+            })}
+        {labelsVisible && <span className={`${baseClass}__label`}>{item.label}</span>}
+      </button>
+    </Tooltip>
   );
+}
 
 export function AppSidebar({
   accountEmail,
@@ -110,52 +143,22 @@ export function AppSidebar({
     return () => clearTimeout(timeout);
   }, [open]);
 
-  const activeIndex = activeItemIndex(navItems, currentPath, homePath);
-
   const navigate = (event: MouseEvent, path: string) => {
     event.stopPropagation();
     onNavigate(path);
   };
 
-  const renderItem = (item: AppSidebarNavItem, index: number) => {
-    const Icon =
-      typeof item.icon === 'string'
-        ? isIconName(item.icon)
-          ? iconRegistry[item.icon]
-          : FolderIcon
-        : (item.icon ?? FolderIcon);
-
-    const active = index === activeIndex;
-
-    return (
-      <Tooltip
-        delay={0}
-        disabled={open}
-        label={item.label}
-        side="right"
-        key={`${index}:${item.path}`}
-      >
-        <button
-          aria-label={item.label}
-          className={classes(
-            `${baseClass}__item`,
-            'fb-slide-right-1',
-            active && `${baseClass}__item--active`,
-          )}
-          onClick={(event) => navigate(event, item.path)}
-          type="button"
-        >
-          {isRenderableNode(Icon)
-            ? Icon
-            : createElement(Icon as ComponentType<{ className?: string; size: number }>, {
-                className: `${baseClass}__icon`,
-                size: 24,
-              })}
-          {labelsVisible && <span className={`${baseClass}__label`}>{item.label}</span>}
-        </button>
-      </Tooltip>
-    );
-  };
+  const renderItem = (item: AppSidebarNavItem, index: number) => (
+    <SidebarNavItem
+      currentPath={currentPath}
+      exact={item.path === homePath}
+      item={item}
+      key={`${index}:${item.path}`}
+      labelsVisible={labelsVisible}
+      onClick={(event) => navigate(event, item.path)}
+      open={open}
+    />
+  );
 
   const showToggleIcon = !open && stripHovered;
 

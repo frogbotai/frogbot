@@ -4,7 +4,9 @@ import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
+import { NavAdapterProvider } from '../../../../packages/ui/src/nav/adapter';
 import { AppSidebar } from '../../../../packages/ui/src/nav/AppSidebar';
+import { NavItem } from '../../../../packages/ui/src/nav/NavItem';
 
 const lazyNode = (node: ReactNode) =>
   ({
@@ -33,26 +35,66 @@ describe('AppSidebar', () => {
     );
   });
 
-  it('marks only the longest matching nav item active', () => {
+  it('marks only the most specific link across the sidebar, sections included', () => {
+    const navItems = [
+      { label: 'Chats', path: '/admin/collections/chats' },
+      { label: 'New chat', path: '/admin/collections/chats/create' },
+    ];
+
     render(
       <AppSidebar
         {...props}
-        currentPath="/a/b/c"
-        navItems={[
-          { label: 'Home', path: '/admin' },
-          { label: 'A', path: '/a' },
-          { label: 'AB', path: '/a/b' },
-          { label: 'ABC sibling', path: '/a/bc' },
-        ]}
+        currentPath="/admin/collections/chats/42"
+        navItems={navItems}
+        open
+        sections={
+          <NavAdapterProvider pathname="/admin/collections/chats/42">
+            <NavItem label="Chat 42" path="/admin/collections/chats/42" />
+            <NavItem label="Ideas" path="/admin/collections/ideas" />
+          </NavAdapterProvider>
+        }
+      />,
+    );
+
+    expect(document.querySelector('.fb-app-sidebar__item--active')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Chat 42' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('link', { name: 'Ideas' }).getAttribute('aria-current')).toBeNull();
+  });
+
+  it('marks the most specific item, including on pages under it', () => {
+    const navItems = [
+      { label: 'Chats', path: '/admin/collections/chats' },
+      { label: 'New chat', path: '/admin/collections/chats/create' },
+    ];
+
+    const activeLabels = () =>
+      screen
+        .getAllByRole('button')
+        .filter(({ className }) => className.includes('fb-app-sidebar__item--active'))
+        .map((button) => button.getAttribute('aria-label'));
+
+    const { rerender } = render(
+      <AppSidebar
+        {...props}
+        currentPath="/admin/collections/chats/create"
+        navItems={navItems}
         open
       />,
     );
 
-    const active = screen
-      .getAllByRole('button')
-      .filter(({ className }) => className.includes('fb-app-sidebar__item--active'));
+    expect(activeLabels()).toEqual(['New chat']);
 
-    expect(active.map((button) => button.getAttribute('aria-label'))).toEqual(['AB']);
+    rerender(
+      <AppSidebar {...props} currentPath="/admin/collections/chats/42" navItems={navItems} open />,
+    );
+
+    expect(activeLabels()).toEqual(['Chats']);
+
+    rerender(
+      <AppSidebar {...props} currentPath="/admin/collections/chats/" navItems={navItems} open />,
+    );
+
+    expect(activeLabels()).toEqual(['Chats']);
   });
 
   it('marks one item active when two items share a path', () => {
