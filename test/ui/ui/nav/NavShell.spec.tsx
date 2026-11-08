@@ -55,6 +55,20 @@ describe('NavShell', () => {
     expect(shell().dataset.navState).toBe('mobile-nav-closed');
   });
 
+  it('leaves the mobile toggle to a host that owns the drawer', () => {
+    isMobile = true;
+    const setOpen = vi.fn();
+
+    render(
+      <NavAdapterProvider drawer={{ hydrated: true, open: false, setOpen }}>
+        <NavShell homePath="/" />
+      </NavAdapterProvider>,
+    );
+
+    expect(shell().dataset.navState).toBe('mobile-nav-closed');
+    expect(screen.queryByRole('button', { name: 'Open navigation' })).toBeNull();
+  });
+
   it("navigates through the adapter and marks the adapter's path active", () => {
     const navigate = vi.fn();
 

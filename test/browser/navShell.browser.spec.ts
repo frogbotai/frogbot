@@ -220,6 +220,28 @@ test.describe('nav shell on desktop', () => {
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
   });
 
+  test('header sidebar toggle stays hidden at 1280px, open and collapsed, and the rail reopens', async ({
+    page,
+  }) => {
+    await page.setViewportSize(laptop);
+    await loadWithSidebarOpen(page);
+    await page.goto('/collections/chats/create');
+    await expect(composerInput(page)).toBeVisible();
+
+    const headerToggle = page.locator('.app-header__sidebar-toggle');
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+    await expect(headerToggle).toBeHidden();
+
+    await page.locator('button[aria-label="Close sidebar"]').click();
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
+    await expect(headerToggle).toHaveCount(1);
+    await expect(headerToggle).toBeHidden();
+
+    await page.locator('button[aria-label="Open sidebar"]').click();
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+  });
+
   test('sidebar shows Chats as a centred bubble without a dot', async ({ page }) => {
     await loadWithSidebarOpen(page);
 
