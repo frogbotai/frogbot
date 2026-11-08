@@ -78,6 +78,7 @@ npx frogbot deploy
 - `frogbot share` runs the same thing and takes the same flags, including `--yes`. See the [`dojo apps share` CLI reference](/getting-started/cli#dojo-apps-share) for its flags.
 - On your first deploy, it prompts to bring your local SQLite data and files (`--data` / `--no-data`), encrypts your `.env` keys, builds the app on Dojo, and prints your live `https://<name>.frogbot.app` URL. `--dry-run` lists the files, their size, the keys and the data it would send, and makes no request.
 - On Dojo, [`dojo()`](/plugins/dojo) automatically configures private R2 file storage, Dojo AI routing, scheduled job execution, and **Continue with Dojo** sign-in.
+- An app deployed without data starts with you as its first user: sign in with **Continue with Dojo**. See [Sign in with Dojo](/plugins/dojo#sign-in-with-dojo).
 - Pull a shared app locally with `npx @frogbotai/plugin-dojo apps pull <app>` or stream live logs with `npx @frogbotai/plugin-dojo apps logs <app> --follow`. Domains, environment keys, members, API keys and billing have [commands](/plugins/dojo#commands) too.
 
 ## Self-hosting (Docker & Node.js)
@@ -86,6 +87,8 @@ FrogBot apps are Next.js applications. They build like a standard Next.js app, b
 
 1. **The build must run in full, at image build time** — not split into "compile in the image / generate at runtime". FrogBot's `prebuild` step generates the admin import map, and `next build` compiles the app. Running `next build --experimental-build-mode generate` at container start (as some platform templates do) re-runs webpack in production, which requires `typescript` at runtime and slows cold starts dramatically.
 2. **In production, FrogBot does not push your schema automatically** the way it does in dev. A fresh production database has no tables until migrations run — see [Migrations](#migrations).
+
+**Sign in before you make it public.** While a self-hosted app has no users, the first person to sign in becomes its first user, whatever `access.create` says. See [The first user](/authentication/sign-in#the-first-user).
 
 ## Docker
 

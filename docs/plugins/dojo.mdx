@@ -106,7 +106,9 @@ On Dojo, the plugin adds a `dojo` method, labelled "Dojo", to the user collectio
 - The first time someone signs in to an app, Dojo asks them once to share their name and email address with it. After that it's one click.
 - Someone whose email already has an account signs in as that user.
 - A new email gets an account only when the collection's [`access.create`](/authentication/sign-in#who-can-sign-up) allows it, so by default the button serves people who already have an account. Open sign-ups with `access: { create: () => true }`.
-- While the collection has no users, the [first person](/authentication/sign-in#who-can-sign-up) to sign in gets an account, as with the create-first-user screen.
+- An app shared to Dojo empty starts with the person who shared it, or who made it from a template, as its first user: the plugin creates that user with their Dojo email when the app starts with no users. They click "Continue with Dojo" and they're in, so nobody can get there first, even on a public app.
+- An app shared with `--data` keeps the users it brought, and the plugin adds nobody. Sign in with your local account.
+- If the plugin can't create the first user, for example because the collection has a required field it can't fill, the app still starts and logs a warning, and the [first person](/authentication/sign-in#who-can-sign-up) to sign in gets an account, as with the create-first-user screen.
 
 Turn it off with one line:
 
@@ -115,5 +117,7 @@ plugins: [dojo({ signIn: false })]
 ```
 
 Dojo gives each app its own OAuth client, in `DOJO_OAUTH_CLIENT_ID`, `DOJO_OAUTH_CLIENT_SECRET` and `DOJO_URL`. Sign-in never stops the app from starting: when one of them is missing, or the collection can't take a sign-in method (see [Collection requirements](/authentication/sign-in#collection-requirements)), the plugin adds nothing and logs why at start, for example `[plugin-dojo] Sign in with Dojo is off for 'users': DOJO_URL is not set.` The same happens when the collection already has a method with the slug `dojo`.
+
+Dojo passes the email of the person who created the app in `DOJO_FIRST_USER_EMAIL`. The plugin creates the first user from it only when it added "Continue with Dojo", so `signIn: false` turns that off too. A failure logs `[plugin-dojo] Couldn't add <email> as the first user: <reason>.`
 
 An app with `sqliteAdapter({ transactionOptions: false })` fails to start once the method is added, because sign-in needs transactions. Remove that option, or use `dojo({ signIn: false })`.

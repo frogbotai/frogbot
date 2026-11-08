@@ -1,8 +1,8 @@
 import type { Endpoint } from 'frogbot';
 
-import { seed } from './index';
+import { hasSampleData, seed } from './index';
 
-/** `POST /api/seed`: replaces the sample data for a signed-in user. */
+/** `POST /api/seed`: adds the sample data for the signed-in user to an app that has none yet. */
 export function seedEndpoint(run: typeof seed = seed): Endpoint {
   return {
     path: '/seed',
@@ -16,6 +16,16 @@ export function seedEndpoint(run: typeof seed = seed): Endpoint {
       }
 
       try {
+        if (await hasSampleData({ frogbot: req.frogbot, req })) {
+          return Response.json(
+            {
+              error:
+                'This app already has projects, so the sample data was not added.',
+            },
+            { status: 409 },
+          );
+        }
+
         await run({ frogbot: req.frogbot, req });
       } catch (err) {
         req.frogbot.logger.error({ err }, 'Seeding the database failed');
