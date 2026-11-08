@@ -28,6 +28,11 @@ export type RevokeApiKeyOptions = {
   collectionSlug: string;
   id: string;
   anyOwner?: boolean;
+  /**
+   * Also revoke every key this key minted, down the whole `mintedBy` tree. Defaults to `true`;
+   * `false` revokes only this key and leaves the keys it made working.
+   */
+  cascade?: boolean;
 };
 
 type KeyDocument = Record<string, unknown>;
@@ -266,29 +271,45 @@ async function revokeMinted(
   const seen = new Set<KeyID>([id]);
 
   for (let parents = [id]; parents.length > 0;) {
-    const { docs } = await req.frogbot.update({
+    const { docs } = await req.frogbot.find({
       collection: collectionSlug,
-      where: { and: [{ mintedBy: { in: parents } }, { revokedAt: { exists: false } }] },
-      data: { revokedAt },
+      where: { mintedBy: { in: parents } },
       depth: 0,
+      pagination: false,
       overrideAccess: true,
       req,
     });
 
-    parents = docs
-      .map((doc) => (doc as KeyDocument).id as KeyID)
-      .filter((child) => !seen.has(child));
+    const children = (docs as KeyDocument[]).filter((child) => !seen.has(child.id as KeyID));
+    const live = children.filter((child) => !child.revokedAt).map((child) => child.id as KeyID);
 
+    if (live.length > 0) {
+      await req.frogbot.update({
+        collection: collectionSlug,
+        where: { id: { in: live } },
+        data: { revokedAt },
+        depth: 0,
+        overrideAccess: true,
+        req,
+      });
+    }
+
+    parents = children.map((child) => child.id as KeyID);
     parents.forEach((child) => seen.add(child));
   }
 }
 
-/** Revokes the key and every key it minted, down the whole `mintedBy` tree. */
+/**
+ * Revokes the key and, unless `cascade` is `false`, every live key below it in the `mintedBy`
+ * tree, including keys under a key that was revoked on its own earlier.
+ */
 export async function revokeApiKey(options: RevokeApiKeyOptions) {
   const key = await findKey(options);
   const revokedAt = await markRevoked(options.req, options.collectionSlug, key);
 
-  await revokeMinted(options.req, options.collectionSlug, key.id, revokedAt);
+  if (options.cascade !== false) {
+    await revokeMinted(options.req, options.collectionSlug, key.id, revokedAt);
+  }
 
   return { id: key.id, name: key.name, owner: key.owner, revokedAt };
 }

@@ -319,6 +319,46 @@ describe('API keys collection', () => {
     });
   });
 
+  it.each([
+    [undefined, 2],
+    [{ cascade: true }, 2],
+    [{ cascade: false }, 1],
+  ])('reads cascade %j from the revoke body', async (body, finds) => {
+    const collection = await getCollection();
+    const find = vi
+      .fn()
+      .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] });
+
+    const req = {
+      user: { id: 'user-1', roles: ['member'] },
+      routeParams: { id: 'key-1' },
+      json: body === undefined ? undefined : () => Promise.resolve(body),
+      frogbot: { find, update: vi.fn().mockResolvedValue({}) },
+    } as unknown as FrogBotRequest;
+
+    const endpoint = collection.endpoints!.find((item) => item.path === '/:id/revoke')!;
+
+    expect((await endpoint.handler(req)).status).toBe(200);
+    expect(find).toHaveBeenCalledTimes(finds);
+  });
+
+  it('refuses a revoke whose cascade is not a boolean', async () => {
+    const collection = await getCollection();
+    const find = vi.fn();
+    const req = {
+      user: { id: 'user-1', roles: ['member'] },
+      routeParams: { id: 'key-1' },
+      json: () => Promise.resolve({ cascade: 'no' }),
+      frogbot: { find, update: vi.fn() },
+    } as unknown as FrogBotRequest;
+
+    const endpoint = collection.endpoints!.find((item) => item.path === '/:id/revoke')!;
+    const response = await endpoint.handler(req);
+
+    expect(response.status).toBe(400);
+    expect(find).not.toHaveBeenCalled();
+  });
+
   it("revokes another user's key only when canRevokeAnyKey allows it", async () => {
     const collection = await getCollection({
       canRevokeAnyKey: (req) =>

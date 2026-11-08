@@ -944,8 +944,11 @@ describe('API keys plugin integration', () => {
     const rotate = (headers: Record<string, string>, id: number | string) =>
       booted.restClient.post<Minted>(`/api/credentials/${id}/rotate`, undefined, { headers });
 
-    const revoke = (headers: Record<string, string>, id: number | string) =>
-      booted.restClient.post(`/api/credentials/${id}/revoke`, undefined, { headers });
+    const revoke = (
+      headers: Record<string, string>,
+      id: number | string,
+      body?: { cascade?: unknown },
+    ) => booted.restClient.post(`/api/credentials/${id}/revoke`, body, { headers });
 
     const asKey = (token: string) => ({ 'x-service-key': token });
 
@@ -1207,6 +1210,33 @@ describe('API keys plugin integration', () => {
           (await booted.restClient.get('/api/credentials', { headers: asKey(token) })).status,
         ).toBe(403);
       }
+    });
+
+    it('keeps the keys a key made when revoked with cascade false, and a later revoke above reaches them', async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const child = await mint(asKey(parent.body.token), 'C', { canMint: true });
+      const grandchild = await mint(asKey(child.body.token), 'G');
+
+      expect((await revoke(session, child.body.id, { cascade: false })).status).toBe(200);
+      expect(new Set(await active())).toEqual(new Set([parent.body.id, grandchild.body.id]));
+      expect(
+        (
+          await booted.restClient.get('/api/credentials', {
+            headers: asKey(grandchild.body.token),
+          })
+        ).status,
+      ).toBe(200);
+
+      expect((await revoke(session, parent.body.id)).status).toBe(200);
+      expect(await active()).toEqual([]);
+      expect(await stored(child.body.id)).toMatchObject({ revokedAt: expect.any(String) });
+    });
+
+    it('refuses a revoke whose cascade is not a boolean', async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+
+      expect((await revoke(session, parent.body.id, { cascade: 'no' })).status).toBe(400);
+      expect(await active()).toEqual([parent.body.id]);
     });
 
     it("counts a key's spend against every key above it", async () => {

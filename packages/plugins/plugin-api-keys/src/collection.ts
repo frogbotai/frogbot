@@ -151,13 +151,22 @@ function createEndpoints({
           return Response.json({ error: 'API key not found' }, { status: 404 });
         }
 
+        const body = ((await req.json?.().catch(() => null)) ?? null) as {
+          cascade?: unknown;
+        } | null;
+
+        const cascade = body?.cascade ?? true;
+        if (typeof cascade !== 'boolean') {
+          return Response.json({ error: 'cascade must be true or false' }, { status: 400 });
+        }
+
         try {
           const anyOwner = (await canRevokeAnyKey?.(req)) === true;
           const {
             name: _name,
             owner: _owner,
             ...result
-          } = await revokeApiKey({ req, collectionSlug, id, anyOwner });
+          } = await revokeApiKey({ req, collectionSlug, id, anyOwner, cascade });
 
           return Response.json(result);
         } catch (error) {
