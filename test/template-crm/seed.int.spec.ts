@@ -204,6 +204,45 @@ describe('crm template seed', () => {
     expect((await counts()).companies).toBe(0);
   });
 
+  function failOn(collection: string) {
+    const create = booted.frogbot.create.bind(booted.frogbot);
+
+    vi.spyOn(booted.frogbot, 'create').mockImplementation((args) =>
+      args.collection === collection ? Promise.reject(new Error('disk full')) : create(args),
+    );
+  }
+
+  it('removes what a failed seed added, so the next press loads the full sample', async () => {
+    const { headers } = await signUp();
+
+    failOn('deals');
+
+    expect((await post(headers)).status).toBe(500);
+    expect(await counts()).toMatchObject({ companies: 0, contacts: 0, media: 0 });
+
+    vi.restoreAllMocks();
+
+    const retry = await post(headers);
+
+    expect(retry.status, retry.body.error).toBe(200);
+    expect(await counts()).toMatchObject({ companies: 8, media: 8 });
+    expect((await counts()).deals).toBeGreaterThan(0);
+  });
+
+  it('leaves no orphan logo when a seed fails on the first company', async () => {
+    const { headers } = await signUp();
+
+    failOn('companies');
+
+    expect((await post(headers)).status).toBe(500);
+    expect((await counts()).media).toBe(0);
+
+    vi.restoreAllMocks();
+
+    expect((await post(headers)).status).toBe(200);
+    expect((await counts()).media).toBe((await counts()).companies);
+  });
+
   it('logs a failing seed and answers 500', async () => {
     const { headers } = await signUp();
     const errors = vi.spyOn(booted.frogbot.logger, 'error');
