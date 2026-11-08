@@ -16,7 +16,7 @@ import {
   useWindowInfo,
 } from '@payloadcms/ui';
 import type { ListViewClientProps } from 'payload';
-import { type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode, type RefObject, useEffect, useRef } from 'react';
 
 import type { ViewTab } from '../../elements/ViewTabs/index.client.js';
 import { aiBulkMenuFields } from '../../fields/AI/bulk.js';
@@ -25,6 +25,10 @@ import { CollectionViewFrame } from '../CollectionViewFrame.client.js';
 import { useRecordPanel, useRecordPanelEvents } from '../panel/RecordPanelProvider.client.js';
 import { BulkUploadButton } from './BulkUploadButton.client.js';
 import { DefaultListView } from './DefaultListView.client.js';
+import { ListSummary, type ListSummaryProps } from './summary/ListSummary.client.js';
+
+/** The footer totals' setup, resolved on the server for the collection's list view. */
+export type ListFrameSummary = Omit<ListSummaryProps, 'collectionSlug' | 'containerRef'>;
 
 export type ListFrameClientProps = {
   AfterList?: ReactNode;
@@ -42,6 +46,7 @@ export type ListFrameClientProps = {
   NoResults: ReactNode;
   /** False when a grouped list shows every group on one page, hiding the group page controls. */
   pagedGroups?: boolean;
+  summary?: ListFrameSummary;
   tabs: ViewTab[];
   Toolbar?: ReactNode[];
 };
@@ -92,8 +97,23 @@ function useRecordRows(doneIds: string[] | undefined) {
   return ref;
 }
 
-function RecordRows({ children, doneIds }: { children: ReactNode; doneIds?: string[] }) {
-  return <div ref={useRecordRows(doneIds)}>{children}</div>;
+function RecordRows({
+  children,
+  doneIds,
+  footer,
+}: {
+  children: ReactNode;
+  doneIds?: string[];
+  footer?: (containerRef: RefObject<HTMLDivElement | null>) => ReactNode;
+}) {
+  const ref = useRecordRows(doneIds);
+
+  return (
+    <>
+      <div ref={ref}>{children}</div>
+      {footer?.(ref)}
+    </>
+  );
 }
 
 function RefreshOnPanelSave() {
@@ -104,7 +124,13 @@ function RefreshOnPanelSave() {
   return null;
 }
 
-function ListFrameInner({ doneIds, listProps, pagedGroups, ...frame }: ListFrameClientProps) {
+function ListFrameInner({
+  doneIds,
+  listProps,
+  pagedGroups,
+  summary,
+  ...frame
+}: ListFrameClientProps) {
   const { collectionSlug, columnState, disableBulkDelete, disableBulkEdit, Table, viewType } =
     listProps;
 
@@ -198,7 +224,20 @@ function ListFrameInner({ doneIds, listProps, pagedGroups, ...frame }: ListFrame
           viewType={viewType}
         >
           <RefreshOnPanelSave />
-          <RecordRows doneIds={doneIds}>
+          <RecordRows
+            doneIds={doneIds}
+            footer={
+              summary && !frame.isEmpty
+                ? (containerRef) => (
+                    <ListSummary
+                      {...summary}
+                      collectionSlug={collectionSlug}
+                      containerRef={containerRef}
+                    />
+                  )
+                : undefined
+            }
+          >
             <RelationshipProvider>{Table}</RelationshipProvider>
           </RecordRows>
         </CollectionViewFrame>

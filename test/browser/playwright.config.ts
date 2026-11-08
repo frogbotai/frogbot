@@ -406,6 +406,7 @@ const testProjects = [
     testMatch: [
       'crm.browser.spec.ts',
       'listGrouping.browser.spec.ts',
+      'listSummary.browser.spec.ts',
       'recordPanel.browser.spec.ts',
       'views.browser.spec.ts',
     ],

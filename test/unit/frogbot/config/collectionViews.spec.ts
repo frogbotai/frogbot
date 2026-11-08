@@ -167,6 +167,88 @@ describe('collection views', () => {
     expect(() => compile({ color: 'title' })).toThrow('unsupported color field "title"');
   });
 
+  describe('list summary', () => {
+    const compile = (summary: unknown, extra: Record<string, unknown> = {}) =>
+      compileCollectionViews({
+        collection: {
+          slug: 'deals',
+          fields: [
+            { name: 'name', type: 'text' },
+            { name: 'amount', type: 'number' },
+            { name: 'scores', type: 'number', hasMany: true },
+            { name: 'closedAt', type: 'date' },
+            { name: 'owner', type: 'relationship', relationTo: 'users' },
+            { name: 'margin', type: 'number', access: { read: () => false } },
+            { name: 'secret', type: 'number', hidden: true },
+            {
+              type: 'row',
+              fields: [
+                { name: 'details', type: 'group', fields: [{ name: 'odds', type: 'number' }] },
+              ],
+            },
+            {
+              name: 'finance',
+              type: 'group',
+              access: { read: () => true },
+              fields: [{ name: 'amount', type: 'number' }],
+            },
+            {
+              name: 'internal',
+              type: 'group',
+              hidden: true,
+              fields: [{ name: 'odds', type: 'number' }],
+            },
+          ],
+          admin: { views: [{ type: 'list', summary } as never] },
+          ...extra,
+        },
+      });
+
+    it('accepts every valid pairing and keeps summary in the client metadata', () => {
+      const summary = {
+        name: 'count',
+        amount: 'avg',
+        scores: 'count',
+        closedAt: 'max',
+        owner: 'count',
+        'details.odds': 'sum',
+        id: 'count',
+        createdAt: 'min',
+      };
+
+      expect(compile(summary)?.custom?.frogbot.views[0]).toMatchObject({ summary });
+    });
+
+    it.each([
+      [{ nope: 'count' }, 'summary names "nope", which is not a field.'],
+      [{ name: 'sum' }, 'sets "name" to "sum": a field that is not a number or date takes count.'],
+      [{ scores: 'sum' }, 'sets "scores" to "sum"'],
+      [{ closedAt: 'avg' }, 'sets "closedAt" to "avg": a date field takes count, min, max.'],
+      [{ amount: 'median' }, 'sets "amount" to "median": a number field takes count, sum, avg'],
+      [{ margin: 'sum' }, 'names "margin", which is hidden or has its own access.read'],
+      [{ secret: 'count' }, 'names "secret", which is hidden or has its own access.read'],
+      [
+        { 'finance.amount': 'sum' },
+        'names "finance.amount", which is hidden or has its own access.read',
+      ],
+      [
+        { 'internal.odds': 'sum' },
+        'names "internal.odds", which is hidden or has its own access.read',
+      ],
+      [['amount'], 'summary must be an object'],
+    ])('rejects %j at load, naming the view, path and operation', (summary, message) => {
+      expect(() => compile(summary)).toThrow(
+        `[frogbot] Collection "deals" list view "list" ${message.startsWith('summary') ? '' : 'summary '}${message}`,
+      );
+    });
+
+    it('rejects timestamps on a collection without them', () => {
+      expect(() => compile({ createdAt: 'max' }, { timestamps: false })).toThrow(
+        'summary names "createdAt", which is not a field.',
+      );
+    });
+  });
+
   describe('fields inside layout containers', () => {
     const compile = (view: Record<string, unknown>) =>
       compileCollectionViews({

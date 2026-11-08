@@ -58,9 +58,10 @@ export type AggregateOptions<
    */
   collection: TSlug;
   /**
-   * The field, date bucket, or list of them that forms each group.
+   * The field, date bucket, or list of them that forms each group. Omit it to total every
+   * matching document in one row.
    */
-  groupBy: AggregateGroupBy<T, TSlug> | readonly AggregateGroupBy<T, TSlug>[];
+  groupBy?: AggregateGroupBy<T, TSlug> | readonly AggregateGroupBy<T, TSlug>[];
   /**
    * The totals to compute for each group, by the name each appears under in the result.
    */

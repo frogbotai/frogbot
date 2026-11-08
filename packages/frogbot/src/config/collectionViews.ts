@@ -1,6 +1,7 @@
 import type { CollectionConfig as PayloadCollectionConfig, PayloadComponent } from 'payload';
 
 import { validateAdminIcon } from '../admin/icons.js';
+import { SUMMARY_OPERATIONS, type SummaryKind } from '../admin/views/summary.js';
 import type { CollectionView, CollectionViewMetadata } from '../admin/views/types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { Field, TabAsField } from '../fields/config/types.js';
@@ -62,17 +63,23 @@ export function hasBoardView(collection: CollectionConfig): boolean {
   return (collection.admin?.views ?? [DEFAULT_VIEW]).some((view) => view.type === 'board');
 }
 
-function resolveDoneField(fields: Field[], path: string): Field | TabAsField | undefined {
+function resolveFieldPath(fields: Field[], path: string): (Field | TabAsField)[] | undefined {
   const [name, ...rest] = path.split('.');
   const field = flattenTopLevelFields(fields).find(
     (candidate) => 'name' in candidate && candidate.name === name,
   );
 
-  if (!field || rest.length === 0) return field;
+  if (!field) return undefined;
+  if (rest.length === 0) return [field];
+  if (field.type !== 'group' && field.type !== 'tab') return undefined;
 
-  return field.type === 'group' || field.type === 'tab'
-    ? resolveDoneField(field.fields, rest.join('.'))
-    : undefined;
+  const inner = resolveFieldPath(field.fields, rest.join('.'));
+
+  return inner && [field, ...inner];
+}
+
+function resolveDoneField(fields: Field[], path: string): Field | TabAsField | undefined {
+  return resolveFieldPath(fields, path)?.at(-1);
 }
 
 function validateUseAsDone(collection: CollectionConfig): void {
@@ -146,6 +153,62 @@ function validatePanel(collection: CollectionConfig): void {
   }
 }
 
+function getConfigSummaryKind(
+  collection: CollectionConfig,
+  path: string,
+): SummaryKind | 'guarded' | undefined {
+  if (path === 'id') return 'other';
+
+  if ((path === 'createdAt' || path === 'updatedAt') && collection.timestamps !== false) {
+    return 'date';
+  }
+
+  const chain = resolveFieldPath(collection.fields, path);
+  const field = chain?.at(-1);
+
+  if (!chain || !field || !('name' in field)) return undefined;
+
+  const isGuarded = chain.some(
+    (step) => ('hidden' in step && step.hidden === true) || ('access' in step && step.access?.read),
+  );
+
+  if (isGuarded) return 'guarded';
+
+  if ('virtual' in field && field.virtual) return 'other';
+
+  if (field.type === 'number' && !field.hasMany) return 'number';
+
+  return field.type === 'date' ? 'date' : 'other';
+}
+
+function validateSummary(collection: CollectionConfig, view: CollectionView & { slug: string }) {
+  if (view.type !== 'list' || view.summary === undefined) return;
+
+  const prefix = `[frogbot] Collection "${collection.slug}" list view "${view.slug}" summary`;
+
+  if (!view.summary || typeof view.summary !== 'object' || Array.isArray(view.summary)) {
+    throw new Error(`${prefix} must be an object of field paths to operations.`);
+  }
+
+  for (const [path, operation] of Object.entries(view.summary)) {
+    const kind = getConfigSummaryKind(collection, path);
+
+    if (!kind) throw new Error(`${prefix} names "${path}", which is not a field.`);
+
+    if (kind === 'guarded') {
+      throw new Error(
+        `${prefix} names "${path}", which is hidden or has its own access.read, so it can't be totaled.`,
+      );
+    }
+
+    if (!SUMMARY_OPERATIONS[kind].includes(operation)) {
+      throw new Error(
+        `${prefix} sets "${path}" to "${String(operation)}": a ${kind === 'other' ? 'field that is not a number or date' : `${kind} field`} takes ${SUMMARY_OPERATIONS[kind].join(', ')}.`,
+      );
+    }
+  }
+}
+
 function containsFunction(value: unknown): boolean {
   if (typeof value === 'function') return true;
   if (!value || typeof value !== 'object') return false;
@@ -212,6 +275,7 @@ export function compileCollectionViews({
 
   for (const view of views) {
     validateAdminIcon(view.icon);
+    validateSummary(collection, view);
 
     if (containsFunction(view.filter)) {
       throw new Error(

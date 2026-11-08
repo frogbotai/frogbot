@@ -1,0 +1,52 @@
+---
+title: Collection list
+description: Configure a collection's list view and its summary row.
+---
+
+The list view is a collection's table. It is the default view, and when `admin.views` has other views the list comes first. Its shared properties, such as `defaultFields`, `filter` and `defaultSort`, are in the [Collection views reference](/configuration/collections#collection-views).
+
+## Summary row
+
+A footer row under the table shows one total per column, across every page of the list, not only the rows on screen. It follows the list's filters, search and the view's `filter`, and counts what the user can read.
+
+Set each column's default with `summary`, keyed by field path:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+import { moneyField } from 'frogbot'
+
+export const Deals: CollectionConfig = {
+  slug: 'deals',
+  admin: {
+    views: [
+      {
+        type: 'list',
+        defaultFields: ['name', 'stage', 'amount', 'closeDate'],
+        summary: { name: 'count', amount: 'sum', closeDate: 'max' },
+      },
+    ],
+  },
+  fields: [
+    { name: 'name', type: 'text' },
+    { name: 'stage', type: 'select', options: ['lead', 'won', 'lost'] },
+    moneyField({ name: 'amount', currency: 'USD' }),
+    { name: 'closeDate', type: 'date' },
+  ],
+}
+```
+
+| Field | Operations |
+| --- | --- |
+| Number, including `moneyField` and `percentField` | `count`, `sum`, `avg`, `min`, `max` |
+| Date, including `createdAt` and `updatedAt` | `count`, `min` (Earliest), `max` (Latest) |
+| Any other field | `count` |
+
+`count` counts the records, whatever the column. Startup fails on a path that isn't a field, a pairing the field can't take, or a field that is hidden or has its own `access.read`: those can't be totaled, so their columns have no total for anyone. Filtering or searching on such a field blanks the whole footer for now, because `aggregate` refuses it in `where` ([#355](https://github.com/frogbotai/frogbot/issues/355)).
+
+Totals use the column's format: money and percent fields keep their currency and precision, other numbers and counts follow the admin language, and dates use the field's display format. A column with no value shows nothing, and `0` shows as `0`.
+
+### Changing a total
+
+Clicking a footer cell opens a menu of the operations its column takes, plus **None**. The choice is saved for that user and that view with the rest of the view's setup, so it wins over `summary` on the next visit, and **Reset to default** in the view menu returns to the config. `summary` sets defaults only; it doesn't lock a column.
+
+The footer reads every total with one [`aggregate`](/queries/aggregate#totals-without-groups) request, sent again when the filters, search, columns or choices change, not when the page changes. Drafts that were never published count. A published record with a newer draft counts its published values, so its total can differ from the draft its row shows ([#361](https://github.com/frogbotai/frogbot/issues/361)). When rows are grouped, one footer for the whole list follows the last group.

@@ -18,6 +18,7 @@ export const Deals: CollectionConfig = {
           'owner',
         ],
         groupBy: 'stage',
+        summary: { name: 'count', amount: 'sum' },
       },
       {
         type: 'board',
