@@ -1,17 +1,16 @@
 'use client';
 
-import { useDocumentDrawer } from '@payloadcms/ui';
 import type { ClientCollectionConfig, Column, PopulateType } from 'payload';
 import type { ComponentType, KeyboardEvent, ReactNode } from 'react';
 
 import { type CardRow, RecordCard } from '../cards/RecordCard.js';
 import type { CardThumbnail } from '../cards/thumbnail.js';
+import { useRecordPanel } from '../panel/RecordPanelProvider.client.js';
 import { getUseAsDone, isRecordDone, recordClassName } from '../records/state.js';
-import { useDrawerSelected } from '../records/useRecordState.js';
 
 /**
- * A gallery card: the shared card body, or the view's `Card`, in a card that opens the document
- * drawer. It keeps its image area, with Payload's document icon when there is no image.
+ * A gallery card: the shared card body, or the view's `Card`, in a card that opens the record
+ * panel. It keeps its image area, with Payload's document icon when there is no image.
  */
 export function GalleryDocumentCard({
   Card,
@@ -19,8 +18,6 @@ export function GalleryDocumentCard({
   cardColumns,
   collectionConfig,
   collectionSlug,
-  onDelete,
-  onSave,
   onToggled,
   populate,
   row,
@@ -31,15 +28,13 @@ export function GalleryDocumentCard({
   cardColumns: Column[];
   collectionConfig: ClientCollectionConfig;
   collectionSlug: string;
-  onDelete: (row: CardRow) => void;
-  onSave: (row: CardRow) => void;
   onToggled: (row: CardRow) => void;
   populate?: PopulateType;
   row: CardRow;
   thumbnail: CardThumbnail;
 }) {
-  const [DocumentDrawer, , drawer] = useDocumentDrawer({ collectionSlug, id: String(row.id) });
-  const selected = useDrawerSelected(drawer.drawerSlug);
+  const panel = useRecordPanel();
+  const selected = panel.openId === String(row.id);
   const done = isRecordDone(row, getUseAsDone(collectionConfig));
 
   const onKeyDown = (event: KeyboardEvent) => {
@@ -48,7 +43,7 @@ export function GalleryDocumentCard({
     }
 
     event.preventDefault();
-    drawer.openDrawer();
+    panel.open(row.id);
   };
 
   let body: ReactNode;
@@ -73,17 +68,15 @@ export function GalleryDocumentCard({
   }
 
   return (
-    <>
-      <div
-        className={`collection-gallery__card ${recordClassName({ done, selected })}`}
-        onClick={drawer.openDrawer}
-        onKeyDown={onKeyDown}
-        role="button"
-        tabIndex={0}
-      >
-        {body}
-      </div>
-      <DocumentDrawer onDelete={() => onDelete(row)} onSave={({ doc }) => onSave(doc)} />
-    </>
+    <div
+      className={`collection-gallery__card ${recordClassName({ done, selected })}`}
+      onAuxClick={(event) => event.button === 1 && panel.open(row.id, event.nativeEvent)}
+      onClick={(event) => panel.open(row.id, event.nativeEvent)}
+      onKeyDown={onKeyDown}
+      role="button"
+      tabIndex={0}
+    >
+      {body}
+    </div>
   );
 }

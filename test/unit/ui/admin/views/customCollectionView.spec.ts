@@ -87,7 +87,7 @@ describe('CustomCollectionView', () => {
         user,
         viewType: 'list',
       } as never),
-    ).toBe('rendered');
+    ).toMatchObject({ props: { children: 'rendered', collectionSlug: 'connections' } });
 
     expect(mocks.createPayloadRequest).toHaveBeenCalledWith({
       payload,

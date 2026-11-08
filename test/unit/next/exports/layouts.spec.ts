@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   RootLayout: vi.fn(() => null),
   connection: vi.fn(() => Promise.resolve()),
   handleServerFunctions: vi.fn((args: unknown) => Promise.resolve(args)),
+  renderRecordPanel: vi.fn(),
 }));
 
 vi.mock('@payloadcms/next/layouts', () => ({
@@ -13,6 +14,12 @@ vi.mock('@payloadcms/next/layouts', () => ({
 }));
 
 vi.mock('@frogbotai/ui/admin', () => ({ shallowRouteState: 'frogbotShallowRoute' }));
+
+vi.mock('@frogbotai/ui/admin/rsc', () => ({
+  RENDER_RECORD_PANEL: 'frogbot-render-record-panel',
+  renderRecordPanelHandler: mocks.renderRecordPanel,
+}));
+
 vi.mock('next/server.js', () => ({ connection: mocks.connection }));
 
 const { RootLayout, handleServerFunctions } =
@@ -118,6 +125,28 @@ describe('@frogbotai/next layouts', () => {
 
     expect(forwarded.name).toBe('form-state');
     await expect(forwarded.config).resolves.toBe(payloadConfig);
+  });
+
+  it("handleServerFunctions registers the record panel's server function beside the app's own", async () => {
+    const { config } = makeConfig();
+    const own = vi.fn();
+
+    await handleServerFunctions({
+      name: 'form-state',
+      args: {},
+      config,
+      importMap: {},
+      serverFunctions: { 'my-function': own },
+    });
+
+    const forwarded = mocks.handleServerFunctions.mock.calls.at(-1)?.[0] as {
+      serverFunctions: Record<string, unknown>;
+    };
+
+    expect(forwarded.serverFunctions).toEqual({
+      'frogbot-render-record-panel': mocks.renderRecordPanel,
+      'my-function': own,
+    });
   });
 
   it('RootLayout preserves a rejected payload config promise', async () => {

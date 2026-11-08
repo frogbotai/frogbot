@@ -75,7 +75,7 @@ test("keeps the image area with Payload's document icon for a company with no lo
   await expect(noLogo.locator('.fb-card__image img')).toHaveCount(0);
 });
 
-test('has no drag handles, and opens the document drawer from a card', async ({ page }) => {
+test('has no drag handles, and opens the record panel from a card', async ({ page }) => {
   await page.goto('/collections/companies/gallery');
 
   const lumen = card(page, 'Lumen Labs');
@@ -87,7 +87,8 @@ test('has no drag handles, and opens the document drawer from a card', async ({ 
   );
 
   await lumen.locator('.fb-card__title').click();
-  await expect(page.locator('.drawer__content input#field-name')).toHaveValue('Lumen Labs');
+  await expect(page.locator('.fb-record-panel-title__input')).toHaveValue('Lumen Labs');
+  await expect(lumen).toHaveClass(/fb-record--selected/);
 });
 
 test('shows no images on the companies board, which turns them off', async ({ page }) => {

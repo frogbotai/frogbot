@@ -18,6 +18,7 @@ import { type ComponentType, useEffect, useMemo, useState } from 'react';
 
 import type { CardRow } from '../cards/RecordCard.js';
 import type { CardThumbnail } from '../cards/thumbnail.js';
+import { useRecordPanelEvents } from '../panel/RecordPanelProvider.client.js';
 import { getViewCardColumns } from '../preferences.js';
 import { GalleryDocumentCard } from './GalleryDocumentCard.js';
 
@@ -55,6 +56,8 @@ export function GalleryViewClient({
 
   useEffect(() => setRows(docs), [docs]);
 
+  useRecordPanelEvents(() => router.refresh());
+
   const replace = (doc: CardRow) =>
     setRows((current) => current.map((row) => (row.id === doc.id ? doc : row)));
 
@@ -72,8 +75,6 @@ export function GalleryViewClient({
             cardColumns={cardColumns}
             collectionConfig={collectionConfig}
             collectionSlug={collectionSlug}
-            onDelete={() => router.refresh()}
-            onSave={() => router.refresh()}
             onToggled={replace}
             populate={populate}
             row={row}

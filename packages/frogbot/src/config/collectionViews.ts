@@ -119,6 +119,66 @@ function validateViewThumbnail(
   }
 }
 
+/** The record panel's width bounds and default, in px. */
+export const PANEL_WIDTH = { default: 560, max: 960, min: 400 } as const;
+
+function validatePanel(collection: CollectionConfig): void {
+  const panel: unknown = collection.admin?.panel;
+  if (panel === undefined || panel === false) return;
+  const name = `[frogbot] Collection "${collection.slug}" admin.panel`;
+
+  if (!panel || typeof panel !== 'object' || Array.isArray(panel)) {
+    throw new Error(`${name} must be false or an object.`);
+  }
+
+  const { properties, width } = panel as { properties?: unknown; width?: unknown };
+
+  if (properties !== undefined) {
+    if (!Array.isArray(properties)) {
+      throw new Error(`${name}.properties must be an array of field names.`);
+    }
+
+    const seen: string[] = [];
+
+    for (const path of properties as unknown[]) {
+      const field =
+        typeof path === 'string' ? resolveDoneField(collection.fields, path) : undefined;
+
+      if (!field || !('name' in field) || field.type === 'tab') {
+        throw new Error(
+          `${name}.properties entry "${String(path)}" must name a field, top level or a dot path into a group or named tab.`,
+        );
+      }
+
+      const entry = path as string;
+      const repeated = seen.find(
+        (other) =>
+          other === entry || entry.startsWith(`${other}.`) || other.startsWith(`${entry}.`),
+      );
+
+      if (repeated !== undefined) {
+        throw new Error(
+          `${name}.properties entry "${entry}" repeats "${repeated}"; each field appears once.`,
+        );
+      }
+
+      seen.push(entry);
+    }
+  }
+
+  if (
+    width !== undefined &&
+    (typeof width !== 'number' ||
+      !Number.isFinite(width) ||
+      width < PANEL_WIDTH.min ||
+      width > PANEL_WIDTH.max)
+  ) {
+    throw new Error(
+      `${name}.width ${String(width)} must be a number from ${PANEL_WIDTH.min} to ${PANEL_WIDTH.max}.`,
+    );
+  }
+}
+
 function getConfigSummaryKind(
   collection: CollectionConfig,
   path: string,
@@ -237,6 +297,7 @@ export function compileCollectionViews({
   }
 
   validateUseAsDone(collection);
+  validatePanel(collection);
 
   for (const view of views) {
     validateAdminIcon(view.icon);
@@ -290,9 +351,15 @@ export function compileCollectionViews({
 
   onRuntimeViews?.(views);
 
-  const { components: authoredComponents, useAsDone, views: _views, ...adminSource } = source ?? {};
+  const {
+    components: authoredComponents,
+    panel,
+    useAsDone,
+    views: _views,
+    ...adminSource
+  } = source ?? {};
 
-  const { edit, ...componentSource } = authoredComponents ?? {};
+  const { edit, panel: _panelComponents, ...componentSource } = authoredComponents ?? {};
   const runtimeViews: Record<string, unknown> = {};
   const metadata: CollectionViewMetadata[] = [];
 
@@ -383,6 +450,13 @@ export function compileCollectionViews({
       ...adminSource.custom,
       frogbot: {
         ...((adminSource.custom?.frogbot as Record<string, unknown> | undefined) ?? {}),
+        panel:
+          panel === false
+            ? false
+            : {
+                ...(panel?.properties ? { properties: panel.properties } : {}),
+                width: panel?.width ?? PANEL_WIDTH.default,
+              },
         ...(useAsDone ? { useAsDone } : {}),
         views: metadata,
       },

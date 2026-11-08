@@ -73,7 +73,7 @@ export const Media: CollectionConfig = {
 | `afterView` | `FrogBotComponent[]` | No; `[]` | Renders inside the view frame after the gallery, above its page controls. |
 | `beforeCards` | `FrogBotComponent[]` | No; `[]` | Renders before the grid. |
 | `afterCards` | `FrogBotComponent[]` | No; `[]` | Renders after the grid. |
-| `Card` | `FrogBotComponent` | No; built-in card body | Replaces each card's body and receives the document as its `row` prop. The card around it still opens the document drawer. |
+| `Card` | `FrogBotComponent` | No; built-in card body | Replaces each card's body and receives the document as its `row` prop. The card around it still opens the record panel. |
 | `NoResults` | `FrogBotComponent` | No; built-in empty state | Replaces the grid when the gallery matches no records. |
 
 ```tsx
@@ -106,7 +106,7 @@ The image area has a fixed height, so cards line up. A card with no image, such 
 
 Cards fill as many columns as fit the page, at least 240px wide, or 150px on a phone. The gallery loads one page at a time, 25 cards unless `pagination.defaultLimit` says otherwise, with page controls below the grid.
 
-Clicking a card opens the document drawer. Saving or deleting there refreshes the page. With the collection's [`admin.useAsDone`](/configuration/collections#done-records) set, each built-in card starts with a check circle that toggles the record's done field, and done cards show a muted title. The card open in the drawer shows the shared selected style.
+Clicking a card opens the record in the [record panel](/admin/record-panel) beside the gallery. Saving or deleting there refreshes the page. With the collection's [`admin.useAsDone`](/configuration/collections#done-records) set, each built-in card starts with a check circle that toggles the record's done field, and done cards show a muted title. The card open in the panel shows the shared selected style.
 
 The gallery's sort, filters, card fields and page size are saved per user. **Reset to default** in the view menu returns to the config.
 

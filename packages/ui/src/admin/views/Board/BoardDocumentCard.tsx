@@ -1,20 +1,19 @@
 'use client';
 
-import { useDocumentDrawer } from '@payloadcms/ui';
 import type { ClientCollectionConfig, Column, PopulateType } from 'payload';
 
 import { BoardCard } from '../../../board/BoardCard.js';
 import { type CardRow, RecordCard } from '../cards/RecordCard.js';
 import type { CardThumbnail } from '../cards/thumbnail.js';
+import { useRecordPanel } from '../panel/RecordPanelProvider.client.js';
 import { getUseAsDone, isRecordDone, recordClassName } from '../records/state.js';
-import { useDrawerSelected } from '../records/useRecordState.js';
 
 /** A document as the board holds it. */
 export type BoardRow = CardRow;
 
 /**
- * The built-in board card: the shared card body in a draggable card that opens the document
- * drawer. A card with no image has no image area, so it stays compact.
+ * The built-in board card: the shared card body in a draggable card that opens the record panel.
+ * A card with no image has no image area, so it stays compact.
  */
 export function BoardDocumentCard({
   canToggleDone,
@@ -22,9 +21,7 @@ export function BoardDocumentCard({
   collectionConfig,
   collectionSlug,
   disabled,
-  onDelete,
   onSave,
-  onToggled,
   populate,
   row,
   thumbnail,
@@ -34,39 +31,35 @@ export function BoardDocumentCard({
   collectionConfig: ClientCollectionConfig;
   collectionSlug: string;
   disabled: boolean;
-  onDelete: (row: BoardRow) => void;
+  /** Called with the record the done toggle saved. */
   onSave: (row: BoardRow) => void;
-  onToggled: (row: BoardRow) => void;
   populate?: PopulateType;
   row: BoardRow;
   thumbnail: CardThumbnail;
 }) {
-  const [DocumentDrawer, , drawer] = useDocumentDrawer({ collectionSlug, id: String(row.id) });
-  const selected = useDrawerSelected(drawer.drawerSlug);
+  const panel = useRecordPanel();
+  const selected = panel.openId === String(row.id);
   const done = isRecordDone(row, getUseAsDone(collectionConfig));
 
   return (
-    <>
-      <BoardCard
-        className={recordClassName({ done, selected })}
-        disabled={disabled}
-        id={String(row.id)}
-        onClick={drawer.openDrawer}
-      >
-        <RecordCard
-          canToggleDone={canToggleDone}
-          cardColumns={cardColumns}
-          collectionConfig={collectionConfig}
-          collectionSlug={collectionSlug}
-          imageArea="when-set"
-          onSave={onToggled}
-          populate={populate}
-          row={row}
-          thumbnail={thumbnail}
-          viewType="board"
-        />
-      </BoardCard>
-      <DocumentDrawer onDelete={() => onDelete(row)} onSave={({ doc }) => onSave(doc)} />
-    </>
+    <BoardCard
+      className={recordClassName({ done, selected })}
+      disabled={disabled}
+      id={String(row.id)}
+      onClick={(event) => panel.open(row.id, event?.nativeEvent)}
+    >
+      <RecordCard
+        canToggleDone={canToggleDone}
+        cardColumns={cardColumns}
+        collectionConfig={collectionConfig}
+        collectionSlug={collectionSlug}
+        imageArea="when-set"
+        onSave={onSave}
+        populate={populate}
+        row={row}
+        thumbnail={thumbnail}
+        viewType="board"
+      />
+    </BoardCard>
   );
 }

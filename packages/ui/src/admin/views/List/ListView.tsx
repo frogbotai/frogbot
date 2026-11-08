@@ -18,6 +18,7 @@ import {
 } from '../collectionViews.js';
 import { buildFrameSlots } from '../frame.js';
 import { selectPath } from '../groups/resolve.js';
+import { redirectRecordParam } from '../panel/redirectRecord.js';
 import { getGroupsPreferenceKey, resolveViewColumnPreferences } from '../preferences.js';
 import { isRecordDone } from '../records/state.js';
 import {
@@ -161,6 +162,13 @@ export async function ListView(props: ListViewServerProps) {
   const view = runtime[0]?.type === 'list' ? runtime[0] : undefined;
   const isList = clientProps.viewType === 'list' && view !== undefined;
   let summary: ListFrameSummary | undefined;
+
+  redirectRecordParam({
+    collectionConfig,
+    record: req.query?.record,
+    redirect: (path) =>
+      server.redirect(formatAdminURL({ adminRoute: payload.config.routes.admin, path })),
+  });
 
   let grouped: GroupedTable | undefined;
 

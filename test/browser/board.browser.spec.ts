@@ -162,10 +162,10 @@ test('keeps a failed card, rolls back the total and offers the form', async ({ p
   await page.unroute(`**/api/${storiesSlug}?depth=1`);
   await failed.getByRole('button', { name: 'Open form' }).click();
 
-  const drawer = page.locator('.drawer__content').last();
+  const panel = page.locator('.fb-record-panel');
 
-  await expect(drawer.locator('#field-title')).toHaveValue('Rejected');
-  await drawer.locator('#action-save').click();
+  await expect(panel.locator('#field-title')).toHaveValue('Rejected');
+  await panel.locator('.fb-record-panel-header__save').click();
 
   await expect(titles(page, 'Todo')).toHaveText(['Rejected']);
   await expect(column(page, 'Todo').locator('.frog-board__inline')).toHaveCount(0);
@@ -180,12 +180,12 @@ test('opens the prefilled form when the collection needs more than a title', asy
 
   await expect(column(page, 'Doing').locator('.frog-board__inline')).toHaveCount(0);
 
-  const drawer = page.locator('.drawer__content').last();
+  const panel = page.locator('.fb-record-panel');
 
-  await expect(drawer.locator('#field-status')).toContainText('Doing');
-  await drawer.locator('#field-title').fill('Budget');
-  await drawer.locator('#field-approver').fill('Ana');
-  await drawer.locator('#action-save').click();
+  await expect(panel.locator('#field-status')).toContainText('Doing');
+  await panel.locator('#field-title').fill('Budget');
+  await panel.locator('#field-approver').fill('Ana');
+  await panel.locator('.fb-record-panel-header__save').click();
 
   await expect(titles(page, 'Doing')).toHaveText(['Budget']);
   await expect(count(page, 'Doing')).toHaveText('1');
@@ -214,29 +214,35 @@ async function createApprovalWithPhoto(page: Page) {
   );
 }
 
-test('keeps a card image after a save in the document drawer', async ({ page }) => {
+test('keeps a card image after a save in the record panel', async ({ page }) => {
   await createApprovalWithPhoto(page);
   await page.goto(`/collections/${approvalsSlug}`);
 
-  const card = column(page, 'Todo').locator('.frog-board__card', {
-    has: page.locator('.fb-card__title', { hasText: /^Launch plan$/ }),
-  });
+  const cardTitled = (title: string) =>
+    column(page, 'Todo').locator('.frog-board__card', {
+      has: page.locator('.fb-card__title', { hasText: new RegExp(`^${title}$`) }),
+    });
 
-  const image = card.locator('.fb-card__image img');
+  await expect(cardTitled('Launch plan').locator('.fb-card__image img')).toHaveAttribute(
+    'src',
+    /\/api\/photos\/file\//,
+  );
 
-  await expect(image).toHaveAttribute('src', /\/api\/photos\/file\//);
-  await card.locator('.fb-card__title').click();
+  await cardTitled('Launch plan').locator('.fb-card__title').click();
 
-  const drawer = page.locator('.drawer__content').last();
+  const panel = page.locator('.fb-record-panel');
 
-  await expect(drawer.locator('#field-title')).toHaveValue('Launch plan');
-  await drawer.locator('#field-approver').fill('Grace');
-  await drawer.locator('#action-save').click();
-  await expect(page.locator('.payload-toast-container')).toContainText(/success/i);
-  await page.keyboard.press('Escape');
-  await expect(drawer).toBeHidden();
+  await expect(panel.locator('#field-title')).toHaveValue('Launch plan');
+  await panel.locator('#field-title').fill('Launch plan v2');
+  await panel.locator('.fb-record-panel-header__save').click();
 
-  await expect(image).toHaveAttribute('src', /\/api\/photos\/file\//);
+  const saved = cardTitled('Launch plan v2');
+
+  await expect(saved).toHaveCount(1);
+  await expect(saved.locator('.fb-card__image img')).toHaveAttribute(
+    'src',
+    /\/api\/photos\/file\//,
+  );
 });
 
 test('offers no Add without create access', async ({ page }) => {
