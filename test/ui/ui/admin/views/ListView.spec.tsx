@@ -124,6 +124,7 @@ describe('ListView', () => {
     function setup(saved?: Record<string, unknown>) {
       mocks.ListFrameClient.mockClear();
       find.mockReset();
+      find.mockResolvedValue({ docs: [] });
       mocks.getRuntimeViews.mockReturnValue([{ slug: 'list', type: 'list' }]);
       mocks.resolveCollectionViews.mockResolvedValue({ views: [] });
 
@@ -170,16 +171,18 @@ describe('ListView', () => {
         ],
       });
 
-      await ListView(
-        pageProps({
-          data: {
-            docs: [
-              { id: 'a', title: 'A' },
-              { id: 'b', title: 'B' },
-              { completed: true, id: 'c', title: 'C' },
-            ],
-          },
-        }) as never,
+      render(
+        await ListView(
+          pageProps({
+            data: {
+              docs: [
+                { id: 'a', title: 'A' },
+                { id: 'b', title: 'B' },
+                { completed: true, id: 'c', title: 'C' },
+              ],
+            },
+          }) as never,
+        ),
       );
 
       expect(find).toHaveBeenCalledWith(
@@ -215,18 +218,20 @@ describe('ListView', () => {
         </table>
       );
 
-      await ListView(
-        pageProps({
-          data: { docs: [{ id: 'a' }, { id: 'b' }] },
-          Table: (
-            <div>
-              <Orderable
-                columns={[{ active: true, renderedCells: [<i key={0}>a</i>, <i key={1}>b</i>] }]}
-                data={[{ id: 'a' }, { id: 'b' }]}
-              />
-            </div>
-          ),
-        }) as never,
+      render(
+        await ListView(
+          pageProps({
+            data: { docs: [{ id: 'a' }, { id: 'b' }] },
+            Table: (
+              <div>
+                <Orderable
+                  columns={[{ active: true, renderedCells: [<i key={0}>a</i>, <i key={1}>b</i>] }]}
+                  data={[{ id: 'a' }, { id: 'b' }]}
+                />
+              </div>
+            ),
+          }) as never,
+        ),
       );
 
       const listProps = mocks.ListFrameClient.mock.lastCall?.[0].listProps as { Table: ReactNode };

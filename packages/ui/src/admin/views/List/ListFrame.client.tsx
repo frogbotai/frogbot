@@ -21,7 +21,6 @@ import type { ViewTab } from '../../elements/ViewTabs/index.client.js';
 import { aiBulkMenuFields } from '../../fields/AI/bulk.js';
 import { AIFieldListMenuItem } from '../../fields/AI/ListMenuItem.client.js';
 import { CollectionViewFrame } from '../CollectionViewFrame.client.js';
-import { getUseAsDone, isRecordDone } from '../records/state.js';
 import { BulkUploadButton } from './BulkUploadButton.client.js';
 import { DefaultListView } from './DefaultListView.client.js';
 
@@ -31,6 +30,8 @@ export type ListFrameClientProps = {
   BeforeList?: ReactNode;
   BeforeListTable?: ReactNode;
   Description?: ReactNode;
+  /** The done records among the rows, found on the server from `admin.useAsDone`. */
+  doneIds?: string[];
   hasCreateButton: boolean;
   isEmpty: boolean;
   listMenuItems?: ReactNode[];
@@ -53,26 +54,39 @@ export function ListFrameClient({ listProps, ...frame }: ListFrameClientProps) {
   return <ListFrameInner {...frame} listProps={listProps} />;
 }
 
-function useDoneRows(docs: Record<string, unknown>[], useAsDone: string | undefined) {
+function rowId(row: HTMLElement): string | undefined {
+  return row.dataset.id ?? row.querySelector<HTMLElement>('[data-row-id]')?.dataset.rowId;
+}
+
+function useDoneRows(doneIds: string[] | undefined) {
   const ref = useRef<HTMLDivElement>(null);
-  const done = new Set(
-    docs.filter((doc) => isRecordDone(doc, useAsDone)).map((doc) => String(doc.id)),
-  );
+  const key = doneIds?.join('\n') ?? '';
 
   useEffect(() => {
-    const rows = ref.current?.querySelectorAll<HTMLElement>(
-      '.table:not(.table--drag-preview) tbody > tr',
-    );
+    const container = ref.current;
+    if (!container) return;
+    const done = new Set(key ? key.split('\n') : []);
 
-    rows?.forEach((row, index) => {
-      row.toggleAttribute('data-done', done.has(row.dataset.id ?? String(docs[index]?.id)));
-    });
-  });
+    const mark = () => {
+      container
+        .querySelectorAll<HTMLElement>('.table:not(.table--drag-preview) tbody > tr')
+        .forEach((row) => {
+          const id = rowId(row);
+          row.toggleAttribute('data-done', id !== undefined && done.has(id));
+        });
+    };
+
+    mark();
+    const observer = new MutationObserver(mark);
+    observer.observe(container, { childList: true, subtree: true });
+
+    return () => observer.disconnect();
+  }, [key]);
 
   return ref;
 }
 
-function ListFrameInner({ listProps, ...frame }: ListFrameClientProps) {
+function ListFrameInner({ doneIds, listProps, ...frame }: ListFrameClientProps) {
   const { collectionSlug, columnState, disableBulkDelete, disableBulkEdit, Table, viewType } =
     listProps;
 
@@ -93,8 +107,7 @@ function ListFrameInner({ listProps, ...frame }: ListFrameClientProps) {
     viewType !== 'trash' &&
     Boolean(upload && upload.bulkUpload && !upload.hideFileInputOnCreate);
 
-  const rowDocs = listProps.groupedData?.flatMap((group) => group.data.docs) ?? docs;
-  const tableRef = useDoneRows(rowDocs, getUseAsDone(collectionConfig));
+  const tableRef = useDoneRows(doneIds);
   const aiFields = aiBulkMenuFields({
     canUpdate: Boolean(permissions?.collections?.[collectionSlug]?.update),
     fields: collectionConfig.fields,

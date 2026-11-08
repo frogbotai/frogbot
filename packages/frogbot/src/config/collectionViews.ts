@@ -70,14 +70,21 @@ function resolveDoneField(fields: Field[], path: string): Field | TabAsField | u
 }
 
 function validateUseAsDone(collection: CollectionConfig): void {
-  const path = collection.admin?.useAsDone;
+  const path: unknown = collection.admin?.useAsDone;
   if (path === undefined) return;
 
-  if (resolveDoneField(collection.fields, path)?.type !== 'checkbox') {
+  if (typeof path !== 'string' || resolveDoneField(collection.fields, path)?.type !== 'checkbox') {
     throw new Error(
       `[frogbot] Collection "${collection.slug}" admin.useAsDone "${path}" must name a checkbox field, top level or a dot path into a group.`,
     );
   }
+}
+
+function containsFunction(value: unknown): boolean {
+  if (typeof value === 'function') return true;
+  if (!value || typeof value !== 'object') return false;
+
+  return Object.values(value).some(containsFunction);
 }
 
 function labelFor(type: CollectionView['type']): string {
@@ -139,7 +146,7 @@ export function compileCollectionViews({
   for (const view of views) {
     validateAdminIcon(view.icon);
 
-    if (typeof view.filter === 'function') {
+    if (containsFunction(view.filter)) {
       throw new Error(
         `[frogbot] Collection "${collection.slug}" view "${view.slug}" has a function filter. A view's filter is a plain Where object.`,
       );
@@ -265,7 +272,7 @@ export function compileCollectionViews({
     ...adminSource,
     ...(list?.defaultFields ? { defaultColumns: list.defaultFields } : {}),
     ...(list?.defaultSort ? { defaultSort: list.defaultSort } : {}),
-    ...(list?.filter ? { baseFilter: list.filter } : {}),
+    ...(list?.filter ? { baseFilter: () => list.filter } : {}),
     ...(list?.pagination ? { pagination: list.pagination } : {}),
     ...(list?.searchableFields ? { listSearchableFields: list.searchableFields } : {}),
     components,

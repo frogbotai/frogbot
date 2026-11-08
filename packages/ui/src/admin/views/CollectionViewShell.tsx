@@ -9,7 +9,7 @@ import {
 } from './collectionViews.js';
 import { CollectionViewShellClient } from './CollectionViewShell.client.js';
 import { buildFrameSlots } from './frame.js';
-import type { StoredViewPreference } from './viewSetup.js';
+import { isQueryError, type StoredViewPreference } from './viewSetup.js';
 
 type CollectionViewShellProps = AdminViewServerProps & {
   children: ReactNode;
@@ -43,15 +43,23 @@ export async function CollectionViewShell(props: CollectionViewShellProps) {
   const permissions = initPageResult.permissions.collections?.[collectionSlug];
   const where = [view.filter, query.where].filter((value): value is Where => Boolean(value));
 
-  const { totalDocs } =
+  const totalDocs =
     props.showEmptyState === false
-      ? { totalDocs: 1 }
-      : await req.payload.count({
-          collection: collectionSlug,
-          overrideAccess: false,
-          req,
-          ...(where.length ? { where: where.length === 1 ? where[0] : { and: where } } : {}),
-        });
+      ? 1
+      : await req.payload
+          .count({
+            collection: collectionSlug,
+            overrideAccess: false,
+            req,
+            ...(where.length ? { where: where.length === 1 ? where[0] : { and: where } } : {}),
+          })
+          .then(
+            (result) => result.totalDocs,
+            (error: unknown) => {
+              if (isQueryError(error)) return 0;
+              throw error;
+            },
+          );
 
   const slots = buildFrameSlots({
     activeSlug: view.slug,

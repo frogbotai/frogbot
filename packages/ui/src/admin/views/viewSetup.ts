@@ -1,5 +1,5 @@
 import { getPreferences, upsertPreferences } from '@payloadcms/ui/utilities/upsertPreferences';
-import type { ListQuery, PayloadRequest } from 'payload';
+import type { ListQuery, PayloadRequest, Where } from 'payload';
 
 import { getViewPreferenceKey } from './preferences.js';
 
@@ -32,9 +32,37 @@ export function mergeViewSetup(
   existing: StoredViewPreference | undefined,
   incoming: ViewSetup,
 ): StoredViewPreference {
-  const { where: _where, ...rest } = existing ?? {};
+  const { where: _where, ...rest } =
+    existing && typeof existing === 'object' && !Array.isArray(existing) ? existing : {};
 
   return { ...rest, ...incoming };
+}
+
+/** Payload's error for a filter on a field that doesn't exist or that the user can't read. */
+export function isQueryError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'QueryError';
+}
+
+async function acceptsWhere(
+  req: PayloadRequest,
+  collectionSlug: string,
+  where: unknown,
+): Promise<boolean> {
+  if (!where || typeof where !== 'object') return true;
+
+  try {
+    await req.payload.count({
+      collection: collectionSlug,
+      overrideAccess: false,
+      req,
+      where: where as Where,
+    });
+
+    return true;
+  } catch (error) {
+    if (isQueryError(error)) return false;
+    throw error;
+  }
 }
 
 export async function readViewPreference(
@@ -77,13 +105,31 @@ export async function resolveViewSetup({
   const fresh = isFreshQuery(query);
 
   if (fresh || !req.user) {
-    const preference = await readViewPreference(req, preferenceKey);
+    const stored = await readViewPreference(req, preferenceKey);
+    const refused = fresh && req.user && !(await acceptsWhere(req, collectionSlug, stored?.where));
+    const preference = refused
+      ? await upsertPreferences<StoredViewPreference>({
+          customMerge: (existing) => mergeViewSetup(existing, {}),
+          key: preferenceKey,
+          req,
+          value: {},
+        })
+      : stored;
 
     return {
       fresh,
       preference,
       preferenceKey,
       query: fresh ? { ...pickViewSetup(preference), ...query } : query,
+    };
+  }
+
+  if (!(await acceptsWhere(req, collectionSlug, query.where))) {
+    return {
+      fresh,
+      preference: await readViewPreference(req, preferenceKey),
+      preferenceKey,
+      query,
     };
   }
 

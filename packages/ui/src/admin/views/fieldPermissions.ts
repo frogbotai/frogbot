@@ -1,22 +1,19 @@
-import type { SanitizedFieldPermissions, SanitizedFieldsPermissions } from 'payload';
+import type { SanitizedFieldsPermissions } from 'payload';
 
-/** Whether field permissions allow updating the field at a dot path. */
+/** Whether field permissions allow updating the field at a dot path, and every group above it. */
 export function canUpdateField(
   fields: SanitizedFieldsPermissions | undefined,
   path: string,
 ): boolean {
-  let fieldPermission: SanitizedFieldPermissions | undefined;
-  let fieldPermissions = fields;
+  let permissions = fields;
 
   for (const key of path.split('.')) {
-    if (!fieldPermissions || fieldPermissions === true) {
-      fieldPermission = fieldPermissions;
-      break;
-    }
-
-    fieldPermission = fieldPermissions[key];
-    fieldPermissions = fieldPermission === true ? true : fieldPermission?.fields;
+    if (permissions === true) return true;
+    const permission = permissions?.[key];
+    if (permission === true) return true;
+    if (!permission?.update) return false;
+    permissions = permission.fields;
   }
 
-  return fieldPermission === true || Boolean(fieldPermission?.update);
+  return true;
 }
