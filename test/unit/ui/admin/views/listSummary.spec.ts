@@ -95,6 +95,12 @@ describe('list summary', () => {
     });
   });
 
+  it('leaves a column named like an Object.prototype key out when it has no total', () => {
+    expect(
+      buildSummaryRequest({ paths: ['toString', 'amount'], summary: { amount: 'sum' }, where: {} }),
+    ).toEqual({ draft: true, values: { amount: { sum: 'amount' } } });
+  });
+
   it('sends the content locale when there is one', () => {
     expect(
       buildSummaryRequest({ locale: 'fr', paths: ['name'], summary: { name: 'count' }, where: {} }),
