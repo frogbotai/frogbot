@@ -402,7 +402,7 @@ describe('FrogBot admin views', () => {
     expect(html).not.toContain('Hidden');
   });
 
-  it('SettingsView lists collections hidden from the sidebar with group false, but not admin.hidden ones', async () => {
+  it("SettingsView leaves group false and admin.hidden collections off the Collections cards, as Payload's dashboard does", async () => {
     const i18n = {
       t: (key: string) =>
         ({ 'general:collections': 'Collections', 'general:globals': 'Globals' })[key] ?? key,
@@ -441,10 +441,9 @@ describe('FrogBot admin views', () => {
     const html = renderToStaticMarkup(content);
 
     expect(html).toContain('id="card-posts"');
-    expect(html).toContain('id="card-users"');
+    expect(html).not.toContain('id="card-users"');
     expect(html).not.toContain('Hidden');
-    expect(html.indexOf('id="card-media"')).toBeLessThan(html.indexOf('id="card-users"'));
-    expect(html.indexOf('id="card-users"')).toBeLessThan(html.indexOf('<h2>Content</h2>'));
+    expect(html.indexOf('id="card-media"')).toBeLessThan(html.indexOf('<h2>Content</h2>'));
   });
 
   it('SettingsView leaves Settings collections off the Collections cards', async () => {
