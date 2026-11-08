@@ -178,6 +178,44 @@ describe(`grouped list body [${adapterLabel}]`, () => {
     expect(result?.totalDocs).toBe(1);
   });
 
+  it("groups a value field by each record's latest draft value", async () => {
+    const doc = await create('drafted', { _status: 'published', city: 'Austin', title: 'moved' });
+
+    await booted.payload.update({
+      collection: 'drafted',
+      data: { city: 'Boston' },
+      draft: true,
+      id: doc.id,
+      overrideAccess: true,
+    });
+
+    const { result, sections } = await render('drafted', 'city');
+
+    expect(summary(sections)).toEqual(['Boston:1']);
+    expect(sections[0].data?.docs.map(({ id }) => id)).toEqual([doc.id]);
+    expect(result?.totalDocs).toBe(1);
+  });
+
+  it('gives a stray select value that only a newer draft holds its own group', async () => {
+    const doc = await create('drafted', { _status: 'published', status: 'todo', title: 'stray' });
+    const { docs } = await booted.payload.findVersions({
+      collection: 'drafted',
+      overrideAccess: true,
+      where: { parent: { equals: doc.id } },
+    });
+
+    await booted.payload.db.updateVersion({
+      collection: 'drafted',
+      id: docs[0].id,
+      req,
+      versionData: { ...docs[0], version: { ...docs[0].version, status: 'archived' } },
+    });
+
+    const { sections } = await render('drafted', 'status');
+
+    expect(summary(sections)).toEqual(['todo:0', 'doing:0', 'done:0', 'archived:1']);
+  });
+
   it('still lists records whose select value is no longer an option', async () => {
     const stale = await create('items', { status: 'todo', title: 'stale' });
     await create('items', { status: 'doing', title: 'fresh' });

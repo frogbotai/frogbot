@@ -52,6 +52,7 @@ const Drafts: CollectionConfig = {
   fields: [
     { name: 'title', type: 'text' },
     { name: 'status', type: 'select', options: ['todo', 'doing', 'done'] },
+    { name: 'city', type: 'text' },
   ],
 };
 
