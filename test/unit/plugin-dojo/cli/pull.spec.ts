@@ -8,6 +8,7 @@ import { strToU8, zipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 
 import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
+import { formatBytes } from '../../../../packages/plugins/plugin-dojo/src/cli/data/upload.js';
 import { runPull } from '../../../../packages/plugins/plugin-dojo/src/cli/pull.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeFiles } from './helpers.js';
@@ -274,6 +275,7 @@ describe('frogbot pull', () => {
       const db = new DatabaseSync(path);
 
       db.exec('CREATE TABLE deals (id INTEGER PRIMARY KEY)');
+
       db.exec(
         'CREATE TABLE frogbot_dojo_uploads (slug TEXT PRIMARY KEY, static_dir TEXT NOT NULL)',
       );
@@ -406,8 +408,10 @@ describe('frogbot pull', () => {
       dojo.source = await appTarball();
       dojo.keys.set(7, { FROGBOT_SECRET: 'a'.repeat(48) });
 
+      const database = await exported({ media: 'media' });
+
       dojo.dataZip = zipOf({
-        'frogbot.db': 'SQLite format 3\0',
+        'frogbot.db': database,
         'media/a.png': 'png',
         'media/sizes/a-200.webp': 'webp',
       });
@@ -423,7 +427,13 @@ describe('frogbot pull', () => {
         'GET /api/apps/7/data',
       ]);
       expect(dojo.requests[1].search).toBe('?secret=1');
-      expect(await readFile(join(dest, 'frogbot.db'), 'utf8')).toBe('SQLite format 3\0');
+
+      const pulled = new DatabaseSync(join(dest, 'frogbot.db'));
+      const tables = pulled.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all();
+
+      pulled.close();
+
+      expect(tables.map(({ name }) => name)).toEqual(['deals']);
       expect(await readFile(join(dest, 'media/a.png'), 'utf8')).toBe('png');
       expect(await readFile(join(dest, 'media/sizes/a-200.webp'), 'utf8')).toBe('webp');
       expect(await readFile(join(dest, '.env'), 'utf8')).toBe(
@@ -431,7 +441,7 @@ describe('frogbot pull', () => {
       );
       await expect(stat(join(dest, '.frogbot-data.zip'))).rejects.toThrow();
       expect(result.stdout()[0]).toBe(
-        '[frogbot] Pulled deals into ./deals with its data: the database (16 B) and 2 files.',
+        `[frogbot] Pulled deals into ./deals with its data: the database (${formatBytes(database.length)}) and 2 files.`,
       );
     });
 

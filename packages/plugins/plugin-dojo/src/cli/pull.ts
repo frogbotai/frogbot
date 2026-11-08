@@ -10,6 +10,7 @@ import { x } from 'tar';
 
 import { unzipTo, ZipError } from './data/unzip.js';
 import { formatBytes } from './data/upload.js';
+import { takeUploadFolders } from './data/uploadFolders.js';
 import type { DojoClient } from './dojo.js';
 import { createDojo, dojoMessage, segment } from './dojo.js';
 import { ShareError } from './error.js';
@@ -95,7 +96,7 @@ async function pull(args: string[], io: DojoIO): Promise<number> {
       throw new ShareError(`Couldn't unpack the app's source: ${(error as Error).message}`);
     });
 
-    if (withData) data = await pullData(dojo, id, staging);
+    if (withData) data = await pullData(dojo, id, staging, io.cwd);
 
     await writeLink(staging, { appId: id });
 
@@ -104,6 +105,7 @@ async function pull(args: string[], io: DojoIO): Promise<number> {
     await writeFile(
       join(staging, '.env'),
       `DATABASE_URL=file:./frogbot.db\nFROGBOT_SECRET=${secret}\n`,
+      { mode: 0o600 },
     );
 
     await rename(staging, dest);
@@ -143,6 +145,7 @@ async function pullData(
   dojo: DojoClient,
   id: string | number,
   folder: string,
+  cwd: string,
 ): Promise<PulledData | string> {
   const response = await dojo.request(`/api/apps/${segment(id)}/data`, () => ({
     headers: { accept: 'application/zip' },
@@ -153,7 +156,8 @@ async function pullData(
     throw new ShareError(`Couldn't download the app's data: ${await dojoMessage(response)}`);
   }
 
-  const zip = join(folder, '.frogbot-data.zip');
+  const download = await mkdtemp(join(cwd, '.frogbot-data-'));
+  const zip = join(download, 'data.zip');
 
   try {
     await pipeline(
@@ -163,24 +167,28 @@ async function pullData(
       throw new ShareError(`The data download stopped: ${(error as Error).message}`);
     });
 
-    const files = await unzipTo({ path: zip, size: (await stat(zip)).size, folder }).catch(
-      (error: unknown) => {
+    const size = (await stat(zip)).size;
+    const unpack = (place: (name: string) => string | undefined) =>
+      unzipTo({ path: zip, size, folder, place }).catch((error: unknown) => {
         if (error instanceof ZipError) {
           throw new ShareError(`Couldn't unpack the app's data: ${error.message}.`);
         }
 
         throw error;
-      },
-    );
+      });
 
-    const database = files.find((file) => file.name === databaseEntry);
+    const [database] = await unpack((name) => (name === databaseEntry ? name : undefined));
+    const uploads = database ? takeUploadFolders(join(folder, databaseEntry)) : new Map();
+    const files = await unpack((name) => {
+      const [slug = '', ...rest] = name.split('/');
+      const staticDir = uploads.get(slug);
 
-    return {
-      databaseBytes: database?.size ?? 0,
-      files: files.length - (database ? 1 : 0),
-    };
+      return staticDir && rest.length > 0 ? `${staticDir}/${rest.join('/')}` : undefined;
+    });
+
+    return { databaseBytes: database?.size ?? 0, files: files.length };
   } finally {
-    await rm(zip, { force: true });
+    await rm(download, { recursive: true, force: true });
   }
 }
 

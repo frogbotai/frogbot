@@ -279,7 +279,7 @@ pnpm install
 pnpm dev
 ```
 
-- `--data` also downloads the live database and uploaded files, for the app's owners: the database lands as `frogbot.db`, each collection's files in its `<collection slug>/` folder, and `.env` gets the app's own `FROGBOT_SECRET` so stored connections and sign-ins keep working. An editor's `--data` prints `Only this app's Admins can download its data.` and pulls the code only.
+- `--data` also downloads the live database and uploaded files, for the app's owners: the database lands as `frogbot.db`, each upload collection's files in its `staticDir`, and `.env` (readable only by you) gets the app's own `FROGBOT_SECRET` so stored connections and sign-ins keep working. A data file never replaces one of the app's code files: the pull stops instead. An editor's `--data` prints `Only this app's Admins can download its data.` and pulls the code only.
 - Refuses to overwrite an existing folder.
 - Exits with code `1` if you lack editor/owner permissions or the app has no live version yet, and code `2` if no app slug is passed.
 
