@@ -950,6 +950,11 @@ describe('API keys plugin integration', () => {
       body?: { cascade?: unknown },
     ) => booted.restClient.post(`/api/credentials/${id}/revoke`, body, { headers });
 
+    const mintedCount = (headers: Record<string, string>, id: number | string) =>
+      booted.restClient.get<{ count: number }>(`/api/credentials/${id}/minted-count`, {
+        headers,
+      });
+
     const asKey = (token: string) => ({ 'x-service-key': token });
 
     const stored = (id: number | string) =>
@@ -1196,6 +1201,41 @@ describe('API keys plugin integration', () => {
       );
     });
 
+    it('lets a key revoke only itself and the keys it minted', async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const sibling = await mint(session, 'S');
+      const child = await mint(asKey(parent.body.token), 'C', { canMint: true });
+      const grandchild = await mint(asKey(child.body.token), 'G');
+
+      for (const id of [sibling.body.id, parent.body.id]) {
+        expect((await revoke(asKey(child.body.token), id)).status).toBe(404);
+        expect((await mintedCount(asKey(child.body.token), id)).status).toBe(404);
+      }
+
+      expect((await revoke(asKey(parent.body.token), grandchild.body.id)).status).toBe(404);
+      expect(new Set(await active())).toEqual(
+        new Set([parent.body.id, sibling.body.id, child.body.id, grandchild.body.id]),
+      );
+
+      expect((await mintedCount(asKey(parent.body.token), child.body.id)).body).toEqual({
+        count: 1,
+      });
+      expect((await revoke(asKey(parent.body.token), child.body.id)).status).toBe(200);
+      expect(new Set(await active())).toEqual(new Set([parent.body.id, sibling.body.id]));
+      expect((await revoke(asKey(parent.body.token), parent.body.id)).status).toBe(200);
+    });
+
+    it("lets a signed-in session revoke any of its owner's keys", async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const sibling = await mint(session, 'S');
+      const child = await mint(asKey(parent.body.token), 'C');
+
+      expect((await revoke(session, sibling.body.id)).status).toBe(200);
+      expect((await revoke(session, parent.body.id)).status).toBe(200);
+      expect(await active()).toEqual([]);
+      expect(await stored(child.body.id)).toMatchObject({ revokedAt: expect.any(String) });
+    });
+
     it('revokes every key a revoked key minted, all the way down', async () => {
       const parent = await mint(session, 'P', { canMint: true });
       const child = await mint(asKey(parent.body.token), 'C', { canMint: true });
@@ -1252,11 +1292,6 @@ describe('API keys plugin integration', () => {
       expect(response.status).toBe(400);
       expect(new Set(await active())).toEqual(new Set([parent.body.id, child.body.id]));
     });
-
-    const mintedCount = (headers: Record<string, string>, id: number | string) =>
-      booted.restClient.get<{ count: number }>(`/api/credentials/${id}/minted-count`, {
-        headers,
-      });
 
     it('counts every live key a cascade would revoke, through a key revoked on its own', async () => {
       const parent = await mint(session, 'P', { canMint: true });
