@@ -314,4 +314,23 @@ describe('useCalendar interactions', () => {
       start: '2026-09-10T00:00:00.000Z',
     });
   });
+
+  it('skips an event that ends exactly at the first visible local midnight', () => {
+    const range = getVisibleRange({ date: '2026-03-08', mode: 'week', timeZone });
+    const late = { end: '2026-03-08T08:00:00.000Z', id: 'late', start: '2026-03-08T06:00:00.000Z' };
+
+    expect(expandToCells([late], range)).toEqual([]);
+  });
+
+  it('keeps a timed end on a move when only the start is date-only', () => {
+    const event = { end: '2026-09-08T18:30:00.000Z', id: 'c', start: '2026-09-07T12:00:00.000Z' };
+
+    expect(
+      moveCalendarEvent(event, toDay('2026-09-09'), {
+        dateOnly: true,
+        from: '2026-09-07',
+        timeZone: 'UTC',
+      }),
+    ).toEqual({ end: '2026-09-10T18:30:00.000Z', event, start: '2026-09-09T12:00:00.000Z' });
+  });
 });

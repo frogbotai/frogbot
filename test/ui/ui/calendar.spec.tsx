@@ -355,3 +355,121 @@ describe('calendar in Los Angeles', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
+
+describe('calendar edges in Los Angeles', () => {
+  const LA = 'America/Los_Angeles';
+  const hourHeight = 56;
+  type Event = { end?: string; id: string; start: string; title: string };
+
+  function renderGrid(events: Event[], props: Partial<TimeGridProps<Event>>) {
+    return render(
+      <TimeGrid
+        date="2026-03-08"
+        events={events}
+        hourHeight={hourHeight}
+        mode="week"
+        renderEvent={(item) => item.title}
+        timeZone={LA}
+        {...props}
+      />,
+    );
+  }
+
+  function drag(column: HTMLElement, fromHour: number, toHour: number) {
+    column.getBoundingClientRect = () => ({ height: 24 * hourHeight, top: 0 }) as DOMRect;
+    Object.defineProperty(column, 'setPointerCapture', { configurable: true, value: () => {} });
+    Object.defineProperty(column, 'releasePointerCapture', { configurable: true, value: () => {} });
+
+    act(() => {
+      column.dispatchEvent(
+        new MouseEvent('pointerdown', { bubbles: true, button: 0, clientY: fromHour * hourHeight }),
+      );
+    });
+
+    act(() => {
+      window.dispatchEvent(new MouseEvent('pointerup', { clientY: toHour * hourHeight }));
+    });
+  }
+
+  it('shows a full local day on the spring-forward date in the all-day row', () => {
+    renderGrid(
+      [
+        {
+          end: '2026-03-09T07:00:00.000Z',
+          id: 'd',
+          start: '2026-03-08T08:00:00.000Z',
+          title: 'Holiday',
+        },
+      ],
+      {},
+    );
+
+    expect(screen.getByText('Holiday').closest('.frog-calendar__all-day-cell')).toBeTruthy();
+  });
+
+  it('hides an event in day view that ended at the day’s first midnight', () => {
+    renderGrid(
+      [
+        {
+          end: '2026-09-09T07:00:00.000Z',
+          id: 'e',
+          start: '2026-09-09T05:00:00.000Z',
+          title: 'Evening',
+        },
+      ],
+      { date: '2026-09-09', mode: 'day' },
+    );
+
+    expect(screen.queryByText('Evening')).toBeNull();
+  });
+
+  it('draws a one-hour event in the repeated fall-back hour one hour tall', () => {
+    renderGrid(
+      [
+        {
+          end: '2026-11-01T09:30:00.000Z',
+          id: 'r',
+          start: '2026-11-01T08:30:00.000Z',
+          title: 'Repeat',
+        },
+      ],
+      { date: '2026-11-01', mode: 'day' },
+    );
+
+    const chip = screen.getByText('Repeat').closest<HTMLElement>('.frog-calendar__event');
+
+    expect(chip?.style.height).toBe(`${hourHeight}px`);
+  });
+
+  it('creates a date-only event at noon UTC on the day dragged in Los Angeles', () => {
+    const onCreate = vi.fn();
+
+    renderGrid([], {
+      date: '2026-09-08',
+      dateOnly: true,
+      endDateOnly: true,
+      mode: 'day',
+      onCreate,
+    });
+
+    drag(document.querySelector<HTMLElement>('.frog-calendar__day-column')!, 9, 10);
+
+    expect(onCreate.mock.calls[0]?.[0]).toEqual({
+      end: '2026-09-08T12:00:00.000Z',
+      start: '2026-09-08T12:00:00.000Z',
+    });
+  });
+
+  it('creates a date-only event at noon UTC on the day dragged in Auckland', () => {
+    const onCreate = vi.fn();
+    renderGrid([], { date: '2026-09-08', dateOnly: true, onCreate, timeZone: 'Pacific/Auckland' });
+    const columns = [...document.querySelectorAll<HTMLElement>('.frog-calendar__day-column')];
+    const header = [...document.querySelectorAll('.frog-calendar__days-header strong')].map(
+      (node) => node.textContent,
+    );
+
+    drag(columns[header.indexOf('Tue 8')], 23, 24);
+
+    expect(onCreate.mock.calls[0]?.[0]).toMatchObject({ start: '2026-09-08T12:00:00.000Z' });
+  });
+});
