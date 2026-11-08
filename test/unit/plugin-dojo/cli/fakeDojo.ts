@@ -451,6 +451,7 @@ export async function startFakeDojo(): Promise<FakeDojo> {
     const app = /^\/api\/apps\/([^/]+)(?:\/(cli|deployments|keys|logs|source))?$/.exec(
       url.pathname,
     );
+
     const appRef = decodeURIComponent(app?.[1] ?? '');
     const bySlug = /^\d+$/.test(appRef)
       ? undefined

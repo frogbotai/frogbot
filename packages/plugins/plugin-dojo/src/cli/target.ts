@@ -2,7 +2,7 @@ import type { DojoClient } from './dojo.js';
 import { dojoMessage, segment } from './dojo.js';
 import { ShareError } from './error.js';
 import type { AppLink } from './link.js';
-import { linkPath, writeLink } from './link.js';
+import { linkPath } from './link.js';
 import { findApp } from './nouns/resolve.js';
 
 /** What `share` needs to know about the app it ships to. */
@@ -17,9 +17,9 @@ export async function refusedApp(appId: string | number, response: Response): Pr
   );
 }
 
-/** The linked app's state on Dojo. */
+/** The linked app's state on Dojo, from `GET /api/apps/:app/cli`. */
 export async function appInfo(dojo: DojoClient, appId: string | number): Promise<AppInfo> {
-  const response = await dojo.request(`/api/apps/${segment(appId)}`);
+  const response = await dojo.request(`/api/apps/${segment(appId)}/cli`);
 
   await refusedApp(appId, response);
 
@@ -31,17 +31,15 @@ export async function appInfo(dojo: DojoClient, appId: string | number): Promise
 }
 
 /**
- * `share --app <slug or id>`: the app on Dojo, linked in `.frogbot/app.json` so later shares find it.
- * A folder already linked to another app stops, naming both.
+ * `share --app <slug or id>`: the app on Dojo, and the link `share` writes to `.frogbot/app.json` once
+ * Dojo accepts the upload. A folder already linked to another app stops, naming both.
  */
 export async function appFromFlag({
   dojo,
-  root,
   ref,
   folderLink,
 }: {
   dojo: DojoClient;
-  root: string;
   ref: string;
   folderLink: AppLink | undefined;
 }): Promise<AppInfo & { link: AppLink }> {
@@ -54,8 +52,6 @@ export async function appFromFlag({
   }
 
   const link = { appId: app.id };
-
-  if (!folderLink) await writeLink(root, link);
 
   return { link, started: app.started, level: app.level === 'editor' ? 'editor' : 'owner' };
 }

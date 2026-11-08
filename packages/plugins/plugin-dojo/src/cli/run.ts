@@ -100,9 +100,7 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
   }
 
   const dojo = createDojo(io);
-  const target = flags.app
-    ? await appFromFlag({ dojo, root, ref: flags.app, folderLink })
-    : undefined;
+  const target = flags.app ? await appFromFlag({ dojo, ref: flags.app, folderLink }) : undefined;
 
   const link = target?.link ?? folderLink;
   const { started, level }: AppInfo =
@@ -179,6 +177,8 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
       updateKeys: !editor && flags.updateKeys,
       data: started ? undefined : Boolean(data),
     });
+
+    if (target && !folderLink) await writeLink(root, target.link);
 
     const build = await followBuild({
       dojo,

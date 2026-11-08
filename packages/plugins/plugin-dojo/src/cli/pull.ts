@@ -43,7 +43,7 @@ async function pull(args: string[], io: DojoIO): Promise<number> {
 
   await dojo.signIn();
 
-  const looked = await dojo.request(`/api/apps/${segment(name)}`);
+  const looked = await dojo.request(`/api/apps/${segment(name)}/cli`);
 
   if (!looked.ok) throw new ShareError(await dojoMessage(looked));
 

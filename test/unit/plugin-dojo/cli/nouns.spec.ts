@@ -359,11 +359,11 @@ describe('frogbot dojo <noun> <verb>', () => {
 
     expect(await runDojo(args, result.io)).toBe(2);
     expect(result.stderr()[0]).toContain(message);
-    expect(dojo.requests.filter(({ path }) => path !== '/api/apps/deals')).toEqual([]);
+    expect(dojo.requests.filter(({ path }) => path !== '/api/apps/deals/cli')).toEqual([]);
   });
 
   it.each([
-    [['apps', 'get', 'a/b?c'], 'GET /api/apps/a%2Fb%3Fc'],
+    [['apps', 'get', 'a/b?c'], 'GET /api/apps/a%2Fb%3Fc/cli'],
     [['deployments', 'logs', '7?x=1', '--follow'], 'GET /api/deployments/7%3Fx%3D1/logs'],
     [
       ['deployments', 'logs', '../projects/7', '--follow'],
