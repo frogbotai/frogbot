@@ -309,7 +309,10 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
                 </PopupList.Button>
               ) : null}
               {isEditing && canCreate && !collectionConfig.disableDuplicate ? (
-                <PopupList.Button id="action-panel-duplicate" onClick={() => void duplicate()}>
+                <PopupList.Button
+                  id="action-panel-duplicate"
+                  onClick={() => panel.guard(() => void duplicate())}
+                >
                   {t('general:duplicate')}
                 </PopupList.Button>
               ) : null}

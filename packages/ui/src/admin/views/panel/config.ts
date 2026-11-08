@@ -163,7 +163,7 @@ export function resolvePropertyPaths(
   collectionConfig: ClientCollectionConfig,
   settings: Exclude<PanelSettings, false>,
 ): string[] {
-  if (settings.properties) return settings.properties;
+  if (settings.properties) return [...new Set(settings.properties)];
 
   return collectionConfig.fields
     .filter((field) => fieldIsSidebar(field) && isNamed(field))

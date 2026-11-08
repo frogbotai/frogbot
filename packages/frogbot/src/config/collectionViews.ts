@@ -99,6 +99,8 @@ function validatePanel(collection: CollectionConfig): void {
       throw new Error(`${name}.properties must be an array of field names.`);
     }
 
+    const seen: string[] = [];
+
     for (const path of properties as unknown[]) {
       const field =
         typeof path === 'string' ? resolveDoneField(collection.fields, path) : undefined;
@@ -108,12 +110,29 @@ function validatePanel(collection: CollectionConfig): void {
           `${name}.properties entry "${String(path)}" must name a field, top level or a dot path into a group or named tab.`,
         );
       }
+
+      const entry = path as string;
+      const repeated = seen.find(
+        (other) =>
+          other === entry || entry.startsWith(`${other}.`) || other.startsWith(`${entry}.`),
+      );
+
+      if (repeated !== undefined) {
+        throw new Error(
+          `${name}.properties entry "${entry}" repeats "${repeated}"; each field appears once.`,
+        );
+      }
+
+      seen.push(entry);
     }
   }
 
   if (
     width !== undefined &&
-    (typeof width !== 'number' || width < PANEL_WIDTH.min || width > PANEL_WIDTH.max)
+    (typeof width !== 'number' ||
+      !Number.isFinite(width) ||
+      width < PANEL_WIDTH.min ||
+      width > PANEL_WIDTH.max)
   ) {
     throw new Error(
       `${name}.width ${String(width)} must be a number from ${PANEL_WIDTH.min} to ${PANEL_WIDTH.max}.`,

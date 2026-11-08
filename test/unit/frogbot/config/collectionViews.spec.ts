@@ -450,7 +450,25 @@ describe('collection views', () => {
     ).toThrow(`Collection "tasks" admin.panel.properties entry "${path}" must name a field`);
   });
 
-  it.each([300, 399, 961, '560'])('rejects a panel width of %s', (width) => {
+  it.each([
+    ['the same field twice', ['status', 'status'], 'status'],
+    ['a group and a field inside it', ['dates', 'dates.due'], 'dates'],
+  ])('rejects panel properties naming %s', (_, properties, repeated) => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [
+            { name: 'status', type: 'text' },
+            { name: 'dates', type: 'group', fields: [{ name: 'due', type: 'date' }] },
+          ],
+          admin: { panel: { properties } },
+        },
+      }),
+    ).toThrow(`repeats "${repeated}"; each field appears once.`);
+  });
+
+  it.each([300, 399, 961, '560', Number.NaN])('rejects a panel width of %s', (width) => {
     expect(() =>
       compileCollectionViews({
         collection: {

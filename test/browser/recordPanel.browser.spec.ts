@@ -170,6 +170,14 @@ test('asks before switching away from unsaved edits', async ({ page }) => {
   await card(page, b).click();
   await modal.getByRole('button', { name: 'Leave anyway' }).click();
   await expect(panelTitle(page)).toHaveValue(b.title);
+  await panelTitle(page).fill(`${b.title} unsaved`);
+  await page.locator('.fb-record-panel-header__menu .popup-button').click();
+  await page.locator('#action-panel-duplicate').click();
+  await expect(modal).toBeVisible();
+  await modal.getByRole('button', { name: 'Stay on this page' }).click();
+  await expect(modal).toBeHidden();
+  await expect(panelTitle(page)).toHaveValue(`${b.title} unsaved`);
+  expect(recordParam(page)).toBe(String(b.id));
 });
 
 test('lays out the title, the properties in order once, then the rest', async ({ page }) => {

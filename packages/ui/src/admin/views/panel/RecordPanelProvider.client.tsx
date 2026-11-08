@@ -46,6 +46,8 @@ export type RecordPanelContextValue = {
   create: (initialData?: Data) => void;
   /** Whether the collection has the panel. With `panel: false` records open their edit page. */
   enabled: boolean;
+  /** Runs `action`, first asking with the leave-without-saving confirm when the form has unsaved edits. */
+  guard: (action: () => void) => void;
   /** Opens the open record's full edit page. */
   expand: () => void;
   /** Sends a panel save or delete to every view listening with `useRecordPanelEvents`. */
@@ -242,6 +244,7 @@ export function RecordPanelProvider({
       create,
       enabled,
       expand,
+      guard,
       notify,
       open,
       openId: state.mode === 'edit' ? state.id : undefined,
@@ -258,6 +261,7 @@ export function RecordPanelProvider({
       create,
       enabled,
       expand,
+      guard,
       notify,
       open,
       reset,
@@ -301,6 +305,7 @@ const CLOSED: RecordPanelContextValue = {
   create: noop,
   enabled: false,
   expand: noop,
+  guard: (action) => action(),
   notify: noop,
   open: noop,
   reset: noop,
