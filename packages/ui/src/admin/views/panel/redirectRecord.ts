@@ -14,7 +14,7 @@ export function redirectRecordParam({
   redirect: (path: `/${string}`) => void;
 }): void {
   const id = Array.isArray(record) ? record[0] : record;
-  if (typeof id !== 'string' || !id) return;
+  if (typeof id !== 'string' || !id || id === '.' || id === '..') return;
   const panel = (collectionConfig.admin?.custom?.frogbot as { panel?: unknown } | undefined)?.panel;
   if (panel !== false) return;
 
