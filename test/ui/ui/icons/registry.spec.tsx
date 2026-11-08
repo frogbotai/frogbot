@@ -27,7 +27,15 @@ describe('iconRegistry', () => {
     expect(iconNames).toContain('money-bag');
     expect(iconNames).toContain('map-pin');
     expect(iconNames).not.toContain('create-lucide');
-    expect(iconNames).toEqual(configuredIconNames);
+    expect(iconNames.filter((name) => !name.startsWith('brand-'))).toEqual(configuredIconNames);
+  });
+
+  it('names brand logos with a brand- prefix', () => {
+    expect(iconNames).toContain('brand-discover');
+    expect(iconNames).toContain('brand-visa');
+    expect(iconNames).toContain('brand-git-hub');
+    expect(iconNames).not.toContain('discover');
+    expect(iconNames).not.toContain('visa');
   });
 
   it('renders registered icons', () => {

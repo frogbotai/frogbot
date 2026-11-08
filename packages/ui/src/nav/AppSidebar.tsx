@@ -164,7 +164,11 @@ export function AppSidebar({
             }}
             type="button"
           >
-            {showToggleIcon ? <SidebarLeftIcon size={20} /> : logo || <FrogBotFavicon size={40} />}
+            {showToggleIcon ? (
+              <SidebarLeftIcon className="fb-sidebar-toggle-icon" size={20} />
+            ) : (
+              logo || <FrogBotFavicon size={40} />
+            )}
           </button>
         </Tooltip>
         {labelsVisible && (
@@ -179,7 +183,7 @@ export function AppSidebar({
               }}
               type="button"
             >
-              <SidebarLeftIcon size={20} />
+              <SidebarLeftIcon className="fb-sidebar-toggle-icon" size={20} />
             </button>
           </div>
         )}

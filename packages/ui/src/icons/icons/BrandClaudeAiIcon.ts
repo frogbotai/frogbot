@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const claudeAiIcon: IconNode = [
+export const brandClaudeAiIcon: IconNode = [
   [
     'path',
     {
@@ -11,6 +11,6 @@ export const claudeAiIcon: IconNode = [
   ],
 ];
 
-const ClaudeAiIcon = createLucideIcon('ClaudeAiIcon', claudeAiIcon, 0, '0 0 20 20');
+const BrandClaudeAiIcon = createLucideIcon('BrandClaudeAiIcon', brandClaudeAiIcon, 0, '0 0 20 20');
 
-export default ClaudeAiIcon;
+export default BrandClaudeAiIcon;

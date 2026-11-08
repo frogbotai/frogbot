@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const youtubeIcon: IconNode = [
+export const brandYoutubeIcon: IconNode = [
   [
     'path',
     {
@@ -12,6 +12,6 @@ export const youtubeIcon: IconNode = [
   ],
 ];
 
-const YoutubeIcon = createLucideIcon('YoutubeIcon', youtubeIcon, 0, '0 0 21 20');
+const BrandYoutubeIcon = createLucideIcon('BrandYoutubeIcon', brandYoutubeIcon, 0, '0 0 21 20');
 
-export default YoutubeIcon;
+export default BrandYoutubeIcon;

@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const mcpIcon: IconNode = [
+export const brandMcpIcon: IconNode = [
   [
     'path',
     {
@@ -25,6 +25,6 @@ export const mcpIcon: IconNode = [
   ],
 ];
 
-const McpIcon = createLucideIcon('McpIcon', mcpIcon, 4.312, '0 0 147 158');
+const BrandMcpIcon = createLucideIcon('BrandMcpIcon', brandMcpIcon, 4.312, '0 0 147 158');
 
-export default McpIcon;
+export default BrandMcpIcon;

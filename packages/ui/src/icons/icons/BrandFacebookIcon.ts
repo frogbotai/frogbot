@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const facebookIcon: IconNode = [
+export const brandFacebookIcon: IconNode = [
   [
     'path',
     {
@@ -12,6 +12,6 @@ export const facebookIcon: IconNode = [
   ],
 ];
 
-const FacebookIcon = createLucideIcon('FacebookIcon', facebookIcon, 1, '0 0 21 20');
+const BrandFacebookIcon = createLucideIcon('BrandFacebookIcon', brandFacebookIcon, 1, '0 0 21 20');
 
-export default FacebookIcon;
+export default BrandFacebookIcon;

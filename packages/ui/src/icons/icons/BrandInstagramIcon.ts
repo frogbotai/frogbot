@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const instagramIcon: IconNode = [
+export const brandInstagramIcon: IconNode = [
   [
     'path',
     {
@@ -12,6 +12,11 @@ export const instagramIcon: IconNode = [
   ],
 ];
 
-const InstagramIcon = createLucideIcon('InstagramIcon', instagramIcon, 0, '0 0 21 20');
+const BrandInstagramIcon = createLucideIcon(
+  'BrandInstagramIcon',
+  brandInstagramIcon,
+  0,
+  '0 0 21 20',
+);
 
-export default InstagramIcon;
+export default BrandInstagramIcon;

@@ -166,6 +166,7 @@ export default buildConfig({
           {
             type: 'calendar',
             start: 'dueAt',
+            end: 'endsAt',
             defaultFields: [
               'status',
               'channel',
@@ -201,6 +202,7 @@ export default buildConfig({
               },
             },
             { name: 'dueAt', type: 'date' },
+            { name: 'endsAt', type: 'date' },
           ],
         },
         {

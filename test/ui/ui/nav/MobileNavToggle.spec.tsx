@@ -13,6 +13,16 @@ describe('MobileNavToggle', () => {
     expect(onOpen).toHaveBeenCalledOnce();
   });
 
+  it('draws the sidebar icon', () => {
+    render(<MobileNavToggle navState="mobile-nav-closed" onOpen={vi.fn()} />);
+
+    expect(
+      screen
+        .getByRole('button', { name: 'Open navigation' })
+        .querySelector('.lucide-sidebar-left-icon.fb-sidebar-toggle-icon'),
+    ).not.toBeNull();
+  });
+
   it.each(['mobile-nav-open', 'desktop-nav-open', 'desktop-nav-closed'] as const)(
     'is absent in the %s state',
     (navState) => {

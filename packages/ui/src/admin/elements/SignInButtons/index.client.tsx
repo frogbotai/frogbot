@@ -2,28 +2,28 @@
 
 import { Button } from '@payloadcms/ui';
 
-import DropboxIcon from '../../../icons/icons/DropboxIcon.js';
-import GitHubIcon from '../../../icons/icons/GitHubIcon.js';
-import GoogleIcon from '../../../icons/icons/GoogleIcon.js';
-import MicrosoftIcon from '../../../icons/icons/MicrosoftIcon.js';
-import NotionIcon from '../../../icons/icons/NotionIcon.js';
-import SlackIcon from '../../../icons/icons/SlackIcon.js';
-import StripeIcon from '../../../icons/icons/StripeIcon.js';
-import XeroIcon from '../../../icons/icons/XeroIcon.js';
-import ZoomIcon from '../../../icons/icons/ZoomIcon.js';
+import BrandDropboxIcon from '../../../icons/icons/BrandDropboxIcon.js';
+import BrandGitHubIcon from '../../../icons/icons/BrandGitHubIcon.js';
+import BrandGoogleIcon from '../../../icons/icons/BrandGoogleIcon.js';
+import BrandMicrosoftIcon from '../../../icons/icons/BrandMicrosoftIcon.js';
+import BrandNotionIcon from '../../../icons/icons/BrandNotionIcon.js';
+import BrandSlackIcon from '../../../icons/icons/BrandSlackIcon.js';
+import BrandStripeIcon from '../../../icons/icons/BrandStripeIcon.js';
+import BrandXeroIcon from '../../../icons/icons/BrandXeroIcon.js';
+import BrandZoomIcon from '../../../icons/icons/BrandZoomIcon.js';
 import { type LucideIcon } from '../../../icons/types.js';
 
 const baseClass = 'oauth-login-buttons';
 const providerIcons: Record<string, LucideIcon> = {
-  dropbox: DropboxIcon,
-  github: GitHubIcon,
-  google: GoogleIcon,
-  microsoft: MicrosoftIcon,
-  notion: NotionIcon,
-  slack: SlackIcon,
-  stripe: StripeIcon,
-  xero: XeroIcon,
-  zoom: ZoomIcon,
+  dropbox: BrandDropboxIcon,
+  github: BrandGitHubIcon,
+  google: BrandGoogleIcon,
+  microsoft: BrandMicrosoftIcon,
+  notion: BrandNotionIcon,
+  slack: BrandSlackIcon,
+  stripe: BrandStripeIcon,
+  xero: BrandXeroIcon,
+  zoom: BrandZoomIcon,
 };
 
 export type SignInButtonsClientProps = {

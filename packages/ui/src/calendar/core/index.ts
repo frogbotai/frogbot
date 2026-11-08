@@ -1,4 +1,4 @@
-import { TZDate } from '@date-fns/tz';
+import { TZDate, tzOffset } from '@date-fns/tz';
 import {
   addDays,
   addMinutes,
@@ -39,6 +39,15 @@ export type CalendarLane<T extends CalendarEvent = CalendarEvent> = {
   laneCount: number;
 };
 
+/** A calendar date in a zone: `yyyy-MM-dd` is that local day, anything else is an instant. */
+export function parseCalendarDate(date: string, timeZone: string): TZDate {
+  const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+
+  return day
+    ? new TZDate(Number(day[1]), Number(day[2]) - 1, Number(day[3]), timeZone)
+    : new TZDate(Date.parse(date), timeZone);
+}
+
 export function getVisibleRange({
   date,
   mode,
@@ -50,7 +59,7 @@ export function getVisibleRange({
   timeZone?: string;
   weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
 }): CalendarRange {
-  const zonedDate = new TZDate(date, timeZone);
+  const zonedDate = parseCalendarDate(date, timeZone);
   let start = startOfDay(zonedDate);
   let end = addDays(start, 1);
 
@@ -65,6 +74,23 @@ export function getVisibleRange({
   }
 
   return { end: end.toISOString(), start: start.toISOString(), timeZone };
+}
+
+/** The calendar day of an instant in a time zone, as `yyyy-MM-dd`. */
+export function dayKey(instant: Date | number | string, timeZone: string): string {
+  return format(new TZDate(new Date(instant).getTime(), timeZone), 'yyyy-MM-dd');
+}
+
+/**
+ * The same visible days as `range`, as UTC midnights. Date-only values are stored at 12:00 UTC
+ * and belong to their UTC date in every zone, so they are placed on this range.
+ */
+export function getFloatingRange(range: CalendarRange): CalendarRange {
+  return {
+    end: `${dayKey(range.end, range.timeZone)}T00:00:00.000Z`,
+    start: `${dayKey(range.start, range.timeZone)}T00:00:00.000Z`,
+    timeZone: 'UTC',
+  };
 }
 
 export function getRangeDays(range: CalendarRange, count: number): Date[] {
@@ -91,7 +117,10 @@ export function expandToCells<T extends CalendarEvent>(
 
     const clippedEnd = new TZDate(Math.min(eventEnd.getTime(), rangeEnd.getTime()), range.timeZone);
 
-    if (clippedEnd < rangeStart || clippedStart >= rangeEnd || clippedEnd < clippedStart) continue;
+    const hasLength = eventEnd.getTime() > eventStart.getTime();
+    const endsBeforeRange = hasLength ? clippedEnd <= rangeStart : clippedEnd < rangeStart;
+
+    if (endsBeforeRange || clippedStart >= rangeEnd || clippedEnd < clippedStart) continue;
 
     const firstDay = startOfDay(clippedStart);
     const lastInstant =
@@ -152,12 +181,15 @@ export function layoutLanes<T extends CalendarEvent>(events: T[]): CalendarLane<
   return result;
 }
 
-export function snapTo(date: string, minutes: number): string {
+export function snapTo(date: string, minutes: number, timeZone = 'UTC'): string {
   if (!Number.isInteger(minutes) || minutes <= 0) {
     throw new RangeError('minutes must be a positive integer');
   }
 
   const interval = minutes * 60_000;
+  const offset = tzOffset(timeZone, new Date(date)) * 60_000;
 
-  return new Date(Math.round(Date.parse(date) / interval) * interval).toISOString();
+  return new Date(
+    Math.round((Date.parse(date) + offset) / interval) * interval - offset,
+  ).toISOString();
 }

@@ -6,7 +6,10 @@ import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'reac
 import type { CalendarEvent, CalendarLane } from './core/index.js';
 import type { CalendarResizeEdge } from './useCalendar.js';
 
+const EDGES: CalendarResizeEdge[] = ['start', 'end'];
+
 export function EventChip<T extends CalendarEvent>({
+  cell,
   disabled,
   dragId,
   event,
@@ -15,8 +18,11 @@ export function EventChip<T extends CalendarEvent>({
   onClick,
   onResizeStart,
   renderEvent,
+  resizeEdges = EDGES,
   style,
 }: {
+  /** The day cell this chip is drawn in, so a drag between days shifts by the right amount. */
+  cell?: string;
   disabled?: boolean;
   dragId?: string;
   event: T;
@@ -25,9 +31,15 @@ export function EventChip<T extends CalendarEvent>({
   onClick?: () => void;
   onResizeStart?: (edge: CalendarResizeEdge, event: PointerEvent) => void;
   renderEvent: (event: T) => ReactNode;
+  resizeEdges?: CalendarResizeEdge[];
   style?: CSSProperties;
 }) {
-  const drag = useDraggable({ data: { eventId: event.id }, disabled, id: dragId ?? event.id });
+  const drag = useDraggable({
+    data: { cell, eventId: event.id },
+    disabled,
+    id: dragId ?? event.id,
+  });
+
   const resize = (edge: CalendarResizeEdge) => (pointer: PointerEvent) => {
     pointer.stopPropagation();
     onResizeStart?.(edge, pointer);
@@ -67,22 +79,17 @@ export function EventChip<T extends CalendarEvent>({
       }
     >
       {renderEvent(event)}
-      {!disabled && onResizeStart ? (
-        <>
-          <button
-            aria-label="Resize start"
-            className="frog-calendar__resize frog-calendar__resize--start"
-            onPointerDown={resize('start')}
-            type="button"
-          />
-          <button
-            aria-label="Resize end"
-            className="frog-calendar__resize frog-calendar__resize--end"
-            onPointerDown={resize('end')}
-            type="button"
-          />
-        </>
-      ) : null}
+      {!disabled && onResizeStart
+        ? resizeEdges.map((edge) => (
+            <button
+              aria-label={`Resize ${edge}`}
+              className={`frog-calendar__resize frog-calendar__resize--${edge}`}
+              key={edge}
+              onPointerDown={resize(edge)}
+              type="button"
+            />
+          ))
+        : null}
     </div>
   );
 }

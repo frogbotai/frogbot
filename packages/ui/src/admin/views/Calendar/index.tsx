@@ -1,5 +1,5 @@
 import { getColumns, renderTable } from '@payloadcms/ui/rsc';
-import type { AdminViewServerProps } from 'payload';
+import { type AdminViewServerProps, getFieldByPath } from 'payload';
 import { getFromImportMap, transformColumnsToSearchParams } from 'payload/shared';
 import type { ComponentType } from 'react';
 
@@ -10,7 +10,12 @@ import { resolveViewColumnPreferences, type ViewColumnsSource } from '../prefere
 import { resolveViewSetup } from '../viewSetup.js';
 import { CalendarPreference } from './CalendarPreference.client.js';
 import { CalendarViewClient } from './CalendarView.client.js';
-import { type CalendarPreferenceValue, resolveCalendarDate, resolveCalendarMode } from './data.js';
+import {
+  type CalendarPreferenceValue,
+  isDateOnly,
+  resolveCalendarDate,
+  resolveCalendarMode,
+} from './data.js';
 
 export async function CalendarView(input: AdminViewServerProps) {
   const props = await withPageProps(input);
@@ -133,6 +138,17 @@ export async function CalendarView(input: AdminViewServerProps) {
         collectionSlug={collectionSlug}
         color={calendar.color}
         date={date}
+        dateOnly={isDateOnly(
+          getFieldByPath({ fields: collectionConfig.flattenedFields, path: calendar.start })?.field,
+        )}
+        endDateOnly={
+          calendar.end
+            ? isDateOnly(
+                getFieldByPath({ fields: collectionConfig.flattenedFields, path: calendar.end })
+                  ?.field,
+              )
+            : false
+        }
         filter={calendar.filter}
         mode={mode}
         modes={calendar.modes}

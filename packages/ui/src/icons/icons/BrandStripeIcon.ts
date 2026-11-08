@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const stripeIcon: IconNode = [
+export const brandStripeIcon: IconNode = [
   [
     'path',
     {
@@ -11,6 +11,6 @@ export const stripeIcon: IconNode = [
   ],
 ];
 
-const StripeIcon = createLucideIcon('StripeIcon', stripeIcon, 0, '0 0 24 24');
+const BrandStripeIcon = createLucideIcon('BrandStripeIcon', brandStripeIcon, 0, '0 0 24 24');
 
-export default StripeIcon;
+export default BrandStripeIcon;

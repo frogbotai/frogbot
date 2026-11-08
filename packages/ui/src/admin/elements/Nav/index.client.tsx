@@ -17,6 +17,7 @@ import { NavShell, type NavShellProps } from '../../../nav/NavShell.js';
 import type { PaletteModel } from '../CommandPalette/buildPaletteModel.js';
 import { RecordPalette } from '../CommandPalette/index.client.js';
 import { SettingsNav, type SettingsNavProps } from '../SettingsNav/index.client.js';
+import { HeaderToggleIcon } from './HeaderToggleIcon.js';
 
 export type FrogBotNavClientProps = Omit<
   NavShellProps,
@@ -60,6 +61,7 @@ function PayloadNavAdapter({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      <HeaderToggleIcon pathname={pathname} />
     </NavAdapterProvider>
   );
 }

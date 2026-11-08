@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const googleIcon: IconNode = [
+export const brandGoogleIcon: IconNode = [
   [
     'path',
     {
@@ -11,6 +11,6 @@ export const googleIcon: IconNode = [
   ],
 ];
 
-const GoogleIcon = createLucideIcon('GoogleIcon', googleIcon, 0, '0 0 24 24');
+const BrandGoogleIcon = createLucideIcon('BrandGoogleIcon', brandGoogleIcon, 0, '0 0 24 24');
 
-export default GoogleIcon;
+export default BrandGoogleIcon;

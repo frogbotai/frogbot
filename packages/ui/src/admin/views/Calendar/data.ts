@@ -1,5 +1,5 @@
 import type { CalendarMode } from 'frogbot';
-import type { ColumnPreference } from 'payload';
+import type { ColumnPreference, FlattenedField } from 'payload';
 
 export type CalendarPreferenceValue = {
   columns?: ColumnPreference[];
@@ -38,4 +38,15 @@ export function resolveCalendarDate({
   today: string;
 }): string {
   return queryDate || preferenceDate || today;
+}
+
+/**
+ * A date field set to pick only a day or a month: Payload stores its values at 12:00 UTC. A plain
+ * date field can hold any instant, such as `createdAt` or a hook's timestamp, so it counts as timed.
+ */
+export function isDateOnly(field: FlattenedField | undefined): boolean {
+  if (field?.type !== 'date') return false;
+  const appearance = field.admin?.date?.pickerAppearance;
+
+  return appearance === 'dayOnly' || appearance === 'monthOnly';
 }
