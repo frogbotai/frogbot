@@ -58,7 +58,7 @@ A value name can't equal a `groupBy` path or start with `-`. The result types ke
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `collection` | `string` | Required | The collection slug. |
-| `groupBy` | `AggregateGroupBy \| AggregateGroupBy[]` | Required | The field, date bucket, or list of them to group by. See [Group by](#group-by). |
+| `groupBy` | `AggregateGroupBy \| AggregateGroupBy[]` | — | The field, date bucket, or list of them to group by. Leave it out for [one row of totals](#totals-without-groups). See [Group by](#group-by). |
 | `values` | `AggregateValues` | Required | The named totals to compute per group, at least one. |
 | `where` | `Where` | — | A [query](/queries/overview) that limits the documents. |
 | `sort` | `Sort` | Every key ascending | `groupBy` paths and value names, with `-` for descending. |
@@ -114,6 +114,23 @@ A document with several values for a key, such as a `hasMany` select or relation
 ### Relationship keys
 
 Relationship keys come back as IDs. With `depth` of `1` or more, each key is replaced with the related document, shaped by `populate`. A related document the caller can't read stays an ID.
+
+## Totals without groups
+
+Leave out `groupBy` to total every matching document in one row, such as the footer of a list:
+
+```ts
+const { groups } = await frogbot.aggregate({
+  collection: 'deals',
+  values: { deals: { count: true }, value: { sum: 'amount' }, latest: { max: 'closedAt' } },
+  where: { stage: { equals: 'won' } },
+  req,
+});
+
+// [{ group: {}, values: { deals: 12, value: 48000, latest: '2026-03-02T00:00:00.000Z' } }]
+```
+
+The result always has that one row. When nothing matches, or the caller can't read the collection and `disableErrors` is `true`, counts and sums are `0` and the rest `null`. `sort`, `limit` and `page` fail with `AggregateValidationError` without `groupBy`, because there is nothing to sort or page.
 
 ## Results and paging
 

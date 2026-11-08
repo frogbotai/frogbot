@@ -120,12 +120,9 @@ export const aggregate: AdapterAggregate = async ({
     order[sortField(descriptor)] = descriptor.direction === 'asc' ? 1 : -1;
   }
 
-  pipeline.push(
-    { $group: perDocument },
-    { $group: totals },
-    { $addFields: nullsLast },
-    { $sort: order },
-  );
+  pipeline.push({ $group: perDocument }, { $group: totals });
+
+  if (sort.length) pipeline.push({ $addFields: nullsLast }, { $sort: order });
 
   if (limit) {
     pipeline.push({

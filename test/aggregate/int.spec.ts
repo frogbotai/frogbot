@@ -286,6 +286,66 @@ describe(`aggregate [${adapterLabel}]`, () => {
     ]);
   });
 
+  it('totals every matching document in one row without groupBy', async () => {
+    const result = await booted.frogbot.aggregate({
+      collection: dealsSlug,
+      values: { ...values, first: { min: 'closedAt' }, last: { max: 'closedAt' } },
+      overrideAccess: true,
+    });
+
+    expect(result.groups).toEqual([
+      {
+        group: {},
+        values: {
+          deals: 4,
+          total: 1000,
+          average: expect.closeTo(1000 / 3, 6),
+          smallest: 100,
+          largest: 600,
+          first: '2025-12-29T10:00:00.000Z',
+          last: '2026-01-05T00:00:00.000Z',
+        },
+      },
+    ]);
+
+    expect(result).toMatchObject({ totalDocs: 1, totalPages: 1, page: 1, hasNextPage: false });
+
+    const drafts = await booted.frogbot.aggregate({
+      collection: dealsSlug,
+      values: { deals: { count: true }, total: { sum: 'amount' } },
+      where: { stage: { equals: 'won' } },
+      draft: true,
+      overrideAccess: true,
+    });
+
+    expect(drafts.groups).toEqual([{ group: {}, values: { deals: 3, total: 1900 } }]);
+  });
+
+  it('returns one row of 0 counts and sums and null for the rest when nothing matches without groupBy', async () => {
+    const result = await booted.frogbot.aggregate({
+      collection: dealsSlug,
+      where: { title: { equals: 'none' } },
+      values: { ...values, first: { min: 'closedAt' } },
+      overrideAccess: true,
+    });
+
+    expect(result.groups).toEqual([
+      {
+        group: {},
+        values: {
+          deals: 0,
+          total: 0,
+          average: null,
+          smallest: null,
+          largest: null,
+          first: null,
+        },
+      },
+    ]);
+
+    expect(result.totalDocs).toBe(1);
+  });
+
   it('returns date minimums and maximums as ISO strings', async () => {
     const { groups } = await booted.frogbot.aggregate({
       collection: dealsSlug,
