@@ -3,7 +3,8 @@ import type { McpPluginOptions, McpTool } from '@frogbotai/plugin-mcp';
 import { definePrompt, mcpPlugin } from '@frogbotai/plugin-mcp';
 // @ts-expect-error -- MCP tools are FrogBot tools; Payload's builders aren't exported.
 import { defineTool } from '@frogbotai/plugin-mcp';
-import type { Tool } from 'frogbot';
+import type { Tool, ToolAnnotations } from 'frogbot';
+import { definePiece } from 'frogbot/pieces';
 import { question, write_todos } from 'frogbot/tools';
 import { expectTypeOf } from 'vitest';
 import { z } from 'zod';
@@ -58,4 +59,51 @@ mcpPlugin({
       messages: [{ role: 'user', content: { type: 'text', text: `Hello ${input.name}` } }],
     })),
   },
+});
+
+const deleteTicket: Tool = {
+  slug: 'deleteTicket',
+  description: 'Delete a ticket.',
+  annotations: { title: 'Delete ticket', destructiveHint: true, idempotentHint: true },
+  inputSchema: z.object({ id: z.string() }),
+  execute: () => null,
+};
+
+mcpPlugin({
+  resourceMetadataURL: 'https://app.example.com/.well-known/oauth-protected-resource',
+  tools: [deleteTicket, { ...math.addNumbers, annotations: { readOnlyHint: true } }],
+});
+
+expectTypeOf<NonNullable<Tool['annotations']>>().toEqualTypeOf<ToolAnnotations>();
+
+const misspelt: Tool = {
+  ...deleteTicket,
+  // @ts-expect-error -- hints use MCP's names, such as `destructiveHint`.
+  annotations: { destructive: true },
+};
+
+void misspelt;
+
+definePiece({
+  slug: 'tickets',
+  label: 'Tickets',
+  admin: { description: 'Tickets', group: 'Test' },
+  actions: [
+    {
+      slug: 'remove',
+      description: 'Delete a ticket.',
+      input: z.object({ id: z.string() }),
+      idempotent: true,
+      annotations: { destructiveHint: true },
+      run: () => Promise.resolve({ ok: true }),
+    },
+    {
+      slug: 'lookup',
+      description: 'Look up a ticket.',
+      input: z.object({ id: z.string() }),
+      // @ts-expect-error -- a piece action's hints have the same names as a tool's.
+      annotations: { readOnly: true },
+      run: () => Promise.resolve({ ok: true }),
+    },
+  ],
 });

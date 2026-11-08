@@ -512,6 +512,7 @@ export type {
   ClientToolValidate,
   Tool,
   ToolAccess,
+  ToolAnnotations,
   ToolCtx,
   ToolOutputLimits,
   ToolSource,

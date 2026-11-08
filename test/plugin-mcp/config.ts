@@ -19,6 +19,8 @@ export const usersSlug = 'users';
 export const postsSlug = 'posts';
 export const ticketsSlug = 'tickets';
 export const secretsSlug = 'secrets';
+export const membersSlug = 'members';
+export const staffNotesSlug = 'staff-notes';
 export const apiKeysSlug = 'api-keys';
 export const mcpEndpoint = '/api/mcp';
 export const apiKeyToken = `fb_${'A'.repeat(43)}`;
@@ -28,7 +30,11 @@ export const customStrategyHeader = 'x-mcp-custom-actor';
 export const customStrategyName = 'mcp-custom-actor';
 export const actorToolName = 'getMcpActor';
 export const restrictedToolName = 'getMcpSecret';
+export const staffToolName = 'getStaffSecret';
+export const memberHeader = 'x-mcp-member';
+export const memberStrategyName = 'mcp-member';
 export const customActorApiKeyToken = `fb_${'C'.repeat(43)}`;
+export const resourceMetadataURL = 'https://app.example.com/.well-known/oauth-protected-resource';
 export const strategyFailureMessage = 'API-key storage unavailable: secret database credentials';
 export const testCredentials = {
   email: 'mcp-key-owner@frogbot.local',
@@ -71,6 +77,42 @@ const Users: CollectionConfig = {
   fields: [],
 };
 
+export const memberCredentials = {
+  email: 'mcp-member@frogbot.local',
+  password: 'frogbot-test-password',
+};
+
+const Members: CollectionConfig = {
+  slug: membersSlug,
+  auth: {
+    strategies: [
+      {
+        name: memberStrategyName,
+        authenticate: async ({ frogbot, headers }) => {
+          if (headers.get(memberHeader) !== memberCredentials.email) return { user: null };
+
+          const { docs } = await frogbot.find({
+            collection: membersSlug,
+            limit: 1,
+            overrideAccess: true,
+            where: { email: { equals: memberCredentials.email } },
+          });
+
+          return { user: docs[0] ? { id: docs[0].id, email: docs[0].email } : null };
+        },
+      },
+    ],
+  },
+  access: openAccess,
+  fields: [],
+};
+
+const StaffNotes: CollectionConfig = {
+  slug: staffNotesSlug,
+  access: { ...openAccess, read: ({ req }) => req.user?.collection === usersSlug },
+  fields: [{ name: 'title', type: 'text' }],
+};
+
 const Posts: CollectionConfig = {
   slug: postsSlug,
   access: openAccess,
@@ -102,6 +144,7 @@ const Tickets: CollectionConfig = {
 const getMcpActor: Tool = {
   slug: actorToolName,
   description: 'Returns the authenticated MCP actor.',
+  annotations: { readOnlyHint: true, idempotentHint: true },
   inputSchema: z.object({}),
   execute: (_input, { req }) => ({
     id: req.user?.id,
@@ -110,6 +153,14 @@ const getMcpActor: Tool = {
     strategy: req.user && '_strategy' in req.user ? req.user._strategy : undefined,
     apiKeyId: req.user && 'apiKeyId' in req.user ? req.user.apiKeyId : undefined,
   }),
+};
+
+const getStaffSecret: Tool = {
+  slug: staffToolName,
+  description: 'Returns a secret only users may read.',
+  inputSchema: z.object({}),
+  access: ({ req }) => req.user?.collection === usersSlug,
+  execute: () => 'the staff secret',
 };
 
 const getMcpSecret: Tool = {
@@ -122,12 +173,19 @@ const getMcpSecret: Tool = {
 
 export default await buildTestConfig({
   admin: { user: usersSlug },
-  collections: [Users, Posts, Tickets, Secrets],
+  collections: [Users, Members, Posts, Tickets, Secrets, StaffNotes],
   plugins: [
     rolesPlugin(),
     apiKeysPlugin({ authCollection: usersSlug, collectionSlug: apiKeysSlug }),
     mcpPlugin({
-      tools: [getMcpActor, getMcpSecret, createMathHelper().addNumbers, write_todos],
+      resourceMetadataURL,
+      tools: [
+        getMcpActor,
+        getMcpSecret,
+        getStaffSecret,
+        { ...createMathHelper().addNumbers, annotations: { readOnlyHint: true } },
+        write_todos,
+      ],
     }),
   ],
 });
