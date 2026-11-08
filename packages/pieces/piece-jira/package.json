@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/piece-jira",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "description": "Jira Cloud issues, comments, attachments, boards and sprints for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",

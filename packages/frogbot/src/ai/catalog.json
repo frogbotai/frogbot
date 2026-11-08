@@ -1280,6 +1280,11 @@
     "mode": "chat"
   },
   {
+    "id": "fireworks/accounts/fireworks/models/kimi-k3p1-pro",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
     "id": "fireworks/accounts/fireworks/models/minimax-m3",
     "provider": "fireworks",
     "mode": "chat"
@@ -1311,6 +1316,11 @@
   },
   {
     "id": "fireworks/accounts/fireworks/routers/deepseek-v4p1-flash-1017-spot",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/routers/deepseek-v4p1-flash-1017-ultrafast",
     "provider": "fireworks",
     "mode": "chat"
   },
@@ -2400,21 +2410,6 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/inception/mercury-2",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/inception/mercury-2.5",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/inception/mercury-3",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/inclusionai/ling-3.0-flash",
     "provider": "openrouter",
     "mode": "chat"
@@ -2456,6 +2451,16 @@
   },
   {
     "id": "openrouter/liquid/lfm-2.5-24b-a2b",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/liquid/lfm-3-1.7b",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/liquid/lfm-3-1.7b:free",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -2781,11 +2786,6 @@
   },
   {
     "id": "openrouter/nvidia/nemotron-3.5-content-safety",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/nvidia/nemotron-3.5-content-safety:free",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -4050,6 +4050,11 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/deepseek/deepseek-v4.1-flash-1017-ultrafast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/deepseek/deepseek-v4.1-flash-fast",
     "provider": "vercel",
     "mode": "chat"
@@ -4136,6 +4141,11 @@
   },
   {
     "id": "vercel/google/gemma-4-31b-it",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/humansand/ampersand-v0.1",
     "provider": "vercel",
     "mode": "chat"
   },
