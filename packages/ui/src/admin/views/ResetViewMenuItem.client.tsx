@@ -3,10 +3,11 @@
 import { PopupList, useConfig, usePathname, usePreferences, useRouter } from '@payloadcms/ui';
 import { formatAdminURL } from 'payload/shared';
 
-import { getViewPreferenceKey } from './preferences.js';
+import { getGroupsPreferenceKey, getViewPreferenceKey } from './preferences.js';
 
 /**
- * The view menu's "Reset to default": deletes the user's saved setup for this view and reloads
+ * The view menu's "Reset to default": deletes the user's saved setup and collapsed groups for
+ * this view and reloads
  * it with the view's config defaults. The list also drops Payload's own list preference.
  */
 export function ResetViewMenuItem({
@@ -26,6 +27,7 @@ export function ResetViewMenuItem({
   const reset = async () => {
     const keys = [
       getViewPreferenceKey(collectionSlug, viewSlug),
+      getGroupsPreferenceKey(collectionSlug, viewSlug),
       ...(resetListPreference ? [`collection-${collectionSlug}`] : []),
     ];
 
