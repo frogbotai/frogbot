@@ -295,3 +295,21 @@ test('drops a record that does not exist with a not-found toast', async ({ page 
   await expect(panel(page)).toHaveCount(0);
   await expect.poll(() => recordParam(page)).toBeNull();
 });
+
+test('the panel create form switches to the record it saved', async ({ page }) => {
+  const seed = await createTask(page, 'create seed');
+  await page.goto(board);
+  await openOnBoard(page, seed);
+
+  await page.locator('.fb-record-panel-header__menu button').first().click();
+  await page.locator('#action-panel-create').click();
+  await expect(panelTitle(page)).toHaveValue('');
+  await panelTitle(page).fill(`${prefix} created`);
+  await page.locator('.fb-record-panel-header__save').click();
+
+  await expect(page.locator('.frog-board__card', { hasText: `${prefix} created` })).toHaveCount(1);
+  const found = await page.request.get(`/api/tasks?${filter}&limit=50`);
+  const docs = ((await found.json()) as { docs: Task[] }).docs;
+  created.push(...docs.filter((doc) => doc.title === `${prefix} created`).map((doc) => doc.id));
+  await expect.poll(() => recordParam(page), { timeout: 10_000 }).not.toBeNull();
+});
