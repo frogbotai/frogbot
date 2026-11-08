@@ -68,6 +68,7 @@ function Harness({
 
 const shell = () => document.querySelector('.fb-nav-shell') as HTMLElement;
 const backdrop = () => document.querySelector('.fb-nav-backdrop');
+const openFromPayloadHeader = () => act(() => nav.setNavOpen(true));
 
 describe('FrogBotNavClient', () => {
   beforeEach(() => {
@@ -130,8 +131,9 @@ describe('FrogBotNavClient', () => {
 
     expect(shell().dataset.navState).toBe('mobile-nav-closed');
     expect(backdrop()).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open navigation' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+    openFromPayloadHeader();
 
     expect(shell().dataset.navState).toBe('mobile-nav-open');
     expect(backdrop()).not.toBeNull();
@@ -141,17 +143,17 @@ describe('FrogBotNavClient', () => {
     isMobile = true;
     const { rerender } = render(<Harness initialNavOpen={false} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+    openFromPayloadHeader();
     fireEvent.click(backdrop()!);
 
     expect(shell().dataset.navState).toBe('mobile-nav-closed');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+    openFromPayloadHeader();
     fireEvent.keyDown(document, { key: 'Escape' });
 
     expect(shell().dataset.navState).toBe('mobile-nav-closed');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+    openFromPayloadHeader();
 
     expect(shell().dataset.navState).toBe('mobile-nav-open');
 
@@ -214,7 +216,7 @@ describe('FrogBotNavClient', () => {
   it('closing the mobile drawer with its close button does not save the preference', async () => {
     isMobile = true;
     render(<Harness initialNavOpen={false} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+    openFromPayloadHeader();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Close sidebar' }));
 
@@ -227,7 +229,7 @@ describe('FrogBotNavClient', () => {
 
     isMobile = true;
     act(() => rerender(<Harness initialNavOpen />));
-    fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+    openFromPayloadHeader();
     fireEvent.click(await screen.findByRole('button', { name: 'Close sidebar' }));
 
     isMobile = false;
@@ -243,7 +245,7 @@ describe('FrogBotNavClient', () => {
 
     isMobile = true;
     act(() => rerender(<Harness initialNavOpen />));
-    fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+    openFromPayloadHeader();
 
     isMobile = false;
     act(() => rerender(<Harness initialNavOpen />));

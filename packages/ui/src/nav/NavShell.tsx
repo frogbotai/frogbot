@@ -28,7 +28,8 @@ export type NavShellProps = Omit<
 
 /**
  * `AppSidebar`, or the `children` that replace it, in a shell: a rail that collapses on desktop,
- * and a drawer with a backdrop, a toggle and Escape below 768px.
+ * and a drawer with a backdrop and Escape below 768px. The shell renders its own drawer toggle
+ * unless the host supplies `drawer`.
  */
 export function NavShell({ children, initialOpen, scrollClassName, ...sidebar }: NavShellProps) {
   const { drawer: hostDrawer, navigate, pathname, preferences } = useNavAdapter();
@@ -70,7 +71,7 @@ export function NavShell({ children, initialOpen, scrollClassName, ...sidebar }:
 
   return (
     <>
-      <MobileNavToggle navState={navState} onOpen={() => setDrawerOpen(true)} />
+      {!hostDrawer && <MobileNavToggle navState={navState} onOpen={() => setDrawerOpen(true)} />}
       {navState === 'mobile-nav-open' && (
         <div aria-hidden className="fb-nav-backdrop" onClick={() => setDrawerOpen(false)} />
       )}

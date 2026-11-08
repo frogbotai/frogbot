@@ -126,7 +126,7 @@ test.describe('Settings shell on a phone', () => {
 
       await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
 
-      await page.getByRole('button', { name: 'Open navigation' }).click();
+      await page.locator('.app-header__sidebar-toggle').click();
 
       await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-open');
       await expect(settingsNav(page)).toBeVisible();
