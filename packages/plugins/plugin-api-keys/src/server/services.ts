@@ -28,6 +28,11 @@ export type RevokeApiKeyOptions = {
   collectionSlug: string;
   id: string;
   anyOwner?: boolean;
+  /**
+   * Also revoke every key this key minted, down the whole `mintedBy` tree. Defaults to `true`;
+   * `false` revokes only this key and leaves the keys it made working.
+   */
+  cascade?: boolean;
 };
 
 type KeyDocument = Record<string, unknown>;
@@ -243,8 +248,13 @@ async function findKey({ req, collectionSlug, id, anyOwner, rotator }: FindKeyOp
   return key as RevokedKey;
 }
 
-async function markRevoked(req: FrogBotRequest, collectionSlug: string, key: RevokedKey) {
-  const revokedAt = typeof key.revokedAt === 'string' ? key.revokedAt : new Date().toISOString();
+async function markRevoked(
+  req: FrogBotRequest,
+  collectionSlug: string,
+  key: RevokedKey,
+  now = new Date().toISOString(),
+) {
+  const revokedAt = typeof key.revokedAt === 'string' ? key.revokedAt : now;
 
   await req.frogbot.update({
     collection: collectionSlug,
@@ -257,38 +267,59 @@ async function markRevoked(req: FrogBotRequest, collectionSlug: string, key: Rev
   return revokedAt;
 }
 
-async function revokeMinted(
-  req: FrogBotRequest,
-  collectionSlug: string,
-  id: KeyID,
-  revokedAt: string,
-) {
+async function liveMinted(req: FrogBotRequest, collectionSlug: string, id: KeyID) {
   const seen = new Set<KeyID>([id]);
+  const live: KeyID[] = [];
 
   for (let parents = [id]; parents.length > 0;) {
-    const { docs } = await req.frogbot.update({
+    const { docs } = await req.frogbot.find({
       collection: collectionSlug,
-      where: { and: [{ mintedBy: { in: parents } }, { revokedAt: { exists: false } }] },
-      data: { revokedAt },
+      where: { mintedBy: { in: parents } },
       depth: 0,
+      pagination: false,
       overrideAccess: true,
       req,
     });
 
-    parents = docs
-      .map((doc) => (doc as KeyDocument).id as KeyID)
-      .filter((child) => !seen.has(child));
+    const children = (docs as KeyDocument[]).filter((child) => !seen.has(child.id as KeyID));
 
+    live.push(...children.filter((child) => !child.revokedAt).map((child) => child.id as KeyID));
+    parents = children.map((child) => child.id as KeyID);
     parents.forEach((child) => seen.add(child));
   }
+
+  return live;
 }
 
-/** Revokes the key and every key it minted, down the whole `mintedBy` tree. */
-export async function revokeApiKey(options: RevokeApiKeyOptions) {
+/** Counts the keys a cascading revoke of the key would also revoke. */
+export async function countMintedApiKeys(options: RevokeApiKeyOptions) {
   const key = await findKey(options);
-  const revokedAt = await markRevoked(options.req, options.collectionSlug, key);
 
-  await revokeMinted(options.req, options.collectionSlug, key.id, revokedAt);
+  return (await liveMinted(options.req, options.collectionSlug, key.id)).length;
+}
+
+/**
+ * Revokes the key and, unless `cascade` is `false`, every live key below it in the `mintedBy`
+ * tree, including keys under a key that was revoked on its own earlier. Those keys get the time of
+ * this revoke.
+ */
+export async function revokeApiKey(options: RevokeApiKeyOptions) {
+  const { req, collectionSlug } = options;
+  const key = await findKey(options);
+  const now = new Date().toISOString();
+  const revokedAt = await markRevoked(req, collectionSlug, key, now);
+  const live = options.cascade === false ? [] : await liveMinted(req, collectionSlug, key.id);
+
+  if (live.length > 0) {
+    await req.frogbot.update({
+      collection: collectionSlug,
+      where: { id: { in: live } },
+      data: { revokedAt: now },
+      depth: 0,
+      overrideAccess: true,
+      req,
+    });
+  }
 
   return { id: key.id, name: key.name, owner: key.owner, revokedAt };
 }

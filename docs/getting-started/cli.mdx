@@ -295,7 +295,7 @@ Prints recent logs (last 24 hours, oldest first) for a Dojo app you own or edit,
 npx @frogbotai/plugin-dojo logout
 ```
 
-Revokes the CLI's key in Dojo and removes it from `auth.json`. If Dojo cannot be reached, the local file is kept so you can retry `logout`.
+Revokes the CLI's key in Dojo and removes it from `auth.json`. Keys the CLI made with `frogbot dojo keys create` keep working; revoke them with `frogbot dojo keys revoke <id>`, which also revokes the keys that key made unless you pass `--no-cascade` (`--cascade`, the default, says so explicitly). If Dojo cannot be reached, the local file is kept so you can retry `logout`.
 
 ## `dev` and `start`
 

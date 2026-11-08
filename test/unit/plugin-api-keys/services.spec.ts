@@ -103,13 +103,11 @@ describe('API key services', () => {
   it('revokes an owned scalar-owner key at depth zero, then the keys it minted', async () => {
     const find = vi
       .fn()
-      .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] });
-
-    const update = vi
-      .fn()
-      .mockResolvedValueOnce({})
-      .mockResolvedValueOnce({ docs: [{ id: 'key-2' }] })
+      .mockResolvedValueOnce({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] })
+      .mockResolvedValueOnce({ docs: [{ id: 'key-2', revokedAt: null }] })
       .mockResolvedValueOnce({ docs: [] });
+
+    const update = vi.fn().mockResolvedValue({});
 
     const req = request({ frogbot: { find, update } });
 
@@ -126,10 +124,51 @@ describe('API key services', () => {
         where: { and: [{ id: { equals: 'key-1' } }, { owner: { equals: 'user-1' } }] },
       }),
     );
+    expect(find.mock.calls.slice(1).map(([args]) => [args.where, args.pagination])).toEqual([
+      [{ mintedBy: { in: ['key-1'] } }, false],
+      [{ mintedBy: { in: ['key-2'] } }, false],
+    ]);
     expect(update.mock.calls.map(([args]) => args.id ?? args.where)).toEqual([
       'key-1',
-      { and: [{ mintedBy: { in: ['key-1'] } }, { revokedAt: { exists: false } }] },
-      { and: [{ mintedBy: { in: ['key-2'] } }, { revokedAt: { exists: false } }] },
+      { id: { in: ['key-2'] } },
+    ]);
+  });
+
+  it('revokes only the key when cascade is false', async () => {
+    const find = vi
+      .fn()
+      .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] });
+
+    const update = vi.fn().mockResolvedValue({});
+    const req = request({ frogbot: { find, update } });
+
+    await revokeApiKey({ req, collectionSlug: 'credentials', id: 'key-1', cascade: false });
+
+    expect(find).toHaveBeenCalledOnce();
+    expect(update).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: 'key-1' }));
+  });
+
+  it('walks through an already revoked key to revoke the live keys under it', async () => {
+    const find = vi
+      .fn()
+      .mockResolvedValueOnce({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] })
+      .mockResolvedValueOnce({ docs: [{ id: 'key-2', revokedAt: '2026-11-01T00:00:00.000Z' }] })
+      .mockResolvedValueOnce({ docs: [{ id: 'key-3', revokedAt: null }, { id: 'key-1' }] })
+      .mockResolvedValueOnce({ docs: [] });
+
+    const update = vi.fn().mockResolvedValue({});
+    const req = request({ frogbot: { find, update } });
+
+    await revokeApiKey({ req, collectionSlug: 'credentials', id: 'key-1' });
+
+    expect(find.mock.calls.slice(1).map(([args]) => args.where)).toEqual([
+      { mintedBy: { in: ['key-1'] } },
+      { mintedBy: { in: ['key-2'] } },
+      { mintedBy: { in: ['key-3'] } },
+    ]);
+    expect(update.mock.calls.map(([args]) => args.id ?? args.where)).toEqual([
+      'key-1',
+      { id: { in: ['key-3'] } },
     ]);
   });
 

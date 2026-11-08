@@ -3,7 +3,10 @@ import { dojoMessage, dojoUrl } from './dojo.js';
 import type { DojoIO } from './io.js';
 import { done, say } from './io.js';
 
-/** Runs `frogbot dojo logout`: revokes the stored key in Dojo, then forgets it. Returns the exit code. */
+/**
+ * Runs `frogbot dojo logout`: revokes the stored key in Dojo, keeping the keys it made, then forgets
+ * it. Returns the exit code.
+ */
 export async function runLogout(args: string[], io: DojoIO): Promise<number> {
   if (args.length > 0) {
     io.stderr.write(`[frogbot] Usage: ${io.program} logout\n`);
@@ -44,7 +47,8 @@ export async function runLogout(args: string[], io: DojoIO): Promise<number> {
   if (user?.apiKeyId !== undefined) {
     const revoked = await fetch(`${url}/api/api-keys/${user.apiKeyId}/revoke`, {
       method: 'POST',
-      headers,
+      headers: { ...headers, 'content-type': 'application/json' },
+      body: JSON.stringify({ cascade: false }),
     });
 
     if (!revoked.ok && revoked.status !== 401 && revoked.status !== 404) {

@@ -944,8 +944,11 @@ describe('API keys plugin integration', () => {
     const rotate = (headers: Record<string, string>, id: number | string) =>
       booted.restClient.post<Minted>(`/api/credentials/${id}/rotate`, undefined, { headers });
 
-    const revoke = (headers: Record<string, string>, id: number | string) =>
-      booted.restClient.post(`/api/credentials/${id}/revoke`, undefined, { headers });
+    const revoke = (
+      headers: Record<string, string>,
+      id: number | string,
+      body?: { cascade?: unknown },
+    ) => booted.restClient.post(`/api/credentials/${id}/revoke`, body, { headers });
 
     const asKey = (token: string) => ({ 'x-service-key': token });
 
@@ -1207,6 +1210,111 @@ describe('API keys plugin integration', () => {
           (await booted.restClient.get('/api/credentials', { headers: asKey(token) })).status,
         ).toBe(403);
       }
+    });
+
+    it('keeps the keys a key made when revoked with cascade false, and a later revoke above reaches them', async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const child = await mint(asKey(parent.body.token), 'C', { canMint: true });
+      const grandchild = await mint(asKey(child.body.token), 'G');
+
+      expect((await revoke(session, child.body.id, { cascade: false })).status).toBe(200);
+      expect(new Set(await active())).toEqual(new Set([parent.body.id, grandchild.body.id]));
+      expect(
+        (
+          await booted.restClient.get('/api/credentials', {
+            headers: asKey(grandchild.body.token),
+          })
+        ).status,
+      ).toBe(200);
+
+      expect((await revoke(session, parent.body.id)).status).toBe(200);
+      expect(await active()).toEqual([]);
+      expect(await stored(child.body.id)).toMatchObject({ revokedAt: expect.any(String) });
+    });
+
+    it.each(['no', null])('refuses a revoke whose cascade is %j', async (cascade) => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const child = await mint(asKey(parent.body.token), 'C');
+
+      expect((await revoke(session, parent.body.id, { cascade })).status).toBe(400);
+      expect(new Set(await active())).toEqual(new Set([parent.body.id, child.body.id]));
+    });
+
+    it('refuses a revoke whose body is not JSON', async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const child = await mint(asKey(parent.body.token), 'C');
+      const response = await fetch(`${booted.baseUrl}/api/credentials/${parent.body.id}/revoke`, {
+        method: 'POST',
+        headers: { ...session, 'content-type': 'application/json' },
+        body: '{"cascade": false',
+      });
+
+      expect(response.status).toBe(400);
+      expect(new Set(await active())).toEqual(new Set([parent.body.id, child.body.id]));
+    });
+
+    const mintedCount = (headers: Record<string, string>, id: number | string) =>
+      booted.restClient.get<{ count: number }>(`/api/credentials/${id}/minted-count`, {
+        headers,
+      });
+
+    it('counts every live key a cascade would revoke, through a key revoked on its own', async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const cli = await mint(asKey(parent.body.token), 'K', { canMint: true });
+      const child = await mint(asKey(cli.body.token), 'C', { canMint: true });
+
+      expect((await mintedCount(session, parent.body.id)).body).toEqual({ count: 2 });
+
+      await mint(asKey(child.body.token), 'G');
+      await revoke(asKey(cli.body.token), cli.body.id, { cascade: false });
+
+      const counted = await mintedCount(session, parent.body.id);
+      const before = (await active()).length;
+
+      expect(counted.status).toBe(200);
+      expect(counted.body).toEqual({ count: 2 });
+      expect((await revoke(session, parent.body.id, { cascade: true })).status).toBe(200);
+      expect(before - 1 - (await active()).length).toBe(counted.body.count);
+    });
+
+    it("counts only the caller's own keys", async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const other = await createOwner();
+      const login = await booted.restClient.post<{ token: string }>(
+        '/api/accounts/login',
+        credentials,
+      );
+
+      expect(other.id).not.toBe(ownerId);
+      expect(
+        (await mintedCount({ Authorization: `JWT ${login.body.token}` }, parent.body.id)).status,
+      ).toBe(404);
+      expect(
+        (await booted.restClient.get(`/api/credentials/${parent.body.id}/minted-count`)).status,
+      ).toBe(401);
+    });
+
+    it('stamps the keys a re-revoke takes with the time of that revoke', async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const child = await mint(asKey(parent.body.token), 'C');
+
+      const first = '2026-01-01T00:00:00.000Z';
+
+      await revoke(session, parent.body.id, { cascade: false });
+
+      await booted.frogbot.update({
+        collection: 'credentials',
+        id: parent.body.id,
+        data: { revokedAt: first },
+        overrideAccess: true,
+      });
+
+      const before = new Date().toISOString();
+
+      await revoke(session, parent.body.id);
+
+      expect(((await stored(child.body.id)).revokedAt as string) >= before).toBe(true);
+      expect((await stored(parent.body.id)).revokedAt).toBe(first);
     });
 
     it("counts a key's spend against every key above it", async () => {

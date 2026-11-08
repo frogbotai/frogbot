@@ -210,6 +210,12 @@ const cases: Case[] = [
     },
   },
   { args: ['keys', 'revoke', '100', '--yes'], route: 'POST /api/api-keys/100/revoke' },
+  { args: ['keys', 'revoke', '100', '--cascade', '--yes'], route: 'POST /api/api-keys/100/revoke' },
+  {
+    args: ['keys', 'revoke', '100', '--no-cascade', '--yes'],
+    route: 'POST /api/api-keys/100/revoke',
+    body: { cascade: false },
+  },
   { args: ['billing', 'status'], route: 'GET /api/workspaces/1' },
   {
     args: ['billing', 'manage'],
@@ -351,6 +357,10 @@ describe('frogbot dojo <noun> <verb>', () => {
     [['apps', 'get', '..'], '".." can\'t name anything on Dojo.'],
     [['keys', 'revoke', '..', '--yes'], '".." can\'t name anything on Dojo.'],
     [['keys', 'revoke', '.', '--yes'], '"." can\'t name anything on Dojo.'],
+    [
+      ['keys', 'revoke', '5', '--cascade', '--no-cascade', '--yes'],
+      'Pass --cascade or --no-cascade, not both.',
+    ],
     [['deployments', 'logs', '..'], '".." can\'t name anything on Dojo.'],
     [['deployments', 'logs', '..', '--follow'], '".." can\'t name anything on Dojo.'],
   ])('exits 2 before calling Dojo for %j', async (args, message) => {
@@ -360,6 +370,16 @@ describe('frogbot dojo <noun> <verb>', () => {
     expect(await runDojo(args, result.io)).toBe(2);
     expect(result.stderr()[0]).toContain(message);
     expect(dojo.requests.filter(({ path }) => path !== '/api/apps/deals/cli')).toEqual([]);
+  });
+
+  it('refuses --cascade with --no-cascade before asking to confirm', async () => {
+    const { dojo, env, cwd } = await setup();
+    const result = testIO({ cwd, env, isTTY: true, confirm: true });
+
+    expect(await runDojo(['keys', 'revoke', '5', '--cascade', '--no-cascade'], result.io)).toBe(2);
+    expect(result.stderr()[0]).toContain('Pass --cascade or --no-cascade, not both.');
+    expect(result.asked).toEqual([]);
+    expect(dojo.requests).toEqual([]);
   });
 
   it.each([
