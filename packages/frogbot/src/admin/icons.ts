@@ -20,6 +20,30 @@ export const adminIconExports = [
   'BookOpenIcon',
   'BrainIcon',
   'BranchIcon',
+  'BrandAmexIcon',
+  'BrandChatGptIcon',
+  'BrandChromeIcon',
+  'BrandClaudeAiIcon',
+  'BrandDiscoverIcon',
+  'BrandDropboxIcon',
+  'BrandFacebookIcon',
+  'BrandGitHubIcon',
+  'BrandGoogleGeminiIcon',
+  'BrandGoogleIcon',
+  'BrandInstagramIcon',
+  'BrandLinkedInIcon',
+  'BrandMastercardIcon',
+  'BrandMcpIcon',
+  'BrandMicrosoftIcon',
+  'BrandNotionIcon',
+  'BrandRedditIcon',
+  'BrandSlackIcon',
+  'BrandStripeIcon',
+  'BrandTwitterIcon',
+  'BrandVisaIcon',
+  'BrandXeroIcon',
+  'BrandYoutubeIcon',
+  'BrandZoomIcon',
   'BriefcaseIcon',
   'BrowserIcon',
   'BubbleChatIcon',
@@ -201,15 +225,7 @@ export const isIconComponent = (icon: unknown): boolean =>
 export function validateAdminIcon(icon: unknown): void {
   if (!icon || isIconComponent(icon) || iconNames.includes(icon as IconName)) return;
 
-  const valid = `Valid: ${iconNames.join(', ')}`;
-
-  if (typeof icon === 'string' && icon.startsWith('brand-')) {
-    throw new Error(
-      `[frogbot] Admin icon '${icon}' is a brand logo, not a UI icon. Pick a UI icon. ${valid}`,
-    );
-  }
-
-  throw new Error(`[frogbot] Unknown admin icon '${icon}'. ${valid}`);
+  throw new Error(`[frogbot] Unknown admin icon '${icon}'. Valid: ${iconNames.join(', ')}`);
 }
 
 type IconCollection = {
