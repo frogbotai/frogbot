@@ -103,26 +103,23 @@ describe('redirectRecordParam', () => {
     const redirect = vi.fn();
 
     redirectRecordParam({
-      adminRoute: '/admin',
       collectionConfig: config(false),
       record: '4 2',
       redirect,
     });
 
     redirectRecordParam({
-      adminRoute: '/admin',
       collectionConfig: config({ width: 560 }),
       record: '9',
       redirect,
     });
 
     redirectRecordParam({
-      adminRoute: '/admin',
       collectionConfig: config(false),
       record: undefined,
       redirect,
     });
 
-    expect(redirect.mock.calls).toEqual([['/admin/collections/notes/4%202']]);
+    expect(redirect.mock.calls).toEqual([['/collections/notes/4%202']]);
   });
 });

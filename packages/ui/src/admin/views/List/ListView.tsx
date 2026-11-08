@@ -97,10 +97,10 @@ export async function ListView(props: ListViewServerProps) {
   const isList = clientProps.viewType === 'list' && view !== undefined;
 
   redirectRecordParam({
-    adminRoute: payload.config.routes.admin,
     collectionConfig,
     record: req.query?.record,
-    redirect: server.redirect,
+    redirect: (path) =>
+      server.redirect(formatAdminURL({ adminRoute: payload.config.routes.admin, path })),
   });
 
   if (isList) {

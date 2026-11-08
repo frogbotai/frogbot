@@ -1,4 +1,5 @@
 import type { AdminViewServerProps, Column, ListQuery, Where } from 'payload';
+import { formatAdminURL } from 'payload/shared';
 import type { ReactNode } from 'react';
 
 import {
@@ -38,10 +39,10 @@ export async function CollectionViewShell(props: CollectionViewShellProps) {
   const view = props.view;
 
   redirectRecordParam({
-    adminRoute: clientConfig.routes.admin,
     collectionConfig,
     record: query.record,
-    redirect: props.server.redirect,
+    redirect: (path) =>
+      props.server.redirect(formatAdminURL({ adminRoute: clientConfig.routes.admin, path })),
   });
 
   if (getActiveViewSlug(props) === undefined) {
