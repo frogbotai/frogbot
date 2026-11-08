@@ -20,6 +20,7 @@ type CollectionViewShellProps = AdminViewServerProps & {
   preference?: StoredViewPreference;
   preferenceKey?: string;
   query?: ListQuery;
+  showEmptyState?: boolean;
   view: RuntimeCollectionView;
   views: Array<{ label: string; path: string; slug: string; type: string }>;
 };
@@ -42,12 +43,15 @@ export async function CollectionViewShell(props: CollectionViewShellProps) {
   const permissions = initPageResult.permissions.collections?.[collectionSlug];
   const where = [view.filter, query.where].filter((value): value is Where => Boolean(value));
 
-  const { totalDocs } = await req.payload.count({
-    collection: collectionSlug,
-    overrideAccess: false,
-    req,
-    ...(where.length ? { where: where.length === 1 ? where[0] : { and: where } } : {}),
-  });
+  const { totalDocs } =
+    props.showEmptyState === false
+      ? { totalDocs: 1 }
+      : await req.payload.count({
+          collection: collectionSlug,
+          overrideAccess: false,
+          req,
+          ...(where.length ? { where: where.length === 1 ? where[0] : { and: where } } : {}),
+        });
 
   const slots = buildFrameSlots({
     activeSlug: view.slug,

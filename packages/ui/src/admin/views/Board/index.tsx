@@ -162,6 +162,7 @@ export async function BoardView(input: AdminViewServerProps) {
       manualSortField={orderField}
       preference={setup.preference}
       preferenceKey={setup.preferenceKey}
+      showEmptyState={Boolean(setup.query.where || setup.query.search)}
       view={board}
       views={views}
     >
