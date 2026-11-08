@@ -2,6 +2,8 @@ import type { Endpoint } from 'frogbot';
 
 import { hasRecords, seed } from './index';
 
+let seeding = false;
+
 /**
  * `POST /api/seed`: adds the sample data for a signed-in user while the CRM is empty.
  * It answers 404 in production, so a deployed app never offers it.
@@ -22,7 +24,7 @@ export function seedEndpoint(run: typeof seed = seed): Endpoint {
         );
       }
 
-      if (await hasRecords(req.frogbot)) {
+      if (seeding || (await hasRecords(req.frogbot))) {
         return Response.json(
           {
             error:
@@ -31,6 +33,8 @@ export function seedEndpoint(run: typeof seed = seed): Endpoint {
           { status: 409 },
         );
       }
+
+      seeding = true;
 
       try {
         await run({ frogbot: req.frogbot, req, today: new Date() });
@@ -41,6 +45,8 @@ export function seedEndpoint(run: typeof seed = seed): Endpoint {
           { error: 'Seeding the database failed.' },
           { status: 500 },
         );
+      } finally {
+        seeding = false;
       }
 
       return Response.json({ success: true });

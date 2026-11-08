@@ -14,6 +14,7 @@ export const Activities: CollectionConfig = {
         type: 'calendar',
         start: 'start',
         end: 'end',
+        color: 'type',
         defaultFields: ['type', 'deal'],
       },
     ],

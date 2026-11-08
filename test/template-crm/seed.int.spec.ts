@@ -173,6 +173,15 @@ describe('crm template seed', () => {
     expect(first.users).toBe(1);
   });
 
+  it('answers a second, concurrent request with 409 and loads the sample once', async () => {
+    const { headers } = await signUp();
+
+    const responses = await Promise.all([post(headers), post(headers)]);
+
+    expect(responses.map(({ status }) => status).sort()).toEqual([200, 409]);
+    expect((await counts()).companies).toBe(8);
+  });
+
   it('refuses when only one sample collection has a record', async () => {
     const { headers } = await signUp();
 
