@@ -343,7 +343,7 @@ views: [
 ];
 ```
 
-In a grouped list, each group has a collapse chevron, its count, a select-all for the rows on its page and **+ Add**, which opens the create form with the group's value filled in (nothing in **No value**, and no button without create access to the collection or the group field). Collapsed groups are saved per person per view, and **Reset to default** clears them with the rest of the view's setup. Groups of option fields all show on one page; groups of other fields are paged by the list's page size. Each group pages its own rows with the view's sort. A field behind a read access function, a hidden field, or a relationship to several collections chosen from the **Group** control renders with Payload's own grouping instead.
+In a grouped list, each group has a collapse chevron, its count, a select-all for the rows on its page and **+ Add**, which opens the create form with the group's value filled in (nothing in **No value**, and no button without create access to the collection or the group field). Collapsed groups are saved per person per view, and **Reset to default** clears them with the rest of the view's setup. Groups of option fields all show on one page; groups of other fields are paged by the list's page size. Each group pages its own rows with the view's sort. A field behind a read access function, a hidden field, or a relationship to several collections chosen from the **Group** control falls back to the standard grouped list instead.
 
 #### BoardView
 
