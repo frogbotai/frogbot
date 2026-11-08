@@ -287,7 +287,7 @@ export const Projects: CollectionConfig = {
 | `defaultFields` | `string[]` | No | Ordered field dot paths initially displayed as list columns or board card fields. Users can change list columns through normal list controls. |
 | `filter` | `Where` | No | Invisible base filter applied to the view, as plain data. |
 | `defaultSort` | `Sort` (`string \| string[]`) | No | Initial field sort or ordered list of sorts. Prefix a field with `-` for descending order. |
-| `searchableFields` | `string[]` | No | Adds field dot paths to the normal search behavior. The collection's `useAsTitle` field remains included; this option does not replace it. |
+| `searchableFields` | `string[]` | No | List views only. Adds field dot paths to the normal search behavior, and the collection's `useAsTitle` field remains included. Other views ignore it and search with the list view's `searchableFields`. |
 | `pagination` | `ViewPagination` | No | Configures query limits. Defaults depend on the view type. |
 | `access` | `({ req }) => boolean \| Promise<boolean>` | No; defaults to collection access | Controls whether the current user can open the view. It does not replace collection operation access. |
 | `components` | View-specific components | No | Supplies shared shell slots and slots for the selected view type. |
