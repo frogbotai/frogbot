@@ -44,6 +44,7 @@ function setup({ revoked = false } = {}) {
     ),
     findByID: vi.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),
     update: vi.fn().mockResolvedValue({}),
+    auth: vi.fn().mockResolvedValue({ permissions: {}, user: null }),
   };
 
   const strategy = createApiKeyStrategy({
@@ -52,9 +53,10 @@ function setup({ revoked = false } = {}) {
     tokenPrefix: 'fb',
   });
 
-  const request = (value: string) =>
+  const request = (value: string, responseHeaders?: Headers) =>
     ({
       headers: new Headers({ authorization: `Bearer ${value}` }),
+      responseHeaders,
       frogbot,
       payload: {
         config: {
@@ -115,6 +117,119 @@ describe('authorizeMcp', () => {
         req: request(replacement ?? token),
       }),
     ).rejects.toThrow(UnauthorizedError);
+  });
+
+  describe("the app's own strategies", () => {
+    const bearer = 'oauth-access-token';
+
+    it('sign in a request without an API key, keeping the user collection', async () => {
+      const { frogbot, request, strategy } = setup();
+      const req = request(bearer);
+
+      frogbot.auth.mockResolvedValue({
+        permissions: {},
+        user: { id: 'member-1', collection: 'members', _strategy: 'oauth-bearer' },
+      });
+
+      await authorizeMcp({ collection: 'users', strategy, pluginConfig, req });
+
+      expect(req).toMatchObject({
+        user: { id: 'member-1', collection: 'members', _strategy: 'oauth-bearer' },
+      });
+
+      const [{ headers }] = frogbot.auth.mock.calls[0] as [{ headers: Headers }];
+
+      expect(headers.get('authorization')).toBe(`Bearer ${bearer}`);
+      expect(headers.get('DisableAutologin')).toBe('true');
+    });
+
+    it('give a user without a collection the API-key auth collection', async () => {
+      const { frogbot, request, strategy } = setup();
+      const req = request(bearer);
+
+      frogbot.auth.mockResolvedValue({ permissions: {}, user: { id: 'user-2' } });
+
+      await authorizeMcp({ collection: 'users', strategy, pluginConfig, req });
+
+      expect(req).toMatchObject({ user: { id: 'user-2', collection: 'users' } });
+    });
+
+    it('run only after the API key, and not when it signs in', async () => {
+      const { frogbot, request, strategy, token } = setup();
+      const req = request(token);
+
+      frogbot.auth.mockResolvedValue({
+        permissions: {},
+        user: { id: 'other', collection: 'users' },
+      });
+
+      await authorizeMcp({ collection: 'users', strategy, pluginConfig, req });
+
+      expect(req).toMatchObject({ user: { id: 'user-1', _strategy: 'api-key' } });
+      expect(frogbot.auth).not.toHaveBeenCalled();
+    });
+
+    it('still sign in when the API-key strategy throws, and log the failure', async () => {
+      const { frogbot, request, strategy, token } = setup();
+      const failure = new Error('key storage down');
+      const req = request(token);
+
+      frogbot.find.mockRejectedValue(failure);
+
+      frogbot.auth.mockResolvedValue({
+        permissions: {},
+        user: { id: 'user-3', collection: 'users' },
+      });
+
+      await authorizeMcp({ collection: 'users', strategy, pluginConfig, req });
+
+      expect(req).toMatchObject({ user: { id: 'user-3' } });
+      expect(frogbot.logger.error).toHaveBeenCalledWith(
+        { err: failure },
+        "[frogbot] auth strategy 'api-key' on 'users' failed",
+      );
+    });
+  });
+
+  describe('resourceMetadataURL', () => {
+    const resourceMetadataURL = 'https://app.example.com/.well-known/oauth-protected-resource';
+
+    it('adds WWW-Authenticate to the 401, keeping headers already set', async () => {
+      const { request, strategy } = setup();
+      const req = request('unknown', new Headers({ 'x-kept': 'yes' }));
+
+      await expect(
+        authorizeMcp({ collection: 'users', strategy, pluginConfig, req, resourceMetadataURL }),
+      ).rejects.toThrow(UnauthorizedError);
+
+      const { responseHeaders } = req as { responseHeaders: Headers };
+
+      expect(responseHeaders.get('WWW-Authenticate')).toBe(
+        `Bearer resource_metadata="${resourceMetadataURL}"`,
+      );
+      expect(responseHeaders.get('x-kept')).toBe('yes');
+    });
+
+    it('leaves the response headers alone without the option or when someone signs in', async () => {
+      const { request, strategy, token } = setup();
+      const rejected = request('unknown');
+      const signedIn = request(token);
+
+      await expect(
+        authorizeMcp({ collection: 'users', strategy, pluginConfig, req: rejected }),
+      ).rejects.toThrow(UnauthorizedError);
+
+      await authorizeMcp({
+        collection: 'users',
+        strategy,
+        pluginConfig,
+        req: signedIn,
+        resourceMetadataURL,
+      });
+
+      expect((rejected as { responseHeaders?: Headers }).responseHeaders).toBeUndefined();
+      expect((signedIn as { responseHeaders?: Headers }).responseHeaders).toBeUndefined();
+    });
   });
 
   describe('a tool with access', () => {

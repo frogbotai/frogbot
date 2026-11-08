@@ -29,6 +29,7 @@ export const customStrategyName = 'mcp-custom-actor';
 export const actorToolName = 'getMcpActor';
 export const restrictedToolName = 'getMcpSecret';
 export const customActorApiKeyToken = `fb_${'C'.repeat(43)}`;
+export const resourceMetadataURL = 'https://app.example.com/.well-known/oauth-protected-resource';
 export const strategyFailureMessage = 'API-key storage unavailable: secret database credentials';
 export const testCredentials = {
   email: 'mcp-key-owner@frogbot.local',
@@ -102,6 +103,7 @@ const Tickets: CollectionConfig = {
 const getMcpActor: Tool = {
   slug: actorToolName,
   description: 'Returns the authenticated MCP actor.',
+  annotations: { readOnlyHint: true, idempotentHint: true },
   inputSchema: z.object({}),
   execute: (_input, { req }) => ({
     id: req.user?.id,
@@ -127,7 +129,13 @@ export default await buildTestConfig({
     rolesPlugin(),
     apiKeysPlugin({ authCollection: usersSlug, collectionSlug: apiKeysSlug }),
     mcpPlugin({
-      tools: [getMcpActor, getMcpSecret, createMathHelper().addNumbers, write_todos],
+      resourceMetadataURL,
+      tools: [
+        getMcpActor,
+        getMcpSecret,
+        { ...createMathHelper().addNumbers, annotations: { readOnlyHint: true } },
+        write_todos,
+      ],
     }),
   ],
 });

@@ -20,6 +20,7 @@ import {
   customStrategyName,
   mcpEndpoint,
   postsSlug,
+  resourceMetadataURL,
   restrictedToolName,
   secretsSlug,
   strategyFailureMessage,
@@ -57,7 +58,14 @@ type JSONSchema = {
 type ToolsListBody = {
   jsonrpc: '2.0';
   id: number;
-  result: { tools: Array<{ name: string; description?: string; inputSchema: JSONSchema }> };
+  result: {
+    tools: Array<{
+      name: string;
+      description?: string;
+      inputSchema: JSONSchema;
+      annotations?: Record<string, unknown>;
+    }>;
+  };
 };
 
 type ToolCallBody = {
@@ -219,6 +227,16 @@ describe('MCP plugin integration', () => {
         .map(({ name }) => name)
         .filter((name) => !frogbotTools.includes(name) && !RESERVED_TOOL_NAMES.has(name)),
     ).toEqual([]);
+  });
+
+  it("POST /api/mcp lists each tool's annotations, and none for a tool without them", async () => {
+    const response = await listTools(apiKeyToken);
+    const { tools } = parseMcpResponse<ToolsListBody>(response.body).result;
+    const annotations = (name: string) => tools.find((tool) => tool.name === name)?.annotations;
+
+    expect(annotations(actorToolName)).toMatchObject({ readOnlyHint: true, idempotentHint: true });
+    expect(annotations(mathToolName)).toMatchObject({ readOnlyHint: true });
+    expect(annotations('write_todos')).toBeUndefined();
   });
 
   it("POST /api/mcp neither lists nor runs a tool whose access rule the key's owner fails", async () => {
@@ -455,34 +473,98 @@ describe('MCP plugin integration', () => {
     expect(body.result.structuredContent).toEqual(actor);
   });
 
-  it('POST /api/mcp rejects an invalid key despite an earlier authenticated custom actor', async () => {
-    const headers = {
-      [apiKeyHeader]: unknownApiKeyToken,
-      [customStrategyHeader]: customActorCredentials.email,
-    };
+  it("POST /api/mcp signs in with the app's own strategy when there is no valid key", async () => {
+    const response = await booted.restClient.post<ToolCallBody | string>(
+      mcpEndpoint,
+      {
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/call',
+        params: { name: actorToolName, arguments: {} },
+      },
+      {
+        headers: {
+          accept: 'application/json, text/event-stream',
+          Authorization: `Bearer ${unknownApiKeyToken}`,
+          [customStrategyHeader]: customActorCredentials.email,
+        },
+      },
+    );
 
-    const me = await booted.restClient.get<MeBody>(`/api/${usersSlug}/me`, { headers });
-
-    expect(me.status).toBe(200);
-    expect(me.body.user).toMatchObject({
+    expect(response.status).toBe(200);
+    expect(parseMcpResponse<ToolCallBody>(response.body).result.structuredContent).toEqual({
       id: customActorId,
       email: customActorCredentials.email,
-      _strategy: customStrategyName,
+      collection: usersSlug,
+      strategy: customStrategyName,
     });
 
-    const unauthorized = await listTools(unknownApiKeyToken);
-    const response = await listTools(unknownApiKeyToken, headers);
+    const tools = await listTools(unknownApiKeyToken, {
+      [customStrategyHeader]: customActorCredentials.email,
+    });
 
-    expect(unauthorized.status).toBe(401);
-    expect(response.status).toBe(unauthorized.status);
-    expect(response.body).toEqual(unauthorized.body);
-    expect(responseHeaders(response.headers)).toEqual(responseHeaders(unauthorized.headers));
+    expect(
+      parseMcpResponse<ToolsListBody>(tools.body).result.tools.map(({ name }) => name),
+    ).toContain(restrictedToolName);
   });
 
-  it('POST /api/mcp rejects an unknown API key', async () => {
+  it('POST /api/mcp signs in with a login token', async () => {
+    const login = await booted.restClient.post<{ token: string }>(
+      `/api/${usersSlug}/login`,
+      customActorCredentials,
+    );
+
+    const response = await booted.restClient.post<ToolCallBody | string>(
+      mcpEndpoint,
+      {
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/call',
+        params: { name: actorToolName, arguments: {} },
+      },
+      {
+        headers: {
+          accept: 'application/json, text/event-stream',
+          Authorization: `JWT ${login.body.token}`,
+        },
+      },
+    );
+
+    expect(response.status).toBe(200);
+    expect(parseMcpResponse<ToolCallBody>(response.body).result.structuredContent).toMatchObject({
+      id: customActorId,
+      collection: usersSlug,
+    });
+  });
+
+  it('POST /api/mcp rejects an unknown API key with a link to the sign-in metadata', async () => {
     const response = await listTools(unknownApiKeyToken);
 
     expect(response.status).toBe(401);
+    expect(response.headers.get('www-authenticate')).toBe(
+      `Bearer resource_metadata="${resourceMetadataURL}"`,
+    );
+  });
+
+  it('POST /api/mcp signs in with a later strategy when the API-key strategy throws', async () => {
+    const find = booted.frogbot.find.bind(booted.frogbot);
+
+    vi.spyOn(booted.frogbot, 'find').mockImplementation((options) =>
+      options.collection === apiKeysSlug
+        ? Promise.reject(new Error(strategyFailureMessage))
+        : find(options),
+    );
+
+    vi.spyOn(booted.frogbot.logger, 'error').mockImplementation(() => undefined);
+
+    const response = await listTools(apiKeyToken, {
+      [customStrategyHeader]: customActorCredentials.email,
+    });
+
+    expect(response.status).toBe(200);
+    expect(
+      parseMcpResponse<ToolsListBody>(response.body).result.tools.map(({ name }) => name),
+    ).toContain(restrictedToolName);
   });
 
   it('POST /api/mcp logs strategy failures without changing the normal unauthorized response', async () => {

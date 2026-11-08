@@ -1,5 +1,5 @@
 import { createDefaultRequest } from '../getFrogBot.js';
-import type { AnyTool } from '../tools/types.js';
+import type { AnyTool, ToolAnnotations } from '../tools/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { defineCustomApiCall } from './customApiCall.js';
 import { isPieceSignIn, validateOAuthRecipe } from './oauth.js';
@@ -425,6 +425,7 @@ export function definePiece<const T extends PieceDefinition>(
         execute: (input, context) =>
           invoke({ input, req: context.req, overrideAccess: context.overrideAccess }),
         ...(action.approval === undefined ? {} : { approval: action.approval }),
+        ...actionAnnotations(action),
       };
 
       for (const [key, value] of Object.entries(tool)) {
@@ -465,4 +466,15 @@ export function definePiece<const T extends PieceDefinition>(
   definitions.set(factory, definition);
 
   return factory;
+}
+
+function actionAnnotations({ annotations, idempotent }: PieceActionDefinition): {
+  annotations?: ToolAnnotations;
+} {
+  const merged = {
+    ...(idempotent === undefined ? {} : { idempotentHint: idempotent }),
+    ...annotations,
+  };
+
+  return Object.keys(merged).length === 0 ? {} : { annotations: merged };
 }

@@ -37,11 +37,56 @@ Configure your MCP client to send Streamable HTTP requests to `/api/mcp` with a 
 Authorization: Bearer fb_...
 ```
 
-Revoked, malformed, and unknown keys are rejected with `401`. The MCP endpoint only accepts users signed in by the API keys plugin.
+The API key is tried first. Without a valid key, the request goes through the same sign-in as the rest of the app: every [auth strategy](/authentication/custom-strategies) on your auth collections, and the built-in login token. The first one that returns a user signs the request in, and a strategy that throws is logged and skipped. When nobody signs in, the response is `401`.
+
+### Sign in with your own OAuth server
+
+MCP clients such as Claude, ChatGPT and Cursor can sign people in with your OAuth server instead of a pasted key. Add a strategy that accepts your access tokens to the auth collection, and point clients at your [protected resource metadata](https://datatracker.ietf.org/doc/html/rfc9728) with `resourceMetadataURL`:
+
+```ts
+import type { AuthStrategy } from 'frogbot'
+
+const oauthBearer: AuthStrategy = {
+  name: 'oauth-bearer',
+  authenticate: async ({ frogbot, headers }) => {
+    const token = headers.get('authorization')?.replace(/^Bearer /, '')
+    if (!token || token.startsWith('fb_')) return { user: null }
+
+    const { docs } = await frogbot.find({
+      collection: 'oauth-tokens',
+      where: { token: { equals: token }, expiresAt: { greater_than: new Date() } },
+      depth: 1,
+      limit: 1,
+    })
+    const user = docs[0]?.user
+
+    return { user: user && typeof user === 'object' ? { ...user, collection: 'users' } : null }
+  },
+}
+
+export default buildConfig({
+  collections: [{ slug: 'users', auth: { strategies: [oauthBearer] }, fields: [] }],
+  plugins: [
+    apiKeysPlugin(),
+    mcpPlugin({
+      resourceMetadataURL: 'https://app.example.com/.well-known/oauth-protected-resource',
+    }),
+  ],
+})
+```
+
+Every `401` from `/api/mcp` then carries the link, so the client can find your sign-in and retry with its token:
+
+```http
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer resource_metadata="https://app.example.com/.well-known/oauth-protected-resource"
+```
+
+Running the OAuth server and serving the metadata document are up to your app. The strategy also signs REST and admin requests in, as any strategy on the collection does.
 
 ## What clients can reach
 
-Every app collection is exposed by default, through shared tools (`getConfigInfo`, `findDocuments`, `createDocuments`, `updateDocument`, `deleteDocuments`, `getCollectionSchema` and more). Each call runs as the key's owner, with your collections' [access control](/access-control/overview): a key reaches nothing over MCP its owner can't reach over REST. A `?overrideAccess=true` query is ignored in development and rejected with `400` elsewhere.
+Every app collection is exposed by default, through shared tools (`getConfigInfo`, `findDocuments`, `createDocuments`, `updateDocument`, `deleteDocuments`, `getCollectionSchema` and more). Each call runs as the signed-in user (the key's owner, for an API key), with your collections' [access control](/access-control/overview): nobody reaches anything over MCP they can't reach over REST. A `?overrideAccess=true` query is ignored in development and rejected with `400` elsewhere.
 
 FrogBot's own collections (chats, messages, API keys, connections, logs and the like) are never exposed.
 
@@ -90,17 +135,18 @@ mcpPlugin({ tools: [lookupTicket, slack] })
 ```
 
 - **Input.** A call is checked against `inputSchema` before `execute` runs; invalid input returns an error result.
-- **Context.** `ctx.req` is the request, signed in as the key's owner, so collection access applies to Local API calls made with it. `ctx.agent` is `{ slug: 'mcp', runId }`, with a new `runId` per call and no `chatId`. `ctx.overrideAccess` is always `false`, so a tool that forwards it runs as the key's owner over MCP and stays trusted in an agent's trusted runs.
+- **Context.** `ctx.req` is the request, signed in as the user, so collection access applies to Local API calls made with it. `ctx.agent` is `{ slug: 'mcp', runId }`, with a new `runId` per call and no `chatId`. `ctx.overrideAccess` is always `false`, so a tool that forwards it runs as the signed-in user over MCP and stays trusted in an agent's trusted runs.
 - **Result.** A string becomes one text block. Anything else becomes its JSON text, and a plain object is also sent as `structuredContent`. `hooks.afterToolCall` sees the result.
 - **Errors.** A thrown error becomes an error result with its message; the server keeps serving.
+- **Annotations.** A tool's [`annotations`](/agents/overview#tool-options), such as `{ destructiveHint: true }`, are sent unchanged in `tools/list`, so a client can ask before a destructive call. A piece action's `idempotent` flag is sent as `idempotentHint`. To change a piece's hints, spread its tool: `{ ...slack.sendChannelMessage, annotations: { openWorldHint: true } }`.
 - **Approval.** Nobody can approve a call over MCP, so a tool whose [`approval`](/chat/tool-approval) asks returns an error result, `Not run: this tool needs a person's approval, and nobody can approve it in this run.`, without running.
 - **Refused.** `mcpPlugin` throws for a client tool such as `question`, a duplicate slug, a slug that a built-in tool already uses (`getConfigInfo`, `findDocuments`, `login` and the rest), or an input schema that isn't an object or can't be written as JSON Schema (such as `z.date()`), since one such schema would break `tools/list` for every tool.
 
 <Warning>
-Piece tools resolve credentials as they do in an agent: a piece without `auth` in its config, like `slack` above, acts with the key owner's [connected account](/connections/overview). Tools that need a chat, such as `write_todos` and `read_todos`, always fail over MCP.
+Piece tools resolve credentials as they do in an agent: a piece without `auth` in its config, like `slack` above, acts with the signed-in user's [connected account](/connections/overview). Tools that need a chat, such as `write_todos` and `read_todos`, always fail over MCP.
 </Warning>
 
-Every listed tool is available to every valid key. To limit a tool to some users, give it an [`access`](/agents/overview#limit-who-gets-a-tool) rule: it runs on each MCP request with the key owner's request, and a key that fails it, or whose rule throws, isn't shown the tool and can't call it.
+Every listed tool is available to every signed-in user. To limit a tool to some users, give it an [`access`](/agents/overview#limit-who-gets-a-tool) rule: it runs on each MCP request with the signed-in user's request, and a user who fails it, or whose rule throws, isn't shown the tool and can't call it.
 
 `definePrompt` comes from `@frogbotai/plugin-mcp` and infers the handler's `input` from `argsSchema`.
 
@@ -112,6 +158,7 @@ FrogBot handles authorization itself, so there's no option to replace it.
 | --- | --- | --- |
 | `collections` | `object` | Map keyed by collection slug: `description`, `tools` (turn built-in tools off with `false`, reword them, or turn on auth tools with `true`) and `overrideResponse`. |
 | `tools` | `array` | FrogBot tools, piece actions and piece instances to serve. See [Tools](#tools). |
+| `resourceMetadataURL` | `string` | Absolute `http(s)` URL of your OAuth protected resource metadata, sent on every `401` as `WWW-Authenticate: Bearer resource_metadata="<url>"`. Anything else throws at startup. See [Sign in with your own OAuth server](#sign-in-with-your-own-oauth-server). |
 | `prompts` | `object` | Custom prompts, keyed by name. |
 | `resources` | `object` | Custom resources, keyed by name. |
 | `disabled` | `boolean` | Skip registering the endpoint. |
@@ -121,6 +168,6 @@ FrogBot handles authorization itself, so there's no option to replace it.
 | `mcp.serverOptions.options` | `object` | Options passed to the underlying MCP server. |
 | `mcp.verboseLogs` | `boolean` | Log the plugin's info and debug messages. Default `false`. |
 
-Prompts and resources take an optional `access({ req, permissions })` that hides them from keys it returns `false` for. Without one, any signed-in key can use them.
+Prompts and resources take an optional `access({ req, permissions })` that hides them from users it returns `false` for. Without one, anyone signed in can use them.
 
 SSE is not supported.

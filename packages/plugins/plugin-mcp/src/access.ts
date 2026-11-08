@@ -14,37 +14,58 @@ type AuthorizeMcpOptions = {
   strategy: AuthStrategy;
   pluginConfig: SanitizedMCPPluginConfig;
   req: PayloadRequest;
+  resourceMetadataURL?: string;
 };
 
 /**
- * Signs the request in with a FrogBot API key and returns the MCP items the key's user can reach,
- * without FrogBot's own collections. Access is always enforced, whatever the request asks.
+ * Signs the request in with a FrogBot API key, then with the app's own strategies, and returns the
+ * MCP items the user can reach, without FrogBot's own collections. Access is always enforced,
+ * whatever the request asks.
  */
 export async function authorizeMcp({
   collection,
   strategy,
   pluginConfig,
   req,
+  resourceMetadataURL,
 }: AuthorizeMcpOptions): Promise<AuthorizedMCP> {
   const frogbotReq = attachRegisteredFrogBot(req);
-  let result: AuthStrategyResult;
+  let user: AuthStrategyResult['user'] = null;
 
   try {
-    result = await executeAuthStrategy({
+    ({ user } = await executeAuthStrategy({
       collection,
       strategy,
       frogbot: frogbotReq.frogbot,
       headers: req.headers,
       req: frogbotReq,
       strategyName: strategy.name,
-    });
+    }));
   } catch {
+    user = null;
+  }
+
+  if (!user) {
+    const headers = new Headers(req.headers);
+
+    headers.set('DisableAutologin', 'true');
+    ({ user } = await frogbotReq.frogbot.auth({ headers, req: frogbotReq }));
+  }
+
+  if (!user) {
+    if (resourceMetadataURL) {
+      req.responseHeaders = new Headers(req.responseHeaders);
+
+      req.responseHeaders.set(
+        'WWW-Authenticate',
+        `Bearer resource_metadata="${resourceMetadataURL}"`,
+      );
+    }
+
     throw new UnauthorizedError();
   }
 
-  if (!result.user) throw new UnauthorizedError();
-
-  req.user = { ...result.user, collection: result.user.collection ?? collection };
+  req.user = { ...user, collection: user.collection ?? collection };
 
   const internal = new Set(
     req.payload.config.collections.filter(isInternalCollection).map(({ slug }) => slug),
