@@ -14,6 +14,7 @@
     "authConfig.test-d.ts",
     "localOptions.test-d.ts",
     "upload.test-d.ts",
-    "adminKeys.test-d.ts"
+    "adminKeys.test-d.ts",
+    "trash.test-d.ts"
   ]
 }

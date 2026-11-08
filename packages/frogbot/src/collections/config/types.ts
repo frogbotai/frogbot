@@ -339,6 +339,12 @@ type UploadArgs = {
   overwriteExistingFiles?: boolean;
 };
 
+/** Reach trashed documents too. Has no effect unless the collection sets `trash: true`. */
+export type TrashArgs = {
+  /** Include trashed (soft-deleted) documents. Combine with a `deletedAt` filter in `where` to act on trashed documents only. @default false */
+  trash?: boolean;
+};
+
 type LocalePublishArgs = {
   publishAllLocales?: boolean;
   unpublishAllLocales?: boolean;
@@ -358,24 +364,26 @@ export type JoinQuery =
       | false
     >;
 
-export type FindArgs<TSlug extends CollectionSlug> = CommonArgs & {
-  collection: TSlug;
-  where?: Where;
-  sort?: Sort;
-  limit?: number;
-  page?: number;
-  pagination?: boolean;
-  draft?: boolean;
-  joins?: JoinQuery;
-};
+export type FindArgs<TSlug extends CollectionSlug> = CommonArgs &
+  TrashArgs & {
+    collection: TSlug;
+    where?: Where;
+    sort?: Sort;
+    limit?: number;
+    page?: number;
+    pagination?: boolean;
+    draft?: boolean;
+    joins?: JoinQuery;
+  };
 
-export type FindByIDArgs<TSlug extends CollectionSlug> = CommonArgs & {
-  collection: TSlug;
-  id: DocID;
-  disableErrors?: boolean;
-  draft?: boolean;
-  joins?: JoinQuery;
-};
+export type FindByIDArgs<TSlug extends CollectionSlug> = CommonArgs &
+  TrashArgs & {
+    collection: TSlug;
+    id: DocID;
+    disableErrors?: boolean;
+    draft?: boolean;
+    joins?: JoinQuery;
+  };
 
 export type CreateArgs<TSlug extends CollectionSlug> = WriteArgs &
   UploadArgs & {
@@ -396,7 +404,8 @@ export type CreateArgs<TSlug extends CollectionSlug> = WriteArgs &
 
 export type UpdateByIDArgs<TSlug extends CollectionSlug> = LockedWriteArgs &
   UploadArgs &
-  LocalePublishArgs & {
+  LocalePublishArgs &
+  TrashArgs & {
     collection: TSlug;
     id: DocID;
     data: Partial<TypedCollection<TSlug>>;
@@ -406,7 +415,8 @@ export type UpdateByIDArgs<TSlug extends CollectionSlug> = LockedWriteArgs &
 
 export type UpdateManyArgs<TSlug extends CollectionSlug> = LockedWriteArgs &
   UploadArgs &
-  LocalePublishArgs & {
+  LocalePublishArgs &
+  TrashArgs & {
     collection: TSlug;
     where: Where;
     data: Partial<TypedCollection<TSlug>>;
@@ -416,23 +426,26 @@ export type UpdateManyArgs<TSlug extends CollectionSlug> = LockedWriteArgs &
 export type UpdateArgs<TSlug extends CollectionSlug> =
   UpdateByIDArgs<TSlug> | UpdateManyArgs<TSlug>;
 
-export type DeleteByIDArgs<TSlug extends CollectionSlug> = LockedWriteArgs & {
-  collection: TSlug;
-  id: DocID;
-};
+export type DeleteByIDArgs<TSlug extends CollectionSlug> = LockedWriteArgs &
+  TrashArgs & {
+    collection: TSlug;
+    id: DocID;
+  };
 
-export type DeleteManyArgs<TSlug extends CollectionSlug> = LockedWriteArgs & {
-  collection: TSlug;
-  where: Where;
-};
+export type DeleteManyArgs<TSlug extends CollectionSlug> = LockedWriteArgs &
+  TrashArgs & {
+    collection: TSlug;
+    where: Where;
+  };
 
 export type DeleteArgs<TSlug extends CollectionSlug> =
   DeleteByIDArgs<TSlug> | DeleteManyArgs<TSlug>;
 
-export type CountArgs<TSlug extends CollectionSlug> = CommonArgs & {
-  collection: TSlug;
-  where?: Where;
-};
+export type CountArgs<TSlug extends CollectionSlug> = CommonArgs &
+  TrashArgs & {
+    collection: TSlug;
+    where?: Where;
+  };
 
 export type PaginatedDocs<T> = {
   docs: T[];
@@ -470,15 +483,16 @@ export type DuplicateArgs<TSlug extends CollectionSlug> = WriteArgs & {
   id: DocID;
 };
 
-export type FindDistinctArgs<TSlug extends CollectionSlug> = CommonArgs & {
-  collection: TSlug;
-  field: string;
-  where?: Where;
-  sort?: Sort;
-  limit?: number;
-  page?: number;
-  pagination?: boolean;
-};
+export type FindDistinctArgs<TSlug extends CollectionSlug> = CommonArgs &
+  TrashArgs & {
+    collection: TSlug;
+    field: string;
+    where?: Where;
+    sort?: Sort;
+    limit?: number;
+    page?: number;
+    pagination?: boolean;
+  };
 
 export type PaginatedDistinctDocs<T extends Record<string, unknown>> = {
   values: T[];
