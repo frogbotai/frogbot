@@ -311,6 +311,29 @@ describe('MCP plugin tools', () => {
       );
     });
 
+    it('fills idempotentHint from idempotent when annotations leaves it undefined', () => {
+      const piece = definePiece({
+        slug: 'undefinedHints',
+        label: 'Undefined hints',
+        admin: { description: 'Undefined hints', group: 'Test' },
+        actions: [
+          {
+            slug: 'lookup',
+            description: 'Look something up.',
+            input: z.object({}),
+            idempotent: true,
+            annotations: { idempotentHint: undefined, readOnlyHint: true, title: undefined },
+            run: () => Promise.resolve(1),
+          },
+        ],
+      })();
+
+      expect(toPayloadTools([piece]).undefinedHints_lookup?.annotations).toStrictEqual({
+        idempotentHint: true,
+        readOnlyHint: true,
+      });
+    });
+
     it("replaces a piece action's annotations with a spread", () => {
       const invoices = createInvoices();
       const tools = toPayloadTools([
@@ -327,6 +350,7 @@ describe('MCP plugin tools', () => {
     '/.well-known/oauth-protected-resource',
     'ftp://app.example.com/meta',
     'javascript:alert(1)',
+    'https://app"example.com/.well-known/oauth-protected-resource',
   ])('rejects resourceMetadataURL %s', (resourceMetadataURL) => {
     expect(() => mcpPlugin({ resourceMetadataURL })).toThrow(
       '[plugin-mcp] resourceMetadataURL must be an absolute http(s) URL',

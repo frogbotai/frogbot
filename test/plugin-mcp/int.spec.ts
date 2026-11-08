@@ -19,10 +19,15 @@ import {
   customStrategyHeader,
   customStrategyName,
   mcpEndpoint,
+  memberCredentials,
+  memberHeader,
+  membersSlug,
   postsSlug,
   resourceMetadataURL,
   restrictedToolName,
   secretsSlug,
+  staffNotesSlug,
+  staffToolName,
   strategyFailureMessage,
   testCredentials,
   ticketsSlug,
@@ -212,7 +217,7 @@ describe('MCP plugin integration', () => {
   it('POST /api/mcp lists FrogBot tools with their JSON Schema, and only Payload built-ins besides', async () => {
     const response = await listTools(apiKeyToken);
     const { tools } = parseMcpResponse<ToolsListBody>(response.body).result;
-    const frogbotTools = [actorToolName, mathToolName, 'write_todos'];
+    const frogbotTools = [actorToolName, staffToolName, mathToolName, 'write_todos'];
 
     expect(tools.find(({ name }) => name === mathToolName)).toMatchObject({
       description: 'Add the first number and the second number.',
@@ -298,7 +303,7 @@ describe('MCP plugin integration', () => {
     expect(response.status).toBe(200);
     expect(toolText(response.body)).toEqual({
       isError: false,
-      text: `Collections: ${usersSlug}, ${postsSlug}, ${ticketsSlug}\nGlobals: none`,
+      text: `Collections: ${usersSlug}, ${membersSlug}, ${postsSlug}, ${ticketsSlug}, ${staffNotesSlug}\nGlobals: none`,
     });
   });
 
@@ -506,6 +511,58 @@ describe('MCP plugin integration', () => {
     expect(
       parseMcpResponse<ToolsListBody>(tools.body).result.tools.map(({ name }) => name),
     ).toContain(restrictedToolName);
+  });
+
+  it("POST /api/mcp keeps a strategy user's missing collection, as REST does", async () => {
+    await booted.frogbot.create({
+      collection: membersSlug,
+      data: memberCredentials,
+      overrideAccess: true,
+    });
+
+    await booted.frogbot.create({
+      collection: staffNotesSlug,
+      data: { title: 'Staff only' },
+      overrideAccess: true,
+    });
+
+    const headers = {
+      accept: 'application/json, text/event-stream',
+      [memberHeader]: memberCredentials.email,
+      DisableAutologin: 'true',
+    };
+
+    const rest = await booted.restClient.get(`/api/${staffNotesSlug}`, { headers });
+
+    expect((await booted.restClient.get(`/api/${postsSlug}`, { headers })).status).toBe(200);
+    expect(rest.status).toBe(403);
+
+    const rpc = (id: number, method: string, params: Record<string, unknown>) =>
+      booted.restClient.post<ToolCallBody | ToolsListBody | string>(
+        mcpEndpoint,
+        { jsonrpc: '2.0', id, method, params },
+        { headers },
+      );
+
+    const actor = parseMcpResponse<ToolCallBody>(
+      (await rpc(2, 'tools/call', { name: actorToolName, arguments: {} })).body,
+    ).result.structuredContent;
+
+    const names = parseMcpResponse<ToolsListBody>(
+      (await rpc(1, 'tools/list', {})).body,
+    ).result.tools.map(({ name }) => name);
+
+    const notes = toolText(
+      (await rpc(3, 'tools/call', { name: 'findDocuments', arguments: { slug: staffNotesSlug } }))
+        .body as ToolCallBody | string,
+    );
+
+    expect(notes.text).not.toContain('Staff only');
+    expect(notes.isError).toBe(true);
+    expect(names).toContain(actorToolName);
+    expect(names).not.toContain(staffToolName);
+    expect(actor).toMatchObject({ email: memberCredentials.email });
+    expect(actor?.collection).toBeUndefined();
   });
 
   it('POST /api/mcp signs in with a login token', async () => {
