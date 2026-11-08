@@ -502,6 +502,89 @@ describe('collection views', () => {
     expect(admin?.custom?.frogbot.useAsDone).toBe('done');
   });
 
+  it('sends panel settings to the client config and keeps them out of Payload admin', () => {
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'tasks',
+        fields: [
+          { name: 'status', type: 'text' },
+          { name: 'dates', type: 'group', fields: [{ name: 'due', type: 'date' }] },
+          { type: 'tabs', tabs: [{ name: 'meta', fields: [{ name: 'owner', type: 'text' }] }] },
+        ],
+        admin: {
+          components: { panel: { actions: ['./Action#Action'] } },
+          panel: { properties: ['status', 'dates.due', 'meta.owner'], width: 640 },
+        },
+      },
+    });
+
+    expect(admin?.custom?.frogbot.panel).toEqual({
+      properties: ['status', 'dates.due', 'meta.owner'],
+      width: 640,
+    });
+    expect(admin).not.toHaveProperty('panel');
+    expect(admin?.components).not.toHaveProperty('panel');
+  });
+
+  it('turns the panel on with the default width when unset, and off with false', () => {
+    const on = compileCollectionViews({ collection: { slug: 'tasks', fields: [] } });
+    const off = compileCollectionViews({
+      collection: { slug: 'tasks', fields: [], admin: { panel: false } },
+    });
+
+    expect(on?.custom?.frogbot.panel).toEqual({ width: 560 });
+    expect(off?.custom?.frogbot.panel).toBe(false);
+  });
+
+  it.each([
+    ['a missing field', 'finished'],
+    ['a field inside an array', 'items.title'],
+    ['an empty path', ''],
+  ])('rejects a panel property naming %s, naming the collection and entry', (_, path) => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [
+            { name: 'title', type: 'text' },
+            { name: 'items', type: 'array', fields: [{ name: 'title', type: 'text' }] },
+          ],
+          admin: { panel: { properties: [path] } },
+        },
+      }),
+    ).toThrow(`Collection "tasks" admin.panel.properties entry "${path}" must name a field`);
+  });
+
+  it.each([
+    ['the same field twice', ['status', 'status'], 'status'],
+    ['a group and a field inside it', ['dates', 'dates.due'], 'dates'],
+  ])('rejects panel properties naming %s', (_, properties, repeated) => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [
+            { name: 'status', type: 'text' },
+            { name: 'dates', type: 'group', fields: [{ name: 'due', type: 'date' }] },
+          ],
+          admin: { panel: { properties } },
+        },
+      }),
+    ).toThrow(`repeats "${repeated}"; each field appears once.`);
+  });
+
+  it.each([300, 399, 961, '560', Number.NaN])('rejects a panel width of %s', (width) => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [],
+          admin: { panel: { width: width as number } },
+        },
+      }),
+    ).toThrow(`Collection "tasks" admin.panel.width ${width} must be a number from 400 to 960.`);
+  });
+
   it('rejects a function filter, since view entries are plain data', () => {
     expect(() =>
       compileCollectionViews({

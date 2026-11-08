@@ -67,6 +67,49 @@ export type CollectionAdminComponents = Omit<
   /** Replaces Payload's Create New in the list controls and the list view's empty state. */
   CreateButton?: FrogBotComponent;
   edit?: NonNullable<PayloadComponents['edit']> & { views?: CollectionEditViews };
+  /** Components in the record side panel. Each gets `PanelComponentProps`. */
+  panel?: RecordPanelComponents;
+};
+
+/**
+ * Props every record panel component gets. Client components get them as props; server
+ * components also get Payload's edit-view server props (`payload`, `req`, `permissions`, `doc`),
+ * and their client children read `close` and `expand` from `useRecordPanel()`.
+ */
+export type PanelComponentProps = {
+  /** Closes the panel. */
+  close: () => void;
+  collectionSlug: string;
+  /** Opens the record's full edit page. */
+  expand: () => void;
+  id: number | string;
+};
+
+/** The record side panel's component slots, in `admin.components.panel`. */
+export type RecordPanelComponents = {
+  /** Header buttons, before copy link. */
+  actions?: FrogBotComponent[];
+  /** After the last field. */
+  afterFields?: FrogBotComponent[];
+  /** Between the title and the property list. */
+  beforeFields?: FrogBotComponent[];
+  /** Replaces the whole panel. */
+  Component?: FrogBotComponent;
+  /** Replaces only the header. */
+  Header?: FrogBotComponent;
+};
+
+/** The record side panel's settings, in `admin.panel`. */
+export type RecordPanelConfig = {
+  /**
+   * Fields in the compact two-column property list under the title, in order.
+   * Names or dot paths of top-level, group or tab fields.
+   * Default: the sidebar fields (`admin.position: 'sidebar'`), in config order.
+   * Every other field appears below in the normal form, in config order.
+   */
+  properties?: string[];
+  /** Starting width in px. Default 560. Users drag between 400 and 960; saved per user. */
+  width?: number;
 };
 
 export type CollectionAdminConfig = Omit<
@@ -93,6 +136,14 @@ export type CollectionAdminConfig = Omit<
   group?: PayloadAdmin['group'] | null;
   icon?: AdminIcon;
   livePreview?: LivePreviewConfig;
+  /**
+   * The record side panel. On by default for every collection: clicking a row, card or event
+   * opens the record in a panel beside the view, at `?record=<id>`.
+   * - `false`: no panel. Rows, cards and events open the full edit page, and `?record=<id>`
+   *   redirects to it.
+   * - object: settings, all optional.
+   */
+  panel?: false | RecordPanelConfig;
   preview?: GeneratePreviewURL;
   /**
    * Moves the collection into Settings: it gets its own Settings sidebar item, its pages show the

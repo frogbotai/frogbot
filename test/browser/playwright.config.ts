@@ -351,6 +351,7 @@ const testProjects = [
       'customField.browser.spec.ts',
       'adminTheme.browser.spec.ts',
       'cssLayers.browser.spec.ts',
+      'recordPanelSlots.browser.spec.ts',
     ],
   }),
   project({
@@ -406,6 +407,7 @@ const testProjects = [
       'crm.browser.spec.ts',
       'listGrouping.browser.spec.ts',
       'listSummary.browser.spec.ts',
+      'recordPanel.browser.spec.ts',
       'views.browser.spec.ts',
     ],
   }),

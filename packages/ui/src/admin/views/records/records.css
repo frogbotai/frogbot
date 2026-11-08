@@ -16,6 +16,14 @@
     vertical-align: -3px;
   }
 
+  .collection-view--list tr[data-selected] td {
+    background: var(--color-bg-selected);
+  }
+
+  .collection-view__view[data-record-panel] .table tbody > tr {
+    cursor: pointer;
+  }
+
   .collection-view--list tr[data-done] td {
     color: var(--color-text-secondary);
   }

@@ -103,6 +103,8 @@ A list or board `groupBy` follows one set of rules: select and radio groups in o
 
 `admin.useAsDone` names one checkbox field (or a dot path into a group); startup fails if it isn't a checkbox. Done records share one done style on every view, and board cards get a check circle that toggles it through a normal update. To make a stage imply done, set the checkbox in a `beforeChange` hook rather than in config. Docs: https://docs.frogbot.ai/configuration/collections#collection-views
 
+Clicking a row, card or event opens the record in a side panel beside the view, at `?record=<id>`, with the edit form. It's on for every collection; `admin.panel: false` opens the edit page instead. `admin.panel.properties` lists the fields shown as label and value rows under the title (default: the sidebar fields), and `admin.panel.width` sets the starting width (400–960, default 560). Panel slots go in `admin.components.panel`: `actions`, `beforeFields`, `afterFields`, `Header`, `Component`. Docs: https://docs.frogbot.ai/admin/record-panel
+
 ## Authentication
 
 Set `auth: true` for FrogBot defaults or provide auth options.

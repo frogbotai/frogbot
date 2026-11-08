@@ -21,7 +21,7 @@ type MovedToViews =
 
 type Dropped = 'disableCopyToLocale' | 'enableRichTextLink' | 'enableRichTextRelationship';
 
-type FrogBotOnly = 'icon' | 'settings' | 'useAsDone' | 'views';
+type FrogBotOnly = 'icon' | 'panel' | 'settings' | 'useAsDone' | 'views';
 
 type Reviewed = Kept | MovedToViews | Dropped;
 

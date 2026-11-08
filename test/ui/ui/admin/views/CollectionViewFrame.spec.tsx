@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => {
     push: vi.fn(),
     setPreference: vi.fn(() => Promise.resolve()),
     setStepNav: vi.fn(),
+    useRecordLinks: vi.fn((_args: { disabled?: boolean }) => undefined),
     smallBreak: false,
     ViewControls: vi.fn(
       (_props: { beforeActions?: ReactNode[]; hasCreatePermission?: boolean }) => (
@@ -62,6 +63,19 @@ vi.mock('../../../../../packages/ui/src/admin/views/controls/ViewControls.client
   ViewControls: mocks.ViewControls,
 }));
 
+vi.mock('../../../../../packages/ui/src/admin/views/panel/RecordPanel.client.js', () => ({
+  RecordPanel: () => <aside data-testid="record-panel" />,
+}));
+
+vi.mock('../../../../../packages/ui/src/admin/views/panel/RecordPanelProvider.client.js', () => ({
+  RecordPanelProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
+  useRecordPanel: () => ({ enabled: true, openId: undefined, state: { mode: 'closed' } }),
+}));
+
+vi.mock('../../../../../packages/ui/src/admin/views/panel/useRecordLinks.js', () => ({
+  useRecordLinks: mocks.useRecordLinks,
+}));
+
 const { CollectionViewFrame } =
   await import('../../../../../packages/ui/src/admin/views/CollectionViewFrame.client');
 
@@ -109,6 +123,20 @@ describe('CollectionViewFrame', () => {
     mocks.setStepNav.mockClear();
     mocks.smallBreak = false;
     mocks.ViewControls.mockClear();
+  });
+
+  it('opens no records from the trash view', () => {
+    render(frame({ viewType: 'trash' }));
+
+    expect(mocks.useRecordLinks).toHaveBeenLastCalledWith(
+      expect.objectContaining({ disabled: true }),
+    );
+
+    render(frame({ viewType: 'board' }));
+
+    expect(mocks.useRecordLinks).toHaveBeenLastCalledWith(
+      expect.objectContaining({ disabled: false }),
+    );
   });
 
   it("renders Payload's list header, with the view tabs under the title", () => {

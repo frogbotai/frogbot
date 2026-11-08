@@ -1,4 +1,5 @@
 import type { AdminViewServerProps, Column, ListQuery, Where } from 'payload';
+import { formatAdminURL } from 'payload/shared';
 import type { ReactNode } from 'react';
 
 import {
@@ -9,6 +10,7 @@ import {
 } from './collectionViews.js';
 import { CollectionViewShellClient } from './CollectionViewShell.client.js';
 import { buildFrameSlots } from './frame.js';
+import { redirectRecordParam } from './panel/redirectRecord.js';
 import { isQueryError, type StoredViewPreference } from './viewSetup.js';
 
 type CollectionViewShellProps = AdminViewServerProps & {
@@ -35,6 +37,13 @@ export async function CollectionViewShell(props: CollectionViewShellProps) {
   const { req } = initPageResult;
   const query = props.query ?? req.query ?? {};
   const view = props.view;
+
+  redirectRecordParam({
+    collectionConfig,
+    record: query.record,
+    redirect: (path) =>
+      props.server.redirect(formatAdminURL({ adminRoute: clientConfig.routes.admin, path })),
+  });
 
   if (getActiveViewSlug(props) === undefined) {
     await redirectToLastView({ collectionSlug, req, server: props.server, views: props.views });

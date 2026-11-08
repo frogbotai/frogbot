@@ -1,17 +1,10 @@
 'use client';
 
-import { toast, useConfig, useModal } from '@payloadcms/ui';
+import { toast, useConfig } from '@payloadcms/ui';
 import { formatAdminURL } from 'payload/shared';
 import { useState } from 'react';
 
 import { setPath } from '../cells.js';
-
-/** Whether the drawer with this slug is open, so its record shows as selected. */
-export function useDrawerSelected(drawerSlug: string): boolean {
-  const { isModalOpen } = useModal();
-
-  return isModalOpen(drawerSlug);
-}
 
 /**
  * Toggles a record's done checkbox with an ordinary update, so field access applies, and hands

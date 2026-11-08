@@ -11,16 +11,18 @@ import {
   useConfig,
   useListDrawerContext,
   useListQuery,
+  useRouter,
   useTranslation,
   useWindowInfo,
 } from '@payloadcms/ui';
 import type { ListViewClientProps } from 'payload';
-import { type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode, type RefObject, useEffect, useRef } from 'react';
 
 import type { ViewTab } from '../../elements/ViewTabs/index.client.js';
 import { aiBulkMenuFields } from '../../fields/AI/bulk.js';
 import { AIFieldListMenuItem } from '../../fields/AI/ListMenuItem.client.js';
 import { CollectionViewFrame } from '../CollectionViewFrame.client.js';
+import { useRecordPanel, useRecordPanelEvents } from '../panel/RecordPanelProvider.client.js';
 import { BulkUploadButton } from './BulkUploadButton.client.js';
 import { DefaultListView } from './DefaultListView.client.js';
 import { ListSummary, type ListSummaryProps } from './summary/ListSummary.client.js';
@@ -65,9 +67,10 @@ function rowId(row: HTMLElement): string | undefined {
   return row.dataset.id ?? row.querySelector<HTMLElement>('[data-row-id]')?.dataset.rowId;
 }
 
-function useDoneRows(doneIds: string[] | undefined) {
+function useRecordRows(doneIds: string[] | undefined) {
   const ref = useRef<HTMLDivElement>(null);
   const key = doneIds?.join('\n') ?? '';
+  const { openId } = useRecordPanel();
 
   useEffect(() => {
     const container = ref.current;
@@ -80,6 +83,7 @@ function useDoneRows(doneIds: string[] | undefined) {
         .forEach((row) => {
           const id = rowId(row);
           row.toggleAttribute('data-done', id !== undefined && done.has(id));
+          row.toggleAttribute('data-selected', id !== undefined && id === openId);
         });
     };
 
@@ -88,9 +92,36 @@ function useDoneRows(doneIds: string[] | undefined) {
     observer.observe(container, { childList: true, subtree: true });
 
     return () => observer.disconnect();
-  }, [key]);
+  }, [key, openId]);
 
   return ref;
+}
+
+function RecordRows({
+  children,
+  doneIds,
+  footer,
+}: {
+  children: ReactNode;
+  doneIds?: string[];
+  footer?: (containerRef: RefObject<HTMLDivElement | null>) => ReactNode;
+}) {
+  const ref = useRecordRows(doneIds);
+
+  return (
+    <>
+      <div ref={ref}>{children}</div>
+      {footer?.(ref)}
+    </>
+  );
+}
+
+function RefreshOnPanelSave() {
+  const router = useRouter();
+
+  useRecordPanelEvents(() => router.refresh());
+
+  return null;
 }
 
 function ListFrameInner({
@@ -120,7 +151,6 @@ function ListFrameInner({
     viewType !== 'trash' &&
     Boolean(upload && upload.bulkUpload && !upload.hideFileInputOnCreate);
 
-  const tableRef = useDoneRows(doneIds);
   const aiFields = aiBulkMenuFields({
     canUpdate: Boolean(permissions?.collections?.[collectionSlug]?.update),
     fields: collectionConfig.fields,
@@ -193,12 +223,23 @@ function ListFrameInner({
           type="list"
           viewType={viewType}
         >
-          <div ref={tableRef}>
+          <RefreshOnPanelSave />
+          <RecordRows
+            doneIds={doneIds}
+            footer={
+              summary && !frame.isEmpty
+                ? (containerRef) => (
+                    <ListSummary
+                      {...summary}
+                      collectionSlug={collectionSlug}
+                      containerRef={containerRef}
+                    />
+                  )
+                : undefined
+            }
+          >
             <RelationshipProvider>{Table}</RelationshipProvider>
-          </div>
-          {summary && !frame.isEmpty ? (
-            <ListSummary {...summary} collectionSlug={collectionSlug} containerRef={tableRef} />
-          ) : null}
+          </RecordRows>
         </CollectionViewFrame>
       </SelectionProvider>
     </TableColumnsProvider>
