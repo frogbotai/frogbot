@@ -65,7 +65,10 @@ export function ensureFrogBotInstance(
 
           return registered.frogbot;
         })
-      : init();
+      : init().catch((error: unknown) => {
+          instances.delete(payload);
+          throw error;
+        });
 
   promises.set(payload, promise);
   const clear = () => {
