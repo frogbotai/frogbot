@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -63,7 +63,8 @@ const table = (ids: string[]) => (
   </div>
 );
 
-const frame = (Table: ReactNode, groupedData?: unknown) => ({
+const frame = (Table: ReactNode, doneIds: string[], groupedData?: unknown) => ({
+  doneIds,
   hasCreateButton: false,
   isEmpty: false,
   listProps: {
@@ -78,69 +79,79 @@ const frame = (Table: ReactNode, groupedData?: unknown) => ({
   tabs: [],
 });
 
+const orderable = (ids: string[]) => (
+  <div className="table">
+    <table>
+      <tbody>
+        {ids.map((id) => (
+          <tr key={id}>
+            <td>
+              <span data-row-id={id} hidden />
+              {id}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
+const rowFor = (container: HTMLElement, label: string) =>
+  [...container.querySelectorAll('tbody tr')].find((row) => row.textContent === label);
+
 describe('ListFrameClient done rows', () => {
   it('marks a done row in an ungrouped list', () => {
-    state.data = {
-      docs: [
-        { completed: true, id: 'a' },
-        { completed: false, id: 'b' },
-      ],
-    };
-
+    state.data = { docs: [{ id: 'a' }, { id: 'b' }] };
     state.isGroupingBy = false;
-    const { container } = render(<ListFrameClient {...frame(table(['a', 'b']))} />);
+    const { container } = render(<ListFrameClient {...frame(table(['a', 'b']), ['a'])} />);
 
     expect(container.querySelector('tr[data-id="a"]')?.hasAttribute('data-done')).toBe(true);
+    expect(container.querySelector('tr[data-id="b"]')?.hasAttribute('data-done')).toBe(false);
   });
 
   it('marks a done row in a list grouped by a field', () => {
     state.data = { docs: [{}, {}] };
     state.isGroupingBy = true;
     const groups = [
-      { data: { docs: [{ completed: true, id: 'a' }] }, heading: 'Open', value: 'open' },
-      { data: { docs: [{ completed: false, id: 'b' }] }, heading: 'Won', value: 'won' },
+      { data: { docs: [{ id: 'a' }] }, heading: 'Open', value: 'open' },
+      { data: { docs: [{ id: 'b' }] }, heading: 'Won', value: 'won' },
     ];
 
     const { container } = render(
-      <ListFrameClient {...frame([table(['a']), table(['b'])], groups)} />,
+      <ListFrameClient {...frame([table(['a']), table(['b'])], ['a'], groups)} />,
     );
 
     expect(container.querySelector('tr[data-id="a"]')?.hasAttribute('data-done')).toBe(true);
     expect(container.querySelector('tr[data-id="b"]')?.hasAttribute('data-done')).toBe(false);
   });
 
-  it('matches orderable rows, which have no data-id, by position', () => {
-    state.data = {
-      docs: [
-        { completed: false, id: 'a' },
-        { completed: true, id: 'b' },
-      ],
-    };
-
+  it('matches orderable rows, which have no data-id, by the row id in their cells', () => {
+    state.data = { docs: [{ id: 'a' }, { id: 'b' }] };
     state.isGroupingBy = false;
+    const { container } = render(<ListFrameClient {...frame(orderable(['a', 'b']), ['b'])} />);
 
-    const { container } = render(
-      <ListFrameClient
-        {...frame(
-          <div className="table">
-            <table>
-              <tbody>
-                <tr>
-                  <td>a</td>
-                </tr>
-                <tr>
-                  <td>b</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>,
-        )}
-      />,
-    );
+    expect(rowFor(container, 'a')?.hasAttribute('data-done')).toBe(false);
+    expect(rowFor(container, 'b')?.hasAttribute('data-done')).toBe(true);
+  });
 
-    const rows = container.querySelectorAll('tbody tr');
+  it('keeps the done mark on its record after a drag reorders the rows before the list refetches', () => {
+    state.data = { docs: [{ id: 'a' }, { id: 'b' }] };
+    state.isGroupingBy = false;
+    const { container } = render(<ListFrameClient {...frame(orderable(['b', 'a']), ['a'])} />);
 
-    expect(rows[0]?.hasAttribute('data-done')).toBe(false);
-    expect(rows[1]?.hasAttribute('data-done')).toBe(true);
+    expect(rowFor(container, 'a')?.hasAttribute('data-done')).toBe(true);
+    expect(rowFor(container, 'b')?.hasAttribute('data-done')).toBe(false);
+  });
+
+  it('marks rows the table adds after the frame rendered', async () => {
+    state.data = { docs: [{ id: 'a' }] };
+    state.isGroupingBy = false;
+    const { container } = render(<ListFrameClient {...frame(orderable(['b']), ['a'])} />);
+    const tbody = container.querySelector('tbody');
+    const row = document.createElement('tr');
+    row.innerHTML = '<td><span data-row-id="a" hidden></span>a</td>';
+    tbody?.append(row);
+
+    await waitFor(() => expect(row.hasAttribute('data-done')).toBe(true));
   });
 });

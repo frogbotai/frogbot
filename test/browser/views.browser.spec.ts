@@ -262,3 +262,32 @@ test('marks the record open in the drawer as selected, and clears it on close', 
   await page.keyboard.press('Escape');
   await expect(event).not.toHaveClass(/fb-record--selected/);
 });
+
+test('the board still renders with a filter on a field that does not exist', async ({ page }) => {
+  const response = await page.goto('/collections/tasks/board?where[nonexistentField][equals]=x');
+
+  expect(response?.status()).toBeLessThan(500);
+  await expect(page.locator('main.collection-view')).toBeVisible();
+});
+
+test('a broken filter opened once does not lock the user out of the plain board', async ({
+  page,
+}) => {
+  await page.goto('/collections/tasks/board?where[nonexistentField][equals]=x');
+  const response = await page.goto('/collections/tasks/board');
+
+  expect(response?.status()).toBeLessThan(500);
+  await expect(page.locator('main.collection-view')).toBeVisible();
+});
+
+test('a done row keeps the done style when the done column is hidden', async ({ page }) => {
+  const columns = encodeURIComponent(JSON.stringify(['title', 'status']));
+  await page.goto(`/collections/tasks?sort=title&limit=100&columns=${columns}`);
+
+  const row = page.locator('tbody tr').filter({ hasText: 'Completed while todo' });
+
+  await expect(row).toHaveAttribute('data-done', '');
+  await expect(
+    page.locator('tbody tr').filter({ hasText: 'Prepare the wholesale portal demo' }),
+  ).not.toHaveAttribute('data-done', '');
+});

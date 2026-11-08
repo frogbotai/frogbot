@@ -411,6 +411,58 @@ describe('collection views', () => {
     ).toThrow('view "board" has a function filter');
   });
 
+  it('rejects a function anywhere inside a view filter', () => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [
+            { name: 'stage', type: 'select', options: [] },
+            { name: 'owner', type: 'relationship', relationTo: 'users' },
+          ],
+          admin: {
+            views: [
+              { type: 'list' },
+              {
+                type: 'board',
+                groupBy: 'stage',
+                filter: { or: [{ owner: { equals: () => 'me' } }] },
+              },
+            ],
+          },
+        },
+      }),
+    ).toThrow('view "board" has a function filter');
+  });
+
+  it("hands a list view's filter to Payload as the baseFilter function Payload calls", async () => {
+    const filter = { status: { equals: 'open' } };
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'tasks',
+        fields: [{ name: 'status', type: 'text' }],
+        admin: { views: [{ type: 'list', filter }] },
+      },
+    });
+
+    expect(typeof admin?.baseFilter).toBe('function');
+    expect(await admin?.baseFilter?.({ limit: 10, page: 1, req: {} as never, sort: '' })).toEqual(
+      filter,
+    );
+  });
+
+  it('rejects a useAsDone that is not a string with the startup message', () => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [{ name: 'done', type: 'checkbox' }],
+          admin: { useAsDone: true as never },
+        },
+      }),
+    ).toThrow('must name a checkbox field');
+  });
+
   it('keeps CreateButton on the collection components', () => {
     const CreateButton = './Create#Button';
     const admin = compileCollectionViews({
