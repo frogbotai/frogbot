@@ -2,6 +2,7 @@ import type { NavItemsArgs } from 'frogbot';
 import type { ImportMap, SanitizedConfig, ServerProps } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 
+import { validateAdminIcon } from '../../../../../../packages/frogbot/src/admin/icons';
 import { buildPaletteModel } from '../../../../../../packages/ui/src/admin/elements/CommandPalette/buildPaletteModel';
 import { buildNavModel } from '../../../../../../packages/ui/src/admin/elements/Nav/buildNavModel';
 import { resolveNavItems } from '../../../../../../packages/ui/src/admin/elements/Nav/resolveNavItems';
@@ -111,6 +112,27 @@ describe('resolveNavItems', () => {
     await expect(resolveNavItems({ config: config(() => [item]), importMap })).rejects.toThrow(
       message,
     );
+  });
+
+  it.each(['brand-google', 'brand-git-hub', 'brand-slack'])(
+    'rejects the brand icon %s, as sanitize does for a static array',
+    async (icon) => {
+      expect(() => validateAdminIcon(icon)).toThrow(/brand logo/);
+      await expect(
+        resolveNavItems({ config: config(() => [{ icon, label: 'B', path: '/b' }]), importMap }),
+      ).rejects.toThrow(`icon "${icon}" is neither`);
+    },
+  );
+
+  it('accepts a @payloadcms/ui icon whose rewritten key is in the import map', async () => {
+    const rewrittenMap = { '@frogbotai/ui/admin#FolderIcon': () => null } as unknown as ImportMap;
+
+    await expect(
+      resolveNavItems({
+        config: config(() => [{ icon: '@payloadcms/ui#FolderIcon', label: 'A', path: '/a' }]),
+        importMap: rewrittenMap,
+      }),
+    ).resolves.toEqual([{ icon: '@frogbotai/ui/admin#FolderIcon', label: 'A', path: '/a' }]);
   });
 
   it('throws when the function does not return an array', async () => {

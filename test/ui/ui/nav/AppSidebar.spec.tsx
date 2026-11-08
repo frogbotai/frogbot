@@ -55,6 +55,27 @@ describe('AppSidebar', () => {
     expect(active.map((button) => button.getAttribute('aria-label'))).toEqual(['AB']);
   });
 
+  it('marks one item active when two items share a path', () => {
+    render(
+      <AppSidebar
+        {...props}
+        currentPath="/admin/collections/posts"
+        navItems={[
+          { label: 'My posts', path: '/admin/collections/posts' },
+          { label: 'Users', path: '/admin/collections/users' },
+          { label: 'Posts', path: '/admin/collections/posts' },
+        ]}
+        open
+      />,
+    );
+
+    const active = screen
+      .getAllByRole('button')
+      .filter(({ className }) => className.includes('fb-app-sidebar__item--active'));
+
+    expect(active.map((button) => button.getAttribute('aria-label'))).toEqual(['My posts']);
+  });
+
   it('marks no nav item active when none matches, and the home item only on its exact path', () => {
     const { rerender } = render(
       <AppSidebar
