@@ -3,11 +3,13 @@ import { readFileSync } from 'node:fs';
 import { DndContext } from '@dnd-kit/core';
 import { act, fireEvent, render, renderHook, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { renderToString } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { EventChip } from '../../../packages/ui/src/calendar/EventChip.js';
 import { MonthGrid } from '../../../packages/ui/src/calendar/MonthGrid.js';
 import { TimeGrid, type TimeGridProps } from '../../../packages/ui/src/calendar/TimeGrid.js';
+import { useBrowserTimeZone } from '../../../packages/ui/src/calendar/useBrowserTimeZone.js';
 import { useCalendar } from '../../../packages/ui/src/calendar/useCalendar.js';
 
 const event = {
@@ -218,6 +220,36 @@ describe('calendar in Los Angeles', () => {
       expect(screen.queryByLabelText('Resize end')).toBeNull();
     },
   );
+
+  it('shows a timed event of a day or more in the all-day row on its local days', () => {
+    renderWeek([
+      {
+        end: '2026-09-09T05:00:00.000Z',
+        id: 'trip',
+        start: '2026-09-08T05:00:00.000Z',
+        title: 'Trip',
+      },
+    ]);
+
+    const cells = [...document.querySelectorAll('.frog-calendar__all-day-cell')];
+    const chips = screen
+      .getAllByText('Trip')
+      .map((chip) => chip.closest('.frog-calendar__all-day-cell'));
+
+    expect(chips.map((cell) => cells.indexOf(cell as Element))).toEqual([1, 2]);
+  });
+
+  it('knows no time zone on the server, so the server renders no grid', () => {
+    function Zone() {
+      return <span>{useBrowserTimeZone() ?? 'none'}</span>;
+    }
+
+    expect(renderToString(<Zone />)).toContain('none');
+
+    render(<Zone />);
+
+    expect(screen.getByText(Intl.DateTimeFormat().resolvedOptions().timeZone)).toBeTruthy();
+  });
 
   it('shows no resize handles and ignores resizes when there is no end to save', async () => {
     const event = {

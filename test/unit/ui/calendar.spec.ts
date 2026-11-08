@@ -67,6 +67,20 @@ describe('calendar core', () => {
     });
   });
 
+  it('reads a yyyy-MM-dd date as that day in the calendar zone', () => {
+    const range = getVisibleRange({
+      date: '2026-09-06',
+      mode: 'day',
+      timeZone: 'America/Los_Angeles',
+    });
+
+    expect(range.start).toBe('2026-09-06T00:00:00.000-07:00');
+  });
+
+  it('snaps on the local clock in half-hour zones', () => {
+    expect(snapTo('2026-09-07T05:40:00.000Z', 60, 'Asia/Kolkata')).toBe('2026-09-07T05:30:00.000Z');
+  });
+
   it('expands and clips multi-day events into visible cells', () => {
     const range = getVisibleRange({ date: '2026-09-06T12:00:00Z', mode: 'week' });
     const cells = expandToCells(
@@ -175,6 +189,43 @@ describe('useCalendar interactions', () => {
         dateOnly: true,
       }),
     ).toMatchObject({ end: '2026-09-10T12:00:00.000Z', start: '2026-09-10T12:00:00.000Z' });
+  });
+
+  it('moves a date-only value dropped on a time slot to noon UTC on that day', () => {
+    expect(
+      moveCalendarEvent(
+        { id: 'd', start: '2026-09-07T12:00:00.000Z' },
+        {
+          end: '2026-09-10T15:00:00.000Z',
+          key: '2026-09-10',
+          kind: 'time',
+          start: '2026-09-10T14:30:00.000Z',
+        },
+        { dateOnly: true },
+      ),
+    ).toMatchObject({ end: '2026-09-10T12:00:00.000Z', start: '2026-09-10T12:00:00.000Z' });
+  });
+
+  it('resizes and creates on the local clock in half-hour zones', () => {
+    const kolkata = { end: '2026-09-07T04:30:00.000Z', id: 'k', start: '2026-09-07T03:30:00.000Z' };
+
+    expect(
+      resizeCalendarEvent({
+        edge: 'end',
+        event: kolkata,
+        instant: '2026-09-07T05:30:00.000Z',
+        snap: 60,
+        timeZone: 'Asia/Kolkata',
+      }).end,
+    ).toBe('2026-09-07T05:30:00.000Z');
+    expect(
+      createCalendarRange(
+        '2026-09-07T03:30:00.000Z',
+        '2026-09-07T04:30:00.000Z',
+        60,
+        'Asia/Kolkata',
+      ),
+    ).toEqual({ end: '2026-09-07T04:30:00.000Z', start: '2026-09-07T03:30:00.000Z' });
   });
 
   it('moves an event with no end as a point in time', () => {
