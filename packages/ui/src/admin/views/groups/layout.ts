@@ -1,50 +1,53 @@
 import { getGroupKey } from './keys.js';
 import type { ResolvedGroup } from './resolve.js';
 
-/** A group as a list shows it: the resolved group plus its true count. */
-export type CountedGroup = ResolvedGroup & { count: number };
+/** A group as a list lays it out: the resolved group, and whether it shows with no records. */
+export type LaidOutGroup = ResolvedGroup & { keepEmpty: boolean };
+
+/** A group with its true count, as the list shows it. */
+export type CountedGroup = LaidOutGroup & { count: number };
 
 /**
- * Orders, counts and pages a list's groups. Fixed groups (options) all show, empty ones with 0;
- * other groups show only with records and are paged by the list's page size, as Payload pages
- * its groups. "No value" comes last, when it has records. A descending `groupBy` reverses the
- * values.
+ * Orders and pages a list's groups before they are counted. Fixed groups (options) all show, empty
+ * ones too; stored values that are no longer options follow them. Other groups are the values
+ * present, paged by the list's page size as Payload pages its groups. "No value" comes last when
+ * it has records. A descending `groupBy` reverses the values.
  */
 export function layoutGroups({
-  counts,
   descending,
   fixed,
   groups,
   limit,
   noValueLabel,
   page,
+  strays = [],
 }: {
-  counts: Record<string, number>;
   descending: boolean;
   fixed: boolean;
   groups: ResolvedGroup[];
   limit: number;
-  noValueLabel: string;
+  /** The "No value" label when records have no value, otherwise `undefined`. */
+  noValueLabel?: string;
   page: number;
-}): { groups: CountedGroup[]; totalPages: number } {
-  const counted = groups
-    .map((group) => ({ ...group, count: counts[group.key] ?? 0 }))
-    .filter((group) => fixed || group.count > 0);
+  strays?: ResolvedGroup[];
+}): { groups: LaidOutGroup[]; totalPages: number } {
+  const ordered: LaidOutGroup[] = groups.map((group) => ({ ...group, keepEmpty: fixed }));
 
-  if (descending) counted.reverse();
+  if (descending) ordered.reverse();
 
-  const empty = counts[''] ?? 0;
-  if (empty > 0) {
-    counted.push({ count: empty, key: getGroupKey(null), label: noValueLabel, value: null });
+  ordered.push(...strays.map((group) => ({ ...group, keepEmpty: false })));
+
+  if (noValueLabel !== undefined) {
+    ordered.push({ key: getGroupKey(null), keepEmpty: false, label: noValueLabel, value: null });
   }
 
-  if (fixed || limit <= 0) return { groups: counted, totalPages: 1 };
+  if (fixed || limit <= 0) return { groups: ordered, totalPages: 1 };
 
   const start = (Math.max(page, 1) - 1) * limit;
 
   return {
-    groups: counted.slice(start, start + limit),
-    totalPages: Math.max(1, Math.ceil(counted.length / limit)),
+    groups: ordered.slice(start, start + limit),
+    totalPages: Math.max(1, Math.ceil(ordered.length / limit)),
   };
 }
 

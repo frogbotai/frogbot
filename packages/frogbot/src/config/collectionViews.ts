@@ -36,9 +36,14 @@ function resolveField(fields: Field[], path: string): Field | TabAsField | undef
 function resolveGroupByField(fields: Field[], path: string): Field | undefined {
   const field = resolveField(fields, path);
 
-  return field && field.type !== 'tab' && GROUP_BY_FIELD_TYPES.includes(field.type)
-    ? field
-    : undefined;
+  if (!field || field.type === 'tab' || !GROUP_BY_FIELD_TYPES.includes(field.type)) {
+    return undefined;
+  }
+
+  const polymorphic = 'relationTo' in field && Array.isArray(field.relationTo);
+  const virtual = 'virtual' in field && Boolean(field.virtual);
+
+  return polymorphic || virtual ? undefined : field;
 }
 
 function normalizeSlug(value: string): string {

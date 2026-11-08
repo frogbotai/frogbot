@@ -1,7 +1,8 @@
+import { getTranslation } from '@payloadcms/translations';
 import { formatDate } from '@payloadcms/ui/shared';
 import { GROUP_BY_FIELD_TYPES, type OptionColor } from 'frogbot';
 import type { Field, PayloadRequest, Where } from 'payload';
-import { flattenTopLevelFields } from 'payload/shared';
+import { fieldIsVirtual, flattenTopLevelFields } from 'payload/shared';
 
 import { getOptionColor } from '../../fields/optionColor.js';
 import { toCellData } from '../cells.js';
@@ -15,15 +16,31 @@ export type ResolvedGroup = {
   value: unknown;
 };
 
-/** The field at a dot path when a view can group by it, or `undefined`. */
+function isGroupable(field: Field): boolean {
+  if ('access' in field && field.access?.read) return false;
+  if ('hidden' in field && field.hidden === true) return false;
+
+  return !fieldIsVirtual(field);
+}
+
+/**
+ * The field at a dot path when a view can group by it, or `undefined`. Fields behind a read
+ * access function, hidden or virtual fields, and polymorphic relationships are left to Payload's
+ * own grouping, because their groups can't be counted.
+ */
 export function resolveGroupField(fields: Field[], path: string): Field | undefined {
   const [name, ...rest] = path.split('.');
   const field = (flattenTopLevelFields(fields) as Field[]).find(
     (candidate) => 'name' in candidate && candidate.name === name,
   );
 
-  if (!field) return undefined;
-  if (rest.length === 0) return GROUP_BY_FIELD_TYPES.includes(field.type) ? field : undefined;
+  if (!field || !isGroupable(field)) return undefined;
+  if (rest.length === 0) {
+    if ('relationTo' in field && Array.isArray(field.relationTo)) return undefined;
+
+    return GROUP_BY_FIELD_TYPES.includes(field.type) ? field : undefined;
+  }
+
   if (!('fields' in field) || !Array.isArray(field.fields)) return undefined;
 
   return resolveGroupField(field.fields, rest.join('.'));
@@ -46,10 +63,13 @@ function optionGroups(field: Field, req: PayloadRequest): ResolvedGroup[] | unde
   if (field.type !== 'select' && field.type !== 'radio') return undefined;
 
   return field.options.map((option) => {
-    const group: ResolvedGroup =
-      typeof option === 'string'
-        ? { key: getGroupKey(option), label: option, value: option }
-        : { key: getGroupKey(option.value), label: String(option.label), value: option.value };
+    const label = typeof option === 'string' ? option : getTranslation(option.label, req.i18n);
+    const value = typeof option === 'string' ? option : option.value;
+    const group: ResolvedGroup = {
+      key: getGroupKey(value),
+      label: typeof label === 'string' ? label : value,
+      value,
+    };
 
     const color = getOptionColor({ field, value: group.value });
 
@@ -132,5 +152,44 @@ export async function resolveGroups({
     }
 
     return [{ key: getGroupKey(value), label, value }];
+  });
+}
+
+/**
+ * Groups for stored values of a select or radio field that are no longer among its options, so
+ * their records still show in the list. Labelled with the raw value.
+ */
+export async function resolveStrayGroups({
+  collectionSlug,
+  field,
+  path,
+  req,
+  where,
+}: {
+  collectionSlug: string;
+  field: Field;
+  path: string;
+  req: PayloadRequest;
+  where?: Where;
+}): Promise<ResolvedGroup[]> {
+  if (field.type !== 'select' && field.type !== 'radio') return [];
+
+  const options = new Set(
+    field.options.map((option) => getGroupKey(typeof option === 'string' ? option : option.value)),
+  );
+
+  const result = await req.payload.findDistinct({
+    collection: collectionSlug,
+    field: path,
+    overrideAccess: false,
+    req,
+    ...(where ? { where } : {}),
+  });
+
+  return (result.values ?? []).flatMap((entry) => {
+    const value = toCellData(entry[path]);
+    if (value === null || value === undefined || options.has(getGroupKey(value))) return [];
+
+    return [{ key: getGroupKey(value), label: String(value), value }];
   });
 }

@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  getGroupKey,
-  toGroupCounts,
-} from '../../../../../packages/ui/src/admin/views/groups/keys.js';
+import { getGroupKey } from '../../../../../packages/ui/src/admin/views/groups/keys.js';
 import {
   getGroupPage,
   layoutGroups,
@@ -82,7 +79,7 @@ describe('list groups', () => {
     expect(hasFixedGroups({ name: 'company', type: 'relationship' } as never)).toBe(false);
   });
 
-  it('shows every option with its count, empty ones with 0, and "No value" last', async () => {
+  it('lays out every option in order, then stray values, then "No value" last', async () => {
     const groups = await resolveGroups({
       collectionSlug: 'deals',
       field: stage,
@@ -90,37 +87,28 @@ describe('list groups', () => {
       req,
     });
 
-    const counts = toGroupCounts(
-      [
-        { group: { stage: 'won' }, values: { count: 2 } },
-        { group: { stage: 'lead' }, values: { count: 5 } },
-        { group: { stage: null }, values: { count: 1 } },
-      ],
-      'stage',
-    );
-
     const layout = layoutGroups({
-      counts,
       descending: false,
       fixed: true,
       groups,
       limit: 2,
       noValueLabel: 'No value',
       page: 1,
+      strays: [{ key: getGroupKey('archived'), label: 'archived', value: 'archived' }],
     });
 
-    expect(layout.groups.map(({ count, label }) => [label, count])).toEqual([
-      ['Lead', 5],
-      ['Qualified', 0],
-      ['Won', 2],
-      ['No value', 1],
+    expect(layout.groups.map(({ keepEmpty, label }) => [label, keepEmpty])).toEqual([
+      ['Lead', true],
+      ['Qualified', true],
+      ['Won', true],
+      ['archived', false],
+      ['No value', false],
     ]);
     expect(layout.groups.at(-1)).toMatchObject({ key: getGroupKey(null), value: null });
     expect(layout.totalPages).toBe(1);
-    expect(layout.groups.reduce((sum, group) => sum + group.count, 0)).toBe(8);
   });
 
-  it('reverses a descending groupBy and hides "No value" when it has no records', async () => {
+  it('reverses a descending groupBy and leaves out "No value" when it has no records', async () => {
     const groups = await resolveGroups({
       collectionSlug: 'deals',
       field: stage,
@@ -130,23 +118,19 @@ describe('list groups', () => {
 
     expect(
       layoutGroups({
-        counts: { 'string:lead': 1 },
         descending: true,
         fixed: true,
         groups,
         limit: 10,
-        noValueLabel: 'No value',
         page: 1,
       }).groups.map(({ label }) => label),
     ).toEqual(['Won', 'Qualified', 'Lead']);
   });
 
-  it('pages value groups by the list page size and drops values without records', () => {
-    const groups = [1, 2, 3, 4].map((id) => ({ key: getGroupKey(id), label: `C${id}`, value: id }));
-    const counts = { 'number:1': 1, 'number:2': 4, 'number:4': 2, '': 3 };
+  it('pages value groups by the list page size, "No value" on the last page', () => {
+    const groups = [1, 2, 3].map((id) => ({ key: getGroupKey(id), label: `C${id}`, value: id }));
     const page = (value: number) =>
       layoutGroups({
-        counts,
         descending: false,
         fixed: false,
         groups,
@@ -156,7 +140,10 @@ describe('list groups', () => {
       });
 
     expect(page(1).groups.map(({ label }) => label)).toEqual(['C1', 'C2']);
-    expect(page(2).groups.map(({ label }) => label)).toEqual(['C4', 'No value']);
+    expect(page(2).groups.map(({ keepEmpty, label }) => [label, keepEmpty])).toEqual([
+      ['C3', false],
+      ['No value', false],
+    ]);
     expect(page(2).totalPages).toBe(2);
   });
 

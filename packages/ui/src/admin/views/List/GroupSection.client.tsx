@@ -35,6 +35,7 @@ export type GroupSectionProps = {
   data?: PaginatedDocs;
   groupKey: string;
   label: string;
+  /** The preference that keeps the view's collapsed groups. */
   preferenceKey: string;
   /** The group's value as create data; absent for "No value". */
   prefill?: Record<string, unknown>;
@@ -45,8 +46,9 @@ export type GroupSectionProps = {
 
 /**
  * One group of the grouped list, in Payload's table section: a header with a collapse chevron,
- * the label, the count, the group's select-all and page controls, and "+ Add" prefilled with the
- * group's value. Collapsing is saved per user in the view's preference.
+ * the label, the count, the group's selection and page controls, and "+ Add" prefilled with the
+ * group's value. Collapsing is saved per user per view. Selecting across pages is off, because
+ * Payload's bulk delete would drop the group's filter and delete matching rows in every group.
  */
 export function GroupSection({
   canCreate,
@@ -120,6 +122,7 @@ export function GroupSection({
               collectionConfig={collectionConfig}
               label={label}
               modalPrefix={groupKey}
+              showSelectAllAcrossPages={false}
               viewType={viewType}
               where={where}
             />

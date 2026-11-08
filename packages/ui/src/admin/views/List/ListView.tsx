@@ -11,9 +11,15 @@ import {
   resolveCollectionViews,
 } from '../collectionViews.js';
 import { buildFrameSlots } from '../frame.js';
-import { resolveViewColumnPreferences } from '../preferences.js';
+import { getGroupsPreferenceKey, resolveViewColumnPreferences } from '../preferences.js';
 import { isRecordDone } from '../records/state.js';
-import { isFreshQuery, pickViewSetup, resolveViewSetup, type ViewSetup } from '../viewSetup.js';
+import {
+  isFreshQuery,
+  pickViewSetup,
+  readViewPreference,
+  resolveViewSetup,
+  type ViewSetup,
+} from '../viewSetup.js';
 import { DefaultListView } from './DefaultListView.client.js';
 import { type GroupedTable, renderGroupedTable } from './groupedTable.js';
 import { ListFrameClient } from './ListFrame.client.js';
@@ -137,6 +143,7 @@ export async function ListView(props: ListViewServerProps) {
         : (clientProps.queryPreset?.groupBy ?? props.listPreferences?.groupBy);
 
     if (groupBy) {
+      const groupsKey = getGroupsPreferenceKey(collectionSlug, view.slug);
       const columns = clientProps.columnState?.length
         ? clientProps.columnState.map(({ accessor, active }) => ({ accessor, active }))
         : resolveViewColumnPreferences({
@@ -153,14 +160,14 @@ export async function ListView(props: ListViewServerProps) {
           importMap: payload.importMap,
           user: user ?? null,
         }).collections.find(({ slug }) => slug === collectionSlug)!,
-        collapsed: toKeys((setup.preference as { collapsed?: unknown } | undefined)?.collapsed),
+        collapsed: toKeys((await readViewPreference(req, groupsKey))?.collapsed),
         collectionConfig,
         columns,
         enableRowSelections: clientProps.enableRowSelections ?? true,
         fieldPermissions: permissions?.collections?.[collectionSlug]?.fields,
         groupBy,
         limit,
-        preferenceKey: setup.preferenceKey,
+        preferenceKey: groupsKey,
         query,
         req,
         sort:

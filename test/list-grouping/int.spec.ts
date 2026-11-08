@@ -9,6 +9,7 @@ import { renderGroupedTable } from '../../packages/ui/src/admin/views/List/group
 import { resolveViewSetup } from '../../packages/ui/src/admin/views/viewSetup';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 
 vi.mock('@payloadcms/ui/rsc', () => ({ renderTable: () => ({ Table: null }) }));
 
@@ -36,6 +37,14 @@ describe(`grouped list body [${adapterLabel}]`, () => {
 
   beforeAll(async () => {
     booted = await bootFrogBot(dirname, 'list-grouping');
+  });
+
+  afterAll(async () => {
+    await booted.shutdown();
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
     const user = await booted.payload.create({
       collection: 'users',
       data: { email: 'grouping@frogbot.local', password: 'list-grouping' },
@@ -46,26 +55,6 @@ describe(`grouped list body [${adapterLabel}]`, () => {
       payload: booted.payload,
       user: { ...user, collection: 'users' },
     });
-  });
-
-  afterAll(async () => {
-    await booted.shutdown();
-  });
-
-  beforeEach(async () => {
-    await booted.payload.delete({
-      collection: 'payload-preferences',
-      overrideAccess: true,
-      where: { id: { exists: true } },
-    });
-
-    for (const collection of ['items', 'people', 'drafted'] as const) {
-      await booted.payload.delete({
-        collection,
-        overrideAccess: true,
-        where: { id: { exists: true } },
-      });
-    }
   });
 
   const create = (collection: Slug, data: Record<string, unknown>) =>
@@ -153,6 +142,7 @@ describe(`grouped list body [${adapterLabel}]`, () => {
       req,
       viewSlug: 'list',
     });
+
     const groupBy = typeof fresh.query.groupBy === 'string' ? fresh.query.groupBy : undefined;
 
     const outcome = groupBy
