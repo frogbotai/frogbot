@@ -49,6 +49,14 @@ export type ListView = ViewConfig & {
     afterTable?: FrogBotComponent[];
     beforeTable?: FrogBotComponent[];
   };
+  /**
+   * Lets people edit cells in place, without opening the record. `true` makes every writable
+   * column of a supported type editable; an array names the fields (names or dot paths) that are.
+   * Text, textarea, email, number, select, checkbox, date, single relationships and FrogBot's
+   * field kinds edit in the cell; other fields, `hasMany` fields and the linked first column open
+   * the record. Off by default.
+   */
+  editable?: boolean | string[];
   /** The field the list opens grouped by, as on a board. A person's own grouping wins. */
   groupBy?: string;
   /**

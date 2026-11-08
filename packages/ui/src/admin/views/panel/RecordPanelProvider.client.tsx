@@ -34,7 +34,7 @@ export type RecordPanelEvent =
 export type RecordPanelForm = { modified: boolean };
 
 type RecordPanelState =
-  | { id: string; mode: 'edit' }
+  | { id: string; mode: 'edit'; version?: number }
   | { initialData?: Data; key: number; mode: 'create' }
   | { mode: 'closed' };
 
@@ -62,6 +62,11 @@ export type RecordPanelContextValue = {
   ) => void;
   /** The open record's id, while one is open. */
   openId?: string;
+  /**
+   * Renders the open record again after it changed elsewhere, as after a cell edit. Does nothing
+   * when another record is open or the panel's form has unsaved edits.
+   */
+  reload: (id: number | string) => void;
   /** Closes the panel without asking, as after a delete or a missing record. */
   reset: () => void;
   settings: PanelSettings;
@@ -209,6 +214,16 @@ export function RecordPanelProvider({
 
   const reset = useCallback(() => go({ mode: 'closed' }), [go]);
 
+  const reload = useCallback((id: number | string) => {
+    if (formRef.current?.modified) return;
+
+    setState((current) =>
+      current.mode === 'edit' && current.id === String(id)
+        ? { ...current, version: (current.version ?? 0) + 1 }
+        : current,
+    );
+  }, []);
+
   const switchTo = useCallback((id: number | string) => go({ id: String(id), mode: 'edit' }), [go]);
 
   const expand = useCallback(() => {
@@ -248,6 +263,7 @@ export function RecordPanelProvider({
       notify,
       open,
       openId: state.mode === 'edit' ? state.id : undefined,
+      reload,
       reset,
       setForm,
       settings,
@@ -264,6 +280,7 @@ export function RecordPanelProvider({
       guard,
       notify,
       open,
+      reload,
       reset,
       setForm,
       settings,
@@ -308,6 +325,7 @@ const CLOSED: RecordPanelContextValue = {
   guard: (action) => action(),
   notify: noop,
   open: noop,
+  reload: noop,
   reset: noop,
   setForm: noop,
   settings: false,

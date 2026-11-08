@@ -1,6 +1,7 @@
 import type { CollectionConfig as PayloadCollectionConfig, PayloadComponent } from 'payload';
 
 import { validateAdminIcon } from '../admin/icons.js';
+import { getCellEditMode, getFieldKindType } from '../admin/views/cellEdit.js';
 import { SUMMARY_OPERATIONS, type SummaryKind } from '../admin/views/summary.js';
 import type { CollectionView, CollectionViewMetadata } from '../admin/views/types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
@@ -209,6 +210,33 @@ function validateSummary(collection: CollectionConfig, view: CollectionView & { 
   }
 }
 
+function validateEditable(collection: CollectionConfig, view: CollectionView & { slug: string }) {
+  if (view.type !== 'list' || view.editable === undefined) return;
+
+  const prefix = `[frogbot] Collection "${collection.slug}" list view "${view.slug}" editable`;
+  const { editable } = view as { editable: unknown };
+
+  if (typeof editable === 'boolean') return;
+
+  if (!Array.isArray(editable) || editable.some((entry) => typeof entry !== 'string')) {
+    throw new Error(`${prefix} must be true, false or an array of field names.`);
+  }
+
+  for (const path of editable as string[]) {
+    const field = resolveFieldPath(collection.fields, path)?.at(-1);
+
+    if (!field || !('name' in field)) {
+      throw new Error(`${prefix} names "${path}", which is not a field.`);
+    }
+
+    if (getCellEditMode(field) === 'never') {
+      throw new Error(
+        `${prefix} names "${path}" (${getFieldKindType(field) ?? field.type}), which can't be edited in a cell. Remove it; people edit it in the record.`,
+      );
+    }
+  }
+}
+
 function containsFunction(value: unknown): boolean {
   if (typeof value === 'function') return true;
   if (!value || typeof value !== 'object') return false;
@@ -276,6 +304,7 @@ export function compileCollectionViews({
   for (const view of views) {
     validateAdminIcon(view.icon);
     validateSummary(collection, view);
+    validateEditable(collection, view);
 
     if (containsFunction(view.filter)) {
       throw new Error(

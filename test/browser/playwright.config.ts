@@ -404,6 +404,7 @@ const testProjects = [
   project({
     name: 'crm',
     testMatch: [
+      'cellEdit.browser.spec.ts',
       'crm.browser.spec.ts',
       'listGrouping.browser.spec.ts',
       'listSummary.browser.spec.ts',

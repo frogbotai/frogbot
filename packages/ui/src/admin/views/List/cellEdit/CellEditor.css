@@ -1,0 +1,56 @@
+@layer frogbot {
+  .table td[data-cell-edit] {
+    cursor: text;
+  }
+
+  .table td[data-cell-edit]:hover {
+    box-shadow: inset 0 0 0 1px var(--color-border-primary);
+  }
+
+  .table td[data-cell-editing] {
+    position: relative;
+  }
+
+  .table td[data-cell-editing] > :not(.fb-cell-editor) {
+    visibility: hidden;
+  }
+
+  .fb-cell-editor {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    z-index: 2;
+    box-sizing: border-box;
+    min-width: max(100%, 12rem);
+    min-height: 100%;
+    padding: 2px;
+    background: var(--theme-elevation-0);
+    border-radius: var(--style-radius-s);
+    box-shadow:
+      0 0 0 2px var(--color-border-selected-strong),
+      0 4px 12px rgb(0 0 0 / 12%);
+  }
+
+  .fb-cell-editor .field-type {
+    --field-width: 100%;
+    flex: 1 1 auto;
+    width: 100%;
+    margin: 0;
+  }
+
+  .fb-cell-editor .field-type > .field-label,
+  .fb-cell-editor .field-type > label.field-label,
+  .fb-cell-editor .field-description {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .fb-cell-editor .render-fields,
+  .fb-cell-editor .render-fields > * {
+    margin: 0;
+  }
+}

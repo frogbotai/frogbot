@@ -89,7 +89,7 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
 
   const requestKey =
     state.mode === 'edit'
-      ? `edit:${state.id}`
+      ? `edit:${state.id}:${state.version ?? 0}`
       : state.mode === 'create'
         ? `create:${state.key}`
         : '';
