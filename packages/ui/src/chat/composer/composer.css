@@ -139,10 +139,6 @@
     stroke: currentColor;
   }
 
-  .fb-composer__stop .fb-composer__action-icon {
-    stroke: currentColor;
-  }
-
   .fb-composer__action:focus-visible {
     outline: 2px solid var(--accessibility-focus-color);
     outline-offset: 2px;
@@ -171,6 +167,7 @@
 
   .fb-composer__stop-icon {
     fill: currentColor;
+    stroke: none;
   }
 
   .fb-composer__sr-only {
