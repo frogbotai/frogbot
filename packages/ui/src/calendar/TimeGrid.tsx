@@ -1,5 +1,6 @@
 'use client';
 
+import { TZDate } from '@date-fns/tz';
 import {
   DndContext,
   DragOverlay,
@@ -9,7 +10,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { format } from 'date-fns';
+import { addDays, format } from 'date-fns';
 import type { CSSProperties, ReactNode } from 'react';
 
 import { AllDayRow } from './AllDayRow.js';
@@ -32,7 +33,9 @@ export function TimeGrid<T extends CalendarEvent>(props: TimeGridProps<T>) {
   const isAllDay = props.dateOnly
     ? () => true
     : (props.isAllDay ??
-      ((event: T) => Date.parse(event.end ?? event.start) - Date.parse(event.start) >= 86_400_000));
+      ((event: T) =>
+        Date.parse(event.end ?? event.start) >=
+        addDays(new TZDate(Date.parse(event.start), calendar.range.timeZone), 1).getTime()));
 
   const allDay = calendar.cells.filter(({ event }) => isAllDay(event));
   const timed = calendar.cells.filter(({ event }) => !isAllDay(event));

@@ -115,6 +115,7 @@ export function CalendarViewClient({
   date,
   dateOnly,
   end,
+  endDateOnly,
   Event,
   filter,
   mode,
@@ -129,6 +130,7 @@ export function CalendarViewClient({
   date: string;
   dateOnly?: boolean;
   end?: string;
+  endDateOnly?: boolean;
   Event?: ComponentType<{ row: Row }>;
   filter?: Record<string, unknown>;
   mode: CalendarMode;
@@ -267,6 +269,7 @@ export function CalendarViewClient({
             canResize={Boolean(end)}
             date={date}
             dateOnly={dateOnly}
+            endDateOnly={endDateOnly}
             events={rows}
             mode={mode}
             modes={modes}

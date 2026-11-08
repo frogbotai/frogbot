@@ -20,8 +20,13 @@ import {
 /** Where a drop lands: a `day` cell keeps the event's time of day, a `time` slot sets its start. */
 export type CalendarPlacement = { end: string; key: string; kind: 'day' | 'time'; start: string };
 
-/** How a move is read: the grid's zone, the day cell the drag began in, and date-only values. */
-export type CalendarMoveOptions = { dateOnly?: boolean; from?: string; timeZone?: string };
+/** How a move is read: the grid's zone, the day cell the drag began in, and which values are date-only. */
+export type CalendarMoveOptions = {
+  dateOnly?: boolean;
+  endDateOnly?: boolean;
+  from?: string;
+  timeZone?: string;
+};
 
 export type CalendarDropData = {
   slotAt?: (clientX: number, clientY: number) => CalendarPlacement | null;
@@ -40,6 +45,8 @@ export type UseCalendarProps<T extends CalendarEvent> = {
   date: string;
   /** Events are dates without a time, stored at 12:00 UTC: they show all day on their UTC date. */
   dateOnly?: boolean;
+  /** The end is a date without a time too. Without it, a date-only event's end keeps its time. */
+  endDateOnly?: boolean;
   events: T[];
   getId?: (event: T) => string;
   mode: CalendarMode;
@@ -83,7 +90,7 @@ function daysBetween(from: string, to: string): number {
 export function moveCalendarEvent<T extends CalendarEvent>(
   event: T,
   placement: CalendarPlacement,
-  { dateOnly = false, from, timeZone = 'UTC' }: CalendarMoveOptions = {},
+  { dateOnly = false, endDateOnly = false, from, timeZone = 'UTC' }: CalendarMoveOptions = {},
 ): CalendarChange<T> {
   if (placement.kind === 'time' && !dateOnly) {
     const duration = Date.parse(event.end ?? event.start) - Date.parse(event.start);
@@ -96,11 +103,12 @@ export function moveCalendarEvent<T extends CalendarEvent>(
   const shift = (value: string) =>
     new Date(addDays(new TZDate(Date.parse(value), timeZone), days).getTime()).toISOString();
 
-  const start = shift(event.start);
-  const end = event.end ? shift(event.end) : start;
   const noon = (value: string) => `${dayKey(value, timeZone)}T12:00:00.000Z`;
+  const start = dateOnly ? noon(shift(event.start)) : shift(event.start);
+  if (!event.end) return { end: start, event, start };
+  const end = endDateOnly ? noon(shift(event.end)) : shift(event.end);
 
-  return dateOnly ? { end: noon(end), event, start: noon(start) } : { end, event, start };
+  return { end, event, start };
 }
 
 export function resizeCalendarEvent<T extends CalendarEvent>({
@@ -138,18 +146,23 @@ export function createCalendarRange(
   end: string,
   snap: number,
   timeZone = 'UTC',
+  {
+    dateOnly = false,
+    endDateOnly = false,
+  }: Pick<CalendarMoveOptions, 'dateOnly' | 'endDateOnly'> = {},
 ): CalendarCreate {
   const first = snapTo(start, snap, timeZone);
   const second = snapTo(end, snap, timeZone);
   const interval = snap * 60_000;
   const firstTime = Date.parse(first);
   const secondTime = Date.parse(second);
+  const startTime = Math.min(firstTime, secondTime);
+  const endTime = Math.max(firstTime, secondTime, startTime + interval);
+  const noon = (instant: number) => `${dayKey(instant, timeZone)}T12:00:00.000Z`;
 
   return {
-    end: new Date(
-      Math.max(firstTime, secondTime, Math.min(firstTime, secondTime) + interval),
-    ).toISOString(),
-    start: new Date(Math.min(firstTime, secondTime)).toISOString(),
+    end: endDateOnly ? noon(Math.max(startTime, endTime - 1)) : new Date(endTime).toISOString(),
+    start: dateOnly ? noon(startTime) : new Date(startTime).toISOString(),
   };
 }
 
@@ -168,6 +181,7 @@ export function useCalendar<T extends CalendarEvent>({
   canResize = true,
   date,
   dateOnly = false,
+  endDateOnly = false,
   events,
   getId = (event) => event.id,
   mode,
@@ -203,6 +217,7 @@ export function useCalendar<T extends CalendarEvent>({
   const resizable = canResize && !dateOnly;
   const moveOptions = (from: unknown): CalendarMoveOptions => ({
     dateOnly,
+    endDateOnly,
     from: typeof from === 'string' ? from : undefined,
     timeZone: range.timeZone,
   });
@@ -294,7 +309,9 @@ export function useCalendar<T extends CalendarEvent>({
   };
 
   const create = async (start: string, end: string) => {
-    await onCreate?.(createCalendarRange(start, end, snap, range.timeZone));
+    await onCreate?.(
+      createCalendarRange(start, end, snap, range.timeZone, { dateOnly, endDateOnly }),
+    );
   };
 
   const navigate = (direction: 'next' | 'previous' | 'today') => {

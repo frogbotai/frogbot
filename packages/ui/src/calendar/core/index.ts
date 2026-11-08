@@ -117,7 +117,10 @@ export function expandToCells<T extends CalendarEvent>(
 
     const clippedEnd = new TZDate(Math.min(eventEnd.getTime(), rangeEnd.getTime()), range.timeZone);
 
-    if (clippedEnd < rangeStart || clippedStart >= rangeEnd || clippedEnd < clippedStart) continue;
+    const hasLength = eventEnd.getTime() > eventStart.getTime();
+    const endsBeforeRange = hasLength ? clippedEnd <= rangeStart : clippedEnd < rangeStart;
+
+    if (endsBeforeRange || clippedStart >= rangeEnd || clippedEnd < clippedStart) continue;
 
     const firstDay = startOfDay(clippedStart);
     const lastInstant =

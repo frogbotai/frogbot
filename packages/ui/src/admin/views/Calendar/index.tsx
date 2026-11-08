@@ -191,6 +191,14 @@ export async function CalendarView(input: AdminViewServerProps) {
         dateOnly={isDateOnly(
           getFieldByPath({ fields: collectionConfig.flattenedFields, path: calendar.start })?.field,
         )}
+        endDateOnly={
+          calendar.end
+            ? isDateOnly(
+                getFieldByPath({ fields: collectionConfig.flattenedFields, path: calendar.end })
+                  ?.field,
+              )
+            : false
+        }
         filter={filter}
         mode={mode}
         modes={calendar.modes}

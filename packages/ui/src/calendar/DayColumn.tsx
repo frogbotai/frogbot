@@ -61,8 +61,12 @@ export function DayColumn<T extends CalendarEvent>({
   };
 
   const box = (start: number, end: number) => {
-    const top = minuteOf(Math.max(start, dayStart.getTime()));
-    const bottom = minuteOf(Math.min(end, dayEnd.getTime()));
+    const from = Math.max(start, dayStart.getTime());
+    const to = Math.min(end, dayEnd.getTime());
+    const top = minuteOf(from);
+    const wallBottom = minuteOf(to);
+    const bottom =
+      wallBottom > top ? wallBottom : Math.min(MINUTES_PER_DAY, top + (to - from) / 60_000);
 
     return {
       height: Math.max(18, ((bottom - top) / 60) * hourHeight),

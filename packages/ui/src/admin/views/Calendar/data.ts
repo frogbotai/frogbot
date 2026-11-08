@@ -40,10 +40,13 @@ export function resolveCalendarDate({
   return queryDate || preferenceDate || today;
 }
 
-/** A date field without a time picker: Payload stores its values at 12:00 UTC. */
+/**
+ * A date field set to pick only a day or a month: Payload stores its values at 12:00 UTC. A plain
+ * date field can hold any instant, such as `createdAt` or a hook's timestamp, so it counts as timed.
+ */
 export function isDateOnly(field: FlattenedField | undefined): boolean {
   if (field?.type !== 'date') return false;
   const appearance = field.admin?.date?.pickerAppearance;
 
-  return appearance !== 'dayAndTime' && appearance !== 'timeOnly';
+  return appearance === 'dayOnly' || appearance === 'monthOnly';
 }
