@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     accounts: Account;
     posts: Post;
+    vault: Vault;
     credentials: Credential;
     'audit-logs': AuditLog;
     'frogbot-waitpoints': FrogBotWaitpoint;
@@ -77,6 +78,7 @@ export interface Config {
   collectionsSelect: {
     accounts: AccountsSelect;
     posts: PostsSelect;
+    vault: VaultSelect;
     credentials: CredentialsSelect;
     'audit-logs': AuditLogsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
@@ -175,6 +177,27 @@ export interface Post {
     token?: string | null;
     note?: string | null;
   };
+  author?: (number | null) | Account;
+  vaultRef?: (number | null) | Vault;
+  createdBy?: {
+    relationTo: 'accounts';
+    value: number | Account;
+  } | null;
+  updatedBy?: {
+    relationTo: 'accounts';
+    value: number | Account;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vault".
+ */
+export interface Vault {
+  id: number;
+  name?: string | null;
+  vaultSecret?: string | null;
   createdBy?: {
     relationTo: 'accounts';
     value: number | Account;
@@ -313,6 +336,20 @@ export interface PostsSelect {
         token?: boolean;
         note?: boolean;
       };
+  author?: boolean;
+  vaultRef?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vault_select".
+ */
+export interface VaultSelect {
+  name?: boolean;
+  vaultSecret?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
@@ -398,7 +435,8 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection: 'accounts' | 'posts' | 'credentials' | 'audit-logs';
+    relatedCollection:
+      'accounts' | 'posts' | 'vault' | 'credentials' | 'audit-logs';
     where?:
       | {
           [k: string]: unknown;
@@ -421,7 +459,7 @@ export interface CollectionQueryWidget {
 export interface ActivityWidget {
   data?: {
     excludedCollections?:
-      ('accounts' | 'posts' | 'credentials' | 'audit-logs')[] | null;
+      ('accounts' | 'posts' | 'vault' | 'credentials' | 'audit-logs')[] | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }

@@ -194,6 +194,152 @@ describe('audit log plugin integration', () => {
     expect(audit.docs).toEqual([]);
   });
 
+  async function postsTitled(title: string) {
+    const result = await booted.frogbot.find({
+      collection: 'posts',
+      where: { title: { equals: title } },
+      overrideAccess: true,
+      depth: 0,
+    });
+
+    return result.docs;
+  }
+
+  async function allEntries() {
+    const result = await booted.frogbot.find({
+      collection: 'audit-logs',
+      overrideAccess: true,
+      depth: 0,
+      limit: 0,
+    });
+
+    return result.docs;
+  }
+
+  it('fails a REST create whose audit write fails, and saves neither', async () => {
+    const res = await booted.restClient.post(
+      '/api/posts',
+      { title: 'BAD create' },
+      { headers: authorization },
+    );
+
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(await postsTitled('BAD create')).toEqual([]);
+    expect(await allEntries()).toEqual([
+      expect.objectContaining({ collection: 'accounts', operation: 'create' }),
+    ]);
+  });
+
+  it('fails a local update whose audit write fails, and keeps the old doc', async () => {
+    const post = await booted.frogbot.create({
+      collection: 'posts',
+      data: { title: 'Before' },
+      overrideAccess: true,
+    });
+
+    await expect(
+      booted.frogbot.update({
+        collection: 'posts',
+        id: post.id,
+        data: { title: 'BAD update' },
+        overrideAccess: true,
+      }),
+    ).rejects.toThrow();
+
+    const fresh = await booted.frogbot.findByID({
+      collection: 'posts',
+      id: post.id,
+      overrideAccess: true,
+    });
+
+    expect(fresh.title).toBe('Before');
+    expect((await entries(post.id)).map((entry) => entry.operation)).toEqual(['create']);
+  });
+
+  it('fails a REST delete whose audit write fails, and keeps the doc', async () => {
+    const post = await booted.frogbot.create({
+      collection: 'posts',
+      data: { title: 'BAD delete' },
+      overrideAccess: true,
+    });
+
+    const res = await booted.restClient.delete(`/api/posts/${post.id}`, {
+      headers: authorization,
+    });
+
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect((await postsTitled('BAD delete')).map((doc) => String(doc.id))).toEqual([
+      String(post.id),
+    ]);
+  });
+
+  it('throws to a caller whose transaction a failed audit write ended', async () => {
+    const { req } = await begin();
+
+    await booted.frogbot.create({
+      collection: 'posts',
+      data: { title: 'Earlier in tx' },
+      overrideAccess: true,
+      req,
+    });
+
+    await expect(
+      booted.frogbot.create({
+        collection: 'posts',
+        data: { title: 'BAD create' },
+        overrideAccess: true,
+        req,
+      }),
+    ).rejects.toThrow();
+    expect(req.transactionID).toBeUndefined();
+    expect(await postsTitled('Earlier in tx')).toEqual([]);
+  });
+
+  it('stores related docs as ids, so their hidden fields stay out', async () => {
+    const vault = await booted.frogbot.create({
+      collection: 'vault',
+      data: { name: 'v', vaultSecret: 'VAULT-SECRET' },
+      overrideAccess: true,
+    });
+
+    const post = await booted.frogbot.create({
+      collection: 'posts',
+      data: { title: 'Rel', author: accountId, vaultRef: vault.id },
+      overrideAccess: true,
+    });
+
+    await booted.frogbot.update({
+      collection: 'posts',
+      id: post.id,
+      data: { title: 'Rel 2' },
+      overrideAccess: true,
+      showHiddenFields: true,
+    });
+
+    await booted.frogbot.delete({
+      collection: 'posts',
+      id: post.id,
+      overrideAccess: true,
+      showHiddenFields: true,
+    });
+
+    const audit = await entries(post.id);
+
+    expect(audit.find((entry) => entry.operation === 'update')?.changes).toEqual({
+      title: { old: 'Rel', new: 'Rel 2' },
+    });
+    expect(audit.find((entry) => entry.operation === 'create')?.changes).toEqual(
+      expect.objectContaining({
+        author: { old: null, new: accountId },
+        vaultRef: { old: null, new: vault.id },
+      }),
+    );
+    expect(audit.find((entry) => entry.operation === 'delete')?.snapshot).toEqual(
+      expect.objectContaining({ author: accountId, vaultRef: vault.id }),
+    );
+    expect(JSON.stringify(audit)).not.toMatch(/VAULT-SECRET|"hash"|"salt"/);
+  });
+
   it('keeps the default entry shape', async () => {
     const post = await booted.frogbot.create({
       collection: 'posts',

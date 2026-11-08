@@ -1,6 +1,6 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
-import { auditLogPlugin } from '@frogbotai/plugin-audit-log';
+import { auditLogPlugin, type AuditOperation } from '@frogbotai/plugin-audit-log';
 import type { CollectionConfig } from 'frogbot';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
@@ -11,6 +11,15 @@ const Accounts: CollectionConfig = {
   auth: true,
   access: openAccess,
   fields: [],
+};
+
+const Vault: CollectionConfig = {
+  slug: 'vault',
+  access: openAccess,
+  fields: [
+    { name: 'name', type: 'text' },
+    { name: 'vaultSecret', type: 'text', hidden: true },
+  ],
 };
 
 const Posts: CollectionConfig = {
@@ -28,6 +37,8 @@ const Posts: CollectionConfig = {
         { name: 'note', type: 'text' },
       ],
     },
+    { name: 'author', type: 'relationship', relationTo: 'accounts' },
+    { name: 'vaultRef', type: 'relationship', relationTo: 'vault' },
   ],
 };
 
@@ -42,7 +53,7 @@ export default await buildTestConfig({
         }),
       }
     : {}),
-  collections: [Accounts, Posts],
+  collections: [Accounts, Posts, Vault],
   plugins: [
     apiKeysPlugin({
       authCollection: 'accounts',
@@ -54,6 +65,10 @@ export default await buildTestConfig({
       collections: ['posts', 'accounts'],
       retention: { days: 30 },
       snapshot: 'delete',
+      entry: ({ entry, doc, operation }) =>
+        doc.title === `BAD ${operation}`
+          ? { ...entry, operation: 'bogus' as AuditOperation }
+          : entry,
     }),
   ],
 });

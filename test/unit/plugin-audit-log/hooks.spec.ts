@@ -155,7 +155,7 @@ describe('audit hooks', () => {
     expect(write.create).not.toHaveBeenCalled();
   });
 
-  it('does not fail the source operation when writing fails', async () => {
+  it('logs a failed write and keeps the change when there is no transaction', async () => {
     const write = request();
     write.create.mockRejectedValue(new Error('database unavailable'));
     const afterChange = await hook();
@@ -168,6 +168,30 @@ describe('audit hooks', () => {
         req: write.req,
       } as never),
     ).resolves.toEqual({ id: 'post-1' });
+    expect(write.error).toHaveBeenCalledOnce();
+  });
+
+  it('logs a failed write and fails the change inside a transaction', async () => {
+    const write = request();
+    const failure = new Error('invalid entry');
+
+    write.create.mockImplementation(({ req }: { req: FrogBotRequest }) => {
+      delete req.transactionID;
+
+      return Promise.reject(failure);
+    });
+
+    write.req.transactionID = 'tx-1';
+    const afterChange = await hook();
+
+    await expect(
+      afterChange({
+        doc: { id: 'post-1' },
+        previousDoc: undefined,
+        operation: 'create',
+        req: write.req,
+      } as never),
+    ).rejects.toBe(failure);
     expect(write.error).toHaveBeenCalledOnce();
   });
 
@@ -356,6 +380,64 @@ describe('audit hooks', () => {
     });
     expect(entry.mock.calls[0][0].doc).toEqual(expected);
     expect(entry.mock.calls[0][0].previousDoc).not.toHaveProperty('secret');
+    expect(JSON.stringify(data)).not.toContain('"x"');
+  });
+
+  it('stores related docs as ids, at any depth', async () => {
+    const write = request();
+    const entry = vi.fn(({ entry: value }: AuditEntryArgs) => value);
+    const fields: Field[] = [
+      { name: 'author', type: 'relationship', relationTo: 'users' },
+      { name: 'tags', type: 'relationship', relationTo: 'tags', hasMany: true },
+      { name: 'owner', type: 'relationship', relationTo: ['users', 'teams'] },
+      { name: 'image', type: 'upload', relationTo: 'media' },
+      { name: 'posts', type: 'join', collection: 'posts', on: 'author' },
+      {
+        name: 'items',
+        type: 'array',
+        fields: [{ name: 'ref', type: 'relationship', relationTo: 'users' }],
+      },
+    ];
+
+    const user = { id: 'u1', email: 'a@b.c', hash: 'x', salt: 'x' };
+    const afterChange = await hook({ snapshot: 'always', entry }, fields);
+
+    await afterChange({
+      doc: {
+        id: 'post-1',
+        author: user,
+        tags: [{ id: 't1', secret: 'x' }, 't2'],
+        owner: { relationTo: 'users', value: user },
+        image: { id: 'm1', secret: 'x' },
+        posts: { docs: [{ id: 'p2', secret: 'x' }], hasNextPage: false },
+        items: [{ ref: user }],
+      },
+      previousDoc: {
+        id: 'post-1',
+        author: 'u1',
+        tags: ['t1', 't2'],
+        owner: { relationTo: 'users', value: 'u1' },
+        image: 'm1',
+        posts: { docs: ['p2'], hasNextPage: false },
+        items: [{ ref: 'u1' }],
+      },
+      operation: 'update',
+      req: write.req,
+    } as never);
+
+    const data = write.create.mock.calls[0][0].data;
+
+    expect(data.changes).toEqual({});
+    expect(data.snapshot).toEqual({
+      id: 'post-1',
+      author: 'u1',
+      tags: ['t1', 't2'],
+      owner: { relationTo: 'users', value: 'u1' },
+      image: 'm1',
+      posts: { docs: ['p2'], hasNextPage: false },
+      items: [{ ref: 'u1' }],
+    });
+    expect(entry.mock.calls[0][0].doc).toEqual(data.snapshot);
     expect(JSON.stringify(data)).not.toContain('"x"');
   });
 });
