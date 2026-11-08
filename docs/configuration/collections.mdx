@@ -329,12 +329,12 @@ These shell slots are shared by list, board, calendar, and custom views. Each va
 
 #### Grouping
 
-List and board views group by the same rules. `groupBy` names a select, radio, relationship (including users), upload, checkbox, text, textarea, number, email or date field, top level or a dot path into a group; any other type stops startup. A field stays out of the toolbar's **Group** control with `admin.disabled.groupBy`. Prefix the path with `-` to reverse the group order.
+List and board views group by the same rules. `groupBy` names a select, radio, relationship (including users), upload, checkbox, text, textarea, number, email or date field, top level or a dot path into a group; any other type, a relationship to several collections, or a virtual field stops startup. A field stays out of the toolbar's **Group** control with `admin.disabled.groupBy`. Prefix the path with `-` to reverse the group order.
 
-- Select and radio groups follow the field's option order and show every option, empty ones with `0`. Checkbox groups are **True**, then **False**.
+- Select and radio groups follow the field's option order and show every option, empty ones with `0`. A stored value that is no longer an option gets its own group after them. Checkbox groups are **True**, then **False**.
 - Other fields show one group per value present under the view's filter and search.
 - Records without a value go in one last group: **No value** in a list, shown when it has records, and **Uncategorized** on a board.
-- Each group's count is the number of records it holds, from one `aggregate` count over the view's filter and search.
+- In a list, each group's count comes from the same query as its rows, over the view's filter and search, so it always matches them. On a collection with drafts that is each record's latest draft.
 
 ```ts
 views: [
@@ -343,7 +343,7 @@ views: [
 ];
 ```
 
-In a grouped list, each group has a collapse chevron, its count, select-all and **+ Add**, which opens the create form with the group's value filled in (nothing in **No value**, and no button without create access). Collapsed groups are saved per person per view, and **Reset to default** clears them with the rest of the view's setup. Groups of option fields all show on one page; groups of other fields are paged by the list's page size. Each group pages its own rows with the view's sort.
+In a grouped list, each group has a collapse chevron, its count, a select-all for the rows on its page and **+ Add**, which opens the create form with the group's value filled in (nothing in **No value**, and no button without create access to the collection or the group field). Collapsed groups are saved per person per view, and **Reset to default** clears them with the rest of the view's setup. Groups of option fields all show on one page; groups of other fields are paged by the list's page size. Each group pages its own rows with the view's sort. A field behind a read access function, a hidden field, or a relationship to several collections chosen from the **Group** control renders with Payload's own grouping instead.
 
 #### BoardView
 

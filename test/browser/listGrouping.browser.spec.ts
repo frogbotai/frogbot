@@ -22,7 +22,7 @@ const setupKey = 'collection-deals-view-list';
 const collapseSaved = (page: Page) =>
   page.waitForResponse(
     (response) =>
-      response.url().includes(`/payload-preferences/${setupKey}:groups`) &&
+      response.url().includes(`/payload-preferences/${setupKey}`) &&
       response.request().method() === 'POST',
   );
 
