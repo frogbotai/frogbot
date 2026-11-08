@@ -210,6 +210,11 @@ const cases: Case[] = [
     },
   },
   { args: ['keys', 'revoke', '100', '--yes'], route: 'POST /api/api-keys/100/revoke' },
+  {
+    args: ['keys', 'revoke', '100', '--no-cascade', '--yes'],
+    route: 'POST /api/api-keys/100/revoke',
+    body: { cascade: false },
+  },
   { args: ['billing', 'status'], route: 'GET /api/workspaces/1' },
   {
     args: ['billing', 'manage'],

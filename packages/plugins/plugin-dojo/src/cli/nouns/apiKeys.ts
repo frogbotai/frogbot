@@ -88,17 +88,30 @@ export const apiKeys: Noun = {
       },
     },
     revoke: {
-      summary: 'Revoke a key by id. Requests made with it stop working.',
+      summary: 'Revoke a key by id, and the keys it made. Requests made with them stop working.',
       args: '<id>',
-      confirm: ({ positionals: [id] }) => `Revoke key ${id}?`,
-      run: async ({ io, dojo, positionals: [id = ''] }) => {
+      flags: {
+        'no-cascade': { type: 'boolean', help: 'Revoke only this key; keep the keys it made.' },
+      },
+      confirm: ({ positionals: [id], values }) =>
+        values['no-cascade'] === true
+          ? `Revoke key ${id}? The keys it made keep working.`
+          : `Revoke key ${id} and the keys it made?`,
+      run: async ({ io, dojo, positionals: [id = ''], values }) => {
+        const keep = values['no-cascade'] === true;
         const revoked = await dojoJSON<{ id: string | number; revokedAt: string }>(
           dojo(),
           `/api/api-keys/${segment(id)}/revoke`,
-          { method: 'POST', what: `Couldn't revoke key ${id}` },
+          {
+            method: 'POST',
+            ...(keep && { body: { cascade: false } }),
+            what: `Couldn't revoke key ${id}`,
+          },
         );
 
-        done(io, revoked, [`[frogbot] Revoked key ${revoked.id}.`]);
+        done(io, revoked, [
+          `[frogbot] Revoked key ${revoked.id}${keep ? '; the keys it made keep working' : ' and the keys it made'}.`,
+        ]);
       },
     },
   },

@@ -96,7 +96,7 @@ const destructive: { args: string[]; asked: string; replies?: Record<string, unk
     asked: 'Remove ada@example.com from the workspace?',
     replies: { 'GET /api/members': { docs: [member] } },
   },
-  { args: ['keys', 'revoke', '4'], asked: 'Revoke key 4?' },
+  { args: ['keys', 'revoke', '4'], asked: 'Revoke key 4 and the keys it made?' },
   {
     args: ['sharing', 'leave', 'deals'],
     asked: "Leave deals? You'll need a new invite to get back.",
