@@ -1,16 +1,24 @@
-import { NoListResults } from '@payloadcms/ui';
-import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
-import type { ListViewServerProps, PayloadComponent } from 'payload';
-import type { ReactNode } from 'react';
+import type { ListViewServerProps } from 'payload';
+import { formatAdminURL } from 'payload/shared';
+import * as qs from 'qs-esm';
 
-import { getRuntimeViews } from '../collectionViews.js';
-import { DefaultListView, type ListPageSlots } from './DefaultListView.client.js';
+import {
+  createViewRequest,
+  getRuntimeViews,
+  redirectToLastView,
+  resolveCollectionViews,
+} from '../collectionViews.js';
+import { buildFrameSlots } from '../frame.js';
+import { isFreshQuery, pickViewSetup, resolveViewSetup } from '../viewSetup.js';
+import { DefaultListView } from './DefaultListView.client.js';
+import { ListFrameClient } from './ListFrame.client.js';
 
 /**
- * The list view Payload renders. FrogBot's toolbar, `CreateButton` and empty state fill Payload's
- * own list slots, and the client list view gets no server props.
+ * The list view Payload renders. On the collection's own page it renders in FrogBot's shared view
+ * frame with Payload's table, selection and page controls as its body. A relationship drawer and
+ * the hierarchy view stay Payload's own list.
  */
-export function ListView(props: ListViewServerProps) {
+export async function ListView(props: ListViewServerProps) {
   const {
     collectionConfig,
     data,
@@ -27,79 +35,83 @@ export function ListView(props: ListViewServerProps) {
     ...clientProps
   } = props;
 
-  const { collectionSlug, hasCreatePermission, hasDeletePermission, newDocumentURL, viewType } =
-    clientProps;
+  const isPage = Array.isArray((params as { segments?: unknown } | undefined)?.segments);
+  if (!isPage || clientProps.viewType === 'hierarchy') return <DefaultListView {...clientProps} />;
 
-  const view = getRuntimeViews({ collectionConfig }).find(({ type }) => type === 'list');
-  const toolbar = view?.type === 'list' ? view.components?.toolbar : undefined;
-  const CreateButton =
-    viewType === 'trash'
-      ? undefined
-      : (collectionConfig.admin.components as { CreateButton?: PayloadComponent } | undefined)
-          ?.CreateButton;
+  const collectionSlug = collectionConfig.slug;
+  const req = await createViewRequest({ i18n, payload, searchParams, user });
+  const { views } = await resolveCollectionViews({ collectionConfig, req });
+  const runtime = getRuntimeViews({ collectionConfig });
+  const view = runtime[0]?.type === 'list' ? runtime[0] : undefined;
+  const isList = clientProps.viewType === 'list' && view !== undefined;
 
-  const { NoResults, ...listProps } = clientProps;
+  if (isList) {
+    await redirectToLastView({ collectionSlug, req, server, views });
 
-  if (!toolbar?.length && !CreateButton && !NoResults) return <DefaultListView {...clientProps} />;
-
-  const createProps = { collectionSlug, hasCreatePermission, newDocumentURL };
-  const render = (Component: PayloadComponent | PayloadComponent[], slotProps: object) =>
-    RenderServerComponent({
-      clientProps: slotProps,
-      Component,
-      importMap: payload.importMap,
-      serverProps: {
-        collectionConfig,
-        data,
-        i18n,
-        limit,
-        listPreferences: props.listPreferences,
-        listSearchableFields,
-        locale,
-        params,
-        payload,
-        permissions,
-        searchParams,
-        server,
-        user,
-      },
+    const query = req.query ?? {};
+    const setup = await resolveViewSetup({
+      collectionSlug,
+      query,
+      req,
+      viewSlug: view.slug,
     });
 
-  const createButton = (key: string) => (
-    <div className="fb-create-button" key={key}>
-      {CreateButton ? render(CreateButton, createProps) : null}
-    </div>
+    const saved = pickViewSetup(setup.preference);
+
+    if (isFreshQuery(query) && Object.keys(saved).length > 0) {
+      server.redirect(
+        `${formatAdminURL({
+          adminRoute: payload.config.routes.admin,
+          path: `/collections/${collectionSlug}`,
+        })}?${qs.stringify({ ...query, ...saved })}`,
+      );
+    }
+  }
+
+  const slots = buildFrameSlots({
+    activeSlug: view?.slug,
+    adminRoute: payload.config.routes.admin,
+    collectionConfig,
+    hasCreatePermission: clientProps.hasCreatePermission,
+    hasDeletePermission: Boolean(clientProps.hasDeletePermission),
+    i18n,
+    importMap: payload.importMap,
+    runtime,
+    serverProps: {
+      collectionConfig,
+      data,
+      i18n,
+      limit,
+      listPreferences: props.listPreferences,
+      listSearchableFields,
+      locale,
+      params,
+      payload,
+      permissions,
+      searchParams,
+      server,
+      user,
+    },
+    skipLayoutSlots: true,
+    view,
+    views,
+    viewType: clientProps.viewType,
+  });
+
+  const docs = (data as { docs?: unknown[] } | undefined)?.docs ?? [];
+  const isEmpty = docs.length === 0 && !clientProps.groupedData?.length;
+
+  return (
+    <ListFrameClient
+      {...slots}
+      AfterList={clientProps.AfterList}
+      AfterListTable={clientProps.AfterListTable}
+      BeforeList={clientProps.BeforeList}
+      BeforeListTable={clientProps.BeforeListTable}
+      Description={clientProps.Description ?? slots.Description}
+      isEmpty={isEmpty}
+      listMenuItems={[...(clientProps.listMenuItems ?? []), ...(slots.listMenuItems ?? [])]}
+      listProps={clientProps}
+    />
   );
-
-  const isEmpty = (data as { docs?: unknown[] } | undefined)?.docs?.length === 0;
-  const pageSlots: ListPageSlots = {
-    ...(NoResults
-      ? { NoResults }
-      : CreateButton && isEmpty
-        ? {
-            NoResults: (
-              <NoListResults
-                Actions={[createButton('create')]}
-                description={i18n.t('general:noResultsDescription')}
-                title={i18n.t('general:noResultsFound')}
-                withMargin
-              />
-            ),
-          }
-        : {}),
-    ...(toolbar?.length || CreateButton
-      ? {
-          beforeActions: [
-            ...(clientProps.beforeActions ?? []),
-            ...(toolbar?.length
-              ? (render(toolbar, { ...createProps, hasDeletePermission }) as ReactNode[])
-              : []),
-            ...(CreateButton ? [createButton('create-button')] : []),
-          ],
-        }
-      : {}),
-    ...(CreateButton ? { hideCreateNew: true } : {}),
-  };
-
-  return <DefaultListView {...listProps} pageSlots={pageSlots} />;
 }

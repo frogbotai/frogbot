@@ -7,6 +7,11 @@ export type ViewPreferenceValue = Record<string, unknown> & {
 
 export type ViewColumnsSource = ColumnPreference[] | string | string[] | undefined;
 
+/** The preference that remembers the view a user last chose for a collection. */
+export function getLastViewPreferenceKey(collectionSlug: string): string {
+  return `frogbot:collection-view:${collectionSlug}`;
+}
+
 export function getViewPreferenceKey(collectionSlug: string, viewSlug: string): string {
   return `collection-${collectionSlug}-view-${viewSlug}`;
 }

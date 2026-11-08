@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
+import { forgetViewSetup } from './__helpers/viewSetup';
 import { aiFieldName, aiFieldPath, tasksSlug } from './fixtures/question/shared';
 
 type ID = number | string;
@@ -121,6 +122,7 @@ test.beforeEach(async ({ page }) => {
 
 test.afterEach(async ({ page }) => {
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
+  await forgetViewSetup(page, tasksSlug);
 });
 
 test('a List cell that never ran shows Generate, and clicking it starts a run', async ({

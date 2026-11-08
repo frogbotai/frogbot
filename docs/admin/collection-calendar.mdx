@@ -13,14 +13,15 @@ See the complete [Collection views reference](/configuration/collections#collect
 | --- | --- | --- | --- |
 | `type` | `'calendar'` | Yes | Selects the calendar layout. |
 | `slug` | `string` | No; defaults to `'calendar'` | Unique normalized route and preference key. The first view uses the collection's root route. |
-| `label` | `string` | No; defaults to `'Calendar'` | Label shown in the view switcher. |
+| `label` | `string` | No; defaults to `'Calendar'` | Label on the view's tab. |
+| `icon` | `AdminIcon` | No; `'calendar'` | Icon on the view's tab. |
 | `start` | `string` | Yes | Dot path to the date field used as each event's start. |
 | `end` | `string` | No | Dot path to the date field used as each event's end. Without it, events use the start as their end. |
 | `color` | `string` | No | Dot path to a select or radio field whose value colors each event. |
 | `modes` | `CalendarMode[]` | No; `['month', 'week', 'day']` | Available modes in display order. The first mode is the default. |
 | `snap` | `number` | No | Minute interval used when creating, moving, or resizing events. |
 | `defaultFields` | `string[]` | No | Dot paths to fields rendered on each event, in display order. |
-| `filter` | `Where \| ({ req }) => Where \| Promise<Where>` | No | Invisible base filter applied to every calendar query. |
+| `filter` | `Where` | No | Invisible base filter applied to every calendar query, as plain data. |
 | `defaultSort` | `Sort` (`string \| string[]`) | No | Initial query sort. Prefix a field with `-` for descending order. |
 | `searchableFields` | `string[]` | No | Adds fields to normal search behavior; `useAsTitle` remains included. |
 | `pagination` | `ViewPagination` | No | Accepted for consistency with other views, but calendar views ignore it. Each visible range loads at most 1000 events. |
@@ -34,11 +35,12 @@ See the complete [Collection views reference](/configuration/collections#collect
 | `actions` | `FrogBotComponent[]` | No; `[]` | Renders in the page header, top right. |
 | `toolbar` | `FrogBotComponent[]` | No; `[]` | Renders in the calendar's view controls, before Filters. Below the small breakpoint it moves into a right-aligned row under the toolbar. |
 | `menuItems` | `FrogBotComponent[]` | No; `[]` | Adds entries to the calendar menu. |
-| `beforeView` | `FrogBotComponent[]` | No; `[]` | Renders inside the collection shell before the calendar body. |
-| `afterView` | `FrogBotComponent[]` | No; `[]` | Renders inside the collection shell after the calendar body. |
+| `beforeView` | `FrogBotComponent[]` | No; `[]` | Renders inside the view frame before the header. |
+| `afterView` | `FrogBotComponent[]` | No; `[]` | Renders inside the view frame after the calendar body. |
 | `beforeCalendar` | `FrogBotComponent[]` | No; `[]` | Renders before the calendar. |
 | `afterCalendar` | `FrogBotComponent[]` | No; `[]` | Renders after the calendar. |
 | `Event` | `FrogBotComponent` | No; built-in event | Replaces each event body and receives the document as its `row` prop. |
+| `NoResults` | `FrogBotComponent` | No; built-in empty state | Shown above the grid when the calendar's filters match no records. The grid stays. |
 
 ```ts
 export const Pipelines: CollectionConfig = {
@@ -73,4 +75,6 @@ Calendar queries are limited to the visible range and include the collection vie
 
 Dragging or resizing an event performs a normal collection update, including access checks, validation, and hooks. Creating a range opens the document drawer with the configured date fields prefilled. Users without update access can view events but cannot move or resize them.
 
-The selected mode, date, and event fields are saved per user and view. URL values take precedence over saved preferences, which take precedence over the configured defaults.
+The selected mode, date, event fields, filters and sort are saved per user and view. URL values take precedence over saved preferences, which take precedence over the configured defaults. **Reset to default** in the view menu clears the saved filters, sort and fields.
+
+With the collection's [`admin.useAsDone`](/configuration/collections#done-records) set, done events show a green check and a muted title. The event open in the document drawer shows the shared selected style.

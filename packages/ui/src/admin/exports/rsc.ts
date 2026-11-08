@@ -14,7 +14,6 @@ export { CalendarView } from '../views/Calendar/index.js';
 export { ChatView } from '../views/Chat/index.js';
 export { CollectionViewActions } from '../views/CollectionViewActions.js';
 export { CollectionViewShell } from '../views/CollectionViewShell.js';
-export { CollectionViewSwitcher } from '../views/CollectionViewSwitcher.js';
 export { ConnectionsView } from '../views/Connections/index.js';
 export { CreateFirstUserView } from '../views/CreateFirstUser/index.js';
 export { CustomCollectionView } from '../views/CustomCollectionView.js';

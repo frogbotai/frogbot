@@ -1,0 +1,57 @@
+@layer frogbot {
+  .fb-view-tabs {
+    display: flex;
+    gap: var(--spacer-4);
+    margin-bottom: calc(-1 * (var(--spacer-3) + var(--stroke-width-small)));
+    margin-top: var(--spacer-2-5);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .fb-view-tabs__tab {
+    align-items: center;
+    border-bottom: 2px solid transparent;
+    color: var(--color-text-secondary);
+    display: inline-flex;
+    flex: none;
+    font-size: var(--text-body-medium-font-size);
+    font-weight: var(--text-body-medium-bold-font-weight);
+    gap: var(--spacer-1-5);
+    line-height: var(--text-body-medium-line-height);
+    padding: var(--spacer-1) 0 var(--spacer-2);
+    text-decoration: none;
+  }
+
+  .fb-view-tabs__tab:hover {
+    color: var(--color-text);
+  }
+
+  .fb-view-tabs__tab:focus-visible {
+    border-radius: var(--radius-small);
+    outline: var(--accessibility-outline);
+    outline-offset: var(--accessibility-outline-offset);
+  }
+
+  .fb-view-tabs__tab--active {
+    border-bottom-color: var(--color-text);
+    color: var(--color-text);
+  }
+
+  .fb-view-tabs__icon {
+    flex: none;
+  }
+
+  .fb-view-tabs--menu {
+    margin-bottom: 0;
+    margin-top: var(--spacer-2);
+    overflow: visible;
+  }
+
+  .fb-view-tabs__menu-button {
+    align-items: center;
+    color: var(--color-text);
+    display: inline-flex;
+    font-weight: var(--text-body-medium-bold-font-weight);
+    gap: var(--spacer-1-5);
+  }
+}

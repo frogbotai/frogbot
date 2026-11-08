@@ -95,6 +95,7 @@ vi.mock('@payloadcms/ui', () => ({
   useModal: () => ({ openModal: vi.fn() }),
   useStepNav: () => ({ setStepNav: vi.fn() }),
   useTranslation: () => ({ i18n: { t: (key: string) => key } }),
+  NoListResults: () => null,
   useWindowInfo: () => ({ breakpoints: { s: false } }),
   ViewDescription: () => null,
   withCondition: <T>(Component: T) => Component,
@@ -194,149 +195,71 @@ describe('FrogBot admin views', () => {
     expect(mocks.PayloadDefaultListView).toHaveBeenCalledWith(props, undefined);
   });
 
-  it('DefaultListView fills the list page slots outside a drawer', () => {
-    mocks.PayloadDefaultListView.mockClear();
-
-    const toolbar = createElement('button', { key: 'toolbar' }, 'Toolbar');
-    const empty = createElement('p', null, 'Empty');
-    const props = {
-      collectionSlug: 'posts',
-      hasCreatePermission: true,
-      newDocumentURL: '/admin/collections/posts/create',
-      viewType: 'list',
-    };
-
-    renderToStaticMarkup(
-      createElement(DefaultListView, {
-        ...props,
-        pageSlots: { beforeActions: [toolbar], hideCreateNew: true, NoResults: empty },
-      } as never),
-    );
-
-    expect(mocks.PayloadDefaultListView).toHaveBeenCalledWith(
-      { ...props, beforeActions: [toolbar], newDocumentURL: '', NoResults: empty },
-      undefined,
-    );
-  });
-
-  it("DefaultListView keeps Payload's own list in a relationship drawer", () => {
-    mocks.PayloadDefaultListView.mockClear();
-    mocks.listDrawer.isInDrawer = true;
-
-    const props = {
-      collectionSlug: 'posts',
-      hasCreatePermission: true,
-      newDocumentURL: '/admin/collections/posts/create',
-      viewType: 'list',
-    };
-
-    renderToStaticMarkup(
-      createElement(DefaultListView, {
-        ...props,
-        pageSlots: { beforeActions: ['toolbar'], hideCreateNew: true, NoResults: 'empty' },
-      } as never),
-    );
-
-    expect(mocks.PayloadDefaultListView).toHaveBeenCalledWith(props, undefined);
-  });
-
-  it('CollectionViewShell renders shared slots and custom cell content', () => {
+  it('CollectionViewShell renders the view slots in the frame and counts its records', async () => {
     mocks.RenderServerComponent.mockImplementation(({ Component }) => `slot:${String(Component)}`);
     const child = createElement('span', { 'data-cell': 'custom' }, 'Cell');
-    const element = CollectionViewShell({
-      children: child,
-      clientConfig: {
-        collections: [
-          { admin: {}, fields: [], labels: { plural: 'Posts', singular: 'Post' }, slug: 'posts' },
-        ],
-        routes: { admin: '/admin' },
+    const count = vi.fn(() => Promise.resolve({ totalDocs: 0 }));
+    const view = {
+      components: {
+        afterView: ['AfterView'],
+        beforeView: ['BeforeView'],
+        menuItems: ['Menu'],
+        toolbar: ['Toolbar'],
       },
+      filter: { archived: { equals: false } },
+      slug: 'stub',
+      type: 'custom',
+    };
+
+    const element = await CollectionViewShell({
+      children: child,
+      clientConfig: { routes: { admin: '/admin' } },
       collectionConfig: {
-        admin: {
-          components: {
-            Description: 'Description',
-            views: {
-              stub: {
-                frogbot: {
-                  components: {
-                    actions: ['Action'],
-                    afterView: ['AfterView'],
-                    beforeView: ['BeforeView'],
-                    menuItems: ['Menu'],
-                  },
-                },
-              },
-            },
-          },
-        },
+        admin: { components: { CreateButton: 'Create', Description: 'Description' } },
+        custom: { frogbot: { collectionViews: [view] } },
+        labels: { plural: 'Posts', singular: 'Post' },
         slug: 'posts',
       },
       collectionSlug: 'posts',
       importMap: {},
       initPageResult: {
         permissions: { collections: { posts: { create: true, delete: true } } },
-        req: { i18n: {}, query: { sort: '-createdAt', where: { status: { equals: 'draft' } } } },
+        req: {
+          i18n: { t: (key: string) => key },
+          payload: { count },
+          query: { sort: '-createdAt', where: { status: { equals: 'draft' } } },
+        },
       },
-      viewSlug: 'stub',
       viewType: 'stub',
-      viewComponents: {
-        actions: ['Action'],
-        afterView: ['AfterView'],
-        beforeView: ['BeforeView'],
-        menuItems: ['Menu'],
-        toolbar: ['Toolbar'],
-      },
+      view,
       views: [{ label: 'Stub', path: '', slug: 'stub', type: 'custom' }],
-    } as never);
-
-    expect(element?.props).toMatchObject({
-      AfterList: 'slot:AfterView',
-      Toolbar: ['slot:Toolbar'],
-      BeforeList: 'slot:BeforeView',
-      Description: 'slot:Description',
-      hasCreatePermission: true,
-      listMenuItems: ['slot:Menu'],
-      query: { sort: '-createdAt', where: { status: { equals: 'draft' } } },
-    });
-    expect(element?.props).not.toHaveProperty('Actions');
-    expect(element?.props.children).toBe(child);
-  });
-
-  it('CollectionViewShell puts the CreateButton after the toolbar', () => {
-    mocks.RenderServerComponent.mockImplementation(({ Component }) => `slot:${String(Component)}`);
-    mocks.RenderServerComponent.mockClear();
-
-    const element = CollectionViewShell({
-      children: null,
-      clientConfig: { routes: { admin: '/admin' } },
-      collectionConfig: { admin: { components: { CreateButton: 'Create' } }, slug: 'posts' },
-      collectionSlug: 'posts',
-      importMap: {},
-      initPageResult: {
-        permissions: { collections: { posts: { create: false, delete: true } } },
-        req: { query: {} },
-      },
-      viewComponents: { toolbar: ['Toolbar'] },
-      views: [],
-      viewSlug: 'board',
     } as never);
 
     const [toolbar, create] = element?.props.Toolbar as ReactNode[];
 
+    expect(element?.props).toMatchObject({
+      AfterList: 'slot:AfterView',
+      BeforeList: 'slot:BeforeView',
+      Description: 'slot:Description',
+      hasCreateButton: true,
+      hasCreatePermission: true,
+      isEmpty: true,
+      query: { sort: '-createdAt', where: { status: { equals: 'draft' } } },
+      type: 'custom',
+    });
+    expect(element?.props.listMenuItems[0]).toBe('slot:Menu');
     expect(toolbar).toBe('slot:Toolbar');
     expect(renderToStaticMarkup(create as never)).toBe(
       '<div class="fb-create-button">slot:Create</div>',
     );
-    expect(mocks.RenderServerComponent).toHaveBeenCalledWith(
+    expect(count).toHaveBeenCalledWith(
       expect.objectContaining({
-        clientProps: {
-          collectionSlug: 'posts',
-          hasCreatePermission: false,
-          newDocumentURL: '/admin/collections/posts/create',
-        },
-        Component: 'Create',
+        collection: 'posts',
+        overrideAccess: false,
+        where: { and: [{ archived: { equals: false } }, { status: { equals: 'draft' } }] },
       }),
     );
+    expect(element?.props.children).toBe(child);
   });
 
   it('SettingsView resolves the longest exact or prefix entry and enforces access', async () => {

@@ -1,42 +1,31 @@
 @layer frogbot {
-  .collection-view-shell {
-    display: flex;
-    flex-direction: column;
+  .collection-view--board,
+  .collection-view--calendar,
+  .collection-view--custom {
     height: calc(100vh - var(--app-header-height));
-  }
-
-  .collection-view-shell__content {
-    display: flex;
-    flex: 1 1 auto;
-    flex-direction: column;
-    margin-inline: auto;
-    max-width: 1920px;
-    min-height: 0;
     padding-bottom: var(--spacing-view-bottom);
-    padding-inline: var(--gutter-h);
-    width: 100%;
   }
 
-  .collection-view-shell__content > *:not(:last-child) {
-    margin-bottom: var(--spacer-3);
-  }
-
-  .collection-view-shell .list-header__after-header-content {
-    padding-top: var(--spacer-2-5);
-  }
-
-  .collection-view-shell__toolbar {
+  .collection-view__toolbar {
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacer-2);
     justify-content: flex-end;
+    padding: 0 var(--gutter-h) var(--spacer-2-5);
   }
 
-  .collection-view-shell__view {
+  .collection-view__view {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
     min-height: 0;
     min-width: 0;
+    padding-inline: var(--gutter-h);
+  }
+
+  .collection-view--list .collection-view__view {
+    display: block;
+    flex: none;
+    padding-inline: 0;
   }
 }

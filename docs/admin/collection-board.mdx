@@ -13,11 +13,12 @@ Add a board entry to `admin.views` to show documents as cards grouped into colum
 | --- | --- | --- | --- |
 | `type` | `'board'` | Yes | Selects the board layout. |
 | `slug` | `string` | No; defaults to `'board'` | Unique normalized route and preference key. The first view uses the collection's root route. |
-| `label` | `string` | No; defaults to `'Board'` | Label shown in the view switcher. |
+| `label` | `string` | No; defaults to `'Board'` | Label on the view's tab. |
+| `icon` | `AdminIcon` | No; `'kanban'` | Icon on the view's tab. |
 | `groupBy` | `string` | No | Dot path to the select or single relationship field that determines each card's column. |
 | `defaultFields` | `string[]` | No | Dot paths to the fields rendered on each card, in display order. |
 | `cover` | `string` | No | Dot path to an upload field rendered as the card's cover image. |
-| `filter` | `Where \| ({ req }) => Where \| Promise<Where>` | No | Invisible base filter applied to every board query. |
+| `filter` | `Where` | No | Invisible base filter applied to every board query, as plain data. |
 | `defaultSort` | `Sort` (`string \| string[]`) | No | Initial card order within columns. Prefix a field with `-` for descending order. |
 | `searchableFields` | `string[]` | No | Adds fields to normal search behavior; `useAsTitle` remains included. |
 | `pagination` | `ViewPagination` | No; `defaultLimit: 50` | Sets the documents fetched per column. Each column lazy-loads additional pages and virtualizes rendered cards. `limits` only drives list page-size choices. |
@@ -31,12 +32,13 @@ Add a board entry to `admin.views` to show documents as cards grouped into colum
 | `actions` | `FrogBotComponent[]` | No; `[]` | Renders in the page header, top right. |
 | `toolbar` | `FrogBotComponent[]` | No; `[]` | Renders in the board's view controls, before Filters. Below the small breakpoint it moves into a right-aligned row under the toolbar. |
 | `menuItems` | `FrogBotComponent[]` | No; `[]` | Adds entries to the board menu. |
-| `beforeView` | `FrogBotComponent[]` | No; `[]` | Renders inside the collection shell before the board body. |
-| `afterView` | `FrogBotComponent[]` | No; `[]` | Renders inside the collection shell after the board body. |
+| `beforeView` | `FrogBotComponent[]` | No; `[]` | Renders inside the view frame before the header. |
+| `afterView` | `FrogBotComponent[]` | No; `[]` | Renders inside the view frame after the board body. |
 | `beforeColumns` | `FrogBotComponent[]` | No; `[]` | Renders before the columns. |
 | `afterColumns` | `FrogBotComponent[]` | No; `[]` | Renders after the columns. |
 | `ColumnHeader` | `FrogBotComponent` | No; built-in header | Replaces each column header. See [Column headers](#column-headers). |
 | `Card` | `FrogBotComponent` | No; built-in card | Replaces each card and receives the document as its `row` prop. |
+| `NoResults` | `FrogBotComponent` | No; built-in empty state | Replaces the columns when the board's filters match no records. |
 
 ```ts
 export const Tasks: CollectionConfig = {
@@ -77,7 +79,11 @@ When the board is sorted by its manual order, dragging a card within a column sa
 
 Nested fields use dot paths such as `workflow.stage` and `details.dueDate`.
 
-Board views use `pagination.defaultLimit` for each column, defaulting to 50. Columns lazy-load subsequent pages and virtualize their cards. `pagination.limits` applies only to list page-size controls. Omitting `admin.views` creates one default list view without a switcher, using FrogBot's normal list pagination defaults.
+Board views use `pagination.defaultLimit` for each column, defaulting to 50. Columns lazy-load subsequent pages and virtualize their cards. `pagination.limits` applies only to list page-size controls. Omitting `admin.views` creates one default list view without a tab row, using FrogBot's normal list pagination defaults.
+
+The board's group, sort, filters and card fields are saved per user, as are collapsed and hidden columns. **Reset to default** in the view menu returns to the config.
+
+With the collection's [`admin.useAsDone`](/configuration/collections#done-records) set, each built-in card starts with a check circle that toggles the record's done field, and done cards show a muted title. The check is read-only without update access to the field. The card open in the document drawer shows the shared selected style.
 
 ## Adding cards
 

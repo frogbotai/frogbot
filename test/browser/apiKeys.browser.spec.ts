@@ -52,19 +52,18 @@ test('puts Create API key in the toolbar where Create New sits', async ({ page }
         .map((child) =>
           child.matches('.fb-create-button')
             ? 'create'
-            : child.querySelector('[role="radiogroup"]') || child.matches('[role="radiogroup"]')
-              ? 'layout'
-              : child.matches('.list-controls__popup')
-                ? 'menu'
-                : 'other',
+            : child.matches('.list-controls__popup')
+              ? 'menu'
+              : 'other',
         ),
     );
 
-  expect(order.slice(order.indexOf('layout'))).toEqual(['layout', 'create', 'menu']);
+  expect(order.slice(-2)).toEqual(['create', 'menu']);
 });
 
 test('shows Create API key in the empty state', async ({ page }) => {
   await page.goto(`/collections/${apiKeysSlug}?where[name][equals]=no-such-key-${Date.now()}`);
+  await page.request.delete(`/api/payload-preferences/collection-${apiKeysSlug}-view-list`);
 
   const empty = page.locator('.no-results');
 

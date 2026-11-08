@@ -64,6 +64,38 @@ Set `admin.icon` on every collection that shows in the sidebar. Without one it s
 
 Your editor autocompletes every built-in name, and an unknown name stops startup with the full list. For anything else, point at a component: `icon: './src/components/LeadsIcon#LeadsIcon'`.
 
+## Views and done records
+
+`admin.views` lists a collection's views; the first is the default and a list view must come first. Every view renders in one frame with a tab row (icon and label), one toolbar and one empty state. Keep view entries plain data: `filter` is a `Where`, React components go in `components`, and `access` is the only function. Each user's filters, sort, columns, page size and grouping are saved per view, with **Reset to default** in the view menu.
+
+```ts
+export const Tasks: CollectionConfig = {
+  slug: 'tasks',
+  admin: {
+    useAsTitle: 'title',
+    useAsDone: 'completed',
+    views: [
+      { type: 'list', defaultFields: ['title', 'status', 'dueDate'] },
+      { type: 'board', groupBy: 'status', icon: 'kanban', filter: { archived: { equals: false } } },
+      {
+        type: 'calendar',
+        start: 'dueDate',
+        components: { NoResults: '/components/NoTasks#NoTasks' },
+      },
+    ],
+  },
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    { name: 'status', type: 'select', options: ['todo', 'doing', 'done'] },
+    { name: 'completed', type: 'checkbox' },
+    { name: 'archived', type: 'checkbox' },
+    { name: 'dueDate', type: 'date' },
+  ],
+};
+```
+
+`admin.useAsDone` names one checkbox field (or a dot path into a group); startup fails if it isn't a checkbox. Done records share one done style on every view, and board cards get a check circle that toggles it through a normal update. To make a stage imply done, set the checkbox in a `beforeChange` hook rather than in config. Docs: https://docs.frogbot.ai/configuration/collections#collection-views
+
 ## Authentication
 
 Set `auth: true` for FrogBot defaults or provide auth options.

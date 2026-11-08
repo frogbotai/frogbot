@@ -1,18 +1,15 @@
 import './BoardView.css';
 
 import { getColumns, renderTable } from '@payloadcms/ui/rsc';
-import type { AdminViewServerProps, PayloadComponent, SanitizedFieldPermissions } from 'payload';
+import type { AdminViewServerProps, PayloadComponent } from 'payload';
 import { getFromImportMap, transformColumnsToSearchParams } from 'payload/shared';
 import type { ComponentType } from 'react';
 
 import { getActiveViewSlug, resolveCollectionViews, withPageProps } from '../collectionViews.js';
 import { CollectionViewShell } from '../CollectionViewShell.js';
-import {
-  getViewPreferenceKey,
-  resolveViewColumnPreferences,
-  type ViewColumnsSource,
-} from '../preferences.js';
-import { BoardPreference } from './BoardPreference.client.js';
+import { canUpdateField } from '../fieldPermissions.js';
+import { resolveViewColumnPreferences, type ViewColumnsSource } from '../preferences.js';
+import { resolveViewSetup } from '../viewSetup.js';
 import { BoardViewClient, type BoardViewClientProps } from './BoardView.client.js';
 import {
   type BoardPreferenceValue,
@@ -39,65 +36,38 @@ export async function BoardView(input: AdminViewServerProps) {
   if (!board || board.type !== 'board') return props.server.notFound();
   const orderField = views.find(({ slug }) => slug === board.slug)?.orderField;
   if (!orderField) return props.server.notFound();
-  const query = (initPageResult.req.query ?? {}) as {
-    columns?: unknown;
-    groupBy?: unknown;
-    sort?: unknown;
-  };
+  const setup = await resolveViewSetup({
+    collectionSlug,
+    query: initPageResult.req.query ?? {},
+    req: initPageResult.req,
+    viewSlug: board.slug,
+  });
 
+  const query = setup.query as { columns?: unknown; groupBy?: unknown; sort?: unknown };
   const hasQueryGroupBy = Object.prototype.hasOwnProperty.call(query, 'groupBy');
   const queryGroupBy = typeof query.groupBy === 'string' ? query.groupBy : undefined;
   const querySort =
     typeof query.sort === 'string' ||
     (Array.isArray(query.sort) && query.sort.every((value) => typeof value === 'string'))
       ? query.sort
-      : Object.prototype.hasOwnProperty.call(query, 'sort')
-        ? ''
-        : undefined;
-
-  const queryColumns: ViewColumnsSource =
-    typeof query.columns === 'string' ||
-    (Array.isArray(query.columns) && query.columns.every((value) => typeof value === 'string'))
-      ? query.columns
       : undefined;
 
-  const preferenceKey = getViewPreferenceKey(collectionSlug, board.slug);
-  const preference = initPageResult.req.user
-    ? await payload.find({
-        collection: 'payload-preferences',
-        depth: 0,
-        limit: 1,
-        overrideAccess: true,
-        pagination: false,
-        req: initPageResult.req,
-        where: {
-          and: [
-            { key: { equals: preferenceKey } },
-            { 'user.relationTo': { equals: initPageResult.req.user.collection } },
-            { 'user.value': { equals: initPageResult.req.user.id } },
-          ],
-        },
-      })
-    : undefined;
+  const queryColumns =
+    typeof query.columns === 'string' || Array.isArray(query.columns)
+      ? (query.columns as ViewColumnsSource)
+      : undefined;
 
-  const preferenceValue = preference?.docs[0]?.value as BoardPreferenceValue | undefined;
-  const preferenceGroupBy =
-    typeof preferenceValue?.groupBy === 'string' ? preferenceValue.groupBy : undefined;
-
-  const preferenceSort =
-    typeof preferenceValue?.sort === 'string' ? preferenceValue.sort : undefined;
+  const preferenceValue = setup.preference as BoardPreferenceValue | undefined;
 
   const selectedGroupBy = resolveBoardGroupBy({
     configuredGroupBy: board.groupBy,
     hasQueryGroupBy,
-    preferenceGroupBy,
     queryGroupBy,
   });
 
   const selectedSort = resolveBoardSort({
     defaultSort: board.defaultSort,
     orderField,
-    preferenceSort,
     querySort,
     viewSlug: board.slug,
   });
@@ -110,9 +80,6 @@ export async function BoardView(input: AdminViewServerProps) {
 
   const columnPreferences = resolveViewColumnPreferences({
     defaultFields: board.defaultFields,
-    preferenceColumns: Array.isArray(preferenceValue?.columns)
-      ? preferenceValue.columns
-      : undefined,
     queryColumns,
     useAsTitle: collectionConfig.admin.useAsTitle,
   });
@@ -139,23 +106,13 @@ export async function BoardView(input: AdminViewServerProps) {
     useAsTitle: collectionConfig.admin.useAsTitle,
   });
 
-  const { queryByGroup: _queryByGroup, ...restQuery } = initPageResult.req.query ?? {};
+  const { queryByGroup: _queryByGroup, ...restQuery } = setup.query;
   const initialQuery = {
     ...restQuery,
     columns: transformColumnsToSearchParams(cardColumns),
     groupBy: selectedGroupBy,
     sort: selectedSort,
   };
-
-  const preferenceWriter = (
-    <BoardPreference
-      collectionSlug={collectionSlug}
-      columns={queryColumns ? cardColumns : undefined}
-      groupBy={hasQueryGroupBy ? selectedGroupBy : undefined}
-      sort={Array.isArray(querySort) ? querySort.join(',') : querySort}
-      viewSlug={board.slug}
-    />
-  );
 
   if (!groupBy) {
     return (
@@ -165,15 +122,18 @@ export async function BoardView(input: AdminViewServerProps) {
         query={initialQuery}
         enableSort
         manualSortField={orderField}
-        viewComponents={board.components}
+        preference={setup.preference}
+        preferenceKey={setup.preferenceKey}
+        view={board}
         views={views}
-        viewSlug={board.slug}
       >
-        {preferenceWriter}
         <div className="collection-board__empty">Choose a group field to use this board.</div>
       </CollectionViewShell>
     );
   }
+
+  const useAsDone = (collectionConfig.admin.custom?.frogbot as { useAsDone?: string } | undefined)
+    ?.useAsDone;
 
   const groupField = resolveBoardField(collectionConfig.fields, groupBy);
   if (!groupField) return props.server.notFound();
@@ -183,19 +143,6 @@ export async function BoardView(input: AdminViewServerProps) {
     path: groupBy,
     req: initPageResult.req,
   });
-
-  let fieldPermission: SanitizedFieldPermissions | undefined;
-  let fieldPermissions = permissions?.fields;
-
-  for (const key of groupBy.split('.')) {
-    if (!fieldPermissions || fieldPermissions === true) {
-      fieldPermission = fieldPermissions;
-      break;
-    }
-
-    fieldPermission = fieldPermissions[key];
-    fieldPermissions = fieldPermission === true ? true : fieldPermission?.fields;
-  }
 
   const resolve = <TProps extends object>(component: PayloadComponent | undefined) =>
     component
@@ -213,11 +160,11 @@ export async function BoardView(input: AdminViewServerProps) {
       query={initialQuery}
       enableSort
       manualSortField={orderField}
-      viewComponents={board.components}
+      preference={setup.preference}
+      preferenceKey={setup.preferenceKey}
+      view={board}
       views={views}
-      viewSlug={board.slug}
     >
-      {preferenceWriter}
       <BoardViewClient
         collectionSlug={collectionSlug}
         columnState={getBoardColumnState(preferenceValue)}
@@ -229,11 +176,11 @@ export async function BoardView(input: AdminViewServerProps) {
         orderField={orderField}
         viewSlug={board.slug}
         canCreate={Boolean(permissions?.create)}
-        inlineAdd={getInlineAdd({ collectionConfig, groupBy, permissions })}
-        canUpdate={Boolean(
-          permissions?.update &&
-          (fieldPermission === true || (fieldPermission && fieldPermission.update)),
+        canToggleDone={Boolean(
+          permissions?.update && useAsDone && canUpdateField(permissions.fields, useAsDone),
         )}
+        inlineAdd={getInlineAdd({ collectionConfig, groupBy, permissions })}
+        canUpdate={Boolean(permissions?.update && canUpdateField(permissions.fields, groupBy))}
         Card={resolve<
           NonNullable<BoardViewClientProps['Card']> extends ComponentType<infer P> ? P : never
         >(board.components?.Card)}
