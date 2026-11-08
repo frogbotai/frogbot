@@ -223,8 +223,8 @@ export function ApiKeysManager(props: ApiKeysManagerProps) {
   );
 }
 
-function madeLabel(count: number | null) {
-  if (count === null) return 'Also revoke the keys it made';
+function madeLabel(count: number | null | undefined) {
+  if (typeof count !== 'number') return 'Also revoke the keys it made';
 
   return count === 1 ? 'Also revoke the key it made' : `Also revoke the ${count} keys it made`;
 }
@@ -242,7 +242,7 @@ export function RevokeApiKey({
   const [loading, setLoading] = useState(false);
   const [revoked, setRevoked] = useState(false);
   const [error, setError] = useState<string>();
-  const [made, setMade] = useState<number | null>(0);
+  const [made, setMade] = useState<number | null>();
   const [cascade, setCascade] = useState(true);
 
   async function countMade() {
@@ -266,7 +266,7 @@ export function RevokeApiKey({
   function changeOpen(next: boolean) {
     if (next) {
       setError(undefined);
-      setMade(0);
+      setMade(undefined);
       setCascade(true);
       void countMade();
     }
@@ -274,9 +274,12 @@ export function RevokeApiKey({
     setOpen(next);
   }
 
-  const asksCascade = made !== 0;
+  const counting = made === undefined;
+  const asksCascade = !counting && made !== 0;
 
   async function revoke() {
+    if (counting) return;
+
     setLoading(true);
     setError(undefined);
     const response = await fetch(`${config.routes.api}/${collectionSlug}/${rowData.id}/revoke`, {
@@ -335,7 +338,7 @@ export function RevokeApiKey({
           <Button variant="secondary" onClick={() => changeOpen(false)} type="button">
             Cancel
           </Button>
-          <Button disabled={loading} onClick={revoke} type="button">
+          <Button disabled={loading || counting} onClick={revoke} type="button">
             {loading ? 'Revoking…' : 'Revoke key'}
           </Button>
         </DialogFooter>

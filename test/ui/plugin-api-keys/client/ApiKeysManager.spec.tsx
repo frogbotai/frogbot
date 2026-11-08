@@ -204,6 +204,13 @@ describe('API key controls', () => {
     );
   }
 
+  async function clickRevokeKey() {
+    const button = screen.getByRole('button', { name: 'Revoke key' });
+
+    await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(button);
+  }
+
   const revokeCalls = () =>
     vi.mocked(fetch).mock.calls.filter(([input]) => String(input).endsWith('/revoke'));
 
@@ -228,7 +235,7 @@ describe('API key controls', () => {
 
     expect(screen.queryByRole('checkbox')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Revoke key' }));
+    await clickRevokeKey();
 
     await waitFor(() => expect(screen.getByText('Revoked')).toBeTruthy());
 
@@ -249,7 +256,7 @@ describe('API key controls', () => {
 
     expect(checkbox.getAttribute('aria-checked')).toBe('true');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Revoke key' }));
+    await clickRevokeKey();
 
     await waitFor(() => expect(screen.getByText('Revoked')).toBeTruthy());
 
@@ -271,7 +278,7 @@ describe('API key controls', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Also revoke the key it made' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Revoke key' }));
+    await clickRevokeKey();
 
     await waitFor(() => expect(screen.getByText('Revoked')).toBeTruthy());
 
@@ -295,7 +302,7 @@ describe('API key controls', () => {
     render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Revoke key' }));
+    await clickRevokeKey();
 
     expect((await screen.findByRole('alert')).textContent).toBe('Key is in use');
     expect(screen.getByRole('dialog')).toBeTruthy();
@@ -315,6 +322,38 @@ describe('API key controls', () => {
 
     expect(revokeCalls()).toEqual([]);
     expect(screen.getByRole('button', { name: 'Revoke' })).toBeTruthy();
+  });
+
+  it('waits for the count before Revoke key works', async () => {
+    let answer: (response: Response) => void = () => undefined;
+
+    vi.mocked(fetch).mockReturnValueOnce(
+      new Promise<Response>((resolve) => {
+        answer = resolve;
+      }),
+    );
+
+    render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
+
+    const button = screen.getByRole('button', { name: 'Revoke key' }) as HTMLButtonElement;
+
+    expect(button.disabled).toBe(true);
+
+    fireEvent.click(button);
+
+    expect(revokeCalls()).toEqual([]);
+
+    answer({ ok: true, json: () => Promise.resolve({ totalDocs: 1 }) } as Response);
+
+    expect(
+      (await screen.findByRole('checkbox', { name: 'Also revoke the key it made' })).getAttribute(
+        'aria-checked',
+      ),
+    ).toBe('true');
+
+    await waitFor(() => expect(button.disabled).toBe(false));
   });
 
   it('shows revoked keys without an action', () => {

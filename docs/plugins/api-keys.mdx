@@ -140,7 +140,7 @@ A session can mint a key with `canMint`, by posting `{ name, data: { canMint: tr
 - A key rotates only itself and the keys it minted. Rotating any other key answers `404` and revokes nothing.
 - With the [AI policy plugin](/plugins/ai-policy#api-key-limits), its model list and monthly cap stay inside the parent's as well as the owner's. A list or cap it leaves empty is the parent's. Its spend also counts against the parent's cap, so a parent capped at $10 and every key below it together spend at most $10 a month.
 
-Revoking a key revokes every key it minted, and every key those minted, all the way down. To revoke only that key and leave the keys it made working, post `{ "cascade": false }` to `revoke`, or pass `cascade: false` to `revokeApiKey`. A missing body or `cascade` revokes the whole tree; any value other than `true` or `false` answers `400`. A later revoke of a key further up still reaches the keys that a `cascade: false` revoke left working.
+Revoking a key revokes every key it minted, and every key those minted, all the way down. To revoke only that key and leave the keys it made working, post `{ "cascade": false }` to `revoke`, or pass `cascade: false` to `revokeApiKey`. A missing body, or one without `cascade`, revokes the whole tree; a `cascade` other than `true` or `false`, `null` included, answers `400`. A later revoke of a key further up still reaches the keys that a `cascade: false` revoke left working.
 
 ```ts
 await revokeApiKey({ req, collectionSlug: 'api-keys', id }); // the key and every key below it

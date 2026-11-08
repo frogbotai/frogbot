@@ -151,11 +151,10 @@ function createEndpoints({
           return Response.json({ error: 'API key not found' }, { status: 404 });
         }
 
-        const body = ((await req.json?.().catch(() => null)) ?? null) as {
-          cascade?: unknown;
-        } | null;
+        const body: unknown = (await req.json?.().catch(() => null)) ?? null;
+        const given = typeof body === 'object' && body !== null && 'cascade' in body;
+        const cascade = given ? body.cascade : true;
 
-        const cascade = body?.cascade ?? true;
         if (typeof cascade !== 'boolean') {
           return Response.json({ error: 'cascade must be true or false' }, { status: 400 });
         }

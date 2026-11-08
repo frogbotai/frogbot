@@ -1232,11 +1232,12 @@ describe('API keys plugin integration', () => {
       expect(await stored(child.body.id)).toMatchObject({ revokedAt: expect.any(String) });
     });
 
-    it('refuses a revoke whose cascade is not a boolean', async () => {
+    it.each(['no', null])('refuses a revoke whose cascade is %j', async (cascade) => {
       const parent = await mint(session, 'P', { canMint: true });
+      const child = await mint(asKey(parent.body.token), 'C');
 
-      expect((await revoke(session, parent.body.id, { cascade: 'no' })).status).toBe(400);
-      expect(await active()).toEqual([parent.body.id]);
+      expect((await revoke(session, parent.body.id, { cascade })).status).toBe(400);
+      expect(new Set(await active())).toEqual(new Set([parent.body.id, child.body.id]));
     });
 
     it("counts a key's spend against every key above it", async () => {

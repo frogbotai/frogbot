@@ -210,6 +210,7 @@ const cases: Case[] = [
     },
   },
   { args: ['keys', 'revoke', '100', '--yes'], route: 'POST /api/api-keys/100/revoke' },
+  { args: ['keys', 'revoke', '100', '--cascade', '--yes'], route: 'POST /api/api-keys/100/revoke' },
   {
     args: ['keys', 'revoke', '100', '--no-cascade', '--yes'],
     route: 'POST /api/api-keys/100/revoke',
@@ -356,6 +357,10 @@ describe('frogbot dojo <noun> <verb>', () => {
     [['apps', 'get', '..'], '".." can\'t name anything on Dojo.'],
     [['keys', 'revoke', '..', '--yes'], '".." can\'t name anything on Dojo.'],
     [['keys', 'revoke', '.', '--yes'], '"." can\'t name anything on Dojo.'],
+    [
+      ['keys', 'revoke', '5', '--cascade', '--no-cascade', '--yes'],
+      'Pass --cascade or --no-cascade, not both.',
+    ],
     [['deployments', 'logs', '..'], '".." can\'t name anything on Dojo.'],
     [['deployments', 'logs', '..', '--follow'], '".." can\'t name anything on Dojo.'],
   ])('exits 2 before calling Dojo for %j', async (args, message) => {
