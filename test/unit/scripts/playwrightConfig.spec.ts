@@ -20,6 +20,7 @@ const allProjects = [
   'plugin-seo',
   'plugin-import-export',
   'forms',
+  'crm',
   'dojo',
   'first-user-blank',
   'sign-in-passwords',

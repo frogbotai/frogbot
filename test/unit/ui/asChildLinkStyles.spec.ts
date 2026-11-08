@@ -37,7 +37,10 @@ const ownColors = [
   },
 ];
 
-const anchorSelectorPattern = /(^|[\s>+~(])a(?=$|[\s.:#[>+~)])|:any-link|:link|:visited/;
+const anchorSelectorPattern = /(^|[\s>+~(,])a(?=$|[\s.:#[>+~),])|:any-link|:link|:visited/;
+
+const stackingOnly = (rule: CssRule) =>
+  [...rule.declarations.keys()].every((property) => ['position', 'z-index'].includes(property));
 
 function listCssFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -61,6 +64,27 @@ function findClosingBrace(css: string, open: number): number {
   }
 
   throw new Error(`Unclosed block at ${open}`);
+}
+
+function splitSelectors(prelude: string): string[] {
+  const selectors: string[] = [];
+  let depth = 0;
+  let start = 0;
+
+  for (let index = 0; index < prelude.length; index++) {
+    if (prelude[index] === '(') depth++;
+
+    if (prelude[index] === ')') depth--;
+
+    if (prelude[index] === ',' && depth === 0) {
+      selectors.push(prelude.slice(start, index));
+      start = index + 1;
+    }
+  }
+
+  return [...selectors, prelude.slice(start)].map((selector) =>
+    selector.replace(/\s+/g, ' ').trim(),
+  );
 }
 
 function parseDeclarations(body: string): Map<string, string> {
@@ -97,7 +121,7 @@ function parseRules(css: string): CssRule[] {
     if (prelude.startsWith('@')) continue;
 
     rules.push({
-      selectors: prelude.split(',').map((selector) => selector.replace(/\s+/g, ' ').trim()),
+      selectors: splitSelectors(prelude),
       declarations: parseDeclarations(body),
     });
   }
@@ -170,6 +194,7 @@ describe('asChild link styles', () => {
 
     const offenders = files.flatMap((file) =>
       readRules(file)
+        .filter((rule) => !stackingOnly(rule))
         .flatMap((rule) => rule.selectors)
         .filter((selector) => anchorSelectorPattern.test(selector))
         .map((selector) => `${file}: ${selector}`),

@@ -45,7 +45,16 @@ function previousTag(cwd, to) {
     .split('\n')
     .filter(Boolean);
 
-  return tags.find((tag) => git(cwd, ['rev-parse', `${tag}^{commit}`]).trim() !== head);
+  const previous = tags.find((tag) => git(cwd, ['rev-parse', `${tag}^{commit}`]).trim() !== head);
+
+  if (!previous && git(cwd, ['tag', '--list', 'v*']).trim()) {
+    throw new Error(
+      `no release tag is an ancestor of ${to}, so the notes would cover all history. ` +
+        'Local tags are probably stale: run `git fetch --tags --force origin`.',
+    );
+  }
+
+  return previous;
 }
 
 function readVersion(cwd, to) {

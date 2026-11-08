@@ -188,7 +188,8 @@ describe('API key controls', () => {
 
     afterEach(() => {
       vi.useRealTimers();
-      process.env.TZ = zone;
+      if (zone === undefined) delete process.env.TZ;
+      else process.env.TZ = zone;
     });
 
     const day = () => screen.getByLabelText<HTMLInputElement>('Expires');

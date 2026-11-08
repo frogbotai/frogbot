@@ -46,13 +46,10 @@ function createMockPayload() {
   return {
     config: {
       collections: [
-        {
-          slug: 'posts',
-          custom: { frogbot: { auth: false } },
-        },
-        { slug: 'users', custom: { frogbot: { auth: true } } },
-        { slug: 'payload-preferences', custom: {} },
-        { slug: 'payload-migrations', custom: {} },
+        { slug: 'posts', admin: {}, custom: { frogbot: { auth: false } } },
+        { slug: 'users', admin: {}, custom: { frogbot: { auth: true } } },
+        { slug: 'payload-preferences', admin: {}, custom: {} },
+        { slug: 'payload-migrations', admin: {}, custom: {} },
       ],
       serverURL: 'http://localhost:3000',
     },
@@ -306,8 +303,8 @@ describe('FrogBot class', () => {
       expect(frogbot.agents.assistant).toBe(firstAgent);
 
       payload.config.collections = [
-        { slug: 'articles', custom: { frogbot: { auth: false } } },
-        { slug: 'payload-preferences', custom: {} },
+        { slug: 'articles', admin: {}, custom: { frogbot: { auth: false } } },
+        { slug: 'payload-preferences', admin: {}, custom: {} },
       ];
 
       const secondConfig = withAI(makeConfig());
