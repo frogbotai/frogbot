@@ -76,6 +76,9 @@ export type CollectionAdminConfig = Omit<
   | 'components'
   | 'defaultColumns'
   | 'defaultSort'
+  | 'disableCopyToLocale'
+  | 'enableRichTextLink'
+  | 'enableRichTextRelationship'
   | 'formatDocURL'
   | 'group'
   | 'listSearchableFields'
@@ -97,6 +100,13 @@ export type CollectionAdminConfig = Omit<
    * replaces `admin.components.views.settings`.
    */
   settings?: boolean;
+  /**
+   * Name of a checkbox field that means "this record is done".
+   * Top-level checkbox field, or a dot path into a group.
+   * The config check fails at startup if it's missing or isn't a checkbox.
+   * Not set (default): the collection has no done state.
+   */
+  useAsDone?: string;
   views?: CollectionView[];
 };
 

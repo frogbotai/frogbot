@@ -1,0 +1,54 @@
+@layer frogbot {
+  .fb-record--selected.frog-board__card,
+  .frog-calendar__event:has(> .fb-record--selected) {
+    border-color: var(--color-border-selected-strong);
+    box-shadow: 0 0 0 1px var(--color-border-selected-strong);
+  }
+
+  .fb-record--done .collection-board__title,
+  .fb-record--done .collection-calendar__title {
+    color: var(--color-text-tertiary);
+  }
+
+  .fb-record__done-icon {
+    color: var(--color-icon-success);
+    flex: none;
+    vertical-align: -3px;
+  }
+
+  .collection-view--list tr[data-done] td {
+    color: var(--color-text-secondary);
+  }
+
+  .collection-view--list tr[data-done] td.cell--linked > :is(a, button) {
+    color: var(--color-text-tertiary);
+    text-decoration-line: line-through;
+  }
+
+  .fb-done-check {
+    align-items: center;
+    background: none;
+    border: 0;
+    border-radius: 50%;
+    color: var(--color-icon-tertiary);
+    cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .fb-done-check:hover:not(:disabled),
+  .fb-done-check--done {
+    color: var(--color-icon-success);
+  }
+
+  .fb-done-check:disabled {
+    cursor: default;
+  }
+
+  .fb-done-check:focus-visible {
+    outline: var(--accessibility-outline);
+    outline-offset: var(--accessibility-outline-offset);
+  }
+}

@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     accounts: Account;
     posts: Post;
+    vault: Vault;
     credentials: Credential;
     'audit-logs': AuditLog;
     'frogbot-waitpoints': FrogBotWaitpoint;
@@ -77,6 +78,7 @@ export interface Config {
   collectionsSelect: {
     accounts: AccountsSelect;
     posts: PostsSelect;
+    vault: VaultSelect;
     credentials: CredentialsSelect;
     'audit-logs': AuditLogsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
@@ -170,6 +172,32 @@ export interface Post {
   id: number;
   title: string;
   optional?: string | null;
+  secret?: string | null;
+  meta?: {
+    token?: string | null;
+    note?: string | null;
+  };
+  author?: (number | null) | Account;
+  vaultRef?: (number | null) | Vault;
+  createdBy?: {
+    relationTo: 'accounts';
+    value: number | Account;
+  } | null;
+  updatedBy?: {
+    relationTo: 'accounts';
+    value: number | Account;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vault".
+ */
+export interface Vault {
+  id: number;
+  name?: string | null;
+  vaultSecret?: string | null;
   createdBy?: {
     relationTo: 'accounts';
     value: number | Account;
@@ -193,6 +221,10 @@ export interface Credential {
   tokenHash: string;
   lastUsedAt?: string | null;
   revokedAt?: string | null;
+  /**
+   * The key stops working at this time. Empty when it never expires.
+   */
+  expiresAt?: string | null;
   /**
    * Requests made with this key can mint and rotate keys no broader than it.
    */
@@ -301,6 +333,27 @@ export interface AccountsSelect {
 export interface PostsSelect {
   title?: boolean;
   optional?: boolean;
+  secret?: boolean;
+  meta?:
+    | boolean
+    | {
+        token?: boolean;
+        note?: boolean;
+      };
+  author?: boolean;
+  vaultRef?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vault_select".
+ */
+export interface VaultSelect {
+  name?: boolean;
+  vaultSecret?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
@@ -317,6 +370,7 @@ export interface CredentialsSelect {
   tokenHash?: boolean;
   lastUsedAt?: boolean;
   revokedAt?: boolean;
+  expiresAt?: boolean;
   canMint?: boolean;
   mintedBy?: boolean;
   updatedAt?: boolean;
@@ -386,7 +440,8 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection: 'accounts' | 'posts' | 'credentials' | 'audit-logs';
+    relatedCollection:
+      'accounts' | 'posts' | 'vault' | 'credentials' | 'audit-logs';
     where?:
       | {
           [k: string]: unknown;
@@ -409,7 +464,7 @@ export interface CollectionQueryWidget {
 export interface ActivityWidget {
   data?: {
     excludedCollections?:
-      ('accounts' | 'posts' | 'credentials' | 'audit-logs')[] | null;
+      ('accounts' | 'posts' | 'vault' | 'credentials' | 'audit-logs')[] | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }

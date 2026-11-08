@@ -1,5 +1,6 @@
 import { expect, type Locator, test } from '@playwright/test';
 
+import { forgetViewSetup } from './__helpers/viewSetup';
 import { tasksSlug, timesheetsSlug } from './fixtures/question/shared';
 
 let consoleErrors: string[];
@@ -40,7 +41,7 @@ for (const { name, path, label } of [
 
     await expect(page.locator('.app-header').getByRole('button', { name: label })).toBeVisible();
     await expect(page.getByRole('button', { name: label })).toHaveCount(1);
-    await expect(page.locator('.collection-view-shell__actions')).toHaveCount(0);
+    await expect(page.locator('.collection-view__actions')).toHaveCount(0);
   });
 }
 
@@ -69,14 +70,14 @@ test.describe('list toolbar', () => {
     expect(await precedes(tool, page.locator('#toggle-list-filters'))).toBe(true);
   });
 
-  test('renders beside the row selection on a phone', async ({ page }) => {
+  test('renders in the toolbar row under the controls on a phone, as on every view', async ({
+    page,
+  }) => {
     await page.setViewportSize(phone);
     await page.goto(`/collections/${tasksSlug}`);
 
     await expect(
-      page
-        .locator('.collection-list__list-selection-actions')
-        .getByRole('button', { name: 'List tool' }),
+      page.locator('.collection-view__toolbar').getByRole('button', { name: 'List tool' }),
     ).toBeVisible();
     await expect(page.locator('.list-controls__actions').getByText('List tool')).toHaveCount(0);
   });
@@ -84,6 +85,7 @@ test.describe('list toolbar', () => {
 
 test('keeps the URL filters on a default board', async ({ page }) => {
   await page.goto(`/collections/${timesheetsSlug}?where[title][equals]=Probe`);
+  await forgetViewSetup(page, timesheetsSlug, 'board');
 
   await expect(page.locator('#toggle-list-filters')).toHaveAttribute('aria-expanded', 'true');
   await expect
@@ -102,14 +104,14 @@ test('renders the board toolbar before Filters', async ({ page }) => {
 
   await expect(tool).toBeVisible();
   expect(await precedes(tool, page.locator('#toggle-list-filters'))).toBe(true);
-  await expect(page.locator('.collection-view-shell__toolbar')).toHaveCount(0);
+  await expect(page.locator('.collection-view__toolbar')).toHaveCount(0);
 });
 
 test('renders the board toolbar right-aligned under the controls on a phone', async ({ page }) => {
   await page.setViewportSize(phone);
   await page.goto(`/collections/${tasksSlug}/board`);
 
-  const row = page.locator('.collection-view-shell__toolbar');
+  const row = page.locator('.collection-view__toolbar');
   const tool = row.getByRole('button', { name: 'Board tool' });
 
   await expect(tool).toBeVisible();
@@ -120,7 +122,13 @@ test('renders the board toolbar right-aligned under the controls on a phone', as
   const toolBox = (await tool.boundingBox())!;
 
   expect(toolBox.width).toBeLessThan(rowBox.width / 2);
-  expect(Math.abs(toolBox.x + toolBox.width - (rowBox.x + rowBox.width))).toBeLessThanOrEqual(1);
+  const gutter = await row.evaluate((element) =>
+    parseFloat(getComputedStyle(element).paddingRight),
+  );
+
+  expect(
+    Math.abs(toolBox.x + toolBox.width - (rowBox.x + rowBox.width - gutter)),
+  ).toBeLessThanOrEqual(1);
 });
 
 test.describe('task document page', () => {
@@ -144,7 +152,7 @@ test.describe('task document page', () => {
 
     await expect(page.getByText('Tasks for the team.')).toHaveCount(1);
     await expect(page.getByText('Tasks for the team.')).toBeVisible();
-    await expect(page.locator('.view-switcher')).toHaveCount(0);
+    await expect(page.locator('.fb-view-tabs')).toHaveCount(0);
   });
 
   test('shows a tab whose condition reads req.frogbot and hides the one it rules out', async ({
@@ -160,7 +168,7 @@ test.describe('task document page', () => {
 test('keeps the view tabs and description on the board view', async ({ page }) => {
   await page.goto(`/collections/${tasksSlug}/board`);
 
-  await expect(page.locator('.view-switcher')).toBeVisible();
+  await expect(page.locator('.fb-view-tabs')).toBeVisible();
   await expect(page.getByText('Tasks for the team.')).toHaveCount(1);
 });
 

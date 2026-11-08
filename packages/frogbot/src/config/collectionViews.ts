@@ -1,5 +1,6 @@
 import type { CollectionConfig as PayloadCollectionConfig, PayloadComponent } from 'payload';
 
+import { validateAdminIcon } from '../admin/icons.js';
 import type { CollectionView, CollectionViewMetadata } from '../admin/views/types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { Field, TabAsField } from '../fields/config/types.js';
@@ -53,6 +54,37 @@ export const BOARD_ORDER_FIELD = '_order';
 /** Whether a collection has a board view, and so needs Payload's `orderable`. */
 export function hasBoardView(collection: CollectionConfig): boolean {
   return (collection.admin?.views ?? [DEFAULT_VIEW]).some((view) => view.type === 'board');
+}
+
+function resolveDoneField(fields: Field[], path: string): Field | TabAsField | undefined {
+  const [name, ...rest] = path.split('.');
+  const field = flattenTopLevelFields(fields).find(
+    (candidate) => 'name' in candidate && candidate.name === name,
+  );
+
+  if (!field || rest.length === 0) return field;
+
+  return field.type === 'group' || field.type === 'tab'
+    ? resolveDoneField(field.fields, rest.join('.'))
+    : undefined;
+}
+
+function validateUseAsDone(collection: CollectionConfig): void {
+  const path: unknown = collection.admin?.useAsDone;
+  if (path === undefined) return;
+
+  if (typeof path !== 'string' || resolveDoneField(collection.fields, path)?.type !== 'checkbox') {
+    throw new Error(
+      `[frogbot] Collection "${collection.slug}" admin.useAsDone "${path}" must name a checkbox field, top level or a dot path into a group.`,
+    );
+  }
+}
+
+function containsFunction(value: unknown): boolean {
+  if (typeof value === 'function') return true;
+  if (!value || typeof value !== 'object') return false;
+
+  return Object.values(value).some(containsFunction);
 }
 
 function labelFor(type: CollectionView['type']): string {
@@ -109,7 +141,17 @@ export function compileCollectionViews({
     }
   }
 
+  validateUseAsDone(collection);
+
   for (const view of views) {
+    validateAdminIcon(view.icon);
+
+    if (containsFunction(view.filter)) {
+      throw new Error(
+        `[frogbot] Collection "${collection.slug}" view "${view.slug}" has a function filter. A view's filter is a plain Where object.`,
+      );
+    }
+
     if (
       view.type === 'board' &&
       view.groupBy &&
@@ -151,7 +193,8 @@ export function compileCollectionViews({
 
   onRuntimeViews?.(views);
 
-  const { components: authoredComponents, views: _views, ...adminSource } = source ?? {};
+  const { components: authoredComponents, useAsDone, views: _views, ...adminSource } = source ?? {};
+
   const { edit, ...componentSource } = authoredComponents ?? {};
   const runtimeViews: Record<string, unknown> = {};
   const metadata: CollectionViewMetadata[] = [];
@@ -160,7 +203,7 @@ export function compileCollectionViews({
     const isDefault = view === views[0];
     const key = isDefault ? 'list' : view.slug;
     const path = isDefault ? '' : `/${view.slug}`;
-    const { access: _access, components, filter: _filter, ...clientView } = view;
+    const { access: _access, components, filter: _filter, icon: _icon, ...clientView } = view;
     const { component: _component, ...safeView } = clientView as typeof clientView & {
       component?: PayloadComponent;
     };
@@ -197,17 +240,14 @@ export function compileCollectionViews({
       runtimeViews.list = {
         Component: '@frogbotai/ui/admin/rsc#ListView',
         ...actions,
-        ...(view.components?.NoResults ? { NoResults: view.components.NoResults } : {}),
       };
     }
   }
 
   const list = views.find((view) => view.type === 'list');
   const listComponents = list?.components;
-  const hasViewSwitcher = views.length > 1;
   const components = {
     ...componentSource,
-    ...(hasViewSwitcher ? { Description: '@frogbotai/ui/admin/rsc#CollectionViewSwitcher' } : {}),
     ...(listComponents
       ? {
           afterList: listComponents.afterView,
@@ -232,7 +272,7 @@ export function compileCollectionViews({
     ...adminSource,
     ...(list?.defaultFields ? { defaultColumns: list.defaultFields } : {}),
     ...(list?.defaultSort ? { defaultSort: list.defaultSort } : {}),
-    ...(list?.filter ? { baseFilter: list.filter } : {}),
+    ...(list?.filter ? { baseFilter: () => list.filter } : {}),
     ...(list?.pagination ? { pagination: list.pagination } : {}),
     ...(list?.searchableFields ? { listSearchableFields: list.searchableFields } : {}),
     components,
@@ -240,9 +280,7 @@ export function compileCollectionViews({
       ...adminSource.custom,
       frogbot: {
         ...((adminSource.custom?.frogbot as Record<string, unknown> | undefined) ?? {}),
-        ...(hasViewSwitcher && componentSource.Description
-          ? { descriptionComponent: componentSource.Description }
-          : {}),
+        ...(useAsDone ? { useAsDone } : {}),
         views: metadata,
       },
     },

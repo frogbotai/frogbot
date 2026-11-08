@@ -8,7 +8,7 @@ export {
   type SignInButtonsClientProps,
 } from '../elements/SignInButtons/index.client.js';
 export { StepNavReset, type StepNavResetProps } from '../elements/StepNavReset/index.client.js';
-export { ViewSwitcher, type ViewSwitcherProps } from '../elements/ViewSwitcher/index.client.js';
+export { type ViewTab, ViewTabs, type ViewTabsProps } from '../elements/ViewTabs/index.client.js';
 export { AICell, AIField } from '../fields/AI/index.client.js';
 export { BarcodeCell } from '../fields/Barcode/index.client.js';
 export { ChannelCell, type ChannelCellProps } from '../fields/Channel/index.client.js';

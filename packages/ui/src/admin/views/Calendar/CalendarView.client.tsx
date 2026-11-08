@@ -22,9 +22,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Calendar } from '../../../calendar/Calendar.js';
 import { getFloatingRange, getVisibleRange } from '../../../calendar/core/index.js';
 import { useBrowserTimeZone } from '../../../calendar/useBrowserTimeZone.js';
+import CheckmarkCircleIcon from '../../../icons/icons/CheckmarkCircleIcon.js';
 import { FieldCell } from '../../fields/FieldCell/index.client.js';
 import { appendQuery, getPath, setPath } from '../cells.js';
 import { getViewCardColumns } from '../preferences.js';
+import { getUseAsDone, isRecordDone, recordClassName } from '../records/state.js';
+import { useDrawerSelected } from '../records/useRecordState.js';
 
 type Row = Record<string, unknown> & {
   color?: string;
@@ -65,6 +68,8 @@ function CalendarDocumentEvent({
   row: Row;
 }) {
   const [DocumentDrawer, , drawer] = useDocumentDrawer({ collectionSlug, id: String(row.id) });
+  const selected = useDrawerSelected(drawer.drawerSlug);
+  const done = isRecordDone(row, getUseAsDone(collectionConfig));
   const { i18n } = useTranslation();
   const { config } = useConfig();
   const title = formatDocTitle({
@@ -76,12 +81,19 @@ function CalendarDocumentEvent({
 
   return (
     <>
-      <div onClick={drawer.openDrawer} role="presentation">
+      <div
+        className={recordClassName({ done, selected })}
+        onClick={drawer.openDrawer}
+        role="presentation"
+      >
         {Event ? (
           <Event row={row} />
         ) : (
           <>
-            <div className="collection-calendar__title">{title}</div>
+            <div className="collection-calendar__title">
+              {done ? <CheckmarkCircleIcon className="fb-record__done-icon" size={14} /> : null}{' '}
+              {title}
+            </div>
             {cardColumns.map(({ accessor, field }) => (
               <div className="collection-calendar__field" key={accessor}>
                 <span className="collection-calendar__field-label">

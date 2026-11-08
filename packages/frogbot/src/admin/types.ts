@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import type { CustomComponent } from 'payload';
+import type { CustomComponent, Params, ViewTypes } from 'payload';
 
 import type { Access } from '../collections/config/types.js';
 import type { RootLivePreviewConfig } from '../config/types.js';
 import type { PayloadConfig } from '../types/payload.js';
+import type { FrogBotRequest } from '../types/request.js';
 import type { IconName } from './icons.js';
 import type { DashboardConfig } from './views/types.js';
 
@@ -33,6 +34,26 @@ export interface NavItem {
   /** Full path the link navigates to, e.g. `/admin/operations`. */
   path: string;
 }
+
+/** What a `navItems` function receives: the request and the page being rendered. */
+export interface NavItemsArgs {
+  /** The collection of the page, when it belongs to one. */
+  collectionSlug?: string;
+  /** The document being viewed or edited, when there is one. */
+  docID?: number | string;
+  /** The route params of the admin page, such as `segments`. */
+  params?: Params;
+  /** The request, with `req.frogbot` attached. */
+  req?: FrogBotRequest;
+  /** The kind of admin view, such as `document` or `list`. */
+  viewType?: ViewTypes;
+}
+
+/**
+ * Builds the sidebar links for the page being rendered. Runs on every admin page render, so keep
+ * it fast. Icons it returns must be built-in icon names or component paths already in the import map.
+ */
+export type NavItemsFunction = (args: NavItemsArgs) => NavItem[] | Promise<NavItem[]>;
 
 export interface RootAdminComponents {
   /** Add components to the top right of the admin panel. */
@@ -73,8 +94,9 @@ export interface RootAdminComponents {
   logout?: { Button?: FrogBotComponent };
   /** Replace the entire admin sidebar navigation. */
   Nav?: FrogBotComponent;
-  /** Sidebar links above your collections. Empty by default. */
-  navItems?: NavItem[];
+  /** Sidebar links above your collections, or a function of the page that returns them. Empty
+   *  by default. */
+  navItems?: NavItem[] | NavItemsFunction;
   /** Sidebar sections below the links. Defaults to Collections; setting this
    *  replaces that default. */
   navSections?: FrogBotComponent[];

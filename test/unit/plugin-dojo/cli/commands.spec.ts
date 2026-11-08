@@ -49,7 +49,7 @@ describe('FROGBOT_DOJO_TOKEN', () => {
     expect(result.stderr()).toEqual([
       `[frogbot] Dojo didn't accept FROGBOT_DOJO_TOKEN at ${dojo.url}; it may be revoked. Set a working key, or unset it to sign in with a browser.`,
     ]);
-    expect(dojo.paths()).toEqual(['GET /api/apps/deals']);
+    expect(dojo.paths()).toEqual(['GET /api/apps/deals/cli']);
   });
 
   it('makes whoami and login fail the same way', async () => {
@@ -96,7 +96,7 @@ const destructive: { args: string[]; asked: string; replies?: Record<string, unk
     asked: 'Remove ada@example.com from the workspace?',
     replies: { 'GET /api/members': { docs: [member] } },
   },
-  { args: ['keys', 'revoke', '4'], asked: 'Revoke key 4?' },
+  { args: ['keys', 'revoke', '4'], asked: 'Revoke key 4 and the keys it made?' },
   {
     args: ['sharing', 'leave', 'deals'],
     asked: "Leave deals? You'll need a new invite to get back.",
@@ -319,7 +319,9 @@ describe('--json', () => {
     });
 
     expect(code).toBe(2);
-    expect(result.stderr().join('\n')).toContain('Usage: frogbot dojo apps share [--data');
+    expect(result.stderr().join('\n')).toContain(
+      'Usage: frogbot dojo apps share [--app <slug or id>] [--data',
+    );
     expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({ target: 'dojo', ok: false });
   });
 

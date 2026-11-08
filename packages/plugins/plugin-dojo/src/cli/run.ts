@@ -1,13 +1,11 @@
 import { openAsBlob } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
-import { parseArgs } from 'node:util';
 
 import type { DeployConfig, DeployContext, DeployIO, PreflightIssue } from 'frogbot';
 import { DeployError, loadConfig, processDeployIO, runDeploy } from 'frogbot/internal';
 
 import { dojoTarget } from '../deploy.js';
-import { type AppInfo, appInfo, refusedApp } from './appInfo.js';
 import { nameTaken, toSlug } from './appSlug.js';
 import type { ShareArchive } from './archive.js';
 import { createArchive } from './archive.js';
@@ -23,6 +21,8 @@ import type { EnvKey } from './envKeys.js';
 import { envKeys, readEnvFiles } from './envKeys.js';
 import { ShareError } from './error.js';
 import { shareFiles } from './files.js';
+import type { ShareFlags } from './flags.js';
+import { parseShareArgs } from './flags.js';
 import type { DojoIO } from './io.js';
 import { say } from './io.js';
 import type { LiveKeys } from './keys.js';
@@ -32,73 +32,9 @@ import { linkPath, readLink, writeLink } from './link.js';
 import { whenPaid } from './payment.js';
 import type { SealedKeys, SealingKey } from './seal.js';
 import { sealKeys } from './seal.js';
+import type { AppInfo } from './target.js';
+import { appFromFlag, appInfo, refusedApp } from './target.js';
 import { chooseWorkspace } from './workspaces.js';
-
-const usage = (program: string) =>
-  `Usage: ${/dojo$/.test(program) ? `${program} apps share` : `${program} deploy dojo`} [--data | --no-data | --replace-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys]`;
-
-type ShareFlags = {
-  data?: boolean;
-  replaceData: boolean;
-  workspace?: string;
-  name?: string;
-  keys: boolean;
-  skipKey: string[];
-  yes: boolean;
-  updateKeys: boolean;
-};
-
-function parseShareArgs(argv: string[], program: string): ShareFlags {
-  let parsed;
-
-  try {
-    parsed = parseArgs({
-      args: argv,
-      options: {
-        data: { type: 'boolean' },
-        'replace-data': { type: 'boolean', default: false },
-        workspace: { type: 'string' },
-        name: { type: 'string' },
-        keys: { type: 'boolean', default: true },
-        'skip-key': { type: 'string', multiple: true, default: [] },
-        yes: { type: 'boolean', default: false },
-        'update-keys': { type: 'boolean', default: false },
-      },
-      allowNegative: true,
-      strict: true,
-      tokens: true,
-    });
-  } catch (error) {
-    throw new ShareError(`${(error as Error).message} ${usage(program)}`, 2);
-  }
-
-  const dataFlags = new Set(
-    parsed.tokens.flatMap((token) =>
-      token.kind === 'option' && token.name === 'data' ? [token.rawName] : [],
-    ),
-  );
-
-  if (dataFlags.size > 1) {
-    throw new ShareError(`Use --data or --no-data, not both. ${usage(program)}`, 2);
-  }
-
-  const { values } = parsed;
-
-  if (values['replace-data'] && values.data === false) {
-    throw new ShareError(`Use --replace-data or --no-data, not both. ${usage(program)}`, 2);
-  }
-
-  return {
-    data: values.data,
-    replaceData: values['replace-data'],
-    workspace: values.workspace,
-    name: values.name,
-    keys: values.keys,
-    skipKey: values['skip-key'],
-    yes: values.yes,
-    updateKeys: values['update-keys'],
-  };
-}
 
 /** Runs `frogbot share`, the same as `frogbot deploy dojo`, and returns its exit code. */
 export async function runShare(argv: string[], io: DeployIO): Promise<number> {
@@ -150,18 +86,26 @@ export async function shareToDojo(context: DeployContext): Promise<Record<string
 async function share(context: DeployContext): Promise<Record<string, unknown>> {
   const { root, config, io } = context;
   const flags = parseShareArgs(context.args, io.program);
-  const link = await readLink(root);
+  const folderLink = await readLink(root);
   const fileEnv = readEnvFiles(root);
   const allKeys = envKeys(fileEnv);
 
   if (context.flags.dryRun) {
-    return dryRun({ context, flags, link, keys: allKeys, databaseUrl: fileEnv.DATABASE_URL });
+    return dryRun({
+      context,
+      flags,
+      link: folderLink,
+      keys: allKeys,
+      databaseUrl: fileEnv.DATABASE_URL,
+    });
   }
 
   const dojo = createDojo(io);
-  const { started, level, slug }: AppInfo = link
-    ? await appInfo(dojo, link.appId)
-    : { started: false, level: 'owner' };
+  const target = flags.app ? await appFromFlag({ dojo, ref: flags.app, folderLink }) : undefined;
+
+  const link = target?.link ?? folderLink;
+  const { started, level, slug }: AppInfo =
+    target ?? (link ? await appInfo(dojo, link.appId) : { started: false, level: 'owner' });
 
   const editor = level === 'editor';
 
@@ -240,6 +184,8 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
       data: replacing ? 'replace' : started ? undefined : Boolean(data),
     });
 
+    if (target && !folderLink) await writeLink(root, target.link);
+
     const build = await followBuild({
       dojo,
       deploymentId,
@@ -298,7 +244,7 @@ async function dryRun({
     if (inventory && inventory !== 'unsupported') await inventory.dispose();
 
     context.log(
-      `[dry-run] ${link ? `Update the app in ${linkPath} (${link.appId})` : 'Create a new app on Dojo'}`,
+      `[dry-run] ${flags.app !== undefined ? `Update the app ${flags.app} and link it in ${linkPath}` : link ? `Update the app in ${linkPath} (${link.appId})` : 'Create a new app on Dojo'}`,
     );
 
     context.log(`[dry-run] ${archive.summary.replace(/^Uploading/, 'Upload')}`);

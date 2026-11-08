@@ -4,6 +4,7 @@ import './styles.css';
 
 import {
   Button,
+  Checkbox,
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -29,15 +30,41 @@ export type ApiKeysManagerProps = {
   createFields?: ReactNode[];
 };
 
+const quickExpiries = [
+  { label: '30 days', days: 30, years: 0 },
+  { label: '90 days', days: 90, years: 0 },
+  { label: '1 year', days: 0, years: 1 },
+];
+
+const pad = (value: number) => String(value).padStart(2, '0');
+
+function dayFromToday(days: number, years: number): string {
+  const now = new Date();
+  const day = new Date(now.getFullYear() + years, now.getMonth(), now.getDate() + days);
+
+  if (years && day.getMonth() !== now.getMonth()) day.setDate(0);
+
+  return `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
+}
+
+function expiryFromDay(day: string): string {
+  const [year, month, date] = day.split('-').map(Number);
+
+  return new Date(year, month - 1, date + 1).toISOString();
+}
+
 export function ApiKeysManager(props: ApiKeysManagerProps) {
   const { config } = useConfig();
   const listQuery = useListQuery();
   const collectionSlug = props.collectionSlug ?? listQuery.collectionSlug;
   const { clearRouteCache } = useRouteCache();
   const nameId = useId();
+  const expiresId = useId();
+  const expiresHintId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
+  const [expiresDay, setExpiresDay] = useState('');
   const [data, setData] = useState<Record<string, unknown>>({});
   const [token, setToken] = useState<string>();
   const [error, setError] = useState<string>();
@@ -48,6 +75,7 @@ export function ApiKeysManager(props: ApiKeysManagerProps) {
   function changeOpen(next: boolean) {
     if (next) {
       setName('');
+      setExpiresDay('');
       setData({});
       setToken(undefined);
       setError(undefined);
@@ -69,7 +97,11 @@ export function ApiKeysManager(props: ApiKeysManagerProps) {
     const response = await fetch(`${config.routes.api}/${collectionSlug}/mint`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(Object.keys(data).length > 0 ? { name, data } : { name }),
+      body: JSON.stringify({
+        name,
+        ...(Object.keys(data).length > 0 && { data }),
+        ...(expiresDay && { expiresAt: expiryFromDay(expiresDay) }),
+      }),
     });
 
     const result = (await response.json()) as { error?: string; token?: string };
@@ -188,6 +220,48 @@ export function ApiKeysManager(props: ApiKeysManagerProps) {
                 }}
               />
             </div>
+            <div className="api-keys-dialog__field">
+              <Label htmlFor={expiresId}>Expires</Label>
+              <div className="api-keys-dialog__expiry">
+                <Input
+                  aria-describedby={expiresHintId}
+                  className="api-keys-dialog__expiry-day"
+                  id={expiresId}
+                  max="9999-12-30"
+                  min={dayFromToday(0, 0)}
+                  readOnly={loading}
+                  type="date"
+                  value={expiresDay}
+                  onChange={(event) => setExpiresDay(event.target.value)}
+                />
+                <div className="api-keys-dialog__expiry-quick">
+                  {quickExpiries.map(({ label, days, years }) => (
+                    <Button
+                      disabled={loading}
+                      key={label}
+                      onClick={() => setExpiresDay(dayFromToday(days, years))}
+                      size="sm"
+                      type="button"
+                      variant="secondary"
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                  <Button
+                    disabled={loading}
+                    onClick={() => setExpiresDay('')}
+                    size="sm"
+                    type="button"
+                    variant="secondary"
+                  >
+                    No expiry
+                  </Button>
+                </div>
+              </div>
+              <p className="api-keys-dialog__hint" id={expiresHintId}>
+                The key works through this day. Leave it empty and the key never expires.
+              </p>
+            </div>
             {props.createFields?.length ? (
               <Collapsible className="api-keys-dialog__limits">
                 <CollapsibleTrigger className="api-keys-dialog__limits-trigger">
@@ -222,6 +296,12 @@ export function ApiKeysManager(props: ApiKeysManagerProps) {
   );
 }
 
+function madeLabel(count: number | null | undefined) {
+  if (typeof count !== 'number') return 'Also revoke the keys it made';
+
+  return count === 1 ? 'Also revoke the key it made' : `Also revoke the ${count} keys it made`;
+}
+
 export function RevokeApiKey({
   rowData,
 }: {
@@ -230,22 +310,53 @@ export function RevokeApiKey({
   const { config } = useConfig();
   const { collectionSlug } = useListQuery();
   const { clearRouteCache } = useRouteCache();
+  const cascadeId = useId();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [revoked, setRevoked] = useState(false);
   const [error, setError] = useState<string>();
+  const [made, setMade] = useState<number | null>();
+  const [cascade, setCascade] = useState(true);
+
+  async function countMade() {
+    try {
+      const response = await fetch(
+        `${config.routes.api}/${collectionSlug}/${rowData.id}/minted-count`,
+      );
+
+      const result = (await response.json()) as { count?: unknown };
+
+      setMade(response.ok && typeof result.count === 'number' ? result.count : null);
+    } catch {
+      setMade(null);
+    }
+  }
 
   function changeOpen(next: boolean) {
-    if (next) setError(undefined);
+    if (next) {
+      setError(undefined);
+      setMade(undefined);
+      setCascade(true);
+      void countMade();
+    }
 
     setOpen(next);
   }
 
+  const counting = made === undefined;
+  const asksCascade = !counting && made !== 0;
+
   async function revoke() {
+    if (counting) return;
+
     setLoading(true);
     setError(undefined);
     const response = await fetch(`${config.routes.api}/${collectionSlug}/${rowData.id}/revoke`, {
       method: 'POST',
+      ...(asksCascade && {
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ cascade }),
+      }),
     });
 
     setLoading(false);
@@ -276,6 +387,17 @@ export function RevokeApiKey({
           This will immediately disable {rowData.name ?? 'this key'}. Any scripts or tools using
           this key will stop working. This cannot be undone.
         </DialogDescription>
+        {asksCascade ? (
+          <div className="api-keys-dialog__cascade">
+            <Checkbox
+              checked={cascade}
+              disabled={loading}
+              id={cascadeId}
+              onCheckedChange={(checked) => setCascade(checked === true)}
+            />
+            <Label htmlFor={cascadeId}>{madeLabel(made)}</Label>
+          </div>
+        ) : null}
         {error ? (
           <p className="api-keys-dialog__error" role="alert">
             {error}
@@ -285,7 +407,7 @@ export function RevokeApiKey({
           <Button variant="secondary" onClick={() => changeOpen(false)} type="button">
             Cancel
           </Button>
-          <Button disabled={loading} onClick={revoke} type="button">
+          <Button disabled={loading || counting} onClick={revoke} type="button">
             {loading ? 'Revoking…' : 'Revoke key'}
           </Button>
         </DialogFooter>

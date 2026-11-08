@@ -5,6 +5,7 @@ export const Tasks: CollectionConfig = {
   admin: {
     icon: 'check-list',
     useAsTitle: 'title',
+    useAsDone: 'completed',
     views: [
       {
         type: 'list',

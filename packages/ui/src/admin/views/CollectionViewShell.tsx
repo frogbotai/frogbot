@@ -1,92 +1,95 @@
-import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
-import type { AdminViewServerProps, Column, ListQuery, PayloadComponent } from 'payload';
-import { formatAdminURL } from 'payload/shared';
+import type { AdminViewServerProps, Column, ListQuery, Where } from 'payload';
 import type { ReactNode } from 'react';
 
+import {
+  getActiveViewSlug,
+  getRuntimeViews,
+  redirectToLastView,
+  type RuntimeCollectionView,
+} from './collectionViews.js';
 import { CollectionViewShellClient } from './CollectionViewShell.client.js';
+import { buildFrameSlots } from './frame.js';
+import { isQueryError, type StoredViewPreference } from './viewSetup.js';
 
 type CollectionViewShellProps = AdminViewServerProps & {
   children: ReactNode;
   columnState?: Column[];
   enableSort?: boolean;
+  keepViewWhenEmpty?: boolean;
   manualSortField?: string;
+  preference?: StoredViewPreference;
+  preferenceKey?: string;
   query?: ListQuery;
-  viewComponents?: Record<string, PayloadComponent | PayloadComponent[]>;
+  showEmptyState?: boolean;
+  view: RuntimeCollectionView;
   views: Array<{ label: string; path: string; slug: string; type: string }>;
-  viewSlug: string;
 };
 
-export function CollectionViewShell(props: CollectionViewShellProps) {
-  const {
-    children,
-    clientConfig,
-    collectionConfig,
-    collectionSlug,
-    importMap,
-    initPageResult,
-    viewComponents,
-  } = props;
+/** Board, calendar and custom views in the shared frame, with Payload's list query around them. */
+export async function CollectionViewShell(props: CollectionViewShellProps) {
+  const { children, clientConfig, collectionConfig, collectionSlug, importMap, initPageResult } =
+    props;
 
   if (!collectionConfig || !collectionSlug) return null;
 
+  const { req } = initPageResult;
+  const query = props.query ?? req.query ?? {};
+  const view = props.view;
+
+  if (getActiveViewSlug(props) === undefined) {
+    await redirectToLastView({ collectionSlug, req, server: props.server, views: props.views });
+  }
+
   const permissions = initPageResult.permissions.collections?.[collectionSlug];
-  const clientProps = {
-    collectionSlug,
+  const where = [view.filter, query.where].filter((value): value is Where => Boolean(value));
+
+  const totalDocs =
+    props.showEmptyState === false
+      ? 1
+      : await req.payload
+          .count({
+            collection: collectionSlug,
+            overrideAccess: false,
+            req,
+            ...(where.length ? { where: where.length === 1 ? where[0] : { and: where } } : {}),
+          })
+          .then(
+            (result) => result.totalDocs,
+            (error: unknown) => {
+              if (isQueryError(error)) return 0;
+              throw error;
+            },
+          );
+
+  const slots = buildFrameSlots({
+    activeSlug: view.slug,
+    adminRoute: clientConfig.routes.admin,
+    collectionConfig,
     hasCreatePermission: Boolean(permissions?.create),
     hasDeletePermission: Boolean(permissions?.delete),
-    newDocumentURL: formatAdminURL({
-      adminRoute: clientConfig.routes.admin,
-      path: `/collections/${collectionSlug}/create`,
-    }),
-  };
-
-  const render = (Component?: PayloadComponent | PayloadComponent[]) =>
-    Component
-      ? RenderServerComponent({ Component, clientProps, importMap, serverProps: props })
-      : undefined;
-
-  const components = collectionConfig.admin.components;
-  const CreateButton = (components as { CreateButton?: PayloadComponent } | undefined)
-    ?.CreateButton;
-
-  const listMenuItems = viewComponents?.menuItems ? [render(viewComponents.menuItems)] : undefined;
-  const toolbar = [
-    ...(viewComponents?.toolbar ? [render(viewComponents.toolbar)] : []),
-    ...(CreateButton
-      ? [
-          <div className="fb-create-button" key="create-button">
-            {RenderServerComponent({
-              clientProps: {
-                collectionSlug,
-                hasCreatePermission: clientProps.hasCreatePermission,
-                newDocumentURL: clientProps.newDocumentURL,
-              },
-              Component: CreateButton,
-              importMap,
-              serverProps: props,
-            })}
-          </div>,
-        ]
-      : []),
-  ];
+    i18n: req.i18n,
+    importMap,
+    runtime: getRuntimeViews(props),
+    serverProps: props,
+    view,
+    views: props.views,
+  });
 
   return (
     <CollectionViewShellClient
-      AfterList={render(viewComponents?.afterView)}
-      AfterListTable={render(viewComponents?.afterColumns ?? viewComponents?.afterCalendar)}
-      BeforeList={render(viewComponents?.beforeView)}
-      BeforeListTable={render(viewComponents?.beforeColumns ?? viewComponents?.beforeCalendar)}
+      {...slots}
       collectionSlug={collectionSlug}
       columnState={props.columnState}
-      Description={render(components?.Description)}
-      hasCreatePermission={clientProps.hasCreatePermission}
-      hasDeletePermission={clientProps.hasDeletePermission}
-      listMenuItems={listMenuItems}
-      newDocumentURL={clientProps.newDocumentURL}
       enableSort={props.enableSort}
+      hasCreatePermission={Boolean(permissions?.create)}
+      hasDeletePermission={Boolean(permissions?.delete)}
+      isEmpty={totalDocs === 0}
+      keepViewWhenEmpty={props.keepViewWhenEmpty}
       manualSortField={props.manualSortField}
-      query={props.query ?? initPageResult.req.query ?? {}}
-      Toolbar={toolbar.length ? toolbar : undefined}
+      preference={props.preference}
+      preferenceKey={props.preferenceKey}
+      query={query}
+      type={view.type}
     >
       {children}
     </CollectionViewShellClient>

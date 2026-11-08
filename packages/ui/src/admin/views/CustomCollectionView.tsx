@@ -22,12 +22,7 @@ export async function CustomCollectionView(input: AdminViewServerProps) {
   if (view.shell === false) return content;
 
   return (
-    <CollectionViewShell
-      {...props}
-      viewComponents={view.components}
-      views={views}
-      viewSlug={view.slug}
-    >
+    <CollectionViewShell {...props} view={view} views={views}>
       {content}
     </CollectionViewShell>
   );

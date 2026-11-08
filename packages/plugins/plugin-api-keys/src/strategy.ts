@@ -4,6 +4,21 @@ import { extractApiKeyToken, hashApiKeyToken } from './server/token.js';
 
 export const apiKeyStrategyName = 'api-key';
 
+/** The time an `expiresAt` value names, or `null` when it names none. */
+export function expiryTime(value: unknown): number | null {
+  const time =
+    value instanceof Date ? value.getTime() : typeof value === 'string' ? Date.parse(value) : NaN;
+
+  return Number.isNaN(time) ? null : time;
+}
+
+/** True when the key has an `expiresAt` that has passed. */
+export function isExpiredKey(key: Record<string, unknown>): boolean {
+  const time = expiryTime(key.expiresAt);
+
+  return time !== null && time <= Date.now();
+}
+
 const apiKeyStrategies = new WeakSet<AuthStrategy>();
 
 type StrategyOptions = {
@@ -40,7 +55,8 @@ export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
       if (
         !key ||
         (typeof key.id !== 'string' && typeof key.id !== 'number') ||
-        (typeof key.owner !== 'string' && typeof key.owner !== 'number')
+        (typeof key.owner !== 'string' && typeof key.owner !== 'number') ||
+        isExpiredKey(key)
       ) {
         return { user: null };
       }
