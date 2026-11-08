@@ -75,6 +75,12 @@ describe('list summary', () => {
     });
   });
 
+  it('sends the content locale when there is one', () => {
+    expect(
+      buildSummaryRequest({ locale: 'fr', paths: ['name'], summary: { name: 'count' }, where: {} }),
+    ).toEqual({ draft: true, locale: 'fr', values: { name: { count: true } } });
+  });
+
   it('sends no request when no visible column has a total, and no empty where', () => {
     expect(buildSummaryRequest({ paths: ['name'], summary: {}, where: undefined })).toBeUndefined();
 

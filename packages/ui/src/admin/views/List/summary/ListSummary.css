@@ -1,8 +1,17 @@
 @layer frogbot {
-  .table tfoot.fb-list-summary td {
+  .table tfoot.fb-list-summary :is(td, th) {
     border-top: 1px solid var(--color-border);
     color: var(--color-text-secondary);
     padding-block: var(--spacer-1);
+  }
+
+  .fb-list-summary__row-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .fb-list-summary__button {

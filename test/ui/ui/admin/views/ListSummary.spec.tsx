@@ -36,6 +36,7 @@ vi.mock('@payloadcms/ui', () => {
       ),
       ButtonGroup: Pass,
     },
+    useLocale: () => ({ code: 'en' }),
     useConfig: () => ({ config: { admin: { dateFormat: 'yyyy-MM-dd' }, routes: { api: '/api' } } }),
     useTableColumns: () => ({
       columns: [
@@ -170,10 +171,12 @@ describe('ListSummary', () => {
 
     await settle(calls[0], totals({ name: 3, amount: 1250 }));
 
-    const cells = container.querySelectorAll('table > tfoot > tr > td');
+    const cells = container.querySelectorAll('table > tfoot > tr > :is(td, th)');
 
     expect(cells).toHaveLength(5);
-    expect(cells[0].textContent).toBe('');
+    expect(cells[0].tagName).toBe('TH');
+    expect(cells[0].getAttribute('scope')).toBe('row');
+    expect(cells[0].textContent).toBe('Summary');
     expect(within(cells[1] as HTMLElement).getByRole('button').textContent).toBe('Count3');
     expect(within(cells[2] as HTMLElement).getByRole('button').textContent).toBe('Sum1,250');
     expect(cells[3].querySelector('button')).toBeNull();

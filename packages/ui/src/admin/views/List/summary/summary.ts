@@ -59,16 +59,20 @@ export function resolveSummary({
 
 export type SummaryRequest = {
   draft: true;
+  locale?: string;
   values: Record<string, { count: true } | Partial<Record<SummaryOperation, string>>>;
   where?: Where;
 };
 
 /** One aggregate body for every visible column with a total, or `undefined` when none has one. */
 export function buildSummaryRequest({
+  locale,
   paths,
   summary,
   where,
 }: {
+  /** The admin's content locale, so localized fields total in the language the list shows. */
+  locale?: string;
   paths: string[];
   summary: Record<string, SummaryOperation>;
   where: undefined | Where;
@@ -87,6 +91,7 @@ export function buildSummaryRequest({
 
   return {
     draft: true,
+    ...(locale ? { locale } : {}),
     values,
     ...(hasWhere ? { where } : {}),
   };

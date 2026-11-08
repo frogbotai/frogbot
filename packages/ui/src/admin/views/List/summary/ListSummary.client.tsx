@@ -3,7 +3,14 @@
 import './ListSummary.css';
 
 import { getTranslation } from '@payloadcms/translations';
-import { Popup, PopupList, useConfig, useTableColumns, useTranslation } from '@payloadcms/ui';
+import {
+  Popup,
+  PopupList,
+  useConfig,
+  useLocale,
+  useTableColumns,
+  useTranslation,
+} from '@payloadcms/ui';
 import type { SummaryOperation } from 'frogbot';
 import type { ClientField, Where } from 'payload';
 import { formatAdminURL } from 'payload/shared';
@@ -107,6 +114,7 @@ export function ListSummary({
   const { i18n } = useTranslation();
   const { columns: tableColumns } = useTableColumns();
   const target = useTableTarget(containerRef);
+  const locale = useLocale();
   const savedKey = JSON.stringify(saved);
   const [choices, setChoices] = useState(saved);
 
@@ -122,6 +130,7 @@ export function ListSummary({
     api: config.routes.api,
     body: buildSummaryRequest({
       paths: accessors.filter((path) => columns[path]),
+      locale: config.localization ? locale?.code : undefined,
       summary,
       where,
     }),
@@ -160,10 +169,18 @@ export function ListSummary({
 
   return createPortal(
     <tfoot className={baseClass}>
-      <tr aria-label="Summary">
+      <tr>
         {accessors.map((accessor, index) => {
           const column = columns[accessor];
           const field = fields.get(accessor);
+
+          if (!column && index === 0) {
+            return (
+              <th className={`${baseClass}__cell`} key={accessor || index} scope="row">
+                <span className={`${baseClass}__row-label`}>Summary</span>
+              </th>
+            );
+          }
 
           if (!column) return <td className={`${baseClass}__cell`} key={accessor || index} />;
 
