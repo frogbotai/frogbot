@@ -216,7 +216,6 @@ export interface Company {
   employees?: number | null;
   owner?: (number | null) | User;
   notes?: LexicalRichText<LexicalNodes_5D433703> | null;
-  _order_board?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -428,7 +427,6 @@ export interface Deal {
   closeDate?: string | null;
   owner?: (number | null) | User;
   notes?: LexicalRichText<LexicalNodes_5D433703> | null;
-  _order_board?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -482,7 +480,6 @@ export interface Task {
   deal?: (number | null) | Deal;
   contact?: (number | null) | Contact;
   notes?: string | null;
-  _order_board?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -679,7 +676,6 @@ export interface CompaniesSelect {
   employees?: boolean;
   owner?: boolean;
   notes?: boolean;
-  _order_board?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
@@ -716,7 +712,6 @@ export interface DealsSelect {
   closeDate?: boolean;
   owner?: boolean;
   notes?: boolean;
-  _order_board?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
@@ -756,7 +751,6 @@ export interface TasksSelect {
   deal?: boolean;
   contact?: boolean;
   notes?: boolean;
-  _order_board?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
