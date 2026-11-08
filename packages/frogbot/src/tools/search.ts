@@ -5,7 +5,7 @@ import { describeSearchIndex, SearchValidationError } from '../search/errors.js'
 import type { SearchOptions, SearchQuery } from '../search/types.js';
 import type { CollectionSlug } from '../types/generated.js';
 import { isRecord } from '../utilities/isRecord.js';
-import type { Tool } from './types.js';
+import type { Tool, ToolCtx, ToolSource } from './types.js';
 
 export type SearchToolOptions<T extends CollectionSlug = CollectionSlug> = {
   collection: T;
@@ -81,10 +81,50 @@ function checkOptions(options: unknown): asserts options is SearchToolOptions {
   }
 }
 
+function isTitle(value: unknown): value is number | string {
+  return isText(value) || (typeof value === 'number' && Number.isFinite(value));
+}
+
+async function hitSources(
+  collection: CollectionSlug,
+  hits: readonly SearchToolHit[],
+  ctx: ToolCtx,
+): Promise<ToolSource[]> {
+  if (hits.length === 0) return [];
+
+  const field = ctx.req.frogbot.collections[collection]?.useAsTitle ?? 'id';
+
+  const { docs } = await ctx.req.frogbot.find({
+    collection,
+    where: { id: { in: hits.map(({ id }) => id) } },
+    select: { [field]: true },
+    depth: 0,
+    limit: hits.length,
+    pagination: false,
+    req: ctx.req,
+    overrideAccess: ctx.overrideAccess,
+  });
+
+  const readable = new Map(
+    (docs as Record<string, unknown>[]).map((doc) => [String(doc.id), doc[field]]),
+  );
+
+  return hits.flatMap((hit) => {
+    if (!readable.has(String(hit.id))) return [];
+
+    const title = [field === 'id' ? hit.id : hit[field], readable.get(String(hit.id))].find(
+      isTitle,
+    );
+
+    return [{ collection, id: hit.id, title: String(title ?? hit.id) }];
+  });
+}
+
 /**
  * A tool that searches one index of one collection. The model sends `{ query }`; it gets back
  * `{ hits }`, each the hit's `id`, `score` and `select`ed fields. Search and the query embedding
- * run as the run's user, unless the run is trusted (`overrideAccess`).
+ * run as the run's user, unless the run is trusted (`overrideAccess`). Each hit shows as a source
+ * under the answer, titled by the collection's `admin.useAsTitle`.
  */
 export function searchTool<T extends CollectionSlug>(
   options: SearchToolOptions<T>,
@@ -146,5 +186,7 @@ export function searchTool<T extends CollectionSlug>(
         hits: result.hits.map(({ doc, score }) => ({ ...doc, id: doc.id, score })),
       };
     },
+    sources: (result, ctx) =>
+      Array.isArray(result?.hits) ? hitSources(collection, result.hits, ctx) : [],
   };
 }
