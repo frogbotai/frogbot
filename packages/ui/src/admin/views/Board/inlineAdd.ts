@@ -1,4 +1,9 @@
-import type { Field, SanitizedCollectionConfig, SanitizedCollectionPermission } from 'payload';
+import type {
+  Field,
+  SanitizedCollectionConfig,
+  SanitizedCollectionPermission,
+  SanitizedFieldsPermissions,
+} from 'payload';
 import {
   fieldAffectsData,
   fieldHasSubFields,
@@ -6,6 +11,8 @@ import {
   flattenTopLevelFields,
   tabHasName,
 } from 'payload/shared';
+
+import { resolveBoardField } from './resolveColumns.js';
 
 /** How a board's "+ Add" creates a card: inline by title, or through the prefilled create form. */
 export type BoardInlineAdd = {
@@ -43,15 +50,16 @@ function hasBlockingField(fields: Field[], skip: Set<string>, prefix = ''): bool
   });
 }
 
-function findField(fields: Field[], path: string): Field | undefined {
-  const [name, ...rest] = path.split('.');
-  const field = (flattenTopLevelFields(fields) as Field[]).find(
-    (candidate) => fieldAffectsData(candidate) && candidate.name === name,
-  );
+function canCreate(fields: SanitizedFieldsPermissions | undefined, path: string[]): boolean {
+  if (fields === undefined || fields === true) return true;
 
-  if (!field || rest.length === 0) return field;
+  const [name, ...rest] = path;
+  const permission = fields[name];
 
-  return fieldHasSubFields(field) ? findField(field.fields, rest.join('.')) : undefined;
+  if (permission === true) return true;
+  if (!permission?.create) return false;
+
+  return rest.length === 0 || canCreate(permission.fields, rest);
 }
 
 /**
@@ -68,7 +76,7 @@ export function getInlineAdd({
   groupBy: string;
   permissions?: SanitizedCollectionPermission;
 }): BoardInlineAdd {
-  const groupField = findField(collectionConfig.fields, groupBy);
+  const groupField = resolveBoardField(collectionConfig.fields, groupBy);
   const groupRequired = Boolean(
     groupField && 'required' in groupField && groupField.required === true,
   );
@@ -80,15 +88,13 @@ export function getInlineAdd({
     (field) => fieldAffectsData(field) && field.name === useAsTitle,
   );
 
-  const fields = permissions?.fields;
-  const titlePermission = fields === undefined || fields === true ? true : fields[useAsTitle];
-  const canCreateTitle = titlePermission === true || Boolean(titlePermission?.create);
   const local = Boolean(collectionConfig.auth) && !collectionConfig.auth.disableLocalStrategy;
 
   const inline =
     (title?.type === 'text' || title?.type === 'textarea') &&
     !fieldIsVirtual(title) &&
-    canCreateTitle &&
+    canCreate(permissions?.fields, [useAsTitle]) &&
+    canCreate(permissions?.fields, groupBy.split('.')) &&
     !collectionConfig.upload &&
     !local &&
     !hasBlockingField(collectionConfig.fields, new Set([useAsTitle, groupBy]));

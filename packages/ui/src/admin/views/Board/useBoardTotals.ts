@@ -29,6 +29,7 @@ export function useBoardTotals({
     const response = await fetch(`${api}/${collectionSlug}/aggregate`, {
       body: JSON.stringify({
         depth: 0,
+        draft: true,
         groupBy,
         values: { count: { count: true } },
         ...(whereRef.current ? { where: whereRef.current } : {}),
@@ -38,10 +39,11 @@ export function useBoardTotals({
       method: 'POST',
     });
 
-    if (!response.ok) return;
-    const result = (await response.json()) as { groups: BoardTotalsGroup[] };
+    const result = response.ok
+      ? ((await response.json()) as { groups: BoardTotalsGroup[] })
+      : undefined;
 
-    if (request === latest.current) setTotals(toColumnTotals(result.groups, groupBy));
+    if (request === latest.current) setTotals(result && toColumnTotals(result.groups, groupBy));
   }, [api, collectionSlug, groupBy]);
 
   const adjust = useCallback((key: string, delta: number) => {

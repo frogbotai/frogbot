@@ -100,6 +100,7 @@ export async function BoardView(input: AdminViewServerProps) {
     orderField,
     preferenceSort,
     querySort,
+    viewSlug: board.slug,
   });
 
   const groupBy = getBoardGroupBy(selectedGroupBy);

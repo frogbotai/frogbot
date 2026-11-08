@@ -48,11 +48,14 @@ export function resolveBoardSort({
   orderField,
   preferenceSort,
   querySort,
+  viewSlug,
 }: {
   defaultSort?: string | string[];
   orderField?: string;
   preferenceSort?: string;
   querySort?: string | string[];
+  /** Sorts saved on this view's old `_order_<view>` field read as `orderField`. */
+  viewSlug?: string;
 }): string | undefined {
   const sort =
     [querySort, preferenceSort, defaultSort].find((value) =>
@@ -61,7 +64,13 @@ export function resolveBoardSort({
 
   const joined = Array.isArray(sort) ? sort.join(',') : sort;
 
-  return orderField ? joined?.replace(/(^|,)(-?)_order_\w+/g, `$1$2${orderField}`) : joined;
+  if (!orderField || !viewSlug || !joined) return joined;
+
+  const legacy = `_order_${viewSlug.replaceAll('-', '_')}`;
+
+  return serializeSort(
+    parseSort(joined).map((row) => (row.field === legacy ? { ...row, field: orderField } : row)),
+  );
 }
 
 export function buildBoardReorderBody({
