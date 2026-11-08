@@ -39,6 +39,7 @@ const oldTokenPattern = new RegExp(
 const pageSelector = ':where(html:not([data-fb-ui-page]))';
 const payloadTokensPath = join(root, 'packages/ui/src/payload-tokens.css');
 const brandColorsPath = join(root, 'packages/ui/src/brand-colors.css');
+const brandToken = /brand|border-selected/;
 
 const removedTokenPattern = new RegExp(
   [
@@ -310,7 +311,7 @@ describe('FrogBot theme tokens', () => {
         [...readDeclaredNames(file)]
           .filter(colorName)
           .filter(
-            (name) => file !== brandColorsPath || !/brand/.test(name) || !adminNames.has(name),
+            (name) => file !== brandColorsPath || !brandToken.test(name) || !adminNames.has(name),
           )
           .map((name) => `${relative(root, file)}: ${name}`),
       );
@@ -333,9 +334,9 @@ describe('FrogBot theme tokens', () => {
       [...(dark?.declarations.keys() ?? [])].sort(),
     );
     expect(dark?.declarations.get('--color-text-brand')).toBe('#67c285');
-    expect([...readDeclaredNames(brandColorsPath)].filter((name) => !/brand/.test(name))).toEqual(
-      [],
-    );
+    expect(
+      [...readDeclaredNames(brandColorsPath)].filter((name) => !brandToken.test(name)),
+    ).toEqual([]);
   });
 
   it('draws selected borders, such as a checked checkbox, in the brand color, light and dark', () => {
