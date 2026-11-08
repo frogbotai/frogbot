@@ -1,5 +1,7 @@
 import MarkdownIt from 'markdown-it';
 
+import { copyWithTextarea } from '../lib/copy-text.js';
+
 const markdown = new MarkdownIt({
   html: true,
   linkify: true,
@@ -16,17 +18,6 @@ const markdownPatterns = [
   /```[\s\S]*?```/,
   /\[([^\]]+)]\(([^)]+)\)/,
 ];
-
-function copyWithTextarea(text: string) {
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  document.body.appendChild(textarea);
-  textarea.select();
-  const copied = document.execCommand('copy');
-  textarea.remove();
-
-  return copied;
-}
 
 export async function copyMarkdown(text: string): Promise<boolean> {
   try {
