@@ -404,6 +404,7 @@ const testProjects = [
     name: 'dojo',
     testMatch: [
       'chatGutter.browser.spec.ts',
+      'chatPageScroll.browser.spec.ts',
       'chatPin.browser.spec.ts',
       'chatScrubber.browser.spec.ts',
       'chatSend.browser.spec.ts',
