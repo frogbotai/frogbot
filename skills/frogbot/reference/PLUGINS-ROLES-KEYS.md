@@ -65,7 +65,7 @@ apiKeysPlugin({
 | `tokenPrefix`    | `fb`            |
 | `headerNames`    | `['x-api-key']` |
 
-`collection` supplies collection overrides. `canRevokeAnyKey(req)` may authorize revoking or rotating another owner's key.
+`collection` supplies collection overrides. `canRevokeAnyKey(req)` may authorize revoking or rotating another owner's key. It widens only a signed-in session's reach. A request made with a key still reaches only that key and the keys it minted.
 
 Authenticate with `Authorization: Bearer <token>` or an accepted API-key header. A successful request authenticates as the owning user. Plaintext is returned only when a key is minted or rotated; storage contains a SHA-256 hash and display prefix. Unknown, malformed, or revoked keys do not authenticate.
 

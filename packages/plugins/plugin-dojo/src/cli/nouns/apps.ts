@@ -7,7 +7,7 @@ import { whenPaid } from '../payment.js';
 import { findWorkspace } from '../workspaces.js';
 import { appAddress, findApp, whereEquals } from './resolve.js';
 
-type Project = {
+type App = {
   id: string | number;
   name: string;
   slug: string;
@@ -18,7 +18,7 @@ type Project = {
 
 const ownerNeeded = 'owner access to the app';
 
-const shown = ({ id, name, slug, workspace, domain, startedAt }: Project) => ({
+const shown = ({ id, name, slug, workspace, domain, startedAt }: App) => ({
   id,
   name,
   slug,
@@ -79,11 +79,9 @@ export const apps: Noun = {
         const workspace = slug ? await findWorkspace({ dojo: dojo(), io, slug }) : undefined;
         const filter = workspace ? `&${whereEquals('workspace', workspace.id)}` : '';
 
-        const docs = await dojoList<Project>(
-          dojo(),
-          `/api/projects?depth=0&limit=100&sort=name${filter}`,
-          { what: "Couldn't list your apps" },
-        );
+        const docs = await dojoList<App>(dojo(), `/api/apps?depth=0&limit=100&sort=name${filter}`, {
+          what: "Couldn't list your apps",
+        });
 
         const listed = docs.map(shown);
 
@@ -120,7 +118,7 @@ export const apps: Noun = {
         const workspace = await findWorkspace({ dojo: dojo(), io, slug });
 
         const created = await whenPaid(dojo(), io, () =>
-          dojo().request('/api/projects?depth=0', () => ({
+          dojo().request('/api/apps?depth=0', () => ({
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ name, slug: appSlug, workspace: workspace.id }),
@@ -137,7 +135,7 @@ export const apps: Noun = {
           throw new ShareError(`Dojo couldn't create the app: ${message}`);
         }
 
-        const { doc } = (await created.json()) as { doc: Project };
+        const { doc } = (await created.json()) as { doc: App };
 
         done(io, shown(doc), [`[frogbot] Created ${doc.slug} in ${workspace.name}.`]);
       },
@@ -148,9 +146,9 @@ export const apps: Noun = {
       run: async ({ io, dojo, positionals: [ref = '', name = ''] }) => {
         const app = await findApp(dojo(), ref);
 
-        const { doc } = await dojoJSON<{ doc: Project }>(
+        const { doc } = await dojoJSON<{ doc: App }>(
           dojo(),
-          `/api/projects/${segment(app.id)}?depth=0`,
+          `/api/apps/${segment(app.id)}?depth=0`,
           {
             method: 'PATCH',
             body: { name },
@@ -171,7 +169,7 @@ export const apps: Noun = {
 
         await confirm(`Delete ${app.slug} and everything in it? This can't be undone.`);
 
-        await dojoJSON(dojo(), `/api/projects/${segment(app.id)}`, {
+        await dojoJSON(dojo(), `/api/apps/${segment(app.id)}`, {
           method: 'DELETE',
           what: "Dojo couldn't delete the app",
           needs: ownerNeeded,

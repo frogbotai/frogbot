@@ -1,7 +1,7 @@
 'use client';
 
 import { useDraggable } from '@dnd-kit/core';
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
 
 export function BoardCard({
   children,
@@ -14,7 +14,7 @@ export function BoardCard({
   className?: string;
   disabled?: boolean;
   id: string;
-  onClick?: () => void;
+  onClick?: (event?: MouseEvent) => void;
 }) {
   const draggable = useDraggable({ disabled, id });
   const onKeyDown = (event: KeyboardEvent) => {
@@ -31,6 +31,7 @@ export function BoardCard({
       {...draggable.attributes}
       {...draggable.listeners}
       className={`frog-board__card${draggable.isDragging ? ' frog-board__card--dragging' : ''}${className ? ` ${className}` : ''}`}
+      onAuxClick={onClick ? (event) => event.button === 1 && onClick(event) : undefined}
       onClick={onClick}
       onKeyDown={onClick ? onKeyDown : undefined}
       ref={draggable.setNodeRef}

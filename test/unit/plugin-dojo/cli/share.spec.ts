@@ -33,7 +33,7 @@ async function setup(files?: Record<string, string>) {
 }
 
 const shareLink = (url: string, id: number) =>
-  `[frogbot] Share it: ${url}/collections/projects/${id}?share=1`;
+  `[frogbot] Share it: ${url}/collections/apps/${id}/settings?share=1`;
 
 describe('frogbot share: pre-checks', () => {
   it.each([
@@ -131,7 +131,7 @@ describe('frogbot share: sign-in', () => {
     const { dojo, run, signIn } = await setup({ '.frogbot/app.json': '{"appId":1}' });
 
     await signIn();
-    dojo.projects.push({ id: 1, name: 'deals', slug: 'deals', workspace: 1 });
+    dojo.apps.push({ id: 1, name: 'deals', slug: 'deals', workspace: 1 });
     dojo.data.started = true;
 
     dojo.afterRequest = (route) => {
@@ -167,13 +167,13 @@ describe('frogbot share: the link', () => {
       appId: 1,
     });
     expect(await readFile(join(root, '.gitignore'), 'utf8')).toBe('node_modules\n/.frogbot\n');
-    expect(dojo.projects).toEqual([{ id: 1, name: 'Deals App', slug: 'deals-app', workspace: 1 }]);
+    expect(dojo.apps).toEqual([{ id: 1, name: 'Deals App', slug: 'deals-app', workspace: 1 }]);
 
     const second = await run([]);
 
     expect(second.code).toBe(0);
     expect(await readFile(join(root, '.gitignore'), 'utf8')).toBe('node_modules\n/.frogbot\n');
-    expect(dojo.projects).toHaveLength(1);
+    expect(dojo.apps).toHaveLength(1);
     expect(dojo.paths().filter((path) => path === 'POST /api/apps/1/deployments')).toHaveLength(2);
     expect(second.stdout().slice(-2)).toEqual([
       shareLink(dojo.url, 1),
@@ -333,7 +333,7 @@ describe('frogbot share: workspace', () => {
 
     expect(result.code).toBe(0);
     expect(result.asked).toEqual([]);
-    expect(dojo.projects[0]?.workspace).toBe(1);
+    expect(dojo.apps[0]?.workspace).toBe(1);
   });
 
   it('asks the person to choose when there are two and no TTY', async () => {
@@ -348,7 +348,7 @@ describe('frogbot share: workspace', () => {
     expect(result.stderr()).toEqual([
       '[frogbot] Ask the person which workspace to use (trend-capital, colby), then rerun with --workspace <slug>.',
     ]);
-    expect(dojo.paths()).not.toContain('POST /api/projects');
+    expect(dojo.paths()).not.toContain('POST /api/apps');
     await expect(stat(join(root, '.frogbot'))).rejects.toThrow();
   });
 
@@ -359,7 +359,7 @@ describe('frogbot share: workspace', () => {
     flagged.dojo.workspaces = two;
 
     expect((await flagged.run(['--no-data', '--workspace', 'colby'])).code).toBe(0);
-    expect(flagged.dojo.projects[0]?.workspace).toBe(2);
+    expect(flagged.dojo.apps[0]?.workspace).toBe(2);
 
     const picked = await setup();
 
@@ -370,7 +370,7 @@ describe('frogbot share: workspace', () => {
 
     expect(result.code).toBe(0);
     expect(result.asked).toEqual(['Which workspace?']);
-    expect(picked.dojo.projects[0]?.workspace).toBe(2);
+    expect(picked.dojo.apps[0]?.workspace).toBe(2);
   });
 
   it("prints Dojo's message and writes no link when the app can't be created", async () => {
@@ -378,7 +378,7 @@ describe('frogbot share: workspace', () => {
 
     await signIn();
 
-    dojo.projectReply = {
+    dojo.createReply = {
       status: 403,
       body: { errors: [{ message: 'You are not allowed to perform this action.' }] },
     };
@@ -405,7 +405,7 @@ describe('frogbot share: the name', () => {
     const result = await run(['--no-data', '--name', 'Deals']);
 
     expect(result.code).toBe(0);
-    expect(dojo.projects).toEqual([{ id: 1, name: 'Deals App', slug: 'deals', workspace: 1 }]);
+    expect(dojo.apps).toEqual([{ id: 1, name: 'Deals App', slug: 'deals', workspace: 1 }]);
     expect(result.stdout()[0]).toBe(
       '[frogbot] Created deals in Trend Capital, linked in .frogbot/app.json.',
     );
@@ -422,7 +422,7 @@ describe('frogbot share: the name', () => {
     expect(result.stderr()).toEqual([
       '[frogbot] "2024" would make the slug "2024", which reads as an app id. Add a letter.',
     ]);
-    expect(dojo.projects).toEqual([]);
+    expect(dojo.apps).toEqual([]);
   });
 
   it.each([
@@ -436,7 +436,7 @@ describe('frogbot share: the name', () => {
             name: 'ValidationError',
             message: 'The following field is invalid: slug',
             data: {
-              collection: 'projects',
+              collection: 'apps',
               errors: [{ message: 'Value must be unique', path: 'slug' }],
             },
           },
@@ -447,7 +447,7 @@ describe('frogbot share: the name', () => {
     const { root, dojo, run, signIn } = await setup();
 
     await signIn();
-    dojo.projectReply = { status, body };
+    dojo.createReply = { status, body };
 
     const result = await run(['--no-data', '--name', 'deals']);
 
@@ -461,7 +461,7 @@ describe('frogbot share: the name', () => {
 
     await signIn();
 
-    dojo.projectReply = {
+    dojo.createReply = {
       status: 400,
       body: {
         errors: [
@@ -493,7 +493,7 @@ describe('frogbot share: as an editor', () => {
     });
 
     await shared.signIn();
-    shared.dojo.projects.push({ id: 1, name: 'deals', slug: 'deals', workspace: 1 });
+    shared.dojo.apps.push({ id: 1, name: 'deals', slug: 'deals', workspace: 1 });
     shared.dojo.data.started = true;
     shared.dojo.keys.set(1, { STRIPE_KEY: 'sk_live_owner0001' });
     shared.dojo.level = level;

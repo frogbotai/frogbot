@@ -14,7 +14,7 @@ async function setup(files?: Record<string, string>, extraEnv: Record<string, st
   const env = { XDG_CONFIG_HOME: await tempDir(), FROGBOT_DOJO_URL: dojo.url, ...extraEnv };
 
   await writeApp(root, files);
-  dojo.projects.push({ id: 7, name: 'deals', slug: 'deals', workspace: 1 });
+  dojo.apps.push({ id: 7, name: 'deals', slug: 'deals', workspace: 1 });
 
   const run = async (args: string[]) => {
     const io = testIO({ cwd: root, env });
@@ -45,8 +45,8 @@ describe('frogbot share --app', () => {
     expect(await readLink(root)).toEqual({ appId: 7 });
     expect(dojo.paths()).toContain('GET /api/apps/deals/cli');
     expect(dojo.paths()).toContain('POST /api/apps/7/deployments');
-    expect(dojo.paths()).not.toContain('POST /api/projects');
-    expect(dojo.projects).toHaveLength(1);
+    expect(dojo.paths()).not.toContain('POST /api/apps');
+    expect(dojo.apps).toHaveLength(1);
   });
 
   it('ships to the app when the folder is already linked to it', async () => {

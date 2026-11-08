@@ -15,12 +15,12 @@ Add a board entry to `admin.views` to show documents as cards grouped into colum
 | `slug` | `string` | No; defaults to `'board'` | Unique normalized route and preference key. The first view uses the collection's root route. |
 | `label` | `string` | No; defaults to `'Board'` | Label on the view's tab. |
 | `icon` | `AdminIcon` | No; `'kanban'` | Icon on the view's tab. |
-| `groupBy` | `string` | No | Dot path to the select or single relationship field that determines each card's column. |
+| `groupBy` | `string` | No | Dot path to the field that determines each card's column. Columns follow the list's [grouping rules](/configuration/collections#grouping): option order for select and radio fields, true then false for a checkbox, and the values present for other fields. |
 | `defaultFields` | `string[]` | No | Dot paths to the fields rendered on each card, in display order. |
 | `cover` | `string` | No | Dot path to an upload field rendered as the card's cover image. |
 | `filter` | `Where` | No | Invisible base filter applied to every board query, as plain data. |
 | `defaultSort` | `Sort` (`string \| string[]`) | No | Initial card order within columns. Prefix a field with `-` for descending order. |
-| `searchableFields` | `string[]` | No | Adds fields to normal search behavior; `useAsTitle` remains included. |
+| `searchableFields` | `string[]` | No | Not read by the board. Its search uses the list view's `searchableFields`, plus `useAsTitle`. |
 | `pagination` | `ViewPagination` | No; `defaultLimit: 50` | Sets the documents fetched per column. Each column lazy-loads additional pages and virtualizes rendered cards. `limits` only drives list page-size choices. |
 | `access` | `({ req }) => boolean \| Promise<boolean>` | No; collection access | Controls whether the current user can open the board without replacing collection operation access. |
 | `components` | `ViewComponents & BoardComponents` | No | Configures shared view slots and board components. |

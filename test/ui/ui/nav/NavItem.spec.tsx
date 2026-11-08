@@ -24,6 +24,40 @@ describe('NavItem', () => {
     expect(screen.getByRole('link', { name: 'Agents' }).getAttribute('aria-current')).toBe('page');
   });
 
+  it('marks itself active on its page and pages under it, unless told otherwise', () => {
+    const { rerender } = render(
+      <NavAdapterProvider pathname="/admin/collections/agents">
+        <NavItem label="Agents" path="/admin/collections/agents" />
+      </NavAdapterProvider>,
+    );
+
+    expect(screen.getByRole('link', { name: 'Agents' }).getAttribute('aria-current')).toBe('page');
+
+    rerender(
+      <NavAdapterProvider pathname="/admin/collections/agents/7">
+        <NavItem label="Agents" path="/admin/collections/agents" />
+      </NavAdapterProvider>,
+    );
+
+    expect(screen.getByRole('link', { name: 'Agents' }).getAttribute('aria-current')).toBe('page');
+
+    rerender(
+      <NavAdapterProvider pathname="/admin/collections/agents-archive">
+        <NavItem label="Agents" path="/admin/collections/agents" />
+      </NavAdapterProvider>,
+    );
+
+    expect(screen.getByRole('link', { name: 'Agents' }).getAttribute('aria-current')).toBeNull();
+
+    rerender(
+      <NavAdapterProvider pathname="/admin/collections/agents">
+        <NavItem active={false} label="Agents" path="/admin/collections/agents" />
+      </NavAdapterProvider>,
+    );
+
+    expect(screen.getByRole('link', { name: 'Agents' }).getAttribute('aria-current')).toBeNull();
+  });
+
   it('renders a lazy icon as a node', () => {
     const icon = {
       $$typeof: Symbol.for('react.lazy'),

@@ -8,4 +8,10 @@
   .list-controls__actions > #empty-trash-button {
     order: 2;
   }
+
+  .list-controls__where .where-builder {
+    padding-block-end: 0;
+    padding-inline: 0;
+    border-bottom: 0;
+  }
 }

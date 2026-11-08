@@ -122,33 +122,46 @@ for (const host of ['standalone', 'admin'] as const) {
   }
 }
 
-test('the stop icon has no white stroke and the button shows a ring only on keyboard focus', async ({
-  page,
-}) => {
+for (const theme of ['light', 'dark'] as const) {
+  test(`the ${theme} stop icon is one even fill with no stroke, at rest and on hover`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await renderGallery(page, { css: css.admin, js, theme, admin: true });
+
+    const stop = page.locator('.fb-composer__stop');
+    const paint = () =>
+      stop.locator('svg > *').evaluate((shape) => {
+        const style = getComputedStyle(shape);
+        const { width, height } = shape.getBoundingClientRect();
+
+        return { fill: style.fill, stroke: style.stroke, width, height };
+      });
+
+    const expectEvenFill = (shape: Awaited<ReturnType<typeof paint>>, state: string) => {
+      expect(shape.stroke, state).toBe('none');
+      expect(shape.fill, state).not.toBe('none');
+      expect(shape.width, `${state} width`).toBeCloseTo(15, 0);
+      expect(shape.height, `${state} height`).toBeCloseTo(15, 0);
+    };
+
+    expectEvenFill(await paint(), 'at rest');
+    await stop.hover();
+    expectEvenFill(await paint(), 'hovered');
+  });
+}
+
+test('the stop button shows a ring only on keyboard focus', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await renderGallery(page, { css: css.standalone, js, theme: 'light', admin: false });
 
   const stop = page.locator('.fb-composer__stop');
-  const paint = () =>
-    stop.locator('svg').evaluate((icon) => {
-      const style = getComputedStyle(icon);
-
-      return { fill: style.fill, stroke: style.stroke };
-    });
-
   const outline = () =>
     stop.evaluate((button) => {
       const style = getComputedStyle(button);
 
       return { style: style.outlineStyle, width: style.outlineWidth };
     });
-
-  const atRest = await paint();
-  expect(atRest.stroke).toBe(atRest.fill);
-
-  await stop.hover();
-  const hovered = await paint();
-  expect(hovered.stroke).toBe(hovered.fill);
 
   await stop.focus();
   await page.keyboard.press('Shift+Tab');

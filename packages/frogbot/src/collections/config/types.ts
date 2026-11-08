@@ -67,6 +67,49 @@ export type CollectionAdminComponents = Omit<
   /** Replaces Payload's Create New in the list controls and the list view's empty state. */
   CreateButton?: FrogBotComponent;
   edit?: NonNullable<PayloadComponents['edit']> & { views?: CollectionEditViews };
+  /** Components in the record side panel. Each gets `PanelComponentProps`. */
+  panel?: RecordPanelComponents;
+};
+
+/**
+ * Props every record panel component gets. Client components get them as props; server
+ * components also get Payload's edit-view server props (`payload`, `req`, `permissions`, `doc`),
+ * and their client children read `close` and `expand` from `useRecordPanel()`.
+ */
+export type PanelComponentProps = {
+  /** Closes the panel. */
+  close: () => void;
+  collectionSlug: string;
+  /** Opens the record's full edit page. */
+  expand: () => void;
+  id: number | string;
+};
+
+/** The record side panel's component slots, in `admin.components.panel`. */
+export type RecordPanelComponents = {
+  /** Header buttons, before copy link. */
+  actions?: FrogBotComponent[];
+  /** After the last field. */
+  afterFields?: FrogBotComponent[];
+  /** Between the title and the property list. */
+  beforeFields?: FrogBotComponent[];
+  /** Replaces the whole panel. */
+  Component?: FrogBotComponent;
+  /** Replaces only the header. */
+  Header?: FrogBotComponent;
+};
+
+/** The record side panel's settings, in `admin.panel`. */
+export type RecordPanelConfig = {
+  /**
+   * Fields in the compact two-column property list under the title, in order.
+   * Names or dot paths of top-level, group or tab fields.
+   * Default: the sidebar fields (`admin.position: 'sidebar'`), in config order.
+   * Every other field appears below in the normal form, in config order.
+   */
+  properties?: string[];
+  /** Starting width in px. Default 560. Users drag between 400 and 960; saved per user. */
+  width?: number;
 };
 
 export type CollectionAdminConfig = Omit<
@@ -93,6 +136,14 @@ export type CollectionAdminConfig = Omit<
   group?: PayloadAdmin['group'] | null;
   icon?: AdminIcon;
   livePreview?: LivePreviewConfig;
+  /**
+   * The record side panel. On by default for every collection: clicking a row, card or event
+   * opens the record in a panel beside the view, at `?record=<id>`.
+   * - `false`: no panel. Rows, cards and events open the full edit page, and `?record=<id>`
+   *   redirects to it.
+   * - object: settings, all optional.
+   */
+  panel?: false | RecordPanelConfig;
   preview?: GeneratePreviewURL;
   /**
    * Moves the collection into Settings: it gets its own Settings sidebar item, its pages show the
@@ -339,6 +390,12 @@ type UploadArgs = {
   overwriteExistingFiles?: boolean;
 };
 
+/** Reach trashed documents too. Has no effect unless the collection sets `trash: true`. */
+export type TrashArgs = {
+  /** Include trashed (soft-deleted) documents. Combine with a `deletedAt` filter in `where` to act on trashed documents only. @default false */
+  trash?: boolean;
+};
+
 type LocalePublishArgs = {
   publishAllLocales?: boolean;
   unpublishAllLocales?: boolean;
@@ -358,24 +415,26 @@ export type JoinQuery =
       | false
     >;
 
-export type FindArgs<TSlug extends CollectionSlug> = CommonArgs & {
-  collection: TSlug;
-  where?: Where;
-  sort?: Sort;
-  limit?: number;
-  page?: number;
-  pagination?: boolean;
-  draft?: boolean;
-  joins?: JoinQuery;
-};
+export type FindArgs<TSlug extends CollectionSlug> = CommonArgs &
+  TrashArgs & {
+    collection: TSlug;
+    where?: Where;
+    sort?: Sort;
+    limit?: number;
+    page?: number;
+    pagination?: boolean;
+    draft?: boolean;
+    joins?: JoinQuery;
+  };
 
-export type FindByIDArgs<TSlug extends CollectionSlug> = CommonArgs & {
-  collection: TSlug;
-  id: DocID;
-  disableErrors?: boolean;
-  draft?: boolean;
-  joins?: JoinQuery;
-};
+export type FindByIDArgs<TSlug extends CollectionSlug> = CommonArgs &
+  TrashArgs & {
+    collection: TSlug;
+    id: DocID;
+    disableErrors?: boolean;
+    draft?: boolean;
+    joins?: JoinQuery;
+  };
 
 export type CreateArgs<TSlug extends CollectionSlug> = WriteArgs &
   UploadArgs & {
@@ -396,7 +455,8 @@ export type CreateArgs<TSlug extends CollectionSlug> = WriteArgs &
 
 export type UpdateByIDArgs<TSlug extends CollectionSlug> = LockedWriteArgs &
   UploadArgs &
-  LocalePublishArgs & {
+  LocalePublishArgs &
+  TrashArgs & {
     collection: TSlug;
     id: DocID;
     data: Partial<TypedCollection<TSlug>>;
@@ -406,7 +466,8 @@ export type UpdateByIDArgs<TSlug extends CollectionSlug> = LockedWriteArgs &
 
 export type UpdateManyArgs<TSlug extends CollectionSlug> = LockedWriteArgs &
   UploadArgs &
-  LocalePublishArgs & {
+  LocalePublishArgs &
+  TrashArgs & {
     collection: TSlug;
     where: Where;
     data: Partial<TypedCollection<TSlug>>;
@@ -416,23 +477,26 @@ export type UpdateManyArgs<TSlug extends CollectionSlug> = LockedWriteArgs &
 export type UpdateArgs<TSlug extends CollectionSlug> =
   UpdateByIDArgs<TSlug> | UpdateManyArgs<TSlug>;
 
-export type DeleteByIDArgs<TSlug extends CollectionSlug> = LockedWriteArgs & {
-  collection: TSlug;
-  id: DocID;
-};
+export type DeleteByIDArgs<TSlug extends CollectionSlug> = LockedWriteArgs &
+  TrashArgs & {
+    collection: TSlug;
+    id: DocID;
+  };
 
-export type DeleteManyArgs<TSlug extends CollectionSlug> = LockedWriteArgs & {
-  collection: TSlug;
-  where: Where;
-};
+export type DeleteManyArgs<TSlug extends CollectionSlug> = LockedWriteArgs &
+  TrashArgs & {
+    collection: TSlug;
+    where: Where;
+  };
 
 export type DeleteArgs<TSlug extends CollectionSlug> =
   DeleteByIDArgs<TSlug> | DeleteManyArgs<TSlug>;
 
-export type CountArgs<TSlug extends CollectionSlug> = CommonArgs & {
-  collection: TSlug;
-  where?: Where;
-};
+export type CountArgs<TSlug extends CollectionSlug> = CommonArgs &
+  TrashArgs & {
+    collection: TSlug;
+    where?: Where;
+  };
 
 export type PaginatedDocs<T> = {
   docs: T[];
@@ -470,15 +534,16 @@ export type DuplicateArgs<TSlug extends CollectionSlug> = WriteArgs & {
   id: DocID;
 };
 
-export type FindDistinctArgs<TSlug extends CollectionSlug> = CommonArgs & {
-  collection: TSlug;
-  field: string;
-  where?: Where;
-  sort?: Sort;
-  limit?: number;
-  page?: number;
-  pagination?: boolean;
-};
+export type FindDistinctArgs<TSlug extends CollectionSlug> = CommonArgs &
+  TrashArgs & {
+    collection: TSlug;
+    field: string;
+    where?: Where;
+    sort?: Sort;
+    limit?: number;
+    page?: number;
+    pagination?: boolean;
+  };
 
 export type PaginatedDistinctDocs<T extends Record<string, unknown>> = {
   values: T[];

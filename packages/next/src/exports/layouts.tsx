@@ -1,3 +1,4 @@
+import { RENDER_RECORD_PANEL, renderRecordPanelHandler } from '@frogbotai/ui/admin/rsc';
 import {
   handleServerFunctions as payloadHandleServerFunctions,
   RootLayout as PayloadRootLayout,
@@ -43,5 +44,9 @@ export function handleServerFunctions(
 ): ReturnType<typeof payloadHandleServerFunctions> {
   const { config, ...rest } = args;
 
-  return payloadHandleServerFunctions({ ...rest, config: getPayloadConfig(config) });
+  return payloadHandleServerFunctions({
+    ...rest,
+    config: getPayloadConfig(config),
+    serverFunctions: { [RENDER_RECORD_PANEL]: renderRecordPanelHandler, ...rest.serverFunctions },
+  });
 }

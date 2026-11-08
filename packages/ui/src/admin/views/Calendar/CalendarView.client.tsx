@@ -5,7 +5,6 @@ import {
   RelationshipProvider,
   toast,
   useConfig,
-  useDocumentDrawer,
   useListQuery,
   usePathname,
   useRouter,
@@ -25,9 +24,9 @@ import { useBrowserTimeZone } from '../../../calendar/useBrowserTimeZone.js';
 import CheckmarkCircleIcon from '../../../icons/icons/CheckmarkCircleIcon.js';
 import { FieldCell } from '../../fields/FieldCell/index.client.js';
 import { appendQuery, getPath, setPath } from '../cells.js';
+import { useRecordPanel, useRecordPanelEvents } from '../panel/RecordPanelProvider.client.js';
 import { getViewCardColumns } from '../preferences.js';
 import { getUseAsDone, isRecordDone, recordClassName } from '../records/state.js';
-import { useDrawerSelected } from '../records/useRecordState.js';
 
 type Row = Record<string, unknown> & {
   color?: string;
@@ -57,18 +56,16 @@ function CalendarDocumentEvent({
   collectionConfig,
   collectionSlug,
   Event,
-  onSave,
   row,
 }: {
   cardColumns: Column[];
   collectionConfig: ClientCollectionConfig;
   collectionSlug: string;
   Event?: ComponentType<{ row: Row }>;
-  onSave: (row: Row) => void;
   row: Row;
 }) {
-  const [DocumentDrawer, , drawer] = useDocumentDrawer({ collectionSlug, id: String(row.id) });
-  const selected = useDrawerSelected(drawer.drawerSlug);
+  const panel = useRecordPanel();
+  const selected = panel.openId === String(row.id);
   const done = isRecordDone(row, getUseAsDone(collectionConfig));
   const { i18n } = useTranslation();
   const { config } = useConfig();
@@ -80,42 +77,40 @@ function CalendarDocumentEvent({
   });
 
   return (
-    <>
-      <div
-        className={recordClassName({ done, selected })}
-        onClick={drawer.openDrawer}
-        role="presentation"
-      >
-        {Event ? (
-          <Event row={row} />
-        ) : (
-          <>
-            <div className="collection-calendar__title">
-              {done ? <CheckmarkCircleIcon className="fb-record__done-icon" size={14} /> : null}{' '}
-              {title}
+    <div
+      className={recordClassName({ done, selected })}
+      onAuxClick={(event) => event.button === 1 && panel.open(row.id, event.nativeEvent)}
+      onClick={(event) => panel.open(row.id, event.nativeEvent)}
+      role="presentation"
+    >
+      {Event ? (
+        <Event row={row} />
+      ) : (
+        <>
+          <div className="collection-calendar__title">
+            {done ? <CheckmarkCircleIcon className="fb-record__done-icon" size={14} /> : null}{' '}
+            {title}
+          </div>
+          {cardColumns.map(({ accessor, field }) => (
+            <div className="collection-calendar__field" key={accessor}>
+              <span className="collection-calendar__field-label">
+                {getTranslation(('label' in field ? field.label : undefined) || accessor, i18n)}
+              </span>
+              <span className="collection-calendar__field-value">
+                <FieldCell
+                  cellData={getPath(row, accessor)}
+                  collectionSlug={collectionSlug}
+                  field={field}
+                  link={false}
+                  rowData={row}
+                  viewType="calendar"
+                />
+              </span>
             </div>
-            {cardColumns.map(({ accessor, field }) => (
-              <div className="collection-calendar__field" key={accessor}>
-                <span className="collection-calendar__field-label">
-                  {getTranslation(('label' in field ? field.label : undefined) || accessor, i18n)}
-                </span>
-                <span className="collection-calendar__field-value">
-                  <FieldCell
-                    cellData={getPath(row, accessor)}
-                    collectionSlug={collectionSlug}
-                    field={field}
-                    link={false}
-                    rowData={row}
-                    viewType="calendar"
-                  />
-                </span>
-              </div>
-            ))}
-          </>
-        )}
-      </div>
-      <DocumentDrawer onSave={({ doc }) => onSave(doc as Row)} />
-    </>
+          ))}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -164,8 +159,7 @@ export function CalendarViewClient({
 
   const [rows, setRows] = useState<Row[]>([]);
   const [truncated, setTruncated] = useState(false);
-  const [createRange, setCreateRange] = useState<{ end: string; start: string }>();
-  const [CreateDrawer, , createDrawer] = useDocumentDrawer({ collectionSlug });
+  const panel = useRecordPanel();
   const timeZone = useBrowserTimeZone();
   const zonedRange = timeZone ? getVisibleRange({ date, mode, timeZone }) : undefined;
   const range = zonedRange && dateOnly ? getFloatingRange(zonedRange) : zonedRange;
@@ -234,6 +228,22 @@ export function CalendarViewClient({
     return () => controller.abort();
   }, [collectionSlug, date, mode, searchKey, timeZone, whereKey]);
 
+  useRecordPanelEvents((event) => {
+    if (event.type === 'deleted') {
+      setRows((current) => current.filter((item) => item.id !== String(event.id)));
+
+      return;
+    }
+
+    const saved = normalizeRow(event.doc);
+
+    setRows((current) =>
+      current.some((item) => item.id === saved.id)
+        ? current.map((item) => (item.id === saved.id ? saved : item))
+        : [...current, saved],
+    );
+  });
+
   const navigate = (key: 'date' | 'mode', value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set(key, value);
@@ -287,10 +297,13 @@ export function CalendarViewClient({
             modes={modes}
             onCreate={
               canCreate
-                ? (value) => {
-                    setCreateRange(value);
-                    createDrawer.openDrawer();
-                  }
+                ? (value) =>
+                    panel.create(
+                      mergePaths(
+                        setPath(start, value.start),
+                        ...(end ? [setPath(end, value.end)] : []),
+                      ),
+                    )
                 : undefined
             }
             onMove={({ end: nextEnd, event, start: nextStart }) =>
@@ -307,11 +320,6 @@ export function CalendarViewClient({
                 cardColumns={cardColumns}
                 collectionConfig={collectionConfig}
                 collectionSlug={collectionSlug}
-                onSave={(saved) =>
-                  setRows((current) =>
-                    current.map((item) => (item.id === saved.id ? normalizeRow(saved) : item)),
-                  )
-                }
                 row={row}
               />
             )}
@@ -319,17 +327,6 @@ export function CalendarViewClient({
             timeZone={timeZone}
           />
         ) : null}
-        <CreateDrawer
-          initialData={
-            createRange
-              ? mergePaths(
-                  setPath(start, createRange.start),
-                  ...(end ? [setPath(end, createRange.end)] : []),
-                )
-              : undefined
-          }
-          onSave={({ doc }) => setRows((current) => [...current, normalizeRow(doc)])}
-        />
       </div>
     </RelationshipProvider>
   );

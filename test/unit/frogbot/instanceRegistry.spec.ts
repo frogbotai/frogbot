@@ -4,6 +4,7 @@ import type { FrogBotSanitizedConfig } from '../../../packages/frogbot/src/confi
 import type { FrogBot } from '../../../packages/frogbot/src/frogbot.js';
 import {
   ensureFrogBotInstance,
+  getFrogBotInstance,
   registerFrogBotInstance,
 } from '../../../packages/frogbot/src/instanceRegistry.js';
 
@@ -49,6 +50,25 @@ describe('ensureFrogBotInstance', () => {
     await expect(ensureFrogBotInstance(payload, init)).rejects.toBe(error);
     await expect(ensureFrogBotInstance(payload, init)).resolves.toBe(frogbot);
     expect(init).toHaveBeenCalledTimes(2);
+  });
+
+  it('initializes again after an init that registered the instance rejects', async () => {
+    const payload = {};
+    const config = {} as FrogBotSanitizedConfig;
+    const error = new Error('onInit failed');
+    const frogbot = {} as FrogBot;
+    const failing = vi.fn(() => {
+      registerFrogBotInstance(payload, frogbot, config, vi.fn());
+
+      return Promise.reject(error);
+    });
+
+    const retry = vi.fn(() => Promise.resolve(frogbot));
+
+    await expect(ensureFrogBotInstance(payload, failing, config)).rejects.toBe(error);
+    expect(getFrogBotInstance(payload)).toBeUndefined();
+    await expect(ensureFrogBotInstance(payload, retry, config)).resolves.toBe(frogbot);
+    expect(retry).toHaveBeenCalledOnce();
   });
 
   it('applies a newer config after pending initialization completes', async () => {

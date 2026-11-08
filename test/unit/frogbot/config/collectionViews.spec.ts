@@ -167,6 +167,88 @@ describe('collection views', () => {
     expect(() => compile({ color: 'title' })).toThrow('unsupported color field "title"');
   });
 
+  describe('list summary', () => {
+    const compile = (summary: unknown, extra: Record<string, unknown> = {}) =>
+      compileCollectionViews({
+        collection: {
+          slug: 'deals',
+          fields: [
+            { name: 'name', type: 'text' },
+            { name: 'amount', type: 'number' },
+            { name: 'scores', type: 'number', hasMany: true },
+            { name: 'closedAt', type: 'date' },
+            { name: 'owner', type: 'relationship', relationTo: 'users' },
+            { name: 'margin', type: 'number', access: { read: () => false } },
+            { name: 'secret', type: 'number', hidden: true },
+            {
+              type: 'row',
+              fields: [
+                { name: 'details', type: 'group', fields: [{ name: 'odds', type: 'number' }] },
+              ],
+            },
+            {
+              name: 'finance',
+              type: 'group',
+              access: { read: () => true },
+              fields: [{ name: 'amount', type: 'number' }],
+            },
+            {
+              name: 'internal',
+              type: 'group',
+              hidden: true,
+              fields: [{ name: 'odds', type: 'number' }],
+            },
+          ],
+          admin: { views: [{ type: 'list', summary } as never] },
+          ...extra,
+        },
+      });
+
+    it('accepts every valid pairing and keeps summary in the client metadata', () => {
+      const summary = {
+        name: 'count',
+        amount: 'avg',
+        scores: 'count',
+        closedAt: 'max',
+        owner: 'count',
+        'details.odds': 'sum',
+        id: 'count',
+        createdAt: 'min',
+      };
+
+      expect(compile(summary)?.custom?.frogbot.views[0]).toMatchObject({ summary });
+    });
+
+    it.each([
+      [{ nope: 'count' }, 'summary names "nope", which is not a field.'],
+      [{ name: 'sum' }, 'sets "name" to "sum": a field that is not a number or date takes count.'],
+      [{ scores: 'sum' }, 'sets "scores" to "sum"'],
+      [{ closedAt: 'avg' }, 'sets "closedAt" to "avg": a date field takes count, min, max.'],
+      [{ amount: 'median' }, 'sets "amount" to "median": a number field takes count, sum, avg'],
+      [{ margin: 'sum' }, 'names "margin", which is hidden or has its own access.read'],
+      [{ secret: 'count' }, 'names "secret", which is hidden or has its own access.read'],
+      [
+        { 'finance.amount': 'sum' },
+        'names "finance.amount", which is hidden or has its own access.read',
+      ],
+      [
+        { 'internal.odds': 'sum' },
+        'names "internal.odds", which is hidden or has its own access.read',
+      ],
+      [['amount'], 'summary must be an object'],
+    ])('rejects %j at load, naming the view, path and operation', (summary, message) => {
+      expect(() => compile(summary)).toThrow(
+        `[frogbot] Collection "deals" list view "list" ${message.startsWith('summary') ? '' : 'summary '}${message}`,
+      );
+    });
+
+    it('rejects timestamps on a collection without them', () => {
+      expect(() => compile({ createdAt: 'max' }, { timestamps: false })).toThrow(
+        'summary names "createdAt", which is not a field.',
+      );
+    });
+  });
+
   describe('fields inside layout containers', () => {
     const compile = (view: Record<string, unknown>) =>
       compileCollectionViews({
@@ -216,6 +298,29 @@ describe('collection views', () => {
     ])('accepts the calendar fields %o', (fields) => {
       expect(() => compile({ type: 'calendar', ...fields })).not.toThrow();
     });
+  });
+
+  it('accepts a list view groupBy and rejects an unsupported one', () => {
+    const compileList = (groupBy: string) =>
+      compileCollectionViews({
+        collection: {
+          slug: 'deals',
+          fields: [
+            { name: 'stage', type: 'select', options: ['lead', 'won'] },
+            { name: 'notes', type: 'richText' },
+            { name: 'link', type: 'relationship', relationTo: ['users', 'deals'] },
+            { name: 'label', type: 'text', virtual: true },
+          ],
+          admin: { views: [{ type: 'list', groupBy }] },
+        },
+      });
+
+    expect(compileList('stage').custom?.frogbot.views[0]).toMatchObject({ groupBy: 'stage' });
+    expect(() => compileList('notes')).toThrow(
+      'list view "list" has an unsupported groupBy field "notes"',
+    );
+    expect(() => compileList('link')).toThrow('unsupported groupBy field "link"');
+    expect(() => compileList('label')).toThrow('unsupported groupBy field "label"');
   });
 
   it('rejects an unsupported groupBy field inside a row', () => {
@@ -395,6 +500,89 @@ describe('collection views', () => {
     });
 
     expect(admin?.custom?.frogbot.useAsDone).toBe('done');
+  });
+
+  it('sends panel settings to the client config and keeps them out of Payload admin', () => {
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'tasks',
+        fields: [
+          { name: 'status', type: 'text' },
+          { name: 'dates', type: 'group', fields: [{ name: 'due', type: 'date' }] },
+          { type: 'tabs', tabs: [{ name: 'meta', fields: [{ name: 'owner', type: 'text' }] }] },
+        ],
+        admin: {
+          components: { panel: { actions: ['./Action#Action'] } },
+          panel: { properties: ['status', 'dates.due', 'meta.owner'], width: 640 },
+        },
+      },
+    });
+
+    expect(admin?.custom?.frogbot.panel).toEqual({
+      properties: ['status', 'dates.due', 'meta.owner'],
+      width: 640,
+    });
+    expect(admin).not.toHaveProperty('panel');
+    expect(admin?.components).not.toHaveProperty('panel');
+  });
+
+  it('turns the panel on with the default width when unset, and off with false', () => {
+    const on = compileCollectionViews({ collection: { slug: 'tasks', fields: [] } });
+    const off = compileCollectionViews({
+      collection: { slug: 'tasks', fields: [], admin: { panel: false } },
+    });
+
+    expect(on?.custom?.frogbot.panel).toEqual({ width: 560 });
+    expect(off?.custom?.frogbot.panel).toBe(false);
+  });
+
+  it.each([
+    ['a missing field', 'finished'],
+    ['a field inside an array', 'items.title'],
+    ['an empty path', ''],
+  ])('rejects a panel property naming %s, naming the collection and entry', (_, path) => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [
+            { name: 'title', type: 'text' },
+            { name: 'items', type: 'array', fields: [{ name: 'title', type: 'text' }] },
+          ],
+          admin: { panel: { properties: [path] } },
+        },
+      }),
+    ).toThrow(`Collection "tasks" admin.panel.properties entry "${path}" must name a field`);
+  });
+
+  it.each([
+    ['the same field twice', ['status', 'status'], 'status'],
+    ['a group and a field inside it', ['dates', 'dates.due'], 'dates'],
+  ])('rejects panel properties naming %s', (_, properties, repeated) => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [
+            { name: 'status', type: 'text' },
+            { name: 'dates', type: 'group', fields: [{ name: 'due', type: 'date' }] },
+          ],
+          admin: { panel: { properties } },
+        },
+      }),
+    ).toThrow(`repeats "${repeated}"; each field appears once.`);
+  });
+
+  it.each([300, 399, 961, '560', Number.NaN])('rejects a panel width of %s', (width) => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [],
+          admin: { panel: { width: width as number } },
+        },
+      }),
+    ).toThrow(`Collection "tasks" admin.panel.width ${width} must be a number from 400 to 960.`);
   });
 
   it('rejects a function filter, since view entries are plain data', () => {

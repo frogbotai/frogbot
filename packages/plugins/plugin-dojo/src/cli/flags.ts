@@ -3,12 +3,13 @@ import { parseArgs } from 'node:util';
 import { ShareError } from './error.js';
 
 const usage = (program: string) =>
-  `Usage: ${/dojo$/.test(program) ? `${program} apps share` : `${program} deploy dojo`} [--app <slug or id>] [--data | --no-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys]`;
+  `Usage: ${/dojo$/.test(program) ? `${program} apps share` : `${program} deploy dojo`} [--app <slug or id>] [--data | --no-data | --replace-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys]`;
 
 /** `share`'s own flags. */
 export type ShareFlags = {
   app?: string;
   data?: boolean;
+  replaceData: boolean;
   workspace?: string;
   name?: string;
   keys: boolean;
@@ -27,6 +28,7 @@ export function parseShareArgs(argv: string[], program: string): ShareFlags {
       options: {
         app: { type: 'string' },
         data: { type: 'boolean' },
+        'replace-data': { type: 'boolean', default: false },
         workspace: { type: 'string' },
         name: { type: 'string' },
         keys: { type: 'boolean', default: true },
@@ -54,6 +56,10 @@ export function parseShareArgs(argv: string[], program: string): ShareFlags {
 
   const { values } = parsed;
 
+  if (values['replace-data'] && values.data === false) {
+    throw new ShareError(`Use --replace-data or --no-data, not both. ${usage(program)}`, 2);
+  }
+
   if (values.app !== undefined && !values.app.trim()) {
     throw new ShareError(`--app needs an app's slug or id. ${usage(program)}`, 2);
   }
@@ -68,6 +74,7 @@ export function parseShareArgs(argv: string[], program: string): ShareFlags {
   return {
     app: values.app,
     data: values.data,
+    replaceData: values['replace-data'],
     workspace: values.workspace,
     name: values.name,
     keys: values.keys,

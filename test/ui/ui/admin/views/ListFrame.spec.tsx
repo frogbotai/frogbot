@@ -27,6 +27,7 @@ vi.mock('@payloadcms/ui', () => {
     }),
     useListDrawerContext: () => ({ isInDrawer: false }),
     useListQuery: () => state,
+    useRouter: () => ({ refresh: () => undefined }),
     useTranslation: () => ({ i18n: { language: 'en', t: (k: string) => k } }),
     useWindowInfo: () => ({ breakpoints: { s: false } }),
   };
@@ -34,6 +35,11 @@ vi.mock('@payloadcms/ui', () => {
 
 vi.mock('../../../../../packages/ui/src/admin/views/CollectionViewFrame.client.js', () => ({
   CollectionViewFrame: ({ children }: { children: ReactNode }) => <>{children}</>,
+}));
+
+vi.mock('../../../../../packages/ui/src/admin/views/panel/RecordPanelProvider.client.js', () => ({
+  useRecordPanel: () => ({ openId: '7' }),
+  useRecordPanelEvents: () => undefined,
 }));
 
 vi.mock('../../../../../packages/ui/src/fields/AI/bulk.js', () => ({ aiBulkMenuFields: () => [] }));
@@ -100,6 +106,15 @@ const rowFor = (container: HTMLElement, label: string) =>
   [...container.querySelectorAll('tbody tr')].find((row) => row.textContent === label);
 
 describe('ListFrameClient done rows', () => {
+  it('marks the row open in the record panel as selected', () => {
+    state.data = { docs: [{ id: '6' }, { id: '7' }] };
+    state.isGroupingBy = false;
+    const { container } = render(<ListFrameClient {...frame(table(['6', '7']), [])} />);
+
+    expect(container.querySelector('tr[data-id="7"]')?.hasAttribute('data-selected')).toBe(true);
+    expect(container.querySelector('tr[data-id="6"]')?.hasAttribute('data-selected')).toBe(false);
+  });
+
   it('marks a done row in an ungrouped list', () => {
     state.data = { docs: [{ id: 'a' }, { id: 'b' }] };
     state.isGroupingBy = false;

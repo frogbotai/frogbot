@@ -240,6 +240,10 @@ describe(`aggregate edges [${adapterLabel}]`, () => {
       { groupBy: 'stage', values: { s: { count: true } }, limit: -1 },
       { groupBy: 'stage', values: { s: { count: true } }, page: 0 },
       { groupBy: [], values: { s: { count: true } } },
+      { values: { s: { count: true } }, sort: 's' },
+      { values: { s: { count: true } }, limit: 1 },
+      { values: { s: { count: true } }, page: 1 },
+      { values: { s: { sum: 'scores' } } },
       { groupBy: 'stage', values: {} },
       { groupBy: 'stage..x', values: { s: { count: true } } },
     ];

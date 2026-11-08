@@ -83,7 +83,7 @@ admin: {
 
 A plain string without `#` must be a built-in icon name. An unknown name, such as a typo, stops startup with `[frogbot] Unknown admin icon '<name>'` followed by the valid names. A component path always names its export after `#`; write `'./src/components/ProjectsIcon#default'` for a default export. Navigation item and settings icons follow the same rules.
 
-Built-in names are UI icons only. The brand logos in `@frogbotai/ui/icons`, such as `BrandSlackIcon` and `BrandVisaIcon`, aren't admin icons, and a `brand-` name such as `'brand-slack'` stops startup. To show one, render it from your own component and point `icon` at that component's path.
+Brand logos are built-in names too, always with the `brand-` prefix: `BrandTwitterIcon` in `@frogbotai/ui/icons` is `'brand-twitter'`, and `BrandGitHubIcon` is `'brand-git-hub'`. Use one where the item is about that brand, such as an X swipe file or a list of GitHub repos, and a UI icon everywhere else. `'twitter'` without the prefix is an unknown name.
 
 Within `CollectionsSection`, ungrouped collections come first, in configuration order. Named groups follow in first-seen order, with their collections in configuration order.
 

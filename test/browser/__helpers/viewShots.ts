@@ -53,9 +53,14 @@ async function hideDevIndicator(page: Page) {
 
 /**
  * Screenshots the open view in light and dark, at 1440 and 390 pixels wide, as
- * `<name>-<theme>-<width>.png` in `options.path`. It saves the files and compares nothing.
+ * `<name>-<theme>-<width>.png` in `options.path`, after `options.waitFor` shows when given.
+ * It saves the files and compares nothing.
  */
-export async function shootView(page: Page, name: string, options: { path: string }) {
+export async function shootView(
+  page: Page,
+  name: string,
+  options: { path: string; waitFor?: string },
+) {
   const files: string[] = [];
 
   for (const colorScheme of themes) {
@@ -67,6 +72,7 @@ export async function shootView(page: Page, name: string, options: { path: strin
     for (const viewport of viewports) {
       await page.setViewportSize(viewport);
       await waitForView(page);
+      if (options.waitFor) await page.locator(options.waitFor).first().waitFor();
       await hideDevIndicator(page);
 
       const file = path.join(options.path, `${name}-${colorScheme}-${viewport.width}.png`);

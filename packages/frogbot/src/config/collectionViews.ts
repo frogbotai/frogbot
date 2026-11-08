@@ -1,13 +1,15 @@
 import type { CollectionConfig as PayloadCollectionConfig, PayloadComponent } from 'payload';
 
 import { validateAdminIcon } from '../admin/icons.js';
+import { SUMMARY_OPERATIONS, type SummaryKind } from '../admin/views/summary.js';
 import type { CollectionView, CollectionViewMetadata } from '../admin/views/types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { Field, TabAsField } from '../fields/config/types.js';
 import { flattenTopLevelFields } from '../seams/config.js';
 
 const DEFAULT_VIEW: CollectionView = { type: 'list' };
-const GROUP_BY_FIELD_TYPES: Field['type'][] = [
+/** The field types a list or board view can group by: Payload's groupable types. */
+export const GROUP_BY_FIELD_TYPES: readonly Field['type'][] = [
   'text',
   'textarea',
   'number',
@@ -35,9 +37,14 @@ function resolveField(fields: Field[], path: string): Field | TabAsField | undef
 function resolveGroupByField(fields: Field[], path: string): Field | undefined {
   const field = resolveField(fields, path);
 
-  return field && field.type !== 'tab' && GROUP_BY_FIELD_TYPES.includes(field.type)
-    ? field
-    : undefined;
+  if (!field || field.type === 'tab' || !GROUP_BY_FIELD_TYPES.includes(field.type)) {
+    return undefined;
+  }
+
+  const polymorphic = 'relationTo' in field && Array.isArray(field.relationTo);
+  const virtual = 'virtual' in field && Boolean(field.virtual);
+
+  return polymorphic || virtual ? undefined : field;
 }
 
 function normalizeSlug(value: string): string {
@@ -56,17 +63,23 @@ export function hasBoardView(collection: CollectionConfig): boolean {
   return (collection.admin?.views ?? [DEFAULT_VIEW]).some((view) => view.type === 'board');
 }
 
-function resolveDoneField(fields: Field[], path: string): Field | TabAsField | undefined {
+function resolveFieldPath(fields: Field[], path: string): (Field | TabAsField)[] | undefined {
   const [name, ...rest] = path.split('.');
   const field = flattenTopLevelFields(fields).find(
     (candidate) => 'name' in candidate && candidate.name === name,
   );
 
-  if (!field || rest.length === 0) return field;
+  if (!field) return undefined;
+  if (rest.length === 0) return [field];
+  if (field.type !== 'group' && field.type !== 'tab') return undefined;
 
-  return field.type === 'group' || field.type === 'tab'
-    ? resolveDoneField(field.fields, rest.join('.'))
-    : undefined;
+  const inner = resolveFieldPath(field.fields, rest.join('.'));
+
+  return inner && [field, ...inner];
+}
+
+function resolveDoneField(fields: Field[], path: string): Field | TabAsField | undefined {
+  return resolveFieldPath(fields, path)?.at(-1);
 }
 
 function validateUseAsDone(collection: CollectionConfig): void {
@@ -77,6 +90,122 @@ function validateUseAsDone(collection: CollectionConfig): void {
     throw new Error(
       `[frogbot] Collection "${collection.slug}" admin.useAsDone "${path}" must name a checkbox field, top level or a dot path into a group.`,
     );
+  }
+}
+
+/** The record panel's width bounds and default, in px. */
+export const PANEL_WIDTH = { default: 560, max: 960, min: 400 } as const;
+
+function validatePanel(collection: CollectionConfig): void {
+  const panel: unknown = collection.admin?.panel;
+  if (panel === undefined || panel === false) return;
+  const name = `[frogbot] Collection "${collection.slug}" admin.panel`;
+
+  if (!panel || typeof panel !== 'object' || Array.isArray(panel)) {
+    throw new Error(`${name} must be false or an object.`);
+  }
+
+  const { properties, width } = panel as { properties?: unknown; width?: unknown };
+
+  if (properties !== undefined) {
+    if (!Array.isArray(properties)) {
+      throw new Error(`${name}.properties must be an array of field names.`);
+    }
+
+    const seen: string[] = [];
+
+    for (const path of properties as unknown[]) {
+      const field =
+        typeof path === 'string' ? resolveDoneField(collection.fields, path) : undefined;
+
+      if (!field || !('name' in field) || field.type === 'tab') {
+        throw new Error(
+          `${name}.properties entry "${String(path)}" must name a field, top level or a dot path into a group or named tab.`,
+        );
+      }
+
+      const entry = path as string;
+      const repeated = seen.find(
+        (other) =>
+          other === entry || entry.startsWith(`${other}.`) || other.startsWith(`${entry}.`),
+      );
+
+      if (repeated !== undefined) {
+        throw new Error(
+          `${name}.properties entry "${entry}" repeats "${repeated}"; each field appears once.`,
+        );
+      }
+
+      seen.push(entry);
+    }
+  }
+
+  if (
+    width !== undefined &&
+    (typeof width !== 'number' ||
+      !Number.isFinite(width) ||
+      width < PANEL_WIDTH.min ||
+      width > PANEL_WIDTH.max)
+  ) {
+    throw new Error(
+      `${name}.width ${String(width)} must be a number from ${PANEL_WIDTH.min} to ${PANEL_WIDTH.max}.`,
+    );
+  }
+}
+
+function getConfigSummaryKind(
+  collection: CollectionConfig,
+  path: string,
+): SummaryKind | 'guarded' | undefined {
+  if (path === 'id') return 'other';
+
+  if ((path === 'createdAt' || path === 'updatedAt') && collection.timestamps !== false) {
+    return 'date';
+  }
+
+  const chain = resolveFieldPath(collection.fields, path);
+  const field = chain?.at(-1);
+
+  if (!chain || !field || !('name' in field)) return undefined;
+
+  const isGuarded = chain.some(
+    (step) => ('hidden' in step && step.hidden === true) || ('access' in step && step.access?.read),
+  );
+
+  if (isGuarded) return 'guarded';
+
+  if ('virtual' in field && field.virtual) return 'other';
+
+  if (field.type === 'number' && !field.hasMany) return 'number';
+
+  return field.type === 'date' ? 'date' : 'other';
+}
+
+function validateSummary(collection: CollectionConfig, view: CollectionView & { slug: string }) {
+  if (view.type !== 'list' || view.summary === undefined) return;
+
+  const prefix = `[frogbot] Collection "${collection.slug}" list view "${view.slug}" summary`;
+
+  if (!view.summary || typeof view.summary !== 'object' || Array.isArray(view.summary)) {
+    throw new Error(`${prefix} must be an object of field paths to operations.`);
+  }
+
+  for (const [path, operation] of Object.entries(view.summary)) {
+    const kind = getConfigSummaryKind(collection, path);
+
+    if (!kind) throw new Error(`${prefix} names "${path}", which is not a field.`);
+
+    if (kind === 'guarded') {
+      throw new Error(
+        `${prefix} names "${path}", which is hidden or has its own access.read, so it can't be totaled.`,
+      );
+    }
+
+    if (!SUMMARY_OPERATIONS[kind].includes(operation)) {
+      throw new Error(
+        `${prefix} sets "${path}" to "${String(operation)}": a ${kind === 'other' ? 'field that is not a number or date' : `${kind} field`} takes ${SUMMARY_OPERATIONS[kind].join(', ')}.`,
+      );
+    }
   }
 }
 
@@ -142,9 +271,11 @@ export function compileCollectionViews({
   }
 
   validateUseAsDone(collection);
+  validatePanel(collection);
 
   for (const view of views) {
     validateAdminIcon(view.icon);
+    validateSummary(collection, view);
 
     if (containsFunction(view.filter)) {
       throw new Error(
@@ -153,12 +284,12 @@ export function compileCollectionViews({
     }
 
     if (
-      view.type === 'board' &&
+      (view.type === 'board' || view.type === 'list') &&
       view.groupBy &&
       !resolveGroupByField(collection.fields, view.groupBy)
     ) {
       throw new Error(
-        `[frogbot] Collection "${collection.slug}" board view "${view.slug}" has an unsupported groupBy field "${view.groupBy}".`,
+        `[frogbot] Collection "${collection.slug}" ${view.type} view "${view.slug}" has an unsupported groupBy field "${view.groupBy}".`,
       );
     }
 
@@ -193,9 +324,15 @@ export function compileCollectionViews({
 
   onRuntimeViews?.(views);
 
-  const { components: authoredComponents, useAsDone, views: _views, ...adminSource } = source ?? {};
+  const {
+    components: authoredComponents,
+    panel,
+    useAsDone,
+    views: _views,
+    ...adminSource
+  } = source ?? {};
 
-  const { edit, ...componentSource } = authoredComponents ?? {};
+  const { edit, panel: _panelComponents, ...componentSource } = authoredComponents ?? {};
   const runtimeViews: Record<string, unknown> = {};
   const metadata: CollectionViewMetadata[] = [];
 
@@ -280,6 +417,13 @@ export function compileCollectionViews({
       ...adminSource.custom,
       frogbot: {
         ...((adminSource.custom?.frogbot as Record<string, unknown> | undefined) ?? {}),
+        panel:
+          panel === false
+            ? false
+            : {
+                ...(panel?.properties ? { properties: panel.properties } : {}),
+                width: panel?.width ?? PANEL_WIDTH.default,
+              },
         ...(useAsDone ? { useAsDone } : {}),
         views: metadata,
       },

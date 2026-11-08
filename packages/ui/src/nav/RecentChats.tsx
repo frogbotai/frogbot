@@ -101,11 +101,7 @@ export function RecentChats({ adapter, chatPath, recents, viewAllPath }: RecentC
                   }}
                 >
                   <div className="fb-recent-chats__item">
-                    <NavItem
-                      active={pathname === path || pathname.startsWith(`${path}/`)}
-                      label={recent.title || 'Untitled'}
-                      path={path}
-                    />
+                    <NavItem label={recent.title || 'Untitled'} path={path} />
                   </div>
                 </ChatHistoryActions>
               );

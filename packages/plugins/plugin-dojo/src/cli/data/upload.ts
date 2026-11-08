@@ -37,6 +37,8 @@ export type UploadDataProps = {
   io: Pick<DojoIO, 'stdout' | 'isTTY'>;
   /** Waits before each retry of a part; one entry per retry. */
   retryDelays?: number[];
+  /** An owner's `--replace-data` on a started app: Dojo takes data that replaces the live data. */
+  replace?: boolean;
 };
 
 /**
@@ -50,6 +52,7 @@ export async function uploadData({
   inventory,
   io,
   retryDelays = [1_000, 2_000, 4_000],
+  replace = false,
 }: UploadDataProps): Promise<void> {
   const objects: DataFile[] = [
     {
@@ -69,7 +72,7 @@ export async function uploadData({
 
   try {
     for (const batch of batches(objects)) {
-      await uploadBatch({ dojo, base, batch, progress, retryDelays });
+      await uploadBatch({ dojo, base, batch, progress, retryDelays, replace });
     }
   } finally {
     progress.end();
@@ -82,17 +85,22 @@ async function uploadBatch({
   batch,
   progress,
   retryDelays,
+  replace,
 }: {
   dojo: DojoClient;
   base: string;
   batch: DataFile[];
   progress: UploadProgress;
   retryDelays: number[];
+  replace: boolean;
 }): Promise<void> {
   const response = await dojo.request(base, () => ({
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ objects: batch.map(({ key, size }) => ({ key, size })) }),
+    body: JSON.stringify({
+      objects: batch.map(({ key, size }) => ({ key, size })),
+      ...(replace && { replace }),
+    }),
   }));
 
   if (!response.ok) {
@@ -128,7 +136,7 @@ async function uploadBatch({
     const completed = await dojo.request(`${base}/complete`, () => ({
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ uploads: [upload] }),
+      body: JSON.stringify({ uploads: [upload], ...(replace && { replace }) }),
       signal,
     }));
 

@@ -4,7 +4,6 @@ import {
   RelationshipProvider,
   toast,
   useConfig,
-  useDocumentDrawer,
   useListQuery,
   useTableColumns,
 } from '@payloadcms/ui';
@@ -13,12 +12,13 @@ import { type ComponentType, useEffect, useMemo, useRef, useState } from 'react'
 import { Board, type BoardColumnState } from '../../../board/Board.js';
 import { BoardAddButton, InlineAddCard } from '../../../board/InlineAddCard.js';
 import { appendQuery, getPath, setPath } from '../cells.js';
+import { adjustGroupCount, buildGroupWhere, getGroupValueKey } from '../groups/keys.js';
+import type { ResolvedGroup } from '../groups/resolve.js';
+import { useRecordPanel, useRecordPanelEvents } from '../panel/RecordPanelProvider.client.js';
 import { getViewCardColumns } from '../preferences.js';
 import { BoardDocumentCard, type BoardRow } from './BoardDocumentCard.js';
-import { buildBoardReorderBody, buildColumnWhere } from './data.js';
+import { buildBoardReorderBody } from './data.js';
 import type { BoardInlineAdd } from './inlineAdd.js';
-import type { ResolvedBoardColumn } from './resolveColumns.js';
-import { adjustColumnTotal, getBoardGroupKey } from './totals.js';
 import { useBoardColumnState } from './useBoardColumnState.js';
 import { useBoardTotals } from './useBoardTotals.js';
 import { useInlineAdd } from './useInlineAdd.js';
@@ -27,10 +27,10 @@ type Row = BoardRow;
 
 export type BoardViewClientProps = {
   Card?: ComponentType<{ disabled: boolean; row: Row }>;
-  ColumnHeader?: ComponentType<{ column: ResolvedBoardColumn; count: number }>;
+  ColumnHeader?: ComponentType<{ column: ResolvedGroup; count: number }>;
   collectionSlug: string;
   columnState: BoardColumnState;
-  columns: ResolvedBoardColumn[];
+  columns: ResolvedGroup[];
   cover?: string;
   filter?: Record<string, unknown>;
   groupBy: string;
@@ -77,7 +77,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
     viewSlug: props.viewSlug,
   });
 
-  const groupKey = (row: Row) => getBoardGroupKey(getPath(row, props.groupBy));
+  const groupKey = (row: Row) => getGroupValueKey(getPath(row, props.groupBy));
 
   const fetchColumn = async (key: string, page: number, replace = false) => {
     const value = props.columns.find((column) => column.key === key)?.value;
@@ -87,7 +87,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
       page: String(page),
     });
 
-    appendQuery(params, 'where', buildColumnWhere(where, props.groupBy, value));
+    appendQuery(params, 'where', buildGroupWhere(where, props.groupBy, value));
     appendQuery(params, 'sort', query.sort);
     const response = await fetch(`${config.routes.api}/${props.collectionSlug}?${params}`, {
       credentials: 'include',
@@ -214,8 +214,8 @@ export function BoardViewClient(props: BoardViewClientProps) {
     );
   };
 
-  const removeRow = (doc: Row) => {
-    setRows((current) => current.filter((row) => row.id !== doc.id));
+  const removeRow = (id: number | string) => {
+    setRows((current) => current.filter((row) => String(row.id) !== String(id)));
     void totals.refresh();
   };
 
@@ -245,15 +245,28 @@ export function BoardViewClient(props: BoardViewClientProps) {
     },
   });
 
-  const [CreateDrawer, , createDrawer] = useDocumentDrawer({
-    collectionSlug: props.collectionSlug,
+  const panel = useRecordPanel();
+  const pendingDraft = useRef<string | undefined>(undefined);
+
+  useRecordPanelEvents((event) => {
+    if (event.type === 'deleted') {
+      removeRow(event.id);
+
+      return;
+    }
+
+    upsertRow(event.doc);
+    if (event.operation === 'create' && pendingDraft.current) {
+      inline.remove(pendingDraft.current);
+      pendingDraft.current = undefined;
+    }
+
+    void totals.refresh();
   });
 
-  const [form, setForm] = useState<{ data: Record<string, unknown>; draftId?: string }>();
-
   const openForm = (key: string, data: Record<string, unknown> = {}, draftId?: string) => {
-    setForm({ data: { ...data, ...groupData(key) }, draftId });
-    createDrawer.openDrawer();
+    pendingDraft.current = draftId;
+    panel.create({ ...data, ...groupData(key) });
   };
 
   const add = (key: string) => {
@@ -321,7 +334,6 @@ export function BoardViewClient(props: BoardViewClientProps) {
                 collectionSlug={props.collectionSlug}
                 cover={props.cover}
                 disabled={!props.canUpdate}
-                onDelete={removeRow}
                 onSave={(doc) => {
                   upsertRow(doc);
                   void totals.refresh();
@@ -334,22 +346,12 @@ export function BoardViewClient(props: BoardViewClientProps) {
           totals={
             totals.totals &&
             Object.entries(inline.pending).reduce(
-              (current, [key, delta]) => adjustColumnTotal(current, key, delta),
+              (current, [key, delta]) => adjustGroupCount(current, key, delta),
               totals.totals,
             )
           }
         />
       </div>
-      {props.canCreate ? (
-        <CreateDrawer
-          initialData={form?.data}
-          onSave={({ doc }) => {
-            upsertRow(doc);
-            if (form?.draftId) inline.remove(form.draftId);
-            void totals.refresh();
-          }}
-        />
-      ) : null}
     </RelationshipProvider>
   );
 }
