@@ -84,6 +84,10 @@ function parseShareArgs(argv: string[], program: string): ShareFlags {
 
   const { values } = parsed;
 
+  if (values['replace-data'] && values.data === false) {
+    throw new ShareError(`Use --replace-data or --no-data, not both. ${usage(program)}`, 2);
+  }
+
   return {
     data: values.data,
     replaceData: values['replace-data'],

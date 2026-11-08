@@ -451,4 +451,19 @@ describe('frogbot share --replace-data', () => {
     expect(result.stderr()[0]).toContain('nothing was replaced');
     expect(after().filter(({ path }) => path.includes('/data-uploads'))).toEqual([]);
   });
+
+  it('refuses --replace-data with --no-data, on a first share and a started app, before any request', async () => {
+    const first = await setup();
+    const result = await first.run(['--replace-data', '--no-data']);
+
+    expect(result.code).toBe(2);
+    expect(result.stderr()[0]).toContain('Use --replace-data or --no-data, not both.');
+    expect(first.dojo.requests).toEqual([]);
+
+    const { run, after } = await started();
+    const later = await run(['--replace-data', '--no-data'], { isTTY: true, text: 'x' });
+
+    expect(later.code).toBe(2);
+    expect(after()).toEqual([]);
+  });
 });
