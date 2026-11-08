@@ -17,6 +17,21 @@ const count = (page: Page, label: string) => group(page, label).locator('.fb-lis
 
 const rows = (page: Page, label: string) => group(page, label).locator('tbody > tr');
 
+const setupKey = 'collection-deals-view-list';
+
+const collapseSaved = (page: Page) =>
+  page.waitForResponse(
+    (response) =>
+      response.url().includes(`/payload-preferences/${setupKey}:groups`) &&
+      response.request().method() === 'POST',
+  );
+
+async function savedSetup(page: Page) {
+  const response = await page.request.get(`/api/payload-preferences/${setupKey}`);
+
+  return ((await response.json()) as { value?: Record<string, unknown> }).value ?? {};
+}
+
 async function reset(page: Page) {
   await forgetViewSetup(page, 'deals');
   await page.request.delete('/api/payload-preferences/collection-deals');
@@ -29,9 +44,11 @@ async function total(page: Page, where: string) {
 }
 
 let errors: string[];
+let created: number[];
 
 test.beforeEach(async ({ page }) => {
   errors = [];
+  created = [];
 
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
@@ -44,6 +61,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.afterEach(async ({ page }) => {
+  for (const id of created) await page.request.delete(`/api/deals/${id}`);
+
   await reset(page);
   expect(errors).toEqual([]);
 });
@@ -83,11 +102,12 @@ test('keeps a collapsed group collapsed after a reload, and reset clears it', as
   await page.goto('/collections/deals');
   await expect(rows(page, 'Lead').first()).toBeVisible();
 
+  const saved = collapseSaved(page);
   await group(page, 'Lead').getByRole('button', { name: 'Collapse Lead' }).click();
   await expect(rows(page, 'Lead')).toHaveCount(0);
   await expect(count(page, 'Lead')).not.toHaveText('0');
 
-  await page.waitForResponse((response) => response.url().includes('/payload-preferences/'));
+  await saved;
   await page.reload();
 
   await expect(group(page, 'Lead').getByRole('button', { name: 'Expand Lead' })).toBeVisible();
@@ -102,6 +122,61 @@ test('keeps a collapsed group collapsed after a reload, and reset clears it', as
   await page.getByRole('menuitem', { name: 'Reset to default' }).click();
 
   await expect(rows(page, 'Lead').first()).toBeVisible();
+});
+
+test('collapsing a group after changing the sort keeps the new sort saved', async ({ page }) => {
+  await page.goto('/collections/deals?groupBy=stage&sort=name');
+  await expect(group(page, 'Lost')).toBeVisible();
+
+  let saved = collapseSaved(page);
+  await group(page, 'Lost').getByRole('button', { name: 'Collapse Lost' }).click();
+  await saved;
+
+  await page
+    .getByRole('button', { name: /sort by name descending/i })
+    .first()
+    .click();
+
+  await expect(page).toHaveURL(/sort=-name/);
+  await expect.poll(async () => (await savedSetup(page)).sort).toBe('-name');
+
+  saved = collapseSaved(page);
+  await group(page, 'Won').getByRole('button', { name: 'Collapse Won' }).click();
+  await saved;
+
+  expect(await savedSetup(page)).toMatchObject({ sort: '-name' });
+
+  await page.goto('/collections/deals');
+  await expect(page).toHaveURL(/sort=-name/);
+});
+
+test('deleting the selected rows of one group leaves the other groups alone', async ({ page }) => {
+  for (const [name, stage] of [
+    ['Grouped delete lost 1', 'lost'],
+    ['Grouped delete lost 2', 'lost'],
+    ['Grouped delete lost 3', 'lost'],
+    ['Grouped delete won 1', 'won'],
+    ['Grouped delete won 2', 'won'],
+  ]) {
+    const response = await page.request.post('/api/deals', { data: { name, stage } });
+    created.push(((await response.json()) as { doc: { id: number } }).doc.id);
+  }
+
+  await page.goto('/collections/deals?groupBy=stage&limit=2&where[name][like]=Grouped%20delete');
+
+  const lost = group(page, 'Lost');
+  await expect(lost.locator('.fb-list-group__count')).toHaveText('3');
+  await lost.locator('thead input[type="checkbox"]').check();
+  await expect(lost.locator('#select-all-across-pages')).toHaveCount(0);
+
+  await lost.getByRole('button', { name: /^delete$/i }).click();
+  await page.getByRole('button', { name: /^confirm$/i }).click();
+  await expect(page.getByText(/Deleted 2 Deals successfully/)).toBeVisible();
+
+  const named = 'where[name][like]=Grouped%20delete';
+
+  expect(await total(page, `${named}&where[stage][equals]=lost`)).toBe(1);
+  expect(await total(page, `${named}&where[stage][equals]=won`)).toBe(2);
 });
 
 test('pages one group without moving the others', async ({ page }) => {

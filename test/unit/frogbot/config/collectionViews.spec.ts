@@ -226,6 +226,8 @@ describe('collection views', () => {
           fields: [
             { name: 'stage', type: 'select', options: ['lead', 'won'] },
             { name: 'notes', type: 'richText' },
+            { name: 'link', type: 'relationship', relationTo: ['users', 'deals'] },
+            { name: 'label', type: 'text', virtual: true },
           ],
           admin: { views: [{ type: 'list', groupBy }] },
         },
@@ -235,6 +237,8 @@ describe('collection views', () => {
     expect(() => compileList('notes')).toThrow(
       'list view "list" has an unsupported groupBy field "notes"',
     );
+    expect(() => compileList('link')).toThrow('unsupported groupBy field "link"');
+    expect(() => compileList('label')).toThrow('unsupported groupBy field "label"');
   });
 
   it('rejects an unsupported groupBy field inside a row', () => {
