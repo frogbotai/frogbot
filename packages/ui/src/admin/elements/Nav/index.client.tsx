@@ -16,10 +16,11 @@ import { NavAdapterProvider, type NavLinkProps } from '../../../nav/adapter.js';
 import { NavShell, type NavShellProps } from '../../../nav/NavShell.js';
 import type { PaletteModel } from '../CommandPalette/buildPaletteModel.js';
 import { RecordPalette } from '../CommandPalette/index.client.js';
+import { SettingsNav, type SettingsNavProps } from '../SettingsNav/index.client.js';
 
 export type FrogBotNavClientProps = Omit<
   NavShellProps,
-  'accountIcon' | 'navItems' | 'scrollClassName'
+  'accountIcon' | 'children' | 'navItems' | 'scrollClassName'
 > & {
   accountPath: string;
   CustomAvatar?: ReactNode;
@@ -28,17 +29,16 @@ export type FrogBotNavClientProps = Omit<
   settingsPath: string;
 };
 
+export type FrogBotSettingsNavClientProps = SettingsNavProps & {
+  initialOpen?: boolean;
+  palette: PaletteModel;
+};
+
 function PayloadLink(props: NavLinkProps) {
   return <Link {...props} prefetch={false} />;
 }
 
-/** FrogBot's sidebar on Payload's router, preferences and nav state. */
-export function FrogBotNavClient({
-  CustomAvatar,
-  items,
-  palette,
-  ...props
-}: FrogBotNavClientProps) {
+function PayloadNavAdapter({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { getPreference, setPreference } = usePreferences();
@@ -59,6 +59,20 @@ export function FrogBotNavClient({
         set: (key, value) => setPreference(key, value, key === PREFERENCE_KEYS.NAV),
       }}
     >
+      {children}
+    </NavAdapterProvider>
+  );
+}
+
+/** FrogBot's sidebar on Payload's router, preferences and nav state. */
+export function FrogBotNavClient({
+  CustomAvatar,
+  items,
+  palette,
+  ...props
+}: FrogBotNavClientProps) {
+  return (
+    <PayloadNavAdapter>
       <NavShell
         {...props}
         accountIcon={CustomAvatar !== undefined ? CustomAvatar : <Account />}
@@ -66,6 +80,26 @@ export function FrogBotNavClient({
         scrollClassName="nav__scroll"
       />
       <RecordPalette {...palette} />
-    </NavAdapterProvider>
+    </PayloadNavAdapter>
+  );
+}
+
+/** The Settings sidebar in the same shell and drawer as FrogBot's sidebar. */
+export function FrogBotSettingsNavClient({
+  initialOpen,
+  palette,
+  ...settings
+}: FrogBotSettingsNavClientProps) {
+  return (
+    <PayloadNavAdapter>
+      <NavShell
+        homePath={settings.backHref}
+        initialOpen={initialOpen}
+        scrollClassName="nav__scroll"
+      >
+        <SettingsNav {...settings} />
+      </NavShell>
+      <RecordPalette {...palette} />
+    </PayloadNavAdapter>
   );
 }

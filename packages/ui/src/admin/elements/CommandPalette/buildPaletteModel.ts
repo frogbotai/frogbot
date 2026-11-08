@@ -3,6 +3,7 @@ import type { SearchIndexDescriptors } from 'frogbot';
 import type { Field, SanitizedCollectionConfig } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 
+import { getSettingsCollections } from '../../views/Settings/resolveSection.js';
 import {
   buildCollectionGroups,
   buildNavModel,
@@ -90,7 +91,7 @@ export function pickLexicalIndex(collection: SanitizedCollectionConfig): string 
   });
 }
 
-/** Builds the command palette's "go to" rows and searchable collections, in sidebar order. */
+/** Builds the command palette's "go to" rows and searchable collections, in sidebar order, then Settings collections. */
 export function buildPaletteModel(props: BuildNavModelProps): PaletteModel {
   const { config, i18n, permissions, visibleEntities } = props;
   const adminRoute = config.routes.admin;
@@ -103,6 +104,16 @@ export function buildPaletteModel(props: BuildNavModelProps): PaletteModel {
     ...groups.flatMap(({ items: groupItems, label: group }) =>
       groupItems.map(({ label, path }) => ({ group, label, path })),
     ),
+    ...getSettingsCollections(config)
+      .filter(
+        ({ slug }) =>
+          visibleEntities.collections.includes(slug) && permissions.collections?.[slug]?.read,
+      )
+      .map(({ labels, slug }) => ({
+        group: i18n.t('general:settings'),
+        label: getTranslation(labels.plural, i18n),
+        path: formatAdminURL({ adminRoute, path: `/collections/${slug}` }),
+      })),
   ];
 
   const collectionByPath = new Map(

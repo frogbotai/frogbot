@@ -1,5 +1,6 @@
 import { HomeIcon } from '@frogbotai/ui/icons';
 import { render, screen } from '@testing-library/react';
+import type * as frogbotInternalModule from 'frogbot/internal';
 import type { PayloadRequest, ServerProps } from 'payload';
 import type { ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -40,7 +41,10 @@ const attachRegisteredFrogBot = vi.hoisted(() =>
   }),
 );
 
-vi.mock('frogbot/internal', () => ({ attachRegisteredFrogBot }));
+vi.mock('frogbot/internal', async (importOriginal) => ({
+  ...(await importOriginal<typeof frogbotInternalModule>()),
+  attachRegisteredFrogBot,
+}));
 
 vi.mock('@payloadcms/ui', () => ({
   Account: () => <span />,
@@ -58,6 +62,7 @@ vi.mock('@payloadcms/ui', () => ({
 
 vi.mock('../../../../../../packages/ui/src/admin/elements/Nav/index.client', () => ({
   FrogBotNavClient: navClient,
+  FrogBotSettingsNavClient: navClient,
 }));
 
 const sectionPath = './NavSection#VisibleEntitiesSection';
@@ -226,6 +231,26 @@ describe('FrogBotNav', () => {
     expect(screen.getByTestId('probe-logout').textContent).toBe('attached');
     expect(attachRegisteredFrogBot).toHaveBeenCalledExactlyOnceWith(navProps.req);
     expect(renderLog[0]).toBe('attach');
+  });
+
+  it('gives the Settings sidebar Log out and the account-menu slots', async () => {
+    const navProps = accountMenuProps({
+      components: {
+        ...accountMenuComponents,
+        views: { settings: { Component: '@frogbotai/ui/admin/rsc#SettingsView' } },
+      },
+    });
+
+    render(await FrogBotNav({ ...navProps, viewType: 'account' }));
+
+    const settingsNav = navClient.mock.calls[0]?.[0] as NavClientProps & { logoutPath?: string };
+
+    expect(settingsNav).toHaveProperty('backHref', '/admin');
+    expect(settingsNav.logoutPath).toBe('/admin/logout');
+    expect(screen.getByTestId('probe-before-account').textContent).toBe('attached');
+    expect(screen.getByTestId('probe-after-account').textContent).toBe('attached');
+    expect(screen.getByTestId('probe-settings-menu').textContent).toBe('attached');
+    expect(screen.getByTestId('probe-logout').textContent).toBe('attached');
   });
 
   it('skips the attach when no req is passed', async () => {

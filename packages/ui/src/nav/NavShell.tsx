@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react';
 
 import { useIsMobile } from '../hooks/use-mobile.js';
 import { useNavAdapter } from './adapter.js';
@@ -15,6 +15,11 @@ export type NavShellProps = Omit<
   AppSidebarProps,
   'currentPath' | 'onNavigate' | 'onToggle' | 'open'
 > & {
+  /**
+   * Replaces `AppSidebar`, such as a Settings sidebar. The rail then never collapses on desktop,
+   * and the host's open state follows `initialOpen`, so `AppSidebar` returns as it was saved.
+   */
+  children?: ReactNode;
   /** The saved desktop state; the sidebar starts open without it. */
   initialOpen?: boolean;
   /** Extra classes for the scroll container, for a host layout that styles it. */
@@ -22,10 +27,11 @@ export type NavShellProps = Omit<
 };
 
 /**
- * `AppSidebar` in a shell: a rail that collapses on desktop, and a drawer with a backdrop and
- * Escape below 768px. The shell renders its own drawer toggle unless the host supplies `drawer`.
+ * `AppSidebar`, or the `children` that replace it, in a shell: a rail that collapses on desktop,
+ * and a drawer with a backdrop and Escape below 768px. The shell renders its own drawer toggle
+ * unless the host supplies `drawer`.
  */
-export function NavShell({ initialOpen, scrollClassName, ...sidebar }: NavShellProps) {
+export function NavShell({ children, initialOpen, scrollClassName, ...sidebar }: NavShellProps) {
   const { drawer: hostDrawer, navigate, pathname, preferences } = useNavAdapter();
   const [ownOpen, setOwnOpen] = useState(false);
   const drawer = hostDrawer ?? { open: ownOpen, setOpen: setOwnOpen, hydrated: true };
@@ -36,12 +42,17 @@ export function NavShell({ initialOpen, scrollClassName, ...sidebar }: NavShellP
     hydrated && !isMobile && hostDrawer ? drawerOpen : (initialOpen ?? true),
   );
 
-  const open = isMobile ? drawerOpen : desktopOpen;
+  const replaced = children !== undefined;
+  const open = isMobile ? drawerOpen : replaced || desktopOpen;
   const navState = getNavShellState(isMobile, open);
 
+  const hostOpen = replaced ? initialOpen : desktopOpen;
+
   useLayoutEffect(() => {
-    if (hydrated && !isMobile && drawerOpen !== desktopOpen) setDrawerOpen(desktopOpen);
-  }, [desktopOpen, hydrated, isMobile, drawerOpen, setDrawerOpen]);
+    if (hydrated && !isMobile && hostOpen !== undefined && drawerOpen !== hostOpen) {
+      setDrawerOpen(hostOpen);
+    }
+  }, [hostOpen, hydrated, isMobile, drawerOpen, setDrawerOpen]);
 
   useEffect(() => {
     if (isMobile) setDrawerOpen(false);
@@ -74,25 +85,27 @@ export function NavShell({ initialOpen, scrollClassName, ...sidebar }: NavShellP
           ref={ref}
         >
           <div className="fb-nav">
-            <AppSidebar
-              {...sidebar}
-              currentPath={pathname}
-              onNavigate={navigate}
-              onToggle={() => {
-                if (isMobile) {
-                  setDrawerOpen(!drawerOpen);
+            {children ?? (
+              <AppSidebar
+                {...sidebar}
+                currentPath={pathname}
+                onNavigate={navigate}
+                onToggle={() => {
+                  if (isMobile) {
+                    setDrawerOpen(!drawerOpen);
 
-                  return;
-                }
+                    return;
+                  }
 
-                const next = !desktopOpen;
+                  const next = !desktopOpen;
 
-                setDesktopOpen(next);
-                setDrawerOpen(next);
-                void preferences.set(NAV_PREFERENCE_KEY, { open: next });
-              }}
-              open={open}
-            />
+                  setDesktopOpen(next);
+                  setDrawerOpen(next);
+                  void preferences.set(NAV_PREFERENCE_KEY, { open: next });
+                }}
+                open={open}
+              />
+            )}
           </div>
         </div>
       </aside>

@@ -1,0 +1,89 @@
+@layer frogbot {
+  .frogbot-settings-nav {
+    color: var(--color-text);
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding: 0.75rem 0.25rem;
+  }
+
+  .frogbot-settings-nav__back,
+  .frogbot-settings-nav__item {
+    align-items: center;
+    color: var(--color-text-secondary);
+    display: flex;
+    font-size: 0.875rem;
+    font-weight: 500;
+    gap: 0.625rem;
+    text-decoration: none;
+  }
+
+  .frogbot-settings-nav__back {
+    margin-bottom: 1.5rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .frogbot-settings-nav__back:hover,
+  .frogbot-settings-nav__item:hover {
+    color: var(--color-text);
+  }
+
+  .frogbot-settings-nav__heading {
+    color: var(--color-text-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    margin: 0 0 1rem;
+    padding: 0 0.5rem;
+    text-transform: uppercase;
+  }
+
+  .frogbot-settings-nav__items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .frogbot-settings-nav__item {
+    border-radius: var(--radius-medium);
+    padding: 0.5rem 0.625rem;
+    transition:
+      background-color 100ms ease,
+      color 100ms ease;
+  }
+
+  .frogbot-settings-nav__item:hover {
+    background: var(--color-bg-hover);
+  }
+
+  .frogbot-settings-nav__item--active {
+    background: var(--color-bg-secondary-hover);
+    color: var(--color-text);
+  }
+
+  .frogbot-settings-nav__icon {
+    align-items: center;
+    display: flex;
+    flex: 0 0 1.125rem;
+    justify-content: center;
+  }
+
+  .frogbot-settings-nav__icon svg {
+    height: 1.125rem;
+    width: 1.125rem;
+  }
+
+  .frogbot-settings-nav__footer {
+    border-top: 1px solid var(--color-border);
+    margin-top: auto;
+    padding-top: 0.75rem;
+  }
+
+  :where(.frogbot-settings-nav__footer button) {
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font-family: inherit;
+    width: 100%;
+  }
+}
