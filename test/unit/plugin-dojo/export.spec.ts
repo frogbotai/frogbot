@@ -149,6 +149,40 @@ describe('POST /api/dojo/export', () => {
     expect(await readdir(join(app.dir, 'data'))).toEqual(['frogbot.db']);
   });
 
+  it('empties the sessions of an auth collection FrogBot adds after the plugins run', async () => {
+    const app = await liveApp();
+    const sessions: number[] = [];
+    const options = {
+      env,
+      collections: [{ slug: 'deals' }],
+      cwd: app.dir,
+      databaseUrl: () => 'file:./data/frogbot.db',
+      upload: ({ path: copy }: { path: string }) => {
+        const read = new DatabaseSync(copy);
+
+        sessions.push(
+          (read.prepare('SELECT COUNT(*) AS n FROM users_sessions').get() as { n: number }).n,
+        );
+
+        read.close();
+
+        return Promise.resolve();
+      },
+    };
+
+    const response = await dojoExportEndpoint(options).handler({
+      headers: new Headers({ authorization: 'Bearer jobs-secret' }),
+      json: () => Promise.resolve({ key }),
+      frogbot: { db: { snapshot: sqliteSnapshot({ url: `file:${app.path}` }) } },
+      payload: {
+        config: { collections: [{ slug: 'deals' }, { slug: 'users', auth: true }] },
+      },
+    } as unknown as FrogBotRequest);
+
+    expect(response.status).toBe(200);
+    expect(sessions).toEqual([0]);
+  });
+
   it('reads the database path from a file: URL', () => {
     expect(databaseFile('file:/data/frogbot.db', '/app')).toBe('/data/frogbot.db');
     expect(databaseFile('file:./frogbot.db?mode=rw', '/app')).toBe('/app/frogbot.db');
