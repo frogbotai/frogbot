@@ -27,7 +27,7 @@ describe('iconRegistry', () => {
     expect(iconNames).toContain('money-bag');
     expect(iconNames).toContain('map-pin');
     expect(iconNames).not.toContain('create-lucide');
-    expect(iconNames.filter((name) => !name.startsWith('brand-'))).toEqual(configuredIconNames);
+    expect(iconNames).toEqual(configuredIconNames);
   });
 
   it('names brand logos with a brand- prefix', () => {

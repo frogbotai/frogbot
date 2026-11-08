@@ -62,7 +62,7 @@ Set `admin.icon` on every collection that shows in the sidebar. Without one it s
 | Places   | `map-pin`, `building`, `home`, `web`                                                                      |
 | Settings | `setting`, `shield`, `key-round`, `lock`, `database`, `link-square`, `code`                               |
 
-Every built-in name is a UI icon. Brand logos (`brand-slack`, `brand-visa`) aren't built-in names, and they don't belong in the sidebar. Your editor autocompletes every built-in name, and an unknown name stops startup with the full list. For anything else, point at a component: `icon: './src/components/LeadsIcon#LeadsIcon'`.
+A collection about one platform takes its logo, always with the `brand-` prefix: `brand-twitter` for an X swipe file, `brand-youtube` for a channel list, `brand-git-hub` for repos. Everything else takes a UI icon. Your editor autocompletes every built-in name, and an unknown name stops startup with the full list. For anything else, point at a component: `icon: './src/components/LeadsIcon#LeadsIcon'`.
 
 ## Views and done records
 
