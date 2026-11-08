@@ -69,7 +69,7 @@ describe('card thumbnails', () => {
     const thumbnail = resolveCardThumbnail({ collectionConfig: media, view: {} });
 
     expect(thumbnail).toEqual({ fit: 'cover', upload: true });
-    expect(getCardThumbnailURL({ id: 1, ...logo }, thumbnail)).toBe(logo.url);
+    expect(getCardThumbnailURL({ ...logo }, thumbnail)).toBe(logo.url);
     expect(
       getCardThumbnailPopulate({ collectionConfig: media, collections: [media], thumbnail }),
     ).toBeUndefined();
