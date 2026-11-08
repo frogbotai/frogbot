@@ -211,6 +211,16 @@ export function BoardViewClient(props: BoardViewClientProps) {
     ]);
   };
 
+  const refreshRow = async (id: Row['id']) => {
+    const params = new URLSearchParams({ depth: '1' });
+
+    appendQuery(params, 'populate', props.populate);
+
+    upsertRow(
+      (await request(`/${props.collectionSlug}/${id}?${params}`, { method: 'GET' })) as Row,
+    );
+  };
+
   const upsertRow = (doc: Row) => {
     setRows((current) =>
       current.some((row) => row.id === doc.id)
@@ -232,8 +242,11 @@ export function BoardViewClient(props: BoardViewClientProps) {
 
   const inline = useInlineAdd({
     create: async ({ columnKey, title }) => {
+      const params = new URLSearchParams({ depth: '1' });
+
+      appendQuery(params, 'populate', props.populate);
       const result = await request(
-        `/${props.collectionSlug}?depth=1`,
+        `/${props.collectionSlug}?${params}`,
         {
           body: JSON.stringify({ ...groupData(columnKey), [useAsTitle ?? 'id']: title }),
           method: 'POST',
@@ -327,9 +340,14 @@ export function BoardViewClient(props: BoardViewClientProps) {
                 disabled={!props.canUpdate}
                 onDelete={removeRow}
                 onSave={(doc) => {
+                  void refreshRow(doc.id).catch(() => upsertRow(doc));
+                  void totals.refresh();
+                }}
+                onToggled={(doc) => {
                   upsertRow(doc);
                   void totals.refresh();
                 }}
+                populate={props.populate}
                 row={row}
                 thumbnail={props.thumbnail}
               />
@@ -349,7 +367,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
         <CreateDrawer
           initialData={form?.data}
           onSave={({ doc }) => {
-            upsertRow(doc);
+            void refreshRow(doc.id).catch(() => upsertRow(doc));
             if (form?.draftId) inline.remove(form.draftId);
             void totals.refresh();
           }}

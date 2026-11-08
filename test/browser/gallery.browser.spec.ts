@@ -118,6 +118,19 @@ test('shows the empty state when the search matches nothing', async ({ page }) =
   await expect(page.locator('.collection-gallery__card')).toHaveCount(0);
 });
 
+test("shows 25 cards per page by default, one of Payload's page sizes", async ({ page }) => {
+  await page.goto('/collections/companies/gallery');
+
+  const sizeButton = page.locator('.per-page button').first();
+
+  await expect(sizeButton).toHaveText('25');
+  await sizeButton.click();
+
+  await expect(
+    page.locator('.popup__content').getByRole('menuitemradio', { name: '25' }),
+  ).toHaveAttribute('aria-checked', 'true');
+});
+
 test('pages through the cards with the page controls', async ({ page }) => {
   await page.goto('/collections/companies/gallery?limit=5');
 

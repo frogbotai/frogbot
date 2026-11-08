@@ -38,7 +38,7 @@ describe('card thumbnails', () => {
       view: { useAsThumbnail: 'banner' },
     });
 
-    expect(thumbnail).toEqual({ field: 'banner', fit: 'cover' });
+    expect(thumbnail).toEqual({ field: 'banner', fit: 'cover', upload: false });
     expect(getCardThumbnailURL({ banner, id: 'a', logo }, thumbnail)).toBe(banner.url);
   });
 
@@ -61,14 +61,14 @@ describe('card thumbnails', () => {
       view: { thumbnailFit: 'contain' },
     });
 
-    expect(thumbnail).toEqual({ field: 'logo', fit: 'contain' });
+    expect(thumbnail).toEqual({ field: 'logo', fit: 'contain', upload: false });
     expect(getCardThumbnailURL({ id: 'a', logo }, thumbnail)).toBe(logo.url);
   });
 
   it("shows an upload collection's own file with nothing set", () => {
     const thumbnail = resolveCardThumbnail({ collectionConfig: media, view: {} });
 
-    expect(thumbnail).toEqual({ fit: 'cover' });
+    expect(thumbnail).toEqual({ fit: 'cover', upload: true });
     expect(getCardThumbnailURL({ id: 1, ...logo }, thumbnail)).toBe(logo.url);
     expect(
       getCardThumbnailPopulate({ collectionConfig: media, collections: [media], thumbnail }),
@@ -131,7 +131,7 @@ describe('card thumbnails', () => {
     const populate = getCardThumbnailPopulate({
       collectionConfig: companies,
       collections: [media],
-      thumbnail: { field: 'banner', fit: 'cover' },
+      thumbnail: { field: 'banner', fit: 'cover', upload: false },
     });
 
     expect(populate).toEqual({ media: expect.objectContaining({ url: true }) });

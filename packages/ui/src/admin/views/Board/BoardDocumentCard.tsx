@@ -1,7 +1,7 @@
 'use client';
 
 import { useDocumentDrawer } from '@payloadcms/ui';
-import type { ClientCollectionConfig, Column } from 'payload';
+import type { ClientCollectionConfig, Column, PopulateType } from 'payload';
 
 import { BoardCard } from '../../../board/BoardCard.js';
 import { type CardRow, RecordCard } from '../cards/RecordCard.js';
@@ -24,6 +24,8 @@ export function BoardDocumentCard({
   disabled,
   onDelete,
   onSave,
+  onToggled,
+  populate,
   row,
   thumbnail,
 }: {
@@ -34,6 +36,8 @@ export function BoardDocumentCard({
   disabled: boolean;
   onDelete: (row: BoardRow) => void;
   onSave: (row: BoardRow) => void;
+  onToggled: (row: BoardRow) => void;
+  populate?: PopulateType;
   row: BoardRow;
   thumbnail: CardThumbnail;
 }) {
@@ -55,7 +59,8 @@ export function BoardDocumentCard({
           collectionConfig={collectionConfig}
           collectionSlug={collectionSlug}
           imageArea="when-set"
-          onSave={onSave}
+          onSave={onToggled}
+          populate={populate}
           row={row}
           thumbnail={thumbnail}
           viewType="board"

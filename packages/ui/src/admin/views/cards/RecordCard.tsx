@@ -5,7 +5,7 @@ import './RecordCard.css';
 import { getTranslation } from '@payloadcms/translations';
 import { DocumentIcon, useConfig, useTranslation } from '@payloadcms/ui';
 import { formatDocTitle } from '@payloadcms/ui/shared';
-import type { ClientCollectionConfig, Column } from 'payload';
+import type { ClientCollectionConfig, Column, PopulateType } from 'payload';
 
 import { FieldCell } from '../../fields/FieldCell/index.client.js';
 import { getPath } from '../cells.js';
@@ -28,6 +28,8 @@ export type RecordCardProps<TRow extends CardRow = CardRow> = {
    */
   imageArea: 'always' | 'when-set';
   onSave: (row: TRow) => void;
+  /** Payload's `populate` for the image's upload, sent with the done toggle. */
+  populate?: PopulateType;
   row: TRow;
   thumbnail: CardThumbnail;
   viewType: 'board' | 'gallery';
@@ -44,13 +46,20 @@ export function RecordCard<TRow extends CardRow>({
   collectionSlug,
   imageArea,
   onSave,
+  populate,
   row,
   thumbnail,
   viewType,
 }: RecordCardProps<TRow>) {
   const useAsDone = getUseAsDone(collectionConfig);
   const done = isRecordDone(row, useAsDone);
-  const { saving, toggle } = useToggleDone<TRow>({ collectionSlug, onSaved: onSave, useAsDone });
+  const { saving, toggle } = useToggleDone<TRow>({
+    collectionSlug,
+    onSaved: onSave,
+    populate,
+    useAsDone,
+  });
+
   const { i18n } = useTranslation();
   const {
     config: {

@@ -1,5 +1,5 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react';
-import type { ClientCollectionConfig, Column } from 'payload';
+import type { ClientCollectionConfig, Column, PopulateType } from 'payload';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -44,7 +44,7 @@ function renderCard(props: Partial<Parameters<typeof RecordCard>[0]> = {}) {
       imageArea="always"
       onSave={vi.fn()}
       row={{ id: 'a', industry: 'software', logo, name: 'Lumen Labs' }}
-      thumbnail={{ field: 'logo', fit: 'cover' }}
+      thumbnail={{ field: 'logo', fit: 'cover', upload: false }}
       viewType="gallery"
       {...props}
     />,
@@ -66,7 +66,9 @@ describe('RecordCard', () => {
   });
 
   it('fits the image without cropping with contain', () => {
-    const { container } = renderCard({ thumbnail: { field: 'logo', fit: 'contain' } });
+    const { container } = renderCard({
+      thumbnail: { field: 'logo', fit: 'contain', upload: false },
+    });
 
     expect(container.querySelector('.fb-card__image--contain img')).not.toBeNull();
   });
@@ -98,7 +100,7 @@ describe('RecordCard', () => {
   });
 
   it("keeps the image after toggling done when the upload's defaultPopulate leaves out its file", async () => {
-    const populate = { media: { mimeType: true, url: true } };
+    const populate: PopulateType = { media: { mimeType: true, url: true } };
     const fetchMock = vi.fn((url: string) =>
       Response.json({
         doc: {

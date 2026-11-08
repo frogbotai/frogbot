@@ -73,6 +73,10 @@ export interface Config {
     projects: Project;
     tags: Tag;
     secrets: Secret;
+    stories: Story;
+    approvals: Approval;
+    photos: Photo;
+    archives: Archive;
     timesheets: Timesheet;
     'api-keys': ApiKey;
     'usage-logs': UsageLog;
@@ -80,6 +84,7 @@ export interface Config {
     'frogbot-chat-assets': FrogBotChatAsset;
     'frogbot-chat-turns': FrogBotChatTurn;
     'frogbot-waitpoints': FrogBotWaitpoint;
+    folders: Folder;
     'frogbot-autonumbers': FrogBotAutonumber;
   };
   collectionsJoins: {};
@@ -90,6 +95,10 @@ export interface Config {
     projects: ProjectsSelect;
     tags: TagsSelect;
     secrets: SecretsSelect;
+    stories: StoriesSelect;
+    approvals: ApprovalsSelect;
+    photos: PhotosSelect;
+    archives: ArchivesSelect;
     timesheets: TimesheetsSelect;
     'api-keys': ApiKeysSelect;
     'usage-logs': UsageLogsSelect;
@@ -97,6 +106,7 @@ export interface Config {
     'frogbot-chat-assets': FrogBotChatAssetsSelect;
     'frogbot-chat-turns': FrogBotChatTurnsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
+    folders: FoldersSelect;
     'frogbot-autonumbers': FrogBotAutonumbersSelect;
   };
   db: {
@@ -111,6 +121,7 @@ export interface Config {
     collections: CollectionsWidget;
     'collection-query': CollectionQueryWidget;
     activity: ActivityWidget;
+    'upload-dropzone': UploadDropzoneWidget;
   };
   user: User;
   jobs: {
@@ -885,6 +896,128 @@ export interface Tag {
 export interface Secret {
   id: number;
   name?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stories".
+ */
+export interface Story {
+  id: number;
+  _order?: string | null;
+  title: string;
+  status?: ('todo' | 'doing' | 'done') | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "approvals".
+ */
+export interface Approval {
+  id: number;
+  _order?: string | null;
+  title: string;
+  status?: ('todo' | 'doing' | 'done') | null;
+  approver: string;
+  photo?: (number | null) | Photo;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photos".
+ */
+export interface Photo {
+  id: number;
+  alt?: string | null;
+  _h_folders?: (number | null) | Folder;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+  };
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders".
+ */
+export interface Folder {
+  id: number;
+  _h_folders?: (number | null) | Folder;
+  name: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _h_slugPath?: string | null;
+  _h_titlePath?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "archives".
+ */
+export interface Archive {
+  id: number;
+  _order?: string | null;
+  title?: string | null;
+  status?: ('todo' | 'doing' | 'done') | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -1723,6 +1856,81 @@ export interface SecretsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stories_select".
+ */
+export interface StoriesSelect {
+  _order?: boolean;
+  title?: boolean;
+  status?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "approvals_select".
+ */
+export interface ApprovalsSelect {
+  _order?: boolean;
+  title?: boolean;
+  status?: boolean;
+  approver?: boolean;
+  photo?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photos_select".
+ */
+export interface PhotosSelect {
+  alt?: boolean;
+  _h_folders?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  deletedAt?: boolean;
+  url?: boolean;
+  thumbnailURL?: boolean;
+  filename?: boolean;
+  mimeType?: boolean;
+  filesize?: boolean;
+  width?: boolean;
+  height?: boolean;
+  original?:
+    | boolean
+    | {
+        filename?: boolean;
+        url?: boolean;
+        mimeType?: boolean;
+        filesize?: boolean;
+        width?: boolean;
+        height?: boolean;
+        prefix?: boolean;
+        _objectKey?: boolean;
+      };
+  focalX?: boolean;
+  focalY?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "archives_select".
+ */
+export interface ArchivesSelect {
+  _order?: boolean;
+  title?: boolean;
+  status?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "timesheets_select".
  */
 export interface TimesheetsSelect {
@@ -1867,6 +2075,20 @@ export interface FrogBotWaitpointsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders_select".
+ */
+export interface FoldersSelect {
+  _h_folders?: boolean;
+  name?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  _h_slugPath?: boolean;
+  _h_titlePath?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-autonumbers_select".
  */
 export interface FrogBotAutonumbersSelect {
@@ -1909,10 +2131,15 @@ export interface CollectionQueryWidget {
       | 'projects'
       | 'tags'
       | 'secrets'
+      | 'stories'
+      | 'approvals'
+      | 'photos'
+      | 'archives'
       | 'timesheets'
       | 'api-keys'
       | 'usage-logs'
-      | 'chats';
+      | 'chats'
+      | 'folders';
     where?:
       | {
           [k: string]: unknown;
@@ -1942,14 +2169,29 @@ export interface ActivityWidget {
           | 'projects'
           | 'tags'
           | 'secrets'
+          | 'stories'
+          | 'approvals'
+          | 'photos'
+          | 'archives'
           | 'timesheets'
           | 'api-keys'
           | 'usage-logs'
           | 'chats'
+          | 'folders'
         )[]
       | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "upload-dropzone_widget".
+ */
+export interface UploadDropzoneWidget {
+  data?: {
+    excludedCollections?: 'photos'[] | null;
+  };
+  width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

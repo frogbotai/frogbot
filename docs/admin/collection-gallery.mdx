@@ -57,8 +57,8 @@ export const Media: CollectionConfig = {
 | `defaultFields` | `string[]` | No | Dot paths to the fields shown under each card's title, in display order. |
 | `filter` | `Where` | No | Invisible base filter applied to the gallery, as plain data. |
 | `defaultSort` | `Sort` (`string \| string[]`) | No | Initial card order. Prefix a field with `-` for descending order. |
-| `searchableFields` | `string[]` | No | Adds fields to normal search behavior; `useAsTitle` remains included. |
-| `pagination` | `ViewPagination` | No; `defaultLimit: 24` | `defaultLimit` sets the cards per page, and `limits` the page-size choices. |
+| `searchableFields` | `string[]` | No | Not read by the gallery. Its search uses the list view's `searchableFields`, plus `useAsTitle`. |
+| `pagination` | `ViewPagination` | No; `defaultLimit: 25` | `defaultLimit` sets the cards per page, and `limits` the page-size choices. |
 | `access` | `({ req }) => boolean \| Promise<boolean>` | No; collection access | Controls whether the current user can open the gallery without replacing collection operation access. |
 | `components` | `ViewComponents & GalleryComponents` | No | Configures shared view slots and gallery components. |
 
@@ -70,7 +70,7 @@ export const Media: CollectionConfig = {
 | `toolbar` | `FrogBotComponent[]` | No; `[]` | Renders in the gallery's view controls, before Filters. Below the small breakpoint it moves into a right-aligned row under the toolbar. |
 | `menuItems` | `FrogBotComponent[]` | No; `[]` | Adds entries to the gallery menu. |
 | `beforeView` | `FrogBotComponent[]` | No; `[]` | Renders inside the view frame before the header. |
-| `afterView` | `FrogBotComponent[]` | No; `[]` | Renders inside the view frame after the gallery and its page controls. |
+| `afterView` | `FrogBotComponent[]` | No; `[]` | Renders inside the view frame after the gallery, above its page controls. |
 | `beforeCards` | `FrogBotComponent[]` | No; `[]` | Renders before the grid. |
 | `afterCards` | `FrogBotComponent[]` | No; `[]` | Renders after the grid. |
 | `Card` | `FrogBotComponent` | No; built-in card body | Replaces each card's body and receives the document as its `row` prop. The card around it still opens the document drawer. |
@@ -104,7 +104,7 @@ The image area has a fixed height, so cards line up. A card with no image, such 
 
 ## Layout and paging
 
-Cards fill as many columns as fit the page, at least 240px wide, or 150px on a phone. The gallery loads one page at a time, 24 cards unless `pagination.defaultLimit` says otherwise, with page controls below the grid.
+Cards fill as many columns as fit the page, at least 240px wide, or 150px on a phone. The gallery loads one page at a time, 25 cards unless `pagination.defaultLimit` says otherwise, with page controls below the grid.
 
 Clicking a card opens the document drawer. Saving or deleting there refreshes the page. With the collection's [`admin.useAsDone`](/configuration/collections#done-records) set, each built-in card starts with a check circle that toggles the record's done field, and done cards show a muted title. The card open in the drawer shows the shared selected style.
 

@@ -13,6 +13,7 @@ import {
   useTableColumns,
   useTranslation,
 } from '@payloadcms/ui';
+import type { PopulateType } from 'payload';
 import { type ComponentType, useEffect, useMemo, useState } from 'react';
 
 import type { CardRow } from '../cards/RecordCard.js';
@@ -25,6 +26,8 @@ export type GalleryViewClientProps = {
   canToggleDone: boolean;
   collectionSlug: string;
   docs: CardRow[];
+  /** Payload's `populate` for the card image's upload. */
+  populate?: PopulateType;
   thumbnail: CardThumbnail;
 };
 
@@ -34,6 +37,7 @@ export function GalleryViewClient({
   canToggleDone,
   collectionSlug,
   docs,
+  populate,
   thumbnail,
 }: GalleryViewClientProps) {
   const router = useRouter();
@@ -71,6 +75,7 @@ export function GalleryViewClient({
             onDelete={() => router.refresh()}
             onSave={() => router.refresh()}
             onToggled={replace}
+            populate={populate}
             row={row}
             thumbnail={thumbnail}
           />

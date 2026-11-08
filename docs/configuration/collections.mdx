@@ -296,7 +296,7 @@ export const Projects: CollectionConfig = {
 
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
-| `defaultLimit` | `number` | No; list uses FrogBot list defaults, gallery defaults to `24`, board to `50` | List and gallery documents per page, or board documents fetched per column. Board columns lazy-load additional pages and virtualize rendered cards. |
+| `defaultLimit` | `number` | No; list uses FrogBot list defaults, gallery defaults to `25`, board to `50` | List and gallery documents per page, or board documents fetched per column. Board columns lazy-load additional pages and virtualize rendered cards. |
 | `limits` | `number[]` | No; list uses FrogBot list defaults | Page-size choices shown by list and gallery page controls. This property does not change board loading or display controls. |
 
 #### ViewComponents
@@ -368,7 +368,7 @@ See [Collection gallery](/admin/collection-gallery) for layout, paging and card 
 
 #### Card images
 
-Board and gallery cards show an image from the collection's `admin.useAsThumbnail`. Startup checks that it names a top-level upload field and, when it's unset, uses the collection's first upload field. On an upload collection with no upload field, such as `media`, each card shows the document's own file. Each board or gallery can change this for its own cards:
+Board and gallery cards show an image from the collection's `admin.useAsThumbnail`. Startup checks that it names a top-level upload field and, when it's unset, uses the collection's first upload field. On an upload collection with no upload field, such as `media`, each card shows the document's own file. On an upload collection, a card whose image field is empty also falls back to the document's own file. Other collections never draw a document from its own fields. Each board or gallery can change this for its own cards:
 
 - `useAsThumbnail: '<field>'` uses another top-level upload field. A bad name stops startup with an error naming the collection, the view and the field.
 - `useAsThumbnail: false` shows no images on that view.

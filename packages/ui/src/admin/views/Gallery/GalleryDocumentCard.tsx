@@ -1,7 +1,7 @@
 'use client';
 
 import { useDocumentDrawer } from '@payloadcms/ui';
-import type { ClientCollectionConfig, Column } from 'payload';
+import type { ClientCollectionConfig, Column, PopulateType } from 'payload';
 import type { ComponentType, KeyboardEvent, ReactNode } from 'react';
 
 import { type CardRow, RecordCard } from '../cards/RecordCard.js';
@@ -22,6 +22,7 @@ export function GalleryDocumentCard({
   onDelete,
   onSave,
   onToggled,
+  populate,
   row,
   thumbnail,
 }: {
@@ -33,6 +34,7 @@ export function GalleryDocumentCard({
   onDelete: (row: CardRow) => void;
   onSave: (row: CardRow) => void;
   onToggled: (row: CardRow) => void;
+  populate?: PopulateType;
   row: CardRow;
   thumbnail: CardThumbnail;
 }) {
@@ -62,6 +64,7 @@ export function GalleryDocumentCard({
         collectionSlug={collectionSlug}
         imageArea="always"
         onSave={onToggled}
+        populate={populate}
         row={row}
         thumbnail={thumbnail}
         viewType="gallery"

@@ -20,7 +20,7 @@ import {
   type GalleryViewClientProps,
 } from './GalleryView.client.js';
 
-const DEFAULT_LIMIT = 24;
+const DEFAULT_LIMIT = 25;
 
 function toNumber(value: unknown): number | undefined {
   const number = typeof value === 'string' || typeof value === 'number' ? Number(value) : NaN;
@@ -99,6 +99,12 @@ export async function GalleryView(input: AdminViewServerProps) {
   });
 
   const thumbnail = resolveCardThumbnail({ collectionConfig, view: gallery });
+  const populate = getCardThumbnailPopulate({
+    collectionConfig,
+    collections: payload.config.collections,
+    thumbnail,
+  });
+
   const where = mergeListSearchAndWhere({
     collectionConfig,
     search: typeof query.search === 'string' ? query.search : '',
@@ -112,11 +118,7 @@ export async function GalleryView(input: AdminViewServerProps) {
       limit,
       overrideAccess: false,
       page,
-      populate: getCardThumbnailPopulate({
-        collectionConfig,
-        collections: payload.config.collections,
-        thumbnail,
-      }),
+      populate,
       req,
       sort,
       where,
@@ -174,6 +176,7 @@ export async function GalleryView(input: AdminViewServerProps) {
         )}
         collectionSlug={collectionSlug}
         docs={data.docs}
+        populate={populate}
         thumbnail={thumbnail}
       />
     </CollectionViewShell>
