@@ -186,6 +186,18 @@ describe('collection views', () => {
                 { name: 'details', type: 'group', fields: [{ name: 'odds', type: 'number' }] },
               ],
             },
+            {
+              name: 'finance',
+              type: 'group',
+              access: { read: () => true },
+              fields: [{ name: 'amount', type: 'number' }],
+            },
+            {
+              name: 'internal',
+              type: 'group',
+              hidden: true,
+              fields: [{ name: 'odds', type: 'number' }],
+            },
           ],
           admin: { views: [{ type: 'list', summary } as never] },
           ...extra,
@@ -215,6 +227,14 @@ describe('collection views', () => {
       [{ amount: 'median' }, 'sets "amount" to "median": a number field takes count, sum, avg'],
       [{ margin: 'sum' }, 'names "margin", which is hidden or has its own access.read'],
       [{ secret: 'count' }, 'names "secret", which is hidden or has its own access.read'],
+      [
+        { 'finance.amount': 'sum' },
+        'names "finance.amount", which is hidden or has its own access.read',
+      ],
+      [
+        { 'internal.odds': 'sum' },
+        'names "internal.odds", which is hidden or has its own access.read',
+      ],
       [['amount'], 'summary must be an object'],
     ])('rejects %j at load, naming the view, path and operation', (summary, message) => {
       expect(() => compile(summary)).toThrow(

@@ -53,6 +53,26 @@ describe('list summary', () => {
     ).toEqual({ amount: 'avg', closedAt: 'max' });
   });
 
+  it('applies the view default to a column named like an Object.prototype key', () => {
+    expect(
+      resolveSummary({
+        columns: { constructor: other, toString: other, valueOf: number },
+        defaults: { constructor: 'count', toString: 'count', valueOf: 'sum' },
+        saved: readSummaryChoices({ summary: {} }),
+      }),
+    ).toEqual({ constructor: 'count', toString: 'count', valueOf: 'sum' });
+  });
+
+  it('falls back to the view default when a saved choice no longer fits the column', () => {
+    expect(
+      resolveSummary({
+        columns: { closedAt: date },
+        defaults: { closedAt: 'max' },
+        saved: readSummaryChoices({ summary: { closedAt: 'sum' } }),
+      }),
+    ).toEqual({ closedAt: 'max' });
+  });
+
   it('leaves out columns the server did not resolve, such as a field with access.read', () => {
     expect(
       resolveSummary({ columns: { amount: number }, defaults: { margin: 'sum' }, saved: {} }),
