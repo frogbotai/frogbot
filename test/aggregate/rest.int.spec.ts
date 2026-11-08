@@ -121,6 +121,19 @@ describe(`aggregate REST [${adapterLabel}]`, () => {
     expect(errors[0].message).toBe('Aggregate requires a JSON request body.');
   });
 
+  it('totals without groupBy in one row, as the signed-in user', async () => {
+    const { headers } = await signIn(seed.users.bo);
+
+    const response = await booted.restClient.post<{ groups: unknown[] }>(
+      route,
+      { draft: true, values: { deals: { count: true }, total: { sum: 'amount' } } },
+      { headers },
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body.groups).toEqual([{ group: {}, values: { deals: 1, total: 300 } }]);
+  });
+
   it('refuses a field with its own read rule even for an admin', async () => {
     const { headers } = await signIn(seed.users.ana);
 

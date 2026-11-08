@@ -104,6 +104,21 @@ export function getAggregatePage({
   };
 }
 
+/** The one row of an aggregate without `groupBy` that matched nothing: counts and sums are `0`, as grouped sums are, and the rest `null`. */
+export function getEmptyTotals(
+  values: { name: string; operation: AggregateValueDescriptor['operation'] }[],
+): AggregateResult['groups'][number] {
+  return {
+    group: {},
+    values: Object.fromEntries(
+      values.map(({ name, operation }) => [
+        name,
+        operation === 'count' || operation === 'sum' ? 0 : null,
+      ]),
+    ),
+  };
+}
+
 export function getEmptyAggregate(limit: number | undefined): AggregateResult {
   return {
     groups: [],

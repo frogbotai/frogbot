@@ -43,7 +43,8 @@ export type AggregateOptions<
   V extends AggregateValues<T> = AggregateValues<T>,
 > = {
   collection: T;
-  groupBy: AggregateGroupBy<T> | readonly AggregateGroupBy<T>[];
+  /** Omit to total every matching document in one row, `{ group: {}, values }`. */
+  groupBy?: AggregateGroupBy<T> | readonly AggregateGroupBy<T>[];
   values: V;
   where?: Where;
   sort?: Sort;
