@@ -122,7 +122,13 @@ test('renders the board toolbar right-aligned under the controls on a phone', as
   const toolBox = (await tool.boundingBox())!;
 
   expect(toolBox.width).toBeLessThan(rowBox.width / 2);
-  expect(Math.abs(toolBox.x + toolBox.width - (rowBox.x + rowBox.width))).toBeLessThanOrEqual(1);
+  const gutter = await row.evaluate((element) =>
+    parseFloat(getComputedStyle(element).paddingRight),
+  );
+
+  expect(
+    Math.abs(toolBox.x + toolBox.width - (rowBox.x + rowBox.width - gutter)),
+  ).toBeLessThanOrEqual(1);
 });
 
 test.describe('task document page', () => {
