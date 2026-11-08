@@ -28,6 +28,15 @@ export const TEMPLATES: TemplateRegistryEntry[] = [
     name: 'projects',
     supportedDatabases: ['sqlite', 'postgres', 'mongodb'],
   },
+  {
+    aiPaths: ['src/agents'],
+    defaultDatabase: 'sqlite',
+    description:
+      'A CRM: companies, contacts, a deals pipeline, a calendar of activities and tasks, with sample data.',
+    dir: 'crm',
+    name: 'crm',
+    supportedDatabases: ['sqlite', 'postgres', 'mongodb'],
+  },
 ];
 
 export function getTemplate(name: string): TemplateRegistryEntry {

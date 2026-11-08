@@ -41,7 +41,7 @@ describe('template prompt', () => {
     });
   }
 
-  it('offers blank first, then projects, and asks nothing else', async () => {
+  it('offers blank first, then projects and crm, and asks nothing else', async () => {
     vi.mocked(p.select).mockResolvedValue('projects');
 
     const plan = await resolveTemplatePlan([]);
@@ -52,6 +52,7 @@ describe('template prompt', () => {
       options: [
         { label: 'blank', value: 'blank' },
         { label: 'projects', value: 'projects' },
+        { label: 'crm', value: 'crm' },
       ],
     });
     expect(p.confirm).not.toHaveBeenCalled();

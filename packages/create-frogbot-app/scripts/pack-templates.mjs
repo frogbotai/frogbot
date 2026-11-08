@@ -3,22 +3,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { catalogVersion } from '../../../scripts/lib/workspace.mjs';
+import { packs } from './pack-filter.mjs';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(dirname, '..');
 const repoRoot = path.resolve(packageRoot, '..', '..');
 const { TEMPLATES } = await import('../dist/templates.js');
-
-const skip = new Set([
-  'node_modules',
-  'dist',
-  '.next',
-  '.env',
-  '.env.local',
-  'frogbot-types.ts',
-  'next-env.d.ts',
-  'AGENTS.md',
-]);
 
 const resolveVersion = (name) => {
   const dir = name === 'frogbot' ? 'frogbot' : name.replace('@frogbotai/', '');
@@ -38,15 +28,7 @@ for (const template of TEMPLATES) {
 
   fs.cpSync(src, dest, {
     recursive: true,
-    filter: (entry) => {
-      const base = path.basename(entry);
-
-      return (
-        !skip.has(base) &&
-        !/\.db(-journal|-shm|-wal)?$/.test(base) &&
-        !base.endsWith('.tsbuildinfo')
-      );
-    },
+    filter: (entry) => packs(src, entry),
   });
 
   fs.renameSync(path.join(dest, '.gitignore'), path.join(dest, 'gitignore'));
