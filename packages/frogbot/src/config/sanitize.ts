@@ -558,6 +558,7 @@ export function sanitize(
       autoGenerate:
         (config as { typescript?: { autoGenerate?: boolean } }).typescript?.autoGenerate !== false,
     },
+    custom: config.custom ?? {},
     _internal: {
       payloadConfig: payloadSanitizedPromise,
       noEmail: !config.email,

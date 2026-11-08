@@ -49,7 +49,7 @@ async function setup() {
   const dojo = await startFakeDojo();
   const env = { XDG_CONFIG_HOME: await tempDir(), FROGBOT_DOJO_URL: dojo.url };
 
-  dojo.projects.push({ id: 7, name: 'deals', slug: 'deals', workspace: 1 });
+  dojo.apps.push({ id: 7, name: 'deals', slug: 'deals', workspace: 1 });
   dojo.level = 'editor';
   dojo.tokens.set('fb_stored', 100);
   await writeToken(env, dojo.url, 'fb_stored');

@@ -19,7 +19,7 @@ async function setup({ isTTY = false } = {}) {
   const env = { XDG_CONFIG_HOME: await tempDir(), FROGBOT_DOJO_URL: dojo.url };
 
   dojo.tokens.set('fb_stored', 100);
-  dojo.projects.push({ id: 1, name: 'Deals', slug: 'deals', workspace: 1 });
+  dojo.apps.push({ id: 1, name: 'Deals', slug: 'deals', workspace: 1 });
   dojo.data.partSize = 1_000;
   await writeToken(env, dojo.url, 'fb_stored');
 

@@ -27,7 +27,7 @@ export async function findApp(dojo: DojoClient, ref: string): Promise<DojoApp> {
   if (/^\d+$/.test(ref) && app.slug !== ref) {
     const { docs } = await dojoJSON<{ docs: unknown[] }>(
       dojo,
-      `/api/projects?depth=0&limit=1&${whereEquals('slug', ref)}`,
+      `/api/apps?depth=0&limit=1&${whereEquals('slug', ref)}`,
       { what: `Couldn't find the app "${ref}"` },
     );
 

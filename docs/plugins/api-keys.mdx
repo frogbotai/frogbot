@@ -77,7 +77,7 @@ apiKeysPlugin({
 | `tokenPrefix` | `string` | `'fb'` | Prefix placed before generated key values, joined with `_`. Only tokens with this prefix authenticate. |
 | `headerNames` | `string[]` | `['x-api-key']` | Request headers checked for a key when `Authorization` doesn't carry one. Replaces the default list. |
 | `collection` | `Partial<CollectionConfig>` | — | Collection overrides, including fields, access, hooks, endpoints, and admin configuration. |
-| `canRevokeAnyKey` | `(req: FrogBotRequest) => boolean \| Promise<boolean>` | — | Predicate allowing a request to revoke or rotate a key it does not own. Without it, callers revoke and rotate only their own keys. |
+| `canRevokeAnyKey` | `(req: FrogBotRequest) => boolean \| Promise<boolean>` | — | Predicate allowing a request to revoke or rotate a key it does not own. Without it, callers revoke and rotate only their own keys. It widens only a signed-in session's reach. A request made with a key still reaches only that key and the keys it minted. |
 
 Collection overrides merge with the generated configuration and changes made by other plugins. The collection uses the `key-round` icon in the admin sidebar; set `collection.admin.icon` to use a different one. The admin controls use the default admin components, and the token dialog ships a small stylesheet built on the admin theme variables.
 
@@ -118,6 +118,8 @@ Other plugins can add fields to the keys collection, and the plugin keeps them:
 
 The plugin does not require a role system. By default, callers read and update only the keys they own, and revoke and rotate are limited to the caller's own keys.
 
+A request made with a key reaches only that key and the keys it minted, whatever the access rules or `canRevokeAnyKey` allow.
+
 To layer roles on top, install [`@frogbotai/plugin-roles`](/plugins/roles) and pass role clauses as the collection access:
 
 ```ts
@@ -138,6 +140,8 @@ plugins: [
 ]
 ```
 
+`canRevokeAnyKey` here lets an admin or support user revoke and rotate other users' keys. It widens only a signed-in session's reach. A request made with a key still reaches only that key and the keys it minted.
+
 `rolesPlugin()` with no roles listed is inert and binds nothing, so `allow()` clauses passed to any plugin deny every request until you list the roles.
 
 ## Security behavior
@@ -148,7 +152,7 @@ plugins: [
 - Keys are revoked individually without affecting the owning user's other authentication methods.
 - Deleting a user also deletes every key that user owns.
 - Collection reads and writes, revoke, and rotate are owner-scoped until you widen them.
-- Minting and rotating need a signed-in session, or a key with `canMint`. A request authenticated by any other key gets `403`, so a leaked key can't create keys that outlive revoking it. Every key has `canMint` off unless whoever minted it set it. A key can still list, rename, and revoke keys, including itself.
+- Minting and rotating need a signed-in session, or a key with `canMint`. A request authenticated by any other key gets `403`, so a leaked key can't create keys that outlive revoking it. Every key has `canMint` off unless whoever minted it set it. A key can still list and rename its owner's keys, and revoke itself and the keys it minted.
 
 ## Keys that mint keys
 
@@ -158,7 +162,7 @@ A session can mint a key with `canMint`, by posting `{ name, data: { canMint: tr
 - It can have `canMint` only because its parent has it.
 - It has its parent's values for [fields from other plugins](#fields-from-other-plugins), such as a tenant or environment.
 - It [expires](#expiring-keys) no later than its parent.
-- A key rotates only itself and the keys it minted. Rotating any other key answers `404` and revokes nothing.
+- A key rotates, revokes and counts with `minted-count` only itself and the keys it minted. Any other key answers `404` and nothing changes. A signed-in session reaches every key its owner has.
 - With the [AI policy plugin](/plugins/ai-policy#api-key-limits), its model list and monthly cap stay inside the parent's as well as the owner's. A list or cap it leaves empty is the parent's. Its spend also counts against the parent's cap, so a parent capped at $10 and every key below it together spend at most $10 a month.
 
 Revoking a key revokes every key it minted, and every key those minted, all the way down. To revoke only that key and leave the keys it made working, post `{ "cascade": false }` to `revoke`, or pass `cascade: false` to `revokeApiKey`. An empty body, or one without `cascade`, revokes the whole tree; a body that isn't JSON, or a `cascade` other than `true` or `false`, `null` included, answers `400`. A later revoke of a key further up still reaches the keys that a `cascade: false` revoke left working, and stamps them with the time of that revoke. `GET /:id/minted-count` answers `{ "count": n }`, the number of working keys a cascading revoke would also revoke.

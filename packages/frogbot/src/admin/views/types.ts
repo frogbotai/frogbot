@@ -49,6 +49,8 @@ export type ListView = ViewConfig & {
     afterTable?: FrogBotComponent[];
     beforeTable?: FrogBotComponent[];
   };
+  /** The field the list opens grouped by, as on a board. A person's own grouping wins. */
+  groupBy?: string;
   /**
    * Each column's default footer total, keyed by field path, such as `{ amount: 'sum' }`. Number
    * fields take every operation, date fields `count`, `min` and `max`, other fields `count`.

@@ -358,6 +358,7 @@ const testProjects = [
     testMatch: [
       'boxSizing.browser.spec.ts',
       'composerSize.browser.spec.ts',
+      'filterPanel.browser.spec.ts',
       'generalPicker.browser.spec.ts',
       'iconGeometry.browser.spec.ts',
       'listControls.browser.spec.ts',
@@ -401,7 +402,12 @@ const testProjects = [
   project({ name: 'forms', testMatch: ['forms.browser.spec.ts', 'formBuilder.browser.spec.ts'] }),
   project({
     name: 'crm',
-    testMatch: ['crm.browser.spec.ts', 'listSummary.browser.spec.ts', 'views.browser.spec.ts'],
+    testMatch: [
+      'crm.browser.spec.ts',
+      'listGrouping.browser.spec.ts',
+      'listSummary.browser.spec.ts',
+      'views.browser.spec.ts',
+    ],
   }),
   project({
     name: 'dojo',

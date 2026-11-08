@@ -12,8 +12,8 @@ import {
   useState,
 } from 'react';
 
+import createLucideIcon from '../../icons/createLucideIcon.js';
 import ArrowUpIcon from '../../icons/icons/ArrowUpIcon.js';
-import SquareIcon from '../../icons/icons/SquareIcon.js';
 import type { ChatPlatformAdapter } from '../adapter.js';
 import { acceptFor } from '../attachment-kind.js';
 import {
@@ -32,6 +32,10 @@ import { defaultComposerFeatures } from './features.js';
 import { createComposerHistory, localStorageHistory } from './history.js';
 import { $readPrompt, $writePrompt, type ComposerPrompt, emptyPrompt } from './prompt.js';
 import { matchCommand } from './slash-menu.js';
+
+const StopSquareIcon = createLucideIcon('StopSquare', [
+  ['rect', { width: '20', height: '20', x: '2', y: '2', rx: '3' }],
+]);
 
 /** A prompt about to be sent, with the attachments that go with it. */
 export type ComposerSubmission = ComposerPrompt & { attachments: readonly ComposerAttachment[] };
@@ -411,7 +415,7 @@ export function Composer({
                       className="fb-composer__action fb-composer__stop"
                       aria-label={typeof stopContent === 'string' ? stopContent : 'Stop response'}
                     >
-                      <SquareIcon className="fb-composer__action-icon fb-composer__stop-icon" />
+                      <StopSquareIcon className="fb-composer__action-icon fb-composer__stop-icon" />
                       <span className="fb-composer__sr-only">{stopContent}</span>
                     </button>
                   ) : (

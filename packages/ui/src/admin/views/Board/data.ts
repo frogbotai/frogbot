@@ -144,37 +144,3 @@ export function getBoardPreferenceUpdate(
     true,
   ];
 }
-
-export function getBoardColumnKey(value: unknown): string {
-  if (value === null || value === undefined) return 'null';
-  if (typeof value === 'object') {
-    const relationship = value as { id?: unknown; relationTo?: unknown; value?: unknown };
-    if (relationship.relationTo && relationship.value !== undefined) {
-      const relatedValue = relationship.value;
-      const id =
-        relatedValue && typeof relatedValue === 'object'
-          ? (relatedValue as { id?: unknown }).id
-          : relatedValue;
-
-      return `relationship:${String(relationship.relationTo)}:${getBoardColumnKey(id)}`;
-    }
-
-    if (relationship.id !== undefined) return `relationship:${getBoardColumnKey(relationship.id)}`;
-  }
-
-  return `${typeof value}:${String(value)}`;
-}
-
-export function buildColumnWhere(
-  where: unknown,
-  groupBy: string,
-  value: unknown,
-): Record<string, unknown> {
-  const group = {
-    [groupBy]: value === null || value === undefined ? { exists: false } : { equals: value },
-  };
-
-  return where && typeof where === 'object' && Object.keys(where).length > 0
-    ? { and: [where, group] }
-    : group;
-}

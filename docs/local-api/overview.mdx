@@ -199,6 +199,7 @@ Accepts the [common options](#local-options-available) plus:
 | `pagination` | `boolean` | `true` | Set `false` to return all matching documents and skip counting them. |
 | `draft` | `boolean` | `false` | Return the latest drafts instead of published documents. Needs [drafts](/versions/drafts). |
 | `joins` | `JoinQuery` | — | Pagination, sort, and filters per [join field](/fields/join#query-options), such as `{ relatedPosts: { limit: 5 } }`. Set a join field to `false` to leave it out, or pass `false` to leave every join field out. |
+| `trash` | `boolean` | `false` | Include trashed documents. Has no effect unless the collection has [`trash`](/trash/overview) enabled. |
 
 <Note>
   `pagination`, `page`, and `limit` are three related properties [documented
@@ -229,6 +230,7 @@ Accepts the [common options](#local-options-available) plus:
 | `id` | `string \| number` | Required | The document ID. |
 | `draft` | `boolean` | `false` | Return the latest drafts instead of published documents. Needs [drafts](/versions/drafts). |
 | `joins` | `JoinQuery` | — | Pagination, sort, and filters per [join field](/fields/join#query-options), such as `{ relatedPosts: { limit: 5 } }`. Set a join field to `false` to leave it out, or pass `false` to leave every join field out. |
+| `trash` | `boolean` | `false` | Return the document even if it's trashed. Has no effect unless the collection has [`trash`](/trash/overview) enabled. |
 
 ### Count#collection-count
 
@@ -252,6 +254,7 @@ Accepts the [common options](#local-options-available) plus:
 | --- | --- | --- | --- |
 | `collection` | `string` | Required | The collection slug. |
 | `where` | `Where` | — | A [query](/queries/overview) that limits the documents. |
+| `trash` | `boolean` | `false` | Include trashed documents in the count. Has no effect unless the collection has [`trash`](/trash/overview) enabled. |
 
 ### FindDistinct#collection-find-distinct
 
@@ -289,6 +292,7 @@ Accepts the [common options](#local-options-available) plus:
 | `limit` | `number` | — | Values per page. |
 | `page` | `number` | `1` | The page to return. |
 | `pagination` | `boolean` | `true` | Set `false` to return every value. |
+| `trash` | `boolean` | `false` | Include values from trashed documents. Has no effect unless the collection has [`trash`](/trash/overview) enabled. |
 
 ### Aggregate#collection-aggregate
 
@@ -363,6 +367,7 @@ Accepts the [common options](#local-options-available) plus:
 | `publishAllLocales` | `boolean` | — | Publishes every locale. Needs [status localization](/configuration/localization#status-localization). |
 | `unpublishAllLocales` | `boolean` | — | Unpublishes every locale. Needs [status localization](/configuration/localization#status-localization). |
 | `disableTransaction` | `boolean` | `false` | Set to `true` to skip the [database transaction](/database/transactions) the operation would otherwise open, so its write isn't rolled back if a later step fails. |
+| `trash` | `boolean` | `false` | Allow the update to target a trashed document, for example to restore it. Has no effect unless the collection has [`trash`](/trash/overview) enabled. |
 
 ### Update Many#collection-update-many
 
@@ -417,6 +422,7 @@ Accepts the [common options](#local-options-available) plus:
 | `publishAllLocales` | `boolean` | — | Publishes every locale. Needs [status localization](/configuration/localization#status-localization). |
 | `unpublishAllLocales` | `boolean` | — | Unpublishes every locale. Needs [status localization](/configuration/localization#status-localization). |
 | `disableTransaction` | `boolean` | `false` | Set to `true` to skip the [database transaction](/database/transactions) the operation would otherwise open, so its write isn't rolled back if a later step fails. |
+| `trash` | `boolean` | `false` | Allow the update to target trashed documents. Has no effect unless the collection has [`trash`](/trash/overview) enabled. |
 
 ### Delete#collection-delete
 
@@ -443,6 +449,7 @@ Accepts the [common options](#local-options-available) plus:
 | `id` | `string \| number` | Required | The document ID. |
 | `overrideLock` | `boolean` | `true` | Document locks are ignored by default. Set to `false` to throw while another user holds the lock on the document. |
 | `disableTransaction` | `boolean` | `false` | Set to `true` to skip the [database transaction](/database/transactions) the operation would otherwise open, so its write isn't rolled back if a later step fails. |
+| `trash` | `boolean` | `false` | Allow permanently deleting a trashed document. Has no effect unless the collection has [`trash`](/trash/overview) enabled. |
 
 ### Delete Many#collection-delete-many
 
@@ -476,6 +483,7 @@ Accepts the [common options](#local-options-available) plus:
 | `where` | `Where` | Required | A [query](/queries/overview) selecting the documents. |
 | `overrideLock` | `boolean` | `true` | Document locks are ignored by default. Set to `false` to skip documents another user holds the lock on; each is reported in `errors`. |
 | `disableTransaction` | `boolean` | `false` | Set to `true` to skip the [database transaction](/database/transactions) the operation would otherwise open, so its write isn't rolled back if a later step fails. |
+| `trash` | `boolean` | `false` | Permanently delete matching trashed documents too. Has no effect unless the collection has [`trash`](/trash/overview) enabled. |
 
 ### Duplicate#collection-duplicate
 
@@ -525,6 +533,7 @@ Accepts the [common options](#local-options-available) plus:
 | `limit` | `number` | `10` | Versions per page. |
 | `page` | `number` | `1` | The page to return. |
 | `pagination` | `boolean` | `true` | Set `false` to return all matching versions. |
+| `trash` | `boolean` | `false` | Include versions of trashed documents. Has no effect unless the collection has [`trash`](/trash/overview) enabled. |
 
 ### Find Version by ID#collection-find-version-by-id
 
@@ -542,6 +551,7 @@ Accepts the [common options](#local-options-available) plus:
 | --- | --- | --- | --- |
 | `collection` | `string` | Required | The collection slug. |
 | `id` | `string \| number` | Required | The version ID. |
+| `trash` | `boolean` | `false` | Return the version even if its document is trashed. Has no effect unless the collection has [`trash`](/trash/overview) enabled. |
 
 ### Count Versions#collection-count-versions
 

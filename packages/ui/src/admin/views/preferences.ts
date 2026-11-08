@@ -16,6 +16,14 @@ export function getViewPreferenceKey(collectionSlug: string, viewSlug: string): 
   return `collection-${collectionSlug}-view-${viewSlug}`;
 }
 
+/**
+ * The preference that keeps a view's collapsed groups, apart from its setup so collapsing a group
+ * never writes back a stale sort, filter or grouping.
+ */
+export function getGroupsPreferenceKey(collectionSlug: string, viewSlug: string): string {
+  return `${getViewPreferenceKey(collectionSlug, viewSlug)}:groups`;
+}
+
 export function getViewPreferenceUpdate<T extends ViewPreferenceValue>(
   collectionSlug: string,
   viewSlug: string,

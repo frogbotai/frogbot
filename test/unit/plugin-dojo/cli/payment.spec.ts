@@ -60,13 +60,13 @@ describe('frogbot share: paying for a first deploy', () => {
     expect(dojo.paths().slice(0, 7)).toEqual([
       'GET /api/users/me',
       'GET /api/workspaces',
-      'POST /api/projects',
+      'POST /api/apps',
       'GET /api/workspaces/1',
       'GET /api/workspaces/1',
       'GET /api/workspaces/1',
-      'POST /api/projects',
+      'POST /api/apps',
     ]);
-    expect(dojo.projects).toHaveLength(1);
+    expect(dojo.apps).toHaveLength(1);
     expect(result.stdout().at(-1)).toBe('https://deals.frogbot.app');
     expect(result.stderr()).toEqual([]);
   });
@@ -76,7 +76,7 @@ describe('frogbot share: paying for a first deploy', () => {
       '.frogbot/app.json': '{"appId":1}',
     });
 
-    dojo.projects.push({ id: 1, name: 'deals', slug: 'deals', workspace: 1 });
+    dojo.apps.push({ id: 1, name: 'deals', slug: 'deals', workspace: 1 });
     payAfterPolls(1);
 
     const result = await run();
@@ -115,13 +115,13 @@ describe('frogbot share: paying for a first deploy', () => {
       "[frogbot] Dojo still has no payment for this app after 30 minutes. Once it's paid, share again.",
     ]);
     expect(dojo.paths().filter((path) => path === 'GET /api/workspaces/1')).toHaveLength(360);
-    expect(dojo.projects).toEqual([]);
+    expect(dojo.apps).toEqual([]);
   });
 
   it("keeps Dojo's message for a 402 with no upgrade link", async () => {
     const { dojo, run } = await setup();
 
-    dojo.projectReply = { status: 402, body: { errors: [{ message: 'Payment required.' }] } };
+    dojo.createReply = { status: 402, body: { errors: [{ message: 'Payment required.' }] } };
 
     const result = await run();
 

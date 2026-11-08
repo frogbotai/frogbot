@@ -42,6 +42,8 @@ export type ListFrameClientProps = {
   listProps: ListViewClientProps;
   newDocumentURL: string;
   NoResults: ReactNode;
+  /** False when a grouped list shows every group on one page, hiding the group page controls. */
+  pagedGroups?: boolean;
   summary?: ListFrameSummary;
   tabs: ViewTab[];
   Toolbar?: ReactNode[];
@@ -91,7 +93,13 @@ function useDoneRows(doneIds: string[] | undefined) {
   return ref;
 }
 
-function ListFrameInner({ doneIds, listProps, summary, ...frame }: ListFrameClientProps) {
+function ListFrameInner({
+  doneIds,
+  listProps,
+  pagedGroups,
+  summary,
+  ...frame
+}: ListFrameClientProps) {
   const { collectionSlug, columnState, disableBulkDelete, disableBulkEdit, Table, viewType } =
     listProps;
 
@@ -143,7 +151,7 @@ function ListFrameInner({ doneIds, listProps, summary, ...frame }: ListFrameClie
         collectionConfig={collectionConfig}
         tableId={`payload-table-${collectionSlug}`}
       />
-    ) : docs.length > 0 && isGroupingBy && (data?.totalPages ?? 0) > 1 ? (
+    ) : docs.length > 0 && isGroupingBy && pagedGroups !== false && (data?.totalPages ?? 0) > 1 ? (
       <PageControls collectionConfig={collectionConfig} />
     ) : null;
 
