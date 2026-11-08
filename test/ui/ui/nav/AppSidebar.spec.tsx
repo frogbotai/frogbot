@@ -114,7 +114,7 @@ describe('AppSidebar', () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
-  it('draws the close icon while open and the mirrored open icon on strip hover', () => {
+  it('draws the same sidebar icon on the close button and on strip hover', () => {
     const { rerender } = render(<AppSidebar {...props} open />);
 
     expect(
@@ -129,9 +129,8 @@ describe('AppSidebar', () => {
     expect(
       screen
         .getByRole('button', { name: 'Open sidebar' })
-        .querySelector('.lucide-sidebar-right-icon.fb-sidebar-toggle-icon'),
+        .querySelector('.lucide-sidebar-left-icon.fb-sidebar-toggle-icon'),
     ).not.toBeNull();
-    expect(document.querySelector('.lucide-sidebar-left-icon')).toBeNull();
   });
 
   it('navigates home from the logo only while open', () => {

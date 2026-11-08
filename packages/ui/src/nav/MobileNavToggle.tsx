@@ -1,6 +1,6 @@
 'use client';
 
-import SidebarRightIcon from '../icons/icons/SidebarRightIcon.js';
+import SidebarLeftIcon from '../icons/icons/SidebarLeftIcon.js';
 import type { NavShellState } from './navShellState.js';
 
 export type MobileNavToggleProps = {
@@ -18,7 +18,7 @@ export function MobileNavToggle({ navState, onOpen }: MobileNavToggleProps) {
       onClick={onOpen}
       type="button"
     >
-      <SidebarRightIcon className="fb-sidebar-toggle-icon" size={20} />
+      <SidebarLeftIcon className="fb-sidebar-toggle-icon" size={20} />
     </button>
   );
 }

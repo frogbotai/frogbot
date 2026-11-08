@@ -13,7 +13,6 @@ import { Tooltip } from '../components/tooltip.js';
 import FolderIcon from '../icons/icons/FolderIcon.js';
 import FrogBotFavicon from '../icons/icons/FrogBotFavicon.js';
 import SidebarLeftIcon from '../icons/icons/SidebarLeftIcon.js';
-import SidebarRightIcon from '../icons/icons/SidebarRightIcon.js';
 import { type IconName, iconRegistry, isIconName } from '../icons/registry.js';
 import { isRenderableNode } from '../lib/isRenderableNode.js';
 import { AccountMenu } from './AccountMenu.js';
@@ -166,7 +165,7 @@ export function AppSidebar({
             type="button"
           >
             {showToggleIcon ? (
-              <SidebarRightIcon className="fb-sidebar-toggle-icon" size={20} />
+              <SidebarLeftIcon className="fb-sidebar-toggle-icon" size={20} />
             ) : (
               logo || <FrogBotFavicon size={40} />
             )}

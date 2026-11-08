@@ -107,7 +107,6 @@ const iconNames = [
   'ResizeIcon',
   'SettingIcon',
   'SidebarLeftIcon',
-  'SidebarRightIcon',
   'SparkleIcon',
   'SquareLockIcon',
   'StopIcon',

@@ -17,25 +17,25 @@ describe('HeaderToggleIcon', () => {
     document.querySelectorAll('.app-header__sidebar-toggle').forEach((node) => node.remove());
   });
 
-  it("draws the sidebar open icon inside Payload's header toggle", () => {
+  it("draws the sidebar icon inside Payload's header toggle", () => {
     const button = payloadToggle();
 
     render(<HeaderToggleIcon pathname="/admin" />);
 
     expect(
-      button.querySelector('.btn__icon > .lucide-sidebar-right-icon.fb-sidebar-toggle-icon'),
+      button.querySelector('.btn__icon > .lucide-sidebar-left-icon.fb-sidebar-toggle-icon'),
     ).not.toBeNull();
   });
 
   it('finds a header toggle mounted after a navigation', () => {
     const { rerender } = render(<HeaderToggleIcon pathname="/admin" />);
 
-    expect(document.querySelector('.lucide-sidebar-right-icon')).toBeNull();
+    expect(document.querySelector('.lucide-sidebar-left-icon')).toBeNull();
 
     const button = payloadToggle();
 
     rerender(<HeaderToggleIcon pathname="/admin/collections/users" />);
 
-    expect(button.querySelector('.lucide-sidebar-right-icon')).not.toBeNull();
+    expect(button.querySelector('.lucide-sidebar-left-icon')).not.toBeNull();
   });
 });

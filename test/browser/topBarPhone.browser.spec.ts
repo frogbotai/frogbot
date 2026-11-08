@@ -211,9 +211,9 @@ test('the phone header toggle opens the drawer and the sidebar closes it', async
 
   const toggle = page.locator('.app-header__sidebar-toggle');
 
-  await expect(toggle.locator('.lucide-sidebar-right-icon'), 'the sidebar open icon').toBeVisible();
+  await expect(toggle.locator('.lucide-sidebar-left-icon'), 'the sidebar icon').toBeVisible();
   await expect(toggle.locator('.icon--sidebar'), "Payload's own icon").toBeHidden();
-  expect(await bounds(toggle.locator('.lucide-sidebar-right-icon'))).toMatchObject({ width: 20 });
+  expect(await bounds(toggle.locator('.lucide-sidebar-left-icon'))).toMatchObject({ width: 20 });
 
   await toggle.click();
   await expect(shell).toHaveAttribute('data-nav-state', 'mobile-nav-open');
