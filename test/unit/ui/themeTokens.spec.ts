@@ -338,6 +338,21 @@ describe('FrogBot theme tokens', () => {
     );
   });
 
+  it('draws selected borders, such as a checked checkbox, in the brand color, light and dark', () => {
+    const rules = parseRules(stripComments(readFileSync(brandColorsPath, 'utf8')));
+    const page = rules.find((rule) => rule.selectors.join() === ':root');
+    const light = rules.find((rule) => rule.selectors.includes('[data-theme="light"]'));
+    const dark = rules.find((rule) => rule.selectors.includes('[data-theme="dark"]'));
+
+    expect(page?.declarations.get('--color-border-selected')).toBe('var(--color-bg-brand)');
+
+    for (const theme of [light, dark]) {
+      expect(theme?.declarations.get('--color-border-selected-strong')).toBe(
+        'var(--color-border-brand-strong)',
+      );
+    }
+  });
+
   it('declares the Payload tokens outside the admin only, the light section aside', () => {
     const tokenRules = parseRules(stripComments(readFileSync(payloadTokensPath, 'utf8')));
 
