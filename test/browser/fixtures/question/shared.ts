@@ -10,6 +10,14 @@ export const timesheetsSlug = 'timesheets';
 export const projectsSlug = 'projects';
 export const tagsSlug = 'tags';
 export const secretsSlug = 'secrets';
+export const storiesSlug = 'stories';
+export const approvalsSlug = 'approvals';
+export const archivesSlug = 'archives';
+export const storyStatusOptions = [
+  { label: 'Todo', value: 'todo' },
+  { label: 'Doing', value: 'doing' },
+  { label: 'Done', value: 'done' },
+];
 export const labelOptions = (
   ['gray', 'blue', 'green', 'yellow', 'red', 'pink', 'purple'] satisfies OptionColor[]
 ).map((color) => ({ label: color[0].toUpperCase() + color.slice(1), value: color, color }));
