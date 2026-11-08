@@ -1,23 +1,43 @@
 # @frogbotai/plugin-dojo
 
-Adds the `share`, `pull`, `logs` and `logout` commands, and runs a FrogBot app on Dojo with no setup: uploads go to the app's R2 bucket, and AI goes through Dojo's gateway. Docs: https://docs.frogbot.ai/plugins/dojo
+Adds the `frogbot dojo` commands, which manage Dojo from the terminal, and runs a FrogBot app on Dojo with no setup: uploads go to the app's R2 bucket, and AI goes through Dojo's gateway. Docs: https://docs.frogbot.ai/plugins/dojo
 
 Dojo adds this plugin when it builds an app, after the app's own plugins, by setting `FROGBOT_PLATFORM_PLUGIN=@frogbotai/plugin-dojo` for `next build` and `frogbot` commands. An app that lists `dojo()` itself gets it once: core skips the platform plugin when a listed plugin has the same slug.
 
 ## Commands
 
-| Command  | Arguments                                                                                           | Does                                                       |
-| -------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `share`  | `--data`, `--no-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys` | uploads the app to Dojo, builds it and prints its URL      |
-| `pull`   | `<app>`                                                                                             | downloads an app shared with you into a new folder         |
-| `logs`   | `<app>`, `--follow`                                                                                 | prints an app's recent logs, or follows them               |
-| `logout` | —                                                                                                   | revokes the CLI's Dojo key and removes it from `auth.json` |
+Every command runs as `frogbot dojo <command>` in an app that lists `dojo()`, and as `npx @frogbotai/plugin-dojo <command>` anywhere, with or without an app. Both run the same command list. `frogbot share` is `frogbot dojo apps share`, with the same flags.
 
-`dojo()` adds them to `cli.commands`, so an app that lists it runs `frogbot share`. The package's `frogbot-dojo` bin runs the same four anywhere, with or without an app: `npx @frogbotai/plugin-dojo pull deals` works in an empty folder. Each usage line names the form that was run. With no command or an unknown one, the bin prints its usage and exits 2.
+| Command                                                                          | Example                                                         | Does                                                                              |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `login`                                                                          | `frogbot dojo login`                                            | signs in with a code you confirm in the browser; the first one makes your account |
+| `logout`                                                                         | `frogbot dojo logout`                                           | revokes the stored sign-in and removes it from `auth.json`                        |
+| `whoami`                                                                         | `frogbot dojo whoami`                                           | shows the account, the Dojo URL and your workspaces                               |
+| `workspaces list \| create <name> \| rename <slug> <name>`                       | `frogbot dojo workspaces create "Acme"`                         | lists, creates and renames workspaces                                             |
+| `members list \| add <email> \| role <email> <role> \| remove <email>`           | `frogbot dojo members add ada@acme.com --role owner`            | manages a workspace's members; `--workspace <slug>` picks one                     |
+| `apps share`                                                                     | `frogbot dojo apps share --no-data`                             | uploads the app in this folder, builds it and prints its URL                      |
+| `apps pull <app>`                                                                | `npx @frogbotai/plugin-dojo apps pull deals`                    | downloads an app you own or edit into a new folder                                |
+| `apps logs <app>`                                                                | `frogbot dojo apps logs deals --follow`                         | prints an app's recent logs, or follows them                                      |
+| `apps list \| get <app> \| create <name> \| rename <app> <name> \| delete <app>` | `frogbot dojo apps delete deals --yes`                          | lists and manages apps                                                            |
+| `deployments list <app> \| logs <id> [--follow]`                                 | `frogbot dojo deployments logs 42`                              | lists an app's deployments and prints a build log                                 |
+| `env list <app> \| set <app> KEY=value… \| unset <app> KEY…`                     | `frogbot dojo env set deals STRIPE_KEY=sk_live_…`               | lists keys masked, sets and removes them; the app restarts once                   |
+| `domains get <app> \| set <app> <host> \| clear <app>`                           | `frogbot dojo domains set deals crm.acme.com`                   | shows, sets and clears the custom domain and its CNAME record                     |
+| `sharing list <app> \| invite <app> <email>… \| leave <app>`                     | `frogbot dojo sharing invite deals ada@acme.com --level editor` | shares an app at `use`, `editor` or `owner`, or leaves one                        |
+| `keys list \| create <name> \| revoke <id>`                                      | `frogbot dojo keys create ci --json`                            | manages your Dojo API keys; `create` prints the new key once                      |
+| `billing status \| manage`                                                       | `frogbot dojo billing manage`                                   | shows the workspace's plan, or prints the link to manage billing                  |
+
+`frogbot dojo --help` lists the commands, `frogbot dojo apps --help` a noun's verbs, and `frogbot dojo apps share --help` a verb's flags. An unknown command or verb prints the list and exits 2.
+
+- **`--json`** on any command prints one JSON value on stdout and nothing else; sign-in links, progress and build lines go to stderr. A failed command prints nothing on stdout. `apps logs --follow` can't end in one value, so it refuses `--json`.
+- **`FROGBOT_DOJO_TOKEN`**, when set, is the Dojo API key every command uses, ahead of the stored sign-in. If Dojo refuses it, the command exits 1 instead of starting a browser sign-in. `FROGBOT_DOJO_URL` points at another Dojo.
+- **No terminal.** Every question has a flag. `apps delete`, `members remove`, `keys revoke`, `sharing leave` and `env unset` ask before acting, and need `--yes` without a terminal (exit 2 otherwise).
+- **Refusals.** A `402` prints Dojo's upgrade link; `apps share` and `apps create` then wait up to 30 minutes for the payment, and open the link with a terminal. A `403` names the access the command needs, such as owner access to the app.
+- **Keys.** `keys create` mints a key with the CLI's sign-in, never broader than it; `--can-mint` lets the new key create keys too. When Dojo doesn't let the sign-in create keys, it prints the link to create one in the browser and exits 1.
+- Signing up is `login`: the browser sign-in makes the account the first time. Paying stays in the browser: `billing manage` prints the link.
 
 ## What it changes
 
-Apart from the commands and the import map entries for the badge and the sign-in buttons, the plugin does nothing unless `DOJO=1`. On Dojo it reads these variables, and boot fails naming any that is missing:
+Apart from the `dojo` command and the import map entries for the badge and the sign-in buttons, the plugin does nothing unless `DOJO=1`. On Dojo it reads these variables, and boot fails naming any that is missing:
 
 | Variable                    | Used for                         |
 | --------------------------- | -------------------------------- |
@@ -32,5 +52,5 @@ Apart from the commands and the import map entries for the badge and the sign-in
 - **Storage.** When the app sets no `storage`, every upload collection is stored in R2 under its slug (`files/<id>/<filename>`). Files stay private and are served through the app, so its access rules apply.
 - **AI.** When every provider in `ai.providers` is a built-in one with no key, they are replaced by one `dojo` provider that calls Dojo's gateway. Old model IDs such as `openai/gpt-5.4-mini` keep working. Chat, embeddings and images work through the gateway; transcription, speech and video need your own key. An app with no `ai` block, or with any provider key of its own, is left unchanged.
 - **Jobs.** Dojo can run due jobs with `Authorization: Bearer <DOJO_JOBS_SECRET>`. Everyone else gets the app's own `jobs.access.run`.
-- **Sign-in.** Adds "Continue with Dojo" (method `dojo`) after the user collection's own `auth.signIn` methods: OAuth with PKCE against Dojo, using `DOJO_OAUTH_CLIENT_ID`, `DOJO_OAUTH_CLIENT_SECRET` and `DOJO_URL`. New accounts follow the collection's `access.create`. When one of those variables is missing, or core would refuse the method, it adds nothing and logs `[plugin-dojo] Sign in with Dojo is off for '<slug>': <reason>.` at start. `dojo({ signIn: false })` turns it off. Even without `DOJO=1`, the plugin lists `@frogbotai/ui/admin/rsc#SignInButtons` in `admin.dependencies`, for the same reason as the badge.
+- **Sign-in.** Adds "Continue with Dojo" (method `dojo`) after the user collection's own `auth.signIn` methods: OAuth with PKCE against Dojo, using `DOJO_OAUTH_CLIENT_ID`, `DOJO_OAUTH_CLIENT_SECRET` and `DOJO_URL`. New accounts follow the collection's `access.create`. When the collection has no users at start, it creates one with `DOJO_FIRST_USER_EMAIL`, the email of the person who created the app on Dojo, so they can sign in first; a failure is a warning, not a failed start. When one of those variables is missing, or core would refuse the method, it adds nothing and logs `[plugin-dojo] Sign in with Dojo is off for '<slug>': <reason>.` at start. `dojo({ signIn: false })` turns it off. Even without `DOJO=1`, the plugin lists `@frogbotai/ui/admin/rsc#SignInButtons` in `admin.dependencies`, for the same reason as the badge.
 - **Badge.** Every FrogBot page, login included, gets a small "Made with FrogBot · Share your own" pill in the bottom-left corner, linking to frogbot.ai with the app's slug as `utm_content`. It's added after the app's own `admin.components.providers`, renders only in the browser after the page has loaded, and makes no request. It stays hidden on collection lists, where it would cover the pagination, and beside the chat input when the window is too narrow. Visitors can close it for the rest of their browser session. Even without `DOJO=1`, the plugin lists the badge in `admin.dependencies`, because Dojo generates the import map at build time, when `DOJO=1` isn't set.

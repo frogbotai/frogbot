@@ -55,7 +55,11 @@ export function assertBudget(policy: AIPolicy): void {
 }
 
 /** The key document the API keys plugin puts on `req.user.apiKey`. */
-export type PolicyKey = { id: number | string; name?: unknown } & PolicyDocument;
+export type PolicyKey = {
+  id: number | string;
+  name?: unknown;
+  mintedBy?: unknown;
+} & PolicyDocument;
 
 export function policyKey(user: unknown): PolicyKey | undefined {
   const key = (user as { apiKey?: unknown } | null | undefined)?.apiKey;

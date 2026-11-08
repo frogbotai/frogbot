@@ -12,6 +12,7 @@ import { startStubChatModel } from '../__helpers/shared/StubChatModel';
 import {
   chatsSlug,
   memberName,
+  messagesSlug,
   modelPort,
   notesSlug,
   readerAccessCalls,
@@ -184,6 +185,50 @@ describe('agent runs and overrideAccess', () => {
 
     expect(toolResult()).toContain(NOTE);
     expect(readerAccessCalls).toHaveLength(1);
+  });
+
+  async function savedSources() {
+    let parts: { type: string; title?: string; providerMetadata?: unknown }[] = [];
+
+    await vi.waitFor(async () => {
+      const { docs } = await booted.frogbot.find({
+        collection: messagesSlug,
+        where: { role: { equals: 'assistant' } },
+        depth: 0,
+        pagination: false,
+        overrideAccess: true,
+      });
+
+      parts = docs.flatMap((doc) => (doc as { parts?: typeof parts }).parts ?? []);
+
+      expect(parts.some((part) => part.type === 'text')).toBe(true);
+    });
+
+    return parts.filter((part) => part.type === 'source-document');
+  }
+
+  it("saves a member's chat turn sources, looked up as the member", async () => {
+    model.respond(readNotes, { text: 'Summarised.' });
+
+    await chat(await signIn('member-sources@frogbot.local', memberName));
+
+    const note = (await booted.frogbot.find({ collection: notesSlug, overrideAccess: true }))
+      .docs[0];
+
+    expect(await savedSources()).toEqual([
+      expect.objectContaining({
+        title: 'Members notes',
+        providerMetadata: { frogbot: { collection: notesSlug, id: note.id } },
+      }),
+    ]);
+  });
+
+  it("saves no sources a non-member's chat turn can't read", async () => {
+    model.respond(readNotes, { text: 'I could not read them.' });
+
+    await chat(await signIn('guest-sources@frogbot.local', 'Guest'));
+
+    expect(await savedSources()).toEqual([]);
   });
 
   it("refuses the notes to a non-member's chat turn", async () => {

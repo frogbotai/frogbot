@@ -26,16 +26,10 @@ Then open [http://localhost:3000](http://localhost:3000) and create your admin a
 
 ## Sample data
 
-The dashboard shows a **Seed your database** panel. Its button calls `POST /api/seed`, which
-loads three projects with tasks and creates a demo login:
-
-- Email: `admin@test.com`
-- Password: `password`
-
-> **Warning:** seeding deletes every project and task, then creates the samples again. It also
-> deletes and recreates `admin@test.com`, unless you are signed in as that user. Any signed-in
-> user can run it, in every environment. Before you deploy, remove the panel and the endpoint
-> from `src/frogbot.config.ts`, or delete the demo user.
+While the app has no projects, the dashboard shows a **Seed your database** panel. Its button
+calls `POST /api/seed`, which adds three projects with tasks, every task assigned to you. It
+creates no user and deletes nothing: once a project exists, the panel hides and the endpoint
+answers `409`. To start over locally, delete the database.
 
 The seed is plain code in `src/seed/index.ts`; edit it to change the sample data.
 
@@ -47,7 +41,8 @@ The seed is plain code in `src/seed/index.ts`; edit it to change the sample data
 | `src/collections/Projects.ts`   | Projects, each with a key such as `WEB`                          |
 | `src/collections/Tasks.ts`      | Tasks with numbered keys, a list view and a board view           |
 | `src/seed/`                     | The sample data and the `POST /api/seed` endpoint                |
-| `src/components/SeedPanel.tsx`  | The dashboard panel with the seed button                         |
+| `src/components/SeedPanel.tsx`  | The dashboard panel, shown while the app has no projects         |
+| `src/components/SeedButton.tsx` | The panel's seed button                                          |
 | `src/agents/`                   | The `assistant` agent (removed with `--ai none`)                 |
 | `src/app/(frogbot)/`            | Admin panel + API routes (owned by FrogBot, safe to leave alone) |
 | `src/app/(frogbot)/api/health/` | Health check, `GET /api/health`, for hosting                     |
@@ -58,7 +53,7 @@ The seed is plain code in `src/seed/index.ts`; edit it to change the sample data
 - Add fields to tasks, such as a priority select, and show them on the board with
   `defaultFields`.
 - Restrict who can edit projects with collection `access` before deploying.
-- Put it online with `npx frogbot share`; see [`share`](https://docs.frogbot.ai/getting-started/cli#share).
+- Put it online with `npx frogbot share`; see [`dojo apps share`](https://docs.frogbot.ai/getting-started/cli#dojo-apps-share).
 
 ## Add an AI provider
 

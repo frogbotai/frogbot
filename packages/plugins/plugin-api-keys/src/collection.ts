@@ -11,7 +11,8 @@ import {
 
 import {
   ApiKeyServiceError,
-  isApiKeyRequest,
+  canMintKeys,
+  keyScopeBeforeValidate,
   mintApiKey,
   revokeApiKey,
   rotateApiKey,
@@ -34,7 +35,10 @@ type CollectionOptions = {
 
 const sessionRequired = () =>
   Response.json(
-    { error: 'An API key cannot mint or rotate API keys. Sign in to manage keys.' },
+    {
+      error:
+        "This API key can't mint or rotate API keys. Sign in, or use a key that can mint keys.",
+    },
     { status: 403 },
   );
 
@@ -76,6 +80,7 @@ function createViews({
           'name',
           'prefix',
           ...(usageCollection ? ['totalCostUSD'] : []),
+          'mintedBy',
           'lastUsedAt',
           'revokedAt',
           'actions',
@@ -98,7 +103,7 @@ function createEndpoints({
       path: '/mint',
       handler: async (req) => {
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
-        if (isApiKeyRequest(req)) return sessionRequired();
+        if (!canMintKeys(req)) return sessionRequired();
         const body = ((await req.json?.().catch(() => null)) ?? null) as {
           name?: unknown;
           data?: unknown;
@@ -173,7 +178,7 @@ function createEndpoints({
       path: '/:id/rotate',
       handler: async (req) => {
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
-        if (isApiKeyRequest(req)) return sessionRequired();
+        if (!canMintKeys(req)) return sessionRequired();
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
           return Response.json({ error: 'API key not found' }, { status: 404 });
@@ -193,6 +198,10 @@ function createEndpoints({
 
           if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
             return Response.json({ error: 'API key not found' }, { status: 404 });
+          }
+
+          if (error instanceof APIError && error.status < 500) {
+            return Response.json({ error: describeError(error) }, { status: error.status });
           }
 
           throw error;
@@ -247,6 +256,30 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
         readOnly: true,
         position: 'sidebar',
         condition: (_, siblingData) => Boolean(siblingData.revokedAt),
+      },
+    },
+    {
+      name: 'canMint',
+      type: 'checkbox',
+      label: 'Can mint keys',
+      defaultValue: false,
+      access: { update: () => false },
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+        description: 'Requests made with this key can mint and rotate keys no broader than it.',
+      },
+    },
+    {
+      name: 'mintedBy',
+      type: 'relationship',
+      relationTo: collectionSlug,
+      label: 'Minted By',
+      access: { update: () => false },
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+        description: 'The key that minted this one. Empty when a signed-in session did.',
       },
     },
     ...(usageCollection
@@ -326,6 +359,10 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
     hooks: {
       ...existing?.hooks,
       ...collection?.hooks,
+      beforeValidate: [
+        keyScopeBeforeValidate,
+        ...(collection?.hooks?.beforeValidate ?? existing?.hooks?.beforeValidate ?? []),
+      ],
     },
   };
 }

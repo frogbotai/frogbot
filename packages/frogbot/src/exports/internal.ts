@@ -1,3 +1,4 @@
+export { appIconURL, appManifestURL } from '../admin/appIcon/urls.js';
 export { executeAuthStrategy } from '../auth/executeAuthStrategy.js';
 export { formatCliError } from '../bin/formatCliError.js';
 export { loadEnv } from '../bin/loadEnv.js';

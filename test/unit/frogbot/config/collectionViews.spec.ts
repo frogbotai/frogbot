@@ -1,73 +1,21 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
-  buildBoardOrderField,
-  buildBoardOrderHook,
   compileCollectionViews,
-  getBoardOrderFieldName,
-  getBoardOrderFieldNames,
+  hasBoardView,
 } from '../../../../packages/frogbot/src/config/collectionViews.js';
 import { getCustomCollectionViewByRoute } from '../../../../packages/ui/node_modules/@payloadcms/ui/dist/views/Root/getCustomCollectionViewByRoute.js';
 
 describe('collection views', () => {
-  it('builds per-board order field names and fields', () => {
-    expect(getBoardOrderFieldName('by-stage')).toBe('_order_by_stage');
+  it('finds collections with a board view', () => {
     expect(
-      getBoardOrderFieldNames({
+      hasBoardView({
         slug: 'posts',
         fields: [],
         admin: { views: [{ type: 'list' }, { type: 'board', slug: 'By Stage' }] },
       }),
-    ).toEqual(['_order_by_stage']);
-
-    const field = buildBoardOrderField('_order_by_stage');
-
-    expect(field).toMatchObject({
-      name: '_order_by_stage',
-      type: 'text',
-      index: true,
-      admin: { disabled: true, hidden: true, readOnly: true },
-    });
-
-    const siblingData = { _order_by_stage: 'a0' };
-    field.hooks?.beforeDuplicate?.[0]?.({ siblingData } as never);
-
-    expect(siblingData).toEqual({});
-  });
-
-  it('assigns missing board order keys after the last document', async () => {
-    const find = vi.fn().mockResolvedValue({ docs: [{ _order_board: 'a0' }] });
-    const data: Record<string, unknown> = {};
-
-    await buildBoardOrderHook(['_order_board'])({
-      collection: { slug: 'posts' },
-      data,
-      originalDoc: {},
-      req: { payload: { find } },
-    } as never);
-
-    expect(data._order_board).toBe('a1');
-    expect(find).toHaveBeenCalledWith(expect.objectContaining({ sort: '-_order_board' }));
-  });
-
-  it('keeps existing board order keys', async () => {
-    const find = vi.fn();
-
-    await buildBoardOrderHook(['_order_board'])({
-      collection: { slug: 'posts' },
-      data: { _order_board: 'a0' },
-      originalDoc: {},
-      req: { payload: { find } },
-    } as never);
-
-    await buildBoardOrderHook(['_order_board'])({
-      collection: { slug: 'posts' },
-      data: {},
-      originalDoc: { _order_board: 'a0' },
-      req: { payload: { find } },
-    } as never);
-
-    expect(find).not.toHaveBeenCalled();
+    ).toBe(true);
+    expect(hasBoardView({ slug: 'posts', fields: [] })).toBe(false);
   });
 
   it('provides a default list view', () => {
@@ -112,8 +60,8 @@ describe('collection views', () => {
       'by-stage',
       'map-view',
     ]);
-    expect(admin?.custom?.frogbot.views[1].orderField).toBe('_order_by_owner');
-    expect(admin?.custom?.frogbot.views[2].orderField).toBe('_order_by_stage');
+    expect(admin?.custom?.frogbot.views[1].orderField).toBe('_order');
+    expect(admin?.custom?.frogbot.views[2].orderField).toBe('_order');
     expect(admin?.components?.Description).toBe('@frogbotai/ui/admin/rsc#CollectionViewSwitcher');
     expect(admin?.components?.beforeList).toBeUndefined();
     expect(admin?.components?.views?.list).toEqual({

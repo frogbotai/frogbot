@@ -25,6 +25,8 @@ export type ShareIO = {
   env: ShareEnv;
   stdout: { write: (text: string) => unknown };
   stderr: { write: (text: string) => unknown };
+  /** With `--json`: the real stdout, which gets only the command's one JSON result; `stdout` is then stderr. */
+  json?: { write: (text: string) => unknown };
   /** Both stdin and stdout are terminals, so a person can answer. */
   isTTY: boolean;
   prompts: SharePrompts;
@@ -101,4 +103,20 @@ export function processIO(program: string): ShareIO {
 /** Writes one line to stdout. */
 export function say(io: ShareIO, line: string): void {
   io.stdout.write(`${line}\n`);
+}
+
+/** Ends a command: with `--json`, its one JSON value on stdout; otherwise its human lines. */
+export function done(io: ShareIO, value: unknown, lines: string[] = []): void {
+  if (io.json) {
+    io.json.write(`${JSON.stringify(value, null, 2)}\n`);
+
+    return;
+  }
+
+  for (const line of lines) say(io, line);
+}
+
+/** `io` for `--json`: human lines go to stderr, leaving stdout to the result. */
+export function jsonIO(io: ShareIO): ShareIO {
+  return { ...io, stdout: io.stderr, json: io.stdout };
 }

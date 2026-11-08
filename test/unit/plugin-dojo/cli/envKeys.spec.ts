@@ -28,7 +28,7 @@ async function keysInFreshProcess(root: string, env: NodeJS.ProcessEnv): Promise
 }
 
 describe('envKeys', () => {
-  it("carries the .env files' keys, first file wins, never Dojo's or the shell's", async () => {
+  it("carries the .env files' keys, first file wins, never Dojo's, the Dojo sign-in or the shell's", async () => {
     const root = await tempDir();
 
     await writeFiles(root, {
@@ -40,6 +40,8 @@ describe('envKeys', () => {
         'NODE_ENV=production',
         'PORT=4000',
         'HOSTNAME=0.0.0.0',
+        'FROGBOT_DOJO_TOKEN=fb_ci_secret_token',
+        'FROGBOT_DOJO_URL=https://dojo.example',
         'EMPTY_KEY=',
       ].join('\n'),
     });

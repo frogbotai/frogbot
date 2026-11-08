@@ -35,17 +35,9 @@ Its `seed({ frogbot, req, today })` takes the date the sample is arranged around
 
 ### projects
 
-The dashboard shows a **Seed your database** panel at the top. Its button calls `POST /api/seed`, which:
+While the app has none of the template's records, the dashboard shows a **Seed your database** panel at the top. Its button calls `POST /api/seed`, which adds the sample records for whoever is signed in: three projects with tasks, every task assigned to you.
 
-1. deletes every record in the template's own collections, such as projects and tasks. It never deletes your users;
-2. creates the sample records;
-3. creates a demo login, `admin@test.com` with the password `password`. If that user already exists, it is deleted and created again, unless you are signed in as it.
-
-You can press it again at any time to get the samples back. Anything you changed in those collections is lost.
-
-<Warning>
-Any signed-in user can run the seed, in every environment, including production. Before you deploy, remove the panel and the endpoint from `src/frogbot.config.ts`, or at least delete the demo user.
-</Warning>
+The seed creates no user and deletes nothing, so it is safe on a deployed app, including one on Dojo. Once the template's records exist, the panel hides and the endpoint answers `409` without changing anything. To start over locally, delete the database.
 
 ## How a seed is built
 
@@ -53,18 +45,18 @@ The seed is plain code in your app, in three files you can change or delete:
 
 | File                           | Does                                                                                                         |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `src/seed/index.ts`            | `seed({ frogbot, req })` deletes and recreates the sample records through the [Local API](/local-api/overview). |
+| `src/seed/index.ts`            | `seed({ frogbot, req })` adds the sample records through the [Local API](/local-api/overview); `hasSampleData()` says whether they exist. |
 | `src/seed/endpoint.ts`         | `seedEndpoint()`, the `POST /api/seed` [root endpoint](/rest-api/overview#custom-endpoints).                  |
-| `src/components/SeedPanel.tsx` | The dashboard panel, registered in `admin.components.beforeDashboard`.                                       |
+| `src/components/SeedPanel.tsx` | The dashboard panel, registered in `admin.components.beforeDashboard`. A server component: it renders `SeedButton` only while `hasSampleData()` is false. |
 
 The seed passes `overrideAccess: true` and the request to each call, so it can write fields people can't, such as [autonumber](/fields/autonumber#seeds-and-migrations) numbers. It doesn't import anything from `src/agents`, so it keeps working when the app has no AI.
 
-The endpoint refuses a request with no signed-in user with `403`. If the seed throws, it logs the error and answers `500`; otherwise it answers `{ "success": true }`:
+The endpoint refuses a request with no signed-in user with `403`, and an app that already has the records with `409`. If the seed throws, it logs the error and answers `500`; otherwise it answers `{ "success": true }`:
 
 ```ts
 import type { Endpoint } from 'frogbot'
 
-import { seed } from './index'
+import { hasSampleData, seed } from './index'
 
 export function seedEndpoint(): Endpoint {
   return {
@@ -76,6 +68,13 @@ export function seedEndpoint(): Endpoint {
       }
 
       try {
+        if (await hasSampleData({ frogbot: req.frogbot, req })) {
+          return Response.json(
+            { error: 'This app already has projects, so the sample data was not added.' },
+            { status: 409 },
+          )
+        }
+
         await seed({ frogbot: req.frogbot, req })
       } catch (err) {
         req.frogbot.logger.error({ err }, 'Seeding the database failed')

@@ -19,7 +19,10 @@ export type NavPreferences = {
   set: <Value>(key: string, value: Value) => Promise<void> | void;
 };
 
-/** The open state the host shares with its own layout, such as an admin template. */
+/**
+ * The open state the host shares with its own layout, such as an admin template. A host that
+ * supplies it opens the drawer from its own control on phones, so the shell renders no toggle.
+ */
 export type NavDrawer = {
   open: boolean;
   setOpen: (open: boolean) => void;

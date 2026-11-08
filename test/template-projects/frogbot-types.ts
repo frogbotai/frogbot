@@ -207,7 +207,6 @@ export interface Task {
   assignee?: (number | null) | User;
   dueDate?: string | null;
   description?: string | null;
-  _order_board?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -301,7 +300,6 @@ export interface TasksSelect {
   assignee?: boolean;
   dueDate?: boolean;
   description?: boolean;
-  _order_board?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;

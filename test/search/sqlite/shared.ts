@@ -47,6 +47,7 @@ export const Users: CollectionConfig = {
 
 export const Articles: CollectionConfig = {
   slug: articlesSlug,
+  admin: { useAsTitle: 'title' },
   access: tenantAccess,
   trash: true,
   versions: { drafts: true },

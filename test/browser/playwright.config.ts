@@ -338,6 +338,7 @@ const testProjects = [
       'themeTokens.browser.spec.ts',
       'viewActions.browser.spec.ts',
       'commandPalette.browser.spec.ts',
+      'board.browser.spec.ts',
     ],
   }),
   project({ name: 'question-firefox', browser: 'firefox', testMatch: crossBrowserQuestionSpecs }),

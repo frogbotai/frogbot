@@ -20,6 +20,7 @@ import {
 } from './messages.js';
 import { promoteQueuedMessage } from './queue.js';
 import { assertStoredSelection } from './selection.js';
+import { messageSourceIds, toolSources } from './sources.js';
 import { holdTurn, releaseTurn } from './state.js';
 import type { ClientToolsOption, TurnClaim } from './types.js';
 
@@ -82,6 +83,7 @@ export async function streamTurn({
       ? (await findMessage({ req: turnReq, id: last.id }))?.createdAt
       : undefined) ?? new Date(Date.now() + 2).toISOString();
 
+  const runId = generateId();
   let result: AgentStreamResult;
   let mainModel: string;
   const compaction = createCompactionParts();
@@ -110,6 +112,7 @@ export async function streamTurn({
       options: withAgentAccessChecked({
         req,
         overrideAccess,
+        runId,
         chatId,
         replyCreatedAt,
         selection,
@@ -131,21 +134,34 @@ export async function streamTurn({
 
   let lastStepInputTokens: number | undefined;
 
-  const source = result.stream.pipeThrough(
-    new TransformStream({
-      transform: (part, controller) => {
-        if (part.type === 'error') {
-          controller.error(part.error);
+  const source = result.stream
+    .pipeThrough(
+      new TransformStream({
+        transform: (part, controller) => {
+          if (part.type === 'error') {
+            controller.error(part.error);
 
-          return;
-        }
+            return;
+          }
 
-        if (part.type === 'finish-step') lastStepInputTokens = part.usage.inputTokens;
+          if (part.type === 'finish-step') lastStepInputTokens = part.usage.inputTokens;
 
-        controller.enqueue(part);
-      },
-    }),
-  );
+          controller.enqueue(part);
+        },
+      }),
+    )
+    .pipeThrough(
+      toolSources({
+        tools: agent.config.tools ?? [],
+        ctx: {
+          req,
+          frogbot: req.frogbot,
+          agent: { slug: agent.slug, runId, chatId },
+          overrideAccess,
+        },
+        seen: messageSourceIds(last?.role === 'assistant' ? last : undefined),
+      }),
+    );
 
   let awaiting = false;
 

@@ -238,7 +238,6 @@ export interface Task {
   stage?: ('backlog' | 'in-progress' | 'done') | null;
   owner?: (number | null) | User;
   dueDate?: string | null;
-  _order_board?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -458,7 +457,6 @@ export interface TasksSelect {
   stage?: boolean;
   owner?: boolean;
   dueDate?: boolean;
-  _order_board?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
