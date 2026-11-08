@@ -41,6 +41,7 @@ import {
   messagesSlug,
   modelPort,
   monthlySpendUSD,
+  photosSlug,
   pickerAgentSlug,
   projectsSlug,
   reasoningModels,
@@ -287,7 +288,13 @@ export default buildConfig({
         { name: 'title', type: 'text', required: true },
         { name: 'status', type: 'select', options: storyStatusOptions },
         { name: 'approver', type: 'text', required: true },
+        { name: 'photo', type: 'upload', relationTo: photosSlug },
       ],
+    },
+    {
+      slug: photosSlug,
+      file: true,
+      fields: [{ name: 'alt', type: 'text' }],
     },
     {
       slug: archivesSlug,
@@ -400,6 +407,7 @@ export default buildConfig({
           timesheetsSlug,
           storiesSlug,
           approvalsSlug,
+          photosSlug,
         ] as const) {
           await req.frogbot.delete({ collection, where: {}, overrideAccess: true, req });
         }

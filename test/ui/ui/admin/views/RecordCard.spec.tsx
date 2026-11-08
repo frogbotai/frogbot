@@ -1,6 +1,7 @@
-import { render } from '@testing-library/react';
+import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import type { ClientCollectionConfig, Column } from 'payload';
-import { describe, expect, it, vi } from 'vitest';
+import { useState } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@payloadcms/ui', () => ({
   DocumentIcon: () => <svg data-testid="document-icon" />,
@@ -50,6 +51,8 @@ function renderCard(props: Partial<Parameters<typeof RecordCard>[0]> = {}) {
   );
 }
 
+afterEach(() => vi.unstubAllGlobals());
+
 describe('RecordCard', () => {
   it('renders the image, done check, title and fields', () => {
     const { container, getByRole } = renderCard();
@@ -92,5 +95,58 @@ describe('RecordCard', () => {
     const { container } = renderCard({ thumbnail: false });
 
     expect(container.querySelector('.fb-card__image')).toBeNull();
+  });
+
+  it("keeps the image after toggling done when the upload's defaultPopulate leaves out its file", async () => {
+    const populate = { media: { mimeType: true, url: true } };
+    const fetchMock = vi.fn((url: string) =>
+      Response.json({
+        doc: {
+          done: true,
+          id: 'a',
+          logo: url.includes('populate') ? logo : { alt: 'Lumen logo', id: 1 },
+          name: 'Lumen Labs',
+        },
+      }),
+    );
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    function Harness() {
+      const [row, setRow] = useState<Record<string, unknown> & { id: string }>({
+        done: false,
+        id: 'a',
+        logo,
+        name: 'Lumen Labs',
+      });
+
+      return (
+        <RecordCard
+          canToggleDone
+          cardColumns={[]}
+          collectionConfig={collectionConfig}
+          collectionSlug="companies"
+          imageArea="always"
+          onSave={setRow}
+          populate={populate}
+          row={row}
+          thumbnail={{ field: 'logo', fit: 'cover', upload: false }}
+          viewType="gallery"
+        />
+      );
+    }
+
+    const { container, getByRole } = render(<Harness />);
+
+    act(() => {
+      fireEvent.click(getByRole('button', { name: 'Mark complete' }));
+    });
+
+    await waitFor(() => expect(getByRole('button', { name: 'Completed' })).toBeTruthy());
+
+    expect(decodeURIComponent(String(fetchMock.mock.calls[0]?.[0]))).toContain(
+      'populate[media][url]=true',
+    );
+    expect(container.querySelector('.fb-card__image img')?.getAttribute('src')).toBe(logo.url);
   });
 });

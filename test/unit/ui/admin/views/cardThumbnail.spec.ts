@@ -83,6 +83,50 @@ describe('card thumbnails', () => {
     expect(getCardThumbnailURL({ id: 'a' }, thumbnail)).toBeUndefined();
   });
 
+  it('never draws a non-upload record from its own url and mimeType fields', () => {
+    const links = config({
+      slug: 'links',
+      admin: {},
+      fields: [],
+      flattenedFields: [
+        { name: 'url', type: 'text' },
+        { name: 'mimeType', type: 'text' },
+      ],
+    });
+
+    const record = { id: 'l', mimeType: 'image/svg+xml', url: 'https://tracker.example/pixel.svg' };
+
+    expect(
+      getCardThumbnailURL(record, resolveCardThumbnail({ collectionConfig: links, view: {} })),
+    ).toBeUndefined();
+    expect(
+      getCardThumbnailURL(
+        { ...record, logo: null },
+        resolveCardThumbnail({ collectionConfig: companies, view: {} }),
+      ),
+    ).toBeUndefined();
+  });
+
+  it("falls back to an upload record's own file when the view's field is empty, as Payload does", () => {
+    const videos = config({
+      slug: 'videos',
+      admin: {},
+      fields: [],
+      flattenedFields: [{ name: 'poster', type: 'upload', relationTo: 'media' }],
+      upload: {},
+    });
+
+    const thumbnail = resolveCardThumbnail({
+      collectionConfig: videos,
+      view: { useAsThumbnail: 'poster' },
+    });
+
+    const own = { id: 7, mimeType: 'image/png', url: '/api/videos/file/a.png', width: 800 };
+
+    expect(getCardThumbnailURL({ ...own, poster: null }, thumbnail)).toBe(own.url);
+    expect(getCardThumbnailURL({ ...own, poster: banner }, thumbnail)).toBe(banner.url);
+  });
+
   it("populates the resolved field's upload with Payload's thumbnail select", () => {
     const populate = getCardThumbnailPopulate({
       collectionConfig: companies,

@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-import { approvalsSlug, archivesSlug, storiesSlug } from './fixtures/question/shared';
+import { approvalsSlug, archivesSlug, photosSlug, storiesSlug } from './fixtures/question/shared';
 
 type Story = { _order: string; id: number | string; status?: string | null; title: string };
 
@@ -189,6 +189,54 @@ test('opens the prefilled form when the collection needs more than a title', asy
 
   await expect(titles(page, 'Doing')).toHaveText(['Budget']);
   await expect(count(page, 'Doing')).toHaveText('1');
+});
+
+const pixel = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+async function createApprovalWithPhoto(page: Page) {
+  const photo = await page.request.post(`/api/${photosSlug}`, {
+    multipart: {
+      _payload: JSON.stringify({ alt: 'Launch photo' }),
+      file: { buffer: pixel, mimeType: 'image/png', name: 'launch.png' },
+    },
+  });
+
+  expect(photo.ok()).toBe(true);
+  const { doc } = (await photo.json()) as { doc: { id: number | string } };
+
+  return create(
+    page,
+    { approver: 'Ada', photo: doc.id, status: 'todo', title: 'Launch plan' },
+    approvalsSlug,
+  );
+}
+
+test('keeps a card image after a save in the document drawer', async ({ page }) => {
+  await createApprovalWithPhoto(page);
+  await page.goto(`/collections/${approvalsSlug}`);
+
+  const card = column(page, 'Todo').locator('.frog-board__card', {
+    has: page.locator('.fb-card__title', { hasText: /^Launch plan$/ }),
+  });
+
+  const image = card.locator('.fb-card__image img');
+
+  await expect(image).toHaveAttribute('src', /\/api\/photos\/file\//);
+  await card.locator('.fb-card__title').click();
+
+  const drawer = page.locator('.drawer__content').last();
+
+  await expect(drawer.locator('#field-title')).toHaveValue('Launch plan');
+  await drawer.locator('#field-approver').fill('Grace');
+  await drawer.locator('#action-save').click();
+  await expect(page.locator('.payload-toast-container')).toContainText(/success/i);
+  await page.keyboard.press('Escape');
+  await expect(drawer).toBeHidden();
+
+  await expect(image).toHaveAttribute('src', /\/api\/photos\/file\//);
 });
 
 test('offers no Add without create access', async ({ page }) => {
