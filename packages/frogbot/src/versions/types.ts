@@ -1,3 +1,4 @@
+import type { TrashArgs } from '../collections/config/types.js';
 import type { CollectionSlug } from '../types/generated.js';
 import type { SelectType, Sort, Where } from '../types/payload.js';
 import type { FrogBotRequest } from '../types/request.js';
@@ -31,19 +32,21 @@ export type TypeWithVersion<T> = {
   version: T;
 };
 
-export type FindVersionsArgs<TSlug extends CollectionSlug> = CommonArgs & {
-  collection: TSlug;
-  where?: Where;
-  sort?: Sort;
-  limit?: number;
-  page?: number;
-  pagination?: boolean;
-};
+export type FindVersionsArgs<TSlug extends CollectionSlug> = CommonArgs &
+  TrashArgs & {
+    collection: TSlug;
+    where?: Where;
+    sort?: Sort;
+    limit?: number;
+    page?: number;
+    pagination?: boolean;
+  };
 
-export type FindVersionByIDArgs<TSlug extends CollectionSlug> = CommonArgs & {
-  collection: TSlug;
-  id: DocID;
-};
+export type FindVersionByIDArgs<TSlug extends CollectionSlug> = CommonArgs &
+  TrashArgs & {
+    collection: TSlug;
+    id: DocID;
+  };
 
 export type CountVersionsArgs<TSlug extends CollectionSlug> = CommonArgs & {
   collection: TSlug;
