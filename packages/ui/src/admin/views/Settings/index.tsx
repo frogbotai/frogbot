@@ -1,5 +1,5 @@
 import { getTranslation } from '@payloadcms/translations';
-import { Card } from '@payloadcms/ui';
+import { Card, Gutter, SetStepNav } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import type { EntityToGroup } from '@payloadcms/ui/shared';
 import { attachRegisteredFrogBot } from 'frogbot/internal';
@@ -7,18 +7,19 @@ import type { AdminViewServerProps } from 'payload';
 import { EntityType } from 'payload/shared';
 import { formatAdminURL } from 'payload/shared';
 
-import SettingIcon from '../../../icons/icons/SettingIcon.js';
-import TileIcon from '../../../icons/icons/TileIcon.js';
 import { splitNavGroups } from '../../elements/Nav/buildNavModel.js';
-import { renderNavIcon } from '../../elements/Nav/renderNavIcon.js';
-import { SettingsNav } from '../../elements/SettingsNav/index.js';
-import type { SettingsEntry } from './resolveSection.js';
-import { getSettingsRoutePath, resolveSettingsSection } from './resolveSection.js';
+import { DefaultTemplate } from '../../templates/Default/index.js';
+import {
+  getSettingsEntries,
+  getSettingsRoutePath,
+  resolveSettingsSection,
+} from './resolveSection.js';
 
 type SettingsViewProps = AdminViewServerProps & { routeSegments?: string[] };
 
+/** FrogBot's Settings pages, in the default template whose nav draws the Settings sidebar. */
 export async function SettingsView(props: SettingsViewProps) {
-  const { importMap, initPageResult, params, payload } = props;
+  const { importMap, initPageResult, params, payload, searchParams } = props;
   const req = initPageResult.req;
   const routePath = getSettingsRoutePath(
     props.routeSegments ?? (params?.segments as string[] | undefined) ?? [],
@@ -30,32 +31,23 @@ export async function SettingsView(props: SettingsViewProps) {
     props.server.redirect(formatAdminURL({ adminRoute, path: '/settings/collections' }));
   }
 
-  const settings = (
-    payload.config.admin as typeof payload.config.admin & { settings?: SettingsEntry[] }
-  ).settings;
+  const frogbotReq = attachRegisteredFrogBot(req);
 
-  const { accessible, matched, title } = await resolveSettingsSection({
-    entries: settings,
-    req: attachRegisteredFrogBot(req),
+  const { matched, title } = await resolveSettingsSection({
+    entries: getSettingsEntries(payload.config),
+    req: frogbotReq,
     routePath,
   });
-
-  const entries = [
-    { icon: <TileIcon size={18} />, label: 'Collections', path: 'collections' },
-    ...accessible.map((entry) => ({
-      icon: renderNavIcon({ icon: entry.icon, importMap, serverProps: props, size: 18 }) ?? (
-        <SettingIcon size={18} />
-      ),
-      label: entry.label,
-      path: entry.path,
-    })),
-  ];
 
   const collectionGroups =
     routePath === 'collections'
       ? splitNavGroups({
           entities: payload.config.collections
-            .filter(({ slug }) => initPageResult.visibleEntities.collections.includes(slug))
+            .filter(
+              ({ admin, slug }) =>
+                initPageResult.visibleEntities.collections.includes(slug) &&
+                !(admin as { settings?: boolean }).settings,
+            )
             .map(
               (entity) =>
                 ({
@@ -123,20 +115,18 @@ export async function SettingsView(props: SettingsViewProps) {
     );
 
   return (
-    <div className="frogbot-settings-template">
-      <SettingsNav
-        accountPath={formatAdminURL({
-          adminRoute,
-          path: payload.config.admin.routes.account,
-        })}
-        activePath={routePath}
-        adminRoute={adminRoute}
-        entries={entries}
-      />
-      <main className="frogbot-settings-template__main">
-        <div className="frogbot-settings-template__header">{title}</div>
-        <div className="frogbot-settings-template__content">{content}</div>
-      </main>
-    </div>
+    <DefaultTemplate
+      i18n={req.i18n}
+      locale={initPageResult.locale}
+      params={params}
+      permissions={initPageResult.permissions}
+      req={frogbotReq}
+      searchParams={searchParams}
+      user={initPageResult.req.user ?? undefined}
+      visibleEntities={initPageResult.visibleEntities}
+    >
+      <SetStepNav nav={[{ label: title }]} />
+      <Gutter className="frogbot-settings">{content}</Gutter>
+    </DefaultTemplate>
   );
 }

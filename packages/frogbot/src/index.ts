@@ -183,6 +183,19 @@ export type {
   UnlockArgs,
   VerifyEmailArgs,
 } from './auth/types.js';
+export type {
+  DeployConfig,
+  DeployContext,
+  DeployEnv,
+  DeployExecOptions,
+  DeployExecResult,
+  DeployFlags,
+  DeployIO,
+  DeployPrompts,
+  DeployRunOptions,
+  DeployTarget,
+  PreflightIssue,
+} from './bin/deploy/types.js';
 export type { ChannelThreadReference } from './channels/types.js';
 export type { CanWriteChatProps, WritableChat } from './chat/access/canWriteChat.js';
 export { canWriteChat } from './chat/access/canWriteChat.js';

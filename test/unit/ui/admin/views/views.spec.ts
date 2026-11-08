@@ -1,4 +1,3 @@
-import { RobotIcon, SettingIcon } from '@frogbotai/ui/icons';
 import type * as frogbotModule from 'frogbot';
 import type * as frogbotInternalModule from 'frogbot/internal';
 import type * as payloadModule from 'payload';
@@ -47,6 +46,7 @@ const mocks = vi.hoisted(() => {
     ListQueryProvider: vi.fn(({ children }) => children),
     PayloadDefaultListView: vi.fn(() => null),
     ViewControls: vi.fn(() => null),
+    DefaultTemplate: vi.fn(({ children }: { children?: ReactNode }) => children),
   };
 });
 
@@ -59,7 +59,9 @@ vi.mock('@payloadcms/ui', () => ({
   Card: ({ buttonAriaLabel, href, id, title }: Record<string, string>) =>
     createElement('a', { 'aria-label': buttonAriaLabel, href, id }, title),
   DefaultListView: mocks.PayloadDefaultListView,
-  Gutter: ({ children }: ComponentProps<'div'>) => createElement('div', null, children),
+  Gutter: ({ children, className }: ComponentProps<'div'>) =>
+    createElement('div', { className }, children),
+  SetStepNav: () => null,
   Link: ({ children, href, ...props }: ComponentProps<'a'>) =>
     createElement('a', { href, ...props }, children),
   ListSelection: () => null,
@@ -142,6 +144,10 @@ vi.mock('payload', async (importOriginal) => ({
   getPayload: mocks.getPayload,
 }));
 
+vi.mock('../../../../../packages/ui/src/admin/templates/Default/index.js', () => ({
+  DefaultTemplate: mocks.DefaultTemplate,
+}));
+
 const server = {
   notFound: () => {
     throw new Error('not-found');
@@ -161,10 +167,6 @@ const { SettingsView: RenderSettingsView } =
 
 const SettingsView = (props: Parameters<typeof RenderSettingsView>[0]) =>
   RenderSettingsView(Object.assign(props, { server }));
-
-function settingsViewProps(props: object): Parameters<typeof SettingsView>[0] {
-  return props as Parameters<typeof SettingsView>[0];
-}
 
 describe('FrogBot admin views', () => {
   afterEach(() => {
@@ -396,7 +398,7 @@ describe('FrogBot admin views', () => {
 
     expect(mocks.RenderServerComponent).not.toHaveBeenCalled();
 
-    const content = element.props.children[1].props.children[1].props.children;
+    const content = element.props.children[1].props.children;
 
     expect(content.props.className).toBe('frogbot-settings__not-found');
   });
@@ -418,192 +420,6 @@ describe('FrogBot admin views', () => {
     } as never);
 
     expect(mocks.redirect).toHaveBeenCalledWith('/admin/settings/collections');
-  });
-
-  it('SettingsView renders accessible nested entries with their icon and canonical path', async () => {
-    mocks.RenderServerComponent.mockClear();
-    mocks.RenderServerComponent.mockReturnValueOnce(createElement('svg', { 'data-icon': 'usage' }));
-    const access = vi.fn(() => true);
-    const props = {
-      importMap: { Icon: 'resolved' },
-      initPageResult: {
-        req: { user: { id: 'user-1' } },
-        visibleEntities: { collections: [], globals: [] },
-      },
-      payload: {
-        config: {
-          admin: {
-            routes: { account: '/account' },
-            settings: [
-              {
-                access,
-                Component: 'UsagePage',
-                icon: './UsageIcon#UsageIcon',
-                label: 'Usage',
-                path: 'workspace/usage',
-              },
-            ],
-          },
-          collections: [],
-          routes: { admin: '/control' },
-        },
-      },
-      routeSegments: ['settings', 'workspace', 'usage'],
-    };
-
-    const element = await SettingsView(settingsViewProps(props));
-    const html = renderToStaticMarkup(element);
-
-    expect(access).toHaveBeenCalledWith({ req: props.initPageResult.req });
-    expect(html).toContain('href="/control/settings/workspace/usage"');
-    expect(html).toContain('>Usage<');
-    expect(html).toContain('data-icon="usage"');
-    expect(mocks.RenderServerComponent).toHaveBeenCalledWith({
-      Component: './UsageIcon#UsageIcon',
-      clientProps: { size: 18 },
-      importMap: props.importMap,
-      serverProps: props,
-    });
-  });
-
-  it('SettingsView renders a built-in settings icon from the icon registry', async () => {
-    mocks.RenderServerComponent.mockClear();
-
-    const element = await SettingsView({
-      importMap: {},
-      initPageResult: {
-        req: { user: { id: 'user-1' } },
-        visibleEntities: { collections: [], globals: [] },
-      },
-      payload: {
-        config: {
-          admin: {
-            routes: { account: '/account' },
-            settings: [{ Component: 'RobotPage', icon: 'robot', label: 'Robot', path: 'robot' }],
-          },
-          collections: [],
-          routes: { admin: '/admin' },
-        },
-      },
-      routeSegments: ['settings', 'robot'],
-    } as never);
-
-    const html = renderToStaticMarkup(element);
-
-    expect(html).toContain(renderToStaticMarkup(createElement(RobotIcon, { size: 18 })));
-    expect(mocks.RenderServerComponent).not.toHaveBeenCalledWith(
-      expect.objectContaining({ Component: 'robot' }),
-    );
-  });
-
-  it('SettingsView renders component object icons and falls back for empty icons', async () => {
-    mocks.RenderServerComponent.mockClear();
-
-    const icon = { exportName: 'UsageIcon', path: './UsageIcon' };
-    const props = {
-      importMap: {},
-      initPageResult: {
-        req: { user: { id: 'user-1' } },
-        visibleEntities: { collections: [], globals: [] },
-      },
-      payload: {
-        config: {
-          admin: {
-            routes: { account: '/account' },
-            settings: [
-              { Component: 'UsagePage', icon, label: 'Usage', path: 'usage' },
-              { Component: 'EmptyPage', icon: '', label: 'Empty', path: 'empty' },
-            ],
-          },
-          collections: [],
-          routes: { admin: '/admin' },
-        },
-      },
-      routeSegments: ['settings', 'usage'],
-    } as never;
-
-    mocks.RenderServerComponent.mockImplementation(({ Component }) =>
-      Component === icon ? createElement('svg', { 'data-icon': 'object' }) : null,
-    );
-
-    const html = renderToStaticMarkup(await SettingsView(props));
-
-    mocks.RenderServerComponent.mockImplementation(() => 'rendered-setting');
-
-    expect(html).toContain('data-icon="object"');
-    expect(mocks.RenderServerComponent).toHaveBeenCalledWith({
-      Component: icon,
-      clientProps: { size: 18 },
-      importMap: {},
-      serverProps: props,
-    });
-    expect(mocks.RenderServerComponent).not.toHaveBeenCalledWith(
-      expect.objectContaining({ Component: '' }),
-    );
-    expect(html).toContain(renderToStaticMarkup(createElement(SettingIcon, { size: 18 })));
-  });
-
-  it.each([
-    ['root', '/', '/settings/usage'],
-    ['default', '/admin', '/admin/settings/usage'],
-    ['custom', '/control', '/control/settings/usage'],
-  ])(
-    'SettingsView formats the %s admin route without a protocol-relative URL',
-    async (_, adminRoute, expected) => {
-      const element = await SettingsView({
-        importMap: {},
-        initPageResult: {
-          req: { user: { id: 'user-1' } },
-          visibleEntities: { collections: [], globals: [] },
-        },
-        payload: {
-          config: {
-            admin: {
-              routes: { account: '/account' },
-              settings: [{ Component: 'UsagePage', label: 'Usage', path: 'usage' }],
-            },
-            routes: { admin: adminRoute },
-          },
-        },
-        routeSegments: ['settings', 'usage'],
-      } as never);
-
-      const html = renderToStaticMarkup(element);
-
-      expect(html).toContain(`href="${expected}"`);
-      expect(html).not.toContain('href="//');
-    },
-  );
-
-  it('SettingsView omits denied entries from the server-rendered navigation', async () => {
-    const denied = vi.fn(() => false);
-    const element = await SettingsView({
-      importMap: {},
-      initPageResult: {
-        req: { user: { id: 'user-1' } },
-        visibleEntities: { collections: [], globals: [] },
-      },
-      payload: {
-        config: {
-          admin: {
-            routes: { account: '/account' },
-            settings: [
-              { access: denied, Component: 'Secret', label: 'Secret', path: 'secret/nested' },
-            ],
-          },
-          collections: [],
-          routes: { admin: '/admin' },
-        },
-      },
-      routeSegments: ['settings', 'missing'],
-    } as never);
-
-    const html = renderToStaticMarkup(element);
-
-    expect(denied).toHaveBeenCalledOnce();
-    expect(html).not.toContain('Secret');
-    expect(html).toContain('href="/admin/settings/collections"');
-    expect(html).toContain('href="/admin/account"');
   });
 
   it('SettingsView lists ungrouped collections without a group heading and labels developer groups', async () => {
@@ -646,7 +462,7 @@ describe('FrogBot admin views', () => {
       routeSegments: ['settings', 'collections'],
     } as never);
 
-    const content = element.props.children[1].props.children[1].props.children;
+    const content = element.props.children[1].props.children;
     const html = renderToStaticMarkup(content);
 
     expect(html).not.toContain('<h2>Collections</h2>');
@@ -698,7 +514,7 @@ describe('FrogBot admin views', () => {
       routeSegments: ['settings', 'collections'],
     } as never);
 
-    const content = element.props.children[1].props.children[1].props.children;
+    const content = element.props.children[1].props.children;
     const html = renderToStaticMarkup(content);
 
     expect(html).toContain('id="card-posts"');
@@ -706,6 +522,85 @@ describe('FrogBot admin views', () => {
     expect(html).not.toContain('Hidden');
     expect(html.indexOf('id="card-media"')).toBeLessThan(html.indexOf('id="card-users"'));
     expect(html.indexOf('id="card-users"')).toBeLessThan(html.indexOf('<h2>Content</h2>'));
+  });
+
+  it('SettingsView leaves Settings collections off the Collections cards', async () => {
+    const i18n = {
+      t: (key: string) =>
+        ({ 'general:collections': 'Collections', 'general:globals': 'Globals' })[key] ?? key,
+    };
+
+    const element = await SettingsView({
+      importMap: {},
+      initPageResult: {
+        permissions: { collections: { posts: { read: true }, users: { read: true } } },
+        req: { i18n, user: { id: 'user-1' } },
+        visibleEntities: { collections: ['posts', 'users'], globals: [] },
+      },
+      payload: {
+        config: {
+          admin: { routes: { account: '/account' }, settings: [] },
+          collections: [
+            { admin: {}, labels: { plural: 'Posts' }, slug: 'posts' },
+            { admin: { group: false, settings: true }, labels: { plural: 'Users' }, slug: 'users' },
+          ],
+          routes: { admin: '/admin' },
+        },
+      },
+      routeSegments: ['settings', 'collections'],
+    } as never);
+
+    const html = renderToStaticMarkup(element.props.children[1].props.children);
+
+    expect(html).toContain('id="card-posts"');
+    expect(html).not.toContain('id="card-users"');
+  });
+
+  it('SettingsView renders in the default template with the page title as its step nav', async () => {
+    mocks.DefaultTemplate.mockClear();
+
+    const req = { i18n: mocks.i18n, user: { id: 'user-1' } };
+    const initPageResult = {
+      locale: { code: 'en' },
+      permissions: { collections: {} },
+      req,
+      visibleEntities: { collections: [], globals: [] },
+    };
+
+    const element = await SettingsView({
+      importMap: {},
+      initPageResult,
+      params: { segments: ['settings', 'usage'] },
+      payload: {
+        config: {
+          admin: {
+            routes: { account: '/account' },
+            settings: [{ Component: 'Usage', label: 'Usage', path: 'usage' }],
+          },
+          collections: [],
+          routes: { admin: '/admin' },
+        },
+      },
+      searchParams: { tab: 'a' },
+    } as never);
+
+    const [stepNav, gutter] = element.props.children;
+
+    expect(element.props).toMatchObject({
+      locale: initPageResult.locale,
+      params: { segments: ['settings', 'usage'] },
+      permissions: initPageResult.permissions,
+      req,
+      searchParams: { tab: 'a' },
+      user: req.user,
+      visibleEntities: initPageResult.visibleEntities,
+    });
+    expect(stepNav.props.nav).toEqual([{ label: 'Usage' }]);
+    expect(gutter.props.className).toBe('frogbot-settings');
+    expect(mocks.RenderServerComponent).toHaveBeenLastCalledWith(
+      expect.objectContaining({ Component: 'Usage' }),
+    );
+    expect(gutter.props.children).toBe(mocks.RenderServerComponent.mock.results.at(-1)?.value);
   });
 
   it('ChatView prefetches bounded, access-filtered messages for the document route', async () => {

@@ -1,6 +1,7 @@
 import type { RootAdminConfig, SettingsEntry } from '../admin/types.js';
 import type { AgentConfig } from '../agents/types.js';
 import type { AIConfig } from '../ai/types.js';
+import type { DeployTarget } from '../bin/deploy/types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { ConnectionsConfig } from '../connections/types.js';
 import type { DatabaseAdapter } from '../database/types.js';
@@ -149,8 +150,15 @@ export type FrogBotConfig = Omit<PayloadConfig, FrogBotOverridden> & {
   onInit?: OnInit | OnInit[];
   /** AI configuration — providers, routers, hooks, and access control. */
   ai?: AIConfig;
-  /** Commands `frogbot <name>` runs, keyed by lowercase name. One with a built-in's name replaces it. */
-  cli?: { commands?: Record<string, CLICommand> };
+  cli?: {
+    /** Commands `frogbot <name>` runs, keyed by lowercase name. One with a built-in's name replaces it. */
+    commands?: Record<string, CLICommand>;
+    /**
+     * Targets `frogbot deploy <name>` runs, keyed by lowercase name; set by plugins, such as `dojo()`.
+     * Can't reuse a core target's name (`docker`, `fly`, `gcp`, `aws`, `azure`).
+     */
+    deployTargets?: Record<string, DeployTarget>;
+  };
   /**
    * Internal. Payload plugins that run inside Payload's `buildConfig`, for plugins that read
    * themselves back from Payload's `config.plugins`. Set by FrogBot plugins.

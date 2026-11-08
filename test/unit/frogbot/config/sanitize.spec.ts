@@ -188,7 +188,7 @@ describe('frogbot sanitize', () => {
     ).toThrow("Collection slug 'frogbot-trigger-subscriptions' is reserved");
   });
 
-  it('makes board collections orderable with per-view fields and a hook', async () => {
+  it('makes board collections orderable on the Payload _order field', async () => {
     const result = sanitize(
       makeConfig({
         collections: [
@@ -210,14 +210,12 @@ describe('frogbot sanitize', () => {
     const posts = payloadConfig.collections?.find(({ slug }) => slug === 'posts');
 
     expect(posts?.orderable).toBe(true);
-    expect(posts?.fields).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ name: '_order_by_stage', type: 'text', index: true }),
-      ]),
+    expect(posts?.fields.some((field) => 'name' in field && field.name.startsWith('_order'))).toBe(
+      false,
     );
-    expect(posts?.hooks?.beforeChange).toHaveLength(1);
+    expect(posts?.hooks?.beforeChange ?? []).toHaveLength(0);
     expect(posts?.admin.defaultSort).toBe('-createdAt');
-    expect(posts?.admin.custom?.frogbot.views[1].orderField).toBe('_order_by_stage');
+    expect(posts?.admin.custom?.frogbot.views[1].orderField).toBe('_order');
   });
 
   it('leaves collections without boards non-orderable', async () => {
@@ -644,7 +642,7 @@ describe('frogbot sanitize', () => {
     const sanitized = await buildConfig(makeConfig({ plugins: [plugin] }));
 
     expect(sanitized.cli.commands).toEqual({ hello });
-    expect(sanitize(makeConfig()).cli).toEqual({ commands: {} });
+    expect(sanitize(makeConfig()).cli).toEqual({ commands: {}, deployTargets: {} });
   });
 
   it('rejects a `cli.commands` key with capitals', () => {
@@ -657,6 +655,37 @@ describe('frogbot sanitize', () => {
     expect(() => sanitize(makeConfig({ cli: { commands: { hello: 'nope' as never } } }))).toThrow(
       '[frogbot] cli command "hello" must be a function',
     );
+  });
+
+  it('keeps the `cli.deployTargets` a plugin adds', () => {
+    const target = { describe: 'Test', preflight: () => [], run: () => undefined };
+
+    expect(
+      sanitize(makeConfig({ cli: { deployTargets: { 'my-host': target } } })).cli.deployTargets,
+    ).toEqual({
+      'my-host': target,
+    });
+  });
+
+  it.each([
+    ['Dojo', 'must be lowercase letters, digits and dashes'],
+    ['my_host', 'must be lowercase letters, digits and dashes'],
+    ['fly', "is a core target's name"],
+  ])('rejects the `cli.deployTargets` name %s', (name, message) => {
+    const target = { describe: 'Test', preflight: () => [], run: () => undefined };
+
+    expect(() => sanitize(makeConfig({ cli: { deployTargets: { [name]: target } } }))).toThrow(
+      `[frogbot] cli deploy target "${name}" ${message}`,
+    );
+  });
+
+  it.each([
+    ['preflight and run', { describe: 'x' }],
+    ['describe', { preflight: () => [], run: () => undefined }],
+  ])('rejects a `cli.deployTargets` value without %s', (_, target) => {
+    expect(() =>
+      sanitize(makeConfig({ cli: { deployTargets: { host: target as never } } })),
+    ).toThrow('[frogbot] cli deploy target "host" must have `describe`, `preflight` and `run`');
   });
 
   it('rejects unknown built-in collection icons', () => {
@@ -682,6 +711,21 @@ describe('frogbot sanitize', () => {
       expect(() => sanitize(config)).toThrowError(/Valid:.*message-square-text/);
     },
   );
+
+  it('rejects brand logos as collection icons', () => {
+    const icon = (value: string) =>
+      sanitize(
+        makeConfig({
+          collections: [{ slug: 'users', auth: true, fields: [], admin: { icon: value as never } }],
+        }),
+      );
+
+    expect(() => icon('discover')).toThrowError("[frogbot] Unknown admin icon 'discover'. Valid:");
+    expect(() => icon('brand-discover')).toThrowError(
+      "[frogbot] Admin icon 'brand-discover' is a brand logo, not a UI icon. Pick a UI icon. Valid:",
+    );
+    expect(() => icon('brand-discover')).not.toThrowError(/Valid:.*brand-/);
+  });
 
   it('rejects unknown built-in nav item icons', () => {
     const config = makeConfig({

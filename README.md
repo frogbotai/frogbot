@@ -129,7 +129,7 @@ export default buildConfig({
 });
 ```
 
-Boot locally with `frogbot dev`, generate end-to-end TypeScript types with `frogbot generate:types`, or deploy to the cloud in one command with `npx frogbot share`.
+Boot locally with `frogbot dev`, generate end-to-end TypeScript types with `frogbot generate:types`, or deploy in one command with `npx frogbot deploy` (Dojo, Docker, Fly.io, Google Cloud, AWS or Azure).
 
 ## Features
 
@@ -140,7 +140,7 @@ Boot locally with `frogbot dev`, generate end-to-end TypeScript types with `frog
 - **40+ native OAuth pieces & chat channels** — connect Slack, Discord, Linear, GitHub, Teams, Telegram, Gmail, Stripe, Notion, Xero, and more with managed OAuth and human-in-the-loop channel approvals
 - **Durable jobs & schedules** — background queues, cron schedules, retries, and workers backed by your database
 - **Single-command type generation** — `frogbot generate:types` produces end-to-end TypeScript types for your collections, agents, and pieces
-- **Own & deploy anywhere** — MIT licensed; swap SQLite, Postgres, or MongoDB and S3/R2/GCS/Azure/Vercel Blob adapters anytime, or deploy in one command with `npx frogbot share`
+- **Own & deploy anywhere** — MIT licensed; swap SQLite, Postgres, or MongoDB and S3/R2/GCS/Azure/Vercel Blob adapters anytime, or deploy in one command with `npx frogbot deploy`
 
 ## Packages
 
@@ -160,23 +160,23 @@ This monorepo publishes the following packages:
 
 **Plugins**
 
-| Package                                                                      | Description                                                                   |
-| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| [`@frogbotai/plugin-dojo`](./packages/plugins/plugin-dojo)                   | One-command cloud deploy (`frogbot share`) and every Dojo action from the CLI |
-| [`@frogbotai/plugin-roles`](./packages/plugins/plugin-roles)                 | Role-based access control (RBAC) collections and permission helpers           |
-| [`@frogbotai/plugin-audit-log`](./packages/plugins/plugin-audit-log)         | Immutable audit trail for collection and auth operations                      |
-| [`@frogbotai/plugin-mcp`](./packages/plugins/plugin-mcp)                     | Expose collections and tools as a Model Context Protocol (MCP) server         |
-| [`@frogbotai/plugin-ai-policy`](./packages/plugins/plugin-ai-policy)         | Per-user model allowlists and monthly AI budgets                              |
-| [`@frogbotai/plugin-api-keys`](./packages/plugins/plugin-api-keys)           | Multiple named, independently revocable API keys                              |
-| [`@frogbotai/plugin-capture`](./packages/plugins/plugin-capture)             | Capture AI calls and export JSONL chat training data                          |
-| [`@frogbotai/plugin-evals`](./packages/plugins/plugin-evals)                 | Score agents on saved test cases, from the admin or CI                        |
-| [`@frogbotai/plugin-usage-reports`](./packages/plugins/plugin-usage-reports) | AI token and cost usage reporting                                             |
-| [`@frogbotai/plugin-import-export`](./packages/plugins/plugin-import-export) | CSV and JSON collection import and export                                     |
-| [`@frogbotai/plugin-stripe`](./packages/plugins/plugin-stripe)               | Stripe webhooks and billing sync                                              |
-| [`@frogbotai/plugin-nested-docs`](./packages/plugins/plugin-nested-docs)     | Hierarchical parent/child document trees and breadcrumbs                      |
-| [`@frogbotai/plugin-redirects`](./packages/plugins/plugin-redirects)         | URL redirect management collection                                            |
-| [`@frogbotai/plugin-seo`](./packages/plugins/plugin-seo)                     | SEO metadata fields and preview helpers                                       |
-| [`@frogbotai/plugin-sentry`](./packages/plugins/plugin-sentry)               | Sentry error reporting integration                                            |
+| Package                                                                      | Description                                                                 |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [`@frogbotai/plugin-dojo`](./packages/plugins/plugin-dojo)                   | Dojo deploys (`frogbot deploy`, `share`) and every Dojo action from the CLI |
+| [`@frogbotai/plugin-roles`](./packages/plugins/plugin-roles)                 | Role-based access control (RBAC) collections and permission helpers         |
+| [`@frogbotai/plugin-audit-log`](./packages/plugins/plugin-audit-log)         | Immutable audit trail for collection and auth operations                    |
+| [`@frogbotai/plugin-mcp`](./packages/plugins/plugin-mcp)                     | Expose collections and tools as a Model Context Protocol (MCP) server       |
+| [`@frogbotai/plugin-ai-policy`](./packages/plugins/plugin-ai-policy)         | Per-user model allowlists and monthly AI budgets                            |
+| [`@frogbotai/plugin-api-keys`](./packages/plugins/plugin-api-keys)           | Multiple named, independently revocable API keys                            |
+| [`@frogbotai/plugin-capture`](./packages/plugins/plugin-capture)             | Capture AI calls and export JSONL chat training data                        |
+| [`@frogbotai/plugin-evals`](./packages/plugins/plugin-evals)                 | Score agents on saved test cases, from the admin or CI                      |
+| [`@frogbotai/plugin-usage-reports`](./packages/plugins/plugin-usage-reports) | AI token and cost usage reporting                                           |
+| [`@frogbotai/plugin-import-export`](./packages/plugins/plugin-import-export) | CSV and JSON collection import and export                                   |
+| [`@frogbotai/plugin-stripe`](./packages/plugins/plugin-stripe)               | Stripe webhooks and billing sync                                            |
+| [`@frogbotai/plugin-nested-docs`](./packages/plugins/plugin-nested-docs)     | Hierarchical parent/child document trees and breadcrumbs                    |
+| [`@frogbotai/plugin-redirects`](./packages/plugins/plugin-redirects)         | URL redirect management collection                                          |
+| [`@frogbotai/plugin-seo`](./packages/plugins/plugin-seo)                     | SEO metadata fields and preview helpers                                     |
+| [`@frogbotai/plugin-sentry`](./packages/plugins/plugin-sentry)               | Sentry error reporting integration                                          |
 
 **Pieces (40+ Integrations & Channels)**
 

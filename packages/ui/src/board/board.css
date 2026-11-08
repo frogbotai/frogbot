@@ -22,8 +22,117 @@
   .frog-board__column-header {
     align-items: center;
     display: flex;
+    gap: 8px;
     justify-content: space-between;
     padding: 12px;
+  }
+
+  .frog-board__column-title {
+    align-items: center;
+    display: flex;
+    flex: 1 1 auto;
+    gap: 8px;
+    justify-content: space-between;
+    min-width: 0;
+  }
+
+  .frog-board__column-menu,
+  .frog-board__hidden {
+    align-items: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    justify-content: center;
+  }
+
+  .frog-board__column-menu {
+    flex: 0 0 auto;
+    height: 24px;
+    margin: -4px -4px -4px 0;
+    padding: 0;
+    width: 24px;
+  }
+
+  .frog-board__column-menu:hover,
+  .frog-board__column-menu[data-state="open"],
+  .frog-board__hidden:hover,
+  .frog-board__hidden[data-state="open"] {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text);
+  }
+
+  .frog-board__column-menu:focus-visible,
+  .frog-board__hidden:focus-visible,
+  .frog-board__strip:focus-visible {
+    outline: var(--accessibility-outline);
+    outline-offset: 1px;
+  }
+
+  .frog-board__column--collapsed {
+    flex: 0 0 44px;
+    min-width: 44px;
+  }
+
+  .frog-board__strip {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: inherit;
+    color: var(--color-text);
+    cursor: pointer;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    font: inherit;
+    gap: 8px;
+    padding: 12px 0;
+  }
+
+  .frog-board__strip:hover {
+    background: var(--color-bg-tertiary);
+  }
+
+  .frog-board__strip-label {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    writing-mode: vertical-rl;
+  }
+
+  .frog-board__column--collapsed.frog-board__column--placing {
+    border-color: var(--color-border-strong);
+  }
+
+  .frog-board__hidden {
+    align-self: flex-start;
+    flex: 0 0 auto;
+    font-size: 13px;
+    padding: 8px 12px;
+    white-space: nowrap;
+  }
+
+  .frog-board__empty {
+    align-items: center;
+    border: 1px dashed var(--special-border-translucent-strong);
+    border-radius: 6px;
+    color: var(--color-text-tertiary);
+    display: flex;
+    font-size: 13px;
+    justify-content: center;
+    min-height: 72px;
+  }
+
+  .frog-board__column-scroll:has(.frog-board__inline) .frog-board__empty {
+    display: none;
+  }
+
+  .frog-board__column-footer {
+    padding: 0 8px 8px;
   }
 
   .frog-board__column-count {
@@ -88,5 +197,92 @@
     box-shadow: 0 8px 24px color-mix(in srgb, var(--color-text) 25%, transparent);
     cursor: grabbing;
     opacity: 1;
+  }
+}
+
+@layer frogbot {
+  .frog-board__inline {
+    cursor: text;
+    gap: 6px;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+  }
+
+  .frog-board__inline:focus-within {
+    border-color: var(--color-border-selected);
+  }
+
+  .frog-board__inline[aria-busy="true"] {
+    opacity: 0.6;
+  }
+
+  .frog-board__inline--error {
+    border-color: var(--color-border-danger-strong);
+  }
+
+  .frog-board__inline-input {
+    background: transparent;
+    border: 0;
+    color: var(--color-text);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+    outline: none;
+    padding: 2px 0;
+    width: 100%;
+  }
+
+  .frog-board__inline-input::placeholder {
+    color: var(--color-text-tertiary);
+    font-weight: 400;
+  }
+
+  .frog-board__inline-error {
+    color: var(--color-text-danger);
+    display: flex;
+    flex-direction: column;
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  .frog-board__inline-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .frog-board__inline-action {
+    background: transparent;
+    border: 0;
+    color: var(--color-text);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    padding: 0;
+    text-decoration: underline;
+  }
+
+  .frog-board__add {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: 13px;
+    gap: 6px;
+    padding: 6px 8px;
+    width: 100%;
+  }
+
+  .frog-board__add:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text);
+  }
+
+  .frog-board__add:focus-visible {
+    outline: var(--accessibility-outline);
   }
 }

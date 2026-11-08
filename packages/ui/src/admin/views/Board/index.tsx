@@ -17,10 +17,12 @@ import { BoardPreference } from './BoardPreference.client.js';
 import { BoardViewClient, type BoardViewClientProps } from './BoardView.client.js';
 import {
   type BoardPreferenceValue,
+  getBoardColumnState,
   getBoardGroupBy,
   resolveBoardGroupBy,
   resolveBoardSort,
 } from './data.js';
+import { getInlineAdd } from './inlineAdd.js';
 import { resolveBoardField, resolveColumns } from './resolveColumns.js';
 
 export async function BoardView(input: AdminViewServerProps) {
@@ -98,6 +100,7 @@ export async function BoardView(input: AdminViewServerProps) {
     orderField,
     preferenceSort,
     querySort,
+    viewSlug: board.slug,
   });
 
   const groupBy = getBoardGroupBy(selectedGroupBy);
@@ -223,12 +226,16 @@ export async function BoardView(input: AdminViewServerProps) {
       {preferenceWriter}
       <BoardViewClient
         collectionSlug={collectionSlug}
+        columnState={getBoardColumnState(preferenceValue)}
         columns={columns}
         cover={board.cover}
         filter={filter}
         groupBy={groupBy}
         limit={board.pagination?.defaultLimit ?? 50}
         orderField={orderField}
+        viewSlug={board.slug}
+        canCreate={Boolean(permissions?.create)}
+        inlineAdd={getInlineAdd({ collectionConfig, groupBy, permissions })}
         canUpdate={Boolean(
           permissions?.update &&
           (fieldPermission === true || (fieldPermission && fieldPermission.update)),

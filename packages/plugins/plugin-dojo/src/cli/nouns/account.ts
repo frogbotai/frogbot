@@ -1,11 +1,11 @@
 import type { RawVerb, Verb } from '../command.js';
 import type { DojoClient, DojoUser } from '../dojo.js';
 import { ShareError } from '../error.js';
-import type { ShareIO } from '../io.js';
+import type { DojoIO } from '../io.js';
 import { done } from '../io.js';
 import { listWorkspaces } from '../workspaces.js';
 
-async function showMe(io: ShareIO, dojo: DojoClient, user: DojoUser): Promise<void> {
+async function showMe(io: DojoIO, dojo: DojoClient, user: DojoUser): Promise<void> {
   const workspaces = (await listWorkspaces(dojo)).map(({ slug, name }) => ({ slug, name }));
 
   done(io, { email: user.email ?? null, url: dojo.url, workspaces }, [

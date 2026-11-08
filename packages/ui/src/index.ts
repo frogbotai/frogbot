@@ -1,6 +1,6 @@
-export { Board, type BoardProps } from './board/Board.js';
+export { Board, type BoardColumnState, type BoardProps } from './board/Board.js';
 export { BoardCard } from './board/BoardCard.js';
-export { BoardColumn } from './board/BoardColumn.js';
+export { BoardColumn, type BoardColumnInfo, type BoardColumnProps } from './board/BoardColumn.js';
 export {
   type BoardColumn as BoardColumnDefinition,
   type BoardMove,

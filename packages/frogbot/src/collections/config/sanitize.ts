@@ -6,12 +6,7 @@ import { buildSignInEndpoints } from '../../auth/signIn/endpoints.js';
 import { buildSignInStrategy } from '../../auth/signIn/strategy.js';
 import { validateSignIn } from '../../auth/signIn/validate.js';
 import type { AuthConfig } from '../../auth/types.js';
-import {
-  buildBoardOrderField,
-  buildBoardOrderHook,
-  compileCollectionViews,
-  getBoardOrderFieldNames,
-} from '../../config/collectionViews.js';
+import { compileCollectionViews, hasBoardView } from '../../config/collectionViews.js';
 import {
   type AttachFrogBot,
   bootstrapFrogBot,
@@ -180,7 +175,7 @@ export function sanitizeCollection(
   }
 
   const views = admin?.components?.views;
-  const orderFieldNames = getBoardOrderFieldNames(c);
+  const orderable = hasBoardView(c);
   const {
     chat: _chat,
     file: _file,
@@ -205,7 +200,7 @@ export function sanitizeCollection(
       wrapFieldRequestFunctions(
         sanitizeVectorFields({
           collection: c.slug,
-          fields: [...c.fields, ...orderFieldNames.map(buildBoardOrderField)],
+          fields: c.fields,
           mapVectorField,
           onAutonumber: collectAutonumber,
           onAutonumberKey,
@@ -222,11 +217,7 @@ export function sanitizeCollection(
           },
         }
       : {}),
-    ...(orderFieldNames.length
-      ? {
-          orderable: true,
-        }
-      : {}),
+    ...(orderable ? { orderable: true } : {}),
     ...(c.chat === true
       ? {
           admin: {
@@ -331,14 +322,6 @@ export function sanitizeCollection(
 
   out.hooks = {
     ...existingHooks,
-    ...(orderFieldNames.length
-      ? {
-          beforeChange: [
-            ...(existingHooks.beforeChange ?? []),
-            buildBoardOrderHook(orderFieldNames),
-          ],
-        }
-      : {}),
     beforeOperation: [setupFrogBot, ...(existingHooks.beforeOperation ?? [])],
     ...(afterMe?.length ? { afterMe: [setupFrogBot, ...afterMe] } : {}),
     ...(afterLogout?.length ? { afterLogout: [setupFrogBot, ...afterLogout] } : {}),

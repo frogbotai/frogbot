@@ -202,7 +202,7 @@ describe('frogbot bin', () => {
 
     expect(mocks.calls).toEqual(['loadEnv']);
     expect(error).toHaveBeenCalledWith(
-      '[frogbot] usage: frogbot <start|dev|up|down|status|run|check|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status>',
+      '[frogbot] usage: frogbot <start|dev|up|down|status|run|check|deploy|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status>',
     );
   });
 
@@ -282,7 +282,7 @@ describe('frogbot bin', () => {
 
   describe('app commands', () => {
     const usage =
-      '[frogbot] usage: frogbot <start|dev|up|down|status|run|check|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status';
+      '[frogbot] usage: frogbot <start|dev|up|down|status|run|check|deploy|generate:types|generate:piece-types|pieces:port|generate:importmap|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status';
 
     function withConfig(commands: Record<string, CLICommand>): FrogBotSanitizedConfig {
       const config = { cli: { commands } } as unknown as FrogBotSanitizedConfig;

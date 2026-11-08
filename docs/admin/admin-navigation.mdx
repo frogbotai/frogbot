@@ -59,7 +59,7 @@ export const Projects: CollectionConfig = {
 }
 ```
 
-Use `group: null` to list a collection as a top-level link above the sections. Leave `group` undefined to list it directly under the Collections heading, as FrogBot's built-in collections are, provide a string or localized value to list it under a named group label, or use `false` to keep the collection's routes but leave it out of the sidebar, the dashboard's collection cards, Recents and Pinned, and the command palette. Settings → Collections still lists a `false` collection, so it's one click away. Set it on Users and other collections people open rarely. Both options are listed with the other collection admin settings in [Admin Options](/configuration/collections#admin-options).
+Use `group: null` to list a collection as a top-level link above the sections. Leave `group` undefined to list it directly under the Collections heading, as FrogBot's built-in collections are, provide a string or localized value to list it under a named group label, or use `false` to keep the collection's routes but leave it out of the sidebar, the dashboard's collection cards, Recents and Pinned, and the command palette. Settings → Collections still lists a `false` collection, so it's one click away. For Users and other admin collections, use [`settings: true`](#settings-collections) instead. Both options are listed with the other collection admin settings in [Admin Options](/configuration/collections#admin-options).
 
 These built-in names suit a sidebar link, grouped by the kind of collection they fit:
 
@@ -82,6 +82,8 @@ admin: {
 ```
 
 A plain string without `#` must be a built-in icon name. An unknown name, such as a typo, stops startup with `[frogbot] Unknown admin icon '<name>'` followed by the valid names. A component path always names its export after `#`; write `'./src/components/ProjectsIcon#default'` for a default export. Navigation item and settings icons follow the same rules.
+
+Built-in names are UI icons only. The brand logos in `@frogbotai/ui/icons`, such as `BrandSlackIcon` and `BrandVisaIcon`, aren't admin icons, and a `brand-` name such as `'brand-slack'` stops startup. To show one, render it from your own component and point `icon` at that component's path.
 
 Within `CollectionsSection`, ungrouped collections come first, in configuration order. Named groups follow in first-seen order, with their collections in configuration order.
 
@@ -258,6 +260,27 @@ return {
 
 The usage reports plugin follows this convention; its Usage entry appears only when the plugin is installed.
 
+## Settings collections
+
+Set `admin.settings: true` to make a collection part of Settings, as Users is in a typical SaaS app:
+
+```ts
+export const Users: CollectionConfig = {
+  slug: 'users',
+  admin: { settings: true },
+  auth: true,
+  fields: [{ name: 'name', type: 'text' }],
+}
+```
+
+A Settings collection gets its own item in the Settings sidebar, after Collections and before the `settings` entries, in `collections` order, with its `admin.icon`. Every page FrogBot draws for it, such as its list, a document or its versions, shows the Settings sidebar, whatever link opened it; its URLs stay `/collections/<slug>`. Account shows the Settings sidebar too, so **Back to app** is the way out of Settings.
+
+It leaves the main sidebar, the dashboard's collection cards and activity, Recents, Pinned and the Settings → Collections cards, whatever its `group`. The command palette still finds it and its documents under **Settings**. Its item shows only to users who can read the collection, and `admin.hidden` still removes it everywhere.
+
+On narrow screens, the Settings sidebar is the same drawer as the main sidebar, opened by the same menu button.
+
+Settings collections need FrogBot's Settings view and sidebar. When the app replaces `admin.components.views.settings` with its own view, `settings: true` does nothing and the collection stays in the main sidebar. A [custom `Nav`](#replace-the-sidebar) draws on Settings pages too.
+
 Registry entries add pages within FrogBot's default Settings shell; they do not override its core routes. To replace the entire Settings surface, configure a custom root view:
 
 ```ts
@@ -290,7 +313,7 @@ admin: {
 
 ## Customize the account menu
 
-Select Account in the bottom rail to open the account menu. Its items appear in this order:
+Select Account in the bottom rail, or at the foot of the Settings sidebar, to open the account menu. Its items appear in this order, and the Settings sidebar's menu leaves out Settings:
 
 1. Your name and email, which open the account page
 2. `admin.components.beforeAccountMenu`
@@ -367,7 +390,7 @@ admin: {
 }
 ```
 
-A custom `Nav` fully owns navigation rendering. It does not receive FrogBot's default sidebar styles, configured items or sections, bottom rail, or shell slots automatically.
+A custom `Nav` fully owns navigation rendering. It does not receive FrogBot's default sidebar styles, configured items or sections, bottom rail, or shell slots automatically, and it also draws on Settings pages, where FrogBot's sidebar would show the Settings sidebar.
 
 ## Use the sidebar outside the admin
 

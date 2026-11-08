@@ -288,7 +288,7 @@ test('moving through chat, Settings, and a board labels each page without a relo
   await page.getByRole('menuitem', { name: 'Settings' }).click();
 
   await expect(page).toHaveURL(/\/settings\/collections$/);
-  await expect(stepNav(page)).toHaveCount(0);
+  await expect(stepNav(page)).toHaveText('Dashboard/Collections');
 
   await expectTabTitle(page, 'Collections');
   expect.soft((await recordedTitles(page)).slice(1)).not.toContain(`${threadTitle} - FrogBot`);
@@ -296,7 +296,7 @@ test('moving through chat, Settings, and a board labels each page without a relo
   await settingsNav(page).getByRole('link', { name: robotSettings.label, exact: true }).click();
 
   await expect(page.getByTestId('robot-settings')).toBeVisible();
-  await expect(stepNav(page)).toHaveCount(0);
+  await expect(stepNav(page)).toHaveText(`Dashboard/${robotSettings.label}`);
 
   await expectTabTitle(page, robotSettings.label);
 
@@ -1000,7 +1000,7 @@ for (const path of [`/settings/${hiddenSettings.path}`, '/settings/does-not-exis
     await page.goto(path);
 
     await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
-    await expect(page.locator('.frogbot-settings-template__header')).toHaveText('Settings');
+    await expect(stepNav(page)).toHaveText('Dashboard/Settings');
     await expectTabTitle(page, 'Settings');
   });
 }

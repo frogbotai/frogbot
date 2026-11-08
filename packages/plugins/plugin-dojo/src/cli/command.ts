@@ -3,7 +3,7 @@ import { parseArgs } from 'node:util';
 import type { DojoClient } from './dojo.js';
 import { createDojo } from './dojo.js';
 import { ShareError } from './error.js';
-import type { ShareIO } from './io.js';
+import type { DojoIO } from './io.js';
 
 /** A flag of one verb, as `node:util` `parseArgs` takes it, with its help line. */
 export type VerbFlag = {
@@ -16,7 +16,7 @@ export type VerbFlag = {
 
 /** What a verb's `run` gets: its positionals and flags, already checked against its usage. */
 export type VerbInput = {
-  io: ShareIO;
+  io: DojoIO;
   positionals: string[];
   values: Record<string, string | boolean | (string | boolean)[] | undefined>;
   /** One client for the whole command, made on first use. */
@@ -41,7 +41,9 @@ export type Verb = {
 
 /** A verb that parses its own arguments, like `share`; `flags` only feed its help. */
 export type RawVerb = Omit<Verb, 'run' | 'confirm'> & {
-  raw: (args: string[], io: ShareIO) => Promise<number>;
+  raw: (args: string[], io: DojoIO) => Promise<number>;
+  /** Gets `--json` and the real stdout as typed, because it writes its own JSON result, like `share`. */
+  ownJson?: true;
 };
 
 /** A noun's verbs: `apps` → `list`, `delete`, … */
@@ -100,7 +102,7 @@ function arity(args: string | undefined): { min: number; max: number } {
 export async function runVerb(
   verb: Verb,
   args: string[],
-  io: ShareIO,
+  io: DojoIO,
   usage: string,
 ): Promise<number> {
   const flags = verbFlags(verb);

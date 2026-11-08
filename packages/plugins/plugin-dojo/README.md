@@ -1,12 +1,12 @@
 # @frogbotai/plugin-dojo
 
-Adds the `frogbot dojo` commands, which manage Dojo from the terminal, and runs a FrogBot app on Dojo with no setup: uploads go to the app's R2 bucket, and AI goes through Dojo's gateway. Docs: https://docs.frogbot.ai/plugins/dojo
+Adds the `dojo` target to `frogbot deploy` and the `frogbot dojo` commands, which manage Dojo from the terminal, and runs a FrogBot app on Dojo with no setup: uploads go to the app's R2 bucket, and AI goes through Dojo's gateway. Docs: https://docs.frogbot.ai/plugins/dojo
 
 Dojo adds this plugin when it builds an app, after the app's own plugins, by setting `FROGBOT_PLATFORM_PLUGIN=@frogbotai/plugin-dojo` for `next build` and `frogbot` commands. An app that lists `dojo()` itself gets it once: core skips the platform plugin when a listed plugin has the same slug.
 
 ## Commands
 
-Every command runs as `frogbot dojo <command>` in an app that lists `dojo()`, and as `npx @frogbotai/plugin-dojo <command>` anywhere, with or without an app. Both run the same command list. `frogbot share` is `frogbot dojo apps share`, with the same flags.
+Every command runs as `frogbot dojo <command>` in an app that lists `dojo()`, and as `npx @frogbotai/plugin-dojo <command>` anywhere, with or without an app. Both run the same command list. `frogbot share` is `frogbot dojo apps share`, with the same flags. `dojo()` also adds `dojo` to `cli.deployTargets`, so `frogbot deploy` (and `frogbot deploy dojo`) runs the same code as `apps share`, and `apps share` takes `deploy`'s `--dry-run`, `--no-interactive` and `--env-file`.
 
 | Command                                                                          | Example                                                         | Does                                                                              |
 | -------------------------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------- |
@@ -28,7 +28,7 @@ Every command runs as `frogbot dojo <command>` in an app that lists `dojo()`, an
 
 `frogbot dojo --help` lists the commands, `frogbot dojo apps --help` a noun's verbs, and `frogbot dojo apps share --help` a verb's flags. An unknown command or verb prints the list and exits 2.
 
-- **`--json`** on any command prints one JSON value on stdout and nothing else; sign-in links, progress and build lines go to stderr. A failed command prints nothing on stdout. `apps logs --follow` can't end in one value, so it refuses `--json`.
+- **`--json`** on any command prints one JSON value on stdout and nothing else; sign-in links, progress and build lines go to stderr. A failed command prints nothing on stdout, except `apps share`, which prints `frogbot deploy`'s `{ target, ok, dryRun, issues, result }` object either way. `apps logs --follow` can't end in one value, so it refuses `--json`.
 - **`FROGBOT_DOJO_TOKEN`**, when set, is the Dojo API key every command uses, ahead of the stored sign-in. If Dojo refuses it, the command exits 1 instead of starting a browser sign-in. `FROGBOT_DOJO_URL` points at another Dojo.
 - **No terminal.** Every question has a flag. `apps delete`, `members remove`, `keys revoke`, `sharing leave` and `env unset` ask before acting, and need `--yes` without a terminal (exit 2 otherwise).
 - **Refusals.** A `402` prints Dojo's upgrade link; `apps share` and `apps create` then wait up to 30 minutes for the payment, and open the link with a terminal. A `403` names the access the command needs, such as owner access to the app.

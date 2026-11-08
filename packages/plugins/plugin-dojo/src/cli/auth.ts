@@ -2,18 +2,20 @@ import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { homedir, hostname } from 'node:os';
 import { dirname, join } from 'node:path';
 
+import type { DeployEnv } from 'frogbot';
+
 import { ShareError } from './error.js';
-import type { ShareEnv, ShareIO } from './io.js';
+import type { DojoIO } from './io.js';
 import { say } from './io.js';
 
 type AuthFile = { tokens: Record<string, string> };
 
 /** `$XDG_CONFIG_HOME/frogbotai/auth.json`, beside the gateway's config. */
-export function authPath(env: ShareEnv): string {
+export function authPath(env: DeployEnv): string {
   return join(env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'frogbotai', 'auth.json');
 }
 
-async function readAuth(env: ShareEnv): Promise<AuthFile> {
+async function readAuth(env: DeployEnv): Promise<AuthFile> {
   try {
     const parsed = JSON.parse(await readFile(authPath(env), 'utf8')) as Partial<AuthFile>;
 
@@ -24,12 +26,12 @@ async function readAuth(env: ShareEnv): Promise<AuthFile> {
 }
 
 /** The stored token for this Dojo, if any. */
-export async function readToken(env: ShareEnv, dojoUrl: string): Promise<string | undefined> {
+export async function readToken(env: DeployEnv, dojoUrl: string): Promise<string | undefined> {
   return (await readAuth(env)).tokens[dojoUrl];
 }
 
 /** Stores the token for this Dojo in an owner-only file. */
-export async function writeToken(env: ShareEnv, dojoUrl: string, token: string): Promise<void> {
+export async function writeToken(env: DeployEnv, dojoUrl: string, token: string): Promise<void> {
   const path = authPath(env);
   const auth = await readAuth(env);
 
@@ -41,7 +43,7 @@ export async function writeToken(env: ShareEnv, dojoUrl: string, token: string):
 }
 
 /** Forgets this Dojo's token, and the file once no token is left. */
-export async function removeToken(env: ShareEnv, dojoUrl: string): Promise<void> {
+export async function removeToken(env: DeployEnv, dojoUrl: string): Promise<void> {
   const path = authPath(env);
   const auth = await readAuth(env);
 
@@ -80,7 +82,7 @@ async function post(url: string, body: Record<string, string>): Promise<Response
 const maxCodes = 3;
 
 /** Signs in with Dojo's device flow (RFC 8628) and stores the token; an expired code makes way for a new one. */
-export async function deviceLogin(io: ShareIO, dojoUrl: string): Promise<string> {
+export async function deviceLogin(io: DojoIO, dojoUrl: string): Promise<string> {
   for (let codes = 1; ; codes += 1) {
     const token = await approvedToken(io, dojoUrl);
 
@@ -105,7 +107,7 @@ export async function deviceLogin(io: ShareIO, dojoUrl: string): Promise<string>
   }
 }
 
-async function approvedToken(io: ShareIO, dojoUrl: string): Promise<string | undefined> {
+async function approvedToken(io: DojoIO, dojoUrl: string): Promise<string | undefined> {
   const start = await post(`${dojoUrl}/api/cli/device/code`, {
     client_id: clientId,
     device_name: hostname(),

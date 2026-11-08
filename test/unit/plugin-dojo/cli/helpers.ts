@@ -7,10 +7,10 @@ import { promisify } from 'node:util';
 import { onTestFinished } from 'vitest';
 
 import type {
-  ShareConfig,
-  ShareEnv,
-  ShareIO,
-} from '../../../../packages/plugins/plugin-dojo/src/cli/io.js';
+  DeployConfig,
+  DeployEnv,
+  DeployIO,
+} from '../../../../packages/frogbot/src/bin/deploy/types.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -56,16 +56,16 @@ export async function gitRepo(root: string): Promise<void> {
 }
 
 export type TestIO = {
-  io: ShareIO;
+  io: DeployIO;
   stdout: () => string[];
   stderr: () => string[];
   opened: string[];
   asked: string[];
 };
 
-const emptyConfig = { collections: [], db: {} } as unknown as ShareConfig;
+const emptyConfig = { collections: [], db: {} } as unknown as DeployConfig;
 
-/** A `ShareIO` that records its output and answers prompts with `answers`, or fails when none is given. */
+/** A `DeployIO` that records its output and answers prompts with `answers`, or fails when none is given. */
 export function testIO({
   cwd,
   env,
@@ -76,12 +76,12 @@ export function testIO({
   config = emptyConfig,
 }: {
   cwd: string;
-  env: ShareEnv;
+  env: DeployEnv;
   isTTY?: boolean;
   confirm?: boolean;
   select?: string;
   multiselect?: string[];
-  config?: ShareConfig;
+  config?: DeployConfig;
 }): TestIO {
   let out = '';
   let err = '';
@@ -96,7 +96,7 @@ export function testIO({
     return value;
   };
 
-  const io: ShareIO = {
+  const io: DeployIO = {
     program: 'frogbot',
     cwd,
     env,
@@ -111,6 +111,8 @@ export function testIO({
     openBrowser: (url) => opened.push(url),
     wait: () => Promise.resolve(),
     loadConfig: () => Promise.resolve(config),
+    exec: (command) => Promise.reject(new Error(`Unexpected command: ${command}`)),
+    which: () => Promise.resolve(false),
   };
 
   const lines = (text: string) => text.split('\n').filter(Boolean);

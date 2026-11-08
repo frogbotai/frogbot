@@ -1,7 +1,7 @@
 import type { DojoClient } from './dojo.js';
 import { dojoList } from './dojo.js';
 import { ShareError } from './error.js';
-import type { ShareIO } from './io.js';
+import type { DojoIO } from './io.js';
 import { say } from './io.js';
 
 export type Workspace = { id: string | number; name: string; slug: string };
@@ -23,7 +23,7 @@ export async function chooseWorkspace({
   slug,
 }: {
   dojo: DojoClient;
-  io: ShareIO;
+  io: DojoIO;
   slug?: string;
 }): Promise<Workspace> {
   const create = `${dojo.url}/collections/workspaces/create`;
@@ -58,7 +58,7 @@ export async function findWorkspace({
   slug,
 }: {
   dojo: DojoClient;
-  io: ShareIO;
+  io: DojoIO;
   slug?: string;
 }): Promise<Workspace> {
   const workspaces = await listWorkspaces(dojo);
@@ -79,7 +79,7 @@ async function pickWorkspace({
 }: {
   workspaces: Workspace[];
   slug?: string;
-  io: ShareIO;
+  io: DojoIO;
 }): Promise<Workspace> {
   const slugs = workspaces.map((workspace) => workspace.slug).join(', ');
 

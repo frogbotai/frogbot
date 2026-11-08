@@ -73,13 +73,37 @@ The group field must be a single select or relationship field. Select option ord
 
 Dragging a card performs a normal collection update, including access checks, validation, and hooks. A rejected update restores the card to its original column and displays the error.
 
+When the board is sorted by its manual order, dragging a card within a column saves its new position. The order is the collection's hidden `_order` field, so every board on one collection shares a single manual order, and new documents go to the bottom.
+
 Nested fields use dot paths such as `workflow.stage` and `details.dueDate`.
 
 Board views use `pagination.defaultLimit` for each column, defaulting to 50. Columns lazy-load subsequent pages and virtualize their cards. `pagination.limits` applies only to list page-size controls. Omitting `admin.views` creates one default list view without a switcher, using FrogBot's normal list pagination defaults.
 
+## Adding cards
+
+Users who can create documents in the collection see **+ Add** at the foot of each column. It opens an empty card with a title input, and the new document gets that column's group value:
+
+- **Enter** saves the card and opens the next one, so several cards can be added in a row. Cards are saved one at a time, in the order they were typed.
+- **Escape** discards the card. Leaving the input saves its text, or removes the card when it is empty.
+- A save that fails keeps the card and its text, shows the error, and offers **Open form**.
+
+**+ Add** opens the create form, prefilled with the column's value, instead of an inline card when a title alone can't create a document:
+
+- `useAsTitle` is unset, `id`, or not a top-level Text or Textarea field, or the user can't set it.
+- The collection is an upload collection, or an auth collection using the local strategy.
+- Another field is required and has no `defaultValue` and no field-level `beforeValidate` hook. Fields inside arrays and blocks don't count.
+
+When the group field itself is required, **Uncategorized** always opens the form.
+
+## Collapsing and hiding columns
+
+Each column's menu collapses it to a narrow strip showing its label and total, or hides it. A collapsed column still accepts dropped cards, and clicking the strip expands it. Hidden columns are listed under **Hidden** after the last column, where each can be shown again. Both are remembered per user in the board's preferences.
+
+A column with no cards shows **No cards** and still accepts dropped cards.
+
 ## Column headers
 
-Each column header shows the column's label and the number of cards loaded in it. When the group field is a select or radio field with [option colors](/fields/select#option-colors), each option's header shows its label as a coloured pill, and options without a colour show as `gray`. **Uncategorized** always keeps a plain label.
+Each column header shows the column's label and the total number of matching documents in it, including those not loaded yet. When the group field is a select or radio field with [option colors](/fields/select#option-colors), each option's header shows its label as a coloured pill, and options without a colour show as `gray`. **Uncategorized** always keeps a plain label.
 
 A `ColumnHeader` component replaces the whole header and receives these props:
 
@@ -89,7 +113,7 @@ A `ColumnHeader` component replaces the whole header and receives these props:
 | `column.label` | `string` | Label shown in the header, such as the option label or the related document's title. **Uncategorized** for documents without a value. |
 | `column.value` | `unknown` | Stored group value for the column. `undefined` for **Uncategorized**. |
 | `column.color` | `OptionColor \| undefined` | The option's colour. Set only when the group field has option colors, and never for **Uncategorized**. |
-| `count` | `number` | Cards loaded in the column so far. |
+| `count` | `number` | Total matching documents in the column, including those not loaded yet. |
 
 Use `OptionPill` from `@frogbotai/ui` to draw the same pill as the built-in header. It accepts these props:
 

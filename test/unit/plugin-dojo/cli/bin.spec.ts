@@ -44,6 +44,9 @@ vi.mock('frogbot/internal', async () => ({
   )),
   ...(await import('../../../../packages/frogbot/src/collections/config/internal.js')),
   ...(await import('../../../../packages/frogbot/src/bin/formatCliError.js')),
+  ...(await import('../../../../packages/frogbot/src/bin/deploy/error.js')),
+  ...(await import('../../../../packages/frogbot/src/bin/deploy/io.js')),
+  ...(await import('../../../../packages/frogbot/src/bin/deploy/run.js')),
   loadConfig: () => Promise.resolve({ _internal: { payloadConfig: { collections: [], db: {} } } }),
 }));
 

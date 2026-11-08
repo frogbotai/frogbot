@@ -79,7 +79,7 @@ Any choice passed as a flag skips its interactive prompt. Passing `--yes` (or ru
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
 | `[project-name]`, `-n`, `--name` | name | Prompted | Project and folder name (required with `--yes`). Lowercase letters, numbers, `.`, `-`, or `_`. |
-| `-t`, `--template` | `blank` \| `projects` | `blank` | Starter template. `projects` adds a project tracker with sample data; see [Templates and sample data](/getting-started/templates). |
+| `-t`, `--template` | `blank` \| `projects` \| `crm` | `blank` | Starter template. `projects` adds a project tracker with sample data, and `crm` a CRM with companies, deals, activities and tasks and sample data that only loads in development; see [Templates and sample data](/getting-started/templates). |
 | `-d`, `--db` | `sqlite` \| `postgres` \| `mongodb` | `sqlite` | Database adapter and connection string. See [Database](/database/overview). |
 | `--ai` | `zen` \| `openai` \| `anthropic` \| `google` \| `bedrock` \| `none` | `none` | AI provider configured in `src/frogbot.config.ts`. |
 | `--api-key` | string | Prompted | Provider API key written to `.env` (ignored with `--ai none`). |
