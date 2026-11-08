@@ -121,6 +121,10 @@ function VisibleEntitiesSection({ visibleEntities }: ServerProps) {
   return <p>{visibleEntities?.collections.join(', ')}</p>;
 }
 
+function PageSection({ collectionSlug, docID }: { collectionSlug?: string; docID?: number }) {
+  return <p data-testid="page-section">{`${collectionSlug}/${docID}`}</p>;
+}
+
 function NavIcon({ className, size }: { className?: string; size?: number }) {
   return <svg className={className} data-size={size} data-testid="nav-icon" />;
 }
@@ -316,6 +320,62 @@ describe('FrogBotNav', () => {
     render(await FrogBotNav(props()));
 
     expect(navClient.mock.calls[0]?.[0].items).toEqual([]);
+  });
+
+  it('passes collectionSlug and docID to its slots', async () => {
+    const base = props();
+    const navProps = {
+      ...base,
+      payload: { ...base.payload, importMap: { [sectionPath]: PageSection } },
+    } as unknown as ServerProps;
+
+    render(await FrogBotNav({ ...navProps, collectionSlug: 'posts', docID: 7 }));
+
+    expect(screen.getByTestId('page-section').textContent).toBe('posts/7');
+  });
+
+  it('calls a navItems function once and gives its items to the rail and the palette', async () => {
+    const navItems = vi.fn(
+      ({
+        collectionSlug,
+        docID,
+        req,
+      }: {
+        collectionSlug?: string;
+        docID?: number;
+        req?: unknown;
+      }) => [
+        {
+          icon: navIconPath,
+          label: (req as { frogbot?: unknown }).frogbot ? 'Versions' : 'missing req.frogbot',
+          path: `/admin/collections/${collectionSlug}/${docID}/versions`,
+        },
+      ],
+    );
+
+    const base = navItemProps([]);
+    const config = base.payload.config as unknown as { admin: { components: object } };
+
+    config.admin.components = { navItems };
+
+    render(await FrogBotNav({ ...base, collectionSlug: 'posts', docID: 7, viewType: 'document' }));
+
+    const { items, palette } = navClient.mock.calls[0]?.[0] as {
+      items: { label: string; path: string }[];
+      palette: { rows: unknown[] };
+    };
+
+    const versions = { label: 'Versions', path: '/admin/collections/posts/7/versions' };
+
+    expect(navItems).toHaveBeenCalledOnce();
+    expect(navItems.mock.calls[0]?.[0]).toMatchObject({
+      collectionSlug: 'posts',
+      docID: 7,
+      viewType: 'document',
+    });
+    expect(items).toEqual([expect.objectContaining(versions)]);
+    expect(palette.rows).toEqual([{ group: null, ...versions }]);
+    expect(render(renderedItemIcon(0)).getByTestId('nav-icon')).not.toBeNull();
   });
 
   it('renders a built-in nav item icon from the icon registry', async () => {

@@ -1,5 +1,6 @@
 export { appIconURL, appManifestURL } from '../admin/appIcon/urls.js';
 export { isFrogBotSettingsView } from '../admin/config/sanitize.js';
+export { iconNames as adminIconNames } from '../admin/icons.js';
 export type { SummaryKind } from '../admin/views/summary.js';
 export { getSummaryKind, SUMMARY_OPERATIONS } from '../admin/views/summary.js';
 export { executeAuthStrategy } from '../auth/executeAuthStrategy.js';
@@ -18,7 +19,7 @@ export { getPayloadConfig } from '../config/getPayloadConfig.js';
 export { loadConfig } from '../config/load.js';
 export { findConfigFile } from '../config/resolveConfigPath.js';
 export type { ComponentPathMap } from '../config/rewriteComponentPaths.js';
-export { mapComponentPaths } from '../config/rewriteComponentPaths.js';
+export { mapComponentPaths, rewritePayloadComponent } from '../config/rewriteComponentPaths.js';
 export type { PostgresAdapter, SQLiteAdapter } from '../database/guards.js';
 export {
   assertDrizzleAdapter,

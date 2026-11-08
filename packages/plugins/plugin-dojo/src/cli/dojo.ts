@@ -10,6 +10,10 @@ export function dojoUrl(env: DeployEnv): string {
   return (env.FROGBOT_DOJO_URL || 'https://dojo.frogbot.ai').replace(/\/+$/, '');
 }
 
+function inCI(env: DeployEnv): boolean {
+  return Boolean(env.CI) && env.CI !== 'false' && env.CI !== '0';
+}
+
 /** A failed Dojo reply: Payload's `errors` (with a `ValidationError`'s field errors), or an OAuth-style `error`. */
 export type DojoErrorBody = {
   errors?: { message?: string; data?: { errors?: { path?: string; message?: string }[] } }[];
@@ -52,7 +56,7 @@ export type DojoClient = {
 
 /**
  * A Dojo client that signs in with `FROGBOT_DOJO_TOKEN`, then the stored token, then the device flow.
- * A refused `FROGBOT_DOJO_TOKEN` fails instead of starting the device flow.
+ * A refused `FROGBOT_DOJO_TOKEN` fails instead of starting the device flow, and so does CI with no token.
  */
 export function createDojo(io: DojoIO): DojoClient {
   const url = dojoUrl(io.env);
@@ -72,6 +76,12 @@ export function createDojo(io: DojoIO): DojoClient {
     if (envToken) {
       throw new ShareError(
         `Dojo didn't accept FROGBOT_DOJO_TOKEN at ${url}; it may be revoked. Set a working key, or unset it to sign in with a browser.`,
+      );
+    }
+
+    if (!io.isTTY && inCI(io.env)) {
+      throw new ShareError(
+        `No Dojo sign-in here, and nobody in CI can open a sign-in link. Set FROGBOT_DOJO_TOKEN to a Dojo API key from "frogbot dojo keys create", stored as a CI secret.`,
       );
     }
 

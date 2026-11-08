@@ -40,6 +40,10 @@ export const CHECK_INPUTS = {
     'packages/plugins/*/package.json',
     'scripts/core-boundaries-baseline.json',
   ],
+  'deploy-dockerfile': [
+    'templates/blank/Dockerfile',
+    'packages/frogbot/src/bin/deploy/dockerfile.ts',
+  ],
   'dist-imports': ['packages/**/src/**', ...MANIFESTS],
   'docs-fences': ['docs/**'],
   'docs-links': ['docs/**', 'skills/**', 'CONTRIBUTING.md', 'CLAUDE.md'],

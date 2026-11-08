@@ -51,7 +51,7 @@ npx @frogbotai/plugin-dojo apps pull deals
 | `members add` | `<email>`, `--role owner\|member`, `--workspace` | Adds someone by email; they join when they sign in with it. |
 | `members role` | `<email> <role>`, `--workspace` | Changes a member's role. |
 | `members remove` | `<email>`, `--workspace`, `--yes` | Removes a member, or yourself. |
-| `apps share` | `--data`, `--no-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys` | Uploads the app in this folder to Dojo, builds it and prints its live URL. See [`dojo apps share`](/getting-started/cli#dojo-apps-share). |
+| `apps share` | `--app`, `--data`, `--no-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys` | Uploads the app in this folder to Dojo, builds it and prints its live URL. See [`dojo apps share`](/getting-started/cli#dojo-apps-share). |
 | `apps pull` | `<app>` | Downloads an app you own or edit into a new folder. See [`dojo apps pull`](/getting-started/cli#dojo-apps-pull). |
 | `apps logs` | `<app>`, `--follow` | Prints an app's recent logs, or follows them. See [`dojo apps logs`](/getting-started/cli#dojo-apps-logs). |
 | `apps list` | `--workspace` | Lists every app you can see. |
@@ -72,7 +72,7 @@ npx @frogbotai/plugin-dojo apps pull deals
 | `sharing leave` | `<app>`, `--yes` | Removes you from an app shared with you. |
 | `keys list` | — | Lists your Dojo API keys, with the key that made each one. |
 | `keys create` | `<name>`, `--can-mint` | Creates a key and prints it once. |
-| `keys revoke` | `<id>`, `--yes` | Revokes a key. |
+| `keys revoke` | `<id>`, `--cascade`, `--no-cascade`, `--yes` | Revokes a key and the keys it made (`--cascade`, the default). `--no-cascade` keeps the keys it made working. |
 | `billing status` | `--workspace` | Shows a workspace's plan, status and paid apps. |
 | `billing manage` | `--workspace` | Prints the link to change the card, see invoices or cancel. |
 
@@ -81,7 +81,7 @@ npx @frogbotai/plugin-dojo apps pull deals
 ### Scripts and agents
 
 - **`--json`** on any command prints one JSON value on stdout and nothing else. Sign-in links, progress and build lines go to stderr, and a failed command prints nothing on stdout. `apps share` (and `frogbot share`) prints the same `{ target, ok, dryRun, issues, result }` object as [`frogbot deploy --json`](/deployment/overview), even when it fails. `apps logs --follow` never ends, so it refuses `--json`.
-- **`FROGBOT_DOJO_TOKEN`** is a Dojo API key every command uses, ahead of the stored sign-in. When Dojo refuses it, the command exits with code `1` instead of starting a browser sign-in. `FROGBOT_DOJO_URL` targets another Dojo. Sharing never uploads either one from `.env` as an app key.
+- **`FROGBOT_DOJO_TOKEN`** is a Dojo API key every command uses, ahead of the stored sign-in. When Dojo refuses it, the command exits with code `1` instead of starting a browser sign-in. In CI (`CI` set, no terminal), a command with no token and no stored sign-in exits `1` at once, naming the variable. `FROGBOT_DOJO_URL` targets another Dojo. Sharing never uploads either one from `.env` as an app key.
 - **No terminal.** Every question has a flag, or fails naming it. `apps delete`, `members remove`, `keys revoke`, `sharing leave`, `env unset`, `domains clear`, and `domains set` when it replaces a domain, ask before acting, and need `--yes` without a terminal. `apps delete` looks the app up first and names it in the question.
 - **Refusals.** A `402` prints Dojo's upgrade link. A `403` says which access the command needs, such as owner access to the app.
 - **Creating keys.** `keys create` mints a key with the CLI's sign-in, using the API keys plugin's [keys that mint keys](/plugins/api-keys#keys-that-mint-keys): the new key is never broader than the sign-in, and `keys list` shows which key made it. When Dojo doesn't let the sign-in create keys, the command prints the link to create one in the browser and exits with code `1`.

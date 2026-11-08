@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/piece-asana",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "description": "Asana workspaces, projects, tasks, comments and attachments for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",

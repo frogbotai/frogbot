@@ -26,6 +26,11 @@ export type McpPluginOptions = Pick<
   'disabled' | 'hooks' | 'mcp' | 'prompts' | 'resources'
 > & {
   collections?: Record<string, McpCollectionOptions>;
+  /**
+   * Your OAuth protected resource metadata URL, sent on every 401 as
+   * `WWW-Authenticate: Bearer resource_metadata="<url>"` so MCP clients can find your sign-in.
+   */
+  resourceMetadataURL?: string;
   /** FrogBot tools, piece actions and piece instances to serve, each named by its slug. */
   tools?: readonly McpTool[];
 };
@@ -37,8 +42,11 @@ declare module 'frogbot' {
 }
 
 export function mcpPlugin(options: McpPluginOptions = {}): Plugin {
-  const { tools = [], ...rest } = options;
+  const { tools = [], resourceMetadataURL, ...rest } = options;
   const payloadTools = toPayloadTools(tools);
+
+  const metadataURL =
+    resourceMetadataURL === undefined ? undefined : toResourceMetadataURL(resourceMetadataURL);
 
   return definePlugin<McpPluginOptions>({
     slug: 'plugin-mcp',
@@ -78,10 +86,25 @@ export function mcpPlugin(options: McpPluginOptions = {}): Plugin {
                 strategy,
                 pluginConfig,
                 req,
+                resourceMetadataURL: metadataURL,
               }),
           }),
         ],
       };
     },
   })(options);
+}
+
+function toResourceMetadataURL(value: string): string {
+  const url = URL.canParse(value) ? new URL(value) : undefined;
+
+  if (url?.protocol !== 'http:' && url?.protocol !== 'https:') {
+    throw new Error('[plugin-mcp] resourceMetadataURL must be an absolute http(s) URL');
+  }
+
+  if (/["\\]/.test(url.href)) {
+    throw new Error('[plugin-mcp] resourceMetadataURL must not contain " or \\');
+  }
+
+  return url.href;
 }

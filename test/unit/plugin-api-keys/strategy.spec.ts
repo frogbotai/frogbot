@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createApiKeyToken } from '../../../packages/plugins/plugin-api-keys/src/server/token.js';
 import {
@@ -23,6 +23,10 @@ function makeFrogBot() {
 }
 
 describe('API key authentication strategy', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('authenticates an active key as its owner', async () => {
     const frogbot = makeFrogBot();
     const token = createApiKeyToken();
@@ -133,6 +137,47 @@ describe('API key authentication strategy', () => {
     expect(result).toEqual({ user: null });
     expect(frogbot.findByID).not.toHaveBeenCalled();
     expect(frogbot.update).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['no expiresAt', null],
+    ['a future expiresAt', new Date(Date.now() + 60_000).toISOString()],
+  ])('authenticates a key with %s and stamps lastUsedAt', async (_name, expiresAt) => {
+    const frogbot = makeFrogBot();
+    frogbot.find.mockResolvedValue({ docs: [{ id: 'key-1', owner: 'user-1', expiresAt }] });
+
+    const result = await makeStrategy().authenticate({
+      headers: new Headers({ authorization: `Bearer ${createApiKeyToken()}` }),
+      frogbot: frogbot as never,
+    });
+
+    expect(result.user).toMatchObject({ id: 'user-1', apiKeyId: 'key-1' });
+    expect(frogbot.update).toHaveBeenCalledOnce();
+  });
+
+  it('signs a key in until its expiresAt, then as nobody without stamping lastUsedAt', async () => {
+    vi.useFakeTimers({ now: new Date('2026-11-08T12:00:00.000Z') });
+
+    const frogbot = makeFrogBot();
+
+    frogbot.find.mockResolvedValue({
+      docs: [{ id: 'key-1', owner: 'user-1', expiresAt: '2026-11-09T00:00:00.000Z' }],
+    });
+
+    const authenticate = () =>
+      makeStrategy().authenticate({
+        headers: new Headers({ authorization: `Bearer ${createApiKeyToken()}` }),
+        frogbot: frogbot as never,
+      });
+
+    expect((await authenticate()).user).toMatchObject({ id: 'user-1' });
+    expect(frogbot.update).toHaveBeenCalledOnce();
+
+    vi.setSystemTime(new Date('2026-11-09T00:00:00.000Z'));
+
+    expect(await authenticate()).toEqual({ user: null });
+    expect(frogbot.findByID).toHaveBeenCalledOnce();
+    expect(frogbot.update).toHaveBeenCalledOnce();
   });
 
   it('authenticates numeric key and owner IDs including zero', async () => {

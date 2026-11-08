@@ -103,13 +103,11 @@ describe('API key services', () => {
   it('revokes an owned scalar-owner key at depth zero, then the keys it minted', async () => {
     const find = vi
       .fn()
-      .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] });
-
-    const update = vi
-      .fn()
-      .mockResolvedValueOnce({})
-      .mockResolvedValueOnce({ docs: [{ id: 'key-2' }] })
+      .mockResolvedValueOnce({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] })
+      .mockResolvedValueOnce({ docs: [{ id: 'key-2', revokedAt: null }] })
       .mockResolvedValueOnce({ docs: [] });
+
+    const update = vi.fn().mockResolvedValue({});
 
     const req = request({ frogbot: { find, update } });
 
@@ -126,10 +124,51 @@ describe('API key services', () => {
         where: { and: [{ id: { equals: 'key-1' } }, { owner: { equals: 'user-1' } }] },
       }),
     );
+    expect(find.mock.calls.slice(1).map(([args]) => [args.where, args.pagination])).toEqual([
+      [{ mintedBy: { in: ['key-1'] } }, false],
+      [{ mintedBy: { in: ['key-2'] } }, false],
+    ]);
     expect(update.mock.calls.map(([args]) => args.id ?? args.where)).toEqual([
       'key-1',
-      { and: [{ mintedBy: { in: ['key-1'] } }, { revokedAt: { exists: false } }] },
-      { and: [{ mintedBy: { in: ['key-2'] } }, { revokedAt: { exists: false } }] },
+      { id: { in: ['key-2'] } },
+    ]);
+  });
+
+  it('revokes only the key when cascade is false', async () => {
+    const find = vi
+      .fn()
+      .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] });
+
+    const update = vi.fn().mockResolvedValue({});
+    const req = request({ frogbot: { find, update } });
+
+    await revokeApiKey({ req, collectionSlug: 'credentials', id: 'key-1', cascade: false });
+
+    expect(find).toHaveBeenCalledOnce();
+    expect(update).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: 'key-1' }));
+  });
+
+  it('walks through an already revoked key to revoke the live keys under it', async () => {
+    const find = vi
+      .fn()
+      .mockResolvedValueOnce({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] })
+      .mockResolvedValueOnce({ docs: [{ id: 'key-2', revokedAt: '2026-11-01T00:00:00.000Z' }] })
+      .mockResolvedValueOnce({ docs: [{ id: 'key-3', revokedAt: null }, { id: 'key-1' }] })
+      .mockResolvedValueOnce({ docs: [] });
+
+    const update = vi.fn().mockResolvedValue({});
+    const req = request({ frogbot: { find, update } });
+
+    await revokeApiKey({ req, collectionSlug: 'credentials', id: 'key-1' });
+
+    expect(find.mock.calls.slice(1).map(([args]) => args.where)).toEqual([
+      { mintedBy: { in: ['key-1'] } },
+      { mintedBy: { in: ['key-2'] } },
+      { mintedBy: { in: ['key-3'] } },
+    ]);
+    expect(update.mock.calls.map(([args]) => args.id ?? args.where)).toEqual([
+      'key-1',
+      { id: { in: ['key-3'] } },
     ]);
   });
 
@@ -225,5 +264,195 @@ describe('API key services', () => {
     ).rejects.toEqual(new ApiKeyServiceError('not_found'));
     expect(update).not.toHaveBeenCalled();
     expect(create).not.toHaveBeenCalled();
+  });
+
+  describe('expiry', () => {
+    const day = 864e5;
+    const inDays = (days: number) => new Date(Date.now() + days * day).toISOString();
+
+    function minter(apiKey?: Record<string, unknown>) {
+      const create = vi.fn().mockResolvedValue({ id: 'key-2', createdAt: 'now' });
+      const req = request({
+        user: apiKey
+          ? {
+              id: 'user-1',
+              _strategy: 'api-key',
+              apiKeyId: 'key-1',
+              apiKey: { id: 'key-1', canMint: true, ...apiKey },
+            }
+          : { id: 'user-1' },
+        frogbot: { create },
+      });
+
+      return { create, req };
+    }
+
+    it('stores and returns expiresAt, and null when none is asked', async () => {
+      const expiresAt = inDays(90);
+      const { create, req } = minter();
+
+      const dated = await mintApiKey({
+        req,
+        collectionSlug: 'credentials',
+        tokenPrefix: 'fb',
+        name: 'CI',
+        expiresAt,
+      });
+
+      const undated = await mintApiKey({
+        req,
+        collectionSlug: 'credentials',
+        tokenPrefix: 'fb',
+        name: 'CI',
+      });
+
+      expect(dated.expiresAt).toBe(expiresAt);
+      expect(undated.expiresAt).toBeNull();
+      expect(create.mock.calls.map(([args]) => args.data.expiresAt)).toEqual([expiresAt, null]);
+    });
+
+    it('ignores expiresAt passed in data from other plugins', async () => {
+      const { create, req } = minter();
+
+      await mintApiKey({
+        req,
+        collectionSlug: 'credentials',
+        tokenPrefix: 'fb',
+        name: 'CI',
+        data: { expiresAt: inDays(5) },
+      });
+
+      expect(create.mock.calls[0][0].data.expiresAt).toBeNull();
+    });
+
+    it.each([
+      ['an unreadable date', 'soon', 'expiresAt must be a date, such as 2027-01-31T00:00:00.000Z.'],
+      ['a past date', '2020-01-01T00:00:00.000Z', 'expiresAt must be in the future.'],
+      [
+        'a year past 9999',
+        '+020271-01-02T00:00:00.000Z',
+        'expiresAt must be before the year 10000.',
+      ],
+    ])('refuses %s with a 400', async (_name, expiresAt, message) => {
+      const { create, req } = minter();
+
+      await expect(
+        mintApiKey({
+          req,
+          collectionSlug: 'credentials',
+          tokenPrefix: 'fb',
+          name: 'CI',
+          expiresAt,
+        }),
+      ).rejects.toMatchObject({ message, status: 400 });
+      expect(create).not.toHaveBeenCalled();
+    });
+
+    it('caps a key minted by a key at its parent date', async () => {
+      const parent = inDays(30);
+      const earlier = inDays(10);
+      const { create, req } = minter({ expiresAt: parent });
+      const mint = (expiresAt?: string | null) =>
+        mintApiKey({
+          req,
+          collectionSlug: 'credentials',
+          tokenPrefix: 'fb',
+          name: 'Child',
+          expiresAt,
+        });
+
+      expect((await mint(inDays(90))).expiresAt).toBe(parent);
+      expect((await mint()).expiresAt).toBe(parent);
+      expect((await mint(null)).expiresAt).toBe(parent);
+      expect((await mint(earlier)).expiresAt).toBe(earlier);
+      expect(create.mock.calls.map(([args]) => args.data.expiresAt)).toEqual([
+        parent,
+        parent,
+        parent,
+        earlier,
+      ]);
+    });
+
+    it('caps nothing when the parent key never expires', async () => {
+      const asked = inDays(90);
+      const { req } = minter({ expiresAt: null });
+
+      await expect(
+        mintApiKey({
+          req,
+          collectionSlug: 'credentials',
+          tokenPrefix: 'fb',
+          name: 'Child',
+          expiresAt: asked,
+        }),
+      ).resolves.toMatchObject({ expiresAt: asked });
+      await expect(
+        mintApiKey({ req, collectionSlug: 'credentials', tokenPrefix: 'fb', name: 'Child' }),
+      ).resolves.toMatchObject({ expiresAt: null });
+    });
+
+    it("rotates a key keeping its expiresAt, even past the rotating key's own date", async () => {
+      const expiresAt = inDays(60);
+      const create = vi.fn().mockResolvedValue({ id: 'key-2' });
+      const req = request({
+        frogbot: {
+          find: vi.fn().mockResolvedValue({
+            docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1', expiresAt }],
+          }),
+          update: vi.fn().mockResolvedValue({ docs: [] }),
+          create,
+        },
+      });
+
+      const result = await rotateApiKey({
+        req,
+        collectionSlug: 'credentials',
+        id: 'key-1',
+        tokenPrefix: 'fb',
+      });
+
+      expect(result.expiresAt).toBe(expiresAt);
+      expect(create.mock.calls[0][0].data.expiresAt).toBe(expiresAt);
+    });
+
+    it('rotates a key with no expiresAt into one with none', async () => {
+      const create = vi.fn().mockResolvedValue({ id: 'key-2' });
+      const req = request({
+        frogbot: {
+          find: vi
+            .fn()
+            .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
+          update: vi.fn().mockResolvedValue({ docs: [] }),
+          create,
+        },
+      });
+
+      await rotateApiKey({ req, collectionSlug: 'credentials', id: 'key-1', tokenPrefix: 'fb' });
+
+      expect(create.mock.calls[0][0].data.expiresAt).toBeNull();
+    });
+
+    it('refuses to rotate an expired key with a 400, minting and revoking nothing', async () => {
+      const create = vi.fn();
+      const update = vi.fn();
+      const req = request({
+        frogbot: {
+          find: vi.fn().mockResolvedValue({
+            docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1', expiresAt: inDays(-1) }],
+          }),
+          update,
+          create,
+        },
+      });
+
+      await expect(
+        rotateApiKey({ req, collectionSlug: 'credentials', id: 'key-1', tokenPrefix: 'fb' }),
+      ).rejects.toMatchObject({
+        message: 'This key has expired. Mint a new key instead.',
+        status: 400,
+      });
+      expect(create).not.toHaveBeenCalled();
+      expect(update).not.toHaveBeenCalled();
+    });
   });
 });

@@ -2,6 +2,8 @@ export type * from './admin/fields/types.js';
 export type { IconName } from './admin/icons.js';
 export type {
   NavItem,
+  NavItemsArgs,
+  NavItemsFunction,
   RootAdminComponents,
   RootAdminConfig,
   RootAdminGraphics,
@@ -511,6 +513,7 @@ export type {
   ClientToolValidate,
   Tool,
   ToolAccess,
+  ToolAnnotations,
   ToolCtx,
   ToolOutputLimits,
   ToolSource,

@@ -54,6 +54,21 @@ const baseClass = 'fb-app-sidebar';
 
 const classes = (...values: (false | string | undefined)[]) => values.filter(Boolean).join(' ');
 
+const matches = (path: string, currentPath: string, homePath: string) =>
+  path === homePath
+    ? currentPath === path
+    : currentPath === path || (path !== '/' && currentPath.startsWith(`${path}/`));
+
+const activeItemIndex = (items: AppSidebarNavItem[], currentPath: string, homePath: string) =>
+  items.reduce(
+    (active, { path }, index) =>
+      matches(path, currentPath, homePath) &&
+      (active === -1 || path.length > items[active].path.length)
+        ? index
+        : active,
+    -1,
+  );
+
 export function AppSidebar({
   accountEmail,
   accountIcon,
@@ -95,12 +110,14 @@ export function AppSidebar({
     return () => clearTimeout(timeout);
   }, [open]);
 
+  const activeIndex = activeItemIndex(navItems, currentPath, homePath);
+
   const navigate = (event: MouseEvent, path: string) => {
     event.stopPropagation();
     onNavigate(path);
   };
 
-  const renderItem = (item: AppSidebarNavItem) => {
+  const renderItem = (item: AppSidebarNavItem, index: number) => {
     const Icon =
       typeof item.icon === 'string'
         ? isIconName(item.icon)
@@ -108,14 +125,16 @@ export function AppSidebar({
           : FolderIcon
         : (item.icon ?? FolderIcon);
 
-    const active =
-      item.path === homePath
-        ? currentPath === item.path
-        : currentPath === item.path ||
-          (item.path !== '/' && currentPath.startsWith(`${item.path}/`));
+    const active = index === activeIndex;
 
     return (
-      <Tooltip delay={0} disabled={open} label={item.label} side="right" key={item.path}>
+      <Tooltip
+        delay={0}
+        disabled={open}
+        label={item.label}
+        side="right"
+        key={`${index}:${item.path}`}
+      >
         <button
           aria-label={item.label}
           className={classes(

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const clearRouteCache = vi.fn();
 const listQuery = vi.hoisted(() => ({ value: { collectionSlug: 'api-keys' } as object }));
@@ -183,6 +183,122 @@ describe('API key controls', () => {
     await waitFor(() => expect(screen.getByRole('tooltip').textContent).toBe('Copied'));
   });
 
+  describe('expiry', () => {
+    const zone = process.env.TZ;
+
+    afterEach(() => {
+      vi.useRealTimers();
+      if (zone === undefined) delete process.env.TZ;
+      else process.env.TZ = zone;
+    });
+
+    const day = () => screen.getByLabelText<HTMLInputElement>('Expires');
+    const posted = () => JSON.parse(vi.mocked(fetch).mock.calls[0][1]!.body as string);
+
+    it('starts empty, no earlier than today, and mints with no expiresAt', async () => {
+      vi.useFakeTimers({ now: new Date(2026, 10, 8, 9, 0), toFake: ['Date'] });
+      mint();
+      openCreate();
+
+      expect(day().value).toBe('');
+      expect(day().type).toBe('date');
+      expect(day().min).toBe('2026-11-08');
+      expect(day().max).toBe('9999-12-30');
+
+      await generate();
+
+      expect(posted()).toEqual({ name: 'Deploy' });
+    });
+
+    it.each([
+      ['30 days', '2026-12-08', new Date(2026, 11, 9)],
+      ['90 days', '2027-02-06', new Date(2027, 1, 7)],
+      ['1 year', '2027-11-08', new Date(2027, 10, 9)],
+    ])('fills %s from today and mints through the end of that day', async (label, filled, next) => {
+      vi.useFakeTimers({ now: new Date(2026, 10, 8, 9, 0), toFake: ['Date'] });
+      mint();
+      openCreate();
+
+      fireEvent.click(screen.getByRole('button', { name: label }));
+
+      expect(day().value).toBe(filled);
+
+      await generate();
+
+      expect(posted()).toEqual({ name: 'Deploy', expiresAt: next.toISOString() });
+    });
+
+    it('fills "1 year" from Feb 29 with Feb 28 of next year, not Mar 1', () => {
+      vi.useFakeTimers({ now: new Date(2028, 1, 29, 9, 0), toFake: ['Date'] });
+      openCreate();
+
+      fireEvent.click(screen.getByRole('button', { name: '1 year' }));
+
+      expect(day().value).toBe('2029-02-28');
+    });
+
+    it.each([
+      ['late in the evening west of UTC', 'America/Los_Angeles', 23, '2026-12-09T08:00:00.000Z'],
+      ['just after midnight east of UTC', 'Asia/Tokyo', 0, '2026-12-08T15:00:00.000Z'],
+    ])('keeps the day from slipping %s', async (_name, timeZone, hour, expiresAt) => {
+      process.env.TZ = timeZone;
+      vi.useFakeTimers({ now: new Date(2026, 10, 8, hour, 30), toFake: ['Date'] });
+      mint();
+      openCreate();
+
+      fireEvent.click(screen.getByRole('button', { name: '30 days' }));
+
+      expect(day().min).toBe('2026-11-08');
+      expect(day().value).toBe('2026-12-08');
+
+      await generate();
+
+      expect(posted().expiresAt).toBe(expiresAt);
+    });
+
+    it('clears the day with No expiry, and takes a typed day after a quick button', async () => {
+      mint();
+      openCreate();
+
+      fireEvent.click(screen.getByRole('button', { name: '90 days' }));
+      fireEvent.click(screen.getByRole('button', { name: 'No expiry' }));
+
+      expect(day().value).toBe('');
+
+      fireEvent.click(screen.getByRole('button', { name: '1 year' }));
+      fireEvent.change(day(), { target: { value: '2030-03-01' } });
+      await generate();
+
+      expect(posted().expiresAt).toBe(new Date(2030, 2, 2).toISOString());
+    });
+
+    it("shows the server's refusal in the dialog", async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        json: () => Promise.resolve({ error: 'expiresAt must be in the future.' }),
+      } as Response);
+
+      openCreate();
+
+      fireEvent.change(screen.getByLabelText('Key name'), { target: { value: 'Deploy' } });
+      fireEvent.change(day(), { target: { value: '2020-01-01' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
+
+      expect((await screen.findByRole('alert')).textContent).toBe(
+        'expiresAt must be in the future.',
+      );
+    });
+
+    it('empties the day when the dialog opens again', () => {
+      openCreate();
+      fireEvent.click(screen.getByRole('button', { name: '30 days' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Create API key' }));
+
+      expect(day().value).toBe('');
+    });
+  });
+
   it('does not clear the route cache when dismissed without a key', () => {
     openCreate();
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
@@ -191,8 +307,31 @@ describe('API key controls', () => {
     expect(clearRouteCache).not.toHaveBeenCalled();
   });
 
-  it('confirms before revoking an active key', async () => {
-    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+  function keysMade(count: number | null, revoke: Partial<Response> = { ok: true }) {
+    vi.mocked(fetch).mockImplementation((input) =>
+      Promise.resolve(
+        String(input).endsWith('/revoke')
+          ? (revoke as Response)
+          : ({
+              ok: count !== null,
+              json: () => Promise.resolve(count === null ? {} : { count }),
+            } as Response),
+      ),
+    );
+  }
+
+  async function clickRevokeKey() {
+    const button = screen.getByRole('button', { name: 'Revoke key' });
+
+    await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(button);
+  }
+
+  const revokeCalls = () =>
+    vi.mocked(fetch).mock.calls.filter(([input]) => String(input).endsWith('/revoke'));
+
+  it('confirms before revoking an active key, with no body when it made no keys', async () => {
+    keysMade(0);
     render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
@@ -203,42 +342,181 @@ describe('API key controls', () => {
         'This will immediately disable Deploy. Any scripts or tools using this key will stop working. This cannot be undone.',
       ),
     ).toBeTruthy();
-    expect(fetch).not.toHaveBeenCalled();
+    expect(revokeCalls()).toEqual([]);
+    expect(fetch).toHaveBeenCalledWith('/api/api-keys/key-1/minted-count');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Revoke key' }));
+    await waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+
+    expect(screen.queryByRole('checkbox')).toBeNull();
+
+    await clickRevokeKey();
 
     await waitFor(() => expect(screen.getByText('Revoked')).toBeTruthy());
 
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(clearRouteCache).toHaveBeenCalled();
-    expect(fetch).toHaveBeenCalledWith('/api/api-keys/key-1/revoke', { method: 'POST' });
+    expect(revokeCalls()).toEqual([['/api/api-keys/key-1/revoke', { method: 'POST' }]]);
+  });
+
+  it('offers to revoke the keys it made, checked by default', async () => {
+    keysMade(2);
+    render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
+
+    const checkbox = await screen.findByRole('checkbox', {
+      name: 'Also revoke the 2 keys it made',
+    });
+
+    expect(checkbox.getAttribute('aria-checked')).toBe('true');
+
+    await clickRevokeKey();
+
+    await waitFor(() => expect(screen.getByText('Revoked')).toBeTruthy());
+
+    expect(revokeCalls()).toEqual([
+      [
+        '/api/api-keys/key-1/revoke',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ cascade: true }),
+        },
+      ],
+    ]);
+  });
+
+  it('keeps the keys it made when the box is cleared', async () => {
+    keysMade(1);
+    render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Also revoke the key it made' }));
+    await clickRevokeKey();
+
+    await waitFor(() => expect(screen.getByText('Revoked')).toBeTruthy());
+
+    expect(revokeCalls()[0]?.[1]).toMatchObject({ body: JSON.stringify({ cascade: false }) });
+  });
+
+  it('still offers the box, checked, when the count fails', async () => {
+    keysMade(null);
+    render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
+
+    const checkbox = await screen.findByRole('checkbox', { name: 'Also revoke the keys it made' });
+
+    expect(checkbox.getAttribute('aria-checked')).toBe('true');
   });
 
   it('keeps the revoke dialog open with the error when revoking fails', async () => {
-    vi.mocked(fetch).mockResolvedValue({
-      ok: false,
-      json: () => Promise.resolve({ error: 'Key is in use' }),
-    } as Response);
+    keysMade(0, { ok: false, json: () => Promise.resolve({ error: 'Key is in use' }) });
 
     render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Revoke key' }));
+    await clickRevokeKey();
 
     expect((await screen.findByRole('alert')).textContent).toBe('Key is in use');
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(clearRouteCache).not.toHaveBeenCalled();
   });
 
-  it('cancels revocation without calling the endpoint', () => {
+  it('cancels revocation without calling the revoke endpoint', async () => {
+    keysMade(0);
     render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(fetch).not.toHaveBeenCalled();
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+
+    expect(revokeCalls()).toEqual([]);
     expect(screen.getByRole('button', { name: 'Revoke' })).toBeTruthy();
+  });
+
+  it('waits for the count before Revoke key works', async () => {
+    let answer: (response: Response) => void = () => undefined;
+
+    vi.mocked(fetch).mockReturnValueOnce(
+      new Promise<Response>((resolve) => {
+        answer = resolve;
+      }),
+    );
+
+    render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
+
+    const button = screen.getByRole('button', { name: 'Revoke key' }) as HTMLButtonElement;
+
+    expect(button.disabled).toBe(true);
+
+    fireEvent.click(button);
+
+    expect(revokeCalls()).toEqual([]);
+
+    answer({ ok: true, json: () => Promise.resolve({ count: 1 }) } as Response);
+
+    expect(
+      (await screen.findByRole('checkbox', { name: 'Also revoke the key it made' })).getAttribute(
+        'aria-checked',
+      ),
+    ).toBe('true');
+
+    await waitFor(() => expect(button.disabled).toBe(false));
+  });
+
+  it('offers the box when the only live key it made sits under a key revoked on its own', async () => {
+    type Key = { id: string; mintedBy: string | null; revokedAt: string | null };
+    const keys: Key[] = [
+      { id: 'P', mintedBy: null, revokedAt: null },
+      { id: 'K', mintedBy: 'P', revokedAt: '2026-11-01T00:00:00.000Z' },
+      { id: 'C', mintedBy: 'K', revokedAt: null },
+    ];
+
+    const below = (id: string): Key[] =>
+      keys.filter((key) => key.mintedBy === id).flatMap((key) => [key, ...below(key.id)]);
+
+    vi.mocked(fetch).mockImplementation((input, init) => {
+      const url = String(input);
+      const answer = (body: unknown) =>
+        Promise.resolve({ ok: true, json: () => Promise.resolve(body) } as Response);
+
+      if (url.endsWith('/P/revoke')) {
+        const body = init?.body ? (JSON.parse(String(init.body)) as { cascade: boolean }) : {};
+        const now = new Date().toISOString();
+
+        keys[0].revokedAt = now;
+        if (body.cascade !== false) below('P').forEach((key) => (key.revokedAt ??= now));
+
+        return answer({});
+      }
+
+      if (url.endsWith('/P/minted-count')) {
+        return answer({ count: below('P').filter((key) => !key.revokedAt).length });
+      }
+
+      return answer({
+        totalDocs: keys.filter((key) => key.mintedBy === 'P' && !key.revokedAt).length,
+      });
+    });
+
+    render(<RevokeApiKey rowData={{ id: 'P', name: 'Parent' }} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
+
+    const checkbox = await screen.findByRole('checkbox', { name: 'Also revoke the key it made' });
+
+    fireEvent.click(checkbox);
+    await clickRevokeKey();
+
+    await waitFor(() => expect(keys[0].revokedAt).not.toBeNull());
+
+    expect(keys[2].revokedAt).toBeNull();
   });
 
   it('shows revoked keys without an action', () => {

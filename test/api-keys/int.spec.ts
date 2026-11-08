@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { GRAPHQL_POST } from '@frogbotai/next/routes';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
@@ -944,8 +944,11 @@ describe('API keys plugin integration', () => {
     const rotate = (headers: Record<string, string>, id: number | string) =>
       booted.restClient.post<Minted>(`/api/credentials/${id}/rotate`, undefined, { headers });
 
-    const revoke = (headers: Record<string, string>, id: number | string) =>
-      booted.restClient.post(`/api/credentials/${id}/revoke`, undefined, { headers });
+    const revoke = (
+      headers: Record<string, string>,
+      id: number | string,
+      body?: { cascade?: unknown },
+    ) => booted.restClient.post(`/api/credentials/${id}/revoke`, body, { headers });
 
     const asKey = (token: string) => ({ 'x-service-key': token });
 
@@ -1209,6 +1212,111 @@ describe('API keys plugin integration', () => {
       }
     });
 
+    it('keeps the keys a key made when revoked with cascade false, and a later revoke above reaches them', async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const child = await mint(asKey(parent.body.token), 'C', { canMint: true });
+      const grandchild = await mint(asKey(child.body.token), 'G');
+
+      expect((await revoke(session, child.body.id, { cascade: false })).status).toBe(200);
+      expect(new Set(await active())).toEqual(new Set([parent.body.id, grandchild.body.id]));
+      expect(
+        (
+          await booted.restClient.get('/api/credentials', {
+            headers: asKey(grandchild.body.token),
+          })
+        ).status,
+      ).toBe(200);
+
+      expect((await revoke(session, parent.body.id)).status).toBe(200);
+      expect(await active()).toEqual([]);
+      expect(await stored(child.body.id)).toMatchObject({ revokedAt: expect.any(String) });
+    });
+
+    it.each(['no', null])('refuses a revoke whose cascade is %j', async (cascade) => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const child = await mint(asKey(parent.body.token), 'C');
+
+      expect((await revoke(session, parent.body.id, { cascade })).status).toBe(400);
+      expect(new Set(await active())).toEqual(new Set([parent.body.id, child.body.id]));
+    });
+
+    it('refuses a revoke whose body is not JSON', async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const child = await mint(asKey(parent.body.token), 'C');
+      const response = await fetch(`${booted.baseUrl}/api/credentials/${parent.body.id}/revoke`, {
+        method: 'POST',
+        headers: { ...session, 'content-type': 'application/json' },
+        body: '{"cascade": false',
+      });
+
+      expect(response.status).toBe(400);
+      expect(new Set(await active())).toEqual(new Set([parent.body.id, child.body.id]));
+    });
+
+    const mintedCount = (headers: Record<string, string>, id: number | string) =>
+      booted.restClient.get<{ count: number }>(`/api/credentials/${id}/minted-count`, {
+        headers,
+      });
+
+    it('counts every live key a cascade would revoke, through a key revoked on its own', async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const cli = await mint(asKey(parent.body.token), 'K', { canMint: true });
+      const child = await mint(asKey(cli.body.token), 'C', { canMint: true });
+
+      expect((await mintedCount(session, parent.body.id)).body).toEqual({ count: 2 });
+
+      await mint(asKey(child.body.token), 'G');
+      await revoke(asKey(cli.body.token), cli.body.id, { cascade: false });
+
+      const counted = await mintedCount(session, parent.body.id);
+      const before = (await active()).length;
+
+      expect(counted.status).toBe(200);
+      expect(counted.body).toEqual({ count: 2 });
+      expect((await revoke(session, parent.body.id, { cascade: true })).status).toBe(200);
+      expect(before - 1 - (await active()).length).toBe(counted.body.count);
+    });
+
+    it("counts only the caller's own keys", async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const other = await createOwner();
+      const login = await booted.restClient.post<{ token: string }>(
+        '/api/accounts/login',
+        credentials,
+      );
+
+      expect(other.id).not.toBe(ownerId);
+      expect(
+        (await mintedCount({ Authorization: `JWT ${login.body.token}` }, parent.body.id)).status,
+      ).toBe(404);
+      expect(
+        (await booted.restClient.get(`/api/credentials/${parent.body.id}/minted-count`)).status,
+      ).toBe(401);
+    });
+
+    it('stamps the keys a re-revoke takes with the time of that revoke', async () => {
+      const parent = await mint(session, 'P', { canMint: true });
+      const child = await mint(asKey(parent.body.token), 'C');
+
+      const first = '2026-01-01T00:00:00.000Z';
+
+      await revoke(session, parent.body.id, { cascade: false });
+
+      await booted.frogbot.update({
+        collection: 'credentials',
+        id: parent.body.id,
+        data: { revokedAt: first },
+        overrideAccess: true,
+      });
+
+      const before = new Date().toISOString();
+
+      await revoke(session, parent.body.id);
+
+      expect(((await stored(child.body.id)).revokedAt as string) >= before).toBe(true);
+      expect((await stored(parent.body.id)).revokedAt).toBe(first);
+    });
+
     it("counts a key's spend against every key above it", async () => {
       const parent = await mint(session, 'P', { canMint: true, monthlyBudget: 10 });
       const child = await mint(asKey(parent.body.token), 'C', { canMint: true });
@@ -1232,6 +1340,149 @@ describe('API keys plugin integration', () => {
       expect(capped.status).toBe(403);
       expect(capped.body.error.message).toBe('API key "P" has used its monthly cap of $10.00.');
       expect(modelCalls).toEqual(['allowed', 'allowed']);
+    });
+  });
+
+  describe('expiring keys', () => {
+    type Minted = { id: number | string; token: string; expiresAt?: string | null; error?: string };
+
+    let session: { Authorization: string };
+
+    beforeEach(async () => {
+      await createOwner();
+      const login = await booted.restClient.post<{ token: string }>(
+        '/api/accounts/login',
+        credentials,
+      );
+
+      session = { Authorization: `JWT ${login.body.token}` };
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const mint = (headers: Record<string, string>, body: Record<string, unknown>) =>
+      booted.restClient.post<Minted>('/api/credentials/mint', body, { headers });
+
+    const asKey = (token: string) => ({ 'x-service-key': token });
+
+    const stored = (id: number | string) =>
+      booted.frogbot.findByID({ collection: 'credentials', id, depth: 0, overrideAccess: true });
+
+    it('refuses an unreadable or past expiresAt and stores a future one', async () => {
+      const unreadable = await mint(session, { name: 'Bad', expiresAt: 'not a date' });
+      const past = await mint(session, { name: 'Past', expiresAt: '2020-01-01T00:00:00.000Z' });
+
+      expect(unreadable.status).toBe(400);
+      expect(past.status).toBe(400);
+      expect(past.body.error).toBe('expiresAt must be in the future.');
+
+      const farFuture = await mint(session, {
+        name: 'Far',
+        expiresAt: '+099999-01-01T00:00:00.000Z',
+      });
+
+      expect(farFuture.status).toBe(400);
+      expect(farFuture.body.error).toBe('expiresAt must be before the year 10000.');
+
+      const expiresAt = new Date(Date.now() + 30 * 864e5).toISOString();
+      const future = await mint(session, { name: 'Future', expiresAt });
+
+      expect(future.status).toBe(201);
+      expect(future.body.expiresAt).toBe(expiresAt);
+      expect((await stored(future.body.id)).expiresAt).toBe(expiresAt);
+
+      const undated = await mint(session, { name: 'Forever' });
+
+      expect(undated.body.expiresAt).toBeNull();
+      expect((await stored(undated.body.id)).expiresAt ?? null).toBeNull();
+    });
+
+    it('refuses impossible calendar dates instead of rolling them into the next month', async () => {
+      for (const expiresAt of ['2050-02-30', '2050-02-31T00:00:00.000Z', '2050-04-31']) {
+        const refused = await mint(session, { name: 'Feb', expiresAt });
+
+        expect(refused.status, `${expiresAt}: ${JSON.stringify(refused.body)}`).toBe(400);
+      }
+    });
+
+    it('refuses non-ISO dates, whose meaning depends on the server time zone', async () => {
+      for (const expiresAt of [
+        '2050-01-01 00:00',
+        'January 1, 2050',
+        '1/2/2050',
+        '2050-01-01T00:00',
+      ]) {
+        const refused = await mint(session, { name: 'Loose', expiresAt });
+
+        expect(refused.status, `${expiresAt}: ${JSON.stringify(refused.body)}`).toBe(400);
+      }
+    });
+
+    it('accepts a date-only expiresAt and one with an offset, as UTC instants', async () => {
+      const day = await mint(session, { name: 'Day', expiresAt: '2050-02-28' });
+      const offset = await mint(session, { name: 'Offset', expiresAt: '2050-01-01T00:00+05:00' });
+
+      expect(day.status).toBe(201);
+      expect(day.body.expiresAt).toBe('2050-02-28T00:00:00.000Z');
+      expect(offset.status).toBe(201);
+      expect(offset.body.expiresAt).toBe('2049-12-31T19:00:00.000Z');
+    });
+
+    it('stops a key signing in once its date passes, and refuses to rotate it', async () => {
+      const expiresAt = new Date(Date.now() + 864e5).toISOString();
+      const key = await mint(session, { name: 'Day pass', expiresAt });
+
+      expect(
+        (await booted.restClient.get('/api/credentials', { headers: asKey(key.body.token) }))
+          .status,
+      ).toBe(200);
+
+      const lastUsedAt = (await stored(key.body.id)).lastUsedAt;
+
+      vi.useFakeTimers({ now: Date.parse(expiresAt) + 1000, toFake: ['Date'] });
+
+      expect(
+        (await booted.restClient.get('/api/credentials', { headers: asKey(key.body.token) }))
+          .status,
+      ).toBe(403);
+      expect((await stored(key.body.id)).lastUsedAt).toBe(lastUsedAt);
+
+      const login = await booted.restClient.post<{ token: string }>(
+        '/api/accounts/login',
+        credentials,
+      );
+
+      const rotated = await booted.restClient.post<Minted>(
+        `/api/credentials/${key.body.id}/rotate`,
+        undefined,
+        { headers: { Authorization: `JWT ${login.body.token}` } },
+      );
+
+      expect(rotated.status).toBe(400);
+      expect(rotated.body.error).toBe('This key has expired. Mint a new key instead.');
+      expect((await stored(key.body.id)).revokedAt ?? null).toBeNull();
+    });
+
+    it("gives a key minted by a key no later date than its parent's", async () => {
+      const parentDate = new Date(Date.now() + 30 * 864e5).toISOString();
+      const parent = await mint(session, {
+        name: 'Parent',
+        expiresAt: parentDate,
+        data: { canMint: true },
+      });
+
+      const undated = await mint(asKey(parent.body.token), { name: 'Undated' });
+      const later = await mint(asKey(parent.body.token), {
+        name: 'Later',
+        expiresAt: new Date(Date.now() + 90 * 864e5).toISOString(),
+      });
+
+      expect(undated.status, JSON.stringify(undated.body)).toBe(201);
+      expect(undated.body.expiresAt).toBe(parentDate);
+      expect(later.body.expiresAt).toBe(parentDate);
+      expect((await stored(undated.body.id)).expiresAt).toBe(parentDate);
     });
   });
 });
