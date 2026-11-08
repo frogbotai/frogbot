@@ -67,6 +67,23 @@ export function getVisibleRange({
   return { end: end.toISOString(), start: start.toISOString(), timeZone };
 }
 
+/** The calendar day of an instant in a time zone, as `yyyy-MM-dd`. */
+export function dayKey(instant: Date | number | string, timeZone: string): string {
+  return format(new TZDate(new Date(instant).getTime(), timeZone), 'yyyy-MM-dd');
+}
+
+/**
+ * The same visible days as `range`, as UTC midnights. Date-only values are stored at 12:00 UTC
+ * and belong to their UTC date in every zone, so they are placed on this range.
+ */
+export function getFloatingRange(range: CalendarRange): CalendarRange {
+  return {
+    end: `${dayKey(range.end, range.timeZone)}T00:00:00.000Z`,
+    start: `${dayKey(range.start, range.timeZone)}T00:00:00.000Z`,
+    timeZone: 'UTC',
+  };
+}
+
 export function getRangeDays(range: CalendarRange, count: number): Date[] {
   const start = new TZDate(range.start, range.timeZone);
 

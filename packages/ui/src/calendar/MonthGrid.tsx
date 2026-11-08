@@ -10,11 +10,12 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { addDays, format, isSameMonth } from 'date-fns';
+import { addDays, format } from 'date-fns';
 import type { ReactNode } from 'react';
 
-import { type CalendarCellEvent, type CalendarEvent, getRangeDays } from './core/index.js';
+import { type CalendarCellEvent, type CalendarEvent, dayKey, getRangeDays } from './core/index.js';
 import { EventChip } from './EventChip.js';
+import { MonthMore } from './MonthMore.js';
 import { type CalendarPlacement, useCalendar, type UseCalendarProps } from './useCalendar.js';
 
 function MonthCell<T extends CalendarEvent>({
@@ -33,7 +34,12 @@ function MonthCell<T extends CalendarEvent>({
   const key = format(date, 'yyyy-MM-dd');
   const drop = useDroppable({
     data: {
-      slotAt: () => ({ end: addDays(date, 1).toISOString(), key, start: date.toISOString() }),
+      slotAt: (): CalendarPlacement => ({
+        end: addDays(date, 1).toISOString(),
+        key,
+        kind: 'day',
+        start: date.toISOString(),
+      }),
     },
     id: `month-${key}`,
   });
@@ -48,6 +54,7 @@ function MonthCell<T extends CalendarEvent>({
       <span className="frog-calendar__month-date">{format(date, 'd')}</span>
       {visible.map(({ event }) => (
         <EventChip
+          cell={key}
           dragId={`${event.id}:${key}`}
           event={event}
           hidden={activeId === event.id}
@@ -56,7 +63,12 @@ function MonthCell<T extends CalendarEvent>({
         />
       ))}
       {cells.length > visible.length ? (
-        <span className="frog-calendar__more">+{cells.length - visible.length} more</span>
+        <MonthMore
+          cells={cells}
+          date={date}
+          hidden={cells.length - visible.length}
+          renderEvent={renderEvent}
+        />
       ) : null}
       {placement?.key === key ? <div className="frog-calendar__month-preview" /> : null}
     </div>
@@ -72,6 +84,7 @@ export function MonthGrid<T extends CalendarEvent>(props: MonthGridProps<T>) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const days = getRangeDays(calendar.range, 42);
   const active = calendar.events.find((event) => event.id === calendar.activeId);
+  const month = dayKey(props.date, props.timeZone ?? 'UTC').slice(0, 7);
 
   return (
     <DndContext
@@ -91,10 +104,7 @@ export function MonthGrid<T extends CalendarEvent>(props: MonthGridProps<T>) {
           const key = format(day, 'yyyy-MM-dd');
 
           return (
-            <div
-              className={isSameMonth(day, props.date) ? '' : 'frog-calendar__month-outside'}
-              key={key}
-            >
+            <div className={key.startsWith(month) ? '' : 'frog-calendar__month-outside'} key={key}>
               <MonthCell
                 activeId={calendar.activeId}
                 cells={calendar.cells.filter((cell) => cell.cell === key)}

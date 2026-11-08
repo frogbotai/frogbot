@@ -1,5 +1,6 @@
 'use client';
 
+import { TZDate } from '@date-fns/tz';
 import { format } from 'date-fns';
 
 import type { CalendarMode } from './core/index.js';
@@ -10,14 +11,17 @@ export function CalendarHeader({
   modes = ['month', 'week', 'day'],
   navigate,
   setMode,
+  timeZone = 'UTC',
 }: {
   date: string;
   mode: CalendarMode;
   modes?: CalendarMode[];
   navigate: (direction: 'next' | 'previous' | 'today') => void;
   setMode?: (mode: CalendarMode) => void;
+  timeZone?: string;
 }) {
-  const label = mode === 'day' ? format(date, 'EEEE, MMMM d, yyyy') : format(date, 'MMMM yyyy');
+  const zoned = new TZDate(Date.parse(date), timeZone);
+  const label = format(zoned, mode === 'day' ? 'EEEE, MMMM d, yyyy' : 'MMMM yyyy');
 
   return (
     <header className="frog-calendar__header">

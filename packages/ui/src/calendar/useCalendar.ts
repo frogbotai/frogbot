@@ -1,5 +1,6 @@
 'use client';
 
+import { TZDate } from '@date-fns/tz';
 import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core';
 import { addDays, addMonths } from 'date-fns';
 import { useEffect, useRef, useState } from 'react';
@@ -7,13 +8,19 @@ import { useEffect, useRef, useState } from 'react';
 import {
   type CalendarEvent,
   type CalendarMode,
+  dayKey,
   expandToCells,
+  getFloatingRange,
   getVisibleRange,
   layoutLanes,
   snapTo,
 } from './core/index.js';
 
-export type CalendarPlacement = { end: string; key: string; start: string };
+/** Where a drop lands: a `day` cell keeps the event's time of day, a `time` slot sets its start. */
+export type CalendarPlacement = { end: string; key: string; kind: 'day' | 'time'; start: string };
+
+/** How a move is read: the grid's zone, the day cell the drag began in, and date-only values. */
+export type CalendarMoveOptions = { dateOnly?: boolean; from?: string; timeZone?: string };
 
 export type CalendarDropData = {
   slotAt?: (clientX: number, clientY: number) => CalendarPlacement | null;
@@ -27,7 +34,11 @@ export type CalendarResizeEdge = 'end' | 'start';
 
 export type UseCalendarProps<T extends CalendarEvent> = {
   canEdit?: (event: T) => boolean;
+  /** Whether events can be resized. Turn it off when there is no end to save. */
+  canResize?: boolean;
   date: string;
+  /** Events are dates without a time, stored at 12:00 UTC: they show all day on their UTC date. */
+  dateOnly?: boolean;
   events: T[];
   getId?: (event: T) => string;
   mode: CalendarMode;
@@ -64,14 +75,31 @@ export function resolveCalendarDrop(
   return point && data?.slotAt ? data.slotAt(point.x, point.y) : null;
 }
 
+function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
+}
+
 export function moveCalendarEvent<T extends CalendarEvent>(
   event: T,
   placement: CalendarPlacement,
+  { dateOnly = false, from, timeZone = 'UTC' }: CalendarMoveOptions = {},
 ): CalendarChange<T> {
-  const duration = Date.parse(event.end ?? event.start) - Date.parse(event.start);
-  const start = new Date(placement.start).toISOString();
+  if (placement.kind === 'time') {
+    const duration = Date.parse(event.end ?? event.start) - Date.parse(event.start);
+    const start = new Date(placement.start).toISOString();
 
-  return { end: new Date(Date.parse(start) + duration).toISOString(), event, start };
+    return { end: new Date(Date.parse(start) + duration).toISOString(), event, start };
+  }
+
+  const days = daysBetween(from ?? dayKey(event.start, timeZone), placement.key);
+  const shift = (value: string) =>
+    new Date(addDays(new TZDate(Date.parse(value), timeZone), days).getTime()).toISOString();
+
+  const start = shift(event.start);
+  const end = event.end ? shift(event.end) : start;
+  const noon = (value: string) => `${dayKey(value, timeZone)}T12:00:00.000Z`;
+
+  return dateOnly ? { end: noon(end), event, start: noon(start) } : { end, event, start };
 }
 
 export function resizeCalendarEvent<T extends CalendarEvent>({
@@ -120,13 +148,18 @@ export function createCalendarRange(start: string, end: string, snap: number): C
 export function isCalendarNoopDrop<T extends CalendarEvent>(
   event: T,
   placement: CalendarPlacement,
+  { from, timeZone = 'UTC' }: CalendarMoveOptions = {},
 ): boolean {
-  return Date.parse(event.start) === Date.parse(placement.start);
+  return placement.kind === 'day'
+    ? placement.key === (from ?? dayKey(event.start, timeZone))
+    : Date.parse(event.start) === Date.parse(placement.start);
 }
 
 export function useCalendar<T extends CalendarEvent>({
   canEdit = () => true,
+  canResize = true,
   date,
+  dateOnly = false,
   events,
   getId = (event) => event.id,
   mode,
@@ -157,7 +190,15 @@ export function useCalendar<T extends CalendarEvent>({
     return override ? { ...event, ...override } : event;
   });
 
-  const range = getVisibleRange({ date, mode, timeZone, weekStartsOn });
+  const zonedRange = getVisibleRange({ date, mode, timeZone, weekStartsOn });
+  const range = dateOnly ? getFloatingRange(zonedRange) : zonedRange;
+  const resizable = canResize && !dateOnly;
+  const moveOptions = (from: unknown): CalendarMoveOptions => ({
+    dateOnly,
+    from: typeof from === 'string' ? from : undefined,
+    timeZone: range.timeZone,
+  });
+
   const cells = expandToCells(displayedEvents, range);
   const lanes = layoutLanes(displayedEvents);
 
@@ -206,10 +247,11 @@ export function useCalendar<T extends CalendarEvent>({
     const event = currentEvents.find((candidate) => getId(candidate) === id);
     const next = resolveCalendarDrop(drag.over?.data.current, getCalendarPointerPosition(drag));
     if (!event || !canEdit(event)) return place(null);
+    const options = moveOptions(drag.active.data.current?.cell);
 
     place(
-      next && !isCalendarNoopDrop(event, next)
-        ? { ...moveCalendarEvent(event, next), key: next.key }
+      next && !isCalendarNoopDrop(event, next, options)
+        ? { ...moveCalendarEvent(event, next, options), key: next.key, kind: next.kind }
         : null,
     );
   };
@@ -221,14 +263,21 @@ export function useCalendar<T extends CalendarEvent>({
     const event = currentEvents.find((candidate) => getId(candidate) === id);
     const resolved = resolveCalendarDrop(over?.data.current, getCalendarPointerPosition(drag));
     const dropped = placementRef.current ?? resolved;
+    const options = moveOptions(active.data.current?.cell);
     reset();
-    if (over && dropped && event && canEdit(event) && !isCalendarNoopDrop(event, dropped)) {
-      await commit({ ...moveCalendarEvent(event, dropped), event }, onMove);
+    if (
+      over &&
+      dropped &&
+      event &&
+      canEdit(event) &&
+      !isCalendarNoopDrop(event, dropped, options)
+    ) {
+      await commit(moveCalendarEvent(event, dropped, options), onMove);
     }
   };
 
   const resize = async (event: T, edge: CalendarResizeEdge, instant: string) => {
-    if (!canEdit(event)) return;
+    if (!resizable || !canEdit(event)) return;
     await commit(resizeCalendarEvent({ edge, event, instant, snap }), onResize);
   };
 
@@ -239,12 +288,13 @@ export function useCalendar<T extends CalendarEvent>({
   const navigate = (direction: 'next' | 'previous' | 'today') => {
     if (direction === 'today') return onNavigate?.(new Date().toISOString());
     const amount = direction === 'next' ? 1 : -1;
+    const zoned = new TZDate(Date.parse(date), timeZone);
     const next =
       mode === 'month'
-        ? addMonths(new Date(date), amount)
-        : addDays(new Date(date), amount * (mode === 'week' ? 7 : 1));
+        ? addMonths(zoned, amount)
+        : addDays(zoned, amount * (mode === 'week' ? 7 : 1));
 
-    onNavigate?.(next.toISOString());
+    onNavigate?.(new Date(next.getTime()).toISOString());
   };
 
   return {
@@ -257,6 +307,7 @@ export function useCalendar<T extends CalendarEvent>({
     navigate,
     placement,
     range,
+    resizable,
     setMode: onSetMode,
   };
 }

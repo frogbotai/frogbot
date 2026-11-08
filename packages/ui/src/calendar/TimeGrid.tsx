@@ -13,7 +13,7 @@ import { format } from 'date-fns';
 import type { CSSProperties, ReactNode } from 'react';
 
 import { AllDayRow } from './AllDayRow.js';
-import { type CalendarEvent, getRangeDays, layoutLanes } from './core/index.js';
+import { type CalendarEvent, getRangeDays } from './core/index.js';
 import { DayColumn } from './DayColumn.js';
 import { EventChip } from './EventChip.js';
 import { useCalendar, type UseCalendarProps } from './useCalendar.js';
@@ -29,12 +29,13 @@ export function TimeGrid<T extends CalendarEvent>(props: TimeGridProps<T>) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const dayCount = props.mode === 'day' ? 1 : 7;
   const days = getRangeDays(calendar.range, dayCount);
-  const isAllDay =
-    props.isAllDay ??
-    ((event) => Date.parse(event.end ?? event.start) - Date.parse(event.start) >= 86_400_000);
+  const isAllDay = props.dateOnly
+    ? () => true
+    : (props.isAllDay ??
+      ((event: T) => Date.parse(event.end ?? event.start) - Date.parse(event.start) >= 86_400_000));
 
-  const allDay = calendar.events.filter(isAllDay);
-  const timed = calendar.events.filter((event) => !isAllDay(event));
+  const allDay = calendar.cells.filter(({ event }) => isAllDay(event));
+  const timed = calendar.cells.filter(({ event }) => !isAllDay(event));
   const active = calendar.events.find((event) => event.id === calendar.activeId);
   const hourHeight = props.hourHeight ?? 56;
 
@@ -58,8 +59,8 @@ export function TimeGrid<T extends CalendarEvent>(props: TimeGridProps<T>) {
         </div>
         <AllDayRow
           activeId={calendar.activeId}
+          cells={allDay}
           days={days}
-          events={allDay}
           renderEvent={props.renderEvent}
         />
         <div className="frog-calendar__time-scroll">
@@ -76,7 +77,6 @@ export function TimeGrid<T extends CalendarEvent>(props: TimeGridProps<T>) {
           >
             {days.map((day) => {
               const key = format(day, 'yyyy-MM-dd');
-              const events = timed.filter((event) => event.start.slice(0, 10) === key);
 
               return (
                 <DayColumn
@@ -84,14 +84,16 @@ export function TimeGrid<T extends CalendarEvent>(props: TimeGridProps<T>) {
                   canEdit={props.canEdit ?? (() => true)}
                   create={calendar.handlers.create}
                   date={day}
-                  events={events}
                   hourHeight={hourHeight}
                   key={key}
-                  lanes={layoutLanes(events)}
+                  nowTimeZone={props.timeZone ?? 'UTC'}
                   placement={calendar.placement}
                   renderEvent={props.renderEvent}
+                  resizable={calendar.resizable}
                   resize={calendar.handlers.resize}
+                  segments={timed.filter((cell) => cell.cell === key)}
                   snap={props.snap ?? 30}
+                  timeZone={calendar.range.timeZone}
                 />
               );
             })}
