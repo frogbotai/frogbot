@@ -77,7 +77,7 @@ apiKeysPlugin({
 | `tokenPrefix` | `string` | `'fb'` | Prefix placed before generated key values, joined with `_`. Only tokens with this prefix authenticate. |
 | `headerNames` | `string[]` | `['x-api-key']` | Request headers checked for a key when `Authorization` doesn't carry one. Replaces the default list. |
 | `collection` | `Partial<CollectionConfig>` | — | Collection overrides, including fields, access, hooks, endpoints, and admin configuration. |
-| `canRevokeAnyKey` | `(req: FrogBotRequest) => boolean \| Promise<boolean>` | — | Predicate allowing a request to revoke or rotate a key it does not own. Without it, callers revoke and rotate only their own keys. |
+| `canRevokeAnyKey` | `(req: FrogBotRequest) => boolean \| Promise<boolean>` | — | Predicate allowing a request to revoke or rotate a key it does not own. Without it, callers revoke and rotate only their own keys. It widens only a signed-in session's reach. A request made with a key still reaches only that key and the keys it minted. |
 
 Collection overrides merge with the generated configuration and changes made by other plugins. The collection uses the `key-round` icon in the admin sidebar; set `collection.admin.icon` to use a different one. The admin controls use the default admin components, and the token dialog ships a small stylesheet built on the admin theme variables.
 
@@ -118,6 +118,8 @@ Other plugins can add fields to the keys collection, and the plugin keeps them:
 
 The plugin does not require a role system. By default, callers read and update only the keys they own, and revoke and rotate are limited to the caller's own keys.
 
+A request made with a key reaches only that key and the keys it minted, whatever the access rules or `canRevokeAnyKey` allow.
+
 To layer roles on top, install [`@frogbotai/plugin-roles`](/plugins/roles) and pass role clauses as the collection access:
 
 ```ts
@@ -137,6 +139,8 @@ plugins: [
   rolesPlugin({ roles: ['admin', 'member', 'auditor', 'support'] }),
 ]
 ```
+
+`canRevokeAnyKey` here lets an admin or support user revoke and rotate other users' keys. It widens only a signed-in session's reach. A request made with a key still reaches only that key and the keys it minted.
 
 `rolesPlugin()` with no roles listed is inert and binds nothing, so `allow()` clauses passed to any plugin deny every request until you list the roles.
 

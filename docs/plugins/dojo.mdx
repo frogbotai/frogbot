@@ -72,7 +72,7 @@ npx @frogbotai/plugin-dojo apps pull deals
 | `sharing leave` | `<app>`, `--yes` | Removes you from an app shared with you. |
 | `keys list` | — | Lists your Dojo API keys, with the key that made each one. |
 | `keys create` | `<name>`, `--can-mint` | Creates a key and prints it once. |
-| `keys revoke` | `<id>`, `--cascade`, `--no-cascade`, `--yes` | Revokes a key and the keys it made (`--cascade`, the default). `--no-cascade` keeps the keys it made working. |
+| `keys revoke` | `<id>`, `--cascade`, `--no-cascade`, `--yes` | Revokes a key and the keys it made (`--cascade`, the default). `--no-cascade` keeps the keys it made working. It reaches only the CLI's own key and the keys it made; revoke other keys from the admin. |
 | `billing status` | `--workspace` | Shows a workspace's plan, status and paid apps. |
 | `billing manage` | `--workspace` | Prints the link to change the card, see invoices or cancel. |
 
