@@ -5,7 +5,11 @@ import { promisify } from 'node:util';
 
 import { describe, expect, it } from 'vitest';
 
-import { mask } from '../../../../packages/plugins/plugin-dojo/src/cli/envKeys.js';
+import {
+  databaseKey,
+  mask,
+  remoteDatabaseURL,
+} from '../../../../packages/plugins/plugin-dojo/src/cli/envKeys.js';
 import { tempDir, writeFiles } from './helpers.js';
 
 const execFileAsync = promisify(execFile);
@@ -61,5 +65,50 @@ describe('mask', () => {
     expect(mask('sk_test_4242')).toBe('••••4242');
     expect(mask('sk_tes_4242')).toBe('••••');
     expect(mask('abcdefgh')).toBe('••••');
+  });
+});
+
+describe('remoteDatabaseURL', () => {
+  it.each([
+    'postgres://crm:pw@db.example.com:5432/crm',
+    'postgresql://crm:pw@db.example.com/crm?sslmode=require',
+    'postgres://crm:pw@10.0.0.5/crm',
+    'postgres://crm:pw@[2001:db8::1]:5432/crm',
+    'postgres://crm:pw@LOCALHOST.example.com/crm',
+  ])('is true for %s', (url) => {
+    expect(remoteDatabaseURL(url)).toBe(true);
+  });
+
+  it.each([
+    undefined,
+    '',
+    'file:./frogbot.db',
+    'file:/data/frogbot.db',
+    'postgres://postgres:postgres@localhost:5432/crm',
+    'postgres://postgres:postgres@LocalHost/crm',
+    'postgres://postgres:postgres@127.0.0.1:5432/crm',
+    'postgres://postgres:postgres@[::1]:5432/crm',
+    'postgres:///crm?host=/var/run/postgresql',
+    'mysql://root:pw@db.example.com/crm',
+    'libsql://crm.turso.io',
+    'not a url',
+  ])('is false for %s', (url) => {
+    expect(remoteDatabaseURL(url)).toBe(false);
+  });
+});
+
+describe('databaseKey', () => {
+  const env = { DATABASE_URL: 'postgres://crm:pw@db.example.com/crm' };
+
+  it("is the remote DATABASE_URL of a Postgres app, and none for another adapter's or a local one", () => {
+    expect(databaseKey(env, { name: 'postgres' })).toEqual([
+      { name: 'DATABASE_URL', value: env.DATABASE_URL },
+    ]);
+    expect(databaseKey(env, { name: 'sqlite' })).toEqual([]);
+    expect(databaseKey(env, {})).toEqual([]);
+    expect(
+      databaseKey({ DATABASE_URL: 'postgres://p:p@127.0.0.1/crm' }, { name: 'postgres' }),
+    ).toEqual([]);
+    expect(databaseKey({}, { name: 'postgres' })).toEqual([]);
   });
 });

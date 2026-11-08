@@ -37,6 +37,8 @@ npx frogbot share
 npx @frogbotai/plugin-dojo apps pull deals
 ```
 
+A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/<app>` to the new `.env` when the app's `package.json` depends on a Postgres adapter, and `file:./frogbot.db` otherwise. The first `share` of a Postgres app lists `.env`'s `DATABASE_URL` under "Keys to bring", masked and ticked, when it points off this machine: not `file:`, and a host other than `localhost`, `127.0.0.1` or `::1`. Untick it to leave it out. A local one, a SQLite app's, and any later share's are never sent. Bringing data works only for SQLite apps.
+
 `frogbot deploy` with no target runs the same deploy as `apps share`, because `dojo()` registers `dojo` as a [deploy target](/getting-started/cli#plugin-deploy-targets).
 
 | Command | Arguments | Description |

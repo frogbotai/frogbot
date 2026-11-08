@@ -18,7 +18,7 @@ import { formatBytes, uploadData } from './data/upload.js';
 import type { DojoClient } from './dojo.js';
 import { createDojo, dojoError, dojoMessage, followBuild, segment } from './dojo.js';
 import type { EnvKey } from './envKeys.js';
-import { envKeys, readEnvFiles } from './envKeys.js';
+import { databaseKey, envKeys, readEnvFiles } from './envKeys.js';
 import { ShareError } from './error.js';
 import { shareFiles } from './files.js';
 import type { ShareFlags } from './flags.js';
@@ -70,7 +70,9 @@ export async function sharePreflight(context: DeployContext): Promise<PreflightI
   return asDeployStop(() => {
     const flags = parseShareArgs(context.args, context.io.program);
 
-    checkSkipKeys(flags.skipKey, envKeys(readEnvFiles(context.root)));
+    const env = readEnvFiles(context.root);
+
+    checkSkipKeys(flags.skipKey, [...envKeys(env), ...databaseKey(env, context.config.db)]);
 
     return [];
   });
@@ -89,13 +91,14 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
   const folderLink = await readLink(root);
   const fileEnv = readEnvFiles(root);
   const allKeys = envKeys(fileEnv);
+  const firstOnly = flags.keys && !folderLink && !flags.app ? databaseKey(fileEnv, config.db) : [];
 
   if (context.flags.dryRun) {
     return dryRun({
       context,
       flags,
       link: folderLink,
-      keys: allKeys,
+      keys: [...allKeys, ...firstOnly],
       databaseUrl: fileEnv.DATABASE_URL,
     });
   }
@@ -140,7 +143,10 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
 
     const localKeys = flags.keys ? allKeys.filter((key) => !flags.skipKey.includes(key.name)) : [];
 
-    const firstKeys = link ? [] : await chooseFirstKeys({ keys: localKeys, yes: flags.yes, io });
+    const databaseKeys = firstOnly.filter((key) => !flags.skipKey.includes(key.name));
+    const firstKeys = link
+      ? []
+      : await chooseFirstKeys({ keys: [...localKeys, ...databaseKeys], yes: flags.yes, io });
 
     await dojo.signIn();
 

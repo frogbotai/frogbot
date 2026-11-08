@@ -41,6 +41,36 @@ export function envKeys(env: Record<string, string>): EnvKey[] {
     .map(([name, value]) => ({ name, value }));
 }
 
+const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
+
+/** Whether `value` is a `postgres://` or `postgresql://` URL whose host is off this machine. */
+export function remoteDatabaseURL(value: string | undefined): boolean {
+  if (!value || value.startsWith('file:')) return false;
+
+  let url: URL;
+
+  try {
+    url = new URL(value);
+  } catch {
+    return false;
+  }
+
+  if (url.protocol !== 'postgres:' && url.protocol !== 'postgresql:') return false;
+
+  const host = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+
+  return host !== '' && !localHosts.has(host);
+}
+
+/** `.env`'s `DATABASE_URL` as a key when the app's adapter is Postgres and the URL points off this machine. */
+export function databaseKey(env: Record<string, string>, db: { name?: string }): EnvKey[] {
+  const value = env.DATABASE_URL;
+
+  return db.name === 'postgres' && value && remoteDatabaseURL(value)
+    ? [{ name: 'DATABASE_URL', value }]
+    : [];
+}
+
 /** `••••` plus the last 4 characters, or `••••` alone when the value is under 12 characters. */
 export function mask(value: string): string {
   return value.length < 12 ? '••••' : `••••${value.slice(-4)}`;

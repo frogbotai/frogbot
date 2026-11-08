@@ -5,11 +5,18 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
 
+import { postgresAdapter } from '@frogbotai/db-postgres';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { registrationFile, serviceId } from '../../../../packages/frogbot/src/bin/service/paths.js';
 import { writeRegistration } from '../../../../packages/frogbot/src/bin/service/registration.js';
 import { parseUpArgs, up } from '../../../../packages/frogbot/src/bin/up.js';
+
+const loaded = vi.hoisted(() => ({ config: undefined as unknown }));
+
+vi.mock('../../../../packages/frogbot/src/config/load.js', () => ({
+  loadConfig: () => Promise.resolve(loaded.config),
+}));
 
 function failingSupervisor(stderr: string) {
   return () => {
@@ -118,6 +125,39 @@ describe('frogbot up', () => {
     rmSync(join(dir, 'next.config.mjs'));
 
     await expect(up([], { log })).rejects.toThrow(/no next\.config/);
+  });
+
+  it("runs a Postgres app's schema sync in the schema step, before the server starts", async () => {
+    const db = postgresAdapter({ pool: { connectionString: 'postgres://p:p@127.0.0.1:1/deals' } });
+    const config = { _internal: { payloadConfig: Promise.resolve({ db }) } };
+    const syncSchema = vi.fn().mockResolvedValue({
+      ok: true,
+      applied: ['ALTER TABLE "deals" ADD COLUMN "stage" varchar;'],
+      kept: [],
+    });
+
+    expect(db.syncSchema).toBeTypeOf('function');
+    expect(postgresAdapter({ pool: {}, prodMigrations: [] }).syncSchema).toBeUndefined();
+
+    loaded.config = config;
+    Object.assign(db, { syncSchema });
+    vi.stubEnv('FROGBOT_SERVICE', 'schema');
+
+    const written: string[] = [];
+
+    vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
+      written.push(String(chunk));
+
+      return true;
+    });
+
+    const exit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+
+    await up([]);
+
+    expect(syncSchema).toHaveBeenCalledWith({ config });
+    expect(written.join('')).toBe('\n{"frogbot":"schema","ok":true,"applied":1,"kept":[]}\n');
+    expect(exit).toHaveBeenCalledWith(0);
   });
 
   it('reads --port and --autostart', () => {
