@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const mastercardIcon: IconNode = [
+export const brandMastercardIcon: IconNode = [
   [
     'path',
     {
@@ -25,6 +25,11 @@ export const mastercardIcon: IconNode = [
   ],
 ];
 
-const MastercardIcon = createLucideIcon('MastercardIcon', mastercardIcon, 2, '0 0 25 24');
+const BrandMastercardIcon = createLucideIcon(
+  'BrandMastercardIcon',
+  brandMastercardIcon,
+  2,
+  '0 0 25 24',
+);
 
-export default MastercardIcon;
+export default BrandMastercardIcon;

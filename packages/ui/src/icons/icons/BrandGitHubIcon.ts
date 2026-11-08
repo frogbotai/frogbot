@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const gitHubIcon: IconNode = [
+export const brandGitHubIcon: IconNode = [
   [
     'path',
     {
@@ -11,6 +11,6 @@ export const gitHubIcon: IconNode = [
   ],
 ];
 
-const GitHubIcon = createLucideIcon('GitHubIcon', gitHubIcon, 0, '0 0 24 24');
+const BrandGitHubIcon = createLucideIcon('BrandGitHubIcon', brandGitHubIcon, 0, '0 0 24 24');
 
-export default GitHubIcon;
+export default BrandGitHubIcon;

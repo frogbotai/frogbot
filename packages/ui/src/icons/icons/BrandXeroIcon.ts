@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const xeroIcon: IconNode = [
+export const brandXeroIcon: IconNode = [
   [
     'path',
     {
@@ -11,6 +11,6 @@ export const xeroIcon: IconNode = [
   ],
 ];
 
-const XeroIcon = createLucideIcon('XeroIcon', xeroIcon, 0, '0 0 24 24');
+const BrandXeroIcon = createLucideIcon('BrandXeroIcon', brandXeroIcon, 0, '0 0 24 24');
 
-export default XeroIcon;
+export default BrandXeroIcon;

@@ -52,6 +52,7 @@ The set in `src/icons/icons/` is one style. A new icon matches it, and a designe
 ### Style
 
 - Open strokes in `currentColor`, round caps and joins, no fills. Filled icons are brand marks or a recorded exception in `test/__helpers/shared/icons.ts`.
+- A brand mark (a company or product logo) is named `Brand<Name>Icon`, so its kebab name starts with `brand-`. Brand marks aren't admin icons: they stay out of `adminIconExports`.
 - New icons use a 20×20 grid (`viewBox="0 0 20 20"`). The stroke comes from the grid: `IconBase` draws 10% of it, so 2 at 20. Don't pass a stroke width.
 - Keep the path's centre line inside 1.67 to 18.33, so the painted edge leaves 0.67 on every side and the shape is centred.
 - Draw with `path` only, never `circle` or `rect`, and round corners with continuous curves, as in `FolderIcon` and `HomeIcon`.
@@ -62,5 +63,5 @@ The set in `src/icons/icons/` is one style. A new icon matches it, and a designe
 
 1. Add `src/icons/icons/<Name>Icon.ts`: export the `IconNode` as `<name>Icon` and default-export `createLucideIcon('<Name>Icon', <name>Icon, undefined, '0 0 20 20')`.
 2. Export it from `src/icons/index.ts`, in alphabetical order.
-3. Add `'<Name>Icon'` to `adminIconExports` in `packages/frogbot/src/admin/icons.ts`, so `admin.icon: '<name>'` validates. The registry test fails until both lists match.
+3. Unless it's a brand mark, add `'<Name>Icon'` to `adminIconExports` in `packages/frogbot/src/admin/icons.ts`, so `admin.icon: '<name>'` validates. The registry test fails until both lists match, brand marks aside.
 4. Add the name to `iconNames` in `test/ui/ui/icons/icons.spec.tsx`. The line-weight test then checks it, and `test/browser/iconGeometry.browser.spec.ts` checks it stays inside its box and is centred. The few older icons drawn off-centre on purpose are recorded in `offCentreIcons` in `test/__helpers/shared/icons.ts`; a new icon doesn't go there, it gets centred.

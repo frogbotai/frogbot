@@ -83,6 +83,8 @@ admin: {
 
 A plain string without `#` must be a built-in icon name. An unknown name, such as a typo, stops startup with `[frogbot] Unknown admin icon '<name>'` followed by the valid names. A component path always names its export after `#`; write `'./src/components/ProjectsIcon#default'` for a default export. Navigation item and settings icons follow the same rules.
 
+Built-in names are UI icons only. The brand logos in `@frogbotai/ui/icons`, such as `BrandSlackIcon` and `BrandVisaIcon`, aren't admin icons, and a `brand-` name such as `'brand-slack'` stops startup. To show one, render it from your own component and point `icon` at that component's path.
+
 Within `CollectionsSection`, ungrouped collections come first, in configuration order. Named groups follow in first-seen order, with their collections in configuration order.
 
 When the sidebar is collapsed, section headings and labels are hidden and each item displays its label in a tooltip. Section state and named-group state persist for the current user.

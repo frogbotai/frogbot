@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const dropboxIcon: IconNode = [
+export const brandDropboxIcon: IconNode = [
   [
     'path',
     {
@@ -11,6 +11,6 @@ export const dropboxIcon: IconNode = [
   ],
 ];
 
-const DropboxIcon = createLucideIcon('DropboxIcon', dropboxIcon, 0, '0 0 24 24');
+const BrandDropboxIcon = createLucideIcon('BrandDropboxIcon', brandDropboxIcon, 0, '0 0 24 24');
 
-export default DropboxIcon;
+export default BrandDropboxIcon;

@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const visaIcon: IconNode = [
+export const brandVisaIcon: IconNode = [
   [
     'path',
     {
@@ -25,6 +25,6 @@ export const visaIcon: IconNode = [
   ],
 ];
 
-const VisaIcon = createLucideIcon('VisaIcon', visaIcon, 2, '0 0 24 24');
+const BrandVisaIcon = createLucideIcon('BrandVisaIcon', brandVisaIcon, 2, '0 0 24 24');
 
-export default VisaIcon;
+export default BrandVisaIcon;

@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const chatGptIcon: IconNode = [
+export const brandChatGptIcon: IconNode = [
   [
     'g',
     {
@@ -17,6 +17,6 @@ export const chatGptIcon: IconNode = [
   ],
 ];
 
-const ChatGptIcon = createLucideIcon('ChatGptIcon', chatGptIcon, 0, '0 0 20 20');
+const BrandChatGptIcon = createLucideIcon('BrandChatGptIcon', brandChatGptIcon, 0, '0 0 20 20');
 
-export default ChatGptIcon;
+export default BrandChatGptIcon;
