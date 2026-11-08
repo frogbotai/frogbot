@@ -1,9 +1,8 @@
 'use client';
 
-import { TZDate } from '@date-fns/tz';
 import { format } from 'date-fns';
 
-import type { CalendarMode } from './core/index.js';
+import { type CalendarMode, parseCalendarDate } from './core/index.js';
 
 export function CalendarHeader({
   date,
@@ -20,7 +19,7 @@ export function CalendarHeader({
   setMode?: (mode: CalendarMode) => void;
   timeZone?: string;
 }) {
-  const zoned = new TZDate(Date.parse(date), timeZone);
+  const zoned = parseCalendarDate(date, timeZone);
   const label = format(zoned, mode === 'day' ? 'EEEE, MMMM d, yyyy' : 'MMMM yyyy');
 
   return (

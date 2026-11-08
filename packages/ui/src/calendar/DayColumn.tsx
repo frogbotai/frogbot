@@ -119,7 +119,7 @@ export function DayColumn<T extends CalendarEvent>({
 
   const beginResize = (event: T, edge: CalendarResizeEdge) => {
     const at = (clientY: number) =>
-      resizeCalendarEvent({ edge, event, instant: instantAt(clientY), snap });
+      resizeCalendarEvent({ edge, event, instant: instantAt(clientY), snap, timeZone });
 
     const stop = () => {
       setPreview(null);

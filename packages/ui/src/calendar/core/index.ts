@@ -1,4 +1,4 @@
-import { TZDate } from '@date-fns/tz';
+import { TZDate, tzOffset } from '@date-fns/tz';
 import {
   addDays,
   addMinutes,
@@ -39,6 +39,15 @@ export type CalendarLane<T extends CalendarEvent = CalendarEvent> = {
   laneCount: number;
 };
 
+/** A calendar date in a zone: `yyyy-MM-dd` is that local day, anything else is an instant. */
+export function parseCalendarDate(date: string, timeZone: string): TZDate {
+  const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+
+  return day
+    ? new TZDate(Number(day[1]), Number(day[2]) - 1, Number(day[3]), timeZone)
+    : new TZDate(Date.parse(date), timeZone);
+}
+
 export function getVisibleRange({
   date,
   mode,
@@ -50,7 +59,7 @@ export function getVisibleRange({
   timeZone?: string;
   weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
 }): CalendarRange {
-  const zonedDate = new TZDate(date, timeZone);
+  const zonedDate = parseCalendarDate(date, timeZone);
   let start = startOfDay(zonedDate);
   let end = addDays(start, 1);
 
@@ -169,12 +178,15 @@ export function layoutLanes<T extends CalendarEvent>(events: T[]): CalendarLane<
   return result;
 }
 
-export function snapTo(date: string, minutes: number): string {
+export function snapTo(date: string, minutes: number, timeZone = 'UTC'): string {
   if (!Number.isInteger(minutes) || minutes <= 0) {
     throw new RangeError('minutes must be a positive integer');
   }
 
   const interval = minutes * 60_000;
+  const offset = tzOffset(timeZone, new Date(date)) * 60_000;
 
-  return new Date(Math.round(Date.parse(date) / interval) * interval).toISOString();
+  return new Date(
+    Math.round((Date.parse(date) + offset) / interval) * interval - offset,
+  ).toISOString();
 }

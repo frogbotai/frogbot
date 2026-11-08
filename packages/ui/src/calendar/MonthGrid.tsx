@@ -13,7 +13,12 @@ import {
 import { addDays, format } from 'date-fns';
 import type { ReactNode } from 'react';
 
-import { type CalendarCellEvent, type CalendarEvent, dayKey, getRangeDays } from './core/index.js';
+import {
+  type CalendarCellEvent,
+  type CalendarEvent,
+  getRangeDays,
+  parseCalendarDate,
+} from './core/index.js';
 import { EventChip } from './EventChip.js';
 import { MonthMore } from './MonthMore.js';
 import { type CalendarPlacement, useCalendar, type UseCalendarProps } from './useCalendar.js';
@@ -84,7 +89,7 @@ export function MonthGrid<T extends CalendarEvent>(props: MonthGridProps<T>) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const days = getRangeDays(calendar.range, 42);
   const active = calendar.events.find((event) => event.id === calendar.activeId);
-  const month = dayKey(props.date, props.timeZone ?? 'UTC').slice(0, 7);
+  const month = format(parseCalendarDate(props.date, props.timeZone ?? 'UTC'), 'yyyy-MM');
 
   return (
     <DndContext

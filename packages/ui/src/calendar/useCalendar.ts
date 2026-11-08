@@ -13,6 +13,7 @@ import {
   getFloatingRange,
   getVisibleRange,
   layoutLanes,
+  parseCalendarDate,
   snapTo,
 } from './core/index.js';
 
@@ -84,7 +85,7 @@ export function moveCalendarEvent<T extends CalendarEvent>(
   placement: CalendarPlacement,
   { dateOnly = false, from, timeZone = 'UTC' }: CalendarMoveOptions = {},
 ): CalendarChange<T> {
-  if (placement.kind === 'time') {
+  if (placement.kind === 'time' && !dateOnly) {
     const duration = Date.parse(event.end ?? event.start) - Date.parse(event.start);
     const start = new Date(placement.start).toISOString();
 
@@ -107,16 +108,18 @@ export function resizeCalendarEvent<T extends CalendarEvent>({
   event,
   instant,
   snap,
+  timeZone = 'UTC',
 }: {
   edge: CalendarResizeEdge;
   event: T;
   instant: string;
   snap: number;
+  timeZone?: string;
 }): CalendarChange<T> {
   const interval = snap * 60_000;
   const originalStart = new Date(event.start).toISOString();
   const originalEnd = new Date(event.end ?? event.start).toISOString();
-  const snapped = snapTo(instant, snap);
+  const snapped = snapTo(instant, snap, timeZone);
   const start =
     edge === 'start'
       ? new Date(Math.min(Date.parse(snapped), Date.parse(originalEnd) - interval)).toISOString()
@@ -130,9 +133,14 @@ export function resizeCalendarEvent<T extends CalendarEvent>({
   return { end, event, start };
 }
 
-export function createCalendarRange(start: string, end: string, snap: number): CalendarCreate {
-  const first = snapTo(start, snap);
-  const second = snapTo(end, snap);
+export function createCalendarRange(
+  start: string,
+  end: string,
+  snap: number,
+  timeZone = 'UTC',
+): CalendarCreate {
+  const first = snapTo(start, snap, timeZone);
+  const second = snapTo(end, snap, timeZone);
   const interval = snap * 60_000;
   const firstTime = Date.parse(first);
   const secondTime = Date.parse(second);
@@ -278,17 +286,21 @@ export function useCalendar<T extends CalendarEvent>({
 
   const resize = async (event: T, edge: CalendarResizeEdge, instant: string) => {
     if (!resizable || !canEdit(event)) return;
-    await commit(resizeCalendarEvent({ edge, event, instant, snap }), onResize);
+
+    await commit(
+      resizeCalendarEvent({ edge, event, instant, snap, timeZone: range.timeZone }),
+      onResize,
+    );
   };
 
   const create = async (start: string, end: string) => {
-    await onCreate?.(createCalendarRange(start, end, snap));
+    await onCreate?.(createCalendarRange(start, end, snap, range.timeZone));
   };
 
   const navigate = (direction: 'next' | 'previous' | 'today') => {
     if (direction === 'today') return onNavigate?.(new Date().toISOString());
     const amount = direction === 'next' ? 1 : -1;
-    const zoned = new TZDate(Date.parse(date), timeZone);
+    const zoned = parseCalendarDate(date, timeZone);
     const next =
       mode === 'month'
         ? addMonths(zoned, amount)
