@@ -36,6 +36,7 @@
   }
 
   body:has(.fb-nav-shell) .app-header__account,
+  body:has(.fb-nav-shell) .app-header__sidebar-toggle .icon--sidebar,
   body:has(.fb-nav-shell:not([data-nav-state^="mobile"])) .app-header__sidebar-toggle {
     display: none;
   }
