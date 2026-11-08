@@ -1,7 +1,6 @@
 import './BoardView.css';
 
 import { getColumns, renderTable } from '@payloadcms/ui/rsc';
-import { attachRegisteredFrogBot } from 'frogbot/internal';
 import type { AdminViewServerProps, PayloadComponent, SanitizedFieldPermissions } from 'payload';
 import { getFromImportMap, transformColumnsToSearchParams } from 'payload/shared';
 import type { ComponentType } from 'react';
@@ -185,11 +184,6 @@ export async function BoardView(input: AdminViewServerProps) {
     req: initPageResult.req,
   });
 
-  const filter =
-    typeof board.filter === 'function'
-      ? await board.filter({ req: attachRegisteredFrogBot(initPageResult.req) })
-      : board.filter;
-
   let fieldPermission: SanitizedFieldPermissions | undefined;
   let fieldPermissions = permissions?.fields;
 
@@ -229,7 +223,7 @@ export async function BoardView(input: AdminViewServerProps) {
         columnState={getBoardColumnState(preferenceValue)}
         columns={columns}
         cover={board.cover}
-        filter={filter}
+        filter={board.filter}
         groupBy={groupBy}
         limit={board.pagination?.defaultLimit ?? 50}
         orderField={orderField}

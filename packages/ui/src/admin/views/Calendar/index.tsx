@@ -1,5 +1,4 @@
 import { getColumns, renderTable } from '@payloadcms/ui/rsc';
-import { attachRegisteredFrogBot } from 'frogbot/internal';
 import type {
   AdminViewServerProps,
   SanitizedFieldPermissions,
@@ -139,11 +138,6 @@ export async function CalendarView(input: AdminViewServerProps) {
     mode,
   };
 
-  const filter =
-    typeof calendar.filter === 'function'
-      ? await calendar.filter({ req: attachRegisteredFrogBot(initPageResult.req) })
-      : calendar.filter;
-
   const canUpdate = Boolean(
     permissions?.update &&
     canUpdateField(permissions.fields, calendar.start) &&
@@ -182,7 +176,7 @@ export async function CalendarView(input: AdminViewServerProps) {
         collectionSlug={collectionSlug}
         color={calendar.color}
         date={date}
-        filter={filter}
+        filter={calendar.filter}
         mode={mode}
         modes={calendar.modes}
         snap={calendar.snap}

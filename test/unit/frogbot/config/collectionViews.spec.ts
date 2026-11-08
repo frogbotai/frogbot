@@ -62,7 +62,7 @@ describe('collection views', () => {
     ]);
     expect(admin?.custom?.frogbot.views[1].orderField).toBe('_order');
     expect(admin?.custom?.frogbot.views[2].orderField).toBe('_order');
-    expect(admin?.components?.Description).toBe('@frogbotai/ui/admin/rsc#CollectionViewSwitcher');
+    expect(admin?.components?.Description).toBeUndefined();
     expect(admin?.components?.beforeList).toBeUndefined();
     expect(admin?.components?.views?.list).toEqual({
       Component: '@frogbotai/ui/admin/rsc#ListView',
@@ -80,15 +80,15 @@ describe('collection views', () => {
     });
   });
 
-  it('keeps callbacks out of client metadata', () => {
-    const filter = () => ({ owner: { exists: true } });
+  it('keeps access, filter and icon out of client metadata', () => {
+    const filter = { owner: { exists: true } };
     const access = () => true;
     let runtime: any[] = [];
     const admin = compileCollectionViews({
       collection: {
         slug: 'posts',
         fields: [{ name: 'owner', type: 'relationship', relationTo: 'users' }],
-        admin: { views: [{ type: 'board', filter, access, groupBy: 'owner' }] },
+        admin: { views: [{ type: 'board', filter, access, groupBy: 'owner', icon: 'tile' }] },
       },
       onRuntimeViews: (views) => {
         runtime = views;
@@ -97,7 +97,8 @@ describe('collection views', () => {
 
     expect(admin?.custom?.frogbot.views[0]).not.toHaveProperty('filter');
     expect(admin?.custom?.frogbot.views[0]).not.toHaveProperty('access');
-    expect(runtime[0]).toMatchObject({ access, filter });
+    expect(admin?.custom?.frogbot.views[0]).not.toHaveProperty('icon');
+    expect(runtime[0]).toMatchObject({ access, filter, icon: 'tile' });
     expect(admin?.components?.views?.list).toMatchObject({
       Component: '@frogbotai/ui/admin/rsc#BoardView',
     });
@@ -301,20 +302,80 @@ describe('collection views', () => {
     });
   });
 
-  it('maps the list NoResults to the native empty state', () => {
+  it('keeps NoResults on the runtime view of every type', () => {
     const NoResults = './Empty#Empty';
+    let runtime: any[] = [];
     const admin = compileCollectionViews({
       collection: {
         slug: 'posts',
-        fields: [],
-        admin: { views: [{ type: 'list', components: { NoResults } }] },
+        fields: [
+          { name: 'stage', type: 'select', options: [] },
+          { name: 'due', type: 'date' },
+        ],
+        admin: {
+          views: [
+            { type: 'list', components: { NoResults } },
+            { type: 'board', groupBy: 'stage', components: { NoResults } },
+            { type: 'calendar', start: 'due', components: { NoResults } },
+          ],
+        },
+      },
+      onRuntimeViews: (views) => {
+        runtime = views;
       },
     });
 
     expect(admin?.components?.views?.list).toEqual({
       Component: '@frogbotai/ui/admin/rsc#ListView',
-      NoResults,
     });
+    expect(runtime.map(({ components }) => components?.NoResults)).toEqual([
+      NoResults,
+      NoResults,
+      NoResults,
+    ]);
+  });
+
+  it('rejects an unknown view icon', () => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'posts',
+          fields: [],
+          admin: { views: [{ type: 'list', icon: 'nope' }] },
+        },
+      }),
+    ).toThrow("Unknown admin icon 'nope'");
+  });
+
+  it('passes useAsDone to the client config and out of Payload admin', () => {
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'tasks',
+        fields: [
+          { name: 'title', type: 'text' },
+          { name: 'progress', type: 'group', fields: [{ name: 'done', type: 'checkbox' }] },
+        ],
+        admin: { useAsDone: 'progress.done' },
+      },
+    });
+
+    expect(admin?.custom?.frogbot.useAsDone).toBe('progress.done');
+    expect(admin).not.toHaveProperty('useAsDone');
+  });
+
+  it.each([
+    ['a missing field', 'finished'],
+    ['a field that is not a checkbox', 'title'],
+  ])('rejects useAsDone naming %s', (_, useAsDone) => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [{ name: 'title', type: 'text' }],
+          admin: { useAsDone },
+        },
+      }),
+    ).toThrow(`Collection "tasks" admin.useAsDone "${useAsDone}" must name a checkbox field`);
   });
 
   it('keeps CreateButton on the collection components', () => {
@@ -373,7 +434,7 @@ describe('collection views', () => {
     expect((admin?.components?.edit as any).views).toBeUndefined();
   });
 
-  it('preserves an authored Description behind the shared view switcher', () => {
+  it('keeps an authored Description with several views', () => {
     const Description = './Description#Description';
     const admin = compileCollectionViews({
       collection: {
@@ -386,8 +447,8 @@ describe('collection views', () => {
       },
     });
 
-    expect(admin?.components?.Description).toBe('@frogbotai/ui/admin/rsc#CollectionViewSwitcher');
-    expect(admin?.custom?.frogbot.descriptionComponent).toBe(Description);
+    expect(admin?.components?.Description).toBe(Description);
+    expect(admin?.custom?.frogbot).not.toHaveProperty('descriptionComponent');
   });
 
   it('rejects duplicate normalized slugs', () => {

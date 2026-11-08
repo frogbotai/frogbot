@@ -28,6 +28,7 @@ export function iterateCollections({
             collectionViews?: Array<{
               component?: PayloadComponent;
               components?: Record<string, PayloadComponent | PayloadComponent[]>;
+              icon?: PayloadComponent;
             }>;
           }
         | undefined
@@ -35,6 +36,7 @@ export function iterateCollections({
 
     for (const view of collectionViews ?? []) {
       addToImportMap(view.component);
+      if (isIconComponent(view.icon)) addToImportMap(view.icon);
       const components = view.components;
       if (!components) continue;
 
@@ -62,11 +64,6 @@ export function iterateCollections({
     );
 
     addToImportMap(collection.admin?.components?.Description);
-
-    addToImportMap(
-      (collection.admin?.custom?.frogbot as { descriptionComponent?: PayloadComponent } | undefined)
-        ?.descriptionComponent,
-    );
 
     addToImportMap(collection.admin?.components?.edit?.beforeDocumentControls);
     addToImportMap(collection.admin?.components?.edit?.BeforeDocumentMeta);
