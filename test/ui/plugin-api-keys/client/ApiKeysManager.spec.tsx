@@ -356,6 +356,55 @@ describe('API key controls', () => {
     await waitFor(() => expect(button.disabled).toBe(false));
   });
 
+  it('offers the box when the only live key it made sits under a key revoked on its own', async () => {
+    type Key = { id: string; mintedBy: string | null; revokedAt: string | null };
+    const keys: Key[] = [
+      { id: 'P', mintedBy: null, revokedAt: null },
+      { id: 'K', mintedBy: 'P', revokedAt: '2026-11-01T00:00:00.000Z' },
+      { id: 'C', mintedBy: 'K', revokedAt: null },
+    ];
+
+    const below = (id: string): Key[] =>
+      keys.filter((key) => key.mintedBy === id).flatMap((key) => [key, ...below(key.id)]);
+
+    vi.mocked(fetch).mockImplementation((input, init) => {
+      const url = String(input);
+      const answer = (body: unknown) =>
+        Promise.resolve({ ok: true, json: () => Promise.resolve(body) } as Response);
+
+      if (url.endsWith('/P/revoke')) {
+        const body = init?.body ? (JSON.parse(String(init.body)) as { cascade: boolean }) : {};
+        const now = new Date().toISOString();
+
+        keys[0].revokedAt = now;
+        if (body.cascade !== false) below('P').forEach((key) => (key.revokedAt ??= now));
+
+        return answer({});
+      }
+
+      if (url.endsWith('/P/minted-count')) {
+        return answer({ count: below('P').filter((key) => !key.revokedAt).length });
+      }
+
+      return answer({
+        totalDocs: keys.filter((key) => key.mintedBy === 'P' && !key.revokedAt).length,
+      });
+    });
+
+    render(<RevokeApiKey rowData={{ id: 'P', name: 'Parent' }} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
+
+    const checkbox = await screen.findByRole('checkbox', { name: 'Also revoke the key it made' });
+
+    fireEvent.click(checkbox);
+    await clickRevokeKey();
+
+    await waitFor(() => expect(keys[0].revokedAt).not.toBeNull());
+
+    expect(keys[2].revokedAt).toBeNull();
+  });
+
   it('shows revoked keys without an action', () => {
     render(<RevokeApiKey rowData={{ id: 'key-1', revokedAt: '2026-07-29' }} />);
 

@@ -372,6 +372,16 @@ describe('frogbot dojo <noun> <verb>', () => {
     expect(dojo.requests.filter(({ path }) => path !== '/api/apps/deals')).toEqual([]);
   });
 
+  it('refuses --cascade with --no-cascade before asking to confirm', async () => {
+    const { dojo, env, cwd } = await setup();
+    const result = testIO({ cwd, env, isTTY: true, confirm: true });
+
+    expect(await runDojo(['keys', 'revoke', '5', '--cascade', '--no-cascade'], result.io)).toBe(2);
+    expect(result.stderr()[0]).toContain('Pass --cascade or --no-cascade, not both.');
+    expect(result.asked).toEqual([]);
+    expect(dojo.requests).toEqual([]);
+  });
+
   it.each([
     [['apps', 'get', 'a/b?c'], 'GET /api/apps/a%2Fb%3Fc'],
     [['deployments', 'logs', '7?x=1', '--follow'], 'GET /api/deployments/7%3Fx%3D1/logs'],
