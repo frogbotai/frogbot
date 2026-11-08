@@ -6,7 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
-import { tasksSlug } from './shared.js';
+import { draftsSlug, lockedSlug, tasksSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const adapterLabel = process.env.FROGBOT_DATABASE || 'sqlite';
@@ -79,5 +79,42 @@ describe(`board order [${adapterLabel}]`, () => {
     await create('d');
 
     expect(await titles()).toEqual(['c', 'a', 'b', 'd']);
+  });
+
+  it('counts drafts in the column totals when the board asks for drafts', async () => {
+    const created = await booted.restClient.post(`/api/${draftsSlug}`, {
+      status: 'todo',
+      title: 'typed inline',
+    });
+
+    expect(created.status).toBe(201);
+
+    const totals = async (draft?: boolean) => {
+      const response = await booted.restClient.post<{
+        groups: { group: { status: string }; values: { count: number } }[];
+      }>(`/api/${draftsSlug}/aggregate`, {
+        depth: 0,
+        groupBy: 'status',
+        values: { count: { count: true } },
+        ...(draft ? { draft } : {}),
+      });
+
+      expect(response.status).toBe(200);
+
+      return response.body.groups.map(({ group, values }) => [group.status, values.count]);
+    };
+
+    expect(await totals()).toEqual([]);
+    expect(await totals(true)).toEqual([['todo', 1]]);
+  });
+
+  it('drops a group value the user cannot create', async () => {
+    const created = await booted.restClient.post<{ doc: Task }>(`/api/${lockedSlug}`, {
+      status: 'todo',
+      title: 'typed inline',
+    });
+
+    expect(created.status).toBe(201);
+    expect(created.body.doc.status ?? undefined).toBeUndefined();
   });
 });

@@ -52,8 +52,31 @@ describe('getInlineAdd', () => {
     expect(check([title, status], { permissions: { fields: { status: true } } }).inline).toBe(
       false,
     );
-    expect(check([title, status], { permissions: { fields: { title: true } } }).inline).toBe(true);
+    expect(
+      check([title, status], { permissions: { fields: { status: true, title: true } } }).inline,
+    ).toBe(true);
     expect(check([title, status], { permissions: { fields: true } }).inline).toBe(true);
+  });
+
+  it('opens the form when the user cannot create the group field', () => {
+    const can = { create: true, read: true, update: true, validate: true };
+
+    expect(check([title, status], { permissions: { fields: { title: can } } }).inline).toBe(false);
+    expect(
+      check([title, status], { permissions: { fields: { status: can, title: can } } }).inline,
+    ).toBe(true);
+    expect(
+      check([title, { name: 'workflow', type: 'group', fields: [status] }], {
+        groupBy: 'workflow.status',
+        permissions: { fields: { title: true, workflow: { ...can, fields: {} } } },
+      }).inline,
+    ).toBe(false);
+    expect(
+      check([title, { name: 'workflow', type: 'group', fields: [status] }], {
+        groupBy: 'workflow.status',
+        permissions: { fields: { title: true, workflow: { ...can, fields: { status: can } } } },
+      }).inline,
+    ).toBe(true);
   });
 
   it('opens the form for upload and local-auth collections', () => {
@@ -114,6 +137,15 @@ describe('getInlineAdd', () => {
       check([title, { name: 'workflow', type: 'group', fields: [{ ...status, required: true }] }], {
         groupBy: 'workflow.status',
       }),
+    ).toEqual({ groupRequired: true, inline: true });
+    expect(
+      check(
+        [
+          title,
+          { type: 'tabs', tabs: [{ name: 'workflow', fields: [{ ...status, required: true }] }] },
+        ],
+        { groupBy: 'workflow.status' },
+      ),
     ).toEqual({ groupRequired: true, inline: true });
   });
 });

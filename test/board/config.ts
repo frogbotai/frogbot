@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'frogbot';
 
 import { buildTestConfig } from '../__helpers/shared/buildTestConfig.js';
-import { tasksSlug } from './shared.js';
+import { draftsSlug, lockedSlug, tasksSlug } from './shared.js';
 
 const Tasks: CollectionConfig = {
   slug: tasksSlug,
@@ -16,4 +16,24 @@ const Tasks: CollectionConfig = {
   ],
 };
 
-export default await buildTestConfig({ collections: [Tasks] });
+const Drafts: CollectionConfig = {
+  ...Tasks,
+  slug: draftsSlug,
+  versions: { drafts: true },
+};
+
+const Locked: CollectionConfig = {
+  ...Tasks,
+  slug: lockedSlug,
+  fields: [
+    { name: 'title', type: 'text' },
+    {
+      name: 'status',
+      type: 'select',
+      access: { create: () => false },
+      options: ['todo', 'doing', 'done'],
+    },
+  ],
+};
+
+export default await buildTestConfig({ collections: [Tasks, Drafts, Locked] });

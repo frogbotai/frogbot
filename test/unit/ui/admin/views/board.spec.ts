@@ -333,12 +333,30 @@ describe('collection board', () => {
     expect(resolveBoardSort({})).toBeUndefined();
     expect(resolveBoardSort({ orderField: '_order' })).toBe('_order');
     expect(resolveBoardSort({ defaultSort: '-priority', orderField: '_order' })).toBe('-priority');
-    expect(resolveBoardSort({ orderField: '_order', preferenceSort: '_order_board' })).toBe(
-      '_order',
-    );
-    expect(resolveBoardSort({ orderField: '_order', querySort: 'priority,-_order_by_stage' })).toBe(
-      'priority,-_order',
-    );
+    expect(
+      resolveBoardSort({ orderField: '_order', preferenceSort: '_order_board', viewSlug: 'board' }),
+    ).toBe('_order');
+    expect(
+      resolveBoardSort({
+        orderField: '_order',
+        querySort: 'priority,-_order_by_stage',
+        viewSlug: 'by-stage',
+      }),
+    ).toBe('priority,-_order');
+    expect(
+      resolveBoardSort({
+        orderField: '_order',
+        preferenceSort: '-_order_total,_order_board',
+        viewSlug: 'board',
+      }),
+    ).toBe('-_order_total,_order');
+    expect(
+      resolveBoardSort({
+        orderField: '_order',
+        preferenceSort: '_order_boards',
+        viewSlug: 'board',
+      }),
+    ).toBe('_order_boards');
   });
 
   it('builds per-view merged preference updates', () => {
