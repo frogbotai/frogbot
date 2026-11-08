@@ -98,6 +98,11 @@ describe('resolveNavItems', () => {
       `index 0 ('A'): icon "hmoe" is neither a built-in icon name nor a component path in the import map.`,
     ],
     [
+      'an icon name inherited from Object',
+      { icon: 'constructor', label: 'A', path: '/a' },
+      `icon "constructor" is neither`,
+    ],
+    [
       'an unmapped component path',
       { icon: './Missing#Icon', label: 'A', path: '/a' },
       `icon "./Missing#Icon" is neither`,
