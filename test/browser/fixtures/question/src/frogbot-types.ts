@@ -776,6 +776,7 @@ export interface Task {
   status?: ('backlog' | 'done') | null;
   channel?: string | null;
   dueAt?: string | null;
+  endsAt?: string | null;
   labels?:
     ('gray' | 'blue' | 'green' | 'yellow' | 'red' | 'pink' | 'purple')[] | null;
   /**
@@ -1654,6 +1655,7 @@ export interface TasksSelect {
   status?: boolean;
   channel?: boolean;
   dueAt?: boolean;
+  endsAt?: boolean;
   labels?: boolean;
   progress?: boolean;
   score?: boolean;

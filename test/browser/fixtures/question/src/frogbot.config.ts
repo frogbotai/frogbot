@@ -162,6 +162,7 @@ export default buildConfig({
           {
             type: 'calendar',
             start: 'dueAt',
+            end: 'endsAt',
             defaultFields: [
               'status',
               'channel',
@@ -196,7 +197,8 @@ export default buildConfig({
                 custom: { frogbot: { kind: { type: 'channel' } } },
               },
             },
-            { name: 'dueAt', type: 'date' },
+            { name: 'dueAt', type: 'date', admin: { date: { pickerAppearance: 'dayAndTime' } } },
+            { name: 'endsAt', type: 'date', admin: { date: { pickerAppearance: 'dayAndTime' } } },
           ],
         },
         {

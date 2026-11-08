@@ -302,6 +302,7 @@
   }
   .frog-calendar__more-list .frog-calendar__event {
     cursor: pointer;
+    flex-shrink: 0;
     font-size: 12px;
     position: relative;
   }
