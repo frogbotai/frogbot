@@ -4,6 +4,7 @@ import './styles.css';
 
 import {
   Button,
+  Checkbox,
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -222,6 +223,12 @@ export function ApiKeysManager(props: ApiKeysManagerProps) {
   );
 }
 
+function madeLabel(count: number | null) {
+  if (count === null) return 'Also revoke the keys it made';
+
+  return count === 1 ? 'Also revoke the key it made' : `Also revoke the ${count} keys it made`;
+}
+
 export function RevokeApiKey({
   rowData,
 }: {
@@ -230,22 +237,54 @@ export function RevokeApiKey({
   const { config } = useConfig();
   const { collectionSlug } = useListQuery();
   const { clearRouteCache } = useRouteCache();
+  const cascadeId = useId();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [revoked, setRevoked] = useState(false);
   const [error, setError] = useState<string>();
+  const [made, setMade] = useState<number | null>(0);
+  const [cascade, setCascade] = useState(true);
+
+  async function countMade() {
+    const query = new URLSearchParams({
+      'where[mintedBy][equals]': String(rowData.id),
+      'where[revokedAt][exists]': 'false',
+      limit: '1',
+      depth: '0',
+    });
+
+    try {
+      const response = await fetch(`${config.routes.api}/${collectionSlug}?${query}`);
+      const result = (await response.json()) as { totalDocs?: unknown };
+
+      setMade(response.ok && typeof result.totalDocs === 'number' ? result.totalDocs : null);
+    } catch {
+      setMade(null);
+    }
+  }
 
   function changeOpen(next: boolean) {
-    if (next) setError(undefined);
+    if (next) {
+      setError(undefined);
+      setMade(0);
+      setCascade(true);
+      void countMade();
+    }
 
     setOpen(next);
   }
+
+  const asksCascade = made !== 0;
 
   async function revoke() {
     setLoading(true);
     setError(undefined);
     const response = await fetch(`${config.routes.api}/${collectionSlug}/${rowData.id}/revoke`, {
       method: 'POST',
+      ...(asksCascade && {
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ cascade }),
+      }),
     });
 
     setLoading(false);
@@ -276,6 +315,17 @@ export function RevokeApiKey({
           This will immediately disable {rowData.name ?? 'this key'}. Any scripts or tools using
           this key will stop working. This cannot be undone.
         </DialogDescription>
+        {asksCascade ? (
+          <div className="api-keys-dialog__cascade">
+            <Checkbox
+              checked={cascade}
+              disabled={loading}
+              id={cascadeId}
+              onCheckedChange={(checked) => setCascade(checked === true)}
+            />
+            <Label htmlFor={cascadeId}>{madeLabel(made)}</Label>
+          </div>
+        ) : null}
         {error ? (
           <p className="api-keys-dialog__error" role="alert">
             {error}

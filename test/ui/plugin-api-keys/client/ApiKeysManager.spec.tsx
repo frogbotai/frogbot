@@ -191,8 +191,24 @@ describe('API key controls', () => {
     expect(clearRouteCache).not.toHaveBeenCalled();
   });
 
-  it('confirms before revoking an active key', async () => {
-    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+  function keysMade(totalDocs: number | null, revoke: Partial<Response> = { ok: true }) {
+    vi.mocked(fetch).mockImplementation((input) =>
+      Promise.resolve(
+        String(input).endsWith('/revoke')
+          ? (revoke as Response)
+          : ({
+              ok: totalDocs !== null,
+              json: () => Promise.resolve(totalDocs === null ? {} : { totalDocs }),
+            } as Response),
+      ),
+    );
+  }
+
+  const revokeCalls = () =>
+    vi.mocked(fetch).mock.calls.filter(([input]) => String(input).endsWith('/revoke'));
+
+  it('confirms before revoking an active key, with no body when it made no keys', async () => {
+    keysMade(0);
     render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
@@ -203,7 +219,14 @@ describe('API key controls', () => {
         'This will immediately disable Deploy. Any scripts or tools using this key will stop working. This cannot be undone.',
       ),
     ).toBeTruthy();
-    expect(fetch).not.toHaveBeenCalled();
+    expect(revokeCalls()).toEqual([]);
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/api-keys?where%5BmintedBy%5D%5Bequals%5D=key-1&where%5BrevokedAt%5D%5Bexists%5D=false&limit=1&depth=0',
+    );
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+
+    expect(screen.queryByRole('checkbox')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Revoke key' }));
 
@@ -211,14 +234,63 @@ describe('API key controls', () => {
 
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(clearRouteCache).toHaveBeenCalled();
-    expect(fetch).toHaveBeenCalledWith('/api/api-keys/key-1/revoke', { method: 'POST' });
+    expect(revokeCalls()).toEqual([['/api/api-keys/key-1/revoke', { method: 'POST' }]]);
+  });
+
+  it('offers to revoke the keys it made, checked by default', async () => {
+    keysMade(2);
+    render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
+
+    const checkbox = await screen.findByRole('checkbox', {
+      name: 'Also revoke the 2 keys it made',
+    });
+
+    expect(checkbox.getAttribute('aria-checked')).toBe('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke key' }));
+
+    await waitFor(() => expect(screen.getByText('Revoked')).toBeTruthy());
+
+    expect(revokeCalls()).toEqual([
+      [
+        '/api/api-keys/key-1/revoke',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ cascade: true }),
+        },
+      ],
+    ]);
+  });
+
+  it('keeps the keys it made when the box is cleared', async () => {
+    keysMade(1);
+    render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Also revoke the key it made' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke key' }));
+
+    await waitFor(() => expect(screen.getByText('Revoked')).toBeTruthy());
+
+    expect(revokeCalls()[0]?.[1]).toMatchObject({ body: JSON.stringify({ cascade: false }) });
+  });
+
+  it('still offers the box, checked, when the count fails', async () => {
+    keysMade(null);
+    render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
+
+    const checkbox = await screen.findByRole('checkbox', { name: 'Also revoke the keys it made' });
+
+    expect(checkbox.getAttribute('aria-checked')).toBe('true');
   });
 
   it('keeps the revoke dialog open with the error when revoking fails', async () => {
-    vi.mocked(fetch).mockResolvedValue({
-      ok: false,
-      json: () => Promise.resolve({ error: 'Key is in use' }),
-    } as Response);
+    keysMade(0, { ok: false, json: () => Promise.resolve({ error: 'Key is in use' }) });
 
     render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
 
@@ -230,14 +302,18 @@ describe('API key controls', () => {
     expect(clearRouteCache).not.toHaveBeenCalled();
   });
 
-  it('cancels revocation without calling the endpoint', () => {
+  it('cancels revocation without calling the revoke endpoint', async () => {
+    keysMade(0);
     render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(fetch).not.toHaveBeenCalled();
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+
+    expect(revokeCalls()).toEqual([]);
     expect(screen.getByRole('button', { name: 'Revoke' })).toBeTruthy();
   });
 

@@ -1,4 +1,4 @@
-import { expect, type Page, test, type TestInfo } from '@playwright/test';
+import { expect, type Page, request, test, type TestInfo } from '@playwright/test';
 
 import { setAdminTheme } from './__helpers/adminTheme';
 import { apiKeysSlug } from './fixtures/question/shared';
@@ -129,6 +129,91 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(row).toContainText('Revoked');
   });
 }
+
+test('revokes a key that made keys and keeps them when the box is cleared', async ({
+  page,
+}, testInfo) => {
+  const stamp = Date.now();
+  const name = `Browser parent key ${stamp}`;
+  const childName = `Browser minted key ${stamp}`;
+  const parentRow = () => page.getByRole('row').filter({ hasText: name, hasNotText: childName });
+
+  await page.goto(`/collections/${apiKeysSlug}`);
+
+  const minted = await page.request.post(`/api/${apiKeysSlug}/mint`, {
+    data: { name, data: { canMint: true } },
+  });
+
+  expect(minted.status()).toBe(201);
+
+  const parent = (await minted.json()) as { token: string };
+  const asKey = await request.newContext({
+    baseURL: new URL(page.url()).origin,
+    extraHTTPHeaders: { Authorization: `Bearer ${parent.token}` },
+  });
+
+  const child = await asKey.post(`/api/${apiKeysSlug}/mint`, {
+    data: { name: childName },
+  });
+
+  expect(child.status()).toBe(201);
+
+  for (const [width, theme] of [
+    [1280, 'light'],
+    [375, 'light'],
+    [375, 'dark'],
+  ] as const) {
+    await setAdminTheme(page, theme);
+    await page.emulateMedia({ colorScheme: theme });
+    await page.setViewportSize({ width, height: 800 });
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+
+    await parentRow().getByRole('button', { name: 'Revoke', exact: true }).click();
+
+    const revoke = page.getByRole('dialog', { name: 'Revoke API Key' });
+    const cascade = revoke.getByRole('checkbox', { name: 'Also revoke the key it made' });
+
+    await expect(cascade).toBeChecked();
+    await attach(page, testInfo, `revoke-cascade-${width}-${theme}`);
+    await revoke.getByRole('button', { name: 'Cancel' }).click();
+    await expect(revoke).toBeHidden();
+  }
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await setAdminTheme(page, 'light');
+  await page.reload();
+  await parentRow().getByRole('button', { name: 'Revoke', exact: true }).click();
+
+  const revoke = page.getByRole('dialog', { name: 'Revoke API Key' });
+
+  await revoke.getByRole('checkbox', { name: 'Also revoke the key it made' }).click();
+  await revoke.getByRole('button', { name: 'Revoke key' }).click();
+  await expect(revoke).toBeHidden();
+
+  await expect(parentRow()).toContainText('Revoked');
+  expect((await asKey.get(`/api/${apiKeysSlug}`)).status()).toBe(403);
+
+  const childToken = ((await child.json()) as { token: string }).token;
+  const asChild = await request.newContext({
+    baseURL: new URL(page.url()).origin,
+    extraHTTPHeaders: { Authorization: `Bearer ${childToken}` },
+  });
+
+  expect((await asChild.get(`/api/${apiKeysSlug}`)).status()).toBe(200);
+  await asChild.dispose();
+
+  await page.reload();
+
+  await expect(
+    page.getByRole('row').filter({ hasText: childName }).getByRole('button', {
+      name: 'Revoke',
+      exact: true,
+    }),
+  ).toBeVisible();
+
+  await asKey.dispose();
+});
 
 test('creates an API key with a monthly cap from the Limits section', async ({
   page,
