@@ -98,7 +98,7 @@ export async function FrogBotNav(props: FrogBotNavProps) {
     docID,
     importMap: payload.importMap,
     params,
-    req,
+    req: frogbotReq,
     viewType,
   });
 

@@ -1,8 +1,8 @@
-import type { NavItemsArgs, RootAdminComponents } from 'frogbot';
+import type { IconName, NavItemsArgs, RootAdminComponents } from 'frogbot';
+import { adminIconNames, rewritePayloadComponent } from 'frogbot/internal';
 import type { ImportMap, PayloadComponent, SanitizedConfig } from 'payload';
 import { parsePayloadComponent } from 'payload/shared';
 
-import { isIconName } from '../../../icons/registry.js';
 import type { NavConfigItem } from './buildNavModel.js';
 
 export type ResolveNavItemsArgs = {
@@ -30,15 +30,16 @@ function validateItem(item: unknown, index: number, importMap: ImportMap): NavCo
     throw new Error(`${at} ('${value.label}'): it needs a path.`);
   }
 
-  const { icon } = value;
+  const icon = rewritePayloadComponent(value.icon);
+  const isName = typeof icon === 'string' && adminIconNames.includes(icon as IconName);
 
-  if (icon && !(typeof icon === 'string' && isIconName(icon)) && !isMapped(icon, importMap)) {
+  if (icon && !isName && !isMapped(icon, importMap)) {
     throw new Error(
-      `${at} ('${value.label}'): icon ${JSON.stringify(icon)} is neither a built-in icon name nor a component path in the import map.`,
+      `${at} ('${value.label}'): icon ${JSON.stringify(value.icon)} is neither a built-in icon name nor a component path in the import map.`,
     );
   }
 
-  return value as NavConfigItem;
+  return (icon ? { ...value, icon } : value) as NavConfigItem;
 }
 
 /** The sidebar links for this render: the static `navItems`, or the function's validated result. */

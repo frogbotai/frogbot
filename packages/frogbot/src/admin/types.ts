@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import type { CustomComponent, Params, PayloadRequest, ViewTypes } from 'payload';
+import type { CustomComponent, Params, ViewTypes } from 'payload';
 
 import type { Access } from '../collections/config/types.js';
 import type { RootLivePreviewConfig } from '../config/types.js';
 import type { PayloadConfig } from '../types/payload.js';
+import type { FrogBotRequest } from '../types/request.js';
 import type { IconName } from './icons.js';
 import type { DashboardConfig } from './views/types.js';
 
@@ -42,7 +43,8 @@ export interface NavItemsArgs {
   docID?: number | string;
   /** The route params of the admin page, such as `segments`. */
   params?: Params;
-  req?: PayloadRequest;
+  /** The request, with `req.frogbot` attached. */
+  req?: FrogBotRequest;
   /** The kind of admin view, such as `document` or `list`. */
   viewType?: ViewTypes;
 }
