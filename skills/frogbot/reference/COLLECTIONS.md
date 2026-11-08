@@ -66,7 +66,7 @@ Every built-in name is a UI icon. Brand logos (`brand-slack`, `brand-visa`) aren
 
 ## Views and done records
 
-`admin.views` lists a collection's views; the first is the default and a list view must come first. Every view renders in one frame with a tab row (icon and label), one toolbar and one empty state. Keep view entries plain data: `filter` is a `Where`, React components go in `components`, and `access` is the only function. Each user's filters, sort, columns, page size and grouping are saved per view, with **Reset to default** in the view menu.
+`admin.views` lists a collection's views; the first is the default and a list view must come first. Every view renders in one frame with a tab row (icon and label), one toolbar and one empty state. Keep view entries plain data: `filter` is a `Where`, React components go in `components`, and `access` is the only function. Each user's filters, sort, columns, page size and grouping are saved per view, with **Reset to default** in the view menu. A list view's `summary` sets each column's default footer total across every page (`count`, `sum`, `avg`, `min`, `max`; numbers take all five, dates `count`, `min` and `max`, other fields `count`); people change it from the footer, and startup fails on an unknown path or a pairing the field can't take.
 
 ```ts
 export const Tasks: CollectionConfig = {
@@ -75,7 +75,7 @@ export const Tasks: CollectionConfig = {
     useAsTitle: 'title',
     useAsDone: 'completed',
     views: [
-      { type: 'list', defaultFields: ['title', 'status', 'dueDate'] },
+      { type: 'list', defaultFields: ['title', 'status', 'dueDate'], summary: { title: 'count' } },
       { type: 'board', groupBy: 'status', icon: 'kanban', filter: { archived: { equals: false } } },
       {
         type: 'calendar',

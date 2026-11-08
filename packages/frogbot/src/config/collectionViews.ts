@@ -1,6 +1,7 @@
 import type { CollectionConfig as PayloadCollectionConfig, PayloadComponent } from 'payload';
 
 import { validateAdminIcon } from '../admin/icons.js';
+import { SUMMARY_OPERATIONS, type SummaryKind } from '../admin/views/summary.js';
 import type { CollectionView, CollectionViewMetadata } from '../admin/views/types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { Field, TabAsField } from '../fields/config/types.js';
@@ -80,6 +81,59 @@ function validateUseAsDone(collection: CollectionConfig): void {
   }
 }
 
+function getConfigSummaryKind(
+  collection: CollectionConfig,
+  path: string,
+): SummaryKind | 'guarded' | undefined {
+  if (path === 'id') return 'other';
+
+  if ((path === 'createdAt' || path === 'updatedAt') && collection.timestamps !== false) {
+    return 'date';
+  }
+
+  const field = resolveDoneField(collection.fields, path);
+
+  if (!field || !('name' in field)) return undefined;
+
+  if (('hidden' in field && field.hidden === true) || ('access' in field && field.access?.read)) {
+    return 'guarded';
+  }
+
+  if ('virtual' in field && field.virtual) return 'other';
+
+  if (field.type === 'number' && !field.hasMany) return 'number';
+
+  return field.type === 'date' ? 'date' : 'other';
+}
+
+function validateSummary(collection: CollectionConfig, view: CollectionView & { slug: string }) {
+  if (view.type !== 'list' || view.summary === undefined) return;
+
+  const prefix = `[frogbot] Collection "${collection.slug}" list view "${view.slug}" summary`;
+
+  if (!view.summary || typeof view.summary !== 'object' || Array.isArray(view.summary)) {
+    throw new Error(`${prefix} must be an object of field paths to operations.`);
+  }
+
+  for (const [path, operation] of Object.entries(view.summary)) {
+    const kind = getConfigSummaryKind(collection, path);
+
+    if (!kind) throw new Error(`${prefix} names "${path}", which is not a field.`);
+
+    if (kind === 'guarded') {
+      throw new Error(
+        `${prefix} names "${path}", which is hidden or has its own access.read, so it can't be totaled.`,
+      );
+    }
+
+    if (!SUMMARY_OPERATIONS[kind].includes(operation)) {
+      throw new Error(
+        `${prefix} sets "${path}" to "${String(operation)}": a ${kind === 'other' ? 'field that is not a number or date' : `${kind} field`} takes ${SUMMARY_OPERATIONS[kind].join(', ')}.`,
+      );
+    }
+  }
+}
+
 function containsFunction(value: unknown): boolean {
   if (typeof value === 'function') return true;
   if (!value || typeof value !== 'object') return false;
@@ -145,6 +199,7 @@ export function compileCollectionViews({
 
   for (const view of views) {
     validateAdminIcon(view.icon);
+    validateSummary(collection, view);
 
     if (containsFunction(view.filter)) {
       throw new Error(

@@ -1,5 +1,7 @@
 export { appIconURL, appManifestURL } from '../admin/appIcon/urls.js';
 export { isFrogBotSettingsView } from '../admin/config/sanitize.js';
+export type { SummaryKind } from '../admin/views/summary.js';
+export { getSummaryKind, SUMMARY_OPERATIONS } from '../admin/views/summary.js';
 export { executeAuthStrategy } from '../auth/executeAuthStrategy.js';
 export { checkLockfile, findAppRoot } from '../bin/deploy/appRoot.js';
 export { DeployError } from '../bin/deploy/error.js';

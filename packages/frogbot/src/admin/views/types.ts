@@ -6,6 +6,7 @@ import type { FrogBotTypes } from '../../types/generated.js';
 import type { Sort, Where } from '../../types/payload.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import type { AdminIcon, FrogBotComponent } from '../types.js';
+import type { SummaryOperation } from './summary.js';
 
 type WithoutPayload<T> = Omit<T, 'payload'>;
 
@@ -48,6 +49,12 @@ export type ListView = ViewConfig & {
     afterTable?: FrogBotComponent[];
     beforeTable?: FrogBotComponent[];
   };
+  /**
+   * Each column's default footer total, keyed by field path, such as `{ amount: 'sum' }`. Number
+   * fields take every operation, date fields `count`, `min` and `max`, other fields `count`.
+   * People can change a column's total; their choice is saved per user and view.
+   */
+  summary?: Record<string, SummaryOperation>;
   type: 'list';
 };
 
