@@ -15,7 +15,7 @@ type Case = {
   replies?: Record<string, Reply>;
 };
 
-const project = { id: 7, name: 'Deals', slug: 'deals', workspace: 1, startedAt: null };
+const app = { id: 7, name: 'Deals', slug: 'deals', workspace: 1, startedAt: null };
 const member = { id: 3, email: 'ada@example.com', role: 'member' };
 const workspace = { id: 1, name: 'Trend Capital', slug: 'trend-capital' };
 
@@ -65,31 +65,31 @@ const cases: Case[] = [
   },
   {
     args: ['apps', 'list', '--workspace', 'trend-capital'],
-    route: 'GET /api/projects',
+    route: 'GET /api/apps',
     search: 'where[workspace][equals]=1',
-    replies: { 'GET /api/projects': { body: { docs: [project] } } },
+    replies: { 'GET /api/apps': { body: { docs: [app] } } },
   },
-  { args: ['apps', 'get', 'deals'], route: 'GET /api/apps/deals' },
+  { args: ['apps', 'get', 'deals'], route: 'GET /api/apps/deals/cli' },
   {
     args: ['apps', 'create', 'Deal Flow'],
-    route: 'POST /api/projects',
+    route: 'POST /api/apps',
     body: { name: 'Deal Flow', slug: 'deal-flow', workspace: 1 },
   },
   {
     args: ['apps', 'rename', 'deals', 'Deal Room'],
-    route: 'PATCH /api/projects/7',
+    route: 'PATCH /api/apps/7',
     body: { name: 'Deal Room' },
-    replies: { 'PATCH /api/projects/7': { body: { doc: { ...project, name: 'Deal Room' } } } },
+    replies: { 'PATCH /api/apps/7': { body: { doc: { ...app, name: 'Deal Room' } } } },
   },
   {
     args: ['apps', 'delete', 'deals', '--yes'],
-    route: 'DELETE /api/projects/7',
-    replies: { 'DELETE /api/projects/7': { body: { doc: project } } },
+    route: 'DELETE /api/apps/7',
+    replies: { 'DELETE /api/apps/7': { body: { doc: app } } },
   },
   {
     args: ['deployments', 'list', 'deals'],
     route: 'GET /api/deployments',
-    search: 'where[project][equals]=7',
+    search: 'where[app][equals]=7',
     replies: {
       'GET /api/deployments': {
         body: { docs: [{ id: 7, status: 'ready', createdAt: '2026-11-07T00:00:00Z' }] },
@@ -155,9 +155,9 @@ const cases: Case[] = [
   },
   {
     args: ['sharing', 'list', 'deals'],
-    route: 'GET /api/projects/7/sharing',
+    route: 'GET /api/apps/7/sharing',
     replies: {
-      'GET /api/projects/7/sharing': {
+      'GET /api/apps/7/sharing': {
         body: {
           url: 'https://deals.frogbot.app',
           shares: [{ id: 1, email: 'ada@example.com', level: 'editor', invited: true, you: false }],
@@ -167,20 +167,20 @@ const cases: Case[] = [
   },
   {
     args: ['sharing', 'invite', 'deals', 'ada@example.com', 'bo@example.com', '--level', 'editor'],
-    route: 'POST /api/projects/7/invite',
+    route: 'POST /api/apps/7/invite',
     body: { emails: 'ada@example.com, bo@example.com', level: 'editor' },
     replies: {
-      'POST /api/projects/7/invite': {
+      'POST /api/apps/7/invite': {
         body: { created: ['ada@example.com'], existing: ['bo@example.com'], failed: [] },
       },
     },
   },
   {
     args: ['sharing', 'leave', 'deals', '--yes'],
-    route: 'DELETE /api/projects/7/sharing/me',
+    route: 'DELETE /api/apps/7/sharing/me',
     replies: {
-      'GET /api/projects': { body: { docs: [project] } },
-      'DELETE /api/projects/7/sharing/me': { body: { removed: true } },
+      'GET /api/apps': { body: { docs: [app] } },
+      'DELETE /api/apps/7/sharing/me': { body: { removed: true } },
     },
   },
   {
@@ -210,6 +210,12 @@ const cases: Case[] = [
     },
   },
   { args: ['keys', 'revoke', '100', '--yes'], route: 'POST /api/api-keys/100/revoke' },
+  { args: ['keys', 'revoke', '100', '--cascade', '--yes'], route: 'POST /api/api-keys/100/revoke' },
+  {
+    args: ['keys', 'revoke', '100', '--no-cascade', '--yes'],
+    route: 'POST /api/api-keys/100/revoke',
+    body: { cascade: false },
+  },
   { args: ['billing', 'status'], route: 'GET /api/workspaces/1' },
   {
     args: ['billing', 'manage'],
@@ -230,7 +236,7 @@ async function setup(replies: Record<string, Reply> = {}) {
 
   dojo.tokens.set('fb_env', 100);
   dojo.level = 'owner';
-  dojo.projects.push({ id: 7, name: 'Deals', slug: 'deals', workspace: 1 });
+  dojo.apps.push({ id: 7, name: 'Deals', slug: 'deals', workspace: 1 });
   dojo.build = { lines: ['step 1'], status: 'ready' };
 
   for (const [route, reply] of Object.entries(replies)) dojo.replies.set(route, reply);
@@ -351,6 +357,10 @@ describe('frogbot dojo <noun> <verb>', () => {
     [['apps', 'get', '..'], '".." can\'t name anything on Dojo.'],
     [['keys', 'revoke', '..', '--yes'], '".." can\'t name anything on Dojo.'],
     [['keys', 'revoke', '.', '--yes'], '"." can\'t name anything on Dojo.'],
+    [
+      ['keys', 'revoke', '5', '--cascade', '--no-cascade', '--yes'],
+      'Pass --cascade or --no-cascade, not both.',
+    ],
     [['deployments', 'logs', '..'], '".." can\'t name anything on Dojo.'],
     [['deployments', 'logs', '..', '--follow'], '".." can\'t name anything on Dojo.'],
   ])('exits 2 before calling Dojo for %j', async (args, message) => {
@@ -359,11 +369,21 @@ describe('frogbot dojo <noun> <verb>', () => {
 
     expect(await runDojo(args, result.io)).toBe(2);
     expect(result.stderr()[0]).toContain(message);
-    expect(dojo.requests.filter(({ path }) => path !== '/api/apps/deals')).toEqual([]);
+    expect(dojo.requests.filter(({ path }) => path !== '/api/apps/deals/cli')).toEqual([]);
+  });
+
+  it('refuses --cascade with --no-cascade before asking to confirm', async () => {
+    const { dojo, env, cwd } = await setup();
+    const result = testIO({ cwd, env, isTTY: true, confirm: true });
+
+    expect(await runDojo(['keys', 'revoke', '5', '--cascade', '--no-cascade'], result.io)).toBe(2);
+    expect(result.stderr()[0]).toContain('Pass --cascade or --no-cascade, not both.');
+    expect(result.asked).toEqual([]);
+    expect(dojo.requests).toEqual([]);
   });
 
   it.each([
-    [['apps', 'get', 'a/b?c'], 'GET /api/apps/a%2Fb%3Fc'],
+    [['apps', 'get', 'a/b?c'], 'GET /api/apps/a%2Fb%3Fc/cli'],
     [['deployments', 'logs', '7?x=1', '--follow'], 'GET /api/deployments/7%3Fx%3D1/logs'],
     [
       ['deployments', 'logs', '../projects/7', '--follow'],
@@ -381,8 +401,8 @@ describe('frogbot dojo <noun> <verb>', () => {
   it("refuses digits that are one app's id and another app's slug", async () => {
     const { dojo, env, cwd } = await setup();
 
-    dojo.projects.push({ id: 2024, name: 'Production', slug: 'prod', workspace: 1 });
-    dojo.projects.push({ id: 9, name: '2024', slug: '2024', workspace: 1 });
+    dojo.apps.push({ id: 2024, name: 'Production', slug: 'prod', workspace: 1 });
+    dojo.apps.push({ id: 9, name: '2024', slug: '2024', workspace: 1 });
 
     const result = testIO({ cwd, env });
 
@@ -394,7 +414,7 @@ describe('frogbot dojo <noun> <verb>', () => {
   });
 
   it.each([
-    ['apps', '/api/projects'],
+    ['apps', '/api/apps'],
     ['keys', '/api/api-keys'],
     ['members', '/api/members'],
     ['workspaces', '/api/workspaces'],
@@ -404,7 +424,7 @@ describe('frogbot dojo <noun> <verb>', () => {
 
     const page = (n: number) => ({
       body: {
-        docs: [{ ...project, ...member, ...workspace, id: n, slug: `s${n}`, createdAt: 'x' }],
+        docs: [{ ...app, ...member, ...workspace, id: n, slug: `s${n}`, createdAt: 'x' }],
         hasNextPage: n < 3,
       },
     });

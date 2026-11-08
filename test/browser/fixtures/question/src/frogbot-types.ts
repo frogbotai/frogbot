@@ -73,6 +73,9 @@ export interface Config {
     projects: Project;
     tags: Tag;
     secrets: Secret;
+    stories: Story;
+    approvals: Approval;
+    archives: Archive;
     timesheets: Timesheet;
     'api-keys': ApiKey;
     'usage-logs': UsageLog;
@@ -90,6 +93,9 @@ export interface Config {
     projects: ProjectsSelect;
     tags: TagsSelect;
     secrets: SecretsSelect;
+    stories: StoriesSelect;
+    approvals: ApprovalsSelect;
+    archives: ArchivesSelect;
     timesheets: TimesheetsSelect;
     'api-keys': ApiKeysSelect;
     'usage-logs': UsageLogsSelect;
@@ -898,6 +904,67 @@ export interface Secret {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stories".
+ */
+export interface Story {
+  id: number;
+  _order?: string | null;
+  title: string;
+  status?: ('todo' | 'doing' | 'done') | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "approvals".
+ */
+export interface Approval {
+  id: number;
+  _order?: string | null;
+  title: string;
+  status?: ('todo' | 'doing' | 'done') | null;
+  approver: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "archives".
+ */
+export interface Archive {
+  id: number;
+  _order?: string | null;
+  title?: string | null;
+  status?: ('todo' | 'doing' | 'done') | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "timesheets".
  */
 export interface Timesheet {
@@ -932,6 +999,10 @@ export interface ApiKey {
   tokenHash: string;
   lastUsedAt?: string | null;
   revokedAt?: string | null;
+  /**
+   * The key stops working at this time. Empty when it never expires.
+   */
+  expiresAt?: string | null;
   /**
    * Requests made with this key can mint and rotate keys no broader than it.
    */
@@ -1723,6 +1794,46 @@ export interface SecretsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stories_select".
+ */
+export interface StoriesSelect {
+  _order?: boolean;
+  title?: boolean;
+  status?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "approvals_select".
+ */
+export interface ApprovalsSelect {
+  _order?: boolean;
+  title?: boolean;
+  status?: boolean;
+  approver?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "archives_select".
+ */
+export interface ArchivesSelect {
+  _order?: boolean;
+  title?: boolean;
+  status?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "timesheets_select".
  */
 export interface TimesheetsSelect {
@@ -1746,6 +1857,7 @@ export interface ApiKeysSelect {
   tokenHash?: boolean;
   lastUsedAt?: boolean;
   revokedAt?: boolean;
+  expiresAt?: boolean;
   canMint?: boolean;
   mintedBy?: boolean;
   totalCostUSD?: boolean;
@@ -1909,6 +2021,9 @@ export interface CollectionQueryWidget {
       | 'projects'
       | 'tags'
       | 'secrets'
+      | 'stories'
+      | 'approvals'
+      | 'archives'
       | 'timesheets'
       | 'api-keys'
       | 'usage-logs'
@@ -1942,6 +2057,9 @@ export interface ActivityWidget {
           | 'projects'
           | 'tags'
           | 'secrets'
+          | 'stories'
+          | 'approvals'
+          | 'archives'
           | 'timesheets'
           | 'api-keys'
           | 'usage-logs'

@@ -248,7 +248,10 @@ describe('blank scaffold output', () => {
 
     for (const file of ['src/frogbot.config.ts', 'package.json', '.env.example']) {
       const filepath = path.join(dest, file);
-      const source = fs.readFileSync(filepath, 'utf8');
+      const source = fs
+        .readFileSync(filepath, 'utf8')
+        .replace(/^(\s*"version": )"[^"]*"/m, '$1"<release>"');
+
       const output = file.endsWith('.env.example')
         ? source
         : await prettier.format(source, {

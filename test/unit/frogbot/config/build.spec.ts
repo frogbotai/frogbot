@@ -445,6 +445,10 @@ describe('frogbot buildConfig', () => {
   });
 
   describe('sanitization passthrough', () => {
+    it('defaults custom to {} like the docs and Payload', async () => {
+      expect((await buildConfig(makeConfig())).custom).toEqual({});
+    });
+
     it('moves admin.settings collections out of Payload groups only with the FrogBot Settings view', async () => {
       const collections: CollectionConfig[] = [
         {

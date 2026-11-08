@@ -1,11 +1,12 @@
 import type { Page } from '@playwright/test';
 
 /**
- * Deletes the signed-in user's saved setup for a collection view, so a filter a test opened by
+ * Deletes the signed-in user's saved setup and collapsed groups for a collection view, so a filter a test opened by
  * URL isn't restored for the specs that follow on the same server.
  */
 export async function forgetViewSetup(page: Page, collectionSlug: string, viewSlug = 'list') {
-  await page.request.delete(
-    `/api/payload-preferences/collection-${collectionSlug}-view-${viewSlug}`,
-  );
+  const key = `collection-${collectionSlug}-view-${viewSlug}`;
+
+  await page.request.delete(`/api/payload-preferences/${key}`);
+  await page.request.delete(`/api/payload-preferences/${key}:groups`);
 }

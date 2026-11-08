@@ -1,4 +1,8 @@
 @layer frogbot {
+  .collection-view--calendar .group-by-control {
+    display: none;
+  }
+
   .view-controls__sort .sort-builder {
     margin-top: var(--spacer-2);
   }

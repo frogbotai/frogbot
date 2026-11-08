@@ -232,6 +232,13 @@ describe('releaseNotes', () => {
     expect(notes({ version: undefined, to: 'HEAD~0' }).split('\n')[0]).toContain('...v1.1.0');
   });
 
+  it('refuses when release tags exist but none is an ancestor, as after a history rewrite', () => {
+    git('checkout', '-q', '--orphan', 'rewritten');
+    commit('chore: start again');
+
+    expect(() => notes()).toThrow('git fetch --tags --force origin');
+  });
+
   it('lists every commit under a plain heading when there is no earlier tag', () => {
     git('tag', '-d', 'v1.0.0');
     commit('fix: second');

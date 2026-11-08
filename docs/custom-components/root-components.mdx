@@ -47,7 +47,7 @@ export default buildConfig({
 | `chat` | `{ Chat?, Greeting?, AssistantMessageActions?, UserMessageActions? }` | Built-in chat components | Admin chat slots; each value is a `FrogBotComponent`. See [Chat](#chat). |
 | `graphics` | `{ Icon?: FrogBotComponent, Logo?: FrogBotComponent }` | FrogBot head mark and wordmark | `Icon` replaces the compact mark in navigation. `Logo` replaces the full mark on the login page and the empty-chat greeting fallback. |
 | `Nav` | `FrogBotComponent` | FrogBot sidebar | Replaces the complete sidebar navigation. See [Replace the sidebar](/admin/admin-navigation#replace-the-sidebar). |
-| `navItems` | `NavItem[]` | `[]` | Links above your collections. See [Navigation item options](/admin/admin-navigation#navigation-item-options). |
+| `navItems` | `NavItem[] \| NavItemsFunction` | `[]` | Links above your collections, or a function of the current page that returns them. See [Links that depend on the page](/admin/admin-navigation#links-that-depend-on-the-page). |
 | `navSections` | `FrogBotComponent[]` | `['@frogbotai/ui/admin/rsc#CollectionsSection']` | Sidebar sections below the links. Setting it replaces the default array. See [Configure sections](/admin/admin-navigation#configure-sections). |
 | `providers` | `ProviderComponent[]` | `[]` | Components that wrap the Admin Panel and render `children`, outermost first. See [Custom Providers](./custom-providers). |
 | `views` | `Record<string, AdminViewConfig>` | Built-in views, plus a `settings` view at `/settings` | Replaces built-in root views (`account`, `dashboard`, `settings`) or adds routes under any other key. See [View options](./custom-views#view-options). |
@@ -137,7 +137,7 @@ components: {
 }
 ```
 
-Navigation items are empty by default. Setting `navSections` replaces the default Collections section, so include `@frogbotai/ui/admin/rsc#CollectionsSection` to keep it. See [Admin navigation](/admin/admin-navigation) for New Chat and Recents examples.
+Navigation items are empty by default, and `navItems` can be a function of the current page that returns them: see [Links that depend on the page](/admin/admin-navigation#links-that-depend-on-the-page). Setting `navSections` replaces the default Collections section, so include `@frogbotai/ui/admin/rsc#CollectionsSection` to keep it. See [Admin navigation](/admin/admin-navigation) for New Chat and Recents examples.
 
 ### Chat
 
@@ -202,6 +202,8 @@ Root component props:
 | `searchParams` | `Params` | Optional | Query string parameters of the current admin page. |
 | `viewType` | `ViewTypes` | Optional | The kind of view being rendered, such as `'list'` or `'document'`. |
 | `documentSubViewType` | `DocumentSubViewTypes` | Optional | The document sub-view, such as `'default'` or `'versions'`, on document routes. |
+| `collectionSlug` | `string` | Optional | The collection of the current page. Sidebar components only. |
+| `docID` | `string \| number` | Optional | The document being viewed or edited. Sidebar components only. |
 | `id` | `string \| number` | Optional | Part of the shared type; the built-in root slots don't set it. |
 
 `req` is optional:

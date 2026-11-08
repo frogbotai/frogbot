@@ -61,6 +61,22 @@ export type Tool<TSchema extends z.ZodType = z.ZodType, TResult = unknown> = Bas
    * adds no sources.
    */
   sources?: (result: TResult, ctx: ToolCtx) => ToolSource[] | Promise<ToolSource[]>;
+  /** Hints for clients about what a call does. FrogBot doesn't act on them; MCP clients may. */
+  annotations?: ToolAnnotations;
+};
+
+/** What a tool call does, in the shape of MCP's tool annotations. Each field is a hint. */
+export type ToolAnnotations = {
+  /** The name clients show. */
+  title?: string;
+  /** The tool only reads. @default false */
+  readOnlyHint?: boolean;
+  /** The tool may delete or overwrite. Meaningless when `readOnlyHint` is true. @default true */
+  destructiveHint?: boolean;
+  /** Calling it again with the same input does nothing more. @default false */
+  idempotentHint?: boolean;
+  /** The tool reaches outside the app, such as Slack or the web. @default true */
+  openWorldHint?: boolean;
 };
 
 /** A record a tool call drew on. `title` defaults to the `id`. */

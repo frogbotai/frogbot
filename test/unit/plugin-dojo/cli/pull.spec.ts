@@ -49,7 +49,7 @@ async function setup() {
   const dojo = await startFakeDojo();
   const env = { XDG_CONFIG_HOME: await tempDir(), FROGBOT_DOJO_URL: dojo.url };
 
-  dojo.projects.push({ id: 7, name: 'deals', slug: 'deals', workspace: 1 });
+  dojo.apps.push({ id: 7, name: 'deals', slug: 'deals', workspace: 1 });
   dojo.level = 'editor';
   dojo.tokens.set('fb_stored', 100);
   await writeToken(env, dojo.url, 'fb_stored');
@@ -75,7 +75,7 @@ describe('frogbot pull', () => {
     expect(result.code).toBe(0);
     expect(dojo.paths()).toEqual([
       'GET /api/users/me',
-      'GET /api/apps/deals',
+      'GET /api/apps/deals/cli',
       'GET /api/apps/7/source',
     ]);
     expect(await readdir(cwd)).toEqual(['deals']);
@@ -130,7 +130,7 @@ describe('frogbot pull', () => {
     dojo.source = await appTarball();
 
     expect((await run(['7'])).code).toBe(0);
-    expect(dojo.paths()).toContain('GET /api/apps/7');
+    expect(dojo.paths()).toContain('GET /api/apps/7/cli');
     expect(await readdir(cwd)).toEqual(['deals']);
   });
 

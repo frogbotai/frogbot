@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/piece-microsoft-outlook",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "description": "Microsoft Outlook mail, calendar and contacts tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",

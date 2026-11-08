@@ -7,7 +7,7 @@ import {
   type Where,
 } from 'frogbot';
 
-import { apiKeyStrategyName } from '../strategy.js';
+import { apiKeyStrategyName, expiryTime, isExpiredKey } from '../strategy.js';
 import { createApiKeyToken, getApiKeyPrefix, hashApiKeyToken } from './token.js';
 
 export type MintApiKeyOptions = {
@@ -21,6 +21,11 @@ export type MintApiKeyOptions = {
    * key takes its parent's values for them instead.
    */
   data?: Record<string, unknown>;
+  /**
+   * When the key stops working, as an ISO date in the future. Omitted or `null`, it never expires.
+   * A key minted by a key expires no later than its parent.
+   */
+  expiresAt?: string | null;
 };
 
 export type RevokeApiKeyOptions = {
@@ -28,6 +33,11 @@ export type RevokeApiKeyOptions = {
   collectionSlug: string;
   id: string;
   anyOwner?: boolean;
+  /**
+   * Also revoke every key this key minted, down the whole `mintedBy` tree. Defaults to `true`;
+   * `false` revokes only this key and leaves the keys it made working.
+   */
+  cascade?: boolean;
 };
 
 type KeyDocument = Record<string, unknown>;
@@ -54,14 +64,16 @@ export function canMintKeys(req: FrogBotRequest): boolean {
 const keyID = (value: unknown): KeyID | null =>
   typeof value === 'string' || typeof value === 'number' ? value : null;
 
+function requestKey(req: FrogBotRequest) {
+  return isApiKeyRequest(req) ? keyID((req.user as { apiKeyId?: unknown }).apiKeyId) : null;
+}
+
 function requireMinter(req: FrogBotRequest) {
   const owner = req.user?.id;
   if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
   if (!canMintKeys(req)) throw new ApiKeyServiceError('session_required');
 
-  const parent = isApiKeyRequest(req) ? (req.user as { apiKeyId?: unknown }).apiKeyId : undefined;
-
-  return { owner, mintedBy: keyID(parent) };
+  return { owner, mintedBy: requestKey(req) };
 }
 
 const ownFields = new Set([
@@ -74,6 +86,7 @@ const ownFields = new Set([
   'tokenHash',
   'lastUsedAt',
   'revokedAt',
+  'expiresAt',
   'canMint',
   'mintedBy',
   'totalCostUSD',
@@ -140,9 +153,59 @@ export const keyScopeBeforeValidate: CollectionBeforeValidateHook = ({
   return data;
 };
 
-type MintForOwnerOptions = MintApiKeyOptions & {
+const lastExpiry = Date.parse('9999-12-31T23:59:59.999Z');
+
+const isoExpiry =
+  /^([+-]\d{6}|\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-](\d{2}):(\d{2})))?$/;
+
+function parseExpiry(value: string): number | null {
+  const parts = isoExpiry.exec(value);
+
+  if (!parts) return null;
+
+  const [year, month, day, hour, minute, second, zoneHour, zoneMinute] = parts
+    .slice(1)
+    .map((part) => Number(part ?? 0));
+
+  const valid =
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= new Date(Date.UTC(year, month, 0)).getUTCDate() &&
+    hour <= 23 &&
+    minute <= 59 &&
+    second <= 59 &&
+    zoneHour <= 23 &&
+    zoneMinute <= 59;
+
+  return valid ? expiryTime(value) : null;
+}
+
+function resolveExpiry(req: FrogBotRequest, asked: unknown): string | null {
+  let expiresAt: number | null = null;
+
+  if (asked !== undefined && asked !== null) {
+    expiresAt = typeof asked === 'string' ? parseExpiry(asked) : null;
+    if (expiresAt === null) {
+      throw new APIError('expiresAt must be a date, such as 2027-01-31T00:00:00.000Z.', 400);
+    }
+
+    if (expiresAt <= Date.now()) throw new APIError('expiresAt must be in the future.', 400);
+    if (expiresAt > lastExpiry) throw new APIError('expiresAt must be before the year 10000.', 400);
+  }
+
+  const parent = isApiKeyRequest(req) ? (req.user as { apiKey?: KeyDocument }).apiKey : undefined;
+  const cap = expiryTime(parent?.expiresAt);
+
+  if (cap !== null && (expiresAt === null || cap < expiresAt)) expiresAt = cap;
+
+  return expiresAt === null ? null : new Date(expiresAt).toISOString();
+}
+
+type MintForOwnerOptions = Omit<MintApiKeyOptions, 'expiresAt'> & {
   owner: KeyID;
   mintedBy: KeyID | null;
+  expiresAt: string | null;
   context?: Record<string, unknown>;
 };
 
@@ -153,6 +216,7 @@ async function mintForOwner({
   name,
   owner,
   mintedBy,
+  expiresAt,
   data,
   context,
 }: MintForOwnerOptions) {
@@ -168,6 +232,7 @@ async function mintForOwner({
       tokenHash: hashApiKeyToken(token),
       canMint: data?.canMint === true,
       mintedBy,
+      expiresAt,
     },
     overrideAccess: true,
     req,
@@ -181,16 +246,19 @@ async function mintForOwner({
     token,
     canMint: data?.canMint === true,
     mintedBy,
+    expiresAt,
     createdAt: doc.createdAt,
   };
 }
 
 /**
  * Mints a key for the signed-in user. A request made with an API key needs that key's `canMint`,
- * and the new key records it as `mintedBy` and copies its fields from other plugins.
+ * and the new key records it as `mintedBy`, copies its fields from other plugins and expires no
+ * later than it. An `expiresAt` that isn't a future date is refused with a 400.
  */
 export async function mintApiKey(options: MintApiKeyOptions) {
   const { owner, mintedBy } = requireMinter(options.req);
+  const expiresAt = resolveExpiry(options.req, options.expiresAt);
 
   return mintForOwner({
     req: options.req,
@@ -199,6 +267,7 @@ export async function mintApiKey(options: MintApiKeyOptions) {
     name: options.name,
     owner,
     mintedBy,
+    expiresAt,
     data: options.data,
   });
 }
@@ -209,9 +278,16 @@ type FindKeyOptions = RevokeApiKeyOptions & {
   rotator?: KeyID | null;
 };
 
-async function findKey({ req, collectionSlug, id, anyOwner, rotator }: FindKeyOptions) {
+async function findKey({
+  req,
+  collectionSlug,
+  id,
+  anyOwner,
+  rotator = requestKey(req),
+}: FindKeyOptions) {
   const owner = req.user?.id;
   if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
+  if (isApiKeyRequest(req) && rotator == null) throw new ApiKeyServiceError('not_found');
 
   const scope: Where[] = [
     { id: { equals: id } },
@@ -243,8 +319,13 @@ async function findKey({ req, collectionSlug, id, anyOwner, rotator }: FindKeyOp
   return key as RevokedKey;
 }
 
-async function markRevoked(req: FrogBotRequest, collectionSlug: string, key: RevokedKey) {
-  const revokedAt = typeof key.revokedAt === 'string' ? key.revokedAt : new Date().toISOString();
+async function markRevoked(
+  req: FrogBotRequest,
+  collectionSlug: string,
+  key: RevokedKey,
+  now = new Date().toISOString(),
+) {
+  const revokedAt = typeof key.revokedAt === 'string' ? key.revokedAt : now;
 
   await req.frogbot.update({
     collection: collectionSlug,
@@ -257,38 +338,63 @@ async function markRevoked(req: FrogBotRequest, collectionSlug: string, key: Rev
   return revokedAt;
 }
 
-async function revokeMinted(
-  req: FrogBotRequest,
-  collectionSlug: string,
-  id: KeyID,
-  revokedAt: string,
-) {
+async function liveMinted(req: FrogBotRequest, collectionSlug: string, id: KeyID) {
   const seen = new Set<KeyID>([id]);
+  const live: KeyID[] = [];
 
   for (let parents = [id]; parents.length > 0;) {
-    const { docs } = await req.frogbot.update({
+    const { docs } = await req.frogbot.find({
       collection: collectionSlug,
-      where: { and: [{ mintedBy: { in: parents } }, { revokedAt: { exists: false } }] },
-      data: { revokedAt },
+      where: { mintedBy: { in: parents } },
       depth: 0,
+      pagination: false,
       overrideAccess: true,
       req,
     });
 
-    parents = docs
-      .map((doc) => (doc as KeyDocument).id as KeyID)
-      .filter((child) => !seen.has(child));
+    const children = (docs as KeyDocument[]).filter((child) => !seen.has(child.id as KeyID));
 
+    live.push(...children.filter((child) => !child.revokedAt).map((child) => child.id as KeyID));
+    parents = children.map((child) => child.id as KeyID);
     parents.forEach((child) => seen.add(child));
   }
+
+  return live;
 }
 
-/** Revokes the key and every key it minted, down the whole `mintedBy` tree. */
-export async function revokeApiKey(options: RevokeApiKeyOptions) {
+/**
+ * Counts the keys a cascading revoke of the key would also revoke. A key counts only for itself
+ * and the keys it minted; any other key is not found.
+ */
+export async function countMintedApiKeys(options: RevokeApiKeyOptions) {
   const key = await findKey(options);
-  const revokedAt = await markRevoked(options.req, options.collectionSlug, key);
 
-  await revokeMinted(options.req, options.collectionSlug, key.id, revokedAt);
+  return (await liveMinted(options.req, options.collectionSlug, key.id)).length;
+}
+
+/**
+ * Revokes the key and, unless `cascade` is `false`, every live key below it in the `mintedBy`
+ * tree, including keys under a key that was revoked on its own earlier. Those keys get the time of
+ * this revoke. A key revokes only itself and the keys it minted; any other key is not found. A
+ * signed-in session revokes any of its owner's keys.
+ */
+export async function revokeApiKey(options: RevokeApiKeyOptions) {
+  const { req, collectionSlug } = options;
+  const key = await findKey(options);
+  const now = new Date().toISOString();
+  const revokedAt = await markRevoked(req, collectionSlug, key, now);
+  const live = options.cascade === false ? [] : await liveMinted(req, collectionSlug, key.id);
+
+  if (live.length > 0) {
+    await req.frogbot.update({
+      collection: collectionSlug,
+      where: { id: { in: live } },
+      data: { revokedAt: now },
+      depth: 0,
+      overrideAccess: true,
+      req,
+    });
+  }
 
   return { id: key.id, name: key.name, owner: key.owner, revokedAt };
 }
@@ -296,10 +402,11 @@ export async function revokeApiKey(options: RevokeApiKeyOptions) {
 export type RotateApiKeyOptions = RevokeApiKeyOptions & { tokenPrefix: string };
 
 /**
- * Mints a key with the old key's name, owner, `canMint`, `mintedBy` and every field another plugin
- * added, with `req.context.apiKeyRotatedFrom` set to the old key's ID, then moves the keys the old
+ * Mints a key with the old key's name, owner, `canMint`, `mintedBy`, `expiresAt` and every field
+ * another plugin added, with `req.context.apiKeyRotatedFrom` set to the old key's ID, then moves the keys the old
  * one minted to the new one and revokes the old one. A refused mint leaves the old key working. A
- * key rotates only itself and the keys it minted; any other key is not found.
+ * key rotates only itself and the keys it minted; any other key is not found. An expired key is
+ * refused with a 400.
  */
 export async function rotateApiKey({
   req,
@@ -310,7 +417,9 @@ export async function rotateApiKey({
 }: RotateApiKeyOptions) {
   const { mintedBy: rotator } = requireMinter(req);
   const key = await findKey({ req, collectionSlug, id, anyOwner, rotator });
+  if (isExpiredKey(key)) throw new APIError('This key has expired. Mint a new key instead.', 400);
 
+  const expiresAt = expiryTime(key.expiresAt);
   const minted = await mintForOwner({
     req,
     collectionSlug,
@@ -318,6 +427,7 @@ export async function rotateApiKey({
     name: key.name,
     owner: key.owner,
     mintedBy: keyID(key.mintedBy),
+    expiresAt: expiresAt === null ? null : new Date(expiresAt).toISOString(),
     data: key,
     context: { apiKeyRotatedFrom: key.id },
   });

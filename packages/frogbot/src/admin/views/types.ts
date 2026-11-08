@@ -48,6 +48,8 @@ export type ListView = ViewConfig & {
     afterTable?: FrogBotComponent[];
     beforeTable?: FrogBotComponent[];
   };
+  /** The field the list opens grouped by, as on a board. A person's own grouping wins. */
+  groupBy?: string;
   type: 'list';
 };
 

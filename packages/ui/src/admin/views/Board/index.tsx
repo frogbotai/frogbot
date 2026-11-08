@@ -9,6 +9,7 @@ import { getCardThumbnailPopulate, resolveCardThumbnail } from '../cards/thumbna
 import { getActiveViewSlug, resolveCollectionViews, withPageProps } from '../collectionViews.js';
 import { CollectionViewShell } from '../CollectionViewShell.js';
 import { canUpdateField } from '../fieldPermissions.js';
+import { resolveGroupField, resolveGroups } from '../groups/resolve.js';
 import { resolveViewColumnPreferences, type ViewColumnsSource } from '../preferences.js';
 import { resolveViewSetup } from '../viewSetup.js';
 import { BoardViewClient, type BoardViewClientProps } from './BoardView.client.js';
@@ -20,7 +21,6 @@ import {
   resolveBoardSort,
 } from './data.js';
 import { getInlineAdd } from './inlineAdd.js';
-import { resolveBoardField, resolveColumns } from './resolveColumns.js';
 
 export async function BoardView(input: AdminViewServerProps) {
   const props = await withPageProps(input);
@@ -136,9 +136,9 @@ export async function BoardView(input: AdminViewServerProps) {
   const useAsDone = (collectionConfig.admin.custom?.frogbot as { useAsDone?: string } | undefined)
     ?.useAsDone;
 
-  const groupField = resolveBoardField(collectionConfig.fields, groupBy);
+  const groupField = resolveGroupField(collectionConfig.fields, groupBy);
   if (!groupField) return props.server.notFound();
-  const columns = await resolveColumns({
+  const columns = await resolveGroups({
     collectionSlug,
     field: groupField,
     path: groupBy,

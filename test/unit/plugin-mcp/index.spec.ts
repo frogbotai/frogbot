@@ -1,6 +1,7 @@
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { rolesPlugin } from '@frogbotai/plugin-roles';
 import type { FrogBotConfig, Plugin, Tool, ToolCtx } from 'frogbot';
+import { definePiece } from 'frogbot/pieces';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -248,6 +249,127 @@ describe('MCP plugin tools', () => {
       'mathHelper_generateRandomNumber',
     ]);
     expect(Object.keys(toPayloadTools([math.addNumbers]))).toEqual(['mathHelper_addNumbers']);
+  });
+
+  describe('annotations', () => {
+    const createInvoices = definePiece({
+      slug: 'invoices',
+      label: 'Invoices',
+      admin: { description: 'Invoices', group: 'Test' },
+      actions: [
+        {
+          slug: 'remove',
+          description: 'Delete an invoice.',
+          input: z.object({ id: z.string() }),
+          idempotent: true,
+          annotations: { destructiveHint: true },
+          run: () => Promise.resolve({ ok: true }),
+        },
+        {
+          slug: 'lookup',
+          description: 'Look up an invoice.',
+          input: z.object({ id: z.string() }),
+          idempotent: true,
+          annotations: { readOnlyHint: true, idempotentHint: false },
+          run: () => Promise.resolve({ ok: true }),
+        },
+        {
+          slug: 'count',
+          description: 'Count invoices.',
+          input: z.object({}),
+          run: () => Promise.resolve({ ok: true }),
+        },
+      ],
+    });
+
+    it("sends a tool's annotations unchanged, and no key for a tool without them", () => {
+      const tools = toPayloadTools([
+        { ...echo, annotations: { title: 'Echo', readOnlyHint: true } },
+        returning('plain', null),
+      ]);
+
+      expect(tools.echo?.annotations).toEqual({ title: 'Echo', readOnlyHint: true });
+      expect(tools.plain).not.toHaveProperty('annotations');
+    });
+
+    it("gives a piece action its definition's annotations, with idempotent as idempotentHint", () => {
+      const invoices = createInvoices();
+      const fromInstance = toPayloadTools([invoices]);
+      const fromAction = toPayloadTools([invoices.remove]);
+
+      expect(fromInstance.invoices_remove?.annotations).toEqual({
+        destructiveHint: true,
+        idempotentHint: true,
+      });
+      expect(fromInstance.invoices_lookup?.annotations).toEqual({
+        readOnlyHint: true,
+        idempotentHint: false,
+      });
+      expect(fromInstance.invoices_count).not.toHaveProperty('annotations');
+      expect(fromAction.invoices_remove?.annotations).toEqual(
+        fromInstance.invoices_remove?.annotations,
+      );
+    });
+
+    it('fills idempotentHint from idempotent when annotations leaves it undefined', () => {
+      const piece = definePiece({
+        slug: 'undefinedHints',
+        label: 'Undefined hints',
+        admin: { description: 'Undefined hints', group: 'Test' },
+        actions: [
+          {
+            slug: 'lookup',
+            description: 'Look something up.',
+            input: z.object({}),
+            idempotent: true,
+            annotations: { idempotentHint: undefined, readOnlyHint: true, title: undefined },
+            run: () => Promise.resolve(1),
+          },
+        ],
+      })();
+
+      expect(toPayloadTools([piece]).undefinedHints_lookup?.annotations).toStrictEqual({
+        idempotentHint: true,
+        readOnlyHint: true,
+      });
+    });
+
+    it("replaces a piece action's annotations with a spread", () => {
+      const invoices = createInvoices();
+      const tools = toPayloadTools([
+        invoices,
+        { ...invoices.remove, annotations: { openWorldHint: false } },
+      ]);
+
+      expect(tools.invoices_remove?.annotations).toEqual({ openWorldHint: false });
+    });
+  });
+
+  it.each([
+    'app.example.com/.well-known/oauth-protected-resource',
+    '/.well-known/oauth-protected-resource',
+    'ftp://app.example.com/meta',
+    'javascript:alert(1)',
+  ])('rejects resourceMetadataURL %s', (resourceMetadataURL) => {
+    expect(() => mcpPlugin({ resourceMetadataURL })).toThrow(
+      '[plugin-mcp] resourceMetadataURL must be an absolute http(s) URL',
+    );
+  });
+
+  it('rejects a resourceMetadataURL that would break the quoted WWW-Authenticate value', () => {
+    expect(() =>
+      mcpPlugin({
+        resourceMetadataURL: 'https://app"example.com/.well-known/oauth-protected-resource',
+      }),
+    ).toThrow('[plugin-mcp] resourceMetadataURL must not contain " or \\');
+  });
+
+  it('accepts an absolute http(s) resourceMetadataURL', async () => {
+    const result = await mcpPlugin({
+      resourceMetadataURL: 'https://app.example.com/.well-known/oauth-protected-resource',
+    })(await authenticatedConfig());
+
+    expect(result._payloadPlugins?.map(({ slug }) => slug)).toEqual(['@payloadcms/plugin-mcp']);
   });
 
   it('accepts a union of object input schemas', () => {

@@ -39,6 +39,7 @@ describe('API keys collection', () => {
       'tokenHash',
       'lastUsedAt',
       'revokedAt',
+      'expiresAt',
       'canMint',
       'mintedBy',
       'actions',
@@ -70,6 +71,7 @@ describe('API keys collection', () => {
       'tokenHash',
       'lastUsedAt',
       'revokedAt',
+      'expiresAt',
       'canMint',
       'mintedBy',
     ]) {
@@ -81,7 +83,15 @@ describe('API keys collection', () => {
     expect(collection.admin?.views).toEqual([
       {
         type: 'list',
-        defaultFields: ['name', 'prefix', 'mintedBy', 'lastUsedAt', 'revokedAt', 'actions'],
+        defaultFields: [
+          'name',
+          'prefix',
+          'mintedBy',
+          'lastUsedAt',
+          'expiresAt',
+          'revokedAt',
+          'actions',
+        ],
       },
     ]);
     expect(
@@ -114,7 +124,14 @@ describe('API keys collection', () => {
       return field && 'admin' in field ? field.admin : undefined;
     };
 
-    for (const name of ['owner', 'prefix', 'lastUsedAt', 'revokedAt', 'totalCostUSD']) {
+    for (const name of [
+      'owner',
+      'prefix',
+      'lastUsedAt',
+      'revokedAt',
+      'expiresAt',
+      'totalCostUSD',
+    ]) {
       expect(admin(name)).toMatchObject({ position: 'sidebar' });
     }
 
@@ -252,6 +269,78 @@ describe('API keys collection', () => {
     expect(create.mock.calls[0][0].data).toMatchObject({ canMint: false, mintedBy: null });
   });
 
+  it.each([
+    [
+      'an unreadable date',
+      'not a date',
+      'expiresAt must be a date, such as 2027-01-31T00:00:00.000Z.',
+    ],
+    ['a past date', '2020-01-01T00:00:00.000Z', 'expiresAt must be in the future.'],
+    ['a number', 1_900_000_000_000, 'expiresAt must be a date string'],
+  ])('refuses a mint with %s for expiresAt, writing nothing', async (_name, expiresAt, error) => {
+    const collection = await getCollection();
+    const create = vi.fn();
+    const req = {
+      user: { id: 'user-1' },
+      json: () => Promise.resolve({ name: 'CI', expiresAt }),
+      frogbot: { create },
+    } as unknown as FrogBotRequest;
+
+    const mint = collection.endpoints!.find((item) => item.path === '/mint')!;
+    const response = await mint.handler(req);
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('mints with a future expiresAt and answers with it', async () => {
+    const collection = await getCollection();
+    const create = vi.fn().mockResolvedValue({ id: 'key-2', createdAt: 'now' });
+    const expiresAt = new Date(Date.now() + 864e5).toISOString();
+    const req = {
+      user: { id: 'user-1' },
+      json: () => Promise.resolve({ name: 'CI', expiresAt }),
+      frogbot: { create },
+    } as unknown as FrogBotRequest;
+
+    const mint = collection.endpoints!.find((item) => item.path === '/mint')!;
+    const response = await mint.handler(req);
+
+    expect(response.status).toBe(201);
+    expect(await response.json()).toMatchObject({ id: 'key-2', expiresAt });
+    expect(create.mock.calls[0][0].data).toMatchObject({ expiresAt });
+  });
+
+  it('refuses to rotate an expired key, leaving it untouched', async () => {
+    const collection = await getCollection();
+    const create = vi.fn();
+    const update = vi.fn();
+    const req = {
+      user: { id: 'user-1' },
+      routeParams: { id: 'key-1' },
+      frogbot: {
+        find: vi.fn().mockResolvedValue({
+          docs: [
+            { id: 'key-1', name: 'Deploy', owner: 'user-1', expiresAt: '2020-01-01T00:00:00.000Z' },
+          ],
+        }),
+        create,
+        update,
+      },
+    } as unknown as FrogBotRequest;
+
+    const rotate = collection.endpoints!.find((item) => item.path === '/:id/rotate')!;
+    const response = await rotate.handler(req);
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: 'This key has expired. Mint a new key instead.',
+    });
+    expect(create).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
+  });
+
   it('shows attributed usage cost in list and document views', async () => {
     const config = makeConfig();
     config.ai = { providers: { openai: { apiKey: 'test' } } };
@@ -317,6 +406,46 @@ describe('API keys collection', () => {
     expect((req.frogbot.find as ReturnType<typeof vi.fn>).mock.calls[0][0].where).toEqual({
       and: [{ id: { equals: 'key-1' } }, { owner: { equals: 'user-1' } }],
     });
+  });
+
+  it.each([
+    [undefined, 2],
+    [{ cascade: true }, 2],
+    [{ cascade: false }, 1],
+  ])('reads cascade %j from the revoke body', async (body, finds) => {
+    const collection = await getCollection();
+    const find = vi
+      .fn()
+      .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] });
+
+    const req = {
+      user: { id: 'user-1', roles: ['member'] },
+      routeParams: { id: 'key-1' },
+      text: body === undefined ? undefined : () => Promise.resolve(JSON.stringify(body)),
+      frogbot: { find, update: vi.fn().mockResolvedValue({}) },
+    } as unknown as FrogBotRequest;
+
+    const endpoint = collection.endpoints!.find((item) => item.path === '/:id/revoke')!;
+
+    expect((await endpoint.handler(req)).status).toBe(200);
+    expect(find).toHaveBeenCalledTimes(finds);
+  });
+
+  it('refuses a revoke whose cascade is not a boolean', async () => {
+    const collection = await getCollection();
+    const find = vi.fn();
+    const req = {
+      user: { id: 'user-1', roles: ['member'] },
+      routeParams: { id: 'key-1' },
+      text: () => Promise.resolve(JSON.stringify({ cascade: 'no' })),
+      frogbot: { find, update: vi.fn() },
+    } as unknown as FrogBotRequest;
+
+    const endpoint = collection.endpoints!.find((item) => item.path === '/:id/revoke')!;
+    const response = await endpoint.handler(req);
+
+    expect(response.status).toBe(400);
+    expect(find).not.toHaveBeenCalled();
   });
 
   it("revokes another user's key only when canRevokeAnyKey allows it", async () => {

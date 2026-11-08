@@ -62,7 +62,7 @@ Set `admin.icon` on every collection that shows in the sidebar. Without one it s
 | Places   | `map-pin`, `building`, `home`, `web`                                                                      |
 | Settings | `setting`, `shield`, `key-round`, `lock`, `database`, `link-square`, `code`                               |
 
-Every built-in name is a UI icon. Brand logos (`brand-slack`, `brand-visa`) aren't built-in names, and they don't belong in the sidebar. Your editor autocompletes every built-in name, and an unknown name stops startup with the full list. For anything else, point at a component: `icon: './src/components/LeadsIcon#LeadsIcon'`.
+A collection about one platform takes its logo, always with the `brand-` prefix: `brand-twitter` for an X swipe file, `brand-youtube` for a channel list, `brand-git-hub` for repos. Everything else takes a UI icon. Your editor autocompletes every built-in name, and an unknown name stops startup with the full list. For anything else, point at a component: `icon: './src/components/LeadsIcon#LeadsIcon'`.
 
 ## Views and done records
 
@@ -75,7 +75,7 @@ export const Tasks: CollectionConfig = {
     useAsTitle: 'title',
     useAsDone: 'completed',
     views: [
-      { type: 'list', defaultFields: ['title', 'status', 'dueDate'] },
+      { type: 'list', defaultFields: ['title', 'status', 'dueDate'], groupBy: 'status' },
       { type: 'board', groupBy: 'status', icon: 'kanban', filter: { archived: { equals: false } } },
       {
         type: 'calendar',
@@ -93,6 +93,8 @@ export const Tasks: CollectionConfig = {
   ],
 };
 ```
+
+A list or board `groupBy` follows one set of rules: select and radio groups in option order with every option shown, checkbox as true then false, other fields by the values present, and records without a value in one last group. A list opens grouped by its `groupBy` until a person picks their own grouping; each list group collapses (saved per person), shows its count and has **+ Add**, which prefills the group's value. Hide a field from grouping with `admin.disabled.groupBy`.
 
 Board and gallery cards share their keys: `defaultFields`, `components.Card`, and the card image. The image comes from the collection's `admin.useAsThumbnail` (defaulting to the first upload field; an upload collection with none shows each document's own file). A view's `useAsThumbnail: '<upload field>'` overrides it, `false` turns images off, and `thumbnailFit: 'contain'` fits logos without cropping. There is no `cover` key.
 
