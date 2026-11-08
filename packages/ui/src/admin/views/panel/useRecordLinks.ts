@@ -19,9 +19,12 @@ function rowRecordId(row: HTMLElement): string | undefined {
  */
 export function useRecordLinks({
   collectionSlug,
+  disabled = false,
   viewRef,
 }: {
   collectionSlug: string;
+  /** Opens nothing, as in the trash view, whose records the panel can't load. */
+  disabled?: boolean;
   viewRef: RefObject<HTMLElement | null>;
 }): void {
   const { config, getEntityConfig } = useConfig();
@@ -41,14 +44,20 @@ export function useRecordLinks({
   });
 
   useEffect(() => {
-    if (!panel.enabled) return;
+    if (!panel.enabled || disabled) return;
     const prefix = `${adminRoute.replace(/\/$/, '')}/collections/${collectionSlug}/`;
     const skip = new Set(reservedKey.split('\n'));
 
     const recordFromLink = (anchor: HTMLAnchorElement): string | undefined => {
       const url = new URL(anchor.href, window.location.href);
       if (url.origin !== window.location.origin || !url.pathname.startsWith(prefix)) return;
-      const rest = decodeURIComponent(url.pathname.slice(prefix.length));
+      let rest: string;
+
+      try {
+        rest = decodeURIComponent(url.pathname.slice(prefix.length));
+      } catch {
+        return;
+      }
 
       return rest && !rest.includes('/') && !skip.has(rest) ? rest : undefined;
     };
@@ -80,5 +89,5 @@ export function useRecordLinks({
     document.addEventListener('click', onClick, true);
 
     return () => document.removeEventListener('click', onClick, true);
-  }, [adminRoute, collectionSlug, panel.enabled, reservedKey, viewRef]);
+  }, [adminRoute, collectionSlug, disabled, panel.enabled, reservedKey, viewRef]);
 }

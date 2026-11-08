@@ -2,6 +2,8 @@
 
 import { getTranslation } from '@payloadcms/translations';
 import { useDocumentInfo, useField, useTranslation } from '@payloadcms/ui';
+import type { ClientField } from 'payload';
+import { getFieldPermissions } from 'payload/shared';
 import { useEffect, useLayoutEffect, useRef } from 'react';
 
 import { usePanelLayout } from './PanelConfig.client.js';
@@ -11,8 +13,31 @@ function fitHeight(input: HTMLTextAreaElement) {
   input.style.height = `${input.scrollHeight}px`;
 }
 
-function TitleInput({ label, path }: { label: string; path: string }) {
-  const { hasSavePermission, isTrashed } = useDocumentInfo();
+function TitleInput({
+  field,
+  label,
+  path,
+}: {
+  field: ClientField | undefined;
+  label: string;
+  path: string;
+}) {
+  const { docPermissions, hasSavePermission, id, isTrashed } = useDocumentInfo();
+  const canEdit =
+    !field ||
+    getFieldPermissions({
+      field,
+      operation: id === undefined || id === null ? 'create' : 'update',
+      parentName: '',
+      permissions: docPermissions?.fields ?? true,
+    }).operation;
+
+  const readOnly =
+    Boolean(field && 'admin' in field && field.admin?.readOnly) ||
+    !canEdit ||
+    !hasSavePermission ||
+    isTrashed;
+
   const { errorMessage, setValue, showError, value } = useField<string>({ path });
   const ref = useRef<HTMLTextAreaElement>(null);
   const text = typeof value === 'string' ? value : '';
@@ -49,7 +74,7 @@ function TitleInput({ label, path }: { label: string; path: string }) {
           if (event.key === 'Enter') event.preventDefault();
         }}
         placeholder={label}
-        readOnly={!hasSavePermission || isTrashed}
+        readOnly={readOnly}
         ref={ref}
         rows={1}
         value={text}
@@ -76,5 +101,5 @@ export function RecordPanelTitle() {
       ? getTranslation(field.label as string, i18n)
       : getTranslation(layout.collectionConfig.labels.singular, i18n);
 
-  return <TitleInput label={label} path={path} />;
+  return <TitleInput field={field} label={label} path={path} />;
 }

@@ -1,6 +1,6 @@
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import { renderDocumentHandler } from '@payloadcms/ui/views/Document/handleServerFunction';
-import type { Data, PayloadComponent, ServerFunction } from 'payload';
+import { canAccessAdmin, type Data, type PayloadComponent, type ServerFunction } from 'payload';
 import { isReactServerComponentOrFunction } from 'payload/shared';
 import { cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
 
@@ -38,6 +38,8 @@ export const renderRecordPanelHandler: ServerFunction<
   const collection = req.payload.collections[collectionSlug]?.config;
 
   if (!collection || !req.user) return { notFound: true };
+
+  await canAccessAdmin({ req });
 
   if (id !== undefined) {
     const doc = await req.payload

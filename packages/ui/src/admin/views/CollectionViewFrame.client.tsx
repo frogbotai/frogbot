@@ -90,7 +90,7 @@ function Frame(props: CollectionViewFrameProps) {
     );
   }, [i18n, isTrash, panelOpen, pathname, pluralLabel, props.tabs, setStepNav]);
 
-  useRecordLinks({ collectionSlug: props.collectionSlug, viewRef });
+  useRecordLinks({ collectionSlug: props.collectionSlug, disabled: isTrash, viewRef });
 
   const showView = !props.isEmpty || props.keepViewWhenEmpty;
 

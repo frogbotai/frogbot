@@ -27,6 +27,7 @@ import { useRecordPanel } from './RecordPanelProvider.client.js';
 import type { RenderRecordPanelArgs, RenderRecordPanelResult } from './renderRecordPanel.js';
 
 const RENDER_RECORD_PANEL = 'frogbot-render-record-panel';
+const PANEL_DRAWER_SLUG = 'fb-record-panel';
 
 /** Below this viewport width the panel covers the view. */
 export const PANEL_FULL_SCREEN_BELOW = 768;
@@ -67,7 +68,8 @@ function isInsideOpenModal(target: Element | null): boolean {
 export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement | null> }) {
   const panel = useRecordPanel();
   const { collectionSlug, settings, state } = panel;
-  const { config } = useConfig();
+  const { config, getEntityConfig } = useConfig();
+  const drafts = Boolean(getEntityConfig({ collectionSlug }).versions?.drafts);
   const { t } = useTranslation();
   const { modalState } = useModal();
   const { serverFunction } = useServerFunctions();
@@ -141,7 +143,11 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
     const id = doc?.id ?? mostRecentUpdate.id;
     if (id === undefined || id === null) return;
 
-    const isCreate = current.state.mode === 'create' && mostRecentUpdate.operation === 'create';
+    const isCreate =
+      current.state.mode === 'create' &&
+      mostRecentUpdate.operation === 'create' &&
+      mostRecentUpdate.drawerSlug === PANEL_DRAWER_SLUG;
+
     const isUpdate = current.state.mode === 'edit' && String(id) === current.state.id;
     if (!isCreate && !isUpdate) return;
 
@@ -150,7 +156,7 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
     void fetch(
       formatAdminURL({
         apiRoute: config.routes.api,
-        path: `/${collectionSlug}/${encodeURIComponent(String(id))}?depth=1`,
+        path: `/${collectionSlug}/${encodeURIComponent(String(id))}?depth=1${drafts ? '&draft=true' : ''}`,
       }),
       { credentials: 'include' },
     )
@@ -164,7 +170,7 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
           });
         }
       });
-  }, [collectionSlug, config.routes.api, mostRecentUpdate]);
+  }, [collectionSlug, config.routes.api, drafts, mostRecentUpdate]);
 
   const open = state.mode !== 'closed';
   const modalStateRef = useRef(modalState);

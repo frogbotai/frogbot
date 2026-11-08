@@ -214,6 +214,7 @@ describe('record panel', () => {
     mocks.docInfo = {
       docPermissions: { fields: { title: { read: true, update: false } }, update: true },
       hasSavePermission: true,
+      id: 1,
       isTrashed: false,
     };
 
@@ -234,6 +235,7 @@ describe('record panel', () => {
     mocks.docInfo = {
       docPermissions: { fields: { title: { read: true, update: true } }, update: true },
       hasSavePermission: true,
+      id: 1,
       isTrashed: false,
     };
 
