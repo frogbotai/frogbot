@@ -53,14 +53,40 @@ export async function hasRecords(frogbot: FrogBotInstance): Promise<boolean> {
 
 /**
  * Adds a small sales team's week: companies with logos, contacts, deals, activities
- * and tasks. Every date is an offset from `today`. It never deletes anything and
- * creates no login: records are owned by the signed-in user, or the first user.
+ * and tasks. Every date is an offset from `today`. It creates no login: records are
+ * owned by the signed-in user, or the first user. If it fails partway, it deletes the
+ * records it added, so the CRM is empty again and the seed can be retried.
  */
-export async function seed({
-  frogbot,
-  req,
-  today,
-}: SeedArgs): Promise<SeedResult> {
+export async function seed(args: SeedArgs): Promise<SeedResult> {
+  const added: Added[] = [];
+
+  try {
+    return await addSample(args, added);
+  } catch (err) {
+    for (const { collection, id } of added.reverse()) {
+      await args.frogbot
+        .delete({ collection, id, overrideAccess: true, req: args.req })
+        .catch((cleanupErr: unknown) =>
+          args.frogbot.logger.error(
+            { err: cleanupErr, collection, id },
+            'Removing a partly added sample record failed',
+          ),
+        );
+    }
+
+    throw err;
+  }
+}
+
+type Added = {
+  collection: (typeof SAMPLE_COLLECTIONS)[number] | 'media';
+  id: ID;
+};
+
+async function addSample(
+  { frogbot, req, today }: SeedArgs,
+  added: Added[],
+): Promise<SeedResult> {
   const options = { overrideAccess: true, req };
   const owner = req?.user?.id ?? (await firstUser(frogbot));
 
@@ -80,6 +106,7 @@ export async function seed({
       ...options,
     });
 
+    added.push({ collection: 'media', id: media.id });
     result.logos.set(logo, media.id);
 
     const created = await frogbot.create({
@@ -88,6 +115,7 @@ export async function seed({
       ...options,
     });
 
+    added.push({ collection: 'companies', id: created.id });
     result.companies.set(company.name, created.id);
   }
 
@@ -103,6 +131,7 @@ export async function seed({
       ...options,
     });
 
+    added.push({ collection: 'contacts', id: created.id });
     result.contacts.set(contact.name, created.id);
   }
 
@@ -119,6 +148,7 @@ export async function seed({
       ...options,
     });
 
+    added.push({ collection: 'deals', id: created.id });
     result.deals.set(deal.name, created.id);
   }
 
@@ -133,7 +163,7 @@ export async function seed({
   } of ACTIVITIES) {
     const start = at(today, day, hour, minute);
 
-    await frogbot.create({
+    const created = await frogbot.create({
       collection: 'activities',
       data: {
         ...activity,
@@ -145,10 +175,12 @@ export async function seed({
       },
       ...options,
     });
+
+    added.push({ collection: 'activities', id: created.id });
   }
 
   for (const { dueInDays, deal, contact, ...task } of TASKS) {
-    await frogbot.create({
+    const created = await frogbot.create({
       collection: 'tasks',
       data: {
         ...task,
@@ -160,6 +192,8 @@ export async function seed({
       },
       ...options,
     });
+
+    added.push({ collection: 'tasks', id: created.id });
   }
 
   return result;
