@@ -1,8 +1,12 @@
-/** Field names to strip at one level of a document: `true` drops the value, a tree recurses into it. */
+/**
+ * Field names to rewrite at one level of a document: `true` drops the value, `ref` keeps only the
+ * related ids, and a tree recurses into it.
+ */
 export type HiddenTree = Map<string, HiddenNode>;
 
 type HiddenNode =
   | true
+  | { kind: 'ref' }
   | { kind: 'object'; tree: HiddenTree }
   | { kind: 'rows'; tree: HiddenTree }
   | { kind: 'blocks'; trees: Map<string, HiddenTree> };
@@ -41,6 +45,8 @@ function blockTrees(field: Shape, blocks: readonly Shape[]): Map<string, HiddenT
   return trees;
 }
 
+const ref = { kind: 'ref' } as const;
+
 function walk(fields: readonly Shape[], blocks: readonly Shape[], tree: HiddenTree): HiddenTree {
   for (const field of fields) {
     const name = named(field);
@@ -67,6 +73,11 @@ function walk(fields: readonly Shape[], blocks: readonly Shape[], tree: HiddenTr
       continue;
     }
 
+    if (field.type === 'relationship' || field.type === 'upload' || field.type === 'join') {
+      tree.set(name, ref);
+      continue;
+    }
+
     if (field.type === 'group' || field.type === 'array') {
       const kind = field.type === 'group' ? 'object' : 'rows';
 
@@ -84,8 +95,9 @@ function walk(fields: readonly Shape[], blocks: readonly Shape[], tree: HiddenTr
 }
 
 /**
- * Collects the paths of `hidden: true` fields, through groups, tabs, rows, collapsibles, arrays
- * and blocks. Takes a collection's final fields, so fields core or later plugins add count too.
+ * Collects the paths of `hidden: true` fields and of relationship, upload and join fields, through
+ * groups, tabs, rows, collapsibles, arrays and blocks. Takes a collection's final fields, so fields
+ * core or later plugins add count too.
  */
 export function hiddenTree(
   fields: readonly unknown[],
@@ -98,7 +110,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function toIds(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(toIds);
+  if (!isRecord(value)) return value;
+  if ('relationTo' in value && 'value' in value) {
+    return { relationTo: value.relationTo, value: toIds(value.value) };
+  }
+
+  if ('id' in value) return value.id;
+
+  return Array.isArray(value.docs) ? { ...value, docs: value.docs.map(toIds) } : value;
+}
+
 function stripValue(value: unknown, node: Exclude<HiddenNode, true>): unknown {
+  if (node.kind === 'ref') return toIds(value);
   if (node.kind === 'object') return isRecord(value) ? stripHidden(value, node.tree) : value;
   if (!Array.isArray(value)) return value;
 
@@ -111,7 +136,10 @@ function stripValue(value: unknown, node: Exclude<HiddenNode, true>): unknown {
   });
 }
 
-/** Returns a copy of `doc` without hidden fields, or `doc` itself when the tree is empty. */
+/**
+ * Returns a copy of `doc` without hidden fields and with related docs reduced to ids, or `doc`
+ * itself when the tree is empty.
+ */
 export function stripHidden<T extends Record<string, unknown>>(doc: T, tree: HiddenTree): T {
   if (!tree.size) return doc;
   const result: Record<string, unknown> = {};

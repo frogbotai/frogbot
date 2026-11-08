@@ -271,6 +271,13 @@ describe('audit log plugin integration', () => {
     expect((await postsTitled('BAD delete')).map((doc) => String(doc.id))).toEqual([
       String(post.id),
     ]);
+
+    await booted.frogbot.update({
+      collection: 'posts',
+      id: post.id,
+      data: { title: 'Kept' },
+      overrideAccess: true,
+    });
   });
 
   it('throws to a caller whose transaction a failed audit write ended', async () => {
@@ -304,7 +311,7 @@ describe('audit log plugin integration', () => {
 
     const post = await booted.frogbot.create({
       collection: 'posts',
-      data: { title: 'Rel', author: accountId, vaultRef: vault.id },
+      data: { title: 'Rel', author: accountId as number, vaultRef: vault.id },
       overrideAccess: true,
     });
 

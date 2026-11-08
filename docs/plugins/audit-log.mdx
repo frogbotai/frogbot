@@ -30,9 +30,9 @@ export default buildConfig({
 
 By default, the plugin audits create, update, and delete operations for every configured collection. The plugin runs with `order: 90`, after plugins that add collections, so those collections are audited too wherever you list it.
 
-Each entry records the collection, operation, document ID, user, API key ID when available, timestamp, and a shallow changed-fields diff. Fields with `hidden: true` never appear in `changes` or `snapshot`, at any depth, even when the write reads them with `showHiddenFields`.
+Each entry records the collection, operation, document ID, user, API key ID when available, timestamp, and a shallow changed-fields diff. Fields with `hidden: true` never appear in `changes` or `snapshot`, at any depth, even when the write reads them with `showHiddenFields`. Relationship, upload and join values are saved as IDs, so a related document's fields never appear either.
 
-The entry is saved inside the change's transaction, so a rolled-back change leaves no entry. A failed audit write is logged and doesn't fail the change on SQLite or MongoDB. On Postgres a failed statement aborts the open transaction, so there a failing audit write also fails the change.
+The entry is saved inside the change's transaction, so a rolled-back change leaves no entry. A failed audit write is logged. When the change runs in a transaction (Postgres, a MongoDB replica set, or SQLite with `transactionOptions`), the failed write has already rolled the transaction back, so the change fails too and nothing is saved. Without a transaction the change is already saved and stays saved.
 
 ## Collection selection
 
@@ -74,7 +74,7 @@ Internal audit writes always override access. API create, update, and delete acc
 
 ## Custom entries
 
-`entry` receives the entry the plugin would save, the audited collection's slug, the operation, the document and previous document (with hidden fields already removed), and `req`. Return the entry to save, with any extra values, or `false` to save nothing. Add a field for each extra value with `overrides.fields`.
+`entry` receives the entry the plugin would save, the audited collection's slug, the operation, the document and previous document (with hidden fields removed and related documents reduced to IDs), and `req`. Return the entry to save, with any extra values, or `false` to save nothing. Add a field for each extra value with `overrides.fields`.
 
 This activity log stores a tenant ID on every entry, so readers see only their tenant's rows, and skips updates that only bump `lastUsedAt`:
 
@@ -99,7 +99,7 @@ auditLogPlugin({
 })
 ```
 
-An `entry` that throws is logged, and the change is saved without an entry.
+An `entry` that throws is logged, and the change is saved without an entry. An entry the audit collection rejects, such as one missing a required field, is a failed audit write, so in a transaction it fails the change.
 
 ## Optional metadata
 

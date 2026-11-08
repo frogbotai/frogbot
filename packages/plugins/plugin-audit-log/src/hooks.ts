@@ -54,6 +54,8 @@ async function writeAudit(
   req: FrogBotRequest,
   collection: unknown,
 ): Promise<void> {
+  let entry: AuditEntry | false;
+
   try {
     const hidden = hiddenFor(options, collection);
     const doc = stripHidden(rawDoc, hidden);
@@ -75,7 +77,7 @@ async function writeAudit(
       ...(options.ipAddress ? requestMetadata(req.headers, options.trustProxy) : {}),
     };
 
-    const entry = options.entry
+    entry = options.entry
       ? await options.entry({
           entry: defaults,
           collection: options.collectionSlug,
@@ -85,9 +87,16 @@ async function writeAudit(
           req,
         })
       : defaults;
+  } catch (error: unknown) {
+    req.frogbot.logger.error('[plugin-audit-log] Failed to build audit entry', error);
 
-    if (entry === false) return;
+    return;
+  }
 
+  if (entry === false) return;
+  const inTransaction = Boolean(req.transactionID);
+
+  try {
     await req.frogbot.create({
       collection: options.auditSlug,
       data: entry,
@@ -96,6 +105,7 @@ async function writeAudit(
     });
   } catch (error: unknown) {
     req.frogbot.logger.error('[plugin-audit-log] Failed to write audit log', error);
+    if (inTransaction) throw error;
   }
 }
 

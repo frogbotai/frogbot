@@ -28,7 +28,7 @@ export type AuditEntry = {
   [key: string]: unknown;
 };
 
-/** What `entry` receives. `doc` and `previousDoc` have hidden fields removed. */
+/** What `entry` receives. `doc` and `previousDoc` have hidden fields removed and related docs as ids. */
 export type AuditEntryArgs = {
   entry: AuditEntry;
   collection: string;
