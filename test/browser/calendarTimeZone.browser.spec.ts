@@ -22,6 +22,11 @@ const tasks = {
     dueAt: '2026-09-10T05:00:00.000Z',
     endsAt: '2026-09-10T11:00:00.000Z',
   },
+  late: {
+    title: 'Late call',
+    dueAt: '2026-09-08T05:00:00.000Z',
+    endsAt: '2026-09-08T07:00:00.000Z',
+  },
   planning: {
     title: 'Planning',
     dueAt: '2026-09-08T21:00:00.000Z',
@@ -158,6 +163,24 @@ test('week view places events, overnight events and the now line in Los Angeles 
 
     await attach(page, testInfo, name, name === 'week' ? [1280, 375] : [1280]);
   }
+});
+
+test('plain date fields keep their time, and an event ending at midnight stays in its day', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ height: 1500, width: 1280 });
+  await page.goto(calendar('week'));
+
+  const late = chip(page, tasks.late.title);
+
+  await expect(late).toBeVisible();
+  await attach(page, testInfo, 'week-midnight', [1280, 375]);
+
+  await expect(page.locator('.frog-calendar__all-day-cell .frog-calendar__event')).toHaveCount(0);
+  await expect(late).toHaveCount(1);
+  expect(await columnIndex(late)).toBe(1);
+  await expect(late).toHaveCSS('top', `${22 * hourHeight}px`);
+  await expect(late).toHaveCSS('height', `${2 * hourHeight}px`);
 });
 
 test('day view shows the local day', async ({ page }, testInfo) => {
