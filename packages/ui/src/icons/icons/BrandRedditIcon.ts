@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const redditIcon: IconNode = [
+export const brandRedditIcon: IconNode = [
   [
     'path',
     {
@@ -61,6 +61,6 @@ export const redditIcon: IconNode = [
   ],
 ];
 
-const RedditIcon = createLucideIcon('RedditIcon', redditIcon, 1.5, '0 0 20 20');
+const BrandRedditIcon = createLucideIcon('BrandRedditIcon', brandRedditIcon, 1.5, '0 0 20 20');
 
-export default RedditIcon;
+export default BrandRedditIcon;

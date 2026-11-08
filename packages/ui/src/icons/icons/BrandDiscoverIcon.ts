@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const discoverIcon: IconNode = [
+export const brandDiscoverIcon: IconNode = [
   [
     'rect',
     {
@@ -205,6 +205,6 @@ export const discoverIcon: IconNode = [
   ],
 ];
 
-const DiscoverIcon = createLucideIcon('DiscoverIcon', discoverIcon, 2, '0 0 24 24');
+const BrandDiscoverIcon = createLucideIcon('BrandDiscoverIcon', brandDiscoverIcon, 2, '0 0 24 24');
 
-export default DiscoverIcon;
+export default BrandDiscoverIcon;

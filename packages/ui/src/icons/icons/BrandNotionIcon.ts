@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const notionIcon: IconNode = [
+export const brandNotionIcon: IconNode = [
   [
     'path',
     {
@@ -11,6 +11,6 @@ export const notionIcon: IconNode = [
   ],
 ];
 
-const NotionIcon = createLucideIcon('NotionIcon', notionIcon, 0, '0 0 24 24');
+const BrandNotionIcon = createLucideIcon('BrandNotionIcon', brandNotionIcon, 0, '0 0 24 24');
 
-export default NotionIcon;
+export default BrandNotionIcon;

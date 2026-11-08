@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const amexIcon: IconNode = [
+export const brandAmexIcon: IconNode = [
   [
     'path',
     {
@@ -124,6 +124,6 @@ export const amexIcon: IconNode = [
   ],
 ];
 
-const AmexIcon = createLucideIcon('AmexIcon', amexIcon, 2, '0 0 24 24');
+const BrandAmexIcon = createLucideIcon('BrandAmexIcon', brandAmexIcon, 2, '0 0 24 24');
 
-export default AmexIcon;
+export default BrandAmexIcon;

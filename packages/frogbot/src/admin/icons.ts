@@ -3,7 +3,6 @@ export const adminIconExports = [
   'AirplaneIcon',
   'AiSearchIcon',
   'AiUserIcon',
-  'AmexIcon',
   'ArchiveIcon',
   'ArrowDownFilledIcon',
   'ArrowDownIcon',
@@ -30,7 +29,6 @@ export const adminIconExports = [
   'CarIcon',
   'ChangeScreenModeIcon',
   'ChartBarIcon',
-  'ChatGptIcon',
   'CheckIcon',
   'CheckListIcon',
   'CheckmarkCircleIcon',
@@ -39,8 +37,6 @@ export const adminIconExports = [
   'ChevronLeftIcon',
   'ChevronRightIcon',
   'ChevronUpIcon',
-  'ChromeIcon',
-  'ClaudeAiIcon',
   'ClipboardIcon',
   'ClockIcon',
   'CloseIcon',
@@ -56,14 +52,11 @@ export const adminIconExports = [
   'DashboardIcon',
   'DatabaseIcon',
   'DeleteIcon',
-  'DiscoverIcon',
   'DocxIcon',
   'DollarIcon',
   'DownloadIcon',
-  'DropboxIcon',
   'DumbbellIcon',
   'EyeIcon',
-  'FacebookIcon',
   'FileIcon',
   'FilterIcon',
   'FlagIcon',
@@ -72,11 +65,8 @@ export const adminIconExports = [
   'FolderIcon',
   'GemIcon',
   'GiftIcon',
-  'GitHubIcon',
   'GoBackwardIcon',
   'GoForwardIcon',
-  'GoogleGeminiIcon',
-  'GoogleIcon',
   'GraduationCapIcon',
   'HandCoinsIcon',
   'HeadsetIcon',
@@ -89,14 +79,12 @@ export const adminIconExports = [
   'ImageIcon',
   'InboxIcon',
   'InfoCircleIcon',
-  'InstagramIcon',
   'InvalidStepIcon',
   'KanbanIcon',
   'KeyboardIcon',
   'KeyRoundIcon',
   'LayersIcon',
   'LightbulbIcon',
-  'LinkedInIcon',
   'LinkSquareIcon',
   'ListIcon',
   'LoadingIcon',
@@ -107,14 +95,11 @@ export const adminIconExports = [
   'MailIcon',
   'MapIcon',
   'MapPinIcon',
-  'MastercardIcon',
-  'McpIcon',
   'MedalIcon',
   'MegaphoneIcon',
   'MessageSquareTextIcon',
   'MenuIcon',
   'MicIcon',
-  'MicrosoftIcon',
   'MinusIcon',
   'MoneyBagIcon',
   'MoreHorizontalIcon',
@@ -122,7 +107,6 @@ export const adminIconExports = [
   'MusicIcon',
   'NewspaperIcon',
   'NoteIcon',
-  'NotionIcon',
   'PackageIcon',
   'PaletteIcon',
   'PawIcon',
@@ -141,7 +125,6 @@ export const adminIconExports = [
   'QrCodeIcon',
   'QuestionMarkCircleIcon',
   'ReceiptIcon',
-  'RedditIcon',
   'RedoIcon',
   'RefreshIcon',
   'ResizeIcon',
@@ -158,7 +141,6 @@ export const adminIconExports = [
   'ShoppingCartIcon',
   'SidebarLeftIcon',
   'SignpostIcon',
-  'SlackIcon',
   'SparkleIcon',
   'SparklesIcon',
   'SquareIcon',
@@ -168,7 +150,6 @@ export const adminIconExports = [
   'StopIcon',
   'StoplightIcon',
   'StoreIcon',
-  'StripeIcon',
   'TableIcon',
   'TagIcon',
   'TargetIcon',
@@ -183,22 +164,17 @@ export const adminIconExports = [
   'TrendingUpIcon',
   'TrophyIcon',
   'TruckIcon',
-  'TwitterIcon',
   'UploadIcon',
   'UserAddIcon',
   'UserShieldIcon',
   'UtensilsIcon',
   'VideoIcon',
-  'VisaIcon',
   'VolumeIcon',
   'WalletIcon',
   'WebIcon',
   'WorkflowIcon',
   'WrenchIcon',
-  'XeroIcon',
   'XIcon',
-  'YoutubeIcon',
-  'ZoomIcon',
 ] as const;
 
 type KebabCase<Value extends string> = Value extends `${infer First}${infer Rest}`
@@ -225,7 +201,15 @@ export const isIconComponent = (icon: unknown): boolean =>
 export function validateAdminIcon(icon: unknown): void {
   if (!icon || isIconComponent(icon) || iconNames.includes(icon as IconName)) return;
 
-  throw new Error(`[frogbot] Unknown admin icon '${icon}'. Valid: ${iconNames.join(', ')}`);
+  const valid = `Valid: ${iconNames.join(', ')}`;
+
+  if (typeof icon === 'string' && icon.startsWith('brand-')) {
+    throw new Error(
+      `[frogbot] Admin icon '${icon}' is a brand logo, not a UI icon. Pick a UI icon. ${valid}`,
+    );
+  }
+
+  throw new Error(`[frogbot] Unknown admin icon '${icon}'. ${valid}`);
 }
 
 type IconCollection = {

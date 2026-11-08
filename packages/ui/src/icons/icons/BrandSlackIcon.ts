@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const slackIcon: IconNode = [
+export const brandSlackIcon: IconNode = [
   [
     'path',
     {
@@ -11,6 +11,6 @@ export const slackIcon: IconNode = [
   ],
 ];
 
-const SlackIcon = createLucideIcon('SlackIcon', slackIcon, 0, '0 0 24 24');
+const BrandSlackIcon = createLucideIcon('BrandSlackIcon', brandSlackIcon, 0, '0 0 24 24');
 
-export default SlackIcon;
+export default BrandSlackIcon;

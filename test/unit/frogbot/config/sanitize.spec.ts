@@ -683,6 +683,21 @@ describe('frogbot sanitize', () => {
     },
   );
 
+  it('rejects brand logos as collection icons', () => {
+    const icon = (value: string) =>
+      sanitize(
+        makeConfig({
+          collections: [{ slug: 'users', auth: true, fields: [], admin: { icon: value as never } }],
+        }),
+      );
+
+    expect(() => icon('discover')).toThrowError("[frogbot] Unknown admin icon 'discover'. Valid:");
+    expect(() => icon('brand-discover')).toThrowError(
+      "[frogbot] Admin icon 'brand-discover' is a brand logo, not a UI icon. Pick a UI icon. Valid:",
+    );
+    expect(() => icon('brand-discover')).not.toThrowError(/Valid:.*brand-/);
+  });
+
   it('rejects unknown built-in nav item icons', () => {
     const config = makeConfig({
       admin: {

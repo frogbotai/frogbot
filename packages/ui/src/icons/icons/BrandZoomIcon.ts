@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const zoomIcon: IconNode = [
+export const brandZoomIcon: IconNode = [
   [
     'path',
     {
@@ -11,6 +11,6 @@ export const zoomIcon: IconNode = [
   ],
 ];
 
-const ZoomIcon = createLucideIcon('ZoomIcon', zoomIcon, 0, '0 0 24 24');
+const BrandZoomIcon = createLucideIcon('BrandZoomIcon', brandZoomIcon, 0, '0 0 24 24');
 
-export default ZoomIcon;
+export default BrandZoomIcon;

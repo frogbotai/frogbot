@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const microsoftIcon: IconNode = [
+export const brandMicrosoftIcon: IconNode = [
   [
     'path',
     {
@@ -32,6 +32,11 @@ export const microsoftIcon: IconNode = [
   ],
 ];
 
-const MicrosoftIcon = createLucideIcon('MicrosoftIcon', microsoftIcon, 0, '0 0 23 23');
+const BrandMicrosoftIcon = createLucideIcon(
+  'BrandMicrosoftIcon',
+  brandMicrosoftIcon,
+  0,
+  '0 0 23 23',
+);
 
-export default MicrosoftIcon;
+export default BrandMicrosoftIcon;

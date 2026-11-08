@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const chromeIcon: IconNode = [
+export const brandChromeIcon: IconNode = [
   [
     'path',
     {
@@ -11,6 +11,6 @@ export const chromeIcon: IconNode = [
   ],
 ];
 
-const ChromeIcon = createLucideIcon('ChromeIcon', chromeIcon, 0);
+const BrandChromeIcon = createLucideIcon('BrandChromeIcon', brandChromeIcon, 0);
 
-export default ChromeIcon;
+export default BrandChromeIcon;
