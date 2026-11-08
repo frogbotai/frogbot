@@ -402,7 +402,12 @@ const testProjects = [
   project({ name: 'forms', testMatch: ['forms.browser.spec.ts', 'formBuilder.browser.spec.ts'] }),
   project({
     name: 'crm',
-    testMatch: ['crm.browser.spec.ts', 'listGrouping.browser.spec.ts', 'views.browser.spec.ts'],
+    testMatch: [
+      'crm.browser.spec.ts',
+      'listGrouping.browser.spec.ts',
+      'listSummary.browser.spec.ts',
+      'views.browser.spec.ts',
+    ],
   }),
   project({
     name: 'dojo',

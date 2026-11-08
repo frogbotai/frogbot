@@ -11,6 +11,7 @@ export type {
 } from './admin/types.js';
 export type { AdminIcon, AdminViews, FrogBotComponent, ProviderComponent } from './admin/types.js';
 export type { SettingsEntry } from './admin/types.js';
+export type { SummaryOperation } from './admin/views/summary.js';
 export type {
   BoardView,
   CalendarMode,
