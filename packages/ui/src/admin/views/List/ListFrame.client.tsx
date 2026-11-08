@@ -22,6 +22,7 @@ import { aiBulkMenuFields } from '../../fields/AI/bulk.js';
 import { AIFieldListMenuItem } from '../../fields/AI/ListMenuItem.client.js';
 import { CollectionViewFrame } from '../CollectionViewFrame.client.js';
 import { getUseAsDone, isRecordDone } from '../records/state.js';
+import { BulkUploadButton } from './BulkUploadButton.client.js';
 import { DefaultListView } from './DefaultListView.client.js';
 
 export type ListFrameClientProps = {
@@ -86,6 +87,12 @@ function ListFrameInner({ listProps, ...frame }: ListFrameClientProps) {
   const collectionConfig = getEntityConfig({ collectionSlug });
   const label = getTranslation(collectionConfig.labels.plural, i18n);
   const docs = data?.docs ?? [];
+  const upload = collectionConfig.upload;
+  const canBulkUpload =
+    listProps.hasCreatePermission &&
+    viewType !== 'trash' &&
+    Boolean(upload && upload.bulkUpload && !upload.hideFileInputOnCreate);
+
   const tableRef = useDoneRows(docs, getUseAsDone(collectionConfig));
   const aiFields = aiBulkMenuFields({
     canUpdate: Boolean(permissions?.collections?.[collectionSlug]?.update),
@@ -141,6 +148,11 @@ function ListFrameInner({ listProps, ...frame }: ListFrameClientProps) {
           hasCreatePermission={listProps.hasCreatePermission}
           hasDeletePermission={Boolean(listProps.hasDeletePermission)}
           HeaderActions={!smallBreak && !isGroupingBy ? [selection] : undefined}
+          TitleActions={
+            canBulkUpload
+              ? [<BulkUploadButton collectionSlug={collectionSlug} key="bulk" />]
+              : undefined
+          }
           listMenuItems={[
             ...(frame.listMenuItems ?? []),
             ...aiFields.map((field) => (

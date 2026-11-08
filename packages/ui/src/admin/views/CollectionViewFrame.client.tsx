@@ -41,6 +41,8 @@ export type CollectionViewFrameProps = {
   NoResults: ReactNode;
   tabs: ViewTab[];
   title?: string;
+  /** Beside the title, such as the list's Bulk upload. */
+  TitleActions?: ReactNode[];
   Toolbar?: ReactNode[];
   type: string;
   viewType?: ViewTypes;
@@ -88,6 +90,9 @@ export function CollectionViewFrame(props: CollectionViewFrameProps) {
         <div className="list-header__content">
           <div className="list-header__title-and-actions">
             <h1 className="list-header__title">{props.title ?? pluralLabel}</h1>
+            {props.TitleActions?.length ? (
+              <div className="list-header__title-actions">{props.TitleActions}</div>
+            ) : null}
           </div>
           {props.HeaderActions?.length ? (
             <div className="list-header__actions">{props.HeaderActions}</div>
