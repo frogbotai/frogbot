@@ -84,6 +84,10 @@ function parseShareArgs(argv: string[], program: string): ShareFlags {
 
   const { values } = parsed;
 
+  if (values.app !== undefined && !values.app.trim()) {
+    throw new ShareError(`--app needs an app's slug or id. ${usage(program)}`, 2);
+  }
+
   if (values.app !== undefined && (values.workspace !== undefined || values.name !== undefined)) {
     throw new ShareError(
       `--app shares to an app that already exists; --workspace and --name are for a new one. ${usage(program)}`,
@@ -306,7 +310,7 @@ async function dryRun({
     if (inventory && inventory !== 'unsupported') await inventory.dispose();
 
     context.log(
-      `[dry-run] ${flags.app ? `Update the app ${flags.app} and link it in ${linkPath}` : link ? `Update the app in ${linkPath} (${link.appId})` : 'Create a new app on Dojo'}`,
+      `[dry-run] ${flags.app !== undefined ? `Update the app ${flags.app} and link it in ${linkPath}` : link ? `Update the app in ${linkPath} (${link.appId})` : 'Create a new app on Dojo'}`,
     );
 
     context.log(`[dry-run] ${archive.summary.replace(/^Uploading/, 'Upload')}`);

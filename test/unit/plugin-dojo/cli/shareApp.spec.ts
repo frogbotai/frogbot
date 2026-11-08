@@ -100,6 +100,16 @@ describe('frogbot share --app', () => {
     await expect(readFile(join(root, '.frogbot/app.json'), 'utf8')).rejects.toThrow();
   });
 
+  it('refuses an empty --app, as an unset CI variable gives, instead of creating an app', async () => {
+    const { dojo, run } = await setup();
+
+    const result = await run(['--app', '', '--no-data']);
+
+    expect(result.code).toBe(2);
+    expect(result.stderr().join('\n')).toContain("--app needs an app's slug or id.");
+    expect(dojo.requests).toEqual([]);
+  });
+
   it('refuses --app with --name or --workspace before any request', async () => {
     const { dojo, run } = await setup();
 
