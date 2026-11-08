@@ -27,7 +27,7 @@ export const deployments: Noun = {
 
         const { docs } = await dojoJSON<{ docs: Deployment[] }>(
           dojo(),
-          `/api/deployments?depth=0&limit=20&sort=-createdAt&${whereEquals('project', app.id)}`,
+          `/api/deployments?depth=0&limit=20&sort=-createdAt&${whereEquals('app', app.id)}`,
           { what: `Couldn't list the deployments of ${app.slug}`, needs: editorNeeded },
         );
 

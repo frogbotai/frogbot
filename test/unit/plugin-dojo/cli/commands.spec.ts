@@ -12,7 +12,7 @@ async function setup(env: Record<string, string> = {}) {
   const fullEnv = { XDG_CONFIG_HOME: await tempDir(), FROGBOT_DOJO_URL: dojo.url, ...env };
 
   dojo.level = 'owner';
-  dojo.projects.push({ id: 7, name: 'Deals', slug: 'deals', workspace: 1 });
+  dojo.apps.push({ id: 7, name: 'Deals', slug: 'deals', workspace: 1 });
 
   const run = async (args: string[], options: { isTTY?: boolean; confirm?: boolean } = {}) => {
     const result = testIO({ cwd, env: fullEnv, ...options });
@@ -145,7 +145,7 @@ describe('destructive verbs', () => {
 
       dojo.tokens.set('fb_env', 50);
 
-      dojo.replies.set('GET /api/projects', {
+      dojo.replies.set('GET /api/apps', {
         body: { docs: [{ id: 7, slug: 'deals', name: 'Deals' }] },
       });
 
@@ -182,13 +182,13 @@ describe('destructive verbs', () => {
     const { dojo, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_env' });
 
     dojo.tokens.set('fb_env', 50);
-    dojo.replies.set('DELETE /api/projects/7', { body: { doc: { id: 7, slug: 'deals' } } });
+    dojo.replies.set('DELETE /api/apps/7', { body: { doc: { id: 7, slug: 'deals' } } });
 
     const result = await run(['apps', 'delete', '7'], { isTTY: true, confirm: true });
 
     expect(result.code).toBe(0);
     expect(result.asked).toEqual(["Delete deals and everything in it? This can't be undone."]);
-    expect(changes(dojo)).toEqual(['DELETE /api/projects/7']);
+    expect(changes(dojo)).toEqual(['DELETE /api/apps/7']);
   });
 });
 
@@ -287,7 +287,7 @@ describe('--json', () => {
     const { dojo, cwd, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_env' });
 
     dojo.tokens.set('fb_env', 50);
-    dojo.projects.length = 0;
+    dojo.apps.length = 0;
     await writeApp(cwd);
 
     const result = await run(['apps', 'share', '--no-data', '--json']);
@@ -301,7 +301,7 @@ describe('--json', () => {
       result: {
         appId: 1,
         url: 'https://deals.frogbot.app',
-        shareLink: `${dojo.url}/collections/projects/1?share=1`,
+        shareLink: `${dojo.url}/collections/apps/1/settings?share=1`,
       },
     });
     expect(result.stderr()).toContain('[build] step 1');
