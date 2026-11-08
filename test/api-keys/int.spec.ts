@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { GRAPHQL_POST } from '@frogbotai/next/routes';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
@@ -1340,6 +1340,149 @@ describe('API keys plugin integration', () => {
       expect(capped.status).toBe(403);
       expect(capped.body.error.message).toBe('API key "P" has used its monthly cap of $10.00.');
       expect(modelCalls).toEqual(['allowed', 'allowed']);
+    });
+  });
+
+  describe('expiring keys', () => {
+    type Minted = { id: number | string; token: string; expiresAt?: string | null; error?: string };
+
+    let session: { Authorization: string };
+
+    beforeEach(async () => {
+      await createOwner();
+      const login = await booted.restClient.post<{ token: string }>(
+        '/api/accounts/login',
+        credentials,
+      );
+
+      session = { Authorization: `JWT ${login.body.token}` };
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const mint = (headers: Record<string, string>, body: Record<string, unknown>) =>
+      booted.restClient.post<Minted>('/api/credentials/mint', body, { headers });
+
+    const asKey = (token: string) => ({ 'x-service-key': token });
+
+    const stored = (id: number | string) =>
+      booted.frogbot.findByID({ collection: 'credentials', id, depth: 0, overrideAccess: true });
+
+    it('refuses an unreadable or past expiresAt and stores a future one', async () => {
+      const unreadable = await mint(session, { name: 'Bad', expiresAt: 'not a date' });
+      const past = await mint(session, { name: 'Past', expiresAt: '2020-01-01T00:00:00.000Z' });
+
+      expect(unreadable.status).toBe(400);
+      expect(past.status).toBe(400);
+      expect(past.body.error).toBe('expiresAt must be in the future.');
+
+      const farFuture = await mint(session, {
+        name: 'Far',
+        expiresAt: '+099999-01-01T00:00:00.000Z',
+      });
+
+      expect(farFuture.status).toBe(400);
+      expect(farFuture.body.error).toBe('expiresAt must be before the year 10000.');
+
+      const expiresAt = new Date(Date.now() + 30 * 864e5).toISOString();
+      const future = await mint(session, { name: 'Future', expiresAt });
+
+      expect(future.status).toBe(201);
+      expect(future.body.expiresAt).toBe(expiresAt);
+      expect((await stored(future.body.id)).expiresAt).toBe(expiresAt);
+
+      const undated = await mint(session, { name: 'Forever' });
+
+      expect(undated.body.expiresAt).toBeNull();
+      expect((await stored(undated.body.id)).expiresAt ?? null).toBeNull();
+    });
+
+    it('refuses impossible calendar dates instead of rolling them into the next month', async () => {
+      for (const expiresAt of ['2050-02-30', '2050-02-31T00:00:00.000Z', '2050-04-31']) {
+        const refused = await mint(session, { name: 'Feb', expiresAt });
+
+        expect(refused.status, `${expiresAt}: ${JSON.stringify(refused.body)}`).toBe(400);
+      }
+    });
+
+    it('refuses non-ISO dates, whose meaning depends on the server time zone', async () => {
+      for (const expiresAt of [
+        '2050-01-01 00:00',
+        'January 1, 2050',
+        '1/2/2050',
+        '2050-01-01T00:00',
+      ]) {
+        const refused = await mint(session, { name: 'Loose', expiresAt });
+
+        expect(refused.status, `${expiresAt}: ${JSON.stringify(refused.body)}`).toBe(400);
+      }
+    });
+
+    it('accepts a date-only expiresAt and one with an offset, as UTC instants', async () => {
+      const day = await mint(session, { name: 'Day', expiresAt: '2050-02-28' });
+      const offset = await mint(session, { name: 'Offset', expiresAt: '2050-01-01T00:00+05:00' });
+
+      expect(day.status).toBe(201);
+      expect(day.body.expiresAt).toBe('2050-02-28T00:00:00.000Z');
+      expect(offset.status).toBe(201);
+      expect(offset.body.expiresAt).toBe('2049-12-31T19:00:00.000Z');
+    });
+
+    it('stops a key signing in once its date passes, and refuses to rotate it', async () => {
+      const expiresAt = new Date(Date.now() + 864e5).toISOString();
+      const key = await mint(session, { name: 'Day pass', expiresAt });
+
+      expect(
+        (await booted.restClient.get('/api/credentials', { headers: asKey(key.body.token) }))
+          .status,
+      ).toBe(200);
+
+      const lastUsedAt = (await stored(key.body.id)).lastUsedAt;
+
+      vi.useFakeTimers({ now: Date.parse(expiresAt) + 1000, toFake: ['Date'] });
+
+      expect(
+        (await booted.restClient.get('/api/credentials', { headers: asKey(key.body.token) }))
+          .status,
+      ).toBe(403);
+      expect((await stored(key.body.id)).lastUsedAt).toBe(lastUsedAt);
+
+      const login = await booted.restClient.post<{ token: string }>(
+        '/api/accounts/login',
+        credentials,
+      );
+
+      const rotated = await booted.restClient.post<Minted>(
+        `/api/credentials/${key.body.id}/rotate`,
+        undefined,
+        { headers: { Authorization: `JWT ${login.body.token}` } },
+      );
+
+      expect(rotated.status).toBe(400);
+      expect(rotated.body.error).toBe('This key has expired. Mint a new key instead.');
+      expect((await stored(key.body.id)).revokedAt ?? null).toBeNull();
+    });
+
+    it("gives a key minted by a key no later date than its parent's", async () => {
+      const parentDate = new Date(Date.now() + 30 * 864e5).toISOString();
+      const parent = await mint(session, {
+        name: 'Parent',
+        expiresAt: parentDate,
+        data: { canMint: true },
+      });
+
+      const undated = await mint(asKey(parent.body.token), { name: 'Undated' });
+      const later = await mint(asKey(parent.body.token), {
+        name: 'Later',
+        expiresAt: new Date(Date.now() + 90 * 864e5).toISOString(),
+      });
+
+      expect(undated.status, JSON.stringify(undated.body)).toBe(201);
+      expect(undated.body.expiresAt).toBe(parentDate);
+      expect(later.body.expiresAt).toBe(parentDate);
+      expect((await stored(undated.body.id)).expiresAt).toBe(parentDate);
     });
   });
 });

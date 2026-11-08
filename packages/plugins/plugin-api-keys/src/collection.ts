@@ -83,6 +83,7 @@ function createViews({
           ...(usageCollection ? ['totalCostUSD'] : []),
           'mintedBy',
           'lastUsedAt',
+          'expiresAt',
           'revokedAt',
           'actions',
         ],
@@ -108,6 +109,7 @@ function createEndpoints({
         const body = ((await req.json?.().catch(() => null)) ?? null) as {
           name?: unknown;
           data?: unknown;
+          expiresAt?: unknown;
         } | null;
 
         const name = typeof body?.name === 'string' ? body.name.trim() : '';
@@ -118,6 +120,11 @@ function createEndpoints({
           return Response.json({ error: 'data must be an object' }, { status: 400 });
         }
 
+        const expiresAt = body?.expiresAt ?? null;
+        if (expiresAt !== null && typeof expiresAt !== 'string') {
+          return Response.json({ error: 'expiresAt must be a date string' }, { status: 400 });
+        }
+
         try {
           return Response.json(
             await mintApiKey({
@@ -126,6 +133,7 @@ function createEndpoints({
               tokenPrefix,
               name,
               data: data as Record<string, unknown>,
+              expiresAt,
             }),
             { status: 201 },
           );
@@ -298,6 +306,17 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
         readOnly: true,
         position: 'sidebar',
         condition: (_, siblingData) => Boolean(siblingData.revokedAt),
+      },
+    },
+    {
+      name: 'expiresAt',
+      type: 'date',
+      label: 'Expires',
+      access: { update: () => false },
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+        description: 'The key stops working at this time. Empty when it never expires.',
       },
     },
     {

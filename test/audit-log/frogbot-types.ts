@@ -222,6 +222,10 @@ export interface Credential {
   lastUsedAt?: string | null;
   revokedAt?: string | null;
   /**
+   * The key stops working at this time. Empty when it never expires.
+   */
+  expiresAt?: string | null;
+  /**
    * Requests made with this key can mint and rotate keys no broader than it.
    */
   canMint?: boolean | null;
@@ -366,6 +370,7 @@ export interface CredentialsSelect {
   tokenHash?: boolean;
   lastUsedAt?: boolean;
   revokedAt?: boolean;
+  expiresAt?: boolean;
   canMint?: boolean;
   mintedBy?: boolean;
   updatedAt?: boolean;

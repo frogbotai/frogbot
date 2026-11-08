@@ -49,7 +49,7 @@ Authorization: Bearer fb_...
 X-API-Key: fb_...
 ```
 
-The request authenticates as the user who owns the key. Revoked, malformed, and unknown keys do not authenticate. A Bearer key takes precedence; when the `Authorization` header holds something other than an API key, such as a session token, FrogBot reads the key from the key headers instead. The auth collection's `/me` endpoint returns the key owner and never echoes the key back.
+The request authenticates as the user who owns the key. Revoked, [expired](#expiring-keys), malformed, and unknown keys do not authenticate. A Bearer key takes precedence; when the `Authorization` header holds something other than an API key, such as a session token, FrogBot reads the key from the key headers instead. The auth collection's `/me` endpoint returns the key owner and never echoes the key back.
 
 When AI is configured, usage rows include an optional `apiKey` relationship identifying the key that authenticated the request. Cookie-authenticated requests omit it, and the relationship follows a custom `collectionSlug`. A key's **Total Cost (USD)** field sums its usage rows, so when [usage retention](/plugins/usage-reports#retention) is on, it covers only the rows still kept.
 
@@ -80,6 +80,26 @@ apiKeysPlugin({
 | `canRevokeAnyKey` | `(req: FrogBotRequest) => boolean \| Promise<boolean>` | — | Predicate allowing a request to revoke or rotate a key it does not own. Without it, callers revoke and rotate only their own keys. |
 
 Collection overrides merge with the generated configuration and changes made by other plugins. The collection uses the `key-round` icon in the admin sidebar; set `collection.admin.icon` to use a different one. The admin controls use the default admin components, and the token dialog ships a small stylesheet built on the admin theme variables.
+
+## Expiring keys
+
+A key works until it is revoked, unless it is given an expiry when it is minted. Post `expiresAt`, an ISO 8601 date in the future, beside `name`. Send a day, such as `2027-02-07`, which means midnight UTC, or a date and time that ends in `Z` or an offset:
+
+```ts
+await fetch('/api/api-keys/mint', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ name: 'CI', expiresAt: '2027-02-07T00:00:00.000Z' }),
+})
+```
+
+`mintApiKey({ req, collectionSlug, tokenPrefix, name, expiresAt })` takes the same option on the server. Both answer `400` for any other format, a day that doesn't exist such as `2027-02-30`, or a date that isn't in the future, and return `expiresAt` with the new key, `null` when it never expires.
+
+- Once `expiresAt` passes, the key no longer authenticates, and its **Last Used At** time stops changing. It stays in the list, with its date in the **Expires** column.
+- `expiresAt` is set only when the key is minted. Nobody can change it afterwards, and `data` can't set it.
+- Rotating keeps the old key's `expiresAt`. Rotating a key that has already expired answers `400`, `This key has expired. Mint a new key instead.`, and leaves the old key as it was.
+- A key minted by a key expires no later than its parent. A later date, or none, becomes the parent's date; an earlier one is kept.
+- The create dialog has an **Expires** day picker, empty by default, with **30 days**, **90 days**, **1 year** and **No expiry** buttons. The key works through the chosen day: the dialog posts the start of the next day in the browser's time zone.
 
 ## Budgets and limits
 
@@ -137,6 +157,7 @@ A session can mint a key with `canMint`, by posting `{ name, data: { canMint: tr
 - It records the parent as `mintedBy`, shown in the keys list. Keys a session mints leave it empty.
 - It can have `canMint` only because its parent has it.
 - It has its parent's values for [fields from other plugins](#fields-from-other-plugins), such as a tenant or environment.
+- It [expires](#expiring-keys) no later than its parent.
 - A key rotates only itself and the keys it minted. Rotating any other key answers `404` and revokes nothing.
 - With the [AI policy plugin](/plugins/ai-policy#api-key-limits), its model list and monthly cap stay inside the parent's as well as the owner's. A list or cap it leaves empty is the parent's. Its spend also counts against the parent's cap, so a parent capped at $10 and every key below it together spend at most $10 a month.
 

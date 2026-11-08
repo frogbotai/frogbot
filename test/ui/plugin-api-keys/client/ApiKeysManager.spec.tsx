@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const clearRouteCache = vi.fn();
 const listQuery = vi.hoisted(() => ({ value: { collectionSlug: 'api-keys' } as object }));
@@ -181,6 +181,121 @@ describe('API key controls', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Click to copy API key' }));
     await waitFor(() => expect(screen.getByRole('tooltip').textContent).toBe('Copied'));
+  });
+
+  describe('expiry', () => {
+    const zone = process.env.TZ;
+
+    afterEach(() => {
+      vi.useRealTimers();
+      process.env.TZ = zone;
+    });
+
+    const day = () => screen.getByLabelText<HTMLInputElement>('Expires');
+    const posted = () => JSON.parse(vi.mocked(fetch).mock.calls[0][1]!.body as string);
+
+    it('starts empty, no earlier than today, and mints with no expiresAt', async () => {
+      vi.useFakeTimers({ now: new Date(2026, 10, 8, 9, 0), toFake: ['Date'] });
+      mint();
+      openCreate();
+
+      expect(day().value).toBe('');
+      expect(day().type).toBe('date');
+      expect(day().min).toBe('2026-11-08');
+      expect(day().max).toBe('9999-12-30');
+
+      await generate();
+
+      expect(posted()).toEqual({ name: 'Deploy' });
+    });
+
+    it.each([
+      ['30 days', '2026-12-08', new Date(2026, 11, 9)],
+      ['90 days', '2027-02-06', new Date(2027, 1, 7)],
+      ['1 year', '2027-11-08', new Date(2027, 10, 9)],
+    ])('fills %s from today and mints through the end of that day', async (label, filled, next) => {
+      vi.useFakeTimers({ now: new Date(2026, 10, 8, 9, 0), toFake: ['Date'] });
+      mint();
+      openCreate();
+
+      fireEvent.click(screen.getByRole('button', { name: label }));
+
+      expect(day().value).toBe(filled);
+
+      await generate();
+
+      expect(posted()).toEqual({ name: 'Deploy', expiresAt: next.toISOString() });
+    });
+
+    it('fills "1 year" from Feb 29 with Feb 28 of next year, not Mar 1', () => {
+      vi.useFakeTimers({ now: new Date(2028, 1, 29, 9, 0), toFake: ['Date'] });
+      openCreate();
+
+      fireEvent.click(screen.getByRole('button', { name: '1 year' }));
+
+      expect(day().value).toBe('2029-02-28');
+    });
+
+    it.each([
+      ['late in the evening west of UTC', 'America/Los_Angeles', 23, '2026-12-09T08:00:00.000Z'],
+      ['just after midnight east of UTC', 'Asia/Tokyo', 0, '2026-12-08T15:00:00.000Z'],
+    ])('keeps the day from slipping %s', async (_name, timeZone, hour, expiresAt) => {
+      process.env.TZ = timeZone;
+      vi.useFakeTimers({ now: new Date(2026, 10, 8, hour, 30), toFake: ['Date'] });
+      mint();
+      openCreate();
+
+      fireEvent.click(screen.getByRole('button', { name: '30 days' }));
+
+      expect(day().min).toBe('2026-11-08');
+      expect(day().value).toBe('2026-12-08');
+
+      await generate();
+
+      expect(posted().expiresAt).toBe(expiresAt);
+    });
+
+    it('clears the day with No expiry, and takes a typed day after a quick button', async () => {
+      mint();
+      openCreate();
+
+      fireEvent.click(screen.getByRole('button', { name: '90 days' }));
+      fireEvent.click(screen.getByRole('button', { name: 'No expiry' }));
+
+      expect(day().value).toBe('');
+
+      fireEvent.click(screen.getByRole('button', { name: '1 year' }));
+      fireEvent.change(day(), { target: { value: '2030-03-01' } });
+      await generate();
+
+      expect(posted().expiresAt).toBe(new Date(2030, 2, 2).toISOString());
+    });
+
+    it("shows the server's refusal in the dialog", async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        json: () => Promise.resolve({ error: 'expiresAt must be in the future.' }),
+      } as Response);
+
+      openCreate();
+
+      fireEvent.change(screen.getByLabelText('Key name'), { target: { value: 'Deploy' } });
+      fireEvent.change(day(), { target: { value: '2020-01-01' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
+
+      expect((await screen.findByRole('alert')).textContent).toBe(
+        'expiresAt must be in the future.',
+      );
+    });
+
+    it('empties the day when the dialog opens again', () => {
+      openCreate();
+      fireEvent.click(screen.getByRole('button', { name: '30 days' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Create API key' }));
+
+      expect(day().value).toBe('');
+    });
   });
 
   it('does not clear the route cache when dismissed without a key', () => {
