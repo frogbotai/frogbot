@@ -2,7 +2,7 @@
 title: "Templates and sample data"
 sidebarTitle: "Templates"
 description: "Choose a create-frogbot-app template, load its sample data from the dashboard, and add a seed to your own app."
-keywords: ["templates", "create-frogbot-app", "seed", "sample data", "projects"]
+keywords: ["templates", "create-frogbot-app", "seed", "sample data", "projects", "crm"]
 ---
 
 `create-frogbot-app` asks which template to start from, or takes it from `--template`:
@@ -15,12 +15,27 @@ npx create-frogbot-app@latest my-app --template projects
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `blank`    | Users, file uploads, and the `general` and `assistant` agents. The default.                                                                                                                                           |
 | `projects` | A project tracker: projects, tasks numbered per project with keys such as `WEB-12` ([autonumber](/fields/autonumber#numbering-per-project)), a board grouped by status, and sample data. |
+| `crm`      | A CRM: companies with logos on a board by lifecycle, contacts, a deals board from lead to won or lost, a calendar of calls and meetings, tasks as a list, board and calendar, and sample data that only adds. |
 
 Every template works with SQLite, PostgreSQL and MongoDB, and with every AI provider. With `--ai none`, the template's agents, AI config and AI-only plugins are left out; its collections and sample data stay.
 
 ## Loading the sample data
 
-A template with sample data shows a **Seed your database** panel at the top of the dashboard. Its button calls `POST /api/seed`, which:
+The `crm` and `projects` templates load their sample data differently.
+
+### crm
+
+In development, the dashboard shows a **Load sample data** panel. Its button calls `POST /api/seed`, which adds eight fictional companies with logos, their contacts and deals, a week of activities around today, and a few tasks, all assigned to you. It is safe to leave in place:
+
+- It only adds. When companies, contacts, deals, activities or tasks already has a record, it answers `409` and changes nothing.
+- It creates no login and deletes nothing.
+- With `NODE_ENV=production`, as under `npm run start` and the Dockerfile, the panel renders nothing and the endpoint answers `404`.
+
+Its `seed({ frogbot, req, today })` takes the date the sample is arranged around, so a test can pass a fixed date and get the same records every run.
+
+### projects
+
+The dashboard shows a **Seed your database** panel at the top. Its button calls `POST /api/seed`, which:
 
 1. deletes every record in the template's own collections, such as projects and tasks. It never deletes your users;
 2. creates the sample records;
