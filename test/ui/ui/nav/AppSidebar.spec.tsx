@@ -33,6 +33,60 @@ describe('AppSidebar', () => {
     );
   });
 
+  it('marks only the longest matching nav item active', () => {
+    render(
+      <AppSidebar
+        {...props}
+        currentPath="/a/b/c"
+        navItems={[
+          { label: 'Home', path: '/admin' },
+          { label: 'A', path: '/a' },
+          { label: 'AB', path: '/a/b' },
+          { label: 'ABC sibling', path: '/a/bc' },
+        ]}
+        open
+      />,
+    );
+
+    const active = screen
+      .getAllByRole('button')
+      .filter(({ className }) => className.includes('fb-app-sidebar__item--active'));
+
+    expect(active.map((button) => button.getAttribute('aria-label'))).toEqual(['AB']);
+  });
+
+  it('marks no nav item active when none matches, and the home item only on its exact path', () => {
+    const { rerender } = render(
+      <AppSidebar
+        {...props}
+        currentPath="/admin/elsewhere"
+        navItems={[
+          { label: 'Overview', path: '/admin' },
+          { label: 'A', path: '/a' },
+        ]}
+        open
+      />,
+    );
+
+    expect(document.querySelector('.fb-app-sidebar__item--active')).toBeNull();
+
+    rerender(
+      <AppSidebar
+        {...props}
+        currentPath="/admin"
+        navItems={[
+          { label: 'Overview', path: '/admin' },
+          { label: 'A', path: '/a' },
+        ]}
+        open
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Overview' }).className).toContain(
+      'fb-app-sidebar__item--active',
+    );
+  });
+
   it('renders built-in and fallback collection icons', () => {
     const { container } = render(
       <AppSidebar

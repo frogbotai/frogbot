@@ -54,6 +54,19 @@ const baseClass = 'fb-app-sidebar';
 
 const classes = (...values: (false | string | undefined)[]) => values.filter(Boolean).join(' ');
 
+const matches = (path: string, currentPath: string, homePath: string) =>
+  path === homePath
+    ? currentPath === path
+    : currentPath === path || (path !== '/' && currentPath.startsWith(`${path}/`));
+
+const activeItemPath = (items: AppSidebarNavItem[], currentPath: string, homePath: string) =>
+  items
+    .filter(({ path }) => matches(path, currentPath, homePath))
+    .reduce<string | undefined>(
+      (longest, { path }) => (!longest || path.length > longest.length ? path : longest),
+      undefined,
+    );
+
 export function AppSidebar({
   accountEmail,
   accountIcon,
@@ -95,6 +108,8 @@ export function AppSidebar({
     return () => clearTimeout(timeout);
   }, [open]);
 
+  const activePath = activeItemPath(navItems, currentPath, homePath);
+
   const navigate = (event: MouseEvent, path: string) => {
     event.stopPropagation();
     onNavigate(path);
@@ -108,11 +123,7 @@ export function AppSidebar({
           : FolderIcon
         : (item.icon ?? FolderIcon);
 
-    const active =
-      item.path === homePath
-        ? currentPath === item.path
-        : currentPath === item.path ||
-          (item.path !== '/' && currentPath.startsWith(`${item.path}/`));
+    const active = item.path === activePath;
 
     return (
       <Tooltip delay={0} disabled={open} label={item.label} side="right" key={item.path}>

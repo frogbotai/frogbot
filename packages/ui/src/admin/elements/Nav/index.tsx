@@ -17,6 +17,7 @@ import { buildSettingsNav } from '../SettingsNav/buildSettingsNav.js';
 import { buildNavModel } from './buildNavModel.js';
 import { FrogBotNavClient, FrogBotSettingsNavClient } from './index.client.js';
 import { renderNavIcon } from './renderNavIcon.js';
+import { resolveNavItems } from './resolveNavItems.js';
 
 async function getNavPreferences(req?: PayloadRequest): Promise<NavPreferences | null> {
   if (!req?.user?.collection) return null;
@@ -42,6 +43,7 @@ async function getNavPreferences(req?: PayloadRequest): Promise<NavPreferences |
 export type FrogBotNavProps = {
   collectionSlug?: string;
   CustomAvatar?: ReactNode;
+  docID?: number | string;
   req?: PayloadRequest;
 } & ServerProps;
 
@@ -70,6 +72,7 @@ export async function FrogBotNav(props: FrogBotNavProps) {
   const {
     collectionSlug,
     CustomAvatar,
+    docID,
     documentSubViewType,
     i18n,
     locale,
@@ -89,10 +92,22 @@ export async function FrogBotNav(props: FrogBotNavProps) {
 
   const { admin, routes } = payload.config;
   const shellComponents = admin.components as typeof admin.components & RootAdminComponents;
-  const modelProps = { config: payload.config, i18n, permissions, visibleEntities };
+  const navItems = await resolveNavItems({
+    collectionSlug,
+    config: payload.config,
+    docID,
+    importMap: payload.importMap,
+    params,
+    req,
+    viewType,
+  });
+
+  const modelProps = { config: payload.config, i18n, navItems, permissions, visibleEntities };
   const palette = buildPaletteModel(modelProps);
 
   const serverProps = {
+    collectionSlug,
+    docID,
     i18n,
     locale,
     params,
