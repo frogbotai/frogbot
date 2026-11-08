@@ -114,6 +114,7 @@ export async function ListView(props: ListViewServerProps) {
     redirect: (path) =>
       server.redirect(formatAdminURL({ adminRoute: payload.config.routes.admin, path })),
   });
+
   let grouped: GroupedTable | undefined;
 
   if (isList) {
