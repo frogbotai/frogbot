@@ -1,5 +1,7 @@
 import type { ComponentProps, ReactNode } from 'react';
 
+const shown = (node: ReactNode) => node != null && typeof node !== 'boolean';
+
 /** Props for {@link List}: a plain `<ul>` of {@link ListItem} rows. */
 export type ListProps = ComponentProps<'ul'>;
 
@@ -8,7 +10,7 @@ export function List({ className, ...props }: ListProps) {
   return <ul className={`fb-list${className ? ` ${className}` : ''}`} {...props} />;
 }
 
-/** Props for {@link ListItem}. With `href`, the whole row opens the link; links and buttons in `subtitle` or `meta` stay clickable on their own. */
+/** Props for {@link ListItem}. With `href`, the whole row opens the link; links, buttons and form controls in `subtitle` or `meta` stay clickable on their own. */
 export type ListItemProps = Omit<ComponentProps<'li'>, 'title'> & {
   /** Shown before the title, such as an icon or avatar. */
   leading?: ReactNode;
@@ -34,7 +36,7 @@ export function ListItem({
 
   return (
     <li className={classes} {...props}>
-      {leading ? <div className="fb-list__leading">{leading}</div> : null}
+      {shown(leading) ? <div className="fb-list__leading">{leading}</div> : null}
       <div className="fb-list__body">
         <div className="fb-list__title">
           {href ? (
@@ -45,9 +47,9 @@ export function ListItem({
             title
           )}
         </div>
-        {subtitle ? <div className="fb-list__subtitle">{subtitle}</div> : null}
+        {shown(subtitle) ? <div className="fb-list__subtitle">{subtitle}</div> : null}
       </div>
-      {meta ? <div className="fb-list__meta">{meta}</div> : null}
+      {shown(meta) ? <div className="fb-list__meta">{meta}</div> : null}
     </li>
   );
 }

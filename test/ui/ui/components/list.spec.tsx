@@ -75,4 +75,31 @@ describe('List', () => {
     expect(item.querySelectorAll('a a')).toHaveLength(0);
     expect(screen.getAllByRole('link')).toHaveLength(3);
   });
+
+  it('shows 0 in leading, subtitle and meta, and omits only null, undefined and false', () => {
+    render(
+      <List>
+        <ListItem data-testid="zero" leading={0} meta={0} subtitle={0} title="Zero" />
+        <ListItem
+          data-testid="empty"
+          leading={false}
+          meta={null}
+          subtitle={undefined}
+          title="Empty"
+        />
+      </List>,
+    );
+
+    const zero = screen.getByTestId('zero');
+
+    expect(zero.querySelector('.fb-list__leading')?.textContent).toBe('0');
+    expect(zero.querySelector('.fb-list__subtitle')?.textContent).toBe('0');
+    expect(zero.querySelector('.fb-list__meta')?.textContent).toBe('0');
+
+    const empty = screen.getByTestId('empty');
+
+    expect(empty.querySelector('.fb-list__leading')).toBeNull();
+    expect(empty.querySelector('.fb-list__subtitle')).toBeNull();
+    expect(empty.querySelector('.fb-list__meta')).toBeNull();
+  });
 });
