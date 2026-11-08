@@ -1291,6 +1291,37 @@ describe('API keys plugin integration', () => {
       expect((await stored(undated.body.id)).expiresAt ?? null).toBeNull();
     });
 
+    it('refuses impossible calendar dates instead of rolling them into the next month', async () => {
+      for (const expiresAt of ['2050-02-30', '2050-02-31T00:00:00.000Z', '2050-04-31']) {
+        const refused = await mint(session, { name: 'Feb', expiresAt });
+
+        expect(refused.status, `${expiresAt}: ${JSON.stringify(refused.body)}`).toBe(400);
+      }
+    });
+
+    it('refuses non-ISO dates, whose meaning depends on the server time zone', async () => {
+      for (const expiresAt of [
+        '2050-01-01 00:00',
+        'January 1, 2050',
+        '1/2/2050',
+        '2050-01-01T00:00',
+      ]) {
+        const refused = await mint(session, { name: 'Loose', expiresAt });
+
+        expect(refused.status, `${expiresAt}: ${JSON.stringify(refused.body)}`).toBe(400);
+      }
+    });
+
+    it('accepts a date-only expiresAt and one with an offset, as UTC instants', async () => {
+      const day = await mint(session, { name: 'Day', expiresAt: '2050-02-28' });
+      const offset = await mint(session, { name: 'Offset', expiresAt: '2050-01-01T00:00+05:00' });
+
+      expect(day.status).toBe(201);
+      expect(day.body.expiresAt).toBe('2050-02-28T00:00:00.000Z');
+      expect(offset.status).toBe(201);
+      expect(offset.body.expiresAt).toBe('2049-12-31T19:00:00.000Z');
+    });
+
     it('stops a key signing in once its date passes, and refuses to rotate it', async () => {
       const expiresAt = new Date(Date.now() + 864e5).toISOString();
       const key = await mint(session, { name: 'Day pass', expiresAt });

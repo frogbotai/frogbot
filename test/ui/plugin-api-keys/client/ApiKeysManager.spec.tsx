@@ -227,6 +227,15 @@ describe('API key controls', () => {
       expect(posted()).toEqual({ name: 'Deploy', expiresAt: next.toISOString() });
     });
 
+    it('fills "1 year" from Feb 29 with Feb 28 of next year, not Mar 1', () => {
+      vi.useFakeTimers({ now: new Date(2028, 1, 29, 9, 0), toFake: ['Date'] });
+      openCreate();
+
+      fireEvent.click(screen.getByRole('button', { name: '1 year' }));
+
+      expect(day().value).toBe('2029-02-28');
+    });
+
     it.each([
       ['late in the evening west of UTC', 'America/Los_Angeles', 23, '2026-12-09T08:00:00.000Z'],
       ['just after midnight east of UTC', 'Asia/Tokyo', 0, '2026-12-08T15:00:00.000Z'],
