@@ -17,6 +17,7 @@ export const Deals: CollectionConfig = {
           'closeDate',
           'owner',
         ],
+        summary: { name: 'count', amount: 'sum' },
       },
       {
         type: 'board',

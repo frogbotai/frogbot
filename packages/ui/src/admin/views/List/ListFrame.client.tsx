@@ -23,6 +23,10 @@ import { AIFieldListMenuItem } from '../../fields/AI/ListMenuItem.client.js';
 import { CollectionViewFrame } from '../CollectionViewFrame.client.js';
 import { BulkUploadButton } from './BulkUploadButton.client.js';
 import { DefaultListView } from './DefaultListView.client.js';
+import { ListSummary, type ListSummaryProps } from './summary/ListSummary.client.js';
+
+/** The footer totals' setup, resolved on the server for the collection's list view. */
+export type ListFrameSummary = Omit<ListSummaryProps, 'collectionSlug' | 'containerRef'>;
 
 export type ListFrameClientProps = {
   AfterList?: ReactNode;
@@ -38,6 +42,7 @@ export type ListFrameClientProps = {
   listProps: ListViewClientProps;
   newDocumentURL: string;
   NoResults: ReactNode;
+  summary?: ListFrameSummary;
   tabs: ViewTab[];
   Toolbar?: ReactNode[];
 };
@@ -86,7 +91,7 @@ function useDoneRows(doneIds: string[] | undefined) {
   return ref;
 }
 
-function ListFrameInner({ doneIds, listProps, ...frame }: ListFrameClientProps) {
+function ListFrameInner({ doneIds, listProps, summary, ...frame }: ListFrameClientProps) {
   const { collectionSlug, columnState, disableBulkDelete, disableBulkEdit, Table, viewType } =
     listProps;
 
@@ -183,6 +188,9 @@ function ListFrameInner({ doneIds, listProps, ...frame }: ListFrameClientProps) 
           <div ref={tableRef}>
             <RelationshipProvider>{Table}</RelationshipProvider>
           </div>
+          {summary && !frame.isEmpty ? (
+            <ListSummary {...summary} collectionSlug={collectionSlug} containerRef={tableRef} />
+          ) : null}
         </CollectionViewFrame>
       </SelectionProvider>
     </TableColumnsProvider>

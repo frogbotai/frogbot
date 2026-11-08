@@ -1,5 +1,12 @@
-import type { ListViewServerProps, PayloadRequest, SelectIncludeType } from 'payload';
-import { formatAdminURL } from 'payload/shared';
+import { getSummaryKind, SUMMARY_OPERATIONS } from 'frogbot/internal';
+import type {
+  ListViewServerProps,
+  PayloadRequest,
+  SanitizedCollectionConfig,
+  SelectIncludeType,
+  Where,
+} from 'payload';
+import { combineWhereConstraints, formatAdminURL, mergeListSearchAndWhere } from 'payload/shared';
 import * as qs from 'qs-esm';
 
 import { getPath } from '../cells.js';
@@ -13,8 +20,9 @@ import { buildFrameSlots } from '../frame.js';
 import { isRecordDone } from '../records/state.js';
 import { isFreshQuery, pickViewSetup, resolveViewSetup } from '../viewSetup.js';
 import { DefaultListView } from './DefaultListView.client.js';
-import { ListFrameClient } from './ListFrame.client.js';
+import { ListFrameClient, type ListFrameSummary } from './ListFrame.client.js';
 import { withRowIds } from './rowIds.js';
+import { readSummaryChoices, type SummaryColumn } from './summary/summary.js';
 
 type Row = Record<string, unknown>;
 
@@ -63,6 +71,53 @@ async function findDoneIds({
     .map((doc) => String(doc.id));
 }
 
+async function resolveSummaryProps({
+  collectionConfig,
+  columns,
+  defaults,
+  preference,
+  preferenceKey,
+  query,
+  req,
+}: {
+  collectionConfig: SanitizedCollectionConfig;
+  columns: string[];
+  defaults: ListFrameSummary['defaults'];
+  preference: unknown;
+  preferenceKey: string;
+  query: Record<string, unknown>;
+  req: PayloadRequest;
+}): Promise<ListFrameSummary> {
+  const summaryColumns: Record<string, SummaryColumn> = {};
+
+  for (const path of columns) {
+    const kind = getSummaryKind({ collection: collectionConfig, path, payload: req.payload });
+
+    if (kind) summaryColumns[path] = { kind, operations: SUMMARY_OPERATIONS[kind] };
+  }
+
+  const baseFilter = await collectionConfig.admin.baseFilter?.({
+    limit: Number(query.limit) || collectionConfig.admin.pagination?.defaultLimit || 10,
+    page: Number(query.page) || 1,
+    req,
+    sort: typeof query.sort === 'string' ? query.sort : '',
+  });
+
+  const where = mergeListSearchAndWhere({
+    collectionConfig,
+    search: typeof query.search === 'string' ? query.search : '',
+    where: combineWhereConstraints([query.where as Where | undefined, baseFilter ?? undefined]),
+  });
+
+  return {
+    columns: summaryColumns,
+    defaults,
+    preferenceKey,
+    saved: readSummaryChoices(preference),
+    where,
+  };
+}
+
 /**
  * The list view Payload renders. On the collection's own page it renders in FrogBot's shared view
  * frame with Payload's table, selection and page controls as its body. A relationship drawer and
@@ -94,6 +149,7 @@ export async function ListView(props: ListViewServerProps) {
   const runtime = getRuntimeViews({ collectionConfig });
   const view = runtime[0]?.type === 'list' ? runtime[0] : undefined;
   const isList = clientProps.viewType === 'list' && view !== undefined;
+  let summary: ListFrameSummary | undefined;
 
   if (isList) {
     await redirectToLastView({ collectionSlug, req, server, views });
@@ -116,6 +172,16 @@ export async function ListView(props: ListViewServerProps) {
         })}?${[qs.stringify(query), saved].filter(Boolean).join('&')}`,
       );
     }
+
+    summary = await resolveSummaryProps({
+      collectionConfig,
+      columns: (clientProps.columnState ?? []).map(({ accessor }) => accessor),
+      defaults: view.summary,
+      preference: setup.preference,
+      preferenceKey: setup.preferenceKey,
+      query,
+      req,
+    });
   }
 
   const slots = buildFrameSlots({
@@ -171,6 +237,7 @@ export async function ListView(props: ListViewServerProps) {
       isEmpty={isEmpty}
       listMenuItems={[...(clientProps.listMenuItems ?? []), ...(slots.listMenuItems ?? [])]}
       listProps={{ ...clientProps, Table: withRowIds(clientProps.Table) }}
+      summary={summary}
     />
   );
 }
