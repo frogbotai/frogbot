@@ -29,7 +29,7 @@ async function expectPhoneTopBar(page: Page, title: string) {
   const stepNav = page.locator('.app-header__step-nav');
   const leaf = stepNav.locator(':scope > .step-nav__last');
   const ancestors = stepNav.locator(':scope > :not(.step-nav__last)');
-  const toggle = page.locator('.fb-mobile-nav-toggle');
+  const toggle = page.locator('.app-header__sidebar-toggle');
 
   await expect(page.locator('.fb-nav-shell')).toHaveAttribute(
     'data-nav-state',
@@ -38,6 +38,7 @@ async function expectPhoneTopBar(page: Page, title: string) {
   await expect(leaf).toHaveText(title);
   await leaf.waitFor({ state: 'visible' });
   await toggle.waitFor({ state: 'visible' });
+  await expect(page.locator('.fb-mobile-nav-toggle'), 'one sidebar control').toHaveCount(0);
 
   expect(await ancestors.count()).toBeGreaterThan(0);
 
@@ -47,7 +48,6 @@ async function expectPhoneTopBar(page: Page, title: string) {
     await expect.soft(ancestor).toBeHidden();
   }
 
-  await expect.soft(toggle).toHaveCSS('position', 'fixed');
   await expect.soft(leaf).toHaveCSS('max-width', 'none');
 
   const [leafBox, toggleBox, controlsRight, viewport] = await Promise.all([
@@ -65,18 +65,14 @@ async function expectPhoneTopBar(page: Page, title: string) {
     })),
   ]);
 
-  const overlapsToggle =
-    leafBox.left < toggleBox.right &&
-    leafBox.right > toggleBox.left &&
-    leafBox.top < toggleBox.bottom &&
-    leafBox.bottom > toggleBox.top;
+  const sameRow = leafBox.top < toggleBox.bottom && leafBox.bottom > toggleBox.top;
 
   const availableWidth = Math.min(controlsRight, viewport.innerWidth) - toggleBox.right;
 
-  expect.soft(overlapsToggle, 'the leaf label clears the fixed menu button').toBe(false);
+  expect.soft(sameRow, 'the toggle sits inline with the leaf label').toBe(true);
   expect
-    .soft(leafBox.left - toggleBox.right, 'the label leaves a gap after the toggle')
-    .toBeGreaterThanOrEqual(12);
+    .soft(leafBox.left, 'the toggle comes before the leaf label')
+    .toBeGreaterThanOrEqual(toggleBox.right);
   expect.soft(viewport.scrollWidth).toBeLessThanOrEqual(viewport.innerWidth);
   expect
     .soft(availableWidth, 'the phone header has more than 160px for its label')
@@ -129,15 +125,16 @@ test('the phone create-chat top bar keeps the home crumb clear of the menu butto
   );
 
   const home = page.locator('.app-header__step-nav .step-nav__first');
-  const toggle = page.locator('.fb-mobile-nav-toggle');
+  const toggle = page.locator('.app-header__sidebar-toggle');
 
   await expect(page.locator('.app-header__step-nav .step-nav__item')).toHaveCount(1);
   await expect(home).toBeVisible();
   await expect(toggle).toBeVisible();
+  await expect(page.locator('.fb-mobile-nav-toggle')).toHaveCount(0);
 
   const [homeBox, toggleBox] = await Promise.all([bounds(home), bounds(toggle)]);
 
-  expect(homeBox.left - toggleBox.right).toBeGreaterThanOrEqual(12);
+  expect(homeBox.left).toBeGreaterThanOrEqual(toggleBox.right);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
 });
 
@@ -184,7 +181,7 @@ test('opening the phone menu restores the full trail without moving the page bod
   const closedBox = await bounds(content);
   const ancestors = page.locator('.app-header__step-nav > :not(.step-nav__last)');
 
-  await page.locator('.fb-mobile-nav-toggle').click();
+  await page.locator('.app-header__sidebar-toggle').click();
 
   await expect(page.locator('.fb-nav-shell')).toHaveAttribute('data-nav-state', 'mobile-nav-open');
 
@@ -202,6 +199,29 @@ test('opening the phone menu restores the full trail without moving the page bod
   await expectPhoneTopBar(page, taskTitle);
 
   expect(await bounds(content)).toEqual(closedBox);
+});
+
+test('the phone header toggle opens the drawer and the sidebar closes it', async ({ page }) => {
+  await page.goto(`/collections/${chatsSlug}/create`);
+  await expect(composerInput(page)).toBeVisible();
+
+  const shell = page.locator('.fb-nav-shell');
+
+  await expect(shell).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
+
+  await page.locator('.app-header__sidebar-toggle').click();
+  await expect(shell).toHaveAttribute('data-nav-state', 'mobile-nav-open');
+  await expect(page.locator('.fb-nav-backdrop')).toBeVisible();
+
+  await page.locator('button[aria-label="Close sidebar"]').click();
+  await expect(shell).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
+  await expect(page.locator('.app-header__sidebar-toggle')).toBeVisible();
+
+  await page.locator('.app-header__sidebar-toggle').click();
+  await expect(shell).toHaveAttribute('data-nav-state', 'mobile-nav-open');
+
+  await page.locator('.fb-nav-backdrop').click({ position: { x: 360, y: 400 } });
+  await expect(shell).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
 });
 
 test('resizing to 1280px restores the unchanged desktop trail', async ({ page }) => {
@@ -227,6 +247,7 @@ test('resizing to 1280px restores the unchanged desktop trail', async ({ page })
   );
 
   await expect(page.locator('.fb-mobile-nav-toggle')).toHaveCount(0);
+  await expect(page.locator('.app-header__sidebar-toggle')).toBeHidden();
   await expect(page.locator('.app-header__controls-wrapper')).toHaveCSS('padding-left', '0px');
   await expect(page.locator('.step-nav__last')).toHaveCSS('max-width', 'none');
   await expect(page.locator('.app-header__step-nav > *')).toHaveText(trail);

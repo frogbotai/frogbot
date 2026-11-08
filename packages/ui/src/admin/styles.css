@@ -34,19 +34,13 @@
     min-width: 0;
   }
 
-  body:has(.fb-nav-shell) .template-default__nav-toggler-wrapper,
-  body:has(.fb-nav-shell) .template-default__nav-toggler-container,
   body:has(.fb-nav-shell) .app-header__account,
-  body:has(.fb-nav-shell) .app-header__mobile-nav-toggler {
+  body:has(.fb-nav-shell:not([data-nav-state^="mobile"])) .app-header__sidebar-toggle {
     display: none;
   }
 
   body:has(.fb-nav-shell) .app-header__controls-wrapper {
     justify-content: flex-end;
-  }
-
-  body:has(.fb-nav-shell[data-nav-state="mobile-nav-closed"]) .app-header__controls-wrapper {
-    padding-left: 48px;
   }
 
   body:has(.fb-nav-shell[data-nav-state="mobile-nav-closed"]) .app-header__step-nav-wrapper,
@@ -74,16 +68,6 @@
   body:has(.fb-nav-shell[data-nav-state="mobile-nav-closed"])
     .step-nav:has(.dashboard-breadcrumb-select, .dashboard-breadcrumb-dropdown__editing) {
     overflow: visible;
-  }
-
-  button[aria-label="Open Menu"],
-  button[aria-label="Close Menu"] {
-    transition: transform 200ms ease-out;
-  }
-
-  button[aria-label="Open Menu"]:hover,
-  button[aria-label="Close Menu"]:hover {
-    transform: translateX(4px);
   }
 
   .frogbot-model-select .multi-value-label {

@@ -116,7 +116,7 @@ async function openAt(page: Page, url: string, { width, sidebar }: (typeof layou
   await waitForNavSettled(page);
 
   if (sidebar === 'drawer-open') {
-    await page.getByRole('button', { name: 'Open navigation' }).click();
+    await page.locator('.app-header__sidebar-toggle').click();
 
     await expect(page.locator('.fb-nav-shell')).toHaveAttribute(
       'data-nav-state',
