@@ -358,6 +358,7 @@ const testProjects = [
     testMatch: [
       'boxSizing.browser.spec.ts',
       'composerSize.browser.spec.ts',
+      'filterPanel.browser.spec.ts',
       'generalPicker.browser.spec.ts',
       'iconGeometry.browser.spec.ts',
       'listControls.browser.spec.ts',
