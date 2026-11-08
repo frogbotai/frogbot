@@ -33,9 +33,7 @@ const count = (page: Page, label: string) =>
   column(page, label).locator('.frog-board__column-count');
 
 const titles = (page: Page, label: string) =>
-  column(page, label).locator(
-    '.frog-board__card:not(.frog-board__inline) .collection-board__title',
-  );
+  column(page, label).locator('.frog-board__card:not(.frog-board__inline) .fb-card__title');
 
 async function create(page: Page, data: Record<string, unknown>, slug = storiesSlug) {
   const response = await page.request.post(`/api/${slug}`, { data });

@@ -8,10 +8,12 @@ import {
   useListQuery,
   useTableColumns,
 } from '@payloadcms/ui';
+import type { PopulateType } from 'payload';
 import { type ComponentType, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Board, type BoardColumnState } from '../../../board/Board.js';
 import { BoardAddButton, InlineAddCard } from '../../../board/InlineAddCard.js';
+import type { CardThumbnail } from '../cards/thumbnail.js';
 import { appendQuery, getPath, setPath } from '../cells.js';
 import { getViewCardColumns } from '../preferences.js';
 import { BoardDocumentCard, type BoardRow } from './BoardDocumentCard.js';
@@ -31,11 +33,13 @@ export type BoardViewClientProps = {
   collectionSlug: string;
   columnState: BoardColumnState;
   columns: ResolvedBoardColumn[];
-  cover?: string;
   filter?: Record<string, unknown>;
   groupBy: string;
   limit: number;
   orderField: string;
+  /** Payload's `populate` for the card image's upload field. */
+  populate?: PopulateType;
+  thumbnail: CardThumbnail;
   canCreate: boolean;
   canToggleDone: boolean;
   canUpdate: boolean;
@@ -89,6 +93,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
 
     appendQuery(params, 'where', buildColumnWhere(where, props.groupBy, value));
     appendQuery(params, 'sort', query.sort);
+    appendQuery(params, 'populate', props.populate);
     const response = await fetch(`${config.routes.api}/${props.collectionSlug}?${params}`, {
       credentials: 'include',
     });
@@ -319,7 +324,6 @@ export function BoardViewClient(props: BoardViewClientProps) {
                 cardColumns={cardColumns}
                 collectionConfig={collectionConfig}
                 collectionSlug={props.collectionSlug}
-                cover={props.cover}
                 disabled={!props.canUpdate}
                 onDelete={removeRow}
                 onSave={(doc) => {
@@ -327,6 +331,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
                   void totals.refresh();
                 }}
                 row={row}
+                thumbnail={props.thumbnail}
               />
             )
           }

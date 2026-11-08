@@ -51,17 +51,42 @@ export type ListView = ViewConfig & {
   type: 'list';
 };
 
-export type BoardView = ViewConfig & {
-  components?: ViewComponents & {
-    afterColumns?: FrogBotComponent[];
-    beforeColumns?: FrogBotComponent[];
-    Card?: FrogBotComponent;
-    ColumnHeader?: FrogBotComponent;
-  };
-  cover?: string;
-  groupBy?: string;
-  type: 'board';
+/** The keys every view that draws cards shares: board and gallery. */
+export type CardViewConfig = {
+  /**
+   * Card image for this view only.
+   * - string: an upload field, overriding the collection's `useAsThumbnail`.
+   * - false: no image on this view's cards.
+   * - not set (default): the collection's `useAsThumbnail`, with Payload's defaults.
+   */
+  useAsThumbnail?: false | string;
+  /** 'cover' (default) fills and crops, for photos. 'contain' fits without cropping, for logos. */
+  thumbnailFit?: 'contain' | 'cover';
 };
+
+export type BoardView = ViewConfig &
+  CardViewConfig & {
+    components?: ViewComponents & {
+      afterColumns?: FrogBotComponent[];
+      beforeColumns?: FrogBotComponent[];
+      /** Replaces each card's body. It receives the document as `row`. */
+      Card?: FrogBotComponent;
+      ColumnHeader?: FrogBotComponent;
+    };
+    groupBy?: string;
+    type: 'board';
+  };
+
+export type GalleryView = ViewConfig &
+  CardViewConfig & {
+    components?: ViewComponents & {
+      afterCards?: FrogBotComponent[];
+      beforeCards?: FrogBotComponent[];
+      /** Replaces each card's body. It receives the document as `row`. */
+      Card?: FrogBotComponent;
+    };
+    type: 'gallery';
+  };
 
 export type CalendarMode = 'day' | 'month' | 'week';
 
@@ -86,7 +111,7 @@ export type CustomView = ViewConfig & {
   type: 'custom';
 };
 
-export type CollectionView = BoardView | CalendarView | CustomView | ListView;
+export type CollectionView = BoardView | CalendarView | CustomView | GalleryView | ListView;
 
 export type CollectionViewMetadata = Omit<
   CollectionView,

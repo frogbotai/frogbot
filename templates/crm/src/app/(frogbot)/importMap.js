@@ -24,6 +24,7 @@ import { BoldFeatureClient as BoldFeatureClient_54ba8335448b80c9678012348095a8b7
 import { ItalicFeatureClient as ItalicFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
 import { LLMInstructionsMenuItem as LLMInstructionsMenuItem_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { ListView as ListView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
+import { GalleryView as GalleryView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { BoardView as BoardView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { PhoneField as PhoneField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { MoneyField as MoneyField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
@@ -108,6 +109,8 @@ export const importMap = {
   '@frogbotai/ui/admin#LLMInstructionsMenuItem':
     LLMInstructionsMenuItem_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin/rsc#ListView': ListView_a9b31afd548db1251f21130da6e46588,
+  '@frogbotai/ui/admin/rsc#GalleryView':
+    GalleryView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin/rsc#BoardView':
     BoardView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin#PhoneField': PhoneField_53ccb9913b2925da8adcdf5fd85e01f4,

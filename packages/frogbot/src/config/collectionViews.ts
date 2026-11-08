@@ -1,4 +1,8 @@
-import type { CollectionConfig as PayloadCollectionConfig, PayloadComponent } from 'payload';
+import {
+  type CollectionConfig as PayloadCollectionConfig,
+  InvalidConfiguration,
+  type PayloadComponent,
+} from 'payload';
 
 import { validateAdminIcon } from '../admin/icons.js';
 import type { CollectionView, CollectionViewMetadata } from '../admin/views/types.js';
@@ -80,6 +84,28 @@ function validateUseAsDone(collection: CollectionConfig): void {
   }
 }
 
+function validateViewThumbnail(
+  collection: CollectionConfig,
+  view: CollectionView & { slug: string },
+) {
+  if (view.type !== 'board' && view.type !== 'gallery') return;
+  const name: unknown = view.useAsThumbnail;
+  if (name === undefined || name === false) return;
+
+  const field =
+    typeof name === 'string' && !name.includes('.')
+      ? flattenTopLevelFields(collection.fields).find(
+          (candidate) => 'name' in candidate && candidate.name === name,
+        )
+      : undefined;
+
+  if (field?.type !== 'upload') {
+    throw new InvalidConfiguration(
+      `[frogbot] Collection "${collection.slug}" ${view.type} view "${view.slug}" has useAsThumbnail "${String(name)}", which must name a top-level upload field or be false.`,
+    );
+  }
+}
+
 function containsFunction(value: unknown): boolean {
   if (typeof value === 'function') return true;
   if (!value || typeof value !== 'object') return false;
@@ -145,6 +171,7 @@ export function compileCollectionViews({
 
   for (const view of views) {
     validateAdminIcon(view.icon);
+    validateViewThumbnail(collection, view);
 
     if (containsFunction(view.filter)) {
       throw new Error(
@@ -221,6 +248,12 @@ export function compileCollectionViews({
     if (view.type === 'board') {
       runtimeViews[key] = {
         Component: '@frogbotai/ui/admin/rsc#BoardView',
+        ...actions,
+        ...(isDefault ? {} : { exact: true, path }),
+      };
+    } else if (view.type === 'gallery') {
+      runtimeViews[key] = {
+        Component: '@frogbotai/ui/admin/rsc#GalleryView',
         ...actions,
         ...(isDefault ? {} : { exact: true, path }),
       };

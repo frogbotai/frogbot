@@ -269,7 +269,20 @@ export default buildConfig({
     },
     {
       slug: approvalsSlug,
-      admin: { useAsTitle: 'title', views: [{ type: 'board', groupBy: 'status' }] },
+      admin: {
+        useAsTitle: 'title',
+        views: [
+          { type: 'board', groupBy: 'status' },
+          {
+            type: 'gallery',
+            components: {
+              afterCards: ['/components/GalleryCard#AfterCards'],
+              beforeCards: ['/components/GalleryCard#BeforeCards'],
+              Card: '/components/GalleryCard#ApprovalCard',
+            },
+          },
+        ],
+      },
       fields: [
         { name: 'title', type: 'text', required: true },
         { name: 'status', type: 'select', options: storyStatusOptions },

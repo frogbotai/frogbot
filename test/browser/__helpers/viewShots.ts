@@ -32,7 +32,11 @@ export async function prepareView(page: Page) {
 }
 
 async function waitForView(page: Page) {
-  await page.locator('table, .collection-board, .frog-calendar').first().waitFor();
+  await page
+    .locator('table, .collection-board, .collection-gallery, .frog-calendar')
+    .first()
+    .waitFor();
+
   await page.waitForLoadState('networkidle');
 
   await page.waitForFunction(() =>

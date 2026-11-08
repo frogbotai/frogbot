@@ -340,6 +340,7 @@ const testProjects = [
       'commandPalette.browser.spec.ts',
       'calendarTimeZone.browser.spec.ts',
       'board.browser.spec.ts',
+      'galleryCard.browser.spec.ts',
     ],
   }),
   project({ name: 'question-firefox', browser: 'firefox', testMatch: crossBrowserQuestionSpecs }),
@@ -399,7 +400,10 @@ const testProjects = [
   project({ name: 'plugin-seo', testMatch: 'seoFields.browser.spec.ts' }),
   project({ name: 'plugin-import-export', testMatch: 'importMapping.browser.spec.ts' }),
   project({ name: 'forms', testMatch: ['forms.browser.spec.ts', 'formBuilder.browser.spec.ts'] }),
-  project({ name: 'crm', testMatch: ['crm.browser.spec.ts', 'views.browser.spec.ts'] }),
+  project({
+    name: 'crm',
+    testMatch: ['crm.browser.spec.ts', 'gallery.browser.spec.ts', 'views.browser.spec.ts'],
+  }),
   project({
     name: 'dojo',
     testMatch: [

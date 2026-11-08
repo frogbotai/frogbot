@@ -120,7 +120,7 @@ test('Board column headers and cards show the option colours', async ({ page }) 
 
   const card = page.locator('.frog-board__card', { hasText: shipped.title });
 
-  await expectPills(card.locator('.collection-board__field', { hasText: 'Labels' }));
+  await expectPills(card.locator('.fb-card__field', { hasText: 'Labels' }));
 });
 
 test('a Calendar event shows the coloured status', async ({ page }) => {

@@ -94,7 +94,20 @@ export const Tasks: CollectionConfig = {
 };
 ```
 
-`admin.useAsDone` names one checkbox field (or a dot path into a group); startup fails if it isn't a checkbox. Done records share one done style on every view, and board cards get a check circle that toggles it through a normal update. To make a stage imply done, set the checkbox in a `beforeChange` hook rather than in config. Docs: https://docs.frogbot.ai/configuration/collections#collection-views
+Board and gallery cards share their keys: `defaultFields`, `components.Card`, and the card image. The image comes from the collection's `admin.useAsThumbnail` (defaulting to the first upload field; an upload collection with none shows each document's own file). A view's `useAsThumbnail: '<upload field>'` overrides it, `false` turns images off, and `thumbnailFit: 'contain'` fits logos without cropping. There is no `cover` key.
+
+```ts
+admin: {
+  useAsThumbnail: 'logo',
+  views: [
+    { type: 'list' },
+    { type: 'gallery', label: 'Logos', thumbnailFit: 'contain', defaultFields: ['industry'] },
+    { type: 'board', groupBy: 'lifecycle', useAsThumbnail: false },
+  ],
+}
+```
+
+`admin.useAsDone` names one checkbox field (or a dot path into a group); startup fails if it isn't a checkbox. Done records share one done style on every view, and board and gallery cards get a check circle that toggles it through a normal update. To make a stage imply done, set the checkbox in a `beforeChange` hook rather than in config. Docs: https://docs.frogbot.ai/configuration/collections#collection-views
 
 ## Authentication
 

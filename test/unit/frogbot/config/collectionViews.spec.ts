@@ -1,3 +1,4 @@
+import { InvalidConfiguration } from 'payload';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -681,6 +682,134 @@ describe('collection views', () => {
     expect(admin?.components?.views?.list).toEqual({
       Component: '@frogbotai/ui/admin/rsc#CustomCollectionView',
       actions,
+    });
+  });
+
+  describe('card views', () => {
+    const fields = [
+      { name: 'name', type: 'text' as const },
+      { name: 'logo', type: 'upload' as const, relationTo: 'media' },
+      { name: 'stage', type: 'select' as const, options: [] },
+      {
+        name: 'meta',
+        type: 'group' as const,
+        fields: [{ name: 'photo', type: 'upload' as const, relationTo: 'media' }],
+      },
+      {
+        type: 'row' as const,
+        fields: [{ name: 'banner', type: 'upload' as const, relationTo: 'media' }],
+      },
+    ];
+
+    it('compiles a gallery route with its card keys in the metadata', () => {
+      const admin = compileCollectionViews({
+        collection: {
+          slug: 'companies',
+          fields,
+          admin: {
+            views: [
+              { type: 'list' },
+              { type: 'gallery', label: 'Logos', thumbnailFit: 'contain' },
+              { type: 'gallery', slug: 'banners', useAsThumbnail: 'banner' },
+              { type: 'board', groupBy: 'stage', useAsThumbnail: false },
+            ],
+          },
+        },
+      });
+
+      expect(admin?.components?.views?.gallery).toEqual({
+        Component: '@frogbotai/ui/admin/rsc#GalleryView',
+        exact: true,
+        path: '/gallery',
+      });
+      expect(admin?.custom?.frogbot.views.slice(1)).toEqual([
+        {
+          type: 'gallery',
+          label: 'Logos',
+          thumbnailFit: 'contain',
+          path: '/gallery',
+          slug: 'gallery',
+        },
+        {
+          type: 'gallery',
+          label: 'Gallery',
+          useAsThumbnail: 'banner',
+          path: '/banners',
+          slug: 'banners',
+        },
+        {
+          type: 'board',
+          groupBy: 'stage',
+          label: 'Board',
+          orderField: '_order',
+          useAsThumbnail: false,
+          path: '/board',
+          slug: 'board',
+        },
+      ]);
+    });
+
+    it('renders a gallery as the default view', () => {
+      const admin = compileCollectionViews({
+        collection: { slug: 'media', fields: [], admin: { views: [{ type: 'gallery' }] } },
+      });
+
+      expect(admin?.components?.views?.list).toEqual({
+        Component: '@frogbotai/ui/admin/rsc#GalleryView',
+      });
+    });
+
+    it.each([
+      ['a missing field', 'photo'],
+      ['a nested path', 'meta.photo'],
+      ['a field that is not an upload', 'name'],
+      ['an empty string', ''],
+    ])('rejects a view useAsThumbnail naming %s', (_, useAsThumbnail) => {
+      for (const type of ['gallery', 'board'] as const) {
+        expect(() =>
+          compileCollectionViews({
+            collection: {
+              slug: 'companies',
+              fields,
+              admin: { views: [{ type: 'list' }, { type, groupBy: 'stage', useAsThumbnail }] },
+            },
+          }),
+        ).toThrow(
+          new RegExp(
+            `^\\[frogbot\\] Collection "companies" ${type} view "${type}" has useAsThumbnail "${useAsThumbnail.replace('.', '\\.')}", which must name a top-level upload field or be false\\.$`,
+          ),
+        );
+      }
+    });
+
+    it('throws Payload InvalidConfiguration for a bad view useAsThumbnail', () => {
+      expect(() =>
+        compileCollectionViews({
+          collection: {
+            slug: 'companies',
+            fields,
+            admin: { views: [{ type: 'gallery', useAsThumbnail: 'name' }] },
+          },
+        }),
+      ).toThrow(InvalidConfiguration);
+    });
+
+    it('accepts a top-level upload field, including one inside a row, and false', () => {
+      expect(() =>
+        compileCollectionViews({
+          collection: {
+            slug: 'companies',
+            fields,
+            admin: {
+              views: [
+                { type: 'gallery', useAsThumbnail: 'logo' },
+                { type: 'gallery', slug: 'banners', useAsThumbnail: 'banner' },
+                { type: 'board', groupBy: 'stage', useAsThumbnail: false },
+              ],
+            },
+          },
+        }),
+      ).not.toThrow();
     });
   });
 });

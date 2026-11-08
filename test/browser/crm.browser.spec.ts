@@ -11,6 +11,7 @@ const shots = path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-resu
 
 const views = [
   { name: 'companies-list', path: '/collections/companies' },
+  { name: 'companies-gallery', path: '/collections/companies/gallery' },
   { name: 'companies-board', path: '/collections/companies/board' },
   { name: 'contacts-list', path: '/collections/contacts' },
   { name: 'deals-list', path: '/collections/deals' },
@@ -20,6 +21,7 @@ const views = [
   { name: 'tasks-list', path: '/collections/tasks' },
   { name: 'tasks-board', path: '/collections/tasks/board' },
   { name: 'tasks-calendar', path: `/collections/tasks/calendar?date=${todayDate}` },
+  { name: 'media-gallery', path: '/collections/media/gallery' },
 ];
 
 test.use({ timezoneId });

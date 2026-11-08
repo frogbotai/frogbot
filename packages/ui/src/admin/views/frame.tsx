@@ -117,9 +117,17 @@ function slotsFor(view: RuntimeCollectionView | undefined) {
   const components = view?.components as Record<string, SlotComponent> | undefined;
 
   return {
-    afterTable: components?.afterTable ?? components?.afterColumns ?? components?.afterCalendar,
+    afterTable:
+      components?.afterTable ??
+      components?.afterColumns ??
+      components?.afterCalendar ??
+      components?.afterCards,
     afterView: components?.afterView,
-    beforeTable: components?.beforeTable ?? components?.beforeColumns ?? components?.beforeCalendar,
+    beforeTable:
+      components?.beforeTable ??
+      components?.beforeColumns ??
+      components?.beforeCalendar ??
+      components?.beforeCards,
     beforeView: components?.beforeView,
     menuItems: components?.menuItems,
     NoResults: components?.NoResults,

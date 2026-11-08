@@ -1,4 +1,4 @@
-import type { AdminViewServerProps, Column, ListQuery, Where } from 'payload';
+import type { AdminViewServerProps, Column, ListQuery, PaginatedDocs, Where } from 'payload';
 import type { ReactNode } from 'react';
 
 import {
@@ -14,13 +14,16 @@ import { isQueryError, type StoredViewPreference } from './viewSetup.js';
 type CollectionViewShellProps = AdminViewServerProps & {
   children: ReactNode;
   columnState?: Column[];
+  data?: PaginatedDocs;
   enableSort?: boolean;
+  Footer?: ReactNode;
   keepViewWhenEmpty?: boolean;
   manualSortField?: string;
   preference?: StoredViewPreference;
   preferenceKey?: string;
   query?: ListQuery;
   showEmptyState?: boolean;
+  totalDocs?: number;
   view: RuntimeCollectionView;
   views: Array<{ label: string; path: string; slug: string; type: string }>;
 };
@@ -44,7 +47,8 @@ export async function CollectionViewShell(props: CollectionViewShellProps) {
   const where = [view.filter, query.where].filter((value): value is Where => Boolean(value));
 
   const totalDocs =
-    props.showEmptyState === false
+    props.totalDocs ??
+    (props.showEmptyState === false
       ? 1
       : await req.payload
           .count({
@@ -59,7 +63,7 @@ export async function CollectionViewShell(props: CollectionViewShellProps) {
               if (isQueryError(error)) return 0;
               throw error;
             },
-          );
+          ));
 
   const slots = buildFrameSlots({
     activeSlug: view.slug,
@@ -80,10 +84,12 @@ export async function CollectionViewShell(props: CollectionViewShellProps) {
       {...slots}
       collectionSlug={collectionSlug}
       columnState={props.columnState}
+      data={props.data}
       enableSort={props.enableSort}
       hasCreatePermission={Boolean(permissions?.create)}
       hasDeletePermission={Boolean(permissions?.delete)}
       isEmpty={totalDocs === 0}
+      Footer={props.Footer}
       keepViewWhenEmpty={props.keepViewWhenEmpty}
       manualSortField={props.manualSortField}
       preference={props.preference}
