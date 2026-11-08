@@ -64,6 +64,17 @@ describe('audit log plugin integration', () => {
     return result.docs;
   }
 
+  async function begin() {
+    const transactionID = await booted.payload.db.beginTransaction();
+
+    if (transactionID === null) throw new Error('[test] the adapter did not start a transaction');
+    const req = await booted.frogbot.createRequest();
+
+    req.transactionID = transactionID;
+
+    return { req, transactionID };
+  }
+
   it('records session CRUD exactly once with stable field boundaries', async () => {
     const created = await booted.restClient.post<{ doc: { id: number | string } }>(
       '/api/posts',
@@ -98,6 +109,107 @@ describe('audit log plugin integration', () => {
     expect(audit.find((entry) => entry.operation === 'update')?.changes).toHaveProperty(
       'optional',
       { old: 'remove-me', new: null },
+    );
+  });
+
+  it('keeps hidden fields out of changes and snapshot, even with showHiddenFields', async () => {
+    const post = await booted.frogbot.create({
+      collection: 'posts',
+      data: { title: 'Hidden', secret: 's1', meta: { token: 't1', note: 'n1' } },
+      overrideAccess: true,
+    });
+
+    await booted.frogbot.update({
+      collection: 'posts',
+      id: post.id,
+      data: { title: 'Hidden 2', secret: 's2', meta: { token: 't2', note: 'n2' } },
+      overrideAccess: true,
+      showHiddenFields: true,
+    });
+
+    await booted.frogbot.delete({
+      collection: 'posts',
+      id: post.id,
+      overrideAccess: true,
+      showHiddenFields: true,
+    });
+
+    const audit = await entries(post.id);
+    const update = audit.find((entry) => entry.operation === 'update');
+
+    expect(audit).toHaveLength(3);
+    expect(update?.changes).toEqual({
+      title: { old: 'Hidden', new: 'Hidden 2' },
+      meta: { old: { note: 'n1' }, new: { note: 'n2' } },
+    });
+    expect(audit.find((entry) => entry.operation === 'create')?.changes).not.toHaveProperty(
+      'secret',
+    );
+    expect(audit.find((entry) => entry.operation === 'delete')?.snapshot).toEqual(
+      expect.objectContaining({ title: 'Hidden 2', meta: { note: 'n2' } }),
+    );
+    expect(JSON.stringify(audit)).not.toMatch(/"(s1|s2|t1|t2)"/);
+  });
+
+  it('leaves no entry when the change is rolled back', async () => {
+    const { req, transactionID } = await begin();
+    const post = await booted.frogbot.create({
+      collection: 'posts',
+      data: { title: 'Rolled back' },
+      overrideAccess: true,
+      req,
+    });
+
+    await booted.payload.db.rollbackTransaction(transactionID);
+
+    const posts = await booted.frogbot.find({
+      collection: 'posts',
+      where: { id: { equals: post.id } },
+      overrideAccess: true,
+    });
+
+    const audit = await booted.frogbot.find({
+      collection: 'audit-logs',
+      where: { documentId: { equals: String(post.id) } },
+      overrideAccess: true,
+    });
+
+    expect(posts.docs).toEqual([]);
+    expect(audit.docs).toEqual([]);
+  });
+
+  it('keeps the default entry shape', async () => {
+    const post = await booted.frogbot.create({
+      collection: 'posts',
+      data: { title: 'Shape' },
+      overrideAccess: true,
+    });
+
+    const [entry] = await entries(post.id);
+
+    expect(entry).toEqual(
+      expect.objectContaining({
+        collection: 'posts',
+        operation: 'create',
+        documentId: String(post.id),
+        changes: expect.objectContaining({ title: { old: null, new: 'Shape' } }),
+        timestamp: expect.any(String),
+      }),
+    );
+    expect(Object.keys(entry).sort()).toEqual(
+      [
+        'apiKeyId',
+        'changes',
+        'collection',
+        'createdAt',
+        'documentId',
+        'id',
+        'operation',
+        'snapshot',
+        'timestamp',
+        'updatedAt',
+        'user',
+      ].sort(),
     );
   });
 

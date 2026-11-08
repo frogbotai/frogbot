@@ -1,19 +1,24 @@
 import { definePlugin, type FrogBotConfig, type Plugin } from 'frogbot';
 
-import { createAuditLogCollection } from './collection.js';
+import { createAuditLogCollection, defaultAuditSlug } from './collection.js';
+import { hiddenTree } from './hidden.js';
 import { createAfterChangeHook, createAfterDeleteHook } from './hooks.js';
 import type { AuditCollectionSelection, AuditLogPluginOptions } from './types.js';
 
 export { computeChanges } from './diff.js';
 export type {
+  AuditCollectionOverrides,
   AuditCollectionSelection,
+  AuditEntry,
+  AuditEntryArgs,
+  AuditEntryFn,
   AuditLogPluginOptions,
   AuditOperation,
   AuditSnapshot,
 } from './types.js';
 
 type AuditLogResolvedOptions = AuditLogPluginOptions &
-  Required<Pick<AuditLogPluginOptions, 'collectionSlug' | 'operations'>>;
+  Required<Pick<AuditLogPluginOptions, 'operations'>> & { auditSlug: string };
 
 declare module 'frogbot' {
   interface RegisteredPlugins {
@@ -44,7 +49,7 @@ const auditLog = definePlugin<AuditLogResolvedOptions>({
   slug: 'plugin-audit-log',
   order: 90,
   plugin: ({ config, options }) => {
-    const auditSlug = options.collectionSlug;
+    const auditSlug = options.auditSlug;
     const operations = new Set(options.operations);
 
     if (config.collections.some((collection) => collection.slug === auditSlug)) {
@@ -59,6 +64,8 @@ const auditLog = definePlugin<AuditLogResolvedOptions>({
       const hookOptions = {
         auditSlug,
         collectionSlug: collection.slug,
+        entry: options.entry,
+        hidden: hiddenTree(collection.fields, config.blocks),
         ipAddress: options.ipAddress ?? false,
         operations,
         snapshot: options.snapshot ?? 'never',
@@ -84,10 +91,9 @@ const auditLog = definePlugin<AuditLogResolvedOptions>({
     });
 
     const auditCollection = createAuditLogCollection({
-      slug: auditSlug,
       userSlug: userSlug(config),
-      access: options.access,
-      ipAddress: options.ipAddress,
+      overrides: options.overrides ?? {},
+      ipAddress: options.ipAddress ?? false,
     });
 
     if (!options.retention) return { ...config, collections: [...collections, auditCollection] };
@@ -143,11 +149,11 @@ const auditLog = definePlugin<AuditLogResolvedOptions>({
 export function auditLogPlugin(options: AuditLogPluginOptions = {}): Plugin {
   const resolved: AuditLogResolvedOptions = {
     ...options,
-    collectionSlug: options.collectionSlug ?? 'audit-logs',
+    auditSlug: options.overrides?.slug ?? defaultAuditSlug,
     operations: options.operations ?? ['create', 'update', 'delete'],
   };
 
-  if (!resolved.collectionSlug) throw new Error('[plugin-audit-log] collectionSlug is required.');
+  if (!resolved.auditSlug) throw new Error('[plugin-audit-log] overrides.slug cannot be empty.');
   if (resolved.operations.length === 0) {
     throw new Error('[plugin-audit-log] operations cannot be empty.');
   }

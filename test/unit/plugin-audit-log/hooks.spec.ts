@@ -1,16 +1,23 @@
-import type { CollectionAfterChangeHook, FrogBotRequest } from 'frogbot';
+import type { CollectionAfterChangeHook, Field, FrogBotRequest } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
-import { auditLogPlugin } from '../../../packages/plugins/plugin-audit-log/src/index.js';
+import {
+  type AuditEntryArgs,
+  auditLogPlugin,
+} from '../../../packages/plugins/plugin-audit-log/src/index.js';
 
-async function hook(options: Parameters<typeof auditLogPlugin>[0] = {}) {
-  const result = await auditLogPlugin(options)({
+async function apply(options: Parameters<typeof auditLogPlugin>[0] = {}, fields: Field[] = []) {
+  return auditLogPlugin(options)({
     secret: 'test',
     collections: [
       { slug: 'users', auth: true, fields: [] },
-      { slug: 'posts', fields: [] },
+      { slug: 'posts', fields },
     ],
   } as never);
+}
+
+async function hook(options: Parameters<typeof auditLogPlugin>[0] = {}, fields: Field[] = []) {
+  const result = await apply(options, fields);
 
   return result.collections.find((item) => item.slug === 'posts')?.hooks
     ?.afterChange?.[0] as CollectionAfterChangeHook;
@@ -153,15 +160,187 @@ describe('audit hooks', () => {
     write.create.mockRejectedValue(new Error('database unavailable'));
     const afterChange = await hook();
 
-    expect(
+    await expect(
       afterChange({
         doc: { id: 'post-1' },
         previousDoc: undefined,
         operation: 'create',
         req: write.req,
       } as never),
-    ).toEqual({ id: 'post-1' });
+    ).resolves.toEqual({ id: 'post-1' });
+    expect(write.error).toHaveBeenCalledOnce();
+  });
 
-    await vi.waitFor(() => expect(write.error).toHaveBeenCalledOnce());
+  it('waits for the audit write before the hook resolves', async () => {
+    const write = request();
+    let saved = false;
+
+    write.create.mockImplementation(async () => {
+      await Promise.resolve();
+      saved = true;
+    });
+
+    const afterChange = await hook();
+
+    await afterChange({
+      doc: { id: 'post-1' },
+      previousDoc: undefined,
+      operation: 'create',
+      req: write.req,
+    } as never);
+
+    expect(saved).toBe(true);
+    expect(write.create.mock.calls[0][0].req).toBe(write.req);
+  });
+
+  it('writes nothing when entry returns false', async () => {
+    const write = request();
+    const entry = vi.fn().mockResolvedValue(false);
+    const afterChange = await hook({ entry });
+
+    await afterChange({
+      doc: { id: 'post-1', lastUsedAt: 'b' },
+      previousDoc: { id: 'post-1', lastUsedAt: 'a' },
+      operation: 'update',
+      req: write.req,
+    } as never);
+
+    expect(entry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'posts',
+        operation: 'update',
+        req: write.req,
+        entry: expect.objectContaining({ changes: { lastUsedAt: { old: 'a', new: 'b' } } }),
+      }),
+    );
+    expect(write.create).not.toHaveBeenCalled();
+  });
+
+  it('saves values added by entry into a field from overrides.fields', async () => {
+    const write = request({ id: 'user-1', tenant: 'acme' });
+    const options = {
+      overrides: {
+        fields: ({ defaultFields }: { defaultFields: Field[] }): Field[] => [
+          ...defaultFields,
+          { name: 'tenant', type: 'text' },
+        ],
+      },
+      entry: ({ entry, req }: AuditEntryArgs) => ({ ...entry, tenant: req.user?.tenant }),
+    };
+
+    const result = await apply(options);
+    const audit = result.collections.find((item) => item.slug === 'audit-logs');
+    const afterChange = await hook(options);
+
+    await afterChange({
+      doc: { id: 'post-1' },
+      previousDoc: undefined,
+      operation: 'create',
+      req: write.req,
+    } as never);
+
+    expect(audit?.fields.map((field) => ('name' in field ? field.name : undefined))).toContain(
+      'tenant',
+    );
+    expect(write.create.mock.calls[0][0].data).toEqual(
+      expect.objectContaining({ collection: 'posts', tenant: 'acme' }),
+    );
+  });
+
+  it('logs and writes nothing when entry throws', async () => {
+    const write = request();
+    const afterChange = await hook({
+      entry: () => {
+        throw new Error('bad entry');
+      },
+    });
+
+    await expect(
+      afterChange({
+        doc: { id: 'post-1' },
+        previousDoc: undefined,
+        operation: 'create',
+        req: write.req,
+      } as never),
+    ).resolves.toEqual({ id: 'post-1' });
+    expect(write.create).not.toHaveBeenCalled();
+    expect(write.error).toHaveBeenCalledOnce();
+  });
+
+  it('keeps hidden fields out of changes, snapshot and entry', async () => {
+    const write = request();
+    const entry = vi.fn(({ entry: value }: AuditEntryArgs) => value);
+    const fields: Field[] = [
+      { name: 'title', type: 'text' },
+      { name: 'secret', type: 'text', hidden: true },
+      { name: 'kept', type: 'text', admin: { disabled: true } },
+      {
+        name: 'meta',
+        type: 'group',
+        fields: [
+          { name: 'token', type: 'text', hidden: true },
+          { name: 'note', type: 'text' },
+        ],
+      },
+      {
+        type: 'tabs',
+        tabs: [
+          { label: 'Main', fields: [{ name: 'tabSecret', type: 'text', hidden: true }] },
+          { name: 'named', fields: [{ name: 'inner', type: 'text', hidden: true }] },
+        ],
+      },
+      { type: 'row', fields: [{ name: 'rowSecret', type: 'text', hidden: true }] },
+      {
+        name: 'items',
+        type: 'array',
+        fields: [
+          { name: 'code', type: 'text', hidden: true },
+          { name: 'label', type: 'text' },
+        ],
+      },
+      {
+        name: 'layout',
+        type: 'blocks',
+        blocks: [{ slug: 'cta', fields: [{ name: 'key', type: 'text', hidden: true }] }],
+      },
+    ];
+
+    const afterChange = await hook({ snapshot: 'always', entry }, fields);
+    const hidden = {
+      secret: 'x',
+      tabSecret: 'x',
+      rowSecret: 'x',
+      named: { inner: 'x' },
+      meta: { token: 'x', note: 'n' },
+      items: [{ code: 'x', label: 'l' }],
+      layout: [{ blockType: 'cta', key: 'x' }],
+    };
+
+    await afterChange({
+      doc: { id: 'post-1', title: 'After', kept: 'k2', ...hidden },
+      previousDoc: { id: 'post-1', title: 'Before', kept: 'k1', ...hidden, secret: 'old' },
+      operation: 'update',
+      req: write.req,
+    } as never);
+
+    const data = write.create.mock.calls[0][0].data;
+    const expected = {
+      id: 'post-1',
+      title: 'After',
+      kept: 'k2',
+      named: {},
+      meta: { note: 'n' },
+      items: [{ label: 'l' }],
+      layout: [{ blockType: 'cta' }],
+    };
+
+    expect(data.snapshot).toEqual(expected);
+    expect(data.changes).toEqual({
+      title: { old: 'Before', new: 'After' },
+      kept: { old: 'k1', new: 'k2' },
+    });
+    expect(entry.mock.calls[0][0].doc).toEqual(expected);
+    expect(entry.mock.calls[0][0].previousDoc).not.toHaveProperty('secret');
+    expect(JSON.stringify(data)).not.toContain('"x"');
   });
 });

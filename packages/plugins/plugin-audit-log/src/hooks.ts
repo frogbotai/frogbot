@@ -1,7 +1,8 @@
-import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'frogbot';
+import type { CollectionAfterChangeHook, CollectionAfterDeleteHook, FrogBotRequest } from 'frogbot';
 
 import { computeChanges } from './diff.js';
-import type { AuditHookOptions, AuditOperation } from './types.js';
+import { stripHidden } from './hidden.js';
+import type { AuditEntry, AuditHookOptions, AuditOperation } from './types.js';
 
 type Document = Record<string, unknown> & { id: number | string };
 
@@ -14,56 +15,80 @@ function requestMetadata(headers: Headers, trustProxy: boolean) {
   };
 }
 
-function writeAudit(
+function apiKeyId(user: FrogBotRequest['user']): string | undefined {
+  return user &&
+    '_strategy' in user &&
+    user._strategy === 'api-key' &&
+    'apiKeyId' in user &&
+    user.apiKeyId !== undefined
+    ? String(user.apiKeyId)
+    : undefined;
+}
+
+async function writeAudit(
   options: AuditHookOptions,
   operation: AuditOperation,
-  doc: Document,
-  previousDoc: Document | undefined,
-  req: Parameters<CollectionAfterChangeHook<Document>>[0]['req'],
-) {
-  const user = req.user;
+  rawDoc: Document,
+  rawPreviousDoc: Document | undefined,
+  req: FrogBotRequest,
+): Promise<void> {
+  try {
+    const doc = stripHidden(rawDoc, options.hidden);
+    const previousDoc = rawPreviousDoc && stripHidden(rawPreviousDoc, options.hidden);
+    const snapshot =
+      options.snapshot === 'always' || (options.snapshot === 'delete' && operation === 'delete')
+        ? doc
+        : undefined;
 
-  const snapshot =
-    options.snapshot === 'always' || (options.snapshot === 'delete' && operation === 'delete')
-      ? doc
-      : undefined;
+    const defaults: AuditEntry = {
+      collection: options.collectionSlug,
+      operation,
+      documentId: String(doc.id),
+      user: req.user?.id,
+      apiKeyId: apiKeyId(req.user),
+      changes: operation === 'delete' ? {} : computeChanges(previousDoc, doc),
+      snapshot,
+      timestamp: new Date().toISOString(),
+      ...(options.ipAddress ? requestMetadata(req.headers, options.trustProxy) : {}),
+    };
 
-  void req.frogbot
-    .create({
+    const entry = options.entry
+      ? await options.entry({
+          entry: defaults,
+          collection: options.collectionSlug,
+          operation,
+          doc,
+          previousDoc,
+          req,
+        })
+      : defaults;
+
+    if (entry === false) return;
+
+    await req.frogbot.create({
       collection: options.auditSlug,
-      data: {
-        collection: options.collectionSlug,
-        operation,
-        documentId: String(doc.id),
-        user: user?.id,
-        apiKeyId:
-          user &&
-          '_strategy' in user &&
-          user._strategy === 'api-key' &&
-          'apiKeyId' in user &&
-          user.apiKeyId !== undefined
-            ? String(user.apiKeyId)
-            : undefined,
-        changes: operation === 'delete' ? {} : computeChanges(previousDoc, doc),
-        snapshot,
-        timestamp: new Date().toISOString(),
-        ...(options.ipAddress ? requestMetadata(req.headers, options.trustProxy) : {}),
-      },
+      data: entry,
       overrideAccess: true,
       req,
-    })
-    .catch((error: unknown) =>
-      req.frogbot.logger.error('[plugin-audit-log] Failed to write audit log', error),
-    );
+    });
+  } catch (error: unknown) {
+    req.frogbot.logger.error('[plugin-audit-log] Failed to write audit log', error);
+  }
 }
 
 export function createAfterChangeHook(
   options: AuditHookOptions,
 ): CollectionAfterChangeHook<Document> {
-  return ({ doc, operation, previousDoc, req }) => {
+  return async ({ doc, operation, previousDoc, req }) => {
     if (!options.operations.has(operation)) return doc;
 
-    writeAudit(options, operation, doc, operation === 'create' ? undefined : previousDoc, req);
+    await writeAudit(
+      options,
+      operation,
+      doc,
+      operation === 'create' ? undefined : previousDoc,
+      req,
+    );
 
     return doc;
   };
@@ -72,8 +97,8 @@ export function createAfterChangeHook(
 export function createAfterDeleteHook(
   options: AuditHookOptions,
 ): CollectionAfterDeleteHook<Document> {
-  return ({ doc, req }) => {
-    writeAudit(options, 'delete', doc, undefined, req);
+  return async ({ doc, req }) => {
+    await writeAudit(options, 'delete', doc, undefined, req);
 
     return doc;
   };

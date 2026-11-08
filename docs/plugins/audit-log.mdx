@@ -30,7 +30,9 @@ export default buildConfig({
 
 By default, the plugin audits create, update, and delete operations for every configured collection. The plugin runs with `order: 90`, after plugins that add collections, so those collections are audited too wherever you list it.
 
-Each entry records the collection, operation, document ID, user, API key ID when available, timestamp, and a shallow changed-fields diff. Audit failures are logged without failing the original write.
+Each entry records the collection, operation, document ID, user, API key ID when available, timestamp, and a shallow changed-fields diff. Fields with `hidden: true` never appear in `changes` or `snapshot`, at any depth, even when the write reads them with `showHiddenFields`.
+
+The entry is saved inside the change's transaction, so a rolled-back change leaves no entry. A failed audit write is logged and doesn't fail the change on SQLite or MongoDB. On Postgres a failed statement aborts the open transaction, so there a failing audit write also fails the change.
 
 ## Collection selection
 
@@ -52,19 +54,52 @@ Use `operations` to limit recorded operations:
 auditLogPlugin({ operations: ['update', 'delete'] })
 ```
 
-## Read access
+## The audit collection
 
-Reading audit entries requires an authenticated user by default. Provide a FrogBot access function for stricter rules:
+Reading audit entries requires an authenticated user by default. Change the audit collection with `overrides`, which takes any collection config key. `access` and `admin` merge over the defaults, and `fields` receives the default fields and returns the full list:
 
 ```ts
 auditLogPlugin({
-  access: {
-    read: ({ req }) => req.user?.role === 'admin',
+  overrides: {
+    slug: 'activity',
+    access: {
+      read: ({ req }) => req.user?.role === 'admin',
+    },
+    admin: { group: 'Settings' },
   },
 })
 ```
 
-Internal audit writes always override access. API create, update, and delete access remains disabled.
+Internal audit writes always override access. API create, update, and delete access stays disabled unless you override it. `overrides.fields` must keep every default field, because the plugin writes them, and the plugin throws at startup if one is missing or named twice.
+
+## Custom entries
+
+`entry` receives the entry the plugin would save, the audited collection's slug, the operation, the document and previous document (with hidden fields already removed), and `req`. Return the entry to save, with any extra values, or `false` to save nothing. Add a field for each extra value with `overrides.fields`.
+
+This activity log stores a tenant ID on every entry, so readers see only their tenant's rows, and skips updates that only bump `lastUsedAt`:
+
+```ts
+auditLogPlugin({
+  overrides: {
+    fields: ({ defaultFields }) => [
+      ...defaultFields,
+      { name: 'tenant', type: 'text', index: true },
+    ],
+    access: {
+      read: ({ req }) => (req.user ? { tenant: { equals: req.user.tenant } } : false),
+    },
+  },
+  entry: ({ entry, req }) => {
+    const changed = Object.keys(entry.changes)
+
+    if (entry.operation === 'update' && changed.every((key) => key === 'lastUsedAt')) return false
+
+    return { ...entry, tenant: req.user?.tenant }
+  },
+})
+```
+
+An `entry` that throws is logged, and the change is saved without an entry.
 
 ## Optional metadata
 
@@ -107,7 +142,7 @@ auditLogPlugin({
 })
 ```
 
-The task `frogbot-prune-<collectionSlug>` runs at midnight daily unless you set `cron`, and it is scheduled on the `default` queue, so a jobs runner that covers `default` prunes without extra setup. Each run deletes entries whose `timestamp` is older than `days`, 100 at a time, and fails the job if any entry can't be deleted.
+The task `frogbot-prune-<slug>`, named after the audit collection's slug, runs at midnight daily unless you set `cron`, and it is scheduled on the `default` queue, so a jobs runner that covers `default` prunes without extra setup. Each run deletes entries whose `timestamp` is older than `days`, 100 at a time, and fails the job if any entry can't be deleted.
 
 ## Options
 
@@ -115,8 +150,8 @@ The task `frogbot-prune-<collectionSlug>` runs at midnight daily unless you set 
 | --- | --- | --- | --- |
 | `collections` | `string[] \| { include?: string[]; exclude?: string[] }` | All collections | Selects audited collections. |
 | `operations` | `('create' \| 'update' \| 'delete')[]` | All operations | Selects audited operations. |
-| `collectionSlug` | `string` | `'audit-logs'` | Sets the audit collection slug. |
-| `access.read` | `Access` | Authenticated users | Controls audit entry reads. |
+| `overrides` | `Partial<CollectionConfig>` with `fields?: ({ defaultFields }) => Field[]` | None | Changes the audit collection: `slug` (default `'audit-logs'`), `access` (read defaults to authenticated users), `admin`, `fields` and any other collection key. |
+| `entry` | `({ entry, collection, operation, doc, previousDoc, req }) => entry \| false` | None | Returns the entry to save, or `false` to skip it. May be async. |
 | `ipAddress` | `boolean` | `false` | Records user agent and trusted forwarded IP metadata. |
 | `trustProxy` | `boolean` | `false` | Trusts forwarded IP headers when IP capture is enabled. |
 | `snapshot` | `'never' \| 'delete' \| 'always'` | `'never'` | Controls full document snapshots. |

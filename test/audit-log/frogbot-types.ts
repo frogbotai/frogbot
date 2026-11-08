@@ -170,6 +170,11 @@ export interface Post {
   id: number;
   title: string;
   optional?: string | null;
+  secret?: string | null;
+  meta?: {
+    token?: string | null;
+    note?: string | null;
+  };
   createdBy?: {
     relationTo: 'accounts';
     value: number | Account;
@@ -301,6 +306,13 @@ export interface AccountsSelect {
 export interface PostsSelect {
   title?: boolean;
   optional?: boolean;
+  secret?: boolean;
+  meta?:
+    | boolean
+    | {
+        token?: boolean;
+        note?: boolean;
+      };
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
