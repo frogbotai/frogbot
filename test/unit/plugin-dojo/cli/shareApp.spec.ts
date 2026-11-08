@@ -43,7 +43,7 @@ describe('frogbot share --app', () => {
 
     expect(result.code).toBe(0);
     expect(await readLink(root)).toEqual({ appId: 7 });
-    expect(dojo.paths()).toContain('GET /api/apps/deals');
+    expect(dojo.paths()).toContain('GET /api/apps/deals/cli');
     expect(dojo.paths()).toContain('POST /api/apps/7/deployments');
     expect(dojo.paths()).not.toContain('POST /api/projects');
     expect(dojo.projects).toHaveLength(1);
@@ -57,6 +57,35 @@ describe('frogbot share --app', () => {
     expect((await run(['--app', 'deals', '--no-data'])).code).toBe(0);
     expect(await readLink(root)).toEqual({ appId: 7 });
     expect(dojo.paths()).toContain('POST /api/apps/7/deployments');
+  });
+
+  it('writes no link when Dojo refuses the upload', async () => {
+    const { root, dojo, run, signIn } = await setup();
+
+    dojo.replies.set('POST /api/apps/7/deployments', {
+      status: 500,
+      body: { errors: [{ message: 'Dojo is down.' }] },
+    });
+
+    await signIn();
+
+    const result = await run(['--app', 'deals', '--yes', '--no-data']);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr().join('\n')).toContain('Dojo refused the upload');
+    await expect(readFile(join(root, '.frogbot/app.json'), 'utf8')).rejects.toThrow();
+  });
+
+  it('keeps the link when the build fails, since the app has the new version', async () => {
+    const { root, dojo, run, signIn } = await setup();
+
+    dojo.build.status = 'failed';
+    await signIn();
+
+    const result = await run(['--app', 'deals', '--yes', '--no-data']);
+
+    expect(result.code).toBe(1);
+    expect(await readLink(root)).toEqual({ appId: 7 });
   });
 
   it('stops naming both apps when the folder is linked to another one', async () => {

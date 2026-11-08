@@ -83,11 +83,11 @@ export type FakeDojo = {
   revokeStatus: number;
   /** 300's `data-uploads` and the app's bucket, which takes the signed PUTs at `/bucket/<key>`. */
   data: FakeData;
-  /** The caller's `level` in `GET /api/apps/:app`; left out of the reply when unset, as an older Dojo does. */
+  /** The caller's `level` in `GET /api/apps/:app/cli`; left out of the reply when unset, as an older Dojo does. */
   level?: 'editor' | 'owner';
   /** The live version's archive, served by `GET /api/apps/:app/source`; 404 when unset. */
   source?: Buffer;
-  /** The reply to `GET /api/apps/:app`, instead of the app. */
+  /** The reply to `GET /api/apps/:app/cli`, instead of the app. */
   appReply?: { status: number; message: string };
   /** The reply to `GET /api/apps/:app/source`, instead of the archive. */
   sourceReply?: { status: number; message: string };
@@ -448,7 +448,9 @@ export async function startFakeDojo(): Promise<FakeDojo> {
       });
     }
 
-    const app = /^\/api\/apps\/([^/]+)(?:\/(deployments|keys|logs|source))?$/.exec(url.pathname);
+    const app = /^\/api\/apps\/([^/]+)(?:\/(cli|deployments|keys|logs|source))?$/.exec(
+      url.pathname,
+    );
     const appRef = decodeURIComponent(app?.[1] ?? '');
     const bySlug = /^\d+$/.test(appRef)
       ? undefined
@@ -460,13 +462,15 @@ export async function startFakeDojo(): Promise<FakeDojo> {
     const owned =
       !dojo.forbidden.has(appId) && dojo.projects.some((project) => project.id === appId);
 
-    if (req.method === 'GET' && app && !app[2] && dojo.appReply) {
+    if (req.method === 'GET' && app && !app[2]) return payloadError(res, 404, 'Not Found');
+
+    if (req.method === 'GET' && app?.[2] === 'cli' && dojo.appReply) {
       return payloadError(res, dojo.appReply.status, dojo.appReply.message);
     }
 
     if (app && !owned) return payloadError(res, 403, 'Only the app’s owners can publish it.');
 
-    if (req.method === 'GET' && app && !app[2]) {
+    if (req.method === 'GET' && app?.[2] === 'cli') {
       const project = dojo.projects.find(({ id }) => id === appId);
 
       return json(res, 200, {

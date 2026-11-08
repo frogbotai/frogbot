@@ -142,7 +142,7 @@ describe('frogbot share: sign-in', () => {
 
     expect(result.code).toBe(0);
     expect(dojo.paths()).toEqual([
-      'GET /api/apps/1',
+      'GET /api/apps/1/cli',
       'GET /api/users/me',
       'POST /api/apps/1/deployments',
       'POST /api/cli/device/code',

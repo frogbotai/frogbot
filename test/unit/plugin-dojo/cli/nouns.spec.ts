@@ -69,7 +69,7 @@ const cases: Case[] = [
     search: 'where[workspace][equals]=1',
     replies: { 'GET /api/projects': { body: { docs: [project] } } },
   },
-  { args: ['apps', 'get', 'deals'], route: 'GET /api/apps/deals' },
+  { args: ['apps', 'get', 'deals'], route: 'GET /api/apps/deals/cli' },
   {
     args: ['apps', 'create', 'Deal Flow'],
     route: 'POST /api/projects',
