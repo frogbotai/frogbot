@@ -6,6 +6,16 @@ export const Tasks: CollectionConfig = {
     icon: 'check-list',
     useAsTitle: 'title',
     useAsDone: 'completed',
+    panel: {
+      properties: [
+        'status',
+        'priority',
+        'dueDate',
+        'assignee',
+        'deal',
+        'contact',
+      ],
+    },
     views: [
       {
         type: 'list',

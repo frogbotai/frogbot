@@ -4,7 +4,6 @@ import {
   RelationshipProvider,
   toast,
   useConfig,
-  useDocumentDrawer,
   useListQuery,
   useTableColumns,
 } from '@payloadcms/ui';
@@ -13,6 +12,7 @@ import { type ComponentType, useEffect, useMemo, useRef, useState } from 'react'
 import { Board, type BoardColumnState } from '../../../board/Board.js';
 import { BoardAddButton, InlineAddCard } from '../../../board/InlineAddCard.js';
 import { appendQuery, getPath, setPath } from '../cells.js';
+import { useRecordPanel, useRecordPanelEvents } from '../panel/RecordPanelProvider.client.js';
 import { getViewCardColumns } from '../preferences.js';
 import { BoardDocumentCard, type BoardRow } from './BoardDocumentCard.js';
 import { buildBoardReorderBody, buildColumnWhere } from './data.js';
@@ -214,8 +214,8 @@ export function BoardViewClient(props: BoardViewClientProps) {
     );
   };
 
-  const removeRow = (doc: Row) => {
-    setRows((current) => current.filter((row) => row.id !== doc.id));
+  const removeRow = (id: number | string) => {
+    setRows((current) => current.filter((row) => String(row.id) !== String(id)));
     void totals.refresh();
   };
 
@@ -245,15 +245,28 @@ export function BoardViewClient(props: BoardViewClientProps) {
     },
   });
 
-  const [CreateDrawer, , createDrawer] = useDocumentDrawer({
-    collectionSlug: props.collectionSlug,
+  const panel = useRecordPanel();
+  const pendingDraft = useRef<string | undefined>(undefined);
+
+  useRecordPanelEvents((event) => {
+    if (event.type === 'deleted') {
+      removeRow(event.id);
+
+      return;
+    }
+
+    upsertRow(event.doc);
+    if (event.operation === 'create' && pendingDraft.current) {
+      inline.remove(pendingDraft.current);
+      pendingDraft.current = undefined;
+    }
+
+    void totals.refresh();
   });
 
-  const [form, setForm] = useState<{ data: Record<string, unknown>; draftId?: string }>();
-
   const openForm = (key: string, data: Record<string, unknown> = {}, draftId?: string) => {
-    setForm({ data: { ...data, ...groupData(key) }, draftId });
-    createDrawer.openDrawer();
+    pendingDraft.current = draftId;
+    panel.create({ ...data, ...groupData(key) });
   };
 
   const add = (key: string) => {
@@ -321,7 +334,6 @@ export function BoardViewClient(props: BoardViewClientProps) {
                 collectionSlug={props.collectionSlug}
                 cover={props.cover}
                 disabled={!props.canUpdate}
-                onDelete={removeRow}
                 onSave={(doc) => {
                   upsertRow(doc);
                   void totals.refresh();
@@ -340,16 +352,6 @@ export function BoardViewClient(props: BoardViewClientProps) {
           }
         />
       </div>
-      {props.canCreate ? (
-        <CreateDrawer
-          initialData={form?.data}
-          onSave={({ doc }) => {
-            upsertRow(doc);
-            if (form?.draftId) inline.remove(form.draftId);
-            void totals.refresh();
-          }}
-        />
-      ) : null}
     </RelationshipProvider>
   );
 }

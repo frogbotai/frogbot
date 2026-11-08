@@ -3,6 +3,8 @@ import type { AdminViewServerProps } from 'payload';
 
 import { getActiveViewSlug, resolveCollectionViews, withPageProps } from './collectionViews.js';
 import { CollectionViewShell } from './CollectionViewShell.js';
+import { RecordPanelRoot } from './panel/RecordPanelRoot.client.js';
+import { redirectRecordParam } from './panel/redirectRecord.js';
 
 export async function CustomCollectionView(input: AdminViewServerProps) {
   const props = await withPageProps(input);
@@ -19,7 +21,20 @@ export async function CustomCollectionView(input: AdminViewServerProps) {
     serverProps: props,
   });
 
-  if (view.shell === false) return content;
+  if (view.shell === false) {
+    redirectRecordParam({
+      adminRoute: props.initPageResult.req.payload.config.routes.admin,
+      collectionConfig: props.collectionConfig!,
+      record: props.initPageResult.req.query?.record,
+      redirect: props.server.redirect,
+    });
+
+    return (
+      <RecordPanelRoot collectionSlug={view.slug && props.collectionSlug!}>
+        {content}
+      </RecordPanelRoot>
+    );
+  }
 
   return (
     <CollectionViewShell {...props} view={view} views={views}>

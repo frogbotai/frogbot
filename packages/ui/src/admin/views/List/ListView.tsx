@@ -10,6 +10,7 @@ import {
   resolveCollectionViews,
 } from '../collectionViews.js';
 import { buildFrameSlots } from '../frame.js';
+import { redirectRecordParam } from '../panel/redirectRecord.js';
 import { isRecordDone } from '../records/state.js';
 import { isFreshQuery, pickViewSetup, resolveViewSetup } from '../viewSetup.js';
 import { DefaultListView } from './DefaultListView.client.js';
@@ -94,6 +95,13 @@ export async function ListView(props: ListViewServerProps) {
   const runtime = getRuntimeViews({ collectionConfig });
   const view = runtime[0]?.type === 'list' ? runtime[0] : undefined;
   const isList = clientProps.viewType === 'list' && view !== undefined;
+
+  redirectRecordParam({
+    adminRoute: payload.config.routes.admin,
+    collectionConfig,
+    record: req.query?.record,
+    redirect: server.redirect,
+  });
 
   if (isList) {
     await redirectToLastView({ collectionSlug, req, server, views });

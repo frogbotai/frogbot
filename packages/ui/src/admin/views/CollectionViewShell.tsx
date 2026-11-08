@@ -9,6 +9,7 @@ import {
 } from './collectionViews.js';
 import { CollectionViewShellClient } from './CollectionViewShell.client.js';
 import { buildFrameSlots } from './frame.js';
+import { redirectRecordParam } from './panel/redirectRecord.js';
 import { isQueryError, type StoredViewPreference } from './viewSetup.js';
 
 type CollectionViewShellProps = AdminViewServerProps & {
@@ -35,6 +36,13 @@ export async function CollectionViewShell(props: CollectionViewShellProps) {
   const { req } = initPageResult;
   const query = props.query ?? req.query ?? {};
   const view = props.view;
+
+  redirectRecordParam({
+    adminRoute: clientConfig.routes.admin,
+    collectionConfig,
+    record: query.record,
+    redirect: props.server.redirect,
+  });
 
   if (getActiveViewSlug(props) === undefined) {
     await redirectToLastView({ collectionSlug, req, server: props.server, views: props.views });

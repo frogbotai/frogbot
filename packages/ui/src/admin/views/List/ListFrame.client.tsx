@@ -11,6 +11,7 @@ import {
   useConfig,
   useListDrawerContext,
   useListQuery,
+  useRouter,
   useTranslation,
   useWindowInfo,
 } from '@payloadcms/ui';
@@ -21,6 +22,7 @@ import type { ViewTab } from '../../elements/ViewTabs/index.client.js';
 import { aiBulkMenuFields } from '../../fields/AI/bulk.js';
 import { AIFieldListMenuItem } from '../../fields/AI/ListMenuItem.client.js';
 import { CollectionViewFrame } from '../CollectionViewFrame.client.js';
+import { useRecordPanel, useRecordPanelEvents } from '../panel/RecordPanelProvider.client.js';
 import { BulkUploadButton } from './BulkUploadButton.client.js';
 import { DefaultListView } from './DefaultListView.client.js';
 
@@ -58,9 +60,10 @@ function rowId(row: HTMLElement): string | undefined {
   return row.dataset.id ?? row.querySelector<HTMLElement>('[data-row-id]')?.dataset.rowId;
 }
 
-function useDoneRows(doneIds: string[] | undefined) {
+function useRecordRows(doneIds: string[] | undefined) {
   const ref = useRef<HTMLDivElement>(null);
   const key = doneIds?.join('\n') ?? '';
+  const { openId } = useRecordPanel();
 
   useEffect(() => {
     const container = ref.current;
@@ -73,6 +76,7 @@ function useDoneRows(doneIds: string[] | undefined) {
         .forEach((row) => {
           const id = rowId(row);
           row.toggleAttribute('data-done', id !== undefined && done.has(id));
+          row.toggleAttribute('data-selected', id !== undefined && id === openId);
         });
     };
 
@@ -81,9 +85,21 @@ function useDoneRows(doneIds: string[] | undefined) {
     observer.observe(container, { childList: true, subtree: true });
 
     return () => observer.disconnect();
-  }, [key]);
+  }, [key, openId]);
 
   return ref;
+}
+
+function RecordRows({ children, doneIds }: { children: ReactNode; doneIds?: string[] }) {
+  return <div ref={useRecordRows(doneIds)}>{children}</div>;
+}
+
+function RefreshOnPanelSave() {
+  const router = useRouter();
+
+  useRecordPanelEvents(() => router.refresh());
+
+  return null;
 }
 
 function ListFrameInner({ doneIds, listProps, ...frame }: ListFrameClientProps) {
@@ -107,7 +123,6 @@ function ListFrameInner({ doneIds, listProps, ...frame }: ListFrameClientProps) 
     viewType !== 'trash' &&
     Boolean(upload && upload.bulkUpload && !upload.hideFileInputOnCreate);
 
-  const tableRef = useDoneRows(doneIds);
   const aiFields = aiBulkMenuFields({
     canUpdate: Boolean(permissions?.collections?.[collectionSlug]?.update),
     fields: collectionConfig.fields,
@@ -180,9 +195,10 @@ function ListFrameInner({ doneIds, listProps, ...frame }: ListFrameClientProps) 
           type="list"
           viewType={viewType}
         >
-          <div ref={tableRef}>
+          <RefreshOnPanelSave />
+          <RecordRows doneIds={doneIds}>
             <RelationshipProvider>{Table}</RelationshipProvider>
-          </div>
+          </RecordRows>
         </CollectionViewFrame>
       </SelectionProvider>
     </TableColumnsProvider>
