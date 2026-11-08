@@ -30,12 +30,15 @@ import { linkPath, readLink, writeLink } from './link.js';
 import { whenPaid } from './payment.js';
 import type { SealedKeys, SealingKey } from './seal.js';
 import { sealKeys } from './seal.js';
+import type { AppInfo } from './target.js';
+import { appFromFlag, appInfo, refusedApp } from './target.js';
 import { chooseWorkspace } from './workspaces.js';
 
 const usage = (program: string) =>
-  `Usage: ${/dojo$/.test(program) ? `${program} apps share` : `${program} deploy dojo`} [--data | --no-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys]`;
+  `Usage: ${/dojo$/.test(program) ? `${program} apps share` : `${program} deploy dojo`} [--app <slug or id>] [--data | --no-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys]`;
 
 type ShareFlags = {
+  app?: string;
   data?: boolean;
   workspace?: string;
   name?: string;
@@ -45,8 +48,6 @@ type ShareFlags = {
   updateKeys: boolean;
 };
 
-type AppInfo = { started: boolean; level: 'editor' | 'owner' };
-
 function parseShareArgs(argv: string[], program: string): ShareFlags {
   let parsed;
 
@@ -54,6 +55,7 @@ function parseShareArgs(argv: string[], program: string): ShareFlags {
     parsed = parseArgs({
       args: argv,
       options: {
+        app: { type: 'string' },
         data: { type: 'boolean' },
         workspace: { type: 'string' },
         name: { type: 'string' },
@@ -82,7 +84,15 @@ function parseShareArgs(argv: string[], program: string): ShareFlags {
 
   const { values } = parsed;
 
+  if (values.app !== undefined && (values.workspace !== undefined || values.name !== undefined)) {
+    throw new ShareError(
+      `--app shares to an app that already exists; --workspace and --name are for a new one. ${usage(program)}`,
+      2,
+    );
+  }
+
   return {
+    app: values.app,
     data: values.data,
     workspace: values.workspace,
     name: values.name,
@@ -143,18 +153,28 @@ export async function shareToDojo(context: DeployContext): Promise<Record<string
 async function share(context: DeployContext): Promise<Record<string, unknown>> {
   const { root, config, io } = context;
   const flags = parseShareArgs(context.args, io.program);
-  const link = await readLink(root);
+  const folderLink = await readLink(root);
   const fileEnv = readEnvFiles(root);
   const allKeys = envKeys(fileEnv);
 
   if (context.flags.dryRun) {
-    return dryRun({ context, flags, link, keys: allKeys, databaseUrl: fileEnv.DATABASE_URL });
+    return dryRun({
+      context,
+      flags,
+      link: folderLink,
+      keys: allKeys,
+      databaseUrl: fileEnv.DATABASE_URL,
+    });
   }
 
   const dojo = createDojo(io);
-  const { started, level }: AppInfo = link
-    ? await appInfo(dojo, link.appId)
-    : { started: false, level: 'owner' };
+  const target = flags.app
+    ? await appFromFlag({ dojo, root, ref: flags.app, folderLink })
+    : undefined;
+
+  const link = target?.link ?? folderLink;
+  const { started, level }: AppInfo =
+    target ?? (link ? await appInfo(dojo, link.appId) : { started: false, level: 'owner' });
 
   const editor = level === 'editor';
 
@@ -286,7 +306,7 @@ async function dryRun({
     if (inventory && inventory !== 'unsupported') await inventory.dispose();
 
     context.log(
-      `[dry-run] ${link ? `Update the app in ${linkPath} (${link.appId})` : 'Create a new app on Dojo'}`,
+      `[dry-run] ${flags.app ? `Update the app ${flags.app} and link it in ${linkPath}` : link ? `Update the app in ${linkPath} (${link.appId})` : 'Create a new app on Dojo'}`,
     );
 
     context.log(`[dry-run] ${archive.summary.replace(/^Uploading/, 'Upload')}`);
@@ -335,18 +355,6 @@ function checkSkipKeys(skipKey: string[], keys: EnvKey[]): void {
     `No ${unknown.length === 1 ? 'key' : 'keys'} named ${unknown.join(', ')}; ${names.length > 0 ? `keys are: ${names.join(', ')}` : 'the .env files have no keys'}.`,
     2,
   );
-}
-
-async function appInfo(dojo: DojoClient, appId: string | number): Promise<AppInfo> {
-  const response = await dojo.request(`/api/apps/${segment(appId)}`);
-
-  await refusedApp(appId, response);
-
-  if (!response.ok) throw new ShareError(`Couldn't read the app: ${await dojoMessage(response)}`);
-
-  const app = (await response.json()) as { started?: boolean; level?: string };
-
-  return { started: app.started === true, level: app.level === 'editor' ? 'editor' : 'owner' };
 }
 
 async function appName(root: string): Promise<string> {
@@ -445,14 +453,6 @@ async function sealedKeys(dojo: DojoClient, keys: EnvKey[]): Promise<SealedKeys>
   const sealingKey = (await response.json()) as SealingKey;
 
   return sealKeys(Object.fromEntries(keys.map((key) => [key.name, key.value])), sealingKey);
-}
-
-async function refusedApp(appId: string | number, response: Response): Promise<void> {
-  if (response.status !== 403 && response.status !== 404) return;
-
-  throw new ShareError(
-    `You can't share to the app in ${linkPath} (${appId}): ${await dojoMessage(response)} Delete ${linkPath} to share as a new app.`,
-  );
 }
 
 async function deploy({

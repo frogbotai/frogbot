@@ -319,7 +319,9 @@ describe('--json', () => {
     });
 
     expect(code).toBe(2);
-    expect(result.stderr().join('\n')).toContain('Usage: frogbot dojo apps share [--data');
+    expect(result.stderr().join('\n')).toContain(
+      'Usage: frogbot dojo apps share [--app <slug or id>] [--data',
+    );
     expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({ target: 'dojo', ok: false });
   });
 
