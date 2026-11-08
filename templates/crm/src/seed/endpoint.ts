@@ -24,19 +24,13 @@ export function seedEndpoint(run: typeof seed = seed): Endpoint {
         );
       }
 
-      if (seeding || (await hasRecords(req.frogbot))) {
-        return Response.json(
-          {
-            error:
-              'Your CRM already has records, so the sample was not added. It only loads into an empty CRM.',
-          },
-          { status: 409 },
-        );
-      }
+      if (seeding) return refused();
 
       seeding = true;
 
       try {
+        if (await hasRecords(req.frogbot)) return refused();
+
         await run({ frogbot: req.frogbot, req, today: new Date() });
       } catch (err) {
         req.frogbot.logger.error({ err }, 'Seeding the database failed');
@@ -52,4 +46,14 @@ export function seedEndpoint(run: typeof seed = seed): Endpoint {
       return Response.json({ success: true });
     },
   };
+}
+
+function refused() {
+  return Response.json(
+    {
+      error:
+        'Your CRM already has records, so the sample was not added. It only loads into an empty CRM.',
+    },
+    { status: 409 },
+  );
 }
