@@ -317,6 +317,7 @@ These shell slots are shared by list, board, calendar, and custom views. Each va
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
 | `type` | `'list'` | Yes | Selects the table-based list view. |
+| `groupBy` | `string` | No | Dot path to the field the list opens grouped by. Each person's own choice from the toolbar's **Group** control is saved for them and wins. See [Grouping](#grouping). |
 | `components` | `ViewComponents & ListViewComponents` | No | Adds shared shell slots and list table slots. |
 
 **ListView components**
@@ -326,12 +327,30 @@ These shell slots are shared by list, board, calendar, and custom views. Each va
 | `beforeTable` | `FrogBotComponent[]` | No; `[]` | Renders after list controls and immediately before the table. |
 | `afterTable` | `FrogBotComponent[]` | No; `[]` | Renders immediately after the table. |
 
+#### Grouping
+
+List and board views group by the same rules. `groupBy` names a select, radio, relationship (including users), upload, checkbox, text, textarea, number, email or date field, top level or a dot path into a group; any other type stops startup. A field stays out of the toolbar's **Group** control with `admin.disabled.groupBy`. Prefix the path with `-` to reverse the group order.
+
+- Select and radio groups follow the field's option order and show every option, empty ones with `0`. Checkbox groups are **True**, then **False**.
+- Other fields show one group per value present under the view's filter and search.
+- Records without a value go in one last group: **No value** in a list, shown when it has records, and **Uncategorized** on a board.
+- Each group's count is the number of records it holds, from one `aggregate` count over the view's filter and search.
+
+```ts
+views: [
+  { type: 'list', groupBy: 'stage' },
+  { type: 'board', groupBy: 'stage' },
+];
+```
+
+In a grouped list, each group has a collapse chevron, its count, select-all and **+ Add**, which opens the create form with the group's value filled in (nothing in **No value**, and no button without create access). Collapsed groups are saved per person per view, and **Reset to default** clears them with the rest of the view's setup. Groups of option fields all show on one page; groups of other fields are paged by the list's page size. Each group pages its own rows with the view's sort.
+
 #### BoardView
 
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
 | `type` | `'board'` | Yes | Selects the column-based board view. |
-| `groupBy` | `string` | No | Dot path to the select or single relationship field used for columns. Documents without a value appear in **Uncategorized**. |
+| `groupBy` | `string` | No | Dot path to the field used for columns. Documents without a value appear in **Uncategorized**. See [Grouping](#grouping). |
 | `cover` | `string` | No | Dot path to an upload field rendered as each card's cover image. |
 | `components` | `ViewComponents & BoardComponents` | No | Adds shared shell slots and board-specific components. |
 

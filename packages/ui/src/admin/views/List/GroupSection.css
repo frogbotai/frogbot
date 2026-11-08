@@ -1,0 +1,48 @@
+@layer frogbot {
+  .fb-list-group__header .table-section__header-inner {
+    gap: var(--spacer-2);
+  }
+
+  .fb-list-group__toggle {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-small);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    justify-content: center;
+    padding: var(--spacer-1);
+  }
+
+  .fb-list-group__toggle:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text);
+  }
+
+  .fb-list-group__toggle:focus-visible {
+    outline: var(--accessibility-outline);
+  }
+
+  .fb-list-group__heading {
+    align-items: center;
+    display: flex;
+    flex-grow: 1;
+    gap: var(--spacer-2);
+    margin: 0;
+    min-width: 0;
+    font-size: var(--text-body-large-bold-font-size);
+    font-weight: var(--text-body-large-bold-font-weight);
+    line-height: var(--text-body-large-bold-line-height);
+  }
+
+  .fb-list-group__count {
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--text-body-large-font-weight);
+  }
+
+  .fb-list-group__add {
+    margin: 0;
+  }
+}

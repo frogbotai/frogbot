@@ -218,6 +218,25 @@ describe('collection views', () => {
     });
   });
 
+  it('accepts a list view groupBy and rejects an unsupported one', () => {
+    const compileList = (groupBy: string) =>
+      compileCollectionViews({
+        collection: {
+          slug: 'deals',
+          fields: [
+            { name: 'stage', type: 'select', options: ['lead', 'won'] },
+            { name: 'notes', type: 'richText' },
+          ],
+          admin: { views: [{ type: 'list', groupBy }] },
+        },
+      });
+
+    expect(compileList('stage').custom?.frogbot.views[0]).toMatchObject({ groupBy: 'stage' });
+    expect(() => compileList('notes')).toThrow(
+      'list view "list" has an unsupported groupBy field "notes"',
+    );
+  });
+
   it('rejects an unsupported groupBy field inside a row', () => {
     expect(() =>
       compileCollectionViews({

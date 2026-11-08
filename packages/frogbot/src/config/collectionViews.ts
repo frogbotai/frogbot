@@ -7,7 +7,8 @@ import type { Field, TabAsField } from '../fields/config/types.js';
 import { flattenTopLevelFields } from '../seams/config.js';
 
 const DEFAULT_VIEW: CollectionView = { type: 'list' };
-const GROUP_BY_FIELD_TYPES: Field['type'][] = [
+/** The field types a list or board view can group by: Payload's groupable types. */
+export const GROUP_BY_FIELD_TYPES: readonly Field['type'][] = [
   'text',
   'textarea',
   'number',
@@ -153,12 +154,12 @@ export function compileCollectionViews({
     }
 
     if (
-      view.type === 'board' &&
+      (view.type === 'board' || view.type === 'list') &&
       view.groupBy &&
       !resolveGroupByField(collection.fields, view.groupBy)
     ) {
       throw new Error(
-        `[frogbot] Collection "${collection.slug}" board view "${view.slug}" has an unsupported groupBy field "${view.groupBy}".`,
+        `[frogbot] Collection "${collection.slug}" ${view.type} view "${view.slug}" has an unsupported groupBy field "${view.groupBy}".`,
       );
     }
 

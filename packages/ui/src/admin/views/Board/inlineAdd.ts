@@ -12,7 +12,7 @@ import {
   tabHasName,
 } from 'payload/shared';
 
-import { resolveBoardField } from './resolveColumns.js';
+import { resolveGroupField } from '../groups/resolve.js';
 
 /** How a board's "+ Add" creates a card: inline by title, or through the prefilled create form. */
 export type BoardInlineAdd = {
@@ -76,7 +76,7 @@ export function getInlineAdd({
   groupBy: string;
   permissions?: SanitizedCollectionPermission;
 }): BoardInlineAdd {
-  const groupField = resolveBoardField(collectionConfig.fields, groupBy);
+  const groupField = resolveGroupField(collectionConfig.fields, groupBy);
   const groupRequired = Boolean(
     groupField && 'required' in groupField && groupField.required === true,
   );
