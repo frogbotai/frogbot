@@ -104,7 +104,7 @@ export function getAggregatePage({
   };
 }
 
-/** The one row of an aggregate without `groupBy` that matched nothing, as SQL returns it. */
+/** The one row of an aggregate without `groupBy` that matched nothing: counts and sums are `0`, as grouped sums are, and the rest `null`. */
 export function getEmptyTotals(
   values: { name: string; operation: AggregateValueDescriptor['operation'] }[],
 ): AggregateResult['groups'][number] {

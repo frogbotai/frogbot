@@ -41,7 +41,7 @@ export const Deals: CollectionConfig = {
 | Date, including `createdAt` and `updatedAt` | `count`, `min` (Earliest), `max` (Latest) |
 | Any other field | `count` |
 
-`count` counts the records, whatever the column. Startup fails on a path that isn't a field, a pairing the field can't take, or a field that is hidden or has its own `access.read`: those can't be totaled, so their columns have no total for anyone.
+`count` counts the records, whatever the column. Startup fails on a path that isn't a field, a pairing the field can't take, or a field that is hidden or has its own `access.read`: those can't be totaled, so their columns have no total for anyone. Filtering or searching on such a field blanks the whole footer for now, because `aggregate` refuses it in `where` ([#355](https://github.com/frogbotai/frogbot/issues/355)).
 
 Totals use the column's format: money and percent fields keep their currency and precision, other numbers and counts follow the admin language, and dates use the field's display format. A column with no value shows nothing, and `0` shows as `0`.
 
@@ -49,4 +49,4 @@ Totals use the column's format: money and percent fields keep their currency and
 
 Clicking a footer cell opens a menu of the operations its column takes, plus **None**. The choice is saved for that user and that view with the rest of the view's setup, so it wins over `summary` on the next visit, and **Reset to default** in the view menu returns to the config. `summary` sets defaults only; it doesn't lock a column.
 
-The footer reads every total with one [`aggregate`](/queries/aggregate#totals-without-groups) request, sent again when the filters, search, columns or choices change, not when the page changes. Drafts count. When rows are grouped, one footer for the whole list follows the last group.
+The footer reads every total with one [`aggregate`](/queries/aggregate#totals-without-groups) request, sent again when the filters, search, columns or choices change, not when the page changes. Drafts that were never published count. A published record with a newer draft counts its published values, so its total can differ from the draft its row shows ([#361](https://github.com/frogbotai/frogbot/issues/361)). When rows are grouped, one footer for the whole list follows the last group.

@@ -639,7 +639,7 @@ Every method's last argument, `init`, takes standard `RequestInit` options that 
 | `page` | `number` | `1` | The page of groups to return. |
 | `depth` | `number` | `0` | How many levels to populate relationship keys. |
 | `populate` | `PopulateType` | — | Which fields to include from populated relationship keys, per collection. |
-| `draft` | `boolean` | `false` | Include drafts. |
+| `draft` | `boolean` | `false` | Include drafts that were never published; see [aggregate drafts](/queries/aggregate#drafts-and-locales). |
 | `trash` | `boolean` | `false` | Include trashed documents. Has no effect unless the collection has `trash` enabled. |
 | `locale` | `string` | — | The locale of localized fields. |
 | `fallbackLocale` | `false \| TypedLocale` | — | The locale to fall back to when a localized field has no value. |
