@@ -91,6 +91,12 @@ export type CollectionAdminConfig = Omit<
   icon?: AdminIcon;
   livePreview?: LivePreviewConfig;
   preview?: GeneratePreviewURL;
+  /**
+   * Moves the collection into Settings: it gets its own Settings sidebar item, its pages show the
+   * Settings sidebar, and it leaves the main sidebar and the dashboard. Ignored when the app
+   * replaces `admin.components.views.settings`.
+   */
+  settings?: boolean;
   views?: CollectionView[];
 };
 
@@ -151,6 +157,8 @@ export type Collection = {
   slug: string;
   /** True if this collection was authored with auth enabled. */
   auth: boolean;
+  /** The field that names a record, from `admin.useAsTitle`; `id` when unset. */
+  useAsTitle: string;
   search?: SearchIndexDescriptors;
 };
 

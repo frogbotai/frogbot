@@ -25,6 +25,8 @@ import {
   aiFieldName,
   aiFieldPath,
   apiKeysSlug,
+  approvalsSlug,
+  archivesSlug,
   channelChat,
   channelQuestion,
   chatPicksPreference,
@@ -45,6 +47,8 @@ import {
   reportsPath,
   robotSettings,
   secretsSlug,
+  storiesSlug,
+  storyStatusOptions,
   tagsSlug,
   tasksSlug,
   timesheetsSlug,
@@ -253,6 +257,35 @@ export default buildConfig({
       fields: [{ name: 'name', type: 'text' }],
     },
     {
+      slug: storiesSlug,
+      admin: {
+        useAsTitle: 'title',
+        views: [{ type: 'board', groupBy: 'status', pagination: { defaultLimit: 5 } }],
+      },
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        { name: 'status', type: 'select', options: storyStatusOptions },
+      ],
+    },
+    {
+      slug: approvalsSlug,
+      admin: { useAsTitle: 'title', views: [{ type: 'board', groupBy: 'status' }] },
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        { name: 'status', type: 'select', options: storyStatusOptions },
+        { name: 'approver', type: 'text', required: true },
+      ],
+    },
+    {
+      slug: archivesSlug,
+      access: { create: () => false },
+      admin: { useAsTitle: 'title', views: [{ type: 'board', groupBy: 'status' }] },
+      fields: [
+        { name: 'title', type: 'text' },
+        { name: 'status', type: 'select', options: storyStatusOptions },
+      ],
+    },
+    {
       slug: timesheetsSlug,
       admin: {
         useAsTitle: 'title',
@@ -352,13 +385,23 @@ export default buildConfig({
           projectsSlug,
           tagsSlug,
           timesheetsSlug,
+          storiesSlug,
+          approvalsSlug,
         ] as const) {
           await req.frogbot.delete({ collection, where: {}, overrideAccess: true, req });
         }
 
         await req.frogbot.db.deleteMany({
           collection: 'payload-preferences',
-          where: { key: { in: [chatPicksPreference, `collection-${tasksSlug}`] } },
+          where: {
+            key: {
+              in: [
+                chatPicksPreference,
+                `collection-${tasksSlug}`,
+                `collection-${storiesSlug}-view-board`,
+              ],
+            },
+          },
         });
 
         return Response.json({ reset: true });

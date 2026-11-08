@@ -44,11 +44,13 @@ vi.mock('frogbot/internal', async () => ({
   )),
   ...(await import('../../../../packages/frogbot/src/collections/config/internal.js')),
   ...(await import('../../../../packages/frogbot/src/bin/formatCliError.js')),
+  ...(await import('../../../../packages/frogbot/src/bin/deploy/error.js')),
+  ...(await import('../../../../packages/frogbot/src/bin/deploy/io.js')),
+  ...(await import('../../../../packages/frogbot/src/bin/deploy/run.js')),
   loadConfig: () => Promise.resolve({ _internal: { payloadConfig: { collections: [], db: {} } } }),
 }));
 
 const execFileAsync = promisify(execFile);
-const usage = '[frogbot] usage: npx @frogbotai/plugin-dojo <share|pull|logs|logout>';
 
 const lines = (spy: { mock: { calls: unknown[][] } }) =>
   spy.mock.calls
@@ -118,7 +120,7 @@ describe('npx @frogbotai/plugin-dojo', () => {
 
       dojo.source = await readFile(join(source, 'source.tar.gz'));
 
-      expect(await run('pull', 'deals')).toBe(0);
+      expect(await run('apps', 'pull', 'deals')).toBe(0);
       expect(dojo.paths()).toEqual([
         'GET /api/users/me',
         'GET /api/apps/deals',
@@ -134,7 +136,7 @@ describe('npx @frogbotai/plugin-dojo', () => {
 
       dojo.logs.push({ at: '2026-10-20T10:00:00Z', message: 'ready' });
 
-      expect(await run('logs', 'deals')).toBe(0);
+      expect(await run('apps', 'logs', 'deals')).toBe(0);
       expect(lines(stdout)).toEqual(['2026-10-20T10:00:00Z ready']);
       expect(core.imported).toEqual([]);
     });
@@ -151,8 +153,10 @@ describe('npx @frogbotai/plugin-dojo', () => {
     it('names itself in a usage line', async () => {
       const { run, stderr } = await setup();
 
-      expect(await run('pull')).toBe(2);
-      expect(lines(stderr)).toEqual(['[frogbot] Usage: npx @frogbotai/plugin-dojo pull <app>']);
+      expect(await run('apps', 'pull')).toBe(2);
+      expect(lines(stderr)).toEqual([
+        '[frogbot] Usage: npx @frogbotai/plugin-dojo apps pull <app>',
+      ]);
     });
   });
 
@@ -163,21 +167,51 @@ describe('npx @frogbotai/plugin-dojo', () => {
     dojo.projects.length = 0;
     await writeApp(cwd);
 
-    expect(await run('share', '--no-data')).toBe(0);
+    expect(await run('apps', 'share', '--no-data')).toBe(0);
     expect(dojo.paths()).toContain('POST /api/apps/1/deployments');
     expect(core.imported).toContain('frogbot/internal');
   });
 
-  it.each([[[]], [['nope']]])('exits 2 with its usage for %j', async (args) => {
-    const { dojo, run } = await setup();
-    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  it.each([[[]], [['nope']], [['share']]])('exits 2 listing the commands for %j', async (args) => {
+    const { dojo, run, stderr } = await setup();
 
-    vi.spyOn(process, 'exit').mockImplementation((code) => {
-      throw new Error(`exit:${code}`);
-    });
-
-    await expect(run(...args)).rejects.toThrow('exit:2');
-    expect(error.mock.calls).toEqual([[usage]]);
+    expect(await run(...args)).toBe(2);
+    expect(lines(stderr)).toEqual(
+      expect.arrayContaining([
+        'Usage: npx @frogbotai/plugin-dojo <command> [--json]',
+        expect.stringMatching(/^ {2}apps +Share, pull/),
+        expect.stringMatching(/^ {2}keys +/),
+      ]),
+    );
     expect(dojo.requests).toEqual([]);
+  });
+
+  it('lists a noun’s verbs with --help, and exits 2 on an unknown verb', async () => {
+    const { dojo, run, stdout, stderr } = await setup();
+
+    expect(await run('apps', '--help')).toBe(0);
+    expect(lines(stdout)).toEqual(
+      expect.arrayContaining([
+        'Usage: npx @frogbotai/plugin-dojo apps <verb> [--json]',
+        expect.stringMatching(/^ {2}share +/),
+        expect.stringMatching(/^ {2}delete +/),
+      ]),
+    );
+
+    expect(await run('apps', 'nope')).toBe(2);
+    expect(lines(stderr)[0]).toBe('[frogbot] "nope" isn\'t a verb of apps.');
+    expect(dojo.requests).toEqual([]);
+  });
+
+  it('shows a verb’s flags with --help', async () => {
+    const { run, stdout } = await setup();
+
+    expect(await run('apps', 'delete', '--help')).toBe(0);
+    expect(lines(stdout)).toEqual(
+      expect.arrayContaining([
+        'Usage: npx @frogbotai/plugin-dojo apps delete <app> [--yes] [--json]',
+        expect.stringMatching(/^ {2}--yes +Skip the confirmation/),
+      ]),
+    );
   });
 });

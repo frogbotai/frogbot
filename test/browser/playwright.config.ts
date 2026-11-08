@@ -110,6 +110,11 @@ const fixtures = {
     cli: 'frogbot',
     env: { FROGBOT_SECRET: 'browser-forms-secret' },
   },
+  crm: {
+    dir: path.join(repoRoot, 'templates', 'crm'),
+    cli: 'frogbot',
+    env: { FROGBOT_SECRET: 'browser-test-secret', OPENAI_API_KEY: 'browser-test-key' },
+  },
 } satisfies Record<string, Fixture>;
 
 type Server = {
@@ -120,6 +125,7 @@ type Server = {
   readyPath?: string;
   env?: Record<string, string>;
   modelPort?: number;
+  seed?: string;
 };
 
 const chatProviderPort = testPort(3126);
@@ -212,6 +218,12 @@ const servers: Record<string, Server> = {
     env: { SIGN_IN_SETUP: signInOnly },
   },
   forms: { fixture: 'forms', port: testPort(3143), database: 'frogbot.forms.db' },
+  crm: {
+    fixture: 'crm',
+    port: testPort(3144),
+    database: 'frogbot.crm.browser.db',
+    seed: path.join(dirname, 'fixtures', 'crm', 'seed.ts'),
+  },
 };
 
 if (!dev && process.env.TEST_WORKER_INDEX === undefined) {
@@ -327,6 +339,7 @@ const testProjects = [
       'viewActions.browser.spec.ts',
       'commandPalette.browser.spec.ts',
       'calendarTimeZone.browser.spec.ts',
+      'board.browser.spec.ts',
     ],
   }),
   project({ name: 'question-firefox', browser: 'firefox', testMatch: crossBrowserQuestionSpecs }),
@@ -350,6 +363,7 @@ const testProjects = [
       'messageSize.browser.spec.ts',
       'navShell.browser.spec.ts',
       'navStandalone.browser.spec.ts',
+      'settingsShell.browser.spec.ts',
       'uiParity.browser.spec.ts',
     ],
   }),
@@ -384,6 +398,7 @@ const testProjects = [
   project({ name: 'plugin-seo', testMatch: 'seoFields.browser.spec.ts' }),
   project({ name: 'plugin-import-export', testMatch: 'importMapping.browser.spec.ts' }),
   project({ name: 'forms', testMatch: ['forms.browser.spec.ts', 'formBuilder.browser.spec.ts'] }),
+  project({ name: 'crm', testMatch: 'crm.browser.spec.ts' }),
   project({
     name: 'dojo',
     testMatch: [
@@ -435,7 +450,7 @@ const schemaDatabase = (fixture: Fixture) =>
   path.join(fixture.dir, '.next', 'frogbot-browser', 'schema.db');
 
 const webServer = (name: string) => {
-  const { fixture: fixtureName, port, database, readyPath = '', env } = servers[name];
+  const { fixture: fixtureName, port, database, readyPath = '', env, seed } = servers[name];
   const fixture: Fixture = fixtures[fixtureName];
   const reset = dev ? [database] : [database, schemaDatabase(fixture)];
   const serve = dev
@@ -444,7 +459,11 @@ const webServer = (name: string) => {
 
   return {
     name,
-    command: `node ${quoted(resetDatabaseScript, ...reset)} && node ${quoted(...serve)}`,
+    command: [
+      `node ${quoted(resetDatabaseScript, ...reset)}`,
+      ...(seed ? [`node ${quoted(frogbotBin, 'run', seed)}`] : []),
+      `node ${quoted(...serve)}`,
+    ].join(' && '),
     cwd: fixture.dir,
     url: `http://localhost:${port}${readyPath}`,
     reuseExistingServer: dev && !process.env.CI,

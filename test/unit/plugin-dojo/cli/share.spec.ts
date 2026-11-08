@@ -37,13 +37,17 @@ const shareLink = (url: string, id: number) =>
 
 describe('frogbot share: pre-checks', () => {
   it.each([
-    ['no lockfile', { 'pnpm-lock.yaml': undefined }, 'No lockfile: run `pnpm install` first.'],
+    [
+      'no lockfile',
+      { 'pnpm-lock.yaml': undefined },
+      ['NO_LOCKFILE No lockfile.', 'Run `pnpm install` first.'],
+    ],
     [
       'a Bun lockfile',
       { 'pnpm-lock.yaml': undefined, 'bun.lock': '' },
-      "Bun isn't supported yet; run `pnpm install` to make a lockfile.",
+      ["NO_LOCKFILE Bun isn't supported yet.", 'Run `pnpm install` to make a lockfile.'],
     ],
-  ])('stops on %s before any request', async (_, change, line) => {
+  ])('stops on %s before any request', async (_, change, [line, fix]) => {
     const { root, dojo, run } = await setup();
 
     for (const [path, contents] of Object.entries(change)) {
@@ -54,7 +58,11 @@ describe('frogbot share: pre-checks', () => {
     const result = await run(['--no-data']);
 
     expect(result.code).toBe(1);
-    expect(result.stderr()).toEqual([`[frogbot] ${line}`]);
+    expect(result.stderr()).toEqual([
+      `[frogbot] ${line}`,
+      `  fix: ${fix}`,
+      '[frogbot] deploy dojo stopped before changing anything: 1 problem.',
+    ]);
     expect(dojo.requests).toEqual([]);
   });
 
@@ -65,7 +73,7 @@ describe('frogbot share: pre-checks', () => {
 
     expect(await runShare(['--no-data'], io.io)).toBe(1);
     expect(io.stderr()).toEqual([
-      '[frogbot] No frogbot.config.ts here or in any parent folder. Run share from inside the app.',
+      '[frogbot] No frogbot.config.ts here or in any parent folder. Run this from inside the app.',
     ]);
     expect(dojo.requests).toEqual([]);
   });
@@ -75,7 +83,7 @@ describe('frogbot share: pre-checks', () => {
     const result = await run(['--nope']);
 
     expect(result.code).toBe(2);
-    expect(result.stderr()[0]).toContain('Usage: frogbot share');
+    expect(result.stderr()[0]).toContain('Usage: frogbot deploy dojo');
     expect(dojo.requests).toEqual([]);
   });
 });
@@ -214,6 +222,18 @@ describe('frogbot share: the link', () => {
     );
   });
 
+  it('never uploads the Dojo sign-in from .env as an app key', async () => {
+    const { dojo, run, signIn } = await setup({
+      '.env':
+        'STRIPE_KEY=sk_test_aaaa4242\nFROGBOT_DOJO_TOKEN=fb_ci_secret_token\nFROGBOT_DOJO_URL=https://dojo.example\n',
+    });
+
+    await signIn();
+
+    expect((await run(['--no-data'])).code).toBe(0);
+    expect(Object.keys(dojo.opened[0]?.values ?? {})).toEqual(['STRIPE_KEY']);
+  });
+
   it('names the symlinks it leaves out', async () => {
     const { root, run, signIn } = await setup();
 
@@ -326,7 +346,7 @@ describe('frogbot share: workspace', () => {
 
     expect(result.code).toBe(1);
     expect(result.stderr()).toEqual([
-      '[frogbot] Ask the person which workspace to share in (trend-capital, colby), then rerun with --workspace <slug>.',
+      '[frogbot] Ask the person which workspace to use (trend-capital, colby), then rerun with --workspace <slug>.',
     ]);
     expect(dojo.paths()).not.toContain('POST /api/projects');
     await expect(stat(join(root, '.frogbot'))).rejects.toThrow();
@@ -389,6 +409,20 @@ describe('frogbot share: the name', () => {
     expect(result.stdout()[0]).toBe(
       '[frogbot] Created deals in Trend Capital, linked in .frogbot/app.json.',
     );
+  });
+
+  it('refuses a name whose slug is all digits, before creating anything', async () => {
+    const { dojo, run, signIn } = await setup();
+
+    await signIn();
+
+    const result = await run(['--no-data', '--name', '2024']);
+
+    expect(result.code).toBe(2);
+    expect(result.stderr()).toEqual([
+      '[frogbot] "2024" would make the slug "2024", which reads as an app id. Add a letter.',
+    ]);
+    expect(dojo.projects).toEqual([]);
   });
 
   it.each([

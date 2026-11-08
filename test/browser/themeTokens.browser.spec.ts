@@ -23,7 +23,11 @@ const surfaces = [
     path: `/collections/${tasksSlug}/calendar?mode=month&date=${day}T00:00:00.000Z`,
     ready: [nav, '.collection-view-shell'],
   },
-  { name: 'settings', path: '/settings/collections', ready: ['.frogbot-settings-template'] },
+  {
+    name: 'settings',
+    path: '/settings/collections',
+    ready: ['.frogbot-settings-nav', '.frogbot-settings'],
+  },
   { name: 'chat', path: `/collections/${chatsSlug}/create`, ready: [nav, '.frogbot-chat-view'] },
 ];
 

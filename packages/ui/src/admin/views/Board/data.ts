@@ -48,18 +48,29 @@ export function resolveBoardSort({
   orderField,
   preferenceSort,
   querySort,
+  viewSlug,
 }: {
   defaultSort?: string | string[];
   orderField?: string;
   preferenceSort?: string;
   querySort?: string | string[];
+  /** Sorts saved on this view's old `_order_<view>` field read as `orderField`. */
+  viewSlug?: string;
 }): string | undefined {
   const sort =
     [querySort, preferenceSort, defaultSort].find((value) =>
       Array.isArray(value) ? value.length > 0 : Boolean(value),
     ) ?? orderField;
 
-  return Array.isArray(sort) ? sort.join(',') : sort;
+  const joined = Array.isArray(sort) ? sort.join(',') : sort;
+
+  if (!orderField || !viewSlug || !joined) return joined;
+
+  const legacy = `_order_${viewSlug.replaceAll('-', '_')}`;
+
+  return serializeSort(
+    parseSort(joined).map((row) => (row.field === legacy ? { ...row, field: orderField } : row)),
+  );
 }
 
 export function buildBoardReorderBody({
@@ -102,10 +113,23 @@ export function resolveBoardGroupBy({
 }
 
 export type BoardPreferenceValue = {
+  collapsed?: string[];
   columns?: ColumnPreference[];
+  hidden?: string[];
   groupBy?: string;
   sort?: string;
 };
+
+/** Reads collapsed and hidden column keys from a stored preference, dropping anything malformed. */
+export function getBoardColumnState(value?: BoardPreferenceValue): {
+  collapsed: string[];
+  hidden: string[];
+} {
+  const keys = (list: unknown) =>
+    Array.isArray(list) ? list.filter((key): key is string => typeof key === 'string') : [];
+
+  return { collapsed: keys(value?.collapsed), hidden: keys(value?.hidden) };
+}
 
 export type BoardColumnsSource = ColumnPreference[] | string | string[] | undefined;
 

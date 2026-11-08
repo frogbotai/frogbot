@@ -1,5 +1,7 @@
+import type { DeployConfig } from 'frogbot';
+
 import { ShareError } from '../error.js';
-import type { ShareConfig, ShareIO } from '../io.js';
+import type { DojoIO } from '../io.js';
 import { say } from '../io.js';
 import type { DataInventory } from './inventory.js';
 import { describeData, takeInventory } from './inventory.js';
@@ -17,8 +19,8 @@ export async function askData({
 }: {
   data: boolean | undefined;
   root: string;
-  config: ShareConfig;
-  io: ShareIO;
+  config: DeployConfig;
+  io: DojoIO;
 }): Promise<DataInventory | undefined> {
   if (data === false) return undefined;
 

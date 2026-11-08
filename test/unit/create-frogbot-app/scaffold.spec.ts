@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import prettier from 'prettier';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { packs } from '../../../packages/create-frogbot-app/scripts/pack-filter.mjs';
 import { applyTemplate } from '../../../packages/create-frogbot-app/src/index.js';
 import { HELP, parseArgs } from '../../../packages/create-frogbot-app/src/lib/args.js';
 import { DATABASE_CHOICES } from '../../../packages/create-frogbot-app/src/lib/db.js';
@@ -578,6 +579,58 @@ describe('projects scaffold output', () => {
   });
 });
 
+describe('crm scaffold output', () => {
+  const crm = { ...templateOptions, template: getTemplate('crm') };
+
+  it('keeps the agent and the AI policy plugin with a provider', () => {
+    const dest = copyTemplate(templatePath('crm'));
+
+    applyTemplate(dest, { ...crm, ai: 'openai' });
+
+    const config = readConfig(dest);
+
+    expect(config).toContain('agents: [general(), assistant]');
+    expect(config).toContain('plugins: [aiPolicyPlugin(), dojo()]');
+    expect(fs.existsSync(path.join(dest, 'src', 'agents', 'assistant.ts'))).toBe(true);
+  });
+
+  it('drops the AI parts and keeps the collections, the seed and the panel for none', () => {
+    const dest = copyTemplate(templatePath('crm'));
+
+    applyTemplate(dest, crm);
+
+    const config = readConfig(dest);
+
+    expect(config).not.toMatch(/aiPolicyPlugin|assistant|agents|ai:|tools:/);
+    expect(config).toContain(
+      'collections: [Companies, Contacts, Deals, Activities, Tasks, Users, Media]',
+    );
+    expect(config).toContain('endpoints: [seedEndpoint()]');
+    expect(config).toContain("beforeDashboard: ['/components/SeedPanel#SeedPanel']");
+    expect(fs.existsSync(path.join(dest, 'src', 'agents'))).toBe(false);
+    expect(fs.existsSync(path.join(dest, 'src', 'seed', 'logos', 'lumen-labs.webp'))).toBe(true);
+  });
+
+  it('ships 6 to 10 logos under 30 KB, and a seed that imports nothing --ai none deletes', () => {
+    const seedDir = path.join(templatePath('crm'), 'src', 'seed');
+    const logos = fs.readdirSync(path.join(seedDir, 'logos'));
+
+    expect(logos.length).toBeGreaterThanOrEqual(6);
+    expect(logos.length).toBeLessThanOrEqual(10);
+
+    for (const logo of logos) {
+      expect(logo).toMatch(/\.webp$/);
+      expect(fs.statSync(path.join(seedDir, 'logos', logo)).size).toBeLessThan(30 * 1024);
+    }
+
+    for (const file of fs.readdirSync(seedDir).filter((name) => name.endsWith('.ts'))) {
+      const source = fs.readFileSync(path.join(seedDir, file), 'utf8');
+
+      expect(source).not.toMatch(/agents|test\/|Math\.random|Date\.now/);
+    }
+  });
+});
+
 describe('packing matrix', () => {
   it('scaffolds every registry template', () => {
     const templates = path.join(copyTemplate(), '..', 'templates');
@@ -590,6 +643,16 @@ describe('packing matrix', () => {
     }
 
     expect(() => scaffoldMatrix(TEMPLATES, templates)).not.toThrow();
+  });
+
+  it('leaves out generated types, build output, local databases and dev uploads', () => {
+    const crm = templatePath('crm');
+    const left = ['media', 'files', 'node_modules', 'frogbot.db', 'src/frogbot-types.ts'];
+    const kept = ['src', 'public', 'src/collections/Media.ts', 'src/seed/logos/lumen-labs.webp'];
+
+    for (const entry of left) expect(packs(crm, path.join(crm, entry)), entry).toBe(false);
+
+    for (const entry of kept) expect(packs(crm, path.join(crm, entry)), entry).toBe(true);
   });
 
   it('names the template, database and provider that failed', () => {

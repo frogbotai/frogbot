@@ -20,6 +20,8 @@ export const READ_ONLY = {
   'test/frogbot-instance/properties.int.spec.ts': 'checks instance properties',
   'test/graphql/disabled/int.spec.ts': 'checks that GraphQL routes are off',
   'test/graphql/productionOptIn/int.spec.ts': 'checks the playground and introspection',
+  'test/plugin-dojo/firstUser.int.spec.ts':
+    'checks the first user startup seeds on a fresh database; its last test sets up its own users',
   'test/search/mongodb/hybrid.int.spec.ts': 'searches articles seeded once in beforeAll',
   'test/search/mongodb/indexes.int.spec.ts': 'checks search index definitions, not documents',
   'test/search/mongodb/searchMany.int.spec.ts': 'searches articles seeded once in beforeAll',

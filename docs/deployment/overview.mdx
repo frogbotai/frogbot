@@ -1,22 +1,85 @@
 ---
 title: "Deployment"
 sidebarTitle: "Deployment"
-description: "Deploy a FrogBot app in one command with Dojo, or self-host with Docker or Fly.io."
+description: "Deploy a FrogBot app in one command to Dojo, Docker, Fly.io, Google Cloud, AWS or Azure."
 ---
 
-You can deploy a FrogBot app to [Dojo](/plugins/dojo) in one command, or self-host it anywhere Docker or Node.js runs.
+`frogbot deploy <target>` puts your app online in one command. It checks the app first, lists every problem at once, and only then builds and deploys with your own login for that host.
+
+```bash
+pnpm frogbot deploy            # Dojo, when the app lists dojo()
+pnpm frogbot deploy docker     # an image on this computer
+pnpm frogbot deploy fly        # Fly.io
+pnpm frogbot deploy gcp --project acme
+pnpm frogbot deploy aws
+pnpm frogbot deploy azure
+```
+
+| Target | Builds | Keeps keys in | Runs on | Needs |
+| --- | --- | --- | --- | --- |
+| `dojo` | on Dojo | Dojo, sealed | Dojo | the [`dojo()`](/plugins/dojo) plugin, a Dojo account |
+| `docker` | on this computer | — | wherever you run the image | Docker |
+| `fly` | on Fly.io | Fly secrets | one Fly machine | `flyctl`, logged in |
+| `gcp` | Cloud Build | Secret Manager | Cloud Run | `gcloud`, logged in, a project |
+| `aws` | on this computer | Secrets Manager | ECS Express Mode (Fargate behind HTTPS) | `aws` CLI v2, Docker, two IAM roles |
+| `azure` | Azure Container Registry | Container Apps secrets | Azure Container Apps | `az`, logged in |
+
+Run `frogbot deploy` with no target and no `dojo()` to list the targets. An unknown target lists them too and exits `2`; with `--json` it also prints a result whose issue is `UNKNOWN_TARGET`.
+
+### Flags every target takes
+
+| Flag | Description |
+| --- | --- |
+| `--dry-run` | Runs the checks, then prints each file it would write and each command it would run, in order, and changes nothing. Exits `0` when the checks pass. Read-only queries (such as "does this repository exist?") still run. |
+| `--json` | Prints one result on stdout, `{ "target", "ok", "dryRun", "issues", "result" }`, and everything else on stderr. Never prompts. On a dry run, `result.steps` lists the files and commands. |
+| `--no-interactive` | Never prompts. Where a prompt would have asked, the deploy stops and names the flag to pass instead. Without a terminal, every deploy behaves this way. |
+| `--env-file <path>` | Reads the app's production variables from this file only. By default they come from the `.env` files `frogbot start` loads (`.env.production.local`, `.env.local`, `.env.production`, `.env`), never the development ones; `FROGBOT_SECRET` and `DATABASE_URL` also come from the shell when no file sets them, which suits CI. |
+
+`gcp`, `aws` and `azure` also take:
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--region` | the CLI's default region, else `us-central1` (gcp) or `eastus` (azure) | Where the service runs. |
+| `--service` | your `package.json` name | The service's name; a re-run with the same name updates it. |
+| `--min-instances` | `1` | `1` keeps one copy always running, so [scheduled jobs](/jobs-queue/overview#schedule-options) run on time. `0` lets Google Cloud and Azure stop the app when idle: cheaper, but scheduled jobs wait until a request wakes it, and the deploy says so. A cloud deploy runs one copy at most. |
+
+### Checks before anything runs
+
+Every failing check prints together, `[frogbot] <code> <message>` with a `fix:` line under it, and the deploy exits `1` having written and run nothing.
+
+| Code | Targets | Means |
+| --- | --- | --- |
+| `NO_LOCKFILE` | all | No `pnpm-lock.yaml`, `package-lock.json` or `yarn.lock`, or a Bun lockfile, which the Dockerfile can't install from. |
+| `CONFIG_INVALID` | all | The config failed to load. Run [`frogbot check`](/getting-started/cli#check-your-config). |
+| `TOOL_MISSING`, `NOT_LOGGED_IN` | all but `dojo` | The host's CLI isn't installed or isn't logged in (Docker isn't running, for `docker`). The fix names the install page or login command. |
+| `MIGRATIONS_NOT_WIRED` | all but `dojo` | The database adapter has no `prodMigrations`, so the deployed database gets no tables. See [Migrations](#migrations). Dojo syncs the schema itself. MongoDB isn't checked. |
+| `SECRET_MISSING` | all but `dojo` | `FROGBOT_SECRET` is empty. |
+| `DOCKERFILE_MISSING` | all but `dojo` | The app has no `Dockerfile`. In a terminal, the deploy offers to write FrogBot's template `Dockerfile` when this is the only problem. |
+| `LOCAL_DATABASE` | `gcp`, `aws`, `azure`, `fly` | `DATABASE_URL` is empty or a `file:` SQLite database, which the cloud wipes on every restart. On `fly`, only `:memory:` stops the deploy, since a SQLite file goes on a volume. Use a hosted database: Postgres with [`@frogbotai/db-postgres`](/database/postgres) (Neon, Supabase, Cloud SQL, RDS), or Turso (`libsql://`) with [`@frogbotai/db-sqlite`](/database/sqlite). The deploy never creates one. |
+| `LOCAL_UPLOADS` | `gcp`, `aws`, `azure`, `fly` | An upload collection saves files on the container's disk. Add a [storage adapter](/upload/storage-adapters): `@frogbotai/storage-gcs`, `@frogbotai/storage-s3` or `@frogbotai/storage-azure`. The deploy never edits your config. |
+| `NO_PROJECT` | `gcp` | No `--project` and no `gcloud config set project`. |
+| `NO_REGION`, `AWS_ROLE_MISSING` | `aws` | No region, or one of the two IAM roles ECS Express Mode needs is missing. |
+| `FLY_NO_MOUNT`, `FLY_APP_MISMATCH` | `fly` | Your `fly.toml` mounts no volume at `/data` while `DATABASE_URL` is a SQLite file, or names a different app than `--app`. |
+| `FLY_SECRET_UNSUPPORTED` | `fly` | A value `fly secrets import` can't read back as written, such as one starting with `""` and holding a `#`. Set it with `fly secrets set`. |
+| `AZURE_SECRET_NAME_CLASH` | `azure` | Two variables, such as `API_KEY` and `Api_Key`, would get the same Container Apps secret name, which is lowercase. |
+
+### Variables
+
+Each target sends the app's variables to the host's own secret store, never as plain environment variables. `NEXT_PUBLIC_*` variables are read when `next build` runs, so they go in as build arguments instead (`fly`, `gcp`, `aws`): add an `ARG NEXT_PUBLIC_…` line to the Dockerfile's builder stage so the build sees each one, as the deploy reminds you. `az containerapp up` takes no build arguments, so on Azure put them in a committed `.env.production`. `NODE_ENV`, `PORT` and `HOSTNAME` are never sent.
 
 ## Deploy to Dojo
 
-Apps created with `create-frogbot-app` include the [`dojo()`](/plugins/dojo) plugin out of the box. Deploy from your project root:
+Apps created with `create-frogbot-app` include the [`dojo()`](/plugins/dojo) plugin, which adds the `dojo` target. Deploy from your project root:
 
 ```bash
-npx frogbot share
+npx frogbot deploy
 ```
 
-- On your first deploy, `share` prompts to bring your local SQLite data and files (`--data` / `--no-data`), encrypts your `.env` keys, builds the app on Dojo, and prints your live `https://<name>.frogbot.app` URL.
+- `frogbot share` runs the same thing and takes the same flags, including `--yes`. See the [`dojo apps share` CLI reference](/getting-started/cli#dojo-apps-share) for its flags.
+- On your first deploy, it prompts to bring your local SQLite data and files (`--data` / `--no-data`), encrypts your `.env` keys, builds the app on Dojo, and prints your live `https://<name>.frogbot.app` URL. `--dry-run` lists the files, their size, the keys and the data it would send, and makes no request.
 - On Dojo, [`dojo()`](/plugins/dojo) automatically configures private R2 file storage, Dojo AI routing, scheduled job execution, and **Continue with Dojo** sign-in.
-- Pull a shared app locally with `npx @frogbotai/plugin-dojo pull <app>` or stream live logs with `npx @frogbotai/plugin-dojo logs <app> --follow`. See the [`share` CLI reference](/getting-started/cli#share).
+- An app deployed without data starts with you as its first user: sign in with **Continue with Dojo**. See [Sign in with Dojo](/plugins/dojo#sign-in-with-dojo).
+- Pull a shared app locally with `npx @frogbotai/plugin-dojo apps pull <app>` or stream live logs with `npx @frogbotai/plugin-dojo apps logs <app> --follow`. Domains, environment keys, members, API keys and billing have [commands](/plugins/dojo#commands) too.
 
 ## Self-hosting (Docker & Node.js)
 
@@ -24,6 +87,8 @@ FrogBot apps are Next.js applications. They build like a standard Next.js app, b
 
 1. **The build must run in full, at image build time** — not split into "compile in the image / generate at runtime". FrogBot's `prebuild` step generates the admin import map, and `next build` compiles the app. Running `next build --experimental-build-mode generate` at container start (as some platform templates do) re-runs webpack in production, which requires `typescript` at runtime and slows cold starts dramatically.
 2. **In production, FrogBot does not push your schema automatically** the way it does in dev. A fresh production database has no tables until migrations run — see [Migrations](#migrations).
+
+**Sign in before you make it public.** While a self-hosted app has no users, the first person to sign in becomes its first user, whatever `access.create` says. See [The first user](/authentication/sign-in#the-first-user).
 
 ## Docker
 
@@ -34,24 +99,33 @@ The template ships a production `Dockerfile` based on the Next.js `with-docker` 
 - **Build isolation** — the build stage uses a throwaway `DATABASE_URL` and a placeholder `FROGBOT_SECRET`, so no local data or secrets are baked into the image. Real values come from environment variables at runtime.
 
 ```bash
-docker build -t my-frogbot-app .
-docker run -p 3000:3000 -e FROGBOT_SECRET=... -e DATABASE_URL=... my-frogbot-app
+pnpm frogbot deploy docker              # builds <name>:<content hash>
+pnpm frogbot deploy docker --tag v1     # builds <name>:v1
+```
+
+It builds the image with your `Dockerfile` (offering FrogBot's template when there is none), prints the `docker run` line, and never pushes. The tag is a hash of the app's source unless you pass `--tag`, so an unchanged app keeps its tag. With a SQLite file database, the printed line mounts a volume at `/data`:
+
+```bash
+docker run -p 3000:3000 --env-file .env -v frogbot-data:/data -e DATABASE_URL=file:/data/frogbot.db my-frogbot-app:1a2b3c4d5e6f
 ```
 
 ### Health check
 
-The template answers `GET /api/health` with `200` and `{ "status": "ok" }` once FrogBot has started, and `503` with `{ "status": "error" }` when it can't start, logging why. It needs no sign-in, so point your platform's HTTP health check at it. Dojo, where the [Dojo plugin](/plugins/dojo)'s [`frogbot share`](/getting-started/cli#share) runs apps, checks this path. The route is `src/app/(frogbot)/api/health/route.ts`.
+The template answers `GET /api/health` with `200` and `{ "status": "ok" }` once FrogBot has started, and `503` with `{ "status": "error" }` when it can't start, logging why. It needs no sign-in, so point your platform's HTTP health check at it. Dojo, Fly.io, Cloud Run, ECS Express Mode and Azure Container Apps check this path when `frogbot deploy` sets them up. The route is `src/app/(frogbot)/api/health/route.ts`.
 
 ## Fly.io
 
 ```bash
-fly launch   # uses the template Dockerfile — Fly will not overwrite it
-fly deploy
+fly auth login
+pnpm frogbot deploy fly --region sjc
 ```
 
-Fly's generator detects the existing `Dockerfile` and uses it instead of generating its default Next.js two-phase build, so your app gets a fast, single-phase cold start.
+- **What it creates:** without a `fly.toml`, it writes one in the shape of the [`fly-sqlite` example](https://github.com/frogbotai/frogbot/tree/main/examples/fly-sqlite) (one machine, stopped when idle, a health check on `/api/health`) and runs `fly apps create`. With a SQLite file database it adds the `frogbot_data` volume at `/data` and sets `DATABASE_URL=file:/data/frogbot.db`; a hosted `DATABASE_URL` gets no volume.
+- **Then:** `fly secrets import --stage` with your variables, and `fly deploy --ha=false`, which keeps one machine so SQLite on a volume works. It prints `https://<app>.fly.dev`.
+- **Re-runs:** an existing `fly.toml` names the app and region, and the volume is created only once. `--app` names a new app; `fly.toml` is written only after `fly apps create` succeeds, so a taken name can be retried with another `--app`.
+- **Teardown:** `fly apps destroy <app>`.
 
-For a complete, working setup — persistent volume, migrations, scale-to-zero — see the [`fly-sqlite` example](https://github.com/frogbotai/frogbot/tree/main/examples/fly-sqlite).
+Fly uses your `Dockerfile` instead of generating its default Next.js two-phase build, so your app gets a fast, single-phase cold start.
 
 ### Database persistence
 
@@ -74,9 +148,48 @@ The default SQLite database lives in a local `frogbot.db` file on the machine's 
 
 - **Use a remote database**: [Postgres](/database/postgres), [MongoDB](/database/mongodb), or a hosted SQLite like Turso. Set `DATABASE_URL` accordingly.
 
+## Google Cloud
+
+```bash
+gcloud auth login
+pnpm frogbot deploy gcp --project acme --region europe-west1
+```
+
+- **Refuses:** `LOCAL_DATABASE` and `LOCAL_UPLOADS` (use `@frogbotai/storage-gcs`), and `NO_PROJECT`.
+- **What it creates:** enables the Cloud Run, Cloud Build, Artifact Registry and Secret Manager APIs; an Artifact Registry repository named `frogbot` in the region; the image, built by Cloud Build from your `Dockerfile`, so you need no local Docker; one Secret Manager secret per variable, `<service>-<name>`, readable by the project's default compute service account; and a Cloud Run service with one instance at most, public, with a startup probe on `/api/health`, so traffic arrives only once FrogBot has started and run its migrations. It prints the service URL.
+- **Re-runs:** update the same service and add a new version of each secret.
+- **Teardown:** `gcloud run services delete <service> --region <region>`, then the `<service>-*` secrets and the `frogbot` repository if nothing else uses them.
+
+## AWS
+
+```bash
+aws configure sso
+pnpm frogbot deploy aws --region us-east-1
+```
+
+AWS runs the app with [ECS Express Mode](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/express-service-overview.html): Fargate behind an HTTPS load balancer with a public URL. App Runner no longer takes new customers.
+
+- **Before the first deploy:** ECS Express Mode needs a task execution role (default `ecsTaskExecutionRole`) and an infrastructure role (default `ecsInfrastructureRoleForExpressServices`); create them as AWS's guide describes, or name yours with `--execution-role` and `--infrastructure-role`. The execution role also needs `secretsmanager:GetSecretValue` on `<service>/*`.
+- **Refuses:** `LOCAL_DATABASE` and `LOCAL_UPLOADS` (use `@frogbotai/storage-s3`, which uses the task role and needs no keys), `NO_REGION`, `AWS_ROLE_MISSING`, and `--min-instances 0`: Express Mode keeps one task running.
+- **What it creates:** an ECR repository named after the service; the image, built on this computer for `linux/amd64` and pushed; one Secrets Manager secret per variable, `<service>/<name>`; and an Express Mode service in the `default` cluster (`--cluster` to change it) with exactly one task and a health check on `/api/health`. It prints the service URL.
+- **Re-runs:** push a new image and update the same service.
+- **Teardown:** `aws ecs delete-express-gateway-service --service-arn <arn>`, then the `<service>/*` secrets and the ECR repository.
+
+## Azure
+
+```bash
+az login
+pnpm frogbot deploy azure --region westeurope
+```
+
+- **Refuses:** `LOCAL_DATABASE` and `LOCAL_UPLOADS` (use `@frogbotai/storage-azure`; its connection string goes in as a secret like any other variable).
+- **What it creates:** the `containerapp` CLI extension if missing; a resource group, `<service>-rg` (`--resource-group` to change it); the app, built in Azure by `az containerapp up --source .` from your `Dockerfile`, with external ingress on port 3000; one Container Apps secret per variable, referenced from the app's environment; one replica at most; and a startup probe on `/api/health`. It prints the app URL.
+- **Re-runs:** rebuild and update the same app.
+- **Teardown:** `az group delete --name <service>-rg`.
+
 ## Migrations
 
-In development, FrogBot pushes your schema to SQLite automatically on boot. In **production** it does not — it only applies migrations listed in `prodMigrations`. Before your first production deploy:
+In development, FrogBot pushes your schema to SQLite automatically on boot. In **production** it does not — it only applies migrations listed in `prodMigrations`, and `frogbot deploy` stops with `MIGRATIONS_NOT_WIRED` until they're wired. Before your first production deploy:
 
 ```bash
 pnpm migrate:create init   # generates src/migrations/<timestamp>_init.ts

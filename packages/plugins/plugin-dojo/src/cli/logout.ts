@@ -1,10 +1,10 @@
 import { readToken, removeToken } from './auth.js';
 import { dojoMessage, dojoUrl } from './dojo.js';
-import type { ShareIO } from './io.js';
-import { say } from './io.js';
+import type { DojoIO } from './io.js';
+import { done, say } from './io.js';
 
-/** Runs `frogbot logout`: revokes the stored key in Dojo, then forgets it. Returns the exit code. */
-export async function runLogout(args: string[], io: ShareIO): Promise<number> {
+/** Runs `frogbot dojo logout`: revokes the stored key in Dojo, then forgets it. Returns the exit code. */
+export async function runLogout(args: string[], io: DojoIO): Promise<number> {
   if (args.length > 0) {
     io.stderr.write(`[frogbot] Usage: ${io.program} logout\n`);
 
@@ -14,8 +14,16 @@ export async function runLogout(args: string[], io: ShareIO): Promise<number> {
   const url = dojoUrl(io.env);
   const token = await readToken(io.env, url);
 
+  if (io.env.FROGBOT_DOJO_TOKEN) {
+    say(
+      io,
+      `[frogbot] FROGBOT_DOJO_TOKEN stays in use until you unset it. Revoke it with ${io.program} keys revoke <id>.`,
+    );
+  }
+
   if (!token) {
     say(io, '[frogbot] Not signed in.');
+    done(io, { url, signedOut: false });
 
     return 0;
   }
@@ -50,6 +58,7 @@ export async function runLogout(args: string[], io: ShareIO): Promise<number> {
 
   await removeToken(io.env, url);
   say(io, `[frogbot] Signed out of ${url}.`);
+  done(io, { url, signedOut: true });
 
   return 0;
 }

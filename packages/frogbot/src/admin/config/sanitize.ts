@@ -11,7 +11,12 @@ import type { DashboardConfig } from '../views/types.js';
 export function validateAppIcon(appIcon: unknown): void {
   if (appIcon === undefined) return;
 
-  if (typeof appIcon !== 'string' || !appIcon.startsWith('/') || !appIcon.endsWith('.png')) {
+  if (
+    typeof appIcon !== 'string' ||
+    !appIcon.startsWith('/') ||
+    !appIcon.endsWith('.png') ||
+    appIcon.split(/[/\\]/).includes('..')
+  ) {
     throw new Error(
       "[frogbot] admin.meta.appIcon must be a .png path in public/, such as '/app-icon.png'",
     );
@@ -114,6 +119,11 @@ export const SETTINGS_VIEW: AdminViewConfig = {
   path: '/settings',
   meta: { title: 'Settings' },
 };
+
+/** Whether a `views.settings` entry is FrogBot's Settings view, which `admin.settings` collections move into. */
+export function isFrogBotSettingsView(view: { Component?: unknown } | undefined): boolean {
+  return view?.Component === SETTINGS_VIEW.Component;
+}
 
 export function fillViewMeta(
   view: AdminViewConfig,

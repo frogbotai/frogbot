@@ -4,9 +4,9 @@ import { Readable } from 'node:stream';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 import type { DojoClient } from '../dojo.js';
-import { dojoMessage } from '../dojo.js';
+import { dojoMessage, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
-import type { ShareIO } from '../io.js';
+import type { DojoIO } from '../io.js';
 import type { DataFile, DataInventory } from './inventory.js';
 
 /** Where Dojo's `data-uploads` takes the snapshot; 301 moves it onto the volume before first start. */
@@ -34,7 +34,7 @@ export type UploadDataProps = {
   dojo: DojoClient;
   appId: string | number;
   inventory: Pick<DataInventory, 'snapshotPath' | 'files'>;
-  io: Pick<ShareIO, 'stdout' | 'isTTY'>;
+  io: Pick<DojoIO, 'stdout' | 'isTTY'>;
   /** Waits before each retry of a part; one entry per retry. */
   retryDelays?: number[];
 };
@@ -65,7 +65,7 @@ export async function uploadData({
     objects.reduce((sum, object) => sum + object.size, 0),
   );
 
-  const base = `/api/apps/${appId}/data-uploads`;
+  const base = `/api/apps/${segment(appId)}/data-uploads`;
 
   try {
     for (const batch of batches(objects)) {

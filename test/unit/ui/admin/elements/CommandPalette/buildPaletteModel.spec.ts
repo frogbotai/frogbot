@@ -12,6 +12,7 @@ const i18n = {
     ({
       'general:collections': 'Collections',
       'general:globals': 'Globals',
+      'general:settings': 'Settings',
     })[key] ?? key,
 } as ServerProps['i18n'];
 
@@ -147,6 +148,69 @@ describe('buildPaletteModel', () => {
     ]);
 
     expect(result.collections[0]?.slug).toBe('projects');
+  });
+
+  it('finds Settings collections under a Settings group, only when readable', () => {
+    const withSettings = config();
+    const settingsView = { Component: '@frogbotai/ui/admin/rsc#SettingsView' };
+
+    (withSettings.admin.components as { views?: unknown }).views = { settings: settingsView };
+
+    withSettings.collections.push(
+      collection('members', { admin: { group: false, settings: true } }) as never,
+      collection('keys', { admin: { group: false, settings: true } }) as never,
+    );
+
+    const result = buildPaletteModel({
+      config: withSettings,
+      i18n,
+      permissions: permissionsFor({
+        ...permissions.collections,
+        keys: { read: false },
+        members: { create: true, read: true },
+      }),
+      visibleEntities: {
+        ...visibleEntities,
+        collections: [...visibleEntities.collections, 'members', 'keys'],
+      },
+    });
+
+    expect(result.rows.filter(({ group }) => group === 'Settings')).toEqual([
+      {
+        createPath: '/control/collections/members/create',
+        group: 'Settings',
+        label: 'Members',
+        path: '/control/collections/members',
+      },
+    ]);
+    expect(result.collections.at(-1)?.slug).toBe('members');
+  });
+
+  it('translates the Settings group label', () => {
+    const withSettings = config();
+
+    (withSettings.admin.components as { views?: unknown }).views = {
+      settings: { Component: '@frogbotai/ui/admin/rsc#SettingsView' },
+    };
+
+    withSettings.collections.push(
+      collection('members', { admin: { group: false, settings: true } }) as never,
+    );
+
+    const result = buildPaletteModel({
+      config: withSettings,
+      i18n: {
+        ...i18n,
+        t: (key: string) => (key === 'general:settings' ? 'Réglages' : i18n.t(key)),
+      },
+      permissions: permissionsFor({ ...permissions.collections, members: { read: true } }),
+      visibleEntities: {
+        ...visibleEntities,
+        collections: [...visibleEntities.collections, 'members'],
+      },
+    });
+
+    expect(result.rows.find(({ label }) => label === 'Members')?.group).toBe('Réglages');
   });
 });
 

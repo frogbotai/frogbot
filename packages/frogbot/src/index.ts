@@ -183,6 +183,19 @@ export type {
   UnlockArgs,
   VerifyEmailArgs,
 } from './auth/types.js';
+export type {
+  DeployConfig,
+  DeployContext,
+  DeployEnv,
+  DeployExecOptions,
+  DeployExecResult,
+  DeployFlags,
+  DeployIO,
+  DeployPrompts,
+  DeployRunOptions,
+  DeployTarget,
+  PreflightIssue,
+} from './bin/deploy/types.js';
 export type { ChannelThreadReference } from './channels/types.js';
 export type { CanWriteChatProps, WritableChat } from './chat/access/canWriteChat.js';
 export { canWriteChat } from './chat/access/canWriteChat.js';
@@ -499,6 +512,7 @@ export type {
   ToolAccess,
   ToolCtx,
   ToolOutputLimits,
+  ToolSource,
 } from './tools/types.js';
 export type { Subscription, SubscriptionEnableProps } from './triggers/subscriptions.js';
 export type { IngressRegistry, TriggerEvent, TriggerSubscriber } from './triggers/types.js';

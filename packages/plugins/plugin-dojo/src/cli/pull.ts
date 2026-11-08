@@ -7,20 +7,20 @@ import type { ReadableStream } from 'node:stream/web';
 
 import { x } from 'tar';
 
-import { createDojo, dojoMessage } from './dojo.js';
+import { createDojo, dojoMessage, segment } from './dojo.js';
 import { ShareError } from './error.js';
-import type { ShareIO } from './io.js';
-import { say } from './io.js';
+import type { DojoIO } from './io.js';
+import { done, say } from './io.js';
 import { writeLink } from './link.js';
 
-const usage = (program: string) => `Usage: ${program} pull <app>`;
+const usage = (program: string) => `Usage: ${program} apps pull <app>`;
 
 const slugPattern = /^[a-z0-9][a-z0-9-]*$/;
 
 type App = { id: string | number; slug: string };
 
-/** Runs `frogbot pull <app>` and returns its exit code; known stops print one `[frogbot]` line. */
-export async function runPull(args: string[], io: ShareIO): Promise<number> {
+/** Runs `frogbot dojo apps pull <app>` and returns its exit code; known stops print one `[frogbot]` line. */
+export async function runPull(args: string[], io: DojoIO): Promise<number> {
   try {
     return await pull(args, io);
   } catch (error) {
@@ -32,7 +32,7 @@ export async function runPull(args: string[], io: ShareIO): Promise<number> {
   }
 }
 
-async function pull(args: string[], io: ShareIO): Promise<number> {
+async function pull(args: string[], io: DojoIO): Promise<number> {
   const [name] = args;
 
   if (args.length !== 1 || !name || name.startsWith('-')) {
@@ -43,7 +43,7 @@ async function pull(args: string[], io: ShareIO): Promise<number> {
 
   await dojo.signIn();
 
-  const looked = await dojo.request(`/api/apps/${encodeURIComponent(name)}`);
+  const looked = await dojo.request(`/api/apps/${segment(name)}`);
 
   if (!looked.ok) throw new ShareError(await dojoMessage(looked));
 
@@ -64,7 +64,7 @@ async function pull(args: string[], io: ShareIO): Promise<number> {
     throw new ShareError(`./${slug} already exists; pull somewhere else or remove it.`);
   }
 
-  const source = await dojo.request(`/api/apps/${encodeURIComponent(String(id))}/source`, () => ({
+  const source = await dojo.request(`/api/apps/${segment(id)}/source`, () => ({
     headers: { accept: 'application/gzip' },
   }));
 
@@ -105,6 +105,7 @@ async function pull(args: string[], io: ShareIO): Promise<number> {
   say(io, `cd ${slug}`);
   say(io, 'pnpm install');
   say(io, 'pnpm dev');
+  done(io, { id, slug, path: dest });
 
   return 0;
 }

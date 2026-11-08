@@ -445,6 +445,74 @@ describe('frogbot buildConfig', () => {
   });
 
   describe('sanitization passthrough', () => {
+    it('moves admin.settings collections out of Payload groups only with the FrogBot Settings view', async () => {
+      const collections: CollectionConfig[] = [
+        {
+          slug: 'users',
+          admin: { group: 'Team', settings: true },
+          auth: true,
+          fields: [{ name: 'name', type: 'text' }],
+        },
+        { slug: 'posts', fields: [{ name: 'title', type: 'text' }] },
+      ];
+
+      const readAdmin = async (config: FrogBotConfig) => {
+        const payloadConfig = await (await buildConfig(config))._internal.payloadConfig;
+        const find = (slug: string) =>
+          payloadConfig.collections.find((collection) => collection.slug === slug)?.admin as
+            Record<string, unknown> | undefined;
+
+        return { posts: find('posts'), users: find('users') };
+      };
+
+      const builtIn = await readAdmin(makeConfig({ collections }));
+
+      expect(builtIn.users).toMatchObject({ group: false, icon: 'people', settings: true });
+      expect(builtIn.posts?.group).toBeUndefined();
+
+      const replaced = await readAdmin(
+        makeConfig({
+          admin: { components: { views: { settings: { Component: './Mine#Mine' } } } },
+          collections,
+        }),
+      );
+
+      expect(replaced.users).toMatchObject({ group: 'Team', settings: true });
+    });
+
+    it('treats an explicit FrogBot Settings view as the FrogBot Settings view', async () => {
+      const payloadConfig = await (
+        await buildConfig(
+          makeConfig({
+            admin: {
+              components: {
+                views: {
+                  settings: {
+                    Component: '@frogbotai/ui/admin/rsc#SettingsView',
+                    exact: false,
+                    meta: { title: 'Preferences' },
+                    path: '/settings',
+                  },
+                },
+              },
+            },
+            collections: [
+              {
+                slug: 'users',
+                admin: { group: 'Team', settings: true },
+                auth: true,
+                fields: [{ name: 'name', type: 'text' }],
+              },
+            ],
+          }),
+        )
+      )._internal.payloadConfig;
+
+      expect(
+        payloadConfig.collections.find((collection) => collection.slug === 'users')?.admin,
+      ).toMatchObject({ group: false });
+    });
+
     it('runs onInit arrays sequentially and shares the FrogBot instance', async () => {
       const order: number[] = [];
       const config = makeConfig({

@@ -101,9 +101,9 @@ test('lists ungrouped collection cards directly under the Collections settings p
 }) => {
   await page.goto('/settings/collections');
 
-  const content = page.locator('.frogbot-settings-template__content');
+  const content = page.locator('.frogbot-settings');
 
-  await expect(page.locator('.frogbot-settings-template__header')).toHaveText('Collections');
+  await expect(page.locator('.app-header__step-nav')).toContainText('Collections');
   await expect(content.getByRole('heading', { level: 2 })).toHaveText(['Content']);
   await expect(content.getByRole('heading', { level: 3 })).toHaveText([
     'Users',

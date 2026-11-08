@@ -188,7 +188,7 @@ describe('frogbot sanitize', () => {
     ).toThrow("Collection slug 'frogbot-trigger-subscriptions' is reserved");
   });
 
-  it('makes board collections orderable with per-view fields and a hook', async () => {
+  it('makes board collections orderable on the Payload _order field', async () => {
     const result = sanitize(
       makeConfig({
         collections: [
@@ -210,14 +210,12 @@ describe('frogbot sanitize', () => {
     const posts = payloadConfig.collections?.find(({ slug }) => slug === 'posts');
 
     expect(posts?.orderable).toBe(true);
-    expect(posts?.fields).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ name: '_order_by_stage', type: 'text', index: true }),
-      ]),
+    expect(posts?.fields.some((field) => 'name' in field && field.name.startsWith('_order'))).toBe(
+      false,
     );
-    expect(posts?.hooks?.beforeChange).toHaveLength(1);
+    expect(posts?.hooks?.beforeChange ?? []).toHaveLength(0);
     expect(posts?.admin.defaultSort).toBe('-createdAt');
-    expect(posts?.admin.custom?.frogbot.views[1].orderField).toBe('_order_by_stage');
+    expect(posts?.admin.custom?.frogbot.views[1].orderField).toBe('_order');
   });
 
   it('leaves collections without boards non-orderable', async () => {
@@ -644,7 +642,7 @@ describe('frogbot sanitize', () => {
     const sanitized = await buildConfig(makeConfig({ plugins: [plugin] }));
 
     expect(sanitized.cli.commands).toEqual({ hello });
-    expect(sanitize(makeConfig()).cli).toEqual({ commands: {} });
+    expect(sanitize(makeConfig()).cli).toEqual({ commands: {}, deployTargets: {} });
   });
 
   it('rejects a `cli.commands` key with capitals', () => {
@@ -657,6 +655,37 @@ describe('frogbot sanitize', () => {
     expect(() => sanitize(makeConfig({ cli: { commands: { hello: 'nope' as never } } }))).toThrow(
       '[frogbot] cli command "hello" must be a function',
     );
+  });
+
+  it('keeps the `cli.deployTargets` a plugin adds', () => {
+    const target = { describe: 'Test', preflight: () => [], run: () => undefined };
+
+    expect(
+      sanitize(makeConfig({ cli: { deployTargets: { 'my-host': target } } })).cli.deployTargets,
+    ).toEqual({
+      'my-host': target,
+    });
+  });
+
+  it.each([
+    ['Dojo', 'must be lowercase letters, digits and dashes'],
+    ['my_host', 'must be lowercase letters, digits and dashes'],
+    ['fly', "is a core target's name"],
+  ])('rejects the `cli.deployTargets` name %s', (name, message) => {
+    const target = { describe: 'Test', preflight: () => [], run: () => undefined };
+
+    expect(() => sanitize(makeConfig({ cli: { deployTargets: { [name]: target } } }))).toThrow(
+      `[frogbot] cli deploy target "${name}" ${message}`,
+    );
+  });
+
+  it.each([
+    ['preflight and run', { describe: 'x' }],
+    ['describe', { preflight: () => [], run: () => undefined }],
+  ])('rejects a `cli.deployTargets` value without %s', (_, target) => {
+    expect(() =>
+      sanitize(makeConfig({ cli: { deployTargets: { host: target as never } } })),
+    ).toThrow('[frogbot] cli deploy target "host" must have `describe`, `preflight` and `run`');
   });
 
   it('rejects unknown built-in collection icons', () => {
@@ -707,14 +736,18 @@ describe('frogbot sanitize', () => {
     ).not.toThrow();
   });
 
-  it.each(['app-icon.png', '/icon.svg', 'https://x/y.png'])(
-    'rejects %s as admin.meta.appIcon',
-    (appIcon) => {
-      expect(() => sanitize(makeConfig({ admin: { meta: { appIcon } } }))).toThrowError(
-        "[frogbot] admin.meta.appIcon must be a .png path in public/, such as '/app-icon.png'",
-      );
-    },
-  );
+  it.each([
+    'app-icon.png',
+    '/icon.svg',
+    'https://x/y.png',
+    '/../secret.png',
+    '/icons/../../x.png',
+    '/..\\secret.png',
+  ])('rejects %s as admin.meta.appIcon', (appIcon) => {
+    expect(() => sanitize(makeConfig({ admin: { meta: { appIcon } } }))).toThrowError(
+      "[frogbot] admin.meta.appIcon must be a .png path in public/, such as '/app-icon.png'",
+    );
+  });
 
   it('accepts built-in names and component icons on nav items and settings', () => {
     const config = makeConfig({
@@ -2107,7 +2140,7 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
     const endpoints = (payloadConfig as any).endpoints as any[];
 
-    expect(endpoints).toHaveLength(5);
+    expect(endpoints).toHaveLength(7);
     expect(endpoints.find(({ path }) => path === '/health').handler).not.toBe(handler);
   });
 
@@ -4743,6 +4776,8 @@ describe('frogbot sanitize', () => {
         'head /jobs/:token/resume',
         'post /jobs/:token/resume',
         'get /frogbot',
+        'get /frogbot/app-icon/:size',
+        'get /frogbot/app-manifest',
         'post /agents/:slug',
         'get /agents/:slug/chats/:chatId/pending',
         'post /agents/:slug/chats/:chatId/settle',
@@ -4772,14 +4807,24 @@ describe('frogbot sanitize', () => {
       expect(result.chat.enabled).toBe(false);
       expect(
         (payloadConfig as { endpoints?: { path: string }[] }).endpoints?.map(({ path }) => path),
-      ).toEqual(['/jobs/:token/resume', '/jobs/:token/resume', '/jobs/:token/resume', '/frogbot']);
+      ).toEqual([
+        '/jobs/:token/resume',
+        '/jobs/:token/resume',
+        '/jobs/:token/resume',
+        '/frogbot',
+        '/frogbot/app-icon/:size',
+        '/frogbot/app-manifest',
+      ]);
     });
 
     it.each([
-      { endpoints: false as const, expected: ['/frogbot'] },
+      {
+        endpoints: false as const,
+        expected: ['/frogbot', '/frogbot/app-icon/:size', '/frogbot/app-manifest'],
+      },
       {
         endpoints: [{ path: '/health', method: 'get' as const, handler: vi.fn() }],
-        expected: ['/health', '/frogbot'],
+        expected: ['/health', '/frogbot', '/frogbot/app-icon/:size', '/frogbot/app-manifest'],
       },
     ])(
       'preserves user endpoint configuration for empty agents',

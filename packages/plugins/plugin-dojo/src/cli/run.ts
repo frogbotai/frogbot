@@ -3,24 +3,29 @@ import { readFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
-import { checkAppRoot, findAppRoot } from './appRoot.js';
+import type { DeployConfig, DeployContext, DeployIO, PreflightIssue } from 'frogbot';
+import { DeployError, loadConfig, processDeployIO, runDeploy } from 'frogbot/internal';
+
+import { dojoTarget } from '../deploy.js';
+import { nameTaken, toSlug } from './appSlug.js';
 import type { ShareArchive } from './archive.js';
 import { createArchive } from './archive.js';
 import { authPath } from './auth.js';
 import { askData } from './data/ask.js';
 import type { DataInventory } from './data/inventory.js';
-import { describeData } from './data/inventory.js';
+import { describeData, takeInventory } from './data/inventory.js';
 import { formatBytes, uploadData } from './data/upload.js';
-import type { DojoClient, DojoErrorBody } from './dojo.js';
-import { createDojo, dojoError, dojoMessage, followBuild } from './dojo.js';
+import type { DojoClient } from './dojo.js';
+import { createDojo, dojoError, dojoMessage, followBuild, segment } from './dojo.js';
 import type { EnvKey } from './envKeys.js';
 import { envKeys, readEnvFiles } from './envKeys.js';
 import { ShareError } from './error.js';
 import { shareFiles } from './files.js';
-import type { ShareIO } from './io.js';
+import type { DojoIO } from './io.js';
 import { say } from './io.js';
 import type { LiveKeys } from './keys.js';
 import { chooseFirstKeys, compareLiveKeys } from './keys.js';
+import type { AppLink } from './link.js';
 import { linkPath, readLink, writeLink } from './link.js';
 import { whenPaid } from './payment.js';
 import type { SealedKeys, SealingKey } from './seal.js';
@@ -28,7 +33,7 @@ import { sealKeys } from './seal.js';
 import { chooseWorkspace } from './workspaces.js';
 
 const usage = (program: string) =>
-  `Usage: ${program} share [--data | --no-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys]`;
+  `Usage: ${/dojo$/.test(program) ? `${program} apps share` : `${program} deploy dojo`} [--data | --no-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys]`;
 
 type ShareFlags = {
   data?: boolean;
@@ -88,34 +93,64 @@ function parseShareArgs(argv: string[], program: string): ShareFlags {
   };
 }
 
-/** Runs `frogbot share` and returns its exit code; known stops print one `[frogbot]` line. */
-export async function runShare(argv: string[], io: ShareIO): Promise<number> {
+/** Runs `frogbot share`, the same as `frogbot deploy dojo`, and returns its exit code. */
+export async function runShare(argv: string[], io: DeployIO): Promise<number> {
+  return runDeploy(dojoTarget, argv, io, { name: 'dojo' });
+}
+
+async function loadShareConfig(root: string): Promise<DeployConfig> {
+  const config = await loadConfig({ cwd: root, mode: 'codegen' });
+
+  return config._internal.payloadConfig;
+}
+
+/** `share` on the real terminal, with the programs and app config `deploy` needs. */
+export async function runShareCommand(argv: string[], io: DojoIO): Promise<number> {
+  return runShare(argv, {
+    ...processDeployIO({ program: io.program, loadConfig: loadShareConfig }),
+    ...io,
+  });
+}
+
+async function asDeployStop<T>(work: () => T | Promise<T>): Promise<T> {
   try {
-    await share(argv, io);
-
-    return 0;
+    return await work();
   } catch (error) {
-    if (!(error instanceof ShareError)) throw error;
+    if (error instanceof ShareError) throw new DeployError(error.message, error.code);
 
-    io.stderr.write(`[frogbot] ${error.message}\n`);
-
-    return error.code;
+    throw error;
   }
 }
 
-async function share(argv: string[], io: ShareIO): Promise<void> {
-  const flags = parseShareArgs(argv, io.program);
-  const root = findAppRoot({ cwd: io.cwd, env: io.env });
+/** The `dojo` target's own checks: its flags and the keys `--skip-key` names. */
+export async function sharePreflight(context: DeployContext): Promise<PreflightIssue[]> {
+  return asDeployStop(() => {
+    const flags = parseShareArgs(context.args, context.io.program);
 
-  checkAppRoot(root);
+    checkSkipKeys(flags.skipKey, envKeys(readEnvFiles(context.root)));
 
+    return [];
+  });
+}
+
+/** Sends the app to Dojo: `share`'s and `deploy dojo`'s body. Under `--json` its progress goes to stderr. */
+export async function shareToDojo(context: DeployContext): Promise<Record<string, unknown>> {
+  const io = context.flags.json ? { ...context.io, stdout: context.io.stderr } : context.io;
+
+  return asDeployStop(() => share({ ...context, io }));
+}
+
+async function share(context: DeployContext): Promise<Record<string, unknown>> {
+  const { root, config, io } = context;
+  const flags = parseShareArgs(context.args, io.program);
   const link = await readLink(root);
   const fileEnv = readEnvFiles(root);
   const allKeys = envKeys(fileEnv);
 
-  checkSkipKeys(flags.skipKey, allKeys);
+  if (context.flags.dryRun) {
+    return dryRun({ context, flags, link, keys: allKeys, databaseUrl: fileEnv.DATABASE_URL });
+  }
 
-  const config = await io.loadConfig(root);
   const dojo = createDojo(io);
   const { started, level }: AppInfo = link
     ? await appInfo(dojo, link.appId)
@@ -205,18 +240,66 @@ async function share(argv: string[], io: ShareIO): Promise<void> {
       );
     }
 
-    if (!editor) {
-      say(io, `[frogbot] Share it: ${dojo.url}/collections/projects/${appId}?share=1`);
-    }
+    const shareLink = editor ? null : `${dojo.url}/collections/projects/${appId}?share=1`;
 
+    if (shareLink) say(io, `[frogbot] Share it: ${shareLink}`);
     if (build.url) say(io, build.url);
+
+    return { appId, url: build.url ?? null, shareLink };
   } finally {
     await archive?.remove();
     await data?.dispose();
   }
 }
 
-function leftOut(io: ShareIO, { leftFolders, leftNames }: DataInventory): void {
+async function dryRun({
+  context,
+  flags,
+  link,
+  keys,
+  databaseUrl,
+}: {
+  context: DeployContext;
+  flags: ShareFlags;
+  link: AppLink | undefined;
+  keys: EnvKey[];
+  databaseUrl: string | undefined;
+}): Promise<Record<string, unknown>> {
+  const { root, config, io } = context;
+  const { files } = await shareFiles({
+    root,
+    collections: config.collections,
+    databaseUrl: databaseUrl ?? io.env.DATABASE_URL,
+    authFile: resolve(io.cwd, authPath(io.env)),
+  });
+
+  const archive = await createArchive({ root, files });
+
+  try {
+    const sent = flags.keys
+      ? keys.filter((key) => !flags.skipKey.includes(key.name)).map((key) => key.name)
+      : [];
+
+    const inventory = !link && flags.data ? await takeInventory({ root, config }) : undefined;
+    const data = inventory && inventory !== 'unsupported' ? describeData(inventory) : undefined;
+
+    if (inventory && inventory !== 'unsupported') await inventory.dispose();
+
+    context.log(
+      `[dry-run] ${link ? `Update the app in ${linkPath} (${link.appId})` : 'Create a new app on Dojo'}`,
+    );
+
+    context.log(`[dry-run] ${archive.summary.replace(/^Uploading/, 'Upload')}`);
+    context.log(`[dry-run] Keys: ${sent.length > 0 ? sent.join(', ') : 'none'}`);
+    context.log(`[dry-run] Data: ${data ?? 'none'}`);
+
+    return { appId: link?.appId, files: files.length, bytes: archive.bytes, keys: sent, data };
+  } finally {
+    await archive.remove();
+  }
+}
+
+function leftOut(io: DeployIO, { leftFolders, leftNames }: DataInventory): void {
   for (const folder of leftFolders) {
     say(
       io,
@@ -255,7 +338,7 @@ function checkSkipKeys(skipKey: string[], keys: EnvKey[]): void {
 }
 
 async function appInfo(dojo: DojoClient, appId: string | number): Promise<AppInfo> {
-  const response = await dojo.request(`/api/apps/${appId}`);
+  const response = await dojo.request(`/api/apps/${segment(appId)}`);
 
   await refusedApp(appId, response);
 
@@ -274,28 +357,6 @@ async function appName(root: string): Promise<string> {
     : basename(root);
 }
 
-function toSlug(name: string): string {
-  const slug = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .slice(0, 63)
-    .replace(/^-+|-+$/g, '');
-
-  return slug || 'app';
-}
-
-function nameTaken(status: number, body: DojoErrorBody | undefined): boolean {
-  if (status === 409 && body?.error === 'name_taken') return true;
-
-  return (
-    body?.errors?.some((error) =>
-      error.data?.errors?.some(
-        (field) => field.path === 'slug' && field.message === 'Value must be unique',
-      ),
-    ) ?? false
-  );
-}
-
 async function createApp({
   dojo,
   io,
@@ -303,7 +364,7 @@ async function createApp({
   root,
 }: {
   dojo: DojoClient;
-  io: ShareIO;
+  io: DeployIO;
   flags: ShareFlags;
   root: string;
 }): Promise<string | number> {
@@ -348,14 +409,14 @@ async function laterKeys({
   updateKeys,
 }: {
   dojo: DojoClient;
-  io: ShareIO;
+  io: DeployIO;
   appId: string | number;
   keys: EnvKey[];
   updateKeys: boolean;
 }): Promise<EnvKey[]> {
   if (keys.length === 0) return [];
 
-  const response = await dojo.request(`/api/apps/${appId}/keys`);
+  const response = await dojo.request(`/api/apps/${segment(appId)}/keys`);
 
   await refusedApp(appId, response);
 
@@ -404,7 +465,7 @@ async function deploy({
   data,
 }: {
   dojo: DojoClient;
-  io: ShareIO;
+  io: DeployIO;
   appId: string | number;
   archive: ShareArchive;
   keys: EnvKey[];
@@ -417,7 +478,7 @@ async function deploy({
       : undefined;
 
   const response = await whenPaid(dojo, io, () =>
-    dojo.request(`/api/apps/${appId}/deployments`, async () => {
+    dojo.request(`/api/apps/${segment(appId)}/deployments`, async () => {
       const form = new FormData();
 
       form.append(

@@ -9,6 +9,8 @@ export type DojoEnv = {
   oauthClientId?: string;
   oauthClientSecret?: string;
   url?: string;
+  /** The Dojo user who created the app, made its first user when it starts empty (frogbot-237). */
+  firstUserEmail?: string;
 };
 
 /** Sign in with Dojo's variables. A missing one turns sign-in off instead of failing the start. */
@@ -26,7 +28,12 @@ const VARIABLES = {
   aiApiKey: 'DOJO_AI_API_KEY',
   aiBaseUrl: 'DOJO_AI_BASE_URL',
   jobsSecret: 'DOJO_JOBS_SECRET',
-} as const satisfies Record<Exclude<keyof DojoEnv, keyof typeof SIGN_IN_VARIABLES>, string>;
+} as const satisfies Record<
+  Exclude<keyof DojoEnv, keyof typeof SIGN_IN_VARIABLES | 'firstUserEmail'>,
+  string
+>;
+
+const FIRST_USER_VARIABLE = 'DOJO_FIRST_USER_EMAIL';
 
 /** Dojo's env when the app runs on Dojo (`DOJO=1`), otherwise `undefined`. */
 export function readDojoEnv(): DojoEnv | undefined {
@@ -47,6 +54,10 @@ export function readDojoEnv(): DojoEnv | undefined {
 
     if (value?.trim()) env[key] = value.trim();
   }
+
+  const firstUser = process.env[FIRST_USER_VARIABLE]?.trim().toLowerCase();
+
+  if (firstUser) env.firstUserEmail = firstUser;
 
   return env;
 }

@@ -5,9 +5,17 @@ import type { NavPreferences, PayloadRequest, ServerProps } from 'payload';
 import { formatAdminURL, PREFERENCE_KEYS } from 'payload/shared';
 import type { ReactNode } from 'react';
 
+import FolderIcon from '../../../icons/icons/FolderIcon.js';
+import SettingIcon from '../../../icons/icons/SettingIcon.js';
+import TileIcon from '../../../icons/icons/TileIcon.js';
+import {
+  getSettingsCollections,
+  usesFrogBotSettings,
+} from '../../views/Settings/resolveSection.js';
 import { buildPaletteModel } from '../CommandPalette/buildPaletteModel.js';
+import { buildSettingsNav } from '../SettingsNav/buildSettingsNav.js';
 import { buildNavModel } from './buildNavModel.js';
-import { FrogBotNavClient } from './index.client.js';
+import { FrogBotNavClient, FrogBotSettingsNavClient } from './index.client.js';
 import { renderNavIcon } from './renderNavIcon.js';
 
 async function getNavPreferences(req?: PayloadRequest): Promise<NavPreferences | null> {
@@ -31,10 +39,36 @@ async function getNavPreferences(req?: PayloadRequest): Promise<NavPreferences |
   return result.docs[0]?.value as NavPreferences | null;
 }
 
-export type FrogBotNavProps = { CustomAvatar?: ReactNode; req?: PayloadRequest } & ServerProps;
+export type FrogBotNavProps = {
+  collectionSlug?: string;
+  CustomAvatar?: ReactNode;
+  req?: PayloadRequest;
+} & ServerProps;
+
+/** Whether the page belongs in FrogBot's Settings: a `/settings` page, Account, or a Settings collection. */
+export function isSettingsPage({
+  collectionSlug,
+  config,
+  params,
+  viewType,
+}: Pick<FrogBotNavProps, 'collectionSlug' | 'params' | 'viewType'> & {
+  config: NonNullable<FrogBotNavProps['payload']>['config'];
+}): boolean {
+  if (!usesFrogBotSettings(config)) return false;
+
+  const segments = params?.segments;
+  const first = Array.isArray(segments) ? segments[0] : segments;
+
+  return (
+    first === 'settings' ||
+    viewType === 'account' ||
+    getSettingsCollections(config).some(({ slug }) => slug === collectionSlug)
+  );
+}
 
 export async function FrogBotNav(props: FrogBotNavProps) {
   const {
+    collectionSlug,
     CustomAvatar,
     documentSubViewType,
     i18n,
@@ -51,15 +85,13 @@ export async function FrogBotNav(props: FrogBotNavProps) {
 
   if (!payload?.config || !permissions || !visibleEntities) return null;
 
-  if (req) attachRegisteredFrogBot(req);
+  const frogbotReq = req ? attachRegisteredFrogBot(req) : undefined;
 
   const { admin, routes } = payload.config;
   const shellComponents = admin.components as typeof admin.components & RootAdminComponents;
   const modelProps = { config: payload.config, i18n, permissions, visibleEntities };
-  const navModel = buildNavModel(modelProps);
   const palette = buildPaletteModel(modelProps);
 
-  const navPreferences = await getNavPreferences(req);
   const serverProps = {
     i18n,
     locale,
@@ -85,6 +117,65 @@ export async function FrogBotNav(props: FrogBotNavProps) {
       serverProps,
     });
 
+  const renderMany = (
+    components: Parameters<typeof RenderServerComponent>[0]['Component'][] | undefined,
+    key: string,
+  ) => components?.map((component, index) => render(component, `${key}-${index}`));
+
+  const settingsMenu = Array.isArray(admin.components.settingsMenu)
+    ? admin.components.settingsMenu.map((component, index) =>
+        render(component, `settings-${index}`),
+      )
+    : [];
+
+  const accountMenu = {
+    afterAccountMenu: (
+      <>
+        {renderMany(shellComponents.afterAccountMenu, 'after-account-menu')}
+        {settingsMenu}
+      </>
+    ),
+    beforeAccountMenu: renderMany(shellComponents.beforeAccountMenu, 'before-account-menu'),
+    logout: admin.components.logout?.Button ? render(admin.components.logout.Button) : undefined,
+    logoutPath: formatAdminURL({ adminRoute: routes.admin, path: admin.routes.logout }),
+  };
+
+  if (frogbotReq && isSettingsPage({ collectionSlug, config: payload.config, params, viewType })) {
+    const navPreferences = await getNavPreferences(req);
+    const settings = await buildSettingsNav({
+      config: payload.config,
+      permissions,
+      req: frogbotReq,
+      visibleEntities,
+    });
+
+    const fallbackIcons = {
+      collection: <FolderIcon size={18} />,
+      collections: <TileIcon size={18} />,
+      entry: <SettingIcon size={18} />,
+    };
+
+    return (
+      <FrogBotSettingsNavClient
+        {...accountMenu}
+        accountHref={settings.accountHref}
+        backHref={settings.backHref}
+        initialOpen={navPreferences?.open}
+        items={settings.items.map(({ href, icon, kind, label }) => ({
+          href,
+          icon:
+            renderNavIcon({ icon, importMap: payload.importMap, serverProps, size: 18 }) ??
+            fallbackIcons[kind],
+          label,
+        }))}
+        palette={palette}
+      />
+    );
+  }
+
+  const navModel = buildNavModel(modelProps);
+  const navPreferences = await getNavPreferences(req);
+
   const configuredItems = navModel.items.map((item) => ({
     ...item,
     icon: renderNavIcon({
@@ -104,46 +195,21 @@ export async function FrogBotNav(props: FrogBotNavProps) {
     render(component, `after-nav-${index}`),
   );
 
-  const settings = Array.isArray(admin.components.settingsMenu)
-    ? admin.components.settingsMenu.map((component, index) =>
-        render(component, `settings-${index}`),
-      )
-    : [];
-
-  const logout = admin.components.logout?.Button
-    ? RenderServerComponent({
-        Component: admin.components.logout.Button,
-        clientProps,
-        importMap: payload.importMap,
-        serverProps,
-      })
-    : undefined;
-
   const accountUser = user as { email?: unknown; name?: unknown } | undefined;
   const accountEmail = typeof accountUser?.email === 'string' ? accountUser.email : undefined;
   const accountName = typeof accountUser?.name === 'string' ? accountUser.name : undefined;
   const logo = render(admin.components.graphics?.Icon);
   const homePath = formatAdminURL({ adminRoute: routes.admin, path: '' });
-  const renderMany = (
-    components: Parameters<typeof RenderServerComponent>[0]['Component'][] | undefined,
-    key: string,
-  ) => components?.map((component, index) => render(component, `${key}-${index}`));
 
   return (
     <FrogBotNavClient
+      {...accountMenu}
       CustomAvatar={CustomAvatar}
       accountEmail={accountEmail}
       accountName={accountName}
       accountPath={formatAdminURL({ adminRoute: routes.admin, path: admin.routes.account })}
-      afterAccountMenu={
-        <>
-          {renderMany(shellComponents.afterAccountMenu, 'after-account-menu')}
-          {settings}
-        </>
-      }
       afterBottomRail={renderMany(shellComponents.afterBottomRail, 'after-bottom-rail')}
       afterNavLinks={afterNavLinks}
-      beforeAccountMenu={renderMany(shellComponents.beforeAccountMenu, 'before-account-menu')}
       beforeBottomRail={renderMany(shellComponents.beforeBottomRail, 'before-bottom-rail')}
       beforeNavLinks={beforeNavLinks}
       beforeSidebarClose={renderMany(shellComponents.beforeSidebarClose, 'before-sidebar-close')}
@@ -151,8 +217,6 @@ export async function FrogBotNav(props: FrogBotNavProps) {
       initialOpen={navPreferences?.open}
       items={configuredItems}
       logo={logo}
-      logout={logout}
-      logoutPath={formatAdminURL({ adminRoute: routes.admin, path: admin.routes.logout })}
       palette={palette}
       sections={renderMany(shellComponents.navSections, 'nav-section')}
       settingsPath={formatAdminURL({ adminRoute: routes.admin, path: '/settings' })}

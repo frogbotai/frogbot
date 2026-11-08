@@ -518,6 +518,9 @@ importers:
       '@ai-sdk/mcp':
         specifier: 2.0.60
         version: 2.0.60(zod@4.4.3)
+      '@clack/prompts':
+        specifier: 1.8.1
+        version: 1.8.1
       '@frogbotai/gateway':
         specifier: workspace:*
         version: link:../gateway
@@ -2332,6 +2335,79 @@ importers:
         version: 6.0.3
 
   templates/blank:
+    dependencies:
+      '@frogbotai/db-sqlite':
+        specifier: workspace:*
+        version: link:../../packages/db-sqlite
+      '@frogbotai/next':
+        specifier: workspace:*
+        version: link:../../packages/next
+      '@frogbotai/plugin-ai-policy':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-ai-policy
+      '@frogbotai/plugin-dojo':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-dojo
+      '@frogbotai/richtext-lexical':
+        specifier: workspace:*
+        version: link:../../packages/richtext-lexical
+      '@frogbotai/transformer-sharp':
+        specifier: workspace:*
+        version: link:../../packages/transformer-sharp
+      '@frogbotai/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
+      drizzle-kit:
+        specifier: ^0.31.7
+        version: 0.31.7
+      frogbot:
+        specifier: workspace:*
+        version: link:../../packages/frogbot
+      graphql:
+        specifier: ^16.8.1
+        version: 16.14.2
+      json-schema-to-typescript:
+        specifier: ^15.0.3
+        version: 15.0.4
+      libsql:
+        specifier: ^0.4.7
+        version: 0.4.7
+      next:
+        specifier: 16.4.2
+        version: 16.4.2(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@24.12.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4)
+      pino:
+        specifier: ^9.14.0
+        version: 9.14.0
+      react:
+        specifier: 19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: 19.3.1
+        version: 19.3.1(react@19.3.1)
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: 24.12.3
+        version: 24.12.3
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      prettier:
+        specifier: ^3.2.5
+        version: 3.9.5
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
+  templates/crm:
     dependencies:
       '@frogbotai/db-sqlite':
         specifier: workspace:*

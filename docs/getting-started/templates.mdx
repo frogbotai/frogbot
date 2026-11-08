@@ -2,7 +2,7 @@
 title: "Templates and sample data"
 sidebarTitle: "Templates"
 description: "Choose a create-frogbot-app template, load its sample data from the dashboard, and add a seed to your own app."
-keywords: ["templates", "create-frogbot-app", "seed", "sample data", "projects"]
+keywords: ["templates", "create-frogbot-app", "seed", "sample data", "projects", "crm"]
 ---
 
 `create-frogbot-app` asks which template to start from, or takes it from `--template`:
@@ -15,22 +15,29 @@ npx create-frogbot-app@latest my-app --template projects
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `blank`    | Users, file uploads, and the `general` and `assistant` agents. The default.                                                                                                                                           |
 | `projects` | A project tracker: projects, tasks numbered per project with keys such as `WEB-12` ([autonumber](/fields/autonumber#numbering-per-project)), a board grouped by status, and sample data. |
+| `crm`      | A CRM: companies with logos on a board by lifecycle, contacts, a deals board from lead to won or lost, a calendar of calls and meetings, tasks as a list, board and calendar, and sample data that only adds. |
 
 Every template works with SQLite, PostgreSQL and MongoDB, and with every AI provider. With `--ai none`, the template's agents, AI config and AI-only plugins are left out; its collections and sample data stay.
 
 ## Loading the sample data
 
-A template with sample data shows a **Seed your database** panel at the top of the dashboard. Its button calls `POST /api/seed`, which:
+The `crm` and `projects` templates load their sample data differently.
 
-1. deletes every record in the template's own collections, such as projects and tasks. It never deletes your users;
-2. creates the sample records;
-3. creates a demo login, `admin@test.com` with the password `password`. If that user already exists, it is deleted and created again, unless you are signed in as it.
+### crm
 
-You can press it again at any time to get the samples back. Anything you changed in those collections is lost.
+In development, the dashboard shows a **Load sample data** panel. Its button calls `POST /api/seed`, which adds eight fictional companies with logos, their contacts and deals, a week of activities around today, and a few tasks, all assigned to you. It is safe to leave in place:
 
-<Warning>
-Any signed-in user can run the seed, in every environment, including production. Before you deploy, remove the panel and the endpoint from `src/frogbot.config.ts`, or at least delete the demo user.
-</Warning>
+- It only adds. When companies, contacts, deals, activities or tasks already has a record, it answers `409` and changes nothing.
+- It creates no login and deletes nothing.
+- With `NODE_ENV=production`, as under `npm run start` and the Dockerfile, the panel renders nothing and the endpoint answers `404`.
+
+Its `seed({ frogbot, req, today })` takes the date the sample is arranged around, so a test can pass a fixed date and get the same records every run.
+
+### projects
+
+While the app has none of the template's records, the dashboard shows a **Seed your database** panel at the top. Its button calls `POST /api/seed`, which adds the sample records for whoever is signed in: three projects with tasks, every task assigned to you.
+
+The seed creates no user and deletes nothing, so it is safe on a deployed app, including one on Dojo. Once the template's records exist, the panel hides and the endpoint answers `409` without changing anything. To start over locally, delete the database.
 
 ## How a seed is built
 
@@ -38,18 +45,18 @@ The seed is plain code in your app, in three files you can change or delete:
 
 | File                           | Does                                                                                                         |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `src/seed/index.ts`            | `seed({ frogbot, req })` deletes and recreates the sample records through the [Local API](/local-api/overview). |
+| `src/seed/index.ts`            | `seed({ frogbot, req })` adds the sample records through the [Local API](/local-api/overview); `hasSampleData()` says whether they exist. |
 | `src/seed/endpoint.ts`         | `seedEndpoint()`, the `POST /api/seed` [root endpoint](/rest-api/overview#custom-endpoints).                  |
-| `src/components/SeedPanel.tsx` | The dashboard panel, registered in `admin.components.beforeDashboard`.                                       |
+| `src/components/SeedPanel.tsx` | The dashboard panel, registered in `admin.components.beforeDashboard`. A server component: it renders `SeedButton` only while `hasSampleData()` is false. |
 
 The seed passes `overrideAccess: true` and the request to each call, so it can write fields people can't, such as [autonumber](/fields/autonumber#seeds-and-migrations) numbers. It doesn't import anything from `src/agents`, so it keeps working when the app has no AI.
 
-The endpoint refuses a request with no signed-in user with `403`. If the seed throws, it logs the error and answers `500`; otherwise it answers `{ "success": true }`:
+The endpoint refuses a request with no signed-in user with `403`, and an app that already has the records with `409`. If the seed throws, it logs the error and answers `500`; otherwise it answers `{ "success": true }`:
 
 ```ts
 import type { Endpoint } from 'frogbot'
 
-import { seed } from './index'
+import { hasSampleData, seed } from './index'
 
 export function seedEndpoint(): Endpoint {
   return {
@@ -61,6 +68,13 @@ export function seedEndpoint(): Endpoint {
       }
 
       try {
+        if (await hasSampleData({ frogbot: req.frogbot, req })) {
+          return Response.json(
+            { error: 'This app already has projects, so the sample data was not added.' },
+            { status: 409 },
+          )
+        }
+
         await seed({ frogbot: req.frogbot, req })
       } catch (err) {
         req.frogbot.logger.error({ err }, 'Seeding the database failed')

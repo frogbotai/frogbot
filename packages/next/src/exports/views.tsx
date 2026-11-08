@@ -3,10 +3,9 @@ import {
   NotFoundPage as PayloadNotFoundPage,
   RootPage as PayloadRootPage,
 } from '@payloadcms/next/views';
-import { getPayloadConfig } from 'frogbot/internal';
+import { appIconURL, appManifestURL, getPayloadConfig } from 'frogbot/internal';
 import type { ComponentProps } from 'react';
 
-import { appIconURL, appManifestURL } from '../appIcon/urls.js';
 import frogbotOGImage from '../assets/frogbot-og.jpg';
 import type { FrogBotConfigArg } from '../types.js';
 import { brandImportMapErrors } from '../utilities/brandImportMapErrors.js';
