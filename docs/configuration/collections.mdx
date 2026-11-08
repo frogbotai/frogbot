@@ -222,6 +222,7 @@ The following options are available:
 | `icon` | `AdminIcon` | `'people'` for auth collections | Built-in kebab-case icon name or component path for the navigation link. See [Collection icons](/admin/admin-navigation#collection-icons-and-placement). |
 | `livePreview` | `LivePreviewConfig` | — | Live Preview for this collection. See [Live Preview](/live-preview/overview). |
 | `meta` | `MetaConfig` | — | Page metadata for this collection's admin pages. |
+| `panel` | `false \| RecordPanelConfig` | On, 560 px wide | The record side panel: clicking a row, card or event opens the record beside the view, at `?record=<id>`. `false` opens records on their edit page instead. Set `properties` and `width` in an object. [More details](/admin/record-panel). |
 | `settings` | `boolean` | `false` | Moves the collection into Settings: its own Settings sidebar item, the Settings sidebar on all its pages, and no main sidebar link or dashboard card. The command palette finds it under Settings. Ignored when the app replaces the Settings view. See [Settings collections](/admin/admin-navigation#settings-collections). |
 | `preview` | `(doc, { locale, req, token }) => string \| null \| Promise<string \| null>` | — | Builds a preview URL that points to your app. `req` is a `FrogBotRequest` with `req.frogbot`. |
 | `useAsDone` | `string` | — | Name of a checkbox field that means "this record is done": a top-level checkbox or a dot path into a group. Every view then shows done records in one done style, and board cards get a check circle that toggles it. The config check fails at startup if the field is missing or isn't a checkbox. [More details](#done-records). |
@@ -427,6 +428,7 @@ The following options are available:
 | `CreateButton` | `FrogBotComponent` | Built-in Create New | Replaces the **Create New** button in the toolbar and the list view's empty state, on every view type. It renders whatever `create` access says and receives `hasCreatePermission`; `create` access still governs REST and GraphQL create, the document view and relationship drawers. Below the small breakpoint it follows `toolbar`. [More details](/custom-components/list-view#createbutton). |
 | `Description` | `FrogBotComponent` | Built-in description | Replaces the collection description. [More details](/custom-components/list-view#description). |
 | `edit` | `object` | — | Edit View component slots. [More details](#edit-view-options). |
+| `panel` | `RecordPanelComponents` | — | Record side panel slots: `actions`, `beforeFields`, `afterFields`, `Header` and `Component`. [More details](/admin/record-panel#components). |
 
 List slots belong to a `type: 'list'` entry in `admin.views`: use `components.beforeView`, `toolbar`, `beforeTable`, `afterTable`, `afterView`, and `NoResults`. To replace the collection list, use a `type: 'custom'` entry with `component`. See [List View](/custom-components/list-view).
 

@@ -62,6 +62,19 @@ vi.mock('../../../../../packages/ui/src/admin/views/controls/ViewControls.client
   ViewControls: mocks.ViewControls,
 }));
 
+vi.mock('../../../../../packages/ui/src/admin/views/panel/RecordPanel.client.js', () => ({
+  RecordPanel: () => <aside data-testid="record-panel" />,
+}));
+
+vi.mock('../../../../../packages/ui/src/admin/views/panel/RecordPanelProvider.client.js', () => ({
+  RecordPanelProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
+  useRecordPanel: () => ({ enabled: true, openId: undefined, state: { mode: 'closed' } }),
+}));
+
+vi.mock('../../../../../packages/ui/src/admin/views/panel/useRecordLinks.js', () => ({
+  useRecordLinks: () => undefined,
+}));
+
 const { CollectionViewFrame } =
   await import('../../../../../packages/ui/src/admin/views/CollectionViewFrame.client');
 

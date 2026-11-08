@@ -226,7 +226,7 @@ test("toggles done from a board card's check circle with an ordinary update", as
     'aria-pressed',
     'true',
   );
-  await expect(page.locator('.doc-drawer')).toHaveCount(0);
+  await expect(page.locator('.fb-record-panel')).toHaveCount(0);
 
   await page.reload();
   await expect(card(page, 'Prepare the wholesale portal demo')).toHaveClass(/fb-record--done/);
@@ -238,9 +238,7 @@ test("toggles done from a board card's check circle with an ordinary update", as
   await expect(card(page, 'Prepare the wholesale portal demo')).not.toHaveClass(/fb-record--done/);
 });
 
-test('marks the record open in the drawer as selected, and clears it on close', async ({
-  page,
-}) => {
+test('marks the record open in the panel as selected, and clears it on close', async ({ page }) => {
   await page.goto('/collections/tasks/board');
 
   const target = card(page, 'Draft the Tidewater proposal');

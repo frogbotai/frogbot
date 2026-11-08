@@ -1828,5 +1828,15 @@
     "page": "versions/overview",
     "heading": "Collection config",
     "type": "Extract<NonNullable<import('frogbot').CollectionConfig['versions']>, object>"
+  },
+  {
+    "page": "admin/record-panel",
+    "heading": "Settings",
+    "type": "import('frogbot').RecordPanelConfig"
+  },
+  {
+    "page": "admin/record-panel",
+    "heading": "Components",
+    "type": "import('frogbot').RecordPanelComponents"
   }
 ]
