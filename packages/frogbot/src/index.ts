@@ -215,6 +215,9 @@ export type {
   Collection,
   CollectionAdminConfig,
   CollectionConfig,
+  PanelComponentProps,
+  RecordPanelComponents,
+  RecordPanelConfig,
 } from './collections/config/types.js';
 export type {
   BulkResult,

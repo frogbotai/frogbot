@@ -22,17 +22,20 @@ export function iterateCollections({
   for (const collection of collections) {
     const icon = (collection.admin as typeof collection.admin & { icon?: PayloadComponent })?.icon;
     if (isIconComponent(icon)) addToImportMap(icon);
-    const collectionViews = (
-      collection.custom?.frogbot as
-        | {
-            collectionViews?: Array<{
-              component?: PayloadComponent;
-              components?: Record<string, PayloadComponent | PayloadComponent[]>;
-              icon?: PayloadComponent;
-            }>;
-          }
-        | undefined
-    )?.collectionViews;
+    const frogbot = collection.custom?.frogbot as
+      | {
+          collectionViews?: Array<{
+            component?: PayloadComponent;
+            components?: Record<string, PayloadComponent | PayloadComponent[]>;
+            icon?: PayloadComponent;
+          }>;
+          panel?: Record<string, PayloadComponent | PayloadComponent[]>;
+        }
+      | undefined;
+
+    const collectionViews = frogbot?.collectionViews;
+
+    for (const component of Object.values(frogbot?.panel ?? {})) addToImportMap(component);
 
     for (const view of collectionViews ?? []) {
       addToImportMap(view.component);
