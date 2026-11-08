@@ -86,6 +86,8 @@ export type FakeDojo = {
   data: FakeData;
   /** The caller's `level` in `GET /api/apps/:app/cli`; left out of the reply when unset, as an older Dojo does. */
   level?: 'editor' | 'owner';
+  /** The zip `GET /api/apps/:app/data` serves to owners; 404 when unset. */
+  dataZip?: Buffer;
   /** The live version's archive, served by `GET /api/apps/:app/source`; 404 when unset. */
   source?: Buffer;
   /** The reply to `GET /api/apps/:app/cli`, instead of the app. */
@@ -386,7 +388,13 @@ export async function startFakeDojo(): Promise<FakeDojo> {
         return payloadError(res, 403, 'Only the app’s owners can publish it.');
       }
 
-      if (dojo.data.started) {
+      const replace = (JSON.parse(body.toString()) as { replace?: unknown }).replace === true;
+
+      if (replace && dojo.level === 'editor') {
+        return payloadError(res, 403, "Only this app's Admins can replace its live data.");
+      }
+
+      if (dojo.data.started && !replace) {
         return payloadError(
           res,
           409,
@@ -428,7 +436,7 @@ export async function startFakeDojo(): Promise<FakeDojo> {
 
       return json(res, 200, {
         objects: objects.map(({ key, size }) => {
-          if (key !== snapshotKey && dojo.data.bucket.get(key)?.length === size) {
+          if (!replace && key !== snapshotKey && dojo.data.bucket.get(key)?.length === size) {
             return { key, done: true };
           }
 
@@ -453,7 +461,7 @@ export async function startFakeDojo(): Promise<FakeDojo> {
       });
     }
 
-    const app = /^\/api\/apps\/([^/]+)(?:\/(cli|deployments|keys|logs|source))?$/.exec(
+    const app = /^\/api\/apps\/([^/]+)(?:\/(cli|data|deployments|keys|logs|source))?$/.exec(
       url.pathname,
     );
 
@@ -475,13 +483,30 @@ export async function startFakeDojo(): Promise<FakeDojo> {
 
     if (req.method === 'GET' && app?.[2] === 'cli') {
       const stored = dojo.apps.find(({ id }) => id === appId);
+      const secret = dojo.keys.get(appId)?.FROGBOT_SECRET;
+      const showSecret =
+        url.searchParams.get('secret') === '1' && dojo.level !== 'editor' && secret;
 
       return json(res, 200, {
         id: appId,
         slug: stored?.slug,
         started: dojo.data.started,
         ...(dojo.level ? { level: dojo.level } : {}),
+        ...(showSecret ? { secret } : {}),
       });
+    }
+
+    if (req.method === 'GET' && app?.[2] === 'data') {
+      if (dojo.level === 'editor') {
+        return payloadError(res, 403, "Only this app's Admins can download its data.");
+      }
+
+      if (!dojo.dataZip) return payloadError(res, 404, 'This app has no data yet.');
+
+      res.writeHead(200, { 'content-type': 'application/zip' });
+      res.end(dojo.dataZip);
+
+      return;
     }
 
     if (req.method === 'GET' && app?.[2] === 'source') {

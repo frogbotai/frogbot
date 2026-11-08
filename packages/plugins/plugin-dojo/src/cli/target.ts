@@ -6,7 +6,7 @@ import { linkPath } from './link.js';
 import { findApp } from './nouns/resolve.js';
 
 /** What `share` needs to know about the app it ships to. */
-export type AppInfo = { started: boolean; level: 'editor' | 'owner' };
+export type AppInfo = { started: boolean; level: 'editor' | 'owner'; slug?: string };
 
 /** Stops with Dojo's words when it refuses the linked app, naming the link file. */
 export async function refusedApp(appId: string | number, response: Response): Promise<void> {
@@ -25,9 +25,13 @@ export async function appInfo(dojo: DojoClient, appId: string | number): Promise
 
   if (!response.ok) throw new ShareError(`Couldn't read the app: ${await dojoMessage(response)}`);
 
-  const app = (await response.json()) as { started?: boolean; level?: string };
+  const app = (await response.json()) as { started?: boolean; level?: string; slug?: unknown };
 
-  return { started: app.started === true, level: app.level === 'editor' ? 'editor' : 'owner' };
+  return {
+    started: app.started === true,
+    level: app.level === 'editor' ? 'editor' : 'owner',
+    slug: typeof app.slug === 'string' ? app.slug : undefined,
+  };
 }
 
 /**
@@ -53,5 +57,10 @@ export async function appFromFlag({
 
   const link = { appId: app.id };
 
-  return { link, started: app.started, level: app.level === 'editor' ? 'editor' : 'owner' };
+  return {
+    link,
+    started: app.started,
+    level: app.level === 'editor' ? 'editor' : 'owner',
+    slug: app.slug,
+  };
 }

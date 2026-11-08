@@ -88,7 +88,7 @@ export async function takeInventory({
 
     try {
       records = await countRecords(db, config.collections);
-      await clean(db, config.collections);
+      await cleanSnapshot(db, config.collections);
     } finally {
       await db.close();
     }
@@ -160,7 +160,11 @@ async function countRecords(db: DatabaseSnapshot, collections: SanitizedCollecti
   return records;
 }
 
-async function clean(db: DatabaseSnapshot, collections: SanitizedCollectionConfig[]) {
+/** Empties what stays on the machine it was written on: jobs, waitpoints, locks, KV, trigger subscriptions and sessions. */
+export async function cleanSnapshot(
+  db: Pick<DatabaseSnapshot, 'all' | 'run'>,
+  collections: TableCollection[],
+) {
   const emptied = [
     ...laptopTables,
     ...collections.filter((collection) => collection.auth).map((c) => `${tableName(c)}_sessions`),
@@ -177,7 +181,7 @@ async function clean(db: DatabaseSnapshot, collections: SanitizedCollectionConfi
   await db.run('VACUUM');
 }
 
-async function tableNames(db: DatabaseSnapshot): Promise<Set<string>> {
+async function tableNames(db: Pick<DatabaseSnapshot, 'all'>): Promise<Set<string>> {
   const rows = await db.all("SELECT name FROM sqlite_master WHERE type = 'table'");
 
   return new Set(rows.map((row) => String(row.name)));
@@ -274,7 +278,13 @@ function storesFiles(
   return Boolean(collection.upload) && !collection.upload.disableLocalStorage;
 }
 
-function tableName(collection: SanitizedCollectionConfig): string {
+/** What names a collection's tables, from a sanitized config or a plugin's own. */
+export type TableCollection = Pick<SanitizedCollectionConfig, 'slug'> & {
+  auth?: unknown;
+  dbName?: SanitizedCollectionConfig['dbName'];
+};
+
+function tableName(collection: TableCollection): string {
   const { dbName } = collection;
 
   return (typeof dbName === 'function' ? dbName({}) : dbName) || toSnakeCase(collection.slug);

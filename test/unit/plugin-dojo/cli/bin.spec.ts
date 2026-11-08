@@ -155,7 +155,7 @@ describe('npx @frogbotai/plugin-dojo', () => {
 
       expect(await run('apps', 'pull')).toBe(2);
       expect(lines(stderr)).toEqual([
-        '[frogbot] Usage: npx @frogbotai/plugin-dojo apps pull <app>',
+        '[frogbot] Usage: npx @frogbotai/plugin-dojo apps pull <app> [--data]',
       ]);
     });
   });
