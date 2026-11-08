@@ -46,6 +46,7 @@ export async function SettingsView(props: SettingsViewProps) {
             .filter(
               ({ admin, slug }) =>
                 initPageResult.visibleEntities.collections.includes(slug) &&
+                !slug.startsWith('payload-') &&
                 !(admin as { settings?: boolean }).settings,
             )
             .map(
