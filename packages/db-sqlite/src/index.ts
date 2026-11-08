@@ -42,8 +42,11 @@ export function sqliteAdapter({ writeLockTimeout = 5000, ...args }: SQLiteAdapte
 
   const adapter = createSQLiteAdapter(adapterArgs);
 
+  const prodMigrations: readonly unknown[] | null = args.prodMigrations ?? null;
+
   return {
     ...adapter,
+    prodMigrations,
     init(initArgs: Parameters<typeof adapter.init>[0]) {
       const signIn = initArgs.payload.config?.collections.some(
         (collection) => collection.custom?.frogbot?.signIn?.length,

@@ -294,11 +294,33 @@ describe('--json', () => {
 
     expect(result.code).toBe(0);
     expect(JSON.parse(result.stdout().join('\n'))).toEqual({
-      appId: 1,
-      url: 'https://deals.frogbot.app',
-      shareLink: `${dojo.url}/collections/projects/1?share=1`,
+      target: 'dojo',
+      ok: true,
+      dryRun: false,
+      issues: [],
+      result: {
+        appId: 1,
+        url: 'https://deals.frogbot.app',
+        shareLink: `${dojo.url}/collections/projects/1?share=1`,
+      },
     });
     expect(result.stderr()).toContain('[build] step 1');
+  });
+
+  it('names apps share in the usage line of frogbot dojo', async () => {
+    const cwd = await tempDir();
+    const result = testIO({ cwd, env: { XDG_CONFIG_HOME: await tempDir() } });
+
+    await writeApp(cwd);
+
+    const code = await runDojo(['apps', 'share', '--nope', '--json'], {
+      ...result.io,
+      program: 'frogbot dojo',
+    });
+
+    expect(code).toBe(2);
+    expect(result.stderr().join('\n')).toContain('Usage: frogbot dojo apps share [--data');
+    expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({ target: 'dojo', ok: false });
   });
 
   it('refuses logs --follow, which never ends in one value', async () => {

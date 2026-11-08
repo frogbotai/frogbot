@@ -642,7 +642,7 @@ describe('frogbot sanitize', () => {
     const sanitized = await buildConfig(makeConfig({ plugins: [plugin] }));
 
     expect(sanitized.cli.commands).toEqual({ hello });
-    expect(sanitize(makeConfig()).cli).toEqual({ commands: {} });
+    expect(sanitize(makeConfig()).cli).toEqual({ commands: {}, deployTargets: {} });
   });
 
   it('rejects a `cli.commands` key with capitals', () => {
@@ -655,6 +655,37 @@ describe('frogbot sanitize', () => {
     expect(() => sanitize(makeConfig({ cli: { commands: { hello: 'nope' as never } } }))).toThrow(
       '[frogbot] cli command "hello" must be a function',
     );
+  });
+
+  it('keeps the `cli.deployTargets` a plugin adds', () => {
+    const target = { describe: 'Test', preflight: () => [], run: () => undefined };
+
+    expect(
+      sanitize(makeConfig({ cli: { deployTargets: { 'my-host': target } } })).cli.deployTargets,
+    ).toEqual({
+      'my-host': target,
+    });
+  });
+
+  it.each([
+    ['Dojo', 'must be lowercase letters, digits and dashes'],
+    ['my_host', 'must be lowercase letters, digits and dashes'],
+    ['fly', "is a core target's name"],
+  ])('rejects the `cli.deployTargets` name %s', (name, message) => {
+    const target = { describe: 'Test', preflight: () => [], run: () => undefined };
+
+    expect(() => sanitize(makeConfig({ cli: { deployTargets: { [name]: target } } }))).toThrow(
+      `[frogbot] cli deploy target "${name}" ${message}`,
+    );
+  });
+
+  it.each([
+    ['preflight and run', { describe: 'x' }],
+    ['describe', { preflight: () => [], run: () => undefined }],
+  ])('rejects a `cli.deployTargets` value without %s', (_, target) => {
+    expect(() =>
+      sanitize(makeConfig({ cli: { deployTargets: { host: target as never } } })),
+    ).toThrow('[frogbot] cli deploy target "host" must have `describe`, `preflight` and `run`');
   });
 
   it('rejects unknown built-in collection icons', () => {

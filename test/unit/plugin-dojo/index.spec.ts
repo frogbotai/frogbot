@@ -8,12 +8,13 @@ import type { CollectionConfig } from '../../../packages/frogbot/src/collections
 import type { FrogBotConfig } from '../../../packages/frogbot/src/config/types.js';
 import type { FrogBot } from '../../../packages/frogbot/src/frogbot.js';
 import type { Plugin } from '../../../packages/frogbot/src/plugin.js';
+import { dojoTarget } from '../../../packages/plugins/plugin-dojo/src/deploy.js';
 import { gcsStorage } from '../../../packages/storage-gcs/src/index.js';
 
 const s3Options = vi.hoisted(() => [] as unknown[]);
-const runShare = vi.hoisted(() => vi.fn(() => Promise.resolve(0)));
+const runShareCommand = vi.hoisted(() => vi.fn(() => Promise.resolve(0)));
 
-vi.mock('../../../packages/plugins/plugin-dojo/src/cli/run.js', () => ({ runShare }));
+vi.mock('../../../packages/plugins/plugin-dojo/src/cli/run.js', () => ({ runShareCommand }));
 
 vi.mock('@frogbotai/storage-s3', async (importOriginal) => {
   const actual = await importOriginal<typeof S3Module>();
@@ -130,7 +131,7 @@ describe('dojo() outside Dojo', () => {
     expect(apply(config)).toEqual({
       ...template({ collections: [Users, Files, Media] }),
       admin: { dependencies: dojoDependencies },
-      cli: { commands: dojoCommands },
+      cli: { commands: dojoCommands, deployTargets: { dojo: dojoTarget } },
     });
   });
 
@@ -140,7 +141,7 @@ describe('dojo() outside Dojo', () => {
     expect(apply(template())).toEqual({
       ...template(),
       admin: { dependencies: dojoDependencies },
-      cli: { commands: dojoCommands },
+      cli: { commands: dojoCommands, deployTargets: { dojo: dojoTarget } },
     });
   });
 
@@ -174,7 +175,7 @@ describe('dojo() commands', () => {
 
     process.exitCode = exitCode;
 
-    expect(runShare).toHaveBeenCalledWith(
+    expect(runShareCommand).toHaveBeenCalledWith(
       ['--data', '--name', 'Deals'],
       expect.objectContaining({ program: 'frogbot dojo' }),
     );

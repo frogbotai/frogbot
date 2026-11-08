@@ -3,7 +3,7 @@ import { setTimeout } from 'node:timers/promises';
 import type { DojoClient } from './dojo.js';
 import { createDojo, dojoMessage, segment } from './dojo.js';
 import { ShareError } from './error.js';
-import type { ShareIO } from './io.js';
+import type { DojoIO } from './io.js';
 import { done, say } from './io.js';
 
 const usage = (program: string) => `Usage: ${program} apps logs <app> [--follow]`;
@@ -18,7 +18,7 @@ export type LogsFollow = { wait?: (ms: number) => Promise<unknown>; signal?: Abo
 /** Runs `frogbot dojo apps logs <app> [--follow]` and returns its exit code; known stops print one `[frogbot]` line. */
 export async function runLogs(
   args: string[],
-  io: ShareIO,
+  io: DojoIO,
   follow: LogsFollow = {},
 ): Promise<number> {
   try {
@@ -34,7 +34,7 @@ export async function runLogs(
 
 async function logs(
   args: string[],
-  io: ShareIO,
+  io: DojoIO,
   { wait = setTimeout, signal }: LogsFollow,
 ): Promise<number> {
   const following = args.includes('--follow');
@@ -101,6 +101,6 @@ async function read(dojo: DojoClient, app: string, after: string | null): Promis
   return { lines: reply.lines, next: reply.next ?? null };
 }
 
-function print(io: ShareIO, reply: LogsReply): void {
+function print(io: DojoIO, reply: LogsReply): void {
   for (const { at, message } of reply.lines) say(io, `${at} ${message}`);
 }

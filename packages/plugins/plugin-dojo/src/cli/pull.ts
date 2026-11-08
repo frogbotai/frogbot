@@ -9,7 +9,7 @@ import { x } from 'tar';
 
 import { createDojo, dojoMessage, segment } from './dojo.js';
 import { ShareError } from './error.js';
-import type { ShareIO } from './io.js';
+import type { DojoIO } from './io.js';
 import { done, say } from './io.js';
 import { writeLink } from './link.js';
 
@@ -20,7 +20,7 @@ const slugPattern = /^[a-z0-9][a-z0-9-]*$/;
 type App = { id: string | number; slug: string };
 
 /** Runs `frogbot dojo apps pull <app>` and returns its exit code; known stops print one `[frogbot]` line. */
-export async function runPull(args: string[], io: ShareIO): Promise<number> {
+export async function runPull(args: string[], io: DojoIO): Promise<number> {
   try {
     return await pull(args, io);
   } catch (error) {
@@ -32,7 +32,7 @@ export async function runPull(args: string[], io: ShareIO): Promise<number> {
   }
 }
 
-async function pull(args: string[], io: ShareIO): Promise<number> {
+async function pull(args: string[], io: DojoIO): Promise<number> {
   const [name] = args;
 
   if (args.length !== 1 || !name || name.startsWith('-')) {

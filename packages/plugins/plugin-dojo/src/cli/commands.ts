@@ -1,7 +1,7 @@
 import type { Noun, RawVerb, Verb } from './command.js';
 import { runVerb, verbHelp, verbUsage } from './command.js';
 import { ShareError } from './error.js';
-import type { ShareIO } from './io.js';
+import type { DojoIO } from './io.js';
 import { jsonIO, processIO } from './io.js';
 import { account } from './nouns/account.js';
 import { apiKeys } from './nouns/apiKeys.js';
@@ -62,11 +62,11 @@ function nounHelp(program: string, name: string, noun: Noun): string[] {
   ];
 }
 
-function print(io: ShareIO, lines: string[], to: 'stdout' | 'stderr'): void {
+function print(io: DojoIO, lines: string[], to: 'stdout' | 'stderr'): void {
   io[to].write(`${lines.join('\n')}\n`);
 }
 
-function usageError(io: ShareIO, message: string, lines: string[]): number {
+function usageError(io: DojoIO, message: string, lines: string[]): number {
   print(io, [`[frogbot] ${message}`, '', ...lines], 'stderr');
 
   return 2;
@@ -76,13 +76,15 @@ async function runCommand(
   name: string,
   verb: Verb | RawVerb,
   args: string[],
-  io: ShareIO,
+  io: DojoIO,
 ): Promise<number> {
   if (args.some((arg) => arg === '--help' || arg === '-h')) {
     print(io, verbHelp(io.program, name, verb), 'stdout');
 
     return 0;
   }
+
+  if ('raw' in verb && verb.ownJson) return verb.raw(args, io);
 
   const json = args.includes('--json');
   const rest = args.filter((arg) => arg !== '--json');
@@ -102,7 +104,7 @@ async function runCommand(
 }
 
 /** Runs `<program> <command> [<verb>] …` and returns its exit code: 0, 1, or 2 for bad usage. */
-export async function runDojo(args: string[], io: ShareIO): Promise<number> {
+export async function runDojo(args: string[], io: DojoIO): Promise<number> {
   const [first, second, ...rest] = args;
   const name = first?.toLowerCase();
 

@@ -1,6 +1,6 @@
 import type { EnvKey } from './envKeys.js';
 import { mask } from './envKeys.js';
-import type { ShareIO } from './io.js';
+import type { DojoIO } from './io.js';
 import { say } from './io.js';
 import { keyFingerprint } from './seal.js';
 
@@ -19,7 +19,7 @@ export async function chooseFirstKeys({
 }: {
   keys: EnvKey[];
   yes: boolean;
-  io: ShareIO;
+  io: DojoIO;
 }): Promise<EnvKey[]> {
   if (keys.length === 0) return [];
 
@@ -62,7 +62,7 @@ export function compareLiveKeys({
   live: LiveKeys;
   appId: string | number;
   updateKeys: boolean;
-  io: ShareIO;
+  io: DojoIO;
 }): EnvKey[] {
   const fingerprints = new Map(live.keys.map((key) => [key.name, key.fingerprint]));
   const added = keys.filter((key) => !fingerprints.has(key.name));

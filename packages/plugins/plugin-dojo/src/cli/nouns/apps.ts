@@ -41,6 +41,13 @@ const share: Verb['flags'] = {
   'skip-key': { type: 'string', multiple: true, value: 'NAME', help: 'Leave one .env key out.' },
   yes: { type: 'boolean', help: 'Bring every key without asking.' },
   'update-keys': { type: 'boolean', help: 'Send local values for keys that differ from live.' },
+  'dry-run': { type: 'boolean', help: 'Check the app and list what would be sent; send nothing.' },
+  'no-interactive': { type: 'boolean', help: 'Ask nothing, even in a terminal.' },
+  'env-file': {
+    type: 'string',
+    value: 'path',
+    help: "Read the app's production variables from this file.",
+  },
 };
 
 /** `apps`: share, pull and logs from an app folder, and list, get, create, rename, delete. */
@@ -50,7 +57,8 @@ export const apps: Noun = {
     share: {
       summary: "Share the app in this folder to Dojo, or update it once it's linked.",
       flags: share,
-      raw: async (args, io) => (await import('../run.js')).runShare(args, io),
+      raw: async (args, io) => (await import('../run.js')).runShareCommand(args, io),
+      ownJson: true,
     },
     pull: {
       summary: "Download an app's live source into a new folder.",

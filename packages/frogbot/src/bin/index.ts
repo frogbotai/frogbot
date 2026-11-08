@@ -20,7 +20,13 @@ import { start } from './start.js';
 import { status } from './status.js';
 import { up } from './up.js';
 
-type Command = (args: string[], command: string) => Promise<unknown> | unknown;
+type LoadedConfig = { config?: FrogBotSanitizedConfig; loadError?: unknown };
+
+type Command = (
+  args: string[],
+  command: string,
+  loaded: LoadedConfig,
+) => Promise<unknown> | unknown;
 
 const runMigrate: Command = (args, command) => migrate([command, ...args]);
 
@@ -32,6 +38,11 @@ const commands: Record<string, Command> = {
   status: (args) => status(args),
   run: (args) => runScript(args),
   check: (args) => check(args),
+  deploy: async (args, _command, loaded) => {
+    const { deploy } = await import('./deploy/command.js');
+
+    process.exitCode = await deploy(args, loaded);
+  },
   'generate:types': () => generateTypes(),
   'generate:piece-types': (args) => generatePieceTypesCommand(args),
   'pieces:port': (args) => piecesPort(args),
@@ -62,9 +73,7 @@ function usage(appCommands: Record<string, CLICommand>): string {
   return `[frogbot] usage: frogbot <${names.join('|')}>`;
 }
 
-async function readConfig(
-  command: string | undefined,
-): Promise<{ config?: FrogBotSanitizedConfig; loadError?: unknown }> {
+async function readConfig(command: string | undefined): Promise<LoadedConfig> {
   const cwd = process.cwd();
 
   try {
@@ -146,7 +155,7 @@ export async function bin() {
 
   try {
     if (appCommand && config) await runAppCommand(appCommand, { args, command, config });
-    else await handler?.(args, command);
+    else await handler?.(args, command, { config, loadError });
   } catch (error) {
     console.error(formatCliError(error));
 

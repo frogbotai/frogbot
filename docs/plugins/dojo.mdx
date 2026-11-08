@@ -4,7 +4,7 @@ description: "Share and manage FrogBot apps on Dojo from the terminal, and run t
 keywords: ["Dojo", "frogbot dojo", "share", "pull", "logs", "FROGBOT_DOJO_TOKEN", "plugin-dojo", "plugins"]
 ---
 
-The Dojo plugin adds `frogbot dojo`, which manages Dojo from the terminal, and runs your app on Dojo with no setup: uploads go to the app's own storage, and AI goes through Dojo's gateway. Apps made with `create-frogbot-app` already list it.
+The Dojo plugin adds the `dojo` target to [`frogbot deploy`](/deployment/overview) and `frogbot dojo`, which manages Dojo from the terminal, and runs your app on Dojo with no setup: uploads go to the app's own storage, and AI goes through Dojo's gateway. Apps made with `create-frogbot-app` already list it.
 
 ## Install
 
@@ -36,6 +36,8 @@ export default buildConfig({
 npx frogbot share
 npx @frogbotai/plugin-dojo apps pull deals
 ```
+
+`frogbot deploy` with no target runs the same deploy as `apps share`, because `dojo()` registers `dojo` as a [deploy target](/getting-started/cli#plugin-deploy-targets).
 
 | Command | Arguments | Description |
 | --- | --- | --- |
@@ -78,7 +80,7 @@ npx @frogbotai/plugin-dojo apps pull deals
 
 ### Scripts and agents
 
-- **`--json`** on any command prints one JSON value on stdout and nothing else. Sign-in links, progress and build lines go to stderr, and a failed command prints nothing on stdout. `apps logs --follow` never ends, so it refuses `--json`.
+- **`--json`** on any command prints one JSON value on stdout and nothing else. Sign-in links, progress and build lines go to stderr, and a failed command prints nothing on stdout. `apps share` (and `frogbot share`) prints the same `{ target, ok, dryRun, issues, result }` object as [`frogbot deploy --json`](/deployment/overview), even when it fails. `apps logs --follow` never ends, so it refuses `--json`.
 - **`FROGBOT_DOJO_TOKEN`** is a Dojo API key every command uses, ahead of the stored sign-in. When Dojo refuses it, the command exits with code `1` instead of starting a browser sign-in. `FROGBOT_DOJO_URL` targets another Dojo. Sharing never uploads either one from `.env` as an app key.
 - **No terminal.** Every question has a flag, or fails naming it. `apps delete`, `members remove`, `keys revoke`, `sharing leave`, `env unset`, `domains clear`, and `domains set` when it replaces a domain, ask before acting, and need `--yes` without a terminal. `apps delete` looks the app up first and names it in the question.
 - **Refusals.** A `402` prints Dojo's upgrade link. A `403` says which access the command needs, such as owner access to the app.
@@ -89,7 +91,7 @@ npx @frogbotai/plugin-dojo apps pull deals
 
 Dojo adds this plugin itself when it builds an app, after the app's own plugins, so an app runs there without listing it. An app that lists `dojo()` gets it once, not twice. A listed `dojo()` also runs after every other plugin, wherever it is in `plugins`, so it sees the upload collections and AI providers they add.
 
-Outside Dojo, `dojo()` only adds the `dojo` command and lists the badge and the sign-in buttons for the import map. On Dojo, where `DOJO=1`, it also changes:
+Outside Dojo, `dojo()` only adds the `dojo` and `share` commands and the `dojo` deploy target, and lists the badge and the sign-in buttons for the import map. On Dojo, where `DOJO=1`, it also changes:
 
 - **Storage.** When the app sets no `storage`, every upload collection is stored in the app's bucket under its slug. Files stay private and are served through the app, so its access rules apply.
 - **AI.** When every provider in `ai.providers` is a built-in one with no key, they are replaced by one `dojo` provider that calls Dojo's gateway. Model IDs such as `openai/gpt-5.4-mini` keep working. Chat, embeddings and images work through the gateway; transcription, speech and video need your own key. An app with no `ai` block, or with any provider key of its own, is left unchanged.

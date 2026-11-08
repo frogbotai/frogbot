@@ -16,8 +16,11 @@ export type {
 export function vercelPostgresAdapter(args: VercelPostgresAdapterArgs) {
   const adapter = createVercelPostgresAdapter(args);
 
+  const prodMigrations: readonly unknown[] | null = args.prodMigrations ?? null;
+
   return {
     ...adapter,
+    prodMigrations,
     init(initArgs: Parameters<typeof adapter.init>[0]) {
       const database = adapter.init(initArgs);
 
