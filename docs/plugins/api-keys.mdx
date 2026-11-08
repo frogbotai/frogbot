@@ -83,7 +83,7 @@ Collection overrides merge with the generated configuration and changes made by 
 
 ## Expiring keys
 
-A key works until it is revoked, unless it is given an expiry when it is minted. Post `expiresAt`, an ISO date in the future, beside `name`:
+A key works until it is revoked, unless it is given an expiry when it is minted. Post `expiresAt`, an ISO 8601 date in the future, beside `name`. Send a day, such as `2027-02-07`, which means midnight UTC, or a date and time that ends in `Z` or an offset:
 
 ```ts
 await fetch('/api/api-keys/mint', {
@@ -93,7 +93,7 @@ await fetch('/api/api-keys/mint', {
 })
 ```
 
-`mintApiKey({ req, collectionSlug, tokenPrefix, name, expiresAt })` takes the same option on the server. Both answer `400` for a date they can't read or one that isn't in the future, and return `expiresAt` with the new key, `null` when it never expires.
+`mintApiKey({ req, collectionSlug, tokenPrefix, name, expiresAt })` takes the same option on the server. Both answer `400` for any other format, a day that doesn't exist such as `2027-02-30`, or a date that isn't in the future, and return `expiresAt` with the new key, `null` when it never expires.
 
 - Once `expiresAt` passes, the key no longer authenticates, and its **Last Used At** time stops changing. It stays in the list, with its date in the **Expires** column.
 - `expiresAt` is set only when the key is minted. Nobody can change it afterwards, and `data` can't set it.

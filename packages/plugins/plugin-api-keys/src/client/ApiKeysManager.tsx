@@ -41,6 +41,8 @@ function dayFromToday(days: number, years: number): string {
   const now = new Date();
   const day = new Date(now.getFullYear() + years, now.getMonth(), now.getDate() + days);
 
+  if (years && day.getMonth() !== now.getMonth()) day.setDate(0);
+
   return `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
 }
 

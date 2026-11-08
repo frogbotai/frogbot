@@ -148,11 +148,37 @@ export const keyScopeBeforeValidate: CollectionBeforeValidateHook = ({
 
 const lastExpiry = Date.parse('9999-12-31T23:59:59.999Z');
 
+const isoExpiry =
+  /^([+-]\d{6}|\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-](\d{2}):(\d{2})))?$/;
+
+function parseExpiry(value: string): number | null {
+  const parts = isoExpiry.exec(value);
+
+  if (!parts) return null;
+
+  const [year, month, day, hour, minute, second, zoneHour, zoneMinute] = parts
+    .slice(1)
+    .map((part) => Number(part ?? 0));
+
+  const valid =
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= new Date(Date.UTC(year, month, 0)).getUTCDate() &&
+    hour <= 23 &&
+    minute <= 59 &&
+    second <= 59 &&
+    zoneHour <= 23 &&
+    zoneMinute <= 59;
+
+  return valid ? expiryTime(value) : null;
+}
+
 function resolveExpiry(req: FrogBotRequest, asked: unknown): string | null {
   let expiresAt: number | null = null;
 
   if (asked !== undefined && asked !== null) {
-    expiresAt = typeof asked === 'string' ? expiryTime(asked) : null;
+    expiresAt = typeof asked === 'string' ? parseExpiry(asked) : null;
     if (expiresAt === null) {
       throw new APIError('expiresAt must be a date, such as 2027-01-31T00:00:00.000Z.', 400);
     }
