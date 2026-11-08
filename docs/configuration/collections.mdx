@@ -334,7 +334,7 @@ List and board views group by the same rules. `groupBy` names a select, radio, r
 - Select and radio groups follow the field's option order and show every option, empty ones with `0`. A stored value that is no longer an option gets its own group after them. Checkbox groups are **True**, then **False**.
 - Other fields show one group per value present under the view's filter and search.
 - Records without a value go in one last group: **No value** in a list, shown when it has records, and **Uncategorized** on a board.
-- In a list, each group's count comes from the same query as its rows, over the view's filter and search, so it always matches them. On a collection with drafts that is each record's latest draft.
+- In a list, each group's count comes from the same query as its rows, over the view's filter and search, so it always matches them. On a collection with drafts, groups, counts and rows all follow each record's latest draft.
 
 ```ts
 views: [

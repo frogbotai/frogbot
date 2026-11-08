@@ -134,9 +134,10 @@ export async function renderGroupedTable({
     (await findRows(groupWhere, { limit: 1 })).totalDocs;
 
   const fixed = hasFixedGroups(field);
+  const draft = Boolean(collectionConfig.versions?.drafts);
   const [resolved, strays, noValueCount, totalDocs] = await Promise.all([
-    resolveGroups({ collectionSlug, field, path, req, where }),
-    resolveStrayGroups({ collectionSlug, field, path, req, where }),
+    resolveGroups({ collectionSlug, draft, field, path, req, where }),
+    resolveStrayGroups({ collectionSlug, draft, field, path, req, where }),
     countRows(buildGroupWhere(where, path, null) as Where),
     countRows(where),
   ]);

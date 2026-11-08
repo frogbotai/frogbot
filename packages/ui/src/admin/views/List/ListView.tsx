@@ -1,5 +1,5 @@
 import { getClientConfig } from '@payloadcms/ui/utilities/getClientConfig';
-import type { ListViewServerProps, PayloadRequest, SelectIncludeType } from 'payload';
+import type { ListViewServerProps, PayloadRequest } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 import * as qs from 'qs-esm';
 
@@ -11,6 +11,7 @@ import {
   resolveCollectionViews,
 } from '../collectionViews.js';
 import { buildFrameSlots } from '../frame.js';
+import { selectPath } from '../groups/resolve.js';
 import { getGroupsPreferenceKey, resolveViewColumnPreferences } from '../preferences.js';
 import { isRecordDone } from '../records/state.js';
 import {
@@ -26,12 +27,6 @@ import { ListFrameClient } from './ListFrame.client.js';
 import { withRowIds } from './rowIds.js';
 
 type Row = Record<string, unknown>;
-
-function selectPath(path: string): SelectIncludeType {
-  const [first, ...rest] = path.split('.');
-
-  return { [first]: rest.length ? selectPath(rest.join('.')) : true };
-}
 
 async function findDoneIds({
   collectionSlug,

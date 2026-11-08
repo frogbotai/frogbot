@@ -1,11 +1,11 @@
 import { getTranslation } from '@payloadcms/translations';
 import { formatDate } from '@payloadcms/ui/shared';
 import { GROUP_BY_FIELD_TYPES, type OptionColor } from 'frogbot';
-import type { Field, PayloadRequest, Where } from 'payload';
+import type { Field, PayloadRequest, PopulateType, SelectIncludeType, Where } from 'payload';
 import { fieldIsVirtual, flattenTopLevelFields } from 'payload/shared';
 
 import { getOptionColor } from '../../fields/optionColor.js';
-import { toCellData } from '../cells.js';
+import { getPath, toCellData } from '../cells.js';
 import { getGroupKey } from './keys.js';
 
 /** One group of a list or one board column: its key, label, option colour and stored value. */
@@ -77,18 +77,99 @@ function optionGroups(field: Field, req: PayloadRequest): ResolvedGroup[] | unde
   });
 }
 
+/** A `select` that reads one dot path. */
+export function selectPath(path: string): SelectIncludeType {
+  const [first, ...rest] = path.split('.');
+
+  return { [first]: rest.length ? selectPath(rest.join('.')) : true };
+}
+
+function compareValues(a: unknown, b: unknown): number {
+  const left = toCellData(a);
+  const right = toCellData(b);
+
+  if (typeof left === 'number' && typeof right === 'number') return left - right;
+
+  const [x, y] = [String(left), String(right)];
+
+  return x < y ? -1 : x > y ? 1 : 0;
+}
+
+async function findGroupValues({
+  collectionSlug,
+  depth = 0,
+  draft,
+  path,
+  populate,
+  req,
+  where,
+}: {
+  collectionSlug: string;
+  depth?: number;
+  draft?: boolean;
+  path: string;
+  populate?: PopulateType;
+  req: PayloadRequest;
+  where?: Where;
+}): Promise<unknown[]> {
+  if (!draft) {
+    const result = await req.payload.findDistinct({
+      collection: collectionSlug,
+      depth,
+      field: path,
+      overrideAccess: false,
+      populate,
+      req,
+      ...(where ? { where } : {}),
+    });
+
+    return (result.values ?? []).map((entry) => entry[path]);
+  }
+
+  const { docs } = await req.payload.find({
+    collection: collectionSlug,
+    depth,
+    draft: true,
+    overrideAccess: false,
+    pagination: false,
+    populate,
+    req,
+    select: selectPath(path),
+    ...(where ? { where } : {}),
+  });
+
+  const values = new Map<string, unknown>();
+
+  for (const doc of docs as Record<string, unknown>[]) {
+    const stored = getPath(doc, path);
+
+    for (const value of Array.isArray(stored) ? stored : [stored]) {
+      const key = getGroupKey(toCellData(value));
+      if (!values.has(key)) values.set(key, value);
+    }
+  }
+
+  return [...values.values()].sort(compareValues);
+}
+
 /**
  * The groups a field splits records into, "No value" aside. Select, radio and checkbox fields
  * give every option in its declared order; other fields give the values present under `where`.
  */
 export async function resolveGroups({
   collectionSlug,
+  draft,
   field,
   path,
   req,
   where,
 }: {
   collectionSlug: string;
+  /**
+   * Read values from each record's latest draft, as a list's rows do on a drafts collection.
+   * Payload's `findDistinct` reads published data only.
+   */
+  draft?: boolean;
   field: Field;
   path: string;
   req: PayloadRequest;
@@ -112,18 +193,17 @@ export async function resolveGroups({
     );
   }
 
-  const result = await req.payload.findDistinct({
-    collection: collectionSlug,
+  const values = await findGroupValues({
+    collectionSlug,
     depth: 1,
-    field: path,
-    overrideAccess: false,
+    draft,
+    path,
     populate,
     req,
-    ...(where ? { where } : {}),
+    where,
   });
 
-  return (result.values ?? []).flatMap((entry) => {
-    const populated = entry[path];
+  return values.flatMap((populated) => {
     const value = toCellData(populated);
     if (value === null || value === undefined) return [];
     let label: string;
@@ -161,12 +241,18 @@ export async function resolveGroups({
  */
 export async function resolveStrayGroups({
   collectionSlug,
+  draft,
   field,
   path,
   req,
   where,
 }: {
   collectionSlug: string;
+  /**
+   * Read values from each record's latest draft, as a list's rows do on a drafts collection.
+   * Payload's `findDistinct` reads published data only.
+   */
+  draft?: boolean;
   field: Field;
   path: string;
   req: PayloadRequest;
@@ -178,16 +264,10 @@ export async function resolveStrayGroups({
     field.options.map((option) => getGroupKey(typeof option === 'string' ? option : option.value)),
   );
 
-  const result = await req.payload.findDistinct({
-    collection: collectionSlug,
-    field: path,
-    overrideAccess: false,
-    req,
-    ...(where ? { where } : {}),
-  });
+  const values = await findGroupValues({ collectionSlug, draft, path, req, where });
 
-  return (result.values ?? []).flatMap((entry) => {
-    const value = toCellData(entry[path]);
+  return values.flatMap((stored) => {
+    const value = toCellData(stored);
     if (value === null || value === undefined || options.has(getGroupKey(value))) return [];
 
     return [{ key: getGroupKey(value), label: String(value), value }];
