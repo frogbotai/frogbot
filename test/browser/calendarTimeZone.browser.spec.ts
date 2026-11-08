@@ -181,6 +181,11 @@ test('plain date fields keep their time, and an event ending at midnight stays i
   expect(await columnIndex(late)).toBe(1);
   await expect(late).toHaveCSS('top', `${22 * hourHeight}px`);
   await expect(late).toHaveCSS('height', `${2 * hourHeight}px`);
+
+  await page.goto(calendar('day'));
+  await expect(chip(page, tasks.standup.title)).toBeVisible();
+  await attach(page, testInfo, 'day-midnight', [1280, 375]);
+  await expect(late).toHaveCount(0);
 });
 
 test('day view shows the local day', async ({ page }, testInfo) => {
