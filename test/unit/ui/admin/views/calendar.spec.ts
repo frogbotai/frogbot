@@ -1,6 +1,8 @@
+import type { FlattenedField } from 'payload';
 import { describe, expect, it } from 'vitest';
 
 import {
+  isDateOnly,
   resolveCalendarDate,
   resolveCalendarMode,
 } from '../../../../../packages/ui/src/admin/views/Calendar/data.js';
@@ -55,5 +57,21 @@ describe('collection calendar', () => {
       { accessor: 'title', active: true },
     ]);
     expect(getViewPreferenceKey('posts', 'schedule')).toBe('collection-posts-view-schedule');
+  });
+
+  it('treats date fields without a time picker as date-only', () => {
+    const date = (pickerAppearance?: string) =>
+      ({
+        admin: pickerAppearance ? { date: { pickerAppearance } } : {},
+        name: 'due',
+        type: 'date',
+      }) as FlattenedField;
+
+    expect(
+      [undefined, 'default', 'dayOnly', 'monthOnly'].map((value) => isDateOnly(date(value))),
+    ).toEqual([true, true, true, true]);
+    expect(isDateOnly(date('dayAndTime'))).toBe(false);
+    expect(isDateOnly({ name: 'title', type: 'text' })).toBe(false);
+    expect(isDateOnly(undefined)).toBe(false);
   });
 });
