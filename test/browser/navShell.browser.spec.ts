@@ -22,6 +22,7 @@ const collapsedWidth = 60;
 
 const shell = (page: Page) => page.locator('.fb-nav-shell');
 const backdrop = (page: Page) => page.locator('.fb-nav-backdrop');
+const headerToggle = (page: Page) => page.locator('.app-header__sidebar-toggle');
 
 const shellWidth = (page: Page) =>
   shell(page).evaluate((el) => Math.round(el.getBoundingClientRect().width));
@@ -228,15 +229,13 @@ test.describe('nav shell on desktop', () => {
     await page.goto('/collections/chats/create');
     await expect(composerInput(page)).toBeVisible();
 
-    const headerToggle = page.locator('.app-header__sidebar-toggle');
-
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
-    await expect(headerToggle).toBeHidden();
+    await expect(headerToggle(page)).toBeHidden();
 
     await page.locator('button[aria-label="Close sidebar"]').click();
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
-    await expect(headerToggle).toHaveCount(1);
-    await expect(headerToggle).toBeHidden();
+    await expect(headerToggle(page)).toHaveCount(1);
+    await expect(headerToggle(page)).toBeHidden();
 
     await page.locator('button[aria-label="Open sidebar"]').click();
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
@@ -488,7 +487,7 @@ test.describe('nav shell across breakpoints and fast toggles', () => {
     await page.setViewportSize(mobile);
     await page.goto('/');
     await waitForNavSettled(page);
-    await page.locator('button[aria-label="Open navigation"]').click();
+    await headerToggle(page).click();
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-open');
 
@@ -504,14 +503,16 @@ test.describe('nav shell across breakpoints and fast toggles', () => {
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
     await expect(backdrop(page)).toHaveCount(0);
-    expect(savedValues).toEqual([]);
+    expect(savedValues, "Payload's header toggle saves the open it makes").toEqual([
+      { open: true },
+    ]);
   });
 
   test('drawer closes after navigating from it without saving the preference', async ({ page }) => {
     await page.setViewportSize(mobile);
     await page.goto('/');
     await waitForNavSettled(page);
-    await page.locator('button[aria-label="Open navigation"]').click();
+    await headerToggle(page).click();
 
     await page
       .locator('#frogbot-nav-section-collections')
@@ -634,7 +635,7 @@ test.describe('nav shell on mobile', () => {
 
     await page.goto('/');
     await waitForNavSettled(page);
-    await page.locator('button[aria-label="Open navigation"]').click();
+    await headerToggle(page).click();
     await page.locator('button[aria-label="Close sidebar"]').click();
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
@@ -659,7 +660,7 @@ test.describe('nav shell on mobile', () => {
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
     await expect(shell(page)).toBeHidden();
-    await expect(page.getByRole('button', { name: 'Open navigation' })).toBeVisible();
+    await expect(headerToggle(page)).toBeVisible();
     await expect.poll(() => contentWidth(page)).toBe(mobile.width);
     await expect(backdrop(page)).toHaveCount(0);
     await noHorizontalOverflow(page);
@@ -669,13 +670,13 @@ test.describe('nav shell on mobile', () => {
     await page.goto('/');
     await waitForNavSettled(page);
 
-    await page.locator('button[aria-label="Open navigation"]').click();
+    await headerToggle(page).click();
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-open');
     await expect(shell(page)).toHaveCSS('position', 'fixed');
     await expect.poll(() => shellWidth(page)).toBe(await expandedWidth(page));
     await expect.poll(() => contentWidth(page)).toBe(mobile.width);
     await expect(backdrop(page)).toHaveCount(1);
-    await expect(page.getByRole('button', { name: 'Open navigation' })).toHaveCount(0);
+    await expect(headerToggle(page)).toBeHidden();
     await noHorizontalOverflow(page);
 
     await backdrop(page).click({ position: { x: mobile.width - 10, y: mobile.height / 2 } });
@@ -687,7 +688,7 @@ test.describe('nav shell on mobile', () => {
     await page.goto('/');
     await waitForNavSettled(page);
 
-    await page.locator('button[aria-label="Open navigation"]').click();
+    await headerToggle(page).click();
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-open');
     await page.keyboard.press('Escape');
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
