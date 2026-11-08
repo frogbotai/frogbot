@@ -3,6 +3,7 @@
 import { type ComponentType, createElement, type ReactNode } from 'react';
 
 import { isRenderableNode } from '../lib/isRenderableNode.js';
+import { useActiveLink } from './activeLink.js';
 import { useNavAdapter } from './adapter.js';
 
 export type NavItemIcon = ComponentType<{ className?: string; size?: number }> | ReactNode;
@@ -17,8 +18,10 @@ export type NavItemProps = {
 
 const baseClass = 'fb-nav-item';
 
-export function NavItem({ active = false, className, icon, label, path }: NavItemProps) {
-  const { Link } = useNavAdapter();
+export function NavItem({ active: activeProp, className, icon, label, path }: NavItemProps) {
+  const { Link, pathname } = useNavAdapter();
+  const chosen = useActiveLink(path, pathname, { skip: activeProp !== undefined });
+  const active = activeProp ?? chosen;
 
   return (
     <Link
