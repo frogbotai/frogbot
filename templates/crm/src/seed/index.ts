@@ -1,9 +1,8 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { FrogBotInstance, FrogBotRequest } from 'frogbot';
+import type { FrogBotInstance, FrogBotRequest, TypedUser } from 'frogbot';
 
-import type { User } from '../frogbot-types';
 import { ACTIVITIES } from './activities';
 import { COMPANIES } from './companies';
 import { CONTACTS } from './contacts';
@@ -26,7 +25,7 @@ export type SeedArgs = {
   today: Date;
 };
 
-type ID = User['id'];
+type ID = TypedUser['id'];
 
 export type SeedResult = {
   companies: Map<string, ID>;
