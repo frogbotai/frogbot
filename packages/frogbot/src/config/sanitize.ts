@@ -196,8 +196,10 @@ export function sanitize(
     validateAdminIcon(collection.admin?.icon);
   }
 
-  for (const item of config.admin?.components?.navItems ?? []) {
-    validateAdminIcon(item.icon);
+  const navItems = config.admin?.components?.navItems;
+
+  if (Array.isArray(navItems)) {
+    for (const item of navItems) validateAdminIcon(item.icon);
   }
 
   validateAppIcon(config.admin?.meta?.appIcon);

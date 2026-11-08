@@ -42,4 +42,4 @@ export const iconRegistry = buildIconRegistry();
 
 export const iconNames = Object.keys(iconRegistry).sort() as IconName[];
 
-export const isIconName = (value: string): value is IconName => value in iconRegistry;
+export const isIconName = (value: string): value is IconName => Object.hasOwn(iconRegistry, value);
