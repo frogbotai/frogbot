@@ -79,6 +79,10 @@
     background: var(--color-bg-hover);
   }
 
+  [dir="rtl"] .fb-sidebar-toggle-icon {
+    transform: scaleX(-1);
+  }
+
   .fb-nav-backdrop {
     background: color-mix(in srgb, var(--color-bg-inverse) 40%, transparent);
     inset: 0;

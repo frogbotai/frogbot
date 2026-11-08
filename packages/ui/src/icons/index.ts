@@ -159,6 +159,7 @@ export { default as SettingIcon } from './icons/SettingIcon.js';
 export { default as ShieldIcon } from './icons/ShieldIcon.js';
 export { default as ShoppingCartIcon } from './icons/ShoppingCartIcon.js';
 export { default as SidebarLeftIcon } from './icons/SidebarLeftIcon.js';
+export { default as SidebarRightIcon } from './icons/SidebarRightIcon.js';
 export { default as SignpostIcon } from './icons/SignpostIcon.js';
 export { default as SlackIcon } from './icons/SlackIcon.js';
 export { default as SparkleIcon } from './icons/SparkleIcon.js';

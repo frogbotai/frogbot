@@ -16,6 +16,7 @@ import { NavAdapterProvider, type NavLinkProps } from '../../../nav/adapter.js';
 import { NavShell, type NavShellProps } from '../../../nav/NavShell.js';
 import type { PaletteModel } from '../CommandPalette/buildPaletteModel.js';
 import { RecordPalette } from '../CommandPalette/index.client.js';
+import { HeaderToggleIcon } from './HeaderToggleIcon.js';
 
 export type FrogBotNavClientProps = Omit<
   NavShellProps,
@@ -65,6 +66,7 @@ export function FrogBotNavClient({
         navItems={items}
         scrollClassName="nav__scroll"
       />
+      <HeaderToggleIcon pathname={pathname} />
       <RecordPalette {...palette} />
     </NavAdapterProvider>
   );

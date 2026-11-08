@@ -114,6 +114,26 @@ describe('AppSidebar', () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
+  it('draws the close icon while open and the mirrored open icon on strip hover', () => {
+    const { rerender } = render(<AppSidebar {...props} open />);
+
+    expect(
+      screen
+        .getByRole('button', { name: 'Close sidebar' })
+        .querySelector('.lucide-sidebar-left-icon.fb-sidebar-toggle-icon'),
+    ).not.toBeNull();
+
+    rerender(<AppSidebar {...props} open={false} />);
+    fireEvent.mouseEnter(document.querySelector('.fb-app-sidebar')!);
+
+    expect(
+      screen
+        .getByRole('button', { name: 'Open sidebar' })
+        .querySelector('.lucide-sidebar-right-icon.fb-sidebar-toggle-icon'),
+    ).not.toBeNull();
+    expect(document.querySelector('.lucide-sidebar-left-icon')).toBeNull();
+  });
+
   it('navigates home from the logo only while open', () => {
     const onNavigate = vi.fn();
     render(<AppSidebar {...props} onNavigate={onNavigate} open />);
