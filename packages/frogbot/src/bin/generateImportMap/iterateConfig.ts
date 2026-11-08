@@ -82,8 +82,10 @@ export function iterateConfig({
   addToImportMap(shellComponents.beforeBottomRail);
   addToImportMap(shellComponents.beforeSidebarClose);
 
-  for (const item of shellComponents.navItems ?? []) {
-    if (isIconComponent(item.icon)) addToImportMap(item.icon);
+  if (Array.isArray(shellComponents.navItems)) {
+    for (const item of shellComponents.navItems) {
+      if (isIconComponent(item.icon)) addToImportMap(item.icon);
+    }
   }
 
   addToImportMap(shellComponents.navSections);

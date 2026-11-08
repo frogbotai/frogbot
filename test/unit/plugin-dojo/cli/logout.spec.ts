@@ -32,6 +32,7 @@ describe('frogbot logout', () => {
 
     expect(result.code).toBe(0);
     expect(dojo.paths()).toEqual(['GET /api/users/me', 'POST /api/api-keys/5/revoke']);
+    expect(JSON.parse(String(dojo.requests[1]?.body))).toEqual({ cascade: false });
     expect(dojo.tokens.size).toBe(0);
     expect(result.stdout()).toEqual([`[frogbot] Signed out of ${dojo.url}.`]);
     await expect(stat(authPath(env))).rejects.toThrow();

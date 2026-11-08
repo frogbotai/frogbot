@@ -46,7 +46,7 @@ describe('frogbot share: no workspace', () => {
 
     expect(result.code).toBe(0);
     expect(result.asked).toEqual([]);
-    expect(dojo.projects[0]?.workspace).toBe(3);
+    expect(dojo.apps[0]?.workspace).toBe(3);
     expect(result.stdout()).toContain(
       `[frogbot] Created deals-app in Colby's workspace, linked in .frogbot/app.json.`,
     );
@@ -63,7 +63,7 @@ describe('frogbot share: no workspace', () => {
     expect(result.stderr()).toEqual([
       `[frogbot] Your Dojo account has no workspace yet. Create one at ${dojo.url}/collections/workspaces/create, then rerun.`,
     ]);
-    expect(dojo.paths()).not.toContain('POST /api/projects');
+    expect(dojo.paths()).not.toContain('POST /api/apps');
     await expect(stat(join(root, '.frogbot'))).rejects.toThrow();
   });
 
@@ -87,7 +87,7 @@ describe('frogbot share: no workspace', () => {
     expect(result.opened).toEqual([create]);
     expect(result.asked).toEqual(['Created it? Check again']);
     expect(dojo.paths().filter((path) => path === 'GET /api/workspaces')).toHaveLength(2);
-    expect(dojo.projects[0]?.workspace).toBe(3);
+    expect(dojo.apps[0]?.workspace).toBe(3);
     expect(result.stdout().at(-1)).toBe('https://deals.frogbot.app');
   });
 
@@ -102,6 +102,6 @@ describe('frogbot share: no workspace', () => {
     expect(result.stderr()).toEqual([
       `[frogbot] No workspace to share in. Create one at ${dojo.url}/collections/workspaces/create, then rerun.`,
     ]);
-    expect(dojo.paths()).not.toContain('POST /api/projects');
+    expect(dojo.paths()).not.toContain('POST /api/apps');
   });
 });

@@ -12,7 +12,7 @@ import {
   tabHasName,
 } from 'payload/shared';
 
-import { resolveBoardField } from './resolveColumns.js';
+import { resolveGroupField } from '../groups/resolve.js';
 
 /** How a board's "+ Add" creates a card: inline by title, or through the prefilled create form. */
 export type BoardInlineAdd = {
@@ -50,7 +50,11 @@ function hasBlockingField(fields: Field[], skip: Set<string>, prefix = ''): bool
   });
 }
 
-function canCreate(fields: SanitizedFieldsPermissions | undefined, path: string[]): boolean {
+/** Whether field permissions let the user set the field at a path on create. */
+export function canCreateField(
+  fields: SanitizedFieldsPermissions | undefined,
+  path: string[],
+): boolean {
   if (fields === undefined || fields === true) return true;
 
   const [name, ...rest] = path;
@@ -59,7 +63,7 @@ function canCreate(fields: SanitizedFieldsPermissions | undefined, path: string[
   if (permission === true) return true;
   if (!permission?.create) return false;
 
-  return rest.length === 0 || canCreate(permission.fields, rest);
+  return rest.length === 0 || canCreateField(permission.fields, rest);
 }
 
 /**
@@ -76,7 +80,7 @@ export function getInlineAdd({
   groupBy: string;
   permissions?: SanitizedCollectionPermission;
 }): BoardInlineAdd {
-  const groupField = resolveBoardField(collectionConfig.fields, groupBy);
+  const groupField = resolveGroupField(collectionConfig.fields, groupBy);
   const groupRequired = Boolean(
     groupField && 'required' in groupField && groupField.required === true,
   );
@@ -93,8 +97,8 @@ export function getInlineAdd({
   const inline =
     (title?.type === 'text' || title?.type === 'textarea') &&
     !fieldIsVirtual(title) &&
-    canCreate(permissions?.fields, [useAsTitle]) &&
-    canCreate(permissions?.fields, groupBy.split('.')) &&
+    canCreateField(permissions?.fields, [useAsTitle]) &&
+    canCreateField(permissions?.fields, groupBy.split('.')) &&
     !collectionConfig.upload &&
     !local &&
     !hasBlockingField(collectionConfig.fields, new Set([useAsTitle, groupBy]));

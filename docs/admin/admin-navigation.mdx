@@ -83,7 +83,7 @@ admin: {
 
 A plain string without `#` must be a built-in icon name. An unknown name, such as a typo, stops startup with `[frogbot] Unknown admin icon '<name>'` followed by the valid names. A component path always names its export after `#`; write `'./src/components/ProjectsIcon#default'` for a default export. Navigation item and settings icons follow the same rules.
 
-Built-in names are UI icons only. The brand logos in `@frogbotai/ui/icons`, such as `BrandSlackIcon` and `BrandVisaIcon`, aren't admin icons, and a `brand-` name such as `'brand-slack'` stops startup. To show one, render it from your own component and point `icon` at that component's path.
+Brand logos are built-in names too, always with the `brand-` prefix: `BrandTwitterIcon` in `@frogbotai/ui/icons` is `'brand-twitter'`, and `BrandGitHubIcon` is `'brand-git-hub'`. Use one where the item is about that brand, such as an X swipe file or a list of GitHub repos, and a UI icon everywhere else. `'twitter'` without the prefix is an unknown name.
 
 Within `CollectionsSection`, ungrouped collections come first, in configuration order. Named groups follow in first-seen order, with their collections in configuration order.
 
@@ -91,7 +91,7 @@ When the sidebar is collapsed, section headings and labels are hidden and each i
 
 ## Add a navigation item
 
-`admin.components.navItems` holds the links above your collections. It is empty by default. Each item requires a `label` and a full `path`. Set `icon` to a built-in kebab-case icon name or a component import path, following the [icon rules](#collection-icons-and-placement).
+`admin.components.navItems` holds the links above your collections. It is empty by default, and can also be a [function of the page](#links-that-depend-on-the-page). Each item requires a `label` and a full `path`. Set `icon` to a built-in kebab-case icon name or a component import path, following the [icon rules](#collection-icons-and-placement).
 
 ```ts
 admin: {
@@ -135,6 +135,41 @@ Each `navItems` entry is a `NavItem`:
 | `label` | `string` | Required | Text shown in the sidebar and in the collapsed-sidebar tooltip. |
 | `path` | `string` | Required | Link destination, used as is. Include the admin route, such as `/admin/operations` when the admin route is `/admin`. |
 | `icon` | `AdminIcon` | Folder icon | Built-in kebab-case icon name or component import path, following the [icon rules](#collection-icons-and-placement). An unknown built-in name stops startup. |
+
+### Links that depend on the page
+
+Set `navItems` to a function to show links that depend on the page, such as a Versions link while a document is open. It receives the page and returns the items, synchronously or as a promise:
+
+```ts
+import type { NavItemsFunction } from 'frogbot'
+
+const navItems: NavItemsFunction = ({ collectionSlug, docID }) => [
+  { label: 'Operations', path: '/admin/operations', icon: 'robot' },
+  ...(collectionSlug === 'contracts' && docID
+    ? [{ label: 'Versions', path: `/admin/collections/contracts/${docID}/versions`, icon: 'file' }]
+    : []),
+]
+
+export default buildConfig({
+  admin: { components: { navItems } },
+})
+```
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `req` | `PayloadRequest` | The current request, with `req.frogbot` attached. |
+| `params` | `Params` | Route parameters of the current admin page. |
+| `collectionSlug` | `string` | The collection of the current page, when it belongs to one. |
+| `docID` | `string \| number` | The document being viewed or edited, when there is one. |
+| `viewType` | `ViewTypes` | The kind of view, such as `'list'` or `'document'`. |
+
+- The function runs once on every admin page render, and its items feed the sidebar, the phone drawer and Cmd+K. Keep it fast: FrogBot doesn't cache the result.
+- An error it throws isn't caught, and fails the sidebar like any component error.
+- Its items are checked when the page renders: each needs a `label` and a `path`, and an `icon` must be a built-in icon name or a component path that is already in the import map, because the import map is generated before the function ever runs. To use a custom icon, also reference it from a static place such as a collection's `admin.icon`, or use a built-in name.
+
+### Active item
+
+The sidebar highlights one item: the one with the longest `path` that matches the current page, either exactly or followed by `/`. With items `/admin/docs` and `/admin/docs/drafts`, only Drafts is active on `/admin/docs/drafts/12`. The item whose path is the admin home is active only on the home page itself.
 
 ## Copy and customize a section
 

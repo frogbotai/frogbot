@@ -202,11 +202,12 @@ export function mapComponentPaths<T extends Config | SanitizedConfig>(
     }
   }
 
-  const navItems = (admin?.components as { navItems?: { icon?: PayloadComponent }[] } | undefined)
-    ?.navItems;
+  const navItems = (admin?.components as { navItems?: unknown } | undefined)?.navItems;
 
-  for (const item of navItems ?? []) {
-    if (item.icon) item.icon = mapComponent(item.icon, map);
+  if (Array.isArray(navItems)) {
+    for (const item of navItems) {
+      if (item.icon) item.icon = mapComponent(item.icon, map);
+    }
   }
 
   if (admin?.dashboard?.widgets) {

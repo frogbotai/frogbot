@@ -6,7 +6,7 @@ import type { z } from 'zod';
 import type { ProviderName } from '../ai/providerNames.js';
 import type { PieceChannelQuestions } from '../channels/questions/types.js';
 import type { ToolApprovalOption } from '../tools/approval.js';
-import type { Tool } from '../tools/types.js';
+import type { Tool, ToolAnnotations } from '../tools/types.js';
 import type { TriggerEvent } from '../triggers/types.js';
 import type { TypedUser } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
@@ -65,7 +65,10 @@ export type PieceActionDefinition<
   description: string;
   input: TInput;
   output?: TOutput;
+  /** Calling it again with the same input does nothing more. Fills `annotations.idempotentHint`. */
   idempotent?: boolean;
+  /** Hints for clients about what a call does, copied onto the action's tool. */
+  annotations?: ToolAnnotations;
   /** Whether a person approves each call when an agent runs this action. @default false */
   approval?: ToolApprovalOption;
   options?: Partial<{

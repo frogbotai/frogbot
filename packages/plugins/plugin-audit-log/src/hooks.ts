@@ -1,9 +1,31 @@
-import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'frogbot';
+import type { CollectionAfterChangeHook, CollectionAfterDeleteHook, FrogBotRequest } from 'frogbot';
 
 import { computeChanges } from './diff.js';
-import type { AuditHookOptions, AuditOperation } from './types.js';
+import { type HiddenTree, hiddenTree, stripHidden } from './hidden.js';
+import type { AuditEntry, AuditHookOptions, AuditOperation } from './types.js';
 
 type Document = Record<string, unknown> & { id: number | string };
+
+const trees = new WeakMap<readonly unknown[], HiddenTree>();
+
+function hiddenFor(options: AuditHookOptions, collection: unknown): HiddenTree {
+  const fields =
+    typeof collection === 'object' &&
+    collection !== null &&
+    'fields' in collection &&
+    Array.isArray(collection.fields)
+      ? collection.fields
+      : options.fields;
+
+  let tree = trees.get(fields);
+
+  if (!tree) {
+    tree = hiddenTree(fields, options.blocks);
+    trees.set(fields, tree);
+  }
+
+  return tree;
+}
 
 function requestMetadata(headers: Headers, trustProxy: boolean) {
   const forwarded = trustProxy ? headers.get('x-forwarded-for')?.split(',')[0]?.trim() : undefined;
@@ -14,56 +36,93 @@ function requestMetadata(headers: Headers, trustProxy: boolean) {
   };
 }
 
-function writeAudit(
+function apiKeyId(user: FrogBotRequest['user']): string | undefined {
+  return user &&
+    '_strategy' in user &&
+    user._strategy === 'api-key' &&
+    'apiKeyId' in user &&
+    user.apiKeyId !== undefined
+    ? String(user.apiKeyId)
+    : undefined;
+}
+
+async function writeAudit(
   options: AuditHookOptions,
   operation: AuditOperation,
-  doc: Document,
-  previousDoc: Document | undefined,
-  req: Parameters<CollectionAfterChangeHook<Document>>[0]['req'],
-) {
-  const user = req.user;
+  rawDoc: Document,
+  rawPreviousDoc: Document | undefined,
+  req: FrogBotRequest,
+  collection: unknown,
+): Promise<void> {
+  let entry: AuditEntry | false;
 
-  const snapshot =
-    options.snapshot === 'always' || (options.snapshot === 'delete' && operation === 'delete')
-      ? doc
-      : undefined;
+  try {
+    const hidden = hiddenFor(options, collection);
+    const doc = stripHidden(rawDoc, hidden);
+    const previousDoc = rawPreviousDoc && stripHidden(rawPreviousDoc, hidden);
+    const snapshot =
+      options.snapshot === 'always' || (options.snapshot === 'delete' && operation === 'delete')
+        ? doc
+        : undefined;
 
-  void req.frogbot
-    .create({
+    const defaults: AuditEntry = {
+      collection: options.collectionSlug,
+      operation,
+      documentId: String(doc.id),
+      user: req.user?.id,
+      apiKeyId: apiKeyId(req.user),
+      changes: operation === 'delete' ? {} : computeChanges(previousDoc, doc),
+      snapshot,
+      timestamp: new Date().toISOString(),
+      ...(options.ipAddress ? requestMetadata(req.headers, options.trustProxy) : {}),
+    };
+
+    entry = options.entry
+      ? await options.entry({
+          entry: defaults,
+          collection: options.collectionSlug,
+          operation,
+          doc,
+          previousDoc,
+          req,
+        })
+      : defaults;
+  } catch (error: unknown) {
+    req.frogbot.logger.error('[plugin-audit-log] Failed to build audit entry', error);
+
+    return;
+  }
+
+  if (entry === false) return;
+  const inTransaction = Boolean(req.transactionID);
+
+  try {
+    await req.frogbot.create({
       collection: options.auditSlug,
-      data: {
-        collection: options.collectionSlug,
-        operation,
-        documentId: String(doc.id),
-        user: user?.id,
-        apiKeyId:
-          user &&
-          '_strategy' in user &&
-          user._strategy === 'api-key' &&
-          'apiKeyId' in user &&
-          user.apiKeyId !== undefined
-            ? String(user.apiKeyId)
-            : undefined,
-        changes: operation === 'delete' ? {} : computeChanges(previousDoc, doc),
-        snapshot,
-        timestamp: new Date().toISOString(),
-        ...(options.ipAddress ? requestMetadata(req.headers, options.trustProxy) : {}),
-      },
+      data: entry,
       overrideAccess: true,
       req,
-    })
-    .catch((error: unknown) =>
-      req.frogbot.logger.error('[plugin-audit-log] Failed to write audit log', error),
-    );
+    });
+  } catch (error: unknown) {
+    req.frogbot.logger.error('[plugin-audit-log] Failed to write audit log', error);
+    if (inTransaction) throw error;
+  }
 }
 
 export function createAfterChangeHook(
   options: AuditHookOptions,
 ): CollectionAfterChangeHook<Document> {
-  return ({ doc, operation, previousDoc, req }) => {
+  return async ({ collection, doc, operation, previousDoc, req }) => {
     if (!options.operations.has(operation)) return doc;
 
-    writeAudit(options, operation, doc, operation === 'create' ? undefined : previousDoc, req);
+    await writeAudit(
+      options,
+      operation,
+      doc,
+      operation === 'create' ? undefined : previousDoc,
+      req,
+      collection,
+    );
 
     return doc;
   };
@@ -72,8 +131,8 @@ export function createAfterChangeHook(
 export function createAfterDeleteHook(
   options: AuditHookOptions,
 ): CollectionAfterDeleteHook<Document> {
-  return ({ doc, req }) => {
-    writeAudit(options, 'delete', doc, undefined, req);
+  return async ({ collection, doc, req }) => {
+    await writeAudit(options, 'delete', doc, undefined, req, collection);
 
     return doc;
   };

@@ -2,6 +2,8 @@ export type * from './admin/fields/types.js';
 export type { IconName } from './admin/icons.js';
 export type {
   NavItem,
+  NavItemsArgs,
+  NavItemsFunction,
   RootAdminComponents,
   RootAdminConfig,
   RootAdminGraphics,
@@ -268,6 +270,7 @@ export type {
   CollectionRefreshHook,
 } from './collections/config/types.js';
 export { buildConfig } from './config/build.js';
+export { GROUP_BY_FIELD_TYPES } from './config/collectionViews.js';
 export type { FrogBotSanitizedConfig } from './config/sanitized.js';
 export type {
   AfterErrorHook,
@@ -513,6 +516,7 @@ export type {
   ClientToolValidate,
   Tool,
   ToolAccess,
+  ToolAnnotations,
   ToolCtx,
   ToolOutputLimits,
   ToolSource,

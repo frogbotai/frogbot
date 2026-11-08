@@ -2,7 +2,7 @@ import type { DojoClient } from '../dojo.js';
 import { dojoJSON, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
 
-/** An app as `GET /api/apps/:app` describes it to its editors and owners. */
+/** An app as `GET /api/apps/:app/cli` describes it to its editors and owners. */
 export type DojoApp = {
   id: string | number;
   slug: string;
@@ -11,11 +11,11 @@ export type DojoApp = {
 };
 
 /**
- * The app named by slug or id, read with `GET /api/apps/:app`. Refuses digits that are one app's id
+ * The app named by slug or id, read with `GET /api/apps/:app/cli`. Refuses digits that are one app's id
  * and another app's slug.
  */
 export async function findApp(dojo: DojoClient, ref: string): Promise<DojoApp> {
-  const app = await dojoJSON<Partial<DojoApp>>(dojo, `/api/apps/${segment(ref)}`, {
+  const app = await dojoJSON<Partial<DojoApp>>(dojo, `/api/apps/${segment(ref)}/cli`, {
     what: `Couldn't find the app "${ref}"`,
     needs: 'editor or owner access to the app',
   });
@@ -27,7 +27,7 @@ export async function findApp(dojo: DojoClient, ref: string): Promise<DojoApp> {
   if (/^\d+$/.test(ref) && app.slug !== ref) {
     const { docs } = await dojoJSON<{ docs: unknown[] }>(
       dojo,
-      `/api/projects?depth=0&limit=1&${whereEquals('slug', ref)}`,
+      `/api/apps?depth=0&limit=1&${whereEquals('slug', ref)}`,
       { what: `Couldn't find the app "${ref}"` },
     );
 

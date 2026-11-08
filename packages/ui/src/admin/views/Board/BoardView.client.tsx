@@ -12,13 +12,13 @@ import { type ComponentType, useEffect, useMemo, useRef, useState } from 'react'
 import { Board, type BoardColumnState } from '../../../board/Board.js';
 import { BoardAddButton, InlineAddCard } from '../../../board/InlineAddCard.js';
 import { appendQuery, getPath, setPath } from '../cells.js';
+import { adjustGroupCount, buildGroupWhere, getGroupValueKey } from '../groups/keys.js';
+import type { ResolvedGroup } from '../groups/resolve.js';
 import { useRecordPanel, useRecordPanelEvents } from '../panel/RecordPanelProvider.client.js';
 import { getViewCardColumns } from '../preferences.js';
 import { BoardDocumentCard, type BoardRow } from './BoardDocumentCard.js';
-import { buildBoardReorderBody, buildColumnWhere } from './data.js';
+import { buildBoardReorderBody } from './data.js';
 import type { BoardInlineAdd } from './inlineAdd.js';
-import type { ResolvedBoardColumn } from './resolveColumns.js';
-import { adjustColumnTotal, getBoardGroupKey } from './totals.js';
 import { useBoardColumnState } from './useBoardColumnState.js';
 import { useBoardTotals } from './useBoardTotals.js';
 import { useInlineAdd } from './useInlineAdd.js';
@@ -27,10 +27,10 @@ type Row = BoardRow;
 
 export type BoardViewClientProps = {
   Card?: ComponentType<{ disabled: boolean; row: Row }>;
-  ColumnHeader?: ComponentType<{ column: ResolvedBoardColumn; count: number }>;
+  ColumnHeader?: ComponentType<{ column: ResolvedGroup; count: number }>;
   collectionSlug: string;
   columnState: BoardColumnState;
-  columns: ResolvedBoardColumn[];
+  columns: ResolvedGroup[];
   cover?: string;
   filter?: Record<string, unknown>;
   groupBy: string;
@@ -77,7 +77,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
     viewSlug: props.viewSlug,
   });
 
-  const groupKey = (row: Row) => getBoardGroupKey(getPath(row, props.groupBy));
+  const groupKey = (row: Row) => getGroupValueKey(getPath(row, props.groupBy));
 
   const fetchColumn = async (key: string, page: number, replace = false) => {
     const value = props.columns.find((column) => column.key === key)?.value;
@@ -87,7 +87,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
       page: String(page),
     });
 
-    appendQuery(params, 'where', buildColumnWhere(where, props.groupBy, value));
+    appendQuery(params, 'where', buildGroupWhere(where, props.groupBy, value));
     appendQuery(params, 'sort', query.sort);
     const response = await fetch(`${config.routes.api}/${props.collectionSlug}?${params}`, {
       credentials: 'include',
@@ -346,7 +346,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
           totals={
             totals.totals &&
             Object.entries(inline.pending).reduce(
-              (current, [key, delta]) => adjustColumnTotal(current, key, delta),
+              (current, [key, delta]) => adjustGroupCount(current, key, delta),
               totals.totals,
             )
           }

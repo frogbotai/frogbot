@@ -68,7 +68,7 @@ async function setup() {
 
   vi.spyOn(process, 'cwd').mockReturnValue(cwd);
 
-  dojo.projects.push({ id: 7, name: 'deals', slug: 'deals', workspace: 1 });
+  dojo.apps.push({ id: 7, name: 'deals', slug: 'deals', workspace: 1 });
   dojo.level = 'editor';
   dojo.tokens.set('fb_stored', 100);
   await writeToken(env, dojo.url, 'fb_stored');
@@ -123,7 +123,7 @@ describe('npx @frogbotai/plugin-dojo', () => {
       expect(await run('apps', 'pull', 'deals')).toBe(0);
       expect(dojo.paths()).toEqual([
         'GET /api/users/me',
-        'GET /api/apps/deals',
+        'GET /api/apps/deals/cli',
         'GET /api/apps/7/source',
       ]);
       expect(await readFile(join(cwd, 'deals/src/page.tsx'), 'utf8')).toBe('1;');
@@ -164,7 +164,7 @@ describe('npx @frogbotai/plugin-dojo', () => {
     const { cwd, dojo, run } = await setup();
 
     core.blocked = false;
-    dojo.projects.length = 0;
+    dojo.apps.length = 0;
     await writeApp(cwd);
 
     expect(await run('apps', 'share', '--no-data')).toBe(0);

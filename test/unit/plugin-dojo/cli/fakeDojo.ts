@@ -58,7 +58,8 @@ export type FakeDojo = {
   /** Tokens Dojo accepts, by API key id. */
   tokens: Map<string, number>;
   workspaces: FakeWorkspace[];
-  projects: { id: number; name: string; slug: string; workspace: number }[];
+  /** Dojo's apps, served at `/api/apps`. The fake has no projects: `/api/projects` answers 404. */
+  apps: { id: number; name: string; slug: string; workspace: number }[];
   /** Polls answered `authorization_pending` before the sign-in is approved. */
   pendingPolls: number;
   /** Device codes whose first poll answers `expired_token`, counted from the first one issued. */
@@ -68,8 +69,8 @@ export type FakeDojo = {
   build: FakeBuild;
   /** Apps whose deployments get 403. */
   forbidden: Set<number>;
-  /** The reply to `POST /api/projects`, instead of creating one. */
-  projectReply?: { status: number; body: unknown };
+  /** The reply to `POST /api/apps`, instead of creating one. */
+  createReply?: { status: number; body: unknown };
   /** The private half of `GET /api/cli/sealing-key`. */
   sealingPrivateKey: KeyObject;
   /** Each app's stored keys, by app id. */
@@ -83,11 +84,11 @@ export type FakeDojo = {
   revokeStatus: number;
   /** 300's `data-uploads` and the app's bucket, which takes the signed PUTs at `/bucket/<key>`. */
   data: FakeData;
-  /** The caller's `level` in `GET /api/apps/:app`; left out of the reply when unset, as an older Dojo does. */
+  /** The caller's `level` in `GET /api/apps/:app/cli`; left out of the reply when unset, as an older Dojo does. */
   level?: 'editor' | 'owner';
   /** The live version's archive, served by `GET /api/apps/:app/source`; 404 when unset. */
   source?: Buffer;
-  /** The reply to `GET /api/apps/:app`, instead of the app. */
+  /** The reply to `GET /api/apps/:app/cli`, instead of the app. */
   appReply?: { status: number; message: string };
   /** The reply to `GET /api/apps/:app/source`, instead of the archive. */
   sourceReply?: { status: number; message: string };
@@ -144,7 +145,7 @@ export function openKeys(
   return JSON.parse(plaintext.toString('utf8')) as Record<string, string>;
 }
 
-/** 307's fingerprint: `base64url(sha256(salt + "\0" + projectId + "\0" + name + "\0" + value))`. */
+/** 307's fingerprint: `base64url(sha256(salt + "\0" + appId + "\0" + name + "\0" + value))`. */
 export function fingerprint(salt: string, appId: number, name: string, value: string): string {
   return createHash('sha256').update(`${salt}\0${appId}\0${name}\0${value}`).digest('base64url');
 }
@@ -170,7 +171,7 @@ export async function startFakeDojo(): Promise<FakeDojo> {
     requests: [],
     tokens: new Map(),
     workspaces: [{ id: 1, name: 'Trend Capital', slug: 'trend-capital' }],
-    projects: [],
+    apps: [],
     pendingPolls: 1,
     expiredCodes: 0,
     build: { lines: ['step 1', 'step 2'], status: 'ready' },
@@ -294,6 +295,10 @@ export async function startFakeDojo(): Promise<FakeDojo> {
 
     if (!signedIn) return payloadError(res, 401, 'You are not allowed to perform this action.');
 
+    if (url.pathname === '/api/projects' || url.pathname.startsWith('/api/projects/')) {
+      return payloadError(res, 404, 'Not Found');
+    }
+
     const reply = dojo.replies.get(route);
 
     if (reply) return json(res, reply.status ?? 200, reply.body);
@@ -340,22 +345,22 @@ export async function startFakeDojo(): Promise<FakeDojo> {
       return true;
     };
 
-    if (route === 'POST /api/projects') {
-      if (dojo.projectReply) return json(res, dojo.projectReply.status, dojo.projectReply.body);
+    if (route === 'POST /api/apps') {
+      if (dojo.createReply) return json(res, dojo.createReply.status, dojo.createReply.body);
 
       const data = JSON.parse(body.toString()) as { name: string; slug: string; workspace: number };
 
       if (slotRefusal(data.workspace)) return;
-      const project = { id: dojo.projects.length + 1, ...data };
+      const app = { id: dojo.apps.length + 1, ...data };
 
-      dojo.projects.push(project);
+      dojo.apps.push(app);
 
-      return json(res, 201, { doc: project, message: 'Project successfully created.' });
+      return json(res, 201, { doc: app, message: 'App successfully created.' });
     }
 
-    if (route === 'GET /api/projects') {
+    if (route === 'GET /api/apps') {
       const slug = url.searchParams.get('where[slug][equals]');
-      const found = dojo.projects.filter((project) => slug === null || project.slug === slug);
+      const found = dojo.apps.filter((app) => slug === null || app.slug === slug);
       const limit = Number(url.searchParams.get('limit') ?? 10);
       const page = Number(url.searchParams.get('page') ?? 1);
 
@@ -377,7 +382,7 @@ export async function startFakeDojo(): Promise<FakeDojo> {
     if (req.method === 'POST' && dataUpload) {
       const appId = Number(dataUpload[1]);
 
-      if (dojo.forbidden.has(appId) || !dojo.projects.some((project) => project.id === appId)) {
+      if (dojo.forbidden.has(appId) || !dojo.apps.some((app) => app.id === appId)) {
         return payloadError(res, 403, 'Only the app’s owners can publish it.');
       }
 
@@ -448,30 +453,32 @@ export async function startFakeDojo(): Promise<FakeDojo> {
       });
     }
 
-    const app = /^\/api\/apps\/([^/]+)(?:\/(deployments|keys|logs|source))?$/.exec(url.pathname);
+    const app = /^\/api\/apps\/([^/]+)(?:\/(cli|deployments|keys|logs|source))?$/.exec(
+      url.pathname,
+    );
+
     const appRef = decodeURIComponent(app?.[1] ?? '');
-    const bySlug = /^\d+$/.test(appRef)
-      ? undefined
-      : dojo.projects.find((project) => project.slug === appRef);
+    const bySlug = /^\d+$/.test(appRef) ? undefined : dojo.apps.find(({ slug }) => slug === appRef);
 
     if (app && !/^\d+$/.test(appRef) && !bySlug) return payloadError(res, 404, 'No such app.');
 
     const appId = bySlug?.id ?? Number(appRef);
-    const owned =
-      !dojo.forbidden.has(appId) && dojo.projects.some((project) => project.id === appId);
+    const owned = !dojo.forbidden.has(appId) && dojo.apps.some((app) => app.id === appId);
 
-    if (req.method === 'GET' && app && !app[2] && dojo.appReply) {
+    if (req.method === 'GET' && app && !app[2]) return payloadError(res, 404, 'Not Found');
+
+    if (req.method === 'GET' && app?.[2] === 'cli' && dojo.appReply) {
       return payloadError(res, dojo.appReply.status, dojo.appReply.message);
     }
 
     if (app && !owned) return payloadError(res, 403, 'Only the app’s owners can publish it.');
 
-    if (req.method === 'GET' && app && !app[2]) {
-      const project = dojo.projects.find(({ id }) => id === appId);
+    if (req.method === 'GET' && app?.[2] === 'cli') {
+      const stored = dojo.apps.find(({ id }) => id === appId);
 
       return json(res, 200, {
         id: appId,
-        slug: project?.slug,
+        slug: stored?.slug,
         started: dojo.data.started,
         ...(dojo.level ? { level: dojo.level } : {}),
       });
@@ -529,9 +536,9 @@ export async function startFakeDojo(): Promise<FakeDojo> {
     }
 
     if (req.method === 'POST' && app?.[2] === 'deployments') {
-      const project = dojo.projects.find(({ id }) => id === appId);
+      const stored = dojo.apps.find(({ id }) => id === appId);
 
-      if (!dojo.data.started && slotRefusal(project?.workspace ?? 1)) return;
+      if (!dojo.data.started && slotRefusal(stored?.workspace ?? 1)) return;
 
       const part = form?.get('keys');
       const data = form?.get('data');

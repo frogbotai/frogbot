@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { adjustColumnTotal, type BoardTotalsGroup, toColumnTotals } from './totals.js';
+import { adjustGroupCount, type GroupCountRow, toGroupCounts } from '../groups/keys.js';
 
 /** Every column's true total from one aggregate query, with optimistic adjustments. */
 export function useBoardTotals({
@@ -40,15 +40,15 @@ export function useBoardTotals({
     });
 
     const result = response.ok
-      ? ((await response.json()) as { groups: BoardTotalsGroup[] })
+      ? ((await response.json()) as { groups: GroupCountRow[] })
       : undefined;
 
-    if (request === latest.current) setTotals(result && toColumnTotals(result.groups, groupBy));
+    if (request === latest.current) setTotals(result && toGroupCounts(result.groups, groupBy));
   }, [api, collectionSlug, groupBy]);
 
   const adjust = useCallback((key: string, delta: number) => {
     latest.current += 1;
-    setTotals((current) => (current ? adjustColumnTotal(current, key, delta) : current));
+    setTotals((current) => (current ? adjustGroupCount(current, key, delta) : current));
   }, []);
 
   return { adjust, refresh, totals };

@@ -1,6 +1,6 @@
 {
   "name": "crm",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "private": true,
   "description": "A FrogBot CRM with companies, contacts, a deals pipeline, a calendar of activities and tasks, with sample data.",
   "license": "MIT",

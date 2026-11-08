@@ -12,7 +12,7 @@ async function setup(env: Record<string, string> = {}) {
   const fullEnv = { XDG_CONFIG_HOME: await tempDir(), FROGBOT_DOJO_URL: dojo.url, ...env };
 
   dojo.level = 'owner';
-  dojo.projects.push({ id: 7, name: 'Deals', slug: 'deals', workspace: 1 });
+  dojo.apps.push({ id: 7, name: 'Deals', slug: 'deals', workspace: 1 });
 
   const run = async (args: string[], options: { isTTY?: boolean; confirm?: boolean } = {}) => {
     const result = testIO({ cwd, env: fullEnv, ...options });
@@ -49,7 +49,7 @@ describe('FROGBOT_DOJO_TOKEN', () => {
     expect(result.stderr()).toEqual([
       `[frogbot] Dojo didn't accept FROGBOT_DOJO_TOKEN at ${dojo.url}; it may be revoked. Set a working key, or unset it to sign in with a browser.`,
     ]);
-    expect(dojo.paths()).toEqual(['GET /api/apps/deals']);
+    expect(dojo.paths()).toEqual(['GET /api/apps/deals/cli']);
   });
 
   it('makes whoami and login fail the same way', async () => {
@@ -96,7 +96,7 @@ const destructive: { args: string[]; asked: string; replies?: Record<string, unk
     asked: 'Remove ada@example.com from the workspace?',
     replies: { 'GET /api/members': { docs: [member] } },
   },
-  { args: ['keys', 'revoke', '4'], asked: 'Revoke key 4?' },
+  { args: ['keys', 'revoke', '4'], asked: 'Revoke key 4 and the keys it made?' },
   {
     args: ['sharing', 'leave', 'deals'],
     asked: "Leave deals? You'll need a new invite to get back.",
@@ -145,7 +145,7 @@ describe('destructive verbs', () => {
 
       dojo.tokens.set('fb_env', 50);
 
-      dojo.replies.set('GET /api/projects', {
+      dojo.replies.set('GET /api/apps', {
         body: { docs: [{ id: 7, slug: 'deals', name: 'Deals' }] },
       });
 
@@ -182,13 +182,13 @@ describe('destructive verbs', () => {
     const { dojo, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_env' });
 
     dojo.tokens.set('fb_env', 50);
-    dojo.replies.set('DELETE /api/projects/7', { body: { doc: { id: 7, slug: 'deals' } } });
+    dojo.replies.set('DELETE /api/apps/7', { body: { doc: { id: 7, slug: 'deals' } } });
 
     const result = await run(['apps', 'delete', '7'], { isTTY: true, confirm: true });
 
     expect(result.code).toBe(0);
     expect(result.asked).toEqual(["Delete deals and everything in it? This can't be undone."]);
-    expect(changes(dojo)).toEqual(['DELETE /api/projects/7']);
+    expect(changes(dojo)).toEqual(['DELETE /api/apps/7']);
   });
 });
 
@@ -287,7 +287,7 @@ describe('--json', () => {
     const { dojo, cwd, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_env' });
 
     dojo.tokens.set('fb_env', 50);
-    dojo.projects.length = 0;
+    dojo.apps.length = 0;
     await writeApp(cwd);
 
     const result = await run(['apps', 'share', '--no-data', '--json']);
@@ -301,7 +301,7 @@ describe('--json', () => {
       result: {
         appId: 1,
         url: 'https://deals.frogbot.app',
-        shareLink: `${dojo.url}/collections/projects/1?share=1`,
+        shareLink: `${dojo.url}/collections/apps/1/settings?share=1`,
       },
     });
     expect(result.stderr()).toContain('[build] step 1');
@@ -319,7 +319,9 @@ describe('--json', () => {
     });
 
     expect(code).toBe(2);
-    expect(result.stderr().join('\n')).toContain('Usage: frogbot dojo apps share [--data');
+    expect(result.stderr().join('\n')).toContain(
+      'Usage: frogbot dojo apps share [--app <slug or id>] [--data',
+    );
     expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({ target: 'dojo', ok: false });
   });
 

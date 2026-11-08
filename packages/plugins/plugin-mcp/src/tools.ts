@@ -88,6 +88,7 @@ export function toPayloadTools(tools: readonly McpTool[]): Record<string, Payloa
     payloadTools[tool.slug] = {
       description: tool.description,
       input: tool.inputSchema,
+      ...(tool.annotations === undefined ? {} : { annotations: tool.annotations }),
       ...(tool.access === undefined
         ? {}
         : {

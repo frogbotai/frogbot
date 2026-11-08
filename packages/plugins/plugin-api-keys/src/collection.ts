@@ -12,6 +12,7 @@ import {
 import {
   ApiKeyServiceError,
   canMintKeys,
+  countMintedApiKeys,
   keyScopeBeforeValidate,
   mintApiKey,
   revokeApiKey,
@@ -82,6 +83,7 @@ function createViews({
           ...(usageCollection ? ['totalCostUSD'] : []),
           'mintedBy',
           'lastUsedAt',
+          'expiresAt',
           'revokedAt',
           'actions',
         ],
@@ -107,6 +109,7 @@ function createEndpoints({
         const body = ((await req.json?.().catch(() => null)) ?? null) as {
           name?: unknown;
           data?: unknown;
+          expiresAt?: unknown;
         } | null;
 
         const name = typeof body?.name === 'string' ? body.name.trim() : '';
@@ -117,6 +120,11 @@ function createEndpoints({
           return Response.json({ error: 'data must be an object' }, { status: 400 });
         }
 
+        const expiresAt = body?.expiresAt ?? null;
+        if (expiresAt !== null && typeof expiresAt !== 'string') {
+          return Response.json({ error: 'expiresAt must be a date string' }, { status: 400 });
+        }
+
         try {
           return Response.json(
             await mintApiKey({
@@ -125,6 +133,7 @@ function createEndpoints({
               tokenPrefix,
               name,
               data: data as Record<string, unknown>,
+              expiresAt,
             }),
             { status: 201 },
           );
@@ -151,13 +160,29 @@ function createEndpoints({
           return Response.json({ error: 'API key not found' }, { status: 404 });
         }
 
+        const text = (await req.text?.()) ?? '';
+        let cascade: unknown = true;
+
+        try {
+          const body: unknown = text.trim() ? JSON.parse(text) : null;
+          if (typeof body === 'object' && body !== null && 'cascade' in body) {
+            cascade = body.cascade;
+          }
+        } catch {
+          return Response.json({ error: 'The body must be JSON' }, { status: 400 });
+        }
+
+        if (typeof cascade !== 'boolean') {
+          return Response.json({ error: 'cascade must be true or false' }, { status: 400 });
+        }
+
         try {
           const anyOwner = (await canRevokeAnyKey?.(req)) === true;
           const {
             name: _name,
             owner: _owner,
             ...result
-          } = await revokeApiKey({ req, collectionSlug, id, anyOwner });
+          } = await revokeApiKey({ req, collectionSlug, id, anyOwner, cascade });
 
           return Response.json(result);
         } catch (error) {
@@ -165,6 +190,31 @@ function createEndpoints({
             return Response.json({ error: 'Authentication required' }, { status: 401 });
           }
 
+          if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
+            return Response.json({ error: 'API key not found' }, { status: 404 });
+          }
+
+          throw error;
+        }
+      },
+    },
+    {
+      method: 'get',
+      path: '/:id/minted-count',
+      handler: async (req) => {
+        if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        const id = req.routeParams?.id;
+        if (typeof id !== 'string' || !id) {
+          return Response.json({ error: 'API key not found' }, { status: 404 });
+        }
+
+        try {
+          const anyOwner = (await canRevokeAnyKey?.(req)) === true;
+
+          return Response.json({
+            count: await countMintedApiKeys({ req, collectionSlug, id, anyOwner }),
+          });
+        } catch (error) {
           if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
             return Response.json({ error: 'API key not found' }, { status: 404 });
           }
@@ -256,6 +306,17 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
         readOnly: true,
         position: 'sidebar',
         condition: (_, siblingData) => Boolean(siblingData.revokedAt),
+      },
+    },
+    {
+      name: 'expiresAt',
+      type: 'date',
+      label: 'Expires',
+      access: { update: () => false },
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+        description: 'The key stops working at this time. Empty when it never expires.',
       },
     },
     {

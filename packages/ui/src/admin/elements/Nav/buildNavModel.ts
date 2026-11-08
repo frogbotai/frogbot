@@ -11,6 +11,8 @@ type EntityIcon = CustomComponent | string;
 export type BuildNavModelProps = {
   config: SanitizedConfig;
   i18n: ServerProps['i18n'];
+  /** The links from `resolveNavItems`. Defaults to `admin.components.navItems` when it is an array. */
+  navItems?: NavConfigItem[];
   permissions: NonNullable<ServerProps['permissions']>;
   visibleEntities: NonNullable<ServerProps['visibleEntities']>;
 };
@@ -85,7 +87,13 @@ export function buildCollectionGroups({
   };
 }
 
-export function buildNavModel({ config, i18n, permissions, visibleEntities }: BuildNavModelProps) {
+export function buildNavModel({
+  config,
+  i18n,
+  navItems,
+  permissions,
+  visibleEntities,
+}: BuildNavModelProps) {
   const { entities, mapEntity } = buildCollectionGroups({
     config,
     i18n,
@@ -109,11 +117,10 @@ export function buildNavModel({ config, i18n, permissions, visibleEntities }: Bu
       });
     });
 
-  const configuredItems = (
-    config.admin.components as typeof config.admin.components & { navItems?: NavConfigItem[] }
-  )?.navItems;
+  const configured = (config.admin.components as { navItems?: unknown } | undefined)?.navItems;
+  const configuredItems = navItems ?? (Array.isArray(configured) ? configured : []);
 
   return {
-    items: [...(configuredItems ?? []), ...topLevelItems],
+    items: [...(configuredItems as NavConfigItem[]), ...topLevelItems],
   };
 }

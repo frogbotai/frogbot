@@ -23,11 +23,10 @@ export const sharing: Noun = {
       args: '<app>',
       run: async ({ io, dojo, positionals: [ref = ''] }) => {
         const app = await findApp(dojo(), ref);
-        const reply = await dojoJSON<SharingReply>(
-          dojo(),
-          `/api/projects/${segment(app.id)}/sharing`,
-          { what: `Couldn't read who ${app.slug} is shared with`, needs: ownerNeeded },
-        );
+        const reply = await dojoJSON<SharingReply>(dojo(), `/api/apps/${segment(app.id)}/sharing`, {
+          what: `Couldn't read who ${app.slug} is shared with`,
+          needs: ownerNeeded,
+        });
 
         const shares = reply.shares.map(({ email, level, invited, you }) => ({
           email,
@@ -64,16 +63,12 @@ export const sharing: Noun = {
         }
 
         const app = await findApp(dojo(), ref);
-        const reply = await dojoJSON<InviteReply>(
-          dojo(),
-          `/api/projects/${segment(app.id)}/invite`,
-          {
-            method: 'POST',
-            body: { emails: emails.join(', '), level },
-            what: `Couldn't share ${app.slug}`,
-            needs: ownerNeeded,
-          },
-        );
+        const reply = await dojoJSON<InviteReply>(dojo(), `/api/apps/${segment(app.id)}/invite`, {
+          method: 'POST',
+          body: { emails: emails.join(', '), level },
+          what: `Couldn't share ${app.slug}`,
+          needs: ownerNeeded,
+        });
 
         done(io, reply, [
           `[frogbot] Shared ${app.slug} with ${count(reply.created.length, 'person', 'people')} at ${level}.`,
@@ -89,7 +84,7 @@ export const sharing: Noun = {
       run: async ({ io, dojo, positionals: [ref = ''] }) => {
         const { docs } = await dojoJSON<{ docs: { id: string | number; slug: string }[] }>(
           dojo(),
-          `/api/projects?depth=0&limit=1&${whereEquals('slug', ref)}`,
+          `/api/apps?depth=0&limit=1&${whereEquals('slug', ref)}`,
           { what: `Couldn't find the app "${ref}"` },
         );
 
@@ -97,7 +92,7 @@ export const sharing: Noun = {
 
         if (!app) throw new ShareError(`No app "${ref}" is shared with you.`);
 
-        await dojoJSON(dojo(), `/api/projects/${segment(app.id)}/sharing/me`, {
+        await dojoJSON(dojo(), `/api/apps/${segment(app.id)}/sharing/me`, {
           method: 'DELETE',
           what: `Couldn't leave ${app.slug}`,
         });

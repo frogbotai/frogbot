@@ -1,4 +1,5 @@
-import type { ListViewServerProps, PayloadRequest, SelectIncludeType } from 'payload';
+import { getClientConfig } from '@payloadcms/ui/utilities/getClientConfig';
+import type { ListViewServerProps, PayloadRequest } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 import * as qs from 'qs-esm';
 
@@ -10,20 +11,23 @@ import {
   resolveCollectionViews,
 } from '../collectionViews.js';
 import { buildFrameSlots } from '../frame.js';
+import { selectPath } from '../groups/resolve.js';
 import { redirectRecordParam } from '../panel/redirectRecord.js';
+import { getGroupsPreferenceKey, resolveViewColumnPreferences } from '../preferences.js';
 import { isRecordDone } from '../records/state.js';
-import { isFreshQuery, pickViewSetup, resolveViewSetup } from '../viewSetup.js';
+import {
+  isFreshQuery,
+  pickViewSetup,
+  readViewPreference,
+  resolveViewSetup,
+  type ViewSetup,
+} from '../viewSetup.js';
 import { DefaultListView } from './DefaultListView.client.js';
+import { type GroupedTable, renderGroupedTable } from './groupedTable.js';
 import { ListFrameClient } from './ListFrame.client.js';
 import { withRowIds } from './rowIds.js';
 
 type Row = Record<string, unknown>;
-
-function selectPath(path: string): SelectIncludeType {
-  const [first, ...rest] = path.split('.');
-
-  return { [first]: rest.length ? selectPath(rest.join('.')) : true };
-}
 
 async function findDoneIds({
   collectionSlug,
@@ -64,6 +68,14 @@ async function findDoneIds({
     .map((doc) => String(doc.id));
 }
 
+function toKeys(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((key): key is string => typeof key === 'string') : [];
+}
+
+function withDefaultGroupBy(stored: ViewSetup, groupBy: string | undefined): ViewSetup {
+  return groupBy && stored.groupBy === undefined ? { ...stored, groupBy } : stored;
+}
+
 /**
  * The list view Payload renders. On the collection's own page it renders in FrogBot's shared view
  * frame with Payload's table, selection and page controls as its body. A relationship drawer and
@@ -102,6 +114,7 @@ export async function ListView(props: ListViewServerProps) {
     redirect: (path) =>
       server.redirect(formatAdminURL({ adminRoute: payload.config.routes.admin, path })),
   });
+  let grouped: GroupedTable | undefined;
 
   if (isList) {
     await redirectToLastView({ collectionSlug, req, server, views });
@@ -114,7 +127,8 @@ export async function ListView(props: ListViewServerProps) {
       viewSlug: view.slug,
     });
 
-    const saved = qs.stringify(pickViewSetup(setup.preference));
+    const stored = pickViewSetup(setup.preference);
+    const saved = qs.stringify(withDefaultGroupBy(stored, view.groupBy));
 
     if (isFreshQuery(query) && saved) {
       server.redirect(
@@ -123,6 +137,50 @@ export async function ListView(props: ListViewServerProps) {
           path: `/collections/${collectionSlug}`,
         })}?${[qs.stringify(query), saved].filter(Boolean).join('&')}`,
       );
+    }
+
+    const groupBy =
+      typeof query.groupBy === 'string'
+        ? query.groupBy
+        : (clientProps.queryPreset?.groupBy ?? props.listPreferences?.groupBy);
+
+    if (groupBy) {
+      const groupsKey = getGroupsPreferenceKey(collectionSlug, view.slug);
+      const columns = clientProps.columnState?.length
+        ? clientProps.columnState.map(({ accessor, active }) => ({ accessor, active }))
+        : resolveViewColumnPreferences({
+            defaultFields: view.defaultFields,
+            useAsTitle: collectionConfig.admin.useAsTitle,
+          });
+
+      grouped = await renderGroupedTable({
+        baseFilter: clientProps.baseFilter,
+        canCreate: clientProps.hasCreatePermission,
+        clientCollectionConfig: getClientConfig({
+          config: payload.config,
+          i18n,
+          importMap: payload.importMap,
+          user: user ?? null,
+        }).collections.find(({ slug }) => slug === collectionSlug)!,
+        collapsed: toKeys((await readViewPreference(req, groupsKey))?.collapsed),
+        collectionConfig,
+        columns,
+        enableRowSelections: clientProps.enableRowSelections ?? true,
+        fieldPermissions: permissions?.collections?.[collectionSlug]?.fields,
+        groupBy,
+        limit,
+        preferenceKey: groupsKey,
+        query,
+        req,
+        sort:
+          typeof query.sort === 'string'
+            ? query.sort
+            : (props.listPreferences?.sort ??
+              (typeof collectionConfig.defaultSort === 'string'
+                ? collectionConfig.defaultSort
+                : undefined)),
+        viewType: clientProps.viewType,
+      });
     }
   }
 
@@ -157,10 +215,16 @@ export async function ListView(props: ListViewServerProps) {
   });
 
   const docs = (data as { docs?: Row[] } | undefined)?.docs ?? [];
-  const isEmpty = docs.length === 0 && !clientProps.groupedData?.length;
+  const isEmpty = grouped
+    ? grouped.totalDocs === 0
+    : docs.length === 0 && !clientProps.groupedData?.length;
+
   const doneIds = await findDoneIds({
     collectionSlug,
-    docs: clientProps.groupedData?.flatMap((group) => group.data.docs as Row[]) ?? docs,
+    docs:
+      grouped?.docs ??
+      clientProps.groupedData?.flatMap((group) => group.data.docs as Row[]) ??
+      docs,
     req,
     trash: clientProps.viewType === 'trash',
     useAsDone: (collectionConfig.admin.custom?.frogbot as { useAsDone?: string } | undefined)
@@ -178,7 +242,8 @@ export async function ListView(props: ListViewServerProps) {
       doneIds={doneIds}
       isEmpty={isEmpty}
       listMenuItems={[...(clientProps.listMenuItems ?? []), ...(slots.listMenuItems ?? [])]}
-      listProps={{ ...clientProps, Table: withRowIds(clientProps.Table) }}
+      listProps={{ ...clientProps, Table: grouped?.Table ?? withRowIds(clientProps.Table) }}
+      pagedGroups={grouped?.pagedGroups}
     />
   );
 }
