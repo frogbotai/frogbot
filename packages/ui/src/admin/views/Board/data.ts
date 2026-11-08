@@ -59,7 +59,9 @@ export function resolveBoardSort({
       Array.isArray(value) ? value.length > 0 : Boolean(value),
     ) ?? orderField;
 
-  return Array.isArray(sort) ? sort.join(',') : sort;
+  const joined = Array.isArray(sort) ? sort.join(',') : sort;
+
+  return orderField ? joined?.replace(/(^|,)(-?)_order_\w+/g, `$1$2${orderField}`) : joined;
 }
 
 export function buildBoardReorderBody({

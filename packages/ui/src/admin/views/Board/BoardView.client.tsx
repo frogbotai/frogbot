@@ -18,7 +18,7 @@ import { BoardDocumentCard, type BoardRow } from './BoardDocumentCard.js';
 import { buildBoardReorderBody, buildColumnWhere } from './data.js';
 import type { BoardInlineAdd } from './inlineAdd.js';
 import type { ResolvedBoardColumn } from './resolveColumns.js';
-import { getBoardGroupKey } from './totals.js';
+import { adjustColumnTotal, getBoardGroupKey } from './totals.js';
 import { useBoardColumnState } from './useBoardColumnState.js';
 import { useBoardTotals } from './useBoardTotals.js';
 import { useInlineAdd } from './useInlineAdd.js';
@@ -237,8 +237,11 @@ export function BoardViewClient(props: BoardViewClientProps) {
 
       return result.doc as Row;
     },
-    onCreated: upsertRow,
-    onTotal: totals.adjust,
+    onCreated: (doc, columnKey) => {
+      upsertRow(doc);
+      totals.adjust(columnKey, 1);
+      void totals.refresh();
+    },
   });
 
   const [CreateDrawer, , createDrawer] = useDocumentDrawer({
@@ -326,7 +329,13 @@ export function BoardViewClient(props: BoardViewClientProps) {
             )
           }
           rows={rows}
-          totals={totals.totals}
+          totals={
+            totals.totals &&
+            Object.entries(inline.pending).reduce(
+              (current, [key, delta]) => adjustColumnTotal(current, key, delta),
+              totals.totals,
+            )
+          }
         />
       </div>
       {props.canCreate ? (

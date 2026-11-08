@@ -277,3 +277,37 @@ test('collapses, hides and restores columns, remembered after a reload', async (
   await expect(titles(page, 'Todo')).toHaveText(['Only']);
   await expect(column(page, 'Doing')).toBeVisible();
 });
+
+test('keeps the total right when a move refreshes it during an inline save', async ({ page }) => {
+  await create(page, { status: 'todo', title: 'a' });
+  await create(page, { status: 'todo', title: 'b' });
+  await page.goto(`/collections/${storiesSlug}`);
+  await expect(count(page, 'Todo')).toHaveText('2');
+
+  let release = () => {};
+
+  const held = new Promise<void>((resolve) => (release = resolve));
+
+  await page.route(`**/api/${storiesSlug}?depth=1`, async (route) => {
+    if (route.request().method() === 'POST') await held;
+    await route.continue();
+  });
+
+  await page.getByRole('button', { name: 'Add a card to Todo' }).click();
+  await page.keyboard.type('Held');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+  await expect(count(page, 'Todo')).toHaveText('3');
+
+  const refreshed = page.waitForResponse((response) => response.url().includes('/aggregate'));
+
+  await drag(page, titles(page, 'Todo').first(), column(page, 'Doing'), 'middle');
+  await refreshed;
+  await expect(count(page, 'Todo')).toHaveText('2');
+
+  release();
+
+  await expect(titles(page, 'Todo')).toHaveText(['b', 'Held']);
+  await expect(count(page, 'Todo')).toHaveText('2');
+  await expect(count(page, 'Doing')).toHaveText('1');
+});

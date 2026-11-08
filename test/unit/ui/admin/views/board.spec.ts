@@ -331,9 +331,13 @@ describe('collection board', () => {
       'configured,-createdAt',
     );
     expect(resolveBoardSort({})).toBeUndefined();
-    expect(resolveBoardSort({ orderField: '_order_board' })).toBe('_order_board');
-    expect(resolveBoardSort({ defaultSort: '-priority', orderField: '_order_board' })).toBe(
-      '-priority',
+    expect(resolveBoardSort({ orderField: '_order' })).toBe('_order');
+    expect(resolveBoardSort({ defaultSort: '-priority', orderField: '_order' })).toBe('-priority');
+    expect(resolveBoardSort({ orderField: '_order', preferenceSort: '_order_board' })).toBe(
+      '_order',
+    );
+    expect(resolveBoardSort({ orderField: '_order', querySort: 'priority,-_order_by_stage' })).toBe(
+      'priority,-_order',
     );
   });
 

@@ -21,11 +21,9 @@ export type BoardDraft = {
 export function useInlineAdd({
   create,
   onCreated,
-  onTotal,
 }: {
   create: (draft: BoardDraft) => Promise<BoardRow>;
-  onCreated: (doc: BoardRow) => void;
-  onTotal: (columnKey: string, delta: number) => void;
+  onCreated: (doc: BoardRow, columnKey: string) => void;
 }) {
   const [drafts, setDrafts] = useState<BoardDraft[]>([]);
   const queue = useRef<Promise<void>>(Promise.resolve());
@@ -64,7 +62,6 @@ export function useInlineAdd({
     const saving = { ...draft, error: undefined, saving: true, title: draft.title.trim() };
 
     patch(id, saving);
-    onTotal(draft.columnKey, 1);
     if (next) open(draft.columnKey);
 
     queue.current = queue.current.then(async () => {
@@ -72,10 +69,8 @@ export function useInlineAdd({
         const doc = await create(saving);
 
         remove(id);
-        onCreated(doc);
+        onCreated(doc, draft.columnKey);
       } catch (error) {
-        onTotal(draft.columnKey, -1);
-
         patch(id, {
           error: error instanceof Error ? error.message : 'Could not save the card',
           saving: false,
@@ -84,10 +79,17 @@ export function useInlineAdd({
     });
   };
 
+  const pending: Record<string, number> = {};
+
+  for (const draft of drafts) {
+    if (draft.saving) pending[draft.columnKey] = (pending[draft.columnKey] ?? 0) + 1;
+  }
+
   return {
     change: (id: string, title: string) => patch(id, { title }),
     drafts,
     open,
+    pending,
     remove,
     submit,
   };
