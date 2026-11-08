@@ -19,6 +19,11 @@ export type SummaryChoices = Record<string, SummaryChoice>;
 
 const choices = new Set<string>(['none', 'count', 'sum', 'avg', 'min', 'max']);
 
+/** A record's own value for a column path, so a column named `constructor` reads nothing inherited. */
+export function getOwn<T>(record: Record<string, T> | undefined, path: string): T | undefined {
+  return record && Object.hasOwn(record, path) ? record[path] : undefined;
+}
+
 /** The `summary` of a stored view preference, keeping only well-formed choices. */
 export function readSummaryChoices(preference: unknown): SummaryChoices {
   const summary: unknown =
@@ -36,7 +41,7 @@ export function readSummaryChoices(preference: unknown): SummaryChoices {
   );
 }
 
-/** Each column's total: the user's saved choice, else the view's default, if the column takes it. */
+/** Each column's total: the user's saved choice if the column takes it, else the view's default. */
 export function resolveSummary({
   columns,
   defaults = {},
@@ -48,8 +53,12 @@ export function resolveSummary({
 }): Record<string, SummaryOperation> {
   const resolved: Record<string, SummaryOperation> = {};
 
+  const fits = (choice: SummaryChoice | undefined, column: SummaryColumn) =>
+    choice === 'none' || (choice !== undefined && column.operations.includes(choice));
+
   for (const [path, column] of Object.entries(columns)) {
-    const choice = saved[path] ?? defaults[path];
+    const own = getOwn(saved, path);
+    const choice = fits(own, column) ? own : getOwn(defaults, path);
 
     if (choice && choice !== 'none' && column.operations.includes(choice)) resolved[path] = choice;
   }
@@ -80,7 +89,7 @@ export function buildSummaryRequest({
   const values: SummaryRequest['values'] = {};
 
   for (const path of paths) {
-    const operation = summary[path];
+    const operation = getOwn(summary, path);
 
     if (operation) values[path] = operation === 'count' ? { count: true } : { [operation]: path };
   }

@@ -57,17 +57,23 @@ export function hasBoardView(collection: CollectionConfig): boolean {
   return (collection.admin?.views ?? [DEFAULT_VIEW]).some((view) => view.type === 'board');
 }
 
-function resolveDoneField(fields: Field[], path: string): Field | TabAsField | undefined {
+function resolveFieldPath(fields: Field[], path: string): (Field | TabAsField)[] | undefined {
   const [name, ...rest] = path.split('.');
   const field = flattenTopLevelFields(fields).find(
     (candidate) => 'name' in candidate && candidate.name === name,
   );
 
-  if (!field || rest.length === 0) return field;
+  if (!field) return undefined;
+  if (rest.length === 0) return [field];
+  if (field.type !== 'group' && field.type !== 'tab') return undefined;
 
-  return field.type === 'group' || field.type === 'tab'
-    ? resolveDoneField(field.fields, rest.join('.'))
-    : undefined;
+  const inner = resolveFieldPath(field.fields, rest.join('.'));
+
+  return inner && [field, ...inner];
+}
+
+function resolveDoneField(fields: Field[], path: string): Field | TabAsField | undefined {
+  return resolveFieldPath(fields, path)?.at(-1);
 }
 
 function validateUseAsDone(collection: CollectionConfig): void {
@@ -91,13 +97,16 @@ function getConfigSummaryKind(
     return 'date';
   }
 
-  const field = resolveDoneField(collection.fields, path);
+  const chain = resolveFieldPath(collection.fields, path);
+  const field = chain?.at(-1);
 
-  if (!field || !('name' in field)) return undefined;
+  if (!chain || !field || !('name' in field)) return undefined;
 
-  if (('hidden' in field && field.hidden === true) || ('access' in field && field.access?.read)) {
-    return 'guarded';
-  }
+  const isGuarded = chain.some(
+    (step) => ('hidden' in step && step.hidden === true) || ('access' in step && step.access?.read),
+  );
+
+  if (isGuarded) return 'guarded';
 
   if ('virtual' in field && field.virtual) return 'other';
 

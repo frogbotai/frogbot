@@ -20,6 +20,7 @@ import { createPortal } from 'react-dom';
 import {
   buildSummaryRequest,
   formatSummary,
+  getOwn,
   getSummaryLabel,
   resolveSummary,
   type SummaryChoice,
@@ -129,7 +130,7 @@ export function ListSummary({
   const values = useListSummary({
     api: config.routes.api,
     body: buildSummaryRequest({
-      paths: accessors.filter((path) => columns[path]),
+      paths: accessors.filter((path) => Object.hasOwn(columns, path)),
       locale: config.localization ? locale?.code : undefined,
       summary,
       where,
@@ -140,7 +141,7 @@ export function ListSummary({
   const choose = async (path: string, choice: SummaryChoice) => {
     const next = { ...choices };
 
-    if (choice === (defaults?.[path] ?? 'none')) delete next[path];
+    if (choice === (getOwn(defaults, path) ?? 'none')) delete next[path];
     else next[path] = choice;
 
     setChoices(next);
@@ -171,7 +172,7 @@ export function ListSummary({
     <tfoot className={baseClass}>
       <tr>
         {accessors.map((accessor, index) => {
-          const column = columns[accessor];
+          const column = getOwn(columns, accessor);
           const field = fields.get(accessor);
 
           if (!column && index === 0) {
@@ -184,7 +185,7 @@ export function ListSummary({
 
           if (!column) return <td className={`${baseClass}__cell`} key={accessor || index} />;
 
-          const operation = summary[accessor];
+          const operation = getOwn(summary, accessor);
 
           return (
             <td className={`${baseClass}__cell`} key={accessor}>
