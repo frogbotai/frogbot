@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { GRAPHQL_POST } from '@frogbotai/next/routes';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
@@ -1232,6 +1232,110 @@ describe('API keys plugin integration', () => {
       expect(capped.status).toBe(403);
       expect(capped.body.error.message).toBe('API key "P" has used its monthly cap of $10.00.');
       expect(modelCalls).toEqual(['allowed', 'allowed']);
+    });
+  });
+
+  describe('expiring keys', () => {
+    type Minted = { id: number | string; token: string; expiresAt?: string | null; error?: string };
+
+    let session: { Authorization: string };
+
+    beforeEach(async () => {
+      await createOwner();
+      const login = await booted.restClient.post<{ token: string }>(
+        '/api/accounts/login',
+        credentials,
+      );
+
+      session = { Authorization: `JWT ${login.body.token}` };
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const mint = (headers: Record<string, string>, body: Record<string, unknown>) =>
+      booted.restClient.post<Minted>('/api/credentials/mint', body, { headers });
+
+    const asKey = (token: string) => ({ 'x-service-key': token });
+
+    const stored = (id: number | string) =>
+      booted.frogbot.findByID({ collection: 'credentials', id, depth: 0, overrideAccess: true });
+
+    it('refuses an unreadable or past expiresAt and stores a future one', async () => {
+      const unreadable = await mint(session, { name: 'Bad', expiresAt: 'not a date' });
+      const past = await mint(session, { name: 'Past', expiresAt: '2020-01-01T00:00:00.000Z' });
+
+      expect(unreadable.status).toBe(400);
+      expect(past.status).toBe(400);
+      expect(past.body.error).toBe('expiresAt must be in the future.');
+
+      const expiresAt = new Date(Date.now() + 30 * 864e5).toISOString();
+      const future = await mint(session, { name: 'Future', expiresAt });
+
+      expect(future.status).toBe(201);
+      expect(future.body.expiresAt).toBe(expiresAt);
+      expect((await stored(future.body.id)).expiresAt).toBe(expiresAt);
+
+      const undated = await mint(session, { name: 'Forever' });
+
+      expect(undated.body.expiresAt).toBeNull();
+      expect((await stored(undated.body.id)).expiresAt ?? null).toBeNull();
+    });
+
+    it('stops a key signing in once its date passes, and refuses to rotate it', async () => {
+      const expiresAt = new Date(Date.now() + 864e5).toISOString();
+      const key = await mint(session, { name: 'Day pass', expiresAt });
+
+      expect(
+        (await booted.restClient.get('/api/credentials', { headers: asKey(key.body.token) }))
+          .status,
+      ).toBe(200);
+
+      const lastUsedAt = (await stored(key.body.id)).lastUsedAt;
+
+      vi.useFakeTimers({ now: Date.parse(expiresAt) + 1000, toFake: ['Date'] });
+
+      expect(
+        (await booted.restClient.get('/api/credentials', { headers: asKey(key.body.token) }))
+          .status,
+      ).toBe(403);
+      expect((await stored(key.body.id)).lastUsedAt).toBe(lastUsedAt);
+
+      const login = await booted.restClient.post<{ token: string }>(
+        '/api/accounts/login',
+        credentials,
+      );
+
+      const rotated = await booted.restClient.post<Minted>(
+        `/api/credentials/${key.body.id}/rotate`,
+        undefined,
+        { headers: { Authorization: `JWT ${login.body.token}` } },
+      );
+
+      expect(rotated.status).toBe(400);
+      expect(rotated.body.error).toBe('This key has expired. Mint a new key instead.');
+      expect((await stored(key.body.id)).revokedAt ?? null).toBeNull();
+    });
+
+    it("gives a key minted by a key no later date than its parent's", async () => {
+      const parentDate = new Date(Date.now() + 30 * 864e5).toISOString();
+      const parent = await mint(session, {
+        name: 'Parent',
+        expiresAt: parentDate,
+        data: { canMint: true },
+      });
+
+      const undated = await mint(asKey(parent.body.token), { name: 'Undated' });
+      const later = await mint(asKey(parent.body.token), {
+        name: 'Later',
+        expiresAt: new Date(Date.now() + 90 * 864e5).toISOString(),
+      });
+
+      expect(undated.status, JSON.stringify(undated.body)).toBe(201);
+      expect(undated.body.expiresAt).toBe(parentDate);
+      expect(later.body.expiresAt).toBe(parentDate);
+      expect((await stored(undated.body.id)).expiresAt).toBe(parentDate);
     });
   });
 });
