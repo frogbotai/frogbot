@@ -57,6 +57,7 @@ export {
 } from './components/card.js';
 export { Checkbox, type CheckboxProps } from './components/checkbox.js';
 export { Collapsible, CollapsibleContent, CollapsibleTrigger } from './components/collapsible.js';
+export { CommandBlock, type CommandBlockProps } from './components/command-block.js';
 export {
   CommandMenu,
   type CommandMenuGroup,
