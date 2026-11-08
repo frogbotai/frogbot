@@ -366,16 +366,49 @@ describe('collection views', () => {
   it.each([
     ['a missing field', 'finished'],
     ['a field that is not a checkbox', 'title'],
+    ['a checkbox inside an array', 'items.done'],
+    ['a sort-style leading minus', '-done'],
+    ['an empty path', ''],
   ])('rejects useAsDone naming %s', (_, useAsDone) => {
     expect(() =>
       compileCollectionViews({
         collection: {
           slug: 'tasks',
-          fields: [{ name: 'title', type: 'text' }],
+          fields: [
+            { name: 'title', type: 'text' },
+            { name: 'done', type: 'checkbox' },
+            { name: 'items', type: 'array', fields: [{ name: 'done', type: 'checkbox' }] },
+          ],
           admin: { useAsDone },
         },
       }),
     ).toThrow(`Collection "tasks" admin.useAsDone "${useAsDone}" must name a checkbox field`);
+  });
+
+  it('accepts a useAsDone checkbox inside an unnamed row', () => {
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'tasks',
+        fields: [{ type: 'row', fields: [{ name: 'done', type: 'checkbox' }] }],
+        admin: { useAsDone: 'done' },
+      },
+    });
+
+    expect(admin?.custom?.frogbot.useAsDone).toBe('done');
+  });
+
+  it('rejects a function filter, since view entries are plain data', () => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [{ name: 'stage', type: 'select', options: [] }],
+          admin: {
+            views: [{ type: 'board', groupBy: 'stage', filter: (() => ({})) as never }],
+          },
+        },
+      }),
+    ).toThrow('view "board" has a function filter');
   });
 
   it('keeps CreateButton on the collection components', () => {

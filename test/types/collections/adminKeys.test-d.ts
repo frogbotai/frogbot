@@ -1,4 +1,4 @@
-import type { CollectionAdminConfig } from 'frogbot';
+import type { CollectionAdminConfig, CollectionView } from 'frogbot';
 import type { CollectionConfig as PayloadCollectionConfig } from 'payload';
 
 type PayloadAdmin = NonNullable<PayloadCollectionConfig['admin']>;
@@ -34,3 +34,11 @@ export type RemovedPayloadKeys = None<Exclude<Reviewed, keyof PayloadAdmin>>;
 export type UnexpectedFrogBotKeys = None<Exclude<keyof CollectionAdminConfig, Kept | FrogBotOnly>>;
 
 export type MissingFrogBotKeys = None<Exclude<Kept | FrogBotOnly, keyof CollectionAdminConfig>>;
+
+export const plainFilter: CollectionView = {
+  type: 'list',
+  filter: { archived: { equals: false } },
+};
+
+// @ts-expect-error A view's filter is plain data, not a function.
+export const functionFilter: CollectionView = { type: 'list', filter: () => ({}) };

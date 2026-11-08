@@ -38,7 +38,7 @@ Add a board entry to `admin.views` to show documents as cards grouped into colum
 | `afterColumns` | `FrogBotComponent[]` | No; `[]` | Renders after the columns. |
 | `ColumnHeader` | `FrogBotComponent` | No; built-in header | Replaces each column header. See [Column headers](#column-headers). |
 | `Card` | `FrogBotComponent` | No; built-in card | Replaces each card and receives the document as its `row` prop. |
-| `NoResults` | `FrogBotComponent` | No; built-in empty state | Replaces the columns when the board's filters match no records. |
+| `NoResults` | `FrogBotComponent` | No; built-in empty state | Replaces the columns when the board's filters or search match no records. An unfiltered empty board shows its columns instead. |
 
 ```ts
 export const Tasks: CollectionConfig = {

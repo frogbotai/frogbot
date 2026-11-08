@@ -56,11 +56,24 @@ export function hasBoardView(collection: CollectionConfig): boolean {
   return (collection.admin?.views ?? [DEFAULT_VIEW]).some((view) => view.type === 'board');
 }
 
+function resolveDoneField(fields: Field[], path: string): Field | TabAsField | undefined {
+  const [name, ...rest] = path.split('.');
+  const field = flattenTopLevelFields(fields).find(
+    (candidate) => 'name' in candidate && candidate.name === name,
+  );
+
+  if (!field || rest.length === 0) return field;
+
+  return field.type === 'group' || field.type === 'tab'
+    ? resolveDoneField(field.fields, rest.join('.'))
+    : undefined;
+}
+
 function validateUseAsDone(collection: CollectionConfig): void {
   const path = collection.admin?.useAsDone;
   if (path === undefined) return;
 
-  if (resolveField(collection.fields, path)?.type !== 'checkbox') {
+  if (resolveDoneField(collection.fields, path)?.type !== 'checkbox') {
     throw new Error(
       `[frogbot] Collection "${collection.slug}" admin.useAsDone "${path}" must name a checkbox field, top level or a dot path into a group.`,
     );
@@ -125,6 +138,12 @@ export function compileCollectionViews({
 
   for (const view of views) {
     validateAdminIcon(view.icon);
+
+    if (typeof view.filter === 'function') {
+      throw new Error(
+        `[frogbot] Collection "${collection.slug}" view "${view.slug}" has a function filter. A view's filter is a plain Where object.`,
+      );
+    }
 
     if (
       view.type === 'board' &&

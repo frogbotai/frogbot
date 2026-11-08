@@ -244,7 +244,7 @@ Every view renders in one frame: the collection title, a row of view tabs under 
 
 Each tab shows its view's `icon` and `label` and links to the view's own route, so a view's URL can be shared and keeps its `access` rule. Trash, when the collection has it, follows the views in the same row. Below the small breakpoint (768px) the tabs become one menu. Opening the collection again returns to the view the user last picked with the tabs.
 
-A view is a saved setup, not just a layout. Config gives each view its defaults (`filter`, `defaultSort`, `defaultFields`, `pagination`), and whatever a user changes in a view (filters, sort, columns, page size and grouping) is saved for that user and that view in the `collection-<slug>-view-<viewSlug>` preference. A URL that sets none of them opens the saved setup. **Reset to default** in the view menu deletes it and returns to the config.
+A view is a saved setup, not just a layout. Config gives each view its defaults (`filter`, `defaultSort`, `defaultFields`, `pagination`), and whatever a user changes in a view (filters, sort, columns, page size and grouping) is saved for that user and that view in the `collection-<slug>-view-<viewSlug>` preference. A URL that sets none of them opens the saved setup. **Reset to default** in the view menu deletes it and returns to the config. A URL that sets any of them is saved as the setup, and filters it leaves out are cleared. Custom views own their content, so they save no setup and have no reset.
 
 View entries are plain, serializable data: `filter` is a `Where` object and React lives only in `components`. `access` is the one function a view takes.
 
@@ -310,7 +310,7 @@ These shell slots are shared by list, board, calendar, and custom views. Each va
 | `menuItems` | `FrogBotComponent[]` | No; `[]` | Adds entries to the view menu, before **Reset to default**. |
 | `beforeView` | `FrogBotComponent[]` | No; `[]` | Renders inside the frame before the header. |
 | `afterView` | `FrogBotComponent[]` | No; `[]` | Renders inside the frame after the view body. |
-| `NoResults` | `FrogBotComponent` | No; built-in empty state | Replaces the empty state shown when the view matches no records. It replaces the list's table and the board's columns; the calendar keeps its grid under it. Not shown in relationship drawers. |
+| `NoResults` | `FrogBotComponent` | No; built-in empty state | Replaces the empty state shown when the view matches no records. It replaces the list's table, and the board's columns when filters or a search match nothing (an unfiltered empty board keeps its columns, each with its own empty state and add button); the calendar keeps its grid under it. Not shown in relationship drawers. |
 
 #### ListView
 

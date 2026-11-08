@@ -93,7 +93,8 @@ function ListFrameInner({ listProps, ...frame }: ListFrameClientProps) {
     viewType !== 'trash' &&
     Boolean(upload && upload.bulkUpload && !upload.hideFileInputOnCreate);
 
-  const tableRef = useDoneRows(docs, getUseAsDone(collectionConfig));
+  const rowDocs = listProps.groupedData?.flatMap((group) => group.data.docs) ?? docs;
+  const tableRef = useDoneRows(rowDocs, getUseAsDone(collectionConfig));
   const aiFields = aiBulkMenuFields({
     canUpdate: Boolean(permissions?.collections?.[collectionSlug]?.update),
     fields: collectionConfig.fields,

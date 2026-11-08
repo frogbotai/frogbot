@@ -199,4 +199,11 @@ describe('buildFrameSlots', () => {
 
     expect(show(listMenuItems).getByRole('button').textContent).toBe('Reset board');
   });
+
+  it('gives a custom view, which saves no setup, no reset item', () => {
+    const view = { component: './Map#Map', slug: 'map', type: 'custom' as const };
+    const { listMenuItems } = buildFrameSlots(args({ view }));
+
+    expect(listMenuItems).toEqual([]);
+  });
 });

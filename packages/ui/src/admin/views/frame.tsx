@@ -215,7 +215,7 @@ export function buildFrameSlots(args: FrameSlotsArgs & { skipLayoutSlots?: boole
     hasCreateButton: Boolean(CreateButton),
     listMenuItems: [
       ...menuItems,
-      ...(args.view && !isTrash
+      ...(args.view && args.view.type !== 'custom' && !isTrash
         ? [
             <ResetViewMenuItem
               collectionSlug={collectionSlug}
