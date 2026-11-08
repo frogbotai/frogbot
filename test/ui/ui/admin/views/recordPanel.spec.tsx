@@ -127,7 +127,6 @@ describe('record panel', () => {
 
     mocks.mostRecentUpdate = {
       doc: { id: 7 },
-      drawerSlug: 'fb-record-panel',
       entitySlug: 'tasks',
       id: 7,
       operation: 'create',

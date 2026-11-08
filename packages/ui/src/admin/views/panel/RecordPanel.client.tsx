@@ -146,7 +146,7 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
     const isCreate =
       current.state.mode === 'create' &&
       mostRecentUpdate.operation === 'create' &&
-      mostRecentUpdate.drawerSlug === PANEL_DRAWER_SLUG;
+      (!mostRecentUpdate.drawerSlug || mostRecentUpdate.drawerSlug === PANEL_DRAWER_SLUG);
 
     const isUpdate = current.state.mode === 'edit' && String(id) === current.state.id;
     if (!isCreate && !isUpdate) return;
