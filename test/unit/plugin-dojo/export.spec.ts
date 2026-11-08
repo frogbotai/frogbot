@@ -16,6 +16,17 @@ import { tempDir } from './cli/helpers.js';
 const env = { jobsSecret: 'jobs-secret' } as DojoEnv;
 const key = '.dojo/export/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed.db';
 
+const collections = [
+  { slug: 'deals' },
+  { slug: 'users', auth: true },
+  { slug: 'media', upload: { staticDir: 'public/media' } },
+  { slug: 'outside', upload: { staticDir: '../elsewhere' } },
+];
+
+const sanitized = (sanitizedCollections: unknown[]) => ({
+  _internal: { payloadConfig: Promise.resolve({ collections: sanitizedCollections }) },
+});
+
 async function liveApp() {
   const dir = await tempDir();
   const path = join(dir, 'data', 'frogbot.db');
@@ -39,10 +50,9 @@ async function liveApp() {
 
   db.close();
 
-  const uploaded: { key: string; tables: Record<string, number> }[] = [];
+  const uploaded: { key: string; tables: Record<string, number>; folders: unknown[] }[] = [];
   const endpoint = dojoExportEndpoint({
     env,
-    collections: [{ slug: 'deals' }, { slug: 'users', auth: true }],
     cwd: dir,
     databaseUrl: () => 'file:./data/frogbot.db',
     upload: ({ key: uploadedKey, path: copy }) => {
@@ -56,8 +66,10 @@ async function liveApp() {
         ),
       );
 
+      const folders = read.prepare('SELECT slug, static_dir FROM frogbot_dojo_uploads').all();
+
       read.close();
-      uploaded.push({ key: uploadedKey, tables });
+      uploaded.push({ key: uploadedKey, tables, folders: folders.map((row) => ({ ...row })) });
 
       return Promise.resolve();
     },
@@ -69,6 +81,7 @@ async function liveApp() {
       json: () => Promise.resolve(body),
       frogbot: {
         db: snapshot ? { snapshot: sqliteSnapshot({ url: `file:${path}` }) } : {},
+        config: sanitized(collections),
       },
     } as unknown as FrogBotRequest);
 
@@ -76,7 +89,7 @@ async function liveApp() {
 }
 
 describe('POST /api/dojo/export', () => {
-  it('AC 2: the copy keeps records and users, drops jobs, locks and sessions, and leaves nothing behind', async () => {
+  it('AC 2: the copy keeps records and users, drops jobs, locks and sessions, records upload folders inside the app, and leaves nothing behind', async () => {
     const app = await liveApp();
 
     const response = await app.call({ key });
@@ -93,6 +106,7 @@ describe('POST /api/dojo/export', () => {
           payload_jobs: 0,
           payload_locked_documents: 0,
         },
+        folders: [{ slug: 'media', static_dir: 'public/media' }],
       },
     ]);
     expect(await readdir(join(app.dir, 'data'))).toEqual(['frogbot.db']);
@@ -129,7 +143,6 @@ describe('POST /api/dojo/export', () => {
     const app = await liveApp();
     const full = dojoExportEndpoint({
       env,
-      collections: [],
       cwd: app.dir,
       databaseUrl: () => 'file:./data/frogbot.db',
       upload: () =>
@@ -141,7 +154,10 @@ describe('POST /api/dojo/export', () => {
     const response = await full.handler({
       headers: new Headers({ authorization: 'Bearer jobs-secret' }),
       json: () => Promise.resolve({ key }),
-      frogbot: { db: { snapshot: sqliteSnapshot({ url: `file:${app.path}` }) } },
+      frogbot: {
+        db: { snapshot: sqliteSnapshot({ url: `file:${app.path}` }) },
+        config: sanitized([]),
+      },
     } as unknown as FrogBotRequest);
 
     expect(response.status).toBe(507);
@@ -173,9 +189,9 @@ describe('POST /api/dojo/export', () => {
     const response = await dojoExportEndpoint(options).handler({
       headers: new Headers({ authorization: 'Bearer jobs-secret' }),
       json: () => Promise.resolve({ key }),
-      frogbot: { db: { snapshot: sqliteSnapshot({ url: `file:${app.path}` }) } },
-      payload: {
-        config: { collections: [{ slug: 'deals' }, { slug: 'users', auth: true }] },
+      frogbot: {
+        db: { snapshot: sqliteSnapshot({ url: `file:${app.path}` }) },
+        config: sanitized([{ slug: 'deals' }, { slug: 'users', auth: true }]),
       },
     } as unknown as FrogBotRequest);
 

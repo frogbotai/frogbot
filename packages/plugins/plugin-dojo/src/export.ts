@@ -8,7 +8,8 @@ import { S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import type { DatabaseAdapter, Endpoint, FrogBotConfig } from 'frogbot';
 
-import { cleanSnapshot, type TableCollection } from './cli/data/inventory.js';
+import { cleanSnapshot } from './cli/data/inventory.js';
+import { uploadFoldersSql } from './cli/data/uploadFolders.js';
 import type { DojoEnv } from './env.js';
 
 /** The only keys Dojo may ask for: `.dojo/export/<id>.db` in the app's bucket. */
@@ -84,20 +85,18 @@ export function r2Upload(env: DojoEnv): ExportUpload {
 /**
  * `POST /api/dojo/export`, for Dojo only (`Authorization: Bearer <DOJO_JOBS_SECRET>`): copies the
  * database with the adapter's snapshot, so writers don't wait, empties what a share empties (jobs,
- * waitpoints, locks, KV, trigger subscriptions and sessions), and uploads the copy to `key` in the
- * app's bucket. Refuses with `disk_full` when the database's disk lacks room for the copy and its
- * cleaning, twice the database's size, and leaves nothing behind either way.
+ * waitpoints, locks, KV, trigger subscriptions and the sessions of every auth collection in the
+ * sanitized config), records each upload collection's folder for `apps pull`, and uploads the copy
+ * to `key` in the app's bucket. Refuses with `disk_full` when the database's disk lacks room for the
+ * copy and its cleaning, twice the database's size, and leaves nothing behind either way.
  */
 export function dojoExportEndpoint({
   env,
-  collections,
   upload = r2Upload(env),
   cwd = process.cwd(),
   databaseUrl = () => process.env.DATABASE_URL,
 }: {
   env: DojoEnv;
-  /** The app's collections, whose auth ones have `_sessions` tables to empty. */
-  collections: TableCollection[];
   upload?: ExportUpload;
   cwd?: string;
   databaseUrl?: () => string | undefined;
@@ -142,8 +141,12 @@ export function dojoExportEndpoint({
 
         if (!copy) return refuse('no_database');
 
+        const { collections } = await req.frogbot.config._internal.payloadConfig;
+
         try {
           await cleanSnapshot(copy, collections);
+
+          for (const sql of uploadFoldersSql(collections, cwd)) await copy.run(sql);
         } finally {
           await copy.close();
         }
@@ -166,9 +169,6 @@ export function dojoExportEndpoint({
 export function withDojoExport(config: FrogBotConfig, env: DojoEnv): FrogBotConfig {
   return {
     ...config,
-    endpoints: [
-      ...(config.endpoints ?? []),
-      dojoExportEndpoint({ env, collections: config.collections }),
-    ],
+    endpoints: [...(config.endpoints ?? []), dojoExportEndpoint({ env })],
   };
 }
