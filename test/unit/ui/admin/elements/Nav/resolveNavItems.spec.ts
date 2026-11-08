@@ -115,12 +115,12 @@ describe('resolveNavItems', () => {
   });
 
   it.each(['brand-google', 'brand-git-hub', 'brand-slack'])(
-    'rejects the brand icon %s, as sanitize does for a static array',
+    'accepts the brand icon %s, as sanitize does for a static array',
     async (icon) => {
-      expect(() => validateAdminIcon(icon)).toThrow(/brand logo/);
+      expect(() => validateAdminIcon(icon)).not.toThrow();
       await expect(
         resolveNavItems({ config: config(() => [{ icon, label: 'B', path: '/b' }]), importMap }),
-      ).rejects.toThrow(`icon "${icon}" is neither`);
+      ).resolves.toEqual([{ icon, label: 'B', path: '/b' }]);
     },
   );
 

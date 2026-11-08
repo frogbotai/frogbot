@@ -297,19 +297,28 @@ describe('predicates and resolution', () => {
 
   it('memoizes a custom resolver once per request', async () => {
     const resolveRoles = vi.fn(() => ['finance']);
-    const result = await rolesPlugin({ roles: ['finance'], resolveRoles })(config());
-    const frogbot = {
-      find: vi.fn().mockResolvedValue({ docs: [], hasNextPage: false }),
-      logger: { warn: vi.fn() },
-    };
+    const sanitized = await buildConfig({
+      ...config(),
+      plugins: [rolesPlugin({ roles: ['finance'], resolveRoles })],
+    });
 
-    await runOnInit(result, frogbot);
-
-    const request = { ...req([]), frogbot } as unknown as FrogBotRequest;
+    const request = { ...req([]), frogbot: { config: sanitized } } as unknown as FrogBotRequest;
 
     expect(hasRole(request, 'finance')).toBe(true);
     expect(rolesOf(request)).toEqual(['finance']);
     expect(resolveRoles).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses a custom resolver when onInit never ran', async () => {
+    const sanitized = await buildConfig({
+      ...config(),
+      plugins: [rolesPlugin({ roles: ['staff'], resolveRoles: () => ['staff'] })],
+    });
+
+    const request = { ...req([]), frogbot: { config: sanitized } } as unknown as FrogBotRequest;
+
+    expect(rolesOf(request)).toEqual(['staff']);
+    expect(hasRole(request, 'staff')).toBe(true);
   });
 });
 

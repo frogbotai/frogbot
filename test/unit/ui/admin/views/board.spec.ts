@@ -3,9 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { aiField } from '../../../../../packages/frogbot/src/fields/baseFields/ai/index.js';
 import {
   buildBoardReorderBody,
-  buildColumnWhere,
   getBoardCardColumns,
-  getBoardColumnKey,
   getBoardGroupBy,
   getBoardPreferenceKey,
   getBoardPreferenceUpdate,
@@ -21,9 +19,13 @@ import {
 } from '../../../../../packages/ui/src/admin/views/Board/data.js';
 import { resolveActiveViewSlug } from '../../../../../packages/ui/src/admin/views/Board/resolveActiveView.js';
 import {
-  resolveBoardField,
-  resolveColumns,
-} from '../../../../../packages/ui/src/admin/views/Board/resolveColumns.js';
+  buildGroupWhere,
+  getGroupKey,
+} from '../../../../../packages/ui/src/admin/views/groups/keys.js';
+import {
+  resolveGroupField,
+  resolveGroups,
+} from '../../../../../packages/ui/src/admin/views/groups/resolve.js';
 
 describe('collection board', () => {
   it('identifies hidden order fields for sort-option filtering', () => {
@@ -73,7 +75,7 @@ describe('collection board', () => {
     } as never;
 
     await expect(
-      resolveColumns({ collectionSlug: 'posts', field, path: 'stage', req: {} as never }),
+      resolveGroups({ collectionSlug: 'posts', field, path: 'stage', req: {} as never }),
     ).resolves.toEqual([
       { key: 'string:review', label: 'Review', value: 'review' },
       { key: 'string:done', label: 'Done', value: 'done' },
@@ -93,7 +95,7 @@ describe('collection board', () => {
       ],
     } as never;
 
-    const columns = await resolveColumns({
+    const columns = await resolveGroups({
       collectionSlug: 'posts',
       field,
       path: 'stage',
@@ -122,7 +124,7 @@ describe('collection board', () => {
     } as never;
 
     await expect(
-      resolveColumns({
+      resolveGroups({
         collectionSlug: 'posts',
         field: { name: 'stage', type: 'relationship', relationTo: 'stages' } as never,
         path: 'stage',
@@ -149,7 +151,7 @@ describe('collection board', () => {
     } as never;
 
     await expect(
-      resolveColumns({
+      resolveGroups({
         collectionSlug: 'posts',
         field: { name: 'priority', type: 'number' } as never,
         path: 'priority',
@@ -166,7 +168,7 @@ describe('collection board', () => {
       { name: 'workflow', type: 'group', fields: [{ name: 'stage', type: 'select' }] },
     ] as never;
 
-    expect(resolveBoardField(fields, 'workflow.stage')).toMatchObject({ name: 'stage' });
+    expect(resolveGroupField(fields, 'workflow.stage')).toMatchObject({ name: 'stage' });
     expect(setPath('workflow.stage', 'done')).toEqual({ workflow: { stage: 'done' } });
     expect(getPath({ workflow: { stage: 'done' } }, 'workflow.stage')).toBe('done');
   });
@@ -179,10 +181,10 @@ describe('collection board', () => {
       { name: 'content', type: 'richText' },
     ] as never;
 
-    expect(resolveBoardField(fields, 'tags')).toMatchObject({ name: 'tags' });
-    expect(resolveBoardField(fields, 'owners')).toMatchObject({ name: 'owners' });
-    expect(resolveBoardField(fields, 'title')).toMatchObject({ name: 'title' });
-    expect(resolveBoardField(fields, 'content')).toBeUndefined();
+    expect(resolveGroupField(fields, 'tags')).toMatchObject({ name: 'tags' });
+    expect(resolveGroupField(fields, 'owners')).toMatchObject({ name: 'owners' });
+    expect(resolveGroupField(fields, 'title')).toMatchObject({ name: 'title' });
+    expect(resolveGroupField(fields, 'content')).toBeUndefined();
   });
 
   it('resolves group fields inside rows, collapsibles, unnamed groups and tabs', () => {
@@ -208,12 +210,12 @@ describe('collection board', () => {
       },
     ] as never;
 
-    expect(resolveBoardField(fields, 'status')).toMatchObject({ name: 'status' });
-    expect(resolveBoardField(fields, 'stage')).toMatchObject({ name: 'stage' });
-    expect(resolveBoardField(fields, 'priority')).toMatchObject({ name: 'priority' });
-    expect(resolveBoardField(fields, 'kind')).toMatchObject({ name: 'kind' });
-    expect(resolveBoardField(fields, 'workflow.stage')).toMatchObject({ name: 'stage' });
-    expect(resolveBoardField(fields, 'meta.status')).toMatchObject({ name: 'status' });
+    expect(resolveGroupField(fields, 'status')).toMatchObject({ name: 'status' });
+    expect(resolveGroupField(fields, 'stage')).toMatchObject({ name: 'stage' });
+    expect(resolveGroupField(fields, 'priority')).toMatchObject({ name: 'priority' });
+    expect(resolveGroupField(fields, 'kind')).toMatchObject({ name: 'kind' });
+    expect(resolveGroupField(fields, 'workflow.stage')).toMatchObject({ name: 'stage' });
+    expect(resolveGroupField(fields, 'meta.status')).toMatchObject({ name: 'status' });
   });
 
   it('resolves an AI select inside its row and its option columns in order', async () => {
@@ -227,12 +229,12 @@ describe('collection board', () => {
       }),
     ] as never;
 
-    const field = resolveBoardField(fields, 'type');
+    const field = resolveGroupField(fields, 'type');
 
     expect(field).toMatchObject({ name: 'type', type: 'select' });
 
     await expect(
-      resolveColumns({
+      resolveGroups({
         collectionSlug: 'tasks',
         field: field as never,
         path: 'type',
@@ -256,8 +258,8 @@ describe('collection board', () => {
       },
     ] as never;
 
-    expect(resolveBoardField(fields, 'content')).toBeUndefined();
-    expect(resolveBoardField(fields, 'status')).toBeUndefined();
+    expect(resolveGroupField(fields, 'content')).toBeUndefined();
+    expect(resolveGroupField(fields, 'status')).toBeUndefined();
   });
 
   it('strips direction only from the selected field path', () => {
@@ -495,10 +497,10 @@ describe('collection board', () => {
   it('merges shared filters with categorized and uncategorized columns', () => {
     const where = { owner: { equals: '1' } };
 
-    expect(buildColumnWhere(where, 'workflow.stage', 2)).toEqual({
+    expect(buildGroupWhere(where, 'workflow.stage', 2)).toEqual({
       and: [where, { 'workflow.stage': { equals: 2 } }],
     });
-    expect(buildColumnWhere(undefined, 'stage', null)).toEqual({ stage: { exists: false } });
-    expect(getBoardColumnKey(2)).not.toBe(getBoardColumnKey('2'));
+    expect(buildGroupWhere(undefined, 'stage', null)).toEqual({ stage: { exists: false } });
+    expect(getGroupKey(2)).not.toBe(getGroupKey('2'));
   });
 });

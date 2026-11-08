@@ -390,7 +390,7 @@ describe('frogbot share --replace-data', () => {
 
     setupResult.dojo.data.started = true;
 
-    const slug = setupResult.dojo.projects[0].slug;
+    const slug = setupResult.dojo.apps[0].slug;
     const before = setupResult.dojo.requests.length;
     const after = () => setupResult.dojo.requests.slice(before);
 

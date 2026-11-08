@@ -8251,10 +8251,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
           type: 'effort',
           values: ['low', 'medium', 'high', 'max'],
         },
-        {
-          type: 'budget_tokens',
-          min: 1024,
-        },
       ],
       vision: true,
       promptCaching: true,
@@ -8356,10 +8352,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
           type: 'effort',
           values: ['low', 'medium', 'high', 'max'],
         },
-        {
-          type: 'budget_tokens',
-          min: 1024,
-        },
       ],
       vision: true,
       promptCaching: true,
@@ -8373,6 +8365,42 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 3,
       output: 15,
       cache_read: 0.3,
+    },
+    providers: ['fireworks'],
+  }),
+  model('fireworks/accounts/fireworks/models/kimi-k3p1-pro', {
+    name: 'Kimi K3.1 Pro',
+    created: '2026-10-23',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
     },
     providers: ['fireworks'],
   }),
@@ -8614,6 +8642,43 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['fireworks'],
   }),
+  model('fireworks/accounts/fireworks/routers/deepseek-v4p1-flash-1017-ultrafast', {
+    name: 'DeepSeek V4.1 Flash 1017 Ultra-fast',
+    created: '2026-10-17',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 384000,
+    },
+    cost: {
+      input: 2.4,
+      output: 9.6,
+      cache_read: 0.048,
+    },
+    providers: ['fireworks'],
+  }),
   model('fireworks/accounts/fireworks/routers/deepseek-v4p1-flash-spot', {
     name: 'DeepSeek V4.1 Flash Spot',
     created: '2026-09-10',
@@ -8832,10 +8897,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
           type: 'effort',
           values: ['low', 'medium', 'high', 'max'],
         },
-        {
-          type: 'budget_tokens',
-          min: 1024,
-        },
       ],
       vision: true,
       promptCaching: true,
@@ -8871,10 +8932,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
         {
           type: 'effort',
           values: ['low', 'medium', 'high', 'max'],
-        },
-        {
-          type: 'budget_tokens',
-          min: 1024,
         },
       ],
       vision: true,
@@ -8912,10 +8969,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
           type: 'effort',
           values: ['low', 'medium', 'high', 'max'],
         },
-        {
-          type: 'budget_tokens',
-          min: 1024,
-        },
       ],
       vision: true,
       promptCaching: true,
@@ -8951,10 +9004,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
         {
           type: 'effort',
           values: ['low', 'medium', 'high', 'max'],
-        },
-        {
-          type: 'budget_tokens',
-          min: 1024,
         },
       ],
       vision: true,
@@ -12448,9 +12497,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 393216,
     },
     cost: {
-      input: 0.0927,
+      input: 0.0999,
       output: 8,
-      cache_read: 0.0927,
+      cache_read: 0.0999,
     },
     providers: ['openrouter'],
   }),
@@ -12584,7 +12633,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     cost: {
       input: 0.1824,
-      output: 10.1583,
+      output: 9.3388,
       cache_read: 0.18,
     },
     providers: ['openrouter'],
@@ -12848,9 +12897,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 131072,
     },
     cost: {
-      input: 0.0285,
-      output: 0.0923,
-      cache_read: 0.0285,
+      input: 0.0335,
+      output: 0.083,
+      cache_read: 0.03,
     },
     providers: ['openrouter'],
   }),
@@ -13157,6 +13206,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       structuredOutput: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -13166,6 +13216,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 2.5,
       output: 5,
+      cache_read: 2.5,
     },
     providers: ['openrouter'],
   }),
@@ -13842,6 +13893,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     operations: ['chat.completions'],
     capabilities: {
+      toolCalling: true,
       structuredOutput: true,
       streaming: true,
     },
@@ -13946,6 +13998,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     operations: ['chat.completions'],
     capabilities: {
+      toolCalling: true,
       structuredOutput: true,
       streaming: true,
     },
@@ -14004,11 +14057,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 163840,
-      output: 16000,
+      output: 16384,
     },
     cost: {
-      input: 0.2574,
-      output: 1.0287,
+      input: 0.32,
+      output: 0.89,
     },
     providers: ['openrouter'],
   }),
@@ -14278,12 +14331,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 262144,
+      output: 943717,
     },
     cost: {
-      input: 0.2156,
-      output: 0.6468,
-      cache_read: 0.00686,
+      input: 0.44,
+      output: 1.32,
+      cache_read: 0.014,
     },
     providers: ['openrouter'],
   }),
@@ -14311,12 +14364,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 393216,
+      output: 384000,
     },
     cost: {
-      input: 1.6,
-      output: 3.2,
-      cache_read: 0.135,
+      input: 0.2088,
+      output: 0.4176,
+      cache_read: 0.0174,
     },
     providers: ['openrouter'],
   }),
@@ -14346,9 +14399,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.103,
-      output: 4.11,
-      cache_read: 0.098,
+      input: 0.111,
+      output: 4.44,
+      cache_read: 0.097,
     },
     providers: ['openrouter'],
   }),
@@ -14380,8 +14433,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.045,
-      output: 0.5,
+      input: 0.051,
+      output: 0.567,
       cache_read: 0.018,
     },
     providers: ['openrouter'],
@@ -14411,12 +14464,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 393216,
+      output: 943718,
     },
     cost: {
-      input: 0.15,
-      output: 0.6,
-      cache_read: 0.003,
+      input: 0.006,
+      output: 0.5,
+      cache_read: 0.005,
     },
     providers: ['openrouter'],
   }),
@@ -15030,9 +15083,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 235929,
     },
     cost: {
-      input: 0.0765,
-      output: 0.255,
-      cache_read: 0.0425,
+      input: 0.0675,
+      output: 0.225,
+      cache_read: 0.0375,
     },
     providers: ['openrouter'],
   }),
@@ -15180,102 +15233,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['openrouter'],
   }),
-  model('openrouter/inception/mercury-2', {
-    name: 'Mercury 2',
-    created: '2026-02-24',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'effort',
-          values: ['none', 'low', 'medium', 'high'],
-        },
-      ],
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 50000,
-    },
-    cost: {
-      input: 0.25,
-      output: 0.75,
-      cache_read: 0.025,
-    },
-    providers: ['openrouter'],
-  }),
-  model('openrouter/inception/mercury-2.5', {
-    name: 'Mercury 2.5',
-    created: '2026-09-08',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'effort',
-          values: ['none', 'low', 'medium', 'high'],
-        },
-      ],
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 260000,
-      output: 65536,
-    },
-    cost: {
-      input: 0.04,
-      output: 0.15,
-      cache_read: 0.004,
-    },
-    providers: ['openrouter'],
-  }),
-  model('openrouter/inception/mercury-3', {
-    name: 'Mercury 3',
-    created: '2026-10-16',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'effort',
-          values: ['none', 'low', 'medium', 'high'],
-        },
-      ],
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 131072,
-    },
-    cost: {
-      input: 0.1,
-      output: 0.35,
-      cache_read: 0.01,
-    },
-    providers: ['openrouter'],
-  }),
   model('openrouter/inclusionai/ling-3.0-flash', {
     name: 'Ling 3.0 Flash',
     created: '2026-07-23',
@@ -15379,7 +15336,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
-      structuredOutput: true,
       reasoning: true,
       reasoningOptions: [
         {
@@ -15394,9 +15350,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 262144,
     },
     cost: {
-      input: 0.075,
-      output: 0.225,
-      cache_read: 0.015,
+      input: 0.045,
+      output: 0.135,
+      cache_read: 0.009,
     },
     providers: ['openrouter'],
   }),
@@ -15524,6 +15480,56 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['openrouter'],
   }),
+  model('openrouter/liquid/lfm-3-1.7b', {
+    name: 'LFM3-1.7B',
+    created: '2026-11-06',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 8192,
+    },
+    cost: {
+      input: 0.08,
+      output: 0.2,
+      cache_read: 0.02,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/liquid/lfm-3-1.7b:free', {
+    name: 'LFM3-1.7B (free)',
+    created: '2026-11-06',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 8192,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
   model('openrouter/mancer/weaver', {
     name: 'Weaver (alpha)',
     created: '2023-08-02',
@@ -15534,6 +15540,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     operations: ['chat.completions'],
     capabilities: {
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -15543,6 +15550,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.4,
       output: 0.75,
+      cache_read: 0.4,
     },
     providers: ['openrouter'],
   }),
@@ -15613,17 +15621,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       structuredOutput: true,
-      promptCaching: true,
       streaming: true,
     },
     context: {
       input: 131072,
-      output: 117964,
+      output: 16384,
     },
     cost: {
-      input: 0.05,
-      output: 0.08,
-      cache_read: 0.025,
+      input: 0.02,
+      output: 0.04,
     },
     providers: ['openrouter'],
   }),
@@ -15664,11 +15670,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 131072,
-      output: 72000,
+      output: 117964,
     },
     cost: {
-      input: 0.0509,
-      output: 0.335,
+      input: 0.05,
+      output: 0.33,
     },
     providers: ['openrouter'],
   }),
@@ -16107,12 +16113,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 204800,
-      output: 32768,
+      output: 58982,
     },
     cost: {
-      input: 0.27,
-      output: 0.95,
-      cache_read: 0.03,
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.06,
     },
     providers: ['openrouter'],
   }),
@@ -16893,12 +16899,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 235929,
+      output: 65536,
     },
     cost: {
-      input: 0.5,
-      output: 2.5,
-      cache_read: 0.15,
+      input: 0.532,
+      output: 3.325,
+      cache_read: 0.209,
     },
     providers: ['openrouter'],
   }),
@@ -17255,17 +17261,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
           type: 'budget_tokens',
         },
       ],
-      promptCaching: true,
       streaming: true,
     },
     context: {
       input: 1048576,
-      output: 262144,
+      output: 16384,
     },
     cost: {
-      input: 0.3,
-      output: 2.4,
-      cache_read: 0.15,
+      input: 0.075,
+      output: 0.4,
     },
     providers: ['openrouter'],
   }),
@@ -17363,34 +17367,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.2,
       output: 0.2,
-    },
-    providers: ['openrouter'],
-  }),
-  model('openrouter/nvidia/nemotron-3.5-content-safety:free', {
-    name: 'Nemotron 3.5 Content Safety (free)',
-    created: '2026-06-02',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'toggle',
-        },
-      ],
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 8192,
-    },
-    cost: {
-      input: 0,
-      output: 0,
     },
     providers: ['openrouter'],
   }),
@@ -19041,9 +19017,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 65536,
     },
     cost: {
-      input: 0.017,
-      output: 0.062,
-      cache_read: 0.015,
+      input: 0.014,
+      output: 0.05,
+      cache_read: 0.012,
     },
     providers: ['openrouter'],
   }),
@@ -20233,11 +20209,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 65536,
+      output: 81920,
     },
     cost: {
-      input: 0.45,
-      output: 2.7,
+      input: 0.32,
+      output: 3.2,
     },
     providers: ['openrouter'],
   }),
@@ -20685,12 +20661,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 131072,
+      output: 943718,
     },
     cost: {
-      input: 0.25,
+      input: 0.3,
       output: 1,
-      cache_read: 0.05,
+      cache_read: 0.04,
     },
     providers: ['openrouter'],
   }),
@@ -20786,7 +20762,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     providers: ['openrouter'],
   }),
   model('openrouter/ricursiveai/ripple-65b-preview', {
-    name: 'ricursiveAI/Ripple-65B-Preview',
+    name: 'Ripple 65B Preview',
     created: '2026-11-04',
     modalities: {
       input: ['text'],
@@ -21574,6 +21550,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       structuredOutput: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -21583,6 +21560,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.35,
       output: 0.65,
+      cache_read: 0.35,
     },
     providers: ['openrouter'],
   }),
@@ -22394,11 +22372,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 943717,
+      output: 131072,
     },
     cost: {
-      input: 0.15,
-      output: 0.5,
+      input: 0.0335,
+      output: 0.083,
       cache_read: 0.03,
     },
     providers: ['openrouter'],
@@ -23706,14 +23684,13 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       streaming: true,
     },
     context: {
-      input: 1000000,
-      output: 131072,
+      input: 262144,
+      output: 262144,
     },
     cost: {
-      input: 0.5,
-      output: 3,
-      cache_read: 0.1,
-      cache_write: 0.625,
+      input: 0.06,
+      output: 2.3,
+      cache_read: 0.059,
     },
     providers: ['vercel'],
   }),
@@ -25145,6 +25122,38 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['vercel'],
   }),
+  model('vercel/deepseek/deepseek-v4.1-flash-1017-ultrafast', {
+    name: 'DeepSeek V4.1 Flash 1017 Ultrafast',
+    created: '2026-11-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 1048576,
+    },
+    cost: {
+      input: 2.4,
+      output: 9.6,
+      cache_read: 0.048,
+    },
+    providers: ['vercel'],
+  }),
   model('vercel/deepseek/deepseek-v4.1-flash-fast', {
     name: 'DeepSeek V4.1 Flash Fast',
     created: '2026-09-10',
@@ -25477,7 +25486,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       reasoningOptions: [
         {
           type: 'effort',
-          values: ['low', 'high'],
+          values: ['none', 'low', 'medium', 'high'],
         },
       ],
       vision: true,
@@ -25604,7 +25613,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       reasoningOptions: [
         {
           type: 'effort',
-          values: ['low', 'high'],
+          values: ['none', 'low', 'medium', 'high'],
         },
       ],
       vision: true,
@@ -25738,6 +25747,35 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.14,
       output: 0.4,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/humansand/ampersand-v0.1', {
+    name: 'Ampersand v0.1',
+    created: '2026-11-06',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 32768,
+    },
+    cost: {
+      input: 0,
+      output: 0,
     },
     providers: ['vercel'],
   }),
@@ -26157,8 +26195,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       reasoning: true,
       reasoningOptions: [
         {
-          type: 'effort',
-          values: ['none', 'low', 'medium', 'high'],
+          type: 'toggle',
         },
       ],
       vision: true,
@@ -27549,9 +27586,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 131072,
     },
     cost: {
-      input: 0.05,
-      output: 0.2,
-      cache_read: 0.01,
+      input: 0.06,
+      output: 0.16,
+      cache_read: 0.03,
     },
     providers: ['vercel'],
   }),

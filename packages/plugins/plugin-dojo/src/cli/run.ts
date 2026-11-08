@@ -198,7 +198,7 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
       );
     }
 
-    const shareLink = editor ? null : `${dojo.url}/collections/projects/${appId}?share=1`;
+    const shareLink = editor ? null : `${dojo.url}/collections/apps/${appId}/settings?share=1`;
 
     if (shareLink) say(io, `[frogbot] Share it: ${shareLink}`);
     if (build.url) say(io, build.url);
@@ -319,7 +319,7 @@ async function createApp({
   const slug = toSlug(flags.name ?? name);
 
   const created = await whenPaid(dojo, io, () =>
-    dojo.request('/api/projects?depth=0', () => ({
+    dojo.request('/api/apps?depth=0', () => ({
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ name, slug, workspace: workspace.id }),

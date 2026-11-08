@@ -78,7 +78,7 @@ try {
     /--(text-(xs|sm|base|lg|xl|[2-5]xl)(--line-height)?|radius(-(sm|md|lg|xl))?|color-red-(500|600|700))(?![\w-])/,
   );
 
-  assert.match(css, /body:has\(\.fb-nav-shell\) \.app-header__mobile-nav-toggler/);
+  assert.match(css, /\.template-default:has\(\.fb-nav-shell\)/);
   assert.match(css, /\.fb-mobile-nav-toggle/);
   assert.match(css, /\.fb-nav-backdrop/);
 

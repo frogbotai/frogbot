@@ -17,6 +17,7 @@ export const Deals: CollectionConfig = {
           'closeDate',
           'owner',
         ],
+        groupBy: 'stage',
       },
       {
         type: 'board',

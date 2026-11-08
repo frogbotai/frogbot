@@ -3,10 +3,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 2px color-mix(in srgb, var(--color-text) 8%, transparent);
   }
 
   .fb-todo-tool__header {
@@ -16,8 +12,9 @@
 
   .fb-todo-tool__title {
     margin: 0;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
+    font-size: inherit;
+    font-weight: 700;
+    line-height: inherit;
   }
 
   .fb-todo-tool__summary {
@@ -68,10 +65,7 @@
   }
 
   .fb-todo-tool__status--in_progress {
-    border-color: var(--special-border-translucent-strong) var(--special-border-translucent-strong)
-      transparent transparent;
-    animation: fb-todo-tool-spin 1s linear infinite;
-    background: var(--color-bg-secondary);
+    border: 0;
   }
 
   .fb-todo-tool__content {
@@ -81,13 +75,7 @@
   }
 
   .fb-todo-tool__content--completed {
-    color: var(--color-text-secondary);
+    opacity: 0.4;
     text-decoration: line-through;
-  }
-
-  @keyframes fb-todo-tool-spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
 }

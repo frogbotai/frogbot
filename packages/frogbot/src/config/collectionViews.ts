@@ -7,7 +7,8 @@ import type { Field, TabAsField } from '../fields/config/types.js';
 import { flattenTopLevelFields } from '../seams/config.js';
 
 const DEFAULT_VIEW: CollectionView = { type: 'list' };
-const GROUP_BY_FIELD_TYPES: Field['type'][] = [
+/** The field types a list or board view can group by: Payload's groupable types. */
+export const GROUP_BY_FIELD_TYPES: readonly Field['type'][] = [
   'text',
   'textarea',
   'number',
@@ -35,9 +36,14 @@ function resolveField(fields: Field[], path: string): Field | TabAsField | undef
 function resolveGroupByField(fields: Field[], path: string): Field | undefined {
   const field = resolveField(fields, path);
 
-  return field && field.type !== 'tab' && GROUP_BY_FIELD_TYPES.includes(field.type)
-    ? field
-    : undefined;
+  if (!field || field.type === 'tab' || !GROUP_BY_FIELD_TYPES.includes(field.type)) {
+    return undefined;
+  }
+
+  const polymorphic = 'relationTo' in field && Array.isArray(field.relationTo);
+  const virtual = 'virtual' in field && Boolean(field.virtual);
+
+  return polymorphic || virtual ? undefined : field;
 }
 
 function normalizeSlug(value: string): string {
@@ -153,12 +159,12 @@ export function compileCollectionViews({
     }
 
     if (
-      view.type === 'board' &&
+      (view.type === 'board' || view.type === 'list') &&
       view.groupBy &&
       !resolveGroupByField(collection.fields, view.groupBy)
     ) {
       throw new Error(
-        `[frogbot] Collection "${collection.slug}" board view "${view.slug}" has an unsupported groupBy field "${view.groupBy}".`,
+        `[frogbot] Collection "${collection.slug}" ${view.type} view "${view.slug}" has an unsupported groupBy field "${view.groupBy}".`,
       );
     }
 

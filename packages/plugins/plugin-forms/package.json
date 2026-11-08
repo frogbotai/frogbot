@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-forms",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "description": "Public forms that create records in FrogBot collections.",
   "license": "MIT",
   "author": "Colby Gilbert",

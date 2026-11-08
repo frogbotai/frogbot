@@ -27,6 +27,7 @@ import {
   parseReflogMerges,
   parseTouches,
   parseWorktrees,
+  repoAt,
   repoCheckout,
   repoGates,
   repoGroups,
@@ -36,11 +37,13 @@ import {
   stageOf,
   statusRow,
   tail,
+  ticketFolders,
   ticketGit,
   ticketKeyOf,
   ticketOfBranch,
   tierOf,
   untilMainSettles,
+  verifyKey,
   worktreePath,
 } from '../../../scripts/ticket.mjs';
 
@@ -243,6 +246,9 @@ describe('tierOf', () => {
     'packages/frogbot/src/chat/channelAccess.ts',
     'packages/frogbot/src/uploads/index.ts',
     'packages/frogbot/src/auth/access/isAdmin.ts',
+    'apps/dojo/src/jobs/wake.ts',
+    'apps/dojo/src/collections/config/index.ts',
+    'packages/core/src/exports/index.ts',
   ])('%s is full', (file) => {
     expect(tierOf([file])).toBe('full');
   });
@@ -354,6 +360,38 @@ describe('naming', () => {
     ['feat/ticket-210b-kinds', 210],
   ])('%s belongs to ticket %s', (branch, ticket) => {
     expect(ticketOfBranch(branch)).toBe(ticket);
+  });
+});
+
+describe('verify target', () => {
+  const tree = { root: '/c/frogbot', home: '/c/frogbot', branch: 'claude/ticket-359-scratch' };
+
+  it('takes the key from the branch in a cloud checkout', () => {
+    expect(verifyKey({ ...tree, remote: true })).toBe('359');
+  });
+
+  it('refuses the main checkout locally and a branch with no ticket anywhere', () => {
+    expect(verifyKey({ ...tree, remote: false })).toBeNull();
+    expect(verifyKey({ ...tree, branch: 'main', remote: true })).toBeNull();
+    expect(
+      verifyKey({ root: '/w/frogbot-ticket12', home: '/c/frogbot', branch: null, remote: false }),
+    ).toBe('12');
+  });
+
+  it('finds the issue folder for the checkout repo, then frogbot, then the old numbering', () => {
+    const names = ['frogbot-38_a', 'platform-38_b', 'ticket38_c', 'ticket40_d', 'sidekick-41_e'];
+
+    expect(ticketFolders(names, { ticket: 38, repo: 'platform' })).toEqual(['platform-38_b']);
+    expect(ticketFolders(names, { ticket: 38, repo: 'sidekick' })).toEqual(['frogbot-38_a']);
+    expect(ticketFolders(names, { ticket: 40, repo: 'frogbot' })).toEqual(['ticket40_d']);
+    expect(ticketFolders(names, { ticket: 41, repo: 'sidekick' })).toEqual(['sidekick-41_e']);
+    expect(ticketFolders(names, { ticket: 4, repo: 'frogbot' })).toEqual([]);
+  });
+
+  it('names the repo whose checkout verify runs in', () => {
+    expect(repoAt('/c/frogbot', '/c/frogbot')).toBe('frogbot');
+    expect(repoAt('/c/frogbot', '/c/sidekick')).toBe('sidekick');
+    expect(repoAt('/c/frogbot', '/elsewhere')).toBeNull();
   });
 });
 

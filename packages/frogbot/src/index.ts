@@ -267,6 +267,7 @@ export type {
   CollectionRefreshHook,
 } from './collections/config/types.js';
 export { buildConfig } from './config/build.js';
+export { GROUP_BY_FIELD_TYPES } from './config/collectionViews.js';
 export type { FrogBotSanitizedConfig } from './config/sanitized.js';
 export type {
   AfterErrorHook,
