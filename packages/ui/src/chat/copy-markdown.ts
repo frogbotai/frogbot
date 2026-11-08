@@ -45,7 +45,11 @@ export async function copyMarkdown(text: string): Promise<boolean> {
 
       return true;
     } catch {
-      return copyWithTextarea(text);
+      try {
+        return copyWithTextarea(text);
+      } catch {
+        return false;
+      }
     }
   }
 }

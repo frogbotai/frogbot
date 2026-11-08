@@ -1,7 +1,7 @@
 'use client';
 
 import type { HTMLAttributes } from 'react';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import CheckIcon from '../icons/icons/CheckIcon.js';
 import CopyIcon from '../icons/icons/CopyIcon.js';
@@ -23,17 +23,15 @@ const COPIED_MS = 1500;
 /** A monospace box holding one command or snippet, with a button that copies it exactly. */
 export function CommandBlock({ className, code, label, onCopy, ...props }: CommandBlockProps) {
   const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const labelId = useId();
 
-  useEffect(() => {
-    if (!copied) return;
-    const timer = setTimeout(() => setCopied(false), COPIED_MS);
-
-    return () => clearTimeout(timer);
-  }, [copied]);
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   const copy = async () => {
     if (!(await copyText(code))) return;
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopied(false), COPIED_MS);
     setCopied(true);
     onCopy?.();
   };
@@ -48,7 +46,13 @@ export function CommandBlock({ className, code, label, onCopy, ...props }: Comma
         </div>
       ) : null}
       <div className="fb-command-block__box">
-        <pre aria-labelledby={label ? labelId : undefined} className="fb-command-block__code">
+        <pre
+          aria-label={label ? undefined : 'Command'}
+          aria-labelledby={label ? labelId : undefined}
+          className="fb-command-block__code"
+          role="region"
+          tabIndex={0}
+        >
           <code>{code}</code>
         </pre>
         <Tooltip label={action} side="top">

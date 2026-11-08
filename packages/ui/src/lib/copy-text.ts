@@ -6,11 +6,14 @@ export function copyWithTextarea(text: string): boolean {
   textarea.style.position = 'fixed';
   textarea.style.opacity = '0';
   document.body.appendChild(textarea);
-  textarea.select();
-  const copied = document.execCommand('copy');
-  textarea.remove();
 
-  return copied;
+  try {
+    textarea.select();
+
+    return document.execCommand('copy');
+  } finally {
+    textarea.remove();
+  }
 }
 
 /** Copies `text` to the clipboard as plain text. Resolves `false` when the browser refuses. */

@@ -36,6 +36,14 @@
     white-space: pre;
   }
 
+  .fb-command-block__code:focus-visible {
+    outline: none;
+  }
+
+  .fb-command-block__box:has(.fb-command-block__code:focus-visible) {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accessibility-focus-color) 50%, transparent);
+  }
+
   .fb-command-block__copy {
     display: inline-flex;
     flex: none;
