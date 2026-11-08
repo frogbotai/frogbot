@@ -34,14 +34,15 @@ Status: Draft | Done (<date>)
 
 ## Reference repos
 
-| Question                                  | Where to look                                                                                          |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Current FrogBot behaviour                 | This repo: public API, implementation, types, callers, tests, fixtures                                 |
-| Collections, fields, access, hooks, admin | `~/code/payload`; `~/code/payload-ai` for AI integration patterns                                      |
-| AI SDK options, providers, wire format    | The installed `ai` and `@ai-sdk/*` source first, then `~/code/ai`; note any version skew               |
-| Admin and chat UI                         | `~/code/firmware` (`apps/web`, `apps/desktop`, `packages/app`, `packages/ui`) is the UI spec           |
-| Gateway translation, schemas, streaming   | Both `~/code/hebo-gateway` and `~/code/portkey-gateway-embed`                                          |
-| Client requests, SSE, retries, errors     | `~/code/hermes-agent` and the matching opencode line                                                   |
-| Agent, tool and config runtime            | `~/code/opencode` (1.x) or `~/code/opencode-v2` (2.x); label the line, check both when they may differ |
-| Other CMS designs                         | `~/code/strapi`, `~/code/directus`: ideas only, never authority                                        |
-| Not available locally                     | Official specs or docs, cited with URL and date                                                        |
+| Question                                  | Where to look                                                                                              |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Current FrogBot behaviour                 | This repo: public API, implementation, types, callers, tests, fixtures                                     |
+| Collections, fields, access, hooks, admin | `~/code/payload`; `~/code/payload-ai` for AI integration patterns                                          |
+| AI SDK options, providers, wire format    | The installed `ai` and `@ai-sdk/*` source first, then `~/code/ai`; note any version skew                   |
+| Admin and chat UI                         | `~/code/firmware` (`apps/web`, `apps/desktop`, `packages/app`, `packages/ui`) is the UI spec               |
+| Gateway translation, schemas, streaming   | Both `~/code/hebo-gateway` and `~/code/portkey-gateway-embed`                                              |
+| Client requests, SSE, retries, errors     | `~/code/hermes-agent` and the matching opencode line                                                       |
+| Sidekick: agents driving a real browser   | `~/code/browse` (`anomalyco/browse`): MCP server and Chromium extension, Playwright on the user's own tabs |
+| Agent, tool and config runtime            | `~/code/opencode` (1.x) or `~/code/opencode-v2` (2.x); label the line, check both when they may differ     |
+| Other CMS designs                         | `~/code/strapi`, `~/code/directus`: ideas only, never authority                                            |
+| Not available locally                     | Official specs or docs, cited with URL and date                                                            |
