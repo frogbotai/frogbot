@@ -12,6 +12,7 @@ import {
 import {
   ApiKeyServiceError,
   canMintKeys,
+  countMintedApiKeys,
   keyScopeBeforeValidate,
   mintApiKey,
   revokeApiKey,
@@ -151,9 +152,17 @@ function createEndpoints({
           return Response.json({ error: 'API key not found' }, { status: 404 });
         }
 
-        const body: unknown = (await req.json?.().catch(() => null)) ?? null;
-        const given = typeof body === 'object' && body !== null && 'cascade' in body;
-        const cascade = given ? body.cascade : true;
+        const text = (await req.text?.()) ?? '';
+        let cascade: unknown = true;
+
+        try {
+          const body: unknown = text.trim() ? JSON.parse(text) : null;
+          if (typeof body === 'object' && body !== null && 'cascade' in body) {
+            cascade = body.cascade;
+          }
+        } catch {
+          return Response.json({ error: 'The body must be JSON' }, { status: 400 });
+        }
 
         if (typeof cascade !== 'boolean') {
           return Response.json({ error: 'cascade must be true or false' }, { status: 400 });
@@ -173,6 +182,31 @@ function createEndpoints({
             return Response.json({ error: 'Authentication required' }, { status: 401 });
           }
 
+          if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
+            return Response.json({ error: 'API key not found' }, { status: 404 });
+          }
+
+          throw error;
+        }
+      },
+    },
+    {
+      method: 'get',
+      path: '/:id/minted-count',
+      handler: async (req) => {
+        if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        const id = req.routeParams?.id;
+        if (typeof id !== 'string' || !id) {
+          return Response.json({ error: 'API key not found' }, { status: 404 });
+        }
+
+        try {
+          const anyOwner = (await canRevokeAnyKey?.(req)) === true;
+
+          return Response.json({
+            count: await countMintedApiKeys({ req, collectionSlug, id, anyOwner }),
+          });
+        } catch (error) {
           if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
             return Response.json({ error: 'API key not found' }, { status: 404 });
           }

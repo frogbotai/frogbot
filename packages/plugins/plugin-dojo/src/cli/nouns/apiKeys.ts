@@ -94,16 +94,19 @@ export const apiKeys: Noun = {
         cascade: { type: 'boolean', help: 'Also revoke the keys it made. The default.' },
         'no-cascade': { type: 'boolean', help: 'Revoke only this key; keep the keys it made.' },
       },
-      confirm: ({ positionals: [id], values }) =>
-        values['no-cascade'] === true
-          ? `Revoke key ${id}? The keys it made keep working.`
-          : `Revoke key ${id} and the keys it made?`,
-      run: async ({ io, dojo, positionals: [id = ''], values }) => {
+      confirm: true,
+      run: async ({ io, dojo, confirm, positionals: [id = ''], values }) => {
         const keep = values['no-cascade'] === true;
 
         if (keep && values.cascade === true) {
           throw new ShareError('Pass --cascade or --no-cascade, not both.', 2);
         }
+
+        await confirm(
+          keep
+            ? `Revoke key ${id}? The keys it made keep working.`
+            : `Revoke key ${id} and the keys it made?`,
+        );
 
         const revoked = await dojoJSON<{ id: string | number; revokedAt: string }>(
           dojo(),

@@ -332,7 +332,7 @@ describe('API keys collection', () => {
     const req = {
       user: { id: 'user-1', roles: ['member'] },
       routeParams: { id: 'key-1' },
-      json: body === undefined ? undefined : () => Promise.resolve(body),
+      text: body === undefined ? undefined : () => Promise.resolve(JSON.stringify(body)),
       frogbot: { find, update: vi.fn().mockResolvedValue({}) },
     } as unknown as FrogBotRequest;
 
@@ -348,7 +348,7 @@ describe('API keys collection', () => {
     const req = {
       user: { id: 'user-1', roles: ['member'] },
       routeParams: { id: 'key-1' },
-      json: () => Promise.resolve({ cascade: 'no' }),
+      text: () => Promise.resolve(JSON.stringify({ cascade: 'no' })),
       frogbot: { find, update: vi.fn() },
     } as unknown as FrogBotRequest;
 

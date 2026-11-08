@@ -246,18 +246,14 @@ export function RevokeApiKey({
   const [cascade, setCascade] = useState(true);
 
   async function countMade() {
-    const query = new URLSearchParams({
-      'where[mintedBy][equals]': String(rowData.id),
-      'where[revokedAt][exists]': 'false',
-      limit: '1',
-      depth: '0',
-    });
-
     try {
-      const response = await fetch(`${config.routes.api}/${collectionSlug}?${query}`);
-      const result = (await response.json()) as { totalDocs?: unknown };
+      const response = await fetch(
+        `${config.routes.api}/${collectionSlug}/${rowData.id}/minted-count`,
+      );
 
-      setMade(response.ok && typeof result.totalDocs === 'number' ? result.totalDocs : null);
+      const result = (await response.json()) as { count?: unknown };
+
+      setMade(response.ok && typeof result.count === 'number' ? result.count : null);
     } catch {
       setMade(null);
     }

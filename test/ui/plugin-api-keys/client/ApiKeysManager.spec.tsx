@@ -191,14 +191,14 @@ describe('API key controls', () => {
     expect(clearRouteCache).not.toHaveBeenCalled();
   });
 
-  function keysMade(totalDocs: number | null, revoke: Partial<Response> = { ok: true }) {
+  function keysMade(count: number | null, revoke: Partial<Response> = { ok: true }) {
     vi.mocked(fetch).mockImplementation((input) =>
       Promise.resolve(
         String(input).endsWith('/revoke')
           ? (revoke as Response)
           : ({
-              ok: totalDocs !== null,
-              json: () => Promise.resolve(totalDocs === null ? {} : { totalDocs }),
+              ok: count !== null,
+              json: () => Promise.resolve(count === null ? {} : { count }),
             } as Response),
       ),
     );
@@ -227,9 +227,7 @@ describe('API key controls', () => {
       ),
     ).toBeTruthy();
     expect(revokeCalls()).toEqual([]);
-    expect(fetch).toHaveBeenCalledWith(
-      '/api/api-keys?where%5BmintedBy%5D%5Bequals%5D=key-1&where%5BrevokedAt%5D%5Bexists%5D=false&limit=1&depth=0',
-    );
+    expect(fetch).toHaveBeenCalledWith('/api/api-keys/key-1/minted-count');
 
     await waitFor(() => expect(fetch).toHaveBeenCalledOnce());
 
@@ -345,7 +343,7 @@ describe('API key controls', () => {
 
     expect(revokeCalls()).toEqual([]);
 
-    answer({ ok: true, json: () => Promise.resolve({ totalDocs: 1 }) } as Response);
+    answer({ ok: true, json: () => Promise.resolve({ count: 1 }) } as Response);
 
     expect(
       (await screen.findByRole('checkbox', { name: 'Also revoke the key it made' })).getAttribute(
