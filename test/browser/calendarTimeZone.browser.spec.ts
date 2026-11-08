@@ -147,11 +147,17 @@ test('week view places events, overnight events and the now line in Los Angeles 
       ),
   ).toBe(2);
 
-  await page.locator('.frog-calendar__time-scroll').evaluate((scroll) => {
-    scroll.scrollTop = 8 * 56;
-  });
+  for (const [name, hour] of [
+    ['week-night', 0],
+    ['week-evening', 16],
+    ['week', 8],
+  ] as const) {
+    await page.locator('.frog-calendar__time-scroll').evaluate((scroll, top) => {
+      scroll.scrollTop = top;
+    }, hour * hourHeight);
 
-  await attach(page, testInfo, 'week', [1280, 375]);
+    await attach(page, testInfo, name, name === 'week' ? [1280, 375] : [1280]);
+  }
 });
 
 test('day view shows the local day', async ({ page }, testInfo) => {
