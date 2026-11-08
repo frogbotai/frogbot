@@ -122,4 +122,12 @@ describe('redirectRecordParam', () => {
 
     expect(redirect.mock.calls).toEqual([['/collections/notes/4%202']]);
   });
+
+  it.each(['.', '..'])('does not redirect ?record=%s, a path step rather than an id', (record) => {
+    const redirect = vi.fn();
+
+    redirectRecordParam({ collectionConfig: config(false), record, redirect });
+
+    expect(redirect).not.toHaveBeenCalled();
+  });
 });
