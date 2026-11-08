@@ -1,4 +1,4 @@
-import type { FrogBotConfig } from 'frogbot';
+import type { Field, FrogBotConfig } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
@@ -78,8 +78,57 @@ describe('auditLogPlugin', () => {
   });
 
   it('rejects collection slug collisions', () => {
-    expect(() => auditLogPlugin({ collectionSlug: 'posts' })(config())).toThrow(
+    expect(() => auditLogPlugin({ overrides: { slug: 'posts' } })(config())).toThrow(
       "Collection slug 'posts' already exists",
+    );
+  });
+
+  it('applies collection overrides over the defaults', async () => {
+    const read = vi.fn(() => true);
+    const result = await apply({
+      overrides: { slug: 'activity', access: { read }, admin: { group: 'Logs' } },
+      retention: { days: 30 },
+    });
+
+    const audit = result.collections.find((collection) => collection.slug === 'activity');
+
+    expect(result.collections.some((collection) => collection.slug === 'audit-logs')).toBe(false);
+    expect(audit?.access?.read).toBe(read);
+    expect(audit?.access?.create?.({} as never)).toBe(false);
+    expect(audit?.access?.update?.({} as never)).toBe(false);
+    expect(audit?.access?.delete?.({} as never)).toBe(false);
+    expect(audit?.admin).toEqual(expect.objectContaining({ group: 'Logs', icon: 'clock' }));
+    expect(result.jobs?.tasks?.at(-1)?.slug).toBe('frogbot-prune-activity');
+  });
+
+  it('rejects overrides.fields that drop a built-in field', () => {
+    expect(() =>
+      auditLogPlugin({
+        overrides: {
+          fields: ({ defaultFields }) =>
+            defaultFields.filter((field) => !('name' in field) || field.name !== 'changes'),
+        },
+      })(config()),
+    ).toThrow("[plugin-audit-log] overrides.fields must keep 'changes'.");
+  });
+
+  it('rejects overrides.fields that name a field twice', () => {
+    expect(() =>
+      auditLogPlugin({
+        overrides: {
+          fields: ({ defaultFields }) => [...defaultFields, { name: 'changes', type: 'json' }],
+        },
+      })(config()),
+    ).toThrow("[plugin-audit-log] overrides.fields names 'changes' twice.");
+  });
+
+  it('requires ip and userAgent only when ipAddress is on', () => {
+    const fields = ({ defaultFields }: { defaultFields: Field[] }) =>
+      defaultFields.filter((field) => !('name' in field) || field.name !== 'userAgent');
+
+    expect(() => auditLogPlugin({ overrides: { fields } })(config())).not.toThrow();
+    expect(() => auditLogPlugin({ ipAddress: true, overrides: { fields } })(config())).toThrow(
+      "[plugin-audit-log] overrides.fields must keep 'userAgent'.",
     );
   });
 

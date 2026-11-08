@@ -257,7 +257,7 @@ describe('plugin order', () => {
   it('binds allow() on collections from plugins listed after it', async () => {
     const result = await built([
       rolesPlugin({ roles: ['admin'] }),
-      auditLogPlugin({ access: { read: allow('admin') } }),
+      auditLogPlugin({ overrides: { access: { read: allow('admin') } } }),
       capturePlugin({ storage: {} as CaptureStorage, access: allow('admin') }),
     ]);
 
