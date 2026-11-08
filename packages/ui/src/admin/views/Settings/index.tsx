@@ -48,7 +48,16 @@ export async function SettingsView(props: SettingsViewProps) {
                 initPageResult.visibleEntities.collections.includes(slug) &&
                 !(admin as { settings?: boolean }).settings,
             )
-            .map((entity) => ({ entity, type: EntityType.collection }) satisfies EntityToGroup),
+            .map(
+              (entity) =>
+                ({
+                  entity:
+                    entity.admin.group === false
+                      ? { ...entity, admin: { ...entity.admin, group: undefined } }
+                      : entity,
+                  type: EntityType.collection,
+                }) satisfies EntityToGroup,
+            ),
           i18n: req.i18n,
           permissions: initPageResult.permissions,
         })

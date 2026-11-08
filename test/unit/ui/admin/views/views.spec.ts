@@ -402,7 +402,7 @@ describe('FrogBot admin views', () => {
     expect(html).not.toContain('Hidden');
   });
 
-  it("SettingsView leaves group false and admin.hidden collections off the Collections cards, as Payload's dashboard does", async () => {
+  it('SettingsView lists collections hidden from the sidebar with group false, but not admin.hidden or Payload built-in ones', async () => {
     const i18n = {
       t: (key: string) =>
         ({ 'general:collections': 'Collections', 'general:globals': 'Globals' })[key] ?? key,
@@ -417,10 +417,14 @@ describe('FrogBot admin views', () => {
             posts: { read: true },
             users: { read: true },
             media: { read: true },
+            'payload-llm-instructions': { read: true },
           },
         },
         req: { i18n, user: { id: 'user-1' } },
-        visibleEntities: { collections: ['media', 'users', 'posts'], globals: [] },
+        visibleEntities: {
+          collections: ['media', 'users', 'posts', 'payload-llm-instructions'],
+          globals: [],
+        },
       },
       payload: {
         config: {
@@ -430,6 +434,11 @@ describe('FrogBot admin views', () => {
             { admin: { group: 'Content' }, labels: { plural: 'Posts' }, slug: 'posts' },
             { admin: { group: false }, labels: { plural: 'Users' }, slug: 'users' },
             { admin: { hidden: true }, labels: { plural: 'Hidden' }, slug: 'hidden' },
+            {
+              admin: { group: false },
+              labels: { plural: 'LLM Instructions' },
+              slug: 'payload-llm-instructions',
+            },
           ],
           routes: { admin: '/admin' },
         },
@@ -441,9 +450,11 @@ describe('FrogBot admin views', () => {
     const html = renderToStaticMarkup(content);
 
     expect(html).toContain('id="card-posts"');
-    expect(html).not.toContain('id="card-users"');
+    expect(html).toContain('id="card-users"');
     expect(html).not.toContain('Hidden');
-    expect(html.indexOf('id="card-media"')).toBeLessThan(html.indexOf('<h2>Content</h2>'));
+    expect(html).not.toContain('LLM Instructions');
+    expect(html.indexOf('id="card-media"')).toBeLessThan(html.indexOf('id="card-users"'));
+    expect(html.indexOf('id="card-users"')).toBeLessThan(html.indexOf('<h2>Content</h2>'));
   });
 
   it('SettingsView leaves Settings collections off the Collections cards', async () => {
