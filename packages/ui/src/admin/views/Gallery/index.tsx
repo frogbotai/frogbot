@@ -163,7 +163,7 @@ export async function GalleryView(input: AdminViewServerProps) {
         page,
         ...(sort ? { sort } : {}),
       }}
-      totalDocs={data.totalDocs}
+      totalDocs={data.docs.length ? data.totalDocs : 0}
       view={gallery}
       views={views}
     >

@@ -131,3 +131,10 @@ test('pages through the cards with the page controls', async ({ page }) => {
   await expect(titles).toHaveCount(5);
   await expect(titles).not.toHaveText(first);
 });
+
+test('shows the empty state on a page past the last one', async ({ page }) => {
+  await page.goto('/collections/companies/gallery?limit=5&page=999');
+
+  await expect(page.locator('.no-results')).toBeVisible();
+  await expect(page.locator('.collection-gallery__card')).toHaveCount(0);
+});

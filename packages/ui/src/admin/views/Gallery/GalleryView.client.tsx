@@ -69,10 +69,7 @@ export function GalleryViewClient({
             collectionConfig={collectionConfig}
             collectionSlug={collectionSlug}
             onDelete={() => router.refresh()}
-            onSave={(doc) => {
-              replace(doc);
-              router.refresh();
-            }}
+            onSave={() => router.refresh()}
             onToggled={replace}
             row={row}
             thumbnail={thumbnail}
