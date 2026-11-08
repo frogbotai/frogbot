@@ -21,6 +21,13 @@ export const articleMeaning = searchTool({
   slug: 'search_articles_meaning',
 });
 
+export const articleBodies = searchTool({
+  collection: articlesSlug,
+  index: 'content',
+  select: { body: true },
+  slug: 'search_article_bodies',
+});
+
 export const noteWords = searchTool({
   collection: notesSlug,
   index: 'content',

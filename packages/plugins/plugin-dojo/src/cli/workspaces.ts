@@ -1,19 +1,16 @@
 import type { DojoClient } from './dojo.js';
-import { dojoMessage } from './dojo.js';
+import { dojoList } from './dojo.js';
 import { ShareError } from './error.js';
 import type { DojoIO } from './io.js';
 import { say } from './io.js';
 
 export type Workspace = { id: string | number; name: string; slug: string };
 
-async function listWorkspaces(dojo: DojoClient): Promise<Workspace[]> {
-  const listed = await dojo.request('/api/workspaces?depth=0&limit=100');
-
-  if (!listed.ok) {
-    throw new ShareError(`Couldn't list your workspaces: ${await dojoMessage(listed)}`);
-  }
-
-  return ((await listed.json()) as { docs: Workspace[] }).docs;
+/** Every workspace the signed-in person is in. */
+export async function listWorkspaces(dojo: DojoClient): Promise<Workspace[]> {
+  return dojoList<Workspace>(dojo, '/api/workspaces?depth=0&limit=100', {
+    what: "Couldn't list your workspaces",
+  });
 }
 
 /**
@@ -54,6 +51,27 @@ export async function chooseWorkspace({
   }
 }
 
+/** The workspace `slug` names, or the only one; with several and no slug, the person's pick. */
+export async function findWorkspace({
+  dojo,
+  io,
+  slug,
+}: {
+  dojo: DojoClient;
+  io: DojoIO;
+  slug?: string;
+}): Promise<Workspace> {
+  const workspaces = await listWorkspaces(dojo);
+
+  if (workspaces.length === 0) {
+    throw new ShareError(
+      `You have no workspace yet. Create one with ${io.program} workspaces create <name>.`,
+    );
+  }
+
+  return pickWorkspace({ workspaces, slug, io });
+}
+
 async function pickWorkspace({
   workspaces,
   slug,
@@ -81,7 +99,7 @@ async function pickWorkspace({
 
   if (!io.isTTY) {
     throw new ShareError(
-      `Ask the person which workspace to share in (${slugs}), then rerun with --workspace <slug>.`,
+      `Ask the person which workspace to use (${slugs}), then rerun with --workspace <slug>.`,
     );
   }
 

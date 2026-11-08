@@ -512,6 +512,7 @@ export type {
   ToolAccess,
   ToolCtx,
   ToolOutputLimits,
+  ToolSource,
 } from './tools/types.js';
 export type { Subscription, SubscriptionEnableProps } from './triggers/subscriptions.js';
 export type { IngressRegistry, TriggerEvent, TriggerSubscriber } from './triggers/types.js';

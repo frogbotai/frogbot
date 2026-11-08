@@ -6,8 +6,14 @@ import type { DeployIO, DeployPrompts } from 'frogbot';
 
 import { ShareError } from './error.js';
 
-/** What the Dojo commands use from the terminal: `share` gets core's full `DeployIO`, the others need no FrogBot app. */
-export type DojoIO = Omit<DeployIO, 'exec' | 'which' | 'loadConfig'>;
+/**
+ * What the Dojo commands use from the terminal: `share` gets core's full `DeployIO`, the others need
+ * no FrogBot app.
+ */
+export type DojoIO = Omit<DeployIO, 'exec' | 'which' | 'loadConfig'> & {
+  /** With `--json`: the real stdout, which gets only the command's one JSON result; `stdout` is then stderr. */
+  json?: { write: (text: string) => unknown };
+};
 
 function answered<T>(value: T | symbol): T {
   if (typeof value === 'symbol') {
@@ -65,4 +71,24 @@ export function processIO(program: string): DojoIO {
 /** Writes one line to stdout. */
 export function say(io: Pick<DojoIO, 'stdout'>, line: string): void {
   io.stdout.write(`${line}\n`);
+}
+
+/** Ends a command: with `--json`, its one JSON value on stdout; otherwise its human lines. */
+export function done(
+  io: Pick<DojoIO, 'stdout' | 'json'>,
+  value: unknown,
+  lines: string[] = [],
+): void {
+  if (io.json) {
+    io.json.write(`${JSON.stringify(value, null, 2)}\n`);
+
+    return;
+  }
+
+  for (const line of lines) say(io, line);
+}
+
+/** `io` for `--json`: human lines go to stderr, leaving stdout to the result. */
+export function jsonIO(io: DojoIO): DojoIO {
+  return { ...io, stdout: io.stderr, json: io.stdout };
 }

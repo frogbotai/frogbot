@@ -12,6 +12,7 @@ import {
   useTranslation,
 } from '@payloadcms/ui';
 import type { AgentReasoningOption, UIMessage } from 'frogbot';
+import { formatAdminURL } from 'payload/shared';
 import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
 
 import type { ChatDocument } from '../../../chat/adapter.js';
@@ -89,6 +90,7 @@ export function ChatViewClient({
 }: ChatViewClientProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { config } = useConfig();
   const { startRouteTransition } = useRouteTransition();
   const [selectedAgent, setSelectedAgent] = useState(agent);
   const [labelChatId, setLabelChatId] = useState(chatId);
@@ -149,6 +151,13 @@ export function ChatViewClient({
       <ChatProvider
         adapter={adapter}
         dataRenderers={DATA_RENDERERS}
+        sourceHref={({ collection, id }) =>
+          formatAdminURL({
+            adminRoute: config.routes.admin,
+            includeBasePath: true,
+            path: `/collections/${collection}/${encodeURIComponent(String(id))}`,
+          })
+        }
         toolRenderers={toolRenderersByAgent[selectedAgent]}
       >
         <ChatStepNav

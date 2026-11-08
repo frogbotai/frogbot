@@ -36,6 +36,7 @@ export function createFormsCollection({
     slug: FORMS_SLUG,
     custom: { [RUNTIME_KEY]: runtime },
     admin: {
+      icon: 'pencil-edit',
       useAsTitle: 'title',
       livePreview: { url: previewUrl, openByDefault: true, breakpoints: PREVIEW_BREAKPOINTS },
       views: [{ type: 'list', defaultFields: ['title', 'slug', 'collection', 'status'] }],

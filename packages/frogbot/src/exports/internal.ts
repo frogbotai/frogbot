@@ -1,3 +1,4 @@
+export { appIconURL, appManifestURL } from '../admin/appIcon/urls.js';
 export { executeAuthStrategy } from '../auth/executeAuthStrategy.js';
 export { checkLockfile, findAppRoot } from '../bin/deploy/appRoot.js';
 export { DeployError } from '../bin/deploy/error.js';

@@ -2,7 +2,15 @@ import nextEnvImport from '@next/env';
 
 const { loadEnvConfig } = nextEnvImport;
 
-const providedByDojo = new Set(['DATABASE_URL', 'FROGBOT_SECRET', 'NODE_ENV', 'PORT', 'HOSTNAME']);
+const providedByDojo = new Set([
+  'DATABASE_URL',
+  'FROGBOT_SECRET',
+  'NODE_ENV',
+  'PORT',
+  'HOSTNAME',
+  'FROGBOT_DOJO_TOKEN',
+  'FROGBOT_DOJO_URL',
+]);
 
 const silentLog = { info: () => {}, error: () => {} };
 
@@ -26,7 +34,7 @@ export function readEnvFiles(root: string): Record<string, string> {
   return env;
 }
 
-/** The keys to carry: non-empty `.env` values, minus the ones Dojo provides. */
+/** The keys to carry: non-empty `.env` values, minus the ones Dojo provides and the Dojo sign-in. */
 export function envKeys(env: Record<string, string>): EnvKey[] {
   return Object.entries(env)
     .filter(([name, value]) => value !== '' && !providedByDojo.has(name))

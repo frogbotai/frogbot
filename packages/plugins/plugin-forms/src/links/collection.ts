@@ -63,6 +63,7 @@ export function createFormLinksCollection({
     disableDuplicate: true,
     versions: false,
     admin: {
+      icon: 'link-square',
       useAsTitle: 'label',
       description:
         'Links that let someone edit one record through one form. Revoke a link to stop it.',
