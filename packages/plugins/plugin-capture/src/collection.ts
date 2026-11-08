@@ -12,6 +12,7 @@ export function createCapturesCollection(slug: string, access?: Access): Collect
     timestamps: false,
     access: { create: immutable, update: immutable, delete: immutable, read: access },
     admin: {
+      icon: 'database',
       useAsTitle: 'captureId',
       views: [
         {

@@ -25,7 +25,7 @@ export function createPolicyFields(models: string[]): Field[] {
   ];
 }
 
-function mergeObject(key: 'access' | 'admin', field: Field, override: Field) {
+function mergeObject(key: 'access' | 'admin' | 'custom', field: Field, override: Field) {
   if (!(key in field) && !(key in override)) return {};
 
   return {
@@ -54,6 +54,7 @@ export function mergePolicyFields(fields: Field[], policy: Field[]): Field[] {
       ...override,
       ...mergeObject('admin', field, override),
       ...mergeObject('access', field, override),
+      ...mergeObject('custom', field, override),
     } as Field;
   });
 

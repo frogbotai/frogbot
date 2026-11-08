@@ -596,14 +596,14 @@ async function registerAITelemetry(ai: SanitizedAIConfig): Promise<void> {
   );
 }
 
-function toCollection(frogbot: FrogBot, c: { slug: string; custom?: unknown }): Collection {
-  const custom = (c.custom as { frogbot?: FrogBotCustom } | undefined) ?? {};
-  const fb = custom.frogbot ?? {};
+function toCollection(frogbot: FrogBot, c: Payload['config']['collections'][number]): Collection {
+  const fb = (c.custom as { frogbot?: FrogBotCustom } | undefined)?.frogbot ?? {};
   const search = frogbot.config.collections.find(({ slug }) => slug === c.slug)?.search;
 
   return {
     slug: c.slug,
     auth: fb.auth ?? false,
+    useAsTitle: c.admin.useAsTitle ?? 'id',
     ...(search ? { search } : {}),
   };
 }

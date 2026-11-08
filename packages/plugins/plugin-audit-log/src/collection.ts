@@ -17,6 +17,7 @@ export function createAuditLogCollection(options: CollectionOptions): Collection
     authorship: false,
     custom: { frogbot: { internal: true } },
     admin: {
+      icon: 'clock',
       views: [
         {
           type: 'list',

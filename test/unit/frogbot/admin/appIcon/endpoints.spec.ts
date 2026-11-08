@@ -3,11 +3,10 @@ import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
 
-import type { PayloadRequest } from 'payload';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { appIconEndpoints } from '../../../../packages/next/src/appIcon/endpoints.js';
-import { FROGBOT_APP_ICON_BASE64 } from '../../../../packages/next/src/appIcon/frogbotAppIcon.js';
+import { appIconEndpoints } from '../../../../../packages/frogbot/src/admin/appIcon/endpoints.js';
+import type { FrogBotRequest } from '../../../../../packages/frogbot/src/types/request.js';
 
 const [iconEndpoint, manifestEndpoint] = appIconEndpoints();
 
@@ -19,7 +18,7 @@ function makeReq(meta: Record<string, unknown> = {}, size?: string) {
       logger: { error },
     },
     routeParams: size === undefined ? {} : { size },
-  } as unknown as PayloadRequest;
+  } as unknown as FrogBotRequest;
 
   return { error, req };
 }
@@ -30,32 +29,6 @@ async function pngSize(response: Response) {
   expect(bytes.subarray(1, 4).toString('ascii')).toBe('PNG');
 
   return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
-}
-
-function pngChunk(type: string, data: Buffer) {
-  const length = Buffer.alloc(4);
-  const crc = Buffer.alloc(4);
-  const body = Buffer.concat([Buffer.from(type, 'ascii'), data]);
-
-  length.writeUInt32BE(data.length);
-  crc.writeUInt32BE(zlib.crc32(body));
-
-  return Buffer.concat([length, body, crc]);
-}
-
-function transparentPNG() {
-  const header = Buffer.alloc(13);
-
-  header.writeUInt32BE(2, 0);
-  header.writeUInt32BE(2, 4);
-  header.set([8, 6, 0, 0, 0], 8);
-
-  return Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    pngChunk('IHDR', header),
-    pngChunk('IDAT', zlib.deflateSync(Buffer.alloc(2 * (1 + 2 * 4)))),
-    pngChunk('IEND', Buffer.alloc(0)),
-  ]);
 }
 
 function firstPixel(png: Buffer) {
@@ -77,7 +50,7 @@ function firstPixel(png: Buffer) {
   return [...zlib.inflateSync(Buffer.concat(idat)).subarray(1, 5)];
 }
 
-describe('@frogbotai/next app-icon endpoints', () => {
+describe('app icon endpoints', () => {
   let cwd: string;
 
   beforeEach(async () => {
@@ -97,7 +70,7 @@ describe('@frogbotai/next app-icon endpoints', () => {
     ]);
   });
 
-  it.each([32, 180, 192, 512])('draws the FrogBot frog at %i px', async (size) => {
+  it.each([32, 180, 192, 512])('serves the FrogBot frog at %i px', async (size) => {
     const { req } = makeReq({}, String(size));
 
     const response = await iconEndpoint.handler(req);
@@ -116,34 +89,36 @@ describe('@frogbotai/next app-icon endpoints', () => {
     expect(response.status).toBe(404);
   });
 
-  it('draws admin.meta.appIcon from public/', async () => {
-    const frog = Buffer.from(FROGBOT_APP_ICON_BASE64, 'base64');
-
-    await fs.mkdir(path.join(cwd, 'public'));
-    await fs.writeFile(path.join(cwd, 'public', 'acme.png'), frog);
-
-    const { error, req } = makeReq({ appIcon: '/acme.png' }, '192');
-
-    const response = await iconEndpoint.handler(req);
-
-    expect(response.status).toBe(200);
-    await expect(pngSize(response)).resolves.toEqual({ width: 192, height: 192 });
-    expect(error).not.toHaveBeenCalled();
-  });
-
   it.each([
     [180, [255, 255, 255, 255]],
     [192, [0, 0, 0, 0]],
-  ])('draws a transparent appIcon at %i px with corner pixel %j', async (size, pixel) => {
-    await fs.mkdir(path.join(cwd, 'public'));
-    await fs.writeFile(path.join(cwd, 'public', 'clear.png'), transparentPNG());
-
-    const { req } = makeReq({ appIcon: '/clear.png' }, String(size));
+  ])('serves the %i px frog with corner pixel %j', async (size, pixel) => {
+    const { req } = makeReq({}, String(size));
 
     const response = await iconEndpoint.handler(req);
 
     expect(firstPixel(Buffer.from(await response.arrayBuffer()))).toEqual(pixel);
   });
+
+  it.each(['32', '180', '192', '512'])(
+    'serves admin.meta.appIcon from public/ unchanged at %s px',
+    async (size) => {
+      const icon = Buffer.from('not decoded, only passed through');
+
+      await fs.mkdir(path.join(cwd, 'public'));
+      await fs.writeFile(path.join(cwd, 'public', 'acme.png'), icon);
+
+      const { error, req } = makeReq({ appIcon: '/acme.png' }, size);
+
+      const response = await iconEndpoint.handler(req);
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toBe('image/png');
+      expect(response.headers.get('cache-control')).toBe('public, max-age=86400');
+      expect(Buffer.from(await response.arrayBuffer())).toEqual(icon);
+      expect(error).not.toHaveBeenCalled();
+    },
+  );
 
   it('returns 500 and logs when admin.meta.appIcon is missing from public/', async () => {
     const { error, req } = makeReq({ appIcon: '/acme.png' }, '192');

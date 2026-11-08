@@ -2,7 +2,7 @@
 title: "CLI"
 sidebarTitle: "CLI"
 description: "Every frogbot command, its arguments, and where each one is documented."
-keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot up", "frogbot down", "frogbot status", "background", "frogbot run", "frogbot check", "frogbot share", "plugin-dojo", "pull", "logs", "commands"]
+keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot up", "frogbot down", "frogbot status", "background", "frogbot run", "frogbot check", "frogbot dojo", "plugin-dojo", "share", "pull", "logs", "commands"]
 ---
 
 The `frogbot` package installs a `frogbot` command. Run it from your app's root directory through your package manager, for example `pnpm frogbot dev` or `npx frogbot dev`.
@@ -62,6 +62,12 @@ Each problem is one line on stderr, `[frogbot] <code> <path>: <message>`, follow
 
 `INVALID_CRON` and `UNKNOWN_TASK` are config errors, so `dev` and `start` fail on them too.
 
+`check` also warns about things that don't stop your app. A warning is one line on stderr, `[frogbot] warning <code> <path>: <message>`, and doesn't change the exit code; a passing run says `check passed with N warnings`:
+
+| Code | Means | Fix |
+| --- | --- | --- |
+| `MISSING_ICON` | A collection that shows in the sidebar has no `admin.icon`, so it shows a folder. Collections with `admin.hidden`, `admin.group: false` or `auth` are skipped. The path names it, for example `collections.invoices`. | Set `admin.icon` to one of the [built-in names](/admin/admin-navigation#collection-icons-and-placement). |
+
 `check` doesn't run TypeScript or look at the database. When it passes, it says so: run your app's `typecheck` script for type errors, and `frogbot migrate:status` for pending migrations.
 
 ### JSON output
@@ -71,6 +77,8 @@ With `--json`, `check` writes exactly one JSON object to stdout and sends everyt
 ```json
 { "command": "check", "success": true }
 ```
+
+When there are warnings, a `warnings` array of `{ code, path, message }` entries sits beside `success`, whether it's `true` or `false`.
 
 ```json
 {
@@ -141,22 +149,26 @@ Added when [`capturePlugin()`](/plugins/capture) is in your config's `plugins`:
 
 ### Commands from `dojo()`
 
-Included automatically in apps created with `create-frogbot-app` via [`dojo()`](/plugins/dojo). Without an app (such as when pulling an app into an empty directory), run them as `npx @frogbotai/plugin-dojo <command>`:
+Apps created with `create-frogbot-app` list [`dojo()`](/plugins/dojo), which adds `frogbot dojo`: every Dojo action from the terminal, for people and coding agents. Without an app (such as when pulling an app into an empty directory), run the same commands as `npx @frogbotai/plugin-dojo <command>`.
 
-| Command | Arguments | Description |
-| --- | --- | --- |
-| `share` | `--data`, `--no-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys` | Uploads the app to Dojo, builds it, and prints its live URL. See [`share`](#share). |
-| `pull` | `<app>` | Downloads an app shared with you on Dojo into a new folder. See [`pull`](#pull). |
-| `logs` | `<app>`, `--follow` | Prints an app's recent logs from Dojo, or follows them live. See [`logs`](#logs). |
-| `logout` | — | Signs the CLI out of Dojo. See [`logout`](#logout). |
+| Command | Description |
+| --- | --- |
+| `login`, `logout`, `whoami` | Signs in with a browser code (the first sign-in makes the account), signs out, or shows who is signed in. |
+| `workspaces`, `members` | Lists, creates and renames workspaces, and manages their members. |
+| `apps share`, `apps pull`, `apps logs` | Shares the app in this folder, downloads one, or prints its logs. See [`dojo apps share`](#dojo-apps-share). |
+| `apps list`, `get`, `create`, `rename`, `delete` | Manages your apps. |
+| `deployments`, `env`, `domains`, `sharing` | An app's deployments and build logs, environment keys, custom domain, and who it's shared with. |
+| `keys`, `billing` | Your Dojo API keys, and the workspace's plan and billing link. |
 
-### `share`
+Every command takes `--json`, which prints one JSON value on stdout, and reads `FROGBOT_DOJO_TOKEN` as its API key. Destructive commands need `--yes` without a terminal. `frogbot dojo --help` lists everything; the [Dojo plugin](/plugins/dojo#commands) has the full list with examples.
+
+### `dojo apps share`
 
 ```bash
-npx frogbot share --no-data
+npx frogbot dojo apps share --no-data
 ```
 
-Uploads the app in the current folder to Dojo, streams `[build]` logs, and prints a share link followed by the live `https://<name>.frogbot.app` URL. Run it from the folder containing `frogbot.config.ts` (or its parent when the config is inside `src/`). In an app without `dojo()`, run `npx @frogbotai/plugin-dojo share`.
+Uploads the app in the current folder to Dojo, streams `[build]` logs, and prints a share link followed by the live `https://<name>.frogbot.app` URL. `npx frogbot share` is the same command, with the same flags. Run it from the folder containing `frogbot.config.ts` (or its parent when the config is inside `src/`). In an app without `dojo()`, run `npx @frogbotai/plugin-dojo apps share`.
 
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -172,7 +184,8 @@ Uploads the app in the current folder to Dojo, streams `[build]` logs, and print
 <AccordionGroup>
   <Accordion title="Pre-flight checks & signing in">
     - **Lockfile check:** `share` stops before uploading if `package.json` is missing, if the app uses Bun, or if no `pnpm-lock.yaml`, `package-lock.json`, or `yarn.lock` is present.
-    - **Browser login:** On first use, `share` prints a Dojo verification URL that carries the code, then the code itself (and opens your browser in interactive terminals). When the code expires, `share` starts a new one: on its own in a non-interactive shell (up to three codes), or when you press Enter. Your token is saved in `~/.config/frogbotai/auth.json` (or `$XDG_CONFIG_HOME`) with owner-only permissions.
+    - **Browser login:** On first use, `share` (like every `frogbot dojo` command) prints a Dojo verification URL that carries the code, then the code itself (and opens your browser in interactive terminals). When the code expires, `share` starts a new one: on its own in a non-interactive shell (up to three codes), or when you press Enter. Your token is saved in `~/.config/frogbotai/auth.json` (or `$XDG_CONFIG_HOME`) with owner-only permissions.
+    - **API key instead:** Set `FROGBOT_DOJO_TOKEN` to a Dojo API key (from `frogbot dojo keys create`) for CI and agents. It's used ahead of the stored token, and a refused one fails instead of starting a browser login.
     - **Custom Dojo endpoint:** Set `FROGBOT_DOJO_URL` to target a different Dojo instance.
   </Accordion>
   <Accordion title="First share vs. subsequent updates">
@@ -187,9 +200,9 @@ Uploads the app in the current folder to Dojo, streams `[build]` logs, and print
     - **Upload collections:** Files inside upload directories within your project root are uploaded with progress output and automatic 3x retries. `.env*`, `.git`, `node_modules`, and database files inside upload folders are excluded.
   </Accordion>
   <Accordion title="Environment keys (--no-keys, --skip-key, --update-keys)">
-    - **Encryption & masking:** Keys from `.env*` files are masked in terminal output (`STRIPE_KEY ••••4242`) and sealed to Dojo's public key before leaving your machine. Platform variables (`DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT`, `HOSTNAME`) are managed by Dojo automatically.
+    - **Encryption & masking:** Keys from `.env*` files are masked in terminal output (`STRIPE_KEY ••••4242`) and sealed to Dojo's public key before leaving your machine. Platform variables (`DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT`, `HOSTNAME`) are managed by Dojo automatically, and the Dojo sign-in (`FROGBOT_DOJO_TOKEN`, `FROGBOT_DOJO_URL`) never leaves your machine.
     - **First vs. later shares:** The first share lets you untick any keys interactively (or uploads all keys when non-interactive). Later shares add newly introduced keys automatically and keep existing live values unless you pass `--update-keys`.
-    - **Editors:** Collaborators with editor access (such as from [`pull`](#pull)) deploy code only; key changes are restricted to workspace owners.
+    - **Editors:** Collaborators with editor access (such as from [`dojo apps pull`](#dojo-apps-pull)) deploy code only; key changes are restricted to workspace owners.
   </Accordion>
   <Accordion title="Uploaded files, 100 MB limit, and exit codes">
     - **Included files:** Uploads all tracked and untracked working files that are not ignored by `.gitignore` (up to **100 MB**).
@@ -198,13 +211,13 @@ Uploads the app in the current folder to Dojo, streams `[build]` logs, and print
   </Accordion>
 </AccordionGroup>
 
-### `pull`
+### `dojo apps pull`
 
 ```bash
-npx @frogbotai/plugin-dojo pull deals
+npx @frogbotai/plugin-dojo apps pull deals
 ```
 
-Downloads the live code of a Dojo app you own or edit into a new `./<app>` directory, links `.frogbot/app.json` so running `npx frogbot share` from that folder updates the same app, and writes a fresh local `.env` (`DATABASE_URL=file:./frogbot.db` and `FROGBOT_SECRET`). Live data and production secrets remain on Dojo.
+Downloads the live code of a Dojo app you own or edit into a new `./<app>` directory, links `.frogbot/app.json` so running `npx frogbot dojo apps share` from that folder updates the same app, and writes a fresh local `.env` (`DATABASE_URL=file:./frogbot.db` and `FROGBOT_SECRET`). Live data and production secrets remain on Dojo.
 
 ```bash
 cd deals
@@ -215,15 +228,15 @@ pnpm dev
 - Refuses to overwrite an existing folder.
 - Exits with code `1` if you lack editor/owner permissions or the app has no live version yet, and code `2` if no app slug is passed.
 
-### `logs`
+### `dojo apps logs`
 
 ```bash
-npx @frogbotai/plugin-dojo logs deals --follow
+npx @frogbotai/plugin-dojo apps logs deals --follow
 ```
 
 Prints recent logs (last 24 hours, oldest first) for a Dojo app you own or edit, masking any stored secret values of 8+ characters as `••••`. Pass `--follow` to stream new lines every 2 seconds until Ctrl+C.
 
-### `logout`
+### `dojo logout`
 
 ```bash
 npx @frogbotai/plugin-dojo logout

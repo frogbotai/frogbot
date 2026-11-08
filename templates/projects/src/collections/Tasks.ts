@@ -4,6 +4,7 @@ import { autonumberField, autonumberKeyField } from 'frogbot';
 export const Tasks: CollectionConfig = {
   slug: 'tasks',
   admin: {
+    icon: 'check-list',
     useAsTitle: 'title',
     views: [
       {

@@ -151,6 +151,8 @@ export type Collection = {
   slug: string;
   /** True if this collection was authored with auth enabled. */
   auth: boolean;
+  /** The field that names a record, from `admin.useAsTitle`; `id` when unset. */
+  useAsTitle: string;
   search?: SearchIndexDescriptors;
 };
 

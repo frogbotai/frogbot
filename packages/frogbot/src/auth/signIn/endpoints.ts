@@ -11,6 +11,7 @@ import type { Endpoint } from '../../endpoints/types.js';
 import type { SignInMethod } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { issueSession } from '../session.js';
+import { continueLook, continuePage } from './continuePage.js';
 import { resolveSignInIdentity } from './identity.js';
 
 async function routeURLs({
@@ -51,21 +52,6 @@ async function routeURLs({
     returnTo: collectionSlug === config.admin.user ? config.routes.admin : '/',
     cookiePrefix: config.cookiePrefix,
   };
-}
-
-const escapeHTML = (value: string) =>
-  value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
-
-function continueTo(returnTo: string, headers: Headers): Response {
-  const url = escapeHTML(returnTo);
-
-  headers.set('content-type', 'text/html; charset=utf-8');
-  headers.set('referrer-policy', 'no-referrer');
-
-  return new Response(
-    `<!doctype html><meta http-equiv="refresh" content="0;url=${url}"><a href="${url}">Continue</a>`,
-    { headers },
-  );
 }
 
 export function buildSignInEndpoints({
@@ -193,7 +179,18 @@ export function buildSignInEndpoints({
             }),
           );
 
-          return continueTo(intent.returnTo, headers);
+          return continuePage({
+            returnTo: intent.returnTo,
+            look: continueLook({
+              config,
+              collectionSlug,
+              returnTo: intent.returnTo,
+              headers: req.headers,
+            }),
+            lang: req.i18n.language,
+            t: req.t,
+            headers,
+          });
         } catch (error) {
           return failure(
             error instanceof OAuthError ? (error.code === 'signUp' ? 403 : 400) : 500,

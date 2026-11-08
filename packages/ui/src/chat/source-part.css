@@ -1,4 +1,19 @@
 @layer frogbot {
+  .fb-source-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fb-source-list__item {
+    display: flex;
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .fb-source-part--url {
     color: var(--color-text);
     font-size: var(--fb-text-sm);
@@ -9,11 +24,29 @@
 
   .fb-source-part--document {
     display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
     padding: 0.25rem 0.75rem;
+    overflow: hidden;
     border-radius: 9999px;
     background-color: var(--color-bg-secondary);
     color: var(--color-text-secondary);
     font-size: var(--fb-text-xs);
     line-height: var(--fb-text-xs--line-height);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fb-source-part--record {
+    text-decoration: none;
+  }
+
+  .fb-source-part--record:hover {
+    color: var(--color-text);
+  }
+
+  .fb-source-part--record:focus-visible {
+    outline: 2px solid var(--color-text);
+    outline-offset: 2px;
   }
 }

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { sanitizeToolList } from '../../../../packages/frogbot/src/tools/config/sanitize.js';
-import { searchTool } from '../../../../packages/frogbot/src/tools/search.js';
+import { searchTool, type SearchToolHit } from '../../../../packages/frogbot/src/tools/search.js';
 import type { ToolCtx } from '../../../../packages/frogbot/src/tools/types.js';
 
 const lexical = { fields: [{ path: 'title', localized: false }] };
@@ -259,5 +259,86 @@ describe('searchTool', () => {
     expect(() => sanitizeToolList([words, searchTool(base)], 'Agent support')).toThrow(
       "Duplicate tool slug 'search_posts_words'",
     );
+  });
+});
+
+describe('searchTool sources', () => {
+  function sourcesCtx({ useAsTitle = 'title', docs = [] as Record<string, unknown>[] } = {}) {
+    const find = vi.fn().mockResolvedValue({ docs });
+    const frogbot = { collections: { posts: { slug: 'posts', auth: false, useAsTitle } }, find };
+    const ctx = {
+      req: { frogbot },
+      frogbot,
+      agent: { slug: 'support', runId: 'run-1' },
+      overrideAccess: false,
+    } as unknown as ToolCtx;
+
+    return { ctx, find };
+  }
+
+  it('gives one source per readable hit, titled from the hit', async () => {
+    const { ctx, find } = sourcesCtx({ docs: [{ id: 2, title: 'Stale' }] });
+    const hits = [
+      { id: 2, score: 0.9, title: 'Second' },
+      { id: 1, score: 0.4, title: 'First' },
+    ];
+
+    expect(await searchTool(base).sources!({ hits }, ctx)).toEqual([
+      { collection: 'posts', id: 2, title: 'Second' },
+    ]);
+    expect(find).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: { in: [2, 1] } }, overrideAccess: false }),
+    );
+  });
+
+  it('reads titles select left out with the run access, and drops records it cannot read', async () => {
+    const { ctx, find } = sourcesCtx({ docs: [{ id: 'b', title: 'Bee' }] });
+    const hits = [
+      { id: 'a', score: 1, body: 'x' },
+      { id: 'b', score: 0.5, body: 'y' },
+    ];
+
+    expect(await searchTool({ ...base, select: { body: true } }).sources!({ hits }, ctx)).toEqual([
+      { collection: 'posts', id: 'b', title: 'Bee' },
+    ]);
+    expect(find).toHaveBeenCalledWith({
+      collection: 'posts',
+      where: { id: { in: ['a', 'b'] } },
+      select: { title: true },
+      depth: 0,
+      limit: 2,
+      pagination: false,
+      req: ctx.req,
+      overrideAccess: false,
+    });
+  });
+
+  it('titles by id when the collection has no useAsTitle, and falls back to id for an empty title', async () => {
+    expect(
+      await searchTool(base).sources!(
+        { hits: [{ id: 7, score: 1 }] },
+        sourcesCtx({ useAsTitle: 'id', docs: [{ id: 7 }] }).ctx,
+      ),
+    ).toEqual([{ collection: 'posts', id: 7, title: '7' }]);
+
+    const { ctx } = sourcesCtx({ docs: [{ id: 3, title: '' }] });
+
+    expect(
+      await searchTool(base).sources!({ hits: [{ id: 3, score: 1, title: '' }] }, ctx),
+    ).toEqual([{ collection: 'posts', id: 3, title: '3' }]);
+  });
+
+  it('gives no sources for a result without hits', async () => {
+    const { ctx } = sourcesCtx();
+    const skipped = 'skipped' as unknown as { hits: SearchToolHit[] };
+
+    expect(await searchTool(base).sources!(skipped, ctx)).toEqual([]);
+  });
+
+  it('leaves the result the model sees as hits only', async () => {
+    const { ctx } = makeCtx();
+    const result = await searchTool(base).execute({ query: 'x' }, ctx);
+
+    expect(Object.keys(result)).toEqual(['hits']);
   });
 });

@@ -211,7 +211,7 @@ describe('aiPolicyPlugin', () => {
     await expect(
       result.ai!.access!.generate!({ req: customer, model: 'openai/gpt-4o' }),
     ).resolves.toBe(true);
-    expect(() => policyHook({ req: customer } as never)).not.toThrow();
+    await expect(policyHook({ req: customer } as never)).resolves.toBeUndefined();
   });
 
   it('rejects a spent budget before each operation, not at access', async () => {
@@ -237,10 +237,10 @@ describe('aiPolicyPlugin', () => {
     await expect(result.ai!.access!.generate!({ req: under, model: 'm' })).resolves.toBe(true);
 
     expect(appHook).not.toBe(policyHook);
-    expect(() => policyHook({ req: spent } as never)).toThrowError(
+    await expect(policyHook({ req: spent } as never)).rejects.toThrowError(
       expect.objectContaining(budgetError),
     );
-    expect(() => policyHook({ req: under } as never)).not.toThrow();
+    await expect(policyHook({ req: under } as never)).resolves.toBeUndefined();
     expect(result.ai!.hooks!.afterOperation).toHaveLength(2);
   });
 

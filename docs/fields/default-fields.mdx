@@ -16,20 +16,18 @@ Some generated fields can be customized by defining a top-level field with the s
 
 ## Override example
 
-This auth collection adds read access control to the generated `apiKey` field. FrogBot preserves the field's built-in hooks and admin configuration because the declaration is merged into the generated field:
+This auth collection limits who can read the generated `email` field. FrogBot keeps the field's built-in validation and admin configuration because the declaration is merged into the generated field:
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
 
 export const Users: CollectionConfig = {
   slug: 'users',
-  auth: {
-    useAPIKey: true,
-  },
+  auth: true,
   fields: [
     {
-      name: 'apiKey',
-      type: 'text',
+      name: 'email',
+      type: 'email',
       access: {
         read: ({ req }) => Boolean(req.user),
       },
@@ -72,7 +70,6 @@ Authentication-enabled collections receive fields according to their auth config
 | --- | --- |
 | `email`, `password`, `resetPasswordToken`, `resetPasswordExpiration` | Local authentication is enabled. |
 | `username` | Username login is enabled. |
-| `enableAPIKey`, `apiKey`, `apiKeyIndex` | API-key authentication is enabled. |
 | `_verified`, `_verificationToken` | Email verification is enabled. |
 | `loginAttempts`, `lockUntil` | Maximum login attempts are configured. |
 | `sessions` | Sessions are enabled. |
