@@ -11,6 +11,8 @@ const skip = new Set([
   'AGENTS.md',
 ]);
 
+const uploads = new Set(['files', 'media']);
+
 /**
  * Whether the pack copies `entry`, a path inside the template folder `templateDir`.
  *
@@ -21,6 +23,9 @@ export function packs(templateDir, entry) {
   const base = path.basename(entry);
 
   return (
-    !skip.has(base) && !/\.db(-journal|-shm|-wal)?$/.test(base) && !base.endsWith('.tsbuildinfo')
+    !skip.has(base) &&
+    !uploads.has(path.relative(templateDir, entry)) &&
+    !/\.db(-journal|-shm|-wal)?$/.test(base) &&
+    !base.endsWith('.tsbuildinfo')
   );
 }
