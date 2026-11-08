@@ -50,6 +50,10 @@ export default await buildTestConfig({
       tokenPrefix: 'test',
       headerNames: ['x-service-key'],
     }),
-    auditLogPlugin({ collections: ['posts'], retention: { days: 30 }, snapshot: 'delete' }),
+    auditLogPlugin({
+      collections: ['posts', 'accounts'],
+      retention: { days: 30 },
+      snapshot: 'delete',
+    }),
   ],
 });

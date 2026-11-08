@@ -1,7 +1,6 @@
 import { definePlugin, type FrogBotConfig, type Plugin } from 'frogbot';
 
 import { createAuditLogCollection, defaultAuditSlug } from './collection.js';
-import { hiddenTree } from './hidden.js';
 import { createAfterChangeHook, createAfterDeleteHook } from './hooks.js';
 import type { AuditCollectionSelection, AuditLogPluginOptions } from './types.js';
 
@@ -65,7 +64,8 @@ const auditLog = definePlugin<AuditLogResolvedOptions>({
         auditSlug,
         collectionSlug: collection.slug,
         entry: options.entry,
-        hidden: hiddenTree(collection.fields, config.blocks),
+        blocks: config.blocks ?? [],
+        fields: collection.fields,
         ipAddress: options.ipAddress ?? false,
         operations,
         snapshot: options.snapshot ?? 'never',

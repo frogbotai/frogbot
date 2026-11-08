@@ -1,10 +1,31 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook, FrogBotRequest } from 'frogbot';
 
 import { computeChanges } from './diff.js';
-import { stripHidden } from './hidden.js';
+import { type HiddenTree, hiddenTree, stripHidden } from './hidden.js';
 import type { AuditEntry, AuditHookOptions, AuditOperation } from './types.js';
 
 type Document = Record<string, unknown> & { id: number | string };
+
+const trees = new WeakMap<readonly unknown[], HiddenTree>();
+
+function hiddenFor(options: AuditHookOptions, collection: unknown): HiddenTree {
+  const fields =
+    typeof collection === 'object' &&
+    collection !== null &&
+    'fields' in collection &&
+    Array.isArray(collection.fields)
+      ? collection.fields
+      : options.fields;
+
+  let tree = trees.get(fields);
+
+  if (!tree) {
+    tree = hiddenTree(fields, options.blocks);
+    trees.set(fields, tree);
+  }
+
+  return tree;
+}
 
 function requestMetadata(headers: Headers, trustProxy: boolean) {
   const forwarded = trustProxy ? headers.get('x-forwarded-for')?.split(',')[0]?.trim() : undefined;
@@ -31,10 +52,12 @@ async function writeAudit(
   rawDoc: Document,
   rawPreviousDoc: Document | undefined,
   req: FrogBotRequest,
+  collection: unknown,
 ): Promise<void> {
   try {
-    const doc = stripHidden(rawDoc, options.hidden);
-    const previousDoc = rawPreviousDoc && stripHidden(rawPreviousDoc, options.hidden);
+    const hidden = hiddenFor(options, collection);
+    const doc = stripHidden(rawDoc, hidden);
+    const previousDoc = rawPreviousDoc && stripHidden(rawPreviousDoc, hidden);
     const snapshot =
       options.snapshot === 'always' || (options.snapshot === 'delete' && operation === 'delete')
         ? doc
@@ -79,7 +102,7 @@ async function writeAudit(
 export function createAfterChangeHook(
   options: AuditHookOptions,
 ): CollectionAfterChangeHook<Document> {
-  return async ({ doc, operation, previousDoc, req }) => {
+  return async ({ collection, doc, operation, previousDoc, req }) => {
     if (!options.operations.has(operation)) return doc;
 
     await writeAudit(
@@ -88,6 +111,7 @@ export function createAfterChangeHook(
       doc,
       operation === 'create' ? undefined : previousDoc,
       req,
+      collection,
     );
 
     return doc;
@@ -97,8 +121,8 @@ export function createAfterChangeHook(
 export function createAfterDeleteHook(
   options: AuditHookOptions,
 ): CollectionAfterDeleteHook<Document> {
-  return async ({ doc, req }) => {
-    await writeAudit(options, 'delete', doc, undefined, req);
+  return async ({ collection, doc, req }) => {
+    await writeAudit(options, 'delete', doc, undefined, req, collection);
 
     return doc;
   };

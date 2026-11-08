@@ -39,11 +39,11 @@ describe('audit log plugin integration', () => {
     authorization = { Authorization: `JWT ${login.body.token}` };
   });
 
-  async function entries(documentId: number | string) {
+  async function entries(documentId: number | string, collection = 'posts') {
     await vi.waitFor(async () => {
       const result = await booted.frogbot.find({
         collection: 'audit-logs',
-        where: { documentId: { equals: String(documentId) } },
+        where: { collection: { equals: collection }, documentId: { equals: String(documentId) } },
         overrideAccess: true,
         depth: 0,
         limit: 20,
@@ -54,7 +54,7 @@ describe('audit log plugin integration', () => {
 
     const result = await booted.frogbot.find({
       collection: 'audit-logs',
-      where: { documentId: { equals: String(documentId) } },
+      where: { collection: { equals: collection }, documentId: { equals: String(documentId) } },
       overrideAccess: true,
       depth: 0,
       limit: 20,
@@ -151,6 +151,22 @@ describe('audit log plugin integration', () => {
     expect(JSON.stringify(audit)).not.toMatch(/"(s1|s2|t1|t2)"/);
   });
 
+  it('keeps login fields core adds, such as hash and salt, out of entries', async () => {
+    await booted.frogbot.update({
+      collection: 'accounts',
+      id: accountId,
+      data: { password: 'audit-password-2' },
+      overrideAccess: true,
+    });
+
+    await booted.frogbot.delete({ collection: 'accounts', id: accountId, overrideAccess: true });
+
+    const audit = await entries(accountId, 'accounts');
+
+    expect(audit.map((entry) => entry.operation).sort()).toEqual(['create', 'delete', 'update']);
+    expect(JSON.stringify(audit)).not.toMatch(/"(hash|salt|resetPasswordToken|lockUntil)"/);
+  });
+
   it('leaves no entry when the change is rolled back', async () => {
     const { req, transactionID } = await begin();
     const post = await booted.frogbot.create({
@@ -170,7 +186,7 @@ describe('audit log plugin integration', () => {
 
     const audit = await booted.frogbot.find({
       collection: 'audit-logs',
-      where: { documentId: { equals: String(post.id) } },
+      where: { collection: { equals: 'posts' }, documentId: { equals: String(post.id) } },
       overrideAccess: true,
     });
 
@@ -311,6 +327,7 @@ describe('audit log plugin integration', () => {
 
     const remaining = await booted.frogbot.find({
       collection: 'audit-logs',
+      where: { collection: { equals: 'posts' } },
       limit: 0,
       overrideAccess: true,
     });
@@ -368,6 +385,7 @@ describe('audit log plugin integration', () => {
 
     const remaining = await booted.frogbot.find({
       collection: 'audit-logs',
+      where: { collection: { equals: 'posts' } },
       limit: 0,
       overrideAccess: true,
     });

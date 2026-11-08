@@ -1,7 +1,6 @@
 import type { CollectionConfig, Field, FrogBotRequest } from 'frogbot';
 
 import type { AuditChanges } from './diff.js';
-import type { HiddenTree } from './hidden.js';
 
 export type AuditOperation = 'create' | 'update' | 'delete';
 
@@ -64,7 +63,8 @@ export type AuditHookOptions = {
   auditSlug: string;
   collectionSlug: string;
   entry: AuditEntryFn | undefined;
-  hidden: HiddenTree;
+  blocks: readonly unknown[];
+  fields: readonly unknown[];
   ipAddress: boolean;
   operations: ReadonlySet<AuditOperation>;
   snapshot: AuditSnapshot;

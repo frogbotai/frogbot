@@ -267,6 +267,21 @@ describe('audit hooks', () => {
     expect(write.error).toHaveBeenCalledOnce();
   });
 
+  it('reads hidden fields from the final collection config the hook receives', async () => {
+    const write = request();
+    const afterChange = await hook();
+
+    await afterChange({
+      collection: { slug: 'posts', fields: [{ name: 'hash', type: 'text', hidden: true }] },
+      doc: { id: 'post-1', hash: 'new' },
+      previousDoc: { id: 'post-1', hash: 'old' },
+      operation: 'update',
+      req: write.req,
+    } as never);
+
+    expect(write.create.mock.calls[0][0].data.changes).toEqual({});
+  });
+
   it('keeps hidden fields out of changes, snapshot and entry', async () => {
     const write = request();
     const entry = vi.fn(({ entry: value }: AuditEntryArgs) => value);

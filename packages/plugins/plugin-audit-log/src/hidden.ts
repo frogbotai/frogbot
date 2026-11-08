@@ -1,5 +1,3 @@
-import { type Block, type Field, fieldAffectsData } from 'frogbot';
-
 /** Field names to strip at one level of a document: `true` drops the value, a tree recurses into it. */
 export type HiddenTree = Map<string, HiddenNode>;
 
@@ -9,65 +7,91 @@ type HiddenNode =
   | { kind: 'rows'; tree: HiddenTree }
   | { kind: 'blocks'; trees: Map<string, HiddenTree> };
 
-function blockFields(block: Block | string, blocks: readonly Block[]): Block | undefined {
-  return typeof block === 'string' ? blocks.find((item) => item.slug === block) : block;
+type Shape = Record<string, unknown>;
+
+function list(value: unknown): Shape[] {
+  return Array.isArray(value) ? value.filter(isRecord) : [];
 }
 
-function walk(fields: readonly Field[], blocks: readonly Block[], tree: HiddenTree): HiddenTree {
-  for (const field of fields) {
-    if (field.type === 'tabs') {
-      for (const tab of field.tabs) {
-        if ('name' in tab && tab.name) {
-          if (tab.hidden) tree.set(tab.name, true);
-          else nest(tree, tab.name, 'object', walk(tab.fields, blocks, new Map()));
-        } else {
-          walk(tab.fields, blocks, tree);
-        }
-      }
-
-      continue;
-    }
-
-    if (!fieldAffectsData(field)) {
-      if ('fields' in field) walk(field.fields, blocks, tree);
-      continue;
-    }
-
-    if ('hidden' in field && field.hidden) {
-      tree.set(field.name, true);
-      continue;
-    }
-
-    if (field.type === 'group' || field.type === 'array') {
-      const kind = field.type === 'group' ? 'object' : 'rows';
-
-      nest(tree, field.name, kind, walk(field.fields, blocks, new Map()));
-    }
-
-    if (field.type === 'blocks') {
-      const trees = new Map<string, HiddenTree>();
-
-      for (const reference of field.blocks) {
-        const block = blockFields(reference, blocks);
-        const blockTree = block ? walk(block.fields, blocks, new Map()) : new Map();
-
-        if (block && blockTree.size) trees.set(block.slug, blockTree);
-      }
-
-      if (trees.size) tree.set(field.name, { kind: 'blocks', trees });
-    }
-  }
-
-  return tree;
+function named(field: Shape): string | undefined {
+  return typeof field.name === 'string' && field.name ? field.name : undefined;
 }
 
 function nest(tree: HiddenTree, name: string, kind: 'object' | 'rows', child: HiddenTree) {
   if (child.size) tree.set(name, { kind, tree: child });
 }
 
-/** Collects the paths of `hidden: true` fields, through groups, tabs, rows, collapsibles, arrays and blocks. */
-export function hiddenTree(fields: readonly Field[], blocks: readonly Block[] = []): HiddenTree {
-  return walk(fields, blocks, new Map());
+function blockTrees(field: Shape, blocks: readonly Shape[]): Map<string, HiddenTree> {
+  const trees = new Map<string, HiddenTree>();
+  const references: unknown[] = [
+    ...(Array.isArray(field.blocks) ? field.blocks : []),
+    ...(Array.isArray(field.blockReferences) ? field.blockReferences : []),
+  ];
+
+  for (const reference of references) {
+    const block =
+      typeof reference === 'string' ? blocks.find((item) => item.slug === reference) : reference;
+
+    if (!isRecord(block) || typeof block.slug !== 'string' || trees.has(block.slug)) continue;
+    const tree = walk(list(block.fields), blocks, new Map());
+
+    if (tree.size) trees.set(block.slug, tree);
+  }
+
+  return trees;
+}
+
+function walk(fields: readonly Shape[], blocks: readonly Shape[], tree: HiddenTree): HiddenTree {
+  for (const field of fields) {
+    const name = named(field);
+
+    if (field.type === 'tabs') {
+      for (const tab of list(field.tabs)) {
+        const tabName = named(tab);
+
+        if (!tabName) walk(list(tab.fields), blocks, tree);
+        else if (tab.hidden === true) tree.set(tabName, true);
+        else nest(tree, tabName, 'object', walk(list(tab.fields), blocks, new Map()));
+      }
+
+      continue;
+    }
+
+    if (!name || field.type === 'ui') {
+      walk(list(field.fields), blocks, tree);
+      continue;
+    }
+
+    if (field.hidden === true) {
+      tree.set(name, true);
+      continue;
+    }
+
+    if (field.type === 'group' || field.type === 'array') {
+      const kind = field.type === 'group' ? 'object' : 'rows';
+
+      nest(tree, name, kind, walk(list(field.fields), blocks, new Map()));
+    }
+
+    if (field.type === 'blocks') {
+      const trees = blockTrees(field, blocks);
+
+      if (trees.size) tree.set(name, { kind: 'blocks', trees });
+    }
+  }
+
+  return tree;
+}
+
+/**
+ * Collects the paths of `hidden: true` fields, through groups, tabs, rows, collapsibles, arrays
+ * and blocks. Takes a collection's final fields, so fields core or later plugins add count too.
+ */
+export function hiddenTree(
+  fields: readonly unknown[],
+  blocks: readonly unknown[] = [],
+): HiddenTree {
+  return walk(list(fields), list(blocks), new Map());
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
