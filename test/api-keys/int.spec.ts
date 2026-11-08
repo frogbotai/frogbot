@@ -1270,6 +1270,14 @@ describe('API keys plugin integration', () => {
       expect(past.status).toBe(400);
       expect(past.body.error).toBe('expiresAt must be in the future.');
 
+      const farFuture = await mint(session, {
+        name: 'Far',
+        expiresAt: '+099999-01-01T00:00:00.000Z',
+      });
+
+      expect(farFuture.status).toBe(400);
+      expect(farFuture.body.error).toBe('expiresAt must be before the year 10000.');
+
       const expiresAt = new Date(Date.now() + 30 * 864e5).toISOString();
       const future = await mint(session, { name: 'Future', expiresAt });
 

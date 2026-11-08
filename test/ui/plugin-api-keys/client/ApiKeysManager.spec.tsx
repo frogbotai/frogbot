@@ -202,6 +202,7 @@ describe('API key controls', () => {
       expect(day().value).toBe('');
       expect(day().type).toBe('date');
       expect(day().min).toBe('2026-11-08');
+      expect(day().max).toBe('9999-12-30');
 
       await generate();
 

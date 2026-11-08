@@ -289,6 +289,11 @@ describe('API key services', () => {
     it.each([
       ['an unreadable date', 'soon', 'expiresAt must be a date, such as 2027-01-31T00:00:00.000Z.'],
       ['a past date', '2020-01-01T00:00:00.000Z', 'expiresAt must be in the future.'],
+      [
+        'a year past 9999',
+        '+020271-01-02T00:00:00.000Z',
+        'expiresAt must be before the year 10000.',
+      ],
     ])('refuses %s with a 400', async (_name, expiresAt, message) => {
       const { create, req } = minter();
 

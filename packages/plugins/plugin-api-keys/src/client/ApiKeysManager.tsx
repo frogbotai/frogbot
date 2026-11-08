@@ -224,6 +224,7 @@ export function ApiKeysManager(props: ApiKeysManagerProps) {
                   aria-describedby={expiresHintId}
                   className="api-keys-dialog__expiry-day"
                   id={expiresId}
+                  max="9999-12-30"
                   min={dayFromToday(0, 0)}
                   readOnly={loading}
                   type="date"

@@ -146,6 +146,8 @@ export const keyScopeBeforeValidate: CollectionBeforeValidateHook = ({
   return data;
 };
 
+const lastExpiry = Date.parse('9999-12-31T23:59:59.999Z');
+
 function resolveExpiry(req: FrogBotRequest, asked: unknown): string | null {
   let expiresAt: number | null = null;
 
@@ -156,6 +158,7 @@ function resolveExpiry(req: FrogBotRequest, asked: unknown): string | null {
     }
 
     if (expiresAt <= Date.now()) throw new APIError('expiresAt must be in the future.', 400);
+    if (expiresAt > lastExpiry) throw new APIError('expiresAt must be before the year 10000.', 400);
   }
 
   const parent = isApiKeyRequest(req) ? (req.user as { apiKey?: KeyDocument }).apiKey : undefined;
