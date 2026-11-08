@@ -5,11 +5,13 @@ import type { KeyboardEvent, ReactNode } from 'react';
 
 export function BoardCard({
   children,
+  className,
   disabled,
   id,
   onClick,
 }: {
   children: ReactNode;
+  className?: string;
   disabled?: boolean;
   id: string;
   onClick?: () => void;
@@ -28,7 +30,7 @@ export function BoardCard({
     <div
       {...draggable.attributes}
       {...draggable.listeners}
-      className={`frog-board__card${draggable.isDragging ? ' frog-board__card--dragging' : ''}`}
+      className={`frog-board__card${draggable.isDragging ? ' frog-board__card--dragging' : ''}${className ? ` ${className}` : ''}`}
       onClick={onClick}
       onKeyDown={onClick ? onKeyDown : undefined}
       ref={draggable.setNodeRef}

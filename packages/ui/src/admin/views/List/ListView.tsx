@@ -1,16 +1,74 @@
-import { NoListResults } from '@payloadcms/ui';
-import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
-import type { ListViewServerProps, PayloadComponent } from 'payload';
-import type { ReactNode } from 'react';
+import type { ListViewServerProps, PayloadRequest, SelectIncludeType } from 'payload';
+import { formatAdminURL } from 'payload/shared';
+import * as qs from 'qs-esm';
 
-import { getRuntimeViews } from '../collectionViews.js';
-import { DefaultListView, type ListPageSlots } from './DefaultListView.client.js';
+import { getPath } from '../cells.js';
+import {
+  createViewRequest,
+  getRuntimeViews,
+  redirectToLastView,
+  resolveCollectionViews,
+} from '../collectionViews.js';
+import { buildFrameSlots } from '../frame.js';
+import { isRecordDone } from '../records/state.js';
+import { isFreshQuery, pickViewSetup, resolveViewSetup } from '../viewSetup.js';
+import { DefaultListView } from './DefaultListView.client.js';
+import { ListFrameClient } from './ListFrame.client.js';
+import { withRowIds } from './rowIds.js';
+
+type Row = Record<string, unknown>;
+
+function selectPath(path: string): SelectIncludeType {
+  const [first, ...rest] = path.split('.');
+
+  return { [first]: rest.length ? selectPath(rest.join('.')) : true };
+}
+
+async function findDoneIds({
+  collectionSlug,
+  docs,
+  req,
+  trash,
+  useAsDone,
+}: {
+  collectionSlug: string;
+  docs: Row[];
+  req: PayloadRequest;
+  trash: boolean;
+  useAsDone: string | undefined;
+}): Promise<string[] | undefined> {
+  if (!useAsDone) return undefined;
+
+  const unread = docs.filter((doc) => getPath(doc, useAsDone) === undefined).map((doc) => doc.id);
+  const read = unread.length
+    ? await req.payload.find({
+        collection: collectionSlug,
+        depth: 0,
+        limit: unread.length,
+        overrideAccess: false,
+        pagination: false,
+        req,
+        select: selectPath(useAsDone),
+        trash,
+        where: { id: { in: unread } },
+      })
+    : { docs: [] };
+
+  const doneElsewhere = new Set(
+    (read.docs as Row[]).filter((doc) => isRecordDone(doc, useAsDone)).map((doc) => doc.id),
+  );
+
+  return docs
+    .filter((doc) => isRecordDone(doc, useAsDone) || doneElsewhere.has(doc.id))
+    .map((doc) => String(doc.id));
+}
 
 /**
- * The list view Payload renders. FrogBot's toolbar, `CreateButton` and empty state fill Payload's
- * own list slots, and the client list view gets no server props.
+ * The list view Payload renders. On the collection's own page it renders in FrogBot's shared view
+ * frame with Payload's table, selection and page controls as its body. A relationship drawer and
+ * the hierarchy view stay Payload's own list.
  */
-export function ListView(props: ListViewServerProps) {
+export async function ListView(props: ListViewServerProps) {
   const {
     collectionConfig,
     data,
@@ -27,79 +85,92 @@ export function ListView(props: ListViewServerProps) {
     ...clientProps
   } = props;
 
-  const { collectionSlug, hasCreatePermission, hasDeletePermission, newDocumentURL, viewType } =
-    clientProps;
+  const isPage = Array.isArray((params as { segments?: unknown } | undefined)?.segments);
+  if (!isPage || clientProps.viewType === 'hierarchy') return <DefaultListView {...clientProps} />;
 
-  const view = getRuntimeViews({ collectionConfig }).find(({ type }) => type === 'list');
-  const toolbar = view?.type === 'list' ? view.components?.toolbar : undefined;
-  const CreateButton =
-    viewType === 'trash'
-      ? undefined
-      : (collectionConfig.admin.components as { CreateButton?: PayloadComponent } | undefined)
-          ?.CreateButton;
+  const collectionSlug = collectionConfig.slug;
+  const req = await createViewRequest({ i18n, payload, searchParams, user });
+  const { views } = await resolveCollectionViews({ collectionConfig, req });
+  const runtime = getRuntimeViews({ collectionConfig });
+  const view = runtime[0]?.type === 'list' ? runtime[0] : undefined;
+  const isList = clientProps.viewType === 'list' && view !== undefined;
 
-  const { NoResults, ...listProps } = clientProps;
+  if (isList) {
+    await redirectToLastView({ collectionSlug, req, server, views });
 
-  if (!toolbar?.length && !CreateButton && !NoResults) return <DefaultListView {...clientProps} />;
-
-  const createProps = { collectionSlug, hasCreatePermission, newDocumentURL };
-  const render = (Component: PayloadComponent | PayloadComponent[], slotProps: object) =>
-    RenderServerComponent({
-      clientProps: slotProps,
-      Component,
-      importMap: payload.importMap,
-      serverProps: {
-        collectionConfig,
-        data,
-        i18n,
-        limit,
-        listPreferences: props.listPreferences,
-        listSearchableFields,
-        locale,
-        params,
-        payload,
-        permissions,
-        searchParams,
-        server,
-        user,
-      },
+    const query = req.query ?? {};
+    const setup = await resolveViewSetup({
+      collectionSlug,
+      query,
+      req,
+      viewSlug: view.slug,
     });
 
-  const createButton = (key: string) => (
-    <div className="fb-create-button" key={key}>
-      {CreateButton ? render(CreateButton, createProps) : null}
-    </div>
+    const saved = qs.stringify(pickViewSetup(setup.preference));
+
+    if (isFreshQuery(query) && saved) {
+      server.redirect(
+        `${formatAdminURL({
+          adminRoute: payload.config.routes.admin,
+          path: `/collections/${collectionSlug}`,
+        })}?${[qs.stringify(query), saved].filter(Boolean).join('&')}`,
+      );
+    }
+  }
+
+  const slots = buildFrameSlots({
+    activeSlug: view?.slug,
+    adminRoute: payload.config.routes.admin,
+    collectionConfig,
+    hasCreatePermission: clientProps.hasCreatePermission,
+    hasDeletePermission: Boolean(clientProps.hasDeletePermission),
+    i18n,
+    importMap: payload.importMap,
+    runtime,
+    serverProps: {
+      collectionConfig,
+      data,
+      i18n,
+      limit,
+      listPreferences: props.listPreferences,
+      listSearchableFields,
+      locale,
+      params,
+      payload,
+      permissions,
+      searchParams,
+      server,
+      user,
+    },
+    skipLayoutSlots: true,
+    view,
+    views,
+    viewType: clientProps.viewType,
+  });
+
+  const docs = (data as { docs?: Row[] } | undefined)?.docs ?? [];
+  const isEmpty = docs.length === 0 && !clientProps.groupedData?.length;
+  const doneIds = await findDoneIds({
+    collectionSlug,
+    docs: clientProps.groupedData?.flatMap((group) => group.data.docs as Row[]) ?? docs,
+    req,
+    trash: clientProps.viewType === 'trash',
+    useAsDone: (collectionConfig.admin.custom?.frogbot as { useAsDone?: string } | undefined)
+      ?.useAsDone,
+  });
+
+  return (
+    <ListFrameClient
+      {...slots}
+      AfterList={clientProps.AfterList}
+      AfterListTable={clientProps.AfterListTable}
+      BeforeList={clientProps.BeforeList}
+      BeforeListTable={clientProps.BeforeListTable}
+      Description={clientProps.Description ?? slots.Description}
+      doneIds={doneIds}
+      isEmpty={isEmpty}
+      listMenuItems={[...(clientProps.listMenuItems ?? []), ...(slots.listMenuItems ?? [])]}
+      listProps={{ ...clientProps, Table: withRowIds(clientProps.Table) }}
+    />
   );
-
-  const isEmpty = (data as { docs?: unknown[] } | undefined)?.docs?.length === 0;
-  const pageSlots: ListPageSlots = {
-    ...(NoResults
-      ? { NoResults }
-      : CreateButton && isEmpty
-        ? {
-            NoResults: (
-              <NoListResults
-                Actions={[createButton('create')]}
-                description={i18n.t('general:noResultsDescription')}
-                title={i18n.t('general:noResultsFound')}
-                withMargin
-              />
-            ),
-          }
-        : {}),
-    ...(toolbar?.length || CreateButton
-      ? {
-          beforeActions: [
-            ...(clientProps.beforeActions ?? []),
-            ...(toolbar?.length
-              ? (render(toolbar, { ...createProps, hasDeletePermission }) as ReactNode[])
-              : []),
-            ...(CreateButton ? [createButton('create-button')] : []),
-          ],
-        }
-      : {}),
-    ...(CreateButton ? { hideCreateNew: true } : {}),
-  };
-
-  return <DefaultListView {...listProps} pageSlots={pageSlots} />;
 }

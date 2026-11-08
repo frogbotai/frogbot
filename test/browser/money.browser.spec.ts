@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { forgetViewSetup } from './__helpers/viewSetup';
 import { apiKeysSlug, costKeyName, usageLogsSlug, usersSlug } from './fixtures/question/shared';
 
 let seeded: {
@@ -18,6 +19,7 @@ test.beforeEach(async ({ page }) => {
 
 test.afterEach(async ({ page }) => {
   expect((await page.request.delete('/api/browser/costs')).ok()).toBe(true);
+  await forgetViewSetup(page, usageLogsSlug);
 });
 
 test('Usage Logs heads the cost column "Cost (USD)" and shows money amounts', async ({ page }) => {

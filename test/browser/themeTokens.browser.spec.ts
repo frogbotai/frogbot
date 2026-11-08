@@ -16,12 +16,12 @@ const surfaces = [
   {
     name: 'board',
     path: `/collections/${tasksSlug}/board`,
-    ready: [nav, '.collection-view-shell'],
+    ready: [nav, '.collection-view'],
   },
   {
     name: 'calendar',
     path: `/collections/${tasksSlug}/calendar?mode=month&date=${day}T00:00:00.000Z`,
-    ready: [nav, '.collection-view-shell'],
+    ready: [nav, '.collection-view'],
   },
   {
     name: 'settings',

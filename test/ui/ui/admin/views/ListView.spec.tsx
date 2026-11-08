@@ -1,36 +1,38 @@
-import { render, within } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  createViewRequest: vi.fn(),
   DefaultListView: vi.fn((_props: Record<string, unknown>) => null),
-  RenderServerComponent: vi.fn(),
+  getPreferences: vi.fn(),
+  getRuntimeViews: vi.fn((): unknown[] => []),
+  ListFrameClient: vi.fn((_props: Record<string, unknown>) => null),
+  resolveCollectionViews: vi.fn(),
 }));
 
-vi.mock('@payloadcms/ui', () => ({
-  NoListResults: ({
-    Actions,
-    description,
-    title,
-  }: {
-    Actions: ReactNode[];
-    description: string;
-    title: string;
-  }) => (
-    <div data-testid="no-results">
-      <h2>{title}</h2>
-      <p>{description}</p>
-      {Actions}
-    </div>
-  ),
+vi.mock('@payloadcms/ui/utilities/upsertPreferences', () => ({
+  getPreferences: mocks.getPreferences,
+  upsertPreferences: vi.fn(),
 }));
 
-vi.mock('@payloadcms/ui/elements/RenderServerComponent', () => ({
-  RenderServerComponent: mocks.RenderServerComponent,
+vi.mock('../../../../../packages/ui/src/admin/views/frame.js', () => ({
+  buildFrameSlots: () => ({}),
+}));
+
+vi.mock('../../../../../packages/ui/src/admin/views/List/ListFrame.client.js', () => ({
+  ListFrameClient: mocks.ListFrameClient,
 }));
 
 vi.mock('../../../../../packages/ui/src/admin/views/List/DefaultListView.client.js', () => ({
   DefaultListView: mocks.DefaultListView,
+}));
+
+vi.mock('../../../../../packages/ui/src/admin/views/collectionViews.js', () => ({
+  createViewRequest: mocks.createViewRequest,
+  getRuntimeViews: mocks.getRuntimeViews,
+  redirectToLastView: vi.fn(),
+  resolveCollectionViews: mocks.resolveCollectionViews,
 }));
 
 const { ListView } = await import('../../../../../packages/ui/src/admin/views/List/ListView.js');
@@ -50,148 +52,196 @@ const serverKeys = [
   'user',
 ];
 
-function listProps({
-  CreateButton,
-  docs = [{ id: 1 }],
-  toolbar,
-  ...overrides
-}: Record<string, unknown> & { CreateButton?: string; docs?: unknown[]; toolbar?: string[] } = {}) {
+function listProps(overrides: Record<string, unknown> = {}) {
   return {
-    collectionConfig: {
-      admin: { components: CreateButton ? { CreateButton } : {} },
-      custom: {
-        frogbot: { collectionViews: [{ type: 'list', slug: 'list', components: { toolbar } }] },
-      },
-      slug: 'posts',
-    },
+    collectionConfig: { admin: { components: {} }, slug: 'posts' },
     collectionSlug: 'posts',
-    columnState: [],
-    data: { docs },
+    data: { docs: [] },
     hasCreatePermission: true,
-    hasDeletePermission: false,
     i18n: { t: (key: string) => key },
     limit: 10,
     listPreferences: { columns: [] },
     listSearchableFields: [],
     locale: undefined,
     newDocumentURL: '/admin/collections/posts/create',
-    params: {},
-    payload: { importMap: {} },
+    params: undefined,
+    payload: { config: { routes: { admin: '/admin' } }, importMap: {} },
     permissions: {},
     searchParams: {},
     server: {},
-    Table: null,
     user: { id: 'u1' },
     viewType: 'list',
     ...overrides,
   };
 }
 
-function renderList(props: ReturnType<typeof listProps>) {
-  render(ListView(props as never));
-
-  return mocks.DefaultListView.mock.lastCall![0] as Record<string, unknown> & {
-    pageSlots?: { beforeActions?: ReactNode[]; hideCreateNew?: boolean; NoResults?: ReactNode };
-  };
-}
-
 describe('ListView', () => {
-  beforeEach(() => {
-    mocks.DefaultListView.mockClear();
-    mocks.RenderServerComponent.mockReset();
+  it("keeps Payload's list in a relationship drawer, with no server props", async () => {
+    render(await ListView(listProps() as never));
 
-    mocks.RenderServerComponent.mockImplementation(
-      ({ Component, clientProps }: { Component: string | string[]; clientProps: object }) => {
-        const one = (path: string, key?: number) => (
-          <button data-props={JSON.stringify(clientProps)} key={key} type="button">
-            {path}
-          </button>
-        );
-
-        return Array.isArray(Component) ? Component.map(one) : one(Component);
-      },
-    );
-  });
-
-  it('passes the client list view no server props and keeps listPreferences', () => {
-    const received = renderList(listProps({ toolbar: ['./Toolbar'] }));
+    const received = mocks.DefaultListView.mock.lastCall?.[0];
 
     for (const key of serverKeys) expect(received).not.toHaveProperty(key);
 
-    expect(received.listPreferences).toEqual({ columns: [] });
-    expect(received.newDocumentURL).toBe('/admin/collections/posts/create');
+    expect(received?.listPreferences).toEqual({ columns: [] });
+    expect(mocks.createViewRequest).not.toHaveBeenCalled();
   });
 
-  it("leaves Payload's props untouched without toolbar, CreateButton or NoResults", () => {
-    const beforeActions = [<span key="x">x</span>];
-    const received = renderList(listProps({ beforeActions }));
+  it("keeps Payload's hierarchy list on the collection page", async () => {
+    mocks.DefaultListView.mockClear();
 
-    expect(received.pageSlots).toBeUndefined();
-    expect(received.beforeActions).toBe(beforeActions);
-    expect(mocks.RenderServerComponent).not.toHaveBeenCalled();
-  });
-
-  it('appends the toolbar and then the CreateButton to beforeActions', () => {
-    const received = renderList(
-      listProps({
-        beforeActions: [<span key="incoming">Incoming</span>],
-        CreateButton: './Create',
-        toolbar: ['./One', './Two'],
-      }),
+    render(
+      await ListView(
+        listProps({
+          params: { segments: ['collections', 'posts'] },
+          viewType: 'hierarchy',
+        }) as never,
+      ),
     );
 
-    const { container } = render(<div>{received.pageSlots?.beforeActions}</div>);
+    expect(mocks.DefaultListView.mock.lastCall?.[0]).toMatchObject({ viewType: 'hierarchy' });
+    expect(mocks.createViewRequest).not.toHaveBeenCalled();
+  });
 
-    expect([...container.firstElementChild!.children].map((node) => node.textContent)).toEqual([
-      'Incoming',
-      './One',
-      './Two',
-      './Create',
-    ]);
-    expect(container.querySelector('.fb-create-button')?.textContent).toBe('./Create');
-    expect(received.pageSlots?.hideCreateNew).toBe(true);
-    expect(JSON.parse(container.querySelector('button')!.dataset.props!)).toEqual({
-      collectionSlug: 'posts',
-      hasCreatePermission: true,
-      hasDeletePermission: false,
-      newDocumentURL: '/admin/collections/posts/create',
+  describe('on the collection page', () => {
+    const find = vi.fn();
+    const payload = { config: { routes: { admin: '/admin' } }, find, importMap: {} };
+
+    function pageProps(overrides: Record<string, unknown> = {}) {
+      return listProps({
+        collectionConfig: {
+          admin: { components: {}, custom: { frogbot: { useAsDone: 'completed' } } },
+          slug: 'tasks',
+        },
+        collectionSlug: 'tasks',
+        params: { segments: ['collections', 'tasks'] },
+        payload,
+        server: { redirect: vi.fn() },
+        ...overrides,
+      });
+    }
+
+    function setup(saved?: Record<string, unknown>) {
+      mocks.ListFrameClient.mockClear();
+      find.mockReset();
+      find.mockResolvedValue({ docs: [] });
+      mocks.getRuntimeViews.mockReturnValue([{ slug: 'list', type: 'list' }]);
+      mocks.resolveCollectionViews.mockResolvedValue({ views: [] });
+
+      mocks.createViewRequest.mockResolvedValue({
+        payload: { ...payload, count: vi.fn().mockResolvedValue({ totalDocs: 1 }) },
+        query: {},
+        user: { collection: 'users', id: 'u1' },
+      });
+
+      mocks.getPreferences.mockResolvedValue(saved ? { id: 1, value: saved } : null);
+    }
+
+    it('opens the saved setup on a fresh visit', async () => {
+      setup({ sort: 'title' });
+      const props = pageProps();
+
+      await ListView(props as never);
+
+      expect(props.server.redirect).toHaveBeenCalledWith('/admin/collections/tasks?sort=title');
     });
-  });
 
-  it('shows one CreateButton in the toolbar and one in the empty state', () => {
-    const received = renderList(listProps({ CreateButton: './Create', docs: [] }));
-    const toolbar = within(render(<div>{received.pageSlots?.beforeActions}</div>).container);
-    const empty = within(render(<div>{received.pageSlots?.NoResults}</div>).container);
+    it.each([
+      ['empty filters', { where: {} }],
+      ['empty columns', { columns: [] }],
+    ])(
+      'does not redirect to an empty query for a saved setup holding only %s',
+      async (_, saved) => {
+        setup(saved);
+        const props = pageProps();
 
-    expect(toolbar.getAllByRole('button', { name: './Create' })).toHaveLength(1);
-    expect(empty.getAllByRole('button', { name: './Create' })).toHaveLength(1);
-    expect(empty.getByRole('heading').textContent).toBe('general:noResultsFound');
-    expect(empty.getByText('general:noResultsDescription')).toBeTruthy();
-  });
+        await ListView(props as never);
 
-  it('adds no empty state while there are documents', () => {
-    const received = renderList(listProps({ CreateButton: './Create' }));
-
-    expect(received.pageSlots?.NoResults).toBeUndefined();
-  });
-
-  it('renders no CreateButton in trash but keeps the toolbar', () => {
-    const received = renderList(
-      listProps({ CreateButton: './Create', docs: [], toolbar: ['./One'], viewType: 'trash' }),
+        expect(props.server.redirect).not.toHaveBeenCalled();
+      },
     );
 
-    const { container } = render(<div>{received.pageSlots?.beforeActions}</div>);
+    it('finds done records whose done field the table did not select', async () => {
+      setup();
 
-    expect(container.textContent).toBe('./One');
-    expect(received.pageSlots?.hideCreateNew).toBeUndefined();
-    expect(received.pageSlots?.NoResults).toBeUndefined();
-  });
+      find.mockResolvedValue({
+        docs: [
+          { completed: true, id: 'a' },
+          { completed: false, id: 'b' },
+        ],
+      });
 
-  it('lets an authored NoResults win over the CreateButton empty state', () => {
-    const NoResults = <p>Nothing yet</p>;
-    const received = renderList(listProps({ CreateButton: './Create', docs: [], NoResults }));
+      render(
+        await ListView(
+          pageProps({
+            data: {
+              docs: [
+                { id: 'a', title: 'A' },
+                { id: 'b', title: 'B' },
+                { completed: true, id: 'c', title: 'C' },
+              ],
+            },
+          }) as never,
+        ),
+      );
 
-    expect(received).not.toHaveProperty('NoResults');
-    expect(received.pageSlots?.NoResults).toBe(NoResults);
+      expect(find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collection: 'tasks',
+          overrideAccess: false,
+          select: { completed: true },
+          where: { id: { in: ['a', 'b'] } },
+        }),
+      );
+      expect(mocks.ListFrameClient.mock.lastCall?.[0]).toMatchObject({ doneIds: ['a', 'c'] });
+    });
+
+    it('puts each row id in its own cells, so a reordered table keeps it', async () => {
+      setup();
+      const Orderable = ({
+        columns,
+        data,
+      }: {
+        columns: Array<{ active: boolean; renderedCells: ReactNode[] }>;
+        data: Array<{ id: string }>;
+      }) => (
+        <table>
+          <tbody>
+            {[...data.keys()].reverse().map((index) => (
+              <tr key={data[index].id}>
+                {columns.map((column, columnIndex) => (
+                  <td key={columnIndex}>{column.renderedCells[index]}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+
+      render(
+        await ListView(
+          pageProps({
+            data: { docs: [{ id: 'a' }, { id: 'b' }] },
+            Table: (
+              <div>
+                <Orderable
+                  columns={[{ active: true, renderedCells: [<i key={0}>a</i>, <i key={1}>b</i>] }]}
+                  data={[{ id: 'a' }, { id: 'b' }]}
+                />
+              </div>
+            ),
+          }) as never,
+        ),
+      );
+
+      const listProps = mocks.ListFrameClient.mock.lastCall?.[0].listProps as { Table: ReactNode };
+      const { container } = render(<>{listProps.Table}</>);
+      const rows = [...container.querySelectorAll('tbody tr')];
+
+      expect(
+        rows.map((row) => row.querySelector('[data-row-id]')?.getAttribute('data-row-id')),
+      ).toEqual(['b', 'a']);
+      expect(rows.map((row) => row.textContent)).toEqual(['b', 'a']);
+    });
   });
 });

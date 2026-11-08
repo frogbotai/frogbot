@@ -1,21 +1,13 @@
 import { getColumns, renderTable } from '@payloadcms/ui/rsc';
-import { attachRegisteredFrogBot } from 'frogbot/internal';
-import {
-  type AdminViewServerProps,
-  getFieldByPath,
-  type SanitizedFieldPermissions,
-  type SanitizedFieldsPermissions,
-} from 'payload';
+import { type AdminViewServerProps, getFieldByPath } from 'payload';
 import { getFromImportMap, transformColumnsToSearchParams } from 'payload/shared';
 import type { ComponentType } from 'react';
 
 import { getActiveViewSlug, resolveCollectionViews, withPageProps } from '../collectionViews.js';
 import { CollectionViewShell } from '../CollectionViewShell.js';
-import {
-  getViewPreferenceKey,
-  resolveViewColumnPreferences,
-  type ViewColumnsSource,
-} from '../preferences.js';
+import { canUpdateField } from '../fieldPermissions.js';
+import { resolveViewColumnPreferences, type ViewColumnsSource } from '../preferences.js';
+import { resolveViewSetup } from '../viewSetup.js';
 import { CalendarPreference } from './CalendarPreference.client.js';
 import { CalendarViewClient } from './CalendarView.client.js';
 import {
@@ -24,23 +16,6 @@ import {
   resolveCalendarDate,
   resolveCalendarMode,
 } from './data.js';
-
-function canUpdateField(fields: SanitizedFieldsPermissions | undefined, path: string): boolean {
-  let fieldPermission: SanitizedFieldPermissions | undefined;
-  let fieldPermissions = fields;
-
-  for (const key of path.split('.')) {
-    if (!fieldPermissions || fieldPermissions === true) {
-      fieldPermission = fieldPermissions;
-      break;
-    }
-
-    fieldPermission = fieldPermissions[key];
-    fieldPermissions = fieldPermission === true ? true : fieldPermission?.fields;
-  }
-
-  return fieldPermission === true || Boolean(fieldPermission?.update);
-}
 
 export async function CalendarView(input: AdminViewServerProps) {
   const props = await withPageProps(input);
@@ -56,40 +31,22 @@ export async function CalendarView(input: AdminViewServerProps) {
 
   if (!calendar || calendar.type !== 'calendar') return props.server.notFound();
 
-  const query = (initPageResult.req.query ?? {}) as {
-    columns?: unknown;
-    date?: unknown;
-    mode?: unknown;
-  };
+  const setup = await resolveViewSetup({
+    collectionSlug,
+    query: initPageResult.req.query ?? {},
+    req: initPageResult.req,
+    viewSlug: calendar.slug,
+  });
 
-  const queryMode = typeof query.mode === 'string' ? query.mode : undefined;
-  const queryDate = typeof query.date === 'string' ? query.date : undefined;
-  const queryColumns: ViewColumnsSource =
-    typeof query.columns === 'string' ||
-    (Array.isArray(query.columns) && query.columns.every((value) => typeof value === 'string'))
-      ? query.columns
+  const urlQuery = (initPageResult.req.query ?? {}) as { date?: unknown; mode?: unknown };
+  const queryMode = typeof urlQuery.mode === 'string' ? urlQuery.mode : undefined;
+  const queryDate = typeof urlQuery.date === 'string' ? urlQuery.date : undefined;
+  const queryColumns =
+    typeof setup.query.columns === 'string' || Array.isArray(setup.query.columns)
+      ? (setup.query.columns as ViewColumnsSource)
       : undefined;
 
-  const preferenceKey = getViewPreferenceKey(collectionSlug, calendar.slug);
-  const preference = initPageResult.req.user
-    ? await payload.find({
-        collection: 'payload-preferences',
-        depth: 0,
-        limit: 1,
-        overrideAccess: true,
-        pagination: false,
-        req: initPageResult.req,
-        where: {
-          and: [
-            { key: { equals: preferenceKey } },
-            { 'user.relationTo': { equals: initPageResult.req.user.collection } },
-            { 'user.value': { equals: initPageResult.req.user.id } },
-          ],
-        },
-      })
-    : undefined;
-
-  const preferenceValue = preference?.docs[0]?.value as CalendarPreferenceValue | undefined;
+  const preferenceValue = setup.preference as CalendarPreferenceValue | undefined;
   const mode = resolveCalendarMode({
     configuredModes: calendar.modes,
     preferenceMode: preferenceValue?.mode,
@@ -104,9 +61,6 @@ export async function CalendarView(input: AdminViewServerProps) {
 
   const columnPreferences = resolveViewColumnPreferences({
     defaultFields: calendar.defaultFields,
-    preferenceColumns: Array.isArray(preferenceValue?.columns)
-      ? preferenceValue.columns
-      : undefined,
     queryColumns,
     useAsTitle: collectionConfig.admin.useAsTitle,
   });
@@ -139,16 +93,11 @@ export async function CalendarView(input: AdminViewServerProps) {
   });
 
   const initialQuery = {
-    ...initPageResult.req.query,
+    ...setup.query,
     columns: transformColumnsToSearchParams(columns),
     date,
     mode,
   };
-
-  const filter =
-    typeof calendar.filter === 'function'
-      ? await calendar.filter({ req: attachRegisteredFrogBot(initPageResult.req) })
-      : calendar.filter;
 
   const canUpdate = Boolean(
     permissions?.update &&
@@ -170,15 +119,16 @@ export async function CalendarView(input: AdminViewServerProps) {
       columnState={columnState}
       enableSort={false}
       query={initialQuery}
-      viewComponents={calendar.components}
+      keepViewWhenEmpty
+      preference={setup.preference}
+      preferenceKey={setup.preferenceKey}
+      view={calendar}
       views={views}
-      viewSlug={calendar.slug}
     >
       <CalendarPreference
         collectionSlug={collectionSlug}
-        columns={queryColumns ? columns : undefined}
-        date={Object.prototype.hasOwnProperty.call(query, 'date') ? date : undefined}
-        mode={Object.prototype.hasOwnProperty.call(query, 'mode') ? mode : undefined}
+        date={queryDate === undefined ? undefined : date}
+        mode={queryMode === undefined ? undefined : mode}
         viewSlug={calendar.slug}
       />
       <CalendarViewClient
@@ -199,7 +149,7 @@ export async function CalendarView(input: AdminViewServerProps) {
               )
             : false
         }
-        filter={filter}
+        filter={calendar.filter}
         mode={mode}
         modes={calendar.modes}
         snap={calendar.snap}

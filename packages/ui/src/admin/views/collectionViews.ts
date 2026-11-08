@@ -3,7 +3,11 @@ import { getClientConfig } from '@payloadcms/ui/utilities/getClientConfig';
 import type { CollectionView } from 'frogbot';
 import { attachRegisteredFrogBot } from 'frogbot/internal';
 import { type AdminViewServerProps, createPayloadRequest, type PayloadRequest } from 'payload';
+import { formatAdminURL } from 'payload/shared';
 import * as qs from 'qs-esm';
+
+import { getLastViewPreferenceKey } from './preferences.js';
+import { readViewPreference } from './viewSetup.js';
 
 export type RuntimeCollectionView = CollectionView & { slug: string };
 
@@ -65,6 +69,53 @@ export function getActiveViewSlug(
 }
 
 /**
+ * On a collection's default route with no query, sends the user to the view they last chose with
+ * the view tabs, when it isn't the default one and they can still open it.
+ */
+export async function redirectToLastView({
+  collectionSlug,
+  req,
+  server,
+  views,
+}: {
+  collectionSlug: string;
+  req: PayloadRequest;
+  server: AdminViewServerProps['server'];
+  views: Array<{ path: string; slug: string }>;
+}): Promise<void> {
+  if (!req.user || Object.keys(req.query ?? {}).length > 0) return;
+
+  const preference = await readViewPreference(req, getLastViewPreferenceKey(collectionSlug));
+  const last = views.find(({ slug }) => slug === preference?.view);
+
+  if (!last || last === views[0]) return;
+
+  server.redirect(
+    formatAdminURL({
+      adminRoute: req.payload.config.routes.admin,
+      path: `/collections/${collectionSlug}${last.path}`,
+    }),
+  );
+}
+
+/** A request for a view rendered with the list's server props, which carry none. */
+export async function createViewRequest({
+  i18n,
+  payload,
+  searchParams,
+  user,
+}: Pick<AdminViewServerProps, 'i18n' | 'payload' | 'searchParams' | 'user'>) {
+  return createPayloadRequest({
+    payload,
+    req: {
+      i18n: i18n as I18n,
+      query: qs.parse(qs.stringify(searchParams ?? {}), { depth: 10 }),
+    },
+    user: user ?? undefined,
+  });
+}
+
+/**
  * A default board, calendar or custom view renders as Payload's list `Component`, which gets the
  * list's server props instead of a view's. Fills in what a view reads.
  */
@@ -90,14 +141,7 @@ export async function withPageProps(props: AdminViewServerProps): Promise<AdminV
       ({
         collectionConfig: props.collectionConfig,
         permissions: props.permissions,
-        req: await createPayloadRequest({
-          payload: props.payload,
-          req: {
-            i18n: props.i18n as I18n,
-            query: qs.parse(qs.stringify(props.searchParams ?? {}), { depth: 10 }),
-          },
-          user: props.user ?? undefined,
-        }),
+        req: await createViewRequest(props),
       } as AdminViewServerProps['initPageResult']),
   };
 }

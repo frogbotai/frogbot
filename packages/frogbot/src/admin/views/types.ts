@@ -5,7 +5,7 @@ import type { Field } from '../../fields/config/types.js';
 import type { FrogBotTypes } from '../../types/generated.js';
 import type { Sort, Where } from '../../types/payload.js';
 import type { FrogBotRequest } from '../../types/request.js';
-import type { FrogBotComponent } from '../types.js';
+import type { AdminIcon, FrogBotComponent } from '../types.js';
 
 type WithoutPayload<T> = Omit<T, 'payload'>;
 
@@ -13,13 +13,16 @@ type WithoutPayloadOrGlobal<T> = Omit<T, 'globalConfig' | 'payload'>;
 
 export type ViewAccess = (args: { req: FrogBotRequest }) => boolean | Promise<boolean>;
 
-export type ViewFilter = Where | ((args: { req: FrogBotRequest }) => Promise<Where> | Where);
+/** The view's fixed filter. Plain data, so a view can be stored as a record. */
+export type ViewFilter = Where;
 
 export type ViewComponents = {
   actions?: FrogBotComponent[];
   afterView?: FrogBotComponent[];
   beforeView?: FrogBotComponent[];
   menuItems?: FrogBotComponent[];
+  /** Replaces the empty state shown when the view has no records. */
+  NoResults?: FrogBotComponent;
   toolbar?: FrogBotComponent[];
 };
 
@@ -33,6 +36,7 @@ type ViewConfig = {
   defaultFields?: string[];
   defaultSort?: Sort;
   filter?: ViewFilter;
+  icon?: AdminIcon;
   label?: string;
   pagination?: ViewPagination;
   searchableFields?: string[];
@@ -43,7 +47,6 @@ export type ListView = ViewConfig & {
   components?: ViewComponents & {
     afterTable?: FrogBotComponent[];
     beforeTable?: FrogBotComponent[];
-    NoResults?: FrogBotComponent;
   };
   type: 'list';
 };
@@ -87,7 +90,7 @@ export type CollectionView = BoardView | CalendarView | CustomView | ListView;
 
 export type CollectionViewMetadata = Omit<
   CollectionView,
-  'access' | 'component' | 'components' | 'filter'
+  'access' | 'component' | 'components' | 'filter' | 'icon'
 > & {
   label: string;
   path: string;

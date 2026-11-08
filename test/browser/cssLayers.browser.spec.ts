@@ -236,7 +236,7 @@ test.describe('FrogBot CSS layer in the admin', () => {
     const { frogbotSelectors, order } = await readLayers(page);
 
     expect(order.slice(0, 4)).toEqual(['frogbot-reset', 'payload-default', 'frogbot', 'payload']);
-    expect(frogbotSelectors).toContain('.collection-view-shell');
+    expect(frogbotSelectors).toContain('.collection-view__view');
   });
 });
 

@@ -37,6 +37,7 @@ export type BoardViewClientProps = {
   limit: number;
   orderField: string;
   canCreate: boolean;
+  canToggleDone: boolean;
   canUpdate: boolean;
   inlineAdd: BoardInlineAdd;
   viewSlug: string;
@@ -314,6 +315,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
               <Card disabled={!props.canUpdate} row={row} />
             ) : (
               <BoardDocumentCard
+                canToggleDone={props.canToggleDone}
                 cardColumns={cardColumns}
                 collectionConfig={collectionConfig}
                 collectionSlug={props.collectionSlug}
