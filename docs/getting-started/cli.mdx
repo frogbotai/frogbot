@@ -224,6 +224,7 @@ Uploads the app in the current folder to Dojo, streams `[build]` logs, and print
 
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
+| `--app` | app slug or id | — | Ships to this existing app and links the folder to it in `.frogbot/app.json`, for a fresh clone or CI. Stops if the folder is linked to another app. Can't be combined with `--workspace` or `--name`. |
 | `--data` | flag | — | On the first share, uploads local SQLite data and files without prompting. |
 | `--no-data` | flag | — | On the first share, uploads code only without prompting. |
 | `--workspace` | workspace slug | — | Dojo workspace to create the app in on first share (when you belong to multiple). |
@@ -237,13 +238,13 @@ Uploads the app in the current folder to Dojo, streams `[build]` logs, and print
   <Accordion title="Pre-flight checks & signing in">
     - **Lockfile check:** `share` stops before uploading with `NO_PACKAGE_JSON` or `NO_LOCKFILE` if `package.json` is missing, if the app uses Bun, or if no `pnpm-lock.yaml`, `package-lock.json`, or `yarn.lock` is present.
     - **Browser login:** On first use, `share` prints a Dojo verification URL that carries the code, then the code itself (and opens your browser in interactive terminals). When the code expires, `share` starts a new one: on its own in a non-interactive shell (up to three codes), or when you press Enter. Your token is saved in `~/.config/frogbotai/auth.json` (or `$XDG_CONFIG_HOME`) with owner-only permissions.
-    - **API key instead:** Set `FROGBOT_DOJO_TOKEN` to a Dojo API key (from `frogbot dojo keys create`) for CI and agents. It's used ahead of the stored token, and a refused one fails instead of starting a browser login.
+    - **API key instead:** Set `FROGBOT_DOJO_TOKEN` to a Dojo API key (from `frogbot dojo keys create`) for CI and agents. It's used ahead of the stored token, and a refused one fails instead of starting a browser login. In CI (`CI` set, no terminal) with no token and no stored sign-in, `share` exits `1` at once naming `FROGBOT_DOJO_TOKEN` instead of printing a code nobody can open.
     - **Custom Dojo endpoint:** Set `FROGBOT_DOJO_URL` to target a different Dojo instance.
   </Accordion>
   <Accordion title="First share vs. subsequent updates">
     - **First share:** Creates a Dojo app named after `package.json`'s `name` (or `--name`), writes the app ID to `.frogbot/app.json`, and adds `/.frogbot` to `.gitignore`.
     - **Paying for the app:** When the workspace's Dojo plan doesn't cover the app yet, `share` prints Dojo's upgrade link (and opens it in interactive terminals), waits up to 30 minutes for the payment, then carries on with the same share.
-    - **Later shares:** Deploying again from the same folder ships a new version of the linked app. Delete `.frogbot/app.json` to deploy as a brand-new app.
+    - **Later shares:** Deploying again from the same folder ships a new version of the linked app. Delete `.frogbot/app.json` to deploy as a brand-new app. In a folder with no link, such as a fresh clone or a CI job, `share --app <slug>` ships to that app and writes the link.
     - **Name collisions & workspaces:** If the app name is taken on Dojo, `share` prompts you to rerun with `--name <another name>`. If you belong to multiple workspaces in a non-interactive shell, pass `--workspace`. With no workspace yet, `share` says where to create one; in an interactive terminal it opens that page and checks again when you press Enter.
   </Accordion>
   <Accordion title="Bringing local database & upload files (--data)">

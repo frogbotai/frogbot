@@ -75,7 +75,7 @@ describe('frogbot pull', () => {
     expect(result.code).toBe(0);
     expect(dojo.paths()).toEqual([
       'GET /api/users/me',
-      'GET /api/apps/deals',
+      'GET /api/apps/deals/cli',
       'GET /api/apps/7/source',
     ]);
     expect(await readdir(cwd)).toEqual(['deals']);
@@ -130,7 +130,7 @@ describe('frogbot pull', () => {
     dojo.source = await appTarball();
 
     expect((await run(['7'])).code).toBe(0);
-    expect(dojo.paths()).toContain('GET /api/apps/7');
+    expect(dojo.paths()).toContain('GET /api/apps/7/cli');
     expect(await readdir(cwd)).toEqual(['deals']);
   });
 
