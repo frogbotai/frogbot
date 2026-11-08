@@ -155,6 +155,8 @@ export interface Account {
         id: string;
         createdAt?: string | null;
         expiresAt: string;
+        refreshCount?: number | null;
+        refreshedAt?: string | null;
       }[]
     | null;
   password?: string | null;
@@ -191,6 +193,14 @@ export interface Credential {
   tokenHash: string;
   lastUsedAt?: string | null;
   revokedAt?: string | null;
+  /**
+   * Requests made with this key can mint and rotate keys no broader than it.
+   */
+  canMint?: boolean | null;
+  /**
+   * The key that minted this one. Empty when a signed-in session did.
+   */
+  mintedBy?: (number | null) | Credential;
   updatedAt: string;
   createdAt: string;
 }
@@ -280,6 +290,8 @@ export interface AccountsSelect {
         id?: boolean;
         createdAt?: boolean;
         expiresAt?: boolean;
+        refreshCount?: boolean;
+        refreshedAt?: boolean;
       };
 }
 /**
@@ -305,6 +317,8 @@ export interface CredentialsSelect {
   tokenHash?: boolean;
   lastUsedAt?: boolean;
   revokedAt?: boolean;
+  canMint?: boolean;
+  mintedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }

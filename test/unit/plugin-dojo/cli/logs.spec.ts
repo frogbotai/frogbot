@@ -105,7 +105,7 @@ describe('frogbot logs', () => {
     const result = await run(args);
 
     expect(result.code).toBe(2);
-    expect(result.stderr()).toEqual(['[frogbot] Usage: frogbot logs <app> [--follow]']);
+    expect(result.stderr()).toEqual(['[frogbot] Usage: frogbot apps logs <app> [--follow]']);
     expect(dojo.requests).toEqual([]);
   });
 

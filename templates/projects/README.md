@@ -58,7 +58,7 @@ The seed is plain code in `src/seed/index.ts`; edit it to change the sample data
 - Add fields to tasks, such as a priority select, and show them on the board with
   `defaultFields`.
 - Restrict who can edit projects with collection `access` before deploying.
-- Put it online with `npx frogbot share`; see [`share`](https://docs.frogbot.ai/getting-started/cli#share).
+- Put it online with `npx frogbot share`; see [`dojo apps share`](https://docs.frogbot.ai/getting-started/cli#dojo-apps-share).
 
 ## Add an AI provider
 

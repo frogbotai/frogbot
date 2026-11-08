@@ -141,7 +141,7 @@ describe('frogbot pull', () => {
       const result = await run(args);
 
       expect(result.code).toBe(2);
-      expect(result.stderr()).toEqual(['[frogbot] Usage: frogbot pull <app>']);
+      expect(result.stderr()).toEqual(['[frogbot] Usage: frogbot apps pull <app>']);
       expect(dojo.requests).toEqual([]);
     },
   );

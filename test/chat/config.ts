@@ -126,6 +126,16 @@ const readNotes: Tool<typeof notesInput, string> = {
 
     return docs.map((doc) => String((doc as { text?: string }).text)).join(', ');
   },
+  sources: async (_result, ctx) => {
+    const { docs } = await ctx.frogbot.find({
+      collection: notesSlug,
+      depth: 0,
+      req: ctx.req,
+      overrideAccess: ctx.overrideAccess,
+    });
+
+    return docs.map(({ id }) => ({ collection: notesSlug, id, title: 'Members notes' }));
+  },
 };
 
 const readNotesApproved: Tool<typeof notesInput, string> = {

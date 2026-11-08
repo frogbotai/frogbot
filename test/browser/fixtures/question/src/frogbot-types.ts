@@ -400,6 +400,7 @@ export interface User {
         | 'openrouter/inception/mercury-3'
         | 'openrouter/inclusionai/ling-3.0-flash'
         | 'openrouter/inclusionai/ling-3.0-flash-vl'
+        | 'openrouter/inclusionai/ling-3.0-tiny'
         | 'openrouter/inclusionai/ling-3.1-flash'
         | 'openrouter/inference-net/schematron-v2-small'
         | 'openrouter/inference-net/schematron-v2-turbo'
@@ -425,11 +426,7 @@ export interface User {
         | 'openrouter/meta/muse-spark-open'
         | 'openrouter/meta/muse-wonder'
         | 'openrouter/microsoft/phi-4'
-        | 'openrouter/minimax/minimax-01'
         | 'openrouter/minimax/minimax-m1'
-        | 'openrouter/minimax/minimax-m2'
-        | 'openrouter/minimax/minimax-m2-her'
-        | 'openrouter/minimax/minimax-m2.1'
         | 'openrouter/minimax/minimax-m2.5'
         | 'openrouter/minimax/minimax-m2.7'
         | 'openrouter/minimax/minimax-m3'
@@ -589,6 +586,7 @@ export interface User {
         | 'openrouter/rekaai/reka-flash-3'
         | 'openrouter/relace/relace-apply-3'
         | 'openrouter/relace/relace-search'
+        | 'openrouter/ricursiveai/ripple-65b-preview'
         | 'openrouter/sakana/fugu-max'
         | 'openrouter/sakana/fugu-ultra'
         | 'openrouter/sakana/fugu-ultra-v2'
@@ -597,6 +595,7 @@ export interface User {
         | 'openrouter/sao10k/l3.1-euryale-70b'
         | 'openrouter/scaledown/extract'
         | 'openrouter/scaledown/summarize'
+        | 'openrouter/stealth/crouton-alpha'
         | 'openrouter/stepfun/step-3.5-flash'
         | 'openrouter/stepfun/step-3.7-flash'
         | 'openrouter/stepfun/step-5-preview'
@@ -606,14 +605,13 @@ export interface User {
         | 'openrouter/tencent/hy-mt2-7b'
         | 'openrouter/tencent/hy3'
         | 'openrouter/tencent/hy3-preview'
+        | 'openrouter/tencent/hy4'
         | 'openrouter/tencent/hy4-preview'
         | 'openrouter/thedrummer/cydonia-24b-v4.1'
         | 'openrouter/thedrummer/skyfall-36b-v2'
         | 'openrouter/thedrummer/unslopnemo-12b'
         | 'openrouter/thinkingmachines/inkling'
         | 'openrouter/thinkingmachines/inkling-small'
-        | 'openrouter/thinkingmachines/inkling-small:free'
-        | 'openrouter/thinkingmachines/inkling:free'
         | 'openrouter/unbiased/pareto-26.10'
         | 'openrouter/unbiased/pareto-26.9'
         | 'openrouter/undi95/remm-slerp-l2-13b'
@@ -644,6 +642,7 @@ export interface User {
         | 'openrouter/z-ai/glm-5.3'
         | 'openrouter/z-ai/glm-5.3-flash'
         | 'openrouter/z-ai/glm-5.3-flashx'
+        | 'openrouter/z-ai/glm-5.3-flashx-legal'
         | 'openrouter/z-ai/glm-5.3-prime'
         | 'openrouter/z-ai/glm-5v-turbo'
         | 'openrouter/~anthropic/claude-fable-latest'
@@ -698,6 +697,8 @@ export interface User {
         id: string;
         createdAt?: string | null;
         expiresAt: string;
+        refreshCount?: number | null;
+        refreshedAt?: string | null;
       }[]
     | null;
   password?: string | null;
@@ -932,6 +933,14 @@ export interface ApiKey {
   tokenHash: string;
   lastUsedAt?: string | null;
   revokedAt?: string | null;
+  /**
+   * Requests made with this key can mint and rotate keys no broader than it.
+   */
+  canMint?: boolean | null;
+  /**
+   * The key that minted this one. Empty when a signed-in session did.
+   */
+  mintedBy?: (number | null) | ApiKey;
   /**
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
@@ -1182,6 +1191,7 @@ export interface ApiKey {
         | 'openrouter/inception/mercury-3'
         | 'openrouter/inclusionai/ling-3.0-flash'
         | 'openrouter/inclusionai/ling-3.0-flash-vl'
+        | 'openrouter/inclusionai/ling-3.0-tiny'
         | 'openrouter/inclusionai/ling-3.1-flash'
         | 'openrouter/inference-net/schematron-v2-small'
         | 'openrouter/inference-net/schematron-v2-turbo'
@@ -1207,11 +1217,7 @@ export interface ApiKey {
         | 'openrouter/meta/muse-spark-open'
         | 'openrouter/meta/muse-wonder'
         | 'openrouter/microsoft/phi-4'
-        | 'openrouter/minimax/minimax-01'
         | 'openrouter/minimax/minimax-m1'
-        | 'openrouter/minimax/minimax-m2'
-        | 'openrouter/minimax/minimax-m2-her'
-        | 'openrouter/minimax/minimax-m2.1'
         | 'openrouter/minimax/minimax-m2.5'
         | 'openrouter/minimax/minimax-m2.7'
         | 'openrouter/minimax/minimax-m3'
@@ -1371,6 +1377,7 @@ export interface ApiKey {
         | 'openrouter/rekaai/reka-flash-3'
         | 'openrouter/relace/relace-apply-3'
         | 'openrouter/relace/relace-search'
+        | 'openrouter/ricursiveai/ripple-65b-preview'
         | 'openrouter/sakana/fugu-max'
         | 'openrouter/sakana/fugu-ultra'
         | 'openrouter/sakana/fugu-ultra-v2'
@@ -1379,6 +1386,7 @@ export interface ApiKey {
         | 'openrouter/sao10k/l3.1-euryale-70b'
         | 'openrouter/scaledown/extract'
         | 'openrouter/scaledown/summarize'
+        | 'openrouter/stealth/crouton-alpha'
         | 'openrouter/stepfun/step-3.5-flash'
         | 'openrouter/stepfun/step-3.7-flash'
         | 'openrouter/stepfun/step-5-preview'
@@ -1388,14 +1396,13 @@ export interface ApiKey {
         | 'openrouter/tencent/hy-mt2-7b'
         | 'openrouter/tencent/hy3'
         | 'openrouter/tencent/hy3-preview'
+        | 'openrouter/tencent/hy4'
         | 'openrouter/tencent/hy4-preview'
         | 'openrouter/thedrummer/cydonia-24b-v4.1'
         | 'openrouter/thedrummer/skyfall-36b-v2'
         | 'openrouter/thedrummer/unslopnemo-12b'
         | 'openrouter/thinkingmachines/inkling'
         | 'openrouter/thinkingmachines/inkling-small'
-        | 'openrouter/thinkingmachines/inkling-small:free'
-        | 'openrouter/thinkingmachines/inkling:free'
         | 'openrouter/unbiased/pareto-26.10'
         | 'openrouter/unbiased/pareto-26.9'
         | 'openrouter/undi95/remm-slerp-l2-13b'
@@ -1426,6 +1433,7 @@ export interface ApiKey {
         | 'openrouter/z-ai/glm-5.3'
         | 'openrouter/z-ai/glm-5.3-flash'
         | 'openrouter/z-ai/glm-5.3-flashx'
+        | 'openrouter/z-ai/glm-5.3-flashx-legal'
         | 'openrouter/z-ai/glm-5.3-prime'
         | 'openrouter/z-ai/glm-5v-turbo'
         | 'openrouter/~anthropic/claude-fable-latest'
@@ -1609,6 +1617,8 @@ export interface UsersSelect {
         id?: boolean;
         createdAt?: boolean;
         expiresAt?: boolean;
+        refreshCount?: boolean;
+        refreshedAt?: boolean;
       };
 }
 /**
@@ -1738,6 +1748,8 @@ export interface ApiKeysSelect {
   tokenHash?: boolean;
   lastUsedAt?: boolean;
   revokedAt?: boolean;
+  canMint?: boolean;
+  mintedBy?: boolean;
   totalCostUSD?: boolean;
   models?: boolean;
   monthlyBudget?: boolean;
@@ -2232,6 +2244,7 @@ declare module 'frogbot' {
       | 'openrouter/inception/mercury-3'
       | 'openrouter/inclusionai/ling-3.0-flash'
       | 'openrouter/inclusionai/ling-3.0-flash-vl'
+      | 'openrouter/inclusionai/ling-3.0-tiny'
       | 'openrouter/inclusionai/ling-3.1-flash'
       | 'openrouter/inference-net/schematron-v2-small'
       | 'openrouter/inference-net/schematron-v2-turbo'
@@ -2257,11 +2270,7 @@ declare module 'frogbot' {
       | 'openrouter/meta/muse-spark-open'
       | 'openrouter/meta/muse-wonder'
       | 'openrouter/microsoft/phi-4'
-      | 'openrouter/minimax/minimax-01'
       | 'openrouter/minimax/minimax-m1'
-      | 'openrouter/minimax/minimax-m2'
-      | 'openrouter/minimax/minimax-m2-her'
-      | 'openrouter/minimax/minimax-m2.1'
       | 'openrouter/minimax/minimax-m2.5'
       | 'openrouter/minimax/minimax-m2.7'
       | 'openrouter/minimax/minimax-m3'
@@ -2421,6 +2430,7 @@ declare module 'frogbot' {
       | 'openrouter/rekaai/reka-flash-3'
       | 'openrouter/relace/relace-apply-3'
       | 'openrouter/relace/relace-search'
+      | 'openrouter/ricursiveai/ripple-65b-preview'
       | 'openrouter/sakana/fugu-max'
       | 'openrouter/sakana/fugu-ultra'
       | 'openrouter/sakana/fugu-ultra-v2'
@@ -2429,6 +2439,7 @@ declare module 'frogbot' {
       | 'openrouter/sao10k/l3.1-euryale-70b'
       | 'openrouter/scaledown/extract'
       | 'openrouter/scaledown/summarize'
+      | 'openrouter/stealth/crouton-alpha'
       | 'openrouter/stepfun/step-3.5-flash'
       | 'openrouter/stepfun/step-3.7-flash'
       | 'openrouter/stepfun/step-5-preview'
@@ -2438,14 +2449,13 @@ declare module 'frogbot' {
       | 'openrouter/tencent/hy-mt2-7b'
       | 'openrouter/tencent/hy3'
       | 'openrouter/tencent/hy3-preview'
+      | 'openrouter/tencent/hy4'
       | 'openrouter/tencent/hy4-preview'
       | 'openrouter/thedrummer/cydonia-24b-v4.1'
       | 'openrouter/thedrummer/skyfall-36b-v2'
       | 'openrouter/thedrummer/unslopnemo-12b'
       | 'openrouter/thinkingmachines/inkling'
       | 'openrouter/thinkingmachines/inkling-small'
-      | 'openrouter/thinkingmachines/inkling-small:free'
-      | 'openrouter/thinkingmachines/inkling:free'
       | 'openrouter/unbiased/pareto-26.10'
       | 'openrouter/unbiased/pareto-26.9'
       | 'openrouter/undi95/remm-slerp-l2-13b'
@@ -2476,6 +2486,7 @@ declare module 'frogbot' {
       | 'openrouter/z-ai/glm-5.3'
       | 'openrouter/z-ai/glm-5.3-flash'
       | 'openrouter/z-ai/glm-5.3-flashx'
+      | 'openrouter/z-ai/glm-5.3-flashx-legal'
       | 'openrouter/z-ai/glm-5.3-prime'
       | 'openrouter/z-ai/glm-5v-turbo'
       | 'openrouter/~anthropic/claude-fable-latest'

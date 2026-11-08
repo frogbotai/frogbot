@@ -707,14 +707,18 @@ describe('frogbot sanitize', () => {
     ).not.toThrow();
   });
 
-  it.each(['app-icon.png', '/icon.svg', 'https://x/y.png'])(
-    'rejects %s as admin.meta.appIcon',
-    (appIcon) => {
-      expect(() => sanitize(makeConfig({ admin: { meta: { appIcon } } }))).toThrowError(
-        "[frogbot] admin.meta.appIcon must be a .png path in public/, such as '/app-icon.png'",
-      );
-    },
-  );
+  it.each([
+    'app-icon.png',
+    '/icon.svg',
+    'https://x/y.png',
+    '/../secret.png',
+    '/icons/../../x.png',
+    '/..\\secret.png',
+  ])('rejects %s as admin.meta.appIcon', (appIcon) => {
+    expect(() => sanitize(makeConfig({ admin: { meta: { appIcon } } }))).toThrowError(
+      "[frogbot] admin.meta.appIcon must be a .png path in public/, such as '/app-icon.png'",
+    );
+  });
 
   it('accepts built-in names and component icons on nav items and settings', () => {
     const config = makeConfig({
@@ -2107,7 +2111,7 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
     const endpoints = (payloadConfig as any).endpoints as any[];
 
-    expect(endpoints).toHaveLength(5);
+    expect(endpoints).toHaveLength(7);
     expect(endpoints.find(({ path }) => path === '/health').handler).not.toBe(handler);
   });
 
@@ -4743,6 +4747,8 @@ describe('frogbot sanitize', () => {
         'head /jobs/:token/resume',
         'post /jobs/:token/resume',
         'get /frogbot',
+        'get /frogbot/app-icon/:size',
+        'get /frogbot/app-manifest',
         'post /agents/:slug',
         'get /agents/:slug/chats/:chatId/pending',
         'post /agents/:slug/chats/:chatId/settle',
@@ -4772,14 +4778,24 @@ describe('frogbot sanitize', () => {
       expect(result.chat.enabled).toBe(false);
       expect(
         (payloadConfig as { endpoints?: { path: string }[] }).endpoints?.map(({ path }) => path),
-      ).toEqual(['/jobs/:token/resume', '/jobs/:token/resume', '/jobs/:token/resume', '/frogbot']);
+      ).toEqual([
+        '/jobs/:token/resume',
+        '/jobs/:token/resume',
+        '/jobs/:token/resume',
+        '/frogbot',
+        '/frogbot/app-icon/:size',
+        '/frogbot/app-manifest',
+      ]);
     });
 
     it.each([
-      { endpoints: false as const, expected: ['/frogbot'] },
+      {
+        endpoints: false as const,
+        expected: ['/frogbot', '/frogbot/app-icon/:size', '/frogbot/app-manifest'],
+      },
       {
         endpoints: [{ path: '/health', method: 'get' as const, handler: vi.fn() }],
-        expected: ['/health', '/frogbot'],
+        expected: ['/health', '/frogbot', '/frogbot/app-icon/:size', '/frogbot/app-manifest'],
       },
     ])(
       'preserves user endpoint configuration for empty agents',
