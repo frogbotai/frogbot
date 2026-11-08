@@ -10,6 +10,32 @@
     gap: 0.5rem;
   }
 
+  .api-keys-dialog__expiry {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .fb-input.api-keys-dialog__expiry-day {
+    flex: 1 1 10rem;
+    width: auto;
+    min-width: 0;
+  }
+
+  .api-keys-dialog__expiry-quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .api-keys-dialog__hint {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+  }
+
   .fb-collapsible__trigger.api-keys-dialog__limits-trigger {
     width: 100%;
     cursor: pointer;
