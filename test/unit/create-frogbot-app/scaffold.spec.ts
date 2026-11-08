@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import prettier from 'prettier';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { packs } from '../../../packages/create-frogbot-app/scripts/pack-filter.mjs';
 import { applyTemplate } from '../../../packages/create-frogbot-app/src/index.js';
 import { HELP, parseArgs } from '../../../packages/create-frogbot-app/src/lib/args.js';
 import { DATABASE_CHOICES } from '../../../packages/create-frogbot-app/src/lib/db.js';
@@ -642,6 +643,16 @@ describe('packing matrix', () => {
     }
 
     expect(() => scaffoldMatrix(TEMPLATES, templates)).not.toThrow();
+  });
+
+  it('leaves out generated types, build output, local databases and dev uploads', () => {
+    const crm = templatePath('crm');
+    const left = ['media', 'files', 'node_modules', 'frogbot.db', 'src/frogbot-types.ts'];
+    const kept = ['src', 'public', 'src/collections/Media.ts', 'src/seed/logos/lumen-labs.webp'];
+
+    for (const entry of left) expect(packs(crm, path.join(crm, entry)), entry).toBe(false);
+
+    for (const entry of kept) expect(packs(crm, path.join(crm, entry)), entry).toBe(true);
   });
 
   it('names the template, database and provider that failed', () => {
