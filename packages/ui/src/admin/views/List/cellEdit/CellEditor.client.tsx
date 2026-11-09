@@ -49,6 +49,8 @@ export type CellEditorProps = {
   id: string;
   /** A printable key that started the edit; it replaces the value in a text input. */
   initialText?: string;
+  /** Enter or Tab pressed before the editor was ready: it saves as soon as the value is in. */
+  pendingDone?: Exclude<CellEditorDone, 'cancel'>;
   onDone: (done: CellEditorDone) => void;
   /** Called after a save, before `onDone`. */
   onSaved: () => void;
@@ -62,8 +64,10 @@ const baseClass = 'fb-cell-editor';
 const FOCUSABLE =
   'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+const DATE_PICKER = '.react-datepicker__input-container';
+
 const TEXT_INPUT =
-  'input[type="text"], input[type="search"], input[type="tel"], input[type="url"], input[type="email"], input:not([type]), textarea';
+  'input:is([type="text"], [type="search"], [type="tel"], [type="url"], [type="email"], [type="number"]), input:not([type]), textarea';
 
 function selectFor(field: ClientField, path: string): SelectType {
   const timezone = field.type === 'date' && Boolean(field.timezone);
@@ -105,9 +109,13 @@ function CellEditorFields({
   initialText,
   onDone,
   parentPath,
+  pendingDone,
   permissions,
   savedRef,
-}: Pick<CellEditorProps, 'field' | 'handleRef' | 'initialText' | 'onDone' | 'parentPath'> & {
+}: Pick<
+  CellEditorProps,
+  'field' | 'handleRef' | 'initialText' | 'onDone' | 'parentPath' | 'pendingDone'
+> & {
   action: string;
   drafts: boolean;
   permissions: SanitizedFieldPermissions | Record<string, SanitizedFieldPermissions>;
@@ -184,14 +192,35 @@ function CellEditorFields({
     };
   }, [initialText]);
 
-  const finish = (done: CellEditorDone) => {
-    void commit().then((saved) => {
-      if (saved) onDone(done);
-    });
+  const finish = useCallback(
+    (done: CellEditorDone) => {
+      void commit().then((saved) => {
+        if (saved) onDone(done);
+      });
+    },
+    [commit, onDone],
+  );
+
+  const queuedRef = useRef(pendingDone);
+
+  useEffect(() => {
+    const done = queuedRef.current;
+
+    if (!done || (initialText && !modified)) return;
+    queuedRef.current = undefined;
+    finish(done);
+  }, [finish, initialText, modified]);
+
+  const onKeyDownCapture = (event: KeyboardEvent<HTMLDivElement>) => {
+    const inPicker = (event.target as HTMLElement).closest(DATE_PICKER);
+
+    if (event.key !== 'Enter' || event.shiftKey || !inPicker) return;
+    window.setTimeout(() => finish('saved'), 0);
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.defaultPrevented || event.nativeEvent.isComposing) return;
+    if (event.key === 'Enter' && (event.target as HTMLElement).closest(DATE_PICKER)) return;
 
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -217,8 +246,14 @@ function CellEditorFields({
   };
 
   return (
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Keys bubble up from the field's own inputs; React's order lets their menus handle Enter and Esc first.
-    <div className={`${baseClass}__fields`} onKeyDown={onKeyDown} ref={rootRef} role="group">
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Keys bubble up from the field's own inputs, so their menus handle Enter and Esc first.
+    <div
+      className={`${baseClass}__fields`}
+      onKeyDown={onKeyDown}
+      onKeyDownCapture={onKeyDownCapture}
+      ref={rootRef}
+      role="group"
+    >
       <RenderFields
         fields={[field]}
         forceRender
@@ -244,6 +279,7 @@ export function CellEditor({
   initialText,
   onDone,
   onSaved,
+  pendingDone,
   parentPath,
   path,
   permissions,
@@ -378,6 +414,7 @@ export function CellEditor({
             field={field}
             handleRef={handleRef}
             initialText={initialText}
+            pendingDone={pendingDone}
             onDone={onDone}
             parentPath={parentPath}
             permissions={fieldPermissionsAt(permissions, parentPath)}

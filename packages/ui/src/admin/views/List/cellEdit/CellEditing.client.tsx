@@ -13,6 +13,7 @@ type ActiveCell = {
   cell: HTMLTableCellElement;
   column: string;
   initialText?: string;
+  pendingDone?: Exclude<CellEditorDone, 'cancel'>;
   rowId: string;
 };
 
@@ -40,6 +41,26 @@ function toActive(td: HTMLTableCellElement, initialText?: string): ActiveCell | 
 
 function isPrintable(event: KeyboardEvent): boolean {
   return event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
+}
+
+const ARROWS: Record<string, [number, number]> = {
+  ArrowDown: [1, 0],
+  ArrowLeft: [0, -1],
+  ArrowRight: [0, 1],
+  ArrowUp: [-1, 0],
+};
+
+function neighborCell(td: HTMLTableCellElement, event: KeyboardEvent) {
+  const move = ARROWS[event.key];
+  const row = td.parentElement;
+
+  if (!move || event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return undefined;
+  if (td.closest('[role="grid"]') || !(row instanceof HTMLTableRowElement)) return undefined;
+
+  const rows = Array.from(row.parentElement?.children ?? []);
+  const target = rows[rows.indexOf(row) + move[0]];
+
+  return target instanceof HTMLTableRowElement ? target.cells[td.cellIndex + move[1]] : undefined;
 }
 
 function focusCell(td: HTMLTableCellElement | undefined) {
@@ -112,6 +133,21 @@ export function CellEditing({
     return () => observer.disconnect();
   }, [columnsKey, containerRef]);
 
+  const queueKey = useCallback((event: KeyboardEvent) => {
+    const { key, shiftKey } = event;
+    const done =
+      key === 'Enter' ? 'saved' : key === 'Tab' ? (shiftKey ? 'prev' : 'next') : undefined;
+
+    setActive((current) => {
+      if (!current || key === 'Escape') return undefined;
+      if (done) return { ...current, pendingDone: done };
+
+      return isPrintable(event)
+        ? { ...current, initialText: `${current.initialText ?? ''}${key}` }
+        : current;
+    });
+  }, []);
+
   const commit = useCallback(async () => handleRef.current?.commit() ?? true, []);
 
   const start = useCallback(
@@ -120,7 +156,9 @@ export function CellEditing({
 
       if (current?.rowId === next.rowId && current.column === next.column) return;
       if (current && !(await commit())) return;
+      activeRef.current = next;
       setActive(next);
+      focusCell(next.cell);
     },
     [commit],
   );
@@ -142,14 +180,29 @@ export function CellEditing({
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
-      const td = event.target as HTMLElement;
+      const td = event.target;
 
-      if (event.defaultPrevented || !td.matches('td[data-cell-edit]')) return;
+      if (event.defaultPrevented || !(td instanceof HTMLTableCellElement)) return;
+      if (!container.contains(td)) return;
+
+      if (activeRef.current?.cell === td) {
+        event.preventDefault();
+        queueKey(event);
+
+        return;
+      }
+
+      const neighbor = neighborCell(td, event);
+
+      if (neighbor) {
+        event.preventDefault();
+        focusCell(neighbor);
+
+        return;
+      }
 
       const starts = event.key === 'Enter' || event.key === 'F2' || isPrintable(event);
-      if (!starts) return;
-
-      const next = toActive(td as HTMLTableCellElement, isPrintable(event) ? event.key : undefined);
+      const next = starts ? toActive(td, isPrintable(event) ? event.key : undefined) : undefined;
 
       if (!next) return;
       event.preventDefault();
@@ -176,7 +229,7 @@ export function CellEditing({
       container.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('pointerdown', onPointerDown, true);
     };
-  }, [commit, containerRef, start]);
+  }, [commit, containerRef, queueKey, start]);
 
   const onSaved = useCallback(() => {
     const id = activeRef.current?.rowId;
@@ -217,6 +270,7 @@ export function CellEditing({
       handleRef={handleRef}
       id={active.rowId}
       initialText={active.initialText}
+      pendingDone={active.pendingDone}
       key={`${active.rowId}:${active.column}`}
       onDone={onDone}
       onSaved={onSaved}
