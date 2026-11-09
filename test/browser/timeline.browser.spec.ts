@@ -55,11 +55,13 @@ async function calendarColumn(page: Page, title: string) {
   return page
     .locator('.frog-calendar__event', { has: page.getByText(title, { exact: true }) })
     .first()
-    .evaluate((element) =>
-      [...document.querySelectorAll('.frog-calendar__day-column')].indexOf(
-        element.closest('.frog-calendar__day-column') as Element,
-      ),
-    );
+    .evaluate((element) => {
+      const selector = element.closest('.frog-calendar__all-day-cell')
+        ? '.frog-calendar__all-day-cell'
+        : '.frog-calendar__day-column';
+
+      return [...document.querySelectorAll(selector)].indexOf(element.closest(selector) as Element);
+    });
 }
 
 async function task(page: Page, key: string) {
