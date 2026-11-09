@@ -168,6 +168,81 @@ describe('collection views', () => {
     expect(() => compile({ color: 'title' })).toThrow('unsupported color field "title"');
   });
 
+  it('compiles a timeline route and metadata', () => {
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'tasks',
+        fields: [
+          { name: 'startDate', type: 'date' },
+          { name: 'dueDate', type: 'date' },
+          { name: 'project', type: 'relationship', relationTo: 'projects' },
+          { name: 'status', type: 'select', options: ['todo', 'done'] },
+        ],
+        admin: {
+          views: [
+            { type: 'list' },
+            {
+              type: 'timeline',
+              start: 'startDate',
+              end: 'dueDate',
+              groupBy: 'project',
+              color: 'status',
+              scales: ['month', 'week'],
+              components: { Bar: './Bar#Bar', beforeTimeline: ['./Before#Before'] },
+            },
+          ],
+        },
+      },
+    });
+
+    expect(admin?.components?.views?.timeline).toEqual({
+      Component: '@frogbotai/ui/admin/rsc#TimelineView',
+      exact: true,
+      path: '/timeline',
+    });
+    expect(admin?.custom?.frogbot.views[1]).toEqual({
+      type: 'timeline',
+      slug: 'timeline',
+      label: 'Timeline',
+      path: '/timeline',
+      start: 'startDate',
+      end: 'dueDate',
+      groupBy: 'project',
+      color: 'status',
+      scales: ['month', 'week'],
+    });
+  });
+
+  it('validates timeline dates, color, groupBy and scales', () => {
+    const compile = (view: Record<string, unknown>) =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [
+            { name: 'startDate', type: 'date' },
+            { name: 'title', type: 'text' },
+            { name: 'notes', type: 'json' },
+            { name: 'status', type: 'select', options: [] },
+          ],
+          admin: { views: [{ type: 'timeline', start: 'startDate', ...view } as never] },
+        },
+      });
+
+    expect(() => compile({ color: 'status', groupBy: 'status', scales: ['day'] })).not.toThrow();
+    expect(() => compile({ start: undefined })).toThrow('timeline view "timeline" needs a start');
+    expect(() => compile({ start: 'title' })).toThrow(
+      'timeline view "timeline" has a non-date field "title"',
+    );
+    expect(() => compile({ end: 'missing' })).toThrow('non-date field "missing"');
+    expect(() => compile({ color: 'title' })).toThrow('unsupported color field "title"');
+    expect(() => compile({ groupBy: 'notes' })).toThrow(
+      'timeline view "timeline" has an unsupported groupBy field "notes"',
+    );
+    expect(() => compile({ scales: [] })).toThrow('has scales []');
+    expect(() => compile({ scales: ['quarter'] })).toThrow('has scales ["quarter"]');
+    expect(() => compile({ scales: ['week', 'week'] })).toThrow('has scales ["week","week"]');
+  });
+
   describe('list summary', () => {
     const compile = (summary: unknown, extra: Record<string, unknown> = {}) =>
       compileCollectionViews({
@@ -246,6 +321,72 @@ describe('collection views', () => {
     it('rejects timestamps on a collection without them', () => {
       expect(() => compile({ createdAt: 'max' }, { timestamps: false })).toThrow(
         'summary names "createdAt", which is not a field.',
+      );
+    });
+  });
+
+  describe('list editable', () => {
+    const compile = (editable: unknown) =>
+      compileCollectionViews({
+        collection: {
+          slug: 'deals',
+          fields: [
+            { name: 'name', type: 'text' },
+            { name: 'stage', type: 'select', options: ['lead', 'won'] },
+            { name: 'tags', type: 'relationship', relationTo: 'tags', hasMany: true },
+            { name: 'notes', type: 'richText' },
+            { name: 'lines', type: 'array', fields: [{ name: 'sku', type: 'text' }] },
+            {
+              name: 'deal',
+              type: 'number',
+              admin: { custom: { frogbot: { kind: { type: 'autonumber' } } } },
+            },
+            {
+              name: 'amount',
+              type: 'number',
+              admin: { custom: { frogbot: { kind: { type: 'money', currency: 'USD' } } } },
+            },
+            {
+              name: 'dealKey',
+              type: 'text',
+              admin: { custom: { frogbot: { kind: { type: 'autonumberKey' } } } },
+            },
+            {
+              type: 'tabs',
+              tabs: [
+                {
+                  name: 'meta',
+                  fields: [{ name: 'source', type: 'text' }],
+                },
+              ],
+            },
+            { name: 'address', type: 'group', fields: [{ name: 'city', type: 'text' }] },
+          ],
+          admin: { views: [{ type: 'list', editable } as never] },
+        },
+      });
+
+    it.each([
+      [true],
+      [false],
+      [['name', 'stage', 'amount', 'tags', 'meta.source', 'address.city']],
+    ])('accepts %j and keeps it in the client metadata', (editable) => {
+      expect(compile(editable)?.custom?.frogbot.views[0]).toMatchObject({ editable });
+    });
+
+    it.each([
+      [['nope'], 'names "nope", which is not a field.'],
+      [['address.zip'], 'names "address.zip", which is not a field.'],
+      [['notes'], 'names "notes" (richText), which can\'t be edited in a cell.'],
+      [['lines'], 'names "lines" (array), which can\'t be edited in a cell.'],
+      [['address'], 'names "address" (group), which can\'t be edited in a cell.'],
+      [['dealKey'], 'names "dealKey" (autonumberKey), which can\'t be edited in a cell.'],
+      [['deal'], 'names "deal" (autonumber), which can\'t be edited in a cell.'],
+      ['name', 'must be true, false or an array of field names.'],
+      [[1], 'must be true, false or an array of field names.'],
+    ])('rejects %j at load, naming the view and entry', (editable, message) => {
+      expect(() => compile(editable)).toThrow(
+        `[frogbot] Collection "deals" list view "list" editable ${message}`,
       );
     });
   });

@@ -86,16 +86,21 @@ function resolve(scope: Scope, path: string): ResolvedAggregateField {
 
   if (!resolved) throw new AggregateValidationError(`${scope.label} has no field '${path}'.`);
 
-  if (resolved.hidden || (resolved.readGuarded && !scope.overrideAccess)) {
-    throw new Forbidden(scope.req.t);
-  }
+  if (resolved.hidden) throw new Forbidden(scope.req.t);
 
   return resolved;
 }
 
+function isReadGuarded(scope: Scope, { readGuarded }: ResolvedAggregateField): boolean {
+  return readGuarded && !scope.overrideAccess;
+}
+
 function resolveGroups(scope: Scope, { groupBy }: ParsedAggregate): ResolvedGroup[] {
-  return groupBy.map(({ by, path }) => {
-    const { field, hops, type } = resolve(scope, path);
+  const groups: ResolvedGroup[] = [];
+
+  for (const { by, path } of groupBy) {
+    const resolved = resolve(scope, path);
+    const { field, hops, type } = resolved;
 
     if (!type) {
       throw new AggregateValidationError(
@@ -115,15 +120,29 @@ function resolveGroups(scope: Scope, { groupBy }: ParsedAggregate): ResolvedGrou
         ? field.relationTo
         : undefined;
 
-    return { path, type, hops, ...(by ? { by } : {}), ...(relationTo ? { relationTo } : {}) };
-  });
+    if (isReadGuarded(scope, resolved)) throw new Forbidden(scope.req.t);
+
+    groups.push({ path, type, hops, ...(by ? { by } : {}), ...(relationTo ? { relationTo } : {}) });
+  }
+
+  return groups;
 }
 
-function resolveValues(scope: Scope, { values }: ParsedAggregate): AggregateValueDescriptor[] {
-  return values.map(({ name, operation, path }) => {
-    if (operation === 'count' || !path) return { operation: 'count' };
+function resolveValues(
+  scope: Scope,
+  { values }: ParsedAggregate,
+): (AggregateValueDescriptor | null)[] {
+  const resolved: (AggregateValueDescriptor | null)[] = [];
 
-    const { hops, many, type } = resolve(scope, path);
+  for (const { name, operation, path } of values) {
+    if (operation === 'count' || !path) {
+      resolved.push({ operation: 'count' });
+
+      continue;
+    }
+
+    const target = resolve(scope, path);
+    const { hops, many, type } = target;
 
     if (hops.length || many) {
       throw new AggregateValidationError(
@@ -141,20 +160,31 @@ function resolveValues(scope: Scope, { values }: ParsedAggregate): AggregateValu
       );
     }
 
-    return { operation, path, type };
-  });
+    resolved.push(isReadGuarded(scope, target) ? null : { operation, path, type });
+  }
+
+  return resolved;
+}
+
+function getColumns(values: (AggregateValueDescriptor | null)[]): number[] {
+  let next = 0;
+
+  return values.map((value) => (value ? next++ : -1));
 }
 
 function getSort(
   { sort, values }: ParsedAggregate,
   groups: ResolvedGroup[],
+  columns: number[],
 ): AggregateSortDescriptor[] {
-  const descriptors: AggregateSortDescriptor[] = sort.map(({ direction, name }) => {
+  const descriptors = sort.flatMap(({ direction, name }): AggregateSortDescriptor[] => {
     const group = groups.findIndex(({ path }) => path === name);
 
-    return group === -1
-      ? { target: 'value', index: values.findIndex((value) => value.name === name), direction }
-      : { target: 'group', index: group, direction };
+    if (group !== -1) return [{ target: 'group', index: group, direction }];
+
+    const index = columns[values.findIndex((value) => value.name === name)] ?? -1;
+
+    return index === -1 ? [] : [{ target: 'value', index, direction }];
   });
 
   for (const [index] of groups.entries()) {
@@ -293,11 +323,11 @@ export async function aggregateOperation<
         collection.access.read,
       );
 
-  const empty = () =>
+  const empty = (denied: ReadonlySet<string> = new Set()) =>
     (parsed.groupBy.length
       ? getEmptyAggregate(parsed.limit)
       : getAggregatePage({
-          groups: [getEmptyTotals(parsed.values)],
+          groups: [getEmptyTotals(parsed.values, denied)],
           limit: undefined,
           page: 1,
           totalDocs: 1,
@@ -320,7 +350,7 @@ export async function aggregateOperation<
   for (const path of getWherePaths(parsed.where)) {
     const field = resolveAggregateField({ collection, path, payload });
 
-    if (field && !parsed.overrideAccess && (field.hidden || field.readGuarded)) {
+    if (field?.hidden && !parsed.overrideAccess) {
       throw new Forbidden(req.t);
     }
   }
@@ -334,12 +364,17 @@ export async function aggregateOperation<
 
   const groups = resolveGroups(scope, parsed);
   const values = resolveValues(scope, parsed);
+  const columns = getColumns(values);
+  const readable = values.filter((value) => value !== null);
+  const denied = new Set(
+    parsed.values.filter((_, index) => !values[index]).map(({ name }) => name),
+  );
 
   if (!parsed.overrideAccess) {
     const related = await getRelatedAccess(scope, groups);
 
     if (related.denied !== undefined) {
-      if (parsed.disableErrors) return empty();
+      if (parsed.disableErrors) return empty(denied);
 
       throw new QueryError([{ path: related.denied }]);
     }
@@ -351,8 +386,8 @@ export async function aggregateOperation<
     collection: collection.slug,
     db: payload.db,
     groupBy: groups.map(({ by, path, type }) => ({ path, type, ...(by ? { by } : {}) })),
-    values,
-    sort: getSort(parsed, groups),
+    values: readable.length ? readable : [{ operation: 'count' }],
+    sort: getSort(parsed, groups, columns),
     limit: parsed.limit,
     page: parsed.page,
     locale: req.locale,
@@ -365,14 +400,15 @@ export async function aggregateOperation<
       groups.map(({ path, type }, index) => [path, toGroupKey(row.group[index], type, label)]),
     ),
     values: Object.fromEntries(
-      parsed.values.map(({ name }, index) => [
-        name,
-        toAggregateValue(row.values[index], values[index], label),
-      ]),
+      parsed.values.map(({ name }, index) => {
+        const value = values[index];
+
+        return [name, value ? toAggregateValue(row.values[columns[index]], value, label) : null];
+      }),
     ),
   }));
 
-  if (!groups.length && !rows.length) return empty();
+  if (!groups.length && !rows.length) return empty(denied);
 
   if (parsed.depth > 0) {
     await populateGroups({ depth: parsed.depth, groups, options: input, rows, scope });

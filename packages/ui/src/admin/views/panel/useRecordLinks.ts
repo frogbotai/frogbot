@@ -6,7 +6,7 @@ import { type RefObject, useEffect, useRef } from 'react';
 import { useRecordPanel } from './RecordPanelProvider.client.js';
 
 const INTERACTIVE =
-  'a, button, input, select, textarea, label, [role="button"], [role="checkbox"], [contenteditable="true"], .popup';
+  'a, button, input, select, textarea, label, [role="button"], [role="checkbox"], [contenteditable="true"], .popup, [data-cell-edit]';
 
 function rowRecordId(row: HTMLElement): string | undefined {
   return row.dataset.id ?? row.querySelector<HTMLElement>('[data-row-id]')?.dataset.rowId;

@@ -21,6 +21,8 @@ export type {
   CustomView,
   GalleryView,
   ListView,
+  TimelineScale,
+  TimelineView,
   ViewAccess,
   ViewComponents,
   ViewFilter,

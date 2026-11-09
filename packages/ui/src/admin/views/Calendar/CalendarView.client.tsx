@@ -27,7 +27,7 @@ import { appendQuery, getPath, setPath } from '../cells.js';
 import { useRecordPanel, useRecordPanelEvents } from '../panel/RecordPanelProvider.client.js';
 import { getViewCardColumns } from '../preferences.js';
 import { getUseAsDone, isRecordDone, recordClassName } from '../records/state.js';
-import { resolveEventColor } from './data.js';
+import { getRangeWhere, resolveEventColor } from './data.js';
 
 type Row = Record<string, unknown> & {
   color?: string;
@@ -179,24 +179,7 @@ export function CalendarViewClient({
   const load = async (signal?: AbortSignal) => {
     if (!range) return;
     const params = new URLSearchParams({ depth: '1', limit: '1000', pagination: 'false' });
-    const rangeWhere = {
-      and: [
-        { [start]: { less_than_equal: range.end } },
-        end
-          ? {
-              or: [
-                { [end]: { greater_than_equal: range.start } },
-                {
-                  and: [
-                    { [end]: { exists: false } },
-                    { [start]: { greater_than_equal: range.start } },
-                  ],
-                },
-              ],
-            }
-          : { [start]: { greater_than_equal: range.start } },
-      ],
-    };
+    const rangeWhere = getRangeWhere({ end, range, start });
 
     appendQuery(params, 'where', { and: [filter, query.where, rangeWhere].filter(Boolean) });
     appendQuery(params, 'search', query.search);

@@ -182,6 +182,7 @@ export const adminIconExports = [
   'ThumbsUpIcon',
   'TicketIcon',
   'TileIcon',
+  'TimelineIcon',
   'TimerIcon',
   'TransferIcon',
   'TrendingDownIcon',

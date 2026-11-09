@@ -134,15 +134,38 @@ describe(`aggregate REST [${adapterLabel}]`, () => {
     expect(response.body.groups).toEqual([{ group: {}, values: { deals: 1, total: 300 } }]);
   });
 
-  it('refuses a field with its own read rule even for an admin', async () => {
-    const { headers } = await signIn(seed.users.ana);
-
-    const response = await booted.restClient.post<ErrorBody>(
+  it('blanks a field with its own read rule, even for an admin', async () => {
+    const response = await booted.restClient.post<{
+      groups: { values: { margin: number | null } }[];
+    }>(
       route,
       { groupBy: 'stage', values: { margin: { sum: 'margin' } } },
+      { headers: (await signIn(seed.users.ana)).headers },
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body.groups.map(({ values }) => values.margin)).toEqual([null, null]);
+  });
+
+  it('does not total over REST a value the REST find hides by a per-document rule', async () => {
+    const { headers } = await signIn(seed.users.cy);
+    const found = await booted.restClient.get<{ docs: { audit?: number | null }[] }>(
+      `/api/${dealsSlug}?limit=100`,
       { headers },
     );
 
-    expect(response.status).toBe(403);
+    const visible = found.body.docs
+      .map(({ audit }) => audit)
+      .filter((value): value is number => typeof value === 'number')
+      .reduce((a, b) => a + b, 0);
+
+    expect(visible).toBe(12);
+
+    const response = await booted.restClient.post<{
+      groups: { values: { audit: number | null } }[];
+    }>(route, { values: { audit: { sum: 'audit' } } }, { headers });
+
+    expect(response.status).toBe(200);
+    expect([12, null]).toContain(response.body.groups[0].values.audit);
   });
 });

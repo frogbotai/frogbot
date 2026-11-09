@@ -115,6 +115,11 @@ const fixtures = {
     cli: 'frogbot',
     env: { FROGBOT_SECRET: 'browser-test-secret', OPENAI_API_KEY: 'browser-test-key' },
   },
+  projects: {
+    dir: path.join(repoRoot, 'templates', 'projects'),
+    cli: 'frogbot',
+    env: { FROGBOT_SECRET: 'browser-test-secret', OPENAI_API_KEY: 'browser-test-key' },
+  },
 } satisfies Record<string, Fixture>;
 
 type Server = {
@@ -223,6 +228,12 @@ const servers: Record<string, Server> = {
     port: testPort(3144),
     database: 'frogbot.crm.browser.db',
     seed: path.join(dirname, 'fixtures', 'crm', 'seed.ts'),
+  },
+  projects: {
+    fixture: 'projects',
+    port: testPort(3145),
+    database: 'frogbot.projects.browser.db',
+    seed: path.join(dirname, 'fixtures', 'projects', 'seed.ts'),
   },
 };
 
@@ -339,7 +350,9 @@ const testProjects = [
       'viewActions.browser.spec.ts',
       'commandPalette.browser.spec.ts',
       'calendarTimeZone.browser.spec.ts',
+      'timeline.browser.spec.ts',
       'board.browser.spec.ts',
+      'cellEditKinds.browser.spec.ts',
       'galleryCard.browser.spec.ts',
     ],
   }),
@@ -405,6 +418,7 @@ const testProjects = [
   project({
     name: 'crm',
     testMatch: [
+      'cellEdit.browser.spec.ts',
       'crm.browser.spec.ts',
       'gallery.browser.spec.ts',
       'listGrid.browser.spec.ts',
@@ -414,6 +428,7 @@ const testProjects = [
       'views.browser.spec.ts',
     ],
   }),
+  project({ name: 'projects', testMatch: 'projects.browser.spec.ts' }),
   project({
     name: 'dojo',
     testMatch: [

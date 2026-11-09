@@ -6,6 +6,7 @@ type TableElementProps = {
   children?: ReactNode;
   columns?: TableColumn[];
   data?: Array<{ _id?: unknown; id?: unknown }>;
+  navigationLabel?: string;
 };
 
 function markCells(cells: ReactNode[], data: NonNullable<TableElementProps['data']>): ReactNode[] {
@@ -20,10 +21,11 @@ function markCells(cells: ReactNode[], data: NonNullable<TableElementProps['data
 /**
  * Puts each row's id inside its first rendered cell. Payload's orderable table renders rows
  * without `data-id` and reorders them locally after a drag, so the cell is the only place the id
- * stays with its row.
+ * stays with its row. A `navigationLabel` turns on Payload's keyboard grid, as Payload's own list
+ * does for tables that aren't orderable.
  */
-export function withRowIds(node: ReactNode): ReactNode {
-  if (Array.isArray(node)) return node.map(withRowIds);
+export function withRowIds(node: ReactNode, navigationLabel?: string): ReactNode {
+  if (Array.isArray(node)) return node.map((child) => withRowIds(child, navigationLabel));
   if (!isValidElement<TableElementProps>(node)) return node;
 
   const { children, columns, data } = node.props;
@@ -41,8 +43,11 @@ export function withRowIds(node: ReactNode): ReactNode {
               ? { ...column, renderedCells: markCells(column.renderedCells, data) }
               : column,
           ),
+          ...(navigationLabel ? { navigationLabel } : {}),
         });
   }
 
-  return children === undefined ? node : cloneElement(node, { children: withRowIds(children) });
+  return children === undefined
+    ? node
+    : cloneElement(node, { children: withRowIds(children, navigationLabel) });
 }

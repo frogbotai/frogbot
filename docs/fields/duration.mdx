@@ -106,6 +106,8 @@ Text the input can't read, such as `1:75`, `1.5` or `1:`, shows "Enter a duratio
 
 The label, description, validation errors, `min`, `max`, `required` and a custom `validate` work as on a Number field. When the field is read-only, because of `admin.readOnly`, because it is virtual, or because the user may not update it, the document view shows the formatted duration as text with no input.
 
+In a list with [`editable`](/admin/collection-list#editing-cells-in-place), a duration cell edits in place with the same input. Enter saves and Esc cancels.
+
 ## Stored value
 
 Durations are stored as whole seconds: `5400` means 1 hour 30 minutes. The REST API, GraphQL and the Local API read and write the number of seconds, and the generated TypeScript type is the same as a Number field's, such as `timeSpent?: number | null`.

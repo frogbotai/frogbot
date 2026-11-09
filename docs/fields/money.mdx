@@ -103,6 +103,8 @@ When the field is read-only, because of `admin.readOnly`, because it is virtual,
 
 If a money field is the first List column, a row with an empty value has no link to open the document from that column.
 
+In a list with [`editable`](/admin/collection-list#editing-cells-in-place), a money cell edits in place with the same input. Enter saves and Esc cancels.
+
 ## Stored value
 
 Amounts are stored as decimals in whole currency units: `1.5` means $1.50, and `0.000173` is valid. Nothing is rounded on save. The REST API, GraphQL and the Local API return a plain number, and the generated TypeScript type is the same as a Number field's, such as `price?: number | null`.

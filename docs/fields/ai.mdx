@@ -118,6 +118,8 @@ The [List](/admin/overview) cell shows the value with its state:
 
 The buttons need update access to the record. Without it, the cell shows the value, the spinner and the warning only. Generating cells update on their own: while any are visible, the page re-reads them in one request every 3 seconds, and stops once none are generating.
 
+In a list with [`editable`](/admin/collection-list#editing-cells-in-place), a click on the cell away from its button edits the value by hand with the document view's input. Enter saves and Esc cancels.
+
 ### Board and Calendar
 
 [Board](/admin/collection-board) cards and [Calendar](/admin/collection-calendar) events show the value, dimmed while generating, and a warning icon after a failure. They have no buttons. Board can group by an AI select field.
