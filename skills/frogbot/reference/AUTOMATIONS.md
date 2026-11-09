@@ -2,7 +2,7 @@
 
 Docs: https://docs.frogbot.ai/hooks/collections and https://docs.frogbot.ai/jobs-queue/overview
 
-An automation is a rule such as "when a ticket has been Pending for 48 hours, solve it and email the customer". In FrogBot it is code: a hook or schedule queues a job, and the job waits and acts. There is no visual builder and no automation helper, as in Payload. People see and steer automations through ordinary records and the app's own views.
+An automation is a rule such as "when a ticket has been Pending for 48 hours, solve it and email the customer". In FrogBot it is code: a hook or schedule queues a job, and the job waits and acts. There is no visual builder and no automation helper. People see and steer automations through ordinary records and the app's own views.
 
 | Rule                         | Build it with                                                                                                                                                                                                                                                                |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -449,4 +449,4 @@ See [the jobs overview](https://docs.frogbot.ai/jobs-queue/overview) for every j
 
 ## Why no helper
 
-An `automation({ when, wait, then })` wrapper would hide the transaction, the `jobId`, the steps and the access choice, which are exactly the parts that go wrong. Payload ships none, and the hook plus workflow above is about as short. Write the hook and the job.
+An `automation({ when, wait, then })` wrapper would hide the transaction, the `jobId`, the steps and the access choice, which are exactly the parts that go wrong. The hook plus workflow above is about as short. Write the hook and the job.
