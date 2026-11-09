@@ -33,6 +33,8 @@ function isRecentlyUsed(key: Record<string, unknown>): boolean {
 
 const apiKeyStrategies = new WeakSet<AuthStrategy>();
 
+let loggedStampFailure = false;
+
 type StrategyOptions = {
   authCollection: string;
   collectionSlug: string;
@@ -42,7 +44,6 @@ type StrategyOptions = {
 
 export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
   const { authCollection, collectionSlug, headerNames, tokenPrefix } = options;
-  let loggedStampFailure = false;
   const strategy: AuthStrategy = {
     name: apiKeyStrategyName,
     authenticate: async ({ frogbot, headers }) => {
