@@ -58,7 +58,7 @@ import {
   usersSlug,
   verboseEffort,
 } from '../shared';
-import { cellDrafts, cellKinds } from './cellEdits';
+import { cellAccess, cellDrafts, cellKinds } from './cellEdits';
 
 const projectStatusOptions = [
   { label: 'Active', value: 'active', color: 'green' as const },
@@ -309,6 +309,7 @@ export default buildConfig({
     },
     cellKinds,
     cellDrafts,
+    cellAccess,
     {
       slug: timesheetsSlug,
       admin: {

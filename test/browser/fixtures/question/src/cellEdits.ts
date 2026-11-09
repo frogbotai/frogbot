@@ -11,7 +11,7 @@ import {
   urlField,
 } from 'frogbot';
 
-import { cellDraftsSlug, cellKindsSlug, tagsSlug } from '../shared';
+import { cellAccessSlug, cellDraftsSlug, cellKindsSlug, tagsSlug } from '../shared';
 
 export const cellKinds: CollectionConfig = {
   slug: cellKindsSlug,
@@ -74,5 +74,38 @@ export const cellDrafts: CollectionConfig = {
     { name: 'title', type: 'text', required: true },
     { name: 'note', type: 'text' },
     { name: 'extra', type: 'text', admin: { condition: (data) => Boolean(data?.title) } },
+  ],
+};
+
+export const cellAccess: CollectionConfig = {
+  slug: cellAccessSlug,
+  access: { update: () => ({ open: { equals: true } }) },
+  admin: {
+    useAsTitle: 'title',
+    views: [
+      {
+        type: 'list',
+        defaultFields: ['title', 'address.city', 'note'],
+        editable: ['address.city', 'note'],
+      },
+    ],
+  },
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    { name: 'open', type: 'checkbox', defaultValue: true },
+    { name: 'archived', type: 'checkbox' },
+    {
+      name: 'address',
+      type: 'group',
+      fields: [
+        { name: 'country', type: 'text' },
+        {
+          name: 'city',
+          type: 'text',
+          admin: { condition: (_, siblingData) => siblingData?.country === 'US' },
+        },
+      ],
+    },
+    { name: 'note', type: 'text', access: { update: ({ doc }) => !doc?.archived } },
   ],
 };

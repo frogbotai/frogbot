@@ -170,4 +170,44 @@ describe('getEditableColumns', () => {
       }),
     ).toEqual(['d']);
   });
+
+  it('keeps a field that only opts out of bulk edit, filters or grouping editable', () => {
+    const optedOut = [
+      { name: 'stage', type: 'select', options: ['a'], admin: { disabled: { bulkEdit: true } } },
+      { name: 'owner', type: 'text', admin: { disabled: { filter: true } } },
+      { name: 'region', type: 'text', admin: { disabled: { groupBy: true } } },
+      { name: 'gone', type: 'text', admin: { disabled: { field: true } } },
+    ];
+
+    const paths = ['stage', 'owner', 'region', 'gone'];
+
+    expect(
+      getEditableColumns({
+        columns: paths,
+        editable: true,
+        fields: optedOut,
+        permissions: permissions(Object.fromEntries(paths.map((path) => [path, access()]))),
+      }),
+    ).toEqual(['stage', 'owner', 'region']);
+  });
+
+  it('never edits the draft status', () => {
+    const status = [
+      {
+        name: '_status',
+        type: 'select',
+        options: ['draft', 'published'],
+        admin: { disabled: { bulkEdit: true } },
+      },
+    ];
+
+    expect(
+      getEditableColumns({
+        columns: ['_status'],
+        editable: true,
+        fields: status,
+        permissions: permissions({ _status: access() }),
+      }),
+    ).toEqual([]);
+  });
 });

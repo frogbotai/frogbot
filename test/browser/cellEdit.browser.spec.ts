@@ -251,6 +251,34 @@ test('clicking elsewhere saves, and the open panel shows the new value', async (
   await expect(page.locator('.fb-record-panel input[name="amount"]')).toHaveValue('321');
 });
 
+test('select-all pressed while the editor loads selects the old value', async ({ page }) => {
+  const name = `SelectAll ${stamp()}`;
+  const deal = await create(page, 'deals', { name, amount: 100, stage: 'lead' });
+
+  let release = () => undefined as void;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+
+  await openDeals(page, name);
+
+  await page.route(`**/api/deals/${deal.id}?*`, async (route) => {
+    if (route.request().method() === 'GET') await held;
+    await route.fallback();
+  });
+
+  const amount = cell(page, name, 'amount');
+
+  await amount.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  release();
+  await expect(editor(amount).locator('input')).toBeFocused();
+  await page.keyboard.type('321');
+  await page.keyboard.press('Enter');
+
+  await expect.poll(async () => (await stored(page, 'deals', deal.id)).amount).toBe(321);
+});
+
 test('selection, the row link and plain cells never start an edit', async ({ page }) => {
   const name = `Plain ${stamp()}`;
 
@@ -284,6 +312,68 @@ test('a checkbox cell toggles and saves', async ({ page }) => {
   await page.keyboard.press('Enter');
 
   await expect.poll(async () => (await stored(page, 'tasks', task.id)).completed).toBe(true);
+});
+
+async function pickPriority(page: Page, target: Locator, label: string) {
+  await target.click();
+  await expect(page.locator('.rs__menu')).toBeVisible();
+  await page.locator('.rs__menu .rs__option', { hasText: label }).click();
+  await page.keyboard.press('Enter');
+  await expect(editor(target)).toHaveCount(0);
+}
+
+test('a cell edit on the record open in the panel with unsaved edits asks first', async ({
+  page,
+}) => {
+  const title = `PanelGuard ${stamp()}`;
+  const task = await create(page, 'tasks', { title, priority: 'low', notes: 'old' });
+
+  await openTasks(page, title);
+  await page.locator('tbody tr', { hasText: title }).getByRole('link', { name: title }).click();
+
+  const panel = page.locator('.fb-record-panel');
+  const notes = panel.locator('textarea[name="notes"], #field-notes').first();
+  const modal = page.locator('#fb-record-panel-leave');
+  const priority = cell(page, title, 'priority');
+
+  await notes.fill('new notes');
+  await priority.click();
+  await expect(modal).toBeVisible();
+  await modal.getByRole('button', { name: 'Stay on this page' }).click();
+  await expect(editor(priority)).toHaveCount(0);
+  await expect(notes).toHaveValue('new notes');
+
+  await priority.click();
+  await modal.getByRole('button', { name: 'Leave anyway' }).click();
+  await expect(page.locator('.rs__menu')).toBeVisible();
+  await page.locator('.rs__menu .rs__option', { hasText: 'High' }).click();
+  await page.keyboard.press('Enter');
+
+  await expect.poll(async () => (await stored(page, 'tasks', task.id)).priority).toBe('high');
+  await expect(notes).toHaveValue('old');
+  await expect(page.locator('#document-stale-data')).toHaveCount(0);
+
+  await notes.fill('newer notes');
+  await panel.locator('.fb-record-panel-header__save').click();
+  await expect.poll(async () => (await stored(page, 'tasks', task.id)).notes).toBe('newer notes');
+  expect((await stored(page, 'tasks', task.id)).priority).toBe('high');
+});
+
+test('saving a cell keeps the row selected', async ({ page }) => {
+  const title = `Select ${stamp()}`;
+  const task = await create(page, 'tasks', { title, priority: 'low' });
+
+  await openTasks(page, title);
+
+  const select = page
+    .locator('tbody tr', { hasText: title })
+    .locator('td.cell-_select input[type="checkbox"]');
+
+  await select.check();
+  await pickPriority(page, cell(page, title, 'priority'), 'High');
+  await expect.poll(async () => (await stored(page, 'tasks', task.id)).priority).toBe('high');
+  await expect(cell(page, title, 'priority')).toContainText('High');
+  await expect(select).toBeChecked();
 });
 
 async function shootEditing(page: Page, target: Locator, file: string, open?: Locator) {

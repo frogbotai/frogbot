@@ -1,6 +1,11 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-import { cellDraftsSlug, cellKindsSlug, tagsSlug } from './fixtures/question/shared';
+import {
+  cellAccessSlug,
+  cellDraftsSlug,
+  cellKindsSlug,
+  tagsSlug,
+} from './fixtures/question/shared';
 
 type Doc = Record<string, unknown> & { id: number | string };
 
@@ -167,4 +172,64 @@ test('a field whose condition reads another field edits in its cell', async ({ p
   await expect
     .poll(async () => (await stored(page, cellDraftsSlug, doc.id, true)).extra)
     .toBe('after');
+});
+
+test('a group field whose condition reads a sibling stays open while typing and saves', async ({
+  page,
+}) => {
+  const title = `Cond ${stamp()}`;
+  const doc = await create(page, cellAccessSlug, {
+    title,
+    address: { country: 'US', city: 'Austin' },
+  });
+
+  await open(page, cellAccessSlug, title);
+
+  const city = cell(page, title, 'address__city');
+
+  await expect(city).toHaveAttribute('data-cell-edit', 'address.city');
+  await city.click();
+  await expect(editor(city).locator('input')).toBeFocused();
+  await page.keyboard.press('ControlOrMeta+a');
+
+  const changed = page.waitForResponse((response) => response.request().method() === 'POST');
+
+  await page.keyboard.type('Dallas');
+  await changed;
+  await expect(editor(city).locator('input')).toHaveValue('Dallas');
+  await page.keyboard.press('Enter');
+  await expect(editor(city)).toHaveCount(0);
+
+  await expect
+    .poll(async () => (await stored(page, cellAccessSlug, doc.id)).address)
+    .toMatchObject({ city: 'Dallas', country: 'US' });
+});
+
+test('a row the person may not update stays plain', async ({ page }) => {
+  const title = `Closed ${stamp()}`;
+
+  await create(page, cellAccessSlug, { title, open: false, note: 'before' });
+  await create(page, cellAccessSlug, { title: `${title} open`, note: 'before' });
+  await open(page, cellAccessSlug, title);
+
+  await expect(cell(page, `${title} open`, 'note')).toHaveAttribute('data-cell-edit', 'note');
+  await expect(page.locator('tbody tr', { hasText: title }).first()).toBeVisible();
+
+  const closed = page.locator('tbody tr', { hasText: title }).filter({ hasNotText: 'open' });
+
+  await expect(closed.locator('td.cell-note')).not.toHaveAttribute('data-cell-edit');
+});
+
+test('a field whose update access denies this record stays plain', async ({ page }) => {
+  const title = `Archived ${stamp()}`;
+
+  await create(page, cellAccessSlug, { title, archived: true, note: 'before' });
+  await create(page, cellAccessSlug, { title: `${title} live`, note: 'before' });
+  await open(page, cellAccessSlug, title);
+
+  await expect(cell(page, `${title} live`, 'note')).toHaveAttribute('data-cell-edit', 'note');
+
+  const archived = page.locator('tbody tr', { hasText: title }).filter({ hasNotText: 'live' });
+
+  await expect(archived.locator('td.cell-note')).not.toHaveAttribute('data-cell-edit');
 });
