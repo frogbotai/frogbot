@@ -6,12 +6,16 @@ import {
   createApiKeyStrategy,
 } from '../../../packages/plugins/plugin-api-keys/src/strategy.js';
 
+const strategyOptions = { authCollection: 'users', collectionSlug: 'api-keys', tokenPrefix: 'fb' };
+
 function makeStrategy() {
-  return createApiKeyStrategy({
-    authCollection: 'users',
-    collectionSlug: 'api-keys',
-    tokenPrefix: 'fb',
-  });
+  return createApiKeyStrategy(strategyOptions);
+}
+
+async function loadStrategyModule() {
+  vi.resetModules();
+
+  return import('../../../packages/plugins/plugin-api-keys/src/strategy.js');
 }
 
 function makeFrogBot() {
@@ -225,12 +229,13 @@ describe('API key authentication strategy', () => {
   });
 
   it('signs the key in when the lastUsedAt write fails, logging the failure once', async () => {
+    const { createApiKeyStrategy: create } = await loadStrategyModule();
     const frogbot = makeFrogBot();
     const conflict = new Error('WriteConflict');
 
     frogbot.update.mockRejectedValue(conflict);
 
-    const strategy = makeStrategy();
+    const strategy = create(strategyOptions);
     const authenticate = () =>
       strategy.authenticate({
         headers: new Headers({ authorization: `Bearer ${createApiKeyToken()}` }),
@@ -244,6 +249,23 @@ describe('API key authentication strategy', () => {
       expect.objectContaining({ err: conflict }),
       expect.stringContaining('lastUsedAt'),
     );
+  });
+
+  it('logs a failed lastUsedAt write once per process across strategy instances', async () => {
+    const { createApiKeyStrategy: create } = await loadStrategyModule();
+    const frogbot = makeFrogBot();
+
+    frogbot.update.mockRejectedValue(new Error('WriteConflict'));
+
+    const authenticate = () =>
+      create(strategyOptions).authenticate({
+        headers: new Headers({ authorization: `Bearer ${createApiKeyToken()}` }),
+        frogbot: frogbot as never,
+      });
+
+    expect((await authenticate()).user).toMatchObject({ id: 'user-1' });
+    expect((await authenticate()).user).toMatchObject({ id: 'user-1' });
+    expect(frogbot.logger.error).toHaveBeenCalledOnce();
   });
 
   it('authenticates numeric key and owner IDs including zero', async () => {
