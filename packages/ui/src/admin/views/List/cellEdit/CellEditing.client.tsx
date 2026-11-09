@@ -71,7 +71,8 @@ function focusCell(td: HTMLTableCellElement | undefined) {
 }
 
 /**
- * Turns a list's editable columns into cells that edit in place. Rows stay Payload's
+ * Turns a list's editable columns into cells that edit in place. Checkbox cells toggle themselves
+ * through `CellToggleProvider`, so they are left out here. Rows stay Payload's
  * server-rendered cells; only the cell being edited mounts a `CellEditor`. Click, Enter, F2 or
  * typing on a focused cell starts an edit; Tab saves and moves on, wrapping to the next row.
  */
@@ -96,9 +97,12 @@ export function CellEditing({
   const handleRef = useRef<CellEditorHandle | null>(null);
   const activeRef = useRef(active);
   const panelRef = useRef(panel);
-  const columnsKey = columns.join('\n');
-  const cellsKey = cells ? JSON.stringify(cells) : '';
   const fields = getEntityConfig({ collectionSlug })?.fields ?? [];
+  const columnsKey = columns
+    .filter((path) => resolveFieldAtPath<ClientField>(fields, path)?.field.type !== 'checkbox')
+    .join('\n');
+
+  const cellsKey = cells ? JSON.stringify(cells) : '';
 
   useEffect(() => {
     activeRef.current = active;

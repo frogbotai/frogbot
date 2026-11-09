@@ -9,6 +9,8 @@ import {
   type MouseEvent,
   type PointerEvent,
   type ReactNode,
+  type RefObject,
+  useLayoutEffect,
   useRef,
 } from 'react';
 
@@ -97,6 +99,83 @@ function getTicks(range: TimelineRange, scale: TimelineScale, today: string): Ti
 
 const percent = (value: number, days: number) => `${(value / days) * 100}%`;
 
+const LABEL_GAP = 6;
+const MIN_INSIDE_LABEL = 48;
+
+type LabelPlacement = { room: number; side: 'end' | 'start' };
+
+function placeLabel(bar: HTMLElement, padding: number): LabelPlacement | undefined {
+  const content = bar.querySelector<HTMLElement>(':scope > .frog-timeline__bar-content');
+  const track = bar.parentElement;
+
+  if (!content || !track) return undefined;
+
+  const width = content.scrollWidth;
+  const inside = bar.clientWidth - padding;
+
+  if (width <= Math.ceil(inside) || inside >= MIN_INSIDE_LABEL) return undefined;
+
+  const left = bar.offsetLeft;
+  const right = left + bar.offsetWidth;
+  let endLimit = track.clientWidth;
+  let startLimit = 0;
+
+  for (const other of Array.from(track.children)) {
+    if (!(other instanceof HTMLElement) || other === bar) continue;
+    if (!other.classList.contains('frog-timeline__bar') || other.offsetTop !== bar.offsetTop) {
+      continue;
+    }
+
+    const otherRight = other.offsetLeft + other.offsetWidth;
+
+    if (other.offsetLeft >= right) endLimit = Math.min(endLimit, other.offsetLeft);
+    else if (otherRight <= left) startLimit = Math.max(startLimit, otherRight);
+  }
+
+  const endRoom = endLimit - right - LABEL_GAP * 2;
+  const startRoom = left - startLimit - LABEL_GAP * 2;
+  const side = endRoom >= width || endRoom >= startRoom ? 'end' : 'start';
+
+  return { room: Math.max(0, side === 'end' ? endRoom : startRoom), side };
+}
+
+function placeLabels(grid: HTMLElement | null) {
+  const bars = grid?.querySelectorAll<HTMLElement>('.frog-timeline__bar') ?? [];
+  const first = bars[0];
+
+  if (!first) return;
+
+  const style = getComputedStyle(first);
+  const padding = parseFloat(style.paddingInlineStart) + parseFloat(style.paddingInlineEnd);
+
+  bars.forEach((bar) => {
+    delete bar.dataset.labelOutside;
+
+    const placement = placeLabel(bar, padding);
+
+    if (!placement) return;
+
+    bar.dataset.labelOutside = placement.side;
+    bar.style.setProperty('--frog-timeline-label-room', `${placement.room}px`);
+  });
+}
+
+function useOutsideLabels(grid: RefObject<HTMLElement | null>) {
+  useLayoutEffect(() => placeLabels(grid.current));
+
+  useLayoutEffect(() => {
+    const element = grid.current;
+
+    if (!element) return;
+
+    const observer = new ResizeObserver(() => placeLabels(element));
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, [grid]);
+}
+
 /**
  * Records as bars across time, in bands. A sideways drag moves a bar by whole days, its edges
  * change one date, and a click opens it. The band column and the scale stay pinned while the
@@ -130,6 +209,8 @@ export function Timeline<T extends TimelineItem>({
   const todayIndex = range.days.indexOf(today);
   const ticks = getTicks(range, scale, today);
   const labelled = bands.some((band) => band.label !== undefined);
+
+  useOutsideLabels(tracks);
 
   const navigate = (direction: 'next' | 'previous' | 'today') => {
     if (direction === 'today') return onNavigate?.(new Date().toISOString());

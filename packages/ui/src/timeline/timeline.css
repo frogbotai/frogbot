@@ -165,6 +165,18 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .frog-timeline__bar[data-label-outside] > .frog-timeline__bar-content {
+    color: var(--color-text);
+    max-width: var(--frog-timeline-label-room);
+    pointer-events: none;
+    position: absolute;
+  }
+  .frog-timeline__bar[data-label-outside="end"] > .frog-timeline__bar-content {
+    inset-inline-start: calc(100% + 6px);
+  }
+  .frog-timeline__bar[data-label-outside="start"] > .frog-timeline__bar-content {
+    inset-inline-end: calc(100% + 6px);
+  }
 
   .frog-timeline__resize {
     background: transparent;

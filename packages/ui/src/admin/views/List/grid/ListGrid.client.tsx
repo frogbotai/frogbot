@@ -10,6 +10,7 @@ import {
   type RefObject,
   use,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -23,6 +24,7 @@ import {
   columnWidthsCss,
   CONTROL_COLUMNS,
   type GridSettings,
+  GROUP_COLUMN_MAX,
   headerAccessor,
   type RowHeight,
 } from './grid.js';
@@ -159,19 +161,137 @@ function tabToHandle(event: KeyboardEvent<HTMLDivElement>) {
   handle.focus();
 }
 
+const groupTableSelector = '.table-wrap--group-by .table:not(.table--drag-preview) table';
+
+function measureGroupWidths(
+  container: HTMLElement,
+  style: HTMLStyleElement | null,
+  resized: ColumnWidths,
+): ColumnWidths {
+  const tables = Array.from(container.querySelectorAll<HTMLTableElement>(groupTableSelector));
+
+  if (tables.length < 2) return {};
+
+  const widths: ColumnWidths = {};
+
+  const saved = tables.map((table) => table.getAttribute('style'));
+
+  if (style) style.media = 'not all';
+
+  tables.forEach((table) => {
+    table.style.setProperty('table-layout', 'auto', 'important');
+    table.style.setProperty('width', 'max-content', 'important');
+    table.style.setProperty('min-width', '0', 'important');
+  });
+
+  for (const table of tables) {
+    for (const cell of Array.from(table.tHead?.rows[0]?.cells ?? [])) {
+      const accessor = headerAccessor(cell);
+
+      if (!accessor || CONTROL_COLUMNS.includes(accessor) || resized[accessor]) continue;
+
+      widths[accessor] = Math.min(
+        GROUP_COLUMN_MAX,
+        Math.max(widths[accessor] ?? 0, Math.ceil(cell.offsetWidth)),
+      );
+    }
+  }
+
+  tables.forEach((table, index) => {
+    const value = saved[index];
+
+    if (value === null || value === undefined) table.removeAttribute('style');
+    else table.setAttribute('style', value);
+  });
+
+  if (style) style.media = '';
+
+  return widths;
+}
+
+function sameWidths(a: ColumnWidths, b: ColumnWidths): boolean {
+  const keys = Object.keys(a);
+
+  return keys.length === Object.keys(b).length && keys.every((key) => a[key] === b[key]);
+}
+
+function useGroupWidths(
+  ref: RefObject<HTMLElement | null>,
+  style: RefObject<HTMLStyleElement | null>,
+  resized: ColumnWidths,
+): ColumnWidths {
+  const [widths, setWidths] = useState<ColumnWidths>({});
+  const resizedRef = useRef(resized);
+
+  useLayoutEffect(() => {
+    resizedRef.current = resized;
+  });
+
+  useLayoutEffect(() => {
+    const container = ref.current;
+
+    if (!container) return;
+
+    const update = () => {
+      const next = measureGroupWidths(container, style.current, resizedRef.current);
+
+      setWidths((current) => (sameWidths(current, next) ? current : next));
+    };
+
+    const onMutation = (records: MutationRecord[]) => {
+      if (records.some((record) => !(record.target instanceof HTMLStyleElement))) update();
+    };
+
+    const onLoad = () => update();
+
+    const observer = new MutationObserver(onMutation);
+
+    observer.observe(container, { characterData: true, childList: true, subtree: true });
+    void document.fonts?.ready.then(update);
+    window.addEventListener('load', onLoad);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('load', onLoad);
+    };
+  }, [ref, style]);
+
+  useLayoutEffect(() => {
+    const container = ref.current;
+
+    if (!container) return;
+
+    const next = measureGroupWidths(container, style.current, resized);
+
+    setWidths((current) => (sameWidths(current, next) ? current : next));
+  }, [ref, resized, style]);
+
+  return widths;
+}
+
 /**
  * Payload's list table with FrogBot's grid on top: resized column widths, the frozen title
  * column, the row height, and a resize handle in each header cell. Group tables and the summary
- * row inside it take the same widths.
+ * row inside it take the same widths, whether resized or not.
  */
 export function ListGrid({ children }: { children: ReactNode }) {
   const { rowHeight, widths } = useListGrid();
   const ref = useRef<HTMLDivElement>(null);
+  const groupStyle = useRef<HTMLStyleElement>(null);
   const cells = useHeaderCells(ref);
+  const groupWidths = useGroupWidths(ref, groupStyle, widths);
+  const grouped = Object.keys(groupWidths).length > 0;
   const css = columnWidthsCss(widths);
 
   return (
-    <div className={baseClass} data-row-height={rowHeight} onKeyDownCapture={tabToHandle} ref={ref}>
+    <div
+      className={baseClass}
+      data-group-widths={grouped ? '' : undefined}
+      data-row-height={rowHeight}
+      onKeyDownCapture={tabToHandle}
+      ref={ref}
+    >
+      {grouped ? <style ref={groupStyle}>{columnWidthsCss(groupWidths)}</style> : null}
       {css ? <style>{css}</style> : null}
       {children}
       {cells.map((cell) =>

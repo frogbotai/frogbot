@@ -121,6 +121,10 @@ function sanitizeJSONSchemaTransforms(field: JSONField): JSONField {
 function sanitizeVirtualPath(field: Field): Field {
   if (!('virtual' in field) || typeof field.virtual !== 'string') return field;
 
+  return withFieldCell(field);
+}
+
+function withFieldCell<T extends Field>(field: T): T {
   const admin = ('admin' in field ? field.admin : undefined) as
     { components?: { Cell?: unknown } } | undefined;
 
@@ -155,6 +159,8 @@ function sanitizeFields(
     }
 
     if (field.type === 'json') return sanitizeJSONSchemaTransforms(field);
+
+    if (field.type === 'checkbox') return withFieldCell(field);
 
     if ('fields' in field && Array.isArray(field.fields)) {
       return {

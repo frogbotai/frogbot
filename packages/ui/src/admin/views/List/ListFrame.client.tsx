@@ -25,6 +25,7 @@ import { CollectionViewFrame } from '../CollectionViewFrame.client.js';
 import { useRecordPanel, useRecordPanelEvents } from '../panel/RecordPanelProvider.client.js';
 import { BulkUploadButton } from './BulkUploadButton.client.js';
 import { CellEditing } from './cellEdit/CellEditing.client.js';
+import { CellToggleProvider } from './cellEdit/CellToggle.client.js';
 import { DefaultListView } from './DefaultListView.client.js';
 import { ListGrid, ListGridProvider, type ListGridSettings } from './grid/ListGrid.client.js';
 import { RowHeightControl } from './grid/RowHeightControl.client.js';
@@ -125,7 +126,19 @@ function RecordRows({
 
   return (
     <>
-      <div ref={ref}>{children}</div>
+      <div ref={ref}>
+        {editableColumns?.length ? (
+          <CellToggleProvider
+            cells={editableCells}
+            collectionSlug={collectionSlug}
+            columns={editableColumns}
+          >
+            {children}
+          </CellToggleProvider>
+        ) : (
+          children
+        )}
+      </div>
       {editableColumns?.length ? (
         <CellEditing
           cells={editableCells}

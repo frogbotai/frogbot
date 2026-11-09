@@ -218,6 +218,49 @@ test('gives a resized column one width in every group table and the summary', as
   expect(await width(page.locator('tfoot.fb-list-summary [data-column="amount"]'))).toBe(260);
 });
 
+test('lines up every group table and the summary without any resize', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/collections/deals?groupBy=stage');
+  await expect(page.locator('tfoot.fb-list-summary')).toBeVisible();
+
+  const tables = page.locator('.fb-list-grid .table table');
+
+  expect(await tables.count()).toBeGreaterThan(2);
+
+  const columns = await page
+    .locator('.fb-list-grid .table thead')
+    .first()
+    .locator('th')
+    .evaluateAll((headers) =>
+      headers.map((header) => header.dataset.column ?? header.id.replace(/^heading-/, '')),
+    );
+
+  expect(columns).toEqual(expect.arrayContaining(['company', 'amount']));
+
+  for (const column of columns.filter((name) => !name.startsWith('_'))) {
+    const boxes = await page
+      .locator(`.fb-list-grid .table thead th[id="heading-${column}"]`)
+      .evaluateAll((headers) =>
+        headers.map((header) => {
+          const box = header.getBoundingClientRect();
+
+          return [Math.round(box.left), Math.round(box.width)];
+        }),
+      );
+
+    expect(boxes, column).toHaveLength(await tables.count());
+    expect(new Set(boxes.map((box) => box.join(':'))).size, column).toBe(1);
+  }
+
+  const amount = header(page, 'amount');
+  const sum = page.locator('tfoot.fb-list-summary [data-column="amount"]');
+
+  expect(Math.round((await sum.boundingBox())?.x ?? 0)).toBe(
+    Math.round((await amount.boundingBox())?.x ?? -1),
+  );
+  expect(await width(sum)).toBe(await width(amount));
+});
+
 test('freezes the selection and title columns while the grid scrolls sideways', async ({
   page,
 }) => {
@@ -293,12 +336,45 @@ test('on a phone the title scrolls, the header swipes, and Row height is reachab
   await expect.poll(() => scroller.evaluate((element) => element.scrollLeft)).toBeGreaterThan(50);
   expect(Math.round((await title.boundingBox())?.x ?? 0)).toBeLessThan(startTitle);
 
-  await page.locator('.collection-view__toolbar #toggle-row-height').click();
+  await page.locator('.list-controls__actions #toggle-row-height').click();
 
   await expect(page.getByRole('menuitemradio', { name: 'Default' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
+});
+
+test('on a phone Row height sits with the other controls and search fills the row', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(plainList);
+
+  const controls = page.locator('.list-controls');
+  const rowHeightButton = page.locator(
+    '.list-controls__actions > .view-controls__toolbar #toggle-row-height',
+  );
+
+  const filters = page.locator('#toggle-list-filters');
+
+  await expect(rowHeightButton).toBeVisible();
+  await expect(page.locator('#toggle-row-height')).toHaveCount(1);
+
+  const box = async (locator: Locator) => (await locator.boundingBox())!;
+  const rowHeightBox = await box(rowHeightButton);
+  const filtersBox = await box(filters);
+  const controlsBox = await box(controls);
+
+  expect(Math.round(rowHeightBox.y)).toBe(Math.round(filtersBox.y));
+  expect(rowHeightBox.x).toBeLessThan(filtersBox.x);
+  expect(rowHeightBox.y + rowHeightBox.height).toBeLessThanOrEqual(
+    controlsBox.y + controlsBox.height,
+  );
+
+  const search = await box(page.locator('.list-controls .search-input'));
+  const left = await box(page.locator('.list-controls__left'));
+
+  expect(Math.round(search.width)).toBe(Math.round(left.width));
 });
 
 test('switches row height, keeps it after reload, and Reset to default clears it with widths', async ({
@@ -341,7 +417,7 @@ test('switches row height, keeps it after reload, and Reset to default clears it
   await page.getByRole('menuitem', { name: 'Reset to default' }).click();
   await expect(page.locator('.fb-list-grid')).toHaveAttribute('data-row-height', 'default');
   await expect.poll(async () => Math.abs((await rowHeight(page)) - initial)).toBeLessThanOrEqual(1);
-  await expect(page.locator('.fb-list-grid style')).toHaveCount(0);
+  await expect(page.locator('.fb-list-grid style', { hasText: `${resized}px` })).toHaveCount(0);
 });
 
 test('shoots resized, frozen, tall and compact lists in light and dark', async ({ page }) => {

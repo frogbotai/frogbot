@@ -103,5 +103,17 @@
     .sort-builder {
       padding: var(--spacer-2);
     }
+
+    .view-controls .list-controls__left > .search-input {
+      flex: 1 1 auto;
+    }
+
+    .view-controls__toolbar {
+      display: contents;
+    }
+
+    .view-controls__toolbar > * {
+      order: -1;
+    }
   }
 }
