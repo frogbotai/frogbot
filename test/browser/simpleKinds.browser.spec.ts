@@ -76,18 +76,18 @@ function listRow(page: Page, title: string) {
 
 function boardCard(page: Page, title: string) {
   return page.locator('.frog-board__card', {
-    has: page.locator('.collection-board__title', { hasText: new RegExp(`^${title}$`) }),
+    has: page.locator('.fb-card__title', { hasText: new RegExp(`^${title}$`) }),
   });
 }
 
 function boardValue(card: Locator, label: string) {
   return card
-    .locator('.collection-board__field', {
-      has: card.page().locator('.collection-board__field-label', {
+    .locator('.fb-card__field', {
+      has: card.page().locator('.fb-card__field-label', {
         hasText: new RegExp(`^${label}$`),
       }),
     })
-    .locator('.collection-board__field-value');
+    .locator('.fb-card__field-value');
 }
 
 async function expectStars(scope: Locator, count: number) {
@@ -201,7 +201,7 @@ test('a Board card URL opens the site in a new tab without opening the card', as
 test('a Board card title still opens the card', async ({ page }) => {
   await page.goto(boardPath);
 
-  await boardCard(page, full.title).locator('.collection-board__title').click();
+  await boardCard(page, full.title).locator('.fb-card__title').click();
 
   await expect(page.locator(`dialog[id^="doc-drawer_${tasksSlug}"]`)).toBeVisible();
 });
@@ -318,6 +318,7 @@ test('ArrowRight moves the rating up one star', async ({ page }) => {
   const two = page.getByRole('radio', { name: '2 stars' });
 
   await expect(two).toBeChecked();
+  await expect(two).toBeEnabled();
   await two.focus();
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('radio', { name: '3 stars' })).toBeChecked();

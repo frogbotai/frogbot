@@ -59,7 +59,7 @@ export const Projects: CollectionConfig = {
 }
 ```
 
-Use `group: null` to list a collection as a top-level link above the sections. Leave `group` undefined to list it directly under the Collections heading, as FrogBot's built-in collections are, provide a string or localized value to list it under a named group label, or use `false` to keep the collection's routes but leave it out of the sidebar, the dashboard's collection cards, Recents and Pinned, and the command palette. Settings → Collections still lists a `false` collection, so it's one click away. For Users and other admin collections, use [`settings: true`](#settings-collections) instead. Both options are listed with the other collection admin settings in [Admin Options](/configuration/collections#admin-options).
+Use `group: null` to list a collection as a top-level link above the sections. Leave `group` undefined to list it directly under the Collections heading, as FrogBot's built-in collections are, provide a string or localized value to list it under a named group label, or use `false` to keep the collection's routes but leave it out of the sidebar, the dashboard's collection cards, Recents and Pinned, and the command palette. Settings → Collections still lists a `false` collection, so it's one click away. Internal `payload-*` collections, such as LLM Instructions, are left off it. For Users and other admin collections, use [`settings: true`](#settings-collections) instead. Both options are listed with the other collection admin settings in [Admin Options](/configuration/collections#admin-options).
 
 These built-in names suit a sidebar link, grouped by the kind of collection they fit:
 

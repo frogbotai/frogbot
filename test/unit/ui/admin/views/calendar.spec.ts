@@ -5,6 +5,7 @@ import {
   isDateOnly,
   resolveCalendarDate,
   resolveCalendarMode,
+  resolveEventColor,
 } from '../../../../../packages/ui/src/admin/views/Calendar/data.js';
 import {
   getViewPreferenceKey,
@@ -74,6 +75,23 @@ describe('collection calendar', () => {
     expect(isDateOnly(date('dayAndTime'))).toBe(false);
     expect(isDateOnly({ name: 'title', type: 'text' })).toBe(false);
     expect(isDateOnly(undefined)).toBe(false);
+  });
+
+  it("colors an event with its select option's color, not the raw value", () => {
+    const optionColors = { call: 'green', meeting: 'blue' } as const;
+    const color = (value: unknown) => resolveEventColor({ optionColors, value });
+
+    expect(color('call')).toBe('var(--color-border-success-strong)');
+    expect(color('meeting')).toBe('var(--color-border-selected-strong)');
+    expect(color(['meeting', 'call'])).toBe('var(--color-border-selected-strong)');
+    expect(color('unlisted')).toBe('var(--color-border-strong)');
+    expect([undefined, null, '', []].map(color)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    ]);
+    expect(resolveEventColor({ value: 'call' })).toBeUndefined();
   });
 
   it('keeps the time of a createdAt timestamp on a month move', async () => {

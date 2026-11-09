@@ -202,7 +202,7 @@ export function AICell(props: DefaultCellComponentProps) {
 
   const name = getFieldName(field);
   const paths = aiFieldPaths(name);
-  const isCard = viewType === 'board' || viewType === 'calendar';
+  const isCard = viewType === 'board' || viewType === 'calendar' || viewType === 'gallery';
   const plain = !Object.hasOwn(rowData ?? {}, paths.status);
 
   const { merge, overridden, record } = useLatestRecord(rowData);

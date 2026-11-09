@@ -96,7 +96,7 @@ export const Deals: CollectionConfig = {
 | Date, including `createdAt` and `updatedAt` | `count`, `min` (Earliest), `max` (Latest) |
 | Any other field | `count` |
 
-`count` counts the records, whatever the column. Startup fails on a path that isn't a field, a pairing the field can't take, or a field that is hidden or has its own `access.read`: those can't be totaled, so their columns have no total for anyone. Filtering or searching on such a field blanks the whole footer for now, because `aggregate` refuses it in `where` ([#355](https://github.com/frogbotai/frogbot/issues/355)).
+`count` counts the records, whatever the column. Startup fails on a path that isn't a field, a pairing the field can't take, or a field that is hidden or has its own `access.read`: the footer leaves those columns out by design, so they have no total for anyone. Filtering on a field with its own `access.read` keeps the other columns' totals for a user its rule allows.
 
 Totals use the column's format: money and percent fields keep their currency and precision, other numbers and counts follow the admin language, and dates use the field's display format. A column with no value shows nothing, and `0` shows as `0`.
 

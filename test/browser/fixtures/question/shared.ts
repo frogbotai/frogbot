@@ -12,6 +12,7 @@ export const tagsSlug = 'tags';
 export const secretsSlug = 'secrets';
 export const storiesSlug = 'stories';
 export const approvalsSlug = 'approvals';
+export const photosSlug = 'photos';
 export const archivesSlug = 'archives';
 export const storyStatusOptions = [
   { label: 'Todo', value: 'todo' },

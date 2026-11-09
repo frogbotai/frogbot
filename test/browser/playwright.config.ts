@@ -341,6 +341,7 @@ const testProjects = [
       'calendarTimeZone.browser.spec.ts',
       'board.browser.spec.ts',
       'cellEditKinds.browser.spec.ts',
+      'galleryCard.browser.spec.ts',
     ],
   }),
   project({ name: 'question-firefox', browser: 'firefox', testMatch: crossBrowserQuestionSpecs }),
@@ -407,6 +408,7 @@ const testProjects = [
     testMatch: [
       'cellEdit.browser.spec.ts',
       'crm.browser.spec.ts',
+      'gallery.browser.spec.ts',
       'listGrouping.browser.spec.ts',
       'listSummary.browser.spec.ts',
       'recordPanel.browser.spec.ts',
@@ -417,6 +419,7 @@ const testProjects = [
     name: 'dojo',
     testMatch: [
       'chatGutter.browser.spec.ts',
+      'chatPageScroll.browser.spec.ts',
       'chatPin.browser.spec.ts',
       'chatScrubber.browser.spec.ts',
       'chatSend.browser.spec.ts',

@@ -1,4 +1,8 @@
-import type { CollectionConfig as PayloadCollectionConfig, PayloadComponent } from 'payload';
+import {
+  type CollectionConfig as PayloadCollectionConfig,
+  InvalidConfiguration,
+  type PayloadComponent,
+} from 'payload';
 
 import { validateAdminIcon } from '../admin/icons.js';
 import { getCellEditMode, getFieldKindType } from '../admin/views/cellEdit.js';
@@ -90,6 +94,28 @@ function validateUseAsDone(collection: CollectionConfig): void {
   if (typeof path !== 'string' || resolveDoneField(collection.fields, path)?.type !== 'checkbox') {
     throw new Error(
       `[frogbot] Collection "${collection.slug}" admin.useAsDone "${path}" must name a checkbox field, top level or a dot path into a group.`,
+    );
+  }
+}
+
+function validateViewThumbnail(
+  collection: CollectionConfig,
+  view: CollectionView & { slug: string },
+) {
+  if (view.type !== 'board' && view.type !== 'gallery') return;
+  const name: unknown = view.useAsThumbnail;
+  if (name === undefined || name === false) return;
+
+  const field =
+    typeof name === 'string' && !name.includes('.')
+      ? flattenTopLevelFields(collection.fields).find(
+          (candidate) => 'name' in candidate && candidate.name === name,
+        )
+      : undefined;
+
+  if (field?.type !== 'upload') {
+    throw new InvalidConfiguration(
+      `[frogbot] Collection "${collection.slug}" ${view.type} view "${view.slug}" has useAsThumbnail "${String(name)}", which must name a top-level upload field or be false.`,
     );
   }
 }
@@ -303,6 +329,7 @@ export function compileCollectionViews({
 
   for (const view of views) {
     validateAdminIcon(view.icon);
+    validateViewThumbnail(collection, view);
     validateSummary(collection, view);
     validateEditable(collection, view);
 
@@ -387,6 +414,12 @@ export function compileCollectionViews({
     if (view.type === 'board') {
       runtimeViews[key] = {
         Component: '@frogbotai/ui/admin/rsc#BoardView',
+        ...actions,
+        ...(isDefault ? {} : { exact: true, path }),
+      };
+    } else if (view.type === 'gallery') {
+      runtimeViews[key] = {
+        Component: '@frogbotai/ui/admin/rsc#GalleryView',
         ...actions,
         ...(isDefault ? {} : { exact: true, path }),
       };

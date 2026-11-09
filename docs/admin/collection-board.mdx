@@ -5,7 +5,7 @@ description: Configure a draggable board for a collection.
 
 Add a board entry to `admin.views` to show documents as cards grouped into columns. Include a list entry when users should be able to switch between table and board layouts.
 
-`admin.views` uses the exported `CollectionView` union. See the complete [Collection views reference](/configuration/collections#collection-views) or configure a [Collection calendar](/admin/collection-calendar).
+`admin.views` uses the exported `CollectionView` union. See the complete [Collection views reference](/configuration/collections#collection-views), or configure a [Collection gallery](/admin/collection-gallery) or [Collection calendar](/admin/collection-calendar).
 
 ## Board properties
 
@@ -17,7 +17,8 @@ Add a board entry to `admin.views` to show documents as cards grouped into colum
 | `icon` | `AdminIcon` | No; `'kanban'` | Icon on the view's tab. |
 | `groupBy` | `string` | No | Dot path to the field that determines each card's column. Columns follow the list's [grouping rules](/configuration/collections#grouping): option order for select and radio fields, true then false for a checkbox, and the values present for other fields. |
 | `defaultFields` | `string[]` | No | Dot paths to the fields rendered on each card, in display order. |
-| `cover` | `string` | No | Dot path to an upload field rendered as the card's cover image. |
+| `useAsThumbnail` | `string \| false` | No; the collection's `useAsThumbnail` | Upload field shown as each card's image, or `false` for none. See [Card images](/configuration/collections#card-images). |
+| `thumbnailFit` | `'cover' \| 'contain'` | No; `'cover'` | `'cover'` fills the image area and crops. `'contain'` fits the whole image, for logos. |
 | `filter` | `Where` | No | Invisible base filter applied to every board query, as plain data. |
 | `defaultSort` | `Sort` (`string \| string[]`) | No | Initial card order within columns. Prefix a field with `-` for descending order. |
 | `searchableFields` | `string[]` | No | Not read by the board. Its search uses the list view's `searchableFields`, plus `useAsTitle`. |
@@ -37,7 +38,7 @@ Add a board entry to `admin.views` to show documents as cards grouped into colum
 | `beforeColumns` | `FrogBotComponent[]` | No; `[]` | Renders before the columns. |
 | `afterColumns` | `FrogBotComponent[]` | No; `[]` | Renders after the columns. |
 | `ColumnHeader` | `FrogBotComponent` | No; built-in header | Replaces each column header. See [Column headers](#column-headers). |
-| `Card` | `FrogBotComponent` | No; built-in card | Replaces each card and receives the document as its `row` prop. |
+| `Card` | `FrogBotComponent` | No; built-in card | Replaces each card and receives the document as its `row` and `disabled` props. Wrap it in `BoardCard` from `@frogbotai/ui` to keep dragging. |
 | `NoResults` | `FrogBotComponent` | No; built-in empty state | Replaces the columns when the board's filters or search match no records. An unfiltered empty board shows its columns instead. |
 
 ```ts
@@ -80,6 +81,8 @@ When the board is sorted by its manual order, dragging a card within a column sa
 Nested fields use dot paths such as `workflow.stage` and `details.dueDate`.
 
 Board views use `pagination.defaultLimit` for each column, defaulting to 50. Columns lazy-load subsequent pages and virtualize their cards. `pagination.limits` applies only to list page-size controls. Omitting `admin.views` creates one default list view without a tab row, using FrogBot's normal list pagination defaults.
+
+Cards show the collection's [`admin.useAsThumbnail`](/configuration/collections#card-images) image, which defaults to the first upload field. A card with no image has no image area, so it stays compact. Set `useAsThumbnail: false` to show no images on the board.
 
 The board's group, sort, filters and card fields are saved per user, as are collapsed and hidden columns. **Reset to default** in the view menu returns to the config.
 

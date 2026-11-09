@@ -1,7 +1,9 @@
 import type { OptionColor } from 'frogbot';
-import type { ClientField, Field } from 'payload';
+import type { ClientField, Field, FlattenedField } from 'payload';
 
-function getOptionColors(field: ClientField | Field): Record<string, OptionColor> | undefined {
+export function getOptionColors(
+  field: ClientField | Field | FlattenedField,
+): Record<string, OptionColor> | undefined {
   const optionColors: unknown = field.admin?.custom?.frogbot?.optionColors;
 
   if (!optionColors || typeof optionColors !== 'object') return undefined;
@@ -20,8 +22,14 @@ export function getOptionColor({
   field: ClientField | Field;
   value: unknown;
 }): OptionColor | undefined {
-  const optionColors = getOptionColors(field);
+  return pickOptionColor(getOptionColors(field), value);
+}
 
+/** Looks a value up in a field's option colors; an unlisted value is gray. */
+export function pickOptionColor(
+  optionColors: Record<string, OptionColor> | undefined,
+  value: unknown,
+): OptionColor | undefined {
   if (!optionColors) return undefined;
 
   const key = String(value);

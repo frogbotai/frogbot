@@ -13,7 +13,7 @@ import {
   useTranslation,
 } from '@payloadcms/ui';
 import { formatDocTitle } from '@payloadcms/ui/shared';
-import type { CalendarMode } from 'frogbot';
+import type { CalendarMode, OptionColor } from 'frogbot';
 import type { ClientCollectionConfig, Column } from 'payload';
 import type { ComponentType } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -27,6 +27,7 @@ import { appendQuery, getPath, setPath } from '../cells.js';
 import { useRecordPanel, useRecordPanelEvents } from '../panel/RecordPanelProvider.client.js';
 import { getViewCardColumns } from '../preferences.js';
 import { getUseAsDone, isRecordDone, recordClassName } from '../records/state.js';
+import { resolveEventColor } from './data.js';
 
 type Row = Record<string, unknown> & {
   color?: string;
@@ -127,6 +128,7 @@ export function CalendarViewClient({
   filter,
   mode,
   modes,
+  optionColors,
   snap,
   start,
 }: {
@@ -142,6 +144,7 @@ export function CalendarViewClient({
   filter?: Record<string, unknown>;
   mode: CalendarMode;
   modes?: CalendarMode[];
+  optionColors?: Record<string, OptionColor>;
   snap?: number;
   start: string;
 }) {
@@ -167,7 +170,7 @@ export function CalendarViewClient({
   const searchKey = String(query.search ?? '');
   const normalizeRow = (row: Record<string, unknown>): Row => ({
     ...row,
-    color: color ? String(getPath(row, color) ?? '') || undefined : undefined,
+    color: color ? resolveEventColor({ optionColors, value: getPath(row, color) }) : undefined,
     end: end ? String(getPath(row, end) ?? '') || undefined : undefined,
     id: String(row.id),
     start: String(getPath(row, start)),

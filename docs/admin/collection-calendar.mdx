@@ -17,7 +17,7 @@ See the complete [Collection views reference](/configuration/collections#collect
 | `icon` | `AdminIcon` | No; `'calendar'` | Icon on the view's tab. |
 | `start` | `string` | Yes | Dot path to the date field used as each event's start. |
 | `end` | `string` | No | Dot path to the date field used as each event's end. Without it, events use the start as their end and can't be resized. |
-| `color` | `string` | No | Dot path to a select or radio field whose value colors each event. |
+| `color` | `string` | No | Dot path to a select or radio field. When the field has [option colors](/fields/select#option-colors), each event takes its option's color, and options without one are gray. |
 | `modes` | `CalendarMode[]` | No; `['month', 'week', 'day']` | Available modes in display order. The first mode is the default. |
 | `snap` | `number` | No | Minute interval used when creating, moving, or resizing events. |
 | `defaultFields` | `string[]` | No | Dot paths to fields rendered on each event, in display order. |
