@@ -222,6 +222,11 @@ const servers: Record<string, Server> = {
     database: 'frogbot.sign-in-only.db',
     env: { SIGN_IN_SETUP: signInOnly },
   },
+  'sign-in-two-factor': {
+    fixture: 'sign-in',
+    port: testPort(3145),
+    database: 'frogbot.two-factor.db',
+  },
   forms: { fixture: 'forms', port: testPort(3143), database: 'frogbot.forms.db' },
   crm: {
     fixture: 'crm',
@@ -414,6 +419,7 @@ const testProjects = [
   }),
   project({ name: 'plugin-seo', testMatch: 'seoFields.browser.spec.ts' }),
   project({ name: 'plugin-import-export', testMatch: 'importMapping.browser.spec.ts' }),
+  project({ name: 'sign-in-two-factor', testMatch: 'twoFactor.browser.spec.ts', signedOut: true }),
   project({ name: 'forms', testMatch: ['forms.browser.spec.ts', 'formBuilder.browser.spec.ts'] }),
   project({
     name: 'crm',

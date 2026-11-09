@@ -22,10 +22,10 @@ type HookArgs<T> = T extends ((args: infer A) => unknown)[] ? A : never;
 
 type FlatPhase = Exclude<
   keyof CollectionHooks,
-  'beforeOperation' | 'afterOperation' | 'me' | 'refresh'
+  'beforeOperation' | 'afterOperation' | 'me' | 'refresh' | 'beforeSignIn'
 >;
 
-expectTypeOf<keyof CollectionHooks>().toEqualTypeOf<keyof PayloadHooks>();
+expectTypeOf<Exclude<keyof CollectionHooks, 'beforeSignIn'>>().toEqualTypeOf<keyof PayloadHooks>();
 
 expectTypeOf<{
   [K in keyof CollectionHooks]: Extract<keyof HookArgs<NonNullable<CollectionHooks[K]>>, 'payload'>;
