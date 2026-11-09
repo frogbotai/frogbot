@@ -170,6 +170,8 @@ export type {
   TranscribeAudio,
   TranscribeOpts,
 } from './ai/types.js';
+export type { FinishSignInArgs } from './auth/signIn/finish.js';
+export { finishSignIn } from './auth/signIn/finish.js';
 export type {
   AuthConfig,
   AuthStrategy,
@@ -267,6 +269,7 @@ export type {
   CollectionBeforeLoginHook,
   CollectionBeforeOperationHook,
   CollectionBeforeReadHook,
+  CollectionBeforeSignInHook,
   CollectionBeforeValidateHook,
   CollectionHooks,
   CollectionMeHook,

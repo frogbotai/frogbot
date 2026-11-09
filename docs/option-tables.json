@@ -966,6 +966,11 @@
   },
   {
     "page": "hooks/collections",
+    "heading": "beforeSignIn",
+    "type": "Parameters<import('frogbot').CollectionBeforeSignInHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
     "heading": "beforeLogin",
     "type": "Parameters<import('frogbot').CollectionBeforeLoginHook>[0]"
   },
