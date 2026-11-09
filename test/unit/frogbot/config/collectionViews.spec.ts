@@ -168,6 +168,80 @@ describe('collection views', () => {
     expect(() => compile({ color: 'title' })).toThrow('unsupported color field "title"');
   });
 
+  it('compiles a timeline route and metadata', () => {
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'tasks',
+        fields: [
+          { name: 'startDate', type: 'date' },
+          { name: 'dueDate', type: 'date' },
+          { name: 'project', type: 'relationship', relationTo: 'projects' },
+          { name: 'status', type: 'select', options: ['todo', 'done'] },
+        ],
+        admin: {
+          views: [
+            { type: 'list' },
+            {
+              type: 'timeline',
+              start: 'startDate',
+              end: 'dueDate',
+              groupBy: 'project',
+              color: 'status',
+              scales: ['month', 'week'],
+              components: { Bar: './Bar#Bar', beforeTimeline: ['./Before#Before'] },
+            },
+          ],
+        },
+      },
+    });
+
+    expect(admin?.components?.views?.timeline).toEqual({
+      Component: '@frogbotai/ui/admin/rsc#TimelineView',
+      exact: true,
+      path: '/timeline',
+    });
+    expect(admin?.custom?.frogbot.views[1]).toEqual({
+      type: 'timeline',
+      slug: 'timeline',
+      label: 'Timeline',
+      path: '/timeline',
+      start: 'startDate',
+      end: 'dueDate',
+      groupBy: 'project',
+      color: 'status',
+      scales: ['month', 'week'],
+    });
+  });
+
+  it('validates timeline dates, color, groupBy and scales', () => {
+    const compile = (view: Record<string, unknown>) =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [
+            { name: 'startDate', type: 'date' },
+            { name: 'title', type: 'text' },
+            { name: 'notes', type: 'json' },
+            { name: 'status', type: 'select', options: [] },
+          ],
+          admin: { views: [{ type: 'timeline', start: 'startDate', ...view } as never] },
+        },
+      });
+
+    expect(() => compile({ color: 'status', groupBy: 'status', scales: ['day'] })).not.toThrow();
+    expect(() => compile({ start: undefined })).toThrow('timeline view "timeline" needs a start');
+    expect(() => compile({ start: 'title' })).toThrow(
+      'timeline view "timeline" has a non-date field "title"',
+    );
+    expect(() => compile({ end: 'missing' })).toThrow('non-date field "missing"');
+    expect(() => compile({ color: 'title' })).toThrow('unsupported color field "title"');
+    expect(() => compile({ groupBy: 'notes' })).toThrow(
+      'timeline view "timeline" has an unsupported groupBy field "notes"',
+    );
+    expect(() => compile({ scales: [] })).toThrow('has scales []');
+    expect(() => compile({ scales: ['quarter'] })).toThrow('has scales ["quarter"]');
+  });
+
   describe('list summary', () => {
     const compile = (summary: unknown, extra: Record<string, unknown> = {}) =>
       compileCollectionViews({

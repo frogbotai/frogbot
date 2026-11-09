@@ -27,6 +27,7 @@ export {
 } from '../views/panel/renderRecordPanel.js';
 export { SettingsView } from '../views/Settings/index.js';
 export { resolveSettingsTitle, type SettingsEntry } from '../views/Settings/resolveSection.js';
+export { TimelineView } from '../views/Timeline/index.js';
 export { FieldDiffContainer } from '@payloadcms/ui/rsc';
 export { FieldDiffLabel } from '@payloadcms/ui/rsc';
 export { escapeDiffHTML } from '@payloadcms/ui/rsc';

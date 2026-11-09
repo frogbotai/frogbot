@@ -33,7 +33,7 @@ export async function prepareView(page: Page) {
 
 async function waitForView(page: Page) {
   await page
-    .locator('table, .collection-board, .collection-gallery, .frog-calendar')
+    .locator('table, .collection-board, .collection-gallery, .frog-calendar, .frog-timeline')
     .first()
     .waitFor();
 
