@@ -66,6 +66,8 @@ const FOCUSABLE =
 
 const DATE_PICKER = '.react-datepicker__input-container';
 
+const OPEN_MENUS = '.rs__menu, .react-datepicker-popper, .popup__content';
+
 const TEXT_INPUT =
   'input:is([type="text"], [type="search"], [type="tel"], [type="url"], [type="email"], [type="number"]), input:not([type]), textarea';
 
@@ -173,6 +175,8 @@ function CellEditorFields({
 
       if (initialText && target.matches(TEXT_INPUT)) {
         typeInto(target as HTMLInputElement | HTMLTextAreaElement, initialText);
+      } else if (target.closest('.rs__control')) {
+        target.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowDown' }));
       }
 
       return true;
@@ -214,6 +218,14 @@ function CellEditorFields({
   const onKeyDownCapture = (event: KeyboardEvent<HTMLDivElement>) => {
     const inPicker = (event.target as HTMLElement).closest(DATE_PICKER);
 
+    if (event.key === 'Escape' && !document.querySelector(OPEN_MENUS)) {
+      event.preventDefault();
+      event.stopPropagation();
+      onDone('cancel');
+
+      return;
+    }
+
     if (event.key !== 'Enter' || event.shiftKey || !inPicker) return;
     window.setTimeout(() => finish('saved'), 0);
   };
@@ -221,14 +233,6 @@ function CellEditorFields({
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.defaultPrevented || event.nativeEvent.isComposing) return;
     if (event.key === 'Enter' && (event.target as HTMLElement).closest(DATE_PICKER)) return;
-
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      event.stopPropagation();
-      onDone('cancel');
-
-      return;
-    }
 
     if (event.key === 'Tab') {
       event.preventDefault();

@@ -318,6 +318,7 @@ These shell slots are shared by list, board, calendar, and custom views. Each va
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
 | `type` | `'list'` | Yes | Selects the table-based list view. |
+| `editable` | `boolean \| string[]` | No | Lets people edit cells in place: `true` for every supported column, or the field names and dot paths that edit. See [Editing cells in place](/admin/collection-list#editing-cells-in-place). |
 | `groupBy` | `string` | No | Dot path to the field the list opens grouped by. Each person's own choice from the toolbar's **Group** control is saved for them and wins. See [Grouping](#grouping). |
 | `summary` | `Record<string, SummaryOperation>` | No | Each column's default footer total, keyed by field path: `'count'`, `'sum'`, `'avg'`, `'min'` or `'max'`. See [Summary row](/admin/collection-list#summary-row). |
 | `components` | `ViewComponents & ListViewComponents` | No | Adds shared shell slots and list table slots. |

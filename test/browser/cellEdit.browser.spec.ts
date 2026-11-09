@@ -1,9 +1,15 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-import { prepareView } from './__helpers/viewShots';
+import { setAdminTheme } from './__helpers/adminTheme';
+import { prepareView, themes, viewports } from './__helpers/viewShots';
 import { timezoneId } from './fixtures/crm/shared';
 
 test.use({ timezoneId });
+
+const shots = path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-results', 'crm-views');
 
 type Doc = Record<string, unknown> & { id: number | string };
 
@@ -278,4 +284,47 @@ test('a checkbox cell toggles and saves', async ({ page }) => {
   await page.keyboard.press('Enter');
 
   await expect.poll(async () => (await stored(page, 'tasks', task.id)).completed).toBe(true);
+});
+
+async function shootEditing(page: Page, target: Locator, file: string, open?: Locator) {
+  await target.scrollIntoViewIfNeeded();
+  await target.click();
+  await expect(editor(target).locator('input').first()).toBeFocused();
+  if (open) await expect(open).toBeVisible();
+  await page.screenshot({ animations: 'disabled', path: path.join(shots, file) });
+}
+
+test('shoots the deals list editing a money and a select cell', async ({ page }) => {
+  test.setTimeout(90_000);
+
+  await prepareView(page);
+
+  for (const colorScheme of themes) {
+    await setAdminTheme(page, colorScheme);
+    await page.emulateMedia({ colorScheme });
+
+    for (const viewport of viewports) {
+      const suffix = `${colorScheme}-${viewport.width}.png`;
+
+      await page.setViewportSize(viewport);
+      await page.goto('/collections/deals');
+
+      const row = page
+        .locator('tbody tr')
+        .filter({ has: page.locator('td.cell-amount') })
+        .first();
+
+      const amount = row.locator('td.cell-amount');
+      const stage = row.locator('td.cell-stage');
+
+      await shootEditing(page, amount, `deals-cell-edit-amount-${suffix}`);
+      await page.keyboard.press('Escape');
+      await expect(editor(amount)).toHaveCount(0);
+
+      await shootEditing(page, stage, `deals-cell-edit-stage-${suffix}`, page.locator('.rs__menu'));
+      await page.keyboard.press('Escape');
+      await page.keyboard.press('Escape');
+      await expect(editor(stage)).toHaveCount(0);
+    }
+  }
 });

@@ -22,6 +22,10 @@ import type { CollectionConfig, Field } from 'frogbot';
 
 Use the concrete type when defining a reusable field and `Field` when processing arbitrary field configuration.
 
+## Custom field components in tables
+
+A list view with `editable` edits a cell with the field's own `admin.components.Field`, the same component as the edit form, in a one-field form; the label and description are hidden in the cell. Don't write a separate cell editor. A custom field works in tables when it reads and writes with `useField`, builds its label, error and description from `FieldLabel`, `FieldError` and `FieldDescription` (or Payload's `field-type` markup), puts its input first, and leaves Enter, Esc and Tab to the cell unless a control of its own calls `preventDefault()`. FrogBot's field kinds (`moneyField`, `percentField`, `ratingField`, `durationField`, `urlField`, `phoneField`, `barcodeField`, `aiField`) already do. Docs: https://docs.frogbot.ai/fields/overview#fields-in-list-cells
+
 ## Recursive fields
 
 Field configuration is recursive:

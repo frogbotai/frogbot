@@ -91,6 +91,8 @@ Screen readers announce the stars as a group named by the field's label, with ea
 
 The label, description, validation errors, `required` and a custom `validate` work as on a Number field. When the field is read-only, because of `admin.readOnly`, because it is virtual, or because the user may not update it, the document view shows the stars with no way to change them.
 
+In a list with [`editable`](/admin/collection-list#editing-cells-in-place), a rating cell edits in place with the same stars: pick one and press Enter, or Esc to cancel.
+
 ## Stored value
 
 Ratings are stored as whole numbers from `1` to `max`. The REST API, GraphQL and the Local API read and write the number, and the generated TypeScript type is the same as a Number field's, such as `score?: number | null`. Filters and sorting use the stored number.

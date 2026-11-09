@@ -26,9 +26,7 @@
     padding: 2px;
     background: var(--theme-elevation-0);
     border-radius: var(--style-radius-s);
-    box-shadow:
-      0 0 0 2px var(--color-border-selected-strong),
-      0 4px 12px rgb(0 0 0 / 12%);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 12%);
   }
 
   .fb-cell-editor .field-type {
@@ -38,8 +36,7 @@
     margin: 0;
   }
 
-  .fb-cell-editor .field-type > .field-label,
-  .fb-cell-editor .field-type > label.field-label,
+  .fb-cell-editor .field-label,
   .fb-cell-editor .field-description {
     position: absolute;
     width: 1px;
