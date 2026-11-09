@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ClientField } from 'payload';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -85,11 +85,30 @@ describe('CellEditor keys', () => {
     expect(onDone).toHaveBeenCalledWith('cancel');
   });
 
-  it('leaves Esc to a control that prevents it', async () => {
-    mocks.claims.add('Escape');
+  it('closes an open menu on Esc before it cancels', async () => {
+    const { input, onDone } = await renderEditor();
+    const menu = document.createElement('div');
+
+    menu.className = 'rs__menu';
+    document.body.append(menu);
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it('saves on Enter', async () => {
     const { input, onDone } = await renderEditor();
 
-    fireEvent.keyDown(input, { key: 'Escape' });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(onDone).toHaveBeenCalledWith('saved'));
+  });
+
+  it('leaves Enter to a control that prevents it', async () => {
+    mocks.claims.add('Enter');
+    const { input, onDone } = await renderEditor();
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await Promise.resolve();
 
     expect(onDone).not.toHaveBeenCalled();
   });

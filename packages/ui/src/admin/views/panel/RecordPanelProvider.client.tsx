@@ -46,8 +46,12 @@ export type RecordPanelContextValue = {
   create: (initialData?: Data) => void;
   /** Whether the collection has the panel. With `panel: false` records open their edit page. */
   enabled: boolean;
-  /** Runs `action`, first asking with the leave-without-saving confirm when the form has unsaved edits. */
-  guard: (action: () => void) => void;
+  /**
+   * Runs `action`, first asking with the leave-without-saving confirm when the form has unsaved
+   * edits. With `record`, it asks only when that record is open, and leaving renders the record
+   * again without the edits, as before a cell edit on it.
+   */
+  guard: (action: () => void, record?: number | string) => void;
   /** Opens the open record's full edit page. */
   expand: () => void;
   /** Sends a panel save or delete to every view listening with `useRecordPanelEvents`. */
@@ -154,18 +158,37 @@ export function RecordPanelProvider({
     replaceRecordParam(next.mode === 'edit' ? next.id : undefined);
   }, []);
 
-  const guard = useCallback(
-    (action: () => void) => {
-      if (formRef.current?.modified) {
-        pendingRef.current = action;
-        openModal(LEAVE_MODAL);
+  const rerender = useCallback((id: string) => {
+    setState((current) =>
+      current.mode === 'edit' && current.id === id
+        ? { ...current, version: (current.version ?? 0) + 1 }
+        : current,
+    );
+  }, []);
+
+  const guard = useCallback<RecordPanelContextValue['guard']>(
+    (action, record) => {
+      const id = record === undefined ? undefined : String(record);
+      const isOpen = id === undefined || (state.mode === 'edit' && state.id === id);
+
+      if (!formRef.current?.modified || !isOpen) {
+        action();
 
         return;
       }
 
-      action();
+      pendingRef.current =
+        id === undefined
+          ? action
+          : () => {
+              formRef.current = undefined;
+              rerender(id);
+              action();
+            };
+
+      openModal(LEAVE_MODAL);
     },
-    [openModal],
+    [openModal, rerender, state],
   );
 
   const open = useCallback<RecordPanelContextValue['open']>(
@@ -214,15 +237,12 @@ export function RecordPanelProvider({
 
   const reset = useCallback(() => go({ mode: 'closed' }), [go]);
 
-  const reload = useCallback((id: number | string) => {
-    if (formRef.current?.modified) return;
-
-    setState((current) =>
-      current.mode === 'edit' && current.id === String(id)
-        ? { ...current, version: (current.version ?? 0) + 1 }
-        : current,
-    );
-  }, []);
+  const reload = useCallback(
+    (id: number | string) => {
+      if (!formRef.current?.modified) rerender(String(id));
+    },
+    [rerender],
+  );
 
   const switchTo = useCallback((id: number | string) => go({ id: String(id), mode: 'edit' }), [go]);
 

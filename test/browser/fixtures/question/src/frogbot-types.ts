@@ -75,9 +75,11 @@ export interface Config {
     secrets: Secret;
     stories: Story;
     approvals: Approval;
+    photos: Photo;
     archives: Archive;
     'cell-kinds': CellKind;
     'cell-drafts': CellDraft;
+    'cell-access': CellAccess;
     timesheets: Timesheet;
     'api-keys': ApiKey;
     'usage-logs': UsageLog;
@@ -85,6 +87,7 @@ export interface Config {
     'frogbot-chat-assets': FrogBotChatAsset;
     'frogbot-chat-turns': FrogBotChatTurn;
     'frogbot-waitpoints': FrogBotWaitpoint;
+    folders: Folder;
     'frogbot-autonumbers': FrogBotAutonumber;
   };
   collectionsJoins: {};
@@ -97,9 +100,11 @@ export interface Config {
     secrets: SecretsSelect;
     stories: StoriesSelect;
     approvals: ApprovalsSelect;
+    photos: PhotosSelect;
     archives: ArchivesSelect;
     'cell-kinds': CellKindsSelect;
     'cell-drafts': CellDraftsSelect;
+    'cell-access': CellAccessSelect;
     timesheets: TimesheetsSelect;
     'api-keys': ApiKeysSelect;
     'usage-logs': UsageLogsSelect;
@@ -107,6 +112,7 @@ export interface Config {
     'frogbot-chat-assets': FrogBotChatAssetsSelect;
     'frogbot-chat-turns': FrogBotChatTurnsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
+    folders: FoldersSelect;
     'frogbot-autonumbers': FrogBotAutonumbersSelect;
   };
   db: {
@@ -121,6 +127,7 @@ export interface Config {
     collections: CollectionsWidget;
     'collection-query': CollectionQueryWidget;
     activity: ActivityWidget;
+    'upload-dropzone': UploadDropzoneWidget;
   };
   user: User;
   jobs: {
@@ -934,6 +941,7 @@ export interface Approval {
   title: string;
   status?: ('todo' | 'doing' | 'done') | null;
   approver: string;
+  photo?: (number | null) | Photo;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -944,6 +952,66 @@ export interface Approval {
   } | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photos".
+ */
+export interface Photo {
+  id: number;
+  alt?: string | null;
+  _h_folders?: (number | null) | Folder;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+  };
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders".
+ */
+export interface Folder {
+  id: number;
+  _h_folders?: (number | null) | Folder;
+  name: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _h_slugPath?: string | null;
+  _h_titlePath?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1050,6 +1118,31 @@ export interface CellDraft {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-access".
+ */
+export interface CellAccess {
+  id: number;
+  title: string;
+  open?: boolean | null;
+  archived?: boolean | null;
+  address?: {
+    country?: string | null;
+    city?: string | null;
+  };
+  note?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1900,10 +1993,45 @@ export interface ApprovalsSelect {
   title?: boolean;
   status?: boolean;
   approver?: boolean;
+  photo?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photos_select".
+ */
+export interface PhotosSelect {
+  alt?: boolean;
+  _h_folders?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  deletedAt?: boolean;
+  url?: boolean;
+  thumbnailURL?: boolean;
+  filename?: boolean;
+  mimeType?: boolean;
+  filesize?: boolean;
+  width?: boolean;
+  height?: boolean;
+  original?:
+    | boolean
+    | {
+        filename?: boolean;
+        url?: boolean;
+        mimeType?: boolean;
+        filesize?: boolean;
+        width?: boolean;
+        height?: boolean;
+        prefix?: boolean;
+        _objectKey?: boolean;
+      };
+  focalX?: boolean;
+  focalY?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1956,6 +2084,26 @@ export interface CellDraftsSelect {
   updatedAt?: boolean;
   createdAt?: boolean;
   _status?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-access_select".
+ */
+export interface CellAccessSelect {
+  title?: boolean;
+  open?: boolean;
+  archived?: boolean;
+  address?:
+    | boolean
+    | {
+        country?: boolean;
+        city?: boolean;
+      };
+  note?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2104,6 +2252,20 @@ export interface FrogBotWaitpointsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders_select".
+ */
+export interface FoldersSelect {
+  _h_folders?: boolean;
+  name?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  _h_slugPath?: boolean;
+  _h_titlePath?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-autonumbers_select".
  */
 export interface FrogBotAutonumbersSelect {
@@ -2148,13 +2310,16 @@ export interface CollectionQueryWidget {
       | 'secrets'
       | 'stories'
       | 'approvals'
+      | 'photos'
       | 'archives'
       | 'cell-kinds'
       | 'cell-drafts'
+      | 'cell-access'
       | 'timesheets'
       | 'api-keys'
       | 'usage-logs'
-      | 'chats';
+      | 'chats'
+      | 'folders';
     where?:
       | {
           [k: string]: unknown;
@@ -2186,17 +2351,30 @@ export interface ActivityWidget {
           | 'secrets'
           | 'stories'
           | 'approvals'
+          | 'photos'
           | 'archives'
           | 'cell-kinds'
           | 'cell-drafts'
+          | 'cell-access'
           | 'timesheets'
           | 'api-keys'
           | 'usage-logs'
           | 'chats'
+          | 'folders'
         )[]
       | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "upload-dropzone_widget".
+ */
+export interface UploadDropzoneWidget {
+  data?: {
+    excludedCollections?: 'photos'[] | null;
+  };
+  width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

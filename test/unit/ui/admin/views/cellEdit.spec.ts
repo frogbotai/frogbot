@@ -2,6 +2,7 @@ import type { SanitizedCollectionPermission } from 'payload';
 import { describe, expect, it } from 'vitest';
 
 import { getEditableColumns } from '../../../../../packages/ui/src/admin/views/List/cellEdit/editable.js';
+import { withValuesAt } from '../../../../../packages/ui/src/admin/views/List/cellEdit/fieldPath.js';
 
 const kind = (type: string) => ({ custom: { frogbot: { kind: { type } } } });
 
@@ -209,5 +210,22 @@ describe('getEditableColumns', () => {
         permissions: permissions({ _status: access() }),
       }),
     ).toEqual([]);
+  });
+});
+
+describe('withValuesAt', () => {
+  it('replaces a value inside a group and keeps its siblings', () => {
+    const data = { title: 'a', address: { country: 'US', city: 'Austin' } };
+    const merged = withValuesAt(data, { address: { city: 'Dallas' } }, ['address.city']);
+
+    expect(merged).toEqual({ title: 'a', address: { country: 'US', city: 'Dallas' } });
+    expect(data.address.city).toBe('Austin');
+  });
+
+  it('clears a value the form no longer has and creates missing groups', () => {
+    expect(withValuesAt({ note: 'x' }, {}, ['note', 'meta.source'])).toEqual({
+      meta: { source: undefined },
+      note: undefined,
+    });
   });
 });

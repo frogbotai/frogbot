@@ -39,6 +39,8 @@ export type ListFrameClientProps = {
   Description?: ReactNode;
   /** The done records among the rows, found on the server from `admin.useAsDone`. */
   doneIds?: string[];
+  /** The columns each row can edit, by row id, when that depends on the record. */
+  editableCells?: Record<string, string[]>;
   /** The columns this person can edit in place, from the list view's `editable`. */
   editableColumns?: string[];
   hasCreateButton: boolean;
@@ -104,12 +106,14 @@ function RecordRows({
   children,
   collectionSlug,
   doneIds,
+  editableCells,
   editableColumns,
   footer,
 }: {
   children: ReactNode;
   collectionSlug: string;
   doneIds?: string[];
+  editableCells?: Record<string, string[]>;
   editableColumns?: string[];
   footer?: (containerRef: RefObject<HTMLDivElement | null>) => ReactNode;
 }) {
@@ -119,7 +123,12 @@ function RecordRows({
     <>
       <div ref={ref}>{children}</div>
       {editableColumns?.length ? (
-        <CellEditing collectionSlug={collectionSlug} columns={editableColumns} containerRef={ref} />
+        <CellEditing
+          cells={editableCells}
+          collectionSlug={collectionSlug}
+          columns={editableColumns}
+          containerRef={ref}
+        />
       ) : null}
       {footer?.(ref)}
     </>
@@ -136,6 +145,7 @@ function RefreshOnPanelSave() {
 
 function ListFrameInner({
   doneIds,
+  editableCells,
   editableColumns,
   listProps,
   pagedGroups,
@@ -238,6 +248,7 @@ function ListFrameInner({
           <RecordRows
             collectionSlug={collectionSlug}
             doneIds={doneIds}
+            editableCells={editableCells}
             editableColumns={editableColumns}
             footer={
               summary && !frame.isEmpty

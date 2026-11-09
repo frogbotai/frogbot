@@ -30,6 +30,7 @@ import {
   type ViewSetup,
 } from '../viewSetup.js';
 import { getEditableColumns } from './cellEdit/editable.js';
+import { findEditableCells } from './cellEdit/editableCells.js';
 import { DefaultListView } from './DefaultListView.client.js';
 import { type GroupedTable, renderGroupedTable } from './groupedTable.js';
 import { ListFrameClient, type ListFrameSummary } from './ListFrame.client.js';
@@ -291,12 +292,12 @@ export async function ListView(props: ListViewServerProps) {
     ? grouped.totalDocs === 0
     : docs.length === 0 && !clientProps.groupedData?.length;
 
+  const rows =
+    grouped?.docs ?? clientProps.groupedData?.flatMap((group) => group.data.docs as Row[]) ?? docs;
+
   const doneIds = await findDoneIds({
     collectionSlug,
-    docs:
-      grouped?.docs ??
-      clientProps.groupedData?.flatMap((group) => group.data.docs as Row[]) ??
-      docs,
+    docs: rows,
     req,
     trash: clientProps.viewType === 'trash',
     useAsDone: (collectionConfig.admin.custom?.frogbot as { useAsDone?: string } | undefined)
@@ -314,6 +315,13 @@ export async function ListView(props: ListViewServerProps) {
       })
     : [];
 
+  const editableCells = await findEditableCells({
+    collectionConfig,
+    columns: editableColumns,
+    docs: rows,
+    req,
+  });
+
   return (
     <ListFrameClient
       {...slots}
@@ -323,6 +331,7 @@ export async function ListView(props: ListViewServerProps) {
       BeforeListTable={clientProps.BeforeListTable}
       Description={clientProps.Description ?? slots.Description}
       doneIds={doneIds}
+      editableCells={editableCells}
       editableColumns={editableColumns}
       isEmpty={isEmpty}
       listMenuItems={[...(clientProps.listMenuItems ?? []), ...(slots.listMenuItems ?? [])]}

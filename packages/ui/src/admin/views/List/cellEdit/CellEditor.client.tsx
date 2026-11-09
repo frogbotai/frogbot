@@ -34,6 +34,8 @@ import {
   useState,
 } from 'react';
 
+import { withValuesAt } from './fieldPath.js';
+
 /** How an edit ended: cancelled, saved, or saved and moving to the next or previous cell. */
 export type CellEditorDone = 'cancel' | 'next' | 'prev' | 'saved';
 
@@ -50,6 +52,8 @@ export type CellEditorProps = {
   initialText?: string;
   /** Enter or Tab pressed before the editor was ready: it saves as soon as the value is in. */
   pendingDone?: Exclude<CellEditorDone, 'cancel'>;
+  /** Select-all pressed before the editor was ready: the text input opens with its value selected. */
+  selectAll?: boolean;
   onDone: (done: CellEditorDone) => void;
   /** Called after a save, before `onDone`. */
   onSaved: () => void;
@@ -119,9 +123,10 @@ function CellEditorFields({
   pendingDone,
   permissions,
   savedRef,
+  selectAll,
 }: Pick<
   CellEditorProps,
-  'field' | 'handleRef' | 'initialText' | 'onDone' | 'parentPath' | 'pendingDone'
+  'field' | 'handleRef' | 'initialText' | 'onDone' | 'parentPath' | 'pendingDone' | 'selectAll'
 > & {
   action: string;
   drafts: boolean;
@@ -131,12 +136,14 @@ function CellEditorFields({
   const { submit } = useForm();
   const modified = useFormModified();
   const rootRef = useRef<HTMLDivElement>(null);
+  const selectAllRef = useRef(selectAll);
   const pendingRef = useRef<Promise<boolean> | null>(null);
   const modifiedRef = useRef(modified);
 
   useEffect(() => {
     modifiedRef.current = modified;
-  }, [modified]);
+    selectAllRef.current = selectAll;
+  }, [modified, selectAll]);
 
   const commit = useCallback(() => {
     if (pendingRef.current) return pendingRef.current;
@@ -180,6 +187,8 @@ function CellEditorFields({
 
       if (initialText && target.matches(TEXT_INPUT)) {
         typeInto(target as HTMLInputElement | HTMLTextAreaElement, initialText);
+      } else if (selectAllRef.current && target.matches(TEXT_INPUT)) {
+        (target as HTMLInputElement | HTMLTextAreaElement).select();
       } else if (target.closest('.rs__control')) {
         target.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowDown' }));
       }
@@ -297,6 +306,7 @@ export function CellEditor({
   parentPath,
   path,
   permissions,
+  selectAll,
 }: CellEditorProps) {
   const { config, getEntityConfig } = useConfig();
   const { user } = useAuth();
@@ -358,7 +368,11 @@ export function CellEditor({
     async ({ formState, submitted }) => {
       const { state } = await getFormState({
         collectionSlug,
-        data: { ...loadedRef.current, ...reduceFieldsToValues(formState, true) },
+        data: withValuesAt(
+          loadedRef.current,
+          reduceFieldsToValues(formState, true),
+          pathsKey.split('\n'),
+        ),
         docPermissions: permissions,
         docPreferences: { fields: {} },
         formState,
@@ -413,6 +427,7 @@ export function CellEditor({
             parentPath={parentPath}
             permissions={fieldPermissionsAt(permissions, parentPath)}
             savedRef={savedRef}
+            selectAll={selectAll}
           />
         </Form>
       </OperationProvider>

@@ -15,6 +15,7 @@ type ActiveCell = {
   initialText?: string;
   pendingDone?: Exclude<CellEditorDone, 'cancel'>;
   rowId: string;
+  selectAll?: boolean;
 };
 
 const ROWS = '.table:not(.table--drag-preview) tbody > tr';
@@ -75,10 +76,13 @@ function focusCell(td: HTMLTableCellElement | undefined) {
  * typing on a focused cell starts an edit; Tab saves and moves on, wrapping to the next row.
  */
 export function CellEditing({
+  cells,
   collectionSlug,
   columns,
   containerRef,
 }: {
+  /** The columns each row can edit, by row id, when that depends on the record. */
+  cells?: Record<string, string[]>;
   collectionSlug: string;
   columns: string[];
   containerRef: RefObject<HTMLDivElement | null>;
@@ -93,6 +97,7 @@ export function CellEditing({
   const activeRef = useRef(active);
   const panelRef = useRef(panel);
   const columnsKey = columns.join('\n');
+  const cellsKey = cells ? JSON.stringify(cells) : '';
   const fields = getEntityConfig({ collectionSlug })?.fields ?? [];
 
   useEffect(() => {
@@ -104,6 +109,7 @@ export function CellEditing({
     const container = containerRef.current;
     if (!container) return;
     const paths = columnsKey ? columnsKey.split('\n') : [];
+    const byRow = cellsKey ? (JSON.parse(cellsKey) as Record<string, string[]>) : undefined;
     const byClass = new Map(
       paths.flatMap((path) => [
         [`cell-${path}`, path],
@@ -114,10 +120,15 @@ export function CellEditing({
     const mark = () => {
       container.querySelectorAll<HTMLTableCellElement>(`${ROWS} > td`).forEach((td) => {
         const className = [...td.classList].find((name) => byClass.has(name));
-        const path =
-          className && !td.classList.contains('cell--linked') && td.parentElement
-            ? rowId(td.parentElement) && byClass.get(className)
-            : undefined;
+        const id = td.parentElement ? rowId(td.parentElement) : undefined;
+        const column = className && byClass.get(className);
+        const allowed =
+          id &&
+          column &&
+          !td.classList.contains('cell--linked') &&
+          (!byRow || byRow[id]?.includes(column));
+
+        const path = allowed ? column : undefined;
 
         if (td.dataset.cellEdit === path) return;
         if (path) td.dataset.cellEdit = path;
@@ -142,7 +153,7 @@ export function CellEditing({
     observer.observe(container, { childList: true, subtree: true });
 
     return () => observer.disconnect();
-  }, [columnsKey, containerRef]);
+  }, [cellsKey, columnsKey, containerRef]);
 
   const queueKey = useCallback((event: KeyboardEvent) => {
     const { key, shiftKey } = event;
@@ -152,6 +163,9 @@ export function CellEditing({
     setActive((current) => {
       if (!current || key === 'Escape') return undefined;
       if (done) return { ...current, pendingDone: done };
+      if ((event.ctrlKey || event.metaKey) && key.toLowerCase() === 'a') {
+        return { ...current, initialText: undefined, selectAll: true };
+      }
 
       return isPrintable(event)
         ? { ...current, initialText: `${current.initialText ?? ''}${key}` }
@@ -167,9 +181,12 @@ export function CellEditing({
 
       if (current?.rowId === next.rowId && current.column === next.column) return;
       if (current && !(await commit())) return;
-      activeRef.current = next;
-      setActive(next);
-      focusCell(next.cell);
+
+      panelRef.current.guard(() => {
+        activeRef.current = next;
+        setActive(next);
+        focusCell(next.cell);
+      }, next.rowId);
     },
     [commit],
   );
@@ -246,7 +263,10 @@ export function CellEditing({
     const id = activeRef.current?.rowId;
 
     if (id) panelRef.current.reload(id);
-    startTransition(() => router.refresh());
+
+    const { pathname, search } = window.location;
+
+    startTransition(() => router.replace(`${pathname}${search}`, { scroll: false }));
   }, [router]);
 
   const onDone = useCallback(
@@ -284,6 +304,7 @@ export function CellEditing({
       id={active.rowId}
       initialText={active.initialText}
       pendingDone={active.pendingDone}
+      selectAll={active.selectAll}
       key={`${active.rowId}:${active.column}`}
       onDone={onDone}
       onSaved={onSaved}

@@ -6,14 +6,17 @@ import { type AnyField, type FieldLookup, readField, resolveFieldAtPath } from '
 
 function isPlain(field: FieldLookup): boolean {
   const { admin, hidden, virtual } = field;
+  const disabled =
+    admin?.disabled === true ||
+    (typeof admin?.disabled === 'object' && admin.disabled.field === true);
 
-  return Boolean(hidden || admin?.hidden || admin?.disabled || admin?.readOnly || virtual);
+  return Boolean(hidden || admin?.hidden || disabled || admin?.readOnly || virtual);
 }
 
 /**
  * The list columns a person can edit in place: those the view's `editable` names (every column
- * for `true`) whose field edits in a cell, isn't read-only, hidden or virtual, and that the
- * person may update. Every other cell stays as it is and opens the record.
+ * for `true`) whose field edits in a cell, isn't read-only, hidden, disabled, virtual or the draft
+ * status, and that the person may update. Every other cell stays as it is and opens the record.
  */
 export function getEditableColumns({
   columns,
@@ -31,7 +34,7 @@ export function getEditableColumns({
   const named = editable === true ? undefined : new Set(editable);
 
   return columns.filter((path) => {
-    if (named && !named.has(path)) return false;
+    if (path === '_status' || (named && !named.has(path))) return false;
 
     const found = resolveFieldAtPath(fields, path);
 
