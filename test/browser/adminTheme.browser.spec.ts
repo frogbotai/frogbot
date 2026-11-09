@@ -342,6 +342,43 @@ for (const [colorScheme, codeBackground, grayBackground] of [
   });
 }
 
+test('highlights a ts code block from the theme tokens in both themes, and an unknown language plain', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/theme-check/system');
+
+  const code = page.getByTestId('theme-check-ts-code');
+  const keyword = code.locator('code span', { hasText: /^const$/ });
+  const string = code.locator('code span', { hasText: /^'draft'$/ });
+  const colors = async () => ({
+    keyword: await resolveColor(code, 'var(--color-text-danger)'),
+    string: await resolveColor(code, 'var(--color-text-success)'),
+    text: await resolveColor(code, 'var(--color-text)'),
+  });
+
+  const light = await colors();
+
+  await expect(keyword).toHaveCSS('color', light.keyword);
+  await expect(string).toHaveCSS('color', light.string);
+  expect(light.keyword).not.toBe(light.text);
+
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+  const dark = await colors();
+
+  await expect(keyword).toHaveCSS('color', dark.keyword);
+  await expect(string).toHaveCSS('color', dark.string);
+  expect(dark.keyword).not.toBe(light.keyword);
+  await expect(code.locator('code')).toHaveText("const status: string = 'draft';");
+
+  const plain = page.getByTestId('theme-check-plain-code');
+
+  await expect(plain.locator('code')).toHaveText('const status = 1;');
+  await expect(plain.locator('code span')).toHaveCount(0);
+});
+
 const surroundingColor = 'rgb(10, 120, 60)';
 const linkBlue = 'rgb(0, 0, 238)';
 
