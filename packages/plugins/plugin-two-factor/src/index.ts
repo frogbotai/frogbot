@@ -9,6 +9,8 @@ import {
 } from './context.js';
 import { createFlowEndpoints } from './flow.js';
 import {
+  beforeOperation,
+  createAfterOperation,
   createBeforeLogin,
   createBeforeSignIn,
   createLoginEndpoint,
@@ -87,6 +89,11 @@ const twoFactorPlugin = definePlugin<TwoFactorResolvedOptions>({
                 ...collection.hooks,
                 beforeSignIn: [...(collection.hooks?.beforeSignIn ?? []), createBeforeSignIn(ctx)],
                 beforeLogin: [...(collection.hooks?.beforeLogin ?? []), createBeforeLogin(ctx)],
+                beforeOperation: [...(collection.hooks?.beforeOperation ?? []), beforeOperation],
+                afterOperation: [
+                  createAfterOperation(ctx),
+                  ...(collection.hooks?.afterOperation ?? []),
+                ],
               },
               endpoints: [
                 createLoginEndpoint(ctx),

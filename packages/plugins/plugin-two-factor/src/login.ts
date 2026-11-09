@@ -1,6 +1,8 @@
 import {
   addDataAndFileToRequest,
+  type CollectionAfterOperationHook,
   type CollectionBeforeLoginHook,
+  type CollectionBeforeOperationHook,
   type CollectionBeforeSignInHook,
   type Endpoint,
   type FrogBotRequest,
@@ -13,6 +15,7 @@ import {
   hasTwoFactor,
   jsonError,
   noStore,
+  passedKey,
   payloadRequest,
   readUser,
   routes,
@@ -98,16 +101,45 @@ export const createBeforeSignIn =
 
 /**
  * Refuses a login that would skip the code: password login through any path other than the
- * plugin's `/login`, which turns the refusal into a pending sign-in. A sign-in resumed through
- * `finishSignIn` and the plugin's own reset-password and first-register pass.
+ * plugin's `/login`, which turns the refusal into a pending sign-in, and a sign-in another
+ * `beforeSignIn` hook resumed with `finishSignIn`. Only the plugin's own finish after a code or
+ * setup, a password reset and the plugin's first-register pass.
  */
 export const createBeforeLogin =
   (ctx: TwoFactorContext): CollectionBeforeLoginHook =>
   async ({ req, user }) => {
-    if (req.context.signIn || req.context.twoFactorReset || req.context.twoFactorFirstUser) return;
+    const id = user.id as string | number;
+    if (req.context.twoFactorPassed === passedKey(ctx.slug, id)) return;
+    if (req.context.twoFactorReset || req.context.twoFactorFirstUser) return;
 
     const mode = await twoFactorStep(req, ctx, user as TwoFactorUser);
-    if (mode) throw new TwoFactorRequired(user.id as string | number, mode);
+    if (mode) throw new TwoFactorRequired(id, mode);
+  };
+
+/** Lets every reset-password path, REST, GraphQL and the Local API, save the new password past the `beforeLogin` gate. */
+export const beforeOperation: CollectionBeforeOperationHook = ({ args, operation, req }) => {
+  if (operation === 'resetPassword') req.context.twoFactorReset = true;
+
+  return args;
+};
+
+/** After a password reset, a user who has two-factor sign-in on or must have it gets no token, and every session they had ends. */
+export const createAfterOperation =
+  (ctx: TwoFactorContext): CollectionAfterOperationHook =>
+  async ({ operation, req, result }) => {
+    if (operation !== 'resetPassword' || !req) return result;
+
+    delete req.context.twoFactorReset;
+
+    const id = (result as { user?: { id?: string | number } }).user?.id;
+    const user = id === undefined ? null : await readUser(req, ctx.slug, id);
+    if (!user || !(await twoFactorStep(req, ctx, user))) return result;
+
+    await writeUser({ req, slug: ctx.slug, id: user.id, data: {}, sessions: 'all' });
+
+    const { token: _token, ...rest } = result as { token?: string };
+
+    return rest as typeof result;
   };
 
 export const depthOf = (req: FrogBotRequest) => {
@@ -228,23 +260,14 @@ export const createResetPasswordEndpoint = (ctx: TwoFactorContext): Endpoint => 
     const collection = payloadReq.payload.collections[ctx.slug];
     const data = (req.data ?? {}) as Record<string, unknown>;
 
-    req.context.twoFactorReset = true;
-
     const result = await resetPasswordOperation({
       collection,
       data: { password: text(data.password), token: text(data.token) },
       depth: depthOf(req),
       req: payloadReq,
-    }).finally(() => {
-      delete req.context.twoFactorReset;
     });
 
-    const id = result.user.id as string | number;
-    const user = await readUser(req, ctx.slug, id);
-
-    if (user && (await twoFactorStep(req, ctx, user))) {
-      await writeUser({ req, slug: ctx.slug, id, data: {}, sessions: 'all' });
-
+    if (!result.token) {
       return Response.json(
         { message: req.t('authentication:passwordResetSuccessfully'), twoFactor: 'signIn' },
         { headers: headersWithCors({ headers: noStore(), req }) },
@@ -254,7 +277,7 @@ export const createResetPasswordEndpoint = (ctx: TwoFactorContext): Endpoint => 
     const cookie = generatePayloadCookie({
       collectionAuthConfig: collection.config.auth,
       cookiePrefix: payloadReq.payload.config.cookiePrefix,
-      token: result.token!,
+      token: result.token,
     });
 
     if (collection.config.auth.removeTokenFromResponses) delete result.token;

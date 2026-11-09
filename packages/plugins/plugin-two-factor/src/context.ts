@@ -36,8 +36,8 @@ export type TwoFactorPluginOptions = {
   require?: (args: TwoFactorUserArgs) => boolean | Promise<boolean>;
   /** Returns false for users who may not turn two-factor sign-in on (403). Defaults to everyone. */
   canEnable?: (args: TwoFactorUserArgs) => boolean | Promise<boolean>;
-  /** Returns true when the signed-in user may reset another user's two-factor sign-in. Defaults to nobody. */
-  canReset?: (args: { req: FrogBotRequest }) => boolean | Promise<boolean>;
+  /** Returns true when the signed-in user may reset `user`'s two-factor sign-in. Asked only for a user they can read and update. Defaults to nobody. */
+  canReset?: (args: TwoFactorUserArgs) => boolean | Promise<boolean>;
   /** The name authenticator apps show beside the account. Defaults to `FrogBot`. */
   issuer?: string;
   /** Replaces an event's email, or turns it off with `false`. */
@@ -61,10 +61,12 @@ declare module 'frogbot' {
 
 declare module 'payload' {
   interface RequestContext {
-    /** Set by the two-factor plugin's `reset-password` endpoint, so its `beforeLogin` gate lets the reset save the password. */
+    /** Set by the two-factor plugin's `beforeOperation` hook on a password reset, so its `beforeLogin` gate lets the reset save the password. */
     twoFactorReset?: boolean;
     /** Set by the two-factor plugin's `first-register` endpoint, so its `beforeLogin` gate lets the first user's registration finish. */
     twoFactorFirstUser?: boolean;
+    /** Set by the two-factor plugin just before it finishes a sign-in that passed the code or setup step, to `passedKey` of that user. */
+    twoFactorPassed?: string;
   }
 }
 
@@ -84,6 +86,9 @@ export const CLEARED = {
   [FIELDS.recovery]: null,
   [FIELDS.lastStep]: null,
 };
+
+/** The `req.context.twoFactorPassed` value that lets one user's sign-in past the `beforeLogin` gate. */
+export const passedKey = (slug: string, id: string | number) => JSON.stringify([slug, String(id)]);
 
 export const WRONG_CODE = "That code didn't work.";
 

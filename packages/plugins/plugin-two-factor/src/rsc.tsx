@@ -87,7 +87,7 @@ export async function TwoFactorFieldServer({ id, data, field, req }: TwoFactorFi
   return (
     <TwoFactorField
       canEnable={self && !enabled ? await ctx.options.canEnable(args) : false}
-      canReset={self ? false : await ctx.options.canReset({ req: frogbotReq })}
+      canReset={self ? false : await ctx.options.canReset(args)}
       collectionSlug={ctx.slug}
       enabled={enabled}
       name={name}

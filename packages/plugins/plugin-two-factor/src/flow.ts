@@ -6,6 +6,7 @@ import {
   FIELDS,
   hasTwoFactor,
   jsonError,
+  passedKey,
   readBody,
   readUser,
   routes,
@@ -79,6 +80,8 @@ async function finish({
     method: pending.method,
     headers,
   };
+
+  req.context.twoFactorPassed = passedKey(slug, pending.userId);
 
   if (pending.response === 'json') {
     const response = await finishSignIn({ ...base, response: 'json' });
@@ -320,7 +323,9 @@ export const createFlowEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
 
             await deletePending(req, slug, found.id);
 
-            return true;
+            const user = await readUser(req, slug, found.pending.userId);
+
+            return hasTwoFactor(user) && user?.[FIELDS.secret] === found.pending.secret;
           },
         });
 

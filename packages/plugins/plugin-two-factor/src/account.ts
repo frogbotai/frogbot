@@ -1,4 +1,5 @@
 import type { Endpoint, FrogBotRequest } from 'frogbot';
+import { combineQueries, executeAccess } from 'payload';
 
 import { readCode, verifyNewSecret, withStoredCode } from './codes.js';
 import {
@@ -7,6 +8,7 @@ import {
   hasTwoFactor,
   jsonError,
   noStore,
+  payloadRequest,
   readBody,
   readUser,
   TEN_MINUTES,
@@ -37,6 +39,39 @@ async function signedIn(
     req.user?.collection === ctx.slug ? await readUser(req, ctx.slug, req.user.id) : null;
 
   return user ? { user } : { refused: jsonError('Sign in first.', 401) };
+}
+
+async function findResettable(
+  req: FrogBotRequest,
+  slug: string,
+  id: string | number,
+): Promise<TwoFactorUser | 'forbidden' | null> {
+  const payloadReq = payloadRequest(req);
+  const visible = await payloadReq.payload.count({
+    collection: slug,
+    overrideAccess: false,
+    req: payloadReq,
+    where: { id: { equals: id } },
+  });
+
+  if (!visible.totalDocs) return null;
+
+  const access = await executeAccess(
+    { slug, req: payloadReq },
+    payloadReq.payload.collections[slug].config.access.update,
+  );
+
+  if (typeof access === 'object') {
+    const updatable = await payloadReq.payload.db.count({
+      collection: slug,
+      req: payloadReq,
+      where: combineQueries({ id: { equals: id } }, access),
+    });
+
+    if (!updatable.totalDocs) return 'forbidden';
+  }
+
+  return readUser(req, slug, id);
 }
 
 function codeFailure(status: 'locked' | 'wrong' | 'expired'): Response {
@@ -204,9 +239,6 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
       handler: async (req) => {
         const { user: admin, refused: anonymous } = await signedIn(req, ctx);
         if (anonymous) return anonymous;
-        if (!(await options.canReset({ req }))) {
-          return jsonError("You may not reset other people's two-factor sign-in.", 403);
-        }
 
         const { body } = await readBody(req);
         const id = typeof body.id === 'string' || typeof body.id === 'number' ? body.id : undefined;
@@ -215,8 +247,11 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
           return jsonError("You can't reset your own two-factor sign-in.", 403);
         }
 
-        const user = await readUser(req, slug, id);
+        const user = await findResettable(req, slug, id);
         if (!user) return jsonError('User not found.', 404);
+        if (user === 'forbidden' || !(await options.canReset({ req, user }))) {
+          return jsonError("You may not reset this user's two-factor sign-in.", 403);
+        }
 
         await withCodeLock({
           req,

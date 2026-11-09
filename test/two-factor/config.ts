@@ -98,8 +98,7 @@ export default await buildTestConfig({
               returnTo: string;
             } | null;
 
-            if (!paused)
-              return Response.json({ errors: [{ message: 'expired' }] }, { status: 400 });
+            if (!paused) return new Response(null, { status: 400 });
 
             await req.frogbot.kv.delete(key);
 

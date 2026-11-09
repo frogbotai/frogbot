@@ -25,7 +25,7 @@ export default buildConfig({
     twoFactor({
       issuer: 'Acme',
       require: ({ user }) => user.role === 'admin',
-      canReset: ({ req }) => req.user?.role === 'admin',
+      canReset: ({ req, user }) => req.user?.role === 'admin' && user.role !== 'owner',
     }),
   ],
 })
@@ -39,7 +39,7 @@ Each user turns two-factor sign-in on from the **Two-factor sign-in** section of
 
 1. **Turn on** shows a QR code and the key as text. The user scans it with an authenticator app (1Password, Google Authenticator, Authy and others) and types the 6-digit code it shows.
 2. FrogBot shows 10 recovery codes once, with **Copy** and **Download**. Each one signs in once when the authenticator is lost.
-3. Every other session of that user ends; the current one stays.
+3. Every other session of that user ends; the current one stays. With [`auth.useSessions: false`](/authentication/overview) there are no sessions to end, and tokens already issued stay valid until they expire.
 
 **New recovery codes** needs a current code and voids the old set. **Turn off** needs a code or a recovery code and keeps the user's sessions. API keys aren't affected by two-factor sign-in: they keep working without a code.
 
@@ -62,13 +62,13 @@ When `require` covers the first user, `POST /api/<collection>/first-register` cr
   ```
 
   `twoFactor` is `'setup'` for a required user without it. Send the code to `POST <url>/verify` with that cookie as `{ "code": "123456" }` to get the normal login response, token included. Add `returnTo` (a path on your server) to the login body and the code page continues there instead.
-- **Reset password.** For a user with two-factor sign-in on or required, the new password is saved and every session ends, but nobody is signed in: the answer is `{ message, twoFactor: 'signIn' }`, and the person signs in with the new password and a code.
+- **Reset password.** For a user with two-factor sign-in on or required, the new password is saved and every session ends, but nobody is signed in: REST answers `{ message, twoFactor: 'signIn' }`, GraphQL and the Local API return no token, and the person signs in with the new password and a code.
 
 The pending sign-in lives in FrogBot's KV store for 10 minutes, is bound to its cookie and works once. On its own it grants nothing: the API, the admin and `refresh-token` refuse it.
 
 ## Reset
 
-A user who loses both their authenticator and recovery codes needs an admin. When `canReset` allows it, another user's document shows **Reset two-factor sign-in**, which removes their secret and recovery codes, ends every session and clears the code lock. Nobody can reset their own. A still-required user is sent to setup at their next sign-in.
+A user who loses both their authenticator and recovery codes needs an admin. When `canReset` allows it, another user's document shows **Reset two-factor sign-in**, which removes their secret and recovery codes, ends every session (with `auth.useSessions: false`, issued tokens stay valid until they expire) and clears the code lock. `canReset` is asked only for a user the admin can read and update under the collection's access rules. Nobody can reset their own. A still-required user is sent to setup at their next sign-in.
 
 ## Endpoints
 
@@ -80,7 +80,7 @@ All live under `/api/<collection>` and answer errors as `{ errors: [{ message }]
 | `POST /two-factor/enable` | `{ code }` | `{ message, recoveryCodes }` |
 | `POST /two-factor/recovery-codes` | `{ code }` | `{ message, recoveryCodes }` |
 | `POST /two-factor/disable` | `{ code }`, an authenticator or recovery code | `{ message }`. `403` while `require` is true. |
-| `POST /two-factor/reset` | `{ id }` | `{ message }`. `403` without `canReset` or for yourself. |
+| `POST /two-factor/reset` | `{ id }` | `{ message }`. `404` for a user you can't read; `403` for yourself, a user your update access excludes, or without `canReset`. |
 
 The first four act on the signed-in user. `hasTwoFactor(user)` tells whether a user has it on.
 
@@ -90,8 +90,9 @@ The plugin emails the user through your [email adapter](/email/overview) when tw
 
 ## Limits
 
-- GraphQL `loginUsers` and the Local API `login` don't have a code step, so they fail for users who need a code or setup. Use the REST login.
+- GraphQL `loginUser` and the Local API `login` don't have a code step, so they fail for users who need a code or setup. Use the REST login.
 - `canReset` defaults to nobody, so without it a user who loses their authenticator and recovery codes can't get back in.
+- Another `beforeSignIn` hook that pauses sign-in, such as a terms step, can't be combined with two-factor sign-in yet: when it resumes with `finishSignIn` for a user who needs a code, the sign-in is refused with `403` rather than skip the code.
 - Passkeys, security keys and per-tenant two-factor settings aren't supported.
 
 ## Options
@@ -102,7 +103,7 @@ twoFactor({
   issuer: 'Acme',
   require: ({ user }) => user.role === 'admin',
   canEnable: ({ user }) => user.role !== 'guest',
-  canReset: ({ req }) => req.user?.role === 'admin',
+  canReset: ({ req, user }) => req.user?.role === 'admin' && user.role !== 'owner',
   emails: { recoveryCodeUsed: false },
 })
 ```
@@ -112,6 +113,6 @@ twoFactor({
 | `collection` | `string` | `admin.user` | Auth collection that gets two-factor sign-in. The plugin throws at startup if it is missing or doesn't have auth enabled. The login view is replaced only when this is the admin's user collection. |
 | `require` | `(args: { req, user }) => boolean \| Promise<boolean>` | nobody | Users who must have two-factor sign-in. They set it up at their next sign-in and can't turn it off. |
 | `canEnable` | `(args: { req, user }) => boolean \| Promise<boolean>` | everyone | Users who may turn it on. `false` hides **Turn on** and refuses with `403`. |
-| `canReset` | `(args: { req }) => boolean \| Promise<boolean>` | nobody | Whether the signed-in user may reset someone else's two-factor sign-in. |
+| `canReset` | `(args: { req, user }) => boolean \| Promise<boolean>` | nobody | Whether the signed-in user may reset `user`'s two-factor sign-in. Asked only for a user they can read and update. |
 | `issuer` | `string` | `'FrogBot'` | Name authenticator apps show beside the account. |
 | `emails` | `Partial<Record<'enabled' \| 'disabled' \| 'recoveryCodeUsed' \| 'recoveryCodesCreated' \| 'reset', ((args: { req, user }) => { subject, text, html? }) \| false>>` | built-in emails | Replaces an event's email, or turns it off with `false`. |
