@@ -81,3 +81,5 @@ export const channelChat = {
     },
   },
 };
+export const cellKindsSlug = 'cell-kinds';
+export const cellDraftsSlug = 'cell-drafts';

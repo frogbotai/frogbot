@@ -340,6 +340,7 @@ const testProjects = [
       'commandPalette.browser.spec.ts',
       'calendarTimeZone.browser.spec.ts',
       'board.browser.spec.ts',
+      'cellEditKinds.browser.spec.ts',
     ],
   }),
   project({ name: 'question-firefox', browser: 'firefox', testMatch: crossBrowserQuestionSpecs }),

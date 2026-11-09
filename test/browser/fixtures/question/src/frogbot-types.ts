@@ -76,6 +76,8 @@ export interface Config {
     stories: Story;
     approvals: Approval;
     archives: Archive;
+    'cell-kinds': CellKind;
+    'cell-drafts': CellDraft;
     timesheets: Timesheet;
     'api-keys': ApiKey;
     'usage-logs': UsageLog;
@@ -96,6 +98,8 @@ export interface Config {
     stories: StoriesSelect;
     approvals: ApprovalsSelect;
     archives: ArchivesSelect;
+    'cell-kinds': CellKindsSelect;
+    'cell-drafts': CellDraftsSelect;
     timesheets: TimesheetsSelect;
     'api-keys': ApiKeysSelect;
     'usage-logs': UsageLogsSelect;
@@ -401,9 +405,6 @@ export interface User {
         | 'openrouter/google/gemma-4-31b-it:free'
         | 'openrouter/gryphe/mythomax-l2-13b'
         | 'openrouter/ibm-granite/granite-4.2-8b'
-        | 'openrouter/inception/mercury-2'
-        | 'openrouter/inception/mercury-2.5'
-        | 'openrouter/inception/mercury-3'
         | 'openrouter/inclusionai/ling-3.0-flash'
         | 'openrouter/inclusionai/ling-3.0-flash-vl'
         | 'openrouter/inclusionai/ling-3.0-tiny'
@@ -413,6 +414,8 @@ export interface User {
         | 'openrouter/liquid/lfm-2.5-2.6b'
         | 'openrouter/liquid/lfm-2.5-2.6b:free'
         | 'openrouter/liquid/lfm-2.5-24b-a2b'
+        | 'openrouter/liquid/lfm-3-1.7b'
+        | 'openrouter/liquid/lfm-3-1.7b:free'
         | 'openrouter/mancer/weaver'
         | 'openrouter/meituan/longcat-2.0'
         | 'openrouter/meta-llama/llama-3.1-70b-instruct'
@@ -478,7 +481,6 @@ export interface User {
         | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b'
         | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free'
         | 'openrouter/nvidia/nemotron-3.5-content-safety'
-        | 'openrouter/nvidia/nemotron-3.5-content-safety:free'
         | 'openrouter/nvidia/nemotron-3.5-lightning'
         | 'openrouter/nvidia/nemotron-3.5-lightning:free'
         | 'openrouter/nvidia/nemotron-3.5-super-vl'
@@ -965,6 +967,91 @@ export interface Archive {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-kinds".
+ */
+export interface CellKind {
+  id: number;
+  title: string;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
+  budget?: number | null;
+  /**
+   * Fraction where 1 means 100%, for example 0.42 for 42%
+   */
+  progress?: number | null;
+  /**
+   * Whole-number rating from 1 to 5
+   */
+  score?: number | null;
+  /**
+   * Duration in whole seconds, for example 5400 for 1 hour 30 minutes
+   */
+  timeSpent?: number | null;
+  /**
+   * Web address, for example https://example.com or example.com
+   */
+  website?: string | null;
+  /**
+   * Phone number as text, for example +44 20 7946 0958 or (415) 555-9876
+   */
+  phone?: string | null;
+  /**
+   * Barcode value as text, for example a UPC or EAN code
+   */
+  sku?: string | null;
+  /**
+   * Generated automatically by AI from: title. Writing a value keeps it and stops automatic updates
+   */
+  blurb?: string | null;
+  /**
+   * Set by FrogBot: pending, done, error or manual. Write "pending" to regenerate the value
+   */
+  _blurb_status?: ('pending' | 'done' | 'error' | 'manual') | null;
+  /**
+   * Set by FrogBot: the error message from the last failed run
+   */
+  _blurb_error?: string | null;
+  /**
+   * Unique number set by FrogBot when the record is created; read-only
+   */
+  number?: number | null;
+  locked?: string | null;
+  secret?: string | null;
+  tags?: (number | Tag)[] | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-drafts".
+ */
+export interface CellDraft {
+  id: number;
+  title: string;
+  note?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "timesheets".
  */
 export interface Timesheet {
@@ -1256,9 +1343,6 @@ export interface ApiKey {
         | 'openrouter/google/gemma-4-31b-it:free'
         | 'openrouter/gryphe/mythomax-l2-13b'
         | 'openrouter/ibm-granite/granite-4.2-8b'
-        | 'openrouter/inception/mercury-2'
-        | 'openrouter/inception/mercury-2.5'
-        | 'openrouter/inception/mercury-3'
         | 'openrouter/inclusionai/ling-3.0-flash'
         | 'openrouter/inclusionai/ling-3.0-flash-vl'
         | 'openrouter/inclusionai/ling-3.0-tiny'
@@ -1268,6 +1352,8 @@ export interface ApiKey {
         | 'openrouter/liquid/lfm-2.5-2.6b'
         | 'openrouter/liquid/lfm-2.5-2.6b:free'
         | 'openrouter/liquid/lfm-2.5-24b-a2b'
+        | 'openrouter/liquid/lfm-3-1.7b'
+        | 'openrouter/liquid/lfm-3-1.7b:free'
         | 'openrouter/mancer/weaver'
         | 'openrouter/meituan/longcat-2.0'
         | 'openrouter/meta-llama/llama-3.1-70b-instruct'
@@ -1333,7 +1419,6 @@ export interface ApiKey {
         | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b'
         | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free'
         | 'openrouter/nvidia/nemotron-3.5-content-safety'
-        | 'openrouter/nvidia/nemotron-3.5-content-safety:free'
         | 'openrouter/nvidia/nemotron-3.5-lightning'
         | 'openrouter/nvidia/nemotron-3.5-lightning:free'
         | 'openrouter/nvidia/nemotron-3.5-super-vl'
@@ -1834,6 +1919,44 @@ export interface ArchivesSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-kinds_select".
+ */
+export interface CellKindsSelect {
+  title?: boolean;
+  budget?: boolean;
+  progress?: boolean;
+  score?: boolean;
+  timeSpent?: boolean;
+  website?: boolean;
+  phone?: boolean;
+  sku?: boolean;
+  blurb?: boolean;
+  _blurb_status?: boolean;
+  _blurb_error?: boolean;
+  number?: boolean;
+  locked?: boolean;
+  secret?: boolean;
+  tags?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-drafts_select".
+ */
+export interface CellDraftsSelect {
+  title?: boolean;
+  note?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  _status?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "timesheets_select".
  */
 export interface TimesheetsSelect {
@@ -2024,6 +2147,8 @@ export interface CollectionQueryWidget {
       | 'stories'
       | 'approvals'
       | 'archives'
+      | 'cell-kinds'
+      | 'cell-drafts'
       | 'timesheets'
       | 'api-keys'
       | 'usage-logs'
@@ -2060,6 +2185,8 @@ export interface ActivityWidget {
           | 'stories'
           | 'approvals'
           | 'archives'
+          | 'cell-kinds'
+          | 'cell-drafts'
           | 'timesheets'
           | 'api-keys'
           | 'usage-logs'
@@ -2355,9 +2482,6 @@ declare module 'frogbot' {
       | 'openrouter/google/gemma-4-31b-it:free'
       | 'openrouter/gryphe/mythomax-l2-13b'
       | 'openrouter/ibm-granite/granite-4.2-8b'
-      | 'openrouter/inception/mercury-2'
-      | 'openrouter/inception/mercury-2.5'
-      | 'openrouter/inception/mercury-3'
       | 'openrouter/inclusionai/ling-3.0-flash'
       | 'openrouter/inclusionai/ling-3.0-flash-vl'
       | 'openrouter/inclusionai/ling-3.0-tiny'
@@ -2367,6 +2491,8 @@ declare module 'frogbot' {
       | 'openrouter/liquid/lfm-2.5-2.6b'
       | 'openrouter/liquid/lfm-2.5-2.6b:free'
       | 'openrouter/liquid/lfm-2.5-24b-a2b'
+      | 'openrouter/liquid/lfm-3-1.7b'
+      | 'openrouter/liquid/lfm-3-1.7b:free'
       | 'openrouter/mancer/weaver'
       | 'openrouter/meituan/longcat-2.0'
       | 'openrouter/meta-llama/llama-3.1-70b-instruct'
@@ -2432,7 +2558,6 @@ declare module 'frogbot' {
       | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b'
       | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free'
       | 'openrouter/nvidia/nemotron-3.5-content-safety'
-      | 'openrouter/nvidia/nemotron-3.5-content-safety:free'
       | 'openrouter/nvidia/nemotron-3.5-lightning'
       | 'openrouter/nvidia/nemotron-3.5-lightning:free'
       | 'openrouter/nvidia/nemotron-3.5-super-vl'
