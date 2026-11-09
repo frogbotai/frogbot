@@ -129,6 +129,24 @@ export function providerKeyEnvVar(provider: string): string | undefined {
   return definition.credentials?.length ? definition.envVars[0] : undefined;
 }
 
+/**
+ * The env-var sets that can each satisfy `provider`'s credential check on their own, for example
+ * `[['KLINGAI_API_KEY'], ['KLINGAI_ACCESS_KEY', 'KLINGAI_SECRET_KEY']]`. Empty for providers with
+ * no API-key check (bedrock, vertex) and for unknown names.
+ */
+export function providerCredentialEnvVars(provider: string): string[][] {
+  if (!Object.hasOwn(providers, provider)) return [];
+
+  const definition: {
+    envVars: readonly string[];
+    credentials?: readonly Readonly<Record<string, string | null>>[];
+  } = providers[provider as ProviderName];
+
+  return (definition.credentials ?? [])
+    .map((form) => Object.values(form))
+    .filter((envVars): envVars is string[] => envVars.every((envVar) => envVar !== null));
+}
+
 export type GatewayLanguageModel = LanguageModelV4 | LanguageModelV3;
 
 export type GatewayEmbeddingModel = EmbeddingModelV4 | EmbeddingModelV3;

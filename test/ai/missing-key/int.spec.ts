@@ -6,17 +6,19 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed';
-import { agentSlug, model, notesSlug } from './config.js';
+import { agentSlug, model, notesSlug, usersSlug } from './config.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
+const password = 'frogbot-int-password';
 
 const missingKey =
-  'OpenAI has no API key. Set the OPENAI_API_KEY environment variable, or set ai.providers.openai.apiKey in the FrogBot config.';
+  'The openai provider has no API key. Set OPENAI_API_KEY in the environment, or set ai.providers.openai.apiKey in the FrogBot config.';
 
 describe('an enabled AI provider with no API key', () => {
   let booted: BootedFrogBot;
   let originalFetch: typeof fetch;
   const upstreamCalls: string[] = [];
+  let jwt: Record<string, string>;
 
   beforeAll(async () => {
     vi.stubEnv('OPENAI_API_KEY', '');
@@ -34,6 +36,21 @@ describe('an enabled AI provider with no API key', () => {
     booted = await bootFrogBot(dirname);
 
     await clearAndSeed(booted.frogbot, 'empty');
+
+    await booted.frogbot.create({
+      collection: usersSlug,
+      data: { email: 'app@frogbot.local', password },
+      overrideAccess: true,
+    });
+
+    const login = await booted.restClient.post<{ token: string }>(`/api/${usersSlug}/login`, {
+      email: 'app@frogbot.local',
+      password,
+    });
+
+    if (login.status !== 200) throw new Error(`Login failed with ${login.status}.`);
+
+    jwt = { Authorization: `JWT ${login.body.token}` };
   });
 
   afterAll(async () => {
@@ -60,8 +77,15 @@ describe('an enabled AI provider with no API key', () => {
     expect(list.body.docs.map(({ title }) => title)).toEqual(['Call Ada']);
   });
 
-  it('serves the admin config and the agent list', async () => {
-    const agents = await fetch(`${booted.baseUrl}/api/agents`);
+  it('serves the signed-in user and the agent list', async () => {
+    const me = await booted.restClient.get<{ user: { email: string } }>(`/api/${usersSlug}/me`, {
+      headers: jwt,
+    });
+
+    expect(me.status).toBe(200);
+    expect(me.body.user.email).toBe('app@frogbot.local');
+
+    const agents = await fetch(`${booted.baseUrl}/api/agents`, { headers: jwt });
 
     expect(agents.status).toBe(200);
   });
@@ -82,6 +106,7 @@ describe('an enabled AI provider with no API key', () => {
     const response = await booted.restClient.post<{ error: { message: string; code: string } }>(
       '/api/v1/chat/completions',
       { model, messages: [{ role: 'user', content: 'Hello' }] },
+      { headers: jwt },
     );
 
     expect(response.status).toBe(401);

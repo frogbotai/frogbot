@@ -36,10 +36,26 @@ function makeAIConfig(providers: SanitizedAIConfig['providers']): SanitizedAICon
 }
 
 describe('buildGatewayConfig', () => {
-  it('maps true to SDK environment fallback config', () => {
+  it('maps true to the SDK environment fallback behind a call-time key check', () => {
     const config = buildGatewayConfig(makeAIConfig({ openai: true }));
 
-    expect(config.providers).toEqual({ openai: {} });
+    expect(config.providers).toEqual({ openai: { credential: expect.any(Function) } });
+  });
+
+  it('boots with no key and fails only the call, naming the env var', async () => {
+    vi.stubEnv('OPENAI_API_KEY', '');
+
+    const credential = buildGatewayConfig(makeAIConfig({ openai: true })).providers.openai!
+      .credential!;
+
+    expect(() => createAIGateway(makeAIConfig({ openai: true }))).not.toThrow();
+    expect(() => credential({}, { via: 'app' })).toThrow(
+      'The openai provider has no API key. Set OPENAI_API_KEY in the environment, or set ai.providers.openai.apiKey in the FrogBot config.',
+    );
+
+    vi.stubEnv('OPENAI_API_KEY', 'sk-env');
+
+    expect(await credential({}, { via: 'app' })).toBeUndefined();
   });
 
   it('passes matching built-in providers through under the same name', () => {
@@ -84,7 +100,7 @@ describe('buildGatewayConfig', () => {
     const config = buildGatewayConfig(makeAIConfig({ 'typesafe-ai': true }));
     const gateway = createAIGateway(makeAIConfig({ 'typesafe-ai': true }));
 
-    expect(config.providers['typesafe-ai']).toEqual({});
+    expect(config.providers['typesafe-ai']).toEqual({ credential: expect.any(Function) });
     expect(gateway.evaluationModel('typesafe-ai/jev').modelId).toBe('jev-latest');
   });
 
