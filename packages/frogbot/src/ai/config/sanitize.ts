@@ -208,7 +208,9 @@ export function sanitizeAI(
       continue;
     }
 
-    if (Object.hasOwn(linked, key) && provider.apiKey === undefined) continue;
+    if (provider.apiKey === undefined && (mode === 'codegen' || Object.hasOwn(linked, key))) {
+      continue;
+    }
 
     const keyError = builtInKeyError(key, provider.apiKey);
     if (keyError) throw new Error(keyError);
