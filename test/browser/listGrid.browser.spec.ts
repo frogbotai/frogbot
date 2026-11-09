@@ -430,7 +430,7 @@ test('a width save in flight keeps a sort the URL saved meanwhile', async ({ pag
   expect((await storedPreference(page)).sort).toBe('-amount');
 });
 
-test('a failed preference read never erases the saved sort, filters and summary', async ({
+test('a failed preference save never erases the saved sort, filters and summary', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -447,10 +447,16 @@ test('a failed preference read never erases the saved sort, filters and summary'
 
   let failed = false;
 
-  await page.route(`**${viewPreference}`, async (route) => {
-    if (route.request().method() === 'GET' && !failed) {
-      failed = true;
+  await page.route('**/*', async (route) => {
+    if (route.request().method() === 'GET' && route.request().url().endsWith(viewPreference)) {
       await route.fulfill({ json: { errors: [{ message: 'boom' }] }, status: 500 });
+
+      return;
+    }
+
+    if (!failed && isPreferenceWrite(route.request())) {
+      failed = true;
+      await route.fulfill({ body: 'boom', status: 500 });
 
       return;
     }
@@ -461,6 +467,13 @@ test('a failed preference read never erases the saved sort, filters and summary'
   cleanups.push(() => page.unrouteAll({ behavior: 'ignoreErrors' }));
 
   await drag(page, 'company', 80);
+  await expect.poll(() => failed).toBe(true);
+  const afterFailure = await storedPreference(page);
+
+  expect(afterFailure).toMatchObject(saved);
+  expect(afterFailure.widths).toBeUndefined();
+
+  await drag(page, 'company', 40);
 
   await expect
     .poll(async () => Object.keys((await storedPreference(page)).widths ?? {}))
