@@ -352,6 +352,7 @@ const testProjects = [
       'calendarTimeZone.browser.spec.ts',
       'timeline.browser.spec.ts',
       'board.browser.spec.ts',
+      'cellEditKinds.browser.spec.ts',
       'galleryCard.browser.spec.ts',
     ],
   }),
@@ -417,6 +418,7 @@ const testProjects = [
   project({
     name: 'crm',
     testMatch: [
+      'cellEdit.browser.spec.ts',
       'crm.browser.spec.ts',
       'gallery.browser.spec.ts',
       'listGrouping.browser.spec.ts',

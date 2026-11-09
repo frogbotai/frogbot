@@ -817,6 +817,17 @@ import type {
 
 See the individual field-type pages for the exact types supported by each family.
 
+#### Fields in list cells
+
+A list view with [`editable`](/admin/collection-list#editing-cells-in-place) edits a cell with the field's own `Field` component, the same one the edit form renders, inside a small form for that one field. The cell hides the label and description (screen readers still read them) and stretches the input to the cell. There is no separate cell editor to write, so a custom field edits in a table when it follows these rules:
+
+- Read and write the value with `useField`, as in the example above, so the cell form saves it.
+- Build the label, error and description from `FieldLabel`, `FieldError` and `FieldDescription`, or wrap the input in the `field-type` markup the built-in fields use, so the cell can hide the label and show the error.
+- Make the input the first focusable element. The cell focuses it when the edit starts, and a key that started the edit is typed into it when it is a text input.
+- Leave Enter, Esc and Tab to the cell: Enter saves, Esc cancels and Tab moves on. A control that uses Enter itself calls `event.preventDefault()` while it does, and the cell lets it. Esc first closes an open select menu, date picker or `Popup`, so render a control's menu with one of those. Tab always saves and moves on.
+
+FrogBot's field kinds follow the same rules, so `moneyField`, `percentField`, `ratingField`, `durationField`, `urlField`, `phoneField`, `barcodeField` and `aiField` edit in cells with no extra config. `autonumberField` stays read-only.
+
 ### Cell
 
 The Cell component renders a field's value in a List view table. Replace it with `admin.components.Cell`:

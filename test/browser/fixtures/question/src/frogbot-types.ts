@@ -75,7 +75,11 @@ export interface Config {
     secrets: Secret;
     stories: Story;
     approvals: Approval;
+    photos: Photo;
     archives: Archive;
+    'cell-kinds': CellKind;
+    'cell-drafts': CellDraft;
+    'cell-access': CellAccess;
     timesheets: Timesheet;
     'api-keys': ApiKey;
     'usage-logs': UsageLog;
@@ -83,6 +87,7 @@ export interface Config {
     'frogbot-chat-assets': FrogBotChatAsset;
     'frogbot-chat-turns': FrogBotChatTurn;
     'frogbot-waitpoints': FrogBotWaitpoint;
+    folders: Folder;
     'frogbot-autonumbers': FrogBotAutonumber;
   };
   collectionsJoins: {};
@@ -95,7 +100,11 @@ export interface Config {
     secrets: SecretsSelect;
     stories: StoriesSelect;
     approvals: ApprovalsSelect;
+    photos: PhotosSelect;
     archives: ArchivesSelect;
+    'cell-kinds': CellKindsSelect;
+    'cell-drafts': CellDraftsSelect;
+    'cell-access': CellAccessSelect;
     timesheets: TimesheetsSelect;
     'api-keys': ApiKeysSelect;
     'usage-logs': UsageLogsSelect;
@@ -103,6 +112,7 @@ export interface Config {
     'frogbot-chat-assets': FrogBotChatAssetsSelect;
     'frogbot-chat-turns': FrogBotChatTurnsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
+    folders: FoldersSelect;
     'frogbot-autonumbers': FrogBotAutonumbersSelect;
   };
   db: {
@@ -117,6 +127,7 @@ export interface Config {
     collections: CollectionsWidget;
     'collection-query': CollectionQueryWidget;
     activity: ActivityWidget;
+    'upload-dropzone': UploadDropzoneWidget;
   };
   user: User;
   jobs: {
@@ -401,9 +412,6 @@ export interface User {
         | 'openrouter/google/gemma-4-31b-it:free'
         | 'openrouter/gryphe/mythomax-l2-13b'
         | 'openrouter/ibm-granite/granite-4.2-8b'
-        | 'openrouter/inception/mercury-2'
-        | 'openrouter/inception/mercury-2.5'
-        | 'openrouter/inception/mercury-3'
         | 'openrouter/inclusionai/ling-3.0-flash'
         | 'openrouter/inclusionai/ling-3.0-flash-vl'
         | 'openrouter/inclusionai/ling-3.0-tiny'
@@ -413,6 +421,8 @@ export interface User {
         | 'openrouter/liquid/lfm-2.5-2.6b'
         | 'openrouter/liquid/lfm-2.5-2.6b:free'
         | 'openrouter/liquid/lfm-2.5-24b-a2b'
+        | 'openrouter/liquid/lfm-3-1.7b'
+        | 'openrouter/liquid/lfm-3-1.7b:free'
         | 'openrouter/mancer/weaver'
         | 'openrouter/meituan/longcat-2.0'
         | 'openrouter/meta-llama/llama-3.1-70b-instruct'
@@ -478,7 +488,6 @@ export interface User {
         | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b'
         | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free'
         | 'openrouter/nvidia/nemotron-3.5-content-safety'
-        | 'openrouter/nvidia/nemotron-3.5-content-safety:free'
         | 'openrouter/nvidia/nemotron-3.5-lightning'
         | 'openrouter/nvidia/nemotron-3.5-lightning:free'
         | 'openrouter/nvidia/nemotron-3.5-super-vl'
@@ -932,6 +941,7 @@ export interface Approval {
   title: string;
   status?: ('todo' | 'doing' | 'done') | null;
   approver: string;
+  photo?: (number | null) | Photo;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -945,6 +955,66 @@ export interface Approval {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photos".
+ */
+export interface Photo {
+  id: number;
+  alt?: string | null;
+  _h_folders?: (number | null) | Folder;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+  };
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders".
+ */
+export interface Folder {
+  id: number;
+  _h_folders?: (number | null) | Folder;
+  name: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _h_slugPath?: string | null;
+  _h_titlePath?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "archives".
  */
 export interface Archive {
@@ -952,6 +1022,117 @@ export interface Archive {
   _order?: string | null;
   title?: string | null;
   status?: ('todo' | 'doing' | 'done') | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-kinds".
+ */
+export interface CellKind {
+  id: number;
+  title: string;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
+  budget?: number | null;
+  /**
+   * Fraction where 1 means 100%, for example 0.42 for 42%
+   */
+  progress?: number | null;
+  /**
+   * Whole-number rating from 1 to 5
+   */
+  score?: number | null;
+  /**
+   * Duration in whole seconds, for example 5400 for 1 hour 30 minutes
+   */
+  timeSpent?: number | null;
+  /**
+   * Web address, for example https://example.com or example.com
+   */
+  website?: string | null;
+  /**
+   * Phone number as text, for example +44 20 7946 0958 or (415) 555-9876
+   */
+  phone?: string | null;
+  /**
+   * Barcode value as text, for example a UPC or EAN code
+   */
+  sku?: string | null;
+  /**
+   * Generated automatically by AI from: title. Writing a value keeps it and stops automatic updates
+   */
+  blurb?: string | null;
+  /**
+   * Set by FrogBot: pending, done, error or manual. Write "pending" to regenerate the value
+   */
+  _blurb_status?: ('pending' | 'done' | 'error' | 'manual') | null;
+  /**
+   * Set by FrogBot: the error message from the last failed run
+   */
+  _blurb_error?: string | null;
+  /**
+   * Unique number set by FrogBot when the record is created; read-only
+   */
+  number?: number | null;
+  locked?: string | null;
+  secret?: string | null;
+  tags?: (number | Tag)[] | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-drafts".
+ */
+export interface CellDraft {
+  id: number;
+  title: string;
+  note?: string | null;
+  extra?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-access".
+ */
+export interface CellAccess {
+  id: number;
+  title: string;
+  open?: boolean | null;
+  archived?: boolean | null;
+  address?: {
+    country?: string | null;
+    city?: string | null;
+  };
+  note?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -1256,9 +1437,6 @@ export interface ApiKey {
         | 'openrouter/google/gemma-4-31b-it:free'
         | 'openrouter/gryphe/mythomax-l2-13b'
         | 'openrouter/ibm-granite/granite-4.2-8b'
-        | 'openrouter/inception/mercury-2'
-        | 'openrouter/inception/mercury-2.5'
-        | 'openrouter/inception/mercury-3'
         | 'openrouter/inclusionai/ling-3.0-flash'
         | 'openrouter/inclusionai/ling-3.0-flash-vl'
         | 'openrouter/inclusionai/ling-3.0-tiny'
@@ -1268,6 +1446,8 @@ export interface ApiKey {
         | 'openrouter/liquid/lfm-2.5-2.6b'
         | 'openrouter/liquid/lfm-2.5-2.6b:free'
         | 'openrouter/liquid/lfm-2.5-24b-a2b'
+        | 'openrouter/liquid/lfm-3-1.7b'
+        | 'openrouter/liquid/lfm-3-1.7b:free'
         | 'openrouter/mancer/weaver'
         | 'openrouter/meituan/longcat-2.0'
         | 'openrouter/meta-llama/llama-3.1-70b-instruct'
@@ -1333,7 +1513,6 @@ export interface ApiKey {
         | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b'
         | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free'
         | 'openrouter/nvidia/nemotron-3.5-content-safety'
-        | 'openrouter/nvidia/nemotron-3.5-content-safety:free'
         | 'openrouter/nvidia/nemotron-3.5-lightning'
         | 'openrouter/nvidia/nemotron-3.5-lightning:free'
         | 'openrouter/nvidia/nemotron-3.5-super-vl'
@@ -1814,10 +1993,45 @@ export interface ApprovalsSelect {
   title?: boolean;
   status?: boolean;
   approver?: boolean;
+  photo?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photos_select".
+ */
+export interface PhotosSelect {
+  alt?: boolean;
+  _h_folders?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  deletedAt?: boolean;
+  url?: boolean;
+  thumbnailURL?: boolean;
+  filename?: boolean;
+  mimeType?: boolean;
+  filesize?: boolean;
+  width?: boolean;
+  height?: boolean;
+  original?:
+    | boolean
+    | {
+        filename?: boolean;
+        url?: boolean;
+        mimeType?: boolean;
+        filesize?: boolean;
+        width?: boolean;
+        height?: boolean;
+        prefix?: boolean;
+        _objectKey?: boolean;
+      };
+  focalX?: boolean;
+  focalY?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1827,6 +2041,65 @@ export interface ArchivesSelect {
   _order?: boolean;
   title?: boolean;
   status?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-kinds_select".
+ */
+export interface CellKindsSelect {
+  title?: boolean;
+  budget?: boolean;
+  progress?: boolean;
+  score?: boolean;
+  timeSpent?: boolean;
+  website?: boolean;
+  phone?: boolean;
+  sku?: boolean;
+  blurb?: boolean;
+  _blurb_status?: boolean;
+  _blurb_error?: boolean;
+  number?: boolean;
+  locked?: boolean;
+  secret?: boolean;
+  tags?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-drafts_select".
+ */
+export interface CellDraftsSelect {
+  title?: boolean;
+  note?: boolean;
+  extra?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  _status?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-access_select".
+ */
+export interface CellAccessSelect {
+  title?: boolean;
+  open?: boolean;
+  archived?: boolean;
+  address?:
+    | boolean
+    | {
+        country?: boolean;
+        city?: boolean;
+      };
+  note?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
@@ -1979,6 +2252,20 @@ export interface FrogBotWaitpointsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders_select".
+ */
+export interface FoldersSelect {
+  _h_folders?: boolean;
+  name?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  _h_slugPath?: boolean;
+  _h_titlePath?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-autonumbers_select".
  */
 export interface FrogBotAutonumbersSelect {
@@ -2023,11 +2310,16 @@ export interface CollectionQueryWidget {
       | 'secrets'
       | 'stories'
       | 'approvals'
+      | 'photos'
       | 'archives'
+      | 'cell-kinds'
+      | 'cell-drafts'
+      | 'cell-access'
       | 'timesheets'
       | 'api-keys'
       | 'usage-logs'
-      | 'chats';
+      | 'chats'
+      | 'folders';
     where?:
       | {
           [k: string]: unknown;
@@ -2059,15 +2351,30 @@ export interface ActivityWidget {
           | 'secrets'
           | 'stories'
           | 'approvals'
+          | 'photos'
           | 'archives'
+          | 'cell-kinds'
+          | 'cell-drafts'
+          | 'cell-access'
           | 'timesheets'
           | 'api-keys'
           | 'usage-logs'
           | 'chats'
+          | 'folders'
         )[]
       | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "upload-dropzone_widget".
+ */
+export interface UploadDropzoneWidget {
+  data?: {
+    excludedCollections?: 'photos'[] | null;
+  };
+  width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2355,9 +2662,6 @@ declare module 'frogbot' {
       | 'openrouter/google/gemma-4-31b-it:free'
       | 'openrouter/gryphe/mythomax-l2-13b'
       | 'openrouter/ibm-granite/granite-4.2-8b'
-      | 'openrouter/inception/mercury-2'
-      | 'openrouter/inception/mercury-2.5'
-      | 'openrouter/inception/mercury-3'
       | 'openrouter/inclusionai/ling-3.0-flash'
       | 'openrouter/inclusionai/ling-3.0-flash-vl'
       | 'openrouter/inclusionai/ling-3.0-tiny'
@@ -2367,6 +2671,8 @@ declare module 'frogbot' {
       | 'openrouter/liquid/lfm-2.5-2.6b'
       | 'openrouter/liquid/lfm-2.5-2.6b:free'
       | 'openrouter/liquid/lfm-2.5-24b-a2b'
+      | 'openrouter/liquid/lfm-3-1.7b'
+      | 'openrouter/liquid/lfm-3-1.7b:free'
       | 'openrouter/mancer/weaver'
       | 'openrouter/meituan/longcat-2.0'
       | 'openrouter/meta-llama/llama-3.1-70b-instruct'
@@ -2432,7 +2738,6 @@ declare module 'frogbot' {
       | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b'
       | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free'
       | 'openrouter/nvidia/nemotron-3.5-content-safety'
-      | 'openrouter/nvidia/nemotron-3.5-content-safety:free'
       | 'openrouter/nvidia/nemotron-3.5-lightning'
       | 'openrouter/nvidia/nemotron-3.5-lightning:free'
       | 'openrouter/nvidia/nemotron-3.5-super-vl'

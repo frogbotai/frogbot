@@ -66,7 +66,7 @@ A collection about one platform takes its logo, always with the `brand-` prefix:
 
 ## Views and done records
 
-`admin.views` lists a collection's views; the first is the default and a list view must come first. Every view renders in one frame with a tab row (icon and label), one toolbar and one empty state. Keep view entries plain data: `filter` is a `Where`, React components go in `components`, and `access` is the only function. Each user's filters, sort, columns, page size and grouping are saved per view, with **Reset to default** in the view menu. A list view's `summary` sets each column's default footer total across every page (`count`, `sum`, `avg`, `min`, `max`; numbers take all five, dates `count`, `min` and `max`, other fields `count`); people change it from the footer, and startup fails on an unknown path or a pairing the field can't take.
+`admin.views` lists a collection's views; the first is the default and a list view must come first. Every view renders in one frame with a tab row (icon and label), one toolbar and one empty state. Keep view entries plain data: `filter` is a `Where`, React components go in `components`, and `access` is the only function. Each user's filters, sort, columns, page size and grouping are saved per view, with **Reset to default** in the view menu. A list view's `summary` sets each column's default footer total across every page (`count`, `sum`, `avg`, `min`, `max`; numbers take all five, dates `count`, `min` and `max`, other fields `count`); people change it from the footer, and startup fails on an unknown path or a pairing the field can't take. A list view's `editable` lets people edit cells in place, like a spreadsheet: `true` for every supported column, or an array of field names or dot paths. Text, textarea, email, number, select, checkbox, date, single relationship fields and every field kind edit in the cell with the field's own input (Enter saves, Esc cancels, Tab moves on and wraps rows); `hasMany`, other types, the linked first column and fields the person can't update open the record instead. Saves are one normal `PATCH` (drafts save as drafts). Startup fails on an entry that isn't a field or never edits in a cell (richText, array, blocks, group, tabs, upload, join, autonumber). Docs: https://docs.frogbot.ai/admin/collection-list#editing-cells-in-place
 
 ```ts
 export const Tasks: CollectionConfig = {
@@ -78,6 +78,7 @@ export const Tasks: CollectionConfig = {
       {
         type: 'list',
         defaultFields: ['title', 'status', 'dueDate'],
+        editable: ['status', 'dueDate'],
         groupBy: 'status',
         summary: { title: 'count' },
       },

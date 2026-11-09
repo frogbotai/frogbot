@@ -325,6 +325,72 @@ describe('collection views', () => {
     });
   });
 
+  describe('list editable', () => {
+    const compile = (editable: unknown) =>
+      compileCollectionViews({
+        collection: {
+          slug: 'deals',
+          fields: [
+            { name: 'name', type: 'text' },
+            { name: 'stage', type: 'select', options: ['lead', 'won'] },
+            { name: 'tags', type: 'relationship', relationTo: 'tags', hasMany: true },
+            { name: 'notes', type: 'richText' },
+            { name: 'lines', type: 'array', fields: [{ name: 'sku', type: 'text' }] },
+            {
+              name: 'deal',
+              type: 'number',
+              admin: { custom: { frogbot: { kind: { type: 'autonumber' } } } },
+            },
+            {
+              name: 'amount',
+              type: 'number',
+              admin: { custom: { frogbot: { kind: { type: 'money', currency: 'USD' } } } },
+            },
+            {
+              name: 'dealKey',
+              type: 'text',
+              admin: { custom: { frogbot: { kind: { type: 'autonumberKey' } } } },
+            },
+            {
+              type: 'tabs',
+              tabs: [
+                {
+                  name: 'meta',
+                  fields: [{ name: 'source', type: 'text' }],
+                },
+              ],
+            },
+            { name: 'address', type: 'group', fields: [{ name: 'city', type: 'text' }] },
+          ],
+          admin: { views: [{ type: 'list', editable } as never] },
+        },
+      });
+
+    it.each([
+      [true],
+      [false],
+      [['name', 'stage', 'amount', 'tags', 'meta.source', 'address.city']],
+    ])('accepts %j and keeps it in the client metadata', (editable) => {
+      expect(compile(editable)?.custom?.frogbot.views[0]).toMatchObject({ editable });
+    });
+
+    it.each([
+      [['nope'], 'names "nope", which is not a field.'],
+      [['address.zip'], 'names "address.zip", which is not a field.'],
+      [['notes'], 'names "notes" (richText), which can\'t be edited in a cell.'],
+      [['lines'], 'names "lines" (array), which can\'t be edited in a cell.'],
+      [['address'], 'names "address" (group), which can\'t be edited in a cell.'],
+      [['dealKey'], 'names "dealKey" (autonumberKey), which can\'t be edited in a cell.'],
+      [['deal'], 'names "deal" (autonumber), which can\'t be edited in a cell.'],
+      ['name', 'must be true, false or an array of field names.'],
+      [[1], 'must be true, false or an array of field names.'],
+    ])('rejects %j at load, naming the view and entry', (editable, message) => {
+      expect(() => compile(editable)).toThrow(
+        `[frogbot] Collection "deals" list view "list" editable ${message}`,
+      );
+    });
+  });
+
   describe('fields inside layout containers', () => {
     const compile = (view: Record<string, unknown>) =>
       compileCollectionViews({

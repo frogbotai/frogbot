@@ -1,3 +1,4 @@
+import { getTranslation } from '@payloadcms/translations';
 import { getClientConfig } from '@payloadcms/ui/utilities/getClientConfig';
 import { getSummaryKind, SUMMARY_OPERATIONS } from 'frogbot/internal';
 import type {
@@ -28,6 +29,8 @@ import {
   resolveViewSetup,
   type ViewSetup,
 } from '../viewSetup.js';
+import { getEditableColumns } from './cellEdit/editable.js';
+import { findEditableCells } from './cellEdit/editableCells.js';
 import { DefaultListView } from './DefaultListView.client.js';
 import { type GroupedTable, renderGroupedTable } from './groupedTable.js';
 import { ListFrameClient, type ListFrameSummary } from './ListFrame.client.js';
@@ -162,6 +165,9 @@ export async function ListView(props: ListViewServerProps) {
   const view = runtime[0]?.type === 'list' ? runtime[0] : undefined;
   const isList = clientProps.viewType === 'list' && view !== undefined;
   let summary: ListFrameSummary | undefined;
+  const navigationLabel = collectionConfig.orderable
+    ? undefined
+    : getTranslation(collectionConfig.labels.plural, i18n);
 
   redirectRecordParam({
     collectionConfig,
@@ -225,6 +231,7 @@ export async function ListView(props: ListViewServerProps) {
         fieldPermissions: permissions?.collections?.[collectionSlug]?.fields,
         groupBy,
         limit,
+        navigationLabel,
         preferenceKey: groupsKey,
         query,
         req,
@@ -285,16 +292,34 @@ export async function ListView(props: ListViewServerProps) {
     ? grouped.totalDocs === 0
     : docs.length === 0 && !clientProps.groupedData?.length;
 
+  const rows =
+    grouped?.docs ?? clientProps.groupedData?.flatMap((group) => group.data.docs as Row[]) ?? docs;
+
   const doneIds = await findDoneIds({
     collectionSlug,
-    docs:
-      grouped?.docs ??
-      clientProps.groupedData?.flatMap((group) => group.data.docs as Row[]) ??
-      docs,
+    docs: rows,
     req,
     trash: clientProps.viewType === 'trash',
     useAsDone: (collectionConfig.admin.custom?.frogbot as { useAsDone?: string } | undefined)
       ?.useAsDone,
+  });
+
+  const editableColumns = isList
+    ? getEditableColumns({
+        columns: (clientProps.columnState ?? [])
+          .filter(({ active }) => active)
+          .map(({ accessor }) => accessor),
+        editable: view.editable,
+        fields: collectionConfig.fields,
+        permissions: permissions?.collections?.[collectionSlug],
+      })
+    : [];
+
+  const editableCells = await findEditableCells({
+    collectionConfig,
+    columns: editableColumns,
+    docs: rows,
+    req,
   });
 
   return (
@@ -306,9 +331,14 @@ export async function ListView(props: ListViewServerProps) {
       BeforeListTable={clientProps.BeforeListTable}
       Description={clientProps.Description ?? slots.Description}
       doneIds={doneIds}
+      editableCells={editableCells}
+      editableColumns={editableColumns}
       isEmpty={isEmpty}
       listMenuItems={[...(clientProps.listMenuItems ?? []), ...(slots.listMenuItems ?? [])]}
-      listProps={{ ...clientProps, Table: grouped?.Table ?? withRowIds(clientProps.Table) }}
+      listProps={{
+        ...clientProps,
+        Table: grouped?.Table ?? withRowIds(clientProps.Table, navigationLabel),
+      }}
       pagedGroups={grouped?.pagedGroups}
       summary={summary}
     />
