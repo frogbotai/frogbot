@@ -15,8 +15,8 @@ export const SUMMARY_OPERATIONS: Record<SummaryKind, readonly SummaryOperation[]
 };
 
 /**
- * The summary kind of a list column, or `undefined` when it has no footer total: an unknown path, a
- * hidden field, or one with its own `access.read`.
+ * The summary kind of a list column, or `undefined` when the aggregate would refuse it: an unknown
+ * path, a hidden field, or one with its own `access.read`.
  */
 export function getSummaryKind({
   collection,
@@ -29,7 +29,7 @@ export function getSummaryKind({
 }): SummaryKind | undefined {
   const resolved = resolveAggregateField({ collection, path, payload });
 
-  if (!resolved || resolved.hidden || resolved.readAccess.length) return undefined;
+  if (!resolved || resolved.hidden || resolved.readGuarded) return undefined;
 
   if (resolved.hops.length || resolved.many) return 'other';
 

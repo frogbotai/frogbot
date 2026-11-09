@@ -97,11 +97,9 @@ describe('aggregate operation validation', () => {
   it.each<[string, Omit<AggregateOptions, 'collection'>]>([
     ['a hidden group', { groupBy: 'secret', values: count, overrideAccess: true }],
     ['a hidden filter', { groupBy: 'stage', values: count, where: { secret: { equals: 1 } } }],
-    ['a group the field read rule denies', { groupBy: 'margin', values: count }],
+    ['a read-guarded group, even for a user its rule allows', { groupBy: 'margin', values: count }],
   ])('refuses %s with a 403', async (_, options) => {
-    const { adapterAggregate, frogbot, payload, req } = aggregateFixture({
-      marginRead: () => false,
-    });
+    const { adapterAggregate, frogbot, payload, req } = aggregateFixture();
 
     await expect(
       aggregateOperation(frogbot, payload, { collection: 'deals', req, ...options }),
@@ -111,30 +109,11 @@ describe('aggregate operation validation', () => {
   });
 });
 
-describe('aggregate field read rules', () => {
-  it('groups and sums by a field whose read rule allows the user', async () => {
+describe('aggregate read-guarded fields', () => {
+  it('blanks a read-guarded column without running its rule, and drops its sort', async () => {
     const marginRead = vi.fn(() => true);
-    const { adapterAggregate, frogbot, payload, req } = aggregateFixture({ marginRead });
-
-    await aggregateOperation(frogbot, payload, {
-      collection: 'deals',
-      groupBy: 'margin',
-      values: { m: { sum: 'margin' } },
-      req,
-    });
-
-    expect(marginRead).toHaveBeenCalledWith(expect.objectContaining({ req }));
-    expect(adapterAggregate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        groupBy: [{ path: 'margin', type: 'number' }],
-        values: [{ operation: 'sum', path: 'margin', type: 'number' }],
-      }),
-    );
-  });
-
-  it('blanks only the column whose read rule denies the user, and drops its sort', async () => {
     const { adapterAggregate, frogbot, payload, req } = aggregateFixture({
-      marginRead: () => false,
+      marginRead,
       result: { rows: [{ group: ['won'], values: ['3', '900'] }], totalDocs: 3 },
     });
 
@@ -149,6 +128,7 @@ describe('aggregate field read rules', () => {
     expect(groups).toEqual([
       { group: { stage: 'won' }, values: { deals: 3, m: null, total: 900 } },
     ]);
+    expect(marginRead).not.toHaveBeenCalled();
     expect(adapterAggregate).toHaveBeenCalledWith(
       expect.objectContaining({
         values: [{ operation: 'count' }, { operation: 'sum', path: 'amount', type: 'number' }],
@@ -160,8 +140,8 @@ describe('aggregate field read rules', () => {
     );
   });
 
-  it('fills the one row without groupBy, blanking a denied column', async () => {
-    const { frogbot, payload, req } = aggregateFixture({ marginRead: () => false });
+  it('fills the one row without groupBy, blanking a read-guarded column', async () => {
+    const { frogbot, payload, req } = aggregateFixture();
 
     const { groups } = await aggregateOperation(frogbot, payload, {
       collection: 'deals',

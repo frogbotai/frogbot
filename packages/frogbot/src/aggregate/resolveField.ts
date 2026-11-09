@@ -1,4 +1,4 @@
-import type { FieldAccess, FlattenedField, Payload, SanitizedCollectionConfig } from 'payload';
+import type { FlattenedField, Payload, SanitizedCollectionConfig } from 'payload';
 
 import type { AggregateFieldType } from './types.js';
 
@@ -15,8 +15,7 @@ export type ResolvedAggregateField = {
   hops: AggregateFieldHop[];
   many: boolean;
   hidden: boolean;
-  /** The `access.read` rule of every field the path crosses, with the collection that holds it. */
-  readAccess: { collection: SanitizedCollectionConfig; read: FieldAccess }[];
+  readGuarded: boolean;
 };
 
 function getFieldType(field: FlattenedField): AggregateFieldType | undefined {
@@ -72,8 +71,7 @@ export function resolveAggregateField({
   let fields = collection.flattenedFields;
   let many = false;
   let hidden = false;
-  const readAccess: ResolvedAggregateField['readAccess'] = [];
-  let owner = collection;
+  let readGuarded = false;
 
   for (const [index, segment] of segments.entries()) {
     const field = findField(fields, segment, documentLevel);
@@ -81,9 +79,7 @@ export function resolveAggregateField({
     if (!field) return undefined;
 
     hidden ||= 'hidden' in field && field.hidden === true;
-    if ('access' in field && field.access?.read) {
-      readAccess.push({ collection: owner, read: field.access.read });
-    }
+    readGuarded ||= 'access' in field && Boolean(field.access?.read);
 
     const rest = segments.slice(index + 1);
     const isRelationship = field.type === 'relationship' || field.type === 'upload';
@@ -91,7 +87,7 @@ export function resolveAggregateField({
     if (!rest.length || (isRelationship && rest.length === 1 && rest[0] === 'id')) {
       many ||= 'hasMany' in field && field.hasMany === true;
 
-      return { field, type: getFieldType(field), hops, many, hidden, readAccess };
+      return { field, type: getFieldType(field), hops, many, hidden, readGuarded };
     }
 
     if (field.type === 'group' || field.type === 'tab' || field.type === 'array') {
@@ -110,7 +106,6 @@ export function resolveAggregateField({
 
     many ||= field.hasMany === true;
     fields = related.flattenedFields;
-    owner = related;
     documentLevel = true;
     hops.push({ collection: related.slug, prefix: segments.slice(0, index + 1).join('.'), many });
   }

@@ -111,46 +111,50 @@ describe(`aggregate access [${adapterLabel}]`, () => {
     expect(groups.map(({ values }) => values.deals)).toEqual([2, 2]);
   });
 
-  it.each([
-    ['groupBy', { groupBy: 'margin', values: { deals: { count: true } } }],
-    ['values', { groupBy: 'stage', values: { margin: { sum: 'margin' } } }],
-    [
-      'where',
-      {
-        groupBy: 'stage',
-        values: { deals: { count: true } },
-        where: { margin: { greater_than: 5 } },
-      },
-    ],
-  ] as Case[])('runs a field read rule in %s for the user it allows', async (_, options) => {
-    const { groups } = await booted.frogbot.aggregate({
-      collection: dealsSlug,
-      ...options,
-      req: await signIn(seed.users.ana),
-    });
-
-    expect(groups.length).toBeGreaterThan(1);
-  });
-
-  it('filters and sums by a field read rule as find does, for the admin', async () => {
+  it('filters by a field read rule as find does, for the admin', async () => {
     const req = await signIn(seed.users.ana);
     const where: Where = { margin: { greater_than: 15 } };
 
     const { groups } = await booted.frogbot.aggregate({
       collection: dealsSlug,
       groupBy: 'stage',
-      values: { deals: { count: true }, margin: { sum: 'margin' } },
+      values: { deals: { count: true }, total: { sum: 'amount' } },
       where,
       req,
     });
 
     const { totalDocs } = await booted.frogbot.find({ collection: dealsSlug, where, req });
 
-    expect(groups).toEqual([{ group: { stage: 'won' }, values: { deals: 1, margin: 20 } }]);
+    expect(groups).toEqual([{ group: { stage: 'won' }, values: { deals: 1, total: 300 } }]);
     expect(totalDocs).toBe(1);
   });
 
-  it('blanks only the column a field read rule denies, in groups and in the one row', async () => {
+  it('refuses a groupBy and blanks a value on a field with a read rule, even for the admin', async () => {
+    const req = await signIn(seed.users.ana);
+
+    await expect(
+      booted.frogbot.aggregate({
+        collection: dealsSlug,
+        groupBy: 'margin',
+        values: { deals: { count: true } },
+        req,
+      }),
+    ).rejects.toMatchObject({ status: 403 });
+
+    const { groups } = await booted.frogbot.aggregate({
+      collection: dealsSlug,
+      groupBy: 'stage',
+      values: { deals: { count: true }, margin: { sum: 'margin' } },
+      req,
+    });
+
+    expect(groups.map(({ values }) => values)).toEqual([
+      { deals: 2, margin: null },
+      { deals: 2, margin: null },
+    ]);
+  });
+
+  it('blanks only the column of a field with a read rule, in groups and in the one row', async () => {
     const req = await signIn(seed.users.cy);
     const values = { deals: { count: true }, margin: { sum: 'margin' }, total: { sum: 'amount' } };
 
@@ -173,7 +177,7 @@ describe(`aggregate access [${adapterLabel}]`, () => {
     ]);
   });
 
-  it('refuses what a field read rule denies as find does: groupBy with 403, where with 400', async () => {
+  it("refuses a field read rule's denied user as find does: groupBy with 403, where with 400", async () => {
     const req = await signIn(seed.users.cy);
     const where: Where = { margin: { greater_than: 5 } };
 

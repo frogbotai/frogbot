@@ -91,17 +91,11 @@ function resolve(scope: Scope, path: string): ResolvedAggregateField {
   return resolved;
 }
 
-async function canRead(scope: Scope, { readAccess }: ResolvedAggregateField): Promise<boolean> {
-  if (scope.overrideAccess) return true;
-
-  for (const { collection, read } of readAccess) {
-    if (!(await read({ collection, req: scope.req }))) return false;
-  }
-
-  return true;
+function isReadGuarded(scope: Scope, { readGuarded }: ResolvedAggregateField): boolean {
+  return readGuarded && !scope.overrideAccess;
 }
 
-async function resolveGroups(scope: Scope, { groupBy }: ParsedAggregate): Promise<ResolvedGroup[]> {
+function resolveGroups(scope: Scope, { groupBy }: ParsedAggregate): ResolvedGroup[] {
   const groups: ResolvedGroup[] = [];
 
   for (const { by, path } of groupBy) {
@@ -126,7 +120,7 @@ async function resolveGroups(scope: Scope, { groupBy }: ParsedAggregate): Promis
         ? field.relationTo
         : undefined;
 
-    if (!(await canRead(scope, resolved))) throw new Forbidden(scope.req.t);
+    if (isReadGuarded(scope, resolved)) throw new Forbidden(scope.req.t);
 
     groups.push({ path, type, hops, ...(by ? { by } : {}), ...(relationTo ? { relationTo } : {}) });
   }
@@ -134,10 +128,10 @@ async function resolveGroups(scope: Scope, { groupBy }: ParsedAggregate): Promis
   return groups;
 }
 
-async function resolveValues(
+function resolveValues(
   scope: Scope,
   { values }: ParsedAggregate,
-): Promise<(AggregateValueDescriptor | null)[]> {
+): (AggregateValueDescriptor | null)[] {
   const resolved: (AggregateValueDescriptor | null)[] = [];
 
   for (const { name, operation, path } of values) {
@@ -166,7 +160,7 @@ async function resolveValues(
       );
     }
 
-    resolved.push((await canRead(scope, target)) ? { operation, path, type } : null);
+    resolved.push(isReadGuarded(scope, target) ? null : { operation, path, type });
   }
 
   return resolved;
@@ -368,8 +362,8 @@ export async function aggregateOperation<
     where: parsed.where ?? {},
   });
 
-  const groups = await resolveGroups(scope, parsed);
-  const values = await resolveValues(scope, parsed);
+  const groups = resolveGroups(scope, parsed);
+  const values = resolveValues(scope, parsed);
   const columns = getColumns(values);
   const readable = values.filter((value) => value !== null);
   const denied = new Set(

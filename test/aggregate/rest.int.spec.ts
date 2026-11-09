@@ -134,22 +134,17 @@ describe(`aggregate REST [${adapterLabel}]`, () => {
     expect(response.body.groups).toEqual([{ group: {}, values: { deals: 1, total: 300 } }]);
   });
 
-  it('runs a field read rule: the admin sums it, a member gets a blank column', async () => {
-    const body = { groupBy: 'stage', values: { margin: { sum: 'margin' } } };
-    const sum = async (user: User) =>
-      booted.restClient.post<{ groups: { values: { margin: number | null } }[] }>(route, body, {
-        headers: (await signIn(user)).headers,
-      });
+  it('blanks a field with its own read rule, even for an admin', async () => {
+    const response = await booted.restClient.post<{
+      groups: { values: { margin: number | null } }[];
+    }>(
+      route,
+      { groupBy: 'stage', values: { margin: { sum: 'margin' } } },
+      { headers: (await signIn(seed.users.ana)).headers },
+    );
 
-    const admin = await sum(seed.users.ana);
-
-    expect(admin.status).toBe(200);
-    expect(admin.body.groups.map(({ values }) => values.margin)).toEqual([10, 20]);
-
-    const member = await sum(seed.users.cy);
-
-    expect(member.status).toBe(200);
-    expect(member.body.groups.map(({ values }) => values.margin)).toEqual([null, null]);
+    expect(response.status).toBe(200);
+    expect(response.body.groups.map(({ values }) => values.margin)).toEqual([null, null]);
   });
 
   it('does not total over REST a value the REST find hides by a per-document rule', async () => {
