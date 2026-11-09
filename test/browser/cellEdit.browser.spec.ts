@@ -298,20 +298,80 @@ test('selection, the row link and plain cells never start an edit', async ({ pag
   await expect(page.locator('.fb-cell-editor')).toHaveCount(0);
 });
 
-test('a checkbox cell toggles and saves', async ({ page }) => {
+test('a checkbox cell shows a checkbox, and one click saves it in place', async ({ page }) => {
   const name = `Check ${stamp()}`;
   const task = await create(page, 'tasks', { title: name, completed: false });
+  const sent = patches(page);
 
   await openTasks(page, name);
 
   const completed = cell(page, name, 'completed');
+  const box = completed.getByRole('checkbox', { name: 'Completed' });
 
-  await completed.click();
-  await expect(editor(completed).locator('input[type="checkbox"]')).toBeFocused();
-  await page.keyboard.press('Space');
-  await page.keyboard.press('Enter');
+  await expect(box).not.toBeChecked();
+  await expect(box).toBeEnabled();
+  await expect(completed.locator('code')).toHaveCount(0);
+  await expect(completed).not.toHaveAttribute('data-cell-edit');
 
+  await box.click();
+  await expect(box).toBeChecked();
+  await expect(editor(completed)).toHaveCount(0);
   await expect.poll(async () => (await stored(page, 'tasks', task.id)).completed).toBe(true);
+  expect(sent).toHaveLength(1);
+
+  await page.reload();
+  await expect(box).toBeChecked();
+
+  await box.focus();
+  await page.keyboard.press('Space');
+  await expect(box).not.toBeChecked();
+  await expect.poll(async () => (await stored(page, 'tasks', task.id)).completed).toBe(false);
+});
+
+test('a failed checkbox save shows the error and puts the box back', async ({ page }) => {
+  const name = `Check fail ${stamp()}`;
+
+  await create(page, 'tasks', { title: name, completed: false });
+  await openTasks(page, name);
+
+  await page.route('**/api/tasks/*', (route) =>
+    route.request().method() === 'PATCH'
+      ? route.fulfill({
+          body: JSON.stringify({ errors: [{ message: 'Tasks are frozen' }] }),
+          contentType: 'application/json',
+          status: 400,
+        })
+      : route.fallback(),
+  );
+
+  const box = cell(page, name, 'completed').getByRole('checkbox', { name: 'Completed' });
+
+  await box.click();
+  await expect(page.getByText('Tasks are frozen')).toBeVisible();
+  await expect(box).not.toBeChecked();
+});
+
+test('a checkbox column the view does not edit shows a read-only checkbox', async ({ page }) => {
+  const title = `All day ${stamp()}`;
+
+  await create(page, 'activities', {
+    allDay: true,
+    end: '2026-03-02T10:00:00.000Z',
+    start: '2026-03-02T09:00:00.000Z',
+    title,
+  });
+
+  await prepareView(page);
+
+  await page.goto(
+    `/collections/activities?search=${encodeURIComponent(title)}&columns=${encodeURIComponent(JSON.stringify(['title', 'allDay']))}`,
+  );
+
+  const box = cell(page, title, 'allDay').getByRole('checkbox');
+
+  await expect(box).toBeChecked();
+  await expect(box).toBeDisabled();
+  await expect(cell(page, title, 'allDay').locator('code')).toHaveCount(0);
 });
 
 async function pickPriority(page: Page, target: Locator, label: string) {

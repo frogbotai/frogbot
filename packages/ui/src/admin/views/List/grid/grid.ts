@@ -12,6 +12,9 @@ export type GridSettings = { rowHeight: RowHeight; widths: ColumnWidths };
 /** A resized column's bounds and the keyboard step, in pixels. */
 export const COLUMN_WIDTH = { max: 800, min: 60, step: 16 } as const;
 
+/** The widest a grouped list sizes a column to its content; longer text wraps. */
+export const GROUP_COLUMN_MAX = 320;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

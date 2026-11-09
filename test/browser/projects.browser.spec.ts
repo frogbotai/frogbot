@@ -91,3 +91,59 @@ test('the tasks timeline shows every seeded task in its project band', async ({ 
   expect(Math.round(((await audit.boundingBox())?.width ?? 0) / dayWidth)).toBe(1);
   expect(Math.round(((await copy.boundingBox())?.width ?? 0) / dayWidth)).toBe(8);
 });
+
+test('a bar too short for its title shows the title beside it, clear of other bars', async ({
+  page,
+}) => {
+  await prepareView(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`/collections/tasks/timeline?date=${todayDate}&scale=week`);
+
+  const audit = page.locator('.frog-timeline__bar', { hasText: 'Run a performance audit' });
+
+  await expect(audit).toHaveAttribute('data-label-outside', /^(end|start)$/);
+
+  const bar = (await audit.boundingBox())!;
+  const title = (await audit.locator('.frog-timeline__bar-content').boundingBox())!;
+
+  expect(title.x >= bar.x + bar.width || title.x + title.width <= bar.x).toBe(true);
+  expect(title.width).toBeGreaterThan(40);
+
+  const overlaps = await page.locator('.frog-timeline__track').evaluateAll((tracks) =>
+    tracks.flatMap((track) => {
+      const bars = [...track.querySelectorAll<HTMLElement>('.frog-timeline__bar')];
+
+      return bars.flatMap((bar) => {
+        const label = bar.querySelector<HTMLElement>('.frog-timeline__bar-content');
+
+        if (!bar.dataset.labelOutside || !label) return [];
+
+        const box = label.getBoundingClientRect();
+
+        return bars
+          .filter((other) => other !== bar)
+          .map((other) => other.getBoundingClientRect())
+          .filter(
+            (other) =>
+              other.top < box.bottom &&
+              other.bottom > box.top &&
+              other.left < box.right &&
+              other.right > box.left,
+          )
+          .map(() => label.textContent);
+      });
+    }),
+  );
+
+  expect(overlaps).toEqual([]);
+
+  for (const name of [
+    'Write the homepage copy',
+    'Set up redirects',
+    'Fix the offline sync crash',
+  ]) {
+    await expect(page.locator('.frog-timeline__bar', { hasText: name })).not.toHaveAttribute(
+      'data-label-outside',
+    );
+  }
+});

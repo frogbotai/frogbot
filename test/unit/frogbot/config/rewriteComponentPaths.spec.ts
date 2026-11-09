@@ -211,6 +211,34 @@ describe('rewriteComponentPaths', () => {
     });
   });
 
+  it('rewrites the icons the folders and tags presets give a hierarchy collection', () => {
+    const config = {
+      collections: [
+        {
+          fields: [],
+          hierarchy: {
+            admin: {
+              components: {
+                Icon: { clientProps: { color: 'muted' }, path: '@payloadcms/ui#FolderIcon' },
+                SmallIcon: '@payloadcms/ui#TagIcon',
+              },
+            },
+          },
+        },
+      ],
+    } as unknown as SanitizedConfig;
+
+    rewriteComponentPaths(config);
+
+    expect(
+      (config.collections[0] as unknown as { hierarchy: { admin: { components: unknown } } })
+        .hierarchy.admin.components,
+    ).toEqual({
+      Icon: { clientProps: { color: 'muted' }, path: '@frogbotai/ui/admin#FolderIcon' },
+      SmallIcon: '@frogbotai/ui/admin#TagIcon',
+    });
+  });
+
   it('rewrites exact @payloadcms/ui package boundaries in field components', () => {
     const config = {
       collections: [

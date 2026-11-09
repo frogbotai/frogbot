@@ -18,6 +18,11 @@
     max-width: var(--fb-list-grid-drag);
   }
 
+  .fb-list-grid[data-group-widths] .table-wrap--group-by .table table {
+    table-layout: fixed;
+    width: 100%;
+  }
+
   .fb-list-grid__resize {
     position: absolute;
     z-index: 1;

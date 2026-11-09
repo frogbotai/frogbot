@@ -70,16 +70,19 @@ test.describe('list toolbar', () => {
     expect(await precedes(tool, page.locator('#toggle-list-filters'))).toBe(true);
   });
 
-  test('renders in the toolbar row under the controls on a phone, as on every view', async ({
-    page,
-  }) => {
+  test('joins the row of control buttons on a phone, before Filters', async ({ page }) => {
     await page.setViewportSize(phone);
     await page.goto(`/collections/${tasksSlug}`);
 
-    await expect(
-      page.locator('.collection-view__toolbar').getByRole('button', { name: 'List tool' }),
-    ).toBeVisible();
-    await expect(page.locator('.list-controls__actions').getByText('List tool')).toHaveCount(0);
+    const tool = page
+      .locator('.list-controls__actions > .view-controls__toolbar')
+      .getByRole('button', { name: 'List tool' });
+
+    const filters = page.locator('#toggle-list-filters');
+
+    await expect(tool).toBeVisible();
+    await expect(page.getByRole('button', { name: 'List tool' })).toHaveCount(1);
+    expect((await tool.boundingBox())!.x).toBeLessThan((await filters.boundingBox())!.x);
   });
 });
 
@@ -107,28 +110,19 @@ test('renders the board toolbar before Filters', async ({ page }) => {
   await expect(page.locator('.collection-view__toolbar')).toHaveCount(0);
 });
 
-test('renders the board toolbar right-aligned under the controls on a phone', async ({ page }) => {
+test('puts the board toolbar in the row of control buttons on a phone', async ({ page }) => {
   await page.setViewportSize(phone);
   await page.goto(`/collections/${tasksSlug}/board`);
 
-  const row = page.locator('.collection-view__toolbar');
-  const tool = row.getByRole('button', { name: 'Board tool' });
+  const tool = page
+    .locator('.list-controls__actions > .view-controls__toolbar')
+    .getByRole('button', { name: 'Board tool' });
 
   await expect(tool).toBeVisible();
-  await expect(page.locator('.list-controls__actions').getByText('Board tool')).toHaveCount(0);
-  expect(await precedes(page.locator('.list-controls'), row)).toBe(true);
-
-  const rowBox = (await row.boundingBox())!;
-  const toolBox = (await tool.boundingBox())!;
-
-  expect(toolBox.width).toBeLessThan(rowBox.width / 2);
-  const gutter = await row.evaluate((element) =>
-    parseFloat(getComputedStyle(element).paddingRight),
+  await expect(page.getByRole('button', { name: 'Board tool' })).toHaveCount(1);
+  expect((await tool.boundingBox())!.x).toBeLessThan(
+    (await page.locator('#toggle-list-filters').boundingBox())!.x,
   );
-
-  expect(
-    Math.abs(toolBox.x + toolBox.width - (rowBox.x + rowBox.width - gutter)),
-  ).toBeLessThanOrEqual(1);
 });
 
 test.describe('task document page', () => {
