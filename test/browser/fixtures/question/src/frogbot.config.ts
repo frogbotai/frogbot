@@ -168,6 +168,7 @@ export default buildConfig({
             type: 'calendar',
             start: 'dueAt',
             end: 'endsAt',
+            color: 'status',
             defaultFields: [
               'status',
               'channel',
