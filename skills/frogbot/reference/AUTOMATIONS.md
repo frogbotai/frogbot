@@ -15,7 +15,7 @@ An automation is a rule such as "when a ticket has been Pending for 48 hours, so
 
 ## A complete rule
 
-A Helpdesk app solves tickets left in Pending for 48 hours. The hook only queues or cancels; the workflow does the work. This whole file is the collection:
+A Helpdesk app solves tickets left in Pending for 48 hours. The hook only stamps and queues; the workflow does the work. This whole file is the collection:
 
 ```ts
 // src/collections/Tickets.ts
@@ -33,31 +33,32 @@ export const Tickets: CollectionConfig = {
       defaultValue: 'open',
       required: true,
     },
+    { name: 'pendingSince', type: 'date', admin: { readOnly: true } },
   ],
   hooks: {
+    beforeChange: [
+      ({ data, originalDoc }) => {
+        if (data.status === 'pending' && originalDoc?.status !== 'pending') {
+          data.pendingSince = new Date().toISOString();
+        }
+
+        return data;
+      },
+    ],
     afterChange: [
       async ({ context, doc, previousDoc, req }) => {
         if (context.automation) return doc;
+        if (doc.status !== 'pending' || previousDoc?.status === 'pending') return doc;
 
-        const jobId = `auto-solve:${doc.id}`;
+        const pendingSince = String(doc.pendingSince);
 
-        if (doc.status === 'pending' && previousDoc?.status !== 'pending') {
-          await req.frogbot.jobs.queue({
-            workflow: 'auto-solve',
-            input: { ticketId: String(doc.id) },
-            jobId,
-            overrideAccess: true,
-            req,
-          });
-        }
-
-        if (doc.status !== 'pending' && previousDoc?.status === 'pending') {
-          await req.frogbot.jobs.cancel({
-            where: { jobId: { equals: jobId } },
-            overrideAccess: true,
-            req,
-          });
-        }
+        await req.frogbot.jobs.queue({
+          workflow: 'auto-solve',
+          input: { ticketId: String(doc.id), pendingSince },
+          jobId: `auto-solve:${doc.id}:${pendingSince}`,
+          overrideAccess: true,
+          req,
+        });
 
         return doc;
       },
@@ -66,7 +67,7 @@ export const Tickets: CollectionConfig = {
 };
 ```
 
-The `jobId` names the work, so a second save while the ticket is still pending creates nothing: the queue call resolves with the job already waiting. Leaving Pending cancels it, which ends the wait and frees the ID, so the next time the ticket enters Pending the 48 hours start again. Queueing with `req` puts the job in the save's transaction: if the save fails, no job exists.
+`pendingSince` marks each stint in Pending, and the `jobId` names that stint, so a save that keeps the ticket pending queues nothing new and a ticket that goes pending, open, pending gets a fresh 48 hours. The old job still wakes, sees a different `pendingSince` and does nothing. Queueing with `req` puts the job in the save's transaction, so if the save fails no job exists. That needs a database that runs transactions: Postgres, MongoDB on a replica set, or SQLite with `transactionOptions: {}`, as the [config below](#see-what-ran) sets. SQLite's default runs without them, and a failed save can leave its job behind.
 
 This whole file is the workflow:
 
@@ -79,14 +80,17 @@ const slack = createSlack({ auth: { botToken: process.env.SLACK_BOT_TOKEN! } });
 
 const WAIT = 48 * 60 * 60 * 1000;
 
-export const autoSolve: WorkflowConfig<{ ticketId: string }> = {
+export const autoSolve: WorkflowConfig<{ ticketId: string; pendingSince: string }> = {
   slug: 'auto-solve',
-  inputSchema: [{ name: 'ticketId', type: 'text', required: true }],
+  inputSchema: [
+    { name: 'ticketId', type: 'text', required: true },
+    { name: 'pendingSince', type: 'text', required: true },
+  ],
   retries: 3,
   async handler({ job, inlineTask, waitFor, req }) {
-    const { ticketId } = job.input;
+    const { ticketId, pendingSince } = job.input;
 
-    await waitFor('pending-48h', { until: new Date(Date.parse(job.createdAt) + WAIT) });
+    await waitFor('pending-48h', { until: new Date(Date.parse(pendingSince) + WAIT) });
 
     const ticket = await inlineTask('check', {
       task: async () => {
@@ -99,7 +103,7 @@ export const autoSolve: WorkflowConfig<{ ticketId: string }> = {
 
         return {
           output: {
-            stillPending: doc.status === 'pending',
+            stillPending: doc.status === 'pending' && doc.pendingSince === pendingSince,
             customerEmail: String(doc.customerEmail),
             subject: String(doc.subject),
           },
@@ -151,7 +155,8 @@ export const autoSolve: WorkflowConfig<{ ticketId: string }> = {
 };
 ```
 
-- The wait is measured from `job.createdAt`, which stays the same when the paused job resumes.
+- The wait is measured from `pendingSince`, which is in the input, so it stays the same when the paused job resumes.
+- Don't cancel jobs from inside a hook: `jobs.cancel` opens its own transaction, and on SQLite it waits on the save's write lock until the save fails. Let a stale job wake and find nothing to do, as here.
 - `check` decides once. Its output is saved, so a retry after a failed email skips straight to the email instead of reading the ticket again and finding it already solved.
 - Each side effect is its own `inlineTask`, so a retry repeats only the step that failed.
 - `slack` uses static credentials (`createSlack({ auth })`): a job has no signed-in user whose connection it could use.
@@ -162,11 +167,11 @@ Register both and run a worker, as the [config below](#see-what-ran) shows.
 
 ### Don't block the save
 
-`afterChange` runs before the response returns, and inside the save's transaction. Queue a job and return. Never send email, call an API, run an agent or wait inside the hook: the person saving waits, a slow provider times out the save, and a failure rolls back their edit. One `jobs.queue` call is a single insert and is fine to await.
+`afterChange` runs before the response returns, and inside the save's transaction when the database runs one. Queue a job and return. Never send email, call an API, run an agent or wait inside the hook: the person saving waits, a slow provider times out the save, and a failure rolls back their edit. One `jobs.queue` call is a single insert and is fine to await.
 
 ### Loops
 
-A job that writes the same collection runs its hooks again. In the example, solving the ticket would leave Pending and cancel the very job that is running. Pass a flag in `context` on the nested write and return early on it, as `Tickets` does with `context.automation`. Prefer comparing `doc` with `previousDoc` over reacting to every save, so a rule fires on a change, not on each write.
+A job that writes the same collection runs its hooks again. A rule that reacts to every change of a ticket would queue itself again on its own write. Pass a flag in `context` on the nested write and return early on it, as `Tickets` does with `context.automation`. Prefer comparing `doc` with `previousDoc` over reacting to every save, so a rule fires on a change, not on each write.
 
 ### Retries repeat side effects
 
@@ -295,7 +300,7 @@ export const followUp: WorkflowConfig<{ enrollmentId: string }> = {
 };
 ```
 
-Templates name these records for their users, such as "SLA timers" or "Sequence enrollments". When the list isn't enough, add a custom view with `admin.components.views` ([ADVANCED.md](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/ADVANCED.md)) over the same collection. To end a run at once instead of at its next step, cancel its job, as `Tickets` does.
+Templates name these records for their users, such as "SLA timers" or "Sequence enrollments". When the list isn't enough, add a custom view with `admin.components.views` ([ADVANCED.md](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/ADVANCED.md)) over the same collection. To end a run at once instead of at its next step, cancel its job with `frogbot.jobs.cancel` from code that isn't inside a save, such as an endpoint.
 
 ## Outgoing webhooks
 
@@ -394,13 +399,13 @@ export const Deals: CollectionConfig = {
 
 ## See what ran
 
-Run history is the jobs collection FrogBot already keeps. It is hidden in the admin by default. Turn it on in the app's config with `jobsCollectionOverrides`, limit reading to trusted users, since job input can hold customer data, and keep completed jobs, which are deleted by default. Create, update and delete stay denied. This whole file registers everything above:
+Run history is the jobs collection FrogBot already keeps. It is hidden in the admin by default. Turn it on in the app's config with `jobsCollectionOverrides`, limit reading to trusted users, since job input can hold customer data, and keep completed jobs, which are deleted by default. Create, update and delete stay denied. A role check is only as strong as the roles field: `rolesFieldAccess` stops a signed-in user from making themselves admin ([ACCESS-CONTROL-ADVANCED.md](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/ACCESS-CONTROL-ADVANCED.md)). This whole file registers everything above:
 
 ```ts
 // src/frogbot.config.ts
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { createResend } from '@frogbotai/piece-resend';
-import { rolesPlugin } from '@frogbotai/plugin-roles';
+import { allow, rolesPlugin } from '@frogbotai/plugin-roles';
 import { buildConfig } from 'frogbot';
 
 import { Deals } from './collections/Deals';
@@ -412,14 +417,19 @@ import { sendWebhook } from './jobs/sendWebhook';
 
 export default buildConfig({
   secret: process.env.FROGBOT_SECRET!,
-  db: sqliteAdapter({ client: { url: process.env.DATABASE_URL! } }),
+  db: sqliteAdapter({ client: { url: process.env.DATABASE_URL! }, transactionOptions: {} }),
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000',
   email: createResend({
     auth: { apiKey: process.env.RESEND_API_KEY! },
     from: { address: 'support@example.com', name: 'Support' },
   }),
   collections: [{ slug: 'users', auth: true, fields: [] }, Tickets, Enrollments, Deals],
-  plugins: [rolesPlugin({ roles: ['admin', 'agent'] })],
+  plugins: [
+    rolesPlugin({
+      roles: ['admin', 'agent'],
+      rolesFieldAccess: { create: allow('admin'), update: allow('admin') },
+    }),
+  ],
   jobs: {
     workflows: [autoSolve, followUp],
     tasks: [sendWebhook],

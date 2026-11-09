@@ -13,31 +13,32 @@ export const Tickets: CollectionConfig = {
       defaultValue: 'open',
       required: true,
     },
+    { name: 'pendingSince', type: 'date', admin: { readOnly: true } },
   ],
   hooks: {
+    beforeChange: [
+      ({ data, originalDoc }) => {
+        if (data.status === 'pending' && originalDoc?.status !== 'pending') {
+          data.pendingSince = new Date().toISOString();
+        }
+
+        return data;
+      },
+    ],
     afterChange: [
       async ({ context, doc, previousDoc, req }) => {
         if (context.automation) return doc;
+        if (doc.status !== 'pending' || previousDoc?.status === 'pending') return doc;
 
-        const jobId = `auto-solve:${doc.id}`;
+        const pendingSince = String(doc.pendingSince);
 
-        if (doc.status === 'pending' && previousDoc?.status !== 'pending') {
-          await req.frogbot.jobs.queue({
-            workflow: 'auto-solve',
-            input: { ticketId: String(doc.id) },
-            jobId,
-            overrideAccess: true,
-            req,
-          });
-        }
-
-        if (doc.status !== 'pending' && previousDoc?.status === 'pending') {
-          await req.frogbot.jobs.cancel({
-            where: { jobId: { equals: jobId } },
-            overrideAccess: true,
-            req,
-          });
-        }
+        await req.frogbot.jobs.queue({
+          workflow: 'auto-solve',
+          input: { ticketId: String(doc.id), pendingSince },
+          jobId: `auto-solve:${doc.id}:${pendingSince}`,
+          overrideAccess: true,
+          req,
+        });
 
         return doc;
       },

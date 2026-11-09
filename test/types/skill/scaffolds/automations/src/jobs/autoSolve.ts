@@ -6,14 +6,17 @@ const slack = createSlack({ auth: { botToken: process.env.SLACK_BOT_TOKEN! } });
 
 const WAIT = 48 * 60 * 60 * 1000;
 
-export const autoSolve: WorkflowConfig<{ ticketId: string }> = {
+export const autoSolve: WorkflowConfig<{ ticketId: string; pendingSince: string }> = {
   slug: 'auto-solve',
-  inputSchema: [{ name: 'ticketId', type: 'text', required: true }],
+  inputSchema: [
+    { name: 'ticketId', type: 'text', required: true },
+    { name: 'pendingSince', type: 'text', required: true },
+  ],
   retries: 3,
   async handler({ job, inlineTask, waitFor, req }) {
-    const { ticketId } = job.input;
+    const { ticketId, pendingSince } = job.input;
 
-    await waitFor('pending-48h', { until: new Date(Date.parse(job.createdAt) + WAIT) });
+    await waitFor('pending-48h', { until: new Date(Date.parse(pendingSince) + WAIT) });
 
     const ticket = await inlineTask('check', {
       task: async () => {
@@ -26,7 +29,7 @@ export const autoSolve: WorkflowConfig<{ ticketId: string }> = {
 
         return {
           output: {
-            stillPending: doc.status === 'pending',
+            stillPending: doc.status === 'pending' && doc.pendingSince === pendingSince,
             customerEmail: String(doc.customerEmail),
             subject: String(doc.subject),
           },
