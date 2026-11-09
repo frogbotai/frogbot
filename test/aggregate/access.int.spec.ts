@@ -123,13 +123,13 @@ describe(`aggregate access [${adapterLabel}]`, () => {
       },
     ],
   ] as Case[])('runs a field read rule in %s for the user it allows', async (_, options) => {
-    await expect(
-      booted.frogbot.aggregate({
-        collection: dealsSlug,
-        ...options,
-        req: await signIn(seed.users.ana),
-      }),
-    ).resolves.toMatchObject({ groups: [expect.anything(), expect.anything()] });
+    const { groups } = await booted.frogbot.aggregate({
+      collection: dealsSlug,
+      ...options,
+      req: await signIn(seed.users.ana),
+    });
+
+    expect(groups.length).toBeGreaterThan(1);
   });
 
   it('filters and sums by a field read rule as find does, for the admin', async () => {

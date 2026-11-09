@@ -104,16 +104,17 @@ export function getAggregatePage({
   };
 }
 
-/** The one row of an aggregate without `groupBy` that matched nothing: counts and sums are `0`, as grouped sums are, and the rest `null`. */
+/** The one row of an aggregate without `groupBy` that matched nothing: counts and sums are `0`, as grouped sums are, and the rest and the `denied` values `null`. */
 export function getEmptyTotals(
   values: { name: string; operation: AggregateValueDescriptor['operation'] }[],
+  denied: ReadonlySet<string> = new Set(),
 ): AggregateResult['groups'][number] {
   return {
     group: {},
     values: Object.fromEntries(
       values.map(({ name, operation }) => [
         name,
-        operation === 'count' || operation === 'sum' ? 0 : null,
+        !denied.has(name) && (operation === 'count' || operation === 'sum') ? 0 : null,
       ]),
     ),
   };

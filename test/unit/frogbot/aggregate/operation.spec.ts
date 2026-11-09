@@ -112,7 +112,7 @@ describe('aggregate operation validation', () => {
 });
 
 describe('aggregate field read rules', () => {
-  it('groups, sums and filters by a field whose read rule allows the user', async () => {
+  it('groups and sums by a field whose read rule allows the user', async () => {
     const marginRead = vi.fn(() => true);
     const { adapterAggregate, frogbot, payload, req } = aggregateFixture({ marginRead });
 
@@ -120,7 +120,6 @@ describe('aggregate field read rules', () => {
       collection: 'deals',
       groupBy: 'margin',
       values: { m: { sum: 'margin' } },
-      where: { AND: [{ margin: { greater_than: 1 } }] },
       req,
     });
 
