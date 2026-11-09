@@ -212,6 +212,74 @@ describe('timeline move and resize', () => {
   });
 });
 
+describe('timeline resize edge cases', () => {
+  it('stops the left edge at the bar end when the timed end is at midnight', () => {
+    const item = { end: '2026-06-12T07:00:00.000Z', id: 'a', start: '2026-06-10T16:00:00.000Z' };
+
+    expect(getItemDays(item, LA)).toEqual({ first: '2026-06-10', last: '2026-06-11' });
+
+    const change = resizeTimelineItem(item, 'start', 3, LA);
+
+    expect(getItemDays({ ...item, end: change.end, start: change.start }, LA)).toEqual({
+      first: '2026-06-11',
+      last: '2026-06-11',
+    });
+  });
+
+  it('shows an end-only record ending at midnight on the day before, as with a start', () => {
+    const item = { end: '2026-06-12T07:00:00.000Z', id: 'b' };
+
+    expect(getItemDays(item, LA)).toEqual({ first: '2026-06-11', last: '2026-06-11' });
+
+    const change = resizeTimelineItem(item, 'start', -2, LA);
+
+    expect(change.end).toBe(item.end);
+    expect(getItemDays({ ...item, start: change.start }, LA)).toEqual({
+      first: '2026-06-09',
+      last: '2026-06-11',
+    });
+  });
+
+  it('clamps a date-only end to noon on the start day, not to the timed start instant', () => {
+    const item = { end: '2026-06-12T12:00:00.000Z', id: 'c', start: '2026-06-11T03:00:00.000Z' };
+    const dateOnly = { end: true };
+
+    expect(getItemDays(item, LA, dateOnly)).toEqual({ first: '2026-06-10', last: '2026-06-12' });
+
+    const change = resizeTimelineItem(item, 'end', -5, LA, dateOnly);
+
+    expect(change.end).toBe('2026-06-10T12:00:00.000Z');
+    expect(getItemDays({ ...item, end: change.end }, LA, dateOnly)).toEqual({
+      first: '2026-06-10',
+      last: '2026-06-10',
+    });
+  });
+
+  it('fills a timed end from a date-only start on the dragged day in every zone', () => {
+    const item = { id: 'd', start: '2026-06-10T12:00:00.000Z' };
+    const dateOnly = { start: true };
+
+    for (const zone of ['Pacific/Kiritimati', 'Pacific/Pago_Pago', LA, 'UTC']) {
+      const change = resizeTimelineItem(item, 'end', 2, zone, dateOnly);
+
+      expect(getItemDays({ ...item, end: change.end }, zone, dateOnly)).toEqual({
+        first: '2026-06-10',
+        last: '2026-06-12',
+      });
+    }
+  });
+
+  it('fills a timed end from a timed start at midnight on the dragged day', () => {
+    const item = { id: 'e', start: '2026-06-10T00:00:00.000Z' };
+    const change = resizeTimelineItem(item, 'end', 2, 'UTC');
+
+    expect(getItemDays({ ...item, end: change.end }, 'UTC')).toEqual({
+      first: '2026-06-10',
+      last: '2026-06-12',
+    });
+  });
+});
+
 describe('range query', () => {
   const range = { end: '2026-06-28T00:00:00.000Z', start: '2026-06-14T00:00:00.000Z' };
 

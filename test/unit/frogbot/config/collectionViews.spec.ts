@@ -240,6 +240,7 @@ describe('collection views', () => {
     );
     expect(() => compile({ scales: [] })).toThrow('has scales []');
     expect(() => compile({ scales: ['quarter'] })).toThrow('has scales ["quarter"]');
+    expect(() => compile({ scales: ['week', 'week'] })).toThrow('has scales ["week","week"]');
   });
 
   describe('list summary', () => {

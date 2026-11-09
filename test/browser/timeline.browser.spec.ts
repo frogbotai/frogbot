@@ -243,6 +243,41 @@ test.describe('editing', () => {
     await expect(bar(page, tasks.evening.title)).toHaveClass(/fb-record--selected/);
   });
 
+  for (const { scale, touch, width } of [
+    { scale: 'month', touch: false, width: 1440 },
+    { scale: 'month', touch: false, width: 390 },
+    { scale: 'week', touch: true, width: 1440 },
+    { scale: 'week', touch: true, width: 390 },
+  ]) {
+    test.describe(`${scale} scale, ${touch ? 'touch' : 'mouse'}, ${width}px`, () => {
+      test.use({ hasTouch: touch, isMobile: touch, viewport: { height: 900, width } });
+
+      test('the middle of a one-day bar is the bar, so a click opens it', async ({ page }) => {
+        await page.goto(timeline(scale));
+
+        const target = bar(page, tasks.dueOnly.title);
+        await target.scrollIntoViewIfNeeded();
+        const box = await boxOf(target);
+        const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+        const hit = await target.evaluate((element, { x, y }) => {
+          const found = document.elementFromPoint(x, y);
+
+          return element.contains(found) && !found?.closest('.frog-timeline__resize');
+        }, center);
+
+        expect(hit).toBe(true);
+
+        await (touch ? page.touchscreen.tap : page.mouse.click).call(
+          touch ? page.touchscreen : page.mouse,
+          center.x,
+          center.y,
+        );
+
+        await expect(page).toHaveURL(new RegExp(`record=${ids.dueOnly}`));
+      });
+    });
+  }
+
   test('switches scale and steps through time from the header', async ({ page }) => {
     await page.goto(timeline());
     await expect(page.locator('.frog-calendar__header strong')).toHaveText('Sep 6 – Sep 19, 2026');
