@@ -151,4 +151,26 @@ describe(`aggregate REST [${adapterLabel}]`, () => {
     expect(member.status).toBe(200);
     expect(member.body.groups.map(({ values }) => values.margin)).toEqual([null, null]);
   });
+
+  it('does not total over REST a value the REST find hides by a per-document rule', async () => {
+    const { headers } = await signIn(seed.users.cy);
+    const found = await booted.restClient.get<{ docs: { audit?: number | null }[] }>(
+      `/api/${dealsSlug}?limit=100`,
+      { headers },
+    );
+
+    const visible = found.body.docs
+      .map(({ audit }) => audit)
+      .filter((value): value is number => typeof value === 'number')
+      .reduce((a, b) => a + b, 0);
+
+    expect(visible).toBe(12);
+
+    const response = await booted.restClient.post<{
+      groups: { values: { audit: number | null } }[];
+    }>(route, { values: { audit: { sum: 'audit' } } }, { headers });
+
+    expect(response.status).toBe(200);
+    expect([12, null]).toContain(response.body.groups[0].values.audit);
+  });
 });

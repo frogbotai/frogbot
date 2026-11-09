@@ -201,6 +201,24 @@ describe(`aggregate access [${adapterLabel}]`, () => {
     ).rejects.toMatchObject({ status: 400 });
   });
 
+  it('does not total a value that find hides from the same user by a per-document rule', async () => {
+    const req = await signIn(seed.users.cy);
+    const { docs } = await booted.frogbot.find({ collection: dealsSlug, req, pagination: false });
+    const visible = docs
+      .map((doc) => doc.audit)
+      .filter((value): value is number => typeof value === 'number');
+
+    expect(visible.reduce((a, b) => a + b, 0)).toBe(12);
+
+    const { groups } = await booted.frogbot.aggregate({
+      collection: dealsSlug,
+      values: { audit: { sum: 'audit' } },
+      req,
+    });
+
+    expect([12, null]).toContain(groups[0].values.audit);
+  });
+
   it('sums a field with a read rule when access is overridden', async () => {
     const { groups } = await booted.frogbot.aggregate({
       collection: dealsSlug,
