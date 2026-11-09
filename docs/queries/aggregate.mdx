@@ -205,7 +205,7 @@ From a frontend, the [SDK](/rest-api/overview#frogbot-rest-api-sdk) has a typed 
 | --- | --- | --- |
 | `AggregateValidationError` | `400` | An unknown option or field, a field of the wrong type, a value name that clashes, an unknown `by`, `locale: 'all'`, or a missing `req`. |
 | `QueryError` | `400` | A `where` or `groupBy` path the caller can't query. |
-| `Forbidden` | `403` | The caller can't read the collection, a field is `hidden`, or `groupBy` names a field with its own `access.read`. |
+| `Forbidden` | `403` | The caller can't read the collection, a field is `hidden`, or `groupBy` names a field with its own `access.read` without `overrideAccess: true`. |
 | `AggregateCapabilityError` | `501` | The database adapter has no aggregate implementation. |
 
 Both aggregate errors are exported from `frogbot`. The REST endpoint returns the same statuses.
