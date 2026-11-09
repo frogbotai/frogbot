@@ -385,3 +385,85 @@ test('shoots resized, frozen, tall and compact lists in light and dark', async (
 
   expect(errors).toEqual([]);
 });
+
+const isPreferenceWrite = (request: {
+  method: () => string;
+  url: () => string;
+  headers: () => Record<string, string>;
+}) =>
+  request.method() === 'POST' &&
+  (request.url().endsWith(viewPreference) || 'next-action' in request.headers());
+
+test('a width save in flight keeps a sort the URL saved meanwhile', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/collections/deals?limit=10&sort=name');
+  await expect(page.locator('.fb-list-grid tbody tr')).toHaveCount(10);
+  await expect.poll(async () => (await storedPreference(page)).sort).toBe('name');
+
+  let release = () => {};
+
+  const held = new Promise<void>((resolve) => (release = resolve));
+  let posted = false;
+
+  await page.route('**/*', async (route) => {
+    if (!posted && isPreferenceWrite(route.request())) {
+      posted = true;
+      await held;
+    }
+
+    await route.continue();
+  });
+
+  cleanups.push(() => page.unrouteAll({ behavior: 'ignoreErrors' }));
+
+  await drag(page, 'company', 80);
+  await expect.poll(() => posted).toBe(true);
+  await header(page, 'amount').getByRole('button').first().click();
+  await expect(page).toHaveURL(/sort=-amount/);
+  await expect.poll(async () => (await storedPreference(page)).sort).toBe('-amount');
+
+  release();
+
+  await expect
+    .poll(async () => Object.keys((await storedPreference(page)).widths ?? {}))
+    .toEqual(['company']);
+  expect((await storedPreference(page)).sort).toBe('-amount');
+});
+
+test('a failed preference read never erases the saved sort, filters and summary', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  const saved = {
+    sort: '-amount',
+    summary: { amount: 'avg' },
+    where: { stage: { equals: 'lead' } },
+  };
+
+  await savePreference(page, saved);
+  await page.goto('/collections/deals');
+  await expect(page.locator('.fb-list-grid tbody tr').first()).toBeVisible();
+
+  let failed = false;
+
+  await page.route(`**${viewPreference}`, async (route) => {
+    if (route.request().method() === 'GET' && !failed) {
+      failed = true;
+      await route.fulfill({ json: { errors: [{ message: 'boom' }] }, status: 500 });
+
+      return;
+    }
+
+    await route.continue();
+  });
+
+  cleanups.push(() => page.unrouteAll({ behavior: 'ignoreErrors' }));
+
+  await drag(page, 'company', 80);
+
+  await expect
+    .poll(async () => Object.keys((await storedPreference(page)).widths ?? {}))
+    .toEqual(['company']);
+  expect(await storedPreference(page)).toMatchObject(saved);
+});
