@@ -342,7 +342,7 @@ export function AgentChat() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `selectedAgent` | `string` | Required | Slug of the selected agent. The trigger shows its profile name, or the slug. |
+| `selectedAgent` | `string` | Required | Slug of the selected agent. The trigger shows its profile name, or the slug. Each agent shows its `profile.avatar`, or the FrogBot face (`brand-frog-bot`) when it has none. |
 | `onAgentChange` | `(slug: string) => void` | Required | Called with the slug of the chosen agent. |
 
 For any other choice in the composer, such as a mode, use `ComposerSelect`. `AgentSelector` is built on it, so the two look the same.
@@ -363,7 +363,7 @@ import { ComposerSelect } from '@frogbotai/ui/chat'
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `value` | `string` | Required | The selected option's `value`. The trigger shows its label, or the value when no option matches. |
-| `options` | `{ value: string; label: string; icon?: IconName }[]` | Required | The choices, in order. `icon` is a name from FrogBot's icon set. |
+| `options` | `{ value: string; label: string; icon?: IconName; image?: string }[]` | Required | The choices, in order. `icon` is a name from FrogBot's icon set. `image` is an image URL shown round in place of `icon`, such as an avatar. |
 | `onChange` | `(value: string) => void` | Required | Called with the chosen option's `value`. |
 | `aria-label` | `string` | The selected label | Accessible name for the trigger. |
 | `className` | `string` | — | Added to the trigger. |
