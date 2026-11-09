@@ -318,6 +318,7 @@ test('ArrowRight moves the rating up one star', async ({ page }) => {
   const two = page.getByRole('radio', { name: '2 stars' });
 
   await expect(two).toBeChecked();
+  await expect(two).toBeEnabled();
   await two.focus();
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('radio', { name: '3 stars' })).toBeChecked();
