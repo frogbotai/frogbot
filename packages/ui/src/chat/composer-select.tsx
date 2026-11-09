@@ -19,6 +19,8 @@ export type ComposerSelectOption = {
   label: string;
   /** A registry icon shown before the label. */
   icon?: IconName;
+  /** An image URL shown round before the label, in place of `icon`, such as an agent's avatar. */
+  image?: string;
 };
 
 export type ComposerSelectProps = {
@@ -29,7 +31,13 @@ export type ComposerSelectProps = {
   className?: string;
 };
 
-function OptionIcon({ icon }: { icon?: IconName }) {
+function OptionIcon({ icon, image }: Pick<ComposerSelectOption, 'icon' | 'image'>) {
+  if (image) {
+    return (
+      <img src={image} alt="" className="fb-composer-select__icon fb-composer-select__image" />
+    );
+  }
+
   if (!icon) return null;
 
   const Icon = iconRegistry[icon];
@@ -56,7 +64,7 @@ export const ComposerSelect = memo(function ComposerSelect({
           aria-label={ariaLabel}
           className={`fb-composer-select__trigger${className ? ` ${className}` : ''}`}
         >
-          <OptionIcon icon={selected?.icon} />
+          <OptionIcon icon={selected?.icon} image={selected?.image} />
           <span className="fb-composer-select__trigger-label">{selected?.label ?? value}</span>
           <ChevronDownIcon className="fb-composer-select__chevron" />
         </Button>
@@ -69,7 +77,7 @@ export const ComposerSelect = memo(function ComposerSelect({
             className="fb-composer-select__item"
           >
             <span className="fb-composer-select__item-option">
-              <OptionIcon icon={option.icon} />
+              <OptionIcon icon={option.icon} image={option.image} />
               <span className="fb-composer-select__item-label">{option.label}</span>
             </span>
             {option.value === value ? (

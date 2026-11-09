@@ -53,6 +53,12 @@
     height: 1.25rem;
   }
 
+  .fb-composer-select__image {
+    flex-shrink: 0;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
   .fb-composer-select__trigger .fb-composer-select__icon {
     width: 1.125rem;
     height: 1.125rem;

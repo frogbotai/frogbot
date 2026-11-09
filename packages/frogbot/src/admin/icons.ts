@@ -27,6 +27,7 @@ export const adminIconExports = [
   'BrandDiscoverIcon',
   'BrandDropboxIcon',
   'BrandFacebookIcon',
+  'BrandFrogBotIcon',
   'BrandGitHubIcon',
   'BrandGoogleGeminiIcon',
   'BrandGoogleIcon',
