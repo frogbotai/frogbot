@@ -1,0 +1,115 @@
+@layer frogbot {
+  .two-factor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--fb-radius-lg);
+  }
+
+  .two-factor__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .two-factor__title {
+    margin: 0;
+    color: var(--color-text);
+    font-size: var(--fb-text-base);
+    font-weight: 600;
+    line-height: var(--fb-text-base--line-height);
+  }
+
+  .two-factor__hint,
+  .two-factor__note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+  }
+
+  .two-factor__note {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .two-factor__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .fb-dialog__content.two-factor-dialog {
+    gap: 1rem;
+    max-width: 30rem;
+  }
+
+  .fb-dialog__description.two-factor__warning {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .two-factor__setup {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .two-factor__qr {
+    flex: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--fb-radius-lg);
+  }
+
+  .two-factor__field {
+    display: flex;
+    flex: 1 1 12rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .two-factor__label {
+    color: var(--color-text);
+    font-size: var(--fb-text-sm);
+    font-weight: 500;
+  }
+
+  .two-factor__key {
+    padding: 0.5rem 0.75rem;
+    overflow-wrap: anywhere;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--fb-radius-lg);
+    user-select: all;
+  }
+
+  .two-factor__recovery {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .two-factor__codes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem 1rem;
+    margin: 0;
+    padding: 0.75rem 1rem;
+    list-style: none;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--fb-radius-lg);
+  }
+
+  .two-factor__error {
+    margin: 0;
+    color: var(--color-text-danger);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+  }
+}

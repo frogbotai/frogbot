@@ -33,11 +33,14 @@
   "files": [
     "dist"
   ],
+  "sideEffects": [
+    "*.css"
+  ],
   "engines": {
     "node": ">=24.21.0"
   },
   "scripts": {
-    "build": "node ../../../scripts/build-package.mjs",
+    "build": "node ../../../scripts/build-package.mjs --assets css",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },
@@ -46,13 +49,20 @@
     "qrcode": "1.5.4"
   },
   "peerDependencies": {
-    "frogbot": "workspace:*",
-    "payload": "catalog:"
-  },
-  "devDependencies": {
-    "@types/qrcode": "1.5.5",
+    "@frogbotai/ui": "workspace:*",
     "frogbot": "workspace:*",
     "payload": "catalog:",
+    "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
+    "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
+  },
+  "devDependencies": {
+    "@frogbotai/ui": "workspace:*",
+    "@types/qrcode": "1.5.5",
+    "@types/react": "19.2.14",
+    "frogbot": "workspace:*",
+    "payload": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "typescript": "catalog:"
   },
   "publishConfig": {

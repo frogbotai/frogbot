@@ -14,6 +14,7 @@ import {
   createLoginEndpoint,
   createResetPasswordEndpoint,
 } from './login.js';
+import { createFirstRegisterEndpoint } from './register.js';
 
 export type {
   TwoFactorEmail,
@@ -28,14 +29,19 @@ export { TwoFactorRequired } from './login.js';
 
 const never = () => false;
 
-const fields: Field[] = [
+const LOGIN_VIEW = '@frogbotai/plugin-two-factor/rsc#TwoFactorLoginView';
+
+const ACCOUNT_FIELD = '@frogbotai/plugin-two-factor/rsc#TwoFactorFieldServer';
+
+const createFields = (ctx: TwoFactorContext): Field[] => [
   {
     name: FIELDS.enabled,
     type: 'checkbox',
     label: 'Two-factor sign-in',
     defaultValue: false,
     access: { create: never, update: never },
-    admin: { readOnly: true },
+    admin: { readOnly: true, components: { Field: ACCOUNT_FIELD } },
+    custom: { 'plugin-two-factor': ctx },
   },
   { name: FIELDS.secret, type: 'text', hidden: true, access: { create: never, update: never } },
   { name: FIELDS.recovery, type: 'json', hidden: true, access: { create: never, update: never } },
@@ -45,10 +51,10 @@ const fields: Field[] = [
 const twoFactorPlugin = definePlugin<TwoFactorResolvedOptions>({
   slug: 'plugin-two-factor',
   plugin: ({ config, options }) => {
-    const slug =
-      options.collection ??
-      config.admin?.user ??
-      config.collections.find((collection) => collection.auth)?.slug;
+    const adminUser =
+      config.admin?.user ?? config.collections.find((collection) => collection.auth)?.slug;
+
+    const slug = options.collection ?? adminUser;
 
     const target = config.collections.find((collection) => collection.slug === slug);
     if (!slug || !target?.auth) {
@@ -58,14 +64,25 @@ const twoFactorPlugin = definePlugin<TwoFactorResolvedOptions>({
     }
 
     const ctx: TwoFactorContext = { slug, options };
+    const views = config.admin?.components?.views;
 
     return {
       ...config,
+      ...(slug === adminUser &&
+        !views?.login && {
+          admin: {
+            ...config.admin,
+            components: {
+              ...config.admin?.components,
+              views: { ...views, login: { Component: LOGIN_VIEW, meta: { title: 'Login' } } },
+            },
+          },
+        }),
       collections: config.collections.map((collection) =>
         collection === target
           ? {
               ...collection,
-              fields: [...collection.fields, ...fields],
+              fields: [...collection.fields, ...createFields(ctx)],
               hooks: {
                 ...collection.hooks,
                 beforeSignIn: [...(collection.hooks?.beforeSignIn ?? []), createBeforeSignIn(ctx)],
@@ -74,6 +91,7 @@ const twoFactorPlugin = definePlugin<TwoFactorResolvedOptions>({
               endpoints: [
                 createLoginEndpoint(ctx),
                 createResetPasswordEndpoint(ctx),
+                createFirstRegisterEndpoint(ctx),
                 ...createFlowEndpoints(ctx),
                 ...createAccountEndpoints(ctx),
                 ...(collection.endpoints ?? []),

@@ -50,3 +50,4 @@ export { LLMInstructionsCell } from '@payloadcms/ui/rsc';
 export { ActivityWidget } from '@payloadcms/ui/rsc';
 export { UploadDropzoneWidget } from '@payloadcms/ui/rsc';
 export { WelcomeWidget } from '@payloadcms/ui/rsc';
+export { Logo } from '@payloadcms/ui/rsc';

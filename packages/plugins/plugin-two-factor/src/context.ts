@@ -63,6 +63,8 @@ declare module 'payload' {
   interface RequestContext {
     /** Set by the two-factor plugin's `reset-password` endpoint, so its `beforeLogin` gate lets the reset save the password. */
     twoFactorReset?: boolean;
+    /** Set by the two-factor plugin's `first-register` endpoint, so its `beforeLogin` gate lets the first user's registration finish. */
+    twoFactorFirstUser?: boolean;
   }
 }
 

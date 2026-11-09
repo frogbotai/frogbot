@@ -1330,6 +1330,11 @@
     "type": "import('@frogbotai/plugin-api-keys').ApiKeysPluginOptions"
   },
   {
+    "page": "plugins/two-factor",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-two-factor').TwoFactorPluginOptions"
+  },
+  {
     "page": "plugins/audit-log",
     "heading": "Options",
     "type": "import('@frogbotai/plugin-audit-log').AuditLogPluginOptions"

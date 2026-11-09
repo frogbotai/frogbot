@@ -47,7 +47,7 @@ export async function twoFactorStep(
   return (await ctx.options.require({ req, user })) ? 'setup' : null;
 }
 
-async function startPending({
+export async function startPending({
   req,
   ctx,
   userId,
@@ -99,24 +99,52 @@ export const createBeforeSignIn =
 /**
  * Refuses a login that would skip the code: password login through any path other than the
  * plugin's `/login`, which turns the refusal into a pending sign-in. A sign-in resumed through
- * `finishSignIn` and the plugin's own reset-password pass.
+ * `finishSignIn` and the plugin's own reset-password and first-register pass.
  */
 export const createBeforeLogin =
   (ctx: TwoFactorContext): CollectionBeforeLoginHook =>
   async ({ req, user }) => {
-    if (req.context.signIn || req.context.twoFactorReset) return;
+    if (req.context.signIn || req.context.twoFactorReset || req.context.twoFactorFirstUser) return;
 
     const mode = await twoFactorStep(req, ctx, user as TwoFactorUser);
     if (mode) throw new TwoFactorRequired(user.id as string | number, mode);
   };
 
-const depthOf = (req: FrogBotRequest) => {
+export const depthOf = (req: FrogBotRequest) => {
   const depth = req.searchParams.get('depth');
 
   return depth !== null && !Number.isNaN(parseFloat(depth)) ? Number(depth) : undefined;
 };
 
-const text = (value: unknown) => (typeof value === 'string' ? value : '');
+export const text = (value: unknown) => (typeof value === 'string' ? value : '');
+
+/** The `202` answer that sends a password sign-in to the code or setup page, with the pending cookie and no token. */
+export function pendingResponse({
+  req,
+  mode,
+  url,
+  cookie,
+}: {
+  req: FrogBotRequest;
+  mode: 'code' | 'setup';
+  url: string;
+  cookie: string;
+}): Response {
+  return Response.json(
+    {
+      message:
+        mode === 'code'
+          ? 'Enter the code from your authenticator app.'
+          : 'Set up two-factor sign-in to continue.',
+      twoFactor: mode,
+      url,
+    },
+    {
+      status: 202,
+      headers: headersWithCors({ headers: noStore({ 'set-cookie': cookie }), req }),
+    },
+  );
+}
 
 /**
  * `POST /login`, Payload's handler plus the code step: a user who needs a code or setup gets
@@ -179,20 +207,7 @@ export const createLoginEndpoint = (ctx: TwoFactorContext): Endpoint => ({
         returnTo,
       });
 
-      return Response.json(
-        {
-          message:
-            error.mode === 'code'
-              ? 'Enter the code from your authenticator app.'
-              : 'Set up two-factor sign-in to continue.',
-          twoFactor: error.mode,
-          url: base,
-        },
-        {
-          status: 202,
-          headers: headersWithCors({ headers: noStore({ 'set-cookie': cookie }), req }),
-        },
-      );
+      return pendingResponse({ req, mode: error.mode, url: base, cookie });
     }
   },
 });
