@@ -415,6 +415,10 @@ describe('providerCredentialEnvVars', () => {
     ]);
   });
 
+  it('accepts FAL_KEY as well as FAL_API_KEY, as fal reads both', () => {
+    expect(providerCredentialEnvVars('fal')).toEqual([['FAL_API_KEY'], ['FAL_KEY']]);
+  });
+
   it('drops forms with a config-only key', () => {
     expect(providerCredentialEnvVars('anthropic')).toEqual([['ANTHROPIC_API_KEY']]);
   });
