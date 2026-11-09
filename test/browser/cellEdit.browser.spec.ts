@@ -351,6 +351,7 @@ test('a cell edit on the record open in the panel with unsaved edits asks first'
 
   await expect.poll(async () => (await stored(page, 'tasks', task.id)).priority).toBe('high');
   await expect(notes).toHaveValue('old');
+  await expect(panel).toContainText('High');
   await expect(page.locator('#document-stale-data')).toHaveCount(0);
 
   await notes.fill('newer notes');
