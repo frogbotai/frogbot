@@ -42,7 +42,7 @@ export const Deals: CollectionConfig = {
 
 These fields edit in the cell: `text`, `textarea`, `email`, `number`, `select`, `checkbox`, `date` and single `relationship` fields, and every [field kind](/fields/overview#field-kinds-frogbotfields) from `frogbot/fields`, such as `moneyField` and `ratingField`. A cell renders the field's own input, so a custom `Field` component edits in the cell too: see [Fields in list cells](/fields/overview#fields-in-list-cells).
 
-Every other cell keeps opening the record in the [record panel](/admin/record-panel): `hasMany` fields, other field types, the linked first column, and fields the person can't change. A cell is never editable when the person has no `update` access to the collection or the field, or the field has `admin.readOnly`, is hidden, or is virtual. Startup fails on an `editable` entry that names no field, or one that never edits in a cell: `richText`, `array`, `blocks`, `group`, `tabs`, `upload`, `join` and `autonumberField`.
+Every other cell keeps opening the record in the [record panel](/admin/record-panel): `hasMany` fields, other field types, the linked first column, and fields the person can't change. A cell is never editable when the person has no `update` access to the collection or the field, or the field, or a group, row or collapsible around it, is read-only, hidden or disabled, or the field is virtual. Startup fails on an `editable` entry that names no field, or one that never edits in a cell: `richText`, `array`, `blocks`, `group`, `tabs`, `upload`, `join`, `autonumberField` and its key field.
 
 ### Keys
 

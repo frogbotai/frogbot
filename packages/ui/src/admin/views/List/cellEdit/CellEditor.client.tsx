@@ -21,9 +21,8 @@ import type {
   FormState,
   SanitizedCollectionPermission,
   SanitizedFieldPermissions,
-  SelectType,
 } from 'payload';
-import { formatAdminURL, unflatten } from 'payload/shared';
+import { formatAdminURL, reduceFieldsToValues } from 'payload/shared';
 import * as qs from 'qs-esm';
 import {
   type KeyboardEvent,
@@ -71,10 +70,16 @@ const OPEN_MENUS = '.rs__menu, .react-datepicker-popper, .popup__content';
 const TEXT_INPUT =
   'input:is([type="text"], [type="search"], [type="tel"], [type="url"], [type="email"], [type="number"]), input:not([type]), textarea';
 
-function selectFor(field: ClientField, path: string): SelectType {
-  const timezone = field.type === 'date' && Boolean(field.timezone);
+function cellPaths(field: ClientField, path: string): string[] {
+  return field.type === 'date' && field.timezone ? [path, `${path}_tz`] : [path];
+}
 
-  return unflatten({ [path]: true, ...(timezone ? { [`${path}_tz`]: true } : {}) });
+function pickPaths(state: FormState, paths: string[]): FormState {
+  return Object.fromEntries(
+    Object.entries(state).filter(([key]) =>
+      paths.some((path) => key === path || key.startsWith(`${path}.`)),
+    ),
+  );
 }
 
 function fieldPermissionsAt(
@@ -208,15 +213,27 @@ function CellEditorFields({
   const queuedRef = useRef(pendingDone);
 
   useEffect(() => {
+    if (pendingDone) queuedRef.current = pendingDone;
+  }, [pendingDone]);
+
+  useEffect(() => {
     const done = queuedRef.current;
 
     if (!done || (initialText && !modified)) return;
     queuedRef.current = undefined;
     finish(done);
-  }, [finish, initialText, modified]);
+  }, [finish, initialText, modified, pendingDone]);
 
   const onKeyDownCapture = (event: KeyboardEvent<HTMLDivElement>) => {
     const inPicker = (event.target as HTMLElement).closest(DATE_PICKER);
+
+    if (event.key === 'Tab') {
+      event.preventDefault();
+      event.stopPropagation();
+      finish(event.shiftKey ? 'prev' : 'next');
+
+      return;
+    }
 
     if (event.key === 'Escape' && !document.querySelector(OPEN_MENUS)) {
       event.preventDefault();
@@ -233,13 +250,6 @@ function CellEditorFields({
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.defaultPrevented || event.nativeEvent.isComposing) return;
     if (event.key === 'Enter' && (event.target as HTMLElement).closest(DATE_PICKER)) return;
-
-    if (event.key === 'Tab') {
-      event.preventDefault();
-      finish(event.shiftKey ? 'prev' : 'next');
-
-      return;
-    }
 
     const inTextarea = (event.target as HTMLElement).matches('textarea');
 
@@ -294,9 +304,9 @@ export function CellEditor({
   const { getFormState } = useServerFunctions();
   const [loaded, setLoaded] = useState<{ data: Data; state: FormState }>();
   const savedRef = useRef(false);
+  const loadedRef = useRef<Data>({});
   const drafts = Boolean(getEntityConfig({ collectionSlug })?.versions?.drafts);
-  const select = selectFor(field, path);
-  const selectKey = JSON.stringify(select);
+  const pathsKey = cellPaths(field, path).join('\n');
   const apiRoute = config.routes.api;
 
   const query = qs.stringify(
@@ -311,26 +321,15 @@ export function CellEditor({
 
   useEffect(() => {
     const controller = new AbortController();
-    const selected = JSON.parse(selectKey) as SelectType;
-    const url = formatAdminURL({
-      apiRoute,
-      path: `/${collectionSlug}/${encodeURIComponent(id)}${qs.stringify(
-        {
-          depth: 0,
-          locale: locale?.code,
-          select: selected,
-          ...(drafts ? { draft: true } : {}),
-        },
-        { addQueryPrefix: true },
-      )}`,
-    });
 
     void (async () => {
       try {
-        const response = await fetch(url, { credentials: 'include', signal: controller.signal });
+        const response = await fetch(action, { credentials: 'include', signal: controller.signal });
         if (!response.ok) throw new Error(response.statusText);
 
         const data = (await response.json()) as Data;
+
+        loadedRef.current = data;
         const { state } = await getFormState({
           collectionSlug,
           data,
@@ -340,47 +339,38 @@ export function CellEditor({
           operation: 'update',
           renderAllFields: true,
           schemaPath: collectionSlug,
-          select: selected,
           signal: controller.signal,
           skipValidation: true,
         });
 
-        if (!controller.signal.aborted && state) setLoaded({ data, state });
+        if (!controller.signal.aborted && state) {
+          setLoaded({ data, state: pickPaths(state, pathsKey.split('\n')) });
+        }
       } catch {
         if (!controller.signal.aborted) onDone('cancel');
       }
     })();
 
     return () => controller.abort();
-  }, [
-    apiRoute,
-    collectionSlug,
-    drafts,
-    getFormState,
-    id,
-    locale?.code,
-    onDone,
-    permissions,
-    selectKey,
-  ]);
+  }, [action, collectionSlug, getFormState, id, onDone, pathsKey, permissions]);
 
   const onChange = useCallback<NonNullable<FormProps['onChange']>[number]>(
     async ({ formState, submitted }) => {
       const { state } = await getFormState({
         collectionSlug,
+        data: { ...loadedRef.current, ...reduceFieldsToValues(formState, true) },
         docPermissions: permissions,
         docPreferences: { fields: {} },
         formState,
         id,
         operation: 'update',
         schemaPath: collectionSlug,
-        select: JSON.parse(selectKey) as SelectType,
         skipValidation: !submitted,
       });
 
-      return state ?? formState;
+      return state ? pickPaths(state, pathsKey.split('\n')) : formState;
     },
-    [collectionSlug, getFormState, id, permissions, selectKey],
+    [collectionSlug, getFormState, id, pathsKey, permissions],
   );
 
   const onSuccess = useCallback(() => {

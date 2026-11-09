@@ -24,7 +24,7 @@ const NEVER_IN_CELL = new Set([
   'upload',
 ]);
 
-const GENERATED_KINDS = new Set(['autonumber']);
+const GENERATED_KINDS = new Set(['autonumber', 'autonumberKey']);
 
 type CellField = {
   admin?: { custom?: Record<string, unknown> };

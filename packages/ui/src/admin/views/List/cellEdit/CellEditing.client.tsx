@@ -274,7 +274,7 @@ export function CellEditing({
 
   if (!active || !found) return null;
 
-  const parentPath = found.parents.map(({ name }) => name).join('.');
+  const parentPath = found.parents.flatMap(({ name }) => (name ? [name] : [])).join('.');
 
   return createPortal(
     <CellEditor

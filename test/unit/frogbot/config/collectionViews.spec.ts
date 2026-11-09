@@ -271,6 +271,11 @@ describe('collection views', () => {
               admin: { custom: { frogbot: { kind: { type: 'money', currency: 'USD' } } } },
             },
             {
+              name: 'dealKey',
+              type: 'text',
+              admin: { custom: { frogbot: { kind: { type: 'autonumberKey' } } } },
+            },
+            {
               type: 'tabs',
               tabs: [
                 {
@@ -299,6 +304,7 @@ describe('collection views', () => {
       [['notes'], 'names "notes" (richText), which can\'t be edited in a cell.'],
       [['lines'], 'names "lines" (array), which can\'t be edited in a cell.'],
       [['address'], 'names "address" (group), which can\'t be edited in a cell.'],
+      [['dealKey'], 'names "dealKey" (autonumberKey), which can\'t be edited in a cell.'],
       [['deal'], 'names "deal" (autonumber), which can\'t be edited in a cell.'],
       ['name', 'must be true, false or an array of field names.'],
       [[1], 'must be true, false or an array of field names.'],
