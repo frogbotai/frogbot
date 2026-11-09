@@ -54,7 +54,7 @@ export default buildConfig({
 | `cookiePrefix` | `string` | `'frogbot'` | Prefix for every cookie FrogBot sets, such as `frogbot-token`. |
 | `cors` | `'*' \| string[] \| { origins: '*' \| string[]; headers?: string[] }` | `[]` | Origins allowed to make cross-origin requests. `'*'` allows any origin. The object form also adds allowed request `headers`. See [Cookies](/authentication/cookies). |
 | `csrf` | `string[]` | `[]` | Origins whose requests may authenticate with the auth cookie. `serverURL` is added automatically when set. See [Cookies](/authentication/cookies). |
-| `custom` | `Record<string, any>` | `{}` | Your own server-only data. FrogBot doesn't read it. |
+| `custom` | `Record<string, any>` | `{}` | Your own server-only data, such as plugin settings. FrogBot doesn't read it; it's on `frogbot.config.custom` at runtime. |
 | `debug` | `boolean` | `false` | Returns error messages and stack traces in API responses, including errors that are normally hidden. |
 | `defaultDepth` | `number` | `1` | Relationship population depth used when a request doesn't set `depth`. See [Depth](/queries/depth). |
 | `defaultMaxTextLength` | `number` | `40000` | Maximum length of Text and Textarea values when the field doesn't set `maxLength`. |

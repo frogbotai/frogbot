@@ -84,6 +84,27 @@ describe(`aggregate access [${adapterLabel}]`, () => {
     expect(result).toMatchObject({ groups: [], totalDocs: 0, totalPages: 0 });
   });
 
+  it('narrows the one row without groupBy by read access, and fills it when read is denied', async () => {
+    const total = (options: { disableErrors?: boolean; req: FrogBotRequest }) =>
+      booted.frogbot.aggregate({
+        collection: dealsSlug,
+        values: { deals: { count: true }, total: { sum: 'amount' } },
+        ...options,
+      });
+
+    const guest = await total({ req: await signIn(seed.users.bo) });
+
+    expect(guest.groups).toEqual([{ group: {}, values: { deals: 1, total: 300 } }]);
+
+    const anonymous = await booted.frogbot.createRequest();
+
+    await expect(total({ req: anonymous })).rejects.toMatchObject({ status: 403 });
+
+    const denied = await total({ disableErrors: true, req: anonymous });
+
+    expect(denied.groups).toEqual([{ group: {}, values: { deals: 0, total: 0 } }]);
+  });
+
   it('counts every document with overrideAccess: true', async () => {
     const { groups } = await byStage({ overrideAccess: true });
 

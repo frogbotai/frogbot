@@ -24,7 +24,13 @@ import {
   resolveAggregateField,
   type ResolvedAggregateField,
 } from './resolveField.js';
-import { getAggregatePage, getEmptyAggregate, toAggregateValue, toGroupKey } from './results.js';
+import {
+  getAggregatePage,
+  getEmptyAggregate,
+  getEmptyTotals,
+  toAggregateValue,
+  toGroupKey,
+} from './results.js';
 import { getAggregateAdapter } from './runtime.js';
 import type {
   AggregateGroupDescriptor,
@@ -287,7 +293,17 @@ export async function aggregateOperation<
         collection.access.read,
       );
 
-  if (access === false) return getEmptyAggregate(parsed.limit) as AggregateResult<T, V>;
+  const empty = () =>
+    (parsed.groupBy.length
+      ? getEmptyAggregate(parsed.limit)
+      : getAggregatePage({
+          groups: [getEmptyTotals(parsed.values)],
+          limit: undefined,
+          page: 1,
+          totalDocs: 1,
+        })) as AggregateResult<T, V>;
+
+  if (access === false) return empty();
 
   const clauses: Where[] = [];
 
@@ -323,7 +339,7 @@ export async function aggregateOperation<
     const related = await getRelatedAccess(scope, groups);
 
     if (related.denied !== undefined) {
-      if (parsed.disableErrors) return getEmptyAggregate(parsed.limit) as AggregateResult<T, V>;
+      if (parsed.disableErrors) return empty();
 
       throw new QueryError([{ path: related.denied }]);
     }
@@ -355,6 +371,8 @@ export async function aggregateOperation<
       ]),
     ),
   }));
+
+  if (!groups.length && !rows.length) return empty();
 
   if (parsed.depth > 0) {
     await populateGroups({ depth: parsed.depth, groups, options: input, rows, scope });

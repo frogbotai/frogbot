@@ -11,12 +11,15 @@ export type {
 } from './admin/types.js';
 export type { AdminIcon, AdminViews, FrogBotComponent, ProviderComponent } from './admin/types.js';
 export type { SettingsEntry } from './admin/types.js';
+export type { SummaryOperation } from './admin/views/summary.js';
 export type {
   BoardView,
   CalendarMode,
   CalendarView,
+  CardViewConfig,
   CollectionView,
   CustomView,
+  GalleryView,
   ListView,
   ViewAccess,
   ViewComponents,
@@ -217,6 +220,9 @@ export type {
   Collection,
   CollectionAdminConfig,
   CollectionConfig,
+  PanelComponentProps,
+  RecordPanelComponents,
+  RecordPanelConfig,
 } from './collections/config/types.js';
 export type {
   BulkResult,
@@ -267,6 +273,7 @@ export type {
   CollectionRefreshHook,
 } from './collections/config/types.js';
 export { buildConfig } from './config/build.js';
+export { GROUP_BY_FIELD_TYPES } from './config/collectionViews.js';
 export type { FrogBotSanitizedConfig } from './config/sanitized.js';
 export type {
   AfterErrorHook,

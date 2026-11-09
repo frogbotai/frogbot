@@ -23,7 +23,7 @@ See the complete [Collection views reference](/configuration/collections#collect
 | `defaultFields` | `string[]` | No | Dot paths to fields rendered on each event, in display order. |
 | `filter` | `Where` | No | Invisible base filter applied to every calendar query, as plain data. |
 | `defaultSort` | `Sort` (`string \| string[]`) | No | Initial query sort. Prefix a field with `-` for descending order. |
-| `searchableFields` | `string[]` | No | Adds fields to normal search behavior; `useAsTitle` remains included. |
+| `searchableFields` | `string[]` | No | Not read by the calendar. Its search uses the list view's `searchableFields`, plus `useAsTitle`. |
 | `pagination` | `ViewPagination` | No | Accepted for consistency with other views, but calendar views ignore it. Each visible range loads at most 1000 events. |
 | `access` | `({ req }) => boolean \| Promise<boolean>` | No; collection access | Controls whether the current user can open the calendar without replacing collection operation access. |
 | `components` | `ViewComponents & CalendarComponents` | No | Configures shared view slots and calendar components. |

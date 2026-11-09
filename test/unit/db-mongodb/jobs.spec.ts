@@ -465,6 +465,7 @@ describe.skipIf(!mongoURL)('Mongo job claims', () => {
       jobId,
       queue: 'work',
       input: {},
+      overrideAccess: true,
       req: winnerReq,
     });
 
@@ -491,6 +492,7 @@ describe.skipIf(!mongoURL)('Mongo job claims', () => {
       jobId,
       queue: 'work',
       input: {},
+      overrideAccess: true,
       req: loserReq,
     });
 

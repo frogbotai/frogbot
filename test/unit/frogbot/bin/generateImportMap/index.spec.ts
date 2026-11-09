@@ -520,6 +520,43 @@ describe('frogbot importMap generator', () => {
     expect(output).toContain("from './components/Map'");
   });
 
+  it('maps every record panel slot', async () => {
+    const dir = await makeDir('frogbot-importmap-record-panel-');
+    const config = sanitize({
+      secret: 'test-secret',
+      db: { defaultIDType: 'number' } as never,
+      collections: [
+        { slug: 'users', auth: true, fields: [] },
+        {
+          slug: 'tasks',
+          fields: [],
+          admin: {
+            components: {
+              panel: {
+                actions: ['./components/PanelAction#PanelAction'],
+                afterFields: ['./components/AfterFields#AfterFields'],
+                beforeFields: ['./components/BeforeFields#BeforeFields'],
+                Component: './components/Panel#Panel',
+                Header: './components/PanelHeader#PanelHeader',
+              },
+            },
+          },
+        },
+      ],
+    });
+
+    const payloadConfig = await config._internal.payloadConfig;
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    await generateImportMap(payloadConfig);
+    const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
+
+    for (const name of ['PanelAction', 'AfterFields', 'BeforeFields', 'Panel', 'PanelHeader']) {
+      expect(output).toContain(`from './components/${name}'`);
+    }
+  });
+
   it('maps tool components', async () => {
     const dir = await makeDir('frogbot-importmap-tool-components-');
     const config = sanitize({

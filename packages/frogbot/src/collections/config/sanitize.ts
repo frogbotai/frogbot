@@ -293,6 +293,7 @@ export function sanitizeCollection(
   const {
     auth: _auth,
     collectionViews: _collectionViews,
+    panel: _panel,
     search: _search,
     signIn: _customSignIn,
     ...existingFrogBot
@@ -304,6 +305,7 @@ export function sanitizeCollection(
       ...existingFrogBot,
       auth,
       collectionViews,
+      ...(c.admin?.components?.panel ? { panel: c.admin.components.panel } : {}),
       ...(search ? { search } : {}),
       ...(signIn.length
         ? {

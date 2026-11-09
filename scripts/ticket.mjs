@@ -37,14 +37,14 @@ import { runGroups, verifyInputs, worktreePatchId } from './lib/verify.mjs';
 
 export const FULL_TIER = [
   '**/migrations/**',
-  'packages/*/src/collections/config/**',
-  'packages/*/src/jobs/**',
-  'packages/*/src/uploads/**',
+  '*/*/src/collections/config/**',
+  '*/*/src/jobs/**',
+  '*/*/src/uploads/**',
   '**/access.ts',
   '**/access/**',
   '**/*Access.ts',
   'packages/storage-*/**',
-  'packages/*/src/exports/**',
+  '*/*/src/exports/**',
 ];
 
 export const BASE_GATES = ['check --full', 'test:unit', 'test:ui'];
@@ -501,6 +501,26 @@ export function keyOfWorktree({ path: dir, branch }) {
   return keyOf(WORKTREE_TICKET.exec(dir)) ?? keyOf(BRANCH_TICKET.exec(branch ?? ''));
 }
 
+export function verifyKey({ root, home, branch, remote }) {
+  return root === home && !remote ? null : keyOfWorktree({ path: root, branch });
+}
+
+export function repoAt(main, home) {
+  return Object.keys(REPOS).find((repo) => repoCheckout(main, repo) === home) ?? null;
+}
+
+export function ticketFolders(names, { ticket, repo }) {
+  const prefixes = [`${repo}-${ticket}_`, `${DEFAULT_REPO}-${ticket}_`, `ticket${ticket}_`];
+
+  for (const prefix of prefixes) {
+    const matches = names.filter((name) => name.startsWith(prefix));
+
+    if (matches.length > 0) return matches;
+  }
+
+  return [];
+}
+
 export function issueFolder({ repo, issue, slug }) {
   return `${repo}-${issue}_${slug}`;
 }
@@ -852,10 +872,14 @@ function headerProblems(tickets) {
   );
 }
 
-function findTicket(main, ticket) {
-  const matches = folders(main).filter((folder) => FOLDER.exec(folder)[1] === String(ticket));
+function findTicket(main, ticket, cloudRepo) {
+  const matches = cloudRepo
+    ? ticketFolders(folders(main, { keyed: true }), { ticket, repo: cloudRepo })
+    : folders(main).filter((folder) => FOLDER.exec(folder)[1] === String(ticket));
 
-  if (matches.length === 0) refuse(`no folder ${TICKETS_DIR}/ticket${ticket}_<slug>/`);
+  if (matches.length === 0) {
+    refuse(`no folder ${TICKETS_DIR}/${cloudRepo ? `${cloudRepo}-` : 'ticket'}${ticket}_<slug>/`);
+  }
 
   if (matches.length > 1) {
     refuse(`ticket ${ticket} has ${matches.length} folders: ${matches.join(', ')}`);
@@ -1490,12 +1514,24 @@ async function commandVerify(main, { list }) {
     gitOut(root, ['rev-parse', '--path-format=absolute', '--git-common-dir']),
   );
 
-  const key = root === home ? null : keyOfWorktree({ path: root, branch });
+  const remote = process.env.CLAUDE_CODE_REMOTE === 'true';
+  const branchKey = verifyKey({ root, home, branch, remote });
 
-  if (!key) refuse(`${root} is not a ticket worktree; run verify in <repo>-ticket<n>`);
+  if (!branchKey) {
+    refuse(
+      remote
+        ? `${branch ?? 'HEAD'} is not a ticket branch; verify on claude/ticket-<n>-<slug>`
+        : `${root} is not a ticket worktree; run verify in <repo>-ticket<n>`,
+    );
+  }
 
-  const found = findTicket(main, Number(TICKET_KEY.exec(key)[1]));
-  const repo = repoOf(found);
+  const cloudRepo = remote ? repoAt(main, home) : null;
+
+  if (remote && !cloudRepo) refuse(`${home} is not a frogbot, sidekick or platform checkout`);
+
+  const found = findTicket(main, Number(TICKET_KEY.exec(branchKey)[1]), cloudRepo);
+  const repo = cloudRepo ?? repoOf(found);
+  const key = cloudRepo ? String(found.ticket) : branchKey;
 
   if (home !== repoCheckout(main, repo)) {
     refuse(`ticket ${key} is a ${repo} ticket; run verify in ${worktreePath(main, key, repo)}`);

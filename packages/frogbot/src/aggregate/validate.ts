@@ -184,9 +184,10 @@ function parseBoolean(value: unknown, { label, name }: { label: string; name: st
 export function parseAggregateOptions(options: AggregateOptions): ParsedAggregate {
   const label = describeAggregate(options.collection);
   const groupInput: unknown = options.groupBy;
-  const groupEntries = Array.isArray(groupInput) ? groupInput : [groupInput];
+  const groupEntries =
+    groupInput === undefined ? [] : Array.isArray(groupInput) ? groupInput : [groupInput];
 
-  if (!groupEntries.length) {
+  if (groupInput !== undefined && !groupEntries.length) {
     throw new AggregateValidationError(`${label} requires at least one groupBy field.`);
   }
 
@@ -238,6 +239,16 @@ export function parseAggregateOptions(options: AggregateOptions): ParsedAggregat
 
   if (options.locale === 'all' || options.locale === '*' || options.req?.locale === 'all') {
     throw new AggregateValidationError(`${label} requires a single locale.`);
+  }
+
+  if (!groupBy.length) {
+    const paging = (['sort', 'limit', 'page'] as const).find((key) => options[key] !== undefined);
+
+    if (paging) {
+      throw new AggregateValidationError(
+        `${label} cannot take ${paging} without groupBy: it returns one row.`,
+      );
+    }
   }
 
   const limit = parseInteger(options.limit, { label, name: 'limit', min: 0 });

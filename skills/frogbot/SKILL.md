@@ -225,7 +225,7 @@ Choose a domain-specific flag and check it before side effects.
 
 Your shell has no terminal, so `share` never prompts you. Settle these with the user first:
 
-- **Data.** On the first share, when the app has local records or files, pass `--data` or `--no-data`; without either, `share` stops before sending anything. Ask the user: `--data` brings a copy of the local database and the upload files, including users with their passwords. Only SQLite `file:` databases can bring data. Data comes only with the first share; later shares send code only and never overwrite live data.
+- **Data.** On the first share, when the app has local records or files, pass `--data` or `--no-data`; without either, `share` stops before sending anything. Ask the user: `--data` brings a copy of the local database and the upload files, including users with their passwords. Only SQLite `file:` databases can bring data. Data comes only with the first share; later shares send code only. `--replace-data` replaces a live app's data, but only an owner typing the app's name at a terminal can confirm it: never try it for the user, tell them the command to run themselves.
 - **Keys.** Every key in the `.env` files comes along without asking (`DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT`, `HOSTNAME`, `FROGBOT_DOJO_TOKEN` and `FROGBOT_DOJO_URL` never do). Leave keys out with `--skip-key NAME` (repeatable, case-sensitive) or `--no-keys`. On later shares, keys whose local value differs from live keep their live value unless you pass `--update-keys`.
 - **Workspace and name.** With more than one Dojo workspace, pass `--workspace <slug>`. The address is `https://<name>.frogbot.app`, named from `package.json`; when that's taken, rerun with `--name <another name>`.
 
@@ -235,7 +235,7 @@ When the workspace's Dojo plan doesn't cover the app yet, `share` prints why, th
 
 `share` needs a `pnpm-lock.yaml`, `package-lock.json` or `yarn.lock` (not Bun) and an upload under 100 MB. It writes the app's id to `.frogbot/app.json`, so later shares from the folder update the same app; delete that file only when the user wants a new app. It ends with `[frogbot] Share it: <link>` and then the live URL as the last line: give the user both.
 
-When someone shared an app with the user as an editor on Dojo, `npx @frogbotai/plugin-dojo apps pull <slug>`, run from the folder that should hold it, downloads it into a new `./<slug>` folder with an empty database; then run `pnpm install` and `pnpm dev` there, and `apps share` from that folder ships a new version of the same app. An editor's share brings no keys and has no `Share it:` line, since only the app's owners manage its keys on Dojo.
+When someone shared an app with the user as an editor on Dojo, `npx @frogbotai/plugin-dojo apps pull <slug>`, run from the folder that should hold it, downloads it into a new `./<slug>` folder with an empty database (an owner can add `--data` to bring the live database, files and the app's secret); then run `pnpm install` and `pnpm dev` there, and `apps share` from that folder ships a new version of the same app. An editor's share brings no keys and has no `Share it:` line, since only the app's owners manage its keys on Dojo.
 
 When a shared app misbehaves on Dojo, run `npx @frogbotai/plugin-dojo apps logs <slug>` (or `npx frogbot dojo apps logs <slug>` in an app that lists `dojo()`) to read its recent logs (key values show as `••••`); add `--follow`, in a background shell, to watch new lines while the user reproduces the problem.
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { ListQueryProvider, TableColumnsProvider, usePreferences } from '@payloadcms/ui';
-import type { Column, ListQuery } from 'payload';
+import type { Column, ListQuery, PaginatedDocs } from 'payload';
 import { useEffect } from 'react';
 
 import {
@@ -12,6 +12,7 @@ import type { StoredViewPreference } from './viewSetup.js';
 
 export type CollectionViewShellClientProps = Omit<CollectionViewFrameProps, 'enableColumns'> & {
   columnState?: Column[];
+  data?: PaginatedDocs;
   preference?: StoredViewPreference;
   preferenceKey?: string;
   query: ListQuery;
@@ -36,6 +37,7 @@ export function HydrateViewPreference({
 
 export function CollectionViewShellClient({
   columnState,
+  data,
   preference,
   preferenceKey,
   query,
@@ -53,7 +55,7 @@ export function CollectionViewShellClient({
   return (
     <ListQueryProvider
       collectionSlug={frame.collectionSlug}
-      data={undefined}
+      data={data}
       modifySearchParams
       query={query}
     >

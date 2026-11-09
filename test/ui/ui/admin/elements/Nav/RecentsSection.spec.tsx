@@ -31,14 +31,6 @@ vi.mock('../../../../../../packages/ui/src/nav/NavSection', () => ({
   ),
 }));
 
-vi.mock('../../../../../../packages/ui/src/nav/NavItem', () => ({
-  NavItem: ({ active, label, path }: { active?: boolean; label: string; path: string }) => (
-    <a aria-current={active ? 'page' : undefined} href={path}>
-      {label}
-    </a>
-  ),
-}));
-
 import { RecentsSection } from '../../../../../../packages/ui/src/admin/elements/Nav/RecentsSection';
 import { NavAdapterProvider } from '../../../../../../packages/ui/src/nav/adapter';
 import { NavSection } from '../../../../../../packages/ui/src/nav/NavSection';

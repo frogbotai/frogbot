@@ -712,7 +712,7 @@ describe('frogbot sanitize', () => {
     },
   );
 
-  it('rejects brand logos as collection icons', () => {
+  it('accepts brand logos as collection icons, only with the brand- prefix', () => {
     const icon = (value: string) =>
       sanitize(
         makeConfig({
@@ -720,11 +720,13 @@ describe('frogbot sanitize', () => {
         }),
       );
 
-    expect(() => icon('discover')).toThrowError("[frogbot] Unknown admin icon 'discover'. Valid:");
-    expect(() => icon('brand-discover')).toThrowError(
-      "[frogbot] Admin icon 'brand-discover' is a brand logo, not a UI icon. Pick a UI icon. Valid:",
+    expect(() => icon('brand-twitter')).not.toThrow();
+    expect(() => icon('brand-git-hub')).not.toThrow();
+    expect(() => icon('twitter')).toThrowError("[frogbot] Unknown admin icon 'twitter'. Valid:");
+    expect(() => icon('brand-myspace')).toThrowError(
+      "[frogbot] Unknown admin icon 'brand-myspace'. Valid:",
     );
-    expect(() => icon('brand-discover')).not.toThrowError(/Valid:.*brand-/);
+    expect(() => icon('brand-myspace')).toThrowError(/Valid:.*brand-twitter/);
   });
 
   it('rejects unknown built-in nav item icons', () => {

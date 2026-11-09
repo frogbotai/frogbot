@@ -1,0 +1,43 @@
+@layer frogbot {
+  .collection-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    padding: var(--spacer-3) 0 var(--spacer-4);
+  }
+
+  .collection-gallery__card {
+    --fb-card-image-height: 160px;
+
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--special-border-translucent);
+    border-radius: 6px;
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--color-text) 8%, transparent);
+    color: var(--color-text);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+    padding: 12px;
+  }
+
+  .collection-gallery__card:hover {
+    border-color: var(--special-border-translucent-strong);
+  }
+
+  .collection-gallery__card:focus-visible {
+    outline: var(--accessibility-outline);
+    outline-offset: var(--accessibility-outline-offset);
+  }
+}
+
+@media (max-width: 480px) {
+  @layer frogbot {
+    .collection-gallery {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+
+    .collection-gallery__card {
+      --fb-card-image-height: 120px;
+    }
+  }
+}

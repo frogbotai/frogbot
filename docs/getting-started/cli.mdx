@@ -227,6 +227,7 @@ Uploads the app in the current folder to Dojo, streams `[build]` logs, and print
 | `--app` | app slug or id | — | Ships to this existing app and links the folder to it in `.frogbot/app.json`, for a fresh clone or CI. Stops if the folder is linked to another app. Can't be combined with `--workspace` or `--name`. |
 | `--data` | flag | — | On the first share, uploads local SQLite data and files without prompting. |
 | `--no-data` | flag | — | On the first share, uploads code only without prompting. |
+| `--replace-data` | flag | — | On a live app, replaces all of its data with this computer's. Owners only, after typing the app's name; needs a terminal. |
 | `--workspace` | workspace slug | — | Dojo workspace to create the app in on first share (when you belong to multiple). |
 | `--name` | name | `package.json` `name` | Subdomain slug for `https://<name>.frogbot.app` on first share (lowercased, alphanumeric + dashes). |
 | `--no-keys` | flag | — | Uploads no `.env` keys. |
@@ -248,7 +249,8 @@ Uploads the app in the current folder to Dojo, streams `[build]` logs, and print
     - **Name collisions & workspaces:** If the app name is taken on Dojo, `share` prompts you to rerun with `--name <another name>`. If you belong to multiple workspaces in a non-interactive shell, pass `--workspace`. With no workspace yet, `share` says where to create one; in an interactive terminal it opens that page and checks again when you press Enter.
   </Accordion>
   <Accordion title="Bringing local database & upload files (--data)">
-    - **First share only:** On the first share of a local `file:` SQLite app, `share` asks `Bring your data? 42 deals, 3 users, 12 files` (or requires `--data` / `--no-data` when non-interactive). Once a version of the app has started on Dojo, later shares deploy code only and never overwrite live data.
+    - **First share only:** On the first share of a local `file:` SQLite app, `share` asks `Bring your data? 42 deals, 3 users, 12 files` (or requires `--data` / `--no-data` when non-interactive). Once a version of the app has started on Dojo, later shares deploy code only; `--data` then says to use `--replace-data`.
+    - **Replacing live data:** `share --replace-data` on a live app asks `This replaces all of deals's live data with this computer's (42 deals, 3 users, 12 files). Anything written live since will be lost. Type deals to confirm:` and ships the data with the new version. Only the app's owners can do it, and only at a terminal: without one it exits `1` with `Replacing live data needs a person at a terminal.`, and `--yes` doesn't skip the question. Dojo snapshots the app's volume first, and brought files overwrite files with the same name; none are deleted.
     - **Safe live copy:** `share` copies your SQLite database so it works while `frogbot dev` is running, stripping local-only state (queued jobs, locks, sessions, trigger subscriptions) while preserving users, password hashes, and `FROGBOT_SECRET` so existing connections keep working.
     - **Upload collections:** Files inside upload directories within your project root are uploaded with progress output and automatic 3x retries. `.env*`, `.git`, `node_modules`, and database files inside upload folders are excluded.
   </Accordion>
@@ -267,7 +269,7 @@ Uploads the app in the current folder to Dojo, streams `[build]` logs, and print
 ### `dojo apps pull`
 
 ```bash
-npx @frogbotai/plugin-dojo apps pull deals
+npx @frogbotai/plugin-dojo apps pull deals [--data]
 ```
 
 Downloads the live code of a Dojo app you own or edit into a new `./<app>` directory, links `.frogbot/app.json` so running `npx frogbot dojo apps share` from that folder updates the same app, and writes a fresh local `.env` (`DATABASE_URL=file:./frogbot.db` and `FROGBOT_SECRET`). Live data and production secrets remain on Dojo.
@@ -278,6 +280,7 @@ pnpm install
 pnpm dev
 ```
 
+- `--data` also downloads the live database and uploaded files, for the app's owners: the database lands as `frogbot.db`, each upload collection's files in its `staticDir`, and `.env` (readable only by you) gets the app's own `FROGBOT_SECRET` so stored connections and sign-ins keep working. A data file never replaces one of the app's code files: the pull stops instead. An editor's `--data` prints `Only this app's Admins can download its data.` and pulls the code only.
 - Refuses to overwrite an existing folder.
 - Exits with code `1` if you lack editor/owner permissions or the app has no live version yet, and code `2` if no app slug is passed.
 

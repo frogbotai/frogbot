@@ -45,9 +45,7 @@ test('a Board card grouped by a field in a row shows the channel badge', async (
 
   await expectBadge(card);
 
-  await expect(card.locator('.collection-board__field', { hasText: /^Status/ })).toContainText(
-    'Backlog',
-  );
+  await expect(card.locator('.fb-card__field', { hasText: /^Status/ })).toContainText('Backlog');
 });
 
 test('a Board card without a channel shows no badge', async ({ page }) => {
@@ -55,10 +53,8 @@ test('a Board card without a channel shows no badge', async ({ page }) => {
 
   const card = page.locator('.frog-board__card', { hasText: plain.title });
 
-  await expect(card.locator('.collection-board__title')).toHaveText(plain.title);
-  await expect(card.locator('.collection-board__field', { hasText: /^Status/ })).toContainText(
-    'Backlog',
-  );
+  await expect(card.locator('.fb-card__title')).toHaveText(plain.title);
+  await expect(card.locator('.fb-card__field', { hasText: /^Status/ })).toContainText('Backlog');
   await expect(card.locator('.channel-cell')).toHaveCount(0);
 });
 

@@ -76,15 +76,15 @@ test('a Board card shows virtual path fields like their source', async ({ page }
 
   const card = page.locator('.frog-board__card', { hasText: titles.apollo });
 
-  await expectApollo(card, '.collection-board__field');
+  await expectApollo(card, '.fb-card__field');
 
-  await expect(card.locator('.collection-board__field', { hasText: 'Tag Names' })).toContainText(
+  await expect(card.locator('.fb-card__field', { hasText: 'Tag Names' })).toContainText(
     'urgent, backend',
   );
 
   const loose = page.locator('.frog-board__card', { hasText: titles.loose });
 
-  await expect(loose.locator('.collection-board__title')).toHaveText(titles.loose);
+  await expect(loose.locator('.fb-card__title')).toHaveText(titles.loose);
 });
 
 test('a Calendar event shows virtual path fields like their source', async ({ page }) => {

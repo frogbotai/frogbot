@@ -73,6 +73,7 @@ export function testIO({
   confirm,
   select,
   multiselect,
+  text,
   config = emptyConfig,
 }: {
   cwd: string;
@@ -81,6 +82,8 @@ export function testIO({
   confirm?: boolean;
   select?: string;
   multiselect?: string[];
+  /** The answer to a typed confirmation, which `share --replace-data` asks for. */
+  text?: string;
   config?: DeployConfig;
 }): TestIO {
   let out = '';
@@ -96,6 +99,13 @@ export function testIO({
     return value;
   };
 
+  const prompts = {
+    confirm: (message: string) => Promise.resolve(answer(message, confirm)),
+    select: (message: string) => Promise.resolve(answer(message, select)),
+    multiselect: (message: string) => Promise.resolve(answer(message, multiselect)),
+    text: (message: string) => Promise.resolve(answer(message, text)),
+  };
+
   const io: DeployIO = {
     program: 'frogbot',
     cwd,
@@ -103,11 +113,7 @@ export function testIO({
     isTTY,
     stdout: { write: (text: string) => (out += text) },
     stderr: { write: (text: string) => (err += text) },
-    prompts: {
-      confirm: (message) => Promise.resolve(answer(message, confirm)),
-      select: (message) => Promise.resolve(answer(message, select)),
-      multiselect: (message) => Promise.resolve(answer(message, multiselect)),
-    },
+    prompts,
     openBrowser: (url) => opened.push(url),
     wait: () => Promise.resolve(),
     loadConfig: () => Promise.resolve(config),

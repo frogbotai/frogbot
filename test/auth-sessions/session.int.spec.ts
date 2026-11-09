@@ -270,6 +270,24 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     vi.spyOn(locks, 'runKVLock').mockImplementation((args) => run({ ...args, ttl: 300 }));
   };
 
+  const loseLeaseWhenArmed = () => {
+    const extendLock = frogbot.kv.extendLock.bind(frogbot.kv);
+    let armed = false;
+    const extend = vi.spyOn(frogbot.kv, 'extendLock').mockImplementation(async (lock, ttl) => {
+      if (!armed) return extendLock(lock, ttl);
+      armed = false;
+
+      return false;
+    });
+
+    return {
+      extend,
+      arm: () => {
+        armed = true;
+      },
+    };
+  };
+
   beforeAll(async () => {
     databaseDir = await mkdtemp(join(tmpdir(), 'frogbot-session-'));
     const createIdentity = definePiece({
@@ -781,11 +799,12 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
 
   it('compensates after a lease loss and waits for the in-flight hook before restoring the request', async () => {
     shortenLease();
-    const extend = vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
+    const { extend, arm } = loseLeaseWhenArmed();
     let finished = false;
 
     payload.collections.members.config.hooks.afterLogin = [
       async ({ req, user }) => {
+        arm();
         await waitForLeaseLoss(extend);
         req.user = user;
         finished = true;
@@ -818,11 +837,12 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
 
   it('rolls back a session write if its lease is lost before commit', async () => {
     shortenLease();
-    const extend = vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
+    const { extend, arm } = loseLeaseWhenArmed();
     const update = payload.db.updateOne.bind(payload.db);
 
     vi.spyOn(payload.db, 'updateOne').mockImplementationOnce(async (args) => {
       const result = await update(args);
+      arm();
       await waitForLeaseLoss(extend);
 
       return result;
@@ -929,11 +949,12 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
 
   it('cleans up password-login lease loss', async () => {
     shortenLease();
-    const extend = vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
+    const { extend, arm } = loseLeaseWhenArmed();
     let finished = false;
 
     payload.collections.members.config.hooks.afterLogin = [
       async ({ req, user }) => {
+        arm();
         await waitForLeaseLoss(extend);
         req.user = user;
         finished = true;
@@ -979,7 +1000,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   it('does not let expired-lease password-login cleanup resurrect a real logout', async () => {
     const rollback = vi.spyOn(payload.db, 'rollbackTransaction');
     shortenLease();
-    vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
+    const { arm } = loseLeaseWhenArmed();
     const acquire = vi.spyOn(frogbot.kv, 'acquireLock');
     let notify!: () => void;
     const entered = new Promise<void>((resolve) => {
@@ -990,6 +1011,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
 
     payload.collections.members.config.hooks.afterLogin = [
       async () => {
+        arm();
         notify();
         await waitForAcquisitions(acquire, 2);
         finished = true;
@@ -1401,7 +1423,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       await prepareReset();
       shortenLease();
       vi.spyOn(payload.logger, 'error').mockImplementation(() => undefined);
-      const extend = vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
+      const { extend, arm } = loseLeaseWhenArmed();
       let notify!: () => void;
       let resume!: () => void;
       const entered = new Promise<void>((resolve) => {
@@ -1422,6 +1444,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
 
         expect(staleTransaction).toBeTruthy();
 
+        arm();
         notify();
         await resumed;
         const result = await update(args);
@@ -1507,7 +1530,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   it('keeps logout revoked when lease loss occurs during an actual delayed commit', async () => {
     shortenLease();
     vi.spyOn(payload.logger, 'error').mockImplementation(() => undefined);
-    const extend = vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
+    const { extend, arm } = loseLeaseWhenArmed();
     const acquire = vi.spyOn(frogbot.kv, 'acquireLock');
     let notify!: () => void;
     let resume!: () => void;
@@ -1523,6 +1546,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const commit = payload.db.commitTransaction.bind(payload.db);
 
     vi.spyOn(payload.db, 'commitTransaction').mockImplementationOnce(async (id) => {
+      arm();
       notify();
       await resumed;
       await commit(id);

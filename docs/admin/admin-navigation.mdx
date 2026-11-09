@@ -59,7 +59,7 @@ export const Projects: CollectionConfig = {
 }
 ```
 
-Use `group: null` to list a collection as a top-level link above the sections. Leave `group` undefined to list it directly under the Collections heading, as FrogBot's built-in collections are, provide a string or localized value to list it under a named group label, or use `false` to keep the collection's routes but leave it out of the sidebar, the dashboard's collection cards, Recents and Pinned, and the command palette. Settings → Collections still lists a `false` collection, so it's one click away. For Users and other admin collections, use [`settings: true`](#settings-collections) instead. Both options are listed with the other collection admin settings in [Admin Options](/configuration/collections#admin-options).
+Use `group: null` to list a collection as a top-level link above the sections. Leave `group` undefined to list it directly under the Collections heading, as FrogBot's built-in collections are, provide a string or localized value to list it under a named group label, or use `false` to keep the collection's routes but leave it out of the sidebar, the dashboard's collection cards, Recents and Pinned, and the command palette. Settings → Collections still lists a `false` collection, so it's one click away. Internal `payload-*` collections, such as LLM Instructions, are left off it. For Users and other admin collections, use [`settings: true`](#settings-collections) instead. Both options are listed with the other collection admin settings in [Admin Options](/configuration/collections#admin-options).
 
 These built-in names suit a sidebar link, grouped by the kind of collection they fit:
 
@@ -83,7 +83,7 @@ admin: {
 
 A plain string without `#` must be a built-in icon name. An unknown name, such as a typo, stops startup with `[frogbot] Unknown admin icon '<name>'` followed by the valid names. A component path always names its export after `#`; write `'./src/components/ProjectsIcon#default'` for a default export. Navigation item and settings icons follow the same rules.
 
-Built-in names are UI icons only. The brand logos in `@frogbotai/ui/icons`, such as `BrandSlackIcon` and `BrandVisaIcon`, aren't admin icons, and a `brand-` name such as `'brand-slack'` stops startup. To show one, render it from your own component and point `icon` at that component's path.
+Brand logos are built-in names too, always with the `brand-` prefix: `BrandTwitterIcon` in `@frogbotai/ui/icons` is `'brand-twitter'`, and `BrandGitHubIcon` is `'brand-git-hub'`. Use one where the item is about that brand, such as an X swipe file or a list of GitHub repos, and a UI icon everywhere else. `'twitter'` without the prefix is an unknown name.
 
 Within `CollectionsSection`, ungrouped collections come first, in configuration order. Named groups follow in first-seen order, with their collections in configuration order.
 

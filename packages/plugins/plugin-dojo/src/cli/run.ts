@@ -13,6 +13,7 @@ import { authPath } from './auth.js';
 import { askData } from './data/ask.js';
 import type { DataInventory } from './data/inventory.js';
 import { describeData, takeInventory } from './data/inventory.js';
+import { askReplace, replaceMessages } from './data/replace.js';
 import { formatBytes, uploadData } from './data/upload.js';
 import type { DojoClient } from './dojo.js';
 import { createDojo, dojoError, dojoMessage, followBuild, segment } from './dojo.js';
@@ -103,16 +104,21 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
   const target = flags.app ? await appFromFlag({ dojo, ref: flags.app, folderLink }) : undefined;
 
   const link = target?.link ?? folderLink;
-  const { started, level }: AppInfo =
+  const { started, level, slug }: AppInfo =
     target ?? (link ? await appInfo(dojo, link.appId) : { started: false, level: 'owner' });
 
   const editor = level === 'editor';
 
-  if (started && flags.data) {
-    say(io, '[frogbot] Data comes only with the first share; sharing code only.');
-  }
+  const replacing = started && flags.replaceData;
 
-  const data = started ? undefined : await askData({ data: flags.data, root, config, io });
+  if (started && flags.data && !replacing) say(io, `[frogbot] ${replaceMessages.firstShareOnly}`);
+
+  const data = replacing
+    ? await askReplace({ slug: slug ?? String(link?.appId), level, root, config, io })
+    : started
+      ? undefined
+      : await askData({ data: flags.replaceData || flags.data, root, config, io });
+
   let archive: ShareArchive | undefined;
 
   try {
@@ -163,7 +169,7 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
         );
       }
 
-      await uploadData({ dojo, appId, inventory: data, io });
+      await uploadData({ dojo, appId, inventory: data, io, replace: replacing });
     }
 
     say(io, `[frogbot] ${archive.summary}`);
@@ -175,7 +181,7 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
       archive,
       keys: data && secret ? [...keys, { name: 'FROGBOT_SECRET', value: secret }] : keys,
       updateKeys: !editor && flags.updateKeys,
-      data: started ? undefined : Boolean(data),
+      data: replacing ? 'replace' : started ? undefined : Boolean(data),
     });
 
     if (target && !folderLink) await writeLink(root, target.link);
@@ -192,7 +198,7 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
       );
     }
 
-    const shareLink = editor ? null : `${dojo.url}/collections/projects/${appId}?share=1`;
+    const shareLink = editor ? null : `${dojo.url}/collections/apps/${appId}/settings?share=1`;
 
     if (shareLink) say(io, `[frogbot] Share it: ${shareLink}`);
     if (build.url) say(io, build.url);
@@ -313,7 +319,7 @@ async function createApp({
   const slug = toSlug(flags.name ?? name);
 
   const created = await whenPaid(dojo, io, () =>
-    dojo.request('/api/projects?depth=0', () => ({
+    dojo.request('/api/apps?depth=0', () => ({
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ name, slug, workspace: workspace.id }),
@@ -402,7 +408,7 @@ async function deploy({
   archive: ShareArchive;
   keys: EnvKey[];
   updateKeys: boolean;
-  data: boolean | undefined;
+  data: boolean | 'replace' | undefined;
 }): Promise<string | number> {
   const keysPart =
     keys.length > 0

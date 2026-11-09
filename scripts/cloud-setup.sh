@@ -64,8 +64,8 @@ git -C "$root/.idea" pull -q --ff-only 2>/dev/null || true
 place sidekick sidekick
 place platform platform
 
-# 3. A local main for `pnpm ticket verify`, which diffs against it.
-git -C "$root" fetch -q --depth=200 origin main:refs/remotes/origin/main || status=1
+# 3. A local main for `pnpm ticket verify`, which diffs against it. The + follows a force-push.
+git -C "$root" fetch -q --depth=200 origin +main:refs/remotes/origin/main || status=1
 if [ "$(git -C "$root" branch --show-current)" != "main" ]; then
   git -C "$root" branch -f main refs/remotes/origin/main >/dev/null || status=1
 fi

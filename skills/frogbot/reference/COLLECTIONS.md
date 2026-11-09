@@ -62,11 +62,11 @@ Set `admin.icon` on every collection that shows in the sidebar. Without one it s
 | Places   | `map-pin`, `building`, `home`, `web`                                                                      |
 | Settings | `setting`, `shield`, `key-round`, `lock`, `database`, `link-square`, `code`                               |
 
-Every built-in name is a UI icon. Brand logos (`brand-slack`, `brand-visa`) aren't built-in names, and they don't belong in the sidebar. Your editor autocompletes every built-in name, and an unknown name stops startup with the full list. For anything else, point at a component: `icon: './src/components/LeadsIcon#LeadsIcon'`.
+A collection about one platform takes its logo, always with the `brand-` prefix: `brand-twitter` for an X swipe file, `brand-youtube` for a channel list, `brand-git-hub` for repos. Everything else takes a UI icon. Your editor autocompletes every built-in name, and an unknown name stops startup with the full list. For anything else, point at a component: `icon: './src/components/LeadsIcon#LeadsIcon'`.
 
 ## Views and done records
 
-`admin.views` lists a collection's views; the first is the default and a list view must come first. Every view renders in one frame with a tab row (icon and label), one toolbar and one empty state. Keep view entries plain data: `filter` is a `Where`, React components go in `components`, and `access` is the only function. Each user's filters, sort, columns, page size and grouping are saved per view, with **Reset to default** in the view menu.
+`admin.views` lists a collection's views; the first is the default and a list view must come first. Every view renders in one frame with a tab row (icon and label), one toolbar and one empty state. Keep view entries plain data: `filter` is a `Where`, React components go in `components`, and `access` is the only function. Each user's filters, sort, columns, page size and grouping are saved per view, with **Reset to default** in the view menu. A list view's `summary` sets each column's default footer total across every page (`count`, `sum`, `avg`, `min`, `max`; numbers take all five, dates `count`, `min` and `max`, other fields `count`); people change it from the footer, and startup fails on an unknown path or a pairing the field can't take.
 
 ```ts
 export const Tasks: CollectionConfig = {
@@ -75,7 +75,12 @@ export const Tasks: CollectionConfig = {
     useAsTitle: 'title',
     useAsDone: 'completed',
     views: [
-      { type: 'list', defaultFields: ['title', 'status', 'dueDate'] },
+      {
+        type: 'list',
+        defaultFields: ['title', 'status', 'dueDate'],
+        groupBy: 'status',
+        summary: { title: 'count' },
+      },
       { type: 'board', groupBy: 'status', icon: 'kanban', filter: { archived: { equals: false } } },
       {
         type: 'calendar',
@@ -94,7 +99,24 @@ export const Tasks: CollectionConfig = {
 };
 ```
 
-`admin.useAsDone` names one checkbox field (or a dot path into a group); startup fails if it isn't a checkbox. Done records share one done style on every view, and board cards get a check circle that toggles it through a normal update. To make a stage imply done, set the checkbox in a `beforeChange` hook rather than in config. Docs: https://docs.frogbot.ai/configuration/collections#collection-views
+A list or board `groupBy` follows one set of rules: select and radio groups in option order with every option shown, checkbox as true then false, other fields by the values present, and records without a value in one last group. A list opens grouped by its `groupBy` until a person picks their own grouping; each list group collapses (saved per person), shows its count and has **+ Add**, which prefills the group's value. Hide a field from grouping with `admin.disabled.groupBy`.
+
+Board and gallery cards share their keys: `defaultFields`, `components.Card`, and the card image. The image comes from the collection's `admin.useAsThumbnail` (defaulting to the first upload field; an upload collection with none shows each document's own file). A view's `useAsThumbnail: '<upload field>'` overrides it, `false` turns images off, and `thumbnailFit: 'contain'` fits logos without cropping. There is no `cover` key.
+
+```ts
+admin: {
+  useAsThumbnail: 'logo',
+  views: [
+    { type: 'list' },
+    { type: 'gallery', label: 'Logos', thumbnailFit: 'contain', defaultFields: ['industry'] },
+    { type: 'board', groupBy: 'lifecycle', useAsThumbnail: false },
+  ],
+}
+```
+
+`admin.useAsDone` names one checkbox field (or a dot path into a group); startup fails if it isn't a checkbox. Done records share one done style on every view, and board and gallery cards get a check circle that toggles it through a normal update. To make a stage imply done, set the checkbox in a `beforeChange` hook rather than in config. Docs: https://docs.frogbot.ai/configuration/collections#collection-views
+
+Clicking a row, card or event opens the record in a side panel beside the view, at `?record=<id>`, with the edit form. It's on for every collection; `admin.panel: false` opens the edit page instead. `admin.panel.properties` lists the fields shown as label and value rows under the title (default: the sidebar fields), and `admin.panel.width` sets the starting width (400–960, default 560). Panel slots go in `admin.components.panel`: `actions`, `beforeFields`, `afterFields`, `Header`, `Component`. Docs: https://docs.frogbot.ai/admin/record-panel
 
 ## Authentication
 
