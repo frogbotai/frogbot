@@ -340,6 +340,7 @@ const testProjects = [
       'commandPalette.browser.spec.ts',
       'calendarTimeZone.browser.spec.ts',
       'board.browser.spec.ts',
+      'galleryCard.browser.spec.ts',
     ],
   }),
   project({ name: 'question-firefox', browser: 'firefox', testMatch: crossBrowserQuestionSpecs }),
@@ -405,6 +406,7 @@ const testProjects = [
     name: 'crm',
     testMatch: [
       'crm.browser.spec.ts',
+      'gallery.browser.spec.ts',
       'listGrouping.browser.spec.ts',
       'listSummary.browser.spec.ts',
       'recordPanel.browser.spec.ts',

@@ -1,0 +1,70 @@
+@layer frogbot {
+  .fb-card__image {
+    align-items: center;
+    background: var(--color-bg-secondary);
+    border-radius: 4px;
+    color: var(--color-icon-tertiary);
+    display: flex;
+    flex: none;
+    height: var(--fb-card-image-height, 140px);
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .fb-card__image img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  .fb-card__image--contain img {
+    object-fit: contain;
+    padding: var(--spacer-2);
+  }
+
+  .fb-card__image svg {
+    height: 40px;
+    width: 40px;
+  }
+
+  .fb-card__heading {
+    align-items: flex-start;
+    display: flex;
+    gap: var(--spacer-2);
+  }
+
+  .fb-card__heading .fb-done-check {
+    margin-top: 2px;
+  }
+
+  .fb-card__title {
+    color: var(--color-text);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .fb-card__field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .fb-card__field-label {
+    color: var(--color-text-tertiary);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .fb-card__field-value {
+    color: var(--color-text);
+    font-size: 13px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+}

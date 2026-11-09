@@ -101,7 +101,20 @@ export const Tasks: CollectionConfig = {
 
 A list or board `groupBy` follows one set of rules: select and radio groups in option order with every option shown, checkbox as true then false, other fields by the values present, and records without a value in one last group. A list opens grouped by its `groupBy` until a person picks their own grouping; each list group collapses (saved per person), shows its count and has **+ Add**, which prefills the group's value. Hide a field from grouping with `admin.disabled.groupBy`.
 
-`admin.useAsDone` names one checkbox field (or a dot path into a group); startup fails if it isn't a checkbox. Done records share one done style on every view, and board cards get a check circle that toggles it through a normal update. To make a stage imply done, set the checkbox in a `beforeChange` hook rather than in config. Docs: https://docs.frogbot.ai/configuration/collections#collection-views
+Board and gallery cards share their keys: `defaultFields`, `components.Card`, and the card image. The image comes from the collection's `admin.useAsThumbnail` (defaulting to the first upload field; an upload collection with none shows each document's own file). A view's `useAsThumbnail: '<upload field>'` overrides it, `false` turns images off, and `thumbnailFit: 'contain'` fits logos without cropping. There is no `cover` key.
+
+```ts
+admin: {
+  useAsThumbnail: 'logo',
+  views: [
+    { type: 'list' },
+    { type: 'gallery', label: 'Logos', thumbnailFit: 'contain', defaultFields: ['industry'] },
+    { type: 'board', groupBy: 'lifecycle', useAsThumbnail: false },
+  ],
+}
+```
+
+`admin.useAsDone` names one checkbox field (or a dot path into a group); startup fails if it isn't a checkbox. Done records share one done style on every view, and board and gallery cards get a check circle that toggles it through a normal update. To make a stage imply done, set the checkbox in a `beforeChange` hook rather than in config. Docs: https://docs.frogbot.ai/configuration/collections#collection-views
 
 Clicking a row, card or event opens the record in a side panel beside the view, at `?record=<id>`, with the edit form. It's on for every collection; `admin.panel: false` opens the edit page instead. `admin.panel.properties` lists the fields shown as label and value rows under the title (default: the sidebar fields), and `admin.panel.width` sets the starting width (400–960, default 560). Panel slots go in `admin.components.panel`: `actions`, `beforeFields`, `afterFields`, `Header`, `Component`. Docs: https://docs.frogbot.ai/admin/record-panel
 

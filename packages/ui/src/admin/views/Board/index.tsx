@@ -5,6 +5,7 @@ import type { AdminViewServerProps, PayloadComponent } from 'payload';
 import { getFromImportMap, transformColumnsToSearchParams } from 'payload/shared';
 import type { ComponentType } from 'react';
 
+import { getCardThumbnailPopulate, resolveCardThumbnail } from '../cards/thumbnail.js';
 import { getActiveViewSlug, resolveCollectionViews, withPageProps } from '../collectionViews.js';
 import { CollectionViewShell } from '../CollectionViewShell.js';
 import { canUpdateField } from '../fieldPermissions.js';
@@ -144,6 +145,8 @@ export async function BoardView(input: AdminViewServerProps) {
     req: initPageResult.req,
   });
 
+  const thumbnail = resolveCardThumbnail({ collectionConfig, view: board });
+
   const resolve = <TProps extends object>(component: PayloadComponent | undefined) =>
     component
       ? getFromImportMap<ComponentType<TProps>>({
@@ -170,11 +173,16 @@ export async function BoardView(input: AdminViewServerProps) {
         collectionSlug={collectionSlug}
         columnState={getBoardColumnState(preferenceValue)}
         columns={columns}
-        cover={board.cover}
         filter={board.filter}
         groupBy={groupBy}
         limit={board.pagination?.defaultLimit ?? 50}
         orderField={orderField}
+        populate={getCardThumbnailPopulate({
+          collectionConfig,
+          collections: payload.config.collections,
+          thumbnail,
+        })}
+        thumbnail={thumbnail}
         viewSlug={board.slug}
         canCreate={Boolean(permissions?.create)}
         canToggleDone={Boolean(

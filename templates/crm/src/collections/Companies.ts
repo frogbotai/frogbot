@@ -5,6 +5,7 @@ export const Companies: CollectionConfig = {
   slug: 'companies',
   admin: {
     icon: 'building',
+    useAsThumbnail: 'logo',
     useAsTitle: 'name',
     views: [
       {
@@ -19,9 +20,15 @@ export const Companies: CollectionConfig = {
         ],
       },
       {
+        type: 'gallery',
+        label: 'Logos',
+        thumbnailFit: 'contain',
+        defaultFields: ['industry', 'owner'],
+      },
+      {
         type: 'board',
         groupBy: 'lifecycle',
-        cover: 'logo',
+        useAsThumbnail: false,
         defaultFields: ['name', 'industry', 'employees'],
       },
     ],

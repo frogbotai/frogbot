@@ -107,8 +107,8 @@ async function createNeverRun(page: Page, data: TaskData): Promise<ID> {
 }
 
 function boardSummary(page: Page, title: string): Locator {
-  return page.locator('.frog-board__card', { hasText: title }).locator('.collection-board__field', {
-    has: page.locator('.collection-board__field-label', { hasText: /^Summary$/ }),
+  return page.locator('.frog-board__card', { hasText: title }).locator('.fb-card__field', {
+    has: page.locator('.fb-card__field-label', { hasText: /^Summary$/ }),
   });
 }
 
