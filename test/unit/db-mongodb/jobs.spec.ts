@@ -315,6 +315,21 @@ describe.skipIf(!mongoURL)('Mongo job claims', () => {
     expect(await read(waiting)).toMatchObject({ processingUntil: null, totalTried: 1 });
   });
 
+  it('claims without a Mongoose deprecation warning', async () => {
+    await seed({ priority: 1 });
+
+    const warn = vi.spyOn(process, 'emitWarning').mockImplementation(() => {});
+
+    const { rows } = await claim({ limit: 1 });
+
+    const warnings = warn.mock.calls.map(([message]) => String(message));
+
+    warn.mockRestore();
+
+    expect(rows).toHaveLength(1);
+    expect(warnings.filter((message) => message.includes('mongoose'))).toEqual([]);
+  });
+
   it('makes no extra find when no claimed row has a key', async () => {
     await seed({ priority: 1 });
     await seed({ priority: 2 });
