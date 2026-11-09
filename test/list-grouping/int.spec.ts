@@ -6,7 +6,8 @@ import type { ReactElement } from 'react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderGroupedTable } from '../../packages/ui/src/admin/views/List/groupedTable';
-import { resolveViewSetup } from '../../packages/ui/src/admin/views/viewSetup';
+import { patchPreferenceHandler } from '../../packages/ui/src/admin/views/patchPreference';
+import { readViewPreference, resolveViewSetup } from '../../packages/ui/src/admin/views/viewSetup';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
@@ -124,6 +125,49 @@ describe(`grouped list body [${adapterLabel}]`, () => {
       search: await outcome({ search: 'north' }),
       where: await outcome({ where: { guarded: { equals: 'north' } } }),
     }).toEqual({ search: 'To do:1,Doing:0,done:0', where: 'To do:1,Doing:0,done:0' });
+  });
+
+  it('patches a preference into what is stored now, keeping a sort saved after the page loaded', async () => {
+    const key = 'collection-items-view-list';
+    const patch = (value: Record<string, unknown>) =>
+      patchPreferenceHandler({ importMap: {}, key, patch: value, req } as Parameters<
+        typeof patchPreferenceHandler
+      >[0]);
+
+    await patch({ widths: { title: 240 } });
+
+    expect(await readViewPreference(req, key)).toEqual({ widths: { title: 240 } });
+
+    await resolveViewSetup({
+      collectionSlug: 'items',
+      query: { sort: '-title', where: { title: { equals: 'one' } } },
+      req,
+      viewSlug: 'list',
+    });
+
+    await patch({ rowHeight: 'tall', summary: { title: 'count' } });
+    await patch({ summary: null, widths: { title: 300 } });
+
+    expect(await readViewPreference(req, key)).toEqual({
+      rowHeight: 'tall',
+      sort: '-title',
+      where: { title: { equals: 'one' } },
+      widths: { title: 300 },
+    });
+  });
+
+  it('refuses a preference patch without a signed-in user or with a malformed patch', async () => {
+    const call = (args: Record<string, unknown>) =>
+      patchPreferenceHandler({ importMap: {}, ...args } as Parameters<
+        typeof patchPreferenceHandler
+      >[0]);
+
+    const signedOut = await createPayloadRequest({ payload: booted.payload });
+
+    await expect(call({ key: 'k', patch: { a: 1 }, req: signedOut })).rejects.toThrow();
+    await expect(call({ key: 'k', patch: [1], req })).rejects.toThrow();
+    await expect(call({ key: '', patch: { a: 1 }, req })).rejects.toThrow();
+    expect(await readViewPreference(req, 'k')).toBeUndefined();
   });
 
   it('does not save a groupBy that crashes the list, so a fresh visit still opens', async () => {

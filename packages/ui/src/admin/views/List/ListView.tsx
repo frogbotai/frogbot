@@ -32,6 +32,8 @@ import {
 import { getEditableColumns } from './cellEdit/editable.js';
 import { findEditableCells } from './cellEdit/editableCells.js';
 import { DefaultListView } from './DefaultListView.client.js';
+import { readGridSettings } from './grid/grid.js';
+import type { ListGridSettings } from './grid/ListGrid.client.js';
 import { type GroupedTable, renderGroupedTable } from './groupedTable.js';
 import { ListFrameClient, type ListFrameSummary } from './ListFrame.client.js';
 import { withRowIds } from './rowIds.js';
@@ -165,6 +167,7 @@ export async function ListView(props: ListViewServerProps) {
   const view = runtime[0]?.type === 'list' ? runtime[0] : undefined;
   const isList = clientProps.viewType === 'list' && view !== undefined;
   let summary: ListFrameSummary | undefined;
+  let grid: ListGridSettings | undefined;
   const navigationLabel = collectionConfig.orderable
     ? undefined
     : getTranslation(collectionConfig.labels.plural, i18n);
@@ -245,6 +248,8 @@ export async function ListView(props: ListViewServerProps) {
         viewType: clientProps.viewType,
       });
     }
+
+    grid = { ...readGridSettings(setup.preference), preferenceKey: setup.preferenceKey };
 
     summary = await resolveSummaryProps({
       collectionConfig,
@@ -331,6 +336,7 @@ export async function ListView(props: ListViewServerProps) {
       BeforeListTable={clientProps.BeforeListTable}
       Description={clientProps.Description ?? slots.Description}
       doneIds={doneIds}
+      grid={grid}
       editableCells={editableCells}
       editableColumns={editableColumns}
       isEmpty={isEmpty}
