@@ -110,15 +110,24 @@ export const createBeforeLogin =
   async ({ req, user }) => {
     const id = user.id as string | number;
     if (req.context.twoFactorPassed === passedKey(ctx.slug, id)) return;
-    if (req.context.twoFactorReset || req.context.twoFactorFirstUser) return;
+    if (req.context.twoFactorFirstUser) return;
+
+    const reset = req.context.twoFactorReset;
+    if (reset !== undefined) {
+      delete req.context.twoFactorReset;
+      if ((await readUser(req, ctx.slug, id))?.resetPasswordToken === reset) return;
+    }
 
     const mode = await twoFactorStep(req, ctx, user as TwoFactorUser);
     if (mode) throw new TwoFactorRequired(id, mode);
   };
 
-/** Lets every reset-password path, REST, GraphQL and the Local API, save the new password past the `beforeLogin` gate. */
+/** Lets every reset-password path, REST, GraphQL and the Local API, save the new password past the `beforeLogin` gate, for the one user whose reset token it carries. */
 export const beforeOperation: CollectionBeforeOperationHook = ({ args, operation, req }) => {
-  if (operation === 'resetPassword') req.context.twoFactorReset = true;
+  const data = 'data' in args ? (args.data as { token?: unknown } | undefined) : undefined;
+  if (operation === 'resetPassword' && typeof data?.token === 'string' && data.token) {
+    req.context.twoFactorReset = data.token;
+  }
 
   return args;
 };

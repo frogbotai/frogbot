@@ -61,8 +61,8 @@ declare module 'frogbot' {
 
 declare module 'payload' {
   interface RequestContext {
-    /** Set by the two-factor plugin's `beforeOperation` hook on a password reset, so its `beforeLogin` gate lets the reset save the password. */
-    twoFactorReset?: boolean;
+    /** The reset token of a password reset in progress, set by the two-factor plugin's `beforeOperation` hook. Its `beforeLogin` gate lets through, once, only the user that token belongs to. */
+    twoFactorReset?: string;
     /** Set by the two-factor plugin's `first-register` endpoint, so its `beforeLogin` gate lets the first user's registration finish. */
     twoFactorFirstUser?: boolean;
     /** Set by the two-factor plugin just before it finishes a sign-in that passed the code or setup step, to `passedKey` of that user. */
