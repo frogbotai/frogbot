@@ -96,24 +96,98 @@ describe('aggregate operation validation', () => {
 
   it.each<[string, Omit<AggregateOptions, 'collection'>]>([
     ['a hidden group', { groupBy: 'secret', values: count, overrideAccess: true }],
-    ['a read-guarded group', { groupBy: 'margin', values: count }],
-    ['a read-guarded value', { groupBy: 'stage', values: { m: { sum: 'margin' } } }],
-    [
-      'a read-guarded filter',
-      { groupBy: 'stage', values: count, where: { margin: { equals: 1 } } },
-    ],
-    [
-      'a read-guarded filter under AND',
-      { groupBy: 'stage', values: count, where: { AND: [{ margin: { equals: 1 } }] } },
-    ],
+    ['a hidden filter', { groupBy: 'stage', values: count, where: { secret: { equals: 1 } } }],
+    ['a group the field read rule denies', { groupBy: 'margin', values: count }],
   ])('refuses %s with a 403', async (_, options) => {
-    const { adapterAggregate, frogbot, payload, req } = aggregateFixture();
+    const { adapterAggregate, frogbot, payload, req } = aggregateFixture({
+      marginRead: () => false,
+    });
 
     await expect(
       aggregateOperation(frogbot, payload, { collection: 'deals', req, ...options }),
     ).rejects.toMatchObject({ status: 403 });
 
     expect(adapterAggregate).not.toHaveBeenCalled();
+  });
+});
+
+describe('aggregate field read rules', () => {
+  it('groups, sums and filters by a field whose read rule allows the user', async () => {
+    const marginRead = vi.fn(() => true);
+    const { adapterAggregate, frogbot, payload, req } = aggregateFixture({ marginRead });
+
+    await aggregateOperation(frogbot, payload, {
+      collection: 'deals',
+      groupBy: 'margin',
+      values: { m: { sum: 'margin' } },
+      where: { AND: [{ margin: { greater_than: 1 } }] },
+      req,
+    });
+
+    expect(marginRead).toHaveBeenCalledWith(expect.objectContaining({ req }));
+    expect(adapterAggregate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        groupBy: [{ path: 'margin', type: 'number' }],
+        values: [{ operation: 'sum', path: 'margin', type: 'number' }],
+      }),
+    );
+  });
+
+  it('blanks only the column whose read rule denies the user, and drops its sort', async () => {
+    const { adapterAggregate, frogbot, payload, req } = aggregateFixture({
+      marginRead: () => false,
+      result: { rows: [{ group: ['won'], values: ['3', '900'] }], totalDocs: 3 },
+    });
+
+    const { groups } = await aggregateOperation(frogbot, payload, {
+      collection: 'deals',
+      groupBy: 'stage',
+      values: { deals: { count: true }, m: { sum: 'margin' }, total: { sum: 'amount' } },
+      sort: ['-m', 'total'],
+      req,
+    });
+
+    expect(groups).toEqual([
+      { group: { stage: 'won' }, values: { deals: 3, m: null, total: 900 } },
+    ]);
+    expect(adapterAggregate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        values: [{ operation: 'count' }, { operation: 'sum', path: 'amount', type: 'number' }],
+        sort: [
+          { target: 'value', index: 1, direction: 'asc' },
+          { target: 'group', index: 0, direction: 'asc' },
+        ],
+      }),
+    );
+  });
+
+  it('fills the one row without groupBy, blanking a denied column', async () => {
+    const { frogbot, payload, req } = aggregateFixture({ marginRead: () => false });
+
+    const { groups } = await aggregateOperation(frogbot, payload, {
+      collection: 'deals',
+      values: { deals: { count: true }, m: { sum: 'margin' } },
+      req,
+    });
+
+    expect(groups).toEqual([{ group: {}, values: { deals: 0, m: null } }]);
+  });
+
+  it('runs no field read rule with overrideAccess: true', async () => {
+    const marginRead = vi.fn(() => false);
+    const { adapterAggregate, frogbot, payload } = aggregateFixture({ marginRead });
+
+    await aggregateOperation(frogbot, payload, {
+      collection: 'deals',
+      groupBy: 'stage',
+      values: { m: { sum: 'margin' } },
+      overrideAccess: true,
+    });
+
+    expect(marginRead).not.toHaveBeenCalled();
+    expect(adapterAggregate).toHaveBeenCalledWith(
+      expect.objectContaining({ values: [{ operation: 'sum', path: 'margin', type: 'number' }] }),
+    );
   });
 });
 
