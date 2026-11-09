@@ -85,7 +85,8 @@ export function resolveEventColor({
 /**
  * The `where` that loads records overlapping a range: a start on or before its end, and an end
  * on or after its start, or no end and a start inside it. `endOnly` also loads records with no
- * start whose end falls inside the range, as the timeline shows them.
+ * start whose end falls inside the range, as the timeline shows them, in a flat `or` that stays
+ * within the REST query's nesting depth.
  */
 export function getRangeWhere({
   end,
@@ -121,7 +122,19 @@ export function getRangeWhere({
 
   return {
     or: [
-      overlaps,
+      {
+        and: [
+          { [start]: { less_than_equal: range.end } },
+          { [end]: { greater_than_equal: range.start } },
+        ],
+      },
+      {
+        and: [
+          { [end]: { exists: false } },
+          { [start]: { greater_than_equal: range.start } },
+          { [start]: { less_than_equal: range.end } },
+        ],
+      },
       {
         and: [
           { [start]: { exists: false } },

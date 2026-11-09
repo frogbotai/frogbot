@@ -240,18 +240,30 @@ describe('range query', () => {
     });
   });
 
-  it('adds end-only records inside the range for the timeline', () => {
-    const where = getRangeWhere({ end: 'endsAt', endOnly: true, range, start: 'startsAt' });
-
-    expect(where.or).toEqual([
-      getRangeWhere({ end: 'endsAt', range, start: 'startsAt' }),
-      {
-        and: [
-          { startsAt: { exists: false } },
-          { endsAt: { greater_than_equal: range.start } },
-          { endsAt: { less_than_equal: range.end } },
-        ],
-      },
-    ]);
+  it('adds end-only records inside the range for the timeline, in one flat or', () => {
+    expect(getRangeWhere({ end: 'endsAt', endOnly: true, range, start: 'startsAt' })).toEqual({
+      or: [
+        {
+          and: [
+            { startsAt: { less_than_equal: range.end } },
+            { endsAt: { greater_than_equal: range.start } },
+          ],
+        },
+        {
+          and: [
+            { endsAt: { exists: false } },
+            { startsAt: { greater_than_equal: range.start } },
+            { startsAt: { less_than_equal: range.end } },
+          ],
+        },
+        {
+          and: [
+            { startsAt: { exists: false } },
+            { endsAt: { greater_than_equal: range.start } },
+            { endsAt: { less_than_equal: range.end } },
+          ],
+        },
+      ],
+    });
   });
 });
