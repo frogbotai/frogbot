@@ -1,5 +1,5 @@
 import type { ColumnPreference } from 'payload';
-import { transformColumnsToPreferences } from 'payload/shared';
+import { formatAdminURL, transformColumnsToPreferences } from 'payload/shared';
 
 export type ViewPreferenceValue = Record<string, unknown> & {
   columns?: ColumnPreference[];
@@ -59,4 +59,61 @@ export function getViewCardColumns<T extends { accessor: string; active: boolean
   return (columns ?? []).filter(
     (column) => column.active && Boolean(column.accessor) && column.accessor !== useAsTitle,
   );
+}
+
+/**
+ * A stored preference with `patch` applied: keys set to `undefined` are removed, every other
+ * stored key is kept.
+ */
+export function applyPreferencePatch(
+  stored: unknown,
+  patch: Record<string, unknown>,
+): Record<string, unknown> {
+  const next: Record<string, unknown> =
+    stored && typeof stored === 'object' && !Array.isArray(stored) ? { ...stored } : {};
+
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === undefined) delete next[key];
+    else next[key] = value;
+  }
+
+  return next;
+}
+
+const patches = new Map<string, Promise<void>>();
+
+/**
+ * Reads a preference fresh and writes it back with `patch` applied, one write per key at a time.
+ * Reading first keeps the sort and filters the server saved since the page loaded.
+ */
+export function patchPreference({
+  api,
+  key,
+  patch,
+}: {
+  api: string;
+  key: string;
+  patch: Record<string, unknown>;
+}): Promise<void> {
+  const url = formatAdminURL({ apiRoute: api, path: `/payload-preferences/${key}` });
+
+  const write = async () => {
+    const current = await fetch(url, { credentials: 'include' });
+    const stored: unknown = current.ok
+      ? ((await current.json()) as { value?: unknown }).value
+      : undefined;
+
+    await fetch(url, {
+      body: JSON.stringify({ value: applyPreferencePatch(stored, patch) }),
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    });
+  };
+
+  const next = (patches.get(key) ?? Promise.resolve()).then(write, write);
+
+  patches.set(key, next);
+
+  return next;
 }

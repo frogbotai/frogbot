@@ -25,6 +25,8 @@ import { CollectionViewFrame } from '../CollectionViewFrame.client.js';
 import { useRecordPanel, useRecordPanelEvents } from '../panel/RecordPanelProvider.client.js';
 import { BulkUploadButton } from './BulkUploadButton.client.js';
 import { DefaultListView } from './DefaultListView.client.js';
+import { ListGrid, ListGridProvider, type ListGridSettings } from './grid/ListGrid.client.js';
+import { RowHeightControl } from './grid/RowHeightControl.client.js';
 import { ListSummary, type ListSummaryProps } from './summary/ListSummary.client.js';
 
 /** The footer totals' setup, resolved on the server for the collection's list view. */
@@ -38,6 +40,8 @@ export type ListFrameClientProps = {
   Description?: ReactNode;
   /** The done records among the rows, found on the server from `admin.useAsDone`. */
   doneIds?: string[];
+  /** The collection list's column widths and row height; absent in the trash. */
+  grid?: ListGridSettings;
   hasCreateButton: boolean;
   isEmpty: boolean;
   listMenuItems?: ReactNode[];
@@ -126,6 +130,7 @@ function RefreshOnPanelSave() {
 
 function ListFrameInner({
   doneIds,
+  grid,
   listProps,
   pagedGroups,
   summary,
@@ -185,7 +190,9 @@ function ListFrameInner({
       <PageControls collectionConfig={collectionConfig} />
     ) : null;
 
-  return (
+  const table = <RelationshipProvider>{Table}</RelationshipProvider>;
+
+  const view = (
     <TableColumnsProvider collectionSlug={collectionSlug} columnState={columnState}>
       <SelectionProvider docs={docs} totalDocs={data?.totalDocs ?? 0}>
         <CollectionViewFrame
@@ -220,6 +227,9 @@ function ListFrameInner({
               />
             )),
           ]}
+          Toolbar={
+            grid ? [...(frame.Toolbar ?? []), <RowHeightControl key="row-height" />] : frame.Toolbar
+          }
           type="list"
           viewType={viewType}
         >
@@ -238,10 +248,12 @@ function ListFrameInner({
                 : undefined
             }
           >
-            <RelationshipProvider>{Table}</RelationshipProvider>
+            {grid ? <ListGrid>{table}</ListGrid> : table}
           </RecordRows>
         </CollectionViewFrame>
       </SelectionProvider>
     </TableColumnsProvider>
   );
+
+  return grid ? <ListGridProvider settings={grid}>{view}</ListGridProvider> : view;
 }

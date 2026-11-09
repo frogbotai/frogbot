@@ -13,10 +13,11 @@ import {
 } from '@payloadcms/ui';
 import type { SummaryOperation } from 'frogbot';
 import type { ClientField, Where } from 'payload';
-import { formatAdminURL } from 'payload/shared';
 import { type RefObject, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { patchPreference } from '../../preferences.js';
+import { headerAccessor } from '../grid/grid.js';
 import {
   buildSummaryRequest,
   formatSummary,
@@ -59,10 +60,7 @@ function readTarget(container: HTMLElement): TableTarget | null {
   if (!table || !header) return null;
 
   return {
-    accessors: Array.from(
-      header.cells,
-      (cell) => cell.dataset.column ?? cell.id.replace(/^heading-/, '').replace(/__/g, '.'),
-    ),
+    accessors: Array.from(header.cells, headerAccessor),
     table,
   };
 }
@@ -146,23 +144,10 @@ export function ListSummary({
 
     setChoices(next);
 
-    const url = formatAdminURL({
-      apiRoute: config.routes.api,
-      path: `/payload-preferences/${preferenceKey}`,
-    });
-
-    const current = await fetch(url, { credentials: 'include' });
-    const stored: unknown = current.ok ? ((await current.json()) as { value?: unknown }).value : {};
-    const value = stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
-    const { summary: _summary, ...rest } = value as Record<string, unknown>;
-
-    await fetch(url, {
-      body: JSON.stringify({
-        value: { ...rest, ...(Object.keys(next).length ? { summary: next } : {}) },
-      }),
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
+    await patchPreference({
+      api: config.routes.api,
+      key: preferenceKey,
+      patch: { summary: Object.keys(next).length ? next : undefined },
     });
   };
 
@@ -177,18 +162,31 @@ export function ListSummary({
 
           if (!column && index === 0) {
             return (
-              <th className={`${baseClass}__cell`} key={accessor || index} scope="row">
+              <th
+                className={`${baseClass}__cell`}
+                data-column={accessor || undefined}
+                key={accessor || index}
+                scope="row"
+              >
                 <span className={`${baseClass}__row-label`}>Summary</span>
               </th>
             );
           }
 
-          if (!column) return <td className={`${baseClass}__cell`} key={accessor || index} />;
+          if (!column) {
+            return (
+              <td
+                className={`${baseClass}__cell`}
+                data-column={accessor || undefined}
+                key={accessor || index}
+              />
+            );
+          }
 
           const operation = getOwn(summary, accessor);
 
           return (
-            <td className={`${baseClass}__cell`} key={accessor}>
+            <td className={`${baseClass}__cell`} data-column={accessor} key={accessor}>
               <SummaryCell
                 column={column}
                 field={field}

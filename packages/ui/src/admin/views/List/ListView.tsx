@@ -29,6 +29,8 @@ import {
   type ViewSetup,
 } from '../viewSetup.js';
 import { DefaultListView } from './DefaultListView.client.js';
+import { readGridSettings } from './grid/grid.js';
+import type { ListGridSettings } from './grid/ListGrid.client.js';
 import { type GroupedTable, renderGroupedTable } from './groupedTable.js';
 import { ListFrameClient, type ListFrameSummary } from './ListFrame.client.js';
 import { withRowIds } from './rowIds.js';
@@ -162,6 +164,7 @@ export async function ListView(props: ListViewServerProps) {
   const view = runtime[0]?.type === 'list' ? runtime[0] : undefined;
   const isList = clientProps.viewType === 'list' && view !== undefined;
   let summary: ListFrameSummary | undefined;
+  let grid: ListGridSettings | undefined;
 
   redirectRecordParam({
     collectionConfig,
@@ -239,6 +242,8 @@ export async function ListView(props: ListViewServerProps) {
       });
     }
 
+    grid = { ...readGridSettings(setup.preference), preferenceKey: setup.preferenceKey };
+
     summary = await resolveSummaryProps({
       collectionConfig,
       columns: (clientProps.columnState ?? []).map(({ accessor }) => accessor),
@@ -306,6 +311,7 @@ export async function ListView(props: ListViewServerProps) {
       BeforeListTable={clientProps.BeforeListTable}
       Description={clientProps.Description ?? slots.Description}
       doneIds={doneIds}
+      grid={grid}
       isEmpty={isEmpty}
       listMenuItems={[...(clientProps.listMenuItems ?? []), ...(slots.listMenuItems ?? [])]}
       listProps={{ ...clientProps, Table: grouped?.Table ?? withRowIds(clientProps.Table) }}
