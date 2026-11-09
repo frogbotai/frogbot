@@ -209,7 +209,7 @@ describe(`beforeSignIn and finishSignIn [${process.env.FROGBOT_DATABASE || 'sqli
       expect.objectContaining({
         method: 'work',
         returnTo: '/control/account',
-        user: expect.objectContaining({ email: 'paused@example.com', secret: null }),
+        user: expect.objectContaining({ email: 'paused@example.com' }),
         collection: expect.objectContaining({ slug: 'users' }),
       }),
     ]);

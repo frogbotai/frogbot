@@ -93,7 +93,9 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
           id: user.id,
           fn: async () => {
             const secret = (await req.frogbot.kv.get(key)) as string | null;
-            if (!secret) return 'expired' as const;
+            if (!secret || hasTwoFactor(await readUser(req, slug, user.id))) {
+              return 'expired' as const;
+            }
 
             const step = await verifyNewSecret({ req, secret, code: readCode(body) });
             if (step === null) return 'wrong' as const;

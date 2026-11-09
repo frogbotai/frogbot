@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import { readCode, verifyNewSecret, withStoredCode } from './codes.js';
 import {
   FIELDS,
+  hasTwoFactor,
   jsonError,
   readBody,
   readUser,
@@ -235,6 +236,11 @@ export const createFlowEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
           fn: async () => {
             const current = await readPending(req, slug);
             if (current?.id !== id || current.pending.confirmed) return 'expired' as const;
+            if (hasTwoFactor(await readUser(req, slug, pending.userId))) {
+              await deletePending(req, slug, id);
+
+              return 'expired' as const;
+            }
 
             const step = await verifyNewSecret({
               req,
