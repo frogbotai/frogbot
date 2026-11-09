@@ -1,6 +1,6 @@
 import { twoFactor } from '@frogbotai/plugin-two-factor';
 import { serve } from '@hono/node-server';
-import { definePiece } from 'frogbot';
+import { type CollectionBeforeSignInHook, definePiece, finishSignIn } from 'frogbot';
 import { z } from 'zod';
 
 import { buildTestConfig } from '../__helpers/shared/buildTestConfig.js';
@@ -54,6 +54,26 @@ const method = definePiece({
   actions: [],
 })({ slug: methodSlug, oauth: { clientId: 'client', clientSecret: 'secret' } });
 
+type Tenanted = { tenant?: string | null } | null;
+
+const sameTenant = ({ req }: { req: { user: unknown } }) => {
+  const tenant = (req.user as Tenanted)?.tenant;
+  if (!req.user) return false;
+
+  return tenant ? { tenant: { equals: tenant } } : true;
+};
+
+const termsKey = (id: string) => `terms:${id}`;
+
+const termsHook: CollectionBeforeSignInHook = async ({ req, user, method, returnTo }) => {
+  if (user.terms !== true) return;
+
+  const id = crypto.randomUUID();
+  await req.frogbot.kv.set(termsKey(id), { userId: user.id, method, returnTo }, { ttl: 60_000 });
+
+  return new Response(null, { status: 303, headers: { location: `/terms?id=${id}` } });
+};
+
 export default await buildTestConfig({
   admin: { user: usersSlug },
   collections: [
@@ -61,12 +81,36 @@ export default await buildTestConfig({
       slug: usersSlug,
       access: {
         create: () => true,
-        read: ({ req }) => Boolean(req.user),
-        update: ({ req }) => Boolean(req.user),
+        read: sameTenant,
+        update: sameTenant,
       },
       auth: { signIn: [method] },
+      hooks: { beforeSignIn: [termsHook] },
+      endpoints: [
+        {
+          path: '/terms/accept',
+          method: 'post',
+          handler: async (req) => {
+            const key = termsKey(req.searchParams.get('id') ?? '');
+            const paused = (await req.frogbot.kv.get(key)) as {
+              userId: string | number;
+              method: string;
+              returnTo: string;
+            } | null;
+
+            if (!paused)
+              return Response.json({ errors: [{ message: 'expired' }] }, { status: 400 });
+
+            await req.frogbot.kv.delete(key);
+
+            return finishSignIn({ req, collectionSlug: usersSlug, ...paused });
+          },
+        },
+      ],
       fields: [
         { name: 'role', type: 'text' },
+        { name: 'tenant', type: 'text' },
+        { name: 'terms', type: 'checkbox' },
         { name: 'noTwoFactor', type: 'checkbox' },
       ],
     },
@@ -77,7 +121,8 @@ export default await buildTestConfig({
       issuer: 'Acme',
       require: ({ user }) => policy.requireAdmins && user.role === 'admin',
       canEnable: ({ user }) => user.noTwoFactor !== true,
-      canReset: ({ req }) => (req.user as { role?: string } | null)?.role === 'admin',
+      canReset: ({ req, user }) =>
+        (req.user as { role?: string } | null)?.role === 'admin' && user?.role !== 'owner',
     }),
   ],
 });

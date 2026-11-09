@@ -8,7 +8,7 @@ import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import { policy, stopProvider, usersSlug } from './config.js';
-import { createHarness, pendingCookieName, twoFactorURL } from './helpers.js';
+import { createHarness, pendingCookieName, tokenCookieName, twoFactorURL } from './helpers.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -28,6 +28,13 @@ describe('two-factor attacks', () => {
     await booted?.shutdown();
     await stopProvider();
   });
+
+  const clearSessions = (email: string) =>
+    booted.payload.db.updateOne({
+      collection: usersSlug,
+      where: { email: { equals: email } },
+      data: { sessions: [] },
+    });
 
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
@@ -79,8 +86,6 @@ describe('two-factor attacks', () => {
       t.json(`${twoFactorURL}/verify`, { code }, { cookie: p2 }),
     ]);
 
-    console.log('C', r1.status, r2.status);
-
     expect([r1.status, r2.status].sort()).toEqual([200, 401]);
     expect(await t.sessions('c@example.com')).toHaveLength(1);
   });
@@ -119,9 +124,6 @@ describe('two-factor attacks', () => {
       { cookie: attacker },
     );
 
-    const body = (await attackerDone.json()) as { token?: string };
-    console.log('F attacker setup', attackerDone.status, Boolean(body.token));
-
     expect(attackerDone.status).not.toBe(200);
     expect((await t.user('f@example.com')).twoFactorSecret).toBe(ownerSecret);
   });
@@ -145,8 +147,131 @@ describe('two-factor attacks', () => {
       { cookie: pending },
     );
 
-    console.log('G', after.status);
-
     expect(after.status).not.toBe(200);
+  });
+
+  it('a terms hook that pauses and resumes with finishSignIn does not skip the code', async () => {
+    await t.createUser('terms@example.com', { terms: true });
+    await t.enable('terms@example.com');
+    await clearSessions('terms@example.com');
+
+    const paused = await t.providerSignIn('terms@example.com');
+    const location = paused.headers.get('location') ?? '';
+
+    expect(location).toMatch(/^\/terms\?id=/);
+
+    const id = new URL(location, 'http://x').searchParams.get('id')!;
+    const resumed = await t.request(`/api/${usersSlug}/terms/accept?id=${id}`, { method: 'POST' });
+
+    expect(t.cookie(resumed, tokenCookieName)).toBeUndefined();
+    expect(await t.sessions('terms@example.com')).toHaveLength(0);
+  });
+
+  it('a terms hook resumed for a user without two-factor still signs in', async () => {
+    await t.createUser('plain-terms@example.com', { terms: true });
+
+    const paused = await t.providerSignIn('plain-terms@example.com');
+    const id = new URL(paused.headers.get('location')!, 'http://x').searchParams.get('id')!;
+    const resumed = await t.request(`/api/${usersSlug}/terms/accept?id=${id}`, { method: 'POST' });
+
+    expect(t.cookie(resumed, tokenCookieName)).toBeDefined();
+    expect(await t.sessions('plain-terms@example.com')).toHaveLength(1);
+  });
+
+  it("canReset cannot reset a user the admin's own read and update access excludes", async () => {
+    await t.createUser('admin-a@example.com', { tenant: 'a', role: 'admin' });
+    await t.createUser('victim-b@example.com', { tenant: 'b' });
+    await t.enable('victim-b@example.com');
+
+    policy.requireAdmins = false;
+    const adminToken = await t.token('admin-a@example.com');
+    const victim = await t.user('victim-b@example.com');
+    const visible = await t.request(`/api/${usersSlug}/${victim.id}`, {
+      headers: t.auth(adminToken),
+    });
+
+    expect(visible.status).toBe(404);
+
+    const reset = await t.json(`${twoFactorURL}/reset`, { id: victim.id }, t.auth(adminToken));
+
+    expect(reset.status).toBe(404);
+    expect((await t.user('victim-b@example.com')).twoFactorEnabled).toBe(true);
+  });
+
+  it('canReset is given the user to reset', async () => {
+    await t.createUser('admin@example.com', { role: 'admin' });
+    await t.createUser('owner@example.com', { role: 'owner' });
+    await t.enable('owner@example.com');
+
+    policy.requireAdmins = false;
+    const adminToken = await t.token('admin@example.com');
+    const owner = await t.user('owner@example.com');
+    const reset = await t.json(`${twoFactorURL}/reset`, { id: owner.id }, t.auth(adminToken));
+
+    expect(reset.status).toBe(403);
+    expect((await t.user('owner@example.com')).twoFactorEnabled).toBe(true);
+  });
+
+  it('a setup confirmed before an admin reset cannot continue to a session', async () => {
+    await t.createUser('admin@example.com', { role: 'admin', noTwoFactor: false });
+    await t.createUser('boss@example.com', { role: 'admin' });
+
+    const paused = await t.login('boss@example.com', { returnTo: '/admin' });
+
+    expect(paused.status).toBe(202);
+
+    const pending = t.cookie(paused, pendingCookieName)!;
+    const setup = (await (
+      await t.request(twoFactorURL, { headers: { accept: 'application/json', cookie: pending } })
+    ).json()) as { secret: string };
+
+    const confirmed = await t.form(
+      `${twoFactorURL}/setup`,
+      { code: codeNow(setup.secret) },
+      pending,
+    );
+
+    expect(confirmed.status).toBe(200);
+
+    policy.requireAdmins = false;
+    const adminToken = await t.token('admin@example.com');
+    policy.requireAdmins = true;
+    const boss = await t.user('boss@example.com');
+    const reset = await t.json(`${twoFactorURL}/reset`, { id: boss.id }, t.auth(adminToken));
+
+    expect(reset.status).toBe(200);
+
+    const continued = await t.form(`${twoFactorURL}/continue`, {}, pending);
+
+    expect(t.cookie(continued, tokenCookieName)).toBeUndefined();
+    expect(await t.sessions('boss@example.com')).toHaveLength(0);
+  });
+
+  it('Local API resetPassword saves the new password for a two-factor user and gives no token', async () => {
+    await t.createUser('local@example.com');
+    await t.enable('local@example.com');
+    const token = await booted.frogbot.forgotPassword({
+      collection: usersSlug,
+      data: { email: 'local@example.com' },
+      disableEmail: true,
+    });
+
+    await clearSessions('local@example.com');
+
+    const result = await booted.frogbot.resetPassword({
+      collection: usersSlug,
+      data: { token, password: 'brand-new-password' },
+      overrideAccess: true,
+    });
+
+    expect(result.token).toBeUndefined();
+    expect(await t.sessions('local@example.com')).toHaveLength(0);
+
+    const relogin = await t.json(`/api/${usersSlug}/login`, {
+      email: 'local@example.com',
+      password: 'brand-new-password',
+    });
+
+    expect(relogin.status).toBe(202);
   });
 });
