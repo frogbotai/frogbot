@@ -68,7 +68,7 @@ export const Tasks: CollectionConfig = {
 }
 ```
 
-Startup checks that `start` and `end` resolve to date fields, `color` to a select or radio field, `groupBy` to a field a board can group by, and `scales` to a non-empty list of `'day'`, `'week'` and `'month'`. Nested fields use dot paths such as `schedule.startsAt`.
+Startup checks that `start` and `end` resolve to date fields, `color` to a select or radio field, `groupBy` to a field a board can group by, and `scales` to a non-empty list of distinct `'day'`, `'week'` and `'month'` values. Nested fields use dot paths such as `schedule.startsAt`.
 
 ## Scales and bands
 
@@ -80,15 +80,15 @@ With `groupBy`, bands follow the board's rules: a select, radio or checkbox fiel
 
 Bars land on the same days as in the [calendar](/admin/collection-calendar#time-zones-and-all-day-dates): a moment shows on its day in the viewer's browser time zone, and a date field with `pickerAppearance` `'dayOnly'` or `'monthOnly'` shows on its saved date for every viewer.
 
-- A record with both dates is a bar from its start day to its end day. A timed end at exactly midnight ends on the day before.
-- A record with only one of the two dates is a one-day bar on that date. Dragging its free edge fills in the other date.
+- A record with both dates is a bar from its start day to its end day. A timed end at exactly midnight ends on the day before, with or without a start date.
+- A record with only one of the two dates is a one-day bar on that date. Dragging its free edge fills in the other date on the day it is dropped, at the existing date's time of day, or at noon when the existing date is date-only.
 - A record with neither date isn't shown.
 
 Each visible range loads only the records that overlap it, with the view's filter and the current search, at most 1000 at a time.
 
 ## Moving and resizing
 
-Drag a bar sideways to move it by whole days: both dates move and keep their time of day, even across a daylight-saving change. Drag a bar's left edge to change its start date and its right edge to change its end date; the end never moves before the start. On a touch screen a sideways drag on a bar moves it, a vertical swipe scrolls the page, and a drag on the empty track scrolls the timeline. Edge handles are 44px wide on touch screens.
+Drag a bar sideways to move it by whole days: both dates move and keep their time of day, even across a daylight-saving change. Drag a bar's left edge to change its start date and its right edge to change its end date; an edge stops where the bar is one day long, so the end never moves before the start. On a touch screen a sideways drag on a bar moves it, a vertical swipe scrolls the page, and a drag on the empty track scrolls the timeline. Edge handles are 44px wide on touch screens and reach up to 23px into the bar. On a narrow bar each handle covers at most a quarter of it, so the middle always opens or moves the bar.
 
 Dragging a bar never changes its band: change the grouped field in the record. Each change is a normal collection update, with access checks, validation and hooks. If it fails, the bar goes back and the error shows. Users without update access to the date fields can view bars but not move them.
 

@@ -358,10 +358,11 @@ export function compileCollectionViews({
       if (
         !Array.isArray(scales) ||
         scales.length === 0 ||
-        scales.some((scale) => !TIMELINE_SCALES.includes(scale as TimelineScale))
+        scales.some((scale) => !TIMELINE_SCALES.includes(scale as TimelineScale)) ||
+        new Set(scales).size !== scales.length
       ) {
         throw new Error(
-          `[frogbot] Collection "${collection.slug}" timeline view "${view.slug}" has scales ${JSON.stringify(scales)}; use a non-empty list of ${TIMELINE_SCALES.map((scale) => `'${scale}'`).join(', ')}.`,
+          `[frogbot] Collection "${collection.slug}" timeline view "${view.slug}" has scales ${JSON.stringify(scales)}; use a non-empty list of distinct ${TIMELINE_SCALES.map((scale) => `'${scale}'`).join(', ')}.`,
         );
       }
     }

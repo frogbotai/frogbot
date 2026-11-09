@@ -203,14 +203,12 @@ export function Timeline<T extends TimelineItem>({
       >
         <div className="frog-timeline__bar-content">{renderBar(item)}</div>
         {edges.map((edge) => (
-          <button
-            aria-label={edge === 'start' ? 'Change start date' : 'Change end date'}
+          <span
+            aria-hidden="true"
             className={`frog-timeline__resize frog-timeline__resize--${edge}`}
+            data-edge={edge}
             key={edge}
-            onClick={(event) => event.stopPropagation()}
             onPointerDown={press(item, edge)}
-            tabIndex={-1}
-            type="button"
           />
         ))}
       </div>

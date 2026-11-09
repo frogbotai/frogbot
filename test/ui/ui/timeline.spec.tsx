@@ -50,6 +50,9 @@ function renderTimeline(props: Partial<TimelineProps<Task>> = {}) {
 const bar = (title: string) =>
   screen.getByText(title).closest<HTMLElement>('.frog-timeline__bar') as HTMLElement;
 
+const edgeOf = (title: string, edge: 'end' | 'start') =>
+  bar(title).querySelector<HTMLElement>(`[data-edge="${edge}"]`) as HTMLElement;
+
 function pointer(target: EventTarget, type: string, clientX: number) {
   fireEvent(target, new MouseEvent(type, { bubbles: true, button: 0, clientX }));
 }
@@ -144,7 +147,7 @@ describe('timeline UI', () => {
     renderTimeline({ onResize });
 
     await act(async () => {
-      drag(within(bar('Write copy')).getByLabelText('Change end date'), 250, 250 + DAY_WIDTH);
+      drag(edgeOf('Write copy', 'end'), 250, 250 + DAY_WIDTH);
       await Promise.resolve();
     });
 
@@ -154,11 +157,7 @@ describe('timeline UI', () => {
     });
 
     await act(async () => {
-      drag(
-        within(bar('Invite testers')).getByLabelText('Change start date'),
-        500,
-        500 - DAY_WIDTH * 2,
-      );
+      drag(edgeOf('Invite testers', 'start'), 500, 500 - DAY_WIDTH * 2);
 
       await Promise.resolve();
     });

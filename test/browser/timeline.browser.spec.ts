@@ -86,6 +86,11 @@ async function dragBy(page: Page, x: number, y: number, dx: number) {
   await page.mouse.up();
 }
 
+async function pressAt(page: Page, touch: boolean, { x, y }: { x: number; y: number }) {
+  if (touch) await page.touchscreen.tap(x, y);
+  else await page.mouse.click(x, y);
+}
+
 test.beforeEach(async ({ page }) => {
   problems = [];
 
@@ -196,7 +201,7 @@ test.describe('editing', () => {
 
     await plan.hover();
 
-    const handle = await boxOf(plan.getByLabel('Change end date'));
+    const handle = await boxOf(plan.locator('[data-edge="end"]'));
     const width = await dayWidth(page);
 
     await dragBy(page, handle.x + handle.width / 2, handle.y + handle.height / 2, width);
@@ -218,7 +223,7 @@ test.describe('editing', () => {
 
     await due.hover();
 
-    const handle = await boxOf(due.getByLabel('Change start date'));
+    const handle = await boxOf(due.locator('[data-edge="start"]'));
 
     await dragBy(
       page,
@@ -267,16 +272,45 @@ test.describe('editing', () => {
 
         expect(hit).toBe(true);
 
-        await (touch ? page.touchscreen.tap : page.mouse.click).call(
-          touch ? page.touchscreen : page.mouse,
-          center.x,
-          center.y,
-        );
+        await pressAt(page, touch, center);
 
         await expect(page).toHaveURL(new RegExp(`record=${ids.dueOnly}`));
       });
     });
   }
+
+  test.describe('touch', () => {
+    test.use({ hasTouch: true, isMobile: true, viewport: { height: 900, width: 390 } });
+
+    test('dragging the end handle with a finger changes only the end', async ({ page }) => {
+      await page.goto(timeline());
+
+      const plan = bar(page, tasks.plan.title);
+      await plan.scrollIntoViewIfNeeded();
+      const box = await boxOf(plan);
+      const width = await dayWidth(page);
+      const session = await page.context().newCDPSession(page);
+      const y = box.y + box.height / 2;
+      const touch = (type: string, x: number) =>
+        session.send('Input.dispatchTouchEvent', {
+          touchPoints: type === 'touchEnd' ? [] : [{ radiusX: 10, radiusY: 10, x, y }],
+          type,
+        });
+
+      const x = box.x + box.width - 4;
+      await touch('touchStart', x);
+
+      for (const step of [0.25, 0.5, 0.75, 1]) await touch('touchMove', x + width * step);
+
+      await touch('touchEnd', x + width);
+
+      await expect
+        .poll(async () => (await task(page, 'plan')).endsAt)
+        .toBe(new Date(Date.parse(tasks.plan.endsAt) + DAY).toISOString());
+
+      expect((await task(page, 'plan')).dueAt).toBe(tasks.plan.dueAt);
+    });
+  });
 
   test('switches scale and steps through time from the header', async ({ page }) => {
     await page.goto(timeline());

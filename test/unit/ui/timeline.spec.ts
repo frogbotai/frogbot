@@ -191,13 +191,21 @@ describe('timeline move and resize', () => {
       start: '2026-06-14T16:00:00.000Z',
     });
     expect(resizeTimelineItem(item, 'end', -10, 'UTC')).toMatchObject({
-      end: item.start,
+      end: '2026-06-15T17:30:00.000Z',
       start: item.start,
     });
     expect(resizeTimelineItem(item, 'start', 10, 'UTC')).toMatchObject({
       end: item.end,
-      start: item.end,
+      start: '2026-06-18T16:00:00.000Z',
     });
+    expect(
+      resizeTimelineItem(
+        { end: '2026-06-18T09:00:00.000Z', id: '2', start: '2026-06-15T16:00:00.000Z' },
+        'start',
+        10,
+        'UTC',
+      ),
+    ).toMatchObject({ end: '2026-06-18T09:00:00.000Z', start: '2026-06-18T09:00:00.000Z' });
   });
 
   it('fills in a missing date from the free edge', () => {

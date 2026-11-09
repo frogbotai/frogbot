@@ -1,3 +1,4 @@
+import { TZDate } from '@date-fns/tz';
 import { addDays, addMonths, format, startOfMonth, startOfWeek } from 'date-fns';
 
 import { dayKey, parseCalendarDate } from '../calendar/core/index.js';
@@ -137,7 +138,8 @@ export function formatTimelineRange(range: TimelineRange): string {
 
 /**
  * An item's first and last day as `yyyy-MM-dd`. A record with one date is one day long on that
- * date. A timed end at midnight belongs to the day before, as in the calendar.
+ * date. A timed end at midnight belongs to the day before, as in the calendar, with or without a
+ * start.
  */
 export function getItemDays(
   item: TimelineItem,
@@ -146,7 +148,7 @@ export function getItemDays(
 ): { first: string; last: string } | undefined {
   const start = item.start ? keyOf(item.start, dateOnly.start, timeZone) : undefined;
   const endValue =
-    item.end && !dateOnly.end && item.start && Date.parse(item.end) > Date.parse(item.start)
+    item.end && !dateOnly.end && (!item.start || Date.parse(item.end) > Date.parse(item.start))
       ? new Date(Date.parse(item.end) - 60_000).toISOString()
       : item.end;
 
@@ -231,9 +233,25 @@ export function moveTimelineItem<T extends TimelineItem>(
   };
 }
 
+function localNoon(key: string, timeZone: string): string {
+  const [year, month, day] = key.split('-').map(Number);
+
+  return new Date(new TZDate(year, month - 1, day, 12, timeZone).getTime()).toISOString();
+}
+
+function moveToDay(value: string, key: string, timeZone: string): string {
+  return moveCalendarEvent(
+    { id: '', start: value },
+    { end: '', key, kind: 'day', start: '' },
+    { from: dayKey(value, timeZone), timeZone },
+  ).start;
+}
+
 /**
- * Drags one edge by whole days. A missing date is filled in from the other one, so dragging a
- * one-date record's free edge gives it a span. The end never lands before the start.
+ * Drags one edge by whole days, stopping where the bar is one day long. A missing date is filled in
+ * on the dropped day, so dragging a one-date record's free edge gives it a span: at the other
+ * date's time of day when both are timed, and at noon otherwise or when that time would land the
+ * bar's edge on another day.
  */
 export function resizeTimelineItem<T extends TimelineItem>(
   item: T,
@@ -242,17 +260,35 @@ export function resizeTimelineItem<T extends TimelineItem>(
   timeZone: string,
   dateOnly: TimelineDateOnly = {},
 ): TimelineChange<T> {
-  const source = item[edge] ?? (edge === 'start' ? item.end : item.start);
-  if (!source) return { end: item.end, item, start: item.start };
-  const sourceDateOnly = item[edge] ? dateOnly[edge] : dateOnly[edge === 'start' ? 'end' : 'start'];
-  const shifted = shiftValue(source, days, sourceDateOnly, timeZone);
-  const value =
-    dateOnly[edge] && !sourceDateOnly ? `${dayKey(shifted, timeZone)}T12:00:00.000Z` : shifted;
+  const span = getItemDays(item, timeZone, dateOnly);
+  const unchanged = { end: item.end, item, start: item.start };
+  if (!span) return unchanged;
+  const width = daysBetween(span.first, span.last);
+  const steps = edge === 'start' ? Math.min(days, width) : Math.max(days, -width);
+  const current = item[edge];
 
+  if (!current) {
+    if (steps === 0) return unchanged;
+    const other = edge === 'start' ? 'end' : 'start';
+    const key = shiftKey(edge === 'start' ? span.first : span.last, steps);
+    if (dateOnly[edge]) return { ...unchanged, [edge]: `${key}T12:00:00.000Z` };
+    const noon = { ...unchanged, [edge]: localNoon(key, timeZone) };
+    const source = item[other];
+    if (!source || dateOnly[other]) return noon;
+    const kept = moveToDay(source, key, timeZone);
+    const days = getItemDays({ ...item, [edge]: kept }, timeZone, dateOnly);
+
+    return days?.[edge === 'start' ? 'first' : 'last'] === key
+      ? { ...unchanged, [edge]: kept }
+      : noon;
+  }
+
+  const value = shiftValue(current, steps, dateOnly[edge], timeZone);
   const start = edge === 'start' ? value : item.start;
   const end = edge === 'end' ? value : item.end;
+  const sameKind = Boolean(dateOnly.start) === Boolean(dateOnly.end);
 
-  if (start && end && Date.parse(end) < Date.parse(start)) {
+  if (sameKind && start && end && Date.parse(end) < Date.parse(start)) {
     return edge === 'start' ? { end, item, start: end } : { end: start, item, start };
   }
 

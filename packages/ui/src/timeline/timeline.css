@@ -175,7 +175,7 @@
     position: absolute;
     top: -1px;
     touch-action: none;
-    width: 8px;
+    width: min(8px, (100% + 4px) / 4);
     z-index: 1;
   }
   .frog-timeline__resize--start {
@@ -197,7 +197,7 @@
 
   @media (pointer: coarse) {
     .frog-timeline__resize {
-      width: 44px;
+      width: calc(21px + min(23px, (100% + 4px) / 4));
     }
     .frog-timeline__resize--start {
       left: -24px;
