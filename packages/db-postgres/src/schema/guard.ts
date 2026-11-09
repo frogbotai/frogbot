@@ -125,8 +125,11 @@ export function findNewUniques(statements: string[], live: LiveSchema): NewUniqu
     if (!liveTable?.rows) return [];
 
     const columns = [...match[5].matchAll(/"((?:[^"]|"")+)"/g)].map(([, name]) => unquote(name));
+    const existing = new Set(liveTable.columns.map(({ name }) => name));
 
-    return columns.length ? [{ table: liveTable.name, columns }] : [];
+    if (!columns.length || columns.some((column) => !existing.has(column))) return [];
+
+    return [{ table: liveTable.name, columns }];
   });
 }
 

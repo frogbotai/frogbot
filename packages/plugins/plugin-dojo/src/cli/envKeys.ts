@@ -41,7 +41,13 @@ export function envKeys(env: Record<string, string>): EnvKey[] {
     .map(([name, value]) => ({ name, value }));
 }
 
-const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
+const isLocalHost = (host: string) =>
+  host === 'localhost' ||
+  host === '::1' ||
+  host === '0.0.0.0' ||
+  host === '::' ||
+  /^(::ffff:)?127\./.test(host) ||
+  /^::ffff:7f[0-9a-f]{2}:/.test(host);
 
 /** Whether `value` is a `postgres://` or `postgresql://` URL whose host is off this machine. */
 export function remoteDatabaseURL(value: string | undefined): boolean {
@@ -57,9 +63,12 @@ export function remoteDatabaseURL(value: string | undefined): boolean {
 
   if (url.protocol !== 'postgres:' && url.protocol !== 'postgresql:') return false;
 
-  const host = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  const host = url.hostname
+    .replace(/^\[|\]$/g, '')
+    .replace(/\.$/, '')
+    .toLowerCase();
 
-  return host !== '' && !localHosts.has(host);
+  return host !== '' && !isLocalHost(host);
 }
 
 /** `.env`'s `DATABASE_URL` as a key when the app's adapter is Postgres and the URL points off this machine. */

@@ -289,7 +289,18 @@ export async function pushAdditive(
 
       if (refusal) return await refuse(refusal);
 
-      for (const statement of statements) {
+      const enumValues = statements.filter((statement) => addEnumValue.test(statement));
+      const ordered = [
+        ...enumValues,
+        ...statements.filter((statement) => !addEnumValue.test(statement)),
+      ];
+
+      for (const [index, statement] of ordered.entries()) {
+        if (enumValues.length && index === enumValues.length) {
+          await client.query('COMMIT');
+          await client.query('BEGIN');
+        }
+
         try {
           await client.query(statement);
         } catch (error) {
@@ -313,6 +324,8 @@ export async function pushAdditive(
     client.release();
   }
 }
+
+const addEnumValue = /^\s*ALTER\s+TYPE\s+.+\s+ADD\s+VALUE\b/i;
 
 /**
  * Payload's dev push (`pushDevSchema`), made additive-only and without its prompt, in a fresh Payload

@@ -299,4 +299,39 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'postgres')('syncSchema on Post
     expect(await schemaDump(sql)).toEqual(before);
     expect(await count(sql, `SELECT count(*) FROM deals WHERE stage = 'won'`)).toBe(10);
   });
+
+  it('adds a new unique field to a table with rows', async () => {
+    const { url, sql } = await seeded();
+    const result = await sync(url, [
+      deals(title, company, { name: 'code', type: 'text', unique: true }),
+      notes,
+    ]);
+
+    expect(result).toMatchObject({ ok: true });
+    expect(await column(sql, 'deals', 'code')).toMatchObject({ is_nullable: 'YES' });
+    expect(await count(sql, 'SELECT count(*) FROM deals')).toBe(10);
+  });
+
+  it('adds a select option and makes it the default on a table with rows', async () => {
+    const stage = (defaultValue: string, ...options: string[]): Field => ({
+      name: 'stage',
+      type: 'select',
+      options,
+      defaultValue,
+    });
+
+    const { url, sql } = await seeded(stage('lead', 'lead', 'won'));
+    const result = await sync(url, [
+      deals(title, company, stage('lost', 'lead', 'won', 'lost')),
+      notes,
+    ]);
+
+    expect(result).toMatchObject({ ok: true });
+
+    await sql('INSERT INTO deals (title, updated_at, created_at) VALUES ($1, now(), now())', [
+      'New',
+    ]);
+
+    expect(await count(sql, `SELECT count(*) FROM deals WHERE stage = 'lost'`)).toBe(1);
+  });
 });
