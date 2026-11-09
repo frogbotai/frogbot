@@ -127,6 +127,8 @@ describe('frogbot sanitize: AI providers linked by connections', () => {
   });
 
   it('still requires an apiKey on providers no piece links', () => {
+    vi.stubEnv('OPENAI_API_KEY', '');
+
     expect(() =>
       sanitize(makeConfig({ ai: { providers: { openai: { apiKey: undefined } } } })),
     ).toThrow("Provider 'openai' requires a non-empty apiKey");
@@ -134,6 +136,10 @@ describe('frogbot sanitize: AI providers linked by connections', () => {
 });
 
 describe('frogbot sanitize', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('rejects rich text fields without an editor before the upstream build', () => {
     expect(() =>
       sanitize(
@@ -2902,6 +2908,8 @@ describe('frogbot sanitize', () => {
     });
 
     it('rejects TypeSafe AI object configuration without an explicit credential', () => {
+      vi.stubEnv('TYPESAFE_AI_API_KEY', '');
+
       expect(() =>
         sanitize(makeConfig({ ai: { providers: { 'typesafe-ai': { apiKey: undefined } } } })),
       ).toThrow("Provider 'typesafe-ai' requires a non-empty apiKey");
@@ -2923,13 +2931,34 @@ describe('frogbot sanitize', () => {
       );
     });
 
-    it('rejects an undefined explicit apiKey', () => {
+    it('rejects an undefined apiKey when the env key is unset', () => {
+      vi.stubEnv('OPENAI_API_KEY', '');
       const config = makeConfig({
         ai: { providers: { openai: { apiKey: undefined } } },
       });
 
       expect(() => sanitize(config)).toThrow(
-        "[frogbot] Provider 'openai' requires a non-empty apiKey when configured with an object.",
+        "[frogbot] Provider 'openai' requires a non-empty apiKey or the OPENAI_API_KEY environment variable.",
+      );
+    });
+
+    it('accepts a models allowlist without apiKey when the env key is set', () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'sk-ant');
+      const result = sanitize(
+        makeConfig({ ai: { providers: { anthropic: { models: ['claude-opus-5-5'] } } } }),
+      );
+
+      expect(result.ai?.providers.anthropic).toEqual({ models: ['claude-opus-5-5'] });
+    });
+
+    it('rejects a models allowlist without apiKey when the env key is unset', () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', '');
+      const config = makeConfig({
+        ai: { providers: { anthropic: { models: ['claude-opus-5-5'] } } },
+      });
+
+      expect(() => sanitize(config)).toThrow(
+        "[frogbot] Provider 'anthropic' requires a non-empty apiKey or the ANTHROPIC_API_KEY environment variable.",
       );
     });
 

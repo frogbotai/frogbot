@@ -187,9 +187,41 @@ describe('buildGatewayConfig', () => {
     expect(Object.keys(config.providers)).toEqual(['openai']);
   });
 
-  it.each([undefined, '', '   '])('rejects an invalid explicit API key: %j', (apiKey) => {
+  it.each([undefined, '', '   '])('rejects an invalid API key with no env key: %j', (apiKey) => {
+    vi.stubEnv('OPENAI_API_KEY', '');
+
     expect(() => buildGatewayConfig(makeAIConfig({ openai: { apiKey } }))).toThrow(
-      "[frogbot] Provider 'openai' requires a non-empty apiKey when configured with an object.",
+      "[frogbot] Provider 'openai' requires a non-empty apiKey or the OPENAI_API_KEY environment variable.",
+    );
+  });
+
+  it('reads the env key for a models allowlist without apiKey', () => {
+    vi.stubEnv('ANTHROPIC_API_KEY', 'sk-ant');
+
+    const config = buildGatewayConfig(
+      makeAIConfig({ anthropic: { models: ['claude-opus-5-5', 'claude-sonnet-5-5'] } }),
+    );
+
+    expect(config.providers).toEqual({
+      anthropic: { models: ['claude-opus-5-5', 'claude-sonnet-5-5'] },
+    });
+  });
+
+  it('reads the env token for replicate without apiKey', () => {
+    vi.stubEnv('REPLICATE_API_TOKEN', 'r8-env');
+
+    const config = buildGatewayConfig(makeAIConfig({ replicate: {} }));
+
+    expect(config.providers).toEqual({ replicate: {} });
+  });
+
+  it('names the env key when neither apiKey nor the env key is set', () => {
+    vi.stubEnv('ANTHROPIC_API_KEY', '');
+
+    expect(() =>
+      buildGatewayConfig(makeAIConfig({ anthropic: { models: ['claude-opus-5-5'] } })),
+    ).toThrow(
+      "[frogbot] Provider 'anthropic' requires a non-empty apiKey or the ANTHROPIC_API_KEY environment variable.",
     );
   });
 
