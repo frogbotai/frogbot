@@ -219,7 +219,9 @@ Without `prodMigrations`, each update under [`frogbot up`](/getting-started/cli#
 - A field or collection you remove keeps its column or table. Its values stay, hidden, and come back when you add the field back. The log names everything kept, such as `Schema sync kept 1 removed column with their data, hidden: deals.company. Nothing is deleted; a field or collection added back shows its data again.`
 - A field that becomes `unique` on a table with rows gets its unique index when no two rows share a value. Otherwise nothing is applied: `deals.email has 3 duplicate values, so it can't become unique. Remove the duplicates, then share again.`
 - A change that would drop a table, a column or rows, or change a column's type on a table with rows, applies nothing and names the column, for example `deals.company can't change from character varying to numeric while deals has 10 rows; change the field back, or write a migration.` The update stops as `update failed` and the old version keeps serving.
-- It runs in one transaction on one connection, so a refused or failed update changes nothing. It never prompts, so it works without a terminal, and it never writes to `payload_migrations`.
+- It runs in one transaction on one connection, so a refused or failed update changes nothing. The one exception: a statement that uses a new `select` option, such as making it the default, runs in a second transaction after the first commits, because Postgres can't use an enum value in the transaction that adds it. If that step fails, the error says how many changes the first one applied. It never prompts, so it works without a terminal, and it never writes to `payload_migrations`.
+
+`@frogbotai/db-vercel-postgres` has no schema sync: with it, set `prodMigrations` and write migrations.
 
 To rename a field or change its type while keeping its data, or to drop data on purpose, write a [migration](/database/migrations). With `prodMigrations` set, the update runs your migrations on connect instead.
 

@@ -365,7 +365,13 @@ A server that crashes restarts on the same build after 1 second, waiting twice a
 
 ### Database schema
 
-With SQLite or Postgres and no `prodMigrations`, each update brings the database's schema up to the new code before the new version starts, with the same rule as `frogbot dev` on SQLite (see [Prototyping in development mode](/database/sqlite#prototyping-in-development-mode) and, for Postgres, [Schema sync under `frogbot up`](/database/postgres#schema-sync-under-frogbot-up)): it adds tables, columns and indexes, adds a new required field as a nullable column so existing rows keep working, and keeps removed fields and collections (their data stays, hidden, until you add them back). It never deletes data and never asks: when a change would drop a table, a column or rows, or change a field's type while it holds values the new type can't read (text that isn't a number, for a `number` field), the update stops as `update failed` and the old version keeps serving. Nothing is written to `payload_migrations`, so you can still adopt [migrations](/database/migrations) later. With `prodMigrations` set, the update runs your migrations on connect instead, as `frogbot start` does.
+With SQLite or Postgres (`@frogbotai/db-postgres`) and no `prodMigrations`, each update brings the database's schema up to the new code before the new version starts: it adds tables, columns and indexes, adds a new required field as a nullable column so existing rows keep working, and keeps removed fields and collections (their data stays, hidden, until you add them back). It never deletes data and never asks. When a change would drop a table, a column or rows, the update stops as `update failed` and the old version keeps serving, and so does a type change the database can't apply safely:
+
+- **SQLite** follows `frogbot dev` (see [Prototyping in development mode](/database/sqlite#prototyping-in-development-mode)): it refuses a field's type change only while the field holds values the new type can't read (text that isn't a number, for a `number` field).
+- **Postgres** refuses any column type change on a table that has rows (see [Schema sync under `frogbot up`](/database/postgres#schema-sync-under-frogbot-up)).
+- **Vercel Postgres** (`@frogbotai/db-vercel-postgres`) has no schema sync: set `prodMigrations` and write [migrations](/database/migrations).
+
+Nothing is written to `payload_migrations`, so you can still adopt [migrations](/database/migrations) later. With `prodMigrations` set, the update runs your migrations on connect instead, as `frogbot start` does.
 
 ### Log
 
