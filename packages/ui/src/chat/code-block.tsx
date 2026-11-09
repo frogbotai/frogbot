@@ -134,7 +134,7 @@ export function CodeBlock({
       {language ? <div className="fb-code-block__language">{language}</div> : null}
       <Tooltip label={copied ? 'Copied' : 'Copy code'} side="top">
         <button
-          aria-label="Copy code"
+          aria-label={copied ? 'Copied' : 'Copy code'}
           className="fb-code-block__copy"
           data-copied={copied || undefined}
           onClick={copy}

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CodeBlock } from '../../../../packages/ui/src/chat/code-block';
 import { highlight } from '../../../../packages/ui/src/chat/highlight';
+import { Markdown } from '../../../../packages/ui/src/chat/markdown';
 import { Message, type MessageProps } from '../../../../packages/ui/src/chat/message';
 import { MessagePart } from '../../../../packages/ui/src/chat/message-part';
 
@@ -64,6 +65,21 @@ describe('CodeBlock', () => {
     ).toBe(false);
   });
 
+  it('renders a Markdown fence as a CodeBlock with its language', () => {
+    const { container } = render(<Markdown>{'```c++\nint main() {}\n```'}</Markdown>);
+    const block = container.querySelector<HTMLElement>('.fb-code-block');
+
+    expect(block?.dataset.language).toBe('c++');
+    expect(block?.querySelector('code')?.textContent).toBe('int main() {}');
+  });
+
+  it('omits the language label without a language', () => {
+    const { container } = render(<CodeBlock code="plain" />);
+
+    expect(container.querySelector('.fb-code-block__language')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Copy code' })).toBeTruthy();
+  });
+
   it('copies the exact raw code, trailing whitespace kept, and announces it', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     const code = 'const a = 1;  \n\tif (a) {}\n\n';
@@ -74,7 +90,7 @@ describe('CodeBlock', () => {
 
     expect(writeText).toHaveBeenCalledWith(code);
     expect(screen.getByRole('status').textContent).toBe('Copied');
-    expect(document.querySelector('.fb-code-block__copy[data-copied]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Copied' }).dataset.copied).toBe('true');
   });
 
   it('copies the raw code, not the highlighted markup, and resets after a moment', async () => {
@@ -119,6 +135,7 @@ describe('CodeBlock', () => {
     const { container } = render(<CodeBlock code="hello" language="not-a-language" />);
 
     expect(await highlight('hello', 'not-a-language')).toBeUndefined();
+    expect(await highlight('main = print 1', 'haskell')).toBeUndefined();
     expect(container.querySelector('code span')).toBeNull();
     expect(container.querySelector('code')?.textContent).toBe('hello');
   });
@@ -134,6 +151,12 @@ describe('highlight', () => {
     expect(colors.const).toContain('var(--color-text-danger)');
     expect(colors["'x'"]).toContain('var(--color-text-success)');
     expect(colors['// note']).toContain('var(--color-text-tertiary)');
+  });
+
+  it('resolves fence names such as c++, c# and sh', async () => {
+    for (const language of ['c++', 'c#', 'sh', 'yml', 'py']) {
+      expect(await highlight('x', language), language).toBeDefined();
+    }
   });
 
   it('keeps every line, including trailing blank ones', async () => {
