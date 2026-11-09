@@ -180,6 +180,14 @@ export default buildConfig({
               'tagNames',
             ],
           },
+          {
+            type: 'timeline',
+            start: 'dueAt',
+            end: 'endsAt',
+            groupBy: 'status',
+            color: 'status',
+            scales: ['day', 'week', 'month'],
+          },
         ],
       },
       fields: [

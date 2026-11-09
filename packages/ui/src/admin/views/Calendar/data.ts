@@ -1,4 +1,4 @@
-import type { CalendarMode, OptionColor } from 'frogbot';
+import type { CalendarMode, OptionColor, TimelineScale } from 'frogbot';
 import type { ColumnPreference, FlattenedField } from 'payload';
 
 import { pickOptionColor } from '../../fields/optionColor.js';
@@ -17,6 +17,8 @@ export type CalendarPreferenceValue = {
   columns?: ColumnPreference[];
   date?: string;
   mode?: CalendarMode;
+  /** A timeline's zoom. */
+  scale?: TimelineScale;
 };
 
 export function resolveCalendarMode({
@@ -78,4 +80,68 @@ export function resolveEventColor({
   const color = pickOptionColor(optionColors, first);
 
   return color ? eventBorderColors[color] : undefined;
+}
+
+/**
+ * The `where` that loads records overlapping a range: a start on or before its end, and an end
+ * on or after its start, or no end and a start inside it. `endOnly` also loads records with no
+ * start whose end falls inside the range, as the timeline shows them, in a flat `or` that stays
+ * within the REST query's nesting depth.
+ */
+export function getRangeWhere({
+  end,
+  endOnly = false,
+  range,
+  start,
+}: {
+  end?: string;
+  endOnly?: boolean;
+  range: { end: string; start: string };
+  start: string;
+}): Record<string, unknown> {
+  const overlaps = {
+    and: [
+      { [start]: { less_than_equal: range.end } },
+      end
+        ? {
+            or: [
+              { [end]: { greater_than_equal: range.start } },
+              {
+                and: [
+                  { [end]: { exists: false } },
+                  { [start]: { greater_than_equal: range.start } },
+                ],
+              },
+            ],
+          }
+        : { [start]: { greater_than_equal: range.start } },
+    ],
+  };
+
+  if (!endOnly || !end) return overlaps;
+
+  return {
+    or: [
+      {
+        and: [
+          { [start]: { less_than_equal: range.end } },
+          { [end]: { greater_than_equal: range.start } },
+        ],
+      },
+      {
+        and: [
+          { [end]: { exists: false } },
+          { [start]: { greater_than_equal: range.start } },
+          { [start]: { less_than_equal: range.end } },
+        ],
+      },
+      {
+        and: [
+          { [start]: { exists: false } },
+          { [end]: { greater_than_equal: range.start } },
+          { [end]: { less_than_equal: range.end } },
+        ],
+      },
+    ],
+  };
 }

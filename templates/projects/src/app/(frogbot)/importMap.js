@@ -1,7 +1,8 @@
 import { LLMInstructionsMenuItem as LLMInstructionsMenuItem_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { ListView as ListView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
-import { BoardView as BoardView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { FieldCell as FieldCell_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
+import { BoardView as BoardView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
+import { TimelineView as TimelineView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { MoneyField as MoneyField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { NullField as NullField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { HierarchyButton as HierarchyButton_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
@@ -47,9 +48,11 @@ export const importMap = {
   '@frogbotai/ui/admin#LLMInstructionsMenuItem':
     LLMInstructionsMenuItem_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin/rsc#ListView': ListView_a9b31afd548db1251f21130da6e46588,
+  '@frogbotai/ui/admin#FieldCell': FieldCell_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin/rsc#BoardView':
     BoardView_a9b31afd548db1251f21130da6e46588,
-  '@frogbotai/ui/admin#FieldCell': FieldCell_53ccb9913b2925da8adcdf5fd85e01f4,
+  '@frogbotai/ui/admin/rsc#TimelineView':
+    TimelineView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin#MoneyField': MoneyField_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin#NullField': NullField_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin/rsc#HierarchyButton':

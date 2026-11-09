@@ -6,7 +6,11 @@ import {
 
 import { validateAdminIcon } from '../admin/icons.js';
 import { SUMMARY_OPERATIONS, type SummaryKind } from '../admin/views/summary.js';
-import type { CollectionView, CollectionViewMetadata } from '../admin/views/types.js';
+import type {
+  CollectionView,
+  CollectionViewMetadata,
+  TimelineScale,
+} from '../admin/views/types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { Field, TabAsField } from '../fields/config/types.js';
 import { flattenTopLevelFields } from '../seams/config.js';
@@ -242,6 +246,8 @@ function containsFunction(value: unknown): boolean {
   return Object.values(value).some(containsFunction);
 }
 
+const TIMELINE_SCALES: TimelineScale[] = ['day', 'week', 'month'];
+
 function labelFor(type: CollectionView['type']): string {
   return type[0].toUpperCase() + type.slice(1);
 }
@@ -311,7 +317,7 @@ export function compileCollectionViews({
     }
 
     if (
-      (view.type === 'board' || view.type === 'list') &&
+      (view.type === 'board' || view.type === 'list' || view.type === 'timeline') &&
       view.groupBy &&
       !resolveGroupByField(collection.fields, view.groupBy)
     ) {
@@ -320,13 +326,19 @@ export function compileCollectionViews({
       );
     }
 
-    if (view.type === 'calendar') {
+    if (view.type === 'calendar' || view.type === 'timeline') {
+      if (!view.start) {
+        throw new Error(
+          `[frogbot] Collection "${collection.slug}" ${view.type} view "${view.slug}" needs a start date field.`,
+        );
+      }
+
       for (const path of [view.start, view.end].filter((value): value is string =>
         Boolean(value),
       )) {
         if (resolveField(collection.fields, path)?.type !== 'date') {
           throw new Error(
-            `[frogbot] Collection "${collection.slug}" calendar view "${view.slug}" has a non-date field "${path}".`,
+            `[frogbot] Collection "${collection.slug}" ${view.type} view "${view.slug}" has a non-date field "${path}".`,
           );
         }
       }
@@ -335,9 +347,23 @@ export function compileCollectionViews({
         const colorField = resolveField(collection.fields, view.color);
         if (colorField?.type !== 'select' && colorField?.type !== 'radio') {
           throw new Error(
-            `[frogbot] Collection "${collection.slug}" calendar view "${view.slug}" has an unsupported color field "${view.color}".`,
+            `[frogbot] Collection "${collection.slug}" ${view.type} view "${view.slug}" has an unsupported color field "${view.color}".`,
           );
         }
+      }
+    }
+
+    if (view.type === 'timeline' && view.scales !== undefined) {
+      const scales: unknown = view.scales;
+      if (
+        !Array.isArray(scales) ||
+        scales.length === 0 ||
+        scales.some((scale) => !TIMELINE_SCALES.includes(scale as TimelineScale)) ||
+        new Set(scales).size !== scales.length
+      ) {
+        throw new Error(
+          `[frogbot] Collection "${collection.slug}" timeline view "${view.slug}" has scales ${JSON.stringify(scales)}; use a non-empty list of distinct ${TIMELINE_SCALES.map((scale) => `'${scale}'`).join(', ')}.`,
+        );
       }
     }
   }
@@ -397,6 +423,12 @@ export function compileCollectionViews({
     } else if (view.type === 'calendar') {
       runtimeViews[key] = {
         Component: '@frogbotai/ui/admin/rsc#CalendarView',
+        ...actions,
+        ...(isDefault ? {} : { exact: true, path }),
+      };
+    } else if (view.type === 'timeline') {
+      runtimeViews[key] = {
+        Component: '@frogbotai/ui/admin/rsc#TimelineView',
         ...actions,
         ...(isDefault ? {} : { exact: true, path }),
       };

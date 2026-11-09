@@ -18,6 +18,7 @@ export const VIEW_TYPE_ICONS: Record<string, string> = {
   gallery: 'tile',
   list: 'list',
   table: 'table',
+  timeline: 'timeline',
 };
 
 type ViewMetadata = { label: string; path: string; slug: string; type: string };
@@ -121,13 +122,15 @@ function slotsFor(view: RuntimeCollectionView | undefined) {
       components?.afterTable ??
       components?.afterColumns ??
       components?.afterCalendar ??
-      components?.afterCards,
+      components?.afterCards ??
+      components?.afterTimeline,
     afterView: components?.afterView,
     beforeTable:
       components?.beforeTable ??
       components?.beforeColumns ??
       components?.beforeCalendar ??
-      components?.beforeCards,
+      components?.beforeCards ??
+      components?.beforeTimeline,
     beforeView: components?.beforeView,
     menuItems: components?.menuItems,
     NoResults: components?.NoResults,

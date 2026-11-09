@@ -90,6 +90,14 @@ describe('projects template seed', () => {
       expect(task.key).toMatch(/^[A-Z]+-\d+$/);
       expect(task.assignee).toBe(id);
     }
+
+    const spans = docs.filter((task) => task.startDate && task.dueDate);
+
+    expect(spans).toHaveLength(10);
+
+    for (const task of spans) {
+      expect(Date.parse(task.startDate!)).toBeLessThan(Date.parse(task.dueDate!));
+    }
   });
 
   it('refuses a second seed with 409 and changes nothing', async () => {

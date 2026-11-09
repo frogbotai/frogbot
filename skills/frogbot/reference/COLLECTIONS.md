@@ -99,7 +99,13 @@ export const Tasks: CollectionConfig = {
 };
 ```
 
-A list or board `groupBy` follows one set of rules: select and radio groups in option order with every option shown, checkbox as true then false, other fields by the values present, and records without a value in one last group. A list opens grouped by its `groupBy` until a person picks their own grouping; each list group collapses (saved per person), shows its count and has **+ Add**, which prefills the group's value. Hide a field from grouping with `admin.disabled.groupBy`.
+A timeline draws each record as a bar from `start` to `end` (date fields), in bands by `groupBy`, colored by `color`, on `scales` of `'week'`, `'month'` and `'day'`; people drag bars to change dates and click them to open the record. A record with one of the two dates is a one-day bar. Docs: https://docs.frogbot.ai/admin/collection-timeline
+
+```ts
+{ type: 'timeline', start: 'startDate', end: 'dueDate', groupBy: 'project', color: 'status' }
+```
+
+A list, board or timeline `groupBy` follows one set of rules: select and radio groups in option order with every option shown, checkbox as true then false, other fields by the values present, and records without a value in one last group. A list opens grouped by its `groupBy` until a person picks their own grouping; each list group collapses (saved per person), shows its count and has **+ Add**, which prefills the group's value. Hide a field from grouping with `admin.disabled.groupBy`.
 
 Board and gallery cards share their keys: `defaultFields`, `components.Card`, and the card image. The image comes from the collection's `admin.useAsThumbnail` (defaulting to the first upload field; an upload collection with none shows each document's own file). A view's `useAsThumbnail: '<upload field>'` overrides it, `false` turns images off, and `thumbnailFit: 'contain'` fits logos without cropping. There is no `cover` key.
 

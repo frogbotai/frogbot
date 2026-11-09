@@ -1,7 +1,7 @@
 # FrogBot Projects Template
 
-A small project tracker: projects, tasks with keys such as `WEB-12` on a board grouped by status,
-an `assistant` agent that knows the layout, and a **Seed your database** button that loads sample
+A small project tracker: projects, tasks with keys such as `WEB-12` on a board grouped by status
+and on a timeline from start to due date, an `assistant` agent that knows the layout, and a **Seed your database** button that loads sample
 data. It runs on SQLite, PostgreSQL or MongoDB. No Docker is required.
 
 ## Quick Start
@@ -39,7 +39,7 @@ The seed is plain code in `src/seed/index.ts`; edit it to change the sample data
 | ------------------------------- | ---------------------------------------------------------------- |
 | `src/frogbot.config.ts`         | Your FrogBot config — agents, collections, providers             |
 | `src/collections/Projects.ts`   | Projects, each with a key such as `WEB`                          |
-| `src/collections/Tasks.ts`      | Tasks with numbered keys, a list view and a board view           |
+| `src/collections/Tasks.ts`      | Tasks with numbered keys, a list, a board and a timeline         |
 | `src/seed/`                     | The sample data and the `POST /api/seed` endpoint                |
 | `src/components/SeedPanel.tsx`  | The dashboard panel, shown while the app has no projects         |
 | `src/components/SeedButton.tsx` | The panel's seed button                                          |
