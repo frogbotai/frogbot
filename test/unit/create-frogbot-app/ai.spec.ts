@@ -7,10 +7,10 @@ describe('missingKeyWarning', () => {
     ['openai', 'OPENAI_API_KEY'],
     ['anthropic', 'ANTHROPIC_API_KEY'],
     ['google', 'GOOGLE_GENERATIVE_AI_API_KEY'],
-  ] as const)('says a %s app will not start without %s', (ai, keyEnv) => {
+  ] as const)('asks for %s before chatting', (ai, keyEnv) => {
     const warning = missingKeyWarning({ ai, projectName: 'my-app' }, {});
 
-    expect(warning).toBe(`Set ${keyEnv} in my-app/.env. The app won't start without it.`);
+    expect(warning).toBe(`Set ${keyEnv} in my-app/.env before chatting.`);
   });
 
   it('asks for a Bedrock key or AWS_PROFILE before chatting', () => {
