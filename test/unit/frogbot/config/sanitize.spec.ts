@@ -2962,6 +2962,28 @@ describe('frogbot sanitize', () => {
       );
     });
 
+    it('accepts a models allowlist without apiKey in codegen mode with the env key unset, as it accepts true', () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', '');
+
+      expect(() =>
+        sanitize(makeConfig({ ai: { providers: { anthropic: true } } }), { mode: 'codegen' }),
+      ).not.toThrow();
+      expect(() =>
+        sanitize(
+          makeConfig({ ai: { providers: { anthropic: { models: ['claude-sonnet-5-5'] } } } }),
+          { mode: 'codegen' },
+        ),
+      ).not.toThrow();
+    });
+
+    it('still rejects a blank explicit apiKey in codegen mode', () => {
+      expect(() =>
+        sanitize(makeConfig({ ai: { providers: { openai: { apiKey: '' } } } }), {
+          mode: 'codegen',
+        }),
+      ).toThrow("Provider 'openai' requires a non-empty apiKey");
+    });
+
     it('accepts true for SDK environment fallback', () => {
       const result = sanitize(makeConfig({ ai: { providers: { openai: true } } }));
 
