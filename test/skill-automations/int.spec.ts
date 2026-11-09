@@ -150,6 +150,28 @@ describe('skill automations guide samples', () => {
     ]);
   });
 
+  it('gives a duplicated pending ticket its own 48 hours', async () => {
+    const ticket = await createTicket();
+    const first = await setTicket(ticket.id, { status: 'pending' });
+
+    vi.useFakeTimers({ toFake: ['Date'], now: Date.parse(String(first.pendingSince)) + 3600_000 });
+
+    const copy = await frogbot
+      .duplicate({ collection: 'tickets', id: ticket.id, overrideAccess: true })
+      .finally(() => vi.useRealTimers());
+
+    expect(copy.pendingSince).not.toBe(first.pendingSince);
+    expect(await jobIds()).toContain(`auto-solve:${copy.id}:${copy.pendingSince}`);
+  });
+
+  it('keeps the stamp when a save tries to change it', async () => {
+    const ticket = await createTicket();
+    const first = await setTicket(ticket.id, { status: 'pending' });
+    const after = await setTicket(ticket.id, { pendingSince: '2020-01-01T00:00:00.000Z' });
+
+    expect(after.pendingSince).toBe(first.pendingSince);
+  });
+
   it('leaves no job when the save fails', async () => {
     const ticket = await createTicket();
 

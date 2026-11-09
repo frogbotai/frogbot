@@ -37,10 +37,12 @@ export const Tickets: CollectionConfig = {
   ],
   hooks: {
     beforeChange: [
-      ({ data, originalDoc }) => {
-        if (data.status === 'pending' && originalDoc?.status !== 'pending') {
-          data.pendingSince = new Date().toISOString();
-        }
+      ({ data, operation, originalDoc }) => {
+        const entering =
+          data.status === 'pending' &&
+          (operation === 'create' || originalDoc?.status !== 'pending');
+
+        data.pendingSince = entering ? new Date().toISOString() : originalDoc?.pendingSince;
 
         return data;
       },
@@ -67,7 +69,7 @@ export const Tickets: CollectionConfig = {
 };
 ```
 
-`pendingSince` marks each stint in Pending, and the `jobId` names that stint, so a save that keeps the ticket pending queues nothing new and a ticket that goes pending, open, pending gets a fresh 48 hours. The old job still wakes, sees a different `pendingSince` and does nothing. Queueing with `req` puts the job in the save's transaction, so if the save fails no job exists. That needs a database that runs transactions: Postgres, MongoDB on a replica set, or SQLite with `transactionOptions: {}`, as the [config below](#see-what-ran) sets. SQLite's default runs without them, and a failed save can leave its job behind.
+`pendingSince` marks each stint in Pending (a new or duplicated ticket starts its own, and other saves keep the stored value), and the `jobId` names that stint, so a save that keeps the ticket pending queues nothing new and a ticket that goes pending, open, pending gets a fresh 48 hours. The old job still wakes, sees a different `pendingSince` and does nothing. Queueing with `req` puts the job in the save's transaction, so if the save fails no job exists. That needs a database that runs transactions: Postgres, MongoDB on a replica set, or SQLite with `transactionOptions: {}`, as the [config below](#see-what-ran) sets. SQLite's default runs without them, and a failed save can leave its job behind.
 
 This whole file is the workflow:
 

@@ -17,10 +17,12 @@ export const Tickets: CollectionConfig = {
   ],
   hooks: {
     beforeChange: [
-      ({ data, originalDoc }) => {
-        if (data.status === 'pending' && originalDoc?.status !== 'pending') {
-          data.pendingSince = new Date().toISOString();
-        }
+      ({ data, operation, originalDoc }) => {
+        const entering =
+          data.status === 'pending' &&
+          (operation === 'create' || originalDoc?.status !== 'pending');
+
+        data.pendingSince = entering ? new Date().toISOString() : originalDoc?.pendingSince;
 
         return data;
       },
