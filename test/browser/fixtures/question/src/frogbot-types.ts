@@ -1038,6 +1038,7 @@ export interface CellDraft {
   id: number;
   title: string;
   note?: string | null;
+  extra?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -1949,6 +1950,7 @@ export interface CellKindsSelect {
 export interface CellDraftsSelect {
   title?: boolean;
   note?: boolean;
+  extra?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;

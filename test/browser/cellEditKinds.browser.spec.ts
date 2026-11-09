@@ -156,3 +156,15 @@ test('a drafts collection saves a cell as a draft and never publishes', async ({
   expect(published.note).toBe('published');
   await expect(cell(page, title, 'note')).toContainText('drafted');
 });
+
+test('a field whose condition reads another field edits in its cell', async ({ page }) => {
+  const title = `Condition ${stamp()}`;
+  const doc = await create(page, cellDraftsSlug, { title, extra: 'before' });
+
+  await open(page, cellDraftsSlug, title);
+  await typeAndSave(page, cell(page, title, 'extra'), 'after');
+
+  await expect
+    .poll(async () => (await stored(page, cellDraftsSlug, doc.id, true)).extra)
+    .toBe('after');
+});

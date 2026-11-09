@@ -152,4 +152,22 @@ describe('getEditableColumns', () => {
       getEditableColumns({ columns, editable: ['address.city'], fields, permissions: denied }),
     ).toEqual([]);
   });
+
+  it('leaves fields under a read-only, hidden or disabled row or collapsible plain', () => {
+    const nested = [
+      { type: 'collapsible', admin: { readOnly: true }, fields: [{ name: 'a', type: 'text' }] },
+      { type: 'row', admin: { disabled: true }, fields: [{ name: 'b', type: 'text' }] },
+      { type: 'row', hidden: true, fields: [{ name: 'c', type: 'text' }] },
+      { type: 'row', fields: [{ name: 'd', type: 'text' }] },
+    ];
+
+    expect(
+      getEditableColumns({
+        columns: ['a', 'b', 'c', 'd'],
+        editable: true,
+        fields: nested,
+        permissions: permissions({ a: access(), b: access(), c: access(), d: access() }),
+      }),
+    ).toEqual(['d']);
+  });
 });

@@ -65,11 +65,14 @@ export const cellDrafts: CollectionConfig = {
   slug: cellDraftsSlug,
   admin: {
     useAsTitle: 'title',
-    views: [{ type: 'list', defaultFields: ['title', 'note'], editable: ['note'] }],
+    views: [
+      { type: 'list', defaultFields: ['title', 'note', 'extra'], editable: ['note', 'extra'] },
+    ],
   },
   versions: { drafts: true },
   fields: [
     { name: 'title', type: 'text', required: true },
     { name: 'note', type: 'text' },
+    { name: 'extra', type: 'text', admin: { condition: (data) => Boolean(data?.title) } },
   ],
 };
