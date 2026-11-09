@@ -1,14 +1,21 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { GRAPHQL_POST } from '@frogbotai/next/routes';
 import { Secret, TOTP } from 'otpauth';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
-import { policy, stopProvider, usersSlug } from './config.js';
-import { createHarness, pendingCookieName, tokenCookieName, twoFactorURL } from './helpers.js';
+import config, { policy, stopProvider, usersSlug } from './config.js';
+import {
+  createHarness,
+  password,
+  pendingCookieName,
+  tokenCookieName,
+  twoFactorURL,
+} from './helpers.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -35,6 +42,18 @@ describe('two-factor attacks', () => {
       where: { email: { equals: email } },
       data: { sessions: [] },
     });
+
+  const graphql = async (query: string) => {
+    const response = await GRAPHQL_POST(config)(
+      new Request('http://localhost/api/graphql', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ query }),
+      }),
+    );
+
+    return response.text();
+  };
 
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
@@ -273,5 +292,65 @@ describe('two-factor attacks', () => {
     });
 
     expect(relogin.status).toBe(202);
+  });
+
+  it('GraphQL resetPassword saves the new password for a two-factor user and gives no token', async () => {
+    await t.createUser('gql@example.com');
+    await t.enable('gql@example.com');
+    const token = await booted.frogbot.forgotPassword({
+      collection: usersSlug,
+      data: { email: 'gql@example.com' },
+      disableEmail: true,
+    });
+
+    await clearSessions('gql@example.com');
+
+    const body = await graphql(
+      `mutation { resetPasswordUser(token: "${token}", password: "brand-new-password") { token } }`,
+    );
+
+    expect(body).not.toMatch(/"errors"|"token":"[^"]+"/);
+    expect(await t.sessions('gql@example.com')).toHaveLength(0);
+
+    const relogin = await t.json(`/api/${usersSlug}/login`, {
+      email: 'gql@example.com',
+      password: 'brand-new-password',
+    });
+
+    expect(relogin.status).toBe(202);
+  });
+
+  it('a failed GraphQL resetPassword does not let a later login in the same request skip the code', async () => {
+    await t.createUser('gql-skip@example.com');
+    await t.enable('gql-skip@example.com');
+
+    const body = await graphql(
+      `mutation { a: resetPasswordUser(token: "bad", password: "whatever-pass") { token } b: loginUser(email: "gql-skip@example.com", password: "${password}") { token } }`,
+    );
+
+    expect(body).not.toMatch(/"token":"[^"]+"/);
+  });
+
+  it('a failed Local API resetPassword does not let a login with the same context skip the code', async () => {
+    await t.createUser('local-skip@example.com');
+    await t.enable('local-skip@example.com');
+    const context: Record<string, unknown> = {};
+
+    await expect(
+      booted.payload.resetPassword({
+        collection: usersSlug,
+        data: { token: 'bad', password: 'whatever-pass' },
+        overrideAccess: true,
+        context,
+      }),
+    ).rejects.toThrow();
+
+    await expect(
+      booted.payload.login({
+        collection: usersSlug,
+        data: { email: 'local-skip@example.com', password },
+        context,
+      }),
+    ).rejects.toThrow(/Two-factor/);
   });
 });
