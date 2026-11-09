@@ -334,4 +334,43 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'postgres')('syncSchema on Post
 
     expect(await count(sql, `SELECT count(*) FROM deals WHERE stage = 'lost'`)).toBe(1);
   });
+
+  it('refuses a new unique field with a default on a table with rows, applying nothing', async () => {
+    const { url, sql } = await seeded();
+    const before = await schemaDump(sql);
+    const result = await sync(url, [
+      deals(title, company, { name: 'code', type: 'text', unique: true, defaultValue: 'x' }),
+      notes,
+    ]);
+
+    expect(result).toEqual({
+      ok: false,
+      error:
+        "The schema sync changed nothing: deals.code has 9 duplicate values, so it can't become unique. Remove the duplicates, then share again.",
+      applied: [],
+      kept: [],
+    });
+    expect(await schemaDump(sql)).toEqual(before);
+  });
+
+  it('keeps a new select option out of the database when the rest of the sync is refused', async () => {
+    const stage = (...options: string[]): Field => ({ name: 'stage', type: 'select', options });
+    const { url, sql } = await seeded(stage('lead', 'won'));
+    const result = await sync(url, [
+      deals(title, company, stage('lead', 'won', 'lost'), {
+        name: 'code',
+        type: 'text',
+        unique: true,
+        defaultValue: 'x',
+      }),
+      notes,
+    ]);
+
+    expect(result).toMatchObject({ ok: false, applied: [] });
+    expect(
+      (await sql(`SELECT unnest(enum_range(NULL::enum_deals_stage))::text AS v`)).rows.map(
+        ({ v }) => v,
+      ),
+    ).toEqual(['lead', 'won']);
+  });
 });

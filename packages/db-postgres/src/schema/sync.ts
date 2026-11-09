@@ -159,7 +159,9 @@ async function refusals(
   const duplicates: string[] = [];
 
   for (const unique of findNewUniques(statements, live)) {
-    const n = await countDuplicates(query, schemaName, unique.table, unique.columns);
+    const n = unique.countOn.length
+      ? await countDuplicates(query, schemaName, unique.table, unique.countOn)
+      : unique.rows - 1;
 
     if (n) {
       duplicates.push(
@@ -225,7 +227,7 @@ function queued(execute: (query: unknown) => Promise<unknown>) {
 
 /**
  * Pushes the adapter's schema through its `requireDrizzleKit()` in one transaction on one checked-out
- * client, and applies nothing when a statement would delete data, change a column's type on a table with
+ * client (a statement that uses a select option the sync adds runs in a second one, once it's committed), and applies nothing when a statement would delete data, change a column's type on a table with
  * rows, or make a column with duplicates unique. Never prompts and never writes `payload_migrations`.
  */
 export async function pushAdditive(
@@ -261,6 +263,11 @@ export async function pushAdditive(
     return { ok: false as const, error: `The schema sync changed nothing: ${error}`, applied: [] };
   };
 
+  const newValues = new Set<string>();
+  const deferred = new Map<string, string>();
+  const usesNewValue = (statement: string) =>
+    [...newValues].some((value) => statement.includes(`'${value.replaceAll("'", "''")}'`));
+
   try {
     await client.query('BEGIN');
 
@@ -281,26 +288,31 @@ export async function pushAdditive(
         live,
       );
 
-      if (!statements.length || statements.join('\n') === repeated) break;
-
-      repeated = statements.join('\n');
+      if (!statements.length) break;
 
       const refusal = await refusals(statements, live, query, schemaName);
 
       if (refusal) return await refuse(refusal);
 
-      const enumValues = statements.filter((statement) => addEnumValue.test(statement));
-      const ordered = [
-        ...enumValues,
-        ...statements.filter((statement) => !addEnumValue.test(statement)),
-      ];
+      for (const statement of statements) {
+        const value = addEnumValue.exec(statement)?.[1];
 
-      for (const [index, statement] of ordered.entries()) {
-        if (enumValues.length && index === enumValues.length) {
-          await client.query('COMMIT');
-          await client.query('BEGIN');
-        }
+        if (value) newValues.add(value.replaceAll("''", "'"));
+      }
 
+      const now = statements.filter((statement) => {
+        if (addEnumValue.test(statement) || !usesNewValue(statement)) return true;
+
+        deferred.set(statement, statement);
+
+        return false;
+      });
+
+      if (!now.length || now.join('\n') === repeated) break;
+
+      repeated = now.join('\n');
+
+      for (const statement of now) {
         try {
           await client.query(statement);
         } catch (error) {
@@ -310,10 +322,33 @@ export async function pushAdditive(
         }
       }
 
-      applied.push(...statements);
+      applied.push(...now);
     }
 
     await client.query('COMMIT');
+
+    if (deferred.size) {
+      const later = [...deferred.values()];
+
+      await client.query('BEGIN');
+
+      try {
+        for (const statement of later) await client.query(statement);
+
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK').catch(() => {});
+        const reason = error instanceof Error ? error.message : String(error);
+
+        return {
+          ok: false,
+          error: `The schema sync applied ${plural(applied.length, 'change', 'changes')}, then Postgres refused a new select option's default (${reason.split('\n')[0]}).`,
+          applied,
+        };
+      }
+
+      applied.push(...later);
+    }
 
     return { ok: true, applied };
   } catch (error) {
@@ -325,7 +360,8 @@ export async function pushAdditive(
   }
 }
 
-const addEnumValue = /^\s*ALTER\s+TYPE\s+.+\s+ADD\s+VALUE\b/i;
+const addEnumValue =
+  /^\s*ALTER\s+TYPE\s+.+?\s+ADD\s+VALUE\s+(?:IF\s+NOT\s+EXISTS\s+)?'((?:[^']|'')*)'/i;
 
 /**
  * Payload's dev push (`pushDevSchema`), made additive-only and without its prompt, in a fresh Payload

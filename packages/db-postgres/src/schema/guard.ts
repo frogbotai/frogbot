@@ -111,10 +111,33 @@ const createIndex = new RegExp(
   'i',
 );
 
-export type NewUnique = { table: string; columns: string[] };
+/**
+ * A unique index this push adds to a table with rows. `countOn` is the live columns duplicates are counted on;
+ * a column the same push adds with a default holds that one value in every row, so it groups nothing apart.
+ */
+export type NewUnique = { table: string; columns: string[]; countOn: string[]; rows: number };
+
+const addColumn = new RegExp(
+  String.raw`^\s*ALTER\s+TABLE\s+${table}\s+ADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?${id}\s+([^;]*)`,
+  'i',
+);
+
+function defaultedColumns(statements: string[]): Set<string> {
+  return new Set(
+    statements.flatMap((statement) => {
+      const match = addColumn.exec(statement);
+
+      return match && /\bDEFAULT\b/i.test(match[4])
+        ? [`${unquote(match[2])}.${unquote(match[3])}`]
+        : [];
+    }),
+  );
+}
 
 /** Unique indexes this push adds to tables that already have rows. */
 export function findNewUniques(statements: string[], live: LiveSchema): NewUnique[] {
+  const defaulted = defaultedColumns(statements);
+
   return statements.flatMap((statement) => {
     const match = createIndex.exec(statement);
 
@@ -126,10 +149,20 @@ export function findNewUniques(statements: string[], live: LiveSchema): NewUniqu
 
     const columns = [...match[5].matchAll(/"((?:[^"]|"")+)"/g)].map(([, name]) => unquote(name));
     const existing = new Set(liveTable.columns.map(({ name }) => name));
+    const added = columns.filter((column) => !existing.has(column));
 
-    if (!columns.length || columns.some((column) => !existing.has(column))) return [];
+    if (!columns.length || added.some((column) => !defaulted.has(`${liveTable.name}.${column}`))) {
+      return [];
+    }
 
-    return [{ table: liveTable.name, columns }];
+    return [
+      {
+        table: liveTable.name,
+        columns,
+        countOn: columns.filter((column) => existing.has(column)),
+        rows: liveTable.rows,
+      },
+    ];
   });
 }
 
