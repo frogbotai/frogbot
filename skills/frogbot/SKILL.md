@@ -3,7 +3,7 @@ name: frogbot
 description: >-
   Builds and maintains FrogBot applications. Use when working with
   frogbot.config.ts, getFrogBot, collections, fields, hooks, access control,
-  Local API queries, agents, tools, pieces, connections, jobs, KV, chat or gateway configuration,
+  Local API queries, agents, tools, pieces, connections, jobs, automations, webhooks, KV, chat or gateway configuration,
   or when sharing, hosting or deploying a FrogBot app with the Dojo plugin's `frogbot share`,
   `pull` or `logs`.
 license: MIT
@@ -40,6 +40,7 @@ Read the smallest relevant reference before editing:
 | Use or author pieces, actions, and triggers                                   | [PIECES.md](reference/PIECES.md)                                   |
 | Store user credentials or configure OAuth flows                               | [CONNECTIONS.md](reference/CONNECTIONS.md)                         |
 | Queue tasks, run workflows, or wait for resumption                            | [JOBS.md](reference/JOBS.md)                                       |
+| Automate work: react to changes, wait, act, webhooks, run history             | [AUTOMATIONS.md](reference/AUTOMATIONS.md)                         |
 | Store expiring values or coordinate with locks                                | [KV.md](reference/KV.md)                                           |
 | Expose operations to MCP clients, or call MCP servers                         | [MCP.md](reference/MCP.md)                                         |
 | Run or embed the AI gateway                                                   | [GATEWAY.md](reference/GATEWAY.md)                                 |

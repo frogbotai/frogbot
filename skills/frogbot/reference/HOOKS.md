@@ -240,7 +240,7 @@ export const Posts: CollectionConfig = {
 };
 ```
 
-Without the context guard, updating the same collection from `afterChange` can trigger the hook repeatedly. Decide explicitly whether nested calls should enforce permissions; Local API calls override access by default.
+Without the context guard, updating the same collection from `afterChange` can trigger the hook repeatedly. Decide explicitly whether nested calls should enforce permissions; Local API calls enforce access by default, so pass `overrideAccess: true` for trusted writes.
 
 ## Auth hooks
 
