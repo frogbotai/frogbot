@@ -73,7 +73,7 @@ async function swipeLeft(page: Page, on: Locator) {
 
   const session = await page.context().newCDPSession(page);
   const y = Math.round(box.y + box.height / 2);
-  const touch = (type: string, x: number) =>
+  const touch = (type: 'touchEnd' | 'touchMove' | 'touchStart', x: number) =>
     session.send('Input.dispatchTouchEvent', {
       touchPoints: type === 'touchEnd' ? [] : [{ x, y }],
       type,
