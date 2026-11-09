@@ -2,7 +2,7 @@
 
 import './ListGrid.css';
 
-import { useConfig } from '@payloadcms/ui';
+import { useServerFunctions } from '@payloadcms/ui';
 import {
   createContext,
   type KeyboardEvent,
@@ -62,7 +62,7 @@ export function ListGridProvider({
   children: ReactNode;
   settings: ListGridSettings;
 }) {
-  const { config } = useConfig();
+  const { serverFunction } = useServerFunctions();
   const { preferenceKey } = settings;
   const savedKey = JSON.stringify([settings.widths, settings.rowHeight]);
   const [widths, setWidths] = useState(settings.widths);
@@ -78,7 +78,7 @@ export function ListGridProvider({
   }, [savedKey]);
 
   const patch = (value: Record<string, unknown>) =>
-    void patchPreference({ api: config.routes.api, key: preferenceKey, patch: value });
+    void patchPreference({ key: preferenceKey, patch: value, serverFunction });
 
   const context: ListGridContext = {
     getWidth: (accessor) => latest.current[accessor],

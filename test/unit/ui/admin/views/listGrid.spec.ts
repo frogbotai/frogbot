@@ -1,11 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   clampWidth,
   columnWidthsCss,
   readGridSettings,
 } from '../../../../../packages/ui/src/admin/views/List/grid/grid.js';
-import { applyPreferencePatch } from '../../../../../packages/ui/src/admin/views/preferences.js';
+import {
+  applyPreferencePatch,
+  PATCH_PREFERENCE,
+  patchPreference,
+} from '../../../../../packages/ui/src/admin/views/preferences.js';
 
 describe('list grid settings', () => {
   it('clamps a column width to 60 to 800 pixels, rounded', () => {
@@ -87,10 +91,11 @@ describe('preference patch', () => {
     });
   });
 
-  it('removes a key patched to undefined', () => {
+  it('removes a key patched to undefined or null', () => {
     const { summary: _summary, ...rest } = stored;
 
     expect(applyPreferencePatch(stored, { summary: undefined })).toEqual(rest);
+    expect(applyPreferencePatch(stored, { summary: null })).toEqual(rest);
   });
 
   it('starts from an empty value when nothing usable is stored', () => {
@@ -98,5 +103,59 @@ describe('preference patch', () => {
       rowHeight: 'compact',
     });
     expect(applyPreferencePatch([1], { rowHeight: 'compact' })).toEqual({ rowHeight: 'compact' });
+  });
+});
+
+describe('patchPreference', () => {
+  it('sends the patch to the server to merge, removed keys as null, and never reads first', async () => {
+    const fetch = vi.fn();
+    const serverFunction = vi.fn(() => Promise.resolve());
+
+    vi.stubGlobal('fetch', fetch);
+
+    await patchPreference({
+      key: 'collection-deals-view-list',
+      patch: { rowHeight: undefined, widths: { company: 240 } },
+      serverFunction,
+    });
+
+    vi.unstubAllGlobals();
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(serverFunction).toHaveBeenCalledWith({
+      name: PATCH_PREFERENCE,
+      args: {
+        key: 'collection-deals-view-list',
+        patch: { rowHeight: null, widths: { company: 240 } },
+      },
+    });
+  });
+
+  it('sends one patch per key at a time, in order, even after one fails', async () => {
+    const order: string[] = [];
+    let fail: (error: Error) => void = () => {};
+
+    const serverFunction = vi.fn(({ args }: { args: Record<string, unknown> }) => {
+      const { patch } = args as { patch: Record<string, unknown> };
+
+      order.push(Object.keys(patch).join());
+
+      return order.length === 1 ? new Promise((_, reject) => (fail = reject)) : Promise.resolve();
+    });
+
+    const first = patchPreference({ key: 'k', patch: { widths: {} }, serverFunction });
+    const second = patchPreference({ key: 'k', patch: { rowHeight: 'tall' }, serverFunction });
+
+    await Promise.resolve();
+
+    expect(order).toEqual(['widths']);
+
+    fail(new Error('offline'));
+
+    await expect(first).rejects.toThrow('offline');
+
+    await second;
+
+    expect(order).toEqual(['widths', 'rowHeight']);
   });
 });

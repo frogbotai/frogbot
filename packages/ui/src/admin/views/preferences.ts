@@ -1,5 +1,5 @@
-import type { ColumnPreference } from 'payload';
-import { formatAdminURL, transformColumnsToPreferences } from 'payload/shared';
+import type { ColumnPreference, ServerFunctionClient } from 'payload';
+import { transformColumnsToPreferences } from 'payload/shared';
 
 export type ViewPreferenceValue = Record<string, unknown> & {
   columns?: ColumnPreference[];
@@ -61,57 +61,54 @@ export function getViewCardColumns<T extends { accessor: string; active: boolean
   );
 }
 
+/** The FrogBot server function that patches the signed-in user's preference. */
+export const PATCH_PREFERENCE = 'frogbot-patch-preference';
+
+/** A preference patch: keys set to `null` or `undefined` are removed, the rest are set. */
+export type PreferencePatch = Record<string, unknown>;
+
+export type PatchPreferenceArgs = {
+  key: string;
+  patch: PreferencePatch;
+};
+
 /**
- * A stored preference with `patch` applied: keys set to `undefined` are removed, every other
- * stored key is kept.
+ * A stored preference with `patch` applied: keys set to `null` or `undefined` are removed, every
+ * other stored key is kept.
  */
 export function applyPreferencePatch(
   stored: unknown,
-  patch: Record<string, unknown>,
+  patch: PreferencePatch,
 ): Record<string, unknown> {
   const next: Record<string, unknown> =
     stored && typeof stored === 'object' && !Array.isArray(stored) ? { ...stored } : {};
 
   for (const [key, value] of Object.entries(patch)) {
-    if (value === undefined) delete next[key];
+    if (value === undefined || value === null) delete next[key];
     else next[key] = value;
   }
 
   return next;
 }
 
-const patches = new Map<string, Promise<void>>();
+const patches = new Map<string, Promise<unknown>>();
 
 /**
- * Reads a preference fresh and writes it back with `patch` applied, one write per key at a time.
- * Reading first keeps the sort and filters the server saved since the page loaded.
+ * Sends `patch` to the server, which merges it into the preference stored at that moment, one
+ * patch per key at a time. Removed keys travel as `null`.
  */
 export function patchPreference({
-  api,
   key,
   patch,
-}: {
-  api: string;
-  key: string;
-  patch: Record<string, unknown>;
-}): Promise<void> {
-  const url = formatAdminURL({ apiRoute: api, path: `/payload-preferences/${key}` });
-
-  const write = async () => {
-    const current = await fetch(url, { credentials: 'include' });
-    const stored: unknown = current.ok
-      ? ((await current.json()) as { value?: unknown }).value
-      : undefined;
-
-    await fetch(url, {
-      body: JSON.stringify({ value: applyPreferencePatch(stored, patch) }),
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
-    });
+  serverFunction,
+}: PatchPreferenceArgs & { serverFunction: ServerFunctionClient }): Promise<unknown> {
+  const args: PatchPreferenceArgs = {
+    key,
+    patch: Object.fromEntries(Object.entries(patch).map(([name, value]) => [name, value ?? null])),
   };
 
-  const next = (patches.get(key) ?? Promise.resolve()).then(write, write);
+  const send = () => serverFunction({ name: PATCH_PREFERENCE, args });
+  const next = (patches.get(key) ?? Promise.resolve()).then(send, send);
 
   patches.set(key, next);
 

@@ -8,6 +8,7 @@ import {
   PopupList,
   useConfig,
   useLocale,
+  useServerFunctions,
   useTableColumns,
   useTranslation,
 } from '@payloadcms/ui';
@@ -110,6 +111,7 @@ export function ListSummary({
   where,
 }: ListSummaryProps) {
   const { config } = useConfig();
+  const { serverFunction } = useServerFunctions();
   const { i18n } = useTranslation();
   const { columns: tableColumns } = useTableColumns();
   const target = useTableTarget(containerRef);
@@ -145,9 +147,9 @@ export function ListSummary({
     setChoices(next);
 
     await patchPreference({
-      api: config.routes.api,
       key: preferenceKey,
       patch: { summary: Object.keys(next).length ? next : undefined },
+      serverFunction,
     });
   };
 

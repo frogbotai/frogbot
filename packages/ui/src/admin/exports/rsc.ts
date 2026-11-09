@@ -25,6 +25,8 @@ export {
   renderRecordPanelHandler,
   type RenderRecordPanelResult,
 } from '../views/panel/renderRecordPanel.js';
+export { patchPreferenceHandler } from '../views/patchPreference.js';
+export { PATCH_PREFERENCE, type PatchPreferenceArgs } from '../views/preferences.js';
 export { SettingsView } from '../views/Settings/index.js';
 export { resolveSettingsTitle, type SettingsEntry } from '../views/Settings/resolveSection.js';
 export { TimelineView } from '../views/Timeline/index.js';
