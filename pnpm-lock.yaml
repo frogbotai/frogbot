@@ -2043,6 +2043,28 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/plugins/plugin-two-factor:
+    dependencies:
+      otpauth:
+        specifier: 9.5.2
+        version: 9.5.2
+      qrcode:
+        specifier: 1.5.4
+        version: 1.5.4
+    devDependencies:
+      '@types/qrcode':
+        specifier: 1.5.5
+        version: 1.5.5
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      payload:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.7(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/plugins/plugin-usage-reports:
     devDependencies:
       '@frogbotai/plugin-import-export':
@@ -2792,6 +2814,9 @@ importers:
       '@frogbotai/plugin-stripe':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-stripe
+      '@frogbotai/plugin-two-factor':
+        specifier: workspace:*
+        version: link:../packages/plugins/plugin-two-factor
       '@frogbotai/plugin-usage-reports':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-usage-reports
@@ -2906,6 +2931,9 @@ importers:
       openpgp:
         specifier: 6.2.0
         version: 6.2.0
+      otpauth:
+        specifier: 9.5.2
+        version: 9.5.2
       payload:
         specifier: 'catalog:'
         version: 4.0.0-beta.7(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
@@ -5485,6 +5513,10 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
+
+  '@noble/hashes@2.4.0':
+    resolution: {integrity: sha512-X5XaVWZIBCT7HHZGm5I7ZQXDwLG+bGXuSrMQAW+7Zvl87h1kmc1ZB1VSRJcpUfoUrGQp4Fkoxm5kZ+Ms+aW+eA==}
+    engines: {node: '>= 20.19.0'}
 
   '@nodable/entities@2.2.0':
     resolution: {integrity: sha512-9uGyhaQavEUMC8AIddIjau4NsnsXhou+j5sBAGojCM1oxmQpVKTWR/9JxABD6UAv12vpIms55fPZKFQEhG6uBg==}
@@ -10343,6 +10375,9 @@ packages:
     resolution: {integrity: sha512-wrAwOeXp1RRMFfQY8Sy7VaGVmPocaLwSFOYCGKSyo8qmJ+/yaafCl5BCA1IQZWqFSRBrKDYFeR9d/VyQzfH/jg==}
     engines: {node: '>= 6.0'}
 
+  otpauth@9.5.2:
+    resolution: {integrity: sha512-GQ5emWR/x1tcExT62IBT0UfO95wZzJZyxYOJOGVeQF47SYEN9vmh0vISvDZaNMuFJRG+IaWCKtfm+t9Bfoal6w==}
+
   own-keys@1.0.2:
     resolution: {integrity: sha512-19YVAg7T+WTrxggPukVq7DjTv6+PJ867TmhCvBsYwmbFCsZd344rq2Ld1p0wo8f8Qrrhgp82c6FJRqdXWtSEhg==}
     engines: {node: '>= 0.4'}
@@ -14449,6 +14484,8 @@ snapshots:
 
   '@next/swc-win32-x64-msvc@16.4.2':
     optional: true
+
+  '@noble/hashes@2.4.0': {}
 
   '@nodable/entities@2.2.0': {}
 
@@ -20196,6 +20233,10 @@ snapshots:
       word-wrap: 1.2.5
 
   os-paths@4.4.0: {}
+
+  otpauth@9.5.2:
+    dependencies:
+      '@noble/hashes': 2.4.0
 
   own-keys@1.0.2:
     dependencies:

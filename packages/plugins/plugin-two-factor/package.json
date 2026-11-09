@@ -1,0 +1,80 @@
+{
+  "name": "@frogbotai/plugin-two-factor",
+  "version": "0.41.0",
+  "description": "Two-factor sign-in for FrogBot: authenticator codes and recovery codes after the password or sign-in provider.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/plugins/plugin-two-factor"
+  },
+  "homepage": "https://github.com/frogbotai/frogbot#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./rsc": {
+      "import": "./dist/rsc.js",
+      "types": "./dist/rsc.d.ts",
+      "default": "./dist/rsc.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=24.21.0"
+  },
+  "scripts": {
+    "build": "node ../../../scripts/build-package.mjs",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "otpauth": "9.5.2",
+    "qrcode": "1.5.4"
+  },
+  "peerDependencies": {
+    "frogbot": "workspace:*",
+    "payload": "catalog:"
+  },
+  "devDependencies": {
+    "@types/qrcode": "1.5.5",
+    "frogbot": "workspace:*",
+    "payload": "catalog:",
+    "typescript": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "import": "./dist/index.js",
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./client": {
+        "import": "./dist/client.js",
+        "types": "./dist/client.d.ts",
+        "default": "./dist/client.js"
+      },
+      "./rsc": {
+        "import": "./dist/rsc.js",
+        "types": "./dist/rsc.d.ts",
+        "default": "./dist/rsc.js"
+      }
+    }
+  }
+}
