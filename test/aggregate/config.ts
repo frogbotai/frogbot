@@ -63,6 +63,16 @@ const Deals: CollectionConfig = {
     { name: 'region', type: 'text', localized: true },
     { name: 'margin', type: 'number', access: { read: isAdmin } },
     { name: 'secret', type: 'number', hidden: true },
+    { name: 'confidential', type: 'checkbox' },
+    {
+      name: 'audit',
+      type: 'number',
+      access: {
+        read: ({ doc, req }) =>
+          isAdmin({ req }) ||
+          (doc as { confidential?: boolean } | undefined)?.confidential !== true,
+      },
+    },
     { name: 'details', type: 'group', fields: [{ name: 'probability', type: 'number' }] },
     { name: 'lines', type: 'array', fields: [{ name: 'product', type: 'text' }] },
   ],

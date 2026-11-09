@@ -14,10 +14,12 @@ type Read = (args: { req: FrogBotRequest }) => boolean | object;
 
 export function aggregateFixture({
   aggregate = true,
+  marginRead = () => true,
   read = () => true,
   result = { rows: [], totalDocs: 0 },
 }: {
   aggregate?: boolean;
+  marginRead?: (args: { req: FrogBotRequest }) => boolean;
   read?: Read;
   result?: AdapterAggregateResult;
 } = {}) {
@@ -48,7 +50,7 @@ export function aggregateFixture({
         type: 'array',
         flattenedFields: [{ name: 'quantity', type: 'number' }],
       },
-      { name: 'margin', type: 'number', access: { read: () => true } },
+      { name: 'margin', type: 'number', access: { read: marginRead } },
       { name: 'secret', type: 'number', hidden: true },
     ],
     hooks: {},
