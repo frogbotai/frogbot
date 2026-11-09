@@ -81,7 +81,13 @@ ai: {
 }
 ```
 
-Invoke that model as `internal/legal-summary-v2`. The chat model picker labels it `Legal Summary`, and its reasoning selector offers `Default`, `Low`, and `High`; built-in models take their names and reasoning levels from the model catalog. Built-in provider entries accept an optional `models` allowlist to restrict their catalog IDs; this is different from a custom provider's required model definitions.
+Invoke that model as `internal/legal-summary-v2`. The chat model picker labels it `Legal Summary`, and its reasoning selector offers `Default`, `Low`, and `High`; built-in models take their names and reasoning levels from the model catalog. Built-in provider entries accept an optional `models` allowlist to restrict their catalog IDs; this is different from a custom provider's required model definitions. Without `apiKey`, the entry reads the same environment variable as `true`:
+
+```ts
+providers: {
+  anthropic: { models: ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5'] }
+}
+```
 
 A provider's `models` list decides what the app can use, while an [agent's `model.options`](/agents/overview#define-one) decides what users can pick for that agent.
 
@@ -116,7 +122,7 @@ Pass `true` to use the provider's standard environment credentials, or an object
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `apiKey` | `string \| undefined` | Required | Credential for the provider. Must be a non-empty string; the key is required even though its type admits `undefined`, so `process.env` values type-check. Optional for a provider a [connections piece links](/connections/overview#run-ai-on-users-keys): there it is the app key for users who haven't linked an account. Replicate receives it as its `apiToken`. |
+| `apiKey` | `string \| undefined` | The provider's environment variable, such as `ANTHROPIC_API_KEY` | Credential for the provider. A string must be non-empty. Left out or `undefined`, the provider's environment variable is used, as with `true`, and startup fails naming that variable when it is unset. For a provider a [connections piece links](/connections/overview#run-ai-on-users-keys), it is the app key for users who haven't linked an account. Replicate receives it as its `apiToken`. |
 | `models` | `string[]` | Every catalog model for the provider | Allowlist of the provider's catalog model names, without the provider prefix. Unknown names fail startup, and calls to other models of this provider are rejected. Also limits what an agent's `model.options: '*'` includes. |
 
 ### Bedrock provider options

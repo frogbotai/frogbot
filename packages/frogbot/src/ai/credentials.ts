@@ -12,6 +12,21 @@ function hasKey(value: unknown): boolean {
 }
 
 /**
+ * The startup error for a built-in provider configured with an object and no usable key: an
+ * omitted `apiKey` falls back to the provider's env var, the same as `true`.
+ */
+export function builtInKeyError(provider: string, apiKey: unknown): string | undefined {
+  const envVar = providerKeyEnvVar(provider);
+
+  if (hasKey(apiKey)) return undefined;
+  if (apiKey === undefined && envVar && hasKey(process.env[envVar])) return undefined;
+
+  return envVar
+    ? `[frogbot] Provider '${provider}' requires a non-empty apiKey or the ${envVar} environment variable.`
+    : `[frogbot] Provider '${provider}' requires a non-empty apiKey when configured with an object.`;
+}
+
+/**
  * The gateway `credential` for a provider a `connections` piece links to: the asking user's
  * linked account, else the app key, else a setup error. A linked account that can't be used
  * fails the call and never falls back to the app key.

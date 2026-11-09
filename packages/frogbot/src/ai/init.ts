@@ -2,7 +2,7 @@ import type { Gateway, GatewayConfig } from '@frogbotai/gateway';
 import { createGateway } from '@frogbotai/gateway';
 
 import type { Logger } from '../frogbot.js';
-import { linkedCredential } from './credentials.js';
+import { builtInKeyError, linkedCredential } from './credentials.js';
 import { toGatewayHooks } from './hooks.js';
 import { logUsage } from './logUsage.js';
 import { isProviderName } from './providerNames.js';
@@ -16,10 +16,6 @@ import type {
 
 function isCustomProvider(entry: object): entry is CustomProviderEntry {
   return 'type' in entry && entry.type === 'openai-compatible';
-}
-
-function isBuiltInProvider(entry: object): entry is BuiltInProviderEntry {
-  return 'apiKey' in entry;
 }
 
 function isBedrockProvider(entry: object): entry is BedrockProviderEntry {
@@ -87,21 +83,6 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
       throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);
     }
 
-    if (key === 'replicate') {
-      if (!isBuiltInProvider(entry) || typeof entry.apiKey !== 'string' || !entry.apiKey.trim()) {
-        throw new Error(
-          "[frogbot] Provider 'replicate' requires a non-empty apiKey when configured with an object.",
-        );
-      }
-
-      providers.replicate = {
-        apiToken: entry.apiKey,
-        ...(entry.models !== undefined && { models: entry.models }),
-      };
-
-      continue;
-    }
-
     if (key === 'bedrock') {
       if (!isBedrockProvider(entry)) {
         throw new Error(
@@ -122,15 +103,23 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
       continue;
     }
 
-    if (!isBuiltInProvider(entry) || typeof entry.apiKey !== 'string' || !entry.apiKey.trim()) {
-      throw new Error(
-        `[frogbot] Provider '${key}' requires a non-empty apiKey when configured with an object.`,
-      );
+    const { apiKey, models } = entry as BuiltInProviderEntry;
+    const keyError = builtInKeyError(key, apiKey);
+
+    if (keyError) throw new Error(keyError);
+
+    if (key === 'replicate') {
+      providers.replicate = {
+        ...(apiKey !== undefined && { apiToken: apiKey }),
+        ...(models !== undefined && { models }),
+      };
+
+      continue;
     }
 
     setGatewayProvider(providers, key, {
-      apiKey: entry.apiKey,
-      ...(entry.models !== undefined && { models: entry.models }),
+      ...(apiKey !== undefined && { apiKey }),
+      ...(models !== undefined && { models }),
     });
   }
 

@@ -3,6 +3,7 @@ import type { PieceInstance } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { isRecord } from '../../utilities/isRecord.js';
 import { isKnownModelId } from '../catalog.js';
+import { builtInKeyError } from '../credentials.js';
 import {
   getConfiguredChatModelIds,
   getConfiguredModelIds,
@@ -209,11 +210,8 @@ export function sanitizeAI(
 
     if (Object.hasOwn(linked, key) && provider.apiKey === undefined) continue;
 
-    if (typeof provider.apiKey !== 'string' || !provider.apiKey.trim()) {
-      throw new Error(
-        `[frogbot] Provider '${key}' requires a non-empty apiKey when configured with an object.`,
-      );
-    }
+    const keyError = builtInKeyError(key, provider.apiKey);
+    if (keyError) throw new Error(keyError);
   }
 
   if (ai.routers !== undefined && !isRecord(ai.routers)) {
