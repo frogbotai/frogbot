@@ -27,7 +27,7 @@ The commands come from `dojo()` (`@frogbotai/plugin-dojo`). In an app that lists
 
 ## Output And Exit Codes
 
-Add `--json` whenever you read a result to act on it: stdout then holds one JSON value and nothing else, and a failed command prints nothing on stdout. Run without `--json` when you only report the result: the plain lines are written for the user. Sign-in links, progress and build lines go to stderr either way. `apps logs --follow` never ends, so it refuses `--json`.
+Add `--json` whenever you read a result to act on it: stdout then holds one JSON value and nothing else, and a failed command prints nothing on stdout, except `deployments logs --follow`, which prints the failed build's JSON and then exits `1`. Run without `--json` when you only report the result: the plain lines are written for the user. Sign-in links, progress and build lines go to stderr either way. `apps logs --follow` never ends, so it refuses `--json`.
 
 | Exit | Meaning                                                                                               |
 | ---- | ----------------------------------------------------------------------------------------------------- |
