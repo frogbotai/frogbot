@@ -123,6 +123,17 @@ export function CellEditing({
         if (path) td.dataset.cellEdit = path;
         else delete td.dataset.cellEdit;
       });
+
+      const current = activeRef.current;
+      if (!current || current.cell.isConnected) return;
+
+      const moved = editableCells(container).find(
+        (td) => td.dataset.cellEdit === current.column && toActive(td)?.rowId === current.rowId,
+      );
+
+      activeRef.current = moved && { ...current, cell: moved };
+      setActive(activeRef.current);
+      if (moved) focusCell(moved);
     };
 
     mark();
@@ -251,8 +262,10 @@ export function CellEditing({
       const next = step && index !== -1 ? cells[index + step] : undefined;
       const following = next ? toActive(next) : undefined;
 
+      activeRef.current = following;
       setActive(following);
-      if (!following) window.requestAnimationFrame(() => focusCell(td));
+      if (following) focusCell(following.cell);
+      else window.requestAnimationFrame(() => focusCell(td));
     },
     [containerRef],
   );
