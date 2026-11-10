@@ -55,7 +55,7 @@ export function createUpdateJobs(adapter: MongooseAdapter): MongooseAdapter['upd
       const doc = await Model.findOneAndUpdate({ $and: [query, candidateQuery] }, update, {
         session,
         timestamps: false,
-        new: true,
+        returnDocument: 'after',
       }).lean<MongoJob | null>();
 
       if (!doc) continue;

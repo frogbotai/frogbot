@@ -228,7 +228,7 @@ The following options are available:
 | `useAsDone` | `string` | — | Name of a checkbox field that means "this record is done": a top-level checkbox or a dot path into a group. Every view then shows done records in one done style, and board cards get a check circle that toggles it. The config check fails at startup if the field is missing or isn't a checkbox. [More details](#done-records). |
 | `useAsThumbnail` | `string` | The first upload field | Top-level upload field used as the document thumbnail: the image on board and gallery cards, and in the Recents and Pinned dashboard widgets. An upload collection with no upload field uses each document's own file. A board or gallery can override it. See [Card images](#card-images). |
 | `useAsTitle` | `string` | `'id'` | Top-level field used as the document title throughout the admin panel. |
-| `views` | `CollectionView[]` | One list view | Collection views, such as list, board, calendar, and custom layouts. [More details](#collection-views). |
+| `views` | `CollectionView[]` | One list view | Collection views, such as list, board, calendar, timeline, and custom layouts. [More details](#collection-views). |
 
 <Warning>
   **Note:** If you set `useAsTitle` to a relationship or join field, it will use
@@ -284,7 +284,7 @@ export const Projects: CollectionConfig = {
 | --- | --- | --- | --- |
 | `slug` | `string` | No; defaults to `type` | Unique route and saved-preference key after normalization to lowercase kebab case. Duplicate or empty normalized slugs produce a configuration error. The first view uses the collection's root route. |
 | `label` | `string` | No; defaults to the capitalized `type` | Label on the view's tab. |
-| `icon` | `AdminIcon` | No; the view type's icon | Icon on the view's tab: a built-in kebab-case icon name or a component path. Defaults: `list` for list, `kanban` for board, `tile` for gallery, `calendar` for calendar and `dashboard` for custom views. |
+| `icon` | `AdminIcon` | No; the view type's icon | Icon on the view's tab: a built-in kebab-case icon name or a component path. Defaults: `list` for list, `kanban` for board, `tile` for gallery, `calendar` for calendar, `timeline` for timeline and `dashboard` for custom views. |
 | `defaultFields` | `string[]` | No | Ordered field dot paths initially displayed as list columns or board and gallery card fields. Users can change list columns through normal list controls. |
 | `filter` | `Where` | No | Invisible base filter applied to the view, as plain data. |
 | `defaultSort` | `Sort` (`string \| string[]`) | No | Initial field sort or ordered list of sorts. Prefix a field with `-` for descending order. |
@@ -302,7 +302,7 @@ export const Projects: CollectionConfig = {
 
 #### ViewComponents
 
-These shell slots are shared by list, board, gallery, calendar, and custom views. Each value uses a `FrogBotComponent` import path; array slots render in declaration order.
+These shell slots are shared by list, board, gallery, calendar, timeline, and custom views. Each value uses a `FrogBotComponent` import path; array slots render in declaration order.
 
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
@@ -311,13 +311,14 @@ These shell slots are shared by list, board, gallery, calendar, and custom views
 | `menuItems` | `FrogBotComponent[]` | No; `[]` | Adds entries to the view menu, before **Reset to default**. |
 | `beforeView` | `FrogBotComponent[]` | No; `[]` | Renders inside the frame before the header. |
 | `afterView` | `FrogBotComponent[]` | No; `[]` | Renders inside the frame after the view body. |
-| `NoResults` | `FrogBotComponent` | No; built-in empty state | Replaces the empty state shown when the view matches no records. It replaces the list's table and the gallery's grid, and the board's columns when filters or a search match nothing (an unfiltered empty board keeps its columns, each with its own empty state and add button); the calendar keeps its grid under it. Not shown in relationship drawers. |
+| `NoResults` | `FrogBotComponent` | No; built-in empty state | Replaces the empty state shown when the view matches no records. It replaces the list's table and the gallery's grid, and the board's columns when filters or a search match nothing (an unfiltered empty board keeps its columns, each with its own empty state and add button); the calendar and timeline keep their grid under it. Not shown in relationship drawers. |
 
 #### ListView
 
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
 | `type` | `'list'` | Yes | Selects the table-based list view. |
+| `editable` | `boolean \| string[]` | No | Lets people edit cells in place: `true` for every supported column, or the field names and dot paths that edit. See [Editing cells in place](/admin/collection-list#editing-cells-in-place). |
 | `groupBy` | `string` | No | Dot path to the field the list opens grouped by. Each person's own choice from the toolbar's **Group** control is saved for them and wins. See [Grouping](#grouping). |
 | `summary` | `Record<string, SummaryOperation>` | No | Each column's default footer total, keyed by field path: `'count'`, `'sum'`, `'avg'`, `'min'` or `'max'`. See [Summary row](/admin/collection-list#summary-row). |
 | `components` | `ViewComponents & ListViewComponents` | No | Adds shared shell slots and list table slots. |
@@ -438,6 +439,28 @@ export const Companies: CollectionConfig = {
 
 See [Collection calendar](/admin/collection-calendar) for modes, date fields, loading, and editing behavior.
 
+#### TimelineView
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `type` | `'timeline'` | Yes | Selects the timeline view: one bar per record, from its start date to its end date. |
+| `start` | `string` | Yes | Dot path to the date field each bar starts on. |
+| `end` | `string` | No | Dot path to the date field each bar ends on. Without it, bars are one day long. |
+| `groupBy` | `string` | No | Dot path to the field that splits the timeline into bands, as on a board. |
+| `color` | `string` | No | Dot path to a select or radio field whose value colors each bar. |
+| `scales` | `TimelineScale[]` | No; `['week', 'month', 'day']` | Available zoom levels in display order. The first is the default. |
+| `components` | `ViewComponents & TimelineComponents` | No | Adds shared shell slots and timeline-specific components. |
+
+**Timeline components**
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `beforeTimeline` | `FrogBotComponent[]` | No; `[]` | Renders before the timeline. |
+| `afterTimeline` | `FrogBotComponent[]` | No; `[]` | Renders after the timeline. |
+| `Bar` | `FrogBotComponent` | No; the document's title | Replaces each bar's body and receives the document as its `row` prop. |
+
+See [Collection timeline](/admin/collection-timeline) for scales, bands, dates, and dragging.
+
 #### CustomView
 
 | Property | Type | Required / default | Behavior |
@@ -467,7 +490,7 @@ export const Tasks: CollectionConfig = {
 }
 ```
 
-With it set, board and gallery cards, calendar events and list rows show done records in one done style: a green check, a muted title, and a struck-through title in the list. Board and gallery cards get a check circle that toggles the field. Toggling is an ordinary update, so field-level `update` access applies, and without it the check is read-only. To tie a stage to done ("won means done"), set the field in a `beforeChange` hook.
+With it set, board and gallery cards, calendar events, timeline bars and list rows show done records in one done style: a green check, a muted title, and a struck-through title in the list. Board and gallery cards get a check circle that toggles the field. Toggling is an ordinary update, so field-level `update` access applies, and without it the check is read-only. To tie a stage to done ("won means done"), set the field in a `beforeChange` hook.
 
 The record open in a document drawer shows one selected style on every view until the drawer closes. Both styles read the admin's theme tokens and sit in FrogBot's CSS layer, so app CSS overrides them.
 

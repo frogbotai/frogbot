@@ -120,6 +120,26 @@ The first user is the exception, as with the create-first-user screen: while the
 
 On Dojo, the [Dojo plugin](/plugins/dojo#sign-in-with-dojo) adds "Continue with Dojo" to the user collection, and it follows these same rules.
 
+## Two-factor sign-in
+
+The [two-factor plugin](/plugins/two-factor) asks for a code from an authenticator app, or a recovery code, after the provider or the password, before any session exists. It pauses the sign-in with the collection's [`beforeSignIn`](/hooks/collections#beforesignin) hook and resumes it with `finishSignIn` once the code is right; any other second step, such as accepting terms, can use the same pair, though not yet together with two-factor sign-in (see [Limits](/plugins/two-factor#limits)).
+
+```ts
+import { twoFactor } from '@frogbotai/plugin-two-factor'
+
+export default buildConfig({
+  collections: [Users],
+  plugins: [twoFactor({ issuer: 'Acme', require: ({ user }) => user.role === 'admin' })],
+})
+```
+
+- **Setup.** Each user turns it on from their account with a QR code and a confirming code, and saves 10 one-time recovery codes. Turning it on signs out their other sessions.
+- **Require.** Users `require` covers set it up at their next sign-in and can't turn it off while they're required.
+- **Recovery.** A recovery code signs in once when the authenticator is lost. An admin that `canReset` allows can clear someone's two-factor sign-in; they set it up again if they're still required.
+- **Sessions.** A paused sign-in is a 10-minute, single-use record behind an HttpOnly cookie and grants nothing on its own. Password login answers `202 { twoFactor, url }` with no token, and a password reset signs nobody in, for users who need a code.
+
+GraphQL and Local API login fail for users who need a code. See [Limits](/plugins/two-factor#limits).
+
 ## Collection requirements
 
 - Each sign-in method needs factory OAuth app credentials and a recipe with an `account` function. Method slugs must be URL-safe and unique within the collection.

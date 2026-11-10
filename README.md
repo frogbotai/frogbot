@@ -56,10 +56,10 @@ Set up a new FrogBot app on this machine and help me build with it:
 
 ## Quickstart
 
-You need Node.js 24.21 or newer and an AI provider key ([OpenAI](https://platform.openai.com/api-keys), Anthropic, or Google). Create and boot a project:
+You need Node.js 24.21 or newer. An AI provider key is optional: the CLI asks for one, and you can add it to `.env` later. Create and boot a project:
 
 ```bash
-npx create-frogbot-app@latest my-app --ai openai
+npx create-frogbot-app@latest my-app
 cd my-app
 npm run dev
 ```

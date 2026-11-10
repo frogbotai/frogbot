@@ -1,4 +1,4 @@
-import type { CollectionConfig, CollectionView, GalleryView } from 'frogbot';
+import type { CollectionConfig, CollectionView, GalleryView, TimelineView } from 'frogbot';
 
 export const companies: CollectionConfig = {
   slug: 'companies',
@@ -61,4 +61,29 @@ export const galleryColumns: CollectionView = {
   type: 'gallery',
   // @ts-expect-error A gallery has no columns.
   components: { beforeColumns: [] },
+};
+
+export const timeline: TimelineView = {
+  type: 'timeline',
+  slug: 'timeline',
+  start: 'startDate',
+  end: 'dueDate',
+  groupBy: 'project',
+  color: 'status',
+  scales: ['week', 'month', 'day'],
+  components: {
+    afterTimeline: ['/After#After'],
+    beforeTimeline: ['/Before#Before'],
+    Bar: '/TaskBar#TaskBar',
+  },
+};
+
+// @ts-expect-error A timeline needs a start date field.
+export const timelineNoStart: CollectionView = { type: 'timeline', end: 'dueDate' };
+
+export const timelineQuarter: CollectionView = {
+  type: 'timeline',
+  start: 'startDate',
+  // @ts-expect-error Scales are day, week and month.
+  scales: ['quarter'],
 };

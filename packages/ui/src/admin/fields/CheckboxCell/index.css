@@ -1,0 +1,23 @@
+@layer frogbot {
+  .fb-checkbox-cell {
+    display: inline-flex;
+    vertical-align: middle;
+  }
+
+  .fb-checkbox-cell .checkbox-input__input {
+    margin-block: 0;
+  }
+
+  .fb-checkbox-cell .checkbox-input__wrap {
+    width: auto;
+  }
+
+  .fb-checkbox-cell .field-label {
+    display: none;
+  }
+
+  .fb-checkbox-cell .checkbox-input__control:disabled + .checkbox-input__visuals {
+    --checkbox-border-color: var(--color-border-control-strong);
+    --checkbox-mark-color: var(--color-icon);
+  }
+}

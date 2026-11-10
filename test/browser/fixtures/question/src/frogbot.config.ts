@@ -58,6 +58,7 @@ import {
   usersSlug,
   verboseEffort,
 } from '../shared';
+import { cellAccess, cellDrafts, cellKinds } from './cellEdits';
 
 const projectStatusOptions = [
   { label: 'Active', value: 'active', color: 'green' as const },
@@ -179,6 +180,14 @@ export default buildConfig({
               'projectStatus',
               'tagNames',
             ],
+          },
+          {
+            type: 'timeline',
+            start: 'dueAt',
+            end: 'endsAt',
+            groupBy: 'status',
+            color: 'status',
+            scales: ['day', 'week', 'month'],
           },
         ],
       },
@@ -306,6 +315,9 @@ export default buildConfig({
         { name: 'status', type: 'select', options: storyStatusOptions },
       ],
     },
+    cellKinds,
+    cellDrafts,
+    cellAccess,
     {
       slug: timesheetsSlug,
       admin: {

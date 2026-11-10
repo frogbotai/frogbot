@@ -55,7 +55,7 @@ https://docs.frogbot.ai/llms.txt
     ```
 
     <Note>
-      OpenAI, Anthropic, and Google apps require their key in `.env` before the server starts (unless you configure [`@frogbotai/piece-openai`](/pieces/openai) so users sign in with **Continue with ChatGPT** or link their own key in the UI). Bedrock and Zen apps start without a key, but require one before chatting.
+      The app starts without a key, but chat and other AI features fail until you add one to `.env`. With [`@frogbotai/piece-openai`](/pieces/openai), users can instead sign in with **Continue with ChatGPT** or link their own key in the UI.
     </Note>
   </Step>
   <Step title="Start the dev server">

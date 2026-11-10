@@ -6,6 +6,7 @@ import { type CalendarMode, parseCalendarDate } from './core/index.js';
 
 export function CalendarHeader({
   date,
+  label,
   mode,
   modes = ['month', 'week', 'day'],
   navigate,
@@ -13,6 +14,8 @@ export function CalendarHeader({
   timeZone = 'UTC',
 }: {
   date: string;
+  /** Replaces the date label, for views that show a range. */
+  label?: string;
   mode: CalendarMode;
   modes?: CalendarMode[];
   navigate: (direction: 'next' | 'previous' | 'today') => void;
@@ -20,7 +23,7 @@ export function CalendarHeader({
   timeZone?: string;
 }) {
   const zoned = parseCalendarDate(date, timeZone);
-  const label = format(zoned, mode === 'day' ? 'EEEE, MMMM d, yyyy' : 'MMMM yyyy');
+  const title = label ?? format(zoned, mode === 'day' ? 'EEEE, MMMM d, yyyy' : 'MMMM yyyy');
 
   return (
     <header className="frog-calendar__header">
@@ -35,7 +38,7 @@ export function CalendarHeader({
           ›
         </button>
       </div>
-      <strong>{label}</strong>
+      <strong>{title}</strong>
       <div className="frog-calendar__modes">
         {modes.map((candidate) => (
           <button

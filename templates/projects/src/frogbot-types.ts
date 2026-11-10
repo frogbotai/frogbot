@@ -292,6 +292,7 @@ export interface Task {
   key?: string | null;
   status?: ('todo' | 'in-progress' | 'in-review' | 'done') | null;
   assignee?: (number | null) | User;
+  startDate?: string | null;
   dueDate?: string | null;
   description?: string | null;
   createdBy?: {
@@ -585,6 +586,7 @@ export interface TasksSelect {
   key?: boolean;
   status?: boolean;
   assignee?: boolean;
+  startDate?: boolean;
   dueDate?: boolean;
   description?: boolean;
   createdBy?: boolean;

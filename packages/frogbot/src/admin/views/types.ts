@@ -49,6 +49,14 @@ export type ListView = ViewConfig & {
     afterTable?: FrogBotComponent[];
     beforeTable?: FrogBotComponent[];
   };
+  /**
+   * Lets people edit cells in place, without opening the record. `true` makes every writable
+   * column of a supported type editable; an array names the fields (names or dot paths) that are.
+   * Text, textarea, email, number, select, checkbox, date, single relationships and FrogBot's
+   * field kinds edit in the cell; other fields, `hasMany` fields and the linked first column open
+   * the record. Off by default.
+   */
+  editable?: boolean | string[];
   /** The field the list opens grouped by, as on a board. A person's own grouping wins. */
   groupBy?: string;
   /**
@@ -113,6 +121,28 @@ export type CalendarView = ViewConfig & {
   type: 'calendar';
 };
 
+export type TimelineScale = 'day' | 'month' | 'week';
+
+export type TimelineView = ViewConfig & {
+  /** A select or radio field whose option colors tint each bar. */
+  color?: string;
+  components?: ViewComponents & {
+    afterTimeline?: FrogBotComponent[];
+    beforeTimeline?: FrogBotComponent[];
+    /** Replaces each bar's body. It receives the document as `row`. */
+    Bar?: FrogBotComponent;
+  };
+  /** The date field each bar ends on. Without it, every bar is one day long. */
+  end?: string;
+  /** The field the timeline splits into bands, as on a board. */
+  groupBy?: string;
+  /** The zoom levels people can switch between, in order; the first opens. Default `['week', 'month', 'day']`. */
+  scales?: TimelineScale[];
+  /** The date field each bar starts on. */
+  start: string;
+  type: 'timeline';
+};
+
 export type CustomView = ViewConfig & {
   component: FrogBotComponent;
   components?: ViewComponents;
@@ -120,7 +150,8 @@ export type CustomView = ViewConfig & {
   type: 'custom';
 };
 
-export type CollectionView = BoardView | CalendarView | CustomView | GalleryView | ListView;
+export type CollectionView =
+  BoardView | CalendarView | CustomView | GalleryView | ListView | TimelineView;
 
 export type CollectionViewMetadata = Omit<
   CollectionView,

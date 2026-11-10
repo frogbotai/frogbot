@@ -966,6 +966,11 @@
   },
   {
     "page": "hooks/collections",
+    "heading": "beforeSignIn",
+    "type": "Parameters<import('frogbot').CollectionBeforeSignInHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
     "heading": "beforeLogin",
     "type": "Parameters<import('frogbot').CollectionBeforeLoginHook>[0]"
   },
@@ -1323,6 +1328,11 @@
     "page": "plugins/api-keys",
     "heading": "Configuration options",
     "type": "import('@frogbotai/plugin-api-keys').ApiKeysPluginOptions"
+  },
+  {
+    "page": "plugins/two-factor",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-two-factor').TwoFactorPluginOptions"
   },
   {
     "page": "plugins/audit-log",

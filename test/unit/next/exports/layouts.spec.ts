@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   RootLayout: vi.fn(() => null),
   connection: vi.fn(() => Promise.resolve()),
   handleServerFunctions: vi.fn((args: unknown) => Promise.resolve(args)),
+  patchPreference: vi.fn(),
   renderRecordPanel: vi.fn(),
 }));
 
@@ -16,6 +17,8 @@ vi.mock('@payloadcms/next/layouts', () => ({
 vi.mock('@frogbotai/ui/admin', () => ({ shallowRouteState: 'frogbotShallowRoute' }));
 
 vi.mock('@frogbotai/ui/admin/rsc', () => ({
+  PATCH_PREFERENCE: 'frogbot-patch-preference',
+  patchPreferenceHandler: mocks.patchPreference,
   RENDER_RECORD_PANEL: 'frogbot-render-record-panel',
   renderRecordPanelHandler: mocks.renderRecordPanel,
 }));
@@ -127,7 +130,7 @@ describe('@frogbotai/next layouts', () => {
     await expect(forwarded.config).resolves.toBe(payloadConfig);
   });
 
-  it("handleServerFunctions registers the record panel's server function beside the app's own", async () => {
+  it("handleServerFunctions registers FrogBot's server functions beside the app's own", async () => {
     const { config } = makeConfig();
     const own = vi.fn();
 
@@ -144,6 +147,7 @@ describe('@frogbotai/next layouts', () => {
     };
 
     expect(forwarded.serverFunctions).toEqual({
+      'frogbot-patch-preference': mocks.patchPreference,
       'frogbot-render-record-panel': mocks.renderRecordPanel,
       'my-function': own,
     });

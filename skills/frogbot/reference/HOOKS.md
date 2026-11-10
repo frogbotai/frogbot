@@ -240,7 +240,7 @@ export const Posts: CollectionConfig = {
 };
 ```
 
-Without the context guard, updating the same collection from `afterChange` can trigger the hook repeatedly. Decide explicitly whether nested calls should enforce permissions; Local API calls enforce access by default, so pass `overrideAccess: true` for trusted writes.
+Without the context guard, updating the same collection from `afterChange` can trigger the hook repeatedly. Decide explicitly whether nested calls should enforce permissions; Local API calls enforce access by default, so pass `overrideAccess: true` for trusted writes. Slow or external work (email, API calls, agents) belongs in a job the hook queues, not in the hook: see [AUTOMATIONS.md](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/AUTOMATIONS.md).
 
 ## Auth hooks
 

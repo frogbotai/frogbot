@@ -1,4 +1,9 @@
-import { RENDER_RECORD_PANEL, renderRecordPanelHandler } from '@frogbotai/ui/admin/rsc';
+import {
+  PATCH_PREFERENCE,
+  patchPreferenceHandler,
+  RENDER_RECORD_PANEL,
+  renderRecordPanelHandler,
+} from '@frogbotai/ui/admin/rsc';
 import {
   handleServerFunctions as payloadHandleServerFunctions,
   RootLayout as PayloadRootLayout,
@@ -47,6 +52,10 @@ export function handleServerFunctions(
   return payloadHandleServerFunctions({
     ...rest,
     config: getPayloadConfig(config),
-    serverFunctions: { [RENDER_RECORD_PANEL]: renderRecordPanelHandler, ...rest.serverFunctions },
+    serverFunctions: {
+      [PATCH_PREFERENCE]: patchPreferenceHandler,
+      [RENDER_RECORD_PANEL]: renderRecordPanelHandler,
+      ...rest.serverFunctions,
+    },
   });
 }

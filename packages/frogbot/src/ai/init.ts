@@ -2,7 +2,7 @@ import type { Gateway, GatewayConfig } from '@frogbotai/gateway';
 import { createGateway } from '@frogbotai/gateway';
 
 import type { Logger } from '../frogbot.js';
-import { linkedCredential } from './credentials.js';
+import { envCredential, linkedCredential } from './credentials.js';
 import { toGatewayHooks } from './hooks.js';
 import { logUsage } from './logUsage.js';
 import { isProviderName } from './providerNames.js';
@@ -63,7 +63,9 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
         throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);
       }
 
-      setGatewayProvider(providers, key, {});
+      const credential = envCredential(key);
+
+      setGatewayProvider(providers, key, credential ? { credential } : {});
       continue;
     }
 

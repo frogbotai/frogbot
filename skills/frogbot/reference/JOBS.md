@@ -2,7 +2,7 @@
 
 Docs: https://docs.frogbot.ai/jobs-queue/overview and https://docs.frogbot.ai/jobs-queue/workers
 
-Configure tasks and workflows under `jobs` in `buildConfig`. Queue them through `frogbot.jobs`.
+Configure tasks and workflows under `jobs` in `buildConfig`. Queue them through `frogbot.jobs`. This file is the job mechanics; for a whole rule that queues from a hook, waits and acts, read [AUTOMATIONS.md](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/AUTOMATIONS.md).
 
 ```ts
 import { sqliteAdapter } from '@frogbotai/db-sqlite';

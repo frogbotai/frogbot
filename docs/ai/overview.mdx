@@ -13,6 +13,8 @@ The `ai` block creates an embedded `@frogbotai/gateway` instance when FrogBot st
 
 Add at least one provider. Set a provider to `true` to use its SDK's standard environment credentials.
 
+The app boots without the key. Records, views and the REST API work as usual, and only AI calls fail, with an error that names the env var to set. That includes saves to a collection with an [`embedFrom`](/fields/vector#embed-on-save) vector field, since each save embeds the record's text. The error reads: `The openai provider has no API key. Set OPENAI_API_KEY in the environment, or set ai.providers.openai.apiKey in the FrogBot config.`
+
 ```ts
 import { buildConfig } from 'frogbot'
 

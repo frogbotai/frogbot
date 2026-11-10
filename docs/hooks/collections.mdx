@@ -47,6 +47,7 @@ export const CollectionWithHooks: CollectionConfig = {
     afterError: [(args) => {....}],
 
     // Auth-enabled Hooks
+    beforeSignIn: [(args) => {...}],
     beforeLogin: [(args) => {...}],
     afterLogin: [(args) => {...}],
     afterLogout: [(args) => {...}],
@@ -71,6 +72,7 @@ export const CollectionWithHooks: CollectionConfig = {
 | `afterDelete` | `CollectionAfterDeleteHook[]` | `[]` | Runs after a document is deleted. [More details](#afterdelete). |
 | `afterOperation` | `CollectionAfterOperationHook[]` | `[]` | Runs after any operation. Can replace the result. [More details](#afteroperation). |
 | `afterError` | `CollectionAfterErrorHook[]` | `[]` | Runs when a request on this collection fails. [More details](#aftererror). |
+| `beforeSignIn` | `CollectionBeforeSignInHook[]` | `[]` | Collections with [sign-in methods](/authentication/sign-in) only. Runs in a sign-in callback before any session exists, and can pause sign-in. [More details](#beforesignin). |
 | `beforeLogin` | `CollectionBeforeLoginHook[]` | `[]` | Auth collections only. Runs before a login succeeds. [More details](#beforelogin). |
 | `afterLogin` | `CollectionAfterLoginHook[]` | `[]` | Auth collections only. Runs after a login succeeds. [More details](#afterlogin). |
 | `afterLogout` | `CollectionAfterLogoutHook[]` | `[]` | Auth collections only. Runs after a logout. [More details](#afterlogout). |
@@ -372,6 +374,38 @@ The following arguments are provided to the `afterError` Hook:
 | `req` | `FrogBotRequest` | Always set | The `FrogBotRequest` object that extends [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request). Contains currently authenticated `user` and the Local API instance `frogbot`. |
 | `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
 | `result` | `ErrorResult` | — | The formatted error result object, available if the hook is executed from a REST context. |
+
+### beforeSignIn
+
+For collections with [sign-in methods](/authentication/sign-in), this hook runs in the method's callback after the user is found or created and before any session exists. It runs for every method, in order. Return a `Response` to answer the callback with it instead: no session is written and no auth cookie is set. Return nothing to let sign-in finish.
+
+A hook that pauses sign-in, for example to ask for a second step, resumes it later with `finishSignIn`, which issues the session, sets the auth cookie and continues to `returnTo`. Before it issues the session it sets `req.context.signIn` to `{ method }`, so `beforeLogin` and `afterLogin` hooks can tell a finished sign-in from a password login. Pass `response: 'json'` to answer like `POST /login` instead. `finishSignIn` doesn't run the `beforeSignIn` hooks after the one that paused, so a step that must not be skipped also checks in `beforeLogin`, as the [two-factor plugin](/plugins/two-factor) does.
+
+```ts
+import { type CollectionBeforeSignInHook, finishSignIn } from 'frogbot'
+
+const beforeSignInHook: CollectionBeforeSignInHook = async ({ user, method, returnTo }) => {
+  if (!user.acceptedTerms) {
+    await savePendingSignIn({ userId: user.id, method, returnTo })
+
+    return Response.redirect(new URL('/terms', process.env.SERVER_URL), 303)
+  }
+}
+
+// Later, in an endpoint on the same collection:
+// return finishSignIn({ req, collectionSlug: 'users', userId, method, returnTo })
+```
+
+The following arguments are provided to the `beforeSignIn` hook:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `req` | `FrogBotRequest` | Always set | The callback request, with `req.frogbot` and no signed-in `user`. |
+| `user` | `object` | Always set | The user signing in, read with `overrideAccess`. |
+| `method` | `string` | Always set | The sign-in method's slug. |
+| `returnTo` | `string` | Always set | The validated same-origin path sign-in continues to. |
 
 ### beforeLogin
 

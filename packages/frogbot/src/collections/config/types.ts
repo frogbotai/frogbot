@@ -308,6 +308,19 @@ export type CollectionBeforeLoginHook<T extends TypeWithID = PayloadDocument> = 
   args: FrogBotArgs<Parameters<PayloadCollectionBeforeLoginHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionBeforeLoginHook<T>>;
 
+/** A sign-in method's callback, after it found or created the user and before any session exists. Return a `Response` to answer the callback instead, with no session written; resume later with `finishSignIn`. Return nothing to let sign-in finish. */
+export type CollectionBeforeSignInHook<T extends TypeWithID = PayloadDocument> = (args: {
+  collection: Parameters<CollectionBeforeLoginHook<T>>[0]['collection'];
+  context: FrogBotRequest['context'];
+  req: FrogBotRequest;
+  /** The user signing in, read with `overrideAccess`. */
+  user: T;
+  /** The sign-in method's slug. */
+  method: string;
+  /** The validated same-origin path sign-in continues to. */
+  returnTo: string;
+}) => Response | void | Promise<Response | void>;
+
 export type CollectionAfterLoginHook<T extends TypeWithID = PayloadDocument> = (
   args: FrogBotArgs<Parameters<PayloadCollectionAfterLoginHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionAfterLoginHook<T>>;
@@ -354,6 +367,8 @@ export type CollectionHooks<T extends TypeWithID = PayloadDocument> = {
   beforeLogin?: CollectionBeforeLoginHook<T>[];
   beforeOperation?: CollectionBeforeOperationHook[];
   beforeRead?: CollectionBeforeReadHook<T>[];
+  /** Runs in order in every sign-in method's callback; the first `Response` returned ends it. */
+  beforeSignIn?: CollectionBeforeSignInHook<T>[];
   beforeValidate?: CollectionBeforeValidateHook<T>[];
   me?: CollectionMeHook<T>[];
   refresh?: CollectionRefreshHook<T>[];
