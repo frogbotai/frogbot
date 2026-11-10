@@ -84,7 +84,12 @@ function keyHint({ model, config }: Omit<AIErrorMessageProps, 'error'>) {
 
   if (!provider) return "Check your AI provider's API key.";
 
-  const envVar = config?.providers[provider] === true ? providerKeyEnvVar(provider) : undefined;
+  const entry = config?.providers[provider];
+  const fromEnv =
+    entry === true ||
+    (typeof entry === 'object' && (!('apiKey' in entry) || entry.apiKey === undefined));
+
+  const envVar = fromEnv ? providerKeyEnvVar(provider) : undefined;
 
   return envVar
     ? `Check ${envVar} in .env.`

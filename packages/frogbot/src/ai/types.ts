@@ -28,7 +28,8 @@ type ProviderModelName<
 > = Id extends `${P}/${infer Model}` ? Model : never;
 
 export type BuiltInProviderEntry<P extends ProviderName = ProviderName> = {
-  apiKey: string | undefined;
+  /** Defaults to the provider's environment variable, such as `ANTHROPIC_API_KEY`. */
+  apiKey?: string | undefined;
   models?: ProviderModelName<P>[];
 };
 

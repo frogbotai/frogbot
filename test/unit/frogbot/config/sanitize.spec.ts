@@ -126,14 +126,18 @@ describe('frogbot sanitize: AI providers linked by connections', () => {
     });
   });
 
-  it('still requires an apiKey on providers no piece links', () => {
-    expect(() =>
-      sanitize(makeConfig({ ai: { providers: { openai: { apiKey: undefined } } } })),
-    ).toThrow("Provider 'openai' requires a non-empty apiKey");
+  it('still rejects a blank apiKey on providers no piece links', () => {
+    expect(() => sanitize(makeConfig({ ai: { providers: { openai: { apiKey: '' } } } }))).toThrow(
+      "Provider 'openai' requires a non-empty apiKey",
+    );
   });
 });
 
 describe('frogbot sanitize', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('rejects rich text fields without an editor before the upstream build', () => {
     expect(() =>
       sanitize(
@@ -2901,9 +2905,9 @@ describe('frogbot sanitize', () => {
       expect(result.ai?.access.evaluate({ req: { user: { id: 'user-1' } } } as never)).toBe(false);
     });
 
-    it('rejects TypeSafe AI object configuration without an explicit credential', () => {
+    it('rejects TypeSafe AI object configuration with a blank credential', () => {
       expect(() =>
-        sanitize(makeConfig({ ai: { providers: { 'typesafe-ai': { apiKey: undefined } } } })),
+        sanitize(makeConfig({ ai: { providers: { 'typesafe-ai': { apiKey: '' } } } })),
       ).toThrow("Provider 'typesafe-ai' requires a non-empty apiKey");
     });
 
@@ -2923,14 +2927,63 @@ describe('frogbot sanitize', () => {
       );
     });
 
-    it('rejects an undefined explicit apiKey', () => {
+    it('accepts an undefined apiKey when the env key is unset, leaving the check to AI calls', () => {
+      vi.stubEnv('OPENAI_API_KEY', '');
       const config = makeConfig({
         ai: { providers: { openai: { apiKey: undefined } } },
       });
 
-      expect(() => sanitize(config)).toThrow(
-        "[frogbot] Provider 'openai' requires a non-empty apiKey when configured with an object.",
+      expect(() => sanitize(config)).not.toThrow();
+    });
+
+    it('accepts a models allowlist without apiKey when the env key is set', () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'sk-ant');
+      const result = sanitize(
+        makeConfig({ ai: { providers: { anthropic: { models: ['claude-opus-5-5'] } } } }),
       );
+
+      expect(result.ai?.providers.anthropic).toEqual({ models: ['claude-opus-5-5'] });
+    });
+
+    it('accepts a models allowlist without apiKey when the env key is unset, as it accepts true', () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', '');
+      const config = makeConfig({
+        ai: { providers: { anthropic: { models: ['claude-opus-5-5'] } } },
+      });
+
+      expect(() => sanitize(config)).not.toThrow();
+    });
+
+    it('rejects a blank explicit apiKey even with the env key set', () => {
+      vi.stubEnv('OPENAI_API_KEY', 'sk-env');
+
+      expect(() =>
+        sanitize(makeConfig({ ai: { providers: { openai: { apiKey: '  ' } } } })),
+      ).toThrow(
+        "[frogbot] Provider 'openai' requires a non-empty apiKey, or leave it out to use the OPENAI_API_KEY environment variable.",
+      );
+    });
+
+    it('accepts a models allowlist without apiKey in codegen mode with the env key unset, as it accepts true', () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', '');
+
+      expect(() =>
+        sanitize(makeConfig({ ai: { providers: { anthropic: true } } }), { mode: 'codegen' }),
+      ).not.toThrow();
+      expect(() =>
+        sanitize(
+          makeConfig({ ai: { providers: { anthropic: { models: ['claude-sonnet-5-5'] } } } }),
+          { mode: 'codegen' },
+        ),
+      ).not.toThrow();
+    });
+
+    it('still rejects a blank explicit apiKey in codegen mode', () => {
+      expect(() =>
+        sanitize(makeConfig({ ai: { providers: { openai: { apiKey: '' } } } }), {
+          mode: 'codegen',
+        }),
+      ).toThrow("Provider 'openai' requires a non-empty apiKey");
     });
 
     it('accepts true for SDK environment fallback', () => {
