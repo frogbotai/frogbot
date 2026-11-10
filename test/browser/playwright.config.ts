@@ -343,6 +343,7 @@ const testProjects = [
       'messagesOverride.browser.spec.ts',
       'breadcrumbs.browser.spec.ts',
       'topBarPhone.browser.spec.ts',
+      'navSections.browser.spec.ts',
       'money.browser.spec.ts',
       'fieldCell.browser.spec.ts',
       'optionColors.browser.spec.ts',
