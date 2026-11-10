@@ -193,7 +193,14 @@ export function sanitizeCollection(
   };
 
   const select = withAIFieldSelect(c.fields, base.select);
-  const existingHooks = base.hooks ?? {};
+  const beforeSignIn = c.hooks?.beforeSignIn;
+  const {
+    beforeSignIn: _beforeSignIn,
+    ...existingHooks
+  }: PayloadCollectionConfig['hooks'] & {
+    beforeSignIn?: unknown;
+  } = base.hooks ?? {};
+
   const out: PayloadCollectionConfig = {
     ...base,
     fields: toPayloadFields(
@@ -332,7 +339,9 @@ export function sanitizeCollection(
 
   out.endpoints = wrapEndpointList(
     [
-      ...(signIn.length ? buildSignInEndpoints({ collectionSlug: c.slug, methods: signIn }) : []),
+      ...(signIn.length
+        ? buildSignInEndpoints({ collectionSlug: c.slug, methods: signIn, beforeSignIn })
+        : []),
       ...(c.endpoints || []),
       ...(search ? buildSearchEndpoints({ collection: c.slug }) : []),
       ...buildAggregateEndpoints({ collection: c.slug }),

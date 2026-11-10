@@ -39,6 +39,10 @@ export { calculateCostUSD } from './providers/catalog.js';
 export { calculateModelCostUSD } from './providers/cost.js';
 export type { ReasoningVariant, ResolveReasoningVariantsArgs } from './providers/reasoning.js';
 export { resolveReasoningVariants } from './providers/reasoning.js';
-export { canonicalizeModelId, providerKeyEnvVar } from './providers/registry.js';
+export {
+  canonicalizeModelId,
+  providerCredentialEnvVars,
+  providerKeyEnvVar,
+} from './providers/registry.js';
 export type { ToTranscriptionLanguageOptionsArgs } from './routes/transcriptions/translators/index.js';
 export { toTranscriptionLanguageOptions } from './routes/transcriptions/translators/index.js';

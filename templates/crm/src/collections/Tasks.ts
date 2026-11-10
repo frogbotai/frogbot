@@ -28,6 +28,7 @@ export const Tasks: CollectionConfig = {
           'assignee',
           'deal',
         ],
+        editable: ['status', 'priority', 'completed', 'dueDate', 'assignee'],
       },
       {
         type: 'board',

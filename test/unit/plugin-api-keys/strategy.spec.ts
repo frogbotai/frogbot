@@ -6,12 +6,16 @@ import {
   createApiKeyStrategy,
 } from '../../../packages/plugins/plugin-api-keys/src/strategy.js';
 
+const strategyOptions = { authCollection: 'users', collectionSlug: 'api-keys', tokenPrefix: 'fb' };
+
 function makeStrategy() {
-  return createApiKeyStrategy({
-    authCollection: 'users',
-    collectionSlug: 'api-keys',
-    tokenPrefix: 'fb',
-  });
+  return createApiKeyStrategy(strategyOptions);
+}
+
+async function loadStrategyModule() {
+  vi.resetModules();
+
+  return import('../../../packages/plugins/plugin-api-keys/src/strategy.js');
 }
 
 function makeFrogBot() {
@@ -19,6 +23,7 @@ function makeFrogBot() {
     find: vi.fn().mockResolvedValue({ docs: [{ id: 'key-1', owner: 'user-1' }] }),
     findByID: vi.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),
     update: vi.fn().mockResolvedValue({}),
+    logger: { error: vi.fn() },
   };
 }
 
@@ -178,6 +183,89 @@ describe('API key authentication strategy', () => {
     expect(await authenticate()).toEqual({ user: null });
     expect(frogbot.findByID).toHaveBeenCalledOnce();
     expect(frogbot.update).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ['missing', undefined],
+    ['a minute old', '2026-11-08T11:59:00.000Z'],
+    ['in the future by over a minute', '2026-11-08T12:01:01.000Z'],
+  ])('stamps lastUsedAt when it is %s', async (_name, lastUsedAt) => {
+    vi.useFakeTimers({ now: new Date('2026-11-08T12:00:00.000Z') });
+
+    const frogbot = makeFrogBot();
+
+    frogbot.find.mockResolvedValue({ docs: [{ id: 'key-1', owner: 'user-1', lastUsedAt }] });
+
+    const result = await makeStrategy().authenticate({
+      headers: new Headers({ authorization: `Bearer ${createApiKeyToken()}` }),
+      frogbot: frogbot as never,
+    });
+
+    expect(result.user).toMatchObject({ id: 'user-1' });
+    expect(frogbot.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { lastUsedAt: '2026-11-08T12:00:00.000Z' } }),
+    );
+  });
+
+  it.each([
+    ['just now', '2026-11-08T12:00:00.000Z'],
+    ['59 seconds ago', '2026-11-08T11:59:01.000Z'],
+    ['a Date 30 seconds ago', new Date('2026-11-08T11:59:30.000Z')],
+  ])('skips the lastUsedAt write when it was stamped %s', async (_name, lastUsedAt) => {
+    vi.useFakeTimers({ now: new Date('2026-11-08T12:00:00.000Z') });
+
+    const frogbot = makeFrogBot();
+
+    frogbot.find.mockResolvedValue({ docs: [{ id: 'key-1', owner: 'user-1', lastUsedAt }] });
+
+    const result = await makeStrategy().authenticate({
+      headers: new Headers({ authorization: `Bearer ${createApiKeyToken()}` }),
+      frogbot: frogbot as never,
+    });
+
+    expect(result.user).toMatchObject({ id: 'user-1', apiKeyId: 'key-1' });
+    expect(frogbot.find).toHaveBeenCalledOnce();
+    expect(frogbot.update).not.toHaveBeenCalled();
+  });
+
+  it('signs the key in when the lastUsedAt write fails, logging the failure once', async () => {
+    const { createApiKeyStrategy: create } = await loadStrategyModule();
+    const frogbot = makeFrogBot();
+    const conflict = new Error('WriteConflict');
+
+    frogbot.update.mockRejectedValue(conflict);
+
+    const strategy = create(strategyOptions);
+    const authenticate = () =>
+      strategy.authenticate({
+        headers: new Headers({ authorization: `Bearer ${createApiKeyToken()}` }),
+        frogbot: frogbot as never,
+      });
+
+    expect((await authenticate()).user).toMatchObject({ id: 'user-1', apiKeyId: 'key-1' });
+    expect((await authenticate()).user).toMatchObject({ id: 'user-1', apiKeyId: 'key-1' });
+    expect(frogbot.update).toHaveBeenCalledTimes(2);
+    expect(frogbot.logger.error).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ err: conflict }),
+      expect.stringContaining('lastUsedAt'),
+    );
+  });
+
+  it('logs a failed lastUsedAt write once per process across strategy instances', async () => {
+    const { createApiKeyStrategy: create } = await loadStrategyModule();
+    const frogbot = makeFrogBot();
+
+    frogbot.update.mockRejectedValue(new Error('WriteConflict'));
+
+    const authenticate = () =>
+      create(strategyOptions).authenticate({
+        headers: new Headers({ authorization: `Bearer ${createApiKeyToken()}` }),
+        frogbot: frogbot as never,
+      });
+
+    expect((await authenticate()).user).toMatchObject({ id: 'user-1' });
+    expect((await authenticate()).user).toMatchObject({ id: 'user-1' });
+    expect(frogbot.logger.error).toHaveBeenCalledOnce();
   });
 
   it('authenticates numeric key and owner IDs including zero', async () => {

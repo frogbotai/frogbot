@@ -184,6 +184,7 @@ export { default as ThumbsDownIcon } from './icons/ThumbsDownIcon.js';
 export { default as ThumbsUpIcon } from './icons/ThumbsUpIcon.js';
 export { default as TicketIcon } from './icons/TicketIcon.js';
 export { default as TileIcon } from './icons/TileIcon.js';
+export { default as TimelineIcon } from './icons/TimelineIcon.js';
 export { default as TimerIcon } from './icons/TimerIcon.js';
 export { default as TransferIcon } from './icons/TransferIcon.js';
 export { default as TrendingDownIcon } from './icons/TrendingDownIcon.js';

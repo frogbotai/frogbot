@@ -1,5 +1,4 @@
-import { generatePayloadCookie } from 'payload/shared';
-
+import type { CollectionBeforeSignInHook } from '../../collections/config/types.js';
 import {
   consumeOAuthState,
   createOAuthState,
@@ -10,8 +9,7 @@ import {
 import type { Endpoint } from '../../endpoints/types.js';
 import type { SignInMethod } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
-import { issueSession } from '../session.js';
-import { continueLook, continuePage } from './continuePage.js';
+import { finishSignIn } from './finish.js';
 import { resolveSignInIdentity } from './identity.js';
 
 async function routeURLs({
@@ -57,9 +55,11 @@ async function routeURLs({
 export function buildSignInEndpoints({
   collectionSlug,
   methods,
+  beforeSignIn = [],
 }: {
   collectionSlug: string;
   methods: SignInMethod[];
+  beforeSignIn?: CollectionBeforeSignInHook[];
 }): Endpoint[] {
   if (!methods.length) return [];
   const methodFor = (req: FrogBotRequest) =>
@@ -166,29 +166,48 @@ export function buildSignInEndpoints({
             email: account?.email,
           });
 
-          const { token } = await issueSession({ req, collectionSlug, userId });
-          const config = await req.frogbot.config._internal.payloadConfig;
-          const collection = config.collections.find(({ slug }) => slug === collectionSlug)!;
+          if (beforeSignIn.length) {
+            const user = await req.frogbot.findByID({
+              collection: collectionSlug,
+              id: userId,
+              overrideAccess: true,
+              showHiddenFields: true,
+              depth: 0,
+              req,
+            });
 
-          headers.append(
-            'set-cookie',
-            generatePayloadCookie({
-              collectionAuthConfig: collection.auth,
-              cookiePrefix: config.cookiePrefix,
-              token,
-            }),
-          );
+            const config = await req.frogbot.config._internal.payloadConfig;
+            const collection = config.collections.find(({ slug }) => slug === collectionSlug)!;
 
-          return continuePage({
+            for (const hook of beforeSignIn) {
+              const response = await hook({
+                collection,
+                context: req.context,
+                req,
+                user,
+                method: method.slug,
+                returnTo: intent.returnTo,
+              });
+
+              if (response) {
+                const answer = new Headers(response.headers);
+                answer.append('set-cookie', clearCookie);
+
+                return new Response(response.body, {
+                  status: response.status,
+                  statusText: response.statusText,
+                  headers: answer,
+                });
+              }
+            }
+          }
+
+          return await finishSignIn({
+            req,
+            collectionSlug,
+            userId,
+            method: method.slug,
             returnTo: intent.returnTo,
-            look: continueLook({
-              config,
-              collectionSlug,
-              returnTo: intent.returnTo,
-              headers: req.headers,
-            }),
-            lang: req.i18n.language,
-            t: req.t,
             headers,
           });
         } catch (error) {

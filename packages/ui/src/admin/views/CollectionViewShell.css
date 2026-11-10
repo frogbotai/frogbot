@@ -6,14 +6,6 @@
     padding-bottom: var(--spacing-view-bottom);
   }
 
-  .collection-view__toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacer-2);
-    justify-content: flex-end;
-    padding: 0 var(--gutter-h) var(--spacer-2-5);
-  }
-
   .collection-view__view {
     display: flex;
     flex: 1 1 auto;

@@ -72,6 +72,8 @@ A barcode shows as typed, as plain text, in the [List](/admin/overview), on [Boa
 
 In the document view, a barcode field uses the normal text input. There is no camera scanning and no barcode image.
 
+In a list with [`editable`](/admin/collection-list#editing-cells-in-place), a barcode cell edits in place with the same input. Enter saves and Esc cancels.
+
 ## Stored value
 
 Only the barcode text is stored, with no barcode type such as UPC-A or EAN-13. The REST API, GraphQL and the Local API return the stored text, and the generated TypeScript type is the same as a Text field's, such as `sku?: string | null`.

@@ -3,6 +3,7 @@ import { type AdminViewServerProps, getFieldByPath } from 'payload';
 import { getFromImportMap, transformColumnsToSearchParams } from 'payload/shared';
 import type { ComponentType } from 'react';
 
+import { getOptionColors } from '../../fields/optionColor.js';
 import { getActiveViewSlug, resolveCollectionViews, withPageProps } from '../collectionViews.js';
 import { CollectionViewShell } from '../CollectionViewShell.js';
 import { canUpdateField } from '../fieldPermissions.js';
@@ -113,6 +114,12 @@ export async function CalendarView(input: AdminViewServerProps) {
       })
     : undefined;
 
+  const colorField = calendar.color
+    ? getFieldByPath({ fields: collectionConfig.flattenedFields, path: calendar.color })?.field
+    : undefined;
+
+  const optionColors = colorField ? getOptionColors(colorField) : undefined;
+
   return (
     <CollectionViewShell
       {...props}
@@ -152,6 +159,7 @@ export async function CalendarView(input: AdminViewServerProps) {
         filter={calendar.filter}
         mode={mode}
         modes={calendar.modes}
+        optionColors={optionColors}
         snap={calendar.snap}
         start={calendar.start}
         end={calendar.end}

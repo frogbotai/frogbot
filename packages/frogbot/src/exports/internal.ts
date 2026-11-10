@@ -1,6 +1,7 @@
 export { appIconURL, appManifestURL } from '../admin/appIcon/urls.js';
 export { isFrogBotSettingsView } from '../admin/config/sanitize.js';
 export { iconNames as adminIconNames } from '../admin/icons.js';
+export { CELL_EDIT_FIELD_TYPES, getCellEditMode } from '../admin/views/cellEdit.js';
 export type { SummaryKind } from '../admin/views/summary.js';
 export { getSummaryKind, SUMMARY_OPERATIONS } from '../admin/views/summary.js';
 export { executeAuthStrategy } from '../auth/executeAuthStrategy.js';

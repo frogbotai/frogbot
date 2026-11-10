@@ -208,10 +208,6 @@ export function sanitizeAI(
       continue;
     }
 
-    if (provider.apiKey === undefined && (mode === 'codegen' || Object.hasOwn(linked, key))) {
-      continue;
-    }
-
     const keyError = builtInKeyError(key, provider.apiKey);
     if (keyError) throw new Error(keyError);
   }

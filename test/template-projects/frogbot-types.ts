@@ -181,6 +181,8 @@ export interface User {
         id: string;
         createdAt?: string | null;
         expiresAt: string;
+        refreshCount?: number | null;
+        refreshedAt?: string | null;
       }[]
     | null;
   password?: string | null;
@@ -205,6 +207,7 @@ export interface Task {
   key?: string | null;
   status?: ('todo' | 'in-progress' | 'in-review' | 'done') | null;
   assignee?: (number | null) | User;
+  startDate?: string | null;
   dueDate?: string | null;
   description?: string | null;
   createdBy?: {
@@ -298,6 +301,7 @@ export interface TasksSelect {
   key?: boolean;
   status?: boolean;
   assignee?: boolean;
+  startDate?: boolean;
   dueDate?: boolean;
   description?: boolean;
   createdBy?: boolean;
@@ -329,6 +333,8 @@ export interface UsersSelect {
         id?: boolean;
         createdAt?: boolean;
         expiresAt?: boolean;
+        refreshCount?: boolean;
+        refreshedAt?: boolean;
       };
 }
 /**

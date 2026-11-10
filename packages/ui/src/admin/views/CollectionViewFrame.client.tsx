@@ -4,7 +4,7 @@ import './CollectionViewShell.css';
 import './records/records.css';
 
 import { getTranslation } from '@payloadcms/translations';
-import { useConfig, usePathname, useStepNav, useTranslation, useWindowInfo } from '@payloadcms/ui';
+import { useConfig, usePathname, useStepNav, useTranslation } from '@payloadcms/ui';
 import type { ViewTypes } from 'payload';
 import { type ReactNode, useEffect, useRef } from 'react';
 
@@ -74,9 +74,6 @@ function Frame(props: CollectionViewFrameProps) {
   const { getEntityConfig } = useConfig();
   const { setStepNav } = useStepNav();
   const pathname = usePathname();
-  const {
-    breakpoints: { s: smallBreak },
-  } = useWindowInfo();
 
   const collectionConfig = getEntityConfig({ collectionSlug: props.collectionSlug });
   const pluralLabel = getTranslation(collectionConfig.labels.plural, i18n);
@@ -141,9 +138,6 @@ function Frame(props: CollectionViewFrameProps) {
           viewType={props.viewType}
           {...props.controls}
         />
-        {smallBreak && props.Toolbar ? (
-          <div className={`${baseClass}__toolbar`}>{props.Toolbar}</div>
-        ) : null}
         {props.BeforeListTable}
         {props.isEmpty ? props.NoResults : null}
         {showView ? (

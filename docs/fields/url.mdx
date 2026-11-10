@@ -101,6 +101,8 @@ An empty value shows nothing: no placeholder and no dash. A stored value that is
 
 In the document view, a URL field uses the normal text input, and a read-only field shows the address in a read-only text input.
 
+In a list with [`editable`](/admin/collection-list#editing-cells-in-place), a URL cell edits in place with the same input. Enter saves and Esc cancels.
+
 ## Stored value
 
 Addresses are stored exactly as typed. The REST API, GraphQL and the Local API return the stored text, and the generated TypeScript type is the same as a Text field's, such as `website?: string | null`.

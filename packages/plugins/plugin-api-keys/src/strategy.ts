@@ -19,7 +19,21 @@ export function isExpiredKey(key: Record<string, unknown>): boolean {
   return time !== null && time <= Date.now();
 }
 
+const lastUsedInterval = 60_000;
+
+function isRecentlyUsed(key: Record<string, unknown>): boolean {
+  const time = expiryTime(key.lastUsedAt);
+
+  if (time === null) return false;
+
+  const age = Date.now() - time;
+
+  return age >= -lastUsedInterval && age < lastUsedInterval;
+}
+
 const apiKeyStrategies = new WeakSet<AuthStrategy>();
+
+let loggedStampFailure = false;
 
 type StrategyOptions = {
   authCollection: string;
@@ -69,12 +83,25 @@ export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
 
       const { tokenHash: _tokenHash, ...apiKey } = key;
 
-      await frogbot.update({
-        collection: collectionSlug,
-        id: key.id,
-        data: { lastUsedAt: new Date().toISOString() },
-        overrideAccess: true,
-      });
+      if (!isRecentlyUsed(key)) {
+        await frogbot
+          .update({
+            collection: collectionSlug,
+            id: key.id,
+            data: { lastUsedAt: new Date().toISOString() },
+            overrideAccess: true,
+          })
+          .catch((error: unknown) => {
+            if (loggedStampFailure) return;
+
+            loggedStampFailure = true;
+
+            frogbot.logger.error(
+              { err: error },
+              '[plugin-api-keys] Failed to stamp lastUsedAt; sign-in continues and later failures are not logged',
+            );
+          });
+      }
 
       return {
         user: {

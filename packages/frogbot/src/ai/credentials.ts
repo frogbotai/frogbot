@@ -1,5 +1,5 @@
 import type { CallCredential } from '@frogbotai/gateway';
-import { providerKeyEnvVar } from '@frogbotai/gateway';
+import { providerCredentialEnvVars, providerKeyEnvVar } from '@frogbotai/gateway';
 import { CallCredentialError } from '@frogbotai/gateway/errors';
 
 import { ConnectionError } from '../connections/api.js';
@@ -12,17 +12,16 @@ function hasKey(value: unknown): boolean {
 }
 
 /**
- * The startup error for a built-in provider configured with an object and no usable key: an
- * omitted `apiKey` falls back to the provider's env var, the same as `true`.
+ * The startup error for a built-in provider configured with an object and an unusable explicit
+ * `apiKey`. An omitted `apiKey` uses the provider's env var, the same as `true`.
  */
 export function builtInKeyError(provider: string, apiKey: unknown): string | undefined {
+  if (apiKey === undefined || hasKey(apiKey)) return undefined;
+
   const envVar = providerKeyEnvVar(provider);
 
-  if (hasKey(apiKey)) return undefined;
-  if (apiKey === undefined && envVar && hasKey(process.env[envVar])) return undefined;
-
   return envVar
-    ? `[frogbot] Provider '${provider}' requires a non-empty apiKey or the ${envVar} environment variable.`
+    ? `[frogbot] Provider '${provider}' requires a non-empty apiKey, or leave it out to use the ${envVar} environment variable.`
     : `[frogbot] Provider '${provider}' requires a non-empty apiKey when configured with an object.`;
 }
 
@@ -75,5 +74,27 @@ export function linkedCredential({
     const middleware = link.middleware?.({ auth });
 
     return middleware ? { settings, middleware } : { settings };
+  };
+}
+
+/**
+ * The gateway `credential` for a built-in provider enabled with `true`: its env key, else a
+ * setup error naming the env var. The app boots without the key and only AI calls fail.
+ * `undefined` for providers whose credentials don't come from an API key.
+ */
+export function envCredential(provider: string): CallCredential | undefined {
+  const forms = providerCredentialEnvVars(provider);
+
+  if (forms.length === 0) return undefined;
+
+  const vars = forms.map((form) => form.join(' and ')).join(', or ');
+  const message = `The ${provider} provider has no API key. Set ${vars} in the environment, or set ai.providers.${provider}.apiKey in the FrogBot config.`;
+
+  return () => {
+    if (forms.some((form) => form.every((envVar) => hasKey(process.env[envVar])))) {
+      return undefined;
+    }
+
+    throw new CallCredentialError(message);
   };
 }

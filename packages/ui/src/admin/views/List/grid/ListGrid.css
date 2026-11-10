@@ -1,0 +1,208 @@
+@layer frogbot {
+  .fb-list-grid {
+    --fb-list-grid-select: calc(var(--gutter-h) + var(--spacer-3) + var(--spacer-2));
+    --fb-list-grid-drag: var(--spacer-4);
+  }
+
+  .fb-list-grid .table :is([data-column="_select"], [id="heading-_select"], .cell-_select) {
+    width: var(--fb-list-grid-select);
+    min-width: var(--fb-list-grid-select);
+    max-width: var(--fb-list-grid-select);
+  }
+
+  .fb-list-grid
+    .table
+    :is([data-column="_dragHandle"], [id="heading-_dragHandle"], .cell-_dragHandle) {
+    width: var(--fb-list-grid-drag);
+    min-width: var(--fb-list-grid-drag);
+    max-width: var(--fb-list-grid-drag);
+  }
+
+  .fb-list-grid[data-group-widths] .table-wrap--group-by .table table {
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  .fb-list-grid__resize {
+    position: absolute;
+    z-index: 1;
+    inset-block: 0;
+    inset-inline-end: 0;
+    width: var(--spacer-2);
+    cursor: col-resize;
+    touch-action: none;
+  }
+
+  .fb-list-grid__resize::after {
+    content: "";
+    position: absolute;
+    inset-block: var(--spacer-2);
+    inset-inline-end: 0;
+    width: 2px;
+    border-radius: 1px;
+    background: transparent;
+    transition: background-color 120ms ease;
+  }
+
+  .fb-list-grid__resize:hover::after {
+    background: var(--color-border);
+  }
+
+  .fb-list-grid__resize[data-active]::after,
+  .fb-list-grid__resize:focus-visible::after {
+    background: var(--color-border-selected-strong);
+  }
+
+  .fb-list-grid__resize:focus-visible {
+    outline: none;
+  }
+
+  @media (pointer: coarse) {
+    .fb-list-grid__resize {
+      width: var(--spacer-3);
+    }
+  }
+
+  .fb-list-grid[data-row-height="compact"] .table tbody td {
+    height: var(--spacer-5);
+  }
+
+  .fb-list-grid[data-row-height="compact"] .table tbody td:not(.cell--linked) {
+    padding-block: var(--spacer-1);
+  }
+
+  .fb-list-grid[data-row-height="compact"] .table tbody td.cell--linked > :is(a, button) {
+    min-height: var(--spacer-5);
+    padding-block: var(--spacer-1);
+  }
+
+  .fb-list-grid[data-row-height="tall"] .table tbody td {
+    height: calc(var(--spacer-5) * 2);
+  }
+
+  .fb-list-grid[data-row-height="tall"] .table tbody td.cell--linked > :is(a, button) {
+    min-height: calc(var(--spacer-5) * 2);
+  }
+
+  .fb-list-grid .table tbody tr:is(:hover, :focus-within) {
+    --fb-list-grid-row-bg: var(--color-bg-secondary);
+  }
+
+  .fb-list-grid .table tbody tr:is([data-selected], :has(.select-row input:checked)) {
+    --fb-list-grid-row-bg: var(--color-bg-selected);
+  }
+
+  @media (min-width: 769px) {
+    .fb-list-grid
+      .table
+      tr
+      > :is(
+        [data-column="_select"],
+        [id="heading-_select"],
+        .cell-_select,
+        [data-column="_dragHandle"],
+        [id="heading-_dragHandle"],
+        .cell-_dragHandle,
+        :nth-child(
+          1
+            of
+            :not(
+              [data-column="_select"],
+              [id="heading-_select"],
+              .cell-_select,
+              [data-column="_dragHandle"],
+              [id="heading-_dragHandle"],
+              .cell-_dragHandle
+            )
+        )
+      ) {
+      position: sticky;
+      z-index: 2;
+      inset-inline-start: 0;
+      background: var(--fb-list-grid-row-bg, var(--color-bg));
+    }
+
+    .fb-list-grid
+      .table
+      tr
+      > :is([data-column="_select"], [id="heading-_select"], .cell-_select)
+      ~ :is(
+        [data-column="_dragHandle"],
+        [id="heading-_dragHandle"],
+        .cell-_dragHandle,
+        :nth-child(
+          1
+            of
+            :not(
+              [data-column="_select"],
+              [id="heading-_select"],
+              .cell-_select,
+              [data-column="_dragHandle"],
+              [id="heading-_dragHandle"],
+              .cell-_dragHandle
+            )
+        )
+      ) {
+      inset-inline-start: var(--fb-list-grid-select);
+    }
+
+    .fb-list-grid
+      .table
+      tr
+      > :is([data-column="_dragHandle"], [id="heading-_dragHandle"], .cell-_dragHandle)
+      ~ :nth-child(
+        1
+          of
+          :not(
+            [data-column="_select"],
+            [id="heading-_select"],
+            .cell-_select,
+            [data-column="_dragHandle"],
+            [id="heading-_dragHandle"],
+            .cell-_dragHandle
+          )
+      ) {
+      inset-inline-start: var(--fb-list-grid-drag);
+    }
+
+    .fb-list-grid
+      .table
+      tr
+      > :is([data-column="_select"], [id="heading-_select"], .cell-_select)
+      ~ :is([data-column="_dragHandle"], [id="heading-_dragHandle"], .cell-_dragHandle)
+      ~ :nth-child(
+        1
+          of
+          :not(
+            [data-column="_select"],
+            [id="heading-_select"],
+            .cell-_select,
+            [data-column="_dragHandle"],
+            [id="heading-_dragHandle"],
+            .cell-_dragHandle
+          )
+      ) {
+      inset-inline-start: calc(var(--fb-list-grid-select) + var(--fb-list-grid-drag));
+    }
+
+    .fb-list-grid
+      .table[data-scrolled]
+      tr
+      > :nth-child(
+        1
+          of
+          :not(
+            [data-column="_select"],
+            [id="heading-_select"],
+            .cell-_select,
+            [data-column="_dragHandle"],
+            [id="heading-_dragHandle"],
+            .cell-_dragHandle
+          )
+      ) {
+      box-shadow:
+        inset calc(-1 * var(--stroke-width-small)) 0 0 var(--color-border),
+        var(--spacer-1-5) 0 var(--spacer-2) calc(-1 * var(--spacer-1-5)) rgb(0 0 0 / 12%);
+    }
+  }
+}

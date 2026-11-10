@@ -80,6 +80,7 @@ export async function renderGroupedTable({
   fieldPermissions,
   groupBy,
   limit,
+  navigationLabel,
   preferenceKey,
   query,
   req,
@@ -96,6 +97,8 @@ export async function renderGroupedTable({
   fieldPermissions?: SanitizedFieldsPermissions;
   groupBy: string;
   limit: number;
+  /** Turns on Payload's keyboard grid in each group's table. */
+  navigationLabel?: string;
   /** The preference that keeps this view's collapsed groups. */
   preferenceKey: string;
   query: Record<string, unknown>;
@@ -191,6 +194,7 @@ export async function renderGroupedTable({
         groupBy,
         hasMany,
         path,
+        navigationLabel,
         preferenceKey,
         req,
         viewType,
@@ -218,6 +222,7 @@ function renderGroup({
   groupBy,
   hasMany,
   path,
+  navigationLabel,
   preferenceKey,
   req,
   viewType,
@@ -234,6 +239,7 @@ function renderGroup({
   groupBy: string;
   hasMany: boolean;
   path: string;
+  navigationLabel?: string;
   preferenceKey: string;
   req: PayloadRequest;
   viewType?: ViewTypes;
@@ -281,7 +287,7 @@ function renderGroup({
       viewType={viewType}
       where={JSON.parse(JSON.stringify(buildGroupWhere(undefined, path, group.value)))}
     >
-      {table ? withRowIds(table) : null}
+      {table ? withRowIds(table, navigationLabel) : null}
     </GroupSection>
   );
 }

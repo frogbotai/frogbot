@@ -2,7 +2,7 @@ import type { Gateway, GatewayConfig } from '@frogbotai/gateway';
 import { createGateway } from '@frogbotai/gateway';
 
 import type { Logger } from '../frogbot.js';
-import { builtInKeyError, linkedCredential } from './credentials.js';
+import { builtInKeyError, envCredential, linkedCredential } from './credentials.js';
 import { toGatewayHooks } from './hooks.js';
 import { logUsage } from './logUsage.js';
 import { isProviderName } from './providerNames.js';
@@ -59,7 +59,9 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
         throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);
       }
 
-      setGatewayProvider(providers, key, {});
+      const credential = envCredential(key);
+
+      setGatewayProvider(providers, key, credential ? { credential } : {});
       continue;
     }
 
@@ -108,10 +110,13 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
 
     if (keyError) throw new Error(keyError);
 
+    const credential = apiKey === undefined ? envCredential(key) : undefined;
+
     if (key === 'replicate') {
       providers.replicate = {
         ...(apiKey !== undefined && { apiToken: apiKey }),
         ...(models !== undefined && { models }),
+        ...(credential && { credential }),
       };
 
       continue;
@@ -120,6 +125,7 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
     setGatewayProvider(providers, key, {
       ...(apiKey !== undefined && { apiKey }),
       ...(models !== undefined && { models }),
+      ...(credential && { credential }),
     });
   }
 

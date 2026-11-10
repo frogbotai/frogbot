@@ -25,8 +25,11 @@ export {
   renderRecordPanelHandler,
   type RenderRecordPanelResult,
 } from '../views/panel/renderRecordPanel.js';
+export { patchPreferenceHandler } from '../views/patchPreference.js';
+export { PATCH_PREFERENCE, type PatchPreferenceArgs } from '../views/preferences.js';
 export { SettingsView } from '../views/Settings/index.js';
 export { resolveSettingsTitle, type SettingsEntry } from '../views/Settings/resolveSection.js';
+export { TimelineView } from '../views/Timeline/index.js';
 export { FieldDiffContainer } from '@payloadcms/ui/rsc';
 export { FieldDiffLabel } from '@payloadcms/ui/rsc';
 export { escapeDiffHTML } from '@payloadcms/ui/rsc';
@@ -50,3 +53,4 @@ export { LLMInstructionsCell } from '@payloadcms/ui/rsc';
 export { ActivityWidget } from '@payloadcms/ui/rsc';
 export { UploadDropzoneWidget } from '@payloadcms/ui/rsc';
 export { WelcomeWidget } from '@payloadcms/ui/rsc';
+export { Logo } from '@payloadcms/ui/rsc';

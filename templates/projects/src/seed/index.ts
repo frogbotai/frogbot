@@ -7,7 +7,12 @@ type SampleProject = {
   name: string;
   description: string;
   status: 'planned' | 'active' | 'done';
-  tasks: Array<{ title: string; status: TaskStatus; dueInDays?: number }>;
+  tasks: Array<{
+    title: string;
+    status: TaskStatus;
+    startInDays?: number;
+    dueInDays?: number;
+  }>;
 };
 
 const PROJECTS: SampleProject[] = [
@@ -18,16 +23,28 @@ const PROJECTS: SampleProject[] = [
       'A new marketing site with a faster homepage and a clearer pricing page.',
     status: 'active',
     tasks: [
-      { title: 'Write the homepage copy', status: 'done', dueInDays: -5 },
-      { title: 'Design the pricing page', status: 'in-review', dueInDays: 2 },
+      {
+        title: 'Write the homepage copy',
+        status: 'done',
+        startInDays: -12,
+        dueInDays: -5,
+      },
+      {
+        title: 'Design the pricing page',
+        status: 'in-review',
+        startInDays: -4,
+        dueInDays: 2,
+      },
       {
         title: 'Move the blog to the new layout',
         status: 'in-progress',
+        startInDays: -1,
         dueInDays: 6,
       },
       {
         title: 'Set up redirects from the old URLs',
         status: 'todo',
+        startInDays: 7,
         dueInDays: 10,
       },
       { title: 'Run a performance audit', status: 'todo', dueInDays: 14 },
@@ -39,12 +56,28 @@ const PROJECTS: SampleProject[] = [
     description: 'A first beta of the iOS and Android app for early customers.',
     status: 'active',
     tasks: [
-      { title: 'Build the sign-in screen', status: 'done', dueInDays: -9 },
-      { title: 'Add push notifications', status: 'in-progress', dueInDays: 4 },
-      { title: 'Invite the first beta testers', status: 'todo', dueInDays: 12 },
+      {
+        title: 'Build the sign-in screen',
+        status: 'done',
+        startInDays: -16,
+        dueInDays: -9,
+      },
+      {
+        title: 'Add push notifications',
+        status: 'in-progress',
+        startInDays: -3,
+        dueInDays: 4,
+      },
+      {
+        title: 'Invite the first beta testers',
+        status: 'todo',
+        startInDays: 8,
+        dueInDays: 12,
+      },
       {
         title: 'Fix the offline sync crash',
         status: 'in-review',
+        startInDays: -2,
         dueInDays: 1,
       },
     ],
@@ -59,9 +92,15 @@ const PROJECTS: SampleProject[] = [
       {
         title: 'List the top ten support questions',
         status: 'todo',
+        startInDays: 3,
         dueInDays: 7,
       },
-      { title: 'Write the escalation guide', status: 'todo', dueInDays: 21 },
+      {
+        title: 'Write the escalation guide',
+        status: 'todo',
+        startInDays: 9,
+        dueInDays: 21,
+      },
       {
         title: 'Choose a tool for the handbook',
         status: 'done',
@@ -72,6 +111,12 @@ const PROJECTS: SampleProject[] = [
 ];
 
 const DAY = 24 * 60 * 60 * 1000;
+
+function daysFrom(today: Date, days: number | undefined): string | undefined {
+  return days === undefined
+    ? undefined
+    : new Date(today.getTime() + days * DAY).toISOString();
+}
 
 /** Whether the app already has the starter's records; Seed only fills an empty app. */
 export async function hasSampleData({
@@ -91,16 +136,19 @@ export async function hasSampleData({
 }
 
 /**
- * Adds three sample projects with tasks, every task assigned to the signed-in user. It creates no
- * user, and the endpoint runs it only on an app with no projects. If it fails partway it deletes
- * what it added, so the app is empty again and Seed can be retried.
+ * Adds three sample projects with tasks, every task assigned to the signed-in user and dated
+ * around `today` (default: now). It creates no user, and the endpoint runs it only on an app with
+ * no projects. If it fails partway it deletes what it added, so the app is empty again and Seed
+ * can be retried.
  */
 export async function seed({
   frogbot,
   req,
+  today = new Date(),
 }: {
   frogbot: FrogBotInstance;
   req: FrogBotRequest;
+  today?: Date;
 }) {
   const assignee = req.user?.id;
   const created: Array<number | string> = [];
@@ -116,17 +164,15 @@ export async function seed({
 
       created.push(project.id);
 
-      for (const { dueInDays, ...task } of tasks) {
+      for (const { dueInDays, startInDays, ...task } of tasks) {
         await frogbot.create({
           collection: 'tasks',
           data: {
             ...task,
             project: project.id,
             assignee,
-            dueDate:
-              dueInDays === undefined
-                ? undefined
-                : new Date(Date.now() + dueInDays * DAY).toISOString(),
+            startDate: daysFrom(today, startInDays),
+            dueDate: daysFrom(today, dueInDays),
           },
           overrideAccess: true,
           req,

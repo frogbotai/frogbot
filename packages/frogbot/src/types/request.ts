@@ -6,6 +6,8 @@ import type { PayloadRequest } from './payload.js';
 declare module 'payload' {
   interface RequestContext {
     channel?: ChannelContext;
+    /** Set by `finishSignIn` before it issues the session: the sign-in method's slug, or `'password'`. */
+    signIn?: { method: string };
   }
 }
 

@@ -33,7 +33,7 @@ export async function prepareView(page: Page) {
 
 async function waitForView(page: Page) {
   await page
-    .locator('table, .collection-board, .collection-gallery, .frog-calendar')
+    .locator('table, .collection-board, .collection-gallery, .frog-calendar, .frog-timeline')
     .first()
     .waitFor();
 
@@ -57,13 +57,14 @@ async function hideDevIndicator(page: Page) {
 
 /**
  * Screenshots the open view in light and dark, at 1440 and 390 pixels wide, as
- * `<name>-<theme>-<width>.png` in `options.path`, after `options.waitFor` shows when given.
+ * `<name>-<theme>-<width>.png` in `options.path`, after `options.waitFor` shows when given and
+ * `options.prepare` has run.
  * It saves the files and compares nothing.
  */
 export async function shootView(
   page: Page,
   name: string,
-  options: { path: string; waitFor?: string },
+  options: { path: string; prepare?: (page: Page) => Promise<void>; waitFor?: string },
 ) {
   const files: string[] = [];
 
@@ -78,6 +79,7 @@ export async function shootView(
       await waitForView(page);
       if (options.waitFor) await page.locator(options.waitFor).first().waitFor();
       await hideDevIndicator(page);
+      await options.prepare?.(page);
 
       const file = path.join(options.path, `${name}-${colorScheme}-${viewport.width}.png`);
 

@@ -114,6 +114,7 @@ const iconNames = [
   'TagIcon',
   'ThumbsDownIcon',
   'TileIcon',
+  'TimelineIcon',
   'TimerIcon',
   'ThumbsUpIcon',
   'BrandTwitterIcon',

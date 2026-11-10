@@ -205,6 +205,8 @@ export interface Deal {
   region?: string | null;
   margin?: number | null;
   secret?: number | null;
+  confidential?: boolean | null;
+  audit?: number | null;
   details?: {
     probability?: number | null;
   };
@@ -317,6 +319,8 @@ export interface DealsSelect {
   region?: boolean;
   margin?: boolean;
   secret?: boolean;
+  confidential?: boolean;
+  audit?: boolean;
   details?:
     | boolean
     | {
