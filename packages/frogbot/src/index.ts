@@ -227,6 +227,7 @@ export type {
   PanelComponentProps,
   RecordPanelComponents,
   RecordPanelConfig,
+  RecordPanelTab,
 } from './collections/config/types.js';
 export type {
   BulkResult,

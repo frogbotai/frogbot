@@ -97,6 +97,19 @@ export type RecordPanelComponents = {
   Component?: FrogBotComponent;
   /** Replaces only the header. */
   Header?: FrogBotComponent;
+  /**
+   * Tabs beside the default Details tab, in order. With none, the panel shows no tab bar.
+   * A tab's pane stays mounted while another tab is open.
+   */
+  tabs?: RecordPanelTab[];
+};
+
+/** A record panel tab, in `admin.components.panel.tabs`. */
+export type RecordPanelTab = {
+  /** The pane. Gets `PanelComponentProps`. */
+  Component: FrogBotComponent;
+  /** The tab's text, or a function of the admin's `t`. */
+  label: ((args: { t: (key: string) => string }) => string) | string;
 };
 
 /** The record side panel's settings, in `admin.panel`. */

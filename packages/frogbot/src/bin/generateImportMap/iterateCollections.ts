@@ -29,13 +29,19 @@ export function iterateCollections({
             components?: Record<string, PayloadComponent | PayloadComponent[]>;
             icon?: PayloadComponent;
           }>;
-          panel?: Record<string, PayloadComponent | PayloadComponent[]>;
+          panel?: { tabs?: Array<{ Component?: PayloadComponent }> } & Record<string, unknown>;
         }
       | undefined;
 
     const collectionViews = frogbot?.collectionViews;
 
-    for (const component of Object.values(frogbot?.panel ?? {})) addToImportMap(component);
+    const { tabs, ...panelSlots } = frogbot?.panel ?? {};
+
+    for (const component of Object.values(panelSlots)) {
+      addToImportMap(component as PayloadComponent | PayloadComponent[]);
+    }
+
+    for (const tab of tabs ?? []) addToImportMap(tab.Component);
 
     for (const view of collectionViews ?? []) {
       addToImportMap(view.component);

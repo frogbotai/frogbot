@@ -538,6 +538,7 @@ describe('frogbot importMap generator', () => {
                 beforeFields: ['./components/BeforeFields#BeforeFields'],
                 Component: './components/Panel#Panel',
                 Header: './components/PanelHeader#PanelHeader',
+                tabs: [{ Component: './components/HistoryTab#HistoryTab', label: 'History' }],
               },
             },
           },
@@ -552,7 +553,14 @@ describe('frogbot importMap generator', () => {
     await generateImportMap(payloadConfig);
     const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
 
-    for (const name of ['PanelAction', 'AfterFields', 'BeforeFields', 'Panel', 'PanelHeader']) {
+    for (const name of [
+      'PanelAction',
+      'AfterFields',
+      'BeforeFields',
+      'Panel',
+      'PanelHeader',
+      'HistoryTab',
+    ]) {
       expect(output).toContain(`from './components/${name}'`);
     }
   });
