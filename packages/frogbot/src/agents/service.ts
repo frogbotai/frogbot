@@ -91,7 +91,7 @@ function thrownText(error: unknown): string {
   try {
     return String(error);
   } catch {
-    return Object.prototype.toString.call(error);
+    return 'a value that cannot be printed';
   }
 }
 

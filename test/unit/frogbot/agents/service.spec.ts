@@ -345,13 +345,32 @@ describe('agent service', () => {
     });
   });
 
-  it('keeps the access-error code when access throws a value String() cannot convert', async () => {
-    const thrown: unknown = Object.create(null);
-    const req = makeRequest({});
+  it.each([
+    ['a null-prototype object', Object.create(null) as unknown],
+    [
+      'a revoked proxy',
+      (() => {
+        const { proxy, revoke } = Proxy.revocable({}, {});
+        revoke();
 
+        return proxy;
+      })() as unknown,
+    ],
+    [
+      'a proxy whose get trap throws',
+      new Proxy(
+        {},
+        {
+          get() {
+            throw new Error('trap');
+          },
+        },
+      ) as unknown,
+    ],
+  ])('keeps the access-error code when access throws %s', async (_name, thrown) => {
     await expect(
       assertAgentAccess({
-        req,
+        req: makeRequest({}),
         agent: makeAgent({
           access: () => {
             throw thrown;
@@ -361,8 +380,7 @@ describe('agent service', () => {
     ).rejects.toMatchObject({
       status: 500,
       code: 'access-error',
-      message: "Access function for agent 'support' threw: [object Object]",
-      cause: thrown,
+      message: "Access function for agent 'support' threw: a value that cannot be printed",
     });
   });
 
