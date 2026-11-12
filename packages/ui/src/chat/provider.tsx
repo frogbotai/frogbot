@@ -64,29 +64,9 @@ export function ChatProvider({
   });
 
   useEffect(() => {
-    const controller = new AbortController();
-
-    void adapter
-      .loadManifest({ signal: controller.signal })
-      .then((manifest) => {
-        if (!controller.signal.aborted) setState({ manifest, loading: false });
-      })
-      .catch((error: unknown) => {
-        if (!controller.signal.aborted) {
-          setState({
-            error: error instanceof Error ? error : new Error(String(error)),
-            loading: false,
-          });
-        }
-      });
-
-    return () => controller.abort();
-  }, [adapter]);
-
-  useEffect(() => {
     let controller: AbortController | undefined;
 
-    const refresh = () => {
+    const load = () => {
       controller?.abort();
 
       const current = new AbortController();
@@ -99,18 +79,30 @@ export function ChatProvider({
           if (current.signal.aborted) return;
 
           setState((previous) =>
-            JSON.stringify(previous.manifest) === JSON.stringify(manifest)
+            !previous.loading && JSON.stringify(previous.manifest) === JSON.stringify(manifest)
               ? previous
               : { manifest, loading: false },
           );
         })
-        .catch(() => undefined);
+        .catch((error: unknown) => {
+          if (current.signal.aborted) return;
+
+          setState((previous) =>
+            previous.manifest
+              ? previous
+              : {
+                  error: error instanceof Error ? error : new Error(String(error)),
+                  loading: false,
+                },
+          );
+        });
     };
 
-    window.addEventListener('focus', refresh);
+    load();
+    window.addEventListener('focus', load);
 
     return () => {
-      window.removeEventListener('focus', refresh);
+      window.removeEventListener('focus', load);
       controller?.abort();
     };
   }, [adapter]);
