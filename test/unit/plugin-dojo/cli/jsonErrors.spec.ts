@@ -2,6 +2,7 @@ import { createServer } from 'node:net';
 
 import { describe, expect, it } from 'vitest';
 
+import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
 import { runDojo } from '../../../../packages/plugins/plugin-dojo/src/cli/commands.js';
 import { unreachableStop } from '../../../../packages/plugins/plugin-dojo/src/cli/error.js';
 import { runShare } from '../../../../packages/plugins/plugin-dojo/src/cli/run.js';
@@ -47,6 +48,20 @@ describe('an unreachable Dojo under --json', () => {
       error: unreachableError(url),
     });
     expect(result.stderr()).toEqual([`[frogbot] ${unreachableError(url)}`]);
+  });
+
+  it('prints DOJO_UNREACHABLE for logout', async () => {
+    const { url, cwd, env } = await unreachable();
+    const result = testIO({ cwd, env: { ...env, FROGBOT_DOJO_TOKEN: undefined } });
+
+    await writeToken(env, url, 'fb_stored');
+
+    expect(await runDojo(['logout', '--json'], result.io)).toBe(1);
+    expect(JSON.parse(result.stdout().join('\n'))).toEqual({
+      ok: false,
+      code: 'DOJO_UNREACHABLE',
+      error: unreachableError(url),
+    });
   });
 
   it('prints DOJO_UNREACHABLE for share, without a token too', async () => {
@@ -105,6 +120,62 @@ describe("Dojo's refusals under --json", () => {
     });
   });
 
+  it("prints Dojo's code when it refuses the sign-in", async () => {
+    const dojo = await startFakeDojo();
+    const cwd = await tempDir();
+    const env = { XDG_CONFIG_HOME: await tempDir(), FROGBOT_DOJO_URL: dojo.url };
+
+    dojo.deviceCodeReply = {
+      status: 429,
+      body: { errors: [{ message: 'Too many sign-ins.', data: { code: 'rate_limited' } }] },
+    };
+
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(['apps', 'list', '--json'], result.io)).toBe(1);
+    expect(JSON.parse(result.stdout().join('\n'))).toEqual({
+      ok: false,
+      code: 'rate_limited',
+      error: 'Dojo refused the sign-in: Too many sign-ins.',
+      status: 429,
+    });
+  });
+
+  it("prints Dojo's code when it refuses a logout", async () => {
+    const dojo = await startFakeDojo();
+    const env = { XDG_CONFIG_HOME: await tempDir(), FROGBOT_DOJO_URL: dojo.url };
+
+    dojo.tokens.set('fb_stored', 5);
+    dojo.revokeStatus = 500;
+    await writeToken(env, dojo.url, 'fb_stored');
+
+    const result = testIO({ cwd: env.XDG_CONFIG_HOME, env });
+
+    expect(await runDojo(['logout', '--json'], result.io)).toBe(1);
+    expect(JSON.parse(result.stdout().join('\n'))).toEqual({
+      ok: false,
+      code: 'FAILED',
+      error: "Couldn't revoke the key: Revoke failed. Run logout again.",
+      status: 500,
+    });
+  });
+
+  it.each([
+    [['nope', '--json'], '"nope" isn\'t a Dojo command.'],
+    [['apps', '--json'], 'Name a verb.'],
+    [['apps', 'nope', '--json'], '"nope" isn\'t a verb of apps.'],
+  ])('prints USAGE_ERROR for %j', async (args, error) => {
+    const cwd = await tempDir();
+    const result = testIO({ cwd, env: { XDG_CONFIG_HOME: await tempDir() } });
+
+    expect(await runDojo(args, result.io)).toBe(2);
+    expect(JSON.parse(result.stdout().join('\n'))).toEqual({
+      ok: false,
+      code: 'USAGE_ERROR',
+      error,
+    });
+  });
+
   it('prints a plain stop as FAILED and a usage stop as USAGE_ERROR', async () => {
     const cwd = await tempDir();
     const env = { XDG_CONFIG_HOME: await tempDir(), FROGBOT_DOJO_URL: 'http://127.0.0.1:1' };
@@ -147,6 +218,31 @@ describe('a Dojo build under --json', () => {
       deploymentId: 7,
       error:
         'Lost the build log. The build may still finish: run `frogbot dojo deployments logs 7 --follow`.',
+    });
+  });
+
+  it('names the deployment when the build log is refused after a reconnect', async () => {
+    const { dojo, result } = await shareSetup();
+
+    dojo.build = { lines: ['step 1', 'step 2'], status: 'ready', dropAfter: 1 };
+
+    dojo.afterRequest = (route) => {
+      if (route === 'GET /api/deployments/7/logs') {
+        dojo.replies.set(route, {
+          status: 500,
+          body: { errors: [{ message: 'Log store down.' }] },
+        });
+      }
+    };
+
+    expect(await runShare(['--json', '--no-data'], result.io)).toBe(1);
+    expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
+      ok: false,
+      code: 'FAILED',
+      status: 500,
+      deploymentId: 7,
+      error:
+        "Couldn't read the build log: Log store down. The build may still finish: run `frogbot dojo deployments logs 7 --follow`.",
     });
   });
 

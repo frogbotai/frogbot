@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { dockerfile } from '../../../../../packages/frogbot/src/bin/deploy/dockerfile.js';
+import { DeployError } from '../../../../../packages/frogbot/src/bin/deploy/error.js';
 import { runDeploy, splitDeployArgs } from '../../../../../packages/frogbot/src/bin/deploy/run.js';
 import type { DeployTarget } from '../../../../../packages/frogbot/src/bin/deploy/types.js';
 import { deployConfig, recordingTarget, tempDir, testIO, writeApp } from './helpers.js';
@@ -395,5 +396,63 @@ describe('runDeploy', () => {
     await writeApp(root);
 
     await expect(runDeploy(target, [], io.io, { name: 'test' })).rejects.toThrow('fetch failed');
+  });
+
+  it('masks every secret whole, even when one contains another', async () => {
+    const root = await tempDir();
+    const io = testIO({
+      cwd: root,
+      programs: { tool: () => ({ code: 1, stderr: 'bad token hunter2-admin\n' }) },
+    });
+
+    const target: DeployTarget = {
+      describe: 'Tool',
+      preflight: () => [],
+      run: async (context) => {
+        await context.run('tool', ['ship', '--token', 'hunter2-admin'], {
+          mask: ['hunter2', 'hunter2-admin'],
+        });
+      },
+    };
+
+    await writeApp(root);
+
+    expect(await runDeploy(target, ['--json'], io.io, { name: 'test', image: true })).toBe(1);
+
+    const stdout = io.stdout().join('\n');
+
+    expect(stdout).not.toContain('admin');
+    expect(JSON.parse(stdout)).toMatchObject({
+      code: 'COMMAND_FAILED',
+      command: 'tool ship --token ••••',
+      stderr: 'bad token ••••',
+      error: '`tool ship --token ••••` failed (exit 1).',
+    });
+  });
+
+  it("keeps the result's own fields when a stop's fields name them too", async () => {
+    const root = await tempDir();
+    const io = testIO({ cwd: root });
+
+    const target: DeployTarget = {
+      describe: 'Broken',
+      preflight: () => [],
+      run: () => {
+        throw new DeployError('Stopped.', 1, {
+          code: 'STOPPED',
+          fields: { ok: true, target: 'other', code: 'OVERRIDE', error: 'other' },
+        });
+      },
+    };
+
+    await writeApp(root);
+
+    expect(await runDeploy(target, ['--json'], io.io, { name: 'test' })).toBe(1);
+    expect(JSON.parse(io.stdout()[0] ?? '')).toMatchObject({
+      target: 'test',
+      ok: false,
+      code: 'STOPPED',
+      error: 'Stopped.',
+    });
   });
 });

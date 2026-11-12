@@ -66,6 +66,8 @@ export type FakeDojo = {
   expiredCodes: number;
   /** `POST /api/cli/device/code` leaves out `verification_uri_complete`, as RFC 8628 allows. */
   noCompleteUri?: boolean;
+  /** The reply to `POST /api/cli/device/code`, instead of a code. */
+  deviceCodeReply?: { status: number; body: unknown };
   build: FakeBuild;
   /** Apps whose deployments get 403. */
   forbidden: Set<number>;
@@ -254,6 +256,10 @@ export async function startFakeDojo(): Promise<FakeDojo> {
     }
 
     if (route === 'POST /api/cli/device/code') {
+      if (dojo.deviceCodeReply) {
+        return json(res, dojo.deviceCodeReply.status, dojo.deviceCodeReply.body);
+      }
+
       codes += 1;
 
       return json(res, 200, {

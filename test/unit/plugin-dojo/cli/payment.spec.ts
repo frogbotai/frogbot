@@ -18,10 +18,13 @@ async function setup(files?: Record<string, string>) {
   await writeToken(env, dojo.url, 'fb_stored');
   dojo.billing = { paidApps: 0 };
 
-  const run = async (options: Omit<Parameters<typeof testIO>[0], 'cwd' | 'env'> = {}) => {
+  const run = async (
+    options: Omit<Parameters<typeof testIO>[0], 'cwd' | 'env'> = {},
+    args: string[] = [],
+  ) => {
     const io = testIO({ cwd: root, env, ...options });
 
-    return { code: await runShare(['--no-data'], io.io), ...io };
+    return { code: await runShare(['--no-data', ...args], io.io), ...io };
   };
 
   const payAfterPolls = (polls: number) => {
@@ -116,6 +119,19 @@ describe('frogbot share: paying for a first deploy', () => {
     ]);
     expect(dojo.paths().filter((path) => path === 'GET /api/workspaces/1')).toHaveLength(360);
     expect(dojo.apps).toEqual([]);
+  });
+
+  it('keeps payment_required and the upgrade link when it stops under --json', async () => {
+    const { run, upgrade } = await setup();
+    const result = await run({}, ['--json']);
+
+    expect(result.code).toBe(1);
+    expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
+      ok: false,
+      code: 'payment_required',
+      status: 402,
+      url: upgrade(),
+    });
   });
 
   it("keeps Dojo's message for a 402 with no upgrade link", async () => {
