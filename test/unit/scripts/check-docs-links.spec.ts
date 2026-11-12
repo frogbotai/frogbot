@@ -11,10 +11,12 @@ const roots: string[] = [];
 function createDocs({
   general = ['index', 'configuration/overview'],
   other = ['agents/alternate'],
+  dojo,
   redirects = [],
 }: {
   general?: string[];
   other?: string[];
+  dojo?: string[];
   redirects?: { destination: string; source: string }[];
 } = {}) {
   const repo = join(tmpdir(), `frogbot-docs-links-${process.pid}-${roots.length}`);
@@ -30,6 +32,7 @@ function createDocs({
         tabs: [
           { tab: 'General', groups: [{ group: 'Guides', pages: general }] },
           { tab: 'Reference', groups: [{ group: 'External', pages: other }] },
+          ...(dojo ? [{ tab: 'Dojo', groups: [{ group: 'Guides', pages: dojo }] }] : []),
         ],
       },
       redirects,
@@ -128,7 +131,7 @@ describe('check-docs-links', () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain(
-      '[check-docs-links] OK - 2 General pages and 0 repo files scanned.',
+      '[check-docs-links] OK - 2 General pages, 0 Dojo pages and 0 repo files scanned.',
     );
   });
 
@@ -210,7 +213,7 @@ describe('check-docs-links', () => {
     expect(result.stderr).toBe('');
     expect(result.status).toBe(0);
     expect(result.stdout).toContain(
-      '[check-docs-links] OK - 1 General pages and 2 repo files scanned.',
+      '[check-docs-links] OK - 1 General pages, 0 Dojo pages and 2 repo files scanned.',
     );
   });
 
@@ -238,5 +241,50 @@ describe('check-docs-links', () => {
     expect(result.stderr).toContain('CONTRIBUTING.md:5: #core-or-plugin');
     expect(result.stderr).toContain('CLAUDE.md:1: CONTRIBUTING.md#core-or-plugin');
     expect(result.stderr).toContain('[check-docs-links] FAIL - 2 issue(s) found.');
+  });
+
+  it('scans Dojo guides and reports their broken links, unlisted pages and missing nav pages', () => {
+    const root = createDocs({ dojo: ['dojo/overview', 'dojo/missing', 'agents/alternate'] });
+
+    writePage(root, 'index', '[Dojo](/dojo/overview)');
+    writePage(root, 'configuration/overview');
+    writePage(root, 'agents/alternate');
+    writePage(root, 'dojo/overview', '[Config](/configuration/overview)\n[Broken](/dojo/nowhere)');
+    writePage(root, 'dojo/unlisted');
+
+    const result = run(root);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('dojo/overview.mdx:2: /dojo/nowhere');
+    expect(result.stderr).toContain('missing Dojo page: dojo/missing');
+    expect(result.stderr).toContain('unlisted Dojo page: dojo/unlisted');
+    expect(result.stderr).toContain('[check-docs-links] FAIL - 4 issue(s) found.');
+  });
+
+  it('lets Dojo guides link to unowned pages in the Dojo tab, but not General pages to them', () => {
+    const root = createDocs({ other: [], dojo: ['dojo/overview', 'hosted'] });
+
+    writePage(root, 'index', '[Hosted](/hosted)');
+    writePage(root, 'configuration/overview');
+    writePage(root, 'hosted', '[Broken](/missing)');
+    writePage(root, 'dojo/overview', '[Hosted](/hosted)\n[Home](/)');
+
+    const result = run(root);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('index.mdx:1: /hosted');
+    expect(result.stderr).toContain('[check-docs-links] FAIL - 1 issue(s) found.');
+  });
+
+  it('rejects a Dojo guide listed in the General tab', () => {
+    const root = createDocs({ general: ['index', 'dojo/overview'], dojo: [] });
+
+    writePage(root, 'index');
+    writePage(root, 'dojo/overview');
+
+    const result = run(root);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('non-General page: dojo/overview');
   });
 });

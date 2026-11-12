@@ -46,6 +46,11 @@ const generalRoots = new Set([
 ]);
 
 const generalPages = new Set(['index', 'agents/overview']);
+const owners = [
+  { tab: 'General', roots: generalRoots, pages: generalPages, required: true, onlyOwn: true },
+  { tab: 'Dojo', roots: new Set(['dojo']), pages: new Set() },
+];
+
 const failures = [];
 
 function pageId(file) {
@@ -76,12 +81,10 @@ function* walk(directory) {
   }
 }
 
-function isOwnedPage(id) {
-  if (generalPages.has(id)) return true;
-
+function ownerOf(id) {
   const [directory] = id.split('/');
 
-  return generalRoots.has(directory);
+  return owners.find(({ pages, roots }) => pages.has(id) || roots.has(directory))?.tab;
 }
 
 function withoutCode(source, { inline = true } = {}) {
@@ -228,69 +231,87 @@ try {
 }
 
 const tabs = config.navigation?.tabs ?? [];
-const generalTab = tabs.find((tab) => tab.tab === 'General');
+const navByTab = new Map(tabs.map((tab) => [tab.tab, flattenPages(tab.groups)]));
 
-if (!generalTab) failures.push('docs.json: missing General tab');
-
-const navPages = flattenPages(generalTab?.groups);
-const otherNavPages = new Set(
-  tabs.filter((tab) => tab !== generalTab).flatMap((tab) => flattenPages(tab.groups)),
-);
-
-const navCounts = new Map();
-
-for (const id of navPages) navCounts.set(id, (navCounts.get(id) ?? 0) + 1);
-
-for (const [id, count] of navCounts) {
-  if (count > 1) failures.push(`docs.json: duplicate General page: ${id}`);
-  if (!isOwnedPage(id) || otherNavPages.has(id)) {
-    failures.push(`docs.json: non-General page: ${id}`);
-  }
-
-  if (!fs.existsSync(path.join(root, `${id}.mdx`))) {
-    failures.push(`docs.json: missing General page: ${id}`);
-  }
+for (const { tab, required } of owners) {
+  if (required && !navByTab.has(tab)) failures.push(`docs.json: missing ${tab} tab`);
 }
 
-const ownedFiles = [...walk(root)].filter((file) => {
-  const id = pageId(file);
-
-  return isOwnedPage(id) && !otherNavPages.has(id);
-});
-
-const ownedIds = new Set(ownedFiles.map(pageId));
-
-for (const id of ownedIds) {
-  if (!navCounts.has(id)) failures.push(`docs.json: unlisted General page: ${id}`);
+function listedElsewhere(id, tab) {
+  return [...navByTab].some(([name, pages]) => name !== tab && pages.includes(id));
 }
 
-for (const file of ownedFiles) {
-  const id = pageId(file);
-  const source = fs.readFileSync(file, 'utf8');
+const allFiles = [...walk(root)];
+const scanned = new Map();
+const ownedIds = new Set();
 
-  for (const { image, line, target } of extractTargets(source)) {
-    const normalized = normalizeTarget(target, id);
+for (const { tab, onlyOwn } of owners) {
+  const navCounts = new Map();
 
-    if (!normalized) continue;
+  for (const id of navByTab.get(tab) ?? []) navCounts.set(id, (navCounts.get(id) ?? 0) + 1);
 
-    if (normalized.escaped) {
-      report(file, line, target);
-      continue;
+  for (const [id, count] of navCounts) {
+    if (count > 1) failures.push(`docs.json: duplicate ${tab} page: ${id}`);
+    const owner = ownerOf(id);
+
+    if ((owner ? owner !== tab : onlyOwn) || listedElsewhere(id, tab)) {
+      failures.push(`docs.json: non-${tab} page: ${id}`);
     }
 
-    if (image) {
-      if (!fs.existsSync(normalized.path) || fs.statSync(normalized.path).isDirectory()) {
+    if (!fs.existsSync(path.join(root, `${id}.mdx`))) {
+      failures.push(`docs.json: missing ${tab} page: ${id}`);
+    }
+  }
+
+  const files = allFiles.filter((file) => {
+    const id = pageId(file);
+
+    return ownerOf(id) === tab && !listedElsewhere(id, tab);
+  });
+
+  for (const file of files) {
+    const id = pageId(file);
+
+    ownedIds.add(id);
+    if (!navCounts.has(id)) failures.push(`docs.json: unlisted ${tab} page: ${id}`);
+  }
+
+  scanned.set(tab, files);
+}
+
+for (const [tab, files] of scanned) {
+  const sameTab = new Set(
+    (navByTab.get(tab) ?? []).filter((id) => fs.existsSync(path.join(root, `${id}.mdx`))),
+  );
+
+  for (const file of files) {
+    const id = pageId(file);
+    const source = fs.readFileSync(file, 'utf8');
+
+    for (const { image, line, target } of extractTargets(source)) {
+      const normalized = normalizeTarget(target, id);
+
+      if (!normalized) continue;
+
+      if (normalized.escaped) {
         report(file, line, target);
+        continue;
       }
 
-      continue;
+      if (image) {
+        if (!fs.existsSync(normalized.path) || fs.statSync(normalized.path).isDirectory()) {
+          report(file, line, target);
+        }
+
+        continue;
+      }
+
+      let destination = normalized.id;
+
+      if (ownedIds.has(`${destination}/index`)) destination = `${destination}/index`;
+
+      if (!ownedIds.has(destination) && !sameTab.has(destination)) report(file, line, target);
     }
-
-    let destination = normalized.id;
-
-    if (ownedIds.has(`${destination}/index`)) destination = `${destination}/index`;
-
-    if (!ownedIds.has(destination)) report(file, line, target);
   }
 }
 
@@ -330,6 +351,6 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(
-  `[check-docs-links] OK - ${ownedFiles.length} General pages and ${repoFiles.length} repo files scanned.`,
-);
+const counts = [...scanned].map(([tab, files]) => `${files.length} ${tab} pages`).join(', ');
+
+console.log(`[check-docs-links] OK - ${counts} and ${repoFiles.length} repo files scanned.`);
