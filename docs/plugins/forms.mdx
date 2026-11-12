@@ -92,7 +92,7 @@ steps: [
 ]
 ```
 
-The page and the server run the same check, `visibleQuestions` from `@frogbotai/ui/forms/rules`, over the answers in order, so the answer to a hidden question counts as no answer for the rules after it. A step whose questions are all hidden is skipped, and the step count leaves it out. Hidden questions aren't checked on the page, and the server drops their answers and files, even if a client sends them; through an edit link, a hidden question's field keeps its saved value. Since a hidden question must never block a response, a `required` field can't have rules: make it optional, or give it a default.
+The page and the server run the same check, `visibleQuestions` from `@frogbotai/ui/forms/rules`, over the answers in order, so the answer to a hidden question counts as no answer for the rules after it. A step whose questions are all hidden is skipped, and the step count leaves it out. Hidden questions aren't checked on the page, and the server drops their answers and files, even if a client sends them; through an edit link, a hidden question's field keeps its saved value. Since a hidden question must never block a response, a `required` field can't have rules, even one with a default: make it optional.
 
 ## Who can open a form
 
