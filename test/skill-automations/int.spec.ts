@@ -259,4 +259,26 @@ describe('skill automations guide samples', () => {
       }),
     ).rejects.toThrow();
   });
+
+  it('shows run history to an admin', async () => {
+    await frogbot.jobs.queue({
+      task: 'send-webhook',
+      input: { deliveryId: 'customer-data' },
+      overrideAccess: true,
+    });
+
+    const admin = await payload.create({
+      collection: 'users',
+      data: { email: 'admin@example.com', password, roles: ['admin'] },
+      overrideAccess: true,
+    });
+
+    const { docs } = await payload.find({
+      collection: 'payload-jobs',
+      user: { ...admin, collection: 'users' },
+      overrideAccess: false,
+    });
+
+    expect(docs).toHaveLength(1);
+  });
 });
