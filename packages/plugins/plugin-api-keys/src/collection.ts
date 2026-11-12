@@ -43,6 +43,8 @@ const sessionRequired = () =>
     { status: 403 },
   );
 
+const keyNotFound = () => new APIError('API key not found', 404, { code: 'not_found' }, true);
+
 function describeError(error: APIError): string {
   const details = (error.data as { errors?: { message?: unknown }[] } | undefined)?.errors;
   const messages = details
@@ -157,7 +159,7 @@ function createEndpoints({
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
-          return Response.json({ error: 'API key not found' }, { status: 404 });
+          throw keyNotFound();
         }
 
         const text = (await req.text?.()) ?? '';
@@ -191,7 +193,7 @@ function createEndpoints({
           }
 
           if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
-            return Response.json({ error: 'API key not found' }, { status: 404 });
+            throw keyNotFound();
           }
 
           throw error;
@@ -205,7 +207,7 @@ function createEndpoints({
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
-          return Response.json({ error: 'API key not found' }, { status: 404 });
+          throw keyNotFound();
         }
 
         try {
@@ -216,7 +218,7 @@ function createEndpoints({
           });
         } catch (error) {
           if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
-            return Response.json({ error: 'API key not found' }, { status: 404 });
+            throw keyNotFound();
           }
 
           throw error;
@@ -231,7 +233,7 @@ function createEndpoints({
         if (!canMintKeys(req)) return sessionRequired();
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
-          return Response.json({ error: 'API key not found' }, { status: 404 });
+          throw keyNotFound();
         }
 
         try {
@@ -247,7 +249,7 @@ function createEndpoints({
           }
 
           if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
-            return Response.json({ error: 'API key not found' }, { status: 404 });
+            throw keyNotFound();
           }
 
           if (error instanceof APIError && error.status < 500) {
