@@ -15,7 +15,7 @@ const auth = z.object({ apiKey: z.string().min(1) });
 
 type Auth = z.output<typeof auth>;
 
-const accountPiece = (providerURL: string, slug: string) =>
+const accountPiece = (providerURL: string, slug: string, lookup = true) =>
   definePiece({
     slug,
     label: slug,
@@ -26,8 +26,15 @@ const accountPiece = (providerURL: string, slug: string) =>
       tokenUrl: `${providerURL}/token`,
       scopes: { catalog: { read: 'read' }, defaults: ['read'] },
       toAuth: ({ tokens }) => ({ apiKey: tokens.access_token ?? '' }),
-      account: ({ client }) =>
-        Promise.resolve({ id: client.auth.apiKey, label: `${client.auth.apiKey}@example.com` }),
+      ...(lookup
+        ? {
+            account: ({ client }: { client: { auth: Auth } }) =>
+              Promise.resolve({
+                id: client.auth.apiKey,
+                label: `${client.auth.apiKey}@example.com`,
+              }),
+          }
+        : {}),
     } satisfies PieceOAuthRecipe<Auth, { auth: Auth }>,
     actions: [],
   })({ oauth: { clientId: 'client-id', clientSecret: 'client-secret' } });
@@ -39,6 +46,7 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
   let baseURL: string;
   let mail: ReturnType<typeof accountPiece>;
   let other: ReturnType<typeof accountPiece>;
+  let plain: ReturnType<typeof accountPiece>;
   const users: (ConnectionOwner & { authorization: string })[] = [];
 
   const request = (path: string, init: RequestInit = {}) =>
@@ -86,6 +94,13 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
     )!;
   };
 
+  const saveKey = (apiKey: string, piece = 'mail') =>
+    request(`/${piece}`, {
+      method: 'POST',
+      headers: { authorization: users[0].authorization, 'content-type': 'application/json' },
+      body: JSON.stringify({ apiKey }),
+    });
+
   const resolve = async (connection?: number | string, piece = mail, user = users[0]) =>
     frogbot.connections.resolve({
       piece,
@@ -97,6 +112,7 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
     provider = await startFakeProvider();
     mail = accountPiece(provider.url, 'mail');
     other = accountPiece(provider.url, 'other');
+    plain = accountPiece(provider.url, 'plain', false);
 
     baseURL = await new Promise<string>((done) => {
       server = serve(
@@ -118,6 +134,7 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
       connections: [
         { piece: mail, oauth: true, secret: true },
         { piece: other, oauth: true },
+        { piece: plain, oauth: true, secret: true },
       ],
     });
 
@@ -355,13 +372,13 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
   });
 
   describe('a row saved before accountId existed', () => {
-    const legacy = async () => {
-      const row = await linked('a');
+    const legacy = async (code = 'a', data: { isDefault?: boolean } = {}) => {
+      const row = await linked(code);
 
       await frogbot.update({
         collection: 'connections',
         id: row.id,
-        data: { accountId: '' },
+        data: { accountId: '', ...data },
         overrideAccess: true,
       });
 
@@ -426,6 +443,64 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
 
       expect((await link('a', { reconnect: row.id })).status).toBe(302);
       expect((await rows()).map((r) => r.id)).toEqual([row.id]);
+    });
+
+    it('stays the default when a second account is linked, though it was saved without one', async () => {
+      const row = await legacy('a', { isDefault: false });
+
+      await expect(resolve()).resolves.toEqual({ apiKey: 'fresh-a' });
+
+      await linked('b');
+
+      await expect(resolve()).resolves.toEqual({ apiKey: 'fresh-a' });
+      expect((await rows()).map((r) => [r.id, r.isDefault])).toEqual([
+        [row.id, true],
+        [expect.anything(), false],
+      ]);
+    });
+
+    it('stays the default when an API key is saved beside it, though it was saved without one', async () => {
+      const row = await legacy('a', { isDefault: false });
+
+      expect((await saveKey('key-one')).status).toBe(200);
+      await expect(resolve()).resolves.toEqual({ apiKey: 'fresh-a' });
+      expect((await rows()).find((r) => r.isDefault)?.id).toBe(row.id);
+    });
+  });
+
+  describe('a recipe with no account lookup', () => {
+    it('keeps an API key beside its OAuth link', async () => {
+      expect((await saveKey('key-one', 'plain')).status).toBe(200);
+      expect((await link('a', { piece: 'plain' })).status).toBe(302);
+      expect((await rows(users[0], 'plain')).map((r) => r.method).sort()).toEqual([
+        'oauth',
+        'secret',
+      ]);
+      await expect(resolve(undefined, plain)).resolves.toEqual({ apiKey: 'key-one' });
+    });
+
+    it('keeps its OAuth link when an API key is saved after it', async () => {
+      expect((await link('a', { piece: 'plain' })).status).toBe(302);
+      expect((await saveKey('key-one', 'plain')).status).toBe(200);
+      expect((await rows(users[0], 'plain')).map((r) => [r.method, r.isDefault])).toEqual([
+        ['oauth', true],
+        ['secret', false],
+      ]);
+    });
+
+    it('relinks onto its one OAuth row, since it cannot tell provider accounts apart', async () => {
+      expect((await link('a', { piece: 'plain' })).status).toBe(302);
+
+      const [first] = await rows(users[0], 'plain');
+
+      expect((await link('b', { piece: 'plain' })).status).toBe(302);
+      expect((await rows(users[0], 'plain')).map((r) => r.id)).toEqual([first.id]);
+      await expect(resolve(first.id, plain)).resolves.toEqual({ apiKey: 'fresh-b' });
+    });
+
+    it('reports that it links one OAuth account', () => {
+      expect(frogbot.config.connections.entries.plain.oauthAccounts).toBe(false);
+      expect(frogbot.config.connections.entries.mail.oauthAccounts).toBe(true);
     });
   });
 });
