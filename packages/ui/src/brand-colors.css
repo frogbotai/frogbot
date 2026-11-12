@@ -1,5 +1,5 @@
 /*
- * FrogBot's default brand colour: green on Payload's own brand and selected-border tokens, in the admin and on
+ * FrogBot's default brand colour: green on Payload's own brand and selected tokens, in the admin and on
  * FrogBot UI pages. Override the same tokens on :root (and [data-theme='dark']) to rebrand.
  */
 @layer theme.frogbot {
@@ -8,6 +8,9 @@
     --color-bg-brand-hover: #166d30;
     --color-bg-brand-pressed: #0e5523;
     --color-bg-brand-secondary: #0e5523;
+    --color-bg-selected-strong: var(--color-bg-brand);
+    --color-bg-selected-strong-hover: var(--color-bg-brand-hover);
+    --color-bg-selected-strong-pressed: var(--color-bg-brand-pressed);
     --color-border-selected: var(--color-bg-brand);
   }
 
@@ -15,22 +18,32 @@
   [data-theme="light"] {
     --color-bg-brand-tertiary: #d1f0db;
     --color-bg-brand-tertiary-hover: #a0ddb4;
+    --color-bg-selected: var(--color-bg-brand-tertiary);
+    --color-bg-selected-hover: var(--color-bg-brand-tertiary-hover);
+    --color-bg-selected-pressed: #67c285;
     --color-border-brand: #a0ddb4;
     --color-border-brand-strong: #166d30;
     --color-border-selected-strong: var(--color-border-brand-strong);
     --color-icon-brand: #166d30;
+    --color-icon-selected: var(--color-icon-brand);
     --color-text-brand: #166d30;
     --color-text-brand-secondary: #166d30;
+    --color-text-selected: var(--color-text-brand);
   }
 
   [data-theme="dark"] {
     --color-bg-brand-tertiary: #083d19;
     --color-bg-brand-tertiary-hover: #0e5523;
+    --color-bg-selected: var(--color-bg-brand-tertiary);
+    --color-bg-selected-hover: var(--color-bg-brand-tertiary-hover);
+    --color-bg-selected-pressed: var(--color-bg-brand-tertiary);
     --color-border-brand: #166d30;
     --color-border-brand-strong: #67c285;
     --color-border-selected-strong: var(--color-border-brand-strong);
     --color-icon-brand: #67c285;
+    --color-icon-selected: var(--color-icon-brand);
     --color-text-brand: #67c285;
     --color-text-brand-secondary: #67c285;
+    --color-text-selected: var(--color-text-brand);
   }
 }
