@@ -23,8 +23,9 @@ import { redirectRecordParam } from '../panel/redirectRecord.js';
 import { getGroupsPreferenceKey, resolveViewColumnPreferences } from '../preferences.js';
 import { isRecordDone } from '../records/state.js';
 import {
+  clearStoredLimit,
+  isDefaultLimit,
   isFreshQuery,
-  pickViewSetup,
   readViewPreference,
   resolveViewSetup,
   type ViewSetup,
@@ -180,20 +181,25 @@ export async function ListView(props: ListViewServerProps) {
   });
 
   let grouped: GroupedTable | undefined;
+  const query = req.query ?? {};
+  const defaultLimit = collectionConfig.admin.pagination?.defaultLimit || 10;
+
+  if (isDefaultLimit(query.limit, defaultLimit)) {
+    await clearStoredLimit(req, `collection-${collectionSlug}`);
+  }
 
   if (isList) {
     await redirectToLastView({ collectionSlug, req, server, views });
 
-    const query = req.query ?? {};
     const setup = await resolveViewSetup({
       collectionSlug,
+      defaultLimit,
       query,
       req,
       viewSlug: view.slug,
     });
 
-    const stored = pickViewSetup(setup.preference);
-    const saved = qs.stringify(withDefaultGroupBy(stored, view.groupBy));
+    const saved = qs.stringify(withDefaultGroupBy(setup.saved, view.groupBy));
 
     if (isFreshQuery(query) && saved) {
       server.redirect(

@@ -1,13 +1,19 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { upsertPreferences } from '@payloadcms/ui/utilities/upsertPreferences';
 import { createPayloadRequest, type PayloadRequest } from 'payload';
 import type { ReactElement } from 'react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderGroupedTable } from '../../packages/ui/src/admin/views/List/groupedTable';
 import { patchPreferenceHandler } from '../../packages/ui/src/admin/views/patchPreference';
-import { readViewPreference, resolveViewSetup } from '../../packages/ui/src/admin/views/viewSetup';
+import {
+  clearStoredLimit,
+  isDefaultLimit,
+  readViewPreference,
+  resolveViewSetup,
+} from '../../packages/ui/src/admin/views/viewSetup';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
@@ -168,6 +174,93 @@ describe(`grouped list body [${adapterLabel}]`, () => {
     await expect(call({ key: 'k', patch: [1], req })).rejects.toThrow();
     await expect(call({ key: '', patch: { a: 1 }, req })).rejects.toThrow();
     expect(await readViewPreference(req, 'k')).toBeUndefined();
+  });
+
+  it('saves a page size only when it differs from the default, so a new default reaches everyone', async () => {
+    const listKey = 'collection-items';
+    const viewKey = 'collection-items-view-list';
+
+    const visit = async (query: Record<string, unknown>, defaultLimit: number) => {
+      const payloadPrefs = await upsertPreferences<Record<string, unknown>>({
+        key: listKey,
+        req,
+        value: { limit: query.limit ? Number(query.limit) : undefined, sort: query.sort },
+      });
+
+      const opensAt = Number(query.limit) || Number(payloadPrefs?.limit) || defaultLimit;
+      const setup = await resolveViewSetup({
+        collectionSlug: 'items',
+        defaultLimit,
+        query,
+        req,
+        viewSlug: 'list',
+      });
+
+      if (isDefaultLimit(query.limit, defaultLimit)) await clearStoredLimit(req, listKey);
+
+      return { opensAt, redirect: setup.fresh ? setup.saved : undefined };
+    };
+
+    const stored = async () => ({
+      list: (await readViewPreference(req, listKey))?.limit,
+      view: (await readViewPreference(req, viewKey))?.limit,
+    });
+
+    expect(await visit({}, 50)).toEqual({ opensAt: 50, redirect: {} });
+    expect(await stored()).toEqual({ list: undefined, view: undefined });
+
+    await visit({ limit: '50' }, 50);
+
+    expect(await stored()).toEqual({ list: undefined, view: undefined });
+
+    await visit({ limit: '25', sort: '-title' }, 50);
+
+    expect(await stored()).toEqual({ list: 25, view: '25' });
+    expect(await visit({}, 50)).toEqual({
+      opensAt: 25,
+      redirect: { limit: '25', sort: '-title' },
+    });
+
+    await visit({ limit: '50', sort: 'title' }, 50);
+
+    expect(await stored()).toEqual({ list: undefined, view: undefined });
+    expect(await readViewPreference(req, listKey)).toMatchObject({ sort: 'title' });
+    expect(await visit({}, 50)).toEqual({ opensAt: 50, redirect: { sort: 'title' } });
+
+    await visit({ limit: '10' }, 10);
+
+    expect(await stored()).toEqual({ list: undefined, view: undefined });
+    expect((await visit({}, 50)).opensAt).toBe(50);
+
+    await visit({ limit: '25' }, 50);
+    await visit({ limit: '50', where: { nonexistentField: { equals: 'x' } } }, 50);
+
+    expect(await stored()).toEqual({ list: undefined, view: undefined });
+    expect(await visit({}, 50)).toEqual({ opensAt: 50, redirect: { sort: 'title' } });
+  });
+
+  it('clears a saved page size from a gallery view and from visits at the default that race', async () => {
+    const gallery = (query: Record<string, unknown>) =>
+      resolveViewSetup({
+        collectionSlug: 'items',
+        defaultLimit: 25,
+        query,
+        req,
+        viewSlug: 'gallery',
+      });
+
+    await gallery({ limit: '50' });
+    await gallery({ limit: '25' });
+
+    expect(await readViewPreference(req, 'collection-items-view-gallery')).toEqual({});
+
+    const list = (query: Record<string, unknown>) =>
+      resolveViewSetup({ collectionSlug: 'items', defaultLimit: 50, query, req, viewSlug: 'list' });
+
+    await list({ limit: '25' });
+    await Promise.all([list({ limit: '50' }), list({ limit: '50' })]);
+
+    expect((await readViewPreference(req, 'collection-items-view-list'))?.limit).toBeUndefined();
   });
 
   it('does not save a groupBy that crashes the list, so a fresh visit still opens', async () => {

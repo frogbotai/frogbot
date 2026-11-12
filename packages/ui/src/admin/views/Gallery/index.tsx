@@ -46,8 +46,10 @@ export async function GalleryView(input: AdminViewServerProps) {
 
   if (!gallery || gallery.type !== 'gallery') return props.server.notFound();
   const { req } = initPageResult;
+  const defaultLimit = gallery.pagination?.defaultLimit ?? DEFAULT_LIMIT;
   const setup = await resolveViewSetup({
     collectionSlug,
+    defaultLimit,
     query: req.query ?? {},
     req,
     viewSlug: gallery.slug,
@@ -59,7 +61,7 @@ export async function GalleryView(input: AdminViewServerProps) {
       ? (query.columns as ViewColumnsSource)
       : undefined;
 
-  const limit = toNumber(query.limit) ?? gallery.pagination?.defaultLimit ?? DEFAULT_LIMIT;
+  const limit = toNumber(query.limit) ?? defaultLimit;
   const page = toNumber(query.page) ?? 1;
   const sort =
     typeof query.sort === 'string' ||
