@@ -1,0 +1,24 @@
+---
+title: "Custom domains"
+description: "Serve a Dojo app at a subdomain you own, such as crm.example.com, with a CNAME record."
+keywords: ["Dojo", "custom domain", "CNAME", "DNS", "certificate", "frogbot dojo domains"]
+---
+
+Every app has an address under `frogbot.app`, such as `deals.frogbot.app`. An app's Admin can also serve it at a domain they own.
+
+## Add a domain
+
+1. In the app's settings, enter a subdomain such as `crm.example.com`, or run `npx frogbot dojo domains set deals crm.example.com`.
+2. At your DNS provider, add the CNAME record Dojo shows: `crm.example.com` pointing at `deals.frogbot.app`.
+3. Wait. Dojo checks the record, gets a certificate, and serves the app there.
+
+The status moves from **Waiting for DNS** to **Getting certificate** to **Live**. If the record later stops pointing at the app, the domain shows **Offline** until you fix it. `npx frogbot dojo domains get deals` shows the record to add and the current status.
+
+## Rules
+
+- Use a subdomain with at least three parts, such as `crm.example.com`. Root domains such as `example.com`, wildcards and IP addresses aren't supported.
+- Domains under `frogbot.app` and `frogbot.ai` are Dojo's own.
+- An app has one custom domain. Setting another replaces it, after asking.
+- A [free preview](/dojo/deploy#free-previews-and-paid-apps) has no custom domain. Keep it as a paid app, then add one.
+
+To remove the domain, clear it on the same page or run `npx frogbot dojo domains clear deals`. The app keeps its `frogbot.app` address throughout.

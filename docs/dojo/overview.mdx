@@ -1,0 +1,37 @@
+---
+title: "Dojo"
+description: "Dojo runs FrogBot apps for you: share one from your terminal and get a live URL, with storage, sign-in and AI already set up."
+keywords: ["Dojo", "workspace", "project", "app", "deployment", "hosting", "dojo.frogbot.ai"]
+---
+
+[Dojo](https://dojo.frogbot.ai) hosts FrogBot apps. You share an app from your terminal or from a connected repo, Dojo builds it and gives it an address such as `deals.frogbot.app`, and the people you share it with sign in with their Dojo account. Uploads, sign-in and AI work there with no setup, because Dojo adds the [Dojo plugin](/plugins/dojo#on-dojo) to every app it builds.
+
+## How Dojo is organized
+
+```text
+Workspace → Project → App → Deployment
+```
+
+- **Workspace.** Your team, and who pays. Each person gets their own workspace at their first sign-in, and can create or join more. Members hold one role: Owner, Admin, Editor or Viewer.
+- **Project.** A group of apps with its own list of people, so a team can see its apps and nobody else's. Projects are a Business plan feature: workspace Owners and Admins add them, and a project shows only to the people on its list and to the workspace's Owners and Admins. The default project shows to every member. Without Business, every app sits in the workspace's default project.
+- **App.** One FrogBot app at one address, with its own database, file storage, [environment variables](/dojo/env-vars) and, if you add one, a [custom domain](/dojo/domains).
+- **Deployment.** One build of an app. Every share or push makes a new deployment; the newest one that builds goes live, and you can [roll back](/dojo/deploy#roll-back) to an earlier one.
+
+## Workspace roles
+
+| Role | Can |
+| --- | --- |
+| Owner | Everything an Admin can, plus billing and deleting the workspace. There is one Owner, who hands ownership over to leave. |
+| Admin | Invites and removes people, manages settings, and is Admin of every app. |
+| Editor | Creates apps, and edits the apps open to the workspace. |
+| Viewer | Uses the apps open to the workspace or shared with them. Creates nothing. |
+
+What someone can do in one app is set separately, when you [share it](/dojo/share).
+
+## Start
+
+1. [Sign in](/dojo/sign-in) at [dojo.frogbot.ai](https://dojo.frogbot.ai), or run `npx frogbot dojo login`.
+2. [Deploy](/dojo/deploy) an app with `npx frogbot share`.
+3. [Share](/dojo/share) it with your team.
+
+Everything you can do on the site you can also do with the [CLI](/dojo/cli) or the [API](/dojo/api-keys#call-the-api), so coding agents can run Dojo too.

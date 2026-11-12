@@ -1,0 +1,27 @@
+---
+title: "Environment variables"
+description: "Give a Dojo app its secrets and settings. Values are write-only: Dojo never shows a stored value again."
+keywords: ["Dojo", "environment variables", "env", "secrets", ".env", "frogbot dojo env"]
+---
+
+An app's environment variables are the keys and settings it reads from `process.env`, such as a Stripe key. Set them on the app's **Environment variables** page, or with the CLI. Saving restarts the app once, so it picks up the new values.
+
+## Values are write-only
+
+Dojo never shows a stored value again, to you or to anyone. The page and `env list` show each key with its value masked, such as `••••4242`. To change a value, set it again. Keep your own copy of anything you'll need to read later.
+
+## Paste a .env file
+
+The page's import box takes a `.env` file's contents and sets every key in it at once. On the first share, the CLI also offers to copy keys from your local `.env`; it never copies `FROGBOT_DOJO_TOKEN` or `FROGBOT_DOJO_URL`.
+
+## From the terminal
+
+```bash
+npx frogbot dojo env list deals
+npx frogbot dojo env set deals STRIPE_SECRET_KEY=sk_live_... SLACK_WEBHOOK=https://hooks.slack.com/...
+npx frogbot dojo env unset deals SLACK_WEBHOOK
+```
+
+## Set for you
+
+Dojo sets the variables an app needs to run there, such as its database, storage, and the sign-in settings for [Sign in with Dojo](/plugins/dojo#sign-in-with-dojo). You don't need to add them, and an app's own AI provider keys are optional: without them, AI goes through Dojo's gateway and is billed to the workspace's [AI balance](/dojo/billing#ai-balance).
