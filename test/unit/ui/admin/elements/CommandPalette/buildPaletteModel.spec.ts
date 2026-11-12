@@ -186,6 +186,39 @@ describe('buildPaletteModel', () => {
     expect(result.collections.at(-1)?.slug).toBe('members');
   });
 
+  it('lists the given Settings pages after Settings collections, with no create path', () => {
+    const withSettings = config();
+
+    (withSettings.admin.components as { views?: unknown }).views = {
+      settings: { Component: '@frogbotai/ui/admin/rsc#SettingsView' },
+    };
+
+    withSettings.collections.push(
+      collection('members', { admin: { group: false, settings: true } }) as never,
+    );
+
+    const result = buildPaletteModel({
+      config: withSettings,
+      i18n,
+      permissions: permissionsFor({ ...permissions.collections, members: { read: true } }),
+      settingsEntries: [
+        { Component: '/Robot#Robot', label: 'Robot', path: 'robot' },
+        { Component: '/Billing#Billing', label: { en: 'Billing' } as never, path: 'billing' },
+      ],
+      visibleEntities: {
+        ...visibleEntities,
+        collections: [...visibleEntities.collections, 'members'],
+      },
+    });
+
+    expect(result.rows.filter(({ group }) => group === 'Settings')).toEqual([
+      { group: 'Settings', label: 'Members', path: '/control/collections/members' },
+      { group: 'Settings', label: 'Robot', path: '/control/settings/robot' },
+      { group: 'Settings', label: 'Billing', path: '/control/settings/billing' },
+    ]);
+    expect(result.collections.map(({ slug }) => slug)).not.toContain('robot');
+  });
+
   it('translates the Settings group label', () => {
     const withSettings = config();
 

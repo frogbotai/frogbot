@@ -1,6 +1,12 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { projectsSlug, secretsSlug, tasksSlug } from './fixtures/question/shared';
+import {
+  hiddenSettings,
+  projectsSlug,
+  robotSettings,
+  secretsSlug,
+  tasksSlug,
+} from './fixtures/question/shared';
 
 const task = { title: 'Order toner', notes: 'Call the quokka supplier' };
 
@@ -16,9 +22,13 @@ async function hotkeyModifier(page: Page): Promise<'Control' | 'Meta'> {
   return (await page.evaluate(() => navigator.userAgent)).includes('Mac OS X') ? 'Meta' : 'Control';
 }
 
-async function openPalette(page: Page) {
+async function gotoTasks(page: Page) {
   await page.goto(`/collections/${tasksSlug}`);
   await expect(page.locator('.fb-nav-shell')).toHaveAttribute('data-nav-hydrated', 'true');
+}
+
+async function openPalette(page: Page) {
+  await gotoTasks(page);
   await page.keyboard.press(`${await hotkeyModifier(page)}+k`);
 
   const dialog = page.getByRole('dialog');
@@ -105,4 +115,75 @@ test('Cmd+Enter on a collection row opens its create page', async ({ page }) => 
   await page.keyboard.press(`${await hotkeyModifier(page)}+Enter`);
 
   await expect(page).toHaveURL(new RegExp(`/collections/${projectsSlug}/create$`));
+});
+
+test.describe('the sidebar Search item', () => {
+  const shell = (page: Page) => page.locator('.fb-nav-shell');
+  const search = (page: Page) =>
+    page.locator('.fb-app-sidebar').getByRole('button', {
+      name: 'Search',
+    });
+
+  async function expectPaletteFromSearch(page: Page) {
+    await search(page).click();
+
+    const dialog = page.getByRole('dialog');
+
+    await expect(dialog).toHaveCount(1);
+    await expect(dialog.getByRole('combobox')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+  }
+
+  test('opens the palette with the sidebar open, showing its label and hint', async ({ page }) => {
+    await gotoTasks(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+    await expect(search(page)).toContainText('Search');
+    await expect(search(page).locator('.fb-shortcut')).toHaveText(/^(⌘|Ctrl) \+ K$/);
+
+    await expectPaletteFromSearch(page);
+  });
+
+  test('opens the palette from the collapsed rail without expanding it', async ({ page }) => {
+    await gotoTasks(page);
+    await page.getByRole('button', { name: 'Close sidebar' }).click();
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
+
+    await search(page).hover();
+    await expect(page.getByRole('tooltip')).toHaveText('Search');
+
+    await expectPaletteFromSearch(page);
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
+
+    await page.locator('.fb-app-sidebar').click({ position: { x: 20, y: 400 } });
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+  });
+
+  test('opens the palette from the phone drawer and closes the drawer', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoTasks(page);
+    await page.locator('.app-header__sidebar-toggle').click();
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-open');
+
+    await search(page).click();
+
+    await expect(page.getByRole('dialog')).toHaveCount(1);
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
+  });
+});
+
+test('the palette lists the Settings pages the user can open, not refused ones', async ({
+  page,
+}) => {
+  const dialog = await openPalette(page);
+  const settings = dialog.getByRole('group', { name: 'Settings' });
+
+  await expect(settings.getByRole('option', { name: robotSettings.label })).toBeVisible();
+  await expect(dialog.getByRole('option', { name: hiddenSettings.label })).toHaveCount(0);
+
+  await dialog.getByRole('combobox').fill(robotSettings.label);
+  await page.keyboard.press('Enter');
+
+  await expect(page).toHaveURL(new RegExp(`/settings/${robotSettings.path}$`));
 });

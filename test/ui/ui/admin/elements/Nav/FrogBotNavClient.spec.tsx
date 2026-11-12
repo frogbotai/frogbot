@@ -19,11 +19,15 @@ const closeModal = (slug: string) => {
   modalState = { ...modalState, [slug]: { isOpen: false } };
 };
 
+const openModal = vi.fn((slug: string) => {
+  modalState = { ...modalState, [slug]: { isOpen: true } };
+});
+
 vi.mock('@payloadcms/ui', () => ({
   Account: () => <svg data-testid="payload-account" />,
   commandPaletteSlug: 'command-palette',
   useConfig: () => ({ config: { routes: { admin: '/admin', api: '/api' } } }),
-  useModal: () => ({ closeModal, modalState }),
+  useModal: () => ({ closeModal, modalState, openModal }),
   useTranslation: () => ({ t: (key: string) => key }),
   usePathname: () => pathname,
   useRouter: () => ({ push: vi.fn() }),
@@ -75,6 +79,7 @@ describe('FrogBotNavClient', () => {
     hydrated = true;
     isMobile = false;
     modalState = {};
+    openModal.mockClear();
     pathname = '/admin';
     setPreference.mockReset();
   });
@@ -89,6 +94,30 @@ describe('FrogBotNavClient', () => {
     rerender(<Harness initialNavOpen />);
 
     expect(screen.getByRole('option', { name: 'Users' })).not.toBeNull();
+  });
+
+  it("opens the palette from the sidebar's Search item through Payload's modal", () => {
+    const { rerender } = render(<Harness initialNavOpen />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(openModal).toHaveBeenCalledWith('command-palette');
+
+    rerender(<Harness initialNavOpen />);
+
+    expect(screen.getByRole('option', { name: 'Users' })).not.toBeNull();
+    expect(shell().dataset.navState).toBe('desktop-nav-open');
+  });
+
+  it('closes the phone drawer when Search opens the palette', () => {
+    isMobile = true;
+    render(<Harness initialNavOpen={false} />);
+    openFromPayloadHeader();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(openModal).toHaveBeenCalledWith('command-palette');
+    expect(shell().dataset.navState).toBe('mobile-nav-closed');
   });
 
   it('does not reuse Payload nav classes on the shell', () => {

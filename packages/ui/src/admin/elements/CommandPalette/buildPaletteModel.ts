@@ -3,7 +3,7 @@ import type { SearchIndexDescriptors } from 'frogbot';
 import type { Field, SanitizedCollectionConfig } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 
-import { getSettingsCollections } from '../../views/Settings/resolveSection.js';
+import { getSettingsCollections, type SettingsEntry } from '../../views/Settings/resolveSection.js';
 import {
   buildCollectionGroups,
   buildNavModel,
@@ -23,6 +23,11 @@ export type PaletteCollection = {
   searchFields: string[];
   slug: string;
   titleField: string;
+};
+
+export type BuildPaletteModelProps = BuildNavModelProps & {
+  /** The root `settings` pages the user can open, already filtered by their `access`. */
+  settingsEntries?: readonly SettingsEntry[];
 };
 
 export type PaletteModel = {
@@ -91,11 +96,15 @@ export function pickLexicalIndex(collection: SanitizedCollectionConfig): string 
   });
 }
 
-/** Builds the command palette's "go to" rows and searchable collections, in sidebar order, then Settings collections. */
-export function buildPaletteModel(props: BuildNavModelProps): PaletteModel {
+/** Builds the command palette's "go to" rows and searchable collections, in sidebar order, then Settings collections and pages. */
+export function buildPaletteModel({
+  settingsEntries = [],
+  ...props
+}: BuildPaletteModelProps): PaletteModel {
   const { config, i18n, permissions, visibleEntities } = props;
   const adminRoute = config.routes.admin;
   const collectionGroup = i18n.t('general:collections');
+  const settingsGroup = i18n.t('general:settings');
   const { groups, items } = buildCollectionGroups(props);
 
   const entries = [
@@ -110,10 +119,15 @@ export function buildPaletteModel(props: BuildNavModelProps): PaletteModel {
           visibleEntities.collections.includes(slug) && permissions.collections?.[slug]?.read,
       )
       .map(({ labels, slug }) => ({
-        group: i18n.t('general:settings'),
+        group: settingsGroup,
         label: getTranslation(labels.plural, i18n),
         path: formatAdminURL({ adminRoute, path: `/collections/${slug}` }),
       })),
+    ...settingsEntries.map((entry) => ({
+      group: settingsGroup,
+      label: getTranslation(entry.label, i18n),
+      path: formatAdminURL({ adminRoute, path: `/settings/${entry.path}` }),
+    })),
   ];
 
   const collectionByPath = new Map(

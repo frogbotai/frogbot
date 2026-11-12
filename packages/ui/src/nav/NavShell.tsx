@@ -31,7 +31,13 @@ export type NavShellProps = Omit<
  * and a drawer with a backdrop and Escape below 768px. The shell renders its own drawer toggle
  * unless the host supplies `drawer`.
  */
-export function NavShell({ children, initialOpen, scrollClassName, ...sidebar }: NavShellProps) {
+export function NavShell({
+  children,
+  initialOpen,
+  onSearch,
+  scrollClassName,
+  ...sidebar
+}: NavShellProps) {
   const { drawer: hostDrawer, navigate, pathname, preferences } = useNavAdapter();
   const [ownOpen, setOwnOpen] = useState(false);
   const drawer = hostDrawer ?? { open: ownOpen, setOpen: setOwnOpen, hydrated: true };
@@ -90,6 +96,13 @@ export function NavShell({ children, initialOpen, scrollClassName, ...sidebar }:
                 {...sidebar}
                 currentPath={pathname}
                 onNavigate={navigate}
+                onSearch={
+                  onSearch &&
+                  (() => {
+                    if (isMobile) setDrawerOpen(false);
+                    onSearch();
+                  })
+                }
                 onToggle={() => {
                   if (isMobile) {
                     setDrawerOpen(!drawerOpen);

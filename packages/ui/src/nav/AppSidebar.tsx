@@ -7,11 +7,14 @@ import {
   type ReactNode,
   useEffect,
   useState,
+  useSyncExternalStore,
 } from 'react';
 
+import { Shortcut } from '../components/shortcut.js';
 import { Tooltip } from '../components/tooltip.js';
 import FolderIcon from '../icons/icons/FolderIcon.js';
 import FrogBotFavicon from '../icons/icons/FrogBotFavicon.js';
+import SearchIcon from '../icons/icons/SearchIcon.js';
 import SidebarLeftIcon from '../icons/icons/SidebarLeftIcon.js';
 import { type IconName, iconRegistry, isIconName } from '../icons/registry.js';
 import { isRenderableNode } from '../lib/isRenderableNode.js';
@@ -47,6 +50,8 @@ export type AppSidebarProps = {
   sections?: ReactNode;
   settingsPath?: string;
   onNavigate: (path: string) => void;
+  /** Opens search; without it the sidebar has no Search item. */
+  onSearch?: () => void;
   onToggle: () => void;
   open: boolean;
 };
@@ -54,6 +59,45 @@ export type AppSidebarProps = {
 const baseClass = 'fb-app-sidebar';
 
 const classes = (...values: (false | string | undefined)[]) => values.filter(Boolean).join(' ');
+
+const subscribeNever = () => () => {};
+
+function SearchItem({
+  labelsVisible,
+  onSearch,
+  open,
+}: {
+  labelsVisible: boolean;
+  onSearch: () => void;
+  open: boolean;
+}) {
+  const hydrated = useSyncExternalStore(
+    subscribeNever,
+    () => true,
+    () => false,
+  );
+
+  return (
+    <Tooltip delay={0} disabled={open} label="Search" side="right">
+      <button
+        aria-keyshortcuts="Meta+K Control+K"
+        aria-label="Search"
+        className={classes(`${baseClass}__item`, `${baseClass}__search`, 'fb-slide-right-1')}
+        onClick={(event) => {
+          event.stopPropagation();
+          onSearch();
+        }}
+        type="button"
+      >
+        <SearchIcon className={`${baseClass}__icon`} size={24} />
+        {labelsVisible && <span className={`${baseClass}__label`}>Search</span>}
+        {labelsVisible && hydrated && (
+          <Shortcut className={`${baseClass}__shortcut`} shortcutKey="K" withCtrl />
+        )}
+      </button>
+    </Tooltip>
+  );
+}
 
 function SidebarNavItem({
   currentPath,
@@ -122,6 +166,7 @@ export function AppSidebar({
   logoutPath,
   navItems = [],
   onNavigate,
+  onSearch,
   onToggle,
   open,
   sections,
@@ -212,6 +257,7 @@ export function AppSidebar({
       </div>
 
       <nav className={`${baseClass}__nav`}>
+        {onSearch && <SearchItem labelsVisible={labelsVisible} onSearch={onSearch} open={open} />}
         {beforeNavLinks}
         {navItems.map(renderItem)}
         {open && sections}
