@@ -137,7 +137,7 @@ export function RecordPanelProvider({
     enabled && recordParam ? { id: recordParam, mode: 'edit' } : { mode: 'closed' },
   );
 
-  const [selected, setSelected] = useState<{ index: number; record: string }>();
+  const [tab, setTab] = useState<number>();
   const formRef = useRef<RecordPanelForm | undefined>(undefined);
   const pendingRef = useRef<(() => void) | undefined>(undefined);
   const listenersRef = useRef(new Set<(event: RecordPanelEvent) => void>());
@@ -145,6 +145,7 @@ export function RecordPanelProvider({
 
   useEffect(() => {
     if (!enabled) return;
+    setTab(undefined);
 
     setState((current) => {
       if (recordParam) {
@@ -160,6 +161,7 @@ export function RecordPanelProvider({
   const go = useCallback((next: RecordPanelState) => {
     formRef.current = undefined;
     setState(next);
+    setTab(undefined);
     replaceRecordParam(next.mode === 'edit' ? next.id : undefined);
   }, []);
 
@@ -261,20 +263,6 @@ export function RecordPanelProvider({
     });
   }, [adminRoute, collectionSlug, guard, router, state]);
 
-  const record =
-    state.mode === 'edit'
-      ? `edit:${state.id}`
-      : state.mode === 'create'
-        ? `create:${state.key}`
-        : '';
-
-  const tab = selected?.record === record ? selected.index : undefined;
-
-  const selectTab = useCallback(
-    (index: number | undefined) => setSelected(index === undefined ? undefined : { index, record }),
-    [record],
-  );
-
   const notify = useCallback((event: RecordPanelEvent) => {
     for (const listener of listenersRef.current) listener(event);
   }, []);
@@ -304,7 +292,7 @@ export function RecordPanelProvider({
       openId: state.mode === 'edit' ? state.id : undefined,
       reload,
       reset,
-      selectTab,
+      selectTab: setTab,
       setForm,
       settings,
       state,
@@ -323,7 +311,6 @@ export function RecordPanelProvider({
       open,
       reload,
       reset,
-      selectTab,
       setForm,
       settings,
       state,
