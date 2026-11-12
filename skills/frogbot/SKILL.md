@@ -32,6 +32,7 @@ Read the smallest relevant reference before editing:
 | Add root or collection HTTP routes                                                 | [ENDPOINTS.md](reference/ENDPOINTS.md)                             |
 | Configure database, storage, or email services                                     | [ADAPTERS.md](reference/ADAPTERS.md)                               |
 | Configure auth, admin UI, dashboard, navigation, preview, or localization          | [ADVANCED.md](reference/ADVANCED.md)                               |
+| Style a widget or custom view, or choose which fields a screen shows               | [ADMIN-DESIGN.md](reference/ADMIN-DESIGN.md)                       |
 | Author a config-transforming plugin                                                | [PLUGIN-DEVELOPMENT.md](reference/PLUGIN-DEVELOPMENT.md)           |
 | Configure and run agents or runtime skills                                         | [AGENTS.md](reference/AGENTS.md)                                   |
 | Define and register agent tools                                                    | [TOOLS.md](reference/TOOLS.md)                                     |
@@ -273,6 +274,8 @@ src/
 └── frogbot.config.ts
 ```
 
+Before you build a dashboard widget or custom view, or choose a collection's columns and fields, read [ADMIN-DESIGN.md](reference/ADMIN-DESIGN.md): built-in views first, `@frogbotai/ui` components and theme tokens, no hand-picked colours or font sizes, and plumbing fields hidden.
+
 Give every collection that shows in the sidebar an `admin.icon` that says what it holds, Users included; without one the sidebar shows a folder. Pick from the names in [COLLECTIONS.md](reference/COLLECTIONS.md#icons).
 
 Each collection is a TitleCase file with a named export, imported by its own path; when it grows hooks, access rules, or endpoints, move it to `<Name>/index.ts` — the config import doesn't change.
@@ -319,6 +322,7 @@ Prefer each bundled local file. If only this hosted entry is available, use its 
 | Endpoints               | [ENDPOINTS.md](reference/ENDPOINTS.md)                             | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/ENDPOINTS.md)               |
 | Adapters                | [ADAPTERS.md](reference/ADAPTERS.md)                               | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/ADAPTERS.md)                |
 | Advanced features       | [ADVANCED.md](reference/ADVANCED.md)                               | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/ADVANCED.md)                |
+| Admin design            | [ADMIN-DESIGN.md](reference/ADMIN-DESIGN.md)                       | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/ADMIN-DESIGN.md)            |
 | Plugin development      | [PLUGIN-DEVELOPMENT.md](reference/PLUGIN-DEVELOPMENT.md)           | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/PLUGIN-DEVELOPMENT.md)      |
 | Agents                  | [AGENTS.md](reference/AGENTS.md)                                   | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/AGENTS.md)                  |
 | Tools                   | [TOOLS.md](reference/TOOLS.md)                                     | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/TOOLS.md)                   |
