@@ -4848,6 +4848,8 @@ describe('frogbot sanitize', () => {
         'get /frogbot',
         'get /frogbot/app-icon/:size',
         'get /frogbot/app-manifest',
+        'head /frogbot/app-icon/:size',
+        'head /frogbot/app-manifest',
         'post /agents/:slug',
         'get /agents/:slug/chats/:chatId/pending',
         'post /agents/:slug/chats/:chatId/settle',
