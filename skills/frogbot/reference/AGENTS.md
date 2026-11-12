@@ -102,7 +102,7 @@ See the [Tools skill reference](https://raw.githubusercontent.com/frogbotai/frog
 
 ## Runtime skills
 
-`AgentConfig.skills` contains runtime `SkillConfig` values. FrogBot exposes them to that running agent through `list_skills`, `load_skill`, and `load_skill_resource`; instruction and resource content may be strings or functions receiving `{ req, frogbot }`.
+`AgentConfig.skills` contains runtime `SkillConfig` values. FrogBot exposes them to that running agent through `list_skills`, `load_skill`, and `load_skill_resource`; instruction and resource content may be strings or functions receiving `{ req, frogbot }`. `resources` itself may be a function receiving `{ req }`, called on every `list_skills` and `load_skill_resource`, for a list that changes while the app runs (a folder of files); its entries are checked when it runs.
 
 ```ts
 import type { AgentConfig, SkillConfig } from 'frogbot';

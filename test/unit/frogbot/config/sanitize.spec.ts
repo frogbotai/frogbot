@@ -5075,6 +5075,20 @@ describe('frogbot sanitize', () => {
       ).not.toThrow();
     });
 
+    it('accepts function skill resources without calling them', () => {
+      const resources = vi.fn(() => []);
+
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai,
+            agents: [{ ...agent, skills: [{ slug: 'docs', instructions: 'Use it', resources }] }],
+          }),
+        ),
+      ).not.toThrow();
+      expect(resources).not.toHaveBeenCalled();
+    });
+
     it('rejects duplicate skill resource paths', () => {
       expect(() =>
         sanitize(
@@ -5097,7 +5111,7 @@ describe('frogbot sanitize', () => {
             ],
           }),
         ),
-      ).toThrow("Duplicate resource path 'api.md'");
+      ).toThrow("duplicate resource path 'api.md'");
     });
 
     it.each(['list_skills', 'load_skill', 'load_skill_resource'])(
