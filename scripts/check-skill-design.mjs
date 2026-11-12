@@ -18,9 +18,9 @@ const CODE_SPAN = /`([^`\n]+)`/g;
 
 const TOKEN = /--[a-z][\w-]*/g;
 
-const COMPONENT = /\b[A-Z][a-z]+(?:[A-Z][a-z]*)*\b/g;
+const COMPONENT = /^[A-Z][A-Za-z]+$/;
 
-const JSX_TAG = /<([A-Z][A-Za-z]*)/g;
+const JSX_TAG = /(?<![\w.])<([A-Z][A-Za-z]*)(?![\w.])/g;
 
 const UI_IMPORT =
   /import\s*(?:type\s+)?(?:(\w+)\s*,?\s*)?(?:\{([^}]*)\})?\s*from\s*['"]@frogbotai\/ui['"]/g;
@@ -90,7 +90,11 @@ export function namedInDesign(markdown) {
     for (const [, span] of text.matchAll(CODE_SPAN)) {
       for (const [token] of span.matchAll(TOKEN)) tokens.push({ name: token, line });
 
-      for (const [name] of span.matchAll(COMPONENT)) components.push({ name, line });
+      const parts = span.split(/,\s*/);
+
+      if (parts.every((part) => COMPONENT.test(part))) {
+        for (const name of parts) components.push({ name, line });
+      }
     }
   }
 

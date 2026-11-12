@@ -54,6 +54,14 @@ describe('checkDesign', () => {
     ]);
   });
 
+  it('catches acronym names, and skips type arguments, member tags and phrases', () => {
+    expect(
+      check(
+        'Use `KPICard`, `Promise<void>` or `Build all`.\n\n```tsx\nconst a: Record<string, number> = {};\nconst b = <React.Fragment />;\n```\n',
+      ),
+    ).toEqual([`${DESIGN}:1 names KPICard, which @frogbotai/ui doesn't export`]);
+  });
+
   it('passes the real skill file', () => {
     expect(checkDesign(readDesign())).toEqual([]);
   });
