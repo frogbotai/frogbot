@@ -23,7 +23,8 @@ export const AgentSelector = memo(function AgentSelector({
       options={agents.map((agent) => ({
         value: agent.slug,
         label: agent.label,
-        icon: 'robot',
+        icon: 'brand-frog-bot',
+        image: agent.profile?.avatar,
       }))}
       onChange={onAgentChange}
     />

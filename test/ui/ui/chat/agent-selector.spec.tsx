@@ -52,14 +52,19 @@ describe('AgentSelector', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /Ada/ })).toBeTruthy());
     await user.click(screen.getByRole('button', { name: /Ada/ }));
 
-    expect(screen.getByRole('menuitem', { name: /Ada/ }).querySelector('svg')).toBeTruthy();
+    expect(
+      screen.getByRole('menuitem', { name: /Ada/ }).querySelector('img')?.getAttribute('src'),
+    ).toBe('/ada.png');
+    expect(
+      screen.getByRole('menuitem', { name: /sales/ }).querySelector('.lucide-brand-frog-bot-icon'),
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole('menuitem', { name: /sales/ }));
 
     expect(onAgentChange).toHaveBeenCalledWith('sales');
   });
 
-  it('renders the agent fallback without an avatar', async () => {
+  it('shows the FrogBot face, not the robot, for an agent without an avatar', async () => {
     const adapter = createRestChatAdapter({ fetch: fetchManifest });
 
     render(
@@ -70,6 +75,27 @@ describe('AgentSelector', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: /sales/ })).toBeTruthy());
 
-    expect(screen.getByRole('button', { name: /sales/ }).querySelector('svg')).toBeTruthy();
+    const trigger = screen.getByRole('button', { name: /sales/ });
+
+    expect(trigger.querySelector('.lucide-brand-frog-bot-icon')).toBeTruthy();
+    expect(trigger.querySelector('.lucide-robot-icon')).toBeNull();
+    expect(trigger.querySelector('img')).toBeNull();
+  });
+
+  it("shows the agent's avatar in the trigger", async () => {
+    const adapter = createRestChatAdapter({ fetch: fetchManifest });
+
+    render(
+      <ChatProvider adapter={adapter}>
+        <AgentSelector selectedAgent="support" onAgentChange={() => undefined} />
+      </ChatProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /Ada/ })).toBeTruthy());
+
+    const trigger = screen.getByRole('button', { name: /Ada/ });
+
+    expect(trigger.querySelector('img')?.getAttribute('src')).toBe('/ada.png');
+    expect(trigger.querySelector('svg.fb-composer-select__icon')).toBeNull();
   });
 });
