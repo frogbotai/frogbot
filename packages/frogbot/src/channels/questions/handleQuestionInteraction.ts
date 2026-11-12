@@ -1,7 +1,7 @@
 import type { Author, Thread } from 'chat';
 import { NotFound } from 'payload';
 
-import { AgentServiceError, canUseAgent } from '../../agents/service.js';
+import { canUseAgent, isAgentAccessDenial } from '../../agents/service.js';
 import { actorFromRequest } from '../../chat/turn/actor.js';
 import { TurnError } from '../../chat/turn/errors.js';
 import type { ToolPart } from '../../chat/turn/messages.js';
@@ -430,7 +430,7 @@ function settleFailure(
 ): { kind: 'denied' } | { kind: 'stale' } | { kind: 'rejected'; reason: string } {
   if (error instanceof NotFound) return { kind: 'denied' };
 
-  if (error instanceof AgentServiceError && error.status === 403) return { kind: 'denied' };
+  if (isAgentAccessDenial(error)) return { kind: 'denied' };
 
   if (!(error instanceof TurnError)) throw error;
 
