@@ -272,28 +272,28 @@ describe('connections API', () => {
     expect(connectionsState(api).credentialKeys.size).toBe(512);
   });
 
-  it('drops a disappeared owner/piece identity before factory fallback', async () => {
-    const { api, req, piece, find } = await setup({ row: {}, auth: { token: 'factory' } });
+  it('falls back to factory auth when the row disappears', async () => {
+    const { req, piece, find } = await setup({ row: {}, auth: { token: 'factory' } });
     const first = await piece.client({ req });
     find.mockResolvedValueOnce({ docs: [] });
 
     expect(await piece.client({ req })).toEqual({ auth: { token: 'factory' } });
-    expect(connectionsState(api).credentialKeys.size).toBe(0);
-    expect(await piece.client({ req })).not.toBe(first);
+    expect(await piece.client({ req })).toBe(first);
   });
 
-  it('replaces an owner/piece identity when the stored row changes', async () => {
+  it('keys identities by row, so another row gets another client', async () => {
     const { api, req, piece, stored } = await setup({ row: {} });
     const first = await piece.client({ req });
     stored!.id = 'replacement';
 
-    expect(await piece.client({ req })).not.toBe(first);
-    expect(connectionsState(api).credentialKeys.size).toBe(1);
+    const second = await piece.client({ req });
+
+    expect(second).not.toBe(first);
+    expect(connectionsState(api).credentialKeys.size).toBe(2);
 
     stored!.id = 'connection';
 
-    expect(await piece.client({ req })).not.toBe(first);
-    expect(connectionsState(api).credentialKeys.size).toBe(1);
+    expect(await piece.client({ req })).toBe(first);
   });
 
   it('prunes disappeared rows on listing without dropping other owners', async () => {

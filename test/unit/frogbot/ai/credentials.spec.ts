@@ -153,6 +153,23 @@ describe('linked provider credential', () => {
     expect(authorizations).toEqual([]);
   });
 
+  it('asks for a default account when several are linked and none is the default', async () => {
+    await expect(run({ apiKey: 'sk-app', req: failing('ambiguous') })).resolves.toMatchObject({
+      status: 401,
+      message: 'Choose a default OpenAI account in Settings → Linked accounts.',
+    });
+
+    expect(authorizations).toEqual([]);
+  });
+
+  it('rethrows a forbidden pinned account instead of asking to reconnect', async () => {
+    const error = await run({ apiKey: 'sk-app', req: failing('forbidden') });
+
+    expect(JSON.stringify(error)).not.toContain('Reconnect');
+    expect(String((error as Error).message)).toContain('Connection failed.');
+    expect(authorizations).toEqual([]);
+  });
+
   it("passes the piece's own credential error through unchanged, with no app-key request", async () => {
     credentialError = new Error('Sign in to ChatGPT again.');
 

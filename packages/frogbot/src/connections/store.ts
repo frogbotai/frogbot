@@ -1,6 +1,7 @@
 import type { FrogBot } from '../frogbot.js';
 import type { PieceJSON, PieceOAuthAccount } from '../pieces/types.js';
 import { CredentialCryptoError } from './encryption.js';
+import { OAuthError } from './oauth/error.js';
 import type { SanitizedConnectionsConfig } from './types.js';
 
 export type ConnectionOwner = { id: number | string; collection: string };
@@ -12,6 +13,10 @@ export type ConnectionRow = {
   method: 'oauth' | 'secret';
   credential: string;
   account?: PieceOAuthAccount | null;
+  /** The provider account id, or `''` for a link with no account (an API key). */
+  accountId: string;
+  /** Whether calls that pin no account use this row. Exactly one row per owner and piece. */
+  isDefault: boolean;
   scopes: string[];
   expiresAt?: string | null;
   status: 'active' | 'revoked' | 'error';
@@ -25,6 +30,8 @@ export type ConnectionStoredValue = ConnectionMetadata & { credential: PieceJSON
 
 export type ConnectionStoreKey = { owner: ConnectionOwner; piece: string };
 
+export type ConnectionID = number | string;
+
 export type ConnectionStoreWrite = {
   method: ConnectionRow['method'];
   credential: PieceJSON;
@@ -32,13 +39,27 @@ export type ConnectionStoreWrite = {
   scopes?: string[];
   expiresAt?: string | null;
   status?: ConnectionRow['status'];
+  /**
+   * Saves onto this row only. The write must carry the row's provider account, or it throws
+   * `OAuthError('account')` and writes nothing.
+   */
+  reconnect?: ConnectionID;
 };
 
+/**
+ * Row operations for one owner and piece, run while their lock is held. Every write leaves
+ * exactly one default row when any row remains.
+ */
 export type ConnectionStoreLock = {
   signal: AbortSignal;
-  get(): Promise<ConnectionStoredValue | undefined>;
+  /** The owner's rows for the piece, oldest first. */
+  rows(): Promise<ConnectionMetadata[]>;
+  /** The row with `id`, or with no `id` the only row or else the default row. */
+  get(id?: ConnectionID): Promise<ConnectionStoredValue | undefined>;
   upsert(data: ConnectionStoreWrite): Promise<ConnectionMetadata>;
-  delete(args?: { id?: number | string }): Promise<boolean>;
+  /** Deletes the row with `id` (with no `id`, the default row) and promotes the oldest left. */
+  delete(id?: ConnectionID): Promise<boolean>;
+  setDefault(id: ConnectionID): Promise<ConnectionMetadata | undefined>;
 };
 
 function metadata(row: ConnectionRow): ConnectionMetadata {
@@ -48,12 +69,29 @@ function metadata(row: ConnectionRow): ConnectionMetadata {
     piece: row.piece,
     method: row.method,
     account: row.account,
+    accountId: row.accountId ?? '',
+    isDefault: row.isDefault === true,
     scopes: row.scopes ?? [],
     expiresAt: row.expiresAt,
     status: row.status,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
+}
+
+const sameID = (a: ConnectionID, b: ConnectionID) => String(a) === String(b);
+
+function byAge(a: ConnectionRow, b: ConnectionRow): number {
+  const time = Date.parse(a.createdAt) - Date.parse(b.createdAt);
+  if (time) return time;
+  const [x, y] = [String(a.id), String(b.id)];
+
+  return x.length - y.length || (x < y ? -1 : x > y ? 1 : 0);
+}
+
+/** The row unpinned calls use: the only row, else the default row. */
+export function defaultRow<T extends Pick<ConnectionRow, 'isDefault'>>(rows: T[]): T | undefined {
+  return rows.length === 1 ? rows[0] : rows.find((row) => row.isDefault);
 }
 
 type ConnectionStoreFrogBot = Pick<FrogBot, 'find' | 'create' | 'update' | 'delete' | 'kv'>;
@@ -99,21 +137,36 @@ function assertKey(state: ConnectionStoreState, { owner, piece }: ConnectionStor
   return config.slug;
 }
 
-async function findRow(
+async function findRows(
   { frogbot }: ConnectionStoreState,
   slug: string,
   { owner, piece }: ConnectionStoreKey,
-): Promise<ConnectionRow | undefined> {
+): Promise<ConnectionRow[]> {
   const result = await frogbot.find({
     collection: slug,
     where: { and: [{ owner: { equals: owner.id } }, { piece: { equals: piece } }] },
     depth: 0,
-    limit: 1,
+    pagination: false,
     overrideAccess: true,
     showHiddenFields: true,
   });
 
-  return result.docs[0] as ConnectionRow | undefined;
+  return (result.docs as ConnectionRow[]).sort(byAge);
+}
+
+async function decrypt(
+  { config }: ConnectionStoreState,
+  row: ConnectionRow | undefined,
+): Promise<ConnectionStoredValue | undefined> {
+  if (!row) return;
+
+  try {
+    const credential = JSON.parse(await config.encryption.decrypt(row.credential));
+
+    return { ...metadata(row), credential };
+  } catch {
+    throw new CredentialCryptoError();
+  }
 }
 
 export class ConnectionStore {
@@ -145,33 +198,41 @@ export class ConnectionStore {
       overrideAccess: true,
     });
 
-    return (result.docs as ConnectionRow[]).map(metadata);
+    return (result.docs as ConnectionRow[]).sort(byAge).map(metadata);
   }
 
-  async get(key: ConnectionStoreKey): Promise<ConnectionStoredValue | undefined> {
+  async rows(key: ConnectionStoreKey): Promise<ConnectionMetadata[]> {
     const state = storeState(this);
-
     const slug = assertKey(state, key);
 
-    const row = await findRow(state, slug, key);
+    return (await findRows(state, slug, key)).map(metadata);
+  }
 
-    if (!row) return;
+  /** The row with `id`, or with no `id` the only row or else the default row. */
+  async get({
+    id,
+    ...key
+  }: ConnectionStoreKey & { id?: ConnectionID }): Promise<ConnectionStoredValue | undefined> {
+    const state = storeState(this);
+    const slug = assertKey(state, key);
+    const rows = await findRows(state, slug, key);
 
-    try {
-      const credential = JSON.parse(await state.config.encryption.decrypt(row.credential));
-
-      return { ...metadata(row), credential };
-    } catch {
-      throw new CredentialCryptoError();
-    }
+    return decrypt(
+      state,
+      id === undefined ? defaultRow(rows) : rows.find((row) => sameID(row.id, id)),
+    );
   }
 
   upsert({ owner, piece, ...data }: ConnectionStoreKey & ConnectionStoreWrite) {
     return this.withLock({ owner, piece, fn: (locked) => locked.upsert(data) });
   }
 
-  delete({ owner, piece, id }: ConnectionStoreKey & { id?: number | string }) {
-    return this.withLock({ owner, piece, fn: (locked) => locked.delete({ id }) });
+  delete({ owner, piece, id }: ConnectionStoreKey & { id?: ConnectionID }) {
+    return this.withLock({ owner, piece, fn: (locked) => locked.delete(id) });
+  }
+
+  setDefault({ owner, piece, id }: ConnectionStoreKey & { id: ConnectionID }) {
+    return this.withLock({ owner, piece, fn: (locked) => locked.setDefault(id) });
   }
 
   async withLock<T>({
@@ -194,17 +255,56 @@ export class ConnectionStore {
         if (!open) throw new Error('Connection lock is closed.');
       };
 
+      const rows = async () => {
+        check();
+        const found = await findRows(state, slug, key);
+        check();
+
+        return found;
+      };
+
+      const settle = async (keep?: ConnectionID): Promise<ConnectionRow[]> => {
+        const current = await rows();
+        const target =
+          (keep !== undefined && current.find((row) => sameID(row.id, keep))) ||
+          current.find((row) => row.isDefault) ||
+          current[0];
+
+        const changes = current
+          .filter((row) => row.isDefault !== (row === target))
+          .sort((a, b) => Number(b === target) - Number(a === target));
+
+        for (const row of changes) {
+          await frogbot.update({
+            collection: slug,
+            id: row.id,
+            data: { isDefault: row === target },
+            depth: 0,
+            overrideAccess: true,
+          });
+
+          check();
+        }
+
+        return current.map((row) => ({ ...row, isDefault: row === target }));
+      };
+
       try {
         return await fn({
           signal,
-          get: async () => {
-            check();
-            const value = await this.get(key);
+          rows: async () => (await rows()).map(metadata),
+          get: async (id) => {
+            const found = await rows();
+            const value = await decrypt(
+              state,
+              id === undefined ? defaultRow(found) : found.find((row) => sameID(row.id, id)),
+            );
+
             check();
 
             return value;
           },
-          upsert: async (data) => {
+          upsert: async ({ reconnect, ...data }) => {
             check();
 
             if (!['oauth', 'secret'].includes(data.method) || !config.entries[piece][data.method]) {
@@ -214,16 +314,26 @@ export class ConnectionStore {
             const serialized = JSON.stringify(data.credential);
             if (serialized === undefined) throw new Error('Connection credential must be JSON.');
             const credential = await config.encryption.encrypt(serialized);
-            check();
-            const row = await findRow(state, slug, key);
-            check();
+            const accountId = data.account?.id ?? '';
+            const current = await rows();
+            const row =
+              reconnect === undefined
+                ? current.find((row) => (row.accountId ?? '') === accountId)
+                : current.find((row) => sameID(row.id, reconnect));
 
+            if (reconnect !== undefined && (row?.accountId ?? '') !== accountId) {
+              throw new OAuthError('account');
+            }
+
+            const isDefault = row?.isDefault === true || !current.some((row) => row.isDefault);
             const write = {
               owner: key.owner.id,
               piece,
               method: data.method,
               credential,
               account: data.account ?? null,
+              accountId,
+              isDefault,
               scopes: data.scopes ?? [],
               expiresAt: data.expiresAt ?? null,
               status: data.status ?? 'active',
@@ -236,19 +346,21 @@ export class ConnectionStore {
               overrideAccess: true,
             };
 
-            const saved = row
-              ? await frogbot.update({ ...options, id: row.id })
-              : await frogbot.create(options);
+            const saved = (
+              row ? await frogbot.update({ ...options, id: row.id }) : await frogbot.create(options)
+            ) as ConnectionRow;
 
             check();
+            const settled = await settle(isDefault ? saved.id : undefined);
 
-            return metadata(saved as ConnectionRow);
+            return metadata(settled.find((row) => sameID(row.id, saved.id)) ?? saved);
           },
-          delete: async ({ id } = {}) => {
-            check();
-            const row = await findRow(state, slug, key);
-            check();
-            if (!row || (id !== undefined && String(id) !== String(row.id))) return false;
+          delete: async (id) => {
+            const current = await rows();
+            const row =
+              id === undefined ? defaultRow(current) : current.find((row) => sameID(row.id, id));
+
+            if (!row) return false;
 
             await frogbot.delete({
               collection: slug,
@@ -257,8 +369,17 @@ export class ConnectionStore {
             });
 
             check();
+            await settle();
 
             return true;
+          },
+          setDefault: async (id) => {
+            const current = await rows();
+            if (!current.some((row) => sameID(row.id, id))) return;
+            const settled = await settle(id);
+            const row = settled.find((row) => sameID(row.id, id));
+
+            return row && metadata(row);
           },
         });
       } finally {

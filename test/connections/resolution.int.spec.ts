@@ -218,7 +218,7 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     expect(client).toHaveBeenCalledTimes(2);
   });
 
-  it('replaces OAuth with a static credential and clears token metadata', async () => {
+  it('adds a static credential beside an OAuth account without moving the default', async () => {
     const row = await store.upsert({
       owner,
       piece: 'example',
@@ -232,15 +232,21 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     expect(await piece.read({ input: {}, req: request() })).toBe('oauth-token');
 
     const response = await link({ token: 'static-token' });
+    const secret = await response.json();
 
-    expect(await response.json()).toMatchObject({
-      id: row.id,
+    expect(secret).toMatchObject({
       method: 'secret',
+      accountId: '',
+      isDefault: false,
       scopes: [],
       account: null,
       expiresAt: null,
     });
-    expect(await piece.read({ input: {}, req: request() })).toBe('static-token');
+    expect(secret.id).not.toBe(row.id);
+    expect(await piece.read({ input: {}, req: request() })).toBe('oauth-token');
+    expect(await piece.read({ input: {}, req: request(), connection: secret.id })).toBe(
+      'static-token',
+    );
   });
 
   it('asks a connection linked before a scope was added to re-link', async () => {

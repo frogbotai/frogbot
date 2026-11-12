@@ -52,9 +52,9 @@ describe(`piece-run OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
   const request = (path: string, init: RequestInit = {}) =>
     fetch(new URL(path, baseURL), { ...init, redirect: 'manual' });
 
-  const authorize = async (authorization: string) => {
+  const authorize = async (authorization: string, reconnect?: number | string) => {
     const response = await request(
-      `/rest/v1/connections/planned/authorize?returnTo=${encodeURIComponent('/control/settings/connections')}`,
+      `/rest/v1/connections/planned/authorize?returnTo=${encodeURIComponent('/control/settings/connections')}${reconnect === undefined ? '' : `&reconnect=${reconnect}`}`,
       { headers: { authorization } },
     );
 
@@ -202,4 +202,55 @@ describe(`piece-run OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
       expect(await rows()).toEqual([]);
     },
   );
+
+  it('reconnects onto the chosen row and refuses a different account without writing', async () => {
+    const link = async (access: string, id: string, reconnect?: number | string) =>
+      (await authorize(users[0].authorization, reconnect)).save({
+        tokens: tokens(access),
+        account: { id, label: id },
+      });
+
+    await link('first', 'sub-1');
+    await link('second', 'sub-2');
+    const [first, second] = (await frogbot.connections.list({
+      req: await userRequest(users[0].id),
+    })) as { id: number | string; accountId: string }[];
+
+    await expect(link('wrong', 'sub-2', first.id)).rejects.toMatchObject({ code: 'account' });
+
+    await link('renewed', 'sub-1', first.id);
+
+    const after = await frogbot.connections.list({ req: await userRequest(users[0].id) });
+
+    expect(after.map((row) => [row.id, row.accountId, row.isDefault])).toEqual([
+      [first.id, 'sub-1', true],
+      [second.id, 'sub-2', false],
+    ]);
+    await expect(
+      frogbot.connections.resolve({ piece, req: await userRequest(users[0].id) }),
+    ).resolves.toEqual({ token: 'plan-renewed', account: 'renewed' });
+    await expect(
+      frogbot.connections.resolve({
+        piece,
+        req: await userRequest(users[0].id),
+        connection: second.id,
+      }),
+    ).resolves.toEqual({ token: 'plan-second', account: 'second' });
+  });
+
+  it("refuses to reconnect another user's row", async () => {
+    await (
+      await authorize(users[0].authorization)
+    ).save({
+      tokens: tokens('first'),
+      account: { id: 'sub-1', label: 'First' },
+    });
+
+    const [row] = await rows();
+    const started = await request(`/rest/v1/connections/planned/authorize?reconnect=${row.id}`, {
+      headers: { authorization: users[1].authorization },
+    });
+
+    expect(started.status).toBe(404);
+  });
 });

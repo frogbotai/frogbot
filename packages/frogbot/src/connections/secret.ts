@@ -117,5 +117,26 @@ export function buildSecretEndpoints({
         }
       },
     },
+    {
+      method: 'post',
+      path: '/:id/default',
+      handler: async (req) => {
+        const denied = access(req);
+        if (denied) return denied;
+        const id = req.routeParams?.id;
+        try {
+          const row =
+            typeof id === 'string' && id
+              ? await req.frogbot.connections.setDefault({ req, id })
+              : undefined;
+
+          return row
+            ? Response.json(row)
+            : Response.json({ error: 'Connection not found' }, { status: 404 });
+        } catch (error) {
+          return failure(error);
+        }
+      },
+    },
   ];
 }

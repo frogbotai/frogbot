@@ -17,6 +17,7 @@ import { KVLockContentionError } from '../../packages/frogbot/src/kv/errors.js';
 import { definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
 import type { PieceOAuthRecipe } from '../../packages/frogbot/src/pieces/types.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
+import { startFakeProvider } from './fakeProvider.js';
 
 const createPiece = definePiece({
   slug: 'example',
@@ -39,13 +40,13 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
   const piece = 'example';
   const credential = { accessToken: 'private-access-token', refreshToken: 'private-refresh-token' };
   let server: ReturnType<typeof serve>;
-  let provider: ReturnType<typeof serve>;
+  let provider: Awaited<ReturnType<typeof startFakeProvider>>;
   let baseURL: string;
   let authorization: string;
   let otherAuthorization: string;
   let customerAuthorization: string;
   let linkedPieces: ReturnType<typeof linkedPiece>[];
-  const exchanges: URLSearchParams[] = [];
+  let exchanges: URLSearchParams[] = [];
   const accounts: { auth: unknown; user: unknown }[] = [];
 
   const linkedAuth = z.object({ apiKey: z.string().min(1) });
@@ -123,35 +124,9 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       );
     });
 
-    const providerURL = await new Promise<string>((resolve) => {
-      provider = serve(
-        {
-          port: 0,
-          hostname: '127.0.0.1',
-          fetch: async (req) => {
-            const params = new URLSearchParams(await req.text());
-            exchanges.push(params);
-            const code = params.get('code');
-            if (code === 'provider-error') {
-              return Response.json({ error: 'private-provider-error' }, { status: 400 });
-            }
-
-            if (code === 'malformed') return Response.json({ access_token: '' });
-
-            return Response.json({
-              access_token: `fresh-${code}`,
-              ...(code === 'replacement'
-                ? {}
-                : { refresh_token: 'private-refresh-token', expires_in: 3600 }),
-              ...(code === 'no-scope'
-                ? {}
-                : { scope: code === 'empty-scope' ? '' : 'read write read' }),
-            });
-          },
-        },
-        (address) => resolve(`http://127.0.0.1:${address.port}`),
-      );
-    });
+    provider = await startFakeProvider();
+    exchanges = provider.exchanges;
+    const providerURL = provider.url;
 
     linkedPieces = ['case-c', 'case-ac', 'case-bc', 'case-abc'].map((slug) =>
       linkedPiece(providerURL, slug),
@@ -227,13 +202,13 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
   });
 
   afterAll(async () => {
-    for (const listener of [server, provider]) {
-      if (listener) {
-        await new Promise<void>((resolve, reject) =>
-          listener.close((error) => (error ? reject(error) : resolve())),
-        );
-      }
+    if (server) {
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
     }
+
+    await provider?.close();
 
     await frogbot?.destroy();
   });
@@ -314,7 +289,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     expect(await store.get({ owner, piece })).toMatchObject({ credential });
   });
 
-  it('enforces owner/piece uniqueness at the database layer', async () => {
+  it('enforces owner/piece/account uniqueness at the database layer', async () => {
     const saved = await store.upsert({ owner, piece, method: 'oauth', credential });
     const encrypted = await frogbot.config.connections.encryption.encrypt(JSON.stringify('secret'));
     const data = {
@@ -322,10 +297,18 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       piece,
       method: 'secret',
       credential: encrypted,
+      accountId: '',
+      isDefault: false,
       status: 'active',
     };
 
     await expect(frogbot.db.create({ collection: 'connections', data })).rejects.toThrow();
+    await expect(
+      frogbot.db.create({ collection: 'connections', data: { ...data, accountId: 'another' } }),
+    ).resolves.toMatchObject({ accountId: 'another' });
+    await expect(
+      frogbot.db.create({ collection: 'connections', data: { ...data, accountId: 'another' } }),
+    ).rejects.toThrow();
     await expect(
       frogbot.db.create({ collection: 'connections', data: { ...data, owner: other.id } }),
     ).resolves.toMatchObject({ owner: other.id });
@@ -335,7 +318,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     expect(await store.get({ owner, piece })).toMatchObject({ id: saved.id, credential });
   });
 
-  it('replaces the same row and clears obsolete OAuth metadata', async () => {
+  it('replaces the same account in its row and clears obsolete OAuth metadata', async () => {
     const saved = await store.upsert({
       owner,
       piece,
@@ -350,21 +333,24 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     const replacement = await store.upsert({
       owner,
       piece,
-      method: 'secret',
-      credential: { apiKey: 'replacement-secret' },
+      method: 'oauth',
+      credential: { accessToken: 'replacement' },
+      account: { id: 'account-1', label: 'First again' },
     });
 
     expect(replacement).toMatchObject({
       id: saved.id,
       piece,
-      method: 'secret',
-      account: null,
+      method: 'oauth',
+      accountId: 'account-1',
+      isDefault: true,
+      account: { id: 'account-1', label: 'First again' },
       scopes: [],
       expiresAt: null,
       status: 'active',
     });
     expect(await store.get({ owner, piece })).toMatchObject({
-      credential: { apiKey: 'replacement-secret' },
+      credential: { accessToken: 'replacement' },
     });
     expect(await store.list({ owner })).toHaveLength(1);
   });
@@ -513,25 +499,28 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
   );
 
   it.each(['case-bc', 'case-abc'])(
-    'replaces secret → OAuth → OAuth → secret in one row for %s',
+    'keeps one key row and one row per OAuth account for %s',
     async (piece) => {
-      const saveSecret = () =>
+      const saveSecret = (apiKey: string) =>
         request(`/rest/v1/connections/${piece}`, {
           method: 'POST',
           headers: { authorization, 'content-type': 'application/json' },
-          body: JSON.stringify({ apiKey: 'static-secret' }),
+          body: JSON.stringify({ apiKey }),
         });
 
-      const saved = await saveSecret();
+      const saved = await saveSecret('static-secret');
 
       expect(saved.status).toBe(200);
 
-      const id = (await saved.json()).id;
+      const secret = await saved.json();
 
+      expect(secret).toMatchObject({ accountId: '', isDefault: true });
       expect((await callback(await authorize(piece))).status).toBe(302);
-      expect(await store.get({ owner, piece })).toMatchObject({
-        id,
-        method: 'oauth',
+
+      const oauth = (await store.list({ owner })).find((row) => row.method === 'oauth')!;
+
+      expect(oauth).toMatchObject({ accountId: 'account', isDefault: false });
+      expect(await store.get({ owner, piece, id: oauth.id })).toMatchObject({
         credential: { refresh_token: 'private-refresh-token' },
       });
 
@@ -539,23 +528,22 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       replacement.callback.searchParams.set('code', 'replacement');
 
       expect((await callback(replacement, authorization)).status).toBe(302);
-      expect(await store.get({ owner, piece })).toMatchObject({
-        id,
+      expect(await store.get({ owner, piece, id: oauth.id })).toMatchObject({
         method: 'oauth',
         expiresAt: null,
         credential: { access_token: 'fresh-replacement' },
       });
-      expect((await store.get({ owner, piece }))!.credential).not.toHaveProperty('refresh_token');
-      expect((await saveSecret()).status).toBe(200);
+      expect((await store.get({ owner, piece, id: oauth.id }))!.credential).not.toHaveProperty(
+        'refresh_token',
+      );
+      expect((await saveSecret('second-secret')).status).toBe(200);
       expect(await store.get({ owner, piece })).toMatchObject({
-        id,
+        id: secret.id,
         method: 'secret',
-        scopes: [],
-        expiresAt: null,
-        account: null,
-        credential: { apiKey: 'static-secret' },
+        isDefault: true,
+        credential: { apiKey: 'second-secret' },
       });
-      expect(await store.list({ owner })).toHaveLength(1);
+      expect(await store.list({ owner })).toHaveLength(2);
     },
   );
 
