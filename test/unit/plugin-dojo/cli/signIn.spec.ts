@@ -1,6 +1,14 @@
+import { readFile } from 'node:fs/promises';
+
 import { describe, expect, it } from 'vitest';
 
-import { deviceLogin, readToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
+import {
+  authPath,
+  deviceLogin,
+  readToken,
+} from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
+import { ShareError } from '../../../../packages/plugins/plugin-dojo/src/cli/error.js';
+import { runLogout } from '../../../../packages/plugins/plugin-dojo/src/cli/logout.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO } from './helpers.js';
 
@@ -8,11 +16,12 @@ async function setup() {
   const dojo = await startFakeDojo();
   const env = { XDG_CONFIG_HOME: await tempDir() };
 
-  const login = async (options: Omit<Parameters<typeof testIO>[0], 'cwd' | 'env'> = {}) => {
+  const login = async (
+    options: Omit<Parameters<typeof testIO>[0], 'cwd' | 'env'> = {},
+    waits = true,
+  ) => {
     const io = testIO({ cwd: env.XDG_CONFIG_HOME, env, ...options });
-    const token = await deviceLogin({ ...io.io, waits: true }, dojo.url).catch(
-      (error: Error) => error,
-    );
+    const token = await deviceLogin({ ...io.io, waits }, dojo.url).catch((error: Error) => error);
 
     return { token, ...io };
   };
@@ -104,5 +113,65 @@ describe('Dojo device sign-in', () => {
     );
     expect(result.stdout()).toContain('[frogbot] The sign-in code expired.');
     expect(codeRequests()).toHaveLength(1);
+  });
+});
+
+describe('Dojo device sign-in without a terminal', () => {
+  const step = (token: unknown) => (token instanceof ShareError ? token.step : undefined);
+
+  it('hands two runs started at once the same code, so one confirmation signs in', async () => {
+    const { dojo, env, login } = await setup();
+
+    dojo.distinctCodes = true;
+
+    const [a, b] = await Promise.all([login({}, false), login({}, false)]);
+    const kept = JSON.parse(await readFile(authPath(env), 'utf8')) as {
+      pending: Record<string, { userCode: string }>;
+    };
+
+    expect(step(a.token)?.userCode).toBe(step(b.token)?.userCode);
+    expect(kept.pending[dojo.url]?.userCode).toBe(step(a.token)?.userCode);
+  });
+
+  it('keeps the code when Dojo cannot be reached on the rerun', async () => {
+    const { dojo, login } = await setup();
+
+    await login({}, false);
+
+    const fetchBefore = globalThis.fetch;
+
+    globalThis.fetch = () => Promise.reject(new TypeError('fetch failed'));
+
+    const failed = await login({}, false).finally(() => {
+      globalThis.fetch = fetchBefore;
+    });
+
+    expect(failed.token).toBeInstanceOf(TypeError);
+
+    dojo.pendingPolls = 0;
+
+    expect((await login({}, false)).token).toBe('fb_test_1');
+    expect(dojo.paths().filter((path) => path === 'POST /api/cli/device/code')).toHaveLength(1);
+  });
+
+  it('drops the kept code when Dojo denies it', async () => {
+    const { dojo, env, login } = await setup();
+
+    await login({}, false);
+    dojo.denied = true;
+
+    expect(((await login({}, false)).token as Error).message).toBe('Sign-in was denied.');
+    await expect(readFile(authPath(env), 'utf8')).rejects.toThrow();
+  });
+
+  it('forgets a kept code on logout', async () => {
+    const { dojo, env, login } = await setup();
+
+    await login({}, false);
+
+    const io = testIO({ cwd: env.XDG_CONFIG_HOME, env: { ...env, FROGBOT_DOJO_URL: dojo.url } });
+
+    expect(await runLogout([], io.io)).toBe(0);
+    await expect(readFile(authPath(env), 'utf8')).rejects.toThrow();
   });
 });
