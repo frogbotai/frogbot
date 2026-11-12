@@ -39,7 +39,9 @@ function isRecentlyUsed(key: Record<string, unknown>): boolean {
 
 const apiKeyStrategies = new WeakSet<AuthStrategy>();
 
-const refusals = new WeakMap<object, string>();
+const refusalKey = Symbol.for('@frogbotai/plugin-api-keys/refusal');
+
+const signInOperations = new Set(['forgotPassword', 'login', 'resetPassword']);
 
 function refusalReason(key: Record<string, unknown>): string | undefined {
   if (key.revokedAt != null) {
@@ -58,7 +60,9 @@ function refusalReason(key: Record<string, unknown>): string | undefined {
  * The caller already holds the token, so saying so leaks nothing.
  */
 export function apiKeyRefusal(req: object | null | undefined): string | undefined {
-  return req ? refusals.get(req) : undefined;
+  const refusal: unknown = req ? Reflect.get(req, refusalKey) : undefined;
+
+  return typeof refusal === 'string' ? refusal : undefined;
 }
 
 /** The `error` and `error_description` of a `WWW-Authenticate: Bearer` challenge for a refused key. */
@@ -67,8 +71,13 @@ export function apiKeyChallenge(message: string): string {
 }
 
 /** Answers an operation run as the caller with 401 and the reason, when its only credential was a refused key. */
-export const refuseRejectedApiKey: CollectionBeforeOperationHook = ({ overrideAccess, req }) => {
-  const message = req.user || overrideAccess ? undefined : apiKeyRefusal(req);
+export const refuseRejectedApiKey: CollectionBeforeOperationHook = ({
+  operation,
+  overrideAccess,
+  req,
+}) => {
+  const message =
+    req.user || overrideAccess || signInOperations.has(operation) ? undefined : apiKeyRefusal(req);
 
   if (!message) return;
 
@@ -120,10 +129,10 @@ export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
         if (req) {
           const api = toPayloadRequest(req).payload.config.routes.api.replace(/\/+$/, '');
 
-          refusals.set(
-            req,
-            `API key ${reason}. Mint a new one with POST ${api}/${collectionSlug}/mint.`,
-          );
+          Object.defineProperty(req, refusalKey, {
+            configurable: true,
+            value: `API key ${reason}. Mint a new one with POST ${api}/${collectionSlug}/mint.`,
+          });
         }
 
         return { user: null };

@@ -1542,6 +1542,44 @@ describe('API keys plugin integration', () => {
       expect(refused.headers.get('www-authenticate')).toContain(`error_description="${message}"`);
     });
 
+    it('refuses a revoked key on GraphQL instead of returning public data', async () => {
+      const key = await mint(session, { name: 'Gone' });
+
+      await booted.restClient.post(`/api/credentials/${key.body.id}/revoke`, undefined, {
+        headers: session,
+      });
+
+      const response = await GRAPHQL_POST(config)(
+        new Request(`${booted.baseUrl}/api/graphql`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', ...asKey(key.body.token) },
+          body: JSON.stringify({ query: '{ Accounts { docs { id } } }' }),
+        }),
+      );
+
+      const body = (await response.json()) as {
+        data?: { Accounts: unknown };
+        errors?: { message: string }[];
+      };
+
+      expect(body.data?.Accounts ?? null).toBeNull();
+      expect(body.errors?.[0]?.message).toMatch(/^API key was revoked at /);
+    });
+
+    it('lets a password login through when the request also carries a refused key', async () => {
+      const key = await mint(session, { name: 'Gone' });
+
+      await booted.restClient.post(`/api/credentials/${key.body.id}/revoke`, undefined, {
+        headers: session,
+      });
+
+      const login = await booted.restClient.post('/api/accounts/login', credentials, {
+        headers: asKey(key.body.token),
+      });
+
+      expect(login.status).toBe(200);
+    });
+
     it('lets a session cookie through when the request also carries a refused key', async () => {
       const key = await mint(session, { name: 'Gone' });
 

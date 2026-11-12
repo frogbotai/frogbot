@@ -114,7 +114,7 @@ WWW-Authenticate: Bearer error="invalid_token", error_description="API key expir
 { "errors": [{ "message": "API key expired at 2026-11-01T00:00:00.000Z. Mint a new one with POST /api/api-keys/mint." }] }
 ```
 
-A revoked key reads `API key was revoked at <date>.` instead. This applies even to collections anyone can read, so the request doesn't quietly return only the public data. Saying so leaks nothing, because the caller already holds the key. An unknown key still gets the usual response, and a request that also carries a valid session signs in as that session's user. The plugin's own endpoints keep their `{ "error": "..." }` body.
+A revoked key reads `API key was revoked at <date>.` instead. On GraphQL the reason is the error's message. This applies even to collections anyone can read, so the request doesn't quietly return only the public data. Saying so leaks nothing, because the caller already holds the key. An unknown key still gets the usual response, a request that also carries a valid session signs in as that session's user, and a password login with a stale key header still signs in. The plugin's own endpoints keep their `{ "error": "..." }` body.
 
 ## Budgets and limits
 
