@@ -1,0 +1,24 @@
+@layer frogbot {
+  .fb-build-notice {
+    position: fixed;
+    top: calc(var(--app-header-height, 3.5rem) + 0.75rem);
+    right: 1rem;
+    z-index: var(--z-status);
+    max-width: calc(100vw - 2rem);
+    pointer-events: none;
+  }
+
+  .fb-build-notice__card {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.5rem 0.5rem 0.5rem 0.875rem;
+    color: var(--color-text);
+    font-size: var(--fb-text-sm);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--fb-radius-lg);
+    box-shadow: var(--elevation-400-menu-panel);
+    pointer-events: auto;
+  }
+}

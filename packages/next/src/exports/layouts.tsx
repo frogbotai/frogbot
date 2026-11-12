@@ -1,3 +1,4 @@
+import { BuildNotice } from '@frogbotai/ui/admin';
 import {
   PATCH_PREFERENCE,
   patchPreferenceHandler,
@@ -32,6 +33,7 @@ export async function RootLayout({ children, config, htmlProps, ...rest }: RootL
   return (
     <PayloadRootLayout {...rest} config={getPayloadConfig(config)} htmlProps={pageHtmlProps}>
       <ShallowRouteListener />
+      <BuildNotice />
       {children}
     </PayloadRootLayout>
   );
