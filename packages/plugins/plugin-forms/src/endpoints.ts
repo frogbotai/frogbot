@@ -12,6 +12,7 @@ import { buildConfirmation } from './definition.js';
 import {
   asFormLink,
   openLinkLimited,
+  prefill,
   type ResolvedLink,
   resolveLink,
   spendUse,
@@ -107,11 +108,37 @@ function cleanAnswers(
   return cleaned;
 }
 
+function isRequiredField(target: FormTarget, name: string): boolean {
+  const entry = target.fields.get(name);
+
+  return entry !== undefined && 'field' in entry && entry.field.required === true;
+}
+
+function ruleAnswers(
+  form: FormDocument,
+  target: FormTarget,
+  body: unknown,
+  stored: Record<string, unknown>,
+): Record<string, unknown> {
+  const answers = bodyAnswers(body);
+  const merged = cleanAnswers(form, target, stored);
+
+  for (const name of Object.keys(answers)) delete merged[name];
+
+  return { ...merged, ...cleanAnswers(form, target, answers) };
+}
+
 /**
- * The questions the visitor saw, from their cleaned answers, by the same rules the page runs.
- * Answers and files for the others are dropped, whatever the client sent.
+ * The questions the visitor saw, by the same rules the page runs, from their cleaned answers over
+ * `stored`. A question whose field is required is always shown, even if a saved rule says
+ * otherwise. Answers and files for the others are dropped, whatever the client sent.
  */
-export function shownQuestions(form: FormDocument, target: FormTarget, body: unknown): Set<string> {
+export function shownQuestions(
+  form: FormDocument,
+  target: FormTarget,
+  body: unknown,
+  stored: Record<string, unknown> = {},
+): Set<string> {
   const steps = (form.steps ?? []).map((step) => ({
     questions: (step.questions ?? []).map(({ field, rules, match }) => {
       const entry = target.fields.get(field);
@@ -119,34 +146,37 @@ export function shownQuestions(form: FormDocument, target: FormTarget, body: unk
       return {
         key: field,
         type: entry && 'field' in entry ? entry.field.type : undefined,
-        rules: (rules ?? []).map(({ question, operator, value }) => ({
-          question,
-          operator,
-          value: value ?? '',
-        })),
+        rules: isRequiredField(target, field)
+          ? []
+          : (rules ?? []).map(({ question, operator, value }) => ({
+              question,
+              operator,
+              value: value ?? '',
+            })),
         match: match ?? undefined,
       };
     }),
   }));
 
-  return visibleQuestions(steps, cleanAnswers(form, target, bodyAnswers(body)));
+  return visibleQuestions(steps, ruleAnswers(form, target, body, stored));
 }
 
 /**
  * Keeps the answers to the form's shown questions and its declared parameters; drops everything
- * else. For an edit (`edit`), there are no parameters, an emptied answer clears its field, and a
- * hidden question's field keeps its stored value.
+ * else. For an edit (`edit`), there are no parameters, an emptied answer clears its field, a
+ * hidden question's field keeps its stored value, and rules also read the record's `stored`
+ * answers that the body leaves out.
  */
 export function pickSubmission(
   form: FormDocument,
   target: FormTarget,
   body: unknown,
-  { edit = false }: { edit?: boolean } = {},
+  { edit = false, stored = {} }: { edit?: boolean; stored?: Record<string, unknown> } = {},
 ): Record<string, unknown> {
   const answers = bodyAnswers(body);
   const params = isRecord(body) && isRecord(body.params) ? body.params : {};
   const cleaned = cleanAnswers(form, target, answers);
-  const shown = shownQuestions(form, target, body);
+  const shown = shownQuestions(form, target, body, stored);
   const data: Record<string, unknown> = {};
 
   for (const step of form.steps ?? []) {
@@ -244,9 +274,14 @@ async function saveEdit(
   link: ResolvedLink,
   body: Record<string, unknown>,
 ): Promise<Response> {
-  const data = pickSubmission(form, target, body, { edit: true });
+  const ruled = (form.steps ?? []).flatMap(({ questions }) =>
+    (questions ?? []).flatMap(({ rules }) => (rules ?? []).map(({ question }) => question)),
+  );
 
   try {
+    const stored = ruled.length ? await prefill(req, form, link, [...new Set(ruled)]) : {};
+    const data = pickSubmission(form, target, body, { edit: true, stored });
+
     const outcome = await spendUse(req, form, link, () =>
       asFormLink(req, form, link, () =>
         req.frogbot.update({

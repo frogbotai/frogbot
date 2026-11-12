@@ -110,7 +110,7 @@ function buildQuestion(
       : { question: source, operator, value: value ?? '' },
   );
 
-  if (rules.length) {
+  if (rules.length && !field.required) {
     question.rules = rules;
     if (config.match === 'any') question.match = 'any';
   }
