@@ -42,6 +42,7 @@
     "graphql",
     "hooks-access",
     "kv",
+    "list-grouping",
     "plugin-dojo",
     "plugin-evals",
     "plugin-forms",
