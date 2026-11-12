@@ -103,17 +103,17 @@ const aiPolicy = definePlugin<AIPolicyPluginOptions>({
       collections: [
         ...config.collections.map((collection) => {
           if (collection.slug === authCollection) {
-            const merged = mergePolicyFields(collection.fields, fields);
+            const merged = { ...collection, fields: mergePolicyFields(collection.fields, fields) };
 
-            assertSpendColumn(merged, collection.slug);
+            assertSpendColumn(merged);
 
-            return { ...collection, fields: merged };
+            return merged;
           }
 
           if (collection.slug === keysCollection) {
             const limited = withKeyLimits(collection, keyFields, { models, titleField });
 
-            assertSpendColumn(limited.fields, collection.slug);
+            assertSpendColumn(limited);
 
             return limited;
           }

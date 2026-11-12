@@ -1,4 +1,4 @@
-import { type Field, moneyField } from 'frogbot';
+import { type CollectionConfig, type Field, moneyField } from 'frogbot';
 
 const names = new Set(['models', 'monthlyBudget', 'spendThisPeriodUSD']);
 
@@ -61,8 +61,13 @@ export function mergePolicyFields(fields: Field[], policy: Field[]): Field[] {
   return [...fields.filter((field) => !('name' in field) || !names.has(field.name)), ...merged];
 }
 
-/** Throws when an override moves spend off the main table, where one atomic `$inc` can't reach it. */
-export function assertSpendColumn(fields: Field[], collection: string): void {
+/**
+ * Throws when spend can't live in one column that one atomic `$inc` updates: an override that
+ * moves it off the main table, or drafts, whose latest version keeps a stale spend that the next
+ * update writes back.
+ */
+export function assertSpendColumn(collection: CollectionConfig): void {
+  const { slug, fields, versions } = collection;
   const spend = fields.find((field) => 'name' in field && field.name === 'spendThisPeriodUSD');
 
   if (
@@ -70,7 +75,13 @@ export function assertSpendColumn(fields: Field[], collection: string): void {
     (('localized' in spend && spend.localized) || ('hasMany' in spend && spend.hasMany))
   ) {
     throw new Error(
-      `[plugin-ai-policy] spendThisPeriodUSD on '${collection}' can't be localized or hasMany: spend is one column.`,
+      `[plugin-ai-policy] spendThisPeriodUSD on '${slug}' can't be localized or hasMany: spend is one column.`,
+    );
+  }
+
+  if (typeof versions === 'object' && versions.drafts) {
+    throw new Error(
+      `[plugin-ai-policy] '${slug}' can't have drafts: a draft version would keep a stale spend.`,
     );
   }
 }
