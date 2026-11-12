@@ -3,7 +3,7 @@ title: Collection list
 description: Configure a collection's list view, cells that edit in place, and its summary row.
 ---
 
-The list view is a collection's table. It is the default view, and when `admin.views` has other views the list comes first. Its shared properties, such as `defaultFields`, `filter` and `defaultSort`, are in the [Collection views reference](/configuration/collections#collection-views).
+The list view is a collection's table. A collection with no `admin.views` has one list view. With other views, the first view in `admin.views` is the default, of any type, and the list can be first or come later, at `/collections/<slug>/<viewSlug>`. Its shared properties, such as `defaultFields`, `filter` and `defaultSort`, are in the [Collection views reference](/configuration/collections#collection-views).
 
 ## Editing cells in place
 

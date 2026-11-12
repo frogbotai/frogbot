@@ -239,9 +239,9 @@ The following options are available:
 
 ### Collection Views
 
-`admin.views` accepts `CollectionView[]`. `CollectionView` is the exported union `ListView | BoardView | GalleryView | CalendarView | CustomView`.
+`admin.views` accepts `CollectionView[]`. `CollectionView` is the exported union `ListView | BoardView | GalleryView | CalendarView | TimelineView | CustomView`.
 
-Every view renders in one frame: the collection title, a row of view tabs under it, one toolbar (search, Filters, Group by, Columns, Sort and Create New, in the same order on every view), the view's slots and its empty state. The array order sets the tab order and the collection's default view. A collection can have at most one list view, and it must be first. Omit `views` to use one default list view, which shows no tab row.
+Every view renders in one frame: the collection title, a row of view tabs under it, one toolbar (search, Filters, Group by, Columns, Sort and Create New, in the same order on every view), the view's slots and its empty state. The array order sets the tab order, and the first view, of any type, is the collection's default: it opens at `/collections/<slug>`, and every other view opens at `/collections/<slug>/<viewSlug>`. A collection can have at most one list view, in any position, so a collection can open on a board and still have a List tab. Relationship drawers always show the list. Omit `views` to use one default list view. The tab row shows only when there are two tabs or more, so a collection with no `views` has none, unless Trash or the hierarchy view adds a tab: with Trash on it shows List and Trash.
 
 Each tab shows its view's `icon` and `label` and links to the view's own route, so a view's URL can be shared and keeps its `access` rule. Trash, when the collection has it, follows the views in the same row. Below the small breakpoint (768px) the tabs become one menu. Opening the collection again returns to the view the user last picked with the tabs.
 
