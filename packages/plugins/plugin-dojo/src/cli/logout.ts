@@ -1,4 +1,4 @@
-import { readToken, removeToken } from './auth.js';
+import { forgetSignIn, readToken } from './auth.js';
 import { dojoMessage, dojoUrl } from './dojo.js';
 import type { DojoIO } from './io.js';
 import { done, say } from './io.js';
@@ -25,6 +25,7 @@ export async function runLogout(args: string[], io: DojoIO): Promise<number> {
   }
 
   if (!token) {
+    await forgetSignIn(io.env, url);
     say(io, '[frogbot] Not signed in.');
     done(io, { url, signedOut: false });
 
@@ -60,7 +61,7 @@ export async function runLogout(args: string[], io: DojoIO): Promise<number> {
     }
   }
 
-  await removeToken(io.env, url);
+  await forgetSignIn(io.env, url);
   say(io, `[frogbot] Signed out of ${url}.`);
   done(io, { url, signedOut: true });
 

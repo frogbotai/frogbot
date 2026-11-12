@@ -234,6 +234,7 @@ Uploads the app in the current folder to Dojo, streams `[build]` logs, and print
 | `--skip-key` | key name (repeatable) | — | Excludes a specific key (case-sensitive), e.g. `--skip-key STRIPE_KEY`. Unknown key names exit with code `2`. |
 | `--yes` | flag | — | On the first share, uploads all detected keys without the interactive checklist. |
 | `--update-keys` | flag | — | On subsequent shares, overwrites live keys whose local values differ. |
+| `--wait` | flag | — | Without a terminal, waits for the sign-in or the payment instead of exiting `3` or `4` with its link. Every `frogbot dojo` command takes it. |
 
 <AccordionGroup>
   <Accordion title="Pre-flight checks & signing in">

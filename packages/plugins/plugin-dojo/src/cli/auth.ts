@@ -1,6 +1,7 @@
-import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { homedir, hostname } from 'node:os';
 import { dirname, join } from 'node:path';
+import { setTimeout } from 'node:timers/promises';
 
 import type { DeployEnv } from 'frogbot';
 
@@ -34,7 +35,46 @@ async function readAuth(env: DeployEnv): Promise<AuthFile> {
   }
 }
 
+const lockTries = 100;
+const lockWaitMs = 20;
+const staleLockMs = 10_000;
+
+async function takeLock(lock: string): Promise<boolean> {
+  return writeFile(lock, '', { flag: 'wx', mode: 0o600 }).then(
+    () => true,
+    async (error: NodeJS.ErrnoException) => {
+      if (error.code !== 'EEXIST') throw error;
+
+      const since = await stat(lock).then(
+        (lockStat) => Date.now() - lockStat.mtimeMs,
+        () => 0,
+      );
+
+      if (since > staleLockMs) await rm(lock, { force: true });
+      else await setTimeout(lockWaitMs);
+
+      return false;
+    },
+  );
+}
+
 async function updateAuth(env: DeployEnv, change: (auth: AuthFile) => void): Promise<void> {
+  const path = authPath(env);
+  const lock = `${path}.lock`;
+  let held = false;
+
+  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+
+  for (let tries = 0; tries < lockTries && !held; tries += 1) held = await takeLock(lock);
+
+  try {
+    await writeAuth(env, change);
+  } finally {
+    if (held) await rm(lock, { force: true });
+  }
+}
+
+async function writeAuth(env: DeployEnv, change: (auth: AuthFile) => void): Promise<void> {
   const path = authPath(env);
   const auth = await readAuth(env);
 
@@ -49,7 +89,6 @@ async function updateAuth(env: DeployEnv, change: (auth: AuthFile) => void): Pro
   const { pending, ...rest } = auth;
   const file = Object.keys(pending).length > 0 ? auth : rest;
 
-  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
   await writeFile(path, `${JSON.stringify(file, null, 2)}\n`, { mode: 0o600 });
   await chmod(path, 0o600);
 }
@@ -75,15 +114,25 @@ export async function removeToken(env: DeployEnv, dojoUrl: string): Promise<void
 }
 
 async function readPending(env: DeployEnv, dojoUrl: string): Promise<PendingCode | undefined> {
-  const code = (await readAuth(env)).pending[dojoUrl];
-
-  return code && code.expiresAt > Date.now() ? code : undefined;
+  return live((await readAuth(env)).pending[dojoUrl]);
 }
 
 async function forgetPending(env: DeployEnv, dojoUrl: string): Promise<void> {
   await updateAuth(env, (auth) => {
     delete auth.pending[dojoUrl];
   });
+}
+
+/** Forgets this Dojo's token and any sign-in code still waiting for its person. */
+export async function forgetSignIn(env: DeployEnv, dojoUrl: string): Promise<void> {
+  await updateAuth(env, (auth) => {
+    delete auth.tokens[dojoUrl];
+    delete auth.pending[dojoUrl];
+  });
+}
+
+function live(code: PendingCode | undefined): PendingCode | undefined {
+  return code && code.expiresAt > Date.now() ? code : undefined;
 }
 
 type DeviceCode = {
@@ -124,7 +173,7 @@ export async function deviceLogin(io: DojoIO, dojoUrl: string): Promise<string> 
 
     const answer = await (waits ? pollToken(io, dojoUrl, code) : askToken(dojoUrl, code)).catch(
       async (error: unknown) => {
-        await forgetPending(io.env, dojoUrl);
+        if (error instanceof ShareError) await forgetPending(io.env, dojoUrl);
 
         throw error;
       },
@@ -186,11 +235,14 @@ async function newCode(env: DeployEnv, dojoUrl: string): Promise<PendingCode> {
     interval: reply.interval ?? 5,
   };
 
+  let kept = code;
+
   await updateAuth(env, (auth) => {
-    auth.pending[dojoUrl] = code;
+    kept = live(auth.pending[dojoUrl]) ?? code;
+    auth.pending[dojoUrl] = kept;
   });
 
-  return code;
+  return kept;
 }
 
 type Answer =
