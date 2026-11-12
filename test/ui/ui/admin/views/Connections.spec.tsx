@@ -12,6 +12,7 @@ import {
 import type {
   ConnectionItem,
   ConnectionPiece,
+  ConnectionSlot,
 } from '../../../../../packages/ui/src/admin/views/Connections/types.js';
 
 const getCachedFrogBot = vi.hoisted(() => vi.fn<() => unknown>());
@@ -557,5 +558,182 @@ describe('connection input schemas', () => {
     ]) {
       expect(() => projectConnectionSchema(schema)).toThrow();
     }
+  });
+});
+
+describe('app accounts', () => {
+  const slots: ConnectionSlot[] = [
+    { app: 'teamMailbox', piece: pieces[0] },
+    {
+      app: 'billing',
+      piece: pieces[1],
+      connection: {
+        id: 9,
+        piece: 'static',
+        method: 'secret',
+        status: 'active',
+        account: { label: 'Billing key' },
+      },
+    },
+  ];
+
+  it('projects declared slots with their rows and no credentials', async () => {
+    const slotRows = vi.fn().mockResolvedValue([
+      { ...row, id: 9, piece: 'static', app: 'billing', credential: 'ciphertext', owner: null },
+      { ...row, id: 10, piece: 'static', app: 'removed', credential: 'ciphertext' },
+    ]);
+
+    const req = {
+      user: { id: 1 },
+      frogbot: {
+        config: {
+          connections: {
+            enabled: true,
+            entries: {},
+            apps: {
+              teamMailbox: { mail: { piece: { piece: 'mail' }, oauth: true, secret: false } },
+              billing: {
+                static: {
+                  piece: { piece: 'static' },
+                  oauth: false,
+                  secret: true,
+                  secretSchema: { type: 'string', default: 'credential-default' },
+                },
+              },
+            },
+          },
+        },
+        connections: { list: vi.fn().mockResolvedValue([]), slots: slotRows },
+      },
+    };
+
+    const view = await ConnectionsView({
+      initPageResult: { req },
+      payload: { config: { routes: { api: '/custom-api', admin: '/control' } } },
+    } as never);
+
+    expect(slotRows).toHaveBeenCalledWith({ req });
+    expect(view?.props.slots).toEqual([
+      { app: 'teamMailbox', piece: expect.objectContaining({ slug: 'mail' }) },
+      {
+        app: 'billing',
+        piece: expect.objectContaining({ slug: 'static' }),
+        connection: expect.objectContaining({ id: 9, piece: 'static' }),
+      },
+    ]);
+    expect(JSON.stringify(view?.props)).not.toContain('ciphertext');
+    expect(JSON.stringify(view?.props)).not.toContain('credential-default');
+  });
+
+  it('hides the section when the config declares no slots', async () => {
+    const req = {
+      user: { id: 1 },
+      frogbot: {
+        config: { connections: { enabled: true, entries: {}, apps: {} } },
+        connections: { list: vi.fn().mockResolvedValue([]), slots: vi.fn() },
+      },
+    };
+
+    const view = await ConnectionsView({
+      initPageResult: { req },
+      payload: { config: { routes: { api: '/custom-api', admin: '/control' } } },
+    } as never);
+
+    expect(view?.props.slots).toBeUndefined();
+    expect(req.frogbot.connections.slots).not.toHaveBeenCalled();
+
+    render(view);
+
+    expect(screen.queryByRole('heading', { name: 'App accounts' })).toBeNull();
+  });
+
+  it('lists slots under the user accounts with their status', () => {
+    render(<ConnectionsViewClient {...props} slots={slots} />);
+
+    const section = screen.getByRole('region', { name: 'App accounts' });
+
+    expect(screen.getByText('Work')).toBeTruthy();
+    expect(within(section).getByText('not linked')).toBeTruthy();
+    expect(within(section).getByText('teamMailbox · Mail')).toBeTruthy();
+    expect(within(section).getByText('Billing key')).toBeTruthy();
+    expect(within(section).getByText('active')).toBeTruthy();
+  });
+
+  it('shows only the App section when every entry is a slot', () => {
+    render(<ConnectionsViewClient {...props} pieces={[]} initialConnections={[]} slots={slots} />);
+
+    expect(screen.queryByLabelText('Search connections')).toBeNull();
+    expect(screen.getByRole('region', { name: 'App accounts' })).toBeTruthy();
+  });
+
+  it('starts a slot OAuth link at the slot path', () => {
+    const assign = vi.fn();
+    vi.stubGlobal('location', { ...window.location, assign });
+
+    render(<ConnectionsViewClient {...props} slots={slots} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Link teamMailbox' }));
+
+    expect(screen.getByRole('heading', { name: 'Link teamMailbox to Mail' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue with Mail' }));
+
+    expect(assign).toHaveBeenCalledWith(
+      `/custom-api/connections/app/teamMailbox/mail/authorize?${new URLSearchParams({ returnTo: props.returnTo })}`,
+    );
+  });
+
+  it('links a slot with static credentials and shows it linked', async () => {
+    fetchMock.mockResolvedValueOnce(
+      Response.json({ id: 11, piece: 'mail', method: 'secret', status: 'active', scopes: [] }),
+    );
+
+    render(<ConnectionsViewClient {...props} slots={slots} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Link teamMailbox' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Static credentials' }));
+    fireEvent.change(screen.getByLabelText('Credential'), { target: { value: 'team-key' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/custom-api/connections/app/teamMailbox/mail',
+      expect.objectContaining({ method: 'POST', body: '"team-key"' }),
+    );
+
+    const section = screen.getByRole('region', { name: 'App accounts' });
+
+    expect(within(section).queryByText('not linked')).toBeNull();
+    expect(within(section).getAllByText('active')).toHaveLength(2);
+  });
+
+  it('reconnects and disconnects a linked slot', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    render(<ConnectionsViewClient {...props} slots={slots} />);
+    const options = screen.getByRole('button', { name: 'Options for billing' });
+
+    fireEvent.keyDown(options, { key: 'ArrowDown' });
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Reconnect' }));
+
+    expect(screen.getByRole('heading', { name: 'Link billing to Static' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Options for billing' }), {
+      key: 'ArrowDown',
+    });
+
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Disconnect' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/custom-api/connections/app/billing/static',
+        expect.objectContaining({ method: 'DELETE' }),
+      ),
+    );
+
+    const section = screen.getByRole('region', { name: 'App accounts' });
+
+    await waitFor(() => expect(within(section).getAllByText('not linked')).toHaveLength(2));
   });
 });

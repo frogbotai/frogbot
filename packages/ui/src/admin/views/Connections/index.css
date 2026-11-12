@@ -111,6 +111,27 @@
     color: var(--color-text-warning);
   }
 
+  .frogbot-connections__status--missing {
+    background: var(--color-bg-transparent-hover);
+    color: var(--color-text-secondary);
+  }
+
+  .frogbot-connections__section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .frogbot-connections__section:not(:first-child) {
+    margin-top: 16px;
+  }
+
+  .frogbot-connections__section-heading h2 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
   .frogbot-connections__empty {
     display: flex;
     align-items: center;

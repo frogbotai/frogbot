@@ -1,13 +1,12 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Button } from '../../../components/button.js';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '../../../components/dialog.js';
@@ -17,189 +16,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../../../components/dropdown-menu.js';
-import { Label } from '../../../components/label.js';
-import { RadioGroup, RadioGroupItem } from '../../../components/radio-group.js';
 import { SearchInput } from '../../../components/search-input.js';
-import ChevronLeftIcon from '../../../icons/icons/ChevronLeftIcon.js';
 import DeleteIcon from '../../../icons/icons/DeleteIcon.js';
 import LinkSquareIcon from '../../../icons/icons/LinkSquareIcon.js';
 import LoadingIcon from '../../../icons/icons/LoadingIcon.js';
 import MoreHorizontalIcon from '../../../icons/icons/MoreHorizontalIcon.js';
-import { ConnectionFields } from './ConnectionFields.js';
-import { linkError } from './linkError.js';
+import { AppConnections } from './AppConnections.client.js';
+import { ConnectionForm } from './ConnectionForm.js';
 import { PieceLogo } from './PieceLogo.js';
-import { connectionInput, initialConnectionValue } from './schema.js';
 import { connectionStatus } from './status.js';
 import type { ConnectionItem, ConnectionPiece, ConnectionsViewClientProps } from './types.js';
-
-function ConnectionForm({
-  piece,
-  apiPath,
-  returnTo,
-  onBack,
-  onCancel,
-  onCreated,
-  onBusyChange,
-}: {
-  piece: ConnectionPiece;
-  apiPath: string;
-  returnTo: string;
-  onBack: () => void;
-  onCancel: () => void;
-  onCreated: () => void;
-  onBusyChange: (busy: boolean) => void;
-}) {
-  const id = useId();
-  const [method, setMethod] = useState(piece.oauth ? 'oauth' : 'secret');
-  const [value, setValue] = useState<unknown>(() =>
-    piece.secretSchema ? initialConnectionValue(piece.secretSchema) : undefined,
-  );
-
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-  const submitting = useRef(false);
-
-  const submit = async () => {
-    if (submitting.current) return;
-    setError('');
-
-    if (method === 'oauth') {
-      submitting.current = true;
-      setBusy(true);
-      onBusyChange(true);
-
-      window.location.assign(
-        `${apiPath}/${encodeURIComponent(piece.slug)}/authorize?${new URLSearchParams({ returnTo })}`,
-      );
-
-      return;
-    }
-
-    if (!piece.secretSchema) {
-      setError('Static credentials are not available for this integration.');
-
-      return;
-    }
-
-    let body: string;
-    try {
-      body = JSON.stringify(connectionInput({ field: piece.secretSchema, value }));
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Check your credential values.');
-
-      return;
-    }
-
-    submitting.current = true;
-    setBusy(true);
-    onBusyChange(true);
-
-    try {
-      const response = await fetch(`${apiPath}/${encodeURIComponent(piece.slug)}`, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body,
-      });
-
-      if (!response.ok) {
-        setError(await linkError(response));
-
-        return;
-      }
-
-      setValue(undefined);
-      onCreated();
-    } catch {
-      setError('Could not reach the server. Please try again.');
-    } finally {
-      submitting.current = false;
-      setBusy(false);
-      onBusyChange(false);
-    }
-  };
-
-  return (
-    <form
-      className="frogbot-connections__form"
-      onSubmit={(event) => {
-        event.preventDefault();
-        void submit();
-      }}
-    >
-      <Button
-        autoFocus
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="frogbot-connections__back"
-        disabled={busy}
-        onClick={onBack}
-      >
-        <ChevronLeftIcon size={16} />
-        Back
-      </Button>
-      <DialogHeader>
-        <DialogTitle>Connect to {piece.label}</DialogTitle>
-        <DialogDescription>
-          {method === 'oauth'
-            ? 'Authorize access with your account.'
-            : 'Enter your credentials to link this integration.'}
-        </DialogDescription>
-      </DialogHeader>
-      <fieldset disabled={busy} className="frogbot-connections__form-fields">
-        {piece.oauth && piece.secret && (
-          <RadioGroup
-            aria-label="Connection method"
-            value={method}
-            onValueChange={(next) => {
-              setMethod(next);
-              setError('');
-            }}
-            className="frogbot-connections__methods"
-          >
-            <Label className="frogbot-connections__method" htmlFor={`${id}-oauth`}>
-              <RadioGroupItem id={`${id}-oauth`} value="oauth" />
-              {piece.oauthLabel ?? 'OAuth'}
-            </Label>
-            <Label className="frogbot-connections__method" htmlFor={`${id}-secret`}>
-              <RadioGroupItem id={`${id}-secret`} value="secret" />
-              Static credentials
-            </Label>
-          </RadioGroup>
-        )}
-        {method === 'secret' && piece.secretSchema && (
-          <ConnectionFields
-            field={piece.secretSchema}
-            label="Credential"
-            value={value}
-            onChange={setValue}
-          />
-        )}
-      </fieldset>
-      {error && (
-        <p role="alert" className="frogbot-connections__error">
-          {error}
-        </p>
-      )}
-      <DialogFooter>
-        <Button type="button" variant="outline" disabled={busy} onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={busy || (method === 'secret' && !piece.secretSchema)}>
-          {busy && <LoadingIcon className="frogbot-connections__spinner" size={16} />}
-          {busy
-            ? method === 'oauth'
-              ? 'Redirecting…'
-              : 'Connecting…'
-            : method === 'oauth'
-              ? `Continue with ${piece.oauthLabel ?? piece.label}`
-              : 'Connect'}
-        </Button>
-      </DialogFooter>
-    </form>
-  );
-}
 
 function NewConnectionDialog({
   pieces,
@@ -376,6 +202,7 @@ export function ConnectionsViewClient({
   pieces,
   initialConnections,
   initialError,
+  slots = [],
 }: ConnectionsViewClientProps) {
   const [connections, setConnections] = useState(initialConnections);
   const [error, setError] = useState(initialError ?? '');
@@ -452,69 +279,74 @@ export function ConnectionsViewClient({
 
   return (
     <div className="frogbot-connections">
-      <div className="frogbot-connections__toolbar">
-        <SearchInput
-          aria-label="Search connections"
-          placeholder="Search connections…"
-          value={search}
-          onChange={setSearch}
-        />
-        <Button
-          size="sm"
-          className="frogbot-connections__lift"
-          onClick={() => setOpen(true)}
-          disabled={pieces.length === 0}
-        >
-          + New Connection
-        </Button>
-      </div>
-      {error && (
-        <div className="frogbot-connections__error" role="alert">
-          <span>{error}</span>
-          <Button variant="outline" size="sm" disabled={loading} onClick={() => void refresh()}>
-            Try again
-          </Button>
-        </div>
-      )}
-      {loading ? (
-        <div role="status" className="frogbot-connections__empty">
-          <LoadingIcon size={24} className="frogbot-connections__spinner" />
-          <span>Loading connections…</span>
-        </div>
-      ) : filtered.length === 0 ? (
-        error ? null : (
-          <div className="frogbot-connections__empty frogbot-connections__empty--bordered">
-            <LinkSquareIcon size={32} />
-            <p>{query ? 'No connections match your search' : 'No connections yet'}</p>
-            {!query && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="frogbot-connections__lift"
-                disabled={pieces.length === 0}
-                onClick={() => setOpen(true)}
-              >
-                Add your first connection
-              </Button>
-            )}
-          </div>
-        )
-      ) : (
-        <div className="frogbot-connections__rows">
-          {filtered.map((connection) => (
-            <ConnectionRow
-              key={connection.id}
-              connection={connection}
-              label={labels.get(connection.piece) ?? connection.piece}
-              oauthLabel={oauthLabels.get(connection.piece)}
-              icon={icons.get(connection.piece)}
-              scopes={scopes.get(connection.piece)}
-              busy={deleting === connection.id}
-              onDisconnect={() => void disconnect(connection.id)}
+      {(pieces.length > 0 || slots.length === 0) && (
+        <>
+          <div className="frogbot-connections__toolbar">
+            <SearchInput
+              aria-label="Search connections"
+              placeholder="Search connections…"
+              value={search}
+              onChange={setSearch}
             />
-          ))}
-        </div>
+            <Button
+              size="sm"
+              className="frogbot-connections__lift"
+              onClick={() => setOpen(true)}
+              disabled={pieces.length === 0}
+            >
+              + New Connection
+            </Button>
+          </div>
+          {error && (
+            <div className="frogbot-connections__error" role="alert">
+              <span>{error}</span>
+              <Button variant="outline" size="sm" disabled={loading} onClick={() => void refresh()}>
+                Try again
+              </Button>
+            </div>
+          )}
+          {loading ? (
+            <div role="status" className="frogbot-connections__empty">
+              <LoadingIcon size={24} className="frogbot-connections__spinner" />
+              <span>Loading connections…</span>
+            </div>
+          ) : filtered.length === 0 ? (
+            error ? null : (
+              <div className="frogbot-connections__empty frogbot-connections__empty--bordered">
+                <LinkSquareIcon size={32} />
+                <p>{query ? 'No connections match your search' : 'No connections yet'}</p>
+                {!query && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="frogbot-connections__lift"
+                    disabled={pieces.length === 0}
+                    onClick={() => setOpen(true)}
+                  >
+                    Add your first connection
+                  </Button>
+                )}
+              </div>
+            )
+          ) : (
+            <div className="frogbot-connections__rows">
+              {filtered.map((connection) => (
+                <ConnectionRow
+                  key={connection.id}
+                  connection={connection}
+                  label={labels.get(connection.piece) ?? connection.piece}
+                  oauthLabel={oauthLabels.get(connection.piece)}
+                  icon={icons.get(connection.piece)}
+                  scopes={scopes.get(connection.piece)}
+                  busy={deleting === connection.id}
+                  onDisconnect={() => void disconnect(connection.id)}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
+      {slots.length > 0 && <AppConnections apiPath={apiPath} returnTo={returnTo} slots={slots} />}
       <NewConnectionDialog
         pieces={pieces}
         apiPath={apiPath}

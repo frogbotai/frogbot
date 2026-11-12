@@ -13,9 +13,10 @@ The piece factory accepts your developer credential as `auth` and your OAuth app
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `piece` | `PieceInstance` | Required | The piece instance users link accounts for. Each piece can appear in only one entry. |
+| `piece` | `PieceInstance` | Required | The piece instance users link accounts for. Each piece can appear in one user entry and once per `app`. |
 | `secret` | `true` | — | Allow users to enter a credential matching the piece's static `auth` schema. Only pieces with an `auth` schema accept it. |
 | `oauth` | `true` | — | Allow users to authorize through the piece's OAuth recipe and your app. Only instances created with factory `oauth` accept it, or pieces that [run their own sign-in](#pieces-that-run-their-own-sign-in). |
+| `app` | `string` | — | Make the entry a [shared app account](#shared-app-accounts): an admin links it once under this name. URL-safe, like an instance slug. |
 
 Set `secret`, `oauth`, or both.
 
@@ -62,7 +63,7 @@ Pass `connections` and `collections: [Users]` to your root config. Reuse these i
 
 Sheets, Drive, and Calendar are native packages: install their `@frogbotai/piece-*` packages without an Activepieces runtime or provider plugin. Each supports factory `auth: { accessToken, refreshToken? }` and optional user-entered tokens through `secret: true`. The example enables only OAuth for these products. Configure each entry's methods explicitly; there is no shared `google` connection group or source/secret policy.
 
-Every entry needs at least one enabled method. OAuth requires both a piece recipe and factory app credentials. Static linking requires a user-enterable schema. Enable both methods only when the piece supports both. Duplicate entries for the same piece are rejected, including instances with different custom slugs.
+Every entry needs at least one enabled method. OAuth requires both a piece recipe and factory app credentials. Static linking requires a user-enterable schema. Enable both methods only when the piece supports both. Duplicate entries for the same piece and `app` are rejected, including instances with different custom slugs.
 
 ### Credential combinations
 
@@ -109,6 +110,32 @@ The page is available at `/admin/settings/connections` with the default admin ro
 
 Each integration shows the logo URL from its piece's `admin.icon`, or a link icon when the piece has none or the image fails to load.
 
+## Shared app accounts
+
+Some accounts belong to the app, not to a person: a team mailbox a nightly job reads, or the company address an **Approve & send** button mails from. Add an entry with `app` beside, or instead of, the user entry for the piece:
+
+```ts
+connections: [
+  { piece: gmail, oauth: true }, // each user links their own
+  { piece: gmail, oauth: true, app: 'teamMailbox' }, // one shared mailbox, linked by an admin
+]
+```
+
+Call sites pick the slot with `as`. The call keeps `req`, so its transaction and files still apply, but it never uses the request's user to find the credential:
+
+```ts
+await gmail.send({ input, req, as: 'teamMailbox' })
+const client = await gmail.client({ req, as: 'teamMailbox' })
+const auth = await frogbot.connections.resolve({ piece: gmail, req, as: 'teamMailbox' })
+```
+
+- An unlinked slot throws `ConnectionError` with code `missing`. It never falls back to the caller's own account or to the factory `auth`.
+- An `as` name that no entry declares for that piece throws a configuration error, so a typo fails loudly instead of looking unlinked.
+- Any user of the `admin.user` collection can link, reconnect and disconnect a slot in the **App accounts** section of **Settings → Linked accounts**. No user can read a slot's credential, and slot rows never appear in the collection's REST or Local API reads.
+- `frogbot.connections.slots({ req })` lists linked slots, without credentials, for users of that collection.
+
+Slots use the piece's existing OAuth callback, so the provider needs no extra redirect URI. Triggers and agent tools can't use a slot yet.
+
 ## Connection endpoints
 
 The paths below use the default `routes.api: '/api'`. If you configure another API prefix, use it in requests and provider redirect URIs. Callback origins use `serverURL` when configured, otherwise the request origin.
@@ -120,8 +147,11 @@ The paths below use the default `routes.api: '/api'`. If you configure another A
 | `GET` | `/api/connections/:piece/authorize` | Start OAuth linking for the signed-in user. |
 | `GET` | `/api/connections/:piece/callback` | Exchange the authorization code, store the connection, and redirect. `404` for pieces that run their own sign-in. |
 | `DELETE` | `/api/connections/:id` | Delete the caller's connection; returns `204`, or `404` when not found. |
+| `POST` | `/api/connections/app/:app/:piece` | Create or replace a shared slot's static credential. |
+| `GET` | `/api/connections/app/:app/:piece/authorize` | Start OAuth linking for a shared slot. The callback is the piece's usual one. |
+| `DELETE` | `/api/connections/app/:app/:piece` | Disconnect a shared slot, revoking it at the provider when the recipe can; `204`, or `404` when not linked. |
 
-`:piece` is the piece's built-in slug, such as `gmail` or `linear`, rather than a custom instance slug. Owners belong to the auth collection selected by `admin.user`. Static writes, deletion, and OAuth authorization require authentication from that collection: anonymous requests receive `401`, and users from another auth collection receive `403`.
+`:piece` is the piece's built-in slug, such as `gmail` or `linear`, rather than a custom instance slug. Owners belong to the auth collection selected by `admin.user`. Static writes, deletion, and OAuth authorization, for users' accounts and shared slots alike, require authentication from that collection: anonymous requests receive `401`, and users from another auth collection receive `403`.
 
 ### Submit a static credential
 
@@ -217,7 +247,7 @@ Expired OAuth connections refresh lazily during resolution, using the recipe's `
 
 ## Storage and access
 
-FrogBot creates its reserved `connections` collection only when the root list is non-empty. A unique `(owner, piece)` constraint permits one row per user and piece. Rows contain `method`, encrypted `credential`, account metadata, scopes, expiry, and status.
+FrogBot creates its reserved `connections` collection only when the root list is non-empty. A unique `(owner, app, piece)` constraint permits one row per user and piece. A shared slot's row has no `owner` and its name in `app`; writes to a slot are serialized, so it keeps one row too. Rows contain `method`, encrypted `credential`, account metadata, scopes, expiry, and status.
 
 Static input and OAuth token sets are encrypted as JSON with AES-256-GCM using a key derived from the root `secret`. Keep that secret stable: changing it makes existing credentials unreadable. Factory `auth` stays in your configuration and is never copied into connection storage.
 

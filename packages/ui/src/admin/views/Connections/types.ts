@@ -35,10 +35,19 @@ export type ConnectionItem = {
   expiresAt?: string | null;
 };
 
+/** A shared account the config declares with `app`, and its linked row when there is one. */
+export type ConnectionSlot = {
+  app: string;
+  piece: ConnectionPiece;
+  connection?: ConnectionItem;
+};
+
 export type ConnectionsViewClientProps = {
   apiPath: string;
   returnTo: string;
   pieces: ConnectionPiece[];
   initialConnections: ConnectionItem[];
   initialError?: string;
+  /** App slots, shown only when the config declares some. */
+  slots?: ConnectionSlot[];
 };

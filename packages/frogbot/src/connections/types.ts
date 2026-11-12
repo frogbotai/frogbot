@@ -15,19 +15,20 @@ type SecretConnectionPiece = PieceInstance & {
 type ConnectionPiece =
   OAuthConnectionPiece | SecretConnectionPiece | (OAuthConnectionPiece & SecretConnectionPiece);
 
-type ConnectionEntryMethods<TPiece extends PieceInstance> =
-  | (TPiece extends OAuthConnectionPiece ? { piece: TPiece; oauth: true; secret?: never } : never)
-  | (TPiece extends SecretConnectionPiece ? { piece: TPiece; oauth?: never; secret: true } : never)
-  | (TPiece extends OAuthConnectionPiece & SecretConnectionPiece
-      ? { piece: TPiece; oauth: true; secret: true }
-      : never);
-
 /**
  * A piece users link in Settings → Linked accounts. With `app`, the entry is a shared slot: an
  * admin links one account under that name, and call sites pick it with `as: '<app>'`.
  */
 export type ConnectionEntry<TPiece extends PieceInstance = ConnectionPiece> =
-  ConnectionEntryMethods<TPiece> & { app?: string };
+  | (TPiece extends OAuthConnectionPiece
+      ? { piece: TPiece; oauth: true; secret?: never; app?: string }
+      : never)
+  | (TPiece extends SecretConnectionPiece
+      ? { piece: TPiece; oauth?: never; secret: true; app?: string }
+      : never)
+  | (TPiece extends OAuthConnectionPiece & SecretConnectionPiece
+      ? { piece: TPiece; oauth: true; secret: true; app?: string }
+      : never);
 
 export type ConnectionsConfig = ConnectionEntry[];
 

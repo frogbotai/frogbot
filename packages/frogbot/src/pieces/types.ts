@@ -485,12 +485,9 @@ export type DefinedPiece<T extends PieceDefinition, TConfig> = {
   piece: string;
   oauth?: OAuthApp;
   client(
-    args: (RequiresRequest<TConfig> extends true
-      ? { req: FrogBotRequest }
-      : { req?: FrogBotRequest }) & {
-      /** The app slot whose shared account the client uses, by its `app` name in `connections`. */
-      as?: string;
-    },
+    args: RequiresRequest<TConfig> extends true
+      ? { req: FrogBotRequest; as?: string }
+      : { req?: FrogBotRequest; as?: string },
   ): Promise<
     T extends { client: (...args: never[]) => infer TClient } ? Awaited<TClient> : undefined
   >;
