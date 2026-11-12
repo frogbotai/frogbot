@@ -1,5 +1,6 @@
 import { type ChildProcess, spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -36,7 +37,10 @@ function folder(prefix: string): string {
 function start(_app: unknown, _slot: string, port: number): ChildProcess {
   const child = spawn(
     process.execPath,
-    ['-e', `require('http').createServer((q,s)=>s.end('ok')).listen(${port},'127.0.0.1')`],
+    [
+      '-e',
+      `require('http').createServer((q,s)=>q.url==='/hold'||s.end('ok')).listen(${port},'127.0.0.1')`,
+    ],
     { detached: true },
   );
 
@@ -45,10 +49,10 @@ function start(_app: unknown, _slot: string, port: number): ChildProcess {
   return child;
 }
 
-async function superviseWith(dir: string, runtime: Omit<AppRuntime, 'start'>) {
+async function superviseWith(dir: string, runtime: Omit<AppRuntime, 'start'>, port?: number) {
   await supervise({
     dir,
-    port: await freePort(),
+    port: port ?? (await freePort()),
     autostart: false,
     env: { ...process.env, XDG_STATE_HOME: folder('frogbot-supervisor-state-') },
     runtime: { ...runtime, start },
@@ -133,5 +137,57 @@ describe('the supervisor on changes', { timeout: 40_000 }, () => {
 
     expect(count(supervisorLog(dir), 'change seen; rebuilding')).toBe(1);
     expect(builds).toBe(2);
+  });
+
+  it('keeps a build folder while an old server still drains from it, after an .env restart', async () => {
+    const dir = folder('frogbot-supervisor-drain-');
+    const port = await freePort();
+    const first = children.length;
+    const firstAliveAtBuild: boolean[] = [];
+    let builds = 0;
+
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, '.env'), 'SECRET=a\n');
+
+    await superviseWith(
+      dir,
+      {
+        prepare: () => Promise.resolve({}),
+        build() {
+          builds += 1;
+
+          if (builds === 3) {
+            const server = children[first];
+
+            firstAliveAtBuild.push(server.exitCode === null && server.signalCode === null);
+          }
+
+          return Promise.resolve();
+        },
+      },
+      port,
+    );
+
+    const held = request({ host: '127.0.0.1', port, path: '/hold' });
+
+    held.on('error', () => {});
+    held.end();
+    await vi.waitFor(() => expect(held.socket?.readyState).toBe('open'), WAIT);
+
+    writeFileSync(join(dir, '.env'), 'SECRET=b\n');
+    await vi.waitFor(() => expect(count(supervisorLog(dir), 'with the new .env')).toBe(1), WAIT);
+
+    writeFileSync(join(dir, 'src', 'one.ts'), 'export {};\n');
+    await vi.waitFor(() => expect(count(supervisorLog(dir), 'serving')).toBe(3), WAIT);
+
+    writeFileSync(join(dir, 'src', 'two.ts'), 'export {};\n');
+    await vi.waitFor(() => expect(count(supervisorLog(dir), 'building into')).toBe(3), WAIT);
+    // eslint-disable-next-line no-restricted-syntax -- gives an unfixed supervisor time to start the build before the held request ends
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    held.destroy();
+
+    await vi.waitFor(() => expect(builds).toBe(3), WAIT);
+
+    expect(firstAliveAtBuild).toEqual([false]);
   });
 });

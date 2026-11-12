@@ -88,7 +88,17 @@ describe('the types line frogbot up reads', () => {
     expect(parseTypesFile(output)).toBe(path);
   });
 
-  it('reads nothing when the last line is something else', () => {
-    expect(parseTypesFile('[frogbot] types written to /a.ts\nwarning: slow\n')).toBeUndefined();
+  it('finds the types line when a stderr warning arrives after it', () => {
+    expect(parseTypesFile('[frogbot] types written to /a.ts\nwarning: slow\n')).toBe('/a.ts');
+  });
+
+  it('reads the last types line when there are several', () => {
+    expect(
+      parseTypesFile('[frogbot] types unchanged at /old.ts\n[frogbot] types written to /a.ts\n'),
+    ).toBe('/a.ts');
+  });
+
+  it('reads nothing when no line names the types file', () => {
+    expect(parseTypesFile('warning: slow\n')).toBeUndefined();
   });
 });

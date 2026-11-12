@@ -83,6 +83,35 @@ describe('NEXT_PUBLIC_ changes', () => {
     expect(publicEnvChanged(before, readPublicEnv(dir, { BASE: 'shell' }))).toEqual([]);
   });
 
+  it('names a key on the first line of a file saved with a UTF-8 BOM', () => {
+    writeFileSync(join(dir, '.env'), '\uFEFFNEXT_PUBLIC_SITE=Acme\n');
+
+    expect(after('.env', '\uFEFFNEXT_PUBLIC_SITE=Beta\n')).toEqual(['NEXT_PUBLIC_SITE']);
+  });
+
+  it('names a key written as `KEY: value`, which Next also reads', () => {
+    writeFileSync(join(dir, '.env'), 'NEXT_PUBLIC_SITE: Acme\n');
+
+    expect(after('.env', 'NEXT_PUBLIC_SITE: Beta\n')).toEqual(['NEXT_PUBLIC_SITE']);
+  });
+
+  it('resolves a reference the shell sets empty from the files, as Next does', () => {
+    writeFileSync(join(dir, '.env'), 'NEXT_PUBLIC_URL=$BASE/x\nBASE=http://one\n');
+
+    const before = readPublicEnv(dir, { BASE: '' });
+
+    writeFileSync(join(dir, '.env'), 'NEXT_PUBLIC_URL=$BASE/x\nBASE=http://two\n');
+
+    expect(publicEnvChanged(before, readPublicEnv(dir, { BASE: '' }))).toEqual(['BASE']);
+  });
+
+  it.each(['.env.example', '.env.development', '.env.test'])(
+    'ignores %s, which a production build never loads',
+    (file) => {
+      expect(after(file, 'NEXT_PUBLIC_SITE=Other\n')).toEqual([]);
+    },
+  );
+
   it('reads nothing from a folder that is gone', () => {
     expect(readPublicEnv(join(dir, 'missing')).size).toBe(0);
   });
