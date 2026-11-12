@@ -316,7 +316,7 @@ Recovery is **at least once**. A crash, database outage, or event-loop stall can
 | `shouldAutoRun` | `() => boolean \| Promise<boolean>` | Always run | Checked on each autorun tick before jobs are claimed. Return `false` to skip the tick. See [Disable web autorun](/jobs-queue/workers#disable-web-autorun). |
 | `deleteJobOnComplete` | `boolean` | `true` | Delete each job record once it completes successfully. Set `false` to keep completed records. |
 | `processingOrder` | `Sort \| { default?: Sort; queues: Record<string, Sort> } \| ((args) => Sort \| Promise<Sort>)` | `'createdAt'` (oldest first) | Order jobs are claimed in, globally, per queue, or computed from the `run` arguments. `'-createdAt'` claims newest first. |
-| `jobsCollectionOverrides` | `({ defaultJobsCollection }) => CollectionConfig` | — | Returns a modified jobs collection. Its access functions get `FrogBotRequest`, so role checks like `allow('admin')` work. FrogBot still adds its `jobId` and `waitpoint` fields, replacing any with those names. |
+| `jobsCollectionOverrides` | `({ defaultJobsCollection }) => CollectionConfig` | — | Returns a modified jobs collection. Its access functions get `FrogBotRequest`, and `rolesPlugin` binds and checks `allow()` there like on any collection, so `read: allow('admin')` works. `allow()` own clauses aren't accepted on it. FrogBot still adds its `jobId` and `waitpoint` fields, replacing any with those names. |
 | `processingLease` | `{ duration?: number; safetyBuffer?: number }` | 20 minutes, 30 seconds | Job lease length and write cutoff. See [Leases and crash recovery](#leases-and-crash-recovery). |
 | `waitpoints` | `{ defaultExpiresIn?: number; maxExpiresIn?: number }` | 7 and 30 days | Resumable-wait lifetimes. See [Expiry](#expiry). |
 
