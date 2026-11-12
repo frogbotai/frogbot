@@ -233,6 +233,30 @@ describe(`grouped list body [${adapterLabel}]`, () => {
     expect((await visit({}, 50)).opensAt).toBe(50);
   });
 
+  it('clears a saved page size from a gallery view and from visits at the default that race', async () => {
+    const gallery = (query: Record<string, unknown>) =>
+      resolveViewSetup({
+        collectionSlug: 'items',
+        defaultLimit: 25,
+        query,
+        req,
+        viewSlug: 'gallery',
+      });
+
+    await gallery({ limit: '50' });
+    await gallery({ limit: '25' });
+
+    expect(await readViewPreference(req, 'collection-items-view-gallery')).toEqual({});
+
+    const list = (query: Record<string, unknown>) =>
+      resolveViewSetup({ collectionSlug: 'items', defaultLimit: 50, query, req, viewSlug: 'list' });
+
+    await list({ limit: '25' });
+    await Promise.all([list({ limit: '50' }), list({ limit: '50' })]);
+
+    expect((await readViewPreference(req, 'collection-items-view-list'))?.limit).toBeUndefined();
+  });
+
   it('does not save a groupBy that crashes the list, so a fresh visit still opens', async () => {
     await create('items', { guarded: 'north', title: 'one' });
 
