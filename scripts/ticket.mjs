@@ -1499,12 +1499,40 @@ async function ensureServices({ root, gates }) {
 }
 
 async function affectedGroups(root, log) {
-  const set = affectedSet(await verifyInputs(root, log));
+  const inputs = await verifyInputs(root, log);
+
+  if (!inputs.built.ok) {
+    return {
+      failed: {
+        group: 'build',
+        command: 'build stale packages',
+        output: inputs.built.groups.flat().join('\n'),
+      },
+    };
+  }
+
+  const set = affectedSet(inputs);
 
   return {
+    failed: null,
     groups: verifyGroups(set),
     uncovered: set.uncovered.filter((file) => existsSync(path.join(root, file))),
   };
+}
+
+function recordFailure(main, { key, patchId, failed }) {
+  appendLedger(main, {
+    ticket: key,
+    patchId,
+    level: 'failed',
+    evidence: `${failed.command} failed`,
+    verifier: VERIFY,
+  });
+}
+
+function refuseRed(main, { failed, log }) {
+  console.log(tail(failed.output).join('\n'));
+  refuse(`${failed.group} is red; full log: ${path.relative(main, log)}`);
 }
 
 async function commandVerify(main, { list }) {
@@ -1539,9 +1567,19 @@ async function commandVerify(main, { list }) {
 
   const tier = tierOf(found.plan == null ? null : parseTouches(found.plan));
   const log = openLog(main, `${key}-verify`);
-  const { groups, uncovered } = REPOS[repo].gates
-    ? { groups: repoGroups(repoGates(REPOS[repo].gates, packageScripts(root))), uncovered: [] }
+  const { groups, uncovered, failed } = REPOS[repo].gates
+    ? {
+        groups: repoGroups(repoGates(REPOS[repo].gates, packageScripts(root))),
+        uncovered: [],
+        failed: null,
+      }
     : await affectedGroups(root, log);
+
+  if (failed) {
+    if (!list) recordFailure(main, { key, patchId: worktreePatchId(root), failed });
+
+    refuseRed(main, { failed, log });
+  }
 
   if (list) {
     console.log(formatList({ tier, groups, uncovered }).join('\n'));
@@ -1561,22 +1599,13 @@ async function commandVerify(main, { list }) {
   });
 
   const id = worktreePatchId(root);
-  const build = REPOS[repo].gates ? async () => ({ ok: true, groups: [] }) : undefined;
-  const result = await runGroups({ root, log, groups, build });
+  const result = await runGroups({ root, log, groups });
 
   console.log(formatUncovered(uncovered).join('\n'));
 
   if (!result.ok) {
-    appendLedger(main, {
-      ticket: key,
-      patchId: id,
-      level: 'failed',
-      evidence: `${result.failed.command} failed`,
-      verifier: VERIFY,
-    });
-
-    console.log(tail(result.failed.output).join('\n'));
-    refuse(`${result.failed.group} is red; full log: ${path.relative(main, log)}`);
+    recordFailure(main, { key, patchId: id, failed: result.failed });
+    refuseRed(main, { failed: result.failed, log });
   }
 
   const level = levelReached(result.passed);
