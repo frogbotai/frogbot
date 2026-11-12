@@ -9,7 +9,7 @@ Connections let each user supply credentials for a piece. Configure the allowed 
 
 ## Configure linking
 
-The piece factory accepts your developer credential as `auth` and your OAuth app as `oauth`; see [factory options](/pieces/overview#factory-options). Factory `auth` is used when the caller has no connection for the piece, and factory `oauth` is available as `instance.oauth` for reuse. A connection entry controls what users can link:
+The piece factory accepts your developer credential as `auth` and your OAuth app as `oauth`; see [factory options](/pieces/overview#factory-options). Factory `oauth` is available as `instance.oauth` for reuse. A connection entry controls what users can link:
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -73,12 +73,21 @@ These seven combinations apply to credential-requiring pieces. OAuth combination
 | Yes | — | — | Developer credential; omit the connection entry. |
 | No | `true` | — | User-entered credential required. |
 | No | — | `true` | User OAuth connection required. |
-| Yes | `true` | — | User-entered credential, otherwise developer credential. |
-| Yes | — | `true` | User OAuth credential, otherwise developer credential. |
+| Yes | `true` | — | User-entered credential required. |
+| Yes | — | `true` | User OAuth connection required. |
 | No | `true` | `true` | User chooses static credentials or OAuth; a connection is required. |
-| Yes | `true` | `true` | User chooses either method, otherwise developer credential. |
+| Yes | `true` | `true` | User chooses either method; a connection is required. |
 
-“Otherwise” means **no connection row exists**. An existing row must resolve successfully. Invalid credentials, revoked or error states, missing scopes, and expiry that cannot be refreshed throw `ConnectionError` and block fallback.
+### When the code credential is used
+
+Factory `auth` is used in exactly two cases:
+
+- The piece has no connection entry. Every call uses factory `auth`.
+- The piece does app-owned work: it sends [transactional email](/email/overview) or answers in a channel, such as [Slack](/pieces/slack). That work uses factory `auth` even when the piece has a connection entry.
+
+For a piece with a connection entry, an action, tool or trigger call never uses factory `auth`. It uses the signed-in user's own connection. When the request has no user, as in a scheduled job or trigger, or the user hasn't linked the piece, it throws `ConnectionError` with code `missing` and the message `Connection for 'gmail' is not linked. Link it in Settings → Linked accounts.` Another user's connection never satisfies the call.
+
+An existing connection must resolve successfully. Invalid credentials, revoked or error states, missing scopes, and expiry that can't be refreshed throw `ConnectionError`.
 
 ## Run AI on users' keys
 
@@ -211,7 +220,7 @@ if (gmailAccount) {
 
 `resolve` accepts optional `scopes` to require specific grants. It returns the piece's parsed auth value, converting stored OAuth tokens through the recipe's `toAuth` when provided. `list` returns IDs, owner, piece, method, account, scopes, expiry, status, and timestamps, without plaintext or encrypted credentials.
 
-Expired OAuth connections refresh lazily during resolution, using the recipe's `refresh` function or a refresh-token grant at its `tokenUrl`. Concurrent refreshes are serialized per owner and piece. A failed refresh marks the connection `error` and throws; it never silently switches to factory `auth`. Reconnect to replace the failing credential. Disconnecting removes the row, allowing factory fallback again if configured; it revokes access at the provider only when the recipe defines `revoke`.
+Expired OAuth connections refresh lazily during resolution, using the recipe's `refresh` function or a refresh-token grant at its `tokenUrl`. Concurrent refreshes are serialized per owner and piece. A failed refresh marks the connection `error` and throws; it never switches to factory `auth`. Reconnect to replace the failing credential. Disconnecting removes the row, so the user's next call throws `missing`; it revokes access at the provider only when the recipe defines `revoke`.
 
 `ConnectionError.code` is `missing`, `revoked`, `expired`, `error`, or `scopes`. Scope errors include `missingScopes`. `frogbot.connections.authorizations({ pieces, req })` returns linking requirements keyed by piece, including enabled methods and an OAuth `authorizeUrl` when available.
 
