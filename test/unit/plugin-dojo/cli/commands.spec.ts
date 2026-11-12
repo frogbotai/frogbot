@@ -114,6 +114,32 @@ describe('signing in', () => {
     ]);
   });
 
+  it.each([['pull'], ['logs']])(
+    'prints the sign-in error as JSON from apps %s --json',
+    async (verb) => {
+      const { run } = await setup();
+      const result = await run(['apps', verb, 'deals', '--json']);
+
+      expect(result.code).toBe(3);
+      expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
+        ok: false,
+        needs: 'sign-in',
+        userCode: 'BCDF-GHJK',
+      });
+    },
+  );
+
+  it('prints a failed logout as JSON under --json', async () => {
+    const { run } = await setup();
+    const result = await run(['logout', 'extra', '--json']);
+
+    expect(result.code).toBe(2);
+    expect(JSON.parse(result.stdout().join('\n'))).toEqual({
+      ok: false,
+      error: 'Usage: frogbot dojo logout',
+    });
+  });
+
   it('exits 3 again with the same code while the person has not confirmed it', async () => {
     const { dojo, run } = await setup();
 

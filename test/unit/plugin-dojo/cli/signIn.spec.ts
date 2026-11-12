@@ -1,6 +1,7 @@
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, utimes, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   authPath,
@@ -175,6 +176,72 @@ describe('Dojo device sign-in without a terminal', () => {
 
     expect((await login({}, false)).token).toBe('fb_test_1');
     expect(dojo.paths().filter((path) => path === 'POST /api/cli/device/code')).toHaveLength(1);
+  });
+
+  it('keeps the code when Dojo answers 5xx with an OAuth error body', async () => {
+    const { dojo, login } = await setup();
+
+    await login({}, false);
+
+    const fetchBefore = globalThis.fetch;
+
+    globalThis.fetch = () =>
+      Promise.resolve(Response.json({ error: 'server_error' }, { status: 500 }));
+
+    const failed = await login({}, false).finally(() => {
+      globalThis.fetch = fetchBefore;
+    });
+
+    expect((failed.token as Error).message).toBe(
+      "Couldn't reach Dojo to finish the sign-in (500). Run the command again.",
+    );
+
+    dojo.pendingPolls = 0;
+
+    expect((await login({}, false)).token).toBe('fb_test_1');
+    expect(dojo.paths().filter((path) => path === 'POST /api/cli/device/code')).toHaveLength(1);
+  });
+
+  it('waits for a held lock instead of writing past it', async () => {
+    const { env, login } = await setup();
+    const lock = `${authPath(env)}.lock`;
+
+    await mkdir(dirname(lock), { recursive: true });
+    await writeFile(lock, '');
+
+    const started = Date.now();
+    let finished = false;
+    const signingIn = login({}, false).then((result) => {
+      finished = true;
+
+      return result;
+    });
+
+    await vi.waitFor(
+      () => {
+        if (Date.now() - started < 2500) throw new Error('The lock is still young.');
+      },
+      { timeout: 5000, interval: 50 },
+    );
+
+    expect(finished).toBe(false);
+    await expect(readFile(authPath(env), 'utf8')).rejects.toThrow();
+
+    await rm(lock);
+
+    expect(step((await signingIn).token)?.needs).toBe('sign-in');
+  }, 10_000);
+
+  it('breaks a lock older than 10 s', async () => {
+    const { env, login } = await setup();
+    const lock = `${authPath(env)}.lock`;
+    const old = new Date(Date.now() - 11_000);
+
+    await mkdir(dirname(lock), { recursive: true });
+    await writeFile(lock, '');
+    await utimes(lock, old, old);
+
+    expect(step((await login({}, false)).token)?.needs).toBe('sign-in');
   });
 
   it('drops the kept code when Dojo denies it', async () => {
