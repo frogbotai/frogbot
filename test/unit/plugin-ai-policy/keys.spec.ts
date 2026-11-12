@@ -110,6 +110,12 @@ describe('aiPolicyPlugin key limits', () => {
     ).rejects.toThrow("[plugin-ai-policy] spendThisPeriodUSD on 'api-keys' can't be localized");
   });
 
+  it('refuses drafts on the keys collection', async () => {
+    await expect(apply({ collection: { versions: { drafts: true } } })).rejects.toThrow(
+      "[plugin-ai-policy] 'api-keys' can't have drafts",
+    );
+  });
+
   it('describes the fields, shows spend and cap after prefix and registers the create fields', async () => {
     const result = await apply();
     const keys = collection(result, 'api-keys');

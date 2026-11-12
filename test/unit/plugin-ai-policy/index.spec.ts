@@ -165,6 +165,20 @@ describe('aiPolicyPlugin', () => {
     },
   );
 
+  it('refuses drafts on the auth collection, whose versions would keep a stale spend', async () => {
+    const users = { slug: 'users', auth: true, versions: { drafts: true }, fields: [] };
+
+    await expect(apply(config({ collections: [users] }))).rejects.toThrow(
+      "[plugin-ai-policy] 'users' can't have drafts",
+    );
+  });
+
+  it('accepts versions without drafts on the auth collection', async () => {
+    const users = { slug: 'users', auth: true, versions: { drafts: false }, fields: [] };
+
+    await expect(apply(config({ collections: [users] }))).resolves.toBeDefined();
+  });
+
   it('wraps every access category, keeping the app rule and signed-in default', async () => {
     const generate = vi.fn(({ model }: { model: string }) => model !== 'openai/blocked');
     const result = await apply(
