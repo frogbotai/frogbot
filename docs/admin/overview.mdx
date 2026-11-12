@@ -130,7 +130,7 @@ admin: {
 }
 ```
 
-FrogBot serves that one file, unchanged, at every icon URL, with no sign-in needed, and the browser scales it:
+FrogBot serves that one file, unchanged, at every icon URL, with no sign-in needed, and the browser scales it. Both endpoints answer `GET` and `HEAD`:
 
 - `/api/frogbot/app-icon/{32,180,192,512}`: the tab icon, the iOS touch icon and the two manifest icons. The default frog is pre-sized, with the iOS one on white.
 - `/api/frogbot/app-manifest`: the manifest, named after `applicationName` (else `FrogBot`) and opening the admin panel.
