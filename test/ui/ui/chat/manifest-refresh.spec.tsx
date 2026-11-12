@@ -219,4 +219,24 @@ describe('ChatProvider manifest refresh', () => {
 
     expect(signals[1].aborted).toBe(true);
   });
+
+  it('keeps a null manifest (chat disabled) when a later focus refetch fails', async () => {
+    const loadManifest = vi
+      .fn<ChatPlatformAdapter['loadManifest']>()
+      .mockResolvedValueOnce(null)
+      .mockRejectedValueOnce(new Error('offline'));
+
+    render(
+      <ChatProvider adapter={adapterLoading(loadManifest)}>
+        <Models />
+      </ChatProvider>,
+    );
+
+    await screen.findByText('none');
+    await focusWindow();
+
+    expect(loadManifest).toHaveBeenCalledTimes(2);
+    expect(renders.mock.calls.at(-1)?.[0]).toMatchObject({ loading: false, manifest: null });
+    expect(renders.mock.calls.at(-1)?.[0]?.error).toBeUndefined();
+  });
 });

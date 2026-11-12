@@ -153,7 +153,11 @@ function renderChatView(props: Partial<Parameters<typeof ChatViewClient>[0]> = {
 }
 
 function lastChatProps() {
-  return mocks.chat.mock.calls.at(-1)?.[0] as { model?: string; reasoning?: string };
+  return mocks.chat.mock.calls.at(-1)?.[0] as {
+    agent?: string;
+    model?: string;
+    reasoning?: string;
+  };
 }
 
 function lastStepNav() {
@@ -928,5 +932,87 @@ describe('ChatViewClient', () => {
     await waitFor(() => expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Quarterly plan' }]));
 
     expect(mocks.chat).not.toHaveBeenCalled();
+  });
+
+  it('keeps an open chat on screen with the default agent when a refetch drops its agent', async () => {
+    const threadPath = '/admin/collections/conversations/chat-1';
+
+    useManifest(
+      agentEntry('general', { defaultModel: 'openai/gpt-5', models: ['openai/gpt-5'] }),
+      agentEntry('sales', { defaultModel: 'anthropic/opus', models: ['anthropic/opus'] }),
+    );
+
+    mocks.pathname = threadPath;
+    mocks.request.mockImplementation(() => Response.json({ id: 'chat-1', agent: 'sales' }));
+
+    const { moveTo } = renderChatView({
+      agent: 'sales',
+      chatId: 'chat-1',
+      initialChat: { id: 'chat-1', agent: 'sales' },
+    });
+
+    await waitFor(() => expect(lastChatProps()).toMatchObject({ agent: 'sales' }));
+
+    useManifest(agentEntry('general', { defaultModel: 'openai/gpt-5', models: ['openai/gpt-5'] }));
+    mocks.chat.mockClear();
+    moveTo(threadPath);
+    await act(() => Promise.resolve());
+
+    await waitFor(() =>
+      expect(lastChatProps()).toMatchObject({ agent: 'general', model: 'openai/gpt-5' }),
+    );
+  });
+
+  it('does not unmount an open chat, and its draft, when a refetch drops its agent', async () => {
+    const threadPath = '/admin/collections/conversations/chat-1';
+    const unmounted = vi.fn();
+
+    function DraftChat(props: { composerStartSlot?: ReactNode }) {
+      useEffect(() => unmounted, []);
+
+      return mocks.chat(props);
+    }
+
+    useManifest(agentEntry('general'), agentEntry('sales'));
+    mocks.pathname = threadPath;
+    mocks.request.mockImplementation(() => Response.json({ id: 'chat-1', agent: 'sales' }));
+
+    const { moveTo } = renderChatView({
+      agent: 'sales',
+      chatId: 'chat-1',
+      ChatComponent: DraftChat,
+      initialChat: { id: 'chat-1', agent: 'sales' },
+    });
+
+    await waitFor(() => expect(lastChatProps()).toMatchObject({ agent: 'sales' }));
+
+    useManifest(agentEntry('general'));
+    moveTo(threadPath);
+    await act(() => Promise.resolve());
+
+    expect(unmounted).not.toHaveBeenCalled();
+  });
+
+  it('does not unmount a new chat, and its draft, when a refetch drops its agent', async () => {
+    const unmounted = vi.fn();
+
+    function DraftChat(props: { composerStartSlot?: ReactNode }) {
+      useEffect(() => unmounted, []);
+
+      return mocks.chat(props);
+    }
+
+    useManifest(agentEntry('sales'), agentEntry('general'));
+
+    const { moveTo } = renderChatView({ agent: 'sales', ChatComponent: DraftChat });
+
+    await waitFor(() => expect(lastChatProps()).toMatchObject({ agent: 'sales' }));
+
+    useManifest(agentEntry('general'));
+    moveTo(createPath);
+    await act(() => Promise.resolve());
+
+    expect(lastChatProps()).toMatchObject({ agent: 'general' });
+    expect(unmounted).not.toHaveBeenCalled();
   });
 });
