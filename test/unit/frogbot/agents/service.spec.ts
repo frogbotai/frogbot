@@ -874,6 +874,36 @@ describe('agent service', () => {
     });
   });
 
+  it('keeps the 403 and leaves out the allowed list when a model check throws while listing it', async () => {
+    const agent = makeAgent({ options: [OPENAI_TEST, OPENAI_OTHER] });
+    const bug = new TypeError('bug');
+    const req = makeRequest({
+      ai: {
+        ...config,
+        access: {
+          ...config.access,
+          generate: ({ model }: { model: string }) => {
+            if (model === OPENAI_OTHER) throw bug;
+
+            return true;
+          },
+        },
+      },
+    });
+
+    await expect(
+      assertAgentSelection({ agent, config, selection: { model: MY_LOCAL_THINKER }, req }),
+    ).rejects.toMatchObject({
+      message: "Model 'my-local/thinker' is not allowed for agent 'support'.",
+      code: 'model-not-allowed',
+      status: 403,
+    });
+    expect(req.frogbot.logger.error).toHaveBeenCalledWith(
+      { err: bug, agent: 'support' },
+      expect.any(String),
+    );
+  });
+
   it('denies agent use by access before checking models', async () => {
     const agent = makeAgent({ access: () => false });
     const req = makeRequest({ agents: { support: agent }, allowed: [] });

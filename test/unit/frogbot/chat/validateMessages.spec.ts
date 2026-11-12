@@ -113,6 +113,35 @@ describe('describeMessagesError', () => {
     ).toBe('`messages[0].parts[0].input.id`: expected string, received number');
   });
 
+  it('lists every option of a union of literals or types', async () => {
+    expect(
+      await explain(
+        [
+          {
+            id: 'm1',
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool-weather',
+                toolCallId: 'c1',
+                state: 'input-available',
+                input: { unit: 'k' },
+              },
+            ],
+          },
+        ],
+        {
+          weather: tool({
+            inputSchema: z.object({ unit: z.union([z.literal('c'), z.literal('f')]) }),
+          }),
+        },
+      ),
+    ).toBe("`messages[0].parts[0].input.unit`: expected one of 'c' | 'f', received 'k'");
+    expect(await explain(withReference({ id: null }))).toBe(
+      '`messages[0].parts[0].id`: expected one of string | number, received null',
+    );
+  });
+
   it('returns undefined for an error without issues', () => {
     expect(describeMessagesError(new Error('boom'), [])).toBeUndefined();
   });
