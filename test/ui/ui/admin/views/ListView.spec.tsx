@@ -68,7 +68,7 @@ function listProps(overrides: Record<string, unknown> = {}) {
     payload: { config: { routes: { admin: '/admin' } }, importMap: {} },
     permissions: {},
     searchParams: {},
-    server: {},
+    server: { getHeaders: () => Promise.resolve(new Headers()) },
     user: { id: 'u1' },
     viewType: 'list',
     ...overrides,
@@ -117,7 +117,7 @@ describe('ListView', () => {
         collectionSlug: 'tasks',
         params: { segments: ['collections', 'tasks'] },
         payload,
-        server: { redirect: vi.fn() },
+        server: { getHeaders: () => Promise.resolve(new Headers()), redirect: vi.fn() },
         ...overrides,
       });
     }

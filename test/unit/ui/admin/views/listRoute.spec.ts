@@ -32,7 +32,10 @@ vi.mock('../../../../../packages/ui/src/admin/views/List/ListFrame.client.js', (
 }));
 
 vi.mock('../../../../../packages/ui/src/admin/views/List/groupedTable.js', () => ({}));
-vi.mock('../../../../../packages/ui/src/admin/views/frame.js', () => ({}));
+
+vi.mock('../../../../../packages/ui/src/admin/views/frame.js', () => ({
+  buildFrameSlots: () => ({}),
+}));
 
 vi.mock('../../../../../packages/ui/src/admin/views/Board/index.js', () => ({
   BoardView: mocks.BoardView,
@@ -76,6 +79,7 @@ vi.mock('../../../../../packages/ui/src/admin/views/viewSetup.js', async (import
 const { ListView } = await import('../../../../../packages/ui/src/admin/views/List/ListView.js');
 
 const server = {
+  getHeaders: () => Promise.resolve(new Headers()),
   notFound: () => {
     throw new Error('not-found');
   },
@@ -129,10 +133,18 @@ describe('ListView routing', () => {
   });
 
   it("renders Payload's list in a relationship drawer when a board is first", async () => {
-    const result = await ListView(listProps(['board', 'list'], undefined));
+    const result = await ListView(
+      listProps(['board', 'list'], ROOT, {
+        server: {
+          ...server,
+          getHeaders: () => Promise.resolve(new Headers({ 'next-action': 'x' })),
+        },
+      }),
+    );
 
     expect(isValidElement(result)).toBe(true);
     expect(mocks.BoardView).not.toHaveBeenCalled();
+    expect(mocks.redirectToLastView).not.toHaveBeenCalled();
   });
 
   it("renders Payload's list in the hierarchy view when a board is first", async () => {

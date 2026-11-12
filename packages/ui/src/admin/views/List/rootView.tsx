@@ -28,6 +28,14 @@ export function isCollectionRoot(params: ListViewServerProps['params']): boolean
   return Array.isArray(segments) && segments.length === 2;
 }
 
+/**
+ * Whether Payload renders the list in a relationship drawer. It does so through a server function
+ * with the collection root's params, so only the server action header tells it from the page.
+ */
+export async function isDrawer(props: ListViewServerProps): Promise<boolean> {
+  return isCollectionRoot(props.params) && (await props.server.getHeaders()).has('next-action');
+}
+
 /** The first view, rendered at the collection root with the list's server props. */
 export async function renderFirstView(
   type: Exclude<CollectionView['type'], 'list'>,

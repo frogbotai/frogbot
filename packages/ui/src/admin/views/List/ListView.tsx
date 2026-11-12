@@ -39,7 +39,7 @@ import { readGridSettings } from './grid/grid.js';
 import type { ListGridSettings } from './grid/ListGrid.client.js';
 import { type GroupedTable, renderGroupedTable } from './groupedTable.js';
 import { ListFrameClient, type ListFrameSummary } from './ListFrame.client.js';
-import { isCollectionRoot, renderFirstView, renderListRoute } from './rootView.js';
+import { isCollectionRoot, isDrawer, renderFirstView, renderListRoute } from './rootView.js';
 import { withRowIds } from './rowIds.js';
 import { readSummaryChoices, type SummaryColumn } from './summary/summary.js';
 
@@ -150,15 +150,22 @@ function withDefaultGroupBy(stored: ViewSetup, groupBy: string | undefined): Vie
 export async function ListView(props: ListViewServerProps | AdminViewServerProps) {
   if ('initPageResult' in props) return renderListRoute(props);
 
-  if (isCollectionRoot(props.params) && props.viewType !== 'hierarchy') {
-    const first = getRuntimeViews(props)[0];
-    if (first && first.type !== 'list') return renderFirstView(first.type, props);
+  const inDrawer = await isDrawer(props);
+  const first = getRuntimeViews(props)[0];
+  if (
+    !inDrawer &&
+    isCollectionRoot(props.params) &&
+    props.viewType !== 'hierarchy' &&
+    first &&
+    first.type !== 'list'
+  ) {
+    return renderFirstView(first.type, props);
   }
 
-  return renderList(props);
+  return renderList(props, inDrawer);
 }
 
-async function renderList(props: ListViewServerProps) {
+async function renderList(props: ListViewServerProps, inDrawer: boolean) {
   const {
     collectionConfig,
     data,
@@ -207,10 +214,10 @@ async function renderList(props: ListViewServerProps) {
   }
 
   if (isList) {
-    if (isCollectionRoot(params)) {
+    if (!isCollectionRoot(params)) {
+      if (!views.some(({ slug }) => slug === view.slug)) return server.notFound();
+    } else if (!inDrawer) {
       await redirectToLastView({ collectionSlug, req, server, views });
-    } else if (!views.some(({ slug }) => slug === view.slug)) {
-      return server.notFound();
     }
 
     const setup = await resolveViewSetup({
@@ -223,7 +230,7 @@ async function renderList(props: ListViewServerProps) {
 
     const saved = qs.stringify(withDefaultGroupBy(setup.saved, view.groupBy));
 
-    if (isFreshQuery(query) && saved) {
+    if (!inDrawer && isFreshQuery(query) && saved) {
       server.redirect(
         `${formatAdminURL({
           adminRoute: payload.config.routes.admin,
