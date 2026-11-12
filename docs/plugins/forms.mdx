@@ -53,7 +53,7 @@ Saving works as on any edit page. A document in the `forms` collection has:
 - `title`, and a unique `slug` of lowercase letters, numbers and hyphens.
 - `collection`: one of the listed collections. Each response creates a record there.
 - `mode`: `create` (the default) takes new records, `update` edits one record through an [edit link](#edit-links), and `both` does either.
-- `steps`, each with an optional `title` and its `questions`. A question names a field of the collection and can override its `label`, `description` and `placeholder`. A file question also has `maxFileSize`, `maxFiles` and `mimeTypes`; see [File uploads](#file-uploads).
+- `steps`, each with an optional `title` and its `questions`. A question names a field of the collection and can override its `label`, `description` and `placeholder`. A file question also has `maxFileSize`, `maxFiles` and `mimeTypes`; see [File uploads](#file-uploads). A question can also have `rules` and `match`; see [Showing a question for some answers](#showing-a-question-for-some-answers).
 - `hiddenParams`: URL parameters, like `utm_source`, saved to a field of the record.
 - `confirmation`: a `message`, or a `redirect` to a path such as `/thanks` or an `http(s)` URL.
 - `status` (`open` or `closed`), `closesAt` and `maxResponses`.
@@ -64,8 +64,35 @@ A question can use any top-level field, including fields in unnamed rows, collap
 - repeats a field already on the form;
 - names a field whose `access.create` denies a form submission;
 - asks for files that could pass the app's upload limits, or stores them somewhere a form can't (see [File uploads](#file-uploads));
+- has a rule that checks itself, a later question, a question not on the form or a file question, or has rules on a `required` field (see [Showing a question for some answers](#showing-a-question-for-some-answers));
 
 or when the form leaves out a field that is `required` and has no `defaultValue`, since no response could then be saved. An `update` form skips that last rule and the `access.create` check, and has its own; see [Edit links](#edit-links). A form saved as `closed` skips these checks, so it can always be closed, or drafted before it opens.
+
+## Showing a question for some answers
+
+A question with `rules` is shown only when the answers to earlier questions pass them. Each rule names an earlier question's field and an `operator`:
+
+- `equals`: the answer is `value`. A checkbox answer is `true` or `false`, a number compares by value (`5` equals `05`), and a multi-select passes when any chosen option is `value`.
+- `notEquals`: the answer isn't `value`, which includes no answer.
+- `hasValue`: the question has an answer. An unchecked checkbox, empty text and no chosen option don't count.
+
+Every rule must pass, or one with `match: 'any'`. In the builder, open a question with **Edit** and use **Show when**, which offers the questions above it:
+
+```ts
+steps: [
+  {
+    questions: [
+      { field: 'business' },
+      {
+        field: 'company',
+        rules: [{ question: 'business', operator: 'equals', value: 'yes' }],
+      },
+    ],
+  },
+]
+```
+
+The page and the server run the same check, `visibleQuestions` from `@frogbotai/ui/forms/rules`, over the answers in order, so the answer to a hidden question counts as no answer for the rules after it. A step whose questions are all hidden is skipped, and the step count leaves it out. Hidden questions aren't checked on the page, and the server drops their answers and files, even if a client sends them; through an edit link, a hidden question's field keeps its saved value. Since a hidden question must never block a response, a `required` field can't have rules: make it optional, or give it a default.
 
 ## Who can open a form
 
