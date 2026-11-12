@@ -242,4 +242,26 @@ describe('the watcher and the build queue', () => {
 
     expect(onChange).toHaveBeenCalledTimes(2);
   });
+
+  it('forgets a types file write seen before prepare named its new path', async () => {
+    const onChange = vi.fn();
+    const fs = fakeWatch();
+
+    fs.setRoot(dir);
+
+    const watcher = watchApp({ dir, onChange, watch: fs.watch });
+
+    fs.emit('src', 'b-types.ts');
+    watcher.forget(join(dir, 'src', 'b-types.ts'));
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(onChange).not.toHaveBeenCalled();
+
+    fs.emit('src', 'b-types.ts');
+    fs.emit('src', 'collections/Notes.ts');
+    watcher.forget(join(dir, 'src', 'b-types.ts'));
+    await vi.advanceTimersByTimeAsync(1500);
+
+    expect(onChange).toHaveBeenCalledWith(['src/collections/Notes.ts']);
+  });
 });

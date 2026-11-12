@@ -67,6 +67,22 @@ describe('NEXT_PUBLIC_ changes', () => {
     expect(after('.env.local', 'NEXT_PUBLIC_SITE=Acme\n')).toEqual(['NEXT_PUBLIC_SITE']);
   });
 
+  it('names a variable a NEXT_PUBLIC_ value references, as Next expands it', () => {
+    writeFileSync(join(dir, '.env'), 'BASE=http://one\nNEXT_PUBLIC_URL=${BASE}/x\n');
+
+    expect(after('.env', 'BASE=http://two\nNEXT_PUBLIC_URL=${BASE}/x\n')).toEqual(['BASE']);
+  });
+
+  it('resolves a reference from the shell before the files', () => {
+    writeFileSync(join(dir, '.env'), 'BASE=file\nNEXT_PUBLIC_URL=$BASE/x\n');
+
+    const before = readPublicEnv(dir, { BASE: 'shell' });
+
+    writeFileSync(join(dir, '.env'), 'BASE=changed\nNEXT_PUBLIC_URL=$BASE/x\n');
+
+    expect(publicEnvChanged(before, readPublicEnv(dir, { BASE: 'shell' }))).toEqual([]);
+  });
+
   it('reads nothing from a folder that is gone', () => {
     expect(readPublicEnv(join(dir, 'missing')).size).toBe(0);
   });
