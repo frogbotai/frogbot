@@ -385,7 +385,6 @@ describe('verifyGroups', () => {
 
 describe('runGroups', () => {
   const log = path.join(os.tmpdir(), `verify-${process.pid}.log`);
-  const build = () => Promise.resolve({ ok: true, groups: [] });
   const pass = ['node', '-e', ''];
   const fail = ['node', '-e', 'process.exit(3)'];
 
@@ -397,7 +396,6 @@ describe('runGroups', () => {
     const result = await runGroups({
       root,
       log,
-      build,
       groups: [
         { group: 'typecheck', level: 'typecheck', commands: [pass] },
         { group: 'unit', level: 'unit', commands: [fail] },
@@ -416,7 +414,6 @@ describe('runGroups', () => {
     const result = await runGroups({
       root,
       log,
-      build,
       groups: [{ group: 'unit', level: 'unit', commands: [pass, pass] }],
     });
 
