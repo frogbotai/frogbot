@@ -119,7 +119,7 @@ describe('GitHub connections', () => {
 
       frogbot.find.mockResolvedValue({ docs: [] });
 
-      await expect(api.resolve({ piece: github, req })).resolves.toEqual(appAuth);
+      await expect(api.resolve({ piece: github, req })).rejects.toMatchObject({ code: 'missing' });
     },
   );
 });

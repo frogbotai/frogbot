@@ -127,31 +127,35 @@ export class Connections {
     };
 
     const entry = Object.hasOwn(config.entries, slug) ? config.entries[slug] : undefined;
-    let row;
-    try {
-      row = owner && entry ? await (await this.store).get({ owner, piece: slug }) : undefined;
-    } catch {
-      return fail('error', 'could not be read');
-    }
-
-    if (!row) {
-      if (id) credentialKeys.delete(id);
+    if (!entry) {
       if (runtime.auth !== undefined) return { auth: runtime.auth, key: piece };
 
       return fail('missing', 'is not linked');
     }
 
+    const notLinked = 'is not linked. Link it in Settings → Linked accounts';
+    if (!owner) return fail('missing', notLinked);
+
+    let row;
+    try {
+      row = await (await this.store).get({ owner, piece: slug });
+    } catch {
+      return fail('error', 'could not be read');
+    }
+
+    if (!row) return fail('missing', notLinked);
+
     if (
       row.status === 'active' &&
       row.method === 'oauth' &&
-      entry?.oauth &&
+      entry.oauth &&
       row.expiresAt &&
       Date.parse(row.expiresAt) <= Date.now()
     ) {
       try {
         row = await refreshOAuthConnection({
           store: await this.store,
-          owner: owner!,
+          owner,
           piece: entry.piece,
           req,
         });
@@ -159,7 +163,7 @@ export class Connections {
         return fail('error', 'could not be refreshed');
       }
 
-      if (!row) return fail('missing', 'is not linked');
+      if (!row) return fail('missing', notLinked);
     }
 
     if (row.status === 'revoked') return fail('revoked', 'is revoked');
@@ -170,7 +174,7 @@ export class Connections {
       if (expiresAt <= Date.now()) return fail('expired', 'is expired');
     }
 
-    if ((row.method !== 'secret' && row.method !== 'oauth') || !entry?.[row.method]) {
+    if ((row.method !== 'secret' && row.method !== 'oauth') || !entry[row.method]) {
       return fail('error', 'uses an unavailable method');
     }
 

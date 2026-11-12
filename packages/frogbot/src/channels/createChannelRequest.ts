@@ -37,7 +37,7 @@ export async function createChannelRequest({
     },
   });
 
-  const client = await runtime.client({ req });
+  const client = await runtime.appClient({ req });
   const user = await runtime.definition.channel!.identity({ author, client, req });
 
   return { client, req: Object.assign(req, { user }) };
@@ -52,5 +52,5 @@ export async function createInternalChannelRequest({
 }): Promise<ChannelRequest> {
   const req = await frogbot.createRequest({});
 
-  return { client: await pieceInstanceRuntime(binding.instance).client({ req }), req };
+  return { client: await pieceInstanceRuntime(binding.instance).appClient({ req }), req };
 }
