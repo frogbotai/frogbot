@@ -335,6 +335,70 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'postgres')('syncSchema on Post
     expect(await count(sql, `SELECT count(*) FROM deals WHERE stage = 'lost'`)).toBe(1);
   });
 
+  it('adds a select option and makes it the default of a new indexed column on a table with rows', async () => {
+    const stage = (defaultValue: string, ...options: string[]): Field => ({
+      name: 'stage',
+      type: 'select',
+      enumName: 'deal_stage',
+      options,
+      defaultValue,
+    });
+
+    const { url, sql } = await seeded(stage('lead', 'lead', 'won'));
+    const next = [
+      deals(title, company, stage('lead', 'lead', 'won', 'lost'), {
+        ...stage('lost', 'lead', 'won', 'lost'),
+        name: 'next',
+        index: true,
+        required: true,
+      }),
+      notes,
+    ];
+
+    const result = await sync(url, next);
+
+    expect(result).toMatchObject({ ok: true });
+    expect(await count(sql, `SELECT count(*) FROM deals WHERE next = 'lost'`)).toBe(10);
+    expect(await column(sql, 'deals', 'next')).toMatchObject({ is_nullable: 'NO' });
+    expect(
+      await count(sql, `SELECT count(*) FROM pg_indexes WHERE indexname = 'deals_next_idx'`),
+    ).toBe(1);
+
+    await sql('INSERT INTO deals (title, updated_at, created_at) VALUES ($1, now(), now())', [
+      'New',
+    ]);
+
+    expect(await count(sql, `SELECT count(*) FROM deals WHERE next = 'lost'`)).toBe(11);
+    expect(await sync(url, next)).toMatchObject({ ok: true, applied: [] });
+  });
+
+  it('adds a select option, makes it the default and indexes the field on a table with rows', async () => {
+    const stage = (defaultValue: string, index: boolean, ...options: string[]): Field => ({
+      name: 'stage',
+      type: 'select',
+      options,
+      defaultValue,
+      index,
+    });
+
+    const { url, sql } = await seeded(stage('lead', false, 'lead', 'won'));
+    const result = await sync(url, [
+      deals(title, company, stage('lost', true, 'lead', 'won', 'lost')),
+      notes,
+    ]);
+
+    expect(result).toMatchObject({ ok: true });
+    expect(
+      await count(sql, `SELECT count(*) FROM pg_indexes WHERE indexname = 'deals_stage_idx'`),
+    ).toBe(1);
+
+    await sql('INSERT INTO deals (title, updated_at, created_at) VALUES ($1, now(), now())', [
+      'New',
+    ]);
+
+    expect(await count(sql, `SELECT count(*) FROM deals WHERE stage = 'lost'`)).toBe(1);
+  });
+
   it('refuses a new unique field with a default on a table with rows, applying nothing', async () => {
     const { url, sql } = await seeded();
     const before = await schemaDump(sql);
