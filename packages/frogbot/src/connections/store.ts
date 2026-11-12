@@ -322,14 +322,17 @@ export class ConnectionStore {
 
             const row =
               reconnect === undefined
-                ? current.find((row) => accountKey(row) === accountId)
+                ? current.find((row) => row.method === data.method && accountKey(row) === accountId)
                 : current.find((row) => sameID(row.id, reconnect));
 
             if (reconnect !== undefined && (!row || accountKey(row) !== accountId)) {
               throw new OAuthError('account');
             }
 
-            const isDefault = row?.isDefault === true || !current.some((row) => row.isDefault);
+            const isDefault = row
+              ? row === (current.find((row) => row.isDefault) ?? current[0])
+              : current.length === 0;
+
             const write = {
               owner: key.owner.id,
               piece,

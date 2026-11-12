@@ -310,7 +310,9 @@ describe('resolveConnectionsCollections', () => {
     const field = collection.fields.find((item) => 'name' in item && item.name === 'credential');
 
     expect(field).toMatchObject({ type: 'text', required: true });
-    expect(collection.indexes).toEqual([{ fields: ['owner', 'piece', 'accountId'], unique: true }]);
+    expect(collection.indexes).toEqual([
+      { fields: ['owner', 'piece', 'method', 'accountId'], unique: true },
+    ]);
   });
 
   it('uses the linked accounts view as the collection default view', () => {

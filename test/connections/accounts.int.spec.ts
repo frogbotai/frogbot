@@ -26,15 +26,10 @@ const accountPiece = (providerURL: string, slug: string, lookup = true) =>
       tokenUrl: `${providerURL}/token`,
       scopes: { catalog: { read: 'read' }, defaults: ['read'] },
       toAuth: ({ tokens }) => ({ apiKey: tokens.access_token ?? '' }),
-      ...(lookup
-        ? {
-            account: ({ client }: { client: { auth: Auth } }) =>
-              Promise.resolve({
-                id: client.auth.apiKey,
-                label: `${client.auth.apiKey}@example.com`,
-              }),
-          }
-        : {}),
+      account: lookup
+        ? ({ client }) =>
+            Promise.resolve({ id: client.auth.apiKey, label: `${client.auth.apiKey}@example.com` })
+        : undefined,
     } satisfies PieceOAuthRecipe<Auth, { auth: Auth }>,
     actions: [],
   })({ oauth: { clientId: 'client-id', clientSecret: 'client-secret' } });

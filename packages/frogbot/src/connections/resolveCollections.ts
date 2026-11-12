@@ -126,6 +126,9 @@ function resolveEntries(config: FrogBotConfig): SanitizedConnectionsConfig['entr
       piece: entry.piece,
       oauth,
       secret,
+      oauthAccounts:
+        oauth &&
+        (isPieceSignIn(definition.oauth) || typeof definition.oauth?.account === 'function'),
       ...(oauth ? { scopes: oauthScopes(entry.piece) } : {}),
       ...(oauth && definition.oauth?.label ? { oauthLabel: definition.oauth.label.trim() } : {}),
       ...(secret ? { secretSchema } : {}),

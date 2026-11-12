@@ -30,7 +30,7 @@ export function defaultConnectionsCollection({
       update: () => false,
       delete: () => false,
     },
-    indexes: [{ fields: ['owner', 'piece', 'accountId'], unique: true }],
+    indexes: [{ fields: ['owner', 'piece', 'method', 'accountId'], unique: true }],
     fields: [
       { name: 'owner', type: 'relationship', relationTo: userSlug, index: true, required: true },
       { name: 'piece', type: 'text', index: true, required: true },

@@ -103,17 +103,17 @@ Before a key is saved, FrogBot checks it with the piece's model listing, and the
 1. Sign in to the admin panel and open **Settings → Linked accounts**.
 2. Select **New Connection**, then choose an integration.
 3. Authorize with OAuth or enter the requested credential fields. When both methods are enabled, choose **OAuth** or **Static credentials**. A piece can name its OAuth method, as OpenAI's **ChatGPT** does.
-4. View your accounts grouped by integration, each with its status. Select **Add another** to link a second account of an OAuth integration. The row menu has **Set as default**, **Reconnect** and **Disconnect**.
+4. View your accounts grouped by integration, each with its status. Select **Add another** to link a second account of an OAuth integration whose recipe has an account lookup (see below). The row menu has **Set as default**, **Reconnect** and **Disconnect**.
 
 The page is available at `/admin/settings/connections` with the default admin route. FrogBot adds it automatically when `connections` is non-empty, and the same view is the default view of the `connections` collection at `/admin/collections/connections`.
 
 ### Several accounts and the default
 
-A user can link several OAuth accounts of one piece, such as a work and a personal Gmail. Each provider account is its own row; linking the same provider account again updates its row and keeps its ID. A static credential has no provider account, so it stays one per piece and saving another replaces it. A piece with both methods can hold its static credential beside its OAuth accounts.
+A user can link several OAuth accounts of one piece, such as a work and a personal Gmail, when its recipe can name the provider account: it defines `account()`, or runs its own sign-in with `authorize`. Each provider account is its own row; linking the same provider account again updates its row and keeps its ID. A recipe without `account()` can't tell accounts apart, so it keeps one OAuth row per user, every link replaces it, and Linked accounts offers **Add another** only until it exists. A static credential has no provider account, so it stays one per piece and saving another replaces it. A piece with both methods can hold its static credential beside its OAuth accounts.
 
-Each user has one default account per piece. The first account linked becomes the default; **Set as default** moves it. Disconnecting the default makes the oldest remaining account the default. Calls that don't pick an account, including agent tools in chat, use the default.
+Each user has one default account per piece. The first account linked becomes the default, and adding another never moves it; **Set as default** does. Disconnecting the default makes the oldest remaining account the default. Calls that don't pick an account, including agent tools in chat, use the default.
 
-**Reconnect** renews one account's OAuth grant in place. The provider must sign in to the same account; a different account fails with `400` and changes nothing.
+**Reconnect** renews one account's OAuth grant in place. When the recipe has an account lookup, the provider must sign in to the same account; a different account fails with `400` and changes nothing.
 
 Each integration shows the logo URL from its piece's `admin.icon`, or a link icon when the piece has none or the image fails to load.
 
@@ -233,7 +233,7 @@ Expired OAuth connections refresh lazily during resolution, using the recipe's `
 
 ## Storage and access
 
-FrogBot creates its reserved `connections` collection only when the root list is non-empty. A unique `(owner, piece, accountId)` constraint permits one row per user, piece, and provider account; `accountId` is the provider account ID, or empty for a static credential. Rows contain `method`, encrypted `credential`, account metadata, `accountId`, `isDefault`, scopes, expiry, and status.
+FrogBot creates its reserved `connections` collection only when the root list is non-empty. A unique `(owner, piece, method, accountId)` constraint permits one row per user, piece, method, and provider account; `accountId` is the provider account ID, or empty for a static credential and for OAuth without an account lookup. Rows contain `method`, encrypted `credential`, account metadata, `accountId`, `isDefault`, scopes, expiry, and status.
 
 Static input and OAuth token sets are encrypted as JSON with AES-256-GCM using a key derived from the root `secret`. Keep that secret stable: changing it makes existing credentials unreadable. Factory `auth` stays in your configuration and is never copied into connection storage.
 

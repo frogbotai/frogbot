@@ -103,7 +103,8 @@ function ConnectionRow({
 
 /**
  * One piece's linked accounts: a header with Add another (OAuth pieces only, since an API key
- * stays one per piece), then a row per account with Set as default, Reconnect and Disconnect.
+ * stays one per piece, and only once for a recipe that can't tell provider accounts apart), then
+ * a row per account with Set as default, Reconnect and Disconnect.
  */
 export function ConnectionGroup({
   slug,
@@ -132,11 +133,18 @@ export function ConnectionGroup({
             {connections.length === 1 ? '1 account' : `${connections.length} accounts`}
           </span>
         </div>
-        {piece?.oauth && (
-          <Button variant="outline" size="sm" className="frogbot-connections__lift" onClick={onAdd}>
-            + Add another
-          </Button>
-        )}
+        {piece?.oauth &&
+          (piece.oauthAccounts !== false ||
+            !connections.some(({ method }) => method === 'oauth')) && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="frogbot-connections__lift"
+              onClick={onAdd}
+            >
+              + Add another
+            </Button>
+          )}
       </header>
       <div className="frogbot-connections__rows">
         {connections.map((connection) => (

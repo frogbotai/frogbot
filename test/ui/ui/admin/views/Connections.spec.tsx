@@ -368,6 +368,21 @@ describe('linked accounts', () => {
       expect(within(staticGroup).queryByRole('button', { name: '+ Add another' })).toBeNull();
     });
 
+    it('offers Add another once for a recipe that cannot tell accounts apart', () => {
+      const plain = { ...props, pieces: [{ ...pieces[0], oauthAccounts: false }] };
+      const add = () => screen.queryByRole('button', { name: '+ Add another' });
+      const { unmount } = render(
+        <ConnectionsViewClient {...plain} initialConnections={[{ ...key, piece: 'mail' }]} />,
+      );
+
+      expect(add()).toBeTruthy();
+
+      unmount();
+      render(<ConnectionsViewClient {...plain} initialConnections={[work]} />);
+
+      expect(add()).toBeNull();
+    });
+
     it('starts another OAuth link from Add another', () => {
       render(<ConnectionsViewClient {...several} />);
       fireEvent.click(screen.getByRole('button', { name: '+ Add another' }));
