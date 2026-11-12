@@ -151,7 +151,7 @@ describe('authorizeMcp', () => {
 
       await authorizeMcp({ collection: 'users', strategy, pluginConfig, req });
 
-      expect(req.user).toEqual({ id: 'user-2' });
+      expect(req).toHaveProperty('user', { id: 'user-2' });
     });
 
     it('run only after the API key, and not when it signs in', async () => {

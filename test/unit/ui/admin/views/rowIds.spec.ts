@@ -4,7 +4,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { withRowIds } from '../../../../../packages/ui/src/admin/views/List/rowIds.js';
 
-function Table({ columns }: { columns: { renderedCells: ReactNode[] }[]; data: unknown[] }) {
+function Table({
+  columns,
+}: {
+  columns: { active?: boolean; renderedCells: ReactNode[] }[];
+  data: unknown[];
+}) {
   return createElement('table', null, columns[0]?.renderedCells);
 }
 
