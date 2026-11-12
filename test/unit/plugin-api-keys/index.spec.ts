@@ -3,7 +3,10 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
 import { apiKeysPlugin } from '../../../packages/plugins/plugin-api-keys/src/index.js';
-import { apiKeyMeHook } from '../../../packages/plugins/plugin-api-keys/src/strategy.js';
+import {
+  apiKeyMeHook,
+  refuseRejectedApiKey,
+} from '../../../packages/plugins/plugin-api-keys/src/strategy.js';
 
 const db = {} as FrogBotConfig['db'];
 
@@ -79,7 +82,7 @@ describe('apiKeysPlugin', () => {
     const result = await apiKeysPlugin()(config);
 
     expect(result.collections[0]?.hooks?.me).toEqual([existing, apiKeyMeHook]);
-    expect(result.collections[1]?.hooks).toBeUndefined();
+    expect(result.collections[1]?.hooks).toEqual({ beforeOperation: [refuseRejectedApiKey] });
     expect(result.collections.at(-1)?.hooks?.me).toBeUndefined();
   });
 

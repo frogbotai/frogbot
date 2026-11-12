@@ -41,17 +41,16 @@ const apiKeyStrategies = new WeakSet<AuthStrategy>();
 
 const refusals = new WeakMap<object, string>();
 
-function refusalMessage(key: Record<string, unknown>, mintPath: string): string | undefined {
-  const revokedAt = key.revokedAt == null ? null : (expiryTime(key.revokedAt) ?? Date.now());
-  const expiresAt = isExpiredKey(key) ? expiryTime(key.expiresAt) : null;
-  const reason =
-    revokedAt !== null
-      ? `was revoked at ${new Date(revokedAt).toISOString()}`
-      : expiresAt !== null
-        ? `expired at ${new Date(expiresAt).toISOString()}`
-        : undefined;
+function refusalReason(key: Record<string, unknown>): string | undefined {
+  if (key.revokedAt != null) {
+    return `was revoked at ${new Date(expiryTime(key.revokedAt) ?? Date.now()).toISOString()}`;
+  }
 
-  return reason && `API key ${reason}. Mint a new one with POST ${mintPath}.`;
+  const expiresAt = expiryTime(key.expiresAt);
+
+  if (expiresAt !== null && expiresAt <= Date.now()) {
+    return `expired at ${new Date(expiresAt).toISOString()}`;
+  }
 }
 
 /**
@@ -115,11 +114,17 @@ export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
         return { user: null };
       }
 
-      const api = req ? toPayloadRequest(req).payload.config.routes.api : '/api';
-      const refusal = refusalMessage(key, `${api.replace(/\/+$/, '')}/${collectionSlug}/mint`);
+      const reason = refusalReason(key);
 
-      if (refusal) {
-        if (req) refusals.set(req, refusal);
+      if (reason) {
+        if (req) {
+          const api = toPayloadRequest(req).payload.config.routes.api.replace(/\/+$/, '');
+
+          refusals.set(
+            req,
+            `API key ${reason}. Mint a new one with POST ${api}/${collectionSlug}/mint.`,
+          );
+        }
 
         return { user: null };
       }

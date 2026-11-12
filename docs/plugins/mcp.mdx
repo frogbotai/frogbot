@@ -37,7 +37,7 @@ Configure your MCP client to send Streamable HTTP requests to `/api/mcp` with a 
 Authorization: Bearer fb_...
 ```
 
-The API key is tried first. Without a valid key, the request goes through the same sign-in as the rest of the app: every [auth strategy](/authentication/custom-strategies) on your auth collections, and the built-in login token. The first one that returns a user signs the request in, and a strategy that throws is logged and skipped. When nobody signs in, the response is `401`. A revoked or unknown key doesn't stop the request there: sent with a valid session cookie, it signs in as the cookie's user.
+The API key is tried first. Without a valid key, the request goes through the same sign-in as the rest of the app: every [auth strategy](/authentication/custom-strategies) on your auth collections, and the built-in login token. The first one that returns a user signs the request in, and a strategy that throws is logged and skipped. When nobody signs in, the response is `401`; for a revoked or expired key it says which and when, with the same message and challenge as REST ([Revoked and expired keys](/plugins/api-keys#revoked-and-expired-keys)). A revoked or unknown key doesn't stop the request there: sent with a valid session cookie, it signs in as the cookie's user.
 
 ### Sign in with your own OAuth server
 
