@@ -231,6 +231,12 @@ describe(`grouped list body [${adapterLabel}]`, () => {
 
     expect(await stored()).toEqual({ list: undefined, view: undefined });
     expect((await visit({}, 50)).opensAt).toBe(50);
+
+    await visit({ limit: '25' }, 50);
+    await visit({ limit: '50', where: { nonexistentField: { equals: 'x' } } }, 50);
+
+    expect(await stored()).toEqual({ list: undefined, view: undefined });
+    expect(await visit({}, 50)).toEqual({ opensAt: 50, redirect: { sort: 'title' } });
   });
 
   it('clears a saved page size from a gallery view and from visits at the default that race', async () => {

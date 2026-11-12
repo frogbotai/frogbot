@@ -161,6 +161,40 @@ describe('ListView', () => {
       },
     );
 
+    it.each(['list', 'trash'])(
+      "clears a page size equal to the default from Payload's row on the %s view",
+      async (viewType) => {
+        setup();
+        const update = vi.fn();
+        const request = await mocks.createViewRequest();
+
+        mocks.createViewRequest.mockResolvedValue({
+          ...request,
+          payload: {
+            ...request.payload,
+            find: vi.fn().mockResolvedValue({ docs: [{ id: 7, value: { limit: 50, sort: 'a' } }] }),
+            update,
+          },
+          query: { limit: '50' },
+        });
+
+        await ListView(
+          pageProps({
+            collectionConfig: {
+              admin: { components: {}, pagination: { defaultLimit: 50 } },
+              labels: { plural: 'Tasks' },
+              slug: 'tasks',
+            },
+            viewType,
+          }) as never,
+        );
+
+        expect(update).toHaveBeenCalledWith(
+          expect.objectContaining({ data: { value: { sort: 'a' } }, id: 7 }),
+        );
+      },
+    );
+
     it('finds done records whose done field the table did not select', async () => {
       setup();
 
