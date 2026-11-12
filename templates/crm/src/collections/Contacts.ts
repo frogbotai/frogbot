@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'frogbot';
 import { phoneField } from 'frogbot';
 
-import { recordAccess } from '../roles';
+import { reassignAccess, recordAccess } from '../roles';
 
 export const Contacts: CollectionConfig = {
   slug: 'contacts',
@@ -29,7 +29,12 @@ export const Contacts: CollectionConfig = {
     { name: 'company', type: 'relationship', relationTo: 'companies' },
     { name: 'email', type: 'email' },
     phoneField({ name: 'phone' }),
-    { name: 'owner', type: 'relationship', relationTo: 'users' },
+    {
+      name: 'owner',
+      type: 'relationship',
+      relationTo: 'users',
+      access: reassignAccess,
+    },
     {
       name: 'lastContacted',
       type: 'date',

@@ -111,6 +111,42 @@ describe('crm template roles', () => {
     expect(task.assignee).toMatchObject({ id: member.id });
   });
 
+  it('keeps a member from handing their record to someone else, and lets a manager do it', async () => {
+    const { manager, member, other } = await team();
+    const deal = await as(member).create('deals', { name: 'Renewal', stage: 'lead' });
+
+    await as(member).update('deals', deal.id, { owner: other.id, stage: 'won' });
+
+    const owner = async () =>
+      (await frogbot.findByID({ collection: 'deals', id: deal.id, depth: 0, overrideAccess: true }))
+        .owner;
+
+    expect(await owner()).toBe(member.id);
+
+    await as(manager).update('deals', deal.id, { owner: other.id });
+
+    expect(await owner()).toBe(other.id);
+  });
+
+  it('lets a member upload media but only a manager change or delete it', async () => {
+    const { manager, member } = await team();
+    const data = Buffer.from('logo');
+    const media = (await frogbot.create({
+      collection: 'media',
+      data: { alt: 'Logo' },
+      file: { data, mimetype: 'text/plain', name: 'logo.txt', size: data.length },
+      user: member,
+      overrideAccess: false,
+    })) as unknown as Doc;
+
+    await expect(as(member).update('media', media.id, { alt: 'Mine' })).rejects.toThrow();
+    await expect(as(member).delete('media', media.id)).rejects.toThrow();
+    await expect(as(manager).update('media', media.id, { alt: 'Brand' })).resolves.toMatchObject({
+      alt: 'Brand',
+    });
+    await expect(as(manager).delete('media', media.id)).resolves.toMatchObject({ id: media.id });
+  });
+
   it('lets a manager change and delete anyone’s records but not manage users', async () => {
     const { manager, member } = await team();
     const deal = await as(member).create('deals', { name: 'Renewal', stage: 'lead' });

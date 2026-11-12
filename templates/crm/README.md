@@ -60,11 +60,11 @@ Every user has a role, set in the **Roles** field of their user record. The firs
 you create on an empty app, is an admin. Users an admin adds are members unless the admin picks
 another role.
 
-| Role    | Can                                                                                                                                                         |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Admin   | Everything, and the only role that adds, removes or changes the role of users                                                                               |
-| Manager | Create, edit and delete any company, contact, deal, activity, task or media, and read the audit log                                                         |
-| Member  | Read everything and create records. A member's new record is theirs (its owner, or a task's assignee), and they edit only their own. Members delete nothing |
+| Role    | Can                                                                                                                                                                                                                       |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Admin   | Everything, and the only role that adds, removes or changes the role of users                                                                                                                                             |
+| Manager | Create, edit and delete any company, contact, deal, activity, task or media, and read the audit log                                                                                                                       |
+| Member  | Read everything and create records. A member's new record is theirs (its owner, or a task's assignee), and they edit only their own. Only admins and managers change a record's owner or assignee. Members delete nothing |
 
 Everyone can edit their own name, email and password. The rules are in `src/roles.ts`; change them
 there.

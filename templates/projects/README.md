@@ -39,11 +39,11 @@ Every user has a role, set in the **Roles** field of their user record. The firs
 you create on an empty app, is an admin. Users an admin adds are members unless the admin picks
 another role.
 
-| Role    | Can                                                                                                                                      |
-| ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Admin   | Everything, and the only role that adds, removes or changes the role of users                                                            |
-| Manager | Create, edit and delete projects, tasks and files, and read the audit log                                                                |
-| Member  | Read everything, create tasks, which are assigned to them, and edit only tasks assigned to them. Members upload files and delete nothing |
+| Role    | Can                                                                                                                                                                                |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Admin   | Everything, and the only role that adds, removes or changes the role of users                                                                                                      |
+| Manager | Create, edit and delete projects, tasks and files, and read the audit log                                                                                                          |
+| Member  | Read everything, create tasks, which are assigned to them, and edit only tasks assigned to them. Only admins and managers reassign a task. Members upload files and delete nothing |
 
 Everyone can edit their own name, email and password. The rules are in `src/roles.ts`; change them
 there.

@@ -1,3 +1,4 @@
+import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -8,6 +9,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
+import { filesDir, importsDir } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -26,6 +28,8 @@ describe('projects template roles', () => {
 
   afterAll(async () => {
     await booted.shutdown();
+    await rm(filesDir, { recursive: true, force: true });
+    await rm(importsDir, { recursive: true, force: true });
   });
 
   beforeEach(async () => {
@@ -114,6 +118,38 @@ describe('projects template roles', () => {
     await expect(as(manager).update('tasks', theirs.id, { status: 'done' })).resolves.toMatchObject(
       { status: 'done' },
     );
+  });
+
+  it('keeps a member from reassigning their task, and lets a manager do it', async () => {
+    const { manager, member, other } = await team();
+    const project = await as(manager).create('projects', { name: 'Website', key: 'WEB' });
+    const task = await as(member).create('tasks', { title: 'Write copy', project: project.id });
+    const assignee = async () =>
+      (await frogbot.findByID({ collection: 'tasks', id: task.id, depth: 0, overrideAccess: true }))
+        .assignee;
+
+    await as(member).update('tasks', task.id, { assignee: other.id });
+
+    expect(await assignee()).toBe(member.id);
+
+    await as(manager).update('tasks', task.id, { assignee: other.id });
+
+    expect(await assignee()).toBe(other.id);
+  });
+
+  it('lets a member upload files but only a manager change or delete them', async () => {
+    const { manager, member } = await team();
+    const data = Buffer.from('brief');
+    const file = (await frogbot.create({
+      collection: 'files',
+      data: {},
+      file: { data, mimetype: 'text/plain', name: 'brief.txt', size: data.length },
+      user: member,
+      overrideAccess: false,
+    })) as unknown as Doc;
+
+    await expect(as(member).delete('files', file.id)).rejects.toThrow();
+    await expect(as(manager).delete('files', file.id)).resolves.toMatchObject({ id: file.id });
   });
 
   it('keeps roles and other people’s profiles out of a member’s reach', async () => {

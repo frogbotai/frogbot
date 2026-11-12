@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'frogbot';
 
-import { recordAccess } from '../roles';
+import { reassignAccess, recordAccess } from '../roles';
 
 export const Activities: CollectionConfig = {
   slug: 'activities',
@@ -54,7 +54,12 @@ export const Activities: CollectionConfig = {
       relationTo: 'contacts',
       hasMany: true,
     },
-    { name: 'owner', type: 'relationship', relationTo: 'users' },
+    {
+      name: 'owner',
+      type: 'relationship',
+      relationTo: 'users',
+      access: reassignAccess,
+    },
     { name: 'notes', type: 'richText' },
   ],
 };

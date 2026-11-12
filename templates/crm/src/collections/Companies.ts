@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'frogbot';
 import { urlField } from 'frogbot';
 
-import { recordAccess } from '../roles';
+import { reassignAccess, recordAccess } from '../roles';
 
 export const Companies: CollectionConfig = {
   slug: 'companies',
@@ -64,7 +64,12 @@ export const Companies: CollectionConfig = {
     },
     urlField({ name: 'website' }),
     { name: 'employees', type: 'number', min: 1 },
-    { name: 'owner', type: 'relationship', relationTo: 'users' },
+    {
+      name: 'owner',
+      type: 'relationship',
+      relationTo: 'users',
+      access: reassignAccess,
+    },
     { name: 'notes', type: 'richText' },
   ],
 };

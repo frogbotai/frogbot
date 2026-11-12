@@ -7,7 +7,7 @@ import type { CollectionBeforeChangeHook, CollectionConfig } from 'frogbot';
  * - `admin`: everything, and the only role that adds, removes or re-roles users.
  * - `manager`: creates, edits and deletes projects, tasks and files, and reads the audit log.
  * - `member`: creates tasks, which are assigned to them, edits only tasks assigned to them, and
- *   uploads files. Deletes nothing.
+ *   uploads files. Only admins and managers reassign a task. Deletes nothing.
  *
  * New users are members. The first user, who signs up on an empty app, is an admin.
  */
@@ -34,6 +34,9 @@ export const managedAccess: CollectionConfig['access'] = {
   update: allow('admin', 'manager'),
   delete: allow('admin', 'manager'),
 };
+
+/** Field access for `owner` and `assignee`: only admins and managers hand a record to someone else. */
+export const reassignAccess = { update: allow('admin', 'manager') };
 
 /** Access for shared records nobody owns, such as uploads: members add them, managers change them. */
 export const sharedAccess: CollectionConfig['access'] = {
@@ -68,11 +71,14 @@ export const firstUserIsAdmin: CollectionBeforeChangeHook = async ({
 }) => {
   if (operation !== 'create') return data;
 
-  const { totalDocs } = await req.frogbot.count({
+  const { docs } = await req.frogbot.find({
     collection: 'users',
+    depth: 0,
+    limit: 1,
     overrideAccess: true,
+    pagination: false,
     req,
   });
 
-  return totalDocs === 0 ? { ...data, roles: ['admin'] } : data;
+  return docs.length === 0 ? { ...data, roles: ['admin'] } : data;
 };
