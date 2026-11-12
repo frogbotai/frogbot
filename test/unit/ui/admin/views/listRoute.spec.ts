@@ -166,6 +166,40 @@ describe('ListView routing', () => {
     });
   });
 
+  it("gives a later list its own query, so Payload's shared preference can't fill it", async () => {
+    const initPageResult = {
+      collectionConfig: { ...collection(['board', 'list']), defaultSort: '-createdAt' },
+      permissions: { collections: { tickets: { read: true } } },
+      req: { query: {} },
+    };
+
+    await ListView({ initPageResult, params: { segments: [...ROOT, 'list'] }, server } as never);
+
+    expect(mocks.resolveViewSetup).toHaveBeenLastCalledWith(
+      expect.objectContaining({ collectionSlug: 'tickets', viewSlug: 'list' }),
+    );
+    expect(mocks.renderListView).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        query: { columns: [], groupBy: '', limit: 10, sort: '-createdAt' },
+      }),
+    );
+
+    mocks.resolveViewSetup.mockResolvedValueOnce({
+      preference: undefined,
+      preferenceKey: 'k',
+      query: { columns: ['title'], groupBy: 'status', sort: 'title' },
+      saved: {},
+    } as never);
+
+    await ListView({ initPageResult, params: { segments: [...ROOT, 'list'] }, server } as never);
+
+    expect(mocks.renderListView).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        query: { columns: ['title'], groupBy: 'status', limit: 10, sort: 'title' },
+      }),
+    );
+  });
+
   it("sends Payload's not-found on the list's own route to the server's not-found", async () => {
     mocks.renderListView.mockRejectedValueOnce(new Error('not-found'));
     const notFound = vi.fn(() => 'not found page');

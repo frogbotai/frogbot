@@ -1,14 +1,15 @@
 import { renderListView } from '@payloadcms/ui/views/List';
 import type { CollectionView } from 'frogbot';
-import type { AdminViewServerProps, ListViewServerProps } from 'payload';
+import type { AdminViewServerProps, ListQuery, ListViewServerProps } from 'payload';
 import type { ReactNode } from 'react';
 
 import { BoardView } from '../Board/index.js';
 import { CalendarView } from '../Calendar/index.js';
-import { withPageProps } from '../collectionViews.js';
+import { getRuntimeViews, withPageProps } from '../collectionViews.js';
 import { CustomCollectionView } from '../CustomCollectionView.js';
 import { GalleryView } from '../Gallery/index.js';
 import { TimelineView } from '../Timeline/index.js';
+import { resolveViewSetup } from '../viewSetup.js';
 
 const FIRST_VIEWS: Record<
   Exclude<CollectionView['type'], 'list'>,
@@ -45,13 +46,48 @@ export async function renderFirstView(
 }
 
 /**
+ * The query a later list renders with: its own saved setup or the URL's, with every setting left
+ * unset filled from the list's defaults. Payload otherwise fills them from its shared
+ * `collection-<slug>` preference, which the first view at the root writes.
+ */
+export async function resolveListRouteQuery(
+  props: AdminViewServerProps,
+): Promise<ListQuery | undefined> {
+  const { collectionConfig, permissions, req } = props.initPageResult;
+  if (!collectionConfig || !permissions?.collections?.[collectionConfig.slug]?.read) return;
+
+  const view = getRuntimeViews({ collectionConfig }).find(({ type }) => type === 'list');
+  if (view?.type !== 'list') return;
+
+  const defaultLimit = collectionConfig.admin.pagination?.defaultLimit || 10;
+  const { query } = await resolveViewSetup({
+    collectionSlug: collectionConfig.slug,
+    defaultLimit,
+    query: req.query ?? {},
+    req,
+    viewSlug: view.slug,
+  });
+
+  return {
+    ...query,
+    columns: query.columns ?? [],
+    groupBy: query.groupBy ?? view.groupBy ?? '',
+    limit: query.limit ?? defaultLimit,
+    sort:
+      query.sort ??
+      (typeof collectionConfig.defaultSort === 'string' ? collectionConfig.defaultSort : ''),
+  };
+}
+
+/**
  * A list that isn't the first view has its own route, which Payload gives no list data. Renders it
- * through Payload's list renderer, as Payload's trash route does.
+ * through Payload's list renderer, as Payload's trash route does, with the list's own query.
  */
 export async function renderListRoute(props: AdminViewServerProps): Promise<ReactNode> {
   try {
     const { List } = await renderListView({
       ...props,
+      query: await resolveListRouteQuery(props),
       ComponentOverride: '@frogbotai/ui/admin/rsc#ListView',
       enableRowSelections: true,
       viewType: 'list',
