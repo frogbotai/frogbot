@@ -39,7 +39,7 @@ const oldTokenPattern = new RegExp(
 const pageSelector = ':where(html:not([data-fb-ui-page]))';
 const payloadTokensPath = join(root, 'packages/ui/src/payload-tokens.css');
 const brandColorsPath = join(root, 'packages/ui/src/brand-colors.css');
-const brandToken = /brand|border-selected/;
+const brandToken = /brand|selected/;
 
 const removedTokenPattern = new RegExp(
   [
@@ -351,6 +351,31 @@ describe('FrogBot theme tokens', () => {
       expect(theme?.declarations.get('--color-border-selected-strong')).toBe(
         'var(--color-border-brand-strong)',
       );
+    }
+  });
+
+  it('fills selected rows and pills with the brand color, light and dark', () => {
+    const rules = parseRules(stripComments(readFileSync(brandColorsPath, 'utf8')));
+    const page = rules.find((rule) => rule.selectors.join() === ':root');
+    const light = rules.find((rule) => rule.selectors.includes('[data-theme="light"]'));
+    const dark = rules.find((rule) => rule.selectors.includes('[data-theme="dark"]'));
+
+    expect(page?.declarations.get('--color-bg-selected-strong')).toBe('var(--color-bg-brand)');
+    expect(page?.declarations.get('--color-bg-selected-strong-hover')).toBe(
+      'var(--color-bg-brand-hover)',
+    );
+    expect(page?.declarations.get('--color-bg-selected-strong-pressed')).toBe(
+      'var(--color-bg-brand-pressed)',
+    );
+
+    for (const theme of [light, dark]) {
+      expect(theme?.declarations.get('--color-bg-selected')).toBe('var(--color-bg-brand-tertiary)');
+      expect(theme?.declarations.get('--color-bg-selected-hover')).toBe(
+        'var(--color-bg-brand-tertiary-hover)',
+      );
+      expect(theme?.declarations.get('--color-bg-selected-pressed')).toBeDefined();
+      expect(theme?.declarations.get('--color-text-selected')).toBe('var(--color-text-brand)');
+      expect(theme?.declarations.get('--color-icon-selected')).toBe('var(--color-icon-brand)');
     }
   });
 
