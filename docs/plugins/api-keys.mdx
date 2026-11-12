@@ -121,6 +121,7 @@ These don't name the reason yet, because core gives a strategy no way to pass it
 - `/api/v1/*` answers a plain `401 Unauthorized`.
 - `/api/<auth collection>/me` answers `200` with `{ "user": null }`.
 - `/api/access` answers `200` with the permissions of a caller who isn't signed in.
+- Payload's internal collections (`payload-preferences`, `payload-locked-documents`, `payload-jobs`, `payload-kv`) answer `403`. Payload adds them after every plugin runs, and they need a signed-in user, so they return no data.
 
 ## Budgets and limits
 
