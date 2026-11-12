@@ -70,7 +70,7 @@ export async function assertAgentAccess({
     req.frogbot.logger.error({ err: error, agent: agent.slug }, '[frogbot] Agent access threw');
 
     throw new AgentServiceError(
-      `Access function for agent '${agent.slug}' threw: ${String(error)}`,
+      `Access function for agent '${agent.slug}' threw: ${thrownText(error)}`,
       500,
       { code: 'access-error', cause: error },
     );
@@ -85,6 +85,14 @@ export async function assertAgentAccess({
   throw new AgentServiceError(`Access denied for agent '${agent.slug}'`, 403, {
     code: 'access-denied',
   });
+}
+
+function thrownText(error: unknown): string {
+  try {
+    return String(error);
+  } catch {
+    return Object.prototype.toString.call(error);
+  }
 }
 
 /** Whether `error` is `assertAgentAccess` refusing the caller, as opposed to failing. */

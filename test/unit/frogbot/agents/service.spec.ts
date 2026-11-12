@@ -345,6 +345,27 @@ describe('agent service', () => {
     });
   });
 
+  it('keeps the access-error code when access throws a value String() cannot convert', async () => {
+    const thrown: unknown = Object.create(null);
+    const req = makeRequest({});
+
+    await expect(
+      assertAgentAccess({
+        req,
+        agent: makeAgent({
+          access: () => {
+            throw thrown;
+          },
+        }),
+      }),
+    ).rejects.toMatchObject({
+      status: 500,
+      code: 'access-error',
+      message: "Access function for agent 'support' threw: [object Object]",
+      cause: thrown,
+    });
+  });
+
   it('answers 401 to an anonymous caller and 403 to a signed-in one', async () => {
     const support = makeAgent();
 
