@@ -18,9 +18,12 @@ const CODE_SPAN = /`([^`\n]+)`/g;
 
 const TOKEN = /--[a-z][\w-]*/g;
 
-const COMPONENT = /^[A-Z][A-Za-z]+$/;
+const COMPONENT = /\b[A-Z][a-z]+(?:[A-Z][a-z]*)*\b/g;
 
-const UI_IMPORT = /import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*['"]@frogbotai\/ui['"]/g;
+const JSX_TAG = /<([A-Z][A-Za-z]*)/g;
+
+const UI_IMPORT =
+  /import\s*(?:type\s+)?(?:(\w+)\s*,?\s*)?(?:\{([^}]*)\})?\s*from\s*['"]@frogbotai\/ui['"]/g;
 
 const EXPORT_LIST = /export\s*(?:type\s*)?\{([^}]*)\}/g;
 
@@ -87,7 +90,7 @@ export function namedInDesign(markdown) {
     for (const [, span] of text.matchAll(CODE_SPAN)) {
       for (const [token] of span.matchAll(TOKEN)) tokens.push({ name: token, line });
 
-      if (COMPONENT.test(span)) components.push({ name: span, line });
+      for (const [name] of span.matchAll(COMPONENT)) components.push({ name, line });
     }
   }
 
@@ -95,7 +98,13 @@ export function namedInDesign(markdown) {
     for (const match of text.matchAll(UI_IMPORT)) {
       const at = line + lineOf(text, match.index);
 
-      for (const name of names(match[1])) components.push({ name, line: at });
+      for (const name of [match[1], ...names(match[2] ?? '')].filter(Boolean)) {
+        components.push({ name, line: at });
+      }
+    }
+
+    for (const match of text.matchAll(JSX_TAG)) {
+      components.push({ name: match[1], line: line + lineOf(text, match.index) });
     }
 
     for (const match of text.matchAll(TOKEN)) {

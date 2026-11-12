@@ -42,6 +42,18 @@ describe('checkDesign', () => {
     ).toEqual([`${DESIGN}:4 names Metric, which @frogbotai/ui doesn't export`]);
   });
 
+  it('finds a made-up component in a multi-name span, a JSX tag or a default import', () => {
+    expect(
+      check(
+        "Use `Card, StatTile` here.\n\n```tsx\nimport Meter from '@frogbotai/ui';\nconst a = <Gauge />;\n```\n",
+      ),
+    ).toEqual([
+      `${DESIGN}:1 names StatTile, which @frogbotai/ui doesn't export`,
+      `${DESIGN}:4 names Meter, which @frogbotai/ui doesn't export`,
+      `${DESIGN}:5 names Gauge, which @frogbotai/ui doesn't export`,
+    ]);
+  });
+
   it('passes the real skill file', () => {
     expect(checkDesign(readDesign())).toEqual([]);
   });
