@@ -82,8 +82,34 @@ describe('apiKeysPlugin', () => {
     const result = await apiKeysPlugin()(config);
 
     expect(result.collections[0]?.hooks?.me).toEqual([existing, apiKeyMeHook]);
-    expect(result.collections[1]?.hooks).toEqual({ beforeOperation: [refuseRejectedApiKey] });
+    expect(result.collections[1]?.hooks).toBeUndefined();
     expect(result.collections.at(-1)?.hooks?.me).toBeUndefined();
+  });
+
+  it('refuses rejected keys on every collection Payload builds, after every other plugin', async () => {
+    const existing = () => undefined;
+    const config = {
+      secret: 'test',
+      db,
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+    } as FrogBotConfig;
+
+    const result = await apiKeysPlugin()(config);
+    const refuse = result._payloadPlugins?.at(-1);
+
+    expect(refuse?.order).toBe(Number.MAX_SAFE_INTEGER);
+
+    const built = await refuse?.({
+      collections: [
+        { slug: 'messages', fields: [] },
+        { slug: 'posts', hooks: { beforeOperation: [existing] }, fields: [] },
+      ],
+    } as never);
+
+    expect(built?.collections?.map((item) => item.hooks?.beforeOperation)).toEqual([
+      [refuseRejectedApiKey],
+      [refuseRejectedApiKey, existing],
+    ]);
   });
 
   it('composes API key attribution into AI usage tracking', async () => {

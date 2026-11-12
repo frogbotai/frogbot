@@ -1,4 +1,10 @@
-import { type CollectionConfig, definePlugin, type FrogBotRequest, type Plugin } from 'frogbot';
+import {
+  type CollectionConfig,
+  definePlugin,
+  type FrogBotConfig,
+  type FrogBotRequest,
+  type Plugin,
+} from 'frogbot';
 import { cascadeDelete } from 'frogbot/internal';
 
 import { createApiKeysCollection } from './collection.js';
@@ -44,6 +50,22 @@ declare module 'frogbot' {
     'plugin-api-keys': ApiKeysResolvedOptions;
   }
 }
+
+type PayloadPlugin = NonNullable<FrogBotConfig['_payloadPlugins']>[number];
+
+const refuseOnEveryCollection: PayloadPlugin = Object.assign(
+  (config: Parameters<PayloadPlugin>[0]) => ({
+    ...config,
+    collections: config.collections?.map((item) => ({
+      ...item,
+      hooks: {
+        ...item.hooks,
+        beforeOperation: [refuseRejectedApiKey, ...(item.hooks?.beforeOperation ?? [])],
+      },
+    })),
+  }),
+  { order: Number.MAX_SAFE_INTEGER },
+);
 
 const apiKeys = definePlugin<ApiKeysResolvedOptions>({
   slug: 'plugin-api-keys',
@@ -118,13 +140,8 @@ const apiKeys = definePlugin<ApiKeysResolvedOptions>({
         ...(usageLog && !config.collections.includes(usageLog)
           ? [{ ...usageLog, fields: [usageField] }]
           : []),
-      ].map((item) => ({
-        ...item,
-        hooks: {
-          ...item.hooks,
-          beforeOperation: [refuseRejectedApiKey, ...(item.hooks?.beforeOperation ?? [])],
-        },
-      })),
+      ],
+      _payloadPlugins: [...(config._payloadPlugins ?? []), refuseOnEveryCollection],
       ...(config.ai && {
         ai: {
           ...config.ai,

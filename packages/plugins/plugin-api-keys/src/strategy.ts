@@ -1,9 +1,4 @@
-import {
-  APIError,
-  type AuthStrategy,
-  type CollectionBeforeOperationHook,
-  type CollectionMeHook,
-} from 'frogbot';
+import { APIError, type AuthStrategy, type CollectionMeHook } from 'frogbot';
 import { toPayloadRequest } from 'frogbot/internal';
 
 import { extractApiKeyToken, hashApiKeyToken } from './server/token.js';
@@ -71,11 +66,15 @@ export function apiKeyChallenge(message: string): string {
 }
 
 /** Answers an operation run as the caller with 401 and the reason, when its only credential was a refused key. */
-export const refuseRejectedApiKey: CollectionBeforeOperationHook = ({
+export function refuseRejectedApiKey({
   operation,
   overrideAccess,
   req,
-}) => {
+}: {
+  operation: string;
+  overrideAccess?: boolean;
+  req: { responseHeaders?: Headers; user?: unknown };
+}): void {
   const message =
     req.user || overrideAccess || signInOperations.has(operation) ? undefined : apiKeyRefusal(req);
 
@@ -85,7 +84,7 @@ export const refuseRejectedApiKey: CollectionBeforeOperationHook = ({
   req.responseHeaders.set('WWW-Authenticate', `Bearer ${apiKeyChallenge(message)}`);
 
   throw new APIError(message, 401, null, true);
-};
+}
 
 let loggedStampFailure = false;
 

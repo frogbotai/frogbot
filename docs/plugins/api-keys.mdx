@@ -97,7 +97,7 @@ await fetch('/api/api-keys/mint', {
 
 `mintApiKey({ req, collectionSlug, tokenPrefix, name, expiresAt })` takes the same option on the server. Both answer `400` for any other format, a day that doesn't exist such as `2027-02-30`, or a date that isn't in the future, and return `expiresAt` with the new key, `null` when it never expires.
 
-- Once `expiresAt` passes, the key no longer authenticates, and its **Last Used At** time stops changing. It stays in the list, with its date in the **Expires** column. Requests made with it get a `401` that says so: see [Revoked and expired keys](#revoked-and-expired-keys).
+- Once `expiresAt` passes, the key no longer authenticates, and its **Last Used At** time stops changing. It stays in the list, with its date in the **Expires** column. Collection, plugin and MCP requests made with it get a `401` that says so, with a few exceptions: see [Revoked and expired keys](#revoked-and-expired-keys).
 - `expiresAt` is set only when the key is minted. Nobody can change it afterwards, and `data` can't set it.
 - Rotating keeps the old key's `expiresAt`. Rotating a key that has already expired answers `400`, `This key has expired. Mint a new key instead.`, and leaves the old key as it was.
 - A key minted by a key expires no later than its parent. A later date, or none, becomes the parent's date; an earlier one is kept.
@@ -115,6 +115,12 @@ WWW-Authenticate: Bearer error="invalid_token", error_description="API key expir
 ```
 
 A revoked key reads `API key was revoked at <date>.` instead. On GraphQL the reason is the error's message. This applies even to collections anyone can read, so the request doesn't quietly return only the public data. Saying so leaks nothing, because the caller already holds the key. An unknown key still gets the usual response, a request that also carries a valid session signs in as that session's user, and a password login with a stale key header still signs in. The plugin's own endpoints keep their `{ "error": "..." }` body.
+
+These don't name the reason yet, because core gives a strategy no way to pass its refusal on ([#462](https://github.com/frogbotai/frogbot/issues/462)):
+
+- `/api/v1/*` answers a plain `401 Unauthorized`.
+- `/api/<auth collection>/me` answers `200` with `{ "user": null }`.
+- `/api/access` answers `200` with the permissions of a caller who isn't signed in.
 
 ## Budgets and limits
 
