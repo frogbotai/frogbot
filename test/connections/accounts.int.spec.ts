@@ -353,4 +353,47 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
       expect((await rows()).filter((row) => row.isDefault)).toHaveLength(1);
     }
   });
+
+  describe('a row saved before accountId existed', () => {
+    const legacy = async () => {
+      const row = await linked('a');
+
+      await frogbot.update({
+        collection: 'connections',
+        id: row.id,
+        data: { accountId: '' },
+        overrideAccess: true,
+      });
+
+      return row;
+    };
+
+    it('still refreshes', async () => {
+      const row = await legacy();
+
+      await frogbot.update({
+        collection: 'connections',
+        id: row.id,
+        data: { expiresAt: new Date(Date.now() - 60_000).toISOString() },
+        overrideAccess: true,
+      });
+
+      await expect(resolve()).resolves.toEqual({ apiKey: 'fresh-null' });
+      expect((await rows()).map((r) => [r.id, r.accountId])).toEqual([[row.id, 'fresh-a']]);
+    });
+
+    it('relinks onto the same row', async () => {
+      const row = await legacy();
+
+      expect((await link('a')).status).toBe(302);
+      expect((await rows()).map((r) => [r.id, r.isDefault])).toEqual([[row.id, true]]);
+    });
+
+    it('reconnects', async () => {
+      const row = await legacy();
+
+      expect((await link('a', { reconnect: row.id })).status).toBe(302);
+      expect((await rows()).map((r) => r.id)).toEqual([row.id]);
+    });
+  });
 });

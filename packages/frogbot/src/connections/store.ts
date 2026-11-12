@@ -69,7 +69,7 @@ function metadata(row: ConnectionRow): ConnectionMetadata {
     piece: row.piece,
     method: row.method,
     account: row.account,
-    accountId: row.accountId ?? '',
+    accountId: accountKey(row),
     isDefault: row.isDefault === true,
     scopes: row.scopes ?? [],
     expiresAt: row.expiresAt,
@@ -80,6 +80,9 @@ function metadata(row: ConnectionRow): ConnectionMetadata {
 }
 
 const sameID = (a: ConnectionID, b: ConnectionID) => String(a) === String(b);
+
+const accountKey = (row: Pick<ConnectionRow, 'accountId' | 'account'>) =>
+  row.accountId || row.account?.id || '';
 
 function byAge(a: ConnectionRow, b: ConnectionRow): number {
   const time = Date.parse(a.createdAt) - Date.parse(b.createdAt);
@@ -318,10 +321,10 @@ export class ConnectionStore {
             const current = await rows();
             const row =
               reconnect === undefined
-                ? current.find((row) => (row.accountId ?? '') === accountId)
+                ? current.find((row) => accountKey(row) === accountId)
                 : current.find((row) => sameID(row.id, reconnect));
 
-            if (reconnect !== undefined && (row?.accountId ?? '') !== accountId) {
+            if (reconnect !== undefined && (!row || accountKey(row) !== accountId)) {
               throw new OAuthError('account');
             }
 
