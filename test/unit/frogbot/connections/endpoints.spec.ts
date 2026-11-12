@@ -22,6 +22,7 @@ function fixture(pieceDefinition: Parameters<typeof setup>[0] = definition) {
     slug: 'connections',
     encryption: base.encryption,
     entries: { example: { piece: base.piece, oauth: true, secret: true } },
+    apps: {},
   };
 
   const endpoints = buildConnectionOAuthEndpoints({ connections, userSlug: 'users' });
@@ -77,12 +78,13 @@ describe('OAuth linking endpoints', () => {
     vi.unstubAllGlobals();
   });
 
-  it('mounts only two-segment collection GET routes', () => {
+  it('mounts the user and app slot authorize routes and one callback', () => {
     const { endpoints, connections } = fixture();
 
     expect(endpoints.map(({ method, path }) => ({ method, path }))).toEqual([
       { method: 'get', path: '/:piece/authorize' },
       { method: 'get', path: '/:piece/callback' },
+      { method: 'get', path: '/app/:app/:piece/authorize' },
     ]);
     expect(
       buildConnectionOAuthEndpoints({
@@ -446,6 +448,7 @@ describe('piece-run sign-in endpoints', () => {
       slug: 'connections',
       encryption: createCredentialEncryption({ secret: 'state-secret' }),
       entries: { example: { piece, oauth: true, secret: false } },
+      apps: {},
     };
 
     vi.stubGlobal('fetch', fetch);

@@ -145,6 +145,7 @@ export async function connectionSetup(pieceDefinition: OAuthPieceDefinition = de
     slug: 'connections',
     encryption,
     entries: { example: { piece, oauth: true, secret: true } },
+    apps: {},
   };
 
   const api = new Connections(frogbot as never, config);

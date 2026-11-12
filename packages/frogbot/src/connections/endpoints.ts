@@ -10,7 +10,8 @@ import {
 } from './oauth/index.js';
 import { saveOAuthConnection } from './oauth/save.js';
 import { safeReturnTo } from './oauth/state.js';
-import type { SanitizedConnectionsConfig } from './types.js';
+import { connectionEntry } from './store.js';
+import type { ConnectionHolder, SanitizedConnectionsConfig } from './types.js';
 
 async function routeURLs({
   req,
@@ -62,12 +63,15 @@ export function buildConnectionOAuthEndpoints({
   userSlug: string;
 }): Endpoint[] {
   if (!connections.enabled) return [];
-  const entryFor = (req: FrogBotRequest) => {
-    const slug = req.routeParams?.piece;
+  const param = (req: FrogBotRequest, name: string) => {
+    const value = req.routeParams?.[name];
+
+    return typeof value === 'string' && value ? value : undefined;
+  };
+
+  const oauthEntry = (app: string | undefined, slug: string | undefined) => {
     const entry =
-      connections.enabled && typeof slug === 'string' && Object.hasOwn(connections.entries, slug)
-        ? connections.entries[slug]
-        : undefined;
+      slug === undefined ? undefined : connectionEntry(connections, { app, piece: slug });
 
     return entry?.oauth && entry.piece.piece === slug ? entry : undefined;
   };
@@ -75,96 +79,123 @@ export function buildConnectionOAuthEndpoints({
   const failure = (status: number, headers: Headers, error = 'Connection operation failed') =>
     Response.json({ error }, { status, headers });
 
-  return [
-    {
-      method: 'get',
-      path: '/:piece/authorize',
-      handler: async (req) => {
-        const headers = new Headers({ 'cache-control': 'no-store' });
-        const entry = entryFor(req);
-        if (!entry) return failure(404, headers, 'Connection not found');
-        if (!req.user) return failure(401, headers, 'Authentication required');
-        if (req.user.collection !== userSlug) return failure(403, headers, 'Access denied');
-        try {
-          const urls = await routeURLs({ req, slug: connections.slug!, piece: entry.piece.piece });
-          const params = new URL(req.url!).searchParams;
-          if (params.getAll('returnTo').length > 1) throw new OAuthError('state');
-          const returnTo = params.get('returnTo') ?? urls.returnTo;
-          const recipe = pieceInstanceDefinition(entry.piece).oauth;
+  const authorize =
+    (slot: boolean): Endpoint['handler'] =>
+    async (req) => {
+      const headers = new Headers({ 'cache-control': 'no-store' });
+      const app = slot ? param(req, 'app') : undefined;
+      const entry = slot && !app ? undefined : oauthEntry(app, param(req, 'piece'));
+      if (!entry) return failure(404, headers, 'Connection not found');
+      if (!req.user) return failure(401, headers, 'Authentication required');
+      if (req.user.collection !== userSlug) return failure(403, headers, 'Access denied');
+      try {
+        const urls = await routeURLs({ req, slug: connections.slug!, piece: entry.piece.piece });
+        const params = new URL(req.url!).searchParams;
+        if (params.getAll('returnTo').length > 1) throw new OAuthError('state');
+        const returnTo = params.get('returnTo') ?? urls.returnTo;
+        const recipe = pieceInstanceDefinition(entry.piece).oauth;
 
-          if (isPieceSignIn(recipe)) {
-            const origin = new URL(req.url!).origin;
-            const owner = { id: req.user.id, collection: req.user.collection };
-            const piece = entry.piece;
+        if (isPieceSignIn(recipe)) {
+          const origin = new URL(req.url!).origin;
+          const holder: ConnectionHolder =
+            app === undefined
+              ? { owner: { id: req.user.id, collection: req.user.collection } }
+              : { app };
 
-            headers.set(
-              'location',
-              await recipe.authorize({
-                req,
-                returnTo: new URL(safeReturnTo(returnTo, origin), origin).href,
-                save: ({ tokens, account }) =>
-                  saveOAuthConnection({ req, piece, owner, tokens, account }),
-              }),
-            );
+          const piece = entry.piece;
 
-            return new Response(null, { status: 302, headers });
-          }
-
-          const started = await createOAuthState({
-            kv: req.frogbot.kv,
-            encryption: connections.encryption,
-            piece: entry.piece,
-            flow: 'link',
-            collection: userSlug,
-            callbackUrl: urls.callbackUrl,
-            cookiePrefix: urls.cookiePrefix,
-            returnTo,
-            req,
-          });
-
-          headers.set('set-cookie', started.setCookie);
-          headers.set('location', started.authorizationUrl);
+          headers.set(
+            'location',
+            await recipe.authorize({
+              req,
+              returnTo: new URL(safeReturnTo(returnTo, origin), origin).href,
+              save: ({ tokens, account }) =>
+                saveOAuthConnection({ req, piece, holder, tokens, account }),
+            }),
+          );
 
           return new Response(null, { status: 302, headers });
-        } catch (error) {
-          return failure(
-            error instanceof OAuthError && error.code === 'state' ? 400 : 500,
-            headers,
-          );
         }
-      },
-    },
+
+        const started = await createOAuthState({
+          kv: req.frogbot.kv,
+          encryption: connections.encryption,
+          piece: entry.piece,
+          flow: 'link',
+          app,
+          collection: userSlug,
+          callbackUrl: urls.callbackUrl,
+          cookiePrefix: urls.cookiePrefix,
+          returnTo,
+          req,
+        });
+
+        headers.set('set-cookie', started.setCookie);
+        headers.set('location', started.authorizationUrl);
+
+        return new Response(null, { status: 302, headers });
+      } catch (error) {
+        return failure(error instanceof OAuthError && error.code === 'state' ? 400 : 500, headers);
+      }
+    };
+
+  return [
+    { method: 'get', path: '/:piece/authorize', handler: authorize(false) },
     {
       method: 'get',
       path: '/:piece/callback',
       handler: async (req) => {
         const headers = new Headers({ 'cache-control': 'no-store' });
-        const entry = entryFor(req);
-        if (!entry || isPieceSignIn(pieceInstanceDefinition(entry.piece).oauth)) {
-          return failure(404, headers, 'Connection not found');
-        }
+        const slug = param(req, 'piece');
+        const candidates = [undefined, ...Object.keys(connections.apps)].flatMap((app) => {
+          const entry = oauthEntry(app, slug);
+
+          return entry && !isPieceSignIn(pieceInstanceDefinition(entry.piece).oauth)
+            ? [{ app, entry }]
+            : [];
+        });
+
+        if (!candidates.length) return failure(404, headers, 'Connection not found');
 
         try {
           const { callbackUrl, cookiePrefix } = await routeURLs({
             req,
             slug: connections.slug!,
-            piece: entry.piece.piece,
+            piece: slug!,
           });
 
           const params = new URL(req.url!).searchParams;
           if (params.getAll('state').length !== 1) throw new OAuthError('state');
 
-          const { intent, clearCookie } = await consumeOAuthState({
-            kv: req.frogbot.kv,
-            encryption: connections.encryption,
-            state: params.get('state')!,
-            piece: entry.piece,
-            flow: 'link',
-            collection: userSlug,
-            callbackUrl,
-            cookiePrefix,
-            req,
-          });
+          let consumed;
+
+          for (const { app, entry } of candidates) {
+            try {
+              consumed = {
+                app,
+                entry,
+                ...(await consumeOAuthState({
+                  kv: req.frogbot.kv,
+                  encryption: connections.encryption,
+                  state: params.get('state')!,
+                  piece: entry.piece,
+                  flow: 'link',
+                  app,
+                  collection: userSlug,
+                  callbackUrl,
+                  cookiePrefix,
+                  req,
+                })),
+              };
+
+              break;
+            } catch (error) {
+              if (!(error instanceof OAuthError)) throw error;
+            }
+          }
+
+          if (!consumed) throw new OAuthError('state');
+          const { app, entry, intent, clearCookie } = consumed;
 
           headers.set('set-cookie', clearCookie);
 
@@ -191,7 +222,12 @@ export function buildConnectionOAuthEndpoints({
             signal: req.signal,
           });
 
-          await saveOAuthConnection({ req, piece: entry.piece, owner, tokens });
+          await saveOAuthConnection({
+            req,
+            piece: entry.piece,
+            holder: app === undefined ? { owner } : { app },
+            tokens,
+          });
 
           headers.set('location', intent.returnTo);
 
@@ -201,5 +237,6 @@ export function buildConnectionOAuthEndpoints({
         }
       },
     },
+    { method: 'get', path: '/app/:app/:piece/authorize', handler: authorize(true) },
   ];
 }

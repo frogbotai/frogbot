@@ -4,18 +4,19 @@ import { KVLockContentionError } from '../../kv/errors.js';
 import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import type { PieceInstance } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
-import type { ConnectionOwner, ConnectionStore, ConnectionStoredValue } from '../store.js';
+import type { ConnectionStore, ConnectionStoredValue } from '../store.js';
+import type { ConnectionHolder } from '../types.js';
 import { OAuthError } from './error.js';
 import { oauthAuth, oauthTokenMetadata, parseOAuthTokens, refreshOAuthTokens } from './tokens.js';
 
 export async function refreshOAuthConnection({
   store,
-  owner,
+  holder,
   piece,
   req,
 }: {
   store: ConnectionStore;
-  owner: ConnectionOwner;
+  holder: ConnectionHolder;
   piece: PieceInstance;
   req: FrogBotRequest;
 }): Promise<ConnectionStoredValue | undefined> {
@@ -24,7 +25,7 @@ export async function refreshOAuthConnection({
   for (;;) {
     try {
       return await store.withLock({
-        owner,
+        ...holder,
         piece: piece.piece,
         fn: async (locked) => {
           const row = await locked.get();

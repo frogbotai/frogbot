@@ -346,14 +346,16 @@ export function definePiece<const T extends PieceDefinition>(
     const factoryKey = {};
 
     const request = (req?: FrogBotRequest) => (req ? Promise.resolve(req) : createDefaultRequest());
-    const client = async ({ req }: { req?: FrogBotRequest } = {}) => {
+    const client = async ({ req, as }: { req?: FrogBotRequest; as?: string } = {}) => {
       const resolvedReq = await request(req);
-      const credential = definition.auth
-        ? await resolvedReq.frogbot.connections.resolvePieceCredential({
-            piece: instance as PieceInstance,
-            req: resolvedReq,
-          })
-        : { auth: undefined, key: factoryKey };
+      const credential =
+        definition.auth || as !== undefined
+          ? await resolvedReq.frogbot.connections.resolvePieceCredential({
+              piece: instance as PieceInstance,
+              req: resolvedReq,
+              as,
+            })
+          : { auth: undefined, key: factoryKey };
 
       if (!definition.client) return undefined;
       const runtime = resolvedReq.frogbot as object;
@@ -399,16 +401,18 @@ export function definePiece<const T extends PieceDefinition>(
         input,
         req,
         overrideAccess = false,
+        as,
       }: {
         input: unknown;
         req?: FrogBotRequest;
         overrideAccess?: boolean;
+        as?: string;
       }) => {
         const resolvedReq = await request(req);
         const parsedInput = action.input.parse(input);
         const result = await action.run({
           input: parsedInput,
-          client: await client({ req: resolvedReq }),
+          client: await client({ req: resolvedReq, as }),
           options,
           req: resolvedReq,
           overrideAccess,

@@ -26,6 +26,7 @@ function setup(auth = z.object({ token: z.string().min(1) })) {
     slug: 'connections',
     encryption: createCredentialEncryption({ secret: 'test' }),
     entries: { example: { piece, secret: true, oauth: false } },
+    apps: {},
   };
 
   const endpoints = buildSecretEndpoints({ connections, userSlug: 'users' });
@@ -195,6 +196,7 @@ describe('static connection endpoint: provider key check', () => {
       slug: 'connections',
       encryption: createCredentialEncryption({ secret: 'test' }),
       entries: { openai: { piece, secret: true, oauth: false } },
+      apps: {},
     };
 
     const [link] = buildSecretEndpoints({ connections, userSlug: 'users' });

@@ -36,6 +36,9 @@ export function collectPieceInstances({
         ...configuredTools.filter(isPieceInstance),
         ...sanitizedTools.flatMap((tool) => pieceToolInstance(tool) ?? []),
         ...Object.values(connections.entries).map(({ piece }) => piece),
+        ...Object.values(connections.apps)
+          .flatMap((slots) => Object.values(slots))
+          .map(({ piece }) => piece),
       ]),
     ],
   };

@@ -30,9 +30,10 @@ export function defaultConnectionsCollection({
       update: () => false,
       delete: () => false,
     },
-    indexes: [{ fields: ['owner', 'piece'], unique: true }],
+    indexes: [{ fields: ['owner', 'app', 'piece'], unique: true }],
     fields: [
-      { name: 'owner', type: 'relationship', relationTo: userSlug, index: true, required: true },
+      { name: 'owner', type: 'relationship', relationTo: userSlug, index: true },
+      { name: 'app', type: 'text', index: true, defaultValue: '' },
       { name: 'piece', type: 'text', index: true, required: true },
       {
         name: 'method',

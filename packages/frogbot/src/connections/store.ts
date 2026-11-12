@@ -1,13 +1,20 @@
 import type { FrogBot } from '../frogbot.js';
 import type { PieceJSON, PieceOAuthAccount } from '../pieces/types.js';
 import { CredentialCryptoError } from './encryption.js';
-import type { SanitizedConnectionsConfig } from './types.js';
+import type {
+  ConnectionHolder,
+  SanitizedConnectionEntry,
+  SanitizedConnectionsConfig,
+} from './types.js';
 
 export type ConnectionOwner = { id: number | string; collection: string };
 
 export type ConnectionRow = {
   id: number | string;
-  owner: number | string;
+  /** The user who linked the account; empty on an app slot's row. */
+  owner?: number | string | null;
+  /** The slot's name on an app slot's row; empty on a user's row. */
+  app?: string | null;
   piece: string;
   method: 'oauth' | 'secret';
   credential: string;
@@ -23,7 +30,7 @@ export type ConnectionMetadata = Omit<ConnectionRow, 'credential'>;
 
 export type ConnectionStoredValue = ConnectionMetadata & { credential: PieceJSON };
 
-export type ConnectionStoreKey = { owner: ConnectionOwner; piece: string };
+export type ConnectionStoreKey = ConnectionHolder & { piece: string };
 
 export type ConnectionStoreWrite = {
   method: ConnectionRow['method'];
@@ -41,10 +48,26 @@ export type ConnectionStoreLock = {
   delete(args?: { id?: number | string }): Promise<boolean>;
 };
 
+/** The configured entry for `piece`, for a user or for the app slot `app`. */
+export function connectionEntry(
+  config: SanitizedConnectionsConfig,
+  { app, piece }: { app?: string; piece: string },
+): SanitizedConnectionEntry | undefined {
+  const entries =
+    app === undefined
+      ? config.entries
+      : Object.hasOwn(config.apps, app)
+        ? config.apps[app]
+        : undefined;
+
+  return entries && Object.hasOwn(entries, piece) ? entries[piece] : undefined;
+}
+
 function metadata(row: ConnectionRow): ConnectionMetadata {
   return {
     id: row.id,
-    owner: row.owner,
+    owner: row.owner ?? null,
+    app: row.app || null,
     piece: row.piece,
     method: row.method,
     account: row.account,
@@ -65,6 +88,22 @@ type ConnectionStoreState = {
 };
 
 const states = new WeakMap<ConnectionStore, ConnectionStoreState>();
+
+function holderKey(key: ConnectionStoreKey): ConnectionStoreKey {
+  return key.app === undefined
+    ? { owner: { ...key.owner }, piece: key.piece }
+    : { app: key.app, piece: key.piece };
+}
+
+/**
+ * The holder's part of a lock or cache key. A user's and a slot's parts differ in their first
+ * element, so no user collection name can collide with a slot name.
+ */
+export function connectionHolderKey(holder: ConnectionHolder): string[] {
+  return holder.app === undefined
+    ? ['user', holder.owner.collection, String(holder.owner.id)]
+    : ['app', holder.app];
+}
 
 function storeState(store: ConnectionStore): ConnectionStoreState {
   const state = states.get(store);
@@ -87,26 +126,43 @@ function assertOwner({ userSlug }: ConnectionStoreState, owner: ConnectionOwner)
   }
 }
 
-function assertKey(state: ConnectionStoreState, { owner, piece }: ConnectionStoreKey): string {
+function assertKey(
+  state: ConnectionStoreState,
+  key: ConnectionStoreKey,
+): { slug: string; entry: SanitizedConnectionEntry } {
   const { config } = state;
 
-  assertOwner(state, owner);
-
-  if (!config.enabled || !config.slug || !Object.hasOwn(config.entries, piece)) {
-    throw new Error(`Connection piece '${piece}' is not configured.`);
+  if (key.app === undefined) assertOwner(state, key.owner);
+  else if (typeof key.app !== 'string' || !key.app) {
+    throw new Error('Connection app slot names must be non-empty strings.');
   }
 
-  return config.slug;
+  const entry = connectionEntry(config, key);
+
+  if (!config.enabled || !config.slug || !entry) {
+    throw new Error(
+      key.app === undefined
+        ? `Connection piece '${key.piece}' is not configured.`
+        : `Connection piece '${key.piece}' is not configured for app '${key.app}'.`,
+    );
+  }
+
+  return { slug: config.slug, entry };
 }
 
 async function findRow(
   { frogbot }: ConnectionStoreState,
   slug: string,
-  { owner, piece }: ConnectionStoreKey,
+  key: ConnectionStoreKey,
 ): Promise<ConnectionRow | undefined> {
   const result = await frogbot.find({
     collection: slug,
-    where: { and: [{ owner: { equals: owner.id } }, { piece: { equals: piece } }] },
+    where: {
+      and: [
+        key.app === undefined ? { owner: { equals: key.owner.id } } : { app: { equals: key.app } },
+        { piece: { equals: key.piece } },
+      ],
+    },
     depth: 0,
     limit: 1,
     overrideAccess: true,
@@ -148,10 +204,30 @@ export class ConnectionStore {
     return (result.docs as ConnectionRow[]).map(metadata);
   }
 
+  /** Every configured app slot's row, without credentials. */
+  async slots(): Promise<ConnectionMetadata[]> {
+    const { config, frogbot } = storeState(this);
+    const apps = Object.keys(config.apps);
+
+    if (!config.enabled || !config.slug || !apps.length) return [];
+
+    const result = await frogbot.find({
+      collection: config.slug,
+      where: { app: { in: apps } },
+      depth: 0,
+      pagination: false,
+      overrideAccess: true,
+    });
+
+    return (result.docs as ConnectionRow[])
+      .filter((row) => row.app && connectionEntry(config, { app: row.app, piece: row.piece }))
+      .map(metadata);
+  }
+
   async get(key: ConnectionStoreKey): Promise<ConnectionStoredValue | undefined> {
     const state = storeState(this);
 
-    const slug = assertKey(state, key);
+    const { slug } = assertKey(state, key);
 
     const row = await findRow(state, slug, key);
 
@@ -166,26 +242,35 @@ export class ConnectionStore {
     }
   }
 
-  upsert({ owner, piece, ...data }: ConnectionStoreKey & ConnectionStoreWrite) {
-    return this.withLock({ owner, piece, fn: (locked) => locked.upsert(data) });
+  upsert({
+    method,
+    credential,
+    account,
+    scopes,
+    expiresAt,
+    status,
+    ...key
+  }: ConnectionStoreKey & ConnectionStoreWrite): Promise<ConnectionMetadata> {
+    return this.withLock({
+      ...holderKey(key),
+      fn: (locked) => locked.upsert({ method, credential, account, scopes, expiresAt, status }),
+    });
   }
 
-  delete({ owner, piece, id }: ConnectionStoreKey & { id?: number | string }) {
-    return this.withLock({ owner, piece, fn: (locked) => locked.delete({ id }) });
+  delete({ id, ...key }: ConnectionStoreKey & { id?: number | string }): Promise<boolean> {
+    return this.withLock({ ...holderKey(key), fn: (locked) => locked.delete({ id }) });
   }
 
   async withLock<T>({
-    owner,
-    piece,
     fn,
+    ...input
   }: ConnectionStoreKey & { fn: (locked: ConnectionStoreLock) => Promise<T> }): Promise<T> {
     const state = storeState(this);
-    const { config, frogbot } = state;
+    const { frogbot } = state;
 
-    const slug = assertKey(state, { owner, piece });
-
-    const key = { owner: { ...owner }, piece };
-    const lockKey = `connections:${JSON.stringify([slug, owner.collection, String(owner.id), piece])}`;
+    const key = holderKey(input);
+    const { slug, entry } = assertKey(state, key);
+    const lockKey = `connections:${JSON.stringify([slug, ...connectionHolderKey(key), key.piece])}`;
 
     return frogbot.kv.lock(lockKey, 30_000, async ({ signal }) => {
       let open = true;
@@ -207,20 +292,23 @@ export class ConnectionStore {
           upsert: async (data) => {
             check();
 
-            if (!['oauth', 'secret'].includes(data.method) || !config.entries[piece][data.method]) {
-              throw new Error(`Connection method '${data.method}' is not enabled for '${piece}'.`);
+            if (!['oauth', 'secret'].includes(data.method) || !entry[data.method]) {
+              throw new Error(
+                `Connection method '${data.method}' is not enabled for '${key.piece}'.`,
+              );
             }
 
             const serialized = JSON.stringify(data.credential);
             if (serialized === undefined) throw new Error('Connection credential must be JSON.');
-            const credential = await config.encryption.encrypt(serialized);
+            const credential = await state.config.encryption.encrypt(serialized);
             check();
             const row = await findRow(state, slug, key);
             check();
 
             const write = {
-              owner: key.owner.id,
-              piece,
+              owner: key.app === undefined ? key.owner.id : null,
+              app: key.app ?? '',
+              piece: key.piece,
               method: data.method,
               credential,
               account: data.account ?? null,
