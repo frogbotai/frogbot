@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, realpathSync, symlinkSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, join, relative } from 'node:path';
@@ -12,6 +12,10 @@ import { writeSlotTsconfig } from './slotTsconfig.js';
 type WithFrogBotOptions = {
   devBundleServerPackages?: boolean;
 };
+
+const BUILD_HEADER = 'x-frogbot-build';
+
+const BUILD_ID_ENV = 'FROGBOT_BUILD_ID';
 
 type LibsqlPackage = {
   optionalDependencies?: Record<string, string>;
@@ -181,8 +185,18 @@ export function withFrogBot(
     ? writeSlotTsconfig(distDir, nextConfig.typescript?.tsconfigPath)
     : undefined;
 
+  const buildId = process.env.NODE_ENV === 'development' ? undefined : randomUUID();
+
   const frogbotConfig: NextConfig = {
     ...nextConfig,
+    ...(buildId && {
+      env: { ...nextConfig.env, [BUILD_ID_ENV]: buildId },
+      generateBuildId: nextConfig.generateBuildId ?? (() => buildId),
+      headers: async () => [
+        ...((await nextConfig.headers?.()) ?? []),
+        { source: '/:path*', headers: [{ key: BUILD_HEADER, value: buildId }] },
+      ],
+    }),
     agentRules: nextConfig.agentRules ?? false,
     ...(distDir && { distDir }),
     ...(tsconfigPath && { typescript: { ...nextConfig.typescript, tsconfigPath } }),
