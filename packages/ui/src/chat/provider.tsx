@@ -88,7 +88,7 @@ export function ChatProvider({
           if (current.signal.aborted) return;
 
           setState((previous) =>
-            previous.manifest
+            !previous.loading && !previous.error
               ? previous
               : {
                   error: error instanceof Error ? error : new Error(String(error)),

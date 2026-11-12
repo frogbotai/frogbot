@@ -282,15 +282,17 @@ function ChatViewInner({
   const provider = useChatProvider();
   const { getPreference, setPreference } = usePreferences();
   const manifest = provider?.manifest;
-  const entry = manifest?.agents.find(({ slug }) => slug === selectedAgent);
+  const offered = manifest?.agents.find(({ slug }) => slug === selectedAgent);
+  const entry = offered ?? manifest?.agents.find(({ slug }) => slug === manifest.defaultAgent);
+  const activeAgent = entry?.slug ?? selectedAgent;
   const [selectedModel, setSelectedModel] = useState<string>();
   const [reasoningByModel, setReasoningByModel] = useState<Record<string, string>>({});
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
   useEffect(() => {
-    if (!manifest || entry || chatId !== undefined) return;
+    if (!manifest || offered) return;
     setSelectedAgent(manifest.defaultAgent);
-  }, [chatId, entry, manifest, setSelectedAgent]);
+  }, [manifest, offered, setSelectedAgent]);
 
   const manifestRef = useRef(manifest);
 
@@ -385,21 +387,21 @@ function ChatViewInner({
     if (!nextModel) return;
 
     setSelectedModel(nextModel);
-    savePicks({ agent: selectedAgent, model: nextModel, reasoning: reasoningByModel });
+    savePicks({ agent: activeAgent, model: nextModel, reasoning: reasoningByModel });
   };
 
   const changeReasoning = (key: string | undefined) => {
     const nextReasoning = rememberReasoning(reasoningByModel, activeModel, key);
 
     setReasoningByModel(nextReasoning);
-    savePicks({ agent: selectedAgent, model: activeModel, reasoning: nextReasoning });
+    savePicks({ agent: activeAgent, model: activeModel, reasoning: nextReasoning });
   };
 
   const controls = (
     <>
       {manifest && manifest.agents.length > 1 ? (
         <AgentSelector
-          selectedAgent={selectedAgent}
+          selectedAgent={activeAgent}
           onAgentChange={(nextAgent) => {
             void changeAgent(nextAgent);
           }}
@@ -446,7 +448,7 @@ function ChatViewInner({
   return (
     <ChatComponent
       {...chatComponentProps}
-      agent={selectedAgent}
+      agent={activeAgent}
       model={activeModel}
       reasoning={activeReasoning}
       {...(chatId === undefined ? {} : { chatId })}
