@@ -298,7 +298,7 @@ describe('frogbot sanitize', () => {
       false,
     );
     expect(events?.admin.components?.views?.list).toEqual({
-      Component: '@frogbotai/ui/admin/rsc#CalendarView',
+      Component: '@frogbotai/ui/admin/rsc#ListView',
     });
     expect(events?.admin.custom?.frogbot.views[0]).not.toHaveProperty('orderField');
   });
@@ -2703,7 +2703,7 @@ describe('frogbot sanitize', () => {
 
     expect(payloadConfig.admin.components.views?.dashboard).toEqual(dashboard);
     expect(chats?.admin.components?.views?.list).toMatchObject({
-      Component: '@frogbotai/ui/admin/rsc#CustomCollectionView',
+      Component: '@frogbotai/ui/admin/rsc#ListView',
     });
     expect(chats?.admin.components?.views?.edit?.root).toEqual(root);
   });
