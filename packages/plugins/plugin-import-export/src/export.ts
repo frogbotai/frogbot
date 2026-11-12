@@ -98,9 +98,10 @@ function previewDrafts(handler: PayloadHandler): PayloadHandler {
 
     const data = req.data as { collectionSlug?: unknown; draft?: unknown } | undefined;
 
-    if (data && !hasDrafts(req, data.collectionSlug)) req.data = { ...data, draft: 'yes' };
+    const patched =
+      data && !hasDrafts(req, data.collectionSlug) ? { ...data, draft: 'yes' } : (data ?? {});
 
-    return handler(req);
+    return handler(Object.assign(req, { text: () => Promise.resolve(JSON.stringify(patched)) }));
   };
 }
 

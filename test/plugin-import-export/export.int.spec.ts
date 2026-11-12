@@ -71,6 +71,23 @@ describe('exports of versioned collections without drafts', () => {
     expect(saved).toMatchObject({ collectionSlug: notesSlug });
   });
 
+  it('previews the rows an export will hold', async () => {
+    await booted.frogbot.create({
+      collection: companiesSlug,
+      data: { name: 'Globex' },
+      overrideAccess: true,
+    });
+
+    const { body, status } = await booted.restClient.post<unknown>(
+      '/api/exports/export-preview',
+      { collectionSlug: companiesSlug, format: 'csv' },
+      { headers: ana.headers, signal: AbortSignal.timeout(10_000) },
+    );
+
+    expect(status).toBe(200);
+    expect(JSON.stringify(body)).toContain('Globex');
+  });
+
   it('refuses to download a collection the export collection does not serve', async () => {
     const { body, status } = await download(usersSlug);
 
