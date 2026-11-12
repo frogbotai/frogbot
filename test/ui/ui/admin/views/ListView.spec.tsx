@@ -111,6 +111,7 @@ describe('ListView', () => {
       return listProps({
         collectionConfig: {
           admin: { components: {}, custom: { frogbot: { useAsDone: 'completed' } } },
+          labels: { plural: 'Tasks' },
           slug: 'tasks',
         },
         collectionSlug: 'tasks',
