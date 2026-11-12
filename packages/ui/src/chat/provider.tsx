@@ -83,6 +83,38 @@ export function ChatProvider({
     return () => controller.abort();
   }, [adapter]);
 
+  useEffect(() => {
+    let controller: AbortController | undefined;
+
+    const refresh = () => {
+      controller?.abort();
+
+      const current = new AbortController();
+
+      controller = current;
+
+      adapter
+        .loadManifest({ signal: current.signal })
+        .then((manifest) => {
+          if (current.signal.aborted) return;
+
+          setState((previous) =>
+            JSON.stringify(previous.manifest) === JSON.stringify(manifest)
+              ? previous
+              : { manifest, loading: false },
+          );
+        })
+        .catch(() => undefined);
+    };
+
+    window.addEventListener('focus', refresh);
+
+    return () => {
+      window.removeEventListener('focus', refresh);
+      controller?.abort();
+    };
+  }, [adapter]);
+
   return (
     <ChatContext
       value={{

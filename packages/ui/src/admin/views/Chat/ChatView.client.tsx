@@ -13,7 +13,7 @@ import {
 } from '@payloadcms/ui';
 import type { AgentReasoningOption, UIMessage } from 'frogbot';
 import { formatAdminURL } from 'payload/shared';
-import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
+import { type ComponentType, type ReactNode, useEffect, useRef, useState } from 'react';
 
 import type { ChatDocument } from '../../../chat/adapter.js';
 import { AgentSelector } from '../../../chat/agent-selector.js';
@@ -292,20 +292,30 @@ function ChatViewInner({
     setSelectedAgent(manifest.defaultAgent);
   }, [chatId, entry, manifest, setSelectedAgent]);
 
+  const manifestRef = useRef(manifest);
+
   useEffect(() => {
-    if (!manifest) return;
+    manifestRef.current = manifest;
+  }, [manifest]);
+
+  const hasManifest = Boolean(manifest);
+
+  useEffect(() => {
+    if (!hasManifest) return;
 
     let current = true;
 
     void getPreference<unknown>(chatPicksPreference).then((value) => {
-      if (!current) return;
+      const loaded = manifestRef.current;
+
+      if (!current || !loaded) return;
 
       const preference = readChatPicks(value);
-      const preferredAgent = manifest.agents.find(({ slug }) => slug === preference.agent);
+      const preferredAgent = loaded.agents.find(({ slug }) => slug === preference.agent);
       const nextAgent =
-        chatId === undefined ? (preferredAgent?.slug ?? manifest.defaultAgent) : initialAgent;
+        chatId === undefined ? (preferredAgent?.slug ?? loaded.defaultAgent) : initialAgent;
 
-      const nextEntry = manifest.agents.find(({ slug }) => slug === nextAgent);
+      const nextEntry = loaded.agents.find(({ slug }) => slug === nextAgent);
       const offers = (model: string | undefined) =>
         nextEntry?.models.some((option) => option === model) ?? false;
 
@@ -330,7 +340,7 @@ function ChatViewInner({
     return () => {
       current = false;
     };
-  }, [chatId, getPreference, initialAgent, initialSelection, manifest, setSelectedAgent]);
+  }, [chatId, getPreference, hasManifest, initialAgent, initialSelection, setSelectedAgent]);
 
   const models: readonly string[] | undefined = entry?.models;
   const names: Partial<Record<string, string>> | undefined = entry?.names;

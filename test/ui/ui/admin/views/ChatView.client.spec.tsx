@@ -519,6 +519,47 @@ describe('ChatViewClient', () => {
     expect(lastChatProps()).toMatchObject({ model: 'anthropic/opus', reasoning: 'max' });
   });
 
+  it('keeps the picked model and level when a refetched manifest adds a model', async () => {
+    useManifest(reasoningAgent);
+
+    mocks.getPreference.mockResolvedValue({
+      agent: 'general',
+      model: 'openai/gpt-5',
+      reasoning: { 'openai/gpt-5': 'low', 'anthropic/opus': 'max' },
+    });
+
+    const { moveTo } = renderChatView();
+
+    await chooseModel('opus');
+
+    useManifest({ ...reasoningAgent, models: [...reasoningAgent.models, 'google/gemini'] });
+    moveTo(createPath);
+
+    await act(() => Promise.resolve());
+
+    expect((await trigger()).textContent).toBe('opus Max · 32k');
+    expect(lastChatProps()).toMatchObject({ model: 'anthropic/opus', reasoning: 'max' });
+
+    await chooseModel('gemini');
+
+    expect(lastChatProps()).toMatchObject({ model: 'google/gemini' });
+  });
+
+  it('falls back to the default model when a refetched manifest drops the picked one', async () => {
+    useManifest(reasoningAgent);
+
+    const { moveTo } = renderChatView();
+
+    await chooseModel('opus');
+
+    useManifest({ ...reasoningAgent, models: ['openai/gpt-5', 'openai/gpt-4o'] });
+    moveTo(createPath);
+
+    await act(() => Promise.resolve());
+
+    expect(lastChatProps()).toMatchObject({ model: 'openai/gpt-5' });
+  });
+
   it('shows Default after switching to a model without a remembered level', async () => {
     useManifest(reasoningAgent);
 
