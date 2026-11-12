@@ -150,6 +150,26 @@ describe('aiPolicyPlugin', () => {
     });
   });
 
+  it('keeps the configured model options when the app overrides the models field', async () => {
+    const update = () => false;
+    const result = await apply(
+      config({
+        collections: [
+          {
+            slug: 'users',
+            auth: true,
+            fields: [{ name: 'models', type: 'select', options: [], access: { update } }],
+          },
+        ],
+      }),
+    );
+
+    expect(field(result, 'users', 'models')).toMatchObject({ hasMany: true, access: { update } });
+    expect(field(result, 'users', 'models')?.options).toEqual(
+      expect.arrayContaining(['openai/gpt-4o']),
+    );
+  });
+
   it('wraps every access category, keeping the app rule and signed-in default', async () => {
     const generate = vi.fn(({ model }: { model: string }) => model !== 'openai/blocked');
     const result = await apply(

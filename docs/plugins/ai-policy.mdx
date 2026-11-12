@@ -42,7 +42,7 @@ The plugin needs an `ai` configuration and fails at startup without one. It adds
 
 An entry in `models` is an exact match: allowing an alias allows calls to the alias, not direct calls to the model behind it.
 
-Define a field with the same name on your auth collection to change it. Your field replaces the plugin's settings it sets, and its `admin` and `access` are merged over the plugin's. For example, let only admins change budgets:
+Define a field with the same name on your auth collection to change it. Your field replaces the plugin's settings it sets, and its `admin` and `access` are merged over the plugin's. The `models` options always come from your AI config, so a `models` field can set `options: []`. For example, let only admins change budgets:
 
 ```ts
 {
