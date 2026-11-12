@@ -171,13 +171,13 @@ export async function deviceLogin(io: DojoIO, dojoUrl: string): Promise<string> 
 
     if (!waits && !saved) throw signInNeeded(io, code);
 
-    const answer = await (waits ? pollToken(io, dojoUrl, code) : askToken(dojoUrl, code)).catch(
-      async (error: unknown) => {
-        if (error instanceof ShareError) await forgetPending(io.env, dojoUrl);
+    const answer = await (waits ? pollToken(io, dojoUrl, code) : askToken(dojoUrl, code));
 
-        throw error;
-      },
-    );
+    if (answer.status === 'refused') {
+      await forgetPending(io.env, dojoUrl);
+
+      throw new ShareError(answer.message);
+    }
 
     if (answer.status === 'approved') {
       await writeToken(io.env, dojoUrl, answer.token);
@@ -246,7 +246,9 @@ async function newCode(env: DeployEnv, dojoUrl: string): Promise<PendingCode> {
 }
 
 type Answer =
-  { status: 'approved'; token: string } | { status: 'pending' | 'slow_down' | 'expired' };
+  | { status: 'approved'; token: string }
+  | { status: 'refused'; message: string }
+  | { status: 'pending' | 'slow_down' | 'expired' };
 
 async function askToken(dojoUrl: string, code: PendingCode): Promise<Answer> {
   const reply = await post(`${dojoUrl}/api/cli/device/token`, {
@@ -261,9 +263,12 @@ async function askToken(dojoUrl: string, code: PendingCode): Promise<Answer> {
   if (body.error === 'authorization_pending') return { status: 'pending' };
   if (body.error === 'slow_down') return { status: 'slow_down' };
   if (body.error === 'expired_token') return { status: 'expired' };
-  if (body.error === 'access_denied') throw new ShareError('Sign-in was denied.');
+  if (body.error === 'access_denied') return { status: 'refused', message: 'Sign-in was denied.' };
+  if (body.error) return { status: 'refused', message: `Sign-in failed: ${body.error}.` };
 
-  throw new ShareError(`Sign-in failed: ${body.error ?? reply.status}.`);
+  throw new ShareError(
+    `Couldn't reach Dojo to finish the sign-in (${reply.status}). Run the command again.`,
+  );
 }
 
 async function pollToken(io: DojoIO, dojoUrl: string, code: PendingCode): Promise<Answer> {
