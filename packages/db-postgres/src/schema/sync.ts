@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import type { FrogBotSanitizedConfig, SchemaSyncResult } from 'frogbot';
 import { BasePayload } from 'payload';
 
+import { addedEnumValue, splitNewEnumDefaults } from './enumDefaults.js';
 import {
   findLosses,
   findNewUniques,
@@ -227,8 +228,9 @@ function queued(execute: (query: unknown) => Promise<unknown>) {
 
 /**
  * Pushes the adapter's schema through its `requireDrizzleKit()` in one transaction on one checked-out
- * client (a statement that uses a select option the sync adds runs in a second one, once it's committed), and applies nothing when a statement would delete data, change a column's type on a table with
- * rows, or make a column with duplicates unique. Never prompts and never writes `payload_migrations`.
+ * client, and applies nothing when a statement would delete data, change a column's type on a table with
+ * rows, or make a column with duplicates unique. A default set to a select option the same sync adds is
+ * set in a second transaction, once that option is committed (see `splitNewEnumDefaults`). Never prompts and never writes `payload_migrations`.
  */
 export async function pushAdditive(
   adapter: SchemaAdapter,
@@ -263,10 +265,9 @@ export async function pushAdditive(
     return { ok: false as const, error: `The schema sync changed nothing: ${error}`, applied: [] };
   };
 
-  const newValues = new Set<string>();
-  const deferred = new Map<string, string>();
-  const usesNewValue = (statement: string) =>
-    [...newValues].some((value) => statement.includes(`'${value.replaceAll("'", "''")}'`));
+  const added = new Map<string, Set<string>>();
+  const deferred = new Set<string>();
+  const later: string[] = [];
 
   try {
     await client.query('BEGIN');
@@ -295,18 +296,15 @@ export async function pushAdditive(
       if (refusal) return await refuse(refusal);
 
       for (const statement of statements) {
-        const value = addEnumValue.exec(statement)?.[1];
+        const value = addedEnumValue(statement);
 
-        if (value) newValues.add(value.replaceAll("''", "'"));
+        if (value) added.set(value.type, (added.get(value.type) ?? new Set()).add(value.value));
       }
 
-      const now = statements.filter((statement) => {
-        if (addEnumValue.test(statement) || !usesNewValue(statement)) return true;
+      const split = splitNewEnumDefaults(statements, added, deferred, live);
+      const now = split.now;
 
-        deferred.set(statement, statement);
-
-        return false;
-      });
+      later.push(...split.later);
 
       if (!now.length || now.join('\n') === repeated) break;
 
@@ -327,9 +325,7 @@ export async function pushAdditive(
 
     await client.query('COMMIT');
 
-    if (deferred.size) {
-      const later = [...deferred.values()];
-
+    if (later.length) {
       await client.query('BEGIN');
 
       try {
@@ -359,9 +355,6 @@ export async function pushAdditive(
     client.release();
   }
 }
-
-const addEnumValue =
-  /^\s*ALTER\s+TYPE\s+.+?\s+ADD\s+VALUE\s+(?:IF\s+NOT\s+EXISTS\s+)?'((?:[^']|'')*)'/i;
 
 /**
  * Payload's dev push (`pushDevSchema`), made additive-only and without its prompt, in a fresh Payload
