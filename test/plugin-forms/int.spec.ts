@@ -302,6 +302,52 @@ describe(`forms plugin [${adapterLabel}]`, () => {
     ]);
   });
 
+  it('shows a required question even when a saved rule would hide it', async () => {
+    const form = await createForm({
+      steps: [{ questions: [{ field: 'interest' }, { field: 'email' }] }],
+    });
+
+    await booted.frogbot.db.updateOne({
+      collection: 'forms',
+      id: form.id,
+      data: {
+        steps: [
+          {
+            id: 'step000000000000000000a1',
+            questions: [
+              { id: 'q00000000000000000000a1', field: 'interest' },
+              {
+                id: 'q00000000000000000000a2',
+                field: 'email',
+                rules: [
+                  {
+                    id: 'r00000000000000000000a1',
+                    question: 'interest',
+                    operator: 'equals',
+                    value: 'sales',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    const definition = await booted.restClient.get<{ steps: { questions: object[] }[] }>(
+      `/api/forms/${form.slug}/definition`,
+    );
+
+    expect(definition.body.steps[0]?.questions[1]).not.toHaveProperty('rules');
+
+    const response = await submit(form.slug, {
+      data: { interest: 'support', email: 'ada@example.com' },
+    });
+
+    expect(response.status).toBe(200);
+    expect((await leads()).map(({ email }) => email)).toEqual(['ada@example.com']);
+  });
+
   it('returns field errors from the collection', async () => {
     await createForm();
 
