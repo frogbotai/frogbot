@@ -319,6 +319,12 @@ export function compileCollectionViews({
       );
     }
 
+    if (slug === 'edit' || (slug === 'list' && view.type !== 'list')) {
+      throw new Error(
+        `[frogbot] Collection "${collection.slug}" view "${slug}" uses a reserved slug. Payload keeps "edit" for the record view and "list" for the list.`,
+      );
+    }
+
     slugs.add(slug);
 
     return { ...view, slug };

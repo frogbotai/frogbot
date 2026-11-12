@@ -24,9 +24,7 @@ export async function CollectionViewActions(props: CollectionViewActionsProps) {
   const { runtime, views } = await resolveCollectionViews({ collectionConfig, req });
   const view = runtime
     .slice(1)
-    .find(
-      ({ slug, type }) => slug === viewType || (type === 'list' && viewType === LIST_ROUTE_KEY),
-    );
+    .find(({ slug, type }) => (type === 'list' ? viewType === LIST_ROUTE_KEY : slug === viewType));
 
   const actions = view?.components?.actions;
 
