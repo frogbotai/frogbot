@@ -2,7 +2,7 @@ import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerCompo
 import type { PayloadRequest, ServerProps } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 
-import { resolveCollectionViews } from './collectionViews.js';
+import { LIST_ROUTE_KEY, resolveCollectionViews } from './collectionViews.js';
 
 export type CollectionViewActionsProps = ServerProps & {
   collectionSlug?: string;
@@ -22,7 +22,12 @@ export async function CollectionViewActions(props: CollectionViewActionsProps) {
   if (!collectionSlug || !collectionConfig || docID !== undefined || !viewType || !req) return null;
 
   const { runtime, views } = await resolveCollectionViews({ collectionConfig, req });
-  const view = runtime.slice(1).find(({ slug }) => slug === viewType);
+  const view = runtime
+    .slice(1)
+    .find(
+      ({ slug, type }) => slug === viewType || (type === 'list' && viewType === LIST_ROUTE_KEY),
+    );
+
   const actions = view?.components?.actions;
 
   if (!view || !actions?.length || !views.some(({ slug }) => slug === view.slug)) return null;

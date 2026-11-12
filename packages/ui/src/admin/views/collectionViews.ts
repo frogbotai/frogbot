@@ -16,6 +16,9 @@ import { readViewPreference } from './viewSetup.js';
 
 export type RuntimeCollectionView = CollectionView & { slug: string };
 
+/** The route key, and so the view type, core gives a list that isn't the first view. */
+export const LIST_ROUTE_KEY = 'frogbotList';
+
 export function getRuntimeViews(
   props: Pick<AdminViewServerProps, 'collectionConfig'>,
 ): RuntimeCollectionView[] {
