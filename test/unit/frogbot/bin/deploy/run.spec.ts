@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { dockerfile } from '../../../../../packages/frogbot/src/bin/deploy/dockerfile.js';
+import { DeployError } from '../../../../../packages/frogbot/src/bin/deploy/error.js';
 import { runDeploy, splitDeployArgs } from '../../../../../packages/frogbot/src/bin/deploy/run.js';
 import { deployConfig, recordingTarget, tempDir, testIO, writeApp } from './helpers.js';
 
@@ -107,6 +108,31 @@ describe('runDeploy', () => {
     expect(await runDeploy(recordingTarget().target, ['--dry-run'], io.io, { name: 'dojo' })).toBe(
       0,
     );
+  });
+
+  it("exits with a target's own code and adds its details to the JSON result", async () => {
+    const root = await tempDir();
+    const io = testIO({ cwd: root, config: deployConfig({ prodMigrations: undefined }) });
+    const target = {
+      ...recordingTarget().target,
+      run: () => {
+        throw new DeployError('Sign in first.', 3, { needs: 'sign-in', link: 'https://x/device' });
+      },
+    };
+
+    await writeApp(root, { '.env': '' });
+
+    expect(await runDeploy(target, ['--json'], io.io, { name: 'dojo' })).toBe(3);
+    expect(JSON.parse(io.stdout().join('\n'))).toEqual({
+      target: 'dojo',
+      ok: false,
+      dryRun: false,
+      issues: [],
+      result: null,
+      error: 'Sign in first.',
+      needs: 'sign-in',
+      link: 'https://x/device',
+    });
   });
 
   it('reports a config that fails to load as CONFIG_INVALID', async () => {

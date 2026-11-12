@@ -10,7 +10,9 @@ async function setup() {
 
   const login = async (options: Omit<Parameters<typeof testIO>[0], 'cwd' | 'env'> = {}) => {
     const io = testIO({ cwd: env.XDG_CONFIG_HOME, env, ...options });
-    const token = await deviceLogin(io.io, dojo.url).catch((error: Error) => error);
+    const token = await deviceLogin({ ...io.io, waits: true }, dojo.url).catch(
+      (error: Error) => error,
+    );
 
     return { token, ...io };
   };
@@ -49,7 +51,7 @@ describe('Dojo device sign-in', () => {
     ]);
   });
 
-  it('starts a new code by itself when one expires without a TTY', async () => {
+  it('starts a new code by itself when one expires with --wait', async () => {
     const { dojo, login, codeRequests } = await setup();
 
     dojo.expiredCodes = 1;
@@ -62,7 +64,7 @@ describe('Dojo device sign-in', () => {
     expect(result.stdout().filter((line) => line === 'Code: BCDF-GHJK')).toHaveLength(2);
   });
 
-  it('gives up after three expired codes without a TTY', async () => {
+  it('gives up after three expired codes with --wait', async () => {
     const { dojo, login, codeRequests } = await setup();
 
     dojo.expiredCodes = 3;
