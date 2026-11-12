@@ -56,7 +56,7 @@ Instance slugs default to the piece slug. Give distinct instances unique slugs w
 
 Both paths use your configured `routes.api` prefix instead of `/api` when customized. Generated subscription URLs combine `serverURL`, that prefix, and the instance slug.
 
-Boot reconciliation reuses unchanged subscriptions, replaces changed subscriptions, and cleans up removed mounts. If an instance is missing during cleanup, FrogBot retains its subscription ledger entry and logs a warning: credentials cannot be reconstructed from the database. To retry cleanup, use the instance again, with its credentials, in an agent's triggers, channels, or tools, or in `connections`.
+Boot reconciliation reuses unchanged subscriptions, replaces changed subscriptions, and cleans up removed mounts. If an instance is missing during cleanup, FrogBot retains its subscription ledger entry and logs a warning: credentials cannot be reconstructed from the database. To retry cleanup, use the instance again, with its factory `auth`, in an agent's triggers, channels, or tools, or in `connections`. Cleanup removes a webhook the app created, so it always uses the instance's factory `auth`, even for the instance in a connection entry. Registering a webhook on that instance throws `ConnectionError` with code `missing`, so mount webhook triggers on a separate instance with its own `auth`.
 
 Boot reconciliation and the subscription ledger exist only while an agent declares a trigger or channel. Removing the last trigger and channel stops automatic deregistration, so delete those webhooks at the provider.
 
@@ -99,7 +99,7 @@ A poll calls the trigger's `run({ input, cursor, client, options, req })` with t
 
 The first poll has no cursor. It only records a starting point: FrogBot queues none of its events, so mounting a trigger never replays a provider's history. Piece authors should return `{ events: [], cursor }` on that run, with the same kind of cursor later polls use (such as "now" or the newest ID), without side effects like uploads. A new input resets the cursor, and the next poll starts again from "now". A trigger that never returns a cursor gets none on every poll; FrogBot queues its events from the second poll on and relies on dedupe.
 
-A poll has no signed-in user, so it uses the instance's app-level credential; there's no per-user polling yet. A poll that fails, for example because no credential is linked or the provider errors, sets the entry's `status` to `'error'` and logs one warning naming the agent, instance, trigger, and error. The job isn't retried; the next scheduled poll tries again, and a successful poll sets `status` back to `'active'`.
+A poll has no signed-in user, so it uses the instance's factory `auth`; there's no per-user polling yet. On the instance in a [connection entry](/connections/overview#when-the-code-credential-is-used) the poll throws `ConnectionError` with code `missing` instead, so mount polling triggers on a separate instance with its own `auth`. A poll that fails, for example because no credential is linked or the provider errors, sets the entry's `status` to `'error'` and logs one warning naming the agent, instance, trigger, and error. The job isn't retried; the next scheduled poll tries again, and a successful poll sets `status` back to `'active'`.
 
 Each event's `dedupeKey` is a hash of the subscription ID and the event's JSON, tracked for the same 24 hours as webhook events.
 
