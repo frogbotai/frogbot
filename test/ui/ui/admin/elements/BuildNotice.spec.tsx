@@ -25,7 +25,6 @@ async function focusTab() {
 
 beforeEach(() => {
   vi.useFakeTimers({ now: 0, toFake: ['Date'] });
-  vi.stubEnv('FROGBOT_BUILD_ID', 'build-a');
   vi.stubGlobal('fetch', fetchMock);
   fetchMock.mockReset();
 });
@@ -33,14 +32,13 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
-  vi.unstubAllEnvs();
   vi.unstubAllGlobals();
 });
 
 describe('BuildNotice', () => {
   it('asks for a reload when the tab regains focus on a newer build', async () => {
     serve('build-b');
-    render(<BuildNotice />);
+    render(<BuildNotice buildId="build-a" />);
 
     expect(screen.queryByText('Updated, reload')).toBeNull();
 
@@ -55,7 +53,7 @@ describe('BuildNotice', () => {
 
   it('counts the header on an error response too', async () => {
     serve('build-b', 503);
-    render(<BuildNotice />);
+    render(<BuildNotice buildId="build-a" />);
     await focusTab();
 
     expect(screen.getByText('Updated, reload')).toBeTruthy();
@@ -66,7 +64,7 @@ describe('BuildNotice', () => {
     ['no header', null],
   ])('shows nothing for %s', async (_name, build) => {
     serve(build);
-    render(<BuildNotice />);
+    render(<BuildNotice buildId="build-a" />);
     await focusTab();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -75,7 +73,7 @@ describe('BuildNotice', () => {
 
   it('shows nothing when the check fails', async () => {
     fetchMock.mockRejectedValue(new TypeError('offline'));
-    render(<BuildNotice />);
+    render(<BuildNotice buildId="build-a" />);
     await focusTab();
 
     expect(screen.queryByText('Updated, reload')).toBeNull();
@@ -83,7 +81,7 @@ describe('BuildNotice', () => {
 
   it('checks at most once every 5 seconds', async () => {
     serve('build-a');
-    render(<BuildNotice />);
+    render(<BuildNotice buildId="build-a" />);
 
     await focusTab();
 
@@ -107,7 +105,7 @@ describe('BuildNotice', () => {
 
     vi.stubGlobal('location', { ...window.location, reload });
     serve('build-b');
-    render(<BuildNotice />);
+    render(<BuildNotice buildId="build-a" />);
     await focusTab();
 
     expect(reload).not.toHaveBeenCalled();
@@ -117,8 +115,7 @@ describe('BuildNotice', () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  it('does nothing without an inlined build ID, as in next dev', async () => {
-    vi.stubEnv('FROGBOT_BUILD_ID', '');
+  it('does nothing without a build ID, as in next dev', async () => {
     serve('build-b');
     render(<BuildNotice />);
     await focusTab();
