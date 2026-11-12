@@ -139,6 +139,7 @@ export interface AccountAuthOperations {
  */
 export interface Account {
   id: number;
+  roles?: ('admin' | 'member')[] | null;
   /**
    * Leave empty to allow all models.
    */
@@ -147,6 +148,8 @@ export interface Account {
         | 'openai/gpt-4.1'
         | 'openai/gpt-4.1-mini'
         | 'openai/gpt-4o'
+        | 'spend/other'
+        | 'spend/priced'
         | 'test/allowed'
         | 'test/blocked'
       )[]
@@ -245,6 +248,8 @@ export interface Credential {
         | 'openai/gpt-4.1'
         | 'openai/gpt-4.1-mini'
         | 'openai/gpt-4o'
+        | 'spend/other'
+        | 'spend/priced'
         | 'test/allowed'
         | 'test/blocked'
       )[]
@@ -416,6 +421,7 @@ export interface FrogBotWaitpoint {
  * via the `definition` "accounts_select".
  */
 export interface AccountsSelect {
+  roles?: boolean;
   models?: boolean;
   monthlyBudget?: boolean;
   spendThisPeriodUSD?: boolean;
@@ -702,6 +708,8 @@ declare module 'frogbot' {
       | 'openai/gpt-4.1'
       | 'openai/gpt-4.1-mini'
       | 'openai/gpt-4o'
+      | 'spend/other'
+      | 'spend/priced'
       | 'test/allowed'
       | 'test/blocked';
   }
