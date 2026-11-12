@@ -1,4 +1,10 @@
-import type { AuthStrategy, CollectionMeHook } from 'frogbot';
+import {
+  APIError,
+  type AuthStrategy,
+  type CollectionBeforeOperationHook,
+  type CollectionMeHook,
+} from 'frogbot';
+import { toPayloadRequest } from 'frogbot/internal';
 
 import { extractApiKeyToken, hashApiKeyToken } from './server/token.js';
 
@@ -33,6 +39,46 @@ function isRecentlyUsed(key: Record<string, unknown>): boolean {
 
 const apiKeyStrategies = new WeakSet<AuthStrategy>();
 
+const refusals = new WeakMap<object, string>();
+
+function refusalMessage(key: Record<string, unknown>, mintPath: string): string | undefined {
+  const revokedAt = key.revokedAt == null ? null : (expiryTime(key.revokedAt) ?? Date.now());
+  const expiresAt = isExpiredKey(key) ? expiryTime(key.expiresAt) : null;
+  const reason =
+    revokedAt !== null
+      ? `was revoked at ${new Date(revokedAt).toISOString()}`
+      : expiresAt !== null
+        ? `expired at ${new Date(expiresAt).toISOString()}`
+        : undefined;
+
+  return reason && `API key ${reason}. Mint a new one with POST ${mintPath}.`;
+}
+
+/**
+ * Why the request's API key was refused, when it named a key that was revoked or has expired.
+ * The caller already holds the token, so saying so leaks nothing.
+ */
+export function apiKeyRefusal(req: object | null | undefined): string | undefined {
+  return req ? refusals.get(req) : undefined;
+}
+
+/** The `error` and `error_description` of a `WWW-Authenticate: Bearer` challenge for a refused key. */
+export function apiKeyChallenge(message: string): string {
+  return `error="invalid_token", error_description="${message}"`;
+}
+
+/** Answers an operation run as the caller with 401 and the reason, when its only credential was a refused key. */
+export const refuseRejectedApiKey: CollectionBeforeOperationHook = ({ overrideAccess, req }) => {
+  const message = req.user || overrideAccess ? undefined : apiKeyRefusal(req);
+
+  if (!message) return;
+
+  req.responseHeaders = new Headers(req.responseHeaders);
+  req.responseHeaders.set('WWW-Authenticate', `Bearer ${apiKeyChallenge(message)}`);
+
+  throw new APIError(message, 401, null, true);
+};
+
 let loggedStampFailure = false;
 
 type StrategyOptions = {
@@ -46,7 +92,7 @@ export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
   const { authCollection, collectionSlug, headerNames, tokenPrefix } = options;
   const strategy: AuthStrategy = {
     name: apiKeyStrategyName,
-    authenticate: async ({ frogbot, headers }) => {
+    authenticate: async ({ frogbot, headers, req }) => {
       const token = extractApiKeyToken(headers, { headerNames, tokenPrefix });
 
       if (!token) return { user: null };
@@ -56,12 +102,7 @@ export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
         depth: 0,
         limit: 1,
         overrideAccess: true,
-        where: {
-          and: [
-            { tokenHash: { equals: hashApiKeyToken(token) } },
-            { revokedAt: { exists: false } },
-          ],
-        },
+        where: { tokenHash: { equals: hashApiKeyToken(token) } },
       });
 
       const key = keys.docs[0];
@@ -69,9 +110,17 @@ export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
       if (
         !key ||
         (typeof key.id !== 'string' && typeof key.id !== 'number') ||
-        (typeof key.owner !== 'string' && typeof key.owner !== 'number') ||
-        isExpiredKey(key)
+        (typeof key.owner !== 'string' && typeof key.owner !== 'number')
       ) {
+        return { user: null };
+      }
+
+      const api = req ? toPayloadRequest(req).payload.config.routes.api : '/api';
+      const refusal = refusalMessage(key, `${api.replace(/\/+$/, '')}/${collectionSlug}/mint`);
+
+      if (refusal) {
+        if (req) refusals.set(req, refusal);
+
         return { user: null };
       }
 

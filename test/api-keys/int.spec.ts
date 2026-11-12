@@ -174,7 +174,7 @@ describe('API keys plugin integration', () => {
       headers: { 'x-service-key': mint.body.token },
     });
 
-    expect(rejected.status).toBe(403);
+    expect(rejected.status).toBe(401);
   });
 
   it('refuses minting and rotating with an API key but lets the key revoke itself', async () => {
@@ -1255,7 +1255,7 @@ describe('API keys plugin integration', () => {
       for (const token of [child.body.token, grandchild.body.token]) {
         expect(
           (await booted.restClient.get('/api/credentials', { headers: asKey(token) })).status,
-        ).toBe(403);
+        ).toBe(401);
       }
     });
 

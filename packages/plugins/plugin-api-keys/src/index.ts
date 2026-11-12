@@ -2,7 +2,12 @@ import { type CollectionConfig, definePlugin, type FrogBotRequest, type Plugin }
 import { cascadeDelete } from 'frogbot/internal';
 
 import { createApiKeysCollection } from './collection.js';
-import { apiKeyMeHook, apiKeyStrategyName, createApiKeyStrategy } from './strategy.js';
+import {
+  apiKeyMeHook,
+  apiKeyStrategyName,
+  createApiKeyStrategy,
+  refuseRejectedApiKey,
+} from './strategy.js';
 
 export type {
   MintApiKeyOptions,
@@ -17,7 +22,7 @@ export {
   getApiKeyPrefix,
   hashApiKeyToken,
 } from './server/token.js';
-export { isApiKeyStrategy } from './strategy.js';
+export { apiKeyChallenge, apiKeyRefusal, isApiKeyStrategy } from './strategy.js';
 
 export type ApiKeysPluginOptions = {
   authCollection?: string;
@@ -113,7 +118,13 @@ const apiKeys = definePlugin<ApiKeysResolvedOptions>({
         ...(usageLog && !config.collections.includes(usageLog)
           ? [{ ...usageLog, fields: [usageField] }]
           : []),
-      ],
+      ].map((item) => ({
+        ...item,
+        hooks: {
+          ...item.hooks,
+          beforeOperation: [refuseRejectedApiKey, ...(item.hooks?.beforeOperation ?? [])],
+        },
+      })),
       ...(config.ai && {
         ai: {
           ...config.ai,

@@ -13,11 +13,13 @@ import {
   ApiKeyServiceError,
   canMintKeys,
   countMintedApiKeys,
+  isApiKeyRequest,
   keyScopeBeforeValidate,
   mintApiKey,
   revokeApiKey,
   rotateApiKey,
 } from './server/services.js';
+import { apiKeyChallenge, apiKeyRefusal } from './strategy.js';
 
 const managerComponent = (collectionSlug: string) => ({
   path: '@frogbotai/plugin-api-keys/rsc#ApiKeysManagerServer',
@@ -41,6 +43,29 @@ const sessionRequired = () =>
         "This API key can't mint or rotate API keys. Sign in, or use a key that can mint keys.",
     },
     { status: 403 },
+  );
+
+function authenticationRequired(req: FrogBotRequest) {
+  const refusal = apiKeyRefusal(req);
+
+  return Response.json(
+    { error: refusal ?? 'Authentication required' },
+    {
+      status: 401,
+      ...(refusal && { headers: { 'WWW-Authenticate': `Bearer ${apiKeyChallenge(refusal)}` } }),
+    },
+  );
+}
+
+const keyNotFound = (req: FrogBotRequest) =>
+  Response.json(
+    {
+      error: isApiKeyRequest(req)
+        ? 'A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.'
+        : 'API key not found',
+      code: 'not_found',
+    },
+    { status: 404 },
   );
 
 function describeError(error: APIError): string {
@@ -104,7 +129,7 @@ function createEndpoints({
       method: 'post',
       path: '/mint',
       handler: async (req) => {
-        if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        if (!req.user) return authenticationRequired(req);
         if (!canMintKeys(req)) return sessionRequired();
         const body = ((await req.json?.().catch(() => null)) ?? null) as {
           name?: unknown;
@@ -139,7 +164,7 @@ function createEndpoints({
           );
         } catch (error) {
           if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') {
-            return Response.json({ error: 'Authentication required' }, { status: 401 });
+            return authenticationRequired(req);
           }
 
           if (error instanceof APIError && error.status < 500) {
@@ -154,7 +179,7 @@ function createEndpoints({
       method: 'post',
       path: '/:id/revoke',
       handler: async (req) => {
-        if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        if (!req.user) return authenticationRequired(req);
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
           return Response.json({ error: 'API key not found' }, { status: 404 });
@@ -187,11 +212,11 @@ function createEndpoints({
           return Response.json(result);
         } catch (error) {
           if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') {
-            return Response.json({ error: 'Authentication required' }, { status: 401 });
+            return authenticationRequired(req);
           }
 
           if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
-            return Response.json({ error: 'API key not found' }, { status: 404 });
+            return keyNotFound(req);
           }
 
           throw error;
@@ -202,7 +227,7 @@ function createEndpoints({
       method: 'get',
       path: '/:id/minted-count',
       handler: async (req) => {
-        if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        if (!req.user) return authenticationRequired(req);
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
           return Response.json({ error: 'API key not found' }, { status: 404 });
@@ -216,7 +241,7 @@ function createEndpoints({
           });
         } catch (error) {
           if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
-            return Response.json({ error: 'API key not found' }, { status: 404 });
+            return keyNotFound(req);
           }
 
           throw error;
@@ -227,7 +252,7 @@ function createEndpoints({
       method: 'post',
       path: '/:id/rotate',
       handler: async (req) => {
-        if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        if (!req.user) return authenticationRequired(req);
         if (!canMintKeys(req)) return sessionRequired();
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
@@ -243,11 +268,11 @@ function createEndpoints({
           );
         } catch (error) {
           if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') {
-            return Response.json({ error: 'Authentication required' }, { status: 401 });
+            return authenticationRequired(req);
           }
 
           if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
-            return Response.json({ error: 'API key not found' }, { status: 404 });
+            return keyNotFound(req);
           }
 
           if (error instanceof APIError && error.status < 500) {
