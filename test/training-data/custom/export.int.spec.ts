@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { exportTrainingData, type TrainingDataRecord } from '@frogbotai/plugin-capture';
+import { exportTrainingData, type TrainingDataRecord } from '@frogbotai/plugin-ai-capture';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot';

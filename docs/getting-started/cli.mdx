@@ -188,14 +188,14 @@ When your app has a config file, `frogbot` loads it before running any command a
   - **Unknown commands:** Running an unknown command prints `[frogbot] "<name>" isn't a command in this app.` (or `[frogbot] "<name>" isn't a built-in command, and there's no app here to add it.` when no config file is found) and exits with code `2`.
 </Accordion>
 
-### Commands from `capturePlugin()`
+### Commands from `aiCapturePlugin()`
 
-Added when [`capturePlugin()`](/plugins/capture) is in your config's `plugins`:
+Added when [`aiCapturePlugin()`](/plugins/ai-capture) is in your config's `plugins`:
 
 | Command | Arguments | Description |
 | --- | --- | --- |
 | `export:training-data` | `--output`, `--where`, `--page-size` | Exports chats as JSONL training data. See [Training data](/chat/training-data). |
-| `export:captures` | `--output`, `--user`, `--api-key`, `--from`, `--to`, `--operation` | Exports captured AI calls. See [Capture](/plugins/capture). |
+| `export:captures` | `--output`, `--user`, `--api-key`, `--from`, `--to`, `--operation` | Exports captured AI calls. See [Capture](/plugins/ai-capture). |
 
 ### Commands from `dojo()`
 

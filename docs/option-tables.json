@@ -277,7 +277,7 @@
   {
     "page": "chat/training-data",
     "heading": "Export from the Local API",
-    "type": "import('@frogbotai/plugin-capture').ReadTrainingDataOptions"
+    "type": "import('@frogbotai/plugin-ai-capture').ReadTrainingDataOptions"
   },
   {
     "page": "chat/ui-chat",
@@ -1340,9 +1340,9 @@
     "type": "import('@frogbotai/plugin-audit-log').AuditLogPluginOptions"
   },
   {
-    "page": "plugins/capture",
+    "page": "plugins/ai-capture",
     "heading": "Options",
-    "type": "import('@frogbotai/plugin-capture').CapturePluginOptions"
+    "type": "import('@frogbotai/plugin-ai-capture').AICapturePluginOptions"
   },
   {
     "page": "plugins/dojo",
@@ -1350,9 +1350,9 @@
     "type": "import('@frogbotai/plugin-dojo').DojoPluginOptions"
   },
   {
-    "page": "plugins/evals",
+    "page": "plugins/ai-evals",
     "heading": "Options",
-    "type": "import('@frogbotai/plugin-evals').EvalsPluginOptions"
+    "type": "import('@frogbotai/plugin-ai-evals').AIEvalsPluginOptions"
   },
   {
     "page": "plugins/forms",
@@ -1430,9 +1430,9 @@
     "type": "NonNullable<import('@frogbotai/plugin-stripe').StripePluginOptions['sync']>[number]"
   },
   {
-    "page": "plugins/usage-reports",
+    "page": "plugins/ai-usage",
     "heading": "Options",
-    "type": "import('@frogbotai/plugin-usage-reports').UsageReportsPluginOptions"
+    "type": "import('@frogbotai/plugin-ai-usage').AIUsagePluginOptions"
   },
   {
     "page": "rest-api/overview",

@@ -204,7 +204,7 @@ const frogbotCssFiles = [
   ...[
     'packages/next/src',
     'packages/plugins/plugin-api-keys/src/client',
-    'packages/plugins/plugin-usage-reports/src/client',
+    'packages/plugins/plugin-ai-usage/src/client',
   ]
     .flatMap((directory) => listCssFiles(join(root, directory)))
     .filter((path) => !layerOrderFiles.includes(path)),

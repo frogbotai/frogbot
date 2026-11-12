@@ -1,0 +1,46 @@
+{
+  "name": "@frogbotai/plugin-ai-capture",
+  "version": "0.41.0",
+  "description": "Blob-first AI request capture for FrogBot.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/plugins/plugin-ai-capture"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "node ../../../scripts/build-package.mjs",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=24.21.0"
+  },
+  "peerDependencies": {
+    "frogbot": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "frogbot": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "4.1.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
