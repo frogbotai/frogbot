@@ -79,6 +79,37 @@ describe('crm template roles', () => {
     };
   }
 
+  async function login(email: string) {
+    const { body } = await booted.restClient.post<{ token: string }>('/api/users/login', {
+      email,
+      password: 'frogbot-test',
+    });
+
+    return { Authorization: `JWT ${body.token}` };
+  }
+
+  function download(email: string, collectionSlug: string) {
+    return login(email).then((headers) =>
+      booted.restClient.post<unknown>(
+        '/api/exports/download',
+        { data: { collectionSlug, format: 'csv' } },
+        { headers, signal: AbortSignal.timeout(10_000) },
+      ),
+    );
+  }
+
+  function importCSV(user: User, collectionSlug: string, csv: string) {
+    const data = Buffer.from(csv);
+
+    return frogbot.create({
+      collection: 'imports',
+      data: { collectionSlug, importMode: 'create' },
+      file: { data, mimetype: 'text/csv', name: `${collectionSlug}.csv`, size: data.length },
+      user,
+      overrideAccess: false,
+    } as never) as unknown as Promise<Doc>;
+  }
+
   it('makes the first user an admin and everyone after a member', async () => {
     const { body, status } = await firstRegister('admin@example.com');
 
@@ -199,15 +230,11 @@ describe('crm template roles', () => {
 
   it('imports a CSV as the importing user, so a member’s rows are theirs', async () => {
     const { member } = await team();
-    const data = Buffer.from('name,website\nInitech,https://initech.example\nHooli,\n');
-
-    const created = (await frogbot.create({
-      collection: 'imports',
-      data: { collectionSlug: 'companies', importMode: 'create' },
-      file: { data, mimetype: 'text/csv', name: 'companies.csv', size: data.length },
-      user: member,
-      overrideAccess: false,
-    } as never)) as unknown as Doc;
+    const created = await importCSV(
+      member,
+      'companies',
+      'name,website\nInitech,https://initech.example\nHooli,\n',
+    );
 
     expect(created.status).toBe('completed');
 
@@ -222,5 +249,66 @@ describe('crm template roles', () => {
       { name: 'Hooli', owner: member.id },
       { name: 'Initech', owner: member.id },
     ]);
+  });
+
+  it('lets a manager export records, saved or downloaded', async () => {
+    const { manager } = await team();
+
+    await as(manager).create('companies', { name: 'Globex' });
+
+    await expect(
+      as(manager).create('exports', { collectionSlug: 'companies', format: 'csv' }),
+    ).resolves.toMatchObject({ collectionSlug: 'companies' });
+
+    const { body, status } = await download('manager@example.com', 'companies');
+
+    expect(status).toBe(200);
+    expect(String(body)).toContain('Globex');
+  });
+
+  it('refuses a member’s download of the audit log instead of hanging', async () => {
+    const { member } = await team();
+
+    await as(member).create('contacts', { name: 'Ada Lovelace' });
+
+    const { body, status } = await download('member@example.com', 'audit-logs');
+
+    expect(status).toBe(400);
+    expect(JSON.stringify(body)).not.toContain('Ada Lovelace');
+  });
+
+  it('lets only admins and managers delete imports and exports', async () => {
+    const { manager, member, other } = await team();
+    const theirs = await importCSV(other, 'companies', 'name\nInitech\n');
+    const exported = await as(manager).create('exports', {
+      collectionSlug: 'companies',
+      format: 'csv',
+    });
+
+    await expect(as(member).delete('imports', theirs.id)).rejects.toThrow();
+    await expect(as(member).delete('exports', exported.id)).rejects.toThrow();
+    await expect(as(manager).delete('imports', theirs.id)).resolves.toMatchObject({
+      id: theirs.id,
+    });
+    await expect(as(manager).delete('exports', exported.id)).resolves.toMatchObject({
+      id: exported.id,
+    });
+  });
+
+  it('lets only an admin set a user’s AI budget and models', async () => {
+    const { admin, member } = await team();
+    const limits = { monthlyBudget: 5, models: ['openai/gpt-5.4-mini'] };
+
+    await as(admin).update('users', member.id, limits);
+    await as(member).update('users', member.id, { monthlyBudget: 100000, models: [] });
+
+    const after = await frogbot.findByID({
+      collection: 'users',
+      id: member.id,
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    expect({ monthlyBudget: after.monthlyBudget, models: after.models }).toEqual(limits);
   });
 });

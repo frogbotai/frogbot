@@ -162,4 +162,71 @@ describe('projects template roles', () => {
     await expect(as(member).update('users', other.id, { name: 'Renamed' })).rejects.toThrow();
     await expect(as(member).count('audit-logs')).rejects.toThrow();
   });
+
+  it('lets a manager export projects, saved or downloaded', async () => {
+    const { manager } = await team();
+
+    await as(manager).create('projects', { name: 'Website', key: 'WEB' });
+
+    await expect(
+      as(manager).create('exports', { collectionSlug: 'projects', format: 'csv' }),
+    ).resolves.toMatchObject({ collectionSlug: 'projects' });
+
+    const { body: login } = await booted.restClient.post<{ token: string }>('/api/users/login', {
+      email: 'manager@example.com',
+      password: 'frogbot-test',
+    });
+
+    const { body, status } = await booted.restClient.post<unknown>(
+      '/api/exports/download',
+      { data: { collectionSlug: 'projects', format: 'csv' } },
+      { headers: { Authorization: `JWT ${login.token}` }, signal: AbortSignal.timeout(10_000) },
+    );
+
+    expect(status).toBe(200);
+    expect(String(body)).toContain('Website');
+  });
+
+  it('lets only admins and managers delete imports and exports', async () => {
+    const { manager, member } = await team();
+    const data = Buffer.from('name,key\nWebsite,WEB\n');
+    const imported = (await frogbot.create({
+      collection: 'imports',
+      data: { collectionSlug: 'projects', importMode: 'create' },
+      file: { data, mimetype: 'text/csv', name: 'projects.csv', size: data.length },
+      user: manager,
+      overrideAccess: false,
+    } as never)) as unknown as Doc;
+
+    const exported = await as(manager).create('exports', {
+      collectionSlug: 'projects',
+      format: 'csv',
+    });
+
+    await expect(as(member).delete('imports', imported.id)).rejects.toThrow();
+    await expect(as(member).delete('exports', exported.id)).rejects.toThrow();
+    await expect(as(manager).delete('imports', imported.id)).resolves.toMatchObject({
+      id: imported.id,
+    });
+    await expect(as(manager).delete('exports', exported.id)).resolves.toMatchObject({
+      id: exported.id,
+    });
+  });
+
+  it('lets only an admin set a user’s AI budget and models', async () => {
+    const { admin, member } = await team();
+    const limits = { monthlyBudget: 5, models: ['openai/gpt-5.4-mini'] };
+
+    await as(admin).update('users', member.id, limits);
+    await as(member).update('users', member.id, { monthlyBudget: 100000, models: [] });
+
+    const after = await frogbot.findByID({
+      collection: 'users',
+      id: member.id,
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    expect({ monthlyBudget: after.monthlyBudget, models: after.models }).toEqual(limits);
+  });
 });

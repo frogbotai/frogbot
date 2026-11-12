@@ -45,17 +45,17 @@ another role.
 | Manager | Create, edit and delete projects, tasks and files, and read the audit log                                                                                                          |
 | Member  | Read everything, create tasks, which are assigned to them, and edit only tasks assigned to them. Only admins and managers reassign a task. Members upload files and delete nothing |
 
-Everyone can edit their own name, email and password. The rules are in `src/roles.ts`; change them
-there.
+Everyone can edit their own name, email and password. Only admins set a user's AI budget and models.
+The rules are in `src/roles.ts`; change them there.
 
 ## Import a CSV
 
 Open projects or tasks, then choose **Import Projects** or **Import Tasks** from the **⋮** menu
 beside **Create New**. Pick a CSV, such as an export from Asana, Airtable or
 a spreadsheet, and match each column to a field. A task's project column links to a project by
-name, and **Create missing** adds the projects that don't exist yet. The preview shows each row
-before you start, and the import runs as you, so your role's rules apply. **Export** in the same
-place downloads a CSV or JSON file.
+name. **Create missing** adds the projects that don't exist yet, but only for admins and managers,
+because members can't create projects. The preview shows each row before you start, and the import
+runs as you, so your role's rules apply. **Export** in the same place downloads a CSV or JSON file.
 
 See [Import and export](https://docs.frogbot.ai/plugins/import-export) for the details.
 
@@ -72,6 +72,7 @@ which fields changed. Admins and managers can read it; nobody can edit it.
 | `src/collections/Projects.ts`   | Projects, each with a key such as `WEB`                          |
 | `src/collections/Tasks.ts`      | Tasks with numbered keys, a list, a board and a timeline         |
 | `src/roles.ts`                  | The roles and who can do what                                    |
+| `src/importExport.ts`           | Which collections import and export, and who deletes a run       |
 | `src/seed/`                     | The sample data and the `POST /api/seed` endpoint                |
 | `src/components/SeedPanel.tsx`  | The dashboard panel, shown while the app has no projects         |
 | `src/components/SeedButton.tsx` | The panel's seed button                                          |

@@ -51,6 +51,9 @@ export const auditLogAccess: CollectionConfig['access'] = {
   read: allow('admin', 'manager'),
 };
 
+/** AI limits on users: only admins set a budget or a model list, so nobody lifts their own. */
+export const aiLimitAccess = { create: allow('admin'), update: allow('admin') };
+
 /** Users see each other and edit their own profile; only admins add or remove them. */
 export const userAccess: CollectionConfig['access'] = {
   read: allow('admin', 'manager', 'member'),

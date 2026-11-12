@@ -66,8 +66,8 @@ another role.
 | Manager | Create, edit and delete any company, contact, deal, activity, task or media, and read the audit log                                                                                                                       |
 | Member  | Read everything and create records. A member's new record is theirs (its owner, or a task's assignee), and they edit only their own. Only admins and managers change a record's owner or assignee. Members delete nothing |
 
-Everyone can edit their own name, email and password. The rules are in `src/roles.ts`; change them
-there.
+Everyone can edit their own name, email and password. Only admins set a user's AI budget and models.
+The rules are in `src/roles.ts`; change them there.
 
 ## Import a CSV
 
@@ -93,6 +93,7 @@ which fields changed. Admins and managers can read it; nobody can edit it.
 | `src/frogbot.config.ts`         | Your FrogBot config — agents, collections, providers             |
 | `src/collections/`              | Companies, contacts, deals, activities, tasks, users and media   |
 | `src/roles.ts`                  | The roles and who can do what                                    |
+| `src/importExport.ts`           | Which collections import and export, and who deletes a run       |
 | `src/seed/`                     | The sample data, its logos and the `POST /api/seed` endpoint     |
 | `src/components/SeedPanel.tsx`  | The dashboard panel with the sample data button                  |
 | `src/agents/`                   | The `assistant` agent (removed with `--ai none`)                 |

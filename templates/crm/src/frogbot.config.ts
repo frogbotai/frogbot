@@ -18,20 +18,9 @@ import { Deals } from './collections/Deals';
 import { Media } from './collections/Media';
 import { Tasks } from './collections/Tasks';
 import { Users } from './collections/Users';
+import { importExport } from './importExport';
 import { auditLogAccess, roles } from './roles';
 import { seedEndpoint } from './seed/endpoint';
-
-const importable = [
-  'companies',
-  'contacts',
-  'deals',
-  'activities',
-  'tasks',
-].map((slug) => ({
-  slug,
-  import: { disableJobsQueue: true },
-  export: { disableJobsQueue: true },
-}));
 
 const config: FrogBotConfig = {
   secret: process.env.FROGBOT_SECRET || '',
@@ -89,7 +78,7 @@ const config: FrogBotConfig = {
     dojo(),
     roles,
     auditLogPlugin({ overrides: { access: auditLogAccess } }),
-    importExportPlugin({ collections: importable }),
+    importExportPlugin(importExport),
   ],
   upload: { transformers: [sharpTransformer()] },
 };

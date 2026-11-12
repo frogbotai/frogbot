@@ -15,14 +15,9 @@ import { Files } from './collections/Files';
 import { Projects } from './collections/Projects';
 import { Tasks } from './collections/Tasks';
 import { Users } from './collections/Users';
+import { importExport } from './importExport';
 import { auditLogAccess, roles } from './roles';
 import { seedEndpoint } from './seed/endpoint';
-
-const importable = ['projects', 'tasks'].map((slug) => ({
-  slug,
-  import: { disableJobsQueue: true },
-  export: { disableJobsQueue: true },
-}));
 
 const config: FrogBotConfig = {
   secret: process.env.FROGBOT_SECRET || '',
@@ -68,7 +63,7 @@ const config: FrogBotConfig = {
     dojo(),
     roles,
     auditLogPlugin({ overrides: { access: auditLogAccess } }),
-    importExportPlugin({ collections: importable }),
+    importExportPlugin(importExport),
   ],
   upload: { transformers: [sharpTransformer()] },
 };

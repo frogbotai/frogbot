@@ -70,10 +70,13 @@ export interface Config {
     projects: Project;
     tasks: Task;
     users: User;
+    files: File;
     exports: Export;
     imports: Import;
     'audit-logs': AuditLog;
+    'usage-logs': UsageLog;
     'frogbot-waitpoints': FrogBotWaitpoint;
+    folders: Folder;
     'frogbot-autonumbers': FrogBotAutonumber;
     'frogbot-autonumber-keys': FrogBotAutonumberKey;
   };
@@ -82,10 +85,13 @@ export interface Config {
     projects: ProjectsSelect;
     tasks: TasksSelect;
     users: UsersSelect;
+    files: FilesSelect;
     exports: ExportsSelect;
     imports: ImportsSelect;
     'audit-logs': AuditLogsSelect;
+    'usage-logs': UsageLogsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
+    folders: FoldersSelect;
     'frogbot-autonumbers': FrogBotAutonumbersSelect;
     'frogbot-autonumber-keys': FrogBotAutonumberKeysSelect;
   };
@@ -108,6 +114,7 @@ export interface Config {
     tasks: {
       createCollectionExport: TaskCreateCollectionExport;
       createCollectionImport: TaskCreateCollectionImport;
+      'plugin-ai-policy-reset-spend': TaskPluginAiPolicyResetSpend;
       'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
@@ -168,6 +175,63 @@ export interface Project {
 export interface User {
   id: number;
   name?: string | null;
+  /**
+   * Leave empty to allow all models.
+   */
+  models?:
+    | (
+        | 'openai/gpt-4.1'
+        | 'openai/gpt-4.1-mini'
+        | 'openai/gpt-4o'
+        | 'openai/gpt-4o-2024-08-06'
+        | 'openai/gpt-4o-2024-11-20'
+        | 'openai/gpt-4o-mini'
+        | 'openai/gpt-4o-mini-transcribe'
+        | 'openai/gpt-4o-transcribe'
+        | 'openai/gpt-5'
+        | 'openai/gpt-5-mini'
+        | 'openai/gpt-5-nano'
+        | 'openai/gpt-5-pro'
+        | 'openai/gpt-5.1'
+        | 'openai/gpt-5.2'
+        | 'openai/gpt-5.2-pro'
+        | 'openai/gpt-5.3-codex'
+        | 'openai/gpt-5.3-codex-spark'
+        | 'openai/gpt-5.4'
+        | 'openai/gpt-5.4-mini'
+        | 'openai/gpt-5.4-nano'
+        | 'openai/gpt-5.4-pro'
+        | 'openai/gpt-5.5'
+        | 'openai/gpt-5.5-pro'
+        | 'openai/gpt-5.6'
+        | 'openai/gpt-5.6-luna'
+        | 'openai/gpt-5.6-sol'
+        | 'openai/gpt-5.6-terra'
+        | 'openai/gpt-6-astra'
+        | 'openai/gpt-6-luna'
+        | 'openai/gpt-6-sol'
+        | 'openai/gpt-6.1-sol'
+        | 'openai/gpt-6.1-terra'
+        | 'openai/gpt-daybreak-blue-latest'
+        | 'openai/gpt-daybreak-red-latest'
+        | 'openai/gpt-image-2'
+        | 'openai/gpt-realtime-2.1'
+        | 'openai/o3'
+        | 'openai/o3-pro'
+        | 'openai/text-embedding-3-large'
+        | 'openai/text-embedding-3-small'
+        | 'openai/text-embedding-ada-002'
+        | 'openai/whisper-1'
+      )[]
+    | null;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
+  monthlyBudget?: number | null;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
+  spendThisPeriodUSD?: number | null;
   roles?: ('admin' | 'manager' | 'member')[] | null;
   createdBy?: {
     relationTo: 'users';
@@ -231,6 +295,65 @@ export interface Task {
   } | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "files".
+ */
+export interface File {
+  id: number;
+  _h_folders?: (number | null) | Folder;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+  };
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders".
+ */
+export interface Folder {
+  id: number;
+  _h_folders?: (number | null) | Folder;
+  name: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _h_slugPath?: string | null;
+  _h_titlePath?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -387,6 +510,42 @@ export interface AuditLog {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs".
+ */
+export interface UsageLog {
+  id: number;
+  user?: (number | null) | User;
+  requestId: string;
+  runId?: string | null;
+  model: string;
+  operation:
+    | 'chat.completions'
+    | 'messages'
+    | 'responses'
+    | 'embeddings'
+    | 'images'
+    | 'speech'
+    | 'transcriptions'
+    | 'videos'
+    | 'rerank'
+    | 'evaluate';
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens?: number | null;
+  cacheWriteTokens?: number | null;
+  reasoningTokens?: number | null;
+  totalTokens: number;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
+  costUSD: number;
+  finishReason?: string | null;
+  requestedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-waitpoints".
  */
 export interface FrogBotWaitpoint {
@@ -479,6 +638,9 @@ export interface TasksSelect {
  */
 export interface UsersSelect {
   name?: boolean;
+  models?: boolean;
+  monthlyBudget?: boolean;
+  spendThisPeriodUSD?: boolean;
   roles?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
@@ -501,6 +663,39 @@ export interface UsersSelect {
         refreshCount?: boolean;
         refreshedAt?: boolean;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "files_select".
+ */
+export interface FilesSelect {
+  _h_folders?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  deletedAt?: boolean;
+  url?: boolean;
+  thumbnailURL?: boolean;
+  filename?: boolean;
+  mimeType?: boolean;
+  filesize?: boolean;
+  width?: boolean;
+  height?: boolean;
+  original?:
+    | boolean
+    | {
+        filename?: boolean;
+        url?: boolean;
+        mimeType?: boolean;
+        filesize?: boolean;
+        width?: boolean;
+        height?: boolean;
+        prefix?: boolean;
+        _objectKey?: boolean;
+      };
+  focalX?: boolean;
+  focalY?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -608,6 +803,28 @@ export interface AuditLogsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs_select".
+ */
+export interface UsageLogsSelect {
+  user?: boolean;
+  requestId?: boolean;
+  runId?: boolean;
+  model?: boolean;
+  operation?: boolean;
+  inputTokens?: boolean;
+  outputTokens?: boolean;
+  cachedInputTokens?: boolean;
+  cacheWriteTokens?: boolean;
+  reasoningTokens?: boolean;
+  totalTokens?: boolean;
+  costUSD?: boolean;
+  finishReason?: boolean;
+  requestedAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-waitpoints_select".
  */
 export interface FrogBotWaitpointsSelect {
@@ -626,6 +843,20 @@ export interface FrogBotWaitpointsSelect {
   dispatchLeaseUntil?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders_select".
+ */
+export interface FoldersSelect {
+  _h_folders?: boolean;
+  name?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  _h_slugPath?: boolean;
+  _h_titlePath?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -677,7 +908,15 @@ export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
     relatedCollection:
-      'projects' | 'tasks' | 'users' | 'exports' | 'imports' | 'audit-logs';
+      | 'projects'
+      | 'tasks'
+      | 'users'
+      | 'files'
+      | 'exports'
+      | 'imports'
+      | 'audit-logs'
+      | 'usage-logs'
+      | 'folders';
     where?:
       | {
           [k: string]: unknown;
@@ -701,7 +940,15 @@ export interface ActivityWidget {
   data?: {
     excludedCollections?:
       | (
-          'projects' | 'tasks' | 'users' | 'exports' | 'imports' | 'audit-logs'
+          | 'projects'
+          | 'tasks'
+          | 'users'
+          | 'files'
+          | 'exports'
+          | 'imports'
+          | 'audit-logs'
+          | 'usage-logs'
+          | 'folders'
         )[]
       | null;
   };
@@ -713,7 +960,7 @@ export interface ActivityWidget {
  */
 export interface UploadDropzoneWidget {
   data?: {
-    excludedCollections?: ('exports' | 'imports')[] | null;
+    excludedCollections?: ('files' | 'exports' | 'imports')[] | null;
   };
   width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
@@ -726,7 +973,8 @@ export interface TaskCreateCollectionExport {
     id: string;
     name: string;
     batchSize?: number | null;
-    collectionSlug: 'projects' | 'tasks' | 'users' | 'exports' | 'imports';
+    collectionSlug:
+      'projects' | 'tasks' | 'users' | 'files' | 'exports' | 'imports';
     drafts?: ('yes' | 'no') | null;
     exportCollection: string;
     fields?: string[] | null;
@@ -769,6 +1017,14 @@ export interface TaskCreateCollectionImport {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskPluginAiPolicyResetSpend".
+ */
+export interface TaskPluginAiPolicyResetSpend {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "TaskFrogBotSweepWaitpoints".
  */
 export interface TaskFrogBotSweepWaitpoints {
@@ -794,6 +1050,48 @@ export interface Auth {
 declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {};
-    models: never;
+    models:
+      | 'openai/gpt-4.1'
+      | 'openai/gpt-4.1-mini'
+      | 'openai/gpt-4o'
+      | 'openai/gpt-4o-2024-08-06'
+      | 'openai/gpt-4o-2024-11-20'
+      | 'openai/gpt-4o-mini'
+      | 'openai/gpt-4o-mini-transcribe'
+      | 'openai/gpt-4o-transcribe'
+      | 'openai/gpt-5'
+      | 'openai/gpt-5-mini'
+      | 'openai/gpt-5-nano'
+      | 'openai/gpt-5-pro'
+      | 'openai/gpt-5.1'
+      | 'openai/gpt-5.2'
+      | 'openai/gpt-5.2-pro'
+      | 'openai/gpt-5.3-codex'
+      | 'openai/gpt-5.3-codex-spark'
+      | 'openai/gpt-5.4'
+      | 'openai/gpt-5.4-mini'
+      | 'openai/gpt-5.4-nano'
+      | 'openai/gpt-5.4-pro'
+      | 'openai/gpt-5.5'
+      | 'openai/gpt-5.5-pro'
+      | 'openai/gpt-5.6'
+      | 'openai/gpt-5.6-luna'
+      | 'openai/gpt-5.6-sol'
+      | 'openai/gpt-5.6-terra'
+      | 'openai/gpt-6-astra'
+      | 'openai/gpt-6-luna'
+      | 'openai/gpt-6-sol'
+      | 'openai/gpt-6.1-sol'
+      | 'openai/gpt-6.1-terra'
+      | 'openai/gpt-daybreak-blue-latest'
+      | 'openai/gpt-daybreak-red-latest'
+      | 'openai/gpt-image-2'
+      | 'openai/gpt-realtime-2.1'
+      | 'openai/o3'
+      | 'openai/o3-pro'
+      | 'openai/text-embedding-3-large'
+      | 'openai/text-embedding-3-small'
+      | 'openai/text-embedding-ada-002'
+      | 'openai/whisper-1';
   }
 }
