@@ -107,15 +107,20 @@ describe('connections API', () => {
       const { api, req, piece, find } = await setup({ auth: { token: 'factory' }, row: {} });
       req.user = user as never;
 
-      await expect(api.resolve({ piece, req })).resolves.toEqual({ token: 'factory' });
+      await expect(api.resolve({ piece, req })).rejects.toMatchObject({ code: 'missing' });
       expect(find).not.toHaveBeenCalled();
     },
   );
 
-  it('falls back only when no row exists and errors without factory auth', async () => {
+  it('throws missing when no row exists, with or without factory auth', async () => {
     const { api, req, piece, factory } = await setup({ auth: { token: 'factory' } });
 
-    await expect(api.resolve({ piece, req })).resolves.toEqual({ token: 'factory' });
+    await expect(api.resolve({ piece, req })).rejects.toMatchObject({
+      name: 'ConnectionError',
+      code: 'missing',
+      piece: 'example',
+      message: "Connection for 'example' is not linked. Link it in Settings → Linked accounts.",
+    });
     await expect(api.resolve({ piece: factory(), req })).rejects.toMatchObject({
       name: 'ConnectionError',
       code: 'missing',
@@ -272,12 +277,12 @@ describe('connections API', () => {
     expect(connectionsState(api).credentialKeys.size).toBe(512);
   });
 
-  it('drops a disappeared owner/piece identity before factory fallback', async () => {
+  it('drops a disappeared owner/piece identity instead of using factory auth', async () => {
     const { api, req, piece, find } = await setup({ row: {}, auth: { token: 'factory' } });
     const first = await piece.client({ req });
     find.mockResolvedValueOnce({ docs: [] });
 
-    expect(await piece.client({ req })).toEqual({ auth: { token: 'factory' } });
+    await expect(piece.client({ req })).rejects.toMatchObject({ code: 'missing' });
     expect(connectionsState(api).credentialKeys.size).toBe(0);
     expect(await piece.client({ req })).not.toBe(first);
   });
@@ -320,7 +325,11 @@ describe('connections API', () => {
   });
 
   it('keeps factory client identity per instance and supports absent users', async () => {
-    const { req, piece, factory } = await setup({ auth: { token: 'factory' } });
+    const { req, piece, factory } = await setup({
+      auth: { token: 'factory' },
+      pieceDefinition: { ...definition, slug: 'plain' },
+    });
+
     req.user = undefined as never;
     const first = await piece.client({ req });
 
@@ -344,7 +353,7 @@ describe('connections API', () => {
     const factory = await setup({ auth: { token: 'factory' } });
 
     expect(await factory.api.authorizations({ pieces: [factory.piece], req: factory.req })).toEqual(
-      [],
+      [expect.objectContaining({ piece: 'example', oauth: true, secret: true })],
     );
   });
 
