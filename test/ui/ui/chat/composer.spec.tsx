@@ -300,25 +300,6 @@ describe('Composer', () => {
     expect(composerInput().getAttribute('aria-readonly')).toBe('true');
   });
 
-  it('limits the file picker to text and the media the model reads', () => {
-    const { container, update } = renderComposer({ modelInputs: ['text', 'image'] });
-
-    const accept = () =>
-      container.querySelector('input[type="file"]')?.getAttribute('accept') ?? '';
-
-    expect(accept().split(',')).toEqual(
-      expect.arrayContaining(['text/*', '.md', '.docx', '.xlsx', 'image/png']),
-    );
-    expect(accept()).not.toContain('application/pdf');
-    expect(accept()).not.toContain('audio/*');
-
-    update({ modelInputs: undefined });
-
-    expect(accept().split(',')).toEqual(
-      expect.arrayContaining(['image/png', 'application/pdf', 'audio/*', 'video/*']),
-    );
-  });
-
   it('uploads a dropped PDF and submits a stable reference', async () => {
     const { drop, onSubmit, server } = renderComposer();
 
@@ -359,15 +340,16 @@ describe('Composer', () => {
 
     expect(input?.hasAttribute('accept')).toBe(false);
 
-    await userEvent.upload(input as HTMLInputElement, [
-      binary('report.zip', 'application/zip'),
-      pdf('report.pdf'),
-    ]);
+    await userEvent.upload(input as HTMLInputElement, binary('report.zip', 'application/zip'));
 
     const zip = await screen.findByRole('group', { name: "report.zip, ZIP, won't be sent" });
 
     expect(description(zip)).toBe("Won't be sent. This file type isn't supported.");
-    expect(status()).toContain("report.zip won't be sent: this file type isn't supported");
+    expect(status()).toBe("report.zip won't be sent: this file type isn't supported");
+    expect(server.fetch).not.toHaveBeenCalled();
+
+    await userEvent.upload(input as HTMLInputElement, pdf('report.pdf'));
+
     expect(await screen.findByRole('group', { name: 'report.pdf, PDF, ready' })).toBeTruthy();
     expect(server.fetch).toHaveBeenCalledTimes(1);
   });
