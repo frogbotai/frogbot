@@ -69,17 +69,8 @@ const createCodeOnly = definePiece({
   slug: 'code-only',
   label: 'Code only',
   auth: z.object({ token: z.string().min(1) }),
-  client: ({ auth }: { auth: { token: string } }) => auth,
-  actions: [
-    createPieceHelpers<{ token: string }>().defineAction({
-      slug: 'read',
-      description: 'Read',
-      input: z.object({}),
-      run({ client }) {
-        return Promise.resolve(client.token);
-      },
-    }),
-  ],
+  client: vi.fn(({ auth }) => ({ token: auth.token })),
+  actions: [read],
 });
 
 describe(`connection resolution and static routes [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () => {
