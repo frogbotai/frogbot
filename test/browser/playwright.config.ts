@@ -227,6 +227,11 @@ const servers: Record<string, Server> = {
     port: testPort(3145),
     database: 'frogbot.two-factor.db',
   },
+  'linked-accounts': {
+    fixture: 'sign-in',
+    port: testPort(3146),
+    database: 'frogbot.linked-accounts.db',
+  },
   forms: { fixture: 'forms', port: testPort(3143), database: 'frogbot.forms.db' },
   crm: {
     fixture: 'crm',
@@ -422,6 +427,7 @@ const testProjects = [
   project({ name: 'plugin-seo', testMatch: 'seoFields.browser.spec.ts' }),
   project({ name: 'plugin-import-export', testMatch: 'importMapping.browser.spec.ts' }),
   project({ name: 'sign-in-two-factor', testMatch: 'twoFactor.browser.spec.ts', signedOut: true }),
+  project({ name: 'linked-accounts', testMatch: 'linkedAccounts.browser.spec.ts' }),
   project({ name: 'forms', testMatch: ['forms.browser.spec.ts', 'formBuilder.browser.spec.ts'] }),
   project({
     name: 'crm',

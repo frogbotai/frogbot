@@ -74,6 +74,7 @@ describe('linked accounts', () => {
       const list = vi.fn().mockResolvedValue([
         {
           ...row,
+          isDefault: true,
           scopes: ['mail.read'],
           credential: 'ciphertext',
           owner: 'private-owner',
@@ -117,6 +118,7 @@ describe('linked accounts', () => {
       expect(view?.props.returnTo).toBe('/control/settings/connections');
       expect(view?.props.pieces[0].scopes).toEqual(['mail.read']);
       expect(view?.props.initialConnections[0].scopes).toEqual(['mail.read']);
+      expect(view?.props.initialConnections[0].isDefault).toBe(true);
 
       const serialized = JSON.stringify(view?.props);
 
@@ -187,7 +189,7 @@ describe('linked accounts', () => {
     );
 
     const rowIcon = container.querySelector(
-      '.frogbot-connections__row .frogbot-connections__icon',
+      '.frogbot-connections__group-header .frogbot-connections__icon',
     )!;
 
     const rowLogo = rowIcon.querySelector('img')!;
@@ -234,7 +236,9 @@ describe('linked accounts', () => {
         />,
       );
 
-      const icon = container.querySelector('.frogbot-connections__row .frogbot-connections__icon')!;
+      const icon = container.querySelector(
+        '.frogbot-connections__group-header .frogbot-connections__icon',
+      )!;
 
       expect(icon.querySelector('img:not([hidden])') !== null).toBe(logo);
       expect(icon.querySelector('svg') !== null).toBe(!logo);
@@ -294,7 +298,7 @@ describe('linked accounts', () => {
 
     expect(screen.getByText('Work')).toBeTruthy();
 
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Options for Mail' }), {
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Options for Work' }), {
       key: 'ArrowDown',
     });
 
@@ -310,9 +314,161 @@ describe('linked accounts', () => {
     await waitFor(() => expect(screen.queryByText('Work')).toBeNull());
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/custom-api/connections?limit=0&depth=0',
+      '/custom-api/connections?limit=0&depth=0&sort=createdAt',
       expect.objectContaining({ cache: 'no-store' }),
     );
+  });
+
+  describe('several accounts', () => {
+    const work = { ...row, isDefault: true };
+    const home = {
+      ...row,
+      id: 'connection/2',
+      isDefault: false,
+      account: { label: 'Home', email: 'home@example.com' },
+    };
+
+    const key = {
+      id: 'connection/3',
+      piece: 'static',
+      method: 'secret' as const,
+      status: 'active' as const,
+      isDefault: true,
+    };
+
+    const several = { ...props, initialConnections: [work, home, key] };
+    let assign: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      assign = vi.fn();
+      vi.stubGlobal('location', { ...window.location, assign });
+    });
+
+    const openMenu = async (name: string) => {
+      fireEvent.keyDown(screen.getByRole('button', { name: `Options for ${name}` }), {
+        key: 'ArrowDown',
+      });
+
+      return screen.findByRole('menu');
+    };
+
+    it('groups accounts by piece and badges the default only when there are several', () => {
+      render(<ConnectionsViewClient {...several} />);
+
+      const mail = screen.getByRole('region', { name: 'Mail' });
+      const staticGroup = screen.getByRole('region', { name: 'Static' });
+
+      expect(within(mail).getByText('2 accounts')).toBeTruthy();
+      expect(within(mail).getAllByText('Default')).toHaveLength(1);
+      expect(
+        within(mail).getByText('Default').closest('.frogbot-connections__row')?.textContent,
+      ).toContain('Work');
+      expect(within(staticGroup).queryByText('Default')).toBeNull();
+      expect(within(mail).getByRole('button', { name: '+ Add another' })).toBeTruthy();
+      expect(within(staticGroup).queryByRole('button', { name: '+ Add another' })).toBeNull();
+    });
+
+    it('starts another OAuth link from Add another', () => {
+      render(<ConnectionsViewClient {...several} />);
+      fireEvent.click(screen.getByRole('button', { name: '+ Add another' }));
+
+      expect(assign).toHaveBeenCalledWith(
+        `/custom-api/connections/mail/authorize?${new URLSearchParams({ returnTo: props.returnTo })}`,
+      );
+    });
+
+    it('posts Set as default, which the default row does not offer', async () => {
+      fetchMock
+        .mockResolvedValueOnce(Response.json({ ...home, isDefault: true }))
+        .mockReturnValueOnce(new Promise(() => undefined));
+
+      render(<ConnectionsViewClient {...several} />);
+
+      const menu = await openMenu('Work');
+
+      expect(within(menu).queryByRole('menuitem', { name: 'Set as default' })).toBeNull();
+
+      fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+
+      fireEvent.click(
+        within(await openMenu('Home')).getByRole('menuitem', { name: 'Set as default' }),
+      );
+
+      await waitFor(() =>
+        expect(fetchMock).toHaveBeenCalledWith(
+          '/custom-api/connections/connection%2F2/default',
+          expect.objectContaining({ method: 'POST' }),
+        ),
+      );
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/custom-api/connections?limit=0&depth=0&sort=createdAt',
+        expect.objectContaining({ cache: 'no-store' }),
+      );
+    });
+
+    it('updates the list from the server after setting a default', async () => {
+      fetchMock
+        .mockResolvedValueOnce(Response.json({ ...home, isDefault: true }))
+        .mockResolvedValueOnce(
+          Response.json({
+            docs: [{ ...work, isDefault: false }, { ...home, isDefault: true }, key],
+          }),
+        );
+
+      render(<ConnectionsViewClient {...several} />);
+
+      fireEvent.click(
+        within(await openMenu('Home')).getByRole('menuitem', { name: 'Set as default' }),
+      );
+
+      await waitFor(() =>
+        expect(
+          screen.getByText('Default').closest('.frogbot-connections__row')?.textContent,
+        ).toContain('Home'),
+      );
+    });
+
+    it('reconnects an OAuth account onto its row', async () => {
+      render(<ConnectionsViewClient {...several} />);
+      fireEvent.click(within(await openMenu('Home')).getByRole('menuitem', { name: 'Reconnect' }));
+
+      expect(assign).toHaveBeenCalledWith(
+        `/custom-api/connections/mail/authorize?${new URLSearchParams({
+          returnTo: props.returnTo,
+          reconnect: 'connection/2',
+        })}`,
+      );
+    });
+
+    it('reconnects a key through the key form', async () => {
+      render(<ConnectionsViewClient {...several} />);
+
+      fireEvent.click(
+        within(await openMenu('Static')).getByRole('menuitem', { name: 'Reconnect' }),
+      );
+
+      expect(await screen.findByRole('dialog')).toBeTruthy();
+      expect(screen.getByText('Connect to Static')).toBeTruthy();
+      expect(screen.getByLabelText('Credential')).toBeTruthy();
+    });
+
+    it('shows an error and keeps the list when setting a default fails', async () => {
+      fetchMock.mockResolvedValueOnce(new Response(null, { status: 500 }));
+      render(<ConnectionsViewClient {...several} />);
+
+      fireEvent.click(
+        within(await openMenu('Home')).getByRole('menuitem', { name: 'Set as default' }),
+      );
+
+      expect(await screen.findByRole('alert')).toHaveProperty(
+        'textContent',
+        expect.stringContaining('Could not set the default account.'),
+      );
+      expect(
+        screen.getByText('Default').closest('.frogbot-connections__row')?.textContent,
+      ).toContain('Work');
+    });
   });
 
   it('uses one searchable modal, switches methods and posts raw masked credentials', async () => {
