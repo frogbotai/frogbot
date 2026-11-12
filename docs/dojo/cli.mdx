@@ -1,0 +1,37 @@
+---
+title: "CLI"
+description: "Run Dojo from the terminal: sign in, share, follow builds, and manage apps, people, domains and keys, for people and coding agents."
+keywords: ["Dojo", "CLI", "frogbot dojo", "frogbot share", "plugin-dojo", "coding agents", "--json"]
+---
+
+Everything you do in Dojo's site, you can do from the terminal with `frogbot dojo`. It comes with the [Dojo plugin](/plugins/dojo), which apps made with `create-frogbot-app` already list, and also runs without an app:
+
+```bash
+npx frogbot dojo login
+npx frogbot share
+npx @frogbotai/plugin-dojo apps list
+```
+
+## A first session
+
+```bash
+npx frogbot dojo login                       # confirm the code in your browser
+npx frogbot share                            # build and deploy this folder, print its URL
+npx frogbot dojo sharing invite deals ana@example.com --level editor
+npx frogbot dojo env set deals STRIPE_SECRET_KEY=sk_live_...
+npx frogbot dojo apps logs deals --follow
+```
+
+## Commands
+
+The commands are grouped by noun: `workspaces`, `members`, `apps`, `deployments`, `env`, `domains`, `sharing`, `keys` and `billing`. The full table, with every flag, is in the [Dojo plugin reference](/plugins/dojo#commands). `frogbot dojo --help`, `frogbot dojo apps --help` and `frogbot dojo apps share --help` print the same lists.
+
+## For scripts and coding agents
+
+- Add `--json` to any command to get one JSON value on stdout and nothing else.
+- Set `FROGBOT_DOJO_TOKEN` to an [API key](/dojo/api-keys) so nothing waits for a browser.
+- Commands that delete or replace something ask first; pass `--yes` when there's no terminal.
+
+[Scripts and agents](/plugins/dojo#scripts-and-agents) covers exit codes and refusals.
+
+Agents that need a browser of their own, rather than Dojo, can use the separate [Browser Agent MCP](/browser-mcp).

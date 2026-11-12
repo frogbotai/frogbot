@@ -1,0 +1,42 @@
+---
+title: "Billing"
+description: "How a Dojo workspace pays: a plan billed per live app, and a prepaid balance for AI."
+keywords: ["Dojo", "billing", "plan", "Pro", "Business", "AI balance", "top up", "auto-recharge", "Stripe"]
+---
+
+A workspace pays for two things, separately: its **apps**, on a monthly plan, and its **AI**, from a prepaid balance. The workspace's Owner manages the plan. Current prices are on the workspace's **Billing** page in [Dojo](https://dojo.frogbot.ai) and on the upgrade page a share links to.
+
+## Plans
+
+The plan is billed per live app per month. Both plans run every Dojo feature that isn't listed below.
+
+| Plan | Adds |
+| --- | --- |
+| Pro | Hosting for your apps. |
+| Business | Everything in Pro, plus [projects](/dojo/overview#how-dojo-is-organized) and sharing with [anyone in the workspace](/dojo/share#who-can-open-it). |
+
+When a deploy needs one more paid app than the workspace has, Dojo starts it as a [free preview](/dojo/deploy#free-previews-and-paid-apps) or prints the link to pay for it. Payment happens in Stripe Checkout; the **Billing** page links to Stripe's portal to change the card, see invoices or cancel.
+
+If a payment fails, Dojo shows **Payment failed** while Stripe retries. A workspace whose plan stops is paused: its apps stop until it pays again.
+
+## AI balance
+
+Apps that use AI without their own provider keys go through Dojo's gateway. Each call's provider cost comes off the workspace's AI balance, in US dollars. When the balance runs out, AI calls stop until it's topped up.
+
+- **Top up** from the **Billing** page, through Stripe Checkout.
+- **Auto-recharge** tops the balance up with the saved card when it runs low.
+
+The workspace's Owner and Admins can top up and set auto-recharge. Apps with their own provider keys in their [environment variables](/dojo/env-vars) pay those providers directly and don't use the balance.
+
+## From the terminal
+
+```bash
+npx frogbot dojo billing status
+npx frogbot dojo billing manage
+```
+
+`billing manage` prints the Stripe link; paying always happens in the browser.
+
+<Note>
+The balance for the Hosted AI service in this tab is separate, and works as [Balance & Usage Pricing](/balance-usage-pricing) describes.
+</Note>
