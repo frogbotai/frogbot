@@ -87,6 +87,8 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
   });
 
   const unlinked = createCodeOnly({ auth: { token: 'code-only' } });
+  const bot = createPiece({ slug: 'example-bot', auth: { token: 'bot' } });
+  const tool = createPiece({ slug: 'example-tool' });
 
   const gmail = createGmail({
     oauth: { clientId: 'google-id', clientSecret: 'google-secret' },
@@ -386,6 +388,24 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     for (const user of [owner, other, null]) {
       await expect(unlinked.read({ input: {}, req: request(user) })).resolves.toBe('code-only');
     }
+  });
+
+  it('uses the code credential for another instance of a linked piece that has its own auth', async () => {
+    await store.upsert({
+      owner,
+      piece: 'example',
+      method: 'secret',
+      credential: { token: 'mine' },
+    });
+
+    for (const user of [owner, other, null]) {
+      await expect(bot.read({ input: {}, req: request(user) })).resolves.toBe('bot');
+    }
+
+    expect(await piece.read({ input: {}, req: request() })).toBe('mine');
+    expect(await tool.read({ input: {}, req: request() })).toBe('mine');
+
+    await expectMissing(tool.read({ input: {}, req: request(other) }));
   });
 
   it("gives a user with a usable row their own credential, never another user's", async () => {
