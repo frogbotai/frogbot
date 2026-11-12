@@ -42,7 +42,7 @@ The plugin needs an `ai` configuration and fails at startup without one. It adds
 
 An entry in `models` is an exact match: allowing an alias allows calls to the alias, not direct calls to the model behind it.
 
-Define a field with the same name on your auth collection to change it. Your field replaces the plugin's settings it sets, and its `admin` and `access` are merged over the plugin's. For example, let only admins change budgets:
+Define a field with the same name on your auth collection to change it. Your field replaces the plugin's settings it sets, and its `admin` and `access` are merged over the plugin's. `spendThisPeriodUSD` must stay one plain number: making it `localized` or `hasMany` throws at config time. For example, let only admins change budgets:
 
 ```ts
 {
@@ -72,7 +72,7 @@ The budget is checked when a call runs, before every AI call a signed-in user ma
 
 After each AI call by a signed-in user, the plugin adds its cost to that user's `spendThisPeriodUSD`, priced from the model catalog or your [custom model prices](/ai/overview#custom-model-options). Failed calls and calls that cost nothing add nothing. If the spend update fails, FrogBot logs the error and the call still succeeds.
 
-Spend updates for one user run one at a time within a process. Calls already running when the budget is reached still finish, and several server processes can update the same user at once, so treat the budget as a limit that can be exceeded by a few calls, not an exact cap.
+Each update adds the cost to the stored value in one atomic database write that touches only `spendThisPeriodUSD`, outside any transaction the call runs in, so parallel calls and several server processes add up exactly and the user's other fields are never rewritten. The write skips collection hooks. Because it waits on the user's row, don't make an AI call inside a transaction that has already updated the same user or API key: on Postgres the call then waits forever. Calls already running when the budget is reached still finish, so treat the budget as a limit that can be exceeded by a few calls, not an exact cap.
 
 ## Monthly reset
 
