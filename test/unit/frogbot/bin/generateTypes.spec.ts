@@ -8,6 +8,8 @@ import { promisify } from 'node:util';
 
 import { describe, expect, it, onTestFinished } from 'vitest';
 
+import { parseTypesFile } from '../../../../packages/frogbot/src/bin/service/runtime.js';
+
 const execFileAsync = promisify(execFile);
 const binURL = pathToFileURL(
   new URL('../../../../packages/frogbot/src/bin/index.ts', import.meta.url).pathname,
@@ -72,5 +74,21 @@ describe('frogbot generate:types', () => {
         /^\[frogbot\] failed to load [\s\S]*\n {2}Caused by: Error: Transform failed[\s\S]*frogbot\.config\.ts:\d+:\d+: ERROR:/,
       ),
     });
+  });
+});
+
+describe('the types line frogbot up reads', () => {
+  it.each([
+    ['[frogbot] types written to /app/src/frogbot-types.ts\n', '/app/src/frogbot-types.ts'],
+    [
+      'loaded .env\n[frogbot] types unchanged at /app/src/types/generated.ts\n',
+      '/app/src/types/generated.ts',
+    ],
+  ])('reads the path from %j', (output, path) => {
+    expect(parseTypesFile(output)).toBe(path);
+  });
+
+  it('reads nothing when the last line is something else', () => {
+    expect(parseTypesFile('[frogbot] types written to /a.ts\nwarning: slow\n')).toBeUndefined();
   });
 });

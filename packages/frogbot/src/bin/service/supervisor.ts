@@ -4,13 +4,14 @@ import { join } from 'node:path';
 
 import { FROGBOT_VERSION } from '../../version.js';
 import { createBackoff } from './backoff.js';
+import { isEnvOnly, publicEnvChanged, readPublicEnv } from './envChanges.js';
 import { checkHealth } from './health.js';
 import { pickError } from './lastError.js';
 import { createLog, type Log } from './log.js';
 import { appPaths, registrationFile, serviceId, type Slot } from './paths.js';
 import { freePort, HOST, readSavedPort, writeSavedPort } from './ports.js';
 import { createProxy, drained, type Upstream } from './proxy.js';
-import { createBuildQueue } from './queue.js';
+import { createBuildQueue, type RunKind } from './queue.js';
 import {
   type Registration,
   removeRegistration,
@@ -194,6 +195,8 @@ export async function supervise({
   const draining = new Map<Slot, ChildProcess>();
   const reported: { kept?: string } = {};
   let current: Server | undefined;
+  let typesFile: string | undefined;
+  let publicEnv = readPublicEnv(dir);
   let booted = false;
   let stopping = false;
 
@@ -254,7 +257,7 @@ export async function supervise({
     return server;
   }
 
-  function swap(server: Server) {
+  function swap(server: Server, { built = false } = {}) {
     const previous = current;
     const old = proxy.switchTo(server.port);
 
@@ -277,6 +280,7 @@ export async function supervise({
       build: server.slot,
       serverPid: server.child.pid,
       lastError: undefined,
+      ...(built && { builtAt: new Date().toISOString() }),
     });
   }
 
@@ -335,7 +339,10 @@ export async function supervise({
       if (old) await exited(old);
 
       rmSync(paths.build(slot), { recursive: true, force: true });
-      await runtime.prepare(app);
+      typesFile = (await runtime.prepare(app)).typesFile ?? typesFile;
+
+      const baked = readPublicEnv(dir);
+
       await runtime.build(app, slot);
       await syncSchema(app, reported);
 
@@ -347,7 +354,8 @@ export async function supervise({
         return;
       }
 
-      swap(server);
+      swap(server, { built: true });
+      publicEnv = baked;
       log.write('supervisor', `serving ${paths.distDir(slot)} (pid ${server.child.pid})`);
 
       if (!booted) {
@@ -368,7 +376,38 @@ export async function supervise({
     }
   }
 
-  const queue = createBuildQueue(update);
+  async function restartOnEnv(): Promise<void> {
+    if (!current) return update();
+
+    const { slot } = current;
+    const { state, lastError } = registration;
+
+    try {
+      const server = await launch(slot);
+
+      if (stopping) {
+        await stopServer(server.child);
+
+        return;
+      }
+
+      swap(server);
+      if (state === 'update failed') save({ state, lastError });
+
+      log.write(
+        'supervisor',
+        `serving ${paths.distDir(slot)} with the new .env (pid ${server.child.pid})`,
+      );
+    } catch (error) {
+      log.write('supervisor', `restart failed: ${summarize(error)}`);
+      save({ lastError: `restart failed: ${summarize(error)}` });
+    }
+  }
+
+  const queue = createBuildQueue((kind: RunKind) =>
+    kind === 'restart' ? restartOnEnv() : update(),
+  );
+
   let watcher: { close: () => void } | undefined;
   let stopOwnership = () => {};
 
@@ -436,9 +475,24 @@ export async function supervise({
 
   watcher = watchApp({
     dir,
-    onChange: () => {
-      log.write('supervisor', 'change seen; rebuilding');
-      queue.trigger();
+    ignore: () => typesFile,
+    onChange: (changed) => {
+      if (isEnvOnly(changed)) {
+        const keys = publicEnvChanged(publicEnv, readPublicEnv(dir));
+
+        if (!keys.length) {
+          log.write('supervisor', 'only .env changed; restarting on the current build');
+          queue.trigger('restart');
+
+          return;
+        }
+
+        log.write('supervisor', `${keys.join(', ')} changed; rebuilding`);
+      } else {
+        log.write('supervisor', 'change seen; rebuilding');
+      }
+
+      queue.trigger('update');
     },
   });
 }
