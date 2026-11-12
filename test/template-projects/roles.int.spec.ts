@@ -148,6 +148,7 @@ describe('projects template roles', () => {
       overrideAccess: false,
     })) as unknown as Doc;
 
+    await expect(as(member).update('files', file.id, {})).rejects.toThrow();
     await expect(as(member).delete('files', file.id)).rejects.toThrow();
     await expect(as(manager).delete('files', file.id)).resolves.toMatchObject({ id: file.id });
   });

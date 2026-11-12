@@ -8,7 +8,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
-import { importsDir } from './shared.js';
+import { importsDir, mediaDir } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -28,6 +28,7 @@ describe('crm template roles', () => {
   afterAll(async () => {
     await booted.shutdown();
     await rm(importsDir, { recursive: true, force: true });
+    await rm(mediaDir, { recursive: true, force: true });
   });
 
   beforeEach(async () => {
