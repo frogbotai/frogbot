@@ -282,7 +282,7 @@ export const Projects: CollectionConfig = {
 
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
-| `slug` | `string` | No; defaults to `type` | Unique route and saved-preference key after normalization to lowercase kebab case. Duplicate or empty normalized slugs produce a configuration error. The first view uses the collection's root route. |
+| `slug` | `string` | No; defaults to `type` | Unique route and saved-preference key after normalization to lowercase kebab case. Duplicate or empty normalized slugs produce a configuration error, and so do `edit` and, on a view that isn't a list, `list`, which the record view and the list use. The first view uses the collection's root route. |
 | `label` | `string` | No; defaults to the capitalized `type` | Label on the view's tab. |
 | `icon` | `AdminIcon` | No; the view type's icon | Icon on the view's tab: a built-in kebab-case icon name or a component path. Defaults: `list` for list, `kanban` for board, `tile` for gallery, `calendar` for calendar, `timeline` for timeline and `dashboard` for custom views. |
 | `defaultFields` | `string[]` | No | Ordered field dot paths initially displayed as list columns or board and gallery card fields. Users can change list columns through normal list controls. |
