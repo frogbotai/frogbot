@@ -102,3 +102,15 @@ test('shows a list, not the board, in a relationship drawer', async ({ page }) =
   await expect(drawer.locator('.table tbody tr')).toHaveCount(2);
   await expect(drawer.locator('.frog-board')).toHaveCount(0);
 });
+
+test("keeps the board's grouping and sort out of the later list", async ({ page }) => {
+  await page.goto(`/collections/${boardFirstSlug}?groupBy=status&sort=-title`);
+  await page.locator('main.collection-view--board').waitFor();
+
+  await page.goto(`/collections/${boardFirstSlug}/list`);
+
+  await expect(page.locator('main.collection-view--list')).toBeVisible();
+  await expect(page.locator('main.collection-view .fb-list-group')).toHaveCount(0);
+  await expect(page.locator('.table tbody tr')).toHaveCount(2);
+  await expect(page).not.toHaveURL(/groupBy=status|sort=-title/);
+});
