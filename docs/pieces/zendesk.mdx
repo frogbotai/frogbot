@@ -27,7 +27,7 @@ export const zendesk = createZendesk({
 export const connections: ConnectionEntry[] = [{ piece: zendesk, secret: true }]
 ```
 
-`secret: true` lets each person paste their own subdomain, email and token when connecting; the factory `auth` is used when they haven't, and by triggers.
+`secret: true` lets each person paste their own subdomain, email and token when connecting. A person who hasn't connected gets a `missing` error asking them to link Zendesk. The factory `auth` on this instance is unused for their calls; see [When the code credential is used](/connections/overview#when-the-code-credential-is-used).
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -120,7 +120,14 @@ Each mounted webhook trigger creates its own Zendesk webhook, subscribed to Zend
 - One Zendesk webhook per mounted trigger: trial accounts allow only 10 webhooks.
 - If Zendesk turns off a webhook after failed deliveries, FrogBot isn't told and the subscription still looks active. Re-export with the last cursors to catch up.
 
-Triggers run with no signed-in person, so they use the instance's factory `auth`.
+Triggers run with no signed-in person, so mount them on a separate instance with its own `auth` and no connection entry. The instance in your connection entry throws `missing` without a signed-in person:
+
+```ts
+export const zendeskBot = createZendesk({
+  slug: 'zendesk-bot',
+  auth: { subdomain: 'acme', email: 'bot@acme.com', apiToken: process.env.ZENDESK_API_TOKEN! },
+})
+```
 
 ### Polling
 

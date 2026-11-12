@@ -80,12 +80,14 @@ These seven combinations apply to credential-requiring pieces. OAuth combination
 
 ### When the code credential is used
 
-Factory `auth` is used in exactly two cases:
+Factory `auth` is used in exactly these cases:
 
 - The piece has no connection entry. Every call uses factory `auth`.
+- The instance isn't the one in the connection entry and has its own factory `auth`, such as a bot account or company mailbox beside the linked instance. Every call on that instance uses its `auth`; use it for triggers and scheduled jobs.
 - The piece does app-owned work: it sends [transactional email](/email/overview) or answers in a channel, such as [Slack](/pieces/slack). That work uses factory `auth` even when the piece has a connection entry.
+- Calls that name an app credential with `as: 'app'`, once [#418](https://github.com/frogbotai/frogbot/issues/418) ships.
 
-For a piece with a connection entry, an action, tool or trigger call never uses factory `auth`. It uses the signed-in user's own connection. When the request has no user, as in a scheduled job or trigger, or the user hasn't linked the piece, it throws `ConnectionError` with code `missing` and the message `Connection for 'gmail' is not linked. Link it in Settings → Linked accounts.` Another user's connection never satisfies the call.
+For the instance in a connection entry, and for other instances of that piece with no factory `auth`, an action, tool or trigger call never uses factory `auth`. It uses the signed-in user's own connection. When the request has no user, as in a scheduled job or trigger, or the user hasn't linked the piece, it throws `ConnectionError` with code `missing` and the message `Connection for 'gmail' is not linked. Link it in Settings → Linked accounts.` Another user's connection never satisfies the call. Factory `auth` on the instance in a connection entry is accepted but unused until `as: 'app'` ships.
 
 An existing connection must resolve successfully. Invalid credentials, revoked or error states, missing scopes, and expiry that can't be refreshed throw `ConnectionError`.
 

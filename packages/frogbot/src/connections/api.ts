@@ -126,7 +126,12 @@ export class Connections {
       throw new ConnectionError(`Connection for '${slug}' ${message}.`, code, undefined, slug);
     };
 
-    const entry = Object.hasOwn(config.entries, slug) ? config.entries[slug] : undefined;
+    const configured = Object.hasOwn(config.entries, slug) ? config.entries[slug] : undefined;
+    const entry =
+      configured && (configured.piece.slug === piece.slug || runtime.auth === undefined)
+        ? configured
+        : undefined;
+
     if (!entry) {
       if (runtime.auth !== undefined) return { auth: runtime.auth, key: piece };
 
