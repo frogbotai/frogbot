@@ -71,8 +71,7 @@ export function ChatRowActions({ children, onDelete, onExport, onRename }: ChatR
   const rowClassName = [
     children.props.className,
     'fb-chat-row-actions__row',
-    'fb-slide-right-1',
-    open ? 'fb-slide-active fb-chat-row-actions__row--open' : '',
+    open ? 'fb-chat-row-actions__row--open' : '',
   ]
     .filter(Boolean)
     .join(' ');

@@ -56,7 +56,7 @@ export function ChatHistory({
               type="button"
               aria-current={String(activeChatId) === String(chat.id) ? 'page' : undefined}
               onClick={() => onChatChange(chat.id)}
-              className="fb-chat-history__button"
+              className="fb-chat-history__button fb-chat-row-actions__label"
             >
               {chat.title || fallbackTitle}
             </button>
