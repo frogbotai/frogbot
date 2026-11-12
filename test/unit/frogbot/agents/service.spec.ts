@@ -7,6 +7,7 @@ import {
   canUseAgent,
   getAgentAuthorizations,
   getAgentManifest,
+  hasAgentAccess,
   listAgents,
 } from '../../../../packages/frogbot/src/agents/service.js';
 import type {
@@ -115,6 +116,7 @@ function makeRequest({
       agents,
       config: { ai: { ...ai, access } },
       connections: authorizations ? { authorizations } : undefined,
+      logger: { error: vi.fn() },
     },
   } as unknown as FrogBotRequest;
 }
@@ -314,19 +316,50 @@ describe('agent service', () => {
     ).rejects.toMatchObject({ status: 403 });
   });
 
-  it('lists only accessible agents and treats access errors as denied', async () => {
+  it('lists only accessible agents, and logs and omits one whose access throws', async () => {
+    const crash = new Error('broken');
     const req = makeRequest({
       agents: {
         support: makeAgent(),
         public: makeAgent({ slug: 'public', access: () => true }),
-        broken: makeAgent({ slug: 'broken', access: () => Promise.reject(new Error('broken')) }),
+        broken: makeAgent({ slug: 'broken', access: () => Promise.reject(crash) }),
       },
     });
 
     await expect(listAgents({ req })).resolves.toEqual([{ slug: 'support' }, { slug: 'public' }]);
+    expect((await getAgentManifest({ req })).agents.map(({ slug }) => slug)).toEqual([
+      'support',
+      'public',
+    ]);
+    expect(req.frogbot.logger.error).toHaveBeenCalledWith(
+      { err: crash, agent: 'broken' },
+      '[frogbot] Agent access threw',
+    );
     await expect(
       assertAgentAccess({ req, agent: req.frogbot.agents.broken }),
-    ).rejects.toMatchObject({ status: 403 });
+    ).rejects.toMatchObject({
+      status: 500,
+      code: 'access-error',
+      message: "Access function for agent 'broken' threw: Error: broken",
+      cause: crash,
+    });
+  });
+
+  it('answers 401 to an anonymous caller and 403 to a signed-in one', async () => {
+    const support = makeAgent();
+
+    await expect(
+      assertAgentAccess({ req: makeRequest({ user: null }), agent: support }),
+    ).rejects.toMatchObject({ status: 401, code: 'unauthenticated' });
+    await expect(
+      assertAgentAccess({
+        req: makeRequest({}),
+        agent: makeAgent({ access: () => false }),
+      }),
+    ).rejects.toMatchObject({ status: 403, code: 'access-denied' });
+    await expect(
+      hasAgentAccess({ req: makeRequest({ user: null }), agent: support }),
+    ).resolves.toBe(false);
   });
 
   it('passes the agent instance to access functions', async () => {
@@ -572,7 +605,7 @@ describe('agent service', () => {
         req,
       }),
     ).rejects.toMatchObject({
-      message: "Model 'my-local/thinker' is not allowed for this user",
+      message: "Model 'my-local/thinker' is not allowed for this user. Allowed: 'openai/test'",
       status: 403,
     });
   });
@@ -584,7 +617,7 @@ describe('agent service', () => {
     await expect(
       assertAgentSelection({ agent, config, selection: { model: MY_LOCAL_THINKER }, req }),
     ).rejects.toMatchObject({
-      message: "Model 'my-local/thinker' is not allowed for agent 'support'",
+      message: "Model 'my-local/thinker' is not allowed for agent 'support'. Allowed: none",
       status: 403,
     });
   });
@@ -617,7 +650,7 @@ describe('agent service', () => {
     await expect(
       assertAgentSelection({ agent, config, selection: { model }, req }),
     ).rejects.toMatchObject({
-      message: `Model '${model}' is not allowed for this user`,
+      message: `Model '${model}' is not allowed for this user. Allowed: '${allowed}'`,
       status: 403,
     });
     await expect(
@@ -761,7 +794,8 @@ describe('agent service', () => {
     await expect(
       assertAgentSelection({ agent, config, selection: { reasoning: 'medium' }, req: anonymous }),
     ).rejects.toMatchObject({
-      message: "Reasoning option 'medium' is not available for model 'my-local/thinker'",
+      message:
+        "Reasoning option 'medium' is not available for model 'my-local/thinker'. Allowed: 'low', 'high'",
       status: 400,
     });
   });
@@ -777,7 +811,8 @@ describe('agent service', () => {
         req: anonymous,
       }),
     ).rejects.toMatchObject({
-      message: "Reasoning option 'high' is not available for model 'my-local/plain'",
+      message:
+        "Reasoning option 'high' is not available for model 'my-local/plain'. It has no reasoning options",
       status: 400,
     });
   });
@@ -793,7 +828,9 @@ describe('agent service', () => {
         req: anonymous,
       }),
     ).rejects.toMatchObject({
-      message: "Model 'my-local/thinker' is not allowed for agent 'support'",
+      message:
+        "Model 'my-local/thinker' is not allowed for agent 'support'. Allowed: 'openai/test', 'openai/other'",
+      code: 'model-not-allowed',
       status: 403,
     });
   });
