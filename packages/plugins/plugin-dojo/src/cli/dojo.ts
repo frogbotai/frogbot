@@ -14,9 +14,12 @@ function inCI(env: DeployEnv): boolean {
   return Boolean(env.CI) && env.CI !== 'false' && env.CI !== '0';
 }
 
-/** A failed Dojo reply: Payload's `errors` (with a `ValidationError`'s field errors), or an OAuth-style `error`. */
+/** A failed Dojo reply: Payload's `errors` (with a `ValidationError`'s field errors or an `APIError`'s `code`), or an OAuth-style `error`. */
 export type DojoErrorBody = {
-  errors?: { message?: string; data?: { errors?: { path?: string; message?: string }[] } }[];
+  errors?: {
+    message?: string;
+    data?: { code?: string; errors?: { path?: string; message?: string }[] };
+  }[];
   error?: string;
   message?: string;
 };
