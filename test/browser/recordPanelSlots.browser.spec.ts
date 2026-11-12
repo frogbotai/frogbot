@@ -159,3 +159,33 @@ test('a collection tab opens beside Details and keeps unsaved edits', async ({ p
   await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('.fb-record-panel-properties')).toBeVisible();
 });
+
+test('reopening or switching back to a record opens Details, not the last tab', async ({
+  page,
+}) => {
+  const first = await create(page, 'journal', 'Reopen entry');
+  const second = await create(page, 'journal', 'Other entry');
+  const tabs = page.getByRole('tablist', { name: 'Record tabs' }).getByRole('tab');
+  const title = page.locator('.fb-record-panel-title__input');
+
+  await page.goto('/collections/journal');
+  await page.locator('tbody tr', { hasText: 'Reopen entry' }).getByRole('link').first().click();
+  await expect(title).toHaveValue('Reopen entry');
+  await tabs.nth(1).click();
+  await expect(page.getByTestId('panel-tab-history')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(panel(page)).toHaveCount(0);
+  await page.locator('tbody tr', { hasText: 'Reopen entry' }).getByRole('link').first().click();
+  await expect(title).toHaveValue('Reopen entry');
+  expect(recordParam(page)).toBe(String(first));
+  await expect(tabs.first(), 'close then reopen').toHaveAttribute('aria-selected', 'true');
+
+  await tabs.nth(1).click();
+  await page.locator('tbody tr', { hasText: 'Other entry' }).getByRole('link').first().click();
+  await expect(title).toHaveValue('Other entry');
+  expect(recordParam(page)).toBe(String(second));
+  await page.locator('tbody tr', { hasText: 'Reopen entry' }).getByRole('link').first().click();
+  await expect(title).toHaveValue('Reopen entry');
+  await expect(tabs.first(), 'switch away and back').toHaveAttribute('aria-selected', 'true');
+});
