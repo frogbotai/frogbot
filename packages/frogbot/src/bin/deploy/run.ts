@@ -93,7 +93,7 @@ async function loadIssues(
 
 /**
  * Runs one deploy target: the shared flags, every preflight check at once, then the target. Returns
- * the exit code: 0 on success, 1 when a check or the deploy failed, 2 for a usage error.
+ * the exit code: 0 on success, 1 when a check or the deploy failed, 2 for a usage error, or a target's own code.
  */
 export async function runDeploy(
   target: DeployTarget,
@@ -109,7 +109,12 @@ export async function runDeploy(
 
   const finish = (
     code: number,
-    fields: { issues?: PreflightIssue[]; result?: unknown; error?: string },
+    fields: {
+      issues?: PreflightIssue[];
+      result?: unknown;
+      error?: string;
+      details?: Record<string, unknown>;
+    },
   ) => {
     if (json) {
       const result =
@@ -118,7 +123,7 @@ export async function runDeploy(
           : fields.result;
 
       io.stdout.write(
-        `${JSON.stringify({ target: name, ok: code === 0, dryRun, issues: fields.issues ?? [], result: result ?? null, ...(fields.error ? { error: fields.error } : {}) })}\n`,
+        `${JSON.stringify({ target: name, ok: code === 0, dryRun, issues: fields.issues ?? [], result: result ?? null, ...(fields.error ? { error: fields.error } : {}), ...fields.details })}\n`,
       );
     }
 
@@ -235,7 +240,7 @@ export async function runDeploy(
 
     io.stderr.write(`[frogbot] ${error.message}\n`);
 
-    return finish(error.code, { error: error.message });
+    return finish(error.code, { error: error.message, details: error.details });
   }
 }
 

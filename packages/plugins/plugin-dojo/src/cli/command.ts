@@ -57,12 +57,18 @@ export const yesFlag: VerbFlag = {
 
 const jsonFlag: VerbFlag = { type: 'boolean', help: 'Print one JSON value on stdout.' };
 
-/** A verb's flags as help lists them, with `--yes` on destructive verbs and `--json` on all. */
+const waitFlag: VerbFlag = {
+  type: 'boolean',
+  help: 'Wait for a sign-in or payment without a terminal, instead of exiting 3 or 4.',
+};
+
+/** A verb's flags as help lists them, with `--yes` on destructive verbs and `--json` and `--wait` on all. */
 export function verbFlags(verb: Verb | RawVerb): Record<string, VerbFlag> {
   return {
     ...verb.flags,
     ...('confirm' in verb && verb.confirm && { yes: yesFlag }),
     json: jsonFlag,
+    wait: waitFlag,
   };
 }
 
@@ -106,7 +112,7 @@ export async function runVerb(
   usage: string,
 ): Promise<number> {
   const flags = verbFlags(verb);
-  const { json: _json, ...options } = flags;
+  const { json: _json, wait: _wait, ...options } = flags;
   let parsed;
 
   try {

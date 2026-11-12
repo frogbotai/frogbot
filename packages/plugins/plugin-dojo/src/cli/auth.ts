@@ -4,11 +4,20 @@ import { dirname, join } from 'node:path';
 
 import type { DeployEnv } from 'frogbot';
 
-import { ShareError } from './error.js';
+import { needsSignIn, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
-import { say } from './io.js';
+import { canWait, dojoProgram, say } from './io.js';
 
-type AuthFile = { tokens: Record<string, string> };
+type PendingCode = {
+  deviceCode: string;
+  userCode: string;
+  link: string;
+  carriesCode: boolean;
+  expiresAt: number;
+  interval: number;
+};
+
+type AuthFile = { tokens: Record<string, string>; pending: Record<string, PendingCode> };
 
 /** `$XDG_CONFIG_HOME/frogbotai/auth.json`, beside the gateway's config. */
 export function authPath(env: DeployEnv): string {
@@ -19,10 +28,30 @@ async function readAuth(env: DeployEnv): Promise<AuthFile> {
   try {
     const parsed = JSON.parse(await readFile(authPath(env), 'utf8')) as Partial<AuthFile>;
 
-    return { tokens: { ...parsed.tokens } };
+    return { tokens: { ...parsed.tokens }, pending: { ...parsed.pending } };
   } catch {
-    return { tokens: {} };
+    return { tokens: {}, pending: {} };
   }
+}
+
+async function updateAuth(env: DeployEnv, change: (auth: AuthFile) => void): Promise<void> {
+  const path = authPath(env);
+  const auth = await readAuth(env);
+
+  change(auth);
+
+  if (Object.keys(auth.tokens).length === 0 && Object.keys(auth.pending).length === 0) {
+    await rm(path, { force: true });
+
+    return;
+  }
+
+  const { pending, ...rest } = auth;
+  const file = Object.keys(pending).length > 0 ? auth : rest;
+
+  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+  await writeFile(path, `${JSON.stringify(file, null, 2)}\n`, { mode: 0o600 });
+  await chmod(path, 0o600);
 }
 
 /** The stored token for this Dojo, if any. */
@@ -30,33 +59,31 @@ export async function readToken(env: DeployEnv, dojoUrl: string): Promise<string
   return (await readAuth(env)).tokens[dojoUrl];
 }
 
-/** Stores the token for this Dojo in an owner-only file. */
+/** Stores the token for this Dojo in an owner-only file, dropping its pending code. */
 export async function writeToken(env: DeployEnv, dojoUrl: string, token: string): Promise<void> {
-  const path = authPath(env);
-  const auth = await readAuth(env);
-
-  auth.tokens[dojoUrl] = token;
-
-  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
-  await writeFile(path, `${JSON.stringify(auth, null, 2)}\n`, { mode: 0o600 });
-  await chmod(path, 0o600);
+  await updateAuth(env, (auth) => {
+    auth.tokens[dojoUrl] = token;
+    delete auth.pending[dojoUrl];
+  });
 }
 
-/** Forgets this Dojo's token, and the file once no token is left. */
+/** Forgets this Dojo's token, and the file once nothing is left. */
 export async function removeToken(env: DeployEnv, dojoUrl: string): Promise<void> {
-  const path = authPath(env);
-  const auth = await readAuth(env);
+  await updateAuth(env, (auth) => {
+    delete auth.tokens[dojoUrl];
+  });
+}
 
-  delete auth.tokens[dojoUrl];
+async function readPending(env: DeployEnv, dojoUrl: string): Promise<PendingCode | undefined> {
+  const code = (await readAuth(env)).pending[dojoUrl];
 
-  if (Object.keys(auth.tokens).length === 0) {
-    await rm(path, { force: true });
+  return code && code.expiresAt > Date.now() ? code : undefined;
+}
 
-    return;
-  }
-
-  await writeFile(path, `${JSON.stringify(auth, null, 2)}\n`, { mode: 0o600 });
-  await chmod(path, 0o600);
+async function forgetPending(env: DeployEnv, dojoUrl: string): Promise<void> {
+  await updateAuth(env, (auth) => {
+    delete auth.pending[dojoUrl];
+  });
 }
 
 type DeviceCode = {
@@ -81,17 +108,40 @@ async function post(url: string, body: Record<string, string>): Promise<Response
 
 const maxCodes = 3;
 
-/** Signs in with Dojo's device flow (RFC 8628) and stores the token; an expired code makes way for a new one. */
+/**
+ * Signs in with Dojo's device flow (RFC 8628) and stores the token. With a terminal or `--wait` it waits for the
+ * person, and an expired code makes way for a new one. Without either it exits 3 with the link, keeping the code,
+ * so running the command again once the person confirmed it signs in.
+ */
 export async function deviceLogin(io: DojoIO, dojoUrl: string): Promise<string> {
-  for (let codes = 1; ; codes += 1) {
-    const token = await approvedToken(io, dojoUrl);
+  const waits = canWait(io);
 
-    if (token) {
-      await writeToken(io.env, dojoUrl, token);
+  for (let codes = 1; ; codes += 1) {
+    const saved = await readPending(io.env, dojoUrl);
+    const code = saved ?? (await newCode(io.env, dojoUrl));
+
+    if (!waits && !saved) throw signInNeeded(io, code);
+
+    const answer = await (waits ? pollToken(io, dojoUrl, code) : askToken(dojoUrl, code)).catch(
+      async (error: unknown) => {
+        await forgetPending(io.env, dojoUrl);
+
+        throw error;
+      },
+    );
+
+    if (answer.status === 'approved') {
+      await writeToken(io.env, dojoUrl, answer.token);
       say(io, '[frogbot] Signed in.');
 
-      return token;
+      return answer.token;
     }
+
+    if (answer.status !== 'expired') throw signInNeeded(io, code);
+
+    await forgetPending(io.env, dojoUrl);
+
+    if (!waits) continue;
 
     if (io.isTTY) {
       say(io, '[frogbot] The sign-in code expired.');
@@ -107,7 +157,17 @@ export async function deviceLogin(io: DojoIO, dojoUrl: string): Promise<string> 
   }
 }
 
-async function approvedToken(io: DojoIO, dojoUrl: string): Promise<string | undefined> {
+function signInNeeded(io: DojoIO, code: PendingCode): ShareError {
+  const step = code.carriesCode ? 'confirm' : 'enter';
+
+  return new ShareError(
+    `Sign in to Dojo: open ${code.link} and ${step} the code ${code.userCode}, then run the command again. Add --wait to wait for the sign-in here, or set FROGBOT_DOJO_TOKEN to a key from "${dojoProgram(io.program)} keys create".`,
+    needsSignIn,
+    { needs: 'sign-in', link: code.link, userCode: code.userCode },
+  );
+}
+
+async function newCode(env: DeployEnv, dojoUrl: string): Promise<PendingCode> {
   const start = await post(`${dojoUrl}/api/cli/device/code`, {
     client_id: clientId,
     device_name: hostname(),
@@ -115,54 +175,68 @@ async function approvedToken(io: DojoIO, dojoUrl: string): Promise<string | unde
 
   if (!start.ok) throw new ShareError(`Dojo refused the sign-in (${start.status}).`);
 
-  const code = (await start.json()) as DeviceCode;
-  const link = code.verification_uri_complete || code.verification_uri;
+  const reply = (await start.json()) as DeviceCode;
 
+  const code: PendingCode = {
+    deviceCode: reply.device_code,
+    userCode: reply.user_code,
+    link: reply.verification_uri_complete || reply.verification_uri,
+    carriesCode: Boolean(reply.verification_uri_complete),
+    expiresAt: Date.now() + reply.expires_in * 1000,
+    interval: reply.interval ?? 5,
+  };
+
+  await updateAuth(env, (auth) => {
+    auth.pending[dojoUrl] = code;
+  });
+
+  return code;
+}
+
+type Answer =
+  { status: 'approved'; token: string } | { status: 'pending' | 'slow_down' | 'expired' };
+
+async function askToken(dojoUrl: string, code: PendingCode): Promise<Answer> {
+  const reply = await post(`${dojoUrl}/api/cli/device/token`, {
+    grant_type: grantType,
+    device_code: code.deviceCode,
+    client_id: clientId,
+  });
+
+  const body = (await reply.json().catch(() => ({}))) as { access_token?: string; error?: string };
+
+  if (reply.ok && body.access_token) return { status: 'approved', token: body.access_token };
+  if (body.error === 'authorization_pending') return { status: 'pending' };
+  if (body.error === 'slow_down') return { status: 'slow_down' };
+  if (body.error === 'expired_token') return { status: 'expired' };
+  if (body.error === 'access_denied') throw new ShareError('Sign-in was denied.');
+
+  throw new ShareError(`Sign-in failed: ${body.error ?? reply.status}.`);
+}
+
+async function pollToken(io: DojoIO, dojoUrl: string, code: PendingCode): Promise<Answer> {
   say(
     io,
-    code.verification_uri_complete
+    code.carriesCode
       ? '[frogbot] Sign in to Dojo: open this link and confirm the code.'
       : '[frogbot] Sign in to Dojo: open this link and enter the code.',
   );
 
-  say(io, link);
-  say(io, `Code: ${code.user_code}`);
+  say(io, code.link);
+  say(io, `Code: ${code.userCode}`);
 
-  if (io.isTTY) io.openBrowser(link);
+  if (io.isTTY) io.openBrowser(code.link);
 
-  const deadline = Date.now() + code.expires_in * 1000;
-  let interval = (code.interval ?? 5) * 1000;
+  let interval = code.interval * 1000;
 
-  while (Date.now() < deadline) {
+  while (Date.now() < code.expiresAt) {
     await io.wait(interval);
 
-    const reply = await post(`${dojoUrl}/api/cli/device/token`, {
-      grant_type: grantType,
-      device_code: code.device_code,
-      client_id: clientId,
-    });
+    const answer = await askToken(dojoUrl, code);
 
-    const body = (await reply.json().catch(() => ({}))) as {
-      access_token?: string;
-      error?: string;
-    };
-
-    if (reply.ok && body.access_token) return body.access_token;
-
-    if (body.error === 'authorization_pending') continue;
-
-    if (body.error === 'slow_down') {
-      interval += 5000;
-
-      continue;
-    }
-
-    if (body.error === 'access_denied') throw new ShareError('Sign-in was denied.');
-
-    if (body.error === 'expired_token') return undefined;
-
-    throw new ShareError(`Sign-in failed: ${body.error ?? reply.status}.`);
+    if (answer.status === 'slow_down') interval += 5000;
+    else if (answer.status !== 'pending') return answer;
   }
 
-  return undefined;
+  return { status: 'expired' };
 }
