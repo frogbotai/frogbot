@@ -250,6 +250,35 @@ describe(`app-owned connection slots [${process.env.FROGBOT_DATABASE || 'sqlite'
     );
   });
 
+  it('lets the database keep one row per slot and per user, whatever writes it', async () => {
+    const base = { piece: 'mail', method: 'secret', credential: 'x', scopes: [], status: 'active' };
+
+    for (const data of [
+      { ...base, app: 'teamMailbox' },
+      { ...base, owner: users[0].id, app: '' },
+    ]) {
+      await frogbot.create({ collection: 'connections', data, overrideAccess: true });
+
+      await expect(
+        frogbot.create({ collection: 'connections', data, overrideAccess: true }),
+      ).rejects.toThrow();
+    }
+
+    await frogbot.create({
+      collection: 'connections',
+      data: { ...base, app: 'billing' },
+      overrideAccess: true,
+    });
+
+    await frogbot.create({
+      collection: 'connections',
+      data: { ...base, owner: users[1].id, app: '' },
+      overrideAccess: true,
+    });
+
+    expect(await rows()).toHaveLength(4);
+  });
+
   it('throws a config error for an `as` no entry declares', async () => {
     const req = await userRequest(users[0].id);
 

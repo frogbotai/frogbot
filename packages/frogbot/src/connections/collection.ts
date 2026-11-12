@@ -30,10 +30,28 @@ export function defaultConnectionsCollection({
       update: () => false,
       delete: () => false,
     },
-    indexes: [{ fields: ['owner', 'app', 'piece'], unique: true }],
+    indexes: [{ fields: ['holder', 'piece'], unique: true }],
     fields: [
       { name: 'owner', type: 'relationship', relationTo: userSlug, index: true },
       { name: 'app', type: 'text', index: true, defaultValue: '' },
+      {
+        name: 'holder',
+        type: 'text',
+        hidden: true,
+        required: true,
+        hooks: {
+          beforeValidate: [
+            ({ siblingData }) => {
+              const owner = siblingData?.owner;
+              const id = owner && typeof owner === 'object' ? owner.id : owner;
+
+              return id != null && id !== ''
+                ? `user:${String(id)}`
+                : `app:${siblingData?.app ?? ''}`;
+            },
+          ],
+        },
+      },
       { name: 'piece', type: 'text', index: true, required: true },
       {
         name: 'method',

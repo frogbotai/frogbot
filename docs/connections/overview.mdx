@@ -131,7 +131,7 @@ const auth = await frogbot.connections.resolve({ piece: gmail, req, as: 'teamMai
 
 - An unlinked slot throws `ConnectionError` with code `missing`. It never falls back to the caller's own account or to the factory `auth`.
 - An `as` name that no entry declares for that piece throws a configuration error, so a typo fails loudly instead of looking unlinked.
-- Any user of the `admin.user` collection can link, reconnect and disconnect a slot in the **App accounts** section of **Settings → Linked accounts**. No user can read a slot's credential, and slot rows never appear in the collection's REST or Local API reads.
+- Any user of the `admin.user` collection can link, reconnect and disconnect a slot in the **App accounts** section of **Settings → Linked accounts**. No user can read a slot's credential, and slot rows never appear in reads made as a user (REST, or the Local API with `overrideAccess: false`).
 - `frogbot.connections.slots({ req })` lists linked slots, without credentials, for users of that collection.
 
 Slots use the piece's existing OAuth callback, so the provider needs no extra redirect URI. Triggers and agent tools can't use a slot yet.
@@ -247,7 +247,7 @@ Expired OAuth connections refresh lazily during resolution, using the recipe's `
 
 ## Storage and access
 
-FrogBot creates its reserved `connections` collection only when the root list is non-empty. A unique `(owner, app, piece)` constraint permits one row per user and piece. A shared slot's row has no `owner` and its name in `app`; writes to a slot are serialized, so it keeps one row too. Rows contain `method`, encrypted `credential`, account metadata, scopes, expiry, and status.
+FrogBot creates its reserved `connections` collection only when the root list is non-empty. A unique constraint on the row's holder and piece permits one row per user and piece, and one per shared slot and piece. A shared slot's row has no `owner` and its name in `app`. Rows contain `method`, encrypted `credential`, account metadata, scopes, expiry, and status.
 
 Static input and OAuth token sets are encrypted as JSON with AES-256-GCM using a key derived from the root `secret`. Keep that secret stable: changing it makes existing credentials unreadable. Factory `auth` stays in your configuration and is never copied into connection storage.
 
