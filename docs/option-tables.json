@@ -595,6 +595,16 @@
     "type": "Omit<NonNullable<import('frogbot').CollapsibleField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>> & { components?: Pick<NonNullable<NonNullable<import('frogbot').CollapsibleField['admin']>['components']>, 'Label'> }"
   },
   {
+    "page": "fields/color",
+    "heading": "Config options",
+    "type": "import('frogbot').ColorFieldArgs"
+  },
+  {
+    "page": "fields/color",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').ColorFieldArgs['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
     "page": "fields/date",
     "heading": "Config options",
     "type": "import('frogbot').DateField"
