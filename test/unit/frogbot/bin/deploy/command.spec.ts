@@ -80,13 +80,41 @@ describe('frogbot deploy', () => {
     });
   });
 
-  it("prints the load error and exits 2 for a target it can't find when the config failed to load", async () => {
+  it.each([
+    ['no target', ['--json']],
+    ['a plugin target', ['dojo', '--json']],
+  ])(
+    'reports a config that failed to load as CONFIG_INVALID for %s, exiting 1',
+    async (_, args) => {
+      const io = testIO({ cwd: await tempDir() });
+      const loadError = new Error('[frogbot] broken config', {
+        cause: new SyntaxError('Unexpected }'),
+      });
+
+      expect(await deploy(args, { loadError, io: io.io })).toBe(1);
+      expect(io.stderr()[0]).toBe('[frogbot] broken config');
+      expect(io.stdout()).toHaveLength(1);
+
+      const [issue] = JSON.parse(io.stdout()[0] ?? '').issues;
+
+      expect(issue.code).toBe('CONFIG_INVALID');
+      expect(issue.message).toContain('broken config');
+      expect(issue.message).toContain('Caused by: SyntaxError: Unexpected }');
+      expect(issue.fix).toContain('frogbot check');
+      expect(issue.fix).toContain('`dojo()` from `@frogbotai/plugin-dojo`');
+    },
+  );
+
+  it('tells deploy dojo to add dojo() when the config loaded without it', async () => {
     const io = testIO({ cwd: await tempDir() });
 
-    expect(
-      await deploy(['dojo'], { loadError: new Error('[frogbot] broken config'), io: io.io }),
-    ).toBe(2);
-    expect(io.stderr()[0]).toContain('broken config');
-    expect(io.stderr()[1]).toBe('[frogbot] "dojo" isn\'t a deploy target.');
+    expect(await deploy(['dojo', '--json'], { config: appConfig(), io: io.io })).toBe(2);
+    expect(JSON.parse(io.stdout()[0] ?? '').issues).toEqual([
+      {
+        code: 'UNKNOWN_TARGET',
+        message: '"dojo" isn\'t a deploy target.',
+        fix: 'Add `dojo()` from `@frogbotai/plugin-dojo` to `plugins` in frogbot.config.ts.',
+      },
+    ]);
   });
 });

@@ -27,6 +27,10 @@ describe('formatCliError', () => {
     ).toBe("[frogbot] migrate failed: Unknown admin icon 'hmoe'.");
   });
 
+  it('leaves out a null cause', () => {
+    expect(formatCliError(new Error('boom', { cause: null }))).toBe('[frogbot] boom');
+  });
+
   it('formats non-Error values', () => {
     expect(formatCliError('[frogbot] stale')).toBe('[frogbot] stale');
   });

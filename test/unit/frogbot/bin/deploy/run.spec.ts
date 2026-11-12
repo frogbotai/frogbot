@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { dockerfile } from '../../../../../packages/frogbot/src/bin/deploy/dockerfile.js';
 import { runDeploy, splitDeployArgs } from '../../../../../packages/frogbot/src/bin/deploy/run.js';
+import type { DeployTarget } from '../../../../../packages/frogbot/src/bin/deploy/types.js';
 import { deployConfig, recordingTarget, tempDir, testIO, writeApp } from './helpers.js';
 
 describe('splitDeployArgs', () => {
@@ -314,6 +315,85 @@ describe('runDeploy', () => {
     expect(
       await runDeploy(recordingTarget().target, [], io.io, { name: 'test', image: true }),
     ).toBe(1);
-    expect(io.stderr()).toContain('[frogbot] `tool ship` failed (exit 3).');
+    expect(io.stderr()).toContain('[frogbot] `tool ship --token ••••` failed (exit 3).');
+  });
+
+  it('names the failed step, its stderr and the steps already done under --json', async () => {
+    const root = await tempDir();
+    const io = testIO({
+      cwd: root,
+      programs: {
+        fly: (args) =>
+          args[0] === 'deploy' ? { code: 1, stderr: 'building\nError: insufficient memory\n' } : {},
+      },
+    });
+
+    const target: DeployTarget = {
+      describe: 'Fly',
+      preflight: () => [],
+      run: async (context) => {
+        await context.run('fly', ['apps', 'create', 'deals']);
+        await context.writeFile('fly.toml', 'app = "deals"');
+        await context.run('fly', ['deploy', '--app', 'deals']);
+      },
+    };
+
+    await writeApp(root);
+
+    expect(await runDeploy(target, ['--json'], io.io, { name: 'fly', image: true })).toBe(1);
+    expect(io.stdout()).toHaveLength(1);
+    expect(JSON.parse(io.stdout()[0] ?? '')).toEqual({
+      target: 'fly',
+      ok: false,
+      dryRun: false,
+      issues: [],
+      result: null,
+      code: 'COMMAND_FAILED',
+      error: '`fly deploy --app deals` failed (exit 1).',
+      command: 'fly deploy --app deals',
+      stderr: 'building\nError: insufficient memory',
+      steps: ['$ fly apps create deals', 'write fly.toml'],
+    });
+  });
+
+  it('keeps an unexpected error to one JSON result under --json', async () => {
+    const root = await tempDir();
+    const io = testIO({ cwd: root });
+
+    const target: DeployTarget = {
+      describe: 'Broken',
+      preflight: () => [],
+      run: () => {
+        throw new TypeError('fetch failed', { cause: new Error('connect ECONNREFUSED') });
+      },
+    };
+
+    await writeApp(root);
+
+    expect(await runDeploy(target, ['--json'], io.io, { name: 'test' })).toBe(1);
+    expect(io.stderr()).toContain('[frogbot] fetch failed');
+    expect(JSON.parse(io.stdout()[0] ?? '')).toMatchObject({
+      target: 'test',
+      ok: false,
+      code: 'UNEXPECTED_ERROR',
+      error: expect.stringContaining('Caused by: Error: connect ECONNREFUSED'),
+    });
+  });
+
+  it('still throws an unexpected error without --json', async () => {
+    const root = await tempDir();
+    const io = testIO({ cwd: root });
+
+    const target: DeployTarget = {
+      describe: 'Broken',
+      preflight: () => [],
+      run: () => {
+        throw new TypeError('fetch failed');
+      },
+    };
+
+    await writeApp(root);
+
+    await expect(runDeploy(target, [], io.io, { name: 'test' })).rejects.toThrow('fetch failed');
   });
 });
