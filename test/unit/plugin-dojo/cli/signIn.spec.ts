@@ -154,6 +154,29 @@ describe('Dojo device sign-in without a terminal', () => {
     expect(dojo.paths().filter((path) => path === 'POST /api/cli/device/code')).toHaveLength(1);
   });
 
+  it('keeps the code when Dojo answers 503 on the rerun', async () => {
+    const { dojo, login } = await setup();
+
+    await login({}, false);
+
+    const fetchBefore = globalThis.fetch;
+
+    globalThis.fetch = () => Promise.resolve(new Response('Bad Gateway', { status: 503 }));
+
+    const failed = await login({}, false).finally(() => {
+      globalThis.fetch = fetchBefore;
+    });
+
+    expect((failed.token as Error).message).toBe(
+      "Couldn't reach Dojo to finish the sign-in (503). Run the command again.",
+    );
+
+    dojo.pendingPolls = 0;
+
+    expect((await login({}, false)).token).toBe('fb_test_1');
+    expect(dojo.paths().filter((path) => path === 'POST /api/cli/device/code')).toHaveLength(1);
+  });
+
   it('drops the kept code when Dojo denies it', async () => {
     const { dojo, env, login } = await setup();
 
