@@ -1,3 +1,4 @@
+import type { CollectionView } from 'frogbot';
 import { InvalidConfiguration } from 'payload';
 import { describe, expect, it } from 'vitest';
 
@@ -934,6 +935,31 @@ describe('collection views', () => {
         },
       }),
     ).toThrow('supports only one list view.');
+  });
+
+  it('rejects view slugs that take over Payload view keys', () => {
+    const compile = (views: CollectionView[]) => () =>
+      compileCollectionViews({
+        collection: {
+          slug: 'posts',
+          fields: [{ name: 'status', type: 'select', options: [] }],
+          admin: { views },
+        },
+      });
+
+    expect(compile([{ type: 'list' }, { type: 'board', groupBy: 'status', slug: 'edit' }])).toThrow(
+      '[frogbot] Collection "posts" view "edit" uses a reserved slug.',
+    );
+    expect(compile([{ type: 'board', groupBy: 'status', slug: 'edit' }])).toThrow(
+      'view "edit" uses a reserved slug.',
+    );
+    expect(
+      compile([
+        { type: 'list', slug: 'all' },
+        { type: 'board', groupBy: 'status', slug: 'List' },
+      ]),
+    ).toThrow('view "list" uses a reserved slug.');
+    expect(compile([{ type: 'board', groupBy: 'status' }, { type: 'list' }])).not.toThrow();
   });
 
   describe('a non-list view first', () => {

@@ -21,7 +21,7 @@ const { getCustomCollectionViewByRoute } =
 const { CollectionViewActions } =
   await import('../../../../../packages/ui/src/admin/views/CollectionViewActions.js');
 
-function render(views: unknown[], path: string) {
+function render(views: unknown[], path: string, rootViewType?: string) {
   let runtime: unknown;
   const admin = compileCollectionViews({
     collection: {
@@ -58,7 +58,7 @@ function render(views: unknown[], path: string) {
     },
     permissions: { collections: { tickets: { create: true } } },
     req: { user: { id: 'u1' } },
-    viewType: viewKey,
+    viewType: rootViewType ?? viewKey,
   } as never);
 }
 
@@ -85,5 +85,18 @@ describe('header actions of a later view on its own route', () => {
         '/list',
       ),
     ).toBe('rendered');
+  });
+
+  it("keeps a later list's actions off the first view at the root", async () => {
+    expect(
+      await render(
+        [
+          { type: 'board', groupBy: 'status' },
+          { type: 'list', components: { actions: ['./L#L'] } },
+        ],
+        '',
+        'list',
+      ),
+    ).toBeNull();
   });
 });
