@@ -16,10 +16,10 @@ import { describeData, takeInventory } from './data/inventory.js';
 import { askReplace, replaceMessages } from './data/replace.js';
 import { formatBytes, uploadData } from './data/upload.js';
 import type { DojoClient } from './dojo.js';
-import { createDojo, dojoError, dojoStop, followBuild, segment } from './dojo.js';
+import { createDojo, followBuild, segment } from './dojo.js';
 import type { EnvKey } from './envKeys.js';
 import { envKeys, readEnvFiles } from './envKeys.js';
-import { ShareError } from './error.js';
+import { dojoError, dojoStop, ShareError } from './error.js';
 import { shareFiles } from './files.js';
 import type { ShareFlags } from './flags.js';
 import { parseShareArgs } from './flags.js';
@@ -196,6 +196,14 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
       dojo,
       deploymentId,
       onLine: (line) => say(io, `[build] ${line}`),
+    }).catch((error: unknown) => {
+      if (!(error instanceof ShareError) || error.deploymentId !== undefined) throw error;
+
+      throw new ShareError(
+        `${error.message} The build may still finish: run \`frogbot dojo deployments logs ${deploymentId} --follow\`.`,
+        error.exitCode,
+        { code: error.code, status: error.status, url: error.url, deploymentId, cause: error },
+      );
     });
 
     if (build.status === 'failed') {

@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 
 import type { DeployEnv } from 'frogbot';
 
-import { reachDojo, ShareError } from './error.js';
+import { dojoStop, reachDojo, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
 import { say } from './io.js';
 
@@ -120,7 +120,7 @@ async function approvedToken(io: DojoIO, dojoUrl: string): Promise<string | unde
     device_name: hostname(),
   });
 
-  if (!start.ok) throw new ShareError(`Dojo refused the sign-in (${start.status}).`);
+  if (!start.ok) throw await dojoStop(start, 'Dojo refused the sign-in');
 
   const code = (await start.json()) as DeviceCode;
   const link = code.verification_uri_complete || code.verification_uri;

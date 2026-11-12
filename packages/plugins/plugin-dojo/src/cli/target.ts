@@ -1,6 +1,6 @@
 import type { DojoClient } from './dojo.js';
-import { dojoStop, segment } from './dojo.js';
-import { ShareError } from './error.js';
+import { segment } from './dojo.js';
+import { dojoStop, ShareError } from './error.js';
 import type { AppLink } from './link.js';
 import { linkPath } from './link.js';
 import { findApp } from './nouns/resolve.js';

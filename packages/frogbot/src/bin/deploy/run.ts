@@ -56,8 +56,15 @@ export function splitDeployArgs(argv: string[]): { flags: SharedFlags; args: str
 const quote = (arg: string) =>
   /^[\w@%+=:,./•-]+$/.test(arg) ? arg : `'${arg.replace(/'/g, `'\\''`)}'`;
 
-const masked = (text: string, mask: string[]) =>
-  mask.reduce((shown, secret) => (secret ? shown.split(secret).join('••••') : shown), text);
+const escaped = (text: string) => text.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
+
+function masked(text: string, mask: string[]): string {
+  const secrets = mask.filter(Boolean).sort((a, b) => b.length - a.length);
+
+  return secrets.length > 0
+    ? text.replace(new RegExp(secrets.map(escaped).join('|'), 'g'), '••••')
+    : text;
+}
 
 function showCommand(command: string, args: string[], mask: string[] = []): string {
   return [command, ...args.map((arg) => masked(arg, mask))].map(quote).join(' ');
@@ -118,14 +125,20 @@ export async function runDeploy(
           ? { steps, ...(isObject(fields.result) ? fields.result : {}) }
           : fields.result;
 
+      const base = {
+        target: name,
+        ok: exitCode === 0,
+        dryRun,
+        issues: fields.issues ?? [],
+        result: result ?? null,
+      };
+
       const failure = fields.failure && {
         ...fields.failure,
         ...(steps.length > 0 && { steps }),
       };
 
-      io.stdout.write(
-        `${JSON.stringify({ target: name, ok: exitCode === 0, dryRun, issues: fields.issues ?? [], result: result ?? null, ...failure })}\n`,
-      );
+      io.stdout.write(`${JSON.stringify({ ...base, ...failure, ...base })}\n`);
     }
 
     return exitCode;
@@ -248,7 +261,7 @@ export async function runDeploy(
       io.stderr.write(`[frogbot] ${error.message}\n`);
 
       return finish(error.exitCode, {
-        failure: { code: error.code, error: error.message, ...error.fields },
+        failure: { ...error.fields, code: error.code, error: error.message },
       });
     }
 

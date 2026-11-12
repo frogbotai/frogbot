@@ -2,7 +2,7 @@ import { createParser } from 'eventsource-parser';
 import type { DeployEnv } from 'frogbot';
 
 import { deviceLogin, readToken, removeToken } from './auth.js';
-import { reachDojo, ShareError } from './error.js';
+import { dojoStop, reachDojo, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
 
 /** `FROGBOT_DOJO_URL`, or Dojo itself. */
@@ -12,49 +12,6 @@ export function dojoUrl(env: DeployEnv): string {
 
 function inCI(env: DeployEnv): boolean {
   return Boolean(env.CI) && env.CI !== 'false' && env.CI !== '0';
-}
-
-/** A failed Dojo reply: Payload's `errors` (with a `ValidationError`'s field errors), or an OAuth-style `error`. */
-export type DojoErrorBody = {
-  errors?: {
-    message?: string;
-    data?: { code?: string; url?: string; errors?: { path?: string; message?: string }[] };
-  }[];
-  error?: string;
-  message?: string;
-};
-
-/** A failed reply's body and Dojo's own words for it, or the status. */
-export async function dojoError(
-  response: Response,
-): Promise<{ body?: DojoErrorBody; message: string }> {
-  const body = (await response.json().catch(() => undefined)) as DojoErrorBody | undefined;
-
-  return {
-    body,
-    message:
-      body?.errors?.find((error) => error.message)?.message ||
-      body?.message ||
-      body?.error ||
-      `Dojo answered ${response.status}.`,
-  };
-}
-
-/** Dojo's own words for a failed reply. */
-export async function dojoMessage(response: Response): Promise<string> {
-  return (await dojoError(response)).message;
-}
-
-/** The stop for a failed reply: `<lead>: <Dojo's words><after>`, carrying its status and Dojo's `code` and `url`. */
-export async function dojoStop(response: Response, lead?: string, after = ''): Promise<ShareError> {
-  const { body, message } = await dojoError(response);
-  const data = body?.errors?.find((error) => error.data?.code)?.data;
-
-  return new ShareError(`${lead ? `${lead}: ` : ''}${message}${after}`, 1, {
-    status: response.status,
-    ...(typeof data?.code === 'string' && { code: data.code }),
-    ...(typeof data?.url === 'string' && { url: data.url }),
-  });
 }
 
 export type DojoUser = { id: string | number; email?: string; apiKeyId?: string | number };

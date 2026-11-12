@@ -24,14 +24,14 @@ pnpm frogbot deploy azure
 | `aws` | on this computer | Secrets Manager | ECS Express Mode (Fargate behind HTTPS) | `aws` CLI v2, Docker, two IAM roles |
 | `azure` | Azure Container Registry | Container Apps secrets | Azure Container Apps | `az`, logged in |
 
-Run `frogbot deploy` with no target and no `dojo()` to list the targets. An unknown target lists them too and exits `2`; with `--json` it also prints a result whose issue is `UNKNOWN_TARGET`.
+Run `frogbot deploy` with no target and no `dojo()` to list the targets. An unknown target lists them too and exits `2`; with `--json` it also prints a result whose issue is `UNKNOWN_TARGET`. When `frogbot.config.ts` fails to load, the issue is `CONFIG_INVALID` with the load error, and the deploy exits `1`, since targets a plugin adds can't be known until the config loads.
 
 ### Flags every target takes
 
 | Flag | Description |
 | --- | --- |
 | `--dry-run` | Runs the checks, then prints each file it would write and each command it would run, in order, and changes nothing. Exits `0` when the checks pass. Read-only queries (such as "does this repository exist?") still run. |
-| `--json` | Prints one result on stdout, `{ "target", "ok", "dryRun", "issues", "result" }`, and everything else on stderr. Never prompts. On a dry run, `result.steps` lists the files and commands. |
+| `--json` | Prints one result on stdout, `{ "target", "ok", "dryRun", "issues", "result" }`, and everything else on stderr, whether the deploy succeeds or fails. Never prompts. On a dry run, `result.steps` lists the files and commands. A deploy that stops adds `code` and `error`: see [When a deploy stops](#when-a-deploy-stops). |
 | `--no-interactive` | Never prompts. Where a prompt would have asked, the deploy stops and names the flag to pass instead. Without a terminal, every deploy behaves this way. |
 | `--env-file <path>` | Reads the app's production variables from this file only. By default they come from the `.env` files `frogbot start` loads (`.env.production.local`, `.env.local`, `.env.production`, `.env`), never the development ones; `FROGBOT_SECRET` and `DATABASE_URL` also come from the shell when no file sets them, which suits CI. |
 
@@ -62,6 +62,27 @@ Every failing check prints together, `[frogbot] <code> <message>` with a `fix:` 
 | `FLY_NO_MOUNT`, `FLY_APP_MISMATCH` | `fly` | Your `fly.toml` mounts no volume at `/data` while `DATABASE_URL` is a SQLite file, or names a different app than `--app`. |
 | `FLY_SECRET_UNSUPPORTED` | `fly` | A value `fly secrets import` can't read back as written, such as one starting with `""` and holding a `#`. Set it with `fly secrets set`. |
 | `AZURE_SECRET_NAME_CLASH` | `azure` | Two variables, such as `API_KEY` and `Api_Key`, would get the same Container Apps secret name, which is lowercase. |
+
+### When a deploy stops
+
+A deploy that stops after its checks pass prints `[frogbot] <error>` on stderr. With `--json`, the one result on stdout also has `ok: false`, a stable `code`, the `error` text, and the fields below, so a script can tell what failed without reading the text.
+
+| Code | Exit | Means | Extra fields |
+| --- | --- | --- | --- |
+| `CONFIG_INVALID` | `1` | `frogbot.config.ts` failed to load. It comes as an issue, like the checks above. | — |
+| `UNKNOWN_TARGET` | `2` | No target by that name. It comes as an issue, like the checks above. | — |
+| `USAGE_ERROR` | `2` | A flag or argument is wrong, such as `--env-file` with no path. | — |
+| `COMMAND_FAILED` | `1` | A host command exited non-zero, such as `fly deploy` running out of memory. | `command`: the whole command, secrets masked as `••••`. `stderr`: its last 10 lines, masked. `steps`: the commands and writes that finished before it. |
+| `DOJO_UNREACHABLE` | `1` | The request never reached Dojo. `error` names the address, and says when `FROGBOT_DOJO_URL` set it. | — |
+| `BUILD_FAILED` | `1` | Dojo's build failed. | `deploymentId` |
+| `BUILD_LOG_LOST` | `1` | The build log stopped and didn't come back, or Dojo refused it. The build may still finish: `error` gives the `frogbot dojo deployments logs <id> --follow` command. | `deploymentId` |
+| Dojo's own code, such as `payment_required`, `forbidden` or `rate_limited` | `1` | Dojo refused a request. A share that waited 30 minutes for a payment stops as `payment_required`. | `status`: the HTTP status. `url`: the link Dojo sent, such as the upgrade page. |
+| `FAILED` | `1` | Any other known stop, such as a refusal without a code of Dojo's. | `status` when Dojo refused |
+| `UNEXPECTED_ERROR` | `1` | A bug or an error nothing expected. `error` holds the whole error with its causes. Without `--json`, the error is thrown as before. | — |
+
+```json
+{"target":"fly","ok":false,"dryRun":false,"issues":[],"result":null,"code":"COMMAND_FAILED","error":"`fly deploy --app deals` failed (exit 1).","command":"fly deploy --app deals","stderr":"Error: insufficient memory","steps":["$ fly apps create deals","write fly.toml"]}
+```
 
 ### Variables
 

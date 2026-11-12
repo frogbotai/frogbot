@@ -1,6 +1,6 @@
 import type { DojoClient } from './dojo.js';
-import { dojoMessage, dojoStop, segment } from './dojo.js';
-import { ShareError } from './error.js';
+import { segment } from './dojo.js';
+import { dojoError, dojoStop, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
 import { say } from './io.js';
 
@@ -84,7 +84,8 @@ export async function whenPaid(
 
     if (response.status !== 402) return response;
 
-    const paywall = readPaywall(await dojoMessage(response.clone()), dojo.url);
+    const refusal = await dojoError(response.clone());
+    const paywall = readPaywall(refusal.message, dojo.url);
 
     if (!paywall) return response;
 
@@ -99,6 +100,14 @@ export async function whenPaid(
       if (polls > maxPolls) {
         throw new ShareError(
           `Dojo still has no payment for this app after ${(maxPolls * pollMs) / 60_000} minutes. Once it's paid, share again.`,
+          1,
+          {
+            code:
+              refusal.body?.errors?.find((error) => error.data?.code)?.data?.code ??
+              'payment_required',
+            status: response.status,
+            url: paywall.url,
+          },
         );
       }
 

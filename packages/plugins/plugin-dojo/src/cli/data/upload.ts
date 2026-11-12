@@ -4,8 +4,8 @@ import { Readable } from 'node:stream';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 import type { DojoClient } from '../dojo.js';
-import { dojoStop, segment } from '../dojo.js';
-import { ShareError } from '../error.js';
+import { segment } from '../dojo.js';
+import { dojoStop, ShareError } from '../error.js';
 import type { DojoIO } from '../io.js';
 import type { DataFile, DataInventory } from './inventory.js';
 

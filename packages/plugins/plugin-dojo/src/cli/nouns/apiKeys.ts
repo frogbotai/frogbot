@@ -1,6 +1,6 @@
 import type { Noun } from '../command.js';
-import { dojoJSON, dojoList, dojoStop, segment } from '../dojo.js';
-import { ShareError } from '../error.js';
+import { dojoJSON, dojoList, segment } from '../dojo.js';
+import { dojoStop, ShareError } from '../error.js';
 import { done } from '../io.js';
 
 type ApiKey = {

@@ -1,7 +1,7 @@
 import { nameTaken, toSlug } from '../appSlug.js';
 import type { Noun, Verb } from '../command.js';
-import { dojoError, dojoJSON, dojoList, dojoStop, segment } from '../dojo.js';
-import { ShareError } from '../error.js';
+import { dojoJSON, dojoList, segment } from '../dojo.js';
+import { dojoError, dojoStop, ShareError } from '../error.js';
 import { done } from '../io.js';
 import { whenPaid } from '../payment.js';
 import { findWorkspace } from '../workspaces.js';

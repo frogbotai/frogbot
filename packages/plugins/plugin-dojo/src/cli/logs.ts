@@ -1,8 +1,8 @@
 import { setTimeout } from 'node:timers/promises';
 
 import type { DojoClient } from './dojo.js';
-import { createDojo, dojoStop, segment } from './dojo.js';
-import { reportStop, ShareError } from './error.js';
+import { createDojo, segment } from './dojo.js';
+import { dojoStop, reportStop, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
 import { done, say } from './io.js';
 

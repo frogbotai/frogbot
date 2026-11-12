@@ -1,5 +1,6 @@
 import { readToken, removeToken } from './auth.js';
-import { dojoMessage, dojoUrl } from './dojo.js';
+import { dojoUrl } from './dojo.js';
+import { dojoStop, reachDojo } from './error.js';
 import type { DojoIO } from './io.js';
 import { done, say } from './io.js';
 
@@ -32,12 +33,10 @@ export async function runLogout(args: string[], io: DojoIO): Promise<number> {
   }
 
   const headers = { authorization: `Bearer ${token}`, accept: 'application/json' };
-  const me = await fetch(`${url}/api/users/me`, { headers });
+  const me = await reachDojo(url, io.env, () => fetch(`${url}/api/users/me`, { headers }));
 
   if (!me.ok && me.status !== 401) {
-    io.stderr.write(`[frogbot] Couldn't sign out: ${await dojoMessage(me)} Run logout again.\n`);
-
-    return 1;
+    throw await dojoStop(me, "Couldn't sign out", ' Run logout again.');
   }
 
   const user = me.ok
@@ -45,18 +44,16 @@ export async function runLogout(args: string[], io: DojoIO): Promise<number> {
     : null;
 
   if (user?.apiKeyId !== undefined) {
-    const revoked = await fetch(`${url}/api/api-keys/${user.apiKeyId}/revoke`, {
-      method: 'POST',
-      headers: { ...headers, 'content-type': 'application/json' },
-      body: JSON.stringify({ cascade: false }),
-    });
+    const revoked = await reachDojo(url, io.env, () =>
+      fetch(`${url}/api/api-keys/${user.apiKeyId}/revoke`, {
+        method: 'POST',
+        headers: { ...headers, 'content-type': 'application/json' },
+        body: JSON.stringify({ cascade: false }),
+      }),
+    );
 
     if (!revoked.ok && revoked.status !== 401 && revoked.status !== 404) {
-      io.stderr.write(
-        `[frogbot] Couldn't revoke the key: ${await dojoMessage(revoked)} Run logout again.\n`,
-      );
-
-      return 1;
+      throw await dojoStop(revoked, "Couldn't revoke the key", ' Run logout again.');
     }
   }
 

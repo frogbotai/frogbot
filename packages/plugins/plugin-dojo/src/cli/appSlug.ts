@@ -1,4 +1,4 @@
-import type { DojoErrorBody } from './dojo.js';
+import type { DojoErrorBody } from './error.js';
 import { ShareError } from './error.js';
 
 /**
