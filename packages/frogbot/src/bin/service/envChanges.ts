@@ -1,14 +1,15 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseEnv } from 'node:util';
 
 const ENV_FILE = /^\.env(\..+)?$/;
 const PUBLIC = 'NEXT_PUBLIC_';
 const REFERENCE = /\$\{?([A-Za-z_]\w*)/g;
 const PRECEDENCE = ['.env.production.local', '.env.local', '.env.production', '.env'];
+const DOTENV_LINE =
+  /^\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?$/gm;
 
 /**
- * What a build bakes in from an app's root `.env*` files: each `NEXT_PUBLIC_*` entry, keyed by
+ * What a build bakes in from the `.env` files a production build loads: each `NEXT_PUBLIC_*` entry, keyed by
  * `<file> <key>`, and each variable those values reference with `$NAME`, keyed by `$ <name>`.
  */
 export type PublicEnv = Map<string, string>;
@@ -19,7 +20,8 @@ export function isEnvOnly(paths: string[]): boolean {
 }
 
 /**
- * Reads what a build bakes in from the root `.env*` files in `dir`; a file it can't read adds none.
+ * Reads what a build bakes in from the `.env` files a production build loads in `dir`; a file it
+ * can't read adds none.
  * A referenced variable resolves as Next does: `env` first, then the files by precedence.
  */
 export function readPublicEnv(dir: string, env: NodeJS.Dict<string> = {}): PublicEnv {
@@ -29,7 +31,7 @@ export function readPublicEnv(dir: string, env: NodeJS.Dict<string> = {}): Publi
 
   try {
     names = readdirSync(dir)
-      .filter((name) => ENV_FILE.test(name))
+      .filter((name) => PRECEDENCE.includes(name))
       .sort();
   } catch {
     return values;
@@ -37,12 +39,12 @@ export function readPublicEnv(dir: string, env: NodeJS.Dict<string> = {}): Publi
 
   for (const name of names) {
     try {
-      files.set(name, parseEnv(readFileSync(join(dir, name), 'utf8')));
+      files.set(name, parseDotenv(readFileSync(join(dir, name), 'utf8')));
     } catch {}
   }
 
   const lookup = (key: string) =>
-    env[key] ??
+    env[key] ||
     PRECEDENCE.map((name) => files.get(name)?.[key]).find((value) => value !== undefined);
 
   const pending: string[] = [];
@@ -82,3 +84,18 @@ export function publicEnvChanged(before: PublicEnv, after: PublicEnv): string[] 
 }
 
 const keyOf = (entry: string) => entry.slice(entry.indexOf(' ') + 1);
+
+function parseDotenv(text: string): Record<string, string> {
+  const parsed: Record<string, string> = {};
+
+  for (const [, key = '', raw = ''] of text.replace(/\r\n?/g, '\n').matchAll(DOTENV_LINE)) {
+    const value = raw.trim();
+    const unquoted = value.replace(/^(['"`])([\s\S]*)\1$/gm, '$2');
+
+    parsed[key] = value.startsWith('"')
+      ? unquoted.replaceAll('\\n', '\n').replaceAll('\\r', '\r')
+      : unquoted;
+  }
+
+  return parsed;
+}

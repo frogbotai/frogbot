@@ -114,7 +114,7 @@ export async function supervise({
   const app: App = { dir, env, log };
   const proxy = createProxy();
   const backoff = createBackoff();
-  const draining = new Map<Slot, ChildProcess>();
+  const draining = new Map<Slot, Set<ChildProcess>>();
   const reported: { kept?: string } = {};
   let current: Server | undefined;
   let typesFile: string | undefined;
@@ -189,12 +189,17 @@ export async function supervise({
     watchCrash(server);
 
     if (previous && previous.child !== server.child) {
-      draining.set(previous.slot, previous.child);
+      const servers = draining.get(previous.slot) ?? new Set();
+
+      draining.set(previous.slot, servers.add(previous.child));
 
       void (old ? drained(old, DRAIN_MS) : Promise.resolve())
         .then(() => stopServer(previous.child))
         .finally(() => {
-          if (draining.get(previous.slot) === previous.child) draining.delete(previous.slot);
+          servers.delete(previous.child);
+          if (!servers.size && draining.get(previous.slot) === servers) {
+            draining.delete(previous.slot);
+          }
         });
     }
 
@@ -257,9 +262,7 @@ export async function supervise({
     log.write('supervisor', `building into ${paths.distDir(slot)}`);
 
     try {
-      const old = draining.get(slot);
-
-      if (old) await exited(old);
+      await Promise.all([...(draining.get(slot) ?? [])].map(exited));
 
       rmSync(paths.build(slot), { recursive: true, force: true });
       const prepared = (await runtime.prepare(app)).typesFile;
@@ -353,7 +356,7 @@ export async function supervise({
 
     await Promise.all([
       ...(current ? [stopServer(current.child)] : []),
-      ...[...draining.values()].map(stopServer),
+      ...[...draining.values()].flatMap((children) => [...children].map(stopServer)),
     ]);
 
     removeRegistration(file, registration);

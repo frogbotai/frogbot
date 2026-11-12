@@ -111,9 +111,13 @@ export function runStep(
 
 const TYPES_LINE = /^\[frogbot\] types (?:written to|unchanged at) (.+)$/;
 
-/** The types file `generate:types` reported on its last line, if it printed one. */
+/** The types file named by the last types line `generate:types` printed, if it printed one. */
 export function parseTypesFile(output: string): string | undefined {
-  return TYPES_LINE.exec(output.trimEnd().split('\n').at(-1) ?? '')?.[1];
+  return output
+    .split('\n')
+    .map((line) => TYPES_LINE.exec(line.trimEnd())?.[1])
+    .filter((file) => file !== undefined)
+    .at(-1);
 }
 
 const productionEnv = (app: App, slot: Slot): NodeJS.ProcessEnv => ({
