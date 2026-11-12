@@ -52,14 +52,12 @@ describe('ChatRowActions', () => {
     const rowClasses = () => screen.getByText('Conversation').closest('.row')?.classList;
 
     expect(rowClasses()?.contains('fb-chat-row-actions__row')).toBe(true);
-    expect(rowClasses()?.contains('fb-slide-right-1')).toBe(true);
-    expect(rowClasses()?.contains('fb-slide-active')).toBe(false);
+    expect(rowClasses()?.contains('fb-slide-right-1'), 'the row itself never slides').toBe(false);
     expect(rowClasses()?.contains('fb-chat-row-actions__row--open')).toBe(false);
 
     await user.click(screen.getByRole('button', { name: 'Chat actions' }));
 
     expect(rowClasses()?.contains('fb-chat-row-actions__row--open')).toBe(true);
-    expect(rowClasses()?.contains('fb-slide-active')).toBe(true);
 
     await user.keyboard('{Escape}');
 
