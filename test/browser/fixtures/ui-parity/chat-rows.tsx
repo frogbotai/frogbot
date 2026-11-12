@@ -79,7 +79,7 @@ function Page() {
 }
 
 createRoot(document.getElementById('root')!).render(
-  <ThemeProvider mode="light">
+  <ThemeProvider mode={document.documentElement.dataset.galleryTheme === 'dark' ? 'dark' : 'light'}>
     <Page />
   </ThemeProvider>,
 );
