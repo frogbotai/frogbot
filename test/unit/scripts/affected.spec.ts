@@ -15,7 +15,7 @@ import {
   typecheckAreas,
   verifyGroups,
 } from '../../../scripts/lib/affected.mjs';
-import { runGroups, worktreePatchId } from '../../../scripts/lib/verify.mjs';
+import { runGroups, verifyInputs, worktreePatchId } from '../../../scripts/lib/verify.mjs';
 
 const root = path.resolve(import.meta.dirname, '../../..');
 
@@ -421,6 +421,25 @@ describe('runGroups', () => {
     });
 
     expect(result).toMatchObject({ ok: true, failed: null });
+  });
+});
+
+describe('verifyInputs', () => {
+  it('builds stale packages before it resolves test imports, and stops when the build fails', async () => {
+    const built = { ok: false, groups: [['build  failed']] };
+    const order: string[] = [];
+
+    const result = await verifyInputs(root, os.devNull, {
+      files: [],
+      build: () => {
+        order.push('build');
+
+        return Promise.resolve(built);
+      },
+    });
+
+    expect(order).toEqual(['build']);
+    expect(result).toEqual({ built });
   });
 });
 
