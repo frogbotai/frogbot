@@ -241,7 +241,9 @@ export interface Customer {
  */
 export interface Connection {
   id: number;
-  owner: number | User;
+  owner?: (number | null) | User;
+  app?: string | null;
+  holder: string;
   piece: string;
   method: 'oauth' | 'secret';
   credential: string;
@@ -359,6 +361,8 @@ export interface ConnectionsSelect {
   expiresAt?: boolean;
   status?: boolean;
   updatedAt?: boolean;
+  app?: boolean;
+  holder?: boolean;
   createdAt?: boolean;
 }
 /**
