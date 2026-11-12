@@ -1,5 +1,6 @@
 import type { MongooseAdapter } from '@payloadcms/db-mongodb';
 import type { AdapterAggregate, AggregateSortDescriptor } from 'frogbot/aggregate';
+import { buildVersionCollectionFields } from 'payload';
 
 import { getJobSession } from '../jobModel.js';
 import { resolvePath } from './resolvePath.js';
@@ -48,6 +49,7 @@ export const aggregate: AdapterAggregate = async ({
   req,
   sort,
   values,
+  versions,
   where,
 }) => {
   const adapter: unknown = db;
@@ -56,7 +58,12 @@ export const aggregate: AdapterAggregate = async ({
     throw new Error('[frogbot] Aggregate requires a MongoDB database connection.');
   }
 
-  const Model = adapter.collections[collection];
+  const Model = versions ? adapter.versions[collection] : adapter.collections[collection];
+  const config = adapter.payload.collections[collection].config;
+  const fields = versions
+    ? buildVersionCollectionFields(adapter.payload.config, config, true)
+    : config.flattenedFields;
+
   const { localization } = adapter.payload.config;
   const locale = localization ? (requestedLocale ?? localization.defaultLocale) : undefined;
 
@@ -69,6 +76,7 @@ export const aggregate: AdapterAggregate = async ({
       adapter,
       alias: `__frogbot_g${index}`,
       collection,
+      fields,
       locale,
       path,
     });
@@ -100,6 +108,7 @@ export const aggregate: AdapterAggregate = async ({
       adapter,
       alias: '__frogbot_v',
       collection,
+      fields,
       locale,
       path: value.path,
     });

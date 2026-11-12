@@ -91,7 +91,7 @@ export type AggregateOptions<
    */
   populate?: PopulateType<T>;
   /**
-   * Include drafts instead of published documents only.
+   * Total each document's newest version, drafts included, as `find` with `draft: true` reads them.
    */
   draft?: boolean;
   /**
