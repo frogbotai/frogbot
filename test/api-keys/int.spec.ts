@@ -1208,7 +1208,14 @@ describe('API keys plugin integration', () => {
       const grandchild = await mint(asKey(child.body.token), 'G');
 
       for (const id of [sibling.body.id, parent.body.id]) {
-        expect((await revoke(asKey(child.body.token), id)).status).toBe(404);
+        const refused = await revoke(asKey(child.body.token), id);
+
+        expect(refused.status).toBe(404);
+        expect(refused.body).toEqual({
+          error:
+            'A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.',
+          code: 'not_found',
+        });
         expect((await mintedCount(asKey(child.body.token), id)).status).toBe(404);
       }
 
@@ -1478,10 +1485,22 @@ describe('API keys plugin integration', () => {
 
       vi.useFakeTimers({ now: Date.parse(expiresAt) + 1000, toFake: ['Date'] });
 
-      expect(
-        (await booted.restClient.get('/api/credentials', { headers: asKey(key.body.token) }))
-          .status,
-      ).toBe(403);
+      const message = `API key expired at ${expiresAt}. Mint a new one with POST /api/credentials/mint.`;
+      const refused = await booted.restClient.get<{ errors: { message: string }[] }>(
+        '/api/credentials',
+        { headers: asKey(key.body.token) },
+      );
+
+      expect(refused.status).toBe(401);
+      expect(refused.body.errors[0]?.message).toBe(message);
+      expect(refused.headers.get('www-authenticate')).toBe(
+        `Bearer error="invalid_token", error_description="${message}"`,
+      );
+
+      const refusedMint = await mint(asKey(key.body.token), { name: 'Next' });
+
+      expect(refusedMint.status).toBe(401);
+      expect(refusedMint.body.error).toBe(message);
       expect((await stored(key.body.id)).lastUsedAt).toBe(lastUsedAt);
 
       const login = await booted.restClient.post<{ token: string }>(
@@ -1498,6 +1517,43 @@ describe('API keys plugin integration', () => {
       expect(rotated.status).toBe(400);
       expect(rotated.body.error).toBe('This key has expired. Mint a new key instead.');
       expect((await stored(key.body.id)).revokedAt ?? null).toBeNull();
+    });
+
+    it('tells a revoked key it was revoked, and when', async () => {
+      const key = await mint(session, { name: 'Gone' });
+
+      expect(
+        (
+          await booted.restClient.post(`/api/credentials/${key.body.id}/revoke`, undefined, {
+            headers: session,
+          })
+        ).status,
+      ).toBe(200);
+
+      const revokedAt = (await stored(key.body.id)).revokedAt as string;
+      const message = `API key was revoked at ${revokedAt}. Mint a new one with POST /api/credentials/mint.`;
+      const refused = await booted.restClient.get<{ errors: { message: string }[] }>(
+        '/api/credentials',
+        { headers: asKey(key.body.token) },
+      );
+
+      expect(refused.status).toBe(401);
+      expect(refused.body.errors[0]?.message).toBe(message);
+      expect(refused.headers.get('www-authenticate')).toContain(`error_description="${message}"`);
+    });
+
+    it('lets a session cookie through when the request also carries a refused key', async () => {
+      const key = await mint(session, { name: 'Gone' });
+
+      await booted.restClient.post(`/api/credentials/${key.body.id}/revoke`, undefined, {
+        headers: session,
+      });
+
+      const both = await booted.restClient.get('/api/credentials', {
+        headers: { ...session, ...asKey(key.body.token) },
+      });
+
+      expect(both.status).toBe(200);
     });
 
     it("gives a key minted by a key no later date than its parent's", async () => {
