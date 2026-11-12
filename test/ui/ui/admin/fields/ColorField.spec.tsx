@@ -80,6 +80,12 @@ describe('ColorField', () => {
     expect(textInput(container)?.name).toBe('color');
   });
 
+  it('keeps the hex value left to right in a right-to-left locale', () => {
+    const { container } = render(<ColorField {...colorProps()} />);
+
+    expect(textInput(container)?.dir).toBe('ltr');
+  });
+
   it('saves typed text as typed', () => {
     const { container } = render(<ColorField {...colorProps()} />);
 

@@ -45,11 +45,13 @@ The result is a plain `text` field, so it works anywhere a field does, including
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
 | `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the color field's own entry. See [Agents and generated types](#agents-and-generated-types). |
 
-A color field holds one color of a fixed length, so `hasMany`, `minRows`, `maxRows`, `minLength` and `maxLength` are not accepted. TypeScript rejects them, and setting any of them from JavaScript fails at startup with an error naming the field:
+A color field holds one color of a fixed length, so `hasMany`, `minRows`, `maxRows`, `minLength`, `maxLength` and `admin.rtl` are not accepted. TypeScript rejects them, and setting any of them from JavaScript fails at startup with an error naming the field:
 
 ```text
 colorField "color": hasMany is not supported
 ```
+
+The hex value always reads left to right, even in a right-to-left locale.
 
 ## Accepted colors
 
@@ -83,7 +85,7 @@ Pass your own palette to match your app, or `[]` to show only the text input and
 colorField({ name: 'color', swatches: ['#0f766e', '#b45309', '#be123c'] })
 ```
 
-Swatches are offered, not enforced: any hex color can still be typed or picked. Each swatch must be a hex color, or the app fails at startup with an error naming the field and the swatch:
+A color listed twice, such as `#fff` and `#FFFFFF`, is offered once. Swatches are offered, not enforced: any hex color can still be typed or picked. Each swatch must be a hex color, or the app fails at startup with an error naming the field and the swatch:
 
 ```text
 colorField "color": swatch "teal" is not a #rgb or #rrggbb color
@@ -91,13 +93,12 @@ colorField "color": swatch "teal" is not a #rgb or #rrggbb color
 
 ## Admin options
 
-Color fields support the standard [field admin options](/fields/overview#admin-options), plus the Text field's input options:
+Color fields support the standard [field admin options](/fields/overview#admin-options), plus these input options:
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `placeholder` | `string \| Record<string, string>` | `#3b82f6` | Placeholder text. Use an object keyed by language code for translations. |
 | `autoComplete` | `string` | — | Value of the input's `autocomplete` attribute. |
-| `rtl` | `boolean` | Follows the locale | `true` forces right-to-left text. `false` keeps left-to-right text in a right-to-left locale. When unset, right-to-left locales render right-to-left. |
 
 FrogBot marks the field as a color in `admin.custom.frogbot.kind`, with its swatches. Your own `admin.custom` keys, and other keys under `admin.custom.frogbot`, are kept.
 

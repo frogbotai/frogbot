@@ -54,6 +54,14 @@ describe('colorField', () => {
     });
   });
 
+  it('keeps each swatch color once', () => {
+    const field = colorField({ name: 'color', swatches: ['#fff', '#FFFFFF', '#000'] });
+
+    expect(field.admin?.custom?.frogbot).toEqual({
+      kind: { type: 'color', swatches: ['#ffffff', '#000000'] },
+    });
+  });
+
   it('offers no swatches for an empty list', () => {
     expect(colorField({ name: 'color', swatches: [] }).admin?.custom?.frogbot).toEqual({
       kind: { type: 'color', swatches: [] },
@@ -103,6 +111,7 @@ describe('colorField option errors', () => {
     [{ maxRows: 2 }, 'colorField "color": maxRows is not supported'],
     [{ minLength: 4 }, 'colorField "color": minLength is not supported'],
     [{ maxLength: 7 }, 'colorField "color": maxLength is not supported'],
+    [{ admin: { rtl: true } }, 'colorField "color": admin.rtl is not supported'],
     [
       { swatches: ['#3b82f6', 'blue'] },
       'colorField "color": swatch "blue" is not a #rgb or #rrggbb color',

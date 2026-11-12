@@ -100,6 +100,7 @@ function ColorFieldComponent(props: TextFieldClientProps) {
           <div className="color-field__control">
             <Input
               autoComplete={autoComplete || undefined}
+              dir="ltr"
               disabled={disabled}
               id={`field-${path.replace(/\./g, '__')}`}
               name={path}

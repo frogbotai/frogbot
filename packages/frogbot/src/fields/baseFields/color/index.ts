@@ -5,8 +5,9 @@ import { type ColorKind, getHexColor } from './getHexColor.js';
 
 export type ColorFieldArgs = Omit<
   Extract<TextField, { hasMany?: false | undefined }>,
-  'type' | 'hasMany' | 'minRows' | 'maxRows' | 'minLength' | 'maxLength'
+  'type' | 'hasMany' | 'minRows' | 'maxRows' | 'minLength' | 'maxLength' | 'admin'
 > & {
+  admin?: Omit<NonNullable<TextField['admin']>, 'rtl'>;
   /** Colors the picker offers as one-click swatches, as `#rgb` or `#rrggbb`. `[]` shows none. */
   swatches?: string[];
 };
@@ -25,7 +26,7 @@ const defaultSwatches = [
 ];
 
 function readSwatches(name: string, swatches: string[]): string[] {
-  return swatches.map((swatch) => {
+  const colors = swatches.map((swatch) => {
     const color = getHexColor({ value: swatch });
 
     if (!color) {
@@ -36,13 +37,15 @@ function readSwatches(name: string, swatches: string[]): string[] {
 
     return color;
   });
+
+  return [...new Set(colors)];
 }
 
 export function colorField({ swatches = defaultSwatches, ...args }: ColorFieldArgs): TextField {
   rejectFieldOptions({
     factory: 'colorField',
     field: args,
-    keys: ['hasMany', 'minRows', 'maxRows', 'minLength', 'maxLength'],
+    keys: ['hasMany', 'minRows', 'maxRows', 'minLength', 'maxLength', 'admin.rtl'],
   });
 
   const kind: ColorKind = { type: 'color', swatches: readSwatches(args.name, swatches) };
