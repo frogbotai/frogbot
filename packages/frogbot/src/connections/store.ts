@@ -319,6 +319,7 @@ export class ConnectionStore {
             const credential = await config.encryption.encrypt(serialized);
             const accountId = data.account?.id ?? '';
             const current = await rows();
+
             const row =
               reconnect === undefined
                 ? current.find((row) => accountKey(row) === accountId)
@@ -348,6 +349,20 @@ export class ConnectionStore {
               depth: 0,
               overrideAccess: true,
             };
+
+            if (!row) {
+              for (const legacy of current.filter((row) => !row.accountId && row.account?.id)) {
+                await frogbot.update({
+                  collection: slug,
+                  id: legacy.id,
+                  data: { accountId: accountKey(legacy) },
+                  depth: 0,
+                  overrideAccess: true,
+                });
+
+                check();
+              }
+            }
 
             const saved = (
               row ? await frogbot.update({ ...options, id: row.id }) : await frogbot.create(options)

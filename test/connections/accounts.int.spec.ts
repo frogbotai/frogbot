@@ -389,6 +389,38 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
       expect((await rows()).map((r) => [r.id, r.isDefault])).toEqual([[row.id, true]]);
     });
 
+    it('keeps its row when an API key is saved beside it', async () => {
+      const row = await legacy();
+      const save = (apiKey: string) =>
+        request('/mail', {
+          method: 'POST',
+          headers: { authorization: users[0].authorization, 'content-type': 'application/json' },
+          body: JSON.stringify({ apiKey }),
+        });
+
+      const first = await save('key-one');
+
+      expect(first.status).toBe(200);
+
+      const key = await first.json();
+
+      expect(key.id).not.toBe(row.id);
+      expect((await rows()).map((r) => [r.id, r.accountId, r.isDefault])).toEqual([
+        [row.id, 'fresh-a', true],
+        [key.id, '', false],
+      ]);
+      await expect(resolve(key.id)).resolves.toEqual({ apiKey: 'key-one' });
+      expect((await (await save('key-two')).json()).id).toBe(key.id);
+    });
+
+    it('refuses a reconnect with a different provider account', async () => {
+      const row = await legacy();
+      const before = await rows();
+
+      expect((await link('b', { reconnect: row.id })).status).toBe(400);
+      expect(await rows()).toEqual(before);
+    });
+
     it('reconnects', async () => {
       const row = await legacy();
 
