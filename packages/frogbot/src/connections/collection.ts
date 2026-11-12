@@ -33,7 +33,16 @@ export function defaultConnectionsCollection({
     indexes: [{ fields: ['holder', 'piece'], unique: true }],
     fields: [
       { name: 'owner', type: 'relationship', relationTo: userSlug, index: true },
-      { name: 'app', type: 'text', index: true, defaultValue: '' },
+      {
+        name: 'app',
+        type: 'text',
+        index: true,
+        defaultValue: '',
+        validate: (value: unknown, { siblingData }: { siblingData?: { owner?: unknown } }) =>
+          !value || siblingData?.owner == null || siblingData.owner === ''
+            ? true
+            : 'A connection belongs to a user or to an app slot, not both.',
+      },
       {
         name: 'holder',
         type: 'text',

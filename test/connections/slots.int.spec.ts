@@ -295,6 +295,21 @@ describe(`app-owned connection slots [${process.env.FROGBOT_DATABASE || 'sqlite'
         overrideAccess: true,
       }),
     ).rejects.toThrow();
+
+    const own = await frogbot.create({
+      collection: 'connections',
+      data: { ...base, owner: users[0].id },
+      overrideAccess: true,
+    });
+
+    await expect(
+      frogbot.update({
+        collection: 'connections',
+        id: own.id,
+        data: { app: 'billing' },
+        overrideAccess: true,
+      }),
+    ).rejects.toThrow();
   });
 
   it('never resolves a user-owned row as the slot', async () => {

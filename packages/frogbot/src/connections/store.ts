@@ -159,7 +159,9 @@ async function findRow(
     collection: slug,
     where: {
       and: [
-        key.app === undefined ? { owner: { equals: key.owner.id } } : { app: { equals: key.app } },
+        key.app === undefined
+          ? { owner: { equals: key.owner.id } }
+          : { holder: { equals: `app:${key.app}` } },
         { piece: { equals: key.piece } },
       ],
     },
@@ -213,7 +215,7 @@ export class ConnectionStore {
 
     const result = await frogbot.find({
       collection: config.slug,
-      where: { app: { in: apps } },
+      where: { holder: { in: apps.map((app) => `app:${app}`) } },
       depth: 0,
       pagination: false,
       overrideAccess: true,
