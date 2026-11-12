@@ -124,6 +124,79 @@ describe('ChatProvider manifest refresh', () => {
     expect(renders.mock.calls.at(-1)?.[0]?.manifest).toBe(before);
   });
 
+  it('does not let a slow first load overwrite a newer refetch', async () => {
+    let resolveFirst: (manifest: ChatManifest) => void = () => undefined;
+    const loadManifest = vi
+      .fn<ChatPlatformAdapter['loadManifest']>()
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+      )
+      .mockResolvedValueOnce(manifestWith('openai/gpt-5', 'google/gemini'));
+
+    render(
+      <ChatProvider adapter={adapterLoading(loadManifest)}>
+        <Models />
+      </ChatProvider>,
+    );
+
+    await focusWindow();
+
+    expect(screen.getByText('openai/gpt-5, google/gemini')).toBeTruthy();
+
+    await act(async () => {
+      resolveFirst(manifestWith('openai/gpt-5'));
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText('openai/gpt-5, google/gemini')).toBeTruthy();
+  });
+
+  it('does not let a failed first load drop a manifest a refetch delivered', async () => {
+    let rejectFirst: (error: Error) => void = () => undefined;
+    const loadManifest = vi
+      .fn<ChatPlatformAdapter['loadManifest']>()
+      .mockReturnValueOnce(
+        new Promise((_resolve, reject) => {
+          rejectFirst = reject;
+        }),
+      )
+      .mockResolvedValueOnce(manifestWith('openai/gpt-5', 'google/gemini'));
+
+    render(
+      <ChatProvider adapter={adapterLoading(loadManifest)}>
+        <Models />
+      </ChatProvider>,
+    );
+
+    await focusWindow();
+
+    await act(async () => {
+      rejectFirst(new Error('timeout'));
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText('openai/gpt-5, google/gemini')).toBeTruthy();
+    expect(renders.mock.calls.at(-1)?.[0]?.error).toBeUndefined();
+  });
+
+  it('shows the error when the first load fails with nothing loaded', async () => {
+    const loadManifest = vi
+      .fn<ChatPlatformAdapter['loadManifest']>()
+      .mockRejectedValueOnce(new Error('offline'));
+
+    render(
+      <ChatProvider adapter={adapterLoading(loadManifest)}>
+        <Models />
+      </ChatProvider>,
+    );
+
+    await act(() => Promise.resolve());
+
+    expect(renders.mock.calls.at(-1)?.[0]?.error?.message).toBe('offline');
+  });
+
   it('aborts a pending refetch when the provider unmounts', async () => {
     const signals: AbortSignal[] = [];
     const loadManifest = vi.fn<ChatPlatformAdapter['loadManifest']>(({ signal }) => {
