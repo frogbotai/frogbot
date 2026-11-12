@@ -73,9 +73,9 @@ A deploy that stops after its checks pass prints `[frogbot] <error>` on stderr. 
 | `UNKNOWN_TARGET` | `2` | No target by that name. It comes as an issue, like the checks above. | — |
 | `USAGE_ERROR` | `2` | A flag or argument is wrong, such as `--env-file` with no path. | — |
 | `COMMAND_FAILED` | `1` | A host command exited non-zero, such as `fly deploy` running out of memory. | `command`: the whole command, secrets masked as `••••`. `stderr`: its last 10 lines, masked. `steps`: the commands and writes that finished before it. |
-| `DOJO_UNREACHABLE` | `1` | The request never reached Dojo. `error` names the address, and says when `FROGBOT_DOJO_URL` set it. | — |
+| `DOJO_UNREACHABLE` | `1` | The request never reached Dojo. `error` names the address, and says when `FROGBOT_DOJO_URL` set it. | `deploymentId` when it happened while following a build |
 | `BUILD_FAILED` | `1` | Dojo's build failed. | `deploymentId` |
-| `BUILD_LOG_LOST` | `1` | The build log stopped and didn't come back, or Dojo refused it. The build may still finish: `error` gives the `frogbot dojo deployments logs <id> --follow` command. | `deploymentId` |
+| `BUILD_LOG_LOST` | `1` | The build log stopped and didn't come back. The build may still finish: `error` gives the `frogbot dojo deployments logs <id> --follow` command. When Dojo refuses the log or can't be reached while following it, the stop keeps that code (`FAILED`, Dojo's own, or `DOJO_UNREACHABLE`) and adds the same command and `deploymentId`. | `deploymentId` |
 | Dojo's own code, such as `payment_required`, `forbidden` or `rate_limited` | `1` | Dojo refused a request. A share that waited 30 minutes for a payment stops as `payment_required`. | `status`: the HTTP status. `url`: the link Dojo sent, such as the upgrade page. |
 | `FAILED` | `1` | Any other known stop, such as a refusal without a code of Dojo's. | `status` when Dojo refused |
 | `UNEXPECTED_ERROR` | `1` | A bug or an error nothing expected. `error` holds the whole error with its causes. Without `--json`, the error is thrown as before. | — |
