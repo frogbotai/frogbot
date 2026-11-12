@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { FROGBOT_VERSION } from '../../version.js';
 import { createBackoff } from './backoff.js';
-import { isEnvOnly, publicEnvChanged, readPublicEnv } from './envChanges.js';
+import { isEnvOnly, type PublicEnv, publicEnvChanged, readPublicEnv } from './envChanges.js';
 import { checkHealth } from './health.js';
 import { pickError } from './lastError.js';
 import { createLog, type Log } from './log.js';
@@ -18,15 +18,8 @@ import {
   watchOwnership,
   writeRegistration,
 } from './registration.js';
-import {
-  type App,
-  type AppRuntime,
-  frogbotBin,
-  nextRuntime,
-  outputTail,
-  runStep,
-  StepError,
-} from './runtime.js';
+import { type App, type AppRuntime, nextRuntime, outputTail, StepError } from './runtime.js';
+import { syncSchema } from './schema.js';
 import { watchApp } from './watch.js';
 
 /** The marker `frogbot up` looks for in a LaunchAgent's log when the first build fails. */
@@ -91,77 +84,6 @@ async function stopServer(child: ChildProcess): Promise<void> {
   clearTimeout(timer);
 }
 
-type SchemaLine = {
-  frogbot: 'schema';
-  ok: boolean;
-  applied: number;
-  kept?: string[];
-  error?: string;
-};
-
-/** Writes the schema step's kept line when it differs from the last one; returns it as the new last. */
-export function reportKept(
-  kept: string[],
-  last: string | undefined,
-  write: (line: string) => void,
-): string {
-  const line = kept.join('\n');
-
-  if (line && line !== last) write(line);
-
-  return line;
-}
-
-async function syncSchema(app: App, reported: { kept?: string }): Promise<void> {
-  let output: string;
-
-  try {
-    output = await runStep(
-      app,
-      'schema',
-      [frogbotBin, 'up'],
-      { ...app.env, NODE_ENV: 'production', FROGBOT_SERVICE: 'schema' },
-      { quiet: true },
-    );
-  } catch (error) {
-    const stepOutput = error instanceof StepError ? error.output : '';
-    const line = parseSchemaLine(stepOutput);
-
-    app.log.write('schema', stepOutput);
-
-    if (line?.error) throw new StepError(`schema sync refused: ${line.error}`, '');
-
-    throw error;
-  }
-
-  const line = parseSchemaLine(output);
-
-  if (!line) {
-    app.log.write('schema', output);
-
-    throw new StepError('schema sync printed no result', output);
-  }
-
-  reported.kept = reportKept(line.kept ?? [], reported.kept, (kept) =>
-    app.log.write('schema', kept),
-  );
-
-  if (!line.ok) throw new StepError(`schema sync refused: ${line.error}`, '');
-  if (line.applied) app.log.write('supervisor', `schema sync applied ${line.applied} statements`);
-}
-
-function parseSchemaLine(output: string): SchemaLine | undefined {
-  const last = output.trim().split('\n').at(-1) ?? '';
-
-  try {
-    const value = JSON.parse(last) as SchemaLine;
-
-    return value?.frogbot === 'schema' ? value : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 export type SuperviseOptions = {
   dir: string;
   port: number;
@@ -196,7 +118,8 @@ export async function supervise({
   const reported: { kept?: string } = {};
   let current: Server | undefined;
   let typesFile: string | undefined;
-  let publicEnv = readPublicEnv(dir);
+  let publicEnv = readPublicEnv(dir, env);
+  let building: PublicEnv | undefined;
   let booted = false;
   let stopping = false;
 
@@ -339,9 +262,16 @@ export async function supervise({
       if (old) await exited(old);
 
       rmSync(paths.build(slot), { recursive: true, force: true });
-      typesFile = (await runtime.prepare(app)).typesFile ?? typesFile;
+      const prepared = (await runtime.prepare(app)).typesFile;
 
-      const baked = readPublicEnv(dir);
+      if (prepared && prepared !== typesFile) {
+        typesFile = prepared;
+        watcher?.forget(prepared);
+      }
+
+      const baked = readPublicEnv(dir, env);
+
+      building = baked;
 
       await runtime.build(app, slot);
       await syncSchema(app, reported);
@@ -373,6 +303,8 @@ export async function supervise({
       }
 
       save({ state: current ? 'update failed' : 'crashed', lastError: summarize(error) });
+    } finally {
+      building = undefined;
     }
   }
 
@@ -408,7 +340,7 @@ export async function supervise({
     kind === 'restart' ? restartOnEnv() : update(),
   );
 
-  let watcher: { close: () => void } | undefined;
+  let watcher: ReturnType<typeof watchApp> | undefined;
   let stopOwnership = () => {};
 
   const shutdown = async (reason: string, code = 0) => {
@@ -478,7 +410,13 @@ export async function supervise({
     ignore: () => typesFile,
     onChange: (changed) => {
       if (isEnvOnly(changed)) {
-        const keys = publicEnvChanged(publicEnv, readPublicEnv(dir));
+        const now = readPublicEnv(dir, env);
+        const keys = [
+          ...new Set([
+            ...publicEnvChanged(publicEnv, now),
+            ...(building ? publicEnvChanged(building, now) : []),
+          ]),
+        ];
 
         if (!keys.length) {
           log.write('supervisor', 'only .env changed; restarting on the current build');

@@ -82,7 +82,7 @@ export function watchApp({
   ignore?: () => string | undefined;
   debounce?: number;
   watch?: Watch;
-}): { close: () => void } {
+}): { close: () => void; forget: (file: string) => void } {
   const watchers: FSWatcher[] = [];
   const tsconfig = join(dir, 'tsconfig.json');
   let shape = readShape(tsconfig);
@@ -136,6 +136,13 @@ export function watchApp({
   for (const base of WATCHED_DIRS) listen(base, true);
 
   return {
+    forget(file) {
+      const path = inside(dir, file);
+
+      if (!path || !seen.delete(path) || seen.size) return;
+
+      clearTimeout(timer);
+    },
     close() {
       clearTimeout(timer);
 
