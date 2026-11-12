@@ -50,7 +50,8 @@ there.
 
 ## Import a CSV
 
-Open projects or tasks and choose **Import**. Pick a CSV, such as an export from Asana, Airtable or
+Open projects or tasks, then choose **Import Projects** or **Import Tasks** from the **⋮** menu
+beside **Create New**. Pick a CSV, such as an export from Asana, Airtable or
 a spreadsheet, and match each column to a field. A task's project column links to a project by
 name, and **Create missing** adds the projects that don't exist yet. The preview shows each row
 before you start, and the import runs as you, so your role's rules apply. **Export** in the same

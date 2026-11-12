@@ -71,7 +71,8 @@ there.
 
 ## Import a CSV
 
-Open companies, contacts, deals, activities or tasks and choose **Import**. Pick a CSV, such as an
+Open companies, contacts, deals, activities or tasks, then choose **Import** (for example
+**Import Companies**) from the **⋮** menu beside **Create New**. Pick a CSV, such as an
 export from Airtable, Salesforce or a spreadsheet, and match each column to a field. A column that
 names a related record, such as a contact's company, links to it by name, and **Create missing**
 adds the ones that don't exist yet. Import companies first, then contacts and deals. The preview
