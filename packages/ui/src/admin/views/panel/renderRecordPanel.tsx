@@ -8,7 +8,11 @@ import { getPanelComponents } from './config.js';
 import { PanelBridge, PanelClientSlot } from './PanelSlots.client.js';
 import { RecordPanelHeader } from './RecordPanelHeader.client.js';
 import { RecordPanelProperties } from './RecordPanelProperties.client.js';
-import { RecordPanelTabList, RecordPanelTabPanes } from './RecordPanelTabs.client.js';
+import {
+  RecordPanelDetails,
+  RecordPanelTabList,
+  RecordPanelTabPanes,
+} from './RecordPanelTabs.client.js';
 import { RecordPanelTitle } from './RecordPanelTitle.client.js';
 
 /** The FrogBot server function that renders the record side panel. */
@@ -135,10 +139,10 @@ export const renderRecordPanelHandler: ServerFunction<
           labels={tabs.map(({ label }) => (typeof label === 'function' ? label({ t }) : label))}
         />
       ) : null}
-      <div className="fb-record-panel__details">
+      <RecordPanelDetails tabbed={tabs.length > 0}>
         {render(components.beforeFields, 'before')}
         <RecordPanelProperties />
-      </div>
+      </RecordPanelDetails>
     </>
   );
 

@@ -350,6 +350,8 @@
   }
 
   /* A collection tab is open: Details stays mounted, so unsaved edits survive, but hidden. */
+  .fb-record-panel[data-tab] .collection-edit__auth,
+  .fb-record-panel[data-tab] .collection-edit__main-wrapper > :not(.collection-edit__main),
   .fb-record-panel[data-tab] .fb-record-panel__details,
   .fb-record-panel[data-tab] .document-fields__fields,
   .fb-record-panel[data-tab] .document-fields__sidebar-wrap,

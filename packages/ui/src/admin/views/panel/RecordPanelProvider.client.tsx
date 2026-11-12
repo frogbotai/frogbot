@@ -74,10 +74,15 @@ export type RecordPanelContextValue = {
   /** Closes the panel without asking, as after a delete or a missing record. */
   reset: () => void;
   settings: PanelSettings;
-  /** Opens a tab by its index in `admin.components.panel.tabs`, or Details with `undefined`. */
+  /**
+   * Opens a tab by its index in `admin.components.panel.tabs`, or Details with `undefined`. An
+   * index the open record has no tab for is ignored.
+   */
   selectTab: (tab: number | undefined) => void;
   /** Called by the form inside the panel with its unsaved state. */
   setForm: (form: RecordPanelForm | undefined) => void;
+  /** Called by the panel's tab bar with how many collection tabs the open record shows. */
+  setTabCount: (count: number) => void;
   state: RecordPanelState;
   subscribe: (listener: (event: RecordPanelEvent) => void) => () => void;
   /** Re-renders the open record, as after a duplicate. */
@@ -138,6 +143,7 @@ export function RecordPanelProvider({
   );
 
   const [tab, setTab] = useState<number>();
+  const [tabCount, setTabCount] = useState(0);
   const formRef = useRef<RecordPanelForm | undefined>(undefined);
   const pendingRef = useRef<(() => void) | undefined>(undefined);
   const listenersRef = useRef(new Set<(event: RecordPanelEvent) => void>());
@@ -253,6 +259,15 @@ export function RecordPanelProvider({
 
   const switchTo = useCallback((id: number | string) => go({ id: String(id), mode: 'edit' }), [go]);
 
+  const selectTab = useCallback(
+    (next: number | undefined) => {
+      if (next === undefined || (Number.isInteger(next) && next >= 0 && next < tabCount)) {
+        setTab(next);
+      }
+    },
+    [tabCount],
+  );
+
   const expand = useCallback(() => {
     if (state.mode === 'closed') return;
     const url = editURL(adminRoute, collectionSlug, state.mode === 'edit' ? state.id : undefined);
@@ -292,13 +307,14 @@ export function RecordPanelProvider({
       openId: state.mode === 'edit' ? state.id : undefined,
       reload,
       reset,
-      selectTab: setTab,
+      selectTab,
       setForm,
+      setTabCount,
       settings,
       state,
       subscribe,
       switchTo,
-      tab,
+      tab: tab !== undefined && tab < tabCount ? tab : undefined,
     }),
     [
       close,
@@ -311,12 +327,14 @@ export function RecordPanelProvider({
       open,
       reload,
       reset,
+      selectTab,
       setForm,
       settings,
       state,
       subscribe,
       switchTo,
       tab,
+      tabCount,
     ],
   );
 
@@ -359,6 +377,7 @@ const CLOSED: RecordPanelContextValue = {
   reset: noop,
   selectTab: noop,
   setForm: noop,
+  setTabCount: noop,
   settings: false,
   state: { mode: 'closed' },
   subscribe: () => noop,
