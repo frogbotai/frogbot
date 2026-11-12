@@ -109,10 +109,10 @@ export const Tickets: CollectionConfig = {
 
 - With no `tabs`, the panel shows no tab bar.
 - **Details** is open first, and again whenever the panel opens or switches to a record. The open tab isn't in the URL.
-- Opening a tab hides Details but keeps it and every pane mounted, so unsaved edits and a pane's state survive switching tabs, and **Save** in the header still saves them.
+- Opening a tab hides Details but keeps it and every pane mounted, so unsaved edits and a pane's state survive switching tabs, and **Save** in the header still saves them. A save that fails on invalid fields opens Details, where those fields are.
 - Tabs show once the record exists, not on a create form.
 - The arrow keys, Home and End move between tabs.
-- `useRecordPanel()` returns the open tab's index as `tab` (`undefined` for Details) and `selectTab(index)` to open one.
+- `useRecordPanel()` returns the open tab's index as `tab` (`undefined` for Details) and `selectTab(index)` to open one. An index the record has no tab for is ignored.
 
 ## Saving
 
