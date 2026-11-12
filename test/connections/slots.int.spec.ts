@@ -279,6 +279,45 @@ describe(`app-owned connection slots [${process.env.FROGBOT_DATABASE || 'sqlite'
     expect(await rows()).toHaveLength(4);
   });
 
+  it('refuses a row that has both an owner and a slot name', async () => {
+    const base = { piece: 'mail', method: 'secret', credential: 'x', scopes: [], status: 'active' };
+
+    await frogbot.create({
+      collection: 'connections',
+      data: { ...base, app: 'teamMailbox' },
+      overrideAccess: true,
+    });
+
+    await expect(
+      frogbot.create({
+        collection: 'connections',
+        data: { ...base, owner: users[0].id, app: 'teamMailbox' },
+        overrideAccess: true,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('never resolves a user-owned row as the slot', async () => {
+    const own = await linkSecret({ owner: users[0].id }, 'mine');
+
+    await frogbot
+      .update({
+        collection: 'connections',
+        id: own.id,
+        data: { owner: users[0].id, app: 'teamMailbox' },
+        overrideAccess: true,
+      })
+      .catch(() => undefined);
+
+    const error = await mail
+      .whoami({ input: {}, req: await userRequest(users[1].id), as: 'teamMailbox' })
+      .catch((e) => e);
+
+    expect(error).toBeInstanceOf(ConnectionError);
+    expect(error).toMatchObject({ code: 'missing' });
+    expect(await frogbot.connections.slots({ req: await userRequest(users[1].id) })).toEqual([]);
+  });
+
   it('throws a config error for an `as` no entry declares', async () => {
     const req = await userRequest(users[0].id);
 
