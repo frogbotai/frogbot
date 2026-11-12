@@ -194,6 +194,7 @@ export async function resolveViewSetup({
   }
 
   if (!(await acceptsWhere(req, collectionSlug, query.where))) {
+    if (isDefaultLimit(query.limit, defaultLimit)) await clearStoredLimit(req, preferenceKey);
     const preference = await readViewPreference(req, preferenceKey);
 
     return {

@@ -181,12 +181,16 @@ export async function ListView(props: ListViewServerProps) {
   });
 
   let grouped: GroupedTable | undefined;
+  const query = req.query ?? {};
+  const defaultLimit = collectionConfig.admin.pagination?.defaultLimit || 10;
+
+  if (isDefaultLimit(query.limit, defaultLimit)) {
+    await clearStoredLimit(req, `collection-${collectionSlug}`);
+  }
 
   if (isList) {
     await redirectToLastView({ collectionSlug, req, server, views });
 
-    const query = req.query ?? {};
-    const defaultLimit = collectionConfig.admin.pagination?.defaultLimit || 10;
     const setup = await resolveViewSetup({
       collectionSlug,
       defaultLimit,
@@ -194,10 +198,6 @@ export async function ListView(props: ListViewServerProps) {
       req,
       viewSlug: view.slug,
     });
-
-    if (isDefaultLimit(query.limit, defaultLimit)) {
-      await clearStoredLimit(req, `collection-${collectionSlug}`);
-    }
 
     const saved = qs.stringify(withDefaultGroupBy(setup.saved, view.groupBy));
 
