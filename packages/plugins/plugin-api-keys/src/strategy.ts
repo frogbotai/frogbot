@@ -84,12 +84,12 @@ export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
       const { tokenHash: _tokenHash, ...apiKey } = key;
 
       if (!isRecentlyUsed(key)) {
-        await frogbot
-          .update({
+        await frogbot.db
+          .updateOne({
             collection: collectionSlug,
             id: key.id,
             data: { lastUsedAt: new Date().toISOString() },
-            overrideAccess: true,
+            returning: false,
           })
           .catch((error: unknown) => {
             if (loggedStampFailure) return;
