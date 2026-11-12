@@ -353,6 +353,25 @@ describe('Composer', () => {
     expect(server.fetch).not.toHaveBeenCalled();
   });
 
+  it('lets the + picker choose any file and refuses unsupported ones after picking', async () => {
+    const { container, server } = renderComposer();
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]');
+
+    expect(input?.hasAttribute('accept')).toBe(false);
+
+    await userEvent.upload(input as HTMLInputElement, [
+      binary('report.zip', 'application/zip'),
+      pdf('report.pdf'),
+    ]);
+
+    const zip = await screen.findByRole('group', { name: "report.zip, ZIP, won't be sent" });
+
+    expect(description(zip)).toBe("Won't be sent. This file type isn't supported.");
+    expect(status()).toContain("report.zip won't be sent: this file type isn't supported");
+    expect(await screen.findByRole('group', { name: 'report.pdf, PDF, ready' })).toBeTruthy();
+    expect(server.fetch).toHaveBeenCalledTimes(1);
+  });
+
   it('uploads a code file as plain text under its real name', async () => {
     const { drop, onSubmit, server } = renderComposer();
 
