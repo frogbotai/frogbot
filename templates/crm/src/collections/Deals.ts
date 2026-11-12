@@ -1,8 +1,11 @@
 import type { CollectionConfig } from 'frogbot';
 import { moneyField } from 'frogbot';
 
+import { recordAccess } from '../roles';
+
 export const Deals: CollectionConfig = {
   slug: 'deals',
+  access: recordAccess('owner'),
   admin: {
     icon: 'hand-coins',
     useAsTitle: 'name',

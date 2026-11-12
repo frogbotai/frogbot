@@ -1,8 +1,11 @@
 import type { CollectionConfig } from 'frogbot';
 import { autonumberField, autonumberKeyField } from 'frogbot';
 
+import { recordAccess } from '../roles';
+
 export const Tasks: CollectionConfig = {
   slug: 'tasks',
+  access: recordAccess('assignee'),
   admin: {
     icon: 'check-list',
     useAsTitle: 'title',

@@ -1,8 +1,11 @@
 import type { CollectionConfig } from 'frogbot';
 import { urlField } from 'frogbot';
 
+import { recordAccess } from '../roles';
+
 export const Companies: CollectionConfig = {
   slug: 'companies',
+  access: recordAccess('owner'),
   admin: {
     icon: 'building',
     useAsThumbnail: 'logo',

@@ -1,8 +1,11 @@
 import type { CollectionConfig } from 'frogbot';
 import { phoneField } from 'frogbot';
 
+import { recordAccess } from '../roles';
+
 export const Contacts: CollectionConfig = {
   slug: 'contacts',
+  access: recordAccess('owner'),
   admin: {
     icon: 'id-card',
     useAsTitle: 'name',

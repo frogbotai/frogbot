@@ -33,6 +33,36 @@ answers `409`. To start over locally, delete the database.
 
 The seed is plain code in `src/seed/index.ts`; edit it to change the sample data.
 
+## Roles
+
+Every user has a role, set in the **Roles** field of their user record. The first account, the one
+you create on an empty app, is an admin. Users an admin adds are members unless the admin picks
+another role.
+
+| Role    | Can                                                                                                                                      |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Admin   | Everything, and the only role that adds, removes or changes the role of users                                                            |
+| Manager | Create, edit and delete projects, tasks and files, and read the audit log                                                                |
+| Member  | Read everything, create tasks, which are assigned to them, and edit only tasks assigned to them. Members upload files and delete nothing |
+
+Everyone can edit their own name, email and password. The rules are in `src/roles.ts`; change them
+there.
+
+## Import a CSV
+
+Open projects or tasks and choose **Import**. Pick a CSV, such as an export from Asana, Airtable or
+a spreadsheet, and match each column to a field. A task's project column links to a project by
+name, and **Create missing** adds the projects that don't exist yet. The preview shows each row
+before you start, and the import runs as you, so your role's rules apply. **Export** in the same
+place downloads a CSV or JSON file.
+
+See [Import and export](https://docs.frogbot.ai/plugins/import-export) for the details.
+
+## Audit log
+
+Every create, update and delete in the app is saved to **Audit Logs**, with who made it, when, and
+which fields changed. Admins and managers can read it; nobody can edit it.
+
 ## Project layout
 
 | Path                            | Description                                                      |
@@ -40,6 +70,7 @@ The seed is plain code in `src/seed/index.ts`; edit it to change the sample data
 | `src/frogbot.config.ts`         | Your FrogBot config — agents, collections, providers             |
 | `src/collections/Projects.ts`   | Projects, each with a key such as `WEB`                          |
 | `src/collections/Tasks.ts`      | Tasks with numbered keys, a list, a board and a timeline         |
+| `src/roles.ts`                  | The roles and who can do what                                    |
 | `src/seed/`                     | The sample data and the `POST /api/seed` endpoint                |
 | `src/components/SeedPanel.tsx`  | The dashboard panel, shown while the app has no projects         |
 | `src/components/SeedButton.tsx` | The panel's seed button                                          |
@@ -52,7 +83,7 @@ The seed is plain code in `src/seed/index.ts`; edit it to change the sample data
 
 - Add fields to tasks, such as a priority select, and show them on the board with
   `defaultFields`.
-- Restrict who can edit projects with collection `access` before deploying.
+- Add a role, such as a read-only `viewer`, in `src/roles.ts`.
 - Put it online with `npx frogbot deploy`, on Dojo, or on Docker, Fly.io, Google Cloud, AWS or Azure; see [Deployment](https://docs.frogbot.ai/deployment/overview).
 
 ## Add an AI provider

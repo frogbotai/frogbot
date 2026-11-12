@@ -1,6 +1,8 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { aiPolicyPlugin } from '@frogbotai/plugin-ai-policy';
+import { auditLogPlugin } from '@frogbotai/plugin-audit-log';
 import { dojo } from '@frogbotai/plugin-dojo';
+import { importExportPlugin } from '@frogbotai/plugin-import-export';
 import { lexicalEditor } from '@frogbotai/richtext-lexical';
 import { sharpTransformer } from '@frogbotai/transformer-sharp';
 import type { FrogBotConfig } from 'frogbot';
@@ -13,7 +15,14 @@ import { Files } from './collections/Files';
 import { Projects } from './collections/Projects';
 import { Tasks } from './collections/Tasks';
 import { Users } from './collections/Users';
+import { auditLogAccess, roles } from './roles';
 import { seedEndpoint } from './seed/endpoint';
+
+const importable = ['projects', 'tasks'].map((slug) => ({
+  slug,
+  import: { disableJobsQueue: true },
+  export: { disableJobsQueue: true },
+}));
 
 const config: FrogBotConfig = {
   secret: process.env.FROGBOT_SECRET || '',
@@ -54,7 +63,13 @@ const config: FrogBotConfig = {
     },
   },
   agents: [general(), assistant],
-  plugins: [aiPolicyPlugin(), dojo()],
+  plugins: [
+    aiPolicyPlugin(),
+    dojo(),
+    roles,
+    auditLogPlugin({ overrides: { access: auditLogAccess } }),
+    importExportPlugin({ collections: importable }),
+  ],
   upload: { transformers: [sharpTransformer()] },
 };
 

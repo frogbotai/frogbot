@@ -1,7 +1,10 @@
 import type { CollectionConfig } from 'frogbot';
 
+import { recordAccess } from '../roles';
+
 export const Activities: CollectionConfig = {
   slug: 'activities',
+  access: recordAccess('owner'),
   admin: {
     icon: 'calendar',
     useAsTitle: 'title',
