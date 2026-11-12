@@ -2161,7 +2161,7 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
     const endpoints = (payloadConfig as any).endpoints as any[];
 
-    expect(endpoints).toHaveLength(7);
+    expect(endpoints).toHaveLength(9);
     expect(endpoints.find(({ path }) => path === '/health').handler).not.toBe(handler);
   });
 
@@ -4886,17 +4886,32 @@ describe('frogbot sanitize', () => {
         '/frogbot',
         '/frogbot/app-icon/:size',
         '/frogbot/app-manifest',
+        '/frogbot/app-icon/:size',
+        '/frogbot/app-manifest',
       ]);
     });
 
     it.each([
       {
         endpoints: false as const,
-        expected: ['/frogbot', '/frogbot/app-icon/:size', '/frogbot/app-manifest'],
+        expected: [
+          '/frogbot',
+          '/frogbot/app-icon/:size',
+          '/frogbot/app-manifest',
+          '/frogbot/app-icon/:size',
+          '/frogbot/app-manifest',
+        ],
       },
       {
         endpoints: [{ path: '/health', method: 'get' as const, handler: vi.fn() }],
-        expected: ['/health', '/frogbot', '/frogbot/app-icon/:size', '/frogbot/app-manifest'],
+        expected: [
+          '/health',
+          '/frogbot',
+          '/frogbot/app-icon/:size',
+          '/frogbot/app-manifest',
+          '/frogbot/app-icon/:size',
+          '/frogbot/app-manifest',
+        ],
       },
     ])(
       'preserves user endpoint configuration for empty agents',
