@@ -1,6 +1,6 @@
 import type { Noun, RawVerb, Verb } from './command.js';
 import { runVerb, verbHelp, verbUsage } from './command.js';
-import { ShareError } from './error.js';
+import { reportStop } from './error.js';
 import type { DojoIO } from './io.js';
 import { jsonIO, processIO } from './io.js';
 import { account } from './nouns/account.js';
@@ -95,11 +95,7 @@ async function runCommand(
 
     return await runVerb(verb, rest, out, verbUsage(io.program, name, verb));
   } catch (error) {
-    if (!(error instanceof ShareError)) throw error;
-
-    io.stderr.write(`[frogbot] ${error.message}\n`);
-
-    return error.code;
+    return reportStop(out, error);
   }
 }
 

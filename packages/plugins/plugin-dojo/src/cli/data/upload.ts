@@ -4,7 +4,7 @@ import { Readable } from 'node:stream';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 import type { DojoClient } from '../dojo.js';
-import { dojoMessage, segment } from '../dojo.js';
+import { dojoStop, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
 import type { DojoIO } from '../io.js';
 import type { DataFile, DataInventory } from './inventory.js';
@@ -104,7 +104,7 @@ async function uploadBatch({
   }));
 
   if (!response.ok) {
-    throw new ShareError(`Couldn't start the data upload: ${await dojoMessage(response)}`);
+    throw await dojoStop(response, "Couldn't start the data upload");
   }
 
   const { objects: replies } = (await response.json()) as { objects: Reply[] };
@@ -141,9 +141,7 @@ async function uploadBatch({
     }));
 
     if (!completed.ok) {
-      throw new ShareError(
-        `Couldn't finish uploading ${upload.key}: ${await dojoMessage(completed)}`,
-      );
+      throw await dojoStop(completed, `Couldn't finish uploading ${upload.key}`);
     }
   });
 }

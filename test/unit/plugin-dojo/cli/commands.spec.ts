@@ -274,11 +274,16 @@ describe('refusals', () => {
 
     const result = await run(['keys', 'create', 'ci', '--json']);
 
+    const message = `This sign-in can't create keys yet: This API key can't mint or rotate API keys. Sign in, or use a key that can mint keys. Create one at ${dojo.url}/collections/api-keys`;
+
     expect(result.code).toBe(1);
-    expect(result.stdout()).toEqual([]);
-    expect(result.stderr()).toEqual([
-      `[frogbot] This sign-in can't create keys yet: This API key can't mint or rotate API keys. Sign in, or use a key that can mint keys. Create one at ${dojo.url}/collections/api-keys`,
-    ]);
+    expect(JSON.parse(result.stdout().join('\n'))).toEqual({
+      ok: false,
+      code: 'FAILED',
+      error: message,
+      status: 403,
+    });
+    expect(result.stderr()).toEqual([`[frogbot] ${message}`]);
   });
 });
 

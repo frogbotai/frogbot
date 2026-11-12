@@ -2,7 +2,7 @@ import { createParser } from 'eventsource-parser';
 import type { DeployEnv } from 'frogbot';
 
 import { deviceLogin, readToken, removeToken } from './auth.js';
-import { ShareError } from './error.js';
+import { reachDojo, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
 
 /** `FROGBOT_DOJO_URL`, or Dojo itself. */
@@ -16,7 +16,10 @@ function inCI(env: DeployEnv): boolean {
 
 /** A failed Dojo reply: Payload's `errors` (with a `ValidationError`'s field errors), or an OAuth-style `error`. */
 export type DojoErrorBody = {
-  errors?: { message?: string; data?: { errors?: { path?: string; message?: string }[] } }[];
+  errors?: {
+    message?: string;
+    data?: { code?: string; url?: string; errors?: { path?: string; message?: string }[] };
+  }[];
   error?: string;
   message?: string;
 };
@@ -40,6 +43,18 @@ export async function dojoError(
 /** Dojo's own words for a failed reply. */
 export async function dojoMessage(response: Response): Promise<string> {
   return (await dojoError(response)).message;
+}
+
+/** The stop for a failed reply: `<lead>: <Dojo's words><after>`, carrying its status and Dojo's `code` and `url`. */
+export async function dojoStop(response: Response, lead?: string, after = ''): Promise<ShareError> {
+  const { body, message } = await dojoError(response);
+  const data = body?.errors?.find((error) => error.data?.code)?.data;
+
+  return new ShareError(`${lead ? `${lead}: ` : ''}${message}${after}`, 1, {
+    status: response.status,
+    ...(typeof data?.code === 'string' && { code: data.code }),
+    ...(typeof data?.url === 'string' && { url: data.url }),
+  });
 }
 
 export type DojoUser = { id: string | number; email?: string; apiKeyId?: string | number };
@@ -69,7 +84,7 @@ export function createDojo(io: DojoIO): DojoClient {
     if (token) headers.set('authorization', `Bearer ${token}`);
     if (!headers.has('accept')) headers.set('accept', 'application/json');
 
-    return fetch(`${url}${path}`, { ...init, headers });
+    return reachDojo(url, io.env, () => fetch(`${url}${path}`, { ...init, headers }));
   };
 
   const login = async () => {
@@ -93,7 +108,7 @@ export function createDojo(io: DojoIO): DojoClient {
     const response = await send('/api/users/me');
 
     if (response.status === 401) return undefined;
-    if (!response.ok) throw new ShareError(`Couldn't reach Dojo: ${await dojoMessage(response)}`);
+    if (!response.ok) throw await dojoStop(response, "Couldn't reach Dojo");
 
     return ((await response.json()) as { user?: DojoUser | null }).user ?? undefined;
   };
@@ -163,10 +178,11 @@ export async function dojoJSON<T>(
 
   if (response.ok) return (await response.json()) as T;
 
-  const message = await dojoMessage(response);
-  const level = response.status === 403 && needs ? ` It needs ${needs}.` : '';
-
-  throw new ShareError(`${what}: ${message}${level}`);
+  throw await dojoStop(
+    response,
+    what,
+    response.status === 403 && needs ? ` It needs ${needs}.` : '',
+  );
 }
 
 /** Every doc of a Dojo list, page by page. `path` must already have a query: pages go after it. */
@@ -242,7 +258,7 @@ export async function followBuild({
     const body = response.body;
 
     if (!response.ok || !body) {
-      throw new ShareError(`Couldn't read the build log: ${await dojoMessage(response)}`);
+      throw await dojoStop(response, "Couldn't read the build log");
     }
 
     const read = async () => {
@@ -260,7 +276,11 @@ export async function followBuild({
     tries = lastId === resumedFrom ? tries + 1 : 0;
 
     if (tries >= reconnects) {
-      throw new ShareError('Lost the build log. The build may still finish; check it in Dojo.');
+      throw new ShareError(
+        `Lost the build log. The build may still finish: run \`frogbot dojo deployments logs ${deploymentId} --follow\`.`,
+        1,
+        { code: 'BUILD_LOG_LOST', deploymentId },
+      );
     }
   }
 }

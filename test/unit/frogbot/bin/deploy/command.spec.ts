@@ -101,11 +101,10 @@ describe('frogbot deploy', () => {
       expect(issue.message).toContain('broken config');
       expect(issue.message).toContain('Caused by: SyntaxError: Unexpected }');
       expect(issue.fix).toContain('frogbot check');
-      expect(issue.fix).toContain('`dojo()` from `@frogbotai/plugin-dojo`');
     },
   );
 
-  it('tells deploy dojo to add dojo() when the config loaded without it', async () => {
+  it('tells deploy dojo to add the plugin when the config loaded without it', async () => {
     const io = testIO({ cwd: await tempDir() });
 
     expect(await deploy(['dojo', '--json'], { config: appConfig(), io: io.io })).toBe(2);
@@ -113,7 +112,7 @@ describe('frogbot deploy', () => {
       {
         code: 'UNKNOWN_TARGET',
         message: '"dojo" isn\'t a deploy target.',
-        fix: 'Add `dojo()` from `@frogbotai/plugin-dojo` to `plugins` in frogbot.config.ts.',
+        fix: 'Name one of: docker, fly, gcp, aws, azure. A target a plugin adds needs that plugin in `plugins` in frogbot.config.ts.',
       },
     ]);
   });

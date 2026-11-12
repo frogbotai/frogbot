@@ -1,5 +1,5 @@
 import type { DojoClient } from './dojo.js';
-import { dojoMessage, segment } from './dojo.js';
+import { dojoMessage, dojoStop, segment } from './dojo.js';
 import { ShareError } from './error.js';
 import type { DojoIO } from './io.js';
 import { say } from './io.js';
@@ -39,7 +39,7 @@ async function paid(dojo: DojoClient, paywall: Paywall): Promise<boolean> {
   const response = await dojo.request(`/api/workspaces/${segment(paywall.workspace)}?depth=0`);
 
   if (!response.ok) {
-    throw new ShareError(`Couldn't check the workspace's plan: ${await dojoMessage(response)}`);
+    throw await dojoStop(response, "Couldn't check the workspace's plan");
   }
 
   const workspace = (await response.json()) as {

@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 
 import type { DeployEnv } from 'frogbot';
 
-import { ShareError } from './error.js';
+import { reachDojo, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
 import { say } from './io.js';
 
@@ -71,12 +71,19 @@ type DeviceCode = {
 const clientId = 'frogbot-cli';
 const grantType = 'urn:ietf:params:oauth:grant-type:device_code';
 
-async function post(url: string, body: Record<string, string>): Promise<Response> {
-  return fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify(body),
-  });
+async function post(
+  io: DojoIO,
+  dojoUrl: string,
+  path: string,
+  body: Record<string, string>,
+): Promise<Response> {
+  return reachDojo(dojoUrl, io.env, () =>
+    fetch(`${dojoUrl}${path}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify(body),
+    }),
+  );
 }
 
 const maxCodes = 3;
@@ -108,7 +115,7 @@ export async function deviceLogin(io: DojoIO, dojoUrl: string): Promise<string> 
 }
 
 async function approvedToken(io: DojoIO, dojoUrl: string): Promise<string | undefined> {
-  const start = await post(`${dojoUrl}/api/cli/device/code`, {
+  const start = await post(io, dojoUrl, '/api/cli/device/code', {
     client_id: clientId,
     device_name: hostname(),
   });
@@ -136,7 +143,7 @@ async function approvedToken(io: DojoIO, dojoUrl: string): Promise<string | unde
   while (Date.now() < deadline) {
     await io.wait(interval);
 
-    const reply = await post(`${dojoUrl}/api/cli/device/token`, {
+    const reply = await post(io, dojoUrl, '/api/cli/device/token', {
       grant_type: grantType,
       device_code: code.device_code,
       client_id: clientId,

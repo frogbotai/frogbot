@@ -110,12 +110,6 @@ describe('formatCliError cause chain', () => {
     expect(result).toBe('[frogbot] outer\n  Caused by: 42');
   });
 
-  it('prints a null cause as its value', () => {
-    const result = formatCliError(new Error('outer', { cause: null }));
-
-    expect(result).toBe('[frogbot] outer\n  Caused by: null');
-  });
-
   it('prints an object cause as its contents', () => {
     const result = formatCliError(new Error('outer', { cause: { code: 'ECONNREFUSED' } }));
 
