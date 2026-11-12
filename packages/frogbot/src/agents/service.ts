@@ -271,7 +271,7 @@ export async function assertAgentSelection({
 
   if (selection.model !== undefined && !agentModels(agent).includes(selection.model)) {
     throw new AgentServiceError(
-      `Model '${model}' is not allowed for agent '${agent.slug}'. ${await allowedModels({ agent, req })}`,
+      `Model '${model}' is not allowed for agent '${agent.slug}'.${await allowedModels({ agent, req })}`,
       403,
       { code: 'model-not-allowed' },
     );
@@ -288,7 +288,7 @@ export async function assertAgentSelection({
     !(await canUseAIModel({ req, method: 'generateText', model }))
   ) {
     throw new AgentServiceError(
-      `Model '${model}' is not allowed for this user. ${await allowedModels({ agent, req })}`,
+      `Model '${model}' is not allowed for this user.${await allowedModels({ agent, req })}`,
       403,
       { code: 'model-not-allowed' },
     );
@@ -321,7 +321,16 @@ async function allowedModels({
   agent: AgentInstance;
   req: FrogBotRequest;
 }): Promise<string> {
-  return allowedList(await userAgentModels({ agent, req }));
+  try {
+    return ` ${allowedList(await userAgentModels({ agent, req }))}`;
+  } catch (error) {
+    req.frogbot.logger.error(
+      { err: error, agent: agent.slug },
+      '[frogbot] Model access threw while listing allowed models',
+    );
+
+    return '';
+  }
 }
 
 function allowedList(values: readonly string[]): string {

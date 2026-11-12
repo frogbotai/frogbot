@@ -82,6 +82,7 @@ type Issue = {
   code?: string;
   path: PropertyKey[];
   message: string;
+  expected?: string;
   values?: unknown[];
   prefix?: string;
   errors?: Issue[][];
@@ -141,6 +142,8 @@ function describeIssue(issue: Issue, input: unknown, base: string): string {
   return `\`${path}\`: ${reason(issue, value)}`;
 }
 
+const SELF = Symbol('self');
+
 function describeUnion(branches: Issue[][], input: unknown, path: string): string {
   let alive = branches;
 
@@ -152,6 +155,16 @@ function describeUnion(branches: Issue[][], input: unknown, path: string): strin
     const key = discriminator(alive);
     const remaining = alive.filter((branch) => !mismatches(branch).includes(key));
 
+    if (remaining.length === 0 && key === SELF) {
+      const expected = new Set(
+        alive.flatMap((branch) =>
+          branch.filter((issue) => issue.path.length === 0).flatMap(selfValues),
+        ),
+      );
+
+      return `\`${path}\`: ${expectation([...expected])}, received ${show(input)}`;
+    }
+
     if (remaining.length === 0) {
       const expected = new Set(
         alive.flatMap((branch) =>
@@ -159,7 +172,7 @@ function describeUnion(branches: Issue[][], input: unknown, path: string): strin
         ),
       );
 
-      return `\`${formatIssuePath([key], path)}\`: expected one of ${[...expected].join(' | ')}, received ${show(valueAt(input, [key]))}`;
+      return `\`${formatIssuePath([key], path)}\`: ${expectation([...expected])}, received ${show(valueAt(input, [key]))}`;
     }
 
     alive = remaining;
@@ -175,9 +188,15 @@ function discriminator(branches: Issue[][]): PropertyKey {
 }
 
 function mismatches(branch: Issue[]): PropertyKey[] {
-  return branch
-    .filter((issue) => issue.path.length === 1 && expectedValues(issue).length > 0)
-    .map((issue) => issue.path[0]);
+  return branch.flatMap((issue) => {
+    if (issue.path.length === 0) return selfValues(issue).length > 0 ? [SELF] : [];
+
+    return issue.path.length === 1 && expectedValues(issue).length > 0 ? [issue.path[0]] : [];
+  });
+}
+
+function selfValues(issue: Issue): string[] {
+  return issue.code === 'invalid_type' && issue.expected ? [issue.expected] : expectedValues(issue);
 }
 
 function expectedValues(issue: Issue): string[] {
@@ -191,11 +210,15 @@ function expectedValues(issue: Issue): string[] {
 function reason(issue: Issue, value: unknown): string {
   const expected = expectedValues(issue);
 
-  if (expected.length > 0) {
-    return `expected ${expected.length > 1 ? `one of ${expected.join(' | ')}` : expected[0]}, received ${show(value)}`;
-  }
+  if (expected.length > 0) return `${expectation(expected)}, received ${show(value)}`;
 
   return issue.message.replace(/^Invalid (input|option|string): /, '');
+}
+
+function expectation(expected: readonly string[]): string {
+  return expected.length > 1
+    ? `expected one of ${expected.join(' | ')}`
+    : `expected ${expected[0]}`;
 }
 
 function valueAt(input: unknown, path: readonly PropertyKey[]): unknown {
