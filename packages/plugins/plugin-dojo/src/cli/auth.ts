@@ -35,7 +35,6 @@ async function readAuth(env: DeployEnv): Promise<AuthFile> {
   }
 }
 
-const lockTries = 100;
 const lockWaitMs = 20;
 const staleLockMs = 10_000;
 
@@ -61,16 +60,22 @@ async function takeLock(lock: string): Promise<boolean> {
 async function updateAuth(env: DeployEnv, change: (auth: AuthFile) => void): Promise<void> {
   const path = authPath(env);
   const lock = `${path}.lock`;
-  let held = false;
+  const giveUpAt = Date.now() + 2 * staleLockMs;
 
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
 
-  for (let tries = 0; tries < lockTries && !held; tries += 1) held = await takeLock(lock);
+  while (!(await takeLock(lock))) {
+    if (Date.now() > giveUpAt) {
+      throw new ShareError(
+        `${lock} stayed locked. Remove it if no other frogbot dojo command is running, then run the command again.`,
+      );
+    }
+  }
 
   try {
     await writeAuth(env, change);
   } finally {
-    if (held) await rm(lock, { force: true });
+    await rm(lock, { force: true });
   }
 }
 
@@ -263,8 +268,13 @@ async function askToken(dojoUrl: string, code: PendingCode): Promise<Answer> {
   if (body.error === 'authorization_pending') return { status: 'pending' };
   if (body.error === 'slow_down') return { status: 'slow_down' };
   if (body.error === 'expired_token') return { status: 'expired' };
-  if (body.error === 'access_denied') return { status: 'refused', message: 'Sign-in was denied.' };
-  if (body.error) return { status: 'refused', message: `Sign-in failed: ${body.error}.` };
+  if (body.error && reply.status >= 400 && reply.status < 500) {
+    return {
+      status: 'refused',
+      message:
+        body.error === 'access_denied' ? 'Sign-in was denied.' : `Sign-in failed: ${body.error}.`,
+    };
+  }
 
   throw new ShareError(
     `Couldn't reach Dojo to finish the sign-in (${reply.status}). Run the command again.`,

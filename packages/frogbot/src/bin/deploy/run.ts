@@ -123,7 +123,7 @@ export async function runDeploy(
           : fields.result;
 
       io.stdout.write(
-        `${JSON.stringify({ target: name, ok: code === 0, dryRun, issues: fields.issues ?? [], result: result ?? null, ...(fields.error ? { error: fields.error } : {}), ...fields.details })}\n`,
+        `${JSON.stringify({ ...fields.details, target: name, ok: code === 0, dryRun, issues: fields.issues ?? [], result: result ?? null, ...(fields.error ? { error: fields.error } : {}) })}\n`,
       );
     }
 
