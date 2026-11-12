@@ -185,7 +185,10 @@ export function withFrogBot(
     ? writeSlotTsconfig(distDir, nextConfig.typescript?.tsconfigPath)
     : undefined;
 
-  const buildId = process.env.NODE_ENV === 'development' ? undefined : randomUUID();
+  const buildId =
+    process.env.NODE_ENV === 'development'
+      ? undefined
+      : (process.env[BUILD_ID_ENV] ||= randomUUID());
 
   const frogbotConfig: NextConfig = {
     ...nextConfig,

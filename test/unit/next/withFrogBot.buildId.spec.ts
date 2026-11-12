@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { withFrogBot } = await import('../../../packages/next/src/withFrogBot.js');
 
@@ -10,6 +10,10 @@ async function buildHeader(config: ReturnType<typeof withFrogBot>): Promise<stri
   return routes.flatMap((route) => route.headers).find((header) => header.key === 'x-frogbot-build')
     ?.value;
 }
+
+beforeEach(() => {
+  vi.stubEnv('FROGBOT_BUILD_ID', undefined);
+});
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -44,7 +48,24 @@ describe('withFrogBot build ID', () => {
   it('gives each build its own ID', () => {
     vi.stubEnv('NODE_ENV', 'production');
 
-    expect(withFrogBot({}).env?.FROGBOT_BUILD_ID).not.toBe(withFrogBot({}).env?.FROGBOT_BUILD_ID);
+    const first = withFrogBot({}).env?.FROGBOT_BUILD_ID;
+
+    vi.stubEnv('FROGBOT_BUILD_ID', undefined);
+
+    expect(withFrogBot({}).env?.FROGBOT_BUILD_ID).not.toBe(first);
+  });
+
+  it('reuses the ID across config loads in one build, as webpack build workers load it again', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+
+    const parent = withFrogBot({});
+
+    expect(process.env.FROGBOT_BUILD_ID).toBe(parent.env?.FROGBOT_BUILD_ID);
+
+    const worker = withFrogBot({});
+
+    expect(worker.env?.FROGBOT_BUILD_ID).toBe(parent.env?.FROGBOT_BUILD_ID);
+    expect(await buildHeader(worker)).toBe(parent.env?.FROGBOT_BUILD_ID);
   });
 
   it('keeps the app’s headers, env and generateBuildId', async () => {
