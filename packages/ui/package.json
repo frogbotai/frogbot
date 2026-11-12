@@ -64,6 +64,11 @@
       "import": "./src/exports/forms.ts",
       "default": "./src/exports/forms.ts"
     },
+    "./forms/rules": {
+      "types": "./src/exports/forms-rules.ts",
+      "import": "./src/exports/forms-rules.ts",
+      "default": "./src/exports/forms-rules.ts"
+    },
     "./lexical": {
       "types": "./src/exports/lexical.ts",
       "import": "./src/exports/lexical.ts",
@@ -218,6 +223,11 @@
         "types": "./dist/exports/forms.d.ts",
         "import": "./dist/exports/forms.js",
         "default": "./dist/exports/forms.js"
+      },
+      "./forms/rules": {
+        "types": "./dist/exports/forms-rules.d.ts",
+        "import": "./dist/exports/forms-rules.js",
+        "default": "./dist/exports/forms-rules.js"
       },
       "./lexical": {
         "types": "./dist/exports/lexical.d.ts",

@@ -18,6 +18,7 @@ type Lead = {
   id: number | string;
   email: string;
   firstName?: string | null;
+  lastName?: string | null;
   interest?: string | null;
   source?: string | null;
   priority: string;
@@ -248,6 +249,57 @@ describe(`forms plugin [${adapterLabel}]`, () => {
     expect(lead.internalNote ?? null).toBeNull();
     expect(lead.meta ?? null).toBeNull();
     expect(await booted.frogbot.kv.get(`${hookMarkerPrefix}${lead.id}`)).toBe('contact');
+  });
+
+  it('drops the answer to a hidden question, whatever the client sends', async () => {
+    await createForm({
+      steps: [
+        {
+          questions: [
+            { field: 'email' },
+            { field: 'interest' },
+            {
+              field: 'lastName',
+              rules: [{ question: 'interest', operator: 'equals', value: 'sales' }],
+            },
+          ],
+        },
+      ],
+    });
+
+    const hidden = await submit('contact', {
+      data: { email: 'ada@example.com', interest: 'support', lastName: 'Lovelace' },
+    });
+
+    const shown = await submit('contact', {
+      data: { email: 'grace@example.com', interest: 'sales', lastName: 'Hopper' },
+    });
+
+    expect([hidden.status, shown.status]).toEqual([200, 200]);
+
+    const byEmail = Object.fromEntries((await leads()).map((lead) => [lead.email, lead]));
+
+    expect(byEmail['ada@example.com']?.lastName ?? null).toBeNull();
+    expect(byEmail['grace@example.com']?.lastName).toBe('Hopper');
+  });
+
+  it('refuses rules on a required field and on a later question', async () => {
+    const errors = await saveErrors({
+      steps: [
+        {
+          questions: [
+            { field: 'interest', rules: [{ question: 'firstName', operator: 'hasValue' }] },
+            { field: 'firstName' },
+            { field: 'email', rules: [{ question: 'interest', operator: 'hasValue' }] },
+          ],
+        },
+      ],
+    });
+
+    expect(errors?.map(({ path }) => path)).toEqual([
+      'steps.0.questions.0.rules.0.question',
+      'steps.0.questions.2.rules',
+    ]);
   });
 
   it('returns field errors from the collection', async () => {
