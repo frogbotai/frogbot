@@ -7,7 +7,7 @@ import {
 } from 'frogbot';
 
 import { createPolicyAccess } from './access.js';
-import { createPolicyFields, mergePolicyFields } from './fields.js';
+import { assertSpendColumn, createPolicyFields, mergePolicyFields } from './fields.js';
 import { createPolicyHooks } from './hooks.js';
 import { createKeyLimitFields, keyLimitsCreateFields, withKeyLimits } from './keys.js';
 import { createResetTask } from './reset.js';
@@ -103,11 +103,19 @@ const aiPolicy = definePlugin<AIPolicyPluginOptions>({
       collections: [
         ...config.collections.map((collection) => {
           if (collection.slug === authCollection) {
-            return { ...collection, fields: mergePolicyFields(collection.fields, fields) };
+            const merged = mergePolicyFields(collection.fields, fields);
+
+            assertSpendColumn(merged, collection.slug);
+
+            return { ...collection, fields: merged };
           }
 
           if (collection.slug === keysCollection) {
-            return withKeyLimits(collection, keyFields, { models, titleField });
+            const limited = withKeyLimits(collection, keyFields, { models, titleField });
+
+            assertSpendColumn(limited.fields, collection.slug);
+
+            return limited;
           }
 
           return collection;

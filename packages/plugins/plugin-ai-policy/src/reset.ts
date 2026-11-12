@@ -1,4 +1,5 @@
 import type { TaskConfig } from 'frogbot';
+import { toPayloadRequest } from 'frogbot/internal';
 
 export const RESET_TASK_SLUG = 'plugin-ai-policy-reset-spend';
 
@@ -17,12 +18,11 @@ export function createResetTask({
       for (const collection of keysCollection
         ? [authCollection, keysCollection]
         : [authCollection]) {
-        await req.frogbot.update({
+        await req.frogbot.db.updateMany({
           collection,
           where: { id: { exists: true } },
           data: { spendThisPeriodUSD: 0 },
-          overrideAccess: true,
-          req,
+          req: toPayloadRequest(req),
         });
       }
 

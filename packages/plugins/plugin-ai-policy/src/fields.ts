@@ -60,3 +60,17 @@ export function mergePolicyFields(fields: Field[], policy: Field[]): Field[] {
 
   return [...fields.filter((field) => !('name' in field) || !names.has(field.name)), ...merged];
 }
+
+/** Throws when an override moves spend off the main table, where one atomic `$inc` can't reach it. */
+export function assertSpendColumn(fields: Field[], collection: string): void {
+  const spend = fields.find((field) => 'name' in field && field.name === 'spendThisPeriodUSD');
+
+  if (
+    spend &&
+    (('localized' in spend && spend.localized) || ('hasMany' in spend && spend.hasMany))
+  ) {
+    throw new Error(
+      `[plugin-ai-policy] spendThisPeriodUSD on '${collection}' can't be localized or hasMany: spend is one column.`,
+    );
+  }
+}

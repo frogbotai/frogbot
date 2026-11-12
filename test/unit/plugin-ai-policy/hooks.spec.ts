@@ -13,26 +13,23 @@ const providers = {
 const million = { inputTokens: 1_000_000, outputTokens: 1_000_000, totalTokens: 2_000_000 };
 
 function request({
-  spend = () => 0,
-  update = vi.fn(),
+  updateOne = vi.fn(),
   user = { id: 'user-1', collection: 'users' },
 }: {
-  spend?: () => number;
-  update?: ReturnType<typeof vi.fn>;
+  updateOne?: ReturnType<typeof vi.fn>;
   user?: Record<string, unknown> | null;
 } = {}) {
   const error = vi.fn();
 
   return {
     error,
-    update,
+    updateOne,
     req: {
       user,
       frogbot: {
         config: { ai: { providers } },
         logger: { error },
-        findByID: vi.fn(() => Promise.resolve({ id: 'user-1', spendThisPeriodUSD: spend() })),
-        update,
+        db: { updateOne },
       },
     } as never,
   };
@@ -43,62 +40,53 @@ function settle(hooks: ReturnType<typeof createPolicyHooks>, args: Record<string
 }
 
 describe('plugin-ai-policy hooks', () => {
-  it('adds the configured provider cost to the user spend', async () => {
+  it('adds the configured provider cost to the user spend in one atomic write, outside the caller transaction', async () => {
     const hooks = createPolicyHooks({ authCollection: 'users' });
-    const { req, update } = request({ spend: () => 1 });
+    const { req, updateOne } = request();
 
     await settle(hooks, { req });
 
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({
+    expect(updateOne.mock.calls.map(([args]) => args)).toEqual([
+      {
+        collection: 'users',
+        where: { and: [{ id: { equals: 'user-1' } }, { spendThisPeriodUSD: { equals: null } }] },
+        data: { spendThisPeriodUSD: 0 },
+        options: { atomic: true },
+        returning: false,
+      },
+      {
         collection: 'users',
         id: 'user-1',
-        data: { spendThisPeriodUSD: 7 },
-        overrideAccess: true,
-      }),
-    );
+        data: { spendThisPeriodUSD: { $inc: 6 } },
+        returning: false,
+      },
+    ]);
   });
 
   it('skips failed, unpriced and user-less operations', async () => {
     const hooks = createPolicyHooks({ authCollection: 'users' });
-    const { req, update } = request();
+    const { req, updateOne } = request();
 
     await settle(hooks, { req, error: new Error('failed') });
     await settle(hooks, { req, usage: undefined });
     await settle(hooks, { req, model: 'custom/unknown' });
     await settle(hooks, { req: request({ user: null }).req });
 
-    expect(update).not.toHaveBeenCalled();
+    expect(updateOne).not.toHaveBeenCalled();
   });
 
   it('skips users of another auth collection with the same id', async () => {
     const hooks = createPolicyHooks({ authCollection: 'users' });
-    const { req, update } = request({ user: { id: 'user-1', collection: 'customers' } });
+    const { req, updateOne } = request({ user: { id: 'user-1', collection: 'customers' } });
 
     await settle(hooks, { req });
 
-    expect(update).not.toHaveBeenCalled();
-  });
-
-  it('serializes concurrent settlement for one user', async () => {
-    let spend = 0;
-    const update = vi.fn(async ({ data }: { data: { spendThisPeriodUSD: number } }) => {
-      await Promise.resolve();
-      spend = data.spendThisPeriodUSD;
-    });
-
-    const hooks = createPolicyHooks({ authCollection: 'users' });
-    const { req } = request({ spend: () => spend, update });
-    const usage = { inputTokens: 1_000_000, outputTokens: 0, totalTokens: 1_000_000 };
-
-    await Promise.all([settle(hooks, { req, usage }), settle(hooks, { req, usage })]);
-
-    expect(spend).toBe(4);
+    expect(updateOne).not.toHaveBeenCalled();
   });
 
   it('logs a failed spend write without failing the operation', async () => {
     const hooks = createPolicyHooks({ authCollection: 'users' });
-    const { req, error } = request({ update: vi.fn().mockRejectedValue(new Error('locked')) });
+    const { req, error } = request({ updateOne: vi.fn().mockRejectedValue(new Error('locked')) });
 
     await expect(settle(hooks, { req })).resolves.toBeUndefined();
     expect(error).toHaveBeenCalledWith(

@@ -150,6 +150,21 @@ describe('aiPolicyPlugin', () => {
     });
   });
 
+  it.each([{ localized: true }, { hasMany: true }])(
+    'refuses a spend override with %o, which moves spend off the main table',
+    async (override) => {
+      const users = {
+        slug: 'users',
+        auth: true,
+        fields: [{ name: 'spendThisPeriodUSD', type: 'number', ...override } as Field],
+      };
+
+      await expect(apply(config({ collections: [users] }))).rejects.toThrow(
+        "[plugin-ai-policy] spendThisPeriodUSD on 'users' can't be localized or hasMany",
+      );
+    },
+  );
+
   it('wraps every access category, keeping the app rule and signed-in default', async () => {
     const generate = vi.fn(({ model }: { model: string }) => model !== 'openai/blocked');
     const result = await apply(
@@ -250,8 +265,8 @@ describe('aiPolicyPlugin', () => {
     );
 
     const task = result.jobs!.tasks!.find(({ slug }) => slug === 'plugin-ai-policy-reset-spend');
-    const update = vi.fn();
-    const req = { frogbot: { update } };
+    const updateMany = vi.fn();
+    const req = { frogbot: { db: { updateMany } } };
 
     expect(result.jobs!.tasks!.map(({ slug }) => slug)).toEqual([
       'other',
@@ -261,13 +276,11 @@ describe('aiPolicyPlugin', () => {
 
     await (task!.handler as (args: unknown) => Promise<unknown>)({ req });
 
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        collection: 'users',
-        where: { id: { exists: true } },
-        data: { spendThisPeriodUSD: 0 },
-        overrideAccess: true,
-      }),
-    );
+    expect(updateMany).toHaveBeenCalledWith({
+      collection: 'users',
+      where: { id: { exists: true } },
+      data: { spendThisPeriodUSD: 0 },
+      req,
+    });
   });
 });

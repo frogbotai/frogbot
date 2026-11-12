@@ -102,6 +102,14 @@ describe('aiPolicyPlugin key limits', () => {
     expect(collection(result, 'api-keys')?.fields).toEqual([]);
   });
 
+  it('refuses a key spend override that is localized', async () => {
+    await expect(
+      apply({
+        collection: { fields: [{ name: 'spendThisPeriodUSD', type: 'number', localized: true }] },
+      }),
+    ).rejects.toThrow("[plugin-ai-policy] spendThisPeriodUSD on 'api-keys' can't be localized");
+  });
+
   it('describes the fields, shows spend and cap after prefix and registers the create fields', async () => {
     const result = await apply();
     const keys = collection(result, 'api-keys');

@@ -14,26 +14,6 @@ import {
   readPolicy,
 } from './policy.js';
 
-type SpendDocument = { spendThisPeriodUSD?: number };
-
-class SerialQueue {
-  private readonly updates = new Map<string, Promise<void>>();
-
-  run(subject: string, update: () => Promise<void>): Promise<void> {
-    const next = (this.updates.get(subject) ?? Promise.resolve()).then(update, update);
-    let owner: Promise<void>;
-
-    const release = () => {
-      if (this.updates.get(subject) === owner) this.updates.delete(subject);
-    };
-
-    owner = next.then(release, release);
-    this.updates.set(subject, owner);
-
-    return next;
-  }
-}
-
 const keyID = (value: unknown): number | string | undefined => {
   const id = value && typeof value === 'object' ? (value as { id?: unknown }).id : value;
 
@@ -73,8 +53,6 @@ export function createPolicyHooks({ authCollection, keysCollection }: PolicyHook
   beforeOperation: AIBeforeOperationHook;
   afterOperation: AIAfterOperationHook;
 } {
-  const queue = new SerialQueue();
-
   return {
     beforeOperation: async ({ req }) => {
       const user = policyUser(req?.user, authCollection);
@@ -104,22 +82,21 @@ export function createPolicyHooks({ authCollection, keysCollection }: PolicyHook
 
       const addSpend = async (collection: string, id: number | string) => {
         try {
-          await queue.run(`${collection}:${id}`, async () => {
-            const current = (await req.frogbot.findByID({
-              collection,
-              id,
-              depth: 0,
-              overrideAccess: true,
-              req,
-            })) as SpendDocument;
+          await req.frogbot.db.updateOne({
+            collection,
+            where: {
+              and: [{ id: { equals: id } }, { spendThisPeriodUSD: { equals: null } }],
+            },
+            data: { spendThisPeriodUSD: 0 },
+            options: { atomic: true },
+            returning: false,
+          });
 
-            await req.frogbot.update({
-              collection,
-              id,
-              data: { spendThisPeriodUSD: (current.spendThisPeriodUSD ?? 0) + cost },
-              overrideAccess: true,
-              req,
-            });
+          await req.frogbot.db.updateOne({
+            collection,
+            id,
+            data: { spendThisPeriodUSD: { $inc: cost } },
+            returning: false,
           });
         } catch (err) {
           req.frogbot.logger.error(
