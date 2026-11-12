@@ -4,7 +4,10 @@ export type AdminTheme = 'dark' | 'light';
 
 export const optionPillTokens: Record<string, { background: string; text: string }> = {
   gray: { background: '--color-bg-secondary', text: '--color-text' },
-  blue: { background: '--color-bg-selected', text: '--color-text' },
+  blue: {
+    background: 'color-mix(in srgb, var(--special-multiplayer-blue) 18%, var(--color-bg))',
+    text: '--color-text',
+  },
   green: { background: '--color-bg-success-tertiary', text: '--color-text' },
   yellow: { background: '--color-bg-warning-tertiary', text: '--color-text' },
   red: { background: '--color-bg-danger-tertiary', text: '--color-text' },
@@ -29,9 +32,9 @@ export async function readAdminColor(page: Page, token: string) {
   return page.evaluate((name) => {
     const sample = document.createElement('div');
 
-    sample.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue(
-      name,
-    );
+    sample.style.backgroundColor = name.startsWith('--')
+      ? getComputedStyle(document.documentElement).getPropertyValue(name)
+      : name;
 
     document.body.append(sample);
 
