@@ -358,6 +358,7 @@ const testProjects = [
       'calendarTimeZone.browser.spec.ts',
       'timeline.browser.spec.ts',
       'board.browser.spec.ts',
+      'boardFirst.browser.spec.ts',
       'cellEditKinds.browser.spec.ts',
       'galleryCard.browser.spec.ts',
     ],

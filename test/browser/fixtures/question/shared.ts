@@ -14,6 +14,8 @@ export const storiesSlug = 'stories';
 export const approvalsSlug = 'approvals';
 export const photosSlug = 'photos';
 export const archivesSlug = 'archives';
+export const boardFirstSlug = 'board-first';
+export const boardFirstLinksSlug = 'board-first-links';
 export const storyStatusOptions = [
   { label: 'Todo', value: 'todo' },
   { label: 'Doing', value: 'doing' },

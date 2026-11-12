@@ -77,6 +77,8 @@ export interface Config {
     approvals: Approval;
     photos: Photo;
     archives: Archive;
+    'board-first': BoardFirst;
+    'board-first-links': BoardFirstLink;
     'cell-kinds': CellKind;
     'cell-drafts': CellDraft;
     'cell-access': CellAccess;
@@ -102,6 +104,8 @@ export interface Config {
     approvals: ApprovalsSelect;
     photos: PhotosSelect;
     archives: ArchivesSelect;
+    'board-first': BoardFirstSelect;
+    'board-first-links': BoardFirstLinksSelect;
     'cell-kinds': CellKindsSelect;
     'cell-drafts': CellDraftsSelect;
     'cell-access': CellAccessSelect;
@@ -1022,6 +1026,45 @@ export interface Archive {
   _order?: string | null;
   title?: string | null;
   status?: ('todo' | 'doing' | 'done') | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "board-first".
+ */
+export interface BoardFirst {
+  id: number;
+  _order?: string | null;
+  title: string;
+  status?: ('todo' | 'doing' | 'done') | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "board-first-links".
+ */
+export interface BoardFirstLink {
+  id: number;
+  title?: string | null;
+  card?: (number | null) | BoardFirst;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -2048,6 +2091,31 @@ export interface ArchivesSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "board-first_select".
+ */
+export interface BoardFirstSelect {
+  _order?: boolean;
+  title?: boolean;
+  status?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "board-first-links_select".
+ */
+export interface BoardFirstLinksSelect {
+  title?: boolean;
+  card?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "cell-kinds_select".
  */
 export interface CellKindsSelect {
@@ -2312,6 +2380,8 @@ export interface CollectionQueryWidget {
       | 'approvals'
       | 'photos'
       | 'archives'
+      | 'board-first'
+      | 'board-first-links'
       | 'cell-kinds'
       | 'cell-drafts'
       | 'cell-access'
@@ -2353,6 +2423,8 @@ export interface ActivityWidget {
           | 'approvals'
           | 'photos'
           | 'archives'
+          | 'board-first'
+          | 'board-first-links'
           | 'cell-kinds'
           | 'cell-drafts'
           | 'cell-access'
