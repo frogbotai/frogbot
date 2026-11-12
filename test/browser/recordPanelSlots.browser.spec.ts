@@ -2,8 +2,13 @@ import { expect, type Page, test } from '@playwright/test';
 
 const created: Array<{ collection: string; id: number }> = [];
 
-async function create(page: Page, collection: string, title: string) {
-  const response = await page.request.post(`/api/${collection}`, { data: { title } });
+async function create(
+  page: Page,
+  collection: string,
+  title: string,
+  data: Record<string, unknown> = {},
+) {
+  const response = await page.request.post(`/api/${collection}`, { data: { ...data, title } });
   expect(response.ok()).toBe(true);
   const { doc } = (await response.json()) as { doc: { id: number } };
   created.push({ collection, id: doc.id });
@@ -188,4 +193,96 @@ test('reopening or switching back to a record opens Details, not the last tab', 
   await page.locator('tbody tr', { hasText: 'Reopen entry' }).getByRole('link').first().click();
   await expect(title).toHaveValue('Reopen entry');
   await expect(tabs.first(), 'switch away and back').toHaveAttribute('aria-selected', 'true');
+});
+
+const recordTabs = (page: Page) =>
+  page.getByRole('tablist', { name: 'Record tabs' }).getByRole('tab');
+
+test('a tab hides the auth block of an auth collection', async ({ page }) => {
+  const id = await create(page, 'members', 'Tabbed member', {
+    email: `member-${Date.now()}@example.com`,
+    password: 'password-123',
+  });
+
+  await page.goto(`/collections/members?record=${id}`);
+  const email = page.locator('.fb-record-panel #field-email');
+  await expect(email).toBeVisible();
+  await recordTabs(page).nth(1).click();
+  await expect(page.getByTestId('panel-tab-history')).toBeVisible();
+  await expect(email).toBeHidden();
+});
+
+test('a tab hides the file manager of an upload collection', async ({ page }) => {
+  const response = await page.request.post('/api/files', {
+    multipart: {
+      _payload: JSON.stringify({ title: 'Tabbed file' }),
+      file: { buffer: Buffer.from('tabbed'), mimeType: 'text/plain', name: 'tabbed.txt' },
+    },
+  });
+
+  expect(response.ok()).toBe(true);
+  const { doc } = (await response.json()) as { doc: { id: number } };
+  created.push({ collection: 'files', id: doc.id });
+
+  await page.goto(`/collections/files?record=${doc.id}`);
+  const upload = page.locator(
+    '.fb-record-panel .collection-edit__main-wrapper > :not(.collection-edit__main)',
+  );
+
+  await expect(upload.first()).toBeVisible();
+  await recordTabs(page).nth(1).click();
+  await expect(page.getByTestId('panel-tab-history')).toBeVisible();
+  await expect(upload.first()).toBeHidden();
+});
+
+test('a failed save with a tab open returns to Details and shows the invalid field', async ({
+  page,
+}) => {
+  const id = await create(page, 'tasks', 'Invalid task', { body: 'Body' });
+
+  await page.goto(`/collections/tasks?record=${id}`);
+  const body = page.locator('.fb-record-panel #field-body');
+  await body.fill('');
+  await recordTabs(page).nth(1).click();
+  await expect(body).toBeHidden();
+
+  await page.locator('.fb-record-panel-header__save').click();
+  await expect(page.locator('.payload-toast-container')).toContainText(/invalid/i);
+  await expect(recordTabs(page).first()).toHaveAttribute('aria-selected', 'true');
+  await expect(body).toBeVisible();
+});
+
+test('selecting a tab that does not exist leaves Details open', async ({ page }) => {
+  const id = await create(page, 'tasks', 'Missing tab task', { body: 'Body' });
+
+  await page.goto(`/collections/tasks?record=${id}`);
+  const body = page.locator('.fb-record-panel #field-body');
+  await expect(body).toBeVisible();
+  await page.getByRole('button', { name: 'Select missing tab' }).click();
+  await expect(body).toBeVisible();
+  await expect(recordTabs(page).first()).toHaveAttribute('aria-selected', 'true');
+  await expect(panel(page)).not.toHaveAttribute('data-tab');
+
+  await page.locator('.fb-record-panel-header__menu .popup__trigger-wrap').click();
+  await page.locator('#action-panel-create').click();
+  await expect(recordTabs(page)).toHaveCount(0);
+  await expect(body).toHaveValue('');
+  await page.getByRole('button', { name: 'Select missing tab' }).click();
+  await expect(body).toBeVisible();
+});
+
+test('every tab, Details included, controls a tab panel', async ({ page }) => {
+  const id = await create(page, 'journal', 'Labelled entry');
+
+  await page.goto(`/collections/journal?record=${id}`);
+  const tabs = recordTabs(page);
+  await expect(tabs).toHaveCount(3);
+
+  for (const index of [0, 1, 2]) {
+    const tab = tabs.nth(index);
+    await expect(tab, `tab ${index}`).toHaveAttribute('aria-controls', /.+/);
+    const tabPanel = page.locator(`[id="${(await tab.getAttribute('aria-controls')) ?? ''}"]`);
+    await expect(tabPanel).toHaveAttribute('role', 'tabpanel');
+    await expect(tabPanel).toHaveAttribute('aria-labelledby', (await tab.getAttribute('id')) ?? '');
+  }
 });

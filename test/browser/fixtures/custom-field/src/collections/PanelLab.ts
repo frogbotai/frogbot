@@ -52,3 +52,36 @@ export const Cards: CollectionConfig = {
   },
   fields: [{ name: 'title', type: 'text', required: true }],
 };
+
+const tabs = [{ Component: '/components/PanelSlots#HistoryTab', label: 'History' }];
+
+/** Saved from the header, with a required field, a tab, and an action that opens a missing tab. */
+export const Tasks: CollectionConfig = {
+  slug: 'tasks',
+  admin: {
+    ...admin,
+    components: { panel: { actions: ['/components/PanelSlots#SelectMissingTab'], tabs } },
+    panel: { properties: ['status'] },
+  },
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    { name: 'body', type: 'text', required: true },
+    { name: 'status', type: 'text' },
+  ],
+};
+
+/** An auth collection with a tab: Payload renders its email and password block itself. */
+export const Members: CollectionConfig = {
+  slug: 'members',
+  auth: true,
+  admin: { ...admin, components: { panel: { tabs } } },
+  fields: [{ name: 'title', type: 'text' }],
+};
+
+/** An upload collection with a tab: Payload renders its file manager beside the fields. */
+export const Files: CollectionConfig = {
+  slug: 'files',
+  upload: { staticDir: 'files' },
+  admin: { ...admin, components: { panel: { tabs } } },
+  fields: [{ name: 'title', type: 'text' }],
+};

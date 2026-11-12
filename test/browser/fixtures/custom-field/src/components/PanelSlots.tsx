@@ -28,6 +28,16 @@ export function HistoryTab({ collectionSlug, id }: PanelComponentProps) {
   );
 }
 
+export function SelectMissingTab() {
+  const { selectTab } = useRecordPanel();
+
+  return (
+    <button onClick={() => selectTab(5)} type="button">
+      Select missing tab
+    </button>
+  );
+}
+
 export function PanelHeader({ close, id }: PanelComponentProps) {
   return (
     <div data-testid="panel-header">
