@@ -312,6 +312,51 @@
     margin-top: var(--spacer-5);
   }
 
+  .fb-record-panel-tabs {
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    gap: var(--spacer-1);
+    margin-bottom: var(--spacer-4);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .fb-record-panel-tabs__tab {
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    flex: none;
+    font: inherit;
+    font-weight: 500;
+    margin-bottom: -1px;
+    padding: var(--spacer-2) var(--spacer-2-5);
+    white-space: nowrap;
+  }
+
+  .fb-record-panel-tabs__tab:hover {
+    color: var(--color-text);
+  }
+
+  .fb-record-panel-tabs__tab[aria-selected="true"] {
+    border-bottom-color: var(--color-border-selected-strong);
+    color: var(--color-text);
+  }
+
+  .fb-record-panel-tabs__tab:focus-visible {
+    outline: var(--accessibility-outline);
+    outline-offset: calc(var(--accessibility-outline-offset) * -1);
+  }
+
+  /* A collection tab is open: Details stays mounted, so unsaved edits survive, but hidden. */
+  .fb-record-panel[data-tab] .fb-record-panel__details,
+  .fb-record-panel[data-tab] .document-fields__fields,
+  .fb-record-panel[data-tab] .document-fields__sidebar-wrap,
+  .fb-record-panel[data-tab] .fb-record-panel__after-fields {
+    display: none;
+  }
+
   @media (max-width: 767px) {
     .fb-record-panel {
       border-left: 0;

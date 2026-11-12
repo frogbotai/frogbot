@@ -19,6 +19,13 @@ export type PanelComponents = {
   beforeFields?: PayloadComponent[];
   Component?: PayloadComponent;
   Header?: PayloadComponent;
+  tabs?: PanelTab[];
+};
+
+/** A tab a collection adds to the panel, beside Details. */
+export type PanelTab = {
+  Component: PayloadComponent;
+  label: ((args: { t: (key: string) => string }) => string) | string;
 };
 
 export function getPanelSettings(collectionConfig: ClientCollectionConfig): PanelSettings {

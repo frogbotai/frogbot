@@ -9,7 +9,7 @@ export const Notes: CollectionConfig = {
   fields: [{ name: 'title', type: 'text', required: true }],
 };
 
-/** Drafts autosave, with the panel's actions, beforeFields and afterFields slots. */
+/** Drafts autosave, with the panel's actions, beforeFields and afterFields slots, and two tabs. */
 export const Journal: CollectionConfig = {
   slug: 'journal',
   admin: {
@@ -19,6 +19,13 @@ export const Journal: CollectionConfig = {
         actions: ['/components/PanelSlots#PanelAction'],
         afterFields: ['/components/PanelSlots#AfterFields'],
         beforeFields: ['/components/PanelServerSlots#BeforeFields'],
+        tabs: [
+          { Component: '/components/PanelSlots#HistoryTab', label: 'History' },
+          {
+            Component: '/components/PanelServerSlots#LinksTab',
+            label: ({ t }) => `${t('general:document')} links`,
+          },
+        ],
       },
     },
   },

@@ -116,3 +116,46 @@ test('replaces the header, or the whole panel', async ({ page }) => {
   await page.getByRole('button', { name: 'Whole expand' }).click();
   await expect(page).toHaveURL(new RegExp(`/collections/cards/${card}$`));
 });
+
+test('a collection tab opens beside Details and keeps unsaved edits', async ({ page }) => {
+  const first = await create(page, 'journal', 'Tabbed entry');
+  const second = await create(page, 'journal', 'Second entry');
+
+  await page.goto(`/collections/journal?record=${first}`);
+  const tabs = page.getByRole('tablist', { name: 'Record tabs' }).getByRole('tab');
+  await expect(tabs).toHaveText(['Details', 'History', 'Document links']);
+  await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('panel-tab-history')).toBeHidden();
+
+  const mood = page.locator('.fb-record-panel-properties input');
+  await mood.fill('Unsaved mood');
+  await mood.evaluate((input) => input.setAttribute('data-mounted', 'kept'));
+
+  await tabs.nth(1).click();
+  await expect(page.getByTestId('panel-tab-history')).toHaveText(`History of journal ${first}`);
+  await expect(page.locator('.fb-record-panel-properties')).toBeHidden();
+  await expect(page.getByTestId('panel-before')).toBeHidden();
+  await expect(page.getByTestId('panel-after')).toBeHidden();
+  await expect(page.locator('.fb-record-panel-title__input')).toBeVisible();
+  expect(recordParam(page)).toBe(String(first));
+
+  await tabs.nth(1).press('ArrowRight');
+  await expect(tabs.nth(2)).toBeFocused();
+  await expect(page.getByTestId('panel-tab-links')).toHaveText(
+    'Links of Tabbed entry with payload',
+  );
+
+  await tabs.nth(2).press('Home');
+  await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+  await expect(mood).toHaveValue('Unsaved mood');
+  await expect(mood).toHaveAttribute('data-mounted', 'kept');
+
+  await tabs.nth(1).click();
+  await page.goto(`/collections/journal?record=${second}`);
+  await expect(page.locator('.fb-record-panel-title__input')).toHaveValue('Second entry');
+  await tabs.nth(1).click();
+  await page.locator('tbody tr', { hasText: 'Tabbed entry' }).getByRole('link').first().click();
+  await expect(page.locator('.fb-record-panel-title__input')).toHaveValue('Tabbed entry');
+  await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('.fb-record-panel-properties')).toBeVisible();
+});

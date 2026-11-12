@@ -12,6 +12,14 @@ export function BeforeFields({ doc, payload }: ServerProps) {
   );
 }
 
+export function LinksTab({ doc, payload }: ServerProps) {
+  return (
+    <p data-testid="panel-tab-links">
+      Links of {doc?.title} {payload ? 'with payload' : 'without payload'}
+    </p>
+  );
+}
+
 export function WholePanel({ doc, id }: ServerProps) {
   return (
     <section data-testid="panel-whole">

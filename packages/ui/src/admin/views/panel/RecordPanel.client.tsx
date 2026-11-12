@@ -259,6 +259,7 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
     <aside
       aria-label="Record"
       className={baseClass}
+      data-tab={panel.tab}
       ref={asideRef}
       style={{ '--fb-record-panel-width': `${width}px` } as React.CSSProperties}
     >

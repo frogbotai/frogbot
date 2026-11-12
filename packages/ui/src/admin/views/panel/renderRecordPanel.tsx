@@ -8,6 +8,7 @@ import { getPanelComponents } from './config.js';
 import { PanelBridge, PanelClientSlot } from './PanelSlots.client.js';
 import { RecordPanelHeader } from './RecordPanelHeader.client.js';
 import { RecordPanelProperties } from './RecordPanelProperties.client.js';
+import { RecordPanelTabList, RecordPanelTabPanes } from './RecordPanelTabs.client.js';
 import { RecordPanelTitle } from './RecordPanelTitle.client.js';
 
 /** The FrogBot server function that renders the record side panel. */
@@ -26,8 +27,9 @@ type Slot = PayloadComponent | PayloadComponent[] | undefined;
 
 /**
  * Renders the record panel: Payload's own edit view from `renderDocument`, with the panel's
- * header, title, properties and slots placed inside its form through `BeforeFields` and
- * `AfterFields`, so they read Payload's form and document state. A missing or unreadable record
+ * header, title, properties, slots and tabs placed inside its form through `BeforeFields` and
+ * `AfterFields`, so they read Payload's form and document state. Tabs show once the record
+ * exists, not on a create form. A missing or unreadable record
  * comes back as `notFound`.
  */
 export const renderRecordPanelHandler: ServerFunction<
@@ -116,6 +118,9 @@ export const renderRecordPanelHandler: ServerFunction<
 
   serverProps = { ...serverProps, doc: data };
 
+  const t = req.i18n.t as (key: string) => string;
+  const tabs = id === undefined ? [] : (components.tabs ?? []);
+
   const BeforeFields = (
     <>
       <PanelBridge />
@@ -125,14 +130,32 @@ export const renderRecordPanelHandler: ServerFunction<
         <RecordPanelHeader actions={render(components.actions, 'action')} />
       )}
       <RecordPanelTitle />
-      {render(components.beforeFields, 'before')}
-      <RecordPanelProperties />
+      {tabs.length ? (
+        <RecordPanelTabList
+          labels={tabs.map(({ label }) => (typeof label === 'function' ? label({ t }) : label))}
+        />
+      ) : null}
+      <div className="fb-record-panel__details">
+        {render(components.beforeFields, 'before')}
+        <RecordPanelProperties />
+      </div>
     </>
   );
 
-  const AfterFields = components.afterFields ? (
-    <div className="fb-record-panel__after-fields">{render(components.afterFields, 'after')}</div>
-  ) : null;
+  const AfterFields = (
+    <>
+      {components.afterFields ? (
+        <div className="fb-record-panel__after-fields">
+          {render(components.afterFields, 'after')}
+        </div>
+      ) : null}
+      {tabs.length ? (
+        <RecordPanelTabPanes
+          panes={tabs.map(({ Component }, index) => render(Component, `tab-${index}`))}
+        />
+      ) : null}
+    </>
+  );
 
   return {
     data,

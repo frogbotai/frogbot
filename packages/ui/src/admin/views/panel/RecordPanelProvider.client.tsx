@@ -74,12 +74,16 @@ export type RecordPanelContextValue = {
   /** Closes the panel without asking, as after a delete or a missing record. */
   reset: () => void;
   settings: PanelSettings;
+  /** Opens a tab by its index in `admin.components.panel.tabs`, or Details with `undefined`. */
+  selectTab: (tab: number | undefined) => void;
   /** Called by the form inside the panel with its unsaved state. */
   setForm: (form: RecordPanelForm | undefined) => void;
   state: RecordPanelState;
   subscribe: (listener: (event: RecordPanelEvent) => void) => () => void;
   /** Re-renders the open record, as after a duplicate. */
   switchTo: (id: number | string) => void;
+  /** The open tab's index in `admin.components.panel.tabs`; `undefined` is Details. */
+  tab?: number;
 };
 
 const RecordPanelContext = createContext<RecordPanelContextValue | undefined>(undefined);
@@ -133,6 +137,7 @@ export function RecordPanelProvider({
     enabled && recordParam ? { id: recordParam, mode: 'edit' } : { mode: 'closed' },
   );
 
+  const [selected, setSelected] = useState<{ index: number; record: string }>();
   const formRef = useRef<RecordPanelForm | undefined>(undefined);
   const pendingRef = useRef<(() => void) | undefined>(undefined);
   const listenersRef = useRef(new Set<(event: RecordPanelEvent) => void>());
@@ -256,6 +261,20 @@ export function RecordPanelProvider({
     });
   }, [adminRoute, collectionSlug, guard, router, state]);
 
+  const record =
+    state.mode === 'edit'
+      ? `edit:${state.id}`
+      : state.mode === 'create'
+        ? `create:${state.key}`
+        : '';
+
+  const tab = selected?.record === record ? selected.index : undefined;
+
+  const selectTab = useCallback(
+    (index: number | undefined) => setSelected(index === undefined ? undefined : { index, record }),
+    [record],
+  );
+
   const notify = useCallback((event: RecordPanelEvent) => {
     for (const listener of listenersRef.current) listener(event);
   }, []);
@@ -285,11 +304,13 @@ export function RecordPanelProvider({
       openId: state.mode === 'edit' ? state.id : undefined,
       reload,
       reset,
+      selectTab,
       setForm,
       settings,
       state,
       subscribe,
       switchTo,
+      tab,
     }),
     [
       close,
@@ -302,11 +323,13 @@ export function RecordPanelProvider({
       open,
       reload,
       reset,
+      selectTab,
       setForm,
       settings,
       state,
       subscribe,
       switchTo,
+      tab,
     ],
   );
 
@@ -347,6 +370,7 @@ const CLOSED: RecordPanelContextValue = {
   open: noop,
   reload: noop,
   reset: noop,
+  selectTab: noop,
   setForm: noop,
   settings: false,
   state: { mode: 'closed' },

@@ -520,7 +520,7 @@ The following options are available:
 | `CreateButton` | `FrogBotComponent` | Built-in Create New | Replaces the **Create New** button in the toolbar and the list view's empty state, on every view type. It renders whatever `create` access says and receives `hasCreatePermission`; `create` access still governs REST and GraphQL create, the document view and relationship drawers. Below the small breakpoint it follows `toolbar`. [More details](/custom-components/list-view#createbutton). |
 | `Description` | `FrogBotComponent` | Built-in description | Replaces the collection description. [More details](/custom-components/list-view#description). |
 | `edit` | `object` | — | Edit View component slots. [More details](#edit-view-options). |
-| `panel` | `RecordPanelComponents` | — | Record side panel slots: `actions`, `beforeFields`, `afterFields`, `Header` and `Component`. [More details](/admin/record-panel#components). |
+| `panel` | `RecordPanelComponents` | — | Record side panel slots: `actions`, `beforeFields`, `afterFields`, `Header`, `Component` and `tabs`. [More details](/admin/record-panel#components). |
 
 List slots belong to a `type: 'list'` entry in `admin.views`: use `components.beforeView`, `toolbar`, `beforeTable`, `afterTable`, `afterView`, and `NoResults`. To replace the collection list, use a `type: 'custom'` entry with `component`. See [List View](/custom-components/list-view).
 

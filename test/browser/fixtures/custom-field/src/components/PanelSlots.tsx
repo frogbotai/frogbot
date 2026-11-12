@@ -20,6 +20,14 @@ export function AfterFields({ collectionSlug }: PanelComponentProps) {
   return <p data-testid="panel-after">After {collectionSlug}</p>;
 }
 
+export function HistoryTab({ collectionSlug, id }: PanelComponentProps) {
+  return (
+    <p data-testid="panel-tab-history">
+      History of {collectionSlug} {String(id)}
+    </p>
+  );
+}
+
 export function PanelHeader({ close, id }: PanelComponentProps) {
   return (
     <div data-testid="panel-header">

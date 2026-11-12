@@ -29,10 +29,11 @@ From the top, the panel shows:
 
 1. The header. On the left, **Mark complete** for collections with [`useAsDone`](/configuration/collections#admin-options); it saves at once and turns green when done. On the right, your `actions`, **Save**, copy link, open full page, close, and a menu with create new, duplicate, delete and, for drafts autosave, the last autosave time. Once the panel scrolls about 46 px, the header shrinks to a check and the title and stays pinned.
 2. The `useAsTitle` field as a large heading you edit in place, when it's a text, textarea or email field.
-3. Your `beforeFields` components.
-4. The `properties` fields as label and value rows.
-5. Every other field, in config order. No field appears twice.
-6. Your `afterFields` components.
+3. The tab bar, when the collection has [`tabs`](#tabs): **Details**, which holds items 4 to 7, then your tabs.
+4. Your `beforeFields` components.
+5. The `properties` fields as label and value rows.
+6. Every other field, in config order. No field appears twice.
+7. Your `afterFields` components.
 
 The menu hides what the user can't do. Delete asks first, and moves the record to the trash when the collection has `trash`.
 
@@ -54,6 +55,7 @@ Settings go in `admin.panel`, React components in `admin.components.panel`, the 
 | `beforeFields` | `FrogBotComponent[]` | — | Between the title and the property list. |
 | `Component` | `FrogBotComponent` | Built-in panel | Replaces the whole panel, edit form included. |
 | `Header` | `FrogBotComponent` | Built-in header | Replaces the header. |
+| `tabs` | `RecordPanelTab[]` | — | Tabs after **Details**, in order. [More details](#tabs). |
 
 Every slot gets `PanelComponentProps`:
 
@@ -81,6 +83,36 @@ export function CloseButton() {
 ```
 
 Every slot except `Component` renders inside the edit form, so it can use the form hooks such as `useField` and `useDocumentInfo`.
+
+### Tabs
+
+A tab is a label and a component. The component is the tab's pane and gets `PanelComponentProps`, like every slot. The label is a string, or a function of the admin's `t` for a translated one:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Tickets: CollectionConfig = {
+  slug: 'tickets',
+  admin: {
+    components: {
+      panel: {
+        tabs: [
+          { label: 'History', Component: '/components/HistoryTab#HistoryTab' },
+          { label: ({ t }) => t('version:versions'), Component: '/components/Versions#Versions' },
+        ],
+      },
+    },
+  },
+  fields: [{ name: 'title', type: 'text' }],
+}
+```
+
+- With no `tabs`, the panel shows no tab bar.
+- **Details** is open first, and again whenever the panel opens or switches to a record. The open tab isn't in the URL.
+- Opening a tab hides Details but keeps it and every pane mounted, so unsaved edits and a pane's state survive switching tabs, and **Save** in the header still saves them.
+- Tabs show once the record exists, not on a create form.
+- The arrow keys, Home and End move between tabs.
+- `useRecordPanel()` returns the open tab's index as `tab` (`undefined` for Details) and `selectTab(index)` to open one.
 
 ## Saving
 
