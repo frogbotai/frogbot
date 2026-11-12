@@ -283,6 +283,12 @@
     padding-inline-start: 8px;
   }
 
+  @media (hover: none) and (pointer: coarse) {
+    .fb-app-sidebar__shortcut {
+      display: none;
+    }
+  }
+
   .fb-app-sidebar__label {
     margin-inline-start: 8px;
     overflow: hidden;
