@@ -72,6 +72,33 @@ auditLogPlugin({
 
 Internal audit writes always override access. API create, update, and delete access stays disabled unless you override it. `overrides.fields` must keep every default field, because the plugin writes them, and the plugin throws at startup if one is missing or named twice.
 
+## Activity field
+
+`activityField()` returns a `ui` field that lists the open record's audit entries, newest first: who created it, which fields each edit changed, and when. Place it anywhere in a collection's `fields`, usually in a tab at the end, and it shows on the edit page and in the [record panel](/admin/record-panel#activity-and-comments):
+
+```ts
+import { activityField, auditLogPlugin } from '@frogbotai/plugin-audit-log'
+
+export default buildConfig({
+  collections: [
+    {
+      slug: 'tasks',
+      fields: [
+        { name: 'title', type: 'text' },
+        {
+          type: 'tabs',
+          admin: { className: 'fb-pill-tabs' },
+          tabs: [{ label: 'Activity', fields: [activityField()] }],
+        },
+      ],
+    },
+  ],
+  plugins: [auditLogPlugin()],
+})
+```
+
+It reads the record and its entries with the signed-in user's access: a record the user can't read shows nothing, and an edit names only the fields the user can read. It shows the latest 20 entries, skips entries older than the record (a database can reuse a deleted record's id), and renders nothing on a create form. Pass field options to change it, for example `activityField({ name: 'history', label: 'History' })`.
+
 ## Custom entries
 
 `entry` receives the entry the plugin would save, the audited collection's slug, the operation, the document and previous document (with hidden fields removed and related documents reduced to IDs), and `req`. Return the entry to save, with any extra values, or `false` to save nothing. Add a field for each extra value with `overrides.fields`.

@@ -42,6 +42,22 @@ const Posts: CollectionConfig = {
   ],
 };
 
+const Ledgers: CollectionConfig = {
+  slug: 'ledgers',
+  access: {
+    ...openAccess,
+    read: ({ req }) => Boolean(req.user && req.user.email !== 'blocked@frogbot.local'),
+  },
+  fields: [
+    { name: 'title', type: 'text' },
+    {
+      name: 'cost',
+      type: 'number',
+      access: { read: ({ req }) => req.user?.email === 'audit@frogbot.local' },
+    },
+  ],
+};
+
 export default await buildTestConfig({
   ...(getCurrentDatabaseAdapter() === 'sqlite'
     ? {
@@ -53,7 +69,7 @@ export default await buildTestConfig({
         }),
       }
     : {}),
-  collections: [Accounts, Posts, Vault],
+  collections: [Accounts, Posts, Vault, Ledgers],
   plugins: [
     apiKeysPlugin({
       authCollection: 'accounts',
@@ -62,7 +78,7 @@ export default await buildTestConfig({
       headerNames: ['x-service-key'],
     }),
     auditLogPlugin({
-      collections: ['posts', 'accounts'],
+      collections: ['posts', 'accounts', 'ledgers'],
       retention: { days: 30 },
       snapshot: 'delete',
       entry: ({ entry, doc, operation }) =>
