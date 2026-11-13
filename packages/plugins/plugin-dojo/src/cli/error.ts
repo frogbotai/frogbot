@@ -1,7 +1,16 @@
 import type { DeployEnv } from 'frogbot';
 
+/** Exit 3: the command needs a Dojo sign-in that nobody is here to give. */
+export const needsSignIn = 3;
+
+/** Exit 4: the command needs a payment that nobody is here to make. */
+export const needsPayment = 4;
+
+/** What a person has to do before the command can carry on, for `--json`. */
+export type NeededStep = { needs: 'sign-in' | 'payment'; link?: string; userCode?: string };
+
 /** What a `ShareError` adds to the `--json` result besides its message. */
-export type ShareErrorDetails = {
+export type ShareErrorDetails = Partial<NeededStep> & {
   /** Stable, for scripts reading `--json`: `DOJO_UNREACHABLE`, or Dojo's own `payment_required`. */
   code?: string;
   /** The HTTP status of Dojo's refusal. */
@@ -12,27 +21,37 @@ export type ShareErrorDetails = {
   cause?: unknown;
 };
 
+const defaultCodes: Record<ShareError['exitCode'], string> = {
+  1: 'FAILED',
+  2: 'USAGE_ERROR',
+  [needsSignIn]: 'SIGN_IN_REQUIRED',
+  [needsPayment]: 'payment_required',
+};
+
 /** A known `frogbot share` or `frogbot dojo` stop: printed as one `[frogbot]` line, exiting with `exitCode`. */
 export class ShareError extends Error {
-  exitCode: 1 | 2;
-  /** The `--json` result's `code`: the details' code, or `USAGE_ERROR` for exit 2 and `FAILED` otherwise. */
+  exitCode: 1 | 2 | typeof needsSignIn | typeof needsPayment;
+  /** The `--json` result's `code`: the details' code, or one for the exit code (`FAILED`, `USAGE_ERROR`, `SIGN_IN_REQUIRED`, `payment_required`). */
   code: string;
   status?: number;
   url?: string;
   deploymentId?: string | number;
+  /** The sign-in or payment a person has to give before the command can carry on. */
+  step?: NeededStep;
 
   constructor(
     message: string,
-    exitCode: 1 | 2 = 1,
-    { code, status, url, deploymentId, cause }: ShareErrorDetails = {},
+    exitCode: ShareError['exitCode'] = 1,
+    { code, status, url, deploymentId, cause, needs, link, userCode }: ShareErrorDetails = {},
   ) {
     super(message, cause === undefined ? undefined : { cause });
     this.name = 'ShareError';
     this.exitCode = exitCode;
-    this.code = code ?? (exitCode === 2 ? 'USAGE_ERROR' : 'FAILED');
+    this.code = code ?? defaultCodes[exitCode];
     this.status = status;
     this.url = url;
     this.deploymentId = deploymentId;
+    this.step = needs && { needs, link, userCode };
   }
 
   /** The fields `--json` prints besides `code` and `error`. */
@@ -42,6 +61,7 @@ export class ShareError extends Error {
         status: this.status,
         url: this.url,
         deploymentId: this.deploymentId,
+        ...this.step,
       }).filter(([, value]) => value !== undefined),
     );
   }

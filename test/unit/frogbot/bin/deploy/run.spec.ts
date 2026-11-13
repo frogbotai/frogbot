@@ -111,6 +111,68 @@ describe('runDeploy', () => {
     );
   });
 
+  it("exits with a target's own code and adds its details to the JSON result", async () => {
+    const root = await tempDir();
+    const io = testIO({ cwd: root, config: deployConfig({ prodMigrations: undefined }) });
+    const target = {
+      ...recordingTarget().target,
+      run: () => {
+        throw new DeployError('Sign in first.', 3, {
+          code: 'SIGN_IN_REQUIRED',
+          fields: { needs: 'sign-in', link: 'https://x/device' },
+        });
+      },
+    };
+
+    await writeApp(root, { '.env': '' });
+
+    expect(await runDeploy(target, ['--json'], io.io, { name: 'dojo' })).toBe(3);
+    expect(JSON.parse(io.stdout().join('\n'))).toEqual({
+      target: 'dojo',
+      ok: false,
+      dryRun: false,
+      issues: [],
+      result: null,
+      code: 'SIGN_IN_REQUIRED',
+      error: 'Sign in first.',
+      needs: 'sign-in',
+      link: 'https://x/device',
+    });
+  });
+
+  it("keeps the result's own keys when a target's details name them too", async () => {
+    const root = await tempDir();
+    const io = testIO({ cwd: root, config: deployConfig({ prodMigrations: undefined }) });
+    const target = {
+      ...recordingTarget().target,
+      run: () => {
+        throw new DeployError('Sign in first.', 3, {
+          code: 'SIGN_IN_REQUIRED',
+          fields: {
+            target: 'other',
+            ok: true,
+            dryRun: true,
+            code: 'replaced',
+            error: 'replaced',
+            needs: 'sign-in',
+          },
+        });
+      },
+    };
+
+    await writeApp(root, { '.env': '' });
+
+    expect(await runDeploy(target, ['--json'], io.io, { name: 'dojo' })).toBe(3);
+    expect(JSON.parse(io.stdout().join('\n'))).toMatchObject({
+      target: 'dojo',
+      ok: false,
+      dryRun: false,
+      code: 'SIGN_IN_REQUIRED',
+      error: 'Sign in first.',
+      needs: 'sign-in',
+    });
+  });
+
   it('reports a config that fails to load as CONFIG_INVALID', async () => {
     const root = await tempDir();
     const io = testIO({

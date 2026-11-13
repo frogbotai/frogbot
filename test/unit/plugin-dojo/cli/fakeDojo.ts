@@ -68,6 +68,10 @@ export type FakeDojo = {
   noCompleteUri?: boolean;
   /** The reply to `POST /api/cli/device/code`, instead of a code. */
   deviceCodeReply?: { status: number; body: unknown };
+  /** Each device code gets its own user code, `CODE-1`, `CODE-2`…, instead of `BCDF-GHJK`. */
+  distinctCodes?: boolean;
+  /** `POST /api/cli/device/token` answers `access_denied`. */
+  denied?: boolean;
   build: FakeBuild;
   /** Apps whose deployments get 403. */
   forbidden: Set<number>;
@@ -262,13 +266,15 @@ export async function startFakeDojo(): Promise<FakeDojo> {
 
       codes += 1;
 
+      const userCode = dojo.distinctCodes ? `CODE-${codes}` : 'BCDF-GHJK';
+
       return json(res, 200, {
         device_code: `device-${codes}`,
-        user_code: 'BCDF-GHJK',
+        user_code: userCode,
         verification_uri: `${dojo.url}/device`,
         ...(dojo.noCompleteUri
           ? {}
-          : { verification_uri_complete: `${dojo.url}/device?user_code=BCDF-GHJK` }),
+          : { verification_uri_complete: `${dojo.url}/device?user_code=${userCode}` }),
         expires_in: 900,
         interval: 0,
       });
@@ -276,6 +282,8 @@ export async function startFakeDojo(): Promise<FakeDojo> {
 
     if (route === 'POST /api/cli/device/token') {
       const { device_code: deviceCode } = JSON.parse(body.toString()) as { device_code: string };
+
+      if (dojo.denied) return json(res, 400, { error: 'access_denied' });
 
       if (Number(deviceCode.slice('device-'.length)) <= dojo.expiredCodes) {
         return json(res, 400, { error: 'expired_token' });

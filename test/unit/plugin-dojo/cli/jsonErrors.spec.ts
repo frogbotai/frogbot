@@ -217,7 +217,7 @@ describe('a Dojo build under --json', () => {
       code: 'BUILD_LOG_LOST',
       deploymentId: 7,
       error:
-        'Lost the build log. The build may still finish: run `frogbot dojo deployments logs 7 --follow`.',
+        'Lost the build log. The build may still finish; follow it with frogbot dojo deployments logs 7 --follow.',
     });
   });
 

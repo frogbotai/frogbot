@@ -1,8 +1,8 @@
 import type { DojoClient } from './dojo.js';
 import { segment } from './dojo.js';
-import { dojoError, dojoStop, ShareError } from './error.js';
+import { dojoError, dojoStop, needsPayment, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
-import { say } from './io.js';
+import { canWait, say } from './io.js';
 
 const pollMs = 5000;
 const maxPolls = 360;
@@ -67,9 +67,20 @@ function showPaywall(io: DojoIO, paywall: Paywall): void {
   if (io.isTTY && paywall.owner) io.openBrowser(paywall.url);
 }
 
+function paymentNeeded(paywall: Paywall): ShareError {
+  const who = paywall.owner ? 'Pay for it at' : 'Ask a workspace owner to pay for it at';
+
+  return new ShareError(
+    `${paywall.why} ${who} ${paywall.url}, then run the command again. Add --wait to wait for the payment here.`,
+    needsPayment,
+    { needs: 'payment', link: paywall.url },
+  );
+}
+
 /**
  * Sends a request that may need a paid app on Dojo. On a 402 with Dojo's upgrade link, shows the link, waits until
- * the workspace's plan pays for the app, then sends it again; any other reply is returned as it came.
+ * the workspace's plan pays for the app, then sends it again; any other reply is returned as it came. Without a
+ * terminal or `--wait` it exits 4 with the link instead of waiting.
  */
 export async function whenPaid(
   dojo: DojoClient,
@@ -88,6 +99,8 @@ export async function whenPaid(
     const paywall = readPaywall(refusal.message, dojo.url);
 
     if (!paywall) return response;
+
+    if (!canWait(io)) throw paymentNeeded(paywall);
 
     if (paywall.url !== shown) {
       showPaywall(io, paywall);

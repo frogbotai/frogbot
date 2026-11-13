@@ -13,7 +13,19 @@ import { ShareError } from './error.js';
 export type DojoIO = Omit<DeployIO, 'exec' | 'which' | 'loadConfig'> & {
   /** With `--json`: the real stdout, which gets only the command's one JSON result; `stdout` is then stderr. */
   json?: { write: (text: string) => unknown };
+  /** With `--wait`: wait for a sign-in or a payment even without a terminal. */
+  waits?: boolean;
 };
+
+/** Whether someone may be waited for: a terminal, or `--wait`. Otherwise a needed sign-in or payment exits. */
+export function canWait(io: Pick<DojoIO, 'isTTY' | 'waits'>): boolean {
+  return io.isTTY || io.waits === true;
+}
+
+/** The Dojo commands' program, also from `frogbot deploy dojo`: `frogbot dojo`, or `npx @frogbotai/plugin-dojo`. */
+export function dojoProgram(program: string): string {
+  return /(?:dojo|plugin-dojo)$/.test(program) ? program : `${program} dojo`;
+}
 
 function answered<T>(value: T | symbol): T {
   if (typeof value === 'symbol') {

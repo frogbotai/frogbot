@@ -76,6 +76,8 @@ A deploy that stops after its checks pass prints `[frogbot] <error>` on stderr. 
 | `DOJO_UNREACHABLE` | `1` | The request never reached Dojo. `error` names the address, and says when `FROGBOT_DOJO_URL` set it. | `deploymentId` when it happened while following a build |
 | `BUILD_FAILED` | `1` | Dojo's build failed. | `deploymentId` |
 | `BUILD_LOG_LOST` | `1` | The build log stopped and didn't come back. The build may still finish: `error` gives the `frogbot dojo deployments logs <id> --follow` command. When Dojo refuses the log or can't be reached while following it, the stop keeps that code (`FAILED`, Dojo's own, or `DOJO_UNREACHABLE`) and adds the same command and `deploymentId`. | `deploymentId` |
+| `SIGN_IN_REQUIRED` | `3` | Dojo needs a sign-in and nobody is there to confirm it: no terminal and no `--wait`, a refused `FROGBOT_DOJO_TOKEN`, or CI with no token. Run it again once the person confirms the code. | `needs`: `sign-in`. `link` and `userCode` for a browser sign-in. |
+| `payment_required` | `4` | The workspace's plan doesn't cover the app and nobody is there to pay: no terminal and no `--wait`. Share again once it's paid. | `needs`: `payment`. `link`: Dojo's upgrade page. |
 | Dojo's own code, such as `payment_required`, `forbidden` or `rate_limited` | `1` | Dojo refused a request. A share that waited 30 minutes for a payment stops as `payment_required`. | `status`: the HTTP status. `url`: the link Dojo sent, such as the upgrade page. |
 | `FAILED` | `1` | Any other known stop, such as a refusal without a code of Dojo's. | `status` when Dojo refused |
 | `UNEXPECTED_ERROR` | `1` | A bug or an error nothing expected. `error` holds the whole error with its causes. Without `--json`, the error is thrown as before. | — |
