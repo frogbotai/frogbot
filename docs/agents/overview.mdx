@@ -370,6 +370,24 @@ export const supportAgent: AgentConfig = {
 
 `instructions` and resource `content` accept a string or a function receiving `{ req, frogbot }`. Function content is evaluated only when the agent loads it. Unknown skill and resource names return the available names so the agent can correct its next call.
 
+`resources` can also be a function receiving `{ req }`, called each time `list_skills` or `load_skill_resource` runs. Use it when the list itself changes while the app runs, such as a folder of documents:
+
+```ts
+import { readdir, readFile } from 'node:fs/promises'
+
+const plansSkill: SkillConfig = {
+  slug: 'plans',
+  instructions: 'List the plans, then load the one the question is about.',
+  resources: async () =>
+    (await readdir('plans')).map((file) => ({
+      path: file,
+      content: () => readFile(`plans/${file}`, 'utf8')
+    }))
+}
+```
+
+A function's entries are checked when it is called: a missing or duplicate path, or empty content, fails that tool call with an error the agent sees.
+
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `slug` | `string` | Required | Skill name, unique and URL-safe within the agent. Maps to the Agent Skills `name` field. |
@@ -378,7 +396,7 @@ export const supportAgent: AgentConfig = {
 | `compatibility` | `string` | — | Must be non-empty when set. Maps to `compatibility`. |
 | `metadata` | `Record<string, string>` | — | Flat string map. Maps to `metadata`. |
 | `instructions` | `string \| ({ req, frogbot }) => string \| Promise<string>` | Required | Returned by `load_skill`. A string must be non-empty. Maps to the `SKILL.md` body. |
-| `resources` | `SkillResource[]` | — | Reference files returned by `load_skill_resource`. Maps to `references/` files. |
+| `resources` | `SkillResource[] \| ({ req }) => SkillResource[] \| Promise<SkillResource[]>` | — | Reference files returned by `load_skill_resource`. A function is called on every `list_skills` and `load_skill_resource`. Maps to `references/` files. |
 
 Each resource takes these options:
 

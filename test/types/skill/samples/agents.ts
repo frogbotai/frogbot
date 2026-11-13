@@ -43,8 +43,16 @@ const supportPolicy: SkillConfig = {
   ],
 };
 
+const folderSkill: SkillConfig = {
+  slug: 'plans',
+  instructions: 'List the plans, then load the one the question is about.',
+  resources: ({ req }) => [
+    { path: 'current.md', content: () => `Plan for ${req.user?.id ?? 'guest'}` },
+  ],
+};
+
 export const skillAssistant: AgentConfig = {
   slug: 'assistant',
   instructions: 'Help customers resolve support requests.',
-  skills: [supportPolicy],
+  skills: [supportPolicy, folderSkill],
 };

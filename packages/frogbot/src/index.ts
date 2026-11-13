@@ -510,7 +510,13 @@ export type {
 } from './search/types.js';
 export type { GatewayHandler } from './server/gateway.js';
 export { createGatewayHandler } from './server/gateway.js';
-export type { SkillConfig, SkillContent, SkillCtx, SkillResource } from './skills/types.js';
+export type {
+  SkillConfig,
+  SkillContent,
+  SkillCtx,
+  SkillResource,
+  SkillResources,
+} from './skills/types.js';
 export type {
   ToolApproval,
   ToolApprovalMode,
