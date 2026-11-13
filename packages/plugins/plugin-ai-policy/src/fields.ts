@@ -36,7 +36,11 @@ function mergeObject(key: 'access' | 'admin' | 'custom', field: Field, override:
   };
 }
 
-/** Puts the policy fields on `fields`, letting an app field of the same name override its parts. */
+/**
+ * Puts the policy fields on `fields`, letting an app field of the same name override its parts.
+ * The `models` options always come from the AI config, so an app can override their access
+ * without repeating the model list.
+ */
 export function mergePolicyFields(fields: Field[], policy: Field[]): Field[] {
   const overrides = new Map(
     fields
@@ -55,6 +59,7 @@ export function mergePolicyFields(fields: Field[], policy: Field[]): Field[] {
       ...mergeObject('admin', field, override),
       ...mergeObject('access', field, override),
       ...mergeObject('custom', field, override),
+      ...('options' in field && { options: field.options }),
     } as Field;
   });
 

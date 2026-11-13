@@ -66,6 +66,10 @@ The adapter preserves FrogBot's collection selection, import and export controls
 | `hooks.after` | `(args) => void \| Promise<void>` | — | Runs after each batch is written. Receives `batchNumber`, `totalBatches`, `format`, `originalData`, `req`, and `result` (`{ imported, updated, total, errors }` for the batch). Its return value is ignored. |
 | `overrideCollection` | `({ collection }) => CollectionConfig \| Promise<CollectionConfig>` | — | Overrides the import collection for this collection only. Returning a new slug creates a separate import collection; returning `imports` merges into the shared one. |
 
+## Export
+
+An export reads as the signed-in user, so their read access applies. A download of a collection the export collection doesn't serve answers `400`, and one the user can't read answers `403`, each with `{ "errors": [{ "message": "..." }] }`. Collections with versions but no drafts export every document.
+
 ## Map columns
 
 After you choose a file on the import form, the **Columns** section lists each column in the file next to a field picker. A column can import into a top-level field, a field inside a group or named tab, or a relationship to one collection. Choose **Skip** to leave a column out. Columns you skip, and columns you don't map, aren't imported.

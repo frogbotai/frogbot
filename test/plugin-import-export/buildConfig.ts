@@ -84,6 +84,7 @@ export function buildImportConfig({ ai }: Pick<FrogBotConfig, 'ai'> = {}) {
           { slug: contactsSlug },
           {
             slug: notesSlug,
+            export: { disableJobsQueue: true },
             import: {
               disableJobsQueue: true,
               hooks: {
