@@ -436,6 +436,31 @@ describe('allow', () => {
     expect(() => rolesPlugin({ roles: ['member'] })(valid)).not.toThrow();
   });
 
+  it('binds and checks allow() in jobsCollectionOverrides', async () => {
+    const withJobs = (read: ReturnType<typeof allow>): FrogBotConfig => ({
+      ...config(),
+      jobs: {
+        jobsCollectionOverrides: ({ defaultJobsCollection }) => ({
+          ...defaultJobsCollection,
+          access: { ...defaultJobsCollection.access, read },
+        }),
+      },
+    });
+
+    const jobsCollection = async (input: FrogBotConfig) =>
+      (await rolesPlugin({ roles: ['admin', 'member'] })(input)).jobs!.jobsCollectionOverrides!({
+        defaultJobsCollection: { slug: 'payload-jobs', fields: [] },
+      });
+
+    const { access } = await jobsCollection(withJobs(allow('admin')));
+
+    expect(await access!.read!({ slug: 'test', req: req(['admin']) })).toBe(true);
+    expect(await access!.read!({ slug: 'test', req: req(['member']) })).toBe(false);
+    await expect(jobsCollection(withJobs(allow('admn')))).rejects.toThrow(
+      /Role 'admn' is not listed/,
+    );
+  });
+
   it('keeps resolver bindings isolated when one compiler is reused', async () => {
     const shared = allow('finance');
     const first = config();
