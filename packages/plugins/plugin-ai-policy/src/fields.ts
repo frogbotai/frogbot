@@ -1,6 +1,31 @@
 import { type Field, moneyField } from 'frogbot';
 
-const names = new Set(['models', 'monthlyBudget', 'spendThisPeriodUSD']);
+import { SPEND_COUNTERS_SLUG } from './counters.js';
+
+const names = new Set(['models', 'monthlyBudget', 'spendCounter', 'spendThisPeriodUSD']);
+
+/** The link to the subject's spend counter, and this month's spend read through it. */
+export function createSpendFields(custom?: Record<string, unknown>): Field[] {
+  return [
+    {
+      name: 'spendCounter',
+      type: 'relationship',
+      relationTo: SPEND_COUNTERS_SLUG,
+      access: { create: () => false, update: () => false },
+      admin: { hidden: true, disableListColumn: true, disableListFilter: true } as {
+        hidden: true;
+      },
+      ...(custom && { custom }),
+    },
+    moneyField({
+      name: 'spendThisPeriodUSD',
+      label: 'Monthly Spend (USD)',
+      virtual: 'spendCounter.amount',
+      admin: { readOnly: true, position: 'sidebar' },
+      ...(custom && { custom }),
+    }),
+  ];
+}
 
 export function createPolicyFields(models: string[]): Field[] {
   return [
@@ -15,13 +40,7 @@ export function createPolicyFields(models: string[]): Field[] {
       },
     },
     moneyField({ name: 'monthlyBudget', label: 'Monthly Budget (USD)', min: 0 }),
-    moneyField({
-      name: 'spendThisPeriodUSD',
-      label: 'Monthly Spend (USD)',
-      defaultValue: 0,
-      access: { update: () => false },
-      admin: { readOnly: true, position: 'sidebar' },
-    }),
+    ...createSpendFields(),
   ];
 }
 

@@ -10,6 +10,8 @@ export const agentSlug = 'api-key-policy';
 
 export const upstreamPort = testPort(3999);
 
+export const spendUpstreamPort = testPort(3981);
+
 export const addTenant: Plugin = (config) => ({
   ...config,
   collections: config.collections.map((collection) =>
@@ -23,7 +25,7 @@ const Accounts: CollectionConfig = {
   slug: 'accounts',
   auth: true,
   access: openAccess,
-  fields: [],
+  fields: [{ name: 'roles', type: 'select', hasMany: true, options: ['admin', 'member'] }],
 };
 
 export default await buildTestConfig({
@@ -38,6 +40,15 @@ export default await buildTestConfig({
         models: [
           { id: 'allowed', mode: 'chat', cost: { input: 1, output: 2 } },
           { id: 'blocked', mode: 'chat', cost: { input: 1, output: 2 } },
+        ],
+      },
+      spend: {
+        type: 'openai-compatible',
+        baseUrl: `http://127.0.0.1:${spendUpstreamPort}/v1`,
+        apiKey: 'test-key',
+        models: [
+          { id: 'priced', mode: 'chat', cost: { input: 1, output: 2 } },
+          { id: 'other', mode: 'chat', cost: { input: 1, output: 2 } },
         ],
       },
     },
