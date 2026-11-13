@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { reportKept } from '../../../../../packages/frogbot/src/bin/service/supervisor.js';
+import { reportKept } from '../../../../../packages/frogbot/src/bin/service/schema.js';
 
 describe('kept schema line', () => {
   it('writes the line once while the kept set stays the same, and again when it changes', () => {
