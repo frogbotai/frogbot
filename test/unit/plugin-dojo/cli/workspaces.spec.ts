@@ -52,7 +52,7 @@ describe('frogbot share: no workspace', () => {
     );
   });
 
-  it('says where to make one without a TTY, and creates nothing', async () => {
+  it('names the command that makes one without a TTY, and creates nothing', async () => {
     const { root, dojo, run, signIn } = await setup();
 
     await signIn();
@@ -61,7 +61,7 @@ describe('frogbot share: no workspace', () => {
 
     expect(result.code).toBe(1);
     expect(result.stderr()).toEqual([
-      `[frogbot] Your Dojo account has no workspace yet. Create one at ${dojo.url}/collections/workspaces/create, then rerun.`,
+      '[frogbot] Your Dojo account has no workspace yet. Create one with frogbot dojo workspaces create <name>, then rerun.',
     ]);
     expect(dojo.paths()).not.toContain('POST /api/apps');
     await expect(stat(join(root, '.frogbot'))).rejects.toThrow();
@@ -100,7 +100,7 @@ describe('frogbot share: no workspace', () => {
 
     expect(result.code).toBe(1);
     expect(result.stderr()).toEqual([
-      `[frogbot] No workspace to share in. Create one at ${dojo.url}/collections/workspaces/create, then rerun.`,
+      '[frogbot] No workspace to share in. Create one with frogbot dojo workspaces create <name>, then rerun.',
     ]);
     expect(dojo.paths()).not.toContain('POST /api/apps');
   });

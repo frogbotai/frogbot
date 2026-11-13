@@ -6,7 +6,11 @@ import type { ChatContext } from '../chat/chatContext.js';
 import { resolveChatContext } from '../chat/chatContext.js';
 import { buildTurnEndpoints } from '../chat/turn/endpoints.js';
 import { allClientTools, streamTurn } from '../chat/turn/streamTurn.js';
-import { validateChatMessages } from '../chat/validateMessages.js';
+import {
+  describeMessagesError,
+  formatIssuePath,
+  validateChatMessages,
+} from '../chat/validateMessages.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { agentResult, errorResponse } from './responses.js';
 import {
@@ -70,7 +74,11 @@ export function buildAgentEndpoints() {
             );
 
             return Response.json(
-              { error: '`messages` must be valid UI messages' },
+              {
+                error:
+                  describeMessagesError(error, messages ?? []) ??
+                  '`messages` must be valid UI messages',
+              },
               { status: 400 },
             );
           }
@@ -179,7 +187,7 @@ function toUIMessages(body: AgentRequestBody): UIMessage[] {
 }
 
 function describeIssue(issue: z.ZodError['issues'][number]): string {
-  const path = issue.path.join('.');
+  const path = formatIssuePath(issue.path);
 
   return path ? `\`${path}\`: ${issue.message}` : issue.message;
 }

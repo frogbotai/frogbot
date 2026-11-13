@@ -1,6 +1,10 @@
 import type { Field, JobsConfig as PayloadJobsConfig } from 'payload';
 
-import { toPayloadJobs } from '../seams/config.js';
+import {
+  fromPayloadJobsCollection,
+  toPayloadJobs,
+  toPayloadJobsCollection,
+} from '../seams/config.js';
 import { deleteOrphanJobs } from './orphans.js';
 import { withJobRun } from './run.js';
 import type { JobsConfig } from './types.js';
@@ -96,8 +100,13 @@ export function resolveJobsConfig(jobs: JobsConfig = {}): PayloadJobsConfig & {
       },
     ],
     jobsCollectionOverrides: ({ defaultJobsCollection }) => {
-      const collection =
-        jobs.jobsCollectionOverrides?.({ defaultJobsCollection }) ?? defaultJobsCollection;
+      const collection = jobs.jobsCollectionOverrides
+        ? toPayloadJobsCollection(
+            jobs.jobsCollectionOverrides({
+              defaultJobsCollection: fromPayloadJobsCollection(defaultJobsCollection),
+            }),
+          )
+        : defaultJobsCollection;
 
       return {
         ...collection,

@@ -31,9 +31,7 @@ const names = (list: ClientField[]): unknown =>
       ? field.tabs.map((tab) => names(tab.fields))
       : 'fields' in field
         ? names(field.fields)
-        : 'name' in field
-          ? field.name
-          : field.type,
+        : field.name,
   );
 
 const collection = (admin: Record<string, unknown>): ClientCollectionConfig =>
@@ -96,8 +94,11 @@ describe('record panel fields', () => {
 });
 
 describe('redirectRecordParam', () => {
-  const config = (panel: unknown) =>
-    ({ admin: { custom: { frogbot: { panel } } }, slug: 'notes' }) as SanitizedCollectionConfig;
+  const config = (panel: unknown) => {
+    const admin: SanitizedCollectionConfig['admin'] = { custom: { frogbot: { panel } } };
+
+    return { admin, slug: 'notes' } as SanitizedCollectionConfig;
+  };
 
   it('sends ?record to the edit page only when the panel is off', () => {
     const redirect = vi.fn();

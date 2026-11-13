@@ -1101,7 +1101,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
     ).rejects.toMatchObject({
       code: 'selection-unavailable',
       status: 409,
-      message: "Model 'local/thinker' is not allowed for this user",
+      message: "Model 'local/thinker' is not allowed for this user. Allowed: 'local/writer'",
     });
 
     expect(calls).toEqual([]);
@@ -1135,7 +1135,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
     expect(errors).toEqual([
       expect.objectContaining({
         code: 'selection-unavailable',
-        message: "Model 'local/writer' is not allowed for this user",
+        message: "Model 'local/writer' is not allowed for this user. Allowed: 'local/thinker'",
       }),
     ]);
     expect(calls).toEqual([{ model: LOCAL_THINKER, providerOptions: undefined }]);
@@ -1298,8 +1298,14 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
   });
 
   it.each([
-    [{ reasoning: 'max' }, "Reasoning option 'max' is not available for model 'local/thinker'"],
-    [{ model: LOCAL_WRITER }, "Model 'local/writer' is not allowed for agent 'support'"],
+    [
+      { reasoning: 'max' },
+      "Reasoning option 'max' is not available for model 'local/thinker'. Allowed: 'low', 'high'",
+    ],
+    [
+      { model: LOCAL_WRITER },
+      "Model 'local/writer' is not allowed for agent 'support'. Allowed: 'local/thinker'",
+    ],
   ] as const)(
     'stops before the next model call when steer selection %o is unavailable',
     async (selection, message) => {
@@ -1345,7 +1351,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
     ).rejects.toMatchObject({
       code: 'selection-unavailable',
       status: 409,
-      message: "Model 'local/writer' is not allowed for agent 'support'",
+      message: "Model 'local/writer' is not allowed for agent 'support'. Allowed: 'local/thinker'",
     });
 
     expect(calls).toEqual([]);

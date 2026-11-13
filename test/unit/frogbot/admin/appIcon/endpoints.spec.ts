@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { appIconEndpoints } from '../../../../../packages/frogbot/src/admin/appIcon/endpoints.js';
 import type { FrogBotRequest } from '../../../../../packages/frogbot/src/types/request.js';
 
-const [iconEndpoint, manifestEndpoint] = appIconEndpoints();
+const [iconEndpoint, manifestEndpoint, iconHeadEndpoint, manifestHeadEndpoint] = appIconEndpoints();
 
 function makeReq(meta: Record<string, unknown> = {}, size?: string) {
   const error = vi.fn();
@@ -63,11 +63,44 @@ describe('app icon endpoints', () => {
     await fs.rm(cwd, { force: true, recursive: true });
   });
 
-  it('registers public GET endpoints under /frogbot', () => {
+  it('registers public GET and HEAD endpoints under /frogbot', () => {
     expect(appIconEndpoints().map(({ method, path }) => `${method} ${path}`)).toEqual([
       'get /frogbot/app-icon/:size',
       'get /frogbot/app-manifest',
+      'head /frogbot/app-icon/:size',
+      'head /frogbot/app-manifest',
     ]);
+  });
+
+  it('answers HEAD for an icon with its headers and no body', async () => {
+    const { req } = makeReq({}, '192');
+
+    const response = await iconHeadEndpoint.handler(req);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toBeNull();
+    expect(response.headers.get('content-type')).toBe('image/png');
+    expect(response.headers.get('cache-control')).toBe('public, max-age=86400');
+  });
+
+  it('answers HEAD for an unknown icon size with 404 and no body', async () => {
+    const { req } = makeReq({}, '64');
+
+    const response = await iconHeadEndpoint.handler(req);
+
+    expect(response.status).toBe(404);
+    expect(response.body).toBeNull();
+  });
+
+  it('answers HEAD for the manifest with its headers and no body', async () => {
+    const { req } = makeReq();
+
+    const response = await manifestHeadEndpoint.handler(req);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toBeNull();
+    expect(response.headers.get('content-type')).toBe('application/manifest+json');
+    expect(response.headers.get('cache-control')).toBe('public, max-age=86400');
   });
 
   it.each([32, 180, 192, 512])('serves the FrogBot frog at %i px', async (size) => {

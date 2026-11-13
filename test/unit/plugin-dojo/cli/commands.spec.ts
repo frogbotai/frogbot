@@ -45,26 +45,26 @@ describe('FROGBOT_DOJO_TOKEN', () => {
 
     const result = await run(['apps', 'get', 'deals']);
 
-    expect(result.code).toBe(1);
+    expect(result.code).toBe(3);
     expect(result.stderr()).toEqual([
-      `[frogbot] Dojo didn't accept FROGBOT_DOJO_TOKEN at ${dojo.url}; it may be revoked. Set a working key, or unset it to sign in with a browser.`,
+      `[frogbot] Dojo didn't accept FROGBOT_DOJO_TOKEN at ${dojo.url}; it may be revoked. Set a working key, or unset it and run frogbot dojo login.`,
     ]);
     expect(dojo.paths()).toEqual(['GET /api/apps/deals/cli']);
   });
 
-  it('makes whoami and login fail the same way', async () => {
+  it('makes whoami and login fail without the device flow, login with the sign-in exit', async () => {
     const { dojo, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_revoked' });
 
     expect((await run(['whoami'])).code).toBe(1);
-    expect((await run(['login'])).code).toBe(1);
+    expect((await run(['login', '--wait'])).code).toBe(3);
     expect(dojo.paths()).not.toContain('POST /api/cli/device/code');
   });
 });
 
 describe('signing in', () => {
-  it('signs in with login and shows the account and workspaces', async () => {
+  it('signs in with login --wait and shows the account and workspaces', async () => {
     const { dojo, run } = await setup();
-    const result = await run(['login']);
+    const result = await run(['login', '--wait']);
 
     expect(result.code).toBe(0);
     expect(result.stdout().slice(-2)).toEqual([
@@ -78,8 +78,88 @@ describe('signing in', () => {
     const result = await run(['whoami']);
 
     expect(result.code).toBe(1);
-    expect(result.stderr()).toEqual([`[frogbot] Not signed in to ${dojo.url}. Run frogbot login.`]);
+    expect(result.stderr()).toEqual([
+      `[frogbot] Not signed in to ${dojo.url}. Run frogbot dojo login.`,
+    ]);
     expect(dojo.requests).toEqual([]);
+  });
+
+  it('exits 3 with the link under --json without a terminal, and signs in on the run after the person confirms', async () => {
+    const { dojo, run } = await setup();
+    const link = `${dojo.url}/device?user_code=BCDF-GHJK`;
+    const first = await run(['apps', 'list', '--json']);
+
+    expect(first.code).toBe(3);
+    expect(JSON.parse(first.stdout().join('\n'))).toEqual({
+      ok: false,
+      error: expect.stringContaining(link),
+      needs: 'sign-in',
+      link,
+      userCode: 'BCDF-GHJK',
+    });
+    expect(first.stderr()).toEqual([
+      `[frogbot] Sign in to Dojo: open ${link} and confirm the code BCDF-GHJK, then run the command again. Add --wait to wait for the sign-in here, or set FROGBOT_DOJO_TOKEN to a key from "frogbot dojo keys create".`,
+    ]);
+    expect(dojo.paths()).toEqual(['POST /api/cli/device/code']);
+
+    dojo.pendingPolls = 0;
+
+    const second = await run(['apps', 'list', '--json']);
+
+    expect(second.code).toBe(0);
+    expect(dojo.paths()).toEqual([
+      'POST /api/cli/device/code',
+      'POST /api/cli/device/token',
+      'GET /api/apps',
+    ]);
+  });
+
+  it.each([['pull'], ['logs']])(
+    'prints the sign-in error as JSON from apps %s --json',
+    async (verb) => {
+      const { run } = await setup();
+      const result = await run(['apps', verb, 'deals', '--json']);
+
+      expect(result.code).toBe(3);
+      expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
+        ok: false,
+        needs: 'sign-in',
+        userCode: 'BCDF-GHJK',
+      });
+    },
+  );
+
+  it('prints a failed logout as JSON under --json', async () => {
+    const { run } = await setup();
+    const result = await run(['logout', 'extra', '--json']);
+
+    expect(result.code).toBe(2);
+    expect(JSON.parse(result.stdout().join('\n'))).toEqual({
+      ok: false,
+      error: 'Usage: frogbot dojo logout',
+    });
+  });
+
+  it('exits 3 again with the same code while the person has not confirmed it', async () => {
+    const { dojo, run } = await setup();
+
+    expect((await run(['login'])).code).toBe(3);
+    expect((await run(['login'])).code).toBe(3);
+    expect(dojo.paths()).toEqual(['POST /api/cli/device/code', 'POST /api/cli/device/token']);
+  });
+
+  it('gets a new code when the kept one expired', async () => {
+    const { dojo, run } = await setup();
+
+    dojo.expiredCodes = 1;
+
+    expect((await run(['login'])).code).toBe(3);
+    expect((await run(['login'])).code).toBe(3);
+    expect(dojo.paths()).toEqual([
+      'POST /api/cli/device/code',
+      'POST /api/cli/device/token',
+      'POST /api/cli/device/code',
+    ]);
   });
 });
 
@@ -253,13 +333,20 @@ describe('refusals', () => {
     dojo.tokens.set('fb_env', 50);
     dojo.billing = { paidApps: 0 };
 
-    const result = await run(['apps', 'create', 'CRM']);
+    const result = await run(['apps', 'create', 'CRM', '--json']);
+    const upgrade = `${dojo.url}/billing/upgrade?workspace=1&apps=1`;
 
-    expect(result.code).toBe(1);
-    expect(result.stdout().join('\n')).toContain(`${dojo.url}/billing/upgrade?workspace=1&apps=1`);
+    expect(result.code).toBe(4);
+    expect(JSON.parse(result.stdout().join('\n'))).toEqual({
+      ok: false,
+      error: expect.stringContaining(`Pay for it at ${upgrade}, then run the command again.`),
+      needs: 'payment',
+      link: upgrade,
+    });
+    expect(dojo.paths().filter((path) => path === 'GET /api/workspaces/1')).toEqual([]);
   });
 
-  it('prints the browser link and exits 1 when Dojo refuses keys create', async () => {
+  it('names the sign-ins that can mint and exits 1 when Dojo refuses keys create', async () => {
     const { dojo, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_env' });
 
     dojo.tokens.set('fb_env', 50);
@@ -274,11 +361,12 @@ describe('refusals', () => {
 
     const result = await run(['keys', 'create', 'ci', '--json']);
 
+    const message =
+      "This sign-in can't create keys: This API key can't mint or rotate API keys. Sign in, or use a key that can mint keys. Keys are made by a browser sign-in (frogbot dojo login, without FROGBOT_DOJO_TOKEN) or by a key made with --can-mint.";
+
     expect(result.code).toBe(1);
-    expect(result.stdout()).toEqual([]);
-    expect(result.stderr()).toEqual([
-      `[frogbot] This sign-in can't create keys yet: This API key can't mint or rotate API keys. Sign in, or use a key that can mint keys. Create one at ${dojo.url}/collections/api-keys`,
-    ]);
+    expect(JSON.parse(result.stdout().join('\n'))).toEqual({ ok: false, error: message });
+    expect(result.stderr()).toEqual([`[frogbot] ${message}`]);
   });
 });
 

@@ -1,4 +1,5 @@
 export type {
+  AgentErrorCode,
   AgentManifestEntry,
   AgentModelNotice,
   AgentProfile,

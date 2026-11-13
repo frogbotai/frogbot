@@ -79,11 +79,7 @@ describe('skill automations guide samples', () => {
           ...defaultJobsCollection,
           access: {
             ...defaultJobsCollection.access,
-            read: ({ req }) => {
-              const roles = req.user && 'roles' in req.user ? req.user.roles : [];
-
-              return Array.isArray(roles) && roles.includes('admin');
-            },
+            read: allow('admin'),
           },
           admin: { ...defaultJobsCollection.admin, hidden: false },
         }),
@@ -262,5 +258,27 @@ describe('skill automations guide samples', () => {
         overrideAccess: false,
       }),
     ).rejects.toThrow();
+  });
+
+  it('shows run history to an admin', async () => {
+    await frogbot.jobs.queue({
+      task: 'send-webhook',
+      input: { deliveryId: 'customer-data' },
+      overrideAccess: true,
+    });
+
+    const admin = await payload.create({
+      collection: 'users',
+      data: { email: 'admin@example.com', password, roles: ['admin'] },
+      overrideAccess: true,
+    });
+
+    const { docs } = await payload.find({
+      collection: 'payload-jobs',
+      user: { ...admin, collection: 'users' },
+      overrideAccess: false,
+    });
+
+    expect(docs).toHaveLength(1);
   });
 });
