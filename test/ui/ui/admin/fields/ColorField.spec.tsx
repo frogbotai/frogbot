@@ -103,13 +103,23 @@ describe('ColorField', () => {
     expect(picker().value).toBe('#ff00aa');
   });
 
-  it('opens the picker on black when the value is not a color', () => {
+  it('opens the picker on near-black when the value is not a color, so picking black still saves', () => {
     form.value = 'blue';
 
     const { container } = render(<ColorField {...colorProps()} />);
 
-    expect(picker().value).toBe('#000000');
+    expect(picker().value).toBe('#010101');
     expect(container.querySelector('.color-field__picker .color-swatch--empty')).not.toBeNull();
+  });
+
+  it('saves black picked on an empty field', () => {
+    form.value = '';
+
+    render(<ColorField {...colorProps()} />);
+
+    fireEvent.change(picker(), { target: { value: '#000000' } });
+
+    expect(setValue).toHaveBeenCalledWith('#000000');
   });
 
   it('saves the color picked', () => {
@@ -171,6 +181,15 @@ describe('ColorField', () => {
     expect(container.querySelector('.color-field__value')?.textContent).toBe('#3b82f6');
     expect(swatch?.style.backgroundColor).toBe('rgb(59, 130, 246)');
     expect(container.querySelector('input, button')).toBeNull();
+  });
+
+  it('shows a read-only value that is not a color as plain text', () => {
+    form.value = 'blue';
+
+    const { container } = render(<ColorField {...colorProps()} readOnly />);
+
+    expect(container.querySelector('.color-field__value')?.textContent).toBe('blue');
+    expect(container.querySelector('.color-swatch')).toBeNull();
   });
 
   it('shows the read-only view when the field config is read-only', () => {

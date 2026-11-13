@@ -116,6 +116,8 @@ describe('colorField option errors', () => {
       { swatches: ['#3b82f6', 'blue'] },
       'colorField "color": swatch "blue" is not a #rgb or #rrggbb color',
     ],
+    [{ swatches: null }, 'colorField "color": swatches must be an array'],
+    [{ swatches: '#fff' }, 'colorField "color": swatches must be an array'],
   ])('rejects %o at call time', (options, error) => {
     expect(() => colorField({ name: 'color', ...(options as object) })).toThrow(new Error(error));
   });

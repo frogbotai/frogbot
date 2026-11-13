@@ -19,6 +19,8 @@ import { Input } from '../../../components/input.js';
 import { getFieldKind, isEmptyKindValue, isKindReadOnly } from '../kind.js';
 import { KindFieldLayout } from '../KindFieldLayout/index.client.js';
 
+const pickerValueWithoutColor = '#010101';
+
 type ColorFieldAdmin = Pick<NonNullable<TextField['admin']>, 'autoComplete' | 'placeholder'>;
 
 function getSwatches(field: ClientField): string[] {
@@ -40,9 +42,11 @@ function ColorSwatch({ color }: { color: string | undefined }) {
 function ColorValue({ value }: { value: unknown }) {
   if (isEmptyKindValue(value)) return null;
 
+  const color = getHexColor({ value });
+
   return (
     <span className="color-value">
-      <ColorSwatch color={getHexColor({ value })} />
+      {color && <ColorSwatch color={color} />}
       <span className="color-value__text">{String(value)}</span>
     </span>
   );
@@ -117,7 +121,7 @@ function ColorFieldComponent(props: TextFieldClientProps) {
                 disabled={disabled}
                 onChange={(event) => setValue(event.target.value)}
                 type="color"
-                value={color ?? '#000000'}
+                value={color ?? pickerValueWithoutColor}
               />
               <ColorSwatch color={color} />
             </label>

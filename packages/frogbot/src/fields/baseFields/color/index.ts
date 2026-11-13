@@ -26,6 +26,8 @@ const defaultSwatches = [
 ];
 
 function readSwatches(name: string, swatches: string[]): string[] {
+  if (!Array.isArray(swatches)) throw new Error(`colorField "${name}": swatches must be an array`);
+
   const colors = swatches.map((swatch) => {
     const color = getHexColor({ value: swatch });
 
