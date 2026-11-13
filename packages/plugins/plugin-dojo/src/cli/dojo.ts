@@ -2,8 +2,9 @@ import { createParser } from 'eventsource-parser';
 import type { DeployEnv } from 'frogbot';
 
 import { deviceLogin, readToken, removeToken } from './auth.js';
-import { ShareError } from './error.js';
+import { needsSignIn, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
+import { canWait, dojoProgram } from './io.js';
 
 /** `FROGBOT_DOJO_URL`, or Dojo itself. */
 export function dojoUrl(env: DeployEnv): string {
@@ -59,7 +60,7 @@ export type DojoClient = {
 
 /**
  * A Dojo client that signs in with `FROGBOT_DOJO_TOKEN`, then the stored token, then the device flow.
- * A refused `FROGBOT_DOJO_TOKEN` fails instead of starting the device flow, and so does CI with no token.
+ * A refused `FROGBOT_DOJO_TOKEN` exits 3 instead of starting the device flow, and so does CI with no token.
  */
 export function createDojo(io: DojoIO): DojoClient {
   const url = dojoUrl(io.env);
@@ -78,13 +79,17 @@ export function createDojo(io: DojoIO): DojoClient {
   const login = async () => {
     if (envToken) {
       throw new ShareError(
-        `Dojo didn't accept FROGBOT_DOJO_TOKEN at ${url}; it may be revoked. Set a working key, or unset it to sign in with a browser.`,
+        `Dojo didn't accept FROGBOT_DOJO_TOKEN at ${url}; it may be revoked. Set a working key, or unset it and run ${dojoProgram(io.program)} login.`,
+        needsSignIn,
+        { needs: 'sign-in' },
       );
     }
 
-    if (!io.isTTY && inCI(io.env)) {
+    if (!canWait(io) && inCI(io.env)) {
       throw new ShareError(
-        `No Dojo sign-in here, and nobody in CI can open a sign-in link. Set FROGBOT_DOJO_TOKEN to a Dojo API key from "frogbot dojo keys create", stored as a CI secret.`,
+        `No Dojo sign-in here, and nobody in CI can open a sign-in link. Set FROGBOT_DOJO_TOKEN to a Dojo API key from "${dojoProgram(io.program)} keys create", stored as a CI secret.`,
+        needsSignIn,
+        { needs: 'sign-in' },
       );
     }
 
@@ -214,10 +219,13 @@ const reconnects = 5;
 export async function followBuild({
   dojo,
   deploymentId,
+  program,
   onLine,
 }: {
   dojo: DojoClient;
   deploymentId: string | number;
+  /** The command's program, for the command that picks a lost log up again. */
+  program: string;
   onLine: (line: string) => void;
 }): Promise<BuildStatus> {
   let lastId: string | undefined;
@@ -263,7 +271,9 @@ export async function followBuild({
     tries = lastId === resumedFrom ? tries + 1 : 0;
 
     if (tries >= reconnects) {
-      throw new ShareError('Lost the build log. The build may still finish; check it in Dojo.');
+      throw new ShareError(
+        `Lost the build log. The build may still finish; follow it with ${dojoProgram(program)} deployments logs ${deploymentId} --follow.`,
+      );
     }
   }
 }

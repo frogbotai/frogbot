@@ -2,7 +2,7 @@ import type { RawVerb, Verb } from '../command.js';
 import type { DojoClient, DojoUser } from '../dojo.js';
 import { ShareError } from '../error.js';
 import type { DojoIO } from '../io.js';
-import { done } from '../io.js';
+import { dojoProgram, done } from '../io.js';
 import { listWorkspaces } from '../workspaces.js';
 
 async function showMe(io: DojoIO, dojo: DojoClient, user: DojoUser): Promise<void> {
@@ -34,7 +34,11 @@ export const account: Record<string, Verb | RawVerb> = {
         throw new ShareError(`Dojo didn't accept FROGBOT_DOJO_TOKEN at ${dojo().url}.`);
       }
 
-      if (!user) throw new ShareError(`Not signed in to ${dojo().url}. Run ${io.program} login.`);
+      if (!user) {
+        throw new ShareError(
+          `Not signed in to ${dojo().url}. Run ${dojoProgram(io.program)} login.`,
+        );
+      }
 
       await showMe(io, dojo(), user);
     },

@@ -24,7 +24,7 @@ import { shareFiles } from './files.js';
 import type { ShareFlags } from './flags.js';
 import { parseShareArgs } from './flags.js';
 import type { DojoIO } from './io.js';
-import { say } from './io.js';
+import { dojoProgram, say } from './io.js';
 import type { LiveKeys } from './keys.js';
 import { chooseFirstKeys, compareLiveKeys } from './keys.js';
 import type { AppLink } from './link.js';
@@ -59,7 +59,7 @@ async function asDeployStop<T>(work: () => T | Promise<T>): Promise<T> {
   try {
     return await work();
   } catch (error) {
-    if (error instanceof ShareError) throw new DeployError(error.message, error.code);
+    if (error instanceof ShareError) throw new DeployError(error.message, error.code, error.step);
 
     throw error;
   }
@@ -84,8 +84,9 @@ export async function shareToDojo(context: DeployContext): Promise<Record<string
 }
 
 async function share(context: DeployContext): Promise<Record<string, unknown>> {
-  const { root, config, io } = context;
-  const flags = parseShareArgs(context.args, io.program);
+  const { root, config } = context;
+  const flags = parseShareArgs(context.args, context.io.program);
+  const io = flags.wait ? { ...context.io, waits: true } : context.io;
   const folderLink = await readLink(root);
   const fileEnv = readEnvFiles(root);
   const allKeys = envKeys(fileEnv);
@@ -144,7 +145,8 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
 
     await dojo.signIn();
 
-    const appId = link?.appId ?? (await createApp({ dojo, io, flags, root }));
+    const app = link ? { id: link.appId, slug } : await createApp({ dojo, io, flags, root });
+    const appId = app.id;
 
     if (editor && (localKeys.length > 0 || flags.updateKeys)) {
       say(io, "[frogbot] Keys left out: only the app's owners manage its keys on Dojo.");
@@ -189,6 +191,7 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
     const build = await followBuild({
       dojo,
       deploymentId,
+      program: io.program,
       onLine: (line) => say(io, `[build] ${line}`),
     });
 
@@ -200,7 +203,13 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
 
     const shareLink = editor ? null : `${dojo.url}/collections/apps/${appId}/settings?share=1`;
 
-    if (shareLink) say(io, `[frogbot] Share it: ${shareLink}`);
+    if (shareLink) {
+      say(
+        io,
+        `[frogbot] Share it: ${dojoProgram(io.program)} sharing invite ${app.slug ?? appId} <email>...`,
+      );
+    }
+
     if (build.url) say(io, build.url);
 
     return { appId, url: build.url ?? null, shareLink };
@@ -313,7 +322,7 @@ async function createApp({
   io: DeployIO;
   flags: ShareFlags;
   root: string;
-}): Promise<string | number> {
+}): Promise<{ id: string | number; slug: string }> {
   const workspace = await chooseWorkspace({ dojo, io, slug: flags.workspace });
   const name = await appName(root);
   const slug = toSlug(flags.name ?? name);
@@ -344,7 +353,7 @@ async function createApp({
 
   say(io, `[frogbot] Created ${doc.slug} in ${workspace.name}, linked in ${linkPath}.`);
 
-  return doc.id;
+  return doc;
 }
 
 async function laterKeys({
