@@ -73,7 +73,9 @@ export interface Config {
     journal: Journal;
     memos: Memo;
     cards: Card;
+    tickets: Ticket;
     'api-keys': ApiKey;
+    'audit-logs': AuditLog;
     'frogbot-waitpoints': FrogBotWaitpoint;
   };
   collectionsJoins: {};
@@ -84,7 +86,9 @@ export interface Config {
     journal: JournalSelect;
     memos: MemosSelect;
     cards: CardsSelect;
+    tickets: TicketsSelect;
     'api-keys': ApiKeysSelect;
+    'audit-logs': AuditLogsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
   };
   db: {
@@ -267,6 +271,27 @@ export interface Card {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tickets".
+ */
+export interface Ticket {
+  id: number;
+  title: string;
+  status?: string | null;
+  notes?: string | null;
+  summary: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-keys".
  */
 export interface ApiKey {
@@ -289,6 +314,39 @@ export interface ApiKey {
    * The key that minted this one. Empty when a signed-in session did.
    */
   mintedBy?: (number | null) | ApiKey;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs".
+ */
+export interface AuditLog {
+  id: number;
+  collection: string;
+  operation: 'create' | 'update' | 'delete';
+  documentId: string;
+  user?: (number | null) | User;
+  apiKeyId?: string | null;
+  changes:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  snapshot?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  timestamp: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -412,6 +470,20 @@ export interface CardsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tickets_select".
+ */
+export interface TicketsSelect {
+  title?: boolean;
+  status?: boolean;
+  notes?: boolean;
+  summary?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-keys_select".
  */
 export interface ApiKeysSelect {
@@ -424,6 +496,22 @@ export interface ApiKeysSelect {
   expiresAt?: boolean;
   canMint?: boolean;
   mintedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs_select".
+ */
+export interface AuditLogsSelect {
+  collection?: boolean;
+  operation?: boolean;
+  documentId?: boolean;
+  user?: boolean;
+  apiKeyId?: boolean;
+  changes?: boolean;
+  snapshot?: boolean;
+  timestamp?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -496,7 +584,15 @@ export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
     relatedCollection:
-      'users' | 'posts' | 'notes' | 'journal' | 'memos' | 'cards' | 'api-keys';
+      | 'users'
+      | 'posts'
+      | 'notes'
+      | 'journal'
+      | 'memos'
+      | 'cards'
+      | 'tickets'
+      | 'api-keys'
+      | 'audit-logs';
     where?:
       | {
           [k: string]: unknown;
@@ -526,7 +622,9 @@ export interface ActivityWidget {
           | 'journal'
           | 'memos'
           | 'cards'
+          | 'tickets'
           | 'api-keys'
+          | 'audit-logs'
         )[]
       | null;
   };
