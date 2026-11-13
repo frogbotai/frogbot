@@ -24,7 +24,7 @@ export async function runLogs(
   try {
     return await logs(args, io, follow);
   } catch (error) {
-    if (!(error instanceof ShareError)) throw error;
+    if (!(error instanceof ShareError) || io.json) throw error;
 
     io.stderr.write(`[frogbot] ${error.message}\n`);
 

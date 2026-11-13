@@ -81,6 +81,7 @@ export const deployments: Noun = {
         const build = await followBuild({
           dojo: dojo(),
           deploymentId: id,
+          program: io.program,
           onLine: (line) => {
             lines.push(line);
 

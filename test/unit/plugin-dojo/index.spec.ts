@@ -507,6 +507,19 @@ describe('dojo() badge', () => {
     });
   });
 
+  it.each([undefined, true])('adds the badge with badge: %s', (value) => {
+    expect(providers(dojo({ badge: value })(template()) as FrogBotConfig)).toEqual([badge]);
+  });
+
+  it('leaves the badge out of the providers, but in the import map, with badge: false', () => {
+    const applied = dojo({ badge: false })(
+      template({ admin: { components: { providers: [own] } } }),
+    ) as FrogBotConfig;
+
+    expect(providers(applied)).toEqual([own]);
+    expect((applied.admin as { dependencies?: unknown }).dependencies).toEqual(dojoDependencies);
+  });
+
   it('adds the badge once when dojo() runs twice', () => {
     const twice = apply(apply(template()));
 
@@ -536,5 +549,23 @@ describe('dojo() as the platform plugin', () => {
     const sanitized = await buildConfig(template({ plugins: [addMedia] }));
 
     expect(prefixDefault(await sanitized._internal.payloadConfig, 'media')).toBe('media');
+  });
+
+  it('keeps the badge off when the app lists dojo({ badge: false }) and Dojo adds its own', async () => {
+    const { default: platformPlugin } =
+      await import('../../../packages/plugins/plugin-dojo/src/index.js');
+
+    const { registerPlatformPlugin } =
+      await import('../../../packages/frogbot/src/config/platformPlugin.js');
+
+    registerPlatformPlugin(platformPlugin);
+    const sanitized = await buildConfig(template({ plugins: [dojo({ badge: false })] }));
+    const { admin } = (await sanitized._internal.payloadConfig) as {
+      admin?: { components?: { providers?: unknown[] } };
+    };
+
+    expect(admin?.components?.providers ?? []).not.toContainEqual(
+      expect.stringContaining('DojoBadge'),
+    );
   });
 });

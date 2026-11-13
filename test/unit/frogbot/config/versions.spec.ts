@@ -6,9 +6,9 @@ import type { AgentConfig } from '../../../../packages/frogbot/src/agents/types.
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import { autonumberField } from '../../../../packages/frogbot/src/fields/baseFields/autonumber/index.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import { aiCapturePlugin } from '../../../../packages/plugins/plugin-ai-capture/src/index.js';
 import { apiKeysPlugin } from '../../../../packages/plugins/plugin-api-keys/src/index.js';
 import { auditLogPlugin } from '../../../../packages/plugins/plugin-audit-log/src/index.js';
-import { capturePlugin } from '../../../../packages/plugins/plugin-capture/src/index.js';
 
 const { incoming } = vi.hoisted(() => ({
   incoming: [] as { slug: string; versions: unknown; hasVersions: boolean }[][],
@@ -111,7 +111,7 @@ function everything(collections: FrogBotConfig['collections']): FrogBotConfig {
       ...collections,
       { slug: 'tickets', fields: [autonumberField({ name: 'number' })] },
     ],
-    plugins: [apiKeysPlugin(), auditLogPlugin(), capturePlugin()],
+    plugins: [apiKeysPlugin(), auditLogPlugin(), aiCapturePlugin()],
   });
 }
 

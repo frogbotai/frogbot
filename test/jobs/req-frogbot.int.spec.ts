@@ -1,3 +1,4 @@
+import { hasFrogBot } from 'frogbot/internal';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { bootJobsFixture } from './fixture.js';
@@ -44,7 +45,7 @@ beforeAll(async () => {
               task: ({ req: stepReq }) => {
                 seen.push({
                   event: 'inlineTask',
-                  frogbot: typeof stepReq.frogbot?.find === 'function',
+                  frogbot: hasFrogBot(stepReq) && typeof stepReq.frogbot.find === 'function',
                 });
 
                 return { output: {} };

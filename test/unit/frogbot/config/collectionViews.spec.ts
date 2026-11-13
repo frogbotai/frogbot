@@ -458,7 +458,7 @@ describe('collection views', () => {
         },
       });
 
-    expect(compileList('stage').custom?.frogbot.views[0]).toMatchObject({ groupBy: 'stage' });
+    expect(compileList('stage')?.custom?.frogbot.views[0]).toMatchObject({ groupBy: 'stage' });
     expect(() => compileList('notes')).toThrow(
       'list view "list" has an unsupported groupBy field "notes"',
     );

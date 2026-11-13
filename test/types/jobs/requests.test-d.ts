@@ -67,3 +67,22 @@ export const handlerRequests: JobsConfig = {
     },
   ],
 };
+
+export const jobsCollectionRequests: JobsConfig = {
+  jobsCollectionOverrides: ({ defaultJobsCollection }) => ({
+    ...defaultJobsCollection,
+    access: {
+      ...defaultJobsCollection.access,
+      admin: ({ req }) => {
+        expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
+
+        return Boolean(req.user);
+      },
+      read: ({ req }) => {
+        expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
+
+        return Boolean(req.user && req.frogbot);
+      },
+    },
+  }),
+};

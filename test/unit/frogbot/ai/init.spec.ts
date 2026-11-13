@@ -10,6 +10,16 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
+type GatewayProviders = ReturnType<typeof buildGatewayConfig>['providers'];
+
+function credentialOf(entry: GatewayProviders['openai'] | GatewayProviders['anthropic']) {
+  if (!entry || !('credential' in entry) || !entry.credential) {
+    throw new Error('Expected the provider to have a credential');
+  }
+
+  return entry.credential;
+}
+
 function makeAIConfig(providers: SanitizedAIConfig['providers']): SanitizedAIConfig {
   return {
     providers,
@@ -45,8 +55,9 @@ describe('buildGatewayConfig', () => {
   it('boots with no key and fails only the call, naming the env var', async () => {
     vi.stubEnv('OPENAI_API_KEY', '');
 
-    const credential = buildGatewayConfig(makeAIConfig({ openai: true })).providers.openai!
-      .credential!;
+    const credential = credentialOf(
+      buildGatewayConfig(makeAIConfig({ openai: true })).providers.openai,
+    );
 
     expect(() => createAIGateway(makeAIConfig({ openai: true }))).not.toThrow();
     expect(() => credential({}, { via: 'app' })).toThrow(
@@ -241,7 +252,7 @@ describe('buildGatewayConfig', () => {
     vi.stubEnv('ANTHROPIC_API_KEY', '');
 
     const ai = makeAIConfig({ anthropic: { models: ['claude-opus-5-5'] } });
-    const credential = buildGatewayConfig(ai).providers.anthropic!.credential!;
+    const credential = credentialOf(buildGatewayConfig(ai).providers.anthropic);
 
     expect(() => createAIGateway(ai)).not.toThrow();
     expect(() => credential({}, { via: 'app' })).toThrow(

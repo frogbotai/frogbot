@@ -46,6 +46,7 @@ function topHelp(program: string): string[] {
     ...list(Object.entries(dojoCommands)),
     '',
     `Run ${program} <command> --help for its verbs and flags. FROGBOT_DOJO_TOKEN signs in with an API key.`,
+    'Without a terminal, a command that needs a sign-in exits 3 and one that needs a payment exits 4, with the link to hand on. --wait waits instead.',
   ];
 }
 
@@ -87,8 +88,9 @@ async function runCommand(
   if ('raw' in verb && verb.ownJson) return verb.raw(args, io);
 
   const json = args.includes('--json');
-  const rest = args.filter((arg) => arg !== '--json');
-  const out = json ? jsonIO(io) : io;
+  const waits = args.includes('--wait');
+  const rest = args.filter((arg) => arg !== '--json' && arg !== '--wait');
+  const out = { ...(json ? jsonIO(io) : io), ...(waits && { waits }) };
 
   try {
     if ('raw' in verb) return await verb.raw(rest, out);
@@ -99,11 +101,18 @@ async function runCommand(
 
     io.stderr.write(`[frogbot] ${error.message}\n`);
 
+    if (json) {
+      io.stdout.write(`${JSON.stringify({ ok: false, error: error.message, ...error.step })}\n`);
+    }
+
     return error.code;
   }
 }
 
-/** Runs `<program> <command> [<verb>] …` and returns its exit code: 0, 1, or 2 for bad usage. */
+/**
+ * Runs `<program> <command> [<verb>] …` and returns its exit code: 0, 1, 2 for bad usage, 3 when it needs a sign-in
+ * and 4 when it needs a payment that nobody is here for.
+ */
 export async function runDojo(args: string[], io: DojoIO): Promise<number> {
   const [first, second, ...rest] = args;
   const name = first?.toLowerCase();

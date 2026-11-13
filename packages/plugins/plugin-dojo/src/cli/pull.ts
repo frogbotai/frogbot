@@ -31,7 +31,7 @@ export async function runPull(args: string[], io: DojoIO): Promise<number> {
   try {
     return await pull(args, io);
   } catch (error) {
-    if (!(error instanceof ShareError)) throw error;
+    if (!(error instanceof ShareError) || io.json) throw error;
 
     io.stderr.write(`[frogbot] ${error.message}\n`);
 

@@ -27,10 +27,12 @@ export function nameTaken(status: number, body: DojoErrorBody | undefined): bool
   if (status === 409 && body?.error === 'name_taken') return true;
 
   return (
-    body?.errors?.some((error) =>
-      error.data?.errors?.some(
-        (field) => field.path === 'slug' && field.message === 'Value must be unique',
-      ),
+    body?.errors?.some(
+      (error) =>
+        error.data?.code === 'name_taken' ||
+        error.data?.errors?.some(
+          (field) => field.path === 'slug' && field.message === 'Value must be unique',
+        ),
     ) ?? false
   );
 }
