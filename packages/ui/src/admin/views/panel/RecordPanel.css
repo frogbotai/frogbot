@@ -70,7 +70,8 @@
     padding: var(--spacer-3) var(--spacer-5);
   }
 
-  .fb-record-panel__footer:empty {
+  .fb-record-panel__footer:empty,
+  .fb-record-panel__footer:not(:has(.fb-record-panel__footer-content > *)) {
     display: none;
   }
 

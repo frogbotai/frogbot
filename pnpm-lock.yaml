@@ -1817,6 +1817,9 @@ importers:
       '@frogbotai/ui':
         specifier: workspace:*
         version: link:../../ui
+      '@payloadcms/translations':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.7
       '@types/react':
         specifier: 19.2.14
         version: 19.2.14

@@ -138,13 +138,7 @@ export const renderRecordPanelHandler: ServerFunction<
           {render(components.afterFields, 'after')}
         </div>
       ) : null}
-      {components.footer ? (
-        <PanelFooter>
-          <div className="fb-record-panel__footer-content">
-            {render(components.footer, 'footer')}
-          </div>
-        </PanelFooter>
-      ) : null}
+      {components.footer ? <PanelFooter>{render(components.footer, 'footer')}</PanelFooter> : null}
     </>
   );
 

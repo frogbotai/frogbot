@@ -40,11 +40,13 @@
     "node": ">=24.21.0"
   },
   "peerDependencies": {
+    "@payloadcms/translations": "catalog:",
     "@frogbotai/ui": "workspace:*",
     "frogbot": "workspace:*",
     "react": "^19.0.1 || ^19.1.2 || ^19.2.1"
   },
   "devDependencies": {
+    "@payloadcms/translations": "catalog:",
     "@frogbotai/ui": "workspace:*",
     "@types/react": "19.2.14",
     "frogbot": "workspace:*",

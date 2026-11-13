@@ -28,6 +28,7 @@ import MaximizeIcon from '../../../icons/icons/MaximizeIcon.js';
 import MoreHorizontalIcon from '../../../icons/icons/MoreHorizontalIcon.js';
 import { PanelIconButton } from '../../elements/PanelIconButton/index.client.js';
 import { getUseAsDone } from '../records/state.js';
+import { usePanelLayout } from './PanelConfig.client.js';
 import { useRecordPanel } from './RecordPanelProvider.client.js';
 import { RecordPanelTitle } from './RecordPanelTitle.client.js';
 
@@ -196,6 +197,7 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
   } = useDocumentInfo();
 
   const { title } = useDocumentTitle();
+  const titlePath = usePanelLayout()?.titlePath;
   const collectionConfig = getEntityConfig({ collectionSlug });
   const useAsDone = getUseAsDone(collectionConfig);
   const autosave = Boolean(
@@ -272,8 +274,10 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
             <MarkComplete compact={compact} path={useAsDone} />
             {compact ? <span className={`${baseClass}__title`}>{title}</span> : null}
           </>
-        ) : (
+        ) : titlePath ? (
           <RecordPanelTitle compact={compact} />
+        ) : (
+          <span className={`${baseClass}__title`}>{title}</span>
         )}
       </div>
       <div className={`${baseClass}__actions`}>

@@ -1,6 +1,7 @@
 import './ActivityField.css';
 
 import { PanelSection } from '@frogbotai/ui/admin';
+import { getTranslation, type I18nClient } from '@payloadcms/translations';
 
 import { defaultAuditSlug } from '../collection.js';
 import { auditLogCustomKey } from '../fields/activity.js';
@@ -31,8 +32,8 @@ type ActivityPayload = {
 /** The server props Payload gives a field component that `ActivityField` reads. */
 export type ActivityFieldProps = {
   collectionSlug?: string;
-  field?: { label?: unknown };
-  i18n?: { language?: string };
+  field?: { label?: Label };
+  i18n?: Pick<I18nClient, 'fallbackLanguage' | 'language' | 't'>;
   id?: number | string;
   req?: { payload: ActivityPayload; user?: unknown };
 };
@@ -62,6 +63,21 @@ function startCase(name: string): string {
 
 type ConfigField = Record<string, unknown>;
 
+type Label = Parameters<typeof getTranslation>[0];
+
+type Translator = ActivityFieldProps['i18n'];
+
+function translate(label: unknown, i18n: Translator): string | undefined {
+  if (typeof label === 'string') return label;
+  if (!i18n || !label || (typeof label !== 'object' && typeof label !== 'function')) {
+    return undefined;
+  }
+
+  const text: unknown = getTranslation(label as Label, i18n as I18nClient);
+
+  return typeof text === 'string' && text ? text : undefined;
+}
+
 function childFields(field: ConfigField): ConfigField[] {
   if (Array.isArray(field.tabs)) {
     return (field.tabs as ConfigField[]).flatMap((tab) =>
@@ -74,13 +90,14 @@ function childFields(field: ConfigField): ConfigField[] {
 
 function fieldLabels(
   fields: ConfigField[],
+  i18n: Translator,
   labels = new Map<string, string>(),
 ): Map<string, string> {
   for (const field of fields) {
     if (typeof field.name === 'string') {
-      labels.set(field.name, typeof field.label === 'string' ? field.label : startCase(field.name));
+      labels.set(field.name, translate(field.label, i18n) ?? startCase(field.name));
     } else {
-      fieldLabels(childFields(field), labels);
+      fieldLabels(childFields(field), i18n, labels);
     }
   }
 
@@ -169,8 +186,8 @@ export async function ActivityField({ collectionSlug, field, i18n, id, req }: Ac
     .catch(() => ({ docs: [] as Entry[] }));
 
   const titleKey = userTitleKey(payload, auditSlug);
-  const labels = fieldLabels(collection.config.fields);
-  const heading = typeof field?.label === 'string' ? field.label : 'Activity';
+  const labels = fieldLabels(collection.config.fields, i18n);
+  const heading = translate(field?.label, i18n) ?? 'Activity';
   const formatter = new Intl.DateTimeFormat(i18n?.language, {
     dateStyle: 'medium',
     timeStyle: 'short',

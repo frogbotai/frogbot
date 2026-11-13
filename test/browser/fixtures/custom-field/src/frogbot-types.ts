@@ -74,6 +74,7 @@ export interface Config {
     memos: Memo;
     cards: Card;
     tickets: Ticket;
+    scraps: Scrap;
     'api-keys': ApiKey;
     'audit-logs': AuditLog;
     'frogbot-waitpoints': FrogBotWaitpoint;
@@ -87,6 +88,7 @@ export interface Config {
     memos: MemosSelect;
     cards: CardsSelect;
     tickets: TicketsSelect;
+    scraps: ScrapsSelect;
     'api-keys': ApiKeysSelect;
     'audit-logs': AuditLogsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
@@ -292,6 +294,25 @@ export interface Ticket {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scraps".
+ */
+export interface Scrap {
+  id: number;
+  title?: string | null;
+  notes?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-keys".
  */
 export interface ApiKey {
@@ -484,6 +505,18 @@ export interface TicketsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scraps_select".
+ */
+export interface ScrapsSelect {
+  title?: boolean;
+  notes?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-keys_select".
  */
 export interface ApiKeysSelect {
@@ -591,6 +624,7 @@ export interface CollectionQueryWidget {
       | 'memos'
       | 'cards'
       | 'tickets'
+      | 'scraps'
       | 'api-keys'
       | 'audit-logs';
     where?:
@@ -623,6 +657,7 @@ export interface ActivityWidget {
           | 'memos'
           | 'cards'
           | 'tickets'
+          | 'scraps'
           | 'api-keys'
           | 'audit-logs'
         )[]
