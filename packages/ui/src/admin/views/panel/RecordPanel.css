@@ -149,9 +149,27 @@
     min-width: 0;
   }
 
-  .fb-record-panel-header--title:not(.fb-record-panel-header--compact)
+  @container (width >= 520px) {
+    .fb-record-panel-header--title:not(.fb-record-panel-header--compact)
+      .fb-record-panel-header__actions {
+      margin-top: var(--spacer-1);
+    }
+  }
+
+  @container (width < 520px) {
+    .fb-record-panel-header {
+      flex-wrap: wrap;
+      row-gap: var(--spacer-2);
+    }
+
     .fb-record-panel-header__actions {
-    margin-top: var(--spacer-1);
+      margin-left: auto;
+      order: -1;
+    }
+
+    .fb-record-panel-header__start {
+      flex-basis: 100%;
+    }
   }
 
   .fb-record-panel-header .fb-record-panel-title {

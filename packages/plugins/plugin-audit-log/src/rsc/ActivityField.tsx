@@ -60,12 +60,28 @@ function startCase(name: string): string {
     .replace(/^./, (first) => first.toUpperCase());
 }
 
-function fieldLabels(fields: Array<Record<string, unknown>>): Map<string, string> {
-  const labels = new Map<string, string>();
+type ConfigField = Record<string, unknown>;
 
+function childFields(field: ConfigField): ConfigField[] {
+  if (Array.isArray(field.tabs)) {
+    return (field.tabs as ConfigField[]).flatMap((tab) =>
+      typeof tab.name === 'string' ? [tab] : childFields(tab),
+    );
+  }
+
+  return Array.isArray(field.fields) ? (field.fields as ConfigField[]) : [];
+}
+
+function fieldLabels(
+  fields: ConfigField[],
+  labels = new Map<string, string>(),
+): Map<string, string> {
   for (const field of fields) {
-    if (typeof field.name !== 'string') continue;
-    labels.set(field.name, typeof field.label === 'string' ? field.label : startCase(field.name));
+    if (typeof field.name === 'string') {
+      labels.set(field.name, typeof field.label === 'string' ? field.label : startCase(field.name));
+    } else {
+      fieldLabels(childFields(field), labels);
+    }
   }
 
   return labels;
