@@ -101,6 +101,7 @@ export type {
   AgentGenerateOpts,
   AgentGenerateResult,
   AgentInstance,
+  AgentInstructions,
   AgentManifest,
   AgentManifestEntry,
   AgentModelId,

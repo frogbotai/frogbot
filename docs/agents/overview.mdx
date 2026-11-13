@@ -32,7 +32,7 @@ export const supportAgent: AgentConfig = {
 | --- | --- | --- | --- |
 | `slug` | `string` | Required | Unique, URL-safe identifier. It names the agent in `frogbot.agents[slug]`, the HTTP routes, and generated types. |
 | `model` | `ModelId \| AgentModelOptions` | `ai.defaultModel` | A model ID or router slug for a single choice, or [model options](#model-options) for a selectable list. Startup fails when neither `model` nor `ai.defaultModel` sets a default. |
-| `instructions` | `string` | Required | System instructions for every run. Must be non-empty. Agents with [skills](#add-skills) get one discovery line per skill appended. |
+| `instructions` | `string \| ({ req }) => string \| Promise<string>` | Required | System instructions. A string is fixed and must be non-empty. A function runs once per run with that run's `req`; see [Instructions that change](#instructions-that-change). Agents with [skills](#add-skills) get one discovery line per skill appended. |
 | `profile` | `AgentProfile` | — | Client-facing identity. See [Profile options](#profile-options). |
 | `channels` | `ChannelPieceInstance[]` | — | Channel-capable piece instances, such as [Slack](/pieces/slack), that the agent answers in. Each instance needs factory `auth` and can belong to only one agent. |
 | `skills` | `SkillConfig[]` | — | Playbooks the agent loads on demand. See [Add skills](#add-skills). |
@@ -83,6 +83,29 @@ FrogBot validates the default and every explicit option. Unknown models or IDs o
 The chat composer shows the active model name and its reasoning level, for example `gpt-5 · High`. Clicking it opens a reasoning slider for that model, and the trigger reads `Select effort`; clicking the model name inside switches to the list of allowed models, and the trigger reads `Select model`. A model without reasoning options opens straight on the list. The slider starts at `Default`, which leaves the level to the provider, and offers only the options that model supports. The selector is hidden when the agent allows one model and that model has no reasoning options.
 
 FrogBot saves the chosen model as a user preference and remembers one reasoning level per model. Switching models restores the level last used with the new model, or `Default` if it has none; levels never carry over from one model to another. A saved model or level that is no longer allowed or offered falls back to the agent's default model or to `Default`. Opening an existing chat starts from the model and level of its latest sent message instead of the saved preference, as long as that model is still allowed.
+
+### Instructions that change
+
+A string is read once when the app starts. When the guidance changes between runs, such as rules staff edit in a collection, pass a function instead. FrogBot calls it once per run, before the model, with that run's `req`, so the next run sees the edit without a restart:
+
+```ts
+import type { AgentConfig } from 'frogbot'
+
+export const supportAgent: AgentConfig = {
+  slug: 'support',
+  instructions: async ({ req }) => {
+    const { docs } = await req.frogbot.find({
+      collection: 'policies',
+      where: { active: { equals: true } },
+      req
+    })
+
+    return ['Answer support questions.', ...docs.map((policy) => `- ${policy.rule}`)].join('\n')
+  }
+}
+```
+
+The function runs on every run, including schedule and trigger runs, so keep it fast and cache slow reads yourself. An empty, whitespace-only or non-string result, or a thrown error, fails the run before the model is called. Skill discovery lines still follow the returned text.
 
 ### Use the general preset
 

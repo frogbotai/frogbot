@@ -56,3 +56,17 @@ export const skillAssistant: AgentConfig = {
   instructions: 'Help customers resolve support requests.',
   skills: [supportPolicy, folderSkill],
 };
+
+export const freshRules: AgentConfig = {
+  slug: 'rules',
+  instructions: ({ req }) => `Help ${req.user ? 'the signed-in user' : 'the visitor'}.`,
+};
+
+export const asyncRules: AgentConfig = {
+  slug: 'async-rules',
+  instructions: async ({ req }) => {
+    const { docs } = await req.frogbot.find({ collection: 'policies', limit: 1, req });
+
+    return `Follow this policy: ${String(docs[0]?.body ?? 'none')}`;
+  },
+};

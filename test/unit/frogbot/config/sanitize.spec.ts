@@ -3802,6 +3802,26 @@ describe('frogbot sanitize', () => {
       });
     });
 
+    it.each([{ instructions: '' }, { instructions: '  ' }, { instructions: 42 }, {}])(
+      'rejects empty or non-string instructions (%o)',
+      (overrides) => {
+        const { instructions: _instructions, ...rest } = agent;
+        const config = makeConfig({ ai, agents: [{ ...rest, ...overrides }] } as never);
+
+        expect(() => sanitize(config)).toThrow(
+          "[frogbot] Agent 'support' requires `instructions`.",
+        );
+      },
+    );
+
+    it('accepts instructions as a function without calling it', () => {
+      const instructions = vi.fn(() => 'Help the user');
+      const result = sanitize(makeConfig({ ai, agents: [{ ...agent, instructions }] }));
+
+      expect(instructions).not.toHaveBeenCalled();
+      expect(result.agents?.[0]?.instructions).toBe(instructions);
+    });
+
     it.each([
       { model: agent.model, allowModels: ['openai/gpt-4o'], options: "['openai/gpt-4o']" },
       { model: agent.model, allowModels: [], options: '[]' },
@@ -5186,9 +5206,27 @@ describe('frogbot sanitize', () => {
         'load_skill',
         'load_skill_resource',
       ]);
-      expect(result.agents?.[0].instructions).toBe(
-        'Help the user\n\n- **docs**: Product documentation\n- **support**',
+      expect(result.agents?.[0].instructions).toBe('Help the user');
+      expect(result.agents?.[0].skillLines).toEqual([
+        '- **docs**: Product documentation',
+        '- **support**',
+      ]);
+    });
+
+    it('keeps skill lines apart from function instructions', () => {
+      const instructions = vi.fn(() => 'Help the user');
+      const result = sanitize(
+        makeConfig({
+          ai,
+          agents: [
+            { ...agent, instructions, skills: [{ slug: 'docs', instructions: 'Use docs' }] },
+          ],
+        }),
       );
+
+      expect(result.agents?.[0].instructions).toBe(instructions);
+      expect(result.agents?.[0].skillLines).toEqual(['- **docs**']);
+      expect(instructions).not.toHaveBeenCalled();
     });
 
     it('keeps skill tools when root tool inheritance is disabled', () => {
@@ -5224,6 +5262,7 @@ describe('frogbot sanitize', () => {
 
       expect(empty.agents?.[0].tools).toEqual(omitted.agents?.[0].tools);
       expect(empty.agents?.[0].instructions).toBe(omitted.agents?.[0].instructions);
+      expect(empty.agents?.[0].skillLines).toBeUndefined();
     });
 
     it('reserves the schedule task slug and merges user jobs', async () => {
