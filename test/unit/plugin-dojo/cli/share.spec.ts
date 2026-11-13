@@ -429,6 +429,15 @@ describe('frogbot share: the name', () => {
   it.each([
     ["Dojo's name_taken", 409, { error: 'name_taken' }],
     [
+      "Dojo's name_taken in errors[].data.code",
+      409,
+      {
+        errors: [
+          { name: 'APIError', message: 'That name is taken.', data: { code: 'name_taken' } },
+        ],
+      },
+    ],
+    [
       "Payload's unique-field error on slug",
       400,
       {

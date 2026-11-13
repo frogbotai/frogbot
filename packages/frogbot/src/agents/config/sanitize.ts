@@ -90,7 +90,10 @@ export function sanitizeAgents({
 
     const modelOptions = options === '*' ? [...chatModels] : (options ?? []);
 
-    if (typeof agent.instructions !== 'string' || !agent.instructions.trim()) {
+    if (
+      typeof agent.instructions !== 'function' &&
+      (typeof agent.instructions !== 'string' || !agent.instructions.trim())
+    ) {
       throw new Error(`[frogbot] Agent '${agent.slug}' requires \`instructions\`.`);
     }
 
@@ -180,6 +183,7 @@ export function sanitizeAgents({
     }
 
     let agentTools: AnyTool[] | undefined;
+    let skillLines: string[] = [];
     let mcp: MCPServer[] = [];
     if (agent.tools !== undefined) {
       if (!Array.isArray(agent.tools)) {
@@ -239,16 +243,11 @@ export function sanitizeAgents({
           }
         }
 
-        const skillLines = agent.skills.map(
+        skillLines = agent.skills.map(
           ({ slug, description }) => `- **${slug}**${description ? `: ${description}` : ''}`,
         );
 
         agentTools = [...(agentTools ?? []), ...buildSkillTools(agent.skills)];
-
-        agent = {
-          ...agent,
-          instructions: `${agent.instructions}\n\n${skillLines.join('\n')}`,
-        };
       }
     }
 
@@ -317,6 +316,7 @@ export function sanitizeAgents({
       access: agent.access ?? defaultAccessFn,
       tools: agentTools,
       ...(mcp.length > 0 ? { mcp } : {}),
+      ...(skillLines.length > 0 ? { skillLines } : {}),
     };
   });
 }

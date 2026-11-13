@@ -537,24 +537,32 @@ describe('MCP plugin integration', () => {
     expect((await booted.restClient.get(`/api/${postsSlug}`, { headers })).status).toBe(200);
     expect(rest.status).toBe(403);
 
-    const rpc = (id: number, method: string, params: Record<string, unknown>) =>
-      booted.restClient.post<ToolCallBody | ToolsListBody | string>(
+    const rpc = <T extends ToolCallBody | ToolsListBody>(
+      id: number,
+      method: string,
+      params: Record<string, unknown>,
+    ) =>
+      booted.restClient.post<T | string>(
         mcpEndpoint,
         { jsonrpc: '2.0', id, method, params },
         { headers },
       );
 
     const actor = parseMcpResponse<ToolCallBody>(
-      (await rpc(2, 'tools/call', { name: actorToolName, arguments: {} })).body,
+      (await rpc<ToolCallBody>(2, 'tools/call', { name: actorToolName, arguments: {} })).body,
     ).result.structuredContent;
 
     const names = parseMcpResponse<ToolsListBody>(
-      (await rpc(1, 'tools/list', {})).body,
+      (await rpc<ToolsListBody>(1, 'tools/list', {})).body,
     ).result.tools.map(({ name }) => name);
 
     const notes = toolText(
-      (await rpc(3, 'tools/call', { name: 'findDocuments', arguments: { slug: staffNotesSlug } }))
-        .body as ToolCallBody | string,
+      (
+        await rpc<ToolCallBody>(3, 'tools/call', {
+          name: 'findDocuments',
+          arguments: { slug: staffNotesSlug },
+        })
+      ).body,
     );
 
     expect(notes.text).not.toContain('Staff only');

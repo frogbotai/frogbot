@@ -95,12 +95,14 @@ export type {
   WidgetServerProps,
   WidgetWidth,
 } from './admin/views/types.js';
+export type { AgentErrorCode } from './agents/service.js';
 export type {
   AgentAccess,
   AgentConfig,
   AgentGenerateOpts,
   AgentGenerateResult,
   AgentInstance,
+  AgentInstructions,
   AgentManifest,
   AgentManifestEntry,
   AgentModelId,
@@ -510,7 +512,13 @@ export type {
 } from './search/types.js';
 export type { GatewayHandler } from './server/gateway.js';
 export { createGatewayHandler } from './server/gateway.js';
-export type { SkillConfig, SkillContent, SkillCtx, SkillResource } from './skills/types.js';
+export type {
+  SkillConfig,
+  SkillContent,
+  SkillCtx,
+  SkillResource,
+  SkillResources,
+} from './skills/types.js';
 export type {
   ToolApproval,
   ToolApprovalMode,

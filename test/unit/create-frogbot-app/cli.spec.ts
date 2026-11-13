@@ -25,20 +25,22 @@ function writeFakeManager(name: string, script: string): void {
 }
 
 function createApp(argv: string[], env: Record<string, string> = {}) {
+  const childEnv: Partial<NodeJS.ProcessEnv> = {
+    GIT_AUTHOR_EMAIL: 'test@frogbot.test',
+    GIT_AUTHOR_NAME: 'FrogBot Test',
+    GIT_COMMITTER_EMAIL: 'test@frogbot.test',
+    GIT_COMMITTER_NAME: 'FrogBot Test',
+    GIT_CONFIG_GLOBAL: gitConfig,
+    GIT_CONFIG_NOSYSTEM: '1',
+    HOME: root,
+    PATH: `${fakeBin}${path.delimiter}${process.env.PATH}`,
+    ...env,
+  };
+
   const result = spawnSync(process.execPath, [cli, ...argv], {
     cwd: root,
     encoding: 'utf8',
-    env: {
-      GIT_AUTHOR_EMAIL: 'test@frogbot.test',
-      GIT_AUTHOR_NAME: 'FrogBot Test',
-      GIT_COMMITTER_EMAIL: 'test@frogbot.test',
-      GIT_COMMITTER_NAME: 'FrogBot Test',
-      GIT_CONFIG_GLOBAL: gitConfig,
-      GIT_CONFIG_NOSYSTEM: '1',
-      HOME: root,
-      PATH: `${fakeBin}${path.delimiter}${process.env.PATH}`,
-      ...env,
-    },
+    env: childEnv as NodeJS.ProcessEnv,
   });
 
   return { status: result.status, stderr: result.stderr, stdout: result.stdout };

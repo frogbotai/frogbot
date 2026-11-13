@@ -15,7 +15,7 @@ import {
   typecheckAreas,
   verifyGroups,
 } from '../../../scripts/lib/affected.mjs';
-import { runGroups, worktreePatchId } from '../../../scripts/lib/verify.mjs';
+import { runGroups, verifyInputs, worktreePatchId } from '../../../scripts/lib/verify.mjs';
 
 const root = path.resolve(import.meta.dirname, '../../..');
 
@@ -385,7 +385,6 @@ describe('verifyGroups', () => {
 
 describe('runGroups', () => {
   const log = path.join(os.tmpdir(), `verify-${process.pid}.log`);
-  const build = () => Promise.resolve({ ok: true, groups: [] });
   const pass = ['node', '-e', ''];
   const fail = ['node', '-e', 'process.exit(3)'];
 
@@ -397,7 +396,6 @@ describe('runGroups', () => {
     const result = await runGroups({
       root,
       log,
-      build,
       groups: [
         { group: 'typecheck', level: 'typecheck', commands: [pass] },
         { group: 'unit', level: 'unit', commands: [fail] },
@@ -416,11 +414,29 @@ describe('runGroups', () => {
     const result = await runGroups({
       root,
       log,
-      build,
       groups: [{ group: 'unit', level: 'unit', commands: [pass, pass] }],
     });
 
     expect(result).toMatchObject({ ok: true, failed: null });
+  });
+});
+
+describe('verifyInputs', () => {
+  it('builds stale packages before it resolves test imports, and stops when the build fails', async () => {
+    const built = { ok: false, groups: [['build  failed']] };
+    const order: string[] = [];
+
+    const result = await verifyInputs(root, os.devNull, {
+      files: [],
+      build: () => {
+        order.push('build');
+
+        return Promise.resolve(built);
+      },
+    });
+
+    expect(order).toEqual(['build']);
+    expect(result).toEqual({ built });
   });
 });
 

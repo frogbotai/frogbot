@@ -15,7 +15,6 @@ import {
 import createLucideIcon from '../../icons/createLucideIcon.js';
 import ArrowUpIcon from '../../icons/icons/ArrowUpIcon.js';
 import type { ChatPlatformAdapter } from '../adapter.js';
-import { acceptFor } from '../attachment-kind.js';
 import {
   AttachmentControl,
   AttachmentList,
@@ -382,7 +381,6 @@ export function Composer({
               <div className="fb-composer__start">
                 {attachments.storage && (
                   <AttachmentControl
-                    accept={acceptFor(modelInputs)}
                     add={(files) => void attachments.add(files)}
                     disabled={disabled}
                   />

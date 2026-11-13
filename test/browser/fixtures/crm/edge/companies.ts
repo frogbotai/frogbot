@@ -31,10 +31,12 @@ const INDUSTRIES = [
 export async function seedCompanies({ frogbot, owner, logos, companies }: Seeded) {
   const logoIds = [...logos.values()];
 
-  const create = async (data: Parameters<typeof frogbot.create<'companies'>>[0]['data']) => {
+  const create = async (
+    data: Parameters<typeof frogbot.create<'companies'>>[0]['data'] & { name: string },
+  ) => {
     const company = await frogbot.create({ collection: 'companies', data, overrideAccess: true });
 
-    companies.set(company.name, company.id);
+    companies.set(data.name, company.id);
   };
 
   await create({

@@ -58,7 +58,7 @@ export function unreachableStop(url: string, env: DeployEnv, cause?: unknown): S
   );
 }
 
-/** A failed Dojo reply: Payload's `errors` (with a `ValidationError`'s field errors), or an OAuth-style `error`. */
+/** A failed Dojo reply: Payload's `errors` (with a `ValidationError`'s field errors or an `APIError`'s `code`), or an OAuth-style `error`. */
 export type DojoErrorBody = {
   errors?: {
     message?: string;

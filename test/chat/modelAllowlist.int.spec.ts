@@ -252,7 +252,10 @@ describe('per-user agent model allowlists', () => {
 
       expect(response).toEqual({
         status: 403,
-        body: { error: "Model 'test/writer' is not allowed for this user" },
+        body: {
+          code: 'model-not-allowed',
+          error: "Model 'test/writer' is not allowed for this user. Allowed: 'test/thinker'",
+        },
       });
       expect(model.requests).toEqual([]);
       expect(await rowCounts()).toEqual([0, 0, 0]);
@@ -287,7 +290,10 @@ describe('per-user agent model allowlists', () => {
 
       expect(response).toEqual({
         status: 403,
-        body: { error: "Model 'test/writer' is not allowed for this user" },
+        body: {
+          code: 'model-not-allowed',
+          error: "Model 'test/writer' is not allowed for this user. Allowed: 'test/thinker'",
+        },
       });
       expect(model.requests).toEqual([]);
       expect(await rowCounts()).toEqual([0, 0, 0]);
@@ -352,7 +358,10 @@ describe('per-user agent model allowlists', () => {
 
     expect(response).toEqual({
       status: 403,
-      body: { error: `No model on agent '${agentSlug}' is allowed for this user` },
+      body: {
+        code: 'no-model-available',
+        error: `No model on agent '${agentSlug}' is allowed for this user`,
+      },
     });
     expect(model.requests).toEqual([]);
     expect(await rowCounts()).toEqual([0, 0, 0]);
@@ -366,7 +375,10 @@ describe('per-user agent model allowlists', () => {
 
     expect(response).toEqual({
       status: 403,
-      body: { error: `Model 'test/writer' is not allowed for agent '${agentSlug}'` },
+      body: {
+        code: 'model-not-allowed',
+        error: `Model 'test/writer' is not allowed for agent '${agentSlug}'. Allowed: none`,
+      },
     });
     expect(model.requests).toEqual([]);
     expect(await rowCounts()).toEqual([0, 0, 0]);
@@ -398,7 +410,10 @@ describe('per-user agent model allowlists', () => {
 
     expect(steer).toEqual({
       status: 403,
-      body: { error: "Model 'test/writer' is not allowed for this user" },
+      body: {
+        code: 'model-not-allowed',
+        error: "Model 'test/writer' is not allowed for this user. Allowed: 'test/thinker'",
+      },
     });
     expect((await turn).body.status).toBe('completed');
     expect(model.requests.map(({ model }) => model)).toEqual(['thinker']);
@@ -446,7 +461,7 @@ describe('per-user agent model allowlists', () => {
 
     expect(response.body).toMatchObject({
       code: 'selection-unavailable',
-      error: "Model 'test/writer' is not allowed for this user",
+      error: "Model 'test/writer' is not allowed for this user. Allowed: 'test/thinker'",
     });
     expect(model.requests.map(({ model }) => model)).toEqual(['thinker']);
     await expect(
@@ -509,7 +524,7 @@ describe('per-user agent model allowlists', () => {
       runQueuedTurn({ frogbot: booted.frogbot, chatId: first.body.chatId }),
     ).rejects.toMatchObject({
       code: 'selection-unavailable',
-      message: "Model 'test/thinker' is not allowed for this user",
+      message: "Model 'test/thinker' is not allowed for this user. Allowed: 'test/writer'",
     });
 
     expect(model.requests).toEqual([]);

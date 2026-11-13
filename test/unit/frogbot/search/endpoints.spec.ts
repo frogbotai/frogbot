@@ -279,7 +279,13 @@ describe('cross-collection search REST endpoint', () => {
         .filter(({ path }) => path.startsWith('/frogbot'))
         .map(({ method, path }) => `${method} ${path}`);
 
-    const core = ['get /frogbot', 'get /frogbot/app-icon/:size', 'get /frogbot/app-manifest'];
+    const core = [
+      'get /frogbot',
+      'get /frogbot/app-icon/:size',
+      'get /frogbot/app-manifest',
+      'head /frogbot/app-icon/:size',
+      'head /frogbot/app-manifest',
+    ];
 
     expect(routes(indexed)).toEqual([...core, 'post /frogbot/search']);
     expect(routes(unindexed)).toEqual(core);
