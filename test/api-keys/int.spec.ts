@@ -1201,6 +1201,21 @@ describe('API keys plugin integration', () => {
       );
     });
 
+    it('answers a missing key on revoke, minted-count and rotate with the errors envelope', async () => {
+      const notFound = {
+        errors: [{ name: 'APIError', message: 'API key not found', data: { code: 'not_found' } }],
+      };
+
+      for (const response of [
+        await revoke(session, 999_999),
+        await mintedCount(session, 999_999),
+        await rotate(session, 999_999),
+      ]) {
+        expect(response.status).toBe(404);
+        expect(response.body).toEqual(notFound);
+      }
+    });
+
     it('lets a key revoke only itself and the keys it minted', async () => {
       const parent = await mint(session, 'P', { canMint: true });
       const sibling = await mint(session, 'S');
@@ -1212,9 +1227,14 @@ describe('API keys plugin integration', () => {
 
         expect(refused.status).toBe(404);
         expect(refused.body).toEqual({
-          error:
-            'A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.',
-          code: 'not_found',
+          errors: [
+            {
+              name: 'APIError',
+              message:
+                'A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.',
+              data: { code: 'not_found' },
+            },
+          ],
         });
         expect((await mintedCount(asKey(child.body.token), id)).status).toBe(404);
       }

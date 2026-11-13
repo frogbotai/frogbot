@@ -9,10 +9,12 @@ export async function seedDeals({ frogbot, owner, companies, contacts, deals }: 
   const companyIds = [...companies.values()];
   const contactIds = [...contacts.values()];
 
-  const create = async (data: Parameters<typeof frogbot.create<'deals'>>[0]['data']) => {
+  const create = async (
+    data: Parameters<typeof frogbot.create<'deals'>>[0]['data'] & { name: string },
+  ) => {
     const deal = await frogbot.create({ collection: 'deals', data, overrideAccess: true });
 
-    deals.set(deal.name, deal.id);
+    deals.set(data.name, deal.id);
   };
 
   await create({

@@ -58,14 +58,13 @@ function authenticationRequired(req: FrogBotRequest) {
 }
 
 const keyNotFound = (req: FrogBotRequest) =>
-  Response.json(
-    {
-      error: isApiKeyRequest(req)
-        ? 'A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.'
-        : 'API key not found',
-      code: 'not_found',
-    },
-    { status: 404 },
+  new APIError(
+    isApiKeyRequest(req)
+      ? 'A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.'
+      : 'API key not found',
+    404,
+    { code: 'not_found' },
+    true,
   );
 
 function describeError(error: APIError): string {
@@ -182,7 +181,7 @@ function createEndpoints({
         if (!req.user) return authenticationRequired(req);
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
-          return Response.json({ error: 'API key not found' }, { status: 404 });
+          throw keyNotFound(req);
         }
 
         const text = (await req.text?.()) ?? '';
@@ -216,7 +215,7 @@ function createEndpoints({
           }
 
           if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
-            return keyNotFound(req);
+            throw keyNotFound(req);
           }
 
           throw error;
@@ -230,7 +229,7 @@ function createEndpoints({
         if (!req.user) return authenticationRequired(req);
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
-          return Response.json({ error: 'API key not found' }, { status: 404 });
+          throw keyNotFound(req);
         }
 
         try {
@@ -241,7 +240,7 @@ function createEndpoints({
           });
         } catch (error) {
           if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
-            return keyNotFound(req);
+            throw keyNotFound(req);
           }
 
           throw error;
@@ -256,7 +255,7 @@ function createEndpoints({
         if (!canMintKeys(req)) return sessionRequired();
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) {
-          return Response.json({ error: 'API key not found' }, { status: 404 });
+          throw keyNotFound(req);
         }
 
         try {
@@ -272,7 +271,7 @@ function createEndpoints({
           }
 
           if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
-            return keyNotFound(req);
+            throw keyNotFound(req);
           }
 
           if (error instanceof APIError && error.status < 500) {

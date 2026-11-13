@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { decodeCapture } from '@frogbotai/plugin-capture';
+import { decodeCapture } from '@frogbotai/plugin-ai-capture';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';

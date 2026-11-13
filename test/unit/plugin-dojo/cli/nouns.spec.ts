@@ -372,6 +372,25 @@ describe('frogbot dojo <noun> <verb>', () => {
     expect(dojo.requests.filter(({ path }) => path !== '/api/apps/deals/cli')).toEqual([]);
   });
 
+  it('names the taken app when Dojo answers name_taken in errors[].data.code', async () => {
+    const { dojo, env, cwd } = await setup();
+    const result = testIO({ cwd, env });
+
+    dojo.createReply = {
+      status: 409,
+      body: {
+        errors: [
+          { name: 'APIError', message: 'That name is taken.', data: { code: 'name_taken' } },
+        ],
+      },
+    };
+
+    expect(await runDojo(['apps', 'create', 'Deal Flow'], result.io)).toBe(1);
+    expect(result.stderr()).toEqual([
+      '[frogbot] The name "deal-flow" is taken on Dojo. Choose another.',
+    ]);
+  });
+
   it('refuses --cascade with --no-cascade before asking to confirm', async () => {
     const { dojo, env, cwd } = await setup();
     const result = testIO({ cwd, env, isTTY: true, confirm: true });

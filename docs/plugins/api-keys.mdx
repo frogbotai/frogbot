@@ -53,7 +53,7 @@ The request authenticates as the user who owns the key. Revoked, [expired](#expi
 
 A request records its time in the key's **Last Used At** about once a minute, so it can lag by up to a minute. Parallel requests that all find it more than a minute old can each record it. Recording it never fails the request: when the write fails, for example on a write conflict between parallel requests, the request still authenticates and the first failure is logged.
 
-When AI is configured, usage rows include an optional `apiKey` relationship identifying the key that authenticated the request. Cookie-authenticated requests omit it, and the relationship follows a custom `collectionSlug`. A key's **Total Cost (USD)** field sums its usage rows, so when [usage retention](/plugins/usage-reports#retention) is on, it covers only the rows still kept.
+When AI is configured, usage rows include an optional `apiKey` relationship identifying the key that authenticated the request. Cookie-authenticated requests omit it, and the relationship follows a custom `collectionSlug`. A key's **Total Cost (USD)** field sums its usage rows, so when [usage retention](/plugins/ai-usage#retention) is on, it covers only the rows still kept.
 
 On a key-authenticated request, `req.user` is the owner with `apiKeyId` and `apiKey`, the key document without its hash, so hooks and access functions can read fields other plugins add to keys. Other plugins find the keys collection through `plugins['plugin-api-keys'].options.collectionSlug` ([Order, slug, and options](/plugins/build-your-own#order-slug-and-options)).
 
@@ -140,7 +140,7 @@ Other plugins can add fields to the keys collection, and the plugin keeps them:
 
 The plugin does not require a role system. By default, callers read and update only the keys they own, and revoke and rotate are limited to the caller's own keys.
 
-A request made with a key reaches only that key and the keys it minted, whatever the access rules or `canRevokeAnyKey` allow. Revoking, rotating or counting any other key answers `404` with `{ "error": "A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.", "code": "not_found" }`.
+A request made with a key reaches only that key and the keys it minted, whatever the access rules or `canRevokeAnyKey` allow. Revoking, rotating or counting any other key answers `404` with the standard error body, whose message tells the caller to sign in: `{ "errors": [{ "name": "APIError", "message": "A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.", "data": { "code": "not_found" } }] }`.
 
 To layer roles on top, install [`@frogbotai/plugin-roles`](/plugins/roles) and pass role clauses as the collection access:
 
@@ -184,7 +184,7 @@ A session can mint a key with `canMint`, by posting `{ name, data: { canMint: tr
 - It can have `canMint` only because its parent has it.
 - It has its parent's values for [fields from other plugins](#fields-from-other-plugins), such as a tenant or environment.
 - It [expires](#expiring-keys) no later than its parent.
-- A key rotates, revokes and counts with `minted-count` only itself and the keys it minted. Any other key answers `404` and nothing changes. A signed-in session reaches every key its owner has.
+- A key rotates, revokes and counts with `minted-count` only itself and the keys it minted. Any other key, or one that doesn't exist, answers `404` with the standard error body and code `not_found`, and nothing changes. A signed-in caller sees the message `API key not found`; a key sees the sign-in message above. A signed-in session reaches every key its owner has.
 - With the [AI policy plugin](/plugins/ai-policy#api-key-limits), its model list and monthly cap stay inside the parent's as well as the owner's. A list or cap it leaves empty is the parent's. Its spend also counts against the parent's cap, so a parent capped at $10 and every key below it together spend at most $10 a month.
 
 Revoking a key revokes every key it minted, and every key those minted, all the way down. To revoke only that key and leave the keys it made working, post `{ "cascade": false }` to `revoke`, or pass `cascade: false` to `revokeApiKey`. An empty body, or one without `cascade`, revokes the whole tree; a body that isn't JSON, or a `cascade` other than `true` or `false`, `null` included, answers `400`. A later revoke of a key further up still reaches the keys that a `cascade: false` revoke left working, and stamps them with the time of that revoke. `GET /:id/minted-count` answers `{ "count": n }`, the number of working keys a cascading revoke would also revoke.

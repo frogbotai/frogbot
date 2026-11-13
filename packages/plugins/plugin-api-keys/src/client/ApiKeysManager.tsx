@@ -361,8 +361,12 @@ export function RevokeApiKey({
 
     setLoading(false);
     if (!response.ok) {
-      const result = (await response.json()) as { error?: string };
-      setError(result.error ?? 'Unable to revoke API key');
+      const result = (await response.json()) as {
+        error?: string;
+        errors?: { message?: string }[];
+      };
+
+      setError(result.error ?? result.errors?.[0]?.message ?? 'Unable to revoke API key');
 
       return;
     }

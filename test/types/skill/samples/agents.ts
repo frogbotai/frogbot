@@ -43,8 +43,30 @@ const supportPolicy: SkillConfig = {
   ],
 };
 
+const folderSkill: SkillConfig = {
+  slug: 'plans',
+  instructions: 'List the plans, then load the one the question is about.',
+  resources: ({ req }) => [
+    { path: 'current.md', content: () => `Plan for ${req.user?.id ?? 'guest'}` },
+  ],
+};
+
 export const skillAssistant: AgentConfig = {
   slug: 'assistant',
   instructions: 'Help customers resolve support requests.',
-  skills: [supportPolicy],
+  skills: [supportPolicy, folderSkill],
+};
+
+export const freshRules: AgentConfig = {
+  slug: 'rules',
+  instructions: ({ req }) => `Help ${req.user ? 'the signed-in user' : 'the visitor'}.`,
+};
+
+export const asyncRules: AgentConfig = {
+  slug: 'async-rules',
+  instructions: async ({ req }) => {
+    const { docs } = await req.frogbot.find({ collection: 'policies', limit: 1, req });
+
+    return `Follow this policy: ${String(docs[0]?.body ?? 'none')}`;
+  },
 };

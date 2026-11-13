@@ -69,6 +69,10 @@ export interface Config {
   collections: {
     users: User;
     posts: Post;
+    notes: Note;
+    journal: Journal;
+    memos: Memo;
+    cards: Card;
     'api-keys': ApiKey;
     'frogbot-waitpoints': FrogBotWaitpoint;
   };
@@ -76,6 +80,10 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect;
     posts: PostsSelect;
+    notes: NotesSelect;
+    journal: JournalSelect;
+    memos: MemosSelect;
+    cards: CardsSelect;
     'api-keys': ApiKeysSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
   };
@@ -172,6 +180,80 @@ export interface Post {
   color?: string | null;
   note?: string | null;
   relatedPost?: (number | null) | Post;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notes".
+ */
+export interface Note {
+  id: number;
+  title: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "journal".
+ */
+export interface Journal {
+  id: number;
+  title?: string | null;
+  mood?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "memos".
+ */
+export interface Memo {
+  id: number;
+  title: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cards".
+ */
+export interface Card {
+  id: number;
+  title: string;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -284,6 +366,52 @@ export interface PostsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notes_select".
+ */
+export interface NotesSelect {
+  title?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "journal_select".
+ */
+export interface JournalSelect {
+  title?: boolean;
+  mood?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  _status?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "memos_select".
+ */
+export interface MemosSelect {
+  title?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cards_select".
+ */
+export interface CardsSelect {
+  title?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-keys_select".
  */
 export interface ApiKeysSelect {
@@ -367,7 +495,8 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection: 'users' | 'posts' | 'api-keys';
+    relatedCollection:
+      'users' | 'posts' | 'notes' | 'journal' | 'memos' | 'cards' | 'api-keys';
     where?:
       | {
           [k: string]: unknown;
@@ -389,7 +518,17 @@ export interface CollectionQueryWidget {
  */
 export interface ActivityWidget {
   data?: {
-    excludedCollections?: ('users' | 'posts' | 'api-keys')[] | null;
+    excludedCollections?:
+      | (
+          | 'users'
+          | 'posts'
+          | 'notes'
+          | 'journal'
+          | 'memos'
+          | 'cards'
+          | 'api-keys'
+        )[]
+      | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }

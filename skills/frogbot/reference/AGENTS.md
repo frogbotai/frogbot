@@ -32,6 +32,28 @@ The surrounding config must also provide the required database, collections, sec
 
 Use `model: { default, options: [...] }` for curated choices or `model: { options: '*' }` for every configured chat model; omitted `default` uses `ai.defaultModel`, and the default is included automatically. `general()` uses `'*'`; a string `model` narrows it to one choice, and `ai.access.generate` still hides models a user may not use.
 
+## Agent knowledge that changes
+
+A string `instructions` is fixed until the app restarts. Pick the place for knowledge by how it changes:
+
+- Guidance that changes between runs (rules in a collection, a file staff edit) goes in an `instructions` function, `({ req }) => string | Promise<string>`. It runs once per run, before the model; read data through `req.frogbot` so access and the run's user apply. Don't cache file contents or indexes in module-level variables unless you rebuild them when the source changes.
+- Long or optional material (docs, plans, archives) goes in a runtime skill whose `instructions` or resource `content` are functions; the agent loads it on demand. Keep the system prompt to stable persona and rules.
+- A chat that already loaded a skill keeps that text for the rest of the chat. After a big change, start a new chat.
+- The function runs on every run, including schedule and trigger runs, so keep it fast and cache slow reads yourself. An empty or non-string result fails the run.
+
+```ts
+import type { AgentConfig } from 'frogbot';
+
+export const assistant: AgentConfig = {
+  slug: 'assistant',
+  instructions: async ({ req }) => {
+    const { docs } = await req.frogbot.find({ collection: 'policies', limit: 1, req });
+
+    return `Follow this policy: ${String(docs[0]?.body ?? 'none')}`;
+  },
+};
+```
+
 ## Run an agent
 
 Use an initialized FrogBot instance and select the agent by slug:
@@ -102,7 +124,7 @@ See the [Tools skill reference](https://raw.githubusercontent.com/frogbotai/frog
 
 ## Runtime skills
 
-`AgentConfig.skills` contains runtime `SkillConfig` values. FrogBot exposes them to that running agent through `list_skills`, `load_skill`, and `load_skill_resource`; instruction and resource content may be strings or functions receiving `{ req, frogbot }`.
+`AgentConfig.skills` contains runtime `SkillConfig` values. FrogBot exposes them to that running agent through `list_skills`, `load_skill`, and `load_skill_resource`; instruction and resource content may be strings or functions receiving `{ req, frogbot }`. `resources` itself may be a function receiving `{ req }`, called on every `list_skills` and `load_skill_resource`, for a list that changes while the app runs (a folder of files); its entries are checked when it runs.
 
 ```ts
 import type { AgentConfig, SkillConfig } from 'frogbot';

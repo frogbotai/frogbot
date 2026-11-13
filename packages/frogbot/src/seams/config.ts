@@ -4,7 +4,7 @@ import { flattenTopLevelFields as flattenPayloadFields } from 'payload/shared';
 import type { COLLECTION_MARKERS, CollectionConfig } from '../collections/config/types.js';
 import type { FrogBotConfig } from '../config/types.js';
 import type { Field, TabAsField } from '../fields/config/types.js';
-import type { JobsConfig } from '../jobs/types.js';
+import type { JobsCollectionConfig, JobsConfig } from '../jobs/types.js';
 import type { Plugin } from '../plugin.js';
 import type { PayloadCollectionConfig, PayloadConfig, PayloadField } from '../types/payload.js';
 import type { Check, Extends, Mutual } from './check.js';
@@ -29,7 +29,7 @@ type ReshapedConfigKeys =
 type ReshapedCollectionKeys =
   'access' | 'admin' | 'auth' | 'endpoints' | 'fields' | 'hooks' | 'upload';
 
-type ReshapedJobsKeys = 'tasks' | 'workflows';
+type ReshapedJobsKeys = 'jobsCollectionOverrides' | 'tasks' | 'workflows';
 
 type ReshapedFieldKeys =
   | 'access'
@@ -72,6 +72,16 @@ export function toPayloadConfig(config: FrogBotConfig): PayloadConfig {
 
 export function toPayloadJobs(jobs: JobsConfig): PayloadJobsConfig {
   return jobs as unknown as PayloadJobsConfig;
+}
+
+export function fromPayloadJobsCollection(
+  collection: PayloadCollectionConfig,
+): JobsCollectionConfig {
+  return collection as unknown as JobsCollectionConfig;
+}
+
+export function toPayloadJobsCollection(collection: JobsCollectionConfig): PayloadCollectionConfig {
+  return collection as unknown as PayloadCollectionConfig;
 }
 
 export function fromPayloadJobs(jobs: PayloadJobsConfig): JobsConfig {

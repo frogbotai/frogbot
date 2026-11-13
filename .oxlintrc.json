@@ -91,7 +91,7 @@
         "test/unit/frogbot/channels/telegramQuestions.spec.ts",
         "test/unit/plugin-api-keys/importMap.spec.ts",
         "test/unit/plugin-mcp/index.spec.ts",
-        "test/unit/plugin-usage-reports/importMap.spec.ts",
+        "test/unit/plugin-ai-usage/importMap.spec.ts",
         "test/unit/scripts/checkScripts.spec.ts",
         "test/unit/scripts/checkSingleFrogBot.spec.ts",
         "test/unit/sdk/query-params.spec.ts"

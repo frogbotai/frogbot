@@ -8,6 +8,7 @@ import {
   openSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -52,15 +53,17 @@ export const BASE_GATES = ['check --full', 'test:unit', 'test:ui'];
 export const DEFAULT_REPO = 'frogbot';
 
 export const REPOS = {
-  frogbot: { dir: null, prefix: 'frogbot-ticket', gates: null },
+  frogbot: { dir: null, prefix: 'frogbot-ticket', issues: ['frogbot'], gates: null },
   sidekick: {
     dir: 'sidekick',
     prefix: 'sidekick-ticket',
+    issues: ['sidekick', 'frogbot'],
     gates: ['check', 'test:unit', 'test:e2e'],
   },
   platform: {
     dir: 'platform',
     prefix: 'platform-ticket',
+    issues: ['platform'],
     gates: ['check', 'test:unit', 'test:int'],
   },
 };
@@ -106,20 +109,22 @@ const KEYED_FOLDER = new RegExp(`^(${ISSUE_TICKET})_(.+)$`);
 
 const TICKET_KEY = /^(\d+)([a-z])?$/i;
 
-const ISSUE_KEY = new RegExp(`^(${Object.keys(REPOS).join('|')})-(\\d+)$`);
+const REPO_NAMES = Object.keys(REPOS).join('|');
 
-const ISSUE_REF = new RegExp(`^(${Object.keys(REPOS).join('|')})#(\\d+)$`);
+const ISSUE_KEY = new RegExp(`^(${REPO_NAMES})-(\\d+)$`);
+
+const ISSUE_REF = new RegExp(`^(${REPO_NAMES})#(\\d+)$`);
 
 const SLUG = /^[a-z][a-z0-9_]*$/;
 
 const GITHUB_OWNER = 'frogbotai';
 
-const BRANCH_TICKET = /(?:^|\/)ticket-?(\d+)([a-z])?(?=-|$)/i;
+const BRANCH_TICKET = new RegExp(`(?:^|/)ticket-?(?:(${REPO_NAMES})-)?(\\d+)([a-z])?(?=-|$)`, 'i');
 
 const WORKTREE_TICKET = new RegExp(
   `(?:${Object.values(REPOS)
     .map(({ prefix }) => prefix)
-    .join('|')})(\\d+)([a-z])?$`,
+    .join('|')})(?:-(${REPO_NAMES})-)?(\\d+)([a-z])?$`,
   'i',
 );
 
@@ -481,12 +486,16 @@ export function repoGroups(gates) {
   }));
 }
 
+function oldNumber(match) {
+  return match && !match[1] ? Number(match[2]) : null;
+}
+
 export function ticketOfBranch(branch) {
-  return number(BRANCH_TICKET.exec(branch ?? '')?.[1]);
+  return oldNumber(BRANCH_TICKET.exec(branch ?? ''));
 }
 
 export function ticketOfWorktree({ path: dir, branch }) {
-  return number(WORKTREE_TICKET.exec(dir)?.[1]) ?? ticketOfBranch(branch);
+  return oldNumber(WORKTREE_TICKET.exec(dir)) ?? ticketOfBranch(branch);
 }
 
 export function ticketKeyOf({ ticket, part }) {
@@ -494,7 +503,11 @@ export function ticketKeyOf({ ticket, part }) {
 }
 
 function keyOf(match) {
-  return match ? ticketKeyOf({ ticket: Number(match[1]), part: match[2]?.toLowerCase() }) : null;
+  if (!match) return null;
+
+  if (match[1]) return `${match[1].toLowerCase()}-${match[2]}`;
+
+  return ticketKeyOf({ ticket: Number(match[2]), part: match[3]?.toLowerCase() });
 }
 
 export function keyOfWorktree({ path: dir, branch }) {
@@ -505,12 +518,23 @@ export function verifyKey({ root, home, branch, remote }) {
   return root === home && !remote ? null : keyOfWorktree({ path: root, branch });
 }
 
+function realPath(dir) {
+  return existsSync(dir) ? realpathSync(dir) : dir;
+}
+
 export function repoAt(main, home) {
-  return Object.keys(REPOS).find((repo) => repoCheckout(main, repo) === home) ?? null;
+  const real = realPath(home);
+
+  return Object.keys(REPOS).find((repo) => realPath(repoCheckout(main, repo)) === real) ?? null;
 }
 
 export function ticketFolders(names, { ticket, repo }) {
-  const prefixes = [`${repo}-${ticket}_`, `${DEFAULT_REPO}-${ticket}_`, `ticket${ticket}_`];
+  if (ISSUE_KEY.test(String(ticket))) return names.filter((name) => name.startsWith(`${ticket}_`));
+
+  const prefixes = [
+    ...REPOS[repo].issues.map((owner) => `${owner}-${ticket}_`),
+    `ticket${ticket}_`,
+  ];
 
   for (const prefix of prefixes) {
     const matches = names.filter((name) => name.startsWith(prefix));
@@ -872,13 +896,17 @@ function headerProblems(tickets) {
   );
 }
 
-function findTicket(main, ticket, cloudRepo) {
-  const matches = cloudRepo
-    ? ticketFolders(folders(main, { keyed: true }), { ticket, repo: cloudRepo })
+function findTicket(main, ticket, checkoutRepo) {
+  const matches = checkoutRepo
+    ? ticketFolders(folders(main, { keyed: true }), { ticket, repo: checkoutRepo })
     : folders(main).filter((folder) => FOLDER.exec(folder)[1] === String(ticket));
 
   if (matches.length === 0) {
-    refuse(`no folder ${TICKETS_DIR}/${cloudRepo ? `${cloudRepo}-` : 'ticket'}${ticket}_<slug>/`);
+    const name = ISSUE_KEY.test(String(ticket))
+      ? ticket
+      : `${checkoutRepo ? `${checkoutRepo}-` : 'ticket'}${ticket}`;
+
+    refuse(`no folder ${TICKETS_DIR}/${name}_<slug>/`);
   }
 
   if (matches.length > 1) {
@@ -1499,12 +1527,40 @@ async function ensureServices({ root, gates }) {
 }
 
 async function affectedGroups(root, log) {
-  const set = affectedSet(await verifyInputs(root, log));
+  const inputs = await verifyInputs(root, log);
+
+  if (!inputs.built.ok) {
+    return {
+      failed: {
+        group: 'build',
+        command: 'build stale packages',
+        output: inputs.built.groups.flat().join('\n'),
+      },
+    };
+  }
+
+  const set = affectedSet(inputs);
 
   return {
+    failed: null,
     groups: verifyGroups(set),
     uncovered: set.uncovered.filter((file) => existsSync(path.join(root, file))),
   };
+}
+
+function recordFailure(main, { key, patchId, failed }) {
+  appendLedger(main, {
+    ticket: key,
+    patchId,
+    level: 'failed',
+    evidence: `${failed.command} failed`,
+    verifier: VERIFY,
+  });
+}
+
+function refuseRed(main, { failed, log }) {
+  console.log(tail(failed.output).join('\n'));
+  refuse(`${failed.group} is red; full log: ${path.relative(main, log)}`);
 }
 
 async function commandVerify(main, { list }) {
@@ -1525,23 +1581,41 @@ async function commandVerify(main, { list }) {
     );
   }
 
-  const cloudRepo = remote ? repoAt(main, home) : null;
+  const keyed = ISSUE_KEY.test(branchKey);
+  const checkoutRepo = remote || keyed ? repoAt(main, home) : null;
 
-  if (remote && !cloudRepo) refuse(`${home} is not a frogbot, sidekick or platform checkout`);
+  if (checkoutRepo === null && (remote || keyed)) {
+    refuse(`${home} is not a frogbot, sidekick or platform checkout`);
+  }
 
-  const found = findTicket(main, Number(TICKET_KEY.exec(branchKey)[1]), cloudRepo);
-  const repo = cloudRepo ?? repoOf(found);
-  const key = cloudRepo ? String(found.ticket) : branchKey;
+  const found = findTicket(
+    main,
+    keyed ? branchKey : Number(TICKET_KEY.exec(branchKey)[1]),
+    checkoutRepo,
+  );
 
-  if (home !== repoCheckout(main, repo)) {
+  const repo = checkoutRepo ?? repoOf(found);
+  const key = checkoutRepo ? String(found.ticket) : branchKey;
+
+  if (repoAt(main, home) !== repo) {
     refuse(`ticket ${key} is a ${repo} ticket; run verify in ${worktreePath(main, key, repo)}`);
   }
 
   const tier = tierOf(found.plan == null ? null : parseTouches(found.plan));
   const log = openLog(main, `${key}-verify`);
-  const { groups, uncovered } = REPOS[repo].gates
-    ? { groups: repoGroups(repoGates(REPOS[repo].gates, packageScripts(root))), uncovered: [] }
+  const { groups, uncovered, failed } = REPOS[repo].gates
+    ? {
+        groups: repoGroups(repoGates(REPOS[repo].gates, packageScripts(root))),
+        uncovered: [],
+        failed: null,
+      }
     : await affectedGroups(root, log);
+
+  if (failed) {
+    if (!list) recordFailure(main, { key, patchId: worktreePatchId(root), failed });
+
+    refuseRed(main, { failed, log });
+  }
 
   if (list) {
     console.log(formatList({ tier, groups, uncovered }).join('\n'));
@@ -1561,22 +1635,13 @@ async function commandVerify(main, { list }) {
   });
 
   const id = worktreePatchId(root);
-  const build = REPOS[repo].gates ? async () => ({ ok: true, groups: [] }) : undefined;
-  const result = await runGroups({ root, log, groups, build });
+  const result = await runGroups({ root, log, groups });
 
   console.log(formatUncovered(uncovered).join('\n'));
 
   if (!result.ok) {
-    appendLedger(main, {
-      ticket: key,
-      patchId: id,
-      level: 'failed',
-      evidence: `${result.failed.command} failed`,
-      verifier: VERIFY,
-    });
-
-    console.log(tail(result.failed.output).join('\n'));
-    refuse(`${result.failed.group} is red; full log: ${path.relative(main, log)}`);
+    recordFailure(main, { key, patchId: id, failed: result.failed });
+    refuseRed(main, { failed: result.failed, log });
   }
 
   const level = levelReached(result.passed);

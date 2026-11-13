@@ -60,8 +60,12 @@ const columns = [
   'createdAt',
 ];
 
+type FieldAccess = { create?: boolean; read?: boolean; update?: boolean; fields?: FieldsAccess };
+
+type FieldsAccess = { [name: string]: FieldAccess | true } | true;
+
 const permissions = (
-  fieldPermissions: SanitizedCollectionPermission['fields'] = {},
+  fieldPermissions: FieldsAccess = {},
   update = true,
 ): SanitizedCollectionPermission =>
   ({ fields: fieldPermissions, read: true, update }) as SanitizedCollectionPermission;
@@ -77,7 +81,7 @@ describe('getEditableColumns', () => {
     address: { ...access(), fields: { city: access() } },
     audit: { ...access(), fields: { by: access() } },
     meta: { ...access(), fields: { source: access() } },
-  } as SanitizedCollectionPermission['fields']);
+  });
 
   it('edits every supported, writable column when editable is true', () => {
     expect(getEditableColumns({ columns, editable: true, fields, permissions: allowed })).toEqual([
@@ -147,7 +151,7 @@ describe('getEditableColumns', () => {
   it('checks update access on each group above a nested field', () => {
     const denied = permissions({
       address: { create: true, read: true, update: false, fields: { city: { update: true } } },
-    } as SanitizedCollectionPermission['fields']);
+    });
 
     expect(
       getEditableColumns({ columns, editable: ['address.city'], fields, permissions: denied }),
