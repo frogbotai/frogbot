@@ -514,7 +514,7 @@ describe('agent generate turns', () => {
     await expect(agent.generate({ prompt: 'Hello', req })).rejects.toMatchObject({
       code: 'selection-unavailable',
       status: 409,
-      message: "Model 'openai/gpt-4o' is not allowed for this user",
+      message: "Model 'openai/gpt-4o' is not allowed for this user. Allowed: 'openai/gpt-4.1'",
     });
 
     expect(agentState.generateCall).toBeUndefined();
@@ -545,7 +545,8 @@ describe('agent generate turns', () => {
     await expect(agent.generate({ prompt: 'Hello', req })).rejects.toMatchObject({
       code: 'selection-unavailable',
       status: 409,
-      message: "Model 'openai/gpt-4.1' is not allowed for agent 'support'",
+      message:
+        "Model 'openai/gpt-4.1' is not allowed for agent 'support'. Allowed: 'openai/gpt-4o'",
     });
 
     expect(agentState.generateCall).toBeUndefined();
@@ -580,12 +581,14 @@ describe('agent generate turns', () => {
     {
       name: 'a model not on the agent list',
       opts: { model: 'openai/gpt-4.1' as AgentModelId },
-      message: "Model 'openai/gpt-4.1' is not allowed for agent 'support'",
+      message:
+        "Model 'openai/gpt-4.1' is not allowed for agent 'support'. Allowed: 'openai/gpt-4o'",
     },
     {
       name: 'an unknown reasoning option',
       opts: { reasoning: 'max' },
-      message: "Reasoning option 'max' is not available for model 'openai/gpt-4o'",
+      message:
+        "Reasoning option 'max' is not available for model 'openai/gpt-4o'. It has no reasoning options",
     },
   ])('refuses $name before any model call', async ({ opts, message }) => {
     const req = makeReq();
@@ -820,7 +823,7 @@ describe('agent generate turns', () => {
       makeDeps(makeConfig(emptyHooks()), req),
     );
 
-    await expect(agent.generate({ prompt: 'Create', req })).rejects.toMatchObject({ status: 403 });
+    await expect(agent.generate({ prompt: 'Create', req })).rejects.toMatchObject({ status: 401 });
     expect(turn.resolveChatContext).not.toHaveBeenCalled();
   });
 
@@ -1228,12 +1231,15 @@ describe('agent run access', () => {
     expect(toolCtx().overrideAccess).toBe(true);
   });
 
-  it.each(entries)('refuses %s with 403 when access throws', async (entry) => {
+  it.each(entries)('fails %s with 500 when access throws', async (entry) => {
     const { run } = setup(() => {
       throw new Error('rule failed');
     });
 
-    await expect(run(entry, { overrideAccess: false })).rejects.toMatchObject({ status: 403 });
+    await expect(run(entry, { overrideAccess: false })).rejects.toMatchObject({
+      status: 500,
+      code: 'access-error',
+    });
     expect(agentState.prepared).toBeUndefined();
   });
 

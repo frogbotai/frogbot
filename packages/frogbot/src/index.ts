@@ -95,6 +95,7 @@ export type {
   WidgetServerProps,
   WidgetWidth,
 } from './admin/views/types.js';
+export type { AgentErrorCode } from './agents/service.js';
 export type {
   AgentAccess,
   AgentConfig,
