@@ -53,7 +53,7 @@ The request authenticates as the user who owns the key. Revoked, [expired](#expi
 
 A request records its time in the key's **Last Used At** about once a minute, so it can lag by up to a minute. Parallel requests that all find it more than a minute old can each record it. Recording it never fails the request: when the write fails, for example on a write conflict between parallel requests, the request still authenticates and the first failure is logged.
 
-When AI is configured, usage rows include an optional `apiKey` relationship identifying the key that authenticated the request. Cookie-authenticated requests omit it, and the relationship follows a custom `collectionSlug`. A key's **Total Cost (USD)** field sums its usage rows, so when [usage retention](/plugins/usage-reports#retention) is on, it covers only the rows still kept.
+When AI is configured, usage rows include an optional `apiKey` relationship identifying the key that authenticated the request. Cookie-authenticated requests omit it, and the relationship follows a custom `collectionSlug`. A key's **Total Cost (USD)** field sums its usage rows, so when [usage retention](/plugins/ai-usage#retention) is on, it covers only the rows still kept.
 
 On a key-authenticated request, `req.user` is the owner with `apiKeyId` and `apiKey`, the key document without its hash, so hooks and access functions can read fields other plugins add to keys. Other plugins find the keys collection through `plugins['plugin-api-keys'].options.collectionSlug` ([Order, slug, and options](/plugins/build-your-own#order-slug-and-options)).
 

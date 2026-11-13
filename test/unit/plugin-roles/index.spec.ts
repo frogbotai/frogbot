@@ -2,9 +2,9 @@ import type { FrogBotConfig, FrogBotRequest, Plugin } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
+import { aiCapturePlugin } from '../../../packages/plugins/plugin-ai-capture/src/index.js';
+import type { CaptureStorage } from '../../../packages/plugins/plugin-ai-capture/src/types.js';
 import { auditLogPlugin } from '../../../packages/plugins/plugin-audit-log/src/index.js';
-import { capturePlugin } from '../../../packages/plugins/plugin-capture/src/index.js';
-import type { CaptureStorage } from '../../../packages/plugins/plugin-capture/src/types.js';
 import { compiledAccess } from '../../../packages/plugins/plugin-roles/src/allow.js';
 import {
   allow,
@@ -258,7 +258,7 @@ describe('plugin order', () => {
     const result = await built([
       rolesPlugin({ roles: ['admin'] }),
       auditLogPlugin({ overrides: { access: { read: allow('admin') } } }),
-      capturePlugin({ storage: {} as CaptureStorage, access: allow('admin') }),
+      aiCapturePlugin({ storage: {} as CaptureStorage, access: allow('admin') }),
     ]);
 
     expect(binding(result, 'ai-captures')).toBeDefined();
@@ -268,7 +268,7 @@ describe('plugin order', () => {
   it('runs audit-log after plugins that add collections, wherever it is listed', async () => {
     const result = await built([
       auditLogPlugin(),
-      capturePlugin({ storage: {} as CaptureStorage, access: allow('admin') }),
+      aiCapturePlugin({ storage: {} as CaptureStorage, access: allow('admin') }),
       rolesPlugin({ roles: ['admin'] }),
     ]);
 
