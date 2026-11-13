@@ -1,4 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+
+import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   affectedRuns,
@@ -328,6 +332,13 @@ describe('naming', () => {
     );
   });
 
+  it('names an issue-keyed worktree so its key reads back', () => {
+    const dir = worktreePath('/code/frogbot/frogbot', 'platform-34', 'platform');
+
+    expect(dir).toBe('/code/frogbot-worktrees/platform-ticket-platform-34');
+    expect(keyOfWorktree({ path: dir, branch: null })).toBe('platform-34');
+  });
+
   it('names a part with its letter', () => {
     const key = ticketKeyOf({ ticket: 210, part: 'b' });
 
@@ -347,6 +358,9 @@ describe('naming', () => {
     [{ path: '/c/sidekick', branch: 'main' }, null],
     [{ path: '/c/platform-ticket299', branch: null }, '299'],
     [{ path: '/c/platform', branch: 'main' }, null],
+    [{ path: '/c/platform-ticket-platform-34', branch: null }, 'platform-34'],
+    [{ path: '/c/platform', branch: 'claude/ticket-platform-34-fix' }, 'platform-34'],
+    [{ path: '/c/sidekick', branch: 'feat/ticket-SIDEKICK-38-chat' }, 'sidekick-38'],
   ])('%j has key %s', (tree, key) => {
     expect(keyOfWorktree(tree)).toBe(key);
   });
@@ -358,6 +372,7 @@ describe('naming', () => {
     ['main', null],
     ['feat/ticketing-5', null],
     ['feat/ticket-210b-kinds', 210],
+    ['feat/ticket-platform-34-fix', null],
   ])('%s belongs to ticket %s', (branch, ticket) => {
     expect(ticketOfBranch(branch)).toBe(ticket);
   });
@@ -386,6 +401,58 @@ describe('verify target', () => {
     expect(ticketFolders(names, { ticket: 40, repo: 'frogbot' })).toEqual(['ticket40_d']);
     expect(ticketFolders(names, { ticket: 41, repo: 'sidekick' })).toEqual(['sidekick-41_e']);
     expect(ticketFolders(names, { ticket: 4, repo: 'frogbot' })).toEqual([]);
+  });
+
+  it('takes the key from a repo-keyed branch, which names the issue exactly', () => {
+    expect(
+      verifyKey({
+        root: '/c/platform',
+        home: '/c/platform',
+        branch: 'claude/ticket-platform-34-fix',
+        remote: true,
+      }),
+    ).toBe('platform-34');
+    expect(
+      verifyKey({
+        root: '/w/platform-ticket-platform-34',
+        home: '/c/platform',
+        branch: 'feat/ticket-platform-34-fix',
+        remote: false,
+      }),
+    ).toBe('platform-34');
+  });
+
+  it('finds an issue key only in its own folder', () => {
+    const names = ['frogbot-34_a', 'platform-34_b', 'ticket34_c'];
+
+    expect(ticketFolders(names, { ticket: 'platform-34', repo: 'frogbot' })).toEqual([
+      'platform-34_b',
+    ]);
+    expect(ticketFolders(names, { ticket: 'sidekick-34', repo: 'sidekick' })).toEqual([]);
+  });
+
+  it("never takes a frogbot issue's folder for a platform number", () => {
+    const names = ['frogbot-39_a', 'ticket39_b'];
+
+    expect(ticketFolders(names, { ticket: 39, repo: 'platform' })).toEqual(['ticket39_b']);
+    expect(ticketFolders(['frogbot-39_a'], { ticket: 39, repo: 'platform' })).toEqual([]);
+  });
+
+  describe('with a linked checkout', () => {
+    let parent = '';
+
+    afterEach(() => rmSync(parent, { recursive: true, force: true }));
+
+    it('names the repo of a checkout reached through a link', () => {
+      parent = mkdtempSync(path.join(tmpdir(), 'ticket-repo-'));
+      const real = path.join(parent, 'attached', 'platform');
+
+      mkdirSync(path.join(parent, 'frogbot'));
+      mkdirSync(real, { recursive: true });
+      symlinkSync(real, path.join(parent, 'platform'));
+
+      expect(repoAt(path.join(parent, 'frogbot'), real)).toBe('platform');
+    });
   });
 
   it('names the repo whose checkout verify runs in', () => {

@@ -78,7 +78,7 @@ Keep it short enough to read on a phone. Detail belongs in the linked files.
 
 ## Implementing
 
-- Branch `claude/ticket-<n>-<slug>` from `main`, in this checkout. Stages, commits and logging follow [Step 4](step4_implementation.md). A bug fix commits its failing test before the fix.
+- Branch `claude/ticket-<n>-<slug>` from `main`, in this checkout. When the issue lives in another repo than the code, as a platform issue or a frogbot issue built in Sidekick does, name it in the branch, `claude/ticket-platform-34-<slug>`, so `pnpm ticket verify` finds that issue's folder and no other. Stages, commits and logging follow [Step 4](step4_implementation.md). A bug fix commits its failing test before the fix.
 - Verify with `pnpm ticket verify`. It diffs against the local `main` that `cloud-setup.sh` made, and writes its ledger row to `.idea/_process/ledger.tsv`.
 - Before the PR, a fresh subagent reviews the change and tries to break it: see [Review before the PR](#review-before-the-pr). Its verdict, with the commit SHA it checked, goes in the log and the PR.
 - Every PR is squash-merged, and the commit on `main` is the PR title alone, with GitHub's `(#<n>)` added. So the title is the commit subject: a Conventional Commit, as in [Commits](../../CONTRIBUTING.md#commits), for example `fix(ui): keep the board's columns when switching to List`. The `pr-message` check refuses anything else.
