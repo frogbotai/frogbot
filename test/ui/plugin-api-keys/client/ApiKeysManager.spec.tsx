@@ -423,6 +423,20 @@ describe('API key controls', () => {
     expect(clearRouteCache).not.toHaveBeenCalled();
   });
 
+  it('shows the message from an errors envelope when revoking fails', async () => {
+    keysMade(0, {
+      ok: false,
+      json: () => Promise.resolve({ errors: [{ message: 'API key not found' }] }),
+    });
+
+    render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
+    await clickRevokeKey();
+
+    expect((await screen.findByRole('alert')).textContent).toBe('API key not found');
+  });
+
   it('cancels revocation without calling the revoke endpoint', async () => {
     keysMade(0);
     render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
