@@ -1,10 +1,12 @@
 import { definePlugin, type FrogBotConfig, type Plugin } from 'frogbot';
 
 import { createAuditLogCollection, defaultAuditSlug } from './collection.js';
+import { activityField, auditLogCustomKey } from './fields/activity.js';
 import { createAfterChangeHook, createAfterDeleteHook } from './hooks.js';
 import type { AuditCollectionSelection, AuditLogPluginOptions } from './types.js';
 
 export { computeChanges } from './diff.js';
+export { activityField };
 export type {
   AuditCollectionOverrides,
   AuditCollectionSelection,
@@ -96,7 +98,12 @@ const auditLog = definePlugin<AuditLogResolvedOptions>({
       ipAddress: options.ipAddress ?? false,
     });
 
-    if (!options.retention) return { ...config, collections: [...collections, auditCollection] };
+    const custom = { ...config.custom, [auditLogCustomKey]: { auditSlug } };
+
+    if (!options.retention) {
+      return { ...config, collections: [...collections, auditCollection], custom };
+    }
+
     const retention = options.retention;
     const task: NonNullable<NonNullable<FrogBotConfig['jobs']>['tasks']>[number] = {
       slug: `frogbot-prune-${auditSlug}`,
@@ -141,6 +148,7 @@ const auditLog = definePlugin<AuditLogResolvedOptions>({
     return {
       ...config,
       collections: [...collections, auditCollection],
+      custom,
       jobs: { ...config.jobs, tasks: [...(config.jobs?.tasks ?? []), task] },
     };
   },

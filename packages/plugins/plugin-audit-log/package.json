@@ -18,13 +18,21 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./rsc": {
+      "import": "./dist/rsc.js",
+      "types": "./dist/rsc.d.ts",
+      "default": "./dist/rsc.js"
     }
   },
   "files": [
     "dist"
   ],
+  "sideEffects": [
+    "*.css"
+  ],
   "scripts": {
-    "build": "node ../../../scripts/build-package.mjs",
+    "build": "node ../../../scripts/build-package.mjs --assets css",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },
@@ -32,10 +40,15 @@
     "node": ">=24.21.0"
   },
   "peerDependencies": {
-    "frogbot": "workspace:*"
+    "@frogbotai/ui": "workspace:*",
+    "frogbot": "workspace:*",
+    "react": "^19.0.1 || ^19.1.2 || ^19.2.1"
   },
   "devDependencies": {
+    "@frogbotai/ui": "workspace:*",
+    "@types/react": "19.2.14",
     "frogbot": "workspace:*",
+    "react": "catalog:",
     "typescript": "catalog:"
   },
   "publishConfig": {

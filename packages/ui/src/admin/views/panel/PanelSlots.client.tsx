@@ -1,7 +1,8 @@
 'use client';
 
 import { useDocumentInfo, useFormModified } from '@payloadcms/ui';
-import { cloneElement, isValidElement, type ReactNode, useEffect } from 'react';
+import { cloneElement, createContext, isValidElement, type ReactNode, use, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 import { useRecordPanel } from './RecordPanelProvider.client.js';
 
@@ -27,4 +28,17 @@ export function PanelBridge() {
   useEffect(() => () => setForm(undefined), [setForm]);
 
   return null;
+}
+
+/** The element under the panel's scrolling body that the `footer` slot renders into. */
+export const PanelFooterTarget = createContext<HTMLElement | null>(null);
+
+/**
+ * Renders the `footer` slot pinned under the panel's scrolling body. It stays inside the form's
+ * React tree, so its components read the form and document like any other slot.
+ */
+export function PanelFooter({ children }: { children: ReactNode }) {
+  const target = use(PanelFooterTarget);
+
+  return target ? createPortal(children, target) : null;
 }

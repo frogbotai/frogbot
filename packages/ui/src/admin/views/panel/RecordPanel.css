@@ -6,6 +6,7 @@
     border-left: 1px solid var(--color-border);
     bottom: 0;
     display: flex;
+    flex-direction: column;
     position: fixed;
     right: 0;
     top: var(--fb-record-panel-top);
@@ -52,11 +53,25 @@
   .fb-record-panel__body {
     container-type: inline-size;
     flex: 1;
+    min-height: 0;
     min-width: 0;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
     position: relative;
+  }
+
+  .fb-record-panel__footer {
+    background: var(--color-bg);
+    border-top: 1px solid var(--color-border);
+    flex: none;
+    max-height: 50%;
+    overflow-y: auto;
+    padding: var(--spacer-3) var(--spacer-5);
+  }
+
+  .fb-record-panel__footer:empty {
+    display: none;
   }
 
   /* Payload's edit view, as a column in the panel: its page controls give way to the panel header. */
@@ -107,28 +122,48 @@
   }
 
   .fb-record-panel-header {
-    align-items: center;
+    align-items: flex-start;
     background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
     display: flex;
-    gap: var(--spacer-2);
+    gap: var(--spacer-3);
     justify-content: space-between;
-    margin: 0 calc(var(--spacer-5) * -1) var(--spacer-3);
+    margin: 0 calc(var(--spacer-5) * -1) var(--spacer-4);
     min-height: 56px;
-    padding: var(--spacer-2) var(--spacer-3) var(--spacer-2) var(--spacer-5);
+    padding: var(--spacer-3) var(--spacer-3) var(--spacer-3) var(--spacer-5);
     position: sticky;
     top: 0;
     z-index: 3;
   }
 
   .fb-record-panel-header--compact {
-    border-bottom: 1px solid var(--color-border);
+    align-items: center;
+    padding-block: var(--spacer-2);
   }
 
   .fb-record-panel-header__start {
     align-items: center;
     display: flex;
+    flex: 1;
     gap: var(--spacer-2);
     min-width: 0;
+  }
+
+  .fb-record-panel-header--title:not(.fb-record-panel-header--compact)
+    .fb-record-panel-header__actions {
+    margin-top: var(--spacer-1);
+  }
+
+  .fb-record-panel-header .fb-record-panel-title {
+    flex: 1;
+    margin: 0;
+    min-width: 0;
+  }
+
+  .fb-record-panel-title--compact .fb-record-panel-title__input {
+    font-size: var(--text-body-medium-font-size);
+    line-height: var(--text-body-medium-line-height);
+    padding-block: 2px;
   }
 
   .fb-record-panel-header__title {
@@ -142,31 +177,30 @@
   .fb-record-panel-header__complete {
     align-items: center;
     background: var(--color-bg);
-    border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
     color: var(--color-text-secondary);
     cursor: pointer;
     display: inline-flex;
     flex: none;
     font: inherit;
     gap: var(--spacer-1-5);
+    min-height: 32px;
     padding: var(--spacer-1) var(--spacer-2-5) var(--spacer-1) var(--spacer-2);
   }
 
   .fb-record-panel-header__complete:hover:not(:disabled) {
+    background: var(--color-bg-success-tertiary);
     border-color: var(--color-border-success-strong);
     color: var(--color-text-success);
   }
 
-  .fb-record-panel-header__complete--done {
-    background: var(--color-bg-success);
-    border-color: var(--color-bg-success);
-    color: var(--color-icon-onsuccess);
-  }
-
+  .fb-record-panel-header__complete--done,
   .fb-record-panel-header__complete--done:hover:not(:disabled) {
-    background: var(--color-bg-success-hover);
-    color: var(--color-icon-onsuccess);
+    background: var(--color-bg-success-tertiary);
+    border-color: var(--color-border-success-strong);
+    color: var(--color-text-success);
   }
 
   .fb-record-panel-header__complete--compact {
@@ -202,11 +236,11 @@
     margin: 0;
   }
 
-  .fb-record-panel-header__icon.btn,
   .fb-record-panel-header__menu .popup__trigger-wrap {
     align-items: center;
-    border-radius: var(--radius-medium);
-    color: var(--color-icon-secondary);
+    border: 1px solid transparent;
+    border-radius: var(--radius-small);
+    color: var(--color-icon-tertiary);
     display: inline-flex;
     height: 32px;
     justify-content: center;
@@ -214,10 +248,15 @@
     width: 32px;
   }
 
-  .fb-record-panel-header__icon.btn:hover,
   .fb-record-panel-header__menu .popup__trigger-wrap:hover {
     background: var(--color-bg-transparent-hover);
+    border-color: var(--color-border);
     color: var(--color-icon-primary);
+  }
+
+  .fb-record-panel-header__delete,
+  .fb-record-panel-header__delete:hover {
+    color: var(--color-text-danger);
   }
 
   .fb-record-panel-header__menu .popup-button {

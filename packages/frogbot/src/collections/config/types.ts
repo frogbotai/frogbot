@@ -91,10 +91,12 @@ export type RecordPanelComponents = {
   actions?: FrogBotComponent[];
   /** After the last field. */
   afterFields?: FrogBotComponent[];
-  /** Between the title and the property list. */
+  /** Before the property list, under the title when the body shows one. */
   beforeFields?: FrogBotComponent[];
   /** Replaces the whole panel. */
   Component?: FrogBotComponent;
+  /** Pinned under the scrolling body, inside the form: for example a comment box. */
+  footer?: FrogBotComponent[];
   /** Replaces only the header. */
   Header?: FrogBotComponent;
 };

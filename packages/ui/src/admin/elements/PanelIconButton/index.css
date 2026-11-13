@@ -1,0 +1,29 @@
+@layer frogbot {
+  .fb-panel-icon-button.btn {
+    align-items: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-small);
+    color: var(--color-icon-tertiary);
+    display: inline-flex;
+    flex: none;
+    height: 32px;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    width: 32px;
+  }
+
+  .fb-panel-icon-button.btn:hover:not(:disabled) {
+    background: var(--color-bg-transparent-hover);
+    border-color: var(--color-border);
+    color: var(--color-icon-primary);
+  }
+
+  .fb-panel-icon-button.btn .btn__icon,
+  .fb-panel-icon-button.btn .btn__content {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+  }
+}

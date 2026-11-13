@@ -1814,9 +1814,18 @@ importers:
 
   packages/plugins/plugin-audit-log:
     devDependencies:
+      '@frogbotai/ui':
+        specifier: workspace:*
+        version: link:../../ui
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
+      react:
+        specifier: 'catalog:'
+        version: 19.3.1
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -2991,6 +3000,9 @@ importers:
       '@frogbotai/plugin-api-keys':
         specifier: workspace:*
         version: link:../../../../packages/plugins/plugin-api-keys
+      '@frogbotai/plugin-audit-log':
+        specifier: workspace:*
+        version: link:../../../../packages/plugins/plugin-audit-log
       '@frogbotai/ui':
         specifier: workspace:*
         version: link:../../../../packages/ui

@@ -10,6 +10,7 @@
     "@frogbotai/db-sqlite": "workspace:*",
     "@frogbotai/next": "workspace:*",
     "@frogbotai/plugin-api-keys": "workspace:*",
+    "@frogbotai/plugin-audit-log": "workspace:*",
     "@frogbotai/ui": "workspace:*",
     "frogbot": "workspace:*",
     "next": "catalog:",

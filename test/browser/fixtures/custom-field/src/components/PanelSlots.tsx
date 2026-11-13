@@ -20,6 +20,14 @@ export function AfterFields({ collectionSlug }: PanelComponentProps) {
   return <p data-testid="panel-after">After {collectionSlug}</p>;
 }
 
+export function PanelFooter({ id }: PanelComponentProps) {
+  return (
+    <div data-testid="panel-footer" data-id={String(id)}>
+      <input aria-label="Comment" placeholder="Add a comment" />
+    </div>
+  );
+}
+
 export function PanelHeader({ close, id }: PanelComponentProps) {
   return (
     <div data-testid="panel-header">

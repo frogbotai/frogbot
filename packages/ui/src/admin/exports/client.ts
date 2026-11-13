@@ -4,6 +4,11 @@ export {
   type RecentsSectionClientProps,
 } from '../elements/Nav/RecentsSection.client.js';
 export {
+  PanelIconButton,
+  type PanelIconButtonProps,
+} from '../elements/PanelIconButton/index.client.js';
+export { PanelSection, type PanelSectionProps } from '../elements/PanelSection/index.client.js';
+export {
   SignInButtonsClient,
   type SignInButtonsClientProps,
 } from '../elements/SignInButtons/index.client.js';
