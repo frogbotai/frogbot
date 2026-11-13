@@ -492,10 +492,5 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
       expect((await rows(users[0], 'plain')).map((r) => r.id)).toEqual([first.id]);
       await expect(resolve(first.id, plain)).resolves.toEqual({ apiKey: 'fresh-b' });
     });
-
-    it('reports that it links one OAuth account', () => {
-      expect(frogbot.config.connections.entries.plain.oauthAccounts).toBe(false);
-      expect(frogbot.config.connections.entries.mail.oauthAccounts).toBe(true);
-    });
   });
 });

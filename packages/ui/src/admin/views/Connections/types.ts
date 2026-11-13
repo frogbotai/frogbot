@@ -18,8 +18,6 @@ export type ConnectionPiece = {
   label: string;
   oauth: boolean;
   secret: boolean;
-  /** Whether a user can link several OAuth accounts; false when the recipe can't tell them apart. */
-  oauthAccounts?: boolean;
   scopes?: string[];
   /** Names the OAuth method, in place of "OAuth". */
   oauthLabel?: string;

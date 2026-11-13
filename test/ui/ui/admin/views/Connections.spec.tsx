@@ -364,28 +364,16 @@ describe('linked accounts', () => {
         within(mail).getByText('Default').closest('.frogbot-connections__row')?.textContent,
       ).toContain('Work');
       expect(within(staticGroup).queryByText('Default')).toBeNull();
-      expect(within(mail).getByRole('button', { name: '+ Add another' })).toBeTruthy();
-      expect(within(staticGroup).queryByRole('button', { name: '+ Add another' })).toBeNull();
     });
 
-    it('offers Add another once for a recipe that cannot tell accounts apart', () => {
-      const plain = { ...props, pieces: [{ ...pieces[0], oauthAccounts: false }] };
-      const add = () => screen.queryByRole('button', { name: '+ Add another' });
-      const { unmount } = render(
-        <ConnectionsViewClient {...plain} initialConnections={[{ ...key, piece: 'mail' }]} />,
-      );
-
-      expect(add()).toBeTruthy();
-
-      unmount();
-      render(<ConnectionsViewClient {...plain} initialConnections={[work]} />);
-
-      expect(add()).toBeNull();
-    });
-
-    it('starts another OAuth link from Add another', () => {
+    it('links another account from New Connection, the only add button', () => {
       render(<ConnectionsViewClient {...several} />);
-      fireEvent.click(screen.getByRole('button', { name: '+ Add another' }));
+
+      expect(screen.getAllByRole('button', { name: /^\+/ })).toHaveLength(1);
+
+      fireEvent.click(screen.getByRole('button', { name: '+ New Connection' }));
+      fireEvent.click(screen.getByRole('button', { name: /Mail OAuth/ }));
+      fireEvent.click(screen.getByRole('button', { name: 'Continue with Mail' }));
 
       expect(assign).toHaveBeenCalledWith(
         `/custom-api/connections/mail/authorize?${new URLSearchParams({ returnTo: props.returnTo })}`,

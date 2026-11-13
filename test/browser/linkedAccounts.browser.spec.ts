@@ -57,7 +57,9 @@ test('links two accounts of one piece, sets a default and disconnects one', asyn
   await expect(group(page).getByText('1 account')).toBeVisible();
   await expect(group(page).getByText('Default')).toHaveCount(0);
 
-  await group(page).getByRole('button', { name: '+ Add another' }).click();
+  await page.getByRole('button', { name: '+ New Connection' }).click();
+  await page.getByRole('button', { name: /^Linked/ }).click();
+  await page.getByRole('button', { name: 'Continue with Linked' }).click();
 
   await expect(group(page).getByText('2 accounts')).toBeVisible();
 

@@ -213,7 +213,6 @@ export function ConnectionsViewClient({
               piece={bySlug.get(slug)}
               connections={items}
               busy={pending}
-              onAdd={() => authorize(slug)}
               onAction={act}
             />
           ))}

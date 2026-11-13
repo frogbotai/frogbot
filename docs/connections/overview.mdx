@@ -103,13 +103,13 @@ Before a key is saved, FrogBot checks it with the piece's model listing, and the
 1. Sign in to the admin panel and open **Settings → Linked accounts**.
 2. Select **New Connection**, then choose an integration.
 3. Authorize with OAuth or enter the requested credential fields. When both methods are enabled, choose **OAuth** or **Static credentials**. A piece can name its OAuth method, as OpenAI's **ChatGPT** does.
-4. View your accounts grouped by integration, each with its status. Select **Add another** to link a second account of an OAuth integration whose recipe has an account lookup (see below). The row menu has **Set as default**, **Reconnect** and **Disconnect**.
+4. View your accounts grouped by integration, each with its status. To link a second account, select **New Connection** again and choose the same integration. The row menu has **Set as default**, **Reconnect** and **Disconnect**.
 
 The page is available at `/admin/settings/connections` with the default admin route. FrogBot adds it automatically when `connections` is non-empty, and the same view is the default view of the `connections` collection at `/admin/collections/connections`.
 
 ### Several accounts and the default
 
-A user can link several OAuth accounts of one piece, such as a work and a personal Gmail, when its recipe can name the provider account: it defines `account()`, or runs its own sign-in with `authorize`. Each provider account is its own row; linking the same provider account again updates its row and keeps its ID. A recipe without `account()` can't tell accounts apart, so it keeps one OAuth row per user, every link replaces it, and Linked accounts offers **Add another** only until it exists. A static credential has no provider account, so it stays one per piece and saving another replaces it. A piece with both methods can hold its static credential beside its OAuth accounts.
+A user can link several OAuth accounts of one piece, such as a work and a personal Gmail, when its recipe can name the provider account: it defines `account()`, or runs its own sign-in with `authorize`. Each provider account is its own row; linking the same provider account again updates its row and keeps its ID. A recipe without `account()` can't tell accounts apart, so it keeps one OAuth row per user, and every link replaces it. A static credential has no provider account, so it stays one per piece and saving another replaces it. A piece with both methods can hold its static credential beside its OAuth accounts.
 
 Each user has one default account per piece. The first account linked becomes the default, and adding another never moves it; **Set as default** does. Disconnecting the default makes the oldest remaining account the default. Calls that don't pick an account, including agent tools in chat, use the default.
 

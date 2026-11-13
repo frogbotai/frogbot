@@ -33,8 +33,6 @@ export type SanitizedConnectionEntry = {
   scopes?: string[];
   /** The OAuth method's name in Linked accounts, from the recipe's `label`. */
   oauthLabel?: string;
-  /** Whether the OAuth recipe names the provider account, so a user can link several. */
-  oauthAccounts: boolean;
   secretSchema?: ConnectionSchema;
   icon?: string;
 };
