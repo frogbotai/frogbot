@@ -68,3 +68,16 @@ export const Tickets: CollectionConfig = {
     },
   ],
 };
+
+/** No `useAsTitle`, and a footer component that renders nothing. */
+export const Scraps: CollectionConfig = {
+  slug: 'scraps',
+  admin: {
+    group: 'Panel lab',
+    components: { panel: { footer: ['/components/PanelSlots#EmptyFooter'] } },
+  },
+  fields: [
+    { name: 'title', type: 'text' },
+    { name: 'notes', type: 'textarea' },
+  ],
+};

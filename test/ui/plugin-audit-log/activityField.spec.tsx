@@ -59,4 +59,33 @@ describe('ActivityField', () => {
     expect(text).toContain('changed Priority');
     expect(text).toContain('changed Summary');
   });
+
+  it('uses translated labels for changed fields and the heading', async () => {
+    const translated: NonNullable<ActivityFieldProps['req']>['payload'] = {
+      ...payload,
+      collections: {
+        ...payload.collections,
+        ledgers: {
+          config: {
+            fields: [
+              { name: 'priority', type: 'text', label: { en: 'Urgency', de: 'Dringlichkeit' } },
+            ],
+          },
+        },
+      },
+    };
+
+    const node = await ActivityField({
+      collectionSlug: 'ledgers',
+      field: { label: { en: 'History', de: 'Verlauf' } },
+      i18n: { fallbackLanguage: 'en', language: 'de', t: (key: string) => key },
+      id: 1,
+      req: { payload: translated, user: { id: 1 } },
+    });
+
+    const text = renderToStaticMarkup(node).replace(/<[^>]+>/g, '|');
+
+    expect(text).toContain('Verlauf');
+    expect(text).toContain('changed Dringlichkeit');
+  });
 });

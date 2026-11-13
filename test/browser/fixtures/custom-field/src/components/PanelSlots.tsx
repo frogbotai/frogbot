@@ -22,10 +22,21 @@ export function AfterFields({ collectionSlug }: PanelComponentProps) {
 
 export function PanelFooter({ id }: PanelComponentProps) {
   return (
-    <div data-testid="panel-footer" data-id={String(id)}>
+    <form
+      data-id={String(id)}
+      data-testid="panel-footer"
+      onSubmit={(event) => {
+        event.preventDefault();
+        event.currentTarget.dataset.sent = 'true';
+      }}
+    >
       <input aria-label="Comment" placeholder="Add a comment" />
-    </div>
+    </form>
   );
+}
+
+export function EmptyFooter() {
+  return null;
 }
 
 export function PanelHeader({ close, id }: PanelComponentProps) {

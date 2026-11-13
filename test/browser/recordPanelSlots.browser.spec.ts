@@ -230,3 +230,52 @@ test('at 375 px the actions get their own row and the title keeps the width', as
   expect(actions.x + actions.width).toBeLessThanOrEqual(headerBox.x + headerBox.width);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 });
+
+test('Enter in a footer form submits that form, not the record', async ({ page }) => {
+  const id = await create(page, 'tickets', 'Footer form', { summary: 'Kept' });
+  const saves: string[] = [];
+
+  page.on('request', (request) => {
+    if (request.method() !== 'GET' && request.url().includes(`/api/tickets/${id}`)) {
+      saves.push(request.method());
+    }
+  });
+
+  await page.goto(`/collections/tickets?record=${id}`);
+  await page.locator('.fb-record-panel #field-notes').fill('Unsaved draft text');
+  const footer = page.getByTestId('panel-footer');
+  const comment = footer.getByRole('textbox', { name: 'Comment' });
+  await comment.fill('A comment');
+  await comment.press('Enter');
+  await expect(footer).toHaveAttribute('data-sent', 'true');
+
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() !== 'GET' && response.url().includes(`/api/tickets/${id}`),
+  );
+
+  await page.locator('.fb-record-panel-header__save').click();
+  await saved;
+  expect(saves).toHaveLength(1);
+});
+
+test('a footer that renders nothing pins nothing', async ({ page }) => {
+  const id = await create(page, 'scraps', 'Empty footer');
+
+  await page.goto(`/collections/scraps?record=${id}`);
+  await expect(page.locator('.fb-record-panel #field-notes')).toBeVisible();
+  await expect(page.locator('.fb-record-panel__footer')).toBeHidden();
+});
+
+test('without a text useAsTitle, the top row still shows the title', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 520 });
+  const id = await create(page, 'scraps', 'No title field', { notes: 'line\n'.repeat(80) });
+
+  await page.goto(`/collections/scraps?record=${id}`);
+  const start = page.locator('.fb-record-panel-header__start');
+  await expect(start).toContainText(String(id));
+
+  await page.locator('.fb-record-panel__body').evaluate((node) => node.scrollTo(0, 400));
+  await expect(page.locator('.fb-record-panel-header--compact')).toBeVisible();
+  await expect(start).toContainText(String(id));
+});
