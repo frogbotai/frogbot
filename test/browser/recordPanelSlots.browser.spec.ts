@@ -211,3 +211,22 @@ test('pill tabs switch, show activity, and count errors after Save', async ({ pa
   await page.locator('.fb-pill-tabs').getByRole('tab', { name: 'Activity' }).click();
   await expect(page.locator('.fb-activity .fb-activity__entry')).toHaveCount(2);
 });
+
+test('at 375 px the actions get their own row and the title keeps the width', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 800 });
+  const id = await create(page, 'journal', 'A reasonably long journal entry title that wraps');
+
+  await page.goto(`/collections/journal?record=${id}`);
+  const header = page.locator('.fb-record-panel-header');
+  const title = header.locator('.fb-record-panel-title__input');
+  await expect(title).toBeVisible();
+  const titleBox = (await title.boundingBox())!;
+  const actions = (await header.locator('.fb-record-panel-header__actions').boundingBox())!;
+  const headerBox = (await header.boundingBox())!;
+
+  expect(titleBox.width).toBeGreaterThan(300);
+  expect(titleBox.y).toBeGreaterThanOrEqual(actions.y + actions.height);
+  expect(headerBox.height).toBeLessThan(200);
+  expect(actions.x + actions.width).toBeLessThanOrEqual(headerBox.x + headerBox.width);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+});
