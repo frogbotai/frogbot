@@ -7,6 +7,7 @@ import {
 } from 'frogbot';
 
 import { createPolicyAccess } from './access.js';
+import { createCounterOnCreate, createSpendCounters } from './counters.js';
 import { createPolicyFields, mergePolicyFields } from './fields.js';
 import { createPolicyHooks } from './hooks.js';
 import { createKeyLimitFields, keyLimitsCreateFields, withKeyLimits } from './keys.js';
@@ -87,6 +88,7 @@ const aiPolicy = definePlugin<AIPolicyPluginOptions>({
       admin: { icon: 'people', useAsTitle: 'name' },
       auth: { tokenExpiration: 7200 },
       fields: [{ name: 'name', type: 'text' }, ...fields],
+      hooks: { afterChange: [createCounterOnCreate('user', authCollection)] },
     };
 
     return {
@@ -103,21 +105,43 @@ const aiPolicy = definePlugin<AIPolicyPluginOptions>({
       collections: [
         ...config.collections.map((collection) => {
           if (collection.slug === authCollection) {
-            return { ...collection, fields: mergePolicyFields(collection.fields, fields) };
+            return {
+              ...collection,
+              fields: mergePolicyFields(collection.fields, fields),
+              hooks: {
+                ...collection.hooks,
+                afterChange: [
+                  ...(collection.hooks?.afterChange ?? []),
+                  createCounterOnCreate('user', collection.slug),
+                ],
+              },
+            };
           }
 
           if (collection.slug === keysCollection) {
-            return withKeyLimits(collection, keyFields, { models, titleField });
+            const limited = withKeyLimits(collection, keyFields, { models, titleField });
+
+            return {
+              ...limited,
+              hooks: {
+                ...limited.hooks,
+                afterChange: [
+                  ...(limited.hooks?.afterChange ?? []),
+                  createCounterOnCreate('apiKey', collection.slug),
+                ],
+              },
+            };
           }
 
           return collection;
         }),
         ...(auth ? [] : [fallback]),
+        createSpendCounters({ authCollection, keysCollection }),
       ],
       ...(keysCollection && { admin: withCreateFieldsImport(config.admin) }),
       jobs: {
         ...config.jobs,
-        tasks: [...(config.jobs?.tasks ?? []), createResetTask({ authCollection, keysCollection })],
+        tasks: [...(config.jobs?.tasks ?? []), createResetTask()],
       },
     };
   },
