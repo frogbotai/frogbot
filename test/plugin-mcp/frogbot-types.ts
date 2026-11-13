@@ -64,13 +64,16 @@ export type SupportedTimezones =
 export interface Config {
   auth: {
     users: UserAuthOperations;
+    members: MemberAuthOperations;
   };
   blocks: {};
   collections: {
     users: User;
+    members: Member;
     posts: Post;
     tickets: Ticket;
     secrets: Secret;
+    'staff-notes': StaffNote;
     'api-keys': ApiKey;
     'frogbot-waitpoints': FrogBotWaitpoint;
     'frogbot-autonumbers': FrogBotAutonumber;
@@ -78,9 +81,11 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect;
+    members: MembersSelect;
     posts: PostsSelect;
     tickets: TicketsSelect;
     secrets: SecretsSelect;
+    'staff-notes': StaffNotesSelect;
     'api-keys': ApiKeysSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
     'frogbot-autonumbers': FrogBotAutonumbersSelect;
@@ -98,7 +103,7 @@ export interface Config {
     'collection-query': CollectionQueryWidget;
     activity: ActivityWidget;
   };
-  user: User;
+  user: User | Member;
   jobs: {
     tasks: {
       'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
@@ -130,20 +135,48 @@ export interface UserAuthOperations {
     password: string;
   };
 }
+export interface MemberAuthOperations {
+  forgotPassword: {
+    email: string;
+    password: string;
+  };
+  login: {
+    email: string;
+    password: string;
+  };
+  registerFirstUser: {
+    email: string;
+    password: string;
+  };
+  unlock: {
+    email: string;
+    password: string;
+  };
+}
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
   id: number;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'members';
+        value: number | Member;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'members';
+        value: number | Member;
+      } | null);
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -165,6 +198,52 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "members".
+ */
+export interface Member {
+  id: number;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'members';
+        value: number | Member;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'members';
+        value: number | Member;
+      } | null);
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+        refreshCount?: number | null;
+        refreshedAt?: string | null;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'members';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -191,14 +270,24 @@ export interface Post {
    * Duration in whole seconds, for example 5400 for 1 hour 30 minutes
    */
   timeSpent?: number | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'members';
+        value: number | Member;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'members';
+        value: number | Member;
+      } | null);
   updatedAt: string;
   createdAt: string;
 }
@@ -213,14 +302,24 @@ export interface Ticket {
    * Unique number set by FrogBot when the record is created; read-only
    */
   number?: number | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'members';
+        value: number | Member;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'members';
+        value: number | Member;
+      } | null);
   updatedAt: string;
   createdAt: string;
 }
@@ -231,14 +330,52 @@ export interface Ticket {
 export interface Secret {
   id: number;
   title?: string | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'members';
+        value: number | Member;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'members';
+        value: number | Member;
+      } | null);
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "staff-notes".
+ */
+export interface StaffNote {
+  id: number;
+  title?: string | null;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'members';
+        value: number | Member;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'members';
+        value: number | Member;
+      } | null);
   updatedAt: string;
   createdAt: string;
 }
@@ -339,6 +476,33 @@ export interface UsersSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "members_select".
+ */
+export interface MembersSelect {
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  email?: boolean;
+  resetPasswordToken?: boolean;
+  resetPasswordExpiration?: boolean;
+  salt?: boolean;
+  hash?: boolean;
+  resetPasswordRequestedAt?: boolean;
+  loginAttempts?: boolean;
+  lockUntil?: boolean;
+  sessions?:
+    | boolean
+    | {
+        id?: boolean;
+        createdAt?: boolean;
+        expiresAt?: boolean;
+        refreshCount?: boolean;
+        refreshedAt?: boolean;
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts_select".
  */
 export interface PostsSelect {
@@ -373,6 +537,17 @@ export interface TicketsSelect {
  * via the `definition` "secrets_select".
  */
 export interface SecretsSelect {
+  title?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "staff-notes_select".
+ */
+export interface StaffNotesSelect {
   title?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
@@ -454,7 +629,14 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection: 'users' | 'posts' | 'tickets' | 'secrets' | 'api-keys';
+    relatedCollection:
+      | 'users'
+      | 'members'
+      | 'posts'
+      | 'tickets'
+      | 'secrets'
+      | 'staff-notes'
+      | 'api-keys';
     where?:
       | {
           [k: string]: unknown;
@@ -477,7 +659,16 @@ export interface CollectionQueryWidget {
 export interface ActivityWidget {
   data?: {
     excludedCollections?:
-      ('users' | 'posts' | 'tickets' | 'secrets' | 'api-keys')[] | null;
+      | (
+          | 'users'
+          | 'members'
+          | 'posts'
+          | 'tickets'
+          | 'secrets'
+          | 'staff-notes'
+          | 'api-keys'
+        )[]
+      | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }

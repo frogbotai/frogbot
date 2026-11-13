@@ -1,4 +1,3 @@
-import type { I18nClient } from '@payloadcms/translations';
 import { enUS } from 'date-fns/locale/en-US';
 import type { ClientField } from 'payload';
 import { describe, expect, it } from 'vitest';
@@ -11,6 +10,8 @@ import {
   resolveSummary,
   type SummaryColumn,
 } from '../../../../../packages/ui/src/admin/views/List/summary/summary.js';
+
+type I18nClient = Parameters<typeof formatSummary>[0]['i18n'];
 
 const number: SummaryColumn = { kind: 'number', operations: ['count', 'sum', 'avg', 'min', 'max'] };
 const date: SummaryColumn = { kind: 'date', operations: ['count', 'min', 'max'] };
@@ -57,7 +58,7 @@ describe('list summary', () => {
     expect(
       resolveSummary({
         columns: { constructor: other, toString: other, valueOf: number },
-        defaults: { constructor: 'count', toString: 'count', valueOf: 'sum' },
+        defaults: { constructor: 'count', toString: 'count', valueOf: 'sum' } as const,
         saved: readSummaryChoices({ summary: {} }),
       }),
     ).toEqual({ constructor: 'count', toString: 'count', valueOf: 'sum' });

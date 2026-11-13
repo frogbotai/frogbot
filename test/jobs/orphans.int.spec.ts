@@ -1,3 +1,4 @@
+import type { Job } from 'payload';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 
 import { bootJobsFixture } from './fixture.js';
@@ -52,7 +53,7 @@ it('the sweep deletes only failed scheduled jobs whose task is gone', async () =
   expect(docs.map(({ id }) => String(id)).sort()).toEqual(kept.map(({ id }) => String(id)).sort());
   expect(
     (
-      await fixture.payload.db.findOne({
+      await fixture.payload.db.findOne<Job>({
         collection: 'payload-jobs',
         where: { id: { equals: sweep.id } },
       })

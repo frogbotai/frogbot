@@ -487,7 +487,10 @@ describe('API key controls', () => {
         Promise.resolve({ ok: true, json: () => Promise.resolve(body) } as Response);
 
       if (url.endsWith('/P/revoke')) {
-        const body = init?.body ? (JSON.parse(String(init.body)) as { cascade: boolean }) : {};
+        const body: { cascade?: boolean } = init?.body
+          ? (JSON.parse(String(init.body)) as { cascade: boolean })
+          : {};
+
         const now = new Date().toISOString();
 
         keys[0].revokedAt = now;

@@ -6,9 +6,8 @@ const Items: CollectionConfig = {
   slug: 'items',
   access: openAccess,
   admin: {
-    listSearchableFields: ['title', 'guarded'],
     useAsTitle: 'title',
-    views: [{ type: 'list' }],
+    views: [{ type: 'list', searchableFields: ['title', 'guarded'] }],
   },
   fields: [
     { name: 'title', type: 'text' },
