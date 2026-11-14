@@ -9,7 +9,12 @@ Connections let each user supply credentials for a piece. Configure the allowed 
 
 ## Configure linking
 
-The piece factory accepts your developer credential as `auth` and your OAuth app as `oauth`; see [factory options](/pieces/overview#factory-options). Factory `auth` is used when the caller has no connection for the piece, and factory `oauth` is available as `instance.oauth` for reuse. A connection entry controls what users can link:
+The piece factory accepts your developer credential as `auth` and your OAuth app as `oauth`. See [factory options](/pieces/overview#factory-options).
+
+- Factory `auth` is used when the caller has no connection for the piece.
+- Factory `oauth` is available as `instance.oauth` for reuse.
+
+A connection entry controls what users can link:
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -94,7 +99,16 @@ export default buildConfig({
 })
 ```
 
-Listing the piece chooses its provider: FrogBot adds the provider to `ai.providers` when it isn't there, and the app boots without an app key. Each call uses the asking user's linked account, else the app key (`ai.providers.<name>.apiKey`, then the provider's environment variable), else fails with a setup error before any request. An existing account that can't be used fails the call and never falls back to the app key. Two pieces can't link the same provider, and the provider must be a built-in API-key provider; either mistake fails startup.
+Listing the piece chooses its provider. FrogBot adds the provider to `ai.providers` when it isn't there, and the app boots without an app key.
+
+Each call picks its key in this order:
+
+1. The asking user's linked account.
+2. The app key: `ai.providers.<name>.apiKey`, then the provider's environment variable.
+
+With neither, the call fails with a setup error before any request. An existing account that can't be used fails the call and never falls back to the app key.
+
+Startup fails when two pieces link the same provider, or when the provider is not a built-in API-key provider.
 
 Before a key is saved, FrogBot checks it with the piece's model listing, and the model picker offers only the models the user's key can use. See [Link a key](/pieces/openai#link-a-key). With `oauth: true`, OpenAI users can instead sign in with ChatGPT and run on their plan; see [Continue with ChatGPT](/pieces/openai#continue-with-chatgpt).
 
@@ -121,7 +135,9 @@ The paths below use the default `routes.api: '/api'`. If you configure another A
 | `GET` | `/api/connections/:piece/callback` | Exchange the authorization code, store the connection, and redirect. `404` for pieces that run their own sign-in. |
 | `DELETE` | `/api/connections/:id` | Delete the caller's connection; returns `204`, or `404` when not found. |
 
-`:piece` is the piece's built-in slug, such as `gmail` or `linear`, rather than a custom instance slug. Owners belong to the auth collection selected by `admin.user`. Static writes, deletion, and OAuth authorization require authentication from that collection: anonymous requests receive `401`, and users from another auth collection receive `403`.
+`:piece` is the piece's built-in slug, such as `gmail` or `linear`, not a custom instance slug. Owners belong to the auth collection selected by `admin.user`.
+
+Static writes, deletion, and OAuth authorization require authentication from that collection. Anonymous requests receive `401`, and users from another auth collection receive `403`.
 
 ### Submit a static credential
 
@@ -150,13 +166,21 @@ https://app.example.com/api/connections/google-calendar/callback
 https://app.example.com/api/connections/gmail/callback
 ```
 
-Start product linking at `/api/connections/:piece/authorize`, replacing `:piece` with `google-sheets`, `google-drive`, `google-calendar`, or `gmail`. Start login at `/api/users/sign-in/google`. Login creates a FrogBot session without storing provider tokens or creating a connection; linking requires a signed-in user and stores only that product's credential. The default linking return destination is the configured admin route plus `/settings/connections`. An optional `returnTo` selects a same-origin destination.
+| To | Start at |
+| --- | --- |
+| Link a product | `/api/connections/:piece/authorize`, with `:piece` replaced by `google-sheets`, `google-drive`, `google-calendar`, or `gmail`. |
+| Log in | `/api/users/sign-in/google` |
+
+- **Login** creates a FrogBot session without storing provider tokens or creating a connection.
+- **Linking** requires a signed-in user and stores only that product's credential. By default it returns to the configured admin route plus `/settings/connections`. An optional `returnTo` selects a same-origin destination.
 
 OAuth state is encrypted, browser-bound, single-use, and expires after ten minutes. It binds the piece, OAuth app, collection, callback, and link intent to the original owner. PKCE is used when the piece recipe enables it. The callback validates that intent before storing credentials.
 
 ### Pieces that run their own sign-in
 
-Some providers' sign-ins can't use this redirect flow. OpenAI's ChatGPT sign-in, for example, must return to `127.0.0.1` and registers a client per user. A piece recipe can define `authorize` instead of `authorizationUrl` and `tokenUrl`; the app then needs no client ID or secret, and the factory takes no `oauth`:
+Some providers' sign-ins can't use this redirect flow. OpenAI's ChatGPT sign-in, for example, must return to `127.0.0.1` and registers a client per user.
+
+A piece recipe can define `authorize` instead of `authorizationUrl` and `tokenUrl`. The app then needs no client ID or secret, and the factory takes no `oauth`:
 
 | Recipe field | Description |
 | --- | --- |
@@ -180,7 +204,11 @@ const gmail = createGmail({
 const readOnlyGmail = createGmail({ oauth: google.oauth, scopes: ['gmail.readonly'] })
 ```
 
-Scopes are short names from the piece's catalog, such as `gmail.labels` for `https://www.googleapis.com/auth/gmail.labels`. Your editor autocompletes them, and an unknown name fails to compile. Each OAuth piece exports its catalog as `<piece>Scopes`, for example `gmailScopes`, and its page lists the names. The required scopes are always requested, and no form removes them. For the Google products these are `openid`, `userinfo.email` and `userinfo.profile`.
+Scopes are short names from the piece's catalog, such as `gmail.labels` for `https://www.googleapis.com/auth/gmail.labels`.
+
+- Your editor autocompletes them, and an unknown name fails to compile.
+- Each OAuth piece exports its catalog as `<piece>Scopes`, for example `gmailScopes`, and its page lists the names.
+- The required scopes are always requested, and no form removes them. For the Google products, these are `openid`, `userinfo.email`, and `userinfo.profile`.
 
 `scopes` belongs to one instance. Sharing an OAuth app between pieces reuses only the app credentials, so a scope added to Gmail never reaches Drive or Google sign-in. Each piece still has its own consent flow, callback, and connection. Selecting fewer agent actions does not narrow OAuth scopes.
 
@@ -193,7 +221,13 @@ The Google product recipes add these scopes to the identity scopes:
 | Drive | `drive` |
 | Calendar | `calendar.events`, `calendar.readonly` |
 
-When you add a scope, accounts linked earlier lack it. Every action for that piece then throws `ConnectionError` with code `scopes`, and `missingScopes` lists the provider strings. Settings → Linked accounts shows those rows as **needs re-link**, and `frogbot.connections.authorizations()` lists the piece with its `authorizeUrl`. Linking again asks for the full list and replaces the row.
+When you add a scope, accounts linked earlier lack it:
+
+- Every action for that piece throws `ConnectionError` with code `scopes`, and `missingScopes` lists the provider strings.
+- Settings → Linked accounts shows those rows as **needs re-link**.
+- `frogbot.connections.authorizations()` lists the piece with its `authorizeUrl`.
+
+Linking again asks for the full list and replaces the row.
 
 ## Resolve credentials on the server
 
@@ -211,7 +245,9 @@ if (gmailAccount) {
 
 `resolve` accepts optional `scopes` to require specific grants. It returns the piece's parsed auth value, converting stored OAuth tokens through the recipe's `toAuth` when provided. `list` returns IDs, owner, piece, method, account, scopes, expiry, status, and timestamps, without plaintext or encrypted credentials.
 
-Expired OAuth connections refresh lazily during resolution, using the recipe's `refresh` function or a refresh-token grant at its `tokenUrl`. Concurrent refreshes are serialized per owner and piece. A failed refresh marks the connection `error` and throws; it never silently switches to factory `auth`. Reconnect to replace the failing credential. Disconnecting removes the row, allowing factory fallback again if configured; it revokes access at the provider only when the recipe defines `revoke`.
+- **Refresh.** Expired OAuth connections refresh lazily during resolution, using the recipe's `refresh` function or a refresh-token grant at its `tokenUrl`. Concurrent refreshes are serialized per owner and piece.
+- **Failed refresh.** A failed refresh marks the connection `error` and throws. It never silently switches to factory `auth`. Reconnect to replace the failing credential.
+- **Disconnect.** Disconnecting removes the row, which allows factory fallback again if configured. It revokes access at the provider only when the recipe defines `revoke`.
 
 `ConnectionError.code` is `missing`, `revoked`, `expired`, `error`, or `scopes`. Scope errors include `missingScopes`. `frogbot.connections.authorizations({ pieces, req })` returns linking requirements keyed by piece, including enabled methods and an OAuth `authorizeUrl` when available.
 

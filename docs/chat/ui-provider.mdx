@@ -56,7 +56,15 @@ The REST adapter reads renamed chat, message, and asset collection slugs from `/
 | `faviconUrl` | `(pageUrl: string) => string \| undefined` | — | The site icon `LinkList` shows for a page. Without it, or when it returns `undefined` or the image fails, the row shows the host's first letter and nothing is requested. See [Link lists](/chat/ui-registries#link-lists). |
 | `sourceHref` | `({ collection, id }) => string \| undefined` | — | The link for a record a tool cited, such as a [`searchTool`](/search/overview#search-from-an-agent) hit. Each message lists its sources under the answer; a record's title links here, and without it the title is plain text. The admin chat links to the record's edit page. |
 
-`ChatProvider` calls the adapter's `loadManifest` once per adapter and aborts it on unmount. Until it resolves, `<Chat>` renders its `loadingContent`; a failure renders its `errorContent`, and `null` renders its `disabledContent`. `useChatProvider()` returns `{ adapter, manifest, error, loading, toolRenderers, dataRenderers, commands, mentionSources, composerFeatures, composerHistory, faviconUrl, sourceHref }`.
+`ChatProvider` calls the adapter's `loadManifest` once per adapter and aborts it on unmount.
+
+| `loadManifest` | `<Chat>` renders |
+| --- | --- |
+| Has not resolved | `loadingContent` |
+| Fails | `errorContent` |
+| Resolves to `null` | `disabledContent` |
+
+`useChatProvider()` returns `{ adapter, manifest, error, loading, toolRenderers, dataRenderers, commands, mentionSources, composerFeatures, composerHistory, faviconUrl, sourceHref }`.
 
 ## REST adapter options
 
