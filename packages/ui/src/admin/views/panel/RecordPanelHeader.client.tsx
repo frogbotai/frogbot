@@ -23,6 +23,7 @@ import {
   SidePanelBar,
   SidePanelMenuItem,
   SidePanelMenuNote,
+  SidePanelMenuProbe,
 } from '../../../components/side-panel-bar.js';
 import CheckIcon from '../../../icons/icons/CheckIcon.js';
 import CheckmarkCircleIcon from '../../../icons/icons/CheckmarkCircleIcon.js';
@@ -181,6 +182,7 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
   const modified = useFormModified();
   const { submit } = useForm();
   const [completing, setCompleting] = useState<'idle' | 'pending' | 'saving'>('idle');
+  const [hasActions, setHasActions] = useState(false);
   const {
     collectionSlug = panel.collectionSlug,
     data,
@@ -279,7 +281,6 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
 
   const canDuplicate = isEditing && canCreate && !collectionConfig.disableDuplicate;
   const canDelete = isEditing && Boolean(hasDeletePermission);
-  const hasActions = Array.isArray(actions) ? actions.length > 0 : Boolean(actions);
   const hasMenu = isEditing || canCreate || hasActions;
 
   const menu = hasMenu ? (
@@ -368,6 +369,7 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
         titleInBody={Boolean(titlePath)}
         titleScrolledOut={titleScrolledOut}
       />
+      {actions ? <SidePanelMenuProbe onRender={setHasActions}>{actions}</SidePanelMenuProbe> : null}
       {canDelete ? (
         <DeleteRecord
           onDeleted={() => {

@@ -52,7 +52,7 @@ Settings go in `admin.panel`, React components in `admin.components.panel`, the 
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `actions` | `FrogBotComponent[]` | — | Items in the header's ••• menu, after create new. Render `SidePanelMenuItem`s. |
+| `actions` | `FrogBotComponent[]` | — | Items in the header's ••• menu, after create new. Render `SidePanelMenuItem`s. They also render hidden while the menu is closed, so the header can hide the ••• button when none of them renders anything; keep them free of side effects. |
 | `afterFields` | `FrogBotComponent[]` | — | After the last field. |
 | `beforeFields` | `FrogBotComponent[]` | — | Before the property list, under the title when the body shows one. |
 | `Component` | `FrogBotComponent` | Built-in panel | Replaces the whole panel, edit form and footer included. |

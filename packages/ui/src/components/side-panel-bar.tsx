@@ -1,6 +1,15 @@
 'use client';
 
-import { type ComponentProps, type ReactNode, useEffect, useRef } from 'react';
+import {
+  Component,
+  type ComponentProps,
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+} from 'react';
 
 import ChevronLeftIcon from '../icons/icons/ChevronLeftIcon.js';
 import MaximizeIcon from '../icons/icons/MaximizeIcon.js';
@@ -15,6 +24,8 @@ import {
 import { sidePanelCrumbs } from './side-panel-crumbs.js';
 
 const baseClass = 'fb-side-panel-bar';
+
+const ProbeContext = createContext(false);
 
 /** The link back to the record or file the panel was opened from. */
 export type SidePanelBarBack = {
@@ -155,11 +166,72 @@ export function SidePanelMenuItem({
   danger,
   ...props
 }: ComponentProps<typeof DropdownMenuItem> & { danger?: boolean }) {
+  if (useContext(ProbeContext)) return <span />;
+
   return (
     <DropdownMenuItem
       className={[danger && `${baseClass}__item--danger`, className].filter(Boolean).join(' ')}
       {...props}
     />
+  );
+}
+
+class ProbeBoundary extends Component<{ children: ReactNode; onError: () => void }> {
+  override state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  override componentDidCatch() {
+    this.props.onError();
+  }
+
+  override render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+/**
+ * Renders menu items hidden, outside the closed menu, and reports whether any of them renders
+ * something, so a menu whose only items render nothing can hide its ••• button. An item that
+ * can't render outside the menu counts as rendering.
+ */
+export function SidePanelMenuProbe({
+  children,
+  onRender,
+}: {
+  children: ReactNode;
+  onRender: (renders: boolean) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const report = useRef(onRender);
+
+  useEffect(() => {
+    report.current = onRender;
+  });
+
+  useLayoutEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const update = () => report.current(node.childElementCount > 0 || Boolean(node.textContent));
+    const observer = new MutationObserver(update);
+
+    update();
+    observer.observe(node, { characterData: true, childList: true, subtree: true });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <ProbeBoundary onError={() => report.current(true)}>
+      <ProbeContext.Provider value>
+        <div hidden ref={ref}>
+          {children}
+        </div>
+      </ProbeContext.Provider>
+    </ProbeBoundary>
   );
 }
 
@@ -191,7 +263,14 @@ export function useSidePanelEscape(
 
       const target = event.target instanceof Element ? event.target : null;
 
-      if (target?.closest('[aria-expanded="true"], [role="menu"], [role="dialog"]')) return;
+      if (
+        target?.closest(
+          '[aria-haspopup][aria-expanded="true"], [role="menu"], [role="listbox"], [role="dialog"]',
+        )
+      ) {
+        return;
+      }
+
       if (ref.current.ignore?.(event)) return;
 
       ref.current.onClose?.();

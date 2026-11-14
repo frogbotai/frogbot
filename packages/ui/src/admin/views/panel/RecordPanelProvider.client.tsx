@@ -308,7 +308,7 @@ export function RecordPanelProvider({
           if (navigationRef.current !== navigation) return;
 
           if (response?.ok) {
-            go({ id: parent.id, mode: 'edit' }, remaining, parent.origin);
+            guard(() => go({ id: parent.id, mode: 'edit' }, remaining, parent.origin));
 
             return;
           }
@@ -370,6 +370,7 @@ export function RecordPanelProvider({
     const url = editURL(adminRoute, collectionSlug, state.mode === 'edit' ? state.id : undefined);
 
     guard(() => {
+      navigationRef.current += 1;
       formRef.current = undefined;
       setStack([]);
       router.push(url);
