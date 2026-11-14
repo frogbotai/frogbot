@@ -150,6 +150,18 @@ The template answers `GET /api/health`:
 
 The route needs no sign-in, so point your platform's HTTP health check at it. Dojo, Fly.io, Cloud Run, ECS Express Mode, and Azure Container Apps check this path when `frogbot deploy` sets them up. The route is `src/app/(frogbot)/api/health/route.ts`.
 
+### New-version notice
+
+When a newer build goes live, open admin tabs show **A new version is available** with a **Refresh** button. A tab checks when it regains focus or moves to another admin page, at most every 5 seconds, and right away when a script or style from the old build fails to load. It never reloads by itself, so unsaved edits stay.
+
+Each production build gets a random build ID, which the server sends in the `x-frogbot-build` header. An app built separately on several servers, or built again from the same code, would show the notice when nothing changed. Set `FROGBOT_BUILD_ID` in the build environment to one value per version, such as the git commit:
+
+```bash
+FROGBOT_BUILD_ID=$(git rev-parse HEAD) pnpm build
+```
+
+In a Docker build, pass it as a build argument and add `ARG FROGBOT_BUILD_ID` to the builder stage.
+
 ## Fly.io
 
 ```bash
