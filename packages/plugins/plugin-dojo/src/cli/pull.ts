@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
-import { lstat, mkdtemp, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { lstat, mkdtemp, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -98,10 +98,16 @@ async function pull(args: string[], io: DojoIO): Promise<number> {
 
     const secret = (typeof data === 'object' && appSecret) || randomBytes(24).toString('hex');
 
+    const databaseUrl = (await usesPostgres(staging))
+      ? `postgres://postgres:postgres@127.0.0.1:5432/${slug}`
+      : 'file:./frogbot.db';
+
     await writeFile(
       join(staging, '.env'),
-      `DATABASE_URL=file:./frogbot.db\nFROGBOT_SECRET=${secret}\n`,
-      { mode: 0o600 },
+      `DATABASE_URL=${databaseUrl}\nFROGBOT_SECRET=${secret}\n`,
+      {
+        mode: 0o600,
+      },
     );
 
     await rename(staging, dest);
@@ -185,6 +191,21 @@ async function pullData(
     return { databaseBytes: database?.size ?? 0, files: files.length };
   } finally {
     await rm(download, { recursive: true, force: true });
+  }
+}
+
+const postgresAdapters = ['@frogbotai/db-postgres', '@frogbotai/db-vercel-postgres'];
+
+async function usesPostgres(folder: string): Promise<boolean> {
+  try {
+    const pkg = JSON.parse(await readFile(join(folder, 'package.json'), 'utf8')) as {
+      dependencies?: Record<string, unknown>;
+      devDependencies?: Record<string, unknown>;
+    };
+
+    return postgresAdapters.some((name) => name in { ...pkg.dependencies, ...pkg.devDependencies });
+  } catch {
+    return false;
   }
 }
 

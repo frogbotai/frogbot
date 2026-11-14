@@ -274,7 +274,8 @@ Uploads the app in the current folder to Dojo, streams `[build]` logs, and print
     - **Upload collections:** Files inside upload directories within your project root are uploaded with progress output and automatic 3x retries. `.env*`, `.git`, `node_modules`, and database files inside upload folders are excluded.
   </Accordion>
   <Accordion title="Environment keys (--no-keys, --skip-key, --update-keys)">
-    - **Encryption & masking:** Keys from `.env*` files are masked in terminal output (`STRIPE_KEY ••••4242`) and sealed to Dojo's public key before leaving your machine. Platform variables (`DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT`, `HOSTNAME`) are managed by Dojo automatically, and the Dojo sign-in (`FROGBOT_DOJO_TOKEN`, `FROGBOT_DOJO_URL`) never leaves your machine.
+    - **Encryption & masking:** Keys from `.env*` files are masked in terminal output (`STRIPE_KEY ••••4242`) and sealed to Dojo's public key before leaving your machine. Platform variables (`DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT`, `HOSTNAME`) are managed by Dojo automatically, except that the first share of a Postgres app offers `.env`'s `DATABASE_URL` with the keys when it points off this machine (see below), and the Dojo sign-in (`FROGBOT_DOJO_TOKEN`, `FROGBOT_DOJO_URL`) never leaves your machine.
+    - **Postgres `DATABASE_URL`:** On the first share of a Postgres app (the adapter's `name` is `postgres`), a `DATABASE_URL` in `.env` that points off this machine is listed with the keys, masked and ticked (`DATABASE_URL ••••/crm`); untick it, or pass `--skip-key DATABASE_URL`, to leave it out. A `file:` URL, or one whose host is `localhost`, `127.0.0.1` or `::1`, is never sent, and neither is any `DATABASE_URL` from a SQLite app or a later share. Bringing data still works only for SQLite apps.
     - **First vs. later shares:** The first share lets you untick any keys interactively (or uploads all keys when non-interactive). Later shares add newly introduced keys automatically and keep existing live values unless you pass `--update-keys`.
     - **Editors:** Collaborators with editor access (such as from [`dojo apps pull`](#dojo-apps-pull)) deploy code only; key changes are restricted to workspace owners.
   </Accordion>
@@ -294,7 +295,7 @@ npx @frogbotai/plugin-dojo apps pull deals [--data]
 Downloads the live code of a Dojo app you own or edit into a new `./<app>` directory. It also:
 
 - Links `.frogbot/app.json`, so running `npx frogbot dojo apps share` from that folder updates the same app.
-- Writes a fresh local `.env` with `DATABASE_URL=file:./frogbot.db` and `FROGBOT_SECRET`.
+- Writes a fresh local `.env` with `DATABASE_URL` and `FROGBOT_SECRET`. `DATABASE_URL` is `file:./frogbot.db`, or `postgres://postgres:postgres@127.0.0.1:5432/<app>` for an app whose `package.json` depends on `@frogbotai/db-postgres` or `@frogbotai/db-vercel-postgres`, as `create-frogbot-app` writes it.
 
 Live data and production secrets remain on Dojo.
 
@@ -465,16 +466,17 @@ A server that crashes restarts on the same build after 1 second. The wait double
 
 ### Database schema
 
-With SQLite and no `prodMigrations`, each update brings the database's schema up to the new code before the new version starts. It follows the same rule as `frogbot dev` (see [Prototyping in development mode](/database/sqlite#prototyping-in-development-mode)):
+With SQLite or Postgres (`@frogbotai/db-postgres`) and no `prodMigrations`, each update brings the database's schema up to the new code before the new version starts:
 
 - It adds tables, columns, and indexes.
 - It adds a new required field as a nullable column, so existing rows keep working.
 - It keeps removed fields and collections. Their data stays, hidden, until you add them back.
 
-It never deletes data and never asks. The update stops as `update failed`, and the old version keeps serving, when a change would do either of these:
+It never deletes data and never asks. The update stops as `update failed`, and the old version keeps serving, when a change would drop a table, a column, or rows, or change a type the database can't apply safely:
 
-- Drop a table, a column, or rows.
-- Change a field's type while the field holds values that the new type can't read, such as text that isn't a number for a `number` field.
+- **SQLite** follows `frogbot dev` (see [Prototyping in development mode](/database/sqlite#prototyping-in-development-mode)): it refuses a field's type change only while the field holds values that the new type can't read, such as text that isn't a number for a `number` field.
+- **Postgres** refuses any column type change on a table that has rows (see [Schema sync under `frogbot up`](/database/postgres#schema-sync-under-frogbot-up)).
+- **Vercel Postgres** (`@frogbotai/db-vercel-postgres`) has no schema sync: set `prodMigrations` and write [migrations](/database/migrations).
 
 Nothing is written to `payload_migrations`, so you can still adopt [migrations](/database/migrations) later. With `prodMigrations` set, the update runs your migrations on connect instead, as `frogbot start` does.
 

@@ -1,6 +1,7 @@
 import { readFile, rm, stat, symlink } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import type { DeployConfig } from 'frogbot';
 import { describe, expect, it } from 'vitest';
 
 import { authPath, writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
@@ -547,4 +548,120 @@ describe('frogbot share: as an editor', () => {
       expect(result.stdout().slice(-2)).toEqual([shareLink('deals'), 'https://deals.frogbot.app']);
     },
   );
+});
+
+describe("frogbot share: a Postgres app's DATABASE_URL", () => {
+  const remote = 'postgres://crm:s3cret-pass@db.example.com:5432/crm';
+  const adapter = (name: string) => ({ collections: [], db: { name } }) as unknown as DeployConfig;
+
+  async function first(databaseUrl: string, name = 'postgres', files: Record<string, string> = {}) {
+    const shared = await setup({
+      '.env': `STRIPE_KEY=sk_test_aaaa4242\nDATABASE_URL=${databaseUrl}\n`,
+      ...files,
+    });
+
+    await shared.signIn();
+
+    const run = (args: string[], options: Parameters<typeof shared.run>[1] = {}) =>
+      shared.run(args, { config: adapter(name), ...options });
+
+    return { ...shared, run };
+  }
+
+  it('lists a remote one masked and ticked under Keys to bring on the first share, and sends it', async () => {
+    const { dojo, run } = await first(remote);
+    const result = await run(['--no-data'], {
+      isTTY: true,
+      multiselect: ['STRIPE_KEY', 'DATABASE_URL'],
+    });
+
+    expect(result.code).toBe(0);
+    expect(result.asked).toEqual(['Keys to bring (untick any to leave out)']);
+    expect(result.choices).toEqual([
+      [
+        { value: 'STRIPE_KEY', label: 'STRIPE_KEY ••••4242' },
+        { value: 'DATABASE_URL', label: 'DATABASE_URL ••••/crm' },
+      ],
+    ]);
+    expect(dojo.opened.map((opened) => opened.values)).toEqual([
+      { STRIPE_KEY: 'sk_test_aaaa4242', DATABASE_URL: remote },
+    ]);
+    expect([...result.stdout(), ...result.stderr()].join('\n')).not.toContain('s3cret-pass');
+  });
+
+  it('leaves it out when unticked, and carries it with no terminal', async () => {
+    const unticked = await first(remote);
+    const left = await unticked.run(['--no-data'], { isTTY: true, multiselect: ['STRIPE_KEY'] });
+
+    expect(left.code).toBe(0);
+    expect(unticked.dojo.opened.map((opened) => opened.values)).toEqual([
+      { STRIPE_KEY: 'sk_test_aaaa4242' },
+    ]);
+
+    const carried = await first(`postgresql://crm:pw@10.0.0.5/crm`);
+    const all = await carried.run(['--no-data']);
+
+    expect(all.code).toBe(0);
+    expect(all.stdout()[0]).toBe(
+      '[frogbot] Bringing 2 keys: STRIPE_KEY ••••4242, DATABASE_URL ••••/crm',
+    );
+    expect(Object.keys(carried.dojo.opened[0]?.values ?? {})).toEqual([
+      'STRIPE_KEY',
+      'DATABASE_URL',
+    ]);
+  });
+
+  it.each([
+    ['localhost', 'postgres://postgres:postgres@localhost:5432/crm'],
+    ['127.0.0.1', 'postgres://postgres:postgres@127.0.0.1:5432/crm'],
+    ['::1', 'postgres://postgres:postgres@[::1]:5432/crm'],
+    ['file:', 'file:./frogbot.db'],
+  ])('never sends a %s one', async (_, url) => {
+    const { dojo, run } = await first(url);
+    const result = await run(['--no-data']);
+
+    expect(result.code).toBe(0);
+    expect(dojo.opened.map((opened) => opened.values)).toEqual([
+      { STRIPE_KEY: 'sk_test_aaaa4242' },
+    ]);
+  });
+
+  it("never sends a SQLite app's", async () => {
+    const { dojo, run } = await first(remote, 'sqlite');
+
+    expect((await run(['--no-data'])).code).toBe(0);
+    expect(Object.keys(dojo.opened[0]?.values ?? {})).toEqual(['STRIPE_KEY']);
+  });
+
+  it('never sends it on a later share', async () => {
+    const { dojo, run } = await first(remote, 'postgres', { '.frogbot/app.json': '{"appId":1}' });
+
+    dojo.apps.push({ id: 1, name: 'deals', slug: 'deals', workspace: 1 });
+    dojo.data.started = true;
+    dojo.keys.set(1, { STRIPE_KEY: 'sk_test_aaaa4242' });
+
+    const result = await run([]);
+
+    expect(result.code).toBe(0);
+    expect(dojo.opened).toEqual([]);
+    expect(dojo.keys.get(1)).toEqual({ STRIPE_KEY: 'sk_test_aaaa4242' });
+  });
+
+  it('keeps bringing data SQLite-only, with the same message', async () => {
+    const { run } = await first(remote);
+    const result = await run([], { isTTY: true, multiselect: ['STRIPE_KEY', 'DATABASE_URL'] });
+
+    expect(result.code).toBe(0);
+    expect(result.stdout()).toContain(
+      '[frogbot] Your data stays on this computer: bringing data works only for SQLite apps for now.',
+    );
+  });
+
+  it('takes --skip-key DATABASE_URL', async () => {
+    const { dojo, run } = await first(remote);
+    const result = await run(['--no-data', '--skip-key', 'DATABASE_URL']);
+
+    expect(result.code).toBe(0);
+    expect(Object.keys(dojo.opened[0]?.values ?? {})).toEqual(['STRIPE_KEY']);
+  });
 });
