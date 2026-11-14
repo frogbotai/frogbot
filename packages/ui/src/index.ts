@@ -153,6 +153,14 @@ export {
 } from './components/shimmer-effect.js';
 export { Shortcut, type ShortcutProps } from './components/shortcut.js';
 export {
+  SidePanelBar,
+  type SidePanelBarBack,
+  type SidePanelBarProps,
+  SidePanelMenuItem,
+  SidePanelMenuNote,
+  useSidePanelEscape,
+} from './components/side-panel-bar.js';
+export {
   Sidebar,
   SidebarInset,
   SidebarProvider,

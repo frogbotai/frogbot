@@ -48,6 +48,7 @@ test('a drafts-autosave collection saves without a Save button', async ({ page }
   const title = page.locator('.fb-record-panel-title__input');
   await expect(title).toHaveValue('Autosaved entry');
   await expect(page.locator('.fb-record-panel-header__save')).toHaveCount(0);
+  await expect(page.locator('.fb-record-panel-header__saved')).toHaveText('Saved');
 
   await title.fill('Autosaved entry changed');
 
@@ -65,12 +66,14 @@ test('renders the actions, beforeFields and afterFields slots in place', async (
 
   await page.goto(`/collections/journal?record=${id}`);
   const header = page.locator('.fb-record-panel-header');
-  const action = header.getByTestId('panel-action');
+  await expect(header.getByTestId('panel-action')).toHaveCount(0);
+  await header.getByRole('button', { name: 'More options' }).click();
+  const action = page.getByRole('menu').getByTestId('panel-action');
   await expect(action).toHaveAttribute('data-id', String(id));
-  await expect(header.locator('.fb-record-panel-header__actions > *').first()).toHaveAttribute(
-    'data-testid',
-    'panel-action',
-  );
+  await expect(action).toHaveRole('menuitem');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menu')).toHaveCount(0);
+  await expect(panel(page)).toHaveCount(1);
 
   const before = page.getByTestId('panel-before');
   await expect(before).toHaveText('Before Slotted entry with payload');
@@ -91,12 +94,15 @@ test('renders the actions, beforeFields and afterFields slots in place', async (
   await expect(page.locator('.fb-record-panel-properties .field-label')).toHaveText([/Mood/]);
   await expect(page.getByTestId('panel-after')).toHaveText('After journal');
 
-  await action.getByRole('button', { name: 'Slot close' }).click();
+  await header.getByRole('button', { name: 'More options' }).click();
+  await page.getByRole('menuitem', { name: 'Slot close' }).click();
   await expect(panel(page)).toHaveCount(0);
   expect(recordParam(page)).toBeNull();
 
   await page.goto(`/collections/journal?record=${id}`);
-  await page.getByTestId('panel-action').getByRole('button', { name: 'Slot expand' }).click();
+  await expect(page.locator('.fb-record-panel-title__input')).toHaveValue('Slotted entry');
+  await panel(page).getByRole('button', { name: 'More options' }).click();
+  await page.getByRole('menuitem', { name: 'Slot expand' }).click();
   await expect(page).toHaveURL(new RegExp(`/collections/journal/${id}$`));
 });
 
@@ -122,7 +128,7 @@ test('replaces the header, or the whole panel', async ({ page }) => {
   await expect(page).toHaveURL(new RegExp(`/collections/cards/${card}$`));
 });
 
-test('a collection without useAsDone shows its title once, in the top row, wrapping', async ({
+test('the bar keeps status, more, expand and close in order; the title shows once', async ({
   page,
 }) => {
   const long = `Entry ${'with a very long title that has to wrap '.repeat(3).trim()}`;
@@ -130,33 +136,60 @@ test('a collection without useAsDone shows its title once, in the top row, wrapp
 
   await page.goto(`/collections/journal?record=${id}`);
   const header = page.locator('.fb-record-panel-header');
-  const title = header.locator('.fb-record-panel-title__input');
+  const title = page.locator('.fb-record-panel-title__input');
   await expect(title).toHaveValue(long);
-  await expect(page.locator('.fb-record-panel-title__input')).toHaveCount(1);
+  await expect(header.locator('.fb-record-panel-title__input')).toHaveCount(0);
+  await expect(header.locator('.fb-side-panel-bar__start')).toHaveText('Journals');
   await expect(header.locator('.fb-record-panel-header__complete')).toHaveCount(0);
+  expect((await title.boundingBox())!.height).toBeGreaterThan(50);
 
-  const box = (await title.boundingBox())!;
-  expect(box.height).toBeGreaterThan(50);
-  const actions = (await header.locator('.fb-record-panel-header__actions').boundingBox())!;
-  expect(box.x + box.width).toBeLessThanOrEqual(actions.x);
+  const end = await header
+    .locator('.fb-side-panel-bar__end > *')
+    .evaluateAll((nodes) =>
+      nodes.map((node) => node.getAttribute('aria-label') ?? node.textContent),
+    );
 
-  await expect(header.getByRole('button', { name: 'Close', exact: true })).toBeVisible();
+  expect(end).toEqual(['Saved', 'More options', 'Open full page', 'Close']);
   await expect(header.getByRole('button', { name: 'Open full page' })).toHaveCSS('width', '32px');
+
+  await page.keyboard.press('Escape');
+  await expect(panel(page)).toHaveCount(0);
+});
+
+test('a shared link names the collection; the title joins the bar after scrolling', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 520 });
+  const id = await create(page, 'tickets', 'Linked ticket', {
+    notes: 'line\n'.repeat(60),
+    summary: 'Linked',
+  });
+
+  await page.goto(`/collections/tickets?record=${id}`);
+  const start = page.locator('.fb-record-panel-header .fb-side-panel-bar__start');
+  await expect(start).toHaveText('Tickets');
+
+  await page.locator('.fb-record-panel__body').evaluate((node) => node.scrollTo(0, 300));
+  await expect(start).toHaveText('Tickets/Linked ticket');
+
+  await page.goto('/collections/tickets');
+  await page.locator('tbody tr', { hasText: 'Linked ticket' }).getByRole('link').first().click();
+  await expect(page.locator('.fb-record-panel-title__input')).toHaveValue('Linked ticket');
+  await expect(start).toHaveText('');
 });
 
 test('the menu ends with delete in the danger colour', async ({ page }) => {
   const id = await create(page, 'tickets', 'Menu ticket', { summary: 'Has one' });
 
   await page.goto(`/collections/tickets?record=${id}`);
-  await page.locator('.fb-record-panel-header__menu .popup-button').click();
-  const items = page.locator('.fb-record-panel-header__menu .popup__content button');
-  await expect(items).toHaveText(['Create New', 'Duplicate', 'Delete']);
+  await panel(page).getByRole('button', { name: 'More options' }).click();
+  const menu = page.getByRole('menu');
+  const items = menu.getByRole('menuitem');
+  await expect(items).toHaveText(['Copy link', 'Duplicate', 'Create New', 'Delete']);
+  await expect(menu.locator('.fb-side-panel-bar__note')).toHaveText(/^Saved /);
   const deleteColor = await items.last().evaluate((node) => getComputedStyle(node).color);
   const createColor = await items.first().evaluate((node) => getComputedStyle(node).color);
   expect(deleteColor).not.toBe(createColor);
-  await expect(
-    page.locator('.fb-record-panel-header__menu .popup__content .popup-divider'),
-  ).toHaveCount(1);
 });
 
 test('the footer stays pinned while the body scrolls', async ({ page }) => {
@@ -212,22 +245,32 @@ test('pill tabs switch, show activity, and count errors after Save', async ({ pa
   await expect(page.locator('.fb-activity .fb-activity__entry')).toHaveCount(2);
 });
 
-test('at 375 px the actions get their own row and the title keeps the width', async ({ page }) => {
-  await page.setViewportSize({ width: 375, height: 800 });
-  const id = await create(page, 'journal', 'A reasonably long journal entry title that wraps');
+test('at 375 px the bar stays one row and the title truncates in it', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 600 });
+  const long = 'A reasonably long ticket title that has to truncate in the bar';
+  const id = await create(page, 'tickets', long, { notes: 'line\n'.repeat(60), summary: 'x' });
 
-  await page.goto(`/collections/journal?record=${id}`);
+  await page.goto(`/collections/tickets?record=${id}`);
   const header = page.locator('.fb-record-panel-header');
-  const title = header.locator('.fb-record-panel-title__input');
-  await expect(title).toBeVisible();
-  const titleBox = (await title.boundingBox())!;
-  const actions = (await header.locator('.fb-record-panel-header__actions').boundingBox())!;
-  const headerBox = (await header.boundingBox())!;
+  await expect(page.locator('.fb-record-panel-title__input')).toHaveValue(long);
+  await page.locator('.fb-record-panel__body').evaluate((node) => node.scrollTo(0, 400));
 
-  expect(titleBox.width).toBeGreaterThan(300);
-  expect(titleBox.y).toBeGreaterThanOrEqual(actions.y + actions.height);
-  expect(headerBox.height).toBeLessThan(200);
-  expect(actions.x + actions.width).toBeLessThanOrEqual(headerBox.x + headerBox.width);
+  const title = header.locator('.fb-side-panel-bar__title');
+  await expect(title).toHaveText(long);
+  expect(await title.evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);
+  expect((await header.boundingBox())!.height).toBeLessThan(64);
+
+  for (const name of ['More options', 'Open full page', 'Close']) {
+    const box = (await header.getByRole('button', { name }).boundingBox())!;
+    expect(box.width).toBe(32);
+    expect(box.x + box.width).toBeLessThanOrEqual(375);
+  }
+
+  await page.locator('.fb-record-panel #field-summary').fill('edited');
+  await expect(header.locator('.fb-record-panel-header__save')).toBeVisible();
+  await expect(header.locator('.fb-record-panel-header__unsaved')).toBeVisible();
+  await expect(header.locator('.fb-record-panel-header__unsaved-label')).toBeHidden();
+  expect((await title.boundingBox())!.width).toBeGreaterThan(30);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 });
 
@@ -259,6 +302,16 @@ test('Enter in a footer form submits that form, not the record', async ({ page }
   expect(saves).toHaveLength(1);
 });
 
+test('a footer that renders only text stays visible', async ({ page }) => {
+  const id = await create(page, 'journal', 'Text footer');
+
+  await page.goto(`/collections/journal?record=${id}`);
+  await expect(page.locator('.fb-record-panel__footer')).toBeVisible();
+  await expect(page.locator('.fb-record-panel__footer')).toHaveText(
+    'Journal entries save as you type',
+  );
+});
+
 test('a footer that renders nothing pins nothing', async ({ page }) => {
   const id = await create(page, 'scraps', 'Empty footer');
 
@@ -272,10 +325,9 @@ test('without a text useAsTitle, the top row still shows the title', async ({ pa
   const id = await create(page, 'scraps', 'No title field', { notes: 'line\n'.repeat(80) });
 
   await page.goto(`/collections/scraps?record=${id}`);
-  const start = page.locator('.fb-record-panel-header__start');
+  const start = page.locator('.fb-record-panel-header .fb-side-panel-bar__start');
   await expect(start).toContainText(String(id));
 
   await page.locator('.fb-record-panel__body').evaluate((node) => node.scrollTo(0, 400));
-  await expect(page.locator('.fb-record-panel-header--compact')).toBeVisible();
   await expect(start).toContainText(String(id));
 });

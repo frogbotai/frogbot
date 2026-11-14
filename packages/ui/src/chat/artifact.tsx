@@ -11,6 +11,7 @@ import {
   useState,
 } from 'react';
 
+import { SidePanelBar, useSidePanelEscape } from '../components/side-panel-bar.js';
 import {
   type Artifact,
   type ArtifactPersistence,
@@ -109,31 +110,44 @@ export function ArtifactView({ artifact: artifactProp }: { artifact?: Artifact }
   );
 }
 
+/**
+ * The chat's file viewer: a side panel with the shared side panel bar. The file's title is always
+ * in the bar, Save sits in the status slot, expand widens the viewer to the window, and close and
+ * Esc call `onClose`.
+ */
 export function ArtifactViewer({ id, onClose }: { id?: string; onClose?: () => void }) {
   const context = useArtifact();
   const loadArtifact = context?.loadArtifact;
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     if (id) void loadArtifact?.(id);
   }, [id, loadArtifact]);
 
+  useSidePanelEscape(context?.artifact ? onClose : undefined);
+
   if (!context?.artifact) return null;
 
   return (
-    <aside data-artifact-viewer className="fb-artifact__viewer">
-      <header className="fb-artifact__header">
-        <strong>{context.artifact.title ?? context.artifact.kind}</strong>
-        <div className="fb-artifact__actions">
-          <button type="button" onClick={() => void context.saveArtifact()}>
+    <aside
+      data-artifact-viewer
+      className={`fb-artifact__viewer${expanded ? ' fb-artifact__viewer--expanded' : ''}`}
+    >
+      <SidePanelBar
+        labels={{ expand: expanded ? 'Collapse' : 'Expand' }}
+        onClose={onClose}
+        onExpand={() => setExpanded((current) => !current)}
+        status={
+          <button
+            className="fb-artifact__save"
+            onClick={() => void context.saveArtifact()}
+            type="button"
+          >
             Save
           </button>
-          {onClose && (
-            <button type="button" onClick={onClose}>
-              Close
-            </button>
-          )}
-        </div>
-      </header>
+        }
+        title={context.artifact.title ?? context.artifact.kind}
+      />
       <div className="fb-artifact__body">
         <ArtifactView />
       </div>

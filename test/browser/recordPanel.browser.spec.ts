@@ -70,7 +70,7 @@ test('opens a board card beside the view, switches records and closes', async ({
   await openOnBoard(page, a);
   await page.keyboard.press('Escape');
   await expect(panel(page)).toHaveCount(0);
-  expect(recordParam(page)).toBeNull();
+  await expect.poll(() => recordParam(page)).toBeNull();
 });
 
 test('opens list rows and calendar events in the panel, and Cmd-click opens a tab', async ({
@@ -171,7 +171,7 @@ test('asks before switching away from unsaved edits', async ({ page }) => {
   await modal.getByRole('button', { name: 'Leave anyway' }).click();
   await expect(panelTitle(page)).toHaveValue(b.title);
   await panelTitle(page).fill(`${b.title} unsaved`);
-  await page.locator('.fb-record-panel-header__menu .popup-button').click();
+  await panel(page).getByRole('button', { name: 'More options' }).click();
   await page.locator('#action-panel-duplicate').click();
   await expect(modal).toBeVisible();
   await modal.getByRole('button', { name: 'Stay on this page' }).click();
@@ -203,7 +203,9 @@ test('lays out the title, the properties in order once, then the rest', async ({
   await expect(panel(page).locator('.field-label', { hasText: /^Notes/ })).toHaveCount(1);
 });
 
-test('marks a record complete, and the header pins after scrolling', async ({ page }) => {
+test('marks a record complete, and the header pins and shows the title after scrolling', async ({
+  page,
+}) => {
   const a = await createTask(page, 'done A');
   await page.setViewportSize({ width: 1440, height: 480 });
   await page.goto(board);
@@ -216,10 +218,10 @@ test('marks a record complete, and the header pins after scrolling', async ({ pa
   const saved = await page.request.get(`/api/tasks/${a.id}`);
   expect(((await saved.json()) as { completed: boolean }).completed).toBe(true);
 
-  await page.locator('.fb-record-panel__body').evaluate((body) => body.scrollTo(0, 120));
   const header = page.locator('.fb-record-panel-header');
-  await expect(header).toHaveClass(/fb-record-panel-header--compact/);
-  await expect(header.locator('.fb-record-panel-header__title')).toHaveText(a.title);
+  await expect(header.locator('.fb-side-panel-bar__title')).toHaveCount(0);
+  await page.locator('.fb-record-panel__body').evaluate((body) => body.scrollTo(0, 120));
+  await expect(header.locator('.fb-side-panel-bar__title')).toHaveText(a.title);
   const box = await header.boundingBox();
   const body = await page.locator('.fb-record-panel__body').boundingBox();
   expect(Math.round(box!.y)).toBe(Math.round(body!.y));
@@ -231,18 +233,21 @@ test('copies a link, opens the full page, duplicates and deletes', async ({ page
   await page.goto(board);
   await openOnBoard(page, a);
 
-  await page.getByRole('button', { name: 'Copy link' }).click();
+  await panel(page).getByRole('button', { name: 'More options' }).click();
+  await page.getByRole('menuitem', { name: 'Copy link' }).click();
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   expect(new URL(copied).searchParams.get('record')).toBe(String(a.id));
-
-  await page.locator('.fb-record-panel-header__menu .popup-button').click();
+  await expect(page.getByRole('menu')).toHaveCount(0);
+  await expect(panel(page).getByRole('button', { name: 'More options' })).toBeFocused();
+  await panel(page).getByRole('button', { name: 'More options' }).click();
   await page.locator('#action-panel-duplicate').click();
   await expect.poll(() => recordParam(page)).not.toBe(String(a.id));
   const copyId = Number(recordParam(page));
   created.push(copyId);
   await expect(card(page, a)).toHaveCount(2);
+  await expect(page.getByRole('menu')).toHaveCount(0);
 
-  await page.locator('.fb-record-panel-header__menu .popup-button').click();
+  await panel(page).getByRole('button', { name: 'More options' }).click();
   await page.locator('#action-panel-delete').click();
 
   await page
@@ -301,7 +306,7 @@ test('the panel create form switches to the record it saved', async ({ page }) =
   await page.goto(board);
   await openOnBoard(page, seed);
 
-  await page.locator('.fb-record-panel-header__menu button').first().click();
+  await panel(page).getByRole('button', { name: 'More options' }).click();
   await page.locator('#action-panel-create').click();
   await expect(panelTitle(page)).toHaveValue('');
   await panelTitle(page).fill(`${prefix} created`);
