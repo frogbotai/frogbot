@@ -1,0 +1,48 @@
+---
+title: "API keys"
+description: "Create Dojo API keys for scripts, CI and coding agents, call Dojo's API with them, and revoke them."
+keywords: ["Dojo", "API keys", "FROGBOT_DOJO_TOKEN", "bearer", "CI", "revoke", "devices"]
+---
+
+A Dojo API key lets a script, a CI job or a coding agent act as you in Dojo, without a browser. Keys start with `fb_`.
+
+<Note>
+These keys are for Dojo itself: apps, deployments, sharing and the rest of the [API reference](#call-the-api). Keys for the Hosted AI service in this tab are a different kind: see [Hosted AI API keys](/api-keys).
+</Note>
+
+## Create a key
+
+1. Open your workspace in [Dojo](https://dojo.frogbot.ai) and go to **API keys**.
+2. Choose **Create key**, give it a name, and pick when it expires: never, 30 days, 90 days or 1 year.
+3. Copy the key. Dojo shows it once and keeps only its first characters, such as `fb_a1b2c3d4e…`, to recognise it.
+
+A key made on a workspace's page reaches that workspace only. Other workspaces' apps, projects and keys look missing to it, even ones shared with you.
+
+From the terminal, `npx frogbot dojo keys create <name>` creates a key with your CLI sign-in. It is never broader than that sign-in. See [Creating keys](/plugins/dojo#scripts-and-agents).
+
+## Use a key
+
+With the CLI, set `FROGBOT_DOJO_TOKEN`:
+
+```bash
+FROGBOT_DOJO_TOKEN=fb_... npx frogbot share --yes --json
+```
+
+## Call the API
+
+Send the key as a Bearer token:
+
+```bash
+curl https://dojo.frogbot.ai/api/apps \
+  -H "Authorization: Bearer fb_..."
+```
+
+Every route, with its access rule and error format, is in the Dojo tab's **API reference**, generated from Dojo's own [OpenAPI document](https://dojo.frogbot.ai/api/openapi.json).
+
+## Signed-in devices
+
+Each terminal sign-in is listed with your keys as a device named `CLI on <computer>`, and the keys list shows which key or device made each key. Revoke a device to sign that terminal out.
+
+## Revoke a key
+
+Choose **Revoke** next to the key, or run `npx frogbot dojo keys revoke <id>`. Revoking a key also revokes the keys it made, unless you choose to keep them. Leaving a workspace revokes every key you made for it.

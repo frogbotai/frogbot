@@ -1,0 +1,35 @@
+---
+title: "Share"
+description: "Choose who can open a Dojo app, and at which level: Viewer, Editor or Admin."
+keywords: ["Dojo", "share", "invite", "Viewer", "Editor", "Admin", "public link", "workspace"]
+---
+
+An app starts private: only the person who shared it can open it. Open the app's **Share** dialog, or use `frogbot dojo sharing`, to let others in.
+
+## Levels
+
+| Level | Can |
+| --- | --- |
+| Viewer | Opens and uses the app. |
+| Editor | Also changes it: deploys, environment variables, and pulling its code. |
+| Admin | Also shares it, connects its repo, sets its domain and deletes it. An app always keeps at least one Admin. |
+
+The API and the CLI name these levels `use`, `editor` and `owner`.
+
+## Who can open it
+
+- **Only people invited.** The default. Invite people by email; Dojo emails each one, and they open the app once they sign in with that email. People outside the workspace can be Viewers or Editors, never Admins.
+- **Anyone in this workspace.** Every member gets the app at the level their [workspace role](/dojo/overview#workspace-roles) carries: Viewers as Viewers, Editors as Editors, Admins and the Owner as Admins. This needs the Business plan; without it the app is treated as private.
+- **Public link.** Anyone with the address opens it as a Viewer, without a Dojo account. What they see is still up to the app's own access rules.
+
+People on a [project's](/dojo/overview#how-dojo-is-organized) list also get its apps.
+
+## From the terminal
+
+```bash
+npx frogbot dojo sharing invite deals ana@example.com --level editor
+npx frogbot dojo sharing list deals
+npx frogbot dojo sharing leave deals
+```
+
+Every `sharing` command is in the [Dojo plugin reference](/plugins/dojo#commands). Apps shared with you show under **Shared with you** in Dojo, and in `frogbot dojo apps list`.

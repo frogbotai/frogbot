@@ -215,50 +215,58 @@
         ]
       },
       {
-        "tab": "Cloud",
+        "tab": "Dojo",
         "groups": [
           {
-            "group": "Hosted API",
-            "pages": ["subscription-intro", "api-keys"]
-          },
-          {
-            "group": "Pricing",
-            "pages": ["balance-usage-pricing"]
-          },
-          {
-            "group": "Browser Agent MCP",
-            "pages": ["browser-mcp"]
-          },
-          {
-            "group": "Agent providers",
+            "group": "Guides",
             "pages": [
-              "agents/opencode",
-              "agents/claude-code-router",
-              "agents/codex",
-              "agents/kilo-code"
+              "dojo/overview",
+              "dojo/sign-in",
+              "dojo/deploy",
+              "dojo/share",
+              "dojo/env-vars",
+              "dojo/domains",
+              "dojo/billing",
+              "dojo/api-keys",
+              "dojo/cli"
             ]
           },
           {
-            "group": "Inference API",
-            "pages": [
-              "api-reference/index",
-              "api-reference/chat-completions",
-              "api-reference/messages",
-              "api-reference/embeddings",
-              "api-reference/rerank",
-              "api-reference/audio-transcriptions",
-              "api-reference/audio-speech",
-              "api-reference/images-generations",
-              "api-reference/models",
-              "api-reference/quota"
-            ]
+            "group": "API reference",
+            "openapi": "https://dojo.frogbot.ai/api/openapi.json"
           },
           {
-            "group": "Deep Research API",
+            "group": "Hosted AI (app.frogbot.ai)",
             "pages": [
-              "api-reference/research-create",
-              "api-reference/research-get",
-              "api-reference/research-list"
+              { "group": "Hosted API", "expanded": false, "pages": ["subscription-intro", "api-keys"] },
+              { "group": "Pricing", "expanded": false, "pages": ["balance-usage-pricing"] },
+              { "group": "Browser Agent MCP", "expanded": false, "pages": ["browser-mcp"] },
+              {
+                "group": "Agent providers",
+                "expanded": false,
+                "pages": ["agents/opencode", "agents/claude-code-router", "agents/codex", "agents/kilo-code"]
+              },
+              {
+                "group": "Inference API",
+                "expanded": false,
+                "pages": [
+                  "api-reference/index",
+                  "api-reference/chat-completions",
+                  "api-reference/messages",
+                  "api-reference/embeddings",
+                  "api-reference/rerank",
+                  "api-reference/audio-transcriptions",
+                  "api-reference/audio-speech",
+                  "api-reference/images-generations",
+                  "api-reference/models",
+                  "api-reference/quota"
+                ]
+              },
+              {
+                "group": "Deep Research API",
+                "expanded": false,
+                "pages": ["api-reference/research-create", "api-reference/research-get", "api-reference/research-list"]
+              }
             ]
           }
         ]

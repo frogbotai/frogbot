@@ -1,0 +1,53 @@
+---
+title: "Deploy"
+description: "Put a FrogBot app on Dojo from your terminal or from a GitHub or GitLab repo, follow the build, and roll back."
+keywords: ["Dojo", "deploy", "frogbot share", "frogbot deploy", "GitHub", "GitLab", "rollback", "build log", "preview"]
+---
+
+## From your terminal
+
+In your app's folder:
+
+```bash
+npx frogbot share
+```
+
+The CLI checks the app, uploads it, follows the build and prints the live URL, such as `https://deals.frogbot.app`. The first share asks which workspace the app goes in and what to name it; later shares deploy a new version of the same app. `npx frogbot deploy` with no target does the same, because the [Dojo plugin](/plugins/dojo) makes Dojo the default target.
+
+Useful flags, all listed in [`dojo apps share`](/getting-started/cli#dojo-apps-share):
+
+- `--data` uploads your local data with the first share, so the app starts with your records and users. Without it the app starts empty.
+- `--no-keys` skips the question about which keys in your `.env` to copy into the app's [environment variables](/dojo/env-vars).
+- `--json` prints one JSON result, for scripts and coding agents.
+
+## From a repo
+
+An app's Admin can connect it to a GitHub or GitLab repo in the app's settings: pick the repo, the branch (the repo's default branch unless you choose another) and the folder the app is in. Dojo adds a webhook to the repo, and every push to that branch deploys. If Dojo loses access to the repo, pushes stop deploying until an Admin connects it again.
+
+## Follow a build
+
+Every deploy is a [deployment](/dojo/overview#how-dojo-is-organized) with its own build log. The app's page lists deployments newest first, and the CLI shows them too:
+
+```bash
+npx frogbot dojo deployments list deals
+npx frogbot dojo deployments logs <id> --follow
+npx frogbot dojo apps logs deals --follow
+```
+
+A build that fails leaves the live version running. You can cancel a deployment that is still building.
+
+## Roll back
+
+Open an earlier deployment that went live and choose **Roll back**. Dojo puts that version back without rebuilding it. Your data stays as it is: a rollback changes the code, not the database.
+
+## Free previews and paid apps
+
+Each live app takes one paid app on the workspace's plan. When the workspace has none free, a new app starts as a free preview instead: it runs for a few hours at its `frogbot.app` address, with no custom domain, and stops when the window ends. An ended preview is kept for a week, so you can choose **Keep it** and pay for it without sharing again. The share prints the upgrade link when a deploy needs one. See [Billing](/dojo/billing).
+
+## Get the code back
+
+Anyone who can edit an app can download it into a new folder, and the app's Admins can bring its data:
+
+```bash
+npx frogbot dojo apps pull deals --data
+```
