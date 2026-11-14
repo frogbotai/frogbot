@@ -141,7 +141,9 @@ On Dojo, the [Dojo plugin](/plugins/dojo#sign-in-with-dojo) adds "Continue with 
 
 ## Two-factor sign-in
 
-The [two-factor plugin](/plugins/two-factor) asks for a code from an authenticator app, or a recovery code, after the provider or the password, before any session exists. It pauses the sign-in with the collection's [`beforeSignIn`](/hooks/collections#beforesignin) hook and resumes it with `finishSignIn` once the code is right; any other second step, such as accepting terms, can use the same pair, though not yet together with two-factor sign-in (see [Limits](/plugins/two-factor#limits)).
+The [two-factor plugin](/plugins/two-factor) asks for a code from an authenticator app, or a recovery code, after the provider or the password, before any session exists. It pauses the sign-in with the collection's [`beforeSignIn`](/hooks/collections#beforesignin) hook and resumes it with `finishSignIn` once the code is right.
+
+Any other second step, such as accepting terms, can use the same pair, but not together with two-factor sign-in. See [Limits](/plugins/two-factor#limits).
 
 ```ts
 import { twoFactor } from '@frogbotai/plugin-two-factor'
