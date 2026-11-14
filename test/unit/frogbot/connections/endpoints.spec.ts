@@ -6,6 +6,7 @@ import type { SanitizedConnectionsConfig } from '../../../../packages/frogbot/sr
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import type { OAuthTokens, PieceOAuthSave } from '../../../../packages/frogbot/src/pieces/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import { continuedTo } from '../../../__helpers/shared/continuedTo.js';
 import { definition, setup } from './oauth/fixtures.js';
 
 function fixture(pieceDefinition: Parameters<typeof setup>[0] = definition) {
@@ -15,6 +16,8 @@ function fixture(pieceDefinition: Parameters<typeof setup>[0] = definition) {
   const config = {
     serverURL: 'https://app.test',
     routes: { api: '/rest/v1', admin: '/control' },
+    admin: { user: 'users' },
+    cookiePrefix: 'payload',
   };
 
   const connections: SanitizedConnectionsConfig = {
@@ -36,6 +39,8 @@ function fixture(pieceDefinition: Parameters<typeof setup>[0] = definition) {
       user,
       routeParams: { piece },
       headers: new Headers({ cookie }),
+      i18n: { language: 'en' },
+      t: (key: string) => key,
       frogbot: {
         kv: base.kv,
         config: { _internal: { payloadConfig: Promise.resolve(config) } },
@@ -171,8 +176,7 @@ describe('OAuth linking endpoints', () => {
 
     const response = await f.endpoints[1].handler(f.request(flow));
 
-    expect(response.status).toBe(302);
-    expect(response.headers.get('location')).toBe('/control/settings/connections');
+    expect(await continuedTo(response)).toBe('/control/settings/connections');
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
     expect(response.headers.get('cache-control')).toBe('no-store');
 
@@ -197,7 +201,7 @@ describe('OAuth linking endpoints', () => {
     const f = fixture();
     const flow = await f.start(`?returnTo=${encodeURIComponent(returnTo)}`);
 
-    expect((await f.endpoints[1].handler(f.request(flow))).headers.get('location')).toBe(
+    expect(await continuedTo(await f.endpoints[1].handler(f.request(flow)))).toBe(
       '/elsewhere?tab=connections#linked',
     );
   });
@@ -240,14 +244,14 @@ describe('OAuth linking endpoints', () => {
 
     const response = await f.endpoints[1].handler(f.request(flow));
 
-    expect(response.headers.get('location')).toBe('/settings/connections');
+    expect(await continuedTo(response)).toBe('/settings/connections');
   });
 
   it('allows a browser-bound cross-site callback without req.user and rejects replay', async () => {
     const f = fixture();
     const flow = await f.start();
 
-    expect((await f.endpoints[1].handler(f.request({ ...flow, user: null }))).status).toBe(302);
+    expect((await f.endpoints[1].handler(f.request({ ...flow, user: null }))).status).toBe(200);
     expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
     expect(f.fetch).toHaveBeenCalledTimes(1);
     expect(f.findByID).toHaveBeenCalledWith({
@@ -299,7 +303,7 @@ describe('OAuth linking endpoints', () => {
 
     finish();
 
-    expect((await response).status).toBe(302);
+    expect((await response).status).toBe(200);
     expect(f.upsert).toHaveBeenCalledTimes(1);
     expect(f.fetch).toHaveBeenCalledTimes(1);
   });
@@ -328,7 +332,7 @@ describe('OAuth linking endpoints', () => {
 
       expect((await f.endpoints[1].handler(req)).status).toBe(400);
       expect(f.fetch).not.toHaveBeenCalled();
-      expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(302);
+      expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(200);
     },
   );
 

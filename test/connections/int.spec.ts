@@ -16,6 +16,7 @@ import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
 import { KVLockContentionError } from '../../packages/frogbot/src/kv/errors.js';
 import { definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
 import type { PieceOAuthRecipe } from '../../packages/frogbot/src/pieces/types.js';
+import { continuedTo } from '../__helpers/shared/continuedTo.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
 import { startFakeProvider } from './fakeProvider.js';
 
@@ -441,8 +442,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
 
       const response = await callback(flow);
 
-      expect(response.status).toBe(302);
-      expect(response.headers.get('location')).toBe('/control/settings/connections');
+      expect(await continuedTo(response)).toBe('/control/settings/connections');
       expect(response.headers.get('set-cookie')).toMatch(/^linked-oauth-.*Max-Age=0/);
       expect(response.headers.get('cache-control')).toBe('no-store');
       expect(accounts).toEqual([{ auth: { apiKey: 'fresh-success' }, user: null }]);
@@ -511,7 +511,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       const secret = await saved.json();
 
       expect(secret).toMatchObject({ accountId: '', isDefault: true });
-      expect((await callback(await authorize(piece))).status).toBe(302);
+      expect((await callback(await authorize(piece))).status).toBe(200);
 
       const oauth = (await store.list({ owner })).find((row) => row.method === 'oauth')!;
 
@@ -523,7 +523,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       const replacement = await authorize(piece);
       replacement.callback.searchParams.set('code', 'replacement');
 
-      expect((await callback(replacement, authorization)).status).toBe(302);
+      expect((await callback(replacement, authorization)).status).toBe(200);
       expect(await store.get({ owner, piece, id: oauth.id })).toMatchObject({
         method: 'oauth',
         expiresAt: null,
@@ -552,9 +552,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     flow.callback.searchParams.set('code', code);
     const response = await callback(flow);
 
-    expect(response.headers.get('location')).toBe(
-      '/control/settings/connections?tab=linked#account',
-    );
+    expect(await continuedTo(response)).toBe('/control/settings/connections?tab=linked#account');
     expect(await store.get({ owner, piece: 'case-c' })).toMatchObject({
       scopes: code === 'no-scope' ? ['read', 'write'] : [],
     });
@@ -595,7 +593,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       expect(response.status).toBe(400);
       expect(exchanges).toHaveLength(0);
       expect(await store.list({ owner })).toEqual([]);
-      expect((await callback(flow)).status).toBe(302);
+      expect((await callback(flow)).status).toBe(200);
       expect((await callback(flow)).status).toBe(400);
       expect(exchanges).toHaveLength(1);
       expect(await store.list({ owner: other })).toEqual([]);
