@@ -280,6 +280,19 @@ function labelFor(type: CollectionView['type']): string {
   return type[0].toUpperCase() + type.slice(1);
 }
 
+const LIST_VIEW_COMPONENT = '@frogbotai/ui/admin/rsc#ListView';
+
+const LIST_ROUTE_KEY = 'frogbotList';
+
+const VIEW_COMPONENTS: Record<CollectionView['type'], string> = {
+  board: '@frogbotai/ui/admin/rsc#BoardView',
+  calendar: '@frogbotai/ui/admin/rsc#CalendarView',
+  custom: '@frogbotai/ui/admin/rsc#CustomCollectionView',
+  gallery: '@frogbotai/ui/admin/rsc#GalleryView',
+  list: LIST_VIEW_COMPONENT,
+  timeline: '@frogbotai/ui/admin/rsc#TimelineView',
+};
+
 export function compileCollectionViews({
   collection,
   onRuntimeViews,
@@ -303,6 +316,12 @@ export function compileCollectionViews({
     if (slugs.has(slug)) {
       throw new Error(
         `[frogbot] Collection "${collection.slug}" has duplicate normalized view slug "${slug}".`,
+      );
+    }
+
+    if (slug === 'edit' || (slug === 'list' && view.type !== 'list')) {
+      throw new Error(
+        `[frogbot] Collection "${collection.slug}" view "${slug}" uses a reserved slug. Payload keeps "edit" for the record view and "list" for the list.`,
       );
     }
 
@@ -398,10 +417,8 @@ export function compileCollectionViews({
   }
 
   const listViews = views.filter((view) => view.type === 'list');
-  if (listViews.length > 1 || (listViews.length === 1 && views[0]?.type !== 'list')) {
-    throw new Error(
-      `[frogbot] Collection "${collection.slug}" supports only one list view and it must be first.`,
-    );
+  if (listViews.length > 1) {
+    throw new Error(`[frogbot] Collection "${collection.slug}" supports only one list view.`);
   }
 
   onRuntimeViews?.(views);
@@ -420,7 +437,7 @@ export function compileCollectionViews({
 
   for (const view of views) {
     const isDefault = view === views[0];
-    const key = isDefault ? 'list' : view.slug;
+    const key = isDefault ? 'list' : view.type === 'list' ? LIST_ROUTE_KEY : view.slug;
     const path = isDefault ? '' : `/${view.slug}`;
     const { access: _access, components, filter: _filter, icon: _icon, ...clientView } = view;
     const { component: _component, ...safeView } = clientView as typeof clientView & {
@@ -437,42 +454,9 @@ export function compileCollectionViews({
 
     const actions = isDefault && components?.actions ? { actions: components.actions } : {};
 
-    if (view.type === 'board') {
-      runtimeViews[key] = {
-        Component: '@frogbotai/ui/admin/rsc#BoardView',
-        ...actions,
-        ...(isDefault ? {} : { exact: true, path }),
-      };
-    } else if (view.type === 'gallery') {
-      runtimeViews[key] = {
-        Component: '@frogbotai/ui/admin/rsc#GalleryView',
-        ...actions,
-        ...(isDefault ? {} : { exact: true, path }),
-      };
-    } else if (view.type === 'calendar') {
-      runtimeViews[key] = {
-        Component: '@frogbotai/ui/admin/rsc#CalendarView',
-        ...actions,
-        ...(isDefault ? {} : { exact: true, path }),
-      };
-    } else if (view.type === 'timeline') {
-      runtimeViews[key] = {
-        Component: '@frogbotai/ui/admin/rsc#TimelineView',
-        ...actions,
-        ...(isDefault ? {} : { exact: true, path }),
-      };
-    } else if (view.type === 'custom') {
-      runtimeViews[key] = {
-        Component: '@frogbotai/ui/admin/rsc#CustomCollectionView',
-        ...actions,
-        ...(isDefault ? {} : { exact: true, path }),
-      };
-    } else if (view.type === 'list' && isDefault) {
-      runtimeViews.list = {
-        Component: '@frogbotai/ui/admin/rsc#ListView',
-        ...actions,
-      };
-    }
+    runtimeViews[key] = isDefault
+      ? { Component: LIST_VIEW_COMPONENT, ...actions }
+      : { Component: VIEW_COMPONENTS[view.type], exact: true, path };
   }
 
   const list = views.find((view) => view.type === 'list');

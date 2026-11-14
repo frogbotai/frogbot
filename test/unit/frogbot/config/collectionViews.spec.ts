@@ -1,3 +1,4 @@
+import type { CollectionView } from 'frogbot';
 import { InvalidConfiguration } from 'payload';
 import { describe, expect, it } from 'vitest';
 
@@ -101,7 +102,7 @@ describe('collection views', () => {
     expect(admin?.custom?.frogbot.views[0]).not.toHaveProperty('icon');
     expect(runtime[0]).toMatchObject({ access, filter, icon: 'tile' });
     expect(admin?.components?.views?.list).toMatchObject({
-      Component: '@frogbotai/ui/admin/rsc#BoardView',
+      Component: '@frogbotai/ui/admin/rsc#ListView',
     });
   });
 
@@ -494,27 +495,12 @@ describe('collection views', () => {
   });
 
   it.each([
-    [
-      'board',
-      { type: 'board' },
-      '@frogbotai/ui/admin/rsc#BoardView',
-      [{ name: 'stage', type: 'select', options: [] }],
-    ],
-    [
-      'calendar',
-      { type: 'calendar', start: 'startsAt' },
-      '@frogbotai/ui/admin/rsc#CalendarView',
-      [{ name: 'startsAt', type: 'date' }],
-    ],
-    [
-      'custom',
-      { type: 'custom', component: './Report' },
-      '@frogbotai/ui/admin/rsc#CustomCollectionView',
-      [],
-    ],
+    ['board', { type: 'board' }, [{ name: 'stage', type: 'select', options: [] }]],
+    ['calendar', { type: 'calendar', start: 'startsAt' }, [{ name: 'startsAt', type: 'date' }]],
+    ['custom', { type: 'custom', component: './Report' }, []],
   ])(
-    'maps the actions of a default %s view to the page header',
-    (_type, view, Component, fields) => {
+    'maps the actions of a default %s view to the page header of the list route that renders it',
+    (_type, view, fields) => {
       const actions = ['./Header#Action'];
       const admin = compileCollectionViews({
         collection: {
@@ -524,7 +510,10 @@ describe('collection views', () => {
         },
       });
 
-      expect(admin?.components?.views?.list).toEqual({ Component, actions });
+      expect(admin?.components?.views?.list).toEqual({
+        Component: '@frogbotai/ui/admin/rsc#ListView',
+        actions,
+      });
     },
   );
 
@@ -926,17 +915,7 @@ describe('collection views', () => {
     ).toThrow('unsupported groupBy field "content"');
   });
 
-  it('rejects named or non-root list views that the native list renderer cannot route', () => {
-    expect(() =>
-      compileCollectionViews({
-        collection: {
-          slug: 'posts',
-          fields: [],
-          admin: { views: [{ type: 'board' }, { type: 'list', slug: 'table' }] },
-        },
-      }),
-    ).toThrow('supports only one list view and it must be first');
-
+  it('rejects a second list view', () => {
     expect(() =>
       compileCollectionViews({
         collection: {
@@ -945,7 +924,146 @@ describe('collection views', () => {
           admin: { views: [{ type: 'list' }, { type: 'list', slug: 'archive' }] },
         },
       }),
-    ).toThrow('supports only one list view and it must be first');
+    ).toThrow('[frogbot] Collection "posts" supports only one list view.');
+
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'posts',
+          fields: [],
+          admin: { views: [{ type: 'board' }, { type: 'list' }, { type: 'list', slug: 'all' }] },
+        },
+      }),
+    ).toThrow('supports only one list view.');
+  });
+
+  it('rejects view slugs that take over Payload view keys', () => {
+    const compile = (views: CollectionView[]) => () =>
+      compileCollectionViews({
+        collection: {
+          slug: 'posts',
+          fields: [{ name: 'status', type: 'select', options: [] }],
+          admin: { views },
+        },
+      });
+
+    expect(compile([{ type: 'list' }, { type: 'board', groupBy: 'status', slug: 'edit' }])).toThrow(
+      '[frogbot] Collection "posts" view "edit" uses a reserved slug.',
+    );
+    expect(compile([{ type: 'board', groupBy: 'status', slug: 'edit' }])).toThrow(
+      'view "edit" uses a reserved slug.',
+    );
+    expect(
+      compile([
+        { type: 'list', slug: 'all' },
+        { type: 'board', groupBy: 'status', slug: 'List' },
+      ]),
+    ).toThrow('view "list" uses a reserved slug.');
+    expect(compile([{ type: 'board', groupBy: 'status' }, { type: 'list' }])).not.toThrow();
+  });
+
+  describe('a non-list view first', () => {
+    const fields = [
+      { name: 'status', type: 'select' as const, options: [] },
+      { name: 'startsAt', type: 'date' as const },
+      { name: 'cover', type: 'upload' as const, relationTo: 'media' },
+    ];
+
+    it('gives the first view the root and a later list its own route', () => {
+      const admin = compileCollectionViews({
+        collection: {
+          slug: 'tickets',
+          fields,
+          admin: {
+            views: [
+              { type: 'board', groupBy: 'status', components: { actions: ['./A#A'] } },
+              {
+                type: 'list',
+                defaultFields: ['status'],
+                defaultSort: '-startsAt',
+                filter: { status: { exists: true } },
+                pagination: { defaultLimit: 25 },
+                searchableFields: ['status'],
+                components: { beforeView: ['./Before#Before'], actions: ['./B#B'] },
+              },
+            ],
+          },
+        },
+      });
+
+      expect(admin?.custom?.frogbot.views.map(({ slug, path }: any) => [slug, path])).toEqual([
+        ['board', ''],
+        ['list', '/list'],
+      ]);
+      expect(admin?.components?.views).toEqual({
+        list: { Component: '@frogbotai/ui/admin/rsc#ListView', actions: ['./A#A'] },
+        frogbotList: { Component: '@frogbotai/ui/admin/rsc#ListView', exact: true, path: '/list' },
+      });
+      expect(admin).toMatchObject({
+        defaultColumns: ['status'],
+        defaultSort: '-startsAt',
+        pagination: { defaultLimit: 25 },
+        listSearchableFields: ['status'],
+      });
+      expect(admin?.baseFilter?.({} as never)).toEqual({ status: { exists: true } });
+      expect(admin?.components?.beforeList).toEqual(['./Before#Before']);
+
+      const route = (path: string) =>
+        getCustomCollectionViewByRoute({
+          adminRoute: '/admin',
+          baseRoute: '/collections/tickets',
+          currentRoute: `/admin/collections/tickets${path}`,
+          views: admin?.components?.views as never,
+        });
+
+      expect(route('/list')).toMatchObject({
+        viewKey: 'frogbotList',
+        view: { payloadComponent: '@frogbotai/ui/admin/rsc#ListView' },
+      });
+      expect(route('/list/extra').viewKey).toBeFalsy();
+    });
+
+    it('routes a renamed later list at its slug', () => {
+      const admin = compileCollectionViews({
+        collection: {
+          slug: 'tickets',
+          fields,
+          admin: { views: [{ type: 'board' }, { type: 'list', slug: 'All Tickets' }] },
+        },
+      });
+
+      expect(admin?.custom?.frogbot.views[1]).toMatchObject({
+        slug: 'all-tickets',
+        path: '/all-tickets',
+      });
+      expect(admin?.components?.views?.frogbotList).toEqual({
+        Component: '@frogbotai/ui/admin/rsc#ListView',
+        exact: true,
+        path: '/all-tickets',
+      });
+    });
+
+    it.each([
+      ['calendar', { type: 'calendar', start: 'startsAt' }],
+      ['gallery', { type: 'gallery', useAsThumbnail: 'cover' }],
+      ['timeline', { type: 'timeline', start: 'startsAt' }],
+      ['custom', { type: 'custom', component: './Report', shell: true }],
+      ['board', { type: 'board', groupBy: 'status' }],
+    ])('compiles a %s first with a list after it', (type, view) => {
+      const admin = compileCollectionViews({
+        collection: {
+          slug: 'tickets',
+          fields,
+          admin: { views: [view as never, { type: 'list' }] },
+        },
+      });
+
+      expect(admin?.custom?.frogbot.views[0]).toMatchObject({ type, path: '' });
+      expect(admin?.components?.views).toEqual({
+        list: { Component: '@frogbotai/ui/admin/rsc#ListView' },
+        frogbotList: { Component: '@frogbotai/ui/admin/rsc#ListView', exact: true, path: '/list' },
+      });
+    });
   });
 
   it('only permits shell false as the sole view', () => {
@@ -970,7 +1088,7 @@ describe('collection views', () => {
     });
 
     expect(admin?.components?.views?.list).toMatchObject({
-      Component: '@frogbotai/ui/admin/rsc#CustomCollectionView',
+      Component: '@frogbotai/ui/admin/rsc#ListView',
     });
   });
 
@@ -1009,7 +1127,7 @@ describe('collection views', () => {
     });
 
     expect(admin?.components?.views?.list).toEqual({
-      Component: '@frogbotai/ui/admin/rsc#CustomCollectionView',
+      Component: '@frogbotai/ui/admin/rsc#ListView',
       actions,
     });
   });
@@ -1084,7 +1202,7 @@ describe('collection views', () => {
       });
 
       expect(admin?.components?.views?.list).toEqual({
-        Component: '@frogbotai/ui/admin/rsc#GalleryView',
+        Component: '@frogbotai/ui/admin/rsc#ListView',
       });
     });
 

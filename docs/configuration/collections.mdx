@@ -239,7 +239,7 @@ The following options are available:
 
 ### Collection Views
 
-`admin.views` accepts `CollectionView[]`. `CollectionView` is the exported union `ListView | BoardView | GalleryView | CalendarView | CustomView`.
+`admin.views` accepts `CollectionView[]`. `CollectionView` is the exported union `ListView | BoardView | GalleryView | CalendarView | TimelineView | CustomView`.
 
 Every view renders in one frame:
 
@@ -248,7 +248,9 @@ Every view renders in one frame:
 - One toolbar: search, Filters, Group by, Columns, Sort, and Create New, in the same order on every view.
 - The view's slots and its empty state.
 
-The array order sets the tab order and the collection's default view. A collection can have at most one list view, and it must be first. Omit `views` to use one default list view, which shows no tab row.
+The array order sets the tab order. The first view, of any type, is the collection's default: it opens at `/collections/<slug>`, and every other view opens at `/collections/<slug>/<viewSlug>`. A collection can have at most one list view, in any position, so a collection can open on a board and still have a List tab. Relationship drawers always show the list.
+
+Omit `views` to use one default list view. The tab row shows only when there are two tabs or more, so a collection with no `views` has none, unless Trash or the hierarchy view adds a tab: with Trash on it shows List and Trash.
 
 Each tab shows its view's `icon` and `label` and links to the view's own route, so a view's URL can be shared and keeps its `access` rule. Trash, when the collection has it, follows the views in the same row. Below the small breakpoint (768px) the tabs become one menu. Opening the collection again returns to the view the user last picked with the tabs.
 
@@ -297,7 +299,7 @@ export const Projects: CollectionConfig = {
 
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
-| `slug` | `string` | No; defaults to `type` | Unique route and saved-preference key after normalization to lowercase kebab case. Duplicate or empty normalized slugs produce a configuration error. The first view uses the collection's root route. |
+| `slug` | `string` | No; defaults to `type` | Unique route and saved-preference key after normalization to lowercase kebab case. Duplicate or empty normalized slugs produce a configuration error, and so do `edit` and, on a view that isn't a list, `list`, which the record view and the list use. The first view uses the collection's root route. |
 | `label` | `string` | No; defaults to the capitalized `type` | Label on the view's tab. |
 | `icon` | `AdminIcon` | No; the view type's icon | Icon on the view's tab: a built-in kebab-case icon name or a component path. Defaults: `list` for list, `kanban` for board, `tile` for gallery, `calendar` for calendar, `timeline` for timeline and `dashboard` for custom views. |
 | `defaultFields` | `string[]` | No | Ordered field dot paths initially displayed as list columns or board and gallery card fields. Users can change list columns through normal list controls. |

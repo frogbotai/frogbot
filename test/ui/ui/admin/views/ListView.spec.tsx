@@ -68,7 +68,7 @@ function listProps(overrides: Record<string, unknown> = {}) {
     payload: { config: { routes: { admin: '/admin' } }, importMap: {} },
     permissions: {},
     searchParams: {},
-    server: {},
+    server: { getHeaders: () => Promise.resolve(new Headers()) },
     user: { id: 'u1' },
     viewType: 'list',
     ...overrides,
@@ -108,20 +108,18 @@ describe('ListView', () => {
     const payload = { config: { routes: { admin: '/admin' } }, find, importMap: {} };
 
     function pageProps(overrides: Record<string, unknown> = {}) {
-      return {
-        ...listProps({
-          collectionConfig: {
-            admin: { components: {}, custom: { frogbot: { useAsDone: 'completed' } } },
-            labels: { plural: 'Tasks' },
-            slug: 'tasks',
-          },
-          collectionSlug: 'tasks',
-          params: { segments: ['collections', 'tasks'] },
-          payload,
-          ...overrides,
-        }),
-        server: { redirect: vi.fn() },
-      };
+      return listProps({
+        collectionConfig: {
+          admin: { components: {}, custom: { frogbot: { useAsDone: 'completed' } } },
+          labels: { plural: 'Tasks', singular: 'Task' },
+          slug: 'tasks',
+        },
+        collectionSlug: 'tasks',
+        params: { segments: ['collections', 'tasks'] },
+        payload,
+        server: { getHeaders: () => Promise.resolve(new Headers()), redirect: vi.fn() },
+        ...overrides,
+      });
     }
 
     function setup(saved?: Record<string, unknown>) {

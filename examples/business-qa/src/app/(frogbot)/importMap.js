@@ -10,7 +10,6 @@ import { KeyBudgetDescription as KeyBudgetDescription_a283bfe2e052b53bfcc520c468
 import { ApiKeysManagerServer as ApiKeysManagerServer_86a7e1bdd84856c31e58b39b8522d232 } from '@frogbotai/plugin-api-keys/rsc';
 import { ChatView as ChatView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { ConnectionsView as ConnectionsView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
-import { CustomCollectionView as CustomCollectionView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { LLMInstructionsDescription as LLMInstructionsDescription_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { LLMInstructionsCell as LLMInstructionsCell_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { FrogBotNav as FrogBotNav_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
@@ -53,8 +52,6 @@ export const importMap = {
   '@frogbotai/ui/admin/rsc#ChatView': ChatView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin/rsc#ConnectionsView':
     ConnectionsView_a9b31afd548db1251f21130da6e46588,
-  '@frogbotai/ui/admin/rsc#CustomCollectionView':
-    CustomCollectionView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin#LLMInstructionsDescription':
     LLMInstructionsDescription_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin/rsc#LLMInstructionsCell':
