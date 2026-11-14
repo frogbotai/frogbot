@@ -1,12 +1,13 @@
 'use client';
 
-import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useLayoutEffect, useState } from 'react';
 
 import { useIsMobile } from '../hooks/use-mobile.js';
 import { useNavAdapter } from './adapter.js';
 import { AppSidebar, type AppSidebarProps } from './AppSidebar.js';
 import { MobileNavToggle } from './MobileNavToggle.js';
 import { getNavShellState } from './navShellState.js';
+import { SidebarDrawerContext } from './sidebarState.js';
 
 /** The key the shell saves its desktop open state under, as `{ open }`. */
 export const NAV_PREFERENCE_KEY = 'nav';
@@ -31,13 +32,7 @@ export type NavShellProps = Omit<
  * and a drawer with a backdrop and Escape below 768px. The shell renders its own drawer toggle
  * unless the host supplies `drawer`.
  */
-export function NavShell({
-  children,
-  initialOpen,
-  onSearch,
-  scrollClassName,
-  ...sidebar
-}: NavShellProps) {
+export function NavShell({ children, initialOpen, scrollClassName, ...sidebar }: NavShellProps) {
   const { drawer: hostDrawer, navigate, pathname, preferences } = useNavAdapter();
   const [ownOpen, setOwnOpen] = useState(false);
   const drawer = hostDrawer ?? { open: ownOpen, setOpen: setOwnOpen, hydrated: true };
@@ -75,8 +70,12 @@ export function NavShell({
     return () => document.removeEventListener('keydown', closeOnEscape);
   }, [navState, setDrawerOpen]);
 
+  const closeDrawer = useCallback(() => {
+    if (isMobile) setDrawerOpen(false);
+  }, [isMobile, setDrawerOpen]);
+
   return (
-    <>
+    <SidebarDrawerContext.Provider value={closeDrawer}>
       {!hostDrawer && <MobileNavToggle navState={navState} onOpen={() => setDrawerOpen(true)} />}
       {navState === 'mobile-nav-open' && (
         <div aria-hidden className="fb-nav-backdrop" onClick={() => setDrawerOpen(false)} />
@@ -96,13 +95,6 @@ export function NavShell({
                 {...sidebar}
                 currentPath={pathname}
                 onNavigate={navigate}
-                onSearch={
-                  onSearch &&
-                  (() => {
-                    if (isMobile) setDrawerOpen(false);
-                    onSearch();
-                  })
-                }
                 onToggle={() => {
                   if (isMobile) {
                     setDrawerOpen(!drawerOpen);
@@ -122,6 +114,6 @@ export function NavShell({
           </div>
         </div>
       </aside>
-    </>
+    </SidebarDrawerContext.Provider>
   );
 }

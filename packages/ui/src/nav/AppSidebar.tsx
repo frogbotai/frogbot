@@ -6,20 +6,19 @@ import {
   type MouseEvent,
   type ReactNode,
   useEffect,
+  useMemo,
   useState,
-  useSyncExternalStore,
 } from 'react';
 
-import { Shortcut } from '../components/shortcut.js';
 import { Tooltip } from '../components/tooltip.js';
 import FolderIcon from '../icons/icons/FolderIcon.js';
 import FrogBotFavicon from '../icons/icons/FrogBotFavicon.js';
-import SearchIcon from '../icons/icons/SearchIcon.js';
 import SidebarLeftIcon from '../icons/icons/SidebarLeftIcon.js';
 import { type IconName, iconRegistry, isIconName } from '../icons/registry.js';
 import { isRenderableNode } from '../lib/isRenderableNode.js';
 import { AccountMenu } from './AccountMenu.js';
 import { useActiveLink } from './activeLink.js';
+import { SidebarOpenContext } from './sidebarState.js';
 
 export type AppSidebarNavItem = {
   icon?: ComponentType<{ className?: string; size: number }> | IconName | ReactNode;
@@ -50,8 +49,6 @@ export type AppSidebarProps = {
   sections?: ReactNode;
   settingsPath?: string;
   onNavigate: (path: string) => void;
-  /** Opens search; without it the sidebar has no Search item. */
-  onSearch?: () => void;
   onToggle: () => void;
   open: boolean;
 };
@@ -59,45 +56,6 @@ export type AppSidebarProps = {
 const baseClass = 'fb-app-sidebar';
 
 const classes = (...values: (false | string | undefined)[]) => values.filter(Boolean).join(' ');
-
-const subscribeNever = () => () => {};
-
-function SearchItem({
-  labelsVisible,
-  onSearch,
-  open,
-}: {
-  labelsVisible: boolean;
-  onSearch: () => void;
-  open: boolean;
-}) {
-  const hydrated = useSyncExternalStore(
-    subscribeNever,
-    () => true,
-    () => false,
-  );
-
-  return (
-    <Tooltip delay={0} disabled={open} label="Search" side="right">
-      <button
-        aria-keyshortcuts="Meta+K Control+K"
-        aria-label="Search"
-        className={classes(`${baseClass}__item`, `${baseClass}__search`, 'fb-slide-right-1')}
-        onClick={(event) => {
-          event.stopPropagation();
-          onSearch();
-        }}
-        type="button"
-      >
-        <SearchIcon className={`${baseClass}__icon`} size={24} />
-        {labelsVisible && <span className={`${baseClass}__label`}>Search</span>}
-        {labelsVisible && hydrated && (
-          <Shortcut className={`${baseClass}__shortcut`} shortcutKey="K" withCtrl />
-        )}
-      </button>
-    </Tooltip>
-  );
-}
 
 function SidebarNavItem({
   currentPath,
@@ -166,7 +124,6 @@ export function AppSidebar({
   logoutPath,
   navItems = [],
   onNavigate,
-  onSearch,
   onToggle,
   open,
   sections,
@@ -206,106 +163,108 @@ export function AppSidebar({
   );
 
   const showToggleIcon = !open && stripHovered;
+  const sidebarState = useMemo(() => ({ labelsVisible, open }), [labelsVisible, open]);
 
   return (
-    <div
-      className={classes(baseClass, !open && `${baseClass}--collapsed`)}
-      data-collapsed={!open}
-      onClick={!open ? onToggle : undefined}
-      onMouseEnter={() => setStripHovered(true)}
-      onMouseLeave={() => setStripHovered(false)}
-      role="presentation"
-    >
-      <div className={`${baseClass}__header`}>
-        <Tooltip delay={0} disabled={open} label="Open sidebar" side="right">
-          <button
-            aria-label={open ? 'Home' : 'Open sidebar'}
-            className={classes(
-              `${baseClass}__logo`,
-              'fb-slide-right-1',
-              showToggleIcon && `${baseClass}__logo--toggle`,
-            )}
-            onClick={(event) => {
-              if (!open) return;
-              navigate(event, homePath);
-            }}
-            type="button"
-          >
-            {showToggleIcon ? (
-              <SidebarLeftIcon className="fb-sidebar-toggle-icon" size={20} />
-            ) : (
-              logo || <FrogBotFavicon size={40} />
-            )}
-          </button>
-        </Tooltip>
-        {labelsVisible && (
-          <div className={`${baseClass}__header-controls`}>
-            {beforeSidebarClose}
+    <SidebarOpenContext.Provider value={sidebarState}>
+      <div
+        className={classes(baseClass, !open && `${baseClass}--collapsed`)}
+        data-collapsed={!open}
+        onClick={!open ? onToggle : undefined}
+        onMouseEnter={() => setStripHovered(true)}
+        onMouseLeave={() => setStripHovered(false)}
+        role="presentation"
+      >
+        <div className={`${baseClass}__header`}>
+          <Tooltip delay={0} disabled={open} label="Open sidebar" side="right">
             <button
-              aria-label="Close sidebar"
-              className={`${baseClass}__collapse fb-slide-left-1`}
+              aria-label={open ? 'Home' : 'Open sidebar'}
+              className={classes(
+                `${baseClass}__logo`,
+                'fb-slide-right-1',
+                showToggleIcon && `${baseClass}__logo--toggle`,
+              )}
               onClick={(event) => {
-                event.stopPropagation();
-                onToggle();
+                if (!open) return;
+                navigate(event, homePath);
               }}
               type="button"
             >
-              <SidebarLeftIcon className="fb-sidebar-toggle-icon" size={20} />
+              {showToggleIcon ? (
+                <SidebarLeftIcon className="fb-sidebar-toggle-icon" size={20} />
+              ) : (
+                logo || <FrogBotFavicon size={40} />
+              )}
             </button>
-          </div>
-        )}
-      </div>
-
-      <nav className={`${baseClass}__nav`}>
-        {onSearch && <SearchItem labelsVisible={labelsVisible} onSearch={onSearch} open={open} />}
-        {beforeNavLinks}
-        {navItems.map(renderItem)}
-        {open && sections}
-        {afterNavLinks}
-      </nav>
-
-      <div className={`${baseClass}__spacer`} />
-      <div
-        className={`${baseClass}__bottom`}
-        onClick={(event) => event.stopPropagation()}
-        role="presentation"
-      >
-        {beforeBottomRail}
-        {accountPath && (
-          <AccountMenu
-            accountPath={accountPath}
-            afterMenuItems={afterAccountMenu}
-            avatar={accountIcon}
-            beforeMenuItems={beforeAccountMenu}
-            email={accountEmail}
-            logout={logout}
-            logoutPath={logoutPath}
-            name={accountName}
-            onNavigate={onNavigate}
-            settingsPath={settingsPath}
-          >
-            <Tooltip delay={0} disabled={open} label="Account" side="right">
+          </Tooltip>
+          {labelsVisible && (
+            <div className={`${baseClass}__header-controls`}>
+              {beforeSidebarClose}
               <button
-                aria-label="Account"
-                className={classes(`${baseClass}__item`, 'fb-slide-right-1')}
-                onClick={(event) => event.stopPropagation()}
+                aria-label="Close sidebar"
+                className={`${baseClass}__collapse fb-slide-left-1`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggle();
+                }}
                 type="button"
               >
-                {accountIcon != null ? (
-                  accountIcon
-                ) : (
-                  <FolderIcon className={`${baseClass}__icon`} size={24} />
-                )}
-                {labelsVisible && (
-                  <span className={`${baseClass}__label`}>{accountName || 'Account'}</span>
-                )}
+                <SidebarLeftIcon className="fb-sidebar-toggle-icon" size={20} />
               </button>
-            </Tooltip>
-          </AccountMenu>
-        )}
-        {bottom}
-        {afterBottomRail}
+            </div>
+          )}
+        </div>
+
+        <nav className={`${baseClass}__nav`}>
+          {beforeNavLinks}
+          {navItems.map(renderItem)}
+          {open && sections}
+          {afterNavLinks}
+        </nav>
+
+        <div className={`${baseClass}__spacer`} />
+        <div
+          className={`${baseClass}__bottom`}
+          onClick={(event) => event.stopPropagation()}
+          role="presentation"
+        >
+          {beforeBottomRail}
+          {accountPath && (
+            <AccountMenu
+              accountPath={accountPath}
+              afterMenuItems={afterAccountMenu}
+              avatar={accountIcon}
+              beforeMenuItems={beforeAccountMenu}
+              email={accountEmail}
+              logout={logout}
+              logoutPath={logoutPath}
+              name={accountName}
+              onNavigate={onNavigate}
+              settingsPath={settingsPath}
+            >
+              <Tooltip delay={0} disabled={open} label="Account" side="right">
+                <button
+                  aria-label="Account"
+                  className={classes(`${baseClass}__item`, 'fb-slide-right-1')}
+                  onClick={(event) => event.stopPropagation()}
+                  type="button"
+                >
+                  {accountIcon != null ? (
+                    accountIcon
+                  ) : (
+                    <FolderIcon className={`${baseClass}__icon`} size={24} />
+                  )}
+                  {labelsVisible && (
+                    <span className={`${baseClass}__label`}>{accountName || 'Account'}</span>
+                  )}
+                </button>
+              </Tooltip>
+            </AccountMenu>
+          )}
+          {bottom}
+          {afterBottomRail}
+        </div>
       </div>
-    </div>
+    </SidebarOpenContext.Provider>
   );
 }

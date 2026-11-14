@@ -277,58 +277,6 @@ describe('AppSidebar', () => {
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
-  it('has no Search item without onSearch', () => {
-    render(<AppSidebar {...props} open />);
-
-    expect(screen.queryByRole('button', { name: 'Search' })).toBeNull();
-  });
-
-  it('puts Search first, with its label and the Cmd+K hint while open', () => {
-    const onSearch = vi.fn();
-    const onToggle = vi.fn();
-
-    render(<AppSidebar {...props} onSearch={onSearch} onToggle={onToggle} open />);
-
-    const search = screen.getByRole('button', { name: 'Search' });
-
-    expect(document.querySelector('.fb-app-sidebar__nav button')).toBe(search);
-    expect(search.querySelector('.fb-app-sidebar__label')?.textContent).toBe('Search');
-    expect(search.querySelector('.fb-shortcut')?.textContent).toMatch(/^(⌘|Ctrl) \+ K$/);
-
-    fireEvent.click(search);
-
-    expect(onSearch).toHaveBeenCalledTimes(1);
-    expect(onToggle).not.toHaveBeenCalled();
-  });
-
-  it('shows Search as an icon with a tooltip while collapsed, and opens it without expanding', async () => {
-    const onSearch = vi.fn();
-    const onToggle = vi.fn();
-
-    render(<AppSidebar {...props} onSearch={onSearch} onToggle={onToggle} open={false} />);
-
-    const search = screen.getByRole('button', { name: 'Search' });
-
-    expect(search.querySelector('.fb-app-sidebar__label')).toBeNull();
-    expect(search.querySelector('.fb-shortcut')).toBeNull();
-
-    fireEvent.focus(search);
-
-    expect((await screen.findByRole('tooltip')).textContent).toBe('Search');
-
-    fireEvent.click(search);
-
-    expect(onSearch).toHaveBeenCalledTimes(1);
-    expect(onToggle).not.toHaveBeenCalled();
-  });
-
-  it('server-renders Search without the platform hint, so hydration matches', () => {
-    const html = renderToString(<AppSidebar {...props} onSearch={vi.fn()} open />);
-
-    expect(html).toContain('aria-label="Search"');
-    expect(html).not.toContain('fb-shortcut');
-  });
-
   it('renders no Tailwind utility classes', () => {
     const { container } = render(<AppSidebar {...props} open />);
     const classNames = [...container.querySelectorAll('[class]')].flatMap((element) =>

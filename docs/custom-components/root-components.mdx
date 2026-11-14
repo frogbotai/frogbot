@@ -35,7 +35,7 @@ export default buildConfig({
 | `header` | `FrogBotComponent[]` | `[]` | Components above the admin panel's top bar, on every signed-in page. |
 | `beforeDashboard` | `FrogBotComponent[]` | `[]` | Components on the dashboard, above its content. Renders only on the default dashboard, not one replaced with `views.dashboard`. |
 | `afterDashboard` | `FrogBotComponent[]` | `[]` | Components on the dashboard, below its content. Renders only on the default dashboard, not one replaced with `views.dashboard`. |
-| `beforeNavLinks` | `FrogBotComponent[]` | `[]` | Components in the sidebar above the nav links. |
+| `beforeNavLinks` | `FrogBotComponent[]` | `[]` | Components in the sidebar above the nav links. Add `'@frogbotai/ui/admin#SearchButton'` for a [Search item](/admin/admin-navigation#search-with-cmdk). |
 | `afterNavLinks` | `FrogBotComponent[]` | `[]` | Components in the sidebar below the nav links and sections. |
 | `beforeBottomRail` | `FrogBotComponent[]` | `[]` | Components in the bottom sidebar rail, above Account and Settings. |
 | `afterBottomRail` | `FrogBotComponent[]` | `[]` | Components in the bottom sidebar rail, below Account and Settings. |

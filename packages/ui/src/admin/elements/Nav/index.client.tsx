@@ -2,9 +2,7 @@
 
 import {
   Account,
-  commandPaletteSlug,
   Link,
-  useModal,
   useNav,
   usePathname,
   usePreferences,
@@ -23,7 +21,7 @@ import { HeaderToggleIcon } from './HeaderToggleIcon.js';
 
 export type FrogBotNavClientProps = Omit<
   NavShellProps,
-  'accountIcon' | 'children' | 'navItems' | 'onSearch' | 'scrollClassName'
+  'accountIcon' | 'children' | 'navItems' | 'scrollClassName'
 > & {
   accountPath: string;
   CustomAvatar?: ReactNode;
@@ -75,15 +73,12 @@ export function FrogBotNavClient({
   palette,
   ...props
 }: FrogBotNavClientProps) {
-  const { openModal } = useModal();
-
   return (
     <PayloadNavAdapter>
       <NavShell
         {...props}
         accountIcon={CustomAvatar !== undefined ? CustomAvatar : <Account />}
         navItems={items}
-        onSearch={() => openModal(commandPaletteSlug)}
         scrollClassName="nav__scroll"
       />
       <RecordPalette {...palette} />

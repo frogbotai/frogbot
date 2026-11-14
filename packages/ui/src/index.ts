@@ -201,4 +201,5 @@ export {
   RecentChats,
   type RecentChatsProps,
 } from './nav/RecentChats.js';
+export { type SidebarState, useSidebarState } from './nav/sidebarState.js';
 export { Placeholder } from './placeholder.js';

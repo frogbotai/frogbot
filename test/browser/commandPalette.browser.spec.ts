@@ -117,7 +117,7 @@ test('Cmd+Enter on a collection row opens its create page', async ({ page }) => 
   await expect(page).toHaveURL(new RegExp(`/collections/${projectsSlug}/create$`));
 });
 
-test.describe('the sidebar Search item', () => {
+test.describe('SearchButton in beforeNavLinks', () => {
   const shell = (page: Page) => page.locator('.fb-nav-shell');
   const search = (page: Page) =>
     page.locator('.fb-app-sidebar').getByRole('button', {

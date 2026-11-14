@@ -80,6 +80,14 @@ test.describe('nav shell on desktop', () => {
     await noHorizontalOverflow(page);
   });
 
+  test('has no Search item by default', async ({ page }) => {
+    await loadWithSidebarOpen(page);
+
+    await expect(
+      page.locator('.fb-app-sidebar').getByRole('button', { name: 'Search' }),
+    ).toHaveCount(0);
+  });
+
   test('collections section links to the configured collections, without Users', async ({
     page,
   }) => {
