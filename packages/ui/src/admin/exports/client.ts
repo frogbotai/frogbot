@@ -1,3 +1,4 @@
+export { BuildNotice, type BuildNoticeProps } from '../elements/BuildNotice/index.client.js';
 export { FrogBotNavClient, type FrogBotNavClientProps } from '../elements/Nav/index.client.js';
 export {
   RecentsSectionClient,
