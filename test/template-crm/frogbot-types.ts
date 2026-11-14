@@ -62,18 +62,18 @@ export type SupportedTimezones =
   | 'Pacific/Fiji';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "LexicalNodes_EDD1118A".
+ * via the `definition` "LexicalNodes_5BEBF11C".
  */
-export type LexicalNodes_EDD1118A =
+export type LexicalNodes_5BEBF11C =
   | SerializedTextNode
   | SerializedTabNode
   | SerializedLineBreakNode
-  | SerializedParagraphNode<LexicalNodes_EDD1118A>
+  | SerializedParagraphNode<LexicalNodes_5BEBF11C>
   | SerializedHorizontalRuleNode
   | SerializedUploadNode<'media'>
   | SerializedUploadNode<'exports'>
   | SerializedUploadNode<'imports'>
-  | SerializedQuoteNode<LexicalNodes_EDD1118A>
+  | SerializedQuoteNode<LexicalNodes_5BEBF11C>
   | SerializedRelationshipNode<
       | 'companies'
       | 'contacts'
@@ -81,16 +81,17 @@ export type LexicalNodes_EDD1118A =
       | 'activities'
       | 'tasks'
       | 'users'
+      | 'plugin-ai-policy-spend'
       | 'audit-logs'
       | 'usage-logs'
       | 'frogbot-waitpoints'
       | 'folders'
     >
-  | SerializedAutoLinkNode<LexicalNodes_EDD1118A, LexicalLinkFields>
-  | SerializedLinkNode<LexicalNodes_EDD1118A, LexicalLinkFields>
-  | SerializedListNode<LexicalNodes_EDD1118A>
-  | SerializedListItemNode<LexicalNodes_EDD1118A>
-  | SerializedHeadingNode<LexicalNodes_EDD1118A>;
+  | SerializedAutoLinkNode<LexicalNodes_5BEBF11C, LexicalLinkFields>
+  | SerializedLinkNode<LexicalNodes_5BEBF11C, LexicalLinkFields>
+  | SerializedListNode<LexicalNodes_5BEBF11C>
+  | SerializedListItemNode<LexicalNodes_5BEBF11C>
+  | SerializedHeadingNode<LexicalNodes_5BEBF11C>;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "LexicalNodes_3DE324E4".
@@ -119,6 +120,7 @@ export interface Config {
     media: Media;
     exports: Export;
     imports: Import;
+    'plugin-ai-policy-spend': PluginAiPolicySpend;
     'audit-logs': AuditLog;
     'usage-logs': UsageLog;
     'frogbot-waitpoints': FrogBotWaitpoint;
@@ -135,6 +137,7 @@ export interface Config {
     media: MediaSelect;
     exports: ExportsSelect;
     imports: ImportsSelect;
+    'plugin-ai-policy-spend': PluginAiPolicySpendSelect;
     'audit-logs': AuditLogsSelect;
     'usage-logs': UsageLogsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
@@ -215,7 +218,7 @@ export interface Company {
   website?: string | null;
   employees?: number | null;
   owner?: (number | null) | User;
-  notes?: LexicalRichText<LexicalNodes_EDD1118A> | null;
+  notes?: LexicalRichText<LexicalNodes_5BEBF11C> | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -347,6 +350,7 @@ export interface User {
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
   monthlyBudget?: number | null;
+  spendCounter?: (number | null) | PluginAiPolicySpend;
   /**
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
@@ -381,6 +385,19 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugin-ai-policy-spend".
+ */
+export interface PluginAiPolicySpend {
+  id: number;
+  key: string;
+  period: string;
+  amount: number;
+  user?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -427,7 +444,7 @@ export interface Deal {
   amount?: number | null;
   closeDate?: string | null;
   owner?: (number | null) | User;
-  notes?: LexicalRichText<LexicalNodes_EDD1118A> | null;
+  notes?: LexicalRichText<LexicalNodes_5BEBF11C> | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -453,7 +470,7 @@ export interface Activity {
   deal?: (number | null) | Deal;
   contacts?: (number | Contact)[] | null;
   owner?: (number | null) | User;
-  notes?: LexicalRichText<LexicalNodes_EDD1118A> | null;
+  notes?: LexicalRichText<LexicalNodes_5BEBF11C> | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -813,6 +830,7 @@ export interface UsersSelect {
   name?: boolean;
   models?: boolean;
   monthlyBudget?: boolean;
+  spendCounter?: boolean;
   spendThisPeriodUSD?: boolean;
   roles?: boolean;
   createdBy?: boolean;
@@ -958,6 +976,18 @@ export interface ImportsSelect {
       };
   focalX?: boolean;
   focalY?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugin-ai-policy-spend_select".
+ */
+export interface PluginAiPolicySpendSelect {
+  key?: boolean;
+  period?: boolean;
+  amount?: boolean;
+  user?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
