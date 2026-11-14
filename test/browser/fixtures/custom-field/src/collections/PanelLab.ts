@@ -1,3 +1,4 @@
+import { activityField } from '@frogbotai/plugin-audit-log';
 import type { CollectionConfig } from 'frogbot';
 
 const admin = { group: 'Panel lab', useAsTitle: 'title' } as const;
@@ -44,4 +45,39 @@ export const Cards: CollectionConfig = {
     components: { panel: { Component: '/components/PanelServerSlots#WholePanel' } },
   },
   fields: [{ name: 'title', type: 'text', required: true }],
+};
+
+/** Save without autosave, a pinned footer, and a pill tabs field with a required field and activity. */
+export const Tickets: CollectionConfig = {
+  slug: 'tickets',
+  admin: {
+    ...admin,
+    components: { panel: { footer: ['/components/PanelSlots#PanelFooter'] } },
+  },
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    { name: 'status', type: 'text', admin: { position: 'sidebar' } },
+    { name: 'notes', type: 'textarea' },
+    {
+      type: 'tabs',
+      admin: { className: 'fb-pill-tabs' },
+      tabs: [
+        { label: 'Details', fields: [{ name: 'summary', type: 'text', required: true }] },
+        { label: 'Activity', fields: [activityField()] },
+      ],
+    },
+  ],
+};
+
+/** No `useAsTitle`, and a footer component that renders nothing. */
+export const Scraps: CollectionConfig = {
+  slug: 'scraps',
+  admin: {
+    group: 'Panel lab',
+    components: { panel: { footer: ['/components/PanelSlots#EmptyFooter'] } },
+  },
+  fields: [
+    { name: 'title', type: 'text' },
+    { name: 'notes', type: 'textarea' },
+  ],
 };

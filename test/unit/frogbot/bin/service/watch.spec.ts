@@ -110,7 +110,7 @@ describe('the watcher and the build queue', () => {
     const fs = fakeWatch();
 
     fs.setRoot(dir);
-    watchApp({ dir, onChange: queue.trigger, watch: fs.watch });
+    watchApp({ dir, onChange: () => queue.trigger(), watch: fs.watch });
 
     fs.emit('src', 'app/page.tsx');
     await vi.advanceTimersByTimeAsync(1500);
@@ -182,5 +182,86 @@ describe('the watcher and the build queue', () => {
     await vi.advanceTimersByTimeAsync(1500);
 
     expect(onChange).toHaveBeenCalledOnce();
+  });
+
+  it('passes the paths that changed during the debounce, once each', async () => {
+    const onChange = vi.fn();
+    const fs = fakeWatch();
+
+    fs.setRoot(dir);
+    watchApp({ dir, onChange, watch: fs.watch });
+
+    fs.emit('', '.env');
+    fs.emit('src', 'app/page.tsx');
+    fs.emit('', '.env');
+    await vi.advanceTimersByTimeAsync(1500);
+
+    expect(onChange).toHaveBeenCalledWith(['.env', 'src/app/page.tsx']);
+
+    fs.emit('', '.env.local');
+    await vi.advanceTimersByTimeAsync(1500);
+
+    expect(onChange).toHaveBeenLastCalledWith(['.env.local']);
+  });
+
+  it.each([
+    ['the default types file', 'src/frogbot-types.ts'],
+    ['a custom typescript.outputFile', 'src/types/generated.ts'],
+  ])('builds nothing for %s that the last prepare reported', async (_name, file) => {
+    const onChange = vi.fn();
+    const fs = fakeWatch();
+
+    fs.setRoot(dir);
+    watchApp({ dir, onChange, ignore: () => join(dir, file), watch: fs.watch });
+
+    fs.emit('src', file.slice('src/'.length));
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(onChange).not.toHaveBeenCalled();
+
+    fs.emit('src', 'collections/Notes.ts');
+    await vi.advanceTimersByTimeAsync(1500);
+
+    expect(onChange).toHaveBeenCalledWith(['src/collections/Notes.ts']);
+  });
+
+  it('still rebuilds on a types file no prepare has reported, or one outside the app', async () => {
+    const onChange = vi.fn();
+    const fs = fakeWatch();
+    let ignored: string | undefined;
+
+    fs.setRoot(dir);
+    watchApp({ dir, onChange, ignore: () => ignored, watch: fs.watch });
+
+    fs.emit('src', 'frogbot-types.ts');
+    await vi.advanceTimersByTimeAsync(1500);
+
+    ignored = join(dir, '..', 'elsewhere', 'src', 'frogbot-types.ts');
+    fs.emit('src', 'frogbot-types.ts');
+    await vi.advanceTimersByTimeAsync(1500);
+
+    expect(onChange).toHaveBeenCalledTimes(2);
+  });
+
+  it('forgets a types file write seen before prepare named its new path', async () => {
+    const onChange = vi.fn();
+    const fs = fakeWatch();
+
+    fs.setRoot(dir);
+
+    const watcher = watchApp({ dir, onChange, watch: fs.watch });
+
+    fs.emit('src', 'b-types.ts');
+    watcher.forget(join(dir, 'src', 'b-types.ts'));
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(onChange).not.toHaveBeenCalled();
+
+    fs.emit('src', 'b-types.ts');
+    fs.emit('src', 'collections/Notes.ts');
+    watcher.forget(join(dir, 'src', 'b-types.ts'));
+    await vi.advanceTimersByTimeAsync(1500);
+
+    expect(onChange).toHaveBeenCalledWith(['src/collections/Notes.ts']);
   });
 });

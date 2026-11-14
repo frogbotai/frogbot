@@ -13,6 +13,19 @@ import type { Account } from './frogbot-types.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const writeSpend = (
+  booted: BootedFrogBot,
+  collection: 'accounts' | 'credentials',
+  id: number | string,
+  amount: number,
+) =>
+  booted.frogbot.update({
+    collection: 'plugin-ai-policy-spend',
+    where: { key: { equals: `${collection}:${String(id)}` } },
+    data: { amount },
+    overrideAccess: true,
+  });
+
 describe('API keys plugin integration', () => {
   let booted: BootedFrogBot;
   let upstream: Server;
@@ -387,12 +400,7 @@ describe('API keys plugin integration', () => {
 
     expect(key.totalCostUSD).toBe(3);
 
-    await booted.frogbot.update({
-      collection: 'accounts',
-      id: owner.id,
-      data: { spendThisPeriodUSD: 10 },
-      overrideAccess: true,
-    });
+    await writeSpend(booted, 'accounts', owner.id, 10);
 
     const exhausted = await request('test/allowed');
 
@@ -624,12 +632,7 @@ describe('API keys plugin integration', () => {
       );
 
     const setSpend = (collection: 'accounts' | 'credentials', id: number | string, spend: number) =>
-      booted.frogbot.update({
-        collection,
-        id,
-        data: { spendThisPeriodUSD: spend },
-        overrideAccess: true,
-      });
+      writeSpend(booted, collection, id, spend);
 
     const spendOf = async (collection: 'accounts' | 'credentials', id: number | string) =>
       (await booted.frogbot.findByID({ collection, id, overrideAccess: true })).spendThisPeriodUSD;
@@ -891,6 +894,9 @@ describe('API keys plugin integration', () => {
         }),
       ).toMatchObject({ models: ['test/allowed'], monthlyBudget: 25, spendThisPeriodUSD: spent });
 
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(Date.now() + 32 * 24 * 60 * 60 * 1000));
+
       await booted.payload.jobs.queue({
         task: 'plugin-ai-policy-reset-spend',
         input: {},
@@ -898,6 +904,8 @@ describe('API keys plugin integration', () => {
       });
 
       await booted.payload.jobs.run({ queue: 'default', overrideAccess: true });
+
+      vi.useRealTimers();
 
       expect(await spendOf('credentials', rotated.body.id)).toBe(0);
       expect(await spendOf('accounts', ownerId)).toBe(0);
@@ -972,12 +980,7 @@ describe('API keys plugin integration', () => {
       ).docs.map((doc) => doc.id);
 
     const setSpend = (id: number | string, spend: number) =>
-      booted.frogbot.update({
-        collection: 'credentials',
-        id,
-        data: { spendThisPeriodUSD: spend },
-        overrideAccess: true,
-      });
+      writeSpend(booted, 'credentials', id, spend);
 
     const complete = (token: string) =>
       booted.restClient.post<{ error: { message: string } }>(

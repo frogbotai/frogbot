@@ -1814,9 +1814,21 @@ importers:
 
   packages/plugins/plugin-audit-log:
     devDependencies:
+      '@frogbotai/ui':
+        specifier: workspace:*
+        version: link:../../ui
+      '@payloadcms/translations':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.7
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
+      react:
+        specifier: 'catalog:'
+        version: 19.3.1
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -2464,9 +2476,18 @@ importers:
       '@frogbotai/plugin-ai-policy':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-ai-policy
+      '@frogbotai/plugin-audit-log':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-audit-log
       '@frogbotai/plugin-dojo':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-dojo
+      '@frogbotai/plugin-import-export':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-import-export
+      '@frogbotai/plugin-roles':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-roles
       '@frogbotai/richtext-lexical':
         specifier: workspace:*
         version: link:../../packages/richtext-lexical
@@ -2537,9 +2558,18 @@ importers:
       '@frogbotai/plugin-ai-policy':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-ai-policy
+      '@frogbotai/plugin-audit-log':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-audit-log
       '@frogbotai/plugin-dojo':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-dojo
+      '@frogbotai/plugin-import-export':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-import-export
+      '@frogbotai/plugin-roles':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-roles
       '@frogbotai/richtext-lexical':
         specifier: workspace:*
         version: link:../../packages/richtext-lexical
@@ -2991,6 +3021,9 @@ importers:
       '@frogbotai/plugin-api-keys':
         specifier: workspace:*
         version: link:../../../../packages/plugins/plugin-api-keys
+      '@frogbotai/plugin-audit-log':
+        specifier: workspace:*
+        version: link:../../../../packages/plugins/plugin-audit-log
       '@frogbotai/ui':
         specifier: workspace:*
         version: link:../../../../packages/ui

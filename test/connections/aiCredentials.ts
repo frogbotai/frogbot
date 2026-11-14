@@ -207,9 +207,7 @@ export async function bootLinked(overrides: Partial<FrogBotConfig>) {
     });
 
   const picker = async (req: FrogBotRequest) => {
-    const response = await manifest.handler({ ...req, payload } as unknown as Parameters<
-      typeof manifest.handler
-    >[0]);
+    const response = await manifest.handler({ ...req, payload });
 
     const { agents } = (await response.json()) as {
       agents: { slug: string; models: string[]; defaultModel?: string }[];

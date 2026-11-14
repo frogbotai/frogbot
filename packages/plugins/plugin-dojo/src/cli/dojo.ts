@@ -2,8 +2,9 @@ import { createParser } from 'eventsource-parser';
 import type { DeployEnv } from 'frogbot';
 
 import { deviceLogin, readToken, removeToken } from './auth.js';
-import { ShareError } from './error.js';
+import { dojoStop, needsSignIn, reachDojo, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
+import { canWait, dojoProgram } from './io.js';
 
 /** `FROGBOT_DOJO_URL`, or Dojo itself. */
 export function dojoUrl(env: DeployEnv): string {
@@ -12,37 +13,6 @@ export function dojoUrl(env: DeployEnv): string {
 
 function inCI(env: DeployEnv): boolean {
   return Boolean(env.CI) && env.CI !== 'false' && env.CI !== '0';
-}
-
-/** A failed Dojo reply: Payload's `errors` (with a `ValidationError`'s field errors or an `APIError`'s `code`), or an OAuth-style `error`. */
-export type DojoErrorBody = {
-  errors?: {
-    message?: string;
-    data?: { code?: string; errors?: { path?: string; message?: string }[] };
-  }[];
-  error?: string;
-  message?: string;
-};
-
-/** A failed reply's body and Dojo's own words for it, or the status. */
-export async function dojoError(
-  response: Response,
-): Promise<{ body?: DojoErrorBody; message: string }> {
-  const body = (await response.json().catch(() => undefined)) as DojoErrorBody | undefined;
-
-  return {
-    body,
-    message:
-      body?.errors?.find((error) => error.message)?.message ||
-      body?.message ||
-      body?.error ||
-      `Dojo answered ${response.status}.`,
-  };
-}
-
-/** Dojo's own words for a failed reply. */
-export async function dojoMessage(response: Response): Promise<string> {
-  return (await dojoError(response)).message;
 }
 
 export type DojoUser = { id: string | number; email?: string; apiKeyId?: string | number };
@@ -59,7 +29,7 @@ export type DojoClient = {
 
 /**
  * A Dojo client that signs in with `FROGBOT_DOJO_TOKEN`, then the stored token, then the device flow.
- * A refused `FROGBOT_DOJO_TOKEN` fails instead of starting the device flow, and so does CI with no token.
+ * A refused `FROGBOT_DOJO_TOKEN` exits 3 instead of starting the device flow, and so does CI with no token.
  */
 export function createDojo(io: DojoIO): DojoClient {
   const url = dojoUrl(io.env);
@@ -72,19 +42,23 @@ export function createDojo(io: DojoIO): DojoClient {
     if (token) headers.set('authorization', `Bearer ${token}`);
     if (!headers.has('accept')) headers.set('accept', 'application/json');
 
-    return fetch(`${url}${path}`, { ...init, headers });
+    return reachDojo(url, io.env, () => fetch(`${url}${path}`, { ...init, headers }));
   };
 
   const login = async () => {
     if (envToken) {
       throw new ShareError(
-        `Dojo didn't accept FROGBOT_DOJO_TOKEN at ${url}; it may be revoked. Set a working key, or unset it to sign in with a browser.`,
+        `Dojo didn't accept FROGBOT_DOJO_TOKEN at ${url}; it may be revoked. Set a working key, or unset it and run ${dojoProgram(io.program)} login.`,
+        needsSignIn,
+        { needs: 'sign-in' },
       );
     }
 
-    if (!io.isTTY && inCI(io.env)) {
+    if (!canWait(io) && inCI(io.env)) {
       throw new ShareError(
-        `No Dojo sign-in here, and nobody in CI can open a sign-in link. Set FROGBOT_DOJO_TOKEN to a Dojo API key from "frogbot dojo keys create", stored as a CI secret.`,
+        `No Dojo sign-in here, and nobody in CI can open a sign-in link. Set FROGBOT_DOJO_TOKEN to a Dojo API key from "${dojoProgram(io.program)} keys create", stored as a CI secret.`,
+        needsSignIn,
+        { needs: 'sign-in' },
       );
     }
 
@@ -96,7 +70,7 @@ export function createDojo(io: DojoIO): DojoClient {
     const response = await send('/api/users/me');
 
     if (response.status === 401) return undefined;
-    if (!response.ok) throw new ShareError(`Couldn't reach Dojo: ${await dojoMessage(response)}`);
+    if (!response.ok) throw await dojoStop(response, "Couldn't reach Dojo");
 
     return ((await response.json()) as { user?: DojoUser | null }).user ?? undefined;
   };
@@ -166,10 +140,11 @@ export async function dojoJSON<T>(
 
   if (response.ok) return (await response.json()) as T;
 
-  const message = await dojoMessage(response);
-  const level = response.status === 403 && needs ? ` It needs ${needs}.` : '';
-
-  throw new ShareError(`${what}: ${message}${level}`);
+  throw await dojoStop(
+    response,
+    what,
+    response.status === 403 && needs ? ` It needs ${needs}.` : '',
+  );
 }
 
 /** Every doc of a Dojo list, page by page. `path` must already have a query: pages go after it. */
@@ -214,10 +189,13 @@ const reconnects = 5;
 export async function followBuild({
   dojo,
   deploymentId,
+  program,
   onLine,
 }: {
   dojo: DojoClient;
   deploymentId: string | number;
+  /** The command's program, for the command that picks a lost log up again. */
+  program: string;
   onLine: (line: string) => void;
 }): Promise<BuildStatus> {
   let lastId: string | undefined;
@@ -245,7 +223,7 @@ export async function followBuild({
     const body = response.body;
 
     if (!response.ok || !body) {
-      throw new ShareError(`Couldn't read the build log: ${await dojoMessage(response)}`);
+      throw await dojoStop(response, "Couldn't read the build log");
     }
 
     const read = async () => {
@@ -263,7 +241,11 @@ export async function followBuild({
     tries = lastId === resumedFrom ? tries + 1 : 0;
 
     if (tries >= reconnects) {
-      throw new ShareError('Lost the build log. The build may still finish; check it in Dojo.');
+      throw new ShareError(
+        `Lost the build log. The build may still finish; follow it with ${dojoProgram(program)} deployments logs ${deploymentId} --follow.`,
+        1,
+        { code: 'BUILD_LOG_LOST', deploymentId },
+      );
     }
   }
 }

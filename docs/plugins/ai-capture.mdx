@@ -55,7 +55,10 @@ Capture writes run out of band. A storage or index failure is logged but does no
 
 ## Retention
 
-Set `retention: { days, cron? }` to register the pruning task `frogbot-prune-<collectionSlug>`. It runs at midnight daily unless you set `cron`, on the `default` queue, so a jobs runner that covers `default` prunes without extra setup. Each run deletes captures whose `requestedAt` is older than `days`, 100 at a time, deleting each blob before its index row. A storage or delete error fails the job. If you omit `retention`, captures are retained until you delete them.
+Set `retention: { days, cron? }` to register the pruning task `frogbot-prune-<collectionSlug>`. If you omit `retention`, captures are retained until you delete them.
+
+- **Schedule.** The task runs at midnight daily unless you set `cron`, on the `default` queue, so a jobs runner that covers `default` prunes without extra setup.
+- **Each run** deletes captures whose `requestedAt` is older than `days`, 100 at a time. It deletes each blob before its index row. A storage or delete error fails the job.
 
 ## Export
 

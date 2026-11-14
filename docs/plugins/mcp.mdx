@@ -37,7 +37,13 @@ Configure your MCP client to send Streamable HTTP requests to `/api/mcp` with a 
 Authorization: Bearer fb_...
 ```
 
-The API key is tried first. Without a valid key, the request goes through the same sign-in as the rest of the app: every [auth strategy](/authentication/custom-strategies) on your auth collections, and the built-in login token. The first one that returns a user signs the request in, and a strategy that throws is logged and skipped. When nobody signs in, the response is `401`; for a revoked or expired key it says which and when, with the same message and challenge as REST ([Revoked and expired keys](/plugins/api-keys#revoked-and-expired-keys)). A revoked or unknown key doesn't stop the request there: sent with a valid session cookie, it signs in as the cookie's user.
+A request signs in this way:
+
+1. The API key is tried first.
+2. Without a valid key, the request goes through the same sign-in as the rest of the app: every [auth strategy](/authentication/custom-strategies) on your auth collections, and the built-in login token. The first one that returns a user signs the request in. A strategy that throws is logged and skipped.
+3. When nobody signs in, the response is `401`. For a revoked or expired key, it says which and when, with the same message and challenge as REST ([Revoked and expired keys](/plugins/api-keys#revoked-and-expired-keys)).
+
+A revoked or unknown key doesn't stop the request at the first step. Sent with a valid session cookie, the request signs in as the cookie's user.
 
 ### Sign in with your own OAuth server
 
@@ -88,7 +94,10 @@ Running the OAuth server and serving the metadata document are up to your app. T
 
 ## What clients can reach
 
-Every app collection is exposed by default, through shared tools (`getConfigInfo`, `findDocuments`, `createDocuments`, `updateDocument`, `deleteDocuments`, `getCollectionSchema` and more). Each call runs as the signed-in user (the key's owner, for an API key), with your collections' [access control](/access-control/overview): nobody reaches anything over MCP they can't reach over REST. A `?overrideAccess=true` query is ignored in development and rejected with `400` elsewhere.
+Every app collection is exposed by default, through shared tools (`getConfigInfo`, `findDocuments`, `createDocuments`, `updateDocument`, `deleteDocuments`, `getCollectionSchema` and more).
+
+- Each call runs as the signed-in user (the key's owner, for an API key), with your collections' [access control](/access-control/overview). Nobody reaches anything over MCP that they can't reach over REST.
+- A `?overrideAccess=true` query is ignored in development and rejected with `400` elsewhere.
 
 FrogBot's own collections (chats, messages, API keys, connections, logs and the like) are never exposed.
 

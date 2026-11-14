@@ -315,7 +315,14 @@ describe('per-user agent model allowlists', () => {
     await booted.frogbot.update({
       collection: usersSlug,
       id: samId,
-      data: { monthlyBudget: 1, spendThisPeriodUSD: 1 },
+      data: { monthlyBudget: 1 },
+      overrideAccess: true,
+    });
+
+    await booted.frogbot.update({
+      collection: 'plugin-ai-policy-spend',
+      where: { key: { equals: `${usersSlug}:${String(samId)}` } },
+      data: { amount: 1 },
       overrideAccess: true,
     });
 

@@ -6,6 +6,7 @@ import type { ClientField } from 'payload';
 import { getFieldPermissions } from 'payload/shared';
 import { useEffect, useLayoutEffect, useRef } from 'react';
 
+import { getUseAsDone } from '../records/state.js';
 import { usePanelLayout } from './PanelConfig.client.js';
 
 function fitHeight(input: HTMLTextAreaElement) {
@@ -14,10 +15,12 @@ function fitHeight(input: HTMLTextAreaElement) {
 }
 
 function TitleInput({
+  compact,
   field,
   label,
   path,
 }: {
+  compact: boolean;
   field: ClientField | undefined;
   label: string;
   path: string;
@@ -44,7 +47,7 @@ function TitleInput({
 
   useLayoutEffect(() => {
     if (ref.current) fitHeight(ref.current);
-  }, [text]);
+  }, [compact, text]);
 
   useEffect(() => {
     const input = ref.current;
@@ -62,7 +65,15 @@ function TitleInput({
   }, []);
 
   return (
-    <div className={`fb-record-panel-title${showError ? ' fb-record-panel-title--error' : ''}`}>
+    <div
+      className={[
+        'fb-record-panel-title',
+        compact && 'fb-record-panel-title--compact',
+        showError && 'fb-record-panel-title--error',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <textarea
         aria-invalid={showError || undefined}
         aria-label={label}
@@ -88,8 +99,11 @@ function TitleInput({
   );
 }
 
-/** The record's `useAsTitle` field as a large heading, edited in place. */
-export function RecordPanelTitle() {
+/**
+ * The record's `useAsTitle` field as a large heading, edited in place. `compact` shrinks it to
+ * the size the header uses once the body scrolls.
+ */
+export function RecordPanelTitle({ compact = false }: { compact?: boolean }) {
   const layout = usePanelLayout();
   const { i18n } = useTranslation();
   const path = layout?.titlePath;
@@ -101,5 +115,16 @@ export function RecordPanelTitle() {
       ? getTranslation(field.label as string, i18n)
       : getTranslation(layout.collectionConfig.labels.singular, i18n);
 
-  return <TitleInput field={field} label={label} path={path} />;
+  return <TitleInput compact={compact} field={field} label={label} path={path} />;
+}
+
+/**
+ * The title in the panel body, under the default header. Only collections with `useAsDone` show
+ * it there: for the rest, the header holds the title, so it isn't shown twice.
+ */
+export function RecordPanelBodyTitle() {
+  const layout = usePanelLayout();
+  if (!layout || !getUseAsDone(layout.collectionConfig)) return null;
+
+  return <RecordPanelTitle />;
 }

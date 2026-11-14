@@ -547,7 +547,7 @@ describe('projects scaffold output', () => {
     const config = readConfig(dest);
 
     expect(config).toContain('agents: [general(), assistant]');
-    expect(config).toContain('plugins: [aiPolicyPlugin(), dojo()]');
+    expect(config).toMatch(/plugins: \[\s*aiPolicyPlugin\(\),\s*dojo\(\),\s*roles,/);
     expect(config).toContain('endpoints: [seedEndpoint()]');
     expect(fs.existsSync(path.join(dest, 'src', 'agents', 'assistant.ts'))).toBe(true);
     expect(readPackage(dest).dependencies).toHaveProperty('@frogbotai/plugin-ai-policy');
@@ -561,7 +561,7 @@ describe('projects scaffold output', () => {
     const config = readConfig(dest);
 
     expect(config).not.toMatch(/aiPolicyPlugin|assistant|agents|ai:|tools:/);
-    expect(config).toContain('plugins: [dojo()]');
+    expect(config).toMatch(/plugins: \[\s*dojo\(\),\s*roles,\s*auditLogPlugin\(/);
     expect(config).toContain('collections: [Projects, Tasks, Users, Files]');
     expect(config).toContain('endpoints: [seedEndpoint()]');
     expect(config).toContain("import { seedEndpoint } from './seed/endpoint';");
@@ -593,7 +593,7 @@ describe('crm scaffold output', () => {
     const config = readConfig(dest);
 
     expect(config).toContain('agents: [general(), assistant]');
-    expect(config).toContain('plugins: [aiPolicyPlugin(), dojo()]');
+    expect(config).toMatch(/plugins: \[\s*aiPolicyPlugin\(\),\s*dojo\(\),\s*roles,/);
     expect(fs.existsSync(path.join(dest, 'src', 'agents', 'assistant.ts'))).toBe(true);
   });
 

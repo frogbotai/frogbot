@@ -1,5 +1,5 @@
 import { type FSWatcher, readFileSync, watch as fsWatch } from 'node:fs';
-import { join, sep } from 'node:path';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 /** Folders watched recursively. */
 export const WATCHED_DIRS = ['src', 'public'];
@@ -57,28 +57,51 @@ type Watch = (
   listener: (event: string, file: string | Buffer | null) => void,
 ) => FSWatcher;
 
+function inside(dir: string, file: string): string | undefined {
+  const path = relative(dir, resolve(dir, file));
+
+  if (!path || path === '..' || path.startsWith(`..${sep}`) || isAbsolute(path)) return undefined;
+
+  return path.split(sep).join('/');
+}
+
 /**
- * Calls `onChange` once `debounce` ms pass with no change that needs a rebuild: agents write several
- * files over a second or two (420 D4).
+ * Calls `onChange` with the paths that changed once `debounce` ms pass with no change that needs a
+ * rebuild: agents write several files over a second or two (420 D4). `ignore` names a file the
+ * build itself writes, such as the types file, so its write starts no second build.
  */
 export function watchApp({
   dir,
   onChange,
+  ignore = () => undefined,
   debounce = 1500,
   watch = fsWatch,
 }: {
   dir: string;
-  onChange: () => void;
+  onChange: (paths: string[]) => void;
+  ignore?: () => string | undefined;
   debounce?: number;
   watch?: Watch;
-}): { close: () => void } {
+}): { close: () => void; forget: (file: string) => void } {
   const watchers: FSWatcher[] = [];
   const tsconfig = join(dir, 'tsconfig.json');
   let shape = readShape(tsconfig);
   let timer: NodeJS.Timeout | undefined;
+  let seen = new Set<string>();
+
+  function flush() {
+    const paths = [...seen];
+
+    seen = new Set();
+    onChange(paths);
+  }
 
   function changed(path: string) {
     if (!shouldRebuild(path)) return;
+
+    const ignored = ignore();
+
+    if (ignored && path === inside(dir, ignored)) return;
 
     if (path === 'tsconfig.json') {
       const next = readShape(tsconfig);
@@ -88,8 +111,9 @@ export function watchApp({
       shape = next;
     }
 
+    seen.add(path);
     clearTimeout(timer);
-    timer = setTimeout(onChange, debounce);
+    timer = setTimeout(flush, debounce);
   }
 
   const listen = (base: string, recursive: boolean) => {
@@ -112,6 +136,13 @@ export function watchApp({
   for (const base of WATCHED_DIRS) listen(base, true);
 
   return {
+    forget(file) {
+      const path = inside(dir, file);
+
+      if (!path || !seen.delete(path) || seen.size) return;
+
+      clearTimeout(timer);
+    },
     close() {
       clearTimeout(timer);
 

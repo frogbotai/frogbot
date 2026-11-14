@@ -1,0 +1,26 @@
+@layer frogbot {
+  .fb-panel-section {
+    display: grid;
+    gap: var(--spacer-2);
+  }
+
+  .fb-panel-section__header {
+    align-items: center;
+    display: flex;
+    gap: var(--spacer-2);
+    justify-content: space-between;
+    min-height: 32px;
+  }
+
+  .fb-panel-section__heading {
+    color: var(--color-text);
+    font-size: var(--text-body-medium-font-size);
+    font-weight: var(--text-body-medium-bold-font-weight);
+    line-height: var(--text-body-medium-line-height);
+    margin: 0;
+  }
+
+  .fb-panel-section__content {
+    min-width: 0;
+  }
+}

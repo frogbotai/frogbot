@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { registrationFile, serviceId } from '../../../../packages/frogbot/src/bin/service/paths.js';
 import { writeRegistration } from '../../../../packages/frogbot/src/bin/service/registration.js';
-import { parseUpArgs, up } from '../../../../packages/frogbot/src/bin/up.js';
+import { age, alreadyUp, parseUpArgs, up } from '../../../../packages/frogbot/src/bin/up.js';
 
 function failingSupervisor(stderr: string) {
   return () => {
@@ -68,7 +68,9 @@ describe('frogbot up', () => {
 
     await up([], { log, spawnSupervisor });
 
-    expect(lines).toEqual([`[frogbot] ${dir} is already up at http://127.0.0.1:3007`]);
+    expect(lines).toEqual([
+      `[frogbot] ${dir} is already up at http://127.0.0.1:3007, watching for changes`,
+    ]);
     expect(spawnSupervisor).not.toHaveBeenCalled();
   });
 
@@ -125,5 +127,64 @@ describe('frogbot up', () => {
     expect(parseUpArgs(['--port=3101'])).toEqual({ port: 3101, autostart: false });
     expect(parseUpArgs(['--port', 'auto'])).toEqual({ port: 'auto', autostart: false });
     expect(() => parseUpArgs(['--watch'])).toThrow(/usage: frogbot up/);
+  });
+});
+
+describe('the already-up line', () => {
+  const found = {
+    id: 'abc',
+    dir: '/apps/crm',
+    url: 'http://127.0.0.1:9696',
+    port: 9696,
+    pid: 1,
+    frogbot: '0.41.0',
+    startedAt: '2026-11-12T10:00:00.000Z',
+    state: 'running' as const,
+    log: '/apps/crm/.frogbot/service.log',
+    autostart: false,
+  };
+
+  const now = Date.parse('2026-11-12T12:00:00.000Z');
+
+  it('says it is watching and when the last build landed', () => {
+    expect(alreadyUp({ ...found, builtAt: '2026-11-12T11:57:30.000Z' }, now)).toEqual([
+      '[frogbot] /apps/crm is already up at http://127.0.0.1:9696, watching for changes (last build 2 min ago)',
+    ]);
+  });
+
+  it('adds the last error on its own line', () => {
+    expect(
+      alreadyUp(
+        {
+          ...found,
+          state: 'update failed',
+          builtAt: '2026-11-12T11:59:15.000Z',
+          lastError: 'build failed (exit 1)',
+        },
+        now,
+      ),
+    ).toEqual([
+      '[frogbot] /apps/crm is already up at http://127.0.0.1:9696, watching for changes (last build 45 s ago)',
+      '[frogbot] last error: build failed (exit 1)',
+    ]);
+  });
+
+  it('leaves out the build time for a supervisor that never recorded one', () => {
+    expect(alreadyUp(found, now)).toEqual([
+      '[frogbot] /apps/crm is already up at http://127.0.0.1:9696, watching for changes',
+    ]);
+  });
+
+  it.each([
+    [0, '0 s'],
+    [59_999, '59 s'],
+    [60_000, '1 min'],
+    [3_599_999, '59 min'],
+    [3_600_000, '1 h'],
+    [86_399_999, '23 h'],
+    [2 * 86_400_000, '2 d'],
+    [-5000, '0 s'],
+  ])('rounds %i ms down to %s', (ms, text) => {
+    expect(age(now - ms, now)).toBe(text);
   });
 });

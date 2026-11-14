@@ -209,7 +209,7 @@ describe('npx @frogbotai/plugin-dojo', () => {
     expect(await run('apps', 'delete', '--help')).toBe(0);
     expect(lines(stdout)).toEqual(
       expect.arrayContaining([
-        'Usage: npx @frogbotai/plugin-dojo apps delete <app> [--yes] [--json]',
+        'Usage: npx @frogbotai/plugin-dojo apps delete <app> [--yes] [--json] [--wait]',
         expect.stringMatching(/^ {2}--yes +Skip the confirmation/),
       ]),
     );

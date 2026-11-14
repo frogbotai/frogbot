@@ -5,10 +5,10 @@ import { isReactServerComponentOrFunction } from 'payload/shared';
 import { cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
 
 import { getPanelComponents } from './config.js';
-import { PanelBridge, PanelClientSlot } from './PanelSlots.client.js';
+import { PanelBridge, PanelClientSlot, PanelFooter } from './PanelSlots.client.js';
 import { RecordPanelHeader } from './RecordPanelHeader.client.js';
 import { RecordPanelProperties } from './RecordPanelProperties.client.js';
-import { RecordPanelTitle } from './RecordPanelTitle.client.js';
+import { RecordPanelBodyTitle, RecordPanelTitle } from './RecordPanelTitle.client.js';
 
 /** The FrogBot server function that renders the record side panel. */
 export const RENDER_RECORD_PANEL = 'frogbot-render-record-panel';
@@ -27,8 +27,9 @@ type Slot = PayloadComponent | PayloadComponent[] | undefined;
 /**
  * Renders the record panel: Payload's own edit view from `renderDocument`, with the panel's
  * header, title, properties and slots placed inside its form through `BeforeFields` and
- * `AfterFields`, so they read Payload's form and document state. A missing or unreadable record
- * comes back as `notFound`.
+ * `AfterFields`, so they read Payload's form and document state. The `footer` slot renders there
+ * too, and is portalled under the scrolling body. A missing or unreadable record comes back as
+ * `notFound`.
  */
 export const renderRecordPanelHandler: ServerFunction<
   RenderRecordPanelArgs,
@@ -124,15 +125,22 @@ export const renderRecordPanelHandler: ServerFunction<
       ) : (
         <RecordPanelHeader actions={render(components.actions, 'action')} />
       )}
-      <RecordPanelTitle />
+      {components.Header ? <RecordPanelTitle /> : <RecordPanelBodyTitle />}
       {render(components.beforeFields, 'before')}
       <RecordPanelProperties />
     </>
   );
 
-  const AfterFields = components.afterFields ? (
-    <div className="fb-record-panel__after-fields">{render(components.afterFields, 'after')}</div>
-  ) : null;
+  const AfterFields = (
+    <>
+      {components.afterFields ? (
+        <div className="fb-record-panel__after-fields">
+          {render(components.afterFields, 'after')}
+        </div>
+      ) : null}
+      {components.footer ? <PanelFooter>{render(components.footer, 'footer')}</PanelFooter> : null}
+    </>
+  );
 
   return {
     data,
