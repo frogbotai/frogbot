@@ -27,8 +27,8 @@ export const Tasks: CollectionConfig = {
 
 From the top, the panel shows:
 
-1. The header, one row pinned to the top with a line under it. On the left, **Mark complete** for collections with [`useAsDone`](/configuration/collections#admin-options): it saves at once and reads **Completed** in green when done. Collections without `useAsDone` show the `useAsTitle` field there instead, as a large heading you edit in place, wrapping onto more lines rather than cutting off. On the right, your `actions`, **Save**, copy link, open full page, close, and a menu with create new, duplicate and then delete in red, plus the last autosave time for drafts autosave. Once the panel scrolls about 46 px, Mark complete shrinks to a check and the title, and a title in the header shrinks to body size.
-2. For collections with `useAsDone`, the `useAsTitle` field as a large heading you edit in place. Either way the title shows once. It needs a text, textarea or email field.
+1. The header, one bar pinned to the top, the same bar every side panel uses. On the right, always in this order: a status slot, a ••• menu, open full page and close (✕). The status slot shows one thing: **Unsaved** and **Save** while a collection without autosave has unsaved edits (and **Save** on a new record), otherwise **Mark complete** for collections with [`useAsDone`](/configuration/collections#admin-options), which saves at once and reads **Completed** in green, otherwise **Saved** for drafts autosave. Below 480 px wide, Mark complete shrinks to a check icon. The menu holds copy link, duplicate, create new, your `actions`, the last saved time and delete in red. On the left the header never repeats what you can see: nothing when the panel was opened from the view, the collection's name when it was opened from a shared link or a reload, and a back link (`‹ Budget feature`) when the record was opened from inside the panel. The title joins it once the body's title scrolls under the header. At narrow widths the back link and title truncate; the buttons never wrap.
+2. The `useAsTitle` field as a large heading you edit in place, wrapping onto more lines rather than cutting off. It needs a text, textarea or email field. Without one, the header always shows the title.
 3. Your `beforeFields` components.
 4. The `properties` fields as label and value rows.
 5. Every other field, in config order. No field appears twice.
@@ -37,7 +37,7 @@ From the top, the panel shows:
 
 The menu hides what the user can't do. Delete asks first, and moves the record to the trash when the collection has `trash`.
 
-A replaced `Header` keeps the title in the body.
+A replaced `Header` keeps the title in the body. Esc closes the panel unless a menu, picker or dialog inside it is open.
 
 ## Settings
 
@@ -52,7 +52,7 @@ Settings go in `admin.panel`, React components in `admin.components.panel`, the 
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `actions` | `FrogBotComponent[]` | — | Header buttons, before copy link. |
+| `actions` | `FrogBotComponent[]` | — | Items in the header's ••• menu, after create new. Render `SidePanelMenuItem`s. |
 | `afterFields` | `FrogBotComponent[]` | — | After the last field. |
 | `beforeFields` | `FrogBotComponent[]` | — | Before the property list, under the title when the body shows one. |
 | `Component` | `FrogBotComponent` | Built-in panel | Replaces the whole panel, edit form and footer included. |
@@ -90,20 +90,38 @@ Every slot except `Component` renders inside the edit form, so it can use the fo
 
 `@frogbotai/ui/admin` exports the pieces the panel is made of, so your slots look like the built-in parts:
 
-- `PanelIconButton` is the header's 32 px icon button. Give it an `icon` at 16 px and a `label`, which is also its tooltip. Use it in `actions`.
+- `SidePanelMenuItem` from `@frogbotai/ui` is an item in the header's ••• menu. Render it from `actions`; `onSelect` runs when it's chosen, and `danger` colours it red.
+- `PanelIconButton` is the panel's 32 px icon button. Give it an `icon` at 16 px and a `label`, which is also its tooltip.
 - `PanelSection` is a titled block: a `heading`, an optional add button (`onAdd`, `addLabel`) and its content.
 - The `fb-pill-tabs` class on a [tabs field](/fields/tabs) gives it small pill tabs. The error count on a tab with invalid fields and the remembered tab per record work as before.
 
 ```tsx
 'use client'
 
-import { PanelIconButton } from '@frogbotai/ui/admin'
-import { ClockIcon } from '@frogbotai/ui/icons'
+import { SidePanelMenuItem } from '@frogbotai/ui'
 
 export function TrackTime() {
-  return <PanelIconButton icon={<ClockIcon size={16} />} label="Track time" onClick={start} />
+  return <SidePanelMenuItem onSelect={start}>Track time</SidePanelMenuItem>
 }
 ```
+
+## Opening a record from inside the panel
+
+A component inside the panel that opens another record of the collection passes `from: 'panel'`, so the header shows a back link to the record it came from:
+
+```tsx
+'use client'
+
+import { useRecordPanel } from '@frogbotai/ui/admin'
+
+export function SubtaskLink({ id, title }: { id: string; title: string }) {
+  const { open } = useRecordPanel()
+
+  return <button onClick={() => open(id, { from: 'panel' })}>{title}</button>
+}
+```
+
+The back link asks before throwing away unsaved edits, and skips records deleted meanwhile. The chain lives in memory only: opening a record from the view, closing, opening the full page or deleting clears it, and a reload or shared link shows the collection's name instead. The browser's Back button leaves the view, as before.
 
 ## Activity and comments
 

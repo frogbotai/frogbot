@@ -21,26 +21,34 @@
     bottom: 0;
     display: flex;
     flex-direction: column;
-    width: min(48rem, 90vw);
-    min-width: 20rem;
-    overflow: auto;
+    width: min(48rem, 100vw);
+    min-width: min(20rem, 100vw);
+    overflow: hidden;
     resize: horizontal;
     border-left: 1px solid var(--color-border);
     background-color: var(--color-bg);
     box-shadow: var(--elevation-500-modal-window);
   }
 
-  .fb-artifact__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem;
-    border-bottom: 1px solid var(--color-border);
+  .fb-artifact__viewer--expanded {
+    width: 100vw;
+    resize: none;
   }
 
-  .fb-artifact__actions {
-    display: flex;
-    gap: 0.5rem;
+  .fb-artifact__save {
+    padding: 0.25rem 0.75rem;
+    font: inherit;
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+    color: var(--color-text);
+    cursor: pointer;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--fb-radius-md);
+  }
+
+  .fb-artifact__save:hover {
+    background: var(--color-bg-hover);
   }
 
   .fb-artifact__body {

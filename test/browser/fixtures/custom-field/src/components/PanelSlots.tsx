@@ -1,18 +1,17 @@
 'use client';
 
+import { SidePanelMenuItem } from '@frogbotai/ui';
 import { useRecordPanel } from '@frogbotai/ui/admin';
 import type { PanelComponentProps } from 'frogbot';
 
 export function PanelAction({ close, expand, id }: PanelComponentProps) {
   return (
-    <span data-testid="panel-action" data-id={String(id)}>
-      <button onClick={close} type="button">
+    <>
+      <SidePanelMenuItem data-id={String(id)} data-testid="panel-action" onSelect={close}>
         Slot close
-      </button>
-      <button onClick={expand} type="button">
-        Slot expand
-      </button>
-    </span>
+      </SidePanelMenuItem>
+      <SidePanelMenuItem onSelect={expand}>Slot expand</SidePanelMenuItem>
+    </>
   );
 }
 
@@ -33,6 +32,10 @@ export function PanelFooter({ id }: PanelComponentProps) {
       <input aria-label="Comment" placeholder="Add a comment" />
     </form>
   );
+}
+
+export function TextFooter() {
+  return 'Journal entries save as you type';
 }
 
 export function EmptyFooter() {

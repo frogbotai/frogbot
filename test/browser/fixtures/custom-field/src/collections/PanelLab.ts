@@ -10,7 +10,7 @@ export const Notes: CollectionConfig = {
   fields: [{ name: 'title', type: 'text', required: true }],
 };
 
-/** Drafts autosave, with the panel's actions, beforeFields and afterFields slots. */
+/** Drafts autosave, with the panel's actions, beforeFields, afterFields and a text-only footer. */
 export const Journal: CollectionConfig = {
   slug: 'journal',
   admin: {
@@ -20,6 +20,7 @@ export const Journal: CollectionConfig = {
         actions: ['/components/PanelSlots#PanelAction'],
         afterFields: ['/components/PanelSlots#AfterFields'],
         beforeFields: ['/components/PanelServerSlots#BeforeFields'],
+        footer: ['/components/PanelSlots#TextFooter'],
       },
     },
   },

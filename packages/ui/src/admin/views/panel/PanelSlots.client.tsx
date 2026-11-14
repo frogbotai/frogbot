@@ -1,6 +1,6 @@
 'use client';
 
-import { useDocumentInfo, useFormModified } from '@payloadcms/ui';
+import { useDocumentInfo, useDocumentTitle, useFormModified } from '@payloadcms/ui';
 import { cloneElement, createContext, isValidElement, type ReactNode, use, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -16,14 +16,18 @@ export function PanelClientSlot({ children }: { children: ReactNode }) {
   return cloneElement(children, { close, collectionSlug, expand, id: id ?? openId ?? '' });
 }
 
-/** Tells the panel whether its form has unsaved edits, so switching and closing can ask first. */
+/**
+ * Tells the panel whether its form has unsaved edits, so switching and closing can ask first, and
+ * the record's title, for the back link of a record opened from it.
+ */
 export function PanelBridge() {
   const { setForm } = useRecordPanel();
   const modified = useFormModified();
+  const { title } = useDocumentTitle();
 
   useEffect(() => {
-    setForm({ modified });
-  }, [modified, setForm]);
+    setForm({ modified, title });
+  }, [modified, setForm, title]);
 
   useEffect(() => () => setForm(undefined), [setForm]);
 

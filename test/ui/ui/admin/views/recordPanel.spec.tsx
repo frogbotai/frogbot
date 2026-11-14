@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   docInfo: {} as Record<string, unknown>,
   fields: [{ name: 'title', type: 'text' }] as Array<Record<string, unknown>>,
   mostRecentUpdate: undefined as Record<string, unknown> | undefined,
+  openModal: vi.fn(),
   search: new URLSearchParams(),
   serverFunction: vi.fn(),
 }));
@@ -29,7 +30,7 @@ vi.mock('@payloadcms/ui', () => ({
   useDocumentEvents: () => ({ mostRecentUpdate: mocks.mostRecentUpdate }),
   useDocumentInfo: () => mocks.docInfo,
   useField: () => ({ setValue: vi.fn(), value: 'Hello' }),
-  useModal: () => ({ closeModal: vi.fn(), modalState: {}, openModal: vi.fn() }),
+  useModal: () => ({ closeModal: vi.fn(), modalState: {}, openModal: mocks.openModal }),
   usePreferences: () => ({
     getPreference: () => Promise.resolve(undefined),
     setPreference: vi.fn(),
@@ -62,9 +63,8 @@ const { RecordPanelTitle } =
   await import('../../../../../packages/ui/src/admin/views/panel/RecordPanelTitle.client.js');
 
 let panel: ReturnType<typeof useRecordPanel>;
-const fetchMock = vi.fn(() =>
-  Promise.resolve({ json: () => Promise.resolve({ id: 5 }), ok: true }),
-);
+const found = () => Promise.resolve({ json: () => Promise.resolve({ id: 5 }), ok: true });
+const fetchMock = vi.fn(found);
 
 function Tree({ children, trash = false }: { children?: ReactNode; trash?: boolean }) {
   const ref = useRef<HTMLElement>(null);
@@ -93,9 +93,11 @@ beforeEach(() => {
   mocks.fields = [{ name: 'title', type: 'text' }];
   mocks.search = new URLSearchParams();
   mocks.mostRecentUpdate = undefined;
+  mocks.openModal.mockReset();
   mocks.serverFunction.mockReset();
   mocks.serverFunction.mockResolvedValue({ data: {}, Panel: <div id="form" /> });
-  fetchMock.mockClear();
+  fetchMock.mockReset();
+  fetchMock.mockImplementation(found);
   vi.stubGlobal('fetch', fetchMock);
 });
 
@@ -241,5 +243,129 @@ describe('record panel', () => {
     const { container } = render(<RecordPanelTitle />);
 
     expect(container.querySelector('textarea')?.readOnly).toBe(false);
+  });
+});
+
+describe('record panel drill-in', () => {
+  const recordParam = () => new URL(window.location.href).searchParams.get('record');
+
+  async function openFromView(id: string, title: string) {
+    act(() => panel.open(id));
+    await waitFor(() => expect(panel.openId).toBe(id));
+    act(() => panel.setForm({ modified: false, title }));
+  }
+
+  it('remembers the parent of a record opened from inside the panel, in memory only', async () => {
+    render(<Tree />);
+    await openFromView('1', 'Budget feature');
+
+    act(() => panel.open('2', { from: 'panel' }));
+
+    expect(panel.openId).toBe('2');
+    expect(panel.parent).toEqual({ collection: 'tasks', id: '1', title: 'Budget feature' });
+    expect(recordParam()).toBe('2');
+    expect(window.location.search).not.toContain('1');
+  });
+
+  it('starts fresh when a record opens from the view, or the panel closes or expands', async () => {
+    render(<Tree />);
+    await openFromView('1', 'Budget feature');
+    act(() => panel.open('2', { from: 'panel' }));
+
+    act(() => panel.open('3'));
+
+    expect(panel.parent).toBeUndefined();
+
+    act(() => panel.open('4', { from: 'panel' }));
+
+    expect(panel.parent?.id).toBe('3');
+
+    act(() => panel.close());
+
+    expect(panel.parent).toBeUndefined();
+
+    await openFromView('1', 'Budget feature');
+    act(() => panel.open('2', { from: 'panel' }));
+    act(() => panel.expand());
+
+    expect(panel.parent).toBeUndefined();
+  });
+
+  it('clears the parents when the open record is deleted', async () => {
+    render(<Tree />);
+    await openFromView('1', 'Budget feature');
+    act(() => panel.open('2', { from: 'panel' }));
+
+    act(() => panel.reset());
+
+    expect(panel.parent).toBeUndefined();
+    expect(panel.state.mode).toBe('closed');
+  });
+
+  it('goes back to the parent, keeping the ones before it', async () => {
+    render(<Tree />);
+    await openFromView('1', 'Budget feature');
+    act(() => panel.open('2', { from: 'panel' }));
+    act(() => panel.setForm({ modified: false, title: 'Spec the cap rules' }));
+    act(() => panel.open('3', { from: 'panel' }));
+
+    act(() => panel.back());
+
+    await waitFor(() => expect(panel.openId).toBe('2'));
+
+    expect(panel.parent?.id).toBe('1');
+    expect(recordParam()).toBe('2');
+  });
+
+  it('asks before going back over unsaved edits', async () => {
+    render(<Tree />);
+    await openFromView('1', 'Budget feature');
+    act(() => panel.open('2', { from: 'panel' }));
+    act(() => panel.setForm({ modified: true, title: 'Spec the cap rules' }));
+
+    act(() => panel.back());
+
+    expect(mocks.openModal).toHaveBeenCalledWith('fb-record-panel-leave');
+    expect(panel.openId).toBe('2');
+  });
+
+  it('skips a parent deleted meanwhile, and drops the back link when none is left', async () => {
+    render(<Tree />);
+    await openFromView('1', 'Budget feature');
+    act(() => panel.open('2', { from: 'panel' }));
+    act(() => panel.open('3', { from: 'panel' }));
+
+    const gone = (url: unknown) => /\/tasks\/2\?/.test(String(url));
+
+    fetchMock.mockImplementation(((url: unknown) =>
+      Promise.resolve({ json: () => Promise.resolve({ id: 5 }), ok: !gone(url) })) as never);
+
+    act(() => panel.back());
+    await waitFor(() => expect(panel.openId).toBe('1'));
+
+    expect(panel.parent).toBeUndefined();
+
+    act(() => panel.open('4', { from: 'panel' }));
+
+    fetchMock.mockImplementation((() =>
+      Promise.resolve({ json: () => Promise.resolve({}), ok: false })) as never);
+
+    act(() => panel.back());
+    await waitFor(() => expect(panel.parent).toBeUndefined());
+
+    expect(panel.openId).toBe('4');
+    expect(panel.origin).toBe('link');
+  });
+
+  it('marks a record opened from the URL as having nothing behind it', async () => {
+    mocks.search = new URLSearchParams('record=5');
+    render(<Tree />);
+
+    expect(panel.origin).toBe('link');
+
+    act(() => panel.open('6'));
+    await waitFor(() => expect(panel.openId).toBe('6'));
+
+    expect(panel.origin).toBe('view');
   });
 });

@@ -19,8 +19,8 @@ export type PanelIconButtonProps = {
 };
 
 /**
- * The record panel header's square icon button: 32px, a muted icon, and a light border on hover.
- * Use it in `admin.components.panel.actions` so plugin buttons match the built-in ones.
+ * The record panel's square icon button: 32px, a muted icon, and a light border on hover, as on
+ * a `PanelSection`'s add button.
  */
 export function PanelIconButton({
   className,
