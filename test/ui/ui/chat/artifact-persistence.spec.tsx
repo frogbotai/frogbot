@@ -73,4 +73,23 @@ describe('artifact viewer', () => {
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('shows the way back to where the file was opened from, then the file name', async () => {
+    const onBack = vi.fn();
+    const { container } = render(
+      <ArtifactProvider persistence={persistence}>
+        <ArtifactViewer back={{ label: 'Chat', onBack }} id="a1" onClose={vi.fn()} />
+      </ArtifactProvider>,
+    );
+
+    await screen.findAllByText('q3-plan.md');
+
+    expect(container.querySelector('.fb-side-panel-bar__start')?.textContent).toBe(
+      'Chat/q3-plan.md',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Chat' }));
+
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
 });

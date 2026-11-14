@@ -45,7 +45,6 @@ vi.mock('../../../../../packages/ui/src/admin/views/panel/RecordPanelProvider.cl
     expand: vi.fn(),
     guard: vi.fn(),
     notify: vi.fn(),
-    origin: 'view',
     reset: vi.fn(),
     switchTo: vi.fn(),
   }),

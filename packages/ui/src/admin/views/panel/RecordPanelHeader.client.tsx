@@ -168,8 +168,8 @@ function DeleteRecord({ onDeleted }: { onDeleted: () => void }) {
  * shows Unsaved and Save while a form without autosave has edits, else Mark complete for
  * `useAsDone` collections, else Saved for autosave. The ••• menu holds copy link, duplicate,
  * create new, the plugin `actions`, the saved time and delete. On the left, a back link when the
- * record was opened from inside the panel, the collection's name when nothing is behind it, and
- * the title once the body's title scrolls under the bar.
+ * record was opened from inside the panel, and the title once the body's title scrolls under the
+ * bar. The view behind the panel already names the collection, so the bar never does.
  */
 export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -204,7 +204,6 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
 
   const canCreate = Boolean(permissions?.collections?.[collectionSlug]?.create);
   const label = getTranslation(collectionConfig.labels.singular, i18n);
-  const plural = getTranslation(collectionConfig.labels.plural, i18n);
   const isEditing = id !== undefined && id !== null && id !== '';
 
   useEffect(() => {
@@ -333,7 +332,6 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
             ? { label: panel.parent.title || `#${panel.parent.id}`, onBack: panel.back }
             : undefined
         }
-        context={panel.origin === 'link' ? plural : undefined}
         labels={{
           close: t('general:close'),
           expand: 'Open full page',

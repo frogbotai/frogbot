@@ -139,7 +139,7 @@ test('the bar keeps status, more, expand and close in order; the title shows onc
   const title = page.locator('.fb-record-panel-title__input');
   await expect(title).toHaveValue(long);
   await expect(header.locator('.fb-record-panel-title__input')).toHaveCount(0);
-  await expect(header.locator('.fb-side-panel-bar__start')).toHaveText('Journals');
+  await expect(header.locator('.fb-side-panel-bar__start')).toHaveText('');
   await expect(header.locator('.fb-record-panel-header__complete')).toHaveCount(0);
   expect((await title.boundingBox())!.height).toBeGreaterThan(50);
 
@@ -156,7 +156,7 @@ test('the bar keeps status, more, expand and close in order; the title shows onc
   await expect(panel(page)).toHaveCount(0);
 });
 
-test('a shared link names the collection; the title joins the bar after scrolling', async ({
+test('a shared link adds nothing on the left; the title joins the bar after scrolling', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 520 });
@@ -167,10 +167,10 @@ test('a shared link names the collection; the title joins the bar after scrollin
 
   await page.goto(`/collections/tickets?record=${id}`);
   const start = page.locator('.fb-record-panel-header .fb-side-panel-bar__start');
-  await expect(start).toHaveText('Tickets');
+  await expect(start).toHaveText('');
 
   await page.locator('.fb-record-panel__body').evaluate((node) => node.scrollTo(0, 300));
-  await expect(start).toHaveText('Tickets/Linked ticket');
+  await expect(start).toHaveText('Linked ticket');
 
   await page.goto('/collections/tickets');
   await page.locator('tbody tr', { hasText: 'Linked ticket' }).getByRole('link').first().click();

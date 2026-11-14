@@ -272,7 +272,6 @@ describe('record panel drill-in', () => {
     expect(panel.parent).toEqual({
       collection: 'tasks',
       id: '1',
-      origin: 'view',
       title: 'Budget feature',
     });
     expect(recordParam()).toBe('2');
@@ -370,19 +369,6 @@ describe('record panel drill-in', () => {
     await waitFor(() => expect(panel.parent).toBeUndefined());
 
     expect(panel.openId).toBe('4');
-    expect(panel.origin).toBe('link');
-  });
-
-  it('marks a record opened from the URL as having nothing behind it', async () => {
-    mocks.search = new URLSearchParams('record=5');
-    render(<Tree />);
-
-    expect(panel.origin).toBe('link');
-
-    act(() => panel.open('6'));
-    await waitFor(() => expect(panel.openId).toBe('6'));
-
-    expect(panel.origin).toBe('view');
   });
 
   it('stays closed when the panel closes while back is still checking the parent', async () => {
@@ -489,21 +475,5 @@ describe('record panel drill-in', () => {
 
     expect(mocks.openModal).toHaveBeenCalledTimes(1);
     expect(panel.openId).toBe('1');
-  });
-
-  it('still shows the collection name after going back to a record opened from a link', async () => {
-    mocks.search = new URLSearchParams('record=5');
-    window.history.replaceState(null, '', '/admin/collections/tasks?record=5');
-    render(<Tree />);
-
-    expect(panel.origin).toBe('link');
-
-    act(() => panel.setForm({ modified: false, title: 'Budget feature' }));
-
-    act(() => panel.open('6', { from: 'panel' }));
-    act(() => panel.back());
-    await waitFor(() => expect(panel.openId).toBe('5'));
-
-    expect(panel.origin).toBe('link');
   });
 });

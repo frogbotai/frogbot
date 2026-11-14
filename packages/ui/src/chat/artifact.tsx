@@ -11,7 +11,11 @@ import {
   useState,
 } from 'react';
 
-import { SidePanelBar, useSidePanelEscape } from '../components/side-panel-bar.js';
+import {
+  SidePanelBar,
+  type SidePanelBarBack,
+  useSidePanelEscape,
+} from '../components/side-panel-bar.js';
 import {
   type Artifact,
   type ArtifactPersistence,
@@ -115,7 +119,16 @@ export function ArtifactView({ artifact: artifactProp }: { artifact?: Artifact }
  * in the bar, Save sits in the status slot, expand widens the viewer to the window, and close and
  * Esc call `onClose`.
  */
-export function ArtifactViewer({ id, onClose }: { id?: string; onClose?: () => void }) {
+export function ArtifactViewer({
+  back,
+  id,
+  onClose,
+}: {
+  /** A link back to where the file was opened from, for example `{ label: 'Chat', onBack }`. */
+  back?: SidePanelBarBack;
+  id?: string;
+  onClose?: () => void;
+}) {
   const context = useArtifact();
   const loadArtifact = context?.loadArtifact;
   const [expanded, setExpanded] = useState(false);
@@ -134,6 +147,7 @@ export function ArtifactViewer({ id, onClose }: { id?: string; onClose?: () => v
       className={`fb-artifact__viewer${expanded ? ' fb-artifact__viewer--expanded' : ''}`}
     >
       <SidePanelBar
+        back={back}
         labels={{ expand: expanded ? 'Collapse' : 'Expand' }}
         onClose={onClose}
         onExpand={() => setExpanded((current) => !current)}

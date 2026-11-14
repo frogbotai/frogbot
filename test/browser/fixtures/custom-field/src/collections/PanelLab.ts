@@ -82,3 +82,19 @@ export const Scraps: CollectionConfig = {
     { name: 'notes', type: 'textarea' },
   ],
 };
+
+/** `useAsDone`, subtasks opened from inside the panel, and a long notes field to scroll. */
+export const Todos: CollectionConfig = {
+  slug: 'todos',
+  admin: {
+    ...admin,
+    useAsDone: 'done',
+    components: { panel: { beforeFields: ['/components/PanelSlots#Subtasks'] } },
+  },
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    { name: 'done', type: 'checkbox' },
+    { name: 'parent', type: 'relationship', relationTo: 'todos' },
+    { name: 'notes', type: 'textarea' },
+  ],
+};

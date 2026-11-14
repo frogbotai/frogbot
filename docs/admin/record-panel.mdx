@@ -27,7 +27,7 @@ export const Tasks: CollectionConfig = {
 
 From the top, the panel shows:
 
-1. The header, one bar pinned to the top, the same bar every side panel uses. On the right, always in this order: a status slot, a ••• menu, open full page and close (✕). The status slot shows one thing: **Unsaved** and **Save** while a collection without autosave has unsaved edits (and **Save** on a new record), otherwise **Mark complete** for collections with [`useAsDone`](/configuration/collections#admin-options), which saves at once and reads **Completed** in green, otherwise **Saved** for drafts autosave. Below 480 px wide, Mark complete shrinks to a check icon. The menu holds copy link, duplicate, create new, your `actions`, the last saved time and delete in red. On the left the header never repeats what you can see: nothing when the panel was opened from the view, the collection's name when it was opened from a shared link or a reload, and a back link (`‹ Budget feature`) when the record was opened from inside the panel. The title joins it once the body's title scrolls under the header. At narrow widths the back link and title truncate; the buttons never wrap.
+1. The header, one bar pinned to the top, the same bar every side panel uses. On the right, always in this order: a status slot, a ••• menu, open full page and close (✕). The status slot shows one thing: **Unsaved** and **Save** while a collection without autosave has unsaved edits (and **Save** on a new record), otherwise **Mark complete** for collections with [`useAsDone`](/configuration/collections#admin-options), which saves at once and reads **Completed** in green, otherwise **Saved** for drafts autosave. Below 480 px wide, Mark complete shrinks to a check icon. The menu holds copy link, duplicate, create new, your `actions`, the last saved time and delete in red. On the left the header never repeats what you can see: nothing at rest, since the view behind the panel already names the collection (also after a reload or a shared link), and a back link (`‹ Budget feature`) when the record was opened from inside the panel. The title joins it once the body's title scrolls under the header. At narrow widths the back link and title truncate; the buttons never wrap.
 2. The `useAsTitle` field as a large heading you edit in place, wrapping onto more lines rather than cutting off. It needs a text, textarea or email field. Without one, the header always shows the title.
 3. Your `beforeFields` components.
 4. The `properties` fields as label and value rows.
@@ -121,7 +121,7 @@ export function SubtaskLink({ id, title }: { id: string; title: string }) {
 }
 ```
 
-The back link asks before throwing away unsaved edits, and skips records deleted meanwhile. The chain lives in memory only: opening a record from the view, closing, opening the full page or deleting clears it, and a reload or shared link shows the collection's name instead. The browser's Back button leaves the view, as before.
+The back link asks before throwing away unsaved edits, and skips records deleted meanwhile. The chain lives in memory only: opening a record from the view, closing, opening the full page or deleting clears it, and a reload or shared link starts without a back link. The browser's Back button leaves the view, as before.
 
 ## Activity and comments
 

@@ -34,16 +34,8 @@ export type RecordPanelEvent =
 /** What the form inside the panel reports: unsaved edits to guard, and the title for a back link. */
 export type RecordPanelForm = { modified: boolean; title?: string };
 
-/** How the open record got there: from the view behind the panel, or a link or reload with nothing behind it. */
-export type RecordPanelOrigin = 'link' | 'view';
-
 /** A record the panel was drilled into from, which its back link returns to. */
-export type RecordPanelParent = {
-  collection: string;
-  id: string;
-  origin: RecordPanelOrigin;
-  title: string;
-};
+export type RecordPanelParent = { collection: string; id: string; title: string };
 
 /** Options for `open`: a click's modifier keys, and `from: 'panel'` when a record opens from inside the panel. */
 export type RecordPanelOpenOptions = Partial<
@@ -87,8 +79,6 @@ export type RecordPanelContextValue = {
   open: (id: number | string, options?: RecordPanelOpenOptions) => void;
   /** The open record's id, while one is open. */
   openId?: string;
-  /** Whether the open record came from the view, or from a link or reload with nothing behind it. */
-  origin: RecordPanelOrigin;
   /** The record the back link returns to, when the panel was drilled into. */
   parent?: RecordPanelParent;
   /**
@@ -159,7 +149,6 @@ export function RecordPanelProvider({
     enabled && recordParam ? { id: recordParam, mode: 'edit' } : { mode: 'closed' },
   );
 
-  const [origin, setOrigin] = useState<RecordPanelOrigin>(recordParam ? 'link' : 'view');
   const [stack, setStack] = useState<RecordPanelParent[]>([]);
   const formRef = useRef<RecordPanelForm | undefined>(undefined);
   const pendingRef = useRef<(() => void) | undefined>(undefined);
@@ -186,7 +175,6 @@ export function RecordPanelProvider({
       if (current.mode === 'edit' && current.id === recordParam) return;
 
       navigationRef.current += 1;
-      setOrigin('link');
       setStack([]);
       setState({ id: recordParam, mode: 'edit' });
 
@@ -200,21 +188,13 @@ export function RecordPanelProvider({
     setState({ mode: 'closed' });
   }, [enabled, recordParam]);
 
-  const go = useCallback(
-    (
-      next: RecordPanelState,
-      parents: RecordPanelParent[] = [],
-      nextOrigin: RecordPanelOrigin = 'view',
-    ) => {
-      navigationRef.current += 1;
-      formRef.current = undefined;
-      setStack(parents);
-      setOrigin(nextOrigin);
-      setState(next);
-      replaceRecordParam(next.mode === 'edit' ? next.id : undefined);
-    },
-    [],
-  );
+  const go = useCallback((next: RecordPanelState, parents: RecordPanelParent[] = []) => {
+    navigationRef.current += 1;
+    formRef.current = undefined;
+    setStack(parents);
+    setState(next);
+    replaceRecordParam(next.mode === 'edit' ? next.id : undefined);
+  }, []);
 
   const rerender = useCallback((id: string) => {
     setState((current) =>
@@ -275,7 +255,6 @@ export function RecordPanelProvider({
               {
                 collection: collectionSlug,
                 id: state.id,
-                origin,
                 title: formRef.current?.title ?? '',
               },
             ]
@@ -283,7 +262,7 @@ export function RecordPanelProvider({
 
       guard(() => go({ id, mode: 'edit' }, parents));
     },
-    [adminRoute, collectionSlug, enabled, go, guard, origin, router, stack, state],
+    [adminRoute, collectionSlug, enabled, go, guard, router, stack, state],
   );
 
   const back = useCallback(() => {
@@ -309,7 +288,7 @@ export function RecordPanelProvider({
           if (navigationRef.current !== navigation) return;
 
           if (response?.ok) {
-            const next = () => go({ id: parent.id, mode: 'edit' }, remaining, parent.origin);
+            const next = () => go({ id: parent.id, mode: 'edit' }, remaining);
 
             if (confirmed) next();
             else guard(next);
@@ -325,7 +304,6 @@ export function RecordPanelProvider({
         }
 
         setStack([]);
-        setOrigin('link');
       })();
     });
   }, [config.routes.api, go, guard, stack, t]);
@@ -409,7 +387,6 @@ export function RecordPanelProvider({
       notify,
       open,
       openId: state.mode === 'edit' ? state.id : undefined,
-      origin,
       parent: stack.at(-1),
       reload,
       reset,
@@ -429,7 +406,6 @@ export function RecordPanelProvider({
       guard,
       notify,
       open,
-      origin,
       reload,
       reset,
       setForm,
@@ -477,7 +453,6 @@ const CLOSED: RecordPanelContextValue = {
   guard: (action) => action(),
   notify: noop,
   open: noop,
-  origin: 'view',
   reload: noop,
   reset: noop,
   setForm: noop,
