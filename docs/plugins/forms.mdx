@@ -42,11 +42,24 @@ A collection that isn't listed is never touched, and listing one that doesn't ex
 
 ## Building a form
 
-Admins build forms on the `forms` edit page. The **Questions** tab is a builder: **Add question** lists the fields of the form's collection that a question can use, with their type and a required mark, greys out the ones it can't with the reason, and hides the ones already on the form. A field that is `required` with no `defaultValue` and isn't on the form shows the warning saving would give. Open a question with **Edit** to change its label, help text and placeholder; the field's own values show as placeholder text. **Add step** splits the form into steps, and a step that still has questions asks before it's removed. Drag a question by its handle, or focus the handle and press Space, the arrow keys and Space, to move it within or across steps. The other settings are in the **Settings** tab and the sidebar. The builder never changes the collection's fields; to ask for something new, add a field in config.
+Admins build forms on the `forms` edit page. The **Questions** tab is a builder:
+
+- **Add question** lists the fields of the form's collection that a question can use, with their type and a required mark. It greys out the fields it can't use, with the reason, and hides the ones already on the form.
+- **A missing required field shows a warning.** A field that is `required` with no `defaultValue` and isn't on the form shows the warning that saving would give.
+- **Edit** opens a question to change its label, help text, and placeholder. The field's own values show as placeholder text.
+- **Add step** splits the form into steps. A step that still has questions asks before it's removed.
+- **Move a question** by dragging its handle. With the keyboard, focus the handle and press Space, the arrow keys, and Space. A question moves within or across steps.
+
+The other settings are in the **Settings** tab and the sidebar. The builder never changes the collection's fields. To ask for something new, add a field in config.
 
 ![The form builder beside the Live Preview of a two-step form](/images/forms-builder.png)
 
-Once a form is saved, [Live Preview](/live-preview/overview) opens beside it and shows the form as visitors get it while you type, before you save again. **Phone** in its toolbar shows it at 390 px wide. Nothing is sent from the preview: its last step shows the confirmation. Live Preview is off on a new document, so a new form shows it after its first save. The preview is the admin page `/forms-preview`, which only users who can create or update forms can open.
+Once a form is saved, [Live Preview](/live-preview/overview) opens beside it and shows the form as visitors get it while you type, before you save again.
+
+- **Phone** in its toolbar shows the form at 390 px wide.
+- Nothing is sent from the preview. Its last step shows the confirmation.
+- Live Preview is off on a new document, so a new form shows it after its first save.
+- The preview is the admin page `/forms-preview`, which only users who can create or update forms can open.
 
 Saving works as on any edit page. A document in the `forms` collection has:
 
@@ -58,14 +71,21 @@ Saving works as on any edit page. A document in the `forms` collection has:
 - `confirmation`: a `message`, or a `redirect` to a path such as `/thanks` or an `http(s)` URL.
 - `status` (`open` or `closed`), `closesAt` and `maxResponses`.
 
-A question can use any top-level field, including fields in unnamed rows, collapsibles, groups and tabs, of type `text`, `textarea`, `email`, `number`, `select`, `radio`, `checkbox`, `date` or `upload`. Saving a form is refused, naming the field at fault, when a question:
+A question can use any top-level field of type `text`, `textarea`, `email`, `number`, `select`, `radio`, `checkbox`, `date`, or `upload`. Fields in unnamed rows, collapsibles, groups, and tabs count as top-level.
 
-- uses another field type, a list (`hasMany` text or number), or a hidden or virtual field;
-- repeats a field already on the form;
-- names a field whose `access.create` denies a form submission;
-- asks for files that could pass the app's upload limits, or stores them somewhere a form can't (see [File uploads](#file-uploads));
+Saving a form is refused, naming the field at fault, when a question does any of these:
 
-or when the form leaves out a field that is `required` and has no `defaultValue`, since no response could then be saved. An `update` form skips that last rule and the `access.create` check, and has its own; see [Edit links](#edit-links). A form saved as `closed` skips these checks, so it can always be closed, or drafted before it opens.
+- Uses another field type, a list (`hasMany` text or number), or a hidden or virtual field.
+- Repeats a field already on the form.
+- Names a field whose `access.create` denies a form submission.
+- Asks for files that could pass the app's upload limits, or stores them somewhere a form can't (see [File uploads](#file-uploads)).
+
+Saving is also refused when the form leaves out a field that is `required` and has no `defaultValue`, since no response could then be saved.
+
+Two kinds of form skip checks:
+
+- An `update` form skips the missing-required-field rule and the `access.create` check, and has its own checks. See [Edit links](#edit-links).
+- A form saved as `closed` skips all of these checks, so it can always be closed, or drafted before it opens.
 
 ## Who can open a form
 
@@ -137,7 +157,15 @@ These checks use the type the browser sends. The upload collection then checks t
 
 ### Upload limits
 
-Every file arrives in one request, under the app's upload limits: by default 20 MB per file, 3 files and 50 MB per request. Saving a form is refused, naming the question, when one file could be larger than the per-file limit, or when its file questions together could take more files, or more bytes plus 1 MB for the answers, than one request allows. An upload collection that requires a field with no default is refused too, since a form only sends the file.
+Every file arrives in one request, under the app's upload limits. The defaults are 20 MB per file, 3 files, and 50 MB per request.
+
+Saving a form is refused, naming the question, in these cases:
+
+- One file could be larger than the per-file limit.
+- The form's file questions together could take more files than one request allows.
+- The form's file questions together could take more bytes, plus 1 MB for the answers, than one request allows.
+
+An upload collection that requires a field with no default is refused too, since a form only sends the file.
 
 For bigger files, raise the limits in your config:
 
@@ -157,7 +185,13 @@ Files are held in memory while the request is read. With large limits, set `uplo
 
 A submit with files is `multipart/form-data`: the usual body as JSON in a `_payload` part, and each file as a part named after its question. Parts named after anything else are ignored. A value in `data` for a file question, such as the ID of a file already in the app, answers `400`: visitors can attach files, never point at existing ones.
 
-Before anything is saved, each question's count, size and types are checked, and a required question with no file answers `400`. Then each file is created in its upload collection the way the record is, flagged as this form's submission and with `overrideAccess: false`, so its hooks run. The record comes last. When a file or the record is refused, the plugin deletes the files it made for that submit, and only those, and answers `400` with the error on its question.
+A submit with files runs in this order:
+
+1. Each question's count, size, and types are checked. A required question with no file answers `400`.
+2. Each file is created in its upload collection the way the record is: flagged as this form's submission and with `overrideAccess: false`, so its hooks run.
+3. The record is created last.
+
+When a file or the record is refused, the plugin deletes the files it made for that submit, and only those, and answers `400` with the error on its question.
 
 ### Scanning files
 
@@ -236,7 +270,14 @@ Both endpoints are public and check the form's `read` access as the visitor.
 GET /api/forms/contact/definition
 ```
 
-Returns what a page needs to show the form: its title, steps, questions (`key`, `type`, `label`, `description`, `placeholder`, `required`, `options`, `hasMany`, `defaultValue`, and for files `maxFiles`, `maxFileSize` and `mimeTypes`), hidden parameter names, confirmation, whether it's `closed`, the `honeypot` input's name and, with Turnstile on, `turnstile.siteKey`. It never returns the collection's other fields.
+Returns what a page needs to show the form:
+
+- Its title, steps, and questions. Each question has `key`, `type`, `label`, `description`, `placeholder`, `required`, `options`, `hasMany`, and `defaultValue`. A file question also has `maxFiles`, `maxFileSize`, and `mimeTypes`.
+- The hidden parameter names and the confirmation.
+- Whether the form is `closed`.
+- The `honeypot` input's name and, with Turnstile on, `turnstile.siteKey`.
+
+It never returns the collection's other fields.
 
 ```http
 POST /api/forms/contact/submit
@@ -258,11 +299,23 @@ With `maxResponses` set, responses are counted under a per-form lock in the app'
 
 ## Edit links
 
-An edit link lets someone without an account change one record through one form: a customer fixing their phone number, an applicant updating their answers. Set the form's `mode` to `update`, or `both` to keep taking new records too, then make a link for a record. Whoever opens it sees that record's answers filled in, changes the form's questions and saves; the collection's validation and hooks run as for any update.
+An edit link lets someone without an account change one record through one form. Examples are a customer who fixes their phone number and an applicant who updates their answers.
+
+1. Set the form's `mode` to `update`, or to `both` to keep taking new records too.
+2. Make a link for a record.
+
+Whoever opens the link sees that record's answers filled in, changes the form's questions, and saves. The collection's validation and hooks run as for any update.
 
 ### Making a link
 
-In the admin, open a record and choose **Create edit link** from its menu. The item shows when an `update` or `both` form targets the collection and you can update the record. Pick the form, how long the link lasts and how many saves it allows, then copy the URL. It is shown once: only a hash of it is stored, so a lost link is replaced, not copied again.
+In the admin, open a record and choose **Create edit link** from its menu. The item shows when an `update` or `both` form targets the collection and you can update the record.
+
+1. Pick the form, how long the link lasts, and how many saves it allows.
+2. Copy the URL.
+
+<Note>
+The URL is shown once. Only a hash of it is stored, so a lost link is replaced, not copied again.
+</Note>
 
 From code, call `createFormLink` as the user who sends it:
 
@@ -286,7 +339,12 @@ const { url, expiresAt } = await createFormLink(req.frogbot, {
 | `req` | `FrogBotRequest` | None | The request whose user makes the link. |
 | `overrideAccess` | `boolean` | `false` | Skip the check that the user can update the record. |
 
-It returns `{ url, id, expiresAt }`. Without `overrideAccess`, the user must pass the collection's own `access.update` for that record, or it throws `Forbidden`; a form that only creates, a bad length or use limit throws `ValidationError`. `POST /api/form-links` with the same options as JSON makes a link as the signed-in user.
+It returns `{ url, id, expiresAt }`.
+
+- Without `overrideAccess`, the user must pass the collection's own `access.update` for that record, or the call throws `Forbidden`.
+- A form that only creates, a bad length, or a bad use limit throws `ValidationError`.
+
+`POST /api/form-links` with the same options as JSON makes a link as the signed-in user.
 
 An agent can send links through a tool that calls it as the agent's user, so the collection's update rule still decides:
 
@@ -336,11 +394,18 @@ A link works for any number of saves until it expires; set `maxSubmissions: 1` f
 - An unknown, expired, revoked or used-up link, or another form's, shows one "This link is no longer valid" page, and the endpoints answer `410` with no detail. With `trustProxy`, each such link counts toward the visitor's [rate limit](#spam-protection).
 - The token is random, not signed, so it never signs anyone in, and changing `FROGBOT_SECRET` doesn't break links.
 
-Saving an `update` or `both` form is refused, naming the field, when a question's `access.read` or `access.update` denies a signed-out request, or when it's a file question. Collections with drafts can't take edit links yet. To fix a value a person may not change, such as the record's owner, set it in a `beforeChange` hook when `req.context.formLink` is present.
+Saving an `update` or `both` form is refused, naming the field, when a question's `access.read` or `access.update` denies a signed-out request, or when it's a file question. Collections with drafts can't take edit links.
+
+To fix a value that a person may not change, such as the record's owner, set it in a `beforeChange` hook when `req.context.formLink` is present.
 
 ### Revoking links
 
-Links live in the **Edit links** collection (`form-links`), with each link's status: active, expired, used up or revoked. **View edit links** in a record's menu lists that record's links; select some and choose **Revoke selected**. Setting `revokedAt`, or deleting the link, stops it at once, and a revoked link stays revoked. Deleting a form deletes its links. People who can update a record can see, revoke and delete its links; `links.access` overrides that.
+Links live in the **Edit links** collection (`form-links`), with each link's status: active, expired, used up, or revoked.
+
+- **Revoke in the admin.** **View edit links** in a record's menu lists that record's links. Select some and choose **Revoke selected**.
+- **Revoke in code.** Setting `revokedAt`, or deleting the link, stops it at once. A revoked link stays revoked.
+- **Deleting a form** deletes its links.
+- **Access.** People who can update a record can see, revoke, and delete its links. `links.access` overrides that.
 
 <Warning>
 Anyone who has the URL can change the record's answers until the link expires or is revoked. Send links only to the person they're for, keep `maxExpiry` short, and revoke a link that may have leaked.
