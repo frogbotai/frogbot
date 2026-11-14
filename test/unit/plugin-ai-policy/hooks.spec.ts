@@ -21,7 +21,13 @@ type Counter = { id: number; key: string; period: string; amount: number };
 
 type Clause = Record<
   string,
-  { equals?: unknown; not_equals?: unknown; in?: unknown[]; less_than?: string }
+  {
+    equals?: unknown;
+    not_equals?: unknown;
+    in?: unknown[];
+    less_than?: string;
+    greater_than_equal?: string;
+  }
 >;
 
 function matches(counter: Counter, where: { and?: Clause[] } & Clause): boolean {
@@ -33,6 +39,9 @@ function matches(counter: Counter, where: { and?: Clause[] } & Clause): boolean 
       if ('not_equals' in condition) return value !== condition.not_equals;
       if ('in' in condition) return condition.in?.includes(value) ?? false;
       if ('less_than' in condition) return String(value) < String(condition.less_than);
+      if ('greater_than_equal' in condition) {
+        return String(value) >= String(condition.greater_than_equal);
+      }
 
       return true;
     }),
@@ -289,7 +298,7 @@ describe('plugin-ai-policy hooks', () => {
     await expect(hooks.beforeOperation({ req } as never)).rejects.toThrow('database down');
   });
 
-  it('never moves a counter back to an earlier month', async () => {
+  it('adds to a counter already in a later month and never moves it back', async () => {
     const hooks = createPolicyHooks({ authCollection: 'users', period: () => '2000-01' });
     const { db, req } = request({
       db: fakeDB([{ key: 'users:user-1', period: '2000-02', amount: 5 }]),
@@ -298,7 +307,7 @@ describe('plugin-ai-policy hooks', () => {
     await settle(hooks, { req });
 
     expect(db.counters).toHaveLength(1);
-    expect(db.counters[0]).toMatchObject({ period: '2000-02', amount: 5 });
+    expect(db.counters[0]).toMatchObject({ period: '2000-02', amount: 11 });
   });
 
   it('counts spend in the month of the configured time zone', async () => {

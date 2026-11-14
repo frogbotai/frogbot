@@ -108,7 +108,9 @@ type SpendOptions = { authCollection: string; keysCollection?: string; period: P
 
 /**
  * Adds `cost` to the subject's counter for this month in single statements on the counter row,
- * never on the user or key row, and outside the caller's transaction.
+ * never on the user or key row, and outside the caller's transaction. A counter already in a later
+ * month (another process's clock, or a `timeZone` moved west) takes the cost in that month; a
+ * counter never moves back.
  */
 export async function addSpend(
   req: FrogBotRequest,
@@ -123,7 +125,7 @@ export async function addSpend(
   const bump = async () =>
     (await db.updateOne({
       collection: SPEND_COUNTERS_SLUG,
-      where: { and: [{ key: { equals: key } }, { period: { equals: period } }] },
+      where: { and: [{ key: { equals: key } }, { period: { greater_than_equal: period } }] },
       data: { amount: { $inc: cost } },
       options: { atomic: true },
     })) as Counter | null;
@@ -218,7 +220,7 @@ export async function readSpend(
   const pending = new Map(pendingSpend(req));
   const { docs } = await req.frogbot.find({
     collection: SPEND_COUNTERS_SLUG,
-    where: { and: [{ key: { in: keys } }, { period: { equals: period() } }] },
+    where: { and: [{ key: { in: keys } }, { period: { greater_than_equal: period() } }] },
     depth: 0,
     limit: keys.length,
     overrideAccess: true,
