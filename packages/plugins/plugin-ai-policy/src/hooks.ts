@@ -5,7 +5,7 @@ import {
   type FrogBotRequest,
 } from 'frogbot';
 
-import { addSpend, readSpend, spendOf, type SpendSubject } from './counters.js';
+import { addSpend, holdSpend, readSpend, spendOf, type SpendSubject } from './counters.js';
 import {
   assertBudget,
   assertKeyBudget,
@@ -97,14 +97,18 @@ export function createPolicyHooks({ authCollection, keysCollection }: PolicyHook
         ...lineage.map(({ id }) => ({ collection: keysCollection as string, id })),
       ];
 
+      const settle = holdSpend(req, subjects, cost);
+
       const record = async () => {
         for (const subject of subjects) {
-          await addSpend(req, subject, cost, options).catch((err: unknown) => {
-            req.frogbot.logger.error(
-              { err, model, collection: subject.collection },
-              '[plugin-ai-policy] Failed to record spend',
-            );
-          });
+          await addSpend(req, subject, cost, options)
+            .catch((err: unknown) => {
+              req.frogbot.logger.error(
+                { err, model, collection: subject.collection },
+                '[plugin-ai-policy] Failed to record spend',
+              );
+            })
+            .finally(() => settle(subject));
         }
       };
 

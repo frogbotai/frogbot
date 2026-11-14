@@ -308,33 +308,40 @@ describe('aiPolicyPlugin', () => {
     expect(result.ai!.hooks!.afterOperation).toHaveLength(2);
   });
 
-  it('schedules a monthly spend reset that zeros only older counters', async () => {
+  it('schedules an idempotent reset that zeros only older counters, each checked as it is written', async () => {
     const result = await apply(
       config({ jobs: { tasks: [{ slug: 'other', handler: () => ({ output: {} }) }] } }),
     );
 
     const task = result.jobs!.tasks!.find(({ slug }) => slug === 'plugin-ai-policy-reset-spend');
-    const update = vi.fn();
-    const req = { frogbot: { update } };
+    const find = vi.fn(() => Promise.resolve({ docs: [{ id: 'c1' }, { id: 'c2' }] }));
+    const updateOne = vi.fn();
+    const req = { frogbot: { find, db: { updateOne } } };
 
     expect(result.jobs!.tasks!.map(({ slug }) => slug)).toEqual([
       'other',
       'plugin-ai-policy-reset-spend',
     ]);
-    expect(task?.schedule).toEqual([{ cron: '0 0 1 * *', queue: 'plugin-ai-policy-reset-spend' }]);
+    expect(task?.schedule).toEqual([
+      { cron: '0 * 1,2 * *', queue: 'plugin-ai-policy-reset-spend' },
+    ]);
 
     await (task!.handler as (args: unknown) => Promise<unknown>)({ req });
 
     const period = new Date().toISOString().slice(0, 7);
+    const stale = { period: { less_than: period } };
 
-    expect(update).toHaveBeenCalledTimes(1);
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({
+    expect(find).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'plugin-ai-policy-spend', where: stale }),
+    );
+    expect(updateOne.mock.calls.map(([args]) => args)).toEqual(
+      ['c1', 'c2'].map((id) => ({
         collection: 'plugin-ai-policy-spend',
-        where: { period: { not_equals: period } },
+        where: { and: [{ id: { equals: id } }, stale] },
         data: { amount: 0, period },
-        overrideAccess: true,
-      }),
+        options: { atomic: true },
+        returning: false,
+      })),
     );
   });
 });

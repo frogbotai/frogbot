@@ -283,7 +283,6 @@ describe('recording spend under parallel gateway calls', () => {
 
     await setCounter('accounts', owner.id, { amount: 50, period: lastMonth() });
 
-    const target = await counterOf('accounts', owner.id);
     const { db } = booted.payload;
     const updateOne = db.updateOne.bind(db);
     const updateMany = db.updateMany.bind(db);
@@ -305,7 +304,7 @@ describe('recording spend under parallel gateway calls', () => {
     };
 
     vi.spyOn(db, 'updateOne').mockImplementation(async (args) => {
-      await race(args.collection === counters && args.id === target?.id);
+      await race(args.collection === counters);
 
       return updateOne(args);
     });

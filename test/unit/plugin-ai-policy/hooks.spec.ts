@@ -212,6 +212,36 @@ describe('plugin-ai-policy hooks', () => {
     release();
   });
 
+  it('counts a spend write still running in the budget check, once', async () => {
+    const hooks = createPolicyHooks({ authCollection: 'users' });
+    const db = fakeDB([{ key: 'users:user-1' }]);
+    const user = { id: 'user-1', collection: 'users', monthlyBudget: 5 };
+    let release = () => {};
+
+    db.updateOne.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve(null);
+        }),
+    );
+
+    const { req } = request({ db, user, transactionID: 1 });
+
+    await settle(hooks, { req });
+
+    await expect(hooks.beforeOperation({ req } as never)).rejects.toMatchObject({
+      code: 'budget_exceeded',
+    });
+
+    user.monthlyBudget = 10;
+    release();
+
+    await vi.waitFor(async () => {
+      expect(db.counters[0].amount).toBe(6);
+      await expect(hooks.beforeOperation({ req } as never)).resolves.toBeUndefined();
+    });
+  });
+
   it('logs a failed spend write without failing the operation', async () => {
     const hooks = createPolicyHooks({ authCollection: 'users' });
     const db = fakeDB();

@@ -6,10 +6,26 @@ const names = new Set(['models', 'monthlyBudget', 'spendCounter', 'spendThisPeri
 
 const spendNames = new Set(['spendCounter', 'spendThisPeriodUSD']);
 
-function keepSpendShape(field: Field): Record<string, unknown> {
-  const { type, virtual, relationTo } = field as Record<string, unknown>;
+type FieldHooks = { afterRead?: unknown[] } & Record<string, unknown>;
 
-  return { type, virtual, relationTo, hasMany: false, localized: false };
+function keepSpendShape(field: Field, override: Field): Record<string, unknown> {
+  const { type, virtual, relationTo } = field as Record<string, unknown>;
+  const hooks = (field as { hooks?: FieldHooks }).hooks;
+  const overrideHooks = (override as { hooks?: FieldHooks }).hooks;
+
+  return {
+    type,
+    virtual,
+    relationTo,
+    hasMany: false,
+    localized: false,
+    ...(hooks && {
+      hooks: {
+        ...overrideHooks,
+        afterRead: [...(hooks.afterRead ?? []), ...(overrideHooks?.afterRead ?? [])],
+      },
+    }),
+  };
 }
 
 /** The link to the subject's spend counter, and this month's spend read through it. */
@@ -28,6 +44,7 @@ export function createSpendFields(custom?: Record<string, unknown>): Field[] {
       label: 'Monthly Spend (USD)',
       virtual: 'spendCounter.amount',
       admin: { readOnly: true, position: 'sidebar' },
+      hooks: { afterRead: [({ value }) => value ?? 0] },
       ...(custom && { custom }),
     }),
   ];
@@ -85,7 +102,7 @@ export function mergePolicyFields(fields: Field[], policy: Field[]): Field[] {
       ...mergeObject('access', field, override),
       ...mergeObject('custom', field, override),
       ...('options' in field && { options: field.options }),
-      ...('name' in field && spendNames.has(field.name) && keepSpendShape(field)),
+      ...('name' in field && spendNames.has(field.name) && keepSpendShape(field, override)),
     } as Field;
   });
 

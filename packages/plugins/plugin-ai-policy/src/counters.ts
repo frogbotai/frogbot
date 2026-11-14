@@ -156,24 +156,65 @@ export async function addSpend(
   });
 }
 
-/** This month's spend per subject, read from the counters so the budget check never sees a stale user. */
+const PENDING_SPEND = 'plugin-ai-policy:pendingSpend';
+
+function pendingSpend(req: FrogBotRequest): Map<string, number> {
+  req.context ??= {};
+
+  const existing = req.context[PENDING_SPEND];
+
+  if (existing instanceof Map) return existing as Map<string, number>;
+
+  const created = new Map<string, number>();
+
+  req.context[PENDING_SPEND] = created;
+
+  return created;
+}
+
+/** Counts `cost` against the subjects for this request until `settle` says its write finished. */
+export function holdSpend(
+  req: FrogBotRequest,
+  subjects: SpendSubject[],
+  cost: number,
+): (subject: SpendSubject) => void {
+  const pending = pendingSpend(req);
+  const change = (subject: SpendSubject, by: number) => {
+    const key = counterKey(subject);
+    const next = (pending.get(key) ?? 0) + by;
+
+    if (next > 1e-9) pending.set(key, next);
+    else pending.delete(key);
+  };
+
+  subjects.forEach((subject) => change(subject, cost));
+
+  return (subject) => change(subject, -cost);
+}
+
+/**
+ * This month's spend per subject: the committed counters, read outside the caller's transaction
+ * so a snapshot can't hide them, plus what this request charged that isn't written yet.
+ */
 export async function readSpend(
   req: FrogBotRequest,
   subjects: SpendSubject[],
 ): Promise<Map<string, number>> {
   const keys = subjects.map(counterKey);
+  const pending = new Map(pendingSpend(req));
   const { docs } = await req.frogbot.find({
     collection: SPEND_COUNTERS_SLUG,
     where: { and: [{ key: { in: keys } }, { period: { equals: currentPeriod() } }] },
     depth: 0,
     limit: keys.length,
     overrideAccess: true,
-    req,
   });
 
-  return new Map(
+  const committed = new Map(
     docs.map((doc) => [String(doc.key), typeof doc.amount === 'number' ? doc.amount : 0]),
   );
+
+  return new Map(keys.map((key) => [key, (committed.get(key) ?? 0) + (pending.get(key) ?? 0)]));
 }
 
 export function spendOf(spend: Map<string, number>, subject: SpendSubject): number {
