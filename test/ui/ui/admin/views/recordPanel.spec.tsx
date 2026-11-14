@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   docInfo: {} as Record<string, unknown>,
   fields: [{ name: 'title', type: 'text' }] as Array<Record<string, unknown>>,
+  leave: undefined as undefined | { onConfirm: () => void },
   mostRecentUpdate: undefined as Record<string, unknown> | undefined,
   openModal: vi.fn(),
   push: vi.fn(),
@@ -14,7 +15,11 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@payloadcms/ui', () => ({
-  ConfirmationModal: () => null,
+  ConfirmationModal: (props: { modalSlug: string; onConfirm: () => void }) => {
+    if (props.modalSlug === 'fb-record-panel-leave') mocks.leave = props;
+
+    return null;
+  },
   LoadingOverlay: () => null,
   RenderFields: () => null,
   toast: { error: vi.fn() },
@@ -464,6 +469,26 @@ describe('record panel drill-in', () => {
 
     expect(mocks.openModal).toHaveBeenCalledWith('fb-record-panel-leave');
     expect(panel.openId).toBe('2');
+  });
+
+  it('asks once about edits made before back, after they are confirmed away', async () => {
+    render(<Tree />);
+    await openFromView('1', 'Budget feature');
+    act(() => panel.open('2', { from: 'panel' }));
+    act(() => panel.setForm({ modified: true, title: 'Spec the cap rules' }));
+    const resolve = pendingFetch();
+
+    act(() => panel.back());
+    act(() => mocks.leave!.onConfirm());
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    resolve();
+
+    await waitFor(() =>
+      expect(mocks.openModal.mock.calls.length > 1 || panel.openId === '1').toBe(true),
+    );
+
+    expect(mocks.openModal).toHaveBeenCalledTimes(1);
+    expect(panel.openId).toBe('1');
   });
 
   it('still shows the collection name after going back to a record opened from a link', async () => {
