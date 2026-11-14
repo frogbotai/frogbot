@@ -112,8 +112,11 @@ describe('frogbot deploy', () => {
       {
         code: 'UNKNOWN_TARGET',
         message: '"dojo" isn\'t a deploy target.',
-        fix: 'Name one of: docker, fly, gcp, aws, azure. A target a plugin adds needs that plugin in `plugins` in frogbot.config.ts.',
+        fix: 'Add `dojo()` from `@frogbotai/plugin-dojo` to `plugins` in frogbot.config.ts.',
       },
     ]);
+    expect(io.stderr()[1]).toBe(
+      '[frogbot] Add `dojo()` from `@frogbotai/plugin-dojo` to `plugins` in frogbot.config.ts.',
+    );
   });
 });

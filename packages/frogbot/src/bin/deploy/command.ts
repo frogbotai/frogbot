@@ -21,6 +21,8 @@ export const coreDeployTargets: Record<(typeof coreDeployTargetNames)[number], D
   azure: azureTarget,
 };
 
+const dojoPackage = '@frogbotai/plugin-dojo';
+
 const sharedUsage = '[--dry-run] [--json] [--no-interactive] [--env-file <path>]';
 
 function targetList(targets: Record<string, DeployTarget>): string {
@@ -51,7 +53,9 @@ export async function deploy(
 
   if (!target || !name) {
     const pluginHint =
-      'A target a plugin adds needs that plugin in `plugins` in frogbot.config.ts.';
+      name === 'dojo'
+        ? `Add \`dojo()\` from \`${dojoPackage}\` to \`plugins\` in frogbot.config.ts.`
+        : 'A target a plugin adds needs that plugin in `plugins` in frogbot.config.ts.';
 
     const issue = loadError
       ? {
@@ -62,13 +66,16 @@ export async function deploy(
       : {
           code: 'UNKNOWN_TARGET',
           message: name ? `"${name}" isn't a deploy target.` : 'No deploy target named.',
-          fix: `Name one of: ${Object.keys(targets).join(', ')}. ${pluginHint}`,
+          fix:
+            name === 'dojo'
+              ? pluginHint
+              : `Name one of: ${Object.keys(targets).join(', ')}. ${pluginHint}`,
         };
 
     if (loadError) stderr.write(`${formatCliError(loadError)}\n`);
     else {
       stderr.write(
-        `${name ? `[frogbot] ${issue.message}\n` : ''}[frogbot] usage: frogbot deploy <target> ${sharedUsage}\nTargets:\n${targetList(targets)}\n`,
+        `${name ? `[frogbot] ${issue.message}\n` : ''}${name === 'dojo' ? `[frogbot] ${pluginHint}\n` : ''}[frogbot] usage: frogbot deploy <target> ${sharedUsage}\nTargets:\n${targetList(targets)}\n`,
       );
     }
 
