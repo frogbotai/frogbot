@@ -201,7 +201,7 @@ describe('buildPaletteModel', () => {
       config: withSettings,
       i18n: {
         ...i18n,
-        t: (key: string) => (key === 'general:settings' ? 'Réglages' : i18n.t(key)),
+        t: (key) => (key === 'general:settings' ? 'Réglages' : i18n.t(key)),
       },
       permissions: permissionsFor({ ...permissions.collections, members: { read: true } }),
       visibleEntities: {

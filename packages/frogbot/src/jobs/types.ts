@@ -11,11 +11,24 @@ import type {
   WorkflowHandler as PayloadWorkflowHandler,
 } from 'payload';
 
+import type { CollectionAccess } from '../collections/config/types.js';
 import type { FrogBotTypes } from '../types/generated.js';
+import type { PayloadCollectionConfig } from '../types/payload.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { Foreach, Parallel, WaitFor, WaitpointOptions } from './waitpoints/types.js';
 
-export type JobsConfig = Omit<PayloadJobsConfig, 'tasks' | 'workflows'> & {
+/** The jobs collection in `jobsCollectionOverrides`. Its access functions get `FrogBotRequest`. */
+export type JobsCollectionConfig = Omit<PayloadCollectionConfig, 'access'> & {
+  access?: CollectionAccess;
+};
+
+export type JobsConfig = Omit<
+  PayloadJobsConfig,
+  'jobsCollectionOverrides' | 'tasks' | 'workflows'
+> & {
+  jobsCollectionOverrides?: (args: {
+    defaultJobsCollection: JobsCollectionConfig;
+  }) => JobsCollectionConfig;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Payload types its task list the same way
   tasks?: TaskConfig<any>[];
   waitpoints?: Partial<WaitpointOptions>;

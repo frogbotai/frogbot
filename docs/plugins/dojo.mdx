@@ -26,11 +26,17 @@ export default buildConfig({
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
+| `badge` | `boolean` | `true` | Adds the ["Made with FrogBot" badge](#on-dojo) to every page on Dojo. Set `false` to leave it out. |
 | `signIn` | `boolean` | `true` | Adds [Sign in with Dojo](#sign-in-with-dojo) on Dojo. Set `false` to leave the app's sign-in methods alone. |
 
 ## Commands
 
-`dojo()` adds `frogbot dojo`, which does everything a person can do in Dojo from the terminal, for people and coding agents, and `frogbot share`, which is `frogbot dojo apps share` with the same flags. In an app that lists `dojo()`, run them as [plugin commands](/getting-started/cli#plugin-commands). The package also installs its own bin, so the same commands run without an app, or in an app that doesn't list `dojo()`:
+`dojo()` adds two commands:
+
+- `frogbot dojo` does everything a person can do in Dojo from the terminal, for people and coding agents.
+- `frogbot share` is `frogbot dojo apps share` with the same flags.
+
+In an app that lists `dojo()`, run them as [plugin commands](/getting-started/cli#plugin-commands). The package also installs its own bin, so the same commands run without an app, or in an app that doesn't list `dojo()`:
 
 ```bash
 npx frogbot share
@@ -51,7 +57,7 @@ npx @frogbotai/plugin-dojo apps pull deals
 | `members add` | `<email>`, `--role owner\|member`, `--workspace` | Adds someone by email; they join when they sign in with it. |
 | `members role` | `<email> <role>`, `--workspace` | Changes a member's role. |
 | `members remove` | `<email>`, `--workspace`, `--yes` | Removes a member, or yourself. |
-| `apps share` | `--app`, `--data`, `--no-data`, `--replace-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys` | Uploads the app in this folder to Dojo, builds it and prints its live URL. See [`dojo apps share`](/getting-started/cli#dojo-apps-share). |
+| `apps share` | `--app`, `--data`, `--no-data`, `--replace-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys`, `--wait` | Uploads the app in this folder to Dojo, builds it and prints its live URL. See [`dojo apps share`](/getting-started/cli#dojo-apps-share). |
 | `apps pull` | `<app>`, `--data` | Downloads an app you own or edit into a new folder; owners can bring its data with `--data`. See [`dojo apps pull`](/getting-started/cli#dojo-apps-pull). |
 | `apps logs` | `<app>`, `--follow` | Prints an app's recent logs, or follows them. See [`dojo apps logs`](/getting-started/cli#dojo-apps-logs). |
 | `apps list` | `--workspace` | Lists every app you can see. |
@@ -76,15 +82,19 @@ npx @frogbotai/plugin-dojo apps pull deals
 | `billing status` | `--workspace` | Shows a workspace's plan, status and paid apps. |
 | `billing manage` | `--workspace` | Prints the link to change the card, see invoices or cancel. |
 
-`<app>` is the app's slug, such as `deals` for `deals.frogbot.app`, or its id. Digits that are one app's id and another app's slug are refused; name that app by its id. Lists read every page. `frogbot dojo --help`, `frogbot dojo apps --help` and `frogbot dojo apps share --help` list the commands, a noun's verbs and a verb's flags. An unknown command or verb prints the list and exits with code `2`.
+- `<app>` is the app's slug, such as `deals` for `deals.frogbot.app`, or its id. Digits that are one app's id and another app's slug are refused. Name that app by its id.
+- Lists read every page.
+- `frogbot dojo --help`, `frogbot dojo apps --help`, and `frogbot dojo apps share --help` list the commands, a noun's verbs, and a verb's flags.
+- An unknown command or verb prints the list and exits with code `2`.
 
 ### Scripts and agents
 
-- **`--json`** on any command prints one JSON value on stdout and nothing else. Sign-in links, progress and build lines go to stderr, and a failed command prints nothing on stdout. `apps share` (and `frogbot share`) prints the same `{ target, ok, dryRun, issues, result }` object as [`frogbot deploy --json`](/deployment/overview), even when it fails. `apps logs --follow` never ends, so it refuses `--json`.
-- **`FROGBOT_DOJO_TOKEN`** is a Dojo API key every command uses, ahead of the stored sign-in. When Dojo refuses it, the command exits with code `1` instead of starting a browser sign-in. In CI (`CI` set, no terminal), a command with no token and no stored sign-in exits `1` at once, naming the variable. `FROGBOT_DOJO_URL` targets another Dojo. Sharing never uploads either one from `.env` as an app key.
+- **`--json`** on any command prints one JSON value on stdout and nothing else. Sign-in links, progress and build lines go to stderr. A failed command prints `{ "ok": false, "code", "error" }` on stdout, with Dojo's `status` and `url` when Dojo refused it, and exits `1`, or `2` for bad usage (`USAGE_ERROR`, including an unknown command or verb), `3` for a sign-in (`SIGN_IN_REQUIRED`) or `4` for a payment (`payment_required`) that nobody is there to give. The codes are the ones in [When a deploy stops](/deployment/overview#when-a-deploy-stops). `apps share` (and `frogbot share`) prints the same `{ target, ok, dryRun, issues, result }` object as [`frogbot deploy --json`](/deployment/overview), even when it fails. `apps logs --follow` never ends, so it refuses `--json`.
+- **`FROGBOT_DOJO_TOKEN`** is a Dojo API key every command uses, ahead of the stored sign-in. When Dojo refuses it, the command exits with code `3` instead of starting a browser sign-in; `whoami` exits `1`, because it only reports who is signed in. In CI (`CI` set, no terminal), a command with no token and no stored sign-in exits `3` at once, naming the variable. `FROGBOT_DOJO_URL` targets another Dojo. Sharing never uploads either one from `.env` as an app key.
 - **No terminal.** Every question has a flag, or fails naming it. `apps delete`, `members remove`, `keys revoke`, `sharing leave`, `env unset`, `domains clear`, and `domains set` when it replaces a domain, ask before acting, and need `--yes` without a terminal. `apps delete` looks the app up first and names it in the question.
+- **Nobody to wait for.** Without a terminal, a command that needs a sign-in exits `3` with the link and code, and keeps the code so the next run signs in once the person confirms it; one that needs a payment exits `4` with the upgrade link. Under `--json` the error adds `needs`, `link` and, for a sign-in, `userCode`. `--wait` waits instead.
 - **Refusals.** A `402` prints Dojo's upgrade link. A `403` says which access the command needs, such as owner access to the app.
-- **Creating keys.** `keys create` mints a key with the CLI's sign-in, using the API keys plugin's [keys that mint keys](/plugins/api-keys#keys-that-mint-keys): the new key is never broader than the sign-in, and `keys list` shows which key made it. When Dojo doesn't let the sign-in create keys, the command prints the link to create one in the browser and exits with code `1`.
+- **Creating keys.** `keys create` mints a key with the CLI's sign-in, using the API keys plugin's [keys that mint keys](/plugins/api-keys#keys-that-mint-keys): the new key is never broader than the sign-in, and `keys list` shows which key made it. When Dojo doesn't let the sign-in create keys, the command says which sign-ins can (a browser sign-in, or a key made with `--can-mint`) and exits with code `1`.
 - **People stay in the loop for two things.** Signing up and confirming a sign-in happen in the browser, through `login`, and so does paying: `billing manage` prints the link.
 
 ## On Dojo
@@ -97,7 +107,7 @@ Outside Dojo, `dojo()` only adds the `dojo` and `share` commands and the `dojo` 
 - **AI.** When every provider in `ai.providers` is a built-in one with no key, they are replaced by one `dojo` provider that calls Dojo's gateway. Model IDs such as `openai/gpt-5.4-mini` keep working. Chat, embeddings and images work through the gateway; transcription, speech and video need your own key. An app with no `ai` block, or with any provider key of its own, is left unchanged.
 - **Jobs.** Dojo wakes the app to run due jobs. Everyone else gets the app's own `jobs.access.run`.
 - **Sign-in.** The login page gets "Continue with Dojo". See [Sign in with Dojo](#sign-in-with-dojo).
-- **Badge.** Every FrogBot page gets a small "Made with FrogBot · Share your own" link in the bottom-left corner. Visitors can close it for the rest of their browser session.
+- **Badge.** Every FrogBot page gets a small "Made with FrogBot · Share your own" link in the bottom-left corner. Visitors can close it for the rest of their browser session. `dojo({ badge: false })` turns it off.
 
 ### Sign in with Dojo
 
@@ -116,7 +126,13 @@ Turn it off with one line:
 plugins: [dojo({ signIn: false })]
 ```
 
-Dojo gives each app its own OAuth client, in `DOJO_OAUTH_CLIENT_ID`, `DOJO_OAUTH_CLIENT_SECRET` and `DOJO_URL`. Sign-in never stops the app from starting: when one of them is missing, or the collection can't take a sign-in method (see [Collection requirements](/authentication/sign-in#collection-requirements)), the plugin adds nothing and logs why at start, for example `[plugin-dojo] Sign in with Dojo is off for 'users': DOJO_URL is not set.` The same happens when the collection already has a method with the slug `dojo`.
+Dojo gives each app its own OAuth client, in `DOJO_OAUTH_CLIENT_ID`, `DOJO_OAUTH_CLIENT_SECRET`, and `DOJO_URL`.
+
+Sign-in never stops the app from starting. In these cases, the plugin adds nothing and logs why at start, for example `[plugin-dojo] Sign in with Dojo is off for 'users': DOJO_URL is not set.`:
+
+- One of the three variables is missing.
+- The collection can't take a sign-in method (see [Collection requirements](/authentication/sign-in#collection-requirements)).
+- The collection already has a method with the slug `dojo`.
 
 Dojo passes the email of the person who created the app in `DOJO_FIRST_USER_EMAIL`. The plugin creates the first user from it only when it added "Continue with Dojo", so `signIn: false` turns that off too. A failure logs `[plugin-dojo] Couldn't add <email> as the first user: <reason>.`
 

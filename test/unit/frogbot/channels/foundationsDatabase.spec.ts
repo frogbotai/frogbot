@@ -13,6 +13,7 @@ import { createChannelStateAdapter } from '../../../../packages/frogbot/src/chan
 import { resolveChannelTask } from '../../../../packages/frogbot/src/channels/task.js';
 import { buildConfig } from '../../../../packages/frogbot/src/config/build.js';
 import { type FrogBot, initFrogBotFromPayload } from '../../../../packages/frogbot/src/frogbot.js';
+import type { JobsConfig } from '../../../../packages/frogbot/src/jobs/types.js';
 import { createSlackAdapter } from '../../../../packages/pieces/piece-slack/node_modules/@chat-adapter/slack/dist/index.js';
 import { channelFixture } from './helpers.js';
 
@@ -28,7 +29,7 @@ describe('channel foundations with SQLite', () => {
       db: sqliteAdapter({ client: { url: `file:${directory}/channels.db` }, push: true }),
       typescript: { autoGenerate: false },
       admin: { importMap: { autoGenerate: false } },
-      jobs: { tasks: resolveChannelTask().tasks },
+      jobs: { tasks: resolveChannelTask().tasks as JobsConfig['tasks'] },
       collections: [
         { slug: 'users', auth: true, fields: [] },
         { slug: 'chats', chat: true, fields: [] },

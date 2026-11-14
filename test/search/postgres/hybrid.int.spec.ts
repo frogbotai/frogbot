@@ -44,7 +44,7 @@ describePostgres(`postgres hybrid search [${driver}]`, () => {
 
     const add = (component: 'lexical' | 'vector', hits: typeof lexical.hits) => {
       hits.forEach(({ doc, score }, index) => {
-        const id = doc.id as number;
+        const id = doc.id;
         const entry = fused.get(id) ?? {
           id,
           score: 0,

@@ -1,6 +1,7 @@
+import { apiKeyChallenge, apiKeyRefusal } from '@frogbotai/plugin-api-keys';
 import type { AuthorizedMCP, SanitizedMCPPluginConfig } from '@payloadcms/plugin-mcp';
 import { filterMCPItems } from '@payloadcms/plugin-mcp/internal';
-import type { AuthStrategy, AuthStrategyResult } from 'frogbot';
+import { APIError, type AuthStrategy, type AuthStrategyResult } from 'frogbot';
 import {
   attachRegisteredFrogBot,
   executeAuthStrategy,
@@ -55,16 +56,19 @@ export async function authorizeMcp({
   }
 
   if (!user) {
-    if (resourceMetadataURL) {
+    const refusal = apiKeyRefusal(frogbotReq);
+    const challenge = [
+      resourceMetadataURL && `resource_metadata="${resourceMetadataURL}"`,
+      refusal && apiKeyChallenge(refusal),
+    ].filter(Boolean);
+
+    if (challenge.length) {
       req.responseHeaders = new Headers(req.responseHeaders);
 
-      req.responseHeaders.set(
-        'WWW-Authenticate',
-        `Bearer resource_metadata="${resourceMetadataURL}"`,
-      );
+      req.responseHeaders.set('WWW-Authenticate', `Bearer ${challenge.join(', ')}`);
     }
 
-    throw new UnauthorizedError();
+    throw refusal ? new APIError(refusal, 401, null, true) : new UnauthorizedError();
   }
 
   req.user = user as PayloadRequest['user'];

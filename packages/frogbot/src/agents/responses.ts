@@ -51,7 +51,8 @@ export function errorResponse(
     );
   }
 
-  const code = error instanceof TurnError ? error.code : undefined;
+  const code =
+    error instanceof TurnError || error instanceof AgentServiceError ? error.code : undefined;
 
   return Response.json(
     {

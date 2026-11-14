@@ -59,4 +59,8 @@ Handlers run after the endpoint responds, so a slow handler doesn't make Stripe 
 
 ### REST proxy
 
-`rest` turns on an endpoint that runs a Stripe SDK method on the server, for example `{ "stripeMethod": "subscriptions.list", "stripeArgs": [{ "customer": "cus_123" }] }`. The request must be authenticated. `allowedMethods` must be a non-empty list of exact method names, with no wildcards; any other method returns `400`. `access` decides who may call the endpoint and defaults to users with admin access.
+`rest` turns on an endpoint that runs a Stripe SDK method on the server, for example `{ "stripeMethod": "subscriptions.list", "stripeArgs": [{ "customer": "cus_123" }] }`.
+
+- The request must be authenticated.
+- `allowedMethods` must be a non-empty list of exact method names, with no wildcards. Any other method returns `400`.
+- `access` decides who may call the endpoint and defaults to users with admin access.

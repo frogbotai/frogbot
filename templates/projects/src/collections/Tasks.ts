@@ -1,8 +1,11 @@
 import type { CollectionConfig } from 'frogbot';
 import { autonumberField, autonumberKeyField } from 'frogbot';
 
+import { reassignAccess, recordAccess } from '../roles';
+
 export const Tasks: CollectionConfig = {
   slug: 'tasks',
+  access: recordAccess('assignee'),
   admin: {
     icon: 'check-list',
     useAsTitle: 'title',
@@ -53,7 +56,12 @@ export const Tasks: CollectionConfig = {
         { label: 'Done', value: 'done', color: 'green' },
       ],
     },
-    { name: 'assignee', type: 'relationship', relationTo: 'users' },
+    {
+      name: 'assignee',
+      type: 'relationship',
+      relationTo: 'users',
+      access: reassignAccess,
+    },
     { name: 'startDate', type: 'date' },
     { name: 'dueDate', type: 'date' },
     { name: 'description', type: 'textarea' },

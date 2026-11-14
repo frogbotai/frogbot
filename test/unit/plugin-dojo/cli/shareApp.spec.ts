@@ -172,7 +172,7 @@ describe('frogbot share in CI', () => {
 
     const result = await run(['--app', 'deals', '--yes', '--no-data']);
 
-    expect(result.code).toBe(1);
+    expect(result.code).toBe(3);
     expect(result.stderr().join('\n')).toContain('Set FROGBOT_DOJO_TOKEN to a Dojo API key');
     expect(result.stdout().join('\n')).not.toContain('Code:');
     expect(dojo.paths()).not.toContain('POST /api/cli/device/code');

@@ -4,7 +4,9 @@ description: Database transactions are fully supported within FrogBot.
 keywords: ["database", "transactions", "sql", "mongodb", "postgres", "typescript", "node", "nextjs"]
 ---
 
-Database transactions allow your application to make a series of database changes in an all-or-nothing commit. Consider an HTTP request that creates a new **Order** and has an `afterChange` hook to update the stock count of related **Items**. If an error occurs when updating an **Item** and an HTTP error is returned to the user, you would not want the new **Order** to be persisted or any other items to be changed either. This kind of interaction with the database is handled seamlessly with transactions.
+Database transactions let your application make a series of database changes in an all-or-nothing commit.
+
+Consider an HTTP request that creates a new **Order** and has an `afterChange` hook that updates the stock count of related **Items**. If updating an **Item** fails and the user gets an HTTP error, the new **Order** should not be saved, and no other items should change. Transactions handle this for you.
 
 By default, FrogBot will use transactions for all data changing operations, as long as it is supported by the configured database. Database changes are contained within all FrogBot operations and any errors thrown will result in all changes being rolled back without being committed. When transactions are not supported by the database, FrogBot will continue to operate as expected without them.
 

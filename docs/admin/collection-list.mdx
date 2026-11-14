@@ -40,9 +40,24 @@ export const Deals: CollectionConfig = {
 | `true` | Every column whose field can edit in a cell. |
 | `string[]` | Only the named fields, by name or dot path (`address.city`). |
 
-These fields edit in the cell: `text`, `textarea`, `email`, `number`, `select`, `checkbox`, `date` and single `relationship` fields, and every [field kind](/fields/overview#field-kinds-frogbotfields) from `frogbot/fields`, such as `moneyField` and `ratingField`. A cell renders the field's own input, so a custom `Field` component edits in the cell too: see [Fields in list cells](/fields/overview#fields-in-list-cells).
+These fields edit in the cell:
 
-Every other cell keeps opening the record in the [record panel](/admin/record-panel): `hasMany` fields, other field types, the linked first column, and fields the person can't change. A cell is never editable when the person may not update that record or field, or the field, or a group, row or collapsible around it, is read-only, hidden or disabled, or the field is virtual. Access is checked for each row with its record, as on the edit page, so an `access.update` that returns a query or reads `doc` keeps the rows it denies plain. Startup fails on an `editable` entry that names no field, or one that never edits in a cell: `richText`, `array`, `blocks`, `group`, `tabs`, `upload`, `join`, `autonumberField` and its key field.
+- `text`, `textarea`, `email`, `number`, `select`, `checkbox`, `date`, and single `relationship` fields.
+- Every [field kind](/fields/overview#field-kinds-frogbotfields) from `frogbot/fields`, such as `moneyField` and `ratingField`.
+
+A cell renders the field's own input, so a custom `Field` component edits in the cell too. See [Fields in list cells](/fields/overview#fields-in-list-cells).
+
+Every other cell keeps opening the record in the [record panel](/admin/record-panel): `hasMany` fields, other field types, the linked first column, and fields the person can't change.
+
+A cell is never editable when any of these is true:
+
+- The person may not update that record or field.
+- The field, or a group, row, or collapsible around it, is read-only, hidden, or disabled.
+- The field is virtual.
+
+Access is checked for each row with its record, as on the edit page. An `access.update` that returns a query or reads `doc` therefore keeps the rows it denies plain.
+
+Startup fails on an `editable` entry that names no field, or one that never edits in a cell: `richText`, `array`, `blocks`, `group`, `tabs`, `upload`, `join`, `autonumberField`, and its key field.
 
 ### Keys
 
@@ -58,7 +73,12 @@ Clicking anywhere else saves a valid change. After an edit, focus returns to the
 
 ### Saving
 
-A save is one `PATCH` of that field, so validation, hooks and access run as on the edit page. An invalid value shows the field's error in the cell and sends nothing. A failed save shows the error, and the cell keeps what you typed until you fix it or press Esc. In a collection with drafts, a cell saves a draft and never publishes. A saved cell updates its row and an open record panel showing the same record.
+A save is one `PATCH` of that field, so validation, hooks, and access run as on the edit page.
+
+- **An invalid value** shows the field's error in the cell and sends nothing.
+- **A failed save** shows the error, and the cell keeps what you typed until you fix it or press Esc.
+- **In a collection with drafts,** a cell saves a draft and never publishes.
+- **A saved cell** updates its row, and it updates an open record panel that shows the same record.
 
 ## Summary row
 

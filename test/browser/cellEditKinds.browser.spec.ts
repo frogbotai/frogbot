@@ -61,6 +61,7 @@ test('every kind with an input edits in its cell', async ({ page }) => {
     ['website', 'example.com/pricing', (value) => String(value).includes('example.com/pricing')],
     ['phone', '5551234567', (value) => String(value).replace(/\D/g, '').endsWith('5551234567')],
     ['sku', '0123456789012', (value) => value === '0123456789012'],
+    ['color', '#3B82F6', (value) => value === '#3B82F6'],
     ['blurb', 'Written by hand', (value) => value === 'Written by hand'],
   ];
 

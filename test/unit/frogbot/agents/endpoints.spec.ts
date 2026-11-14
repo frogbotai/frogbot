@@ -266,7 +266,8 @@ describe('agent endpoints', () => {
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({
-      error: "Model 'openai/test' is not allowed for this user",
+      code: 'model-not-allowed',
+      error: "Model 'openai/test' is not allowed for this user. Allowed: 'local/plain'",
     });
     expect(resolveChatContext).not.toHaveBeenCalled();
     expect(streamTurn).not.toHaveBeenCalled();
@@ -526,7 +527,8 @@ describe('agent endpoints', () => {
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({
-      error: `Model '${model}' is not allowed for agent 'support'`,
+      code: 'model-not-allowed',
+      error: `Model '${model}' is not allowed for agent 'support'. Allowed: 'openai/test'`,
     });
     expect(resolveChatContext).not.toHaveBeenCalled();
   });
@@ -542,7 +544,9 @@ describe('agent endpoints', () => {
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({
-      error: "Model 'local/deep' is not allowed for agent 'support'",
+      code: 'model-not-allowed',
+      error:
+        "Model 'local/deep' is not allowed for agent 'support'. Allowed: 'openai/test', 'local/thinker', 'local/plain'",
     });
     expect(resolveChatContext).not.toHaveBeenCalled();
     expect(streamTurn).not.toHaveBeenCalled();
@@ -603,14 +607,16 @@ describe('agent endpoints', () => {
     );
   });
 
+  const NO_REASONING = 'It has no reasoning options';
+
   it.each([
-    ['text/plain', { model: 'local/plain', reasoning: 'high' }, 'local/plain'],
-    ['text/event-stream', { model: 'local/plain', reasoning: 'high' }, 'local/plain'],
-    ['text/plain', { reasoning: 'high' }, 'openai/test'],
-    ['text/plain', { model: 'local/deep', reasoning: 'high' }, 'local/deep'],
+    ['text/plain', { model: 'local/plain', reasoning: 'high' }, 'local/plain', NO_REASONING],
+    ['text/event-stream', { model: 'local/plain', reasoning: 'high' }, 'local/plain', NO_REASONING],
+    ['text/plain', { reasoning: 'high' }, 'openai/test', NO_REASONING],
+    ['text/plain', { model: 'local/deep', reasoning: 'high' }, 'local/deep', "Allowed: 'max'"],
   ])(
     'rejects an unavailable reasoning option before the chat is resolved (%s, %o)',
-    async (accept, selection, model) => {
+    async (accept, selection, model, allowed) => {
       const agent = makeAgent();
 
       agent.config.model.options = [OPENAI_TEST, LOCAL_THINKER, LOCAL_DEEP, LOCAL_PLAIN];
@@ -621,7 +627,8 @@ describe('agent endpoints', () => {
 
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({
-        error: `Reasoning option 'high' is not available for model '${model}'`,
+        code: 'reasoning-unavailable',
+        error: `Reasoning option 'high' is not available for model '${model}'. ${allowed}`,
       });
       expect(resolveChatContext).not.toHaveBeenCalled();
       expect(streamTurn).not.toHaveBeenCalled();
@@ -635,7 +642,8 @@ describe('agent endpoints', () => {
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({
-      error: "Model 'local/thinker' is not allowed for agent 'support'",
+      code: 'model-not-allowed',
+      error: "Model 'local/thinker' is not allowed for agent 'support'. Allowed: 'openai/test'",
     });
     expect(resolveChatContext).not.toHaveBeenCalled();
   });
@@ -778,12 +786,64 @@ describe('agent endpoints', () => {
     agent.config.access = () => false;
 
     const response = await postHandler()(
-      makeRequest({ agent, user: null, body: { prompt: 'Hello', chatId: 'chat-7' } }),
+      makeRequest({ agent, body: { prompt: 'Hello', chatId: 'chat-7' } }),
     );
 
     expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      code: 'access-denied',
+      error: "Access denied for agent 'support'",
+    });
     expect(resolveChatContext).not.toHaveBeenCalled();
     expect(streamTurn).not.toHaveBeenCalled();
+  });
+
+  it('asks an anonymous caller to sign in with 401', async () => {
+    const response = await postHandler()(makeRequest({ user: null, body: { prompt: 'Hello' } }));
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      code: 'unauthenticated',
+      error: 'Authentication required',
+    });
+    expect(resolveChatContext).not.toHaveBeenCalled();
+  });
+
+  it('answers 500 with the cause and logs it when the access function throws', async () => {
+    const agent = makeAgent();
+    const crash = new TypeError("Cannot read properties of undefined (reading 'includes')");
+
+    agent.config.access = () => {
+      throw crash;
+    };
+
+    const req = makeRequest({ agent, body: { prompt: 'Hello' } });
+
+    const response = await postHandler()(req);
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      code: 'access-error',
+      error: `Access function for agent 'support' threw: ${String(crash)}`,
+    });
+    expect(req.frogbot.logger.error).toHaveBeenCalledWith(
+      { err: crash, agent: 'support' },
+      '[frogbot] Agent access threw',
+    );
+    expect(resolveChatContext).not.toHaveBeenCalled();
+  });
+
+  it('names the field and reason for invalid messages', async () => {
+    const response = await postHandler()(
+      makeRequest({
+        body: { messages: [{ id: 'm1', role: 'user', parts: [{ type: 'txt', text: 'Hi' }] }] },
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toMatch(
+      /^`messages\[0\]\.parts\[0\]\.type`: expected one of 'text' \| .*'file' \| .*, received 'txt'$/,
+    );
   });
 
   it('runs anonymous turns after agent access succeeds', async () => {

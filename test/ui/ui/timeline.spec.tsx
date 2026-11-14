@@ -53,7 +53,7 @@ const bar = (title: string) =>
 const edgeOf = (title: string, edge: 'end' | 'start') =>
   bar(title).querySelector<HTMLElement>(`[data-edge="${edge}"]`) as HTMLElement;
 
-function pointer(target: EventTarget, type: string, clientX: number) {
+function pointer(target: Element | Window, type: string, clientX: number) {
   fireEvent(target, new MouseEvent(type, { bubbles: true, button: 0, clientX }));
 }
 

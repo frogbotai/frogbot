@@ -21,6 +21,7 @@ import { columnMapFields } from './columns/columnMap.js';
 import { createColumnRewrite, importErrorKey } from './columns/rewrite.js';
 import { importColumnsEndpoint } from './endpoints/importColumns.js';
 import { suggestColumnsEndpoint } from './endpoints/suggestColumns.js';
+import { withExportFixes, withExportTaskDrafts } from './export.js';
 import { ImportLookupError } from './relationships.js';
 
 export type { ImportColumn, ImportColumnMap } from './columns/columnMap.js';
@@ -79,6 +80,8 @@ export const importExportPlugin = definePlugin<ImportExportPluginOptions>({
 
 const importTaskSlug = 'createCollectionImport';
 
+const exportTaskSlug = 'createCollectionExport';
+
 const previewFieldName = 'preview';
 
 const pluginKey = 'plugin-import-export';
@@ -91,9 +94,11 @@ function withColumnMapping(config: Config): Config {
     collections: config.collections?.map(withRowRewrite),
     jobs: config.jobs && {
       ...config.jobs,
-      tasks: config.jobs.tasks?.map((task) =>
-        task.slug === importTaskSlug ? withImportUser(task) : task,
-      ),
+      tasks: config.jobs.tasks?.map((task) => {
+        if (task.slug === importTaskSlug) return withImportUser(task);
+
+        return task.slug === exportTaskSlug ? withExportTaskDrafts(task) : task;
+      }),
     },
   };
 }
@@ -242,7 +247,9 @@ function queueWithRequest(
       },
     };
 
-    return override ? override({ collection: queued }) : queued;
+    const fixed = kind === 'export' ? withExportFixes(queued) : queued;
+
+    return override ? override({ collection: fixed }) : fixed;
   };
 }
 

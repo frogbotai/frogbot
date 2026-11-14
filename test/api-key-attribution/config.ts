@@ -1,6 +1,6 @@
+import type { CaptureStorage } from '@frogbotai/plugin-ai-capture';
+import { aiCapturePlugin } from '@frogbotai/plugin-ai-capture';
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
-import type { CaptureStorage } from '@frogbotai/plugin-capture';
-import { capturePlugin } from '@frogbotai/plugin-capture';
 import type { CollectionConfig } from 'frogbot';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
@@ -64,6 +64,6 @@ export default await buildTestConfig({
       collectionSlug: 'credentials',
       tokenPrefix: 'attr',
     }),
-    capturePlugin({ enabled: true, collectionSlug: 'captures', storage: captureStorage }),
+    aiCapturePlugin({ enabled: true, collectionSlug: 'captures', storage: captureStorage }),
   ],
 });

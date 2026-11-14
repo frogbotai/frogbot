@@ -1,5 +1,7 @@
 export type { AIFieldStatus, AIKind } from '../fields/baseFields/ai/state.js';
 export { aiFieldPaths, isAIFieldInputSet } from '../fields/baseFields/ai/state.js';
+export type { ColorKind } from '../fields/baseFields/color/getHexColor.js';
+export { getHexColor } from '../fields/baseFields/color/getHexColor.js';
 export type {
   DurationFormat,
   DurationKind,

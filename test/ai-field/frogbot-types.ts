@@ -73,6 +73,7 @@ export interface Config {
     issues: Issue;
     reports: Report;
     shouts: Shout;
+    'plugin-ai-policy-spend': PluginAiPolicySpend;
     'usage-logs': UsageLog;
     'frogbot-waitpoints': FrogBotWaitpoint;
   };
@@ -84,6 +85,7 @@ export interface Config {
     issues: IssuesSelect;
     reports: ReportsSelect;
     shouts: ShoutsSelect;
+    'plugin-ai-policy-spend': PluginAiPolicySpendSelect;
     'usage-logs': UsageLogsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
   };
@@ -153,6 +155,7 @@ export interface User {
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
   monthlyBudget?: number | null;
+  spendCounter?: (number | null) | PluginAiPolicySpend;
   /**
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
@@ -180,10 +183,25 @@ export interface User {
         id: string;
         createdAt?: string | null;
         expiresAt: string;
+        refreshCount?: number | null;
+        refreshedAt?: string | null;
       }[]
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugin-ai-policy-spend".
+ */
+export interface PluginAiPolicySpend {
+  id: number;
+  key: string;
+  period: string;
+  amount: number;
+  user?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -427,6 +445,7 @@ export interface UsersSelect {
   role?: boolean;
   models?: boolean;
   monthlyBudget?: boolean;
+  spendCounter?: boolean;
   spendThisPeriodUSD?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
@@ -446,6 +465,8 @@ export interface UsersSelect {
         id?: boolean;
         createdAt?: boolean;
         expiresAt?: boolean;
+        refreshCount?: boolean;
+        refreshedAt?: boolean;
       };
 }
 /**
@@ -524,6 +545,18 @@ export interface ShoutsSelect {
   _summary_error?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugin-ai-policy-spend_select".
+ */
+export interface PluginAiPolicySpendSelect {
+  key?: boolean;
+  period?: boolean;
+  amount?: boolean;
+  user?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }

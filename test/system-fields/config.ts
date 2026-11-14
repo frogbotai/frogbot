@@ -152,7 +152,7 @@ export function buildSystemFieldsConfig({ db }: { db?: FrogBotConfig['db'] }) {
             { name: 'title', type: 'text', required: true },
           ],
           handler: async ({ input, req }) => {
-            await req.payload.update({
+            await req.frogbot.update({
               collection: ticketsSlug,
               id: input.ticket,
               data: { title: input.title },
