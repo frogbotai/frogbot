@@ -138,24 +138,23 @@ export async function addSpend(
       options: { atomic: true },
     })) as Counter | null;
 
-  let counter = (await bump()) ?? (await rollOver());
+  const field = subject.collection === options.authCollection ? 'user' : 'apiKey';
 
-  if (!counter) {
-    const field = subject.collection === options.authCollection ? 'user' : 'apiKey';
-
-    counter = (await db
+  const create = async () =>
+    (await db
       .create({
         collection: SPEND_COUNTERS_SLUG,
         data: { key, period, amount: cost, [field]: subject.id },
       })
-      .catch(async (err: unknown) => {
-        const retried = await bump();
+      .catch(() => null)) as Counter | null;
 
-        if (!retried) throw err;
+  let counter: Counter | null = null;
 
-        return retried;
-      })) as Counter;
+  for (let attempt = 0; attempt < 3 && !counter; attempt += 1) {
+    counter = (await bump()) ?? (await rollOver()) ?? (await create());
   }
+
+  if (!counter) throw new Error(`[plugin-ai-policy] Could not record spend on ${key}.`);
 
   await db.updateOne({
     collection: subject.collection,

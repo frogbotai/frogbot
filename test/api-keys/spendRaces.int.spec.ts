@@ -155,7 +155,12 @@ describe('first spend races across months', () => {
 
     const rows = await counters(id);
 
-    expect(results.every((r) => r.status === 'fulfilled')).toBe(true);
+    expect(results.map((r) => (r.status === 'rejected' ? String(r.reason) : 'ok'))).toEqual([
+      'ok',
+      'ok',
+      'ok',
+      'ok',
+    ]);
     expect(rows).toHaveLength(1);
   });
 
