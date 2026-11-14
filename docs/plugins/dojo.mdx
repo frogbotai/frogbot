@@ -31,7 +31,12 @@ export default buildConfig({
 
 ## Commands
 
-`dojo()` adds `frogbot dojo`, which does everything a person can do in Dojo from the terminal, for people and coding agents, and `frogbot share`, which is `frogbot dojo apps share` with the same flags. In an app that lists `dojo()`, run them as [plugin commands](/getting-started/cli#plugin-commands). The package also installs its own bin, so the same commands run without an app, or in an app that doesn't list `dojo()`:
+`dojo()` adds two commands:
+
+- `frogbot dojo` does everything a person can do in Dojo from the terminal, for people and coding agents.
+- `frogbot share` is `frogbot dojo apps share` with the same flags.
+
+In an app that lists `dojo()`, run them as [plugin commands](/getting-started/cli#plugin-commands). The package also installs its own bin, so the same commands run without an app, or in an app that doesn't list `dojo()`:
 
 ```bash
 npx frogbot share
@@ -77,7 +82,10 @@ npx @frogbotai/plugin-dojo apps pull deals
 | `billing status` | `--workspace` | Shows a workspace's plan, status and paid apps. |
 | `billing manage` | `--workspace` | Prints the link to change the card, see invoices or cancel. |
 
-`<app>` is the app's slug, such as `deals` for `deals.frogbot.app`, or its id. Digits that are one app's id and another app's slug are refused; name that app by its id. Lists read every page. `frogbot dojo --help`, `frogbot dojo apps --help` and `frogbot dojo apps share --help` list the commands, a noun's verbs and a verb's flags. An unknown command or verb prints the list and exits with code `2`.
+- `<app>` is the app's slug, such as `deals` for `deals.frogbot.app`, or its id. Digits that are one app's id and another app's slug are refused. Name that app by its id.
+- Lists read every page.
+- `frogbot dojo --help`, `frogbot dojo apps --help`, and `frogbot dojo apps share --help` list the commands, a noun's verbs, and a verb's flags.
+- An unknown command or verb prints the list and exits with code `2`.
 
 ### Scripts and agents
 
@@ -118,7 +126,13 @@ Turn it off with one line:
 plugins: [dojo({ signIn: false })]
 ```
 
-Dojo gives each app its own OAuth client, in `DOJO_OAUTH_CLIENT_ID`, `DOJO_OAUTH_CLIENT_SECRET` and `DOJO_URL`. Sign-in never stops the app from starting: when one of them is missing, or the collection can't take a sign-in method (see [Collection requirements](/authentication/sign-in#collection-requirements)), the plugin adds nothing and logs why at start, for example `[plugin-dojo] Sign in with Dojo is off for 'users': DOJO_URL is not set.` The same happens when the collection already has a method with the slug `dojo`.
+Dojo gives each app its own OAuth client, in `DOJO_OAUTH_CLIENT_ID`, `DOJO_OAUTH_CLIENT_SECRET`, and `DOJO_URL`.
+
+Sign-in never stops the app from starting. In these cases, the plugin adds nothing and logs why at start, for example `[plugin-dojo] Sign in with Dojo is off for 'users': DOJO_URL is not set.`:
+
+- One of the three variables is missing.
+- The collection can't take a sign-in method (see [Collection requirements](/authentication/sign-in#collection-requirements)).
+- The collection already has a method with the slug `dojo`.
 
 Dojo passes the email of the person who created the app in `DOJO_FIRST_USER_EMAIL`. The plugin creates the first user from it only when it added "Continue with Dojo", so `signIn: false` turns that off too. A failure logs `[plugin-dojo] Couldn't add <email> as the first user: <reason>.`
 

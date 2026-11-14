@@ -87,7 +87,10 @@ Reads go one page per call, so a job can drive a large import a step at a time:
 
 Build the field list from `describeObject` and name the fields in the query: `FIELDS(ALL)` only works with `LIMIT 200` and not at all in Bulk queries. Lookup fields such as `AccountId`, `WhoId`, `WhatId` and `OwnerId` keep the links between records.
 
-Use a Bulk query job for objects over about 2,000 records: Salesforce runs it in the background and it uses far fewer API calls. Bulk queries don't support `FIELDS()`, `OFFSET`, `GROUP BY`, aggregates or parent-to-child subqueries; child-to-parent lookups such as `Account.Name` work. The piece never waits on a job: check it with `getQueryJob` from a later job step.
+Use a Bulk query job for objects over about 2,000 records. Salesforce runs it in the background, and it uses far fewer API calls.
+
+- Bulk queries don't support `FIELDS()`, `OFFSET`, `GROUP BY`, aggregates, or parent-to-child subqueries. Child-to-parent lookups such as `Account.Name` work.
+- The piece never waits on a job. Check it with `getQueryJob` from a later job step.
 
 ## Actions
 

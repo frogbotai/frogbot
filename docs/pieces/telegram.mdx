@@ -58,13 +58,22 @@ To use a self-hosted Bot API server, set `TELEGRAM_API_BASE_URL` to its origin. 
 
 ## Groups, privacy mode, and topics
 
-Bots start with privacy mode on. In a group, the bot then receives commands, messages that mention it, and replies to its own messages. Taps on its buttons always arrive. That is enough to use questions: mention the bot to start, then tap, or reply to the question to type an answer. With privacy mode off (BotFather, `/setprivacy`), the agent also receives the rest of the group's messages once it has joined the conversation.
+Bots start with privacy mode on.
+
+| Privacy mode | In a group, the bot receives |
+| --- | --- |
+| On | Commands, messages that mention it, and replies to its own messages. Taps on its buttons always arrive. |
+| Off (BotFather, `/setprivacy`) | Also the rest of the group's messages, once the agent has joined the conversation. |
+
+Privacy mode on is enough to use questions: mention the bot to start, then tap, or reply to the question to type an answer.
 
 Each chat is one conversation, and each forum topic is its own conversation. Replies in a group without topics, and in a forum's General topic, stay in the group's conversation.
 
 ## Who can answer
 
-Telegram does not tell FrogBot who a participant is, so no one is signed in as a FrogBot user. The agent's default `access` check requires a signed-in user and denies everyone. Write an `access` function that admits the Telegram participants who may use the agent, as in the example above, which also keeps the agent available to signed-in FrogBot users in the admin chat. `req.context.channel.author` holds the participant's numeric Telegram `id`, `username`, and `name`.
+Telegram does not tell FrogBot who a participant is, so no one is signed in as a FrogBot user. The agent's default `access` check requires a signed-in user and denies everyone.
+
+Write an `access` function that admits the Telegram participants who may use the agent, as in the example above. That example also keeps the agent available to signed-in FrogBot users in the admin chat. `req.context.channel.author` holds the participant's numeric Telegram `id`, `username`, and `name`.
 
 The same check decides who may answer a question. An authorized participant can answer a question someone else started. A participant without access gets a short reply saying so, and the question stays open.
 

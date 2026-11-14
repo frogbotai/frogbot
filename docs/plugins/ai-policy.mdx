@@ -28,7 +28,12 @@ export default buildConfig({
 })
 ```
 
-The plugin needs an `ai` configuration and fails at startup without one. It adds its fields to your auth collection. With several auth collections, it uses `admin.user`; otherwise set `authCollection`. Users of other auth collections get no model list, budget or spend tracking. When your app has no auth collection, the plugin adds a `users` collection with a `name` field and the policy fields. It runs with `order: 10`.
+The plugin needs an `ai` configuration and fails at startup without one. It runs with `order: 10`.
+
+It adds its fields to your auth collection:
+
+- With several auth collections, it uses `admin.user`. Set `authCollection` to use another one. Users of other auth collections get no model list, budget, or spend tracking.
+- When your app has no auth collection, the plugin adds a `users` collection with a `name` field and the policy fields.
 
 ## Fields
 
@@ -62,11 +67,30 @@ Apart from the spend counter, the fields have no access rules of their own, so u
 
 ## Enforcement
 
-The plugin wraps each [`ai.access`](/ai/overview#control-access) rule (`generate`, `embed`, `transcribe`, `rerank`, `evaluate`). For each call, your own rule runs first; without one, the user must be signed in. When it allows a signed-in user, a non-empty `models` list must include the model or alias the caller asked for. Otherwise the call fails with a `403` and the code `model_not_allowed`: `Model "<id>" is not allowed by this policy.` Over HTTP, this returns `{ "error": { "message": "...", "type": "invalid_request_error", "code": "model_not_allowed", "param": "model" } }`, the same body as a spent budget; on `/api/v1/messages` it is Anthropic's `{ "type": "error", "error": { "type": "permission_error", "message": "...", "param": "model" } }`.
+The plugin wraps each [`ai.access`](/ai/overview#control-access) rule (`generate`, `embed`, `transcribe`, `rerank`, `evaluate`). For each call:
 
-The same check shapes chat. A user sees only the agent models they may use, and an agent with none is hidden from them. `GET /api/v1/models` likewise lists only the models in a non-empty `models` list. Chat shows a microphone only when the user may use the [transcription model](/chat/ui-chat#voice-input), and a read aloud button only when they may use the [speech model](/chat/ui-chat#read-aloud); for an alias, list the model behind it.
+1. Your own rule runs first. Without one, the user must be signed in.
+2. When the rule allows a signed-in user, a non-empty `models` list must include the model or alias that the caller asked for.
 
-The budget is checked when a call runs, before every AI call a signed-in user makes, agent turns included. When `monthlyBudget` is set and `spendThisPeriodUSD` has reached it, the call fails with a `403` and the code `budget_exceeded`: `The configured budget has been exhausted.` A spent budget doesn't hide agents or models: chat lists them as usual and shows this error when the user sends. Calls without a signed-in user, such as scheduled tasks, have no per-user limit.
+Otherwise the call fails with a `403` and the code `model_not_allowed`: `Model "<id>" is not allowed by this policy.` Over HTTP, the body is the same as for a spent budget:
+
+```json
+{ "error": { "message": "...", "type": "invalid_request_error", "code": "model_not_allowed", "param": "model" } }
+```
+
+On `/api/v1/messages`, it is Anthropic's `{ "type": "error", "error": { "type": "permission_error", "message": "...", "param": "model" } }`.
+
+The same check shapes chat:
+
+- A user sees only the agent models they may use, and an agent with none is hidden from them.
+- `GET /api/v1/models` lists only the models in a non-empty `models` list.
+- Chat shows a microphone only when the user may use the [transcription model](/chat/ui-chat#voice-input), and a read aloud button only when they may use the [speech model](/chat/ui-chat#read-aloud). For an alias, list the model behind it.
+
+The budget is checked when a call runs, before every AI call that a signed-in user makes, agent turns included.
+
+- When `monthlyBudget` is set and `spendThisPeriodUSD` has reached it, the call fails with a `403` and the code `budget_exceeded`: `The configured budget has been exhausted.`
+- A spent budget doesn't hide agents or models. Chat lists them as usual and shows this error when the user sends.
+- Calls without a signed-in user, such as scheduled tasks, have no per-user limit.
 
 ## Spend
 
@@ -88,7 +112,9 @@ With the [API keys plugin](/plugins/api-keys) on the same auth collection, each 
 | `monthlyBudget` | Monthly Cap (USD) | Spend limit for the key this month, up to the owner's monthly budget. Leave it empty for no cap. |
 | `spendThisPeriodUSD` | Monthly Spend (USD) | What the key and the keys below it have spent this month. Read-only; the plugin maintains it. |
 
-The key's create dialog has a collapsed **Limits** section with the model list and cap, and the keys list shows spend and cap after the prefix. A key's models and cap are checked against its owner when they change, for admins too: `"<id>" isn't allowed for <owner>.` and `Can't exceed <owner>'s monthly budget of $50.00.` Values that didn't change aren't checked again, so lowering the owner's budget doesn't block renaming a key.
+The key's create dialog has a collapsed **Limits** section with the model list and cap, and the keys list shows spend and cap after the prefix.
+
+A key's models and cap are checked against its owner when they change, for admins too. The errors read `"<id>" isn't allowed for <owner>.` and `Can't exceed <owner>'s monthly budget of $50.00.` Values that didn't change aren't checked again, so lowering the owner's budget doesn't block renaming a key.
 
 Only a signed-in session can change a key's limits. A request authenticated by an API key that changes `models` or `monthlyBudget` on any key gets a `403`: `API keys can't change their own limits. Sign in to change them.`
 
@@ -105,7 +131,9 @@ Both fail before the model is called, so they write no usage row. Each call's co
 
 ## Use your own policy
 
-The plugin is built only on `ai.access` and AI hooks, so you can replace it with your own rules, such as prepaid credits. Leave the plugin out and put your check in `ai.access`. Each rule receives `{ req, model }`; return `false` for a generic `403`, or throw an error with a numeric `status` and a `code` to send your own:
+The plugin is built only on `ai.access` and AI hooks, so you can replace it with your own rules, such as prepaid credits. Leave the plugin out and put your check in `ai.access`.
+
+Each rule receives `{ req, model }`. Return `false` for a generic `403`, or throw an error with a numeric `status` and a `code` to send your own:
 
 ```ts
 class OutOfCreditsError extends Error {
