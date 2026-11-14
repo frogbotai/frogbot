@@ -421,23 +421,15 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     expect(await store.get({ owner, piece })).toMatchObject({ credential: 'replacement' });
   });
 
-  const developerFallback = (resolution: Promise<unknown>) =>
-    expect(resolution).resolves.toEqual({ apiKey: 'developer-fallback' });
-
   const notLinked = (resolution: Promise<unknown>) =>
     expect(resolution).rejects.toMatchObject({ code: 'missing' });
 
-  it.each([
-    { piece: 'case-c', unlinked: notLinked },
-    { piece: 'case-ac', unlinked: developerFallback },
-    { piece: 'case-bc', unlinked: notLinked },
-    { piece: 'case-abc', unlinked: developerFallback },
-  ])(
-    'links $piece through real HTTP, PKCE, fresh account validation and encrypted storage',
-    async ({ piece, unlinked }) => {
+  it.each(['case-c', 'case-ac', 'case-bc', 'case-abc'])(
+    'links %s through real HTTP, PKCE, fresh account validation and encrypted storage',
+    async (piece) => {
       const instance = linkedPieces.find((entry) => entry.piece === piece)!;
       const req = await frogbot.createRequest({ user: owner });
-      await unlinked(frogbot.connections.resolve({ piece: instance, req }));
+      await notLinked(frogbot.connections.resolve({ piece: instance, req }));
       const flow = await authorize(piece);
 
       expect(await store.list({ owner })).toEqual([]);

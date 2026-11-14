@@ -10,6 +10,7 @@ import {
   createPieceHelpers,
   definePiece,
   pieceActionTool,
+  pieceInstanceRuntime,
   pieceInstanceTools,
   pieceToolInstance,
 } from '../../../../packages/frogbot/src/pieces/definePiece.js';
@@ -205,6 +206,19 @@ describe('definePiece', () => {
       'example_run',
       'example_other',
     ]);
+  });
+
+  it('builds the app client from the factory credential without asking the resolver', async () => {
+    const example = createExample({ auth: { token: 'factory' }, prefix: 'value' });
+    const { req, resolvePieceCredential } = request();
+    const appClient = pieceInstanceRuntime(example).appClient;
+
+    const client = await appClient({ req });
+
+    expect(client).toEqual({ auth: { token: 'factory' } });
+    expect(await appClient({ req })).toBe(client);
+    expect(await example.client({ req })).toEqual({ auth: { token: 'resolved' } });
+    expect(resolvePieceCredential).toHaveBeenCalledOnce();
   });
 
   it('spreads an action into a tool that keeps execute and its connection', async () => {

@@ -133,7 +133,19 @@ export class Connections {
       throw new ConnectionError(`Connection for '${slug}' ${message}.`, code, undefined, slug);
     };
 
-    const entry = Object.hasOwn(config.entries, slug) ? config.entries[slug] : undefined;
+    const configured = Object.hasOwn(config.entries, slug) ? config.entries[slug] : undefined;
+    const entry =
+      configured && (configured.piece.slug === piece.slug || runtime.auth === undefined)
+        ? configured
+        : undefined;
+
+    if (!entry && connection === undefined) {
+      if (runtime.auth !== undefined) return { auth: runtime.auth, key: piece };
+
+      return fail('missing', 'is not linked');
+    }
+
+    const notLinked = 'is not linked. Link it in Settings → Linked accounts';
     let row;
     try {
       const store = await this.store;
@@ -169,18 +181,12 @@ export class Connections {
       return fail('error', 'could not be read');
     }
 
-    if (!row) {
-      if (runtime.auth !== undefined && connection === undefined) {
-        return { auth: runtime.auth, key: piece };
-      }
-
-      return fail('missing', 'is not linked');
-    }
+    if (!row || !entry) return fail('missing', notLinked);
 
     if (
       row.status === 'active' &&
       row.method === 'oauth' &&
-      entry?.oauth &&
+      entry.oauth &&
       row.expiresAt &&
       Date.parse(row.expiresAt) <= Date.now()
     ) {
@@ -196,7 +202,7 @@ export class Connections {
         return fail('error', 'could not be refreshed');
       }
 
-      if (!row) return fail('missing', 'is not linked');
+      if (!row) return fail('missing', notLinked);
     }
 
     if (row.status === 'revoked') return fail('revoked', 'is revoked');
@@ -207,7 +213,7 @@ export class Connections {
       if (expiresAt <= Date.now()) return fail('expired', 'is expired');
     }
 
-    if ((row.method !== 'secret' && row.method !== 'oauth') || !entry?.[row.method]) {
+    if ((row.method !== 'secret' && row.method !== 'oauth') || !entry[row.method]) {
       return fail('error', 'uses an unavailable method');
     }
 

@@ -115,7 +115,7 @@ Asana sends small events, so a webhook trigger fetches the full task (and commen
 
 ### Credential
 
-Triggers run with no signed-in person, so they use the instance's factory `auth`, and Asana ties each webhook to the token that created it. Give the instance a token, ideally for a dedicated Asana account:
+Triggers run with no signed-in person, so mount them on a separate instance with its own factory `auth`; the instance in your connection entry throws `missing` without a signed-in person. Asana ties each webhook to the token that created it. Give the instance a token, ideally for a dedicated Asana account:
 
 ```ts
 export const asanaBot = createAsana({
