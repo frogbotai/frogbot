@@ -5,7 +5,7 @@ import type { DeployConfig } from 'frogbot';
 import { describe, expect, it } from 'vitest';
 
 import { authPath, writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
-import { runShare } from '../../../../packages/plugins/plugin-dojo/src/cli/run.js';
+import { deployDojo } from './deployDojo.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeApp, writeFiles } from './helpers.js';
 
@@ -22,7 +22,7 @@ async function setup(files?: Record<string, string>) {
   ) => {
     const io = testIO({ cwd: root, env, ...options });
 
-    return { code: await runShare(args, io.io), ...io };
+    return { code: await deployDojo(args, io.io), ...io };
   };
 
   const signIn = async () => {
@@ -36,7 +36,7 @@ async function setup(files?: Record<string, string>) {
 const shareLink = (app: string) =>
   `[frogbot] Share it: frogbot dojo sharing invite ${app} <email>...`;
 
-describe('frogbot share: pre-checks', () => {
+describe('frogbot deploy: pre-checks', () => {
   it.each([
     [
       'no lockfile',
@@ -72,7 +72,7 @@ describe('frogbot share: pre-checks', () => {
     const cwd = await tempDir();
     const io = testIO({ cwd, env: { FROGBOT_DOJO_URL: dojo.url, XDG_CONFIG_HOME: cwd } });
 
-    expect(await runShare(['--no-data'], io.io)).toBe(1);
+    expect(await deployDojo(['--no-data'], io.io)).toBe(1);
     expect(io.stderr()).toEqual([
       '[frogbot] No frogbot.config.ts here or in any parent folder. Run this from inside the app.',
     ]);
@@ -84,12 +84,12 @@ describe('frogbot share: pre-checks', () => {
     const result = await run(['--nope']);
 
     expect(result.code).toBe(2);
-    expect(result.stderr()[0]).toContain('Usage: frogbot deploy dojo');
+    expect(result.stderr()[0]).toContain('Usage: frogbot deploy [dojo]');
     expect(dojo.requests).toEqual([]);
   });
 });
 
-describe('frogbot share: sign-in', () => {
+describe('frogbot deploy: sign-in', () => {
   it('prints the link and code on their own lines, opens no browser with --wait, and stores the token 0600', async () => {
     const { dojo, env, run } = await setup();
     const result = await run(['--no-data', '--wait']);
@@ -155,7 +155,7 @@ describe('frogbot share: sign-in', () => {
   });
 });
 
-describe('frogbot share: the link', () => {
+describe('frogbot deploy: the link', () => {
   it('writes .frogbot/app.json and one /.frogbot line, then ships new versions to the same app', async () => {
     const { root, dojo, run, signIn } = await setup({ '.gitignore': 'node_modules' });
 
@@ -204,7 +204,7 @@ describe('frogbot share: the link', () => {
 
     expect(result.code).toBe(1);
     expect(result.stderr()).toEqual([
-      "[frogbot] You can't share to the app in .frogbot/app.json (42): Only the app’s owners can publish it. Delete .frogbot/app.json to share as a new app.",
+      "[frogbot] You can't deploy to the app in .frogbot/app.json (42): Only the app’s owners can publish it. Delete .frogbot/app.json to deploy as a new app.",
     ]);
     expect(dojo.paths()).not.toContain('GET /api/workspaces');
   });
@@ -252,7 +252,7 @@ describe('frogbot share: the link', () => {
   });
 });
 
-describe('frogbot share: the build', () => {
+describe('frogbot deploy: the build', () => {
   it('streams the log and ends with the live URL', async () => {
     const { run, signIn } = await setup();
 
@@ -320,7 +320,7 @@ describe('frogbot share: the build', () => {
   });
 });
 
-describe('frogbot share: workspace', () => {
+describe('frogbot deploy: workspace', () => {
   const two = [
     { id: 1, name: 'Trend Capital', slug: 'trend-capital' },
     { id: 2, name: 'Colby', slug: 'colby' },
@@ -396,7 +396,7 @@ describe('frogbot share: workspace', () => {
   });
 });
 
-describe('frogbot share: the name', () => {
+describe('frogbot deploy: the name', () => {
   const taken = '[frogbot] The name "deals" is taken on Dojo. Rerun with --name <another name>.';
 
   it('sets the slug from --name on a first share', async () => {
@@ -494,7 +494,7 @@ describe('frogbot share: the name', () => {
   });
 });
 
-describe('frogbot share: as an editor', () => {
+describe('frogbot deploy: as an editor', () => {
   const keysLeftOut = "[frogbot] Keys left out: only the app's owners manage its keys on Dojo.";
 
   async function linked(level?: 'editor' | 'owner') {
@@ -550,7 +550,7 @@ describe('frogbot share: as an editor', () => {
   );
 });
 
-describe("frogbot share: a Postgres app's DATABASE_URL", () => {
+describe("frogbot deploy: a Postgres app's DATABASE_URL", () => {
   const remote = 'postgres://crm:s3cret-pass@db.example.com:5432/crm';
   const adapter = (name: string) => ({ collections: [], db: { name } }) as unknown as DeployConfig;
 

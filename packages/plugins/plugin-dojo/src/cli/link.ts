@@ -5,12 +5,12 @@ import ignore from 'ignore';
 
 import { ShareError } from './error.js';
 
-/** The Dojo app a folder shares to, from `.frogbot/app.json`. */
+/** The Dojo app a folder deploys to, from `.frogbot/app.json`. */
 export type AppLink = { appId: string | number };
 
 export const linkPath = '.frogbot/app.json';
 
-/** The app's link, or `undefined` on a first share. */
+/** The app's link, or `undefined` on a first deploy. */
 export async function readLink(root: string): Promise<AppLink | undefined> {
   let text: string;
 
@@ -23,7 +23,7 @@ export async function readLink(root: string): Promise<AppLink | undefined> {
   const link = parseJSON(text) as Partial<AppLink> | undefined;
 
   if (typeof link?.appId !== 'string' && typeof link?.appId !== 'number') {
-    throw new ShareError(`${linkPath} has no appId. Delete it to share as a new app.`);
+    throw new ShareError(`${linkPath} has no appId. Delete it to deploy as a new app.`);
   }
 
   return { appId: link.appId };

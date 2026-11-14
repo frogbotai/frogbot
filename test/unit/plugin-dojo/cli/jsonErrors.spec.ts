@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
 import { runDojo } from '../../../../packages/plugins/plugin-dojo/src/cli/commands.js';
 import { unreachableStop } from '../../../../packages/plugins/plugin-dojo/src/cli/error.js';
-import { runShare } from '../../../../packages/plugins/plugin-dojo/src/cli/run.js';
+import { deployDojo } from './deployDojo.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeApp } from './helpers.js';
 
@@ -68,7 +68,7 @@ describe('an unreachable Dojo under --json', () => {
     const { url, cwd, env } = await unreachable();
     const result = testIO({ cwd, env: { ...env, FROGBOT_DOJO_TOKEN: undefined } });
 
-    expect(await runShare(['--json', '--no-data', '--no-interactive'], result.io)).toBe(1);
+    expect(await deployDojo(['--json', '--no-data', '--no-interactive'], result.io)).toBe(1);
     expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
       target: 'dojo',
       ok: false,
@@ -211,7 +211,7 @@ describe('a Dojo build under --json', () => {
 
     dojo.replies.set('GET /api/deployments/7/logs', { body: {} });
 
-    expect(await runShare(['--json', '--no-data'], result.io)).toBe(1);
+    expect(await deployDojo(['--json', '--no-data'], result.io)).toBe(1);
     expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
       ok: false,
       code: 'BUILD_LOG_LOST',
@@ -235,7 +235,7 @@ describe('a Dojo build under --json', () => {
       }
     };
 
-    expect(await runShare(['--json', '--no-data'], result.io)).toBe(1);
+    expect(await deployDojo(['--json', '--no-data'], result.io)).toBe(1);
     expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
       ok: false,
       code: 'FAILED',
@@ -251,7 +251,7 @@ describe('a Dojo build under --json', () => {
 
     dojo.build = { lines: ['step 1'], status: 'failed', error: 'pnpm install failed.' };
 
-    expect(await runShare(['--json', '--no-data'], result.io)).toBe(1);
+    expect(await deployDojo(['--json', '--no-data'], result.io)).toBe(1);
     expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
       ok: false,
       code: 'BUILD_FAILED',

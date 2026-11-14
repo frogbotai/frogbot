@@ -5,8 +5,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
-import { runShare } from '../../../../packages/plugins/plugin-dojo/src/cli/run.js';
 import { keyFingerprint, sealKeys } from '../../../../packages/plugins/plugin-dojo/src/cli/seal.js';
+import { deployDojo } from './deployDojo.js';
 import { fingerprint, openKeys, startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeApp } from './helpers.js';
 
@@ -33,7 +33,7 @@ async function setup() {
   ) => {
     const io = testIO({ cwd: root, env, ...options });
 
-    return { code: await runShare(args, io.io), ...io };
+    return { code: await deployDojo(args, io.io), ...io };
   };
 
   const writeEnv = (text: string) => writeFile(join(root, '.env'), text);
@@ -87,7 +87,7 @@ describe('seal', () => {
   });
 });
 
-describe('frogbot share: keys on a first share', () => {
+describe('frogbot deploy: keys on a first share', () => {
   it('carries every key with no TTY, without asking, and says so', async () => {
     const { dojo, run } = await setup();
     const result = await run(['--no-data']);
@@ -202,7 +202,7 @@ describe('frogbot share: keys on a first share', () => {
   });
 });
 
-describe('frogbot share: keys on a later share', () => {
+describe('frogbot deploy: keys on a later share', () => {
   const later = async () => {
     const shared = await setup();
 
@@ -320,7 +320,7 @@ describe('frogbot share: keys on a later share', () => {
 
     expect(result.code).toBe(1);
     expect(result.stderr()).toEqual([
-      "[frogbot] You can't share to the app in .frogbot/app.json (1): Only the app’s owners can publish it. Delete .frogbot/app.json to share as a new app.",
+      "[frogbot] You can't deploy to the app in .frogbot/app.json (1): Only the app’s owners can publish it. Delete .frogbot/app.json to deploy as a new app.",
     ]);
     expect(dojo.paths().filter((path) => path === 'POST /api/apps/1/deployments')).toHaveLength(1);
   });

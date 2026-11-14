@@ -1,5 +1,5 @@
 import { nameTaken, toSlug } from '../appSlug.js';
-import type { Noun, Verb } from '../command.js';
+import type { Noun } from '../command.js';
 import { dojoJSON, dojoList, segment } from '../dojo.js';
 import { dojoError, dojoStop, ShareError } from '../error.js';
 import { done } from '../io.js';
@@ -28,38 +28,10 @@ const shown = ({ id, name, slug, workspace, domain, startedAt }: App) => ({
   started: Boolean(startedAt),
 });
 
-const share: Verb['flags'] = {
-  data: { type: 'boolean', help: "Bring the app's local data, on the first share only." },
-  'no-data': { type: 'boolean', help: 'Bring no data.' },
-  workspace: {
-    type: 'string',
-    value: 'slug',
-    help: 'The workspace a first share creates the app in.',
-  },
-  name: { type: 'string', help: "The app's name on Dojo, on the first share." },
-  'no-keys': { type: 'boolean', help: 'Bring no keys from .env.' },
-  'skip-key': { type: 'string', multiple: true, value: 'NAME', help: 'Leave one .env key out.' },
-  yes: { type: 'boolean', help: 'Bring every key without asking.' },
-  'update-keys': { type: 'boolean', help: 'Send local values for keys that differ from live.' },
-  'dry-run': { type: 'boolean', help: 'Check the app and list what would be sent; send nothing.' },
-  'no-interactive': { type: 'boolean', help: 'Ask nothing, even in a terminal.' },
-  'env-file': {
-    type: 'string',
-    value: 'path',
-    help: "Read the app's production variables from this file.",
-  },
-};
-
-/** `apps`: share, pull and logs from an app folder, and list, get, create, rename, delete. */
+/** `apps`: pull and logs, and list, get, create, rename, delete. `frogbot deploy` ships an app. */
 export const apps: Noun = {
-  summary: 'Share, pull, read logs of, and manage your apps.',
+  summary: 'Pull, read logs of, and manage your apps.',
   verbs: {
-    share: {
-      summary: "Share the app in this folder to Dojo, or update it once it's linked.",
-      flags: share,
-      raw: async (args, io) => (await import('../run.js')).runShareCommand(args, io),
-      ownJson: true,
-    },
     pull: {
       summary: "Download an app's live source into a new folder.",
       args: '<app>',
@@ -107,7 +79,7 @@ export const apps: Noun = {
       },
     },
     create: {
-      summary: 'Create an empty app to share to later.',
+      summary: 'Create an empty app to deploy to later.',
       args: '<name>',
       flags: {
         workspace: { type: 'string', value: 'slug', help: 'Needed when you are in more than one.' },

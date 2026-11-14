@@ -269,7 +269,7 @@ async function sendWithRetries(
 
     if (delay === undefined) {
       throw new ShareError(
-        `Couldn't upload ${what}: ${reason}. Run share again to resume; finished files are skipped.`,
+        `Couldn't upload ${what}: ${reason}. Run frogbot deploy again to resume; finished files are skipped.`,
       );
     }
 

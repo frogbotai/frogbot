@@ -105,7 +105,7 @@ which fields changed. Admins and managers can read it; nobody can edit it.
 
 - Add the stages your team uses to the deal `stage` select; the board gets a column for each.
 - Add a role, such as a read-only `viewer`, in `src/roles.ts`.
-- Put it online with `npx frogbot share`; see [`share`](https://docs.frogbot.ai/getting-started/cli#share).
+- Put it online with `npx frogbot deploy`; see [Deploy to Dojo](https://docs.frogbot.ai/getting-started/cli#deploy-to-dojo).
 
 ## Add an AI provider
 

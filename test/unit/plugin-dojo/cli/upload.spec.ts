@@ -115,7 +115,7 @@ describe('uploadData', () => {
     dojo.data.failures.set(`${snapshotKey}#2`, 4);
 
     await expect(upload({}, 'x'.repeat(2_500))).rejects.toThrow(
-      `Couldn't upload ${snapshotKey} (part 2 of 3): R2 answered 500. Run share again to resume; finished files are skipped.`,
+      `Couldn't upload ${snapshotKey} (part 2 of 3): R2 answered 500. Run frogbot deploy again to resume; finished files are skipped.`,
     );
     expect(puts().filter((put) => put.search.endsWith('partNumber=2'))).toHaveLength(4);
     expect(dojo.data.completed).toEqual([]);

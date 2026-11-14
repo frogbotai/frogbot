@@ -9,7 +9,7 @@ import ignore from 'ignore';
 
 const execFileAsync = promisify(execFile);
 
-/** Laptop-only paths, relative to the app root: never in a share, code or data. */
+/** Laptop-only paths, relative to the app root: never in a deploy, code or data. */
 export const neverShared = ignore().add([
   '.git',
   '.frogbot',

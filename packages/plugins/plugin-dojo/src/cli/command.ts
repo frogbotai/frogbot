@@ -39,11 +39,9 @@ export type Verb = {
   run: (input: VerbInput) => Promise<number | void>;
 };
 
-/** A verb that parses its own arguments, like `share`; `flags` only feed its help. */
+/** A verb that parses its own arguments, like `pull`; `flags` only feed its help. */
 export type RawVerb = Omit<Verb, 'run' | 'confirm'> & {
   raw: (args: string[], io: DojoIO) => Promise<number>;
-  /** Gets `--json` and the real stdout as typed, because it writes its own JSON result, like `share`. */
-  ownJson?: true;
 };
 
 /** A noun's verbs: `apps` → `list`, `delete`, … */

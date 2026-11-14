@@ -58,7 +58,7 @@ export type TakeInventoryProps = {
 };
 
 /**
- * What a first share can bring: `'unsupported'` when the database adapter can't snapshot (not
+ * What a first deploy can bring: `'unsupported'` when the database adapter can't snapshot (not
  * SQLite on a file), `undefined` when there is no database or nothing to count. Reads only a
  * snapshot of the database, never the app's own file.
  */

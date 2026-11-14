@@ -2,7 +2,7 @@
 
 Docs: https://docs.frogbot.ai/plugins/dojo
 
-Everything past the first share happens through `frogbot dojo`: keys, a custom domain, the people on an app, workspaces, deployments, logs, Dojo API keys and billing. The first share is in "Sharing The App" in [SKILL.md](../SKILL.md#sharing-the-app).
+Shipping an app, the first time and every time after, is `npx frogbot deploy`. Everything else happens through `frogbot dojo`: keys, a custom domain, the people on an app, workspaces, deployments, logs, Dojo API keys and billing. Deploying is in "Sharing The App" in [SKILL.md](../SKILL.md#sharing-the-app).
 
 The commands come from `dojo()` (`@frogbotai/plugin-dojo`). In an app that lists it, run `npx frogbot dojo <command>`. Anywhere else, run the same command as `npx @frogbotai/plugin-dojo <command>`, for example `npx @frogbotai/plugin-dojo apps list`. `<app>` is the app's slug, such as `deals` for `deals.frogbot.app`, or its id. `npx frogbot dojo <command> --help` prints a command's flags.
 
@@ -11,7 +11,7 @@ The commands come from `dojo()` (`@frogbotai/plugin-dojo`). In an app that lists
 - **Being asked is enough** for every command here, except the ones below. Run it, then report what it printed.
 - **Invites.** Before `sharing invite` or `members add`, read back the addresses and the level or role, and wait for a yes: "I'll invite sam@acme.com with use access (they can open the app, not edit it). Send it?" An invite emails each person and can't be unsent, and an address added to a workspace joins it when someone signs in with it.
 - **Destructive commands** need `--yes`, because your shell has no terminal to confirm in; without it they exit `2` and change nothing. Ask the user the question the CLI would ask, from the table below, and pass `--yes` only after a yes in this conversation. Never pass `--yes` because a command failed without it.
-- **`--replace-data`.** Never try `apps share --replace-data`: only an owner typing the app's name at a terminal can confirm it. Tell the user the command to run themselves.
+- **`--replace-data`.** Never try `frogbot deploy --replace-data`: only an owner typing the app's name at a terminal can confirm it. Tell the user the command to run themselves.
 - **Key values.** Never repeat a key's value in a reply, even one the user just gave you. `env list` shows keys masked; keep it that way.
 - **Refusals.** When a command stops because the user lacks access (`It needs owner access to the app.`), or because a step needs a person (terms, payment, a plan upgrade), pass on the reason and any link it prints, and don't retry. Never open a link yourself: links are for the user.
 
@@ -37,7 +37,7 @@ Add `--json` whenever you read a result to act on it: stdout then holds one JSON
 
 ## Signing In
 
-- `npx frogbot dojo login` signs in with a code the user confirms in the browser, and the first sign-in makes their Dojo account. It prints the link and `Code: <code>` on their own lines and waits, as `share` does: run it where you can read its output while it waits, and pass both on. Any command that needs a sign-in starts the same flow.
+- `npx frogbot dojo login` signs in with a code the user confirms in the browser, and the first sign-in makes their Dojo account. It prints the link and `Code: <code>` on their own lines and waits, as `deploy` does: run it where you can read its output while it waits, and pass both on. Any command that needs a sign-in starts the same flow.
 - `npx frogbot dojo whoami` prints `[frogbot] Signed in to <url> as <email>.`, then one `<slug>  <name>` line per workspace. It exits `1` when nobody is signed in.
 - `npx frogbot dojo logout` revokes the stored sign-in and forgets it.
 - `FROGBOT_DOJO_TOKEN`, a Dojo API key, signs every command in ahead of the stored sign-in. When Dojo refuses it, the command exits `1` instead of opening a browser sign-in. In CI with no token and no sign-in, commands exit `1` at once.
@@ -46,10 +46,10 @@ Add `--json` whenever you read a result to act on it: stdout then holds one JSON
 
 - `npx frogbot dojo apps list [--workspace <slug>]` prints `<slug>  <url>` for every app the user can see.
 - `npx frogbot dojo apps get <app>` prints the address, `Started: yes` or `Started: not yet`, and `Your access: use|editor|owner`.
-- `npx frogbot dojo apps create <name> [--workspace <slug>]` makes an empty app to share to later. When the name is taken, ask for another. When the workspace's plan doesn't cover another app, it prints the upgrade link and waits for the payment; pass the link on.
+- `npx frogbot dojo apps create <name> [--workspace <slug>]` makes an empty app to deploy to later. When the name is taken, ask for another. When the workspace's plan doesn't cover another app, it prints the upgrade link and waits for the payment; pass the link on.
 - `npx frogbot dojo apps rename <app> <name>` changes the name; the slug and address stay. Owners only.
 - `npx frogbot dojo apps delete <app> --yes` deletes the app, its versions and its data. Owners only, and only after the user says yes to the question above.
-- `npx frogbot dojo apps pull <app>`, run from the folder that should hold it, downloads an app the user owns or edits into a new `./<app>` folder with an empty database. An owner can add `--data` to bring the live database, files and the app's secret. Then run `pnpm install` and `pnpm dev` there; `apps share` from that folder ships a new version of the same app. An editor's share brings no keys and has no `Share it:` line, since only owners manage keys.
+- `npx frogbot dojo apps pull <app>`, run from the folder that should hold it, downloads an app the user owns or edits into a new `./<app>` folder with an empty database. An owner can add `--data` to bring the live database, files and the app's secret. Then run `pnpm install` and `pnpm dev` there; `npx frogbot deploy` from that folder ships a new version of the same app. An editor's deploy brings no keys and has no `Share it:` line, since only owners manage keys.
 - `npx frogbot dojo apps logs <app>` prints the app's recent runtime logs, with key values shown as `••••`. When an app misbehaves on Dojo, read them first. Add `--follow`, in a background shell, to watch new lines while the user reproduces the problem.
 
 ## Deployments
@@ -57,7 +57,7 @@ Add `--json` whenever you read a result to act on it: stdout then holds one JSON
 For an app the user owns or edits:
 
 - `npx frogbot dojo deployments list <app>` prints `<id>  <created>  <status>` per deployment, newest first.
-- `npx frogbot dojo deployments logs <id>` prints the end of that build's log, then `[frogbot] <status>` with the error when the build failed. Add `--follow` to stream it until the build ends; a failed build then exits `1` with `Build failed:` and the reason. Fix the cause and share again.
+- `npx frogbot dojo deployments logs <id>` prints the end of that build's log, then `[frogbot] <status>` with the error when the build failed. Add `--follow` to stream it until the build ends; a failed build then exits `1` with `Build failed:` and the reason. Fix the cause and deploy again.
 
 ## Keys
 
@@ -67,7 +67,7 @@ An app's environment keys on Dojo. Owners only.
 - `npx frogbot dojo env set <app> KEY=value...` sets one or more keys. Values go only as `KEY=value` arguments; there is no file or stdin option. Tell the user first that the live app restarts once. It prints `[frogbot] Set 1 key on <app>. It restarts once.`
 - `npx frogbot dojo env unset <app> KEY... --yes` removes keys, after the question above; the app restarts once.
 
-Keys in the local `.env` reach Dojo on the first `share`; on later shares, pass `--update-keys` to send local values that differ from live, or use `env set`.
+Keys in the local `.env` reach Dojo on the first `deploy`; on later deploys, pass `--update-keys` to send local values that differ from live, or use `env set`.
 
 ## Custom Domain
 
@@ -82,7 +82,7 @@ One custom domain per app, on a domain the user owns. Owners only. The `<app>.fr
 Each person has one of three levels:
 
 - **`use`**: opens and uses the deployed app. The default.
-- **`editor`**: also pulls the source, changes it and shares new versions.
+- **`editor`**: also pulls the source, changes it and deploys new versions.
 - **`owner`**: also manages the app's keys, custom domain and people, and can delete it.
 
 Commands:

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
-import { runShare } from '../../../../packages/plugins/plugin-dojo/src/cli/run.js';
+import { deployDojo } from './deployDojo.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeApp } from './helpers.js';
 
@@ -19,7 +19,7 @@ async function setup(files?: Record<string, string>, extraEnv: Record<string, st
   const run = async (args: string[]) => {
     const io = testIO({ cwd: root, env });
 
-    return { code: await runShare(args, io.io), ...io };
+    return { code: await deployDojo(args, io.io), ...io };
   };
 
   const signIn = async () => {
@@ -33,7 +33,7 @@ async function setup(files?: Record<string, string>, extraEnv: Record<string, st
 const readLink = async (root: string) =>
   JSON.parse(await readFile(join(root, '.frogbot/app.json'), 'utf8')) as unknown;
 
-describe('frogbot share --app', () => {
+describe('frogbot deploy --app', () => {
   it('links an unlinked folder to the named app, then ships to it without creating one', async () => {
     const { root, dojo, run, signIn } = await setup();
 
@@ -152,7 +152,7 @@ describe('frogbot share --app', () => {
   });
 });
 
-describe('frogbot share in CI', () => {
+describe('frogbot deploy in CI', () => {
   it('uses FROGBOT_DOJO_TOKEN and never starts the device sign-in', async () => {
     const { dojo, run } = await setup(undefined, { CI: 'true', FROGBOT_DOJO_TOKEN: 'fb_ci' });
 

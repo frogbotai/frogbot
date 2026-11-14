@@ -14,7 +14,7 @@ const providedByDojo = new Set([
 
 const silentLog = { info: () => {}, error: () => {} };
 
-/** A key `frogbot share` can carry to Dojo. */
+/** A key `frogbot deploy` can carry to Dojo. */
 export type EnvKey = {
   name: string;
   value: string;

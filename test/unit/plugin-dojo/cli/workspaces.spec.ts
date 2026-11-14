@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
-import { runShare } from '../../../../packages/plugins/plugin-dojo/src/cli/run.js';
+import { deployDojo } from './deployDojo.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeApp } from './helpers.js';
 
@@ -21,7 +21,7 @@ async function setup() {
   const run = async (options: Omit<Parameters<typeof testIO>[0], 'cwd' | 'env'> = {}) => {
     const io = testIO({ cwd: root, env, ...options });
 
-    return { code: await runShare(['--no-data'], io.io), ...io };
+    return { code: await deployDojo(['--no-data'], io.io), ...io };
   };
 
   const signIn = async () => {
@@ -32,7 +32,7 @@ async function setup() {
   return { root, dojo, run, signIn };
 }
 
-describe('frogbot share: no workspace', () => {
+describe('frogbot deploy: no workspace', () => {
   it('reads the workspaces after signing in, so the one Dojo made at sign-in is used without asking', async () => {
     const { dojo, run } = await setup();
 
@@ -100,7 +100,7 @@ describe('frogbot share: no workspace', () => {
 
     expect(result.code).toBe(1);
     expect(result.stderr()).toEqual([
-      '[frogbot] No workspace to share in. Create one with frogbot dojo workspaces create <name>, then rerun.',
+      '[frogbot] No workspace to deploy to. Create one with frogbot dojo workspaces create <name>, then rerun.',
     ]);
     expect(dojo.paths()).not.toContain('POST /api/apps');
   });

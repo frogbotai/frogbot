@@ -7,8 +7,8 @@ import type { DeployIO, DeployPrompts } from 'frogbot';
 import { ShareError } from './error.js';
 
 /**
- * What the Dojo commands use from the terminal: `share` gets core's full `DeployIO`, the others need
- * no FrogBot app.
+ * What the Dojo commands use from the terminal: core's `DeployIO` without what only `frogbot deploy`
+ * needs, so they run with no FrogBot app.
  */
 export type DojoIO = Omit<DeployIO, 'exec' | 'which' | 'loadConfig'> & {
   /** With `--json`: the real stdout, which gets only the command's one JSON result; `stdout` is then stderr. */

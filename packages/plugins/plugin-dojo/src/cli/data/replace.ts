@@ -23,11 +23,11 @@ export const replaceMessages = {
   unsupported: 'Replacing live data works only for SQLite apps for now.',
   nothing: "There's no local data to bring, so nothing was replaced.",
   firstShareOnly:
-    "Data comes only with the first share. To replace the live data with this computer's, rerun with --replace-data.",
+    "Data comes only with the first deploy. To replace the live data with this computer's, rerun with --replace-data.",
 } as const;
 
 /**
- * `share --replace-data` on a started app: an owner's local data, once they type the app's name to
+ * `frogbot deploy --replace-data` on a started app: an owner's local data, once they type the app's name to
  * confirm. It never runs without a person at a terminal, so an agent can't replace live data alone;
  * `--yes` doesn't skip it. The caller disposes of the inventory it gets back.
  */
