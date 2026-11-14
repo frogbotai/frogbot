@@ -20,11 +20,22 @@ FrogBot injects both collections when agents are configured and no collection cl
 | `chats` | `title`, `user`, `agent`, `lastMessageAt`, [`autoApprove`](/chat/tool-approval#auto-approve), and for a chat started in a channel, `channel`, `externalId`, `channelKey`, and `channelThread` |
 | `messages` | Text `id`, `chat`, `role`, `parts`, `metadata`, `usage`, `status`, `delivery`, `model`, `reasoning`, `author`, `settlements`, `version` |
 
-Chat and message collections use soft deletion. Moving a chat to the trash keeps its messages; deleting a chat permanently also deletes all of its messages, trashed ones included, whatever the messages collection's `delete` access says. Chats appear under **Collections** in the admin panel, and Messages is hidden from the admin by default (see [show messages in the admin](#show-messages-in-the-admin)). Access is owner-scoped through the chat's `user` relationship, and a channel chat is written only from its channel. See [who can write a chat](#who-can-write-a-chat).
+- **Soft deletion.** Chat and message collections use soft deletion. Moving a chat to the trash keeps its messages. Deleting a chat permanently also deletes all of its messages, trashed ones included, whatever the messages collection's `delete` access says.
+- **Admin.** Chats appear under **Collections** in the admin panel. Messages is hidden from the admin by default (see [show messages in the admin](#show-messages-in-the-admin)).
+- **Access.** Access is owner-scoped through the chat's `user` relationship, and a channel chat is written only from its channel. See [who can write a chat](#who-can-write-a-chat).
 
 Messages store the AI SDK `UIMessage.parts` array. Tool calls, tool results, reasoning, and custom data parts therefore remain available on later turns instead of being flattened into text.
 
-FrogBot manages the remaining message fields and they are read-only through the API. `status` is `queued` for a message waiting behind a running turn, `model` and `reasoning` record the model and reasoning option a user message was sent with, `author` records who sent it, and `settlements` records who answered each [question](/chat/questions) or [approval](/chat/tool-approval). A hidden `frogbot-chat-turns` collection tracks each chat's current [turn](/chat/turns).
+FrogBot manages the remaining message fields, and they are read-only through the API:
+
+| Field | Holds |
+| --- | --- |
+| `status` | `queued` for a message that waits behind a running turn. |
+| `model`, `reasoning` | The model and reasoning option that a user message was sent with. |
+| `author` | Who sent the message. |
+| `settlements` | Who answered each [question](/chat/questions) or [approval](/chat/tool-approval). |
+
+A hidden `frogbot-chat-turns` collection tracks each chat's current [turn](/chat/turns).
 
 ## Who can write a chat
 
@@ -58,7 +69,9 @@ const writable = canWriteChat({ req, chat })
 
 ### Channel label
 
-Chats have a virtual `channelLabel` field: the label of the channel piece a channel chat belongs to, such as `Slack`, and `null` for a web chat. FrogBot computes it on every read and stores nothing. It needs `channel`, `channelKey`, and `channelThread` from the same document, so a read that selects only `channelLabel` gets `null`.
+Chats have a virtual `channelLabel` field. It holds the label of the channel piece that a channel chat belongs to, such as `Slack`, and it is `null` for a web chat. FrogBot computes it on every read and stores nothing.
+
+The field needs `channel`, `channelKey`, and `channelThread` from the same document, so a read that selects only `channelLabel` gets `null`.
 
 ### Default collection access
 
@@ -120,7 +133,12 @@ FrogBot injects the collection whenever chat persistence is enabled and hides it
 
 Because read access follows the chat collection's own rule, sharing a chat also shares its attachments. A [storage adapter](/upload/storage-adapters) covers `frogbot-chat-assets` automatically, so assets go to cloud storage without listing the collection. Set `'frogbot-chat-assets': false` in the adapter's `collections` to keep them on local disk.
 
-Word and Excel assets also carry a `text` field: the text FrogBot read from the file when it was uploaded, exactly as the model receives it after the file's label (see [Word and Excel files](#word-and-excel-files)). Other assets have `text: null`. Anyone who can read the asset can read `text`; FrogBot ignores a value sent by the client, and no one can change it through the API. The upload response includes it, so a client can show the text without a second request. Because `text` can hold about 60,000 characters, leave it out of reads that don't need it with [`select`](/queries/select), such as `select: { text: false }`.
+Word and Excel assets also carry a `text` field. It holds the text that FrogBot read from the file when it was uploaded, exactly as the model receives it after the file's label (see [Word and Excel files](#word-and-excel-files)). Other assets have `text: null`.
+
+- **Read access.** Anyone who can read the asset can read `text`.
+- **No writes.** FrogBot ignores a value sent by the client, and no one can change it through the API.
+- **Upload response.** The upload response includes it, so a client can show the text without a second request.
+- **Size.** `text` can hold about 60,000 characters. Leave it out of reads that don't need it with [`select`](/queries/select), such as `select: { text: false }`.
 
 Tools can save files against the current chat with `saveChatAsset`:
 
@@ -152,7 +170,14 @@ FrogBot sorts each attachment into one kind:
 | Audio, video | `audio/*` or `video/*` that doesn't read as text | The file, when the model accepts that kind |
 | Unsupported | Everything else, such as archives, PowerPoint files, older `.doc` and `.xls` files, UTF-16 text, and HEIC images | A marker |
 
-The label is `Attached file "notes.md":`, using the file name in the message part, or the stored name when the part has none, or `Pasted text:` for a `file-reference` part with `origin: 'paste'` and for `data-paste` parts. SVG files are text. A leading byte-order mark is dropped, and bytes that aren't valid UTF-8 become `�`. FrogBot sets no size limit on text.
+The label depends on the part:
+
+| Part | Label |
+| --- | --- |
+| A file | `Attached file "notes.md":`, using the file name in the message part, or the stored name when the part has none. |
+| A `file-reference` part with `origin: 'paste'`, or a `data-paste` part | `Pasted text:` |
+
+SVG files are text. A leading byte-order mark is dropped, and bytes that aren't valid UTF-8 become `�`. FrogBot sets no size limit on text.
 
 Which image, audio, video, and PDF attachments a model accepts comes from its [input types](/ai/overview#custom-model-options). A model with unknown input types receives every image, audio, video, and PDF attachment. The chat composer applies the same rules when a file is picked, so it refuses unsupported files and files the selected model can't read before they are uploaded; see [Attachments](/chat/ui-chat#attachments).
 
@@ -160,7 +185,12 @@ Which image, audio, video, and PDF attachments a model accepts comes from its [i
 
 FrogBot reads Word (`.docx`) and Excel (`.xlsx`) files once, when they are uploaded, and stores the result in the asset's [`text` field](#chat-assets). Every model receives that text after the file's label, including models that only read text. The original file stays in storage and is never sent to the model.
 
-A file is read as Word or Excel when its name ends in `.docx` or `.xlsx`, or, for any other name, when its media type is `application/vnd.openxmlformats-officedocument.wordprocessingml.document` or `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`. Macro-enabled `.docm` and `.xlsm` files, templates such as `.dotx`, older `.doc` and `.xls` files, PowerPoint, and OpenDocument files are unsupported, even when sent with the Word or Excel media type.
+A file is read as Word or Excel in two cases:
+
+- Its name ends in `.docx` or `.xlsx`.
+- It has any other name, and its media type is `application/vnd.openxmlformats-officedocument.wordprocessingml.document` or `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`.
+
+These files are unsupported, even when sent with the Word or Excel media type: macro-enabled `.docm` and `.xlsm` files, templates such as `.dotx`, older `.doc` and `.xls` files, PowerPoint, and OpenDocument files.
 
 A Word document becomes plain text that keeps its structure:
 
@@ -238,7 +268,9 @@ The REST response is a validation error on the `file` field, naming the file:
 }
 ```
 
-The [SDK](/rest-api/overview#frogbot-rest-api-sdk) throws a `FrogBotSDKError` with status `400` and this `errors` array, and the Local API throws the validation error. The chat UI's REST adapter turns it into a `ChatAdapterError` with code `file-unreadable`, and the composer shows the file as a red card; see [Attachment cards](/chat/ui-chat#attachment-cards).
+The [SDK](/rest-api/overview#frogbot-rest-api-sdk) throws a `FrogBotSDKError` with status `400` and this `errors` array, and the Local API throws the validation error.
+
+The chat UI's REST adapter turns it into a `ChatAdapterError` with code `file-unreadable`, and the composer shows the file as a red card. See [Attachment cards](/chat/ui-chat#attachment-cards).
 
 An asset without stored text, such as one saved with `saveChatAsset` or stored before FrogBot read these files on upload, is read the first time a turn sends it, and the text is saved to the asset for later turns. If it can't be read, the model receives the "couldn't be read" marker below, and FrogBot tries again on the next turn.
 
@@ -263,7 +295,11 @@ Files are the same when their contents match. FrogBot stores a SHA-256 hash of e
 
 #### Size limit
 
-When the images, PDFs, audio, and video in one model request add up to more than 25 MiB, measured as base64, FrogBot replaces the oldest of them, in message order, until 15 MiB or less remain. A single file over 15 MiB is replaced even when it is the newest. Earlier copies of repeated files, files given by URL, and text don't count. On Amazon Bedrock, only the newest 20 images in a request are sent, and older ones get the image marker.
+When the images, PDFs, audio, and video in one model request add up to more than 25 MiB, measured as base64, FrogBot replaces the oldest of them, in message order, until 15 MiB or less remain.
+
+- A single file over 15 MiB is replaced even when it is the newest.
+- Earlier copies of repeated files, files given by URL, and text don't count.
+- On Amazon Bedrock, only the newest 20 images in a request are sent, and older ones get the image marker.
 
 #### Missing files
 
@@ -281,7 +317,12 @@ These defaults also apply when your own collection uses `chat: true`. FrogBot us
 
 ## Automatic chat titles
 
-FrogBot titles a chat as soon as it exists. The first title is the first user message, shortened to 48 characters with "…". After the first assistant reply, FrogBot generates a better title with the configured [utility model](/ai/overview#choose-a-utility-model), replaces the shortened message, and records the call through normal usage reporting. A chat whose first message has no text, such as an image-only message, stays untitled until the generated title arrives.
+FrogBot titles a chat as soon as it exists:
+
+1. The first title is the first user message, shortened to 48 characters with "…".
+2. After the first assistant reply, FrogBot generates a better title with the configured [utility model](/ai/overview#choose-a-utility-model), replaces the shortened message, and records the call through normal usage reporting.
+
+A chat whose first message has no text, such as an image-only message, stays untitled until the generated title arrives.
 
 Naming runs in the background and never delays or fails the assistant response. If generation fails, or a hard process exit interrupts it, the chat keeps the shortened first message. Long titles fade at the edge of the chat list instead of showing an ellipsis.
 

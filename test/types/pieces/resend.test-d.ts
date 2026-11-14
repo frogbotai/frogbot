@@ -99,10 +99,9 @@ const _connectedSent = connected.send({ input, req });
 const _connectedClient = connected.client({ req });
 expectTypeOf<Parameters<typeof connected.send>[0]['req']>().toEqualTypeOf<FrogBotRequest>();
 
-expectTypeOf<Parameters<typeof connected.client>[0]>().toEqualTypeOf<{
-  req: FrogBotRequest;
-  as?: string;
-}>();
+expectTypeOf<Parameters<typeof connected.client>[0]>().toEqualTypeOf<
+  { req: FrogBotRequest } & { connection?: number | string; as?: string }
+>();
 
 expectTypeOf<{ input: SendInput }>().not.toMatchTypeOf<Parameters<typeof connected.send>[0]>();
 expectTypeOf<'missing'>().not.toMatchTypeOf<keyof typeof resend>();

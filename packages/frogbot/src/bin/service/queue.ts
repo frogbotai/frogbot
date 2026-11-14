@@ -1,32 +1,36 @@
+/** What a run does: `update` builds and swaps, `restart` swaps in a new server on the current build. */
+export type RunKind = 'update' | 'restart';
+
 /**
  * Runs `run` one at a time: triggers during a run collapse into one follow-up run, as OpenCode v2's
- * plugin supervisor does with `Queue.sliding(1)`.
+ * plugin supervisor does with `Queue.sliding(1)`. The follow-up is an `update` when any collapsed
+ * trigger was one, since a build also restarts.
  */
-export function createBuildQueue(run: () => Promise<unknown>) {
-  let pending = false;
+export function createBuildQueue(run: (kind: RunKind) => Promise<unknown>) {
+  let pending: RunKind | undefined;
   let current: Promise<void> | undefined;
 
-  async function loop() {
-    do {
-      pending = false;
+  async function loop(kind: RunKind) {
+    for (let next: RunKind | undefined = kind; next; next = pending) {
+      pending = undefined;
 
       try {
-        await run();
+        await run(next);
       } catch {}
-    } while (pending);
+    }
 
     current = undefined;
   }
 
   return {
-    trigger(): void {
+    trigger(kind: RunKind = 'update'): void {
       if (current) {
-        pending = true;
+        pending = pending === 'update' ? 'update' : kind;
 
         return;
       }
 
-      current = loop();
+      current = loop(kind);
     },
     idle(): Promise<void> {
       return current ?? Promise.resolve();

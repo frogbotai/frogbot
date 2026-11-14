@@ -23,6 +23,8 @@ export type Registration = {
   /** The build folder being served. */
   build?: string;
   lastError?: string;
+  /** When the last build landed; a restart on the same build keeps it. */
+  builtAt?: string;
   log: string;
   autostart: boolean;
 };

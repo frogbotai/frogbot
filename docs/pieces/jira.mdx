@@ -139,7 +139,7 @@ Jira errors keep Jira's messages and status. When Jira rate-limits a request, wh
 
 The issue and comment triggers take an optional `jql` filter, such as `project = OPS`. All nine are [polling triggers](/pieces/triggers#polling) that check every 5 minutes. The first poll only records where to start, so nothing already in Jira is emitted. Issue polls look 15 minutes past the previous one, since Jira's search can lag, and skip what they already emitted.
 
-A poll has no signed-in person, so it uses the instance's factory `auth`. Give the instance an API token, ideally for a dedicated Jira account:
+A poll has no signed-in person, so mount it on a separate instance with its own factory `auth`; the instance in your connection entry throws `missing` without a signed-in person. Give the instance an API token, ideally for a dedicated Jira account:
 
 ```ts
 export const jiraBot = createJira({

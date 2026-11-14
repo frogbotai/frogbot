@@ -18,6 +18,7 @@ export type PanelComponents = {
   afterFields?: PayloadComponent[];
   beforeFields?: PayloadComponent[];
   Component?: PayloadComponent;
+  footer?: PayloadComponent[];
   Header?: PayloadComponent;
 };
 

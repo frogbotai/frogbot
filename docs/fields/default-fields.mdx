@@ -102,7 +102,11 @@ When chat is configured, FrogBot supplies or merges fields into the default or m
 | Chats | `title`, `user`, `agent`, `channel`, `externalId`, `channelKey`, `lastMessageAt`, `autoApprove`, `todos` |
 | Messages | `id`, `chat`, `role`, `parts`, `metadata`, `usage` |
 
-Message `usage` contains `inputTokens`, `outputTokens`, `totalTokens`, `reasoningTokens`, `cachedInputTokens`, `lastStepInputTokens`, `model`, and `provider`. The token counts add up every step of the reply, except `lastStepInputTokens`, the last step's prompt tokens, which [compaction](/chat/turns#compaction) starts its estimate from. These fields are present only on collections serving the corresponding chat role. See [Chat](/chat/overview).
+Message `usage` contains `inputTokens`, `outputTokens`, `totalTokens`, `reasoningTokens`, `cachedInputTokens`, `lastStepInputTokens`, `model`, and `provider`.
+
+The token counts add up every step of the reply. The exception is `lastStepInputTokens`, which holds the last step's prompt tokens. [Compaction](/chat/turns#compaction) starts its estimate from that value.
+
+These fields are present only on collections serving the corresponding chat role. See [Chat](/chat/overview).
 
 ## AI fields
 
@@ -133,7 +137,7 @@ The jobs collection includes fields used for durable execution and atomic claims
 | `processingUntil`, `processingToken` | The job's lease: when it expires and which run holds it. |
 | `waitpoint` | Hidden internal waitpoint state. |
 
-`waitpoint` is not an author input and is hidden from APIs. See [Jobs](/jobs-queue/overview).
+`waitpoint` is not an author input and is hidden from APIs. See [Durable waits](/jobs-queue/waits).
 
 ## Plugin fields
 

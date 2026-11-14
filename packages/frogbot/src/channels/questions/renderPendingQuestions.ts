@@ -58,7 +58,7 @@ export async function renderPendingQuestions({
   const byId = new Map(claimed.map((call) => [call.toolCallId, call]));
 
   try {
-    const client = await pieceInstanceRuntime(binding.instance).client({ req });
+    const client = await pieceInstanceRuntime(binding.instance).appClient({ req });
     const rendered = await questions.hooks.render({ calls: claimed, client, req, thread });
 
     const saved = rendered.flatMap(({ calls: covered, messages, state }) =>

@@ -213,10 +213,9 @@ expectTypeOf(connected.getValue({ input: { id: 'id' }, req })).toEqualTypeOf<
 
 expectTypeOf(connected.client({ req })).toEqualTypeOf<Promise<TokenClient>>();
 
-expectTypeOf<Parameters<typeof connected.client>[0]>().toEqualTypeOf<{
-  req: FrogBotRequest;
-  as?: string;
-}>();
+expectTypeOf<Parameters<typeof connected.client>[0]>().toEqualTypeOf<
+  { req: FrogBotRequest } & { connection?: number | string; as?: string }
+>();
 
 expectTypeOf<'missing'>().not.toExtend<keyof typeof connected>();
 // @ts-expect-error req is required without factory auth

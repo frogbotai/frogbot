@@ -1,7 +1,10 @@
 import type { CollectionConfig } from 'frogbot';
 
+import { managedAccess } from '../roles';
+
 export const Projects: CollectionConfig = {
   slug: 'projects',
+  access: managedAccess,
   admin: { icon: 'briefcase', useAsTitle: 'name' },
   fields: [
     { name: 'name', type: 'text', required: true },

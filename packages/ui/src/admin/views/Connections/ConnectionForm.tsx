@@ -18,12 +18,15 @@ import { linkError } from './linkError.js';
 import { connectionInput, initialConnectionValue } from './schema.js';
 import type { ConnectionItem, ConnectionPiece } from './types.js';
 
+export type ConnectionMethod = ConnectionItem['method'];
+
 /**
  * Links `piece` by OAuth or static credentials through `apiPath`: a user's own account at the
  * connections path, or an app slot at its `/app/<name>` path.
  */
 export function ConnectionForm({
   piece,
+  initialMethod,
   apiPath,
   returnTo,
   onBack,
@@ -33,6 +36,7 @@ export function ConnectionForm({
   title,
 }: {
   piece: ConnectionPiece;
+  initialMethod?: ConnectionMethod;
   apiPath: string;
   returnTo: string;
   title?: string;
@@ -42,7 +46,7 @@ export function ConnectionForm({
   onBusyChange: (busy: boolean) => void;
 }) {
   const id = useId();
-  const [method, setMethod] = useState(piece.oauth ? 'oauth' : 'secret');
+  const [method, setMethod] = useState<string>(initialMethod ?? (piece.oauth ? 'oauth' : 'secret'));
   const [value, setValue] = useState<unknown>(() =>
     piece.secretSchema ? initialConnectionValue(piece.secretSchema) : undefined,
   );

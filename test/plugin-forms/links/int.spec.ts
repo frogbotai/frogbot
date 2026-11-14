@@ -595,6 +595,56 @@ describe(`form edit links [${adapterLabel}]`, () => {
       expect(untouched.name ?? null).toBeNull();
     });
 
+    it('reads the stored answers a rule needs when the edit leaves them out', async () => {
+      const ruled = (operator: 'equals' | 'notEquals') =>
+        createForm({
+          slug: `phone-when-${operator.toLowerCase()}`,
+          steps: [
+            {
+              questions: [
+                { field: 'name' },
+                { field: 'phone', rules: [{ question: 'name', operator, value: 'Ada' }] },
+              ],
+            },
+          ],
+        });
+
+      const shown = await ruled('equals');
+      const hidden = await ruled('notEquals');
+      const record = await createApplication({
+        email: 'ada@example.com',
+        name: 'Ada',
+        phone: 'old',
+      });
+
+      const kept = await save(
+        await link({ form: hidden.slug, record }),
+        { phone: 'hidden' },
+        hidden.slug,
+      );
+
+      expect(kept.status).toBe(200);
+      expect(await application(record)).toMatchObject({ name: 'Ada', phone: 'old' });
+
+      const changed = await save(
+        await link({ form: shown.slug, record }),
+        { phone: 'new' },
+        shown.slug,
+      );
+
+      expect(changed.status).toBe(200);
+      expect(await application(record)).toMatchObject({ name: 'Ada', phone: 'new' });
+
+      const cleared = await save(
+        await link({ form: shown.slug, record }),
+        { name: '', phone: 'dropped' },
+        shown.slug,
+      );
+
+      expect(cleared.status).toBe(200);
+      expect(await application(record)).toMatchObject({ name: null, phone: 'new' });
+    });
+
     it("runs the collection's hooks with the link, and leaves updatedBy as it was", async () => {
       const record = (
         await booted.frogbot.create({

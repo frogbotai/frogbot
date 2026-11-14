@@ -23,7 +23,7 @@ function isError(value: unknown): value is Error {
 
 function nextCause(value: unknown): unknown {
   try {
-    return isError(value) ? value.cause : undefined;
+    return isError(value) ? (value.cause ?? undefined) : undefined;
   } catch {
     return undefined;
   }

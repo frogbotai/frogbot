@@ -260,4 +260,12 @@ export const ScheduledAt: Field = {
   such as `America/New_York` when daylight saving behavior matters.
 </Banner>
 
-If an application separately mounts a compatible GraphQL executor, timezone values are transformed into enum-safe names: `+05:30` becomes `_TZOFFSET_PLUS_05_30`, `-08:00` becomes `_TZOFFSET_MINUS_08_00`, and `America/New_York` becomes `America_New_York`. The original value remains stored and is returned by the REST API. FrogBot does not currently ship a GraphQL execution route.
+With [GraphQL enabled](/graphql/enable), timezone values are transformed into enum-safe names:
+
+| Value | GraphQL name |
+| --- | --- |
+| `+05:30` | `_TZOFFSET_PLUS_05_30` |
+| `-08:00` | `_TZOFFSET_MINUS_08_00` |
+| `America/New_York` | `America_New_York` |
+
+The original value remains stored and is returned by the REST API.

@@ -5,7 +5,9 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { dockerfile } from '../../../../../packages/frogbot/src/bin/deploy/dockerfile.js';
+import { DeployError } from '../../../../../packages/frogbot/src/bin/deploy/error.js';
 import { runDeploy, splitDeployArgs } from '../../../../../packages/frogbot/src/bin/deploy/run.js';
+import type { DeployTarget } from '../../../../../packages/frogbot/src/bin/deploy/types.js';
 import { deployConfig, recordingTarget, tempDir, testIO, writeApp } from './helpers.js';
 
 describe('splitDeployArgs', () => {
@@ -107,6 +109,68 @@ describe('runDeploy', () => {
     expect(await runDeploy(recordingTarget().target, ['--dry-run'], io.io, { name: 'dojo' })).toBe(
       0,
     );
+  });
+
+  it("exits with a target's own code and adds its details to the JSON result", async () => {
+    const root = await tempDir();
+    const io = testIO({ cwd: root, config: deployConfig({ prodMigrations: undefined }) });
+    const target = {
+      ...recordingTarget().target,
+      run: () => {
+        throw new DeployError('Sign in first.', 3, {
+          code: 'SIGN_IN_REQUIRED',
+          fields: { needs: 'sign-in', link: 'https://x/device' },
+        });
+      },
+    };
+
+    await writeApp(root, { '.env': '' });
+
+    expect(await runDeploy(target, ['--json'], io.io, { name: 'dojo' })).toBe(3);
+    expect(JSON.parse(io.stdout().join('\n'))).toEqual({
+      target: 'dojo',
+      ok: false,
+      dryRun: false,
+      issues: [],
+      result: null,
+      code: 'SIGN_IN_REQUIRED',
+      error: 'Sign in first.',
+      needs: 'sign-in',
+      link: 'https://x/device',
+    });
+  });
+
+  it("keeps the result's own keys when a target's details name them too", async () => {
+    const root = await tempDir();
+    const io = testIO({ cwd: root, config: deployConfig({ prodMigrations: undefined }) });
+    const target = {
+      ...recordingTarget().target,
+      run: () => {
+        throw new DeployError('Sign in first.', 3, {
+          code: 'SIGN_IN_REQUIRED',
+          fields: {
+            target: 'other',
+            ok: true,
+            dryRun: true,
+            code: 'replaced',
+            error: 'replaced',
+            needs: 'sign-in',
+          },
+        });
+      },
+    };
+
+    await writeApp(root, { '.env': '' });
+
+    expect(await runDeploy(target, ['--json'], io.io, { name: 'dojo' })).toBe(3);
+    expect(JSON.parse(io.stdout().join('\n'))).toMatchObject({
+      target: 'dojo',
+      ok: false,
+      dryRun: false,
+      code: 'SIGN_IN_REQUIRED',
+      error: 'Sign in first.',
+      needs: 'sign-in',
+    });
   });
 
   it('reports a config that fails to load as CONFIG_INVALID', async () => {
@@ -314,6 +378,143 @@ describe('runDeploy', () => {
     expect(
       await runDeploy(recordingTarget().target, [], io.io, { name: 'test', image: true }),
     ).toBe(1);
-    expect(io.stderr()).toContain('[frogbot] `tool ship` failed (exit 3).');
+    expect(io.stderr()).toContain('[frogbot] `tool ship --token ••••` failed (exit 3).');
+  });
+
+  it('names the failed step, its stderr and the steps already done under --json', async () => {
+    const root = await tempDir();
+    const io = testIO({
+      cwd: root,
+      programs: {
+        fly: (args) =>
+          args[0] === 'deploy' ? { code: 1, stderr: 'building\nError: insufficient memory\n' } : {},
+      },
+    });
+
+    const target: DeployTarget = {
+      describe: 'Fly',
+      preflight: () => [],
+      run: async (context) => {
+        await context.run('fly', ['apps', 'create', 'deals']);
+        await context.writeFile('fly.toml', 'app = "deals"');
+        await context.run('fly', ['deploy', '--app', 'deals']);
+      },
+    };
+
+    await writeApp(root);
+
+    expect(await runDeploy(target, ['--json'], io.io, { name: 'fly', image: true })).toBe(1);
+    expect(io.stdout()).toHaveLength(1);
+    expect(JSON.parse(io.stdout()[0] ?? '')).toEqual({
+      target: 'fly',
+      ok: false,
+      dryRun: false,
+      issues: [],
+      result: null,
+      code: 'COMMAND_FAILED',
+      error: '`fly deploy --app deals` failed (exit 1).',
+      command: 'fly deploy --app deals',
+      stderr: 'building\nError: insufficient memory',
+      steps: ['$ fly apps create deals', 'write fly.toml'],
+    });
+  });
+
+  it('keeps an unexpected error to one JSON result under --json', async () => {
+    const root = await tempDir();
+    const io = testIO({ cwd: root });
+
+    const target: DeployTarget = {
+      describe: 'Broken',
+      preflight: () => [],
+      run: () => {
+        throw new TypeError('fetch failed', { cause: new Error('connect ECONNREFUSED') });
+      },
+    };
+
+    await writeApp(root);
+
+    expect(await runDeploy(target, ['--json'], io.io, { name: 'test' })).toBe(1);
+    expect(io.stderr()).toContain('[frogbot] fetch failed');
+    expect(JSON.parse(io.stdout()[0] ?? '')).toMatchObject({
+      target: 'test',
+      ok: false,
+      code: 'UNEXPECTED_ERROR',
+      error: expect.stringContaining('Caused by: Error: connect ECONNREFUSED'),
+    });
+  });
+
+  it('still throws an unexpected error without --json', async () => {
+    const root = await tempDir();
+    const io = testIO({ cwd: root });
+
+    const target: DeployTarget = {
+      describe: 'Broken',
+      preflight: () => [],
+      run: () => {
+        throw new TypeError('fetch failed');
+      },
+    };
+
+    await writeApp(root);
+
+    await expect(runDeploy(target, [], io.io, { name: 'test' })).rejects.toThrow('fetch failed');
+  });
+
+  it('masks every secret whole, even when one contains another', async () => {
+    const root = await tempDir();
+    const io = testIO({
+      cwd: root,
+      programs: { tool: () => ({ code: 1, stderr: 'bad token hunter2-admin\n' }) },
+    });
+
+    const target: DeployTarget = {
+      describe: 'Tool',
+      preflight: () => [],
+      run: async (context) => {
+        await context.run('tool', ['ship', '--token', 'hunter2-admin'], {
+          mask: ['hunter2', 'hunter2-admin'],
+        });
+      },
+    };
+
+    await writeApp(root);
+
+    expect(await runDeploy(target, ['--json'], io.io, { name: 'test', image: true })).toBe(1);
+
+    const stdout = io.stdout().join('\n');
+
+    expect(stdout).not.toContain('admin');
+    expect(JSON.parse(stdout)).toMatchObject({
+      code: 'COMMAND_FAILED',
+      command: 'tool ship --token ••••',
+      stderr: 'bad token ••••',
+      error: '`tool ship --token ••••` failed (exit 1).',
+    });
+  });
+
+  it("keeps the result's own fields when a stop's fields name them too", async () => {
+    const root = await tempDir();
+    const io = testIO({ cwd: root });
+
+    const target: DeployTarget = {
+      describe: 'Broken',
+      preflight: () => [],
+      run: () => {
+        throw new DeployError('Stopped.', 1, {
+          code: 'STOPPED',
+          fields: { ok: true, target: 'other', code: 'OVERRIDE', error: 'other' },
+        });
+      },
+    };
+
+    await writeApp(root);
+
+    expect(await runDeploy(target, ['--json'], io.io, { name: 'test' })).toBe(1);
+    expect(JSON.parse(io.stdout()[0] ?? '')).toMatchObject({
+      target: 'test',
+      ok: false,
+      code: 'STOPPED',
+      error: 'Stopped.',
+    });
   });
 });

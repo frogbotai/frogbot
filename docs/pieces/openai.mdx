@@ -22,7 +22,11 @@ export default buildConfig({
 })
 ```
 
-`secret: true` offers the pasted key and `oauth: true` offers **Continue with ChatGPT**; list either or both. That is the whole setup: ChatGPT sign-in needs no client ID or secret. Listing the piece in `connections` chooses OpenAI, so FrogBot adds the `openai` provider when [`ai.providers`](/ai/overview#configure-providers) has none. You don't need an `ai` block or an `OPENAI_API_KEY`, and the app boots without one.
+`secret: true` offers the pasted key, and `oauth: true` offers **Continue with ChatGPT**. List either or both. That is the whole setup:
+
+- ChatGPT sign-in needs no client ID or secret.
+- Listing the piece in `connections` chooses OpenAI, so FrogBot adds the `openai` provider when [`ai.providers`](/ai/overview#configure-providers) has none.
+- You don't need an `ai` block or an `OPENAI_API_KEY`, and the app boots without one.
 
 `createOpenAI` takes only `slug` (default `'openai'`). It takes no `auth`: the app's own key goes in `ai.providers.openai.apiKey` or `OPENAI_API_KEY`. See [factory options](/pieces/overview#factory-options).
 
@@ -34,7 +38,7 @@ For each call to an `openai/*` model:
 2. Otherwise the app key: `ai.providers.openai.apiKey`, then `OPENAI_API_KEY`.
 3. Otherwise the call fails before any request with "OpenAI isn't set up. Add your OpenAI key in Settings → Linked accounts."
 
-Work without a user, such as jobs and schedules, has no linked key, so it uses the app key or fails the same way. A linked key that can't be used, because it was revoked or can't be read, fails with "Reconnect OpenAI in Settings → Linked accounts." and never falls back to the app key.
+Work without a user, such as jobs and schedules, has no linked key, so it uses the app key or fails the same way. A linked key that can't be used, because it was revoked or can't be read, fails with "Reconnect OpenAI in Settings → Linked accounts." and never falls back to the app key. With several linked OpenAI accounts and no default, it fails with "Choose a default OpenAI account in Settings → Linked accounts." the same way.
 
 This holds for chat and agent turns on every step, for [AI operations](/ai/overview#call-operations) given `req`, and for the [HTTP gateway route](/ai/overview#call-over-http), except that a ChatGPT plan can't be used there (see [Continue with ChatGPT](#continue-with-chatgpt)). One user's key is never sent on another user's call.
 
@@ -54,7 +58,11 @@ Each user has one linked OpenAI account, a key or a ChatGPT sign-in; linking one
 
 ## Model picker
 
-For a user with a linked key, the chat model picker offers the agent's OpenAI models that the key can use: the models from `GET /v1/models` that are also in the agent's options and allowed by [`ai.access`](/ai/overview#control-access). Models from other providers are unchanged. FrogBot keeps the list for 15 minutes per linked key; linking a new key fetches it again. When the list can't be fetched, the picker shows the full list. If the agent's default model isn't in the list, the first listed model is the default.
+For a user with a linked key, the chat model picker offers the agent's OpenAI models that the key can use. Those are the models from `GET /v1/models` that are also in the agent's options and allowed by [`ai.access`](/ai/overview#control-access). Models from other providers are unchanged.
+
+- FrogBot keeps the list for 15 minutes per linked key. Linking a new key fetches it again.
+- When the list can't be fetched, the picker shows the full list.
+- If the agent's default model isn't in the list, the first listed model is the default.
 
 ## Continue with ChatGPT
 
@@ -66,7 +74,12 @@ For a user with a linked key, the chat model picker offers the agent's OpenAI mo
 
 A sign-in without plan use saves nothing: "ChatGPT didn't allow plan use. Sign in again and allow it, or paste an OpenAI API key instead."
 
-FrogBot keeps two IDs in the app's [key-value store](/configuration/overview#key-value-store): one host ID per install, made on the first sign-in, and each user's issued client ID, reused on later sign-ins. A copy of the database copies the host ID, so give each computer its own database. Tokens refresh with the issued client ID; a failed refresh means the user reconnects. **Disconnect** revokes the session at OpenAI, then deletes the tokens even if revoking fails, and keeps both IDs for the next sign-in.
+FrogBot keeps two IDs in the app's [key-value store](/configuration/overview#key-value-store):
+
+- **One host ID per install,** made on the first sign-in. A copy of the database copies the host ID, so give each computer its own database.
+- **Each user's issued client ID,** reused on later sign-ins. Tokens refresh with it, and a failed refresh means the user reconnects.
+
+**Disconnect** revokes the session at OpenAI, then deletes the tokens even if revoking fails. It keeps both IDs for the next sign-in.
 
 On a plan:
 

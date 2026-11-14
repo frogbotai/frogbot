@@ -279,4 +279,40 @@ describe(`forms plugin uploads [${adapterLabel}]`, () => {
     expect(await storedFiles()).toEqual([]);
     expect(await tickets()).toEqual([expect.objectContaining({ subject: 'Stray part' })]);
   });
+
+  it('neither checks nor keeps the files of a hidden question', async () => {
+    await booted.frogbot.update({
+      collection: 'forms',
+      where: { slug: { equals: 'support' } },
+      data: {
+        steps: [
+          {
+            questions: [
+              { field: 'subject' },
+              {
+                field: 'attachments',
+                mimeTypes: ['text/*'],
+                rules: [{ question: 'subject', operator: 'equals', value: 'Bug report' }],
+              },
+            ],
+          },
+        ],
+      },
+      overrideAccess: true,
+    });
+
+    const hidden = await submit({ subject: 'Question' }, [
+      { key: 'attachments', name: 'photo.png', type: 'image/png', data: 'png' },
+    ]);
+
+    expect(hidden.status).toBe(200);
+    expect(await storedFiles()).toEqual([]);
+    expect((await tickets())[0]?.attachments ?? []).toEqual([]);
+
+    const shown = await submit({ subject: 'Bug report' }, [
+      { key: 'attachments', name: 'photo.png', type: 'image/png', data: 'png' },
+    ]);
+
+    expect(shown.status).toBe(400);
+  });
 });

@@ -69,9 +69,16 @@ Omit `endpoint` to fall back to the exporter's own env handling: `OTEL_EXPORTER_
 | `metrics` | `{ endpoint?: string; exportIntervalMs?: number } \| false` | Metrics on, with the defaults below | Metrics exporter options, or `false` to skip metrics. See [Metrics](#metrics). |
 | `logger` | `GatewayLogger` | The built-in console logger | Receives the warning a repeated call logs. |
 
-It also registers a global async context manager and labels exports with `service.name` `@frogbotai/gateway`, the package version, a per-process instance ID, and `NODE_ENV` as the environment; `OTEL_SERVICE_NAME` and `OTEL_RESOURCE_ATTRIBUTES` override them. Only the first call in a process takes effect; later calls log a warning and return a no-op `flush`.
+It also registers a global async context manager and labels exports with these values. `OTEL_SERVICE_NAME` and `OTEL_RESOURCE_ATTRIBUTES` override them.
 
-The CLI calls `setupTracing` automatically when `tracing.endpoint`, `OTEL_EXPORTER_OTLP_ENDPOINT`, or `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` is set — no extra setup needed for the standalone server. Only the CLI reads `tracing.endpoint`: `createGateway` ignores it, so an embedded gateway exports nothing until you call `setupTracing` or register your own tracer provider.
+- `service.name` `@frogbotai/gateway`.
+- The package version.
+- A per-process instance ID.
+- `NODE_ENV` as the environment.
+
+Only the first call in a process takes effect. Later calls log a warning and return a no-op `flush`.
+
+The CLI calls `setupTracing` automatically when `tracing.endpoint`, `OTEL_EXPORTER_OTLP_ENDPOINT`, or `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` is set, so the standalone server needs no extra setup. Only the CLI reads `tracing.endpoint`. `createGateway` ignores it, so an embedded gateway exports nothing until you call `setupTracing` or register your own tracer provider.
 
 <Warning>
   `@opentelemetry/*` packages are optional peer dependencies. If a tracing endpoint is configured but the peers aren't installed, the CLI reports which packages to add rather than crashing on boot.

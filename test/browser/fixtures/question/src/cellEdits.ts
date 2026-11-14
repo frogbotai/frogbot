@@ -3,6 +3,7 @@ import {
   autonumberField,
   barcodeField,
   type CollectionConfig,
+  colorField,
   durationField,
   moneyField,
   percentField,
@@ -29,6 +30,7 @@ export const cellKinds: CollectionConfig = {
           'website',
           'phone',
           'sku',
+          'color',
           'blurb',
           'number',
           'locked',
@@ -48,6 +50,7 @@ export const cellKinds: CollectionConfig = {
     urlField({ name: 'website' }),
     phoneField({ name: 'phone' }),
     barcodeField({ name: 'sku' }),
+    colorField({ name: 'color' }),
     aiField({
       name: 'blurb',
       inputs: ['title'],

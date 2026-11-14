@@ -53,7 +53,7 @@ type-generation changes are needed — both layouts are detected automatically.
 - Add collections (`collections: [...]`) for FrogBot's data layer.
 - Choose PostgreSQL or MongoDB with `create-frogbot-app --db` when creating a project.
 - Restrict agent `access` (e.g. `({ req }) => !!req.user`) before deploying.
-- Put it online with `npx frogbot deploy`, on Dojo, or on Docker, Fly.io, Google Cloud, AWS or Azure; see [Deployment](https://docs.frogbot.ai/deployment/overview).
+- Put it online with `npx frogbot deploy`, or run the included `Dockerfile` anywhere; see [Deployment](https://docs.frogbot.ai/deployment/overview).
 
 ## Add an AI provider
 

@@ -71,6 +71,7 @@ export interface Config {
     chats: Chat;
     credentials: Credential;
     'usage-logs': UsageLog;
+    'plugin-ai-policy-spend': PluginAiPolicySpend;
     messages: Message;
     'frogbot-chat-assets': FrogBotChatAsset;
     'frogbot-chat-turns': FrogBotChatTurn;
@@ -82,6 +83,7 @@ export interface Config {
     chats: ChatsSelect;
     credentials: CredentialsSelect;
     'usage-logs': UsageLogsSelect;
+    'plugin-ai-policy-spend': PluginAiPolicySpendSelect;
     messages: MessagesSelect;
     'frogbot-chat-assets': FrogBotChatAssetsSelect;
     'frogbot-chat-turns': FrogBotChatTurnsSelect;
@@ -139,6 +141,7 @@ export interface AccountAuthOperations {
  */
 export interface Account {
   id: number;
+  roles?: ('admin' | 'member')[] | null;
   /**
    * Leave empty to allow all models.
    */
@@ -147,6 +150,8 @@ export interface Account {
         | 'openai/gpt-4.1'
         | 'openai/gpt-4.1-mini'
         | 'openai/gpt-4o'
+        | 'spend/other'
+        | 'spend/priced'
         | 'test/allowed'
         | 'test/blocked'
       )[]
@@ -155,6 +160,7 @@ export interface Account {
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
   monthlyBudget?: number | null;
+  spendCounter?: (number | null) | PluginAiPolicySpend;
   /**
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
@@ -191,24 +197,17 @@ export interface Account {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "chats".
+ * via the `definition` "plugin-ai-policy-spend".
  */
-export interface Chat {
+export interface PluginAiPolicySpend {
   id: number;
-  title?: string | null;
+  key: string;
+  period: string;
+  amount: number;
   user?: (number | null) | Account;
-  agent?: string | null;
-  channel?: string | null;
-  externalId?: string | null;
-  channelKey?: string | null;
-  channelThread?: import('frogbot').ChannelThreadReference;
-  channelLabel?: string | null;
-  lastMessageAt?: string | null;
-  autoApprove?: boolean | null;
-  todos?: import('frogbot/tools').TodoItem[];
+  apiKey?: (number | null) | Credential;
   updatedAt: string;
   createdAt: string;
-  deletedAt?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -245,6 +244,8 @@ export interface Credential {
         | 'openai/gpt-4.1'
         | 'openai/gpt-4.1-mini'
         | 'openai/gpt-4o'
+        | 'spend/other'
+        | 'spend/priced'
         | 'test/allowed'
         | 'test/blocked'
       )[]
@@ -253,12 +254,34 @@ export interface Credential {
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
   monthlyBudget?: number | null;
+  spendCounter?: (number | null) | PluginAiPolicySpend;
   /**
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
   spendThisPeriodUSD?: number | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chats".
+ */
+export interface Chat {
+  id: number;
+  title?: string | null;
+  user?: (number | null) | Account;
+  agent?: string | null;
+  channel?: string | null;
+  externalId?: string | null;
+  channelKey?: string | null;
+  channelThread?: import('frogbot').ChannelThreadReference;
+  channelLabel?: string | null;
+  lastMessageAt?: string | null;
+  autoApprove?: boolean | null;
+  todos?: import('frogbot/tools').TodoItem[];
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -416,8 +439,10 @@ export interface FrogBotWaitpoint {
  * via the `definition` "accounts_select".
  */
 export interface AccountsSelect {
+  roles?: boolean;
   models?: boolean;
   monthlyBudget?: boolean;
+  spendCounter?: boolean;
   spendThisPeriodUSD?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
@@ -480,6 +505,7 @@ export interface CredentialsSelect {
   tenant?: boolean;
   models?: boolean;
   monthlyBudget?: boolean;
+  spendCounter?: boolean;
   spendThisPeriodUSD?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
@@ -505,6 +531,19 @@ export interface UsageLogsSelect {
   costUSD?: boolean;
   finishReason?: boolean;
   requestedAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugin-ai-policy-spend_select".
+ */
+export interface PluginAiPolicySpendSelect {
+  key?: boolean;
+  period?: boolean;
+  amount?: boolean;
+  user?: boolean;
+  apiKey?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -702,6 +741,8 @@ declare module 'frogbot' {
       | 'openai/gpt-4.1'
       | 'openai/gpt-4.1-mini'
       | 'openai/gpt-4o'
+      | 'spend/other'
+      | 'spend/priced'
       | 'test/allowed'
       | 'test/blocked';
   }

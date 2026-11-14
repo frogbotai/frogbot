@@ -39,6 +39,7 @@ function projectRow(row: ConnectionMetadata): ConnectionItem {
     id: row.id,
     piece: row.piece,
     method: row.method,
+    isDefault: row.isDefault,
     status: row.status,
     scopes: row.scopes,
     expiresAt: row.expiresAt,

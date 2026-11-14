@@ -44,8 +44,11 @@ type ActionMetadata = {
   tool: AnyTool;
 };
 
+type AppClient = (args: { req: FrogBotRequest }) => Promise<unknown>;
+
 type InstanceMetadata = {
   actions: AnyTool[];
+  appClient: AppClient;
   definition: PieceDefinition;
   options: object;
   auth: unknown;
@@ -127,6 +130,8 @@ export function pieceToolInstance(tool: AnyTool): PieceInstance | undefined {
 }
 
 export function pieceInstanceRuntime(instance: PieceInstance): {
+  /** Builds the client from the factory credential, for app-owned work such as email and channels. */
+  appClient: AppClient;
   client: PieceInstance['client'];
   definition: PieceDefinition;
   options: object;
@@ -140,6 +145,7 @@ export function pieceInstanceRuntime(instance: PieceInstance): {
   const metadata: InstanceMetadata = Reflect.get(instance, instanceMetadata);
 
   return {
+    appClient: metadata.appClient,
     client: instance.client,
     definition: metadata.definition,
     options: metadata.options,
@@ -346,19 +352,8 @@ export function definePiece<const T extends PieceDefinition>(
     const factoryKey = {};
 
     const request = (req?: FrogBotRequest) => (req ? Promise.resolve(req) : createDefaultRequest());
-    const client = async ({ req, as }: { req?: FrogBotRequest; as?: string } = {}) => {
-      const resolvedReq = await request(req);
-      const credential =
-        definition.auth || as !== undefined
-          ? await resolvedReq.frogbot.connections.resolvePieceCredential({
-              piece: instance as PieceInstance,
-              req: resolvedReq,
-              as,
-            })
-          : { auth: undefined, key: factoryKey };
-
-      if (!definition.client) return undefined;
-      const runtime = resolvedReq.frogbot as object;
+    const build = (runtime: object, credential: { auth: unknown; key: object }) => {
+      if (!definition.client) return Promise.resolve(undefined);
       let runtimeClients = clients.get(runtime);
       if (!runtimeClients) {
         runtimeClients = new WeakMap();
@@ -380,6 +375,28 @@ export function definePiece<const T extends PieceDefinition>(
       return pending;
     };
 
+    const client = async ({
+      req,
+      connection,
+      as,
+    }: { req?: FrogBotRequest; connection?: number | string; as?: string } = {}) => {
+      const resolvedReq = await request(req);
+      const credential =
+        definition.auth || as !== undefined
+          ? await resolvedReq.frogbot.connections.resolvePieceCredential({
+              piece: instance as PieceInstance,
+              req: resolvedReq,
+              ...(connection === undefined ? {} : { connection }),
+              ...(as === undefined ? {} : { as }),
+            })
+          : { auth: undefined, key: factoryKey };
+
+      return build(resolvedReq.frogbot, credential);
+    };
+
+    const appClient: AppClient = ({ req }) =>
+      build(req.frogbot, { auth, key: definition.auth ? instance : factoryKey });
+
     const triggers = Object.freeze(
       Object.fromEntries(
         (definition.triggers ?? []).map((trigger) => [trigger.slug, Object.freeze({ ...trigger })]),
@@ -400,11 +417,13 @@ export function definePiece<const T extends PieceDefinition>(
       const invoke = async ({
         input,
         req,
+        connection,
         overrideAccess = false,
         as,
       }: {
         input: unknown;
         req?: FrogBotRequest;
+        connection?: number | string;
         overrideAccess?: boolean;
         as?: string;
       }) => {
@@ -412,7 +431,7 @@ export function definePiece<const T extends PieceDefinition>(
         const parsedInput = action.input.parse(input);
         const result = await action.run({
           input: parsedInput,
-          client: await client({ req: resolvedReq, as }),
+          client: await client({ req: resolvedReq, connection, as }),
           options,
           req: resolvedReq,
           overrideAccess,
@@ -443,7 +462,7 @@ export function definePiece<const T extends PieceDefinition>(
     }
 
     Object.defineProperty(instance, instanceMetadata, {
-      value: { actions: tools, definition, options, auth, scopes },
+      value: { actions: tools, appClient, definition, options, auth, scopes },
     });
 
     Object.defineProperty(instance, pieceCapabilities, {

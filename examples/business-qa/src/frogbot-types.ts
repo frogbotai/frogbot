@@ -570,6 +570,8 @@ export interface Connection {
     | number
     | boolean
     | null;
+  accountId?: string | null;
+  isDefault: boolean;
   scopes?: string[] | null;
   expiresAt?: string | null;
   status: 'active' | 'error' | 'revoked';
@@ -845,6 +847,8 @@ export interface ConnectionsSelect {
   method?: boolean;
   credential?: boolean;
   account?: boolean;
+  accountId?: boolean;
+  isDefault?: boolean;
   scopes?: boolean;
   expiresAt?: boolean;
   status?: boolean;

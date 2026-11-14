@@ -3,7 +3,7 @@ title: Collection list
 description: Configure a collection's list view, cells that edit in place, and its summary row.
 ---
 
-The list view is a collection's table. It is the default view, and when `admin.views` has other views the list comes first. Its shared properties, such as `defaultFields`, `filter` and `defaultSort`, are in the [Collection views reference](/configuration/collections#collection-views).
+The list view is a collection's table. A collection with no `admin.views` has one list view. With other views, the first view in `admin.views` is the default, of any type, and the list can be first or come later, at `/collections/<slug>/<viewSlug>`. Its shared properties, such as `defaultFields`, `filter` and `defaultSort`, are in the [Collection views reference](/configuration/collections#collection-views).
 
 ## Editing cells in place
 
@@ -40,9 +40,24 @@ export const Deals: CollectionConfig = {
 | `true` | Every column whose field can edit in a cell. |
 | `string[]` | Only the named fields, by name or dot path (`address.city`). |
 
-These fields edit in the cell: `text`, `textarea`, `email`, `number`, `select`, `checkbox`, `date` and single `relationship` fields, and every [field kind](/fields/overview#field-kinds-frogbotfields) from `frogbot/fields`, such as `moneyField` and `ratingField`. A cell renders the field's own input, so a custom `Field` component edits in the cell too: see [Fields in list cells](/fields/overview#fields-in-list-cells).
+These fields edit in the cell:
 
-Every other cell keeps opening the record in the [record panel](/admin/record-panel): `hasMany` fields, other field types, the linked first column, and fields the person can't change. A cell is never editable when the person may not update that record or field, or the field, or a group, row or collapsible around it, is read-only, hidden or disabled, or the field is virtual. Access is checked for each row with its record, as on the edit page, so an `access.update` that returns a query or reads `doc` keeps the rows it denies plain. Startup fails on an `editable` entry that names no field, or one that never edits in a cell: `richText`, `array`, `blocks`, `group`, `tabs`, `upload`, `join`, `autonumberField` and its key field.
+- `text`, `textarea`, `email`, `number`, `select`, `checkbox`, `date`, and single `relationship` fields.
+- Every [field kind](/fields/overview#field-kinds-frogbotfields) from `frogbot/fields`, such as `moneyField` and `ratingField`.
+
+A cell renders the field's own input, so a custom `Field` component edits in the cell too. See [Fields in list cells](/fields/overview#fields-in-list-cells).
+
+Every other cell keeps opening the record in the [record panel](/admin/record-panel): `hasMany` fields, other field types, the linked first column, and fields the person can't change.
+
+A cell is never editable when any of these is true:
+
+- The person may not update that record or field.
+- The field, or a group, row, or collapsible around it, is read-only, hidden, or disabled.
+- The field is virtual.
+
+Access is checked for each row with its record, as on the edit page. An `access.update` that returns a query or reads `doc` therefore keeps the rows it denies plain.
+
+Startup fails on an `editable` entry that names no field, or one that never edits in a cell: `richText`, `array`, `blocks`, `group`, `tabs`, `upload`, `join`, `autonumberField`, and its key field.
 
 ### Keys
 
@@ -58,7 +73,12 @@ Clicking anywhere else saves a valid change. After an edit, focus returns to the
 
 ### Saving
 
-A save is one `PATCH` of that field, so validation, hooks and access run as on the edit page. An invalid value shows the field's error in the cell and sends nothing. A failed save shows the error, and the cell keeps what you typed until you fix it or press Esc. In a collection with drafts, a cell saves a draft and never publishes. A saved cell updates its row and an open record panel showing the same record.
+A save is one `PATCH` of that field, so validation, hooks, and access run as on the edit page.
+
+- **An invalid value** shows the field's error in the cell and sends nothing.
+- **A failed save** shows the error, and the cell keeps what you typed until you fix it or press Esc.
+- **In a collection with drafts,** a cell saves a draft and never publishes.
+- **A saved cell** updates its row, and it updates an open record panel that shows the same record.
 
 ## Summary row
 
@@ -104,4 +124,4 @@ Totals use the column's format: money and percent fields keep their currency and
 
 Clicking a footer cell opens a menu of the operations its column takes, plus **None**. The choice is saved for that user and that view with the rest of the view's setup, so it wins over `summary` on the next visit, and **Reset to default** in the view menu returns to the config. `summary` sets defaults only; it doesn't lock a column.
 
-The footer reads every total with one [`aggregate`](/queries/aggregate#totals-without-groups) request, sent again when the filters, search, columns or choices change, not when the page changes. Drafts that were never published count. A published record with a newer draft counts its published values, so its total can differ from the draft its row shows ([#361](https://github.com/frogbotai/frogbot/issues/361)). When rows are grouped, one footer for the whole list follows the last group.
+The footer reads every total with one [`aggregate`](/queries/aggregate#totals-without-groups) request, sent again when the filters, search, columns or choices change, not when the page changes. Totals read each record's newest draft, the same values its row shows. When rows are grouped, one footer for the whole list follows the last group.

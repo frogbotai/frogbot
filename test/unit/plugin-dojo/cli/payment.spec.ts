@@ -18,10 +18,13 @@ async function setup(files?: Record<string, string>) {
   await writeToken(env, dojo.url, 'fb_stored');
   dojo.billing = { paidApps: 0 };
 
-  const run = async (options: Omit<Parameters<typeof testIO>[0], 'cwd' | 'env'> = {}) => {
+  const run = async (
+    options: Omit<Parameters<typeof testIO>[0], 'cwd' | 'env'> = {},
+    args = ['--wait'],
+  ) => {
     const io = testIO({ cwd: root, env, ...options });
 
-    return { code: await runShare(['--no-data'], io.io), ...io };
+    return { code: await runShare(['--no-data', ...args], io.io), ...io };
   };
 
   const payAfterPolls = (polls: number) => {
@@ -116,6 +119,55 @@ describe('frogbot share: paying for a first deploy', () => {
     ]);
     expect(dojo.paths().filter((path) => path === 'GET /api/workspaces/1')).toHaveLength(360);
     expect(dojo.apps).toEqual([]);
+  });
+
+  it('keeps payment_required and the upgrade link when a --wait share stops under --json', async () => {
+    const { run, upgrade } = await setup();
+    const result = await run({}, ['--wait', '--json']);
+
+    expect(result.code).toBe(1);
+    expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
+      ok: false,
+      code: 'payment_required',
+      status: 402,
+      url: upgrade(),
+    });
+  });
+
+  it('exits 4 with the link at once without a terminal or --wait, and creates the app on the next run once paid', async () => {
+    const { dojo, run, upgrade } = await setup();
+    const first = await run({}, []);
+
+    expect(first.code).toBe(4);
+    expect(first.stderr()).toEqual([
+      `${why} Pay for it at ${upgrade()}, then run the command again. Add --wait to wait for the payment here.`,
+    ]);
+    expect(dojo.paths()).not.toContain('GET /api/workspaces/1');
+    expect(dojo.apps).toEqual([]);
+
+    dojo.billing = { subscriptionStatus: 'active', paidApps: 1 };
+
+    const second = await run({}, []);
+
+    expect(second.code).toBe(0);
+    expect(dojo.apps).toHaveLength(1);
+  });
+
+  it('names the workspace owner in the exit when the person cannot pay', async () => {
+    const { dojo, run, upgrade } = await setup();
+
+    dojo.billing = { paidApps: 0, owner: false };
+
+    const result = await run({}, ['--json']);
+
+    expect(result.code).toBe(4);
+    expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
+      ok: false,
+      code: 'payment_required',
+      error: expect.stringContaining(`Ask a workspace owner to pay for it at ${upgrade()}`),
+      needs: 'payment',
+      link: upgrade(),
+    });
   });
 
   it("keeps Dojo's message for a 402 with no upgrade link", async () => {

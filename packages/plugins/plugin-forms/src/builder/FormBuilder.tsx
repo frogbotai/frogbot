@@ -22,7 +22,9 @@ import { type ComponentProps, useId, useState } from 'react';
 
 import { fieldRefusal, type FormFieldInfo, missingRequired } from '../definition.js';
 import type { FormMode } from '../types.js';
+import { DragHandleIcon } from './DragHandleIcon.js';
 import { resolveQuestionMove } from './move.js';
+import { QuestionRules } from './QuestionRules.js';
 
 export type FormBuilderProps = {
   /** The `steps` array field; the builder reads its row fields. */
@@ -116,16 +118,6 @@ function stepKey(id: string): string {
   return `step:${id}`;
 }
 
-function DragHandleIcon() {
-  return (
-    <svg aria-hidden="true" height="16" viewBox="0 0 16 16" width="16">
-      {[4, 8, 12].flatMap((y) =>
-        [6, 10].map((x) => <circle cx={x} cy={y} fill="currentColor" key={`${x}-${y}`} r="1.25" />),
-      )}
-    </svg>
-  );
-}
-
 function AddQuestion({
   collection,
   fields,
@@ -208,6 +200,7 @@ function AddQuestion({
 }
 
 function QuestionRow({
+  earlier,
   info,
   mode,
   onRemove,
@@ -217,7 +210,9 @@ function QuestionRow({
   readOnly,
   schemaPath,
   sortable,
+  state,
 }: {
+  earlier: FormFieldInfo[];
   info: FormFieldInfo | undefined;
   mode: FormMode;
   onRemove: () => void;
@@ -227,6 +222,7 @@ function QuestionRow({
   readOnly?: boolean;
   schemaPath: string;
   sortable: Parameters<ComponentProps<typeof DraggableSortableItem>['children']>[0];
+  state: FormState;
 }) {
   const [open, setOpen] = useState(false);
   const wordingId = useId();
@@ -319,6 +315,14 @@ function QuestionRow({
             permissions={permissions}
             readOnly={readOnly}
           />
+          <QuestionRules
+            earlier={earlier}
+            info={info}
+            path={question.path}
+            readOnly={readOnly}
+            schemaPath={schemaPath}
+            state={state}
+          />
         </div>
       )}
     </li>
@@ -358,6 +362,15 @@ export function FormBuilder({
   );
 
   const missing = list ? missingRequired(list, used, mode) : [];
+  const asked = steps.flatMap(({ questions }) => questions);
+  const before = (id: string) =>
+    asked
+      .slice(
+        0,
+        asked.findIndex((question) => question.id === id),
+      )
+      .flatMap(({ field: name }) => byName.get(name) ?? []);
+
   const chrome = shown.length > 1;
 
   const questionsField = childFields(field, ['questions'])[0] as ArrayFieldClient | undefined;
@@ -493,6 +506,7 @@ export function FormBuilder({
                 <DraggableSortableItem disabled={readOnly} id={question.id} key={question.id}>
                   {(sortable) => (
                     <QuestionRow
+                      earlier={before(question.id)}
                       info={byName.get(question.field)}
                       mode={mode}
                       onRemove={() =>
@@ -504,6 +518,7 @@ export function FormBuilder({
                       readOnly={readOnly}
                       schemaPath={questionsSchemaPath}
                       sortable={sortable}
+                      state={state}
                     />
                   )}
                 </DraggableSortableItem>

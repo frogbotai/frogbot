@@ -4,6 +4,7 @@ import type { ComponentType } from 'react';
 import { AICell } from '../AI/index.client.js';
 import { BarcodeCell } from '../Barcode/index.client.js';
 import { ChannelCell } from '../Channel/index.client.js';
+import { ColorCell } from '../Color/index.client.js';
 import { DurationCell } from '../Duration/index.client.js';
 import { MoneyCell } from '../Money/index.client.js';
 import { PercentCell } from '../Percent/index.client.js';
@@ -15,6 +16,7 @@ export const kindCells: Record<string, ComponentType<DefaultCellComponentProps>>
   ai: AICell,
   barcode: BarcodeCell,
   channel: ChannelCell,
+  color: ColorCell,
   duration: DurationCell,
   money: MoneyCell,
   percent: PercentCell,

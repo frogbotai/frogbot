@@ -94,6 +94,18 @@ export function buildConnectionOAuthEndpoints({
         if (params.getAll('returnTo').length > 1) throw new OAuthError('state');
         const returnTo = params.get('returnTo') ?? urls.returnTo;
         const recipe = pieceInstanceDefinition(entry.piece).oauth;
+        if (params.getAll('reconnect').length > 1) throw new OAuthError('state');
+        if (app !== undefined && params.has('reconnect')) throw new OAuthError('state');
+        let reconnect: number | string | undefined;
+        if (params.has('reconnect')) {
+          const id = params.get('reconnect');
+          const row = (await req.frogbot.connections.list({ req })).find(
+            (row) => String(row.id) === id && row.piece === entry.piece.piece,
+          );
+
+          if (!row) return failure(404, headers, 'Connection not found');
+          reconnect = row.id;
+        }
 
         if (isPieceSignIn(recipe)) {
           const origin = new URL(req.url!).origin;
@@ -110,7 +122,7 @@ export function buildConnectionOAuthEndpoints({
               req,
               returnTo: new URL(safeReturnTo(returnTo, origin), origin).href,
               save: ({ tokens, account }) =>
-                saveOAuthConnection({ req, piece, holder, tokens, account }),
+                saveOAuthConnection({ req, piece, holder, tokens, account, reconnect }),
             }),
           );
 
@@ -127,6 +139,7 @@ export function buildConnectionOAuthEndpoints({
           callbackUrl: urls.callbackUrl,
           cookiePrefix: urls.cookiePrefix,
           returnTo,
+          reconnect,
           req,
         });
 
@@ -227,6 +240,7 @@ export function buildConnectionOAuthEndpoints({
             piece: entry.piece,
             holder: app === undefined ? { owner } : { app },
             tokens,
+            reconnect: intent.reconnect,
           });
 
           headers.set('location', intent.returnTo);

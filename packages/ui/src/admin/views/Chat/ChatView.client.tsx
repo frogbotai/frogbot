@@ -13,7 +13,7 @@ import {
 } from '@payloadcms/ui';
 import type { AgentReasoningOption, UIMessage } from 'frogbot';
 import { formatAdminURL } from 'payload/shared';
-import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
+import { type ComponentType, type ReactNode, useEffect, useRef, useState } from 'react';
 
 import type { ChatDocument } from '../../../chat/adapter.js';
 import { AgentSelector } from '../../../chat/agent-selector.js';
@@ -282,30 +282,42 @@ function ChatViewInner({
   const provider = useChatProvider();
   const { getPreference, setPreference } = usePreferences();
   const manifest = provider?.manifest;
-  const entry = manifest?.agents.find(({ slug }) => slug === selectedAgent);
+  const offered = manifest?.agents.find(({ slug }) => slug === selectedAgent);
+  const entry = offered ?? manifest?.agents.find(({ slug }) => slug === manifest.defaultAgent);
+  const activeAgent = entry?.slug ?? selectedAgent;
   const [selectedModel, setSelectedModel] = useState<string>();
   const [reasoningByModel, setReasoningByModel] = useState<Record<string, string>>({});
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
   useEffect(() => {
-    if (!manifest || entry || chatId !== undefined) return;
+    if (!manifest || offered) return;
     setSelectedAgent(manifest.defaultAgent);
-  }, [chatId, entry, manifest, setSelectedAgent]);
+  }, [manifest, offered, setSelectedAgent]);
+
+  const manifestRef = useRef(manifest);
 
   useEffect(() => {
-    if (!manifest) return;
+    manifestRef.current = manifest;
+  }, [manifest]);
+
+  const hasManifest = Boolean(manifest);
+
+  useEffect(() => {
+    if (!hasManifest) return;
 
     let current = true;
 
     void getPreference<unknown>(chatPicksPreference).then((value) => {
-      if (!current) return;
+      const loaded = manifestRef.current;
+
+      if (!current || !loaded) return;
 
       const preference = readChatPicks(value);
-      const preferredAgent = manifest.agents.find(({ slug }) => slug === preference.agent);
+      const preferredAgent = loaded.agents.find(({ slug }) => slug === preference.agent);
       const nextAgent =
-        chatId === undefined ? (preferredAgent?.slug ?? manifest.defaultAgent) : initialAgent;
+        chatId === undefined ? (preferredAgent?.slug ?? loaded.defaultAgent) : initialAgent;
 
-      const nextEntry = manifest.agents.find(({ slug }) => slug === nextAgent);
+      const nextEntry = loaded.agents.find(({ slug }) => slug === nextAgent);
       const offers = (model: string | undefined) =>
         nextEntry?.models.some((option) => option === model) ?? false;
 
@@ -330,7 +342,7 @@ function ChatViewInner({
     return () => {
       current = false;
     };
-  }, [chatId, getPreference, initialAgent, initialSelection, manifest, setSelectedAgent]);
+  }, [chatId, getPreference, hasManifest, initialAgent, initialSelection, setSelectedAgent]);
 
   const models: readonly string[] | undefined = entry?.models;
   const names: Partial<Record<string, string>> | undefined = entry?.names;
@@ -375,21 +387,21 @@ function ChatViewInner({
     if (!nextModel) return;
 
     setSelectedModel(nextModel);
-    savePicks({ agent: selectedAgent, model: nextModel, reasoning: reasoningByModel });
+    savePicks({ agent: activeAgent, model: nextModel, reasoning: reasoningByModel });
   };
 
   const changeReasoning = (key: string | undefined) => {
     const nextReasoning = rememberReasoning(reasoningByModel, activeModel, key);
 
     setReasoningByModel(nextReasoning);
-    savePicks({ agent: selectedAgent, model: activeModel, reasoning: nextReasoning });
+    savePicks({ agent: activeAgent, model: activeModel, reasoning: nextReasoning });
   };
 
   const controls = (
     <>
       {manifest && manifest.agents.length > 1 ? (
         <AgentSelector
-          selectedAgent={selectedAgent}
+          selectedAgent={activeAgent}
           onAgentChange={(nextAgent) => {
             void changeAgent(nextAgent);
           }}
@@ -436,7 +448,7 @@ function ChatViewInner({
   return (
     <ChatComponent
       {...chatComponentProps}
-      agent={selectedAgent}
+      agent={activeAgent}
       model={activeModel}
       reasoning={activeReasoning}
       {...(chatId === undefined ? {} : { chatId })}

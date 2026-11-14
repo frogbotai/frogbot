@@ -28,7 +28,12 @@ export default buildConfig({
 })
 ```
 
-The plugin needs an `ai` configuration and fails at startup without one. It adds its fields to your auth collection. With several auth collections, it uses `admin.user`; otherwise set `authCollection`. Users of other auth collections get no model list, budget or spend tracking. When your app has no auth collection, the plugin adds a `users` collection with a `name` field and the policy fields. It runs with `order: 10`.
+The plugin needs an `ai` configuration and fails at startup without one. It runs with `order: 10`.
+
+It adds its fields to your auth collection:
+
+- With several auth collections, it uses `admin.user`. Set `authCollection` to use another one. Users of other auth collections get no model list, budget, or spend tracking.
+- When your app has no auth collection, the plugin adds a `users` collection with a `name` field and the policy fields.
 
 ## Fields
 
@@ -36,13 +41,15 @@ The plugin needs an `ai` configuration and fails at startup without one. It adds
 | --- | --- | --- |
 | `models` | Models | Model IDs and [alias](/ai/overview#add-aliases) slugs the user may call, chosen from every configured model and alias. Leave it empty to allow all models, including ones you configure later. |
 | `monthlyBudget` | Monthly Budget (USD) | Spend limit for the month, at least `0`. Leave it empty for no limit. |
-| `spendThisPeriodUSD` | Monthly Spend (USD) | What the user has spent this month. Read-only and starts at `0`; the plugin maintains it. |
+| `spendThisPeriodUSD` | Monthly Spend (USD) | What the user has spent this month. Read-only and starts at `0`; the plugin maintains it. You can sort and filter users by it, but a filter leaves out users with no AI calls since you installed or upgraded the plugin. |
 
 `monthlyBudget` and `spendThisPeriodUSD` are USD [Money fields](/fields/money).
 
+Spend isn't stored on the user. The plugin keeps it in its own hidden `plugin-ai-policy-spend` collection, one counter per user and per API key, and `spendThisPeriodUSD` is a [virtual field](/fields/overview#virtual-field-configuration) that reads the user's counter through a hidden `spendCounter` relationship. That keeps AI calls from ever writing to the user, so they can't overwrite roles, models or other fields. Whoever can read a user can read their spend: the counters follow your auth collection's read access, whatever rules you set. Your app needs the counters table, so generate a migration after adding or upgrading the plugin when you use [migrations](/database/migrations).
+
 An entry in `models` is an exact match: allowing an alias allows calls to the alias, not direct calls to the model behind it.
 
-Define a field with the same name on your auth collection to change it. Your field replaces the plugin's settings it sets, and its `admin` and `access` are merged over the plugin's. For example, let only admins change budgets:
+Define a field with the same name on your auth collection to change it. Your field replaces the plugin's settings it sets, and its `admin` and `access` are merged over the plugin's. The `models` options always come from your AI config, so a `models` field can set `options: []`. An override of `spendThisPeriodUSD` can change its label and admin settings, but not its type or where spend is stored. For example, let only admins change budgets:
 
 ```ts
 {
@@ -62,21 +69,40 @@ Apart from the spend counter, the fields have no access rules of their own, so u
 
 ## Enforcement
 
-The plugin wraps each [`ai.access`](/ai/overview#control-access) rule (`generate`, `embed`, `transcribe`, `rerank`, `evaluate`). For each call, your own rule runs first; without one, the user must be signed in. When it allows a signed-in user, a non-empty `models` list must include the model or alias the caller asked for. Otherwise the call fails with a `403` and the code `model_not_allowed`: `Model "<id>" is not allowed by this policy.` Over HTTP, this returns `{ "error": { "message": "...", "type": "invalid_request_error", "code": "model_not_allowed", "param": "model" } }`, the same body as a spent budget; on `/api/v1/messages` it is Anthropic's `{ "type": "error", "error": { "type": "permission_error", "message": "...", "param": "model" } }`.
+The plugin wraps each [`ai.access`](/ai/overview#control-access) rule (`generate`, `embed`, `transcribe`, `rerank`, `evaluate`). For each call:
 
-The same check shapes chat. A user sees only the agent models they may use, and an agent with none is hidden from them. `GET /api/v1/models` likewise lists only the models in a non-empty `models` list. Chat shows a microphone only when the user may use the [transcription model](/chat/ui-chat#voice-input), and a read aloud button only when they may use the [speech model](/chat/ui-chat#read-aloud); for an alias, list the model behind it.
+1. Your own rule runs first. Without one, the user must be signed in.
+2. When the rule allows a signed-in user, a non-empty `models` list must include the model or alias that the caller asked for.
 
-The budget is checked when a call runs, before every AI call a signed-in user makes, agent turns included. When `monthlyBudget` is set and `spendThisPeriodUSD` has reached it, the call fails with a `403` and the code `budget_exceeded`: `The configured budget has been exhausted.` A spent budget doesn't hide agents or models: chat lists them as usual and shows this error when the user sends. Calls without a signed-in user, such as scheduled tasks, have no per-user limit.
+Otherwise the call fails with a `403` and the code `model_not_allowed`: `Model "<id>" is not allowed by this policy.` Over HTTP, the body is the same as for a spent budget:
+
+```json
+{ "error": { "message": "...", "type": "invalid_request_error", "code": "model_not_allowed", "param": "model" } }
+```
+
+On `/api/v1/messages`, it is Anthropic's `{ "type": "error", "error": { "type": "permission_error", "message": "...", "param": "model" } }`.
+
+The same check shapes chat:
+
+- A user sees only the agent models they may use, and an agent with none is hidden from them.
+- `GET /api/v1/models` lists only the models in a non-empty `models` list.
+- Chat shows a microphone only when the user may use the [transcription model](/chat/ui-chat#voice-input), and a read aloud button only when they may use the [speech model](/chat/ui-chat#read-aloud). For an alias, list the model behind it.
+
+The budget is checked when a call runs, before every AI call that a signed-in user makes, agent turns included.
+
+- When `monthlyBudget` is set and `spendThisPeriodUSD` has reached it, the call fails with a `403` and the code `budget_exceeded`: `The configured budget has been exhausted.`
+- A spent budget doesn't hide agents or models. Chat lists them as usual and shows this error when the user sends.
+- Calls without a signed-in user, such as scheduled tasks, have no per-user limit.
 
 ## Spend
 
-After each AI call by a signed-in user, the plugin adds its cost to that user's `spendThisPeriodUSD`, priced from the model catalog or your [custom model prices](/ai/overview#custom-model-options). Failed calls and calls that cost nothing add nothing. If the spend update fails, FrogBot logs the error and the call still succeeds.
+After each AI call by a signed-in user, the plugin adds its cost to that user's spend, priced from the model catalog or your [custom model prices](/ai/overview#custom-model-options). Failed calls and calls that cost nothing add nothing. If the spend update fails, FrogBot logs the error and the call still succeeds.
 
-Spend updates for one user run one at a time within a process. Calls already running when the budget is reached still finish, and several server processes can update the same user at once, so treat the budget as a limit that can be exceeded by a few calls, not an exact cap.
+Each update is one atomic add to the counter, outside any transaction the call runs in, so parallel calls and several server processes add up exactly, and spend is kept even if the caller's transaction rolls back. Inside a transaction, the call doesn't wait for the update. Spend updates don't run collection hooks. The budget check reads the counter, not the signed-in user, outside any transaction, and adds the cost of this request's calls whose update hasn't finished, so it sees spend from calls earlier in the same request, inside a transaction too. If the counter can't be read, the call fails. Calls already running when the budget is reached still finish, so treat the budget as a limit that can be exceeded by a few calls, not an exact cap.
 
 ## Monthly reset
 
-The `plugin-ai-policy-reset-spend` task sets every user's `spendThisPeriodUSD` to `0` at midnight on the first day of each month (`0 0 1 * *`), on its own `plugin-ai-policy-reset-spend` queue. Run a [worker](/jobs-queue/workers) that handles schedules for that queue, such as one started with `--all-queues --handle-schedules`.
+Spend counts per calendar month, in UTC unless you set `timeZone`, for example `aiPolicyPlugin({ timeZone: 'America/New_York' })` to start budgets over at midnight New York time on the 1st. The first AI call of a month starts the counter again from that call's cost, so budgets reset on time even without a worker. A counter never moves back to an earlier month: if it is already in a later month, for example after you change `timeZone` to a zone further west or while server clocks disagree at midnight, calls keep adding to that month until your calendar catches up. The `plugin-ai-policy-reset-spend` task also sets counters from earlier months to `0`, so users with no calls yet show `0`. It runs every hour on the 28th to the 31st and the 1st and 2nd of each month (`0 * 1,2,28-31 * *`), so it covers the change of month in your time zone whatever your server's, on its own `plugin-ai-policy-reset-spend` queue. A run that finds nothing to reset changes nothing, and it never zeros spend a call has already added in the new month. Run a [worker](/jobs-queue/workers) that handles schedules for that queue, such as one started with `--all-queues --handle-schedules`.
 
 ## API key limits
 
@@ -88,7 +114,9 @@ With the [API keys plugin](/plugins/api-keys) on the same auth collection, each 
 | `monthlyBudget` | Monthly Cap (USD) | Spend limit for the key this month, up to the owner's monthly budget. Leave it empty for no cap. |
 | `spendThisPeriodUSD` | Monthly Spend (USD) | What the key and the keys below it have spent this month. Read-only; the plugin maintains it. |
 
-The key's create dialog has a collapsed **Limits** section with the model list and cap, and the keys list shows spend and cap after the prefix. A key's models and cap are checked against its owner when they change, for admins too: `"<id>" isn't allowed for <owner>.` and `Can't exceed <owner>'s monthly budget of $50.00.` Values that didn't change aren't checked again, so lowering the owner's budget doesn't block renaming a key.
+The key's create dialog has a collapsed **Limits** section with the model list and cap, and the keys list shows spend and cap after the prefix.
+
+A key's models and cap are checked against its owner when they change, for admins too. The errors read `"<id>" isn't allowed for <owner>.` and `Can't exceed <owner>'s monthly budget of $50.00.` Values that didn't change aren't checked again, so lowering the owner's budget doesn't block renaming a key.
 
 Only a signed-in session can change a key's limits. A request authenticated by an API key that changes `models` or `monthlyBudget` on any key gets a `403`: `API keys can't change their own limits. Sign in to change them.`
 
@@ -105,7 +133,9 @@ Both fail before the model is called, so they write no usage row. Each call's co
 
 ## Use your own policy
 
-The plugin is built only on `ai.access` and AI hooks, so you can replace it with your own rules, such as prepaid credits. Leave the plugin out and put your check in `ai.access`. Each rule receives `{ req, model }`; return `false` for a generic `403`, or throw an error with a numeric `status` and a `code` to send your own:
+The plugin is built only on `ai.access` and AI hooks, so you can replace it with your own rules, such as prepaid credits. Leave the plugin out and put your check in `ai.access`.
+
+Each rule receives `{ req, model }`. Return `false` for a generic `403`, or throw an error with a numeric `status` and a `code` to send your own:
 
 ```ts
 class OutOfCreditsError extends Error {
@@ -129,10 +159,11 @@ export default buildConfig({
 })
 ```
 
-To charge for calls, add an `afterOperation` [hook](/ai/overview#observe-calls) that prices the call's usage with `calculateUsageCostUSD({ model, providers, usage })` from `frogbot` and updates the user.
+To charge for calls, add an `afterOperation` [hook](/ai/overview#observe-calls) that prices the call's usage with `calculateUsageCostUSD({ model, providers, usage })` from `frogbot`. Record the charge in a collection of its own with a single atomic write, such as `req.frogbot.db.updateOne({ collection, where, data: { balance: { $inc: -cost } }, options: { atomic: true } })`, not by updating the user: a full update of the user from a hook rewrites all of its fields and can undo changes made at the same moment.
 
 ## Options
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `authCollection` | `string` | Your only auth collection, or `admin.user` when there are several | Slug of the auth collection that gets the policy fields. Required when you have several auth collections and `admin.user` is not one of them. |
+| `timeZone` | `string` | `'UTC'` | [IANA time zone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) whose calendar months spend counts in, such as `'America/New_York'`. An unknown name fails at startup. See [Monthly reset](#monthly-reset). |

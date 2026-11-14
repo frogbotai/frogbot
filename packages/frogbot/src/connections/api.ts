@@ -12,9 +12,11 @@ import { oauthAuth, parseOAuthTokens } from './oauth/tokens.js';
 import {
   connectionEntry,
   connectionHolderKey,
+  type ConnectionID,
   type ConnectionMetadata,
   type ConnectionOwner,
   ConnectionStore,
+  defaultRow,
 } from './store.js';
 import type { ConnectionHolder, SanitizedConnectionsConfig } from './types.js';
 
@@ -30,6 +32,8 @@ export type ConnectionResolveArgs = {
   piece: PieceInstance;
   req: FrogBotRequest;
   scopes?: readonly string[];
+  /** Pins one of the holder's linked accounts by row id; omitted, the default account is used. */
+  connection?: ConnectionID;
   /**
    * The app slot to read, by its `app` name in `connections`. The request's user is not used, and
    * an unlinked slot throws `ConnectionError('missing')`.
@@ -40,7 +44,8 @@ export type ConnectionResolveArgs = {
 export class ConnectionError extends Error {
   constructor(
     message: string,
-    public readonly code: 'missing' | 'revoked' | 'expired' | 'error' | 'scopes',
+    public readonly code:
+      'missing' | 'revoked' | 'expired' | 'error' | 'scopes' | 'ambiguous' | 'forbidden',
     public readonly missingScopes?: string[],
     public readonly piece?: string,
   ) {
@@ -63,7 +68,7 @@ function canonicalJSON(value: PieceJSON): string {
 
 type ConnectionsState = {
   config: SanitizedConnectionsConfig;
-  credentialKeys: Map<string, { rowID: string; fingerprint: string; key: object }>;
+  credentialKeys: Map<string, { fingerprint: string; key: object }>;
   frogbot: FrogBot;
   identitySecret: Buffer;
   storePromise?: Promise<ConnectionStore>;
@@ -78,6 +83,9 @@ export function connectionsState(connections: Connections): ConnectionsState {
 
   return state;
 }
+
+const rowKey = (holder: ConnectionHolder, id: ConnectionID) =>
+  JSON.stringify([...connectionHolderKey(holder), String(id)]);
 
 async function requestOwner(
   frogbot: FrogBot,
@@ -96,9 +104,6 @@ async function requestOwner(
 
   return undefined;
 }
-
-const identityID = (holder: ConnectionHolder, piece: string) =>
-  JSON.stringify([...connectionHolderKey(holder), piece]);
 
 export class Connections {
   constructor(frogbot: FrogBot, config: SanitizedConnectionsConfig) {
@@ -127,6 +132,7 @@ export class Connections {
     piece,
     req,
     scopes,
+    connection,
     as,
   }: ConnectionResolveArgs): Promise<{ auth: unknown; key: object }> {
     const { config, credentialKeys, frogbot, identitySecret } = connectionsState(this);
@@ -150,31 +156,67 @@ export class Connections {
       holder = owner && { owner };
     }
 
-    const id = holder && identityID(holder, slug);
+    let id: string | undefined;
     const fail = (code: ConnectionError['code'], message: string): never => {
       if (id) credentialKeys.delete(id);
       throw new ConnectionError(`Connection for '${slug}' ${message}.`, code, undefined, slug);
     };
 
-    const entry = connectionEntry(config, { app: as, piece: slug });
+    const configured = connectionEntry(config, { app: as, piece: slug });
+    const entry =
+      configured &&
+      (as !== undefined || configured.piece.slug === piece.slug || runtime.auth === undefined)
+        ? configured
+        : undefined;
+
+    if (!entry && connection === undefined) {
+      if (runtime.auth !== undefined) return { auth: runtime.auth, key: piece };
+
+      return fail('missing', 'is not linked');
+    }
+
+    const notLinked = `${as === undefined ? 'is not linked' : `app '${as}' is not linked`}. Link it in Settings → Linked accounts`;
     let row;
     try {
-      row = holder && entry ? await (await this.store).get({ ...holder, piece: slug }) : undefined;
-    } catch {
+      const store = await this.store;
+      const rows = holder && entry ? await store.rows({ ...holder, piece: slug }) : [];
+      const picked =
+        connection === undefined
+          ? defaultRow(rows)
+          : rows.find((row) => String(row.id) === String(connection));
+
+      if (connection !== undefined && !picked) {
+        throw new ConnectionError(
+          `Connection ${JSON.stringify(String(connection))} is not one of your '${slug}' accounts.`,
+          'forbidden',
+          undefined,
+          slug,
+        );
+      }
+
+      if (!picked && rows.length) {
+        throw new ConnectionError(
+          `Connection for '${slug}' has several accounts and no default. Choose a default account in Settings → Linked accounts.`,
+          'ambiguous',
+          undefined,
+          slug,
+        );
+      }
+
+      if (picked) id = rowKey(holder!, picked.id);
+      row = picked && (await store.get({ ...holder!, piece: slug, id: picked.id }));
+    } catch (error) {
+      if (error instanceof ConnectionError) throw error;
+
       return fail('error', 'could not be read');
     }
 
-    if (!row) {
-      if (id) credentialKeys.delete(id);
-      if (as === undefined && runtime.auth !== undefined) return { auth: runtime.auth, key: piece };
-
-      return fail('missing', as === undefined ? 'is not linked' : `app '${as}' is not linked`);
-    }
+    if (!row || !entry) return fail('missing', notLinked);
 
     if (
       row.status === 'active' &&
       row.method === 'oauth' &&
-      entry?.oauth &&
+      entry.oauth &&
       row.expiresAt &&
       Date.parse(row.expiresAt) <= Date.now()
     ) {
@@ -183,13 +225,14 @@ export class Connections {
           store: await this.store,
           holder: holder!,
           piece: entry.piece,
+          id: row.id,
           req,
         });
       } catch {
         return fail('error', 'could not be refreshed');
       }
 
-      if (!row) return fail('missing', 'is not linked');
+      if (!row) return fail('missing', notLinked);
     }
 
     if (row.status === 'revoked') return fail('revoked', 'is revoked');
@@ -200,7 +243,7 @@ export class Connections {
       if (expiresAt <= Date.now()) return fail('expired', 'is expired');
     }
 
-    if ((row.method !== 'secret' && row.method !== 'oauth') || !entry?.[row.method]) {
+    if ((row.method !== 'secret' && row.method !== 'oauth') || !entry[row.method]) {
       return fail('error', 'uses an unavailable method');
     }
 
@@ -235,9 +278,7 @@ export class Connections {
       .digest('hex');
 
     let identity = credentialKeys.get(id!);
-    if (!identity || identity.rowID !== String(row.id) || identity.fingerprint !== fingerprint) {
-      identity = { rowID: String(row.id), fingerprint, key: {} };
-    }
+    if (!identity || identity.fingerprint !== fingerprint) identity = { fingerprint, key: {} };
 
     credentialKeys.delete(id!);
     credentialKeys.set(id!, identity);
@@ -254,12 +295,10 @@ export class Connections {
     if (!owner) throw new Error('Connections require an owner from the admin user collection.');
     const rows = await (await this.store).list({ owner });
     const prefix = `${JSON.stringify(connectionHolderKey({ owner })).slice(0, -1)},`;
-    const current = new Map(rows.map((row) => [identityID({ owner }, row.piece), String(row.id)]));
+    const current = new Set(rows.map((row) => rowKey({ owner }, row.id)));
 
-    for (const [id, identity] of credentialKeys) {
-      if (id.startsWith(prefix) && current.get(id) !== identity.rowID) {
-        credentialKeys.delete(id);
-      }
+    for (const id of credentialKeys.keys()) {
+      if (id.startsWith(prefix) && !current.has(id)) credentialKeys.delete(id);
     }
 
     return rows;
@@ -299,15 +338,19 @@ export class Connections {
     if (!entry) return false;
     const store = await this.store;
     const holder = { app };
-    if (entry.oauth) await revokeOAuthConnection({ store, holder, piece: entry.piece, req });
+    const row = defaultRow(await store.rows({ ...holder, piece }));
+    if (!row) return false;
+    if (entry.oauth) {
+      await revokeOAuthConnection({ store, holder, piece: entry.piece, id: row.id, req });
+    }
 
-    const deleted = await store.delete({ ...holder, piece });
-    credentialKeys.delete(identityID(holder, piece));
+    const deleted = await store.delete({ ...holder, piece, id: row.id });
+    credentialKeys.delete(rowKey(holder, row.id));
 
     return deleted;
   }
 
-  async delete({ req, id }: { req: FrogBotRequest; id: number | string }): Promise<boolean> {
+  async delete({ req, id }: { req: FrogBotRequest; id: ConnectionID }): Promise<boolean> {
     const { config, credentialKeys, frogbot } = connectionsState(this);
     const owner = await requestOwner(frogbot, req);
     if (!owner) throw new Error('Connections require an owner from the admin user collection.');
@@ -321,14 +364,32 @@ export class Connections {
         : undefined;
 
       if (entry) {
-        await revokeOAuthConnection({ store, holder: { owner }, piece: entry.piece, req });
+        await revokeOAuthConnection({
+          store,
+          holder: { owner },
+          piece: entry.piece,
+          id: row.id,
+          req,
+        });
       }
     }
 
-    const deleted = await store.delete({ owner, piece: row.piece, id });
-    if (deleted) credentialKeys.delete(identityID({ owner }, row.piece));
+    const deleted = await store.delete({ owner, piece: row.piece, id: row.id });
+    if (deleted) credentialKeys.delete(rowKey({ owner }, row.id));
 
     return deleted;
+  }
+
+  /** Makes the caller's row `id` the default account of its piece; `undefined` if it isn't theirs. */
+  async setDefault({ req, id }: { req: FrogBotRequest; id: ConnectionID }) {
+    const { frogbot } = connectionsState(this);
+    const owner = await requestOwner(frogbot, req);
+    if (!owner) throw new Error('Connections require an owner from the admin user collection.');
+    const store = await this.store;
+    const row = (await store.list({ owner })).find((row) => String(row.id) === String(id));
+    if (!row || !Object.hasOwn(connectionsState(this).config.entries, row.piece)) return;
+
+    return store.setDefault({ owner, piece: row.piece, id: row.id });
   }
 
   async authorizations({
@@ -351,7 +412,13 @@ export class Connections {
       try {
         await this.resolve({ piece, req });
       } catch (error) {
-        if (!(error instanceof ConnectionError)) throw error;
+        if (
+          !(error instanceof ConnectionError) ||
+          error.code === 'ambiguous' ||
+          error.code === 'forbidden'
+        ) {
+          throw error;
+        }
 
         requirements.set(piece.piece, {
           piece: piece.piece,

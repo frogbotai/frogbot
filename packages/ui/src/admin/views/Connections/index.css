@@ -20,6 +20,37 @@
     min-width: 0;
   }
 
+  .frogbot-connections__groups {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .frogbot-connections__group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .frogbot-connections__group-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 4px;
+  }
+
+  .frogbot-connections__group-title {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .frogbot-connections__group-title strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
   .frogbot-connections__rows,
   .frogbot-connections__picker {
     display: flex;

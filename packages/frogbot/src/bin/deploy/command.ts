@@ -21,6 +21,8 @@ export const coreDeployTargets: Record<(typeof coreDeployTargetNames)[number], D
   azure: azureTarget,
 };
 
+const dojoPackage = '@frogbotai/plugin-dojo';
+
 const sharedUsage = '[--dry-run] [--json] [--no-interactive] [--env-file <path>]';
 
 function targetList(targets: Record<string, DeployTarget>): string {
@@ -50,27 +52,40 @@ export async function deploy(
   const stderr = io?.stderr ?? process.stderr;
 
   if (!target || !name) {
-    const message = name ? `"${name}" isn't a deploy target.` : 'No deploy target named.';
+    const pluginHint =
+      name === 'dojo'
+        ? `Add \`dojo()\` from \`${dojoPackage}\` to \`plugins\` in frogbot.config.ts.`
+        : 'A target a plugin adds needs that plugin in `plugins` in frogbot.config.ts.';
+
+    const issue = loadError
+      ? {
+          code: 'CONFIG_INVALID',
+          message: formatCliError(loadError).replace(/^\[frogbot\] /, ''),
+          fix: "Fix frogbot.config.ts and rerun; `frogbot check` shows what's wrong. Targets that plugins add load only with a working config.",
+        }
+      : {
+          code: 'UNKNOWN_TARGET',
+          message: name ? `"${name}" isn't a deploy target.` : 'No deploy target named.',
+          fix:
+            name === 'dojo'
+              ? pluginHint
+              : `Name one of: ${Object.keys(targets).join(', ')}. ${pluginHint}`,
+        };
 
     if (loadError) stderr.write(`${formatCliError(loadError)}\n`);
-
-    stderr.write(
-      `${name ? `[frogbot] ${message}\n` : ''}[frogbot] usage: frogbot deploy <target> ${sharedUsage}\nTargets:\n${targetList(targets)}\n`,
-    );
+    else {
+      stderr.write(
+        `${name ? `[frogbot] ${issue.message}\n` : ''}${name === 'dojo' ? `[frogbot] ${pluginHint}\n` : ''}[frogbot] usage: frogbot deploy <target> ${sharedUsage}\nTargets:\n${targetList(targets)}\n`,
+      );
+    }
 
     if (args.includes('--json')) {
-      const issue = {
-        code: 'UNKNOWN_TARGET',
-        message,
-        fix: `Name one of: ${Object.keys(targets).join(', ')}.`,
-      };
-
       (io?.stdout ?? process.stdout).write(
         `${JSON.stringify({ target: name ?? null, ok: false, dryRun: args.includes('--dry-run'), issues: [issue], result: null })}\n`,
       );
     }
 
-    return 2;
+    return loadError ? 1 : 2;
   }
 
   const payloadConfig = async () => {

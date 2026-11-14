@@ -216,22 +216,26 @@ describe('chat reasoning selection', () => {
     {
       name: 'an unknown key',
       body: { model: 'test/thinker', reasoning: 'forged' },
-      error: "Reasoning option 'forged' is not available for model 'test/thinker'",
+      error:
+        "Reasoning option 'forged' is not available for model 'test/thinker'. Allowed: 'low', 'high'",
     },
     {
       name: 'a key offered only by another allowed model',
       body: { model: 'test/thinker', reasoning: 'max' },
-      error: "Reasoning option 'max' is not available for model 'test/thinker'",
+      error:
+        "Reasoning option 'max' is not available for model 'test/thinker'. Allowed: 'low', 'high'",
     },
     {
       name: 'Off for a model that does not accept it',
       body: { model: 'test/thinker', reasoning: 'none' },
-      error: "Reasoning option 'none' is not available for model 'test/thinker'",
+      error:
+        "Reasoning option 'none' is not available for model 'test/thinker'. Allowed: 'low', 'high'",
     },
     {
       name: 'a key for the default model, which has no options',
       body: { reasoning: 'high' },
-      error: "Reasoning option 'high' is not available for model 'test/gpt-4.1-mini'",
+      error:
+        "Reasoning option 'high' is not available for model 'test/gpt-4.1-mini'. It has no reasoning options",
     },
   ])('$name returns 400 on JSON and SSE without writing or calling the model', async (testCase) => {
     const json = await post({ prompt: 'Start.', ...testCase.body });
@@ -266,7 +270,11 @@ describe('chat reasoning selection', () => {
 
     expect(response).toEqual({
       status: 403,
-      body: { error: "Model 'test/other' is not allowed for agent 'questioner'" },
+      body: {
+        code: 'model-not-allowed',
+        error:
+          "Model 'test/other' is not allowed for agent 'questioner'. Allowed: 'test/gpt-4.1-mini', 'test/thinker', 'test/writer', 'test/reasoner', 'test/text-only', 'test/media'",
+      },
     });
     expect(await rowCounts()).toEqual({ chats: 0, messages: 0 });
     expect(model.requests).toEqual([]);

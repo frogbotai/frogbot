@@ -26,6 +26,8 @@ describe('app icon and manifest endpoints', () => {
 
       expect(routes.filter((route) => route === 'get /frogbot/app-icon/:size')).toHaveLength(1);
       expect(routes.filter((route) => route === 'get /frogbot/app-manifest')).toHaveLength(1);
+      expect(routes.filter((route) => route === 'head /frogbot/app-icon/:size')).toHaveLength(1);
+      expect(routes.filter((route) => route === 'head /frogbot/app-manifest')).toHaveLength(1);
     }
   });
 });

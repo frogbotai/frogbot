@@ -298,7 +298,7 @@ describe('frogbot sanitize', () => {
       false,
     );
     expect(events?.admin.components?.views?.list).toEqual({
-      Component: '@frogbotai/ui/admin/rsc#CalendarView',
+      Component: '@frogbotai/ui/admin/rsc#ListView',
     });
     expect(events?.admin.custom?.frogbot.views[0]).not.toHaveProperty('orderField');
   });
@@ -2161,7 +2161,7 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
     const endpoints = (payloadConfig as any).endpoints as any[];
 
-    expect(endpoints).toHaveLength(7);
+    expect(endpoints).toHaveLength(9);
     expect(endpoints.find(({ path }) => path === '/health').handler).not.toBe(handler);
   });
 
@@ -2703,7 +2703,7 @@ describe('frogbot sanitize', () => {
 
     expect(payloadConfig.admin.components.views?.dashboard).toEqual(dashboard);
     expect(chats?.admin.components?.views?.list).toMatchObject({
-      Component: '@frogbotai/ui/admin/rsc#CustomCollectionView',
+      Component: '@frogbotai/ui/admin/rsc#ListView',
     });
     expect(chats?.admin.components?.views?.edit?.root).toEqual(root);
   });
@@ -3802,6 +3802,26 @@ describe('frogbot sanitize', () => {
       });
     });
 
+    it.each([{ instructions: '' }, { instructions: '  ' }, { instructions: 42 }, {}])(
+      'rejects empty or non-string instructions (%o)',
+      (overrides) => {
+        const { instructions: _instructions, ...rest } = agent;
+        const config = makeConfig({ ai, agents: [{ ...rest, ...overrides }] } as never);
+
+        expect(() => sanitize(config)).toThrow(
+          "[frogbot] Agent 'support' requires `instructions`.",
+        );
+      },
+    );
+
+    it('accepts instructions as a function without calling it', () => {
+      const instructions = vi.fn(() => 'Help the user');
+      const result = sanitize(makeConfig({ ai, agents: [{ ...agent, instructions }] }));
+
+      expect(instructions).not.toHaveBeenCalled();
+      expect(result.agents?.[0]?.instructions).toBe(instructions);
+    });
+
     it.each([
       { model: agent.model, allowModels: ['openai/gpt-4o'], options: "['openai/gpt-4o']" },
       { model: agent.model, allowModels: [], options: '[]' },
@@ -4848,6 +4868,8 @@ describe('frogbot sanitize', () => {
         'get /frogbot',
         'get /frogbot/app-icon/:size',
         'get /frogbot/app-manifest',
+        'head /frogbot/app-icon/:size',
+        'head /frogbot/app-manifest',
         'post /agents/:slug',
         'get /agents/:slug/chats/:chatId/pending',
         'post /agents/:slug/chats/:chatId/settle',
@@ -4884,17 +4906,32 @@ describe('frogbot sanitize', () => {
         '/frogbot',
         '/frogbot/app-icon/:size',
         '/frogbot/app-manifest',
+        '/frogbot/app-icon/:size',
+        '/frogbot/app-manifest',
       ]);
     });
 
     it.each([
       {
         endpoints: false as const,
-        expected: ['/frogbot', '/frogbot/app-icon/:size', '/frogbot/app-manifest'],
+        expected: [
+          '/frogbot',
+          '/frogbot/app-icon/:size',
+          '/frogbot/app-manifest',
+          '/frogbot/app-icon/:size',
+          '/frogbot/app-manifest',
+        ],
       },
       {
         endpoints: [{ path: '/health', method: 'get' as const, handler: vi.fn() }],
-        expected: ['/health', '/frogbot', '/frogbot/app-icon/:size', '/frogbot/app-manifest'],
+        expected: [
+          '/health',
+          '/frogbot',
+          '/frogbot/app-icon/:size',
+          '/frogbot/app-manifest',
+          '/frogbot/app-icon/:size',
+          '/frogbot/app-manifest',
+        ],
       },
     ])(
       'preserves user endpoint configuration for empty agents',
@@ -5075,6 +5112,20 @@ describe('frogbot sanitize', () => {
       ).not.toThrow();
     });
 
+    it('accepts function skill resources without calling them', () => {
+      const resources = vi.fn(() => []);
+
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai,
+            agents: [{ ...agent, skills: [{ slug: 'docs', instructions: 'Use it', resources }] }],
+          }),
+        ),
+      ).not.toThrow();
+      expect(resources).not.toHaveBeenCalled();
+    });
+
     it('rejects duplicate skill resource paths', () => {
       expect(() =>
         sanitize(
@@ -5097,7 +5148,7 @@ describe('frogbot sanitize', () => {
             ],
           }),
         ),
-      ).toThrow("Duplicate resource path 'api.md'");
+      ).toThrow("duplicate resource path 'api.md'");
     });
 
     it.each(['list_skills', 'load_skill', 'load_skill_resource'])(
@@ -5155,9 +5206,27 @@ describe('frogbot sanitize', () => {
         'load_skill',
         'load_skill_resource',
       ]);
-      expect(result.agents?.[0].instructions).toBe(
-        'Help the user\n\n- **docs**: Product documentation\n- **support**',
+      expect(result.agents?.[0].instructions).toBe('Help the user');
+      expect(result.agents?.[0].skillLines).toEqual([
+        '- **docs**: Product documentation',
+        '- **support**',
+      ]);
+    });
+
+    it('keeps skill lines apart from function instructions', () => {
+      const instructions = vi.fn(() => 'Help the user');
+      const result = sanitize(
+        makeConfig({
+          ai,
+          agents: [
+            { ...agent, instructions, skills: [{ slug: 'docs', instructions: 'Use docs' }] },
+          ],
+        }),
       );
+
+      expect(result.agents?.[0].instructions).toBe(instructions);
+      expect(result.agents?.[0].skillLines).toEqual(['- **docs**']);
+      expect(instructions).not.toHaveBeenCalled();
     });
 
     it('keeps skill tools when root tool inheritance is disabled', () => {
@@ -5193,6 +5262,7 @@ describe('frogbot sanitize', () => {
 
       expect(empty.agents?.[0].tools).toEqual(omitted.agents?.[0].tools);
       expect(empty.agents?.[0].instructions).toBe(omitted.agents?.[0].instructions);
+      expect(empty.agents?.[0].skillLines).toBeUndefined();
     });
 
     it('reserves the schedule task slug and merges user jobs', async () => {

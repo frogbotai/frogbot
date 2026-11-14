@@ -27,6 +27,8 @@ import {
   apiKeysSlug,
   approvalsSlug,
   archivesSlug,
+  boardFirstLinksSlug,
+  boardFirstSlug,
   channelChat,
   channelQuestion,
   chatPicksPreference,
@@ -315,6 +317,30 @@ export default buildConfig({
         { name: 'status', type: 'select', options: storyStatusOptions },
       ],
     },
+    {
+      slug: boardFirstSlug,
+      admin: {
+        useAsTitle: 'title',
+        views: [{ type: 'board', groupBy: 'status' }, { type: 'list' }],
+      },
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        { name: 'status', type: 'select', options: storyStatusOptions },
+      ],
+    },
+    {
+      slug: boardFirstLinksSlug,
+      admin: { useAsTitle: 'title' },
+      fields: [
+        { name: 'title', type: 'text' },
+        {
+          name: 'card',
+          type: 'relationship',
+          relationTo: boardFirstSlug,
+          admin: { appearance: 'drawer' },
+        },
+      ],
+    },
     cellKinds,
     cellDrafts,
     cellAccess,
@@ -421,6 +447,8 @@ export default buildConfig({
           storiesSlug,
           approvalsSlug,
           photosSlug,
+          boardFirstLinksSlug,
+          boardFirstSlug,
         ] as const) {
           await req.frogbot.delete({ collection, where: {}, overrideAccess: true, req });
         }
@@ -433,6 +461,8 @@ export default buildConfig({
                 chatPicksPreference,
                 `collection-${tasksSlug}`,
                 `collection-${storiesSlug}-view-board`,
+                `frogbot:collection-view:${boardFirstSlug}`,
+                `collection-${boardFirstSlug}-view-list`,
               ],
             },
           },
@@ -575,9 +605,9 @@ export default buildConfig({
         }
 
         await req.frogbot.update({
-          collection: usersSlug,
-          id: req.user.id,
-          data: { spendThisPeriodUSD: monthlySpendUSD },
+          collection: 'plugin-ai-policy-spend',
+          where: { key: { equals: `${usersSlug}:${String(req.user.id)}` } },
+          data: { amount: monthlySpendUSD },
           overrideAccess: true,
           req,
         });
@@ -612,7 +642,15 @@ export default buildConfig({
         await req.frogbot.update({
           collection: usersSlug,
           id: req.user.id,
-          data: { spendThisPeriodUSD: 0, monthlyBudget: null },
+          data: { monthlyBudget: null },
+          overrideAccess: true,
+          req,
+        });
+
+        await req.frogbot.update({
+          collection: 'plugin-ai-policy-spend',
+          where: { key: { equals: `${usersSlug}:${String(req.user.id)}` } },
+          data: { amount: 0 },
           overrideAccess: true,
           req,
         });

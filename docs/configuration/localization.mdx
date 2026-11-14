@@ -100,7 +100,13 @@ The locale codes do not need to be in any specific format. It's up to you to def
 
 #### Filter Available Options
 
-In some projects you may want to filter the available locales shown in the admin UI selector. You can do this by providing a `filterAvailableLocales` function in your FrogBot Config. This is called on the server side and is passed the array of locales and `req`, the current `FrogBotRequest` with `req.frogbot`. This means that you can determine what locales are visible in the localizer selection menu at the top of the admin panel. You could do this per user, or implement a function that scopes these to tenants and more. Here is an example using request headers in a multi-tenant application:
+To filter the locales shown in the admin's locale selector, provide a `filterAvailableLocales` function in your FrogBot Config.
+
+- It runs on the server.
+- It receives the array of locales and `req`, the current `FrogBotRequest` with `req.frogbot`.
+- It returns the locales to show in the selector at the top of the admin panel.
+
+You can filter per user, or scope locales to tenants. This example uses request headers in a multi-tenant application:
 
 ```ts
 // ... rest of FrogBot config
@@ -279,9 +285,12 @@ query {
 
 #### Local API
 
-You can specify `locale` as well as `fallbackLocale` within the Local API as well as properties on the `options`
-argument. The `locale` property will accept any valid locale, and the `fallbackLocale` property will accept any valid
-locale, array of locales, as well as `'null'`, `'false'`, `false`, and `'none'`.
+In the Local API, pass `locale` and `fallbackLocale` as properties on the `options` argument.
+
+| Property | Accepts |
+| --- | --- |
+| `locale` | Any valid locale. |
+| `fallbackLocale` | Any valid locale, an array of locales, `'null'`, `'false'`, `false`, or `'none'`. |
 
 **Example:**
 

@@ -7,7 +7,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { attachmentKind as serverKind } from '../../../packages/frogbot/src/uploads/attachmentParts.js';
 import { officeKind as serverOfficeKind } from '../../../packages/frogbot/src/uploads/office/officeText.js';
 import {
-  acceptFor,
   attachmentKind,
   BLOCKED_EXTENSIONS,
   BLOCKED_TYPES,
@@ -29,10 +28,6 @@ async function payloadRestrictions(): Promise<RestrictedType[]> {
   const restrictions = await import(pathToFileURL(modulePath).href);
 
   return restrictions.RESTRICTED_FILE_EXT_AND_TYPES;
-}
-
-function accepted(modelInputs?: Parameters<typeof acceptFor>[0]) {
-  return acceptFor(modelInputs).split(',');
 }
 
 describe('browser attachment kinds', () => {
@@ -161,55 +156,5 @@ describe('extensionLabel', () => {
     { filename: undefined, label: undefined },
   ])('labels $filename as $label', ({ filename, label }) => {
     expect(extensionLabel(filename)).toBe(label);
-  });
-});
-
-describe('acceptFor', () => {
-  it('accepts text and no media for a text-only model', () => {
-    const accept = accepted(['text']);
-
-    expect(accept).toEqual(expect.arrayContaining(['text/*', 'application/json', '.js', '.md']));
-    expect(accept).not.toContain('image/png');
-    expect(accept).not.toContain('application/pdf');
-    expect(accept).not.toContain('audio/*');
-    expect(accept).not.toContain('video/*');
-  });
-
-  it('accepts text, images and PDFs for a model that reads them', () => {
-    const accept = accepted(['text', 'image', 'pdf']);
-
-    expect(accept).toEqual(
-      expect.arrayContaining(['text/*', 'image/png', 'image/webp', 'application/pdf', '.pdf']),
-    );
-    expect(accept).not.toContain('audio/*');
-    expect(accept).not.toContain('video/*');
-    expect(accept).not.toContain('image/heic');
-  });
-
-  it.each([
-    { model: 'a text-only model', modelInputs: ['text'] as const },
-    { model: 'an unknown model', modelInputs: undefined },
-  ])('accepts Word and Excel files for $model', ({ modelInputs }) => {
-    const accept = accepted(modelInputs);
-
-    expect(accept).toEqual(
-      expect.arrayContaining([
-        '.docx',
-        '.xlsx',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      ]),
-    );
-    expect(accept).not.toContain('.pptx');
-    expect(accept).not.toContain('.doc');
-    expect(accept).not.toContain('.xls');
-  });
-
-  it('accepts text and every media kind when the model is unknown', () => {
-    const accept = accepted();
-
-    expect(accept).toEqual(
-      expect.arrayContaining(['text/*', 'image/jpeg', 'audio/*', 'video/*', 'application/pdf']),
-    );
   });
 });

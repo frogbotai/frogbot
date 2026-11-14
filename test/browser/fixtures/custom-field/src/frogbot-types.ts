@@ -69,14 +69,28 @@ export interface Config {
   collections: {
     users: User;
     posts: Post;
+    notes: Note;
+    journal: Journal;
+    memos: Memo;
+    cards: Card;
+    tickets: Ticket;
+    scraps: Scrap;
     'api-keys': ApiKey;
+    'audit-logs': AuditLog;
     'frogbot-waitpoints': FrogBotWaitpoint;
   };
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect;
     posts: PostsSelect;
+    notes: NotesSelect;
+    journal: JournalSelect;
+    memos: MemosSelect;
+    cards: CardsSelect;
+    tickets: TicketsSelect;
+    scraps: ScrapsSelect;
     'api-keys': ApiKeysSelect;
+    'audit-logs': AuditLogsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
   };
   db: {
@@ -185,6 +199,120 @@ export interface Post {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notes".
+ */
+export interface Note {
+  id: number;
+  title: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "journal".
+ */
+export interface Journal {
+  id: number;
+  title?: string | null;
+  mood?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "memos".
+ */
+export interface Memo {
+  id: number;
+  title: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cards".
+ */
+export interface Card {
+  id: number;
+  title: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tickets".
+ */
+export interface Ticket {
+  id: number;
+  title: string;
+  status?: string | null;
+  notes?: string | null;
+  summary: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scraps".
+ */
+export interface Scrap {
+  id: number;
+  title?: string | null;
+  notes?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-keys".
  */
 export interface ApiKey {
@@ -207,6 +335,39 @@ export interface ApiKey {
    * The key that minted this one. Empty when a signed-in session did.
    */
   mintedBy?: (number | null) | ApiKey;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs".
+ */
+export interface AuditLog {
+  id: number;
+  collection: string;
+  operation: 'create' | 'update' | 'delete';
+  documentId: string;
+  user?: (number | null) | User;
+  apiKeyId?: string | null;
+  changes:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  snapshot?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  timestamp: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -284,6 +445,78 @@ export interface PostsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notes_select".
+ */
+export interface NotesSelect {
+  title?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "journal_select".
+ */
+export interface JournalSelect {
+  title?: boolean;
+  mood?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  _status?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "memos_select".
+ */
+export interface MemosSelect {
+  title?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cards_select".
+ */
+export interface CardsSelect {
+  title?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tickets_select".
+ */
+export interface TicketsSelect {
+  title?: boolean;
+  status?: boolean;
+  notes?: boolean;
+  summary?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scraps_select".
+ */
+export interface ScrapsSelect {
+  title?: boolean;
+  notes?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-keys_select".
  */
 export interface ApiKeysSelect {
@@ -296,6 +529,22 @@ export interface ApiKeysSelect {
   expiresAt?: boolean;
   canMint?: boolean;
   mintedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs_select".
+ */
+export interface AuditLogsSelect {
+  collection?: boolean;
+  operation?: boolean;
+  documentId?: boolean;
+  user?: boolean;
+  apiKeyId?: boolean;
+  changes?: boolean;
+  snapshot?: boolean;
+  timestamp?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -367,7 +616,17 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection: 'users' | 'posts' | 'api-keys';
+    relatedCollection:
+      | 'users'
+      | 'posts'
+      | 'notes'
+      | 'journal'
+      | 'memos'
+      | 'cards'
+      | 'tickets'
+      | 'scraps'
+      | 'api-keys'
+      | 'audit-logs';
     where?:
       | {
           [k: string]: unknown;
@@ -389,7 +648,20 @@ export interface CollectionQueryWidget {
  */
 export interface ActivityWidget {
   data?: {
-    excludedCollections?: ('users' | 'posts' | 'api-keys')[] | null;
+    excludedCollections?:
+      | (
+          | 'users'
+          | 'posts'
+          | 'notes'
+          | 'journal'
+          | 'memos'
+          | 'cards'
+          | 'tickets'
+          | 'scraps'
+          | 'api-keys'
+          | 'audit-logs'
+        )[]
+      | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }

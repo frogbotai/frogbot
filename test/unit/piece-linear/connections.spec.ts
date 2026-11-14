@@ -193,7 +193,7 @@ describe('Linear connections', () => {
 
       frogbot.find.mockResolvedValue({ docs: [] });
 
-      await expect(api.resolve({ piece: linear, req })).resolves.toEqual(auth);
+      await expect(api.resolve({ piece: linear, req })).rejects.toMatchObject({ code: 'missing' });
     },
   );
 

@@ -291,7 +291,7 @@ test.describe('editing', () => {
       const width = await dayWidth(page);
       const session = await page.context().newCDPSession(page);
       const y = box.y + box.height / 2;
-      const touch = (type: string, x: number) =>
+      const touch = (type: 'touchEnd' | 'touchMove' | 'touchStart', x: number) =>
         session.send('Input.dispatchTouchEvent', {
           touchPoints: type === 'touchEnd' ? [] : [{ radiusX: 10, radiusY: 10, x, y }],
           type,

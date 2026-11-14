@@ -1,5 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 
+import { postgresAdapter } from '@frogbotai/db-postgres';
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import {
@@ -35,6 +36,25 @@ export async function sync(
   const config = await buildConfig({
     secret: 'schema-sync-test',
     db: sqliteAdapter({ client: { url: `file:${db}` }, ...adapter }),
+    typescript: { autoGenerate: false },
+    collections,
+  });
+
+  const { syncSchema } = (await config._internal.payloadConfig).db as { syncSchema?: SyncSchema };
+
+  if (!syncSchema) throw new Error('syncSchema is unset');
+
+  return syncSchema({ config });
+}
+
+/** Builds a fresh config on the Postgres database at `url`, then syncs it. */
+export async function syncPostgres(
+  url: string,
+  collections: CollectionConfig[],
+): Promise<SchemaSyncResult> {
+  const config = await buildConfig({
+    secret: 'schema-sync-test',
+    db: postgresAdapter({ pool: { connectionString: url } }),
     typescript: { autoGenerate: false },
     collections,
   });

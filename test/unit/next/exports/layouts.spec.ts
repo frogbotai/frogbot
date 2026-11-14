@@ -14,7 +14,10 @@ vi.mock('@payloadcms/next/layouts', () => ({
   handleServerFunctions: mocks.handleServerFunctions,
 }));
 
-vi.mock('@frogbotai/ui/admin', () => ({ shallowRouteState: 'frogbotShallowRoute' }));
+vi.mock('@frogbotai/ui/admin', () => ({
+  BuildNotice: () => null,
+  shallowRouteState: 'frogbotShallowRoute',
+}));
 
 vi.mock('@frogbotai/ui/admin/rsc', () => ({
   PATCH_PREFERENCE: 'frogbot-patch-preference',
@@ -30,6 +33,9 @@ const { RootLayout, handleServerFunctions } =
 
 const { ShallowRouteListener } =
   await import('../../../../packages/next/src/adapters/router.client.js');
+
+const { BuildNoticeListener } =
+  await import('../../../../packages/next/src/adapters/buildNotice.client.js');
 
 async function payloadLayout(rendered: ReturnType<typeof RootLayout>) {
   const element = await rendered;
@@ -49,7 +55,7 @@ function makeConfig() {
 }
 
 describe('@frogbotai/next layouts', () => {
-  it("RootLayout mounts the shallow-route listener inside Payload's layout", async () => {
+  it("RootLayout mounts the shallow-route listener and the build notice inside Payload's layout", async () => {
     const { config } = makeConfig();
     const children = 'page';
 
@@ -58,7 +64,8 @@ describe('@frogbotai/next layouts', () => {
     );
 
     expect(element.props.children[0].type).toBe(ShallowRouteListener);
-    expect(element.props.children[1]).toBe(children);
+    expect(element.props.children[1].type).toBe(BuildNoticeListener);
+    expect(element.props.children[2]).toBe(children);
   });
 
   it('RootLayout opts into dynamic rendering before it renders', async () => {

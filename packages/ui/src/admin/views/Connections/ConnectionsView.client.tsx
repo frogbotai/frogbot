@@ -3,198 +3,14 @@
 import { useRef, useState } from 'react';
 
 import { Button } from '../../../components/button.js';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '../../../components/dialog.js';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../../../components/dropdown-menu.js';
 import { SearchInput } from '../../../components/search-input.js';
-import DeleteIcon from '../../../icons/icons/DeleteIcon.js';
 import LinkSquareIcon from '../../../icons/icons/LinkSquareIcon.js';
 import LoadingIcon from '../../../icons/icons/LoadingIcon.js';
-import MoreHorizontalIcon from '../../../icons/icons/MoreHorizontalIcon.js';
 import { AppConnections } from './AppConnections.client.js';
-import { ConnectionForm } from './ConnectionForm.js';
-import { PieceLogo } from './PieceLogo.js';
-import { connectionStatus } from './status.js';
+import type { ConnectionMethod } from './ConnectionForm.js';
+import { type ConnectionAction, ConnectionGroup } from './ConnectionGroup.js';
+import { NewConnectionDialog } from './NewConnectionDialog.js';
 import type { ConnectionItem, ConnectionPiece, ConnectionsViewClientProps } from './types.js';
-
-function NewConnectionDialog({
-  pieces,
-  apiPath,
-  returnTo,
-  open,
-  onOpenChange,
-  onCreated,
-}: Pick<ConnectionsViewClientProps, 'pieces' | 'apiPath' | 'returnTo'> & {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCreated: () => void;
-}) {
-  const [selected, setSelected] = useState<ConnectionPiece>();
-  const [search, setSearch] = useState('');
-  const [busy, setBusy] = useState(false);
-  const query = search.trim().toLowerCase();
-  const filtered = pieces.filter((piece) =>
-    `${piece.label} ${piece.slug}`.toLowerCase().includes(query),
-  );
-
-  const changeOpen = (next: boolean) => {
-    if (busy) return;
-    if (!next) {
-      setSelected(undefined);
-      setSearch('');
-    }
-
-    onOpenChange(next);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={changeOpen}>
-      <DialogContent
-        className={`frogbot-connections__dialog${selected ? ' frogbot-connections__dialog--selected' : ''}`}
-        onInteractOutside={(event) => event.preventDefault()}
-        onEscapeKeyDown={(event) => {
-          if (busy) event.preventDefault();
-        }}
-        withCloseButton={!busy}
-      >
-        {selected ? (
-          <ConnectionForm
-            key={selected.slug}
-            piece={selected}
-            apiPath={apiPath}
-            returnTo={returnTo}
-            onBack={() => setSelected(undefined)}
-            onCancel={() => changeOpen(false)}
-            onBusyChange={setBusy}
-            onCreated={() => {
-              setSelected(undefined);
-              setSearch('');
-              onCreated();
-            }}
-          />
-        ) : (
-          <>
-            <DialogHeader>
-              <DialogTitle>Select integration</DialogTitle>
-              <DialogDescription>Choose an integration to connect.</DialogDescription>
-            </DialogHeader>
-            <SearchInput
-              autoFocus
-              aria-label="Search integrations"
-              placeholder="Search integrations…"
-              value={search}
-              onChange={setSearch}
-            />
-            <div className="frogbot-connections__picker">
-              {filtered.length === 0 && (
-                <p className="frogbot-connections__empty">No integrations found</p>
-              )}
-              {filtered.map((piece) => (
-                <button
-                  key={piece.slug}
-                  type="button"
-                  className="frogbot-connections__piece"
-                  onClick={() => setSelected(piece)}
-                >
-                  <PieceLogo src={piece.icon} />
-                  <span>
-                    <strong>{piece.label}</strong>
-                    <span className="frogbot-connections__muted">
-                      {[
-                        piece.oauth && (piece.oauthLabel ?? 'OAuth'),
-                        piece.secret && 'Static credentials',
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function ConnectionRow({
-  connection,
-  label,
-  oauthLabel = 'OAuth',
-  icon,
-  scopes,
-  busy,
-  onDisconnect,
-}: {
-  connection: ConnectionItem;
-  label: string;
-  oauthLabel?: string;
-  icon?: string;
-  scopes?: string[];
-  busy: boolean;
-  onDisconnect: () => void;
-}) {
-  const status = connectionStatus(connection, scopes);
-
-  return (
-    <div className="frogbot-connections__row">
-      <div className="frogbot-connections__identity">
-        <PieceLogo src={icon} />
-        <div>
-          <strong>{connection.account?.label || connection.account?.email || label}</strong>
-          <span className="frogbot-connections__muted">
-            {label}
-            {connection.account?.email && connection.account.email !== connection.account.label
-              ? ` · ${connection.account.email}`
-              : ''}
-          </span>
-        </div>
-      </div>
-      <div className="frogbot-connections__row-actions">
-        <span className={`frogbot-connections__status frogbot-connections__status--${status}`}>
-          {status === 'relink' ? 'needs re-link' : status}
-        </span>
-        <span className="frogbot-connections__muted">
-          {connection.method === 'oauth' ? oauthLabel : 'Static credentials'}
-        </span>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="frogbot-connections__menu"
-              disabled={busy}
-              aria-label={`Options for ${label}`}
-            >
-              {busy ? (
-                <LoadingIcon className="frogbot-connections__spinner" size={16} />
-              ) : (
-                <MoreHorizontalIcon size={16} />
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem className="frogbot-connections__disconnect" onSelect={onDisconnect}>
-              <DeleteIcon size={16} />
-              Disconnect
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
-  );
-}
 
 export function ConnectionsViewClient({
   apiPath,
@@ -208,19 +24,22 @@ export function ConnectionsViewClient({
   const [error, setError] = useState(initialError ?? '');
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
+  const [dialog, setDialog] = useState<{
+    key: number;
+    piece?: ConnectionPiece;
+    method?: ConnectionMethod;
+  }>({ key: 0 });
+
   const [loading, setLoading] = useState(false);
-  const [deleting, setDeleting] = useState<number | string>();
+  const [pending, setPending] = useState<number | string>();
   const requestID = useRef(0);
-  const removing = useRef(false);
-  const labels = new Map(pieces.map((piece) => [piece.slug, piece.label]));
-  const icons = new Map(pieces.map((piece) => [piece.slug, piece.icon]));
-  const oauthLabels = new Map(pieces.map((piece) => [piece.slug, piece.oauthLabel]));
-  const scopes = new Map(pieces.map((piece) => [piece.slug, piece.scopes]));
+  const acting = useRef(false);
+  const bySlug = new Map(pieces.map((piece) => [piece.slug, piece]));
   const query = search.trim().toLowerCase();
   const filtered = connections.filter((connection) =>
     [
       connection.piece,
-      labels.get(connection.piece),
+      bySlug.get(connection.piece)?.label,
       connection.account?.label,
       connection.account?.email,
     ]
@@ -229,12 +48,32 @@ export function ConnectionsViewClient({
       .includes(query),
   );
 
+  const groups = new Map<string, ConnectionItem[]>();
+
+  for (const connection of filtered) {
+    groups.set(connection.piece, [...(groups.get(connection.piece) ?? []), connection]);
+  }
+
+  const openDialog = (piece?: ConnectionPiece, method?: ConnectionMethod) => {
+    setDialog(({ key }) => ({ key: key + 1, piece, method }));
+    setOpen(true);
+  };
+
+  const authorize = (slug: string, reconnect?: number | string) => {
+    window.location.assign(
+      `${apiPath}/${encodeURIComponent(slug)}/authorize?${new URLSearchParams({
+        returnTo,
+        ...(reconnect === undefined ? {} : { reconnect: String(reconnect) }),
+      })}`,
+    );
+  };
+
   const refresh = async () => {
     const request = ++requestID.current;
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`${apiPath}?limit=0&depth=0`, {
+      const response = await fetch(`${apiPath}?limit=0&depth=0&sort=createdAt`, {
         credentials: 'same-origin',
         cache: 'no-store',
       });
@@ -255,26 +94,68 @@ export function ConnectionsViewClient({
     }
   };
 
-  const disconnect = async (id: number | string) => {
-    if (removing.current) return;
-    removing.current = true;
-    setDeleting(id);
+  const send = async (
+    connection: ConnectionItem,
+    { path, method, failure }: { path: string; method: string; failure: string },
+    update: (current: ConnectionItem[]) => ConnectionItem[],
+  ) => {
+    if (acting.current) return;
+    acting.current = true;
+    setPending(connection.id);
     setError('');
     try {
-      const response = await fetch(`${apiPath}/${encodeURIComponent(String(id))}`, {
-        method: 'DELETE',
-        credentials: 'same-origin',
-      });
+      const response = await fetch(
+        `${apiPath}/${encodeURIComponent(String(connection.id))}${path}`,
+        {
+          method,
+          credentials: 'same-origin',
+        },
+      );
 
-      if (!response.ok) throw new Error('Could not disconnect this account. Please try again.');
-      setConnections((current) => current.filter((connection) => connection.id !== id));
+      if (!response.ok) throw new Error(failure);
+      setConnections(update);
       await refresh();
     } catch {
-      setError('Could not disconnect this account. Please try again.');
+      setError(failure);
     } finally {
-      removing.current = false;
-      setDeleting(undefined);
+      acting.current = false;
+      setPending(undefined);
     }
+  };
+
+  const act = (connection: ConnectionItem, action: ConnectionAction) => {
+    const piece = bySlug.get(connection.piece);
+
+    if (action === 'reconnect') {
+      if (!piece) return;
+      if (connection.method === 'oauth') authorize(piece.slug, connection.id);
+      else openDialog(piece, 'secret');
+
+      return;
+    }
+
+    void send(
+      connection,
+      action === 'default'
+        ? {
+            path: '/default',
+            method: 'POST',
+            failure: 'Could not set the default account. Please try again.',
+          }
+        : {
+            path: '',
+            method: 'DELETE',
+            failure: 'Could not disconnect this account. Please try again.',
+          },
+      (current) =>
+        action === 'default'
+          ? current.map((item) =>
+              item.piece === connection.piece
+                ? { ...item, isDefault: item.id === connection.id }
+                : item,
+            )
+          : current.filter((item) => item.id !== connection.id),
+    );
   };
 
   return (
@@ -291,7 +172,7 @@ export function ConnectionsViewClient({
             <Button
               size="sm"
               className="frogbot-connections__lift"
-              onClick={() => setOpen(true)}
+              onClick={() => openDialog()}
               disabled={pieces.length === 0}
             >
               + New Connection
@@ -321,7 +202,7 @@ export function ConnectionsViewClient({
                     size="sm"
                     className="frogbot-connections__lift"
                     disabled={pieces.length === 0}
-                    onClick={() => setOpen(true)}
+                    onClick={() => openDialog()}
                   >
                     Add your first connection
                   </Button>
@@ -329,17 +210,15 @@ export function ConnectionsViewClient({
               </div>
             )
           ) : (
-            <div className="frogbot-connections__rows">
-              {filtered.map((connection) => (
-                <ConnectionRow
-                  key={connection.id}
-                  connection={connection}
-                  label={labels.get(connection.piece) ?? connection.piece}
-                  oauthLabel={oauthLabels.get(connection.piece)}
-                  icon={icons.get(connection.piece)}
-                  scopes={scopes.get(connection.piece)}
-                  busy={deleting === connection.id}
-                  onDisconnect={() => void disconnect(connection.id)}
+            <div className="frogbot-connections__groups">
+              {[...groups].map(([slug, items]) => (
+                <ConnectionGroup
+                  key={slug}
+                  slug={slug}
+                  piece={bySlug.get(slug)}
+                  connections={items}
+                  busy={pending}
+                  onAction={act}
                 />
               ))}
             </div>
@@ -348,9 +227,12 @@ export function ConnectionsViewClient({
       )}
       {slots.length > 0 && <AppConnections apiPath={apiPath} returnTo={returnTo} slots={slots} />}
       <NewConnectionDialog
+        key={dialog.key}
         pieces={pieces}
         apiPath={apiPath}
         returnTo={returnTo}
+        initialPiece={dialog.piece}
+        initialMethod={dialog.method}
         open={open}
         onOpenChange={setOpen}
         onCreated={() => {

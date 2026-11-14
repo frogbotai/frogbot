@@ -245,9 +245,9 @@ describe(`app-owned connection slots [${process.env.FROGBOT_DATABASE || 'sqlite'
 
     expect(error).toBeInstanceOf(ConnectionError);
     expect(error).toMatchObject({ code: 'missing', piece: 'mail' });
-    await expect(mail.whoami({ input: {}, req: await userRequest(users[1].id) })).resolves.toBe(
-      'factory-fallback',
-    );
+    await expect(
+      mail.whoami({ input: {}, req: await userRequest(users[1].id) }),
+    ).rejects.toMatchObject({ code: 'missing' });
   });
 
   it('lets the database keep one row per slot and per user, whatever writes it', async () => {

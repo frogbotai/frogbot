@@ -30,7 +30,7 @@ export function defaultConnectionsCollection({
       update: () => false,
       delete: () => false,
     },
-    indexes: [{ fields: ['holder', 'piece'], unique: true }],
+    indexes: [{ fields: ['holder', 'piece', 'method', 'accountId'], unique: true }],
     fields: [
       { name: 'owner', type: 'relationship', relationTo: userSlug, index: true },
       {
@@ -94,6 +94,14 @@ export function defaultConnectionsCollection({
           );
         },
       },
+      {
+        name: 'accountId',
+        type: 'text',
+        index: true,
+        defaultValue: '',
+        validate: (value: unknown) => typeof value === 'string' || 'Invalid account id.',
+      },
+      { name: 'isDefault', type: 'checkbox', defaultValue: false, required: true },
       { name: 'scopes', type: 'text', hasMany: true, defaultValue: [] },
       { name: 'expiresAt', type: 'date', index: true },
       {

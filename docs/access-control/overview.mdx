@@ -63,7 +63,7 @@ To accomplish this, FrogBot exposes the [Access Operation](/authentication/opera
   specific Document.
 </Warning>
 
-If you use `id`, `data`, `siblingData`, `blockData` and `doc` within your access control functions, make sure to check that they are defined first. If they are not, then you can assume that your Access Control is being executed via the Access Operation to determine solely what the user can do within the Admin Panel.
+If your access control functions use `id`, `data`, `siblingData`, `blockData`, or `doc`, check that each one is defined first. When they are undefined, the Access Operation is running your function only to determine what the user can do in the Admin Panel.
 
 ## Locale Specific Access Control
 

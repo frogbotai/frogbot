@@ -188,17 +188,6 @@ export const BLOCKED_TYPES = new Set([
   'text/x-ruby',
 ]);
 
-const MEDIA_ACCEPT: Record<AttachmentMediaKind, string[]> = {
-  image: [...IMAGE_TYPES],
-  audio: ['audio/*'],
-  video: ['video/*'],
-  pdf: ['application/pdf', '.pdf'],
-};
-
-const MEDIA_KINDS: AttachmentMediaKind[] = ['image', 'audio', 'video', 'pdf'];
-
-const OFFICE_ACCEPT = [...OFFICE_TYPES.keys(), '.docx', '.xlsx'];
-
 function normalizeType(mediaType: string | undefined): string {
   const type = mediaType?.split(';', 1)[0]?.trim().toLowerCase() ?? '';
 
@@ -316,14 +305,4 @@ export function typeLabel({
   if (origin === 'paste') return 'PASTED';
 
   return officeKind({ mediaType, filename })?.toUpperCase() ?? extensionLabel(filename) ?? 'TEXT';
-}
-
-export function acceptFor(modelInputs?: readonly (AttachmentMediaKind | 'text')[]): string {
-  const extensions = [...TEXT_EXTENSIONS].map((extension) => `.${extension}`);
-  const text = ['text/*', ...TEXT_TYPES, '.svg', ...extensions, ...OFFICE_ACCEPT];
-  const media = modelInputs
-    ? MEDIA_KINDS.filter((kind) => modelInputs.includes(kind))
-    : MEDIA_KINDS;
-
-  return [...text, ...media.flatMap((kind) => MEDIA_ACCEPT[kind])].join(',');
 }
