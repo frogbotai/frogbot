@@ -193,6 +193,7 @@ Collection `beforeOperation` and `afterOperation` hooks don't run for aggregate.
 - **Published check.** On a localized collection, the published check uses the requested locale, so a document published only in `en` is left out of an `fr` aggregate.
 - **Localized fields.** Localized fields in `groupBy` and `values` read the requested `locale`.
 
+
 ## REST API
 
 Every collection has a `POST /api/{collection-slug}/aggregate` endpoint. The JSON body accepts the same options as `frogbot.aggregate()` except `collection`, `overrideAccess`, `req`, and `context`: the endpoint always runs as the requesting user with access enforced.

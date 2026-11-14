@@ -31,19 +31,22 @@ export function resolvePath({
   adapter,
   alias,
   collection,
+  fields: rootFields,
   locale,
   path,
 }: {
   adapter: MongooseAdapter;
   alias: string;
   collection: string;
+  /** The fields `path` starts from: the collection's, or its versions'. */
+  fields: FlattenedField[];
   locale: string | undefined;
   path: string;
 }): ResolvedPath {
   const segments = path.split('.');
   const stages: PipelineStage[] = [];
 
-  let fields = adapter.payload.collections[collection].config.flattenedFields;
+  let fields = rootFields;
   let documentLevel = true;
   let current = '';
   let copies = 0;

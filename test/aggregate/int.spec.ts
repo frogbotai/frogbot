@@ -431,6 +431,49 @@ describe(`aggregate [${adapterLabel}]`, () => {
     expect((await count({ trash: true })).lost).toEqual({ deals: 1, total: 50 });
   });
 
+  it('totals the newest draft of a published document with draft: true, as find does', async () => {
+    const [published] = seed.deals;
+
+    await booted.frogbot.update({
+      collection: dealsSlug,
+      id: published.id,
+      data: { amount: 500, stage: 'won' },
+      draft: true,
+      overrideAccess: true,
+    });
+
+    const where = { title: { equals: 'd1' } };
+
+    const listed = await booted.frogbot.find({
+      collection: dealsSlug,
+      where,
+      draft: true,
+      overrideAccess: true,
+    });
+
+    const aggregate = (draft: boolean) =>
+      booted.frogbot.aggregate({
+        collection: dealsSlug,
+        groupBy: 'stage',
+        values: { deals: { count: true }, total: { sum: 'amount' } },
+        where,
+        draft,
+        overrideAccess: true,
+      });
+
+    expect(listed.docs.map(({ amount, stage }) => ({ amount, stage }))).toEqual([
+      { amount: 500, stage: 'won' },
+    ]);
+
+    expect((await aggregate(true)).groups).toEqual([
+      { group: { stage: 'won' }, values: { deals: 1, total: 500 } },
+    ]);
+
+    expect((await aggregate(false)).groups).toEqual([
+      { group: { stage: 'lead' }, values: { deals: 1, total: 100 } },
+    ]);
+  });
+
   it('groups a localized field in the requested locale', async () => {
     const english = await booted.frogbot.aggregate({
       collection: dealsSlug,
