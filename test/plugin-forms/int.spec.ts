@@ -18,6 +18,7 @@ type Lead = {
   id: number | string;
   email: string;
   firstName?: string | null;
+  lastName?: string | null;
   interest?: string | null;
   source?: string | null;
   priority: string;
@@ -248,6 +249,103 @@ describe(`forms plugin [${adapterLabel}]`, () => {
     expect(lead.internalNote ?? null).toBeNull();
     expect(lead.meta ?? null).toBeNull();
     expect(await booted.frogbot.kv.get(`${hookMarkerPrefix}${lead.id}`)).toBe('contact');
+  });
+
+  it('drops the answer to a hidden question, whatever the client sends', async () => {
+    await createForm({
+      steps: [
+        {
+          questions: [
+            { field: 'email' },
+            { field: 'interest' },
+            {
+              field: 'lastName',
+              rules: [{ question: 'interest', operator: 'equals', value: 'sales' }],
+            },
+          ],
+        },
+      ],
+    });
+
+    const hidden = await submit('contact', {
+      data: { email: 'ada@example.com', interest: 'support', lastName: 'Lovelace' },
+    });
+
+    const shown = await submit('contact', {
+      data: { email: 'grace@example.com', interest: 'sales', lastName: 'Hopper' },
+    });
+
+    expect([hidden.status, shown.status]).toEqual([200, 200]);
+
+    const byEmail = Object.fromEntries((await leads()).map((lead) => [lead.email, lead]));
+
+    expect(byEmail['ada@example.com']?.lastName ?? null).toBeNull();
+    expect(byEmail['grace@example.com']?.lastName).toBe('Hopper');
+  });
+
+  it('refuses rules on a required field and on a later question', async () => {
+    const errors = await saveErrors({
+      steps: [
+        {
+          questions: [
+            { field: 'interest', rules: [{ question: 'firstName', operator: 'hasValue' }] },
+            { field: 'firstName' },
+            { field: 'email', rules: [{ question: 'interest', operator: 'hasValue' }] },
+          ],
+        },
+      ],
+    });
+
+    expect(errors?.map(({ path }) => path)).toEqual([
+      'steps.0.questions.0.rules.0.question',
+      'steps.0.questions.2.rules',
+    ]);
+  });
+
+  it('shows a required question even when a saved rule would hide it', async () => {
+    const form = await createForm({
+      steps: [{ questions: [{ field: 'interest' }, { field: 'email' }] }],
+    });
+
+    await booted.frogbot.db.updateOne({
+      collection: 'forms',
+      id: form.id,
+      data: {
+        steps: [
+          {
+            id: 'step000000000000000000a1',
+            questions: [
+              { id: 'q00000000000000000000a1', field: 'interest' },
+              {
+                id: 'q00000000000000000000a2',
+                field: 'email',
+                rules: [
+                  {
+                    id: 'r00000000000000000000a1',
+                    question: 'interest',
+                    operator: 'equals',
+                    value: 'sales',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    const definition = await booted.restClient.get<{ steps: { questions: object[] }[] }>(
+      `/api/forms/${form.slug}/definition`,
+    );
+
+    expect(definition.body.steps[0]?.questions[1]).not.toHaveProperty('rules');
+
+    const response = await submit(form.slug, {
+      data: { interest: 'support', email: 'ada@example.com' },
+    });
+
+    expect(response.status).toBe(200);
+    expect((await leads()).map(({ email }) => email)).toEqual(['ada@example.com']);
   });
 
   it('returns field errors from the collection', async () => {

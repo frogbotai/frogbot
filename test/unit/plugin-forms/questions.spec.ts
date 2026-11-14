@@ -8,7 +8,10 @@ import {
   describeFields,
   type FormTarget,
 } from '../../../packages/plugins/plugin-forms/src/questions.js';
-import type { FormDocument } from '../../../packages/plugins/plugin-forms/src/types.js';
+import type {
+  FormDocument,
+  FormQuestionConfig,
+} from '../../../packages/plugins/plugin-forms/src/types.js';
 
 const fields: Field[] = [
   { name: 'title', type: 'text', required: true },
@@ -215,6 +218,139 @@ describe('checkForm', () => {
   });
 });
 
+describe('checkForm rules', () => {
+  const ruled = (questions: Partial<FormQuestionConfig>[]): Partial<FormDocument> => ({
+    slug: 'contact',
+    collection: 'leads',
+    steps: [
+      { questions: [{ field: 'title' }, { field: 'contact' }] },
+      { questions: questions.map((question) => ({ field: 'email', ...question })) },
+    ],
+  });
+
+  it('accepts a rule on an earlier question', async () => {
+    expect(
+      await checkForm({
+        form: ruled([
+          {
+            field: 'email',
+            rules: [
+              { question: 'contact', operator: 'equals', value: 'email' },
+              { question: 'title', operator: 'hasValue' },
+            ],
+            match: 'any',
+          },
+        ]),
+        targets,
+        req,
+      }),
+    ).toEqual([]);
+  });
+
+  it('refuses a rule on itself, a later question or one not on the form', async () => {
+    const errors = await checkForm({
+      form: ruled([
+        {
+          field: 'email',
+          rules: [
+            { question: 'email', operator: 'hasValue' },
+            { question: 'body', operator: 'hasValue' },
+            { question: 'company', operator: 'hasValue' },
+          ],
+        },
+        { field: 'body' },
+      ]),
+      targets,
+      req,
+    });
+
+    expect(errors).toEqual([
+      { path: 'steps.1.questions.0.rules.0.question', message: expect.stringContaining('itself') },
+      {
+        path: 'steps.1.questions.0.rules.1.question',
+        message: expect.stringContaining('comes later'),
+      },
+      {
+        path: 'steps.1.questions.0.rules.2.question',
+        message: expect.stringContaining("isn't on this form"),
+      },
+    ]);
+  });
+
+  it('refuses rules on a required field, even one with a default', async () => {
+    const errors = await checkForm({
+      form: ruled([{ field: 'terms', rules: [{ question: 'title', operator: 'hasValue' }] }]),
+      targets,
+      req,
+    });
+
+    expect(errors).toEqual([
+      { path: 'steps.1.questions.0.rules', message: expect.stringContaining('is required') },
+    ]);
+  });
+
+  it('refuses a comparison without a value, an unknown operator and an unknown match', async () => {
+    const errors = await checkForm({
+      form: ruled([
+        {
+          field: 'email',
+          match: 'some' as 'any',
+          rules: [
+            { question: 'contact', operator: 'equals', value: '' },
+            { question: 'contact', operator: 'contains' as 'equals', value: 'x' },
+          ],
+        },
+      ]),
+      targets,
+      req,
+    });
+
+    expect(errors.map(({ path }) => path)).toEqual([
+      'steps.1.questions.0.match',
+      'steps.1.questions.0.rules.0.value',
+      'steps.1.questions.0.rules.1.operator',
+    ]);
+  });
+
+  it('refuses a rule on a file question', async () => {
+    const files = new Map<string, FormTarget>([
+      [
+        'leads',
+        {
+          slug: 'leads',
+          fields: collectFields([
+            { name: 'cv', type: 'upload', relationTo: 'media' },
+            { name: 'note', type: 'text' },
+          ] as Field[]),
+        },
+      ],
+      ['media', { slug: 'media', fields: new Map(), upload: true }],
+    ]);
+
+    const errors = await checkForm({
+      form: {
+        slug: 'apply',
+        collection: 'leads',
+        steps: [
+          {
+            questions: [
+              { field: 'cv' },
+              { field: 'note', rules: [{ question: 'cv', operator: 'hasValue' }] },
+            ],
+          },
+        ],
+      },
+      targets: files,
+      req,
+    });
+
+    expect(errors).toContainEqual({
+      path: 'steps.0.questions.1.rules.0.question',
+      message: expect.stringContaining('file question'),
+    });
+  });
+});
+
 describe('buildDefinition', () => {
   const saved: FormDocument = {
     id: 1,
@@ -242,6 +378,42 @@ describe('buildDefinition', () => {
     hiddenParams: [{ name: 'utm_source', field: 'company' }],
     confirmation: { type: 'redirect', redirect: '/thanks' },
   };
+
+  it('copies rules onto the question, with match only when it is any', () => {
+    const definition = buildDefinition({
+      form: {
+        ...saved,
+        steps: [
+          {
+            questions: [
+              { field: 'contact' },
+              {
+                field: 'email',
+                rules: [
+                  { id: 'r1', question: 'contact', operator: 'equals', value: 'email' },
+                  { id: 'r2', question: 'contact', operator: 'hasValue', value: 'ignored' },
+                ],
+                match: 'any',
+              },
+              { field: 'body', rules: [], match: 'all' },
+            ],
+          },
+        ],
+      },
+      fields: describeFields({ fields: catalog }),
+      closed: false,
+    });
+
+    const [, email, body] = definition.steps[0].questions;
+
+    expect(email.rules).toEqual([
+      { question: 'contact', operator: 'equals', value: 'email' },
+      { question: 'contact', operator: 'hasValue' },
+    ]);
+    expect(email.match).toBe('any');
+    expect(body).not.toHaveProperty('rules');
+    expect(body).not.toHaveProperty('match');
+  });
 
   it('builds steps and questions from the form and its fields', () => {
     expect(
