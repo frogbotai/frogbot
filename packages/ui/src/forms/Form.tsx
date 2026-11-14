@@ -4,6 +4,7 @@ import { type FormEvent, useMemo, useState } from 'react';
 import { Button } from '../components/button.js';
 import { fileProblem } from './files.js';
 import { FormQuestion } from './FormQuestion.js';
+import { visibleQuestions } from './rules.js';
 import { useTurnstile } from './turnstile.js';
 import type {
   FormConfirmation,
@@ -128,8 +129,21 @@ export function Form({ definition, submitUrl, onSubmitted, className }: FormProp
   const [message, setMessage] = useState<string>();
   const [trap, setTrap] = useState('');
 
-  const step = steps[stepIndex];
-  const isLast = stepIndex >= steps.length - 1;
+  const shown = visibleQuestions(steps, values);
+  const shownSteps = steps.flatMap((item, index) =>
+    item.questions.some(({ key }) => shown.has(key)) ? [index] : [],
+  );
+
+  const current = shownSteps.includes(stepIndex)
+    ? stepIndex
+    : (shownSteps.find((index) => index > stepIndex) ?? shownSteps.at(-1) ?? stepIndex);
+
+  const position = shownSteps.indexOf(current);
+  const next = shownSteps[position + 1];
+  const previous = position > 0 ? shownSteps[position - 1] : undefined;
+  const step = steps[current];
+  const stepQuestions = step?.questions.filter(({ key }) => shown.has(key)) ?? [];
+  const isLast = next === undefined;
   const turnstile = useTurnstile(definition.turnstile?.siteKey, isLast && !message);
   const classes = `fb-form${className ? ` ${className}` : ''}`;
 
@@ -160,7 +174,7 @@ export function Form({ definition, submitUrl, onSubmitted, className }: FormProp
   };
 
   const checkStep = (): boolean => {
-    const problems = step.questions.flatMap((question): [string, string][] => {
+    const problems = stepQuestions.flatMap((question): [string, string][] => {
       const value = values[question.key] ?? '';
 
       if (question.required && isEmpty(value)) return [[question.key, REQUIRED]];
@@ -210,12 +224,17 @@ export function Form({ definition, submitUrl, onSubmitted, className }: FormProp
         questions.filter(({ type }) => type === 'upload').map(({ key }) => key),
       );
 
-      const data = Object.fromEntries(Object.entries(values).filter(([key]) => !uploads.has(key)));
-      const files = [...uploads].map((key): [string, File[]] => {
-        const value = values[key];
+      const data = Object.fromEntries(
+        Object.entries(values).filter(([key]) => shown.has(key) && !uploads.has(key)),
+      );
 
-        return [key, isFiles(value) ? value : []];
-      });
+      const files = [...uploads]
+        .filter((key) => shown.has(key))
+        .map((key): [string, File[]] => {
+          const value = values[key];
+
+          return [key, isFiles(value) ? value : []];
+        });
 
       const result = await post(
         url,
@@ -263,8 +282,8 @@ export function Form({ definition, submitUrl, onSubmitted, className }: FormProp
 
     if (submitting || !checkStep()) return;
 
-    if (!isLast) {
-      setStepIndex(stepIndex + 1);
+    if (next !== undefined) {
+      setStepIndex(next);
       setFormErrors([]);
 
       return;
@@ -288,13 +307,13 @@ export function Form({ definition, submitUrl, onSubmitted, className }: FormProp
   return (
     <form className={classes} noValidate onSubmit={onSubmit}>
       <h1 className="fb-form__title">{definition.title}</h1>
-      {steps.length > 1 ? (
+      {shownSteps.length > 1 ? (
         <p className="fb-form__progress">
-          Step {stepIndex + 1} of {steps.length}
+          Step {position + 1} of {shownSteps.length}
         </p>
       ) : null}
       {step.title ? <h2 className="fb-form__step-title">{step.title}</h2> : null}
-      {step.questions.map((question) => (
+      {stepQuestions.map((question) => (
         <FormQuestion
           error={errors[question.key]}
           key={question.key}
@@ -324,12 +343,12 @@ export function Form({ definition, submitUrl, onSubmitted, className }: FormProp
         </div>
       ) : null}
       <div className="fb-form__actions">
-        {stepIndex > 0 ? (
+        {previous !== undefined ? (
           <Button
             disabled={submitting}
             type="button"
             variant="outline"
-            onClick={() => setStepIndex(stepIndex - 1)}
+            onClick={() => setStepIndex(previous)}
           >
             Back
           </Button>

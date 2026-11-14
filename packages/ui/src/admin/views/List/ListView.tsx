@@ -2,6 +2,7 @@ import { getTranslation } from '@payloadcms/translations';
 import { getClientConfig } from '@payloadcms/ui/utilities/getClientConfig';
 import { getSummaryKind, SUMMARY_OPERATIONS } from 'frogbot/internal';
 import type {
+  AdminViewServerProps,
   ListViewServerProps,
   PayloadRequest,
   SanitizedCollectionConfig,
@@ -16,6 +17,7 @@ import {
   getRuntimeViews,
   redirectToLastView,
   resolveCollectionViews,
+  type RuntimeCollectionView,
 } from '../collectionViews.js';
 import { buildFrameSlots } from '../frame.js';
 import { selectPath } from '../groups/resolve.js';
@@ -37,10 +39,13 @@ import { readGridSettings } from './grid/grid.js';
 import type { ListGridSettings } from './grid/ListGrid.client.js';
 import { type GroupedTable, renderGroupedTable } from './groupedTable.js';
 import { ListFrameClient, type ListFrameSummary } from './ListFrame.client.js';
+import { isCollectionRoot, isDrawer, renderFirstView, renderListRoute } from './rootView.js';
 import { withRowIds } from './rowIds.js';
 import { readSummaryChoices, type SummaryColumn } from './summary/summary.js';
 
 type Row = Record<string, unknown>;
+
+type ListRuntimeView = Extract<RuntimeCollectionView, { type: 'list' }>;
 
 async function findDoneIds({
   collectionSlug,
@@ -139,9 +144,28 @@ function withDefaultGroupBy(stored: ViewSetup, groupBy: string | undefined): Vie
 /**
  * The list view Payload renders. On the collection's own page it renders in FrogBot's shared view
  * frame with Payload's table, selection and page controls as its body. A relationship drawer and
- * the hierarchy view stay Payload's own list.
+ * the hierarchy view stay Payload's own list. At the collection root it renders the first view,
+ * whatever its type, and a list that isn't first renders here on its own route.
  */
-export async function ListView(props: ListViewServerProps) {
+export async function ListView(props: ListViewServerProps | AdminViewServerProps) {
+  if ('initPageResult' in props) return renderListRoute(props);
+
+  const inDrawer = await isDrawer(props);
+  const first = getRuntimeViews(props)[0];
+  if (
+    !inDrawer &&
+    isCollectionRoot(props.params) &&
+    props.viewType !== 'hierarchy' &&
+    first &&
+    first.type !== 'list'
+  ) {
+    return renderFirstView(first.type, props);
+  }
+
+  return renderList(props, inDrawer);
+}
+
+async function renderList(props: ListViewServerProps, inDrawer: boolean) {
   const {
     collectionConfig,
     data,
@@ -165,8 +189,9 @@ export async function ListView(props: ListViewServerProps) {
   const req = await createViewRequest({ i18n, payload, searchParams, user });
   const { views } = await resolveCollectionViews({ collectionConfig, req });
   const runtime = getRuntimeViews({ collectionConfig });
-  const view = runtime[0]?.type === 'list' ? runtime[0] : undefined;
+  const view = runtime.find((item): item is ListRuntimeView => item.type === 'list');
   const isList = clientProps.viewType === 'list' && view !== undefined;
+  const viewPath = views.find(({ slug }) => slug === view?.slug)?.path ?? '';
   let summary: ListFrameSummary | undefined;
   let grid: ListGridSettings | undefined;
   const navigationLabel = collectionConfig.orderable
@@ -189,7 +214,11 @@ export async function ListView(props: ListViewServerProps) {
   }
 
   if (isList) {
-    await redirectToLastView({ collectionSlug, req, server, views });
+    if (!isCollectionRoot(params)) {
+      if (!views.some(({ slug }) => slug === view.slug)) return server.notFound();
+    } else if (!inDrawer) {
+      await redirectToLastView({ collectionSlug, req, server, views });
+    }
 
     const setup = await resolveViewSetup({
       collectionSlug,
@@ -201,11 +230,11 @@ export async function ListView(props: ListViewServerProps) {
 
     const saved = qs.stringify(withDefaultGroupBy(setup.saved, view.groupBy));
 
-    if (isFreshQuery(query) && saved) {
+    if (!inDrawer && isFreshQuery(query) && saved) {
       server.redirect(
         `${formatAdminURL({
           adminRoute: payload.config.routes.admin,
-          path: `/collections/${collectionSlug}`,
+          path: `/collections/${collectionSlug}${viewPath}`,
         })}?${[qs.stringify(query), saved].filter(Boolean).join('&')}`,
       );
     }

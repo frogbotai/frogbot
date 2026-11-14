@@ -1,3 +1,4 @@
+import { RULE_OPERATORS } from '@frogbotai/ui/forms/rules';
 import {
   type Field,
   fieldAffectsData,
@@ -19,7 +20,7 @@ import {
   uploadRules,
   type UsableFieldInfo,
 } from './definition.js';
-import type { FormDocument, FormOption, FormQuestionType } from './types.js';
+import type { FormDocument, FormOption, FormQuestionConfig, FormQuestionType } from './types.js';
 import { checkUploadQuestion, checkUploadTotals, uploadStoreRefusal } from './uploads.js';
 
 export const QUESTION_TYPES = [
@@ -293,6 +294,67 @@ function isSafeRedirect(url: string): boolean {
   return /^https?:\/\/[^\s]+$/i.test(url);
 }
 
+function checkRules({
+  path,
+  question,
+  info,
+  earlier,
+  later,
+}: {
+  path: string;
+  question: FormQuestionConfig;
+  info: FormFieldInfo | undefined;
+  earlier: Map<string, string>;
+  later: Set<string>;
+}): FormError[] {
+  const rules = question.rules ?? [];
+  const errors: FormError[] = [];
+
+  if (question.match && question.match !== 'all' && question.match !== 'any') {
+    errors.push({ path: `${path}.match`, message: 'Use all or any.' });
+  }
+
+  if (!rules.length) return errors;
+
+  if (info?.required) {
+    errors.push({
+      path: `${path}.rules`,
+      message: `"${question.field}" is required, so it can't have rules: a hidden question would block submit.`,
+    });
+
+    return errors;
+  }
+
+  for (const [index, { question: source, operator, value }] of rules.entries()) {
+    const rulePath = `${path}.rules.${index}`;
+    const type = earlier.get(source);
+
+    if (source === question.field) {
+      errors.push({ path: `${rulePath}.question`, message: "A question can't depend on itself." });
+    } else if (later.has(source)) {
+      errors.push({
+        path: `${rulePath}.question`,
+        message: `"${source}" comes later in the form. A rule can only check an earlier question.`,
+      });
+    } else if (type === undefined) {
+      errors.push({ path: `${rulePath}.question`, message: `"${source}" isn't on this form.` });
+    } else if (type === 'upload') {
+      errors.push({
+        path: `${rulePath}.question`,
+        message: `"${source}" is a file question, which rules can't check.`,
+      });
+    }
+
+    if (!RULE_OPERATORS.includes(operator)) {
+      errors.push({ path: `${rulePath}.operator`, message: 'Use equals, notEquals or hasValue.' });
+    } else if (operator !== 'hasValue' && !value) {
+      errors.push({ path: `${rulePath}.value`, message: 'Enter the answer to compare with.' });
+    }
+  }
+
+  return errors;
+}
+
 /**
  * The reasons a form can't be saved, each with the path of the form field at fault. A closed
  * form skips the question checks, so it can always be closed, or drafted before it opens.
@@ -393,11 +455,21 @@ export async function checkForm({
   };
 
   const files: { name: string; rules: UploadRules }[] = [];
+  const later = new Set(
+    (form.steps ?? []).flatMap((step) => (step.questions ?? []).map(({ field }) => field)),
+  );
+
+  const earlier = new Map<string, string>();
 
   for (const [stepIndex, step] of (form.steps ?? []).entries()) {
     for (const [index, question] of (step.questions ?? []).entries()) {
       const path = `steps.${stepIndex}.questions.${index}`;
       const entry = target.fields.get(question.field);
+      const info = fields.get(question.field);
+
+      later.delete(question.field);
+      errors.push(...checkRules({ path, question, info, earlier, later }));
+      if (info && !earlier.has(question.field)) earlier.set(question.field, info.type);
 
       if (!usable(`${path}.field`, question.field) || !entry || !('field' in entry)) continue;
       if (entry.field.type !== 'upload') continue;

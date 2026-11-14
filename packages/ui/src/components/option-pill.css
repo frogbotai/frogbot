@@ -15,7 +15,8 @@
     background: var(--color-bg-secondary);
   }
   .fb-option-pill--blue {
-    background: var(--color-bg-selected);
+    /* The selected tokens carry the brand, so blue mixes Payload's theme-fixed blue into the background. */
+    background: color-mix(in srgb, var(--special-multiplayer-blue) 18%, var(--color-bg));
   }
   .fb-option-pill--green {
     background: var(--color-bg-success-tertiary);

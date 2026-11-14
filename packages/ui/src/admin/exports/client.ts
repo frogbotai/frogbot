@@ -1,9 +1,15 @@
+export { BuildNotice, type BuildNoticeProps } from '../elements/BuildNotice/index.client.js';
 export { FrogBotNavClient, type FrogBotNavClientProps } from '../elements/Nav/index.client.js';
 export {
   RecentsSectionClient,
   type RecentsSectionClientProps,
 } from '../elements/Nav/RecentsSection.client.js';
 export { SearchButton } from '../elements/SearchButton/index.client.js';
+export {
+  PanelIconButton,
+  type PanelIconButtonProps,
+} from '../elements/PanelIconButton/index.client.js';
+export { PanelSection, type PanelSectionProps } from '../elements/PanelSection/index.client.js';
 export {
   SignInButtonsClient,
   type SignInButtonsClientProps,
@@ -13,6 +19,7 @@ export { type ViewTab, ViewTabs, type ViewTabsProps } from '../elements/ViewTabs
 export { AICell, AIField } from '../fields/AI/index.client.js';
 export { BarcodeCell } from '../fields/Barcode/index.client.js';
 export { ChannelCell, type ChannelCellProps } from '../fields/Channel/index.client.js';
+export { ColorCell, ColorField } from '../fields/Color/index.client.js';
 export { DurationCell, DurationField } from '../fields/Duration/index.client.js';
 export { FieldCell } from '../fields/FieldCell/index.client.js';
 export { MoneyCell, MoneyField } from '../fields/Money/index.client.js';

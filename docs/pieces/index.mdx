@@ -77,7 +77,12 @@ export const gmail = createGmail({ oauth: google.oauth })
 export const connections: ConnectionEntry[] = [{ piece: gmail, oauth: true }]
 ```
 
-Google's identity recipe requests OpenID, email, and profile access. Gmail adds mailbox scopes, and a `scopes` option on `createGmail` changes only Gmail's consent screen, not the shared app. Put `google` in a collection's `auth.signIn` for login and pass `connections` to the root config for Gmail linking. Sheets, Drive, and Calendar share `google.oauth` the same way, with a separate entry and callback for each product. See the complete [product connection example](/connections/overview#configure-linking) and [redirect setup](/connections/overview#configure-oauth-redirects).
+- Google's identity recipe requests OpenID, email, and profile access.
+- Gmail adds mailbox scopes. A `scopes` option on `createGmail` changes only Gmail's consent screen, not the shared app.
+- Put `google` in a collection's `auth.signIn` for login, and pass `connections` to the root config for Gmail linking.
+- Sheets, Drive, and Calendar share `google.oauth` the same way, with a separate entry and callback for each product.
+
+See the complete [product connection example](/connections/overview#configure-linking) and [redirect setup](/connections/overview#configure-oauth-redirects).
 
 ## Google actions
 
@@ -125,7 +130,12 @@ res.body.emailAddress // parsed JSON
 | `failsafe` | `boolean` | `false` | Return the response for a non-2xx status instead of throwing. |
 | `timeoutSeconds` | `number` | `30` | Abort the request after this many seconds. The request is also aborted with `req.signal`. |
 
-The result is always `{ status, headers, body }`. An empty body is `null`. A non-2xx status throws an error with the piece, the status and the first 500 characters of the body, unless `failsafe` is `true`. Redirects are never followed: a 3xx throws, or is returned with `failsafe`. Slack and Telegram also throw when a 2xx response has `ok: false`.
+The result is always `{ status, headers, body }`.
+
+- An empty body is `null`.
+- A non-2xx status throws an error with the piece, the status, and the first 500 characters of the body, unless `failsafe` is `true`.
+- Redirects are never followed. A 3xx throws, or is returned with `failsafe`.
+- Slack and Telegram also throw when a 2xx response has `ok: false`.
 
 With `responseType: 'binary'`, `body` is the saved file, `{ id, name, mimeType, size, url }`. The file is created as the caller, with access control. Binary calls need an upload collection with `file: true`; without one the call throws before sending the request.
 

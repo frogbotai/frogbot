@@ -4,7 +4,7 @@ description: 'Run independent FrogBot workers and schedulers with graceful shutd
 keywords: ['workers', 'jobs:run', 'scheduler', 'Docker', 'D1']
 ---
 
-`frogbot jobs:run` loads your app configuration and initializes FrogBot, including application `onInit`, without starting Next.js. It stays running and polls on a cron schedule. Configure your [tasks, workflows, and leases](/jobs-queue/overview) before starting workers.
+`frogbot jobs:run` loads your app configuration and initializes FrogBot, including application `onInit`, without starting Next.js. It stays running and polls on a cron schedule. Configure your [tasks](/jobs-queue/tasks), [workflows](/jobs-queue/workflows), and [leases](/jobs-queue/queues#leases-and-crash-recovery) before starting workers.
 
 ## Start a worker
 
@@ -27,7 +27,7 @@ Value flags accept `--flag value` and `--flag=value`. Invalid, unknown, duplicat
 
 During normal execution, `SIGINT` and `SIGTERM` stop new ticks, drain the active batch and pending heartbeat, close the database, and exit `0`. Set your container's shutdown grace period to accommodate the longest active batch.
 
-An exceptional completion or database-write failure can reject a batch before sibling work finishes; the worker can then exit `1` without draining those siblings. Forced termination and interrupted work rely on [lease recovery](/jobs-queue/overview#leases-and-crash-recovery), which is at least once and can occasionally duplicate work.
+An exceptional completion or database-write failure can reject a batch before sibling work finishes; the worker can then exit `1` without draining those siblings. Forced termination and interrupted work rely on [lease recovery](/jobs-queue/queues#leases-and-crash-recovery), which is at least once and can occasionally duplicate work.
 
 ## Disable web autorun
 
@@ -80,15 +80,54 @@ The worker CLI's `--limit 0` never runs jobs. Without `--handle-schedules`, it p
 
 ## Workers for durable waits
 
-[Workflow waits](/jobs-queue/overview#durable-workflow-waits) persist in the shared database and release the current worker. Resume wakes the same paused job in its original queue. Keep workers covering that queue, and keep a scheduler **and** worker covering `default`: the minute `frogbot-sweep-waitpoints` task proactively expires waits and recovers accepted responses whose jobs still need waking. The all-queue container setup above covers both.
+[Workflow waits](/jobs-queue/waits) persist in the shared database and release the current worker. Resume wakes the same paused job in its original queue. Keep workers covering that queue, and keep a scheduler **and** worker covering `default`: the minute `frogbot-sweep-waitpoints` task proactively expires waits and recovers accepted responses whose jobs still need waking. The all-queue container setup above covers both.
 
-Failed wakes remain retryable by the scheduled sweep. Cancelled, superseded, or deleted paused jobs are not recreated, and their resume links return `409`. See [Dispatch and recovery limits](/jobs-queue/overview#dispatch-and-recovery-limits).
+Failed wakes remain retryable by the scheduled sweep. Cancelled, superseded, or deleted paused jobs are not recreated, and their resume links return `409`. See [Dispatch and recovery limits](/jobs-queue/waits#dispatch-and-recovery-limits).
 
 Set `serverURL` to the public web origin in the shared application configuration. Workers use it to generate approval links; recipients need the web service to open confirmation and submit a response. Keep wait names, task IDs, and branching compatible across the app versions serving a suspended workflow.
 
 Paused jobs become eligible once their `waitUntil` is strictly earlier than now: `until` for a delay, or the expiry for a resumable wait. Expiry continues the same job with `{ expired: true }`, through a runner or the sweep. Neither is an in-process timer or a promise to execute at an exact instant. Worker ticks, active batches, and backlog affect wake-up time. A scheduler-only process cannot execute the sweep or resumed work.
 
 Paused jobs stay unfinished and retain their input, queue, replay history, and `jobId` reservation. They hold no lease until they run again. Resumed or expired waitpoints marked `dispatched` are retained; the sweep skips them rather than deleting or redispatching them. Deploy the waitpoint schema through your normal [database migrations](/database/migrations) before starting SQL-backed workers.
+
+## Troubleshooting
+
+### Jobs are queued but don't run
+
+Check these in order:
+
+| Check | Fix |
+| --- | --- |
+| Is a runner running at all? | Start a worker, add `autoRun`, or call the run URL from a cron. Queuing never runs a job by itself. |
+| Does a runner cover the job's queue? | A runner claims only `default` unless given `--queue` or `--all-queues`. Match the queue name exactly, or use `--all-queues`. |
+| Is `waitUntil` in the future? | The job waits for a delay, a retry backoff, or its schedule time. `runByID` runs it early. |
+| Is another job holding its `concurrency` key? | It runs after that job completes, fails, or pauses. |
+| Does `shouldAutoRun` return `false`? | Web autorun skips every tick while it does. |
+
+To see what's waiting, read the unfinished jobs from trusted server code:
+
+```ts
+const { docs } = await frogbot.find({
+  collection: 'payload-jobs',
+  where: { completedAt: { exists: false } },
+  overrideAccess: true,
+})
+```
+
+| On the job | Means |
+| --- | --- |
+| `processingUntil` in the future | A runner holds it now. |
+| `processingUntil` in the past, not completed | Its runner stopped; the next run claims it again. |
+| `hasError: true` | It failed for good or was cancelled. Read `error` and `log`. |
+| `totalTried` above 0, `hasError: false` | It failed and waits to retry. |
+
+### Scheduled jobs aren't queued
+
+Something must handle schedules for the schedule's queue: a worker with `--handle-schedules`, an `autoRun` entry without `disableScheduling`, or the run URL. The default check also skips while an earlier scheduled job of the same task is unfinished, so a stuck or retrying job holds back the next one. See [Schedules](/jobs-queue/schedules).
+
+### Jobs run slowly
+
+Raise `--limit` or the `autoRun` `limit`, tick more often with `--cron`, or add worker replicas. Workers claim different jobs, so replicas add throughput. Long jobs in a shared queue hold back short ones; give them their own queue and worker.
 
 ## SQLite and D1
 

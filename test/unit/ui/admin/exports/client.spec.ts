@@ -40,6 +40,7 @@ describe('@frogbotai/ui/admin client export', () => {
   });
 
   it.each([
+    ['ColorCell, ColorField', 'Color'],
     ['DurationCell, DurationField', 'Duration'],
     ['PercentCell, PercentField', 'Percent'],
     ['PhoneCell, PhoneField', 'Phone'],

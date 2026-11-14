@@ -1,7 +1,7 @@
 import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import type { OAuthTokens, PieceInstance, PieceOAuthAccount } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
-import type { ConnectionOwner } from '../store.js';
+import type { ConnectionID, ConnectionOwner } from '../store.js';
 import { OAuthError } from './error.js';
 import { oauthScopes } from './scopes.js';
 import {
@@ -15,7 +15,9 @@ import {
 /**
  * Stores finished OAuth tokens as `owner`'s linked account for `piece`. The owner must still
  * exist; the tokens must parse and give the piece's auth. With no `account`, the recipe's
- * `account()` looks it up.
+ * `account()` looks it up. The same provider account updates its row; a new one adds a row. With
+ * `reconnect`, only that row is updated, and a different provider account throws
+ * `OAuthError('account')` without writing.
  */
 export async function saveOAuthConnection({
   req,
@@ -23,12 +25,14 @@ export async function saveOAuthConnection({
   owner,
   tokens,
   account,
+  reconnect,
 }: {
   req: FrogBotRequest;
   piece: PieceInstance;
   owner: ConnectionOwner;
   tokens: OAuthTokens;
   account?: PieceOAuthAccount;
+  reconnect?: ConnectionID;
 }): Promise<void> {
   const user = await req.frogbot.findByID({
     collection: owner.collection,
@@ -71,5 +75,6 @@ export async function saveOAuthConnection({
     credential,
     account: linked,
     ...metadata,
+    ...(reconnect === undefined ? {} : { reconnect }),
   });
 }

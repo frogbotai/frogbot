@@ -2,7 +2,12 @@ import type { I18n } from '@payloadcms/translations';
 import { getClientConfig } from '@payloadcms/ui/utilities/getClientConfig';
 import type { CollectionView } from 'frogbot';
 import { attachRegisteredFrogBot } from 'frogbot/internal';
-import { type AdminViewServerProps, createPayloadRequest, type PayloadRequest } from 'payload';
+import {
+  type AdminViewServerProps,
+  createPayloadRequest,
+  type ListViewServerProps,
+  type PayloadRequest,
+} from 'payload';
 import { formatAdminURL } from 'payload/shared';
 import * as qs from 'qs-esm';
 
@@ -10,6 +15,9 @@ import { getLastViewPreferenceKey } from './preferences.js';
 import { readViewPreference } from './viewSetup.js';
 
 export type RuntimeCollectionView = CollectionView & { slug: string };
+
+/** The route key, and so the view type, core gives a list that isn't the first view. */
+export const LIST_ROUTE_KEY = 'frogbotList';
 
 export function getRuntimeViews(
   props: Pick<AdminViewServerProps, 'collectionConfig'>,
@@ -119,9 +127,11 @@ export async function createViewRequest({
  * A default board, calendar or custom view renders as Payload's list `Component`, which gets the
  * list's server props instead of a view's. Fills in what a view reads.
  */
-export async function withPageProps(props: AdminViewServerProps): Promise<AdminViewServerProps> {
+export async function withPageProps(
+  props: AdminViewServerProps | ListViewServerProps,
+): Promise<AdminViewServerProps> {
+  if ('initPageResult' in props && props.clientConfig && props.importMap) return props;
   const partial = props as Partial<AdminViewServerProps> & Pick<AdminViewServerProps, 'payload'>;
-  if (partial.clientConfig && partial.importMap && partial.initPageResult) return props;
 
   const importMap = partial.importMap ?? props.payload.importMap;
 

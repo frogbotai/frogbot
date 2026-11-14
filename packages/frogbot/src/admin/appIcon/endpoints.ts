@@ -67,7 +67,17 @@ const appManifestHandler: Handler = (req) => {
   });
 };
 
+const withoutBody =
+  (handler: Handler): Handler =>
+  async (req) => {
+    const response = await handler(req);
+
+    return new Response(null, { headers: response.headers, status: response.status });
+  };
+
 export const appIconEndpoints = (): Endpoint[] => [
   { handler: appIconHandler, method: 'get', path: '/frogbot/app-icon/:size' },
   { handler: appManifestHandler, method: 'get', path: '/frogbot/app-manifest' },
+  { handler: withoutBody(appIconHandler), method: 'head', path: '/frogbot/app-icon/:size' },
+  { handler: withoutBody(appManifestHandler), method: 'head', path: '/frogbot/app-manifest' },
 ];

@@ -1,3 +1,5 @@
+import type { FormRule, FormRuleMatch } from './rules.js';
+
 export type FormQuestionType =
   'checkbox' | 'date' | 'email' | 'number' | 'radio' | 'select' | 'text' | 'textarea' | 'upload';
 
@@ -19,6 +21,10 @@ export type FormQuestion = {
   maxFileSize?: number;
   /** File questions: accepted types, like `image/*`. */
   mimeTypes?: string[];
+  /** Show the question only when these pass. Absent, it is always shown. */
+  rules?: FormRule[];
+  /** Set to `any` when one passing rule is enough. Absent, every rule must pass. */
+  match?: FormRuleMatch;
 };
 
 export type FormStep = {

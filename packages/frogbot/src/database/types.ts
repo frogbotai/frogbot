@@ -103,6 +103,11 @@ export type AdapterAggregateArgs = {
   locale: string | null | undefined;
   req: PayloadRequest;
   where: Where;
+  /**
+   * Reads the collection's versions instead of its documents. The paths and `where` already address
+   * them (`version.<path>`, `parent`, `latest`).
+   */
+  versions?: boolean;
 };
 
 /** One group: its keys in `groupBy` order and its totals in `values` order, as the database returns them. */

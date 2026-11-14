@@ -51,10 +51,9 @@ Options may be strings or `{ label, value }` objects.
 | `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 <Banner type="warning">
-  Option values should avoid hyphens and special characters when the field's
-  metadata will be used to build a GraphQL schema. Underscores are safe. FrogBot
-  does not currently ship a GraphQL execution route; this constraint applies
-  only when an application separately mounts a compatible executor.
+  Option values should avoid hyphens and special characters, because they name
+  GraphQL enum values when you [enable GraphQL](/graphql/enable). Underscores
+  are safe.
 </Banner>
 
 ## Option colors

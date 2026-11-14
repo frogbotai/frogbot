@@ -20,13 +20,17 @@ import {
 import { formatAdminURL } from 'payload/shared';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 
-import ArrowExpandIcon from '../../../icons/icons/ArrowExpandIcon.js';
+import ArrowRightToLineIcon from '../../../icons/icons/ArrowRightToLineIcon.js';
+import CheckIcon from '../../../icons/icons/CheckIcon.js';
 import CheckmarkCircleIcon from '../../../icons/icons/CheckmarkCircleIcon.js';
-import LinkSquareIcon from '../../../icons/icons/LinkSquareIcon.js';
-import LogoutRightIcon from '../../../icons/icons/LogoutRightIcon.js';
-import MoreVerticalIcon from '../../../icons/icons/MoreVerticalIcon.js';
+import LinkIcon from '../../../icons/icons/LinkIcon.js';
+import MaximizeIcon from '../../../icons/icons/MaximizeIcon.js';
+import MoreHorizontalIcon from '../../../icons/icons/MoreHorizontalIcon.js';
+import { PanelIconButton } from '../../elements/PanelIconButton/index.client.js';
 import { getUseAsDone } from '../records/state.js';
+import { usePanelLayout } from './PanelConfig.client.js';
 import { useRecordPanel } from './RecordPanelProvider.client.js';
+import { RecordPanelTitle } from './RecordPanelTitle.client.js';
 
 const baseClass = 'fb-record-panel-header';
 
@@ -80,8 +84,14 @@ function MarkComplete({ compact, path }: { compact: boolean; path: string }) {
       }}
       type="button"
     >
-      <CheckmarkCircleIcon aria-hidden size={compact ? 18 : 16} />
-      {compact ? null : <span>{done ? 'Completed' : 'Mark complete'}</span>}
+      {compact ? (
+        <CheckmarkCircleIcon aria-hidden size={18} />
+      ) : (
+        <>
+          <CheckIcon aria-hidden size={14} />
+          <span>{done ? 'Completed' : 'Mark complete'}</span>
+        </>
+      )}
     </button>
   );
 }
@@ -163,10 +173,11 @@ function DeleteRecord({ onDeleted }: { onDeleted: () => void }) {
 }
 
 /**
- * The panel's default header. On the left, "Mark complete" for collections with `useAsDone`; once
- * the body scrolls, it shrinks to a check and the title and stays pinned. On the right, the
- * `actions` slot, Save (unless the collection autosaves), copy link, open full page, close, and a
- * menu with create new, duplicate, delete and the autosave status.
+ * The panel's default header, one row pinned to the top. On the left, "Mark complete" for
+ * collections with `useAsDone`, which shrinks to a check and the title once the body scrolls;
+ * otherwise the editable title, which shrinks instead. On the right, the `actions` slot, Save
+ * (unless the collection autosaves), copy link, open full page, close, and a menu with create
+ * new, duplicate, delete and the autosave status.
  */
 export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -186,6 +197,7 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
   } = useDocumentInfo();
 
   const { title } = useDocumentTitle();
+  const titlePath = usePanelLayout()?.titlePath;
   const collectionConfig = getEntityConfig({ collectionSlug });
   const useAsDone = getUseAsDone(collectionConfig);
   const autosave = Boolean(
@@ -247,12 +259,26 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
 
   return (
     <div
-      className={[baseClass, compact && `${baseClass}--compact`].filter(Boolean).join(' ')}
+      className={[
+        baseClass,
+        compact && `${baseClass}--compact`,
+        !useAsDone && `${baseClass}--title`,
+      ]
+        .filter(Boolean)
+        .join(' ')}
       ref={ref}
     >
       <div className={`${baseClass}__start`}>
-        {useAsDone ? <MarkComplete compact={compact} path={useAsDone} /> : null}
-        {compact ? <span className={`${baseClass}__title`}>{title}</span> : null}
+        {useAsDone ? (
+          <>
+            <MarkComplete compact={compact} path={useAsDone} />
+            {compact ? <span className={`${baseClass}__title`}>{title}</span> : null}
+          </>
+        ) : titlePath ? (
+          <RecordPanelTitle compact={compact} />
+        ) : (
+          <span className={`${baseClass}__title`}>{title}</span>
+        )}
       </div>
       <div className={`${baseClass}__actions`}>
         {actions}
@@ -267,64 +293,61 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
           </Button>
         ) : null}
         {isEditing ? (
-          <Button
-            aria-label="Copy link"
-            buttonStyle="ghost"
-            className={`${baseClass}__icon`}
-            icon={<LinkSquareIcon size={18} />}
+          <PanelIconButton
+            icon={<LinkIcon size={16} />}
+            label="Copy link"
             onClick={() => void copyLink()}
-            tooltip="Copy link"
           />
         ) : null}
         {isEditing ? (
-          <Button
-            aria-label="Open full page"
-            buttonStyle="ghost"
-            className={`${baseClass}__icon`}
-            icon={<ArrowExpandIcon size={18} />}
+          <PanelIconButton
+            icon={<MaximizeIcon size={16} />}
+            label="Open full page"
             onClick={panel.expand}
-            tooltip="Open full page"
           />
         ) : null}
-        <Button
-          aria-label={t('general:close')}
-          buttonStyle="ghost"
-          className={`${baseClass}__icon`}
-          icon={<LogoutRightIcon size={18} />}
+        <PanelIconButton
+          icon={<ArrowRightToLineIcon size={16} />}
+          label={t('general:close')}
           onClick={panel.close}
-          tooltip={t('general:close')}
         />
         {hasMenu ? (
           <Popup
-            button={<MoreVerticalIcon aria-label={t('general:moreOptions')} size={18} />}
+            button={<MoreHorizontalIcon aria-label={t('general:moreOptions')} size={16} />}
             className={`${baseClass}__menu`}
             horizontalAlign="right"
             size="large"
             verticalAlign="bottom"
           >
-            <PopupList.ButtonGroup>
-              {canCreate ? (
+            {canCreate ? (
+              <PopupList.ButtonGroup>
                 <PopupList.Button id="action-panel-create" onClick={() => panel.create()}>
                   {t('general:createNew')}
                 </PopupList.Button>
-              ) : null}
-              {isEditing && canCreate && !collectionConfig.disableDuplicate ? (
-                <PopupList.Button
-                  id="action-panel-duplicate"
-                  onClick={() => panel.guard(() => void duplicate())}
-                >
-                  {t('general:duplicate')}
-                </PopupList.Button>
-              ) : null}
-              {isEditing && hasDeletePermission ? (
-                <PopupList.Button
-                  id="action-panel-delete"
-                  onClick={() => openModal(deleteModalSlug(collectionSlug))}
-                >
-                  {t('general:delete')}
-                </PopupList.Button>
-              ) : null}
-            </PopupList.ButtonGroup>
+                {isEditing && !collectionConfig.disableDuplicate ? (
+                  <PopupList.Button
+                    id="action-panel-duplicate"
+                    onClick={() => panel.guard(() => void duplicate())}
+                  >
+                    {t('general:duplicate')}
+                  </PopupList.Button>
+                ) : null}
+              </PopupList.ButtonGroup>
+            ) : null}
+            {isEditing && hasDeletePermission ? (
+              <>
+                {canCreate ? <PopupList.Divider /> : null}
+                <PopupList.ButtonGroup>
+                  <PopupList.Button
+                    className={`${baseClass}__delete`}
+                    id="action-panel-delete"
+                    onClick={() => openModal(deleteModalSlug(collectionSlug))}
+                  >
+                    {t('general:delete')}
+                  </PopupList.Button>
+                </PopupList.ButtonGroup>
+              </>
+            ) : null}
             {autosave && isEditing && lastUpdateTime ? (
               <div className={`${baseClass}__autosave`}>
                 {t('version:autosavedSuccessfully')}{' '}

@@ -1,5 +1,6 @@
 import { buildQuery, type BuildQueryJoinAliases, type DrizzleAdapter } from '@payloadcms/drizzle';
 import { eq, inArray, type SQL, sql, type SQLWrapper } from 'drizzle-orm';
+import { buildVersionCollectionFields, type FlattenedField } from 'payload';
 import toSnakeCase from 'to-snake-case';
 
 import { assertDrizzleAdapter } from '../../database/guards.js';
@@ -42,6 +43,7 @@ const derived = (column: string) => sql`${sql.identifier('g')}.${sql.identifier(
 function resolveColumn({
   adapter,
   collection,
+  fields,
   joins,
   locale,
   path,
@@ -49,6 +51,7 @@ function resolveColumn({
 }: {
   adapter: DrizzleAdapter;
   collection: string;
+  fields: FlattenedField[];
   joins: BuildQueryJoinAliases;
   locale: string | undefined;
   path: string;
@@ -58,7 +61,7 @@ function resolveColumn({
 
   const { orderBy } = buildQuery({
     adapter,
-    fields: adapter.payload.collections[collection].config.flattenedFields,
+    fields,
     joins,
     locale,
     sort: [path],
@@ -88,11 +91,21 @@ export function createDrizzleAggregate(dialect: AggregateDialect) {
     req,
     sort,
     values,
+    versions,
     where,
   }: AdapterAggregateArgs): Promise<AdapterAggregateResult> => {
     const adapter = assertDrizzleAdapter(db, 'Aggregate');
-    const tableName = adapter.tableNameMap.get(toSnakeCase(collection));
+    const config = adapter.payload.collections[collection].config;
+
+    const tableName = adapter.tableNameMap.get(
+      versions ? `_${toSnakeCase(collection)}${adapter.versionsSuffix}` : toSnakeCase(collection),
+    );
+
     const table = tableName ? adapter.tables[tableName] : undefined;
+
+    const queryFields = versions
+      ? buildVersionCollectionFields(adapter.payload.config, config, true)
+      : config.flattenedFields;
 
     if (!tableName || !table) {
       throw new Error(`[frogbot] Collection '${collection}' has no table to aggregate.`);
@@ -102,7 +115,7 @@ export function createDrizzleAggregate(dialect: AggregateDialect) {
 
     const filter = buildQuery({
       adapter,
-      fields: adapter.payload.collections[collection].config.flattenedFields,
+      fields: queryFields,
       locale: requestedLocale,
       tableName,
       where,
@@ -127,6 +140,7 @@ export function createDrizzleAggregate(dialect: AggregateDialect) {
       const column = resolveColumn({
         adapter,
         collection,
+        fields: queryFields,
         joins: keyJoins,
         locale: requestedLocale,
         path,
@@ -168,6 +182,7 @@ export function createDrizzleAggregate(dialect: AggregateDialect) {
           : sql`${sql.raw(value.operation)}(${resolveColumn({
               adapter,
               collection,
+              fields: queryFields,
               joins: valueJoins,
               locale: requestedLocale,
               path: value.path,

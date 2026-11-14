@@ -6,6 +6,15 @@ import {
 } from 'frogbot';
 
 import {
+  addSpend,
+  currentPeriod,
+  holdSpend,
+  type Period,
+  readSpend,
+  spendOf,
+  type SpendSubject,
+} from './counters.js';
+import {
   assertBudget,
   assertKeyBudget,
   type PolicyKey,
@@ -13,26 +22,6 @@ import {
   policyUser,
   readPolicy,
 } from './policy.js';
-
-type SpendDocument = { spendThisPeriodUSD?: number };
-
-class SerialQueue {
-  private readonly updates = new Map<string, Promise<void>>();
-
-  run(subject: string, update: () => Promise<void>): Promise<void> {
-    const next = (this.updates.get(subject) ?? Promise.resolve()).then(update, update);
-    let owner: Promise<void>;
-
-    const release = () => {
-      if (this.updates.get(subject) === owner) this.updates.delete(subject);
-    };
-
-    owner = next.then(release, release);
-    this.updates.set(subject, owner);
-
-    return next;
-  }
-}
 
 const keyID = (value: unknown): number | string | undefined => {
   const id = value && typeof value === 'object' ? (value as { id?: unknown }).id : value;
@@ -67,27 +56,39 @@ async function keyLineage(
 type PolicyHooksOptions = {
   authCollection: string;
   keysCollection?: string;
+  period?: Period;
 };
 
-export function createPolicyHooks({ authCollection, keysCollection }: PolicyHooksOptions): {
+export function createPolicyHooks({
+  authCollection,
+  keysCollection,
+  period = currentPeriod,
+}: PolicyHooksOptions): {
   beforeOperation: AIBeforeOperationHook;
   afterOperation: AIAfterOperationHook;
 } {
-  const queue = new SerialQueue();
+  const options = { authCollection, keysCollection, period };
 
   return {
     beforeOperation: async ({ req }) => {
       const user = policyUser(req?.user, authCollection);
 
-      if (!req || !user) return;
-
-      assertBudget(readPolicy(user));
+      if (!req || user?.id === undefined) return;
 
       const key = keysCollection ? policyKey(user) : undefined;
+      const lineage = key && keysCollection ? await keyLineage(req, keysCollection, key) : [];
+      const subjects: SpendSubject[] = [
+        { collection: authCollection, id: user.id },
+        ...lineage.map(({ id }) => ({ collection: keysCollection as string, id })),
+      ];
 
-      if (!key || !keysCollection) return;
+      const spend = await readSpend(req, subjects, period);
 
-      for (const each of await keyLineage(req, keysCollection, key)) assertKeyBudget(each);
+      assertBudget({ ...readPolicy(user), spendThisPeriodUSD: spendOf(spend, subjects[0]) });
+
+      lineage.forEach((each, index) =>
+        assertKeyBudget({ ...each, spendThisPeriodUSD: spendOf(spend, subjects[index + 1]) }),
+      );
     },
     afterOperation: async ({ req, model, usage, error }) => {
       const user = policyUser(req?.user, authCollection);
@@ -100,44 +101,32 @@ export function createPolicyHooks({ authCollection, keysCollection }: PolicyHook
         usage,
       });
 
-      if (cost <= 0) return;
+      if (!Number.isFinite(cost) || cost <= 0) return;
 
-      const addSpend = async (collection: string, id: number | string) => {
-        try {
-          await queue.run(`${collection}:${id}`, async () => {
-            const current = (await req.frogbot.findByID({
-              collection,
-              id,
-              depth: 0,
-              overrideAccess: true,
-              req,
-            })) as SpendDocument;
+      const key = keysCollection ? policyKey(user) : undefined;
+      const lineage = key && keysCollection ? await keyLineage(req, keysCollection, key) : [];
+      const subjects: SpendSubject[] = [
+        { collection: authCollection, id: user.id },
+        ...lineage.map(({ id }) => ({ collection: keysCollection as string, id })),
+      ];
 
-            await req.frogbot.update({
-              collection,
-              id,
-              data: { spendThisPeriodUSD: (current.spendThisPeriodUSD ?? 0) + cost },
-              overrideAccess: true,
-              req,
-            });
-          });
-        } catch (err) {
-          req.frogbot.logger.error(
-            { err, model, collection },
-            '[plugin-ai-policy] Failed to record spend',
-          );
+      const settle = holdSpend(req, subjects, cost);
+
+      const record = async () => {
+        for (const subject of subjects) {
+          await addSpend(req, subject, cost, options)
+            .catch((err: unknown) => {
+              req.frogbot.logger.error(
+                { err, model, collection: subject.collection },
+                '[plugin-ai-policy] Failed to record spend',
+              );
+            })
+            .finally(() => settle(subject));
         }
       };
 
-      const key = keysCollection ? policyKey(user) : undefined;
-      const keySpends =
-        key && keysCollection
-          ? (await keyLineage(req, keysCollection, key)).map(({ id }) =>
-              addSpend(keysCollection, id),
-            )
-          : [];
-
-      await Promise.all([addSpend(authCollection, user.id), ...keySpends]);
+      if (req.transactionID) void record();
+      else await record();
     },
   };
 }

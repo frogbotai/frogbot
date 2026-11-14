@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -809,8 +809,13 @@ describe('frogbot generate:types', () => {
         ai: { providers: { bedrock: true } },
       });
 
-      await expect(writeGeneratedTypes(config, dir)).resolves.toMatchObject({ changed: true });
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      const past = new Date('2020-01-01T00:00:00.000Z');
+
+      await utimes(outputPath, past, past);
+
       await expect(writeGeneratedTypes(config, dir)).resolves.toMatchObject({ changed: false });
+      expect((await stat(outputPath)).mtimeMs).toBe(past.getTime());
     });
 
     it('reports stale types under dryRun without writing them', async () => {

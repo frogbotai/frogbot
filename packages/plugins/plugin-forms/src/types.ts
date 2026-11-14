@@ -1,4 +1,7 @@
+import type { FormRule, FormRuleMatch, FormRuleOperator } from '@frogbotai/ui/forms/rules';
 import type { CollectionAccess, CollectionSlug, FrogBotRequest } from 'frogbot';
+
+export type { FormRule, FormRuleMatch, FormRuleOperator };
 
 export type FormsPluginOptions<S extends CollectionSlug = CollectionSlug> = {
   /** Collections that forms may create records in. Others are left untouched. */
@@ -85,6 +88,20 @@ export type FormQuestionConfig = {
   maxFiles?: number | null;
   /** File questions: accepted types, like `application/pdf` or `image/*`. Empty accepts any. */
   mimeTypes?: string[] | null;
+  /** Show the question only when these pass. Only questions whose field isn't required may have rules. */
+  rules?: FormRuleConfig[] | null;
+  /** `any` shows the question when one rule passes. Defaults to `all`. */
+  match?: FormRuleMatch | null;
+};
+
+/** A rule row as the `forms` collection stores it. */
+export type FormRuleConfig = {
+  id?: string | null;
+  /** The field of an earlier, non-file question on the form. */
+  question: string;
+  operator: FormRuleOperator;
+  /** What `equals` and `notEquals` compare with. A checkbox answer is `true` or `false`. */
+  value?: string | null;
 };
 
 export type FormStepConfig = {
@@ -140,6 +157,10 @@ export type FormQuestion = {
   maxFileSize?: number;
   /** File questions: accepted types, like `image/*`. Absent accepts any. */
   mimeTypes?: string[];
+  /** Show the question only when these pass. Absent, it is always shown. */
+  rules?: FormRule[];
+  /** `any` when one passing rule is enough. Absent, every rule must pass. */
+  match?: FormRuleMatch;
 };
 
 export type FormStep = {

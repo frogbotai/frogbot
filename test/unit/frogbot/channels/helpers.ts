@@ -11,6 +11,7 @@ import type { AgentStreamMessageOpts } from '../../../../packages/frogbot/src/ag
 import { ChannelHost } from '../../../../packages/frogbot/src/channels/host.js';
 import type { PieceChannelQuestions } from '../../../../packages/frogbot/src/channels/questions/types.js';
 import type { ChannelTaskInput } from '../../../../packages/frogbot/src/channels/types.js';
+import { ConnectionError } from '../../../../packages/frogbot/src/connections/api.js';
 import { runKVLock } from '../../../../packages/frogbot/src/kv/lock.js';
 import type { KV, KVLock } from '../../../../packages/frogbot/src/kv/types.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
@@ -244,7 +245,7 @@ export function channelFixture({
     },
     connections: {
       resolvePieceCredential: vi.fn((): Promise<{ auth: unknown; key: object }> =>
-        Promise.resolve({ auth: { token: 'secret' }, key: {} }),
+        Promise.reject(new ConnectionError('not linked', 'missing')),
       ),
     },
     createRequest: vi.fn((req: { context?: object }) =>

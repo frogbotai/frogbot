@@ -277,7 +277,7 @@
   {
     "page": "chat/training-data",
     "heading": "Export from the Local API",
-    "type": "import('@frogbotai/plugin-capture').ReadTrainingDataOptions"
+    "type": "import('@frogbotai/plugin-ai-capture').ReadTrainingDataOptions"
   },
   {
     "page": "chat/ui-chat",
@@ -593,6 +593,16 @@
     "page": "fields/collapsible",
     "heading": "Admin options",
     "type": "Omit<NonNullable<import('frogbot').CollapsibleField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>> & { components?: Pick<NonNullable<NonNullable<import('frogbot').CollapsibleField['admin']>['components']>, 'Label'> }"
+  },
+  {
+    "page": "fields/color",
+    "heading": "Config options",
+    "type": "import('frogbot').ColorFieldArgs"
+  },
+  {
+    "page": "fields/color",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').ColorFieldArgs['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
   },
   {
     "page": "fields/date",
@@ -1025,27 +1035,27 @@
     "type": "import('frogbot').RootHooks"
   },
   {
-    "page": "jobs-queue/overview",
-    "heading": "Method options",
+    "page": "jobs-queue/queues",
+    "heading": "Queue options",
     "type": "import('frogbot').JobQueueArgs<any>"
   },
   {
-    "page": "jobs-queue/overview",
-    "heading": "Method options",
+    "page": "jobs-queue/queues",
+    "heading": "Run options",
     "type": "Parameters<import('frogbot').Jobs['run']>[0]"
   },
   {
-    "page": "jobs-queue/overview",
-    "heading": "Durable workflow waits",
+    "page": "jobs-queue/waits",
+    "heading": "Durable waits",
     "type": "Parameters<import('frogbot').WorkflowHandler>[0]['waitFor'] extends { (name: string, options: infer A): unknown; (name: string, options: infer B): unknown } ? A | B : never"
   },
   {
-    "page": "jobs-queue/overview",
+    "page": "jobs-queue/workflows",
     "heading": "Loops and parallel steps",
     "type": "Parameters<Parameters<import('frogbot').WorkflowHandler>[0]['foreach']>[2]"
   },
   {
-    "page": "jobs-queue/overview",
+    "page": "jobs-queue/waits",
     "heading": "Expiry",
     "type": "{ jobs: { waitpoints: NonNullable<import('frogbot').JobsConfig['waitpoints']> } }"
   },
@@ -1055,8 +1065,8 @@
     "type": "import('frogbot').JobsConfig"
   },
   {
-    "page": "jobs-queue/overview",
-    "heading": "Access options",
+    "page": "jobs-queue/queues",
+    "heading": "Access",
     "type": "NonNullable<import('frogbot').JobsConfig['access']>"
   },
   {
@@ -1065,27 +1075,27 @@
     "type": "NonNullable<import('frogbot').JobsConfig['autoRun']>"
   },
   {
-    "page": "jobs-queue/overview",
+    "page": "jobs-queue/tasks",
     "heading": "Task options",
     "type": "NonNullable<import('frogbot').JobsConfig['tasks']>[number]"
   },
   {
-    "page": "jobs-queue/overview",
+    "page": "jobs-queue/workflows",
     "heading": "Workflow options",
     "type": "import('frogbot').WorkflowConfig"
   },
   {
-    "page": "jobs-queue/overview",
+    "page": "jobs-queue/tasks",
     "heading": "Retry options",
     "type": "NonNullable<import('frogbot').WorkflowConfig['retries']>"
   },
   {
-    "page": "jobs-queue/overview",
+    "page": "jobs-queue/workflows",
     "heading": "Concurrency options",
     "type": "NonNullable<import('frogbot').WorkflowConfig['concurrency']>"
   },
   {
-    "page": "jobs-queue/overview",
+    "page": "jobs-queue/schedules",
     "heading": "Schedule options",
     "type": "NonNullable<import('frogbot').WorkflowConfig['schedule']>[number]"
   },
@@ -1340,9 +1350,9 @@
     "type": "import('@frogbotai/plugin-audit-log').AuditLogPluginOptions"
   },
   {
-    "page": "plugins/capture",
+    "page": "plugins/ai-capture",
     "heading": "Options",
-    "type": "import('@frogbotai/plugin-capture').CapturePluginOptions"
+    "type": "import('@frogbotai/plugin-ai-capture').AICapturePluginOptions"
   },
   {
     "page": "plugins/dojo",
@@ -1350,9 +1360,9 @@
     "type": "import('@frogbotai/plugin-dojo').DojoPluginOptions"
   },
   {
-    "page": "plugins/evals",
+    "page": "plugins/ai-evals",
     "heading": "Options",
-    "type": "import('@frogbotai/plugin-evals').EvalsPluginOptions"
+    "type": "import('@frogbotai/plugin-ai-evals').AIEvalsPluginOptions"
   },
   {
     "page": "plugins/forms",
@@ -1430,9 +1440,9 @@
     "type": "NonNullable<import('@frogbotai/plugin-stripe').StripePluginOptions['sync']>[number]"
   },
   {
-    "page": "plugins/usage-reports",
+    "page": "plugins/ai-usage",
     "heading": "Options",
-    "type": "import('@frogbotai/plugin-usage-reports').UsageReportsPluginOptions"
+    "type": "import('@frogbotai/plugin-ai-usage').AIUsagePluginOptions"
   },
   {
     "page": "rest-api/overview",

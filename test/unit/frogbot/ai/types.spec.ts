@@ -16,7 +16,7 @@ import type { FrogBotTypes } from '../../../../packages/frogbot/src/types/genera
 describe('AI config types', () => {
   it('accepts true or an explicit apiKey for built-in providers', () => {
     expectTypeOf<true>().toMatchTypeOf<ProviderConfig['openai']>();
-    expectTypeOf<Record<string, never>>().not.toMatchTypeOf<ProviderConfig['openai']>();
+    expectTypeOf<Record<string, never>>().toMatchTypeOf<ProviderConfig['openai']>();
     expectTypeOf({ apiKey: process.env.TEST_KEY }).toMatchTypeOf<ProviderConfig['openai']>();
     expectTypeOf<{ apiKey: string | undefined }>().toMatchTypeOf<BuiltInProviderEntry>();
     expectTypeOf<false>().not.toMatchTypeOf<ProviderConfig['openai']>();

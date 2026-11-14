@@ -64,23 +64,47 @@ export function ChatProvider({
   });
 
   useEffect(() => {
-    const controller = new AbortController();
+    let controller: AbortController | undefined;
 
-    void adapter
-      .loadManifest({ signal: controller.signal })
-      .then((manifest) => {
-        if (!controller.signal.aborted) setState({ manifest, loading: false });
-      })
-      .catch((error: unknown) => {
-        if (!controller.signal.aborted) {
-          setState({
-            error: error instanceof Error ? error : new Error(String(error)),
-            loading: false,
-          });
-        }
-      });
+    const load = () => {
+      controller?.abort();
 
-    return () => controller.abort();
+      const current = new AbortController();
+
+      controller = current;
+
+      adapter
+        .loadManifest({ signal: current.signal })
+        .then((manifest) => {
+          if (current.signal.aborted) return;
+
+          setState((previous) =>
+            !previous.loading && JSON.stringify(previous.manifest) === JSON.stringify(manifest)
+              ? previous
+              : { manifest, loading: false },
+          );
+        })
+        .catch((error: unknown) => {
+          if (current.signal.aborted) return;
+
+          setState((previous) =>
+            !previous.loading && !previous.error
+              ? previous
+              : {
+                  error: error instanceof Error ? error : new Error(String(error)),
+                  loading: false,
+                },
+          );
+        });
+    };
+
+    load();
+    window.addEventListener('focus', load);
+
+    return () => {
+      window.removeEventListener('focus', load);
+      controller?.abort();
+    };
   }, [adapter]);
 
   return (

@@ -42,6 +42,7 @@ import type { FrogBotRequest } from '../types/request.js';
 import { toAgentModelMessages } from '../uploads/toAgentModelMessages.js';
 import type { AttachmentHashes } from '../uploads/toModelInput.js';
 import { toModelInput } from '../uploads/toModelInput.js';
+import { resolveAgentInstructions } from './instructions.js';
 import type { ResolvedAgentSelection } from './service.js';
 import {
   assertAgentAccess,
@@ -127,11 +128,10 @@ export function createAgentInstance(
   ): ToolLoopAgentSettings<AgentCallOptions, typeof tools, Record<string, unknown>, O> => ({
     id: agentConfig.slug,
     model: gateway.chatModel(resolveModel(agentConfig.model.default, config)),
-    instructions: agentConfig.instructions,
     tools,
     stopWhen: agentConfig.stopWhen,
     ...(output === undefined ? {} : { output }),
-    prepareCall: ({ options, ...call }) => {
+    prepareCall: async ({ options, ...call }) => {
       const ctx: ToolCtx = {
         req: options.req!,
         frogbot,
@@ -149,9 +149,11 @@ export function createAgentInstance(
       const run = runs.get(options)!;
 
       const mcpToolNames = Object.keys(run.mcpTools);
+      const instructions = await resolveAgentInstructions(agentConfig, req);
 
       return {
         ...call,
+        instructions,
         model: run.op.chatModel(run.selection.model),
         runtimeContext: { agent: ctx.agent },
         ...(mcpToolNames.length === 0 ? {} : { tools: { ...tools, ...run.mcpTools } }),

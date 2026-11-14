@@ -47,7 +47,11 @@ Codes follow RFC 6238: SHA-1, 30-second steps, one step of drift either way. A c
 
 ## Require it
 
-`require` returns true for users who must have two-factor sign-in. A required user without it is sent to setup at their next sign-in, before any session exists, and can't turn it off: the account section hides **Turn off** and the API refuses with `403`. When `require` stops returning true for them, for example because an admin turns a workspace's requirement off and `require` reads it, they can turn it off with a code.
+`require` returns true for users who must have two-factor sign-in.
+
+- A required user without it is sent to setup at their next sign-in, before any session exists.
+- A required user can't turn it off. The account section hides **Turn off**, and the API refuses with `403`.
+- When `require` stops returning true for a user, they can turn it off with a code. This happens, for example, when an admin turns a workspace's requirement off and `require` reads that setting.
 
 When `require` covers the first user, `POST /api/<collection>/first-register` creates the account and answers the same `202` as password login instead of signing them in. The admin's create-first-user form doesn't follow that answer, so after registering there, sign in with the new password to reach setup.
 
@@ -68,7 +72,13 @@ The pending sign-in lives in FrogBot's KV store for 10 minutes, is bound to its 
 
 ## Reset
 
-A user who loses both their authenticator and recovery codes needs an admin. When `canReset` allows it, another user's document shows **Reset two-factor sign-in**, which removes their secret and recovery codes, ends every session (with `auth.useSessions: false`, issued tokens stay valid until they expire) and clears the code lock. `canReset` is asked only for a user the admin can read and update under the collection's access rules. Nobody can reset their own. A still-required user is sent to setup at their next sign-in.
+A user who loses both their authenticator and their recovery codes needs an admin. When `canReset` allows it, another user's document shows **Reset two-factor sign-in**. A reset does this:
+
+- It removes their secret and recovery codes.
+- It ends every session. With `auth.useSessions: false`, issued tokens stay valid until they expire.
+- It clears the code lock.
+
+`canReset` is asked only for a user that the admin can read and update under the collection's access rules. Nobody can reset their own. A still-required user is sent to setup at their next sign-in.
 
 ## Endpoints
 
@@ -92,7 +102,7 @@ The plugin emails the user through your [email adapter](/email/overview) when tw
 
 - GraphQL `loginUser` and the Local API `login` don't have a code step, so they fail for users who need a code or setup. Use the REST login.
 - `canReset` defaults to nobody, so without it a user who loses their authenticator and recovery codes can't get back in.
-- Another `beforeSignIn` hook that pauses sign-in, such as a terms step, can't be combined with two-factor sign-in yet: when it resumes with `finishSignIn` for a user who needs a code, the sign-in is refused with `403` rather than skip the code.
+- Another `beforeSignIn` hook that pauses sign-in, such as a terms step, can't be combined with two-factor sign-in. When it resumes with `finishSignIn` for a user who needs a code, the sign-in is refused with `403` rather than skip the code.
 - Passkeys, security keys and per-tenant two-factor settings aren't supported.
 
 ## Options

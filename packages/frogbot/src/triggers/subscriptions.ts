@@ -526,7 +526,7 @@ async function cleanup(
 
   signal.throwIfAborted();
 
-  const client = await runtime.client({ req });
+  const client = await runtime.appClient({ req });
 
   signal.throwIfAborted();
 

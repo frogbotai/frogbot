@@ -1,5 +1,6 @@
 import type { EmailAdapter as PayloadEmailAdapter } from 'payload';
 
+import { ConnectionError } from '../connections/api.js';
 import { getFrogBotInstance } from '../instanceRegistry.js';
 import { isPieceInstance, pieceInstanceRuntime } from './definePiece.js';
 import type { EmailPieceInstance } from './types.js';
@@ -18,7 +19,7 @@ export function pieceEmailAdapter(piece: unknown): PayloadEmailAdapter {
     throw new Error('email must be a piece that implements email');
   }
 
-  const { definition, options } = pieceInstanceRuntime(piece);
+  const { appClient, auth, definition, options } = pieceInstanceRuntime(piece);
   const email = definition.email;
 
   if (!email || typeof email.send !== 'function') {
@@ -59,12 +60,20 @@ export function pieceEmailAdapter(piece: unknown): PayloadEmailAdapter {
         throw new Error(`Piece '${piece.slug}' cannot send email before FrogBot is initialized`);
       }
 
+      if (definition.auth && auth === undefined) {
+        throw new ConnectionError(
+          `Piece '${piece.slug}' is used as email but has no factory auth.`,
+          'missing',
+          undefined,
+          piece.piece,
+        );
+      }
+
       const req = await frogbot.createRequest();
-      const client = await piece.client({ req });
 
       return email.send({
         message: { ...message, from: message.from ?? defaultFrom },
-        client,
+        client: await appClient({ req }),
         options,
         req,
       });

@@ -12,6 +12,7 @@ import { getPayloadConfig } from 'frogbot/internal';
 import { connection } from 'next/server.js';
 import type { ComponentProps } from 'react';
 
+import { BuildNoticeListener } from '../adapters/buildNotice.client.js';
 import { ShallowRouteListener } from '../adapters/router.client.js';
 import type { FrogBotConfigArg } from '../types.js';
 import { brandImportMapErrors } from '../utilities/brandImportMapErrors.js';
@@ -32,6 +33,7 @@ export async function RootLayout({ children, config, htmlProps, ...rest }: RootL
   return (
     <PayloadRootLayout {...rest} config={getPayloadConfig(config)} htmlProps={pageHtmlProps}>
       <ShallowRouteListener />
+      <BuildNoticeListener />
       {children}
     </PayloadRootLayout>
   );

@@ -1,3 +1,4 @@
+import { visibleQuestions } from '@frogbotai/ui/forms/rules';
 import {
   addDataAndFileToRequest,
   APIError,
@@ -11,6 +12,7 @@ import { buildConfirmation } from './definition.js';
 import {
   asFormLink,
   openLinkLimited,
+  prefill,
   type ResolvedLink,
   resolveLink,
   spendUse,
@@ -80,19 +82,16 @@ function cleanAnswer(field: QuestionField, value: unknown): unknown {
   return typeof value === 'string' ? value : undefined;
 }
 
-/**
- * Keeps the answers to the form's questions and its declared parameters; drops everything else.
- * For an edit (`edit`), there are no parameters, and an emptied answer clears its field.
- */
-export function pickSubmission(
+function bodyAnswers(body: unknown): Record<string, unknown> {
+  return isRecord(body) && isRecord(body.data) ? body.data : {};
+}
+
+function cleanAnswers(
   form: FormDocument,
   target: FormTarget,
-  body: unknown,
-  { edit = false }: { edit?: boolean } = {},
+  answers: Record<string, unknown>,
 ): Record<string, unknown> {
-  const answers = isRecord(body) && isRecord(body.data) ? body.data : {};
-  const params = isRecord(body) && isRecord(body.params) ? body.params : {};
-  const data: Record<string, unknown> = {};
+  const cleaned: Record<string, unknown> = {};
 
   for (const step of form.steps ?? []) {
     for (const { field: name } of step.questions ?? []) {
@@ -100,11 +99,96 @@ export function pickSubmission(
       if (!entry || !('field' in entry) || !Object.hasOwn(answers, name)) continue;
       if (entry.field.type === 'upload') continue;
 
-      const answer = answers[name];
-      const value = cleanAnswer(entry.field, answer);
+      const value = cleanAnswer(entry.field, answers[name]);
 
-      if (value !== undefined) data[name] = value;
-      else if (edit && (answer === null || answer === '')) data[name] = null;
+      if (value !== undefined) cleaned[name] = value;
+    }
+  }
+
+  return cleaned;
+}
+
+function isRequiredField(target: FormTarget, name: string): boolean {
+  const entry = target.fields.get(name);
+
+  return entry !== undefined && 'field' in entry && entry.field.required === true;
+}
+
+function ruleAnswers(
+  form: FormDocument,
+  target: FormTarget,
+  body: unknown,
+  stored: Record<string, unknown>,
+): Record<string, unknown> {
+  const answers = bodyAnswers(body);
+  const merged = cleanAnswers(form, target, stored);
+
+  for (const name of Object.keys(answers)) delete merged[name];
+
+  return { ...merged, ...cleanAnswers(form, target, answers) };
+}
+
+/**
+ * The questions the visitor saw, by the same rules the page runs, from their cleaned answers over
+ * `stored`. A question whose field is required is always shown, even if a saved rule says
+ * otherwise. Answers and files for the others are dropped, whatever the client sent.
+ */
+export function shownQuestions(
+  form: FormDocument,
+  target: FormTarget,
+  body: unknown,
+  stored: Record<string, unknown> = {},
+): Set<string> {
+  const steps = (form.steps ?? []).map((step) => ({
+    questions: (step.questions ?? []).map(({ field, rules, match }) => {
+      const entry = target.fields.get(field);
+
+      return {
+        key: field,
+        type: entry && 'field' in entry ? entry.field.type : undefined,
+        rules: isRequiredField(target, field)
+          ? []
+          : (rules ?? []).map(({ question, operator, value }) => ({
+              question,
+              operator,
+              value: value ?? '',
+            })),
+        match: match ?? undefined,
+      };
+    }),
+  }));
+
+  return visibleQuestions(steps, ruleAnswers(form, target, body, stored));
+}
+
+/**
+ * Keeps the answers to the form's shown questions and its declared parameters; drops everything
+ * else. For an edit (`edit`), there are no parameters, an emptied answer clears its field, a
+ * hidden question's field keeps its stored value, and rules also read the record's `stored`
+ * answers that the body leaves out.
+ */
+export function pickSubmission(
+  form: FormDocument,
+  target: FormTarget,
+  body: unknown,
+  { edit = false, stored = {} }: { edit?: boolean; stored?: Record<string, unknown> } = {},
+): Record<string, unknown> {
+  const answers = bodyAnswers(body);
+  const params = isRecord(body) && isRecord(body.params) ? body.params : {};
+  const cleaned = cleanAnswers(form, target, answers);
+  const shown = shownQuestions(form, target, body, stored);
+  const data: Record<string, unknown> = {};
+
+  for (const step of form.steps ?? []) {
+    for (const { field: name } of step.questions ?? []) {
+      if (!shown.has(name)) continue;
+
+      if (Object.hasOwn(cleaned, name)) data[name] = cleaned[name];
+      else if (edit && (answers[name] === null || answers[name] === '')) {
+        const entry = target.fields.get(name);
+
+        if (entry && 'field' in entry && entry.field.type !== 'upload') data[name] = null;
+      }
     }
   }
 
@@ -190,9 +274,14 @@ async function saveEdit(
   link: ResolvedLink,
   body: Record<string, unknown>,
 ): Promise<Response> {
-  const data = pickSubmission(form, target, body, { edit: true });
+  const ruled = (form.steps ?? []).flatMap(({ questions }) =>
+    (questions ?? []).flatMap(({ rules }) => (rules ?? []).map(({ question }) => question)),
+  );
 
   try {
+    const stored = ruled.length ? await prefill(req, form, link, [...new Set(ruled)]) : {};
+    const data = pickSubmission(form, target, body, { edit: true, stored });
+
     const outcome = await spendUse(req, form, link, () =>
       asFormLink(req, form, link, () =>
         req.frogbot.update({
@@ -278,8 +367,12 @@ export function createSubmitEndpoint(runtime: FormsRuntime): Endpoint {
 
       if (link) return saveEdit(req, form, target, link, body);
 
-      const files = uploadQuestions(form, target, runtime.uploads);
-      const refused = checkFiles(files, isRecord(body.data) ? body.data : {}, req.files);
+      const shown = shownQuestions(form, target, body);
+      const files = uploadQuestions(form, target, runtime.uploads).filter(({ key }) =>
+        shown.has(key),
+      );
+
+      const refused = checkFiles(files, bodyAnswers(body), req.files);
 
       if (refused.length) return invalid(refused);
 

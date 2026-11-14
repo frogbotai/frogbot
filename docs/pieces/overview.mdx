@@ -41,7 +41,12 @@ export const pieceConfig = {
 
 Merge `pieceConfig` into your root config alongside your database, collections, secret, and AI provider configuration. This example uses a developer access token. For user-owned credentials, reuse the factory instances from the [OAuth connection example](/connections/overview#configure-linking).
 
-Pieces expose actions directly. Pass only the actions your agent needs in `tools`, or pass the piece to expose all of its actions. Each action can also be called on the server with `{ input, req }` to use the caller's credentials; add `overrideAccess: true` for a trusted call with no user. An action's `run` receives the agent run's `overrideAccess` (or the call's, default `false`) and forwards it to the files it reads and writes.
+Pieces expose actions directly.
+
+- **As agent tools.** Pass only the actions your agent needs in `tools`, or pass the piece to expose all of its actions.
+- **On the server.** Call an action with `{ input, req }` to use the caller's credentials. Add `overrideAccess: true` for a trusted call with no user.
+
+An action's `run` receives the agent run's `overrideAccess` (or the call's, default `false`) and forwards it to the files it reads and writes.
 
 An action is also a tool object, so you change one by spreading it: `{ ...googleSheets.updateRow, approval: 'ask' }` asks a person before each call and keeps the action's connection. Listed next to the whole piece, it replaces the piece's tool of the same slug. See [Change a tool you didn't write](/agents/overview#change-a-tool-you-didnt-write).
 
@@ -54,7 +59,7 @@ Every piece factory accepts these options. Each piece page lists the full set fo
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `slug` | `string` | The piece slug, such as `google-sheets` | Instance slug. It prefixes tool slugs and names webhook routes. Must be URL-safe. Give each instance of the same piece its own slug. |
-| `auth` | The piece's auth input | — | Developer credential, validated against the piece's auth schema when the factory runs. Used when the caller has no [connection](/connections/overview) for the piece. Only pieces with an auth schema accept it. |
+| `auth` | The piece's auth input | — | Developer credential, validated against the piece's auth schema when the factory runs. Used when the piece has no [connection entry](/connections/overview#when-the-code-credential-is-used), on an instance other than the one in the entry, and for app-owned work such as transactional email and channels. Only pieces with an auth schema accept it. |
 | `oauth` | `OAuthApp` | — | Your OAuth app. Only pieces with an OAuth recipe accept it, and not pieces that [run their own sign-in](/connections/overview#pieces-that-run-their-own-sign-in). It enables `oauth: true` connection entries and is exposed as `instance.oauth` for reuse. |
 | `scopes` | Scope names, or `({ defaultScopes }) => names` | The piece's default scopes | OAuth scopes for this instance, as names from the piece's catalog. A function receives the defaults, `({ defaultScopes }) => [...defaultScopes, 'gmail.labels']`; an array replaces them. The piece's required scopes are always added. Only pieces with an OAuth recipe accept it. See [Connections](/connections/overview#choose-oauth-scopes). |
 

@@ -441,11 +441,7 @@ export default buildConfig({
       ...defaultJobsCollection,
       access: {
         ...defaultJobsCollection.access,
-        read: ({ req }) => {
-          const roles = req.user && 'roles' in req.user ? req.user.roles : [];
-
-          return Array.isArray(roles) && roles.includes('admin');
-        },
+        read: allow('admin'),
       },
       admin: { ...defaultJobsCollection.admin, hidden: false },
     }),

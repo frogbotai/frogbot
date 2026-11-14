@@ -137,7 +137,11 @@ export function ListHelp({ hasCreatePermission }: AfterListClientProps) {
 
 ### toolbar
 
-The `toolbar` slot renders in the toolbar, before Filters. Below the small breakpoint it moves into a row under the toolbar, as on every view type. It is not shown in relationship drawers. Each component receives `collectionSlug`, `hasCreatePermission`, `hasDeletePermission` and `newDocumentURL`, plus the list's server props when it is a Server Component.
+The `toolbar` slot renders in the toolbar, before Filters.
+
+- Below the small breakpoint, it moves into a row under the toolbar, as on every view type.
+- It is not shown in relationship drawers.
+- Each component receives `collectionSlug`, `hasCreatePermission`, `hasDeletePermission`, and `newDocumentURL`. A Server Component also receives the list's server props.
 
 ```tsx
 'use client'
@@ -161,7 +165,11 @@ export function NoPosts() {
 
 `admin.components.CreateButton` replaces the **Create New** button where it sits: in the toolbar before the ⋮ menu, and in the empty state (unless the view sets `NoResults`), on every view type. It renders in no trash view or relationship drawer. Below the small breakpoint it follows `toolbar` into the row under the toolbar.
 
-It always renders, so it decides what a user without `create` access sees. It receives `collectionSlug`, `hasCreatePermission` and `newDocumentURL`; `create` access still governs REST and GraphQL create, the document view and relationship drawers. To match Create New, use the admin `Button` with `buttonStyle="primary"` and `size="medium"`:
+It always renders, so it decides what a user without `create` access sees. It receives `collectionSlug`, `hasCreatePermission`, and `newDocumentURL`.
+
+`create` access still governs REST and GraphQL create, the document view, and relationship drawers.
+
+To match Create New, use the admin `Button` with `buttonStyle="primary"` and `size="medium"`:
 
 ```tsx
 'use client'

@@ -16,15 +16,15 @@ import { describeData, takeInventory } from './data/inventory.js';
 import { askReplace, replaceMessages } from './data/replace.js';
 import { formatBytes, uploadData } from './data/upload.js';
 import type { DojoClient } from './dojo.js';
-import { createDojo, dojoError, dojoMessage, followBuild, segment } from './dojo.js';
+import { createDojo, followBuild, segment } from './dojo.js';
 import type { EnvKey } from './envKeys.js';
-import { envKeys, readEnvFiles } from './envKeys.js';
-import { ShareError } from './error.js';
+import { databaseKey, envKeys, readEnvFiles } from './envKeys.js';
+import { dojoError, dojoStop, ShareError } from './error.js';
 import { shareFiles } from './files.js';
 import type { ShareFlags } from './flags.js';
 import { parseShareArgs } from './flags.js';
 import type { DojoIO } from './io.js';
-import { say } from './io.js';
+import { dojoProgram, say } from './io.js';
 import type { LiveKeys } from './keys.js';
 import { chooseFirstKeys, compareLiveKeys } from './keys.js';
 import type { AppLink } from './link.js';
@@ -59,7 +59,13 @@ async function asDeployStop<T>(work: () => T | Promise<T>): Promise<T> {
   try {
     return await work();
   } catch (error) {
-    if (error instanceof ShareError) throw new DeployError(error.message, error.code);
+    if (error instanceof ShareError) {
+      throw new DeployError(error.message, error.exitCode, {
+        code: error.code,
+        fields: error.fields,
+        cause: error.cause,
+      });
+    }
 
     throw error;
   }
@@ -70,7 +76,9 @@ export async function sharePreflight(context: DeployContext): Promise<PreflightI
   return asDeployStop(() => {
     const flags = parseShareArgs(context.args, context.io.program);
 
-    checkSkipKeys(flags.skipKey, envKeys(readEnvFiles(context.root)));
+    const env = readEnvFiles(context.root);
+
+    checkSkipKeys(flags.skipKey, [...envKeys(env), ...databaseKey(env, context.config.db)]);
 
     return [];
   });
@@ -84,18 +92,20 @@ export async function shareToDojo(context: DeployContext): Promise<Record<string
 }
 
 async function share(context: DeployContext): Promise<Record<string, unknown>> {
-  const { root, config, io } = context;
-  const flags = parseShareArgs(context.args, io.program);
+  const { root, config } = context;
+  const flags = parseShareArgs(context.args, context.io.program);
+  const io = flags.wait ? { ...context.io, waits: true } : context.io;
   const folderLink = await readLink(root);
   const fileEnv = readEnvFiles(root);
   const allKeys = envKeys(fileEnv);
+  const firstOnly = flags.keys && !folderLink && !flags.app ? databaseKey(fileEnv, config.db) : [];
 
   if (context.flags.dryRun) {
     return dryRun({
       context,
       flags,
       link: folderLink,
-      keys: allKeys,
+      keys: [...allKeys, ...firstOnly],
       databaseUrl: fileEnv.DATABASE_URL,
     });
   }
@@ -140,11 +150,15 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
 
     const localKeys = flags.keys ? allKeys.filter((key) => !flags.skipKey.includes(key.name)) : [];
 
-    const firstKeys = link ? [] : await chooseFirstKeys({ keys: localKeys, yes: flags.yes, io });
+    const databaseKeys = firstOnly.filter((key) => !flags.skipKey.includes(key.name));
+    const firstKeys = link
+      ? []
+      : await chooseFirstKeys({ keys: [...localKeys, ...databaseKeys], yes: flags.yes, io });
 
     await dojo.signIn();
 
-    const appId = link?.appId ?? (await createApp({ dojo, io, flags, root }));
+    const app = link ? { id: link.appId, slug } : await createApp({ dojo, io, flags, root });
+    const appId = app.id;
 
     if (editor && (localKeys.length > 0 || flags.updateKeys)) {
       say(io, "[frogbot] Keys left out: only the app's owners manage its keys on Dojo.");
@@ -189,18 +203,39 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
     const build = await followBuild({
       dojo,
       deploymentId,
+      program: io.program,
       onLine: (line) => say(io, `[build] ${line}`),
+    }).catch((error: unknown) => {
+      if (!(error instanceof ShareError) || error.deploymentId !== undefined) throw error;
+
+      throw new ShareError(
+        `${error.message} The build may still finish: run \`frogbot dojo deployments logs ${deploymentId} --follow\`.`,
+        error.exitCode,
+        { code: error.code, status: error.status, url: error.url, deploymentId, cause: error },
+      );
     });
 
     if (build.status === 'failed') {
       throw new ShareError(
-        [`Build failed: ${build.error || 'see the log above'}`, ...(build.tail ?? [])].join('\n'),
+        [
+          `Build failed: ${build.error || 'see the log above'}`,
+          ...(build.tail ?? []),
+          `Run \`frogbot dojo deployments logs ${deploymentId}\` for the full log.`,
+        ].join('\n'),
+        1,
+        { code: 'BUILD_FAILED', deploymentId },
       );
     }
 
     const shareLink = editor ? null : `${dojo.url}/collections/apps/${appId}/settings?share=1`;
 
-    if (shareLink) say(io, `[frogbot] Share it: ${shareLink}`);
+    if (shareLink) {
+      say(
+        io,
+        `[frogbot] Share it: ${dojoProgram(io.program)} sharing invite ${app.slug ?? appId} <email>...`,
+      );
+    }
+
     if (build.url) say(io, build.url);
 
     return { appId, url: build.url ?? null, shareLink };
@@ -313,7 +348,7 @@ async function createApp({
   io: DeployIO;
   flags: ShareFlags;
   root: string;
-}): Promise<string | number> {
+}): Promise<{ id: string | number; slug: string }> {
   const workspace = await chooseWorkspace({ dojo, io, slug: flags.workspace });
   const name = await appName(root);
   const slug = toSlug(flags.name ?? name);
@@ -327,15 +362,15 @@ async function createApp({
   );
 
   if (!created.ok) {
-    const { body, message } = await dojoError(created);
+    const stop = await dojoStop(created.clone(), "Dojo couldn't create the app");
 
-    if (nameTaken(created.status, body)) {
+    if (nameTaken(created.status, (await dojoError(created)).body)) {
       throw new ShareError(
         `The name "${slug}" is taken on Dojo. Rerun with --name <another name>.`,
       );
     }
 
-    throw new ShareError(`Dojo couldn't create the app: ${message}`);
+    throw stop;
   }
 
   const { doc } = (await created.json()) as { doc: { id: string | number; slug: string } };
@@ -344,7 +379,7 @@ async function createApp({
 
   say(io, `[frogbot] Created ${doc.slug} in ${workspace.name}, linked in ${linkPath}.`);
 
-  return doc.id;
+  return doc;
 }
 
 async function laterKeys({
@@ -367,7 +402,7 @@ async function laterKeys({
   await refusedApp(appId, response);
 
   if (!response.ok) {
-    throw new ShareError(`Couldn't read the app's keys: ${await dojoMessage(response)}`);
+    throw await dojoStop(response, "Couldn't read the app's keys");
   }
 
   const { salt, keys: live } = (await response.json()) as Partial<LiveKeys>;
@@ -383,9 +418,7 @@ async function sealedKeys(dojo: DojoClient, keys: EnvKey[]): Promise<SealedKeys>
   const response = await dojo.request('/api/cli/sealing-key');
 
   if (!response.ok) {
-    throw new ShareError(
-      `Couldn't get Dojo's key for sealing keys: ${await dojoMessage(response)}`,
-    );
+    throw await dojoStop(response, "Couldn't get Dojo's key for sealing keys");
   }
 
   const sealingKey = (await response.json()) as SealingKey;
@@ -434,7 +467,7 @@ async function deploy({
 
   await refusedApp(appId, response);
 
-  if (!response.ok) throw new ShareError(`Dojo refused the upload: ${await dojoMessage(response)}`);
+  if (!response.ok) throw await dojoStop(response, 'Dojo refused the upload');
 
   return ((await response.json()) as { deploymentId: string | number }).deploymentId;
 }

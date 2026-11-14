@@ -66,6 +66,12 @@ export function linkedCredential({
       if (!(error instanceof ConnectionError)) throw error;
 
       if (error.code === 'missing') return unlinked();
+      if (error.code === 'forbidden') throw error;
+      if (error.code === 'ambiguous') {
+        throw new CallCredentialError(
+          `Choose a default ${label} account in Settings → Linked accounts.`,
+        );
+      }
 
       throw new CallCredentialError(`Reconnect ${label} in Settings → Linked accounts.`);
     }

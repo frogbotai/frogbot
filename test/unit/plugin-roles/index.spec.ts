@@ -2,9 +2,9 @@ import type { FrogBotConfig, FrogBotRequest, Plugin } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
+import { aiCapturePlugin } from '../../../packages/plugins/plugin-ai-capture/src/index.js';
+import type { CaptureStorage } from '../../../packages/plugins/plugin-ai-capture/src/types.js';
 import { auditLogPlugin } from '../../../packages/plugins/plugin-audit-log/src/index.js';
-import { capturePlugin } from '../../../packages/plugins/plugin-capture/src/index.js';
-import type { CaptureStorage } from '../../../packages/plugins/plugin-capture/src/types.js';
 import { compiledAccess } from '../../../packages/plugins/plugin-roles/src/allow.js';
 import {
   allow,
@@ -258,7 +258,7 @@ describe('plugin order', () => {
     const result = await built([
       rolesPlugin({ roles: ['admin'] }),
       auditLogPlugin({ overrides: { access: { read: allow('admin') } } }),
-      capturePlugin({ storage: {} as CaptureStorage, access: allow('admin') }),
+      aiCapturePlugin({ storage: {} as CaptureStorage, access: allow('admin') }),
     ]);
 
     expect(binding(result, 'ai-captures')).toBeDefined();
@@ -268,7 +268,7 @@ describe('plugin order', () => {
   it('runs audit-log after plugins that add collections, wherever it is listed', async () => {
     const result = await built([
       auditLogPlugin(),
-      capturePlugin({ storage: {} as CaptureStorage, access: allow('admin') }),
+      aiCapturePlugin({ storage: {} as CaptureStorage, access: allow('admin') }),
       rolesPlugin({ roles: ['admin'] }),
     ]);
 
@@ -434,6 +434,31 @@ describe('allow', () => {
     valid.collections[0].access = { read: allow({ role: 'member', own: 'id' }) };
 
     expect(() => rolesPlugin({ roles: ['member'] })(valid)).not.toThrow();
+  });
+
+  it('binds and checks allow() in jobsCollectionOverrides', async () => {
+    const withJobs = (read: ReturnType<typeof allow>): FrogBotConfig => ({
+      ...config(),
+      jobs: {
+        jobsCollectionOverrides: ({ defaultJobsCollection }) => ({
+          ...defaultJobsCollection,
+          access: { ...defaultJobsCollection.access, read },
+        }),
+      },
+    });
+
+    const jobsCollection = async (input: FrogBotConfig) =>
+      (await rolesPlugin({ roles: ['admin', 'member'] })(input)).jobs!.jobsCollectionOverrides!({
+        defaultJobsCollection: { slug: 'payload-jobs', fields: [] },
+      });
+
+    const { access } = await jobsCollection(withJobs(allow('admin')));
+
+    expect(await access!.read!({ slug: 'test', req: req(['admin']) })).toBe(true);
+    expect(await access!.read!({ slug: 'test', req: req(['member']) })).toBe(false);
+    await expect(jobsCollection(withJobs(allow('admn')))).rejects.toThrow(
+      /Role 'admn' is not listed/,
+    );
   });
 
   it('keeps resolver bindings isolated when one compiler is reused', async () => {

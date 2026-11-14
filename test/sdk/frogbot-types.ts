@@ -173,6 +173,8 @@ export interface SdkUser {
         id: string;
         createdAt?: string | null;
         expiresAt: string;
+        refreshCount?: number | null;
+        refreshedAt?: string | null;
       }[]
     | null;
   password?: string | null;
@@ -440,6 +442,8 @@ export interface SdkUsersSelect {
         id?: boolean;
         createdAt?: boolean;
         expiresAt?: boolean;
+        refreshCount?: boolean;
+        refreshedAt?: boolean;
       };
 }
 /**

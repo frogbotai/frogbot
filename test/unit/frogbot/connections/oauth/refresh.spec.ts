@@ -205,7 +205,13 @@ describe('lazy connection refresh', () => {
       await withLock({
         owner: args.owner,
         piece: args.piece,
-        fn: (locked) => locked.upsert({ method: 'secret', credential: { token: 'relinked' } }),
+        fn: (locked) =>
+          locked.upsert({
+            method: 'oauth',
+            credential: { access_token: 'relinked', expires_in: 3600 },
+            scopes: ['read'],
+            expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+          }),
       });
 
       return withLock(args);

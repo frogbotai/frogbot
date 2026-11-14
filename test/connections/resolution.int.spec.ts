@@ -65,6 +65,14 @@ const createGmail = definePiece({
   actions: [],
 });
 
+const createCodeOnly = definePiece({
+  slug: 'code-only',
+  label: 'Code only',
+  auth: z.object({ token: z.string().min(1) }),
+  client: vi.fn(({ auth }) => ({ token: auth.token })),
+  actions: [read],
+});
+
 describe(`connection resolution and static routes [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () => {
   let frogbot: FrogBot;
   let payload: Payload;
@@ -78,6 +86,10 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     oauth: { clientId: 'id', clientSecret: 'secret' },
   });
 
+  const unlinked = createCodeOnly({ auth: { token: 'code-only' } });
+  const bot = createPiece({ slug: 'example-bot', auth: { token: 'bot' } });
+  const tool = createPiece({ slug: 'example-tool' });
+
   const gmail = createGmail({
     oauth: { clientId: 'google-id', clientSecret: 'google-secret' },
     scopes: ({ defaultScopes }) => [...defaultScopes, 'gmail.labels'],
@@ -85,6 +97,14 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
 
   const request = (user: ConnectionOwner | null = owner): FrogBotRequest =>
     ({ frogbot, payload, user }) as unknown as FrogBotRequest;
+
+  const expectMissing = (resolution: Promise<unknown>) =>
+    expect(resolution).rejects.toMatchObject({
+      name: 'ConnectionError',
+      code: 'missing',
+      piece: 'example',
+      message: "Connection for 'example' is not linked. Link it in Settings → Linked accounts.",
+    });
 
   const link = (body: unknown, user = owner) =>
     endpoints[0].handler({
@@ -169,9 +189,6 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
 
   it('links raw input, encrypts every field, and invokes the native action as the user', async () => {
     const req = request();
-
-    expect(await piece.read({ input: {}, req })).toBe('factory');
-
     const response = await link({ token: 'user-secret' });
 
     expect(response.status).toBe(200);
@@ -198,8 +215,9 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     expect(await frogbot.connections.resolve({ piece, req })).toEqual({
       token: { value: 'user-secret' },
     });
-    expect(await piece.read({ input: {}, req: request(other) })).toBe('factory');
-    expect(await piece.read({ input: {}, req: request(null) })).toBe('factory');
+
+    await expectMissing(piece.read({ input: {}, req: request(other) }));
+    await expectMissing(piece.read({ input: {}, req: request(null) }));
   });
 
   it('replaces in place, retaining the client only when the credential is unchanged', async () => {
@@ -218,7 +236,7 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     expect(client).toHaveBeenCalledTimes(2);
   });
 
-  it('replaces OAuth with a static credential and clears token metadata', async () => {
+  it('adds a static credential beside an OAuth account without moving the default', async () => {
     const row = await store.upsert({
       owner,
       piece: 'example',
@@ -232,15 +250,21 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     expect(await piece.read({ input: {}, req: request() })).toBe('oauth-token');
 
     const response = await link({ token: 'static-token' });
+    const secret = await response.json();
 
-    expect(await response.json()).toMatchObject({
-      id: row.id,
+    expect(secret).toMatchObject({
       method: 'secret',
+      accountId: '',
+      isDefault: false,
       scopes: [],
       account: null,
       expiresAt: null,
     });
-    expect(await piece.read({ input: {}, req: request() })).toBe('static-token');
+    expect(secret.id).not.toBe(row.id);
+    expect(await piece.read({ input: {}, req: request() })).toBe('oauth-token');
+    expect(await piece.read({ input: {}, req: request(), connection: secret.id })).toBe(
+      'static-token',
+    );
   });
 
   it('asks a connection linked before a scope was added to re-link', async () => {
@@ -290,7 +314,8 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     const row = await (await link({ token: 'owner-secret' })).json();
     const customer = { ...owner, collection: 'customers' };
 
-    expect(await piece.read({ input: {}, req: request(customer) })).toBe('factory');
+    await expectMissing(piece.read({ input: {}, req: request(customer) }));
+
     expect((await link({ token: 'attacker' }, customer)).status).toBe(403);
     expect((await remove(row.id, customer)).status).toBe(403);
     expect((await remove(row.id, other)).status).toBe(404);
@@ -299,7 +324,9 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     );
     expect(await frogbot.connections.list({ req: request(other) })).toEqual([]);
     expect((await remove(row.id)).status).toBe(204);
-    expect(await piece.read({ input: {}, req: request() })).toBe('factory');
+
+    await expectMissing(piece.read({ input: {}, req: request() }));
+
     expect((await remove(row.id)).status).toBe(404);
   });
 
@@ -323,5 +350,86 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
       piece: 'example',
     });
     expect(client).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a signed-in user with no row', () => request()],
+    ['a request with no user, as triggers and jobs build', () => request(null)],
+  ])('never uses the code credential for a linked-type piece: %s', async (_, req) => {
+    await store.upsert({
+      owner: other,
+      piece: 'example',
+      method: 'secret',
+      credential: { token: 'other-user' },
+    });
+
+    await expectMissing(piece.read({ input: {}, req: req() }));
+    await expectMissing(frogbot.connections.resolve({ piece, req: req() }));
+
+    expect(client).not.toHaveBeenCalled();
+  });
+
+  it('fails a failed lazy refresh without falling back to the code credential', async () => {
+    await store.upsert({
+      owner,
+      piece: 'example',
+      method: 'oauth',
+      credential: { access_token: 'stale' },
+      scopes: [],
+      expiresAt: '2000-01-01T00:00:00Z',
+    });
+
+    await expect(frogbot.connections.resolve({ piece, req: request() })).rejects.toMatchObject({
+      name: 'ConnectionError',
+      code: 'error',
+      piece: 'example',
+    });
+    await expect(frogbot.connections.resolve({ piece, req: request() })).rejects.toMatchObject({
+      code: 'error',
+    });
+    expect(client).not.toHaveBeenCalled();
+  });
+
+  it('uses the code credential only for a piece with no connection entry', async () => {
+    for (const user of [owner, other, null]) {
+      await expect(unlinked.read({ input: {}, req: request(user) })).resolves.toBe('code-only');
+    }
+  });
+
+  it('uses the code credential for another instance of a linked piece that has its own auth', async () => {
+    await store.upsert({
+      owner,
+      piece: 'example',
+      method: 'secret',
+      credential: { token: 'mine' },
+    });
+
+    for (const user of [owner, other, null]) {
+      await expect(bot.read({ input: {}, req: request(user) })).resolves.toBe('bot');
+    }
+
+    expect(await piece.read({ input: {}, req: request() })).toBe('mine');
+    expect(await tool.read({ input: {}, req: request() })).toBe('mine');
+
+    await expectMissing(tool.read({ input: {}, req: request(other) }));
+  });
+
+  it("gives a user with a usable row their own credential, never another user's", async () => {
+    await store.upsert({
+      owner,
+      piece: 'example',
+      method: 'secret',
+      credential: { token: 'mine' },
+    });
+
+    await store.upsert({
+      owner: other,
+      piece: 'example',
+      method: 'secret',
+      credential: { token: 'theirs' },
+    });
+
+    expect(await piece.read({ input: {}, req: request() })).toBe('mine');
+    expect(await piece.read({ input: {}, req: request(other) })).toBe('theirs');
   });
 });

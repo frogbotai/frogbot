@@ -4,6 +4,8 @@ frogbot.db-*
 .env*
 !.env.example
 /files
+/imports
+/exports
 /.frogbot
 
 # Dependencies / build output

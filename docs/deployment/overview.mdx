@@ -24,14 +24,14 @@ pnpm frogbot deploy azure
 | `aws` | on this computer | Secrets Manager | ECS Express Mode (Fargate behind HTTPS) | `aws` CLI v2, Docker, two IAM roles |
 | `azure` | Azure Container Registry | Container Apps secrets | Azure Container Apps | `az`, logged in |
 
-Run `frogbot deploy` with no target and no `dojo()` to list the targets. An unknown target lists them too and exits `2`; with `--json` it also prints a result whose issue is `UNKNOWN_TARGET`.
+Run `frogbot deploy` with no target and no `dojo()` to list the targets. An unknown target lists them too and exits `2`; with `--json` it also prints a result whose issue is `UNKNOWN_TARGET`. When `frogbot.config.ts` fails to load, the issue is `CONFIG_INVALID` with the load error, and the deploy exits `1`, since targets a plugin adds can't be known until the config loads.
 
 ### Flags every target takes
 
 | Flag | Description |
 | --- | --- |
 | `--dry-run` | Runs the checks, then prints each file it would write and each command it would run, in order, and changes nothing. Exits `0` when the checks pass. Read-only queries (such as "does this repository exist?") still run. |
-| `--json` | Prints one result on stdout, `{ "target", "ok", "dryRun", "issues", "result" }`, and everything else on stderr. Never prompts. On a dry run, `result.steps` lists the files and commands. |
+| `--json` | Prints one result on stdout, `{ "target", "ok", "dryRun", "issues", "result" }`, and everything else on stderr, whether the deploy succeeds or fails. Never prompts. On a dry run, `result.steps` lists the files and commands. A deploy that stops adds `code` and `error`: see [When a deploy stops](#when-a-deploy-stops). |
 | `--no-interactive` | Never prompts. Where a prompt would have asked, the deploy stops and names the flag to pass instead. Without a terminal, every deploy behaves this way. |
 | `--env-file <path>` | Reads the app's production variables from this file only. By default they come from the `.env` files `frogbot start` loads (`.env.production.local`, `.env.local`, `.env.production`, `.env`), never the development ones; `FROGBOT_SECRET` and `DATABASE_URL` also come from the shell when no file sets them, which suits CI. |
 
@@ -41,7 +41,7 @@ Run `frogbot deploy` with no target and no `dojo()` to list the targets. An unkn
 | --- | --- | --- |
 | `--region` | the CLI's default region, else `us-central1` (gcp) or `eastus` (azure) | Where the service runs. |
 | `--service` | your `package.json` name | The service's name; a re-run with the same name updates it. |
-| `--min-instances` | `1` | `1` keeps one copy always running, so [scheduled jobs](/jobs-queue/overview#schedule-options) run on time. `0` lets Google Cloud and Azure stop the app when idle: cheaper, but scheduled jobs wait until a request wakes it, and the deploy says so. A cloud deploy runs one copy at most. |
+| `--min-instances` | `1` | `1` keeps one copy always running, so [scheduled jobs](/jobs-queue/schedules) run on time. `0` lets Google Cloud and Azure stop the app when idle: cheaper, but scheduled jobs wait until a request wakes it, and the deploy says so. A cloud deploy runs one copy at most. |
 
 ### Checks before anything runs
 
@@ -63,9 +63,39 @@ Every failing check prints together, `[frogbot] <code> <message>` with a `fix:` 
 | `FLY_SECRET_UNSUPPORTED` | `fly` | A value `fly secrets import` can't read back as written, such as one starting with `""` and holding a `#`. Set it with `fly secrets set`. |
 | `AZURE_SECRET_NAME_CLASH` | `azure` | Two variables, such as `API_KEY` and `Api_Key`, would get the same Container Apps secret name, which is lowercase. |
 
+### When a deploy stops
+
+A deploy that stops after its checks pass prints `[frogbot] <error>` on stderr. With `--json`, the one result on stdout also has `ok: false`, a stable `code`, the `error` text, and the fields below, so a script can tell what failed without reading the text.
+
+| Code | Exit | Means | Extra fields |
+| --- | --- | --- | --- |
+| `CONFIG_INVALID` | `1` | `frogbot.config.ts` failed to load. It comes as an issue, like the checks above. | — |
+| `UNKNOWN_TARGET` | `2` | No target by that name. It comes as an issue, like the checks above. | — |
+| `USAGE_ERROR` | `2` | A flag or argument is wrong, such as `--env-file` with no path. | — |
+| `COMMAND_FAILED` | `1` | A host command exited non-zero, such as `fly deploy` running out of memory. | `command`: the whole command, secrets masked as `••••`. `stderr`: its last 10 lines, masked. `steps`: the commands and writes that finished before it. |
+| `DOJO_UNREACHABLE` | `1` | The request never reached Dojo. `error` names the address, and says when `FROGBOT_DOJO_URL` set it. | `deploymentId` when it happened while following a build |
+| `BUILD_FAILED` | `1` | Dojo's build failed. | `deploymentId` |
+| `BUILD_LOG_LOST` | `1` | The build log stopped and didn't come back. The build may still finish: `error` gives the `frogbot dojo deployments logs <id> --follow` command. When Dojo refuses the log or can't be reached while following it, the stop keeps that code (`FAILED`, Dojo's own, or `DOJO_UNREACHABLE`) and adds the same command and `deploymentId`. | `deploymentId` |
+| `SIGN_IN_REQUIRED` | `3` | Dojo needs a sign-in and nobody is there to confirm it: no terminal and no `--wait`, a refused `FROGBOT_DOJO_TOKEN`, or CI with no token. Run it again once the person confirms the code. | `needs`: `sign-in`. `link` and `userCode` for a browser sign-in. |
+| `payment_required` | `4` | The workspace's plan doesn't cover the app and nobody is there to pay: no terminal and no `--wait`. Share again once it's paid. | `needs`: `payment`. `link`: Dojo's upgrade page. |
+| Dojo's own code, such as `payment_required`, `forbidden` or `rate_limited` | `1` | Dojo refused a request. A share that waited 30 minutes for a payment stops as `payment_required`. | `status`: the HTTP status. `url`: the link Dojo sent, such as the upgrade page. |
+| `FAILED` | `1` | Any other known stop, such as a refusal without a code of Dojo's. | `status` when Dojo refused |
+| `UNEXPECTED_ERROR` | `1` | A bug or an error nothing expected. `error` holds the whole error with its causes. Without `--json`, the error is thrown as before. | — |
+
+```json
+{"target":"fly","ok":false,"dryRun":false,"issues":[],"result":null,"code":"COMMAND_FAILED","error":"`fly deploy --app deals` failed (exit 1).","command":"fly deploy --app deals","stderr":"Error: insufficient memory","steps":["$ fly apps create deals","write fly.toml"]}
+```
+
 ### Variables
 
-Each target sends the app's variables to the host's own secret store, never as plain environment variables. `NEXT_PUBLIC_*` variables are read when `next build` runs, so they go in as build arguments instead (`fly`, `gcp`, `aws`): add an `ARG NEXT_PUBLIC_…` line to the Dockerfile's builder stage so the build sees each one, as the deploy reminds you. `az containerapp up` takes no build arguments, so on Azure put them in a committed `.env.production`. `NODE_ENV`, `PORT` and `HOSTNAME` are never sent.
+Each target sends the app's variables to the host's own secret store, never as plain environment variables. `NODE_ENV`, `PORT`, and `HOSTNAME` are never sent.
+
+`NEXT_PUBLIC_*` variables are read when `next build` runs, so they go elsewhere:
+
+| Target | Where `NEXT_PUBLIC_*` variables go |
+| --- | --- |
+| `fly`, `gcp`, `aws` | Build arguments. Add an `ARG NEXT_PUBLIC_…` line to the Dockerfile's builder stage so the build sees each one. The deploy reminds you. |
+| `azure` | A committed `.env.production`, because `az containerapp up` takes no build arguments. |
 
 ## Deploy to Dojo
 
@@ -111,7 +141,26 @@ docker run -p 3000:3000 --env-file .env -v frogbot-data:/data -e DATABASE_URL=fi
 
 ### Health check
 
-The template answers `GET /api/health` with `200` and `{ "status": "ok" }` once FrogBot has started, and `503` with `{ "status": "error" }` when it can't start, logging why. It needs no sign-in, so point your platform's HTTP health check at it. Dojo, Fly.io, Cloud Run, ECS Express Mode and Azure Container Apps check this path when `frogbot deploy` sets them up. The route is `src/app/(frogbot)/api/health/route.ts`.
+The template answers `GET /api/health`:
+
+| FrogBot | Status | Body |
+| --- | --- | --- |
+| Has started | `200` | `{ "status": "ok" }` |
+| Can't start | `503` | `{ "status": "error" }`. FrogBot logs why. |
+
+The route needs no sign-in, so point your platform's HTTP health check at it. Dojo, Fly.io, Cloud Run, ECS Express Mode, and Azure Container Apps check this path when `frogbot deploy` sets them up. The route is `src/app/(frogbot)/api/health/route.ts`.
+
+### New-version notice
+
+When a newer build goes live, open admin tabs show **A new version is available** with a **Refresh** button. A tab checks when it regains focus or moves to another admin page, at most every 5 seconds, and right away when a script or style from the old build fails to load. It never reloads by itself, so unsaved edits stay.
+
+Each production build gets a random build ID, which the server sends in the `x-frogbot-build` header. An app built separately on several servers, or built again from the same code, would show the notice when nothing changed. Set `FROGBOT_BUILD_ID` in the build environment to one value per version, such as the git commit:
+
+```bash
+FROGBOT_BUILD_ID=$(git rev-parse HEAD) pnpm build
+```
+
+In a Docker build, pass it as a build argument and add `ARG FROGBOT_BUILD_ID` to the builder stage.
 
 ## Fly.io
 
@@ -222,7 +271,9 @@ Recent pnpm versions refuse packages published within the last 24 hours as a sup
 
 ### `Cannot find module 'libsql'` (or `sharp`, `pino`, `drizzle-kit`, `json-schema-to-typescript`)
 
-Only applies to non-standalone deploys (bare VPS running `pnpm start`): the compiled routes `require()` a package that FrogBot externalizes from the webpack bundle, but it is not linked at your project root. Add it to `dependencies` in `package.json` and rebuild — the template already includes all of them. Standalone Docker images are unaffected: the build includes these packages, and libsql's native binary for the platform the image is built on. Build the image with the template `Dockerfile` so dependencies install inside Linux. `node_modules` copied in from macOS or Windows has no Linux binary, and the server fails with `Cannot find module '@libsql/linux-…'`.
+**Non-standalone deploys** (a bare VPS that runs `pnpm start`). The compiled routes `require()` a package that FrogBot externalizes from the webpack bundle, but the package is not linked at your project root. Add it to `dependencies` in `package.json` and rebuild. The template already includes all of them.
+
+**Standalone Docker images** are unaffected. The build includes these packages, and libsql's native binary for the platform the image is built on. Build the image with the template `Dockerfile` so dependencies install inside Linux. `node_modules` copied in from macOS or Windows has no Linux binary, and the server fails with `Cannot find module '@libsql/linux-…'`.
 
 ### `Installing TypeScript...` or `Can't resolve '@frogbot-config'` at start
 

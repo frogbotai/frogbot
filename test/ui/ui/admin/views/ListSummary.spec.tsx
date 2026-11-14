@@ -1,6 +1,9 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import type { Where } from 'frogbot';
 import { createRef, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const serverFunction = vi.hoisted(() => vi.fn(() => Promise.resolve(undefined)));
 
 vi.mock('@payloadcms/ui', () => {
   const Pass = ({ children }: { children?: ReactNode }) => <>{children}</>;
@@ -37,6 +40,7 @@ vi.mock('@payloadcms/ui', () => {
       ButtonGroup: Pass,
     },
     useLocale: () => ({ code: 'en' }),
+    useServerFunctions: () => ({ serverFunction }),
     useConfig: () => ({ config: { admin: { dateFormat: 'yyyy-MM-dd' }, routes: { api: '/api' } } }),
     useTableColumns: () => ({
       columns: [
@@ -125,9 +129,7 @@ const columns = {
   closedAt: { kind: 'date', operations: ['count', 'min', 'max'] },
 } as const;
 
-function setup(
-  props: { saved?: Record<string, 'avg' | 'none'>; where?: Record<string, unknown> } = {},
-) {
+function setup(props: { saved?: Record<string, 'avg' | 'none'>; where?: Where } = {}) {
   const ref = createRef<HTMLDivElement>();
 
   const view = (where = props.where) => (
@@ -149,7 +151,7 @@ function setup(
 
   return {
     ...result,
-    rerenderWhere: (where: Record<string, unknown>) => result.rerender(view(where)),
+    rerenderWhere: (where: Where) => result.rerender(view(where)),
   };
 }
 
@@ -223,9 +225,10 @@ describe('ListSummary', () => {
     expect(screen.getByRole('group', { name: 'Amount: Sum' })).toBeTruthy();
   });
 
-  it("saves a choice into the view preference without touching the setup's other keys", async () => {
+  it('saves a choice as a patch of the view preference and asks for the new total', async () => {
     const calls = mockFetch();
 
+    serverFunction.mockClear();
     setup();
 
     await waitFor(() => expect(calls).toHaveLength(1));
@@ -235,36 +238,15 @@ describe('ListSummary', () => {
 
     fireEvent.click(within(amount).getByRole('menuitem', { name: 'Average' }));
 
-    await waitFor(() => expect(calls.length).toBeGreaterThanOrEqual(3));
+    await waitFor(() => expect(calls).toHaveLength(2));
 
-    const read = calls.find(
-      (call) => call.url === '/api/payload-preferences/collection-deals-view-list',
+    expect(serverFunction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        args: { key: 'collection-deals-view-list', patch: { summary: { amount: 'avg' } } },
+      }),
     );
-
-    expect(read?.init?.method).toBeUndefined();
-
-    await settle(
-      read,
-      json({ value: { columns: [{ accessor: 'name', active: true }], summary: { name: 'none' } } }),
-    );
-
-    await waitFor(() =>
-      expect(
-        calls.some((call) => call.init?.method === 'POST' && call.url.includes('preferences')),
-      ).toBe(true),
-    );
-
-    const write = calls.find(
-      (call) => call.init?.method === 'POST' && call.url.includes('preferences'),
-    );
-
-    expect(JSON.parse(String(write?.init?.body))).toEqual({
-      value: { columns: [{ accessor: 'name', active: true }], summary: { amount: 'avg' } },
-    });
-
-    const request = calls.find((call, index) => index > 0 && call.url === '/api/deals/aggregate');
-
-    expect(JSON.parse(String(request?.init?.body)).values.amount).toEqual({ avg: 'amount' });
+    expect(calls[1].url).toBe('/api/deals/aggregate');
+    expect(JSON.parse(String(calls[1].init?.body)).values.amount).toEqual({ avg: 'amount' });
   });
 
   it('drops a config default the user set to None', async () => {
