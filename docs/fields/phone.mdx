@@ -164,10 +164,17 @@ Both take the same argument:
 | --- | --- | --- | --- |
 | `value` | `unknown` | Required | The stored number. |
 
-`formatPhone` returns `(XXX) XXX-XXXX` for an accepted number with exactly 10 digits and no `+`, any other text as given, and `''` for a value that isn't a string. `getPhoneHref` returns the `tel:` link for an [accepted number](#accepted-numbers), or `undefined` for an empty or rejected value. `frogbot/fields` also exports the `FormatPhoneArgs` type.
+| Function | Returns |
+| --- | --- |
+| `formatPhone` | `(XXX) XXX-XXXX` for an accepted number with exactly 10 digits and no `+`. Any other text is returned as given. A value that isn't a string returns `''`. |
+| `getPhoneHref` | The `tel:` link for an [accepted number](#accepted-numbers), or `undefined` for an empty or rejected value. |
+
+`frogbot/fields` also exports the `FormatPhoneArgs` type.
 
 ## Custom components
 
-The phone cell and read-only display are `PhoneCell` and `PhoneField` from `@frogbotai/ui/admin`. `PhoneField` renders the normal text input when the field is editable. Your own `admin.components.Cell` or `admin.components.Field` replaces them, and other components such as `Label`, `Description`, `Error`, `beforeInput` and `afterInput` work as they do on a Text field.
+The phone cell and read-only display are `PhoneCell` and `PhoneField` from `@frogbotai/ui/admin`. `PhoneField` renders the normal text input when the field is editable.
+
+Your own `admin.components.Cell` or `admin.components.Field` replaces them. Other components, such as `Label`, `Description`, `Error`, `beforeInput`, and `afterInput`, work as they do on a Text field.
 
 A custom Cell can draw the standard link inside its own markup with [`FieldCell`](/fields/overview#cell), as shown for [Money fields](/fields/money#custom-components). As with any custom Cell, it appears only in the List view. Board cards and Calendar events keep the standard link.

@@ -314,7 +314,9 @@ The focal point selector is shown only when the collection has `variants` or ima
 
 ## Disabling Local Upload Storage
 
-If you are using a [storage adapter](/upload/storage-adapters) under the root `storage` option to send your files to a third-party file storage host or CDN (like Amazon S3, Cloudflare R2, or Google Cloud Storage), you may not want to store your files locally at all. Storage adapters disable local storage automatically, or you can prevent FrogBot from writing files to disk manually by specifying `disableLocalStorage: true` on your collection's upload config.
+If a [storage adapter](/upload/storage-adapters) under the root `storage` option sends your files to a third-party storage host or CDN, such as Amazon S3, Cloudflare R2, or Google Cloud Storage, you may not want to store files locally at all.
+
+Storage adapters disable local storage automatically. To stop FrogBot from writing files to disk yourself, set `disableLocalStorage: true` on your collection's upload config.
 
 <Banner type="warning">
   **Note:**
@@ -513,7 +515,7 @@ export const Media: CollectionConfig = {
 <Banner type="warning">
   **Important:**
 
-Uploading files is currently only possible through the REST and Local APIs due to how GraphQL
+Uploading files is only possible through the REST and Local APIs due to how GraphQL
 works. It's difficult and fairly nonsensical to support uploading files through GraphQL.
 
 </Banner>

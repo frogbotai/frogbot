@@ -65,7 +65,14 @@ Every failing check prints together, `[frogbot] <code> <message>` with a `fix:` 
 
 ### Variables
 
-Each target sends the app's variables to the host's own secret store, never as plain environment variables. `NEXT_PUBLIC_*` variables are read when `next build` runs, so they go in as build arguments instead (`fly`, `gcp`, `aws`): add an `ARG NEXT_PUBLIC_…` line to the Dockerfile's builder stage so the build sees each one, as the deploy reminds you. `az containerapp up` takes no build arguments, so on Azure put them in a committed `.env.production`. `NODE_ENV`, `PORT` and `HOSTNAME` are never sent.
+Each target sends the app's variables to the host's own secret store, never as plain environment variables. `NODE_ENV`, `PORT`, and `HOSTNAME` are never sent.
+
+`NEXT_PUBLIC_*` variables are read when `next build` runs, so they go elsewhere:
+
+| Target | Where `NEXT_PUBLIC_*` variables go |
+| --- | --- |
+| `fly`, `gcp`, `aws` | Build arguments. Add an `ARG NEXT_PUBLIC_…` line to the Dockerfile's builder stage so the build sees each one. The deploy reminds you. |
+| `azure` | A committed `.env.production`, because `az containerapp up` takes no build arguments. |
 
 ## Deploy to Dojo
 
@@ -111,7 +118,14 @@ docker run -p 3000:3000 --env-file .env -v frogbot-data:/data -e DATABASE_URL=fi
 
 ### Health check
 
-The template answers `GET /api/health` with `200` and `{ "status": "ok" }` once FrogBot has started, and `503` with `{ "status": "error" }` when it can't start, logging why. It needs no sign-in, so point your platform's HTTP health check at it. Dojo, Fly.io, Cloud Run, ECS Express Mode and Azure Container Apps check this path when `frogbot deploy` sets them up. The route is `src/app/(frogbot)/api/health/route.ts`.
+The template answers `GET /api/health`:
+
+| FrogBot | Status | Body |
+| --- | --- | --- |
+| Has started | `200` | `{ "status": "ok" }` |
+| Can't start | `503` | `{ "status": "error" }`. FrogBot logs why. |
+
+The route needs no sign-in, so point your platform's HTTP health check at it. Dojo, Fly.io, Cloud Run, ECS Express Mode, and Azure Container Apps check this path when `frogbot deploy` sets them up. The route is `src/app/(frogbot)/api/health/route.ts`.
 
 ## Fly.io
 
@@ -222,7 +236,9 @@ Recent pnpm versions refuse packages published within the last 24 hours as a sup
 
 ### `Cannot find module 'libsql'` (or `sharp`, `pino`, `drizzle-kit`, `json-schema-to-typescript`)
 
-Only applies to non-standalone deploys (bare VPS running `pnpm start`): the compiled routes `require()` a package that FrogBot externalizes from the webpack bundle, but it is not linked at your project root. Add it to `dependencies` in `package.json` and rebuild — the template already includes all of them. Standalone Docker images are unaffected: the build includes these packages, and libsql's native binary for the platform the image is built on. Build the image with the template `Dockerfile` so dependencies install inside Linux. `node_modules` copied in from macOS or Windows has no Linux binary, and the server fails with `Cannot find module '@libsql/linux-…'`.
+**Non-standalone deploys** (a bare VPS that runs `pnpm start`). The compiled routes `require()` a package that FrogBot externalizes from the webpack bundle, but the package is not linked at your project root. Add it to `dependencies` in `package.json` and rebuild. The template already includes all of them.
+
+**Standalone Docker images** are unaffected. The build includes these packages, and libsql's native binary for the platform the image is built on. Build the image with the template `Dockerfile` so dependencies install inside Linux. `node_modules` copied in from macOS or Windows has no Linux binary, and the server fails with `Cannot find module '@libsql/linux-…'`.
 
 ### `Installing TypeScript...` or `Can't resolve '@frogbot-config'` at start
 

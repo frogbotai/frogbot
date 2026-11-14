@@ -88,7 +88,12 @@ export default buildConfig({
 
 ### Prerequisites
 
-Lexical-only indexes need nothing beyond PostgreSQL. An index with `vector` needs pgvector **0.8.0 or later**. Each time the adapter connects, including when you run `migrate`, it checks `pg_extension` and runs `CREATE EXTENSION IF NOT EXISTS vector` if pgvector is missing. `migrate:create` does not connect, so it generates the schema without this check. pgvector is not a trusted extension, so the connecting role must be a superuser, or you must create the extension ahead of time with a role that can. On a managed host, enable pgvector the way your host documents when the application role cannot create it.
+- **Lexical-only indexes** need nothing beyond PostgreSQL.
+- **An index with `vector`** needs pgvector **0.8.0 or later**.
+
+Each time the adapter connects, including when you run `migrate`, it checks `pg_extension` and runs `CREATE EXTENSION IF NOT EXISTS vector` if pgvector is missing. `migrate:create` does not connect, so it generates the schema without this check.
+
+pgvector is not a trusted extension. The connecting role must be a superuser, or you must create the extension ahead of time with a role that can. On a managed host, enable pgvector the way your host documents when the application role cannot create it.
 
 If the extension cannot be used, the adapter stops setup with `SearchCapabilityError`. The message names the first vector index, the reason, and the PostgreSQL SQLSTATE:
 
@@ -119,7 +124,16 @@ Changing a vector field's `dimensions` requires a migration that rewrites or cle
 
 Query text supports web search syntax: quoted phrases, `or`, and `-` to exclude a term. It is always sent as a bound parameter.
 
-Vector and hybrid queries on an HNSW index report `approximate: true`. They run in a transaction with `SET LOCAL hnsw.iterative_scan = strict_order`, so pgvector keeps scanning the index until enough rows pass your access and `where` filters, in exact distance order. The same transaction sets `hnsw.ef_search` to the [resolved candidate count](/search/overview#candidates), with pgvector's default of 40 as the minimum and its maximum of 1,000 as the cap. Both settings end with the transaction and never reach other pooled connections. Iterative scans still stop at pgvector's scan limits, so a very selective filter can return fewer than `limit` hits. Exact queries on an index with `vector.approximate: false` run with `SET LOCAL enable_indexscan = off`, so they never use an HNSW index that another search index built on the same field. When the request already runs in a transaction, search reads through it and sees its uncommitted writes.
+**Approximate queries.** Vector and hybrid queries on an HNSW index report `approximate: true`. They run in a transaction that sets two values:
+
+- `SET LOCAL hnsw.iterative_scan = strict_order`, so pgvector keeps scanning the index until enough rows pass your access and `where` filters, in exact distance order.
+- `hnsw.ef_search`, set to the [resolved candidate count](/search/overview#candidates), with pgvector's default of 40 as the minimum and its maximum of 1,000 as the cap.
+
+Both settings end with the transaction and never reach other pooled connections. Iterative scans still stop at pgvector's scan limits, so a very selective filter can return fewer than `limit` hits.
+
+**Exact queries.** Exact queries on an index with `vector.approximate: false` run with `SET LOCAL enable_indexscan = off`, so they never use an HNSW index that another search index built on the same field.
+
+**Transactions.** When the request already runs in a transaction, search reads through it and sees its uncommitted writes.
 
 Hybrid search takes up to the [resolved candidate count](/search/overview#candidates) from each component, joins them in the database, and returns the top `limit` by fused score. A record that matches only one component still ranks, with the other component reported as `null`.
 
@@ -305,9 +319,11 @@ Make sure FrogBot doesn't overlap table names with its collections. For example,
 
 ### afterSchemaInit
 
-Runs after the Drizzle schema is built. You can use this hook to modify the schema with features that aren't supported by FrogBot, or if you want to add a column that you don't want to be in the FrogBot config.
-To extend a table, FrogBot exposes `extendTable` utility to the args. You can refer to the [Drizzle documentation](https://orm.drizzle.team/docs/sql-schema-declaration).
-The following example adds the `extra_integer_column` column and a composite index on `country` and `city` columns.
+Runs after the Drizzle schema is built. Use this hook to modify the schema with features that FrogBot doesn't support, or to add a column that you don't want in the FrogBot config.
+
+To extend a table, use the `extendTable` utility that FrogBot passes in the args. See the [Drizzle documentation](https://orm.drizzle.team/docs/sql-schema-declaration).
+
+The following example adds the `extra_integer_column` column and a composite index on the `country` and `city` columns.
 
 ```ts
 import { postgresAdapter } from '@frogbotai/db-postgres'
