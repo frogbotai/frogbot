@@ -200,13 +200,10 @@ export const Pages: CollectionConfig = {
 <Warning>
   **Note regarding adding versions to an existing collection**
 
-If you already have a collection with documents, and you _opt in_ to draft functionality
-after you have already created existing documents, all of your old documents
-_will not have a `_status` field_ until you resave them. For this reason, if you are
-_adding_ versions into an existing collection, you might want to write your Access Control
-function to allow for users to read both documents where
-**`_status` is equal to `"published"`** as well as where
-**`_status` does not exist**.
+If you opt in to drafts on a collection that already has documents, the old documents have no `_status` field until you resave them. When you add versions to an existing collection, write your Access Control function so that users can read documents in both cases:
+
+- `_status` is equal to `"published"`.
+- `_status` does not exist.
 
 </Warning>
 
@@ -315,4 +312,4 @@ If a document is published, the FrogBot Admin UI will be updated to show an "unp
 
 ## Reverting to published
 
-If a document is published, and you have made further changes which are saved as a draft, FrogBot will show a "revert to published" button at the top of the sidebar which will allow you to reject your draft changes and "revert" back to the published state of the document. Your drafts will still be saved, but a new version will be created that will reflect the last published state of the document.
+If a document is published and you save further changes as a draft, FrogBot shows a "revert to published" button at the top of the sidebar. The button rejects your draft changes and returns the document to its published state. Your drafts are still saved, and a new version is created that reflects the last published state.

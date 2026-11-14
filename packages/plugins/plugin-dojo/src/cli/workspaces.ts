@@ -2,7 +2,7 @@ import type { DojoClient } from './dojo.js';
 import { dojoList } from './dojo.js';
 import { ShareError } from './error.js';
 import type { DojoIO } from './io.js';
-import { say } from './io.js';
+import { dojoProgram, say } from './io.js';
 
 export type Workspace = { id: string | number; name: string; slug: string };
 
@@ -35,7 +35,7 @@ export async function chooseWorkspace({
 
     if (!io.isTTY) {
       throw new ShareError(
-        `Your Dojo account has no workspace yet. Create one at ${create}, then rerun.`,
+        `Your Dojo account has no workspace yet. Create one with ${dojoProgram(io.program)} workspaces create <name>, then rerun.`,
       );
     }
 
@@ -46,7 +46,9 @@ export async function chooseWorkspace({
     }
 
     if (!(await io.prompts.confirm('Created it? Check again'))) {
-      throw new ShareError(`No workspace to share in. Create one at ${create}, then rerun.`);
+      throw new ShareError(
+        `No workspace to share in. Create one with ${dojoProgram(io.program)} workspaces create <name>, then rerun.`,
+      );
     }
   }
 }
@@ -65,7 +67,7 @@ export async function findWorkspace({
 
   if (workspaces.length === 0) {
     throw new ShareError(
-      `You have no workspace yet. Create one with ${io.program} workspaces create <name>.`,
+      `You have no workspace yet. Create one with ${dojoProgram(io.program)} workspaces create <name>.`,
     );
   }
 

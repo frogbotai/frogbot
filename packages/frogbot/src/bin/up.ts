@@ -46,6 +46,28 @@ function shellEnv(): NodeJS.ProcessEnv {
   return env;
 }
 
+/** How long ago `since` was, rounded down: `45 s`, `2 min`, `3 h`, `2 d`. */
+export function age(since: number, now = Date.now()): string {
+  const seconds = Math.max(0, Math.floor((now - since) / 1000));
+
+  if (seconds < 60) return `${seconds} s`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} min`;
+  if (seconds < 86_400) return `${Math.floor(seconds / 3600)} h`;
+
+  return `${Math.floor(seconds / 86_400)} d`;
+}
+
+/** What `up` prints for an app already up: that it is watching, its last build, and its last error. */
+export function alreadyUp(found: Registration, now = Date.now()): string[] {
+  const built = Date.parse(found.builtAt ?? '');
+  const last = Number.isNaN(built) ? '' : ` (last build ${age(built, now)} ago)`;
+
+  return [
+    `[frogbot] ${found.dir} is already up at ${found.url}, watching for changes${last}`,
+    ...(found.lastError ? [`[frogbot] last error: ${found.lastError}`] : []),
+  ];
+}
+
 export type UpOptions = { port?: number | 'auto'; autostart: boolean };
 
 export function parseUpArgs(args: string[]): UpOptions {
@@ -122,7 +144,7 @@ async function superviseHere(): Promise<void> {
   const found = readRegistration(registrationFile(id));
 
   if (found && found.pid !== process.pid && isAlive(found.pid)) {
-    process.stderr.write(`[frogbot] ${dir} is already up at ${found.url}\n`);
+    process.stderr.write(`${alreadyUp(found).join('\n')}\n`);
 
     return;
   }
@@ -347,7 +369,7 @@ async function keepRunning(
   }
 
   if (requested === undefined || requested === 'auto' || requested === found.port) {
-    log(`[frogbot] ${found.dir} is already up at ${found.url}`);
+    for (const line of alreadyUp(found)) log(line);
 
     return;
   }

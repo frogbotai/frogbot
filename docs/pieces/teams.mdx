@@ -78,7 +78,11 @@ Package the manifest with its icons, then upload it in the Teams admin center or
 
 ## Who can answer
 
-FrogBot looks up the person who submits a card in the conversation's member list, the same list Teams uses for @mentions, and reads their email address. It matches that address to a FrogBot user, then runs the agent's `access` check for that user. Anyone who passes can answer, including a teammate who did not start the conversation. Being a member of the Teams channel is not enough on its own.
+1. FrogBot looks up the person who submits a card in the conversation's member list, the same list that Teams uses for @mentions, and reads their email address.
+2. It matches that address to a FrogBot user.
+3. It runs the agent's `access` check for that user.
+
+Anyone who passes can answer, including a teammate who did not start the conversation. Being a member of the Teams channel is not enough on its own.
 
 A person without access gets a private notice, and the question stays open. People whose Teams account has no email, such as some guest accounts, have no FrogBot user; the default agent access denies them with a notice saying their account could not be matched. Write an `access` function if unmatched people should be able to answer.
 

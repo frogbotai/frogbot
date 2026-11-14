@@ -187,4 +187,46 @@
   .fb-form-builder__choice--refused .fb-form-builder__reason {
     flex-basis: 100%;
   }
+
+  .fb-form-builder__rules {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .fb-form-builder__rules-title {
+    margin: 0;
+    font-size: var(--fb-text-sm);
+    font-weight: 600;
+  }
+
+  .fb-form-builder__rule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-self: stretch;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fb-form-builder__rule {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .fb-form-builder__rule-select,
+  .fb-form-builder__rule-value {
+    width: auto;
+    min-width: 8rem;
+  }
+
+  .fb-form-builder__rule > .fb-form-builder__warning {
+    flex-basis: 100%;
+  }
 }

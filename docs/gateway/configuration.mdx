@@ -132,13 +132,31 @@ The CLI builds one config from these layers. Each later layer merges on top of t
 4. The file passed with `--config` or `GATEWAY_CONFIG`.
 5. The JSON object in `GATEWAY_CONFIG_JSON`.
 
-Supported extensions are `.ts`, `.mts`, `.cts`, `.js`, `.mjs`, `.cjs`, and `.json`. A file can export the config as `default` or as a named `config` export, or export a function, optionally async, that returns it. Loading a TypeScript file needs a runtime that imports `.ts` directly, such as Bun or Node with `--import tsx`.
+- **Extensions.** Supported extensions are `.ts`, `.mts`, `.cts`, `.js`, `.mjs`, `.cjs`, and `.json`.
+- **Exports.** A file can export the config as `default` or as a named `config` export. It can also export a function, optionally async, that returns the config.
+- **TypeScript.** Loading a TypeScript file needs a runtime that imports `.ts` directly, such as Bun or Node with `--import tsx`.
 
-JSON files and `GATEWAY_CONFIG_JSON` can reference `{env:NAME}` to insert an environment variable, or `{file:path}` to insert a file's trimmed contents. A file path resolves from the config file's directory (or the current directory for `GATEWAY_CONFIG_JSON`), may start with `~/`, and must stay inside that directory. A missing variable or file stops startup.
+JSON files and `GATEWAY_CONFIG_JSON` can reference two placeholders. A missing variable or file stops startup.
 
-When layers merge, each `providers` entry merges key by key, so a later layer can add `models` to a provider an earlier layer configured. `tracing` and `logger` options merge one level deep; a logger instance replaces the earlier `logger`. Other keys are replaced by the later layer.
+| Placeholder | Inserts |
+| --- | --- |
+| `{env:NAME}` | An environment variable. |
+| `{file:path}` | A file's trimmed contents. The path resolves from the config file's directory (or the current directory for `GATEWAY_CONFIG_JSON`), may start with `~/`, and must stay inside that directory. |
 
-Every [config option](#config-options) works in a config file. JSON files and `GATEWAY_CONFIG_JSON` hold only JSON values, so options that take a function, a `Map`, or an object instance need a `.ts` or `.js` file: `hooks`, `catalog`, `tracer`, a logger instance, [pre-built provider instances](/gateway/providers#pre-built-instances), and function provider options such as `azure.tokenProvider`. A JSON `catalog` fails validation on startup.
+When layers merge:
+
+- Each `providers` entry merges key by key, so a later layer can add `models` to a provider that an earlier layer configured.
+- `tracing` and `logger` options merge one level deep. A logger instance replaces the earlier `logger`.
+- Other keys are replaced by the later layer.
+
+Every [config option](#config-options) works in a config file. JSON files and `GATEWAY_CONFIG_JSON` hold only JSON values, so options that take a function, a `Map`, or an object instance need a `.ts` or `.js` file:
+
+- `hooks`, `catalog`, and `tracer`.
+- A logger instance.
+- [Pre-built provider instances](/gateway/providers#pre-built-instances).
+- Function provider options, such as `azure.tokenProvider`.
+
+A JSON `catalog` fails validation on startup.
 
 ---
 

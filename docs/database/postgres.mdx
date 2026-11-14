@@ -88,7 +88,12 @@ export default buildConfig({
 
 ### Prerequisites
 
-Lexical-only indexes need nothing beyond PostgreSQL. An index with `vector` needs pgvector **0.8.0 or later**. Each time the adapter connects, including when you run `migrate`, it checks `pg_extension` and runs `CREATE EXTENSION IF NOT EXISTS vector` if pgvector is missing. `migrate:create` does not connect, so it generates the schema without this check. pgvector is not a trusted extension, so the connecting role must be a superuser, or you must create the extension ahead of time with a role that can. On a managed host, enable pgvector the way your host documents when the application role cannot create it.
+- **Lexical-only indexes** need nothing beyond PostgreSQL.
+- **An index with `vector`** needs pgvector **0.8.0 or later**.
+
+Each time the adapter connects, including when you run `migrate`, it checks `pg_extension` and runs `CREATE EXTENSION IF NOT EXISTS vector` if pgvector is missing. `migrate:create` does not connect, so it generates the schema without this check.
+
+pgvector is not a trusted extension. The connecting role must be a superuser, or you must create the extension ahead of time with a role that can. On a managed host, enable pgvector the way your host documents when the application role cannot create it.
 
 If the extension cannot be used, the adapter stops setup with `SearchCapabilityError`. The message names the first vector index, the reason, and the PostgreSQL SQLSTATE:
 
@@ -119,7 +124,16 @@ Changing a vector field's `dimensions` requires a migration that rewrites or cle
 
 Query text supports web search syntax: quoted phrases, `or`, and `-` to exclude a term. It is always sent as a bound parameter.
 
-Vector and hybrid queries on an HNSW index report `approximate: true`. They run in a transaction with `SET LOCAL hnsw.iterative_scan = strict_order`, so pgvector keeps scanning the index until enough rows pass your access and `where` filters, in exact distance order. The same transaction sets `hnsw.ef_search` to the [resolved candidate count](/search/overview#candidates), with pgvector's default of 40 as the minimum and its maximum of 1,000 as the cap. Both settings end with the transaction and never reach other pooled connections. Iterative scans still stop at pgvector's scan limits, so a very selective filter can return fewer than `limit` hits. Exact queries on an index with `vector.approximate: false` run with `SET LOCAL enable_indexscan = off`, so they never use an HNSW index that another search index built on the same field. When the request already runs in a transaction, search reads through it and sees its uncommitted writes.
+**Approximate queries.** Vector and hybrid queries on an HNSW index report `approximate: true`. They run in a transaction that sets two values:
+
+- `SET LOCAL hnsw.iterative_scan = strict_order`, so pgvector keeps scanning the index until enough rows pass your access and `where` filters, in exact distance order.
+- `hnsw.ef_search`, set to the [resolved candidate count](/search/overview#candidates), with pgvector's default of 40 as the minimum and its maximum of 1,000 as the cap.
+
+Both settings end with the transaction and never reach other pooled connections. Iterative scans still stop at pgvector's scan limits, so a very selective filter can return fewer than `limit` hits.
+
+**Exact queries.** Exact queries on an index with `vector.approximate: false` run with `SET LOCAL enable_indexscan = off`, so they never use an HNSW index that another search index built on the same field.
+
+**Transactions.** When the request already runs in a transaction, search reads through it and sees its uncommitted writes.
 
 Hybrid search takes up to the [resolved candidate count](/search/overview#candidates) from each component, joins them in the database, and returns the top `limit` by fused score. A record that matches only one component still ranks, with the other component reported as `null`.
 
@@ -210,6 +224,20 @@ The first is [`db push`](https://orm.drizzle.team/kit-docs/overview#prototyping-
 You will be warned if any changes that you make will entail data loss while in development mode. Push is enabled by default, but you can opt out if you'd like.
 
 Alternatively, you can disable `push` and rely solely on migrations to keep your local database in sync with your FrogBot Config.
+
+## Schema sync under `frogbot up`
+
+Without `prodMigrations`, each update under [`frogbot up`](/getting-started/cli#database-schema) brings the database's schema up to the new code before the new version starts, with the same rules as the [SQLite schema sync](/database/sqlite#prototyping-in-development-mode). Development push above is unchanged.
+
+- A new collection becomes a new table, and a new field a new column. A new required field with no default becomes a nullable column on a table that has rows, so existing rows keep working.
+- A field or collection you remove keeps its column or table. Its values stay, hidden, and come back when you add the field back. The log names everything kept, such as `Schema sync kept 1 removed column with their data, hidden: deals.company. Nothing is deleted; a field or collection added back shows its data again.`
+- A field that becomes `unique` on a table with rows gets its unique index when no two rows share a value. Otherwise nothing is applied: `deals.email has 3 duplicate values, so it can't become unique. Remove the duplicates, then share again.`
+- A change that would drop a table, a column or rows, or change a column's type on a table with rows, applies nothing and names the column, for example `deals.company can't change from character varying to numeric while deals has 10 rows; change the field back, or write a migration.` The update stops as `update failed` and the old version keeps serving.
+- It runs in one transaction on one connection, so a refused or failed update changes nothing. The one exception: making a new `select` option a column's default happens in a second transaction after the first commits, because Postgres can't use an enum value in the transaction that adds it. A new column with that default is added in the first, with its indexes, and the second sets the default and fills the existing rows with it. If that step fails, the error says how many changes the first one applied. It never prompts, so it works without a terminal, and it never writes to `payload_migrations`.
+
+`@frogbotai/db-vercel-postgres` has no schema sync: with it, set `prodMigrations` and write migrations.
+
+To rename a field or change its type while keeping its data, or to drop data on purpose, write a [migration](/database/migrations). With `prodMigrations` set, the update runs your migrations on connect instead.
 
 ## Migration workflows
 
@@ -305,9 +333,11 @@ Make sure FrogBot doesn't overlap table names with its collections. For example,
 
 ### afterSchemaInit
 
-Runs after the Drizzle schema is built. You can use this hook to modify the schema with features that aren't supported by FrogBot, or if you want to add a column that you don't want to be in the FrogBot config.
-To extend a table, FrogBot exposes `extendTable` utility to the args. You can refer to the [Drizzle documentation](https://orm.drizzle.team/docs/sql-schema-declaration).
-The following example adds the `extra_integer_column` column and a composite index on `country` and `city` columns.
+Runs after the Drizzle schema is built. Use this hook to modify the schema with features that FrogBot doesn't support, or to add a column that you don't want in the FrogBot config.
+
+To extend a table, use the `extendTable` utility that FrogBot passes in the args. See the [Drizzle documentation](https://orm.drizzle.team/docs/sql-schema-declaration).
+
+The following example adds the `extra_integer_column` column and a composite index on the `country` and `city` columns.
 
 ```ts
 import { postgresAdapter } from '@frogbotai/db-postgres'

@@ -6,6 +6,8 @@ import { postgresAggregateAdapter } from 'frogbot/aggregate';
 import { installSQLJobOperations } from 'frogbot/jobs';
 import { postgresSearchAdapter } from 'frogbot/search';
 
+import { syncSchema } from './schema/sync.js';
+
 export type {
   MigrateDownArgs,
   MigrateUpArgs,
@@ -13,6 +15,10 @@ export type {
   PostgresAdapterArgs,
 } from '@payloadcms/db-postgres';
 
+/**
+ * Payload's Postgres adapter with FrogBot's job operations. Without `prodMigrations`, it also syncs the
+ * schema for `frogbot up`: it adds tables, columns and indexes, never drops data and never asks.
+ */
 export function postgresAdapter(args: PostgresAdapterArgs) {
   const adapter = createPostgresAdapter(args);
 
@@ -30,5 +36,6 @@ export function postgresAdapter(args: PostgresAdapterArgs) {
     },
     aggregate: postgresAggregateAdapter,
     search: postgresSearchAdapter,
+    ...(args.prodMigrations === undefined && { syncSchema }),
   };
 }

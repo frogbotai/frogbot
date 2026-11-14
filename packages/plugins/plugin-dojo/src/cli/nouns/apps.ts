@@ -1,7 +1,7 @@
 import { nameTaken, toSlug } from '../appSlug.js';
 import type { Noun, Verb } from '../command.js';
-import { dojoError, dojoJSON, dojoList, segment } from '../dojo.js';
-import { ShareError } from '../error.js';
+import { dojoJSON, dojoList, segment } from '../dojo.js';
+import { dojoError, dojoStop, ShareError } from '../error.js';
 import { done } from '../io.js';
 import { whenPaid } from '../payment.js';
 import { findWorkspace } from '../workspaces.js';
@@ -126,13 +126,13 @@ export const apps: Noun = {
         );
 
         if (!created.ok) {
-          const { body, message } = await dojoError(created);
+          const stop = await dojoStop(created.clone(), "Dojo couldn't create the app");
 
-          if (nameTaken(created.status, body)) {
+          if (nameTaken(created.status, (await dojoError(created)).body)) {
             throw new ShareError(`The name "${appSlug}" is taken on Dojo. Choose another.`);
           }
 
-          throw new ShareError(`Dojo couldn't create the app: ${message}`);
+          throw stop;
         }
 
         const { doc } = (await created.json()) as { doc: App };

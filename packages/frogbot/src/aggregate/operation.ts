@@ -7,6 +7,7 @@ import type {
   Where,
 } from 'payload';
 import {
+  appendVersionToQueryKey,
   createPayloadRequest,
   executeAccess,
   Forbidden,
@@ -196,6 +197,10 @@ function getSort(
   return descriptors;
 }
 
+function toVersionPath(path: string): string {
+  return path === 'id' ? 'parent' : `version.${path}`;
+}
+
 function prefixWhere(prefix: string, where: Where): Where {
   return Object.fromEntries(
     Object.entries(where).map(([key, value]) =>
@@ -343,6 +348,8 @@ export async function aggregateOperation<
 
   if (collection.trash && !parsed.trash) clauses.push({ deletedAt: { exists: false } });
 
+  const versions = Boolean(collection.versions?.drafts && parsed.draft);
+
   if (collection.versions?.drafts && !parsed.draft) {
     clauses.push({ _status: { equals: 'published' } });
   }
@@ -382,17 +389,29 @@ export async function aggregateOperation<
     clauses.push(...related.clauses);
   }
 
+  const where: Where = clauses.length ? { and: clauses } : {};
+  const toPath = versions ? toVersionPath : (path: string) => path;
+
   const result = await adapter.aggregate({
     collection: collection.slug,
     db: payload.db,
-    groupBy: groups.map(({ by, path, type }) => ({ path, type, ...(by ? { by } : {}) })),
-    values: readable.length ? readable : [{ operation: 'count' }],
+    groupBy: groups.map(({ by, path, type }) => ({
+      path: toPath(path),
+      type,
+      ...(by ? { by } : {}),
+    })),
+    values: (readable.length ? readable : [{ operation: 'count' as const }]).map((value) =>
+      value.operation === 'count' ? value : { ...value, path: toPath(value.path) },
+    ),
     sort: getSort(parsed, groups, columns),
     limit: parsed.limit,
     page: parsed.page,
     locale: req.locale,
     req,
-    where: clauses.length ? { and: clauses } : {},
+    where: versions
+      ? { and: [{ latest: { equals: true } }, appendVersionToQueryKey(where)] }
+      : where,
+    ...(versions ? { versions } : {}),
   });
 
   const rows: AggregateResult['groups'] = result.rows.map((row) => ({

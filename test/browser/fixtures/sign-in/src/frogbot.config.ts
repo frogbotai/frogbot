@@ -31,6 +31,27 @@ const stub = definePiece({
   actions: [],
 })({ oauth: { clientId: 'browser-client', clientSecret: 'browser-client-secret' } });
 
+let linkedCount = 0;
+
+const linked = definePiece({
+  slug: 'linked',
+  label: 'Linked',
+  auth: z.object({ access_token: z.string() }),
+  client: ({ auth }: { auth: unknown }) => auth,
+  oauth: {
+    authorizationUrl: `${crossOriginProviderURL}/authorize`,
+    tokenUrl: `${crossOriginProviderURL}/token`,
+    scopes: { catalog: { email: 'email' }, defaults: ['email'] },
+    toAuth: ({ tokens }) => ({ access_token: tokens.access_token }),
+    account: ({ tokens }) => {
+      const name = (tokens.access_token ?? '').slice('fresh:'.length);
+
+      return Promise.resolve({ id: name, label: name, email: `${name}@linked.test` });
+    },
+  },
+  actions: [],
+})({ oauth: { clientId: 'linked-client', clientSecret: 'linked-client-secret' } });
+
 export default buildConfig({
   secret: process.env.FROGBOT_SECRET || 'browser-sign-in-secret',
   serverURL,
@@ -38,6 +59,7 @@ export default buildConfig({
   typescript: { autoGenerate: false },
   admin: { importMap: { autoGenerate: false } },
   plugins: [twoFactor({ issuer: 'Sign-in Lab', canReset: ({ req }) => Boolean(req.user) })],
+  connections: [{ piece: linked, oauth: true }],
   collections: [
     {
       slug: 'users',
@@ -59,7 +81,11 @@ export default buildConfig({
         const callback = new URL(params.get('redirect_uri')!);
 
         callback.searchParams.set('state', params.get('state')!);
-        callback.searchParams.set('code', firstUserEmail);
+
+        callback.searchParams.set(
+          'code',
+          params.get('client_id') === 'linked-client' ? `account-${++linkedCount}` : firstUserEmail,
+        );
 
         return Response.redirect(callback, 302);
       },

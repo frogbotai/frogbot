@@ -374,6 +374,91 @@ describe('Form', () => {
     ]);
   });
 
+  it('shows a question by an earlier answer, skips a hidden step and sends no hidden answer', async () => {
+    const ruled: FormDefinition = {
+      ...definition,
+      steps: [
+        {
+          questions: [
+            {
+              key: 'business',
+              type: 'radio',
+              label: 'Are you a business?',
+              required: true,
+              options: [
+                { label: 'Yes', value: 'yes' },
+                { label: 'No', value: 'no' },
+              ],
+            },
+            {
+              key: 'company',
+              type: 'text',
+              label: 'Company',
+              required: true,
+              rules: [{ question: 'business', operator: 'equals', value: 'yes' }],
+            },
+          ],
+        },
+        {
+          title: 'Billing',
+          questions: [
+            {
+              key: 'vat',
+              type: 'text',
+              label: 'VAT number',
+              required: true,
+              rules: [{ question: 'company', operator: 'hasValue' }],
+            },
+          ],
+        },
+        { questions: [{ key: 'note', type: 'textarea', label: 'Anything else', required: false }] },
+      ],
+    };
+
+    const fetch = respond({ confirmation: { type: 'message', message: 'Thanks!' } });
+    const user = userEvent.setup();
+
+    render(<Form definition={ruled} submitUrl="/api/forms/contact/submit" />);
+
+    expect(screen.queryByLabelText(/Company/)).toBeNull();
+    expect(screen.getByText('Step 1 of 2')).toBeTruthy();
+
+    await user.click(screen.getByLabelText('Yes'));
+    await user.type(screen.getByLabelText(/Company/), 'Acme');
+
+    expect(screen.getByText('Step 1 of 3')).toBeTruthy();
+
+    await user.click(screen.getByLabelText('No'));
+
+    expect(screen.queryByLabelText(/Company/)).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+
+    expect(screen.queryByText('This field is required.')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Billing' })).toBeNull();
+    expect(screen.getByText('Step 2 of 2')).toBeTruthy();
+    expect(screen.getByLabelText(/Anything else/)).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    await user.click(screen.getByLabelText('Yes'));
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+
+    expect(screen.getByRole('heading', { name: 'Billing' })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+
+    expect(screen.getByText('This field is required.')).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    await user.click(screen.getByLabelText('No'));
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+
+    await screen.findByRole('status');
+
+    expect(sent(fetch).body.data).toEqual({ business: 'no', note: '' });
+  });
+
   it('sends nothing without a submit URL, and shows the confirmation, as a preview does', async () => {
     const user = userEvent.setup();
     const fetch = respond({});

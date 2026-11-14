@@ -127,6 +127,39 @@ describe('frogbot pull', () => {
     expect(await secret(first.cwd)).not.toBe(await secret(second.cwd));
   });
 
+  it('writes a local postgres:// DATABASE_URL for an app on a Postgres adapter', async () => {
+    const { cwd, dojo, run } = await setup();
+
+    dojo.source = await appTarball({
+      'package.json': JSON.stringify({
+        name: 'deals',
+        dependencies: { '@frogbotai/db-postgres': '0.42.0', frogbot: '0.42.0' },
+      }),
+    });
+
+    expect((await run(['deals'])).code).toBe(0);
+    expect(await readFile(join(cwd, 'deals/.env'), 'utf8')).toMatch(
+      /^DATABASE_URL=postgres:\/\/postgres:postgres@127\.0\.0\.1:5432\/deals\nFROGBOT_SECRET=[0-9a-f]{48}\n$/,
+    );
+  });
+
+  it('keeps the file: line for an app on a SQLite adapter', async () => {
+    const { cwd, dojo, run } = await setup();
+
+    dojo.source = await appTarball({
+      'package.json': JSON.stringify({
+        name: 'deals',
+        dependencies: { '@frogbotai/db-sqlite': '0.42.0' },
+        devDependencies: { pg: '8.0.0' },
+      }),
+    });
+
+    expect((await run(['deals'])).code).toBe(0);
+    expect(await readFile(join(cwd, 'deals/.env'), 'utf8')).toMatch(
+      /^DATABASE_URL=file:\.\/frogbot\.db\n/,
+    );
+  });
+
   it('takes the app id too', async () => {
     const { cwd, dojo, run } = await setup();
 

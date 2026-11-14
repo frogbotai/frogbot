@@ -1,7 +1,10 @@
 import type { CollectionConfig } from 'frogbot';
 
+import { reassignAccess, recordAccess } from '../roles';
+
 export const Tasks: CollectionConfig = {
   slug: 'tasks',
+  access: recordAccess('assignee'),
   admin: {
     icon: 'check-list',
     useAsTitle: 'title',
@@ -73,7 +76,12 @@ export const Tasks: CollectionConfig = {
         date: { pickerAppearance: 'dayOnly', displayFormat: 'MMM d, yyyy' },
       },
     },
-    { name: 'assignee', type: 'relationship', relationTo: 'users' },
+    {
+      name: 'assignee',
+      type: 'relationship',
+      relationTo: 'users',
+      access: reassignAccess,
+    },
     { name: 'deal', type: 'relationship', relationTo: 'deals' },
     { name: 'contact', type: 'relationship', relationTo: 'contacts' },
     { name: 'notes', type: 'textarea' },

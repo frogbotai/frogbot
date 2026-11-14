@@ -514,7 +514,7 @@ describe('agent generate turns', () => {
     await expect(agent.generate({ prompt: 'Hello', req })).rejects.toMatchObject({
       code: 'selection-unavailable',
       status: 409,
-      message: "Model 'openai/gpt-4o' is not allowed for this user",
+      message: "Model 'openai/gpt-4o' is not allowed for this user. Allowed: 'openai/gpt-4.1'",
     });
 
     expect(agentState.generateCall).toBeUndefined();
@@ -545,7 +545,8 @@ describe('agent generate turns', () => {
     await expect(agent.generate({ prompt: 'Hello', req })).rejects.toMatchObject({
       code: 'selection-unavailable',
       status: 409,
-      message: "Model 'openai/gpt-4.1' is not allowed for agent 'support'",
+      message:
+        "Model 'openai/gpt-4.1' is not allowed for agent 'support'. Allowed: 'openai/gpt-4o'",
     });
 
     expect(agentState.generateCall).toBeUndefined();
@@ -580,12 +581,14 @@ describe('agent generate turns', () => {
     {
       name: 'a model not on the agent list',
       opts: { model: 'openai/gpt-4.1' as AgentModelId },
-      message: "Model 'openai/gpt-4.1' is not allowed for agent 'support'",
+      message:
+        "Model 'openai/gpt-4.1' is not allowed for agent 'support'. Allowed: 'openai/gpt-4o'",
     },
     {
       name: 'an unknown reasoning option',
       opts: { reasoning: 'max' },
-      message: "Reasoning option 'max' is not available for model 'openai/gpt-4o'",
+      message:
+        "Reasoning option 'max' is not available for model 'openai/gpt-4o'. It has no reasoning options",
     },
   ])('refuses $name before any model call', async ({ opts, message }) => {
     const req = makeReq();
@@ -820,7 +823,7 @@ describe('agent generate turns', () => {
       makeDeps(makeConfig(emptyHooks()), req),
     );
 
-    await expect(agent.generate({ prompt: 'Create', req })).rejects.toMatchObject({ status: 403 });
+    await expect(agent.generate({ prompt: 'Create', req })).rejects.toMatchObject({ status: 401 });
     expect(turn.resolveChatContext).not.toHaveBeenCalled();
   });
 
@@ -1228,12 +1231,15 @@ describe('agent run access', () => {
     expect(toolCtx().overrideAccess).toBe(true);
   });
 
-  it.each(entries)('refuses %s with 403 when access throws', async (entry) => {
+  it.each(entries)('fails %s with 500 when access throws', async (entry) => {
     const { run } = setup(() => {
       throw new Error('rule failed');
     });
 
-    await expect(run(entry, { overrideAccess: false })).rejects.toMatchObject({ status: 403 });
+    await expect(run(entry, { overrideAccess: false })).rejects.toMatchObject({
+      status: 500,
+      code: 'access-error',
+    });
     expect(agentState.prepared).toBeUndefined();
   });
 
@@ -2075,5 +2081,143 @@ describe('agent setup', () => {
       clientStepSkipped: SKIPPED_FOR_CLIENT_INPUT,
       serverStepSkipped: { found: true },
     });
+  });
+});
+
+describe('agent instructions', () => {
+  const model = { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] } as const;
+
+  const skillLines = ['- **docs**: Product documentation', '- **support**'];
+
+  it('sends string instructions with the skill lines after them, as before', async () => {
+    const req = makeReq();
+    const agent = createAgentInstance(
+      { slug: 'support', model, instructions: 'Help', skillLines },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await agent.generate({ prompt: 'Hello', req });
+
+    expect(agentState.prepared?.instructions).toBe(
+      'Help\n\n- **docs**: Product documentation\n- **support**',
+    );
+  });
+
+  it('sends string instructions unchanged when there are no skills', async () => {
+    const req = makeReq();
+    const agent = createAgentInstance(
+      { slug: 'support', model, instructions: 'Help' },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await agent.generate({ prompt: 'Hello', req });
+
+    expect(agentState.prepared?.instructions).toBe('Help');
+  });
+
+  it('calls a function once per run with that run’s req, then appends skill lines', async () => {
+    const req = makeReq();
+    const instructions = vi.fn(({ req }: { req: FrogBotRequest }) =>
+      Promise.resolve(`Help ${req.user?.id}`),
+    );
+
+    const agent = createAgentInstance(
+      { slug: 'support', model, instructions, skillLines },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    expect(instructions).not.toHaveBeenCalled();
+
+    await agent.generate({ prompt: 'Hello', req });
+
+    expect(instructions).toHaveBeenCalledTimes(1);
+    expect(instructions).toHaveBeenCalledWith({ req });
+    expect(agentState.prepared?.instructions).toBe(
+      'Help user-1\n\n- **docs**: Product documentation\n- **support**',
+    );
+  });
+
+  it('computes each run from its own req and current data, on generate and stream', async () => {
+    const source = { rule: 'v1' };
+    const first = makeReq({ id: 'user-1' });
+    const second = makeReq({ id: 'user-2' });
+    const instructions = vi.fn(
+      ({ req }: { req: FrogBotRequest }) => `Rule ${source.rule} for ${req.user?.id}`,
+    );
+
+    const deps = makeDeps(makeConfig(emptyHooks()), first) as unknown as {
+      frogbot: { createRequest: ReturnType<typeof vi.fn> };
+    };
+
+    deps.frogbot.createRequest.mockImplementation((req: FrogBotRequest) =>
+      Promise.resolve(Object.assign(req, { frogbot: deps.frogbot })),
+    );
+
+    const agent = createAgentInstance({ slug: 'support', model, instructions }, deps as never);
+
+    await agent.generate({ prompt: 'Hello', req: first });
+    const firstText = agentState.prepared?.instructions;
+
+    source.rule = 'v2';
+    await agent.stream({ prompt: 'Hello', req: second });
+
+    expect(firstText).toBe('Rule v1 for user-1');
+    expect(agentState.prepared?.instructions).toBe('Rule v2 for user-2');
+    expect(instructions).toHaveBeenCalledTimes(2);
+  });
+
+  it('resolves the function for structured-output runs', async () => {
+    const req = makeReq();
+    const agent = createAgentInstance(
+      { slug: 'support', model, instructions: () => 'Fresh' },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await agent.generate({
+      prompt: 'Hello',
+      req,
+      output: Output.object({ schema: z.object({ ok: z.boolean() }) }),
+    });
+
+    expect(agentState.prepared?.instructions).toBe('Fresh');
+  });
+
+  it.each([
+    { name: 'an empty string', value: '', message: 'returned an empty string' },
+    { name: 'a whitespace-only string', value: '  \n', message: 'returned an empty string' },
+    { name: 'a non-string', value: 42, message: 'returned a non-string value' },
+  ])('fails the run before the model call when the function returns $name', async (row) => {
+    const req = makeReq();
+    const agent = createAgentInstance(
+      { slug: 'support', model, instructions: (() => row.value) as () => string },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await expect(agent.generate({ prompt: 'Hello', req })).rejects.toThrow(
+      `[frogbot] Agent 'support' instructions ${row.message}.`,
+    );
+    await expect(agent.stream({ prompt: 'Hello', req })).rejects.toThrow(row.message);
+
+    expect(agentState.generateCall).toBeUndefined();
+    expect(agentState.streamCall).toBeUndefined();
+  });
+
+  it('lets an error thrown by the function fail the run before the model call', async () => {
+    const req = makeReq();
+    const error = new Error('plan file missing');
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model,
+        instructions: () => {
+          throw error;
+        },
+      },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await expect(agent.generate({ prompt: 'Hello', req })).rejects.toBe(error);
+
+    expect(agentState.generateCall).toBeUndefined();
   });
 });

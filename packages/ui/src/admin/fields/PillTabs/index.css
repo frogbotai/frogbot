@@ -1,0 +1,48 @@
+/* Small pill tabs for a Payload tabs field: set the field's `admin.className` to `fb-pill-tabs`. */
+@layer frogbot {
+  .fb-pill-tabs .tabs-field__tabs {
+    box-shadow: none;
+    gap: var(--spacer-1);
+  }
+
+  .fb-pill-tabs .tabs-field__tabs::before,
+  .fb-pill-tabs .tabs-field__tabs::after {
+    display: none;
+  }
+
+  .fb-pill-tabs .tabs-field__tabs-wrap {
+    margin-bottom: var(--spacer-3);
+    padding-inline: calc(var(--gutter-h) * var(--field-border-bleed, 1));
+  }
+
+  .fb-pill-tabs .tabs-field__tab-button {
+    border: 1px solid transparent;
+    border-radius: var(--radius-full);
+    margin: 0;
+    padding: var(--spacer-1) var(--spacer-3);
+  }
+
+  .fb-pill-tabs .tabs-field__tab-button::after {
+    display: none;
+  }
+
+  .fb-pill-tabs .tabs-field__tab-button:hover {
+    background: var(--color-bg-transparent-hover);
+    color: var(--color-text);
+  }
+
+  .fb-pill-tabs .tabs-field__tab-button--active,
+  .fb-pill-tabs .tabs-field__tab-button--active:hover {
+    background: var(--color-bg-secondary);
+    border-color: var(--color-border);
+    color: var(--color-text);
+  }
+
+  .fb-pill-tabs .tabs-field__tab-button--has-error {
+    color: var(--color-text-danger);
+  }
+
+  .fb-pill-tabs .tabs-field__tab-button--has-error.tabs-field__tab-button--active {
+    border-color: var(--color-border-danger);
+  }
+}

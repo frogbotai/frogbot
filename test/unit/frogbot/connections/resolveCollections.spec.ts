@@ -304,13 +304,15 @@ describe('resolveConnectionsCollections', () => {
     expect(await encrypted.access.read({ req })).toBe(false);
   });
 
-  it('requires an encrypted credential and a unique owner/piece pair', () => {
+  it('requires an encrypted credential and a unique owner/piece/account triple', () => {
     const result = resolveConnectionsCollections(config());
     const collection = result.collections.find((item) => item.slug === 'connections')!;
     const field = collection.fields.find((item) => 'name' in item && item.name === 'credential');
 
     expect(field).toMatchObject({ type: 'text', required: true });
-    expect(collection.indexes).toEqual([{ fields: ['owner', 'piece'], unique: true }]);
+    expect(collection.indexes).toEqual([
+      { fields: ['owner', 'piece', 'method', 'accountId'], unique: true },
+    ]);
   });
 
   it('uses the linked accounts view as the collection default view', () => {

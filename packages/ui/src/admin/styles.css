@@ -1,7 +1,9 @@
+@import "./elements/BuildNotice/index.css";
 @import "./elements/CommandPalette/index.css";
 @import "./elements/Nav/index.css";
 @import "./elements/SettingsNav/index.css";
 @import "./elements/SignInButtons/index.css";
+@import "./fields/PillTabs/index.css";
 @import "./views/SettingsView.css";
 @import "./views/CreateFirstUser/index.css";
 @import "./views/Connections/index.css";

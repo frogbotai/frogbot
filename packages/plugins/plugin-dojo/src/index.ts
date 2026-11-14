@@ -17,6 +17,8 @@ const shareCommand: CLICommand = async ({ args }) =>
   (await import('./cli/commands.js')).runDojoCommand(['apps', 'share', ...args], 'frogbot dojo');
 
 export type DojoPluginOptions = {
+  /** Adds the "Made with FrogBot" badge to every admin page on Dojo. Default `true`. */
+  badge?: boolean;
   /** Adds "Continue with Dojo" to the user collection's sign-in methods on Dojo. Default `true`. */
   signIn?: boolean;
 };
@@ -57,9 +59,12 @@ export const dojo = definePlugin<DojoPluginOptions | undefined>({
         ? withDojoFirstUser(signedIn, withDojo, env.firstUserEmail)
         : signedIn;
 
-    return withDojoBadge(
-      withDojoExport(withDojoJobs(withDojoAI(withDojoStorage(seeded, env), env), env), env),
+    const deployed = withDojoExport(
+      withDojoJobs(withDojoAI(withDojoStorage(seeded, env), env), env),
+      env,
     );
+
+    return options?.badge === false ? deployed : withDojoBadge(deployed);
   },
 });
 

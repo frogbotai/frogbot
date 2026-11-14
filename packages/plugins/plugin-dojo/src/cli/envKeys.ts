@@ -41,6 +41,45 @@ export function envKeys(env: Record<string, string>): EnvKey[] {
     .map(([name, value]) => ({ name, value }));
 }
 
+const isLocalHost = (host: string) =>
+  host === 'localhost' ||
+  host === '::1' ||
+  host === '0.0.0.0' ||
+  host === '::' ||
+  /^(::ffff:)?127\./.test(host) ||
+  /^::ffff:7f[0-9a-f]{2}:/.test(host);
+
+/** Whether `value` is a `postgres://` or `postgresql://` URL whose host is off this machine. */
+export function remoteDatabaseURL(value: string | undefined): boolean {
+  if (!value || value.startsWith('file:')) return false;
+
+  let url: URL;
+
+  try {
+    url = new URL(value);
+  } catch {
+    return false;
+  }
+
+  if (url.protocol !== 'postgres:' && url.protocol !== 'postgresql:') return false;
+
+  const host = url.hostname
+    .replace(/^\[|\]$/g, '')
+    .replace(/\.$/, '')
+    .toLowerCase();
+
+  return host !== '' && !isLocalHost(host);
+}
+
+/** `.env`'s `DATABASE_URL` as a key when the app's adapter is Postgres and the URL points off this machine. */
+export function databaseKey(env: Record<string, string>, db: { name?: string }): EnvKey[] {
+  const value = env.DATABASE_URL;
+
+  return db.name === 'postgres' && value && remoteDatabaseURL(value)
+    ? [{ name: 'DATABASE_URL', value }]
+    : [];
+}
+
 /** `••••` plus the last 4 characters, or `••••` alone when the value is under 12 characters. */
 export function mask(value: string): string {
   return value.length < 12 ? '••••' : `••••${value.slice(-4)}`;

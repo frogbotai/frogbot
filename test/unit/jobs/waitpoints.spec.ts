@@ -79,7 +79,7 @@ vi.mock('../../../packages/frogbot/src/jobs/waitpoints/atomic.js', () => ({
 
 const config = { defaultExpiresIn: 7 * 86_400_000, maxExpiresIn: 30 * 86_400_000 };
 
-function workflowArgs(replay?: WaitpointReplay): Parameters<WorkflowHandler>[0] {
+function workflowArgs(replay?: WaitpointReplay): Parameters<PayloadWorkflowHandler>[0] {
   const payload = {
     config: { serverURL: 'https://example.com', routes: { api: '/api' } },
   } as Payload;

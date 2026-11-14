@@ -30,6 +30,8 @@ export type ConnectionItem = {
   piece: string;
   method: 'oauth' | 'secret';
   account?: { label: string; email?: string } | null;
+  /** Whether calls that pin no account use this one. */
+  isDefault?: boolean;
   status: 'active' | 'revoked' | 'error';
   scopes?: string[];
   expiresAt?: string | null;

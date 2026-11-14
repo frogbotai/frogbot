@@ -1,0 +1,102 @@
+---
+title: AI usage
+description: Explore model and user usage over a date range with adapter-neutral reports.
+keywords: ["usage", "analytics", "cost", "tokens", "plugins"]
+---
+
+The usage reports plugin adds a **Usage Analytics** admin page with sortable Models and Users tables, preset and custom date ranges, and request, token, and cost totals.
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-ai-usage
+```
+
+```ts
+import { aiUsagePlugin } from '@frogbotai/plugin-ai-usage'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET!,
+  db: databaseAdapter,
+  collections: [{ slug: 'users', auth: true, fields: [] }],
+  ai: {
+    providers: {
+      openai: { apiKey: process.env.OPENAI_API_KEY },
+    },
+  },
+  plugins: [aiUsagePlugin()],
+})
+```
+
+Each report is one [`aggregate`](/queries/aggregate) call, so the database groups and sums the usage rows and none are loaded into memory. It works the same on FrogBot's SQL and MongoDB adapters.
+
+## Admin tools
+
+The plugin extends the usage-log collection with:
+
+- Grouped list views
+- A Usage Analytics view with date-range filtering and models/users breakdown tables
+
+The Usage Analytics page contains aggregated totals. To also export filtered raw usage rows as CSV, add [`@frogbotai/plugin-import-export`](/plugins/import-export) yourself and point it at the usage collection:
+
+```ts
+import { importExportPlugin } from '@frogbotai/plugin-import-export'
+
+plugins: [
+  aiUsagePlugin(),
+  importExportPlugin({
+    collections: [{ slug: 'usage-logs', import: false, export: { format: 'csv' } }],
+  }),
+]
+```
+
+## Report API
+
+Authenticated callers can request aggregated data directly:
+
+```http
+GET /api/usage/report?groupBy=model&from=2026-07-01T00:00:00.000Z&to=2026-08-01T00:00:00.000Z
+```
+
+`groupBy` accepts `model`, `user`, or `day`. `apiKey` is also accepted when `@frogbotai/plugin-api-keys` is installed, in any order, or when the usage collection has an `apiKey` relationship. Other values return `400`.
+
+The endpoint allows any authenticated caller by default, matching FrogBot's default access. Pass `access` to narrow it with an ordinary access function. Returning `false` forbids the request; returning a `Where` restricts the rows the report reads:
+
+```ts
+aiUsagePlugin({
+  access: ({ req }) => (req.user?.isAdmin ? true : { user: { equals: req.user!.id } }),
+})
+```
+
+Because `allow()` returns an access function, the roles plugin composes here without being a dependency:
+
+```ts
+import { allow } from '@frogbotai/plugin-roles'
+
+aiUsagePlugin({ access: allow('admin', 'finance', 'auditor') })
+```
+
+## Retention
+
+Usage rows are kept indefinitely by default. Set `retention` to delete old rows on a schedule:
+
+```ts
+aiUsagePlugin({
+  retention: { days: 90 },
+})
+```
+
+The task is `frogbot-prune-<usage collection slug>`.
+
+- **Schedule.** It runs at midnight daily unless you set `cron`. It is scheduled on the `default` queue, so a jobs runner that covers `default` prunes without extra setup.
+- **Each run** deletes rows whose `requestedAt` is older than `days`, 100 at a time, and fails the job if any row can't be deleted.
+
+Nothing is rolled up before rows are deleted. Reports for ranges older than the window return fewer rows or none, and an API key's **Total Cost (USD)** covers only the kept rows. Leave `retention` off, or set a long window, if you need longer history.
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `access` | `Access` | Authenticated users | Access function gating the report endpoint. Return `false` to forbid the request or a `Where` to restrict the rows it reads. |
+| `retention` | `false \| { days: number; cron?: string }` | `false` | Schedules deletion of usage rows older than `days` on the `default` queue. `days` must be a positive integer. |

@@ -164,6 +164,50 @@ export function createFormsCollection({
                             'File questions: accepted types, like application/pdf or image/*.',
                         },
                       },
+                      {
+                        name: 'rules',
+                        type: 'array',
+                        admin: {
+                          description:
+                            'Show the question only when an earlier answer matches. Not for required fields.',
+                        },
+                        fields: [
+                          {
+                            name: 'question',
+                            type: 'text',
+                            required: true,
+                            admin: { description: 'The field of an earlier question.' },
+                          },
+                          {
+                            name: 'operator',
+                            type: 'select',
+                            required: true,
+                            defaultValue: 'equals',
+                            options: [
+                              { label: 'Is', value: 'equals' },
+                              { label: 'Is not', value: 'notEquals' },
+                              { label: 'Has an answer', value: 'hasValue' },
+                            ],
+                          },
+                          {
+                            name: 'value',
+                            type: 'text',
+                            admin: {
+                              condition: (_, sibling) => sibling?.operator !== 'hasValue',
+                              description: 'A checkbox answer is true or false.',
+                            },
+                          },
+                        ],
+                      },
+                      {
+                        name: 'match',
+                        type: 'select',
+                        defaultValue: 'all',
+                        options: [
+                          { label: 'Every rule passes', value: 'all' },
+                          { label: 'Any rule passes', value: 'any' },
+                        ],
+                      },
                     ],
                   },
                 ],

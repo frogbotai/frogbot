@@ -184,6 +184,8 @@ export interface User {
         id: string;
         createdAt?: string | null;
         expiresAt: string;
+        refreshCount?: number | null;
+        refreshedAt?: string | null;
       }[]
     | null;
   password?: string | null;
@@ -230,6 +232,8 @@ export interface Customer {
         id: string;
         createdAt?: string | null;
         expiresAt: string;
+        refreshCount?: number | null;
+        refreshedAt?: string | null;
       }[]
     | null;
   password?: string | null;
@@ -254,6 +258,8 @@ export interface Connection {
     | number
     | boolean
     | null;
+  accountId?: string | null;
+  isDefault: boolean;
   scopes?: string[] | null;
   expiresAt?: string | null;
   status: 'active' | 'error' | 'revoked';
@@ -316,6 +322,8 @@ export interface UsersSelect {
         id?: boolean;
         createdAt?: boolean;
         expiresAt?: boolean;
+        refreshCount?: boolean;
+        refreshedAt?: boolean;
       };
 }
 /**
@@ -343,6 +351,8 @@ export interface CustomersSelect {
         id?: boolean;
         createdAt?: boolean;
         expiresAt?: boolean;
+        refreshCount?: boolean;
+        refreshedAt?: boolean;
       };
 }
 /**
@@ -355,6 +365,8 @@ export interface ConnectionsSelect {
   method?: boolean;
   credential?: boolean;
   account?: boolean;
+  accountId?: boolean;
+  isDefault?: boolean;
   scopes?: boolean;
   expiresAt?: boolean;
   status?: boolean;

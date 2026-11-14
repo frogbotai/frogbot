@@ -60,7 +60,9 @@ Exports page through everything that changed since a time, oldest first, for imp
 | `exportTicketEvents` | Ticket events, with every public reply and internal note in `child_events`. |
 | `exportArticles` | Help-center articles. |
 
-Each takes `startTime` (an ISO time, such as `1970-01-01T00:00:00Z` for everything) on the first call, or `cursor` to continue, never both, and returns `{ data, pagination: { count, hasMore, nextCursor } }`. Call again with `nextCursor` until `hasMore` is `false`, then keep the last `nextCursor` and pass it next time to get only what changed since.
+Each takes `startTime` on the first call, or `cursor` to continue, never both. `startTime` is an ISO time, such as `1970-01-01T00:00:00Z` for everything. Each returns `{ data, pagination: { count, hasMore, nextCursor } }`.
+
+Call again with `nextCursor` until `hasMore` is `false`. Then keep the last `nextCursor` and pass it next time to get only what changed since.
 
 - Zendesk allows **10 export requests a minute** (20 for `exportUsers`) per account. A big first import takes a while: about 1,000 tickets a request, so 100,000 tickets is about 10 minutes of requests.
 - Exports never include **the last minute**: `startTime` must be at least a minute ago, and the newest changes appear on a later call.
@@ -77,7 +79,9 @@ Each takes `startTime` (an ISO time, such as `1970-01-01T00:00:00Z` for everythi
 | `listMacros`, `listViews`, `listSlaPolicies` | Macros, views and SLA policies, as Zendesk stores them. |
 | `downloadAttachment` | Copies an attachment into your files collection as the caller, and returns `{ attachment, file }`. |
 
-Lists take `limit` (1–100, default 100) and `cursor`, and return `{ data, pagination: { count, hasMore, nextCursor, limit } }`. `listSlaPolicies` returns every policy at once. `downloadAttachment` follows Zendesk's redirect to its file storage without the API token: the token goes only to the account's own address.
+Lists take `limit` (1–100, default 100) and `cursor`, and return `{ data, pagination: { count, hasMore, nextCursor, limit } }`. `listSlaPolicies` returns every policy at once.
+
+`downloadAttachment` follows Zendesk's redirect to its file storage without the API token. The token goes only to the account's own address.
 
 ## Actions
 

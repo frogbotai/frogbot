@@ -50,7 +50,7 @@ The following operators are available for use in queries:
 | `contains`           | Must contain the value entered, case-insensitive.                                                                                                                                |
 | `in`                 | The value must be found within the provided comma-delimited list of values.                                                                                                      |
 | `not_in`             | The value must NOT be within the provided comma-delimited list of values.                                                                                                        |
-| `all`                | The value must contain all values provided in the comma-delimited list. Note: currently this operator is supported only with the MongoDB adapter.                                |
+| `all`                | The value must contain all values provided in the comma-delimited list. This operator is supported only with the MongoDB adapter.                                |
 | `exists`             | Only return documents where the value either exists (`true`) or does not exist (`false`).                                                                                        |
 | `near`               | For distance related to a [Point Field](/fields/point), comma separated as `<longitude>, <latitude>, <maxDistance in meters (nullable)>, <minDistance in meters (nullable)>`. |
 | `within`             | For Point Fields, filters documents based on whether points are inside the given area defined in GeoJSON. [Example](/fields/point#querying-within).     |
@@ -100,7 +100,7 @@ Written in plain English, if the above query were passed to a `find` operation, 
 
 ### Nested properties
 
-When working with nested properties, which can happen when using relational fields, it is possible to use the dot notation to access the nested property. For example, when working with a `Song` collection that has an `artists` field which is related to an `Artists` collection using the `name: 'artists'`. You can access a property within the collection `Artists` like so:
+Relationship fields create nested properties, and dot notation reaches them. For example, a `Song` collection has an `artists` field (`name: 'artists'`) that relates to an `Artists` collection. You can query a property of the related `Artists` documents like so:
 
 ```ts
 import type { Where } from 'frogbot'

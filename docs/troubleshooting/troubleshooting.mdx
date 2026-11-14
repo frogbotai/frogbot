@@ -118,7 +118,9 @@ Another error you might see is the following or similarly related to hooks, in p
 useUploadHandlers must be used within UploadHandlersProvider
 ```
 
-This is a common pitfall when using a monorepo setup with multiple packages. In this case, ensure that all packages in the monorepo use the same version of `frogbot`, `@frogbotai/*`, `next`, `react`, and `react-dom`. You can use pnpm with workspaces to manage dependencies across packages in a monorepo effectively. Unfortunately this error becomes harder to debug inside a monorepo due to how package managers hoist dependencies as well as resolve them.
+This pitfall is common in a monorepo with multiple packages. Make sure that all packages in the monorepo use the same version of `frogbot`, `@frogbotai/*`, `next`, `react`, and `react-dom`. pnpm workspaces can manage dependencies across the packages.
+
+The error is harder to debug inside a monorepo, because of how package managers hoist and resolve dependencies.
 
 If you've pinned the versions and the error persists we recommend removing `.next/`, `node_modules/` and if possible deleting the lockfile and re-generating it to ensure that all packages in the monorepo are using the same version of the dependencies mentioned above.
 

@@ -61,6 +61,8 @@ export type TestIO = {
   stderr: () => string[];
   opened: string[];
   asked: string[];
+  /** The options of each multiselect, as shown. */
+  choices: { value: string; label: string }[][];
 };
 
 const emptyConfig = { collections: [], db: {} } as unknown as DeployConfig;
@@ -90,6 +92,7 @@ export function testIO({
   let err = '';
   const opened: string[] = [];
   const asked: string[] = [];
+  const choices: TestIO['choices'] = [];
 
   const answer = <T>(message: string, value: T | undefined): T => {
     asked.push(message);
@@ -102,7 +105,11 @@ export function testIO({
   const prompts = {
     confirm: (message: string) => Promise.resolve(answer(message, confirm)),
     select: (message: string) => Promise.resolve(answer(message, select)),
-    multiselect: (message: string) => Promise.resolve(answer(message, multiselect)),
+    multiselect: (message: string, options: { value: string; label: string }[]) => {
+      choices.push(options);
+
+      return Promise.resolve(answer(message, multiselect));
+    },
     text: (message: string) => Promise.resolve(answer(message, text)),
   };
 
@@ -123,7 +130,7 @@ export function testIO({
 
   const lines = (text: string) => text.split('\n').filter(Boolean);
 
-  return { io, stdout: () => lines(out), stderr: () => lines(err), opened, asked };
+  return { io, stdout: () => lines(out), stderr: () => lines(err), opened, asked, choices };
 }
 
 /** A minimal app that passes the pre-checks. */

@@ -62,7 +62,15 @@ With `options`, these Select options are also accepted, and `minLength` and `max
 | `dbName` | `string \| ({ tableName }) => string` | Generated from the field name | SQL table name for the values of a `hasMany` field. |
 | `interfaceName` | `string` | — | Generates a reusable top-level TypeScript type for the options. |
 
-`required` isn't supported: a generated value is empty until its first run finishes, and an empty answer is allowed. FrogBot stores the value and shows it to everyone who can read the record, so `virtual` and `hidden` aren't supported either. A text AI field also holds one value, so `hasMany`, `minRows` and `maxRows` are not accepted without `options`. TypeScript rejects all of them, and from JavaScript they fail when the config is built, as do invalid options:
+An AI field does not accept these:
+
+| Not accepted | Why |
+| --- | --- |
+| `required` | A generated value is empty until its first run finishes, and an empty answer is allowed. |
+| `virtual`, `hidden` | FrogBot stores the value and shows it to everyone who can read the record. |
+| `hasMany`, `minRows`, `maxRows`, without `options` | A text AI field holds one value. |
+
+TypeScript rejects all of them. From JavaScript, they fail when the config is built, as do invalid options:
 
 ```text
 aiField "summary": inputs must be a non-empty array of field names
@@ -256,7 +264,14 @@ When the runs are queued, the dialog closes and a message reports the result:
 Queued 12 runs · 3 records skipped (no inputs, no permission, being edited, or changed)
 ```
 
-A record is skipped when its inputs are all empty, you can't update it, another user is editing it, or its status changed after you chose. The selection is cleared, and the queued rows show a spinner and fill in as their runs finish. If queueing stops partway, for example after a network error, the message gives the error and how many runs were already queued; those runs still happen.
+A record is skipped when any of these is true:
+
+- Its inputs are all empty.
+- You can't update it.
+- Another user is editing it.
+- Its status changed after you chose.
+
+The selection is cleared, and the queued rows show a spinner and fill in as their runs finish. If queueing stops partway, for example after a network error, the message gives the error and how many runs were already queued. Those runs still happen.
 
 Each record is regenerated as a single [Regenerate](#regenerate) would do it:
 

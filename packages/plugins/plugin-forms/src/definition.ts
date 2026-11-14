@@ -104,6 +104,17 @@ function buildQuestion(
   if (field.options) question.options = field.options;
   if (field.hasMany) question.hasMany = true;
 
+  const rules = rows(config.rules).map(({ question: source, operator, value }) =>
+    operator === 'hasValue'
+      ? { question: source, operator }
+      : { question: source, operator, value: value ?? '' },
+  );
+
+  if (rules.length && !field.required) {
+    question.rules = rules;
+    if (config.match === 'any') question.match = 'any';
+  }
+
   if (field.type === 'upload') {
     const { maxFiles, maxFileSize, mimeTypes } = uploadRules(config, limits);
 

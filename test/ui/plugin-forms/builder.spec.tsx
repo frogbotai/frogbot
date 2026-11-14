@@ -1,5 +1,6 @@
 import type * as Admin from '@frogbotai/ui/admin';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { FormState } from 'payload';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,6 +12,8 @@ const form = vi.hoisted(() => ({
   addFieldRow: vi.fn(),
   moveFieldRow: vi.fn(),
   removeFieldRow: vi.fn(),
+  dispatchFields: vi.fn(),
+  setModified: vi.fn(),
 }));
 
 vi.mock('@frogbotai/ui/admin', async (importActual) => {
@@ -38,6 +41,8 @@ vi.mock('@frogbotai/ui/admin', async (importActual) => {
       addFieldRow: form.addFieldRow,
       moveFieldRow: form.moveFieldRow,
       removeFieldRow: form.removeFieldRow,
+      dispatchFields: form.dispatchFields,
+      setModified: form.setModified,
     }),
   };
 });
@@ -365,5 +370,107 @@ describe('FormBuilder', () => {
     });
 
     expect(form.removeFieldRow).toHaveBeenCalledWith({ path: 'steps.0.questions', rowIndex: 1 });
+  });
+
+  describe('Show when', () => {
+    const openEdit = (label: string) => {
+      const row = screen.getByText(label).closest('li') as HTMLElement;
+
+      fireEvent.click(within(row).getByRole('button', { name: 'Edit' }));
+
+      return row;
+    };
+
+    it('adds a rule on the first earlier question', () => {
+      setState([['email', 'interest'], ['firstName']]);
+      renderBuilder();
+
+      const row = openEdit('First Name');
+
+      expect(within(row).getByRole('group', { name: 'Show when' })).toBeTruthy();
+      expect(within(row).getByText('Always shown.')).toBeTruthy();
+
+      fireEvent.click(within(row).getByRole('button', { name: 'Add rule' }));
+
+      expect(form.addFieldRow).toHaveBeenCalledWith({
+        path: 'steps.1.questions.0.rules',
+        rowIndex: 0,
+        schemaPath: 'steps.questions.rules',
+        subFieldState: {
+          question: { initialValue: 'email', valid: true, value: 'email' },
+          operator: { initialValue: 'equals', valid: true, value: 'equals' },
+          value: { initialValue: '', valid: true, value: '' },
+        },
+      });
+    });
+
+    it('offers only earlier questions, and edits and removes a rule', async () => {
+      setState([['email', 'interest', 'firstName']], {
+        'steps.0.questions.2.rules': { rows: [{ id: 'r1' }], value: 1 },
+        'steps.0.questions.2.rules.0.question': { value: 'interest' },
+        'steps.0.questions.2.rules.0.operator': { value: 'equals' },
+        'steps.0.questions.2.rules.0.value': { value: '' },
+      });
+
+      renderBuilder();
+
+      const row = openEdit('First Name');
+      const user = userEvent.setup();
+
+      fireEvent.change(within(row).getByRole('textbox', { name: 'Rule 1 answer' }), {
+        target: { value: 'sales' },
+      });
+
+      expect(form.dispatchFields).toHaveBeenCalledWith({
+        type: 'UPDATE',
+        path: 'steps.0.questions.2.rules.0.value',
+        value: 'sales',
+      });
+      expect(form.setModified).toHaveBeenCalledWith(true);
+
+      await user.click(within(row).getByRole('combobox', { name: 'Rule 1 question' }));
+
+      expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
+        'Email',
+        'Interest',
+      ]);
+
+      await user.keyboard('{Escape}');
+      fireEvent.click(within(row).getByRole('button', { name: 'Remove rule 1' }));
+
+      expect(form.removeFieldRow).toHaveBeenCalledWith({
+        path: 'steps.0.questions.2.rules',
+        rowIndex: 0,
+      });
+    });
+
+    it('says a required question is always shown', () => {
+      setState([['firstName', 'email']]);
+      renderBuilder();
+
+      const row = openEdit('Email');
+
+      expect(within(row).getByText(/Required questions are always shown/)).toBeTruthy();
+      expect(within(row).queryByRole('button', { name: 'Add rule' })).toBeNull();
+    });
+
+    it("shows a refused rule's save error on its row", () => {
+      setState([['email', 'firstName']], {
+        'steps.0.questions.1.rules': { rows: [{ id: 'r1' }], value: 1 },
+        'steps.0.questions.1.rules.0.question': {
+          value: 'interest',
+          valid: false,
+          errorMessage: '"interest" comes later in the form.',
+        },
+        'steps.0.questions.1.rules.0.operator': { value: 'hasValue' },
+      });
+
+      renderBuilder();
+
+      const row = openEdit('First Name');
+
+      expect(within(row).getByRole('alert').textContent).toContain('comes later');
+      expect(within(row).queryByRole('textbox', { name: 'Rule 1 answer' })).toBeNull();
+    });
   });
 });

@@ -375,12 +375,16 @@ export function definePiece<const T extends PieceDefinition>(
       return pending;
     };
 
-    const client = async ({ req }: { req?: FrogBotRequest } = {}) => {
+    const client = async ({
+      req,
+      connection,
+    }: { req?: FrogBotRequest; connection?: number | string } = {}) => {
       const resolvedReq = await request(req);
       const credential = definition.auth
         ? await resolvedReq.frogbot.connections.resolvePieceCredential({
             piece: instance as PieceInstance,
             req: resolvedReq,
+            ...(connection === undefined ? {} : { connection }),
           })
         : { auth: undefined, key: factoryKey };
 
@@ -410,17 +414,19 @@ export function definePiece<const T extends PieceDefinition>(
       const invoke = async ({
         input,
         req,
+        connection,
         overrideAccess = false,
       }: {
         input: unknown;
         req?: FrogBotRequest;
+        connection?: number | string;
         overrideAccess?: boolean;
       }) => {
         const resolvedReq = await request(req);
         const parsedInput = action.input.parse(input);
         const result = await action.run({
           input: parsedInput,
-          client: await client({ req: resolvedReq }),
+          client: await client({ req: resolvedReq, connection }),
           options,
           req: resolvedReq,
           overrideAccess,

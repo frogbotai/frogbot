@@ -125,6 +125,7 @@
                       "fields/duration",
                       "fields/url",
                       "fields/phone",
+                      "fields/color",
                       "fields/barcode",
                       "fields/autonumber",
                       "fields/ai"
@@ -183,7 +184,7 @@
               { "group": "Admin", "expanded": false, "pages": ["admin/overview", "admin/admin-navigation", "admin/collection-list", "admin/collection-board", "admin/collection-gallery", "admin/collection-calendar", "admin/collection-timeline", "admin/record-panel"]},
               { "group": "Authentication", "expanded": false, "pages": ["authentication/overview", "authentication/sign-in", "authentication/operations", "authentication/jwt", "authentication/cookies", "authentication/email", "authentication/api-keys", "authentication/token-data", "authentication/custom-strategies"]},
               { "group": "Upload", "expanded": false, "pages": ["upload/overview", "upload/storage-adapters", "upload/files"]},
-              { "group": "Jobs Queue", "expanded": false, "pages": ["jobs-queue/overview", "jobs-queue/workers"]},
+              { "group": "Jobs Queue", "expanded": false, "pages": ["jobs-queue/overview", "jobs-queue/tasks", "jobs-queue/workflows", "jobs-queue/queues", "jobs-queue/schedules", "jobs-queue/waits", "jobs-queue/workers"]},
               { "group": "Versions", "expanded": false, "pages": ["versions/overview", "versions/drafts", "versions/autosave"]},
               { "group": "Email", "expanded": false, "pages": ["email/overview"]},
               { "group": "Trash", "expanded": false, "pages": ["trash/overview"]},
@@ -200,7 +201,7 @@
           {
             "group": "Ecosystem",
             "pages": [
-              { "group": "Plugins", "expanded": false, "pages": ["plugins/overview", "plugins/ai-policy", "plugins/api-keys", "plugins/audit-log", "plugins/capture", "plugins/dojo", "plugins/evals", "plugins/forms", "plugins/roles", "plugins/usage-reports", "plugins/mcp", "plugins/import-export", "plugins/nested-docs", "plugins/redirects", "plugins/sentry", "plugins/seo", "plugins/stripe", "plugins/two-factor", "plugins/build-your-own"]},
+              { "group": "Plugins", "expanded": false, "pages": ["plugins/overview", "plugins/ai-capture", "plugins/ai-evals", "plugins/ai-policy", "plugins/ai-usage", "plugins/api-keys", "plugins/audit-log", "plugins/dojo", "plugins/forms", "plugins/roles", "plugins/mcp", "plugins/import-export", "plugins/nested-docs", "plugins/redirects", "plugins/sentry", "plugins/seo", "plugins/stripe", "plugins/two-factor", "plugins/build-your-own"]},
               { "group": "Gateway", "expanded": false, "pages": ["gateway/overview", "gateway/providers", "gateway/configuration", "gateway/embedding", "gateway/hooks", "gateway/observability", "gateway/errors"]},
               { "group": "Agent Skills", "expanded": false, "pages": ["skills/coding-agents"]}
             ]
@@ -280,7 +281,10 @@
     { "source": "/configuration/connections", "destination": "/connections/overview" },
     { "source": "/configuration/pieces", "destination": "/pieces/overview" },
     { "source": "/access-control/globals", "destination": "/access-control/collections" },
-    { "source": "/hooks/globals", "destination": "/hooks/collections" }
+    { "source": "/hooks/globals", "destination": "/hooks/collections" },
+    { "source": "/plugins/capture", "destination": "/plugins/ai-capture" },
+    { "source": "/plugins/evals", "destination": "/plugins/ai-evals" },
+    { "source": "/plugins/usage-reports", "destination": "/plugins/ai-usage" }
   ],
   "background": {
     "color": {

@@ -28,6 +28,7 @@ Admins build forms in the `forms` collection: a slug, the target collection, ste
 ![The form builder beside the Live Preview of a two-step form](https://raw.githubusercontent.com/frogbotai/frogbot/main/docs/images/forms-builder.png)
 
 - Building a form: the edit page's **Questions** tab picks questions from the collection's usable fields (refused ones greyed with the reason), warns about required fields the form leaves out, edits each question's wording, groups questions into steps, and reorders them by drag or keyboard. Once saved, Live Preview shows the form as visitors get it while you type, with a **Phone** size; nothing is sent from it.
+- Show when: a question's `rules` (`equals`, `notEquals` or `hasValue` on an earlier question's answer, all or `match: 'any'`) show it only for some answers. The page skips steps with nothing to ask, and the server drops hidden answers and files. `required` fields can't have rules.
 
 Each listed collection's `access.create` becomes `isFormSubmission(req, slug) || yourRule(args)`, and the record is created with `overrideAccess: false`, so field access and hooks still run.
 

@@ -379,7 +379,11 @@ The following arguments are provided to the `afterError` Hook:
 
 For collections with [sign-in methods](/authentication/sign-in), this hook runs in the method's callback after the user is found or created and before any session exists. It runs for every method, in order. Return a `Response` to answer the callback with it instead: no session is written and no auth cookie is set. Return nothing to let sign-in finish.
 
-A hook that pauses sign-in, for example to ask for a second step, resumes it later with `finishSignIn`, which issues the session, sets the auth cookie and continues to `returnTo`. Before it issues the session it sets `req.context.signIn` to `{ method }`, so `beforeLogin` and `afterLogin` hooks can tell a finished sign-in from a password login. Pass `response: 'json'` to answer like `POST /login` instead. `finishSignIn` doesn't run the `beforeSignIn` hooks after the one that paused, so a step that must not be skipped also checks in `beforeLogin`, as the [two-factor plugin](/plugins/two-factor) does.
+A hook can pause sign-in, for example to ask for a second step, and resume it later with `finishSignIn`. `finishSignIn` issues the session, sets the auth cookie, and continues to `returnTo`.
+
+- **It marks the sign-in.** Before it issues the session, it sets `req.context.signIn` to `{ method }`, so `beforeLogin` and `afterLogin` hooks can tell a finished sign-in from a password login.
+- **It can answer with JSON.** Pass `response: 'json'` to answer like `POST /login` instead.
+- **It skips later `beforeSignIn` hooks.** `finishSignIn` doesn't run the `beforeSignIn` hooks after the one that paused. A step that must not be skipped therefore also checks in `beforeLogin`, as the [two-factor plugin](/plugins/two-factor) does.
 
 ```ts
 import { type CollectionBeforeSignInHook, finishSignIn } from 'frogbot'

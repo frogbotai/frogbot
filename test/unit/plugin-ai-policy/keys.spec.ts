@@ -49,12 +49,29 @@ const owners: Record<string, Record<string, unknown>> = {
   2: { id: 2, name: 'Bo', models: [] },
 };
 
+function counters(user: Record<string, unknown> | null) {
+  const apiKey = user?.apiKey as Record<string, unknown> | undefined;
+  const spend = new Map([
+    [`users:${String(user?.id)}`, user?.spendThisPeriodUSD],
+    [`api-keys:${String(apiKey?.id)}`, apiKey?.spendThisPeriodUSD],
+  ]);
+
+  return vi.fn(({ where }: { where: { and: [{ key: { in: string[] } }] } }) =>
+    Promise.resolve({
+      docs: where.and[0].key.in
+        .filter((key) => typeof spend.get(key) === 'number')
+        .map((key) => ({ key, amount: spend.get(key) })),
+    }),
+  );
+}
+
 function request(user: Record<string, unknown> | null = null, context = {}): FrogBotRequest {
   return {
     context,
     user,
     t: (key: string) => key,
     frogbot: {
+      find: counters(user),
       findByID: vi.fn(({ id }: { id: number }) =>
         owners[id] ? Promise.resolve(owners[id]) : Promise.reject(new Error('not found')),
       ),
