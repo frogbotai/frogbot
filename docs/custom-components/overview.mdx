@@ -255,28 +255,41 @@ Use `useFormFields` with a selector instead of subscribing to the entire form wh
 
 ### Adding Styles
 
-Import a CSS file from your component:
+FrogBot UI components and theme tokens are available in every admin component without a wrapper and follow the admin's light and dark theme. Start from the components, such as `Card`, `Badge` and `Button`, before writing CSS:
 
 ```tsx
-import './StatusAction.css'
+import { Badge, Card, CardContent, CardHeader, CardTitle } from '@frogbotai/ui'
 
-export function StatusAction() {
-  return <div className="status-action">Ready for review</div>
+import './ReviewStatus.css'
+
+export function ReviewStatus() {
+  return (
+    <Card>
+      <CardHeader className="review-status__header">
+        <CardTitle>Review</CardTitle>
+        <Badge variant="success">Ready</Badge>
+      </CardHeader>
+      <CardContent className="review-status__note">Two approvals, no open comments.</CardContent>
+    </Card>
+  )
 }
 ```
 
-FrogBot UI components and theme tokens are available in every admin component without a wrapper and follow the admin's light and dark theme. Use the admin's semantic [color tokens](/chat/ui-theming#color-tokens), such as `--color-bg-secondary`, `--color-border` and `--color-text`; they switch with the theme.
-
-Your component CSS beats FrogBot's styles as long as it isn't in a CSS layer. See [override FrogBot styles](/chat/ui-theming#override-frogbot-styles) and [admin panel styles](/chat/ui-theming#admin-panel-styles).
+Use your own CSS for layout, and the admin's semantic [color tokens](/chat/ui-theming#color-tokens), such as `--color-text-secondary` and `--color-border`, for any colour; they switch with the theme.
 
 ```css
-.status-action {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  padding: 0.75rem 1rem;
+.review-status__header {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.review-status__note {
+  color: var(--color-text-secondary);
 }
 ```
+
+Your component CSS beats FrogBot's styles as long as it isn't in a CSS layer. See [override FrogBot styles](/chat/ui-theming#override-frogbot-styles) and [admin panel styles](/chat/ui-theming#admin-panel-styles).
 
 ### Tooltips
 

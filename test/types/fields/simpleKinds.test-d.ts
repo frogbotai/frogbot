@@ -1,5 +1,6 @@
 import type {
   BarcodeFieldArgs,
+  ColorFieldArgs,
   DurationFieldArgs,
   FrogBotRequest,
   NumberField,
@@ -11,6 +12,7 @@ import type {
 } from 'frogbot';
 import {
   barcodeField,
+  colorField,
   durationField,
   percentField,
   phoneField,
@@ -18,6 +20,7 @@ import {
   urlField,
 } from 'frogbot';
 import type {
+  ColorKind,
   DurationFormat,
   DurationKind,
   FormatDurationArgs,
@@ -31,6 +34,7 @@ import {
   formatDuration,
   formatPercent,
   formatPhone,
+  getHexColor,
   getPhoneHref,
   getUrlHref,
   parseDuration,
@@ -124,6 +128,18 @@ expectTypeOf(barcodeField).returns.toEqualTypeOf<TextField>();
 expectTypeOf<UrlFieldArgs['minLength']>().toEqualTypeOf<number | undefined>();
 expectTypeOf<PhoneFieldArgs['maxLength']>().toEqualTypeOf<number | undefined>();
 expectTypeOf<BarcodeFieldArgs['required']>().toEqualTypeOf<boolean | undefined>();
+
+expectTypeOf(colorField).returns.toEqualTypeOf<TextField>();
+expectTypeOf<ColorFieldArgs['swatches']>().toEqualTypeOf<string[] | undefined>();
+expectTypeOf<ColorKind>().toEqualTypeOf<{ type: 'color'; swatches: string[] }>();
+expectTypeOf(getHexColor).parameter(0).toEqualTypeOf<{ value: unknown }>();
+expectTypeOf(getHexColor).returns.toEqualTypeOf<string | undefined>();
+
+// @ts-expect-error a color has a fixed length
+colorField({ name: 'color', maxLength: 7 });
+
+// @ts-expect-error a color field holds one color
+colorField({ name: 'color', hasMany: true });
 
 expectTypeOf(getUrlHref).parameter(0).toEqualTypeOf<{ value: unknown }>();
 expectTypeOf(getUrlHref).returns.toEqualTypeOf<string | undefined>();

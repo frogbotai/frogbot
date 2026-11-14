@@ -90,10 +90,14 @@ export type AgentPieceTrigger<TTrigger extends PieceTriggerReference = PieceTrig
 
 export type { AgentProfile, AgentReasoningOption };
 
+/** Builds an agent's instructions once per run from that run's request. */
+export type AgentInstructions = ({ req }: { req: FrogBotRequest }) => string | Promise<string>;
+
 export type AgentConfig<TTrigger extends PieceTriggerReference = PieceTriggerReference> = {
   slug: string;
   model?: AgentModelId | AgentModelOptions;
-  instructions: string;
+  /** Fixed text, or a function called once per run with the run's `req`. */
+  instructions: string | AgentInstructions;
   profile?: AgentProfile;
   channels?: readonly ChannelPieceInstance[];
   skills?: readonly SkillConfig[];
@@ -109,6 +113,8 @@ export type SanitizedAgentConfig = Omit<AgentConfig, 'model' | 'tools'> & {
   tools?: readonly AnyTool[];
   /** MCP servers from `tools`, the agent's own after the root ones it inherits. */
   mcp?: readonly MCPServer[];
+  /** Skill discovery lines, appended after the instructions on every run. */
+  skillLines?: readonly string[];
 };
 
 export type AgentSelection = {

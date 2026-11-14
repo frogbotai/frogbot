@@ -3,7 +3,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 
 import { authPath, writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
-import { runLogout } from '../../../../packages/plugins/plugin-dojo/src/cli/logout.js';
+import { runDojo } from '../../../../packages/plugins/plugin-dojo/src/cli/commands.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO } from './helpers.js';
 
@@ -19,7 +19,7 @@ async function setup({ signedIn = true } = {}) {
   const run = async () => {
     const io = testIO({ cwd: env.XDG_CONFIG_HOME, env });
 
-    return { code: await runLogout([], io.io), ...io };
+    return { code: await runDojo(['logout'], io.io), ...io };
   };
 
   return { dojo, env, run };

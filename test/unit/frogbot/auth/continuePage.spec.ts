@@ -34,7 +34,10 @@ describe('sign-in continue page', () => {
   it("keeps ADMIN_COLORS equal to Payload's --color-bg and --color-text; update them after a Payload bump", () => {
     const tokens = readPayloadTokens();
     const resolve = (theme: 'light' | 'dark', name: string): string | undefined => {
-      const value = new Map([...tokens.page, ...tokens[theme]]).get(name);
+      const value = new Map(
+        [...tokens.page, ...tokens[theme]].map(([key, token]): [string, string] => [key, token]),
+      ).get(name);
+
       const alias = /^var\((--[\w-]+)\)$/.exec(value ?? '')?.[1];
 
       return alias ? resolve(theme, alias) : value;

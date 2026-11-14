@@ -364,6 +364,7 @@ const testProjects = [
       'timeline.browser.spec.ts',
       'board.browser.spec.ts',
       'cellEditKinds.browser.spec.ts',
+      'colorField.browser.spec.ts',
       'galleryCard.browser.spec.ts',
     ],
   }),

@@ -45,8 +45,8 @@ describe('deploy dojo', () => {
   });
 
   it('runs the same function as share: same requests, same output', async () => {
-    const shared = await shareWith(['--no-data'], 'share');
-    const deployed = await shareWith(['--no-data'], 'deploy');
+    const shared = await shareWith(['--no-data', '--wait'], 'share');
+    const deployed = await shareWith(['--no-data', '--wait'], 'deploy');
 
     expect(shared.code).toBe(0);
     expect(deployed).toEqual(shared);
@@ -63,10 +63,26 @@ describe('deploy dojo', () => {
 
     await writeApp(root, { '.env': 'OPENAI_API_KEY=sk-test-1234567890\n' });
 
-    expect(await runShare(['--json', '--no-data'], io.io)).toBe(0);
+    expect(await runShare(['--json', '--no-data', '--wait'], io.io)).toBe(0);
     expect(io.stdout()).toHaveLength(1);
     expect(JSON.parse(io.stdout()[0] ?? '')).toMatchObject({ target: 'dojo', ok: true });
     expect(io.stderr().some((line) => line.startsWith('[build] '))).toBe(true);
+  });
+
+  it('exits 3 with the sign-in link in the JSON result when nobody can sign in', async () => {
+    const { code, paths, stdout } = await shareWith(['--json', '--no-data'], 'share');
+    const link = '<dojo>/device?user_code=BCDF-GHJK';
+
+    expect(code).toBe(3);
+    expect(JSON.parse(stdout.join('\n'))).toMatchObject({
+      target: 'dojo',
+      ok: false,
+      error: expect.stringContaining(link),
+      needs: 'sign-in',
+      link,
+      userCode: 'BCDF-GHJK',
+    });
+    expect(paths).toEqual(['POST /api/cli/device/code']);
   });
 
   it('dry-runs: lists files, size and keys and makes no request', async () => {
@@ -101,7 +117,7 @@ describe('deploy dojo', () => {
 
     await writeApp(root, { '.env': 'OPENAI_API_KEY=sk-test-1234567890\n' });
 
-    expect(await runShare(['--no-interactive', '--no-data'], io.io)).toBe(0);
+    expect(await runShare(['--no-interactive', '--no-data', '--wait'], io.io)).toBe(0);
     expect(io.asked).toEqual([]);
   });
 });

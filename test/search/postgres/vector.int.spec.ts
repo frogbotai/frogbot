@@ -139,7 +139,7 @@ describePostgres(`postgres vector search [${driver}]`, () => {
           .map(({ id }) => id),
       );
 
-      found += result.hits.filter(({ doc }) => expected.has(doc.id as number)).length;
+      found += result.hits.filter(({ doc }) => expected.has(doc.id)).length;
       total += expected.size;
     }
 

@@ -10,6 +10,11 @@ export type SkillResource = {
   content: SkillContent;
 };
 
+/** Resources as a list, or a function called each time `list_skills` or `load_skill_resource` runs. */
+export type SkillResources =
+  | readonly SkillResource[]
+  | ((ctx: Pick<SkillCtx, 'req'>) => readonly SkillResource[] | Promise<readonly SkillResource[]>);
+
 export type SkillConfig = {
   slug: string;
   description?: string;
@@ -17,5 +22,5 @@ export type SkillConfig = {
   compatibility?: string;
   metadata?: Record<string, string>;
   instructions: SkillContent;
-  resources?: readonly SkillResource[];
+  resources?: SkillResources;
 };

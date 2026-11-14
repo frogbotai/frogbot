@@ -56,13 +56,21 @@ export function splitDeployArgs(argv: string[]): { flags: SharedFlags; args: str
 const quote = (arg: string) =>
   /^[\w@%+=:,./•-]+$/.test(arg) ? arg : `'${arg.replace(/'/g, `'\\''`)}'`;
 
-function showCommand(command: string, args: string[], mask: string[] = []): string {
-  const masked = args.map((arg) =>
-    mask.reduce((shown, secret) => (secret ? shown.split(secret).join('••••') : shown), arg),
-  );
+const escaped = (text: string) => text.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
 
-  return [command, ...masked].map(quote).join(' ');
+function masked(text: string, mask: string[]): string {
+  const secrets = mask.filter(Boolean).sort((a, b) => b.length - a.length);
+
+  return secrets.length > 0
+    ? text.replace(new RegExp(secrets.map(escaped).join('|'), 'g'), '••••')
+    : text;
 }
+
+function showCommand(command: string, args: string[], mask: string[] = []): string {
+  return [command, ...args.map((arg) => masked(arg, mask))].map(quote).join(' ');
+}
+
+const tailLines = 10;
 
 function formatIssues(name: string, issues: PreflightIssue[]): string {
   const lines = issues.map(
@@ -93,7 +101,7 @@ async function loadIssues(
 
 /**
  * Runs one deploy target: the shared flags, every preflight check at once, then the target. Returns
- * the exit code: 0 on success, 1 when a check or the deploy failed, 2 for a usage error.
+ * the exit code: 0 on success, 1 when a check or the deploy failed, 2 for a usage error, or a target's own code.
  */
 export async function runDeploy(
   target: DeployTarget,
@@ -108,21 +116,32 @@ export async function runDeploy(
   const log = (line: string) => out().write(`${line}\n`);
 
   const finish = (
-    code: number,
-    fields: { issues?: PreflightIssue[]; result?: unknown; error?: string },
+    exitCode: number,
+    fields: { issues?: PreflightIssue[]; result?: unknown; failure?: Record<string, unknown> },
   ) => {
     if (json) {
       const result =
-        dryRun && code === 0
+        dryRun && exitCode === 0
           ? { steps, ...(isObject(fields.result) ? fields.result : {}) }
           : fields.result;
 
-      io.stdout.write(
-        `${JSON.stringify({ target: name, ok: code === 0, dryRun, issues: fields.issues ?? [], result: result ?? null, ...(fields.error ? { error: fields.error } : {}) })}\n`,
-      );
+      const base = {
+        target: name,
+        ok: exitCode === 0,
+        dryRun,
+        issues: fields.issues ?? [],
+        result: result ?? null,
+      };
+
+      const failure = fields.failure && {
+        ...fields.failure,
+        ...(steps.length > 0 && { steps }),
+      };
+
+      io.stdout.write(`${JSON.stringify({ ...base, ...failure, ...base })}\n`);
     }
 
-    return code;
+    return exitCode;
   };
 
   try {
@@ -166,9 +185,8 @@ export async function runDeploy(
       run: async (command, commandArgs, { mask, quiet, ...options } = {}) => {
         const shown = showCommand(command, commandArgs, mask);
 
-        steps.push(`$ ${shown}`);
-
         if (dryRun) {
+          steps.push(`$ ${shown}`);
           log(`[dry-run] $ ${shown}`);
 
           return { code: 0, stdout: '', stderr: '' };
@@ -183,25 +201,33 @@ export async function runDeploy(
         });
 
         if (result.code !== 0) {
-          const tail = quiet ? result.stderr.trim().split('\n').slice(-5).join('\n') : '';
+          const tail = masked(result.stderr, mask ?? [])
+            .trim()
+            .split('\n')
+            .slice(-tailLines)
+            .join('\n');
 
           throw new DeployError(
-            `\`${command} ${commandArgs[0] ?? ''}\` failed (exit ${result.code}).${tail ? `\n${tail}` : ''}`,
+            `\`${shown}\` failed (exit ${result.code}).${quiet && tail ? `\n${tail}` : ''}`,
+            1,
+            { code: 'COMMAND_FAILED', fields: { command: shown, ...(tail && { stderr: tail }) } },
           );
         }
+
+        steps.push(`$ ${shown}`);
 
         return result;
       },
       writeFile: async (path, contents) => {
-        steps.push(`write ${path}`);
-
         if (dryRun) {
+          steps.push(`write ${path}`);
           log(`[dry-run] write ${path}`);
 
           return;
         }
 
         await writeFile(join(root, path), contents);
+        steps.push(`write ${path}`);
         log(`[frogbot] Wrote ${path}.`);
       },
     };
@@ -231,11 +257,23 @@ export async function runDeploy(
 
     return finish(0, { result });
   } catch (error) {
-    if (!(error instanceof DeployError)) throw error;
+    if (error instanceof DeployError) {
+      io.stderr.write(`[frogbot] ${error.message}\n`);
 
-    io.stderr.write(`[frogbot] ${error.message}\n`);
+      return finish(error.exitCode, {
+        failure: { ...error.fields, code: error.code, error: error.message },
+      });
+    }
 
-    return finish(error.code, { error: error.message });
+    if (!json) throw error;
+
+    const text = formatCliError(error);
+
+    io.stderr.write(`${text}\n`);
+
+    return finish(1, {
+      failure: { code: 'UNEXPECTED_ERROR', error: text.replace(/^\[frogbot\] /, '') },
+    });
   }
 }
 

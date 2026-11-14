@@ -81,7 +81,11 @@ Chat renders no sidebar by default because the FrogBot admin navigation already 
 
 ## Dock
 
-The dock sits between the queued messages and the composer, for requests that need the user before the chat can go on. A waiting client tool call with a registered renderer, such as a [question](/chat/questions#answer-in-the-chat-ui), docks there on its own and hides the composer until it is answered or dismissed; it then shows in the conversation as usual. Pass your own cards through `dockSlot`, below any docked call, and set `dockBlocking` while they wait for an answer. The composer stays mounted while hidden, so its text and attachments come back with it.
+The dock sits between the queued messages and the composer. It holds requests that need the user before the chat can go on.
+
+- **Client tool calls dock on their own.** A waiting client tool call with a registered renderer, such as a [question](/chat/questions#answer-in-the-chat-ui), docks there and hides the composer until it is answered or dismissed. It then shows in the conversation as usual.
+- **Your own cards go in `dockSlot`.** They show below any docked call. Set `dockBlocking` while they wait for an answer.
+- **The composer stays mounted while hidden,** so its text and attachments come back with it.
 
 `ChatDock` gives a docked card FrogBot's look: an optional `header`, the body, and an optional `footer` with a top border for actions.
 
@@ -113,9 +117,21 @@ import { Chat, ChatDock } from '@frogbotai/ui/chat'
 
 Register `/` commands with [`commands`](/chat/ui-registries#composer-commands) on `ChatProvider`: typing `/` opens a menu of them, and `/id rest` runs one that takes arguments. For anything else, use `onBeforeSubmit`.
 
-`Chat` adds a built-in `/compact` after them when the adapter has [`compactChat`](/chat/ui-provider#adapter-options) and a chat is open. It summarizes the chat's older messages now, as described in [Compaction](/chat/turns#compaction), shows a running divider, and reloads the messages when it's done. It's left out of the menu while a reply runs and in a channel conversation. Show the stored divider and summary by registering `CompactionPart` for `compaction` data parts, as FrogBot's admin chat does; see [Message data parts](#message-data-parts).
+`Chat` adds a built-in `/compact` after them when the adapter has [`compactChat`](/chat/ui-provider#adapter-options) and a chat is open.
 
-`onBeforeSubmit` runs before each message is sent and receives `{ text, mentions, attachments }`. Return `true` and nothing is sent: the text clears and attachments stay in the composer. Return `false` to send as usual. If it throws or rejects, nothing is sent and the chat shows `Command failed: <message>`. A registered command that matches runs first, and `onBeforeSubmit` isn't called for it. While a reply runs, a send is [queued](#queued-messages) without calling it.
+- It summarizes the chat's older messages now, as described in [Compaction](/chat/turns#compaction), shows a running divider, and reloads the messages when it's done.
+- It's left out of the menu while a reply runs and in a channel conversation.
+- To show the stored divider and summary, register `CompactionPart` for `compaction` data parts, as FrogBot's admin chat does. See [Message data parts](#message-data-parts).
+
+`onBeforeSubmit` runs before each message is sent and receives `{ text, mentions, attachments }`.
+
+| `onBeforeSubmit` | Result |
+| --- | --- |
+| Returns `true` | Nothing is sent. The text clears, and attachments stay in the composer. |
+| Returns `false` | The message is sent as usual. |
+| Throws or rejects | Nothing is sent, and the chat shows `Command failed: <message>`. |
+
+`onBeforeSubmit` isn't called in two cases. A registered command that matches runs first. A send made while a reply runs is [queued](#queued-messages).
 
 ```tsx
 const [pickerOpen, setPickerOpen] = useState(false)
@@ -148,7 +164,11 @@ matchesModelSearch('sonnet', values) // true for "Claude Sonnet"
 
 While a reply runs, Enter or the **Queue message** button beside Stop adds the prompt, with its attachments, to a list above the composer and clears the composer. Stop only stops the reply; it never sends what you've typed. Attachments, drops and the microphone keep working while a reply runs. A command with [`queue: true`](/chat/ui-registries#command-options) waits in the list as its `/` text; other commands run at once.
 
-Each entry has **Edit**, which moves it back into an empty composer, and **Remove**. When a reply ends normally, with no question waiting, the first entry is sent with the current model, and the next waits for that reply. Stop, a failed reply or switching chats pauses the entries; a prompt you send then goes out first, and **Send now** sends a paused entry. Entries are kept per chat while the page is open and are lost on reload.
+Each entry has **Edit**, which moves it back into an empty composer, and **Remove**.
+
+- **When a reply ends normally,** with no question waiting, the first entry is sent with the current model, and the next waits for that reply.
+- **Stop, a failed reply, or switching chats** pauses the entries. A prompt you send then goes out first, and **Send now** sends a paused entry.
+- **Entries are kept per chat** while the page is open and are lost on reload.
 
 With an adapter [`steerMessage`](/chat/ui-provider#adapter-options), a queued message also has **Steer** while a reply runs: it is handed to the running turn and shows **Steering** until the reply takes it, as a [`data-steered`](/chat/ui-registries#data-renderer-options) part, or the turn ends.
 
@@ -238,7 +258,18 @@ Pass the [adapter](/chat/ui-provider#adapter-options) to add the same actions to
 
 ## Message actions
 
-Completed user messages include Copy and Edit actions. Assistant messages include Copy and Branch; Branch needs the adapter's `branchChat` and is hidden without it. Editing uses the composer's editor with its mention chips; Enter sends and Escape cancels. It preserves the other non-text parts, replaces the text and `data-mention` parts, replaces the selected message, removes later responses, and retries the conversation from that point. Branch creates and opens a separate chat containing the conversation through the selected message.
+| Message | Actions |
+| --- | --- |
+| Completed user message | Copy and Edit. |
+| Assistant message | Copy and Branch. Branch needs the adapter's `branchChat` and is hidden without it. |
+
+**Edit** uses the composer's editor with its mention chips. Enter sends and Escape cancels. An edit does this:
+
+- It preserves the other non-text parts, and replaces the text and `data-mention` parts.
+- It replaces the selected message and removes later responses.
+- It retries the conversation from that point.
+
+**Branch** creates and opens a separate chat that contains the conversation through the selected message.
 
 User and assistant message text, the message editor and the composer render at 14px from the `--fb-text-sm` token, with compact headings and 13px inline code. The sizes are in `rem`, so they follow the app's root font size, and apps can override `--fb-text-sm` or the `.fb-markdown__*` classes with unlayered CSS.
 
@@ -293,7 +324,14 @@ import {
 
 ## Channel conversations
 
-`Chat` reads the active chat's document, from the `initialChat` prop when it matches the active chat and otherwise with a request. Pass `initialChat` when your server already has the document, so a channel conversation renders read-only from the first paint. When the chat belongs to a channel, `Chat` shows the conversation [read-only](/chat/questions#channel-conversations): `ChannelConversationNotice` replaces the composer, user messages have no Edit action, and tool renderers receive [`isReadonly`](/chat/ui-registries#read-only-conversations). Branch stays on the notice and on assistant messages.
+`Chat` reads the active chat's document. It takes the document from the `initialChat` prop when that matches the active chat, and otherwise makes a request. Pass `initialChat` when your server already has the document, so a channel conversation renders read-only from the first paint.
+
+When the chat belongs to a channel, `Chat` shows the conversation [read-only](/chat/questions#channel-conversations):
+
+- `ChannelConversationNotice` replaces the composer.
+- User messages have no Edit action.
+- Tool renderers receive [`isReadonly`](/chat/ui-registries#read-only-conversations).
+- Branch stays on the notice and on assistant messages.
 
 Custom shells can build the same view from `useChatDocument` and `ChannelConversationNotice`. `useChatDocument` returns `{ chat, error, refresh }`, where `chat` includes the chat's `channel` and `channelLabel`. It accepts:
 
@@ -315,7 +353,10 @@ Custom shells can build the same view from `useChatDocument` and `ChannelConvers
 
 ## Composer selectors
 
-`AgentSelector` reads the agents available to the current user from `ChatProvider`. Keep the selected agent in your application state and pass it to both the selector and `<Chat>`. Changing it starts a new conversation. Place selectors in `composerStartSlot`, as the admin chat does; keep `headerSlot` for content above the messages.
+`AgentSelector` reads the agents available to the current user from `ChatProvider`.
+
+- Keep the selected agent in your application state, and pass it to both the selector and `<Chat>`. Changing it starts a new conversation.
+- Place selectors in `composerStartSlot`, as the admin chat does. Keep `headerSlot` for content above the messages.
 
 ```tsx
 'use client'
@@ -368,7 +409,18 @@ import { ComposerSelect } from '@frogbotai/ui/chat'
 | `aria-label` | `string` | The selected label | Accessible name for the trigger. |
 | `className` | `string` | — | Added to the trigger. |
 
-`ModelSelector` shows the active model and reasoning level as compact text. Clicking it opens a reasoning slider for that model; clicking the model name switches to the model list, grouped by provider when there is more than one. A group is labelled with its first model's `providerName`, then FrogBot's name for the provider (`OpenAI` for `openai`), then the provider slug; models without a `provider` go under `Other`. While the selector is open, its trigger reads `Select effort` on the slider and `Select model` on the list. A model without reasoning levels opens straight on the list, which then has no Back button, and choosing such a model closes the selector; choosing a model with levels shows its slider. The reasoning slider shows the active level's name above a track with one dot per level. The selector keeps one width in both views and while searching, and long model names are truncated. Its selection is fully controlled, and it renders nothing when `models` is empty.
+`ModelSelector` shows the active model and reasoning level as compact text. It has two views:
+
+| View | Opens when | The trigger reads |
+| --- | --- | --- |
+| Reasoning slider | You click the selector, or you choose a model that has levels. | `Select effort` |
+| Model list | You click the model name, or the model has no reasoning levels. | `Select model` |
+
+- **Model list.** Models are grouped by provider when there is more than one. A group is labelled with its first model's `providerName`, then FrogBot's name for the provider (`OpenAI` for `openai`), then the provider slug. Models without a `provider` go under `Other`.
+- **A model without reasoning levels** opens straight on the list, which then has no Back button. Choosing such a model closes the selector.
+- **Reasoning slider.** It shows the active level's name above a track with one dot per level.
+- **Width.** The selector keeps one width in both views and while searching, and long model names are truncated.
+- **Selection.** The selection is fully controlled, and the selector renders nothing when `models` is empty.
 
 Each row starts with its provider's logo. Logos ship with FrogBot for every catalog provider plus FrogBot (`frogbot`), Ollama (`ollama`) and LM Studio (`lmstudio`), so the list makes no network requests; custom and unknown providers get a generic icon. Hovering a row shows its model ID, and rows that share a name also show their IDs.
 
@@ -384,7 +436,11 @@ A search field above the list filters by name, ID, provider slug, and group labe
 | `open` | `boolean` | Its own state | Opens the selector from code, such as a typed `/model`. It opens on the model list with an empty search. |
 | `onOpenChange` | `(open: boolean) => void` | — | Called when the selector opens or closes, including on Escape and outside clicks. |
 
-Pass the same choice to `<Chat>` through `model` and `reasoning`; each message is sent with them. The agent manifest lists allowed models, their display names in `names`, and each model's reasoning options, so a selector fed from it never offers a choice the server rejects. `names` holds catalog names such as `Nova Micro (US)` and the `name` of custom provider models; a model FrogBot has no name for is left out, so fall back to its ID. When the model changes, reset or restore the level yourself: a key from one model does not apply to another.
+Pass the same choice to `<Chat>` through `model` and `reasoning`. Each message is sent with them.
+
+- **Feed the selector from the agent manifest.** The manifest lists allowed models, their display names in `names`, and each model's reasoning options, so the selector never offers a choice that the server rejects.
+- **Fall back to the ID for unnamed models.** `names` holds catalog names such as `Nova Micro (US)` and the `name` of custom provider models. A model that FrogBot has no name for is left out.
+- **Reset or restore the level when the model changes.** A key from one model does not apply to another.
 
 ```tsx
 'use client'
@@ -448,7 +504,7 @@ export function ModelChat() {
 | `onToolsChange` | `(ids: string[]) => void` | Required | Called with the new list of selected IDs. |
 
 <Warning>
-  Tool selections are currently client-side only. They do not change tool availability or add fields to chat requests.
+  Tool selections are client-side only. They do not change tool availability or add fields to chat requests.
 </Warning>
 
 The selectors intentionally differ from Firmware where FrogBot has no matching concept: agents have no "Default" row, model billing locks are omitted, reasoning levels use a per-model slider, tools use multi-select availability instead of prompt injection, and Radix handles menu positioning.
@@ -487,7 +543,15 @@ The host remains responsible for reading tab content and creating `data-page-con
 
 ## Attachments
 
-Dropping or selecting files in the composer uploads each one through the adapter's `uploadAttachment`, then sends a `file-reference` part carrying the stored id. With the [REST adapter](/chat/ui-provider#rest-adapter-options), files go to the chat assets collection advertised by the manifest as `chat.assetsSlug`; the server links the asset to the chat on the first message that references it, and on every agent turn sends the file in a form the selected model can read. See [chat assets](/chat/overview#chat-assets) for storage and access rules, and [how attachments reach the agent](/chat/overview#how-attachments-reach-the-agent) for what the model receives.
+Dropping or selecting files in the composer uploads each one through the adapter's `uploadAttachment`, then sends a `file-reference` part that carries the stored id.
+
+With the [REST adapter](/chat/ui-provider#rest-adapter-options):
+
+1. Files go to the chat assets collection that the manifest advertises as `chat.assetsSlug`.
+2. The server links the asset to the chat on the first message that references it.
+3. On every agent turn, the server sends the file in a form that the selected model can read.
+
+See [chat assets](/chat/overview#chat-assets) for storage and access rules, and [how attachments reach the agent](/chat/overview#how-attachments-reach-the-agent) for what the model receives.
 
 Pass an `adapter` with `uploadAttachment` to a standalone `Composer` to enable the attachment control; `<Chat>` passes the provider's adapter automatically, along with the selected model's input types and display name (`modelInputs` and `modelName`, see [Composer props](/chat/ui-custom-shell#composer-props)).
 
@@ -514,7 +578,9 @@ The composer sorts each picked, dropped, or pasted file with the same rules the 
 
 The file picker offers only the accepted types. A file that isn't accepted, for example one dropped onto the composer, gets a red card and is never uploaded.
 
-Code files that FrogBot's [restricted file types](/upload/overview#restricted-file-types) would block, such as `app.js`, `main.py`, or `page.html`, are read in the browser and uploaded as plain text named `app.js.txt`. The message still refers to the real name, so the agent receives `Attached file "app.js":` followed by the code. A restricted file that isn't text is refused.
+Code files that FrogBot's [restricted file types](/upload/overview#restricted-file-types) would block, such as `app.js`, `main.py`, or `page.html`, are read in the browser and uploaded as plain text named `app.js.txt`. The message still refers to the real name, so the agent receives `Attached file "app.js":` followed by the code.
+
+A restricted file that isn't text is refused.
 
 Word and Excel files are uploaded as they are, without being read in the browser. The server reads them during the upload, and the card shows the text from the upload response. A file the server refuses, such as a corrupt, password-protected, or renamed file, gets a red card without Retry, because uploading the same file again can't succeed.
 
@@ -538,17 +604,43 @@ Each file in the composer shows one card in one state:
 
 The model name in a refusal is the model's display name from the [manifest](/chat/manifest), or its ID without the provider when it has none. A file the browser can't read at all, such as one changed on disk after it was picked, shows **Upload failed.** "This file couldn't be read." without Retry.
 
-The three red states have a red border and icon; their text keeps the normal text colour in light and dark themes. Text cards are tagged with the file's extension in capitals when it has five characters or fewer (`MD`, `JS`, `JSON`), `TEXT` otherwise, and `PASTED` for pasted text. Word and Excel files are tagged `DOCX` or `XLSX`, even without an extension. Click a text card, or focus it and press Enter, to open the full text in a viewer with Copy and Close buttons. For a Word or Excel file, the viewer shows exactly the text the model receives after the file's label, including any note about rows or characters left out.
+The three red states have a red border and icon. Their text keeps the normal text colour in light and dark themes.
+
+Each card carries a tag:
+
+| File | Tag |
+| --- | --- |
+| Text, with an extension of five characters or fewer | The extension in capitals, such as `MD`, `JS`, or `JSON`. |
+| Other text | `TEXT` |
+| Pasted text | `PASTED` |
+| Word or Excel | `DOCX` or `XLSX`, even without an extension. |
+
+Click a text card, or focus it and press Enter, to open the full text in a viewer with Copy and Close buttons. For a Word or Excel file, the viewer shows exactly the text that the model receives after the file's label, including any note about rows or characters left out.
 
 You can send while red cards are showing. Only ready and text attachments are sent, and every card that was in the composer when you sent, red ones included, clears with the draft. The send button appears once there is text or at least one ready or text attachment, and stays hidden while files are uploading or being checked.
 
 ### Large files
 
-An attachment over 10 MB (10,000,000 bytes) that isn't red gets an amber edge and a **Large file** tag. Its tooltip, also read by screen readers as the card's description, says "Large file (11.2 MB). In long chats, older files may be left out to keep requests small." The file is still sent; the hint refers to the server's [size limit](/chat/overview#size-limit) on each model request. Word and Excel files never get the tag: the model receives only their text, which is capped, not the original file.
+An attachment over 10 MB (10,000,000 bytes) that isn't red gets an amber edge and a **Large file** tag.
+
+- **Tooltip.** The tooltip says "Large file (11.2 MB). In long chats, older files may be left out to keep requests small." Screen readers read it as the card's description.
+- **The file is still sent.** The hint refers to the server's [size limit](/chat/overview#size-limit) on each model request.
+- **Word and Excel files never get the tag.** The model receives only their text, which is capped, not the original file.
 
 ### Sent messages
 
-A sent `file-reference` part shows the same text card for text attachments, named by the part's `filename` and opening the same viewer. For an asset with a stored [`text` field](/chat/overview#chat-assets), such as a Word or Excel file, the card uses that text and the file itself isn't downloaded; one stored without text shows a download link until a turn reads it. Images show the image; PDFs, audio, and video show a download link with the file name. Either kind gets the large-file tag over 10 MB, except a Word or Excel text card. While the file loads, the part shows "Loading attachment"; if it can't be loaded, or the adapter has no `readAttachment`, "Attachment unavailable".
+A sent `file-reference` part shows one of these:
+
+| Attachment | Shows |
+| --- | --- |
+| Text | The same text card, named by the part's `filename`, which opens the same viewer. |
+| An asset with a stored [`text` field](/chat/overview#chat-assets), such as a Word or Excel file | A text card that uses that text. The file itself isn't downloaded. An asset stored without text shows a download link until a turn reads it. |
+| Image | The image. |
+| PDF, audio, or video | A download link with the file name. |
+
+A sent attachment over 10 MB gets the large-file tag, except a Word or Excel text card.
+
+While the file loads, the part shows "Loading attachment". If the file can't be loaded, or the adapter has no `readAttachment`, the part shows "Attachment unavailable".
 
 ### Screen readers
 
@@ -570,7 +662,14 @@ Several refusals in one drop are announced together, separated by full stops.
 
 ### Pasted text
 
-Pasting more than 650 characters into the composer turns the paste into a **Pasted text** card tagged `PASTED`; a paste of 650 characters or fewer stays in the input. With upload storage (an adapter with `uploadAttachment`), the text is uploaded as a plain-text asset named `pasted-<time>.txt` and sent as a `file-reference` part with `filename: 'Pasted text'` and `origin: 'paste'`. FrogBot sets no size limit on pasted text. A composer without upload storage keeps the text in the browser and sends it as a [`data-paste` part](#message-data-parts) instead. Either way, the agent receives `Pasted text:` followed by the text.
+Pasting more than 650 characters into the composer turns the paste into a **Pasted text** card tagged `PASTED`. A paste of 650 characters or fewer stays in the input. FrogBot sets no size limit on pasted text.
+
+| Composer | What is sent |
+| --- | --- |
+| With upload storage (an adapter with `uploadAttachment`) | The text is uploaded as a plain-text asset named `pasted-<time>.txt` and sent as a `file-reference` part with `filename: 'Pasted text'` and `origin: 'paste'`. |
+| Without upload storage | The text stays in the browser and is sent as a [`data-paste` part](#message-data-parts). |
+
+Either way, the agent receives `Pasted text:` followed by the text.
 
 ## Message data parts
 
@@ -589,7 +688,13 @@ A `data-paste` part holds pasted text inline. The composer sends one only when i
 
 ## Voice input
 
-The composer shows a microphone when the `ChatProvider` adapter has `transcribe` and its manifest sets `transcribe`. With the REST adapter, that is when [`ai.transcriptionModel`](/ai/overview#ai-options) is set, the signed-in user may transcribe with it, and the browser supports `MediaRecorder` and microphone access. Tap once to record and again to transcribe. The resulting text is appended to the current draft.
+The composer shows a microphone when the `ChatProvider` adapter has `transcribe` and its manifest sets `transcribe`. With the REST adapter, that needs all of these:
+
+- [`ai.transcriptionModel`](/ai/overview#ai-options) is set.
+- The signed-in user may transcribe with it.
+- The browser supports `MediaRecorder` and microphone access.
+
+Tap once to record and again to transcribe. The resulting text is appended to the current draft.
 
 ```ts
 ai: {
@@ -606,7 +711,9 @@ Permission, access, network, and empty-audio failures appear beside the micropho
 
 ## Read aloud
 
-Each AI reply gets a **Read aloud** button next to Copy when the `ChatProvider` adapter has `speak` and its manifest sets `speak`. With the REST adapter, that is when [`ai.speechModel`](/ai/overview#ai-options) is set and the signed-in user may generate with it. Set [`ai.speechVoice`](/ai/overview#ai-options) to pick a voice; without it the provider's default voice is used.
+Each AI reply gets a **Read aloud** button next to Copy when the `ChatProvider` adapter has `speak` and its manifest sets `speak`. With the REST adapter, that is when [`ai.speechModel`](/ai/overview#ai-options) is set and the signed-in user may generate with it.
+
+Set [`ai.speechVoice`](/ai/overview#ai-options) to pick a voice. Without it, the provider's default voice is used.
 
 ```ts
 ai: {
@@ -615,6 +722,11 @@ ai: {
 }
 ```
 
-Click the button to hear the reply and again to stop. Starting another reply stops the first, and so do switching chat or editing a message. Markdown formatting, images and code are skipped, and a reply that is only code has no button. Long replies are read in parts of up to 4,000 characters, each fetched while the one before it plays. Replaying the last reply uses the audio already fetched.
+Click the button to hear the reply, and again to stop.
+
+- Starting another reply stops the first, and so do switching chat or editing a message.
+- Markdown formatting, images, and code are skipped. A reply that is only code has no button.
+- Long replies are read in parts of up to 4,000 characters, each fetched while the one before it plays.
+- Replaying the last reply uses the audio already fetched.
 
 Speech spends under [`ai.access.generate`](/ai/overview#control-access), the rule checked for the speech model. For an alias, the rule receives the model behind the alias, so with the [AI policy plugin](/plugins/ai-policy) the user's `models` list must include that model. A failed request shows a short message beside the button.

@@ -62,16 +62,18 @@ export type SupportedTimezones =
   | 'Pacific/Fiji';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "LexicalNodes_2F5C3515".
+ * via the `definition` "LexicalNodes_EDD1118A".
  */
-export type LexicalNodes_2F5C3515 =
+export type LexicalNodes_EDD1118A =
   | SerializedTextNode
   | SerializedTabNode
   | SerializedLineBreakNode
-  | SerializedParagraphNode<LexicalNodes_2F5C3515>
+  | SerializedParagraphNode<LexicalNodes_EDD1118A>
   | SerializedHorizontalRuleNode
   | SerializedUploadNode<'media'>
-  | SerializedQuoteNode<LexicalNodes_2F5C3515>
+  | SerializedUploadNode<'exports'>
+  | SerializedUploadNode<'imports'>
+  | SerializedQuoteNode<LexicalNodes_EDD1118A>
   | SerializedRelationshipNode<
       | 'companies'
       | 'contacts'
@@ -79,14 +81,16 @@ export type LexicalNodes_2F5C3515 =
       | 'activities'
       | 'tasks'
       | 'users'
+      | 'audit-logs'
+      | 'usage-logs'
       | 'frogbot-waitpoints'
       | 'folders'
     >
-  | SerializedAutoLinkNode<LexicalNodes_2F5C3515, LexicalLinkFields>
-  | SerializedLinkNode<LexicalNodes_2F5C3515, LexicalLinkFields>
-  | SerializedListNode<LexicalNodes_2F5C3515>
-  | SerializedListItemNode<LexicalNodes_2F5C3515>
-  | SerializedHeadingNode<LexicalNodes_2F5C3515>;
+  | SerializedAutoLinkNode<LexicalNodes_EDD1118A, LexicalLinkFields>
+  | SerializedLinkNode<LexicalNodes_EDD1118A, LexicalLinkFields>
+  | SerializedListNode<LexicalNodes_EDD1118A>
+  | SerializedListItemNode<LexicalNodes_EDD1118A>
+  | SerializedHeadingNode<LexicalNodes_EDD1118A>;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "LexicalNodes_3DE324E4".
@@ -113,6 +117,10 @@ export interface Config {
     tasks: Task;
     users: User;
     media: Media;
+    exports: Export;
+    imports: Import;
+    'audit-logs': AuditLog;
+    'usage-logs': UsageLog;
     'frogbot-waitpoints': FrogBotWaitpoint;
     folders: Folder;
   };
@@ -125,6 +133,10 @@ export interface Config {
     tasks: TasksSelect;
     users: UsersSelect;
     media: MediaSelect;
+    exports: ExportsSelect;
+    imports: ImportsSelect;
+    'audit-logs': AuditLogsSelect;
+    'usage-logs': UsageLogsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
     folders: FoldersSelect;
   };
@@ -145,6 +157,9 @@ export interface Config {
   user: User;
   jobs: {
     tasks: {
+      createCollectionExport: TaskCreateCollectionExport;
+      createCollectionImport: TaskCreateCollectionImport;
+      'plugin-ai-policy-reset-spend': TaskPluginAiPolicyResetSpend;
       'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
       'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
@@ -154,6 +169,7 @@ export interface Config {
     };
     workflows: unknown;
   };
+  roles: 'admin' | 'manager' | 'member';
 }
 export interface UserAuthOperations {
   forgotPassword: {
@@ -199,7 +215,7 @@ export interface Company {
   website?: string | null;
   employees?: number | null;
   owner?: (number | null) | User;
-  notes?: LexicalRichText<LexicalNodes_2F5C3515> | null;
+  notes?: LexicalRichText<LexicalNodes_EDD1118A> | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -278,6 +294,64 @@ export interface Folder {
 export interface User {
   id: number;
   name?: string | null;
+  /**
+   * Leave empty to allow all models.
+   */
+  models?:
+    | (
+        | 'openai/gpt-4.1'
+        | 'openai/gpt-4.1-mini'
+        | 'openai/gpt-4o'
+        | 'openai/gpt-4o-2024-08-06'
+        | 'openai/gpt-4o-2024-11-20'
+        | 'openai/gpt-4o-mini'
+        | 'openai/gpt-4o-mini-transcribe'
+        | 'openai/gpt-4o-transcribe'
+        | 'openai/gpt-5'
+        | 'openai/gpt-5-mini'
+        | 'openai/gpt-5-nano'
+        | 'openai/gpt-5-pro'
+        | 'openai/gpt-5.1'
+        | 'openai/gpt-5.2'
+        | 'openai/gpt-5.2-pro'
+        | 'openai/gpt-5.3-codex'
+        | 'openai/gpt-5.3-codex-spark'
+        | 'openai/gpt-5.4'
+        | 'openai/gpt-5.4-mini'
+        | 'openai/gpt-5.4-nano'
+        | 'openai/gpt-5.4-pro'
+        | 'openai/gpt-5.5'
+        | 'openai/gpt-5.5-pro'
+        | 'openai/gpt-5.6'
+        | 'openai/gpt-5.6-luna'
+        | 'openai/gpt-5.6-sol'
+        | 'openai/gpt-5.6-terra'
+        | 'openai/gpt-6-astra'
+        | 'openai/gpt-6-luna'
+        | 'openai/gpt-6-sol'
+        | 'openai/gpt-6.1-sol'
+        | 'openai/gpt-6.1-terra'
+        | 'openai/gpt-daybreak-blue-latest'
+        | 'openai/gpt-daybreak-red-latest'
+        | 'openai/gpt-image-2'
+        | 'openai/gpt-realtime-2.1'
+        | 'openai/o3'
+        | 'openai/o3-pro'
+        | 'openai/text-embedding-3-large'
+        | 'openai/text-embedding-3-small'
+        | 'openai/text-embedding-ada-002'
+        | 'openai/whisper-1'
+      )[]
+    | null;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
+  monthlyBudget?: number | null;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
+  spendThisPeriodUSD?: number | null;
+  roles?: ('admin' | 'manager' | 'member')[] | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -353,7 +427,7 @@ export interface Deal {
   amount?: number | null;
   closeDate?: string | null;
   owner?: (number | null) | User;
-  notes?: LexicalRichText<LexicalNodes_2F5C3515> | null;
+  notes?: LexicalRichText<LexicalNodes_EDD1118A> | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -379,7 +453,7 @@ export interface Activity {
   deal?: (number | null) | Deal;
   contacts?: (number | Contact)[] | null;
   owner?: (number | null) | User;
-  notes?: LexicalRichText<LexicalNodes_2F5C3515> | null;
+  notes?: LexicalRichText<LexicalNodes_EDD1118A> | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -415,6 +489,195 @@ export interface Task {
     relationTo: 'users';
     value: number | User;
   } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "exports".
+ */
+export interface Export {
+  id: number;
+  name?: string | null;
+  format: 'csv' | 'json';
+  limit?: number | null;
+  page?: number | null;
+  sort?: string | null;
+  sortOrder?: ('asc' | 'desc') | null;
+  drafts?: ('yes' | 'no') | null;
+  selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null;
+  fields?: string[] | null;
+  collectionSlug: string;
+  where?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+  };
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "imports".
+ */
+export interface Import {
+  id: number;
+  collectionSlug: string;
+  importMode?: ('create' | 'update' | 'upsert') | null;
+  matchField?: string | null;
+  status?: ('pending' | 'completed' | 'partial' | 'failed') | null;
+  summary?: {
+    imported?: number | null;
+    updated?: number | null;
+    total?: number | null;
+    issues?: number | null;
+    issueDetails?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  columnMap?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  headerKey?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+  };
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs".
+ */
+export interface AuditLog {
+  id: number;
+  collection: string;
+  operation: 'create' | 'update' | 'delete';
+  documentId: string;
+  user?: (number | null) | User;
+  apiKeyId?: string | null;
+  changes:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  snapshot?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  timestamp: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs".
+ */
+export interface UsageLog {
+  id: number;
+  user?: (number | null) | User;
+  requestId: string;
+  runId?: string | null;
+  model: string;
+  operation:
+    | 'chat.completions'
+    | 'messages'
+    | 'responses'
+    | 'embeddings'
+    | 'images'
+    | 'speech'
+    | 'transcriptions'
+    | 'videos'
+    | 'rerank'
+    | 'evaluate';
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens?: number | null;
+  cacheWriteTokens?: number | null;
+  reasoningTokens?: number | null;
+  totalTokens: number;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
+  costUSD: number;
+  finishReason?: string | null;
+  requestedAt: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -548,6 +811,10 @@ export interface TasksSelect {
  */
 export interface UsersSelect {
   name?: boolean;
+  models?: boolean;
+  monthlyBudget?: boolean;
+  spendThisPeriodUSD?: boolean;
+  roles?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
@@ -603,6 +870,132 @@ export interface MediaSelect {
       };
   focalX?: boolean;
   focalY?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "exports_select".
+ */
+export interface ExportsSelect {
+  name?: boolean;
+  format?: boolean;
+  limit?: boolean;
+  page?: boolean;
+  sort?: boolean;
+  sortOrder?: boolean;
+  drafts?: boolean;
+  selectionToUse?: boolean;
+  fields?: boolean;
+  collectionSlug?: boolean;
+  where?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  url?: boolean;
+  thumbnailURL?: boolean;
+  filename?: boolean;
+  mimeType?: boolean;
+  filesize?: boolean;
+  width?: boolean;
+  height?: boolean;
+  original?:
+    | boolean
+    | {
+        filename?: boolean;
+        url?: boolean;
+        mimeType?: boolean;
+        filesize?: boolean;
+        width?: boolean;
+        height?: boolean;
+        prefix?: boolean;
+        _objectKey?: boolean;
+      };
+  focalX?: boolean;
+  focalY?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "imports_select".
+ */
+export interface ImportsSelect {
+  collectionSlug?: boolean;
+  importMode?: boolean;
+  matchField?: boolean;
+  status?: boolean;
+  summary?:
+    | boolean
+    | {
+        imported?: boolean;
+        updated?: boolean;
+        total?: boolean;
+        issues?: boolean;
+        issueDetails?: boolean;
+      };
+  columnMap?: boolean;
+  headerKey?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  url?: boolean;
+  thumbnailURL?: boolean;
+  filename?: boolean;
+  mimeType?: boolean;
+  filesize?: boolean;
+  width?: boolean;
+  height?: boolean;
+  original?:
+    | boolean
+    | {
+        filename?: boolean;
+        url?: boolean;
+        mimeType?: boolean;
+        filesize?: boolean;
+        width?: boolean;
+        height?: boolean;
+        prefix?: boolean;
+        _objectKey?: boolean;
+      };
+  focalX?: boolean;
+  focalY?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs_select".
+ */
+export interface AuditLogsSelect {
+  collection?: boolean;
+  operation?: boolean;
+  documentId?: boolean;
+  user?: boolean;
+  apiKeyId?: boolean;
+  changes?: boolean;
+  snapshot?: boolean;
+  timestamp?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs_select".
+ */
+export interface UsageLogsSelect {
+  user?: boolean;
+  requestId?: boolean;
+  runId?: boolean;
+  model?: boolean;
+  operation?: boolean;
+  inputTokens?: boolean;
+  outputTokens?: boolean;
+  cachedInputTokens?: boolean;
+  cacheWriteTokens?: boolean;
+  reasoningTokens?: boolean;
+  totalTokens?: boolean;
+  costUSD?: boolean;
+  finishReason?: boolean;
+  requestedAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -674,6 +1067,10 @@ export interface CollectionQueryWidget {
       | 'tasks'
       | 'users'
       | 'media'
+      | 'exports'
+      | 'imports'
+      | 'audit-logs'
+      | 'usage-logs'
       | 'folders';
     where?:
       | {
@@ -705,6 +1102,10 @@ export interface ActivityWidget {
           | 'tasks'
           | 'users'
           | 'media'
+          | 'exports'
+          | 'imports'
+          | 'audit-logs'
+          | 'usage-logs'
           | 'folders'
         )[]
       | null;
@@ -717,9 +1118,76 @@ export interface ActivityWidget {
  */
 export interface UploadDropzoneWidget {
   data?: {
-    excludedCollections?: 'media'[] | null;
+    excludedCollections?: ('media' | 'exports' | 'imports')[] | null;
   };
   width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskCreateCollectionExport".
+ */
+export interface TaskCreateCollectionExport {
+  input: {
+    id: string;
+    name: string;
+    batchSize?: number | null;
+    collectionSlug:
+      | 'companies'
+      | 'contacts'
+      | 'deals'
+      | 'activities'
+      | 'tasks'
+      | 'users'
+      | 'media'
+      | 'exports'
+      | 'imports';
+    drafts?: ('yes' | 'no') | null;
+    exportCollection: string;
+    fields?: string[] | null;
+    format: 'csv' | 'json';
+    limit?: number | null;
+    locale?: string | null;
+    maxLimit?: number | null;
+    page?: number | null;
+    sort?: string | null;
+    userCollection?: string | null;
+    userID?: string | null;
+    where?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskCreateCollectionImport".
+ */
+export interface TaskCreateCollectionImport {
+  input: {
+    importId: string;
+    importCollection: string;
+    userID?: string | null;
+    userCollection?: string | null;
+    batchSize?: number | null;
+    debug?: boolean | null;
+    defaultVersionStatus?: ('draft' | 'published') | null;
+    maxLimit?: number | null;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskPluginAiPolicyResetSpend".
+ */
+export interface TaskPluginAiPolicyResetSpend {
+  input?: unknown;
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -913,6 +1381,48 @@ export interface LexicalRichText<TNode> {
 declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {};
-    models: never;
+    models:
+      | 'openai/gpt-4.1'
+      | 'openai/gpt-4.1-mini'
+      | 'openai/gpt-4o'
+      | 'openai/gpt-4o-2024-08-06'
+      | 'openai/gpt-4o-2024-11-20'
+      | 'openai/gpt-4o-mini'
+      | 'openai/gpt-4o-mini-transcribe'
+      | 'openai/gpt-4o-transcribe'
+      | 'openai/gpt-5'
+      | 'openai/gpt-5-mini'
+      | 'openai/gpt-5-nano'
+      | 'openai/gpt-5-pro'
+      | 'openai/gpt-5.1'
+      | 'openai/gpt-5.2'
+      | 'openai/gpt-5.2-pro'
+      | 'openai/gpt-5.3-codex'
+      | 'openai/gpt-5.3-codex-spark'
+      | 'openai/gpt-5.4'
+      | 'openai/gpt-5.4-mini'
+      | 'openai/gpt-5.4-nano'
+      | 'openai/gpt-5.4-pro'
+      | 'openai/gpt-5.5'
+      | 'openai/gpt-5.5-pro'
+      | 'openai/gpt-5.6'
+      | 'openai/gpt-5.6-luna'
+      | 'openai/gpt-5.6-sol'
+      | 'openai/gpt-5.6-terra'
+      | 'openai/gpt-6-astra'
+      | 'openai/gpt-6-luna'
+      | 'openai/gpt-6-sol'
+      | 'openai/gpt-6.1-sol'
+      | 'openai/gpt-6.1-terra'
+      | 'openai/gpt-daybreak-blue-latest'
+      | 'openai/gpt-daybreak-red-latest'
+      | 'openai/gpt-image-2'
+      | 'openai/gpt-realtime-2.1'
+      | 'openai/o3'
+      | 'openai/o3-pro'
+      | 'openai/text-embedding-3-large'
+      | 'openai/text-embedding-3-small'
+      | 'openai/text-embedding-ada-002'
+      | 'openai/whisper-1';
   }
 }

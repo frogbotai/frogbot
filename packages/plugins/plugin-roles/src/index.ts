@@ -1,4 +1,5 @@
 import {
+  type CollectionAccess,
   type CollectionConfig,
   definePlugin,
   type Field,
@@ -124,6 +125,73 @@ function bindFields(
   });
 }
 
+function bindCollectionAccess(
+  access: CollectionAccess | undefined,
+  listed: ReadonlySet<string>,
+  resolver: RoleResolver,
+  isPolymorphic: (field: string) => boolean,
+): CollectionAccess | undefined {
+  if (!access) return undefined;
+
+  return Object.fromEntries(
+    Object.entries(access).map(([operation, value]) => {
+      if (!isCompiledAccess(value)) return [operation, value];
+
+      for (const clause of value[compiledAccess].clauses) {
+        const role =
+          typeof clause === 'string'
+            ? clause
+            : typeof clause === 'object'
+              ? clause.role
+              : undefined;
+
+        if (role && !listed.has(role)) {
+          throw new Error(`[plugin-roles] Role '${role}' is not listed in rolesPlugin().`);
+        }
+      }
+
+      const polymorphicOwnFields = new Set(
+        value[compiledAccess].clauses.flatMap((clause) =>
+          typeof clause === 'object' && isPolymorphic(clause.own) ? [clause.own] : [],
+        ),
+      );
+
+      return [
+        operation,
+        bindCompiledAccess(value, { operation, polymorphicOwnFields, resolver, roles: listed }),
+      ];
+    }),
+  );
+}
+
+function bindJobs(
+  jobs: NonNullable<FrogBotConfig['jobs']>,
+  listed: ReadonlySet<string>,
+  resolver: RoleResolver,
+): NonNullable<FrogBotConfig['jobs']> {
+  const overrides = jobs.jobsCollectionOverrides;
+  if (!overrides) return jobs;
+
+  return {
+    ...jobs,
+    jobsCollectionOverrides: (args) => {
+      const collection = overrides(args);
+
+      for (const value of Object.values(collection.access ?? {})) {
+        if (!isCompiledAccess(value)) continue;
+        if (value[compiledAccess].clauses.some((clause) => typeof clause === 'object')) {
+          throw new Error('[plugin-roles] own clauses cannot be used on the jobs collection.');
+        }
+      }
+
+      return {
+        ...collection,
+        access: bindCollectionAccess(collection.access, listed, resolver, () => false),
+      };
+    },
+  };
+}
+
 function bindAccess(
   config: FrogBotConfig,
   roleSlugs: readonly string[],
@@ -132,47 +200,11 @@ function bindAccess(
   const listed = new Set(roleSlugs);
   const collections = config.collections.map((collection) => {
     const fields = namedFields(collection.fields);
-    const access = collection.access
-      ? Object.fromEntries(
-          Object.entries(collection.access).map(([operation, value]) => {
-            if (!isCompiledAccess(value)) return [operation, value];
+    const access = bindCollectionAccess(collection.access, listed, resolver, (own) => {
+      const field = fields.find(({ name }) => name === own);
 
-            for (const clause of value[compiledAccess].clauses) {
-              const role =
-                typeof clause === 'string'
-                  ? clause
-                  : typeof clause === 'object'
-                    ? clause.role
-                    : undefined;
-
-              if (role && !listed.has(role)) {
-                throw new Error(`[plugin-roles] Role '${role}' is not listed in rolesPlugin().`);
-              }
-            }
-
-            const polymorphicOwnFields = new Set(
-              value[compiledAccess].clauses.flatMap((clause) => {
-                if (typeof clause !== 'object') return [];
-                const field = fields.find(({ name }) => name === clause.own);
-
-                return field?.type === 'relationship' && Array.isArray(field.relationTo)
-                  ? [clause.own]
-                  : [];
-              }),
-            );
-
-            return [
-              operation,
-              bindCompiledAccess(value, {
-                operation,
-                polymorphicOwnFields,
-                resolver,
-                roles: listed,
-              }),
-            ];
-          }),
-        )
-      : undefined;
+      return field?.type === 'relationship' && Array.isArray(field.relationTo);
+    });
 
     const create = collection.access?.create;
     const own = isCompiledAccess(create)
@@ -215,7 +247,11 @@ function bindAccess(
     };
   });
 
-  return { ...config, collections };
+  return {
+    ...config,
+    collections,
+    ...(config.jobs ? { jobs: bindJobs(config.jobs, listed, resolver) } : {}),
+  };
 }
 
 function distance(left: string, right: string): number {

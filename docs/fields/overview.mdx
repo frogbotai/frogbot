@@ -63,6 +63,7 @@ Pre-built field factories exported from `frogbot/fields`:
 - [AI](/fields/ai) (`aiTextField`, `aiTextareaField`, `aiSelectField`) for AI-generated fields from sibling inputs
 - [Autonumber](/fields/autonumber) (`autonumberField`) for sequential record numbers
 - [Barcode](/fields/barcode) (`barcodeField`) for GTIN, EAN, UPC, and ISBN codes
+- [Color](/fields/color) (`colorField`) for hex colors with swatches and a color picker
 - [Duration](/fields/duration) (`durationField`) for elapsed time values
 - [Money](/fields/money) (`moneyField`) for currency amounts stored in minor units
 - [Percent](/fields/percent) (`percentField`) for percentage values
@@ -126,7 +127,13 @@ export const AuthorName: Field = {
 
 #### Display in the admin
 
-In List, Board and Calendar, a string path virtual field shows its value the way the field at the end of the path shows it. A path to a [money](/fields/money) field shows a money amount, a path to a select or radio with [option colors](/fields/select#option-colors) shows the coloured pill, and a path to a date uses that date field's display format. An empty value shows what the source field shows when it is empty, so an empty money amount shows nothing, and `0` shows as zero (`$0.00`).
+In List, Board, and Calendar, a string path virtual field shows its value the way the field at the end of the path shows it:
+
+- A path to a [money](/fields/money) field shows a money amount.
+- A path to a select or radio with [option colors](/fields/select#option-colors) shows the coloured pill.
+- A path to a date uses that date field's display format.
+
+An empty value shows what the source field shows when it is empty. An empty money amount shows nothing, and `0` shows as zero (`$0.00`).
 
 ```ts
 import { moneyField, type CollectionConfig } from 'frogbot'
@@ -804,7 +811,12 @@ Do not construct this request yourself or use a fallback instance lookup. Compon
 
 #### Field component types
 
-Each field family exports the props its components receive from `frogbot`: `*FieldClientProps` and `*FieldServerProps`, plus `*FieldLabel*Props`, `*FieldDescription*Props`, `*FieldError*Props` and `*FieldDiff*Props`. Type a component by its props, as in `({ field }: TextFieldServerProps) => …`. UI fields do not have label, description, or error props; Blocks fields additionally provide `BlockRowLabelServerProps` and `BlockRowLabelClientProps`.
+Each field family exports the props that its components receive from `frogbot`:
+
+- `*FieldClientProps` and `*FieldServerProps`.
+- `*FieldLabel*Props`, `*FieldDescription*Props`, `*FieldError*Props`, and `*FieldDiff*Props`.
+
+Type a component by its props, as in `({ field }: TextFieldServerProps) => …`. UI fields do not have label, description, or error props. Blocks fields also provide `BlockRowLabelServerProps` and `BlockRowLabelClientProps`.
 
 ```tsx
 import type {
@@ -826,7 +838,7 @@ A list view with [`editable`](/admin/collection-list#editing-cells-in-place) edi
 - Make the input the first focusable element. The cell focuses it when the edit starts, and a key that started the edit is typed into it when it is a text input.
 - Leave Enter, Esc and Tab to the cell: Enter saves, Esc cancels and Tab moves on. A control that uses Enter itself calls `event.preventDefault()` while it does, and the cell lets it. Esc first closes an open select menu, date picker or `Popup`, so render a control's menu with one of those. Tab always saves and moves on.
 
-FrogBot's field kinds follow the same rules, so `moneyField`, `percentField`, `ratingField`, `durationField`, `urlField`, `phoneField`, `barcodeField` and `aiField` edit in cells with no extra config. `autonumberField` stays read-only.
+FrogBot's field kinds follow the same rules, so `moneyField`, `percentField`, `ratingField`, `durationField`, `urlField`, `phoneField`, `barcodeField`, `colorField` and `aiField` edit in cells with no extra config. `autonumberField` stays read-only.
 
 ### Cell
 

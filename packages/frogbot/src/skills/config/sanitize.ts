@@ -48,46 +48,48 @@ export function sanitizeSkills(agentSlug: string, skills: readonly SkillConfig[]
       );
     }
 
-    if (skill.resources === undefined) continue;
+    if (skill.resources === undefined || typeof skill.resources === 'function') continue;
     if (!Array.isArray(skill.resources)) {
       throw new Error(
-        `[frogbot] Agent '${agentSlug}' skill '${skill.slug}' resources must be an array.`,
+        `[frogbot] Agent '${agentSlug}' skill '${skill.slug}' resources must be an array or a function.`,
       );
     }
 
-    const paths = new Set<string>();
+    const error = skillResourcesError(skill.slug, skill.resources);
+    if (error) throw new Error(`[frogbot] Agent '${agentSlug}' ${error}`);
+  }
+}
 
-    for (const resource of skill.resources) {
-      if (!isRecord(resource) || typeof resource.path !== 'string' || !resource.path.trim()) {
-        throw new Error(
-          `[frogbot] Agent '${agentSlug}' skill '${skill.slug}' has a resource missing a path.`,
-        );
-      }
+/** Returns why a skill's resource list is invalid, or `undefined` when every entry is valid. */
+export function skillResourcesError(skillSlug: string, resources: unknown): string | undefined {
+  if (!Array.isArray(resources)) return `skill '${skillSlug}' resources must be an array.`;
 
-      if (paths.has(resource.path)) {
-        throw new Error(
-          `[frogbot] Duplicate resource path '${resource.path}' in skill '${skill.slug}'.`,
-        );
-      }
+  const paths = new Set<string>();
 
-      paths.add(resource.path);
-      if (
-        resource.description !== undefined &&
-        (typeof resource.description !== 'string' || !resource.description.trim())
-      ) {
-        throw new Error(
-          `[frogbot] Agent '${agentSlug}' skill '${skill.slug}' resource '${resource.path}' description must be a non-empty string.`,
-        );
-      }
+  for (const resource of resources) {
+    if (!isRecord(resource) || typeof resource.path !== 'string' || !resource.path.trim()) {
+      return `skill '${skillSlug}' has a resource missing a path.`;
+    }
 
-      if (
-        typeof resource.content !== 'function' &&
-        (typeof resource.content !== 'string' || !resource.content.trim())
-      ) {
-        throw new Error(
-          `[frogbot] Agent '${agentSlug}' skill '${skill.slug}' resource '${resource.path}' requires content.`,
-        );
-      }
+    if (paths.has(resource.path)) {
+      return `skill '${skillSlug}' has a duplicate resource path '${resource.path}'.`;
+    }
+
+    paths.add(resource.path);
+    if (
+      resource.description !== undefined &&
+      (typeof resource.description !== 'string' || !resource.description.trim())
+    ) {
+      return `skill '${skillSlug}' resource '${resource.path}' description must be a non-empty string.`;
+    }
+
+    if (
+      typeof resource.content !== 'function' &&
+      (typeof resource.content !== 'string' || !resource.content.trim())
+    ) {
+      return `skill '${skillSlug}' resource '${resource.path}' requires content.`;
     }
   }
+
+  return undefined;
 }

@@ -45,13 +45,24 @@ You can store supplied vectors on ordinary records using a [vector field](/field
 | [MongoDB](/database/mongodb#collection-search) | Lexical, vector, and hybrid on deployments with a search process (Atlas or `mongot`) |
 | [Cloudflare D1](/database/sqlite#d1-collection-search) | Lexical (vector and hybrid are an engine gap) |
 
-Cloudflare D1 has no native vector search, so an index with `vector` fails setup there with an `engine-gap` error. On an adapter without search, any configured collection `search` index, including lexical-only, fails setup with a `not-implemented` error identifying the collection, index, and mode. On a MongoDB deployment without a search process, it fails with `missing-prerequisite` instead. With no search index configured, setup does not emit a search capability report.
+Setup fails in these cases:
+
+| Case | Error |
+| --- | --- |
+| An index with `vector` on Cloudflare D1, which has no native vector search. | `engine-gap` |
+| Any configured collection `search` index, including lexical-only, on an adapter without search. The error identifies the collection, index, and mode. | `not-implemented` |
+| A search index on a MongoDB deployment without a search process. | `missing-prerequisite` |
+
+With no search index configured, setup does not emit a search capability report.
 
 ## Selecting a database
 
 ### SQLite (`@frogbotai/db-sqlite`)
 
-SQLite is the default in `create-frogbot-app` and stores your entire database in a single local file (`file:./frogbot.db`) or a remote LibSQL/Turso database—with zero external database servers to run locally. When deploying to [Dojo](/plugins/dojo), `npx frogbot deploy` can bring your local SQLite data along on the first deploy. On Google Cloud, AWS and Azure, point `DATABASE_URL` at a hosted database instead: their disks are wiped on restart, so [`frogbot deploy`](/deployment/overview) refuses a local file.
+SQLite is the default in `create-frogbot-app`. It stores your entire database in a single local file (`file:./frogbot.db`) or in a remote LibSQL or Turso database, so you run no database server locally.
+
+- **Dojo.** When you deploy to [Dojo](/plugins/dojo), `npx frogbot deploy` can bring your local SQLite data along on the first deploy.
+- **Google Cloud, AWS, and Azure.** Point `DATABASE_URL` at a hosted database instead. Their disks are wiped on restart, so [`frogbot deploy`](/deployment/overview) refuses a local file.
 
 ```ts
 import { sqliteAdapter } from '@frogbotai/db-sqlite'

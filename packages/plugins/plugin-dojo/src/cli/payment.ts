@@ -1,8 +1,8 @@
 import type { DojoClient } from './dojo.js';
-import { dojoMessage, segment } from './dojo.js';
-import { ShareError } from './error.js';
+import { segment } from './dojo.js';
+import { dojoError, dojoStop, needsPayment, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
-import { say } from './io.js';
+import { canWait, say } from './io.js';
 
 const pollMs = 5000;
 const maxPolls = 360;
@@ -39,7 +39,7 @@ async function paid(dojo: DojoClient, paywall: Paywall): Promise<boolean> {
   const response = await dojo.request(`/api/workspaces/${segment(paywall.workspace)}?depth=0`);
 
   if (!response.ok) {
-    throw new ShareError(`Couldn't check the workspace's plan: ${await dojoMessage(response)}`);
+    throw await dojoStop(response, "Couldn't check the workspace's plan");
   }
 
   const workspace = (await response.json()) as {
@@ -67,9 +67,20 @@ function showPaywall(io: DojoIO, paywall: Paywall): void {
   if (io.isTTY && paywall.owner) io.openBrowser(paywall.url);
 }
 
+function paymentNeeded(paywall: Paywall): ShareError {
+  const who = paywall.owner ? 'Pay for it at' : 'Ask a workspace owner to pay for it at';
+
+  return new ShareError(
+    `${paywall.why} ${who} ${paywall.url}, then run the command again. Add --wait to wait for the payment here.`,
+    needsPayment,
+    { needs: 'payment', link: paywall.url },
+  );
+}
+
 /**
  * Sends a request that may need a paid app on Dojo. On a 402 with Dojo's upgrade link, shows the link, waits until
- * the workspace's plan pays for the app, then sends it again; any other reply is returned as it came.
+ * the workspace's plan pays for the app, then sends it again; any other reply is returned as it came. Without a
+ * terminal or `--wait` it exits 4 with the link instead of waiting.
  */
 export async function whenPaid(
   dojo: DojoClient,
@@ -84,9 +95,12 @@ export async function whenPaid(
 
     if (response.status !== 402) return response;
 
-    const paywall = readPaywall(await dojoMessage(response.clone()), dojo.url);
+    const refusal = await dojoError(response.clone());
+    const paywall = readPaywall(refusal.message, dojo.url);
 
     if (!paywall) return response;
+
+    if (!canWait(io)) throw paymentNeeded(paywall);
 
     if (paywall.url !== shown) {
       showPaywall(io, paywall);
@@ -99,6 +113,14 @@ export async function whenPaid(
       if (polls > maxPolls) {
         throw new ShareError(
           `Dojo still has no payment for this app after ${(maxPolls * pollMs) / 60_000} minutes. Once it's paid, share again.`,
+          1,
+          {
+            code:
+              refusal.body?.errors?.find((error) => error.data?.code)?.data?.code ??
+              'payment_required',
+            status: response.status,
+            url: paywall.url,
+          },
         );
       }
 

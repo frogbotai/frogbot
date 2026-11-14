@@ -108,17 +108,20 @@ describe('ListView', () => {
     const payload = { config: { routes: { admin: '/admin' } }, find, importMap: {} };
 
     function pageProps(overrides: Record<string, unknown> = {}) {
-      return listProps({
-        collectionConfig: {
-          admin: { components: {}, custom: { frogbot: { useAsDone: 'completed' } } },
-          slug: 'tasks',
-        },
-        collectionSlug: 'tasks',
-        params: { segments: ['collections', 'tasks'] },
-        payload,
+      return {
+        ...listProps({
+          collectionConfig: {
+            admin: { components: {}, custom: { frogbot: { useAsDone: 'completed' } } },
+            labels: { plural: 'Tasks' },
+            slug: 'tasks',
+          },
+          collectionSlug: 'tasks',
+          params: { segments: ['collections', 'tasks'] },
+          payload,
+          ...overrides,
+        }),
         server: { redirect: vi.fn() },
-        ...overrides,
-      });
+      };
     }
 
     function setup(saved?: Record<string, unknown>) {

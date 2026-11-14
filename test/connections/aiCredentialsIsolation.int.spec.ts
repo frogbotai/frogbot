@@ -226,7 +226,7 @@ describe(`Linked OpenAI keys stay with their user [${process.env.FROGBOT_DATABAS
       routeParams: { slug: 'support' },
       headers: new Headers({ 'content-type': 'application/json' }),
       json: () => Promise.resolve({ prompt: 'alice-rejected' }),
-    } as unknown as Parameters<typeof endpoint.handler>[0]);
+    });
 
     expect(keysFor('alice-rejected')).toEqual(['Bearer sk-alice']);
     expect(await response.json()).toEqual({

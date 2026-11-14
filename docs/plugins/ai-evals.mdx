@@ -1,0 +1,145 @@
+---
+title: AI evals
+description: Score an agent on saved test cases after a prompt, model or tool change, from the admin or CI.
+keywords: ["evals", "evaluation", "datasets", "scorers", "llm judge", "ci", "plugins"]
+---
+
+The evals plugin checks that an agent still answers well. You save test cases in a dataset, pick scorers written in code, and start a run. Each case runs the agent once and gets a score from 0 to 1 per scorer. The run keeps the totals, so you can compare it with earlier runs.
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-ai-evals
+```
+
+```ts
+import { checks, aiEvalsPlugin, judge } from '@frogbotai/plugin-ai-evals'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET!,
+  db: databaseAdapter,
+  collections: [{ slug: 'users', auth: true, fields: [] }],
+  ai: {
+    providers: {
+      openai: { apiKey: process.env.OPENAI_API_KEY },
+    },
+    smallModel: 'openai/gpt-4o-mini',
+  },
+  agents: [supportAgent],
+  plugins: [
+    aiEvalsPlugin({
+      scorers: {
+        usedLookup: checks.calledTool('findInvoices'),
+        grounded: judge({ rubric: 'Score 1 if every claim is backed by a tool result.' }),
+      },
+    }),
+  ],
+})
+```
+
+The plugin needs `ai` and at least one agent. It adds four collections in an **Evals** admin group:
+
+| Collection | Holds |
+| --- | --- |
+| `eval-datasets` | A `name`, the `agent` to run and the `scorers` to apply, chosen from the plugin's scorer names. |
+| `eval-cases` | A case of a dataset: the `input` prompt, an optional `expected` answer, `expectedTools` and `metadata`. |
+| `eval-runs` | One run of a dataset: its `model`, `status`, `total`, `passed`, `errored`, `score`, `scorerMeans` and timestamps. |
+| `eval-results` | One case's result in a run: the agent's `output`, `toolCalls`, `usage`, `durationMs`, any `error`, and its `scores`, with a copy of the case as it was. |
+
+## Run a dataset
+
+Create an `eval-runs` record for a dataset, in the admin or with the Local API. Creating it queues the `frogbot-eval-run` workflow on the `default` queue, so a [jobs runner](/jobs-queue/workers) must be running for admin-started runs. Editing a run queues nothing, and the run's own fields can't be changed after it's created.
+
+The run then:
+
+1. runs the dataset's agent on each case, `concurrency` cases at a time (default `5`), with the run's `model` if one is set;
+2. applies the dataset's scorers to each answer, in order, and saves one result per case;
+3. saves the totals and sets `status` to `completed`.
+
+`passed` counts the cases where every scorer gave 1. `scorerMeans` holds each scorer's mean over all cases, and `score` is the mean of those. A missing score counts as 0, so an errored case lowers every mean.
+
+A case's agent error, a scorer that throws, and a score outside 0–1 are saved on the result and the run goes on. Only a failed result write fails the run; its retry skips the cases already saved. Cases don't save a chat, so they don't show in chat lists or [training data](/chat/training-data).
+
+The `model` must be one of the agent's `model.options`. Another model refuses the run when it's created, before anything is queued. Leave it empty to use the agent's default. To compare two models, start a run for each.
+
+## Scorers
+
+A scorer receives the case and the answer and returns `{ score, reason? }`, sync or async:
+
+```ts
+import { defineScorer } from '@frogbotai/plugin-ai-evals'
+
+const short = defineScorer({
+  score: ({ output }) =>
+    output.length <= 280 ? { score: 1 } : { score: 0, reason: 'Longer than 280 characters.' },
+})
+```
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `input` | `string` | The case's prompt. |
+| `expected` | `string \| undefined` | The case's expected answer. |
+| `expectedTools` | `string[] \| undefined` | The case's expected tool names. |
+| `output` | `string` | The agent's final answer. |
+| `toolCalls` | `EvalToolCall[]` | Every tool call in step order: `{ toolName, input, output?, error? }`. |
+| `metadata` | `unknown` | The case's `metadata`. |
+| `req` | `FrogBotRequest` | The run's request, as the user who started it, or with no user. |
+| `overrideAccess` | `boolean` | `false` on a user's run, `true` on one with no user. Pass it to Local API and AI calls. |
+
+### Checks
+
+`checks` are scorers that give 0 or 1, with a reason when they fail:
+
+| Check | Scores 1 when |
+| --- | --- |
+| `checks.equals(text?)` | The trimmed answer equals `text`, or the case's `expected`. Errors on a case with neither. |
+| `checks.includes(text)` | The answer contains `text`, or every string in an array. |
+| `checks.matches(pattern)` | The answer matches the `RegExp`. |
+| `checks.calledTool(name)` | The agent called the tool. |
+| `checks.didNotCall(name)` | The agent never called the tool. |
+| `checks.toolOrder(names)` | The agent called the tools in this order, with other calls allowed between. |
+| `checks.maxToolCalls(max)` | The agent made at most `max` tool calls. |
+| `checks.noToolErrors()` | No tool call failed. |
+| `checks.expectedTools()` | The agent called every tool in the case's `expectedTools`. Errors on a case without any. |
+
+### Judge
+
+`judge({ rubric, model? })` asks a model to score the answer against your rubric. It makes one `generateText` call per case with the rubric, the question, the expected answer, the tool calls, and the answer. It reads back a score and a reason.
+
+It uses `model`, or `ai.smallModel` when `model` is unset. With neither, the config throws.
+
+The judge's calls are normal AI calls: they're metered in [usage logs](/gateway/hooks#track-usage) and checked against [`ai.access`](/ai/overview#control-access) for the run's user. A dataset of 200 cases with one judge costs 200 agent runs plus 200 judge calls per run.
+
+## Run from CI
+
+`aiEvalsPlugin()` adds the `evals:run` command to the FrogBot CLI:
+
+```bash
+frogbot evals:run billing --model openai/gpt-4o-mini --min-score 0.8
+```
+
+It creates a run of the dataset named, or with the ID, `billing`, runs it in this process with no jobs runner needed, and prints each scorer's mean and the score. It exits 1 when any case errored, the run failed, or the score is below `--min-score`.
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| `--model` | model ID | The agent's default | One of the agent's models to run the cases on. |
+| `--min-score` | number from 0 to 1 | — | Exit 1 when the run's score is below it. |
+
+## Access
+
+The plugin sets no access on its collections; pass `access` to set your own, applied to all four. Without it, any signed-in user can read and write them.
+
+A run started by a user runs as that user: the agent's `access`, its tools' `access` and `ai.access` apply, as in chat. A run with no user, such as one from `evals:run` or a Local API call without `req`, runs trusted with `overrideAccess: true`.
+
+## Real tools
+
+Cases run the agent's real tools. A case such as "Email the customer their invoice" sends that email on every run. Run evals against test data and test accounts, or leave tools with side effects off the agent you evaluate.
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `scorers` | `Record<string, Scorer>` | Required | Scorers by name, from `defineScorer()`, `checks` or `judge()`. A dataset picks from these names. Must not be empty. |
+| `concurrency` | `number` | `5` | Cases a run scores at once. Must be a positive integer. |
+| `access` | `CollectionAccess` | None | Access for the four collections. |
