@@ -5,7 +5,7 @@ export async function continuedTo(response: Response) {
   expect(response.status).toBe(200);
   expect(response.headers.get('location')).toBeNull();
   expect(response.headers.get('content-type')).toBe('text/html; charset=utf-8');
-  expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+  expect(response.headers.get('referrer-policy')).toBe('strict-origin');
 
   const url = /<meta http-equiv="refresh" content="0;url=([^"]*)">/.exec(
     await response.text(),

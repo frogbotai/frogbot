@@ -528,7 +528,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       expect(response.status).toBe(200);
       expect(response.headers.get('cache-control')).toBe('no-store');
       expect(response.headers.get('x-content-type-options')).toBe('nosniff');
-      expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+      expect(response.headers.get('referrer-policy')).toBe('strict-origin');
       expect(response.headers.get('content-security-policy')).toBe(
         `default-src 'none'; base-uri 'none'; frame-ancestors 'none'; style-src 'sha256-${createHash('sha256').update(css).digest('base64')}'`,
       );
