@@ -40,6 +40,7 @@ export async function ConnectionsView({ initPageResult, payload }: AdminViewServ
       id: row.id,
       piece: row.piece,
       method: row.method,
+      isDefault: row.isDefault,
       status: row.status,
       scopes: row.scopes,
       expiresAt: row.expiresAt,

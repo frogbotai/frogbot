@@ -117,9 +117,17 @@ Before a key is saved, FrogBot checks it with the piece's model listing, and the
 1. Sign in to the admin panel and open **Settings → Linked accounts**.
 2. Select **New Connection**, then choose an integration.
 3. Authorize with OAuth or enter the requested credential fields. When both methods are enabled, choose **OAuth** or **Static credentials**. A piece can name its OAuth method, as OpenAI's **ChatGPT** does.
-4. View the linked account and its status in the list. Use the row menu's **Disconnect** action to remove it.
+4. View your accounts grouped by integration, each with its status. To link a second account, select **New Connection** again and choose the same integration. The row menu has **Set as default**, **Reconnect** and **Disconnect**.
 
-The page is available at `/admin/settings/connections` with the default admin route. FrogBot adds it automatically when `connections` is non-empty, and the same view is the default view of the `connections` collection at `/admin/collections/connections`. Linking another account or switching methods replaces the existing connection for that owner and piece.
+The page is available at `/admin/settings/connections` with the default admin route. FrogBot adds it automatically when `connections` is non-empty, and the same view is the default view of the `connections` collection at `/admin/collections/connections`.
+
+### Several accounts and the default
+
+A user can link several OAuth accounts of one piece, such as a work and a personal Gmail, when its recipe can name the provider account: it defines `account()`, or runs its own sign-in with `authorize`. Each provider account is its own row; linking the same provider account again updates its row and keeps its ID. A recipe without `account()` can't tell accounts apart, so it keeps one OAuth row per user, and every link replaces it. A static credential has no provider account, so it stays one per piece and saving another replaces it. A piece with both methods can hold its static credential beside its OAuth accounts.
+
+Each user has one default account per piece. The first account linked becomes the default, and adding another never moves it; **Set as default** does. Disconnecting the default makes the oldest remaining account the default. Calls that don't pick an account, including agent tools in chat, use the default.
+
+**Reconnect** renews one account's OAuth grant in place. When the recipe has an account lookup, the provider must sign in to the same account; a different account fails with `400` and changes nothing.
 
 Each integration shows the logo URL from its piece's `admin.icon`, or a link icon when the piece has none or the image fails to load.
 
@@ -131,9 +139,10 @@ The paths below use the default `routes.api: '/api'`. If you configure another A
 | --- | --- | --- |
 | `GET` | `/api/connections` | List the caller's connection metadata using the collection API. |
 | `POST` | `/api/connections/:piece` | Create or replace a static credential. |
-| `GET` | `/api/connections/:piece/authorize` | Start OAuth linking for the signed-in user. |
+| `GET` | `/api/connections/:piece/authorize` | Start OAuth linking for the signed-in user. `?reconnect=<id>` renews that connection instead of adding one; `404` when it isn't the caller's connection for the piece. |
 | `GET` | `/api/connections/:piece/callback` | Exchange the authorization code, store the connection, and redirect. `404` for pieces that run their own sign-in. |
-| `DELETE` | `/api/connections/:id` | Delete the caller's connection; returns `204`, or `404` when not found. |
+| `POST` | `/api/connections/:id/default` | Make the caller's connection the default for its piece; returns the connection, or `404` when not found. |
+| `DELETE` | `/api/connections/:id` | Delete the caller's connection; returns `204`, or `404` when not found. The oldest remaining account of the piece becomes the default. |
 
 `:piece` is the piece's built-in slug, such as `gmail` or `linear`, not a custom instance slug. Owners belong to the auth collection selected by `admin.user`.
 
@@ -227,33 +236,40 @@ When you add a scope, accounts linked earlier lack it:
 - Settings → Linked accounts shows those rows as **needs re-link**.
 - `frogbot.connections.authorizations()` lists the piece with its `authorizeUrl`.
 
-Linking again asks for the full list and replaces the row.
+Reconnecting asks for the full list and updates the row.
 
 ## Resolve credentials on the server
 
-Piece actions and `piece.client({ req })` resolve credentials automatically. Pass `req` to use the caller's linked account. For direct resolution and account management:
+Piece actions and `piece.client({ req })` resolve credentials automatically. Pass `req` to use the caller's default account for the piece, and `connection` to pin one of their accounts by ID:
+
+```ts
+await gmail.sendEmail({ input, req, connection: accountId })
+const client = await gmail.client({ req, connection: accountId })
+```
+
+For direct resolution and account management:
 
 ```ts
 const auth = await frogbot.connections.resolve({ piece: gmail, req })
 const accounts = await frogbot.connections.list({ req })
 
-const gmailAccount = accounts.find(({ piece }) => piece === 'gmail')
-if (gmailAccount) {
-  await frogbot.connections.delete({ req, id: gmailAccount.id })
+const work = accounts.find(({ piece, account }) => piece === 'gmail' && account?.email === 'me@work.com')
+if (work) {
+  await frogbot.connections.setDefault({ req, id: work.id })
 }
 ```
 
-`resolve` accepts optional `scopes` to require specific grants. It returns the piece's parsed auth value, converting stored OAuth tokens through the recipe's `toAuth` when provided. `list` returns IDs, owner, piece, method, account, scopes, expiry, status, and timestamps, without plaintext or encrypted credentials.
+`resolve` accepts optional `scopes` to require specific grants and `connection` to pin an account. With no `connection`, it uses the user's only account for the piece, else their default. It returns the piece's parsed auth value, converting stored OAuth tokens through the recipe's `toAuth` when provided. `list` returns IDs, owner, piece, method, account, `accountId`, `isDefault`, scopes, expiry, status, and timestamps, oldest first, without plaintext or encrypted credentials.
 
-- **Refresh.** Expired OAuth connections refresh lazily during resolution, using the recipe's `refresh` function or a refresh-token grant at its `tokenUrl`. Concurrent refreshes are serialized per owner and piece.
+- **Refresh.** Expired OAuth connections refresh lazily during resolution, using the recipe's `refresh` function or a refresh-token grant at its `tokenUrl`. Each account refreshes on its own; concurrent refreshes are serialized per owner and piece.
 - **Failed refresh.** A failed refresh marks the connection `error` and throws. It never silently switches to factory `auth`. Reconnect to replace the failing credential.
 - **Disconnect.** Disconnecting removes the row, which allows factory fallback again if configured. It revokes access at the provider only when the recipe defines `revoke`.
 
-`ConnectionError.code` is `missing`, `revoked`, `expired`, `error`, or `scopes`. Scope errors include `missingScopes`. `frogbot.connections.authorizations({ pieces, req })` returns linking requirements keyed by piece, including enabled methods and an OAuth `authorizeUrl` when available.
+`ConnectionError.code` is `missing`, `revoked`, `expired`, `error`, `scopes`, `ambiguous`, or `forbidden`. Scope errors include `missingScopes`. `ambiguous` means the user has several accounts and none is the default; `forbidden` means a pinned `connection` isn't one of the caller's accounts for that piece, including an unknown ID. `authorizations` throws both instead of listing the piece, since linking another account wouldn't fix them. `frogbot.connections.authorizations({ pieces, req })` returns linking requirements keyed by piece, including enabled methods and an OAuth `authorizeUrl` when available.
 
 ## Storage and access
 
-FrogBot creates its reserved `connections` collection only when the root list is non-empty. A unique `(owner, piece)` constraint permits one row per user and piece. Rows contain `method`, encrypted `credential`, account metadata, scopes, expiry, and status.
+FrogBot creates its reserved `connections` collection only when the root list is non-empty. A unique `(owner, piece, method, accountId)` constraint permits one row per user, piece, method, and provider account; `accountId` is the provider account ID, or empty for a static credential and for OAuth without an account lookup. Rows contain `method`, encrypted `credential`, account metadata, `accountId`, `isDefault`, scopes, expiry, and status.
 
 Static input and OAuth token sets are encrypted as JSON with AES-256-GCM using a key derived from the root `secret`. Keep that secret stable: changing it makes existing credentials unreadable. Factory `auth` stays in your configuration and is never copied into connection storage.
 

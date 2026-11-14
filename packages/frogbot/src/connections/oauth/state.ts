@@ -30,6 +30,9 @@ const stateSchema = z.object({
       collection: z.string().min(1),
     })
     .optional(),
+  reconnect: z
+    .union([z.string().refine((value) => value.trim().length > 0), z.number().int().safe()])
+    .optional(),
   browser: z.string().regex(/^[a-f0-9]{64}$/),
   verifier: randomSchema.optional(),
   issuedAt: z.number().finite(),
@@ -102,10 +105,13 @@ export async function createOAuthState({
   callbackUrl,
   cookiePrefix,
   returnTo,
+  reconnect,
   req,
 }: OAuthStateStorage &
   OAuthStateBinding & {
     returnTo: string;
+    /** The linked row a link flow saves onto; the provider must return that row's account. */
+    reconnect?: number | string;
     req: Pick<FrogBotRequest, 'user'>;
   }): Promise<{ state: string; authorizationUrl: string; setCookie: string }> {
   const recipe = urlRecipe(pieceInstanceRuntime(piece).definition);
@@ -130,6 +136,7 @@ export async function createOAuthState({
       flow === 'link' && req.user
         ? { id: req.user.id, collection: req.user.collection }
         : undefined,
+    reconnect: flow === 'link' ? reconnect : undefined,
     browser: digest(browser),
     verifier,
     issuedAt,
@@ -222,7 +229,7 @@ export async function consumeOAuthState({
       intent.expiresAt - intent.issuedAt > lifetime ||
       Boolean(intent.verifier) !==
         Boolean(urlRecipe(pieceInstanceRuntime(piece).definition)?.pkce) ||
-      (flow === 'login' && intent.owner) ||
+      (flow === 'login' && (intent.owner || intent.reconnect !== undefined)) ||
       (flow === 'link' && (!intent.owner || intent.owner.collection !== collection))
     ) {
       throw new OAuthError('state');

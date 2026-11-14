@@ -4,7 +4,12 @@ import { KVLockContentionError } from '../../kv/errors.js';
 import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import type { PieceInstance } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
-import type { ConnectionOwner, ConnectionStore, ConnectionStoredValue } from '../store.js';
+import type {
+  ConnectionID,
+  ConnectionOwner,
+  ConnectionStore,
+  ConnectionStoredValue,
+} from '../store.js';
 import { OAuthError } from './error.js';
 import { oauthAuth, oauthTokenMetadata, parseOAuthTokens, refreshOAuthTokens } from './tokens.js';
 
@@ -12,11 +17,13 @@ export async function refreshOAuthConnection({
   store,
   owner,
   piece,
+  id,
   req,
 }: {
   store: ConnectionStore;
   owner: ConnectionOwner;
   piece: PieceInstance;
+  id: ConnectionID;
   req: FrogBotRequest;
 }): Promise<ConnectionStoredValue | undefined> {
   const deadline = Date.now() + 30_000;
@@ -27,7 +34,7 @@ export async function refreshOAuthConnection({
         owner,
         piece: piece.piece,
         fn: async (locked) => {
-          const row = await locked.get();
+          const row = await locked.get(id);
           if (
             !row ||
             row.status !== 'active' ||
@@ -40,7 +47,7 @@ export async function refreshOAuthConnection({
           }
 
           const unchanged = async () => {
-            const current = await locked.get();
+            const current = await locked.get(id);
 
             return { current, same: JSON.stringify(current) === JSON.stringify(row) };
           };
@@ -69,13 +76,19 @@ export async function refreshOAuthConnection({
           } catch {
             const { current, same } = await unchanged();
             if (!same) return current;
-            await locked.upsert({ ...row, status: 'error' });
+            await locked.upsert({ ...row, status: 'error', reconnect: row.id });
             throw new OAuthError('refresh');
           }
 
           const { current, same } = await unchanged();
           if (!same) return current;
-          const saved = await locked.upsert({ ...row, ...metadata, credential, status: 'active' });
+          const saved = await locked.upsert({
+            ...row,
+            ...metadata,
+            credential,
+            status: 'active',
+            reconnect: row.id,
+          });
 
           return { ...saved, credential };
         },

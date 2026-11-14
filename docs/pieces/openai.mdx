@@ -38,7 +38,7 @@ For each call to an `openai/*` model:
 2. Otherwise the app key: `ai.providers.openai.apiKey`, then `OPENAI_API_KEY`.
 3. Otherwise the call fails before any request with "OpenAI isn't set up. Add your OpenAI key in Settings → Linked accounts."
 
-Work without a user, such as jobs and schedules, has no linked key, so it uses the app key or fails the same way. A linked key that can't be used, because it was revoked or can't be read, fails with "Reconnect OpenAI in Settings → Linked accounts." and never falls back to the app key.
+Work without a user, such as jobs and schedules, has no linked key, so it uses the app key or fails the same way. A linked key that can't be used, because it was revoked or can't be read, fails with "Reconnect OpenAI in Settings → Linked accounts." and never falls back to the app key. With several linked OpenAI accounts and no default, it fails with "Choose a default OpenAI account in Settings → Linked accounts." the same way.
 
 This holds for chat and agent turns on every step, for [AI operations](/ai/overview#call-operations) given `req`, and for the [HTTP gateway route](/ai/overview#call-over-http), except that a ChatGPT plan can't be used there (see [Continue with ChatGPT](#continue-with-chatgpt)). One user's key is never sent on another user's call.
 
