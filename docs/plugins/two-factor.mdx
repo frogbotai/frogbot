@@ -102,7 +102,7 @@ The plugin emails the user through your [email adapter](/email/overview) when tw
 
 - GraphQL `loginUser` and the Local API `login` don't have a code step, so they fail for users who need a code or setup. Use the REST login.
 - `canReset` defaults to nobody, so without it a user who loses their authenticator and recovery codes can't get back in.
-- Another `beforeSignIn` hook that pauses sign-in, such as a terms step, can't be combined with two-factor sign-in yet: when it resumes with `finishSignIn` for a user who needs a code, the sign-in is refused with `403` rather than skip the code.
+- Another `beforeSignIn` hook that pauses sign-in, such as a terms step, can't be combined with two-factor sign-in. When it resumes with `finishSignIn` for a user who needs a code, the sign-in is refused with `403` rather than skip the code.
 - Passkeys, security keys and per-tenant two-factor settings aren't supported.
 
 ## Options
