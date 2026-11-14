@@ -457,6 +457,7 @@ describe('record panel drill-in', () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     act(() => panel.setForm({ modified: true, title: 'Spec the cap rules' }));
     resolve();
+
     await waitFor(() =>
       expect(mocks.openModal.mock.calls.length || panel.openId !== '2').toBeTruthy(),
     );
