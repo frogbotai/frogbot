@@ -41,7 +41,7 @@ Run `frogbot deploy` with no target and no `dojo()` to list the targets. An unkn
 | --- | --- | --- |
 | `--region` | the CLI's default region, else `us-central1` (gcp) or `eastus` (azure) | Where the service runs. |
 | `--service` | your `package.json` name | The service's name; a re-run with the same name updates it. |
-| `--min-instances` | `1` | `1` keeps one copy always running, so [scheduled jobs](/jobs-queue/overview#schedule-options) run on time. `0` lets Google Cloud and Azure stop the app when idle: cheaper, but scheduled jobs wait until a request wakes it, and the deploy says so. A cloud deploy runs one copy at most. |
+| `--min-instances` | `1` | `1` keeps one copy always running, so [scheduled jobs](/jobs-queue/schedules) run on time. `0` lets Google Cloud and Azure stop the app when idle: cheaper, but scheduled jobs wait until a request wakes it, and the deploy says so. A cloud deploy runs one copy at most. |
 
 ### Checks before anything runs
 

@@ -1,0 +1,123 @@
+---
+title: 'Schedules'
+description: 'Queue tasks and workflows on a cron schedule, and make sure something handles the schedule and runs the jobs.'
+keywords: ['schedules', 'cron', 'jobs', 'handleSchedules', 'beforeSchedule', 'recurring']
+---
+
+A schedule queues a task or workflow on a cron expression: a nightly report, an hourly sync, a weekly digest.
+
+A schedule only queues jobs. Two things must also be running:
+
+1. Something that **handles schedules**, which queues each due job.
+2. A runner that **runs the schedule's queue**.
+
+A worker started with `--handle-schedules` and `--all-queues` does both.
+
+## Add a schedule
+
+Add `schedule` to a task or workflow:
+
+```ts
+{
+  slug: 'send-daily-digest',
+  schedule: [{ cron: '0 7 * * *', queue: 'emails' }],
+  handler: async ({ req }) => {
+    const users = await req.frogbot.find({
+      collection: 'users',
+      where: { digest: { equals: true } },
+      pagination: false,
+      overrideAccess: true,
+    })
+
+    for (const user of users.docs) {
+      await req.frogbot.email.sendEmail({ to: user.email, subject: 'Your digest', html: '…' })
+    }
+
+    return { output: {} }
+  },
+}
+```
+
+A task or workflow can have several schedules, each with its own `cron` and `queue`.
+
+## Handle schedules
+
+Use one of these, covering the schedule's queue:
+
+| Where | How | Also runs jobs? |
+| --- | --- | --- |
+| Worker | `frogbot jobs:run --handle-schedules --all-queues`. See [Job workers](/jobs-queue/workers). | Yes, unless `--limit 0` |
+| `jobs.autoRun` | Each entry handles schedules for its queue unless `disableScheduling: true`. | Yes |
+| Run URL | `GET /api/payload-jobs/run` handles schedules first, unless `disableScheduling=true`. See [Run jobs over HTTP](/jobs-queue/queues#run-jobs-over-http). | Yes |
+| Schedules URL | `GET /api/payload-jobs/handle-schedules` | No |
+| Local API | `frogbot.jobs.handleSchedules({ queue, allQueues, req })` | No |
+
+Handle schedules often, every minute or faster. The cron decides when a job runs; the handling interval only needs to be shorter than the gap between occurrences.
+
+Run schedule handling in one place, such as a single scheduler process. If web replicas also autorun, see [Disable web autorun](/jobs-queue/workers#disable-web-autorun).
+
+## How scheduling works
+
+Each time schedules are handled, for every schedule in the selected queues, FrogBot:
+
+1. Works out the next cron time after the schedule last queued a job. It keeps that time in the `payload-jobs-stats` global.
+2. Calls `beforeSchedule`. By default, it skips while a scheduled job of the same task or workflow in that queue is still unfinished, so runs don't pile up or overlap.
+3. Queues the job with `waitUntil` set to that cron time and `meta: { scheduled: true }`. The job is queued ahead of time and waits until then.
+4. Calls `afterSchedule`, which by default records the time in `payload-jobs-stats`.
+
+Cron expressions are read in the server process's local timezone. Set `TZ` on the process to pin it.
+
+## Cron format
+
+Use five fields, or six with a leading seconds field:
+
+```text
+┌───────────── second (optional, 0-59)
+│ ┌─────────── minute (0-59)
+│ │ ┌───────── hour (0-23)
+│ │ │ ┌─────── day of month (1-31)
+│ │ │ │ ┌───── month (1-12)
+│ │ │ │ │ ┌─── day of week (0-7, 0 and 7 are Sunday)
+* * * * * *
+```
+
+| Cron | Runs |
+| --- | --- |
+| `*/5 * * * *` | Every 5 minutes |
+| `0 * * * *` | Every hour, on the hour |
+| `30 2 * * *` | Every day at 02:30 |
+| `0 9 * * 1` | Mondays at 09:00 |
+| `0 8 * * 1-5` | Weekdays at 08:00 |
+| `0 0 1 * *` | The first of each month at midnight |
+| `*/30 * * * * *` | Every 30 seconds |
+
+## Set the input of a scheduled job
+
+Scheduled jobs get `{}` as input. To compute input when the job is queued, wrap the default check in `beforeSchedule`:
+
+```ts
+schedule: [
+  {
+    cron: '0 6 * * *',
+    queue: 'reports',
+    hooks: {
+      beforeSchedule: async (args) => {
+        const result = await args.defaultBeforeSchedule(args)
+
+        return { ...result, input: { region: 'us' } }
+      },
+    },
+  },
+]
+```
+
+Keep the default's `shouldSchedule` and `waitUntil`. Without `waitUntil`, the job runs as soon as a runner sees it, not at the cron time. A hook that always returns `shouldSchedule: true` queues another job on every scheduling tick.
+
+## Schedule options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `cron` | `string` | Required | When to queue the job. Accepts an optional leading seconds field. |
+| `queue` | `string` | Required | Queue the scheduled job is added to. Something must handle schedules for this queue. |
+| `hooks.beforeSchedule` | `(args) => { shouldSchedule: boolean; input?: object; waitUntil?: Date } \| Promise<…>` | Skips while a scheduled job of the same task or workflow in the queue is unfinished and has no recorded `error`: queued, running, paused at `waitFor`, or retrying without one. A job retrying after an attempt that recorded an `error` does not count | Decides whether to queue each occurrence and with what input. It receives `defaultBeforeSchedule`, `jobStats`, `queueable`, and `req`. |
+| `hooks.afterSchedule` | `(args) => void \| Promise<void>` | Records the occurrence in `payload-jobs-stats` | Runs after each occurrence with `status` `'success'` and `job`, `'error'` and `error`, or `'skipped'`. It also receives `defaultAfterSchedule`, `jobStats`, `queueable`, and `req`. Call `defaultAfterSchedule` from your hook so the next occurrence is worked out from this one. |
