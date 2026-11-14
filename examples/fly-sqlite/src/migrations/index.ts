@@ -2,6 +2,7 @@ import * as migration_20261004_050945_init from './20261004_050945_init';
 import * as migration_20261005_035332_concurrency_key from './20261005_035332_concurrency_key';
 import * as migration_20261017_181504_upgrade from './20261017_181504_upgrade';
 import * as migration_20261028_070224_ai_policy_plugin from './20261028_070224_ai_policy_plugin';
+import * as migration_20261114_170645_spend_counters from './20261114_170645_spend_counters';
 
 export const migrations = [
   {
@@ -23,5 +24,10 @@ export const migrations = [
     up: migration_20261028_070224_ai_policy_plugin.up,
     down: migration_20261028_070224_ai_policy_plugin.down,
     name: '20261028_070224_ai_policy_plugin',
+  },
+  {
+    up: migration_20261114_170645_spend_counters.up,
+    down: migration_20261114_170645_spend_counters.down,
+    name: '20261114_170645_spend_counters',
   },
 ];
