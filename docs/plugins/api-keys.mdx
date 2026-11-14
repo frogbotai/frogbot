@@ -35,7 +35,11 @@ export default buildConfig({
 
 `frogbot dev` generates the admin import map before starting, so the API Keys collection and its key-creation controls appear on the first load. Click **Create API key** in the API Keys list toolbar, where Create New sits on other collections, to create a named key, and copy the token when it is displayed. The plaintext token cannot be retrieved again.
 
-Build and start-only workflows must run `frogbot generate:importmap` after adding the plugin. The blank template does this automatically during `prebuild`; add the same step to custom CI workflows that invoke `next build` directly. If the server console reports a component missing from the import map, run `frogbot generate:importmap` and rebuild, or restart `frogbot dev`.
+Build and start-only workflows must run `frogbot generate:importmap` after adding the plugin.
+
+- The blank template does this automatically during `prebuild`.
+- Custom CI workflows that invoke `next build` directly need the same step.
+- If the server console reports a component missing from the import map, run `frogbot generate:importmap` and rebuild, or restart `frogbot dev`.
 
 ## Authenticate requests
 
@@ -95,7 +99,9 @@ await fetch('/api/api-keys/mint', {
 })
 ```
 
-`mintApiKey({ req, collectionSlug, tokenPrefix, name, expiresAt })` takes the same option on the server. Both answer `400` for any other format, a day that doesn't exist such as `2027-02-30`, or a date that isn't in the future, and return `expiresAt` with the new key, `null` when it never expires.
+`mintApiKey({ req, collectionSlug, tokenPrefix, name, expiresAt })` takes the same option on the server.
+
+Both answer `400` for any other format, a day that doesn't exist such as `2027-02-30`, or a date that isn't in the future. Both return `expiresAt` with the new key. It is `null` when the key never expires.
 
 - Once `expiresAt` passes, the key no longer authenticates, and its **Last Used At** time stops changing. It stays in the list, with its date in the **Expires** column.
 - `expiresAt` is set only when the key is minted. Nobody can change it afterwards, and `data` can't set it.
@@ -167,7 +173,17 @@ A session can mint a key with `canMint`, by posting `{ name, data: { canMint: tr
 - A key rotates, revokes and counts with `minted-count` only itself and the keys it minted. Any other key, or one that doesn't exist, answers `404` with the standard error body, `{ "errors": [{ "name": "APIError", "message": "API key not found", "data": { "code": "not_found" } }] }`, and nothing changes. A signed-in session reaches every key its owner has.
 - With the [AI policy plugin](/plugins/ai-policy#api-key-limits), its model list and monthly cap stay inside the parent's as well as the owner's. A list or cap it leaves empty is the parent's. Its spend also counts against the parent's cap, so a parent capped at $10 and every key below it together spend at most $10 a month.
 
-Revoking a key revokes every key it minted, and every key those minted, all the way down. To revoke only that key and leave the keys it made working, post `{ "cascade": false }` to `revoke`, or pass `cascade: false` to `revokeApiKey`. An empty body, or one without `cascade`, revokes the whole tree; a body that isn't JSON, or a `cascade` other than `true` or `false`, `null` included, answers `400`. A later revoke of a key further up still reaches the keys that a `cascade: false` revoke left working, and stamps them with the time of that revoke. `GET /:id/minted-count` answers `{ "count": n }`, the number of working keys a cascading revoke would also revoke.
+Revoking a key revokes every key it minted, and every key those minted, all the way down. The `revoke` body controls this:
+
+| Body | Result |
+| --- | --- |
+| Empty, or without `cascade` | Revokes the whole tree. |
+| `{ "cascade": false }` | Revokes only that key and leaves the keys it made working. `revokeApiKey` takes `cascade: false` too. |
+| Not JSON, or a `cascade` other than `true` or `false`, `null` included | Answers `400`. |
+
+A later revoke of a key further up still reaches the keys that a `cascade: false` revoke left working, and stamps them with the time of that revoke.
+
+`GET /:id/minted-count` answers `{ "count": n }`, the number of working keys that a cascading revoke would also revoke.
 
 ```ts
 await revokeApiKey({ req, collectionSlug: 'api-keys', id }); // the key and every key below it

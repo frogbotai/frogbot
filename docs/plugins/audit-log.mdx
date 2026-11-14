@@ -97,7 +97,12 @@ export default buildConfig({
 })
 ```
 
-It reads the record and its entries with the signed-in user's access: a record the user can't read shows nothing, and an edit names only the fields the user can read. It shows the latest 20 entries, skips entries older than the record (a database can reuse a deleted record's id), and renders nothing on a create form. Pass field options to change it, for example `activityField({ name: 'history', label: 'History' })`.
+It reads the record and its entries with the signed-in user's access:
+
+- A record the user can't read shows nothing.
+- An edit names only the fields the user can read.
+
+It shows the latest 20 entries, skips entries older than the record (a database can reuse a deleted record's id), and renders nothing on a create form. Pass field options to change it, for example `activityField({ name: 'history', label: 'History' })`.
 
 ## Custom entries
 
@@ -169,7 +174,10 @@ auditLogPlugin({
 })
 ```
 
-The task `frogbot-prune-<slug>`, named after the audit collection's slug, runs at midnight daily unless you set `cron`, and it is scheduled on the `default` queue, so a jobs runner that covers `default` prunes without extra setup. Each run deletes entries whose `timestamp` is older than `days`, 100 at a time, and fails the job if any entry can't be deleted.
+The task `frogbot-prune-<slug>` is named after the audit collection's slug.
+
+- **Schedule.** It runs at midnight daily unless you set `cron`. It is scheduled on the `default` queue, so a jobs runner that covers `default` prunes without extra setup.
+- **Each run** deletes entries whose `timestamp` is older than `days`, 100 at a time, and fails the job if any entry can't be deleted.
 
 ## Options
 

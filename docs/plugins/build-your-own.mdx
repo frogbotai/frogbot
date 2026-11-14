@@ -182,7 +182,11 @@ export const keyNotesPlugin = definePlugin<KeyNotesPluginOptions | undefined>({
 })
 ```
 
-FrogBot runs plugins by `order`, lowest first. The default is `0`, and plugins with the same order keep their `plugins` array order. Use `10` when your plugin needs collections or fields another plugin adds, like the API keys collection above, so it runs after that plugin wherever the app lists it. When a plugin with a slug throws, the error names it: `[frogbot] plugin "plugin-key-notes" failed: …`.
+FrogBot runs plugins by `order`, lowest first. The default is `0`, and plugins with the same order keep their `plugins` array order.
+
+Use `10` when your plugin needs collections or fields that another plugin adds, like the API keys collection above. Your plugin then runs after that plugin, wherever the app lists it.
+
+When a plugin with a slug throws, the error names it: `[frogbot] plugin "plugin-key-notes" failed: …`.
 
 Each plugin's `options` are the object its factory was called with. To give other plugins typed access to them, register your slug by augmenting `RegisteredPlugins`:
 

@@ -102,11 +102,21 @@ A row fails, and the other rows still import, when a relationship cell can't be 
 
 Every row that needs a record whose creation failed fails with the same message.
 
-CSV rows whose cells are all empty are skipped, which can shift the rows after one. A mapped row that can't be lined up with its line in the file fails with `This row could not be lined up with the file because of an empty row above it. Remove the empty rows and import the file again.` rather than taking another line's values. Empty rows at the end of the file are harmless.
+CSV rows whose cells are all empty are skipped, which can shift the rows after one. A mapped row that can't be lined up with its line in the file fails with this error, rather than taking another line's values:
+
+```text
+This row could not be lined up with the file because of an empty row above it. Remove the empty rows and import the file again.
+```
+
+Empty rows at the end of the file are harmless.
 
 ### Suggest with AI
 
-When the app sets `ai.smallModel` or `ai.defaultModel`, the Columns section adds a **Suggest with AI** button. It sends the headers of the columns still on **Skip**, up to 3 values from each, and the fields not yet used to the small model (the default model when no small model is set), as the importing user. It fills only the columns on **Skip**, with fields the collection has; you can change its picks before importing. If the model call fails, the mapping stays as it was and the error is shown. Without an AI model the button is hidden and no model is called.
+When the app sets `ai.smallModel` or `ai.defaultModel`, the Columns section adds a **Suggest with AI** button. Without an AI model, the button is hidden and no model is called.
+
+- **What it sends.** The headers of the columns still on **Skip**, up to 3 values from each, and the fields that are not used. They go to the small model, or to the default model when no small model is set, as the importing user.
+- **What it fills.** Only the columns on **Skip**, with fields that the collection has. You can change its picks before importing.
+- **If the model call fails,** the mapping stays as it was and the error is shown.
 
 ### Imports from the API
 

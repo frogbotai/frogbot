@@ -4,7 +4,12 @@ description: Let a channel piece post agent questions and turn platform interact
 keywords: [pieces, channels, questions, client tools, interactions, stale, retries]
 ---
 
-A channel piece can let participants answer the [question tool](/chat/questions) inside the conversation. Add `questions` to the piece's `channel` definition, next to `adapter` and `identity`. The piece draws and reads platform controls, and its hooks return what FrogBot should remember. FrogBot keeps the question's record, decides which interactions are out of date, checks who is answering, records the answer once, retries a failed update, and continues the agent in the same conversation.
+A channel piece can let participants answer the [question tool](/chat/questions) inside the conversation. Add `questions` to the piece's `channel` definition, next to `adapter` and `identity`. The work is split:
+
+| Who | Does |
+| --- | --- |
+| The piece | Draws and reads platform controls. Its hooks return what FrogBot should remember. |
+| FrogBot | Keeps the question's record, decides which interactions are out of date, checks who is answering, records the answer once, retries a failed update, and continues the agent in the same conversation. |
 
 A channel conversation is answered only in its channel. The admin chat shows it read-only, and HTTP callers get a [`channel-chat` error](/chat/overview#who-can-write-a-chat).
 
@@ -12,7 +17,22 @@ A channel conversation is answered only in its channel. The admin chat shows it 
 
 FrogBot offers the question tool to an agent in a channel conversation only when the piece defines `questions` and `supports({ thread })` does not return `false`. Use `supports` to turn questions off where a platform surface cannot show controls. If `supports` throws, FrogBot logs the error and does not offer questions for that turn.
 
-The same hooks ask for [tool approval](/chat/tool-approval#in-channels). FrogBot hands `render` an approval as a question call with `call.approval` set and the input `{ questions: [{ header: 'Approval', question: 'Approve <tool>?', options: [{ label: 'Approve' }, { label: 'Deny' }], custom: true }] }`, and turns the parsed answer into the approval: Approve approves, Deny denies, and a typed answer denies with that reason. Draw and parse it like any other question. Where `supports` returns `false`, a call that needs approval is denied.
+The same hooks ask for [tool approval](/chat/tool-approval#in-channels). FrogBot hands `render` an approval as a question call with `call.approval` set and this input:
+
+```ts
+const input = {
+  questions: [
+    {
+      header: 'Approval',
+      question: 'Approve <tool>?',
+      options: [{ label: 'Approve' }, { label: 'Deny' }],
+      custom: true,
+    },
+  ],
+};
+```
+
+FrogBot turns the parsed answer into the approval: Approve approves, Deny denies, and a typed answer denies with that reason. Draw and parse it like any other question. Where `supports` returns `false`, a call that needs approval is denied.
 
 ## The question record
 
@@ -208,9 +228,17 @@ A piece that edits one message in place, such as a card that steps through a que
 
 When `parse` returns `partial`, FrogBot saves the returned `state` with `revision + 1`, marks the question as still posting, and calls `updated` with the interaction and the updated `question`. When `updated` returns, FrogBot saves its change and clears the mark. A piece without `updated` gets the saved `state` and nothing else.
 
-Throw from `updated` only when the current question isn't visible yet, so that a retry would fix what people see. FrogBot then logs the error and runs `updated` again as a job, up to 10 times with exponential backoff starting at 5 seconds. The job has no `interaction`, so `updated` must be able to post or redraw the current question from `question` alone. Failures of responses that belong to one interaction, such as opening a form or posting a private confirmation, aren't fixed by a retry: catch them, log them with `req.frogbot.logger.error`, and return normally.
+Throw from `updated` only when the current question isn't visible yet, so that a retry would fix what people see.
 
-While the question is still posting, an interaction that `parse` matches to it gets `rejected` with the reason "The next question is still posting — try again in a moment." Nothing is recorded against the question people can't see yet, and a held reply does not reach the agent. Each held interaction also queues the retry again, so a question recovers after a restart or after the retries run out. A retry that finds the question answered, or at a different revision, does nothing.
+- **What a throw does.** FrogBot logs the error and runs `updated` again as a job, up to 10 times with exponential backoff starting at 5 seconds.
+- **The retry has no `interaction`,** so `updated` must be able to post or redraw the current question from `question` alone.
+- **Don't throw for one interaction's responses.** Failures such as opening a form or posting a private confirmation aren't fixed by a retry. Catch them, log them with `req.frogbot.logger.error`, and return normally.
+
+While the question is still posting, an interaction that `parse` matches to it gets `rejected` with the reason "The next question is still posting — try again in a moment."
+
+- Nothing is recorded against the question that people can't see yet, and a held reply does not reach the agent.
+- Each held interaction also queues the retry again, so a question recovers after a restart or after the retries run out.
+- A retry that finds the question answered, or at a different revision, does nothing.
 
 ## Close a question
 
