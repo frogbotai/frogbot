@@ -13,9 +13,9 @@ export type BuildNoticeProps = {
 };
 
 /**
- * Shows "Updated, reload" when the tab regains focus after a newer production build went live,
- * by comparing `buildId` with the `x-frogbot-build` header the server sends now. It never
- * reloads by itself, so a half-written draft is never lost.
+ * Shows "A new version is available" and a Refresh button when the tab regains focus after a
+ * newer production build went live, by comparing `buildId` with the `x-frogbot-build` header the
+ * server sends now. It never reloads by itself, so a half-written draft is never lost.
  */
 export function BuildNotice({ buildId }: BuildNoticeProps) {
   const { config } = useConfig();
@@ -60,9 +60,9 @@ export function BuildNotice({ buildId }: BuildNoticeProps) {
     <div className="fb-build-notice" role="status">
       {updated && (
         <div className="fb-build-notice__card">
-          <span className="fb-build-notice__text">Updated, reload</span>
+          <span className="fb-build-notice__text">A new version is available</span>
           <Button onClick={() => window.location.reload()} size="sm" type="button">
-            Reload
+            Refresh
           </Button>
         </div>
       )}

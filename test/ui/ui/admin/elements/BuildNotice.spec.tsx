@@ -40,7 +40,7 @@ describe('BuildNotice', () => {
     serve('build-b');
     render(<BuildNotice buildId="build-a" />);
 
-    expect(screen.queryByText('Updated, reload')).toBeNull();
+    expect(screen.queryByText('A new version is available')).toBeNull();
 
     await focusTab();
 
@@ -48,7 +48,7 @@ describe('BuildNotice', () => {
       cache: 'no-store',
       credentials: 'same-origin',
     });
-    expect(screen.getByRole('status').textContent).toContain('Updated, reload');
+    expect(screen.getByRole('status').textContent).toContain('A new version is available');
   });
 
   it('counts the header on an error response too', async () => {
@@ -56,7 +56,7 @@ describe('BuildNotice', () => {
     render(<BuildNotice buildId="build-a" />);
     await focusTab();
 
-    expect(screen.getByText('Updated, reload')).toBeTruthy();
+    expect(screen.getByText('A new version is available')).toBeTruthy();
   });
 
   it.each([
@@ -68,7 +68,7 @@ describe('BuildNotice', () => {
     await focusTab();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText('Updated, reload')).toBeNull();
+    expect(screen.queryByText('A new version is available')).toBeNull();
   });
 
   it('shows nothing when the check fails', async () => {
@@ -76,7 +76,7 @@ describe('BuildNotice', () => {
     render(<BuildNotice buildId="build-a" />);
     await focusTab();
 
-    expect(screen.queryByText('Updated, reload')).toBeNull();
+    expect(screen.queryByText('A new version is available')).toBeNull();
   });
 
   it('checks at most once every 5 seconds', async () => {
@@ -100,7 +100,7 @@ describe('BuildNotice', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('reloads only when Reload is clicked', async () => {
+  it('reloads only when Refresh is clicked', async () => {
     const reload = vi.fn();
 
     vi.stubGlobal('location', { ...window.location, reload });
@@ -110,7 +110,7 @@ describe('BuildNotice', () => {
 
     expect(reload).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
 
     expect(reload).toHaveBeenCalledTimes(1);
   });
