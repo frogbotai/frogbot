@@ -107,7 +107,7 @@ Each event's `dedupeKey` is a hash of the subscription ID and the event's JSON, 
 
 FrogBot verifies incoming requests and queues events before running agent handlers. Each event's required `dedupeKey` is tracked for 24 hours per recipient: agent, instance, and trigger. A provider retry can enqueue failed recipients without re-enqueueing recipients whose queue and dedupe writes succeeded.
 
-FrogBot automatically adds an all-queues job runner scheduled every minute (`* * * * *`), sharing the runner when agent schedules are also configured. The trigger task currently sets no automatic handler retry policy.
+FrogBot automatically adds an all-queues job runner scheduled every minute (`* * * * *`), sharing the runner when agent schedules are also configured. The trigger task sets no automatic handler retry policy.
 
 Delivery is not exactly once: if enqueue succeeds but persisting the dedupe marker fails, a retry can queue the event again. Make handler side effects idempotent.
 

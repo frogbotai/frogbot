@@ -448,7 +448,7 @@ export function ModelChat() {
 | `onToolsChange` | `(ids: string[]) => void` | Required | Called with the new list of selected IDs. |
 
 <Warning>
-  Tool selections are currently client-side only. They do not change tool availability or add fields to chat requests.
+  Tool selections are client-side only. They do not change tool availability or add fields to chat requests.
 </Warning>
 
 The selectors intentionally differ from Firmware where FrogBot has no matching concept: agents have no "Default" row, model billing locks are omitted, reasoning levels use a per-model slider, tools use multi-select availability instead of prompt injection, and Radix handles menu positioning.
