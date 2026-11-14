@@ -51,7 +51,7 @@ X-API-Key: fb_...
 
 The request authenticates as the user who owns the key. Revoked, [expired](#expiring-keys), malformed, and unknown keys do not authenticate. A Bearer key takes precedence; when the `Authorization` header holds something other than an API key, such as a session token, FrogBot reads the key from the key headers instead. The auth collection's `/me` endpoint returns the key owner and never echoes the key back.
 
-A request records its time in the key's **Last Used At** about once a minute, so it can lag by up to a minute. Parallel requests that all find it more than a minute old can each record it. Recording it never fails the request: when the write fails, for example on a write conflict between parallel requests, the request still authenticates and the first failure is logged.
+A request records its time in the key's **Last Used At** about once a minute, so it can lag by up to a minute. The write touches only `lastUsedAt` (and `updatedAt`) and skips collection hooks, so it never rewrites the key's other fields and an audit log doesn't see it. Parallel requests that all find it more than a minute old can each record it. Recording it never fails the request: when the write fails, for example on a write conflict between parallel requests, the request still authenticates and the first failure is logged.
 
 When AI is configured, usage rows include an optional `apiKey` relationship identifying the key that authenticated the request. Cookie-authenticated requests omit it, and the relationship follows a custom `collectionSlug`. A key's **Total Cost (USD)** field sums its usage rows, so when [usage retention](/plugins/ai-usage#retention) is on, it covers only the rows still kept.
 
