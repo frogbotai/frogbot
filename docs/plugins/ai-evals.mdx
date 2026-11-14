@@ -105,7 +105,9 @@ const short = defineScorer({
 
 ### Judge
 
-`judge({ rubric, model? })` asks a model to score the answer against your rubric. It makes one `generateText` call per case with the rubric, the question, the expected answer, the tool calls and the answer, and reads back a score and a reason. It uses `model`, or `ai.smallModel` when `model` is unset; with neither, the config throws.
+`judge({ rubric, model? })` asks a model to score the answer against your rubric. It makes one `generateText` call per case with the rubric, the question, the expected answer, the tool calls, and the answer. It reads back a score and a reason.
+
+It uses `model`, or `ai.smallModel` when `model` is unset. With neither, the config throws.
 
 The judge's calls are normal AI calls: they're metered in [usage logs](/gateway/hooks#track-usage) and checked against [`ai.access`](/ai/overview#control-access) for the run's user. A dataset of 200 cases with one judge costs 200 agent runs plus 200 judge calls per run.
 

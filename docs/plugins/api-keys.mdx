@@ -35,7 +35,11 @@ export default buildConfig({
 
 `frogbot dev` generates the admin import map before starting, so the API Keys collection and its key-creation controls appear on the first load. Click **Create API key** in the API Keys list toolbar, where Create New sits on other collections, to create a named key, and copy the token when it is displayed. The plaintext token cannot be retrieved again.
 
-Build and start-only workflows must run `frogbot generate:importmap` after adding the plugin. The blank template does this automatically during `prebuild`; add the same step to custom CI workflows that invoke `next build` directly. If the server console reports a component missing from the import map, run `frogbot generate:importmap` and rebuild, or restart `frogbot dev`.
+Build and start-only workflows must run `frogbot generate:importmap` after adding the plugin.
+
+- The blank template does this automatically during `prebuild`.
+- Custom CI workflows that invoke `next build` directly need the same step.
+- If the server console reports a component missing from the import map, run `frogbot generate:importmap` and rebuild, or restart `frogbot dev`.
 
 ## Authenticate requests
 
@@ -95,7 +99,9 @@ await fetch('/api/api-keys/mint', {
 })
 ```
 
-`mintApiKey({ req, collectionSlug, tokenPrefix, name, expiresAt })` takes the same option on the server. Both answer `400` for any other format, a day that doesn't exist such as `2027-02-30`, or a date that isn't in the future, and return `expiresAt` with the new key, `null` when it never expires.
+`mintApiKey({ req, collectionSlug, tokenPrefix, name, expiresAt })` takes the same option on the server.
+
+Both answer `400` for any other format, a day that doesn't exist such as `2027-02-30`, or a date that isn't in the future. Both return `expiresAt` with the new key. It is `null` when the key never expires.
 
 - Once `expiresAt` passes, the key no longer authenticates, and its **Last Used At** time stops changing. It stays in the list, with its date in the **Expires** column.
 - `expiresAt` is set only when the key is minted. Nobody can change it afterwards, and `data` can't set it.

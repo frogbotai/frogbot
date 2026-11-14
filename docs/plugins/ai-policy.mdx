@@ -131,7 +131,9 @@ Both fail before the model is called, so they write no usage row. Each call's co
 
 ## Use your own policy
 
-The plugin is built only on `ai.access` and AI hooks, so you can replace it with your own rules, such as prepaid credits. Leave the plugin out and put your check in `ai.access`. Each rule receives `{ req, model }`; return `false` for a generic `403`, or throw an error with a numeric `status` and a `code` to send your own:
+The plugin is built only on `ai.access` and AI hooks, so you can replace it with your own rules, such as prepaid credits. Leave the plugin out and put your check in `ai.access`.
+
+Each rule receives `{ req, model }`. Return `false` for a generic `403`, or throw an error with a numeric `status` and a `code` to send your own:
 
 ```ts
 class OutOfCreditsError extends Error {
