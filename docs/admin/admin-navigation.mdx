@@ -417,7 +417,7 @@ Account menu components receive the request as `req`. Use `req?.frogbot` to reac
 
 ## Search with Cmd+K
 
-Press Cmd+K (Ctrl+K on Windows and Linux) anywhere in the admin, outside a drawer, to open the command palette. It lists the sidebar's entries, with the same labels and order, and filters them as you type. Enter opens the highlighted entry, and Cmd+Enter opens a collection's create page when you can create in it. Press Cmd+K again, Esc, or click outside to close it.
+Press Cmd+K (Ctrl+K on Windows and Linux) anywhere in the admin, outside a drawer, to open the command palette. It lists the sidebar's entries, with the same labels and order, then the [Settings pages](#register-a-settings-page) the user's `access` lets them open, and filters them as you type. Enter opens the highlighted entry, and Cmd+Enter opens a collection's create page when you can create in it. Press Cmd+K again, Esc, or click outside to close it.
 
 As you type, the palette also lists matching records, grouped by collection in sidebar order, at most 5 per collection. Enter or a click opens the record. Each collection the sidebar shows and you can read is searched in two ways:
 
@@ -440,6 +440,22 @@ export const Tickets: CollectionConfig = {
 ```
 
 Each record shows its `useAsTitle` field, or its ID when that's empty. Every result comes from the REST API as the signed-in user, so collection and document read access apply: the palette never lists a collection the user can't read, and a request that fails hides only that collection's group.
+
+The sidebar has no Search item by default, so on a phone, where there's no keyboard, the palette is out of reach. To add one, put `SearchButton` in the `beforeNavLinks` or `afterNavLinks` slot:
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  admin: {
+    components: {
+      beforeNavLinks: ['@frogbotai/ui/admin#SearchButton'],
+    },
+  },
+})
+```
+
+It opens the palette like Cmd+K. With the sidebar open it shows "Search" and the Cmd+K hint, on the collapsed rail an icon with a tooltip, and in the phone drawer it closes the drawer as the palette opens. To build your own sidebar item that follows the same states, read them with `useSidebarState()` from `@frogbotai/ui`: `open`, `labelsVisible` and `closeDrawer`.
 
 The palette is part of FrogBot's default sidebar. If you [replace the sidebar](#replace-the-sidebar), Cmd+K opens the built-in admin palette instead, which goes to collections and create pages but doesn't search records.
 

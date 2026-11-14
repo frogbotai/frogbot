@@ -1,12 +1,13 @@
 'use client';
 
-import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useLayoutEffect, useState } from 'react';
 
 import { useIsMobile } from '../hooks/use-mobile.js';
 import { useNavAdapter } from './adapter.js';
 import { AppSidebar, type AppSidebarProps } from './AppSidebar.js';
 import { MobileNavToggle } from './MobileNavToggle.js';
 import { getNavShellState } from './navShellState.js';
+import { SidebarDrawerContext } from './sidebarState.js';
 
 /** The key the shell saves its desktop open state under, as `{ open }`. */
 export const NAV_PREFERENCE_KEY = 'nav';
@@ -69,8 +70,12 @@ export function NavShell({ children, initialOpen, scrollClassName, ...sidebar }:
     return () => document.removeEventListener('keydown', closeOnEscape);
   }, [navState, setDrawerOpen]);
 
+  const closeDrawer = useCallback(() => {
+    if (isMobile) setDrawerOpen(false);
+  }, [isMobile, setDrawerOpen]);
+
   return (
-    <>
+    <SidebarDrawerContext.Provider value={closeDrawer}>
       {!hostDrawer && <MobileNavToggle navState={navState} onOpen={() => setDrawerOpen(true)} />}
       {navState === 'mobile-nav-open' && (
         <div aria-hidden className="fb-nav-backdrop" onClick={() => setDrawerOpen(false)} />
@@ -109,6 +114,6 @@ export function NavShell({ children, initialOpen, scrollClassName, ...sidebar }:
           </div>
         </div>
       </aside>
-    </>
+    </SidebarDrawerContext.Provider>
   );
 }

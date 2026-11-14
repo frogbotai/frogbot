@@ -277,6 +277,18 @@
     width: 24px;
   }
 
+  .fb-app-sidebar__shortcut {
+    flex-grow: 0;
+    margin-inline-start: auto;
+    padding-inline-start: 8px;
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    .fb-app-sidebar__shortcut {
+      display: none;
+    }
+  }
+
   .fb-app-sidebar__label {
     margin-inline-start: 8px;
     overflow: hidden;

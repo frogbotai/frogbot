@@ -80,6 +80,7 @@ export default buildConfig({
     components: {
       afterDashboard: ['/components/RootSlots#AfterDashboardSlot'],
       beforeDashboard: ['/components/RootSlots#BeforeDashboardSlot'],
+      beforeNavLinks: ['@frogbotai/ui/admin#SearchButton'],
       header: ['/components/RootSlots#HeaderSlot'],
       navItems: [
         { label: 'New Chat', path: `/collections/${chatsSlug}/create`, icon: 'pencil-edit' },

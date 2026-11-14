@@ -10,6 +10,8 @@ import SettingIcon from '../../../icons/icons/SettingIcon.js';
 import TileIcon from '../../../icons/icons/TileIcon.js';
 import {
   getSettingsCollections,
+  getSettingsEntries,
+  resolveSettingsSection,
   usesFrogBotSettings,
 } from '../../views/Settings/resolveSection.js';
 import { buildPaletteModel } from '../CommandPalette/buildPaletteModel.js';
@@ -103,7 +105,18 @@ export async function FrogBotNav(props: FrogBotNavProps) {
   });
 
   const modelProps = { config: payload.config, i18n, navItems, permissions, visibleEntities };
-  const palette = buildPaletteModel(modelProps);
+  const settingsEntries =
+    frogbotReq && usesFrogBotSettings(payload.config)
+      ? (
+          await resolveSettingsSection({
+            entries: getSettingsEntries(payload.config),
+            req: frogbotReq,
+            routePath: '',
+          })
+        ).accessible
+      : [];
+
+  const palette = buildPaletteModel({ ...modelProps, settingsEntries });
 
   const serverProps = {
     collectionSlug,

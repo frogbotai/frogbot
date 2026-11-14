@@ -1,8 +1,10 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { type ReactNode, useState } from 'react';
+import { renderToString } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FrogBotNavClient } from '../../../../../../packages/ui/src/admin/elements/Nav/index.client';
+import { SearchButton } from '../../../../../../packages/ui/src/admin/elements/SearchButton/index.client';
 
 let hydrated = true;
 let isMobile = false;
@@ -19,11 +21,15 @@ const closeModal = (slug: string) => {
   modalState = { ...modalState, [slug]: { isOpen: false } };
 };
 
+const openModal = vi.fn((slug: string) => {
+  modalState = { ...modalState, [slug]: { isOpen: true } };
+});
+
 vi.mock('@payloadcms/ui', () => ({
   Account: () => <svg data-testid="payload-account" />,
   commandPaletteSlug: 'command-palette',
   useConfig: () => ({ config: { routes: { admin: '/admin', api: '/api' } } }),
-  useModal: () => ({ closeModal, modalState }),
+  useModal: () => ({ closeModal, modalState, openModal }),
   useTranslation: () => ({ t: (key: string) => key }),
   usePathname: () => pathname,
   useRouter: () => ({ push: vi.fn() }),
@@ -40,10 +46,12 @@ vi.mock('@payloadcms/ui', () => ({
 
 function Harness({
   CustomAvatar,
+  beforeNavLinks,
   initialNavOpen,
   initialOpen,
 }: {
   CustomAvatar?: ReactNode;
+  beforeNavLinks?: ReactNode;
   initialNavOpen: boolean;
   initialOpen?: boolean;
 }) {
@@ -54,6 +62,7 @@ function Harness({
     <FrogBotNavClient
       CustomAvatar={CustomAvatar}
       accountPath="/admin/account"
+      beforeNavLinks={beforeNavLinks}
       homePath="/admin"
       initialOpen={initialOpen}
       items={[{ label: 'Users', path: '/admin/collections/users' }]}
@@ -75,6 +84,7 @@ describe('FrogBotNavClient', () => {
     hydrated = true;
     isMobile = false;
     modalState = {};
+    openModal.mockClear();
     pathname = '/admin';
     setPreference.mockReset();
   });
@@ -89,6 +99,70 @@ describe('FrogBotNavClient', () => {
     rerender(<Harness initialNavOpen />);
 
     expect(screen.getByRole('option', { name: 'Users' })).not.toBeNull();
+  });
+
+  it('has no Search item unless a slot adds SearchButton', () => {
+    render(<Harness initialNavOpen />);
+
+    expect(screen.queryByRole('button', { name: 'Search' })).toBeNull();
+  });
+
+  it('opens the palette from SearchButton in a slot, with its label and hint while open', () => {
+    const { rerender } = render(<Harness beforeNavLinks={<SearchButton />} initialNavOpen />);
+    const search = screen.getByRole('button', { name: 'Search' });
+
+    expect(search.querySelector('.fb-app-sidebar__label')?.textContent).toBe('Search');
+    expect(search.querySelector('.fb-shortcut')?.textContent).toMatch(/^(⌘|Ctrl) \+ K$/);
+
+    fireEvent.click(search);
+
+    expect(openModal).toHaveBeenCalledWith('command-palette');
+
+    rerender(<Harness beforeNavLinks={<SearchButton />} initialNavOpen />);
+
+    expect(screen.getByRole('option', { name: 'Users' })).not.toBeNull();
+    expect(shell().dataset.navState).toBe('desktop-nav-open');
+  });
+
+  it('shows SearchButton as an icon with a tooltip on the collapsed rail, and keeps it collapsed', async () => {
+    render(
+      <Harness beforeNavLinks={<SearchButton />} initialNavOpen={false} initialOpen={false} />,
+    );
+
+    const search = screen.getByRole('button', { name: 'Search' });
+
+    expect(shell().dataset.navState).toBe('desktop-nav-closed');
+    expect(search.querySelector('.fb-app-sidebar__label')).toBeNull();
+    expect(search.querySelector('.fb-shortcut')).toBeNull();
+
+    fireEvent.focus(search);
+
+    expect((await screen.findByRole('tooltip')).textContent).toBe('Search');
+
+    fireEvent.click(search);
+
+    expect(openModal).toHaveBeenCalledWith('command-palette');
+    expect(shell().dataset.navState).toBe('desktop-nav-closed');
+  });
+
+  it('server-renders SearchButton without the platform hint, so hydration matches', () => {
+    const html = renderToString(<SearchButton />);
+
+    expect(html).toContain('aria-label="Search"');
+    expect(html).not.toContain('fb-shortcut');
+  });
+
+  it('closes the phone drawer when SearchButton opens the palette', () => {
+    isMobile = true;
+    render(<Harness beforeNavLinks={<SearchButton />} initialNavOpen={false} />);
+    openFromPayloadHeader();
+
+    expect(shell().dataset.navState).toBe('mobile-nav-open');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(openModal).toHaveBeenCalledWith('command-palette');
+    expect(shell().dataset.navState).toBe('mobile-nav-closed');
   });
 
   it('does not reuse Payload nav classes on the shell', () => {
