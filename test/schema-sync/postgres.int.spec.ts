@@ -225,7 +225,7 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'postgres')('syncSchema on Post
       applied: [],
       kept: [],
       error:
-        "The schema sync changed nothing: deals.email has 3 duplicate values, so it can't become unique. Remove the duplicates, then share again.",
+        "The schema sync changed nothing: deals.email has 3 duplicate values, so it can't become unique. Remove the duplicates, then deploy again.",
     });
     expect(await schemaDump(sql)).toEqual(before);
   });
@@ -410,7 +410,7 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'postgres')('syncSchema on Post
     expect(result).toEqual({
       ok: false,
       error:
-        "The schema sync changed nothing: deals.code has 9 duplicate values, so it can't become unique. Remove the duplicates, then share again.",
+        "The schema sync changed nothing: deals.code has 9 duplicate values, so it can't become unique. Remove the duplicates, then deploy again.",
       applied: [],
       kept: [],
     });

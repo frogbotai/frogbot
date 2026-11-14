@@ -100,7 +100,7 @@ A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://post
 
 Dojo adds this plugin itself when it builds an app, after the app's own plugins, so an app runs there without listing it. An app that lists `dojo()` gets it once, not twice. A listed `dojo()` also runs after every other plugin, wherever it is in `plugins`, so it sees the upload collections and AI providers they add.
 
-Outside Dojo, `dojo()` only adds the `dojo` and `share` commands and the `dojo` deploy target, and lists the badge and the sign-in buttons for the import map. On Dojo, where `DOJO=1`, it also changes:
+Outside Dojo, `dojo()` only adds the `dojo` command and the `dojo` deploy target, and lists the badge and the sign-in buttons for the import map. On Dojo, where `DOJO=1`, it also changes:
 
 - **Storage.** When the app sets no `storage`, every upload collection is stored in the app's bucket under its slug. Files stay private and are served through the app, so its access rules apply.
 - **AI.** When every provider in `ai.providers` is a built-in one with no key, they are replaced by one `dojo` provider that calls Dojo's gateway. Model IDs such as `openai/gpt-5.4-mini` keep working. Chat, embeddings and images work through the gateway; transcription, speech and video need your own key. An app with no `ai` block, or with any provider key of its own, is left unchanged.

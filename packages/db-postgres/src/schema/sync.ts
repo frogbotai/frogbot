@@ -166,7 +166,7 @@ async function refusals(
 
     if (n) {
       duplicates.push(
-        `${uniqueName(unique)} has ${plural(n, 'duplicate value', 'duplicate values')}, so it can't become unique. Remove the duplicates, then share again.`,
+        `${uniqueName(unique)} has ${plural(n, 'duplicate value', 'duplicate values')}, so it can't become unique. Remove the duplicates, then deploy again.`,
       );
     }
   }
