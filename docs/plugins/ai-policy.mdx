@@ -36,7 +36,7 @@ The plugin needs an `ai` configuration and fails at startup without one. It adds
 | --- | --- | --- |
 | `models` | Models | Model IDs and [alias](/ai/overview#add-aliases) slugs the user may call, chosen from every configured model and alias. Leave it empty to allow all models, including ones you configure later. |
 | `monthlyBudget` | Monthly Budget (USD) | Spend limit for the month, at least `0`. Leave it empty for no limit. |
-| `spendThisPeriodUSD` | Monthly Spend (USD) | What the user has spent this month. Read-only and starts at `0`; the plugin maintains it. You can sort and filter users by it. |
+| `spendThisPeriodUSD` | Monthly Spend (USD) | What the user has spent this month. Read-only and starts at `0`; the plugin maintains it. You can sort and filter users by it, but a filter leaves out users with no AI calls since you installed or upgraded the plugin. |
 
 `monthlyBudget` and `spendThisPeriodUSD` are USD [Money fields](/fields/money).
 
@@ -74,11 +74,11 @@ The budget is checked when a call runs, before every AI call a signed-in user ma
 
 After each AI call by a signed-in user, the plugin adds its cost to that user's spend, priced from the model catalog or your [custom model prices](/ai/overview#custom-model-options). Failed calls and calls that cost nothing add nothing. If the spend update fails, FrogBot logs the error and the call still succeeds.
 
-Each update is one atomic add to the counter, outside any transaction the call runs in, so parallel calls and several server processes add up exactly, and spend is kept even if the caller's transaction rolls back. Inside a transaction, the call doesn't wait for the update. Spend updates don't run collection hooks. The budget check reads the counter, not the signed-in user, so it sees spend from calls earlier in the same request. If the counter can't be read, the call fails. Calls already running when the budget is reached still finish, so treat the budget as a limit that can be exceeded by a few calls, not an exact cap.
+Each update is one atomic add to the counter, outside any transaction the call runs in, so parallel calls and several server processes add up exactly, and spend is kept even if the caller's transaction rolls back. Inside a transaction, the call doesn't wait for the update. Spend updates don't run collection hooks. The budget check reads the counter, not the signed-in user, outside any transaction, and adds the cost of this request's calls whose update hasn't finished, so it sees spend from calls earlier in the same request, inside a transaction too. If the counter can't be read, the call fails. Calls already running when the budget is reached still finish, so treat the budget as a limit that can be exceeded by a few calls, not an exact cap.
 
 ## Monthly reset
 
-Spend counts per UTC calendar month. The first AI call of a month starts the counter again from that call's cost, so budgets reset on time even without a worker. The `plugin-ai-policy-reset-spend` task also sets counters from earlier months to `0` at midnight on the first day of each month (`0 0 1 * *`), on its own `plugin-ai-policy-reset-spend` queue, so users with no calls yet show `0`. Run a [worker](/jobs-queue/workers) that handles schedules for that queue, such as one started with `--all-queues --handle-schedules`.
+Spend counts per UTC calendar month. The first AI call of a month starts the counter again from that call's cost, so budgets reset on time even without a worker. The `plugin-ai-policy-reset-spend` task also sets counters from earlier months to `0`, so users with no calls yet show `0`. It runs every hour on the first and second day of each month (`0 * 1,2 * *`), so it covers the UTC month change whatever your server's time zone, on its own `plugin-ai-policy-reset-spend` queue. A run that finds nothing to reset changes nothing, and it never zeros spend a call has already added in the new month. Run a [worker](/jobs-queue/workers) that handles schedules for that queue, such as one started with `--all-queues --handle-schedules`.
 
 ## API key limits
 
