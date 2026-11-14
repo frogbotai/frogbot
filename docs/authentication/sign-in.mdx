@@ -100,7 +100,7 @@ The callback answers with a small page that continues to `returnTo` with a `<met
 
 - Browsers mark the callback's load as cross-site, because it comes from the provider.
 - With `serverURL` set, the session cookie doesn't count on a cross-site load, so a redirect's target would not see the user until a reload.
-- The page's own navigation is same-origin, so `returnTo` sees the user on its first load.
+- The page's own navigation is same-origin, and it sends the site's origin as the referrer for hosts where browsers send no fetch-site header, such as plain HTTP. So `returnTo` sees the user on its first load.
 
 What the page shows:
 
