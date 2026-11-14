@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 
+import { extractJWT } from 'payload/shared';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -105,13 +106,38 @@ describe('sign-in continue page', () => {
         `default-src 'none'; base-uri 'none'; frame-ancestors 'none'; style-src 'sha256-${createHash('sha256').update(css).digest('base64')}'`,
       );
       expect(response.headers.get('x-content-type-options')).toBe('nosniff');
-      expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+      expect(response.headers.get('referrer-policy')).toBe('strict-origin');
       expect(response.headers.get('content-type')).toBe('text/html; charset=utf-8');
       expect(body).not.toMatch(/<script/i);
       expect(body.match(/<style>/g)).toHaveLength(1);
       expect(css).toContain('animation: fb-show 0s 1.5s forwards');
     },
   );
+
+  it('sends the origin on the refresh hop, so Payload keeps the session over plain HTTP, where browsers send no Sec-Fetch-Site', async () => {
+    const serverURL = 'http://app.internal:3000';
+    const { response } = await render('light', `${serverURL}/admin/settings/connections`);
+    const cookie = 'payload-token=session';
+    const sent: Record<string, Headers> = {
+      'no-referrer': new Headers({ cookie }),
+      'strict-origin': new Headers({ cookie, referer: `${serverURL}/` }),
+    };
+
+    const headers = sent[response.headers.get('referrer-policy')!];
+
+    expect(
+      extractJWT({
+        headers,
+        payload: {
+          config: {
+            auth: { jwtOrder: ['JWT', 'Bearer', 'cookie'] },
+            cookiePrefix: 'payload',
+            csrf: [serverURL],
+          },
+        },
+      } as never),
+    ).toBe('session');
+  });
 
   it('paints the admin colours for each look, and the browser colours for plain', async () => {
     const light = `background: ${ADMIN_COLORS.light.bg}`;

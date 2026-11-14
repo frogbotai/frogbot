@@ -106,7 +106,7 @@ export function continuePage({
   const dir = (rtlLanguages as readonly string[]).includes(lang) ? 'rtl' : 'ltr';
 
   headers.set('content-type', 'text/html; charset=utf-8');
-  headers.set('referrer-policy', 'no-referrer');
+  headers.set('referrer-policy', 'strict-origin');
   headers.set('x-content-type-options', 'nosniff');
   headers.set('content-security-policy', csp);
 

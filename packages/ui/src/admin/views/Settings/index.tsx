@@ -2,6 +2,7 @@ import { getTranslation } from '@payloadcms/translations';
 import { Card, Gutter, SetStepNav } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import type { EntityToGroup } from '@payloadcms/ui/shared';
+import { handleAuthRedirect } from '@payloadcms/ui/utilities/handleAuthRedirect';
 import { attachRegisteredFrogBot } from 'frogbot/internal';
 import type { AdminViewServerProps } from 'payload';
 import { EntityType } from 'payload/shared';
@@ -26,6 +27,21 @@ export async function SettingsView(props: SettingsViewProps) {
   );
 
   const adminRoute = payload.config.routes.admin;
+
+  if (!initPageResult.permissions.canAccessAdmin) {
+    props.server.redirect(
+      handleAuthRedirect({
+        config: payload.config,
+        route: formatAdminURL({ adminRoute, path: `/settings/${routePath}` }).replace(/\/$/, ''),
+        searchParams: Object.fromEntries(
+          Object.entries(searchParams ?? {}).filter(
+            (entry): entry is [string, string | string[]] => entry[1] !== undefined,
+          ),
+        ),
+        user: req.user ?? undefined,
+      }),
+    );
+  }
 
   if (routePath === '') {
     props.server.redirect(formatAdminURL({ adminRoute, path: '/settings/collections' }));

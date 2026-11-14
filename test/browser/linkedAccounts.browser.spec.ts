@@ -40,6 +40,16 @@ const group = (page: Page) => page.getByRole('region', { name: 'Linked' });
 const row = (page: Page, name: string) =>
   group(page).locator('.frogbot-connections__row').filter({ hasText: name });
 
+async function link(page: Page) {
+  await expect(page.locator('.fb-nav-shell')).toHaveAttribute('data-nav-hydrated', 'true');
+  await page.getByRole('button', { name: '+ New Connection' }).click();
+  await page.getByRole('button', { name: /^Linked/ }).click();
+  const callback = page.waitForResponse((response) => response.url().includes('/callback?'));
+  await page.getByRole('button', { name: 'Continue with Linked' }).click();
+  await callback;
+  await page.waitForURL('/settings/connections');
+}
+
 async function menu(page: Page, name: string, item: string) {
   await page.getByRole('button', { name: `Options for ${name}` }).click();
   await page.getByRole('menuitem', { name: item }).click();
@@ -49,17 +59,13 @@ test('links two accounts of one piece, sets a default and disconnects one', asyn
   page,
 }, testInfo) => {
   test.setTimeout(90_000);
-  await page.goto('/collections/connections');
-  await page.getByRole('button', { name: '+ New Connection' }).click();
-  await page.getByRole('button', { name: /^Linked/ }).click();
-  await page.getByRole('button', { name: 'Continue with Linked' }).click();
+  await page.goto('/settings/connections');
+  await link(page);
 
   await expect(group(page).getByText('1 account')).toBeVisible();
   await expect(group(page).getByText('Default')).toHaveCount(0);
 
-  await page.getByRole('button', { name: '+ New Connection' }).click();
-  await page.getByRole('button', { name: /^Linked/ }).click();
-  await page.getByRole('button', { name: 'Continue with Linked' }).click();
+  await link(page);
 
   await expect(group(page).getByText('2 accounts')).toBeVisible();
 
@@ -108,4 +114,14 @@ test('links two accounts of one piece, sets a default and disconnects one', asyn
 
   await expect(row(page, first)).toBeVisible();
   await expect(row(page, second)).toHaveCount(0);
+});
+
+test.describe('signed out', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test('Settings sends the visitor to sign in and back', async ({ page }) => {
+    await page.goto('/settings/connections');
+
+    await expect(page).toHaveURL('/login?redirect=%2Fsettings%2Fconnections');
+  });
 });

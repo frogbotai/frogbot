@@ -1,3 +1,4 @@
+import { continueLook, continuePage } from '../auth/signIn/continuePage.js';
 import type { Endpoint } from '../endpoints/types.js';
 import { pieceInstanceDefinition } from '../pieces/definePiece.js';
 import { isPieceSignIn } from '../pieces/oauth.js';
@@ -52,6 +53,7 @@ async function routeURLs({
     ).href,
     returnTo: path(config.routes.admin, 'settings/connections'),
     cookiePrefix: config.cookiePrefix,
+    config,
   };
 }
 
@@ -171,7 +173,7 @@ export function buildConnectionOAuthEndpoints({
         if (!candidates.length) return failure(404, headers, 'Connection not found');
 
         try {
-          const { callbackUrl, cookiePrefix } = await routeURLs({
+          const { callbackUrl, cookiePrefix, config } = await routeURLs({
             req,
             slug: connections.slug!,
             piece: slug!,
@@ -243,9 +245,18 @@ export function buildConnectionOAuthEndpoints({
             reconnect: intent.reconnect,
           });
 
-          headers.set('location', intent.returnTo);
-
-          return new Response(null, { status: 302, headers });
+          return continuePage({
+            returnTo: intent.returnTo,
+            look: continueLook({
+              config,
+              collectionSlug: owner.collection,
+              returnTo: intent.returnTo,
+              headers: req.headers,
+            }),
+            lang: req.i18n.language,
+            t: req.t,
+            headers,
+          });
         } catch (error) {
           return failure(error instanceof OAuthError ? 400 : 500, headers);
         }

@@ -16,6 +16,7 @@ import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
 import { createSQLKV } from '../../packages/frogbot/src/kv/adapters/sql.js';
 import * as locks from '../../packages/frogbot/src/kv/lock.js';
 import { definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
+import { continuedTo } from '../__helpers/shared/continuedTo.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
 
 type StoredUser = TypeWithID & {
@@ -76,19 +77,6 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       .getSetCookie()
       .find((value) => value.startsWith('identity-token='))
       ?.split(';')[0];
-
-  const continuedTo = async (response: Response) => {
-    expect(response.status).toBe(200);
-    expect(response.headers.get('location')).toBeNull();
-    expect(response.headers.get('content-type')).toBe('text/html; charset=utf-8');
-    expect(response.headers.get('referrer-policy')).toBe('no-referrer');
-
-    const url = /<meta http-equiv="refresh" content="0;url=([^"]*)">/.exec(
-      await response.text(),
-    )?.[1];
-
-    return url?.replaceAll('&#38;', '&');
-  };
 
   const rawUser = async (email: string, collection = 'users') =>
     (
@@ -540,7 +528,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       expect(response.status).toBe(200);
       expect(response.headers.get('cache-control')).toBe('no-store');
       expect(response.headers.get('x-content-type-options')).toBe('nosniff');
-      expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+      expect(response.headers.get('referrer-policy')).toBe('strict-origin');
       expect(response.headers.get('content-security-policy')).toBe(
         `default-src 'none'; base-uri 'none'; frame-ancestors 'none'; style-src 'sha256-${createHash('sha256').update(css).digest('base64')}'`,
       );

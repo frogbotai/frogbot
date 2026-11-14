@@ -281,7 +281,11 @@ describe('FrogBot admin views', () => {
 
     const props = {
       importMap: {},
-      initPageResult: { req, visibleEntities: { collections: [], globals: [] } },
+      initPageResult: {
+        permissions: { canAccessAdmin: true },
+        req,
+        visibleEntities: { collections: [], globals: [] },
+      },
       payload,
       routeSegments: ['settings', 'billing', 'invoices', 'invoice-1'],
     } as never;
@@ -302,7 +306,7 @@ describe('FrogBot admin views', () => {
     const payload = {
       config: {
         admin: {
-          routes: { account: '/account' },
+          routes: { account: '/account', login: '/login', unauthorized: '/unauthorized' },
           settings: [{ Component: 'Usage', path: 'usage' }],
         },
         routes: { admin: '/admin' },
@@ -312,6 +316,7 @@ describe('FrogBot admin views', () => {
     const element = await SettingsView({
       importMap: {},
       initPageResult: {
+        permissions: { canAccessAdmin: false },
         req: { user: null },
         visibleEntities: { collections: [], globals: [] },
       },
@@ -319,6 +324,9 @@ describe('FrogBot admin views', () => {
       routeSegments: ['settings', 'usage'],
     } as never);
 
+    expect(mocks.redirect).toHaveBeenCalledWith(
+      '/admin/login?redirect=%2Fadmin%2Fsettings%2Fusage',
+    );
     expect(mocks.RenderServerComponent).not.toHaveBeenCalled();
 
     const content = element.props.children[1].props.children;
@@ -330,6 +338,7 @@ describe('FrogBot admin views', () => {
     await SettingsView({
       importMap: {},
       initPageResult: {
+        permissions: { canAccessAdmin: true },
         req: { user: { id: 'user-1' } },
         visibleEntities: { collections: [], globals: [] },
       },
@@ -359,6 +368,7 @@ describe('FrogBot admin views', () => {
       importMap: {},
       initPageResult: {
         permissions: {
+          canAccessAdmin: true,
           collections: {
             media: { read: true },
             posts: { read: true },
@@ -412,6 +422,7 @@ describe('FrogBot admin views', () => {
       importMap: {},
       initPageResult: {
         permissions: {
+          canAccessAdmin: true,
           collections: {
             hidden: { read: true },
             posts: { read: true },
@@ -466,7 +477,10 @@ describe('FrogBot admin views', () => {
     const element = await SettingsView({
       importMap: {},
       initPageResult: {
-        permissions: { collections: { posts: { read: true }, users: { read: true } } },
+        permissions: {
+          canAccessAdmin: true,
+          collections: { posts: { read: true }, users: { read: true } },
+        },
         req: { i18n, user: { id: 'user-1' } },
         visibleEntities: { collections: ['posts', 'users'], globals: [] },
       },
@@ -495,7 +509,7 @@ describe('FrogBot admin views', () => {
     const req = { i18n: mocks.i18n, user: { id: 'user-1' } };
     const initPageResult = {
       locale: { code: 'en' },
-      permissions: { collections: {} },
+      permissions: { canAccessAdmin: true, collections: {} },
       req,
       visibleEntities: { collections: [], globals: [] },
     };
