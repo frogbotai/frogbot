@@ -115,6 +115,11 @@ const fixtures = {
     cli: 'frogbot',
     env: { FROGBOT_SECRET: 'browser-test-secret', OPENAI_API_KEY: 'browser-test-key' },
   },
+  projects: {
+    dir: path.join(repoRoot, 'templates', 'projects'),
+    cli: 'frogbot',
+    env: { FROGBOT_SECRET: 'browser-test-secret', OPENAI_API_KEY: 'browser-test-key' },
+  },
 } satisfies Record<string, Fixture>;
 
 type Server = {
@@ -217,12 +222,23 @@ const servers: Record<string, Server> = {
     database: 'frogbot.sign-in-only.db',
     env: { SIGN_IN_SETUP: signInOnly },
   },
+  'sign-in-two-factor': {
+    fixture: 'sign-in',
+    port: testPort(3145),
+    database: 'frogbot.two-factor.db',
+  },
   forms: { fixture: 'forms', port: testPort(3143), database: 'frogbot.forms.db' },
   crm: {
     fixture: 'crm',
     port: testPort(3144),
     database: 'frogbot.crm.browser.db',
     seed: path.join(dirname, 'fixtures', 'crm', 'seed.ts'),
+  },
+  projects: {
+    fixture: 'projects',
+    port: testPort(3145),
+    database: 'frogbot.projects.browser.db',
+    seed: path.join(dirname, 'fixtures', 'projects', 'seed.ts'),
   },
 };
 
@@ -327,6 +343,7 @@ const testProjects = [
       'messagesOverride.browser.spec.ts',
       'breadcrumbs.browser.spec.ts',
       'topBarPhone.browser.spec.ts',
+      'navSections.browser.spec.ts',
       'money.browser.spec.ts',
       'fieldCell.browser.spec.ts',
       'optionColors.browser.spec.ts',
@@ -339,7 +356,11 @@ const testProjects = [
       'viewActions.browser.spec.ts',
       'commandPalette.browser.spec.ts',
       'calendarTimeZone.browser.spec.ts',
+      'timeline.browser.spec.ts',
       'board.browser.spec.ts',
+      'cellEditKinds.browser.spec.ts',
+      'colorField.browser.spec.ts',
+      'galleryCard.browser.spec.ts',
     ],
   }),
   project({ name: 'question-firefox', browser: 'firefox', testMatch: crossBrowserQuestionSpecs }),
@@ -351,6 +372,7 @@ const testProjects = [
       'customField.browser.spec.ts',
       'adminTheme.browser.spec.ts',
       'cssLayers.browser.spec.ts',
+      'recordPanelSlots.browser.spec.ts',
     ],
   }),
   project({
@@ -365,6 +387,7 @@ const testProjects = [
       'messageSize.browser.spec.ts',
       'navShell.browser.spec.ts',
       'navStandalone.browser.spec.ts',
+      'chatRowHover.browser.spec.ts',
       'settingsShell.browser.spec.ts',
       'uiParity.browser.spec.ts',
     ],
@@ -399,20 +422,27 @@ const testProjects = [
   }),
   project({ name: 'plugin-seo', testMatch: 'seoFields.browser.spec.ts' }),
   project({ name: 'plugin-import-export', testMatch: 'importMapping.browser.spec.ts' }),
+  project({ name: 'sign-in-two-factor', testMatch: 'twoFactor.browser.spec.ts', signedOut: true }),
   project({ name: 'forms', testMatch: ['forms.browser.spec.ts', 'formBuilder.browser.spec.ts'] }),
   project({
     name: 'crm',
     testMatch: [
+      'cellEdit.browser.spec.ts',
       'crm.browser.spec.ts',
+      'gallery.browser.spec.ts',
+      'listGrid.browser.spec.ts',
       'listGrouping.browser.spec.ts',
       'listSummary.browser.spec.ts',
+      'recordPanel.browser.spec.ts',
       'views.browser.spec.ts',
     ],
   }),
+  project({ name: 'projects', testMatch: 'projects.browser.spec.ts' }),
   project({
     name: 'dojo',
     testMatch: [
       'chatGutter.browser.spec.ts',
+      'chatPageScroll.browser.spec.ts',
       'chatPin.browser.spec.ts',
       'chatScrubber.browser.spec.ts',
       'chatSend.browser.spec.ts',

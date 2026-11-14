@@ -68,6 +68,7 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
+    'plugin-ai-policy-spend': PluginAiPolicySpend;
     chats: Chat;
     messages: Message;
     'frogbot-chat-assets': FrogBotChatAsset;
@@ -78,6 +79,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect;
+    'plugin-ai-policy-spend': PluginAiPolicySpendSelect;
     chats: ChatsSelect;
     messages: MessagesSelect;
     'frogbot-chat-assets': FrogBotChatAssetsSelect;
@@ -145,6 +147,7 @@ export interface User {
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
   monthlyBudget?: number | null;
+  spendCounter?: (number | null) | PluginAiPolicySpend;
   /**
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
@@ -172,10 +175,25 @@ export interface User {
         id: string;
         createdAt?: string | null;
         expiresAt: string;
+        refreshCount?: number | null;
+        refreshedAt?: string | null;
       }[]
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugin-ai-policy-spend".
+ */
+export interface PluginAiPolicySpend {
+  id: number;
+  key: string;
+  period: string;
+  amount: number;
+  user?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -192,6 +210,7 @@ export interface Chat {
   channelThread?: import('frogbot').ChannelThreadReference;
   channelLabel?: string | null;
   lastMessageAt?: string | null;
+  autoApprove?: boolean | null;
   todos?: import('frogbot/tools').TodoItem[];
   updatedAt: string;
   createdAt: string;
@@ -228,6 +247,7 @@ export interface Message {
     totalTokens?: number | null;
     reasoningTokens?: number | null;
     cachedInputTokens?: number | null;
+    lastStepInputTokens?: number | null;
     model?: string | null;
     provider?: string | null;
   };
@@ -354,6 +374,7 @@ export interface UsersSelect {
   name?: boolean;
   models?: boolean;
   monthlyBudget?: boolean;
+  spendCounter?: boolean;
   spendThisPeriodUSD?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
@@ -373,7 +394,21 @@ export interface UsersSelect {
         id?: boolean;
         createdAt?: boolean;
         expiresAt?: boolean;
+        refreshCount?: boolean;
+        refreshedAt?: boolean;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugin-ai-policy-spend_select".
+ */
+export interface PluginAiPolicySpendSelect {
+  key?: boolean;
+  period?: boolean;
+  amount?: boolean;
+  user?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -389,6 +424,7 @@ export interface ChatsSelect {
   channelThread?: boolean;
   channelLabel?: boolean;
   lastMessageAt?: boolean;
+  autoApprove?: boolean;
   todos?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
@@ -419,6 +455,7 @@ export interface MessagesSelect {
         totalTokens?: boolean;
         reasoningTokens?: boolean;
         cachedInputTokens?: boolean;
+        lastStepInputTokens?: boolean;
         model?: boolean;
         provider?: boolean;
       };

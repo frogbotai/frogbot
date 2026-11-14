@@ -33,8 +33,8 @@ async function setup(files?: Record<string, string>) {
   return { root, dojo, env, run, signIn };
 }
 
-const shareLink = (url: string, id: number) =>
-  `[frogbot] Share it: ${url}/collections/apps/${id}/settings?share=1`;
+const shareLink = (app: string) =>
+  `[frogbot] Share it: frogbot dojo sharing invite ${app} <email>...`;
 
 describe('frogbot share: pre-checks', () => {
   it.each([
@@ -90,9 +90,9 @@ describe('frogbot share: pre-checks', () => {
 });
 
 describe('frogbot share: sign-in', () => {
-  it('prints the link and code on their own lines, opens no browser without a TTY, and stores the token 0600', async () => {
+  it('prints the link and code on their own lines, opens no browser with --wait, and stores the token 0600', async () => {
     const { dojo, env, run } = await setup();
-    const result = await run(['--no-data']);
+    const result = await run(['--no-data', '--wait']);
 
     expect(result.code).toBe(0);
     expect(result.stdout()).toEqual(
@@ -118,7 +118,7 @@ describe('frogbot share: sign-in', () => {
 
     await writeToken(env, dojo.url, 'fb_revoked');
 
-    const result = await run(['--no-data']);
+    const result = await run(['--no-data', '--wait']);
 
     expect(result.code).toBe(0);
     expect(dojo.paths()).toContain('POST /api/cli/device/token');
@@ -139,7 +139,7 @@ describe('frogbot share: sign-in', () => {
       if (route === 'GET /api/users/me') dojo.tokens.delete('fb_stored');
     };
 
-    const result = await run([]);
+    const result = await run(['--wait']);
 
     expect(result.code).toBe(0);
     expect(dojo.paths()).toEqual([
@@ -177,7 +177,7 @@ describe('frogbot share: the link', () => {
     expect(dojo.apps).toHaveLength(1);
     expect(dojo.paths().filter((path) => path === 'POST /api/apps/1/deployments')).toHaveLength(2);
     expect(second.stdout().slice(-2)).toEqual([
-      shareLink(dojo.url, 1),
+      shareLink('deals-app'),
       'https://deals.frogbot.app',
     ]);
   });
@@ -254,7 +254,7 @@ describe('frogbot share: the link', () => {
 
 describe('frogbot share: the build', () => {
   it('streams the log and ends with the live URL', async () => {
-    const { dojo, run, signIn } = await setup();
+    const { run, signIn } = await setup();
 
     await signIn();
 
@@ -266,7 +266,7 @@ describe('frogbot share: the build', () => {
       expect.stringMatching(/^\[frogbot\] Uploading 4 files \(\d\.\d KB\)$/),
       '[build] step 1',
       '[build] step 2',
-      shareLink(dojo.url, 1),
+      shareLink('deals-app'),
       'https://deals.frogbot.app',
     ]);
   });
@@ -315,6 +315,7 @@ describe('frogbot share: the build', () => {
       '[frogbot] Build failed: The build failed at `pnpm install`.',
       'step 1',
       'ERR_PNPM_OUTDATED_LOCKFILE',
+      'Run `frogbot dojo deployments logs 7` for the full log.',
     ]);
   });
 });
@@ -429,6 +430,15 @@ describe('frogbot share: the name', () => {
   it.each([
     ["Dojo's name_taken", 409, { error: 'name_taken' }],
     [
+      "Dojo's name_taken in errors[].data.code",
+      409,
+      {
+        errors: [
+          { name: 'APIError', message: 'That name is taken.', data: { code: 'name_taken' } },
+        ],
+      },
+    ],
+    [
       "Payload's unique-field error on slug",
       400,
       {
@@ -535,10 +545,7 @@ describe('frogbot share: as an editor', () => {
       expect(result.code).toBe(0);
       expect(dojo.paths()).toContain('GET /api/apps/1/keys');
       expect(result.stdout()).not.toContain(keysLeftOut);
-      expect(result.stdout().slice(-2)).toEqual([
-        shareLink(dojo.url, 1),
-        'https://deals.frogbot.app',
-      ]);
+      expect(result.stdout().slice(-2)).toEqual([shareLink('deals'), 'https://deals.frogbot.app']);
     },
   );
 });

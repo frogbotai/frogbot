@@ -1,0 +1,196 @@
+---
+title: 'Tasks'
+description: 'Define typed task functions, fail and retry them, and run them on their own or inside workflows.'
+keywords: ['tasks', 'jobs', 'retries', 'backoff', 'onFail', 'onSuccess', 'inputSchema']
+---
+
+A task is one function with typed input and output. Queue it as a job on its own, or call it from a [workflow](/jobs-queue/workflows) as one step.
+
+## Define a task
+
+Add the task to `jobs.tasks`:
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  // ...
+  jobs: {
+    tasks: [
+      {
+        slug: 'create-post',
+        retries: 2,
+        inputSchema: [{ name: 'title', type: 'text', required: true }],
+        outputSchema: [{ name: 'postID', type: 'text', required: true }],
+        handler: async ({ input, req }) => {
+          const post = await req.frogbot.create({
+            collection: 'posts',
+            data: { title: input.title },
+            overrideAccess: true,
+            req,
+          })
+
+          return { output: { postID: String(post.id) } }
+        },
+      },
+    ],
+  },
+})
+```
+
+Then queue it:
+
+```ts
+await frogbot.jobs.queue({
+  task: 'create-post',
+  input: { title: 'Hello' },
+  overrideAccess: true,
+})
+```
+
+The job waits in the database until a runner claims it. See [Queue and run jobs](/jobs-queue/queues).
+
+### Handler arguments
+
+The handler returns `{ output }`, where `output` matches `outputSchema`. Throw to fail the attempt.
+
+| Argument | Description |
+| --- | --- |
+| `input` | The job's input, typed from `inputSchema`. |
+| `job` | The job record, including `id`, `queue`, `totalTried`, and `taskStatus`. |
+| `req` | A `FrogBotRequest`. `req.frogbot` is the Local API, as in hooks and endpoints. |
+| `tasks` | Runs other registered tasks as nested steps. See [Nested tasks](#nested-tasks). |
+| `inlineTask` | Runs an unregistered function as a nested step. |
+
+### Generated types
+
+`inputSchema` and `outputSchema` take the same [fields](/fields/overview) as a collection. FrogBot generates an interface for each task, named `Task` plus the capitalized slug unless you set `interfaceName`. `jobs.queue` then checks `input` against it, and `handler` gets a typed `input`.
+
+Pass IDs, not whole records. The task reads what it needs when it runs, so it always sees current data, and the job record stays small.
+
+## Failures and retries
+
+A task fails when its handler throws. Throw an `Error` with a message that says what went wrong; FrogBot saves it on the job.
+
+```ts
+handler: async ({ input, req }) => {
+  const order = await req.frogbot.findByID({
+    collection: 'orders',
+    id: input.orderId,
+    overrideAccess: true,
+  })
+
+  if (order.status === 'cancelled') {
+    throw new Error(`Order ${input.orderId} is cancelled`)
+  }
+
+  // ...
+  return { output: {} }
+}
+```
+
+Tasks don't retry by default. Set `retries` to retry a failed attempt:
+
+| `retries` | Result |
+| --- | --- |
+| Not set | No retries, unless the task runs in a workflow that sets `retries`. |
+| `2` | Up to 3 attempts in total, with no wait between them. |
+| `{ attempts: 3, backoff: { type: 'fixed', delay: 5000 } }` | Up to 4 attempts, 5 seconds apart. |
+| `{ attempts: 5, backoff: { type: 'exponential', delay: 1000 } }` | Up to 6 attempts; the wait doubles after each retry. |
+
+A retry is a new run of the job: it waits in the queue until the backoff passes and a runner claims it again. After the last attempt fails, the job is failed for good: `hasError` is `true` and `error` holds the last error. See [Check a job's status](/jobs-queue/queues#check-a-jobs-status).
+
+Each retry runs the handler again from the start, so write tasks that are safe to repeat. Use the destination service's idempotency key for charges, emails, and other external effects. A crashed worker doesn't use up a retry; see [Leases and crash recovery](/jobs-queue/queues#leases-and-crash-recovery).
+
+### Callbacks
+
+| Callback | When it runs |
+| --- | --- |
+| `onSuccess` | After the handler succeeds, before its result is saved. |
+| `onFail` | After every failed attempt, including attempts that will retry. It is not a final-failure callback. |
+
+Both receive `{ input, job, req, taskStatus }` and are awaited.
+
+### Restore a task that already succeeded
+
+When a workflow retries, a task that already succeeded returns its saved output instead of running again. Set `retries.shouldRestore` to change that:
+
+| `shouldRestore` | Result |
+| --- | --- |
+| `true` (default) | Return the saved output. |
+| `false` | Run the task again on every workflow retry. |
+| `({ input, job, req, taskStatus }) => boolean` | Decide per run, for example rerun only while a date in `input` is in the future. |
+
+```ts
+{
+  slug: 'refresh-rates',
+  retries: { attempts: 2, shouldRestore: false },
+  handler: async () => ({ output: { rates: await fetchRates() } }),
+}
+```
+
+## Nested tasks
+
+A task handler can run steps of its own with `tasks` and `inlineTask`. Each step saves its output on the job, so a retry of the outer task restores finished steps:
+
+```ts
+{
+  slug: 'import-feed',
+  inputSchema: [{ name: 'url', type: 'text', required: true }],
+  handler: async ({ input, tasks, inlineTask }) => {
+    const { items } = await inlineTask('fetch', {
+      task: async () => ({ output: { items: await fetchFeed(input.url) } }),
+    })
+
+    await tasks['create-post']('create-first', { input: { title: items[0].title } })
+
+    return { output: {} }
+  },
+}
+```
+
+The first argument is a step ID, unique within the job. Keep it the same across retries. For many steps or longer flows, use a [workflow](/jobs-queue/workflows).
+
+## Load a handler from a file
+
+`handler` can be a module path instead of a function: `'/abs/path/to/file.ts'` for the default export, or `'/abs/path/to/file.ts#exportName'` for a named export. FrogBot imports the file when the task runs, which keeps heavy dependencies out of your web bundle.
+
+```ts
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const dirname = path.dirname(fileURLToPath(import.meta.url))
+
+const task = {
+  slug: 'render-pdf',
+  handler: path.resolve(dirname, 'jobs/renderPdf.ts') + '#renderPdf',
+}
+```
+
+The file must exist at that path, in a form your runtime can import, wherever jobs run. That suits a [worker process](/jobs-queue/workers) better than a bundled web server. Task handlers loaded from a file get the request without `req.frogbot`.
+
+## Task options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | Required | Unique among all tasks and workflows. The slug `frogbot-sweep-waitpoints` is reserved. |
+| `handler` | `(args) => { output } \| Promise<…> \| string` | Required | Runs the task. See [Handler arguments](#handler-arguments) and [Load a handler from a file](#load-a-handler-from-a-file). |
+| `inputSchema` | `Field[]` | — | Fields describing `input`, used for generated types. |
+| `outputSchema` | `Field[]` | — | Fields describing `output`, used for generated types. |
+| `interfaceName` | `string` | `Task` plus the capitalized slug | Name of the generated input and output interface. |
+| `label` | `string` | — | Human-friendly name for the task. |
+| `retries` | `number \| RetryConfig` | No retries, unless a workflow sets them | Retries after a failure. See [Retry options](#retry-options). |
+| `concurrency` | `ConcurrencyConfig` | — | Keeps related jobs from running at once. See [Concurrency](/jobs-queue/workflows#concurrency). |
+| `schedule` | `ScheduleConfig[]` | — | Queues the task on a cron schedule. See [Schedules](/jobs-queue/schedules). |
+| `onSuccess` | `({ input, job, req, taskStatus }) => void \| Promise<void>` | — | Awaited after a successful handler, before its result is saved. |
+| `onFail` | `({ input, job, req, taskStatus }) => void \| Promise<void>` | — | Awaited after every failed attempt, including attempts that will retry. |
+
+### Retry options
+
+`retries` takes a number of retries or an object:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `attempts` | `number` | Inherited from the workflow, otherwise `0` | Number of retries after a failure. |
+| `backoff` | `{ type: 'fixed' \| 'exponential'; delay?: number }` | No delay | Wait before each retry. `delay` is the base in milliseconds; `exponential` doubles it after each retry. In a workflow, the longest task backoff sets when the whole workflow retries. |
+| `shouldRestore` | `boolean \| (args) => boolean \| Promise<boolean>` | `true` | Whether a task that already succeeded restores its saved output on retry instead of running again. A function receives `input`, `job`, `req`, and `taskStatus`. |

@@ -85,7 +85,7 @@ export function testIO({
   isTTY?: boolean;
   confirm?: boolean;
   config?: DeployConfig | (() => Promise<DeployConfig>);
-  programs?: Record<string, FakeProgram>;
+  programs?: Partial<Record<string, FakeProgram>>;
 }) {
   let out = '';
   let err = '';

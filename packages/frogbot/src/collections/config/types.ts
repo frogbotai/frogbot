@@ -67,6 +67,51 @@ export type CollectionAdminComponents = Omit<
   /** Replaces Payload's Create New in the list controls and the list view's empty state. */
   CreateButton?: FrogBotComponent;
   edit?: NonNullable<PayloadComponents['edit']> & { views?: CollectionEditViews };
+  /** Components in the record side panel. Each gets `PanelComponentProps`. */
+  panel?: RecordPanelComponents;
+};
+
+/**
+ * Props every record panel component gets. Client components get them as props; server
+ * components also get Payload's edit-view server props (`payload`, `req`, `permissions`, `doc`),
+ * and their client children read `close` and `expand` from `useRecordPanel()`.
+ */
+export type PanelComponentProps = {
+  /** Closes the panel. */
+  close: () => void;
+  collectionSlug: string;
+  /** Opens the record's full edit page. */
+  expand: () => void;
+  id: number | string;
+};
+
+/** The record side panel's component slots, in `admin.components.panel`. */
+export type RecordPanelComponents = {
+  /** Header buttons, before copy link. */
+  actions?: FrogBotComponent[];
+  /** After the last field. */
+  afterFields?: FrogBotComponent[];
+  /** Before the property list, under the title when the body shows one. */
+  beforeFields?: FrogBotComponent[];
+  /** Replaces the whole panel. */
+  Component?: FrogBotComponent;
+  /** Pinned under the scrolling body, inside the form: for example a comment box. */
+  footer?: FrogBotComponent[];
+  /** Replaces only the header. */
+  Header?: FrogBotComponent;
+};
+
+/** The record side panel's settings, in `admin.panel`. */
+export type RecordPanelConfig = {
+  /**
+   * Fields in the compact two-column property list under the title, in order.
+   * Names or dot paths of top-level, group or tab fields.
+   * Default: the sidebar fields (`admin.position: 'sidebar'`), in config order.
+   * Every other field appears below in the normal form, in config order.
+   */
+  properties?: string[];
+  /** Starting width in px. Default 560. Users drag between 400 and 960; saved per user. */
+  width?: number;
 };
 
 export type CollectionAdminConfig = Omit<
@@ -93,6 +138,14 @@ export type CollectionAdminConfig = Omit<
   group?: PayloadAdmin['group'] | null;
   icon?: AdminIcon;
   livePreview?: LivePreviewConfig;
+  /**
+   * The record side panel. On by default for every collection: clicking a row, card or event
+   * opens the record in a panel beside the view, at `?record=<id>`.
+   * - `false`: no panel. Rows, cards and events open the full edit page, and `?record=<id>`
+   *   redirects to it.
+   * - object: settings, all optional.
+   */
+  panel?: false | RecordPanelConfig;
   preview?: GeneratePreviewURL;
   /**
    * Moves the collection into Settings: it gets its own Settings sidebar item, its pages show the
@@ -257,6 +310,19 @@ export type CollectionBeforeLoginHook<T extends TypeWithID = PayloadDocument> = 
   args: FrogBotArgs<Parameters<PayloadCollectionBeforeLoginHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionBeforeLoginHook<T>>;
 
+/** A sign-in method's callback, after it found or created the user and before any session exists. Return a `Response` to answer the callback instead, with no session written; resume later with `finishSignIn`. Return nothing to let sign-in finish. */
+export type CollectionBeforeSignInHook<T extends TypeWithID = PayloadDocument> = (args: {
+  collection: Parameters<CollectionBeforeLoginHook<T>>[0]['collection'];
+  context: FrogBotRequest['context'];
+  req: FrogBotRequest;
+  /** The user signing in, read with `overrideAccess`. */
+  user: T;
+  /** The sign-in method's slug. */
+  method: string;
+  /** The validated same-origin path sign-in continues to. */
+  returnTo: string;
+}) => Response | void | Promise<Response | void>;
+
 export type CollectionAfterLoginHook<T extends TypeWithID = PayloadDocument> = (
   args: FrogBotArgs<Parameters<PayloadCollectionAfterLoginHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionAfterLoginHook<T>>;
@@ -303,6 +369,8 @@ export type CollectionHooks<T extends TypeWithID = PayloadDocument> = {
   beforeLogin?: CollectionBeforeLoginHook<T>[];
   beforeOperation?: CollectionBeforeOperationHook[];
   beforeRead?: CollectionBeforeReadHook<T>[];
+  /** Runs in order in every sign-in method's callback; the first `Response` returned ends it. */
+  beforeSignIn?: CollectionBeforeSignInHook<T>[];
   beforeValidate?: CollectionBeforeValidateHook<T>[];
   me?: CollectionMeHook<T>[];
   refresh?: CollectionRefreshHook<T>[];

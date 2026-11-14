@@ -12,8 +12,8 @@ import { unzipTo, ZipError } from './data/unzip.js';
 import { formatBytes } from './data/upload.js';
 import { takeUploadFolders } from './data/uploadFolders.js';
 import type { DojoClient } from './dojo.js';
-import { createDojo, dojoMessage, segment } from './dojo.js';
-import { ShareError } from './error.js';
+import { createDojo, segment } from './dojo.js';
+import { dojoMessage, dojoStop, reportStop, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
 import { done, say } from './io.js';
 import { writeLink } from './link.js';
@@ -31,11 +31,7 @@ export async function runPull(args: string[], io: DojoIO): Promise<number> {
   try {
     return await pull(args, io);
   } catch (error) {
-    if (!(error instanceof ShareError)) throw error;
-
-    io.stderr.write(`[frogbot] ${error.message}\n`);
-
-    return error.code;
+    return reportStop(io, error);
   }
 }
 
@@ -54,7 +50,7 @@ async function pull(args: string[], io: DojoIO): Promise<number> {
 
   const looked = await dojo.request(`/api/apps/${segment(name)}/cli${withData ? '?secret=1' : ''}`);
 
-  if (!looked.ok) throw new ShareError(await dojoMessage(looked));
+  if (!looked.ok) throw await dojoStop(looked);
 
   const app = (await looked.json()) as Partial<App>;
 
@@ -78,7 +74,7 @@ async function pull(args: string[], io: DojoIO): Promise<number> {
     headers: { accept: 'application/gzip' },
   }));
 
-  if (!source.ok || !source.body) throw new ShareError(await dojoMessage(source));
+  if (!source.ok || !source.body) throw await dojoStop(source);
 
   const staging = await mkdtemp(join(io.cwd, '.frogbot-pull-'));
   let data: PulledData | string | undefined;
@@ -159,7 +155,7 @@ async function pullData(
 
   if (response.status === 403 || response.status === 404) return dojoMessage(response);
   if (!response.ok || !response.body) {
-    throw new ShareError(`Couldn't download the app's data: ${await dojoMessage(response)}`);
+    throw await dojoStop(response, "Couldn't download the app's data");
   }
 
   const download = await mkdtemp(join(cwd, '.frogbot-data-'));

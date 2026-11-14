@@ -310,11 +310,9 @@ export function useAttachments({
 }
 
 export function AttachmentControl({
-  accept,
   add,
   disabled,
 }: {
-  accept?: string;
   add: (files: File[]) => void;
   disabled?: boolean;
 }) {
@@ -331,7 +329,6 @@ export function AttachmentControl({
         ref={input}
         type="file"
         multiple
-        accept={accept}
         tabIndex={-1}
         className="fb-attachments__input"
         onChange={select}

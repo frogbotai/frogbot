@@ -4,6 +4,11 @@ export {
   type RecentsSectionClientProps,
 } from '../elements/Nav/RecentsSection.client.js';
 export {
+  PanelIconButton,
+  type PanelIconButtonProps,
+} from '../elements/PanelIconButton/index.client.js';
+export { PanelSection, type PanelSectionProps } from '../elements/PanelSection/index.client.js';
+export {
   SignInButtonsClient,
   type SignInButtonsClientProps,
 } from '../elements/SignInButtons/index.client.js';
@@ -12,6 +17,7 @@ export { type ViewTab, ViewTabs, type ViewTabsProps } from '../elements/ViewTabs
 export { AICell, AIField } from '../fields/AI/index.client.js';
 export { BarcodeCell } from '../fields/Barcode/index.client.js';
 export { ChannelCell, type ChannelCellProps } from '../fields/Channel/index.client.js';
+export { ColorCell, ColorField } from '../fields/Color/index.client.js';
 export { DurationCell, DurationField } from '../fields/Duration/index.client.js';
 export { FieldCell } from '../fields/FieldCell/index.client.js';
 export { MoneyCell, MoneyField } from '../fields/Money/index.client.js';
@@ -21,6 +27,12 @@ export { RatingCell, RatingField } from '../fields/Rating/index.client.js';
 export { UrlCell } from '../fields/Url/index.client.js';
 export { shallowRouteState } from '../utilities/shallowRoute.js';
 export { DefaultListView } from '../views/List/DefaultListView.client.js';
+export {
+  type RecordPanelContextValue,
+  type RecordPanelEvent,
+  useRecordPanel,
+  useRecordPanelEvents,
+} from '../views/panel/RecordPanelProvider.client.js';
 export type { FieldType } from '@payloadcms/ui';
 export type { Options } from '@payloadcms/ui';
 export type { FormProps } from '@payloadcms/ui';
@@ -239,5 +251,6 @@ export { QueryPresetsWhereCell } from '@payloadcms/ui';
 export { QueryPresetsWhereField } from '@payloadcms/ui';
 export { Button } from '@payloadcms/ui';
 export { PopupList } from '@payloadcms/ui';
+export { FormSubmit } from '@payloadcms/ui';
 export { DraggableSortable } from '@payloadcms/ui';
 export { DraggableSortableItem } from '@payloadcms/ui';

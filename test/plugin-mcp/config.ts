@@ -9,6 +9,7 @@ import {
   moneyField,
   ratingField,
   type Tool,
+  type TypedUser,
 } from 'frogbot';
 import { write_todos } from 'frogbot/tools';
 import { z } from 'zod';
@@ -98,7 +99,7 @@ const Members: CollectionConfig = {
             where: { email: { equals: memberCredentials.email } },
           });
 
-          return { user: docs[0] ? { id: docs[0].id, email: docs[0].email } : null };
+          return { user: docs[0] ? ({ id: docs[0].id, email: docs[0].email } as TypedUser) : null };
         },
       },
     ],

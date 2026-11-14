@@ -1,0 +1,169 @@
+---
+title: Record panel
+description: Open a record beside any collection view, with its edit form.
+---
+
+Clicking a row in the list, a card on a board, an event on a calendar or a record link in a custom view opens the record in a panel beside the view. The panel is the edit page's own form, so every field type, hook, validation rule and access rule works as it does on the edit page. Clicking another record switches the panel to it.
+
+The panel is on for every collection. Set `admin.panel: false` to open records on their edit page instead.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Tasks: CollectionConfig = {
+  slug: 'tasks',
+  admin: {
+    useAsTitle: 'title',
+    useAsDone: 'completed',
+    panel: { properties: ['status', 'assignee', 'dueDate'], width: 600 },
+  },
+  fields: [
+    // ...
+  ],
+}
+```
+
+## Layout
+
+From the top, the panel shows:
+
+1. The header, one row pinned to the top with a line under it. On the left, **Mark complete** for collections with [`useAsDone`](/configuration/collections#admin-options): it saves at once and reads **Completed** in green when done. Collections without `useAsDone` show the `useAsTitle` field there instead, as a large heading you edit in place, wrapping onto more lines rather than cutting off. On the right, your `actions`, **Save**, copy link, open full page, close, and a menu with create new, duplicate and then delete in red, plus the last autosave time for drafts autosave. Once the panel scrolls about 46 px, Mark complete shrinks to a check and the title, and a title in the header shrinks to body size.
+2. For collections with `useAsDone`, the `useAsTitle` field as a large heading you edit in place. Either way the title shows once. It needs a text, textarea or email field.
+3. Your `beforeFields` components.
+4. The `properties` fields as label and value rows.
+5. Every other field, in config order. No field appears twice.
+6. Your `afterFields` components.
+7. Your `footer` components, pinned under the scrolling body.
+
+The menu hides what the user can't do. Delete asks first, and moves the record to the trash when the collection has `trash`.
+
+A replaced `Header` keeps the title in the body.
+
+## Settings
+
+Settings go in `admin.panel`, React components in `admin.components.panel`, the same split as the edit view.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `properties` | `string[]` | Sidebar fields | Fields in the property list under the title, in order. Names or dot paths of top-level, group or named tab fields. The default is the fields with `admin.position: 'sidebar'`, in config order. Startup fails when an entry names no field. |
+| `width` | `number` | `560` | Starting width in px, from 400 to 960. Users drag the panel's left edge between 400 and 960 px, and the width they pick is saved per user and collection in their preferences (`collection-<slug>-panel`). |
+
+## Components
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `actions` | `FrogBotComponent[]` | — | Header buttons, before copy link. |
+| `afterFields` | `FrogBotComponent[]` | — | After the last field. |
+| `beforeFields` | `FrogBotComponent[]` | — | Before the property list, under the title when the body shows one. |
+| `Component` | `FrogBotComponent` | Built-in panel | Replaces the whole panel, edit form and footer included. |
+| `footer` | `FrogBotComponent[]` | — | Pinned to the bottom of the panel, under the scrolling body: for example a comment box. Nothing is pinned without it. |
+| `Header` | `FrogBotComponent` | Built-in header | Replaces the header. |
+
+Every slot gets `PanelComponentProps`:
+
+```ts
+type PanelComponentProps = {
+  collectionSlug: string
+  id: number | string
+  close: () => void
+  expand: () => void // opens the full edit page
+}
+```
+
+Server components also get the edit view's server props: `payload`, `req`, `permissions` and `doc`. Functions can't cross from the server, so a server component's client children read `close` and `expand` from `useRecordPanel()`:
+
+```tsx
+'use client'
+
+import { useRecordPanel } from '@frogbotai/ui/admin'
+
+export function CloseButton() {
+  const { close } = useRecordPanel()
+
+  return <button onClick={close}>Done</button>
+}
+```
+
+Every slot except `Component` renders inside the edit form, so it can use the form hooks such as `useField` and `useDocumentInfo`. The footer is portalled below the form's element, so a `<form>` of its own, such as a comment box, doesn't nest inside the edit form, and Enter in it doesn't save the record.
+
+## Building blocks
+
+`@frogbotai/ui/admin` exports the pieces the panel is made of, so your slots look like the built-in parts:
+
+- `PanelIconButton` is the header's 32 px icon button. Give it an `icon` at 16 px and a `label`, which is also its tooltip. Use it in `actions`.
+- `PanelSection` is a titled block: a `heading`, an optional add button (`onAdd`, `addLabel`) and its content.
+- The `fb-pill-tabs` class on a [tabs field](/fields/tabs) gives it small pill tabs. The error count on a tab with invalid fields and the remembered tab per record work as before.
+
+```tsx
+'use client'
+
+import { PanelIconButton } from '@frogbotai/ui/admin'
+import { ClockIcon } from '@frogbotai/ui/icons'
+
+export function TrackTime() {
+  return <PanelIconButton icon={<ClockIcon size={16} />} label="Track time" onClick={start} />
+}
+```
+
+## Activity and comments
+
+Activity and comments are fields, so the full edit page shows them too. Put a tabs field at the end of `fields`, with [`activityField()`](/plugins/audit-log#activity-field) from the audit log plugin in one tab:
+
+```ts
+import { activityField } from '@frogbotai/plugin-audit-log'
+import type { CollectionConfig } from 'frogbot'
+
+export const Tasks: CollectionConfig = {
+  slug: 'tasks',
+  admin: { useAsTitle: 'title' },
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    // ...
+    {
+      type: 'tabs',
+      admin: { className: 'fb-pill-tabs' },
+      tabs: [
+        { label: 'Activity', fields: [activityField()] },
+        // a Comments tab goes here
+      ],
+    },
+  ],
+}
+```
+
+## Saving
+
+The panel saves the way the edit page does: the **Save** button or Cmd/Ctrl-S, or autosave when the collection has `versions.drafts.autosave`, which hides **Save**. A save updates the record's card, row or event; unsaved values never show on it. Switching records, closing, Esc and clicking outside ask before throwing away unsaved edits.
+
+Custom views hear about saves and deletes with `useRecordPanelEvents`:
+
+```tsx
+'use client'
+
+import { useRecordPanelEvents } from '@frogbotai/ui/admin'
+import { useState } from 'react'
+
+export function TaskStrip({ initial }: { initial: Task[] }) {
+  const [tasks, setTasks] = useState(initial)
+
+  useRecordPanelEvents((event) => {
+    if (event.type === 'deleted') {
+      setTasks((current) => current.filter((task) => task.id !== event.id))
+    } else {
+      setTasks((current) => current.map((task) => (task.id === event.doc.id ? event.doc : task)))
+    }
+  })
+
+  return <ul>{/* each task links to its edit page, so a click opens it in the panel */}</ul>
+}
+```
+
+## Behavior
+
+- The open record is `?record=<id>` on every view. Reload, Back and shared links reopen it. Opening or switching a record replaces the history entry, so Back doesn't step through each record.
+- Cmd, Ctrl or Shift-click, or a middle click, opens the record's edit page in a new tab.
+- Esc, the close button, or a click on the view outside a record closes the panel.
+- A record that is missing or the user can't read closes the panel with a not-found message.
+- Below 768 px the panel covers the view.
+- With `panel: false`, `?record=<id>` redirects to the record's edit page, so shared links keep working.
+- Create, from a board column or a calendar slot, opens the create form in the panel; the first save switches it to the new record.

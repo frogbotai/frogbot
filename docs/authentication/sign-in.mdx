@@ -50,7 +50,10 @@ The admin login page automatically renders methods from the collection selected 
 
 ### The first user
 
-While the admin user collection has no users, the admin sends everyone to `/admin/create-first-user`. With sign-in methods configured, that page shows the sign-in buttons below the password form, so the first person can also continue with Google. The first person to finish either one becomes the first user. With the [OAuth-only setup](#collection-requirements), the admin shows the login page instead, and the first person to sign in becomes the first user.
+While the admin user collection has no users, the admin sends everyone to `/admin/create-first-user`.
+
+- **With sign-in methods configured,** that page shows the sign-in buttons below the password form, so the first person can also continue with Google. The first person to finish either one becomes the first user.
+- **With the [OAuth-only setup](#collection-requirements),** the admin shows the login page instead, and the first person to sign in becomes the first user.
 
 **On an empty self-hosted app, that can be anyone who opens the URL.** Sign in yourself before you make it public. On Dojo, a shared app [starts with its sharer as the first user](/plugins/dojo#sign-in-with-dojo).
 
@@ -91,7 +94,19 @@ For piece authors, `oauth.account({ tokens, client, req })` returns `{ id, label
 
 User creation runs collection validation and hooks. Give required custom fields defaults or populate them in a hook. If creation fails, sign-in fails. Trashed users are excluded from identity lookup; duplicate or incompatible email identities are rejected.
 
-Session issuance respects account lockout, collection session and cookie settings, and runs `beforeLogin` and `afterLogin`. The callback sets the session cookie and never returns provider tokens. It answers with a small page that continues to `returnTo` (a `<meta http-equiv="refresh">`) rather than a redirect: browsers mark the callback's load cross-site because it comes from the provider, and with `serverURL` set the session cookie doesn't count on a cross-site load, so a redirect's target would not see the user until a reload. The page's own navigation is same-origin, so `returnTo` sees the user on its first load. The page takes the admin's background (light, dark, or the system's when the admin follows the system) and shows nothing, so it looks like the admin loading. If the next page takes more than 1.5 seconds to open, it shows a translated "Loading…" and a link to continue. When `returnTo` is outside the admin, it uses the browser's own colours.
+Session issuance respects account lockout and the collection's session and cookie settings, and it runs `beforeLogin` and `afterLogin`. The callback sets the session cookie and never returns provider tokens.
+
+The callback answers with a small page that continues to `returnTo` with a `<meta http-equiv="refresh">`. It does not redirect, for this reason:
+
+- Browsers mark the callback's load as cross-site, because it comes from the provider.
+- With `serverURL` set, the session cookie doesn't count on a cross-site load, so a redirect's target would not see the user until a reload.
+- The page's own navigation is same-origin, so `returnTo` sees the user on its first load.
+
+What the page shows:
+
+- It takes the admin's background (light, dark, or the system's when the admin follows the system) and shows nothing else, so it looks like the admin loading.
+- If the next page takes more than 1.5 seconds to open, it shows a translated "Loading…" and a link to continue.
+- When `returnTo` is outside the admin, it uses the browser's own colours.
 
 For collections with sign-in methods, FrogBot coordinates OAuth and password login, logout, refresh, and password reset through the end of each operation. Operations serialize per collection to prevent concurrent requests from restoring revoked sessions. Use FrogBot's public API and normal auth endpoints; direct database operations bypass this coordination.
 
@@ -101,7 +116,11 @@ The SQLite adapter enables transactions automatically when you configure sign-in
 
 ## Who can sign up
 
-Creating a user through sign-in follows the collection's `access.create`, the same rule as `POST /api/users`. It runs with no signed-in user, and `data` holds the normalized email. The default `create` access allows only a signed-in user, so **without `access.create`, only people who already have an account can sign in.**
+Creating a user through sign-in follows the collection's `access.create`, the same rule as `POST /api/users`. The rule runs with no signed-in user, and `data` holds the normalized email.
+
+<Warning>
+The default `create` access allows only a signed-in user. Without `access.create`, only people who already have an account can sign in.
+</Warning>
 
 ```ts
 // Anyone with a provider account
@@ -119,6 +138,28 @@ The rule also governs `POST /api/users`, so an open rule lets anyone create an a
 The first user is the exception, as with the create-first-user screen: while the collection has no users at all, counting trashed ones, the first person to sign in gets an account whatever `access.create` says. Sign-ins to a collection run one at a time, so two people signing in at once can't both become the first user.
 
 On Dojo, the [Dojo plugin](/plugins/dojo#sign-in-with-dojo) adds "Continue with Dojo" to the user collection, and it follows these same rules.
+
+## Two-factor sign-in
+
+The [two-factor plugin](/plugins/two-factor) asks for a code from an authenticator app, or a recovery code, after the provider or the password, before any session exists. It pauses the sign-in with the collection's [`beforeSignIn`](/hooks/collections#beforesignin) hook and resumes it with `finishSignIn` once the code is right.
+
+Any other second step, such as accepting terms, can use the same pair, but not together with two-factor sign-in. See [Limits](/plugins/two-factor#limits).
+
+```ts
+import { twoFactor } from '@frogbotai/plugin-two-factor'
+
+export default buildConfig({
+  collections: [Users],
+  plugins: [twoFactor({ issuer: 'Acme', require: ({ user }) => user.role === 'admin' })],
+})
+```
+
+- **Setup.** Each user turns it on from their account with a QR code and a confirming code, and saves 10 one-time recovery codes. Turning it on signs out their other sessions.
+- **Require.** Users `require` covers set it up at their next sign-in and can't turn it off while they're required.
+- **Recovery.** A recovery code signs in once when the authenticator is lost. An admin that `canReset` allows can clear someone's two-factor sign-in; they set it up again if they're still required.
+- **Sessions.** A paused sign-in is a 10-minute, single-use record behind an HttpOnly cookie and grants nothing on its own. Password login answers `202 { twoFactor, url }` with no token, and a password reset signs nobody in, for users who need a code.
+
+GraphQL and Local API login fail for users who need a code. See [Limits](/plugins/two-factor#limits).
 
 ## Collection requirements
 

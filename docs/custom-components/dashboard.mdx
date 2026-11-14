@@ -69,37 +69,83 @@ Each entry in `widgets` is a `Widget`:
 
 ## Creating a Widget Component
 
-Widgets are Server Components. Their request exposes the FrogBot instance at `req.frogbot`:
+Widgets are Server Components. Their request exposes the FrogBot instance at `req.frogbot`. Build them from [FrogBot UI](/chat/ui-installation) components such as `Card`, `List` and `Badge`, which follow the admin's light and dark theme with no stylesheet:
 
 ```tsx
+import {
+  Badge,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  List,
+  ListItem,
+} from '@frogbotai/ui'
 import type { WidgetServerProps } from 'frogbot'
 
-export async function UserStats({ req }: WidgetServerProps) {
-  const result = await req.frogbot.count({
-    collection: 'users',
+export async function OrdersThisWeek({ req }: WidgetServerProps) {
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const orders = await req.frogbot.find({
+    collection: 'orders',
+    where: { createdAt: { greater_than: weekAgo } },
+    sort: '-createdAt',
+    limit: 3,
     overrideAccess: false,
     req,
   })
 
   return (
-    <section className="user-stats">
-      <h2>Total users</h2>
-      <strong>{result.totalDocs}</strong>
-    </section>
+    <Card>
+      <CardHeader>
+        <CardDescription>Orders this week</CardDescription>
+        <CardTitle>{orders.totalDocs}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <List>
+          {orders.docs.map((order) => (
+            <ListItem
+              key={order.id}
+              title={String(order.customer)}
+              meta={
+                <Badge variant={order.status === 'paid' ? 'success' : 'outline'}>
+                  {String(order.status)}
+                </Badge>
+              }
+            />
+          ))}
+        </List>
+      </CardContent>
+    </Card>
   )
 }
 ```
 
-Use the [color tokens](/chat/ui-theming#color-tokens) in the widget stylesheet:
+Register the widget and put it on the first screen:
 
-```css
-.user-stats {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  padding: 1rem;
-}
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  admin: {
+    dashboard: {
+      widgets: [
+        {
+          slug: 'orders-this-week',
+          Component: '/components/OrdersThisWeek#OrdersThisWeek',
+          maxWidth: 'medium',
+        },
+      ],
+      defaultLayout: [
+        { widgetSlug: 'orders-this-week', width: 'medium' },
+        { widgetSlug: 'activity', width: 'full' },
+      ],
+    },
+  },
+})
 ```
+
+If a widget needs its own CSS, use it for layout and take colours from the [color tokens](/chat/ui-theming#color-tokens), such as `--color-text-secondary` and `--color-border`, so it follows the theme. Avoid fixed colours and font sizes, and use `Card` rather than drawing your own border and shadow.
 
 ### Widget component props
 

@@ -92,4 +92,42 @@ describe('collection import map', () => {
     expect(addToImportMap).toHaveBeenCalledWith(['./After#After']);
     expect(addToImportMap).toHaveBeenCalledWith('./Event#Event');
   });
+
+  it('collects gallery slots and Card override', () => {
+    const addToImportMap = vi.fn();
+
+    iterateCollections({
+      addToImportMap,
+      baseDir: '/tmp',
+      collections: [
+        {
+          admin: {},
+          custom: {
+            frogbot: {
+              collectionViews: [
+                {
+                  components: {
+                    afterCards: ['./After#After'],
+                    beforeCards: ['./Before#Before'],
+                    Card: './Card#Card',
+                  },
+                  slug: 'gallery',
+                  type: 'gallery',
+                },
+              ],
+            },
+          },
+          fields: [],
+          slug: 'companies',
+        },
+      ] as never,
+      config: {} as never,
+      importMap: {},
+      imports: {},
+    });
+
+    expect(addToImportMap).toHaveBeenCalledWith(['./Before#Before']);
+    expect(addToImportMap).toHaveBeenCalledWith(['./After#After']);
+    expect(addToImportMap).toHaveBeenCalledWith('./Card#Card');
+  });
 });

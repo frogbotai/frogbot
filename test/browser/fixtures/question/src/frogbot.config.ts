@@ -41,6 +41,7 @@ import {
   messagesSlug,
   modelPort,
   monthlySpendUSD,
+  photosSlug,
   pickerAgentSlug,
   projectsSlug,
   reasoningModels,
@@ -57,6 +58,7 @@ import {
   usersSlug,
   verboseEffort,
 } from '../shared';
+import { cellAccess, cellDrafts, cellKinds } from './cellEdits';
 
 const projectStatusOptions = [
   { label: 'Active', value: 'active', color: 'green' as const },
@@ -167,6 +169,7 @@ export default buildConfig({
             type: 'calendar',
             start: 'dueAt',
             end: 'endsAt',
+            color: 'status',
             defaultFields: [
               'status',
               'channel',
@@ -177,6 +180,14 @@ export default buildConfig({
               'projectStatus',
               'tagNames',
             ],
+          },
+          {
+            type: 'timeline',
+            start: 'dueAt',
+            end: 'endsAt',
+            groupBy: 'status',
+            color: 'status',
+            scales: ['day', 'week', 'month'],
           },
         ],
       },
@@ -269,12 +280,31 @@ export default buildConfig({
     },
     {
       slug: approvalsSlug,
-      admin: { useAsTitle: 'title', views: [{ type: 'board', groupBy: 'status' }] },
+      admin: {
+        useAsTitle: 'title',
+        views: [
+          { type: 'board', groupBy: 'status' },
+          {
+            type: 'gallery',
+            components: {
+              afterCards: ['/components/GalleryCard#AfterCards'],
+              beforeCards: ['/components/GalleryCard#BeforeCards'],
+              Card: '/components/GalleryCard#ApprovalCard',
+            },
+          },
+        ],
+      },
       fields: [
         { name: 'title', type: 'text', required: true },
         { name: 'status', type: 'select', options: storyStatusOptions },
         { name: 'approver', type: 'text', required: true },
+        { name: 'photo', type: 'upload', relationTo: photosSlug },
       ],
+    },
+    {
+      slug: photosSlug,
+      file: true,
+      fields: [{ name: 'alt', type: 'text' }],
     },
     {
       slug: archivesSlug,
@@ -285,6 +315,9 @@ export default buildConfig({
         { name: 'status', type: 'select', options: storyStatusOptions },
       ],
     },
+    cellKinds,
+    cellDrafts,
+    cellAccess,
     {
       slug: timesheetsSlug,
       admin: {
@@ -387,6 +420,7 @@ export default buildConfig({
           timesheetsSlug,
           storiesSlug,
           approvalsSlug,
+          photosSlug,
         ] as const) {
           await req.frogbot.delete({ collection, where: {}, overrideAccess: true, req });
         }
@@ -541,9 +575,9 @@ export default buildConfig({
         }
 
         await req.frogbot.update({
-          collection: usersSlug,
-          id: req.user.id,
-          data: { spendThisPeriodUSD: monthlySpendUSD },
+          collection: 'plugin-ai-policy-spend',
+          where: { key: { equals: `${usersSlug}:${String(req.user.id)}` } },
+          data: { amount: monthlySpendUSD },
           overrideAccess: true,
           req,
         });
@@ -578,7 +612,15 @@ export default buildConfig({
         await req.frogbot.update({
           collection: usersSlug,
           id: req.user.id,
-          data: { spendThisPeriodUSD: 0, monthlyBudget: null },
+          data: { monthlyBudget: null },
+          overrideAccess: true,
+          req,
+        });
+
+        await req.frogbot.update({
+          collection: 'plugin-ai-policy-spend',
+          where: { key: { equals: `${usersSlug}:${String(req.user.id)}` } },
+          data: { amount: 0 },
           overrideAccess: true,
           req,
         });

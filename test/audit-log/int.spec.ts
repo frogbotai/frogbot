@@ -1,8 +1,11 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { createPayloadRequest } from 'payload';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ActivityField } from '../../packages/plugins/plugin-audit-log/src/rsc/ActivityField.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
@@ -548,5 +551,99 @@ describe('audit log plugin integration', () => {
       (await booted.frogbot.findByID({ collection: 'posts', id: post.id, overrideAccess: true }))
         .title,
     ).toBe('Kept');
+  });
+
+  describe('activityField', () => {
+    async function activityAs(email: string, id: number | string) {
+      const existing = await booted.frogbot.find({
+        collection: 'accounts',
+        where: { email: { equals: email } },
+        overrideAccess: true,
+      });
+
+      const account =
+        existing.docs[0] ??
+        (await booted.frogbot.create({
+          collection: 'accounts',
+          data: { email, password: 'activity-password' },
+          overrideAccess: true,
+        }));
+
+      const req = await createPayloadRequest({
+        payload: booted.payload,
+        user: { ...account, collection: 'accounts' },
+      });
+
+      const node = await ActivityField({ collectionSlug: 'ledgers', id, req: req as never });
+
+      return node ? renderToStaticMarkup(node) : null;
+    }
+
+    async function ledgerWithHistory() {
+      const ledger = await booted.frogbot.create({
+        collection: 'ledgers',
+        data: { title: 'Q1' },
+        overrideAccess: true,
+      });
+
+      await booted.frogbot.update({
+        collection: 'ledgers',
+        id: ledger.id,
+        data: { title: 'Q1 final' },
+        overrideAccess: true,
+      });
+
+      await booted.frogbot.update({
+        collection: 'ledgers',
+        id: ledger.id,
+        data: { cost: 40 },
+        overrideAccess: true,
+      });
+
+      await vi.waitFor(async () => expect(await entries(ledger.id, 'ledgers')).toHaveLength(3));
+
+      return ledger.id;
+    }
+
+    const texts = (html: string | null) =>
+      [...(html ?? '').matchAll(/<p class="fb-activity__text">(.*?)<\/p>/g)].map(([, text]) =>
+        text.replace(/<[^>]+>/g, ''),
+      );
+
+    it('lists the record entries newest first, naming only fields the user reads', async () => {
+      const id = await ledgerWithHistory();
+
+      expect(texts(await activityAs('audit@frogbot.local', id))).toEqual([
+        'Someone changed Cost',
+        'Someone changed Title',
+        'Someone created this',
+      ]);
+
+      expect(texts(await activityAs('viewer@frogbot.local', id))).toEqual([
+        'Someone edited this',
+        'Someone changed Title',
+        'Someone created this',
+      ]);
+    });
+
+    it('shows nothing for a record the user cannot read', async () => {
+      const id = await ledgerWithHistory();
+
+      expect(await activityAs('blocked@frogbot.local', id)).toBeNull();
+    });
+
+    it('skips entries older than the record, left by a deleted record with the same id', async () => {
+      const id = await ledgerWithHistory();
+      const old = await entries(id, 'ledgers');
+
+      await booted.frogbot.update({
+        collection: 'audit-logs',
+        id: old[old.length - 1].id,
+        data: { timestamp: '2000-01-01T00:00:00.000Z' },
+        overrideAccess: true,
+      });
+
+      expect(texts(await activityAs('audit@frogbot.local', id))).toHaveLength(2);
+    });
   });
 });

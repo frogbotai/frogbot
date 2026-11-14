@@ -16,9 +16,13 @@ export type {
   BoardView,
   CalendarMode,
   CalendarView,
+  CardViewConfig,
   CollectionView,
   CustomView,
+  GalleryView,
   ListView,
+  TimelineScale,
+  TimelineView,
   ViewAccess,
   ViewComponents,
   ViewFilter,
@@ -91,12 +95,14 @@ export type {
   WidgetServerProps,
   WidgetWidth,
 } from './admin/views/types.js';
+export type { AgentErrorCode } from './agents/service.js';
 export type {
   AgentAccess,
   AgentConfig,
   AgentGenerateOpts,
   AgentGenerateResult,
   AgentInstance,
+  AgentInstructions,
   AgentManifest,
   AgentManifestEntry,
   AgentModelId,
@@ -168,6 +174,8 @@ export type {
   TranscribeAudio,
   TranscribeOpts,
 } from './ai/types.js';
+export type { FinishSignInArgs } from './auth/signIn/finish.js';
+export { finishSignIn } from './auth/signIn/finish.js';
 export type {
   AuthConfig,
   AuthStrategy,
@@ -218,6 +226,9 @@ export type {
   Collection,
   CollectionAdminConfig,
   CollectionConfig,
+  PanelComponentProps,
+  RecordPanelComponents,
+  RecordPanelConfig,
 } from './collections/config/types.js';
 export type {
   BulkResult,
@@ -262,6 +273,7 @@ export type {
   CollectionBeforeLoginHook,
   CollectionBeforeOperationHook,
   CollectionBeforeReadHook,
+  CollectionBeforeSignInHook,
   CollectionBeforeValidateHook,
   CollectionHooks,
   CollectionMeHook,
@@ -330,6 +342,8 @@ export type { AutonumberKeyFieldArgs } from './fields/baseFields/autonumber/key.
 export { autonumberKeyField } from './fields/baseFields/autonumber/key.js';
 export type { BarcodeFieldArgs } from './fields/baseFields/barcode/index.js';
 export { barcodeField } from './fields/baseFields/barcode/index.js';
+export type { ColorFieldArgs } from './fields/baseFields/color/index.js';
+export { colorField } from './fields/baseFields/color/index.js';
 export type { DurationFieldArgs } from './fields/baseFields/duration/index.js';
 export { durationField } from './fields/baseFields/duration/index.js';
 export type { MoneyFieldArgs } from './fields/baseFields/money/index.js';
@@ -500,7 +514,13 @@ export type {
 } from './search/types.js';
 export type { GatewayHandler } from './server/gateway.js';
 export { createGatewayHandler } from './server/gateway.js';
-export type { SkillConfig, SkillContent, SkillCtx, SkillResource } from './skills/types.js';
+export type {
+  SkillConfig,
+  SkillContent,
+  SkillCtx,
+  SkillResource,
+  SkillResources,
+} from './skills/types.js';
 export type {
   ToolApproval,
   ToolApprovalMode,

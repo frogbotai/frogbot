@@ -193,7 +193,14 @@ export function sanitizeCollection(
   };
 
   const select = withAIFieldSelect(c.fields, base.select);
-  const existingHooks = base.hooks ?? {};
+  const beforeSignIn = c.hooks?.beforeSignIn;
+  const {
+    beforeSignIn: _beforeSignIn,
+    ...existingHooks
+  }: PayloadCollectionConfig['hooks'] & {
+    beforeSignIn?: unknown;
+  } = base.hooks ?? {};
+
   const out: PayloadCollectionConfig = {
     ...base,
     fields: toPayloadFields(
@@ -293,6 +300,7 @@ export function sanitizeCollection(
   const {
     auth: _auth,
     collectionViews: _collectionViews,
+    panel: _panel,
     search: _search,
     signIn: _customSignIn,
     ...existingFrogBot
@@ -304,6 +312,7 @@ export function sanitizeCollection(
       ...existingFrogBot,
       auth,
       collectionViews,
+      ...(c.admin?.components?.panel ? { panel: c.admin.components.panel } : {}),
       ...(search ? { search } : {}),
       ...(signIn.length
         ? {
@@ -330,7 +339,9 @@ export function sanitizeCollection(
 
   out.endpoints = wrapEndpointList(
     [
-      ...(signIn.length ? buildSignInEndpoints({ collectionSlug: c.slug, methods: signIn }) : []),
+      ...(signIn.length
+        ? buildSignInEndpoints({ collectionSlug: c.slug, methods: signIn, beforeSignIn })
+        : []),
       ...(c.endpoints || []),
       ...(search ? buildSearchEndpoints({ collection: c.slug }) : []),
       ...buildAggregateEndpoints({ collection: c.slug }),

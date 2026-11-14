@@ -56,10 +56,10 @@ Set up a new FrogBot app on this machine and help me build with it:
 
 ## Quickstart
 
-You need Node.js 24.21 or newer and an AI provider key ([OpenAI](https://platform.openai.com/api-keys), Anthropic, or Google). Create and boot a project:
+You need Node.js 24.21 or newer. An AI provider key is optional: the CLI asks for one, and you can add it to `.env` later. Create and boot a project:
 
 ```bash
-npx create-frogbot-app@latest my-app --ai openai
+npx create-frogbot-app@latest my-app
 cd my-app
 npm run dev
 ```
@@ -129,7 +129,7 @@ export default buildConfig({
 });
 ```
 
-Boot locally with `frogbot dev`, generate end-to-end TypeScript types with `frogbot generate:types`, or deploy in one command with `npx frogbot deploy` (Dojo, Docker, Fly.io, Google Cloud, AWS or Azure).
+Boot locally with `frogbot dev`, generate end-to-end TypeScript types with `frogbot generate:types`, or put it online in one command with `npx frogbot deploy`.
 
 ## Features
 
@@ -166,11 +166,11 @@ This monorepo publishes the following packages:
 | [`@frogbotai/plugin-roles`](./packages/plugins/plugin-roles)                 | Role-based access control (RBAC) collections and permission helpers         |
 | [`@frogbotai/plugin-audit-log`](./packages/plugins/plugin-audit-log)         | Immutable audit trail for collection and auth operations                    |
 | [`@frogbotai/plugin-mcp`](./packages/plugins/plugin-mcp)                     | Expose collections and tools as a Model Context Protocol (MCP) server       |
+| [`@frogbotai/plugin-ai-capture`](./packages/plugins/plugin-ai-capture)       | Capture AI calls and export JSONL chat training data                        |
+| [`@frogbotai/plugin-ai-evals`](./packages/plugins/plugin-ai-evals)           | Score agents on saved test cases, from the admin or CI                      |
 | [`@frogbotai/plugin-ai-policy`](./packages/plugins/plugin-ai-policy)         | Per-user model allowlists and monthly AI budgets                            |
+| [`@frogbotai/plugin-ai-usage`](./packages/plugins/plugin-ai-usage)           | AI token and cost usage reporting                                           |
 | [`@frogbotai/plugin-api-keys`](./packages/plugins/plugin-api-keys)           | Multiple named, independently revocable API keys                            |
-| [`@frogbotai/plugin-capture`](./packages/plugins/plugin-capture)             | Capture AI calls and export JSONL chat training data                        |
-| [`@frogbotai/plugin-evals`](./packages/plugins/plugin-evals)                 | Score agents on saved test cases, from the admin or CI                      |
-| [`@frogbotai/plugin-usage-reports`](./packages/plugins/plugin-usage-reports) | AI token and cost usage reporting                                           |
 | [`@frogbotai/plugin-import-export`](./packages/plugins/plugin-import-export) | CSV and JSON collection import and export                                   |
 | [`@frogbotai/plugin-stripe`](./packages/plugins/plugin-stripe)               | Stripe webhooks and billing sync                                            |
 | [`@frogbotai/plugin-nested-docs`](./packages/plugins/plugin-nested-docs)     | Hierarchical parent/child document trees and breadcrumbs                    |

@@ -84,3 +84,9 @@ const withFileInput: AIConfig = {
 };
 
 void withFileInput;
+
+const allowlistFromEnv = {
+  providers: { anthropic: { models: ['claude-opus-5-5', 'claude-sonnet-5-5'] } },
+} satisfies AIConfig;
+
+void allowlistFromEnv;

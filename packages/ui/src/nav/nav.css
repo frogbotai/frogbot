@@ -386,7 +386,7 @@
   .fb-nav-section {
     display: flex;
     flex-direction: column;
-    min-height: 0;
+    flex-shrink: 0;
     width: 100%;
   }
 

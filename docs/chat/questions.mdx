@@ -57,7 +57,14 @@ type QuestionOutput = {
 }
 ```
 
-`selected` holds option labels exactly as they were offered. FrogBot rejects an answer that picks an option that was not offered, answers the wrong header, selects more than one option on a single-choice question, or includes `custom` when the question disallows it. Both types are exported as Zod schemas and TypeScript types: `QuestionInput` and `QuestionOutput` from `frogbot/tools`.
+`selected` holds option labels exactly as they were offered. FrogBot rejects an answer that does any of these:
+
+- Picks an option that was not offered.
+- Answers the wrong header.
+- Selects more than one option on a single-choice question.
+- Includes `custom` when the question disallows it.
+
+Both types are exported as Zod schemas and TypeScript types: `QuestionInput` and `QuestionOutput` from `frogbot/tools`.
 
 ## Answer in the chat UI
 
@@ -123,7 +130,10 @@ curl http://localhost:3000/api/agents/planner/chats/CHAT_ID/settle \
   --data '{ "toolCallId": "call_1", "output": { "answers": [{ "header": "Color", "selected": ["Blue"] }] } }'
 ```
 
-When that answer settles the last pending call in the step, FrogBot continues the turn and responds with the same JSON shape as the original request, plus the `settlement`. If other calls in the step are still waiting, the response has `status: "awaiting-input"` and the remaining `pending` calls. Send `{ "toolCallId": "call_1", "dismissed": true }` instead of `output` to dismiss. A call waiting for [tool approval](/chat/tool-approval#over-http) has an `approval` object and takes `{ "toolCallId", "approved", "reason"? }` instead.
+- **The answer settles the last pending call in the step.** FrogBot continues the turn and responds with the same JSON shape as the original request, plus the `settlement`.
+- **Other calls in the step are still waiting.** The response has `status: "awaiting-input"` and the remaining `pending` calls.
+
+To dismiss, send `{ "toolCallId": "call_1", "dismissed": true }` instead of `output`. A call that waits for [tool approval](/chat/tool-approval#over-http) has an `approval` object and takes `{ "toolCallId", "approved", "reason"? }` instead.
 
 | Status | `code` | Meaning |
 | --- | --- | --- |

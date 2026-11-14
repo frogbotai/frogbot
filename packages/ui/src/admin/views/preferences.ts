@@ -1,4 +1,4 @@
-import type { ColumnPreference } from 'payload';
+import type { ColumnPreference, ServerFunctionClient } from 'payload';
 import { transformColumnsToPreferences } from 'payload/shared';
 
 export type ViewPreferenceValue = Record<string, unknown> & {
@@ -59,4 +59,58 @@ export function getViewCardColumns<T extends { accessor: string; active: boolean
   return (columns ?? []).filter(
     (column) => column.active && Boolean(column.accessor) && column.accessor !== useAsTitle,
   );
+}
+
+/** The FrogBot server function that patches the signed-in user's preference. */
+export const PATCH_PREFERENCE = 'frogbot-patch-preference';
+
+/** A preference patch: keys set to `null` or `undefined` are removed, the rest are set. */
+export type PreferencePatch = Record<string, unknown>;
+
+export type PatchPreferenceArgs = {
+  key: string;
+  patch: PreferencePatch;
+};
+
+/**
+ * A stored preference with `patch` applied: keys set to `null` or `undefined` are removed, every
+ * other stored key is kept.
+ */
+export function applyPreferencePatch(
+  stored: unknown,
+  patch: PreferencePatch,
+): Record<string, unknown> {
+  const next: Record<string, unknown> =
+    stored && typeof stored === 'object' && !Array.isArray(stored) ? { ...stored } : {};
+
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === undefined || value === null) delete next[key];
+    else next[key] = value;
+  }
+
+  return next;
+}
+
+const patches = new Map<string, Promise<unknown>>();
+
+/**
+ * Sends `patch` to the server, which merges it into the preference stored at that moment, one
+ * patch per key at a time. Removed keys travel as `null`.
+ */
+export function patchPreference({
+  key,
+  patch,
+  serverFunction,
+}: PatchPreferenceArgs & { serverFunction: ServerFunctionClient }): Promise<unknown> {
+  const args: PatchPreferenceArgs = {
+    key,
+    patch: Object.fromEntries(Object.entries(patch).map(([name, value]) => [name, value ?? null])),
+  };
+
+  const send = () => serverFunction({ name: PATCH_PREFERENCE, args });
+  const next = (patches.get(key) ?? Promise.resolve()).then(send, send);
+
+  patches.set(key, next);
+
+  return next;
 }

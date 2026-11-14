@@ -1,4 +1,5 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
+import { twoFactor } from '@frogbotai/plugin-two-factor';
 import { buildConfig, definePiece } from 'frogbot';
 import { z } from 'zod';
 
@@ -36,6 +37,7 @@ export default buildConfig({
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || 'file:./frogbot.db' } }),
   typescript: { autoGenerate: false },
   admin: { importMap: { autoGenerate: false } },
+  plugins: [twoFactor({ issuer: 'Sign-in Lab', canReset: ({ req }) => Boolean(req.user) })],
   collections: [
     {
       slug: 'users',

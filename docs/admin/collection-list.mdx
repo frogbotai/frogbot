@@ -1,9 +1,84 @@
 ---
 title: Collection list
-description: Configure a collection's list view and its summary row.
+description: Configure a collection's list view, cells that edit in place, and its summary row.
 ---
 
 The list view is a collection's table. It is the default view, and when `admin.views` has other views the list comes first. Its shared properties, such as `defaultFields`, `filter` and `defaultSort`, are in the [Collection views reference](/configuration/collections#collection-views).
+
+## Editing cells in place
+
+A list can let people change a value where they see it, as in a spreadsheet, without opening the record. Turn it on per list view with `editable`:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+import { moneyField } from 'frogbot'
+
+export const Deals: CollectionConfig = {
+  slug: 'deals',
+  admin: {
+    views: [
+      {
+        type: 'list',
+        defaultFields: ['name', 'stage', 'amount', 'closeDate', 'owner'],
+        editable: true, // or ['stage', 'amount'] to edit only those columns
+      },
+    ],
+  },
+  fields: [
+    { name: 'name', type: 'text' },
+    { name: 'stage', type: 'select', options: ['lead', 'won', 'lost'] },
+    moneyField({ name: 'amount', currency: 'USD' }),
+    { name: 'closeDate', type: 'date' },
+    { name: 'owner', type: 'relationship', relationTo: 'users' },
+  ],
+}
+```
+
+| `editable` | Effect |
+| --- | --- |
+| unset or `false` | Off. Cells show values only, and a click opens the record. |
+| `true` | Every column whose field can edit in a cell. |
+| `string[]` | Only the named fields, by name or dot path (`address.city`). |
+
+These fields edit in the cell:
+
+- `text`, `textarea`, `email`, `number`, `select`, `checkbox`, `date`, and single `relationship` fields.
+- Every [field kind](/fields/overview#field-kinds-frogbotfields) from `frogbot/fields`, such as `moneyField` and `ratingField`.
+
+A cell renders the field's own input, so a custom `Field` component edits in the cell too. See [Fields in list cells](/fields/overview#fields-in-list-cells).
+
+Every other cell keeps opening the record in the [record panel](/admin/record-panel): `hasMany` fields, other field types, the linked first column, and fields the person can't change.
+
+A cell is never editable when any of these is true:
+
+- The person may not update that record or field.
+- The field, or a group, row, or collapsible around it, is read-only, hidden, or disabled.
+- The field is virtual.
+
+Access is checked for each row with its record, as on the edit page. An `access.update` that returns a query or reads `doc` therefore keeps the rows it denies plain.
+
+Startup fails on an `editable` entry that names no field, or one that never edits in a cell: `richText`, `array`, `blocks`, `group`, `tabs`, `upload`, `join`, `autonumberField`, and its key field.
+
+### Keys
+
+| Key | Outside an edit | While editing |
+| --- | --- | --- |
+| Click, Enter, F2 | Starts editing the cell | Enter saves; Shift+Enter is a new line in a textarea |
+| A letter or digit | Starts editing, replacing the value with what you type | Types |
+| Esc | | Cancels and restores the value |
+| Tab, Shift+Tab | | Saves and edits the next or previous editable cell, wrapping to the next row |
+| Arrows | Move between cells | Move within the input |
+
+Clicking anywhere else saves a valid change. After an edit, focus returns to the cell.
+
+### Saving
+
+A save is one `PATCH` of that field, so validation, hooks, and access run as on the edit page.
+
+- **An invalid value** shows the field's error in the cell and sends nothing.
+- **A failed save** shows the error, and the cell keeps what you typed until you fix it or press Esc.
+- **In a collection with drafts,** a cell saves a draft and never publishes.
+- **A saved cell** updates its row, and it updates an open record panel that shows the same record.
 
 ## Summary row
 
@@ -41,7 +116,7 @@ export const Deals: CollectionConfig = {
 | Date, including `createdAt` and `updatedAt` | `count`, `min` (Earliest), `max` (Latest) |
 | Any other field | `count` |
 
-`count` counts the records, whatever the column. Startup fails on a path that isn't a field, a pairing the field can't take, or a field that is hidden or has its own `access.read`: those can't be totaled, so their columns have no total for anyone. Filtering or searching on such a field blanks the whole footer for now, because `aggregate` refuses it in `where` ([#355](https://github.com/frogbotai/frogbot/issues/355)).
+`count` counts the records, whatever the column. Startup fails on a path that isn't a field, a pairing the field can't take, or a field that is hidden or has its own `access.read`: the footer leaves those columns out by design, so they have no total for anyone. Filtering on a field with its own `access.read` keeps the other columns' totals for a user its rule allows.
 
 Totals use the column's format: money and percent fields keep their currency and precision, other numbers and counts follow the admin language, and dates use the field's display format. A column with no value shows nothing, and `0` shows as `0`.
 
@@ -49,4 +124,4 @@ Totals use the column's format: money and percent fields keep their currency and
 
 Clicking a footer cell opens a menu of the operations its column takes, plus **None**. The choice is saved for that user and that view with the rest of the view's setup, so it wins over `summary` on the next visit, and **Reset to default** in the view menu returns to the config. `summary` sets defaults only; it doesn't lock a column.
 
-The footer reads every total with one [`aggregate`](/queries/aggregate#totals-without-groups) request, sent again when the filters, search, columns or choices change, not when the page changes. Drafts that were never published count. A published record with a newer draft counts its published values, so its total can differ from the draft its row shows ([#361](https://github.com/frogbotai/frogbot/issues/361)). When rows are grouped, one footer for the whole list follows the last group.
+The footer reads every total with one [`aggregate`](/queries/aggregate#totals-without-groups) request, sent again when the filters, search, columns or choices change, not when the page changes. Totals read each record's newest draft, the same values its row shows. When rows are grouped, one footer for the whole list follows the last group.

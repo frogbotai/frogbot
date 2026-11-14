@@ -13,7 +13,7 @@ export function isRecordDone(row: Record<string, unknown>, useAsDone: string | u
   return useAsDone ? getPath(row, useAsDone) === true : false;
 }
 
-/** The shared classes every view puts on a record: done, and selected while its drawer is open. */
+/** The shared classes every view puts on a record: done, and selected while it's open in the panel. */
 export function recordClassName({ done, selected }: { done: boolean; selected: boolean }): string {
   return ['fb-record', done && 'fb-record--done', selected && 'fb-record--selected']
     .filter(Boolean)

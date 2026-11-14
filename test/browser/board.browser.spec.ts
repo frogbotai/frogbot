@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-import { approvalsSlug, archivesSlug, storiesSlug } from './fixtures/question/shared';
+import { approvalsSlug, archivesSlug, photosSlug, storiesSlug } from './fixtures/question/shared';
 
 type Story = { _order: string; id: number | string; status?: string | null; title: string };
 
@@ -33,9 +33,7 @@ const count = (page: Page, label: string) =>
   column(page, label).locator('.frog-board__column-count');
 
 const titles = (page: Page, label: string) =>
-  column(page, label).locator(
-    '.frog-board__card:not(.frog-board__inline) .collection-board__title',
-  );
+  column(page, label).locator('.frog-board__card:not(.frog-board__inline) .fb-card__title');
 
 async function create(page: Page, data: Record<string, unknown>, slug = storiesSlug) {
   const response = await page.request.post(`/api/${slug}`, { data });
@@ -164,10 +162,10 @@ test('keeps a failed card, rolls back the total and offers the form', async ({ p
   await page.unroute(`**/api/${storiesSlug}?depth=1`);
   await failed.getByRole('button', { name: 'Open form' }).click();
 
-  const drawer = page.locator('.drawer__content').last();
+  const panel = page.locator('.fb-record-panel');
 
-  await expect(drawer.locator('#field-title')).toHaveValue('Rejected');
-  await drawer.locator('#action-save').click();
+  await expect(panel.locator('#field-title')).toHaveValue('Rejected');
+  await panel.locator('.fb-record-panel-header__save').click();
 
   await expect(titles(page, 'Todo')).toHaveText(['Rejected']);
   await expect(column(page, 'Todo').locator('.frog-board__inline')).toHaveCount(0);
@@ -182,15 +180,69 @@ test('opens the prefilled form when the collection needs more than a title', asy
 
   await expect(column(page, 'Doing').locator('.frog-board__inline')).toHaveCount(0);
 
-  const drawer = page.locator('.drawer__content').last();
+  const panel = page.locator('.fb-record-panel');
 
-  await expect(drawer.locator('#field-status')).toContainText('Doing');
-  await drawer.locator('#field-title').fill('Budget');
-  await drawer.locator('#field-approver').fill('Ana');
-  await drawer.locator('#action-save').click();
+  await expect(panel.locator('#field-status')).toContainText('Doing');
+  await panel.locator('#field-title').fill('Budget');
+  await panel.locator('#field-approver').fill('Ana');
+  await panel.locator('.fb-record-panel-header__save').click();
 
   await expect(titles(page, 'Doing')).toHaveText(['Budget']);
   await expect(count(page, 'Doing')).toHaveText('1');
+});
+
+const pixel = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+async function createApprovalWithPhoto(page: Page) {
+  const photo = await page.request.post(`/api/${photosSlug}`, {
+    multipart: {
+      _payload: JSON.stringify({ alt: 'Launch photo' }),
+      file: { buffer: pixel, mimeType: 'image/png', name: 'launch.png' },
+    },
+  });
+
+  expect(photo.ok()).toBe(true);
+  const { doc } = (await photo.json()) as { doc: { id: number | string } };
+
+  return create(
+    page,
+    { approver: 'Ada', photo: doc.id, status: 'todo', title: 'Launch plan' },
+    approvalsSlug,
+  );
+}
+
+test('keeps a card image after a save in the record panel', async ({ page }) => {
+  await createApprovalWithPhoto(page);
+  await page.goto(`/collections/${approvalsSlug}`);
+
+  const cardTitled = (title: string) =>
+    column(page, 'Todo').locator('.frog-board__card', {
+      has: page.locator('.fb-card__title', { hasText: new RegExp(`^${title}$`) }),
+    });
+
+  await expect(cardTitled('Launch plan').locator('.fb-card__image img')).toHaveAttribute(
+    'src',
+    /\/api\/photos\/file\//,
+  );
+
+  await cardTitled('Launch plan').locator('.fb-card__title').click();
+
+  const panel = page.locator('.fb-record-panel');
+
+  await expect(panel.locator('#field-title')).toHaveValue('Launch plan');
+  await panel.locator('#field-title').fill('Launch plan v2');
+  await panel.locator('.fb-record-panel-header__save').click();
+
+  const saved = cardTitled('Launch plan v2');
+
+  await expect(saved).toHaveCount(1);
+  await expect(saved.locator('.fb-card__image img')).toHaveAttribute(
+    'src',
+    /\/api\/photos\/file\//,
+  );
 });
 
 test('offers no Add without create access', async ({ page }) => {

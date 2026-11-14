@@ -1703,6 +1703,37 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/plugins/plugin-ai-capture:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.12.3
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.12.3)(happy-dom@21.0.4(bufferutil@4.1.0))(jsdom@24.1.3(bufferutil@4.1.0))(vite@6.4.3(@types/node@24.12.3)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.49.2)(tsx@4.23.15)(yaml@2.4.5))
+
+  packages/plugins/plugin-ai-evals:
+    dependencies:
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.12.3
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/plugins/plugin-ai-policy:
     devDependencies:
       '@frogbotai/gateway':
@@ -1723,6 +1754,33 @@ importers:
       react:
         specifier: 'catalog:'
         version: 19.3.1
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
+  packages/plugins/plugin-ai-usage:
+    devDependencies:
+      '@frogbotai/plugin-import-export':
+        specifier: workspace:*
+        version: link:../plugin-import-export
+      '@frogbotai/ui':
+        specifier: workspace:*
+        version: link:../../ui
+      '@testing-library/react':
+        specifier: ^16.3.0
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      react:
+        specifier: 'catalog:'
+        version: 19.3.1
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.3.1(react@19.3.1)
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -1759,27 +1817,24 @@ importers:
 
   packages/plugins/plugin-audit-log:
     devDependencies:
-      frogbot:
+      '@frogbotai/ui':
         specifier: workspace:*
-        version: link:../../frogbot
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
-
-  packages/plugins/plugin-capture:
-    devDependencies:
-      '@types/node':
+        version: link:../../ui
+      '@payloadcms/translations':
         specifier: 'catalog:'
-        version: 24.12.3
+        version: 4.0.0-beta.7
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
+      react:
+        specifier: 'catalog:'
+        version: 19.3.1
       typescript:
         specifier: 6.0.3
         version: 6.0.3
-      vitest:
-        specifier: 4.1.2
-        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.12.3)(happy-dom@21.0.4(bufferutil@4.1.0))(jsdom@24.1.3(bufferutil@4.1.0))(vite@6.4.3(@types/node@24.12.3)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.49.2)(tsx@4.23.15)(yaml@2.4.5))
 
   packages/plugins/plugin-dojo:
     dependencies:
@@ -1841,22 +1896,6 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.3.1(react@19.3.1)
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
-
-  packages/plugins/plugin-evals:
-    dependencies:
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.12.3
-      frogbot:
-        specifier: workspace:*
-        version: link:../../frogbot
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -2046,23 +2085,30 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
-  packages/plugins/plugin-usage-reports:
+  packages/plugins/plugin-two-factor:
+    dependencies:
+      otpauth:
+        specifier: 9.5.2
+        version: 9.5.2
+      qrcode:
+        specifier: 1.5.4
+        version: 1.5.4
     devDependencies:
-      '@frogbotai/plugin-import-export':
-        specifier: workspace:*
-        version: link:../plugin-import-export
       '@frogbotai/ui':
         specifier: workspace:*
         version: link:../../ui
-      '@testing-library/react':
-        specifier: ^16.3.0
-        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@types/qrcode':
+        specifier: 1.5.5
+        version: 1.5.5
       '@types/react':
         specifier: 19.2.14
         version: 19.2.14
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
+      payload:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.7(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       react:
         specifier: 'catalog:'
         version: 19.3.1
@@ -2272,6 +2318,9 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.2.16
         version: 1.2.16(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@shikijs/langs':
+        specifier: 4.5.0
+        version: 4.5.0
       '@tanstack/react-virtual':
         specifier: ^3.13.12
         version: 3.14.10(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -2296,6 +2345,9 @@ importers:
       remark-gfm:
         specifier: 4.0.1
         version: 4.0.1
+      shiki:
+        specifier: 4.5.0
+        version: 4.5.0
     devDependencies:
       '@payloadcms/translations':
         specifier: 'catalog:'
@@ -2427,9 +2479,18 @@ importers:
       '@frogbotai/plugin-ai-policy':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-ai-policy
+      '@frogbotai/plugin-audit-log':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-audit-log
       '@frogbotai/plugin-dojo':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-dojo
+      '@frogbotai/plugin-import-export':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-import-export
+      '@frogbotai/plugin-roles':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-roles
       '@frogbotai/richtext-lexical':
         specifier: workspace:*
         version: link:../../packages/richtext-lexical
@@ -2500,9 +2561,18 @@ importers:
       '@frogbotai/plugin-ai-policy':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-ai-policy
+      '@frogbotai/plugin-audit-log':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-audit-log
       '@frogbotai/plugin-dojo':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-dojo
+      '@frogbotai/plugin-import-export':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-import-export
+      '@frogbotai/plugin-roles':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-roles
       '@frogbotai/richtext-lexical':
         specifier: workspace:*
         version: link:../../packages/richtext-lexical
@@ -2750,24 +2820,27 @@ importers:
       '@frogbotai/piece-zoom':
         specifier: workspace:*
         version: link:../packages/pieces/piece-zoom
+      '@frogbotai/plugin-ai-capture':
+        specifier: workspace:*
+        version: link:../packages/plugins/plugin-ai-capture
+      '@frogbotai/plugin-ai-evals':
+        specifier: workspace:*
+        version: link:../packages/plugins/plugin-ai-evals
       '@frogbotai/plugin-ai-policy':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-ai-policy
+      '@frogbotai/plugin-ai-usage':
+        specifier: workspace:*
+        version: link:../packages/plugins/plugin-ai-usage
       '@frogbotai/plugin-api-keys':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-api-keys
       '@frogbotai/plugin-audit-log':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-audit-log
-      '@frogbotai/plugin-capture':
-        specifier: workspace:*
-        version: link:../packages/plugins/plugin-capture
       '@frogbotai/plugin-dojo':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-dojo
-      '@frogbotai/plugin-evals':
-        specifier: workspace:*
-        version: link:../packages/plugins/plugin-evals
       '@frogbotai/plugin-forms':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-forms
@@ -2795,9 +2868,9 @@ importers:
       '@frogbotai/plugin-stripe':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-stripe
-      '@frogbotai/plugin-usage-reports':
+      '@frogbotai/plugin-two-factor':
         specifier: workspace:*
-        version: link:../packages/plugins/plugin-usage-reports
+        version: link:../packages/plugins/plugin-two-factor
       '@frogbotai/protocol':
         specifier: workspace:*
         version: link:../packages/protocol
@@ -2909,6 +2982,9 @@ importers:
       openpgp:
         specifier: 6.2.0
         version: 6.2.0
+      otpauth:
+        specifier: 9.5.2
+        version: 9.5.2
       payload:
         specifier: 'catalog:'
         version: 4.0.0-beta.7(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
@@ -2948,6 +3024,9 @@ importers:
       '@frogbotai/plugin-api-keys':
         specifier: workspace:*
         version: link:../../../../packages/plugins/plugin-api-keys
+      '@frogbotai/plugin-audit-log':
+        specifier: workspace:*
+        version: link:../../../../packages/plugins/plugin-audit-log
       '@frogbotai/ui':
         specifier: workspace:*
         version: link:../../../../packages/ui
@@ -5489,6 +5568,10 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@noble/hashes@2.4.0':
+    resolution: {integrity: sha512-X5XaVWZIBCT7HHZGm5I7ZQXDwLG+bGXuSrMQAW+7Zvl87h1kmc1ZB1VSRJcpUfoUrGQp4Fkoxm5kZ+Ms+aW+eA==}
+    engines: {node: '>= 20.19.0'}
+
   '@nodable/entities@2.2.0':
     resolution: {integrity: sha512-9uGyhaQavEUMC8AIddIjau4NsnsXhou+j5sBAGojCM1oxmQpVKTWR/9JxABD6UAv12vpIms55fPZKFQEhG6uBg==}
 
@@ -5849,6 +5932,7 @@ packages:
   '@opentelemetry/sdk-trace-node@2.9.0':
     resolution: {integrity: sha512-ec9a7ps37huy5itYk0MalaZdSLlM6AXWp/FhtEjgMpp5leEGojBDvAl/UWttQnkMZOvFHKzRESn8TD3yKTF5nQ==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Use @opentelemetry/sdk-trace package
     peerDependencies:
       '@opentelemetry/api': '>=1.0.0 <1.10.0'
 
@@ -7037,6 +7121,37 @@ packages:
     peerDependencies:
       webpack: '>=4.40.0'
 
+  '@shikijs/core@4.5.0':
+    resolution: {integrity: sha512-6CIgwq+bt2JZ3OSjb/nBkkwEf/CfpHcbam+Mg5Pllco7HAGRQ2/EFhZrrJtbyNTgKwknfVS+llsXGygiDGwJWw==}
+    engines: {node: '>=20'}
+
+  '@shikijs/engine-javascript@4.5.0':
+    resolution: {integrity: sha512-Ed6UdEj84LyYkwnxM5CvSMWAD+id9ExTYri0/+x41U9zrgNifPSS9lZm0JqBP0VfYI8yr8tY5nbNq9+p9R0kFA==}
+    engines: {node: '>=20'}
+
+  '@shikijs/engine-oniguruma@4.5.0':
+    resolution: {integrity: sha512-dKVmbJecVdB9recl8a/CU4jdpNXyjJQrIcesIkpS70s5HS02ohpnCSpMUbotPnEUzbAcLQ+S4hwZYbkBBiTcJw==}
+    engines: {node: '>=20'}
+
+  '@shikijs/langs@4.5.0':
+    resolution: {integrity: sha512-wwBTqwduXSz0X4v9Qa2EWeFaYJEw1clCncWjoRNQRbVDu3SPRTRWucnouYapKj3b8Q+sk/41Vbc4B5c8nuYzLA==}
+    engines: {node: '>=20'}
+
+  '@shikijs/primitive@4.5.0':
+    resolution: {integrity: sha512-UM7ShlA8oz0OWxLLO8BmO9Ip6fVqdkt8yF0EH7nOCqHfrx1eEAzF0ZUVK7L+I8NEgeu1PEWSRlxaiPPeCb4iDg==}
+    engines: {node: '>=20'}
+
+  '@shikijs/themes@4.5.0':
+    resolution: {integrity: sha512-zGb87H3UBbpuI4yoh5UguB1XbU+2BDU3kflM7UfZ+Cy2hWo9lBtqjSVK20gmLY6ukYl040hAypGXMgud9vul8Q==}
+    engines: {node: '>=20'}
+
+  '@shikijs/types@4.5.0':
+    resolution: {integrity: sha512-drtPrtD8N0DENyD2cyt6Ajy+IWsiCLgMxODwLTpvH1UsN6a9jf90tNTPjqwHvA+0Lzu9e0txk8DjfqH1p9UJRw==}
+    engines: {node: '>=20'}
+
+  '@shikijs/vscode-textmate@10.1.0':
+    resolution: {integrity: sha512-cVBuhDQjBZaNMTwBquYfPydrUP+E3hE6oYGasx8h6ZrODIM7/r+gxLDXdd66oszbrggZHEntdE6j+5gYIVyMWQ==}
+
   '@sindresorhus/is@7.2.0':
     resolution: {integrity: sha512-P1Cz1dWaFfR4IR+U13mqqiGsLFf1KbayybWwdd2vfctdV6hDpUkgCY0nKOLLTMSoRd/jJNjtbqzf13K8DCCXQw==}
     engines: {node: '>=18'}
@@ -7060,7 +7175,9 @@ packages:
   '@smithy/core@3.31.0':
     resolution: {integrity: sha512-sylYk2l9d7CmRv8ts8p0SDQUr3VO+HMeS1nrjL6+UtbO8ktJHTOeQ1McX+aAyvGGccp5aZX9eNtdcXrSwzoZaw==}
     engines: {node: '>=18.0.0'}
-    deprecated: Deprecated due to a bug in custom logger data redaction. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
+    deprecated: |-
+      Deprecated due to a bug in custom logger data redaction. Upgrade to the latest version. If you used a custom logger with this
+        version, review your logs and rotate any credentials or other secrets. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/credential-provider-imds@4.4.15':
     resolution: {integrity: sha512-xYVGrisQqTJWhOnScUhbx8s9H63TMtoxzuUoxG6mP8J+B/YbX3vZxVsgV0xDf43abJnJP0fjP7BkQh7OESwuRA==}
@@ -9120,6 +9237,9 @@ packages:
     resolution: {integrity: sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==}
     engines: {node: '>= 0.4'}
 
+  hast-util-to-html@9.0.6:
+    resolution: {integrity: sha512-1SZUxCN3TtJAE7e2BQN2MBHsoZ1gnmi9GoCP5Di59CSWptIezSAW09yDZyVbanb78V9eCwrKqdQsjtfVTxYHWA==}
+
   hast-util-to-jsx-runtime@2.3.6:
     resolution: {integrity: sha512-zl6s8LwNyo1P9uw+XJGvZtdFF1GdAkOg8ujOw+4Pyb76874fLps4ueHXDhXWdk6YHQ6OgUtinliG7RsYvCbbBg==}
 
@@ -9157,6 +9277,9 @@ packages:
 
   html-url-attributes@3.0.1:
     resolution: {integrity: sha512-ol6UPyBWqsrO6EJySPz2O7ZSr856WDrEzM5zMqp+FJJLGMW35cLYmmZnl0vztAZxRUoNZJFTCohfjuIJ8I4QBQ==}
+
+  html-void-elements@3.0.0:
+    resolution: {integrity: sha512-bEqo66MRXsUGxWHV5IP0PUiAWwoEjba4VCzg0LjFJBpchPaTfyfCKTG6bc5F8ucKec3q5y6qOdGyYTSBEvhCrg==}
 
   http-errors@2.0.1:
     resolution: {integrity: sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ==}
@@ -10330,6 +10453,12 @@ packages:
     resolution: {integrity: sha512-VXJjc87FScF88uafS3JllDgvAm+c/Slfz06lorj2uAY34rlUu0Nt+v8wreiImcrgAjjIHp1rXpTDlLOGw29WwQ==}
     engines: {node: '>=18'}
 
+  oniguruma-parser@0.12.2:
+    resolution: {integrity: sha512-6HVa5oIrgMC6aA6WF6XyyqbhRPJrKR02L20+2+zpDtO5QAzGHAUGw5TKQvwi5vctNnRHkJYmjAhRVQF2EKdTQw==}
+
+  oniguruma-to-es@4.3.6:
+    resolution: {integrity: sha512-csuQ9x3Yr0cEIs/Zgx/OEt9iBw9vqIunAPQkx19R/fiMq2oGVTgcMqO/V3Ybqefr1TBvosI6jU539ksaBULJyA==}
+
   openpgp@6.2.0:
     resolution: {integrity: sha512-zKbgazxMeGrTqUEWicKufbdcjv2E0om3YVxw+I3hRykp8ODp+yQOJIDqIr1UXJjP8vR2fky3bNQwYoQXyFkYMA==}
     engines: {node: '>= 18.0.0'}
@@ -10345,6 +10474,9 @@ packages:
   os-paths@4.4.0:
     resolution: {integrity: sha512-wrAwOeXp1RRMFfQY8Sy7VaGVmPocaLwSFOYCGKSyo8qmJ+/yaafCl5BCA1IQZWqFSRBrKDYFeR9d/VyQzfH/jg==}
     engines: {node: '>= 6.0'}
+
+  otpauth@9.5.2:
+    resolution: {integrity: sha512-GQ5emWR/x1tcExT62IBT0UfO95wZzJZyxYOJOGVeQF47SYEN9vmh0vISvDZaNMuFJRG+IaWCKtfm+t9Bfoal6w==}
 
   own-keys@1.0.2:
     resolution: {integrity: sha512-19YVAg7T+WTrxggPukVq7DjTv6+PJ867TmhCvBsYwmbFCsZd344rq2Ld1p0wo8f8Qrrhgp82c6FJRqdXWtSEhg==}
@@ -10896,6 +11028,15 @@ packages:
   regenerator-runtime@0.13.11:
     resolution: {integrity: sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==}
 
+  regex-recursion@6.0.2:
+    resolution: {integrity: sha512-0YCaSCq2VRIebiaUviZNs0cBz1kg5kVS2UKUfNIx8YVs1cN3AV7NTctO5FOKBA+UT2BPJIWZauYHPqJODG50cg==}
+
+  regex-utilities@2.3.0:
+    resolution: {integrity: sha512-8VhliFJAWRaUiVvREIiW2NXXTmHs4vMNnSzuJVhscgmGav3g9VDxLrQndI3dZZVVdp0ZO/5v0xmX516/7M9cng==}
+
+  regex@6.1.0:
+    resolution: {integrity: sha512-6VwtthbV4o/7+OaAF9I5L5V3llLEsoPyq9P1JVXkedTP33c7MfCG0/5NOPcSJn0TzXcG9YUrR0gQSWioew3LDg==}
+
   regexp.prototype.flags@1.5.4:
     resolution: {integrity: sha512-dYqgNSZbDwkaJ2ceRd9ojCGjBq+mOm9LmtXnAnEGyHhN/5R7iDW2TRw3h+o/jCFxus3P2LfWIIiwowAjANm7IA==}
     engines: {node: '>= 0.4'}
@@ -11102,6 +11243,10 @@ packages:
   shebang-regex@3.0.0:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
+
+  shiki@4.5.0:
+    resolution: {integrity: sha512-OcRW72ngQvc+MSVWBRIovC/BTW589iUE/Vxav7VeM4RcY9MUjqB+IR6ILG1k9nuW6LiG/nct9uma4/MBtnZbmQ==}
+    engines: {node: '>=20'}
 
   shimmer@1.2.1:
     resolution: {integrity: sha512-sQTKC1Re/rM6XyFM6fIAGHRPVGvyXfgzIDvzoq608vM+jeyVD0Tu1E6Np0Kc2zAIFWIj963V2800iF/9LPieQw==}
@@ -14453,6 +14598,8 @@ snapshots:
   '@next/swc-win32-x64-msvc@16.4.2':
     optional: true
 
+  '@noble/hashes@2.4.0': {}
+
   '@nodable/entities@2.2.0': {}
 
   '@octokit/auth-app@8.3.1':
@@ -16454,6 +16601,46 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
+
+  '@shikijs/core@4.5.0':
+    dependencies:
+      '@shikijs/primitive': 4.5.0
+      '@shikijs/types': 4.5.0
+      '@shikijs/vscode-textmate': 10.1.0
+      '@types/hast': 3.0.5
+      hast-util-to-html: 9.0.6
+
+  '@shikijs/engine-javascript@4.5.0':
+    dependencies:
+      '@shikijs/types': 4.5.0
+      '@shikijs/vscode-textmate': 10.1.0
+      oniguruma-to-es: 4.3.6
+
+  '@shikijs/engine-oniguruma@4.5.0':
+    dependencies:
+      '@shikijs/types': 4.5.0
+      '@shikijs/vscode-textmate': 10.1.0
+
+  '@shikijs/langs@4.5.0':
+    dependencies:
+      '@shikijs/types': 4.5.0
+
+  '@shikijs/primitive@4.5.0':
+    dependencies:
+      '@shikijs/types': 4.5.0
+      '@shikijs/vscode-textmate': 10.1.0
+      '@types/hast': 3.0.5
+
+  '@shikijs/themes@4.5.0':
+    dependencies:
+      '@shikijs/types': 4.5.0
+
+  '@shikijs/types@4.5.0':
+    dependencies:
+      '@shikijs/vscode-textmate': 10.1.0
+      '@types/hast': 3.0.5
+
+  '@shikijs/vscode-textmate@10.1.0': {}
 
   '@sindresorhus/is@7.2.0': {}
 
@@ -18759,6 +18946,20 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
+  hast-util-to-html@9.0.6:
+    dependencies:
+      '@types/hast': 3.0.5
+      '@types/unist': 3.0.3
+      ccount: 2.0.1
+      comma-separated-tokens: 2.0.3
+      hast-util-whitespace: 3.0.0
+      html-void-elements: 3.0.0
+      mdast-util-to-hast: 13.2.1
+      property-information: 7.2.0
+      space-separated-tokens: 2.0.2
+      stringify-entities: 4.0.4
+      zwitch: 2.0.4
+
   hast-util-to-jsx-runtime@2.3.6:
     dependencies:
       '@types/estree': 1.0.9
@@ -18812,6 +19013,8 @@ snapshots:
   html-entities@2.6.0: {}
 
   html-url-attributes@3.0.1: {}
+
+  html-void-elements@3.0.0: {}
 
   http-errors@2.0.1:
     dependencies:
@@ -20185,6 +20388,14 @@ snapshots:
     dependencies:
       mimic-function: 5.0.1
 
+  oniguruma-parser@0.12.2: {}
+
+  oniguruma-to-es@4.3.6:
+    dependencies:
+      oniguruma-parser: 0.12.2
+      regex: 6.1.0
+      regex-recursion: 6.0.2
+
   openpgp@6.2.0: {}
 
   option@0.2.4: {}
@@ -20199,6 +20410,10 @@ snapshots:
       word-wrap: 1.2.5
 
   os-paths@4.4.0: {}
+
+  otpauth@9.5.2:
+    dependencies:
+      '@noble/hashes': 2.4.0
 
   own-keys@1.0.2:
     dependencies:
@@ -20830,6 +21045,16 @@ snapshots:
 
   regenerator-runtime@0.13.11: {}
 
+  regex-recursion@6.0.2:
+    dependencies:
+      regex-utilities: 2.3.0
+
+  regex-utilities@2.3.0: {}
+
+  regex@6.1.0:
+    dependencies:
+      regex-utilities: 2.3.0
+
   regexp.prototype.flags@1.5.4:
     dependencies:
       call-bind: 1.0.9
@@ -21167,6 +21392,17 @@ snapshots:
       shebang-regex: 3.0.0
 
   shebang-regex@3.0.0: {}
+
+  shiki@4.5.0:
+    dependencies:
+      '@shikijs/core': 4.5.0
+      '@shikijs/engine-javascript': 4.5.0
+      '@shikijs/engine-oniguruma': 4.5.0
+      '@shikijs/langs': 4.5.0
+      '@shikijs/themes': 4.5.0
+      '@shikijs/types': 4.5.0
+      '@shikijs/vscode-textmate': 10.1.0
+      '@types/hast': 3.0.5
 
   shimmer@1.2.1: {}
 

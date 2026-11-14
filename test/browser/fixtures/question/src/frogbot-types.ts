@@ -75,14 +75,20 @@ export interface Config {
     secrets: Secret;
     stories: Story;
     approvals: Approval;
+    photos: Photo;
     archives: Archive;
+    'cell-kinds': CellKind;
+    'cell-drafts': CellDraft;
+    'cell-access': CellAccess;
     timesheets: Timesheet;
     'api-keys': ApiKey;
     'usage-logs': UsageLog;
+    'plugin-ai-policy-spend': PluginAiPolicySpend;
     chats: Chat;
     'frogbot-chat-assets': FrogBotChatAsset;
     'frogbot-chat-turns': FrogBotChatTurn;
     'frogbot-waitpoints': FrogBotWaitpoint;
+    folders: Folder;
     'frogbot-autonumbers': FrogBotAutonumber;
   };
   collectionsJoins: {};
@@ -95,14 +101,20 @@ export interface Config {
     secrets: SecretsSelect;
     stories: StoriesSelect;
     approvals: ApprovalsSelect;
+    photos: PhotosSelect;
     archives: ArchivesSelect;
+    'cell-kinds': CellKindsSelect;
+    'cell-drafts': CellDraftsSelect;
+    'cell-access': CellAccessSelect;
     timesheets: TimesheetsSelect;
     'api-keys': ApiKeysSelect;
     'usage-logs': UsageLogsSelect;
+    'plugin-ai-policy-spend': PluginAiPolicySpendSelect;
     chats: ChatsSelect;
     'frogbot-chat-assets': FrogBotChatAssetsSelect;
     'frogbot-chat-turns': FrogBotChatTurnsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
+    folders: FoldersSelect;
     'frogbot-autonumbers': FrogBotAutonumbersSelect;
   };
   db: {
@@ -117,6 +129,7 @@ export interface Config {
     collections: CollectionsWidget;
     'collection-query': CollectionQueryWidget;
     activity: ActivityWidget;
+    'upload-dropzone': UploadDropzoneWidget;
   };
   user: User;
   jobs: {
@@ -401,9 +414,6 @@ export interface User {
         | 'openrouter/google/gemma-4-31b-it:free'
         | 'openrouter/gryphe/mythomax-l2-13b'
         | 'openrouter/ibm-granite/granite-4.2-8b'
-        | 'openrouter/inception/mercury-2'
-        | 'openrouter/inception/mercury-2.5'
-        | 'openrouter/inception/mercury-3'
         | 'openrouter/inclusionai/ling-3.0-flash'
         | 'openrouter/inclusionai/ling-3.0-flash-vl'
         | 'openrouter/inclusionai/ling-3.0-tiny'
@@ -413,6 +423,8 @@ export interface User {
         | 'openrouter/liquid/lfm-2.5-2.6b'
         | 'openrouter/liquid/lfm-2.5-2.6b:free'
         | 'openrouter/liquid/lfm-2.5-24b-a2b'
+        | 'openrouter/liquid/lfm-3-1.7b'
+        | 'openrouter/liquid/lfm-3-1.7b:free'
         | 'openrouter/mancer/weaver'
         | 'openrouter/meituan/longcat-2.0'
         | 'openrouter/meta-llama/llama-3.1-70b-instruct'
@@ -478,7 +490,6 @@ export interface User {
         | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b'
         | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free'
         | 'openrouter/nvidia/nemotron-3.5-content-safety'
-        | 'openrouter/nvidia/nemotron-3.5-content-safety:free'
         | 'openrouter/nvidia/nemotron-3.5-lightning'
         | 'openrouter/nvidia/nemotron-3.5-lightning:free'
         | 'openrouter/nvidia/nemotron-3.5-super-vl'
@@ -676,6 +687,7 @@ export interface User {
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
   monthlyBudget?: number | null;
+  spendCounter?: (number | null) | PluginAiPolicySpend;
   /**
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
@@ -712,280 +724,17 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "messages".
+ * via the `definition` "plugin-ai-policy-spend".
  */
-export interface Message {
-  id: string;
-  chat: number | Chat;
-  role: 'user' | 'assistant' | 'system';
-  parts: import('frogbot').UIMessage['parts'];
-  metadata?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  status?: ('active' | 'queued') | null;
-  delivery?: ('queue' | 'steer') | null;
-  model?: string | null;
-  reasoning?: string | null;
-  author?: import('frogbot').TurnActor;
-  settlements?: Record<string, import('frogbot').ClientToolSettlement>;
-  version?: number | null;
-  usage?: {
-    inputTokens?: number | null;
-    outputTokens?: number | null;
-    totalTokens?: number | null;
-    reasoningTokens?: number | null;
-    cachedInputTokens?: number | null;
-    lastStepInputTokens?: number | null;
-    model?: string | null;
-    provider?: string | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-  deletedAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "chats".
- */
-export interface Chat {
+export interface PluginAiPolicySpend {
   id: number;
-  title?: string | null;
+  key: string;
+  period: string;
+  amount: number;
   user?: (number | null) | User;
-  agent?: string | null;
-  channel?: string | null;
-  externalId?: string | null;
-  channelKey?: string | null;
-  channelThread?: import('frogbot').ChannelThreadReference;
-  channelLabel?: string | null;
-  lastMessageAt?: string | null;
-  autoApprove?: boolean | null;
-  todos?: import('frogbot/tools').TodoItem[];
+  apiKey?: (number | null) | ApiKey;
   updatedAt: string;
   createdAt: string;
-  deletedAt?: string | null;
-}
-/**
- * Tasks for the team.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "tasks".
- */
-export interface Task {
-  id: number;
-  _order?: string | null;
-  title: string;
-  status?: ('backlog' | 'done') | null;
-  channel?: string | null;
-  dueAt?: string | null;
-  endsAt?: string | null;
-  labels?:
-    ('gray' | 'blue' | 'green' | 'yellow' | 'red' | 'pink' | 'purple')[] | null;
-  /**
-   * Fraction where 1 means 100%, for example 0.42 for 42%
-   */
-  progress?: number | null;
-  /**
-   * Whole-number rating from 1 to 5
-   */
-  score?: number | null;
-  /**
-   * Duration in whole seconds, for example 5400 for 1 hour 30 minutes
-   */
-  timeSpent?: number | null;
-  /**
-   * Web address, for example https://example.com or example.com
-   */
-  website?: string | null;
-  /**
-   * Phone number as text, for example +44 20 7946 0958 or (415) 555-9876
-   */
-  phone?: string | null;
-  /**
-   * Barcode value as text, for example a UPC or EAN code
-   */
-  sku?: string | null;
-  /**
-   * Unique number set by FrogBot when the record is created; read-only
-   */
-  number?: number | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  project?: (number | null) | Project;
-  tags?: (number | Tag)[] | null;
-  projectBudget?: number | null;
-  projectStatus?: ('active' | 'paused') | null;
-  tagNames?: string[] | null;
-  notes?: string | null;
-  /**
-   * Generated automatically by AI from: notes. Writing a value keeps it and stops automatic updates
-   */
-  summary?: string | null;
-  /**
-   * Set by FrogBot: pending, done, error or manual. Write "pending" to regenerate the value
-   */
-  _summary_status?: ('pending' | 'done' | 'error' | 'manual') | null;
-  /**
-   * Set by FrogBot: the error message from the last failed run
-   */
-  _summary_error?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "projects".
- */
-export interface Project {
-  id: number;
-  name: string;
-  /**
-   * Decimal amount in USD, in whole units, not minor units such as cents
-   */
-  budget?: number | null;
-  status?: ('active' | 'paused') | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "tags".
- */
-export interface Tag {
-  id: number;
-  name?: string | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "secrets".
- */
-export interface Secret {
-  id: number;
-  name?: string | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "stories".
- */
-export interface Story {
-  id: number;
-  _order?: string | null;
-  title: string;
-  status?: ('todo' | 'doing' | 'done') | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "approvals".
- */
-export interface Approval {
-  id: number;
-  _order?: string | null;
-  title: string;
-  status?: ('todo' | 'doing' | 'done') | null;
-  approver: string;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "archives".
- */
-export interface Archive {
-  id: number;
-  _order?: string | null;
-  title?: string | null;
-  status?: ('todo' | 'doing' | 'done') | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "timesheets".
- */
-export interface Timesheet {
-  id: number;
-  _order?: string | null;
-  title: string;
-  /**
-   * Duration in whole seconds, for example 5400 for 1 hour 30 minutes
-   */
-  logged?: number | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1256,9 +1005,6 @@ export interface ApiKey {
         | 'openrouter/google/gemma-4-31b-it:free'
         | 'openrouter/gryphe/mythomax-l2-13b'
         | 'openrouter/ibm-granite/granite-4.2-8b'
-        | 'openrouter/inception/mercury-2'
-        | 'openrouter/inception/mercury-2.5'
-        | 'openrouter/inception/mercury-3'
         | 'openrouter/inclusionai/ling-3.0-flash'
         | 'openrouter/inclusionai/ling-3.0-flash-vl'
         | 'openrouter/inclusionai/ling-3.0-tiny'
@@ -1268,6 +1014,8 @@ export interface ApiKey {
         | 'openrouter/liquid/lfm-2.5-2.6b'
         | 'openrouter/liquid/lfm-2.5-2.6b:free'
         | 'openrouter/liquid/lfm-2.5-24b-a2b'
+        | 'openrouter/liquid/lfm-3-1.7b'
+        | 'openrouter/liquid/lfm-3-1.7b:free'
         | 'openrouter/mancer/weaver'
         | 'openrouter/meituan/longcat-2.0'
         | 'openrouter/meta-llama/llama-3.1-70b-instruct'
@@ -1333,7 +1081,6 @@ export interface ApiKey {
         | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b'
         | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free'
         | 'openrouter/nvidia/nemotron-3.5-content-safety'
-        | 'openrouter/nvidia/nemotron-3.5-content-safety:free'
         | 'openrouter/nvidia/nemotron-3.5-lightning'
         | 'openrouter/nvidia/nemotron-3.5-lightning:free'
         | 'openrouter/nvidia/nemotron-3.5-super-vl'
@@ -1531,12 +1278,466 @@ export interface ApiKey {
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
   monthlyBudget?: number | null;
+  spendCounter?: (number | null) | PluginAiPolicySpend;
   /**
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
   spendThisPeriodUSD?: number | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages".
+ */
+export interface Message {
+  id: string;
+  chat: number | Chat;
+  role: 'user' | 'assistant' | 'system';
+  parts: import('frogbot').UIMessage['parts'];
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  status?: ('active' | 'queued') | null;
+  delivery?: ('queue' | 'steer') | null;
+  model?: string | null;
+  reasoning?: string | null;
+  author?: import('frogbot').TurnActor;
+  settlements?: Record<string, import('frogbot').ClientToolSettlement>;
+  version?: number | null;
+  usage?: {
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    totalTokens?: number | null;
+    reasoningTokens?: number | null;
+    cachedInputTokens?: number | null;
+    lastStepInputTokens?: number | null;
+    model?: string | null;
+    provider?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chats".
+ */
+export interface Chat {
+  id: number;
+  title?: string | null;
+  user?: (number | null) | User;
+  agent?: string | null;
+  channel?: string | null;
+  externalId?: string | null;
+  channelKey?: string | null;
+  channelThread?: import('frogbot').ChannelThreadReference;
+  channelLabel?: string | null;
+  lastMessageAt?: string | null;
+  autoApprove?: boolean | null;
+  todos?: import('frogbot/tools').TodoItem[];
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * Tasks for the team.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tasks".
+ */
+export interface Task {
+  id: number;
+  _order?: string | null;
+  title: string;
+  status?: ('backlog' | 'done') | null;
+  channel?: string | null;
+  dueAt?: string | null;
+  endsAt?: string | null;
+  labels?:
+    ('gray' | 'blue' | 'green' | 'yellow' | 'red' | 'pink' | 'purple')[] | null;
+  /**
+   * Fraction where 1 means 100%, for example 0.42 for 42%
+   */
+  progress?: number | null;
+  /**
+   * Whole-number rating from 1 to 5
+   */
+  score?: number | null;
+  /**
+   * Duration in whole seconds, for example 5400 for 1 hour 30 minutes
+   */
+  timeSpent?: number | null;
+  /**
+   * Web address, for example https://example.com or example.com
+   */
+  website?: string | null;
+  /**
+   * Phone number as text, for example +44 20 7946 0958 or (415) 555-9876
+   */
+  phone?: string | null;
+  /**
+   * Barcode value as text, for example a UPC or EAN code
+   */
+  sku?: string | null;
+  /**
+   * Unique number set by FrogBot when the record is created; read-only
+   */
+  number?: number | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  project?: (number | null) | Project;
+  tags?: (number | Tag)[] | null;
+  projectBudget?: number | null;
+  projectStatus?: ('active' | 'paused') | null;
+  tagNames?: string[] | null;
+  notes?: string | null;
+  /**
+   * Generated automatically by AI from: notes. Writing a value keeps it and stops automatic updates
+   */
+  summary?: string | null;
+  /**
+   * Set by FrogBot: pending, done, error or manual. Write "pending" to regenerate the value
+   */
+  _summary_status?: ('pending' | 'done' | 'error' | 'manual') | null;
+  /**
+   * Set by FrogBot: the error message from the last failed run
+   */
+  _summary_error?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "projects".
+ */
+export interface Project {
+  id: number;
+  name: string;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
+  budget?: number | null;
+  status?: ('active' | 'paused') | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags".
+ */
+export interface Tag {
+  id: number;
+  name?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "secrets".
+ */
+export interface Secret {
+  id: number;
+  name?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stories".
+ */
+export interface Story {
+  id: number;
+  _order?: string | null;
+  title: string;
+  status?: ('todo' | 'doing' | 'done') | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "approvals".
+ */
+export interface Approval {
+  id: number;
+  _order?: string | null;
+  title: string;
+  status?: ('todo' | 'doing' | 'done') | null;
+  approver: string;
+  photo?: (number | null) | Photo;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photos".
+ */
+export interface Photo {
+  id: number;
+  alt?: string | null;
+  _h_folders?: (number | null) | Folder;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+  };
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders".
+ */
+export interface Folder {
+  id: number;
+  _h_folders?: (number | null) | Folder;
+  name: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _h_slugPath?: string | null;
+  _h_titlePath?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "archives".
+ */
+export interface Archive {
+  id: number;
+  _order?: string | null;
+  title?: string | null;
+  status?: ('todo' | 'doing' | 'done') | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-kinds".
+ */
+export interface CellKind {
+  id: number;
+  title: string;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
+  budget?: number | null;
+  /**
+   * Fraction where 1 means 100%, for example 0.42 for 42%
+   */
+  progress?: number | null;
+  /**
+   * Whole-number rating from 1 to 5
+   */
+  score?: number | null;
+  /**
+   * Duration in whole seconds, for example 5400 for 1 hour 30 minutes
+   */
+  timeSpent?: number | null;
+  /**
+   * Web address, for example https://example.com or example.com
+   */
+  website?: string | null;
+  /**
+   * Phone number as text, for example +44 20 7946 0958 or (415) 555-9876
+   */
+  phone?: string | null;
+  /**
+   * Barcode value as text, for example a UPC or EAN code
+   */
+  sku?: string | null;
+  /**
+   * Hex color as #rrggbb or #rgb, for example #3b82f6
+   */
+  color?: string | null;
+  /**
+   * Generated automatically by AI from: title. Writing a value keeps it and stops automatic updates
+   */
+  blurb?: string | null;
+  /**
+   * Set by FrogBot: pending, done, error or manual. Write "pending" to regenerate the value
+   */
+  _blurb_status?: ('pending' | 'done' | 'error' | 'manual') | null;
+  /**
+   * Set by FrogBot: the error message from the last failed run
+   */
+  _blurb_error?: string | null;
+  /**
+   * Unique number set by FrogBot when the record is created; read-only
+   */
+  number?: number | null;
+  locked?: string | null;
+  secret?: string | null;
+  tags?: (number | Tag)[] | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-drafts".
+ */
+export interface CellDraft {
+  id: number;
+  title: string;
+  note?: string | null;
+  extra?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-access".
+ */
+export interface CellAccess {
+  id: number;
+  title: string;
+  open?: boolean | null;
+  archived?: boolean | null;
+  address?: {
+    country?: string | null;
+    city?: string | null;
+  };
+  note?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "timesheets".
+ */
+export interface Timesheet {
+  id: number;
+  _order?: string | null;
+  title: string;
+  /**
+   * Duration in whole seconds, for example 5400 for 1 hour 30 minutes
+   */
+  logged?: number | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1668,6 +1869,7 @@ export interface FrogBotAutonumber {
 export interface UsersSelect {
   models?: boolean;
   monthlyBudget?: boolean;
+  spendCounter?: boolean;
   spendThisPeriodUSD?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
@@ -1814,10 +2016,45 @@ export interface ApprovalsSelect {
   title?: boolean;
   status?: boolean;
   approver?: boolean;
+  photo?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photos_select".
+ */
+export interface PhotosSelect {
+  alt?: boolean;
+  _h_folders?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  deletedAt?: boolean;
+  url?: boolean;
+  thumbnailURL?: boolean;
+  filename?: boolean;
+  mimeType?: boolean;
+  filesize?: boolean;
+  width?: boolean;
+  height?: boolean;
+  original?:
+    | boolean
+    | {
+        filename?: boolean;
+        url?: boolean;
+        mimeType?: boolean;
+        filesize?: boolean;
+        width?: boolean;
+        height?: boolean;
+        prefix?: boolean;
+        _objectKey?: boolean;
+      };
+  focalX?: boolean;
+  focalY?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1827,6 +2064,66 @@ export interface ArchivesSelect {
   _order?: boolean;
   title?: boolean;
   status?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-kinds_select".
+ */
+export interface CellKindsSelect {
+  title?: boolean;
+  budget?: boolean;
+  progress?: boolean;
+  score?: boolean;
+  timeSpent?: boolean;
+  website?: boolean;
+  phone?: boolean;
+  sku?: boolean;
+  color?: boolean;
+  blurb?: boolean;
+  _blurb_status?: boolean;
+  _blurb_error?: boolean;
+  number?: boolean;
+  locked?: boolean;
+  secret?: boolean;
+  tags?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-drafts_select".
+ */
+export interface CellDraftsSelect {
+  title?: boolean;
+  note?: boolean;
+  extra?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  _status?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cell-access_select".
+ */
+export interface CellAccessSelect {
+  title?: boolean;
+  open?: boolean;
+  archived?: boolean;
+  address?:
+    | boolean
+    | {
+        country?: boolean;
+        city?: boolean;
+      };
+  note?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
@@ -1863,6 +2160,7 @@ export interface ApiKeysSelect {
   totalCostUSD?: boolean;
   models?: boolean;
   monthlyBudget?: boolean;
+  spendCounter?: boolean;
   spendThisPeriodUSD?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
@@ -1888,6 +2186,19 @@ export interface UsageLogsSelect {
   costUSD?: boolean;
   finishReason?: boolean;
   requestedAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugin-ai-policy-spend_select".
+ */
+export interface PluginAiPolicySpendSelect {
+  key?: boolean;
+  period?: boolean;
+  amount?: boolean;
+  user?: boolean;
+  apiKey?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -1979,6 +2290,20 @@ export interface FrogBotWaitpointsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "folders_select".
+ */
+export interface FoldersSelect {
+  _h_folders?: boolean;
+  name?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  _h_slugPath?: boolean;
+  _h_titlePath?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-autonumbers_select".
  */
 export interface FrogBotAutonumbersSelect {
@@ -2023,11 +2348,16 @@ export interface CollectionQueryWidget {
       | 'secrets'
       | 'stories'
       | 'approvals'
+      | 'photos'
       | 'archives'
+      | 'cell-kinds'
+      | 'cell-drafts'
+      | 'cell-access'
       | 'timesheets'
       | 'api-keys'
       | 'usage-logs'
-      | 'chats';
+      | 'chats'
+      | 'folders';
     where?:
       | {
           [k: string]: unknown;
@@ -2059,15 +2389,30 @@ export interface ActivityWidget {
           | 'secrets'
           | 'stories'
           | 'approvals'
+          | 'photos'
           | 'archives'
+          | 'cell-kinds'
+          | 'cell-drafts'
+          | 'cell-access'
           | 'timesheets'
           | 'api-keys'
           | 'usage-logs'
           | 'chats'
+          | 'folders'
         )[]
       | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "upload-dropzone_widget".
+ */
+export interface UploadDropzoneWidget {
+  data?: {
+    excludedCollections?: 'photos'[] | null;
+  };
+  width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2355,9 +2700,6 @@ declare module 'frogbot' {
       | 'openrouter/google/gemma-4-31b-it:free'
       | 'openrouter/gryphe/mythomax-l2-13b'
       | 'openrouter/ibm-granite/granite-4.2-8b'
-      | 'openrouter/inception/mercury-2'
-      | 'openrouter/inception/mercury-2.5'
-      | 'openrouter/inception/mercury-3'
       | 'openrouter/inclusionai/ling-3.0-flash'
       | 'openrouter/inclusionai/ling-3.0-flash-vl'
       | 'openrouter/inclusionai/ling-3.0-tiny'
@@ -2367,6 +2709,8 @@ declare module 'frogbot' {
       | 'openrouter/liquid/lfm-2.5-2.6b'
       | 'openrouter/liquid/lfm-2.5-2.6b:free'
       | 'openrouter/liquid/lfm-2.5-24b-a2b'
+      | 'openrouter/liquid/lfm-3-1.7b'
+      | 'openrouter/liquid/lfm-3-1.7b:free'
       | 'openrouter/mancer/weaver'
       | 'openrouter/meituan/longcat-2.0'
       | 'openrouter/meta-llama/llama-3.1-70b-instruct'
@@ -2432,7 +2776,6 @@ declare module 'frogbot' {
       | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b'
       | 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free'
       | 'openrouter/nvidia/nemotron-3.5-content-safety'
-      | 'openrouter/nvidia/nemotron-3.5-content-safety:free'
       | 'openrouter/nvidia/nemotron-3.5-lightning'
       | 'openrouter/nvidia/nemotron-3.5-lightning:free'
       | 'openrouter/nvidia/nemotron-3.5-super-vl'

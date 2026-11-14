@@ -44,7 +44,9 @@ Chats are grouped under Today, Yesterday, Previous 7 days, Previous 30 days, and
 
 ## Collection icons and placement
 
-Set `admin.icon` on a collection to a built-in kebab-case icon name or a component import path. Your editor autocompletes every built-in name, including `robot`, `bubble-chat`, `file`, `link-square`, `ai-search`, and `people`. A collection with no icon shows a folder, and `frogbot check` warns about each one that shows in the sidebar (`MISSING_ICON`) without failing.
+Set `admin.icon` on a collection to a built-in kebab-case icon name or a component import path. Your editor autocompletes every built-in name, including `robot`, `bubble-chat`, `file`, `link-square`, `ai-search`, and `people`.
+
+A collection with no icon shows a folder. `frogbot check` warns about each one that shows in the sidebar (`MISSING_ICON`), without failing.
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -59,7 +61,18 @@ export const Projects: CollectionConfig = {
 }
 ```
 
-Use `group: null` to list a collection as a top-level link above the sections. Leave `group` undefined to list it directly under the Collections heading, as FrogBot's built-in collections are, provide a string or localized value to list it under a named group label, or use `false` to keep the collection's routes but leave it out of the sidebar, the dashboard's collection cards, Recents and Pinned, and the command palette. Settings → Collections still lists a `false` collection, so it's one click away. For Users and other admin collections, use [`settings: true`](#settings-collections) instead. Both options are listed with the other collection admin settings in [Admin Options](/configuration/collections#admin-options).
+`admin.group` places the collection:
+
+| `group` | Placement |
+| --- | --- |
+| `null` | A top-level link above the sections. |
+| Undefined | Directly under the Collections heading, as FrogBot's built-in collections are. |
+| A string or localized value | Under a named group label. |
+| `false` | Left out of the sidebar, the dashboard's collection cards, Recents and Pinned, and the command palette. The collection keeps its routes. |
+
+Settings → Collections still lists a `false` collection, so it's one click away. Internal `payload-*` collections, such as LLM Instructions, are left off it.
+
+For Users and other admin collections, use [`settings: true`](#settings-collections) instead. Both options are listed with the other collection admin settings in [Admin Options](/configuration/collections#admin-options).
 
 These built-in names suit a sidebar link, grouped by the kind of collection they fit:
 
@@ -83,7 +96,14 @@ admin: {
 
 A plain string without `#` must be a built-in icon name. An unknown name, such as a typo, stops startup with `[frogbot] Unknown admin icon '<name>'` followed by the valid names. A component path always names its export after `#`; write `'./src/components/ProjectsIcon#default'` for a default export. Navigation item and settings icons follow the same rules.
 
-Brand logos are built-in names too, always with the `brand-` prefix: `BrandTwitterIcon` in `@frogbotai/ui/icons` is `'brand-twitter'`, and `BrandGitHubIcon` is `'brand-git-hub'`. Use one where the item is about that brand, such as an X swipe file or a list of GitHub repos, and a UI icon everywhere else. `'twitter'` without the prefix is an unknown name.
+Brand logos are built-in names too, always with the `brand-` prefix. `'twitter'` without the prefix is an unknown name.
+
+| Component in `@frogbotai/ui/icons` | Name |
+| --- | --- |
+| `BrandTwitterIcon` | `'brand-twitter'` |
+| `BrandGitHubIcon` | `'brand-git-hub'` |
+
+Use a brand logo where the item is about that brand, such as an X swipe file or a list of GitHub repos. Use a UI icon everywhere else.
 
 Within `CollectionsSection`, ungrouped collections come first, in configuration order. Named groups follow in first-seen order, with their collections in configuration order.
 
@@ -237,7 +257,12 @@ admin: {
 }
 ```
 
-Component paths in `navSections` and admin component slots use `FrogBotComponent`. This type accepts either an import-map path string or a component definition. Collection, navigation item, and settings icons use `AdminIcon`, which also accepts built-in names; its `IconName` member lists them. Both types are exported from `frogbot` for reusable configuration types.
+Two types cover component and icon values. Both are exported from `frogbot` for reusable configuration types.
+
+| Type | Used by | Accepts |
+| --- | --- | --- |
+| `FrogBotComponent` | Component paths in `navSections` and admin component slots | An import-map path string or a component definition. |
+| `AdminIcon` | Collection, navigation item, and settings icons | The same values, and built-in names. Its `IconName` member lists the names. |
 
 Chat-wide component slots are grouped under `admin.components.chat`. Use `Chat` to replace the canonical conversation surface, or `UserMessageActions` and `AssistantMessageActions` to customize only role-specific controls. See [Chat persistence](/chat/overview#customize-admin-chat-components).
 
@@ -261,7 +286,12 @@ export default buildConfig({
 })
 ```
 
-`icon` and `access` are optional. Set `icon` to a built-in icon name, such as `'robot'`, or a component import path, following the [icon rules](#collection-icons-and-placement). Without `access`, FrogBot allows any authenticated user. The access function runs before FrogBot shows the card or renders the page. The page component and component icons are added to the generated import map.
+`icon` and `access` are optional:
+
+- **`icon`** is a built-in icon name, such as `'robot'`, or a component import path. It follows the [icon rules](#collection-icons-and-placement).
+- **`access`** runs before FrogBot shows the card or renders the page. Without it, FrogBot allows any authenticated user.
+
+The page component and component icons are added to the generated import map.
 
 Each Settings page names itself in the browser tab, followed by `admin.meta.titleSuffix`: `Collections - FrogBot` on the collection cards and the entry's label on its page, such as `Usage - FrogBot`. An unknown path, or an entry the user cannot open, reads `Settings - FrogBot`. The server title already names the page, so the tab doesn't change after it loads.
 
@@ -431,7 +461,17 @@ A custom `Nav` fully owns navigation rendering. It does not receive FrogBot's de
 
 The sidebar doesn't need the admin panel. `NavShell`, `AppSidebar`, `NavSection`, `NavItem`, `AccountMenu` and `RecentChats` are exported from `@frogbotai/ui`, so a browser extension's side panel or your own app can show the same sidebar with `@frogbotai/ui/styles.css` alone.
 
-`NavAdapterProvider` tells the sidebar how your app links and navigates. Every prop is optional: without it, links are plain anchors, the current path comes from `location`, navigating sets `location`, and preferences, such as a collapsed section, live in memory. Define `Link` outside your component, as any React component: a new `Link` on each render remounts every link and moves keyboard focus off the one just pressed. Render the sidebar inside a [`ThemeProvider`](/chat/ui-theming#themeprovider), like any FrogBot component outside the admin, so it gets FrogBot's font and light or dark mode.
+`NavAdapterProvider` tells the sidebar how your app links and navigates. Every prop is optional. Without the provider:
+
+- Links are plain anchors.
+- The current path comes from `location`, and navigating sets `location`.
+- Preferences, such as a collapsed section, live in memory.
+
+<Warning>
+Define `Link` outside your component, as any React component. A new `Link` on each render remounts every link and moves keyboard focus off the one just pressed.
+</Warning>
+
+Render the sidebar inside a [`ThemeProvider`](/chat/ui-theming#themeprovider), like any FrogBot component outside the admin, so it gets FrogBot's font and light or dark mode.
 
 ```tsx
 import {

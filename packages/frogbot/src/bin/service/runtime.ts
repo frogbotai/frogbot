@@ -19,8 +19,11 @@ export type App = {
  * call only this, so another framework's runtime plugs in beside `nextRuntime`.
  */
 export type AppRuntime = {
-  /** Writes what the build reads (the import map). */
-  prepare: (app: App) => Promise<void>;
+  /**
+   * Writes what the build reads (the import map) and the app's types, returning the types file's
+   * absolute path when it is known so the watcher can skip that write.
+   */
+  prepare: (app: App) => Promise<{ typesFile?: string }>;
   /** Builds into `slot`, never the one being served. */
   build: (app: App, slot: Slot) => Promise<void>;
   /** Starts a production server on `slot`'s build at `127.0.0.1:<port>`, leading its own process group. */
@@ -106,6 +109,17 @@ export function runStep(
   });
 }
 
+const TYPES_LINE = /^\[frogbot\] types (?:written to|unchanged at) (.+)$/;
+
+/** The types file named by the last types line `generate:types` printed, if it printed one. */
+export function parseTypesFile(output: string): string | undefined {
+  return output
+    .split('\n')
+    .map((line) => TYPES_LINE.exec(line.trimEnd())?.[1])
+    .filter((file) => file !== undefined)
+    .at(-1);
+}
+
 const productionEnv = (app: App, slot: Slot): NodeJS.ProcessEnv => ({
   ...app.env,
   NODE_ENV: 'production',
@@ -115,10 +129,19 @@ const productionEnv = (app: App, slot: Slot): NodeJS.ProcessEnv => ({
 
 export const nextRuntime: AppRuntime = {
   async prepare(app) {
-    await runStep(app, 'importmap', [frogbotBin, 'generate:importmap'], {
-      ...app.env,
-      FROGBOT_SERVICE: undefined,
-    });
+    const env = { ...app.env, FROGBOT_SERVICE: undefined };
+
+    await runStep(app, 'importmap', [frogbotBin, 'generate:importmap'], env);
+
+    try {
+      return {
+        typesFile: parseTypesFile(await runStep(app, 'types', [frogbotBin, 'generate:types'], env)),
+      };
+    } catch (error) {
+      app.log.write('types', `${(error as Error).message}; the build goes on with the old types`);
+
+      return {};
+    }
   },
 
   async build(app, slot) {

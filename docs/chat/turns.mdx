@@ -49,7 +49,14 @@ curl http://localhost:3000/api/agents/support \
   --data '{ "prompt": "Only look at last week", "chatId": "CHAT_ID", "delivery": "steer" }'
 ```
 
-FrogBot adds a steer message to the model's messages at the next step boundary, so the agent sees it before its next model call. From that step on, the turn uses the steer message's model and reasoning option. Steering applies only when the sender is the user driving the current run: the sender of the message being answered, or the user who answered the question the turn is continuing from. A steer from anyone else, or one that arrives after the last step, runs as an ordinary queued message.
+FrogBot adds a steer message to the model's messages at the next step boundary, so the agent sees it before its next model call. From that step on, the turn uses the steer message's model and reasoning option.
+
+Steering applies only when the sender is the user who drives the current run:
+
+- The sender of the message being answered.
+- The user who answered the question that the turn is continuing from.
+
+A steer from anyone else, or one that arrives after the last step, runs as an ordinary queued message.
 
 A steer that joins a turn is stored just before that turn's reply, so history reads in the order the model saw it.
 
@@ -71,7 +78,12 @@ Send `parts`, `delivery`, or both. A `DELETE` request to the same path removes t
 
 ## Compaction
 
-Every turn sends the chat's messages to the model, so a long chat eventually outgrows the model's context window. Before each model step, FrogBot estimates the prompt size: the prompt tokens the provider measured for the previous step, or for the chat's latest reply, plus about one token per four characters of everything since. When the estimate reaches the ceiling, the context window less [`ai.compaction.buffer`](/ai/overview#compaction-options), FrogBot summarizes the older messages first. A provider "too long" rejection also compacts once and retries the step; a second rejection ends the turn with `This chat is too long for <model ID>.`
+Every turn sends the chat's messages to the model, so a long chat eventually outgrows the model's context window.
+
+1. **Estimate.** Before each model step, FrogBot estimates the prompt size. It takes the prompt tokens that the provider measured for the previous step, or for the chat's latest reply, and adds about one token per four characters of everything since.
+2. **Compact.** When the estimate reaches the ceiling, FrogBot summarizes the older messages first. The ceiling is the context window less [`ai.compaction.buffer`](/ai/overview#compaction-options).
+
+A provider's "too long" rejection also compacts once and retries the step. A second rejection ends the turn with `This chat is too long for <model ID>.`
 
 Compaction works the same for the admin chat, HTTP clients, channels, and `agent.generate({ chatId })`. Runs without a `chatId` never compact. A model with no known window, neither a catalog entry nor a custom model's `limit.input` or `limit.context`, compacts only on a "too long" rejection.
 
@@ -83,7 +95,11 @@ The summary is written by the chat's own model, through `req.frogbot.generateTex
 
 A later compaction summarizes the previous summary with the messages since. Stored messages don't change: the admin chat, the messages collection, and [branches](/chat/ui-chat#message-actions) still show every message.
 
-The summary is saved as a `data-compaction` part, with `status` (`running`, `completed` or `failed`), `reason` (`auto` or `manual`), `summary`, `error`, `tokens` and `keepFrom`, the ID of the first kept message. An automatic compaction is part of the reply it ran for, streamed from `running` to its result between that reply's steps. If the summary fails, the part is saved as `failed` and the turn ends with its error; the next turn tries again. Channels post only the reply, never the summary.
+The summary is saved as a `data-compaction` part. Its fields are `status` (`running`, `completed`, or `failed`), `reason` (`auto` or `manual`), `summary`, `error`, `tokens`, and `keepFrom`, the ID of the first kept message.
+
+- An automatic compaction is part of the reply it ran for. It streams from `running` to its result between that reply's steps.
+- If the summary fails, the part is saved as `failed` and the turn ends with its error. The next turn tries again.
+- Channels post only the reply, never the summary.
 
 Compact a chat now with `/compact` in the admin chat, or with a request. It works with `auto: false`, needs [write access](/chat/overview#who-can-write-a-chat) to the chat, and saves an assistant message that holds only the `manual` part:
 

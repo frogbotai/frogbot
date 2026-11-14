@@ -64,6 +64,7 @@ Shape the first screen and the sidebar around the app's main work in every app y
 - List the app's main collections in the sidebar. With more than a handful, group them with `admin.group: 'Label'`.
 - Set `admin.settings: true` on Users and other admin collections. Each gets its own Settings sidebar item and opens with the Settings sidebar; it leaves the main sidebar, the dashboard's collection cards, Recents and Pinned, and the command palette finds it under Settings. Use `admin.group: false` for other collections people open rarely, and `admin.hidden` only for collections nobody should open in the admin.
 - Set `admin.dashboard.defaultLayout` so the first screen shows the work people come for, such as open tasks or new orders, then Recents and Pinned and the collection cards.
+- Build widgets and views from FrogBot's components and theme tokens, and hide plumbing fields, as [ADMIN-DESIGN.md](ADMIN-DESIGN.md) describes.
 
 ```ts
 export const Users: CollectionConfig = {

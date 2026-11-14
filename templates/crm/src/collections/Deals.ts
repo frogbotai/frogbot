@@ -1,8 +1,11 @@
 import type { CollectionConfig } from 'frogbot';
 import { moneyField } from 'frogbot';
 
+import { reassignAccess, recordAccess } from '../roles';
+
 export const Deals: CollectionConfig = {
   slug: 'deals',
+  access: recordAccess('owner'),
   admin: {
     icon: 'hand-coins',
     useAsTitle: 'name',
@@ -17,6 +20,7 @@ export const Deals: CollectionConfig = {
           'closeDate',
           'owner',
         ],
+        editable: true,
         groupBy: 'stage',
         summary: { name: 'count', amount: 'sum' },
       },
@@ -52,7 +56,12 @@ export const Deals: CollectionConfig = {
         date: { pickerAppearance: 'dayOnly', displayFormat: 'MMM d, yyyy' },
       },
     },
-    { name: 'owner', type: 'relationship', relationTo: 'users' },
+    {
+      name: 'owner',
+      type: 'relationship',
+      relationTo: 'users',
+      access: reassignAccess,
+    },
     { name: 'notes', type: 'richText' },
   ],
 };

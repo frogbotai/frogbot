@@ -10,6 +10,16 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
+type GatewayProviders = ReturnType<typeof buildGatewayConfig>['providers'];
+
+function credentialOf(entry: GatewayProviders['openai'] | GatewayProviders['anthropic']) {
+  if (!entry || !('credential' in entry) || !entry.credential) {
+    throw new Error('Expected the provider to have a credential');
+  }
+
+  return entry.credential;
+}
+
 function makeAIConfig(providers: SanitizedAIConfig['providers']): SanitizedAIConfig {
   return {
     providers,
@@ -36,10 +46,27 @@ function makeAIConfig(providers: SanitizedAIConfig['providers']): SanitizedAICon
 }
 
 describe('buildGatewayConfig', () => {
-  it('maps true to SDK environment fallback config', () => {
+  it('maps true to the SDK environment fallback behind a call-time key check', () => {
     const config = buildGatewayConfig(makeAIConfig({ openai: true }));
 
-    expect(config.providers).toEqual({ openai: {} });
+    expect(config.providers).toEqual({ openai: { credential: expect.any(Function) } });
+  });
+
+  it('boots with no key and fails only the call, naming the env var', async () => {
+    vi.stubEnv('OPENAI_API_KEY', '');
+
+    const credential = credentialOf(
+      buildGatewayConfig(makeAIConfig({ openai: true })).providers.openai,
+    );
+
+    expect(() => createAIGateway(makeAIConfig({ openai: true }))).not.toThrow();
+    expect(() => credential({}, { via: 'app' })).toThrow(
+      'The openai provider has no API key. Set OPENAI_API_KEY in the environment, or set ai.providers.openai.apiKey in the FrogBot config.',
+    );
+
+    vi.stubEnv('OPENAI_API_KEY', 'sk-env');
+
+    expect(await credential({}, { via: 'app' })).toBeUndefined();
   });
 
   it('passes matching built-in providers through under the same name', () => {
@@ -84,7 +111,7 @@ describe('buildGatewayConfig', () => {
     const config = buildGatewayConfig(makeAIConfig({ 'typesafe-ai': true }));
     const gateway = createAIGateway(makeAIConfig({ 'typesafe-ai': true }));
 
-    expect(config.providers['typesafe-ai']).toEqual({});
+    expect(config.providers['typesafe-ai']).toEqual({ credential: expect.any(Function) });
     expect(gateway.evaluationModel('typesafe-ai/jev').modelId).toBe('jev-latest');
   });
 
@@ -187,10 +214,60 @@ describe('buildGatewayConfig', () => {
     expect(Object.keys(config.providers)).toEqual(['openai']);
   });
 
-  it.each([undefined, '', '   '])('rejects an invalid explicit API key: %j', (apiKey) => {
-    expect(() => buildGatewayConfig(makeAIConfig({ openai: { apiKey } }))).toThrow(
-      "[frogbot] Provider 'openai' requires a non-empty apiKey when configured with an object.",
+  it.each(['', '   '])(
+    'rejects a blank explicit API key even with the env key set: %j',
+    (apiKey) => {
+      vi.stubEnv('OPENAI_API_KEY', 'sk-env');
+
+      expect(() => buildGatewayConfig(makeAIConfig({ openai: { apiKey } }))).toThrow(
+        "[frogbot] Provider 'openai' requires a non-empty apiKey, or leave it out to use the OPENAI_API_KEY environment variable.",
+      );
+    },
+  );
+
+  it('reads the env key for a models allowlist without apiKey', () => {
+    vi.stubEnv('ANTHROPIC_API_KEY', 'sk-ant');
+
+    const config = buildGatewayConfig(
+      makeAIConfig({ anthropic: { models: ['claude-opus-5-5', 'claude-sonnet-5-5'] } }),
     );
+
+    expect(config.providers).toEqual({
+      anthropic: {
+        models: ['claude-opus-5-5', 'claude-sonnet-5-5'],
+        credential: expect.any(Function),
+      },
+    });
+  });
+
+  it('reads the env token for replicate without apiKey', () => {
+    vi.stubEnv('REPLICATE_API_TOKEN', 'r8-env');
+
+    const config = buildGatewayConfig(makeAIConfig({ replicate: {} }));
+
+    expect(config.providers).toEqual({ replicate: { credential: expect.any(Function) } });
+  });
+
+  it('boots without apiKey or the env key and fails only the call, as true does', async () => {
+    vi.stubEnv('ANTHROPIC_API_KEY', '');
+
+    const ai = makeAIConfig({ anthropic: { models: ['claude-opus-5-5'] } });
+    const credential = credentialOf(buildGatewayConfig(ai).providers.anthropic);
+
+    expect(() => createAIGateway(ai)).not.toThrow();
+    expect(() => credential({}, { via: 'app' })).toThrow(
+      'The anthropic provider has no API key. Set ANTHROPIC_API_KEY in the environment, or set ai.providers.anthropic.apiKey in the FrogBot config.',
+    );
+
+    vi.stubEnv('ANTHROPIC_API_KEY', 'sk-env');
+
+    expect(await credential({}, { via: 'app' })).toBeUndefined();
+  });
+
+  it('adds no env key check when an explicit apiKey is set', () => {
+    const config = buildGatewayConfig(makeAIConfig({ openai: { apiKey: 'sk' } }));
+
+    expect(config.providers).toEqual({ openai: { apiKey: 'sk' } });
   });
 
   it('forwards all five hook phases into the gateway', () => {

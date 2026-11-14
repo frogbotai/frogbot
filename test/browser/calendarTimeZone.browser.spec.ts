@@ -8,6 +8,7 @@ const calendar = (mode: string) => `/collections/${tasksSlug}/calendar?mode=${mo
 
 const tasks = {
   standup: {
+    status: 'done',
     title: 'Standup',
     dueAt: '2026-09-08T16:00:00.000Z',
     endsAt: '2026-09-08T16:30:00.000Z',
@@ -28,6 +29,7 @@ const tasks = {
     endsAt: '2026-09-08T07:00:00.000Z',
   },
   planning: {
+    status: 'backlog',
     title: 'Planning',
     dueAt: '2026-09-08T21:00:00.000Z',
     endsAt: '2026-09-08T22:00:00.000Z',
@@ -275,4 +277,36 @@ test('"+N more" opens the whole day', async ({ page }, testInfo) => {
   await attach(page, testInfo, 'more');
   await page.keyboard.press('Escape');
   await expect(list).toHaveCount(0);
+});
+
+test("events take their status option's color", async ({ page }, testInfo) => {
+  await page.goto(calendar('day'));
+
+  const token = (name: string) =>
+    page.locator('.frog-calendar').evaluate((calendar, variable) => {
+      const probe = document.createElement('div');
+
+      probe.style.color = `var(${variable})`;
+      calendar.append(probe);
+      const color = getComputedStyle(probe).color;
+
+      probe.remove();
+
+      return color;
+    }, name);
+
+  await expect(chip(page, tasks.standup.title)).toHaveCSS(
+    'border-left-color',
+    await token('--color-border-success-strong'),
+  );
+  await expect(chip(page, tasks.planning.title)).toHaveCSS(
+    'border-left-color',
+    await token('--color-border-strong'),
+  );
+
+  await page.locator('.frog-calendar__time-scroll').evaluate((scroll) => {
+    scroll.scrollTop = 8 * 56;
+  });
+
+  await attach(page, testInfo, 'day-colors', [1280, 375]);
 });

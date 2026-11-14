@@ -100,6 +100,8 @@ An empty value shows nothing: no placeholder and no dash. A stored value that is
 
 In the document view, an editable phone field uses the normal text input and shows the number as typed. When the field is read-only, because of `admin.readOnly`, because it is virtual, or because the user may not update it, the document view shows the formatted number as text with no input.
 
+In a list with [`editable`](/admin/collection-list#editing-cells-in-place), a phone cell edits in place with the same input. Enter saves and Esc cancels.
+
 ## Stored value
 
 Numbers are stored exactly as typed, including spaces and punctuation. The REST API, GraphQL and the Local API return the stored text, and the generated TypeScript type is the same as a Text field's, such as `phone?: string | null`. Filters and sorting use the stored text.
@@ -162,10 +164,17 @@ Both take the same argument:
 | --- | --- | --- | --- |
 | `value` | `unknown` | Required | The stored number. |
 
-`formatPhone` returns `(XXX) XXX-XXXX` for an accepted number with exactly 10 digits and no `+`, any other text as given, and `''` for a value that isn't a string. `getPhoneHref` returns the `tel:` link for an [accepted number](#accepted-numbers), or `undefined` for an empty or rejected value. `frogbot/fields` also exports the `FormatPhoneArgs` type.
+| Function | Returns |
+| --- | --- |
+| `formatPhone` | `(XXX) XXX-XXXX` for an accepted number with exactly 10 digits and no `+`. Any other text is returned as given. A value that isn't a string returns `''`. |
+| `getPhoneHref` | The `tel:` link for an [accepted number](#accepted-numbers), or `undefined` for an empty or rejected value. |
+
+`frogbot/fields` also exports the `FormatPhoneArgs` type.
 
 ## Custom components
 
-The phone cell and read-only display are `PhoneCell` and `PhoneField` from `@frogbotai/ui/admin`. `PhoneField` renders the normal text input when the field is editable. Your own `admin.components.Cell` or `admin.components.Field` replaces them, and other components such as `Label`, `Description`, `Error`, `beforeInput` and `afterInput` work as they do on a Text field.
+The phone cell and read-only display are `PhoneCell` and `PhoneField` from `@frogbotai/ui/admin`. `PhoneField` renders the normal text input when the field is editable.
+
+Your own `admin.components.Cell` or `admin.components.Field` replaces them. Other components, such as `Label`, `Description`, `Error`, `beforeInput`, and `afterInput`, work as they do on a Text field.
 
 A custom Cell can draw the standard link inside its own markup with [`FieldCell`](/fields/overview#cell), as shown for [Money fields](/fields/money#custom-components). As with any custom Cell, it appears only in the List view. Board cards and Calendar events keep the standard link.

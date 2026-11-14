@@ -1,12 +1,15 @@
 @layer frogbot {
   .fb-record--selected.frog-board__card,
+  .fb-record--selected.collection-gallery__card,
+  .fb-record--selected.frog-timeline__bar,
   .frog-calendar__event:has(> .fb-record--selected) {
     border-color: var(--color-border-selected-strong);
     box-shadow: 0 0 0 1px var(--color-border-selected-strong);
   }
 
-  .fb-record--done .collection-board__title,
-  .fb-record--done .collection-calendar__title {
+  .fb-record--done .fb-card__title,
+  .fb-record--done .collection-calendar__title,
+  .fb-record--done .collection-timeline__title {
     color: var(--color-text-tertiary);
   }
 
@@ -14,6 +17,14 @@
     color: var(--color-icon-success);
     flex: none;
     vertical-align: -3px;
+  }
+
+  .collection-view--list tr[data-selected] td {
+    background: var(--color-bg-selected);
+  }
+
+  .collection-view__view[data-record-panel] .table tbody > tr {
+    cursor: pointer;
   }
 
   .collection-view--list tr[data-done] td {

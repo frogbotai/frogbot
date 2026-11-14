@@ -53,4 +53,27 @@ describe('ComposerSelect', () => {
     expect(trigger.className).toContain('fb-composer-select__trigger');
     expect(trigger.className).toContain('app-mode');
   });
+
+  it('shows an option image round in place of its icon', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ComposerSelect
+        value="ada"
+        options={[{ value: 'ada', label: 'Ada', icon: 'wrench', image: '/ada.png' }]}
+        onChange={() => undefined}
+      />,
+    );
+
+    const trigger = screen.getByRole('button', { name: /Ada/ });
+    const image = trigger.querySelector('img');
+
+    expect(image?.getAttribute('src')).toBe('/ada.png');
+    expect(image?.className).toContain('fb-composer-select__image');
+    expect(trigger.querySelector('.lucide-wrench-icon')).toBeNull();
+
+    await user.click(trigger);
+
+    expect(screen.getByRole('menuitem', { name: /Ada/ }).querySelector('img')).toBeTruthy();
+  });
 });

@@ -211,6 +211,54 @@ describe('frogbot up, status and down', { timeout: 600_000 }, () => {
     expect(listed.output).toMatch(/running/);
   });
 
+  it('regenerates the types on an update, with no second build from the write', async () => {
+    const { url } = registrationOf(two)!;
+    const types = join(two, 'src', 'frogbot-types.ts');
+    const builds = () => serviceLog(two).split('building into').length - 1;
+
+    expect(readFileSync(types, 'utf8')).not.toContain('summary');
+
+    const before = builds();
+
+    write(
+      two,
+      'src/fields.ts',
+      "export const noteFields = [\n  { name: 'title', type: 'text' as const },\n  { name: 'summary', type: 'text' as const },\n];\n",
+    );
+
+    await vi.waitFor(() => expect(readFileSync(types, 'utf8')).toContain('summary'), BUILD);
+    await vi.waitFor(() => expect(builds()).toBe(before + 1), BUILD);
+    await vi.waitFor(() => expect(registrationOf(two)?.state).toBe('running'), BUILD);
+
+    expect((await get(`${url}/text`)).status).toBe(200);
+    expect(serviceLog(two).split('change seen; rebuilding')).toHaveLength(2);
+    expect(builds()).toBe(before + 1);
+  });
+
+  it('restarts on an .env-only edit without a build, and rebuilds for a NEXT_PUBLIC_ key', async () => {
+    const { url } = registrationOf(two)!;
+    const builds = () => serviceLog(two).split('building into').length - 1;
+    const before = builds();
+    const { builtAt } = registrationOf(two) as Registration & { builtAt?: string };
+
+    write(two, '.env', 'SERVICE_GREETING=hello\n');
+    await vi.waitFor(async () => expect((await get(`${url}/env`)).text).toBe('hello|'), BUILD);
+
+    expect(serviceLog(two)).toContain('only .env changed; restarting on the current build');
+    expect(builds()).toBe(before);
+    expect(registrationOf(two)).toMatchObject({ state: 'running', builtAt });
+
+    write(two, '.env', 'SERVICE_GREETING=hello\nNEXT_PUBLIC_SERVICE_NAME=acme\n');
+    await vi.waitFor(async () => expect((await get(`${url}/env`)).text).toBe('hello|acme'), BUILD);
+
+    expect(serviceLog(two)).toContain('NEXT_PUBLIC_SERVICE_NAME changed; rebuilding');
+    expect(builds()).toBe(before + 1);
+
+    const again = await frogbot(two, 'up');
+
+    expect(again.output).toMatch(/already up at .*, watching for changes \(last build \d+ s ago\)/);
+  });
+
   it('finishes a stream on the old server while an edit goes live, with no failed request', async () => {
     const { url } = registrationOf(one)!;
     const stream = get(`${url}/stream?chunks=60`);

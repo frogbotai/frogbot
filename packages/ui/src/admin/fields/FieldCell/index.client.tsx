@@ -5,6 +5,7 @@ import type { ClientField, DefaultCellComponentProps } from 'payload';
 import { Fragment } from 'react';
 
 import { toCellData } from '../../views/cells.js';
+import { CheckboxCell } from '../CheckboxCell/index.client.js';
 import { getFieldKind, isEmptyKindValue } from '../kind.js';
 import { hasOptionColors } from '../optionColor.js';
 import { OptionPills } from '../OptionPills/index.client.js';
@@ -82,6 +83,8 @@ export function FieldCell(props: DefaultCellComponentProps) {
       : undefined;
 
   if (source) return renderFromSource({ props, source });
+
+  if (field.type === 'checkbox') return <CheckboxCell {...props} cellData={cellData} />;
 
   if (
     (field.type === 'select' || field.type === 'radio') &&

@@ -17,7 +17,7 @@ See the complete [Collection views reference](/configuration/collections#collect
 | `icon` | `AdminIcon` | No; `'calendar'` | Icon on the view's tab. |
 | `start` | `string` | Yes | Dot path to the date field used as each event's start. |
 | `end` | `string` | No | Dot path to the date field used as each event's end. Without it, events use the start as their end and can't be resized. |
-| `color` | `string` | No | Dot path to a select or radio field whose value colors each event. |
+| `color` | `string` | No | Dot path to a select or radio field. When the field has [option colors](/fields/select#option-colors), each event takes its option's color, and options without one are gray. |
 | `modes` | `CalendarMode[]` | No; `['month', 'week', 'day']` | Available modes in display order. The first mode is the default. |
 | `snap` | `number` | No | Minute interval used when creating, moving, or resizing events. |
 | `defaultFields` | `string[]` | No | Dot paths to fields rendered on each event, in display order. |
@@ -75,7 +75,16 @@ The `start` and `end` paths must resolve to date fields. Nested date fields use 
 
 The calendar shows events in the viewer's browser time zone: a meeting saved at `2026-09-06T02:00:00Z` shows at 7pm on September 5 for someone in Los Angeles. An event that crosses midnight shows in every day it touches. Dragging an event to another day in month view, or in the all-day row, keeps its time of day, even across a daylight-saving change.
 
-A `start` field with `pickerAppearance` `'dayOnly'` or `'monthOnly'` is a date, not a moment. Its events show in the all-day row on their saved date, the same day for every viewer, and moving or creating one saves noon UTC on the day. Every other date field is a moment shown at its time of day, including a plain `type: 'date'` field, because it can hold any instant, such as `createdAt` or a timestamp a hook writes. The `end` field is read the same way on its own, so a date-only `start` with a timed `end` keeps the end's time when an event moves.
+The `start` field's `pickerAppearance` decides how the calendar reads it:
+
+| `start` field | Read as | Shown |
+| --- | --- | --- |
+| `pickerAppearance` is `'dayOnly'` or `'monthOnly'` | A date, not a moment. | In the all-day row on its saved date, the same day for every viewer. Moving or creating an event saves noon UTC on the day. |
+| Every other date field | A moment. | At its time of day. |
+
+A plain `type: 'date'` field is a moment too, because it can hold any instant, such as `createdAt` or a timestamp that a hook writes.
+
+The `end` field is read the same way on its own, so a date-only `start` with a timed `end` keeps the end's time when an event moves.
 
 Calendar queries are limited to the visible range and include the collection view's filter and current search. A range displays at most 1000 events.
 

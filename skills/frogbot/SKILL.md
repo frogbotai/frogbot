@@ -3,9 +3,9 @@ name: frogbot
 description: >-
   Builds and maintains FrogBot applications. Use when working with
   frogbot.config.ts, getFrogBot, collections, fields, hooks, access control,
-  Local API queries, agents, tools, pieces, connections, jobs, KV, chat or gateway configuration,
-  or when sharing, hosting or deploying a FrogBot app with the Dojo plugin's `frogbot share`,
-  `pull` or `logs`.
+  Local API queries, agents, tools, pieces, connections, jobs, automations, webhooks, KV, chat or gateway configuration,
+  or when sharing, hosting or deploying a FrogBot app on Dojo with `frogbot share`, or managing
+  its keys, custom domain, people, deployments or logs with `frogbot dojo`.
 license: MIT
 metadata:
   author: 'frogbotai'
@@ -20,31 +20,34 @@ Use FrogBot names, imports, generated types, and request APIs. Check the install
 
 Read the smallest relevant reference before editing:
 
-| Task                                                                          | Reference                                                          |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Define auth, upload, draft, preview, or managed collections                   | [COLLECTIONS.md](reference/COLLECTIONS.md)                         |
-| Configure fields, edit page layout, recursive structures, slugs, or rich text | [FIELDS.md](reference/FIELDS.md)                                   |
-| Inspect or traverse field configuration safely                                | [FIELD-TYPE-GUARDS.md](reference/FIELD-TYPE-GUARDS.md)             |
-| Add collection or field lifecycle behavior                                    | [HOOKS.md](reference/HOOKS.md)                                     |
-| Define collection or field permissions                                        | [ACCESS-CONTROL.md](reference/ACCESS-CONTROL.md)                   |
-| Build scoped, role-aware, or reusable permissions                             | [ACCESS-CONTROL-ADVANCED.md](reference/ACCESS-CONTROL-ADVANCED.md) |
-| Query through Local, REST, or GraphQL APIs                                    | [QUERIES.md](reference/QUERIES.md)                                 |
-| Add root or collection HTTP routes                                            | [ENDPOINTS.md](reference/ENDPOINTS.md)                             |
-| Configure database, storage, or email services                                | [ADAPTERS.md](reference/ADAPTERS.md)                               |
-| Configure auth, admin UI, dashboard, navigation, preview, or localization     | [ADVANCED.md](reference/ADVANCED.md)                               |
-| Author a config-transforming plugin                                           | [PLUGIN-DEVELOPMENT.md](reference/PLUGIN-DEVELOPMENT.md)           |
-| Configure and run agents or runtime skills                                    | [AGENTS.md](reference/AGENTS.md)                                   |
-| Define and register agent tools                                               | [TOOLS.md](reference/TOOLS.md)                                     |
-| Configure AI providers or call model operations                               | [AI.md](reference/AI.md)                                           |
-| Render chat in React                                                          | [CHAT-UI.md](reference/CHAT-UI.md)                                 |
-| Use or author pieces, actions, and triggers                                   | [PIECES.md](reference/PIECES.md)                                   |
-| Store user credentials or configure OAuth flows                               | [CONNECTIONS.md](reference/CONNECTIONS.md)                         |
-| Queue tasks, run workflows, or wait for resumption                            | [JOBS.md](reference/JOBS.md)                                       |
-| Store expiring values or coordinate with locks                                | [KV.md](reference/KV.md)                                           |
-| Expose operations to MCP clients, or call MCP servers                         | [MCP.md](reference/MCP.md)                                         |
-| Run or embed the AI gateway                                                   | [GATEWAY.md](reference/GATEWAY.md)                                 |
-| Configure roles or API keys                                                   | [PLUGINS-ROLES-KEYS.md](reference/PLUGINS-ROLES-KEYS.md)           |
-| Parse typed server environment variables                                      | [ENV.md](reference/ENV.md)                                         |
+| Task                                                                               | Reference                                                          |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Define auth, upload, draft, preview, or managed collections                        | [COLLECTIONS.md](reference/COLLECTIONS.md)                         |
+| Configure fields, edit page layout, recursive structures, slugs, or rich text      | [FIELDS.md](reference/FIELDS.md)                                   |
+| Inspect or traverse field configuration safely                                     | [FIELD-TYPE-GUARDS.md](reference/FIELD-TYPE-GUARDS.md)             |
+| Add collection or field lifecycle behavior                                         | [HOOKS.md](reference/HOOKS.md)                                     |
+| Define collection or field permissions                                             | [ACCESS-CONTROL.md](reference/ACCESS-CONTROL.md)                   |
+| Build scoped, role-aware, or reusable permissions                                  | [ACCESS-CONTROL-ADVANCED.md](reference/ACCESS-CONTROL-ADVANCED.md) |
+| Query through Local, REST, or GraphQL APIs                                         | [QUERIES.md](reference/QUERIES.md)                                 |
+| Add root or collection HTTP routes                                                 | [ENDPOINTS.md](reference/ENDPOINTS.md)                             |
+| Configure database, storage, or email services                                     | [ADAPTERS.md](reference/ADAPTERS.md)                               |
+| Configure auth, admin UI, dashboard, navigation, preview, or localization          | [ADVANCED.md](reference/ADVANCED.md)                               |
+| Style a widget or custom view, or choose which fields a screen shows               | [ADMIN-DESIGN.md](reference/ADMIN-DESIGN.md)                       |
+| Author a config-transforming plugin                                                | [PLUGIN-DEVELOPMENT.md](reference/PLUGIN-DEVELOPMENT.md)           |
+| Configure and run agents or runtime skills                                         | [AGENTS.md](reference/AGENTS.md)                                   |
+| Define and register agent tools                                                    | [TOOLS.md](reference/TOOLS.md)                                     |
+| Configure AI providers or call model operations                                    | [AI.md](reference/AI.md)                                           |
+| Render chat in React                                                               | [CHAT-UI.md](reference/CHAT-UI.md)                                 |
+| Use or author pieces, actions, and triggers                                        | [PIECES.md](reference/PIECES.md)                                   |
+| Store user credentials or configure OAuth flows                                    | [CONNECTIONS.md](reference/CONNECTIONS.md)                         |
+| Define, queue, pause and resume jobs, or run workers                               | [JOBS.md](reference/JOBS.md)                                       |
+| Build a "when X happens, wait, then do Y" rule, send webhooks, or show run history | [AUTOMATIONS.md](reference/AUTOMATIONS.md)                         |
+| Store expiring values or coordinate with locks                                     | [KV.md](reference/KV.md)                                           |
+| Expose operations to MCP clients, or call MCP servers                              | [MCP.md](reference/MCP.md)                                         |
+| Run or embed the AI gateway                                                        | [GATEWAY.md](reference/GATEWAY.md)                                 |
+| Configure roles or API keys                                                        | [PLUGINS-ROLES-KEYS.md](reference/PLUGINS-ROLES-KEYS.md)           |
+| Parse typed server environment variables                                           | [ENV.md](reference/ENV.md)                                         |
+| Manage an app on Dojo: keys, domains, people, deployments, logs                    | [DOJO.md](reference/DOJO.md)                                       |
 
 ## Quick Start
 
@@ -221,7 +224,7 @@ Choose a domain-specific flag and check it before side effects.
 
 ## Sharing The App
 
-`npx frogbot share` takes the app live on Dojo and prints its URL. It comes from `dojo()` (`@frogbotai/plugin-dojo`), which new apps list in `plugins`; in an app that doesn't list it, run `npx @frogbotai/plugin-dojo apps share` instead. Run it from anywhere inside the app when the user asks to share, host, publish or deploy it, or to send someone a link. Suggest it, without running it, when the user wants someone else to try the app or asks how to put it online. Don't share without being asked: it uploads the code and keys.
+`npx frogbot share` takes the app live on Dojo and prints its URL. It comes from `dojo()` (`@frogbotai/plugin-dojo`), which new apps list in `plugins`; in an app that doesn't list it, run `npx @frogbotai/plugin-dojo apps share` instead. Run it from anywhere inside the app when the user asks to share, host, publish or deploy it, or to send someone a link. Suggest it, without running it, when the user wants someone else to try the app or asks how to put it online. Don't share without being asked: it uploads the code and keys. `npx frogbot deploy` with no target runs the same share.
 
 Your shell has no terminal, so `share` never prompts you. Settle these with the user first:
 
@@ -235,10 +238,6 @@ When the workspace's Dojo plan doesn't cover the app yet, `share` prints why, th
 
 `share` needs a `pnpm-lock.yaml`, `package-lock.json` or `yarn.lock` (not Bun) and an upload under 100 MB. It writes the app's id to `.frogbot/app.json`, so later shares from the folder update the same app; delete that file only when the user wants a new app. It ends with `[frogbot] Share it: <link>` and then the live URL as the last line: give the user both.
 
-When someone shared an app with the user as an editor on Dojo, `npx @frogbotai/plugin-dojo apps pull <slug>`, run from the folder that should hold it, downloads it into a new `./<slug>` folder with an empty database (an owner can add `--data` to bring the live database, files and the app's secret); then run `pnpm install` and `pnpm dev` there, and `apps share` from that folder ships a new version of the same app. An editor's share brings no keys and has no `Share it:` line, since only the app's owners manage its keys on Dojo.
-
-When a shared app misbehaves on Dojo, run `npx @frogbotai/plugin-dojo apps logs <slug>` (or `npx frogbot dojo apps logs <slug>` in an app that lists `dojo()`) to read its recent logs (key values show as `••••`); add `--follow`, in a background shell, to watch new lines while the user reproduces the problem.
-
 | Exit | Meaning                                                                                                      |
 | ---- | ------------------------------------------------------------------------------------------------------------ |
 | `0`  | Live. The last line is the URL.                                                                              |
@@ -246,6 +245,8 @@ When a shared app misbehaves on Dojo, run `npx @frogbotai/plugin-dojo apps logs 
 | `2`  | Bad flags, such as `--data` with `--no-data` or a `--skip-key` that names no key. Fix the command and rerun. |
 
 On Dojo the app runs as it does with `frogbot start`. Jobs run in the web server, and Dojo wakes a sleeping app when a task or agent schedule is due, so add no worker, external cron or `jobs.access.run` rule for Dojo. Dojo checks `GET /api/health` (`src/app/(frogbot)/api/health/route.ts`, `200` once FrogBot starts, `503` when it can't); keep that route. See the [CLI reference](https://docs.frogbot.ai/getting-started/cli#dojo-apps-share).
+
+For everything after the first share (pulling, logs, keys, a custom domain, inviting people, workspaces, Dojo API keys, billing), read [DOJO.md](reference/DOJO.md).
 
 ## Running The App In The Background
 
@@ -272,6 +273,8 @@ src/
 ├── frogbot-types.ts
 └── frogbot.config.ts
 ```
+
+Before you build a dashboard widget or custom view, or choose a collection's columns and fields, read [ADMIN-DESIGN.md](reference/ADMIN-DESIGN.md): built-in views first, `@frogbotai/ui` components and theme tokens, no hand-picked colours or font sizes, and plumbing fields hidden.
 
 Give every collection that shows in the sidebar an `admin.icon` that says what it holds, Users included; without one the sidebar shows a folder. Pick from the names in [COLLECTIONS.md](reference/COLLECTIONS.md#icons).
 
@@ -319,6 +322,7 @@ Prefer each bundled local file. If only this hosted entry is available, use its 
 | Endpoints               | [ENDPOINTS.md](reference/ENDPOINTS.md)                             | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/ENDPOINTS.md)               |
 | Adapters                | [ADAPTERS.md](reference/ADAPTERS.md)                               | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/ADAPTERS.md)                |
 | Advanced features       | [ADVANCED.md](reference/ADVANCED.md)                               | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/ADVANCED.md)                |
+| Admin design            | [ADMIN-DESIGN.md](reference/ADMIN-DESIGN.md)                       | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/ADMIN-DESIGN.md)            |
 | Plugin development      | [PLUGIN-DEVELOPMENT.md](reference/PLUGIN-DEVELOPMENT.md)           | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/PLUGIN-DEVELOPMENT.md)      |
 | Agents                  | [AGENTS.md](reference/AGENTS.md)                                   | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/AGENTS.md)                  |
 | Tools                   | [TOOLS.md](reference/TOOLS.md)                                     | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/TOOLS.md)                   |
@@ -332,6 +336,7 @@ Prefer each bundled local file. If only this hosted entry is available, use its 
 | Gateway                 | [GATEWAY.md](reference/GATEWAY.md)                                 | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/GATEWAY.md)                 |
 | Roles and API keys      | [PLUGINS-ROLES-KEYS.md](reference/PLUGINS-ROLES-KEYS.md)           | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/PLUGINS-ROLES-KEYS.md)      |
 | Environment variables   | [ENV.md](reference/ENV.md)                                         | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/ENV.md)                     |
+| Dojo                    | [DOJO.md](reference/DOJO.md)                                       | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/DOJO.md)                    |
 
 ## Resources
 

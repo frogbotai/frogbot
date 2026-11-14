@@ -1,3 +1,4 @@
+import { InvalidConfiguration } from 'payload';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -167,6 +168,81 @@ describe('collection views', () => {
     expect(() => compile({ color: 'title' })).toThrow('unsupported color field "title"');
   });
 
+  it('compiles a timeline route and metadata', () => {
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'tasks',
+        fields: [
+          { name: 'startDate', type: 'date' },
+          { name: 'dueDate', type: 'date' },
+          { name: 'project', type: 'relationship', relationTo: 'projects' },
+          { name: 'status', type: 'select', options: ['todo', 'done'] },
+        ],
+        admin: {
+          views: [
+            { type: 'list' },
+            {
+              type: 'timeline',
+              start: 'startDate',
+              end: 'dueDate',
+              groupBy: 'project',
+              color: 'status',
+              scales: ['month', 'week'],
+              components: { Bar: './Bar#Bar', beforeTimeline: ['./Before#Before'] },
+            },
+          ],
+        },
+      },
+    });
+
+    expect(admin?.components?.views?.timeline).toEqual({
+      Component: '@frogbotai/ui/admin/rsc#TimelineView',
+      exact: true,
+      path: '/timeline',
+    });
+    expect(admin?.custom?.frogbot.views[1]).toEqual({
+      type: 'timeline',
+      slug: 'timeline',
+      label: 'Timeline',
+      path: '/timeline',
+      start: 'startDate',
+      end: 'dueDate',
+      groupBy: 'project',
+      color: 'status',
+      scales: ['month', 'week'],
+    });
+  });
+
+  it('validates timeline dates, color, groupBy and scales', () => {
+    const compile = (view: Record<string, unknown>) =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [
+            { name: 'startDate', type: 'date' },
+            { name: 'title', type: 'text' },
+            { name: 'notes', type: 'json' },
+            { name: 'status', type: 'select', options: [] },
+          ],
+          admin: { views: [{ type: 'timeline', start: 'startDate', ...view } as never] },
+        },
+      });
+
+    expect(() => compile({ color: 'status', groupBy: 'status', scales: ['day'] })).not.toThrow();
+    expect(() => compile({ start: undefined })).toThrow('timeline view "timeline" needs a start');
+    expect(() => compile({ start: 'title' })).toThrow(
+      'timeline view "timeline" has a non-date field "title"',
+    );
+    expect(() => compile({ end: 'missing' })).toThrow('non-date field "missing"');
+    expect(() => compile({ color: 'title' })).toThrow('unsupported color field "title"');
+    expect(() => compile({ groupBy: 'notes' })).toThrow(
+      'timeline view "timeline" has an unsupported groupBy field "notes"',
+    );
+    expect(() => compile({ scales: [] })).toThrow('has scales []');
+    expect(() => compile({ scales: ['quarter'] })).toThrow('has scales ["quarter"]');
+    expect(() => compile({ scales: ['week', 'week'] })).toThrow('has scales ["week","week"]');
+  });
+
   describe('list summary', () => {
     const compile = (summary: unknown, extra: Record<string, unknown> = {}) =>
       compileCollectionViews({
@@ -249,6 +325,72 @@ describe('collection views', () => {
     });
   });
 
+  describe('list editable', () => {
+    const compile = (editable: unknown) =>
+      compileCollectionViews({
+        collection: {
+          slug: 'deals',
+          fields: [
+            { name: 'name', type: 'text' },
+            { name: 'stage', type: 'select', options: ['lead', 'won'] },
+            { name: 'tags', type: 'relationship', relationTo: 'tags', hasMany: true },
+            { name: 'notes', type: 'richText' },
+            { name: 'lines', type: 'array', fields: [{ name: 'sku', type: 'text' }] },
+            {
+              name: 'deal',
+              type: 'number',
+              admin: { custom: { frogbot: { kind: { type: 'autonumber' } } } },
+            },
+            {
+              name: 'amount',
+              type: 'number',
+              admin: { custom: { frogbot: { kind: { type: 'money', currency: 'USD' } } } },
+            },
+            {
+              name: 'dealKey',
+              type: 'text',
+              admin: { custom: { frogbot: { kind: { type: 'autonumberKey' } } } },
+            },
+            {
+              type: 'tabs',
+              tabs: [
+                {
+                  name: 'meta',
+                  fields: [{ name: 'source', type: 'text' }],
+                },
+              ],
+            },
+            { name: 'address', type: 'group', fields: [{ name: 'city', type: 'text' }] },
+          ],
+          admin: { views: [{ type: 'list', editable } as never] },
+        },
+      });
+
+    it.each([
+      [true],
+      [false],
+      [['name', 'stage', 'amount', 'tags', 'meta.source', 'address.city']],
+    ])('accepts %j and keeps it in the client metadata', (editable) => {
+      expect(compile(editable)?.custom?.frogbot.views[0]).toMatchObject({ editable });
+    });
+
+    it.each([
+      [['nope'], 'names "nope", which is not a field.'],
+      [['address.zip'], 'names "address.zip", which is not a field.'],
+      [['notes'], 'names "notes" (richText), which can\'t be edited in a cell.'],
+      [['lines'], 'names "lines" (array), which can\'t be edited in a cell.'],
+      [['address'], 'names "address" (group), which can\'t be edited in a cell.'],
+      [['dealKey'], 'names "dealKey" (autonumberKey), which can\'t be edited in a cell.'],
+      [['deal'], 'names "deal" (autonumber), which can\'t be edited in a cell.'],
+      ['name', 'must be true, false or an array of field names.'],
+      [[1], 'must be true, false or an array of field names.'],
+    ])('rejects %j at load, naming the view and entry', (editable, message) => {
+      expect(() => compile(editable)).toThrow(
+        `[frogbot] Collection "deals" list view "list" editable ${message}`,
+      );
+    });
+  });
+
   describe('fields inside layout containers', () => {
     const compile = (view: Record<string, unknown>) =>
       compileCollectionViews({
@@ -315,7 +457,7 @@ describe('collection views', () => {
         },
       });
 
-    expect(compileList('stage').custom?.frogbot.views[0]).toMatchObject({ groupBy: 'stage' });
+    expect(compileList('stage')?.custom?.frogbot.views[0]).toMatchObject({ groupBy: 'stage' });
     expect(() => compileList('notes')).toThrow(
       'list view "list" has an unsupported groupBy field "notes"',
     );
@@ -500,6 +642,89 @@ describe('collection views', () => {
     });
 
     expect(admin?.custom?.frogbot.useAsDone).toBe('done');
+  });
+
+  it('sends panel settings to the client config and keeps them out of Payload admin', () => {
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'tasks',
+        fields: [
+          { name: 'status', type: 'text' },
+          { name: 'dates', type: 'group', fields: [{ name: 'due', type: 'date' }] },
+          { type: 'tabs', tabs: [{ name: 'meta', fields: [{ name: 'owner', type: 'text' }] }] },
+        ],
+        admin: {
+          components: { panel: { actions: ['./Action#Action'] } },
+          panel: { properties: ['status', 'dates.due', 'meta.owner'], width: 640 },
+        },
+      },
+    });
+
+    expect(admin?.custom?.frogbot.panel).toEqual({
+      properties: ['status', 'dates.due', 'meta.owner'],
+      width: 640,
+    });
+    expect(admin).not.toHaveProperty('panel');
+    expect(admin?.components).not.toHaveProperty('panel');
+  });
+
+  it('turns the panel on with the default width when unset, and off with false', () => {
+    const on = compileCollectionViews({ collection: { slug: 'tasks', fields: [] } });
+    const off = compileCollectionViews({
+      collection: { slug: 'tasks', fields: [], admin: { panel: false } },
+    });
+
+    expect(on?.custom?.frogbot.panel).toEqual({ width: 560 });
+    expect(off?.custom?.frogbot.panel).toBe(false);
+  });
+
+  it.each([
+    ['a missing field', 'finished'],
+    ['a field inside an array', 'items.title'],
+    ['an empty path', ''],
+  ])('rejects a panel property naming %s, naming the collection and entry', (_, path) => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [
+            { name: 'title', type: 'text' },
+            { name: 'items', type: 'array', fields: [{ name: 'title', type: 'text' }] },
+          ],
+          admin: { panel: { properties: [path] } },
+        },
+      }),
+    ).toThrow(`Collection "tasks" admin.panel.properties entry "${path}" must name a field`);
+  });
+
+  it.each([
+    ['the same field twice', ['status', 'status'], 'status'],
+    ['a group and a field inside it', ['dates', 'dates.due'], 'dates'],
+  ])('rejects panel properties naming %s', (_, properties, repeated) => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [
+            { name: 'status', type: 'text' },
+            { name: 'dates', type: 'group', fields: [{ name: 'due', type: 'date' }] },
+          ],
+          admin: { panel: { properties } },
+        },
+      }),
+    ).toThrow(`repeats "${repeated}"; each field appears once.`);
+  });
+
+  it.each([300, 399, 961, '560', Number.NaN])('rejects a panel width of %s', (width) => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'tasks',
+          fields: [],
+          admin: { panel: { width: width as number } },
+        },
+      }),
+    ).toThrow(`Collection "tasks" admin.panel.width ${width} must be a number from 400 to 960.`);
   });
 
   it('rejects a function filter, since view entries are plain data', () => {
@@ -786,6 +1011,134 @@ describe('collection views', () => {
     expect(admin?.components?.views?.list).toEqual({
       Component: '@frogbotai/ui/admin/rsc#CustomCollectionView',
       actions,
+    });
+  });
+
+  describe('card views', () => {
+    const fields = [
+      { name: 'name', type: 'text' as const },
+      { name: 'logo', type: 'upload' as const, relationTo: 'media' },
+      { name: 'stage', type: 'select' as const, options: [] },
+      {
+        name: 'meta',
+        type: 'group' as const,
+        fields: [{ name: 'photo', type: 'upload' as const, relationTo: 'media' }],
+      },
+      {
+        type: 'row' as const,
+        fields: [{ name: 'banner', type: 'upload' as const, relationTo: 'media' }],
+      },
+    ];
+
+    it('compiles a gallery route with its card keys in the metadata', () => {
+      const admin = compileCollectionViews({
+        collection: {
+          slug: 'companies',
+          fields,
+          admin: {
+            views: [
+              { type: 'list' },
+              { type: 'gallery', label: 'Logos', thumbnailFit: 'contain' },
+              { type: 'gallery', slug: 'banners', useAsThumbnail: 'banner' },
+              { type: 'board', groupBy: 'stage', useAsThumbnail: false },
+            ],
+          },
+        },
+      });
+
+      expect(admin?.components?.views?.gallery).toEqual({
+        Component: '@frogbotai/ui/admin/rsc#GalleryView',
+        exact: true,
+        path: '/gallery',
+      });
+      expect(admin?.custom?.frogbot.views.slice(1)).toEqual([
+        {
+          type: 'gallery',
+          label: 'Logos',
+          thumbnailFit: 'contain',
+          path: '/gallery',
+          slug: 'gallery',
+        },
+        {
+          type: 'gallery',
+          label: 'Gallery',
+          useAsThumbnail: 'banner',
+          path: '/banners',
+          slug: 'banners',
+        },
+        {
+          type: 'board',
+          groupBy: 'stage',
+          label: 'Board',
+          orderField: '_order',
+          useAsThumbnail: false,
+          path: '/board',
+          slug: 'board',
+        },
+      ]);
+    });
+
+    it('renders a gallery as the default view', () => {
+      const admin = compileCollectionViews({
+        collection: { slug: 'media', fields: [], admin: { views: [{ type: 'gallery' }] } },
+      });
+
+      expect(admin?.components?.views?.list).toEqual({
+        Component: '@frogbotai/ui/admin/rsc#GalleryView',
+      });
+    });
+
+    it.each([
+      ['a missing field', 'photo'],
+      ['a nested path', 'meta.photo'],
+      ['a field that is not an upload', 'name'],
+      ['an empty string', ''],
+    ])('rejects a view useAsThumbnail naming %s', (_, useAsThumbnail) => {
+      for (const type of ['gallery', 'board'] as const) {
+        expect(() =>
+          compileCollectionViews({
+            collection: {
+              slug: 'companies',
+              fields,
+              admin: { views: [{ type: 'list' }, { type, groupBy: 'stage', useAsThumbnail }] },
+            },
+          }),
+        ).toThrow(
+          new RegExp(
+            `^\\[frogbot\\] Collection "companies" ${type} view "${type}" has useAsThumbnail "${useAsThumbnail.replace('.', '\\.')}", which must name a top-level upload field or be false\\.$`,
+          ),
+        );
+      }
+    });
+
+    it('throws Payload InvalidConfiguration for a bad view useAsThumbnail', () => {
+      expect(() =>
+        compileCollectionViews({
+          collection: {
+            slug: 'companies',
+            fields,
+            admin: { views: [{ type: 'gallery', useAsThumbnail: 'name' }] },
+          },
+        }),
+      ).toThrow(InvalidConfiguration);
+    });
+
+    it('accepts a top-level upload field, including one inside a row, and false', () => {
+      expect(() =>
+        compileCollectionViews({
+          collection: {
+            slug: 'companies',
+            fields,
+            admin: {
+              views: [
+                { type: 'gallery', useAsThumbnail: 'logo' },
+                { type: 'gallery', slug: 'banners', useAsThumbnail: 'banner' },
+                { type: 'board', groupBy: 'stage', useAsThumbnail: false },
+              ],
+            },
+          },
+        }),
+      ).not.toThrow();
     });
   });
 });

@@ -13,6 +13,19 @@ import type { Account } from './frogbot-types.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const writeSpend = (
+  booted: BootedFrogBot,
+  collection: 'accounts' | 'credentials',
+  id: number | string,
+  amount: number,
+) =>
+  booted.frogbot.update({
+    collection: 'plugin-ai-policy-spend',
+    where: { key: { equals: `${collection}:${String(id)}` } },
+    data: { amount },
+    overrideAccess: true,
+  });
+
 describe('API keys plugin integration', () => {
   let booted: BootedFrogBot;
   let upstream: Server;
@@ -174,7 +187,7 @@ describe('API keys plugin integration', () => {
       headers: { 'x-service-key': mint.body.token },
     });
 
-    expect(rejected.status).toBe(403);
+    expect(rejected.status).toBe(401);
   });
 
   it('refuses minting and rotating with an API key but lets the key revoke itself', async () => {
@@ -387,12 +400,7 @@ describe('API keys plugin integration', () => {
 
     expect(key.totalCostUSD).toBe(3);
 
-    await booted.frogbot.update({
-      collection: 'accounts',
-      id: owner.id,
-      data: { spendThisPeriodUSD: 10 },
-      overrideAccess: true,
-    });
+    await writeSpend(booted, 'accounts', owner.id, 10);
 
     const exhausted = await request('test/allowed');
 
@@ -624,12 +632,7 @@ describe('API keys plugin integration', () => {
       );
 
     const setSpend = (collection: 'accounts' | 'credentials', id: number | string, spend: number) =>
-      booted.frogbot.update({
-        collection,
-        id,
-        data: { spendThisPeriodUSD: spend },
-        overrideAccess: true,
-      });
+      writeSpend(booted, collection, id, spend);
 
     const spendOf = async (collection: 'accounts' | 'credentials', id: number | string) =>
       (await booted.frogbot.findByID({ collection, id, overrideAccess: true })).spendThisPeriodUSD;
@@ -891,6 +894,9 @@ describe('API keys plugin integration', () => {
         }),
       ).toMatchObject({ models: ['test/allowed'], monthlyBudget: 25, spendThisPeriodUSD: spent });
 
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(Date.now() + 32 * 24 * 60 * 60 * 1000));
+
       await booted.payload.jobs.queue({
         task: 'plugin-ai-policy-reset-spend',
         input: {},
@@ -898,6 +904,8 @@ describe('API keys plugin integration', () => {
       });
 
       await booted.payload.jobs.run({ queue: 'default', overrideAccess: true });
+
+      vi.useRealTimers();
 
       expect(await spendOf('credentials', rotated.body.id)).toBe(0);
       expect(await spendOf('accounts', ownerId)).toBe(0);
@@ -972,12 +980,7 @@ describe('API keys plugin integration', () => {
       ).docs.map((doc) => doc.id);
 
     const setSpend = (id: number | string, spend: number) =>
-      booted.frogbot.update({
-        collection: 'credentials',
-        id,
-        data: { spendThisPeriodUSD: spend },
-        overrideAccess: true,
-      });
+      writeSpend(booted, 'credentials', id, spend);
 
     const complete = (token: string) =>
       booted.restClient.post<{ error: { message: string } }>(
@@ -1201,6 +1204,21 @@ describe('API keys plugin integration', () => {
       );
     });
 
+    it('answers a missing key on revoke, minted-count and rotate with the errors envelope', async () => {
+      const notFound = {
+        errors: [{ name: 'APIError', message: 'API key not found', data: { code: 'not_found' } }],
+      };
+
+      for (const response of [
+        await revoke(session, 999_999),
+        await mintedCount(session, 999_999),
+        await rotate(session, 999_999),
+      ]) {
+        expect(response.status).toBe(404);
+        expect(response.body).toEqual(notFound);
+      }
+    });
+
     it('lets a key revoke only itself and the keys it minted', async () => {
       const parent = await mint(session, 'P', { canMint: true });
       const sibling = await mint(session, 'S');
@@ -1208,7 +1226,19 @@ describe('API keys plugin integration', () => {
       const grandchild = await mint(asKey(child.body.token), 'G');
 
       for (const id of [sibling.body.id, parent.body.id]) {
-        expect((await revoke(asKey(child.body.token), id)).status).toBe(404);
+        const refused = await revoke(asKey(child.body.token), id);
+
+        expect(refused.status).toBe(404);
+        expect(refused.body).toEqual({
+          errors: [
+            {
+              name: 'APIError',
+              message:
+                'A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.',
+              data: { code: 'not_found' },
+            },
+          ],
+        });
         expect((await mintedCount(asKey(child.body.token), id)).status).toBe(404);
       }
 
@@ -1248,7 +1278,7 @@ describe('API keys plugin integration', () => {
       for (const token of [child.body.token, grandchild.body.token]) {
         expect(
           (await booted.restClient.get('/api/credentials', { headers: asKey(token) })).status,
-        ).toBe(403);
+        ).toBe(401);
       }
     });
 
@@ -1478,10 +1508,22 @@ describe('API keys plugin integration', () => {
 
       vi.useFakeTimers({ now: Date.parse(expiresAt) + 1000, toFake: ['Date'] });
 
-      expect(
-        (await booted.restClient.get('/api/credentials', { headers: asKey(key.body.token) }))
-          .status,
-      ).toBe(403);
+      const message = `API key expired at ${expiresAt}. Mint a new one with POST /api/credentials/mint.`;
+      const refused = await booted.restClient.get<{ errors: { message: string }[] }>(
+        '/api/credentials',
+        { headers: asKey(key.body.token) },
+      );
+
+      expect(refused.status).toBe(401);
+      expect(refused.body.errors[0]?.message).toBe(message);
+      expect(refused.headers.get('www-authenticate')).toBe(
+        `Bearer error="invalid_token", error_description="${message}"`,
+      );
+
+      const refusedMint = await mint(asKey(key.body.token), { name: 'Next' });
+
+      expect(refusedMint.status).toBe(401);
+      expect(refusedMint.body.error).toBe(message);
       expect((await stored(key.body.id)).lastUsedAt).toBe(lastUsedAt);
 
       const login = await booted.restClient.post<{ token: string }>(
@@ -1498,6 +1540,81 @@ describe('API keys plugin integration', () => {
       expect(rotated.status).toBe(400);
       expect(rotated.body.error).toBe('This key has expired. Mint a new key instead.');
       expect((await stored(key.body.id)).revokedAt ?? null).toBeNull();
+    });
+
+    it('tells a revoked key it was revoked, and when', async () => {
+      const key = await mint(session, { name: 'Gone' });
+
+      expect(
+        (
+          await booted.restClient.post(`/api/credentials/${key.body.id}/revoke`, undefined, {
+            headers: session,
+          })
+        ).status,
+      ).toBe(200);
+
+      const revokedAt = (await stored(key.body.id)).revokedAt as string;
+      const message = `API key was revoked at ${revokedAt}. Mint a new one with POST /api/credentials/mint.`;
+      const refused = await booted.restClient.get<{ errors: { message: string }[] }>(
+        '/api/credentials',
+        { headers: asKey(key.body.token) },
+      );
+
+      expect(refused.status).toBe(401);
+      expect(refused.body.errors[0]?.message).toBe(message);
+      expect(refused.headers.get('www-authenticate')).toContain(`error_description="${message}"`);
+    });
+
+    it('refuses a revoked key on GraphQL instead of returning public data', async () => {
+      const key = await mint(session, { name: 'Gone' });
+
+      await booted.restClient.post(`/api/credentials/${key.body.id}/revoke`, undefined, {
+        headers: session,
+      });
+
+      const response = await GRAPHQL_POST(config)(
+        new Request(`${booted.baseUrl}/api/graphql`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', ...asKey(key.body.token) },
+          body: JSON.stringify({ query: '{ Accounts { docs { id } } }' }),
+        }),
+      );
+
+      const body = (await response.json()) as {
+        data?: { Accounts: unknown };
+        errors?: { message: string }[];
+      };
+
+      expect(body.data?.Accounts ?? null).toBeNull();
+      expect(body.errors?.[0]?.message).toMatch(/^API key was revoked at /);
+    });
+
+    it('lets a password login through when the request also carries a refused key', async () => {
+      const key = await mint(session, { name: 'Gone' });
+
+      await booted.restClient.post(`/api/credentials/${key.body.id}/revoke`, undefined, {
+        headers: session,
+      });
+
+      const login = await booted.restClient.post('/api/accounts/login', credentials, {
+        headers: asKey(key.body.token),
+      });
+
+      expect(login.status).toBe(200);
+    });
+
+    it('lets a session cookie through when the request also carries a refused key', async () => {
+      const key = await mint(session, { name: 'Gone' });
+
+      await booted.restClient.post(`/api/credentials/${key.body.id}/revoke`, undefined, {
+        headers: session,
+      });
+
+      const both = await booted.restClient.get('/api/credentials', {
+        headers: { ...session, ...asKey(key.body.token) },
+      });
+
+      expect(both.status).toBe(200);
     });
 
     it("gives a key minted by a key no later date than its parent's", async () => {

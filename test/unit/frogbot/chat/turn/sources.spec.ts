@@ -6,7 +6,7 @@ import {
   messageSourceIds,
   toolSources,
 } from '../../../../../packages/frogbot/src/chat/turn/sources.js';
-import type { AnyTool, ToolCtx } from '../../../../../packages/frogbot/src/tools/types.js';
+import type { AnyTool, Tool, ToolCtx } from '../../../../../packages/frogbot/src/tools/types.js';
 
 type Part = TextStreamPart<ToolSet>;
 
@@ -25,7 +25,7 @@ function makeCtx() {
   };
 }
 
-function tool(slug: string, sources?: AnyTool['sources']): AnyTool {
+function tool(slug: string, sources?: Tool['sources']): AnyTool {
   return {
     slug,
     description: slug,

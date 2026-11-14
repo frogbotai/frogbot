@@ -19,6 +19,7 @@ import {
   isProviderInstance,
   PROVIDER_NAMES,
   type ProviderConfigMap,
+  providerCredentialEnvVars,
   type ProviderRegistry,
   providers,
   resolveProvider,
@@ -402,5 +403,28 @@ describe('provider table', () => {
 
   it('providers table keys match PROVIDER_NAMES', () => {
     expect(Object.keys(providers).sort()).toEqual([...PROVIDER_NAMES].sort());
+  });
+});
+
+describe('providerCredentialEnvVars', () => {
+  it('lists each env-only credential form', () => {
+    expect(providerCredentialEnvVars('openai')).toEqual([['OPENAI_API_KEY']]);
+    expect(providerCredentialEnvVars('klingai')).toEqual([
+      ['KLINGAI_API_KEY'],
+      ['KLINGAI_ACCESS_KEY', 'KLINGAI_SECRET_KEY'],
+    ]);
+  });
+
+  it('accepts FAL_KEY as well as FAL_API_KEY, as fal reads both', () => {
+    expect(providerCredentialEnvVars('fal')).toEqual([['FAL_API_KEY'], ['FAL_KEY']]);
+  });
+
+  it('drops forms with a config-only key', () => {
+    expect(providerCredentialEnvVars('anthropic')).toEqual([['ANTHROPIC_API_KEY']]);
+  });
+
+  it('is empty for providers without an API-key check and for unknown names', () => {
+    expect(providerCredentialEnvVars('bedrock')).toEqual([]);
+    expect(providerCredentialEnvVars('ollama')).toEqual([]);
   });
 });

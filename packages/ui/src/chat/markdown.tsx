@@ -30,7 +30,7 @@ const createComponents = (role: MessageRole): Components => ({
       );
     }
 
-    const language = className?.match(/language-(\w+)/)?.[1];
+    const language = className?.match(/language-([\w+#-]+)/)?.[1];
 
     return <CodeBlock code={code} language={language} role={role} />;
   },

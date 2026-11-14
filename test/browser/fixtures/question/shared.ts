@@ -12,6 +12,7 @@ export const tagsSlug = 'tags';
 export const secretsSlug = 'secrets';
 export const storiesSlug = 'stories';
 export const approvalsSlug = 'approvals';
+export const photosSlug = 'photos';
 export const archivesSlug = 'archives';
 export const storyStatusOptions = [
   { label: 'Todo', value: 'todo' },
@@ -81,3 +82,6 @@ export const channelChat = {
     },
   },
 };
+export const cellKindsSlug = 'cell-kinds';
+export const cellDraftsSlug = 'cell-drafts';
+export const cellAccessSlug = 'cell-access';

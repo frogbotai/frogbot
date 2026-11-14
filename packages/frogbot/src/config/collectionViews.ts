@@ -1,8 +1,17 @@
-import type { CollectionConfig as PayloadCollectionConfig, PayloadComponent } from 'payload';
+import {
+  type CollectionConfig as PayloadCollectionConfig,
+  InvalidConfiguration,
+  type PayloadComponent,
+} from 'payload';
 
 import { validateAdminIcon } from '../admin/icons.js';
+import { getCellEditMode, getFieldKindType } from '../admin/views/cellEdit.js';
 import { SUMMARY_OPERATIONS, type SummaryKind } from '../admin/views/summary.js';
-import type { CollectionView, CollectionViewMetadata } from '../admin/views/types.js';
+import type {
+  CollectionView,
+  CollectionViewMetadata,
+  TimelineScale,
+} from '../admin/views/types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { Field, TabAsField } from '../fields/config/types.js';
 import { flattenTopLevelFields } from '../seams/config.js';
@@ -93,6 +102,88 @@ function validateUseAsDone(collection: CollectionConfig): void {
   }
 }
 
+function validateViewThumbnail(
+  collection: CollectionConfig,
+  view: CollectionView & { slug: string },
+) {
+  if (view.type !== 'board' && view.type !== 'gallery') return;
+  const name: unknown = view.useAsThumbnail;
+  if (name === undefined || name === false) return;
+
+  const field =
+    typeof name === 'string' && !name.includes('.')
+      ? flattenTopLevelFields(collection.fields).find(
+          (candidate) => 'name' in candidate && candidate.name === name,
+        )
+      : undefined;
+
+  if (field?.type !== 'upload') {
+    throw new InvalidConfiguration(
+      `[frogbot] Collection "${collection.slug}" ${view.type} view "${view.slug}" has useAsThumbnail "${String(name)}", which must name a top-level upload field or be false.`,
+    );
+  }
+}
+
+/** The record panel's width bounds and default, in px. */
+export const PANEL_WIDTH = { default: 560, max: 960, min: 400 } as const;
+
+function validatePanel(collection: CollectionConfig): void {
+  const panel: unknown = collection.admin?.panel;
+  if (panel === undefined || panel === false) return;
+  const name = `[frogbot] Collection "${collection.slug}" admin.panel`;
+
+  if (!panel || typeof panel !== 'object' || Array.isArray(panel)) {
+    throw new Error(`${name} must be false or an object.`);
+  }
+
+  const { properties, width } = panel as { properties?: unknown; width?: unknown };
+
+  if (properties !== undefined) {
+    if (!Array.isArray(properties)) {
+      throw new Error(`${name}.properties must be an array of field names.`);
+    }
+
+    const seen: string[] = [];
+
+    for (const path of properties as unknown[]) {
+      const field =
+        typeof path === 'string' ? resolveDoneField(collection.fields, path) : undefined;
+
+      if (!field || !('name' in field) || field.type === 'tab') {
+        throw new Error(
+          `${name}.properties entry "${String(path)}" must name a field, top level or a dot path into a group or named tab.`,
+        );
+      }
+
+      const entry = path as string;
+      const repeated = seen.find(
+        (other) =>
+          other === entry || entry.startsWith(`${other}.`) || other.startsWith(`${entry}.`),
+      );
+
+      if (repeated !== undefined) {
+        throw new Error(
+          `${name}.properties entry "${entry}" repeats "${repeated}"; each field appears once.`,
+        );
+      }
+
+      seen.push(entry);
+    }
+  }
+
+  if (
+    width !== undefined &&
+    (typeof width !== 'number' ||
+      !Number.isFinite(width) ||
+      width < PANEL_WIDTH.min ||
+      width > PANEL_WIDTH.max)
+  ) {
+    throw new Error(
+      `${name}.width ${String(width)} must be a number from ${PANEL_WIDTH.min} to ${PANEL_WIDTH.max}.`,
+    );
+  }
+}
+
 function getConfigSummaryKind(
   collection: CollectionConfig,
   path: string,
@@ -149,12 +240,41 @@ function validateSummary(collection: CollectionConfig, view: CollectionView & { 
   }
 }
 
+function validateEditable(collection: CollectionConfig, view: CollectionView & { slug: string }) {
+  if (view.type !== 'list' || view.editable === undefined) return;
+
+  const prefix = `[frogbot] Collection "${collection.slug}" list view "${view.slug}" editable`;
+  const { editable } = view as { editable: unknown };
+
+  if (typeof editable === 'boolean') return;
+
+  if (!Array.isArray(editable) || editable.some((entry) => typeof entry !== 'string')) {
+    throw new Error(`${prefix} must be true, false or an array of field names.`);
+  }
+
+  for (const path of editable as string[]) {
+    const field = resolveFieldPath(collection.fields, path)?.at(-1);
+
+    if (!field || !('name' in field)) {
+      throw new Error(`${prefix} names "${path}", which is not a field.`);
+    }
+
+    if (getCellEditMode(field) === 'never') {
+      throw new Error(
+        `${prefix} names "${path}" (${getFieldKindType(field) ?? field.type}), which can't be edited in a cell. Remove it; people edit it in the record.`,
+      );
+    }
+  }
+}
+
 function containsFunction(value: unknown): boolean {
   if (typeof value === 'function') return true;
   if (!value || typeof value !== 'object') return false;
 
   return Object.values(value).some(containsFunction);
 }
+
+const TIMELINE_SCALES: TimelineScale[] = ['day', 'week', 'month'];
 
 function labelFor(type: CollectionView['type']): string {
   return type[0].toUpperCase() + type.slice(1);
@@ -211,10 +331,13 @@ export function compileCollectionViews({
   }
 
   validateUseAsDone(collection);
+  validatePanel(collection);
 
   for (const view of views) {
     validateAdminIcon(view.icon);
+    validateViewThumbnail(collection, view);
     validateSummary(collection, view);
+    validateEditable(collection, view);
 
     if (containsFunction(view.filter)) {
       throw new Error(
@@ -223,7 +346,7 @@ export function compileCollectionViews({
     }
 
     if (
-      (view.type === 'board' || view.type === 'list') &&
+      (view.type === 'board' || view.type === 'list' || view.type === 'timeline') &&
       view.groupBy &&
       !resolveGroupByField(collection.fields, view.groupBy)
     ) {
@@ -232,13 +355,19 @@ export function compileCollectionViews({
       );
     }
 
-    if (view.type === 'calendar') {
+    if (view.type === 'calendar' || view.type === 'timeline') {
+      if (!view.start) {
+        throw new Error(
+          `[frogbot] Collection "${collection.slug}" ${view.type} view "${view.slug}" needs a start date field.`,
+        );
+      }
+
       for (const path of [view.start, view.end].filter((value): value is string =>
         Boolean(value),
       )) {
         if (resolveField(collection.fields, path)?.type !== 'date') {
           throw new Error(
-            `[frogbot] Collection "${collection.slug}" calendar view "${view.slug}" has a non-date field "${path}".`,
+            `[frogbot] Collection "${collection.slug}" ${view.type} view "${view.slug}" has a non-date field "${path}".`,
           );
         }
       }
@@ -247,9 +376,23 @@ export function compileCollectionViews({
         const colorField = resolveField(collection.fields, view.color);
         if (colorField?.type !== 'select' && colorField?.type !== 'radio') {
           throw new Error(
-            `[frogbot] Collection "${collection.slug}" calendar view "${view.slug}" has an unsupported color field "${view.color}".`,
+            `[frogbot] Collection "${collection.slug}" ${view.type} view "${view.slug}" has an unsupported color field "${view.color}".`,
           );
         }
+      }
+    }
+
+    if (view.type === 'timeline' && view.scales !== undefined) {
+      const scales: unknown = view.scales;
+      if (
+        !Array.isArray(scales) ||
+        scales.length === 0 ||
+        scales.some((scale) => !TIMELINE_SCALES.includes(scale as TimelineScale)) ||
+        new Set(scales).size !== scales.length
+      ) {
+        throw new Error(
+          `[frogbot] Collection "${collection.slug}" timeline view "${view.slug}" has scales ${JSON.stringify(scales)}; use a non-empty list of distinct ${TIMELINE_SCALES.map((scale) => `'${scale}'`).join(', ')}.`,
+        );
       }
     }
   }
@@ -263,9 +406,15 @@ export function compileCollectionViews({
 
   onRuntimeViews?.(views);
 
-  const { components: authoredComponents, useAsDone, views: _views, ...adminSource } = source ?? {};
+  const {
+    components: authoredComponents,
+    panel,
+    useAsDone,
+    views: _views,
+    ...adminSource
+  } = source ?? {};
 
-  const { edit, ...componentSource } = authoredComponents ?? {};
+  const { edit, panel: _panelComponents, ...componentSource } = authoredComponents ?? {};
   const runtimeViews: Record<string, unknown> = {};
   const metadata: CollectionViewMetadata[] = [];
 
@@ -294,9 +443,21 @@ export function compileCollectionViews({
         ...actions,
         ...(isDefault ? {} : { exact: true, path }),
       };
+    } else if (view.type === 'gallery') {
+      runtimeViews[key] = {
+        Component: '@frogbotai/ui/admin/rsc#GalleryView',
+        ...actions,
+        ...(isDefault ? {} : { exact: true, path }),
+      };
     } else if (view.type === 'calendar') {
       runtimeViews[key] = {
         Component: '@frogbotai/ui/admin/rsc#CalendarView',
+        ...actions,
+        ...(isDefault ? {} : { exact: true, path }),
+      };
+    } else if (view.type === 'timeline') {
+      runtimeViews[key] = {
+        Component: '@frogbotai/ui/admin/rsc#TimelineView',
         ...actions,
         ...(isDefault ? {} : { exact: true, path }),
       };
@@ -350,6 +511,13 @@ export function compileCollectionViews({
       ...adminSource.custom,
       frogbot: {
         ...((adminSource.custom?.frogbot as Record<string, unknown> | undefined) ?? {}),
+        panel:
+          panel === false
+            ? false
+            : {
+                ...(panel?.properties ? { properties: panel.properties } : {}),
+                width: panel?.width ?? PANEL_WIDTH.default,
+              },
         ...(useAsDone ? { useAsDone } : {}),
         views: metadata,
       },

@@ -64,6 +64,7 @@ export const CHECK_INPUTS = {
   'peer-variants': ['pnpm-lock.yaml'],
   scripts: ['CONTRIBUTING.md', ...MANIFESTS],
   'single-frogbot': MANIFESTS,
+  'skill-design': ['skills/frogbot/reference/ADMIN-DESIGN.md', 'packages/ui/src/**'],
   'skill-scaffolds': ['skills/**', 'test/types/skill/**'],
   'test-types': ['test/**', 'packages/**/src/**', '.opencode/**'],
   tests: ['test/**', 'packages/**/src/**', 'vitest.config.ts'],

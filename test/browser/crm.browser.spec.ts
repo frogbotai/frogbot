@@ -11,6 +11,7 @@ const shots = path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-resu
 
 const views = [
   { name: 'companies-list', path: '/collections/companies' },
+  { name: 'companies-gallery', path: '/collections/companies/gallery' },
   { name: 'companies-board', path: '/collections/companies/board' },
   { name: 'contacts-list', path: '/collections/contacts' },
   { name: 'deals-list', path: '/collections/deals' },
@@ -20,6 +21,7 @@ const views = [
   { name: 'tasks-list', path: '/collections/tasks' },
   { name: 'tasks-board', path: '/collections/tasks/board' },
   { name: 'tasks-calendar', path: `/collections/tasks/calendar?date=${todayDate}` },
+  { name: 'media-gallery', path: '/collections/media/gallery' },
 ];
 
 test.use({ timezoneId });
@@ -64,3 +66,34 @@ for (const view of views) {
     expect(errors).toEqual([]);
   });
 }
+
+test('shoots the tasks board and list with the record panel open, with no errors', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+
+  const errors = watchErrors(page);
+
+  await prepareView(page);
+  const found = await page.request.get(
+    `/api/tasks?where[title][equals]=${encodeURIComponent('Prepare the wholesale portal demo')}&limit=1`,
+  );
+
+  const [task] = ((await found.json()) as { docs: Array<{ id: number }> }).docs;
+
+  for (const view of [
+    { name: 'tasks-board-panel', path: `/collections/tasks/board?record=${task.id}` },
+    { name: 'tasks-list-panel', path: `/collections/tasks?record=${task.id}` },
+  ]) {
+    await page.goto(view.path);
+
+    const files = await shootView(page, view.name, {
+      path: shots,
+      waitFor: '.fb-record-panel-title__input',
+    });
+
+    expect(files).toHaveLength(4);
+  }
+
+  expect(errors).toEqual([]);
+});

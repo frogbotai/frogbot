@@ -104,7 +104,11 @@ When you leave the input, readable text is shown in the field's format, so `90` 
 
 Text the input can't read, such as `1:75`, `1.5` or `1:`, shows "Enter a duration such as 1:30." on the field when you leave it. That text is never saved: Save and Save Draft leave the field out of the request, so the stored value is kept, and after saving the input shows the stored value again.
 
-The label, description, validation errors, `min`, `max`, `required` and a custom `validate` work as on a Number field. When the field is read-only, because of `admin.readOnly`, because it is virtual, or because the user may not update it, the document view shows the formatted duration as text with no input.
+The label, description, validation errors, `min`, `max`, `required`, and a custom `validate` work as on a Number field.
+
+When the field is read-only, the document view shows the formatted duration as text with no input. A field is read-only because of `admin.readOnly`, because it is virtual, or because the user may not update it.
+
+In a list with [`editable`](/admin/collection-list#editing-cells-in-place), a duration cell edits in place with the same input. Enter saves and Esc cancels.
 
 ## Stored value
 

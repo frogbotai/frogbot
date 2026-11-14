@@ -97,11 +97,17 @@ Amounts are formatted in the admin's selected language, so the same value shows 
 
 An empty value (missing, `null`, or not a number) shows nothing: no placeholder and no dash. A stored `0` is an amount and shows as `$0.00`.
 
-Money looks the same in the [List](/admin/overview), on [Board](/admin/collection-board) cards and in [Calendar](/admin/collection-calendar) events. In the document view, an editable money field is a number input with the currency symbol before it. Type the amount in whole units, such as `12.5` for $12.50; it is saved as typed, and clearing the input saves an empty value. The label, description, validation errors, `min`, `max`, `required` and a custom `validate` work as on a Number field.
+Money looks the same in the [List](/admin/overview), on [Board](/admin/collection-board) cards, and in [Calendar](/admin/collection-calendar) events.
+
+In the document view, an editable money field is a number input with the currency symbol before it. Type the amount in whole units, such as `12.5` for $12.50. The amount is saved as typed, and clearing the input saves an empty value.
+
+The label, description, validation errors, `min`, `max`, `required`, and a custom `validate` work as on a Number field.
 
 When the field is read-only, because of `admin.readOnly`, because it is virtual, or because the user may not update it, the document view shows the formatted amount as text with no input. An empty value shows no amount.
 
 If a money field is the first List column, a row with an empty value has no link to open the document from that column.
+
+In a list with [`editable`](/admin/collection-list#editing-cells-in-place), a money cell edits in place with the same input. Enter saves and Esc cancels.
 
 ## Stored value
 

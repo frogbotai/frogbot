@@ -1,15 +1,17 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
+import { auditLogPlugin } from '@frogbotai/plugin-audit-log';
 import { buildConfig, type FrogBotConfig } from 'frogbot';
 
+import { Cards, Journal, Memos, Notes, Scraps, Tickets } from './collections/PanelLab';
 import { Posts } from './collections/Posts';
 import { Users } from './collections/Users';
 
 const config: FrogBotConfig = {
   secret: process.env.FROGBOT_SECRET || '',
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || '' } }),
-  collections: [Users, Posts],
-  plugins: [apiKeysPlugin()],
+  collections: [Users, Posts, Notes, Journal, Memos, Cards, Tickets, Scraps],
+  plugins: [apiKeysPlugin(), auditLogPlugin({ collections: ['tickets'] })],
   admin: {
     meta: { titleSuffix: '- Field Lab', openGraph: { siteName: 'Field Lab' } },
     dashboard: {

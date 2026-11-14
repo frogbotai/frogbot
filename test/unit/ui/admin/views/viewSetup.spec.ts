@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@payloadcms/ui/utilities/upsertPreferences', () => mocks);
 
-const { isFreshQuery, mergeViewSetup, pickViewSetup, resolveViewSetup } =
+const { clearStoredLimit, isFreshQuery, mergeViewSetup, pickViewSetup, resolveViewSetup } =
   await import('../../../../../packages/ui/src/admin/views/viewSetup.js');
 
 const count = vi.fn();
@@ -170,5 +170,96 @@ describe('view setups', () => {
         viewSlug: 'board',
       }),
     ).rejects.toThrow('database down');
+  });
+
+  describe('page size at the view default', () => {
+    it('does not save a URL limit equal to the default, and drops one already saved', async () => {
+      mocks.upsertPreferences.mockImplementation(({ customMerge, value }) =>
+        Promise.resolve(customMerge({ limit: '25', sort: 'title' }, value)),
+      );
+
+      const setup = await resolveViewSetup({
+        collectionSlug: 'logs',
+        defaultLimit: 50,
+        query: { limit: '50', page: '1' },
+        req,
+        viewSlug: 'list',
+      });
+
+      expect(mocks.upsertPreferences).toHaveBeenCalledWith(expect.objectContaining({ value: {} }));
+      expect(setup.preference).toEqual({ sort: 'title' });
+      expect(setup.query).toEqual({ limit: '50', page: '1' });
+    });
+
+    it('saves a URL limit that differs from the default', async () => {
+      mocks.upsertPreferences.mockImplementation(({ customMerge, value }) =>
+        Promise.resolve(customMerge({ sort: 'title' }, value)),
+      );
+
+      const setup = await resolveViewSetup({
+        collectionSlug: 'logs',
+        defaultLimit: 50,
+        query: { limit: '25' },
+        req,
+        viewSlug: 'list',
+      });
+
+      expect(setup.preference).toEqual({ limit: '25', sort: 'title' });
+      expect(setup.saved).toEqual({ limit: '25', sort: 'title' });
+    });
+
+    it('never replays a saved limit equal to the default on a fresh visit', async () => {
+      mocks.getPreferences.mockResolvedValue({ id: 1, value: { limit: 50, sort: 'title' } });
+
+      const setup = await resolveViewSetup({
+        collectionSlug: 'logs',
+        defaultLimit: 50,
+        query: {},
+        req,
+        viewSlug: 'list',
+      });
+
+      expect(setup.saved).toEqual({ sort: 'title' });
+      expect(setup.query).toEqual({ sort: 'title' });
+    });
+
+    it('keeps a saved limit when no default is given', async () => {
+      mocks.getPreferences.mockResolvedValue({ id: 1, value: { limit: '10' } });
+
+      const setup = await resolveViewSetup({
+        collectionSlug: 'tasks',
+        query: {},
+        req,
+        viewSlug: 'gallery',
+      });
+
+      expect(setup.saved).toEqual({ limit: '10' });
+    });
+
+    it("removes the limit from Payload's list preference with a fresh read, keeping the rest", async () => {
+      const find = vi.fn().mockResolvedValue({
+        docs: [{ id: 7, value: { limit: 50, sort: '-createdAt' } }],
+      });
+
+      const update = vi.fn();
+      const listReq = { payload: { find, update }, user: { collection: 'users', id: 'u1' } };
+
+      await clearStoredLimit(listReq as never, 'collection-logs');
+
+      expect(mocks.getPreferences).not.toHaveBeenCalled();
+      expect(update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collection: 'payload-preferences',
+          data: { value: { sort: '-createdAt' } },
+          id: 7,
+        }),
+      );
+
+      update.mockReset();
+      find.mockResolvedValue({ docs: [{ id: 7, value: { sort: '-createdAt' } }] });
+      await clearStoredLimit(listReq as never, 'collection-logs');
+
+      expect(update).not.toHaveBeenCalled();
+    });
   });
 });

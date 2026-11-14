@@ -1,13 +1,27 @@
 import { z } from 'zod';
 
 import type { AnyTool, ToolCtx } from '../tools/types.js';
-import type { SkillConfig, SkillContent, SkillCtx } from './types.js';
+import { skillResourcesError } from './config/sanitize.js';
+import type { SkillConfig, SkillContent, SkillCtx, SkillResource } from './types.js';
 
 function resolveContent(content: SkillContent, ctx: ToolCtx) {
   if (typeof content === 'string') return content;
   const skillCtx: SkillCtx = { req: ctx.req, frogbot: ctx.frogbot };
 
   return content(skillCtx);
+}
+
+async function resolveResources(
+  skill: SkillConfig,
+  ctx: ToolCtx,
+): Promise<readonly SkillResource[]> {
+  if (typeof skill.resources !== 'function') return skill.resources ?? [];
+
+  const resources = await skill.resources({ req: ctx.req });
+  const error = skillResourcesError(skill.slug, resources);
+  if (error) throw new Error(`[frogbot] ${error}`);
+
+  return resources;
 }
 
 function available(values: readonly string[]) {
@@ -22,18 +36,21 @@ export function buildSkillTools(skills: readonly SkillConfig[]): AnyTool[] {
       slug: 'list_skills',
       description: 'List available skills and their resources',
       inputSchema: z.object({}),
-      execute: () =>
-        skills
-          .map((skill) => {
+      execute: async (_input, ctx) => {
+        const lines = await Promise.all(
+          skills.map(async (skill) => {
             const description = skill.description ? `: ${skill.description}` : '';
-            const resources = (skill.resources ?? []).map(
+            const resources = (await resolveResources(skill, ctx)).map(
               (resource) =>
                 `  - ${resource.path}${resource.description ? `: ${resource.description}` : ''}`,
             );
 
             return [`- ${skill.slug}${description}`, ...resources].join('\n');
-          })
-          .join('\n'),
+          }),
+        );
+
+        return lines.join('\n');
+      },
     },
     {
       slug: 'load_skill',
@@ -52,15 +69,16 @@ export function buildSkillTools(skills: readonly SkillConfig[]): AnyTool[] {
       slug: 'load_skill_resource',
       description: 'Load a resource from an available skill',
       inputSchema: z.object({ skill: z.string(), path: z.string() }),
-      execute: ({ skill, path }, ctx) => {
+      execute: async ({ skill, path }, ctx) => {
         const match = bySlug.get(skill);
         if (!match) {
           return `Skill '${skill}' not found. Available skills: ${available(skills.map(({ slug }) => slug))}.`;
         }
 
-        const resource = match.resources?.find((entry) => entry.path === path);
+        const resources = await resolveResources(match, ctx);
+        const resource = resources.find((entry) => entry.path === path);
         if (!resource) {
-          return `Resource '${path}' not found in skill '${skill}'. Available resources: ${available((match.resources ?? []).map(({ path: value }) => value))}.`;
+          return `Resource '${path}' not found in skill '${skill}'. Available resources: ${available(resources.map(({ path: value }) => value))}.`;
         }
 
         return resolveContent(resource.content, ctx);

@@ -91,6 +91,8 @@ Screen readers announce the stars as a group named by the field's label, with ea
 
 The label, description, validation errors, `required` and a custom `validate` work as on a Number field. When the field is read-only, because of `admin.readOnly`, because it is virtual, or because the user may not update it, the document view shows the stars with no way to change them.
 
+In a list with [`editable`](/admin/collection-list#editing-cells-in-place), a rating cell edits in place with the same stars: pick one and press Enter, or Esc to cancel.
+
 ## Stored value
 
 Ratings are stored as whole numbers from `1` to `max`. The REST API, GraphQL and the Local API read and write the number, and the generated TypeScript type is the same as a Number field's, such as `score?: number | null`. Filters and sorting use the stored number.
@@ -133,6 +135,10 @@ Score out of 10
 
 ## Custom components
 
-The rating cell and input are `RatingCell` and `RatingField` from `@frogbotai/ui/admin`. Your own `admin.components.Cell` or `admin.components.Field` replaces them, and other components such as `Label`, `Description`, `Error`, `beforeInput` and `afterInput` work with the stars as they do on a Number field. `frogbot/fields` exports the `RatingKind` type for reading the field's `max` in your own components.
+The rating cell and input are `RatingCell` and `RatingField` from `@frogbotai/ui/admin`.
+
+Your own `admin.components.Cell` or `admin.components.Field` replaces them. Other components, such as `Label`, `Description`, `Error`, `beforeInput`, and `afterInput`, work with the stars as they do on a Number field.
+
+`frogbot/fields` exports the `RatingKind` type for reading the field's `max` in your own components.
 
 A custom Cell can draw the standard stars inside its own markup with [`FieldCell`](/fields/overview#cell), as shown for [Money fields](/fields/money#custom-components). As with any custom Cell, it appears only in the List view. Board cards and Calendar events keep the standard stars.

@@ -66,7 +66,7 @@ A collection about one platform takes its logo, always with the `brand-` prefix:
 
 ## Views and done records
 
-`admin.views` lists a collection's views; the first is the default and a list view must come first. Every view renders in one frame with a tab row (icon and label), one toolbar and one empty state. Keep view entries plain data: `filter` is a `Where`, React components go in `components`, and `access` is the only function. Each user's filters, sort, columns, page size and grouping are saved per view, with **Reset to default** in the view menu. A list view's `summary` sets each column's default footer total across every page (`count`, `sum`, `avg`, `min`, `max`; numbers take all five, dates `count`, `min` and `max`, other fields `count`); people change it from the footer, and startup fails on an unknown path or a pairing the field can't take.
+`admin.views` lists a collection's views; the first is the default and a list view must come first. Every view renders in one frame with a tab row (icon and label), one toolbar and one empty state. Keep view entries plain data: `filter` is a `Where`, React components go in `components`, and `access` is the only function. Each user's filters, sort, columns, page size and grouping are saved per view, with **Reset to default** in the view menu. A list view's `summary` sets each column's default footer total across every page (`count`, `sum`, `avg`, `min`, `max`; numbers take all five, dates `count`, `min` and `max`, other fields `count`); people change it from the footer, and startup fails on an unknown path or a pairing the field can't take. A list view's `editable` lets people edit cells in place, like a spreadsheet: `true` for every supported column, or an array of field names or dot paths. Text, textarea, email, number, select, checkbox, date, single relationship fields and every field kind edit in the cell with the field's own input (Enter saves, Esc cancels, Tab moves on and wraps rows); `hasMany`, other types, the linked first column and fields the person can't update open the record instead. Saves are one normal `PATCH` (drafts save as drafts). Startup fails on an entry that isn't a field or never edits in a cell (richText, array, blocks, group, tabs, upload, join, autonumber). Docs: https://docs.frogbot.ai/admin/collection-list#editing-cells-in-place
 
 ```ts
 export const Tasks: CollectionConfig = {
@@ -78,6 +78,7 @@ export const Tasks: CollectionConfig = {
       {
         type: 'list',
         defaultFields: ['title', 'status', 'dueDate'],
+        editable: ['status', 'dueDate'],
         groupBy: 'status',
         summary: { title: 'count' },
       },
@@ -99,9 +100,30 @@ export const Tasks: CollectionConfig = {
 };
 ```
 
-A list or board `groupBy` follows one set of rules: select and radio groups in option order with every option shown, checkbox as true then false, other fields by the values present, and records without a value in one last group. A list opens grouped by its `groupBy` until a person picks their own grouping; each list group collapses (saved per person), shows its count and has **+ Add**, which prefills the group's value. Hide a field from grouping with `admin.disabled.groupBy`.
+A timeline draws each record as a bar from `start` to `end` (date fields), in bands by `groupBy`, colored by `color`, on `scales` of `'week'`, `'month'` and `'day'`; people drag bars to change dates and click them to open the record. A record with one of the two dates is a one-day bar. Docs: https://docs.frogbot.ai/admin/collection-timeline
 
-`admin.useAsDone` names one checkbox field (or a dot path into a group); startup fails if it isn't a checkbox. Done records share one done style on every view, and board cards get a check circle that toggles it through a normal update. To make a stage imply done, set the checkbox in a `beforeChange` hook rather than in config. Docs: https://docs.frogbot.ai/configuration/collections#collection-views
+```ts
+{ type: 'timeline', start: 'startDate', end: 'dueDate', groupBy: 'project', color: 'status' }
+```
+
+A list, board or timeline `groupBy` follows one set of rules: select and radio groups in option order with every option shown, checkbox as true then false, other fields by the values present, and records without a value in one last group. A list opens grouped by its `groupBy` until a person picks their own grouping; each list group collapses (saved per person), shows its count and has **+ Add**, which prefills the group's value. Hide a field from grouping with `admin.disabled.groupBy`.
+
+Board and gallery cards share their keys: `defaultFields`, `components.Card`, and the card image. The image comes from the collection's `admin.useAsThumbnail` (defaulting to the first upload field; an upload collection with none shows each document's own file). A view's `useAsThumbnail: '<upload field>'` overrides it, `false` turns images off, and `thumbnailFit: 'contain'` fits logos without cropping. There is no `cover` key.
+
+```ts
+admin: {
+  useAsThumbnail: 'logo',
+  views: [
+    { type: 'list' },
+    { type: 'gallery', label: 'Logos', thumbnailFit: 'contain', defaultFields: ['industry'] },
+    { type: 'board', groupBy: 'lifecycle', useAsThumbnail: false },
+  ],
+}
+```
+
+`admin.useAsDone` names one checkbox field (or a dot path into a group); startup fails if it isn't a checkbox. Done records share one done style on every view, and board and gallery cards get a check circle that toggles it through a normal update. To make a stage imply done, set the checkbox in a `beforeChange` hook rather than in config. Docs: https://docs.frogbot.ai/configuration/collections#collection-views
+
+Clicking a row, card or event opens the record in a side panel beside the view, at `?record=<id>`, with the edit form. It's on for every collection; `admin.panel: false` opens the edit page instead. `admin.panel.properties` lists the fields shown as label and value rows under the title (default: the sidebar fields), and `admin.panel.width` sets the starting width (400–960, default 560). Panel slots go in `admin.components.panel`: `actions`, `beforeFields`, `afterFields`, `Header`, `Component`. Docs: https://docs.frogbot.ai/admin/record-panel
 
 ## Authentication
 

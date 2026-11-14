@@ -255,6 +255,13 @@ export function mapComponentPaths<T extends Config | SanitizedConfig>(
       ) as typeof collection.admin.components;
     }
 
+    const hierarchy = (collection as { hierarchy?: unknown }).hierarchy as
+      { admin?: { components?: unknown } } | undefined;
+
+    if (hierarchy && typeof hierarchy === 'object' && hierarchy.admin?.components) {
+      hierarchy.admin.components = mapComponents(hierarchy.admin.components, map);
+    }
+
     if (collection.fields) mapFields(collection.fields, walk);
   }
 

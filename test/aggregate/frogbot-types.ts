@@ -160,6 +160,8 @@ export interface User {
         id: string;
         createdAt?: string | null;
         expiresAt: string;
+        refreshCount?: number | null;
+        refreshedAt?: string | null;
       }[]
     | null;
   password?: string | null;
@@ -205,6 +207,8 @@ export interface Deal {
   region?: string | null;
   margin?: number | null;
   secret?: number | null;
+  confidential?: boolean | null;
+  audit?: number | null;
   details?: {
     probability?: number | null;
   };
@@ -283,6 +287,8 @@ export interface UsersSelect {
         id?: boolean;
         createdAt?: boolean;
         expiresAt?: boolean;
+        refreshCount?: boolean;
+        refreshedAt?: boolean;
       };
 }
 /**
@@ -317,6 +323,8 @@ export interface DealsSelect {
   region?: boolean;
   margin?: boolean;
   secret?: boolean;
+  confidential?: boolean;
+  audit?: boolean;
   details?:
     | boolean
     | {

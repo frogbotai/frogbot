@@ -13,12 +13,20 @@ export type NavItemProps = {
   className?: string;
   icon?: NavItemIcon;
   label: string;
+  labelClassName?: string;
   path: string;
 };
 
 const baseClass = 'fb-nav-item';
 
-export function NavItem({ active: activeProp, className, icon, label, path }: NavItemProps) {
+export function NavItem({
+  active: activeProp,
+  className,
+  icon,
+  label,
+  labelClassName,
+  path,
+}: NavItemProps) {
   const { Link, pathname } = useNavAdapter();
   const chosen = useActiveLink(path, pathname, { skip: activeProp !== undefined });
   const active = activeProp ?? chosen;
@@ -46,7 +54,9 @@ export function NavItem({ active: activeProp, className, icon, label, path }: Na
               })}
         </span>
       ) : null}
-      <span className={`${baseClass}__label`}>{label}</span>
+      <span className={[`${baseClass}__label`, labelClassName].filter(Boolean).join(' ')}>
+        {label}
+      </span>
     </Link>
   );
 }
