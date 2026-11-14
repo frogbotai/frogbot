@@ -2,7 +2,7 @@ import { createServer, type Server } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
@@ -14,6 +14,7 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 const password = 'frogbot-test-password';
 const callCost = 3;
 const calls = 30;
+const adapterName = process.env.FROGBOT_DATABASE ?? 'sqlite';
 
 describe('recording spend under parallel gateway calls', () => {
   let booted: BootedFrogBot;
@@ -52,6 +53,16 @@ describe('recording spend under parallel gateway calls', () => {
     await new Promise<void>((resolve) => upstream.listen(spendUpstreamPort, '127.0.0.1', resolve));
     booted = await bootFrogBot(dirname, 'api-keys-spend');
     await clearAndSeed(booted.frogbot, 'empty');
+  });
+
+  let openTransaction: number | string | undefined;
+
+  afterEach(async () => {
+    vi.restoreAllMocks();
+
+    if (openTransaction !== undefined) await booted.payload.db.rollbackTransaction(openTransaction);
+
+    openTransaction = undefined;
   });
 
   afterAll(async () => {
@@ -101,6 +112,41 @@ describe('recording spend under parallel gateway calls', () => {
 
   const read = (collection: 'accounts' | 'credentials', id: number | string) =>
     booted.frogbot.findByID({ collection, id, depth: 0, overrideAccess: true });
+
+  const counters = 'plugin-ai-policy-spend';
+  const thisMonth = () => new Date().toISOString().slice(0, 7);
+  const lastMonth = () => {
+    const now = new Date();
+
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1))
+      .toISOString()
+      .slice(0, 7);
+  };
+
+  const counterOf = async (collection: 'accounts' | 'credentials', id: number | string) => {
+    const { docs } = await booted.frogbot.find({
+      collection: counters,
+      where: { key: { equals: `${collection}:${String(id)}` } },
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+    });
+
+    return docs[0] as { id: number | string; amount: number; period: string } | undefined;
+  };
+
+  const setCounter = async (
+    collection: 'accounts' | 'credentials',
+    id: number | string,
+    data: { amount: number; period: string },
+  ) => {
+    await booted.payload.db.updateOne({
+      collection: counters,
+      where: { key: { equals: `${collection}:${String(id)}` } },
+      data,
+      returning: false,
+    });
+  };
 
   it('keeps roles and model lists and adds up every call exactly', async () => {
     const owner = await createAccount('spend-owner@frogbot.local', {
@@ -176,7 +222,7 @@ describe('recording spend under parallel gateway calls', () => {
       returning: false,
     });
 
-    expect((await read('accounts', legacy.id)).spendThisPeriodUSD).toBeUndefined();
+    expect((await read('accounts', legacy.id)).spendThisPeriodUSD).toBe(0);
     expect((await read('accounts', idle.id)).spendThisPeriodUSD).toBe(0);
 
     const responses = await Promise.all(Array.from({ length: 5 }, () => complete(key.token)));
@@ -230,4 +276,93 @@ describe('recording spend under parallel gateway calls', () => {
     expect(own.body.docs.map(({ key }) => key)).toContain(`accounts:${String(alice.id)}`);
     expect(bob.id).toBeDefined();
   });
+
+  it('keeps spend an AI call rolls into the new month while the reset runs', async () => {
+    const owner = await createAccount('spend-reset-race@frogbot.local');
+    const key = await mint(owner.session, {});
+
+    await setCounter('accounts', owner.id, { amount: 50, period: lastMonth() });
+
+    const target = await counterOf('accounts', owner.id);
+    const { db } = booted.payload;
+    const updateOne = db.updateOne.bind(db);
+    const updateMany = db.updateMany.bind(db);
+    let raced = false;
+
+    const race = async (touches: boolean) => {
+      if (raced || !touches) return;
+
+      raced = true;
+
+      expect((await complete(key.token)).status).toBe(200);
+
+      await vi.waitFor(async () => {
+        expect(await counterOf('accounts', owner.id)).toMatchObject({
+          amount: callCost,
+          period: thisMonth(),
+        });
+      });
+    };
+
+    vi.spyOn(db, 'updateOne').mockImplementation(async (args) => {
+      await race(args.collection === counters && args.id === target?.id);
+
+      return updateOne(args);
+    });
+
+    vi.spyOn(db, 'updateMany').mockImplementation(async (args) => {
+      await race(args.collection === counters);
+
+      return updateMany(args);
+    });
+
+    await booted.payload.jobs.queue({
+      task: 'plugin-ai-policy-reset-spend',
+      input: {},
+      overrideAccess: true,
+    });
+
+    await booted.payload.jobs.run({ queue: 'default', overrideAccess: true });
+
+    expect(raced).toBe(true);
+    expect(await counterOf('accounts', owner.id)).toMatchObject({
+      amount: callCost,
+      period: thisMonth(),
+    });
+  });
+
+  it.skipIf(adapterName === 'sqlite')(
+    'refuses later calls in one transaction once earlier calls spent the budget',
+    async () => {
+      const owner = await createAccount('spend-same-request@frogbot.local', { monthlyBudget: 2 });
+      const account = await read('accounts', owner.id);
+
+      openTransaction = (await booted.payload.db.beginTransaction()) ?? undefined;
+
+      const req = await booted.frogbot.createRequest({
+        transactionID: openTransaction,
+        user: { ...account, collection: 'accounts' } as never,
+      });
+
+      const outcomes: string[] = [];
+
+      for (let call = 0; call < 5; call += 1) {
+        outcomes.push(
+          await booted.frogbot.generateText({ model: 'spend/priced', prompt: 'Hi', req }).then(
+            () => 'ok',
+            () => 'refused',
+          ),
+        );
+      }
+
+      await booted.payload.db.commitTransaction(openTransaction as number | string);
+      openTransaction = undefined;
+
+      expect(outcomes).toEqual(['ok', 'refused', 'refused', 'refused', 'refused']);
+
+      await vi.waitFor(async () => {
+        expect((await counterOf('accounts', owner.id))?.amount).toBe(callCost);
+      });
+    },
+  );
 });
