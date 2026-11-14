@@ -1,6 +1,6 @@
 import type { Noun } from '../command.js';
-import { dojoJSON, dojoList, dojoMessage, segment } from '../dojo.js';
-import { ShareError } from '../error.js';
+import { dojoJSON, dojoList, segment } from '../dojo.js';
+import { dojoStop, ShareError } from '../error.js';
 import { dojoProgram, done } from '../io.js';
 
 type ApiKey = {
@@ -70,13 +70,15 @@ export const apiKeys: Noun = {
         }));
 
         if (response.status === 403) {
-          throw new ShareError(
-            `This sign-in can't create keys: ${await dojoMessage(response)} Keys are made by a browser sign-in (${dojoProgram(io.program)} login, without FROGBOT_DOJO_TOKEN) or by a key made with --can-mint.`,
+          throw await dojoStop(
+            response,
+            "This sign-in can't create keys",
+            ` Keys are made by a browser sign-in (${dojoProgram(io.program)} login, without FROGBOT_DOJO_TOKEN) or by a key made with --can-mint.`,
           );
         }
 
         if (!response.ok) {
-          throw new ShareError(`Couldn't create the key: ${await dojoMessage(response)}`);
+          throw await dojoStop(response, "Couldn't create the key");
         }
 
         const minted = (await response.json()) as Minted;

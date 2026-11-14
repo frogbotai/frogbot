@@ -1,6 +1,6 @@
 import type { Noun, RawVerb, Verb } from './command.js';
 import { runVerb, verbHelp, verbUsage } from './command.js';
-import { ShareError } from './error.js';
+import { reportStop } from './error.js';
 import type { DojoIO } from './io.js';
 import { jsonIO, processIO } from './io.js';
 import { account } from './nouns/account.js';
@@ -67,8 +67,16 @@ function print(io: DojoIO, lines: string[], to: 'stdout' | 'stderr'): void {
   io[to].write(`${lines.join('\n')}\n`);
 }
 
-function usageError(io: DojoIO, message: string, lines: string[]): number {
+function usageError(io: DojoIO, message: string, lines: string[], args: string[]): number {
   print(io, [`[frogbot] ${message}`, '', ...lines], 'stderr');
+
+  if (args.includes('--json')) {
+    print(
+      io,
+      [JSON.stringify({ ok: false, code: 'USAGE_ERROR', error: message }, null, 2)],
+      'stdout',
+    );
+  }
 
   return 2;
 }
@@ -97,15 +105,7 @@ async function runCommand(
 
     return await runVerb(verb, rest, out, verbUsage(io.program, name, verb));
   } catch (error) {
-    if (!(error instanceof ShareError)) throw error;
-
-    io.stderr.write(`[frogbot] ${error.message}\n`);
-
-    if (json) {
-      io.stdout.write(`${JSON.stringify({ ok: false, error: error.message, ...error.step })}\n`);
-    }
-
-    return error.code;
+    return reportStop(out, error);
   }
 }
 
@@ -114,10 +114,11 @@ async function runCommand(
  * and 4 when it needs a payment that nobody is here for.
  */
 export async function runDojo(args: string[], io: DojoIO): Promise<number> {
-  const [first, second, ...rest] = args;
+  const flags = args.includes('--json') ? ['--json'] : [];
+  const [first, second, ...rest] = args.filter((arg) => arg !== '--json');
   const name = first?.toLowerCase();
 
-  if (!name) return usageError(io, 'Name a command.', topHelp(io.program));
+  if (!name) return usageError(io, 'Name a command.', topHelp(io.program), args);
 
   if (helpFlags.has(name)) {
     print(io, topHelp(io.program), 'stdout');
@@ -127,13 +128,22 @@ export async function runDojo(args: string[], io: DojoIO): Promise<number> {
 
   const command = Object.hasOwn(dojoCommands, name) ? dojoCommands[name] : undefined;
 
-  if (!command) return usageError(io, `"${first}" isn't a Dojo command.`, topHelp(io.program));
+  if (!command) {
+    return usageError(io, `"${first}" isn't a Dojo command.`, topHelp(io.program), args);
+  }
 
-  if (!isNoun(command)) return runCommand(name, command, args.slice(1), io);
+  if (!isNoun(command)) {
+    return runCommand(
+      name,
+      command,
+      [...(second === undefined ? [] : [second]), ...rest, ...flags],
+      io,
+    );
+  }
 
   const verbName = second?.toLowerCase();
 
-  if (!verbName) return usageError(io, `Name a verb.`, nounHelp(io.program, name, command));
+  if (!verbName) return usageError(io, `Name a verb.`, nounHelp(io.program, name, command), args);
 
   if (helpFlags.has(verbName)) {
     print(io, nounHelp(io.program, name, command), 'stdout');
@@ -148,10 +158,11 @@ export async function runDojo(args: string[], io: DojoIO): Promise<number> {
       io,
       `"${second}" isn't a verb of ${name}.`,
       nounHelp(io.program, name, command),
+      args,
     );
   }
 
-  return runCommand(`${name} ${verbName}`, verb, rest, io);
+  return runCommand(`${name} ${verbName}`, verb, [...rest, ...flags], io);
 }
 
 /** Runs one Dojo command line against the real terminal and sets `process.exitCode`. */

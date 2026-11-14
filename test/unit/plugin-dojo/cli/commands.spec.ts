@@ -92,6 +92,7 @@ describe('signing in', () => {
     expect(first.code).toBe(3);
     expect(JSON.parse(first.stdout().join('\n'))).toEqual({
       ok: false,
+      code: 'SIGN_IN_REQUIRED',
       error: expect.stringContaining(link),
       needs: 'sign-in',
       link,
@@ -136,6 +137,7 @@ describe('signing in', () => {
     expect(result.code).toBe(2);
     expect(JSON.parse(result.stdout().join('\n'))).toEqual({
       ok: false,
+      code: 'USAGE_ERROR',
       error: 'Usage: frogbot dojo logout',
     });
   });
@@ -339,6 +341,7 @@ describe('refusals', () => {
     expect(result.code).toBe(4);
     expect(JSON.parse(result.stdout().join('\n'))).toEqual({
       ok: false,
+      code: 'payment_required',
       error: expect.stringContaining(`Pay for it at ${upgrade}, then run the command again.`),
       needs: 'payment',
       link: upgrade,
@@ -365,7 +368,12 @@ describe('refusals', () => {
       "This sign-in can't create keys: This API key can't mint or rotate API keys. Sign in, or use a key that can mint keys. Keys are made by a browser sign-in (frogbot dojo login, without FROGBOT_DOJO_TOKEN) or by a key made with --can-mint.";
 
     expect(result.code).toBe(1);
-    expect(JSON.parse(result.stdout().join('\n'))).toEqual({ ok: false, error: message });
+    expect(JSON.parse(result.stdout().join('\n'))).toEqual({
+      ok: false,
+      code: 'FAILED',
+      error: message,
+      status: 403,
+    });
     expect(result.stderr()).toEqual([`[frogbot] ${message}`]);
   });
 });

@@ -1,6 +1,6 @@
 import type { DojoClient } from './dojo.js';
-import { dojoMessage, segment } from './dojo.js';
-import { needsPayment, ShareError } from './error.js';
+import { segment } from './dojo.js';
+import { dojoError, dojoStop, needsPayment, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
 import { canWait, say } from './io.js';
 
@@ -39,7 +39,7 @@ async function paid(dojo: DojoClient, paywall: Paywall): Promise<boolean> {
   const response = await dojo.request(`/api/workspaces/${segment(paywall.workspace)}?depth=0`);
 
   if (!response.ok) {
-    throw new ShareError(`Couldn't check the workspace's plan: ${await dojoMessage(response)}`);
+    throw await dojoStop(response, "Couldn't check the workspace's plan");
   }
 
   const workspace = (await response.json()) as {
@@ -95,7 +95,8 @@ export async function whenPaid(
 
     if (response.status !== 402) return response;
 
-    const paywall = readPaywall(await dojoMessage(response.clone()), dojo.url);
+    const refusal = await dojoError(response.clone());
+    const paywall = readPaywall(refusal.message, dojo.url);
 
     if (!paywall) return response;
 
@@ -112,6 +113,14 @@ export async function whenPaid(
       if (polls > maxPolls) {
         throw new ShareError(
           `Dojo still has no payment for this app after ${(maxPolls * pollMs) / 60_000} minutes. Once it's paid, share again.`,
+          1,
+          {
+            code:
+              refusal.body?.errors?.find((error) => error.data?.code)?.data?.code ??
+              'payment_required',
+            status: response.status,
+            url: paywall.url,
+          },
         );
       }
 

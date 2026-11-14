@@ -1,1 +1,8 @@
-[]
+[
+  {
+    "file": "packages/frogbot/src/bin/deploy/command.ts",
+    "match": "@frogbotai/plugin-",
+    "ticket": "424"
+  },
+  { "file": "packages/frogbot/src/bin/deploy/command.ts", "match": "plugin-dojo", "ticket": "424" }
+]

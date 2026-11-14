@@ -5,7 +5,7 @@ import { setTimeout } from 'node:timers/promises';
 
 import type { DeployEnv } from 'frogbot';
 
-import { needsSignIn, ShareError } from './error.js';
+import { dojoStop, needsSignIn, reachDojo, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
 import { canWait, dojoProgram, say } from './io.js';
 
@@ -152,12 +152,19 @@ type DeviceCode = {
 const clientId = 'frogbot-cli';
 const grantType = 'urn:ietf:params:oauth:grant-type:device_code';
 
-async function post(url: string, body: Record<string, string>): Promise<Response> {
-  return fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify(body),
-  });
+async function post(
+  env: DeployEnv,
+  dojoUrl: string,
+  path: string,
+  body: Record<string, string>,
+): Promise<Response> {
+  return reachDojo(dojoUrl, env, () =>
+    fetch(`${dojoUrl}${path}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify(body),
+    }),
+  );
 }
 
 const maxCodes = 3;
@@ -176,7 +183,7 @@ export async function deviceLogin(io: DojoIO, dojoUrl: string): Promise<string> 
 
     if (!waits && !saved) throw signInNeeded(io, code);
 
-    const answer = await (waits ? pollToken(io, dojoUrl, code) : askToken(dojoUrl, code));
+    const answer = await (waits ? pollToken(io, dojoUrl, code) : askToken(io.env, dojoUrl, code));
 
     if (answer.status === 'refused') {
       await forgetPending(io.env, dojoUrl);
@@ -222,12 +229,12 @@ function signInNeeded(io: DojoIO, code: PendingCode): ShareError {
 }
 
 async function newCode(env: DeployEnv, dojoUrl: string): Promise<PendingCode> {
-  const start = await post(`${dojoUrl}/api/cli/device/code`, {
+  const start = await post(env, dojoUrl, '/api/cli/device/code', {
     client_id: clientId,
     device_name: hostname(),
   });
 
-  if (!start.ok) throw new ShareError(`Dojo refused the sign-in (${start.status}).`);
+  if (!start.ok) throw await dojoStop(start, 'Dojo refused the sign-in');
 
   const reply = (await start.json()) as DeviceCode;
 
@@ -255,8 +262,8 @@ type Answer =
   | { status: 'refused'; message: string }
   | { status: 'pending' | 'slow_down' | 'expired' };
 
-async function askToken(dojoUrl: string, code: PendingCode): Promise<Answer> {
-  const reply = await post(`${dojoUrl}/api/cli/device/token`, {
+async function askToken(env: DeployEnv, dojoUrl: string, code: PendingCode): Promise<Answer> {
+  const reply = await post(env, dojoUrl, '/api/cli/device/token', {
     grant_type: grantType,
     device_code: code.deviceCode,
     client_id: clientId,
@@ -299,7 +306,7 @@ async function pollToken(io: DojoIO, dojoUrl: string, code: PendingCode): Promis
   while (Date.now() < code.expiresAt) {
     await io.wait(interval);
 
-    const answer = await askToken(dojoUrl, code);
+    const answer = await askToken(io.env, dojoUrl, code);
 
     if (answer.status === 'slow_down') interval += 5000;
     else if (answer.status !== 'pending') return answer;

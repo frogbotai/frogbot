@@ -147,7 +147,8 @@ describe('Dojo device sign-in without a terminal', () => {
       globalThis.fetch = fetchBefore;
     });
 
-    expect(failed.token).toBeInstanceOf(TypeError);
+    expect(failed.token).toBeInstanceOf(ShareError);
+    expect(failed.token).toMatchObject({ code: 'DOJO_UNREACHABLE' });
 
     dojo.pendingPolls = 0;
 

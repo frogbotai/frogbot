@@ -121,6 +121,19 @@ describe('frogbot share: paying for a first deploy', () => {
     expect(dojo.apps).toEqual([]);
   });
 
+  it('keeps payment_required and the upgrade link when a --wait share stops under --json', async () => {
+    const { run, upgrade } = await setup();
+    const result = await run({}, ['--wait', '--json']);
+
+    expect(result.code).toBe(1);
+    expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
+      ok: false,
+      code: 'payment_required',
+      status: 402,
+      url: upgrade(),
+    });
+  });
+
   it('exits 4 with the link at once without a terminal or --wait, and creates the app on the next run once paid', async () => {
     const { dojo, run, upgrade } = await setup();
     const first = await run({}, []);
@@ -150,6 +163,7 @@ describe('frogbot share: paying for a first deploy', () => {
     expect(result.code).toBe(4);
     expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({
       ok: false,
+      code: 'payment_required',
       error: expect.stringContaining(`Ask a workspace owner to pay for it at ${upgrade()}`),
       needs: 'payment',
       link: upgrade(),
