@@ -109,7 +109,10 @@ Documents without a value for a key form one group whose key is `null`. The `nul
 
 ### Many values per document
 
-A document with several values for a key, such as a `hasMany` select or relationship, or a field inside an array, joins one group per distinct value. A deal tagged `hot` and `big` counts once under `hot` and once under `big`, so group counts can add up to more than `count`. A value the document repeats, such as two array rows with the same `sku`, still counts once.
+A document with several values for a key joins one group per distinct value. Such a key is a `hasMany` select or relationship, or a field inside an array.
+
+- A deal tagged `hot` and `big` counts once under `hot` and once under `big`, so group counts can add up to more than `count`.
+- A value that the document repeats, such as two array rows with the same `sku`, still counts once.
 
 ### Relationship keys
 
@@ -130,7 +133,10 @@ const { groups } = await frogbot.aggregate({
 // [{ group: {}, values: { deals: 12, value: 48000, latest: '2026-03-02T00:00:00.000Z' } }]
 ```
 
-The result always has that one row. When nothing matches, or the caller can't read the collection and `disableErrors` is `true`, counts and sums are `0` and the rest `null`. `sort`, `limit` and `page` fail with `AggregateValidationError` without `groupBy`, because there is nothing to sort or page.
+The result always has that one row.
+
+- **No match.** When nothing matches, counts and sums are `0` and the rest are `null`. The same applies when the caller can't read the collection and `disableErrors` is `true`.
+- **No sorting or paging.** Without `groupBy`, `sort`, `limit`, and `page` fail with `AggregateValidationError`, because there is nothing to sort or page.
 
 ## Results and paging
 
@@ -168,15 +174,24 @@ Results are numbers on every database. Text keys sort alphabetically everywhere,
 Aggregate runs as `req.user` unless `overrideAccess: true`:
 
 - **Collection read.** `false` fails with `403`, or returns no groups with `disableErrors: true`. A `Where` narrows the documents that count.
-- **Related read.** A `groupBy` path through a relationship applies the related collection's read rule: a `Where` narrows the documents to those whose related document it allows, plus those with no related document, which stay in the `null` group. `false` fails with `QueryError` (`400`), as a `where` on that path would, or returns no groups with `disableErrors: true`. So does a `Where` on a path through a `hasMany` relationship or an array, such as `partners.tier`: a document can link both a readable and an unreadable account, and its groups would show the unreadable one's `tier`.
-- **Field read.** A field with its own `access.read` rule can be filtered on: a `where` on it runs the rule with the request, as `find` does, and fails with `QueryError` (`400`) for a user it denies. In `values` it is `null` in every group while the other values still total, and in `groupBy` it fails with `403`, for every user, because `find` runs the rule once per document and a total can't. `overrideAccess: true` totals and groups it. Run admin reports from your own endpoint with `overrideAccess: true` after checking the user.
+- **Related read.** A `groupBy` path through a relationship applies the related collection's read rule:
+  - A `Where` narrows the documents to those whose related document it allows, plus those with no related document, which stay in the `null` group.
+  - `false` fails with `QueryError` (`400`), as a `where` on that path would, or returns no groups with `disableErrors: true`.
+  - A `Where` on a path through a `hasMany` relationship or an array, such as `partners.tier`, fails the same way. A document can link both a readable and an unreadable account, and its groups would show the unreadable account's `tier`.
+- **Field read.** A field with its own `access.read` rule behaves differently in each option:
+  - In `where`, you can filter on it. The `where` runs the rule with the request, as `find` does, and fails with `QueryError` (`400`) for a user that the rule denies.
+  - In `values`, it is `null` in every group, while the other values still total.
+  - In `groupBy`, it fails with `403`, for every user, because `find` runs the rule once per document and a total can't.
+  - `overrideAccess: true` totals and groups it. Run admin reports from your own endpoint with `overrideAccess: true` after checking the user.
 - **Hidden fields.** A field with `hidden: true` fails with `403` in `groupBy` and `values`, even with `overrideAccess: true`, as `findDistinct` does. In `where`, it fails only without `overrideAccess`.
 
 Collection `beforeOperation` and `afterOperation` hooks don't run for aggregate.
 
 ## Drafts and locales
 
-On a collection with drafts, only published documents count unless `draft: true`, which adds drafts that were never published. A published document with a newer draft still counts its published values, unlike `find` with `draft: true` ([#361](https://github.com/frogbotai/frogbot/issues/361)). On a localized collection, the published check uses the requested locale, so a document published only in `en` is left out of an `fr` aggregate. Localized fields in `groupBy` and `values` read the requested `locale`.
+- **Drafts.** On a collection with drafts, only published documents count. `draft: true` adds drafts that were never published. A published document with a newer draft still counts its published values, unlike `find` with `draft: true` ([#361](https://github.com/frogbotai/frogbot/issues/361)).
+- **Published check.** On a localized collection, the published check uses the requested locale, so a document published only in `en` is left out of an `fr` aggregate.
+- **Localized fields.** Localized fields in `groupBy` and `values` read the requested `locale`.
 
 ## REST API
 
@@ -212,4 +227,11 @@ Both aggregate errors are exported from `frogbot`. The REST endpoint returns the
 
 ## Adapter integration
 
-A database adapter adds aggregate through an `aggregate` object, beside `search`. FrogBot checks options, runs access, and resolves fields first, so the adapter receives a `Where` with access already applied, the group and value fields with their stored types, and the sort. It returns one row per group with raw keys and totals, plus the group count; FrogBot turns them into numbers and ISO dates. The SQL adapters use `sqliteAggregateAdapter` and `postgresAggregateAdapter` from `frogbot/aggregate`.
+A database adapter adds aggregate through an `aggregate` object, beside `search`.
+
+1. FrogBot checks options, runs access, and resolves fields.
+2. The adapter receives a `Where` with access already applied, the group and value fields with their stored types, and the sort.
+3. The adapter returns one row per group with raw keys and totals, plus the group count.
+4. FrogBot turns the keys and totals into numbers and ISO dates.
+
+The SQL adapters use `sqliteAggregateAdapter` and `postgresAggregateAdapter` from `frogbot/aggregate`.

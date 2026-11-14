@@ -91,15 +91,37 @@ Each named index becomes up to two MongoDB search indexes on the collection:
 
 MongoDB needs the `vectorSearch` index for exact vector search as well, so an index with `vector.approximate: false` still creates it. Collections with drafts get the same indexes on their versions collection, so `draft: true` queries rank the latest draft of each document. Each index counts toward your deployment's search index limit: one named index with both components on a collection with drafts uses four MongoDB search indexes.
 
-The adapter creates missing indexes and updates an index in place when its definition differs from your configuration, for example after you add a filterable field or someone edits the index by hand. It never drops a search index. If the server rejects an in-place update, setup fails with `setup-failed` and the server's message. Drop the index yourself, and the adapter recreates it on the next connection. An index that MongoDB reports as failed to build also stops setup with `setup-failed`; fix the cause, then drop it so it is recreated. Search configuration is read once at startup, so restart the app, including the development server, after changing a collection's `search` indexes.
+The adapter keeps search indexes in step with your configuration:
+
+- **It creates missing indexes.**
+- **It updates an index in place** when its definition differs from your configuration, for example after you add a filterable field or someone edits the index by hand.
+- **It never drops a search index.**
+
+Setup fails with `setup-failed` in two cases:
+
+| Cause | Fix |
+| --- | --- |
+| The server rejects an in-place update. The error carries the server's message. | Drop the index yourself. The adapter recreates it on the next connection. |
+| MongoDB reports that an index failed to build. | Fix the cause, then drop the index so that it is recreated. |
+
+Search configuration is read once at startup. Restart the app, including the development server, after you change a collection's `search` indexes.
 
 MongoDB builds search indexes asynchronously, so a new or rebuilt index is not usable right away. Every search checks the indexes it needs first. A missing index, or one that is not queryable yet, returns `SearchReadinessError` (HTTP `503`) rather than an empty result. Ordinary reads and writes are never blocked while an index builds.
 
 ### Filters
 
-MongoDB can only filter search results on paths that the search index maps, so the adapter maps every eligible filterable field: IDs and single relationships, dates, numbers, checkboxes, and text-like values (text, textarea, email, select, and radio). Use `filters.fields` or `filters.exclude` on the index to narrow the list. Text fields that are both searched and filtered are indexed as searchable text and as exact-match tokens. Fields with `hasMany`, and fields inside arrays or blocks, cannot be filtered.
+MongoDB can only filter search results on paths that the search index maps, so the adapter maps every eligible filterable field:
 
-Your `where` filter, collection read access, trash visibility, and draft status run inside the `$search` or `$vectorSearch` stage, before the result limit, so hidden documents never take up result slots. Filters on unmapped paths, or operators such as `like` and `contains`, fail with `SearchFilterUnsupportedError`. Exact-match tokens are case-sensitive, and very long text values may not be indexed as tokens, so filter on short, exact values.
+- IDs and single relationships.
+- Dates, numbers, and checkboxes.
+- Text-like values: text, textarea, email, select, and radio.
+
+Use `filters.fields` or `filters.exclude` on the index to narrow the list. Text fields that are both searched and filtered are indexed as searchable text and as exact-match tokens. Fields with `hasMany`, and fields inside arrays or blocks, cannot be filtered.
+
+Your `where` filter, collection read access, trash visibility, and draft status run inside the `$search` or `$vectorSearch` stage, before the result limit, so hidden documents never take up result slots.
+
+- Filters on unmapped paths, or operators such as `like` and `contains`, fail with `SearchFilterUnsupportedError`.
+- Exact-match tokens are case-sensitive, and very long text values may not be indexed as tokens. Filter on short, exact values.
 
 ### Ranking
 
@@ -111,9 +133,14 @@ Your `where` filter, collection read access, trash visibility, and draft status 
 
 MongoDB reports vector scores normalized to the 0–1 range. The adapter converts them back in the database, so vector scores use the same scale as on the other adapters. The `dotProduct` metric expects unit-length vectors; use `cosine` if yours aren't normalized.
 
-Approximate vector queries report `approximate: true` and pass the [resolved candidate count](/search/overview#candidates) to `$vectorSearch` as `numCandidates`, capped at MongoDB's maximum of 10,000. Your filters run inside the vector index scan, so they don't reduce the number of hits. Indexes with `vector.approximate: false` search exactly, and so does any query whose `limit` exceeds 10,000, because `numCandidates` cannot be lower than the limit.
+- **Approximate vector queries** report `approximate: true`. They pass the [resolved candidate count](/search/overview#candidates) to `$vectorSearch` as `numCandidates`, capped at MongoDB's maximum of 10,000. Your filters run inside the vector index scan, so they don't reduce the number of hits.
+- **Exact search** runs on indexes with `vector.approximate: false`. It also runs on any query whose `limit` exceeds 10,000, because `numCandidates` cannot be lower than the limit.
 
-Hybrid search takes up to the [resolved candidate count](/search/overview#candidates) from each component and returns the top `limit` by fused score. A record that matches only one component still ranks, with the other component reported as `null`. Documents with equal component scores share a rank. On servers that support `$rankFusion`, the adapter uses it; otherwise, for example on MongoDB 8.0, it computes the same fusion with `$unionWith`. Both paths run entirely in the database.
+Hybrid search takes up to the [resolved candidate count](/search/overview#candidates) from each component and returns the top `limit` by fused score.
+
+- A record that matches only one component still ranks, with the other component reported as `null`.
+- Documents with equal component scores share a rank.
+- On servers that support `$rankFusion`, the adapter uses it. Otherwise, for example on MongoDB 8.0, it computes the same fusion with `$unionWith`. Both paths run entirely in the database.
 
 ### Limits
 

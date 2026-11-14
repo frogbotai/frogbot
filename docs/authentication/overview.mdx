@@ -228,7 +228,9 @@ There are cases where these may not be enough for your application. FrogBot is e
 
 ### Access Control
 
-Default auth fields including `email`, `username`, and `password` can be overridden by defining a custom field with the same name in your collection config. This allows you to customize the field — including access control — while preserving the underlying auth functionality. For example, you might want to restrict the `email` field from being updated once it is created, or only allow it to be read by certain user roles. You can achieve this by redefining the field and setting access rules accordingly.
+You can override the default auth fields, including `email`, `username`, and `password`. Define a field with the same name in your collection config. The custom field keeps the underlying auth functionality, and you can change the rest, including its access control.
+
+For example, you can stop the `email` field from being updated after it is created, or let only certain user roles read it.
 
 Here's an example of how to restrict access to default auth fields:
 

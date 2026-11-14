@@ -127,7 +127,13 @@ export const AuthorName: Field = {
 
 #### Display in the admin
 
-In List, Board and Calendar, a string path virtual field shows its value the way the field at the end of the path shows it. A path to a [money](/fields/money) field shows a money amount, a path to a select or radio with [option colors](/fields/select#option-colors) shows the coloured pill, and a path to a date uses that date field's display format. An empty value shows what the source field shows when it is empty, so an empty money amount shows nothing, and `0` shows as zero (`$0.00`).
+In List, Board, and Calendar, a string path virtual field shows its value the way the field at the end of the path shows it:
+
+- A path to a [money](/fields/money) field shows a money amount.
+- A path to a select or radio with [option colors](/fields/select#option-colors) shows the coloured pill.
+- A path to a date uses that date field's display format.
+
+An empty value shows what the source field shows when it is empty. An empty money amount shows nothing, and `0` shows as zero (`$0.00`).
 
 ```ts
 import { moneyField, type CollectionConfig } from 'frogbot'
@@ -805,7 +811,12 @@ Do not construct this request yourself or use a fallback instance lookup. Compon
 
 #### Field component types
 
-Each field family exports the props its components receive from `frogbot`: `*FieldClientProps` and `*FieldServerProps`, plus `*FieldLabel*Props`, `*FieldDescription*Props`, `*FieldError*Props` and `*FieldDiff*Props`. Type a component by its props, as in `({ field }: TextFieldServerProps) => …`. UI fields do not have label, description, or error props; Blocks fields additionally provide `BlockRowLabelServerProps` and `BlockRowLabelClientProps`.
+Each field family exports the props that its components receive from `frogbot`:
+
+- `*FieldClientProps` and `*FieldServerProps`.
+- `*FieldLabel*Props`, `*FieldDescription*Props`, `*FieldError*Props`, and `*FieldDiff*Props`.
+
+Type a component by its props, as in `({ field }: TextFieldServerProps) => …`. UI fields do not have label, description, or error props. Blocks fields also provide `BlockRowLabelServerProps` and `BlockRowLabelClientProps`.
 
 ```tsx
 import type {

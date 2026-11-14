@@ -226,7 +226,8 @@ exact same properties may cause issue. This gives you a way to avoid duplicate n
 
 This hook gets called before the `beforeValidate` and `beforeChange` hooks are called.
 
-By Default, unique and required text fields FrogBot will append "- Copy" to the original document value. The default is not added if your field has its own, you must return non-unique values from your beforeDuplicate hook to avoid errors or enable the `disableDuplicate` option on the collection.
+By default, FrogBot appends "- Copy" to the original value of unique and required text fields. The default is not added if your field has its own `beforeDuplicate` hook. In that case, return a value from your hook that keeps the field unique, or enable the `disableDuplicate` option on the collection.
+
 Here is an example of a number field with a hook that increments the number to avoid unique constraint errors when duplicating a document:
 
 ```ts
