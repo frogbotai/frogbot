@@ -7,6 +7,7 @@ A fresh drafter writes `step2_spec.md` from `issue.md` and the research Summary.
 - Number the requirements, and make each one testable.
 - `## Core changes` lists every change under `packages/frogbot`, or says `None.`. For each, name its generic seam and the existing hook, collection hook, access function or export that can't do the job; decide with [Core or plugin](../../CONTRIBUTING.md#core-or-plugin). `pnpm check ticket-docs` fails a Draft spec without it.
 - Name the precedent that fits the ticket: Payload for app-builder work, OpenCode v2 for agent-harness work (DR-041), and Claude for Chrome as well for Sidekick's browser tools. Where FrogBot does what it does, say so under `## Following <precedent>` with `path:line`; the owner may veto any line. A recommendation equal to the precedent is not a card: it goes there.
+- When the issue has a design image (a mock, a prototype screenshot), the image is the spec and the words only describe it. Add `## Design cases`: one row per case in the image, with the image's caption copied word for word, where that case happens in the real app (the view, collection or fixture), and what each part of the screen shows. A case that can't happen as drawn in the real app, or whose caption has a condition the app never meets (for example "no list behind it" for a panel that always opens over a list), is a card, not a guess. A case with no way to reach it in the app yet gets a test fixture, named in the row.
 - A card is for a choice only the owner can make. Facts are research: "which modes exist?" is not a card.
 - Write each card so the owner can answer without asking what it means: a concrete situation and public-API code.
 - Run `pnpm check ticket-docs <n>` before returning.
@@ -47,6 +48,14 @@ The owner can veto any of these.
 ## Out of scope
 
 - <Item> (ticket <n>, if one owns it).
+
+## Design cases
+
+<Only when the issue has a design image. One row per case in the image.>
+
+| Case | Caption, word for word | Where in the app              | Expected               |
+| ---- | ---------------------- | ----------------------------- | ---------------------- |
+| 1    | <caption>              | <view, collection or fixture> | <what each part shows> |
 
 ## Acceptance criteria
 

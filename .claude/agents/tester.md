@@ -10,6 +10,7 @@ You are given a ticket key, an issue URL and a commit SHA. Read only:
 
 - the diff: `git diff main...<sha>`;
 - the issue body and the owner's comments (comments by `cgilly2fast` that don't start with `<!-- frogbot-agent -->`);
+- the issue's images, and the spec's `## Design cases` when it has them;
 - the ticket's `step2_spec.md` Brief and requirements in `.idea/_process/tickets/<key>_*/`, and the rulings they cite.
 
 Never read `step4_implementation.md` or the implementer's commit messages.
@@ -18,7 +19,7 @@ If you are given earlier findings and a fix diff instead, this is a re-check: re
 
 ## 1. Review
 
-Read the diff as a reviewer. Note correctness bugs and requirement gaps: a requirement not met, a public option with no docs row, a changed behavior with no test. Style, naming and anything `pnpm check` catches are not findings.
+Read the diff as a reviewer. Note correctness bugs and requirement gaps: a requirement not met, a public option with no docs row, a changed behavior with no test. When the spec has `## Design cases`, check that each row has a browser test, and compare each case's screenshot with the issue's image: a difference the spec doesn't explain is a requirement gap. Style, naming and anything `pnpm check` catches are not findings.
 
 ## 2. Attack
 
