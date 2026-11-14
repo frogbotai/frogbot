@@ -21,6 +21,7 @@ import {
   useState,
 } from 'react';
 
+import { useSidePanelEscape } from '../../../components/side-panel-bar.js';
 import { clampPanelWidth, getPanelPreferenceKey, PANEL_WIDTH } from './config.js';
 import { PanelConfig } from './PanelConfig.client.js';
 import { PanelFooterTarget } from './PanelSlots.client.js';
@@ -181,17 +182,18 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
     modalStateRef.current = modalState;
   }, [modalState]);
 
+  useSidePanelEscape(
+    open ? () => window.setTimeout(() => panelRef.current.close(), 0) : undefined,
+    (event) => {
+      if (Object.values(modalStateRef.current).some((modal) => modal?.isOpen)) return true;
+      const target = event.target as Element | null;
+
+      return Boolean(target?.closest('.rs__menu, .react-datepicker')) || isInsideOpenModal(target);
+    },
+  );
+
   useEffect(() => {
     if (!open) return;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || event.defaultPrevented) return;
-      if (Object.values(modalStateRef.current).some((modal) => modal?.isOpen)) return;
-      const target = event.target as Element | null;
-      if (target?.closest('[aria-expanded="true"], .rs__menu, .react-datepicker')) return;
-      if (isInsideOpenModal(target)) return;
-      window.setTimeout(() => panelRef.current.close(), 0);
-    };
 
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Element | null;
@@ -201,13 +203,9 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
       panelRef.current.close();
     };
 
-    document.addEventListener('keydown', onKeyDown);
     document.addEventListener('pointerdown', onPointerDown, true);
 
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('pointerdown', onPointerDown, true);
-    };
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
   }, [open, viewRef]);
 
   useEffect(() => {

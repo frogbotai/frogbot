@@ -10,6 +10,7 @@ import {
   resolveTitlePath,
 } from '../../../../../packages/ui/src/admin/views/panel/config.js';
 import { redirectRecordParam } from '../../../../../packages/ui/src/admin/views/panel/redirectRecord.js';
+import { recordPanelStatus } from '../../../../../packages/ui/src/admin/views/panel/status.js';
 
 const fields: ClientField[] = [
   { name: 'title', type: 'text' },
@@ -130,5 +131,34 @@ describe('redirectRecordParam', () => {
     redirectRecordParam({ collectionConfig: config(false), record, redirect });
 
     expect(redirect).not.toHaveBeenCalled();
+  });
+});
+
+describe('recordPanelStatus', () => {
+  const base = { autosave: false, canSave: true, editing: true, modified: false, useAsDone: false };
+
+  it('shows Save while a form without autosave has edits or is new', () => {
+    expect(recordPanelStatus({ ...base, modified: true })).toBe('save');
+    expect(recordPanelStatus({ ...base, editing: false })).toBe('save');
+    expect(recordPanelStatus({ ...base, modified: true, useAsDone: true })).toBe('save');
+  });
+
+  it('shows nothing for a clean record without autosave or useAsDone', () => {
+    expect(recordPanelStatus(base)).toBeUndefined();
+  });
+
+  it('shows Mark complete for a clean useAsDone record, even with autosave', () => {
+    expect(recordPanelStatus({ ...base, useAsDone: true })).toBe('complete');
+    expect(recordPanelStatus({ ...base, autosave: true, modified: true, useAsDone: true })).toBe(
+      'complete',
+    );
+  });
+
+  it('shows Saved for an autosaved record', () => {
+    expect(recordPanelStatus({ ...base, autosave: true, modified: true })).toBe('saved');
+  });
+
+  it('never offers Save without save access', () => {
+    expect(recordPanelStatus({ ...base, canSave: false, modified: true })).toBeUndefined();
   });
 });

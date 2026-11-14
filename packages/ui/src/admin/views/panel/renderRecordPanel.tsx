@@ -8,7 +8,7 @@ import { getPanelComponents } from './config.js';
 import { PanelBridge, PanelClientSlot, PanelFooter } from './PanelSlots.client.js';
 import { RecordPanelHeader } from './RecordPanelHeader.client.js';
 import { RecordPanelProperties } from './RecordPanelProperties.client.js';
-import { RecordPanelBodyTitle, RecordPanelTitle } from './RecordPanelTitle.client.js';
+import { RecordPanelTitle } from './RecordPanelTitle.client.js';
 
 /** The FrogBot server function that renders the record side panel. */
 export const RENDER_RECORD_PANEL = 'frogbot-render-record-panel';
@@ -125,7 +125,7 @@ export const renderRecordPanelHandler: ServerFunction<
       ) : (
         <RecordPanelHeader actions={render(components.actions, 'action')} />
       )}
-      {components.Header ? <RecordPanelTitle /> : <RecordPanelBodyTitle />}
+      <RecordPanelTitle />
       {render(components.beforeFields, 'before')}
       <RecordPanelProperties />
     </>

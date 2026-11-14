@@ -75,6 +75,7 @@ export interface Config {
     cards: Card;
     tickets: Ticket;
     scraps: Scrap;
+    todos: Todo;
     'api-keys': ApiKey;
     'audit-logs': AuditLog;
     'frogbot-waitpoints': FrogBotWaitpoint;
@@ -89,6 +90,7 @@ export interface Config {
     cards: CardsSelect;
     tickets: TicketsSelect;
     scraps: ScrapsSelect;
+    todos: TodosSelect;
     'api-keys': ApiKeysSelect;
     'audit-logs': AuditLogsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
@@ -313,6 +315,27 @@ export interface Scrap {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "todos".
+ */
+export interface Todo {
+  id: number;
+  title: string;
+  done?: boolean | null;
+  parent?: (number | null) | Todo;
+  notes?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-keys".
  */
 export interface ApiKey {
@@ -517,6 +540,20 @@ export interface ScrapsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "todos_select".
+ */
+export interface TodosSelect {
+  title?: boolean;
+  done?: boolean;
+  parent?: boolean;
+  notes?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-keys_select".
  */
 export interface ApiKeysSelect {
@@ -625,6 +662,7 @@ export interface CollectionQueryWidget {
       | 'cards'
       | 'tickets'
       | 'scraps'
+      | 'todos'
       | 'api-keys'
       | 'audit-logs';
     where?:
@@ -658,6 +696,7 @@ export interface ActivityWidget {
           | 'cards'
           | 'tickets'
           | 'scraps'
+          | 'todos'
           | 'api-keys'
           | 'audit-logs'
         )[]
