@@ -443,7 +443,15 @@ describe('aiField runs', () => {
     });
 
     it('a user over budget gets error and no usage row', async () => {
-      const user = await createUser('editor', { monthlyBudget: 0.01, spendThisPeriodUSD: 1 });
+      const user = await createUser('editor', { monthlyBudget: 0.01 });
+
+      await booted.frogbot.update({
+        collection: 'plugin-ai-policy-spend',
+        where: { key: { equals: `${usersSlug}:${String(user.id)}` } },
+        data: { amount: 1 },
+        overrideAccess: true,
+      });
+
       const task = await createTask({ notes: 'Paint the fence' }, user);
 
       await runJobs();

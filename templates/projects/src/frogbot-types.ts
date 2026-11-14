@@ -85,6 +85,7 @@ export interface Config {
     files: File;
     exports: Export;
     imports: Import;
+    'plugin-ai-policy-spend': PluginAiPolicySpend;
     'audit-logs': AuditLog;
     chats: Chat;
     messages: Message;
@@ -104,6 +105,7 @@ export interface Config {
     files: FilesSelect;
     exports: ExportsSelect;
     imports: ImportsSelect;
+    'plugin-ai-policy-spend': PluginAiPolicySpendSelect;
     'audit-logs': AuditLogsSelect;
     chats: ChatsSelect;
     messages: MessagesSelect;
@@ -248,6 +250,7 @@ export interface User {
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
   monthlyBudget?: number | null;
+  spendCounter?: (number | null) | PluginAiPolicySpend;
   /**
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
@@ -282,6 +285,19 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugin-ai-policy-spend".
+ */
+export interface PluginAiPolicySpend {
+  id: number;
+  key: string;
+  period: string;
+  amount: number;
+  user?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -765,6 +781,7 @@ export interface UsersSelect {
   name?: boolean;
   models?: boolean;
   monthlyBudget?: boolean;
+  spendCounter?: boolean;
   spendThisPeriodUSD?: boolean;
   roles?: boolean;
   createdBy?: boolean;
@@ -909,6 +926,18 @@ export interface ImportsSelect {
       };
   focalX?: boolean;
   focalY?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugin-ai-policy-spend_select".
+ */
+export interface PluginAiPolicySpendSelect {
+  key?: boolean;
+  period?: boolean;
+  amount?: boolean;
+  user?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

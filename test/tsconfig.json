@@ -9,6 +9,7 @@
     "aggregate",
     "ai",
     "ai-field",
+    "ai-policy-access",
     "api-key-attribution",
     "api-keys",
     "audit-log",
