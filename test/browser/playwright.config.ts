@@ -360,6 +360,7 @@ const testProjects = [
       'board.browser.spec.ts',
       'boardFirst.browser.spec.ts',
       'cellEditKinds.browser.spec.ts',
+      'colorField.browser.spec.ts',
       'galleryCard.browser.spec.ts',
     ],
   }),

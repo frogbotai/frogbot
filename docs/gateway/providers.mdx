@@ -203,7 +203,11 @@ ai: {
 }
 ```
 
-The key stays on the server; authenticate callers in your standalone host or through FrogBot's authenticated `/api/v1/evaluate` mount. FrogBot accepts `typesafe-ai/jev` and `typesafe-ai/jev-latest` and sends both to TypeSafe as `jev-latest`. Bare `jev` is not a documented TypeSafe upstream model ID. An optional built-in `models` allowlist uses unprefixed IDs, for example `models: ['jev-latest']`; the alias is canonicalized before checking it.
+The key stays on the server. Authenticate callers in your standalone host or through FrogBot's authenticated `/api/v1/evaluate` mount.
+
+- FrogBot accepts `typesafe-ai/jev` and `typesafe-ai/jev-latest`, and sends both to TypeSafe as `jev-latest`.
+- Bare `jev` is not a documented TypeSafe upstream model ID.
+- An optional built-in `models` allowlist uses unprefixed IDs, for example `models: ['jev-latest']`. The alias is canonicalized before the allowlist is checked.
 
 As of September 23, 2026, TypeSafe lists Jev 1.13 at **$0.042 per million input tokens**, with no charge for output tokens. FrogBot's USD cost uses these catalog rates as an estimate, not a provider invoice. The upstream `jev-latest` alias and its pricing can change; check [TypeSafe's model list](https://docs.typesafe.ai/models.md) for current rates.
 
@@ -215,7 +219,12 @@ The `vercel` provider sends requests to [Vercel AI Gateway](https://vercel.com/d
 
 The key is required. A Vercel deployment's OIDC token does not enable the provider, so a project on Vercel can send its traffic to another provider without AI Gateway turning on.
 
-Model IDs have the form `vercel/<creator>/<model>`, for example `vercel/anthropic/claude-sonnet-4.6` or `vercel/openai/gpt-5.4-mini`. FrogBot accepts the chat models that [models.dev](https://models.dev) lists for Vercel with a price, and uses those prices for usage cost. Other IDs return `model_not_found`. Image, video, speech, transcription, embedding, and rerank models are not available through this provider. Narrow the list with `models`, which uses IDs without the `vercel/` prefix:
+Model IDs have the form `vercel/<creator>/<model>`, for example `vercel/anthropic/claude-sonnet-4.6` or `vercel/openai/gpt-5.4-mini`.
+
+- FrogBot accepts the chat models that [models.dev](https://models.dev) lists for Vercel with a price, and uses those prices for usage cost. Other IDs return `model_not_found`.
+- Image, video, speech, transcription, embedding, and rerank models are not available through this provider.
+
+Narrow the list with `models`, which uses IDs without the `vercel/` prefix:
 
 ```ts
 createGateway({
@@ -269,7 +278,11 @@ OpenAI retention accepts only `in_memory` and `24h`. Marker TTL values are omitt
 
 OpenRouter gives one API key access to models from many vendors. Set `OPENROUTER_API_KEY` in the server environment and configure `providers: { openrouter: {} }` in a standalone gateway, or `ai: { providers: { openrouter: true } }` in FrogBot. `OPENROUTER_BASE_URL` optionally overrides the API URL.
 
-Model IDs keep OpenRouter's own `<creator>/<model>` form after the `openrouter/` prefix, including variants such as `:free`, for example `openrouter/anthropic/claude-sonnet-4.6` or `openrouter/google/gemma-4-31b-it:free`. FrogBot accepts the priced models that models.dev lists for OpenRouter. Dynamic routers without a fixed price, such as `openrouter/auto`, and models not yet in the catalog return a model-not-found error before any upstream call. Narrow the set with an allowlist, for example `models: ['anthropic/claude-sonnet-4.6']`; the allowlist applies only to config objects, not to a [pre-built instance](#pre-built-instances). Usage cost is estimated from those catalog prices, not read from OpenRouter's invoice.
+Model IDs keep OpenRouter's own `<creator>/<model>` form after the `openrouter/` prefix, including variants such as `:free`. Examples are `openrouter/anthropic/claude-sonnet-4.6` and `openrouter/google/gemma-4-31b-it:free`.
+
+- **Accepted models.** FrogBot accepts the priced models that models.dev lists for OpenRouter. Dynamic routers without a fixed price, such as `openrouter/auto`, and models that are not in the catalog return a model-not-found error before any upstream call.
+- **Allowlist.** Narrow the set with an allowlist, for example `models: ['anthropic/claude-sonnet-4.6']`. The allowlist applies only to config objects, not to a [pre-built instance](#pre-built-instances).
+- **Cost.** Usage cost is estimated from those catalog prices, not read from OpenRouter's invoice.
 
 Requests identify FrogBot to OpenRouter with the `X-OpenRouter-Title: FrogBot` and `HTTP-Referer: https://www.frogbot.ai` headers. Override them with `appName` and `appUrl`:
 

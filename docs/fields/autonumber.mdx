@@ -5,7 +5,11 @@ description: Give every record a short unique number, such as ticket 42, set by 
 keywords: autonumber, auto increment, serial, sequence, record number, ticket number, counter, per project, scope, issue key, APP-123, autonumberKeyField, findByAutonumberKey, number, fields, collections, configuration
 ---
 
-`autonumberField` returns a [Number field](/fields/number) that FrogBot sets to the next number when a record is created: 1, 2, 3 and so on. Numbers are unique within the field, even when many records are created at the same moment, and are never reused. People and agents can't write them, and agents and generated types are told that FrogBot sets them. A field can also [count per project](#numbering-per-project), with [keys like APP-123](#keys-like-app-123).
+`autonumberField` returns a [Number field](/fields/number) that FrogBot sets to the next number when a record is created: 1, 2, 3, and so on.
+
+- **Numbers are unique within the field,** even when many records are created at the same moment, and they are never reused.
+- **Only FrogBot writes them.** People and agents can't write them, and agents and generated types are told that FrogBot sets them.
+- **A field can also [count per project](#numbering-per-project),** with [keys like APP-123](#keys-like-app-123).
 
 ```ts
 import { autonumberField } from 'frogbot'
@@ -42,7 +46,7 @@ The result is a plain `number` field with a unique index, or with [`scope`](#num
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
 | `jsonSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the field's own entry. See [Agents and generated types](#agents-and-generated-types). |
 
-An autonumber field holds one number that FrogBot sets and is always unique, so `hasMany`, `minRows`, `maxRows`, `localized`, `defaultValue`, `required`, `unique`, `virtual`, `access.create` and `access.update` are not accepted. TypeScript rejects them, and setting any of them from JavaScript fails at startup with an error naming the field:
+An autonumber field holds one number that FrogBot sets and that is always unique. It therefore does not accept `hasMany`, `minRows`, `maxRows`, `localized`, `defaultValue`, `required`, `unique`, `virtual`, `access.create`, or `access.update`. TypeScript rejects them, and setting any of them from JavaScript fails at startup with an error that names the field:
 
 ```text
 autonumberField "number": defaultValue is not supported
@@ -68,7 +72,10 @@ Updates, autosaves, drafts, bulk updates and version restores keep the number, u
 
 How a failed save affects the count depends on whether the save runs in a database [transaction](/database/transactions):
 
-- **SQLite and Postgres with transactions:** the number is taken inside the save's transaction. A save that fails and rolls back gives its number back, so it leaves no gap. Creates on the same field wait for each other's transactions, so a long-running transaction that creates a numbered record holds up other creates on that field until it finishes. On Postgres, two transactions that create numbered records in two collections in opposite orders, such as one creating a ticket then an order and the other an order then a ticket, can deadlock, and Postgres fails one of them with `deadlock detected`. Create numbered records in the same collection order in every transaction, or retry a save that fails this way.
+- **SQLite and Postgres with transactions:** the number is taken inside the save's transaction.
+  - A save that fails and rolls back gives its number back, so it leaves no gap.
+  - Creates on the same field wait for each other's transactions. A long-running transaction that creates a numbered record holds up other creates on that field until it finishes.
+  - On Postgres, two transactions that create numbered records in two collections in opposite orders can deadlock, and Postgres fails one of them with `deadlock detected`. An example is one transaction that creates a ticket then an order, while another creates an order then a ticket. Create numbered records in the same collection order in every transaction, or retry a save that fails this way.
 - **MongoDB, and SQLite or Postgres without transactions:** the number is taken on its own, outside the save. A save that fails after its number was taken can leave a gap.
 
 Postgres runs transactions unless you set `transactionOptions: false`. SQLite runs them when you pass an object such as `transactionOptions: {}`, or when a collection uses [sign-in](/authentication/sign-in) and you leave `transactionOptions` unset. See [SQLite options](/database/sqlite#options).
@@ -105,7 +112,9 @@ The first issue in APP is 1 and the first in WEB is also 1. `autonumberKeyField`
 [frogbot] Autonumber field 'number' in collection 'issues' has scope 'project', which must be a required relationship to one collection, not localized or hasMany.
 ```
 
-A scoped number isn't unique on its own. FrogBot adds a unique index on the scope and the number together instead, so two issues in one project never share a number. Everything in [How numbers are assigned](#how-numbers-are-assigned) applies within each scope: parallel creates, transactions, gaps and seeds. On SQLite and Postgres with transactions, the first issues created at the same moment in a new project are numbered 1 and 2, and a create that rolls back gives its number back.
+A scoped number isn't unique on its own. FrogBot adds a unique index on the scope and the number together instead, so two issues in one project never share a number.
+
+Everything in [How numbers are assigned](#how-numbers-are-assigned) applies within each scope: parallel creates, transactions, gaps, and seeds. On SQLite and Postgres with transactions, the first issues created at the same moment in a new project are numbered 1 and 2, and a create that rolls back gives its number back.
 
 A seed's supplied number raises only its own project's count. A number another issue in the same project already has fails with `Value must be unique`; the same number in another project is fine.
 
@@ -152,7 +161,11 @@ Like the number, the key doesn't accept `hasMany`, `minRows`, `maxRows`, `locali
 [frogbot] Autonumber key field 'key' in collection 'issues' has prefix 'key', which must be a required, unique text field in collection 'projects', not localized or hasMany.
 ```
 
-FrogBot sets the key when the record is created and whenever its number changes, reading the prefix from the scope's record. A key sent by people, agents or trusted server code is dropped; a seed that supplies number 7 gets `APP-7`. A duplicate gets the key of its new number. Records that have a number but no key, such as records numbered before the key field was added, get their key at the next start.
+FrogBot sets the key when the record is created and whenever its number changes. It reads the prefix from the scope's record.
+
+- A key sent by people, agents, or trusted server code is dropped. A seed that supplies number 7 gets `APP-7`.
+- A duplicate gets the key of its new number.
+- Records that have a number but no key get their key at the next start. Records numbered before the key field was added are one example.
 
 ### Renaming a prefix
 
@@ -168,7 +181,11 @@ import { findByAutonumberKey } from 'frogbot'
 const issue = await findByAutonumberKey(frogbot, { collection: 'issues', key: 'APP-5' })
 ```
 
-It returns the record that holds the key now. Otherwise it returns the record that held it last, or `null` if no record did. It takes the same options as [`findByID`](/local-api/overview#collection-find-by-id), such as `depth`, `req` and `overrideAccess: false`. With access checked, a record the user can't read gives `null`, whether it holds the key now or held it before; a key now held by a hidden record never falls back to its earlier holder. A collection without a key field fails with `[frogbot] Collection 'tickets' has no autonumberKeyField.`
+It returns the record that holds the key now. Otherwise it returns the record that held the key last, or `null` if no record did.
+
+- **Options.** It takes the same options as [`findByID`](/local-api/overview#collection-find-by-id), such as `depth`, `req`, and `overrideAccess: false`.
+- **Access.** With access checked, a record the user can't read gives `null`, whether it holds the key now or held it before. A key now held by a hidden record never falls back to its earlier holder.
+- **No key field.** A collection without a key field fails with `[frogbot] Collection 'tickets' has no autonumberKeyField.`
 
 Old keys are kept in a hidden `frogbot-autonumber-keys` collection, added when a key field exists. Deleting a record removes its old keys. The collection behaves like the [counters collection](#counters), its slug is reserved, and generated types include it as `FrogBotAutonumberKey`.
 
@@ -229,7 +246,14 @@ Existing records are still being numbered. Try again in a moment.
 
 ## Counters
 
-FrogBot keeps each field's count in a hidden `frogbot-autonumbers` collection, with one record per field keyed by collection and field path, such as `tickets.number` or `tickets.details.ref`. A scoped field has one record per scope, such as `issues.number[project=12]`, plus `issues.number[project]`, which marks that existing records have been numbered. The collection is added only when an autonumber field exists. It doesn't appear in the admin panel or GraphQL, and access-controlled requests can't read or change it. Generated types include it as `FrogBotAutonumber`.
+FrogBot keeps each field's count in a hidden `frogbot-autonumbers` collection.
+
+| Field | Records |
+| --- | --- |
+| Unscoped | One record per field, keyed by collection and field path, such as `tickets.number` or `tickets.details.ref`. |
+| Scoped | One record per scope, such as `issues.number[project=12]`, plus `issues.number[project]`, which marks that existing records have been numbered. |
+
+The collection is added only when an autonumber field exists. It doesn't appear in the admin panel or GraphQL, and access-controlled requests can't read or change it. Generated types include it as `FrogBotAutonumber`.
 
 The slug is reserved. A collection of your own with that slug fails at startup:
 

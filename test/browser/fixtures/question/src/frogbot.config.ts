@@ -605,9 +605,9 @@ export default buildConfig({
         }
 
         await req.frogbot.update({
-          collection: usersSlug,
-          id: req.user.id,
-          data: { spendThisPeriodUSD: monthlySpendUSD },
+          collection: 'plugin-ai-policy-spend',
+          where: { key: { equals: `${usersSlug}:${String(req.user.id)}` } },
+          data: { amount: monthlySpendUSD },
           overrideAccess: true,
           req,
         });
@@ -642,7 +642,15 @@ export default buildConfig({
         await req.frogbot.update({
           collection: usersSlug,
           id: req.user.id,
-          data: { spendThisPeriodUSD: 0, monthlyBudget: null },
+          data: { monthlyBudget: null },
+          overrideAccess: true,
+          req,
+        });
+
+        await req.frogbot.update({
+          collection: 'plugin-ai-policy-spend',
+          where: { key: { equals: `${usersSlug}:${String(req.user.id)}` } },
+          data: { amount: 0 },
           overrideAccess: true,
           req,
         });

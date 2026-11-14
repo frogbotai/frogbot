@@ -314,6 +314,7 @@ describe('frogbot share: the build', () => {
       '[frogbot] Build failed: The build failed at `pnpm install`.',
       'step 1',
       'ERR_PNPM_OUTDATED_LOCKFILE',
+      'Run `frogbot dojo deployments logs 7` for the full log.',
     ]);
   });
 });

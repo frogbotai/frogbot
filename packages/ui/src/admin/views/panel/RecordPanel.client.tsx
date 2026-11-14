@@ -23,6 +23,7 @@ import {
 
 import { clampPanelWidth, getPanelPreferenceKey, PANEL_WIDTH } from './config.js';
 import { PanelConfig } from './PanelConfig.client.js';
+import { PanelFooterTarget } from './PanelSlots.client.js';
 import { useRecordPanel } from './RecordPanelProvider.client.js';
 import type { RenderRecordPanelArgs, RenderRecordPanelResult } from './renderRecordPanel.js';
 
@@ -77,6 +78,7 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
   const [content, setContent] = useState<{ key: string; Panel: ReactNode }>();
   const [loading, setLoading] = useState(false);
   const asideRef = useRef<HTMLElement>(null);
+  const [footer, setFooter] = useState<HTMLDivElement | null>(null);
   const panelRef = useRef(panel);
   const { save, setWidth, width } = usePanelWidth(
     collectionSlug,
@@ -271,12 +273,15 @@ export function RecordPanel({ viewRef }: { viewRef: React.RefObject<HTMLElement 
       />
       <div className={`${baseClass}__body`}>
         {content ? (
-          <PanelConfig collectionSlug={collectionSlug} key={content.key}>
-            {content.Panel}
-          </PanelConfig>
+          <PanelFooterTarget value={footer}>
+            <PanelConfig collectionSlug={collectionSlug} key={content.key}>
+              {content.Panel}
+            </PanelConfig>
+          </PanelFooterTarget>
         ) : null}
         {loading ? <LoadingOverlay /> : null}
       </div>
+      <div className={`${baseClass}__footer`} ref={setFooter} />
     </aside>
   );
 }

@@ -1,6 +1,6 @@
 import { forgetSignIn, readToken } from './auth.js';
-import { dojoMessage, dojoUrl } from './dojo.js';
-import { ShareError } from './error.js';
+import { dojoUrl } from './dojo.js';
+import { dojoStop, reachDojo, reportStop, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
 import { dojoProgram, done, say } from './io.js';
 
@@ -12,11 +12,7 @@ export async function runLogout(args: string[], io: DojoIO): Promise<number> {
   try {
     return await logout(args, io);
   } catch (error) {
-    if (!(error instanceof ShareError) || io.json) throw error;
-
-    io.stderr.write(`[frogbot] ${error.message}\n`);
-
-    return error.code;
+    return reportStop(io, error);
   }
 }
 
@@ -42,10 +38,10 @@ async function logout(args: string[], io: DojoIO): Promise<number> {
   }
 
   const headers = { authorization: `Bearer ${token}`, accept: 'application/json' };
-  const me = await fetch(`${url}/api/users/me`, { headers });
+  const me = await reachDojo(url, io.env, () => fetch(`${url}/api/users/me`, { headers }));
 
   if (!me.ok && me.status !== 401) {
-    throw new ShareError(`Couldn't sign out: ${await dojoMessage(me)} Run logout again.`);
+    throw await dojoStop(me, "Couldn't sign out", ' Run logout again.');
   }
 
   const user = me.ok
@@ -53,16 +49,16 @@ async function logout(args: string[], io: DojoIO): Promise<number> {
     : null;
 
   if (user?.apiKeyId !== undefined) {
-    const revoked = await fetch(`${url}/api/api-keys/${user.apiKeyId}/revoke`, {
-      method: 'POST',
-      headers: { ...headers, 'content-type': 'application/json' },
-      body: JSON.stringify({ cascade: false }),
-    });
+    const revoked = await reachDojo(url, io.env, () =>
+      fetch(`${url}/api/api-keys/${user.apiKeyId}/revoke`, {
+        method: 'POST',
+        headers: { ...headers, 'content-type': 'application/json' },
+        body: JSON.stringify({ cascade: false }),
+      }),
+    );
 
     if (!revoked.ok && revoked.status !== 401 && revoked.status !== 404) {
-      throw new ShareError(
-        `Couldn't revoke the key: ${await dojoMessage(revoked)} Run logout again.`,
-      );
+      throw await dojoStop(revoked, "Couldn't revoke the key", ' Run logout again.');
     }
   }
 

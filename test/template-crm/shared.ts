@@ -3,6 +3,8 @@ import path from 'node:path';
 
 export const mediaDir = path.join(os.tmpdir(), 'frogbot-template-crm-media');
 
+export const importsDir = path.join(os.tmpdir(), 'frogbot-template-crm-imports');
+
 export const brokenSeedPath = '/seed-broken';
 
 export const brokenSeedError = 'sample data is broken';

@@ -1,8 +1,8 @@
 import { setTimeout } from 'node:timers/promises';
 
 import type { DojoClient } from './dojo.js';
-import { createDojo, dojoMessage, segment } from './dojo.js';
-import { ShareError } from './error.js';
+import { createDojo, segment } from './dojo.js';
+import { dojoStop, reportStop, ShareError } from './error.js';
 import type { DojoIO } from './io.js';
 import { done, say } from './io.js';
 
@@ -24,11 +24,7 @@ export async function runLogs(
   try {
     return await logs(args, io, follow);
   } catch (error) {
-    if (!(error instanceof ShareError) || io.json) throw error;
-
-    io.stderr.write(`[frogbot] ${error.message}\n`);
-
-    return error.code;
+    return reportStop(io, error);
   }
 }
 
@@ -90,7 +86,7 @@ async function read(dojo: DojoClient, app: string, after: string | null): Promis
   const query = after ? `?after=${encodeURIComponent(after)}` : '';
   const response = await dojo.request(`/api/apps/${segment(app)}/logs${query}`);
 
-  if (!response.ok) throw new ShareError(await dojoMessage(response));
+  if (!response.ok) throw await dojoStop(response);
 
   const reply = (await response.json()) as Partial<LogsReply>;
 

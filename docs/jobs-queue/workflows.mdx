@@ -1,0 +1,239 @@
+---
+title: 'Workflows'
+description: 'Run tasks in order, resume from the step that failed, loop over items, and keep related jobs from overlapping.'
+keywords: ['workflows', 'jobs', 'inlineTask', 'taskStatus', 'foreach', 'parallel', 'concurrency', 'supersedes']
+---
+
+A workflow runs several steps as one job. When a step fails, the retry skips the steps that already succeeded and picks up at the failed one.
+
+Use a [task](/jobs-queue/tasks) for one operation. Use a workflow when steps depend on each other and one of them can fail on its own, such as signing a user up: create the profile, send the welcome email, add them to a mailing list. If the email service is down, the retry sends the email without creating a second profile.
+
+## Define a workflow
+
+Add the workflow to `jobs.workflows`. Its handler calls registered tasks through `tasks`:
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  // ...
+  jobs: {
+    tasks: [createProfile, sendWelcomeEmail, addToList],
+    workflows: [
+      {
+        slug: 'onboard-user',
+        inputSchema: [{ name: 'userId', type: 'text', required: true }],
+        retries: 3,
+        handler: async ({ job, tasks }) => {
+          const { profileID } = await tasks['create-profile']('create-profile', {
+            input: { userId: job.input.userId },
+          })
+
+          await tasks['send-welcome-email']('send-email', { input: { profileID } })
+          await tasks['add-to-list']('add-to-list', { input: { profileID } })
+        },
+      },
+    ],
+  },
+})
+```
+
+Queue it like a task, with `workflow` instead of `task`:
+
+```ts
+await frogbot.jobs.queue({
+  workflow: 'onboard-user',
+  input: { userId: '42' },
+  overrideAccess: true,
+})
+```
+
+`tasks[slug](stepID, { input, retries? })` runs the task and resolves with its output. The step ID names this call within the job. Keep each ID unique and the same on every run, because FrogBot matches saved results by it. Descriptive IDs, such as `send-email`, also make the job log easier to read.
+
+### Inline steps
+
+`inlineTask` runs a function that isn't registered as a task. Its output is saved like any other step, but it isn't typed or reusable.
+
+```ts
+handler: async ({ job, inlineTask }) => {
+  const { invoiceID } = await inlineTask('create-invoice', {
+    retries: 2,
+    task: async ({ req }) => {
+      const invoice = await req.frogbot.create({
+        collection: 'invoices',
+        data: { order: job.input.orderId },
+        overrideAccess: true,
+        req,
+      })
+
+      return { output: { invoiceID: String(invoice.id) } }
+    },
+  })
+}
+```
+
+The `task` function receives `input`, `job`, `req`, `tasks`, and `inlineTask`, like a task handler.
+
+### Read step outputs
+
+Use the value a step resolves with. Every step's result is also on `job.taskStatus`, keyed by task slug and step ID. Inline steps use the slug `inline`.
+
+```ts
+job.taskStatus = {
+  'create-profile': {
+    'create-profile': {
+      complete: true,
+      input: { userId: '42' },
+      output: { profileID: 'p_1' },
+      taskSlug: 'create-profile',
+      totalTried: 1,
+    },
+  },
+}
+```
+
+## Failure and recovery
+
+When a step throws, the job fails that attempt. If retries remain, the next attempt runs the handler again from the top:
+
+| Step | First attempt | Retry |
+| --- | --- | --- |
+| `create-profile` | Succeeds; output saved | Skipped; returns the saved output |
+| `send-email` | Throws: email service timed out | Runs again and succeeds |
+| `add-to-list` | Never reached | Runs |
+
+Only the steps restore their saved results; any other code in the handler runs again on every attempt. Put database writes and external calls inside steps, and base decisions on `job.input` and step outputs rather than the current time or random values.
+
+### Retries in workflows
+
+| Setting | Effect |
+| --- | --- |
+| Workflow `retries` | Caps retries for the whole job. Tasks without their own `retries` inherit it. |
+| Workflow `retries: 0` | Any step failure fails the job for good, whatever the tasks set. |
+| Workflow `retries` not set | Each task's own `retries` decides. |
+| A task's `retries.shouldRestore` | Whether a step that already succeeded reruns on retry. See [Restore a task that already succeeded](/jobs-queue/tasks#restore-a-task-that-already-succeeded). |
+
+## Loops and parallel steps
+
+Use `foreach` to run a step per item and `parallel` to run a few named steps at once. Both are workflow-handler arguments beside `tasks` and `inlineTask`. Each item or branch runs as an `inlineTask` with the ID `` `${name}:${key}` ``, so a retry or a resumed run returns its saved output without running it again.
+
+```ts
+import type { WorkflowHandler } from 'frogbot'
+
+const handler: WorkflowHandler<{ invoices: Invoice[] }> = async ({ job, foreach, parallel }) => {
+  const pushed = await foreach('push-invoice', job.input.invoices, {
+    key: (invoice) => invoice.id,
+    concurrency: 5,
+    task: async ({ item }) => ({ output: await xero.push(item) }),
+  })
+
+  const { crm, billing } = await parallel('notify', {
+    crm: async () => ({ output: await crm.note(pushed) }),
+    billing: async () => ({ output: await billing.sync(pushed) }),
+  })
+}
+```
+
+| Call | Result |
+| --- | --- |
+| `foreach(name, items, { key, task, concurrency?, retries? })` | `Promise<Output[]>`, in the order of `items` |
+| `parallel(name, branches, { retries? })` | `Promise<{ [branch]: Output }>` |
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `key` | `(item) => string \| number` | Required | The item's stable identity. Empty, non-finite and duplicate keys throw before any item runs. |
+| `task` | `({ item, job, req, inlineTask, tasks }) => { output } \| Promise<…>` | Required | Runs one item, like an `inlineTask` handler. |
+| `concurrency` | `number` | `1` | Most items running at once, a positive integer. A new item starts as soon as one finishes. |
+| `retries` | `number \| RetryConfig` | inherited from the workflow | Passed to each item's `inlineTask`. The workflow's own `retries` still caps the job, so with `retries: 0` on the workflow one failed item fails it for good. |
+
+- **Names and keys.** A `name` is a nonempty string without `:`, used once per run across `foreach` and `parallel`. Restore is by key, not position, so a reordered or shorter list restores the right outputs and runs only new keys. Branch names are `parallel`'s keys. A helper called inside an item or branch nests under it, with the ID `` `${itemID}:${name}:${key}` ``, so its name only has to be unique within that item.
+- **Concurrency.** `foreach` runs one item at a time unless you raise `concurrency`; `parallel` starts every branch at once. The limit is per call and in-process: it doesn't count against `jobs.run({ limit })` or workflow `concurrency` keys, so 10 jobs running `concurrency: 10` can mean 100 calls in flight.
+- **Failure.** When an item or branch throws, no new items start, the running ones finish and save, and the first error fails the run. Its retry skips the saved items. To carry on past a bad item, catch inside `task` and return an error in `output`.
+- **No waits inside items.** `waitFor` inside an item or branch throws `FrogBot waitFor can't run inside foreach '<name>' item '<key>'.`; wait before, between or after helper calls instead, or use a plain loop of `waitFor` calls.
+- **Storage.** Every output is saved on the job row's `log`, so a long list makes the job record large. Keep outputs small, such as IDs.
+
+## Wait for approvals and dates
+
+A workflow can pause for hours or days, without holding a worker, until someone responds to a link or a date passes. See [Durable waits](/jobs-queue/waits).
+
+## Concurrency
+
+Two jobs for the same record can race: a quick edit after a create queues a second sync while the first is still running. A `concurrency` key makes jobs with the same key run one at a time.
+
+```ts
+{
+  slug: 'sync-document',
+  inputSchema: [{ name: 'documentId', type: 'text', required: true }],
+  concurrency: ({ input }) => `sync:${input.documentId}`,
+  handler: async ({ job, inlineTask }) => {
+    // Never runs alongside another sync of the same document.
+  },
+}
+```
+
+`concurrency` works the same on tasks and workflows. It takes a key function, or an object:
+
+| Setting | Behavior |
+| --- | --- |
+| `concurrency: ({ input }) => key` | Jobs with the same key run one at a time. All of them run, in claim order. |
+| `concurrency: { key, supersedes: true }` | Queuing a job deletes older pending jobs with the same key, so only the latest runs. Use it when only the newest state matters, such as regenerating embeddings after rapid edits. |
+
+- **Scope.** A key is global across queues, runners, and processes. Include the queue in the key, as in `` ({ input, queue }) => `${queue}:sync:${input.documentId}` ``, to allow one job per queue.
+- **Waiting.** A blocked job stays pending and holds no lease. It runs after the job holding the key completes, fails, or pauses at `waitFor`.
+- **Superseding.** Only pending jobs are deleted, including paused workflows, which frees their `jobId`s and closes their waits. A job that is already running finishes, and the new job waits for it.
+- **No key.** Jobs without `concurrency` run in parallel.
+
+## JSON workflows
+
+Instead of a function, `handler` can be an array of steps. A JSON workflow has no `waitFor`, `foreach`, or `parallel`.
+
+Steps don't run in array order. Each pass runs, at the same time, every unfinished step whose `condition` passes, and passes repeat until a step marked `completesJob` has finished. Use `condition` to order steps, and mark the last one `completesJob: true`, or the job never completes.
+
+```ts
+{
+  slug: 'publish-and-notify',
+  inputSchema: [{ name: 'postId', type: 'text', required: true }],
+  handler: [
+    { id: 'publish', task: 'publish-post', input: ({ job }) => ({ postId: job.input.postId }) },
+    {
+      id: 'notify',
+      task: 'notify-subscribers',
+      condition: ({ job }) => job.taskStatus['publish-post']?.publish?.complete === true,
+      input: ({ job }) => ({ postId: job.input.postId }),
+      completesJob: true,
+    },
+  ],
+}
+```
+
+| Step key | Description |
+| --- | --- |
+| `id` | Step ID, unique within the workflow. |
+| `task` and `input` | A registered task slug, and a function `({ job }) => input`. |
+| `inlineTask` | A function `({ job, req }) => { output }`, instead of `task` and `input`. |
+| `condition` | `({ job }) => boolean`. The step waits for a later pass while it returns `false`. |
+| `completesJob` | When `true`, the job completes once this step has finished. |
+| `retries` | As for tasks. |
+
+## Workflow options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | Required | Unique among all tasks and workflows. |
+| `handler` | `WorkflowHandler \| WorkflowJSON \| string` | Required | A function receiving `job`, `req`, `tasks`, `inlineTask`, [`waitFor`](/jobs-queue/waits), and [`foreach` and `parallel`](#loops-and-parallel-steps); a string module path, `'path#exportName'`, loaded when the workflow runs; or a [JSON array of task steps](#json-workflows). |
+| `inputSchema` | `Field[]` | — | Fields describing `input`, used for generated types. |
+| `interfaceName` | `string` | `Workflow` plus the capitalized slug | Name of the generated input interface. |
+| `label` | `string` | — | Human-friendly name for the workflow. |
+| `queue` | `string` | `'default'` | Default queue for jobs of this workflow. An explicit `queue` when queuing takes precedence. |
+| `retries` | `number \| RetryConfig` | Each task's own retries | Maximum retries for the whole workflow, inherited by tasks without their own. `0` fails the workflow on any task failure. See [Retry options](/jobs-queue/tasks#retry-options). |
+| `concurrency` | `ConcurrencyConfig` | — | See [Concurrency options](#concurrency-options). |
+| `schedule` | `ScheduleConfig[]` | — | Queues the workflow on a cron schedule. See [Schedules](/jobs-queue/schedules). |
+
+### Concurrency options
+
+`concurrency` takes a key function or an object:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `key` | `({ input, queue }) => string` | Required | Only one job with the key runs at a time, across every runner and process. Others wait until it completes, fails, or pauses at `waitFor`. |
+| `supersedes` | `boolean` | `false` | Queuing a job deletes older pending jobs with the same key, including paused workflows, freeing their `jobId`s and closing their waits. Processing jobs are not affected. |

@@ -44,11 +44,10 @@ export async function down({ frogbot, req }: MigrateDownArgs): Promise<void> {
 
 ## Using Transactions
 
-When migrations are run, each migration is performed in a new [transaction](/database/transactions) for you. All
-you need to do is pass the `req` object to any [Local API](/local-api/overview) or direct database calls, such as
-`frogbot.db.updateMany()`, to make database changes inside the transaction. Assuming no errors were thrown, the transaction is committed
-after your `up` or `down` function runs. If the migration errors at any point or fails to commit, it is caught and the
-transaction gets aborted. This way no change is made to the database if the migration fails.
+Each migration runs in a new [transaction](/database/transactions). To make database changes inside the transaction, pass the `req` object to any [Local API](/local-api/overview) or direct database call, such as `frogbot.db.updateMany()`.
+
+- If no error is thrown, the transaction is committed after your `up` or `down` function runs.
+- If the migration errors at any point or fails to commit, the transaction is aborted, and no change is made to the database.
 
 ### Using database directly with the transaction
 
@@ -152,7 +151,17 @@ After upgrading, create the next migration from FrogBot's upgrade migration inst
 npx frogbot migrate:create upgrade --file frogbot/migrations/upgrade-0.34
 ```
 
-On Postgres and SQLite it makes the schema change, and on SQLite it also rebuilds changed tables without losing their rows. Earlier versions stored authors in `createdByField()` and `lastModifiedByField()` fields; they're now the built-in `createdBy` and `updatedBy` fields. Remove those fields first: the migration copies each old author column into `createdBy` or `updatedBy`. Columns it can't place are listed in the console and at the top of the file, set to `null`: assign each to `'createdBy'` or `'updatedBy'`, or leave it to drop the column. The next `migrate:create` drops the old columns. On MongoDB it moves the `createdBy` and `lastModifiedBy` keys; edit the map at the top of the file for other names.
+| Database | What the upgrade migration does |
+| --- | --- |
+| Postgres and SQLite | Makes the schema change. On SQLite, it also rebuilds changed tables without losing their rows. |
+| MongoDB | Moves the `createdBy` and `lastModifiedBy` keys. Edit the map at the top of the file for other names. |
+
+Earlier versions stored authors in `createdByField()` and `lastModifiedByField()` fields. They are now the built-in `createdBy` and `updatedBy` fields.
+
+1. Remove the `createdByField()` and `lastModifiedByField()` fields first. The migration copies each old author column into `createdBy` or `updatedBy`.
+2. Check the columns that the migration can't place. They are listed in the console and at the top of the file, set to `null`. Assign each one to `'createdBy'` or `'updatedBy'`, or leave it to drop the column.
+
+The next `migrate:create` drops the old columns.
 
 Folders from earlier versions (`payload-folders`) aren't carried over: files keep everything else, and come back unfiled.
 
@@ -209,7 +218,10 @@ In relational databases, migrations will be **required** for non-development dat
 
 In MongoDB, you'll only ever really need to run migrations for times where you change your database shape, and you have lots of existing data that you'd like to transform from Shape A to Shape B.
 
-In this case, you can create a migration by running `pnpm frogbot migrate:create`, and then write the logic that you need to perform to migrate your documents to their new shape. You can then either run your migrations in CI before you build / deploy, or you can run them locally, against your production database, by using your production database connection string on your local computer and running the `pnpm frogbot migrate` command.
+In this case, create a migration with `pnpm frogbot migrate:create`, then write the logic that migrates your documents to their new shape. Run your migrations in one of two ways:
+
+- In CI, before you build and deploy.
+- Locally, against your production database. Use your production database connection string on your local computer and run `pnpm frogbot migrate`.
 
 #### Postgres#postgres-migrations
 

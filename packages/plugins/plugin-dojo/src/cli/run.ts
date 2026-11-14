@@ -16,10 +16,10 @@ import { describeData, takeInventory } from './data/inventory.js';
 import { askReplace, replaceMessages } from './data/replace.js';
 import { formatBytes, uploadData } from './data/upload.js';
 import type { DojoClient } from './dojo.js';
-import { createDojo, dojoError, dojoMessage, followBuild, segment } from './dojo.js';
+import { createDojo, followBuild, segment } from './dojo.js';
 import type { EnvKey } from './envKeys.js';
 import { envKeys, readEnvFiles } from './envKeys.js';
-import { ShareError } from './error.js';
+import { dojoError, dojoStop, ShareError } from './error.js';
 import { shareFiles } from './files.js';
 import type { ShareFlags } from './flags.js';
 import { parseShareArgs } from './flags.js';
@@ -59,7 +59,13 @@ async function asDeployStop<T>(work: () => T | Promise<T>): Promise<T> {
   try {
     return await work();
   } catch (error) {
-    if (error instanceof ShareError) throw new DeployError(error.message, error.code, error.step);
+    if (error instanceof ShareError) {
+      throw new DeployError(error.message, error.exitCode, {
+        code: error.code,
+        fields: error.fields,
+        cause: error.cause,
+      });
+    }
 
     throw error;
   }
@@ -193,11 +199,25 @@ async function share(context: DeployContext): Promise<Record<string, unknown>> {
       deploymentId,
       program: io.program,
       onLine: (line) => say(io, `[build] ${line}`),
+    }).catch((error: unknown) => {
+      if (!(error instanceof ShareError) || error.deploymentId !== undefined) throw error;
+
+      throw new ShareError(
+        `${error.message} The build may still finish: run \`frogbot dojo deployments logs ${deploymentId} --follow\`.`,
+        error.exitCode,
+        { code: error.code, status: error.status, url: error.url, deploymentId, cause: error },
+      );
     });
 
     if (build.status === 'failed') {
       throw new ShareError(
-        [`Build failed: ${build.error || 'see the log above'}`, ...(build.tail ?? [])].join('\n'),
+        [
+          `Build failed: ${build.error || 'see the log above'}`,
+          ...(build.tail ?? []),
+          `Run \`frogbot dojo deployments logs ${deploymentId}\` for the full log.`,
+        ].join('\n'),
+        1,
+        { code: 'BUILD_FAILED', deploymentId },
       );
     }
 
@@ -336,15 +356,15 @@ async function createApp({
   );
 
   if (!created.ok) {
-    const { body, message } = await dojoError(created);
+    const stop = await dojoStop(created.clone(), "Dojo couldn't create the app");
 
-    if (nameTaken(created.status, body)) {
+    if (nameTaken(created.status, (await dojoError(created)).body)) {
       throw new ShareError(
         `The name "${slug}" is taken on Dojo. Rerun with --name <another name>.`,
       );
     }
 
-    throw new ShareError(`Dojo couldn't create the app: ${message}`);
+    throw stop;
   }
 
   const { doc } = (await created.json()) as { doc: { id: string | number; slug: string } };
@@ -376,7 +396,7 @@ async function laterKeys({
   await refusedApp(appId, response);
 
   if (!response.ok) {
-    throw new ShareError(`Couldn't read the app's keys: ${await dojoMessage(response)}`);
+    throw await dojoStop(response, "Couldn't read the app's keys");
   }
 
   const { salt, keys: live } = (await response.json()) as Partial<LiveKeys>;
@@ -392,9 +412,7 @@ async function sealedKeys(dojo: DojoClient, keys: EnvKey[]): Promise<SealedKeys>
   const response = await dojo.request('/api/cli/sealing-key');
 
   if (!response.ok) {
-    throw new ShareError(
-      `Couldn't get Dojo's key for sealing keys: ${await dojoMessage(response)}`,
-    );
+    throw await dojoStop(response, "Couldn't get Dojo's key for sealing keys");
   }
 
   const sealingKey = (await response.json()) as SealingKey;
@@ -443,7 +461,7 @@ async function deploy({
 
   await refusedApp(appId, response);
 
-  if (!response.ok) throw new ShareError(`Dojo refused the upload: ${await dojoMessage(response)}`);
+  if (!response.ok) throw await dojoStop(response, 'Dojo refused the upload');
 
   return ((await response.json()) as { deploymentId: string | number }).deploymentId;
 }

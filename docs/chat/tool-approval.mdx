@@ -31,7 +31,11 @@ An approved call runs the input the model sent, as stored with the chat. An answ
 
 ## Auto-approve
 
-When an agent has a tool, or an MCP server `tools` entry, that sets `approval`, the composer shows an **Auto-approve** switch. While it's on, `'ask'` calls run without asking; `'required'` calls still pause. The switch is saved on the chat as its `autoApprove` checkbox, so it applies to every later turn and to a turn resumed after an answer. Turning it on doesn't answer calls that are already waiting.
+When an agent has a tool, or an MCP server `tools` entry, that sets `approval`, the composer shows an **Auto-approve** switch.
+
+- While it's on, `'ask'` calls run without asking. `'required'` calls still pause.
+- The switch is saved on the chat as its `autoApprove` checkbox, so it applies to every later turn and to a turn resumed after an answer.
+- Turning it on doesn't answer calls that are already waiting.
 
 The chats collection's `update` access decides who can change it. On a new chat, the switch is sent as `autoApprove` with the first message and saved when the chat is created.
 
@@ -53,7 +57,17 @@ The run keeps going. `'ask'` tools run when the run sets `autoApprove: true` or 
 
 ## Who can answer
 
-Whoever can continue the chat can answer, the same as for [questions](/chat/questions#who-can-answer): over HTTP, the chat's owner; in a channel conversation, any participant who passes the agent's `access` check. Someone who can read the chat but not continue it gets `404`, and the call keeps waiting. Someone who can continue it but fails the tool's [`access`](/agents/overview#limit-who-gets-a-tool) gets `403`, and the call keeps waiting too. FrogBot records each answer, who gave it and when, in the message's `settlements` field, with the outcome `approved` or `denied`.
+Whoever can continue the chat can answer, the same as for [questions](/chat/questions#who-can-answer):
+
+- Over HTTP, the chat's owner.
+- In a channel conversation, any participant who passes the agent's `access` check.
+
+| Person | Result |
+| --- | --- |
+| Can read the chat but not continue it | `404`. The call keeps waiting. |
+| Can continue the chat but fails the tool's [`access`](/agents/overview#limit-who-gets-a-tool) | `403`. The call keeps waiting. |
+
+FrogBot records each answer, who gave it, and when, in the message's `settlements` field, with the outcome `approved` or `denied`.
 
 ## Over HTTP
 
@@ -88,7 +102,15 @@ curl http://localhost:3000/api/agents/support/chats/CHAT_ID/settle \
   --data '{ "toolCallId": "call_1", "approved": false, "reason": "Refund half instead." }'
 ```
 
-Approving, or denying with a `reason`, continues the turn and responds like the original request, plus the `settlement`. Denying without a `reason` ends the turn and responds with `{ "status": "denied", "chatId", "settlement" }`. Errors are the same as for [questions](/chat/questions#answer-over-http); sending an `output` for an approval, or `approved` for a question, is `400` with `code: "invalid-output"`, and a second answer is `409` with `code: "already-settled"`.
+| Answer | Result |
+| --- | --- |
+| Approve, or deny with a `reason` | Continues the turn and responds like the original request, plus the `settlement`. |
+| Deny without a `reason` | Ends the turn and responds with `{ "status": "denied", "chatId", "settlement" }`. |
+
+Errors are the same as for [questions](/chat/questions#answer-over-http):
+
+- Sending an `output` for an approval, or `approved` for a question, is `400` with `code: "invalid-output"`.
+- A second answer is `409` with `code: "already-settled"`.
 
 A chat UI built on the AI SDK can also answer with `addToolApprovalResponse` and resubmit the assistant message. FrogBot reads only each part's `toolCallId`, `approval.approved` and `approval.reason`, and settles them against the stored call. A resubmitted denial needs a `reason`; deny without one through settle.
 

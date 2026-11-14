@@ -125,6 +125,7 @@
                       "fields/duration",
                       "fields/url",
                       "fields/phone",
+                      "fields/color",
                       "fields/barcode",
                       "fields/autonumber",
                       "fields/ai"
@@ -183,7 +184,7 @@
               { "group": "Admin", "expanded": false, "pages": ["admin/overview", "admin/admin-navigation", "admin/collection-list", "admin/collection-board", "admin/collection-gallery", "admin/collection-calendar", "admin/collection-timeline", "admin/record-panel"]},
               { "group": "Authentication", "expanded": false, "pages": ["authentication/overview", "authentication/sign-in", "authentication/operations", "authentication/jwt", "authentication/cookies", "authentication/email", "authentication/api-keys", "authentication/token-data", "authentication/custom-strategies"]},
               { "group": "Upload", "expanded": false, "pages": ["upload/overview", "upload/storage-adapters", "upload/files"]},
-              { "group": "Jobs Queue", "expanded": false, "pages": ["jobs-queue/overview", "jobs-queue/workers"]},
+              { "group": "Jobs Queue", "expanded": false, "pages": ["jobs-queue/overview", "jobs-queue/tasks", "jobs-queue/workflows", "jobs-queue/queues", "jobs-queue/schedules", "jobs-queue/waits", "jobs-queue/workers"]},
               { "group": "Versions", "expanded": false, "pages": ["versions/overview", "versions/drafts", "versions/autosave"]},
               { "group": "Email", "expanded": false, "pages": ["email/overview"]},
               { "group": "Trash", "expanded": false, "pages": ["trash/overview"]},

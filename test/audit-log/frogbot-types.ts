@@ -70,6 +70,7 @@ export interface Config {
     accounts: Account;
     posts: Post;
     vault: Vault;
+    ledgers: Ledger;
     credentials: Credential;
     'audit-logs': AuditLog;
     'frogbot-waitpoints': FrogBotWaitpoint;
@@ -79,6 +80,7 @@ export interface Config {
     accounts: AccountsSelect;
     posts: PostsSelect;
     vault: VaultSelect;
+    ledgers: LedgersSelect;
     credentials: CredentialsSelect;
     'audit-logs': AuditLogsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
@@ -198,6 +200,25 @@ export interface Vault {
   id: number;
   name?: string | null;
   vaultSecret?: string | null;
+  createdBy?: {
+    relationTo: 'accounts';
+    value: number | Account;
+  } | null;
+  updatedBy?: {
+    relationTo: 'accounts';
+    value: number | Account;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ledgers".
+ */
+export interface Ledger {
+  id: number;
+  title?: string | null;
+  cost?: number | null;
   createdBy?: {
     relationTo: 'accounts';
     value: number | Account;
@@ -361,6 +382,18 @@ export interface VaultSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ledgers_select".
+ */
+export interface LedgersSelect {
+  title?: boolean;
+  cost?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "credentials_select".
  */
 export interface CredentialsSelect {
@@ -441,7 +474,7 @@ export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
     relatedCollection:
-      'accounts' | 'posts' | 'vault' | 'credentials' | 'audit-logs';
+      'accounts' | 'posts' | 'vault' | 'ledgers' | 'credentials' | 'audit-logs';
     where?:
       | {
           [k: string]: unknown;
@@ -464,7 +497,15 @@ export interface CollectionQueryWidget {
 export interface ActivityWidget {
   data?: {
     excludedCollections?:
-      ('accounts' | 'posts' | 'vault' | 'credentials' | 'audit-logs')[] | null;
+      | (
+          | 'accounts'
+          | 'posts'
+          | 'vault'
+          | 'ledgers'
+          | 'credentials'
+          | 'audit-logs'
+        )[]
+      | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }

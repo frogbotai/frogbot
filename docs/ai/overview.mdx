@@ -13,7 +13,13 @@ The `ai` block creates an embedded `@frogbotai/gateway` instance when FrogBot st
 
 Add at least one provider. Set a provider to `true` to use its SDK's standard environment credentials.
 
-The app boots without the key. Records, views and the REST API work as usual, and only AI calls fail, with an error that names the env var to set. That includes saves to a collection with an [`embedFrom`](/fields/vector#embed-on-save) vector field, since each save embeds the record's text. The error reads: `The openai provider has no API key. Set OPENAI_API_KEY in the environment, or set ai.providers.openai.apiKey in the FrogBot config.`
+The app boots without the key. Records, views, and the REST API work as usual. Only AI calls fail, with an error that names the env var to set:
+
+```text
+The openai provider has no API key. Set OPENAI_API_KEY in the environment, or set ai.providers.openai.apiKey in the FrogBot config.
+```
+
+AI calls include saves to a collection with an [`embedFrom`](/fields/vector#embed-on-save) vector field, since each save embeds the record's text.
 
 ```ts
 import { buildConfig } from 'frogbot'
@@ -36,7 +42,12 @@ Model IDs use `<provider>/<model>`, where `<provider>` is the exact key you used
 
 To have each user's AI calls run on their own key or ChatGPT plan, list a provider piece such as [OpenAI](/pieces/openai) in `connections`; FrogBot adds its provider here when missing, and the app needs no key of its own. See [Run AI on users' keys](/connections/overview#run-ai-on-users-keys).
 
-Use `{ apiKey: process.env.CUSTOM_KEY }` only for an alternate credential. Explicit keys must be non-empty. Bedrock accepts `true`, `{ region }`, paired `{ accessKeyId, secretAccessKey, sessionToken? }` overrides, or a custom `credentialProvider`. In Node.js, the default chain supports AWS profiles and IAM Identity Center, web identity, ECS task roles, and EC2 instance profiles. Install the optional `@aws-sdk/credential-providers` peer dependency to use this fallback. Edge runtimes must provide an edge-compatible `credentialProvider` instead.
+Use `{ apiKey: process.env.CUSTOM_KEY }` only for an alternate credential. Explicit keys must be non-empty.
+
+Bedrock accepts `true`, `{ region }`, paired `{ accessKeyId, secretAccessKey, sessionToken? }` overrides, or a custom `credentialProvider`.
+
+- **In Node.js,** the default chain supports AWS profiles and IAM Identity Center, web identity, ECS task roles, and EC2 instance profiles. Install the optional `@aws-sdk/credential-providers` peer dependency to use this fallback.
+- **Edge runtimes** must provide an edge-compatible `credentialProvider` instead.
 
 Vertex AI serves Gemini and Claude through one `vertex` entry, using Google Cloud Application Default Credentials (ADC) instead of an API key:
 
@@ -53,7 +64,16 @@ ai: {
 }
 ```
 
-Call Gemini as `vertex/gemini-3.5-flash` and Claude as `vertex/claude-sonnet-4-6`. `vertex: true` reads the project and location from `GOOGLE_VERTEX_PROJECT` and `GOOGLE_VERTEX_LOCATION`. Locally, ADC uses the credentials from `gcloud auth application-default login`. In deployment, it uses the attached service account or workload identity, so no key file is needed. Pass `googleAuthOptions`, such as `{ keyFilename }` or `{ credentials }`, to use another identity. ADC needs Node.js, so the `vertex` provider doesn't run on edge runtimes. Before calling Claude, enable each Claude model for the project in the Vertex AI Model Garden, accepting Anthropic's terms there, and make sure the project has quota for it in the Claude location.
+Call Gemini as `vertex/gemini-3.5-flash` and Claude as `vertex/claude-sonnet-4-6`. `vertex: true` reads the project and location from `GOOGLE_VERTEX_PROJECT` and `GOOGLE_VERTEX_LOCATION`.
+
+| Where | Credentials that ADC uses |
+| --- | --- |
+| Locally | The credentials from `gcloud auth application-default login`. |
+| In deployment | The attached service account or workload identity, so no key file is needed. |
+
+- Pass `googleAuthOptions`, such as `{ keyFilename }` or `{ credentials }`, to use another identity.
+- ADC needs Node.js, so the `vertex` provider doesn't run on edge runtimes.
+- Before you call Claude, enable each Claude model for the project in the Vertex AI Model Garden, accept Anthropic's terms there, and make sure the project has quota for it in the Claude location.
 
 Add an OpenAI-compatible endpoint with any non-built-in key. Its `models` list is required for validation, and calls use the custom key as the provider prefix.
 
@@ -83,7 +103,9 @@ ai: {
 }
 ```
 
-Invoke that model as `internal/legal-summary-v2`. The chat model picker labels it `Legal Summary`, and its reasoning selector offers `Default`, `Low`, and `High`; built-in models take their names and reasoning levels from the model catalog. Built-in provider entries accept an optional `models` allowlist to restrict their catalog IDs; this is different from a custom provider's required model definitions. Without `apiKey`, the entry reads the same environment variable as `true`:
+Invoke that model as `internal/legal-summary-v2`. The chat model picker labels it `Legal Summary`, and its reasoning selector offers `Default`, `Low`, and `High`. Built-in models take their names and reasoning levels from the model catalog.
+
+Built-in provider entries accept an optional `models` allowlist that restricts their catalog IDs. This is different from a custom provider's required model definitions. Without `apiKey`, the entry reads the same environment variable as `true`:
 
 ```ts
 providers: {
@@ -404,7 +426,11 @@ const assignedTeam = result.answers.team.choice
 const severityScore = result.answers.severity.score
 ```
 
-The result retains inferred answer types for each question, along with SDK usage, warnings, rounding, response, and provider metadata. A boolean probability is an estimate, not an automatic decision. TypeSafe rounds probabilities and scores to two decimal places; `result.rounding` records that precision. When provided, confidence for choice and score questions is separate from their answer probabilities at `result.providerMetadata?.typesafe?.confidence`. Evaluation uses the AI SDK's experimental API, which may change in patch releases.
+- The result retains inferred answer types for each question, along with SDK usage, warnings, rounding, response, and provider metadata.
+- A boolean probability is an estimate, not an automatic decision.
+- TypeSafe rounds probabilities and scores to two decimal places, and `result.rounding` records that precision.
+- When provided, confidence for choice and score questions is at `result.providerMetadata?.typesafe?.confidence`. It is separate from their answer probabilities.
+- Evaluation uses the AI SDK's experimental API, which may change in patch releases.
 
 `typesafe-ai/jev` is FrogBot's shorthand for upstream `jev-latest`; `typesafe-ai/jev-latest` also works. Local router slugs can target either model, while HTTP requests use provider-prefixed IDs.
 
@@ -491,9 +517,16 @@ ai: {
 | `rerank` | `({ req, model }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `rerank`. |
 | `evaluate` | `({ req, model }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `evaluate`. |
 
-FrogBot runs the matching rule before every AI operation and [HTTP request](#call-over-http). A rule that returns `false` rejects the call with `AIAccessError` (status `403`). To send your own status and message, throw an error with a numeric `status` and a `code`; HTTP routes return it as `{ error: { message, type: code } }` with that status.
+FrogBot runs the matching rule before every AI operation and [HTTP request](#call-over-http).
 
-Chat also runs the `generate` rule for each of an agent's models when a signed-in user lists agents or picks a model. A model whose rule returns `false` or throws an error with a numeric `status` is hidden from that user, a request without a model uses the agent's default if allowed or else the first allowed model, and an agent with no allowed model is hidden and rejects their requests.
+- A rule that returns `false` rejects the call with `AIAccessError` (status `403`).
+- To send your own status and message, throw an error with a numeric `status` and a `code`. HTTP routes return it as `{ error: { message, type: code } }` with that status.
+
+Chat also runs the `generate` rule for each of an agent's models when a signed-in user lists agents or picks a model:
+
+- A model whose rule returns `false`, or throws an error with a numeric `status`, is hidden from that user.
+- A request without a model uses the agent's default if it is allowed, or else the first allowed model.
+- An agent with no allowed model is hidden and rejects that user's requests.
 
 An in-process call with `req` enforces access unless `overrideAccess: true` is set. A server-side call without `req` bypasses access by default, since there is no user to check.
 
@@ -636,7 +669,19 @@ Each accepted request gets one FrogBot lifecycle around the gateway handler. Fro
 | `POST` | `/api/v1/rerank` |
 | `POST` | `/api/v1/evaluate` |
 
-Pass credentials accepted by your configured auth collection. HTTP bodies use provider-prefixed model IDs because router aliases are resolved by FrogBot's local operation layer, not by the gateway handler. After authentication, mounted operation routes run the matching [`ai.access`](#control-access) rule with the body's `model`. A denied request receives `403` with `{ "error": { "message": "...", "type": "permission_error", "code": "permission_denied", "param": null } }`, or the status and code of an error the rule throws, in the same four-field body; on `/api/v1/messages` errors use Anthropic's `{ "type": "error", "error": { "type", "message", "param" } }` shape; `GET /api/v1/models` lists only the models the caller may use: each model is checked with the `ai.access` rule for its kind (`generate` for chat, image, speech and video models; `embed`, `transcribe`, `rerank` or `evaluate` otherwise), and a model whose rule returns `false` or throws an error with a `status` is left out. Keep the TypeSafe upstream key on the server; clients authenticate to FrogBot instead. See the [evaluation JSON contract](/gateway/overview#evaluate-over-http) for a request and response shape.
+Pass credentials accepted by your configured auth collection. HTTP bodies use provider-prefixed model IDs, because router aliases are resolved by FrogBot's local operation layer, not by the gateway handler.
+
+After authentication, mounted operation routes run the matching [`ai.access`](#control-access) rule with the body's `model`. A denied request receives `403` with the body below. If the rule throws an error, the response uses that error's status and code in the same four-field body.
+
+```json
+{ "error": { "message": "...", "type": "permission_error", "code": "permission_denied", "param": null } }
+```
+
+On `/api/v1/messages`, errors use Anthropic's `{ "type": "error", "error": { "type", "message", "param" } }` shape.
+
+`GET /api/v1/models` lists only the models that the caller may use. Each model is checked with the `ai.access` rule for its kind: `generate` for chat, image, speech, and video models, and `embed`, `transcribe`, `rerank`, or `evaluate` otherwise. A model whose rule returns `false` or throws an error with a `status` is left out.
+
+Keep the TypeSafe upstream key on the server. Clients authenticate to FrogBot instead. See the [evaluation JSON contract](/gateway/overview#evaluate-over-http) for a request and response shape.
 
 ```bash
 curl http://localhost:3000/api/v1/chat/completions \

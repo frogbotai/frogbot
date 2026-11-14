@@ -4,28 +4,22 @@ import { join } from 'node:path';
 
 import { FROGBOT_VERSION } from '../../version.js';
 import { createBackoff } from './backoff.js';
+import { isEnvOnly, type PublicEnv, publicEnvChanged, readPublicEnv } from './envChanges.js';
 import { checkHealth } from './health.js';
 import { pickError } from './lastError.js';
 import { createLog, type Log } from './log.js';
 import { appPaths, registrationFile, serviceId, type Slot } from './paths.js';
 import { freePort, HOST, readSavedPort, writeSavedPort } from './ports.js';
 import { createProxy, drained, type Upstream } from './proxy.js';
-import { createBuildQueue } from './queue.js';
+import { createBuildQueue, type RunKind } from './queue.js';
 import {
   type Registration,
   removeRegistration,
   watchOwnership,
   writeRegistration,
 } from './registration.js';
-import {
-  type App,
-  type AppRuntime,
-  frogbotBin,
-  nextRuntime,
-  outputTail,
-  runStep,
-  StepError,
-} from './runtime.js';
+import { type App, type AppRuntime, nextRuntime, outputTail, StepError } from './runtime.js';
+import { syncSchema } from './schema.js';
 import { watchApp } from './watch.js';
 
 /** The marker `frogbot up` looks for in a LaunchAgent's log when the first build fails. */
@@ -90,77 +84,6 @@ async function stopServer(child: ChildProcess): Promise<void> {
   clearTimeout(timer);
 }
 
-type SchemaLine = {
-  frogbot: 'schema';
-  ok: boolean;
-  applied: number;
-  kept?: string[];
-  error?: string;
-};
-
-/** Writes the schema step's kept line when it differs from the last one; returns it as the new last. */
-export function reportKept(
-  kept: string[],
-  last: string | undefined,
-  write: (line: string) => void,
-): string {
-  const line = kept.join('\n');
-
-  if (line && line !== last) write(line);
-
-  return line;
-}
-
-async function syncSchema(app: App, reported: { kept?: string }): Promise<void> {
-  let output: string;
-
-  try {
-    output = await runStep(
-      app,
-      'schema',
-      [frogbotBin, 'up'],
-      { ...app.env, NODE_ENV: 'production', FROGBOT_SERVICE: 'schema' },
-      { quiet: true },
-    );
-  } catch (error) {
-    const stepOutput = error instanceof StepError ? error.output : '';
-    const line = parseSchemaLine(stepOutput);
-
-    app.log.write('schema', stepOutput);
-
-    if (line?.error) throw new StepError(`schema sync refused: ${line.error}`, '');
-
-    throw error;
-  }
-
-  const line = parseSchemaLine(output);
-
-  if (!line) {
-    app.log.write('schema', output);
-
-    throw new StepError('schema sync printed no result', output);
-  }
-
-  reported.kept = reportKept(line.kept ?? [], reported.kept, (kept) =>
-    app.log.write('schema', kept),
-  );
-
-  if (!line.ok) throw new StepError(`schema sync refused: ${line.error}`, '');
-  if (line.applied) app.log.write('supervisor', `schema sync applied ${line.applied} statements`);
-}
-
-function parseSchemaLine(output: string): SchemaLine | undefined {
-  const last = output.trim().split('\n').at(-1) ?? '';
-
-  try {
-    const value = JSON.parse(last) as SchemaLine;
-
-    return value?.frogbot === 'schema' ? value : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 export type SuperviseOptions = {
   dir: string;
   port: number;
@@ -191,9 +114,12 @@ export async function supervise({
   const app: App = { dir, env, log };
   const proxy = createProxy();
   const backoff = createBackoff();
-  const draining = new Map<Slot, ChildProcess>();
+  const draining = new Map<Slot, Set<ChildProcess>>();
   const reported: { kept?: string } = {};
   let current: Server | undefined;
+  let typesFile: string | undefined;
+  let publicEnv = readPublicEnv(dir, env);
+  let building: PublicEnv | undefined;
   let booted = false;
   let stopping = false;
 
@@ -254,7 +180,7 @@ export async function supervise({
     return server;
   }
 
-  function swap(server: Server) {
+  function swap(server: Server, { built = false } = {}) {
     const previous = current;
     const old = proxy.switchTo(server.port);
 
@@ -263,12 +189,17 @@ export async function supervise({
     watchCrash(server);
 
     if (previous && previous.child !== server.child) {
-      draining.set(previous.slot, previous.child);
+      const servers = draining.get(previous.slot) ?? new Set();
+
+      draining.set(previous.slot, servers.add(previous.child));
 
       void (old ? drained(old, DRAIN_MS) : Promise.resolve())
         .then(() => stopServer(previous.child))
         .finally(() => {
-          if (draining.get(previous.slot) === previous.child) draining.delete(previous.slot);
+          servers.delete(previous.child);
+          if (!servers.size && draining.get(previous.slot) === servers) {
+            draining.delete(previous.slot);
+          }
         });
     }
 
@@ -277,6 +208,7 @@ export async function supervise({
       build: server.slot,
       serverPid: server.child.pid,
       lastError: undefined,
+      ...(built && { builtAt: new Date().toISOString() }),
     });
   }
 
@@ -330,12 +262,20 @@ export async function supervise({
     log.write('supervisor', `building into ${paths.distDir(slot)}`);
 
     try {
-      const old = draining.get(slot);
-
-      if (old) await exited(old);
+      await Promise.all([...(draining.get(slot) ?? [])].map(exited));
 
       rmSync(paths.build(slot), { recursive: true, force: true });
-      await runtime.prepare(app);
+      const prepared = (await runtime.prepare(app)).typesFile;
+
+      if (prepared && prepared !== typesFile) {
+        typesFile = prepared;
+        watcher?.forget(prepared);
+      }
+
+      const baked = readPublicEnv(dir, env);
+
+      building = baked;
+
       await runtime.build(app, slot);
       await syncSchema(app, reported);
 
@@ -347,7 +287,8 @@ export async function supervise({
         return;
       }
 
-      swap(server);
+      swap(server, { built: true });
+      publicEnv = baked;
       log.write('supervisor', `serving ${paths.distDir(slot)} (pid ${server.child.pid})`);
 
       if (!booted) {
@@ -365,11 +306,44 @@ export async function supervise({
       }
 
       save({ state: current ? 'update failed' : 'crashed', lastError: summarize(error) });
+    } finally {
+      building = undefined;
     }
   }
 
-  const queue = createBuildQueue(update);
-  let watcher: { close: () => void } | undefined;
+  async function restartOnEnv(): Promise<void> {
+    if (!current) return update();
+
+    const { slot } = current;
+    const { state, lastError } = registration;
+
+    try {
+      const server = await launch(slot);
+
+      if (stopping) {
+        await stopServer(server.child);
+
+        return;
+      }
+
+      swap(server);
+      if (state === 'update failed') save({ state, lastError });
+
+      log.write(
+        'supervisor',
+        `serving ${paths.distDir(slot)} with the new .env (pid ${server.child.pid})`,
+      );
+    } catch (error) {
+      log.write('supervisor', `restart failed: ${summarize(error)}`);
+      save({ lastError: `restart failed: ${summarize(error)}` });
+    }
+  }
+
+  const queue = createBuildQueue((kind: RunKind) =>
+    kind === 'restart' ? restartOnEnv() : update(),
+  );
+
+  let watcher: ReturnType<typeof watchApp> | undefined;
   let stopOwnership = () => {};
 
   const shutdown = async (reason: string, code = 0) => {
@@ -382,7 +356,7 @@ export async function supervise({
 
     await Promise.all([
       ...(current ? [stopServer(current.child)] : []),
-      ...[...draining.values()].map(stopServer),
+      ...[...draining.values()].flatMap((children) => [...children].map(stopServer)),
     ]);
 
     removeRegistration(file, registration);
@@ -436,9 +410,30 @@ export async function supervise({
 
   watcher = watchApp({
     dir,
-    onChange: () => {
-      log.write('supervisor', 'change seen; rebuilding');
-      queue.trigger();
+    ignore: () => typesFile,
+    onChange: (changed) => {
+      if (isEnvOnly(changed)) {
+        const now = readPublicEnv(dir, env);
+        const keys = [
+          ...new Set([
+            ...publicEnvChanged(publicEnv, now),
+            ...(building ? publicEnvChanged(building, now) : []),
+          ]),
+        ];
+
+        if (!keys.length) {
+          log.write('supervisor', 'only .env changed; restarting on the current build');
+          queue.trigger('restart');
+
+          return;
+        }
+
+        log.write('supervisor', `${keys.join(', ')} changed; rebuilding`);
+      } else {
+        log.write('supervisor', 'change seen; rebuilding');
+      }
+
+      queue.trigger('update');
     },
   });
 }
