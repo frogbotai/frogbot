@@ -129,7 +129,7 @@ export default buildConfig({
 });
 ```
 
-Boot locally with `frogbot dev`, generate end-to-end TypeScript types with `frogbot generate:types`, or deploy in one command with `npx frogbot deploy` (Dojo, Docker, Fly.io, Google Cloud, AWS or Azure).
+Boot locally with `frogbot dev`, generate end-to-end TypeScript types with `frogbot generate:types`, or put it online in one command with `npx frogbot deploy`.
 
 ## Features
 

@@ -86,7 +86,7 @@ which fields changed. Admins and managers can read it; nobody can edit it.
 - Add fields to tasks, such as a priority select, and show them on the board with
   `defaultFields`.
 - Add a role, such as a read-only `viewer`, in `src/roles.ts`.
-- Put it online with `npx frogbot deploy`, on Dojo, or on Docker, Fly.io, Google Cloud, AWS or Azure; see [Deployment](https://docs.frogbot.ai/deployment/overview).
+- Put it online with `npx frogbot deploy`, or run the included `Dockerfile` anywhere; see [Deployment](https://docs.frogbot.ai/deployment/overview).
 
 ## Add an AI provider
 
