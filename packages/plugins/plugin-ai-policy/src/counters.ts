@@ -1,6 +1,7 @@
 import type {
   Access,
   CollectionAfterChangeHook,
+  CollectionAfterDeleteHook,
   CollectionConfig,
   FrogBotRequest,
   Where,
@@ -179,11 +180,7 @@ export function spendOf(spend: Map<string, number>, subject: SpendSubject): numb
   return spend.get(counterKey(subject)) ?? 0;
 }
 
-/**
- * Gives every new user or key its counter in the creating transaction, so spend reads $0.00 and
- * sorts from the start. A rotated key starts from the old key's spend.
- */
-export function createCounterOnCreate(
+function createCounterOnCreate(
   field: 'user' | 'apiKey',
   collection: string,
 ): CollectionAfterChangeHook {
@@ -220,5 +217,37 @@ export function createCounterOnCreate(
     });
 
     return { ...doc, spendCounter: counter.id, spendThisPeriodUSD: amount };
+  };
+}
+
+function deleteCounterOnDelete(collection: string): CollectionAfterDeleteHook {
+  return async ({ id, req }) => {
+    await req.frogbot.delete({
+      collection: SPEND_COUNTERS_SLUG,
+      where: { key: { equals: counterKey({ collection, id }) } },
+      overrideAccess: true,
+      req,
+    });
+  };
+}
+
+/** Gives a user or key collection its spend counter: one per document, created and deleted with it. */
+export function withSpendCounter(
+  collection: CollectionConfig,
+  field: 'user' | 'apiKey',
+): CollectionConfig {
+  return {
+    ...collection,
+    hooks: {
+      ...collection.hooks,
+      afterChange: [
+        ...(collection.hooks?.afterChange ?? []),
+        createCounterOnCreate(field, collection.slug),
+      ],
+      afterDelete: [
+        ...(collection.hooks?.afterDelete ?? []),
+        deleteCounterOnDelete(collection.slug),
+      ],
+    },
   };
 }

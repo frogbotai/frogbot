@@ -36,13 +36,15 @@ The plugin needs an `ai` configuration and fails at startup without one. It adds
 | --- | --- | --- |
 | `models` | Models | Model IDs and [alias](/ai/overview#add-aliases) slugs the user may call, chosen from every configured model and alias. Leave it empty to allow all models, including ones you configure later. |
 | `monthlyBudget` | Monthly Budget (USD) | Spend limit for the month, at least `0`. Leave it empty for no limit. |
-| `spendThisPeriodUSD` | Monthly Spend (USD) | What the user has spent this month. Read-only and starts at `0`; the plugin maintains it. |
+| `spendThisPeriodUSD` | Monthly Spend (USD) | What the user has spent this month. Read-only and starts at `0`; the plugin maintains it. You can sort and filter users by it. |
 
 `monthlyBudget` and `spendThisPeriodUSD` are USD [Money fields](/fields/money).
 
+Spend isn't stored on the user. The plugin keeps it in its own hidden `plugin-ai-policy-spend` collection, one counter per user and per API key, and `spendThisPeriodUSD` is a [virtual field](/fields/overview#virtual-field-configuration) that reads the user's counter through a hidden `spendCounter` relationship. That keeps AI calls from ever writing to the user, so they can't overwrite roles, models or other fields. Whoever can read a user can read their spend: the counters follow your auth collection's read access, whatever rules you set. Your app needs the counters table, so generate a migration after adding or upgrading the plugin when you use [migrations](/database/migrations).
+
 An entry in `models` is an exact match: allowing an alias allows calls to the alias, not direct calls to the model behind it.
 
-Define a field with the same name on your auth collection to change it. Your field replaces the plugin's settings it sets, and its `admin` and `access` are merged over the plugin's. The `models` options always come from your AI config, so a `models` field can set `options: []`. For example, let only admins change budgets:
+Define a field with the same name on your auth collection to change it. Your field replaces the plugin's settings it sets, and its `admin` and `access` are merged over the plugin's. The `models` options always come from your AI config, so a `models` field can set `options: []`. An override of `spendThisPeriodUSD` can change its label and admin settings, but not its type or where spend is stored. For example, let only admins change budgets:
 
 ```ts
 {
@@ -70,13 +72,13 @@ The budget is checked when a call runs, before every AI call a signed-in user ma
 
 ## Spend
 
-After each AI call by a signed-in user, the plugin adds its cost to that user's `spendThisPeriodUSD`, priced from the model catalog or your [custom model prices](/ai/overview#custom-model-options). Failed calls and calls that cost nothing add nothing. If the spend update fails, FrogBot logs the error and the call still succeeds.
+After each AI call by a signed-in user, the plugin adds its cost to that user's spend, priced from the model catalog or your [custom model prices](/ai/overview#custom-model-options). Failed calls and calls that cost nothing add nothing. If the spend update fails, FrogBot logs the error and the call still succeeds.
 
-Spend updates for one user run one at a time within a process. Calls already running when the budget is reached still finish, and several server processes can update the same user at once, so treat the budget as a limit that can be exceeded by a few calls, not an exact cap.
+Each update is one atomic add to the counter, outside any transaction the call runs in, so parallel calls and several server processes add up exactly, and spend is kept even if the caller's transaction rolls back. Inside a transaction, the call doesn't wait for the update. Spend updates don't run collection hooks. The budget check reads the counter, not the signed-in user, so it sees spend from calls earlier in the same request. If the counter can't be read, the call fails. Calls already running when the budget is reached still finish, so treat the budget as a limit that can be exceeded by a few calls, not an exact cap.
 
 ## Monthly reset
 
-The `plugin-ai-policy-reset-spend` task sets every user's `spendThisPeriodUSD` to `0` at midnight on the first day of each month (`0 0 1 * *`), on its own `plugin-ai-policy-reset-spend` queue. Run a [worker](/jobs-queue/workers) that handles schedules for that queue, such as one started with `--all-queues --handle-schedules`.
+Spend counts per UTC calendar month. The first AI call of a month starts the counter again from that call's cost, so budgets reset on time even without a worker. The `plugin-ai-policy-reset-spend` task also sets counters from earlier months to `0` at midnight on the first day of each month (`0 0 1 * *`), on its own `plugin-ai-policy-reset-spend` queue, so users with no calls yet show `0`. Run a [worker](/jobs-queue/workers) that handles schedules for that queue, such as one started with `--all-queues --handle-schedules`.
 
 ## API key limits
 
@@ -129,7 +131,7 @@ export default buildConfig({
 })
 ```
 
-To charge for calls, add an `afterOperation` [hook](/ai/overview#observe-calls) that prices the call's usage with `calculateUsageCostUSD({ model, providers, usage })` from `frogbot` and updates the user.
+To charge for calls, add an `afterOperation` [hook](/ai/overview#observe-calls) that prices the call's usage with `calculateUsageCostUSD({ model, providers, usage })` from `frogbot`. Record the charge in a collection of its own with a single atomic write, such as `req.frogbot.db.updateOne({ collection, where, data: { balance: { $inc: -cost } }, options: { atomic: true } })`, not by updating the user: a full update of the user from a hook rewrites all of its fields and can undo changes made at the same moment.
 
 ## Options
 

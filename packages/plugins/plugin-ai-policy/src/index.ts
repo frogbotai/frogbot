@@ -7,7 +7,7 @@ import {
 } from 'frogbot';
 
 import { createPolicyAccess } from './access.js';
-import { createCounterOnCreate, createSpendCounters } from './counters.js';
+import { createSpendCounters, withSpendCounter } from './counters.js';
 import { createPolicyFields, mergePolicyFields } from './fields.js';
 import { createPolicyHooks } from './hooks.js';
 import { createKeyLimitFields, keyLimitsCreateFields, withKeyLimits } from './keys.js';
@@ -81,15 +81,17 @@ const aiPolicy = definePlugin<AIPolicyPluginOptions>({
       ? createKeyLimitFields({ authCollection, titleField, models })
       : [];
 
-    const fallback: CollectionConfig = {
-      slug: authCollection,
-      authorship: false,
-      custom: { frogbot: { internal: true } },
-      admin: { icon: 'people', useAsTitle: 'name' },
-      auth: { tokenExpiration: 7200 },
-      fields: [{ name: 'name', type: 'text' }, ...fields],
-      hooks: { afterChange: [createCounterOnCreate('user', authCollection)] },
-    };
+    const fallback: CollectionConfig = withSpendCounter(
+      {
+        slug: authCollection,
+        authorship: false,
+        custom: { frogbot: { internal: true } },
+        admin: { icon: 'people', useAsTitle: 'name' },
+        auth: { tokenExpiration: 7200 },
+        fields: [{ name: 'name', type: 'text' }, ...fields],
+      },
+      'user',
+    );
 
     return {
       ...config,
@@ -105,32 +107,17 @@ const aiPolicy = definePlugin<AIPolicyPluginOptions>({
       collections: [
         ...config.collections.map((collection) => {
           if (collection.slug === authCollection) {
-            return {
-              ...collection,
-              fields: mergePolicyFields(collection.fields, fields),
-              hooks: {
-                ...collection.hooks,
-                afterChange: [
-                  ...(collection.hooks?.afterChange ?? []),
-                  createCounterOnCreate('user', collection.slug),
-                ],
-              },
-            };
+            return withSpendCounter(
+              { ...collection, fields: mergePolicyFields(collection.fields, fields) },
+              'user',
+            );
           }
 
           if (collection.slug === keysCollection) {
-            const limited = withKeyLimits(collection, keyFields, { models, titleField });
-
-            return {
-              ...limited,
-              hooks: {
-                ...limited.hooks,
-                afterChange: [
-                  ...(limited.hooks?.afterChange ?? []),
-                  createCounterOnCreate('apiKey', collection.slug),
-                ],
-              },
-            };
+            return withSpendCounter(
+              withKeyLimits(collection, keyFields, { models, titleField }),
+              'apiKey',
+            );
           }
 
           return collection;

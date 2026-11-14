@@ -4,6 +4,14 @@ import { SPEND_COUNTERS_SLUG } from './counters.js';
 
 const names = new Set(['models', 'monthlyBudget', 'spendCounter', 'spendThisPeriodUSD']);
 
+const spendNames = new Set(['spendCounter', 'spendThisPeriodUSD']);
+
+function keepSpendShape(field: Field): Record<string, unknown> {
+  const { type, virtual, relationTo } = field as Record<string, unknown>;
+
+  return { type, virtual, relationTo, hasMany: false, localized: false };
+}
+
 /** The link to the subject's spend counter, and this month's spend read through it. */
 export function createSpendFields(custom?: Record<string, unknown>): Field[] {
   return [
@@ -12,9 +20,7 @@ export function createSpendFields(custom?: Record<string, unknown>): Field[] {
       type: 'relationship',
       relationTo: SPEND_COUNTERS_SLUG,
       access: { create: () => false, update: () => false },
-      admin: { hidden: true, disableListColumn: true, disableListFilter: true } as {
-        hidden: true;
-      },
+      admin: { disabled: true },
       ...(custom && { custom }),
     },
     moneyField({
@@ -79,6 +85,7 @@ export function mergePolicyFields(fields: Field[], policy: Field[]): Field[] {
       ...mergeObject('access', field, override),
       ...mergeObject('custom', field, override),
       ...('options' in field && { options: field.options }),
+      ...('name' in field && spendNames.has(field.name) && keepSpendShape(field)),
     } as Field;
   });
 
