@@ -3,7 +3,7 @@ import { parseArgs } from 'node:util';
 import { ShareError } from './error.js';
 
 const usage = (program: string) =>
-  `Usage: ${/dojo$/.test(program) ? `${program} apps share` : `${program} deploy dojo`} [--app <slug or id>] [--data | --no-data | --replace-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys]`;
+  `Usage: ${/dojo$/.test(program) ? `${program} apps share` : `${program} deploy dojo`} [--app <slug or id>] [--data | --no-data | --replace-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys] [--wait]`;
 
 /** `share`'s own flags. */
 export type ShareFlags = {
@@ -16,6 +16,8 @@ export type ShareFlags = {
   skipKey: string[];
   yes: boolean;
   updateKeys: boolean;
+  /** Wait for a sign-in or a payment without a terminal, instead of exiting 3 or 4 with its link. */
+  wait: boolean;
 };
 
 /** Parses `share`'s flags; a bad one stops with the usage line and exit code 2. */
@@ -35,6 +37,7 @@ export function parseShareArgs(argv: string[], program: string): ShareFlags {
         'skip-key': { type: 'string', multiple: true, default: [] },
         yes: { type: 'boolean', default: false },
         'update-keys': { type: 'boolean', default: false },
+        wait: { type: 'boolean', default: false },
       },
       allowNegative: true,
       strict: true,
@@ -81,5 +84,6 @@ export function parseShareArgs(argv: string[], program: string): ShareFlags {
     skipKey: values['skip-key'],
     yes: values.yes,
     updateKeys: values['update-keys'],
+    wait: values.wait,
   };
 }

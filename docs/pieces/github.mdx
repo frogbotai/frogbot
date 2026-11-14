@@ -76,7 +76,10 @@ After its first reply, the bot follows the conversation and answers every new co
 
 FrogBot matches a commenter to a FrogBot user by the email address on their public GitHub profile. Most GitHub accounts don't show an email, so most commenters arrive without a FrogBot user. The default agent `access` check requires a signed-in user and denies them. Write an `access` function for every agent that uses GitHub.
 
-`req.context.channel.author` holds the GitHub user `id` and login as `username`. The example above admits a fixed list of user IDs; find a user's ID at `https://api.github.com/users/<login>`. Prefer IDs to logins: a login can be renamed, and someone else can then claim it. To admit a repository's collaborators instead, look up the commenter with the GitHub API in your `access` function.
+`req.context.channel.author` holds the GitHub user `id` and login as `username`.
+
+- **Fixed list.** The example above admits a fixed list of user IDs. Find a user's ID at `https://api.github.com/users/<login>`. Prefer IDs to logins, because a login can be renamed and someone else can then claim it.
+- **Collaborators.** To admit a repository's collaborators instead, look up the commenter with the GitHub API in your `access` function.
 
 Anyone who passes the check can answer, including a teammate who did not start the conversation. FrogBot records the GitHub login on the answer. Someone who fails the check and comments `/answer` or `/dismiss` while the question is open gets a short reply saying they don't have access, and the question stays open. Their other comments are ignored.
 

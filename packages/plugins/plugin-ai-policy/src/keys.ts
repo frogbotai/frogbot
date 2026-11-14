@@ -9,7 +9,7 @@ import {
   type Validate,
 } from 'frogbot';
 
-import { mergePolicyFields } from './fields.js';
+import { createSpendFields, mergePolicyFields } from './fields.js';
 import { formatUSD, type PolicyKey, policyKey, readPolicy } from './policy.js';
 
 export type KeyLimitsOptions = {
@@ -178,20 +178,7 @@ export function createKeyLimitFields(options: KeyLimitsOptions): Field[] {
         components: { Description: { path: `${rsc}#KeyBudgetDescription`, serverProps } },
       },
     }),
-    moneyField({
-      name: 'spendThisPeriodUSD',
-      label: 'Monthly Spend (USD)',
-      defaultValue: 0,
-      access: { update: () => false },
-      admin: { readOnly: true, position: 'sidebar' },
-      custom: bounded,
-      hooks: {
-        beforeChange: [
-          ({ operation, req, value }) =>
-            operation === 'create' && !isRotated(req) ? 0 : (value as unknown),
-        ],
-      },
-    }),
+    ...createSpendFields(bounded),
   ];
 }
 

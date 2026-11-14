@@ -241,11 +241,26 @@ The following options are available:
 
 `admin.views` accepts `CollectionView[]`. `CollectionView` is the exported union `ListView | BoardView | GalleryView | CalendarView | CustomView`.
 
-Every view renders in one frame: the collection title, a row of view tabs under it, one toolbar (search, Filters, Group by, Columns, Sort and Create New, in the same order on every view), the view's slots and its empty state. The array order sets the tab order and the collection's default view. A collection can have at most one list view, and it must be first. Omit `views` to use one default list view, which shows no tab row.
+Every view renders in one frame:
+
+- The collection title.
+- A row of view tabs under the title.
+- One toolbar: search, Filters, Group by, Columns, Sort, and Create New, in the same order on every view.
+- The view's slots and its empty state.
+
+The array order sets the tab order and the collection's default view. A collection can have at most one list view, and it must be first. Omit `views` to use one default list view, which shows no tab row.
 
 Each tab shows its view's `icon` and `label` and links to the view's own route, so a view's URL can be shared and keeps its `access` rule. Trash, when the collection has it, follows the views in the same row. Below the small breakpoint (768px) the tabs become one menu. Opening the collection again returns to the view the user last picked with the tabs.
 
-A view is a saved setup, not just a layout. Config gives each view its defaults (`filter`, `defaultSort`, `defaultFields`, `pagination`), and whatever a user changes in a view (filters, sort, columns, page size and grouping) is saved for that user and that view in the `collection-<slug>-view-<viewSlug>` preference. A URL that sets none of them opens the saved setup. **Reset to default** in the view menu deletes it and returns to the config. A URL that sets any of them is saved as the setup, and filters it leaves out are cleared. Custom views own their content, so they save no setup and have no reset.
+A view is a saved setup, not just a layout.
+
+- **Config sets the defaults.** Each view gets its `filter`, `defaultSort`, `defaultFields`, and `pagination` from config.
+- **User changes are saved.** Whatever a user changes in a view (filters, sort, columns, page size, and grouping) is saved for that user and that view in the `collection-<slug>-view-<viewSlug>` preference.
+- **A URL that sets none of them** opens the saved setup.
+- **A URL that sets any of them** is saved as the setup, and the filters it leaves out are cleared.
+- **Reset to default** in the view menu deletes the saved setup and returns to the config.
+
+Custom views own their content, so they save no setup and have no reset.
 
 View entries are plain, serializable data: `filter` is a `Where` object and React lives only in `components`. `access` is the one function a view takes.
 
@@ -332,7 +347,16 @@ These shell slots are shared by list, board, gallery, calendar, timeline, and cu
 
 #### Grouping
 
-List and board views group by the same rules. `groupBy` names a select, radio, relationship (including users), upload, checkbox, text, textarea, number, email or date field, top level or a dot path into a group; any other type, a relationship to several collections, or a virtual field stops startup. A field stays out of the toolbar's **Group** control with `admin.disabled.groupBy`. Prefix the path with `-` to reverse the group order.
+List and board views group by the same rules.
+
+| `groupBy` names | Result |
+| --- | --- |
+| A select, radio, relationship (including users), upload, checkbox, text, textarea, number, email, or date field. The field is top level or a dot path into a group. | The view groups by it. |
+| Any other type, a relationship to several collections, or a virtual field | Startup stops. |
+
+Prefix the path with `-` to reverse the group order. A field stays out of the toolbar's **Group** control with `admin.disabled.groupBy`.
+
+Groups form by these rules:
 
 - Select and radio groups follow the field's option order and show every option, empty ones with `0`. A stored value that is no longer an option gets its own group after them. Checkbox groups are **True**, then **False**.
 - Other fields show one group per value present under the view's filter and search.
@@ -346,7 +370,16 @@ views: [
 ];
 ```
 
-In a grouped list, each group has a collapse chevron, its count, a select-all for the rows on its page and **+ Add**, which opens the create form with the group's value filled in (nothing in **No value**, and no button without create access to the collection or the group field). Collapsed groups are saved per person per view, and **Reset to default** clears them with the rest of the view's setup. Groups of option fields all show on one page; groups of other fields are paged by the list's page size. Each group pages its own rows with the view's sort. A field behind a read access function, a hidden field, or a relationship to several collections chosen from the **Group** control falls back to the standard grouped list instead.
+In a grouped list, each group has:
+
+- A collapse chevron. Collapsed groups are saved per person per view, and **Reset to default** clears them with the rest of the view's setup.
+- Its count.
+- A select-all for the rows on its page.
+- **+ Add**, which opens the create form with the group's value filled in. **No value** fills nothing in. The button is missing without create access to the collection or the group field.
+
+Groups of option fields all show on one page. Groups of other fields are paged by the list's page size. Each group pages its own rows with the view's sort.
+
+A field chosen from the **Group** control falls back to the standard grouped list when it is behind a read access function, is hidden, or is a relationship to several collections.
 
 #### BoardView
 
@@ -390,7 +423,15 @@ See [Collection gallery](/admin/collection-gallery) for layout, paging and card 
 
 #### Card images
 
-Board and gallery cards show an image from the collection's `admin.useAsThumbnail`. Startup checks that it names a top-level upload field and, when it's unset, uses the collection's first upload field. On an upload collection with no upload field, such as `media`, each card shows the document's own file. On an upload collection, a card whose image field is empty also falls back to the document's own file. Other collections never draw a document from its own fields. Each board or gallery can change this for its own cards:
+Board and gallery cards show an image from the collection's `admin.useAsThumbnail`. Startup checks that it names a top-level upload field. When it's unset, FrogBot uses the collection's first upload field.
+
+Upload collections can fall back to the document's own file:
+
+- On an upload collection with no upload field, such as `media`, each card shows the document's own file.
+- On an upload collection, a card whose image field is empty also shows the document's own file.
+- Other collections never draw a document from its own fields.
+
+Each board or gallery can change the image for its own cards:
 
 - `useAsThumbnail: '<field>'` uses another top-level upload field. A bad name stops startup with an error naming the collection, the view and the field.
 - `useAsThumbnail: false` shows no images on that view.
@@ -490,7 +531,11 @@ export const Tasks: CollectionConfig = {
 }
 ```
 
-With it set, board and gallery cards, calendar events, timeline bars and list rows show done records in one done style: a green check, a muted title, and a struck-through title in the list. Board and gallery cards get a check circle that toggles the field. Toggling is an ordinary update, so field-level `update` access applies, and without it the check is read-only. To tie a stage to done ("won means done"), set the field in a `beforeChange` hook.
+With it set, board and gallery cards, calendar events, timeline bars, and list rows show done records in one done style: a green check, a muted title, and a struck-through title in the list.
+
+Board and gallery cards get a check circle that toggles the field. Toggling is an ordinary update, so field-level `update` access applies, and without it the check is read-only.
+
+To tie a stage to done ("won means done"), set the field in a `beforeChange` hook.
 
 The record open in a document drawer shows one selected style on every view until the drawer closes. Both styles read the admin's theme tokens and sit in FrogBot's CSS layer, so app CSS overrides them.
 
@@ -520,7 +565,7 @@ The following options are available:
 | `CreateButton` | `FrogBotComponent` | Built-in Create New | Replaces the **Create New** button in the toolbar and the list view's empty state, on every view type. It renders whatever `create` access says and receives `hasCreatePermission`; `create` access still governs REST and GraphQL create, the document view and relationship drawers. Below the small breakpoint it follows `toolbar`. [More details](/custom-components/list-view#createbutton). |
 | `Description` | `FrogBotComponent` | Built-in description | Replaces the collection description. [More details](/custom-components/list-view#description). |
 | `edit` | `object` | — | Edit View component slots. [More details](#edit-view-options). |
-| `panel` | `RecordPanelComponents` | — | Record side panel slots: `actions`, `beforeFields`, `afterFields`, `Header` and `Component`. [More details](/admin/record-panel#components). |
+| `panel` | `RecordPanelComponents` | — | Record side panel slots: `actions`, `beforeFields`, `afterFields`, `footer`, `Header` and `Component`. [More details](/admin/record-panel#components). |
 
 List slots belong to a `type: 'list'` entry in `admin.views`: use `components.beforeView`, `toolbar`, `beforeTable`, `afterTable`, `afterView`, and `NoResults`. To replace the collection list, use a `type: 'custom'` entry with `component`. See [List View](/custom-components/list-view).
 

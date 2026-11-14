@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { buildConfig, type FrogBotConfig } from 'frogbot';
+import { toPayloadRequest } from 'frogbot/internal';
 import { FrogBot, getFrogBotPayload } from 'frogbot/test';
 import {
   type BaseDatabaseAdapter,
@@ -325,9 +326,11 @@ export async function bootJobsFixture({
                 await gate.release.promise;
               }
 
-              await actions.get(input.marker)?.(req);
+              const payloadReq = toPayloadRequest(req);
 
-              await req.payload.create({
+              await actions.get(input.marker)?.(payloadReq);
+
+              await payloadReq.payload.create({
                 collection: 'effects',
                 data: { jobRecord: String(job.id), marker: input.marker, owner },
                 overrideAccess: true,
@@ -358,8 +361,10 @@ export async function bootJobsFixture({
 
               return { output: {} };
             },
-            onFail: ({ job, req }) => recordCallback({ job, req, event: 'onFail' }),
-            onSuccess: ({ job, req }) => recordCallback({ job, req, event: 'onSuccess' }),
+            onFail: ({ job, req }) =>
+              recordCallback({ job, req: toPayloadRequest(req), event: 'onFail' }),
+            onSuccess: ({ job, req }) =>
+              recordCallback({ job, req: toPayloadRequest(req), event: 'onSuccess' }),
           },
         ],
         jobsCollectionOverrides: ({ defaultJobsCollection }) => ({

@@ -6,15 +6,15 @@ import { buildConfig } from '../../../../packages/frogbot/src/config/build.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import { autonumberField } from '../../../../packages/frogbot/src/fields/baseFields/autonumber/index.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import { aiCapturePlugin } from '../../../../packages/plugins/plugin-ai-capture/src/index.js';
+import { aiUsagePlugin } from '../../../../packages/plugins/plugin-ai-usage/src/index.js';
 import { apiKeysPlugin } from '../../../../packages/plugins/plugin-api-keys/src/index.js';
 import { auditLogPlugin } from '../../../../packages/plugins/plugin-audit-log/src/index.js';
-import { capturePlugin } from '../../../../packages/plugins/plugin-capture/src/index.js';
 import { importExportPlugin } from '../../../../packages/plugins/plugin-import-export/src/index.js';
 import { nestedDocsPlugin } from '../../../../packages/plugins/plugin-nested-docs/src/index.js';
 import { redirectsPlugin } from '../../../../packages/plugins/plugin-redirects/src/index.js';
 import { rolesPlugin } from '../../../../packages/plugins/plugin-roles/src/index.js';
 import { seoPlugin } from '../../../../packages/plugins/plugin-seo/src/index.js';
-import { usageReportsPlugin } from '../../../../packages/plugins/plugin-usage-reports/src/index.js';
 
 const CASCADED = ['api-keys.owner', 'connections.owner', 'messages.chat'];
 
@@ -94,8 +94,8 @@ describe('required relationships', () => {
         rolesPlugin(),
         apiKeysPlugin(),
         auditLogPlugin(),
-        capturePlugin(),
-        usageReportsPlugin(),
+        aiCapturePlugin(),
+        aiUsagePlugin(),
         importExportPlugin({ collections: [{ slug: 'pages' }] }),
         nestedDocsPlugin({ collections: ['pages'] }),
         redirectsPlugin({ collections: ['pages'] }),

@@ -54,12 +54,46 @@ To remove the sample data, delete its records in the admin panel. To remove the 
 `src/seed/` and `src/components/SeedPanel.tsx`, then remove `seedEndpoint()` and the `SeedPanel`
 entry from `src/frogbot.config.ts` and run `npm run generate:importmap`.
 
+## Roles
+
+Every user has a role, set in the **Roles** field of their user record. The first account, the one
+you create on an empty app, is an admin. Users an admin adds are members unless the admin picks
+another role.
+
+| Role    | Can                                                                                                                                                                                                                       |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Admin   | Everything, and the only role that adds, removes or changes the role of users                                                                                                                                             |
+| Manager | Create, edit and delete any company, contact, deal, activity, task or media, and read the audit log                                                                                                                       |
+| Member  | Read everything and create records. A member's new record is theirs (its owner, or a task's assignee), and they edit only their own. Only admins and managers change a record's owner or assignee. Members delete nothing |
+
+Everyone can edit their own name, email and password. Only admins set a user's AI budget and models.
+The rules are in `src/roles.ts`; change them there.
+
+## Import a CSV
+
+Open companies, contacts, deals, activities or tasks, then choose **Import** (for example
+**Import Companies**) from the **⋮** menu beside **Create New**. Pick a CSV, such as an
+export from Airtable, Salesforce or a spreadsheet, and match each column to a field. A column that
+names a related record, such as a contact's company, links to it by name, and **Create missing**
+adds the ones that don't exist yet. Import companies first, then contacts and deals. The preview
+shows each row before you start, and the import runs as you, so your role's rules apply: a member's
+imported rows are theirs. **Export** in the same place downloads a CSV or JSON file.
+
+See [Import and export](https://docs.frogbot.ai/plugins/import-export) for the details.
+
+## Audit log
+
+Every create, update and delete in the app is saved to **Audit Logs**, with who made it, when, and
+which fields changed. Admins and managers can read it; nobody can edit it.
+
 ## Project layout
 
 | Path                            | Description                                                      |
 | ------------------------------- | ---------------------------------------------------------------- |
 | `src/frogbot.config.ts`         | Your FrogBot config — agents, collections, providers             |
 | `src/collections/`              | Companies, contacts, deals, activities, tasks, users and media   |
+| `src/roles.ts`                  | The roles and who can do what                                    |
+| `src/importExport.ts`           | Which collections import and export, and who deletes a run       |
 | `src/seed/`                     | The sample data, its logos and the `POST /api/seed` endpoint     |
 | `src/components/SeedPanel.tsx`  | The dashboard panel with the sample data button                  |
 | `src/agents/`                   | The `assistant` agent (removed with `--ai none`)                 |
@@ -70,7 +104,7 @@ entry from `src/frogbot.config.ts` and run `npm run generate:importmap`.
 ## Next steps
 
 - Add the stages your team uses to the deal `stage` select; the board gets a column for each.
-- Restrict who can see and edit records with collection `access` before deploying.
+- Add a role, such as a read-only `viewer`, in `src/roles.ts`.
 - Put it online with `npx frogbot share`; see [`share`](https://docs.frogbot.ai/getting-started/cli#share).
 
 ## Add an AI provider

@@ -36,7 +36,23 @@ export function Providers({ children }: { children: React.ReactNode }) {
 }
 ```
 
-Tool kinds without a registration use the generic tool card: a closed card with a wrench icon, the tool's name and a one-line summary of its input. While the call runs the icon is a spinner; when it finishes the icon turns green, and a failed or denied call turns it red and starts the title with **Failed:** or **Denied:**. Opening it shows the input, then the output, error or denial reason, scrolling past 240px. An output in MCP's `CallToolResult` shape, `{ content: [...] }`, shows its `{ type: 'text', text }` items as text and its `{ type: 'image', data, mimeType }` items with an `image/*` type as images, in order; anything else shows as JSON. Artifact kinds without a registration show their title, kind, and serialized content rather than throwing.
+Tool kinds without a registration use the generic tool card: a closed card with a wrench icon, the tool's name, and a one-line summary of its input.
+
+| Call | Card |
+| --- | --- |
+| Running | The icon is a spinner. |
+| Finished | The icon turns green. |
+| Failed or denied | The icon turns red, and the title starts with **Failed:** or **Denied:**. |
+
+Opening the card shows the input, then the output, error, or denial reason, scrolling past 240px.
+
+An output in MCP's `CallToolResult` shape, `{ content: [...] }`, shows its items in order:
+
+- `{ type: 'text', text }` items show as text.
+- `{ type: 'image', data, mimeType }` items with an `image/*` type show as images.
+- Anything else shows as JSON.
+
+Artifact kinds without a registration show their title, kind, and serialized content rather than throwing.
 
 ## Tool cards
 
@@ -140,7 +156,9 @@ It reads `CompactionPartData`:
 
 While `status` is `running`, it shows **Compacting…** with a spinner and no closing divider. Data in any other shape shows as JSON.
 
-`SteeredPart` renders a `data-steered` part, a message the user [steered](/chat/ui-chat#queued-messages) into a running reply, as a user bubble where the reply took it. Register it as `{ kind: 'steered', render: SteeredPart }`. It reads `SteeredPartData`, `{ messageId: string, text: string }`; data in any other shape shows as JSON.
+`SteeredPart` renders a `data-steered` part as a user bubble where the reply took it. A `data-steered` part is a message that the user [steered](/chat/ui-chat#queued-messages) into a running reply.
+
+Register it as `{ kind: 'steered', render: SteeredPart }`. It reads `SteeredPartData`, `{ messageId: string, text: string }`. Data in any other shape shows as JSON.
 
 ## Artifact options
 
@@ -226,7 +244,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 Typing `/` as the whole input opens a menu of the enabled commands whose `id` or `title` contains the text after it. Typing `@` at the start or after a space searches every mention source and groups the results by source. In both menus Tab or Enter picks, Up and Down or Ctrl+N and Ctrl+P move, and Escape closes the menu.
 
-Picking a command without `arguments` clears the input and runs it. Picking one with `arguments` writes `/id `; sending `/id rest` then calls `execute(rest)`. Either way the text clears, attachments stay, nothing is sent or added to history, and it works while a reply streams. In `<Chat>`, a command that rejects shows `Command failed: <message>`.
+- **A command without `arguments`.** Picking it clears the input and runs it.
+- **A command with `arguments`.** Picking it writes `/id `. Sending `/id rest` then calls `execute(rest)`.
+
+Either way, the text clears, attachments stay, nothing is sent or added to history, and the command works while a reply streams. In `<Chat>`, a command that rejects shows `Command failed: <message>`.
 
 Picking a mention inserts a chip that reads `@label`. One Backspace removes it. `<Chat>` sends the chip's `@label` in the text and a `data-mention` part for it; see [Composer prompt](/chat/ui-custom-shell#composer-prompt).
 

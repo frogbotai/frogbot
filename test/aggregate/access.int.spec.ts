@@ -156,7 +156,11 @@ describe(`aggregate access [${adapterLabel}]`, () => {
 
   it('blanks only the column of a field with a read rule, in groups and in the one row', async () => {
     const req = await signIn(seed.users.cy);
-    const values = { deals: { count: true }, margin: { sum: 'margin' }, total: { sum: 'amount' } };
+    const values = {
+      deals: { count: true },
+      margin: { sum: 'margin' },
+      total: { sum: 'amount' },
+    } satisfies AggregateValues<typeof dealsSlug>;
 
     const board = await booted.frogbot.aggregate({
       collection: dealsSlug,

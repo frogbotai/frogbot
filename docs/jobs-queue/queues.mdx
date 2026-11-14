@@ -1,0 +1,326 @@
+---
+title: 'Queue and run jobs'
+description: 'Queue jobs from hooks and endpoints, run them from code, a worker, or a cron URL, and check, cancel, and inspect them.'
+keywords: ['jobs', 'queue', 'run', 'jobId', 'cancel', 'processingOrder', 'cron', 'leases']
+---
+
+A job is one run of a [task](/jobs-queue/tasks) or [workflow](/jobs-queue/workflows), stored as a record in your database. A queue is a name on that record. Queuing a job only saves it; a runner that covers its queue claims and runs it later.
+
+Use the API through `req.frogbot.jobs` in hooks and endpoints, or `frogbot.jobs` on your initialized instance.
+
+## Queue a job
+
+```ts
+const job = await req.frogbot.jobs.queue({
+  task: 'sync-user',
+  input: { userId: '42' },
+  queue: 'sync',
+  jobId: 'sync-user-42',
+  overrideAccess: true,
+  req,
+})
+```
+
+Use `workflow` instead of `task` for a registered workflow. Pass `waitUntil: new Date(...)` to delay the job. An explicit `queue` takes precedence over the workflow's configured queue; otherwise jobs use `default`.
+
+### Where to queue
+
+| From | How |
+| --- | --- |
+| A collection or field hook | `req.frogbot.jobs.queue({ ..., overrideAccess: true, req })`. Passing `req` puts the job in the hook's transaction. |
+| A custom endpoint | `req.frogbot.jobs.queue({ ..., req })`. Leave `overrideAccess` off to check `jobs.access.queue` against the signed-in user. |
+| A server function or script | `frogbot.jobs.queue({ ..., overrideAccess: true })` after your own checks. |
+
+For example, notify subscribers when a post is published:
+
+```ts
+{
+  slug: 'posts',
+  hooks: {
+    afterChange: [
+      async ({ doc, previousDoc, req }) => {
+        if (doc.status === 'published' && previousDoc?.status !== 'published') {
+          await req.frogbot.jobs.queue({
+            task: 'notify-subscribers',
+            input: { postId: String(doc.id) },
+            overrideAccess: true,
+            req,
+          })
+        }
+      },
+    ],
+  },
+}
+```
+
+And from a server function, after checking the user yourself:
+
+```ts
+'use server'
+
+import { headers } from 'next/headers'
+import { getFrogBot } from 'frogbot'
+import config from '@frogbot-config'
+
+export async function exportMyData() {
+  const frogbot = await getFrogBot({ config })
+  const { user } = await frogbot.auth({ headers: await headers() })
+
+  if (!user) throw new Error('Sign in to export your data.')
+
+  await frogbot.jobs.queue({
+    task: 'export-user-data',
+    input: { userId: String(user.id) },
+    overrideAccess: true,
+  })
+}
+```
+
+### Queue options
+
+Every method that accepts `req` takes a `FrogBotRequest`. `overrideAccess` defaults to `false`, which runs the matching [`jobs.access`](#access) rule against `req.user`; pass `true` to skip it.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `task` | `string` | Required unless `workflow` is set | Slug of a registered task. Can't be combined with `workflow`. |
+| `workflow` | `string` | Required unless `task` is set | Slug of a registered workflow. |
+| `input` | `object` | Required | Input matching the task or workflow `inputSchema`. |
+| `queue` | `string` | The workflow's `queue`, otherwise `'default'` | Queue to add the job to. |
+| `waitUntil` | `Date` | — | The job is not eligible to run before this time. |
+| `jobId` | `string` | — | Reserves the ID while the job or its workflow is unfinished. See [Reserve a `jobId`](#reserve-a-jobid). |
+| `meta` | `Record<string, unknown>` | — | Extra data stored on the job record. |
+| `overrideAccess` | `boolean` | `false` | `true` skips `jobs.access.queue`. |
+| `req` | `FrogBotRequest` | — | Request used for the access check. |
+
+### Reserve a `jobId`
+
+`jobId` is an optional string, unique among unfinished jobs across all tasks, workflows, and queues. It stays reserved while the job is waiting (including a future `waitUntil`), processing, failed with retries left, or paused at `waitFor`. A paused workflow keeps it through delays, resumable waits, expiry, and the resumed run.
+
+A duplicate `jobs.queue` with a reserved `jobId` creates nothing, does not throw, and resolves with the existing job record: the same `id`, original task or workflow, input, queue, `waitUntil`, and `meta`. The new call's arguments are ignored, so use an ID that identifies the work, not just the caller. Concurrent calls from many instances end with one job on every supported database, subject to the MongoDB transaction exception below.
+
+- The returned `job.id` remains the generated primary key. Use it for `runByID` and `cancelByID`.
+- Omitting `jobId` preserves ordinary enqueue behavior; multiple jobs can omit it.
+- Completion, failure for good, cancellation, or deletion frees the ID. Completion frees it whether the record is kept or deleted, with either `jobs.deleteJobOnComplete` setting.
+
+`jobId` means “first live job wins; later duplicates are absorbed.” `concurrency.supersedes` instead deletes older pending jobs with the same `concurrencyKey` first, including paused workflows, freeing their IDs before inserting the replacement. A job that is already processing is not superseded; the duplicate resolves with it.
+
+`jobId` is not an “only ever once” key and does not give exactly-once execution. After a job finishes, the same ID queues new work; recovery can also repeat an external side effect. Check your own records for side effects that must happen once.
+
+#### Transactions
+
+A duplicate inside your transaction resolves with the existing job and leaves the transaction usable on Postgres and SQLite. On Postgres, a duplicate of a job inserted by another still-open transaction waits until that transaction ends.
+
+On MongoDB, if two uncommitted transactions enqueue the same new `jobId` at the same moment, the server aborts the losing transaction with its retryable transient transaction error. FrogBot passes that error through unchanged; retry the whole transaction. Duplicates of committed jobs and calls outside a transaction do not error because of a duplicate. Unrelated database errors still reject.
+
+## Run jobs
+
+Pick one way to run jobs for each queue:
+
+| Runner | Best for | Setup |
+| --- | --- | --- |
+| Worker process | Servers and containers | `frogbot jobs:run --all-queues --handle-schedules`. See [Job workers](/jobs-queue/workers). |
+| `jobs.autoRun` | A single always-on server | Cron entries in your config. Runs inside the web process. See [Autorun options](/jobs-queue/overview#autorun-options). |
+| Run URL | Serverless hosts | An external cron calls `GET /api/payload-jobs/run`. See [Run jobs over HTTP](#run-jobs-over-http). |
+| `jobs.run` | Tests, scripts, custom loops | Call it from your own code. |
+
+Every runner needs to cover the queues your jobs use. Keep one covering `default` too: FrogBot's own `frogbot-sweep-waitpoints` task runs there every minute.
+
+### Local API
+
+| Method | Purpose |
+| --- | --- |
+| `queue({ task, input, ... })` or `queue({ workflow, input, ... })` | Create a job, or return the unfinished job that holds its `jobId`. |
+| `run({ queue, limit, ... })` | Claim and await one batch; defaults to 10 jobs from `default`. |
+| `runByID({ id, ... })` | Run one job by its generated record ID, ignoring `waitUntil`. |
+| `handleSchedules({ allQueues, queue, req })` | Queue due scheduled jobs without running them. |
+| `cancel({ where, queue, ... })` | Cancel matching unfinished jobs. |
+| `cancelByID({ id, ... })` | Cancel one job by its generated record ID. |
+| `resume({ token, data, req? })` | Accept a response to a durable wait and wake the paused job. See [Durable waits](/jobs-queue/waits#resume-from-code). |
+
+For example, a maintenance loop can schedule and run across every queue:
+
+```ts
+await frogbot.jobs.handleSchedules({ allQueues: true, req })
+
+await frogbot.jobs.run({ allQueues: true, limit: 10, req, overrideAccess: true })
+```
+
+Jobs in a batch run in parallel unless `sequential: true`. Queue, run, and cancel operations run the matching `jobs.access` rule unless `overrideAccess: true` is passed. The default rule allows a signed-in user, so workers, crons and other calls without a user pass `overrideAccess: true`.
+
+An exceptional completion or database-write failure can reject a batch before already-started sibling work finishes. The batch promise does not guarantee that siblings have drained after such a failure.
+
+<Note>
+  Local API `run({ limit: 0 })` means unlimited. Only the worker CLI treats
+  `--limit 0` as “run no jobs.”
+</Note>
+
+### Run options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `queue` | `string` | `'default'` | Queue to claim jobs from. |
+| `allQueues` | `boolean` | `false` | Claim from every queue; `queue` is ignored. |
+| `limit` | `number` | `10` | Maximum jobs to claim in this batch. `0` means unlimited. |
+| `where` | `Where` | — | Extra filter on which jobs are claimed. |
+| `processingOrder` | `Sort` | [`jobs.processingOrder`](/jobs-queue/overview#jobs-options) | Sort for this batch, such as `'createdAt'` for oldest first. |
+| `sequential` | `boolean` | `false` | Run the claimed jobs one at a time instead of in parallel. |
+| `silent` | `boolean \| { info?: boolean; error?: boolean }` | `false` | Suppress the job system's info logs, error logs, or both. Your own logging is unaffected. |
+| `overrideAccess` | `boolean` | `false` | `true` skips `jobs.access.run`. |
+| `req` | `FrogBotRequest` | — | Request used for the access check and passed to handlers. |
+
+| Method | Options |
+| --- | --- |
+| `runByID` | `id` (required), `overrideAccess`, `req`, and `silent`, as for `run`. |
+| `handleSchedules` | `allQueues` (default `false`), `queue` (default `'default'`), and `req`. Queues due jobs for tasks and workflows with a `schedule` in the selected queues. |
+| `cancel` | `where` (required), `queue`, `overrideAccess`, and `req`. Runs `jobs.access.cancel` unless `overrideAccess: true`. |
+| `cancelByID` | `id` (required), `overrideAccess`, and `req`. |
+| `resume` | `token` (required), `data` (required JSON value), and `req`. See [Durable waits](/jobs-queue/waits#resume-from-code). |
+
+### Run jobs over HTTP
+
+FrogBot mounts two `GET` routes on the jobs collection, under your API prefix. Both check `jobs.access.run`, and answer `401` when it fails.
+
+| Route | What it does | Response |
+| --- | --- | --- |
+| `/api/payload-jobs/run` | Queues due scheduled jobs, then runs one batch. | `{ message, noJobsRemaining, remainingJobsFromQueried }` |
+| `/api/payload-jobs/handle-schedules` | Queues due scheduled jobs only. | `{ message, queued, skipped, errored }` |
+
+| Query parameter | Routes | Description |
+| --- | --- | --- |
+| `queue` | Both | Queue to use. Default `default`. |
+| `allQueues=true` | Both | Use every queue; `queue` is ignored. |
+| `limit` | `run` | Maximum jobs in the batch. Default `10`. |
+| `disableScheduling=true` | `run` | Skip queuing scheduled jobs. |
+| `silent=true` | `run` | Suppress the job system's logs. |
+
+On a serverless host, have a cron service call `run` with a shared secret. Let that secret pass the run check:
+
+```ts
+const jobs = {
+  access: {
+    run: ({ req }) =>
+      Boolean(req.user) ||
+      (Boolean(process.env.CRON_SECRET) &&
+        req.headers.get('authorization') === `Bearer ${process.env.CRON_SECRET}`),
+  },
+}
+```
+
+Then call it every minute from your host's scheduler, or any cron:
+
+```sh
+curl -fsS -H "Authorization: Bearer $CRON_SECRET" "https://example.com/api/payload-jobs/run?allQueues=true"
+```
+
+Each call runs one batch of at most `limit` jobs, so choose a cron interval and `limit` that keep up with your queue. A crashed call's jobs wait for their lease to expire, then a later call claims them.
+
+### Processing order
+
+Runners claim the oldest jobs first. Set `jobs.processingOrder` to change that, globally, per queue, or with a function of the `run` arguments:
+
+```ts
+const jobs = {
+  processingOrder: {
+    default: 'createdAt',
+    queues: { reports: '-createdAt' },
+  },
+}
+```
+
+`run({ processingOrder })` overrides it for one batch.
+
+## Check a job's status
+
+`jobs.queue` resolves with the job record. Read it again later through the jobs collection, `payload-jobs`, with `overrideAccess: true`; its access rules deny everything else by default.
+
+```ts
+const job = await frogbot.findByID({
+  collection: 'payload-jobs',
+  id: queued.id,
+  overrideAccess: true,
+})
+
+if (job.hasError) console.error(job.error)
+```
+
+| Field | Description |
+| --- | --- |
+| `taskSlug` or `workflowSlug` | What the job runs. |
+| `input` | The input it was queued with. |
+| `queue` | Its queue. |
+| `waitUntil` | Not eligible to run before this time: a delay, a retry backoff, a schedule, or a durable wait. |
+| `completedAt` | When it finished successfully. Empty while unfinished. |
+| `hasError` | `true` once it has failed for good or been cancelled. |
+| `error` | The last error. A cancelled job has `{ cancelled: true }`. |
+| `totalTried` | Number of finished attempts. |
+| `taskStatus` | Each step's `input`, `output`, `complete`, and `totalTried`, by task slug and step ID. |
+| `log` | One entry per step attempt, with `state` (`succeeded` or `failed`), `output`, and `error`. |
+| `processingUntil` | While set and in the future, a runner holds the job. |
+| `meta` | Your `meta`. Scheduled jobs have `{ scheduled: true }`. |
+| `jobId` | The reserved ID, if any. |
+
+Completed jobs are deleted unless `jobs.deleteJobOnComplete` is `false`, so a missing record usually means success. Failed and cancelled jobs are kept.
+
+### Show jobs in the admin
+
+The jobs collection is hidden from the admin, because job inputs, outputs, and errors can hold sensitive data. To give admins a read-only list, override it:
+
+```ts
+import { allow } from '@frogbotai/plugin-roles'
+
+const jobs = {
+  jobsCollectionOverrides: ({ defaultJobsCollection }) => ({
+    ...defaultJobsCollection,
+    access: { ...defaultJobsCollection.access, read: allow('admin') },
+    admin: { ...defaultJobsCollection.admin, hidden: false },
+  }),
+}
+```
+
+Keep create, update, and delete denied, and change jobs through `frogbot.jobs` so access rules and leases apply.
+
+## Cancel jobs
+
+```ts
+await frogbot.jobs.cancelByID({ id: job.id, overrideAccess: true })
+
+await frogbot.jobs.cancel({
+  where: { workflowSlug: { equals: 'onboard-user' } },
+  overrideAccess: true,
+})
+```
+
+A cancelled job gets `hasError: true` and `error: { cancelled: true }`, and frees its `jobId`. A job that is running finishes its current step, then stops before the next one. Cancelling a paused workflow ends its wait; see [Durable waits](/jobs-queue/waits#dispatch-and-recovery-limits).
+
+## Access
+
+Each rule receives `{ req }` and returns a boolean or a promise of one. Set them in `jobs.access`.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `queue` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked by `queue` with `overrideAccess: false`. |
+| `run` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked by `run` and `runByID` with `overrideAccess: false`, and by the [HTTP routes](#run-jobs-over-http). |
+| `cancel` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked by `cancel` and `cancelByID` with `overrideAccess: false`. |
+
+These rules guard `frogbot.jobs`. Reads and writes on the `payload-jobs` collection itself follow the collection's access, set through `jobsCollectionOverrides`.
+
+## Callbacks, hooks, and requests
+
+Job execution uses atomic claims and direct job-record updates at depth 0. It does not run jobs collection hooks. Ordinary application collection hooks, including those invoked by collection operations inside a task, remain supported.
+
+Task handlers, `onSuccess` and `onFail`, workflow handlers, and `inlineTask` callbacks receive a `FrogBotRequest`, so `req.frogbot` is set, as in hooks and endpoints. Task handlers given as a file path do not get it.
+
+## Leases and crash recovery
+
+Each run claims jobs with a fresh `processingToken` and a `processingUntil` lease, and renews the lease while the jobs run. Task and workflow handlers need no heartbeat code. A job whose lease has passed can be claimed by any worker; an old worker can't update a job once a successor holds it. FrogBot's SQL adapters claim with `FOR UPDATE SKIP LOCKED` on Postgres, so concurrent workers take different jobs.
+
+| Setting | Value |
+| --- | --- |
+| `jobs.processingLease.duration` | Milliseconds; default `1200000` (20 minutes). |
+| `jobs.processingLease.safetyBuffer` | Milliseconds before expiry that a worker stops writing; default `30000`. |
+
+Choose a duration with headroom for event-loop pauses and database delays; it is not a maximum job runtime. A crash doesn't use up a retry.
+
+**Keep a scheduler and worker running that cover the `default` queue**, or use `allQueues: true` for both scheduling and execution. They can share one process. The `default` queue runs the `frogbot-sweep-waitpoints` task, which expires waits and wakes their jobs. It also deletes failed scheduled jobs whose task is no longer registered, such as one an upgrade removed; the schedule queues a fresh job if the task comes back.
+
+Recovery is **at least once**. A crash, database outage, or event-loop stall can lose the lease after an external action has already happened. The lease protects job updates, not external effects. Make external operations idempotent, for example with the destination service's idempotency key.

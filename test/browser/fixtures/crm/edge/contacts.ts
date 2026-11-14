@@ -11,10 +11,12 @@ const TITLES = ['Buyer', 'CFO', 'Office Manager', 'Engineer', 'Director of Sales
 export async function seedContacts({ frogbot, owner, companies, contacts }: Seeded) {
   const companyIds = [...companies.values()];
 
-  const create = async (data: Parameters<typeof frogbot.create<'contacts'>>[0]['data']) => {
+  const create = async (
+    data: Parameters<typeof frogbot.create<'contacts'>>[0]['data'] & { name: string },
+  ) => {
     const contact = await frogbot.create({ collection: 'contacts', data, overrideAccess: true });
 
-    contacts.set(contact.name, contact.id);
+    contacts.set(data.name, contact.id);
   };
 
   await create({

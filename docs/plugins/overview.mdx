@@ -45,12 +45,13 @@ Writing Plugins is no more complex than writing regular JavaScript. If you know 
 
 FrogBot maintains a set of Official Plugins that solve for some of the common use cases. These plugins are maintained by the FrogBot team and its contributors and are guaranteed to be stable and up-to-date.
 
+- [AI capture](/plugins/ai-capture)
+- [AI evals](/plugins/ai-evals)
 - [AI policy](/plugins/ai-policy)
+- [AI usage](/plugins/ai-usage)
 - [API Keys](/plugins/api-keys)
 - [Audit log](/plugins/audit-log)
-- [AI request capture](/plugins/capture)
 - [Dojo](/plugins/dojo)
-- [Evals](/plugins/evals)
 - [Forms](/plugins/forms)
 - [MCP server](/plugins/mcp)
 - [Import and export](/plugins/import-export)
@@ -61,7 +62,6 @@ FrogBot maintains a set of Official Plugins that solve for some of the common us
 - [SEO](/plugins/seo)
 - [Stripe](/plugins/stripe)
 - [Two-factor sign-in](/plugins/two-factor)
-- [Usage reports](/plugins/usage-reports)
 
 You can also [build your own plugin](/plugins/build-your-own) to extend FrogBot's functionality in another way.
 
@@ -75,7 +75,9 @@ Plugins are changing every day, so be sure to check back often to see what new p
 
 ## Example
 
-A plugin is a function with the type `(config: FrogBotConfig) => FrogBotConfig | Promise<FrogBotConfig>`. FrogBot runs plugins serially by their `order`, lowest first, and plugins with the same order run in `plugins` array order. Plugins built with `definePlugin` also have a `slug` and can read each other's options; see [Order, slug, and options](/plugins/build-your-own#order-slug-and-options). See [Build your own plugin](/plugins/build-your-own) for the full guide.
+A plugin is a function with the type `(config: FrogBotConfig) => FrogBotConfig | Promise<FrogBotConfig>`. FrogBot runs plugins serially by their `order`, lowest first. Plugins with the same order run in `plugins` array order.
+
+Plugins built with `definePlugin` also have a `slug` and can read each other's options. See [Order, slug, and options](/plugins/build-your-own#order-slug-and-options), or [Build your own plugin](/plugins/build-your-own) for the full guide.
 
 The base [FrogBot Config](/configuration/overview) allows for a `plugins` property which takes an `array` of [Plugin Configs](/plugins/build-your-own).
 

@@ -32,7 +32,7 @@ export const supportAgent: AgentConfig = {
 | --- | --- | --- | --- |
 | `slug` | `string` | Required | Unique, URL-safe identifier. It names the agent in `frogbot.agents[slug]`, the HTTP routes, and generated types. |
 | `model` | `ModelId \| AgentModelOptions` | `ai.defaultModel` | A model ID or router slug for a single choice, or [model options](#model-options) for a selectable list. Startup fails when neither `model` nor `ai.defaultModel` sets a default. |
-| `instructions` | `string` | Required | System instructions for every run. Must be non-empty. Agents with [skills](#add-skills) get one discovery line per skill appended. |
+| `instructions` | `string \| ({ req }) => string \| Promise<string>` | Required | System instructions. A string is fixed and must be non-empty. A function runs once per run with that run's `req`; see [Instructions that change](#instructions-that-change). Agents with [skills](#add-skills) get one discovery line per skill appended. |
 | `profile` | `AgentProfile` | — | Client-facing identity. See [Profile options](#profile-options). |
 | `channels` | `ChannelPieceInstance[]` | — | Channel-capable piece instances, such as [Slack](/pieces/slack), that the agent answers in. Each instance needs factory `auth` and can belong to only one agent. |
 | `skills` | `SkillConfig[]` | — | Playbooks the agent loads on demand. See [Add skills](#add-skills). |
@@ -49,7 +49,11 @@ export const supportAgent: AgentConfig = {
 | `default` | `ModelId` | `ai.defaultModel` | The model used when a request names none. Always listed first. |
 | `options` | `'*' \| ModelId[]` | Required | Models users may pick. `'*'` includes every configured chat-capable model. An array lists models in addition to the default; duplicates are removed, and `[]` offers only the default. |
 
-Use `model: { default, options }` to offer model choices. Omit `default` to use `ai.defaultModel`; if neither is set, startup fails. The default is always included first, and duplicate IDs are removed. An empty `options: []` offers only the default, as does a string `model`.
+Use `model: { default, options }` to offer model choices.
+
+- Omit `default` to use `ai.defaultModel`. If neither is set, startup fails.
+- The default is always included first, and duplicate IDs are removed.
+- An empty `options: []` offers only the default, as does a string `model`.
 
 A provider's `models` list controls what the app can use; an agent's `model.options` controls what users can pick for that agent. `options: '*'` includes every configured chat-capable model:
 
@@ -76,17 +80,60 @@ For a curated selector, replace `'*'` with `['bedrock/amazon.nova-lite-v1:0', 'b
 
 Put a `models` list on OpenRouter and Vercel AI Gateway provider entries to keep the picker focused. Without a list, `'*'` includes their entire chat catalogs, which can contain hundreds of models.
 
-FrogBot validates the default and every explicit option. Unknown models or IDs outside a provider's `models` list fail startup with `is not configured`; configured non-chat models fail with `is not chat-capable`. `frogbot dev` and type generation warn for these model checks instead of throwing. [`ai.access.generate`](/ai/overview#control-access) further filters the choices each user sees and may use, for example through the [AI policy plugin](/plugins/ai-policy).
+FrogBot validates the default and every explicit option at startup:
+
+| Problem | Startup fails with |
+| --- | --- |
+| An unknown model, or an ID outside a provider's `models` list | `is not configured` |
+| A configured model that is not a chat model | `is not chat-capable` |
+
+`frogbot dev` and type generation warn for these model checks instead of throwing.
+
+[`ai.access.generate`](/ai/overview#control-access) further filters the choices that each user sees and may use, for example through the [AI policy plugin](/plugins/ai-policy).
 
 `allowModels` has been removed. Configs that still set it fail with a message naming the agent and showing the replacement. Migrate `model: 'provider/id', allowModels: [...]` to `model: { default: 'provider/id', options: [...] }`.
 
-The chat composer shows the active model name and its reasoning level, for example `gpt-5 · High`. Clicking it opens a reasoning slider for that model, and the trigger reads `Select effort`; clicking the model name inside switches to the list of allowed models, and the trigger reads `Select model`. A model without reasoning options opens straight on the list. The slider starts at `Default`, which leaves the level to the provider, and offers only the options that model supports. The selector is hidden when the agent allows one model and that model has no reasoning options.
+The chat composer shows the active model name and its reasoning level, for example `gpt-5 · High`.
 
-FrogBot saves the chosen model as a user preference and remembers one reasoning level per model. Switching models restores the level last used with the new model, or `Default` if it has none; levels never carry over from one model to another. A saved model or level that is no longer allowed or offered falls back to the agent's default model or to `Default`. Opening an existing chat starts from the model and level of its latest sent message instead of the saved preference, as long as that model is still allowed.
+- **Clicking it opens a reasoning slider** for that model, and the trigger reads `Select effort`. The slider starts at `Default`, which leaves the level to the provider, and offers only the options that the model supports.
+- **Clicking the model name inside** switches to the list of allowed models, and the trigger reads `Select model`.
+- **A model without reasoning options** opens straight on the list.
+- **The selector is hidden** when the agent allows one model and that model has no reasoning options.
+
+FrogBot saves the chosen model as a user preference and remembers one reasoning level per model.
+
+- **Switching models** restores the level last used with the new model, or `Default` if it has none. Levels never carry over from one model to another.
+- **A saved model or level that is no longer allowed or offered** falls back to the agent's default model or to `Default`.
+- **Opening an existing chat** starts from the model and level of its latest sent message instead of the saved preference, as long as that model is still allowed.
+
+### Instructions that change
+
+A string is read once when the app starts. When the guidance changes between runs, such as rules staff edit in a collection, pass a function instead. FrogBot calls it once per run, before the model, with that run's `req`, so the next run sees the edit without a restart:
+
+```ts
+import type { AgentConfig } from 'frogbot'
+
+export const supportAgent: AgentConfig = {
+  slug: 'support',
+  instructions: async ({ req }) => {
+    const { docs } = await req.frogbot.find({
+      collection: 'policies',
+      where: { active: { equals: true } },
+      req
+    })
+
+    return ['Answer support questions.', ...docs.map((policy) => `- ${policy.rule}`)].join('\n')
+  }
+}
+```
+
+The function runs on every run, including schedule and trigger runs, so keep it fast and cache slow reads yourself. An empty, whitespace-only or non-string result, or a thrown error, fails the run before the model is called. Skill discovery lines still follow the returned text.
 
 ### Use the general preset
 
-`general()` provides FrogBot's default general-purpose instructions and the `general` slug. It sets `model: { options: '*' }`, offering every configured chat model with `ai.defaultModel` as the default, subject to [`ai.access.generate`](/ai/overview#control-access). Configure that default and its provider. The chat composer shows a model picker whenever more than one model is available.
+`general()` provides FrogBot's default general-purpose instructions and the `general` slug. It sets `model: { options: '*' }`, which offers every configured chat model with `ai.defaultModel` as the default, subject to [`ai.access.generate`](/ai/overview#control-access). Configure that default and its provider.
+
+The chat composer shows a model picker whenever more than one model is available.
 
 ```ts
 import { buildConfig } from 'frogbot'
@@ -279,7 +326,13 @@ What each value does depends on the run. A chat can turn on **Auto-approve**, an
 | `'required'` | Pauses | Pauses | Denied with feedback |
 | `{ mode, reason }` | As `mode`, showing `reason` | As `mode` | As `mode` |
 
-A function receives `{ input, req, agent, tool }` for each call, may be async, and returns `false`, `'ask'`, `'required'`, or `{ mode, reason? }`; the `reason` is shown next to Approve and Deny. A function that throws or returns anything else counts as `'required'`, and FrogBot logs the error. Any other `approval` value, or `approval` on a client tool, fails at startup.
+`approval` can also be a function:
+
+- It receives `{ input, req, agent, tool }` for each call, and it may be async.
+- It returns `false`, `'ask'`, `'required'`, or `{ mode, reason? }`. The `reason` is shown next to Approve and Deny.
+- A function that throws or returns anything else counts as `'required'`, and FrogBot logs the error.
+
+Any other `approval` value, or `approval` on a client tool, fails at startup.
 
 | Answer | Result |
 | --- | --- |
@@ -303,7 +356,13 @@ export const refund: Tool<typeof refundInput, string> = {
 }
 ```
 
-The rule receives `{ req, agent, tool }`, may be async, and runs once per run, before the first model call, with the run's request; a change to the user applies from their next message. Trusted runs (`overrideAccess: true`) skip it and are offered every tool. A rule that returns `false` or throws hides the tool, and a throw is logged. Answering an [approval](#ask-before-a-tool-runs) also needs the answerer to pass the tool's `access`, else `403`, and a run whose user fails the rule denies an already approved call instead of running it. Over [MCP](/plugins/mcp#tools), a key whose owner fails the rule isn't shown the tool.
+The rule receives `{ req, agent, tool }` and may be async.
+
+- **When it runs.** Once per run, before the first model call, with the run's request. A change to the user applies from their next message.
+- **Trusted runs** (`overrideAccess: true`) skip it and are offered every tool.
+- **A rule that returns `false` or throws** hides the tool, and a throw is logged.
+- **Approvals.** Answering an [approval](#ask-before-a-tool-runs) also needs the answerer to pass the tool's `access`, else `403`. A run whose user fails the rule denies an already approved call instead of running it.
+- **MCP.** Over [MCP](/plugins/mcp#tools), a key whose owner fails the rule isn't shown the tool.
 
 Four options decide who can do what:
 
@@ -370,6 +429,24 @@ export const supportAgent: AgentConfig = {
 
 `instructions` and resource `content` accept a string or a function receiving `{ req, frogbot }`. Function content is evaluated only when the agent loads it. Unknown skill and resource names return the available names so the agent can correct its next call.
 
+`resources` can also be a function receiving `{ req }`, called each time `list_skills` or `load_skill_resource` runs. Use it when the list itself changes while the app runs, such as a folder of documents:
+
+```ts
+import { readdir, readFile } from 'node:fs/promises'
+
+const plansSkill: SkillConfig = {
+  slug: 'plans',
+  instructions: 'List the plans, then load the one the question is about.',
+  resources: async () =>
+    (await readdir('plans')).map((file) => ({
+      path: file,
+      content: () => readFile(`plans/${file}`, 'utf8')
+    }))
+}
+```
+
+A function's entries are checked when it is called: a missing or duplicate path, or empty content, fails that tool call with an error the agent sees.
+
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `slug` | `string` | Required | Skill name, unique and URL-safe within the agent. Maps to the Agent Skills `name` field. |
@@ -378,7 +455,7 @@ export const supportAgent: AgentConfig = {
 | `compatibility` | `string` | — | Must be non-empty when set. Maps to `compatibility`. |
 | `metadata` | `Record<string, string>` | — | Flat string map. Maps to `metadata`. |
 | `instructions` | `string \| ({ req, frogbot }) => string \| Promise<string>` | Required | Returned by `load_skill`. A string must be non-empty. Maps to the `SKILL.md` body. |
-| `resources` | `SkillResource[]` | — | Reference files returned by `load_skill_resource`. Maps to `references/` files. |
+| `resources` | `SkillResource[] \| ({ req }) => SkillResource[] \| Promise<SkillResource[]>` | — | Reference files returned by `load_skill_resource`. A function is called on every `list_skills` and `load_skill_resource`. Maps to `references/` files. |
 
 Each resource takes these options:
 
@@ -447,7 +524,9 @@ export const supportAgent: AgentConfig = {
 }
 ```
 
-Each item has `content` and a `status` of `pending`, `in_progress`, or `completed`. Keep one item `in_progress` at a time. Todos are stored on the current chat, survive continuations, and are deleted with that chat. Chat persistence must be enabled and the tool must run within a persisted agent chat.
+Each item has `content` and a `status` of `pending`, `in_progress`, or `completed`. Keep one item `in_progress` at a time.
+
+Todos are stored on the current chat, survive continuations, and are deleted with that chat. Chat persistence must be enabled, and the tool must run within a persisted agent chat.
 
 ## Ask the user a question
 
@@ -536,7 +615,9 @@ for await (const text of result.textStream) {
 }
 ```
 
-Local calls run as `req`'s user and check the agent's [`access`](#control-access) rule, like the Local API with `overrideAccess: false`. With no user, the default rule refuses the call with `403`. Server code with nobody signed in, such as a job, passes `overrideAccess: true` to run trusted: the rule is skipped, tool `access` is skipped, and tools see `ctx.overrideAccess: true`.
+Local calls run as `req`'s user and check the agent's [`access`](#control-access) rule, like the Local API with `overrideAccess: false`. With no user, the default rule refuses the call with `401`.
+
+Server code with nobody signed in, such as a job, passes `overrideAccess: true` to run trusted. The agent's rule is skipped, tool `access` is skipped, and tools see `ctx.overrideAccess: true`.
 
 ```ts
 await frogbot.agents.support.generate({
@@ -667,7 +748,10 @@ A schedule trigger runs the agent on a clock. A [polling piece trigger](/pieces/
 
 FrogBot runs schedules and skips an occurrence while the same trigger already has an active or runnable scheduled job. User-defined jobs, workflows, queues, and automatic runners remain configured alongside FrogBot schedules.
 
-Each prompt trigger creates a fresh chat with `user: null` and persists its user and assistant messages. A handler may invoke the owning agent, another agent, or no agent. Every handler receives `{ frogbot, agent, req, job }`, and `req.context` contains `source`, `agentSlug`, `triggerSlug`, and `jobId`. Removing an agent or trigger makes already-queued work for it complete without running.
+- Each prompt trigger creates a fresh chat with `user: null` and persists its user and assistant messages.
+- A handler may invoke the owning agent, another agent, or no agent.
+- Every handler receives `{ frogbot, agent, req, job }`, and `req.context` contains `source`, `agentSlug`, `triggerSlug`, and `jobId`.
+- Removing an agent or trigger makes already-queued work for it complete without running.
 
 ---
 
@@ -680,7 +764,16 @@ Configuring at least one worker mounts two FrogBot endpoints at the root API pat
 | `GET` | `/api/agents` | Permission-filtered [agent manifest](/chat/manifest#agent-manifest) with defaults, allowed models, and their reasoning options |
 | `POST` | `/api/agents/:slug` | Generated JSON or an AI SDK UI message stream |
 
-POST exactly one non-empty `prompt` or non-empty `messages` array. Add `model` to select one of the agent's allowed models; FrogBot rejects other models with a 403 response. Add `reasoning` to select one of the options the manifest lists under `reasoning` for that model, or for the default model when `model` is omitted; an option the model does not offer returns 400. A request without `model` uses the agent's default model. Each user message keeps the model and reasoning option it was sent with, and every turn it starts uses them. Authenticated calls create a chat when `chatId` is absent. Without an explicit event-stream accept header, the response is `{ text, usage, finishReason, chatId }`.
+POST exactly one non-empty `prompt` or one non-empty `messages` array. The body also accepts:
+
+| Field | Selects | When it is not allowed |
+| --- | --- | --- |
+| `model` | One of the agent's allowed models. Without it, the request uses the agent's default model. | `403`, with the models the caller may use. |
+| `reasoning` | One of the options that the manifest lists under `reasoning` for that model, or for the default model when `model` is omitted. | `400`, with the options the model does offer. |
+
+- Each user message keeps the model and reasoning option it was sent with, and every turn it starts uses them.
+- Authenticated calls create a chat when `chatId` is absent.
+- Without an explicit event-stream accept header, the response is `{ text, usage, finishReason, chatId }`.
 
 ```bash
 curl http://localhost:3000/api/agents/support \
@@ -713,7 +806,19 @@ curl http://localhost:3000/api/agents/support \
 
 FrogBot loads stored history, rejects chats owned by another authenticated user, and rejects client-supplied assistant or system messages. Custom access rules can allow anonymous callers to create and continue chats, but those chats are not private to the anonymous caller who created them because there is no anonymous identity to verify. Applications handling sensitive conversations should require authentication.
 
-Malformed input returns `400`, an unknown slug returns `404`, and an aborted request returns a bodyless `499`.
+Malformed input returns `400` naming the first field that failed and why, for example `` `messages[0].parts[0].type`: expected one of 'text' | 'file' | …, received 'txt' ``. An unknown slug returns `404`, and an aborted request returns a bodyless `499`.
+
+Errors are `{ error, code? }`. `code` is stable, so branch on it rather than the message:
+
+| Code | Status | Meaning |
+| --- | --- | --- |
+| `agent-not-found` | 404 | No agent has this slug. |
+| `unauthenticated` | 401 | The agent's `access` refused a caller with no user. |
+| `access-denied` | 403 | The agent's `access` refused a signed-in caller. |
+| `access-error` | 500 | The agent's `access` threw. The error is logged. |
+| `model-not-allowed` | 403 | `model` isn't one of the agent's options, or `ai.access` blocks it for this user. The message lists the allowed models. |
+| `no-model-available` | 403 | No model is named and none of the agent's models is allowed for this user. |
+| `reasoning-unavailable` | 400 | The model doesn't offer this `reasoning` option. The message lists the ones it does. |
 
 See [Chat persistence](/chat/overview) for collection customization and durability behavior.
 
@@ -727,7 +832,16 @@ See [Chat persistence](/chat/overview) for collection customization and durabili
 access: ({ req }) => Boolean(req.user)
 ```
 
-The rule runs once per run, and a rule that returns `false` or throws refuses it with `403`. HTTP calls, channels and local calls check it; only local calls that pass `overrideAccess: true`, and prompt schedules, skip it. The GET endpoint evaluates each worker's rule and omits denied entries or entries whose rule throws.
+The rule runs once per run.
+
+| The rule | Result |
+| --- | --- |
+| Returns `false` | Refuses the run with `403`, or with `401` when there is no user. |
+| Throws | Fails the run with `500` and code `access-error`. FrogBot logs the error and keeps it as the `cause`, so a bug in a rule doesn't look like a permissions problem. |
+
+HTTP calls, channels, and local calls check the rule. Only local calls that pass `overrideAccess: true`, and prompt schedules, skip it.
+
+The GET endpoint evaluates each worker's rule. It omits entries that are denied or whose rule throws, and it logs the throw.
 
 Custom rules may allow anonymous requests by returning `true`.
 

@@ -66,6 +66,10 @@ The adapter preserves FrogBot's collection selection, import and export controls
 | `hooks.after` | `(args) => void \| Promise<void>` | — | Runs after each batch is written. Receives `batchNumber`, `totalBatches`, `format`, `originalData`, `req`, and `result` (`{ imported, updated, total, errors }` for the batch). Its return value is ignored. |
 | `overrideCollection` | `({ collection }) => CollectionConfig \| Promise<CollectionConfig>` | — | Overrides the import collection for this collection only. Returning a new slug creates a separate import collection; returning `imports` merges into the shared one. |
 
+## Export
+
+An export reads as the signed-in user, so their read access applies. A download of a collection the export collection doesn't serve answers `400`, and one the user can't read answers `403`, each with `{ "errors": [{ "message": "..." }] }`. Collections with versions but no drafts export every document.
+
 ## Map columns
 
 After you choose a file on the import form, the **Columns** section lists each column in the file next to a field picker. A column can import into a top-level field, a field inside a group or named tab, or a relationship to one collection. Choose **Skip** to leave a column out. Columns you skip, and columns you don't map, aren't imported.
@@ -98,11 +102,21 @@ A row fails, and the other rows still import, when a relationship cell can't be 
 
 Every row that needs a record whose creation failed fails with the same message.
 
-CSV rows whose cells are all empty are skipped, which can shift the rows after one. A mapped row that can't be lined up with its line in the file fails with `This row could not be lined up with the file because of an empty row above it. Remove the empty rows and import the file again.` rather than taking another line's values. Empty rows at the end of the file are harmless.
+CSV rows whose cells are all empty are skipped, which can shift the rows after one. A mapped row that can't be lined up with its line in the file fails with this error, rather than taking another line's values:
+
+```text
+This row could not be lined up with the file because of an empty row above it. Remove the empty rows and import the file again.
+```
+
+Empty rows at the end of the file are harmless.
 
 ### Suggest with AI
 
-When the app sets `ai.smallModel` or `ai.defaultModel`, the Columns section adds a **Suggest with AI** button. It sends the headers of the columns still on **Skip**, up to 3 values from each, and the fields not yet used to the small model (the default model when no small model is set), as the importing user. It fills only the columns on **Skip**, with fields the collection has; you can change its picks before importing. If the model call fails, the mapping stays as it was and the error is shown. Without an AI model the button is hidden and no model is called.
+When the app sets `ai.smallModel` or `ai.defaultModel`, the Columns section adds a **Suggest with AI** button. Without an AI model, the button is hidden and no model is called.
+
+- **What it sends.** The headers of the columns still on **Skip**, up to 3 values from each, and the fields that are not used. They go to the small model, or to the default model when no small model is set, as the importing user.
+- **What it fills.** Only the columns on **Skip**, with fields that the collection has. You can change its picks before importing.
+- **If the model call fails,** the mapping stays as it was and the error is shown.
 
 ### Imports from the API
 

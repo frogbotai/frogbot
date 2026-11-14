@@ -1,6 +1,6 @@
 import type { DojoClient } from './dojo.js';
-import { dojoMessage, segment } from './dojo.js';
-import { ShareError } from './error.js';
+import { segment } from './dojo.js';
+import { dojoStop, ShareError } from './error.js';
 import type { AppLink } from './link.js';
 import { linkPath } from './link.js';
 import { findApp } from './nouns/resolve.js';
@@ -12,8 +12,10 @@ export type AppInfo = { started: boolean; level: 'editor' | 'owner'; slug?: stri
 export async function refusedApp(appId: string | number, response: Response): Promise<void> {
   if (response.status !== 403 && response.status !== 404) return;
 
-  throw new ShareError(
-    `You can't share to the app in ${linkPath} (${appId}): ${await dojoMessage(response)} Delete ${linkPath} to share as a new app.`,
+  throw await dojoStop(
+    response,
+    `You can't share to the app in ${linkPath} (${appId})`,
+    ` Delete ${linkPath} to share as a new app.`,
   );
 }
 
@@ -23,7 +25,7 @@ export async function appInfo(dojo: DojoClient, appId: string | number): Promise
 
   await refusedApp(appId, response);
 
-  if (!response.ok) throw new ShareError(`Couldn't read the app: ${await dojoMessage(response)}`);
+  if (!response.ok) throw await dojoStop(response, "Couldn't read the app");
 
   const app = (await response.json()) as { started?: boolean; level?: string; slug?: unknown };
 

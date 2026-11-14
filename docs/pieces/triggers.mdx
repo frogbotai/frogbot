@@ -33,7 +33,11 @@ export const ops: AgentConfig<typeof linear.triggers.issueCreated> = {
 }
 ```
 
-Add `ops` to your configuration's `agents` array. Use `AgentConfig<typeof piece.triggers.ref>` for contextual inference from the trigger's input and output schemas. Plain `AgentConfig` leaves the handler's `event` as `unknown`. The handler receives the emitted event's `data`, the agent, and a request with `{ piece, trigger, agent }` in `req.context.trigger`; `piece` is the instance slug. The request has no user, so a handler that runs the agent passes `overrideAccess: true`: `await agent.generate({ prompt, req, overrideAccess: true })`.
+Add `ops` to your configuration's `agents` array.
+
+- **Types.** Use `AgentConfig<typeof piece.triggers.ref>` for contextual inference from the trigger's input and output schemas. Plain `AgentConfig` leaves the handler's `event` as `unknown`.
+- **Handler arguments.** The handler receives the emitted event's `data`, the agent, and a request with `{ piece, trigger, agent }` in `req.context.trigger`. `piece` is the instance slug.
+- **No user.** The request has no user, so a handler that runs the agent passes `overrideAccess: true`: `await agent.generate({ prompt, req, overrideAccess: true })`.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -62,7 +66,7 @@ Boot reconciliation and the subscription ledger exist only while an agent declar
 
 If registration succeeds but saving its state fails, FrogBot attempts provider cleanup and retains recovery state when cleanup fails. An unresolved registration blocks another enable attempt rather than creating a duplicate. A process crash before state is persisted can require manual provider cleanup.
 
-Automatic subscription renewal is not supported yet.
+Automatic subscription renewal is not supported.
 
 ## Polling
 
@@ -95,11 +99,20 @@ export const sms: AgentConfig<typeof twilio.triggers.incomingSms> = {
 }
 ```
 
-A poll calls the trigger's `run({ input, cursor, client, options, req })` with the subscription's input and stored cursor, and a request carrying `req.context.trigger`. It returns `{ events, cursor }`, where the cursor is any JSON value. The cursor is stored on the subscription entry only after every event is queued, so a poll that fails partway replays its events and they're deduped. A poll whose entry was deleted, or whose input changed, while it ran doesn't write its cursor.
+A poll calls the trigger's `run({ input, cursor, client, options, req })` with the subscription's input and stored cursor, and a request that carries `req.context.trigger`. It returns `{ events, cursor }`, where the cursor is any JSON value.
 
-The first poll has no cursor. It only records a starting point: FrogBot queues none of its events, so mounting a trigger never replays a provider's history. Piece authors should return `{ events: [], cursor }` on that run, with the same kind of cursor later polls use (such as "now" or the newest ID), without side effects like uploads. A new input resets the cursor, and the next poll starts again from "now". A trigger that never returns a cursor gets none on every poll; FrogBot queues its events from the second poll on and relies on dedupe.
+- The cursor is stored on the subscription entry only after every event is queued. A poll that fails partway therefore replays its events, and they're deduped.
+- A poll doesn't write its cursor when its entry was deleted, or its input changed, while it ran.
 
-A poll has no signed-in user, so it uses the instance's app-level credential; there's no per-user polling yet. A poll that fails, for example because no credential is linked or the provider errors, sets the entry's `status` to `'error'` and logs one warning naming the agent, instance, trigger, and error. The job isn't retried; the next scheduled poll tries again, and a successful poll sets `status` back to `'active'`.
+The first poll has no cursor. It only records a starting point. FrogBot queues none of its events, so mounting a trigger never replays a provider's history.
+
+- **Piece authors** should return `{ events: [], cursor }` on that run, with the same kind of cursor that later polls use (such as "now" or the newest ID), and without side effects like uploads.
+- **A new input** resets the cursor, and the next poll starts again from "now".
+- **A trigger that never returns a cursor** gets none on every poll. FrogBot queues its events from the second poll on and relies on dedupe.
+
+A poll has no signed-in user, so it uses the instance's app-level credential. Polls don't run with a per-user credential.
+
+A poll that fails, for example because no credential is linked or the provider errors, sets the entry's `status` to `'error'` and logs one warning that names the agent, instance, trigger, and error. FrogBot doesn't retry the job. The next scheduled poll tries again, and a successful poll sets `status` back to `'active'`.
 
 Each event's `dedupeKey` is a hash of the subscription ID and the event's JSON, tracked for the same 24 hours as webhook events.
 
@@ -107,7 +120,7 @@ Each event's `dedupeKey` is a hash of the subscription ID and the event's JSON, 
 
 FrogBot verifies incoming requests and queues events before running agent handlers. Each event's required `dedupeKey` is tracked for 24 hours per recipient: agent, instance, and trigger. A provider retry can enqueue failed recipients without re-enqueueing recipients whose queue and dedupe writes succeeded.
 
-FrogBot automatically adds an all-queues job runner scheduled every minute (`* * * * *`), sharing the runner when agent schedules are also configured. The trigger task currently sets no automatic handler retry policy.
+FrogBot automatically adds an all-queues job runner scheduled every minute (`* * * * *`), sharing the runner when agent schedules are also configured. The trigger task sets no automatic handler retry policy.
 
 Delivery is not exactly once: if enqueue succeeds but persisting the dedupe marker fails, a retry can queue the event again. Make handler side effects idempotent.
 

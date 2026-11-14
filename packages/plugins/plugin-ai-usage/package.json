@@ -1,0 +1,61 @@
+{
+  "name": "@frogbotai/plugin-ai-usage",
+  "version": "0.41.0",
+  "description": "Usage analytics reports for FrogBot.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/plugins/plugin-ai-usage"
+  },
+  "homepage": "https://github.com/frogbotai/frogbot#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "build": "node ../../../scripts/build-package.mjs --assets css",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=24.21.0"
+  },
+  "peerDependencies": {
+    "@frogbotai/ui": "workspace:*",
+    "frogbot": "workspace:*",
+    "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
+    "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
+  },
+  "devDependencies": {
+    "@frogbotai/plugin-import-export": "workspace:*",
+    "@frogbotai/ui": "workspace:*",
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "19.2.14",
+    "frogbot": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "typescript": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

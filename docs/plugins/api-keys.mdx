@@ -35,7 +35,11 @@ export default buildConfig({
 
 `frogbot dev` generates the admin import map before starting, so the API Keys collection and its key-creation controls appear on the first load. Click **Create API key** in the API Keys list toolbar, where Create New sits on other collections, to create a named key, and copy the token when it is displayed. The plaintext token cannot be retrieved again.
 
-Build and start-only workflows must run `frogbot generate:importmap` after adding the plugin. The blank template does this automatically during `prebuild`; add the same step to custom CI workflows that invoke `next build` directly. If the server console reports a component missing from the import map, run `frogbot generate:importmap` and rebuild, or restart `frogbot dev`.
+Build and start-only workflows must run `frogbot generate:importmap` after adding the plugin.
+
+- The blank template does this automatically during `prebuild`.
+- Custom CI workflows that invoke `next build` directly need the same step.
+- If the server console reports a component missing from the import map, run `frogbot generate:importmap` and rebuild, or restart `frogbot dev`.
 
 ## Authenticate requests
 
@@ -51,9 +55,9 @@ X-API-Key: fb_...
 
 The request authenticates as the user who owns the key. Revoked, [expired](#expiring-keys), malformed, and unknown keys do not authenticate. A Bearer key takes precedence; when the `Authorization` header holds something other than an API key, such as a session token, FrogBot reads the key from the key headers instead. The auth collection's `/me` endpoint returns the key owner and never echoes the key back.
 
-A request records its time in the key's **Last Used At** about once a minute, so it can lag by up to a minute. Parallel requests that all find it more than a minute old can each record it. Recording it never fails the request: when the write fails, for example on a write conflict between parallel requests, the request still authenticates and the first failure is logged.
+A request records its time in the key's **Last Used At** about once a minute, so it can lag by up to a minute. The write touches only `lastUsedAt` (and `updatedAt`) and skips collection hooks, so it never rewrites the key's other fields and an audit log doesn't see it. Parallel requests that all find it more than a minute old can each record it. Recording it never fails the request: when the write fails, for example on a write conflict between parallel requests, the request still authenticates and the first failure is logged.
 
-When AI is configured, usage rows include an optional `apiKey` relationship identifying the key that authenticated the request. Cookie-authenticated requests omit it, and the relationship follows a custom `collectionSlug`. A key's **Total Cost (USD)** field sums its usage rows, so when [usage retention](/plugins/usage-reports#retention) is on, it covers only the rows still kept.
+When AI is configured, usage rows include an optional `apiKey` relationship identifying the key that authenticated the request. Cookie-authenticated requests omit it, and the relationship follows a custom `collectionSlug`. A key's **Total Cost (USD)** field sums its usage rows, so when [usage retention](/plugins/ai-usage#retention) is on, it covers only the rows still kept.
 
 On a key-authenticated request, `req.user` is the owner with `apiKeyId` and `apiKey`, the key document without its hash, so hooks and access functions can read fields other plugins add to keys. Other plugins find the keys collection through `plugins['plugin-api-keys'].options.collectionSlug` ([Order, slug, and options](/plugins/build-your-own#order-slug-and-options)).
 
@@ -95,7 +99,9 @@ await fetch('/api/api-keys/mint', {
 })
 ```
 
-`mintApiKey({ req, collectionSlug, tokenPrefix, name, expiresAt })` takes the same option on the server. Both answer `400` for any other format, a day that doesn't exist such as `2027-02-30`, or a date that isn't in the future, and return `expiresAt` with the new key, `null` when it never expires.
+`mintApiKey({ req, collectionSlug, tokenPrefix, name, expiresAt })` takes the same option on the server.
+
+Both answer `400` for any other format, a day that doesn't exist such as `2027-02-30`, or a date that isn't in the future. Both return `expiresAt` with the new key. It is `null` when the key never expires.
 
 - Once `expiresAt` passes, the key no longer authenticates, and its **Last Used At** time stops changing. It stays in the list, with its date in the **Expires** column.
 - `expiresAt` is set only when the key is minted. Nobody can change it afterwards, and `data` can't set it.
@@ -164,10 +170,20 @@ A session can mint a key with `canMint`, by posting `{ name, data: { canMint: tr
 - It can have `canMint` only because its parent has it.
 - It has its parent's values for [fields from other plugins](#fields-from-other-plugins), such as a tenant or environment.
 - It [expires](#expiring-keys) no later than its parent.
-- A key rotates, revokes and counts with `minted-count` only itself and the keys it minted. Any other key answers `404` and nothing changes. A signed-in session reaches every key its owner has.
+- A key rotates, revokes and counts with `minted-count` only itself and the keys it minted. Any other key, or one that doesn't exist, answers `404` with the standard error body, `{ "errors": [{ "name": "APIError", "message": "API key not found", "data": { "code": "not_found" } }] }`, and nothing changes. A signed-in session reaches every key its owner has.
 - With the [AI policy plugin](/plugins/ai-policy#api-key-limits), its model list and monthly cap stay inside the parent's as well as the owner's. A list or cap it leaves empty is the parent's. Its spend also counts against the parent's cap, so a parent capped at $10 and every key below it together spend at most $10 a month.
 
-Revoking a key revokes every key it minted, and every key those minted, all the way down. To revoke only that key and leave the keys it made working, post `{ "cascade": false }` to `revoke`, or pass `cascade: false` to `revokeApiKey`. An empty body, or one without `cascade`, revokes the whole tree; a body that isn't JSON, or a `cascade` other than `true` or `false`, `null` included, answers `400`. A later revoke of a key further up still reaches the keys that a `cascade: false` revoke left working, and stamps them with the time of that revoke. `GET /:id/minted-count` answers `{ "count": n }`, the number of working keys a cascading revoke would also revoke.
+Revoking a key revokes every key it minted, and every key those minted, all the way down. The `revoke` body controls this:
+
+| Body | Result |
+| --- | --- |
+| Empty, or without `cascade` | Revokes the whole tree. |
+| `{ "cascade": false }` | Revokes only that key and leaves the keys it made working. `revokeApiKey` takes `cascade: false` too. |
+| Not JSON, or a `cascade` other than `true` or `false`, `null` included | Answers `400`. |
+
+A later revoke of a key further up still reaches the keys that a `cascade: false` revoke left working, and stamps them with the time of that revoke.
+
+`GET /:id/minted-count` answers `{ "count": n }`, the number of working keys that a cascading revoke would also revoke.
 
 ```ts
 await revokeApiKey({ req, collectionSlug: 'api-keys', id }); // the key and every key below it

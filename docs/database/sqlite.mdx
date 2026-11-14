@@ -104,13 +104,19 @@ Database triggers keep these copies in sync in the same transaction as every cre
 
 Query text supports web search syntax: the terms must all match, quoted words match as a phrase, `or` between terms accepts either one, and `-` excludes a term. Other punctuation separates words and is never parsed as FTS5 syntax. The text is always sent as a bound parameter.
 
-Vector and hybrid queries on a vector index report `approximate: true`. The index cannot apply your filters itself, so it returns the [resolved candidate count](/search/overview#candidates) of nearest records, and the same statement then applies access and `where` filters and returns the top `limit`. A selective filter can therefore return fewer than `limit` hits even when more matching records exist; raise `candidates` to trade speed for completeness. Exact vector search applies filters first, compares the query with every remaining record, and ignores `candidates`.
+- **Approximate search.** Vector and hybrid queries on a vector index report `approximate: true`. The index cannot apply your filters itself. It returns the [resolved candidate count](/search/overview#candidates) of nearest records, and the same statement then applies access and `where` filters and returns the top `limit`. A selective filter can therefore return fewer than `limit` hits even when more matching records exist. Raise `candidates` to trade speed for completeness.
+- **Exact search.** Exact vector search applies filters first, compares the query with every remaining record, and ignores `candidates`.
 
 Hybrid search takes up to the resolved candidate count from each component, joins them in the database, and returns the top `limit` by fused score. A record that matches only one component still ranks, with the other component reported as `null`. When the request already runs in a transaction, search reads through it and sees its uncommitted writes.
 
 ### Push and migrations
 
-Search tables, indexes, and triggers are part of your schema. Development push creates them and leaves them untouched while they match your configuration. When an index definition changes, or a push changes a table an index reads from, the adapter drops the search objects and rebuilds them from the stored records. `migrate:create` writes the same statements into your migration and rebuilds only the indexes whose definition or source tables changed. Changing a field list, metric, dimensions, or `approximate` produces a rebuild; embeddings are never regenerated.
+Search tables, indexes, and triggers are part of your schema.
+
+- **Development push** creates them and leaves them untouched while they match your configuration. When an index definition changes, or a push changes a table that an index reads from, the adapter drops the search objects and rebuilds them from the stored records.
+- **`migrate:create`** writes the same statements into your migration and rebuilds only the indexes whose definition or source tables changed.
+
+Changing a field list, metric, dimensions, or `approximate` produces a rebuild. Embeddings are never regenerated.
 
 ### Limits
 
@@ -210,7 +216,7 @@ This schema sync runs whenever FrogBot connects to a file database without `prod
 
 - A new field becomes a new column, and a new required field a nullable one, so existing rows keep working.
 - A field or collection you remove keeps its column or table. Its values stay, hidden, and come back when you add the field back. FrogBot logs one line naming everything it keeps, such as `Schema sync kept 2 removed columns and 1 removed table with their data, hidden: deals.company, deals.stage, notes. Nothing is deleted; a field or collection added back shows its data again.` It logs the line once per process, and `frogbot up` logs it again only when that list changes.
-- A change that would delete data is skipped: dropping a column, a table or rows, or changing a field's type while it holds values the new type can't read, such as text that isn't a number for a `number` field. FrogBot logs one error that names the column and what to do, for example `deals.company holds 3 text values that aren't numbers; change the field back, or clear those values, then save again.`, and the app keeps starting on the current schema. Under `frogbot up` the update stops as `update failed` instead.
+- A change that would delete data is skipped. Such a change drops a column, a table, or rows, or it changes a field's type while the field holds values that the new type can't read, such as text that isn't a number for a `number` field. FrogBot logs one error that names the column and what to do, and the app keeps starting on the current schema. An example is `deals.company holds 3 text values that aren't numbers; change the field back, or clear those values, then save again.` Under `frogbot up`, the update stops as `update failed` instead.
 - It never prompts, so it works without a terminal, and it never writes to `payload_migrations`.
 
 To rename a field or change its type while keeping its data, or to drop data on purpose, write a [migration](/database/migrations). Set `push: false` to turn the sync off and rely on migrations only; with `prodMigrations` set, migrations run on connect instead.
@@ -308,9 +314,11 @@ Make sure FrogBot doesn't overlap table names with its collections. For example,
 
 ### afterSchemaInit
 
-Runs after the Drizzle schema is built. You can use this hook to modify the schema with features that aren't supported by FrogBot, or if you want to add a column that you don't want to be in the FrogBot config.
-To extend a table, FrogBot exposes `extendTable` utility to the args. You can refer to the [Drizzle documentation](https://orm.drizzle.team/docs/sql-schema-declaration).
-The following example adds the `extra_integer_column` column and a composite index on `country` and `city` columns.
+Runs after the Drizzle schema is built. Use this hook to modify the schema with features that FrogBot doesn't support, or to add a column that you don't want in the FrogBot config.
+
+To extend a table, use the `extendTable` utility that FrogBot passes in the args. See the [Drizzle documentation](https://orm.drizzle.team/docs/sql-schema-declaration).
+
+The following example adds the `extra_integer_column` column and a composite index on the `country` and `city` columns.
 
 ```ts
 import { sqliteAdapter } from '@frogbotai/db-sqlite'
@@ -400,7 +408,7 @@ sqliteAdapter({
 ## D1 Database
 
 <Warning>
-  This adapter is currently in beta and could be subject to breaking changes.
+  This adapter is in beta and could be subject to breaking changes.
 </Warning>
 
 We also provide a separate adapter to connect to [Cloudflare D1](https://developers.cloudflare.com/d1/), which is a serverless SQLite database.
@@ -504,7 +512,10 @@ You can then verify that they're being used by checking the logs in your Cloudfl
 
 ### WAL Mode
 
-Write-Ahead Logging (WAL) is on by default for `file:` databases. In WAL mode, reads don't wait for a write that's committing, and a large transaction doesn't block reads. Pass `wal: false` to use SQLite's rollback journal instead. A database that ran in WAL switches back at startup; if another process has it open then, it stays in WAL and the adapter logs a warning. WAL keeps two files beside the database, ending in `-wal` and `-shm`; back up, move, or delete all three together.
+Write-Ahead Logging (WAL) is on by default for `file:` databases. In WAL mode, reads don't wait for a write that's committing, and a large transaction doesn't block reads.
+
+- **Turn it off.** Pass `wal: false` to use SQLite's rollback journal instead. A database that ran in WAL switches back at startup. If another process has the database open then, it stays in WAL and the adapter logs a warning.
+- **Keep the three files together.** WAL keeps two files beside the database, ending in `-wal` and `-shm`. Back up, move, or delete all three together.
 
 ```ts title="Example SQLite Adapter with WAL"
 import { sqliteAdapter } from '@frogbotai/db-sqlite'

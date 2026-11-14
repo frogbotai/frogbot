@@ -49,7 +49,7 @@ function thirdPartyKV(): KVAdapterResult {
   };
 }
 
-function makeJobs(): JobsConfig {
+function makeJobs() {
   return {
     autoRun: [{ cron: '*/5 * * * *', queue: 'reports', limit: 7 }],
     tasks: [{ slug: 'send-report', handler: () => ({ output: {} }) }],
@@ -230,7 +230,7 @@ describe('resolveKVCleanupTask', () => {
 
     expect(result).toEqual({
       ...jobs,
-      tasks: [...jobs.tasks!, expect.objectContaining({ slug: KV_CLEANUP_TASK_SLUG })],
+      tasks: [...jobs.tasks, expect.objectContaining({ slug: KV_CLEANUP_TASK_SLUG })],
     });
     expect(result?.autoRun).toBe(jobs.autoRun);
     expect(result?.workflows).toBe(jobs.workflows);

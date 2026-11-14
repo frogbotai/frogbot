@@ -279,12 +279,20 @@ async function browserInputs(root, packages) {
   };
 }
 
-export async function verifyInputs(root, log, files = changedFiles(root)) {
+export async function verifyInputs(
+  root,
+  log,
+  { files = changedFiles(root), build = buildStale } = {},
+) {
+  const built = await build(log);
+
+  if (!built.ok) return { built };
+
   const packages = packageInputs(root, log);
   const { vitest, related } = await vitestInputs(root, files);
   const browser = await browserInputs(root, packages);
 
-  return { files, packages, vitest, related, browser, checks: discoverChecks() };
+  return { built, files, packages, vitest, related, browser, checks: discoverChecks() };
 }
 
 function duration(ms) {
@@ -307,25 +315,9 @@ function runCommand(log, args, cwd) {
   return { ok: code === 0, output: readFileSync(log).subarray(start).toString('utf8') };
 }
 
-export async function runGroups({ root, log, groups, build = buildStale }) {
+export async function runGroups({ root, log, groups }) {
   const width = Math.max('uncovered'.length, ...groups.map(({ group }) => group.length));
   const label = (name) => name.padEnd(width);
-  const built = await build(log);
-
-  if (!built.ok) {
-    console.log(`${label('build')}  failed`);
-
-    return {
-      ok: false,
-      passed: [],
-      failed: {
-        group: 'build',
-        command: 'build stale packages',
-        output: built.groups.flat().join('\n'),
-      },
-    };
-  }
-
   const passed = [];
 
   for (const [index, entry] of groups.entries()) {

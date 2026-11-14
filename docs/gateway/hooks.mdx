@@ -157,7 +157,13 @@ hooks: {
 }
 ```
 
-`messages` and `params` are present on the language routes (chat, messages, responses) and absent on modality routes (embeddings, images, speech, transcriptions, rerank, video, evaluate) — those operations have no messages or language params. On chat and messages, message/part-level `providerOptions.unknown` remains available during the hook and is forwarded into the provider namespace afterward. `headers` and request-level `providerOptions` are honored on every route. `system` and `tools` are read-only.
+| Field | Where it applies |
+| --- | --- |
+| `messages`, `params` | Present on the language routes (chat, messages, responses). Absent on the modality routes (embeddings, images, speech, transcriptions, rerank, video, evaluate), because those operations have no messages or language params. |
+| `headers`, request-level `providerOptions` | Honored on every route. |
+| `system`, `tools` | Read-only. |
+
+On chat and messages, message-level and part-level `providerOptions.unknown` remains available during the hook and is forwarded into the provider namespace afterward.
 
 ---
 

@@ -4,6 +4,11 @@ export {
   type RecentsSectionClientProps,
 } from '../elements/Nav/RecentsSection.client.js';
 export {
+  PanelIconButton,
+  type PanelIconButtonProps,
+} from '../elements/PanelIconButton/index.client.js';
+export { PanelSection, type PanelSectionProps } from '../elements/PanelSection/index.client.js';
+export {
   SignInButtonsClient,
   type SignInButtonsClientProps,
 } from '../elements/SignInButtons/index.client.js';
@@ -12,6 +17,7 @@ export { type ViewTab, ViewTabs, type ViewTabsProps } from '../elements/ViewTabs
 export { AICell, AIField } from '../fields/AI/index.client.js';
 export { BarcodeCell } from '../fields/Barcode/index.client.js';
 export { ChannelCell, type ChannelCellProps } from '../fields/Channel/index.client.js';
+export { ColorCell, ColorField } from '../fields/Color/index.client.js';
 export { DurationCell, DurationField } from '../fields/Duration/index.client.js';
 export { FieldCell } from '../fields/FieldCell/index.client.js';
 export { MoneyCell, MoneyField } from '../fields/Money/index.client.js';
