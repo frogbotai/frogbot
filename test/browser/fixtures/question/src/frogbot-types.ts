@@ -1069,6 +1069,10 @@ export interface CellKind {
    */
   sku?: string | null;
   /**
+   * Hex color as #rrggbb or #rgb, for example #3b82f6
+   */
+  color?: string | null;
+  /**
    * Generated automatically by AI from: title. Writing a value keeps it and stops automatic updates
    */
   blurb?: string | null;
@@ -2059,6 +2063,7 @@ export interface CellKindsSelect {
   website?: boolean;
   phone?: boolean;
   sku?: boolean;
+  color?: boolean;
   blurb?: boolean;
   _blurb_status?: boolean;
   _blurb_error?: boolean;

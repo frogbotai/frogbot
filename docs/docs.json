@@ -125,6 +125,7 @@
                       "fields/duration",
                       "fields/url",
                       "fields/phone",
+                      "fields/color",
                       "fields/barcode",
                       "fields/autonumber",
                       "fields/ai"

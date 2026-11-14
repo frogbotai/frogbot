@@ -342,6 +342,8 @@ export type { AutonumberKeyFieldArgs } from './fields/baseFields/autonumber/key.
 export { autonumberKeyField } from './fields/baseFields/autonumber/key.js';
 export type { BarcodeFieldArgs } from './fields/baseFields/barcode/index.js';
 export { barcodeField } from './fields/baseFields/barcode/index.js';
+export type { ColorFieldArgs } from './fields/baseFields/color/index.js';
+export { colorField } from './fields/baseFields/color/index.js';
 export type { DurationFieldArgs } from './fields/baseFields/duration/index.js';
 export { durationField } from './fields/baseFields/duration/index.js';
 export type { MoneyFieldArgs } from './fields/baseFields/money/index.js';

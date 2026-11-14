@@ -19,6 +19,9 @@ vi.mock('@payloadcms/ui', () => ({
 const { BarcodeCell } =
   await import('../../../../../packages/ui/src/admin/fields/Barcode/index.client.js');
 
+const { ColorCell } =
+  await import('../../../../../packages/ui/src/admin/fields/Color/index.client.js');
+
 const { DurationCell } =
   await import('../../../../../packages/ui/src/admin/fields/Duration/index.client.js');
 
@@ -44,6 +47,7 @@ function kindField(type: 'number' | 'text', kind: Record<string, unknown>): Clie
 
 const fields = {
   barcode: kindField('text', { type: 'barcode' }),
+  color: kindField('text', { type: 'color', swatches: [] }),
   duration: kindField('number', { type: 'duration', format: 'h:mm:ss' }),
   percent: kindField('number', { type: 'percent', precision: 0 }),
   phone: kindField('text', { type: 'phone' }),
@@ -53,6 +57,7 @@ const fields = {
 
 const cells: [keyof typeof fields, KindCell][] = [
   ['barcode', BarcodeCell],
+  ['color', ColorCell],
   ['duration', DurationCell],
   ['percent', PercentCell],
   ['phone', PhoneCell],
@@ -91,6 +96,8 @@ describe('simple kind cells', () => {
     ['url', UrlCell, 'javascript:alert(1)'],
     ['url', UrlCell, 'mailto:a@b.com'],
     ['phone', PhoneCell, 'call me'],
+    ['color', ColorCell, 'blue'],
+    ['color', ColorCell, '3b82f6'],
     ['rating', RatingCell, 0],
     ['rating', RatingCell, 3.5],
     ['rating', RatingCell, 6],
@@ -103,6 +110,24 @@ describe('simple kind cells', () => {
 
     expect(lastProps()).toStrictEqual(props);
     expect(container.querySelector('a')).toBeNull();
+  });
+
+  it('draws a color as a swatch beside the value as stored', () => {
+    const { container } = render(<ColorCell {...cell(fields.color, '#3B82F6')} />);
+
+    const swatch = container.querySelector<HTMLElement>('.color-swatch');
+
+    expect(screen.getByTestId('default-cell').textContent).toBe('#3B82F6');
+    expect(swatch?.getAttribute('aria-hidden')).toBe('true');
+    expect(swatch?.style.backgroundColor).toBe('rgb(59, 130, 246)');
+  });
+
+  it('draws a short hex color at full length', () => {
+    const { container } = render(<ColorCell {...cell(fields.color, '#f0a')} />);
+
+    expect(container.querySelector<HTMLElement>('.color-swatch')?.style.backgroundColor).toBe(
+      'rgb(255, 0, 170)',
+    );
   });
 
   it('formats a percent', () => {
