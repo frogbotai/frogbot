@@ -56,7 +56,6 @@ export async function down({
   payload,
   req,
 }: MigrateDownArgs): Promise<void> {
-  await db.run(sql`DROP TABLE \`plugin_ai_policy_spend\`;`);
   await db.run(sql`PRAGMA foreign_keys=OFF;`);
   await db.run(sql`CREATE TABLE \`__new_users\` (
   	\`id\` integer PRIMARY KEY NOT NULL,
@@ -159,4 +158,5 @@ export async function down({
   await db.run(
     sql`ALTER TABLE \`messages\` DROP COLUMN \`usage_last_step_input_tokens\`;`,
   );
+  await db.run(sql`DROP TABLE \`plugin_ai_policy_spend\`;`);
 }
