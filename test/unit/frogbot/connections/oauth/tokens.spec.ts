@@ -501,7 +501,7 @@ describe('OAuth token and account transport', () => {
       await saveOAuthConnection({
         req: fixture.req,
         piece: fixture.piece,
-        owner: { id: 'owner', collection: 'users' },
+        holder: { owner: { id: 'owner', collection: 'users' } },
         tokens,
         account: { id: 'account', label: 'Account' },
       });

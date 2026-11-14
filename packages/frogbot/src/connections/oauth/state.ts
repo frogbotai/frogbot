@@ -24,6 +24,7 @@ const stateSchema = z.object({
   collection: z.string().min(1),
   callbackUrl: z.string(),
   returnTo: z.string(),
+  app: z.string().min(1).optional(),
   owner: z
     .object({
       id: z.union([z.string().refine((value) => value.trim().length > 0), z.number().int().safe()]),
@@ -44,6 +45,8 @@ export type OAuthState = z.infer<typeof stateSchema>;
 export type OAuthStateBinding = {
   flow: OAuthState['flow'];
   piece: PieceInstance;
+  /** The app slot a link flow saves to; none for a user's own account. */
+  app?: string;
   collection: string;
   callbackUrl: string;
   cookiePrefix: string;
@@ -101,6 +104,7 @@ export async function createOAuthState({
   encryption,
   piece,
   flow,
+  app,
   collection,
   callbackUrl,
   cookiePrefix,
@@ -115,8 +119,8 @@ export async function createOAuthState({
     req: Pick<FrogBotRequest, 'user'>;
   }): Promise<{ state: string; authorizationUrl: string; setCookie: string }> {
   const recipe = urlRecipe(pieceInstanceRuntime(piece).definition);
-  const app = piece.oauth;
-  if (!recipe || !app) throw new OAuthError('configuration');
+  const client = piece.oauth;
+  if (!recipe || !client) throw new OAuthError('configuration');
 
   const callback = callbackURL(callbackUrl).href;
   const state = randomValue();
@@ -128,10 +132,11 @@ export async function createOAuthState({
     flow,
     piece: piece.piece,
     instance: piece.slug,
-    clientId: app.clientId,
+    clientId: client.clientId,
     collection,
     callbackUrl: callback,
     returnTo: safeReturnTo(returnTo, callback),
+    app,
     owner:
       flow === 'link' && req.user
         ? { id: req.user.id, collection: req.user.collection }
@@ -143,7 +148,10 @@ export async function createOAuthState({
     expiresAt: issuedAt + lifetime,
   });
 
-  if (flow === 'link' && (!data.owner || data.owner.collection !== collection)) {
+  if (
+    (flow === 'link' && (!data.owner || data.owner.collection !== collection)) ||
+    (flow === 'login' && app !== undefined)
+  ) {
     throw new OAuthError('state');
   }
 
@@ -166,7 +174,7 @@ export async function createOAuthState({
     if (!reserved.has(key)) url.searchParams.set(key, value);
   }
 
-  url.searchParams.set('client_id', app.clientId);
+  url.searchParams.set('client_id', client.clientId);
   url.searchParams.set('redirect_uri', callback);
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('state', state);
@@ -198,6 +206,7 @@ export async function consumeOAuthState({
   state,
   piece,
   flow,
+  app,
   collection,
   callbackUrl,
   cookiePrefix,
@@ -217,6 +226,7 @@ export async function consumeOAuthState({
     if (
       intent.state !== state ||
       intent.flow !== flow ||
+      intent.app !== app ||
       intent.piece !== piece.piece ||
       intent.instance !== piece.slug ||
       intent.clientId !== piece.oauth?.clientId ||

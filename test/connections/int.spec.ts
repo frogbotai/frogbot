@@ -289,11 +289,12 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     expect(await store.get({ owner, piece })).toMatchObject({ credential });
   });
 
-  it('enforces owner/piece/method/account uniqueness at the database layer', async () => {
+  it('enforces holder/piece/method/account uniqueness at the database layer', async () => {
     const saved = await store.upsert({ owner, piece, method: 'oauth', credential });
     const encrypted = await frogbot.config.connections.encryption.encrypt(JSON.stringify('secret'));
     const data = {
       owner: owner.id,
+      holder: `user:${owner.id}`,
       piece,
       method: 'secret',
       credential: encrypted,
@@ -314,7 +315,10 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       frogbot.db.create({ collection: 'connections', data: { ...data, accountId: 'another' } }),
     ).resolves.toMatchObject({ accountId: 'another' });
     await expect(
-      frogbot.db.create({ collection: 'connections', data: { ...data, owner: other.id } }),
+      frogbot.db.create({
+        collection: 'connections',
+        data: { ...data, owner: other.id, holder: `user:${other.id}` },
+      }),
     ).resolves.toMatchObject({ owner: other.id });
     await expect(
       frogbot.db.create({ collection: 'connections', data: { ...data, piece: 'another-piece' } }),

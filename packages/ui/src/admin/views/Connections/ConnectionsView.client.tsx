@@ -6,8 +6,10 @@ import { Button } from '../../../components/button.js';
 import { SearchInput } from '../../../components/search-input.js';
 import LinkSquareIcon from '../../../icons/icons/LinkSquareIcon.js';
 import LoadingIcon from '../../../icons/icons/LoadingIcon.js';
+import { AppConnections } from './AppConnections.client.js';
+import type { ConnectionMethod } from './ConnectionForm.js';
 import { type ConnectionAction, ConnectionGroup } from './ConnectionGroup.js';
-import { type ConnectionMethod, NewConnectionDialog } from './NewConnectionDialog.js';
+import { NewConnectionDialog } from './NewConnectionDialog.js';
 import type { ConnectionItem, ConnectionPiece, ConnectionsViewClientProps } from './types.js';
 
 export function ConnectionsViewClient({
@@ -16,6 +18,7 @@ export function ConnectionsViewClient({
   pieces,
   initialConnections,
   initialError,
+  slots = [],
 }: ConnectionsViewClientProps) {
   const [connections, setConnections] = useState(initialConnections);
   const [error, setError] = useState(initialError ?? '');
@@ -157,67 +160,72 @@ export function ConnectionsViewClient({
 
   return (
     <div className="frogbot-connections">
-      <div className="frogbot-connections__toolbar">
-        <SearchInput
-          aria-label="Search connections"
-          placeholder="Search connections…"
-          value={search}
-          onChange={setSearch}
-        />
-        <Button
-          size="sm"
-          className="frogbot-connections__lift"
-          onClick={() => openDialog()}
-          disabled={pieces.length === 0}
-        >
-          + New Connection
-        </Button>
-      </div>
-      {error && (
-        <div className="frogbot-connections__error" role="alert">
-          <span>{error}</span>
-          <Button variant="outline" size="sm" disabled={loading} onClick={() => void refresh()}>
-            Try again
-          </Button>
-        </div>
-      )}
-      {loading ? (
-        <div role="status" className="frogbot-connections__empty">
-          <LoadingIcon size={24} className="frogbot-connections__spinner" />
-          <span>Loading connections…</span>
-        </div>
-      ) : filtered.length === 0 ? (
-        error ? null : (
-          <div className="frogbot-connections__empty frogbot-connections__empty--bordered">
-            <LinkSquareIcon size={32} />
-            <p>{query ? 'No connections match your search' : 'No connections yet'}</p>
-            {!query && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="frogbot-connections__lift"
-                disabled={pieces.length === 0}
-                onClick={() => openDialog()}
-              >
-                Add your first connection
-              </Button>
-            )}
-          </div>
-        )
-      ) : (
-        <div className="frogbot-connections__groups">
-          {[...groups].map(([slug, items]) => (
-            <ConnectionGroup
-              key={slug}
-              slug={slug}
-              piece={bySlug.get(slug)}
-              connections={items}
-              busy={pending}
-              onAction={act}
+      {(pieces.length > 0 || slots.length === 0) && (
+        <>
+          <div className="frogbot-connections__toolbar">
+            <SearchInput
+              aria-label="Search connections"
+              placeholder="Search connections…"
+              value={search}
+              onChange={setSearch}
             />
-          ))}
-        </div>
+            <Button
+              size="sm"
+              className="frogbot-connections__lift"
+              onClick={() => openDialog()}
+              disabled={pieces.length === 0}
+            >
+              + New Connection
+            </Button>
+          </div>
+          {error && (
+            <div className="frogbot-connections__error" role="alert">
+              <span>{error}</span>
+              <Button variant="outline" size="sm" disabled={loading} onClick={() => void refresh()}>
+                Try again
+              </Button>
+            </div>
+          )}
+          {loading ? (
+            <div role="status" className="frogbot-connections__empty">
+              <LoadingIcon size={24} className="frogbot-connections__spinner" />
+              <span>Loading connections…</span>
+            </div>
+          ) : filtered.length === 0 ? (
+            error ? null : (
+              <div className="frogbot-connections__empty frogbot-connections__empty--bordered">
+                <LinkSquareIcon size={32} />
+                <p>{query ? 'No connections match your search' : 'No connections yet'}</p>
+                {!query && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="frogbot-connections__lift"
+                    disabled={pieces.length === 0}
+                    onClick={() => openDialog()}
+                  >
+                    Add your first connection
+                  </Button>
+                )}
+              </div>
+            )
+          ) : (
+            <div className="frogbot-connections__groups">
+              {[...groups].map(([slug, items]) => (
+                <ConnectionGroup
+                  key={slug}
+                  slug={slug}
+                  piece={bySlug.get(slug)}
+                  connections={items}
+                  busy={pending}
+                  onAction={act}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
+      {slots.length > 0 && <AppConnections apiPath={apiPath} returnTo={returnTo} slots={slots} />}
       <NewConnectionDialog
         key={dialog.key}
         pieces={pieces}

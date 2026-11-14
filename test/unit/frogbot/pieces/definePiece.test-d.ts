@@ -214,7 +214,7 @@ expectTypeOf(connected.getValue({ input: { id: 'id' }, req })).toEqualTypeOf<
 expectTypeOf(connected.client({ req })).toEqualTypeOf<Promise<TokenClient>>();
 
 expectTypeOf<Parameters<typeof connected.client>[0]>().toEqualTypeOf<
-  { req: FrogBotRequest } & { connection?: number | string }
+  { req: FrogBotRequest } & { connection?: number | string; as?: string }
 >();
 
 expectTypeOf<'missing'>().not.toExtend<keyof typeof connected>();
@@ -698,6 +698,7 @@ expectTypeOf<PublicConnectionEntry<typeof oauthWithoutApp>>().toEqualTypeOf<{
   piece: typeof oauthWithoutApp;
   oauth?: never;
   secret: true;
+  app?: string;
 }>();
 
 expectTypeOf<

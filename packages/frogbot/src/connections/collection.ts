@@ -30,9 +30,37 @@ export function defaultConnectionsCollection({
       update: () => false,
       delete: () => false,
     },
-    indexes: [{ fields: ['owner', 'piece', 'method', 'accountId'], unique: true }],
+    indexes: [{ fields: ['holder', 'piece', 'method', 'accountId'], unique: true }],
     fields: [
-      { name: 'owner', type: 'relationship', relationTo: userSlug, index: true, required: true },
+      { name: 'owner', type: 'relationship', relationTo: userSlug, index: true },
+      {
+        name: 'app',
+        type: 'text',
+        index: true,
+        defaultValue: '',
+        validate: (value: unknown, { siblingData }: { siblingData?: { owner?: unknown } }) =>
+          !value || siblingData?.owner == null || siblingData.owner === ''
+            ? true
+            : 'A connection belongs to a user or to an app slot, not both.',
+      },
+      {
+        name: 'holder',
+        type: 'text',
+        hidden: true,
+        required: true,
+        hooks: {
+          beforeValidate: [
+            ({ siblingData }) => {
+              const owner = siblingData?.owner;
+              const id = owner && typeof owner === 'object' ? owner.id : owner;
+
+              return id != null && id !== ''
+                ? `user:${String(id)}`
+                : `app:${siblingData?.app ?? ''}`;
+            },
+          ],
+        },
+      },
       { name: 'piece', type: 'text', index: true, required: true },
       {
         name: 'method',

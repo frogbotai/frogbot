@@ -27,7 +27,12 @@ const createPiece = definePiece({
   actions: [],
 });
 
-type UncheckedConnectionEntry = { piece: PieceInstance; oauth?: unknown; secret?: unknown };
+type UncheckedConnectionEntry = {
+  piece: PieceInstance;
+  oauth?: unknown;
+  secret?: unknown;
+  app?: unknown;
+};
 
 function config({
   collections = [],
@@ -101,6 +106,60 @@ describe('resolveConnectionsCollections', () => {
       });
       expect(connections.entries.linear?.piece).toBe(piece);
       expect(connections.entries.toString).toBeUndefined();
+    },
+  );
+
+  it('keeps app slots apart from user entries, one per piece and app', () => {
+    const piece = createPiece({ oauth });
+    const { connections } = resolveConnectionsCollections(
+      config({
+        connections: [
+          { piece, oauth: true },
+          { piece, oauth: true, app: 'teamMailbox' },
+          { piece, secret: true, app: 'billing' },
+        ],
+      }),
+    );
+
+    expect(Object.keys(connections.entries)).toEqual(['linear']);
+    expect(Object.keys(connections.apps)).toEqual(['teamMailbox', 'billing']);
+    expect(connections.apps.teamMailbox.linear).toMatchObject({ piece, oauth: true });
+    expect(connections.apps.billing.linear).toMatchObject({ oauth: false, secret: true });
+  });
+
+  it('enables connections for a config with only app slots', () => {
+    const result = resolveConnectionsCollections(
+      config({ connections: [{ piece: createPiece(), secret: true, app: 'shared' }] }),
+    );
+
+    expect(result.connections).toMatchObject({ enabled: true, entries: {} });
+    expect(result.collections.map(({ slug }) => slug)).toContain('connections');
+  });
+
+  it.each([
+    [[{}, {}], "Duplicate connection entry for piece 'linear'."],
+    [
+      [{ app: 'team' }, { app: 'team' }],
+      "Duplicate connection entry for piece 'linear' in app 'team'.",
+    ],
+  ])('rejects a duplicate piece and app %j', (apps, message) => {
+    expect(() =>
+      resolveConnectionsCollections(
+        config({
+          connections: apps.map((app) => ({ piece: createPiece(), secret: true, ...app })),
+        }),
+      ),
+    ).toThrow(message);
+  });
+
+  it.each(['', ' team', 'team mailbox', 'a/b', 'é', 42, null])(
+    'rejects the app slot name %j',
+    (app) => {
+      expect(() =>
+        resolveConnectionsCollections(
+          config({ connections: [{ piece: createPiece(), secret: true, app }] }),
+        ),
+      ).toThrow('is not URL-safe');
     },
   );
 
@@ -304,14 +363,14 @@ describe('resolveConnectionsCollections', () => {
     expect(await encrypted.access.read({ req })).toBe(false);
   });
 
-  it('requires an encrypted credential and a unique owner/piece/account triple', () => {
+  it('requires an encrypted credential and a unique holder/piece/method/account key', () => {
     const result = resolveConnectionsCollections(config());
     const collection = result.collections.find((item) => item.slug === 'connections')!;
     const field = collection.fields.find((item) => 'name' in item && item.name === 'credential');
 
     expect(field).toMatchObject({ type: 'text', required: true });
     expect(collection.indexes).toEqual([
-      { fields: ['owner', 'piece', 'method', 'accountId'], unique: true },
+      { fields: ['holder', 'piece', 'method', 'accountId'], unique: true },
     ]);
   });
 

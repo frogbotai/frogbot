@@ -9,8 +9,16 @@ import { refreshOAuthConnection } from './oauth/refresh.js';
 import { revokeOAuthConnection } from './oauth/revoke.js';
 import { oauthScopes } from './oauth/scopes.js';
 import { oauthAuth, parseOAuthTokens } from './oauth/tokens.js';
-import { type ConnectionID, type ConnectionOwner, ConnectionStore, defaultRow } from './store.js';
-import type { SanitizedConnectionsConfig } from './types.js';
+import {
+  connectionEntry,
+  connectionHolderKey,
+  type ConnectionID,
+  type ConnectionMetadata,
+  type ConnectionOwner,
+  ConnectionStore,
+  defaultRow,
+} from './store.js';
+import type { ConnectionHolder, SanitizedConnectionsConfig } from './types.js';
 
 export type AuthorizationRequirement = {
   piece: string;
@@ -24,8 +32,13 @@ export type ConnectionResolveArgs = {
   piece: PieceInstance;
   req: FrogBotRequest;
   scopes?: readonly string[];
-  /** Pins one of the user's linked accounts by row id; omitted, the default account is used. */
+  /** Pins one of the holder's linked accounts by row id; omitted, the default account is used. */
   connection?: ConnectionID;
+  /**
+   * The app slot to read, by its `app` name in `connections`. The request's user is not used, and
+   * an unlinked slot throws `ConnectionError('missing')`.
+   */
+  as?: string;
 };
 
 export class ConnectionError extends Error {
@@ -71,8 +84,8 @@ export function connectionsState(connections: Connections): ConnectionsState {
   return state;
 }
 
-const rowKey = (owner: ConnectionOwner, id: ConnectionID) =>
-  JSON.stringify([owner.collection, String(owner.id), String(id)]);
+const rowKey = (holder: ConnectionHolder, id: ConnectionID) =>
+  JSON.stringify([...connectionHolderKey(holder), String(id)]);
 
 async function requestOwner(
   frogbot: FrogBot,
@@ -120,22 +133,39 @@ export class Connections {
     req,
     scopes,
     connection,
+    as,
   }: ConnectionResolveArgs): Promise<{ auth: unknown; key: object }> {
     const { config, credentialKeys, frogbot, identitySecret } = connectionsState(this);
     const runtime = pieceInstanceRuntime(piece);
     const slug = piece.piece;
+    if (
+      as !== undefined &&
+      (typeof as !== 'string' || !connectionEntry(config, { app: as, piece: slug }))
+    ) {
+      throw new Error(
+        `[frogbot] No connection entry declares piece '${slug}' with app '${String(as)}'.`,
+      );
+    }
+
     if (!runtime.definition.auth) return { auth: undefined, key: piece };
 
-    const owner = await requestOwner(frogbot, req);
+    let holder: ConnectionHolder | undefined;
+    if (as !== undefined) holder = { app: as };
+    else {
+      const owner = await requestOwner(frogbot, req);
+      holder = owner && { owner };
+    }
+
     let id: string | undefined;
     const fail = (code: ConnectionError['code'], message: string): never => {
       if (id) credentialKeys.delete(id);
       throw new ConnectionError(`Connection for '${slug}' ${message}.`, code, undefined, slug);
     };
 
-    const configured = Object.hasOwn(config.entries, slug) ? config.entries[slug] : undefined;
+    const configured = connectionEntry(config, { app: as, piece: slug });
     const entry =
-      configured && (configured.piece.slug === piece.slug || runtime.auth === undefined)
+      configured &&
+      (as !== undefined || configured.piece.slug === piece.slug || runtime.auth === undefined)
         ? configured
         : undefined;
 
@@ -145,11 +175,11 @@ export class Connections {
       return fail('missing', 'is not linked');
     }
 
-    const notLinked = 'is not linked. Link it in Settings → Linked accounts';
+    const notLinked = `${as === undefined ? 'is not linked' : `app '${as}' is not linked`}. Link it in Settings → Linked accounts`;
     let row;
     try {
       const store = await this.store;
-      const rows = owner && entry ? await store.rows({ owner, piece: slug }) : [];
+      const rows = holder && entry ? await store.rows({ ...holder, piece: slug }) : [];
       const picked =
         connection === undefined
           ? defaultRow(rows)
@@ -173,8 +203,8 @@ export class Connections {
         );
       }
 
-      if (picked) id = rowKey(owner!, picked.id);
-      row = picked && (await store.get({ owner: owner!, piece: slug, id: picked.id }));
+      if (picked) id = rowKey(holder!, picked.id);
+      row = picked && (await store.get({ ...holder!, piece: slug, id: picked.id }));
     } catch (error) {
       if (error instanceof ConnectionError) throw error;
 
@@ -193,7 +223,7 @@ export class Connections {
       try {
         row = await refreshOAuthConnection({
           store: await this.store,
-          owner: owner!,
+          holder: holder!,
           piece: entry.piece,
           id: row.id,
           req,
@@ -264,14 +294,60 @@ export class Connections {
     const owner = await requestOwner(frogbot, req);
     if (!owner) throw new Error('Connections require an owner from the admin user collection.');
     const rows = await (await this.store).list({ owner });
-    const prefix = `${JSON.stringify([owner.collection, String(owner.id)]).slice(0, -1)},`;
-    const current = new Set(rows.map((row) => rowKey(owner, row.id)));
+    const prefix = `${JSON.stringify(connectionHolderKey({ owner })).slice(0, -1)},`;
+    const current = new Set(rows.map((row) => rowKey({ owner }, row.id)));
 
     for (const id of credentialKeys.keys()) {
       if (id.startsWith(prefix) && !current.has(id)) credentialKeys.delete(id);
     }
 
     return rows;
+  }
+
+  /**
+   * Every linked app slot, without credentials. Only users of the admin collection may read them.
+   */
+  async slots({ req }: { req: FrogBotRequest }): Promise<ConnectionMetadata[]> {
+    const { frogbot } = connectionsState(this);
+    if (!(await requestOwner(frogbot, req))) {
+      throw new Error('Connections require an owner from the admin user collection.');
+    }
+
+    return (await this.store).slots();
+  }
+
+  /**
+   * Disconnects the app slot `app` for `piece`: ends an OAuth session at the provider when the
+   * recipe can, then deletes the row. Only users of the admin collection may do this.
+   */
+  async deleteSlot({
+    req,
+    app,
+    piece,
+  }: {
+    req: FrogBotRequest;
+    app: string;
+    piece: string;
+  }): Promise<boolean> {
+    const { config, credentialKeys, frogbot } = connectionsState(this);
+    if (!(await requestOwner(frogbot, req))) {
+      throw new Error('Connections require an owner from the admin user collection.');
+    }
+
+    const entry = connectionEntry(config, { app, piece });
+    if (!entry) return false;
+    const store = await this.store;
+    const holder = { app };
+    const row = defaultRow(await store.rows({ ...holder, piece }));
+    if (!row) return false;
+    if (entry.oauth) {
+      await revokeOAuthConnection({ store, holder, piece: entry.piece, id: row.id, req });
+    }
+
+    const deleted = await store.delete({ ...holder, piece, id: row.id });
+    credentialKeys.delete(rowKey(holder, row.id));
+
+    return deleted;
   }
 
   async delete({ req, id }: { req: FrogBotRequest; id: ConnectionID }): Promise<boolean> {
@@ -287,11 +363,19 @@ export class Connections {
         ? config.entries[row.piece]
         : undefined;
 
-      if (entry) await revokeOAuthConnection({ store, owner, piece: entry.piece, id: row.id, req });
+      if (entry) {
+        await revokeOAuthConnection({
+          store,
+          holder: { owner },
+          piece: entry.piece,
+          id: row.id,
+          req,
+        });
+      }
     }
 
     const deleted = await store.delete({ owner, piece: row.piece, id: row.id });
-    if (deleted) credentialKeys.delete(rowKey(owner, row.id));
+    if (deleted) credentialKeys.delete(rowKey({ owner }, row.id));
 
     return deleted;
   }

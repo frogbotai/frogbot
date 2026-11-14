@@ -1,24 +1,25 @@
 import { pieceInstanceDefinition } from '../../pieces/definePiece.js';
 import type { PieceInstance } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
-import type { ConnectionID, ConnectionOwner, ConnectionStore } from '../store.js';
+import type { ConnectionID, ConnectionStore } from '../store.js';
+import type { ConnectionHolder } from '../types.js';
 import { parseOAuthTokens } from './tokens.js';
 
 const REVOKE_TIMEOUT_MS = 10_000;
 
 /**
- * Ends the OAuth session of `owner`'s row `id` for `piece` at the provider, when the recipe can. A failure or a
- * timeout is logged, never thrown, so Disconnect still deletes the tokens.
+ * Ends the OAuth session of the holder's row `id` for `piece` at the provider, when the recipe
+ * can. A failure or a timeout is logged, never thrown, so Disconnect still deletes the tokens.
  */
 export async function revokeOAuthConnection({
   store,
-  owner,
+  holder,
   piece,
   id,
   req,
 }: {
   store: ConnectionStore;
-  owner: ConnectionOwner;
+  holder: ConnectionHolder;
   piece: PieceInstance;
   id: ConnectionID;
   req: FrogBotRequest;
@@ -30,7 +31,7 @@ export async function revokeOAuthConnection({
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   try {
-    const row = await store.get({ owner, piece: piece.piece, id });
+    const row = await store.get({ ...holder, piece: piece.piece, id });
 
     if (row?.method !== 'oauth') return;
 

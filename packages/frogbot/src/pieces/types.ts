@@ -36,6 +36,8 @@ export type PieceCallArgs<TInput, TRequireRequest extends boolean> = {
   overrideAccess?: boolean;
   /** Pins one of the user's linked accounts by row id; omitted, the default account is used. */
   connection?: number | string;
+  /** The app slot whose shared account the call uses, by its `app` name in `connections`. */
+  as?: string;
 } & (TRequireRequest extends true ? { req: FrogBotRequest } : { req?: FrogBotRequest });
 
 export type PieceRunArgs<TInput, TOptions, TClient> = {
@@ -434,7 +436,11 @@ export type PieceInstance = {
   piece: string;
   oauth?: OAuthApp;
   readonly triggers: Readonly<Record<string, PieceTriggerReference>>;
-  client(args: { req: FrogBotRequest; connection?: number | string }): Promise<unknown>;
+  client(args: {
+    req: FrogBotRequest;
+    connection?: number | string;
+    as?: string;
+  }): Promise<unknown>;
   readonly [pieceCapabilities]: PieceCapabilities;
 };
 
@@ -487,7 +493,7 @@ export type DefinedPiece<T extends PieceDefinition, TConfig> = {
   client(
     args: (RequiresRequest<TConfig> extends true
       ? { req: FrogBotRequest }
-      : { req?: FrogBotRequest }) & { connection?: number | string },
+      : { req?: FrogBotRequest }) & { connection?: number | string; as?: string },
   ): Promise<
     T extends { client: (...args: never[]) => infer TClient } ? Awaited<TClient> : undefined
   >;

@@ -19,6 +19,7 @@ function harness() {
     enabled: true,
     slug: 'connections',
     entries: { example: { piece: {} as never, oauth: false, secret: true } },
+    apps: { shared: { example: { piece: {} as never, oauth: false, secret: true } } },
     encryption: createCredentialEncryption({ secret: 'test-secret' }),
   };
 
@@ -163,4 +164,38 @@ describe('connection store guards and leases', () => {
     await expect(locked.delete()).rejects.toBeInstanceOf(KVLeaseLostError);
     expect(vi.getTimerCount()).toBe(0);
   });
+
+  it('locks a slot and a user row for one piece under different keys', async () => {
+    const { store, atomic, frogbot } = harness();
+
+    await store
+      .upsert({ owner: { id: 'shared', collection: 'app' }, piece, ...write })
+      .catch(() => undefined);
+
+    await store.upsert({ owner, piece, ...write });
+    await store.upsert({ app: 'shared', piece, ...write });
+
+    const keys = atomic.acquireLock.mock.calls.map(([key]) => key);
+
+    expect(keys).toEqual([
+      'connections:["connections","user","users","1","example"]',
+      'connections:["connections","app","shared","example"]',
+    ]);
+    expect(frogbot.create.mock.calls.map(([{ data }]) => [data.owner, data.app])).toEqual([
+      [1, ''],
+      [null, 'shared'],
+    ]);
+  });
+
+  it.each(['missing', 'toString', '__proto__', ''])(
+    'rejects the undeclared app slot %j before storage or lock access',
+    async (app) => {
+      const { store, frogbot, atomic } = harness();
+
+      await expect(store.upsert({ app, piece, ...write })).rejects.toThrow();
+      await expect(store.get({ app, piece })).rejects.toThrow();
+      expect(frogbot.find).not.toHaveBeenCalled();
+      expect(atomic.acquireLock).not.toHaveBeenCalled();
+    },
+  );
 });

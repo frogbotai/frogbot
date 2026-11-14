@@ -51,7 +51,9 @@ function isRenderableSchema(schema: ConnectionSchema | boolean): boolean {
   return ['string', 'number', 'integer', 'boolean'].includes(schema.type as string);
 }
 
-function resolveEntries(config: FrogBotConfig): SanitizedConnectionsConfig['entries'] {
+function resolveEntries(
+  config: FrogBotConfig,
+): Pick<SanitizedConnectionsConfig, 'apps' | 'entries'> {
   if ('credentialSources' in config) {
     throw new Error(
       '[frogbot] `credentialSources` is no longer supported. Configure `connections` entries.',
@@ -63,6 +65,7 @@ function resolveEntries(config: FrogBotConfig): SanitizedConnectionsConfig['entr
   }
 
   const entries: Record<string, SanitizedConnectionEntry> = Object.create(null);
+  const apps: Record<string, Record<string, SanitizedConnectionEntry>> = Object.create(null);
 
   for (const entry of config.connections ?? []) {
     if (!entry || !isPieceInstance(entry.piece)) {
@@ -70,8 +73,26 @@ function resolveEntries(config: FrogBotConfig): SanitizedConnectionsConfig['entr
     }
 
     const slug = entry.piece.piece;
-    if (entries[slug]) {
-      throw new Error(`[frogbot] Duplicate connection entry for piece '${slug}'.`);
+    const slot = entry.app;
+    if (
+      slot !== undefined &&
+      (typeof slot !== 'string' ||
+        !slot.trim() ||
+        slot !== slot.trim() ||
+        encodeURIComponent(slot) !== slot)
+    ) {
+      throw new Error(`[frogbot] Connection '${slug}' app '${String(slot)}' is not URL-safe.`);
+    }
+
+    const target: Record<string, SanitizedConnectionEntry> =
+      slot === undefined ? entries : (apps[slot] ??= Object.create(null));
+
+    if (target[slug]) {
+      throw new Error(
+        slot === undefined
+          ? `[frogbot] Duplicate connection entry for piece '${slug}'.`
+          : `[frogbot] Duplicate connection entry for piece '${slug}' in app '${slot}'.`,
+      );
     }
 
     for (const method of ['oauth', 'secret'] as const) {
@@ -122,7 +143,7 @@ function resolveEntries(config: FrogBotConfig): SanitizedConnectionsConfig['entr
 
     const icon = definition.admin?.icon;
 
-    entries[slug] = {
+    target[slug] = {
       piece: entry.piece,
       oauth,
       secret,
@@ -133,15 +154,15 @@ function resolveEntries(config: FrogBotConfig): SanitizedConnectionsConfig['entr
     };
   }
 
-  return entries;
+  return { entries, apps };
 }
 
-/** The AI providers that `connections` pieces link to, each with its piece. */
+/** The AI providers that users' `connections` pieces link to, each with its piece. App slots don't. */
 export function resolveLinkedProviders(config: FrogBotConfig): Record<string, PieceInstance> {
   const linked: Record<string, PieceInstance> = Object.create(null);
 
   for (const entry of Array.isArray(config.connections) ? config.connections : []) {
-    if (!isPieceInstance(entry?.piece)) continue;
+    if (!isPieceInstance(entry?.piece) || entry.app !== undefined) continue;
 
     const provider = pieceInstanceDefinition(entry.piece).provider;
 
@@ -183,20 +204,20 @@ export function resolveConnectionsCollections(config: FrogBotConfig): {
     );
   }
 
-  const entries = resolveEntries(config);
-  const enabled = Object.keys(entries).length > 0;
+  const { entries, apps } = resolveEntries(config);
+  const enabled = Object.keys(entries).length > 0 || Object.keys(apps).length > 0;
   const encryption = createCredentialEncryption({ secret: config.secret });
   if (!enabled) {
     return {
       collections: config.collections,
-      connections: { enabled: false, encryption, entries },
+      connections: { enabled: false, encryption, entries, apps },
     };
   }
 
   const slug = DEFAULT_CONNECTIONS_SLUG;
   const userSlug = resolveUserSlug(config);
   const base = defaultConnectionsCollection({ slug, userSlug });
-  const connections = { enabled: true, slug, encryption, entries };
+  const connections = { enabled: true, slug, encryption, entries, apps };
   base.endpoints = buildConnectionOAuthEndpoints({ connections, userSlug });
 
   return {

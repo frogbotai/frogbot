@@ -1,7 +1,8 @@
 import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import type { OAuthTokens, PieceInstance, PieceOAuthAccount } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
-import type { ConnectionID, ConnectionOwner } from '../store.js';
+import type { ConnectionID } from '../store.js';
+import type { ConnectionHolder } from '../types.js';
 import { OAuthError } from './error.js';
 import { oauthScopes } from './scopes.js';
 import {
@@ -13,36 +14,39 @@ import {
 } from './tokens.js';
 
 /**
- * Stores finished OAuth tokens as `owner`'s linked account for `piece`. The owner must still
- * exist; the tokens must parse and give the piece's auth. With no `account`, the recipe's
- * `account()` looks it up. The same provider account updates its row; a new one adds a row. With
- * `reconnect`, only that row is updated, and a different provider account throws
+ * Stores finished OAuth tokens as the holder's linked account for `piece`: a user's, or an app
+ * slot's. A user holder must still exist; the tokens must parse and give the piece's auth. With
+ * no `account`, the recipe's `account()` looks it up. For a user, the same provider account
+ * updates its row and a new one adds a row; an app slot keeps one row, which the save replaces.
+ * With `reconnect`, only that row is updated, and a different provider account throws
  * `OAuthError('account')` without writing.
  */
 export async function saveOAuthConnection({
   req,
   piece,
-  owner,
+  holder,
   tokens,
   account,
   reconnect,
 }: {
   req: FrogBotRequest;
   piece: PieceInstance;
-  owner: ConnectionOwner;
+  holder: ConnectionHolder;
   tokens: OAuthTokens;
   account?: PieceOAuthAccount;
   reconnect?: ConnectionID;
 }): Promise<void> {
-  const user = await req.frogbot.findByID({
-    collection: owner.collection,
-    id: owner.id,
-    depth: 0,
-    overrideAccess: true,
-    disableErrors: true,
-  });
+  if (holder.app === undefined) {
+    const user = await req.frogbot.findByID({
+      collection: holder.owner.collection,
+      id: holder.owner.id,
+      depth: 0,
+      overrideAccess: true,
+      disableErrors: true,
+    });
 
-  if (!user) throw new OAuthError('state');
+    if (!user) throw new OAuthError('state');
+  }
 
   const credential = parseOAuthTokens(tokens);
 
@@ -69,7 +73,7 @@ export async function saveOAuthConnection({
   await (
     await req.frogbot.connections.store
   ).upsert({
-    owner,
+    ...holder,
     piece: piece.piece,
     method: 'oauth',
     credential,

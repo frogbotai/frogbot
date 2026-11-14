@@ -81,6 +81,7 @@ async function setup({
     slug: 'connections',
     encryption,
     entries: { example: { piece, oauth, secret } },
+    apps: {},
   });
 
   const req = { user: { id: 'owner', collection: 'users' }, frogbot } as unknown as FrogBotRequest;
