@@ -14,10 +14,23 @@ export type SpendSubject = { collection: string; id: number | string };
 
 type Counter = { id: number | string; amount?: number; period?: string };
 
-/** The UTC calendar month a cost belongs to, as `YYYY-MM`. */
-export function currentPeriod(now = new Date()): string {
-  return now.toISOString().slice(0, 7);
+/** Returns the month a moment belongs to, as `YYYY-MM`, on the calendar of an IANA time zone. */
+export type Period = (now?: Date) => string;
+
+/** The calendar month in `timeZone` (default UTC). Throws a `RangeError` for an unknown zone. */
+export function periodIn(timeZone = 'UTC'): Period {
+  const format = new Intl.DateTimeFormat('en-US', { timeZone, year: 'numeric', month: '2-digit' });
+
+  return (now = new Date()) => {
+    const parts = format.formatToParts(now);
+    const part = (type: 'year' | 'month') => parts.find((each) => each.type === type)?.value;
+
+    return `${part('year')}-${part('month')}`;
+  };
 }
+
+/** The UTC calendar month, as `YYYY-MM`. */
+export const currentPeriod: Period = periodIn();
 
 const counterKey = ({ collection, id }: SpendSubject) => `${collection}:${String(id)}`;
 
@@ -91,7 +104,7 @@ export function createSpendCounters({
   };
 }
 
-type SpendOptions = { authCollection: string; keysCollection?: string };
+type SpendOptions = { authCollection: string; keysCollection?: string; period: Period };
 
 /**
  * Adds `cost` to the subject's counter for this month in single statements on the counter row,
@@ -105,7 +118,7 @@ export async function addSpend(
 ): Promise<void> {
   const { db } = req.frogbot;
   const key = counterKey(subject);
-  const period = currentPeriod();
+  const period = options.period();
 
   const bump = async () =>
     (await db.updateOne({
@@ -118,7 +131,7 @@ export async function addSpend(
   const rollOver = async () =>
     (await db.updateOne({
       collection: SPEND_COUNTERS_SLUG,
-      where: { and: [{ key: { equals: key } }, { period: { not_equals: period } }] },
+      where: { and: [{ key: { equals: key } }, { period: { less_than: period } }] },
       data: { amount: cost, period },
       options: { atomic: true },
     })) as Counter | null;
@@ -199,12 +212,13 @@ export function holdSpend(
 export async function readSpend(
   req: FrogBotRequest,
   subjects: SpendSubject[],
+  period: Period,
 ): Promise<Map<string, number>> {
   const keys = subjects.map(counterKey);
   const pending = new Map(pendingSpend(req));
   const { docs } = await req.frogbot.find({
     collection: SPEND_COUNTERS_SLUG,
-    where: { and: [{ key: { in: keys } }, { period: { equals: currentPeriod() } }] },
+    where: { and: [{ key: { in: keys } }, { period: { equals: period() } }] },
     depth: 0,
     limit: keys.length,
     overrideAccess: true,
@@ -224,6 +238,7 @@ export function spendOf(spend: Map<string, number>, subject: SpendSubject): numb
 function createCounterOnCreate(
   field: 'user' | 'apiKey',
   collection: string,
+  period: Period,
 ): CollectionAfterChangeHook {
   return async ({ doc, operation, req }) => {
     if (operation !== 'create') return doc;
@@ -235,13 +250,16 @@ function createCounterOnCreate(
     const amount =
       from === undefined
         ? 0
-        : spendOf(await readSpend(req, [{ collection, id: from }]), { collection, id: from });
+        : spendOf(await readSpend(req, [{ collection, id: from }], period), {
+            collection,
+            id: from,
+          });
 
     const counter = (await req.frogbot.create({
       collection: SPEND_COUNTERS_SLUG,
       data: {
         key: counterKey({ collection, id: doc.id }),
-        period: currentPeriod(),
+        period: period(),
         amount,
         [field]: doc.id,
       },
@@ -276,6 +294,7 @@ function deleteCounterOnDelete(collection: string): CollectionAfterDeleteHook {
 export function withSpendCounter(
   collection: CollectionConfig,
   field: 'user' | 'apiKey',
+  period: Period,
 ): CollectionConfig {
   return {
     ...collection,
@@ -283,7 +302,7 @@ export function withSpendCounter(
       ...collection.hooks,
       afterChange: [
         ...(collection.hooks?.afterChange ?? []),
-        createCounterOnCreate(field, collection.slug),
+        createCounterOnCreate(field, collection.slug, period),
       ],
       afterDelete: [
         ...(collection.hooks?.afterDelete ?? []),

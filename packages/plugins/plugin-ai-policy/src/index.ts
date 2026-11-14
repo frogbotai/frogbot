@@ -7,7 +7,7 @@ import {
 } from 'frogbot';
 
 import { createPolicyAccess } from './access.js';
-import { createSpendCounters, withSpendCounter } from './counters.js';
+import { createSpendCounters, type Period, periodIn, withSpendCounter } from './counters.js';
 import { createPolicyFields, mergePolicyFields } from './fields.js';
 import { createPolicyHooks } from './hooks.js';
 import { createKeyLimitFields, keyLimitsCreateFields, withKeyLimits } from './keys.js';
@@ -16,6 +16,11 @@ import { createResetTask } from './reset.js';
 export type AIPolicyPluginOptions = {
   /** Auth collection that gets the policy fields. Default: the app's only auth collection, or `admin.user`. */
   authCollection?: string;
+  /**
+   * IANA time zone whose calendar months spend counts in, such as `America/New_York`. Budgets start
+   * over at local midnight on the 1st. Default: `UTC`.
+   */
+  timeZone?: string;
 };
 
 declare module 'frogbot' {
@@ -57,6 +62,20 @@ function withCreateFieldsImport(admin: FrogBotConfig['admin']): Admin {
   };
 }
 
+function resolvePeriod(timeZone: unknown): Period {
+  if (timeZone !== undefined && typeof timeZone !== 'string') {
+    throw new Error('[plugin-ai-policy] timeZone must be an IANA time zone name, such as "UTC".');
+  }
+
+  try {
+    return periodIn(timeZone);
+  } catch {
+    throw new Error(
+      `[plugin-ai-policy] Unknown timeZone "${String(timeZone)}": use an IANA time zone name, such as "America/New_York".`,
+    );
+  }
+}
+
 const aiPolicy = definePlugin<AIPolicyPluginOptions>({
   slug: 'plugin-ai-policy',
   order: 10,
@@ -64,6 +83,7 @@ const aiPolicy = definePlugin<AIPolicyPluginOptions>({
     if (!config.ai) throw new Error('[plugin-ai-policy] AI configuration is required.');
 
     const authCollection = resolveAuthCollection(config, options);
+    const period = resolvePeriod(options.timeZone);
     const models = getConfiguredModelIds(config.ai);
     const fields = createPolicyFields(models);
     const apiKeys = plugins['plugin-api-keys']?.options as
@@ -74,7 +94,7 @@ const aiPolicy = definePlugin<AIPolicyPluginOptions>({
         ? apiKeys.collectionSlug
         : undefined;
 
-    const hooks = createPolicyHooks({ authCollection, keysCollection });
+    const hooks = createPolicyHooks({ authCollection, keysCollection, period });
     const auth = config.collections.find(({ slug }) => slug === authCollection);
     const titleField = auth ? auth.admin?.useAsTitle : 'name';
     const keyFields = keysCollection
@@ -91,6 +111,7 @@ const aiPolicy = definePlugin<AIPolicyPluginOptions>({
         fields: [{ name: 'name', type: 'text' }, ...fields],
       },
       'user',
+      period,
     );
 
     return {
@@ -110,6 +131,7 @@ const aiPolicy = definePlugin<AIPolicyPluginOptions>({
             return withSpendCounter(
               { ...collection, fields: mergePolicyFields(collection.fields, fields) },
               'user',
+              period,
             );
           }
 
@@ -117,6 +139,7 @@ const aiPolicy = definePlugin<AIPolicyPluginOptions>({
             return withSpendCounter(
               withKeyLimits(collection, keyFields, { models, titleField }),
               'apiKey',
+              period,
             );
           }
 
@@ -128,7 +151,7 @@ const aiPolicy = definePlugin<AIPolicyPluginOptions>({
       ...(keysCollection && { admin: withCreateFieldsImport(config.admin) }),
       jobs: {
         ...config.jobs,
-        tasks: [...(config.jobs?.tasks ?? []), createResetTask()],
+        tasks: [...(config.jobs?.tasks ?? []), createResetTask(period)],
       },
     };
   },

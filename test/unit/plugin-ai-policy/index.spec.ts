@@ -1,5 +1,5 @@
 import type { FrogBotConfig, FrogBotRequest } from 'frogbot';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { aiPolicyPlugin } from '../../../packages/plugins/plugin-ai-policy/src/index.js';
 
@@ -39,6 +39,10 @@ function request(user: Record<string, unknown> | null, spend = 0): FrogBotReques
 }
 
 describe('aiPolicyPlugin', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('registers with its slug and order', () => {
     const plugin = aiPolicyPlugin();
 
@@ -49,6 +53,33 @@ describe('aiPolicyPlugin', () => {
   it('requires an ai config', async () => {
     await expect(apply(config({ ai: undefined }))).rejects.toThrow(
       '[plugin-ai-policy] AI configuration is required.',
+    );
+  });
+
+  it('refuses an unknown time zone at config time', async () => {
+    await expect(apply(config(), { timeZone: 'Not/AZone' })).rejects.toThrow(
+      '[plugin-ai-policy] Unknown timeZone "Not/AZone"',
+    );
+  });
+
+  it('resets counters on the calendar of the configured time zone', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-30T23:30:00Z'));
+
+    const result = await apply(config(), { timeZone: 'Asia/Tokyo' });
+    const task = result.jobs!.tasks!.find(({ slug }) => slug === 'plugin-ai-policy-reset-spend');
+    const find = vi.fn(() => Promise.resolve({ docs: [{ id: 'c1' }] }));
+    const updateOne = vi.fn();
+
+    await (task!.handler as (args: unknown) => Promise<unknown>)({
+      req: { frogbot: { find, db: { updateOne } } },
+    });
+
+    expect(find).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { period: { less_than: '2026-12' } } }),
+    );
+    expect(updateOne).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { amount: 0, period: '2026-12' } }),
     );
   });
 
@@ -323,7 +354,7 @@ describe('aiPolicyPlugin', () => {
       'plugin-ai-policy-reset-spend',
     ]);
     expect(task?.schedule).toEqual([
-      { cron: '0 * 1,2 * *', queue: 'plugin-ai-policy-reset-spend' },
+      { cron: '0 * 1,2,28-31 * *', queue: 'plugin-ai-policy-reset-spend' },
     ]);
 
     await (task!.handler as (args: unknown) => Promise<unknown>)({ req });

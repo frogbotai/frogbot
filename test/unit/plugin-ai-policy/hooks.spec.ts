@@ -1,6 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { SPEND_COUNTERS_SLUG } from '../../../packages/plugins/plugin-ai-policy/src/counters.js';
+import {
+  periodIn,
+  SPEND_COUNTERS_SLUG,
+} from '../../../packages/plugins/plugin-ai-policy/src/counters.js';
 import { createPolicyHooks } from '../../../packages/plugins/plugin-ai-policy/src/hooks.js';
 
 const providers = {
@@ -16,7 +19,10 @@ const period = new Date().toISOString().slice(0, 7);
 
 type Counter = { id: number; key: string; period: string; amount: number };
 
-type Clause = Record<string, { equals?: unknown; not_equals?: unknown; in?: unknown[] }>;
+type Clause = Record<
+  string,
+  { equals?: unknown; not_equals?: unknown; in?: unknown[]; less_than?: string }
+>;
 
 function matches(counter: Counter, where: { and?: Clause[] } & Clause): boolean {
   return (where.and ?? [where]).every((clause) =>
@@ -26,6 +32,7 @@ function matches(counter: Counter, where: { and?: Clause[] } & Clause): boolean 
       if ('equals' in condition) return value === condition.equals;
       if ('not_equals' in condition) return value !== condition.not_equals;
       if ('in' in condition) return condition.in?.includes(value) ?? false;
+      if ('less_than' in condition) return String(value) < String(condition.less_than);
 
       return true;
     }),
@@ -117,6 +124,10 @@ async function settle(
 }
 
 describe('plugin-ai-policy hooks', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('adds the cost to the counter in one atomic statement, outside the caller transaction', async () => {
     const hooks = createPolicyHooks({ authCollection: 'users' });
     const { db, req, update } = request({ db: fakeDB([{ key: 'users:user-1', amount: 1 }]) });
@@ -276,5 +287,52 @@ describe('plugin-ai-policy hooks', () => {
     const { req } = request({ db, user: { id: 'user-1', collection: 'users', monthlyBudget: 5 } });
 
     await expect(hooks.beforeOperation({ req } as never)).rejects.toThrow('database down');
+  });
+
+  it('never moves a counter back to an earlier month', async () => {
+    const hooks = createPolicyHooks({ authCollection: 'users', period: () => '2000-01' });
+    const { db, req } = request({
+      db: fakeDB([{ key: 'users:user-1', period: '2000-02', amount: 5 }]),
+    });
+
+    await settle(hooks, { req });
+
+    expect(db.counters).toHaveLength(1);
+    expect(db.counters[0]).toMatchObject({ period: '2000-02', amount: 5 });
+  });
+
+  it('counts spend in the month of the configured time zone', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-30T23:30:00Z'));
+
+    const hooks = createPolicyHooks({
+      authCollection: 'users',
+      period: periodIn('Pacific/Kiritimati'),
+    });
+
+    const { db, req } = request({
+      db: fakeDB([{ key: 'users:user-1', period: '2026-11', amount: 40 }]),
+    });
+
+    await settle(hooks, { req });
+
+    expect(db.counters[0]).toMatchObject({ period: '2026-12', amount: 6 });
+  });
+});
+
+describe('periodIn', () => {
+  const moment = new Date('2026-11-30T23:30:00Z');
+
+  it('reads the month on the calendar of a time zone', () => {
+    expect(periodIn()(moment)).toBe('2026-11');
+    expect(periodIn('UTC')(moment)).toBe('2026-11');
+    expect(periodIn('America/New_York')(moment)).toBe('2026-11');
+    expect(periodIn('Asia/Tokyo')(moment)).toBe('2026-12');
+    expect(periodIn('America/New_York')(new Date('2027-01-01T04:59:00Z'))).toBe('2026-12');
+    expect(periodIn('America/New_York')(new Date('2027-01-01T05:00:00Z'))).toBe('2027-01');
+  });
+
+  it('throws on an unknown time zone', () => {
+    expect(() => periodIn('Not/AZone')).toThrow(RangeError);
   });
 });

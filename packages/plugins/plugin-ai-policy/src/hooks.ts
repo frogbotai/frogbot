@@ -5,7 +5,15 @@ import {
   type FrogBotRequest,
 } from 'frogbot';
 
-import { addSpend, holdSpend, readSpend, spendOf, type SpendSubject } from './counters.js';
+import {
+  addSpend,
+  currentPeriod,
+  holdSpend,
+  type Period,
+  readSpend,
+  spendOf,
+  type SpendSubject,
+} from './counters.js';
 import {
   assertBudget,
   assertKeyBudget,
@@ -48,13 +56,18 @@ async function keyLineage(
 type PolicyHooksOptions = {
   authCollection: string;
   keysCollection?: string;
+  period?: Period;
 };
 
-export function createPolicyHooks({ authCollection, keysCollection }: PolicyHooksOptions): {
+export function createPolicyHooks({
+  authCollection,
+  keysCollection,
+  period = currentPeriod,
+}: PolicyHooksOptions): {
   beforeOperation: AIBeforeOperationHook;
   afterOperation: AIAfterOperationHook;
 } {
-  const options = { authCollection, keysCollection };
+  const options = { authCollection, keysCollection, period };
 
   return {
     beforeOperation: async ({ req }) => {
@@ -69,7 +82,7 @@ export function createPolicyHooks({ authCollection, keysCollection }: PolicyHook
         ...lineage.map(({ id }) => ({ collection: keysCollection as string, id })),
       ];
 
-      const spend = await readSpend(req, subjects);
+      const spend = await readSpend(req, subjects, period);
 
       assertBudget({ ...readPolicy(user), spendThisPeriodUSD: spendOf(spend, subjects[0]) });
 
