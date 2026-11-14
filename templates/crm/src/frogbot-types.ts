@@ -62,19 +62,19 @@ export type SupportedTimezones =
   | 'Pacific/Fiji';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "LexicalNodes_B0B2D6CE".
+ * via the `definition` "LexicalNodes_D3EBD753".
  */
-export type LexicalNodes_B0B2D6CE =
+export type LexicalNodes_D3EBD753 =
   | SerializedTextNode
   | SerializedTabNode
   | SerializedLineBreakNode
-  | SerializedParagraphNode<LexicalNodes_B0B2D6CE>
+  | SerializedParagraphNode<LexicalNodes_D3EBD753>
   | SerializedHorizontalRuleNode
   | SerializedUploadNode<'media'>
   | SerializedUploadNode<'exports'>
   | SerializedUploadNode<'imports'>
   | SerializedUploadNode<'frogbot-chat-assets'>
-  | SerializedQuoteNode<LexicalNodes_B0B2D6CE>
+  | SerializedQuoteNode<LexicalNodes_D3EBD753>
   | SerializedRelationshipNode<
       | 'companies'
       | 'contacts'
@@ -82,6 +82,7 @@ export type LexicalNodes_B0B2D6CE =
       | 'activities'
       | 'tasks'
       | 'users'
+      | 'plugin-ai-policy-spend'
       | 'audit-logs'
       | 'chats'
       | 'messages'
@@ -90,11 +91,11 @@ export type LexicalNodes_B0B2D6CE =
       | 'frogbot-waitpoints'
       | 'folders'
     >
-  | SerializedAutoLinkNode<LexicalNodes_B0B2D6CE, LexicalLinkFields>
-  | SerializedLinkNode<LexicalNodes_B0B2D6CE, LexicalLinkFields>
-  | SerializedListNode<LexicalNodes_B0B2D6CE>
-  | SerializedListItemNode<LexicalNodes_B0B2D6CE>
-  | SerializedHeadingNode<LexicalNodes_B0B2D6CE>;
+  | SerializedAutoLinkNode<LexicalNodes_D3EBD753, LexicalLinkFields>
+  | SerializedLinkNode<LexicalNodes_D3EBD753, LexicalLinkFields>
+  | SerializedListNode<LexicalNodes_D3EBD753>
+  | SerializedListItemNode<LexicalNodes_D3EBD753>
+  | SerializedHeadingNode<LexicalNodes_D3EBD753>;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "LexicalNodes_3DE324E4".
@@ -123,6 +124,7 @@ export interface Config {
     media: Media;
     exports: Export;
     imports: Import;
+    'plugin-ai-policy-spend': PluginAiPolicySpend;
     'audit-logs': AuditLog;
     chats: Chat;
     messages: Message;
@@ -143,6 +145,7 @@ export interface Config {
     media: MediaSelect;
     exports: ExportsSelect;
     imports: ImportsSelect;
+    'plugin-ai-policy-spend': PluginAiPolicySpendSelect;
     'audit-logs': AuditLogsSelect;
     chats: ChatsSelect;
     messages: MessagesSelect;
@@ -227,7 +230,7 @@ export interface Company {
   website?: string | null;
   employees?: number | null;
   owner?: (number | null) | User;
-  notes?: LexicalRichText<LexicalNodes_B0B2D6CE> | null;
+  notes?: LexicalRichText<LexicalNodes_D3EBD753> | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -359,6 +362,7 @@ export interface User {
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
   monthlyBudget?: number | null;
+  spendCounter?: (number | null) | PluginAiPolicySpend;
   /**
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
@@ -393,6 +397,19 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugin-ai-policy-spend".
+ */
+export interface PluginAiPolicySpend {
+  id: number;
+  key: string;
+  period: string;
+  amount: number;
+  user?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -439,7 +456,7 @@ export interface Deal {
   amount?: number | null;
   closeDate?: string | null;
   owner?: (number | null) | User;
-  notes?: LexicalRichText<LexicalNodes_B0B2D6CE> | null;
+  notes?: LexicalRichText<LexicalNodes_D3EBD753> | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -465,7 +482,7 @@ export interface Activity {
   deal?: (number | null) | Deal;
   contacts?: (number | Contact)[] | null;
   owner?: (number | null) | User;
-  notes?: LexicalRichText<LexicalNodes_B0B2D6CE> | null;
+  notes?: LexicalRichText<LexicalNodes_D3EBD753> | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -930,6 +947,7 @@ export interface UsersSelect {
   name?: boolean;
   models?: boolean;
   monthlyBudget?: boolean;
+  spendCounter?: boolean;
   spendThisPeriodUSD?: boolean;
   roles?: boolean;
   createdBy?: boolean;
@@ -1075,6 +1093,18 @@ export interface ImportsSelect {
       };
   focalX?: boolean;
   focalY?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugin-ai-policy-spend_select".
+ */
+export interface PluginAiPolicySpendSelect {
+  key?: boolean;
+  period?: boolean;
+  amount?: boolean;
+  user?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
