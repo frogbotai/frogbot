@@ -266,6 +266,11 @@ test('at 375 px the bar stays one row and the title truncates in it', async ({ p
     expect(box.x + box.width).toBeLessThanOrEqual(375);
   }
 
+  await page.locator('.fb-record-panel #field-summary').fill('edited');
+  await expect(header.locator('.fb-record-panel-header__save')).toBeVisible();
+  await expect(header.locator('.fb-record-panel-header__unsaved')).toBeVisible();
+  await expect(header.locator('.fb-record-panel-header__unsaved-label')).toBeHidden();
+  expect((await title.boundingBox())!.width).toBeGreaterThan(30);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 });
 

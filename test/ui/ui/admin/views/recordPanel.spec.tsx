@@ -262,7 +262,12 @@ describe('record panel drill-in', () => {
     act(() => panel.open('2', { from: 'panel' }));
 
     expect(panel.openId).toBe('2');
-    expect(panel.parent).toEqual({ collection: 'tasks', id: '1', title: 'Budget feature' });
+    expect(panel.parent).toEqual({
+      collection: 'tasks',
+      id: '1',
+      origin: 'view',
+      title: 'Budget feature',
+    });
     expect(recordParam()).toBe('2');
     expect(window.location.search).not.toContain('1');
   });
@@ -338,7 +343,11 @@ describe('record panel drill-in', () => {
     const gone = (url: unknown) => /\/tasks\/2\?/.test(String(url));
 
     fetchMock.mockImplementation(((url: unknown) =>
-      Promise.resolve({ json: () => Promise.resolve({ id: 5 }), ok: !gone(url) })) as never);
+      Promise.resolve({
+        json: () => Promise.resolve({ id: 5 }),
+        ok: !gone(url),
+        status: gone(url) ? 404 : 200,
+      })) as never);
 
     act(() => panel.back());
     await waitFor(() => expect(panel.openId).toBe('1'));
@@ -348,7 +357,7 @@ describe('record panel drill-in', () => {
     act(() => panel.open('4', { from: 'panel' }));
 
     fetchMock.mockImplementation((() =>
-      Promise.resolve({ json: () => Promise.resolve({}), ok: false })) as never);
+      Promise.resolve({ json: () => Promise.resolve({}), ok: false, status: 404 })) as never);
 
     act(() => panel.back());
     await waitFor(() => expect(panel.parent).toBeUndefined());
@@ -367,5 +376,62 @@ describe('record panel drill-in', () => {
     await waitFor(() => expect(panel.openId).toBe('6'));
 
     expect(panel.origin).toBe('view');
+  });
+
+  it('stays closed when the panel closes while back is still checking the parent', async () => {
+    render(<Tree />);
+    await openFromView('1', 'Budget feature');
+    act(() => panel.open('2', { from: 'panel' }));
+
+    let resolve!: (value: unknown) => void;
+    fetchMock.mockImplementation((() => new Promise((r) => (resolve = r))) as never);
+
+    act(() => panel.back());
+    act(() => panel.close());
+
+    expect(panel.state.mode).toBe('closed');
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    resolve({ json: () => Promise.resolve({ id: 1 }), ok: true });
+
+    await waitFor(() => expect(panel.state.mode).not.toBe('closed'), { timeout: 300 }).catch(
+      () => undefined,
+    );
+
+    expect(panel.state.mode).toBe('closed');
+  });
+
+  it('stays put and keeps the parent when the check fails for a network error', async () => {
+    render(<Tree />);
+    await openFromView('1', 'Budget feature');
+    act(() => panel.open('2', { from: 'panel' }));
+
+    fetchMock.mockImplementation(() => Promise.reject(new TypeError('offline')));
+
+    act(() => panel.back());
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+
+    await waitFor(() => expect(panel.parent).toBeUndefined(), { timeout: 300 }).catch(
+      () => undefined,
+    );
+
+    expect(panel.parent?.id).toBe('1');
+    expect(panel.openId).toBe('2');
+  });
+
+  it('still shows the collection name after going back to a record opened from a link', async () => {
+    mocks.search = new URLSearchParams('record=5');
+    window.history.replaceState(null, '', '/admin/collections/tasks?record=5');
+    render(<Tree />);
+
+    expect(panel.origin).toBe('link');
+
+    act(() => panel.setForm({ modified: false, title: 'Budget feature' }));
+
+    act(() => panel.open('6', { from: 'panel' }));
+    act(() => panel.back());
+    await waitFor(() => expect(panel.openId).toBe('5'));
+
+    expect(panel.origin).toBe('link');
   });
 });

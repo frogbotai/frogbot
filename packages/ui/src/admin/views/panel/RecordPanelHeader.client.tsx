@@ -344,7 +344,11 @@ export function RecordPanelHeader({ actions }: { actions?: ReactNode }) {
         status={
           status === 'save' ? (
             <>
-              {modified ? <span className={`${baseClass}__unsaved`}>Unsaved</span> : null}
+              {modified ? (
+                <span className={`${baseClass}__unsaved`} title="Unsaved">
+                  <span className={`${baseClass}__unsaved-label`}>Unsaved</span>
+                </span>
+              ) : null}
               <Button
                 buttonStyle="primary"
                 className={`${baseClass}__save`}

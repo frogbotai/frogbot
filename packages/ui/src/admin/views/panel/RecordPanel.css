@@ -188,6 +188,10 @@
     .fb-record-panel-header__complete-icon {
       display: block;
     }
+
+    .fb-record-panel-header__unsaved-label {
+      display: none;
+    }
   }
 
   .fb-record-panel-header__complete:disabled {

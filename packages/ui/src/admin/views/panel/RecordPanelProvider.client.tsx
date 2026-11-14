@@ -2,6 +2,7 @@
 
 import {
   ConfirmationModal,
+  toast,
   useConfig,
   useModal,
   useRouter,
@@ -33,11 +34,16 @@ export type RecordPanelEvent =
 /** What the form inside the panel reports: unsaved edits to guard, and the title for a back link. */
 export type RecordPanelForm = { modified: boolean; title?: string };
 
-/** A record the panel was drilled into from, which its back link returns to. */
-export type RecordPanelParent = { collection: string; id: string; title: string };
-
 /** How the open record got there: from the view behind the panel, or a link or reload with nothing behind it. */
 export type RecordPanelOrigin = 'link' | 'view';
+
+/** A record the panel was drilled into from, which its back link returns to. */
+export type RecordPanelParent = {
+  collection: string;
+  id: string;
+  origin: RecordPanelOrigin;
+  title: string;
+};
 
 /** Options for `open`: a click's modifier keys, and `from: 'panel'` when a record opens from inside the panel. */
 export type RecordPanelOpenOptions = Partial<
@@ -52,7 +58,8 @@ type RecordPanelState =
 export type RecordPanelContextValue = {
   /**
    * Returns to the parent the panel was drilled into from, asking first when the form has unsaved
-   * edits. Parents deleted meanwhile are skipped; with none left, the back link goes away.
+   * edits. Parents deleted or no longer readable are skipped; with none left, the back link goes
+   * away. When the check fails for another reason, the panel stays where it is.
    */
   back: () => void;
   /** Closes the panel, asking first when the form has unsaved edits. */
@@ -158,6 +165,7 @@ export function RecordPanelProvider({
   const pendingRef = useRef<(() => void) | undefined>(undefined);
   const listenersRef = useRef(new Set<(event: RecordPanelEvent) => void>());
   const createKeyRef = useRef(0);
+  const navigationRef = useRef(0);
 
   const stateRef = useRef(state);
 
@@ -177,6 +185,7 @@ export function RecordPanelProvider({
     if (recordParam) {
       if (current.mode === 'edit' && current.id === recordParam) return;
 
+      navigationRef.current += 1;
       setOrigin('link');
       setStack([]);
       setState({ id: recordParam, mode: 'edit' });
@@ -186,17 +195,26 @@ export function RecordPanelProvider({
 
     if (current.mode !== 'edit') return;
 
+    navigationRef.current += 1;
     setStack([]);
     setState({ mode: 'closed' });
   }, [enabled, recordParam]);
 
-  const go = useCallback((next: RecordPanelState, parents: RecordPanelParent[] = []) => {
-    formRef.current = undefined;
-    setStack(parents);
-    setOrigin('view');
-    setState(next);
-    replaceRecordParam(next.mode === 'edit' ? next.id : undefined);
-  }, []);
+  const go = useCallback(
+    (
+      next: RecordPanelState,
+      parents: RecordPanelParent[] = [],
+      nextOrigin: RecordPanelOrigin = 'view',
+    ) => {
+      navigationRef.current += 1;
+      formRef.current = undefined;
+      setStack(parents);
+      setOrigin(nextOrigin);
+      setState(next);
+      replaceRecordParam(next.mode === 'edit' ? next.id : undefined);
+    },
+    [],
+  );
 
   const rerender = useCallback((id: string) => {
     setState((current) =>
@@ -254,19 +272,26 @@ export function RecordPanelProvider({
         options?.from === 'panel' && state.mode === 'edit'
           ? [
               ...stack,
-              { collection: collectionSlug, id: state.id, title: formRef.current?.title ?? '' },
+              {
+                collection: collectionSlug,
+                id: state.id,
+                origin,
+                title: formRef.current?.title ?? '',
+              },
             ]
           : [];
 
       guard(() => go({ id, mode: 'edit' }, parents));
     },
-    [adminRoute, collectionSlug, enabled, go, guard, router, stack, state],
+    [adminRoute, collectionSlug, enabled, go, guard, origin, router, stack, state],
   );
 
   const back = useCallback(() => {
     if (!stack.length) return;
 
     guard(() => {
+      const navigation = navigationRef.current;
+
       void (async () => {
         const remaining = [...stack];
 
@@ -280,8 +305,16 @@ export function RecordPanelProvider({
             { credentials: 'include' },
           ).catch(() => undefined);
 
+          if (navigationRef.current !== navigation) return;
+
           if (response?.ok) {
-            go({ id: parent.id, mode: 'edit' }, remaining);
+            go({ id: parent.id, mode: 'edit' }, remaining, parent.origin);
+
+            return;
+          }
+
+          if (response?.status !== 403 && response?.status !== 404) {
+            toast.error(t('error:unspecific'));
 
             return;
           }
@@ -291,7 +324,7 @@ export function RecordPanelProvider({
         setOrigin('link');
       })();
     });
-  }, [config.routes.api, go, guard, stack]);
+  }, [config.routes.api, go, guard, stack, t]);
 
   const create = useCallback<RecordPanelContextValue['create']>(
     (initialData) => {
@@ -326,6 +359,7 @@ export function RecordPanelProvider({
   const switchTo = useCallback((rawId: number | string) => {
     const id = String(rawId);
 
+    navigationRef.current += 1;
     formRef.current = undefined;
     setState({ id, mode: 'edit' });
     replaceRecordParam(id);
