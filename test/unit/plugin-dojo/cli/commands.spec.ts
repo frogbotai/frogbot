@@ -4,7 +4,7 @@ import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/aut
 import { runDojo } from '../../../../packages/plugins/plugin-dojo/src/cli/commands.js';
 import type { FakeDojo } from './fakeDojo.js';
 import { startFakeDojo } from './fakeDojo.js';
-import { tempDir, testIO, writeApp } from './helpers.js';
+import { tempDir, testIO } from './helpers.js';
 
 async function setup(env: Record<string, string> = {}) {
   const dojo = await startFakeDojo();
@@ -379,48 +379,6 @@ describe('refusals', () => {
 });
 
 describe('--json', () => {
-  it('leaves stdout to the share result and sends progress to stderr', async () => {
-    const { dojo, cwd, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_env' });
-
-    dojo.tokens.set('fb_env', 50);
-    dojo.apps.length = 0;
-    await writeApp(cwd);
-
-    const result = await run(['apps', 'share', '--no-data', '--json']);
-
-    expect(result.code).toBe(0);
-    expect(JSON.parse(result.stdout().join('\n'))).toEqual({
-      target: 'dojo',
-      ok: true,
-      dryRun: false,
-      issues: [],
-      result: {
-        appId: 1,
-        url: 'https://deals.frogbot.app',
-        shareLink: `${dojo.url}/collections/apps/1/settings?share=1`,
-      },
-    });
-    expect(result.stderr()).toContain('[build] step 1');
-  });
-
-  it('names apps share in the usage line of frogbot dojo', async () => {
-    const cwd = await tempDir();
-    const result = testIO({ cwd, env: { XDG_CONFIG_HOME: await tempDir() } });
-
-    await writeApp(cwd);
-
-    const code = await runDojo(['apps', 'share', '--nope', '--json'], {
-      ...result.io,
-      program: 'frogbot dojo',
-    });
-
-    expect(code).toBe(2);
-    expect(result.stderr().join('\n')).toContain(
-      'Usage: frogbot dojo apps share [--app <slug or id>] [--data',
-    );
-    expect(JSON.parse(result.stdout().join('\n'))).toMatchObject({ target: 'dojo', ok: false });
-  });
-
   it('refuses logs --follow, which never ends in one value', async () => {
     const { dojo, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_env' });
     const result = await run(['apps', 'logs', 'deals', '--follow', '--json']);

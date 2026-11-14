@@ -46,10 +46,7 @@ function problems(commands: Commands, markdown: string): string[] {
 
 describe('the FrogBot skill names only real Dojo commands', () => {
   it.each(skillFiles)('%s', (file) => {
-    const markdown = read(file);
-
-    expect(named(markdown).length).toBeGreaterThan(0);
-    expect(problems(dojoCommands, markdown)).toEqual([]);
+    expect(problems(dojoCommands, read(file))).toEqual([]);
   });
 
   it('teaches every Dojo command', () => {

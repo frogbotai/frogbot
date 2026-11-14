@@ -160,16 +160,14 @@ describe('npx @frogbotai/plugin-dojo', () => {
     });
   });
 
-  it('shares an app that does not list dojo()', async () => {
-    const { cwd, dojo, run } = await setup();
+  it('has no apps share: frogbot deploy is the one way to ship an app', async () => {
+    const { cwd, dojo, run, stderr } = await setup();
 
-    core.blocked = false;
-    dojo.apps.length = 0;
     await writeApp(cwd);
 
-    expect(await run('apps', 'share', '--no-data')).toBe(0);
-    expect(dojo.paths()).toContain('POST /api/apps/1/deployments');
-    expect(core.imported).toContain('frogbot/internal');
+    expect(await run('apps', 'share', '--no-data')).toBe(2);
+    expect(lines(stderr)[0]).toBe('[frogbot] "share" isn\'t a verb of apps.');
+    expect(dojo.requests).toEqual([]);
   });
 
   it.each([[[]], [['nope']], [['share']]])('exits 2 listing the commands for %j', async (args) => {
@@ -179,7 +177,7 @@ describe('npx @frogbotai/plugin-dojo', () => {
     expect(lines(stderr)).toEqual(
       expect.arrayContaining([
         'Usage: npx @frogbotai/plugin-dojo <command> [--json]',
-        expect.stringMatching(/^ {2}apps +Share, pull/),
+        expect.stringMatching(/^ {2}apps +Pull, read logs/),
         expect.stringMatching(/^ {2}keys +/),
       ]),
     );
@@ -193,7 +191,7 @@ describe('npx @frogbotai/plugin-dojo', () => {
     expect(lines(stdout)).toEqual(
       expect.arrayContaining([
         'Usage: npx @frogbotai/plugin-dojo apps <verb> [--json]',
-        expect.stringMatching(/^ {2}share +/),
+        expect.stringMatching(/^ {2}pull +/),
         expect.stringMatching(/^ {2}delete +/),
       ]),
     );

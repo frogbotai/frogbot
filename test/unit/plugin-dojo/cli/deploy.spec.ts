@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { deploy } from '../../../../packages/frogbot/src/bin/deploy/command.js';
 import type { FrogBotSanitizedConfig } from '../../../../packages/frogbot/src/config/sanitized.js';
-import { runShare } from '../../../../packages/plugins/plugin-dojo/src/cli/run.js';
 import { dojoTarget } from '../../../../packages/plugins/plugin-dojo/src/deploy.js';
 import { dojo } from '../../../../packages/plugins/plugin-dojo/src/index.js';
+import { deployDojo } from './deployDojo.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeApp } from './helpers.js';
 
@@ -13,7 +13,7 @@ const appConfig = {
   _internal: { payloadConfig: Promise.resolve({ collections: [], db: {} }) },
 } as unknown as FrogBotSanitizedConfig;
 
-async function shareWith(args: string[], via: 'share' | 'deploy') {
+async function deployWith(args: string[], target: string[]) {
   const root = await tempDir();
   const fake = await startFakeDojo();
   const io = testIO({
@@ -23,10 +23,7 @@ async function shareWith(args: string[], via: 'share' | 'deploy') {
 
   await writeApp(root, { '.env': 'OPENAI_API_KEY=sk-test-1234567890\n' });
 
-  const code =
-    via === 'share'
-      ? await runShare(args, io.io)
-      : await deploy(['dojo', ...args], { config: appConfig, io: io.io });
+  const code = await deploy([...target, ...args], { config: appConfig, io: io.io });
 
   return {
     code,
@@ -44,13 +41,13 @@ describe('deploy dojo', () => {
     expect(config.cli.deployTargets).toEqual({ dojo: dojoTarget });
   });
 
-  it('runs the same function as share: same requests, same output', async () => {
-    const shared = await shareWith(['--no-data', '--wait'], 'share');
-    const deployed = await shareWith(['--no-data', '--wait'], 'deploy');
+  it('is what frogbot deploy runs with no target: same requests, same output', async () => {
+    const named = await deployWith(['--no-data', '--wait'], ['dojo']);
+    const unnamed = await deployWith(['--no-data', '--wait'], []);
 
-    expect(shared.code).toBe(0);
-    expect(deployed).toEqual(shared);
-    expect(shared.paths).toContain('POST /api/apps/1/deployments');
+    expect(named.code).toBe(0);
+    expect(unnamed).toEqual(named);
+    expect(named.paths).toContain('POST /api/apps/1/deployments');
   });
 
   it('writes only the JSON result on stdout under --json, the progress on stderr', async () => {
@@ -63,14 +60,25 @@ describe('deploy dojo', () => {
 
     await writeApp(root, { '.env': 'OPENAI_API_KEY=sk-test-1234567890\n' });
 
-    expect(await runShare(['--json', '--no-data', '--wait'], io.io)).toBe(0);
+    expect(await deployDojo(['--json', '--no-data', '--wait'], io.io)).toBe(0);
     expect(io.stdout()).toHaveLength(1);
     expect(JSON.parse(io.stdout()[0] ?? '')).toMatchObject({ target: 'dojo', ok: true });
     expect(io.stderr().some((line) => line.startsWith('[build] '))).toBe(true);
   });
 
   it('exits 3 with the sign-in link in the JSON result when nobody can sign in', async () => {
-    const { code, paths, stdout } = await shareWith(['--json', '--no-data'], 'share');
+    const root = await tempDir();
+    const fake = await startFakeDojo();
+    const io = testIO({
+      cwd: root,
+      env: { XDG_CONFIG_HOME: await tempDir(), FROGBOT_DOJO_URL: fake.url },
+    });
+
+    await writeApp(root, { '.env': 'OPENAI_API_KEY=sk-test-1234567890\n' });
+
+    const code = await deployDojo(['--json', '--no-data'], io.io);
+    const paths = fake.paths();
+    const stdout = io.stdout().map((line) => line.replaceAll(fake.url, '<dojo>'));
     const link = '<dojo>/device?user_code=BCDF-GHJK';
 
     expect(code).toBe(3);
@@ -95,7 +103,7 @@ describe('deploy dojo', () => {
 
     await writeApp(root, { '.env': 'OPENAI_API_KEY=sk-test-1234567890\n' });
 
-    expect(await runShare(['--dry-run'], io.io)).toBe(0);
+    expect(await deployDojo(['--dry-run'], io.io)).toBe(0);
     expect(fake.requests).toEqual([]);
     expect(io.stdout()).toEqual([
       '[dry-run] Create a new app on Dojo',
@@ -117,7 +125,7 @@ describe('deploy dojo', () => {
 
     await writeApp(root, { '.env': 'OPENAI_API_KEY=sk-test-1234567890\n' });
 
-    expect(await runShare(['--no-interactive', '--no-data', '--wait'], io.io)).toBe(0);
+    expect(await deployDojo(['--no-interactive', '--no-data', '--wait'], io.io)).toBe(0);
     expect(io.asked).toEqual([]);
   });
 });

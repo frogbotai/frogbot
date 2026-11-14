@@ -11,7 +11,7 @@ const listed = (keys: EnvKey[]) => keys.map((key) => `${key.name} ${mask(key.val
 
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
-/** First share: every key, minus any the person unticks with a TTY. Runs before any network call. */
+/** First deploy: every key, minus any the person unticks with a TTY. Runs before any network call. */
 export async function chooseFirstKeys({
   keys,
   yes,
@@ -50,7 +50,7 @@ export async function chooseFirstKeys({
   return chosen;
 }
 
-/** Later share: new keys go; keys whose local value differs from live go only with `updateKeys`. */
+/** Later deploy: new keys go; keys whose local value differs from live go only with `updateKeys`. */
 export function compareLiveKeys({
   keys,
   live,

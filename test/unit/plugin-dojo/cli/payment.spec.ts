@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
-import { runShare } from '../../../../packages/plugins/plugin-dojo/src/cli/run.js';
+import { deployDojo } from './deployDojo.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeApp } from './helpers.js';
 
@@ -24,7 +24,7 @@ async function setup(files?: Record<string, string>) {
   ) => {
     const io = testIO({ cwd: root, env, ...options });
 
-    return { code: await runShare(['--no-data', ...args], io.io), ...io };
+    return { code: await deployDojo(['--no-data', ...args], io.io), ...io };
   };
 
   const payAfterPolls = (polls: number) => {
@@ -44,7 +44,7 @@ async function setup(files?: Record<string, string>) {
   return { dojo, run, payAfterPolls, upgrade };
 }
 
-describe('frogbot share: paying for a first deploy', () => {
+describe('frogbot deploy: paying for a first deploy', () => {
   it('opens the upgrade page, waits for the payment, and creates the app without a second share', async () => {
     const { dojo, run, payAfterPolls, upgrade } = await setup();
 
@@ -55,7 +55,7 @@ describe('frogbot share: paying for a first deploy', () => {
     expect(result.code).toBe(0);
     expect(result.stdout().slice(0, 4)).toEqual([
       why,
-      '[frogbot] Pay for it here; the share carries on once Dojo has the payment:',
+      '[frogbot] Pay for it here; the deploy carries on once Dojo has the payment:',
       upgrade(),
       '[frogbot] Paid. Carrying on.',
     ]);
@@ -103,7 +103,7 @@ describe('frogbot share: paying for a first deploy', () => {
     expect(result.code).toBe(0);
     expect(result.stdout().slice(0, 3)).toEqual([
       why,
-      '[frogbot] Ask a workspace owner to pay for it here; the share carries on once Dojo has the payment:',
+      '[frogbot] Ask a workspace owner to pay for it here; the deploy carries on once Dojo has the payment:',
       upgrade(),
     ]);
     expect(result.opened).toEqual([]);
@@ -115,7 +115,7 @@ describe('frogbot share: paying for a first deploy', () => {
 
     expect(result.code).toBe(1);
     expect(result.stderr()).toEqual([
-      "[frogbot] Dojo still has no payment for this app after 30 minutes. Once it's paid, share again.",
+      "[frogbot] Dojo still has no payment for this app after 30 minutes. Once it's paid, deploy again.",
     ]);
     expect(dojo.paths().filter((path) => path === 'GET /api/workspaces/1')).toHaveLength(360);
     expect(dojo.apps).toEqual([]);

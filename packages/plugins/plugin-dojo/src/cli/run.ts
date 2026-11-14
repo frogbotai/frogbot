@@ -2,10 +2,9 @@ import { openAsBlob } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 
-import type { DeployConfig, DeployContext, DeployIO, PreflightIssue } from 'frogbot';
-import { DeployError, loadConfig, processDeployIO, runDeploy } from 'frogbot/internal';
+import type { DeployContext, DeployIO, PreflightIssue } from 'frogbot';
+import { DeployError } from 'frogbot/internal';
 
-import { dojoTarget } from '../deploy.js';
 import { nameTaken, toSlug } from './appSlug.js';
 import type { ShareArchive } from './archive.js';
 import { createArchive } from './archive.js';
@@ -23,7 +22,6 @@ import { dojoError, dojoStop, ShareError } from './error.js';
 import { shareFiles } from './files.js';
 import type { ShareFlags } from './flags.js';
 import { parseShareArgs } from './flags.js';
-import type { DojoIO } from './io.js';
 import { dojoProgram, say } from './io.js';
 import type { LiveKeys } from './keys.js';
 import { chooseFirstKeys, compareLiveKeys } from './keys.js';
@@ -35,25 +33,6 @@ import { sealKeys } from './seal.js';
 import type { AppInfo } from './target.js';
 import { appFromFlag, appInfo, refusedApp } from './target.js';
 import { chooseWorkspace } from './workspaces.js';
-
-/** Runs `frogbot share`, the same as `frogbot deploy dojo`, and returns its exit code. */
-export async function runShare(argv: string[], io: DeployIO): Promise<number> {
-  return runDeploy(dojoTarget, argv, io, { name: 'dojo' });
-}
-
-async function loadShareConfig(root: string): Promise<DeployConfig> {
-  const config = await loadConfig({ cwd: root, mode: 'codegen' });
-
-  return config._internal.payloadConfig;
-}
-
-/** `share` on the real terminal, with the programs and app config `deploy` needs. */
-export async function runShareCommand(argv: string[], io: DojoIO): Promise<number> {
-  return runShare(argv, {
-    ...processDeployIO({ program: io.program, loadConfig: loadShareConfig }),
-    ...io,
-  });
-}
 
 async function asDeployStop<T>(work: () => T | Promise<T>): Promise<T> {
   try {
@@ -84,7 +63,7 @@ export async function sharePreflight(context: DeployContext): Promise<PreflightI
   });
 }
 
-/** Sends the app to Dojo: `share`'s and `deploy dojo`'s body. Under `--json` its progress goes to stderr. */
+/** Sends the app to Dojo: the `dojo` deploy target's body. Under `--json` its progress goes to stderr. */
 export async function shareToDojo(context: DeployContext): Promise<Record<string, unknown>> {
   const io = context.flags.json ? { ...context.io, stdout: context.io.stderr } : context.io;
 

@@ -3,9 +3,9 @@ import { parseArgs } from 'node:util';
 import { ShareError } from './error.js';
 
 const usage = (program: string) =>
-  `Usage: ${/dojo$/.test(program) ? `${program} apps share` : `${program} deploy dojo`} [--app <slug or id>] [--data | --no-data | --replace-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys] [--wait]`;
+  `Usage: ${program} deploy [dojo] [--app <slug or id>] [--data | --no-data | --replace-data] [--workspace <slug>] [--name <name>] [--no-keys] [--skip-key <NAME>]... [--yes] [--update-keys] [--wait]`;
 
-/** `share`'s own flags. */
+/** The `dojo` deploy target's own flags. */
 export type ShareFlags = {
   app?: string;
   data?: boolean;
@@ -20,7 +20,7 @@ export type ShareFlags = {
   wait: boolean;
 };
 
-/** Parses `share`'s flags; a bad one stops with the usage line and exit code 2. */
+/** Parses the `dojo` target's flags; a bad one stops with the usage line and exit code 2. */
 export function parseShareArgs(argv: string[], program: string): ShareFlags {
   let parsed;
 

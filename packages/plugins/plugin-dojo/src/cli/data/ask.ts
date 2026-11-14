@@ -7,8 +7,8 @@ import type { DataInventory } from './inventory.js';
 import { describeData, takeInventory } from './inventory.js';
 
 /**
- * A first share's data: `data` is `--data` (true), `--no-data` (false) or neither. Asks with a TTY,
- * stops without one; nothing to count, or a database that can't be snapshotted, shares code only.
+ * A first deploy's data: `data` is `--data` (true), `--no-data` (false) or neither. Asks with a TTY,
+ * stops without one; nothing to count, or a database that can't be snapshotted, deploys code only.
  * The caller disposes of the inventory it gets back.
  */
 export async function askData({
@@ -44,7 +44,7 @@ export async function askData({
 
     if (data === undefined && !io.isTTY) {
       throw new ShareError(
-        `This first share can bring the local data (${summary}). Ask the person whether to bring it, then rerun with --data or --no-data.`,
+        `This first deploy can bring the local data (${summary}). Ask the person whether to bring it, then rerun with --data or --no-data.`,
       );
     }
 

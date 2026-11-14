@@ -4,7 +4,7 @@ description: >-
   Builds and maintains FrogBot applications. Use when working with
   frogbot.config.ts, getFrogBot, collections, fields, hooks, access control,
   Local API queries, agents, tools, pieces, connections, jobs, automations, webhooks, KV, chat or gateway configuration,
-  or when sharing, hosting or deploying a FrogBot app on Dojo with `frogbot share`, or managing
+  or when sharing, hosting or deploying a FrogBot app on Dojo with `frogbot deploy`, or managing
   its keys, custom domain, people, deployments or logs with `frogbot dojo`.
 license: MIT
 metadata:
@@ -224,19 +224,19 @@ Choose a domain-specific flag and check it before side effects.
 
 ## Sharing The App
 
-`npx frogbot share` takes the app live on Dojo and prints its URL. It comes from `dojo()` (`@frogbotai/plugin-dojo`), which new apps list in `plugins`; in an app that doesn't list it, run `npx @frogbotai/plugin-dojo apps share` instead. Run it from anywhere inside the app when the user asks to share, host, publish or deploy it, or to send someone a link. Suggest it, without running it, when the user wants someone else to try the app or asks how to put it online. Don't share without being asked: it uploads the code and keys. `npx frogbot deploy` with no target runs the same share.
+`npx frogbot deploy` takes the app live on Dojo and prints its URL; it is the one command that ships an app there. Its `dojo` target comes from `dojo()` (`@frogbotai/plugin-dojo`), which new apps list in `plugins`; in an app that doesn't list it, add `dojo()` to `plugins` first. Run it from anywhere inside the app when the user asks to share, host, publish or deploy it, or to send someone a link. Suggest it, without running it, when the user wants someone else to try the app or asks how to put it online. Don't deploy without being asked: it uploads the code and keys.
 
-Your shell has no terminal, so `share` never prompts you. Settle these with the user first:
+Your shell has no terminal, so `deploy` never prompts you. Settle these with the user first:
 
-- **Data.** On the first share, when the app has local records or files, pass `--data` or `--no-data`; without either, `share` stops before sending anything. Ask the user: `--data` brings a copy of the local database and the upload files, including users with their passwords. Only SQLite `file:` databases can bring data. Data comes only with the first share; later shares send code only. `--replace-data` replaces a live app's data, but only an owner typing the app's name at a terminal can confirm it: never try it for the user, tell them the command to run themselves.
-- **Keys.** Every key in the `.env` files comes along without asking (`DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT`, `HOSTNAME`, `FROGBOT_DOJO_TOKEN` and `FROGBOT_DOJO_URL` never do). Leave keys out with `--skip-key NAME` (repeatable, case-sensitive) or `--no-keys`. On later shares, keys whose local value differs from live keep their live value unless you pass `--update-keys`.
+- **Data.** On the first deploy, when the app has local records or files, pass `--data` or `--no-data`; without either, `deploy` stops before sending anything. Ask the user: `--data` brings a copy of the local database and the upload files, including users with their passwords. Only SQLite `file:` databases can bring data. Data comes only with the first deploy; later deploys send code only. `--replace-data` replaces a live app's data, but only an owner typing the app's name at a terminal can confirm it: never try it for the user, tell them the command to run themselves.
+- **Keys.** Every key in the `.env` files comes along without asking (`DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT`, `HOSTNAME`, `FROGBOT_DOJO_TOKEN` and `FROGBOT_DOJO_URL` never do). Leave keys out with `--skip-key NAME` (repeatable, case-sensitive) or `--no-keys`. On later deploys, keys whose local value differs from live keep their live value unless you pass `--update-keys`.
 - **Workspace and name.** With more than one Dojo workspace, pass `--workspace <slug>`. The address is `https://<name>.frogbot.app`, named from `package.json`; when that's taken, rerun with `--name <another name>`.
 
-The first time, `share` prints `[frogbot] Sign in to Dojo: open this link and confirm the code.`, then the link and `Code: <code>` on their own lines, and waits until the user confirms. Run it where you can read its output while it waits, such as a background shell, and pass the link and code on. When the code expires, it prints `[frogbot] The sign-in code expired. Here's a new one.` and a new link and code (up to three codes); pass the new ones on.
+The first time, `deploy` prints `[frogbot] Sign in to Dojo: open this link and confirm the code.`, then the link and `Code: <code>` on their own lines, and waits until the user confirms. Run it where you can read its output while it waits, such as a background shell, and pass the link and code on. When the code expires, it prints `[frogbot] The sign-in code expired. Here's a new one.` and a new link and code (up to three codes); pass the new ones on.
 
-When the workspace's Dojo plan doesn't cover the app yet, `share` prints why, then the upgrade link on its own line, and waits up to 30 minutes for the payment before it carries on; pass the link on.
+When the workspace's Dojo plan doesn't cover the app yet, `deploy` prints why, then the upgrade link on its own line, and waits up to 30 minutes for the payment before it carries on; pass the link on.
 
-`share` needs a `pnpm-lock.yaml`, `package-lock.json` or `yarn.lock` (not Bun) and an upload under 100 MB. It writes the app's id to `.frogbot/app.json`, so later shares from the folder update the same app; delete that file only when the user wants a new app. It ends with `[frogbot] Share it: <link>` and then the live URL as the last line: give the user both.
+`deploy` needs a `pnpm-lock.yaml`, `package-lock.json` or `yarn.lock` (not Bun) and an upload under 100 MB. It writes the app's id to `.frogbot/app.json`, so later deploys from the folder update the same app; delete that file only when the user wants a new app. It ends with `[frogbot] Share it: <link>` and then the live URL as the last line: give the user both.
 
 | Exit | Meaning                                                                                                      |
 | ---- | ------------------------------------------------------------------------------------------------------------ |
@@ -244,9 +244,9 @@ When the workspace's Dojo plan doesn't cover the app yet, `share` prints why, th
 | `1`  | Stopped. The last `[frogbot]` line on stderr says why and what to rerun with; fix it or ask the user.        |
 | `2`  | Bad flags, such as `--data` with `--no-data` or a `--skip-key` that names no key. Fix the command and rerun. |
 
-On Dojo the app runs as it does with `frogbot start`. Jobs run in the web server, and Dojo wakes a sleeping app when a task or agent schedule is due, so add no worker, external cron or `jobs.access.run` rule for Dojo. Dojo checks `GET /api/health` (`src/app/(frogbot)/api/health/route.ts`, `200` once FrogBot starts, `503` when it can't); keep that route. See the [CLI reference](https://docs.frogbot.ai/getting-started/cli#dojo-apps-share).
+On Dojo the app runs as it does with `frogbot start`. Jobs run in the web server, and Dojo wakes a sleeping app when a task or agent schedule is due, so add no worker, external cron or `jobs.access.run` rule for Dojo. Dojo checks `GET /api/health` (`src/app/(frogbot)/api/health/route.ts`, `200` once FrogBot starts, `503` when it can't); keep that route. See the [CLI reference](https://docs.frogbot.ai/getting-started/cli#deploy-to-dojo).
 
-For everything after the first share (pulling, logs, keys, a custom domain, inviting people, workspaces, Dojo API keys, billing), read [DOJO.md](reference/DOJO.md).
+For everything after the first deploy (pulling, logs, keys, a custom domain, inviting people, workspaces, Dojo API keys, billing), read [DOJO.md](reference/DOJO.md).
 
 ## Running The App In The Background
 

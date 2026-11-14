@@ -105,11 +105,11 @@ Apps created with `create-frogbot-app` include the [`dojo()`](/plugins/dojo) plu
 npx frogbot deploy
 ```
 
-- `frogbot share` runs the same thing and takes the same flags, including `--yes`. See the [`dojo apps share` CLI reference](/getting-started/cli#dojo-apps-share) for its flags.
+- `frogbot deploy` is the one command that ships an app to Dojo; `frogbot deploy dojo` names the target. See [Deploy to Dojo](/getting-started/cli#deploy-to-dojo) for its flags, such as `--no-data` and `--yes`.
 - On your first deploy, it prompts to bring your local SQLite data and files (`--data` / `--no-data`), encrypts your `.env` keys, builds the app on Dojo, and prints your live `https://<name>.frogbot.app` URL. `--dry-run` lists the files, their size, the keys and the data it would send, and makes no request.
 - On Dojo, [`dojo()`](/plugins/dojo) automatically configures private R2 file storage, Dojo AI routing, scheduled job execution, and **Continue with Dojo** sign-in.
 - An app deployed without data starts with you as its first user: sign in with **Continue with Dojo**. See [Sign in with Dojo](/plugins/dojo#sign-in-with-dojo).
-- Pull a shared app locally with `npx @frogbotai/plugin-dojo apps pull <app>` or stream live logs with `npx @frogbotai/plugin-dojo apps logs <app> --follow`. Domains, environment keys, members, API keys and billing have [commands](/plugins/dojo#commands) too.
+- Pull an app locally with `npx @frogbotai/plugin-dojo apps pull <app>` or stream live logs with `npx @frogbotai/plugin-dojo apps logs <app> --follow`. Domains, environment keys, members, API keys and billing have [commands](/plugins/dojo#commands) too.
 
 ## Self-hosting (Docker & Node.js)
 

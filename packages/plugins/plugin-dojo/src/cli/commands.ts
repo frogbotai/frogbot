@@ -93,8 +93,6 @@ async function runCommand(
     return 0;
   }
 
-  if ('raw' in verb && verb.ownJson) return verb.raw(args, io);
-
   const json = args.includes('--json');
   const waits = args.includes('--wait');
   const rest = args.filter((arg) => arg !== '--json' && arg !== '--wait');

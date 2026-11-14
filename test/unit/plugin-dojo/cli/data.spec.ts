@@ -10,7 +10,7 @@ import type { DeployConfig } from '../../../../packages/frogbot/src/bin/deploy/t
 import type { DatabaseSnapshot } from '../../../../packages/frogbot/src/database/types.js';
 import { writeToken } from '../../../../packages/plugins/plugin-dojo/src/cli/auth.js';
 import { snapshotKey } from '../../../../packages/plugins/plugin-dojo/src/cli/data/upload.js';
-import { runShare } from '../../../../packages/plugins/plugin-dojo/src/cli/run.js';
+import { deployDojo } from './deployDojo.js';
 import { startFakeDojo } from './fakeDojo.js';
 import { tempDir, testIO, writeApp } from './helpers.js';
 
@@ -90,7 +90,7 @@ async function setup({
   ) => {
     const io = testIO({ cwd: root, env, config, ...options });
 
-    return { code: await runShare(args, io.io), ...io };
+    return { code: await deployDojo(args, io.io), ...io };
   };
 
   const dataRequests = () =>
@@ -116,7 +116,7 @@ async function setup({
   return { root, dojo, run, dataRequests, uploadedDeals };
 }
 
-describe('frogbot share: bringing data', () => {
+describe('frogbot deploy: bringing data', () => {
   it('asks in a terminal with the counts, trash left out and the upload collection as files, and brings the data on Yes', async () => {
     const { dojo, run } = await setup();
     const result = await run([], { isTTY: true, confirm: true, multiselect: ['STRIPE_KEY'] });
@@ -132,7 +132,7 @@ describe('frogbot share: bringing data', () => {
 
     expect(result.code).toBe(1);
     expect(result.stderr()).toEqual([
-      `[frogbot] This first share can bring the local data (${summary}). Ask the person whether to bring it, then rerun with --data or --no-data.`,
+      `[frogbot] This first deploy can bring the local data (${summary}). Ask the person whether to bring it, then rerun with --data or --no-data.`,
     ]);
     expect(dojo.requests).toEqual([]);
   });
@@ -232,7 +232,7 @@ describe('frogbot share: bringing data', () => {
 
     expect(flagged.code).toBe(0);
     expect(flagged.stdout()[0]).toBe(
-      "[frogbot] Data comes only with the first share. To replace the live data with this computer's, rerun with --replace-data.",
+      "[frogbot] Data comes only with the first deploy. To replace the live data with this computer's, rerun with --replace-data.",
     );
     expect(app.copies).toEqual([]);
     expect(dataRequests()).toEqual([]);
@@ -382,7 +382,7 @@ describe('frogbot share: bringing data', () => {
   });
 });
 
-describe('frogbot share --replace-data', () => {
+describe('frogbot deploy --replace-data', () => {
   const started = async () => {
     const setupResult = await setup();
 

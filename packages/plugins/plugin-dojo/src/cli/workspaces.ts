@@ -14,7 +14,7 @@ export async function listWorkspaces(dojo: DojoClient): Promise<Workspace[]> {
 }
 
 /**
- * The workspace a first share creates the app in: `slug`, the only one, or the person's pick. With none, says how to
+ * The workspace a first deploy creates the app in: `slug`, the only one, or the person's pick. With none, says how to
  * make one and, with a TTY, reads them again when the person has.
  */
 export async function chooseWorkspace({
@@ -47,7 +47,7 @@ export async function chooseWorkspace({
 
     if (!(await io.prompts.confirm('Created it? Check again'))) {
       throw new ShareError(
-        `No workspace to share in. Create one with ${dojoProgram(io.program)} workspaces create <name>, then rerun.`,
+        `No workspace to deploy to. Create one with ${dojoProgram(io.program)} workspaces create <name>, then rerun.`,
       );
     }
   }
@@ -95,7 +95,7 @@ async function pickWorkspace({
 
   const [only] = workspaces;
 
-  if (!only) throw new ShareError('No workspace to share in.');
+  if (!only) throw new ShareError('No workspace to deploy to.');
 
   if (workspaces.length === 1) return only;
 

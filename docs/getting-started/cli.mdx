@@ -2,7 +2,7 @@
 title: "CLI"
 sidebarTitle: "CLI"
 description: "Every frogbot command, its arguments, and where each one is documented."
-keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot up", "frogbot down", "frogbot status", "background", "frogbot run", "frogbot check", "frogbot deploy", "frogbot dojo", "frogbot share", "plugin-dojo", "share", "pull", "logs", "commands"]
+keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot up", "frogbot down", "frogbot status", "background", "frogbot run", "frogbot check", "frogbot deploy", "frogbot dojo", "plugin-dojo", "pull", "logs", "commands"]
 ---
 
 The `frogbot` package installs a `frogbot` command. Run it from your app's root directory through your package manager, for example `pnpm frogbot dev` or `npx frogbot dev`.
@@ -122,6 +122,64 @@ pnpm frogbot deploy docker --dry-run
 
 See [Deployment](/deployment/overview) for each target's flags, checks, what it creates, and how to remove it.
 
+### Deploy to Dojo
+
+```bash
+npx frogbot deploy --no-data
+```
+
+With [`dojo()`](/plugins/dojo) in `plugins`, `frogbot deploy` (or `frogbot deploy dojo`) uploads the app in the current folder to Dojo, streams `[build]` logs, and prints a share link followed by the live `https://<name>.frogbot.app` URL. It is the one command that ships an app to Dojo; `frogbot dojo` manages the account and apps around it.
+
+- **Where to run it.** Run it from the folder that contains `frogbot.config.ts`, or from its parent when the config is inside `src/`.
+- **Without `dojo()`.** Add `dojo()` from `@frogbotai/plugin-dojo` to `plugins`; `frogbot deploy dojo` says so when it's missing.
+- **Deploy flags.** It takes the flags [every target takes](/deployment/overview#flags-every-target-takes): `--json`, `--no-interactive`, `--env-file`, and `--dry-run`. A dry run lists the files, size, keys, and data it would send, and makes no request.
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `--app` | app slug or id | — | Ships to this existing app and links the folder to it in `.frogbot/app.json`, for a fresh clone or CI. Stops if the folder is linked to another app. Can't be combined with `--workspace` or `--name`. |
+| `--data` | flag | — | On the first deploy, uploads local SQLite data and files without prompting. |
+| `--no-data` | flag | — | On the first deploy, uploads code only without prompting. |
+| `--replace-data` | flag | — | On a live app, replaces all of its data with this computer's. Owners only, after typing the app's name; needs a terminal. |
+| `--workspace` | workspace slug | — | Dojo workspace to create the app in on the first deploy (when you belong to multiple). |
+| `--name` | name | `package.json` `name` | Subdomain slug for `https://<name>.frogbot.app` on the first deploy (lowercased, alphanumeric + dashes). |
+| `--no-keys` | flag | — | Uploads no `.env` keys. |
+| `--skip-key` | key name (repeatable) | — | Excludes a specific key (case-sensitive), e.g. `--skip-key STRIPE_KEY`. Unknown key names exit with code `2`. |
+| `--yes` | flag | — | On the first deploy, uploads all detected keys without the interactive checklist. |
+| `--update-keys` | flag | — | On later deploys, overwrites live keys whose local values differ. |
+| `--wait` | flag | — | Without a terminal, waits for the sign-in or the payment instead of exiting `3` or `4` with its link. Every `frogbot dojo` command takes it. |
+
+<AccordionGroup>
+  <Accordion title="Pre-flight checks & signing in">
+    - **Lockfile check:** The deploy stops before uploading with `NO_PACKAGE_JSON` or `NO_LOCKFILE` if `package.json` is missing, if the app uses Bun, or if no `pnpm-lock.yaml`, `package-lock.json`, or `yarn.lock` is present.
+    - **Browser login:** On first use, the deploy prints a Dojo verification URL that carries the code, then the code itself (and opens your browser in interactive terminals). When the code expires, it starts a new one: on its own with `--wait` (up to three codes), or when you press Enter. Without a terminal or `--wait`, it exits `3` with the link and code instead of waiting, and keeps the code, so running it again after the code is confirmed signs in. Your token is saved in `~/.config/frogbotai/auth.json` (or `$XDG_CONFIG_HOME`) with owner-only permissions.
+    - **API key instead:** Set `FROGBOT_DOJO_TOKEN` to a Dojo API key (from `frogbot dojo keys create`) for CI and agents. It's used ahead of the stored token, and a refused one exits `3` instead of starting a browser login. In CI (`CI` set, no terminal) with no token and no stored sign-in, it exits `3` at once naming `FROGBOT_DOJO_TOKEN` instead of printing a code nobody can open.
+    - **Custom Dojo endpoint:** Set `FROGBOT_DOJO_URL` to target a different Dojo instance.
+  </Accordion>
+  <Accordion title="First deploy vs. later updates">
+    - **First deploy:** Creates a Dojo app named after `package.json`'s `name` (or `--name`), writes the app ID to `.frogbot/app.json`, and adds `/.frogbot` to `.gitignore`.
+    - **Paying for the app:** When the workspace's Dojo plan doesn't cover the app yet, the deploy prints Dojo's upgrade link (and opens it in interactive terminals), waits up to 30 minutes for the payment, then carries on with the same deploy. Without a terminal or `--wait`, it exits `4` with the link instead; deploy again once it's paid.
+    - **Later deploys:** Deploying again from the same folder ships a new version of the linked app. Delete `.frogbot/app.json` to deploy as a brand-new app. In a folder with no link, such as a fresh clone or a CI job, `frogbot deploy --app <slug>` ships to that app and writes the link.
+    - **Name collisions & workspaces:** If the app name is taken on Dojo, the deploy prompts you to rerun with `--name <another name>`. If you belong to multiple workspaces in a non-interactive shell, pass `--workspace`. With no workspace yet, it names `frogbot dojo workspaces create <name>`; in an interactive terminal it opens the page to create one and checks again when you press Enter.
+  </Accordion>
+  <Accordion title="Bringing local database & upload files (--data)">
+    - **First deploy only:** On the first deploy of a local `file:` SQLite app, it asks `Bring your data? 42 deals, 3 users, 12 files` (or requires `--data` / `--no-data` when non-interactive). Once a version of the app has started on Dojo, later deploys send code only; `--data` then says to use `--replace-data`.
+    - **Replacing live data:** `frogbot deploy --replace-data` on a live app asks `This replaces all of deals's live data with this computer's (42 deals, 3 users, 12 files). Anything written live since will be lost. Type deals to confirm:` and ships the data with the new version. Only the app's owners can do it, and only at a terminal: without one it exits `1` with `Replacing live data needs a person at a terminal.`, and `--yes` doesn't skip the question. Dojo snapshots the app's volume first, and brought files overwrite files with the same name; none are deleted.
+    - **Safe live copy:** The deploy copies your SQLite database so it works while `frogbot dev` is running, stripping local-only state (queued jobs, locks, sessions, trigger subscriptions) while preserving users, password hashes, and `FROGBOT_SECRET` so existing connections keep working.
+    - **Upload collections:** Files inside upload directories within your project root are uploaded with progress output and automatic 3x retries. `.env*`, `.git`, `node_modules`, and database files inside upload folders are excluded.
+  </Accordion>
+  <Accordion title="Environment keys (--no-keys, --skip-key, --update-keys)">
+    - **Encryption & masking:** Keys from `.env*` files are masked in terminal output (`STRIPE_KEY ••••4242`) and sealed to Dojo's public key before leaving your machine. Platform variables (`DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT`, `HOSTNAME`) are managed by Dojo automatically, except that the first deploy of a Postgres app offers `.env`'s `DATABASE_URL` with the keys when it points off this machine (see below), and the Dojo sign-in (`FROGBOT_DOJO_TOKEN`, `FROGBOT_DOJO_URL`) never leaves your machine.
+    - **Postgres `DATABASE_URL`:** On the first deploy of a Postgres app (the adapter's `name` is `postgres`), a `DATABASE_URL` in `.env` that points off this machine is listed with the keys, masked and ticked (`DATABASE_URL ••••/crm`); untick it, or pass `--skip-key DATABASE_URL`, to leave it out. A `file:` URL, or one whose host is `localhost`, `127.0.0.1` or `::1`, is never sent, and neither is any `DATABASE_URL` from a SQLite app or a later deploy. Bringing data still works only for SQLite apps.
+    - **First vs. later deploys:** The first deploy lets you untick any keys interactively (or uploads all keys when non-interactive). Later deploys add newly introduced keys automatically and keep existing live values unless you pass `--update-keys`.
+    - **Editors:** Collaborators with editor access (such as from [`dojo apps pull`](#dojo-apps-pull)) deploy code only; key changes are restricted to workspace owners.
+  </Accordion>
+  <Accordion title="Uploaded files, 100 MB limit, and exit codes">
+    - **Included files:** Uploads all tracked and untracked working files that are not ignored by `.gitignore` (up to **100 MB**).
+    - **Always excluded:** `.git`, `.frogbot/`, `.env*`, `frogbot.db*`, `*.sqlite*`, `node_modules`, `.next`, `files/`, upload collection folders, and symlinks.
+    - **Exit codes:** Build or upload failures print the last build lines and exit with code `1`. Invalid flag combinations (such as `--data` with `--no-data`) exit with code `2`. A sign-in nobody is there to confirm exits `3`, and a payment nobody is there to make exits `4`; under `--json` the result adds `needs`, `link` and, for a sign-in, `userCode`.
+  </Accordion>
+</AccordionGroup>
+
 ### Plugin deploy targets
 
 A plugin adds a target under `cli.deployTargets`, the way `dojo()` adds `dojo`. App developers don't write one. A target name uses lowercase letters, digits, and dashes, and it can't be a core target's name.
@@ -212,13 +270,13 @@ Added when [`aiCapturePlugin()`](/plugins/ai-capture) is in your config's `plugi
 
 ### Commands from `dojo()`
 
-Apps created with `create-frogbot-app` list [`dojo()`](/plugins/dojo), which adds `frogbot dojo`: every Dojo action from the terminal, for people and coding agents. Without an app (such as when pulling an app into an empty directory), run the same commands as `npx @frogbotai/plugin-dojo <command>`.
+Apps created with `create-frogbot-app` list [`dojo()`](/plugins/dojo), which adds the `dojo` [deploy target](#deploy-to-dojo) and `frogbot dojo`: every other Dojo action from the terminal, for people and coding agents. Without an app (such as when pulling an app into an empty directory), run the same commands as `npx @frogbotai/plugin-dojo <command>`.
 
 | Command | Description |
 | --- | --- |
 | `login`, `logout`, `whoami` | Signs in with a browser code (the first sign-in makes the account), signs out, or shows who is signed in. |
 | `workspaces`, `members` | Lists, creates and renames workspaces, and manages their members. |
-| `apps share`, `apps pull`, `apps logs` | Shares the app in this folder, downloads one, or prints its logs. See [`dojo apps share`](#dojo-apps-share). |
+| `apps pull`, `apps logs` | Downloads an app, or prints its logs. To ship an app, run [`frogbot deploy`](#deploy-to-dojo). |
 | `apps list`, `get`, `create`, `rename`, `delete` | Manages your apps. |
 | `deployments`, `env`, `domains`, `sharing` | An app's deployments and build logs, environment keys, custom domain, and who it's shared with. |
 | `keys`, `billing` | Your Dojo API keys, and the workspace's plan and billing link. |
@@ -226,65 +284,6 @@ Apps created with `create-frogbot-app` list [`dojo()`](/plugins/dojo), which add
 Every command takes `--json`, which prints one JSON value on stdout, and reads `FROGBOT_DOJO_TOKEN` as its API key. Destructive commands need `--yes` without a terminal.
 
 `frogbot dojo --help` lists everything. The [Dojo plugin](/plugins/dojo#commands) has the full list with examples.
-
-### `dojo apps share`
-
-```bash
-npx frogbot dojo apps share --no-data
-```
-
-Uploads the app in the current folder to Dojo, streams `[build]` logs, and prints a share link followed by the live `https://<name>.frogbot.app` URL.
-
-- **Where to run it.** Run it from the folder that contains `frogbot.config.ts`, or from its parent when the config is inside `src/`.
-- **Short form.** `npx frogbot share` is the same command, with the same flags.
-- **Without `dojo()`.** In an app without `dojo()`, run `npx @frogbotai/plugin-dojo apps share`.
-- **Deploy flags.** `share` and [`frogbot deploy dojo`](#deploy) run the same code, so `share` also takes `--json`, `--no-interactive`, `--env-file`, and `--dry-run`. A dry run lists the files, size, keys, and data it would send, and makes no request.
-
-| Argument | Type | Default | Description |
-| --- | --- | --- | --- |
-| `--app` | app slug or id | — | Ships to this existing app and links the folder to it in `.frogbot/app.json`, for a fresh clone or CI. Stops if the folder is linked to another app. Can't be combined with `--workspace` or `--name`. |
-| `--data` | flag | — | On the first share, uploads local SQLite data and files without prompting. |
-| `--no-data` | flag | — | On the first share, uploads code only without prompting. |
-| `--replace-data` | flag | — | On a live app, replaces all of its data with this computer's. Owners only, after typing the app's name; needs a terminal. |
-| `--workspace` | workspace slug | — | Dojo workspace to create the app in on first share (when you belong to multiple). |
-| `--name` | name | `package.json` `name` | Subdomain slug for `https://<name>.frogbot.app` on first share (lowercased, alphanumeric + dashes). |
-| `--no-keys` | flag | — | Uploads no `.env` keys. |
-| `--skip-key` | key name (repeatable) | — | Excludes a specific key (case-sensitive), e.g. `--skip-key STRIPE_KEY`. Unknown key names exit with code `2`. |
-| `--yes` | flag | — | On the first share, uploads all detected keys without the interactive checklist. |
-| `--update-keys` | flag | — | On subsequent shares, overwrites live keys whose local values differ. |
-| `--wait` | flag | — | Without a terminal, waits for the sign-in or the payment instead of exiting `3` or `4` with its link. Every `frogbot dojo` command takes it. |
-
-<AccordionGroup>
-  <Accordion title="Pre-flight checks & signing in">
-    - **Lockfile check:** `share` stops before uploading with `NO_PACKAGE_JSON` or `NO_LOCKFILE` if `package.json` is missing, if the app uses Bun, or if no `pnpm-lock.yaml`, `package-lock.json`, or `yarn.lock` is present.
-    - **Browser login:** On first use, `share` prints a Dojo verification URL that carries the code, then the code itself (and opens your browser in interactive terminals). When the code expires, `share` starts a new one: on its own with `--wait` (up to three codes), or when you press Enter. Without a terminal or `--wait`, `share` exits `3` with the link and code instead of waiting, and keeps the code, so running it again after the code is confirmed signs in. Your token is saved in `~/.config/frogbotai/auth.json` (or `$XDG_CONFIG_HOME`) with owner-only permissions.
-    - **API key instead:** Set `FROGBOT_DOJO_TOKEN` to a Dojo API key (from `frogbot dojo keys create`) for CI and agents. It's used ahead of the stored token, and a refused one exits `3` instead of starting a browser login. In CI (`CI` set, no terminal) with no token and no stored sign-in, `share` exits `3` at once naming `FROGBOT_DOJO_TOKEN` instead of printing a code nobody can open.
-    - **Custom Dojo endpoint:** Set `FROGBOT_DOJO_URL` to target a different Dojo instance.
-  </Accordion>
-  <Accordion title="First share vs. subsequent updates">
-    - **First share:** Creates a Dojo app named after `package.json`'s `name` (or `--name`), writes the app ID to `.frogbot/app.json`, and adds `/.frogbot` to `.gitignore`.
-    - **Paying for the app:** When the workspace's Dojo plan doesn't cover the app yet, `share` prints Dojo's upgrade link (and opens it in interactive terminals), waits up to 30 minutes for the payment, then carries on with the same share. Without a terminal or `--wait`, it exits `4` with the link instead; share again once it's paid.
-    - **Later shares:** Deploying again from the same folder ships a new version of the linked app. Delete `.frogbot/app.json` to deploy as a brand-new app. In a folder with no link, such as a fresh clone or a CI job, `share --app <slug>` ships to that app and writes the link.
-    - **Name collisions & workspaces:** If the app name is taken on Dojo, `share` prompts you to rerun with `--name <another name>`. If you belong to multiple workspaces in a non-interactive shell, pass `--workspace`. With no workspace yet, `share` names `frogbot dojo workspaces create <name>`; in an interactive terminal it opens the page to create one and checks again when you press Enter.
-  </Accordion>
-  <Accordion title="Bringing local database & upload files (--data)">
-    - **First share only:** On the first share of a local `file:` SQLite app, `share` asks `Bring your data? 42 deals, 3 users, 12 files` (or requires `--data` / `--no-data` when non-interactive). Once a version of the app has started on Dojo, later shares deploy code only; `--data` then says to use `--replace-data`.
-    - **Replacing live data:** `share --replace-data` on a live app asks `This replaces all of deals's live data with this computer's (42 deals, 3 users, 12 files). Anything written live since will be lost. Type deals to confirm:` and ships the data with the new version. Only the app's owners can do it, and only at a terminal: without one it exits `1` with `Replacing live data needs a person at a terminal.`, and `--yes` doesn't skip the question. Dojo snapshots the app's volume first, and brought files overwrite files with the same name; none are deleted.
-    - **Safe live copy:** `share` copies your SQLite database so it works while `frogbot dev` is running, stripping local-only state (queued jobs, locks, sessions, trigger subscriptions) while preserving users, password hashes, and `FROGBOT_SECRET` so existing connections keep working.
-    - **Upload collections:** Files inside upload directories within your project root are uploaded with progress output and automatic 3x retries. `.env*`, `.git`, `node_modules`, and database files inside upload folders are excluded.
-  </Accordion>
-  <Accordion title="Environment keys (--no-keys, --skip-key, --update-keys)">
-    - **Encryption & masking:** Keys from `.env*` files are masked in terminal output (`STRIPE_KEY ••••4242`) and sealed to Dojo's public key before leaving your machine. Platform variables (`DATABASE_URL`, `FROGBOT_SECRET`, `NODE_ENV`, `PORT`, `HOSTNAME`) are managed by Dojo automatically, except that the first share of a Postgres app offers `.env`'s `DATABASE_URL` with the keys when it points off this machine (see below), and the Dojo sign-in (`FROGBOT_DOJO_TOKEN`, `FROGBOT_DOJO_URL`) never leaves your machine.
-    - **Postgres `DATABASE_URL`:** On the first share of a Postgres app (the adapter's `name` is `postgres`), a `DATABASE_URL` in `.env` that points off this machine is listed with the keys, masked and ticked (`DATABASE_URL ••••/crm`); untick it, or pass `--skip-key DATABASE_URL`, to leave it out. A `file:` URL, or one whose host is `localhost`, `127.0.0.1` or `::1`, is never sent, and neither is any `DATABASE_URL` from a SQLite app or a later share. Bringing data still works only for SQLite apps.
-    - **First vs. later shares:** The first share lets you untick any keys interactively (or uploads all keys when non-interactive). Later shares add newly introduced keys automatically and keep existing live values unless you pass `--update-keys`.
-    - **Editors:** Collaborators with editor access (such as from [`dojo apps pull`](#dojo-apps-pull)) deploy code only; key changes are restricted to workspace owners.
-  </Accordion>
-  <Accordion title="Uploaded files, 100 MB limit, and exit codes">
-    - **Included files:** Uploads all tracked and untracked working files that are not ignored by `.gitignore` (up to **100 MB**).
-    - **Always excluded:** `.git`, `.frogbot/`, `.env*`, `frogbot.db*`, `*.sqlite*`, `node_modules`, `.next`, `files/`, upload collection folders, and symlinks.
-    - **Exit codes:** Build or upload failures print the last build lines and exit with code `1`. Invalid flag combinations (such as `--data` with `--no-data`) exit with code `2`. A sign-in nobody is there to confirm exits `3`, and a payment nobody is there to make exits `4`; under `--json` the result adds `needs`, `link` and, for a sign-in, `userCode`.
-  </Accordion>
-</AccordionGroup>
 
 ### `dojo apps pull`
 
@@ -294,7 +293,7 @@ npx @frogbotai/plugin-dojo apps pull deals [--data]
 
 Downloads the live code of a Dojo app you own or edit into a new `./<app>` directory. It also:
 
-- Links `.frogbot/app.json`, so running `npx frogbot dojo apps share` from that folder updates the same app.
+- Links `.frogbot/app.json`, so running `npx frogbot deploy` from that folder updates the same app.
 - Writes a fresh local `.env` with `DATABASE_URL` and `FROGBOT_SECRET`. `DATABASE_URL` is `file:./frogbot.db`, or `postgres://postgres:postgres@127.0.0.1:5432/<app>` for an app whose `package.json` depends on `@frogbotai/db-postgres` or `@frogbotai/db-vercel-postgres`, as `create-frogbot-app` writes it.
 
 Live data and production secrets remain on Dojo.

@@ -7,7 +7,6 @@ export { getSummaryKind, SUMMARY_OPERATIONS } from '../admin/views/summary.js';
 export { executeAuthStrategy } from '../auth/executeAuthStrategy.js';
 export { checkLockfile, findAppRoot } from '../bin/deploy/appRoot.js';
 export { DeployError } from '../bin/deploy/error.js';
-export { processDeployIO } from '../bin/deploy/io.js';
 export type { RunDeployOptions } from '../bin/deploy/run.js';
 export { runDeploy } from '../bin/deploy/run.js';
 export { formatCliError } from '../bin/formatCliError.js';

@@ -5,7 +5,7 @@ import type { AppLink } from './link.js';
 import { linkPath } from './link.js';
 import { findApp } from './nouns/resolve.js';
 
-/** What `share` needs to know about the app it ships to. */
+/** What a deploy needs to know about the app it ships to. */
 export type AppInfo = { started: boolean; level: 'editor' | 'owner'; slug?: string };
 
 /** Stops with Dojo's words when it refuses the linked app, naming the link file. */
@@ -14,8 +14,8 @@ export async function refusedApp(appId: string | number, response: Response): Pr
 
   throw await dojoStop(
     response,
-    `You can't share to the app in ${linkPath} (${appId})`,
-    ` Delete ${linkPath} to share as a new app.`,
+    `You can't deploy to the app in ${linkPath} (${appId})`,
+    ` Delete ${linkPath} to deploy as a new app.`,
   );
 }
 
@@ -37,7 +37,7 @@ export async function appInfo(dojo: DojoClient, appId: string | number): Promise
 }
 
 /**
- * `share --app <slug or id>`: the app on Dojo, and the link `share` writes to `.frogbot/app.json` once
+ * `frogbot deploy --app <slug or id>`: the app on Dojo, and the link the deploy writes to `.frogbot/app.json` once
  * Dojo accepts the upload. A folder already linked to another app stops, naming both.
  */
 export async function appFromFlag({

@@ -1,7 +1,7 @@
 ---
 title: "Dojo"
 description: "Share and manage FrogBot apps on Dojo from the terminal, and run them there with no setup."
-keywords: ["Dojo", "frogbot dojo", "share", "pull", "logs", "FROGBOT_DOJO_TOKEN", "plugin-dojo", "plugins"]
+keywords: ["Dojo", "frogbot dojo", "frogbot deploy", "pull", "logs", "FROGBOT_DOJO_TOKEN", "plugin-dojo", "plugins"]
 ---
 
 The Dojo plugin adds the `dojo` target to [`frogbot deploy`](/deployment/overview) and `frogbot dojo`, which manages Dojo from the terminal, and runs your app on Dojo with no setup: uploads go to the app's own storage, and AI goes through Dojo's gateway. Apps made with `create-frogbot-app` already list it.
@@ -31,21 +31,19 @@ export default buildConfig({
 
 ## Commands
 
-`dojo()` adds two commands:
+`dojo()` adds the `dojo` [deploy target](/getting-started/cli#plugin-deploy-targets) and the `frogbot dojo` command:
 
-- `frogbot dojo` does everything a person can do in Dojo from the terminal, for people and coding agents.
-- `frogbot share` is `frogbot dojo apps share` with the same flags.
+- `frogbot deploy` ships the app in this folder to Dojo. It runs `dojo` when you name no target, and it is the one command that ships to Dojo. See [Deploy to Dojo](/getting-started/cli#deploy-to-dojo) for its flags.
+- `frogbot dojo` does everything else a person can do in Dojo from the terminal, for people and coding agents: the account, workspaces, apps, keys, domains, logs and billing.
 
-In an app that lists `dojo()`, run them as [plugin commands](/getting-started/cli#plugin-commands). The package also installs its own bin, so the same commands run without an app, or in an app that doesn't list `dojo()`:
+In an app that lists `dojo()`, run `frogbot dojo` as a [plugin command](/getting-started/cli#plugin-commands). The package also installs its own bin, so the same commands run without an app:
 
 ```bash
-npx frogbot share
+npx frogbot deploy
 npx @frogbotai/plugin-dojo apps pull deals
 ```
 
-A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/<app>` to the new `.env` when the app's `package.json` depends on a Postgres adapter, and `file:./frogbot.db` otherwise. The first `share` of a Postgres app lists `.env`'s `DATABASE_URL` under "Keys to bring", masked and ticked, when it points off this machine: not `file:`, and a host other than `localhost`, `127.0.0.1` or `::1`. Untick it to leave it out. A local one, a SQLite app's, and any later share's are never sent. Bringing data works only for SQLite apps.
-
-`frogbot deploy` with no target runs the same deploy as `apps share`, because `dojo()` registers `dojo` as a [deploy target](/getting-started/cli#plugin-deploy-targets).
+A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/<app>` to the new `.env` when the app's `package.json` depends on a Postgres adapter, and `file:./frogbot.db` otherwise. The first deploy of a Postgres app lists `.env`'s `DATABASE_URL` under "Keys to bring", masked and ticked, when it points off this machine: not `file:`, and a host other than `localhost`, `127.0.0.1` or `::1`. Untick it to leave it out. A local one, a SQLite app's, and any later deploy's are never sent. Bringing data works only for SQLite apps.
 
 | Command | Arguments | Description |
 | --- | --- | --- |
@@ -59,12 +57,11 @@ A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://post
 | `members add` | `<email>`, `--role owner\|member`, `--workspace` | Adds someone by email; they join when they sign in with it. |
 | `members role` | `<email> <role>`, `--workspace` | Changes a member's role. |
 | `members remove` | `<email>`, `--workspace`, `--yes` | Removes a member, or yourself. |
-| `apps share` | `--app`, `--data`, `--no-data`, `--replace-data`, `--workspace`, `--name`, `--no-keys`, `--skip-key`, `--yes`, `--update-keys`, `--wait` | Uploads the app in this folder to Dojo, builds it and prints its live URL. See [`dojo apps share`](/getting-started/cli#dojo-apps-share). |
 | `apps pull` | `<app>`, `--data` | Downloads an app you own or edit into a new folder; owners can bring its data with `--data`. See [`dojo apps pull`](/getting-started/cli#dojo-apps-pull). |
 | `apps logs` | `<app>`, `--follow` | Prints an app's recent logs, or follows them. See [`dojo apps logs`](/getting-started/cli#dojo-apps-logs). |
 | `apps list` | `--workspace` | Lists every app you can see. |
 | `apps get` | `<app>` | Shows an app's address, whether it has started, and your access. |
-| `apps create` | `<name>`, `--workspace` | Creates an empty app to share to later. A name whose slug would be digits alone is refused, since digits name an app by id. |
+| `apps create` | `<name>`, `--workspace` | Creates an empty app to deploy to later. A name whose slug would be digits alone is refused, since digits name an app by id. |
 | `apps rename` | `<app> <name>` | Renames an app; its address stays. |
 | `apps delete` | `<app>`, `--yes` | Deletes an app and everything in it. |
 | `deployments list` | `<app>` | Lists an app's deployments, newest first. |
@@ -86,13 +83,13 @@ A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://post
 
 - `<app>` is the app's slug, such as `deals` for `deals.frogbot.app`, or its id. Digits that are one app's id and another app's slug are refused. Name that app by its id.
 - Lists read every page.
-- `frogbot dojo --help`, `frogbot dojo apps --help`, and `frogbot dojo apps share --help` list the commands, a noun's verbs, and a verb's flags.
+- `frogbot dojo --help`, `frogbot dojo apps --help`, and `frogbot dojo apps delete --help` list the commands, a noun's verbs, and a verb's flags.
 - An unknown command or verb prints the list and exits with code `2`.
 
 ### Scripts and agents
 
-- **`--json`** on any command prints one JSON value on stdout and nothing else. Sign-in links, progress and build lines go to stderr. A failed command prints `{ "ok": false, "code", "error" }` on stdout, with Dojo's `status` and `url` when Dojo refused it, and exits `1`, or `2` for bad usage (`USAGE_ERROR`, including an unknown command or verb), `3` for a sign-in (`SIGN_IN_REQUIRED`) or `4` for a payment (`payment_required`) that nobody is there to give. The codes are the ones in [When a deploy stops](/deployment/overview#when-a-deploy-stops). `apps share` (and `frogbot share`) prints the same `{ target, ok, dryRun, issues, result }` object as [`frogbot deploy --json`](/deployment/overview), even when it fails. `apps logs --follow` never ends, so it refuses `--json`.
-- **`FROGBOT_DOJO_TOKEN`** is a Dojo API key every command uses, ahead of the stored sign-in. When Dojo refuses it, the command exits with code `3` instead of starting a browser sign-in; `whoami` exits `1`, because it only reports who is signed in. In CI (`CI` set, no terminal), a command with no token and no stored sign-in exits `3` at once, naming the variable. `FROGBOT_DOJO_URL` targets another Dojo. Sharing never uploads either one from `.env` as an app key.
+- **`--json`** on any command prints one JSON value on stdout and nothing else. Sign-in links, progress and build lines go to stderr. A failed command prints `{ "ok": false, "code", "error" }` on stdout, with Dojo's `status` and `url` when Dojo refused it, and exits `1`, or `2` for bad usage (`USAGE_ERROR`, including an unknown command or verb), `3` for a sign-in (`SIGN_IN_REQUIRED`) or `4` for a payment (`payment_required`) that nobody is there to give. The codes are the ones in [When a deploy stops](/deployment/overview#when-a-deploy-stops). [`frogbot deploy --json`](/deployment/overview) prints its own `{ target, ok, dryRun, issues, result }` object, even when it fails. `apps logs --follow` never ends, so it refuses `--json`.
+- **`FROGBOT_DOJO_TOKEN`** is a Dojo API key every command uses, ahead of the stored sign-in. When Dojo refuses it, the command exits with code `3` instead of starting a browser sign-in; `whoami` exits `1`, because it only reports who is signed in. In CI (`CI` set, no terminal), a command with no token and no stored sign-in exits `3` at once, naming the variable. `FROGBOT_DOJO_URL` targets another Dojo. A deploy never uploads either one from `.env` as an app key.
 - **No terminal.** Every question has a flag, or fails naming it. `apps delete`, `members remove`, `keys revoke`, `sharing leave`, `env unset`, `domains clear`, and `domains set` when it replaces a domain, ask before acting, and need `--yes` without a terminal. `apps delete` looks the app up first and names it in the question.
 - **Nobody to wait for.** Without a terminal, a command that needs a sign-in exits `3` with the link and code, and keeps the code so the next run signs in once the person confirms it; one that needs a payment exits `4` with the upgrade link. Under `--json` the error adds `needs`, `link` and, for a sign-in, `userCode`. `--wait` waits instead.
 - **Refusals.** A `402` prints Dojo's upgrade link. A `403` says which access the command needs, such as owner access to the app.

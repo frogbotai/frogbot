@@ -28,7 +28,7 @@ const defaultCodes: Record<ShareError['exitCode'], string> = {
   [needsPayment]: 'payment_required',
 };
 
-/** A known `frogbot share` or `frogbot dojo` stop: printed as one `[frogbot]` line, exiting with `exitCode`. */
+/** A known `frogbot deploy` or `frogbot dojo` stop: printed as one `[frogbot]` line, exiting with `exitCode`. */
 export class ShareError extends Error {
   exitCode: 1 | 2 | typeof needsSignIn | typeof needsPayment;
   /** The `--json` result's `code`: the details' code, or one for the exit code (`FAILED`, `USAGE_ERROR`, `SIGN_IN_REQUIRED`, `payment_required`). */

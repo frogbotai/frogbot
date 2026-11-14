@@ -58,8 +58,8 @@ function showPaywall(io: DojoIO, paywall: Paywall): void {
   say(
     io,
     paywall.owner
-      ? '[frogbot] Pay for it here; the share carries on once Dojo has the payment:'
-      : '[frogbot] Ask a workspace owner to pay for it here; the share carries on once Dojo has the payment:',
+      ? '[frogbot] Pay for it here; the deploy carries on once Dojo has the payment:'
+      : '[frogbot] Ask a workspace owner to pay for it here; the deploy carries on once Dojo has the payment:',
   );
 
   say(io, paywall.url);
@@ -112,7 +112,7 @@ export async function whenPaid(
 
       if (polls > maxPolls) {
         throw new ShareError(
-          `Dojo still has no payment for this app after ${(maxPolls * pollMs) / 60_000} minutes. Once it's paid, share again.`,
+          `Dojo still has no payment for this app after ${(maxPolls * pollMs) / 60_000} minutes. Once it's paid, deploy again.`,
           1,
           {
             code:
