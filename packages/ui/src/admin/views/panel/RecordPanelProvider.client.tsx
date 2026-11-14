@@ -291,6 +291,7 @@ export function RecordPanelProvider({
 
     guard(() => {
       const navigation = navigationRef.current;
+      const confirmed = Boolean(formRef.current?.modified);
 
       void (async () => {
         const remaining = [...stack];
@@ -308,7 +309,10 @@ export function RecordPanelProvider({
           if (navigationRef.current !== navigation) return;
 
           if (response?.ok) {
-            guard(() => go({ id: parent.id, mode: 'edit' }, remaining, parent.origin));
+            const next = () => go({ id: parent.id, mode: 'edit' }, remaining, parent.origin);
+
+            if (confirmed) next();
+            else guard(next);
 
             return;
           }
