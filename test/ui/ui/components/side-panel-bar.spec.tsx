@@ -1,5 +1,6 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -30,6 +31,12 @@ function Panel({ onClose, menu = true }: { menu?: boolean; onClose: () => void }
       title="Budget feature"
     />
   );
+}
+
+function Escapable({ children, onClose }: { children: ReactNode; onClose: () => void }) {
+  useSidePanelEscape(onClose);
+
+  return <>{children}</>;
 }
 
 describe('SidePanelBar', () => {
@@ -132,5 +139,53 @@ describe('SidePanelBar', () => {
 
     expect(screen.getByText('Tasks')).toBeTruthy();
     expect(screen.queryByText('Budget feature')).toBeNull();
+  });
+});
+
+describe('useSidePanelEscape', () => {
+  it('closes when focus is on an open collapsible toggle, which is not a menu', () => {
+    const close = vi.fn();
+
+    render(
+      <Escapable onClose={close}>
+        <button aria-controls="details" aria-expanded="true" type="button">
+          Details
+        </button>
+        <div id="details">Open section</div>
+      </Escapable>,
+    );
+
+    const toggle = screen.getByRole('button', { name: 'Details' });
+
+    toggle.focus();
+    fireEvent.keyDown(toggle, { key: 'Escape' });
+
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays open while focus is on an open picker trigger or in its listbox', () => {
+    const close = vi.fn();
+
+    render(
+      <Escapable onClose={close}>
+        <input
+          aria-controls="priority"
+          aria-expanded="true"
+          aria-haspopup="listbox"
+          aria-label="Priority"
+          role="combobox"
+        />
+        <ul id="priority" role="listbox">
+          <li aria-selected="false" role="option" tabIndex={0}>
+            High
+          </li>
+        </ul>
+      </Escapable>,
+    );
+
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Priority' }), { key: 'Escape' });
+    fireEvent.keyDown(screen.getByRole('option', { name: 'High' }), { key: 'Escape' });
+
+    expect(close).not.toHaveBeenCalled();
   });
 });

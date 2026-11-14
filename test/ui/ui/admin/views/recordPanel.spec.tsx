@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   fields: [{ name: 'title', type: 'text' }] as Array<Record<string, unknown>>,
   mostRecentUpdate: undefined as Record<string, unknown> | undefined,
   openModal: vi.fn(),
+  push: vi.fn(),
   search: new URLSearchParams(),
   serverFunction: vi.fn(),
 }));
@@ -35,7 +36,7 @@ vi.mock('@payloadcms/ui', () => ({
     getPreference: () => Promise.resolve(undefined),
     setPreference: vi.fn(),
   }),
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: mocks.push }),
   useSearchParams: () => mocks.search,
   useServerFunctions: () => ({ serverFunction: mocks.serverFunction }),
   useTranslation: () => ({ i18n: { language: 'en', t: (k: string) => k }, t: (k: string) => k }),
@@ -94,6 +95,7 @@ beforeEach(() => {
   mocks.search = new URLSearchParams();
   mocks.mostRecentUpdate = undefined;
   mocks.openModal.mockReset();
+  mocks.push.mockReset();
   mocks.serverFunction.mockReset();
   mocks.serverFunction.mockResolvedValue({ data: {}, Panel: <div id="form" /> });
   fetchMock.mockReset();
@@ -416,6 +418,50 @@ describe('record panel drill-in', () => {
     );
 
     expect(panel.parent?.id).toBe('1');
+    expect(panel.openId).toBe('2');
+  });
+
+  function pendingFetch() {
+    let resolve!: (value: unknown) => void;
+    fetchMock.mockImplementation((() => new Promise((r) => (resolve = r))) as never);
+
+    return () => resolve({ json: () => Promise.resolve({ id: 1 }), ok: true });
+  }
+
+  it('does not jump to the parent when Open full page is pressed while back is checking', async () => {
+    render(<Tree />);
+    await openFromView('1', 'Budget feature');
+    act(() => panel.open('2', { from: 'panel' }));
+    const resolve = pendingFetch();
+
+    act(() => panel.back());
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    act(() => panel.expand());
+
+    expect(mocks.push).toHaveBeenCalledWith('/admin/collections/tasks/2');
+
+    resolve();
+    await waitFor(() => expect(panel.openId).toBe('1'), { timeout: 300 }).catch(() => undefined);
+
+    expect(panel.openId).toBe('2');
+    expect(recordParam()).toBe('2');
+  });
+
+  it('asks before dropping edits made while back was still checking the parent', async () => {
+    render(<Tree />);
+    await openFromView('1', 'Budget feature');
+    act(() => panel.open('2', { from: 'panel' }));
+    const resolve = pendingFetch();
+
+    act(() => panel.back());
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    act(() => panel.setForm({ modified: true, title: 'Spec the cap rules' }));
+    resolve();
+    await waitFor(() =>
+      expect(mocks.openModal.mock.calls.length || panel.openId !== '2').toBeTruthy(),
+    );
+
+    expect(mocks.openModal).toHaveBeenCalledWith('fb-record-panel-leave');
     expect(panel.openId).toBe('2');
   });
 
