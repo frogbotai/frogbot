@@ -115,3 +115,13 @@ test('links two accounts of one piece, sets a default and disconnects one', asyn
   await expect(row(page, first)).toBeVisible();
   await expect(row(page, second)).toHaveCount(0);
 });
+
+test.describe('signed out', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test('Settings sends the visitor to sign in and back', async ({ page }) => {
+    await page.goto('/settings/connections');
+
+    await expect(page).toHaveURL('/login?redirect=%2Fsettings%2Fconnections');
+  });
+});
