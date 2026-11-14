@@ -27,6 +27,11 @@ const filterMCPItems = vi.hoisted(() =>
 
 vi.mock('@payloadcms/plugin-mcp/internal', () => ({ filterMCPItems }));
 
+vi.mock(
+  '@frogbotai/plugin-api-keys',
+  () => import('../../../packages/plugins/plugin-api-keys/src/index.js'),
+);
+
 const { authorizeMcp } = await import('../../../packages/plugins/plugin-mcp/src/access.js');
 const { toPayloadTools } = await import('../../../packages/plugins/plugin-mcp/src/tools.js');
 
@@ -37,9 +42,15 @@ function setup({ revoked = false } = {}) {
     find: vi.fn().mockImplementation(({ where }) =>
       Promise.resolve({
         docs:
-          revoked || where.and[0].tokenHash.equals !== hashApiKeyToken(token)
-            ? []
-            : [{ id: 'key-1', owner: 'user-1' }],
+          where.tokenHash.equals === hashApiKeyToken(token)
+            ? [
+                {
+                  id: 'key-1',
+                  owner: 'user-1',
+                  ...(revoked && { revokedAt: '2026-01-01T00:00:00.000Z' }),
+                },
+              ]
+            : [],
       }),
     ),
     findByID: vi.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),
@@ -60,6 +71,7 @@ function setup({ revoked = false } = {}) {
       frogbot,
       payload: {
         config: {
+          routes: { api: '/api' },
           collections: [
             { slug: 'posts' },
             { slug: 'api-keys', custom: { frogbot: { internal: true } } },
@@ -105,7 +117,6 @@ describe('authorizeMcp', () => {
   it.each([
     ['invalid key', () => setup(), 'fb_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'],
     ['plaintext lookalike', () => setup(), 'fb_plaintext'],
-    ['revoked key', () => setup({ revoked: true }), null],
   ])('rejects %s', async (_name, makeSetup, replacement) => {
     const { request, strategy, token } = makeSetup();
 
@@ -117,6 +128,20 @@ describe('authorizeMcp', () => {
         req: request(replacement ?? token),
       }),
     ).rejects.toThrow(UnauthorizedError);
+  });
+
+  it('rejects a revoked key with 401, saying when it was revoked', async () => {
+    const { request, strategy, token } = setup({ revoked: true });
+    const req = request(token);
+    const message =
+      'API key was revoked at 2026-01-01T00:00:00.000Z. Mint a new one with POST /api/api-keys/mint.';
+
+    await expect(
+      authorizeMcp({ collection: 'users', strategy, pluginConfig, req }),
+    ).rejects.toMatchObject({ message, status: 401 });
+    expect((req as { responseHeaders: Headers }).responseHeaders.get('WWW-Authenticate')).toBe(
+      `Bearer error="invalid_token", error_description="${message}"`,
+    );
   });
 
   describe("the app's own strategies", () => {

@@ -12,6 +12,7 @@
     "ai-policy-access",
     "api-key-attribution",
     "api-keys",
+    "api-keys-all-collections",
     "audit-log",
     "auth",
     "auth-strategies",

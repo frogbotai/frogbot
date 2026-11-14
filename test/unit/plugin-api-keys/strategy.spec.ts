@@ -3,7 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApiKeyToken } from '../../../packages/plugins/plugin-api-keys/src/server/token.js';
 import {
   apiKeyMeHook,
+  apiKeyRefusal,
   createApiKeyStrategy,
+  refuseRejectedApiKey,
 } from '../../../packages/plugins/plugin-api-keys/src/strategy.js';
 
 const strategyOptions = { authCollection: 'users', collectionSlug: 'api-keys', tokenPrefix: 'fb' };
@@ -114,6 +116,74 @@ describe('API key authentication strategy', () => {
       }),
     ).toEqual({ user: null });
     expect(frogbot.findByID).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'a revoked key',
+      { revokedAt: '2026-01-01T00:00:00.000Z' },
+      'API key was revoked at 2026-01-01T00:00:00.000Z. Mint a new one with POST /v1/api-keys/mint.',
+    ],
+    [
+      'an expired key',
+      { expiresAt: '2026-01-01T00:00:00+01:00' },
+      'API key expired at 2025-12-31T23:00:00.000Z. Mint a new one with POST /v1/api-keys/mint.',
+    ],
+  ])('refuses %s and records why on the request', async (_name, fields, message) => {
+    const frogbot = makeFrogBot();
+    const req = { payload: { config: { routes: { api: '/v1/' } } } };
+
+    frogbot.find.mockResolvedValue({ docs: [{ id: 'key-1', owner: 'user-1', ...fields }] });
+
+    const result = await makeStrategy().authenticate({
+      headers: new Headers({ 'x-api-key': createApiKeyToken() }),
+      frogbot: frogbot as never,
+      req: req as never,
+    });
+
+    expect(result).toEqual({ user: null });
+    expect(apiKeyRefusal(req)).toBe(message);
+    expect(frogbot.findByID).not.toHaveBeenCalled();
+    expect(frogbot.update).not.toHaveBeenCalled();
+  });
+
+  describe('refuseRejectedApiKey', () => {
+    async function refusedRequest(user: unknown = null) {
+      const req = { user, payload: { config: { routes: { api: '/api' } } } };
+      const frogbot = makeFrogBot();
+
+      frogbot.find.mockResolvedValue({
+        docs: [{ id: 'key-1', owner: 'user-1', revokedAt: '2026-01-01T00:00:00.000Z' }],
+      });
+
+      await makeStrategy().authenticate({
+        headers: new Headers({ 'x-api-key': createApiKeyToken() }),
+        frogbot: frogbot as never,
+        req: req as never,
+      });
+
+      return req as { responseHeaders?: Headers };
+    }
+
+    const run = (req: object, overrideAccess = false) =>
+      refuseRejectedApiKey({ overrideAccess, req } as never);
+
+    it('answers 401 with the reason and a Bearer challenge', async () => {
+      const req = await refusedRequest();
+      const message =
+        'API key was revoked at 2026-01-01T00:00:00.000Z. Mint a new one with POST /api/api-keys/mint.';
+
+      expect(() => run(req)).toThrow(expect.objectContaining({ message, status: 401 }));
+      expect(req.responseHeaders?.get('WWW-Authenticate')).toBe(
+        `Bearer error="invalid_token", error_description="${message}"`,
+      );
+    });
+
+    it('lets the operation run when another strategy signed someone in, or access is overridden', async () => {
+      expect(run(await refusedRequest({ id: 'user-1' }))).toBeUndefined();
+      expect(run(await refusedRequest(), true)).toBeUndefined();
+      expect(run({ user: null })).toBeUndefined();
+    });
   });
 
   it('does not authenticate a deleted owner', async () => {

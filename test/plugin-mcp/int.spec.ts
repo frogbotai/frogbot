@@ -611,6 +611,26 @@ describe('MCP plugin integration', () => {
     );
   });
 
+  it('POST /api/mcp tells a revoked key it was revoked, as REST does', async () => {
+    const revokedAt = '2026-01-01T00:00:00.000Z';
+
+    await booted.frogbot.update({
+      collection: apiKeysSlug,
+      id: apiKeyId,
+      data: { revokedAt },
+      overrideAccess: true,
+    });
+
+    const message = `API key was revoked at ${revokedAt}. Mint a new one with POST /api/${apiKeysSlug}/mint.`;
+    const response = await listTools(apiKeyToken);
+
+    expect(response.status).toBe(401);
+    expect(JSON.stringify(response.body)).toContain(message);
+    expect(response.headers.get('www-authenticate')).toBe(
+      `Bearer resource_metadata="${resourceMetadataURL}", error="invalid_token", error_description="${message}"`,
+    );
+  });
+
   it('POST /api/mcp signs in with a later strategy when the API-key strategy throws', async () => {
     const find = booted.frogbot.find.bind(booted.frogbot);
 

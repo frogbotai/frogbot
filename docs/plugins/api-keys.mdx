@@ -103,11 +103,31 @@ await fetch('/api/api-keys/mint', {
 
 Both answer `400` for any other format, a day that doesn't exist such as `2027-02-30`, or a date that isn't in the future. Both return `expiresAt` with the new key. It is `null` when the key never expires.
 
-- Once `expiresAt` passes, the key no longer authenticates, and its **Last Used At** time stops changing. It stays in the list, with its date in the **Expires** column.
+- Once `expiresAt` passes, the key no longer authenticates, and its **Last Used At** time stops changing. It stays in the list, with its date in the **Expires** column. Collection, plugin and MCP requests made with it get a `401` that says so, with a few exceptions: see [Revoked and expired keys](#revoked-and-expired-keys).
 - `expiresAt` is set only when the key is minted. Nobody can change it afterwards, and `data` can't set it.
 - Rotating keeps the old key's `expiresAt`. Rotating a key that has already expired answers `400`, `This key has expired. Mint a new key instead.`, and leaves the old key as it was.
 - A key minted by a key expires no later than its parent. A later date, or none, becomes the parent's date; an earlier one is kept.
 - The create dialog has an **Expires** day picker, empty by default, with **30 days**, **90 days**, **1 year** and **No expiry** buttons. The key works through the chosen day: the dialog posts the start of the next day in the browser's time zone.
+
+## Revoked and expired keys
+
+A request whose only credential is a revoked or expired key gets a `401` that names the reason, so an agent mints a new key instead of retrying or debugging access rules. The same text is the error message and the `WWW-Authenticate` challenge, on REST, the plugin's endpoints and [MCP](/plugins/mcp):
+
+```http
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer error="invalid_token", error_description="API key expired at 2026-11-01T00:00:00.000Z. Mint a new one with POST /api/api-keys/mint."
+
+{ "errors": [{ "message": "API key expired at 2026-11-01T00:00:00.000Z. Mint a new one with POST /api/api-keys/mint." }] }
+```
+
+A revoked key reads `API key was revoked at <date>.` instead. On GraphQL the reason is the error's message. This applies even to collections anyone can read, so the request doesn't quietly return only the public data. Saying so leaks nothing, because the caller already holds the key. An unknown key still gets the usual response, a request that also carries a valid session signs in as that session's user, and a password login with a stale key header still signs in. The plugin's own endpoints keep their `{ "error": "..." }` body.
+
+These don't name the reason yet, because core gives a strategy no way to pass its refusal on ([#462](https://github.com/frogbotai/frogbot/issues/462)):
+
+- `/api/v1/*` answers a plain `401 Unauthorized`.
+- `/api/<auth collection>/me` answers `200` with `{ "user": null }`.
+- `/api/access` answers `200` with the permissions of a caller who isn't signed in.
+- The built-in internal collections (`payload-preferences`, `payload-locked-documents`, `payload-jobs`, `payload-kv`) answer `403`. They are added after every plugin runs, and they need a signed-in user, so they return no data.
 
 ## Budgets and limits
 
@@ -126,7 +146,7 @@ Other plugins can add fields to the keys collection, and the plugin keeps them:
 
 The plugin does not require a role system. By default, callers read and update only the keys they own, and revoke and rotate are limited to the caller's own keys.
 
-A request made with a key reaches only that key and the keys it minted, whatever the access rules or `canRevokeAnyKey` allow.
+A request made with a key reaches only that key and the keys it minted, whatever the access rules or `canRevokeAnyKey` allow. Revoking, rotating or counting any other key answers `404` with the standard error body, whose message tells the caller to sign in: `{ "errors": [{ "name": "APIError", "message": "A key can revoke or rotate only itself and the keys it minted. Sign in to manage this key.", "data": { "code": "not_found" } }] }`.
 
 To layer roles on top, install [`@frogbotai/plugin-roles`](/plugins/roles) and pass role clauses as the collection access:
 
@@ -170,7 +190,7 @@ A session can mint a key with `canMint`, by posting `{ name, data: { canMint: tr
 - It can have `canMint` only because its parent has it.
 - It has its parent's values for [fields from other plugins](#fields-from-other-plugins), such as a tenant or environment.
 - It [expires](#expiring-keys) no later than its parent.
-- A key rotates, revokes and counts with `minted-count` only itself and the keys it minted. Any other key, or one that doesn't exist, answers `404` with the standard error body, `{ "errors": [{ "name": "APIError", "message": "API key not found", "data": { "code": "not_found" } }] }`, and nothing changes. A signed-in session reaches every key its owner has.
+- A key rotates, revokes and counts with `minted-count` only itself and the keys it minted. Any other key, or one that doesn't exist, answers `404` with the standard error body and code `not_found`, and nothing changes. A signed-in caller sees the message `API key not found`; a key sees the sign-in message above. A signed-in session reaches every key its owner has.
 - With the [AI policy plugin](/plugins/ai-policy#api-key-limits), its model list and monthly cap stay inside the parent's as well as the owner's. A list or cap it leaves empty is the parent's. Its spend also counts against the parent's cap, so a parent capped at $10 and every key below it together spend at most $10 a month.
 
 Revoking a key revokes every key it minted, and every key those minted, all the way down. The `revoke` body controls this:
