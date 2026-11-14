@@ -363,6 +363,8 @@ export interface CustomersSelect {
  */
 export interface ConnectionsSelect {
   owner?: boolean;
+  app?: boolean;
+  holder?: boolean;
   piece?: boolean;
   method?: boolean;
   credential?: boolean;
@@ -373,8 +375,6 @@ export interface ConnectionsSelect {
   expiresAt?: boolean;
   status?: boolean;
   updatedAt?: boolean;
-  app?: boolean;
-  holder?: boolean;
   createdAt?: boolean;
 }
 /**

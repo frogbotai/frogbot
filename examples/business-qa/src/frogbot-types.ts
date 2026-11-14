@@ -72,6 +72,7 @@ export interface Config {
     releases: Release;
     'api-keys': ApiKey;
     'usage-logs': UsageLog;
+    'plugin-ai-policy-spend': PluginAiPolicySpend;
     chats: Chat;
     messages: Message;
     'frogbot-chat-assets': FrogBotChatAsset;
@@ -87,6 +88,7 @@ export interface Config {
     releases: ReleasesSelect;
     'api-keys': ApiKeysSelect;
     'usage-logs': UsageLogsSelect;
+    'plugin-ai-policy-spend': PluginAiPolicySpendSelect;
     chats: ChatsSelect;
     messages: MessagesSelect;
     'frogbot-chat-assets': FrogBotChatAssetsSelect;
@@ -202,6 +204,7 @@ export interface User {
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
   monthlyBudget?: number | null;
+  spendCounter?: (number | null) | PluginAiPolicySpend;
   /**
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
@@ -235,6 +238,106 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugin-ai-policy-spend".
+ */
+export interface PluginAiPolicySpend {
+  id: number;
+  key: string;
+  period: string;
+  amount: number;
+  user?: (number | null) | User;
+  apiKey?: (number | null) | ApiKey;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "api-keys".
+ */
+export interface ApiKey {
+  id: number;
+  name: string;
+  owner: number | User;
+  prefix: string;
+  tokenHash: string;
+  lastUsedAt?: string | null;
+  revokedAt?: string | null;
+  /**
+   * The key stops working at this time. Empty when it never expires.
+   */
+  expiresAt?: string | null;
+  /**
+   * Requests made with this key can mint and rotate keys no broader than it.
+   */
+  canMint?: boolean | null;
+  /**
+   * The key that minted this one. Empty when a signed-in session did.
+   */
+  mintedBy?: (number | null) | ApiKey;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
+  totalCostUSD?: number | null;
+  models?:
+    | (
+        | 'openai/gpt-4.1'
+        | 'openai/gpt-4.1-mini'
+        | 'openai/gpt-4o'
+        | 'openai/gpt-4o-2024-08-06'
+        | 'openai/gpt-4o-2024-11-20'
+        | 'openai/gpt-4o-mini'
+        | 'openai/gpt-4o-mini-transcribe'
+        | 'openai/gpt-4o-transcribe'
+        | 'openai/gpt-5'
+        | 'openai/gpt-5-mini'
+        | 'openai/gpt-5-nano'
+        | 'openai/gpt-5-pro'
+        | 'openai/gpt-5.1'
+        | 'openai/gpt-5.2'
+        | 'openai/gpt-5.2-pro'
+        | 'openai/gpt-5.3-codex'
+        | 'openai/gpt-5.3-codex-spark'
+        | 'openai/gpt-5.4'
+        | 'openai/gpt-5.4-mini'
+        | 'openai/gpt-5.4-nano'
+        | 'openai/gpt-5.4-pro'
+        | 'openai/gpt-5.5'
+        | 'openai/gpt-5.5-pro'
+        | 'openai/gpt-5.6'
+        | 'openai/gpt-5.6-luna'
+        | 'openai/gpt-5.6-sol'
+        | 'openai/gpt-5.6-terra'
+        | 'openai/gpt-6-astra'
+        | 'openai/gpt-6-luna'
+        | 'openai/gpt-6-sol'
+        | 'openai/gpt-6.1-sol'
+        | 'openai/gpt-6.1-terra'
+        | 'openai/gpt-daybreak-blue-latest'
+        | 'openai/gpt-daybreak-red-latest'
+        | 'openai/gpt-image-2'
+        | 'openai/gpt-realtime-2.1'
+        | 'openai/o3'
+        | 'openai/o3-pro'
+        | 'openai/text-embedding-3-large'
+        | 'openai/text-embedding-3-small'
+        | 'openai/text-embedding-ada-002'
+        | 'openai/whisper-1'
+      )[]
+    | null;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
+  monthlyBudget?: number | null;
+  spendCounter?: (number | null) | PluginAiPolicySpend;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
+  spendThisPeriodUSD?: number | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -319,91 +422,6 @@ export interface Release {
     relationTo: 'users';
     value: number | User;
   } | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "api-keys".
- */
-export interface ApiKey {
-  id: number;
-  name: string;
-  owner: number | User;
-  prefix: string;
-  tokenHash: string;
-  lastUsedAt?: string | null;
-  revokedAt?: string | null;
-  /**
-   * The key stops working at this time. Empty when it never expires.
-   */
-  expiresAt?: string | null;
-  /**
-   * Requests made with this key can mint and rotate keys no broader than it.
-   */
-  canMint?: boolean | null;
-  /**
-   * The key that minted this one. Empty when a signed-in session did.
-   */
-  mintedBy?: (number | null) | ApiKey;
-  /**
-   * Decimal amount in USD, in whole units, not minor units such as cents
-   */
-  totalCostUSD?: number | null;
-  models?:
-    | (
-        | 'openai/gpt-4.1'
-        | 'openai/gpt-4.1-mini'
-        | 'openai/gpt-4o'
-        | 'openai/gpt-4o-2024-08-06'
-        | 'openai/gpt-4o-2024-11-20'
-        | 'openai/gpt-4o-mini'
-        | 'openai/gpt-4o-mini-transcribe'
-        | 'openai/gpt-4o-transcribe'
-        | 'openai/gpt-5'
-        | 'openai/gpt-5-mini'
-        | 'openai/gpt-5-nano'
-        | 'openai/gpt-5-pro'
-        | 'openai/gpt-5.1'
-        | 'openai/gpt-5.2'
-        | 'openai/gpt-5.2-pro'
-        | 'openai/gpt-5.3-codex'
-        | 'openai/gpt-5.3-codex-spark'
-        | 'openai/gpt-5.4'
-        | 'openai/gpt-5.4-mini'
-        | 'openai/gpt-5.4-nano'
-        | 'openai/gpt-5.4-pro'
-        | 'openai/gpt-5.5'
-        | 'openai/gpt-5.5-pro'
-        | 'openai/gpt-5.6'
-        | 'openai/gpt-5.6-luna'
-        | 'openai/gpt-5.6-sol'
-        | 'openai/gpt-5.6-terra'
-        | 'openai/gpt-6-astra'
-        | 'openai/gpt-6-luna'
-        | 'openai/gpt-6-sol'
-        | 'openai/gpt-6.1-sol'
-        | 'openai/gpt-6.1-terra'
-        | 'openai/gpt-daybreak-blue-latest'
-        | 'openai/gpt-daybreak-red-latest'
-        | 'openai/gpt-image-2'
-        | 'openai/gpt-realtime-2.1'
-        | 'openai/o3'
-        | 'openai/o3-pro'
-        | 'openai/text-embedding-3-large'
-        | 'openai/text-embedding-3-small'
-        | 'openai/text-embedding-ada-002'
-        | 'openai/whisper-1'
-      )[]
-    | null;
-  /**
-   * Decimal amount in USD, in whole units, not minor units such as cents
-   */
-  monthlyBudget?: number | null;
-  /**
-   * Decimal amount in USD, in whole units, not minor units such as cents
-   */
-  spendThisPeriodUSD?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -616,6 +634,7 @@ export interface UsersSelect {
   name?: boolean;
   models?: boolean;
   monthlyBudget?: boolean;
+  spendCounter?: boolean;
   spendThisPeriodUSD?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
@@ -709,6 +728,7 @@ export interface ApiKeysSelect {
   totalCostUSD?: boolean;
   models?: boolean;
   monthlyBudget?: boolean;
+  spendCounter?: boolean;
   spendThisPeriodUSD?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
@@ -734,6 +754,19 @@ export interface UsageLogsSelect {
   costUSD?: boolean;
   finishReason?: boolean;
   requestedAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugin-ai-policy-spend_select".
+ */
+export interface PluginAiPolicySpendSelect {
+  key?: boolean;
+  period?: boolean;
+  amount?: boolean;
+  user?: boolean;
+  apiKey?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
