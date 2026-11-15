@@ -1,7 +1,7 @@
 import type { Noun } from '../command.js';
 import { dojoJSON, followBuild, segment } from '../dojo.js';
 import { ShareError } from '../error.js';
-import { done, say } from '../io.js';
+import { dojoProgram, done, say } from '../io.js';
 import { findApp, whereEquals } from './resolve.js';
 
 type Deployment = {
@@ -15,9 +15,9 @@ type Deployment = {
 
 const editorNeeded = 'editor or owner access to the app';
 
-/** `deployments list | logs`: an app's versions and their build logs. */
+/** `deployments list | logs | rollback | cancel`: an app's versions, their build logs, going back and stopping a build. */
 export const deployments: Noun = {
-  summary: "List an app's deployments and read their build logs.",
+  summary: "List an app's deployments, read their build logs, roll back or cancel a build.",
   verbs: {
     list: {
       summary: "List an app's deployments, newest first.",
@@ -100,6 +100,40 @@ export const deployments: Noun = {
         if (build.status === 'failed') {
           throw new ShareError(`Build failed: ${build.error || 'see the log above'}`);
         }
+      },
+    },
+    rollback: {
+      summary: "Put an earlier live version back, keeping today's data and keys.",
+      args: '<app> <id>',
+      run: async ({ io, dojo, positionals: [ref = '', id = ''] }) => {
+        const app = await findApp(dojo(), ref);
+        const { deploymentId } = await dojoJSON<{ deploymentId: string | number }>(
+          dojo(),
+          `/api/apps/${segment(app.id)}/deployments/${segment(id)}/rollback`,
+          { method: 'POST', what: `Dojo couldn't roll ${app.slug} back`, needs: editorNeeded },
+        );
+
+        done(io, { app: app.slug, rolledBackTo: id, deploymentId }, [
+          `[frogbot] Rolling ${app.slug} back to ${id} as deployment ${deploymentId}. If it can't start, the current version keeps running.`,
+          `${dojoProgram(io.program)} deployments list ${app.slug} shows when it's live.`,
+        ]);
+      },
+    },
+    cancel: {
+      summary: 'Cancel a queued or building deployment. The app stays as it was.',
+      args: '<id>',
+      run: async ({ io, dojo, positionals: [id = ''] }) => {
+        const { status, finishedAt } = await dojoJSON<{ status: string; finishedAt: string }>(
+          dojo(),
+          `/api/deployments/${segment(id)}/cancel`,
+          {
+            method: 'POST',
+            what: `Dojo couldn't cancel deployment ${id}`,
+            needs: 'owner access to the app',
+          },
+        );
+
+        done(io, { id, status, finishedAt }, [`[frogbot] Cancelled deployment ${id}.`]);
       },
     },
   },

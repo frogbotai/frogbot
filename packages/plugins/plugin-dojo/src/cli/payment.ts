@@ -16,18 +16,19 @@ const askOwner = 'Ask a workspace owner';
 const nextStep =
   /\s*(?:Pay for it at|Ask a workspace owner to open|A workspace owner can pay for it at)\s*$/;
 
-function readPaywall(message: string, dojoUrl: string): Paywall | undefined {
+function readPaywall(message: string, dojoUrl: string, link?: string): Paywall | undefined {
   const match = upgradeLink.exec(message);
+  const found = match?.[0].replace(/\.+$/, '') ?? link;
 
-  if (!match) return undefined;
+  if (!found) return undefined;
 
-  const url = new URL(match[0].replace(/\.+$/, ''), dojoUrl);
+  const url = new URL(found, dojoUrl);
   const workspace = url.searchParams.get('workspace');
 
-  if (!workspace) return undefined;
+  if (!workspace || !url.pathname.endsWith('/billing/upgrade')) return undefined;
 
   return {
-    why: message.slice(0, match.index).replace(nextStep, ''),
+    why: (match ? message.slice(0, match.index) : message).replace(nextStep, ''),
     url: url.href,
     workspace,
     apps: Number(url.searchParams.get('apps')) || 1,
@@ -58,8 +59,8 @@ function showPaywall(io: DojoIO, paywall: Paywall): void {
   say(
     io,
     paywall.owner
-      ? '[frogbot] Pay for it here; the deploy carries on once Dojo has the payment:'
-      : '[frogbot] Ask a workspace owner to pay for it here; the deploy carries on once Dojo has the payment:',
+      ? '[frogbot] Pay for it here; this carries on once Dojo has the payment:'
+      : '[frogbot] Ask a workspace owner to pay for it here; this carries on once Dojo has the payment:',
   );
 
   say(io, paywall.url);
@@ -67,11 +68,11 @@ function showPaywall(io: DojoIO, paywall: Paywall): void {
   if (io.isTTY && paywall.owner) io.openBrowser(paywall.url);
 }
 
-function paymentNeeded(paywall: Paywall): ShareError {
+function paymentNeeded(paywall: Paywall, then: string): ShareError {
   const who = paywall.owner ? 'Pay for it at' : 'Ask a workspace owner to pay for it at';
 
   return new ShareError(
-    `${paywall.why} ${who} ${paywall.url}, then run the command again. Add --wait to wait for the payment here.`,
+    `${paywall.why} ${who} ${paywall.url}, ${then}. Add --wait to wait for the payment here.`,
     needsPayment,
     { needs: 'payment', link: paywall.url },
   );
@@ -96,37 +97,76 @@ export async function whenPaid(
     if (response.status !== 402) return response;
 
     const refusal = await dojoError(response.clone());
-    const paywall = readPaywall(refusal.message, dojo.url);
+    const data = refusal.body?.errors?.find((error) => error.data?.url)?.data;
+    const paywall = readPaywall(refusal.message, dojo.url, data?.url);
 
     if (!paywall) return response;
 
-    if (!canWait(io)) throw paymentNeeded(paywall);
+    if (!canWait(io)) throw paymentNeeded(paywall, 'then run the command again');
 
     if (paywall.url !== shown) {
       showPaywall(io, paywall);
       shown = paywall.url;
     }
 
-    do {
-      polls += 1;
-
-      if (polls > maxPolls) {
-        throw new ShareError(
-          `Dojo still has no payment for this app after ${(maxPolls * pollMs) / 60_000} minutes. Once it's paid, deploy again.`,
-          1,
-          {
-            code:
-              refusal.body?.errors?.find((error) => error.data?.code)?.data?.code ??
-              'payment_required',
-            status: response.status,
-            url: paywall.url,
-          },
-        );
-      }
-
-      await io.wait(pollMs);
-    } while (!(await paid(dojo, paywall)));
+    polls = await untilPaid(dojo, io, paywall, polls, {
+      code: refusal.body?.errors?.find((error) => error.data?.code)?.data?.code,
+      status: response.status,
+    });
 
     say(io, '[frogbot] Paid. Carrying on.');
   }
+}
+
+async function untilPaid(
+  dojo: DojoClient,
+  io: DojoIO,
+  paywall: Paywall,
+  from: number,
+  { code, status }: { code?: string; status?: number },
+): Promise<number> {
+  let polls = from;
+
+  do {
+    polls += 1;
+
+    if (polls > maxPolls) {
+      throw new ShareError(
+        `Dojo still has no payment for this app after ${(maxPolls * pollMs) / 60_000} minutes. Once it's paid, run the command again.`,
+        1,
+        { code: code ?? 'payment_required', status, url: paywall.url },
+      );
+    }
+
+    await io.wait(pollMs);
+  } while (!(await paid(dojo, paywall)));
+
+  return polls;
+}
+
+/**
+ * For a change Dojo finishes by itself once a person pays at `link`, such as keeping a preview: shows the link and
+ * waits for the payment. Without a terminal or `--wait` it exits 4 with the link. A link that isn't Dojo's upgrade
+ * page is only printed, and answers false.
+ */
+export async function waitForPayment(
+  dojo: DojoClient,
+  io: DojoIO,
+  { link, why, then }: { link: string; why: string; then: string },
+): Promise<boolean> {
+  const paywall = readPaywall(why, dojo.url, link);
+
+  if (!paywall) {
+    say(io, `[frogbot] ${why} Pay for it at:`);
+    say(io, link);
+
+    return false;
+  }
+
+  if (!canWait(io)) throw paymentNeeded(paywall, then);
+
+  showPaywall(io, paywall);
+  await untilPaid(dojo, io, paywall, 0, {});
+
+  return true;
 }

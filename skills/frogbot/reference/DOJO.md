@@ -2,7 +2,7 @@
 
 Docs: https://docs.frogbot.ai/plugins/dojo
 
-Shipping an app, the first time and every time after, is `npx frogbot deploy`. Everything else happens through `frogbot dojo`: keys, a custom domain, the people on an app, workspaces, deployments, logs, Dojo API keys and billing. Deploying is in "Sharing The App" in [SKILL.md](../SKILL.md#sharing-the-app).
+Shipping an app, the first time and every time after, is `npx frogbot deploy`. Everything else happens through `frogbot dojo`: keys, a custom domain, the people on an app, workspaces, deployments and rollbacks, logs, starting and stopping an app, Trash, data exports, templates, activity, Dojo API keys and billing. Deploying is in "Sharing The App" in [SKILL.md](../SKILL.md#sharing-the-app).
 
 The commands come from `dojo()` (`@frogbotai/plugin-dojo`). In an app that lists it, run `npx frogbot dojo <command>`. Anywhere else, run the same command as `npx @frogbotai/plugin-dojo <command>`, for example `npx @frogbotai/plugin-dojo apps list`. `<app>` is the app's slug, such as `deals` for `deals.frogbot.app`, or its id. `npx frogbot dojo <command> --help` prints a command's flags.
 
@@ -17,7 +17,8 @@ The commands come from `dojo()` (`@frogbotai/plugin-dojo`). In an app that lists
 
 | Command                    | Ask first                                                                    |
 | -------------------------- | ---------------------------------------------------------------------------- |
-| `apps delete <app>`        | Delete `<app>` and everything in it? This can't be undone.                   |
+| `apps delete <app>`        | Move `<app>` to Trash? It stops now and is deleted for good in 30 days.      |
+| `apps stop <app>`          | Stop `<app>`? Visitors see a paused page until you start it again.           |
 | `env unset <app> <KEY>...` | Remove `<KEY>` from `<app>`? It restarts once.                               |
 | `domains set <app> <host>` | Only when `domains get` shows another domain: Replace `<old>` with `<host>`? |
 | `domains clear <app>`      | Remove the custom domain of `<app>`? It stops reaching the app.              |
@@ -29,18 +30,20 @@ The commands come from `dojo()` (`@frogbotai/plugin-dojo`). In an app that lists
 
 Add `--json` whenever you read a result to act on it: stdout then holds one JSON value and nothing else, and a failed command prints nothing on stdout, except `deployments logs --follow`, which prints the failed build's JSON and then exits `1`. Run without `--json` when you only report the result: the plain lines are written for the user. Sign-in links, progress and build lines go to stderr either way. `apps logs --follow` never ends, so it refuses `--json`.
 
-| Exit | Meaning                                                                                               |
-| ---- | ----------------------------------------------------------------------------------------------------- |
-| `0`  | Done.                                                                                                 |
-| `1`  | Stopped. The last `[frogbot]` line on stderr says why: Dojo's reason, the access it needs, or a link. |
-| `2`  | Bad usage: a missing argument, an unknown flag or level, or a destructive command without `--yes`.    |
+| Exit | Meaning                                                                                                    |
+| ---- | ---------------------------------------------------------------------------------------------------------- |
+| `0`  | Done.                                                                                                      |
+| `1`  | Stopped. The last `[frogbot]` line on stderr says why: Dojo's reason, the access it needs, or a link.      |
+| `2`  | Bad usage: a missing argument, an unknown flag or level, or a destructive command without `--yes`.         |
+| `3`  | Needs a sign-in nobody is here to give. Pass on the link and code it printed, or use `FROGBOT_DOJO_TOKEN`. |
+| `4`  | Needs a payment. Pass on the link it printed; the user pays in the browser.                                |
 
 ## Signing In
 
 - `npx frogbot dojo login` signs in with a code the user confirms in the browser, and the first sign-in makes their Dojo account. It prints the link and `Code: <code>` on their own lines and waits, as `deploy` does: run it where you can read its output while it waits, and pass both on. Any command that needs a sign-in starts the same flow.
 - `npx frogbot dojo whoami` prints `[frogbot] Signed in to <url> as <email>.`, then one `<slug>  <name>` line per workspace. It exits `1` when nobody is signed in.
 - `npx frogbot dojo logout` revokes the stored sign-in and forgets it.
-- `FROGBOT_DOJO_TOKEN`, a Dojo API key, signs every command in ahead of the stored sign-in. When Dojo refuses it, the command exits `1` instead of opening a browser sign-in. In CI with no token and no sign-in, commands exit `1` at once.
+- `FROGBOT_DOJO_TOKEN`, a Dojo API key, signs every command in ahead of the stored sign-in. When Dojo refuses it, the command exits `3` instead of opening a browser sign-in. In CI with no token and no sign-in, commands exit `3` at once.
 
 ## Apps
 
@@ -48,7 +51,13 @@ Add `--json` whenever you read a result to act on it: stdout then holds one JSON
 - `npx frogbot dojo apps get <app>` prints the address, `Started: yes` or `Started: not yet`, and `Your access: use|editor|owner`.
 - `npx frogbot dojo apps create <name> [--workspace <slug>]` makes an empty app to deploy to later. When the name is taken, ask for another. When the workspace's plan doesn't cover another app, it prints the upgrade link and waits for the payment; pass the link on.
 - `npx frogbot dojo apps rename <app> <name>` changes the name; the slug and address stay. Owners only.
-- `npx frogbot dojo apps delete <app> --yes` deletes the app, its versions and its data. Owners only, and only after the user says yes to the question above.
+- `npx frogbot dojo apps create <name> --template <template>` builds the new app from a template, named by id or name, and prints its first deployment's id; follow it with `deployments logs <id> --follow`. `npx frogbot dojo templates list` prints `<id>  <name>  <summary>` for FrogBot's templates and the ones saved in the user's workspaces.
+- `npx frogbot dojo apps delete <app> --yes` moves the app to Trash: it stops at once and Dojo deletes it, its versions and its data for good after 30 days. Owners only, and only after the user says yes to the question above.
+- `npx frogbot dojo apps trash` prints `<slug>  deleted for good <date>` for each app in Trash the user is an owner of. `npx frogbot dojo apps restore <app>` takes one out; an app that had gone live needs a paid app free in its workspace, so it may print the upgrade link (exit `4` without a terminal): pass it on.
+- `npx frogbot dojo apps restart <app>` restarts the live app on its current version and keys. `npx frogbot dojo apps stop <app> --yes` stops it, after the question above: visitors get a paused page, and it keeps its address, data and paid app. `npx frogbot dojo apps start <app>` starts it again. Owners only.
+- `npx frogbot dojo apps keep <app>` keeps a free preview as a paid app. When the workspace has no paid app free, it prints the link that pays for one (exit `4` without a terminal); pass it on, and the preview becomes paid once it's paid.
+- `npx frogbot dojo apps usage <app>` prints the app's AI spend this month, by model, and the workspace's AI balance. Owners and editors.
+- `npx frogbot dojo apps export-data <app> [--out <file>]` saves the live database and uploaded files as a `.zip`, by default `./<app>-data.zip`. It never overwrites a file. Owners only.
 - `npx frogbot dojo apps pull <app>`, run from the folder that should hold it, downloads an app the user owns or edits into a new `./<app>` folder with an empty database. An owner can add `--data` to bring the live database, files and the app's secret. Then run `pnpm install` and `pnpm dev` there; `npx frogbot deploy` from that folder ships a new version of the same app. An editor's deploy brings no keys and has no `Share it:` line, since only owners manage keys.
 - `npx frogbot dojo apps logs <app>` prints the app's recent runtime logs, with key values shown as `••••`. When an app misbehaves on Dojo, read them first. Add `--follow`, in a background shell, to watch new lines while the user reproduces the problem.
 
@@ -58,6 +67,8 @@ For an app the user owns or edits:
 
 - `npx frogbot dojo deployments list <app>` prints `<id>  <created>  <status>` per deployment, newest first.
 - `npx frogbot dojo deployments logs <id>` prints the end of that build's log, then `[frogbot] <status>` with the error when the build failed. Add `--follow` to stream it until the build ends; a failed build then exits `1` with `Build failed:` and the reason. Fix the cause and deploy again.
+- `npx frogbot dojo deployments rollback <app> <id>` puts an earlier live version back as a new deployment, without a build, keeping today's data and keys. If it can't start, the current version keeps running. Run `deployments list` to see when it's live.
+- `npx frogbot dojo deployments cancel <id>` cancels a queued or building deployment; the app stays as it was. Owners only.
 
 ## Keys
 
@@ -115,3 +126,9 @@ Keys for scripts, CI and other agents to act as the user through `FROGBOT_DOJO_T
 
 - `npx frogbot dojo billing status [--workspace <slug>]` prints the workspace's plan, its status and how many paid apps it has, and the link to choose a plan when it has none.
 - `npx frogbot dojo billing manage [--workspace <slug>]` prints the link to change the card, see invoices or cancel. Workspace owners only. Give the link to the user: paying happens in the browser, never through you.
+- `npx frogbot dojo billing ai [--workspace <slug>]` prints the workspace's AI balance and whether auto-recharge is on. AI is paused while the balance is $0 or less. Only a person changes auto-recharge, in Dojo.
+- `npx frogbot dojo billing add-funds [--amount <dollars>] [--workspace <slug>]` prints the link that adds AI funds, $10 to $1000 (default $20) plus a processing fee. Workspace owners only. Give the link to the user.
+
+## Activity
+
+- `npx frogbot dojo activity [--workspace <slug>] [--app <app>] [--limit <n>]` prints who deployed, changed or invited what, newest first, as `<time>  <who>  <event>  <app>`. Workspace owners only, on the Business plan.

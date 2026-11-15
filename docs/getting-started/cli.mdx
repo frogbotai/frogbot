@@ -277,9 +277,11 @@ Apps created with `create-frogbot-app` list [`dojo()`](/plugins/dojo), which add
 | `login`, `logout`, `whoami` | Signs in with a browser code (the first sign-in makes the account), signs out, or shows who is signed in. |
 | `workspaces`, `members` | Lists, creates and renames workspaces, and manages their members. |
 | `apps pull`, `apps logs` | Downloads an app, or prints its logs. To ship an app, run [`frogbot deploy`](#deploy-to-dojo). |
-| `apps list`, `get`, `create`, `rename`, `delete` | Manages your apps. |
-| `deployments`, `env`, `domains`, `sharing` | An app's deployments and build logs, environment keys, custom domain, and who it's shared with. |
-| `keys`, `billing` | Your Dojo API keys, and the workspace's plan and billing link. |
+| `apps list`, `get`, `create`, `rename`, `delete`, `trash`, `restore` | Manages your apps, from a template too, and Trash. |
+| `apps restart`, `stop`, `start`, `keep`, `usage`, `export-data` | Runs and stops an app, keeps a free preview, shows its AI spend, and downloads its data. |
+| `deployments`, `env`, `domains`, `sharing` | An app's deployments, build logs, rollbacks and cancels, environment keys, custom domain, and who it's shared with. |
+| `templates`, `activity` | The templates a new app can start from, and a workspace's activity log. |
+| `keys`, `billing` | Your Dojo API keys, and the workspace's plan, AI balance, and billing and AI funds links. |
 
 Every command takes `--json`, which prints one JSON value on stdout, and reads `FROGBOT_DOJO_TOKEN` as its API key. Destructive commands need `--yes` without a terminal.
 

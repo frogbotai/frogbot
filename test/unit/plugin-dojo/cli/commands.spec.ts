@@ -171,7 +171,7 @@ const liveDomain = { domain: 'crm.acme.com', record: null, status: 'live' };
 const destructive: { args: string[]; asked: string; replies?: Record<string, unknown> }[] = [
   {
     args: ['apps', 'delete', 'deals'],
-    asked: "Delete deals and everything in it? This can't be undone.",
+    asked: 'Move deals to Trash? It stops now and is deleted for good in 30 days unless restored.',
   },
   {
     args: ['members', 'remove', 'ada@example.com'],
@@ -260,17 +260,19 @@ describe('destructive verbs', () => {
     expect(changes(dojo)).toEqual(['PUT /api/apps/7/domain']);
   });
 
-  it('names the app it found in the delete question, and deletes that app by id', async () => {
+  it('names the app it found in the delete question, and trashes that app by id', async () => {
     const { dojo, run } = await setup({ FROGBOT_DOJO_TOKEN: 'fb_env' });
 
     dojo.tokens.set('fb_env', 50);
-    dojo.replies.set('DELETE /api/apps/7', { body: { doc: { id: 7, slug: 'deals' } } });
+    dojo.replies.set('POST /api/apps/7/trash', { body: { deletedAt: 'x', purgeAt: 'y' } });
 
     const result = await run(['apps', 'delete', '7'], { isTTY: true, confirm: true });
 
     expect(result.code).toBe(0);
-    expect(result.asked).toEqual(["Delete deals and everything in it? This can't be undone."]);
-    expect(changes(dojo)).toEqual(['DELETE /api/apps/7']);
+    expect(result.asked).toEqual([
+      'Move deals to Trash? It stops now and is deleted for good in 30 days unless restored.',
+    ]);
+    expect(changes(dojo)).toEqual(['POST /api/apps/7/trash']);
   });
 });
 
