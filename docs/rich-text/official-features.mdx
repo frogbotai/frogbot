@@ -28,6 +28,7 @@ Every feature is configurable. You can use the recommended defaults, remove feat
 | `OrderedListFeature` | Yes | Numbered lists. |
 | `ChecklistFeature` | Yes | Interactive checklists. |
 | `LinkFeature` | Yes | External and internal links. |
+| `MentionFeature` | No | `@` mentions of users, stored by id. |
 | `RelationshipFeature` | Yes | Block-level record relationships. |
 | `BlockquoteFeature` | Yes | Block quotes. |
 | `UploadFeature` | Yes | File nodes for upload-enabled collections. |
@@ -111,6 +112,29 @@ Set either `enabledCollections` or `disabledCollections`, not both. `disableAuto
 | `maxDepth` | `number` | Remaining query depth | Maximum population depth of the internal link's `doc` field, regardless of the depth remaining when the link is reached. Applies only to the default `doc` field. |
 | `disableAutoLinks` | `true \| 'creationOnly'` | Auto-links enabled | `'creationOnly'` stops URLs from becoming auto-links but keeps existing auto-links editable. `true` also removes auto-link support. |
 | `internalDocToHref` | `({ linkNode }) => string` | None | Builds the URL for an internal link when converting to Markdown. Without it, internal links export with an empty URL, as `[text]()`. For JSX rendering, see [Internal links](/rich-text/converting-jsx#internal-links). |
+
+## Configure mentions
+
+`MentionFeature()` adds `@` mentions to any rich text field. Typing `@` lists the users the signed-in user may read, searched through the REST API with their access; picking one inserts an inline node that stores the user's id, collection and name when inserted:
+
+```ts
+import { lexicalEditor, MentionFeature } from '@frogbotai/richtext-lexical'
+
+{ name: 'body', type: 'richText', editor: lexicalEditor({ features: ({ defaultFeatures }) => [...defaultFeatures, MentionFeature()] }) }
+// stored: { type: 'mention', value: 7, relationTo: 'users', label: 'Sam', version: 1 }
+```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `relationTo` | `string` | `admin.user`, else the only auth collection | The auth collection users are mentioned from. The list searches its `useAsTitle` field and `email`. |
+
+`mentionedIds(value)` returns the ids a rich text value mentions, once each. To render mentions as `@Sam`, add the matching converter: `MentionJSXConverter` from `@frogbotai/richtext-lexical/react`, `MentionHTMLConverter` from `/html` or `/html-async`, and `MentionPlaintextConverter` from `/plaintext`:
+
+```tsx
+<RichText converters={({ defaultConverters }) => ({ ...defaultConverters, ...MentionJSXConverter })} data={body} />
+```
+
+The [comments plugin](/plugins/comments) adds this feature to every comment editor.
 
 ## Configure relationships
 

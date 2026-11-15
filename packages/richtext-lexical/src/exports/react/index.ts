@@ -1,3 +1,4 @@
+export { MentionJSXConverter } from '../../features/mention/react.js';
 export type {
   DefaultNodeTypes,
   DefaultTypedEditorState,

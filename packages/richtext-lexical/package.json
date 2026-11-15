@@ -112,6 +112,8 @@
     "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
   },
   "devDependencies": {
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
     "frogbot": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:",
