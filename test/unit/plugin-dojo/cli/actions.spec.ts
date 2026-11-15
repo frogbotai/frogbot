@@ -1,3 +1,4 @@
+import { writeFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -215,18 +216,38 @@ describe('frogbot dojo actions beyond the basics', () => {
     ]);
   });
 
-  it('says AI is paused when the balance is spent', async () => {
-    const { env, cwd } = await setup({
-      'GET /api/workspaces/1': { body: { id: 1, slug: 'trend-capital', aiBalanceUSD: 0 } },
+  it("shows a $0 balance without calling AI paused, since Dojo doesn't bill every workspace for AI", async () => {
+    const reply = {
+      body: { id: 1, slug: 'trend-capital', aiBalanceUSD: 0, aiAutoRecharge: false },
+    };
+    const { env, cwd } = await setup({ 'GET /api/workspaces/1': reply });
+    const text = testIO({ cwd, env });
+
+    expect(await runDojo(['billing', 'ai'], text.io)).toBe(0);
+    expect(text.stdout()).toEqual(['trend-capital: $0.00 AI balance, auto-recharge off']);
+
+    const json = testIO({ cwd, env });
+
+    expect(await runDojo(['billing', 'ai', '--json'], json.io)).toBe(0);
+    expect(JSON.parse(json.stdout().join('\n'))).toEqual({
+      workspace: 'trend-capital',
+      balanceUSD: 0,
+      autoRecharge: false,
     });
+  });
 
-    const result = testIO({ cwd, env });
+  it('says the AI balance is not reported when Dojo sends none', async () => {
+    const reply = { body: { id: 1, slug: 'trend-capital' } };
+    const { env, cwd } = await setup({ 'GET /api/workspaces/1': reply });
+    const text = testIO({ cwd, env });
 
-    expect(await runDojo(['billing', 'ai'], result.io)).toBe(0);
-    expect(result.stdout()).toEqual([
-      'trend-capital: $0.00 AI balance, auto-recharge off',
-      'AI is paused until funds are added: billing add-funds.',
-    ]);
+    expect(await runDojo(['billing', 'ai'], text.io)).toBe(0);
+    expect(text.stdout()).toEqual(['trend-capital: AI balance not reported, auto-recharge off']);
+
+    const json = testIO({ cwd, env });
+
+    expect(await runDojo(['billing', 'ai', '--json'], json.io)).toBe(0);
+    expect(JSON.parse(json.stdout().join('\n'))).toMatchObject({ balanceUSD: null });
   });
 
   it('exits 4 with the pay link when keeping a preview needs a paid app nobody is here to buy', async () => {
@@ -293,6 +314,47 @@ describe('frogbot dojo actions beyond the basics', () => {
     expect(await runDojo(['apps', 'export-data', 'deals', '--out', 'taken.zip'], again.io)).toBe(1);
     expect(again.stderr()[0]).toContain('taken.zip already exists');
     expect(await readFile(join(cwd, 'taken.zip'), 'utf8')).toBe('mine');
+  });
+
+  it('leaves a file that appears at the path while Dojo starts the download', async () => {
+    const { dojo, env, cwd } = await setup();
+
+    dojo.dataZip = Buffer.from('PK zip bytes');
+
+    dojo.afterRequest = (route) => {
+      if (route === 'GET /api/apps/7/data') writeFileSync(join(cwd, 'deals-data.zip'), 'mine');
+    };
+
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(['apps', 'export-data', 'deals'], result.io)).toBe(1);
+    expect(await readFile(join(cwd, 'deals-data.zip'), 'utf8')).toBe('mine');
+  });
+
+  it("tells someone who isn't an owner to ask one, from Dojo's own wording", async () => {
+    const { dojo, env, cwd } = await setup({
+      'GET /api/templates': { body: { docs: [template] } },
+    });
+    const link = `${dojo.url}/billing/upgrade?workspace=1&apps=1`;
+
+    dojo.replies.set('POST /api/templates/tpl1/use', {
+      status: 402,
+      body: {
+        errors: [
+          {
+            message: `This workspace has no plan yet. Each app is $20 a month on Pro or $40 on Business. Ask the workspace's Owner to open ${link}, then use the template again.`,
+            data: { url: link },
+          },
+        ],
+      },
+    });
+
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(['apps', 'create', 'Desk', '--template', 'tpl1'], result.io)).toBe(4);
+    expect(result.stderr()).toEqual([
+      `[frogbot] This workspace has no plan yet. Each app is $20 a month on Pro or $40 on Business. Ask a workspace owner to pay for it at ${link}, then run the command again. Add --wait to wait for the payment here.`,
+    ]);
   });
 
   it('refuses a template name two templates share', async () => {

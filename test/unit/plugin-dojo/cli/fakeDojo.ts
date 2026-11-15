@@ -349,7 +349,7 @@ export async function startFakeDojo(): Promise<FakeDojo> {
       const upgrade = `${dojo.url}/billing/upgrade?workspace=${workspaceId}&apps=${apps}`;
       const next =
         billing.owner === false
-          ? `Ask a workspace owner to open ${upgrade}, then share again.`
+          ? `Ask the workspace's Owner to open ${upgrade}, then share again.`
           : `Pay for it at ${upgrade}, then share again.`;
 
       payloadError(
