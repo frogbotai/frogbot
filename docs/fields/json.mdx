@@ -28,7 +28,8 @@ export const Settings: CollectionConfig = {
 | --- | --- | --- | --- |
 | `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
 | `type` | `'json'` | Required | Selects the JSON field. |
-| `jsonSchema` | `{ uri: string; fileMatch: string[]; schema: JSONSchema4 }` | — | JSON Schema used for editor suggestions and validation. See [JSON Schema validation](#json-schema-validation). |
+| `jsonSchema` | `{ uri: string; fileMatch: string[]; schema?: JSONSchema4 }` | — | JSON Schema used for editor suggestions and validation. Without `schema`, FrogBot fetches the schema from `uri`. See [JSON Schema validation](#json-schema-validation). |
+| `interfaceName` | `string` | — | Name of a reusable top-level generated TypeScript type for the `jsonSchema` value. |
 | `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
 | `required` | `boolean` | `false` | Rejects an empty value in the default validation. |
 | `unique` | `boolean` | `false` | Creates a unique database index for the field path. See [indexes](/database/indexes). |

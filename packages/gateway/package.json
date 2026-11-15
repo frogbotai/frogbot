@@ -7,7 +7,7 @@
   "homepage": "https://github.com/frogbotai/frogbot#readme",
   "type": "module",
   "engines": {
-    "node": ">=24.21.0"
+    "node": ">=24.22.3"
   },
   "publishConfig": {
     "access": "public"

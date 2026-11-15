@@ -54,7 +54,7 @@ export function attachSessionPayload(req: PayloadRequest): void {
         if (property === 'beginTransaction') {
           const begin: Payload['db']['beginTransaction'] = async (...args) => {
             const id = await target.beginTransaction(...args);
-            if (id) req.transactionID = id;
+            if (id && !(req.transactionID instanceof Promise)) req.transactionID = id;
 
             return id;
           };

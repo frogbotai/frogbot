@@ -220,7 +220,7 @@ export type UIField = RetypedField<PayloadUIField>;
 export type UploadField = RetypedField<PayloadUploadField>;
 
 export type VectorField = Omit<
-  RetypedField<Omit<PayloadJSONField, 'jsonSchema' | 'type'>>,
+  RetypedField<Omit<PayloadJSONField, 'interfaceName' | 'jsonSchema' | 'type'>>,
   'validate'
 > & {
   jsonSchema?: JSONSchemaTransform[];
