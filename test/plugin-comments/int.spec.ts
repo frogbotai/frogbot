@@ -376,6 +376,40 @@ describe('comments plugin', () => {
     expect(target.since).toBe(record.createdAt);
   });
 
+  it("deletes a record's comments with it, so a new record that reuses its id starts empty", async () => {
+    const note = (owner: string, title: string) =>
+      booted.frogbot.create({
+        collection: 'notes',
+        data: { owner: users[owner].id, title },
+        overrideAccess: true,
+      });
+
+    const old = await note('ana', 'Ana private');
+
+    await comment('ana', {
+      body: body(text('Ana secret')),
+      collection: 'notes',
+      documentId: String(old.id),
+    });
+
+    await booted.frogbot.delete({ collection: 'notes', id: old.id, overrideAccess: true });
+
+    const reused = await note('sam', 'Sam note');
+
+    expect(String(reused.id)).toBe(String(old.id));
+
+    const seen = await booted.restClient.get<{ docs: Doc[] }>(
+      `/api/comments?depth=0&where[collection][equals]=notes&where[documentId][equals]=${reused.id}`,
+      { headers: users.sam.headers },
+    );
+
+    expect(seen.body.docs).toEqual([]);
+
+    const left = await booted.frogbot.count({ collection: 'comments', overrideAccess: true });
+
+    expect(left.totalDocs).toBe(0);
+  });
+
   it('refuses a comment from a user outside the author collection', async () => {
     const record = await deal();
     const credentials = { email: 'cust@frogbot.local', password: 'cust-password' };
