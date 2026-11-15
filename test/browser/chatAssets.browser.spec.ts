@@ -773,19 +773,14 @@ test('long pasted text is stored as a text asset and reaches the agent as pasted
   expect(await providerUserTexts(request)).toContain(`Pasted text:\n${pasted}`);
 });
 
-test('a model that reads only text refuses an image and leaves images out of the picker', async ({
+test('a model that reads only text still offers every file and refuses an image', async ({
   page,
 }) => {
   const uploads = trackUploads(page);
 
   await selectModel({ page, id: 'browser/text-reader', name: textReaderName });
 
-  const accept = await page.locator('.fb-composer input[type="file"]').getAttribute('accept');
-
-  expect(accept?.split(',')).toEqual(
-    expect.arrayContaining(['text/*', '.md', '.js', '.docx', '.xlsx']),
-  );
-  expect(accept?.split(',')).not.toContain('image/png');
+  await expect(page.locator('.fb-composer input[type="file"]')).not.toHaveAttribute('accept');
 
   await pickFiles({ page, files: [photo] });
 

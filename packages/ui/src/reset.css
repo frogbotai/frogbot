@@ -307,7 +307,7 @@
   :where([data-fb-ui], [data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):focus-visible:where(
       :not([data-fb-ui-page] *)
     ) {
-    outline: 1px solid #0d99ff;
+    outline: 1px solid var(--accessibility-focus-color, #0d99ff);
     outline-offset: 1px;
     border-radius: 0.3125rem;
   }

@@ -18,6 +18,7 @@ export default buildConfig({
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || 'file:./frogbot.db' } }),
   typescript: { autoGenerate: false },
   admin: {
+    avatar: 'default',
     importMap: { autoGenerate: false },
     components: { chat: { Chat: '/components/MentionChat#MentionChat' } },
   },

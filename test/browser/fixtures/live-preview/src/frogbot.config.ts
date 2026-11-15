@@ -13,6 +13,7 @@ export default buildConfig({
   collections: [Users, Pages],
   typescript: { autoGenerate: false },
   admin: {
+    avatar: 'default',
     components: {
       afterAccountMenu: ['/components/AccountMenuProbes#AfterAccount'],
       beforeAccountMenu: ['/components/AccountMenuProbes#BeforeAccount'],

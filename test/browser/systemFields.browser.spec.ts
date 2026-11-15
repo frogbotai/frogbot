@@ -31,14 +31,14 @@ async function storedNumber(page: Page, id: ID): Promise<number> {
   return (await response.json()).number;
 }
 
-function fieldValue(scope: Locator, prefix: 'board' | 'calendar', label: string) {
+function fieldValue(scope: Locator, kind: 'board' | 'calendar', label: string) {
+  const prefix = kind === 'board' ? 'fb-card' : 'collection-calendar';
+
   return scope
-    .locator(`.collection-${prefix}__field`, {
-      has: scope.page().locator(`.collection-${prefix}__field-label`, {
-        hasText: new RegExp(`^${label}$`),
-      }),
+    .locator(`.${prefix}__field`, {
+      has: scope.page().locator(`.${prefix}__field-label`, { hasText: new RegExp(`^${label}$`) }),
     })
-    .locator(`.collection-${prefix}__field-value`);
+    .locator(`.${prefix}__field-value`);
 }
 
 test.beforeEach(async ({ page }) => {

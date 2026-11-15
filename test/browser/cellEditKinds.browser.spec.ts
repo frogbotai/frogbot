@@ -168,8 +168,14 @@ test('a field whose condition reads another field edits in its cell', async ({ p
   const doc = await create(page, cellDraftsSlug, { title, extra: 'before' });
 
   await open(page, cellDraftsSlug, title);
+
+  const patch = page.waitForRequest((request) => request.method() === 'PATCH');
+
   await typeAndSave(page, cell(page, title, 'extra'), 'after');
 
+  const payload = /name="_payload"\r\n\r\n(.*)\r\n/.exec((await patch).postData() ?? '')?.[1];
+
+  expect(JSON.parse(payload ?? 'null')).toEqual({ extra: 'after', _status: 'draft' });
   await expect
     .poll(async () => (await stored(page, cellDraftsSlug, doc.id, true)).extra)
     .toBe('after');

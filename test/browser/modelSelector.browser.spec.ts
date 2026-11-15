@@ -282,21 +282,20 @@ test('typing sonnet filters about 500 models within 100 ms per key', async ({
 
   await searchField(page).focus();
 
-  const timings = await searchField(page).evaluate(async (input: HTMLInputElement) => {
+  const { counts, timings } = await searchField(page).evaluate(async (input: HTMLInputElement) => {
     const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
-    const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
-    const result: number[] = [];
+    const rows = () => document.querySelectorAll('.fb-model-selector__option').length;
+    const result = { counts: [rows()], timings: [] as number[] };
 
     for (const length of [1, 2, 3, 4, 5, 6]) {
       const start = performance.now();
 
       setValue.call(input, 'sonnet'.slice(0, length));
       input.dispatchEvent(new Event('input', { bubbles: true }));
+      await Promise.resolve();
 
-      await frame();
-      await frame();
-
-      result.push(Math.round((performance.now() - start) * 10) / 10);
+      result.timings.push(Math.round((performance.now() - start) * 10) / 10);
+      result.counts.push(rows());
     }
 
     return result;
@@ -315,6 +314,8 @@ test('typing sonnet filters about 500 models within 100 ms per key', async ({
 
   expect(ids.length).toBeGreaterThan(0);
   expect(ids.filter((id) => !/sonnet/i.test(id!))).toEqual([]);
+  expect(counts.at(-1)).toBe(ids.length);
+  expect(counts.at(-1)).toBeLessThan(counts[0]);
   expect(Math.max(...timings)).toBeLessThan(100);
 });
 

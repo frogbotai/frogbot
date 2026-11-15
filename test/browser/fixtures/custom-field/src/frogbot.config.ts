@@ -13,6 +13,7 @@ const config: FrogBotConfig = {
   collections: [Users, Posts, Notes, Journal, Memos, Cards, Tickets, Scraps, Todos],
   plugins: [apiKeysPlugin(), auditLogPlugin({ collections: ['tickets'] })],
   admin: {
+    avatar: 'default',
     meta: { titleSuffix: '- Field Lab', openGraph: { siteName: 'Field Lab' } },
     dashboard: {
       defaultLayout: ({ req }) => [

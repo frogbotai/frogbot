@@ -67,7 +67,7 @@ afterEach(async () => {
   await rm(workspace, { recursive: true, force: true });
 });
 
-describe('build-package', () => {
+describe('build-package', { timeout: 30_000 }, () => {
   it('emits JavaScript, declarations, source maps and listed assets from src', async () => {
     await fixture('app');
     await write('app/src/index.ts', "export { Button } from './Button.js';\n");

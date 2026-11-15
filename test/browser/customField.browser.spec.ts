@@ -87,6 +87,7 @@ test('lists ungrouped collections directly under one Collections heading', async
   await expect(collections.locator('.fb-nav-section__scroll > .fb-nav-item')).toHaveText([
     'Users',
     'API Keys',
+    'Audit Logs',
   ]);
   await expect(collections.locator('.frogbot-collections-section__group-label')).toHaveText([
     'Content',
@@ -98,6 +99,9 @@ test('lists ungrouped collections directly under one Collections heading', async
     'Journals',
     'Memos',
     'Cards',
+    'Tickets',
+    'Scraps',
+    'Todos',
   ]);
 });
 
@@ -113,12 +117,15 @@ test('lists ungrouped collection cards directly under the Collections settings p
   await expect(content.getByRole('heading', { level: 3 })).toHaveText([
     'Users',
     'API Keys',
-    'LLM Instructions',
+    'Audit Logs',
     'Posts',
     'Notes',
     'Journals',
     'Memos',
     'Cards',
+    'Tickets',
+    'Scraps',
+    'Todos',
   ]);
 });
 

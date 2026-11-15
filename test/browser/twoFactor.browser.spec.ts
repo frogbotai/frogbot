@@ -60,12 +60,8 @@ async function submitPassword(page: Page, email: string, value = password) {
   await form.locator('button[type="submit"]').click();
 }
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(({ page }) => {
   consoleErrors = [];
-
-  await page.route('https://www.gravatar.com/**', (route) =>
-    route.fulfill({ status: 204, body: '' }),
-  );
 
   page.on('console', (message) => {
     if (message.type() === 'error') consoleErrors.push(message.text());

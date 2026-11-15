@@ -200,6 +200,21 @@ describe('buildFrameSlots', () => {
     expect(show(listMenuItems).getByRole('button').textContent).toBe('Reset board');
   });
 
+  it("renders the view's menu items before Reset, but leaves them to Payload's list view with skipLayoutSlots", () => {
+    const board = { ...args().runtime[1], components: { menuItems: ['./Menu'] } };
+
+    expect(
+      show(buildFrameSlots(args({ view: board })).listMenuItems)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['./Menu', 'Reset board']);
+    expect(
+      show(buildFrameSlots({ ...args({ view: board }), skipLayoutSlots: true }).listMenuItems)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['Reset board']);
+  });
+
   it('gives a custom view, which saves no setup, no reset item', () => {
     const view = { component: './Map#Map', slug: 'map', type: 'custom' as const };
     const { listMenuItems } = buildFrameSlots(args({ view }));
