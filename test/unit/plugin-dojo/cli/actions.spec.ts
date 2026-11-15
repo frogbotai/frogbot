@@ -373,6 +373,87 @@ describe('frogbot dojo actions beyond the basics', () => {
     expect(dojo.paths().filter((route) => route.startsWith('POST'))).toEqual([]);
   });
 
+  it('tells an app editor to ask a workspace owner to pay to keep a preview', async () => {
+    const { dojo, env, cwd } = await setup();
+
+    dojo.level = 'editor';
+    dojo.replies.set('POST /api/apps/7/preview/keep', { body: { preview, url: upgrade(dojo) } });
+
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(['apps', 'keep', 'deals'], result.io)).toBe(4);
+    expect(result.stderr()[0]).toContain(`Ask a workspace owner to pay for it at ${upgrade(dojo)}`);
+
+    dojo.billing = { subscriptionStatus: 'active', paidApps: 2 };
+
+    const tty = testIO({ cwd, env, isTTY: true });
+
+    expect(await runDojo(['apps', 'keep', 'deals'], tty.io)).toBe(0);
+    expect(tty.opened).toEqual([]);
+    expect(tty.stdout()).toContain(
+      '[frogbot] Ask a workspace owner to pay for it here; this carries on once Dojo has the payment:',
+    );
+  });
+
+  it("reads an app's activity in the app's workspace, and refuses another one", async () => {
+    const { dojo, env, cwd } = await setup({
+      'GET /api/activity': { body: { docs: [], totalDocs: 0 } },
+    });
+
+    dojo.workspaces.push({ id: 2, name: 'Side Co', slug: 'side-co' });
+    dojo.apps.push({ id: 9, name: 'Foo', slug: 'foo', workspace: 2 });
+
+    const wrong = testIO({ cwd, env });
+
+    expect(
+      await runDojo(['activity', '--workspace', 'trend-capital', '--app', 'foo'], wrong.io),
+    ).toBe(1);
+    expect(wrong.stderr()).toEqual([
+      '[frogbot] foo is in side-co, not trend-capital. Leave out --workspace, or use --workspace side-co.',
+    ]);
+    expect(sent(dojo, 'GET /api/activity')).toBeUndefined();
+
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(['activity', '--app', 'foo'], result.io)).toBe(0);
+    expect(result.stdout()).toEqual(['[frogbot] No activity in side-co yet.']);
+    expect(sent(dojo, 'GET /api/activity')?.search).toContain('where%5Bworkspace%5D%5Bequals%5D=2');
+  });
+
+  it("creates an app from a saved template in the template's workspace", async () => {
+    const owned = { ...template, id: 'tplB', workspace: 2 };
+    const { dojo, env, cwd } = await setup({
+      'GET /api/templates': { body: { docs: [owned] } },
+      'POST /api/templates/tplB/use': {
+        status: 201,
+        body: { app: { id: 9, slug: 'desk', name: 'Desk' }, deploymentId: 40 },
+      },
+    });
+
+    dojo.workspaces.push({ id: 2, name: 'Side Co', slug: 'side-co' });
+
+    const wrong = testIO({ cwd, env });
+
+    expect(
+      await runDojo(
+        ['apps', 'create', 'Desk', '--template', 'tplB', '--workspace', 'trend-capital'],
+        wrong.io,
+      ),
+    ).toBe(1);
+    expect(wrong.stderr()).toEqual([
+      '[frogbot] Helpdesk is saved in side-co; create the app there with --workspace side-co.',
+    ]);
+    expect(sent(dojo, 'POST /api/templates/tplB/use')).toBeUndefined();
+
+    const result = testIO({ cwd, env });
+
+    expect(await runDojo(['apps', 'create', 'Desk', '--template', 'tplB'], result.io)).toBe(0);
+    expect(result.stderr()).toEqual([]);
+    expect(JSON.parse(sent(dojo, 'POST /api/templates/tplB/use')!.body.toString())).toMatchObject({
+      workspace: 2,
+    });
+  });
+
   it.each([
     [['apps', 'stop', 'deals'], 'rerun with --yes'],
     [['deployments', 'rollback', 'deals'], 'Usage: frogbot deployments rollback <app> <id>'],

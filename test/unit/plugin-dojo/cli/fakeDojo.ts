@@ -504,6 +504,7 @@ export async function startFakeDojo(): Promise<FakeDojo> {
       return json(res, 200, {
         id: appId,
         slug: stored?.slug,
+        workspace: stored?.workspace,
         started: dojo.data.started,
         ...(dojo.level ? { level: dojo.level } : {}),
         ...(showSecret ? { secret } : {}),
