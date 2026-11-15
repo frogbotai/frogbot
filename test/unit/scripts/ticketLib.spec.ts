@@ -4,7 +4,12 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { failedTests, flakyRetry, KNOWN_FLAKY } from '../../../scripts/lib/flaky.mjs';
-import { findingIssue, findingProblem, parseFinding } from '../../../scripts/lib/found.mjs';
+import {
+  findingIssue,
+  findingProblem,
+  findingRefusal,
+  parseFinding,
+} from '../../../scripts/lib/found.mjs';
 
 const summary = (entries: string[], failed = entries.length) =>
   [
@@ -98,6 +103,26 @@ describe('findings', () => {
       body: 'Kind: pre-existing failure\n\nSource: https://example.com/log',
       labels: ['found', 'area:land'],
     });
+  });
+
+  it('labels ideas enhancement and --noticed findings noticed', () => {
+    const idea = parseFinding('idea · dojo-cli · add `frogbot deploy --help`')!;
+    const bug = parseFinding('bug · ui · palette labels split')!;
+
+    expect(findingIssue(idea, undefined).labels).toEqual(['enhancement', 'area:dojo-cli']);
+    expect(findingIssue(bug, undefined, { noticed: true }).labels).toEqual(['noticed', 'area:ui']);
+  });
+
+  it('refuses red-on-main findings, and found issues without a failing command', () => {
+    const bug = parseFinding('bug · ui · palette labels split')!;
+
+    expect(
+      findingRefusal(parseFinding('pre-existing failure · ui · x')!, { source: 'pnpm test:ui a' }),
+    ).toMatch(/fixed in its own small PR/);
+    expect(findingRefusal(bug, {})).toMatch(/--source/);
+    expect(findingRefusal(bug, { noticed: true })).toBeNull();
+    expect(findingRefusal(bug, { source: 'pnpm test:ui test/ui/a.spec.tsx' })).toBeNull();
+    expect(findingRefusal(parseFinding('idea · ui · x')!, {})).toBeNull();
   });
 
   it('refuses a row without a kind, an area and a text', () => {

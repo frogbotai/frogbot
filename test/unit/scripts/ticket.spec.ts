@@ -87,6 +87,7 @@ describe('parseArgs', () => {
       repo: 'platform',
       source: 'x.md',
     });
+    expect(parseArgs(['found', '--noticed'])).toEqual({ command: 'found', noticed: true });
   });
 
   it('reads verify and its --list switch', () => {
@@ -114,6 +115,7 @@ describe('parseArgs', () => {
     [['stats', '27'], 'stats takes no arguments'],
     [['verify', '236'], 'verify takes no arguments'],
     [['land', '236', '--list'], 'land takes no --list'],
+    [['verify', '--noticed'], 'verify takes no --noticed'],
   ])('rejects %j', (argv, error) => {
     expect(parseArgs(argv)).toMatchObject({ error: expect.stringContaining(error) });
   });
