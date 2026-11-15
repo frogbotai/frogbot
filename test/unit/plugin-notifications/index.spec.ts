@@ -38,6 +38,7 @@ describe('notificationsPlugin', () => {
       'link',
       'source',
       'readAt',
+      'createdAt',
     ]);
     expect(custom).toEqual({ notify, slug: 'notifications', userSlug: 'users' });
     expect(result.admin?.components?.actions).toEqual([
