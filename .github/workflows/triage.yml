@@ -1,0 +1,64 @@
+name: triage
+
+# Bug reports from outside the team need a public reproduction, like Payload's triage action
+# (payloadcms/payload .github/actions/triage). A bug without a reachable github.com link gets the
+# invalid-reproduction label and one comment; editing in a working link removes the label.
+# Owners, members and collaborators are skipped: their findings follow the feature process.
+on:
+  issues:
+    types: [opened, edited, labeled]
+
+permissions:
+  issues: write
+
+jobs:
+  reproduction:
+    if: >-
+      contains(github.event.issue.labels.*.name, 'bug') &&
+      !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@v8
+        with:
+          script: |
+            const label = 'invalid-reproduction';
+            const issue = context.payload.issue;
+            const common = { ...context.repo, issue_number: issue.number };
+            const flagged = issue.labels.some((l) => l.name === label);
+
+            const link = (issue.body ?? '')
+              .match(/### Link to the code that reproduces this issue(.*?)(?:###|$)/is)?.[1]
+              ?.trim();
+
+            let valid = false;
+
+            if (link && URL.canParse(link) && new URL(link).hostname === 'github.com') {
+              try {
+                const { status } = await fetch(link, { redirect: 'follow' });
+
+                valid = status < 400 || status >= 500;
+              } catch {
+                valid = false;
+              }
+            }
+
+            if (valid) {
+              if (flagged) await github.rest.issues.removeLabel({ ...common, name: label });
+
+              return;
+            }
+
+            if (flagged) return;
+
+            await github.rest.issues.addLabels({ ...common, labels: [label] });
+            await github.rest.issues.createComment({
+              ...common,
+              body: [
+                '**Please add a reproduction so we can investigate.**',
+                '',
+                'This bug needs a link to a public GitHub repository that shows it. Start one with `npx create-frogbot-app@latest my-repro`, add the smallest config that fails, push it, and edit the link into the issue. A fork of this repository with a failing test works too.',
+                '',
+                'The link must open without signing in: a private repository, `n/a` or "will add later" won\'t pass. Once a working link is in, the label comes off by itself. Bugs without one may be closed.',
+              ].join('\n'),
+            });
