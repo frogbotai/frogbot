@@ -1,0 +1,68 @@
+name: browser
+
+# Playwright tests build a production Next.js app per fixture first (about 2 minutes
+# each, about 7 GB at peak), so they run nightly on main and on PRs labeled `browser`,
+# not on every push. Each group builds only its own fixtures.
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+
+concurrency:
+  group: browser-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'browser')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - group: question
+            projects: --project question
+            browsers: chromium
+          - group: admin
+            projects: --project custom-field --project blank --project chat-assets
+            browsers: chromium
+          - group: apps
+            projects: --project crm --project dojo --project projects --project forms
+            browsers: chromium
+          - group: sign-in
+            projects: >-
+              --project rich-text --project live-preview --project plugin-seo
+              --project plugin-import-export --project sign-in-two-factor --project linked-accounts
+              --project sign-in-passwords --project sign-in-only --project first-user-blank
+            browsers: chromium
+          # Their sign-in setup projects run in Chromium.
+          - group: firefox
+            projects: --project question-firefox --project custom-field-firefox --project chat-assets-firefox
+            browsers: chromium firefox
+          - group: webkit
+            projects: --project question-webkit --project custom-field-webkit --project chat-assets-webkit
+            browsers: chromium webkit
+    name: browser (${{ matrix.group }})
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r --filter './packages/**' build
+      - run: pnpm exec playwright install --with-deps ${{ matrix.browsers }}
+      - run: pnpm test:browser ${{ matrix.projects }}
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-${{ matrix.group }}-results
+          path: test/browser/test-results
+          retention-days: 7

@@ -468,7 +468,7 @@ Pass `--project` to narrow a run: a spec path alone still builds and starts ever
 
 ## Live tests (real credentials)
 
-Live tests call real providers and services with your own keys. They run locally only. `pnpm bump` starts Docker Desktop if needed, starts the Docker services (`pnpm docker:start`) and runs every project with live suites on (`RUN_E2E=1 pnpm test`), then the Postgres and MongoDB adapter suites (`pnpm test:int:pg` and `pnpm test:int:mongo` with `test/database`, `test/search/*` and `test/kv/mongo-native.int.spec.ts`). Before the services it runs the UI packaging checks (`scripts/test-ui-package.mjs`, `scripts/test-ui-next.mjs`). `pnpm release` only builds and publishes.
+Live tests call real providers and services with your own keys. They run locally only. `pnpm bump` starts Docker Desktop if needed, starts the Docker services (`pnpm docker:start`) and runs every project except unit and UI, which CI runs on every PR, with live suites on and at most 4 workers (`RUN_E2E=1 pnpm vitest run --project int --project e2e ... --maxWorkers=4`), then the Postgres and MongoDB adapter suites (`pnpm test:int:pg` and `pnpm test:int:mongo` with `test/database`, `test/search/*` and `test/kv/mongo-native.int.spec.ts`). Before the services it runs the UI packaging checks (`scripts/test-ui-package.mjs`, `scripts/test-ui-next.mjs`). `pnpm release` only builds and publishes.
 
 1. Copy `.env.live.example` to `.env.live.local` and fill in keys. Put credential files (GitHub app key, Vertex service account) in `.live-credentials/`. Both locations are gitignored.
 2. Run `node test/live/doctor.ts` to check every key with one cheap read-only call.
