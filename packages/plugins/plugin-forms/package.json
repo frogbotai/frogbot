@@ -42,7 +42,7 @@
     "typecheck": "tsc --noEmit"
   },
   "engines": {
-    "node": ">=24.21.0"
+    "node": ">=24.22.3"
   },
   "dependencies": {
     "@frogbotai/live-preview-react": "workspace:*"

@@ -7,6 +7,83 @@
  */
 
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "UploadTransforms".
+ */
+export type UploadTransforms = {
+  /**
+   * Time range on the original, in milliseconds. Start inclusive, end exclusive.
+   */
+  clip?: {
+    endMs: number;
+    startMs: number;
+  };
+  /**
+   * Rectangle in original-file pixels, applied before resize and encoding.
+   */
+  crop?: {
+    height: number;
+    width: number;
+    x: number;
+    y: number;
+  };
+  /**
+   * Encoding settings for the output format. Does not select the format.
+   */
+  encoding?: {
+    [k: string]: unknown;
+  };
+  /**
+   * Mirror the image on one or both axes.
+   */
+  flip?: {
+    horizontal?: boolean;
+    vertical?: boolean;
+  };
+  /**
+   * Preferred point as percentages of the original, from 0 to 100.
+   */
+  focalPoint?: {
+    x: number;
+    y: number;
+  };
+  /**
+   * Keep or remove metadata embedded in the output file.
+   */
+  metadataPolicy?: {
+    mode: 'preserve' | 'strip';
+  };
+  /**
+   * One-based, inclusive page range on the original document.
+   */
+  pageRange?: {
+    endPage: number;
+    startPage: number;
+  };
+  /**
+   * Video frame to use as the poster, in milliseconds on the original.
+   */
+  posterFrame?: {
+    timestampMs: number;
+  };
+  /**
+   * Target size for visual media.
+   */
+  resize?: {
+    fit?: 'contain' | 'cover' | 'fill' | 'inside' | 'outside';
+    height?: number;
+    width?: number;
+    withoutEnlargement?: boolean;
+  };
+  /**
+   * Clockwise rotation in degrees.
+   */
+  rotate?: {
+    angle: number;
+  };
+  [k: string]: unknown;
+} | null;
+/**
  * Supported timezones in IANA format.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -168,6 +245,17 @@ export interface User {
         expiresAt: string;
         refreshCount?: number | null;
         refreshedAt?: string | null;
+        label?: string | null;
+        type?: string | null;
+        metadata?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
       }[]
     | null;
   password?: string | null;
@@ -199,6 +287,8 @@ export interface Media {
   filesize?: number | null;
   width?: number | null;
   height?: number | null;
+  _stored?: boolean | null;
+  _transforms?: UploadTransforms;
   original?: {
     filename?: string | null;
     url?: string | null;
@@ -208,6 +298,7 @@ export interface Media {
     height?: number | null;
     prefix?: string | null;
     _objectKey?: string | null;
+    _stored?: boolean | null;
   };
   focalX?: number | null;
   focalY?: number | null;
@@ -260,6 +351,8 @@ export interface File {
   filesize?: number | null;
   width?: number | null;
   height?: number | null;
+  _stored?: boolean | null;
+  _transforms?: UploadTransforms;
   original?: {
     filename?: string | null;
     url?: string | null;
@@ -269,6 +362,7 @@ export interface File {
     height?: number | null;
     prefix?: string | null;
     _objectKey?: string | null;
+    _stored?: boolean | null;
   };
   focalX?: number | null;
   focalY?: number | null;
@@ -354,6 +448,8 @@ export interface FrogBotChatAsset {
   filesize?: number | null;
   width?: number | null;
   height?: number | null;
+  _stored?: boolean | null;
+  _transforms?: UploadTransforms;
   original?: {
     filename?: string | null;
     url?: string | null;
@@ -363,6 +459,7 @@ export interface FrogBotChatAsset {
     height?: number | null;
     prefix?: string | null;
     _objectKey?: string | null;
+    _stored?: boolean | null;
   };
   focalX?: number | null;
   focalY?: number | null;
@@ -472,6 +569,9 @@ export interface UsersSelect {
         expiresAt?: boolean;
         refreshCount?: boolean;
         refreshedAt?: boolean;
+        label?: boolean;
+        type?: boolean;
+        metadata?: boolean;
       };
 }
 /**
@@ -493,6 +593,8 @@ export interface MediaSelect {
   filesize?: boolean;
   width?: boolean;
   height?: boolean;
+  _stored?: boolean;
+  _transforms?: boolean;
   original?:
     | boolean
     | {
@@ -504,6 +606,7 @@ export interface MediaSelect {
         height?: boolean;
         prefix?: boolean;
         _objectKey?: boolean;
+        _stored?: boolean;
       };
   focalX?: boolean;
   focalY?: boolean;
@@ -548,6 +651,8 @@ export interface FilesSelect {
   filesize?: boolean;
   width?: boolean;
   height?: boolean;
+  _stored?: boolean;
+  _transforms?: boolean;
   original?:
     | boolean
     | {
@@ -559,6 +664,7 @@ export interface FilesSelect {
         height?: boolean;
         prefix?: boolean;
         _objectKey?: boolean;
+        _stored?: boolean;
       };
   focalX?: boolean;
   focalY?: boolean;
@@ -616,6 +722,8 @@ export interface FrogBotChatAssetsSelect {
   filesize?: boolean;
   width?: boolean;
   height?: boolean;
+  _stored?: boolean;
+  _transforms?: boolean;
   original?:
     | boolean
     | {
@@ -627,6 +735,7 @@ export interface FrogBotChatAssetsSelect {
         height?: boolean;
         prefix?: boolean;
         _objectKey?: boolean;
+        _stored?: boolean;
       };
   focalX?: boolean;
   focalY?: boolean;

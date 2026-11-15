@@ -10,7 +10,7 @@ export const OUTPUT = path.join(ROOT, 'packages/ui/src/payload-tokens.css');
 
 const SOURCE = path.join(ROOT, 'packages/ui/node_modules/@payloadcms/ui');
 
-const FILES = ['design-tokens.css', 'colors.css', 'elevations.css', 'utilities.css', 'theme.css'];
+const FILES = ['color-ramps.css', 'colors.css', 'elevations.css', 'theme.css'];
 
 const THEME_NAMES = /^--stroke-width-/;
 
@@ -42,6 +42,10 @@ function blocks(css) {
   return result;
 }
 
+function unique(declarations) {
+  return [...new Map(declarations.map((declaration) => [declaration[0], declaration])).values()];
+}
+
 export function readPayloadTokens(source = SOURCE) {
   const { version } = JSON.parse(readFileSync(path.join(source, 'package.json'), 'utf8'));
   const page = [];
@@ -51,9 +55,11 @@ export function readPayloadTokens(source = SOURCE) {
     for (const { declarations, selector } of blocks(
       readFileSync(path.join(source, 'dist/css', file), 'utf8'),
     )) {
-      if (selector === ':root') {
+      if (selector.split(',').some((part) => part.trim() === ':root')) {
         page.push(
-          ...declarations.filter(([name]) => file !== 'theme.css' || THEME_NAMES.test(name)),
+          ...declarations.filter(
+            ([name]) => file !== 'theme.css' || THEME_NAMES.test(name) || ALIASES.test(name),
+          ),
         );
       } else if (
         selector.includes("[data-theme='dark']") &&
@@ -68,7 +74,12 @@ export function readPayloadTokens(source = SOURCE) {
   const aliases = page.filter(([name]) => ALIASES.test(name));
   const light = [...page.filter(([name]) => themed.has(name)), ...aliases];
 
-  return { dark: [...dark, ...aliases], light, page, version };
+  return {
+    dark: unique([...dark, ...aliases]),
+    light: unique(light),
+    page: unique(page),
+    version,
+  };
 }
 
 function block(selector, declarations) {

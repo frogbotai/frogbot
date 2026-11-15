@@ -37,7 +37,7 @@
     "*.css"
   ],
   "engines": {
-    "node": ">=24.21.0"
+    "node": ">=24.22.3"
   },
   "scripts": {
     "build": "node ../../../scripts/build-package.mjs --assets css",

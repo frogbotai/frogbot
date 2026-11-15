@@ -1,3 +1,4 @@
+import { PageLocaleProvider } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import { renderDocumentHandler } from '@payloadcms/ui/views/Document/handleServerFunction';
 import { canAccessAdmin, type Data, type PayloadComponent, type ServerFunction } from 'payload';
@@ -23,6 +24,18 @@ export type RenderRecordPanelResult =
   { notFound: true } | { data: Data; notFound?: false; Panel: ReactNode };
 
 type Slot = PayloadComponent | PayloadComponent[] | undefined;
+
+type Slots = { AfterFields: ReactNode; BeforeFields: ReactNode };
+
+function withSlots(Document: ReactNode, slots: Slots): ReactNode {
+  if (!isValidElement<{ children?: ReactNode }>(Document)) return Document;
+
+  if (Document.type === PageLocaleProvider) {
+    return cloneElement(Document, undefined, withSlots(Document.props.children, slots));
+  }
+
+  return cloneElement(Document as ReactElement<Record<string, unknown>>, slots);
+}
 
 /**
  * Renders the record panel: Payload's own edit view from `renderDocument`, with the panel's
@@ -144,11 +157,6 @@ export const renderRecordPanelHandler: ServerFunction<
 
   return {
     data,
-    Panel: isValidElement(Document)
-      ? cloneElement(Document as ReactElement<Record<string, unknown>>, {
-          AfterFields,
-          BeforeFields,
-        })
-      : Document,
+    Panel: withSlots(Document, { AfterFields, BeforeFields }),
   };
 };

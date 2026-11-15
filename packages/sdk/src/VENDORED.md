@@ -4,8 +4,8 @@ Ported from the Payload monorepo — `packages/sdk/src/`.
 
 - Upstream: https://github.com/payloadcms/payload
 - Path: `packages/sdk/src`
-- Commit: `27abc28e1dc9a4716407a75c042950b21350ff01`
-- Tag: `v4.0.0-beta.7`
+- Commit: `430939a861a5cea0ac0f1c095eb44e6952201d71`
+- Tag: `v4.0.0-beta.9`
 - License: MIT, reproduced in [`../THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md)
 
 Ported so the SDK ships one FrogBot client whose requests match Payload's REST client byte for byte,

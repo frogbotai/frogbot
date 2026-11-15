@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { CodeBlock } from '../../../../packages/ui/src/chat/code-block';
 import { highlight } from '../../../../packages/ui/src/chat/highlight';
@@ -30,6 +30,10 @@ function renderCodeInMessage(role: MessageProps['role']) {
     </Message>,
   );
 }
+
+beforeAll(async () => {
+  await highlight('', 'ts');
+});
 
 afterEach(() => {
   if (clipboard) Object.defineProperty(navigator, 'clipboard', clipboard);

@@ -323,7 +323,7 @@ describe('FrogBot theme tokens', () => {
 
   it("sets FrogBot's brand on Payload's own brand tokens, light and dark", () => {
     const rules = parseRules(stripComments(readFileSync(brandColorsPath, 'utf8')));
-    const page = rules.find((rule) => rule.selectors.join() === ':root');
+    const page = rules.find((rule) => rule.selectors.join() === ':root,[data-theme]');
     const light = rules.find((rule) => rule.selectors.includes('[data-theme="light"]'));
     const dark = rules.find((rule) => rule.selectors.includes('[data-theme="dark"]'));
 
@@ -341,7 +341,7 @@ describe('FrogBot theme tokens', () => {
 
   it('draws selected borders, such as a checked checkbox, in the brand color, light and dark', () => {
     const rules = parseRules(stripComments(readFileSync(brandColorsPath, 'utf8')));
-    const page = rules.find((rule) => rule.selectors.join() === ':root');
+    const page = rules.find((rule) => rule.selectors.join() === ':root,[data-theme]');
     const light = rules.find((rule) => rule.selectors.includes('[data-theme="light"]'));
     const dark = rules.find((rule) => rule.selectors.includes('[data-theme="dark"]'));
 
@@ -356,7 +356,7 @@ describe('FrogBot theme tokens', () => {
 
   it('fills selected rows and pills with the brand color, light and dark', () => {
     const rules = parseRules(stripComments(readFileSync(brandColorsPath, 'utf8')));
-    const page = rules.find((rule) => rule.selectors.join() === ':root');
+    const page = rules.find((rule) => rule.selectors.join() === ':root,[data-theme]');
     const light = rules.find((rule) => rule.selectors.includes('[data-theme="light"]'));
     const dark = rules.find((rule) => rule.selectors.includes('[data-theme="dark"]'));
 

@@ -73,7 +73,7 @@ fi
 # 4. Node and dependencies.
 major=$(node -p 'process.versions.node.split(".")[0]')
 if [ "$major" -lt 24 ]; then
-  echo "cloud-setup: node $(node --version) is older than the repo's >=24.21; the environment setup script installs 24" >&2
+  echo "cloud-setup: node $(node --version) is older than the repo's >=24.22.3; the environment setup script installs 24" >&2
   status=1
 fi
 for dir in "$root" "$parent/sidekick" "$parent/platform"; do

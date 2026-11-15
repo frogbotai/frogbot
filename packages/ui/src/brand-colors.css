@@ -1,9 +1,10 @@
 /*
  * FrogBot's default brand colour: green on Payload's own brand and selected tokens, in the admin and on
- * FrogBot UI pages. Override the same tokens on :root (and [data-theme='dark']) to rebrand.
+ * FrogBot UI pages. Override the same tokens on :root and [data-theme] to rebrand.
  */
 @layer theme.frogbot {
-  :root {
+  :root,
+  [data-theme] {
     --color-bg-brand: #2f964f;
     --color-bg-brand-hover: #166d30;
     --color-bg-brand-pressed: #0e5523;

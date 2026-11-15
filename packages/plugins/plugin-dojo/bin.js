@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const minimumNode = '24.21.0';
+const minimumNode = '24.22.3';
 const [major, minor, patch] = process.versions.node.split('.').map(Number);
 const [minMajor, minMinor, minPatch] = minimumNode.split('.').map(Number);
 

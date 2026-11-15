@@ -20,8 +20,8 @@ describe('G104 — publishing readiness metadata', () => {
     expect(pkg.bin).toEqual({ 'frogbotai-gateway': './dist/cli/index.js' });
   });
 
-  it('declares Node >=24.21.0 in engines', () => {
-    expect(pkg.engines?.node).toBe('>=24.21.0');
+  it('declares Node >=24.22.3 in engines', () => {
+    expect(pkg.engines?.node).toBe('>=24.22.3');
   });
 
   it('sets publishConfig.access to public so the scoped package publishes publicly', () => {
