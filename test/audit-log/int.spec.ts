@@ -651,6 +651,32 @@ describe('audit log plugin integration', () => {
       expect(changes).toEqual(['Stage Lead → Qualified', 'Owner None → audit@frogbot.local']);
     });
 
+    it('names a timezone date once, without its hidden timezone companion', async () => {
+      const ledger = await booted.frogbot.create({
+        collection: 'ledgers',
+        data: { title: 'Q3', due: '2026-03-01T12:00:00.000Z', due_tz: 'America/New_York' },
+        overrideAccess: true,
+      });
+
+      await booted.frogbot.update({
+        collection: 'ledgers',
+        id: ledger.id,
+        data: { due: '2026-04-01T12:00:00.000Z', due_tz: 'Europe/London' },
+        overrideAccess: true,
+      });
+
+      await vi.waitFor(async () => expect(await entries(ledger.id, 'ledgers')).toHaveLength(2));
+
+      const html = await activityAs('audit@frogbot.local', ledger.id);
+      const changes = [
+        ...(html ?? '').matchAll(/<li class="fb-activity__change">(.*?)<\/li>/g),
+      ].map(([, text]) => text.replace(/<[^>]+>/g, ''));
+
+      expect(texts(html)[0]).toBe('Someone changed Due');
+      expect(changes).toHaveLength(1);
+      expect(changes[0]).toMatch(/^Due /);
+    });
+
     it('shows nothing for a record the user cannot read', async () => {
       const id = await ledgerWithHistory();
 

@@ -64,6 +64,7 @@ const Ledgers: CollectionConfig = {
       ],
     },
     { name: 'owner', type: 'relationship', relationTo: 'accounts' },
+    { name: 'due', type: 'date', timezone: true },
   ],
 };
 

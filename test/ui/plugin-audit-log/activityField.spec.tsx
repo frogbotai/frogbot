@@ -241,4 +241,78 @@ describe('ActivityField', () => {
     expect(from).not.toBe(to);
     expect(changes).toHaveLength(2);
   });
+
+  it('titles a related record by its useAsTitle only, formatting a date, else by id', async () => {
+    const titled: NonNullable<ActivityFieldProps['req']>['payload'] = {
+      collections: {
+        'audit-logs': { config: { fields: [] } },
+        people: {
+          config: {
+            admin: { useAsTitle: 'fullName' },
+            fields: [{ name: 'fullName', type: 'text' }],
+          },
+        },
+        meetings: {
+          config: {
+            admin: { useAsTitle: 'startsAt' },
+            fields: [{ name: 'startsAt', type: 'date' }],
+          },
+        },
+        deals: {
+          config: {
+            fields: [
+              { name: 'owner', type: 'relationship', relationTo: 'people' },
+              { name: 'meeting', type: 'relationship', relationTo: 'meetings' },
+              { name: 'note', type: 'text', admin: { hidden: true } },
+            ],
+          },
+        },
+      },
+      config: {},
+      findByID: () => Promise.resolve({ id: 1, owner: 4, meeting: 5, note: 'x' }),
+      find: (args) => {
+        if (args.collection === 'audit-logs') {
+          return Promise.resolve({
+            docs: [
+              {
+                id: 'e1',
+                operation: 'update',
+                timestamp: '2026-01-02T00:00:00.000Z',
+                changes: {
+                  owner: { old: null, new: 4 },
+                  meeting: { old: null, new: 5 },
+                  note: { old: 'w', new: 'x' },
+                },
+              },
+            ],
+          });
+        }
+
+        return Promise.resolve({
+          docs:
+            args.collection === 'people'
+              ? [{ id: 4, email: 'p@x.io', name: 'Pat' }]
+              : [{ id: 5, startsAt: '2026-03-01T12:00:00.000Z' }],
+        });
+      },
+    };
+
+    const node = await ActivityField({
+      collectionSlug: 'deals',
+      i18n: { fallbackLanguage: 'en', language: 'en', t: (key: string) => key },
+      id: 1,
+      req: { payload: titled, user: { id: 1 } },
+    });
+
+    const html = renderToStaticMarkup(node);
+    const changes = [...html.matchAll(/<li class="fb-activity__change">(.*?)<\/li>/g)].map(
+      ([, text]) => text.replace(/<[^>]+>/g, ''),
+    );
+
+    expect(html).toContain('changed Owner, Meeting<');
+    expect(changes[0]).toBe('Owner None → #4');
+    expect(changes[1]).toBe(
+      `Meeting None → ${new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(new Date('2026-03-01T12:00:00.000Z'))}`,
+    );
+  });
 });
