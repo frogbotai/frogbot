@@ -10,6 +10,11 @@
     "mode": "chat"
   },
   {
+    "id": "anthropic/claude-fable-5-2",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
     "id": "anthropic/claude-haiku-4-5",
     "provider": "anthropic",
     "mode": "chat"
@@ -60,16 +65,6 @@
     "mode": "chat"
   },
   {
-    "id": "anthropic/claude-sonnet-4-5",
-    "provider": "anthropic",
-    "mode": "chat"
-  },
-  {
-    "id": "anthropic/claude-sonnet-4-5-20250929",
-    "provider": "anthropic",
-    "mode": "chat"
-  },
-  {
     "id": "anthropic/claude-sonnet-4-6",
     "provider": "anthropic",
     "mode": "chat"
@@ -106,6 +101,11 @@
   },
   {
     "id": "bedrock/anthropic.claude-fable-5-1",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/anthropic.claude-fable-5-2",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -340,6 +340,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/global.anthropic.claude-fable-5-2",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -396,6 +401,11 @@
   },
   {
     "id": "bedrock/global.moonshotai.kimi-k3",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/global.moonshotai.kimi-k3.1",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -735,6 +745,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/us.anthropic.claude-fable-5-2",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -806,6 +821,11 @@
   },
   {
     "id": "bedrock/us.moonshotai.kimi-k3",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.moonshotai.kimi-k3.1",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -1110,6 +1130,11 @@
     "mode": "chat"
   },
   {
+    "id": "deepinfra/moonshotai/Kimi-K3.1-Pro",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
     "id": "deepinfra/openai/gpt-oss-120b",
     "provider": "deepinfra",
     "mode": "chat"
@@ -1206,6 +1231,11 @@
   },
   {
     "id": "deepinfra/tencent/Hy4-preview",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/thinkingmachines/Inkling-2-Small",
     "provider": "deepinfra",
     "mode": "chat"
   },
@@ -1506,6 +1536,16 @@
   },
   {
     "id": "google/gemini-4-argon",
+    "provider": "google",
+    "mode": "chat"
+  },
+  {
+    "id": "google/gemini-4-carbon",
+    "provider": "google",
+    "mode": "chat"
+  },
+  {
+    "id": "google/gemini-4-hydrogen",
     "provider": "google",
     "mode": "chat"
   },
@@ -2100,6 +2140,11 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/anthropic/claude-fable-5.2",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/anthropic/claude-haiku-4.5",
     "provider": "openrouter",
     "mode": "chat"
@@ -2161,6 +2206,16 @@
   },
   {
     "id": "openrouter/anthropic/claude-sonnet-5.5",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/baidu/ernie-5.5-flash-preview:free",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/baidu/ernie-light-dt-1.0-intl",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -2360,6 +2415,16 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/google/gemini-4-carbon",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/google/gemini-4-hydrogen",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/google/gemma-2-27b-it",
     "provider": "openrouter",
     "mode": "chat"
@@ -2440,12 +2505,7 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/liquid/lfm-2.5-2.6b",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/liquid/lfm-2.5-2.6b:free",
+    "id": "openrouter/kt/midm-k-3.0-pro",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -2515,6 +2575,11 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/meta/muse-ember",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/meta/muse-glimmer-30b",
     "provider": "openrouter",
     "mode": "chat"
@@ -2556,11 +2621,6 @@
   },
   {
     "id": "openrouter/microsoft/phi-4",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/minimax/minimax-m1",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -2745,12 +2805,22 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/motif-technologies/motif-3",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/nex-agi/nex-n2.5-mini",
     "provider": "openrouter",
     "mode": "chat"
   },
   {
     "id": "openrouter/nex-agi/nex-n2.5-pro",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/nex-agi/nex-n2.6",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3080,6 +3150,11 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/particle-ai/particle-1:free",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/perceptron/perceptron-mk1",
     "provider": "openrouter",
     "mode": "chat"
@@ -3126,11 +3201,6 @@
   },
   {
     "id": "openrouter/qwen/qwen-2.5-72b-instruct",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/qwen/qwen-2.5-7b-instruct",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3400,11 +3470,6 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/stealth/crouton-alpha",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/stepfun/step-3.5-flash",
     "provider": "openrouter",
     "mode": "chat"
@@ -3480,12 +3545,27 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/thinkingmachines/inkling-2-small",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/thinkingmachines/inkling-2-small:free",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/thinkingmachines/inkling-small",
     "provider": "openrouter",
     "mode": "chat"
   },
   {
     "id": "openrouter/unbiased/pareto-26.10",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/unbiased/pareto-26.10-preview",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3561,11 +3641,6 @@
   },
   {
     "id": "openrouter/xiaomi/mimo-v2.6-pro-ultraspeed",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/xingchen-agi/xing4.0-29b-a4b:free",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3810,6 +3885,11 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/alibaba/qwen3.6-35b-a3b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/alibaba/qwen3.6-plus",
     "provider": "vercel",
     "mode": "chat"
@@ -3895,6 +3975,16 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/anthropic/claude-fable-5.2",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-fable-5.2-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/anthropic/claude-haiku-4.5",
     "provider": "vercel",
     "mode": "chat"
@@ -3966,16 +4056,6 @@
   },
   {
     "id": "vercel/anthropic/claude-sonnet-5.5",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/bytedance/seed-1.6",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/bytedance/seed-1.8",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -4135,6 +4215,16 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/google/gemini-4-carbon",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/google/gemini-4-hydrogen",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/google/gemma-4-26b-a4b-it",
     "provider": "vercel",
     "mode": "chat"
@@ -4246,6 +4336,11 @@
   },
   {
     "id": "vercel/meta/llama-4-scout",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/meta/muse-ember",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -4436,11 +4531,6 @@
   },
   {
     "id": "vercel/morph/morph-v3-large",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/nvidia/nemotron-3-nano-30b-a3b",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -4780,17 +4870,17 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/paperinstruments/ultramarine-1-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/particle/particle-1",
     "provider": "vercel",
     "mode": "chat"
   },
   {
     "id": "vercel/perplexity/sonar",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/poolside/laguna-s-2.1",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -4940,6 +5030,11 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/thinkingmachines/inkling-2-small",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/thinkingmachines/inkling-small",
     "provider": "vercel",
     "mode": "chat"
@@ -5056,6 +5151,11 @@
   },
   {
     "id": "vertex/claude-fable-5-1",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/claude-fable-5-2",
     "provider": "vertex",
     "mode": "chat"
   },
@@ -5186,6 +5286,16 @@
   },
   {
     "id": "vertex/gemini-4-argon",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/gemini-4-carbon",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/gemini-4-hydrogen",
     "provider": "vertex",
     "mode": "chat"
   },
