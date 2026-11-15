@@ -33,19 +33,21 @@ jobs:
             projects: --project custom-field --project blank --project chat-assets
             browsers: chromium
           - group: apps
-            projects: >-
-              --project crm --project dojo --project projects --project forms --project rich-text
-              --project live-preview --project plugin-seo --project plugin-import-export
-              --project sign-in-two-factor --project linked-accounts --project sign-in-passwords
-              --project sign-in-only --project first-user-blank
+            projects: --project crm --project dojo --project projects --project forms
             browsers: chromium
-          - group: firefox-webkit
+          - group: sign-in
             projects: >-
-              --project question-firefox --project question-webkit
-              --project custom-field-firefox --project custom-field-webkit
-              --project chat-assets-firefox --project chat-assets-webkit
-            # Their sign-in setup projects run in Chromium.
-            browsers: chromium firefox webkit
+              --project rich-text --project live-preview --project plugin-seo
+              --project plugin-import-export --project sign-in-two-factor --project linked-accounts
+              --project sign-in-passwords --project sign-in-only --project first-user-blank
+            browsers: chromium
+          # Their sign-in setup projects run in Chromium.
+          - group: firefox
+            projects: --project question-firefox --project custom-field-firefox --project chat-assets-firefox
+            browsers: chromium firefox
+          - group: webkit
+            projects: --project question-webkit --project custom-field-webkit --project chat-assets-webkit
+            browsers: chromium webkit
     name: browser (${{ matrix.group }})
     steps:
       - uses: actions/checkout@v5
