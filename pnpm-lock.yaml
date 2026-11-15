@@ -6139,7 +6139,7 @@ packages:
 
   '@payloadcms/kv-redis@4.0.0-beta.9':
     resolution: {integrity: sha512-BXKQpb6udxN++ZGh82aYDzcY1TWZq7/OAExc+yE5ma1wi53VkH1Cuo51qxhqM8hlLi4lJPq1Opr6xqjHCegwRg==}
-    engines: {node: >=24.22.3}
+    engines: {node: ^24.22.3 || >=26.13.1}
     peerDependencies:
       payload: 4.0.0-beta.9
 
@@ -6159,7 +6159,7 @@ packages:
 
   '@payloadcms/next@4.0.0-beta.9':
     resolution: {integrity: sha512-zqxsRpVi+Gh70ZPsXwvqBygvv1qkCOcWuZT8eA5RoWpY03u7aTyz/C2SfW06pmEF1VeUgvWvaOeV1ChP7ff4/g==}
-    engines: {node: >=24.22.3}
+    engines: {node: ^24.22.3 || >=26.13.1}
     peerDependencies:
       graphql: ^16.8.1
       next: '>=16.4.1 <17.0.0'
@@ -6216,7 +6216,7 @@ packages:
 
   '@payloadcms/richtext-lexical@4.0.0-beta.9':
     resolution: {integrity: sha512-iYC0654NiC5Xq4CAHxebkcVjebhXwQNMSdrFxsN56MlrvtzeF4DfEvFuBJKDZiMoCC++S8qUA0kyMl0Yy+iYWQ==}
-    engines: {node: >=24.22.3}
+    engines: {node: ^24.22.3 || >=26.13.1}
     peerDependencies:
       '@faceless-ui/modal': 3.0.2
       '@faceless-ui/scroll-info': 2.0.0
@@ -6229,37 +6229,37 @@ packages:
 
   '@payloadcms/storage-azure@4.0.0-beta.9':
     resolution: {integrity: sha512-YNd7vShbckHIaDpEtFSqqCJBRJ+naKEsLKR4jnfHoxiB7UVp5P1FuWZTQEsCLpXiGr9MSnWYgt9JLLMp+YWtoQ==}
-    engines: {node: >=24.22.3}
+    engines: {node: ^24.22.3 || >=26.13.1}
     peerDependencies:
       payload: 4.0.0-beta.9
 
   '@payloadcms/storage-gcs@4.0.0-beta.9':
     resolution: {integrity: sha512-A/dzB1jjMpZeEzbn349sXXA3hqy8U+hLNOndC3FvmncyapJX/edIVsa6xA5iIQrsMXlOSydDsMB0EOhgka/9fA==}
-    engines: {node: >=24.22.3}
+    engines: {node: ^24.22.3 || >=26.13.1}
     peerDependencies:
       payload: 4.0.0-beta.9
 
   '@payloadcms/storage-r2@4.0.0-beta.9':
     resolution: {integrity: sha512-BGb2eDgI9jbn7XLOp9zPfxGiyP697DkTnYUs7Usimu0SHlWgvk3hhTOell+vLRVPTQe4FuAq6ltVN33eRSR9DA==}
-    engines: {node: >=24.22.3}
+    engines: {node: ^24.22.3 || >=26.13.1}
     peerDependencies:
       payload: 4.0.0-beta.9
 
   '@payloadcms/storage-s3@4.0.0-beta.9':
     resolution: {integrity: sha512-f6ZT58w3JcXpgSN7Y7rPBOBOCk+zA2tqGgYyIyDYGb8rkuo/E5b5dzze7y2UjyIJDfUzcCQOxI8puhbUhXCHSQ==}
-    engines: {node: >=24.22.3}
+    engines: {node: ^24.22.3 || >=26.13.1}
     peerDependencies:
       payload: 4.0.0-beta.9
 
   '@payloadcms/storage-vercel-blob@4.0.0-beta.9':
     resolution: {integrity: sha512-vhqsHHYBiiftfDedVA0+7cWnEyxnuZM/y+xrI0hxT4sVgpot29skpJ0s9mY4yFIJsIkWygWCEb9Tx1HJdzma6w==}
-    engines: {node: >=24.22.3}
+    engines: {node: ^24.22.3 || >=26.13.1}
     peerDependencies:
       payload: 4.0.0-beta.9
 
   '@payloadcms/transformer-sharp@4.0.0-beta.9':
     resolution: {integrity: sha512-0EYJ4SSm1kCQ/SCG+4hq+89Uw4vKnS7UzMHev+z2+ERDwD4WvN65pPRG9WB85tqIZV6nDw6yOzLCkJzLWmGgag==}
-    engines: {node: >=24.22.3}
+    engines: {node: ^24.22.3 || >=26.13.1}
     peerDependencies:
       payload: 4.0.0-beta.9
 
@@ -6268,7 +6268,7 @@ packages:
 
   '@payloadcms/ui@4.0.0-beta.9':
     resolution: {integrity: sha512-YCEc23rSlDcHlNg4O1jjBdLZl6V1yuWwaZIIUgIaH6GdXJ7lmtsQBxm+L2wl8DgEB7MYmHW99VKvcxrG/Tabcg==}
-    engines: {node: >=24.22.3}
+    engines: {node: ^24.22.3 || >=26.13.1}
     peerDependencies:
       payload: 4.0.0-beta.9
       react: ^19.3.1
@@ -10614,7 +10614,7 @@ packages:
 
   payload@4.0.0-beta.9:
     resolution: {integrity: sha512-bpn8FQpsZJhxtSF672PCI1blIwpc92GHqKDx1NfHNDDANoccSMiKSgwAPeFtRHiElt3lnx28cyVI55Wfge+Mwg==}
-    engines: {node: >=24.22.3}
+    engines: {node: ^24.22.3 || >=26.13.1}
     hasBin: true
     peerDependencies:
       graphql: ^16.8.1
