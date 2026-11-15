@@ -31,7 +31,13 @@ import {
 } from './lib/affected.mjs';
 import { ISSUE_TICKET, recordDecisions, REPLY_USAGE, ticketKey } from './lib/decisions.mjs';
 import { flakyRetry } from './lib/flaky.mjs';
-import { FINDING_REPOS, findingIssue, findingProblem, parseFinding } from './lib/found.mjs';
+import {
+  FINDING_REPOS,
+  findingIssue,
+  findingProblem,
+  findingRefusal,
+  parseFinding,
+} from './lib/found.mjs';
 import { acquireSlot, LAND_LOCK } from './lib/slot.mjs';
 import { readSessions, statsRows, summarize } from './lib/stats.mjs';
 import { runGroups, verifyInputs, worktreePatchId } from './lib/verify.mjs';
@@ -90,10 +96,10 @@ const MAIN = 'main';
 
 const DEFAULT_TYPE = 'feat';
 
-const FOUND_USAGE = `pnpm ticket found [--repo ${FINDING_REPOS.join('|')}] [--source <link>] <<'EOF' <kind> · <area> · <text> EOF`;
+const FOUND_USAGE = `pnpm ticket found [--repo ${FINDING_REPOS.join('|')}] [--source <command>] [--noticed] <<'EOF' <kind> · <area> · <text> EOF`;
 
 const USAGE =
-  'usage: pnpm ticket new <slug> [--repo <repo>] [--type <type>] | new <n> [--type <type>] | new --issue <repo>#<n> [--type <type>] | land <n> | status [--batch <n>] | stats [--batch <n>] | found [--repo <repo>] [--source <link>] (row on stdin) | decisions (owner replies on stdin) | verify [--list]';
+  'usage: pnpm ticket new <slug> [--repo <repo>] [--type <type>] | new <n> [--type <type>] | new --issue <repo>#<n> [--type <type>] | land <n> | status [--batch <n>] | stats [--batch <n>] | found [--repo <repo>] [--source <command>] [--noticed] (row on stdin) | decisions (owner replies on stdin) | verify [--list]';
 
 const ENV = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
 
@@ -153,6 +159,11 @@ export function parseArgs(argv) {
       continue;
     }
 
+    if (arg === '--noticed') {
+      options.noticed = true;
+      continue;
+    }
+
     const flag = {
       '--type': 'type',
       '--batch': 'batch',
@@ -180,7 +191,7 @@ export function parseArgs(argv) {
     land: { ticket: true, flags: [] },
     status: { ticket: false, flags: ['batch'] },
     stats: { ticket: false, flags: ['batch'] },
-    found: { ticket: false, stdin: true, flags: ['source', 'repo'] },
+    found: { ticket: false, stdin: true, flags: ['source', 'repo', 'noticed'] },
     decisions: { ticket: false, flags: [] },
     verify: { ticket: false, flags: ['list'] },
   }[command];
@@ -1116,7 +1127,7 @@ function commandStats(main, options) {
   console.log(formatTable(statsRows(summary)).join('\n'));
 }
 
-function commandFound(main, { source, repo = DEFAULT_REPO }) {
+function commandFound(main, { source, repo = DEFAULT_REPO, noticed = false }) {
   if (process.stdin.isTTY) refuse(`found reads its row from stdin: ${FOUND_USAGE}`);
   if (!FINDING_REPOS.includes(repo)) {
     refuse(`--repo "${repo}" is not one of ${FINDING_REPOS.join(', ')}`);
@@ -1131,7 +1142,11 @@ function commandFound(main, { source, repo = DEFAULT_REPO }) {
 
   if (!finding) refuse(`the row is not "<kind> · <area> · <text>". Usage: ${FOUND_USAGE}`);
 
-  const { title, body, labels } = findingIssue(finding, source);
+  const refusal = findingRefusal(finding, { source, noticed });
+
+  if (refusal) refuse(`${refusal} Usage: ${FOUND_USAGE}`);
+
+  const { title, body, labels } = findingIssue(finding, source, { noticed });
   const args = [
     'api',
     `repos/frogbotai/${repo}/issues`,

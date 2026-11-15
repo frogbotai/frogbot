@@ -92,7 +92,7 @@ Keep it short enough to read on a phone. Detail belongs in the linked files.
   - **Blast radius**: what else could break, and what checked it.
   - **Screenshots**: for a visual change, the before and after images, labelled by width and theme. Otherwise omit the section.
   - **Verification**: the verify summary and the review line from [Logging the review](#logging-the-review).
-  - **Noticed, not done**: findings that didn't meet the bar for an issue. Empty is fine.
+  - **Noticed, not done**: links to the `noticed` issues this run filed. Empty is fine.
 - If the issue has `ticket:automerge` and the verdict is `PASS` on the PR's head, add `ticket:automerge` to the PR. Before pushing anything else to a PR that has the label, remove it. Add it again only after a new `PASS`.
 
 ## Review before the PR
@@ -148,13 +148,16 @@ The cloud container has Docker, but `dockerd` isn't running at the start. `CLAUD
 
 ## Findings
 
-A finding is an issue in the repo whose code it is about, labeled `found` and `area:<area>`. Frogbot and Sidekick code are public issues in `frogbotai/frogbot`, platform code is a private issue in `frogbotai/platform`, and only findings about the process itself go in `frogbotai/process`. The issue is the finding: adding a stage label to it starts work on it directly, with nothing copied. `pnpm ticket found` files one (`gh api repos/...` works in a cloud session). Don't append to `found.md`.
+A finding is an issue in the repo whose code it is about. Frogbot and Sidekick code are public issues in `frogbotai/frogbot`, platform code is a private issue in `frogbotai/platform`, and only findings about the process itself go in `frogbotai/process`. The issue is the finding: adding a stage label to it starts work on it directly, with nothing copied. `pnpm ticket found` files one (`gh api repos/...` works in a cloud session) and picks the label. Don't append to `found.md`.
 
-Each finding takes one of three routes:
+Each finding takes one of four routes:
 
-1. **It blocks the ticket or serves its goal.** Fix it in its own small PR, then return to the ticket.
-2. **It's confirmed and outside the ticket.** You saw it happen, or you can point at the line. File it with `pnpm ticket found`: a one-line title, the command or `path:line` that shows it as `--source`, and a severity in the text. Search the open `found` issues in that repo first, and comment on a match instead of opening a duplicate.
-3. **Anything else.** One line under **Noticed, not done** in the PR description. It isn't written anywhere else.
+1. **It blocks the ticket or serves its goal.** Fix it in its own small PR, then return to the ticket. A test or check that already fails on `main` always takes this route: it turns `pnpm ticket verify` red for every ticket after yours. Never file it; `pnpm ticket found` refuses a `pre-existing failure` row.
+2. **A bug you saw fail, medium or high severity.** File it with `pnpm ticket found --source '<command>'`: a one-line title, the command that shows the failure (a test, a `curl`, a CLI run) as `--source`, and the severity in the text. It gets the `found` label. A `path:line` alone isn't proof; that's route 3.
+3. **Anything else that's real**: a bug you only read in the code, or a low-severity one. File it with `pnpm ticket found --noticed`. It gets the `noticed` label, which keeps it off the owner's `found` list and in one place for a later sweep. Link it under **Noticed, not done** in the PR.
+4. **An idea or a missing feature.** Use the kind `idea`, `gap` or `feature`; it gets the `enhancement` label, not `found`.
+
+Search the open issues with that label in that repo first, and comment on a match instead of opening a duplicate.
 
 ## What needs the owner
 
