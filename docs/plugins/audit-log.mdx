@@ -103,7 +103,7 @@ It reads the record and its entries with the signed-in user's access:
 - An edit names only the fields the user can read.
 - A related record the user can't read, or whose `useAsTitle` field the user can't read, shows its ID instead of its title.
 
-It shows the latest 20 entries, skips entries older than the record (a database can reuse a deleted record's id), and renders nothing on a create form. Pass field options to change it, for example `activityField({ name: 'history', label: 'History' })`.
+It shows the latest 20 entries, skips entries older than the record (a database can reuse a deleted record's id), and renders nothing on a create form. Its label is the heading, except when it is the only field in a tab, whose label already names it. Put [`commentsField()`](/plugins/comments#placing-the-field) in a second tab for Comments | Activity. Pass field options to change it, for example `activityField({ name: 'history', label: 'History' })`.
 
 ## Custom entries
 

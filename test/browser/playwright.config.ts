@@ -436,6 +436,7 @@ const testProjects = [
     name: 'crm',
     testMatch: [
       'cellEdit.browser.spec.ts',
+      'comments.browser.spec.ts',
       'crm.browser.spec.ts',
       'gallery.browser.spec.ts',
       'listGrid.browser.spec.ts',

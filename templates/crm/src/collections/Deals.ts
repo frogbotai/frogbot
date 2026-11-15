@@ -1,3 +1,5 @@
+import { activityField } from '@frogbotai/plugin-audit-log';
+import { commentsField } from '@frogbotai/plugin-comments';
 import type { CollectionConfig } from 'frogbot';
 import { moneyField } from 'frogbot';
 
@@ -63,5 +65,13 @@ export const Deals: CollectionConfig = {
       access: reassignAccess,
     },
     { name: 'notes', type: 'richText' },
+    {
+      type: 'tabs',
+      admin: { className: 'fb-pill-tabs' },
+      tabs: [
+        { label: 'Comments', fields: [commentsField()] },
+        { label: 'Activity', fields: [activityField()] },
+      ],
+    },
   ],
 };

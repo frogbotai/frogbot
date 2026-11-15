@@ -139,19 +139,19 @@ export type SupportedTimezones =
   | 'Pacific/Fiji';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "LexicalNodes_D3EBD753".
+ * via the `definition` "LexicalNodes_294BC60D".
  */
-export type LexicalNodes_D3EBD753 =
+export type LexicalNodes_294BC60D =
   | SerializedTextNode
   | SerializedTabNode
   | SerializedLineBreakNode
-  | SerializedParagraphNode<LexicalNodes_D3EBD753>
+  | SerializedParagraphNode<LexicalNodes_294BC60D>
   | SerializedHorizontalRuleNode
   | SerializedUploadNode<'media'>
   | SerializedUploadNode<'exports'>
   | SerializedUploadNode<'imports'>
   | SerializedUploadNode<'frogbot-chat-assets'>
-  | SerializedQuoteNode<LexicalNodes_D3EBD753>
+  | SerializedQuoteNode<LexicalNodes_294BC60D>
   | SerializedRelationshipNode<
       | 'companies'
       | 'contacts'
@@ -161,6 +161,7 @@ export type LexicalNodes_D3EBD753 =
       | 'users'
       | 'plugin-ai-policy-spend'
       | 'audit-logs'
+      | 'comments'
       | 'chats'
       | 'messages'
       | 'frogbot-chat-turns'
@@ -168,11 +169,11 @@ export type LexicalNodes_D3EBD753 =
       | 'frogbot-waitpoints'
       | 'folders'
     >
-  | SerializedAutoLinkNode<LexicalNodes_D3EBD753, LexicalLinkFields>
-  | SerializedLinkNode<LexicalNodes_D3EBD753, LexicalLinkFields>
-  | SerializedListNode<LexicalNodes_D3EBD753>
-  | SerializedListItemNode<LexicalNodes_D3EBD753>
-  | SerializedHeadingNode<LexicalNodes_D3EBD753>;
+  | SerializedAutoLinkNode<LexicalNodes_294BC60D, LexicalLinkFields>
+  | SerializedLinkNode<LexicalNodes_294BC60D, LexicalLinkFields>
+  | SerializedListNode<LexicalNodes_294BC60D>
+  | SerializedListItemNode<LexicalNodes_294BC60D>
+  | SerializedHeadingNode<LexicalNodes_294BC60D>;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "LexicalNodes_3DE324E4".
@@ -203,6 +204,7 @@ export interface Config {
     imports: Import;
     'plugin-ai-policy-spend': PluginAiPolicySpend;
     'audit-logs': AuditLog;
+    comments: Comment;
     chats: Chat;
     messages: Message;
     'frogbot-chat-assets': FrogBotChatAsset;
@@ -224,6 +226,7 @@ export interface Config {
     imports: ImportsSelect;
     'plugin-ai-policy-spend': PluginAiPolicySpendSelect;
     'audit-logs': AuditLogsSelect;
+    comments: CommentsSelect;
     chats: ChatsSelect;
     messages: MessagesSelect;
     'frogbot-chat-assets': FrogBotChatAssetsSelect;
@@ -307,7 +310,7 @@ export interface Company {
   website?: string | null;
   employees?: number | null;
   owner?: (number | null) | User;
-  notes?: LexicalRichText<LexicalNodes_D3EBD753> | null;
+  notes?: LexicalRichText<LexicalNodes_294BC60D> | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -547,7 +550,7 @@ export interface Deal {
   amount?: number | null;
   closeDate?: string | null;
   owner?: (number | null) | User;
-  notes?: LexicalRichText<LexicalNodes_D3EBD753> | null;
+  notes?: LexicalRichText<LexicalNodes_294BC60D> | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -573,7 +576,7 @@ export interface Activity {
   deal?: (number | null) | Deal;
   contacts?: (number | Contact)[] | null;
   owner?: (number | null) | User;
-  notes?: LexicalRichText<LexicalNodes_D3EBD753> | null;
+  notes?: LexicalRichText<LexicalNodes_294BC60D> | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -768,6 +771,38 @@ export interface AuditLog {
     | boolean
     | null;
   timestamp: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments".
+ */
+export interface Comment {
+  id: number;
+  collection: string;
+  documentId: string;
+  author?: (number | null) | User;
+  mentions?: (number | User)[] | null;
+  bodyField?: string | null;
+  body_0?: LexicalRichText<LexicalNodes_294BC60D> | null;
+  body?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1236,6 +1271,23 @@ export interface AuditLogsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments_select".
+ */
+export interface CommentsSelect {
+  collection?: boolean;
+  documentId?: boolean;
+  author?: boolean;
+  mentions?: boolean;
+  bodyField?: boolean;
+  body_0?: boolean;
+  body?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "chats_select".
  */
 export interface ChatsSelect {
@@ -1431,6 +1483,7 @@ export interface CollectionQueryWidget {
       | 'exports'
       | 'imports'
       | 'audit-logs'
+      | 'comments'
       | 'chats'
       | 'usage-logs'
       | 'folders';
@@ -1467,6 +1520,7 @@ export interface ActivityWidget {
           | 'exports'
           | 'imports'
           | 'audit-logs'
+          | 'comments'
           | 'chats'
           | 'usage-logs'
           | 'folders'

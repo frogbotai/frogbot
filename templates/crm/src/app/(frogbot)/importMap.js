@@ -30,6 +30,8 @@ import { GalleryView as GalleryView_a9b31afd548db1251f21130da6e46588 } from '@fr
 import { BoardView as BoardView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { PhoneField as PhoneField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { MoneyField as MoneyField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
+import { CommentsField as CommentsField_e8c8dd609de0901c90af99cf939acdd7 } from '@frogbotai/plugin-comments/rsc';
+import { ActivityField as ActivityField_43354f5f91541cf6def56094146bbf90 } from '@frogbotai/plugin-audit-log/rsc';
 import { CalendarView as CalendarView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { NullField as NullField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { HierarchyButton as HierarchyButton_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
@@ -46,6 +48,7 @@ import { ExportSaveButton as ExportSaveButton_4174734ae0c0aa7fd57002a832979351 }
 import { ImportColumnsField as ImportColumnsField_6771adfffbedc23be239d1e57fc08159 } from '@frogbotai/plugin-import-export/client';
 import { ImportPreview as ImportPreview_4174734ae0c0aa7fd57002a832979351 } from '@frogbotai/plugin-import-export/rsc';
 import { ImportSaveButton as ImportSaveButton_4174734ae0c0aa7fd57002a832979351 } from '@frogbotai/plugin-import-export/rsc';
+import { MentionFeatureClient as MentionFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
 import { ChatView as ChatView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { LLMInstructionsDescription as LLMInstructionsDescription_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { FixedToolbarFeatureClient as FixedToolbarFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
@@ -135,6 +138,10 @@ export const importMap = {
     BoardView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin#PhoneField': PhoneField_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin#MoneyField': MoneyField_53ccb9913b2925da8adcdf5fd85e01f4,
+  '@frogbotai/plugin-comments/rsc#CommentsField':
+    CommentsField_e8c8dd609de0901c90af99cf939acdd7,
+  '@frogbotai/plugin-audit-log/rsc#ActivityField':
+    ActivityField_43354f5f91541cf6def56094146bbf90,
   '@frogbotai/ui/admin/rsc#CalendarView':
     CalendarView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin#NullField': NullField_53ccb9913b2925da8adcdf5fd85e01f4,
@@ -166,6 +173,8 @@ export const importMap = {
     ImportPreview_4174734ae0c0aa7fd57002a832979351,
   '@frogbotai/plugin-import-export/rsc#ImportSaveButton':
     ImportSaveButton_4174734ae0c0aa7fd57002a832979351,
+  '@frogbotai/richtext-lexical/client#MentionFeatureClient':
+    MentionFeatureClient_54ba8335448b80c9678012348095a8b7,
   '@frogbotai/ui/admin/rsc#ChatView': ChatView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin#LLMInstructionsDescription':
     LLMInstructionsDescription_53ccb9913b2925da8adcdf5fd85e01f4,

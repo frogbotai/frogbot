@@ -23,6 +23,7 @@
     "@frogbotai/next": "workspace:*",
     "@frogbotai/plugin-ai-policy": "workspace:*",
     "@frogbotai/plugin-audit-log": "workspace:*",
+    "@frogbotai/plugin-comments": "workspace:*",
     "@frogbotai/plugin-dojo": "workspace:*",
     "@frogbotai/plugin-import-export": "workspace:*",
     "@frogbotai/plugin-roles": "workspace:*",

@@ -6,6 +6,7 @@ import type { getTranslation, I18nClient } from '@payloadcms/translations';
 import { defaultAuditSlug } from '../collection.js';
 import { auditLogCustomKey } from '../fields/activity.js';
 import type { AuditOperation } from '../types.js';
+import { type PlacementProps, soleInTab } from './heading.js';
 import {
   type ConfigField,
   type FieldInfo,
@@ -42,7 +43,7 @@ type ActivityPayload = {
 };
 
 /** The server props Payload gives a field component that `ActivityField` reads. */
-export type ActivityFieldProps = {
+export type ActivityFieldProps = PlacementProps & {
   collectionSlug?: string;
   field?: { label?: Label };
   i18n?: Pick<I18nClient, 'fallbackLanguage' | 'language' | 't'>;
@@ -178,9 +179,18 @@ function describe(
  * record the user can't read shows nothing. A change to an option, related record, text, number,
  * date or checkbox also shows its old and new value, with options by label and related records
  * by their `useAsTitle`; a related record whose title the user can't read shows its ID. Entries older than the record are
- * skipped, since a database can reuse a deleted record's id. Renders nothing on a create form.
+ * skipped, since a database can reuse a deleted record's id. The field's label is the heading,
+ * unless the field is the only one in a tab, whose label already names it. Renders nothing on a
+ * create form.
  */
-export async function ActivityField({ collectionSlug, field, i18n, id, req }: ActivityFieldProps) {
+export async function ActivityField({
+  collectionSlug,
+  field,
+  i18n,
+  id,
+  req,
+  ...placement
+}: ActivityFieldProps) {
   if (!req?.user || !collectionSlug || id === undefined || id === null || id === '') return null;
 
   const { payload } = req;
@@ -243,41 +253,45 @@ export async function ActivityField({ collectionSlug, field, i18n, id, req }: Ac
   const format = (config: FieldInfo['field'], value: unknown, withTime: boolean) =>
     formatValue(config, value, titles, i18n, withTime ? formatter : day);
 
-  return (
-    <PanelSection className="fb-activity" heading={heading}>
-      {entries.length ? (
-        <ol className="fb-activity__list">
-          {entries.map((entry) => {
-            const { changes, summary } = describe(entry, readable, format);
+  const content = entries.length ? (
+    <ol className="fb-activity__list">
+      {entries.map((entry) => {
+        const { changes, summary } = describe(entry, readable, format);
 
-            return (
-              <li className="fb-activity__entry" key={entry.id}>
-                <span className="fb-activity__dot" />
-                <p className="fb-activity__text">
-                  <strong>{userName(entry.user, userTitleKey)}</strong> {summary}
-                </p>
-                {changes.length ? (
-                  <ul className="fb-activity__changes">
-                    {changes.map((change) => (
-                      <li className="fb-activity__change" key={change.key}>
-                        <span className="fb-activity__field">{change.label}</span>{' '}
-                        <span className="fb-activity__from">{change.from}</span>
-                        {' → '}
-                        <span className="fb-activity__to">{change.to}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                <time className="fb-activity__time" dateTime={entry.timestamp}>
-                  {formatter.format(new Date(entry.timestamp))}
-                </time>
-              </li>
-            );
-          })}
-        </ol>
-      ) : (
-        <p className="fb-activity__empty">No activity yet.</p>
-      )}
+        return (
+          <li className="fb-activity__entry" key={entry.id}>
+            <span className="fb-activity__dot" />
+            <p className="fb-activity__text">
+              <strong>{userName(entry.user, userTitleKey)}</strong> {summary}
+            </p>
+            {changes.length ? (
+              <ul className="fb-activity__changes">
+                {changes.map((change) => (
+                  <li className="fb-activity__change" key={change.key}>
+                    <span className="fb-activity__field">{change.label}</span>{' '}
+                    <span className="fb-activity__from">{change.from}</span>
+                    {' → '}
+                    <span className="fb-activity__to">{change.to}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <time className="fb-activity__time" dateTime={entry.timestamp}>
+              {formatter.format(new Date(entry.timestamp))}
+            </time>
+          </li>
+        );
+      })}
+    </ol>
+  ) : (
+    <p className="fb-activity__empty">No activity yet.</p>
+  );
+
+  return soleInTab(placement) ? (
+    <section className="fb-activity">{content}</section>
+  ) : (
+    <PanelSection className="fb-activity" heading={heading}>
+      {content}
     </PanelSection>
   );
 }

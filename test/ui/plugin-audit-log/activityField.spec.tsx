@@ -354,4 +354,27 @@ describe('ActivityField', () => {
 
     expect(headers).toEqual(['sam@x.io changed Title', 'Someone created this']);
   });
+
+  it('drops its heading when it is the only field in a tab, and keeps it anywhere else', async () => {
+    const fieldSchemaMap = new Map<string, unknown>([
+      [
+        'tickets._index-1-0',
+        { type: 'tab', label: 'Activity', fields: [{ name: 'activity', type: 'ui' }] },
+      ],
+    ]);
+
+    const render = async (schemaPath: string) =>
+      renderToStaticMarkup(
+        await ActivityField({
+          collectionSlug: 'tickets',
+          fieldSchemaMap,
+          id: 1,
+          req: { payload, user: { id: 1 } },
+          schemaPath,
+        }),
+      );
+
+    expect(await render('tickets._index-1-0.activity')).not.toContain('fb-panel-section__heading');
+    expect(await render('tickets.activity')).toContain('>Activity</h3>');
+  });
 });
