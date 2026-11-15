@@ -1350,6 +1350,16 @@
     "type": "import('@frogbotai/plugin-audit-log').AuditLogPluginOptions"
   },
   {
+    "page": "plugins/comments",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-comments').CommentsPluginOptions"
+  },
+  {
+    "page": "rich-text/official-features",
+    "heading": "Configure mentions",
+    "type": "import('@frogbotai/richtext-lexical').MentionFeatureProps"
+  },
+  {
     "page": "plugins/ai-capture",
     "heading": "Options",
     "type": "import('@frogbotai/plugin-ai-capture').AICapturePluginOptions"
