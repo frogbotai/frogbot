@@ -289,6 +289,33 @@ function CellEditorFields({
   );
 }
 
+type PendingHandle = {
+  ref: RefObject<CellEditorHandle | null>;
+  ready: Promise<void>;
+  settle: () => void;
+};
+
+function pendingHandle(): PendingHandle {
+  let current: CellEditorHandle | null = null;
+  let settle = () => {};
+
+  const ready = new Promise<void>((resolve) => {
+    settle = resolve;
+  });
+
+  const ref = {
+    get current() {
+      return current;
+    },
+    set current(handle: CellEditorHandle | null) {
+      current = handle;
+      if (handle) settle();
+    },
+  };
+
+  return { ready, ref, settle };
+}
+
 function ReadyCellEditorFields(props: Parameters<typeof CellEditorFields>[0]) {
   return useFormInitializing() ? null : <CellEditorFields {...props} />;
 }
@@ -318,6 +345,7 @@ export function CellEditor({
   const { getFormState } = useServerFunctions();
   const [loaded, setLoaded] = useState<{ data: Data; state: FormState }>();
   const savedRef = useRef(false);
+  const [fields] = useState(pendingHandle);
   const drafts = Boolean(getEntityConfig({ collectionSlug })?.versions?.drafts);
   const pathsKey = cellPaths(field, path).join('\n');
   const apiRoute = config.routes.api;
@@ -371,6 +399,24 @@ export function CellEditor({
     [pathsKey],
   );
 
+  useEffect(() => {
+    const handle: CellEditorHandle = {
+      commit: async () => {
+        await fields.ready;
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        return fields.ref.current?.commit() ?? true;
+      },
+    };
+
+    handleRef.current = handle;
+
+    return () => {
+      fields.settle();
+      if (handleRef.current === handle) handleRef.current = null;
+    };
+  }, [fields, handleRef]);
+
   const onSuccess = useCallback(() => {
     savedRef.current = true;
     onSaved();
@@ -405,7 +451,7 @@ export function CellEditor({
             action={action}
             drafts={drafts}
             field={field}
-            handleRef={handleRef}
+            handleRef={fields.ref}
             initialText={initialText}
             pendingDone={pendingDone}
             onDone={onDone}
