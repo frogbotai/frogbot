@@ -22,7 +22,7 @@ const config = {
 
 describe('contextWindow', () => {
   it.each([
-    ['a catalog model', 'anthropic/claude-sonnet-4-5', 200_000],
+    ['a catalog model', 'anthropic/claude-haiku-4-5', 200_000],
     ['a custom model with limit.input', 'local/split', 150_000],
     ['a custom model with only limit.context', 'local/context', 32_000],
     ['a router to a custom model', 'fast', 32_000],

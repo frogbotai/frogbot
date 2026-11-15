@@ -309,7 +309,7 @@ describe('Chat', () => {
     expect(String(state.fetch.mock.calls[0]?.[0])).toBe('/api/assets');
   });
 
-  it("gives the composer the selected model's file types and name", async () => {
+  it("opens the picker without an accept list and names the model that can't read a file", async () => {
     setAdapter('assets');
 
     state.agents = [
@@ -325,13 +325,10 @@ describe('Chat', () => {
     ];
 
     const { container, rerender } = render(<Chat agent="support" />);
-    const accept = () => container.querySelector('input[type="file"]')?.getAttribute('accept');
 
-    expect(accept()).toContain('image/png');
+    expect(container.querySelector('input[type="file"]')?.hasAttribute('accept')).toBe(false);
 
     rerender(<Chat agent="support" model="openai/gpt-4o-mini" />);
-
-    expect(accept()).not.toContain('image/png');
 
     fireEvent.drop(container.querySelector('form') as HTMLFormElement, {
       dataTransfer: {

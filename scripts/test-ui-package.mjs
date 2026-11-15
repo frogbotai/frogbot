@@ -28,6 +28,7 @@ const subpaths = [
   './chat/tools',
   './chat/artifacts',
   './forms',
+  './forms/rules',
   './lexical',
   './admin',
   './admin/shared',

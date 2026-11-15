@@ -60,7 +60,7 @@ describe('aiErrorMessage', () => {
 
   it('names the provider instead of an env var when the key is configured explicitly', () => {
     expect(
-      aiErrorMessage({ error: providerError(401), model: 'anthropic/claude-sonnet-4-5', config }),
+      aiErrorMessage({ error: providerError(401), model: 'anthropic/claude-haiku-4-5', config }),
     ).toBe(
       'The AI provider rejected the API key. Check the API key configured for the anthropic provider.',
     );

@@ -190,6 +190,7 @@ export const uiComponentExports: Readonly<Record<string, ReadonlySet<string>>> =
     'QueryPresetsWhereField',
     'Button',
     'PopupList',
+    'FormSubmit',
     'DraggableSortable',
     'DraggableSortableItem',
   ]),
@@ -240,5 +241,6 @@ export const uiComponentExports: Readonly<Record<string, ReadonlySet<string>>> =
     'UploadDropzoneWidget',
     'WelcomeWidget',
     'DefaultTemplate',
+    'Logo',
   ]),
 };

@@ -31,9 +31,6 @@ const PROVIDERS = {
   xai: 'xai',
 };
 
-// Workaround: https://github.com/anomalyco/models.dev/pull/10430, remove when models.dev serves the flat FrogBot logo
-const FALLBACK_LOGOS = { frogbot: resolve(root, 'scripts/logos/frogbot.svg') };
-
 const LOGO_ONLY_PROVIDERS = {
   frogbot: { name: 'FrogBot', logo: 'frogbot' },
   lmstudio: { name: 'LM Studio', logo: 'lmstudio' },
@@ -512,10 +509,6 @@ export async function syncCatalog({ fetchImpl = fetch } = {}) {
     try {
       return logoNodes(svg);
     } catch (error) {
-      if (Object.hasOwn(FALLBACK_LOGOS, sourceProvider)) {
-        return logoNodes(await readFile(FALLBACK_LOGOS[sourceProvider], 'utf8'));
-      }
-
       throw new Error(`Invalid models.dev logo for '${sourceProvider}': ${error.message}`, {
         cause: error,
       });

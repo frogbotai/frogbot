@@ -37,12 +37,15 @@ export const inventory = [
     'ACCESS-CONTROL-ADVANCED',
     'ACCESS-CONTROL',
     'ADAPTERS',
+    'ADMIN-DESIGN',
     'ADVANCED',
     'AGENTS',
     'AI',
+    'AUTOMATIONS',
     'CHAT-UI',
     'COLLECTIONS',
     'CONNECTIONS',
+    'DOJO',
     'ENDPOINTS',
     'ENV',
     'FIELD-TYPE-GUARDS',
@@ -219,7 +222,7 @@ export function files(directory: string): string[] {
 export function expectFullSkill(directory: string): void {
   expect(files(canonicalSkill)).toEqual(inventory);
   expect(files(directory)).toEqual(inventory);
-  expect(inventory).toHaveLength(24);
+  expect(inventory).toHaveLength(27);
 
   for (const file of inventory) {
     const installed = path.join(directory, file);
@@ -255,7 +258,10 @@ export function expectProjectSkill(project: string): void {
     expect(pointer).toContain(`\`${target}/SKILL.md\``);
     expect(pointer).toContain(`\`${target}/reference/\``);
     expect(fs.statSync(path.join(project, target, 'SKILL.md')).isFile()).toBe(true);
-    expect(fs.readdirSync(path.join(project, target, 'reference'))).toHaveLength(23);
+
+    expect(fs.readdirSync(path.join(project, target, 'reference'))).toHaveLength(
+      inventory.length - 1,
+    );
   }
 }
 
