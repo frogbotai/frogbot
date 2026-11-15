@@ -315,4 +315,43 @@ describe('ActivityField', () => {
       `Meeting None → ${new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(new Date('2026-03-01T12:00:00.000Z'))}`,
     );
   });
+
+  it('names a user with no title by email, and a write with no user as Someone', async () => {
+    const named: NonNullable<ActivityFieldProps['req']>['payload'] = {
+      collections: {
+        'audit-logs': { config: { fields: [{ name: 'user', relationTo: 'users' }] } },
+        users: {
+          config: { admin: { useAsTitle: 'name' }, fields: [{ name: 'name', type: 'text' }] },
+        },
+        deals: { config: { fields: [{ name: 'title', type: 'text' }] } },
+      },
+      config: {},
+      findByID: () => Promise.resolve({ id: 1, title: 'x' }),
+      find: () =>
+        Promise.resolve({
+          docs: [
+            {
+              id: 'e2',
+              operation: 'update',
+              timestamp: '2026-01-03T00:00:00.000Z',
+              user: { id: 3, email: 'sam@x.io' },
+              changes: { title: { old: 'w', new: 'x' } },
+            },
+            { id: 'e1', operation: 'create', timestamp: '2026-01-02T00:00:00.000Z', user: null },
+          ],
+        }),
+    };
+
+    const node = await ActivityField({
+      collectionSlug: 'deals',
+      id: 1,
+      req: { payload: named, user: { id: 3 } },
+    });
+
+    const headers = [
+      ...renderToStaticMarkup(node).matchAll(/<p class="fb-activity__text">(.*?)<\/p>/g),
+    ].map(([, text]) => text.replace(/<[^>]+>/g, ''));
+
+    expect(headers).toEqual(['sam@x.io changed Title', 'Someone created this']);
+  });
 });
