@@ -74,7 +74,7 @@ Internal audit writes always override access. API create, update, and delete acc
 
 ## Activity field
 
-`activityField()` returns a `ui` field that lists the open record's audit entries, newest first: who created it, which fields each edit changed, and when. An edit to an option, a related record, text, a number, a date or a checkbox also shows the old and new value, for example `Stage Lead → Qualified`: options by their label and related records by their `useAsTitle`, looked up when the field renders, so a renamed option or record shows its current name. Other fields, such as rich text, groups and arrays, are only named. Place it anywhere in a collection's `fields`, usually in a tab at the end, and it shows on the edit page and in the [record panel](/admin/record-panel#activity-and-comments):
+`activityField()` returns a `ui` field that lists the open record's audit entries, newest first: who created it, which fields each edit changed, and when. An edit to an option, a related record, text, a number, a date or a checkbox also shows the old and new value, for example `Stage Lead → Qualified`: options by their label and related records by their `useAsTitle`, looked up when the field renders, so a renamed option or record shows its current name. A date title is formatted like a date value. Other fields, such as rich text, groups and arrays, are only named, and fields hidden in the admin, such as a timezone date's `_tz` companion, are left out. Place it anywhere in a collection's `fields`, usually in a tab at the end, and it shows on the edit page and in the [record panel](/admin/record-panel#activity-and-comments):
 
 ```ts
 import { activityField, auditLogPlugin } from '@frogbotai/plugin-audit-log'
@@ -101,7 +101,7 @@ It reads the record and its entries with the signed-in user's access:
 
 - A record the user can't read shows nothing.
 - An edit names only the fields the user can read.
-- A related record the user can't read shows its ID instead of its title.
+- A related record the user can't read, or whose `useAsTitle` field the user can't read, shows its ID instead of its title.
 
 It shows the latest 20 entries, skips entries older than the record (a database can reuse a deleted record's id), and renders nothing on a create form. Pass field options to change it, for example `activityField({ name: 'history', label: 'History' })`.
 

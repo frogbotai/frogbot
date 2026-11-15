@@ -10,6 +10,8 @@ import {
   type ConfigField,
   type FieldInfo,
   fieldInfo,
+  findField,
+  formatDate,
   formatValue,
   relatedIds,
   showsTime,
@@ -70,6 +72,21 @@ function titleKeyOf(payload: ActivityPayload, slug: unknown): string | undefined
   return typeof slug === 'string' ? payload.collections[slug]?.config.admin?.useAsTitle : undefined;
 }
 
+type DatesFor = (field: ConfigField) => Intl.DateTimeFormat;
+
+function titleFormat(
+  payload: ActivityPayload,
+  slug: string,
+  titleKey: string | undefined,
+  datesFor: DatesFor,
+) {
+  const titleField = findField(payload.collections[slug]?.config.fields ?? [], titleKey);
+
+  return titleField?.type === 'date'
+    ? (value: string) => formatDate(value, datesFor(titleField))
+    : undefined;
+}
+
 function userName(user: Entry['user'], titleKey: string | undefined): string {
   return (user && typeof user === 'object' && titleOf(user, titleKey)) || 'Someone';
 }
@@ -79,6 +96,7 @@ async function relatedTitles(
   req: unknown,
   entries: Entry[],
   info: Map<string, FieldInfo>,
+  datesFor: DatesFor,
 ): Promise<Titles> {
   const titles: Titles = new Map();
   const lookups = [
@@ -102,9 +120,10 @@ async function relatedTitles(
       .catch(() => ({ docs: [] as Doc[] }));
 
     const titleKey = titleKeyOf(payload, collection);
+    const format = titleFormat(payload, collection, titleKey, datesFor);
 
     for (const doc of docs) {
-      const title = titleOf(doc, titleKey);
+      const title = titleOf(doc, titleKey, format);
       if (title) titles.set(`${collection}:${doc.id}`, title);
     }
   });
@@ -154,7 +173,7 @@ function describe(
  * with the signed-in user's access, and a change names only fields the user can read, so a
  * record the user can't read shows nothing. A change to an option, related record, text, number,
  * date or checkbox also shows its old and new value, with options by label and related records
- * by title; a related record the user can't read shows its ID. Entries older than the record are
+ * by their `useAsTitle`; a related record whose title the user can't read shows its ID. Entries older than the record are
  * skipped, since a database can reuse a deleted record's id. Renders nothing on a create form.
  */
 export async function ActivityField({ collectionSlug, field, i18n, id, req }: ActivityFieldProps) {
@@ -206,14 +225,17 @@ export async function ActivityField({ collectionSlug, field, i18n, id, req }: Ac
   const userTitleKey = titleKeyOf(payload, userField?.relationTo);
   const info = fieldInfo(collection.config.fields, i18n);
   const readable = new Map([...info].filter(([key]) => key in record));
-  const titles = await relatedTitles(payload, req, entries, readable);
-  const heading = translate(field?.label, i18n) ?? 'Activity';
   const formatter = new Intl.DateTimeFormat(i18n?.language, {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
 
   const day = new Intl.DateTimeFormat(i18n?.language, { dateStyle: 'medium' });
+  const titles = await relatedTitles(payload, req, entries, readable, (config) =>
+    showsTime(config) ? formatter : day,
+  );
+
+  const heading = translate(field?.label, i18n) ?? 'Activity';
   const format = (config: FieldInfo['field'], value: unknown, withTime: boolean) =>
     formatValue(config, value, titles, i18n, withTime ? formatter : day);
 

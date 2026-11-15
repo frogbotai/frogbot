@@ -49,13 +49,22 @@ function childFields(field: ConfigField): ConfigField[] {
   return Array.isArray(field.fields) ? (field.fields as ConfigField[]) : [];
 }
 
-/** Maps each top-level data name, including those inside rows, collapsibles and unnamed tabs. */
+function hiddenInAdmin(field: ConfigField): boolean {
+  return (field.admin as { hidden?: unknown } | undefined)?.hidden === true;
+}
+
+/**
+ * Maps each top-level data name, including those inside rows, collapsibles and unnamed tabs.
+ * Skips fields hidden in the admin, such as the `<name>_tz` companion of a timezone date.
+ */
 export function fieldInfo(
   fields: ConfigField[],
   i18n: Translator,
   info = new Map<string, FieldInfo>(),
 ): Map<string, FieldInfo> {
   for (const field of fields) {
+    if (hiddenInAdmin(field)) continue;
+
     if (typeof field.name === 'string') {
       info.set(field.name, {
         field,
@@ -67,6 +76,22 @@ export function fieldInfo(
   }
 
   return info;
+}
+
+/** Finds a top-level data field by name, including inside rows, collapsibles and unnamed tabs. */
+export function findField(
+  fields: ConfigField[],
+  name: string | undefined,
+): ConfigField | undefined {
+  for (const field of fields) {
+    if (field.name === name) return field;
+    if (typeof field.name !== 'string') {
+      const found = findField(childFields(field), name);
+      if (found) return found;
+    }
+  }
+
+  return undefined;
 }
 
 function list(value: unknown): unknown[] {
@@ -120,15 +145,27 @@ export function relatedIds(
   return ids;
 }
 
-/** The record's title: its collection's `useAsTitle`, then `name`, `title` or `email`. */
-export function titleOf(doc: Record<string, unknown>, titleKey: string | undefined) {
-  for (const key of [titleKey, 'name', 'title', 'email']) {
-    const value = key && key !== 'id' ? doc[key] : undefined;
-    if (typeof value === 'string' && value) return value;
-    if (key === titleKey && typeof value === 'number') return String(value);
-  }
+/** Formats an ISO date, or returns the value as it is when it isn't one. */
+export function formatDate(value: string, dates: Intl.DateTimeFormat): string {
+  const date = new Date(value);
 
-  return undefined;
+  return Number.isNaN(date.getTime()) ? value : dates.format(date);
+}
+
+/**
+ * The record's title: the value of its collection's `useAsTitle`, passed through `format` (for
+ * a date title). Like Payload, no other field stands in, so a missing or unreadable title
+ * returns `undefined` and the caller shows the ID.
+ */
+export function titleOf(
+  doc: Record<string, unknown>,
+  titleKey: string | undefined,
+  format: (value: string) => string = (value) => value,
+): string | undefined {
+  const value = titleKey && titleKey !== 'id' ? doc[titleKey] : undefined;
+  if (typeof value === 'number') return String(value);
+
+  return typeof value === 'string' && value ? format(value) : undefined;
 }
 
 function optionLabel(field: ConfigField, value: unknown, i18n: Translator): string {
@@ -161,11 +198,7 @@ function scalar(
 
   if (choiceTypes.has(type)) return optionLabel(field, value, i18n);
 
-  if (type === 'date' && typeof value === 'string') {
-    const date = new Date(value);
-
-    return Number.isNaN(date.getTime()) ? value : dates.format(date);
-  }
+  if (type === 'date' && typeof value === 'string') return formatDate(value, dates);
 
   return typeof value === 'string' || typeof value === 'number' ? String(value) : undefined;
 }

@@ -8,6 +8,7 @@ import { getCurrentDatabaseAdapter } from '../__helpers/shared/db/dbAdapters.js'
 
 const Accounts: CollectionConfig = {
   slug: 'accounts',
+  admin: { useAsTitle: 'email' },
   auth: true,
   access: openAccess,
   fields: [],
