@@ -18,7 +18,7 @@ vi.mock('@frogbotai/ui/admin', () => ({
   }) => <a {...props}>{children}</a>,
   SetStepNav: () => null,
   toast: { error: vi.fn() },
-  useConfig: () => ({ config: { routes: { api: '/api' } } }),
+  useConfig: () => ({ config: { routes: { admin: '/admin', api: '/api' } } }),
   useRouter: () => router,
 }));
 
@@ -170,24 +170,41 @@ describe('Inbox', () => {
     expect(unread.className).toContain('--unread');
   });
 
-  it('never navigates to a link that is not an admin path or a web URL', async () => {
+  const open = (link: string) => {
     render(
       <Inbox
-        items={[
-          {
-            createdAt: items[1].createdAt,
-            id: 3,
-            link: 'javascript:alert(1)',
-            title: 'Odd',
-            readAt: 'x',
-          },
-        ]}
+        items={[{ createdAt: items[1].createdAt, id: 3, link, readAt: 'x', title: 'Odd' }]}
         slug="notifications"
       />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: /Odd/ }));
+  };
+
+  it.each([
+    'javascript:alert(1)',
+    '/\\evil.com',
+    '/\t/evil.com',
+    '/api/users/logout',
+    '/administrator',
+    'http://evil.com/',
+  ])('never follows %j, which is not an admin path or an https URL', async (link) => {
+    const assign = vi.fn();
+
+    vi.stubGlobal('location', { ...window.location, assign });
+    open(link);
     await waitFor(() => expect(router.refresh).toHaveBeenCalled());
+
+    expect(router.push).not.toHaveBeenCalled();
+    expect(assign).not.toHaveBeenCalled();
+  });
+
+  it('follows an https URL in the browser', async () => {
+    const assign = vi.fn();
+
+    vi.stubGlobal('location', { ...window.location, assign });
+    open('https://status.example.com/');
+    await waitFor(() => expect(assign).toHaveBeenCalledWith('https://status.example.com/'));
 
     expect(router.push).not.toHaveBeenCalled();
   });

@@ -306,4 +306,132 @@ describe('notifications plugin', () => {
 
     expect(await inbox('sam')).toEqual([]);
   });
+
+  async function anaReq() {
+    const ana = await booted.frogbot.findByID({
+      collection: 'users',
+      id: users.ana.id,
+      overrideAccess: true,
+    });
+
+    return booted.frogbot.createRequest({ user: { ...ana, collection: 'users' } });
+  }
+
+  it('a bulk edit that newly mentions Sam in two comments notifies Sam once per comment', async () => {
+    const record = await deal();
+
+    for (const words of ['first', 'second']) {
+      await comment('ana', {
+        body: body(text(words)),
+        collection: 'deals',
+        documentId: String(record.id),
+      });
+    }
+
+    const req = await anaReq();
+    const result = await booted.frogbot.update({
+      collection: 'comments',
+      data: { body: body(mention(users.sam.id, 'Sam'), text(' look')) },
+      overrideAccess: false,
+      req,
+      where: { author: { equals: users.ana.id } },
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(result.docs).toHaveLength(2);
+    expect(await inbox('sam')).toHaveLength(2);
+    expect(toPayloadRequest(req).user?.id).toBe(users.ana.id);
+  });
+
+  it('two comments saved at once on one request each notify their own mention', async () => {
+    const one = await deal();
+    const two = await deal();
+    const req = await anaReq();
+    const save = (record: Doc, who: string) =>
+      booted.frogbot.create({
+        collection: 'comments',
+        data: {
+          body: body(mention(users[who].id, who)),
+          collection: 'deals',
+          documentId: String(record.id),
+        },
+        overrideAccess: false,
+        req,
+      });
+
+    await Promise.all([save(one, 'sam'), save(two, 'kim')]);
+
+    const admin = booted.payload.config.routes.admin;
+    const base = `${admin === '/' ? '' : admin}/collections/deals/`;
+
+    expect((await inbox('sam')).map((doc) => doc.link)).toEqual([`${base}${one.id}`]);
+    expect((await inbox('kim')).map((doc) => doc.link)).toEqual([`${base}${two.id}`]);
+    expect(toPayloadRequest(req).user?.id).toBe(users.ana.id);
+  });
+
+  it('an edit saved with select still notifies the user it adds, once', async () => {
+    const record = await deal();
+    const created = await comment('ana', {
+      body: body(text('hi')),
+      collection: 'deals',
+      documentId: String(record.id),
+    });
+
+    await booted.frogbot.update({
+      collection: 'comments',
+      data: { body: body(mention(users.sam.id, 'Sam'), text(' hi')) },
+      id: created.body.doc.id,
+      overrideAccess: false,
+      req: await anaReq(),
+      select: { id: true },
+    });
+
+    expect(await inbox('sam')).toHaveLength(1);
+
+    await booted.restClient.patch(
+      `/api/comments/${created.body.doc.id}`,
+      { body: body(mention(users.sam.id, 'Sam'), text(' hi again')) },
+      { headers: users.ana.headers },
+    );
+
+    expect(await inbox('sam')).toHaveLength(1);
+  });
+
+  it('deleting a user deletes their notifications', async () => {
+    const req = await booted.frogbot.createRequest({});
+
+    await notify(req, { title: 'For Sam', user: users.sam.id });
+    await notify(req, { title: 'For Kim', user: users.kim.id });
+    await booted.frogbot.delete({ collection: 'users', id: users.sam.id, overrideAccess: true });
+
+    const left = await booted.frogbot.find({ collection: 'notifications', overrideAccess: true });
+
+    expect(left.docs.map((doc) => doc.title)).toEqual(['For Kim']);
+  });
+
+  it('lets the owner change only readAt', async () => {
+    const req = await booted.frogbot.createRequest({});
+    const sent = await notify(req, { title: 'Job failed', user: users.sam.id });
+    const patched = await booted.restClient.patch<{ doc: Doc }>(
+      `/api/notifications/${sent.id}`,
+      {
+        createdAt: '2000-01-01T00:00:00.000Z',
+        readAt: '2026-11-15T12:00:00.000Z',
+        updatedAt: '2000-01-01T00:00:00.000Z',
+      },
+      { headers: users.sam.headers },
+    );
+
+    expect(patched.status).toBe(200);
+
+    const stored = await booted.frogbot.findByID({
+      collection: 'notifications',
+      id: sent.id,
+      overrideAccess: true,
+    });
+
+    expect(stored.readAt).toBe('2026-11-15T12:00:00.000Z');
+    expect(stored.createdAt).toBe(sent.createdAt);
+    expect(stored.updatedAt).not.toBe('2000-01-01T00:00:00.000Z');
+  });
 });
