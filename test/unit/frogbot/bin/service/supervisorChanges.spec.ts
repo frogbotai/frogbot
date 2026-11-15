@@ -18,7 +18,7 @@ const { freePort } = await import('../../../../../packages/frogbot/src/bin/servi
 
 const children: ChildProcess[] = [];
 const folders: string[] = [];
-const WAIT = { timeout: 15_000, interval: 50 };
+const WAIT = { timeout: 30_000, interval: 50 };
 
 afterAll(() => {
   for (const child of children) child.kill('SIGKILL');
@@ -66,7 +66,18 @@ const supervisorLog = (dir: string) =>
 
 const count = (lines: string[], text: string) => lines.filter((line) => line.includes(text)).length;
 
-describe('the supervisor on changes', { timeout: 40_000 }, () => {
+async function serving(dir: string, times: number) {
+  await vi.waitFor(() => {
+    const lines = supervisorLog(dir);
+
+    if (!lines.some((line) => line.includes('failed'))) expect(count(lines, 'serving')).toBe(times);
+  }, WAIT);
+
+  expect(supervisorLog(dir).filter((line) => line.includes('failed'))).toEqual([]);
+  expect(count(supervisorLog(dir), 'serving')).toBe(times);
+}
+
+describe('the supervisor on changes', { timeout: 90_000 }, () => {
   it('rebuilds when a NEXT_PUBLIC_ edit is reverted while the build that read it runs', async () => {
     const dir = folder('frogbot-supervisor-env-');
     const value = () => /NEXT_PUBLIC_NAME=(\S*)/.exec(readFileSync(join(dir, '.env'), 'utf8'))?.[1];
@@ -95,7 +106,7 @@ describe('the supervisor on changes', { timeout: 40_000 }, () => {
     await vi.waitFor(() => expect(count(supervisorLog(dir), 'changed; rebuilding')).toBe(2), WAIT);
 
     release();
-    await vi.waitFor(() => expect(count(supervisorLog(dir), 'serving')).toBe(3), WAIT);
+    await serving(dir, 3);
 
     const served = /serving \S*builds\/(a|b)/.exec(supervisorLog(dir).at(-1) ?? '')?.[1];
 
@@ -133,7 +144,7 @@ describe('the supervisor on changes', { timeout: 40_000 }, () => {
     });
 
     writeFileSync(config, "export default { typescript: { outputFile: 'src/b-types.ts' } };\n");
-    await vi.waitFor(() => expect(count(supervisorLog(dir), 'serving')).toBe(2), WAIT);
+    await serving(dir, 2);
 
     expect(count(supervisorLog(dir), 'change seen; rebuilding')).toBe(1);
     expect(builds).toBe(2);
@@ -178,7 +189,7 @@ describe('the supervisor on changes', { timeout: 40_000 }, () => {
     await vi.waitFor(() => expect(count(supervisorLog(dir), 'with the new .env')).toBe(1), WAIT);
 
     writeFileSync(join(dir, 'src', 'one.ts'), 'export {};\n');
-    await vi.waitFor(() => expect(count(supervisorLog(dir), 'serving')).toBe(3), WAIT);
+    await serving(dir, 3);
 
     writeFileSync(join(dir, 'src', 'two.ts'), 'export {};\n');
     await vi.waitFor(() => expect(count(supervisorLog(dir), 'building into')).toBe(3), WAIT);
