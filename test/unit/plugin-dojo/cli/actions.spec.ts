@@ -417,7 +417,9 @@ describe('frogbot dojo actions beyond the basics', () => {
 
     expect(await runDojo(['activity', '--app', 'foo'], result.io)).toBe(0);
     expect(result.stdout()).toEqual(['[frogbot] No activity in side-co yet.']);
-    expect(sent(dojo, 'GET /api/activity')?.search).toContain('where%5Bworkspace%5D%5Bequals%5D=2');
+    expect(
+      new URLSearchParams(sent(dojo, 'GET /api/activity')?.search).get('where[workspace][equals]'),
+    ).toBe('2');
   });
 
   it("creates an app from a saved template in the template's workspace", async () => {

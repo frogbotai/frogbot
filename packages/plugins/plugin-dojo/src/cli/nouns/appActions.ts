@@ -127,6 +127,7 @@ export const appActions: Record<string, Verb> = {
             link: url,
             why: `Keeping ${app.slug} needs one more paid app.`,
             then: `and ${app.slug} becomes a paid app`,
+            owner: app.level !== 'editor',
           })
         : true;
 

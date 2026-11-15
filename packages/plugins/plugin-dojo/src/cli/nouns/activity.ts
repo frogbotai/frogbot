@@ -36,8 +36,20 @@ export const activity: Verb = {
     }
 
     const slug = typeof values.workspace === 'string' ? values.workspace : undefined;
-    const workspace = await findWorkspace({ dojo: dojo(), io, slug });
     const app = typeof values.app === 'string' ? await findApp(dojo(), values.app) : undefined;
+    const workspace = await findWorkspace({
+      dojo: dojo(),
+      io,
+      slug,
+      ...(app?.workspace !== undefined && {
+        home: {
+          id: app.workspace,
+          refuse: (home) =>
+            `${app.slug} is in ${home}, not ${slug}. Leave out --workspace, or use --workspace ${home}.`,
+        },
+      }),
+    });
+
     const filter = app ? `&${whereEquals('app', app.id)}` : '';
 
     const { docs } = await dojoJSON<{ docs: Entry[] }>(

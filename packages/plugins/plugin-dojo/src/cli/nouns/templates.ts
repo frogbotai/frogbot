@@ -3,6 +3,7 @@ import type { DojoClient } from '../dojo.js';
 import { dojoList } from '../dojo.js';
 import { ShareError } from '../error.js';
 import { done } from '../io.js';
+import { relationId } from './resolve.js';
 
 /** A template as Dojo's Templates page reads it: FrogBot's own, and ones saved in your workspaces. */
 export type Template = {
@@ -53,8 +54,7 @@ export const templates: Noun = {
             name,
             summary,
             tags: tags ?? [],
-            workspace:
-              workspace && typeof workspace === 'object' ? workspace.id : (workspace ?? null),
+            workspace: relationId(workspace) ?? null,
           }),
         );
 

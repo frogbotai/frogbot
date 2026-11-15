@@ -6,7 +6,7 @@ import { dojoProgram, done } from '../io.js';
 import { whenPaid } from '../payment.js';
 import { findWorkspace } from '../workspaces.js';
 import { appActions } from './appActions.js';
-import { appAddress, findApp, whereEquals } from './resolve.js';
+import { appAddress, findApp, relationId, whereEquals } from './resolve.js';
 import { findTemplate } from './templates.js';
 
 type App = {
@@ -99,7 +99,20 @@ export const apps: Noun = {
             ? await findTemplate(dojo(), values.template)
             : undefined;
 
-        const workspace = await findWorkspace({ dojo: dojo(), io, slug });
+        const home = relationId(template?.workspace);
+        const workspace = await findWorkspace({
+          dojo: dojo(),
+          io,
+          slug,
+          ...(template &&
+            home !== undefined && {
+              home: {
+                id: home,
+                refuse: (saved) =>
+                  `${template.name} is saved in ${saved}; create the app there with --workspace ${saved}.`,
+              },
+            }),
+        });
 
         const created = await whenPaid(dojo(), io, () =>
           dojo().request(

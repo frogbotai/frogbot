@@ -61,7 +61,7 @@ A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://post
 | `apps logs` | `<app>`, `--follow` | Prints an app's recent logs, or follows them. See [`dojo apps logs`](/getting-started/cli#dojo-apps-logs). |
 | `apps list` | `--workspace` | Lists every app you can see. |
 | `apps get` | `<app>` | Shows an app's address, whether it has started, and your access. |
-| `apps create` | `<name>`, `--workspace`, `--template` | Creates an empty app to deploy to later, or, with `--template <id or name>`, one built from a template, and prints its first deployment. A name whose slug would be digits alone is refused, since digits name an app by id. |
+| `apps create` | `<name>`, `--workspace`, `--template` | Creates an empty app to deploy to later, or, with `--template <id or name>`, one built from a template, and prints its first deployment. A template saved in a workspace makes the app in that workspace. A name whose slug would be digits alone is refused, since digits name an app by id. |
 | `apps rename` | `<app> <name>` | Renames an app; its address stays. |
 | `apps delete` | `<app>`, `--yes` | Moves an app to Trash. It stops at once, and Dojo deletes it and everything in it after 30 days. |
 | `apps trash` | — | Lists your apps in Trash, with when each is deleted for good. |
@@ -69,7 +69,7 @@ A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://post
 | `apps restart` | `<app>` | Restarts the live app on its current version and keys. |
 | `apps stop` | `<app>`, `--yes` | Stops an app: visitors get a paused page. It keeps its address, data and paid app. |
 | `apps start` | `<app>` | Starts a stopped app. |
-| `apps keep` | `<app>` | Keeps a free preview as a paid app, or prints the link that pays for one when no paid app is free. |
+| `apps keep` | `<app>` | Keeps a free preview as a paid app, or prints the link that pays for one when no paid app is free. An app editor is told to ask a workspace owner to pay. |
 | `apps usage` | `<app>` | Shows the app's AI spend this month by model, and its workspace's AI balance. |
 | `apps export-data` | `<app>`, `--out` | Saves the live database and uploaded files as a `.zip`, by default `./<app>-data.zip`. Never overwrites a file. Owners only. |
 | `templates list` | — | Lists FrogBot's templates and the ones saved in your workspaces. |
@@ -93,7 +93,7 @@ A Postgres app works with both. `apps pull` writes `DATABASE_URL=postgres://post
 | `billing manage` | `--workspace` | Prints the link to change the card, see invoices or cancel. |
 | `billing ai` | `--workspace` | Shows the workspace's AI balance and whether auto-recharge is on. Change auto-recharge in Dojo. |
 | `billing add-funds` | `--amount`, `--workspace` | Prints the link that adds $10 to $1000 of AI funds (default $20), plus a processing fee, for a person to pay at. |
-| `activity` | `--workspace`, `--app`, `--limit` | Shows who deployed, changed or invited what, newest first. Workspace admins, on Business. |
+| `activity` | `--workspace`, `--app`, `--limit` | Shows who deployed, changed or invited what, newest first. With `--app`, the app's own workspace. Workspace admins, on Business. |
 
 - `<app>` is the app's slug, such as `deals` for `deals.frogbot.app`, or its id. Digits that are one app's id and another app's slug are refused. Name that app by its id.
 - Lists read every page.

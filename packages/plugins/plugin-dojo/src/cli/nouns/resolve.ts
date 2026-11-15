@@ -8,17 +8,30 @@ export type DojoApp = {
   slug: string;
   started: boolean;
   level?: 'editor' | 'owner';
+  /** The id of the workspace the app is in. */
+  workspace?: string | number;
 };
+
+/** The id of a related document, whether Dojo sent it as an id or populated it. */
+export function relationId(value: unknown): string | number | undefined {
+  const id = value && typeof value === 'object' && 'id' in value ? value.id : value;
+
+  return typeof id === 'string' || typeof id === 'number' ? id : undefined;
+}
 
 /**
  * The app named by slug or id, read with `GET /api/apps/:app/cli`. Refuses digits that are one app's id
  * and another app's slug.
  */
 export async function findApp(dojo: DojoClient, ref: string): Promise<DojoApp> {
-  const app = await dojoJSON<Partial<DojoApp>>(dojo, `/api/apps/${segment(ref)}/cli`, {
-    what: `Couldn't find the app "${ref}"`,
-    needs: 'editor or owner access to the app',
-  });
+  const app = await dojoJSON<Partial<Omit<DojoApp, 'workspace'>> & { workspace?: unknown }>(
+    dojo,
+    `/api/apps/${segment(ref)}/cli`,
+    {
+      what: `Couldn't find the app "${ref}"`,
+      needs: 'editor or owner access to the app',
+    },
+  );
 
   if ((typeof app.id !== 'string' && typeof app.id !== 'number') || typeof app.slug !== 'string') {
     throw new ShareError("Couldn't read the app: Dojo sent no id or slug.");
@@ -38,7 +51,15 @@ export async function findApp(dojo: DojoClient, ref: string): Promise<DojoApp> {
     }
   }
 
-  return { id: app.id, slug: app.slug, started: app.started === true, level: app.level };
+  const workspace = relationId(app.workspace);
+
+  return {
+    id: app.id,
+    slug: app.slug,
+    started: app.started === true,
+    level: app.level,
+    ...(workspace !== undefined && { workspace }),
+  };
 }
 
 /** The live address of an app on Dojo. */

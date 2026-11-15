@@ -146,15 +146,17 @@ async function untilPaid(
 
 /**
  * For a change Dojo finishes by itself once a person pays at `link`, such as keeping a preview: shows the link and
- * waits for the payment. Without a terminal or `--wait` it exits 4 with the link. A link that isn't Dojo's upgrade
- * page is only printed, and answers false.
+ * waits for the payment. Without a terminal or `--wait` it exits 4 with the link. With `owner: false` it asks for a
+ * workspace owner to pay, and opens no browser. A link that isn't Dojo's upgrade page is only printed, and answers
+ * false.
  */
 export async function waitForPayment(
   dojo: DojoClient,
   io: DojoIO,
-  { link, why, then }: { link: string; why: string; then: string },
+  { link, why, then, owner = true }: { link: string; why: string; then: string; owner?: boolean },
 ): Promise<boolean> {
-  const paywall = readPaywall(why, dojo.url, link);
+  const read = readPaywall(why, dojo.url, link);
+  const paywall = read && { ...read, owner: read.owner && owner };
 
   if (!paywall) {
     say(io, `[frogbot] ${why} Pay for it at:`);
