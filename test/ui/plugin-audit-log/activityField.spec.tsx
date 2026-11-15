@@ -88,4 +88,106 @@ describe('ActivityField', () => {
     expect(text).toContain('Verlauf');
     expect(text).toContain('changed Dringlichkeit');
   });
+
+  it('shows old and new values by label, and a related record it cannot read by id', async () => {
+    const lookups: Array<{ collection: string; where: unknown }> = [];
+    const deals: NonNullable<ActivityFieldProps['req']>['payload'] = {
+      collections: {
+        'audit-logs': { config: { fields: [{ name: 'user', relationTo: 'users' }] } },
+        users: { config: { admin: { useAsTitle: 'fullName' }, fields: [] } },
+        companies: { config: { admin: { useAsTitle: 'name' }, fields: [] } },
+        deals: {
+          config: {
+            fields: [
+              {
+                name: 'stage',
+                type: 'select',
+                options: [
+                  { label: { en: 'Lead', de: 'Interessent' }, value: 'lead' },
+                  { label: 'Qualified', value: 'qualified' },
+                ],
+              },
+              { name: 'tags', type: 'select', hasMany: true, options: ['hot', 'cold'] },
+              { name: 'owner', type: 'relationship', relationTo: 'users' },
+              { name: 'party', type: 'relationship', relationTo: ['users', 'companies'] },
+              { name: 'won', type: 'checkbox' },
+              { name: 'notes', type: 'richText' },
+              { name: 'secret', type: 'text' },
+            ],
+          },
+        },
+      },
+      config: {},
+      findByID: () =>
+        Promise.resolve({
+          id: 1,
+          stage: 'qualified',
+          tags: [],
+          owner: 2,
+          party: null,
+          won: true,
+          notes: null,
+        }),
+      find: (args) => {
+        if (args.collection === 'audit-logs') {
+          return Promise.resolve({
+            docs: [
+              {
+                id: 'e1',
+                operation: 'update',
+                timestamp: '2026-01-02T00:00:00.000Z',
+                user: { id: 2, fullName: 'Ana Park', email: 'ana@example.com' },
+                changes: {
+                  stage: { old: 'lead', new: 'qualified' },
+                  tags: { old: ['hot'], new: ['hot', 'cold'] },
+                  owner: { old: 3, new: 2 },
+                  party: { old: null, new: { relationTo: 'companies', value: 7 } },
+                  won: { old: null, new: true },
+                  notes: { old: null, new: { root: {} } },
+                  secret: { old: 'a', new: 'b' },
+                },
+              },
+            ],
+          });
+        }
+
+        lookups.push({ collection: args.collection, where: args.where });
+
+        return Promise.resolve({
+          docs:
+            args.collection === 'users'
+              ? [{ id: 2, fullName: 'Ana Park' }]
+              : [{ id: 7, name: 'Acme' }],
+        });
+      },
+    };
+
+    const node = await ActivityField({
+      collectionSlug: 'deals',
+      i18n: { fallbackLanguage: 'en', language: 'de', t: (key: string) => key },
+      id: 1,
+      req: { payload: deals, user: { id: 2 } },
+    });
+
+    const html = renderToStaticMarkup(node);
+    const changes = [...html.matchAll(/<li class="fb-activity__change">(.*?)<\/li>/g)].map(
+      ([, text]) => text.replace(/<[^>]+>/g, ''),
+    );
+
+    expect(html).toContain(
+      '<strong>Ana Park</strong> changed Stage, Tags, Owner, Party, Won, Notes',
+    );
+    expect(html).not.toContain('Secret');
+    expect(changes).toEqual([
+      'Stage Interessent → Qualified',
+      'Tags hot → hot, cold',
+      'Owner #3 → Ana Park',
+      'Party None → Acme',
+      'Won No → Yes',
+    ]);
+    expect(lookups).toEqual([
+      { collection: 'users', where: { id: { in: [3, 2] } } },
+      { collection: 'companies', where: { id: { in: [7] } } },
+    ]);
+  });
 });

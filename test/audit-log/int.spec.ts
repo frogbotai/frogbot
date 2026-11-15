@@ -626,6 +626,31 @@ describe('audit log plugin integration', () => {
       ]);
     });
 
+    it('shows an option by label and a related record by title, read at render time', async () => {
+      const ledger = await booted.frogbot.create({
+        collection: 'ledgers',
+        data: { title: 'Q2', stage: 'lead' },
+        overrideAccess: true,
+      });
+
+      await booted.frogbot.update({
+        collection: 'ledgers',
+        id: ledger.id,
+        data: { stage: 'qualified', owner: accountId },
+        overrideAccess: true,
+      });
+
+      await vi.waitFor(async () => expect(await entries(ledger.id, 'ledgers')).toHaveLength(2));
+
+      const html = await activityAs('audit@frogbot.local', ledger.id);
+      const changes = [
+        ...(html ?? '').matchAll(/<li class="fb-activity__change">(.*?)<\/li>/g),
+      ].map(([, text]) => text.replace(/<[^>]+>/g, ''));
+
+      expect(texts(html)[0]).toBe('Someone changed Stage, Owner');
+      expect(changes).toEqual(['Stage Lead → Qualified', 'Owner None → audit@frogbot.local']);
+    });
+
     it('shows nothing for a record the user cannot read', async () => {
       const id = await ledgerWithHistory();
 

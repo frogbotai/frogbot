@@ -1,11 +1,21 @@
 import './ActivityField.css';
 
 import { PanelSection } from '@frogbotai/ui/admin';
-import { getTranslation, type I18nClient } from '@payloadcms/translations';
+import type { getTranslation, I18nClient } from '@payloadcms/translations';
 
 import { defaultAuditSlug } from '../collection.js';
 import { auditLogCustomKey } from '../fields/activity.js';
 import type { AuditOperation } from '../types.js';
+import {
+  type ConfigField,
+  type FieldInfo,
+  fieldInfo,
+  formatValue,
+  relatedIds,
+  titleOf,
+  type Titles,
+  translate,
+} from './values.js';
 
 type Doc = Record<string, unknown> & { id: number | string };
 
@@ -19,13 +29,12 @@ type FindArgs = {
 type ActivityPayload = {
   collections: Record<
     string,
-    | { config: { admin?: { useAsTitle?: string }; fields: Array<Record<string, unknown>> } }
-    | undefined
+    { config: { admin?: { useAsTitle?: string }; fields: ConfigField[] } } | undefined
   >;
   config: { custom?: Record<string, unknown> };
   find: (
     args: FindArgs & { limit: number; sort: string; where: Record<string, unknown> },
-  ) => Promise<{ docs: Entry[] }>;
+  ) => Promise<{ docs: Doc[] }>;
   findByID: (args: FindArgs & { disableErrors: true; id: number | string }) => Promise<Doc | null>;
 };
 
@@ -46,6 +55,8 @@ type Entry = {
   user?: Doc | number | string | null;
 };
 
+type Label = Parameters<typeof getTranslation>[0];
+
 const LIMIT = 20;
 
 function auditSlugOf(payload: ActivityPayload): string {
@@ -54,95 +65,91 @@ function auditSlugOf(payload: ActivityPayload): string {
   return options?.auditSlug ?? defaultAuditSlug;
 }
 
-function startCase(name: string): string {
-  return name
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/[_-]+/g, ' ')
-    .replace(/^./, (first) => first.toUpperCase());
-}
-
-type ConfigField = Record<string, unknown>;
-
-type Label = Parameters<typeof getTranslation>[0];
-
-type Translator = ActivityFieldProps['i18n'];
-
-function translate(label: unknown, i18n: Translator): string | undefined {
-  if (typeof label === 'string') return label;
-  if (!i18n || !label || (typeof label !== 'object' && typeof label !== 'function')) {
-    return undefined;
-  }
-
-  const text: unknown = getTranslation(label as Label, i18n as I18nClient);
-
-  return typeof text === 'string' && text ? text : undefined;
-}
-
-function childFields(field: ConfigField): ConfigField[] {
-  if (Array.isArray(field.tabs)) {
-    return (field.tabs as ConfigField[]).flatMap((tab) =>
-      typeof tab.name === 'string' ? [tab] : childFields(tab),
-    );
-  }
-
-  return Array.isArray(field.fields) ? (field.fields as ConfigField[]) : [];
-}
-
-function fieldLabels(
-  fields: ConfigField[],
-  i18n: Translator,
-  labels = new Map<string, string>(),
-): Map<string, string> {
-  for (const field of fields) {
-    if (typeof field.name === 'string') {
-      labels.set(field.name, translate(field.label, i18n) ?? startCase(field.name));
-    } else {
-      fieldLabels(childFields(field), i18n, labels);
-    }
-  }
-
-  return labels;
-}
-
-function userTitleKey(payload: ActivityPayload, auditSlug: string): string | undefined {
-  const userField = payload.collections[auditSlug]?.config.fields.find(
-    (field) => field.name === 'user',
-  );
-
-  const relationTo = userField?.relationTo;
-
-  return typeof relationTo === 'string'
-    ? payload.collections[relationTo]?.config.admin?.useAsTitle
-    : undefined;
+function titleKeyOf(payload: ActivityPayload, slug: unknown): string | undefined {
+  return typeof slug === 'string' ? payload.collections[slug]?.config.admin?.useAsTitle : undefined;
 }
 
 function userName(user: Entry['user'], titleKey: string | undefined): string {
-  if (!user || typeof user !== 'object') return 'Someone';
-
-  for (const key of [titleKey, 'name', 'email']) {
-    const value = key && key !== 'id' ? user[key] : undefined;
-    if (typeof value === 'string' && value) return value;
-  }
-
-  return 'Someone';
+  return (user && typeof user === 'object' && titleOf(user, titleKey)) || 'Someone';
 }
 
-function describe(entry: Entry, labels: Map<string, string>, readable: Doc): string {
-  if (entry.operation === 'create') return 'created this';
-  if (entry.operation === 'delete') return 'deleted this';
+async function relatedTitles(
+  payload: ActivityPayload,
+  req: unknown,
+  entries: Entry[],
+  info: Map<string, FieldInfo>,
+): Promise<Titles> {
+  const titles: Titles = new Map();
+  const lookups = [
+    ...relatedIds(
+      entries.map((entry) => entry.changes),
+      info,
+    ),
+  ].map(async ([collection, ids]) => {
+    if (!payload.collections[collection]) return;
 
-  const changed = Object.keys(entry.changes ?? {})
-    .filter((key) => key in readable && labels.has(key))
-    .map((key) => labels.get(key));
+    const { docs } = await payload
+      .find({
+        collection,
+        depth: 0,
+        limit: ids.size,
+        overrideAccess: false,
+        req,
+        sort: 'id',
+        where: { id: { in: [...ids] } },
+      })
+      .catch(() => ({ docs: [] as Doc[] }));
 
-  return changed.length ? `changed ${changed.join(', ')}` : 'edited this';
+    const titleKey = titleKeyOf(payload, collection);
+
+    for (const doc of docs) {
+      const title = titleOf(doc, titleKey);
+      if (title) titles.set(`${collection}:${doc.id}`, title);
+    }
+  });
+
+  await Promise.all(lookups);
+
+  return titles;
+}
+
+type Change = { from: string; label: string; to: string };
+
+type Described = { changes: Change[]; summary: string };
+
+function describe(
+  entry: Entry,
+  info: Map<string, FieldInfo>,
+  format: (field: FieldInfo['field'], value: unknown) => string | undefined,
+): Described {
+  if (entry.operation === 'create') return { changes: [], summary: 'created this' };
+  if (entry.operation === 'delete') return { changes: [], summary: 'deleted this' };
+
+  const keys = Object.keys(entry.changes ?? {}).filter((key) => info.has(key));
+  if (!keys.length) return { changes: [], summary: 'edited this' };
+
+  const changes = keys.flatMap((key) => {
+    const { field, label } = info.get(key) as FieldInfo;
+    const diff = (entry.changes?.[key] ?? {}) as { new?: unknown; old?: unknown };
+    const from = format(field, diff.old);
+    const to = format(field, diff.new);
+
+    return from === undefined || to === undefined ? [] : [{ from, label, to }];
+  });
+
+  return {
+    changes,
+    summary: `changed ${keys.map((key) => info.get(key)?.label).join(', ')}`,
+  };
 }
 
 /**
  * Lists the open record's audit entries, newest first. Both the record and its entries are read
  * with the signed-in user's access, and a change names only fields the user can read, so a
- * record the user can't read shows nothing. Entries older than the record are skipped, since a
- * database can reuse a deleted record's id. Renders nothing on a create form.
+ * record the user can't read shows nothing. A change to an option, related record, text, number,
+ * date or checkbox also shows its old and new value, with options by label and related records
+ * by title; a related record the user can't read shows its ID. Entries older than the record are
+ * skipped, since a database can reuse a deleted record's id. Renders nothing on a create form.
  */
 export async function ActivityField({ collectionSlug, field, i18n, id, req }: ActivityFieldProps) {
   if (!req?.user || !collectionSlug || id === undefined || id === null || id === '') return null;
@@ -165,7 +172,7 @@ export async function ActivityField({ collectionSlug, field, i18n, id, req }: Ac
   if (!record) return null;
 
   const auditSlug = auditSlugOf(payload);
-  const { docs: entries } = await payload
+  const { docs } = await payload
     .find({
       collection: auditSlug,
       depth: 1,
@@ -183,31 +190,58 @@ export async function ActivityField({ collectionSlug, field, i18n, id, req }: Ac
         ],
       },
     })
-    .catch(() => ({ docs: [] as Entry[] }));
+    .catch(() => ({ docs: [] as Doc[] }));
 
-  const titleKey = userTitleKey(payload, auditSlug);
-  const labels = fieldLabels(collection.config.fields, i18n);
+  const entries = docs as Entry[];
+  const userField = payload.collections[auditSlug]?.config.fields.find(
+    (auditField) => auditField.name === 'user',
+  );
+
+  const userTitleKey = titleKeyOf(payload, userField?.relationTo);
+  const info = fieldInfo(collection.config.fields, i18n);
+  const readable = new Map([...info].filter(([key]) => key in record));
+  const titles = await relatedTitles(payload, req, entries, readable);
   const heading = translate(field?.label, i18n) ?? 'Activity';
   const formatter = new Intl.DateTimeFormat(i18n?.language, {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
 
+  const dates = new Intl.DateTimeFormat(i18n?.language, { dateStyle: 'medium' });
+  const format = (config: FieldInfo['field'], value: unknown) =>
+    formatValue(config, value, titles, i18n, dates);
+
   return (
     <PanelSection className="fb-activity" heading={heading}>
       {entries.length ? (
         <ol className="fb-activity__list">
-          {entries.map((entry) => (
-            <li className="fb-activity__entry" key={entry.id}>
-              <span className="fb-activity__dot" />
-              <p className="fb-activity__text">
-                <strong>{userName(entry.user, titleKey)}</strong> {describe(entry, labels, record)}
-              </p>
-              <time className="fb-activity__time" dateTime={entry.timestamp}>
-                {formatter.format(new Date(entry.timestamp))}
-              </time>
-            </li>
-          ))}
+          {entries.map((entry) => {
+            const { changes, summary } = describe(entry, readable, format);
+
+            return (
+              <li className="fb-activity__entry" key={entry.id}>
+                <span className="fb-activity__dot" />
+                <p className="fb-activity__text">
+                  <strong>{userName(entry.user, userTitleKey)}</strong> {summary}
+                </p>
+                {changes.length ? (
+                  <ul className="fb-activity__changes">
+                    {changes.map((change) => (
+                      <li className="fb-activity__change" key={change.label}>
+                        <span className="fb-activity__field">{change.label}</span>{' '}
+                        <span className="fb-activity__from">{change.from}</span>
+                        {' → '}
+                        <span className="fb-activity__to">{change.to}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                <time className="fb-activity__time" dateTime={entry.timestamp}>
+                  {formatter.format(new Date(entry.timestamp))}
+                </time>
+              </li>
+            );
+          })}
         </ol>
       ) : (
         <p className="fb-activity__empty">No activity yet.</p>

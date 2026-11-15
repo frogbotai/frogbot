@@ -55,6 +55,15 @@ const Ledgers: CollectionConfig = {
       type: 'number',
       access: { read: ({ req }) => req.user?.email === 'audit@frogbot.local' },
     },
+    {
+      name: 'stage',
+      type: 'select',
+      options: [
+        { label: 'Lead', value: 'lead' },
+        { label: 'Qualified', value: 'qualified' },
+      ],
+    },
+    { name: 'owner', type: 'relationship', relationTo: 'accounts' },
   ],
 };
 
