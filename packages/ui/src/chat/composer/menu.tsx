@@ -11,7 +11,7 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
 } from 'lexical';
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { composing } from './keys.js';
@@ -109,7 +109,7 @@ export function ComposerMenu<T extends ComposerMenuItem>(props: ComposerMenuProp
     return mergeRegister(editor.registerUpdateListener(update), () => controller?.abort());
   }, [editor]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = editor.getRootElement();
 
     if (!root || !open) return;
