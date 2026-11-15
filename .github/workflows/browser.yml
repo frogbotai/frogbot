@@ -41,13 +41,14 @@ jobs:
               --project plugin-import-export --project sign-in-two-factor --project linked-accounts
               --project sign-in-passwords --project sign-in-only --project first-user-blank
             browsers: chromium
-          # Their sign-in setup projects run in Chromium.
+          # Sign-in setup projects run in Chromium. chat-assets-webkit runs after chat-assets and
+          # chat-assets-firefox on the same server, so its group needs all three browsers.
           - group: firefox
-            projects: --project question-firefox --project custom-field-firefox --project chat-assets-firefox
+            projects: --project question-firefox --project custom-field-firefox
             browsers: chromium firefox
           - group: webkit
             projects: --project question-webkit --project custom-field-webkit --project chat-assets-webkit
-            browsers: chromium webkit
+            browsers: chromium firefox webkit
     name: browser (${{ matrix.group }})
     steps:
       - uses: actions/checkout@v5
