@@ -312,7 +312,11 @@ describe('frogbot dojo actions beyond the basics', () => {
   it.each([
     [['apps', 'stop', 'deals'], 'rerun with --yes'],
     [['deployments', 'rollback', 'deals'], 'Usage: frogbot deployments rollback <app> <id>'],
-    [['billing', 'add-funds', '--amount', '12.5'], 'Give --amount in whole dollars'],
+    [
+      ['billing', 'add-funds', '--amount', '12.5'],
+      'Give --amount as whole dollars from 10 to 1000',
+    ],
+    [['billing', 'add-funds', '--amount', '5'], 'Give --amount as whole dollars from 10 to 1000'],
     [['activity', '--limit', '500'], 'Give --limit as a whole number from 1 to 100.'],
   ])('exits 2 before calling Dojo for %j', async (args, message) => {
     const { dojo, env, cwd } = await setup();

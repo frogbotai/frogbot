@@ -114,8 +114,8 @@ export const billing: Noun = {
       run: async (input) => {
         const amount = Number(input.values.amount ?? '20');
 
-        if (!Number.isInteger(amount) || amount <= 0) {
-          throw new ShareError(`Give --amount in whole dollars, such as 20.`, 2);
+        if (!Number.isInteger(amount) || amount < 10 || amount > 1000) {
+          throw new ShareError(`Give --amount as whole dollars from 10 to 1000, such as 20.`, 2);
         }
 
         const { id, slug } = await workspace(input);
