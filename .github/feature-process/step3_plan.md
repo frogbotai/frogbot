@@ -8,7 +8,13 @@ A fresh planner writes `step3_plan.md` from the approved spec and the research S
 - Give each alternative one line, with why not.
 - Each stage is one fresh worker's job. `Verify:` is the exact command that proves it; `Evidence:` is where the result is kept, a path or a ledger level (`typecheck`, `unit`, `int`, `ui`).
 - A plan has at most 3 stages; split a bigger ticket.
-- A new decision found while planning becomes a card in the spec and goes back to the inbox. Don't settle it in the plan.
+- A new decision found while planning becomes a card in the spec, with a recommended option, and goes back to the inbox. Don't settle it in the plan. In the cloud, an unanswered card stops the build from starting ([From plan to build](cloud.md#from-plan-to-build)). A new decision is anything in [What needs the owner](cloud.md#what-needs-the-owner) that the spec, the owner's answers and the rulings don't settle:
+  - what users see or do, or the shape of an API, config or stored data;
+  - a change to data that can't be undone, or a new paid service or dependency;
+  - dropping or changing something the spec promised, or finding the spec can't work as written.
+
+  File layout, internal names and the test approach are the planner's call: say what you chose in the plan. When unsure, write the card.
+
 - Run `pnpm check ticket-docs <n>` before returning.
 
 ## Template
