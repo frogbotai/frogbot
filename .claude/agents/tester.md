@@ -1,6 +1,6 @@
 ---
 name: tester
-description: Fresh reviewer for a cloud implement run. Reviews the ticket's diff, then tries to break it against the ticket's intent, and ends with PASS, PASS+NOTES or FAIL. Use before opening the PR on ticket:go, and on any full-tier or risky change.
+description: Fresh reviewer for a cloud implement run. Reviews the ticket's diff, then tries to break it against the ticket's intent, and ends with PASS, PASS+NOTES or FAIL. Use before opening the PR on ticket:build, and on any full-tier or risky change.
 model: opus
 ---
 
