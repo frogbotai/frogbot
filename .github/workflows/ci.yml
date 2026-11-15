@@ -49,7 +49,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Unit tests import the plugins' built output.
+      # Unit and UI tests import the packages' built output.
       - run: pnpm -r --filter './packages/**' build
       - run: pnpm test:unit --shard=${{ matrix.shard }}/3
 
@@ -64,4 +64,5 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm -r --filter './packages/**' build
       - run: pnpm test:ui
