@@ -23,12 +23,12 @@ const config = {
       ],
     },
   },
-  routers: { smart: { model: 'anthropic/claude-sonnet-4-5' } },
+  routers: { smart: { model: 'anthropic/claude-haiku-4-5' } },
 } as unknown as SanitizedAIConfig;
 
 describe('resolveModelInputs', () => {
   it('reads PDF input from the catalog for a built-in model that lists it', () => {
-    expect(resolveModelInputs({ config, model: 'anthropic/claude-sonnet-4-5' })).toEqual({
+    expect(resolveModelInputs({ config, model: 'anthropic/claude-haiku-4-5' })).toEqual({
       inputs: ['text', 'image', 'pdf'],
       provider: 'anthropic',
     });

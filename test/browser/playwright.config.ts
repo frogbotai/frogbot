@@ -224,7 +224,7 @@ const servers: Record<string, Server> = {
   },
   'sign-in-two-factor': {
     fixture: 'sign-in',
-    port: testPort(3145),
+    port: testPort(3147),
     database: 'frogbot.two-factor.db',
   },
   'linked-accounts': {

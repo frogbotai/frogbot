@@ -30,3 +30,39 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: mkdir -p .idea/tmp
       - run: pnpm check
+
+  # Not in the ruleset's required checks yet, so a red test doesn't block merges or
+  # ticket:automerge. Add `unit` and `ui` there once main is green.
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    name: unit (${{ matrix.shard }}/3)
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Unit and UI tests import the packages' built output.
+      - run: pnpm -r --filter './packages/**' build
+      - run: pnpm test:unit --shard=${{ matrix.shard }}/3
+
+  ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r --filter './packages/**' build
+      - run: pnpm test:ui

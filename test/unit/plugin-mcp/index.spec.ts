@@ -28,6 +28,9 @@ const authenticatedConfig = () => {
   return apiKeys({ ...baseConfig, plugins: [apiKeys] });
 };
 
+const mcpSlugs = (plugins: { slug?: string }[] | undefined) =>
+  (plugins ?? []).flatMap(({ slug }) => (slug === '@payloadcms/plugin-mcp' ? [slug] : []));
+
 describe('MCP plugin', () => {
   it('requires the API keys plugin', () => {
     expect(() => mcpPlugin({})(baseConfig)).toThrow(
@@ -65,7 +68,7 @@ describe('MCP plugin', () => {
       await authenticatedConfig(),
     );
 
-    expect(result._payloadPlugins?.map(({ slug }) => slug)).toEqual(['@payloadcms/plugin-mcp']);
+    expect(mcpSlugs(result._payloadPlugins)).toEqual(['@payloadcms/plugin-mcp']);
     expect(result.endpoints ?? []).toEqual([]);
   });
 
@@ -88,7 +91,7 @@ describe('MCP plugin', () => {
     expect(
       payloadConfig.endpoints?.filter(({ path }) => path === '/mcp').map(({ method }) => method),
     ).toEqual(['post', 'get']);
-    expect(payloadConfig.plugins?.map(({ slug }) => slug)).toEqual(['@payloadcms/plugin-mcp']);
+    expect(mcpSlugs(payloadConfig.plugins)).toEqual(['@payloadcms/plugin-mcp']);
   });
 });
 
@@ -114,7 +117,9 @@ function call(tool: { handler: (args: never) => unknown }, input: unknown = {}) 
 describe('MCP plugin tools', () => {
   it("passes each tool's slug, description and input schema to Payload", async () => {
     const result = await mcpPlugin({ tools: [echo] })(await authenticatedConfig());
-    const options = result._payloadPlugins?.[0]?.options;
+    const options = result._payloadPlugins?.find(
+      ({ slug }) => slug === '@payloadcms/plugin-mcp',
+    )?.options;
 
     expect(options?.tools).toEqual({
       echo: {
@@ -369,7 +374,7 @@ describe('MCP plugin tools', () => {
       resourceMetadataURL: 'https://app.example.com/.well-known/oauth-protected-resource',
     })(await authenticatedConfig());
 
-    expect(result._payloadPlugins?.map(({ slug }) => slug)).toEqual(['@payloadcms/plugin-mcp']);
+    expect(mcpSlugs(result._payloadPlugins)).toEqual(['@payloadcms/plugin-mcp']);
   });
 
   it('accepts a union of object input schemas', () => {

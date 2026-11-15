@@ -475,32 +475,26 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
     ]);
   });
 
-  it('uses factory auth only for an owner without a connection', async () => {
-    const input = emailInput('factory');
+  it.each(['mail', 'required'] as const)(
+    'refuses an owner without a connection on %s instead of using the code credential',
+    async (instance) => {
+      const input = emailInput('unlinked');
 
-    expect((await direct({ user: unconnected, input })).status).toBe(200);
-    expect((await agent({ user: unconnected, input })).part.state).toBe('output-available');
-    expect(providers.requests.resend.map(({ authorization }) => authorization)).toEqual([
-      'Bearer factory-key',
-      'Bearer factory-key',
-    ]);
+      expect(await direct({ user: unconnected, input, instance })).toMatchObject({
+        status: 422,
+        body: { name: 'ConnectionError', code: 'missing' },
+      });
 
-    const missing = await direct({ user: unconnected, input, instance: 'required' });
+      const generated = await agent({ user: unconnected, input, instance });
 
-    expect(missing).toMatchObject({
-      status: 422,
-      body: { name: 'ConnectionError', code: 'missing' },
-    });
-
-    const generated = await agent({ user: unconnected, input, instance: 'required' });
-
-    expect(generated.part).toMatchObject({
-      state: 'output-error',
-      errorText: expect.stringContaining("Connection for 'resend' is not linked."),
-    });
-    expect(generated.body.text).toContain("Connection for 'resend' is not linked.");
-    expect(providers.requests.resend).toHaveLength(2);
-  });
+      expect(generated.part).toMatchObject({
+        state: 'output-error',
+        errorText: expect.stringContaining("Connection for 'resend' is not linked."),
+      });
+      expect(generated.body.text).toContain("Connection for 'resend' is not linked.");
+      expect(providers.requests.resend).toEqual([]);
+    },
+  );
 
   it('keeps an in-flight request on its original credential while new calls use the rotated key', async () => {
     let release!: () => void;
@@ -648,7 +642,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
       body: { prompt: JSON.stringify(input) },
     });
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(401);
     expect(providers.requests.model).toEqual([]);
     expect(providers.requests.resend).toEqual([]);
   });

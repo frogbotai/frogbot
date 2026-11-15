@@ -292,7 +292,7 @@ describe('skill distribution local installation', () => {
       if (preparation) fs.rmSync(preparation.root, { recursive: true, force: true });
     });
 
-    it('packs all 24 unchanged skill files, every template, bin and synchronized version', () => {
+    it('packs all 27 unchanged skill files, every template, bin and synchronized version', () => {
       expectFullSkill(path.join(packed, 'dist/skills/frogbot'));
 
       expect(readJSON<{ version: string }>(path.join(packed, 'package.json')).version).toBe(

@@ -54,7 +54,7 @@ function setup({ revoked = false } = {}) {
       }),
     ),
     findByID: vi.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),
-    update: vi.fn().mockResolvedValue({}),
+    db: { updateOne: vi.fn().mockResolvedValue(undefined) },
     auth: vi.fn().mockResolvedValue({ permissions: {}, user: null }),
   };
 

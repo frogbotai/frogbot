@@ -44,7 +44,7 @@ const app = async (plugins: Plugin[]) =>
       secret: 'test-secret',
       db: { defaultIDType: 'number' } as FrogBotConfig['db'],
       ai: { providers: { anthropic: { apiKey: 'sk-test' } } },
-      agents: [{ slug: 'support', model: 'anthropic/claude-sonnet-4-5', instructions: 'Help.' }],
+      agents: [{ slug: 'support', model: 'anthropic/claude-haiku-4-5', instructions: 'Help.' }],
       collections: [
         { slug: 'users', auth: true, fields: [] },
         { slug: 'leads', admin: { icon: 'people' }, fields: [] },

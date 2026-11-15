@@ -397,7 +397,7 @@ describe('catalog sync modalities', () => {
   });
 
   it.each([
-    ['anthropic/claude-sonnet-4-5', ['text', 'image', 'pdf']],
+    ['anthropic/claude-haiku-4-5', ['text', 'image', 'pdf']],
     ['openai/gpt-5', ['text', 'image']],
   ])('publishes the models.dev input types for %s', (id, input) => {
     expect(DEFAULT_MODEL_CATALOG.get(id)?.modalities.input).toEqual(input);

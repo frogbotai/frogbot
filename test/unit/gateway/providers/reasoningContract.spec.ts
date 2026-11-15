@@ -142,7 +142,7 @@ describe('reasoning variant wire contract', () => {
 
   it('Anthropic sends thinking.budget_tokens for budget presets', async () => {
     const body = await sendVariant({
-      modelId: 'anthropic/claude-sonnet-4-5',
+      modelId: 'anthropic/claude-haiku-4-5',
       options: [{ type: 'budget_tokens', min: 1024 }],
       outputLimit: 64_000,
       key: 'high',
@@ -154,7 +154,7 @@ describe('reasoning variant wire contract', () => {
 
   it('Anthropic Max budget leaves half the output limit for the answer', async () => {
     const body = await sendVariant({
-      modelId: 'anthropic/claude-sonnet-4-5',
+      modelId: 'anthropic/claude-haiku-4-5',
       options: [{ type: 'budget_tokens', min: 1024 }],
       outputLimit: 64_000,
       key: 'max',

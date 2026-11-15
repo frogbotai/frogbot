@@ -102,7 +102,7 @@ app.mount('/v1/chat', gw.routes['/chat/completions'].handler)
 Skip HTTP entirely and resolve a model for direct AI SDK calls — useful when you already have a `generateText`/`streamText` call site and just want the gateway's provider resolution and hooks.
 
 ```ts
-const model = gw.chatModel('anthropic/claude-sonnet-4-5')
+const model = gw.chatModel('anthropic/claude-sonnet-5-5')
 ```
 
 `gw.operation({ operation, ... })` exposes the full lifecycle (model resolution, hooks, usage aggregation) for building custom in-process call sites — see [Hooks](/gateway/hooks).
@@ -112,7 +112,7 @@ import { generateText } from 'ai'
 
 const op = gw.operation({
   operation: 'chat.completions',
-  model: 'anthropic/claude-sonnet-4-5',
+  model: 'anthropic/claude-sonnet-5-5',
   context: { userId: 'user-123' }
 })
 
