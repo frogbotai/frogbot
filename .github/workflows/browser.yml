@@ -44,7 +44,8 @@ jobs:
               --project question-firefox --project question-webkit
               --project custom-field-firefox --project custom-field-webkit
               --project chat-assets-firefox --project chat-assets-webkit
-            browsers: firefox webkit
+            # Their sign-in setup projects run in Chromium.
+            browsers: chromium firefox webkit
     name: browser (${{ matrix.group }})
     steps:
       - uses: actions/checkout@v5
