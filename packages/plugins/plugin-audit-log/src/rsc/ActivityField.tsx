@@ -88,7 +88,11 @@ function titleFormat(
 }
 
 function userName(user: Entry['user'], titleKey: string | undefined): string {
-  return (user && typeof user === 'object' && titleOf(user, titleKey)) || 'Someone';
+  if (!user || typeof user !== 'object') return 'Someone';
+
+  const email = typeof user.email === 'string' && user.email ? user.email : undefined;
+
+  return titleOf(user, titleKey) ?? email ?? `#${user.id}`;
 }
 
 async function relatedTitles(
