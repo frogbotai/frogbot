@@ -691,7 +691,7 @@ describe('frogbot generate:types', () => {
       const output = await readFile(outputPath, 'utf-8');
 
       expect(output).toContain('assistant: unknown;');
-      expect(output).toContain("'anthropic/claude-sonnet-4-5'");
+      expect(output).toContain("'anthropic/claude-haiku-4-5'");
       expect(output).not.toContain("'openai/gpt-4o'");
     });
 
@@ -764,7 +764,7 @@ describe('frogbot generate:types', () => {
       const output = await generateModelTypes({ providers: { openai: true } });
 
       expect(output).toContain("'openai/gpt-4o'");
-      expect(output).not.toContain('anthropic/claude-sonnet-4-5');
+      expect(output).not.toContain('anthropic/claude-haiku-4-5');
     });
 
     it('emits the complete Google model union after catalog mode corrections', async () => {
@@ -895,7 +895,7 @@ describe('frogbot generate:types', () => {
         providers: { anthropic: true, openai: true },
       });
 
-      expect(output).toContain("'anthropic/claude-sonnet-4-5'");
+      expect(output).toContain("'anthropic/claude-haiku-4-5'");
       expect(output).toContain("'openai/gpt-4o'");
     });
 
@@ -949,7 +949,7 @@ describe('frogbot generate:types', () => {
 
       expect(openai).toContain("'openai/gpt-4o'");
       expect(anthropic).not.toContain("'openai/gpt-4o'");
-      expect(anthropic).toContain("'anthropic/claude-sonnet-4-5'");
+      expect(anthropic).toContain("'anthropic/claude-haiku-4-5'");
     });
   });
 });

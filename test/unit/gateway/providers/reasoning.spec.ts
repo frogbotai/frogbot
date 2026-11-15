@@ -124,7 +124,7 @@ describe('resolveReasoningVariants — Anthropic', () => {
 
   it('labels budget presets with their token counts', () => {
     const variants = resolveReasoningVariants({
-      modelId: 'anthropic/claude-sonnet-4-5',
+      modelId: 'anthropic/claude-haiku-4-5',
       options: [budget(1024)],
       outputLimit: 64_000,
     });
@@ -150,7 +150,7 @@ describe('resolveReasoningVariants — Anthropic', () => {
   it('turns effort claims on manual-thinking models into budget presets', () => {
     expect(
       keys({
-        modelId: 'anthropic/claude-sonnet-4-5',
+        modelId: 'anthropic/claude-haiku-4-5',
         options: [effort('low', 'high')],
         outputLimit: 64_000,
       }),
@@ -192,18 +192,18 @@ describe('resolveReasoningVariants — Anthropic', () => {
   });
 
   it('offers no budget presets without an output limit or maximum', () => {
-    expect(keys({ modelId: 'anthropic/claude-sonnet-4-5', options: [budget(1024)] })).toEqual([]);
+    expect(keys({ modelId: 'anthropic/claude-haiku-4-5', options: [budget(1024)] })).toEqual([]);
   });
 
   it('offers no budget presets when the output limit is below the minimum budget', () => {
     expect(
-      keys({ modelId: 'anthropic/claude-sonnet-4-5', options: [budget(1024)], outputLimit: 1000 }),
+      keys({ modelId: 'anthropic/claude-haiku-4-5', options: [budget(1024)], outputLimit: 1000 }),
     ).toEqual([]);
   });
 
   it('caps budget presets at half the output limit to leave room for the answer', () => {
     const variants = resolveReasoningVariants({
-      modelId: 'anthropic/claude-sonnet-4-5',
+      modelId: 'anthropic/claude-haiku-4-5',
       options: [budget(1024, 100_000)],
       outputLimit: 8192,
     });
@@ -216,7 +216,7 @@ describe('resolveReasoningVariants — Anthropic', () => {
 
   it('offers only High when the capped maximum equals the minimum budget', () => {
     const variants = resolveReasoningVariants({
-      modelId: 'anthropic/claude-sonnet-4-5',
+      modelId: 'anthropic/claude-haiku-4-5',
       options: [budget(1024)],
       outputLimit: 2048,
     });
@@ -226,7 +226,7 @@ describe('resolveReasoningVariants — Anthropic', () => {
 
   it('offers no budget presets when half the output limit is below the minimum budget', () => {
     expect(
-      keys({ modelId: 'anthropic/claude-sonnet-4-5', options: [budget(1024)], outputLimit: 2000 }),
+      keys({ modelId: 'anthropic/claude-haiku-4-5', options: [budget(1024)], outputLimit: 2000 }),
     ).toEqual([]);
   });
 });
@@ -511,11 +511,12 @@ describe('resolveReasoningVariants — OpenAI-compatible families', () => {
     ).toEqual(['none', 'high']);
   });
 
-  it('offers nothing for Mistral GLM 5.3, whose effort the SDK never sends', () => {
-    expect(
-      keys({ modelId: 'mistral/zai-glm-5-3', options: [effort('low', 'high', 'max')] }),
-    ).toEqual([]);
-  });
+  it.each(['mistral/zai-glm-5-3', 'mistral/mistral-large-latest'])(
+    'offers nothing for %s, whose effort the SDK never sends',
+    (modelId) => {
+      expect(keys({ modelId, options: [effort('low', 'medium', 'high')] })).toEqual([]);
+    },
+  );
 
   it('sends Perplexity efforts as snake_case reasoning_effort', () => {
     const low = variant(

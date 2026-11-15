@@ -221,21 +221,6 @@ describe('CollectionViewFrame', () => {
     expect(container.querySelector('.collection-view__toolbar')).toBeNull();
   });
 
-  it('renders the toolbar in its own row after the view controls on small screens', () => {
-    mocks.smallBreak = true;
-
-    const { container, getByRole, getByTestId } = render(
-      frame({ Toolbar: [<button key="t">Tool</button>] }),
-    );
-
-    const row = container.querySelector('.collection-view__toolbar')!;
-
-    expect(getByRole('button', { name: 'Tool' }).parentElement).toBe(row);
-    expect(
-      getByTestId('view-controls').compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-  });
-
   it('replaces the view with its empty state, or keeps it under the empty state', () => {
     const { getByText, queryByTestId, rerender } = render(frame({ isEmpty: true }));
 

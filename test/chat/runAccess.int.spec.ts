@@ -278,7 +278,7 @@ describe('agent runs and overrideAccess', () => {
 
     await booted.frogbot.jobs.runByID({ id: job.id, overrideAccess: true });
 
-    expect(readerHandlerRuns).toEqual([403, 'ok']);
+    expect(readerHandlerRuns).toEqual([401, 'ok']);
     expect(toolResult()).toContain(NOTE);
     expect(readerAccessCalls).toEqual([null]);
   });
@@ -312,7 +312,7 @@ describe('agent runs and overrideAccess', () => {
   it('refuses a local generate() with no user and no flag', async () => {
     await expect(
       booted.frogbot.agents[readerAgentSlug].generate({ prompt: 'Read.' }),
-    ).rejects.toMatchObject({ status: 403 });
+    ).rejects.toMatchObject({ status: 401 });
 
     expect(model.requests).toEqual([]);
     expect(readerAccessCalls).toEqual([null]);

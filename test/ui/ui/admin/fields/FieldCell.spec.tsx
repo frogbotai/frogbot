@@ -8,7 +8,12 @@ import type {
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { DefaultCell, getEntityConfig, useTranslation } = vi.hoisted(() => ({
+const { CheckboxInput, DefaultCell, getEntityConfig, useTranslation } = vi.hoisted(() => ({
+  CheckboxInput: vi.fn(
+    ({ checked, 'aria-label': label }: { checked?: boolean; 'aria-label'?: string }) => (
+      <input aria-label={label} checked={checked} readOnly type="checkbox" />
+    ),
+  ),
   DefaultCell: vi.fn(({ cellData }: { cellData?: unknown }) => (
     <span data-testid="default-cell">{typeof cellData === 'string' ? cellData : null}</span>
   )),
@@ -17,6 +22,7 @@ const { DefaultCell, getEntityConfig, useTranslation } = vi.hoisted(() => ({
 }));
 
 vi.mock('@payloadcms/ui', () => ({
+  CheckboxInput,
   DefaultCell,
   useAuth: () => ({ permissions: { collections: { tasks: { update: true } } } }),
   useConfig: () => ({ config: { routes: { api: '/api' } }, getEntityConfig }),
@@ -596,20 +602,21 @@ describe('FieldCell', () => {
       expect(container.textContent).toBe('$12.50');
     });
 
-    it('passes a false checkbox source value through as false', () => {
-      const props = cell(virtualField('tags.archived'), false);
+    it('draws a false checkbox source value as an unchecked checkbox', () => {
+      render(<FieldCell {...cell(virtualField('tags.archived'), false)} />);
 
-      render(<FieldCell {...props} />);
+      const box = screen.getByRole<HTMLInputElement>('checkbox', { name: 'Lookup' });
 
-      expect(calls()).toStrictEqual([
-        { ...props, field: { ...archived, label: 'Lookup', name: 'lookup' } },
-      ]);
+      expect(box.checked).toBe(false);
+      expect(calls()).toStrictEqual([]);
     });
 
     it('keeps false checkbox values in a list', () => {
       render(<FieldCell {...cell(virtualField('tags.archived'), [false, null, true])} />);
 
-      expect(calls().map((props) => props.cellData)).toStrictEqual([false, true]);
+      expect(
+        screen.getAllByRole<HTMLInputElement>('checkbox').map((box) => box.checked),
+      ).toStrictEqual([false, true]);
     });
 
     it('falls back to the default cell for virtual fields that point at each other', () => {

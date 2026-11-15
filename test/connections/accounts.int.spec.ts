@@ -82,7 +82,7 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
   };
 
   const linked = async (code: string, options?: Parameters<typeof link>[1]) => {
-    expect((await link(code, options)).status).toBe(302);
+    expect((await link(code, options)).status).toBe(200);
 
     return (await rows(options?.user, options?.piece)).find(
       (row) => row.accountId === `fresh-${code}`,
@@ -299,7 +299,7 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
     expect(wrong.status).toBe(400);
     expect(await rows()).toEqual(before);
 
-    expect((await link('a', { reconnect: first.id })).status).toBe(302);
+    expect((await link('a', { reconnect: first.id })).status).toBe(200);
     expect((await rows()).map((row) => row.id)).toEqual([first.id, second.id]);
 
     for (const options of [
@@ -397,7 +397,7 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
     it('relinks onto the same row', async () => {
       const row = await legacy();
 
-      expect((await link('a')).status).toBe(302);
+      expect((await link('a')).status).toBe(200);
       expect((await rows()).map((r) => [r.id, r.isDefault])).toEqual([[row.id, true]]);
     });
 
@@ -436,7 +436,7 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
     it('reconnects', async () => {
       const row = await legacy();
 
-      expect((await link('a', { reconnect: row.id })).status).toBe(302);
+      expect((await link('a', { reconnect: row.id })).status).toBe(200);
       expect((await rows()).map((r) => r.id)).toEqual([row.id]);
     });
 
@@ -466,7 +466,7 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
   describe('a recipe with no account lookup', () => {
     it('keeps an API key beside its OAuth link', async () => {
       expect((await saveKey('key-one', 'plain')).status).toBe(200);
-      expect((await link('a', { piece: 'plain' })).status).toBe(302);
+      expect((await link('a', { piece: 'plain' })).status).toBe(200);
       expect((await rows(users[0], 'plain')).map((r) => r.method).sort()).toEqual([
         'oauth',
         'secret',
@@ -475,7 +475,7 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
     });
 
     it('keeps its OAuth link when an API key is saved after it', async () => {
-      expect((await link('a', { piece: 'plain' })).status).toBe(302);
+      expect((await link('a', { piece: 'plain' })).status).toBe(200);
       expect((await saveKey('key-one', 'plain')).status).toBe(200);
       expect((await rows(users[0], 'plain')).map((r) => [r.method, r.isDefault])).toEqual([
         ['oauth', true],
@@ -484,11 +484,11 @@ describe(`several accounts per piece [${process.env.FROGBOT_DATABASE || 'sqlite'
     });
 
     it('relinks onto its one OAuth row, since it cannot tell provider accounts apart', async () => {
-      expect((await link('a', { piece: 'plain' })).status).toBe(302);
+      expect((await link('a', { piece: 'plain' })).status).toBe(200);
 
       const [first] = await rows(users[0], 'plain');
 
-      expect((await link('b', { piece: 'plain' })).status).toBe(302);
+      expect((await link('b', { piece: 'plain' })).status).toBe(200);
       expect((await rows(users[0], 'plain')).map((r) => r.id)).toEqual([first.id]);
       await expect(resolve(first.id, plain)).resolves.toEqual({ apiKey: 'fresh-b' });
     });

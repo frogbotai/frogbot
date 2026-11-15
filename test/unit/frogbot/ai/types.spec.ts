@@ -90,7 +90,7 @@ describe('AI config types', () => {
     expectTypeOf<NonNullable<AIConfig['defaultModel']>>().toEqualTypeOf<ModelId>();
     expectTypeOf<'openai/gpt-4o'>().toMatchTypeOf<AgentModelId>();
     expectTypeOf<'bedrock/us.anthropic.claude-sonnet-4-6'>().toMatchTypeOf<ModelId>();
-    expectTypeOf<'anthropic/claude-sonnet-4-5'>().toMatchTypeOf<AgentConfig['model']>();
+    expectTypeOf<'anthropic/claude-haiku-4-5'>().toMatchTypeOf<AgentConfig['model']>();
   });
 
   it('rejects arbitrary model strings', () => {

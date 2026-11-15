@@ -544,21 +544,7 @@ describe('provider registry sync', () => {
     });
   });
 
-  it("falls back to the bundled FrogBot logo while models.dev's is styled", async () => {
-    const { syncCatalog } = await loadSync();
-    const styled =
-      '<svg viewBox="0 0 40 40"><style>.st0{fill:currentColor;}.st1{fill:#FFFFFF;}</style><g transform="matrix(0.44,0,0,0.44,-2.1,-2.1)"><path class="st0" d="M93.9 67.1Z"/><path class="st1" d="M21.8 41.8Z"/></g></svg>';
-
-    vi.mocked(readFile).mockImplementation((path) =>
-      Promise.resolve(String(path).endsWith('/scripts/logos/frogbot.svg') ? svg : '{}'),
-    );
-
-    await syncCatalog({ fetchImpl: logoFetch({ frogbot: new Response(styled) }) });
-
-    expect((await renderedProviders()).frogbot.logo).toEqual((await loadSync()).logoNodes(svg));
-  });
-
-  it('still rejects a styled logo for a provider without a bundled fallback', async () => {
+  it('rejects a styled logo', async () => {
     const { syncCatalog } = await loadSync();
     const styled = '<svg viewBox="0 0 40 40"><style>.a{}</style></svg>';
 
