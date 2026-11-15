@@ -21,9 +21,8 @@ import type {
   FormState,
   SanitizedCollectionPermission,
   SanitizedFieldPermissions,
-  SelectType,
 } from 'payload';
-import { formatAdminURL, unflatten } from 'payload/shared';
+import { formatAdminURL, getDataFromFormState } from 'payload/shared';
 import * as qs from 'qs-esm';
 import {
   type KeyboardEvent,
@@ -120,6 +119,7 @@ function CellEditorFields({
   initialText,
   onDone,
   parentPath,
+  paths,
   pendingDone,
   permissions,
   savedRef,
@@ -130,10 +130,11 @@ function CellEditorFields({
 > & {
   action: string;
   drafts: boolean;
+  paths: string[];
   permissions: SanitizedFieldPermissions | Record<string, SanitizedFieldPermissions>;
   savedRef: RefObject<boolean>;
 }) {
-  const { submit } = useForm();
+  const { getFields, submit } = useForm();
   const modified = useFormModified();
   const rootRef = useRef<HTMLDivElement>(null);
   const selectAllRef = useRef(selectAll);
@@ -151,10 +152,17 @@ function CellEditorFields({
 
     savedRef.current = false;
 
+    const fields = getFields();
+    const others = Object.keys(getDataFromFormState(fields, true)).map((key) => [key, undefined]);
+
     pendingRef.current = submit({
       action,
       method: 'PATCH',
-      ...(drafts ? { overrides: { _status: 'draft' } } : {}),
+      overrides: {
+        ...Object.fromEntries(others),
+        ...getDataFromFormState(pickPaths(fields, paths), true),
+        ...(drafts ? { _status: 'draft' } : {}),
+      },
     })
       .then(() => savedRef.current)
       .finally(() => {
@@ -162,7 +170,7 @@ function CellEditorFields({
       });
 
     return pendingRef.current;
-  }, [action, drafts, savedRef, submit]);
+  }, [action, drafts, getFields, paths, savedRef, submit]);
 
   useEffect(() => {
     handleRef.current = { commit };
@@ -383,21 +391,16 @@ export function CellEditor({
           skipValidation: true,
         });
 
-        if (!controller.signal.aborted && state) {
-          setLoaded({ data, state: pickPaths(state, pathsKey.split('\n')) });
-        }
+        if (!controller.signal.aborted && state) setLoaded({ data, state });
       } catch {
         if (!controller.signal.aborted) onDone('cancel');
       }
     })();
 
     return () => controller.abort();
-  }, [action, collectionSlug, getFormState, id, onDone, pathsKey, permissions]);
+  }, [action, collectionSlug, getFormState, id, onDone, permissions]);
 
-  const select = useMemo<SelectType>(
-    () => unflatten(Object.fromEntries(pathsKey.split('\n').map((path) => [path, true]))),
-    [pathsKey],
-  );
+  const paths = useMemo(() => pathsKey.split('\n'), [pathsKey]);
 
   useEffect(() => {
     const handle: CellEditorHandle = {
@@ -445,7 +448,6 @@ export function CellEditor({
           initialState={loaded.state}
           onSuccess={onSuccess}
           schemaPath={collectionSlug}
-          select={select}
         >
           <ReadyCellEditorFields
             action={action}
@@ -456,6 +458,7 @@ export function CellEditor({
             pendingDone={pendingDone}
             onDone={onDone}
             parentPath={parentPath}
+            paths={paths}
             permissions={fieldPermissionsAt(permissions, parentPath)}
             savedRef={savedRef}
             selectAll={selectAll}
