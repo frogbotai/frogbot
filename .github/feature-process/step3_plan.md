@@ -8,6 +8,7 @@ A fresh planner writes `step3_plan.md` from the approved spec and the research S
 - Give each alternative one line, with why not.
 - Each stage is one fresh worker's job. `Verify:` is the exact command that proves it; `Evidence:` is where the result is kept, a path or a ledger level (`typecheck`, `unit`, `int`, `ui`).
 - A plan has at most 3 stages; split a bigger ticket.
+- With more than one stage, each stage says `Needs: stage <k>` when it builds on another stage's code, or `Needs: none`. Stages that need none get their own PRs off `main`, which can merge in any order.
 - A new decision found while planning becomes a card in the spec, with a recommended option, and goes back to the inbox. Don't settle it in the plan. In the cloud, an unanswered card stops the build from starting ([From plan to build](cloud.md#from-plan-to-build)). A new decision is anything in [What needs the owner](cloud.md#what-needs-the-owner) that the spec, the owner's answers and the rulings don't settle:
   - what users see or do, or the shape of an API, config or stored data;
   - a change to data that can't be undone, or a new paid service or dependency;
@@ -39,6 +40,7 @@ touches:
 ## Stages
 
 1. <Goal>.
+   - Needs: none
    - Verify: `<exact command>`
    - Evidence: <path or ledger level>
 ```

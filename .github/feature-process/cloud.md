@@ -40,13 +40,14 @@ The plan and the build are separate runs, so the build starts with fresh context
 
 A `ticket:build` run stops with a comment unless `step3_plan.md` says `Status: Go`. The only stage label it adds is `ticket:build` for the next stage of a stacked plan.
 
-A plan with several stages is built as a stack of PRs, all before the owner reviews any of them:
+A plan with several stages gets every stage built before the owner reviews any of them, one PR per stage:
 
-- Each stage has its own `claude/ticket-<n>-<stage>` branch and PR. Stage 1 branches from `main`. Every later stage branches from the stage before it, and its PR targets that stage's branch, so its diff shows only its own stage. Its body starts with `Stacked on #<previous PR>` after the `Part of` line.
+- Each stage has its own `claude/ticket-<n>-<stage>` branch and PR. The plan says which stage each one needs (`Needs: stage 1`, or `Needs: none`).
+- A stage that needs another branches from that stage's branch, and its PR targets it, so its diff shows only its own stage. Its body says `Stacked on #<that PR>` after the `Part of` line. A stage that needs none branches from `main` and targets `main`, and it can merge in any order.
 - Every PR but the last says `Part of #<n>`. The last says `Closes #<n>`.
-- Each `ticket:build` builds the first stage with no PR. When its PR is green and ready, the run adds `ticket:build` again, on its own and 5 seconds after its comment, so the next stage starts. That is the third run that adds a label, and it adds only `ticket:build`, only while the plan has a stage with no PR.
-- When a run changes a stage that has stages above it, as a fix round does, it merges that branch into each branch above it, in order, and pushes them. It never force-pushes or rebases.
-- The comments for every stage but the last say `**Your call:** none. Stage <k+1> is building.` The last says `**Your call:** review PRs #a, #b and #c, then merge them in that order.` After each merge GitHub retargets the next PR to `main`, and its squash merge stays clean because its branch already holds the stages below it.
+- Stages build one run at a time, because labels added close together start only one run. Each `ticket:build` builds the first stage with no PR. When its PR is green and ready, the run adds `ticket:build` again, on its own and 5 seconds after its comment, so the next stage starts. That is the third run that adds a label, and it adds only `ticket:build`, only while the plan has a stage with no PR.
+- When a run changes a stage that other stages are stacked on, as a fix round does, it merges that branch into each stacked branch, in order, and pushes them. It never force-pushes or rebases.
+- The comments for every stage but the last say `**Your call:** none. Stage <k+1> is building.` The last says `**Your call:** review PRs #a, #b and #c`, and gives the merge order for stacked ones (any order for the rest). After a stacked PR's base merges, GitHub retargets it to `main`, and its squash merge stays clean because its branch already holds the stage it needs.
 - A `ticket:go` on a plan that is already `Status: Go`, with no new owner comment, skips planning and hands off the same way.
 
 ### Fix lists from the independent review
