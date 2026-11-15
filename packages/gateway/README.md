@@ -65,7 +65,7 @@ const client = new OpenAI({
 });
 
 const res = await client.chat.completions.create({
-  model: 'anthropic/claude-sonnet-4-5',
+  model: 'anthropic/claude-sonnet-5-5',
   messages: [{ role: 'user', content: 'Hello' }],
   stream: true,
 });

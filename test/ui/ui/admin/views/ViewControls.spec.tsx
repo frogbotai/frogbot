@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   ListControls: vi.fn(),
   SortBuilder: vi.fn(() => null),
+  smallBreak: false,
 }));
 
 vi.mock('@payloadcms/ui', async () => {
@@ -16,13 +17,19 @@ vi.mock('@payloadcms/ui', async () => {
       mocks.ListControls(props);
       const [open, setOpen] = useState(false);
 
-      return createElement('button', {
-        'aria-expanded': open,
-        id: 'toggle-list-sort',
-        onClick: () => setOpen(!open),
-        type: 'button',
-      });
+      return createElement(
+        'div',
+        null,
+        createElement('button', {
+          'aria-expanded': open,
+          id: 'toggle-list-sort',
+          onClick: () => setOpen(!open),
+          type: 'button',
+        }),
+        createElement('div', { className: 'list-controls__actions', 'data-testid': 'actions' }),
+      );
     },
+    useWindowInfo: () => ({ breakpoints: { s: mocks.smallBreak } }),
   };
 });
 
@@ -47,6 +54,7 @@ const renderControls = (props: Record<string, unknown> = {}) =>
 beforeEach(() => {
   mocks.ListControls.mockClear();
   mocks.SortBuilder.mockClear();
+  mocks.smallBreak = false;
 });
 
 describe('ViewControls', () => {
@@ -78,5 +86,22 @@ describe('ViewControls', () => {
     fireEvent.click(screen.getByRole('button'));
 
     await waitFor(() => expect(screen.getByTestId('sort-height').dataset.height).toBe('auto'));
+  });
+
+  it('moves the toolbar into the list controls row only on small screens', async () => {
+    const toolbar = [<button key="t">Tool</button>];
+
+    renderControls({ beforeActions: toolbar });
+
+    expect(screen.queryByRole('button', { name: 'Tool' })).toBeNull();
+
+    mocks.smallBreak = true;
+    renderControls({ beforeActions: toolbar });
+
+    const tool = await screen.findByRole('button', { name: 'Tool' });
+
+    expect(tool.closest('.view-controls__toolbar')?.parentElement).toBe(
+      screen.getAllByTestId('actions').at(-1),
+    );
   });
 });

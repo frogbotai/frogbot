@@ -29,10 +29,30 @@ export function parseFinding(text) {
   return { kind, area, title };
 }
 
-export function findingIssue({ kind, area, title }, source) {
+const IDEA_KINDS = new Set(['idea', 'gap', 'feature']);
+
+const RED_ON_MAIN = /pre-existing|failing on main|red on main/i;
+
+/** Why a finding can't be filed as asked, or null. */
+export function findingRefusal({ kind }, { source, noticed = false }) {
+  if (RED_ON_MAIN.test(kind)) {
+    return 'A test or check failing on main is fixed in its own small PR, not filed.';
+  }
+
+  if (!noticed && !IDEA_KINDS.has(kind) && !source) {
+    return 'A found issue needs --source: the command that shows it failing. Without one, file it with --noticed.';
+  }
+
+  return null;
+}
+
+/** `enhancement` for ideas, `noticed` when asked, else `found`. */
+export function findingIssue({ kind, area, title }, source, { noticed = false } = {}) {
+  const label = IDEA_KINDS.has(kind) ? 'enhancement' : noticed ? 'noticed' : 'found';
+
   return {
     title,
     body: `Kind: ${kind}${source ? `\n\nSource: ${source}` : ''}`,
-    labels: ['found', `area:${area}`],
+    labels: [label, `area:${area}`],
   };
 }

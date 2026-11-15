@@ -26,8 +26,8 @@ const urls = [
 
 const results = [];
 
-if (fallbacks.length !== 23 || new Set(fallbacks).size !== 23) {
-  throw new Error('Expected exactly 23 canonical raw fallback URLs');
+if (fallbacks.length !== 26 || new Set(fallbacks).size !== 26) {
+  throw new Error('Expected exactly 26 canonical raw fallback URLs');
 }
 
 async function probe(url) {

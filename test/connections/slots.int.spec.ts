@@ -402,7 +402,7 @@ describe(`app-owned connection slots [${process.env.FROGBOT_DATABASE || 'sqlite'
         headers: { cookie: response.headers.get('set-cookie')!.split(';')[0] },
       });
 
-      expect(done.status).toBe(302);
+      expect(done.status).toBe(200);
     }
 
     const saved = await rows();

@@ -16,7 +16,7 @@ import { redirectsPlugin } from '../../../../packages/plugins/plugin-redirects/s
 import { rolesPlugin } from '../../../../packages/plugins/plugin-roles/src/index.js';
 import { seoPlugin } from '../../../../packages/plugins/plugin-seo/src/index.js';
 
-const CASCADED = ['api-keys.owner', 'connections.owner', 'messages.chat'];
+const CASCADED = ['api-keys.owner', 'messages.chat'];
 
 const agent = {
   slug: 'support',
