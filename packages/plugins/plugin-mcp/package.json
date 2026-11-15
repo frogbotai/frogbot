@@ -29,7 +29,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p ../../../test/types/plugin-mcp/tsconfig.json"
   },
   "engines": {
-    "node": ">=24.21.0"
+    "node": ">=24.22.3"
   },
   "dependencies": {
     "@payloadcms/plugin-mcp": "catalog:"

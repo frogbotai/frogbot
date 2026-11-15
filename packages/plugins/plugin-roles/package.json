@@ -29,7 +29,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.typetest.json && tsc --noEmit -p ../../../test/types/plugin-roles/tsconfig.json && tsc --noEmit -p ../../../test/types/plugin-roles/tsconfig.fallback.json"
   },
   "engines": {
-    "node": ">=24.21.0"
+    "node": ">=24.22.3"
   },
   "peerDependencies": {
     "frogbot": "workspace:*",

@@ -28,6 +28,7 @@ vi.mock('@payloadcms/ui', () => {
       getEntityConfig: () => ({ slug: 'things' }),
     }),
     useForm: () => ({ submit: vi.fn(() => Promise.resolve()) }),
+    useFormInitializing: () => false,
     useFormModified: () => false,
     useLocale: () => ({ code: 'en' }),
     useServerFunctions: () => ({ getFormState: () => Promise.resolve({ state: {} }) }),

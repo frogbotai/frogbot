@@ -5,12 +5,12 @@ import './CellEditor.css';
 import {
   DocumentInfoProvider,
   Form,
-  type FormProps,
   OperationProvider,
   RenderFields,
   useAuth,
   useConfig,
   useForm,
+  useFormInitializing,
   useFormModified,
   useLocale,
   useServerFunctions,
@@ -21,8 +21,9 @@ import type {
   FormState,
   SanitizedCollectionPermission,
   SanitizedFieldPermissions,
+  SelectType,
 } from 'payload';
-import { formatAdminURL, reduceFieldsToValues } from 'payload/shared';
+import { formatAdminURL, unflatten } from 'payload/shared';
 import * as qs from 'qs-esm';
 import {
   type KeyboardEvent,
@@ -30,11 +31,10 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
-
-import { withValuesAt } from './fieldPath.js';
 
 /** How an edit ended: cancelled, saved, or saved and moving to the next or previous cell. */
 export type CellEditorDone = 'cancel' | 'next' | 'prev' | 'saved';
@@ -289,6 +289,10 @@ function CellEditorFields({
   );
 }
 
+function ReadyCellEditorFields(props: Parameters<typeof CellEditorFields>[0]) {
+  return useFormInitializing() ? null : <CellEditorFields {...props} />;
+}
+
 /**
  * Edits one field of one record where it is shown, with the field's own `Field` component: a
  * Payload form for that field alone, built the way bulk edit builds its form, saved with one
@@ -314,7 +318,6 @@ export function CellEditor({
   const { getFormState } = useServerFunctions();
   const [loaded, setLoaded] = useState<{ data: Data; state: FormState }>();
   const savedRef = useRef(false);
-  const loadedRef = useRef<Data>({});
   const drafts = Boolean(getEntityConfig({ collectionSlug })?.versions?.drafts);
   const pathsKey = cellPaths(field, path).join('\n');
   const apiRoute = config.routes.api;
@@ -339,7 +342,6 @@ export function CellEditor({
 
         const data = (await response.json()) as Data;
 
-        loadedRef.current = data;
         const { state } = await getFormState({
           collectionSlug,
           data,
@@ -364,27 +366,9 @@ export function CellEditor({
     return () => controller.abort();
   }, [action, collectionSlug, getFormState, id, onDone, pathsKey, permissions]);
 
-  const onChange = useCallback<NonNullable<FormProps['onChange']>[number]>(
-    async ({ formState, submitted }) => {
-      const { state } = await getFormState({
-        collectionSlug,
-        data: withValuesAt(
-          loadedRef.current,
-          reduceFieldsToValues(formState, true),
-          pathsKey.split('\n'),
-        ),
-        docPermissions: permissions,
-        docPreferences: { fields: {} },
-        formState,
-        id,
-        operation: 'update',
-        schemaPath: collectionSlug,
-        skipValidation: !submitted,
-      });
-
-      return state ? pickPaths(state, pathsKey.split('\n')) : formState;
-    },
-    [collectionSlug, getFormState, id, pathsKey, permissions],
+  const select = useMemo<SelectType>(
+    () => unflatten(Object.fromEntries(pathsKey.split('\n').map((path) => [path, true]))),
+    [pathsKey],
   );
 
   const onSuccess = useCallback(() => {
@@ -413,10 +397,11 @@ export function CellEditor({
           className={baseClass}
           disableSuccessStatus
           initialState={loaded.state}
-          onChange={[onChange]}
           onSuccess={onSuccess}
+          schemaPath={collectionSlug}
+          select={select}
         >
-          <CellEditorFields
+          <ReadyCellEditorFields
             action={action}
             drafts={drafts}
             field={field}

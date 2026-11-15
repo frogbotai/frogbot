@@ -4,8 +4,8 @@ Vendored from the Payload monorepo — `packages/payload/src/cli/commands/genera
 
 - Upstream: https://github.com/payloadcms/payload
 - Path: `packages/payload/src/cli/commands/generateImportMap`
-- Commit: `27abc28e1dc9a4716407a75c042950b21350ff01`
-- Tag: `v4.0.0-beta.7`
+- Commit: `430939a861a5cea0ac0f1c095eb44e6952201d71`
+- Tag: `v4.0.0-beta.9`
 
 Vendored because these internals are not exported from `payload`, and FrogBot owns
 the emitted `importMap.js` (branding rule: no Payload references in generated files).

@@ -15,7 +15,7 @@
   &nbsp;
   <a href="https://discord.com/invite/JBZF7syAnU"><img alt="Discord" src="https://img.shields.io/badge/Discord-join%20chat-5865F2?logo=discord&logoColor=white&style=flat-square" /></a>
   &nbsp;
-  <img alt="Node" src="https://img.shields.io/badge/node-%E2%89%A524.21-brightgreen?style=flat-square" />
+  <img alt="Node" src="https://img.shields.io/badge/node-%E2%89%A524.22.3-brightgreen?style=flat-square" />
 </p>
 
 <hr/>
@@ -45,7 +45,7 @@ Paste this prompt into Claude Code, Cursor, Codex, or OpenCode to scaffold a Fro
 ```text
 Set up a new FrogBot app on this machine and help me build with it:
 
-1. Verify Node.js >= 24.21 (node --version). If missing, give me https://nodejs.org/en/download and wait.
+1. Verify Node.js >= 24.22.3 (node --version). If missing, give me https://nodejs.org/en/download and wait.
 2. Ask which AI provider key I want to use (openai, anthropic, or google) and where to create the project folder.
 3. Run: npx create-frogbot-app@latest my-frogbot --yes --ai <PROVIDER> --agents <AGENT>
    (Use claude, codex, cursor, opencode, copilot, or gemini for <AGENT>.)
@@ -56,7 +56,7 @@ Set up a new FrogBot app on this machine and help me build with it:
 
 ## Quickstart
 
-You need Node.js 24.21 or newer. An AI provider key is optional: the CLI asks for one, and you can add it to `.env` later. Create and boot a project:
+You need Node.js 24.22.3 or newer. An AI provider key is optional: the CLI asks for one, and you can add it to `.env` later. Create and boot a project:
 
 ```bash
 npx create-frogbot-app@latest my-app
@@ -228,7 +228,7 @@ pnpm docker:start
 pnpm test:int:sqlite   # or test:int:pg / test:int:mongo
 ```
 
-Requires Node ≥ 24.21 and [pnpm](https://pnpm.io).
+Requires Node ≥ 24.22.3 and [pnpm](https://pnpm.io).
 
 ## Contributing
 

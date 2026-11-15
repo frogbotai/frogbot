@@ -13,10 +13,15 @@ async function pathOrFileExists(path: string): Promise<boolean> {
   }
 }
 
-const defaultCandidateDirectories = (rootDir: string, adminRoute: string): string[] => [
-  path.resolve(rootDir, `app/${NEXT_ROUTE_GROUP}${adminRoute}/`),
-  path.resolve(rootDir, `src/app/${NEXT_ROUTE_GROUP}${adminRoute}/`),
-];
+const defaultCandidateDirectories = (rootDir: string, adminRoute: string): string[] => {
+  // Next.js uses %5F for routable segments that begin with an underscore.
+  const adminFolder = adminRoute.replace(/(^|\/)_/g, '$1%5F');
+
+  return [
+    path.resolve(rootDir, `app/${NEXT_ROUTE_GROUP}${adminFolder}/`),
+    path.resolve(rootDir, `src/app/${NEXT_ROUTE_GROUP}${adminFolder}/`),
+  ];
+};
 
 export async function resolveImportMapFilePath({
   adminRoute = '/',

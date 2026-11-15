@@ -531,72 +531,47 @@ describe('Local API select', () => {
     expect(sourceAfter).toEqual(original);
   });
 
-  describe('unsupported upstream restore projection reproduction', () => {
-    it('rolls back the parent and version history when an owner-omitting restore fails to save its snapshot', async () => {
-      const { post, original, versions } = await createRestoreFixture();
+  it('restores every field of a version when restore selects only some of them', async () => {
+    const { post, original } = await createRestoreFixture();
 
-      const parentBefore = await booted.frogbot.findByID({
-        collection: postsSlug,
-        id: post.id,
-        depth: 0,
-        overrideAccess: true,
-      });
-
-      const storedParentBefore = await sqlite.execute({
-        sql: 'select * from select_posts where id = ?',
-        args: [post.id],
-      });
-
-      const storedVersionsBefore = await sqlite.execute({
-        sql: 'select * from _select_posts_v where parent_id = ? order by id',
-        args: [post.id],
-      });
-
-      await expect(
-        booted.payload.restoreVersion({
-          collection: postsSlug,
-          id: original.id,
-          select: { title: true },
-          overrideAccess: true,
-        }),
-      ).rejects.toMatchObject({
-        cause: {
-          code: 'SQLITE_CONSTRAINT_NOTNULL',
-          message: 'NOT NULL constraint failed: _select_posts_v.version_owner_id',
-        },
-      });
-
-      const parentAfter = await booted.frogbot.findByID({
-        collection: postsSlug,
-        id: post.id,
-        depth: 0,
-        overrideAccess: true,
-      });
-
-      const versionsAfter = await booted.frogbot.findVersions({
-        collection: postsSlug,
-        where: { parent: { equals: post.id } },
-        depth: 0,
-        pagination: false,
-        overrideAccess: true,
-      });
-
-      const storedParentAfter = await sqlite.execute({
-        sql: 'select * from select_posts where id = ?',
-        args: [post.id],
-      });
-
-      const storedVersionsAfter = await sqlite.execute({
-        sql: 'select * from _select_posts_v where parent_id = ? order by id',
-        args: [post.id],
-      });
-
-      expect(parentAfter).toEqual(parentBefore);
-      expect(versionsAfter.totalDocs).toBe(2);
-      expect(versionsAfter.docs).toEqual(versions.docs);
-      expect(storedParentAfter.rows).toEqual(storedParentBefore.rows);
-      expect(storedVersionsAfter.rows).toHaveLength(2);
-      expect(storedVersionsAfter.rows).toEqual(storedVersionsBefore.rows);
+    const restored = await booted.payload.restoreVersion({
+      collection: postsSlug,
+      id: original.id,
+      select: { title: true },
+      overrideAccess: true,
     });
+
+    expect(restored).toEqual({ id: post.id, title: 'Original' });
+
+    const parent = await booted.frogbot.findByID({
+      collection: postsSlug,
+      id: post.id,
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    expect(parent).toMatchObject({
+      title: 'Original',
+      body: 'Original body',
+      details: { summary: 'Original summary', budget: 50 },
+      owner: owner.id,
+      secret: 'Original secret',
+    });
+
+    const versions = await booted.frogbot.findVersions({
+      collection: postsSlug,
+      where: { parent: { equals: post.id } },
+      depth: 0,
+      pagination: false,
+      overrideAccess: true,
+    });
+
+    const snapshots = versions.docs.filter(({ id }) => id !== original.id);
+
+    expect(versions.totalDocs).toBe(3);
+    expect(snapshots.map(({ version }) => version.title).sort()).toEqual(['Original', 'Updated']);
+    expect(snapshots.find(({ version }) => version.title === 'Original')!.version.owner).toBe(
+      owner.id,
+    );
   });
 });

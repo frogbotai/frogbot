@@ -80,36 +80,3 @@ export function resolveFieldAtPath<TField extends AnyField>(
     ? { field: inner.field, parents: [...step.containers, parent, ...inner.parents] }
     : undefined;
 }
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/**
- * A copy of `data` with the value at each dot path taken from `values`, so a value inside a group
- * replaces only itself and keeps its siblings.
- */
-export function withValuesAt(
-  data: Record<string, unknown>,
-  values: Record<string, unknown>,
-  paths: string[],
-): Record<string, unknown> {
-  const result = structuredClone(data);
-
-  for (const path of paths) {
-    const keys = path.split('.');
-    const last = keys.pop()!;
-    let source: unknown = values;
-    let target = result;
-
-    for (const key of keys) {
-      source = isRecord(source) ? source[key] : undefined;
-      if (!isRecord(target[key])) target[key] = {};
-      target = target[key] as Record<string, unknown>;
-    }
-
-    target[last] = isRecord(source) ? source[last] : undefined;
-  }
-
-  return result;
-}
