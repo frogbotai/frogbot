@@ -55,7 +55,7 @@ export const tellOwner: CollectionAfterChangeHook = async ({ doc, previousDoc, r
 | `user` | The id of the user to notify. Required. |
 | `title` | One line saying what happened. Required. |
 | `excerpt` | A short plain-text preview, such as the start of a comment. |
-| `link` | Where opening the notification goes: an admin path such as `/admin/collections/deals/12`, or an `https://` URL. |
+| `link` | Where opening the notification goes: an admin path such as `/admin/collections/deals/12`, or an `https://` URL. The inbox follows nothing else. |
 | `source` | What sent it, such as `deals`, for your own filtering. |
 
 `notify()` checks no access: your code decides who to tell. Only send people things they may see.
@@ -78,7 +78,7 @@ The bell shows the signed-in user's unread count, up to `99+`, and links to the 
 | `title`, `excerpt`, `link`, `source` | What `notify()` was given. |
 | `readAt` | When the user opened it, or empty while unread. |
 
-Only `readAt` can be changed after create.
+Only `readAt` can be changed after create. Deleting a user deletes their notifications.
 
 ```ts
 // mark one read

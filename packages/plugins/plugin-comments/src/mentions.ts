@@ -44,9 +44,6 @@ export function excerptOf(body: unknown): string {
   return chars.length > EXCERPT_LENGTH ? `${chars.slice(0, EXCERPT_LENGTH - 1).join('')}…` : text;
 }
 
-/** Where `fillMentions` hands the users to notify to `notifyMentions`, in the hook `context`. */
-export const FRESH_MENTIONS = 'plugin-comments:fresh-mentions';
-
 /**
  * Who a save should notify: users `mentions` names that the comment never notified before and
  * that aren't its author. `notified` is everyone the comment has ever mentioned, so a mention
@@ -75,17 +72,15 @@ export function mentionChanges(args: { author: unknown; mentions: unknown; notif
   return { fresh: added.map(String), notified: [...before, ...added] };
 }
 
-async function asUser<T>(req: FrogBotRequest, user: unknown, read: () => Promise<T>): Promise<T> {
-  const payloadReq = toPayloadRequest(req);
-  const own = payloadReq.user;
+function asUser(req: FrogBotRequest, user: unknown): FrogBotRequest {
+  const own = { user };
+  const pick = (key: PropertyKey) => (key === 'user' ? own : req);
 
-  payloadReq.user = user as typeof own;
-
-  try {
-    return await read();
-  } finally {
-    payloadReq.user = own;
-  }
+  return new Proxy(req, {
+    get: (_target, key) => Reflect.get(pick(key), key, pick(key)),
+    has: (_target, key) => Reflect.has(pick(key), key),
+    set: (_target, key, value) => Reflect.set(pick(key), key, value, pick(key)),
+  });
 }
 
 function nameOf(user: Doc | undefined, titleField: string | undefined): string {
@@ -97,15 +92,19 @@ function nameOf(user: Doc | undefined, titleField: string | undefined): string {
 }
 
 /**
- * With plugin-notifications installed, notifies the users `fillMentions` found new, once per
+ * With plugin-notifications installed, notifies the users this save added to `notified`, once per
  * comment. A user who can't read the commented record isn't notified, so the excerpt never
- * reaches someone who couldn't open it. Runs in the caller's transaction.
+ * reaches someone who couldn't open it. Reads the save's `data` and `previousDoc`, never the
+ * returned `doc`, which `select` can trim. Runs in the caller's transaction.
  */
 export function notifyMentions(userSlug: string): CollectionAfterChangeHook {
-  return async ({ context, doc, req }) => {
-    const fresh = (context[FRESH_MENTIONS] ?? []) as string[];
-
-    delete context[FRESH_MENTIONS];
+  return async ({ data, doc, previousDoc, req }) => {
+    const saved = { ...previousDoc, ...data } as Record<string, unknown>;
+    const { fresh } = mentionChanges({
+      author: saved.author,
+      mentions: data.notified,
+      notified: previousDoc?.notified,
+    });
 
     const payload = toPayloadRequest(req).payload;
     const notifications = (payload.config.custom as Record<string, unknown> | undefined)?.[
@@ -114,7 +113,7 @@ export function notifyMentions(userSlug: string): CollectionAfterChangeHook {
 
     if (!notifications?.notify || !fresh.length) return doc;
 
-    const authorId = idOf(doc.author);
+    const authorId = idOf(saved.author);
     const { docs: people } = await req.frogbot.find({
       collection: userSlug,
       depth: 0,
@@ -127,11 +126,11 @@ export function notifyMentions(userSlug: string): CollectionAfterChangeHook {
     const byId = new Map(people.map((person) => [String(person.id), person]));
     const titleField = payload.collections[userSlug]?.config.admin?.useAsTitle;
     const author = authorId === undefined ? undefined : byId.get(String(authorId));
-    const collection = String(doc.collection);
-    const documentId = String(doc.documentId);
+    const collection = String(saved.collection);
+    const documentId = String(saved.documentId);
     const admin = payload.config.routes.admin;
     const link = `${admin === '/' ? '' : admin}/collections/${collection}/${documentId}`;
-    const excerpt = excerptOf(doc.body ?? doc[doc.bodyField as string]);
+    const excerpt = excerptOf(saved[saved.bodyField as string]);
     const title = `${nameOf(author, titleField)} mentioned you in a comment`;
 
     for (const id of fresh) {
@@ -139,19 +138,17 @@ export function notifyMentions(userSlug: string): CollectionAfterChangeHook {
 
       if (!person) continue;
 
-      const canRead = await asUser(req, { ...person, collection: userSlug }, () =>
-        req.frogbot
-          .findByID({
-            collection,
-            depth: 0,
-            disableErrors: true,
-            id: documentId,
-            overrideAccess: false,
-            req,
-            select: {},
-          })
-          .catch(() => null),
-      );
+      const canRead = await req.frogbot
+        .findByID({
+          collection,
+          depth: 0,
+          disableErrors: true,
+          id: documentId,
+          overrideAccess: false,
+          req: asUser(req, { ...person, collection: userSlug }),
+          select: {},
+        })
+        .catch(() => null);
 
       if (!canRead) continue;
 

@@ -22,6 +22,21 @@ export type InboxProps = {
   slug: string;
 };
 
+function isAdminPath(link: string, routes: { admin: string; api: string }): boolean {
+  const unsafe = (char: string) => char === '\\' || char <= ' ' || char === '\u007f';
+
+  if (Array.from(link).some(unsafe)) return false;
+
+  const within = (route: string) => {
+    const base = route.replace(/\/$/, '');
+    const rest = link.slice(base.length);
+
+    return link.startsWith(base) && (rest === '' ? base !== '' : /^\/(?!\/)/.test(rest));
+  };
+
+  return within(routes.admin) && !within(routes.api);
+}
+
 const time = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
 /** Notifications, newest first. Opening one marks it read, then follows its link. */
@@ -50,8 +65,8 @@ export function Inbox({ items, slug }: InboxProps) {
 
     const link = item.link ?? '';
 
-    if (/^\/(?!\/)/.test(link)) router.push(link);
-    else if (/^https?:\/\//i.test(link)) window.location.assign(link);
+    if (isAdminPath(link, config.routes)) router.push(link);
+    else if (/^https:\/\/[^\\\s]+$/i.test(link)) window.location.assign(link);
     else router.refresh();
   };
 

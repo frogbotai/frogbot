@@ -1,4 +1,5 @@
 import { definePlugin, type FrogBotConfig, type Plugin } from 'frogbot';
+import { cascadeDelete } from 'frogbot/internal';
 
 import { createNotificationsCollection } from './collection.js';
 import { notify } from './notify.js';
@@ -50,7 +51,11 @@ const notifications = definePlugin<NotificationsPluginOptions>({
     return {
       ...config,
       collections: [
-        ...config.collections,
+        ...config.collections.map((collection) =>
+          collection.slug === users
+            ? cascadeDelete(collection, { collection: slug, field: 'user' })
+            : collection,
+        ),
         createNotificationsCollection({ overrides: options.overrides ?? {}, userSlug: users }),
       ],
       admin: {

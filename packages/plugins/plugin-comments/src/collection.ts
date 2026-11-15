@@ -9,7 +9,7 @@ import {
 } from 'frogbot';
 
 import { authorAccess, createAccess, readAccess } from './access.js';
-import { FRESH_MENTIONS, mentionChanges, notifyMentions } from './mentions.js';
+import { mentionChanges, notifyMentions } from './mentions.js';
 import { hasContent } from './shared.js';
 import type { CommentsCollectionOverrides, CommentsEditor } from './types.js';
 
@@ -96,7 +96,7 @@ function placeBody(bodies: Record<string, string>): CollectionBeforeValidateHook
   };
 }
 
-const fillMentions: CollectionBeforeChangeHook = ({ context, data, operation, originalDoc }) => {
+const fillMentions: CollectionBeforeChangeHook = ({ data, operation, originalDoc }) => {
   const bodyField = (data.bodyField ?? originalDoc?.bodyField) as string;
   const body = data[bodyField];
 
@@ -107,13 +107,11 @@ const fillMentions: CollectionBeforeChangeHook = ({ context, data, operation, or
   if (body === undefined) return data;
 
   const mentions = mentionedIds(body);
-  const { fresh, notified } = mentionChanges({
+  const { notified } = mentionChanges({
     author: data.author ?? originalDoc?.author,
     mentions,
     notified: originalDoc?.notified,
   });
-
-  context[FRESH_MENTIONS] = fresh;
 
   return { ...data, mentions, notified };
 };

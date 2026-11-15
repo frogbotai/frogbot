@@ -31,6 +31,13 @@ function defaultFields(userSlug: string): Field[] {
       index: true,
       admin: { date: { pickerAppearance: 'dayAndTime' } },
     },
+    {
+      name: 'createdAt',
+      type: 'date',
+      index: true,
+      admin: { disabled: { bulkEdit: true }, hidden: true },
+      access: fixed,
+    },
   ];
 }
 
