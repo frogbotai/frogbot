@@ -190,4 +190,55 @@ describe('ActivityField', () => {
       { collection: 'companies', where: { id: { in: [7] } } },
     ]);
   });
+
+  it('shows a cleared text as None, adds the time to same-day dates, and skips no-op values', async () => {
+    const edges: NonNullable<ActivityFieldProps['req']>['payload'] = {
+      collections: {
+        'audit-logs': { config: { fields: [] } },
+        deals: {
+          config: {
+            fields: [
+              { name: 'title', type: 'text' },
+              { name: 'due', type: 'date' },
+              { name: 'won', type: 'checkbox' },
+            ],
+          },
+        },
+      },
+      config: {},
+      findByID: () => Promise.resolve({ id: 1, title: '', due: null, won: false }),
+      find: () =>
+        Promise.resolve({
+          docs: [
+            {
+              id: 'e1',
+              operation: 'update',
+              timestamp: '2026-01-02T00:00:00.000Z',
+              changes: {
+                title: { old: 'Q9', new: '' },
+                due: { old: '2026-03-01T09:00:00.000Z', new: '2026-03-01T15:00:00.000Z' },
+                won: { old: null, new: false },
+              },
+            },
+          ],
+        }),
+    };
+
+    const node = await ActivityField({
+      collectionSlug: 'deals',
+      id: 1,
+      req: { payload: edges, user: { id: 1 } },
+    });
+
+    const changes = [
+      ...renderToStaticMarkup(node).matchAll(/<li class="fb-activity__change">(.*?)<\/li>/g),
+    ].map(([, text]) => text.replace(/<[^>]+>/g, ''));
+
+    expect(changes[0]).toBe('Title Q9 → None');
+
+    const [from, to] = (changes[1] ?? '').replace('Due ', '').split(' → ');
+
+    expect(from).not.toBe(to);
+    expect(changes).toHaveLength(2);
+  });
 });

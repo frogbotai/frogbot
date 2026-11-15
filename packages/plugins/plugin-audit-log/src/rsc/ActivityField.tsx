@@ -12,6 +12,7 @@ import {
   fieldInfo,
   formatValue,
   relatedIds,
+  showsTime,
   titleOf,
   type Titles,
   translate,
@@ -113,14 +114,14 @@ async function relatedTitles(
   return titles;
 }
 
-type Change = { from: string; label: string; to: string };
+type Change = { from: string; key: string; label: string; to: string };
 
 type Described = { changes: Change[]; summary: string };
 
 function describe(
   entry: Entry,
   info: Map<string, FieldInfo>,
-  format: (field: FieldInfo['field'], value: unknown) => string | undefined,
+  format: (field: FieldInfo['field'], value: unknown, withTime: boolean) => string | undefined,
 ): Described {
   if (entry.operation === 'create') return { changes: [], summary: 'created this' };
   if (entry.operation === 'delete') return { changes: [], summary: 'deleted this' };
@@ -131,10 +132,15 @@ function describe(
   const changes = keys.flatMap((key) => {
     const { field, label } = info.get(key) as FieldInfo;
     const diff = (entry.changes?.[key] ?? {}) as { new?: unknown; old?: unknown };
-    const from = format(field, diff.old);
-    const to = format(field, diff.new);
+    let from = format(field, diff.old, showsTime(field));
+    let to = format(field, diff.new, showsTime(field));
 
-    return from === undefined || to === undefined ? [] : [{ from, label, to }];
+    if (from === to && field.type === 'date') {
+      from = format(field, diff.old, true);
+      to = format(field, diff.new, true);
+    }
+
+    return from === undefined || to === undefined || from === to ? [] : [{ from, key, label, to }];
   });
 
   return {
@@ -207,9 +213,9 @@ export async function ActivityField({ collectionSlug, field, i18n, id, req }: Ac
     timeStyle: 'short',
   });
 
-  const dates = new Intl.DateTimeFormat(i18n?.language, { dateStyle: 'medium' });
-  const format = (config: FieldInfo['field'], value: unknown) =>
-    formatValue(config, value, titles, i18n, dates);
+  const day = new Intl.DateTimeFormat(i18n?.language, { dateStyle: 'medium' });
+  const format = (config: FieldInfo['field'], value: unknown, withTime: boolean) =>
+    formatValue(config, value, titles, i18n, withTime ? formatter : day);
 
   return (
     <PanelSection className="fb-activity" heading={heading}>
@@ -227,7 +233,7 @@ export async function ActivityField({ collectionSlug, field, i18n, id, req }: Ac
                 {changes.length ? (
                   <ul className="fb-activity__changes">
                     {changes.map((change) => (
-                      <li className="fb-activity__change" key={change.label}>
+                      <li className="fb-activity__change" key={change.key}>
                         <span className="fb-activity__field">{change.label}</span>{' '}
                         <span className="fb-activity__from">{change.from}</span>
                         {' → '}

@@ -70,9 +70,9 @@ export function fieldInfo(
 }
 
 function list(value: unknown): unknown[] {
-  if (value === null || value === undefined) return [];
-
-  return Array.isArray(value) ? value : [value];
+  return (Array.isArray(value) ? value : [value]).filter(
+    (item) => item !== null && item !== undefined && item !== '',
+  );
 }
 
 function isId(value: unknown): value is number | string {
@@ -172,6 +172,14 @@ function scalar(
 
 function clip(text: string): string {
   return text.length > MAX_LENGTH ? `${text.slice(0, MAX_LENGTH - 1)}…` : text;
+}
+
+/** Whether a date field's picker includes a time. */
+export function showsTime(field: ConfigField): boolean {
+  const admin = field.admin as { date?: { pickerAppearance?: string } } | undefined;
+  const appearance = admin?.date?.pickerAppearance;
+
+  return appearance === 'dayAndTime' || appearance === 'timeOnly';
 }
 
 /**
