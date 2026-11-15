@@ -165,6 +165,68 @@ describe('notifications plugin', () => {
     expect(await inbox('kim')).toHaveLength(1);
   });
 
+  it('never notifies a user twice for one comment, even when an edit removes and re-adds them', async () => {
+    const record = await deal();
+    const created = await comment('ana', {
+      body: body(mention(users.sam.id, 'Sam'), text(' hi')),
+      collection: 'deals',
+      documentId: String(record.id),
+    });
+
+    const id = created.body.doc.id;
+
+    await booted.restClient.patch(
+      `/api/comments/${id}`,
+      { body: body(text('hi')) },
+      { headers: users.ana.headers },
+    );
+
+    await booted.restClient.patch(
+      `/api/comments/${id}`,
+      { body: body(mention(users.sam.id, 'Sam'), text(' hi')) },
+      { headers: users.ana.headers },
+    );
+
+    expect(await inbox('sam')).toHaveLength(1);
+  });
+
+  it('notifies for a comment on a record created earlier in the same transaction', async () => {
+    const ana = await booted.frogbot.findByID({
+      collection: 'users',
+      id: users.ana.id,
+      overrideAccess: true,
+    });
+
+    const user = { ...ana, collection: 'users' };
+    const req = await booted.frogbot.createRequest({ user });
+    const id = (await booted.payload.db.beginTransaction()) as number | string;
+
+    toPayloadRequest(req).transactionID = id;
+
+    const record = await booted.frogbot.create({
+      collection: 'deals',
+      data: { name: 'Acme' },
+      overrideAccess: true,
+      req,
+    });
+
+    await booted.frogbot.create({
+      collection: 'comments',
+      data: {
+        body: body(mention(users.sam.id, 'Sam'), text(' new deal')),
+        collection: 'deals',
+        documentId: String(record.id),
+      },
+      overrideAccess: false,
+      req,
+    });
+
+    await booted.payload.db.commitTransaction(id);
+
+    expect(await inbox('sam')).toHaveLength(1);
+    expect(toPayloadRequest(req).user?.id).toBe(users.ana.id);
+  });
+
   it("doesn't notify the author, or a user who can't read the record", async () => {
     const record = await deal();
 
