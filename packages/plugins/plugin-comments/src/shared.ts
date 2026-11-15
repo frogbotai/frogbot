@@ -15,6 +15,8 @@ export type CommentsTarget = {
   commentsSlug: string;
   /** The record's id. */
   documentId: number | string;
+  /** The record's `createdAt`. Older comments belong to a deleted record whose id was reused. */
+  since?: string;
   /** The field that names a user, such as `name`. */
   titleField?: string;
 };
@@ -53,12 +55,29 @@ export function toCommentItem(doc: Doc, titleField: string | undefined): Comment
 }
 
 /** The REST query for a record's latest comments, newest first. */
-export function commentsQuery({ collection, documentId }: CommentsTarget): string {
+export function commentsQuery({ collection, documentId, since }: CommentsTarget): string {
   return new URLSearchParams({
     depth: '1',
     limit: String(COMMENTS_LIMIT),
     sort: '-createdAt',
     'where[collection][equals]': collection,
     'where[documentId][equals]': String(documentId),
+    ...(since ? { 'where[createdAt][greater_than_equal]': since } : {}),
   }).toString();
+}
+
+/** Whether a rich text value has anything to post: text, or a node such as a mention or upload. */
+export function hasContent(value: unknown): boolean {
+  const visit = (node: unknown): boolean => {
+    if (!node || typeof node !== 'object') return false;
+
+    const { children, text, type } = node as Record<string, unknown>;
+
+    if (typeof text === 'string') return text.trim() !== '';
+    if (Array.isArray(children)) return children.some(visit);
+
+    return typeof type === 'string' && type !== 'linebreak';
+  };
+
+  return visit((value as { root?: unknown } | null | undefined)?.root);
 }

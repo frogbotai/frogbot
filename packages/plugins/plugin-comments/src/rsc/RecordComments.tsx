@@ -40,7 +40,7 @@ export type RecordCommentsProps = {
 
 /**
  * A record's comments, oldest first, with a box to add one, read with the signed-in user's
- * access. Renders nothing when the user can't read the record or its collection has no comments.
+ * access, skipping any older than the record. Renders nothing when the user can't read the record or its collection has no comments.
  * Use it in a custom view or dashboard; `commentsField()` renders it in a record's form.
  */
 export async function RecordComments({ collection, heading, id, req }: RecordCommentsProps) {
@@ -56,6 +56,8 @@ export async function RecordComments({ collection, heading, id, req }: RecordCom
 
   if (!record) return null;
 
+  const since = typeof record.createdAt === 'string' ? record.createdAt : undefined;
+
   const { docs } = await payload
     .find({
       collection: options.commentsSlug,
@@ -65,7 +67,11 @@ export async function RecordComments({ collection, heading, id, req }: RecordCom
       req,
       sort: '-createdAt',
       where: {
-        and: [{ collection: { equals: collection } }, { documentId: { equals: String(id) } }],
+        and: [
+          { collection: { equals: collection } },
+          { documentId: { equals: String(id) } },
+          ...(since ? [{ createdAt: { greater_than_equal: since } }] : []),
+        ],
       },
     })
     .catch(() => ({ docs: [] as Doc[] }));
@@ -77,7 +83,7 @@ export async function RecordComments({ collection, heading, id, req }: RecordCom
       heading={heading}
       initial={docs.map((doc) => toCommentItem(doc, titleField)).reverse()}
       schemaPath={`collection.${options.commentsSlug}.${bodyField}`}
-      target={{ collection, commentsSlug: options.commentsSlug, documentId: id, titleField }}
+      target={{ collection, commentsSlug: options.commentsSlug, documentId: id, since, titleField }}
       userId={user.id}
     />
   );

@@ -9,6 +9,7 @@ import {
 } from 'frogbot';
 
 import { authorAccess, createAccess, readAccess } from './access.js';
+import { hasContent } from './shared.js';
 import type { CommentsCollectionOverrides, CommentsEditor } from './types.js';
 
 export const defaultCommentsSlug = 'comments';
@@ -57,21 +58,6 @@ function defaultFields({ editors, userSlug }: CollectionOptions): Field[] {
       },
     },
   ];
-}
-
-function hasContent(value: unknown): boolean {
-  const visit = (node: unknown): boolean => {
-    if (!node || typeof node !== 'object') return false;
-
-    const { children, text, type } = node as Record<string, unknown>;
-
-    if (typeof text === 'string') return text.trim() !== '';
-    if (Array.isArray(children)) return children.some(visit);
-
-    return typeof type === 'string' && type !== 'linebreak';
-  };
-
-  return visit((value as { root?: unknown } | null | undefined)?.root);
 }
 
 function placeBody(bodies: Record<string, string>): CollectionBeforeValidateHook {
@@ -143,7 +129,7 @@ export function createCommentsCollection(options: CollectionOptions): Collection
     },
     access: {
       read: readAccess(targets),
-      create: createAccess(targets),
+      create: createAccess(targets, options.userSlug),
       update: authorAccess(options.userSlug),
       delete: authorAccess(options.userSlug),
       ...overrides.access,

@@ -46,10 +46,10 @@ export function readAccess(targets: Targets): Access {
   };
 }
 
-/** Create: signed in, on a collection with comments, on a record the user may read. */
-export function createAccess(targets: Targets): Access {
+/** Create: signed in as an author, on a collection with comments, on a record the user may read. */
+export function createAccess(targets: Targets, userSlug: string): Access {
   return async ({ data, req }) => {
-    if (!req.user) return false;
+    if (req.user?.collection !== userSlug) return false;
     if (!data) return true;
 
     const { collection, documentId } = data as { collection?: unknown; documentId?: unknown };

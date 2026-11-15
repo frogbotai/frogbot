@@ -5,7 +5,7 @@ import { RenderLexical } from '@frogbotai/richtext-lexical/client';
 import { Button, toast, useConfig } from '@frogbotai/ui/admin';
 import { type ComponentProps, useState } from 'react';
 
-import type { CommentsTarget } from '../shared.js';
+import { type CommentsTarget, hasContent } from '../shared.js';
 
 type SetValue = NonNullable<ComponentProps<typeof RenderLexical>['setValue']>;
 
@@ -17,12 +17,6 @@ export type CommentBoxProps = {
   schemaPath: string;
   target: CommentsTarget;
 };
-
-function isEmpty(value: DefaultTypedEditorState | undefined): boolean {
-  const text = JSON.stringify(value?.root ?? {});
-
-  return !/"text":"\s*[^"\s]/.test(text) && !text.includes('"type":"mention"');
-}
 
 /**
  * A rich text box that adds a comment to a record through the comments API. It keeps its own
@@ -84,7 +78,7 @@ export function CommentBox({ onPosted, schemaPath, target }: CommentBoxProps) {
       <div className="fb-comments__actions">
         <Button
           buttonStyle="primary"
-          disabled={posting || isEmpty(value)}
+          disabled={posting || !hasContent(value)}
           onClick={() => void post()}
           size="medium"
         >
