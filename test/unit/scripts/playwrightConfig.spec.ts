@@ -25,6 +25,9 @@ const allProjects = [
   'first-user-blank',
   'sign-in-passwords',
   'sign-in-only',
+  'sign-in-two-factor',
+  'linked-accounts',
+  'projects',
 ];
 
 const dependencyURLs: Record<string, string[]> = {

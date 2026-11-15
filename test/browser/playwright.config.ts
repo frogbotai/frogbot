@@ -241,7 +241,7 @@ const servers: Record<string, Server> = {
   },
   projects: {
     fixture: 'projects',
-    port: testPort(3145),
+    port: testPort(3147),
     database: 'frogbot.projects.browser.db',
     seed: path.join(dirname, 'fixtures', 'projects', 'seed.ts'),
   },
