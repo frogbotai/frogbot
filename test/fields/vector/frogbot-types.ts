@@ -191,6 +191,17 @@ export interface User {
         expiresAt: string;
         refreshCount?: number | null;
         refreshedAt?: string | null;
+        label?: string | null;
+        type?: string | null;
+        metadata?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
       }[]
     | null;
   password?: string | null;
@@ -314,6 +325,9 @@ export interface UsersSelect {
         expiresAt?: boolean;
         refreshCount?: boolean;
         refreshedAt?: boolean;
+        label?: boolean;
+        type?: boolean;
+        metadata?: boolean;
       };
 }
 /**
