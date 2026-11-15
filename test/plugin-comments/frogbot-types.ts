@@ -153,29 +153,31 @@ export type LexicalNodes_5BED233F =
   | SerializedLinkNode<LexicalNodes_5BED233F, LexicalLinkFields>;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "LexicalNodes_C37653B9".
+ * via the `definition` "LexicalNodes_732223E2".
  */
-export type LexicalNodes_C37653B9 =
+export type LexicalNodes_732223E2 =
   | SerializedTextNode
   | SerializedTabNode
   | SerializedLineBreakNode
-  | SerializedParagraphNode<LexicalNodes_C37653B9>
+  | SerializedParagraphNode<LexicalNodes_732223E2>
   | SerializedHorizontalRuleNode
   | SerializedUploadNode<'media'>
-  | SerializedQuoteNode<LexicalNodes_C37653B9>
+  | SerializedQuoteNode<LexicalNodes_732223E2>
   | SerializedRelationshipNode<
       | 'users'
+      | 'customers'
       | 'deals'
       | 'tasks'
+      | 'notes'
       | 'audit-logs'
       | 'comments'
       | 'frogbot-waitpoints'
     >
-  | SerializedAutoLinkNode<LexicalNodes_C37653B9, LexicalLinkFields>
-  | SerializedLinkNode<LexicalNodes_C37653B9, LexicalLinkFields>
-  | SerializedListNode<LexicalNodes_C37653B9>
-  | SerializedListItemNode<LexicalNodes_C37653B9>
-  | SerializedHeadingNode<LexicalNodes_C37653B9>;
+  | SerializedAutoLinkNode<LexicalNodes_732223E2, LexicalLinkFields>
+  | SerializedLinkNode<LexicalNodes_732223E2, LexicalLinkFields>
+  | SerializedListNode<LexicalNodes_732223E2>
+  | SerializedListItemNode<LexicalNodes_732223E2>
+  | SerializedHeadingNode<LexicalNodes_732223E2>;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "LexicalNodes_3DE324E4".
@@ -192,13 +194,16 @@ export type LexicalNodes_3DE324E4 =
 export interface Config {
   auth: {
     users: UserAuthOperations;
+    customers: CustomerAuthOperations;
   };
   blocks: {};
   collections: {
     users: User;
+    customers: Customer;
     media: Media;
     deals: Deal;
     tasks: Task;
+    notes: Note;
     'audit-logs': AuditLog;
     comments: Comment;
     'frogbot-waitpoints': FrogBotWaitpoint;
@@ -206,9 +211,11 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect;
+    customers: CustomersSelect;
     media: MediaSelect;
     deals: DealsSelect;
     tasks: TasksSelect;
+    notes: NotesSelect;
     'audit-logs': AuditLogsSelect;
     comments: CommentsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
@@ -227,7 +234,7 @@ export interface Config {
     activity: ActivityWidget;
     'upload-dropzone': UploadDropzoneWidget;
   };
-  user: User;
+  user: User | Customer;
   jobs: {
     tasks: {
       'frogbot-sweep-waitpoints': TaskFrogBotSweepWaitpoints;
@@ -258,6 +265,24 @@ export interface UserAuthOperations {
     password: string;
   };
 }
+export interface CustomerAuthOperations {
+  forgotPassword: {
+    email: string;
+    password: string;
+  };
+  login: {
+    email: string;
+    password: string;
+  };
+  registerFirstUser: {
+    email: string;
+    password: string;
+  };
+  unlock: {
+    email: string;
+    password: string;
+  };
+}
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
@@ -265,14 +290,24 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   name?: string | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null);
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -308,18 +343,85 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customers".
+ */
+export interface Customer {
+  id: number;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null);
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+        refreshCount?: number | null;
+        refreshedAt?: string | null;
+        label?: string | null;
+        type?: string | null;
+        metadata?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'customers';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
   id: number;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null);
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -352,14 +454,24 @@ export interface Media {
 export interface Deal {
   id: number;
   name?: string | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null);
   updatedAt: string;
   createdAt: string;
 }
@@ -370,14 +482,53 @@ export interface Deal {
 export interface Task {
   id: number;
   title?: string | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null);
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notes".
+ */
+export interface Note {
+  id: number;
+  title?: string | null;
+  owner?: (number | null) | User;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null);
   updatedAt: string;
   createdAt: string;
 }
@@ -426,7 +577,7 @@ export interface Comment {
   mentions?: (number | User)[] | null;
   bodyField?: string | null;
   body_0?: LexicalRichText<LexicalNodes_5BED233F> | null;
-  body_1?: LexicalRichText<LexicalNodes_C37653B9> | null;
+  body_1?: LexicalRichText<LexicalNodes_732223E2> | null;
   body?:
     | {
         [k: string]: unknown;
@@ -436,14 +587,24 @@ export interface Comment {
     | number
     | boolean
     | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null);
   updatedAt: string;
   createdAt: string;
 }
@@ -483,6 +644,36 @@ export interface FrogBotWaitpoint {
  */
 export interface UsersSelect {
   name?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  email?: boolean;
+  resetPasswordToken?: boolean;
+  resetPasswordExpiration?: boolean;
+  salt?: boolean;
+  hash?: boolean;
+  resetPasswordRequestedAt?: boolean;
+  loginAttempts?: boolean;
+  lockUntil?: boolean;
+  sessions?:
+    | boolean
+    | {
+        id?: boolean;
+        createdAt?: boolean;
+        expiresAt?: boolean;
+        refreshCount?: boolean;
+        refreshedAt?: boolean;
+        label?: boolean;
+        type?: boolean;
+        metadata?: boolean;
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customers_select".
+ */
+export interface CustomersSelect {
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
@@ -559,6 +750,18 @@ export interface DealsSelect {
  */
 export interface TasksSelect {
   title?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notes_select".
+ */
+export interface NotesSelect {
+  title?: boolean;
+  owner?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
@@ -647,7 +850,14 @@ export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
     relatedCollection:
-      'users' | 'media' | 'deals' | 'tasks' | 'audit-logs' | 'comments';
+      | 'users'
+      | 'customers'
+      | 'media'
+      | 'deals'
+      | 'tasks'
+      | 'notes'
+      | 'audit-logs'
+      | 'comments';
     where?:
       | {
           [k: string]: unknown;
@@ -670,7 +880,16 @@ export interface CollectionQueryWidget {
 export interface ActivityWidget {
   data?: {
     excludedCollections?:
-      | ('users' | 'media' | 'deals' | 'tasks' | 'audit-logs' | 'comments')[]
+      | (
+          | 'users'
+          | 'customers'
+          | 'media'
+          | 'deals'
+          | 'tasks'
+          | 'notes'
+          | 'audit-logs'
+          | 'comments'
+        )[]
       | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';

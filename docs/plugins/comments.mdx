@@ -114,6 +114,8 @@ await fetch('/api/comments', {
 
 A comment needs some text or a node such as a mention or upload. Creating one on a collection without comments fails.
 
+Deleting a record deletes its comments, so a new record that gets the same id starts with none. Moving a record to the trash keeps them.
+
 ### Access
 
 FrogBot adds no tenant rules. The defaults:
