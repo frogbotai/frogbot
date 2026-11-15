@@ -5,8 +5,11 @@ import {
   convertLexicalToPlaintext,
   MentionPlaintextConverter,
 } from '@frogbotai/richtext-lexical/plaintext';
+import { toPayloadRequest } from 'frogbot/internal';
+import { isValidElement, type ReactElement } from 'react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { RecordComments } from '../../packages/plugins/plugin-comments/src/rsc/RecordComments.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
@@ -325,5 +328,75 @@ describe('comments plugin', () => {
     });
 
     expect(plain.body.doc.bodyField).toBe('body_1');
+  });
+
+  it('lists only comments made since the record was created, as a reused id brings back old ones', async () => {
+    const record = await deal();
+
+    await booted.frogbot.create({
+      collection: 'comments',
+      data: {
+        author: users.ana.id,
+        body: body(text('Left on a deleted record')),
+        collection: 'deals',
+        createdAt: '2000-01-01T00:00:00.000Z',
+        documentId: String(record.id),
+      },
+      overrideAccess: true,
+    });
+
+    await comment('ana', {
+      body: body(text('Current')),
+      collection: 'deals',
+      documentId: String(record.id),
+    });
+
+    const req = await booted.frogbot.createRequest();
+    const ana = await booted.frogbot.findByID({
+      collection: 'users',
+      id: users.ana.id,
+      overrideAccess: true,
+    });
+
+    req.user = { ...ana, collection: 'users' } as typeof req.user;
+
+    const node = await RecordComments({
+      collection: 'deals',
+      id: record.id,
+      req: toPayloadRequest(req) as unknown as Parameters<typeof RecordComments>[0]['req'],
+    });
+
+    expect(isValidElement(node)).toBe(true);
+
+    const { initial, target } = (
+      node as ReactElement<{ initial: { body: unknown }[]; target: { since?: string } }>
+    ).props;
+
+    expect(initial).toHaveLength(1);
+    expect(target.since).toBe(record.createdAt);
+  });
+
+  it('refuses a comment from a user outside the author collection', async () => {
+    const record = await deal();
+    const credentials = { email: 'cust@frogbot.local', password: 'cust-password' };
+
+    await booted.restClient.post('/api/customers', credentials);
+
+    const login = await booted.restClient.post<{ token: string }>(
+      '/api/customers/login',
+      credentials,
+    );
+
+    const posted = await booted.restClient.post(
+      '/api/comments',
+      {
+        body: body(text('From a customer')),
+        collection: 'deals',
+        documentId: String(record.id),
+      },
+      { headers: { Authorization: `JWT ${login.body.token}` } },
+    );
+
+    expect(posted.status).toBe(403);
   });
 });

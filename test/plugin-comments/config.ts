@@ -18,6 +18,13 @@ const Users: CollectionConfig = {
   fields: [{ name: 'name', type: 'text' }],
 };
 
+const Customers: CollectionConfig = {
+  slug: 'customers',
+  auth: true,
+  access: openAccess,
+  fields: [],
+};
+
 const Media: CollectionConfig = {
   slug: 'media',
   access: openAccess,
@@ -58,6 +65,7 @@ export default await buildTestConfig({
       }
     : {}),
   editor: lexicalEditor(),
-  collections: [Users, Media, Deals, Tasks],
+  admin: { user: 'users' },
+  collections: [Users, Customers, Media, Deals, Tasks],
   plugins: [auditLogPlugin({ collections: ['deals'] }), commentsPlugin({ collections: ['tasks'] })],
 });
