@@ -1,0 +1,99 @@
+@layer frogbot {
+  .fb-bell {
+    align-items: center;
+    border-radius: var(--radius-full, 999px);
+    color: var(--color-icon-primary);
+    display: inline-flex;
+    height: 32px;
+    justify-content: center;
+    position: relative;
+    width: 32px;
+  }
+
+  .fb-bell:hover {
+    background: var(--color-bg-hover);
+  }
+
+  .fb-bell__badge {
+    background: var(--color-bg-danger);
+    border-radius: 999px;
+    color: var(--color-text-ondanger);
+    font-size: 10px;
+    font-weight: 600;
+    inset-block-start: 2px;
+    inset-inline-end: 0;
+    line-height: 16px;
+    min-width: 16px;
+    padding-inline: 4px;
+    position: absolute;
+    text-align: center;
+  }
+
+  .fb-inbox-view__title {
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.25;
+    margin: var(--spacer-3) 0 var(--spacer-2);
+  }
+
+  .fb-inbox {
+    display: grid;
+    list-style: none;
+    margin: 0 calc(-1 * var(--spacer-2)) var(--spacer-4, 24px);
+    max-width: 720px;
+    padding: 0;
+  }
+
+  .fb-inbox > li + li {
+    border-block-start: 1px solid var(--color-border);
+  }
+
+  .fb-inbox__item {
+    background: none;
+    border: 0;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    display: grid;
+    font: inherit;
+    gap: var(--spacer-1);
+    padding: var(--spacer-3) var(--spacer-2);
+    text-align: start;
+    width: 100%;
+  }
+
+  .fb-inbox__item:hover {
+    background: var(--color-bg-hover);
+  }
+
+  .fb-inbox__item--unread {
+    color: var(--color-text);
+  }
+
+  .fb-inbox__item--unread .fb-inbox__title {
+    font-weight: 600;
+  }
+
+  .fb-inbox__title {
+    align-items: center;
+    display: flex;
+    gap: var(--spacer-2);
+  }
+
+  .fb-inbox__dot {
+    background: var(--color-bg-brand);
+    border-radius: 999px;
+    flex: none;
+    height: 8px;
+    width: 8px;
+  }
+
+  .fb-inbox__excerpt {
+    overflow-wrap: anywhere;
+  }
+
+  .fb-inbox__item time,
+  .fb-inbox__empty {
+    color: var(--color-text-tertiary);
+    font-size: var(--text-body-small-font-size);
+  }
+}

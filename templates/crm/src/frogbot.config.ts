@@ -4,6 +4,7 @@ import { auditLogPlugin } from '@frogbotai/plugin-audit-log';
 import { commentsPlugin } from '@frogbotai/plugin-comments';
 import { dojo } from '@frogbotai/plugin-dojo';
 import { importExportPlugin } from '@frogbotai/plugin-import-export';
+import { notificationsPlugin } from '@frogbotai/plugin-notifications';
 import { lexicalEditor } from '@frogbotai/richtext-lexical';
 import { sharpTransformer } from '@frogbotai/transformer-sharp';
 import type { FrogBotConfig } from 'frogbot';
@@ -80,6 +81,7 @@ const config: FrogBotConfig = {
     roles,
     auditLogPlugin({ overrides: { access: auditLogAccess } }),
     commentsPlugin(),
+    notificationsPlugin(),
     importExportPlugin(importExport),
   ],
   upload: { transformers: [sharpTransformer()] },

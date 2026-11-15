@@ -1350,6 +1350,11 @@
     "type": "import('@frogbotai/plugin-audit-log').AuditLogPluginOptions"
   },
   {
+    "page": "plugins/notifications",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-notifications').NotificationsPluginOptions"
+  },
+  {
     "page": "plugins/comments",
     "heading": "Options",
     "type": "import('@frogbotai/plugin-comments').CommentsPluginOptions"

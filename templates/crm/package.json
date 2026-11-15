@@ -26,6 +26,7 @@
     "@frogbotai/plugin-comments": "workspace:*",
     "@frogbotai/plugin-dojo": "workspace:*",
     "@frogbotai/plugin-import-export": "workspace:*",
+    "@frogbotai/plugin-notifications": "workspace:*",
     "@frogbotai/plugin-roles": "workspace:*",
     "@frogbotai/richtext-lexical": "workspace:*",
     "@frogbotai/transformer-sharp": "workspace:*",

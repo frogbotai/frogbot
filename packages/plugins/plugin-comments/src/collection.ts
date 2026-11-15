@@ -9,6 +9,7 @@ import {
 } from 'frogbot';
 
 import { authorAccess, createAccess, readAccess } from './access.js';
+import { notifyMentions } from './mentions.js';
 import { hasContent } from './shared.js';
 import type { CommentsCollectionOverrides, CommentsEditor } from './types.js';
 
@@ -139,6 +140,7 @@ export function createCommentsCollection(options: CollectionOptions): Collection
       beforeValidate: [placeBody(options.bodies), ...(overrides.hooks?.beforeValidate ?? [])],
       beforeChange: [fillMentions, ...(overrides.hooks?.beforeChange ?? [])],
       afterRead: [hideBodies([...options.editors.keys()]), ...(overrides.hooks?.afterRead ?? [])],
+      afterChange: [notifyMentions(options.userSlug), ...(overrides.hooks?.afterChange ?? [])],
     },
     fields: overrideFields ? overrideFields({ defaultFields: builtIns }) : builtIns,
   };

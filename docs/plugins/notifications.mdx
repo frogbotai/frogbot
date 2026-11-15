@@ -1,0 +1,104 @@
+---
+title: Notifications
+description: In-app notifications with a bell, an inbox and notify() for any hook or job.
+---
+
+The notifications plugin tells people when something needs them. It adds a bell to the admin header with the number of unread notifications, an inbox at `/admin/notifications`, and `notify()` to send one from any hook, endpoint or job. With the [comments plugin](/plugins/comments), a new @mention notifies the person mentioned.
+
+Delivery is in-app only. The bell's count is read again on every page change; it doesn't update on its own while a page stays open.
+
+## Installation
+
+```bash
+pnpm add @frogbotai/plugin-notifications
+```
+
+## Configuration
+
+```ts
+import { commentsPlugin } from '@frogbotai/plugin-comments'
+import { notificationsPlugin } from '@frogbotai/plugin-notifications'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  // ...
+  plugins: [commentsPlugin({ collections: ['deals'] }), notificationsPlugin()],
+})
+```
+
+Notifications go to users of the app's auth collection. With several auth collections, set `admin.user`.
+
+## Sending a notification
+
+Call `notify()` with the `req` of the hook, endpoint or job you're in, so the notification is saved in the same transaction: if the work fails and rolls back, nobody is told about it.
+
+```ts
+import { notify } from '@frogbotai/plugin-notifications'
+import type { CollectionAfterChangeHook } from 'frogbot'
+
+export const tellOwner: CollectionAfterChangeHook = async ({ doc, previousDoc, req }) => {
+  if (doc.owner && doc.owner !== previousDoc?.owner) {
+    await notify(req, {
+      user: doc.owner,
+      title: `You now own ${doc.name}`,
+      link: `/admin/collections/deals/${doc.id}`,
+      source: 'deals',
+    })
+  }
+
+  return doc
+}
+```
+
+| Field | Description |
+| --- | --- |
+| `user` | The id of the user to notify. Required. |
+| `title` | One line saying what happened. Required. |
+| `excerpt` | A short plain-text preview, such as the start of a comment. |
+| `link` | Where opening the notification goes: an admin path such as `/admin/collections/deals/12`, or an `https://` URL. |
+| `source` | What sent it, such as `deals`, for your own filtering. |
+
+`notify()` checks no access: your code decides who to tell. Only send people things they may see.
+
+## Mentions in comments
+
+With both plugins installed, a comment notifies each user it newly mentions, once, with the comment's first 140 characters and a link to the record. Editing a comment notifies only the users the edit adds. Nobody is notified for mentioning themselves, and a user who can't read the record isn't notified, so the excerpt never reaches someone who couldn't open it.
+
+The two plugins don't depend on each other: either works alone.
+
+## Bell and inbox
+
+The bell shows the signed-in user's unread count, up to `99+`, and links to the inbox. The inbox lists their latest 50 notifications, newest first, with unread ones in bold. Opening one marks it read and follows its link.
+
+## The notifications collection
+
+| Field | Holds |
+| --- | --- |
+| `user` | Who it's for. |
+| `title`, `excerpt`, `link`, `source` | What `notify()` was given. |
+| `readAt` | When the user opened it, or empty while unread. |
+
+Only `readAt` can be changed after create.
+
+```ts
+// mark one read
+await fetch('/api/notifications/42', {
+  method: 'PATCH',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ readAt: new Date().toISOString() }),
+})
+```
+
+### Access
+
+- **Read, update and delete**: the user's own notifications only.
+- **Create**: nobody through the API. Use `notify()`.
+
+Change them with `overrides.access`.
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `overrides` | `Partial<CollectionConfig>` with `fields?: ({ defaultFields }) => Field[]` | None | Changes the notifications collection: `slug` (default `'notifications'`), `access`, `admin`, `hooks`, `fields` and any other collection key. |
