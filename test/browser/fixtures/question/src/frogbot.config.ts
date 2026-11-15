@@ -76,6 +76,7 @@ export default buildConfig({
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || 'file:./frogbot.db' } }),
   typescript: { autoGenerate: false },
   admin: {
+    avatar: 'default',
     importMap: { autoGenerate: false },
     components: {
       afterDashboard: ['/components/RootSlots#AfterDashboardSlot'],
@@ -457,15 +458,7 @@ export default buildConfig({
         await req.frogbot.db.deleteMany({
           collection: 'payload-preferences',
           where: {
-            key: {
-              in: [
-                chatPicksPreference,
-                `collection-${tasksSlug}`,
-                `collection-${storiesSlug}-view-board`,
-                `frogbot:collection-view:${boardFirstSlug}`,
-                `collection-${boardFirstSlug}-view-list`,
-              ],
-            },
+            or: [{ key: { equals: chatPicksPreference } }, { key: { like: 'collection-' } }],
           },
         });
 

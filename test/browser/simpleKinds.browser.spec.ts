@@ -195,7 +195,7 @@ test('a Board card URL opens the site in a new tab without opening the card', as
 
   await expect(site).toHaveURL('https://example.com/pricing');
   expect(await site.evaluate(() => window.opener)).toBeNull();
-  await expect(page.locator(`dialog[id*="doc-drawer_${tasksSlug}"]`)).toHaveCount(0);
+  await expect(page.locator('.fb-record-panel')).toHaveCount(0);
 });
 
 test('a Board card title still opens the card', async ({ page }) => {
@@ -203,7 +203,7 @@ test('a Board card title still opens the card', async ({ page }) => {
 
   await boardCard(page, full.title).locator('.fb-card__title').click();
 
-  await expect(page.locator(`dialog[id^="doc-drawer_${tasksSlug}"]`)).toBeVisible();
+  await expect(page.locator('.fb-record-panel #field-title')).toHaveValue(full.title);
 });
 
 test('Board cards and Calendar events show kind values and leave empty ones blank', async ({

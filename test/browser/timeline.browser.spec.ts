@@ -104,7 +104,6 @@ test.beforeEach(async ({ page }) => {
     if (response.status() >= 400) problems.push(`${response.status()} ${response.url()}`);
   });
 
-  await page.route('https://www.gravatar.com/**', (route) => route.fulfill({ status: 204 }));
   await page.clock.setFixedTime(now);
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
 

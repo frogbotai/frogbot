@@ -5,7 +5,7 @@ import { themes, viewports } from './__helpers/viewShots';
 
 let problems: string[];
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(({ page }) => {
   problems = [];
 
   page.on('console', (message) => {
@@ -27,8 +27,6 @@ test.beforeEach(async ({ page }) => {
   page.on('response', (response) => {
     if (response.status() >= 400) problems.push(`response: ${response.status()} ${response.url()}`);
   });
-
-  await page.route('https://www.gravatar.com/**', (route) => route.fulfill({ status: 204 }));
 });
 
 test.afterEach(() => {

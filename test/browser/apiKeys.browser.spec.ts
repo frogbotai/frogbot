@@ -191,7 +191,12 @@ test('revokes a key that made keys and keeps them when the box is cleared', asyn
   await expect(revoke).toBeHidden();
 
   await expect(parentRow()).toContainText('Revoked');
-  expect((await asKey.get(`/api/${apiKeysSlug}`)).status()).toBe(403);
+  const refused = await asKey.get(`/api/${apiKeysSlug}`);
+
+  expect(refused.status()).toBe(401);
+  expect(((await refused.json()) as { errors: { message: string }[] }).errors[0]?.message).toMatch(
+    /^API key was revoked at /,
+  );
 
   const childToken = ((await child.json()) as { token: string }).token;
   const asChild = await request.newContext({

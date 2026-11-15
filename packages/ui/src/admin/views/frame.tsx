@@ -140,7 +140,8 @@ function slotsFor(view: RuntimeCollectionView | undefined) {
 
 /**
  * Renders the shared frame's slots for a view: tabs, description, toolbar, menu, the slots around
- * the view and its empty state. `skipLayoutSlots` leaves the slots around the view to the caller.
+ * the view and its empty state. `skipLayoutSlots` leaves the slots around the view and its menu items
+ * to the caller: the list view gets them rendered from Payload's own `listMenuItems` and list slots.
  */
 export function buildFrameSlots(args: FrameSlotsArgs & { skipLayoutSlots?: boolean }): FrameSlots {
   const { collectionConfig, hasCreatePermission, hasDeletePermission, i18n, importMap } = args;
@@ -211,7 +212,8 @@ export function buildFrameSlots(args: FrameSlotsArgs & { skipLayoutSlots?: boole
       />
     ));
 
-  const menuItems = slots.menuItems ? [render(slots.menuItems)].flat() : [];
+  const menuItems =
+    slots.menuItems && !args.skipLayoutSlots ? [render(slots.menuItems)].flat() : [];
 
   return {
     ...(args.skipLayoutSlots

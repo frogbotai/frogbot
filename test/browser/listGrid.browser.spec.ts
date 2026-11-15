@@ -157,7 +157,8 @@ test('clamps a drag to 60 pixels and keeps the sort and filters it was saved bes
 
   const stored = await storedPreference(page);
 
-  expect(stored).toMatchObject({ limit: '10', sort: 'name', where: { stage: { equals: 'lead' } } });
+  expect(stored).toMatchObject({ sort: 'name', where: { stage: { equals: 'lead' } } });
+  expect(stored).not.toHaveProperty('limit');
 
   await page.goto('/collections/deals?limit=10&sort=-name');
   await expect(page.locator('.fb-list-grid tbody tr').first()).toBeVisible();

@@ -65,7 +65,7 @@ test.afterEach(async ({ page }) => {
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
 });
 
-test('the List link around a coloured status keeps its classes and opens the document', async ({
+test('the List link around a coloured status keeps its classes and opens the record', async ({
   page,
 }) => {
   await page.goto(listPath);
@@ -83,7 +83,8 @@ test('the List link around a coloured status keeps its classes and opens the doc
 
   await link.click();
 
-  await expect(page).toHaveURL(new RegExp(`/collections/${tasksSlug}/${shippedId}$`));
+  await expect(page).toHaveURL(new RegExp(`[?&]record=${shippedId}(&|$)`));
+  await expect(page.locator('.fb-record-panel #field-title')).toHaveValue('Shipped');
 });
 
 test('the List shows a pill per stored value and gray for an uncoloured option', async ({

@@ -8,7 +8,7 @@ export default buildConfig({
   secret: process.env.FROGBOT_SECRET || 'browser-forms-secret',
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || 'file:./frogbot.db' } }),
   typescript: { autoGenerate: false },
-  admin: { importMap: { autoGenerate: false } },
+  admin: { avatar: 'default', importMap: { autoGenerate: false } },
   collections: [
     { slug: 'users', auth: true, fields: [] },
     {

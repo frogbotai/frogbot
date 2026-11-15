@@ -285,7 +285,12 @@ test('typing sonnet filters about 500 models within 100 ms per key', async ({
   const timings = await searchField(page).evaluate(async (input: HTMLInputElement) => {
     const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
     const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
-    const result: number[] = [];
+    const idle = performance.now();
+
+    await frame();
+    await frame();
+
+    const result: number[] = [Math.round((performance.now() - idle) * 10) / 10];
 
     for (const length of [1, 2, 3, 4, 5, 6]) {
       const start = performance.now();
@@ -307,7 +312,7 @@ test('typing sonnet filters about 500 models within 100 ms per key', async ({
     description: `${browserName}: ${timings.join(', ')} ms`,
   });
 
-  console.log(`model search timings (${browserName}): ${timings.join(', ')} ms`);
+  console.log(`model search timings (${browserName}, idle first): ${timings.join(', ')} ms`);
 
   const ids = await list
     .locator('.fb-model-selector__option')
