@@ -544,6 +544,7 @@ export interface MediaSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+  notified?: (number | User)[] | null;
  * via the `definition` "deals_select".
  */
 export interface DealsSelect {
@@ -749,6 +750,7 @@ export interface SerializedTabNode {
   version: number;
 }
 
+  notified?: boolean;
 export interface SerializedLineBreakNode {
   type: 'linebreak';
   /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */

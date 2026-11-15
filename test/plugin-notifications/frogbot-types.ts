@@ -265,6 +265,7 @@ export interface Comment {
   author?: (number | null) | User;
   mentions?: (number | User)[] | null;
   bodyField?: string | null;
+  notified?: (number | User)[] | null;
   body_0?: LexicalRichText<LexicalNodes_5C2A8086> | null;
   body?:
     | {
@@ -384,6 +385,7 @@ export interface CommentsSelect {
   author?: boolean;
   mentions?: boolean;
   bodyField?: boolean;
+  notified?: boolean;
   body_0?: boolean;
   body?: boolean;
   createdBy?: boolean;

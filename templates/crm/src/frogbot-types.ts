@@ -785,6 +785,7 @@ export interface Comment {
   author?: (number | null) | User;
   mentions?: (number | User)[] | null;
   bodyField?: string | null;
+  notified?: (number | User)[] | null;
   body_0?: LexicalRichText<LexicalNodes_294BC60D> | null;
   body?:
     | {
@@ -1321,6 +1322,7 @@ export interface MessagesSelect {
   model?: boolean;
   reasoning?: boolean;
   author?: boolean;
+  notified?: boolean;
   settlements?: boolean;
   version?: boolean;
   usage?:
