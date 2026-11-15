@@ -220,6 +220,7 @@ describe('frogbot dojo actions beyond the basics', () => {
     const reply = {
       body: { id: 1, slug: 'trend-capital', aiBalanceUSD: 0, aiAutoRecharge: false },
     };
+
     const { env, cwd } = await setup({ 'GET /api/workspaces/1': reply });
     const text = testIO({ cwd, env });
 
@@ -335,6 +336,7 @@ describe('frogbot dojo actions beyond the basics', () => {
     const { dojo, env, cwd } = await setup({
       'GET /api/templates': { body: { docs: [template] } },
     });
+
     const link = `${dojo.url}/billing/upgrade?workspace=1&apps=1`;
 
     dojo.replies.set('POST /api/templates/tpl1/use', {
