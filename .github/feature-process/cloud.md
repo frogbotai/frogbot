@@ -4,7 +4,7 @@ Cloud agents run the same steps as [the local process](README.md), started from 
 
 ## Labels start the stages
 
-Only the owner adds labels. A run never adds a stage label, because runs act as the owner's GitHub account and a label added by a run would start another run. There are two exceptions, each adding one label once: the plan run adds `ticket:build` when the plan needs nothing from the owner, as [From plan to build](#from-plan-to-build) describes, and the independent PR review task adds `ticket:revise` after it posts a fix list, as [Fix lists](#fix-lists-from-the-independent-review) describes.
+Only the owner adds labels. A run never adds a stage label, because runs act as the owner's GitHub account and a label added by a run would start another run. There are three exceptions: the plan run adds `ticket:build` when the plan needs nothing from the owner, a build run adds `ticket:build` for the next stage of a stacked plan, both as [From plan to build](#from-plan-to-build) describes, and the independent PR review task adds `ticket:revise` after it posts a fix list, as [Fix lists](#fix-lists-from-the-independent-review) describes.
 
 | Label               | Stage               | The run writes                                                             | It ends with                                                                                                                   |
 | ------------------- | ------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
@@ -38,9 +38,16 @@ The plan and the build are separate runs, so the build starts with fresh context
 4. Otherwise set the plan to `Status: Go (<date>)`, commit and push the ticket folder, and post the issue comment.
 5. Hand off: wait 5 seconds, then add `ticket:build` to the issue, on its own. Skip it, and say why in the comment, if the issue already has another stage label, or the next stage to build already has an open PR or a pushed branch.
 
-A `ticket:build` run stops with a comment unless `step3_plan.md` says `Status: Go`. It never adds a stage label.
+A `ticket:build` run stops with a comment unless `step3_plan.md` says `Status: Go`. The only stage label it adds is `ticket:build` for the next stage of a stacked plan.
 
-A plan with several stages ships one PR per stage, in order, each on its own `claude/ticket-<n>-<stage>` branch. Every PR but the last says `Part of #<n>`, not `Closes`. Each `ticket:build` builds the first stage with no PR. After a stage's PR merges, the owner adds `ticket:build` for the next one, and the build comment's call line says so: `review and merge PR #n, then add ticket:build for stage 2`. A `ticket:go` on a plan that is already `Status: Go`, with no new owner comment, skips planning and hands off the same way.
+A plan with several stages is built as a stack of PRs, all before the owner reviews any of them:
+
+- Each stage has its own `claude/ticket-<n>-<stage>` branch and PR. Stage 1 branches from `main`. Every later stage branches from the stage before it, and its PR targets that stage's branch, so its diff shows only its own stage. Its body starts with `Stacked on #<previous PR>` after the `Part of` line.
+- Every PR but the last says `Part of #<n>`. The last says `Closes #<n>`.
+- Each `ticket:build` builds the first stage with no PR. When its PR is green and ready, the run adds `ticket:build` again, on its own and 5 seconds after its comment, so the next stage starts. That is the third run that adds a label, and it adds only `ticket:build`, only while the plan has a stage with no PR.
+- When a run changes a stage that has stages above it, as a fix round does, it merges that branch into each branch above it, in order, and pushes them. It never force-pushes or rebases.
+- The comments for every stage but the last say `**Your call:** none. Stage <k+1> is building.` The last says `**Your call:** review PRs #a, #b and #c, then merge them in that order.` After each merge GitHub retargets the next PR to `main`, and its squash merge stays clean because its branch already holds the stages below it.
+- A `ticket:go` on a plan that is already `Status: Go`, with no new owner comment, skips planning and hands off the same way.
 
 ### Fix lists from the independent review
 
