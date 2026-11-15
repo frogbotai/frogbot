@@ -1,5 +1,4 @@
-import { createWriteStream } from 'node:fs';
-import { lstat, rm } from 'node:fs/promises';
+import { lstat, open, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -81,10 +80,14 @@ async function listTrash(dojo: DojoClient): Promise<TrashedApp[]> {
 }
 
 async function download(response: Response, path: string): Promise<number> {
+  const file = await open(path, 'wx', 0o600).catch((error: Error) => {
+    throw new ShareError(`Couldn't create ${path}: ${error.message}`);
+  });
+
   try {
     await pipeline(
       Readable.fromWeb(response.body as ReadableStream<Uint8Array>),
-      createWriteStream(path, { flags: 'wx', mode: 0o600 }),
+      file.createWriteStream(),
     );
   } catch (error) {
     await rm(path, { force: true });

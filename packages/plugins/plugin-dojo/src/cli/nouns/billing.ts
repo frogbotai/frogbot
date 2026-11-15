@@ -87,17 +87,19 @@ export const billing: Noun = {
           what: `Couldn't read the AI balance of ${slug}`,
         });
 
-        const balanceUSD = read.aiBalanceUSD ?? 0;
         const ai = {
           workspace: slug,
-          balanceUSD,
-          paused: balanceUSD <= 0,
+          balanceUSD: read.aiBalanceUSD ?? null,
           autoRecharge: read.aiAutoRecharge === true,
         };
 
+        const balance =
+          ai.balanceUSD === null
+            ? 'AI balance not reported'
+            : `${dollars(ai.balanceUSD)} AI balance`;
+
         done(input.io, ai, [
-          `${slug}: ${dollars(balanceUSD)} AI balance, auto-recharge ${ai.autoRecharge ? 'on' : 'off'}`,
-          ...(ai.paused ? ['AI is paused until funds are added: billing add-funds.'] : []),
+          `${slug}: ${balance}, auto-recharge ${ai.autoRecharge ? 'on' : 'off'}`,
         ]);
       },
     },

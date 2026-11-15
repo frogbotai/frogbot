@@ -12,9 +12,9 @@ const paying = new Set(['active', 'trialing', 'past_due']);
 type Paywall = { why: string; url: string; workspace: string; apps: number; owner: boolean };
 
 const upgradeLink = /\S*\/billing\/upgrade\?[^\s,;]+/;
-const askOwner = 'Ask a workspace owner';
+const someoneElse = /workspace's Owner|workspace owner/i;
 const nextStep =
-  /\s*(?:Pay for it at|Ask a workspace owner to open|A workspace owner can pay for it at)\s*$/;
+  /\s*(?:Pay for it at|Ask (?:the workspace's|a workspace) Owner to open|(?:The workspace's|A workspace) Owner can pay for it at)\s*$/i;
 
 function readPaywall(message: string, dojoUrl: string, link?: string): Paywall | undefined {
   const match = upgradeLink.exec(message);
@@ -32,7 +32,7 @@ function readPaywall(message: string, dojoUrl: string, link?: string): Paywall |
     url: url.href,
     workspace,
     apps: Number(url.searchParams.get('apps')) || 1,
-    owner: !message.includes(askOwner),
+    owner: !someoneElse.test(message),
   };
 }
 

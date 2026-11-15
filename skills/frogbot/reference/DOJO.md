@@ -126,9 +126,9 @@ Keys for scripts, CI and other agents to act as the user through `FROGBOT_DOJO_T
 
 - `npx frogbot dojo billing status [--workspace <slug>]` prints the workspace's plan, its status and how many paid apps it has, and the link to choose a plan when it has none.
 - `npx frogbot dojo billing manage [--workspace <slug>]` prints the link to change the card, see invoices or cancel. Workspace owners only. Give the link to the user: paying happens in the browser, never through you.
-- `npx frogbot dojo billing ai [--workspace <slug>]` prints the workspace's AI balance and whether auto-recharge is on. AI is paused while the balance is $0 or less. Only a person changes auto-recharge, in Dojo.
+- `npx frogbot dojo billing ai [--workspace <slug>]` prints the workspace's AI balance and whether auto-recharge is on. It says "not reported" when Dojo sends no balance. Only a person changes auto-recharge, in Dojo.
 - `npx frogbot dojo billing add-funds [--amount <dollars>] [--workspace <slug>]` prints the link that adds AI funds, $10 to $1000 (default $20) plus a processing fee. Workspace owners only. Give the link to the user.
 
 ## Activity
 
-- `npx frogbot dojo activity [--workspace <slug>] [--app <app>] [--limit <n>]` prints who deployed, changed or invited what, newest first, as `<time>  <who>  <event>  <app>`. Workspace owners only, on the Business plan.
+- `npx frogbot dojo activity [--workspace <slug>] [--app <app>] [--limit <n>]` prints who deployed, changed or invited what, newest first, as `<time>  <who>  <event>  <app>`. Workspace admins only, on the Business plan.
