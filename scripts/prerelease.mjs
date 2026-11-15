@@ -18,7 +18,21 @@ export const STEPS = [
   { name: 'services', run: ['pnpm', 'docker:start'], docker: true },
   {
     name: 'test',
-    run: ['pnpm', 'test'],
+    run: [
+      'pnpm',
+      'vitest',
+      'run',
+      ...[
+        'int',
+        'e2e',
+        'gateway-integration',
+        'gateway-golden',
+        'gateway-e2e',
+        'gateway-zen',
+        'live',
+      ].flatMap((project) => ['--project', project]),
+      '--maxWorkers=4',
+    ],
     env: { RUN_E2E: '1', RUN_COMPILER_CHECKS: '1' },
     docker: true,
   },
