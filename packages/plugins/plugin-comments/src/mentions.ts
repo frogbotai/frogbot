@@ -28,12 +28,6 @@ function idOf(value: unknown): Id | undefined {
   return undefined;
 }
 
-function idsOf(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.map(idOf).flatMap((id) => (id === undefined ? [] : [String(id)]))
-    : [];
-}
-
 /** The comment's text, with mentions as `@Name`, clipped to `EXCERPT_LENGTH` characters. */
 export function excerptOf(body: unknown): string {
   if (!body || typeof body !== 'object') return '';
@@ -50,12 +44,48 @@ export function excerptOf(body: unknown): string {
   return chars.length > EXCERPT_LENGTH ? `${chars.slice(0, EXCERPT_LENGTH - 1).join('')}…` : text;
 }
 
-/** The users mentioned in `doc` that weren't in `previous` and aren't its author. */
-export function newlyMentioned(doc: Doc, previous: Doc | undefined): string[] {
-  const before = new Set(idsOf(previous?.mentions));
-  const author = idOf(doc.author);
+/** Where `fillMentions` hands the users to notify to `notifyMentions`, in the hook `context`. */
+export const FRESH_MENTIONS = 'plugin-comments:fresh-mentions';
 
-  return [...new Set(idsOf(doc.mentions))].filter((id) => !before.has(id) && id !== String(author));
+/**
+ * Who a save should notify: users `mentions` names that the comment never notified before and
+ * that aren't its author. `notified` is everyone the comment has ever mentioned, so a mention
+ * that is removed and added back is not new.
+ */
+export function mentionChanges(args: { author: unknown; mentions: unknown; notified: unknown }): {
+  fresh: string[];
+  notified: Id[];
+} {
+  const ids = (value: unknown) =>
+    Array.isArray(value) ? value.map(idOf).filter((id): id is Id => id !== undefined) : [];
+
+  const before = ids(args.notified);
+  const seen = new Set(before.map(String));
+  const author = String(idOf(args.author));
+  const added = ids(args.mentions).filter((id) => {
+    const key = String(id);
+
+    if (seen.has(key) || key === author) return false;
+
+    seen.add(key);
+
+    return true;
+  });
+
+  return { fresh: added.map(String), notified: [...before, ...added] };
+}
+
+async function asUser<T>(req: FrogBotRequest, user: unknown, read: () => Promise<T>): Promise<T> {
+  const payloadReq = toPayloadRequest(req);
+  const own = payloadReq.user;
+
+  payloadReq.user = user as typeof own;
+
+  try {
+    return await read();
+  } finally {
+    payloadReq.user = own;
+  }
 }
 
 function nameOf(user: Doc | undefined, titleField: string | undefined): string {
@@ -67,25 +97,22 @@ function nameOf(user: Doc | undefined, titleField: string | undefined): string {
 }
 
 /**
- * With plugin-notifications installed, notifies each user a comment newly mentions, once: an edit
- * notifies only users it adds. A user who can't read the commented record isn't notified, so the
- * excerpt never reaches someone who couldn't open it.
+ * With plugin-notifications installed, notifies the users `fillMentions` found new, once per
+ * comment. A user who can't read the commented record isn't notified, so the excerpt never
+ * reaches someone who couldn't open it. Runs in the caller's transaction.
  */
 export function notifyMentions(userSlug: string): CollectionAfterChangeHook {
-  return async ({ doc, operation, previousDoc, req }) => {
+  return async ({ context, doc, req }) => {
+    const fresh = (context[FRESH_MENTIONS] ?? []) as string[];
+
+    delete context[FRESH_MENTIONS];
+
     const payload = toPayloadRequest(req).payload;
     const notifications = (payload.config.custom as Record<string, unknown> | undefined)?.[
       NOTIFICATIONS_KEY
     ] as Notifications | undefined;
 
-    if (!notifications?.notify) return doc;
-
-    const fresh = newlyMentioned(
-      doc as Doc,
-      operation === 'update' ? (previousDoc as Doc) : undefined,
-    );
-
-    if (!fresh.length) return doc;
+    if (!notifications?.notify || !fresh.length) return doc;
 
     const authorId = idOf(doc.author);
     const { docs: people } = await req.frogbot.find({
@@ -112,17 +139,19 @@ export function notifyMentions(userSlug: string): CollectionAfterChangeHook {
 
       if (!person) continue;
 
-      const canRead = await req.frogbot
-        .findByID({
-          collection,
-          depth: 0,
-          disableErrors: true,
-          id: documentId,
-          overrideAccess: false,
-          select: {},
-          user: { ...person, collection: userSlug },
-        })
-        .catch(() => null);
+      const canRead = await asUser(req, { ...person, collection: userSlug }, () =>
+        req.frogbot
+          .findByID({
+            collection,
+            depth: 0,
+            disableErrors: true,
+            id: documentId,
+            overrideAccess: false,
+            req,
+            select: {},
+          })
+          .catch(() => null),
+      );
 
       if (!canRead) continue;
 

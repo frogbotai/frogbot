@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   EXCERPT_LENGTH,
   excerptOf,
-  newlyMentioned,
+  mentionChanges,
 } from '../../../packages/plugins/plugin-comments/src/mentions.js';
 
 const paragraph = (...children: Record<string, unknown>[]) => ({
@@ -23,19 +23,24 @@ const mention = (value: number, label: string) => ({
   relationTo: 'users',
 });
 
-describe('newlyMentioned', () => {
-  it('lists each mention once, minus the author and anyone already mentioned', () => {
-    expect(newlyMentioned({ id: 1, author: 9, mentions: [2, 3, 2, 9] }, undefined)).toEqual([
-      '2',
-      '3',
-    ]);
+describe('mentionChanges', () => {
+  it('lists each new mention once, minus the author and anyone the comment notified before', () => {
+    expect(mentionChanges({ author: 9, mentions: [2, 3, 2, 9], notified: undefined })).toEqual({
+      fresh: ['2', '3'],
+      notified: [2, 3],
+    });
     expect(
-      newlyMentioned(
-        { id: 1, author: { id: 9 }, mentions: [{ id: 2 }, { id: 4 }] },
-        { id: 1, mentions: [2] },
-      ),
-    ).toEqual(['4']);
-    expect(newlyMentioned({ id: 1, author: 9 }, { id: 1, mentions: [2] })).toEqual([]);
+      mentionChanges({ author: { id: 9 }, mentions: [{ id: 2 }, { id: 4 }], notified: [2] }),
+    ).toEqual({ fresh: ['4'], notified: [2, 4] });
+  });
+
+  it('keeps a removed mention in notified, so adding it back is not new', () => {
+    const removed = mentionChanges({ author: 9, mentions: [], notified: [2] });
+
+    expect(removed).toEqual({ fresh: [], notified: [2] });
+    expect(mentionChanges({ author: 9, mentions: [2], notified: removed.notified }).fresh).toEqual(
+      [],
+    );
   });
 });
 

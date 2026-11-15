@@ -9,7 +9,7 @@ import {
 } from 'frogbot';
 
 import { authorAccess, createAccess, readAccess } from './access.js';
-import { notifyMentions } from './mentions.js';
+import { FRESH_MENTIONS, mentionChanges, notifyMentions } from './mentions.js';
 import { hasContent } from './shared.js';
 import type { CommentsCollectionOverrides, CommentsEditor } from './types.js';
 
@@ -44,6 +44,7 @@ function defaultFields({ editors, userSlug }: CollectionOptions): Field[] {
       admin: { readOnly: true },
     },
     { name: 'bodyField', type: 'text', access: fixed, admin: { hidden: true } },
+    { name: 'notified', type: 'relationship', relationTo: userSlug, hasMany: true, hidden: true },
     ...[...editors].map(([name, editor]): Field => ({
       name,
       type: 'richText',
@@ -66,6 +67,8 @@ function placeBody(bodies: Record<string, string>): CollectionBeforeValidateHook
     if (!data) return data;
 
     const { body, ...rest } = data;
+
+    delete rest.notified;
 
     if (operation === 'create') {
       const bodyField = bodies[rest.collection as string];
@@ -93,7 +96,7 @@ function placeBody(bodies: Record<string, string>): CollectionBeforeValidateHook
   };
 }
 
-const fillMentions: CollectionBeforeChangeHook = ({ data, operation, originalDoc }) => {
+const fillMentions: CollectionBeforeChangeHook = ({ context, data, operation, originalDoc }) => {
   const bodyField = (data.bodyField ?? originalDoc?.bodyField) as string;
   const body = data[bodyField];
 
@@ -101,7 +104,18 @@ const fillMentions: CollectionBeforeChangeHook = ({ data, operation, originalDoc
     throw new APIError('A comment needs some text.', 400, null, true);
   }
 
-  return body === undefined ? data : { ...data, mentions: mentionedIds(body) };
+  if (body === undefined) return data;
+
+  const mentions = mentionedIds(body);
+  const { fresh, notified } = mentionChanges({
+    author: data.author ?? originalDoc?.author,
+    mentions,
+    notified: originalDoc?.notified,
+  });
+
+  context[FRESH_MENTIONS] = fresh;
+
+  return { ...data, mentions, notified };
 };
 
 function hideBodies(names: string[]): CollectionAfterReadHook {
