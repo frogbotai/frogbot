@@ -66,9 +66,7 @@ export function UserAvatar({ className, email, gravatar, name, size = 24 }: User
       style={{ fontSize: Math.max(9, Math.round(size * 0.42)), height: size, width: size }}
     >
       {src ? <AvatarImage alt={name ?? email ?? ''} src={src} /> : null}
-      <AvatarFallback aria-label={name ?? email} delayMs={src ? 600 : 0}>
-        {userInitials(name, email)}
-      </AvatarFallback>
+      <AvatarFallback aria-label={name ?? email}>{userInitials(name, email)}</AvatarFallback>
     </Avatar>
   );
 }

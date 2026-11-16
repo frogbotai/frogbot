@@ -39,8 +39,8 @@ export type RecordCommentsProps = {
   heading?: ReactNode;
   id: number | string;
   /**
-   * Renders a custom `admin.avatar` component for each author. Field components get it from
-   * Payload as `renderComponent`; without it, authors show initials.
+   * Renders a custom `admin.avatar` component for each author. Without it, the component is
+   * looked up in the import map and rendered with `user` and `size`.
    */
   renderComponent?: (args: {
     Component: unknown;
@@ -54,6 +54,15 @@ export type RecordCommentsProps = {
   };
 };
 
+type AvatarComponent = (props: { size: number; user: Doc }) => ReactNode;
+
+function resolveComponent(component: unknown, importMap: unknown): AvatarComponent | undefined {
+  const path =
+    typeof component === 'string' ? component : (component as { path?: string } | null)?.path;
+
+  return path ? (importMap as Record<string, AvatarComponent> | undefined)?.[path] : undefined;
+}
+
 function customAvatars(
   payload: CommentsPayload,
   users: (Doc | undefined)[],
@@ -61,7 +70,11 @@ function customAvatars(
 ): Record<string, ReactNode> | undefined {
   const setting = payload.config.admin?.avatar;
 
-  if (!render || !setting || typeof setting !== 'object') return undefined;
+  if (!setting || typeof setting !== 'object') return undefined;
+
+  const Component = resolveComponent(setting.Component, payload.importMap);
+
+  if (!render && !Component) return undefined;
 
   const byId = new Map(
     users.filter((user): user is Doc => Boolean(user)).map((user) => [String(user.id), user]),
@@ -70,12 +83,14 @@ function customAvatars(
   return Object.fromEntries(
     [...byId].map(([id, user]) => [
       id,
-      render({
-        Component: setting.Component,
-        importMap: payload.importMap,
-        key: id,
-        serverProps: { size: 24, user },
-      }),
+      render
+        ? render({
+            Component: setting.Component,
+            importMap: payload.importMap,
+            key: id,
+            serverProps: { size: 24, user },
+          })
+        : Component && <Component key={id} size={24} user={user} />,
     ]),
   );
 }

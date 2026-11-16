@@ -19,6 +19,7 @@ export {
   type MentionData,
   mentionedIds,
   type MentionFeatureClientProps,
+  mentionInitials,
   mentionText,
   type SerializedMentionNode,
 } from './features/mention/shared.js';

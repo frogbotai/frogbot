@@ -33,6 +33,23 @@ export function personName(
   return `#${person.id}`;
 }
 
+/** One or two initials for a mention chip: `Sam Lee` → `SL`, `ro@example.com` → `R`. */
+export function mentionInitials(label: string): string {
+  const words = label
+    .trim()
+    .split(/[\s@]+/)
+    .filter(Boolean);
+
+  if (label.includes('@') && !label.includes(' ')) return (label.trim()[0] ?? '?').toUpperCase();
+
+  return (
+    words
+      .slice(0, 2)
+      .map((word) => word[0].toUpperCase())
+      .join('') || '?'
+  );
+}
+
 /** The text a mention renders as, `@Sam`. */
 export function mentionText(node: Pick<MentionData, 'label' | 'value'>): string {
   return `@${node.label || node.value}`;

@@ -180,7 +180,7 @@ export function MentionPlugin({ clientProps }: { clientProps: MentionFeatureClie
       }
       onQueryChange={setQuery}
       onSelectOption={select}
-      options={people.options}
+      options={people.query === query ? people.options : []}
       triggerFn={trigger}
     />
   );

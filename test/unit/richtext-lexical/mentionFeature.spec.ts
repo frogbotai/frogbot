@@ -1,6 +1,7 @@
 import {
   mentionedIds,
   MentionFeature,
+  mentionInitials,
   type SerializedMentionNode,
 } from '@frogbotai/richtext-lexical';
 import { $createMentionNode, MentionNode } from '@frogbotai/richtext-lexical/client';
@@ -146,7 +147,9 @@ describe('MentionFeature', () => {
       }),
     );
 
-    expect(jsx).toContain('<span class="mention" data-id="9">@Ana</span>');
+    expect(jsx).toContain(
+      '<span class="mention" data-id="9"><span aria-hidden="true" class="fb-mention__avatar">A</span><span class="fb-mention__name">Ana</span></span>',
+    );
   });
 
   it('escapes names in HTML', () => {
@@ -162,5 +165,14 @@ describe('MentionFeature', () => {
     });
 
     expect(html).toContain('data-id="1&quot;">@&lt;b&gt;</span>');
+  });
+});
+
+describe('mentionInitials', () => {
+  it('takes up to two initials from a name, or the first letter of an email', () => {
+    expect(mentionInitials('Sam Lee')).toBe('SL');
+    expect(mentionInitials('Ana')).toBe('A');
+    expect(mentionInitials('ro@example.com')).toBe('R');
+    expect(mentionInitials('')).toBe('?');
   });
 });

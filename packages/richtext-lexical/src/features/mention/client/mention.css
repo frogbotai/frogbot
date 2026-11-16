@@ -1,11 +1,35 @@
 @layer frogbot {
   .fb-mention,
   .mention {
+    align-items: center;
     background: var(--color-bg-tertiary);
     border-radius: var(--radius-small);
     color: var(--color-text);
-    padding: 0 0.3em;
+    display: inline-flex;
+    gap: 0.3em;
+    padding: 0 0.35em 0 0.15em;
+    vertical-align: baseline;
     white-space: nowrap;
+  }
+
+  .fb-mention__avatar {
+    align-items: center;
+    background: var(--color-bg-secondary, var(--color-bg));
+    border-radius: 50%;
+    color: var(--color-text-secondary);
+    display: inline-flex;
+    font-size: 0.6em;
+    font-weight: 600;
+    height: 1.5em;
+    justify-content: center;
+    line-height: 1;
+    min-width: 1.5em;
+  }
+
+  .fb-mention-menu {
+    max-width: min(28rem, calc(100vw - 2rem));
+    min-width: 20rem;
+    width: max-content;
   }
 
   .fb-mention-menu__item {
@@ -19,12 +43,15 @@
     font-weight: 700;
   }
 
+  .fb-mention-menu__name,
+  .fb-mention-menu__email {
+    overflow: visible;
+    white-space: nowrap;
+  }
+
   .fb-mention-menu__email {
     color: var(--color-text-tertiary);
     font-size: var(--text-body-small-font-size, 12px);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .fb-mention-menu__empty {
