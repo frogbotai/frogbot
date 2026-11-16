@@ -179,6 +179,7 @@ export { TextWithIcon, type TextWithIconProps } from './components/text-with-ico
 export { Textarea, type TextareaProps } from './components/textarea.js';
 export { Toggle, type ToggleProps } from './components/toggle.js';
 export { Tooltip, type TooltipProps } from './components/tooltip.js';
+export { UserAvatar, type UserAvatarProps, userInitials } from './components/user-avatar.js';
 export { useControlledState } from './hooks/use-controlled-state.js';
 export { useHotkey } from './hooks/use-hotkey.js';
 export { useIsMobile } from './hooks/use-mobile.js';
