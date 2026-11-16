@@ -6,7 +6,11 @@ import {
   notificationsPlugin,
   notify,
 } from '../../../packages/plugins/plugin-notifications/src/index.js';
-import { adminPath, badge } from '../../../packages/plugins/plugin-notifications/src/shared.js';
+import {
+  adminPath,
+  badge,
+  inboxLimit,
+} from '../../../packages/plugins/plugin-notifications/src/shared.js';
 
 function config(collections: CollectionConfig[] = [], admin: FrogBotConfig['admin'] = {}) {
   return {
@@ -114,5 +118,11 @@ describe('shared', () => {
     expect(adminPath('/admin', '/notifications')).toBe('/admin/notifications');
     expect(adminPath('/admin/', '/notifications')).toBe('/admin/notifications');
     expect(adminPath('/', '/notifications')).toBe('/notifications');
+  });
+
+  it('reads the inbox limit from the URL as a whole number from 50 to 1000', () => {
+    expect(
+      [undefined, 'abc', '10', '100', '120.5', 'Infinity', '1e400', '5000'].map(inboxLimit),
+    ).toEqual([50, 50, 50, 100, 120, 50, 50, 1000]);
   });
 });

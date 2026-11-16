@@ -271,6 +271,33 @@ describe('Inbox', () => {
     expect(screen.queryByRole('button', { name: 'Mark all read' })).toBeNull();
   });
 
+  it('after Mark all read, a notification that arrives later is unread and opening it marks it read', async () => {
+    const { rerender } = render(<Inbox items={items} slug="notifications" unread={1} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark all read' }));
+    await waitFor(() => expect(router.refresh).toHaveBeenCalled());
+
+    const fresh = {
+      createdAt: '2026-11-16T10:00:00.000Z',
+      id: 3,
+      link: '/admin',
+      title: 'Kim mentioned you',
+    };
+
+    rerender(<Inbox items={[fresh]} slug="notifications" unread={1} />);
+
+    expect(screen.getByRole('button', { name: /Kim mentioned you/ }).className).toContain(
+      '--unread',
+    );
+    expect(screen.getByRole('button', { name: 'Mark all read' })).toBeTruthy();
+
+    fetchMock.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: /Kim mentioned you/ }));
+    await waitFor(() => expect(router.push).toHaveBeenCalled());
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('hides Mark all read with nothing unread, and keeps items unread when it fails', async () => {
     const { unmount } = render(<Inbox items={items} slug="notifications" />);
 
