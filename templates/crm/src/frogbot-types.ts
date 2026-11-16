@@ -784,6 +784,8 @@ export interface AuditLog {
 export interface Notification {
   id: number;
   user: number | User;
+  actor?: (number | null) | User;
+  kind?: string | null;
   title: string;
   excerpt?: string | null;
   link?: string | null;
@@ -1302,6 +1304,8 @@ export interface AuditLogsSelect {
  */
 export interface NotificationsSelect {
   user?: boolean;
+  actor?: boolean;
+  kind?: boolean;
   title?: boolean;
   excerpt?: boolean;
   link?: boolean;
