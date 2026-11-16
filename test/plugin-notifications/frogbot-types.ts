@@ -243,6 +243,7 @@ export interface Notification {
   link?: string | null;
   source?: string | null;
   readAt?: string | null;
+  createdAt: string;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -252,7 +253,6 @@ export interface Notification {
     value: number | User;
   } | null;
   updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -370,10 +370,10 @@ export interface NotificationsSelect {
   link?: boolean;
   source?: boolean;
   readAt?: boolean;
+  createdAt?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;
-  createdAt?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -441,7 +441,7 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection: 'users' | 'deals' | 'notifications' | 'comments';
+    relatedCollection: 'users' | 'deals' | 'comments';
     where?:
       | {
           [k: string]: unknown;
@@ -463,8 +463,7 @@ export interface CollectionQueryWidget {
  */
 export interface ActivityWidget {
   data?: {
-    excludedCollections?:
-      ('users' | 'deals' | 'notifications' | 'comments')[] | null;
+    excludedCollections?: ('users' | 'deals' | 'comments')[] | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }

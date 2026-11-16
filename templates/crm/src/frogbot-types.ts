@@ -139,19 +139,19 @@ export type SupportedTimezones =
   | 'Pacific/Fiji';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "LexicalNodes_294BC60D".
+ * via the `definition` "LexicalNodes_10F187E4".
  */
-export type LexicalNodes_294BC60D =
+export type LexicalNodes_10F187E4 =
   | SerializedTextNode
   | SerializedTabNode
   | SerializedLineBreakNode
-  | SerializedParagraphNode<LexicalNodes_294BC60D>
+  | SerializedParagraphNode<LexicalNodes_10F187E4>
   | SerializedHorizontalRuleNode
   | SerializedUploadNode<'media'>
   | SerializedUploadNode<'exports'>
   | SerializedUploadNode<'imports'>
   | SerializedUploadNode<'frogbot-chat-assets'>
-  | SerializedQuoteNode<LexicalNodes_294BC60D>
+  | SerializedQuoteNode<LexicalNodes_10F187E4>
   | SerializedRelationshipNode<
       | 'companies'
       | 'contacts'
@@ -161,6 +161,7 @@ export type LexicalNodes_294BC60D =
       | 'users'
       | 'plugin-ai-policy-spend'
       | 'audit-logs'
+      | 'notifications'
       | 'comments'
       | 'chats'
       | 'messages'
@@ -169,11 +170,11 @@ export type LexicalNodes_294BC60D =
       | 'frogbot-waitpoints'
       | 'folders'
     >
-  | SerializedAutoLinkNode<LexicalNodes_294BC60D, LexicalLinkFields>
-  | SerializedLinkNode<LexicalNodes_294BC60D, LexicalLinkFields>
-  | SerializedListNode<LexicalNodes_294BC60D>
-  | SerializedListItemNode<LexicalNodes_294BC60D>
-  | SerializedHeadingNode<LexicalNodes_294BC60D>;
+  | SerializedAutoLinkNode<LexicalNodes_10F187E4, LexicalLinkFields>
+  | SerializedLinkNode<LexicalNodes_10F187E4, LexicalLinkFields>
+  | SerializedListNode<LexicalNodes_10F187E4>
+  | SerializedListItemNode<LexicalNodes_10F187E4>
+  | SerializedHeadingNode<LexicalNodes_10F187E4>;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "LexicalNodes_3DE324E4".
@@ -204,6 +205,7 @@ export interface Config {
     imports: Import;
     'plugin-ai-policy-spend': PluginAiPolicySpend;
     'audit-logs': AuditLog;
+    notifications: Notification;
     comments: Comment;
     chats: Chat;
     messages: Message;
@@ -226,6 +228,7 @@ export interface Config {
     imports: ImportsSelect;
     'plugin-ai-policy-spend': PluginAiPolicySpendSelect;
     'audit-logs': AuditLogsSelect;
+    notifications: NotificationsSelect;
     comments: CommentsSelect;
     chats: ChatsSelect;
     messages: MessagesSelect;
@@ -310,7 +313,7 @@ export interface Company {
   website?: string | null;
   employees?: number | null;
   owner?: (number | null) | User;
-  notes?: LexicalRichText<LexicalNodes_294BC60D> | null;
+  notes?: LexicalRichText<LexicalNodes_10F187E4> | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -550,7 +553,7 @@ export interface Deal {
   amount?: number | null;
   closeDate?: string | null;
   owner?: (number | null) | User;
-  notes?: LexicalRichText<LexicalNodes_294BC60D> | null;
+  notes?: LexicalRichText<LexicalNodes_10F187E4> | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -576,7 +579,7 @@ export interface Activity {
   deal?: (number | null) | Deal;
   contacts?: (number | Contact)[] | null;
   owner?: (number | null) | User;
-  notes?: LexicalRichText<LexicalNodes_294BC60D> | null;
+  notes?: LexicalRichText<LexicalNodes_10F187E4> | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -776,6 +779,29 @@ export interface AuditLog {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications".
+ */
+export interface Notification {
+  id: number;
+  user: number | User;
+  title: string;
+  excerpt?: string | null;
+  link?: string | null;
+  source?: string | null;
+  readAt?: string | null;
+  createdAt: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "comments".
  */
 export interface Comment {
@@ -786,7 +812,7 @@ export interface Comment {
   mentions?: (number | User)[] | null;
   bodyField?: string | null;
   notified?: (number | User)[] | null;
-  body_0?: LexicalRichText<LexicalNodes_294BC60D> | null;
+  body_0?: LexicalRichText<LexicalNodes_10F187E4> | null;
   body?:
     | {
         [k: string]: unknown;
@@ -1272,6 +1298,22 @@ export interface AuditLogsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications_select".
+ */
+export interface NotificationsSelect {
+  user?: boolean;
+  title?: boolean;
+  excerpt?: boolean;
+  link?: boolean;
+  source?: boolean;
+  readAt?: boolean;
+  createdAt?: boolean;
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "comments_select".
  */
 export interface CommentsSelect {
@@ -1280,6 +1322,7 @@ export interface CommentsSelect {
   author?: boolean;
   mentions?: boolean;
   bodyField?: boolean;
+  notified?: boolean;
   body_0?: boolean;
   body?: boolean;
   createdBy?: boolean;
@@ -1322,7 +1365,6 @@ export interface MessagesSelect {
   model?: boolean;
   reasoning?: boolean;
   author?: boolean;
-  notified?: boolean;
   settlements?: boolean;
   version?: boolean;
   usage?:
