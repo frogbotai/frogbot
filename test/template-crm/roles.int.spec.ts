@@ -38,6 +38,7 @@ describe('crm template roles', () => {
   async function firstRegister(email: string) {
     return booted.restClient.post<{ user?: User }>('/api/users/first-register', {
       email,
+      name: email.split('@')[0],
       password: 'frogbot-test',
     });
   }
@@ -49,7 +50,12 @@ describe('crm template roles', () => {
       ({
         ...(await frogbot.create({
           collection: 'users',
-          data: { email, password: 'frogbot-test', ...(roles && { roles }) },
+          data: {
+            email,
+            name: email.split('@')[0],
+            password: 'frogbot-test',
+            ...(roles && { roles }),
+          },
           user: admin,
           overrideAccess: false,
         } as never)),
@@ -118,6 +124,7 @@ describe('crm template roles', () => {
 
     const added = await as({ ...body.user!, collection: 'users' }).create('users', {
       email: 'new@example.com',
+      name: 'new',
       password: 'frogbot-test',
     });
 
@@ -188,7 +195,7 @@ describe('crm template roles', () => {
     });
     await expect(as(manager).delete('deals', deal.id)).resolves.toMatchObject({ id: deal.id });
     await expect(
-      as(manager).create('users', { email: 'x@example.com', password: 'frogbot-test' }),
+      as(manager).create('users', { email: 'x@example.com', name: 'x', password: 'frogbot-test' }),
     ).rejects.toThrow();
     await expect(as(manager).delete('users', member.id)).rejects.toThrow();
   });

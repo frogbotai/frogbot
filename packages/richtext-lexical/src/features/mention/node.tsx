@@ -8,9 +8,14 @@ import {
 } from '@payloadcms/richtext-lexical/lexical';
 import type { JSX } from 'react';
 
-import { type MentionData, mentionText, type SerializedMentionNode } from './shared.js';
+import {
+  type MentionData,
+  mentionInitials,
+  mentionText,
+  type SerializedMentionNode,
+} from './shared.js';
 
-/** An inline mention of a user, shown as `@Name` in the editor. */
+/** An inline mention of a user, shown as a chip with initials and the name. */
 export class MentionNode extends DecoratorNode<JSX.Element> {
   __data: MentionData;
 
@@ -92,8 +97,20 @@ export class MentionNode extends DecoratorNode<JSX.Element> {
   }
 
   override decorate(): JSX.Element {
-    return <span data-mention-id={String(this.__data.value)}>{mentionText(this.__data)}</span>;
+    return <MentionChip label={this.__data.label || String(this.__data.value)} />;
   }
+}
+
+/** A mention as a chip: an initials circle and the person's name. */
+export function MentionChip({ label }: { label: string }) {
+  return (
+    <>
+      <span aria-hidden className="fb-mention__avatar">
+        {mentionInitials(label)}
+      </span>
+      <span className="fb-mention__name">{label}</span>
+    </>
+  );
 }
 
 /** Creates a mention node for `data`. */

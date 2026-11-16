@@ -42,19 +42,46 @@ export function commentFeatures(): CommentFeatures {
   ];
 }
 
-/** `editor` with `MentionFeature()` added when it doesn't have it, since mentions drive notifications. */
+const placeholder = 'Add a comment or @mention someone';
+
+function withPlaceholder<T>(adapter: T): T {
+  const { FieldComponent } = adapter as LexicalAdapter;
+  const serverProps = FieldComponent?.serverProps;
+
+  if (!FieldComponent || typeof FieldComponent !== 'object' || serverProps?.admin?.placeholder) {
+    return adapter;
+  }
+
+  return {
+    ...adapter,
+    FieldComponent: {
+      ...FieldComponent,
+      serverProps: { ...serverProps, admin: { ...serverProps?.admin, placeholder } },
+    },
+  };
+}
+
+/**
+ * `editor` for comments: `MentionFeature()` is added when it's missing, since mentions drive
+ * notifications, and the box says "Add a comment or @mention someone" unless the editor sets
+ * its own `admin.placeholder`.
+ */
 export function withMentions(editor: CommentsEditor): CommentsEditor {
   return (args) => {
     const adapter = editor(args);
     const { editorConfig, features, FieldComponent } = adapter as LexicalAdapter;
 
-    if (!features || features.some((feature) => feature.key === 'mention')) return adapter;
+    if (!features || features.some((feature) => feature.key === 'mention')) {
+      return withPlaceholder(adapter);
+    }
 
-    return lexicalEditor({
-      admin: FieldComponent?.serverProps?.admin,
-      features: [...(features as CommentFeatures), MentionFeature()],
-      lexical: editorConfig?.lexical,
-      views: FieldComponent?.serverProps?.views,
-    })(args);
+    return withPlaceholder(
+      lexicalEditor({
+        admin: FieldComponent?.serverProps?.admin,
+        features: [...(features as CommentFeatures), MentionFeature()],
+        lexical: editorConfig?.lexical,
+        views: FieldComponent?.serverProps?.views,
+      })(args),
+    );
   };
 }

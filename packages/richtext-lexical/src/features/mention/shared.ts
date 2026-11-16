@@ -15,9 +15,40 @@ export type SerializedMentionNode = MentionData & SerializedLexicalNode & { type
 /** What the client feature receives: the REST API's base URL, where to search for people, and which field names them. */
 export type MentionFeatureClientProps = {
   api: string;
+  /** Pictures in the @ menu: Gravatar, or initials for `'default'` and custom avatar components. */
+  avatar: 'default' | 'gravatar';
   relationTo: string;
   titleField: string;
 };
+
+/** A person's display name: their collection's title field, then email, then `#id`. */
+export function personName(
+  person: Record<string, unknown> & { id: number | string },
+  titleField?: string,
+): string {
+  for (const value of [titleField ? person[titleField] : undefined, person.email]) {
+    if (typeof value === 'string' && value.trim()) return value;
+  }
+
+  return `#${person.id}`;
+}
+
+/** One or two initials for a mention chip: `Sam Lee` → `SL`, `ro@example.com` → `R`. */
+export function mentionInitials(label: string): string {
+  const words = label
+    .trim()
+    .split(/[\s@]+/)
+    .filter(Boolean);
+
+  if (label.includes('@') && !label.includes(' ')) return (label.trim()[0] ?? '?').toUpperCase();
+
+  return (
+    words
+      .slice(0, 2)
+      .map((word) => word[0].toUpperCase())
+      .join('') || '?'
+  );
+}
 
 /** The text a mention renders as, `@Sam`. */
 export function mentionText(node: Pick<MentionData, 'label' | 'value'>): string {

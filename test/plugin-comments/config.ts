@@ -53,6 +53,18 @@ const Tasks: CollectionConfig = {
   fields: [{ name: 'title', type: 'text' }],
 };
 
+const Notes: CollectionConfig = {
+  slug: 'notes',
+  access: {
+    ...openAccess,
+    read: ({ req }) => (req.user ? { owner: { equals: req.user.id } } : false),
+  },
+  fields: [
+    { name: 'title', type: 'text' },
+    { name: 'owner', type: 'relationship', relationTo: 'users' },
+  ],
+};
+
 export default await buildTestConfig({
   ...(getCurrentDatabaseAdapter() === 'sqlite'
     ? {
@@ -66,6 +78,9 @@ export default await buildTestConfig({
     : {}),
   editor: lexicalEditor(),
   admin: { user: 'users' },
-  collections: [Users, Customers, Media, Deals, Tasks],
-  plugins: [auditLogPlugin({ collections: ['deals'] }), commentsPlugin({ collections: ['tasks'] })],
+  collections: [Users, Customers, Media, Deals, Tasks, Notes],
+  plugins: [
+    auditLogPlugin({ collections: ['deals'] }),
+    commentsPlugin({ collections: ['tasks', 'notes'] }),
+  ],
 });

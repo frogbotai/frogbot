@@ -37,20 +37,27 @@ function bodyField(comments: CollectionConfig | undefined, name: string) {
     Extract<Field, { type: 'richText' }> | undefined;
 }
 
-function featureKeys(field: Extract<Field, { type: 'richText' }> | undefined) {
+type Adapter = {
+  features: { key: string }[];
+  FieldComponent: { serverProps?: { admin?: { placeholder?: string } } };
+};
+
+function adapterOf(field: Extract<Field, { type: 'richText' }> | undefined): Adapter {
   const editor = field?.editor;
 
   if (typeof editor !== 'function') throw new Error('Expected an editor provider.');
 
-  const adapter = editor({
+  return editor({
     config: {
       collections: [{ slug: 'users', auth: {}, admin: {} }],
       i18n: { translations: {} },
     } as unknown as SanitizedConfig,
     parentIsLocalized: false,
-  }) as unknown as { features: { key: string }[] };
+  }) as unknown as Adapter;
+}
 
-  return adapter.features.map((feature) => feature.key);
+function featureKeys(field: Extract<Field, { type: 'richText' }> | undefined) {
+  return adapterOf(field).features.map((feature) => feature.key);
 }
 
 const deals = (fields: Field[] = []): CollectionConfig => ({ slug: 'deals', fields });
@@ -163,5 +170,25 @@ describe('commentsPlugin', () => {
 
     expect(comments).toBeUndefined();
     expect(custom.commentsSlug).toBe('notes-on-records');
+  });
+
+  it("says 'Add a comment or @mention someone' unless the editor sets its own placeholder", async () => {
+    const own = lexicalEditor({
+      admin: { placeholder: 'Reply to the customer' },
+      features: commentFeatures(),
+    });
+
+    const { comments } = await apply(config([deals(), tasks([commentsField({ editor: own })])]), {
+      collections: ['deals'],
+    });
+
+    const placeholders = ['body_0', 'body_1'].map(
+      (name) => adapterOf(bodyField(comments, name)).FieldComponent.serverProps?.admin?.placeholder,
+    );
+
+    expect(placeholders.sort()).toEqual([
+      'Add a comment or @mention someone',
+      'Reply to the customer',
+    ]);
   });
 });

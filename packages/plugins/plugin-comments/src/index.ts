@@ -1,5 +1,6 @@
 import { lexicalEditor } from '@frogbotai/richtext-lexical';
 import {
+  type CollectionAfterDeleteHook,
   type CollectionConfig,
   definePlugin,
   type Field,
@@ -111,6 +112,29 @@ function resolveEditors(config: FrogBotConfig, options: CommentsPluginOptions) {
   return { bodies, collections, editors };
 }
 
+function deleteComments(commentsSlug: string): CollectionAfterDeleteHook {
+  return async ({ collection, id, req }) => {
+    await req.frogbot.delete({
+      collection: commentsSlug,
+      overrideAccess: true,
+      req,
+      where: {
+        and: [{ collection: { equals: collection.slug } }, { documentId: { equals: String(id) } }],
+      },
+    });
+  };
+}
+
+function withCommentCleanup(collection: CollectionConfig, commentsSlug: string): CollectionConfig {
+  return {
+    ...collection,
+    hooks: {
+      ...collection.hooks,
+      afterDelete: [...(collection.hooks?.afterDelete ?? []), deleteComments(commentsSlug)],
+    },
+  };
+}
+
 const comments = definePlugin<CommentsPluginOptions>({
   slug: 'plugin-comments',
   order: 95,
@@ -128,7 +152,9 @@ const comments = definePlugin<CommentsPluginOptions>({
     return {
       ...config,
       collections: [
-        ...collections,
+        ...collections.map((collection) =>
+          bodies[collection.slug] ? withCommentCleanup(collection, commentsSlug) : collection,
+        ),
         createCommentsCollection({
           bodies,
           editors,

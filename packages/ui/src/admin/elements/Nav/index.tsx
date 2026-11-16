@@ -223,9 +223,14 @@ export async function FrogBotNav(props: FrogBotNavProps) {
     render(component, `after-nav-${index}`),
   );
 
-  const accountUser = user as { email?: unknown; name?: unknown } | undefined;
+  const accountUser = user as (Record<string, unknown> & { collection?: string }) | undefined;
   const accountEmail = typeof accountUser?.email === 'string' ? accountUser.email : undefined;
-  const accountName = typeof accountUser?.name === 'string' ? accountUser.name : undefined;
+  const titleField = accountUser?.collection
+    ? payload.collections?.[accountUser.collection]?.config.admin?.useAsTitle
+    : undefined;
+
+  const title = titleField ? accountUser?.[titleField] : accountUser?.name;
+  const accountName = typeof title === 'string' && title ? title : undefined;
   const logo = render(admin.components.graphics?.Icon);
   const homePath = formatAdminURL({ adminRoute: routes.admin, path: '' });
 

@@ -6,11 +6,15 @@ import { PanelSection, toast, useConfig } from '@frogbotai/ui/admin';
 import { type ReactNode, useCallback, useState } from 'react';
 
 import { type CommentItem, commentsQuery, type CommentsTarget, toCommentItem } from '../shared.js';
-import { CommentBox } from './CommentBox.js';
+import { CommentBox, errorOf } from './CommentBox.js';
 import { CommentList } from './CommentList.js';
 
 /** Props for `Comments`. */
 export type CommentsProps = {
+  /** Pictures from a custom `admin.avatar` component, rendered on the server, by user id. */
+  avatars?: Record<string, ReactNode>;
+  /** Pictures for everyone else: Gravatar, or initials. */
+  gravatar?: boolean;
   heading?: ReactNode;
   initial: CommentItem[];
   schemaPath: string;
@@ -18,8 +22,16 @@ export type CommentsProps = {
   userId?: number | string;
 };
 
-/** A record's comment list and box. Reloads the list after a comment is added or deleted. */
-export function Comments({ heading, initial, schemaPath, target, userId }: CommentsProps) {
+/** A record's comment list and box. Reloads the list after a comment is added, edited or deleted. */
+export function Comments({
+  avatars,
+  gravatar,
+  heading,
+  initial,
+  schemaPath,
+  target,
+  userId,
+}: CommentsProps) {
   const { config } = useConfig();
   const [comments, setComments] = useState(initial);
   const api = `${config.routes.api}/${target.commentsSlug}`;
@@ -46,9 +58,36 @@ export function Comments({ heading, initial, schemaPath, target, userId }: Comme
     await reload();
   };
 
+  const edit = async (id: CommentItem['id'], body: unknown) => {
+    const response = await fetch(`${api}/${id}`, {
+      body: JSON.stringify({ body }),
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH',
+    }).catch(() => null);
+
+    if (!response?.ok) {
+      toast.error(await errorOf(response, 'The comment could not be saved.'));
+
+      return false;
+    }
+
+    await reload();
+
+    return true;
+  };
+
   const content = (
     <>
-      <CommentList comments={comments} onDelete={(id) => void remove(id)} userId={userId} />
+      <CommentList
+        avatars={avatars}
+        comments={comments}
+        gravatar={gravatar}
+        onDelete={(id) => void remove(id)}
+        onEdit={edit}
+        schemaPath={schemaPath}
+        userId={userId}
+      />
       <CommentBox onPosted={() => void reload()} schemaPath={schemaPath} target={target} />
     </>
   );
