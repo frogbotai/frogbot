@@ -128,7 +128,7 @@ import { lexicalEditor, MentionFeature } from '@frogbotai/richtext-lexical'
 | --- | --- | --- | --- |
 | `relationTo` | `string` | `admin.user`, else the only auth collection | The auth collection users are mentioned from. The list searches its `useAsTitle` field and `email`. |
 
-`mentionedIds(value)` returns the ids a rich text value mentions, once each. To render mentions as `@Sam`, add the matching converter: `MentionJSXConverter` from `@frogbotai/richtext-lexical/react`, `MentionHTMLConverter` from `/html` or `/html-async`, and `MentionPlaintextConverter` from `/plaintext`:
+`mentionedIds(value)` returns the ids a rich text value mentions, once each. To render mentions, add the matching converter: `MentionJSXConverter` from `@frogbotai/richtext-lexical/react` draws a chip with the person's initials and name, and `MentionHTMLConverter` from `/html` or `/html-async` and `MentionPlaintextConverter` from `/plaintext` print `@Sam`:
 
 ```tsx
 <RichText converters={({ defaultConverters }) => ({ ...defaultConverters, ...MentionJSXConverter })} data={body} />
