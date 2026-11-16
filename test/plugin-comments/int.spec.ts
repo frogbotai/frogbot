@@ -138,7 +138,7 @@ describe('comments plugin', () => {
         converters: MentionPlaintextConverter,
         data: doc.body as Parameters<typeof convertLexicalToPlaintext>[0]['data'],
       }),
-    ).toBe('@Sam can you check the logs?');
+    ).toBe('@sam can you check the logs?');
   });
 
   it('writes no audit entry or version on the record, and needs no update access on it', async () => {
@@ -432,5 +432,36 @@ describe('comments plugin', () => {
     );
 
     expect(posted.status).toBe(403);
+  });
+
+  it("shows a mention by the person's current name when read with depth, else the name saved at typing", async () => {
+    const record = await deal();
+    const created = await comment('ana', {
+      body: body(mention(users.sam.id, 'Old name'), text(' please look')),
+      collection: 'deals',
+      documentId: String(record.id),
+    });
+
+    await booted.frogbot.update({
+      collection: 'users',
+      data: { name: 'Sam Lee' },
+      id: users.sam.id,
+      overrideAccess: true,
+    });
+
+    const labelAt = async (depth: number) => {
+      const read = await booted.restClient.get<Doc>(
+        `/api/comments/${created.body.doc.id}?depth=${depth}`,
+        {
+          headers: users.ana.headers,
+        },
+      );
+
+      return (read.body.body as { root: { children: { children: { label?: string }[] }[] } }).root
+        .children[0].children[0].label;
+    };
+
+    expect(await labelAt(1)).toBe('Sam Lee');
+    expect(await labelAt(0)).toBe('Old name');
   });
 });

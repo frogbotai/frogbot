@@ -18,6 +18,7 @@ async function createDeal(page: Page, name: string) {
   return ((await response.json()) as { doc: Deal }).doc;
 }
 
+const name = 'Browser Tester';
 const comments = (page: Page) => page.locator('.fb-comments');
 const editor = (page: Page) => comments(page).locator('[contenteditable="true"]');
 
@@ -27,13 +28,21 @@ async function writeComment(page: Page) {
   await page.keyboard.press('ControlOrMeta+b');
   await page.keyboard.type('today');
   await page.keyboard.press('ControlOrMeta+b');
-  await page.keyboard.type(' @');
-  await page.keyboard.type(user.email.slice(0, 4));
+  const searched = page.waitForResponse(
+    (response) => response.url().includes('/api/users?') && response.url().includes('brow'),
+  );
 
-  const option = page.locator('.slash-menu-popup__item', { hasText: user.email });
+  await page.keyboard.type(' @brow');
+  await searched;
+
+  const option = page.locator('.fb-mention-menu__item', { hasText: name });
 
   await expect(option).toBeVisible();
-  await option.click();
+  await expect(option.locator('.fb-mention-menu__name strong')).toHaveText('Brow');
+  await expect(option.locator('.fb-mention-menu__email')).toHaveText(user.email);
+  await expect(option).toHaveAttribute('aria-selected', 'true');
+  await page.keyboard.press('Enter');
+  await expect(editor(page).locator('.fb-mention')).toHaveText(`@${name}`);
   await comments(page).getByRole('button', { name: 'Comment' }).click();
 }
 
@@ -60,7 +69,9 @@ test('posts a bold comment with a mention on the edit page, leaving the form cle
 
   await expect(item).toHaveCount(1);
   await expect(item.locator('strong', { hasText: 'today' })).toBeVisible();
-  await expect(item.locator('.mention')).toHaveText(`@${user.email}`);
+  await expect(item.locator('.mention')).toHaveText(`@${name}`);
+  await expect(item.locator('.fb-comments__meta')).toContainText(`${name}·Just now`);
+  await expect(item.locator('.fb-user-avatar')).toBeVisible();
   await expect(editor(page)).not.toContainText('Please check');
 
   const stored = await page.request.get(
@@ -80,8 +91,32 @@ test('posts a bold comment with a mention on the edit page, leaving the form cle
   await page.getByRole('tab', { name: 'Comments' }).click();
   await expect(comments(page).locator('.fb-comments__item')).toHaveCount(1);
 
-  await comments(page).getByRole('button', { name: 'Delete' }).click();
+  const posted = comments(page).locator('.fb-comments__item');
+
+  await posted.hover();
+  await posted.getByRole('button', { name: 'Comment options' }).click();
+  await page.getByRole('menuitem', { name: 'Edit comment' }).click();
+  await posted.locator('[contenteditable="true"]').click();
+  await page.keyboard.press('ControlOrMeta+End');
+  await page.keyboard.type(' Thanks!');
+  await posted.getByRole('button', { name: 'Save' }).click();
+  await expect(posted.locator('.fb-comments__body')).toContainText('Thanks!');
+  await expect(posted.locator('.fb-comments__edited')).toHaveText('(edited)');
+
+  await posted.hover();
+  await posted.getByRole('button', { name: 'Comment options' }).click();
+  await page.getByRole('menuitem', { name: 'Delete comment' }).click();
   await expect(comments(page)).toContainText('No comments yet.');
+});
+
+test('says when nobody matches the mention', async ({ page }) => {
+  const deal = await createDeal(page, 'no match');
+
+  await page.goto(`/collections/deals/${deal.id}`);
+  await editor(page).click();
+  await page.keyboard.type('@zzqxw');
+  await expect(page.locator('.fb-mention-menu__empty')).toHaveText('No people match');
+  await expect(page.locator('.fb-mention-menu__item')).toHaveCount(0);
 });
 
 test('posts from the record panel without asking to discard edits', async ({ page }) => {

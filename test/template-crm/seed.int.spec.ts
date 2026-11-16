@@ -39,7 +39,7 @@ describe('crm template seed', () => {
   async function signUp() {
     const user = await booted.frogbot.create({
       collection: 'users',
-      data: ownerCredentials,
+      data: { ...ownerCredentials, name: 'Owner' },
       overrideAccess: true,
     });
 

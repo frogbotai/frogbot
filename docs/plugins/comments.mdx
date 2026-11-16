@@ -64,7 +64,28 @@ export const Tasks: CollectionConfig = {
 
 For activity without comments, place `activityField()` alone and leave this plugin out. Either field shows its label as a heading, except when it is the only field in a tab, whose label already names it. Pass field options to change it, for example `commentsField({ label: 'Discussion' })`. Both fields show on the edit page and in the [record panel](/admin/record-panel#activity-and-comments).
 
-The list shows the latest 50 comments, oldest first, with the author and time. Typing in the box never marks the record's form as changed: **Comment** saves through the comments API, and the author can delete their own comments.
+The list shows the latest 50 comments, oldest first. Each shows the author's picture and name, when it was posted ("Just now", "6 minutes ago", then a date after a day), and "(edited)" when it was changed. Hovering your own comment shows a `···` menu to edit it in place or delete it. Typing in the box never marks the record's form as changed: **Comment** saves through the comments API.
+
+## Names and pictures
+
+Comments, the `@` menu and mentions name people the way the rest of the admin does:
+
+- **Name**: the users collection's `admin.useAsTitle`, then their email. Set `useAsTitle: 'name'` on a users collection with a name field to show names rather than emails.
+- **Picture**: the app's [`admin.avatar`](/admin/overview), with no extra setting.
+  - `'gravatar'` (the default) shows each person's Gravatar, or their initials when they have none.
+  - `'default'` shows initials.
+  - A custom `{ Component }` renders on comment rows with the person as `user` and the size in pixels as `size`. Read the person from `user`, not the signed-in user. The `@` menu shows initials for it, since its results load in the browser.
+
+```tsx
+// admin: { avatar: { Component: '/components/UserPhoto#UserPhoto' } }
+export function UserPhoto({ size = 24, user }: { size?: number; user?: { name?: string; photo?: { url?: string } } }) {
+  return user?.photo?.url ? (
+    <img alt={user.name ?? ''} height={size} src={user.photo.url} style={{ borderRadius: '50%' }} width={size} />
+  ) : null
+}
+```
+
+A mention shows the person's current name whenever the comment is read with `depth`, so a renamed person reads correctly in old comments.
 
 ## Choosing the editor
 
@@ -138,7 +159,7 @@ export async function DealSummary({ id, req }) {
 }
 ```
 
-`RecordComments` loads a record's comments with the signed-in user's access and renders the list and box, or nothing when the user can't read the record. The client parts are in `@frogbotai/plugin-comments/client`: `Comments` (list and box, reloading after changes), `CommentList` and `CommentBox`.
+`RecordComments` loads a record's comments with the signed-in user's access and renders the list and box, or nothing when the user can't read the record. The client parts are in `@frogbotai/plugin-comments/client`: `Comments` (list and box, reloading after changes), `CommentList`, `CommentBox`, `CommentEditor` (the rich text box with its own value) and `formatWhen`. `UserAvatar` from `@frogbotai/ui` draws a person's Gravatar or initials anywhere else.
 
 ## Options
 

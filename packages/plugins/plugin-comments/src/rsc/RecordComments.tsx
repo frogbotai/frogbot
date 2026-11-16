@@ -7,9 +7,12 @@ import type { CommentsConfig } from '../types.js';
 
 type Doc = Record<string, unknown> & { id: number | string };
 
+type AvatarSetting = 'default' | 'gravatar' | { Component: unknown } | undefined;
+
 type CommentsPayload = {
   collections: Record<string, { config: { admin?: { useAsTitle?: string } } } | undefined>;
-  config: { custom?: Record<string, unknown> };
+  config: { admin?: { avatar?: AvatarSetting }; custom?: Record<string, unknown> };
+  importMap?: unknown;
   find: (args: {
     collection: string;
     depth: number;
@@ -35,15 +38,60 @@ export type RecordCommentsProps = {
   /** The heading above the list. Omit it for none, for example inside a tab of the same name. */
   heading?: ReactNode;
   id: number | string;
-  req: { payload: CommentsPayload; user?: { id: number | string } | null };
+  /**
+   * Renders a custom `admin.avatar` component for each author. Field components get it from
+   * Payload as `renderComponent`; without it, authors show initials.
+   */
+  renderComponent?: (args: {
+    Component: unknown;
+    importMap: unknown;
+    key?: string;
+    serverProps?: object;
+  }) => ReactNode;
+  req: {
+    payload: CommentsPayload;
+    user?: ({ id: number | string } & Record<string, unknown>) | null;
+  };
 };
+
+function customAvatars(
+  payload: CommentsPayload,
+  users: (Doc | undefined)[],
+  render: RecordCommentsProps['renderComponent'],
+): Record<string, ReactNode> | undefined {
+  const setting = payload.config.admin?.avatar;
+
+  if (!render || !setting || typeof setting !== 'object') return undefined;
+
+  const byId = new Map(
+    users.filter((user): user is Doc => Boolean(user)).map((user) => [String(user.id), user]),
+  );
+
+  return Object.fromEntries(
+    [...byId].map(([id, user]) => [
+      id,
+      render({
+        Component: setting.Component,
+        importMap: payload.importMap,
+        key: id,
+        serverProps: { size: 24, user },
+      }),
+    ]),
+  );
+}
 
 /**
  * A record's comments, oldest first, with a box to add one, read with the signed-in user's
  * access, skipping any older than the record. Renders nothing when the user can't read the record or its collection has no comments.
  * Use it in a custom view or dashboard; `commentsField()` renders it in a record's form.
  */
-export async function RecordComments({ collection, heading, id, req }: RecordCommentsProps) {
+export async function RecordComments({
+  collection,
+  heading,
+  id,
+  renderComponent,
+  req,
+}: RecordCommentsProps) {
   const { payload, user } = req;
   const options = payload.config.custom?.[commentsCustomKey] as CommentsConfig | undefined;
   const bodyField = options?.bodies[collection];
@@ -77,9 +125,14 @@ export async function RecordComments({ collection, heading, id, req }: RecordCom
     .catch(() => ({ docs: [] as Doc[] }));
 
   const titleField = payload.collections[options.userSlug]?.config.admin?.useAsTitle;
+  const authors = docs.map((doc) =>
+    doc.author && typeof doc.author === 'object' ? (doc.author as Doc) : undefined,
+  );
 
   return (
     <Comments
+      avatars={customAvatars(payload, [...authors, user], renderComponent)}
+      gravatar={(payload.config.admin?.avatar ?? 'gravatar') === 'gravatar'}
       heading={heading}
       initial={docs.map((doc) => toCommentItem(doc, titleField)).reverse()}
       schemaPath={`collection.${options.commentsSlug}.${bodyField}`}

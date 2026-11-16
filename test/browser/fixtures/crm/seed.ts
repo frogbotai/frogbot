@@ -21,7 +21,7 @@ const frogbot = await getFrogBot({ config });
 
 await frogbot.create({
   collection: 'users',
-  data: { email: user.email, password: user.password },
+  data: { email: user.email, name: 'Browser Tester', password: user.password },
   overrideAccess: true,
 });
 

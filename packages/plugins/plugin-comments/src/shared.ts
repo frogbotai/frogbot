@@ -1,9 +1,13 @@
 /** A comment as the list shows it. */
 export type CommentItem = {
+  authorEmail?: string;
   authorId?: number | string;
+  /** The author's display name: their title field, then email. */
   authorName: string;
   body: unknown;
   createdAt: string;
+  /** Whether the comment was changed after it was posted. */
+  edited: boolean;
   id: number | string;
 };
 
@@ -42,7 +46,14 @@ function authorName(author: unknown, titleField: string | undefined): string {
 export function toCommentItem(doc: Doc, titleField: string | undefined): CommentItem {
   const author = doc.author;
 
+  const created = Date.parse(String(doc.createdAt));
+  const updated = Date.parse(String(doc.updatedAt));
+
   return {
+    authorEmail:
+      author && typeof author === 'object' && typeof (author as Doc).email === 'string'
+        ? ((author as Doc).email as string)
+        : undefined,
     authorId:
       author && typeof author === 'object'
         ? (author as Doc).id
@@ -50,6 +61,7 @@ export function toCommentItem(doc: Doc, titleField: string | undefined): Comment
     authorName: authorName(author, titleField),
     body: doc.body,
     createdAt: String(doc.createdAt),
+    edited: updated - created > 1000,
     id: doc.id,
   };
 }
@@ -80,4 +92,31 @@ export function hasContent(value: unknown): boolean {
   };
 
   return visit((value as { root?: unknown } | null | undefined)?.root);
+}
+
+const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+
+/** When a comment was posted: "Just now", "6 minutes ago", "3 hours ago", then a date such as "Nov 15". */
+export function formatWhen(iso: string, now = Date.now(), locale?: string): string {
+  const at = Date.parse(iso);
+  const ago = now - at;
+
+  if (Number.isNaN(at)) return '';
+  if (ago < MINUTE) return 'Just now';
+  if (ago < HOUR) return plural(Math.floor(ago / MINUTE), 'minute');
+  if (ago < DAY) return plural(Math.floor(ago / HOUR), 'hour');
+
+  const sameYear = new Date(at).getFullYear() === new Date(now).getFullYear();
+
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'short',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  }).format(at);
+}
+
+function plural(count: number, unit: string): string {
+  return `${count} ${unit}${count === 1 ? '' : 's'} ago`;
 }

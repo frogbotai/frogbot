@@ -9,6 +9,7 @@ export type CommentsFieldProps = PlacementProps & {
   field?: { label?: Parameters<typeof getTranslation>[0] | false };
   i18n?: Pick<I18nClient, 'fallbackLanguage' | 'language' | 't'>;
   id?: number | string;
+  renderComponent?: RecordCommentsProps['renderComponent'];
   req?: RecordCommentsProps['req'];
 };
 
@@ -21,6 +22,7 @@ export function CommentsField({
   field,
   i18n,
   id,
+  renderComponent,
   req,
   ...placement
 }: CommentsFieldProps) {
@@ -34,5 +36,13 @@ export function CommentsField({
         ? getTranslation(label, i18n as I18nClient)
         : 'Comments';
 
-  return <RecordComments collection={collectionSlug} heading={heading} id={id} req={req} />;
+  return (
+    <RecordComments
+      collection={collectionSlug}
+      heading={heading}
+      id={id}
+      renderComponent={renderComponent}
+      req={req}
+    />
+  );
 }

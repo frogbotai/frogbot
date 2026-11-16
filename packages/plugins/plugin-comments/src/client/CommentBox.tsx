@@ -1,13 +1,9 @@
 'use client';
 
-import type { DefaultTypedEditorState } from '@frogbotai/richtext-lexical';
-import { RenderLexical } from '@frogbotai/richtext-lexical/client';
-import { Button, toast, useConfig } from '@frogbotai/ui/admin';
-import { type ComponentProps, useState } from 'react';
+import { toast, useConfig } from '@frogbotai/ui/admin';
 
-import { type CommentsTarget, hasContent } from '../shared.js';
-
-type SetValue = NonNullable<ComponentProps<typeof RenderLexical>['setValue']>;
+import type { CommentsTarget } from '../shared.js';
+import { CommentEditor } from './CommentEditor.js';
 
 /** Props for `CommentBox`. */
 export type CommentBoxProps = {
@@ -18,28 +14,23 @@ export type CommentBoxProps = {
   target: CommentsTarget;
 };
 
-/**
- * A rich text box that adds a comment to a record through the comments API. It keeps its own
- * value, so typing in it never marks the record's form as changed.
- */
+/** The error message in a failed comments API response, or `fallback`. */
+export async function errorOf(response: Response | null, fallback: string): Promise<string> {
+  const result = (await response?.json().catch(() => null)) as {
+    errors?: { message?: string }[];
+  } | null;
+
+  return result?.errors?.[0]?.message ?? fallback;
+}
+
+/** A rich text box that adds a comment to a record through the comments API. */
 export function CommentBox({ onPosted, schemaPath, target }: CommentBoxProps) {
   const { config } = useConfig();
-  const [value, setValue] = useState<DefaultTypedEditorState | undefined>();
-  const [version, setVersion] = useState(0);
-  const [posting, setPosting] = useState(false);
 
-  const update: SetValue = (next) => {
-    if (next === undefined || (typeof next === 'object' && next !== null)) {
-      setValue(next as DefaultTypedEditorState | undefined);
-    }
-  };
-
-  const post = async () => {
-    setPosting(true);
-
+  const post = async (body: unknown) => {
     const response = await fetch(`${config.routes.api}/${target.commentsSlug}`, {
       body: JSON.stringify({
-        body: value,
+        body,
         collection: target.collection,
         documentId: String(target.documentId),
       }),
@@ -48,43 +39,20 @@ export function CommentBox({ onPosted, schemaPath, target }: CommentBoxProps) {
       method: 'POST',
     }).catch(() => null);
 
-    setPosting(false);
-
     if (!response?.ok) {
-      const result = (await response?.json().catch(() => null)) as {
-        errors?: { message?: string }[];
-      } | null;
+      toast.error(await errorOf(response, 'The comment could not be saved.'));
 
-      toast.error(result?.errors?.[0]?.message ?? 'The comment could not be saved.');
-
-      return;
+      return false;
     }
 
-    setValue(undefined);
-    setVersion((current) => current + 1);
     onPosted?.();
+
+    return true;
   };
 
   return (
     <div className="fb-comments__box">
-      <RenderLexical
-        key={version}
-        label={false}
-        name="body"
-        schemaPath={schemaPath}
-        setValue={update}
-        value={value}
-      />
-      <div className="fb-comments__actions">
-        <Button
-          buttonStyle="primary"
-          disabled={posting || !hasContent(value)}
-          onClick={() => void post()}
-          size="medium"
-        >
-          Comment
-        </Button>
-      </div>
+      <CommentEditor onSubmit={post} schemaPath={schemaPath} submitLabel="Comment" />
     </div>
   );
 }

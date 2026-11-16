@@ -2159,6 +2159,9 @@ importers:
         specifier: 'catalog:'
         version: 4.0.0-beta.9(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
     devDependencies:
+      '@frogbotai/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@types/react':
         specifier: 19.2.14
         version: 19.2.14
