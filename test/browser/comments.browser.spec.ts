@@ -185,14 +185,22 @@ test('shows initials on rows and chips, full names and emails in the menu, and k
   await expect(item.locator('.fb-comments__avatar .fb-user-avatar')).toBeVisible();
   await expect(item.locator('.mention .fb-mention__avatar')).toHaveText('BT');
 
+  const chipColors = () =>
+    item.locator('.mention').evaluate((element) => {
+      const style = getComputedStyle(element);
+
+      return { background: style.backgroundColor, color: style.color };
+    });
+
+  const light = await chipColors();
+
   await page.emulateMedia({ colorScheme: 'dark' });
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
-  const colors = await item.locator('.mention').evaluate((element) => {
-    const style = getComputedStyle(element);
+  const dark = await chipColors();
 
-    return { background: style.backgroundColor, color: style.color };
-  });
-
-  expect(colors.background).not.toBe(colors.color);
-  expect(colors.background).not.toBe('rgb(255, 255, 255)');
+  expect(dark.background).not.toBe(light.background);
+  expect(dark.color).not.toBe(light.color);
+  expect(dark.background).not.toBe(dark.color);
 });

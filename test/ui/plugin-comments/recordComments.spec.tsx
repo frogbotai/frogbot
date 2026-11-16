@@ -38,7 +38,10 @@ const payload = {
       ],
     }),
   findByID: () => Promise.resolve({ id: 3, createdAt: '2026-11-01T00:00:00.000Z' }),
-  importMap: { '/components/UserPhoto#UserPhoto': UserPhoto },
+  importMap: {
+    '/components/UserPhoto#default': UserPhoto,
+    '/components/UserPhoto#UserPhoto': UserPhoto,
+  },
 } as unknown as RecordCommentsProps['req']['payload'];
 
 describe('RecordComments', () => {
@@ -59,4 +62,29 @@ describe('RecordComments', () => {
     expect(Object.keys(avatars ?? {}).sort()).toEqual(['7', '9']);
     expect(renderToStaticMarkup(<>{avatars?.['7']}</>)).toBe('<img alt="Sam Lee" data-size="24"/>');
   });
+
+  it.each([
+    '/components/UserPhoto',
+    { path: '/components/UserPhoto' },
+    { exportName: 'UserPhoto', path: '/components/UserPhoto' },
+    { path: '/components/UserPhoto#UserPhoto' },
+  ])(
+    'finds the avatar component given as %j, the way Payload keys its import map',
+    async (Component) => {
+      const node = await RecordComments({
+        collection: 'deals',
+        id: 3,
+        req: {
+          payload: { ...payload, config: { ...payload.config, admin: { avatar: { Component } } } },
+          user: { id: 9, name: 'Ana Ruiz' },
+        },
+      });
+
+      const { avatars } = (node as ReactElement<{ avatars?: Record<string, unknown> }>).props;
+
+      expect(renderToStaticMarkup(<>{avatars?.['7']}</>)).toBe(
+        '<img alt="Sam Lee" data-size="24"/>',
+      );
+    },
+  );
 });
