@@ -137,46 +137,74 @@ async function relatedTitles(
   return titles;
 }
 
-type Change = { from: string; key: string; label: string; to: string };
+type Line = { key: string; label?: string; value?: string; verb: string };
 
-type Described = { changes: Change[]; summary: string };
+type Format = (field: FieldInfo['field'], value: unknown, withTime: boolean) => string | undefined;
 
-function describe(
-  entry: Entry,
-  info: Map<string, FieldInfo>,
-  format: (field: FieldInfo['field'], value: unknown, withTime: boolean) => string | undefined,
-): Described {
-  if (entry.operation === 'create') return { changes: [], summary: 'created this' };
-  if (entry.operation === 'delete') return { changes: [], summary: 'deleted this' };
+const GROUP_GAP = 10 * 60 * 1000;
+
+function changeLine(key: string, info: FieldInfo, diff: unknown, format: Format): Line[] {
+  const { field, label } = info;
+  const { new: next, old } = (diff ?? {}) as { new?: unknown; old?: unknown };
+  let from = format(field, old, showsTime(field));
+  let to = format(field, next, showsTime(field));
+
+  if (from === to && field.type === 'date') {
+    from = format(field, old, true);
+    to = format(field, next, true);
+  }
+
+  if (to === undefined || from === undefined) return [{ key, label, verb: 'changed' }];
+  if (from === to) return [];
+  if (to === 'None') return [{ key, label, verb: 'cleared' }];
+
+  return [{ key, label, value: to, verb: 'changed' }];
+}
+
+function describe(entry: Entry, info: Map<string, FieldInfo>, format: Format): Line[] {
+  if (entry.operation === 'create') return [{ key: 'create', verb: 'created this' }];
+  if (entry.operation === 'delete') return [{ key: 'delete', verb: 'deleted this' }];
 
   const keys = Object.keys(entry.changes ?? {}).filter((key) => info.has(key));
-  if (!keys.length) return { changes: [], summary: 'edited this' };
+  if (!keys.length) return [{ key: 'edit', verb: 'edited this' }];
 
-  const changes = keys.flatMap((key) => {
-    const { field, label } = info.get(key) as FieldInfo;
-    const diff = (entry.changes?.[key] ?? {}) as { new?: unknown; old?: unknown };
-    let from = format(field, diff.old, showsTime(field));
-    let to = format(field, diff.new, showsTime(field));
+  return keys.flatMap((key) =>
+    changeLine(key, info.get(key) as FieldInfo, entry.changes?.[key], format),
+  );
+}
 
-    if (from === to && field.type === 'date') {
-      from = format(field, diff.old, true);
-      to = format(field, diff.new, true);
+function actorOf(entry: Entry): unknown {
+  return entry.user && typeof entry.user === 'object' ? entry.user.id : entry.user;
+}
+
+function groupRuns(entries: Entry[]): Entry[][] {
+  const runs: Entry[][] = [];
+
+  for (const entry of entries) {
+    const run = runs.at(-1);
+    const last = run?.at(-1);
+
+    if (
+      run &&
+      last &&
+      actorOf(last) === actorOf(entry) &&
+      Date.parse(entry.timestamp) - Date.parse(last.timestamp) <= GROUP_GAP
+    ) {
+      run.push(entry);
+    } else {
+      runs.push([entry]);
     }
+  }
 
-    return from === undefined || to === undefined || from === to ? [] : [{ from, key, label, to }];
-  });
-
-  return {
-    changes,
-    summary: `changed ${keys.map((key) => info.get(key)?.label).join(', ')}`,
-  };
+  return runs;
 }
 
 /**
- * Lists the open record's audit entries, newest first. Both the record and its entries are read
- * with the signed-in user's access, and a change names only fields the user can read, so a
- * record the user can't read shows nothing. A change to an option, related record, text, number,
- * date or checkbox also shows its old and new value, with options by label and related records
+ * Lists the open record's latest audit entries, oldest first, one line per changed field, with
+ * runs by the same person a few minutes apart grouped together. Both the record and its entries
+ * are read with the signed-in user's access, and a change names only fields the user can read,
+ * so a record the user can't read shows nothing. A change to an option, related record, text,
+ * number, date or checkbox also shows its new value, with options by label and related records
  * by their `useAsTitle`; a related record whose title the user can't read shows its ID. Entries older than the record are
  * skipped, since a database can reuse a deleted record's id. Renders nothing on a create form.
  */
@@ -221,7 +249,7 @@ export async function ActivityField({ collectionSlug, field, i18n, id, req }: Ac
     })
     .catch(() => ({ docs: [] as Doc[] }));
 
-  const entries = docs as Entry[];
+  const entries = (docs as Entry[]).reverse();
   const userField = payload.collections[auditSlug]?.config.fields.find(
     (auditField) => auditField.name === 'user',
   );
@@ -229,51 +257,59 @@ export async function ActivityField({ collectionSlug, field, i18n, id, req }: Ac
   const userTitleKey = titleKeyOf(payload, userField?.relationTo);
   const info = fieldInfo(collection.config.fields, i18n);
   const readable = new Map([...info].filter(([key]) => key in record));
-  const formatter = new Intl.DateTimeFormat(i18n?.language, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
-
-  const day = new Intl.DateTimeFormat(i18n?.language, { dateStyle: 'medium' });
+  const heading = translate(field?.label, i18n) ?? 'Activity';
+  const language = i18n?.language;
+  const full = new Intl.DateTimeFormat(language, { dateStyle: 'medium', timeStyle: 'short' });
+  const day = new Intl.DateTimeFormat(language, { dateStyle: 'medium' });
+  const thisYear = new Intl.DateTimeFormat(language, { day: 'numeric', month: 'short' });
+  const year = new Date().getFullYear();
+  const short = (date: Date) => (date.getFullYear() === year ? thisYear : day).format(date);
   const titles = await relatedTitles(payload, req, entries, readable, (config) =>
-    showsTime(config) ? formatter : day,
+    showsTime(config) ? full : day,
   );
 
-  const heading = translate(field?.label, i18n) ?? 'Activity';
-  const format = (config: FieldInfo['field'], value: unknown, withTime: boolean) =>
-    formatValue(config, value, titles, i18n, withTime ? formatter : day);
+  const format: Format = (config, value, withTime) =>
+    formatValue(config, value, titles, i18n, withTime ? full : day);
+
+  const runs = groupRuns(entries)
+    .map((run) =>
+      run.flatMap((entry) => describe(entry, readable, format).map((line) => ({ ...line, entry }))),
+    )
+    .filter((lines) => lines.length);
 
   return (
     <PanelSection className="fb-activity" heading={heading}>
-      {entries.length ? (
+      {runs.length ? (
         <ol className="fb-activity__list">
-          {entries.map((entry) => {
-            const { changes, summary } = describe(entry, readable, format);
+          {runs.map((lines) => (
+            <li className="fb-activity__run" key={`${lines[0].entry.id}`}>
+              {lines.map(({ entry, key, label, value, verb }) => {
+                const date = new Date(entry.timestamp);
 
-            return (
-              <li className="fb-activity__entry" key={entry.id}>
-                <span className="fb-activity__dot" />
-                <p className="fb-activity__text">
-                  <strong>{userName(entry.user, userTitleKey)}</strong> {summary}
-                </p>
-                {changes.length ? (
-                  <ul className="fb-activity__changes">
-                    {changes.map((change) => (
-                      <li className="fb-activity__change" key={change.key}>
-                        <span className="fb-activity__field">{change.label}</span>{' '}
-                        <span className="fb-activity__from">{change.from}</span>
-                        {' → '}
-                        <span className="fb-activity__to">{change.to}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                <time className="fb-activity__time" dateTime={entry.timestamp}>
-                  {formatter.format(new Date(entry.timestamp))}
-                </time>
-              </li>
-            );
-          })}
+                return (
+                  <p className="fb-activity__line" key={`${entry.id}:${key}`}>
+                    <strong>{userName(entry.user, userTitleKey)}</strong> {verb}
+                    {label ? (
+                      <>
+                        {' '}
+                        <strong>{label}</strong>
+                      </>
+                    ) : null}
+                    {value ? (
+                      <>
+                        {' to '}
+                        <strong>{value}</strong>
+                      </>
+                    ) : null}
+                    {' · '}
+                    <time dateTime={entry.timestamp} title={full.format(date)}>
+                      {short(date)}
+                    </time>
+                  </p>
+                );
+              })}
+            </li>
+          ))}
         </ol>
       ) : (
         <p className="fb-activity__empty">No activity yet.</p>

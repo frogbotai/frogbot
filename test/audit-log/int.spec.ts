@@ -606,23 +606,23 @@ describe('audit log plugin integration', () => {
     }
 
     const texts = (html: string | null) =>
-      [...(html ?? '').matchAll(/<p class="fb-activity__text">(.*?)<\/p>/g)].map(([, text]) =>
-        text.replace(/<[^>]+>/g, ''),
+      [...(html ?? '').matchAll(/<p class="fb-activity__line">(.*?)<\/p>/g)].map(([, text]) =>
+        text.replace(/<[^>]+>/g, '').replace(/ · .*$/, ''),
       );
 
-    it('lists the record entries newest first, naming only fields the user reads', async () => {
+    it('lists the record entries oldest first, naming only fields the user reads', async () => {
       const id = await ledgerWithHistory();
 
       expect(texts(await activityAs('audit@frogbot.local', id))).toEqual([
-        'Someone changed Cost',
-        'Someone changed Title',
         'Someone created this',
+        'Someone changed Title to Q1 final',
+        'Someone changed Cost to 40',
       ]);
 
       expect(texts(await activityAs('viewer@frogbot.local', id))).toEqual([
-        'Someone edited this',
-        'Someone changed Title',
         'Someone created this',
+        'Someone changed Title to Q1 final',
+        'Someone edited this',
       ]);
     });
 
@@ -642,13 +642,11 @@ describe('audit log plugin integration', () => {
 
       await vi.waitFor(async () => expect(await entries(ledger.id, 'ledgers')).toHaveLength(2));
 
-      const html = await activityAs('audit@frogbot.local', ledger.id);
-      const changes = [
-        ...(html ?? '').matchAll(/<li class="fb-activity__change">(.*?)<\/li>/g),
-      ].map(([, text]) => text.replace(/<[^>]+>/g, ''));
-
-      expect(texts(html)[0]).toBe('Someone changed Stage, Owner');
-      expect(changes).toEqual(['Stage Lead → Qualified', 'Owner None → audit@frogbot.local']);
+      expect(texts(await activityAs('audit@frogbot.local', ledger.id))).toEqual([
+        'Someone created this',
+        'Someone changed Stage to Qualified',
+        'Someone changed Owner to audit@frogbot.local',
+      ]);
     });
 
     it('names a timezone date once, without its hidden timezone companion', async () => {
@@ -667,14 +665,10 @@ describe('audit log plugin integration', () => {
 
       await vi.waitFor(async () => expect(await entries(ledger.id, 'ledgers')).toHaveLength(2));
 
-      const html = await activityAs('audit@frogbot.local', ledger.id);
-      const changes = [
-        ...(html ?? '').matchAll(/<li class="fb-activity__change">(.*?)<\/li>/g),
-      ].map(([, text]) => text.replace(/<[^>]+>/g, ''));
+      const changed = texts(await activityAs('audit@frogbot.local', ledger.id)).slice(1);
 
-      expect(texts(html)[0]).toBe('Someone changed Due');
-      expect(changes).toHaveLength(1);
-      expect(changes[0]).toMatch(/^Due /);
+      expect(changed).toHaveLength(1);
+      expect(changed[0]).toMatch(/^Someone changed Due to /);
     });
 
     it('shows nothing for a record the user cannot read', async () => {

@@ -33,18 +33,23 @@ const payload: NonNullable<ActivityFieldProps['req']>['payload'] = {
         {
           id: 'e2',
           operation: 'update',
-          timestamp: '2026-01-03T00:00:00.000Z',
-          changes: { priority: {} },
+          timestamp: '2025-01-03T00:00:00.000Z',
+          changes: { priority: { old: 'low', new: 'high' } },
         },
         {
           id: 'e1',
           operation: 'update',
-          timestamp: '2026-01-02T00:00:00.000Z',
-          changes: { summary: {} },
+          timestamp: '2025-01-02T00:00:00.000Z',
+          changes: { summary: { old: 'A', new: 'B' } },
         },
       ],
     }),
 };
+
+const lines = (html: string) =>
+  [...html.matchAll(/<p class="fb-activity__line">(.*?)<\/p>/g)].map(([, text]) =>
+    text.replace(/<[^>]+>/g, '').replace(/&#x27;/g, "'"),
+  );
 
 describe('ActivityField', () => {
   it('names a changed field that sits in an unnamed tab or a row', async () => {
@@ -56,8 +61,8 @@ describe('ActivityField', () => {
 
     const text = renderToStaticMarkup(node).replace(/<[^>]+>/g, '|');
 
-    expect(text).toContain('changed Priority');
-    expect(text).toContain('changed Summary');
+    expect(text).toContain('changed |Priority| to |high|');
+    expect(text).toContain('changed |Summary| to |B|');
   });
 
   it('uses translated labels for changed fields and the heading', async () => {
@@ -86,10 +91,10 @@ describe('ActivityField', () => {
     const text = renderToStaticMarkup(node).replace(/<[^>]+>/g, '|');
 
     expect(text).toContain('Verlauf');
-    expect(text).toContain('changed Dringlichkeit');
+    expect(text).toContain('changed |Dringlichkeit| to |high|');
   });
 
-  it('shows old and new values by label, and a related record it cannot read by id', async () => {
+  it('shows each new value by label, and a related record it cannot read by id', async () => {
     const lookups: Array<{ collection: string; where: unknown }> = [];
     const deals: NonNullable<ActivityFieldProps['req']>['payload'] = {
       collections: {
@@ -135,12 +140,12 @@ describe('ActivityField', () => {
               {
                 id: 'e1',
                 operation: 'update',
-                timestamp: '2026-01-02T00:00:00.000Z',
+                timestamp: '2025-01-02T00:00:00.000Z',
                 user: { id: 2, fullName: 'Ana Park', email: 'ana@example.com' },
                 changes: {
                   stage: { old: 'lead', new: 'qualified' },
                   tags: { old: ['hot'], new: ['hot', 'cold'] },
-                  owner: { old: 3, new: 2 },
+                  owner: { old: 2, new: 3 },
                   party: { old: null, new: { relationTo: 'companies', value: 7 } },
                   won: { old: null, new: true },
                   notes: { old: null, new: { root: {} } },
@@ -170,28 +175,23 @@ describe('ActivityField', () => {
     });
 
     const html = renderToStaticMarkup(node);
-    const changes = [...html.matchAll(/<li class="fb-activity__change">(.*?)<\/li>/g)].map(
-      ([, text]) => text.replace(/<[^>]+>/g, ''),
-    );
 
-    expect(html).toContain(
-      '<strong>Ana Park</strong> changed Stage, Tags, Owner, Party, Won, Notes',
-    );
     expect(html).not.toContain('Secret');
-    expect(changes).toEqual([
-      'Stage Interessent → Qualified',
-      'Tags hot → hot, cold',
-      'Owner #3 → Ana Park',
-      'Party None → Acme',
-      'Won No → Yes',
+    expect(lines(html)).toEqual([
+      'Ana Park changed Stage to Qualified · 02.01.2025',
+      'Ana Park changed Tags to hot, cold · 02.01.2025',
+      'Ana Park changed Owner to #3 · 02.01.2025',
+      'Ana Park changed Party to Acme · 02.01.2025',
+      'Ana Park changed Won to Yes · 02.01.2025',
+      'Ana Park changed Notes · 02.01.2025',
     ]);
     expect(lookups).toEqual([
-      { collection: 'users', where: { id: { in: [3, 2] } } },
+      { collection: 'users', where: { id: { in: [2, 3] } } },
       { collection: 'companies', where: { id: { in: [7] } } },
     ]);
   });
 
-  it('shows a cleared text as None, adds the time to same-day dates, and skips no-op values', async () => {
+  it('says cleared for an emptied value, adds the time to same-day dates, and skips no-op values', async () => {
     const edges: NonNullable<ActivityFieldProps['req']>['payload'] = {
       collections: {
         'audit-logs': { config: { fields: [] } },
@@ -213,7 +213,7 @@ describe('ActivityField', () => {
             {
               id: 'e1',
               operation: 'update',
-              timestamp: '2026-01-02T00:00:00.000Z',
+              timestamp: '2025-01-02T00:00:00.000Z',
               changes: {
                 title: { old: 'Q9', new: '' },
                 due: { old: '2026-03-01T09:00:00.000Z', new: '2026-03-01T15:00:00.000Z' },
@@ -230,16 +230,52 @@ describe('ActivityField', () => {
       req: { payload: edges, user: { id: 1 } },
     });
 
-    const changes = [
-      ...renderToStaticMarkup(node).matchAll(/<li class="fb-activity__change">(.*?)<\/li>/g),
-    ].map(([, text]) => text.replace(/<[^>]+>/g, ''));
+    const [title, due, ...rest] = lines(renderToStaticMarkup(node));
 
-    expect(changes[0]).toBe('Title Q9 → None');
+    expect(title).toBe('Someone cleared Title · Jan 2, 2025');
+    expect(due).toMatch(/^Someone changed Due to Mar 1, 2026, \d/);
+    expect(rest).toEqual([]);
+  });
 
-    const [from, to] = (changes[1] ?? '').replace('Due ', '').split(' → ');
+  it('groups changes by the same person a few minutes apart into one run, oldest first', async () => {
+    const entry = (id: string, user: number, timestamp: string) => ({
+      id,
+      operation: 'update',
+      timestamp,
+      user: { id: user, email: `user${user}@x.io` },
+      changes: { title: { old: 'a', new: id } },
+    });
 
-    expect(from).not.toBe(to);
-    expect(changes).toHaveLength(2);
+    const runs: NonNullable<ActivityFieldProps['req']>['payload'] = {
+      ...payload,
+      find: () =>
+        Promise.resolve({
+          docs: [
+            entry('e4', 1, '2025-01-01T11:00:00.000Z'),
+            entry('e3', 2, '2025-01-01T10:06:00.000Z'),
+            entry('e2', 1, '2025-01-01T10:05:00.000Z'),
+            entry('e1', 1, '2025-01-01T10:00:00.000Z'),
+          ],
+        }),
+    };
+
+    const node = await ActivityField({
+      collectionSlug: 'tickets',
+      id: 1,
+      req: { payload: runs, user: { id: 1 } },
+    });
+
+    const html = renderToStaticMarkup(node);
+    const groups = html
+      .split('<li class="fb-activity__run">')
+      .slice(1)
+      .map((run) => lines(run).map((line) => line.replace(/ · .*$/, '')));
+
+    expect(groups).toEqual([
+      ['user1@x.io changed Title to e1', 'user1@x.io changed Title to e2'],
+      ['user2@x.io changed Title to e3'],
+      ['user1@x.io changed Title to e4'],
+    ]);
   });
 
   it('titles a related record by its useAsTitle only, formatting a date, else by id', async () => {
@@ -304,15 +340,13 @@ describe('ActivityField', () => {
       req: { payload: titled, user: { id: 1 } },
     });
 
-    const html = renderToStaticMarkup(node);
-    const changes = [...html.matchAll(/<li class="fb-activity__change">(.*?)<\/li>/g)].map(
-      ([, text]) => text.replace(/<[^>]+>/g, ''),
+    const [owner, meeting] = lines(renderToStaticMarkup(node)).map((line) =>
+      line.replace(/ · .*$/, ''),
     );
 
-    expect(html).toContain('changed Owner, Meeting<');
-    expect(changes[0]).toBe('Owner None → #4');
-    expect(changes[1]).toBe(
-      `Meeting None → ${new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(new Date('2026-03-01T12:00:00.000Z'))}`,
+    expect(owner).toBe('Someone changed Owner to #4');
+    expect(meeting).toBe(
+      `Someone changed Meeting to ${new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(new Date('2026-03-01T12:00:00.000Z'))}`,
     );
   });
 
@@ -348,10 +382,8 @@ describe('ActivityField', () => {
       req: { payload: named, user: { id: 3 } },
     });
 
-    const headers = [
-      ...renderToStaticMarkup(node).matchAll(/<p class="fb-activity__text">(.*?)<\/p>/g),
-    ].map(([, text]) => text.replace(/<[^>]+>/g, ''));
+    const names = lines(renderToStaticMarkup(node)).map((line) => line.replace(/ · .*$/, ''));
 
-    expect(headers).toEqual(['sam@x.io changed Title', 'Someone created this']);
+    expect(names).toEqual(['Someone created this', 'sam@x.io changed Title to x']);
   });
 });
