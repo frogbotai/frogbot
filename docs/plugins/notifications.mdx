@@ -56,29 +56,53 @@ export const tellOwner: CollectionAfterChangeHook = async ({ doc, previousDoc, r
 | `title` | One line saying what happened. Required. |
 | `excerpt` | A short plain-text preview, such as the start of a comment. |
 | `link` | Where opening the notification goes: an admin path such as `/admin/collections/deals/12`, or an `https://` URL. The inbox follows nothing else. |
+| `actor` | The id of the user who caused it, such as a comment's author. |
+| `kind` | What happened, such as `mention` or `assigned`, for filtering. |
 | `source` | What sent it, such as `deals`, for your own filtering. |
+
+Any field you add to the collection with `overrides.fields` can be passed too, and is stored.
 
 `notify()` checks no access: your code decides who to tell. Only send people things they may see.
 
 ## Mentions in comments
 
-With both plugins installed, a comment notifies each user it newly mentions, once, with the comment's first 140 characters and a link to the record. Editing a comment notifies only the users the edit adds. Nobody is notified for mentioning themselves, and a user who can't read the record isn't notified, so the excerpt never reaches someone who couldn't open it.
+With both plugins installed, a comment notifies each user it newly mentions, once, with the comment's first 140 characters, a link to the record, the author as `actor` and `kind: 'mention'`. Editing a comment notifies only the users the edit adds. Nobody is notified for mentioning themselves, and a user who can't read the record isn't notified, so the excerpt never reaches someone who couldn't open it.
 
 The two plugins don't depend on each other: either works alone.
 
 ## Bell and inbox
 
-The bell shows the signed-in user's unread count, up to `99+`, and links to the inbox. The inbox lists their latest 50 notifications, newest first, with unread ones in bold. Opening one marks it read and follows its link.
+The bell shows the signed-in user's unread count, up to `99+`, and links to the inbox. It refreshes on each page change. Set `bell: false` to leave it out and put your own entry point anywhere.
+
+The inbox lists the user's notifications, newest first, 50 at a time with **Load more**. Unread ones are bold with a dot. **All** and **Unread** switch the list, and **Mark all read** marks every unread one read. Opening one marks it read and follows its link. Each control is a URL (`?filter=unread`, `?limit=100`).
+
+## Build your own
+
+Everything the inbox uses is public, so you can build a different experience on the same data:
+
+- **Components**: `NotificationsBell` from `@frogbotai/plugin-notifications/rsc`, and `BellLink` and `Inbox` from `@frogbotai/plugin-notifications/client`. Render `Inbox` in your own view or popover with your own query.
+- **REST**: each user reads and updates only their own rows, so `GET /api/notifications?where[kind][equals]=mention` is a "Mentioned" view, and `PATCH /api/notifications?where[readAt][exists]=false` marks all read.
+- **Fields**: add your own with `overrides.fields` and pass them to `notify()`. For example, an archive:
+
+```ts
+notificationsPlugin({
+  overrides: {
+    fields: ({ defaultFields }) => [...defaultFields, { name: 'archivedAt', type: 'date' }],
+  },
+})
+// archive one: PATCH /api/notifications/42 with { archivedAt: new Date().toISOString() }
+// the Archive view: GET /api/notifications?where[archivedAt][exists]=true
+```
 
 ## The notifications collection
 
 | Field | Holds |
 | --- | --- |
 | `user` | Who it's for. |
-| `title`, `excerpt`, `link`, `source` | What `notify()` was given. |
+| `actor`, `kind`, `title`, `excerpt`, `link`, `source` | What `notify()` was given. |
 | `readAt` | When the user opened it, or empty while unread. |
 
-Only `readAt` can be changed after create. Deleting a user deletes their notifications.
+Only `readAt`, and fields you add, can be changed after create. Deleting a user deletes their notifications.
 
 ```ts
 // mark one read
@@ -101,4 +125,5 @@ Change them with `overrides.access`.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
+| `bell` | `boolean` | `true` | Adds the bell to the admin header. Set `false` to place your own. |
 | `overrides` | `Partial<CollectionConfig>` with `fields?: ({ defaultFields }) => Field[]` | None | Changes the notifications collection: `slug` (default `'notifications'`), `access`, `admin`, `hooks`, `fields` and any other collection key. |

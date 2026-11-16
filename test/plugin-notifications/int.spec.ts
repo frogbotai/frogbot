@@ -126,7 +126,9 @@ describe('notifications plugin', () => {
 
     expect(sam).toHaveLength(1);
     expect(sam[0]).toMatchObject({
+      actor: users.ana.id,
       excerpt: '@Sam can you check the logs?',
+      kind: 'mention',
       link: `${admin === '/' ? '' : admin}/collections/deals/${record.id}`,
       source: 'plugin-comments',
       title: 'Ana mentioned you in a comment',
@@ -433,5 +435,52 @@ describe('notifications plugin', () => {
     expect(stored.readAt).toBe('2026-11-15T12:00:00.000Z');
     expect(stored.createdAt).toBe(sent.createdAt);
     expect(stored.updatedAt).not.toBe('2000-01-01T00:00:00.000Z');
+  });
+
+  it('stores fields added with overrides.fields, and nobody can edit them later', async () => {
+    const req = await booted.frogbot.createRequest({});
+    const sent = await notify(req, {
+      archivedAt: '2026-11-15T12:00:00.000Z',
+      kind: 'assigned',
+      title: 'Assigned to you',
+      user: users.sam.id,
+    });
+
+    expect(sent).toMatchObject({ archivedAt: '2026-11-15T12:00:00.000Z', kind: 'assigned' });
+
+    await booted.restClient.patch(
+      `/api/notifications/${sent.id}`,
+      { kind: 'other' },
+      { headers: users.sam.headers },
+    );
+
+    const stored = await booted.frogbot.findByID({
+      collection: 'notifications',
+      id: sent.id,
+      overrideAccess: true,
+    });
+
+    expect(stored.kind).toBe('assigned');
+  });
+
+  it('marks all of a user’s unread notifications read in one request, and nobody else’s', async () => {
+    const req = await booted.frogbot.createRequest({});
+
+    await notify(req, { title: 'One', user: users.sam.id });
+    await notify(req, { title: 'Two', user: users.sam.id });
+    await notify(req, { title: 'For Kim', user: users.kim.id });
+
+    const marked = await booted.restClient.patch(
+      '/api/notifications?where[readAt][exists]=false&limit=0',
+      { readAt: '2026-11-15T12:00:00.000Z' },
+      { headers: users.sam.headers },
+    );
+
+    expect(marked.status).toBe(200);
+    expect((await inbox('sam')).map((doc) => doc.readAt)).toEqual([
+      '2026-11-15T12:00:00.000Z',
+      '2026-11-15T12:00:00.000Z',
+    ]);
+    expect((await inbox('kim'))[0].readAt ?? null).toBeNull();
   });
 });

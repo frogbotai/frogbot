@@ -21,6 +21,8 @@ function defaultFields(userSlug: string): Field[] {
       index: true,
       access: fixed,
     },
+    { name: 'actor', type: 'relationship', relationTo: userSlug, access: fixed },
+    { name: 'kind', type: 'text', index: true, access: fixed },
     { name: 'title', type: 'text', required: true, access: fixed },
     { name: 'excerpt', type: 'textarea', access: fixed },
     { name: 'link', type: 'text', access: fixed },

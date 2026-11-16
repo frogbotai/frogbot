@@ -8,6 +8,24 @@ import type { NotificationsBellProps } from '../../../packages/plugins/plugin-no
 const router = vi.hoisted(() => ({ push: vi.fn(), refresh: vi.fn() }));
 
 vi.mock('@frogbotai/ui/admin', () => ({
+  Button: ({
+    children,
+    el,
+    onClick,
+    url,
+  }: {
+    children: ReactNode;
+    el?: string;
+    onClick?: () => void;
+    url?: string;
+  }) =>
+    el === 'link' ? (
+      <a href={url}>{children}</a>
+    ) : (
+      <button onClick={onClick} type="button">
+        {children}
+      </button>
+    ),
   PayloadLink: ({
     children,
     ...props
@@ -209,9 +227,65 @@ describe('Inbox', () => {
     expect(router.push).not.toHaveBeenCalled();
   });
 
-  it('says so when there are none', () => {
-    render(<Inbox items={[]} slug="notifications" />);
+  it('says so when there are none, and offers all when unread-only is empty', () => {
+    const { unmount } = render(<Inbox items={[]} slug="notifications" />);
 
-    expect(screen.getByText('No notifications yet.')).toBeTruthy();
+    expect(screen.getByText("You're all caught up")).toBeTruthy();
+
+    unmount();
+
+    render(<Inbox filter="unread" items={[]} slug="notifications" />);
+
+    expect(screen.getByText('No unread notifications')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Show all' }).getAttribute('href')).toBe('?');
+  });
+
+  it('switches between all and unread with the count, and loads more in the same filter', () => {
+    render(<Inbox filter="unread" items={items} more={100} slug="notifications" unread={3} />);
+
+    const all = screen.getByRole('link', { name: 'All' });
+    const unread = screen.getByRole('link', { name: 'Unread (3)' });
+
+    expect(all.getAttribute('href')).toBe('?');
+    expect(all.getAttribute('aria-current')).toBeNull();
+    expect(unread.getAttribute('href')).toBe('?filter=unread');
+    expect(unread.getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('link', { name: 'Load more' }).getAttribute('href')).toBe(
+      '?filter=unread&limit=100',
+    );
+  });
+
+  it('marks all read in one request, then refreshes', async () => {
+    render(<Inbox items={items} slug="notifications" unread={1} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark all read' }));
+    await waitFor(() => expect(router.refresh).toHaveBeenCalled());
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+
+    expect(url).toBe('/api/notifications?where[readAt][exists]=false&limit=0');
+    expect(init.method).toBe('PATCH');
+    expect(screen.getByRole('button', { name: /Ana mentioned you/ }).className).not.toContain(
+      '--unread',
+    );
+    expect(screen.queryByRole('button', { name: 'Mark all read' })).toBeNull();
+  });
+
+  it('hides Mark all read with nothing unread, and keeps items unread when it fails', async () => {
+    const { unmount } = render(<Inbox items={items} slug="notifications" />);
+
+    expect(screen.queryByRole('button', { name: 'Mark all read' })).toBeNull();
+
+    unmount();
+
+    fetchMock.mockResolvedValue(new Response('{}', { status: 403 }));
+    render(<Inbox items={items} slug="notifications" unread={1} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Mark all read' }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+
+    expect(router.refresh).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /Ana mentioned you/ }).className).toContain(
+      '--unread',
+    );
   });
 });

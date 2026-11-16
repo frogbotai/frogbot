@@ -238,12 +238,15 @@ export interface Deal {
 export interface Notification {
   id: number;
   user: number | User;
+  actor?: (number | null) | User;
+  kind?: string | null;
   title: string;
   excerpt?: string | null;
   link?: string | null;
   source?: string | null;
   readAt?: string | null;
   createdAt: string;
+  archivedAt?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -365,12 +368,15 @@ export interface DealsSelect {
  */
 export interface NotificationsSelect {
   user?: boolean;
+  actor?: boolean;
+  kind?: boolean;
   title?: boolean;
   excerpt?: boolean;
   link?: boolean;
   source?: boolean;
   readAt?: boolean;
   createdAt?: boolean;
+  archivedAt?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;

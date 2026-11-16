@@ -6,9 +6,13 @@ import { Inbox, type InboxItem } from '../client/Inbox.js';
 import { INBOX_LIMIT, notificationsCustomKey } from '../shared.js';
 import type { NotificationsConfig } from '../types.js';
 
+function param(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : Array.isArray(value) ? String(value[0]) : undefined;
+}
+
 /**
- * The inbox at `/admin/notifications`: the signed-in user's latest notifications, newest first,
- * read with their own access.
+ * The inbox at `/admin/notifications`: the signed-in user's notifications, newest first, read with
+ * their own access. `?filter=unread` shows unread ones only, and `?limit=` how many.
  */
 export async function InboxView(props: AdminViewServerProps) {
   const { initPageResult, params, payload, searchParams } = props;
@@ -16,29 +20,45 @@ export async function InboxView(props: AdminViewServerProps) {
   const options = payload.config.custom?.[notificationsCustomKey] as
     NotificationsConfig | undefined;
 
-  const items: InboxItem[] =
-    options && req.user?.collection === options.userSlug
-      ? (
-          await payload
-            .find({
-              collection: options.slug,
-              depth: 0,
-              limit: INBOX_LIMIT,
-              overrideAccess: false,
-              req,
-              sort: '-createdAt',
-              where: { user: { equals: req.user.id } },
-            })
-            .catch(() => ({ docs: [] }))
-        ).docs.map((doc) => ({
-          createdAt: String(doc.createdAt),
-          excerpt: doc.excerpt as InboxItem['excerpt'],
-          id: doc.id,
-          link: doc.link as InboxItem['link'],
-          readAt: doc.readAt as InboxItem['readAt'],
-          title: String(doc.title),
-        }))
-      : [];
+  const filter = param(searchParams?.filter) === 'unread' ? 'unread' : 'all';
+  const limit = Math.max(INBOX_LIMIT, Number(param(searchParams?.limit)) || INBOX_LIMIT);
+  const slug = options && req.user?.collection === options.userSlug ? options.slug : undefined;
+  const mine = { user: { equals: req.user?.id } };
+  const unreadOnly = { readAt: { exists: false } };
+
+  const [page, unread] = slug
+    ? await Promise.all([
+        payload
+          .find({
+            collection: slug,
+            depth: 0,
+            limit,
+            overrideAccess: false,
+            req,
+            sort: '-createdAt',
+            where: filter === 'unread' ? { and: [mine, unreadOnly] } : mine,
+          })
+          .catch(() => ({ docs: [], hasNextPage: false })),
+        payload
+          .count({
+            collection: slug,
+            overrideAccess: false,
+            req,
+            where: { and: [mine, unreadOnly] },
+          })
+          .then((result) => result.totalDocs)
+          .catch(() => 0),
+      ])
+    : [{ docs: [], hasNextPage: false }, 0];
+
+  const items: InboxItem[] = page.docs.map((doc) => ({
+    createdAt: String(doc.createdAt),
+    excerpt: doc.excerpt as InboxItem['excerpt'],
+    id: doc.id,
+    link: doc.link as InboxItem['link'],
+    readAt: doc.readAt as InboxItem['readAt'],
+    title: String(doc.title),
+  }));
 
   return (
     <DefaultTemplate
@@ -54,7 +74,13 @@ export async function InboxView(props: AdminViewServerProps) {
     >
       <div className="gutter--left gutter--right fb-inbox-view">
         <h1 className="fb-inbox-view__title">Notifications</h1>
-        <Inbox items={items} slug={options?.slug ?? ''} />
+        <Inbox
+          filter={filter}
+          items={items}
+          more={page.hasNextPage ? limit + INBOX_LIMIT : undefined}
+          slug={options?.slug ?? ''}
+          unread={unread}
+        />
       </div>
     </DefaultTemplate>
   );

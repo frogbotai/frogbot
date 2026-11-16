@@ -33,6 +33,8 @@ describe('notificationsPlugin', () => {
 
     expect(collection?.fields.map((field) => ('name' in field ? field.name : ''))).toEqual([
       'user',
+      'actor',
+      'kind',
       'title',
       'excerpt',
       'link',
@@ -55,16 +57,23 @@ describe('notificationsPlugin', () => {
     const { collection, custom } = await apply(config(), {
       overrides: {
         slug: 'alerts',
-        fields: ({ defaultFields }) => [...defaultFields, { name: 'kind', type: 'text' }],
+        fields: ({ defaultFields }) => [...defaultFields, { name: 'archivedAt', type: 'date' }],
       },
     });
 
     expect(custom.slug).toBe('alerts');
-    expect(collection?.fields.at(-1)).toMatchObject({ name: 'kind' });
+    expect(collection?.fields.at(-1)).toMatchObject({ name: 'archivedAt' });
     await expect(apply(config([{ slug: 'notifications', fields: [] }]))).rejects.toThrow(
       /already exists/,
     );
     expect(() => notificationsPlugin({ overrides: { slug: '' } })).toThrow(/cannot be empty/);
+  });
+
+  it('leaves the bell out with bell: false, and keeps the inbox', async () => {
+    const { result } = await apply(config(), { bell: false });
+
+    expect(result.admin?.components?.actions ?? []).toEqual([]);
+    expect(result.admin?.components?.views?.notifications).toBeDefined();
   });
 
   it('picks admin.user with several auth collections, and asks for it otherwise', async () => {

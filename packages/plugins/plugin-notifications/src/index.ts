@@ -13,6 +13,7 @@ export type {
   NotificationsConfig,
   NotificationsPluginOptions,
   Notify,
+  NotifyFields,
   NotifyInput,
 } from './types.js';
 
@@ -62,7 +63,10 @@ const notifications = definePlugin<NotificationsPluginOptions>({
         ...config.admin,
         components: {
           ...config.admin?.components,
-          actions: [...(config.admin?.components?.actions ?? []), BELL],
+          actions: [
+            ...(config.admin?.components?.actions ?? []),
+            ...(options.bell === false ? [] : [BELL]),
+          ],
           views: {
             ...config.admin?.components?.views,
             notifications: {

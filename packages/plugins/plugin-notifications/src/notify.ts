@@ -13,8 +13,9 @@ export function notificationsConfig(req: FrogBotRequest): NotificationsConfig | 
 
 /**
  * Sends `input.user` an in-app notification: it shows in their bell and inbox. Call it from any
- * hook, endpoint or job with that call's `req`, so it joins the same transaction. Access is not
- * checked: this is trusted server code deciding who to tell.
+ * hook, endpoint or job with that call's `req`, so it joins the same transaction. Fields added to
+ * the collection with `overrides.fields` are stored too. Access is not checked: this is trusted
+ * server code deciding who to tell.
  */
 export async function notify(req: FrogBotRequest, input: NotifyInput): Promise<NotificationDoc> {
   const config = notificationsConfig(req);
@@ -23,13 +24,13 @@ export async function notify(req: FrogBotRequest, input: NotifyInput): Promise<N
     throw new Error('[plugin-notifications] Add notificationsPlugin() to plugins to use notify().');
   }
 
-  const { excerpt, link, source, title, user } = input;
+  const { title } = input;
 
   if (!title.trim()) throw new Error('[plugin-notifications] notify() needs a title.');
 
   const doc = await req.frogbot.create({
     collection: config.slug,
-    data: { excerpt, link, source, title, user },
+    data: input,
     depth: 0,
     overrideAccess: true,
     req,

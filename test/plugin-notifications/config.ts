@@ -38,5 +38,12 @@ export default await buildTestConfig({
   editor: lexicalEditor(),
   admin: { user: 'users' },
   collections: [Users, Deals],
-  plugins: [commentsPlugin(), notificationsPlugin()],
+  plugins: [
+    commentsPlugin(),
+    notificationsPlugin({
+      overrides: {
+        fields: ({ defaultFields }) => [...defaultFields, { name: 'archivedAt', type: 'date' }],
+      },
+    }),
+  ],
 });

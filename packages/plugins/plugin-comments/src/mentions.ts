@@ -12,7 +12,15 @@ type Doc = Record<string, unknown> & { id: Id };
 type Notifications = {
   notify: (
     req: FrogBotRequest,
-    input: { excerpt?: string; link?: string; source?: string; title: string; user: Id },
+    input: {
+      actor?: Id;
+      excerpt?: string;
+      kind?: string;
+      link?: string;
+      source?: string;
+      title: string;
+      user: Id;
+    },
   ) => Promise<unknown>;
 };
 
@@ -153,7 +161,9 @@ export function notifyMentions(userSlug: string): CollectionAfterChangeHook {
       if (!canRead) continue;
 
       await notifications.notify(req, {
+        actor: authorId,
         excerpt,
+        kind: 'mention',
         link,
         source: 'plugin-comments',
         title,

@@ -6,15 +6,21 @@ export type NotificationsCollectionOverrides = Partial<Omit<CollectionConfig, 'f
 };
 
 export type NotificationsPluginOptions = {
+  /** Adds the bell to the admin header. Set `false` to place your own entry point. Default `true`. */
+  bell?: boolean;
   overrides?: NotificationsCollectionOverrides;
 };
 
-/** What `notify()` stores for one user. */
-export type NotifyInput = {
+/** The fields `notify()` knows. */
+export type NotifyFields = {
+  /** The user who caused it, by id, such as a comment's author. */
+  actor?: number | string;
   /** A short plain-text preview, such as the start of a comment. */
   excerpt?: string;
   /** Where opening the notification goes, such as `/admin/collections/deals/12`. */
   link?: string;
+  /** What happened, such as `mention` or `assigned`, for filtering. */
+  kind?: string;
   /** What sent it, such as `plugin-comments`. */
   source?: string;
   /** One line saying what happened, such as `Ana mentioned you`. */
@@ -23,8 +29,15 @@ export type NotifyInput = {
   user: number | string;
 };
 
+/**
+ * What `notify()` stores for one user: the known fields, plus any field added to the collection
+ * with `overrides.fields`, such as an `archivedAt` date.
+ */
+export type NotifyInput = NotifyFields & { [field: string]: unknown };
+
 /** A stored notification. */
-export type NotificationDoc = Omit<NotifyInput, 'user'> & {
+export type NotificationDoc = Omit<NotifyFields, 'actor' | 'user'> & {
+  actor?: null | number | string | { id: number | string };
   createdAt: string;
   id: number | string;
   readAt?: null | string;
