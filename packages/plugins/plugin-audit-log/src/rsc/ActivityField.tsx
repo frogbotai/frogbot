@@ -105,7 +105,7 @@ async function relatedTitles(
   const titles: Titles = new Map();
   const lookups = [
     ...relatedIds(
-      entries.map((entry) => entry.changes),
+      entries.filter((entry) => entry.operation === 'update').map((entry) => entry.changes),
       info,
     ),
   ].map(async ([collection, ids]) => {
