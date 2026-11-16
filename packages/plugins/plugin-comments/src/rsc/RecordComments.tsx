@@ -56,11 +56,23 @@ export type RecordCommentsProps = {
 
 type AvatarComponent = (props: { size: number; user: Doc }) => ReactNode;
 
-function resolveComponent(component: unknown, importMap: unknown): AvatarComponent | undefined {
-  const path =
-    typeof component === 'string' ? component : (component as { path?: string } | null)?.path;
+function importMapKey(component: unknown): string | undefined {
+  const { exportName, path } =
+    typeof component === 'string'
+      ? { exportName: undefined, path: component }
+      : ((component ?? {}) as { exportName?: string; path?: string });
 
-  return path ? (importMap as Record<string, AvatarComponent> | undefined)?.[path] : undefined;
+  if (!path) return undefined;
+
+  const [file, named] = path.split('#');
+
+  return `${file}#${exportName ?? named ?? 'default'}`;
+}
+
+function resolveComponent(component: unknown, importMap: unknown): AvatarComponent | undefined {
+  const key = importMapKey(component);
+
+  return key ? (importMap as Record<string, AvatarComponent> | undefined)?.[key] : undefined;
 }
 
 function customAvatars(
