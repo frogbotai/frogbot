@@ -83,8 +83,12 @@ const cases: Case[] = [
   },
   {
     args: ['apps', 'delete', 'deals', '--yes'],
-    route: 'DELETE /api/apps/7',
-    replies: { 'DELETE /api/apps/7': { body: { doc: app } } },
+    route: 'POST /api/apps/7/trash',
+    replies: {
+      'POST /api/apps/7/trash': {
+        body: { deletedAt: '2026-11-15T00:00:00Z', purgeAt: '2026-12-15T00:00:00Z' },
+      },
+    },
   },
   {
     args: ['deployments', 'list', 'deals'],
