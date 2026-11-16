@@ -303,6 +303,29 @@ describe('FrogBotNav', () => {
     expect(navClient.mock.calls[0]?.[0].CustomAvatar).toBe(CustomAvatar);
   });
 
+  it("names the account by its collection's useAsTitle, else name", async () => {
+    const base = props();
+    const user = {
+      collection: 'users',
+      email: 'sam@example.com',
+      fullName: 'Sam Lee',
+      id: 'user-1',
+      name: 'sam',
+    };
+
+    const collections = { users: { config: { admin: { useAsTitle: 'fullName' } } } };
+
+    render(
+      await FrogBotNav({ ...base, payload: { ...base.payload, collections }, user } as typeof base),
+    );
+
+    expect(navClient.mock.calls[0]?.[0].accountName).toBe('Sam Lee');
+
+    render(await FrogBotNav({ ...base, user }));
+
+    expect(navClient.mock.calls[1]?.[0].accountName).toBe('sam');
+  });
+
   it('creates no account icon on the server', async () => {
     render(await FrogBotNav(props()));
 

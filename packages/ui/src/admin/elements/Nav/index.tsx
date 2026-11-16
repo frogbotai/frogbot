@@ -226,7 +226,7 @@ export async function FrogBotNav(props: FrogBotNavProps) {
   const accountUser = user as (Record<string, unknown> & { collection?: string }) | undefined;
   const accountEmail = typeof accountUser?.email === 'string' ? accountUser.email : undefined;
   const titleField = accountUser?.collection
-    ? payload.collections[accountUser.collection]?.config.admin?.useAsTitle
+    ? payload.collections?.[accountUser.collection]?.config.admin?.useAsTitle
     : undefined;
 
   const title = titleField ? accountUser?.[titleField] : accountUser?.name;
