@@ -115,7 +115,7 @@ Set either `enabledCollections` or `disabledCollections`, not both. `disableAuto
 
 ## Configure mentions
 
-`MentionFeature()` adds `@` mentions to any rich text field. Typing `@` lists the users the signed-in user may read, searched through the REST API with their access; picking one inserts an inline node that stores the user's id, collection and name when inserted:
+`MentionFeature()` adds `@` mentions to any rich text field. Typing `@` lists the users the signed-in user may read, by their `useAsTitle` field or email, searched through the REST API with their access. Each row shows the person's picture, name and email. Picking one inserts an inline node that stores the user's id, collection and name. Reads with `depth` replace that name with the person's current one, looked up with the reader's access:
 
 ```ts
 import { lexicalEditor, MentionFeature } from '@frogbotai/richtext-lexical'

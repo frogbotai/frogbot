@@ -79,6 +79,7 @@ describe('MentionFeature', () => {
 
     expect(feature?.clientFeatureProps).toEqual({
       api: '/api',
+      avatar: 'gravatar',
       relationTo: 'people',
       titleField: 'name',
     });

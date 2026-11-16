@@ -1,5 +1,6 @@
 'use client';
 
+import { UserAvatar } from '@frogbotai/ui';
 import { $createTextNode, type TextNode } from '@payloadcms/richtext-lexical/lexical';
 import { useLexicalComposerContext } from '@payloadcms/richtext-lexical/lexical/react/LexicalComposerContext';
 import {
@@ -7,33 +8,45 @@ import {
   MenuOption,
   useBasicTypeaheadTriggerMatch,
 } from '@payloadcms/richtext-lexical/lexical/react/LexicalTypeaheadMenuPlugin';
-import { useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { $createMentionNode } from '../node.js';
-import type { MentionFeatureClientProps } from '../shared.js';
+import { type MentionFeatureClientProps, personName } from '../shared.js';
 
 const LIMIT = 8;
 const menu = 'slash-menu-popup';
 
 class PersonOption extends MenuOption {
+  email?: string;
   id: number | string;
   label: string;
+  name?: string;
 
-  constructor(id: number | string, label: string) {
-    super(String(id));
-    this.id = id;
-    this.label = label;
+  constructor(person: Person, titleField: string) {
+    super(String(person.id));
+
+    const title = person[titleField];
+
+    this.id = person.id;
+    this.email = typeof person.email === 'string' ? person.email : undefined;
+    this.name = typeof title === 'string' && title && titleField !== 'email' ? title : undefined;
+    this.label = personName(person, titleField);
   }
 }
 
 type Person = Record<string, unknown> & { id: number | string };
 
-function searchURL({ api, relationTo, titleField }: MentionFeatureClientProps, query: string) {
+type People = { options: PersonOption[]; query: string | null };
+
+function searchURL(
+  { api, relationTo, titleField }: Omit<MentionFeatureClientProps, 'avatar'>,
+  query: string,
+) {
   const params = new URLSearchParams({ depth: '0', limit: String(LIMIT), sort: titleField });
   const fields = [...new Set([titleField, 'email'])];
 
-  params.set(`select[${titleField}]`, 'true');
+  fields.forEach((field) => params.set(`select[${field}]`, 'true'));
 
   if (query) {
     fields.forEach((field, index) => params.set(`where[or][${index}][${field}][like]`, query));
@@ -45,8 +58,8 @@ function searchURL({ api, relationTo, titleField }: MentionFeatureClientProps, q
 function usePeople(
   { api, relationTo, titleField }: MentionFeatureClientProps,
   query: string | null,
-) {
-  const [people, setPeople] = useState<PersonOption[]>([]);
+): People {
+  const [people, setPeople] = useState<People>({ options: [], query: null });
 
   useEffect(() => {
     if (query === null) return;
@@ -59,16 +72,7 @@ function usePeople(
     })
       .then((response) => (response.ok ? response.json() : { docs: [] }))
       .then(({ docs }: { docs: Person[] }) =>
-        setPeople(
-          docs.map((doc) => {
-            const title = doc[titleField];
-
-            return new PersonOption(
-              doc.id,
-              typeof title === 'string' && title ? title : `#${doc.id}`,
-            );
-          }),
-        ),
+        setPeople({ options: docs.map((doc) => new PersonOption(doc, titleField)), query }),
       )
       .catch(() => undefined);
 
@@ -78,12 +82,27 @@ function usePeople(
   return people;
 }
 
+function highlight(text: string, query: string): ReactNode {
+  const at = query ? text.toLowerCase().indexOf(query.toLowerCase()) : -1;
+
+  if (at < 0) return text;
+
+  return (
+    <>
+      {text.slice(0, at)}
+      <strong>{text.slice(at, at + query.length)}</strong>
+      {text.slice(at + query.length)}
+    </>
+  );
+}
+
 /** The `@` typeahead: lists people as you type and inserts the one you pick. */
 export function MentionPlugin({ clientProps }: { clientProps: MentionFeatureClientProps }) {
   const [editor] = useLexicalComposerContext();
   const [query, setQuery] = useState<string | null>(null);
   const people = usePeople(clientProps, query);
   const trigger = useBasicTypeaheadTriggerMatch('@', { minLength: 0 });
+  const gravatar = clientProps.avatar === 'gravatar';
 
   const select = useCallback(
     (option: PersonOption, queryNode: TextNode | null, close: () => void) => {
@@ -106,20 +125,23 @@ export function MentionPlugin({ clientProps }: { clientProps: MentionFeatureClie
     [clientProps.relationTo, editor],
   );
 
+  const empty = Boolean(query) && people.query === query && !people.options.length;
+
   return (
     <LexicalTypeaheadMenuPlugin<PersonOption>
       menuRenderFn={(
         anchor,
         { options, selectedIndex, selectOptionAndCleanUp, setHighlightedIndex },
+        matching,
       ) =>
-        anchor.current && options.length
+        anchor.current && (options.length || empty)
           ? createPortal(
-              <div className={menu} role="listbox">
+              <div className={`${menu} fb-mention-menu`} role="listbox">
                 <div className={`${menu}__group`}>
                   {options.map((option, index) => (
                     <button
                       aria-selected={selectedIndex === index}
-                      className={`${menu}__item${selectedIndex === index ? ` ${menu}__item--selected` : ''}`}
+                      className={`${menu}__item fb-mention-menu__item${selectedIndex === index ? ` ${menu}__item--selected` : ''}`}
                       key={option.key}
                       onClick={() => {
                         setHighlightedIndex(index);
@@ -131,9 +153,25 @@ export function MentionPlugin({ clientProps }: { clientProps: MentionFeatureClie
                       tabIndex={-1}
                       type="button"
                     >
-                      <span className={`${menu}__item-text`}>{option.label}</span>
+                      <UserAvatar
+                        email={option.email}
+                        gravatar={gravatar}
+                        name={option.name}
+                        size={20}
+                      />
+                      <span className={`${menu}__item-text fb-mention-menu__name`}>
+                        {highlight(option.label, matching)}
+                      </span>
+                      {option.name && option.email ? (
+                        <span className="fb-mention-menu__email">
+                          {highlight(option.email, matching)}
+                        </span>
+                      ) : null}
                     </button>
                   ))}
+                  {options.length ? null : (
+                    <p className="fb-mention-menu__empty">No people match</p>
+                  )}
                 </div>
               </div>,
               anchor.current,
@@ -142,7 +180,7 @@ export function MentionPlugin({ clientProps }: { clientProps: MentionFeatureClie
       }
       onQueryChange={setQuery}
       onSelectOption={select}
-      options={people}
+      options={people.options}
       triggerFn={trigger}
     />
   );

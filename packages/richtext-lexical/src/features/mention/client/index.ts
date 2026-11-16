@@ -1,5 +1,7 @@
 'use client';
 
+import './mention.css';
+
 import { createClientFeature } from '@payloadcms/richtext-lexical/client';
 
 import { MentionNode } from '../node.js';
