@@ -3,7 +3,7 @@ import { attachRegisteredFrogBot } from 'frogbot/internal';
 import type { AdminViewServerProps } from 'payload';
 
 import { Inbox, type InboxItem } from '../client/Inbox.js';
-import { INBOX_LIMIT, notificationsCustomKey } from '../shared.js';
+import { INBOX_LIMIT, INBOX_MAX, inboxLimit, notificationsCustomKey } from '../shared.js';
 import type { NotificationsConfig } from '../types.js';
 
 function param(value: unknown): string | undefined {
@@ -21,7 +21,7 @@ export async function InboxView(props: AdminViewServerProps) {
     NotificationsConfig | undefined;
 
   const filter = param(searchParams?.filter) === 'unread' ? 'unread' : 'all';
-  const limit = Math.max(INBOX_LIMIT, Number(param(searchParams?.limit)) || INBOX_LIMIT);
+  const limit = inboxLimit(param(searchParams?.limit));
   const slug = options && req.user?.collection === options.userSlug ? options.slug : undefined;
   const mine = { user: { equals: req.user?.id } };
   const unreadOnly = { readAt: { exists: false } };
@@ -77,7 +77,11 @@ export async function InboxView(props: AdminViewServerProps) {
         <Inbox
           filter={filter}
           items={items}
-          more={page.hasNextPage ? limit + INBOX_LIMIT : undefined}
+          more={
+            page.hasNextPage && limit < INBOX_MAX
+              ? Math.min(INBOX_MAX, limit + INBOX_LIMIT)
+              : undefined
+          }
           slug={options?.slug ?? ''}
           unread={unread}
         />

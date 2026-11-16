@@ -54,7 +54,7 @@ export function Inbox({ filter = 'all', items, more, slug, unread = 0 }: InboxPr
   const { config } = useConfig();
   const router = useRouter();
   const [read, setRead] = useState(() => new Set<InboxItem['id']>());
-  const [allRead, setAllRead] = useState(false);
+  const [markedAll, setMarkedAll] = useState<InboxItem[]>();
   const query = (next: { filter?: string; limit?: number }) => {
     const params = new URLSearchParams();
 
@@ -73,7 +73,7 @@ export function Inbox({ filter = 'all', items, more, slug, unread = 0 }: InboxPr
     });
 
   const open = async (item: InboxItem) => {
-    if (!item.readAt && !read.has(item.id) && !allRead) {
+    if (!item.readAt && !read.has(item.id)) {
       const response = await markRead(`${config.routes.api}/${slug}/${item.id}`);
 
       if (!response.ok) {
@@ -103,7 +103,8 @@ export function Inbox({ filter = 'all', items, more, slug, unread = 0 }: InboxPr
       return;
     }
 
-    setAllRead(true);
+    setRead((previous) => new Set([...previous, ...items.map((item) => item.id)]));
+    setMarkedAll(items);
     router.refresh();
   };
 
@@ -125,7 +126,7 @@ export function Inbox({ filter = 'all', items, more, slug, unread = 0 }: InboxPr
           {tab('all', 'All')}
           {tab('unread', unread ? `Unread (${unread})` : 'Unread')}
         </nav>
-        {unread && !allRead ? (
+        {unread && markedAll !== items ? (
           <Button
             buttonStyle="secondary"
             margin={false}
@@ -139,7 +140,7 @@ export function Inbox({ filter = 'all', items, more, slug, unread = 0 }: InboxPr
       {items.length ? (
         <ol className="fb-inbox">
           {items.map((item) => {
-            const isUnread = !item.readAt && !read.has(item.id) && !allRead;
+            const isUnread = !item.readAt && !read.has(item.id);
 
             return (
               <li key={item.id}>
