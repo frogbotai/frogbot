@@ -386,4 +386,51 @@ describe('ActivityField', () => {
 
     expect(names).toEqual(['Someone created this', 'sam@x.io changed Title to x']);
   });
+
+  it('does not look up related ids that only a create entry mentions', async () => {
+    const lookups: unknown[] = [];
+    const created: NonNullable<ActivityFieldProps['req']>['payload'] = {
+      collections: {
+        'audit-logs': { config: { fields: [] } },
+        companies: { config: { admin: { useAsTitle: 'name' }, fields: [] } },
+        deals: {
+          config: { fields: [{ name: 'company', type: 'relationship', relationTo: 'companies' }] },
+        },
+      },
+      config: {},
+      findByID: () => Promise.resolve({ id: 1, company: 8 }),
+      find: (args) => {
+        if (args.collection === 'audit-logs') {
+          return Promise.resolve({
+            docs: [
+              {
+                id: 'e2',
+                operation: 'update',
+                timestamp: '2026-01-03T00:00:00.000Z',
+                changes: { company: { old: null, new: 8 } },
+              },
+              {
+                id: 'e1',
+                operation: 'create',
+                timestamp: '2026-01-02T00:00:00.000Z',
+                changes: { company: { old: null, new: 7 } },
+              },
+            ],
+          });
+        }
+
+        lookups.push((args.where as { id: { in: unknown } }).id.in);
+
+        return Promise.resolve({ docs: [{ id: 8, name: 'Acme' }] });
+      },
+    };
+
+    await ActivityField({
+      collectionSlug: 'deals',
+      id: 1,
+      req: { payload: created, user: { id: 1 } },
+    });
+
+    expect(lookups).toEqual([[8]]);
+  });
 });
