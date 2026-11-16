@@ -135,3 +135,64 @@ test('posts from the record panel without asking to discard edits', async ({ pag
   await expect(page.locator('#fb-record-panel-leave')).toBeHidden();
   await expect(panel).toHaveCount(0);
 });
+
+test('shows initials on rows and chips, full names and emails in the menu, and keeps chips readable in dark mode', async ({
+  page,
+}) => {
+  await page.request.post('/api/users', {
+    data: { email: 'brownie@example.com', name: 'Brownie Two', password: 'brownie-password' },
+  });
+
+  const deal = await createDeal(page, 'people');
+
+  await page.goto(`/collections/deals/${deal.id}`);
+  await editor(page).click();
+
+  const searched = page.waitForResponse(
+    (response) => response.url().includes('/api/users?') && response.url().includes('brow'),
+  );
+
+  await page.keyboard.type('Hi @brow');
+  await searched;
+
+  const options = page.locator('.fb-mention-menu__item');
+
+  await expect(options).toHaveCount(2);
+
+  for (const part of ['.fb-mention-menu__name', '.fb-mention-menu__email']) {
+    const cut = await options
+      .locator(part)
+      .evaluateAll(
+        (elements) =>
+          elements.filter((element) => element.scrollWidth > element.clientWidth).length,
+      );
+
+    expect(cut).toBe(0);
+  }
+
+  await expect(options.nth(0)).toHaveAttribute('aria-selected', 'true');
+  await page.keyboard.press('ArrowDown');
+  await expect(options.nth(1)).toHaveAttribute('aria-selected', 'true');
+  await page.keyboard.press('Enter');
+
+  const chip = editor(page).locator('.fb-mention');
+
+  await expect(chip.locator('.fb-mention__avatar')).toHaveText('BT');
+  await comments(page).getByRole('button', { name: 'Comment' }).click();
+
+  const item = comments(page).locator('.fb-comments__item');
+
+  await expect(item.locator('.fb-comments__avatar')).toHaveText('BT');
+  await expect(item.locator('.mention .fb-mention__avatar')).toHaveText('BT');
+
+  await page.emulateMedia({ colorScheme: 'dark' });
+
+  const colors = await item.locator('.mention').evaluate((element) => {
+    const style = getComputedStyle(element);
+
+    return { background: style.backgroundColor, color: style.color };
+  });
+
+  expect(colors.background).not.toBe(colors.color);
+  expect(colors.background).not.toBe('rgb(255, 255, 255)');
+});
