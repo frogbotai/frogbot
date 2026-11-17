@@ -53,15 +53,21 @@ export async function chooseWorkspace({
   }
 }
 
-/** The workspace `slug` names, or the only one; with several and no slug, the person's pick. */
+/**
+ * The workspace `slug` names, or the only one; with several and no slug, the person's pick. When the thing worked on
+ * lives in one of the person's workspaces (`home.id`), that one, and a `slug` naming another is refused with
+ * `home.refuse`.
+ */
 export async function findWorkspace({
   dojo,
   io,
   slug,
+  home,
 }: {
   dojo: DojoClient;
   io: DojoIO;
   slug?: string;
+  home?: { id: string | number; refuse: (homeSlug: string) => string };
 }): Promise<Workspace> {
   const workspaces = await listWorkspaces(dojo);
 
@@ -70,6 +76,12 @@ export async function findWorkspace({
       `You have no workspace yet. Create one with ${dojoProgram(io.program)} workspaces create <name>.`,
     );
   }
+
+  const found = home && workspaces.find(({ id }) => String(id) === String(home.id));
+
+  if (found && slug && slug !== found.slug) throw new ShareError(home.refuse(found.slug));
+
+  if (found) return found;
 
   return pickWorkspace({ workspaces, slug, io });
 }

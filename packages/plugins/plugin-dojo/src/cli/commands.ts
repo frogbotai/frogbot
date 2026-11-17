@@ -4,6 +4,7 @@ import { reportStop } from './error.js';
 import type { DojoIO } from './io.js';
 import { jsonIO, processIO } from './io.js';
 import { account } from './nouns/account.js';
+import { activity } from './nouns/activity.js';
 import { apiKeys } from './nouns/apiKeys.js';
 import { apps } from './nouns/apps.js';
 import { billing } from './nouns/billing.js';
@@ -12,6 +13,7 @@ import { domains } from './nouns/domains.js';
 import { env } from './nouns/env.js';
 import { members } from './nouns/members.js';
 import { sharing } from './nouns/sharing.js';
+import { templates } from './nouns/templates.js';
 import { workspaces } from './nouns/workspaces.js';
 
 /** Every Dojo command: `login`, `logout` and `whoami`, then one noun per Dojo resource. */
@@ -20,12 +22,14 @@ export const dojoCommands: Record<string, Verb | RawVerb | Noun> = {
   workspaces,
   members,
   apps,
+  templates,
   deployments,
   env,
   domains,
   sharing,
   keys: apiKeys,
   billing,
+  activity,
 };
 
 const helpFlags = new Set(['--help', '-h', 'help']);
