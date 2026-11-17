@@ -62,9 +62,11 @@ function createAccess(chatsSlug: string): Access {
   return async ({ req, data }) => {
     if (!req.user) return false;
 
-    const chatId = relationID(data?.chat);
+    if (data?.chat == null) return true;
 
-    if (chatId === null) return true;
+    const chatId = relationID(data.chat);
+
+    if (chatId === null) return false;
 
     const chat = (await req.frogbot.findByID({
       collection: chatsSlug,
