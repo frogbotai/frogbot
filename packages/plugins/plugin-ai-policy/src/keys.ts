@@ -8,6 +8,7 @@ import {
   moneyField,
   type Validate,
 } from 'frogbot';
+import { relationID } from 'frogbot/internal';
 
 import { createSpendFields, mergePolicyFields } from './fields.js';
 import { formatUSD, type PolicyKey, policyKey, readPolicy } from './policy.js';
@@ -44,21 +45,14 @@ export function budgetDescription(owner: string, budget: number | undefined): st
     : `Up to ${formatUSD(budget)}, ${owner}'s monthly budget.`;
 }
 
-function ownerID(data: unknown): number | string | undefined {
-  const owner = (data as { owner?: unknown } | undefined)?.owner;
-  const id = owner && typeof owner === 'object' ? (owner as { id?: unknown }).id : owner;
-
-  return typeof id === 'string' || typeof id === 'number' ? id : undefined;
-}
-
 async function loadOwner(
   req: FrogBotRequest,
   authCollection: string,
   data: unknown,
 ): Promise<OwnerDocument | undefined> {
-  const id = ownerID(data);
+  const id = relationID((data as { owner?: unknown } | undefined)?.owner);
 
-  if (id === undefined) return undefined;
+  if (id === null) return undefined;
 
   return await req.frogbot
     .findByID({ collection: authCollection, id, depth: 0, overrideAccess: true, req })

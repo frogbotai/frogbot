@@ -1,5 +1,5 @@
 import type { FrogBot, FrogBotRequest } from 'frogbot';
-import { getPayloadConfig } from 'frogbot/internal';
+import { getPayloadConfig, isId } from 'frogbot/internal';
 import { Forbidden, NotFound, ValidationError } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 
@@ -10,10 +10,6 @@ import { createLinkToken, hashLinkToken, linkLifetime } from './token.js';
 
 function refuse(req: FrogBotRequest, path: string, message: string): never {
   throw new ValidationError({ collection: FORM_LINKS_SLUG, errors: [{ path, message }] }, req.t);
-}
-
-function isId(value: unknown): value is number | string {
-  return (typeof value === 'string' && value !== '') || Number.isInteger(value);
 }
 
 async function loadForm(

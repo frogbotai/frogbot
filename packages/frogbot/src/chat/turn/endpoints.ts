@@ -7,6 +7,7 @@ import type { AgentInstance } from '../../agents/types.js';
 import type { DocID } from '../../collections/config/types.js';
 import type { Endpoint } from '../../endpoints/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
+import { relationID } from '../../utilities/relationID.js';
 import { findChat } from '../findChat.js';
 import { validateChatMessages } from '../validateMessages.js';
 import { actorFromRequest } from './actor.js';
@@ -208,7 +209,7 @@ async function findQueuedMessage({
   chatId: DocID;
 }): Promise<TurnMessageDocument> {
   const message = await findMessage({ req, id: String(req.routeParams?.messageId ?? '') });
-  const chat = typeof message?.chat === 'object' ? message.chat.id : message?.chat;
+  const chat = relationID(message?.chat);
 
   if (!message || String(chat) !== String(chatId)) {
     throw new TurnError('not-found', 'Message not found.');

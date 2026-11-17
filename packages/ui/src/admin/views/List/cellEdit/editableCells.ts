@@ -1,3 +1,4 @@
+import { isId } from 'frogbot/internal';
 import type { PayloadRequest, SanitizedCollectionConfig, Where } from 'payload';
 
 import { type AnyField, readField, resolveFieldAtPath } from './fieldPath.js';
@@ -11,10 +12,6 @@ type UpdateAccess = (args: {
   id: number | string;
   req: PayloadRequest;
 }) => boolean | Promise<boolean>;
-
-function isId(id: unknown): id is number | string {
-  return typeof id === 'number' || typeof id === 'string';
-}
 
 function fieldUpdateAccess(fields: readonly AnyField[], path: string): UpdateAccess[] {
   const found = resolveFieldAtPath(fields, path);

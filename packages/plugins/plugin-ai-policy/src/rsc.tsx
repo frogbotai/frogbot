@@ -1,3 +1,5 @@
+import { relationID } from 'frogbot/internal';
+
 import { KeyLimitsFields } from './client/KeyLimitsFields.js';
 import { budgetDescription, modelsDescription, ownerTitle } from './keys.js';
 import { readPolicy } from './policy.js';
@@ -19,10 +21,9 @@ type DescriptionProps = {
 };
 
 async function findOwner({ authCollection, data, payload }: DescriptionProps) {
-  const owner = data?.owner;
-  const id = owner && typeof owner === 'object' ? (owner as { id?: unknown }).id : owner;
+  const id = relationID(data?.owner);
 
-  if (typeof id !== 'string' && typeof id !== 'number') return undefined;
+  if (id === null) return undefined;
 
   return (await payload
     .findByID({ collection: authCollection, id, depth: 0, overrideAccess: true })

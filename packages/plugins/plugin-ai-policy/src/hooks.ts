@@ -4,6 +4,7 @@ import {
   calculateUsageCostUSD,
   type FrogBotRequest,
 } from 'frogbot';
+import { relationID } from 'frogbot/internal';
 
 import {
   addSpend,
@@ -23,12 +24,6 @@ import {
   readPolicy,
 } from './policy.js';
 
-const keyID = (value: unknown): number | string | undefined => {
-  const id = value && typeof value === 'object' ? (value as { id?: unknown }).id : value;
-
-  return typeof id === 'string' || typeof id === 'number' ? id : undefined;
-};
-
 async function keyLineage(
   req: FrogBotRequest,
   keysCollection: string,
@@ -37,7 +32,7 @@ async function keyLineage(
   const lineage = [key];
   const seen = new Set([key.id]);
 
-  for (let parent = keyID(key.mintedBy); parent !== undefined && !seen.has(parent);) {
+  for (let parent = relationID(key.mintedBy); parent !== null && !seen.has(parent);) {
     seen.add(parent);
 
     const doc = (await req.frogbot
@@ -47,7 +42,7 @@ async function keyLineage(
     if (!doc) break;
 
     lineage.push(doc);
-    parent = keyID(doc.mintedBy);
+    parent = relationID(doc.mintedBy);
   }
 
   return lineage;
