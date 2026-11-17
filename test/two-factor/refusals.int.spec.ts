@@ -44,7 +44,7 @@ describe('two-factor refusals', () => {
     policy.requireAdmins = true;
   });
 
-  it('accepts the right code sent as a JSON number, leading zeros included', async () => {
+  it('accepts the right code sent as a JSON number', async () => {
     await t.createUser('number@example.com');
     const { secret } = await t.enable('number@example.com');
     const cookie = await pendingFor('number@example.com');
@@ -101,7 +101,7 @@ describe('two-factor refusals', () => {
 
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual(
-        refusal('Send JSON or a form body, e.g. {"code":"123456"}.', 'body_unreadable'),
+        refusal('Send JSON or a URL-encoded form body, e.g. {"code":"123456"}.', 'body_unreadable'),
       );
     }
 

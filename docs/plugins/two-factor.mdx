@@ -89,7 +89,7 @@ All live under `/api/<collection>` and answer errors as `{ errors: [{ message }]
 | `wrong_code` | `401` | The code didn't match. It counts toward the lock. |
 | `locked` | `429` | Five wrong codes locked code entry. `Retry-After` gives the seconds left. |
 | `code_missing` | `400` | `code` is missing, empty, or not a string or a whole number of up to six digits. It doesn't count. |
-| `body_unreadable` | `400` | The body isn't a JSON object or a form. It doesn't count. |
+| `body_unreadable` | `400` | The body isn't a JSON object or a URL-encoded form. It doesn't count. |
 | `pending_missing` | `400` | The request didn't send the pending sign-in cookie. |
 | `expired` | `400` | The pending sign-in, or the start of turning it on, expired or was used. Sign in, or start, again. |
 

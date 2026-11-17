@@ -65,7 +65,7 @@ export function readCode(
     return {
       refused: {
         status: 400,
-        message: 'Send JSON or a form body, e.g. {"code":"123456"}.',
+        message: 'Send JSON or a URL-encoded form body, e.g. {"code":"123456"}.',
         code: 'body_unreadable',
       },
     };
