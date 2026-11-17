@@ -2,10 +2,12 @@ import { nameTaken, toSlug } from '../appSlug.js';
 import type { Noun } from '../command.js';
 import { dojoJSON, dojoList, segment } from '../dojo.js';
 import { dojoError, dojoStop, ShareError } from '../error.js';
-import { done } from '../io.js';
+import { dojoProgram, done } from '../io.js';
 import { whenPaid } from '../payment.js';
 import { findWorkspace } from '../workspaces.js';
-import { appAddress, findApp, whereEquals } from './resolve.js';
+import { appActions } from './appActions.js';
+import { appAddress, findApp, relationId, whereEquals } from './resolve.js';
+import { findTemplate } from './templates.js';
 
 type App = {
   id: string | number;
@@ -28,9 +30,9 @@ const shown = ({ id, name, slug, workspace, domain, startedAt }: App) => ({
   started: Boolean(startedAt),
 });
 
-/** `apps`: pull and logs, and list, get, create, rename, delete. `frogbot deploy` ships an app. */
+/** `apps`: pull and logs, list, get, create, rename and delete, then run, keep, Trash and data. `frogbot deploy` ships an app. */
 export const apps: Noun = {
-  summary: 'Pull, read logs of, and manage your apps.',
+  summary: 'Pull, read logs of, run and manage your apps.',
   verbs: {
     pull: {
       summary: "Download an app's live source into a new folder.",
@@ -79,22 +81,48 @@ export const apps: Noun = {
       },
     },
     create: {
-      summary: 'Create an empty app to deploy to later.',
+      summary: 'Create an empty app to deploy to later, or one built from a template.',
       args: '<name>',
       flags: {
         workspace: { type: 'string', value: 'slug', help: 'Needed when you are in more than one.' },
+        template: {
+          type: 'string',
+          value: 'template',
+          help: 'Build it from this template, by id or name. templates list shows them.',
+        },
       },
       run: async ({ io, dojo, positionals: [name = ''], values }) => {
         const appSlug = toSlug(name);
         const slug = typeof values.workspace === 'string' ? values.workspace : undefined;
-        const workspace = await findWorkspace({ dojo: dojo(), io, slug });
+        const template =
+          typeof values.template === 'string'
+            ? await findTemplate(dojo(), values.template)
+            : undefined;
+
+        const home = relationId(template?.workspace);
+        const workspace = await findWorkspace({
+          dojo: dojo(),
+          io,
+          slug,
+          ...(template &&
+            home !== undefined && {
+              home: {
+                id: home,
+                refuse: (saved) =>
+                  `${template.name} is saved in ${saved}; create the app there with --workspace ${saved}.`,
+              },
+            }),
+        });
 
         const created = await whenPaid(dojo(), io, () =>
-          dojo().request('/api/apps?depth=0', () => ({
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ name, slug: appSlug, workspace: workspace.id }),
-          })),
+          dojo().request(
+            template ? `/api/templates/${segment(template.id)}/use` : '/api/apps?depth=0',
+            () => ({
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ name, slug: appSlug, workspace: workspace.id }),
+            }),
+          ),
         );
 
         if (!created.ok) {
@@ -105,6 +133,20 @@ export const apps: Noun = {
           }
 
           throw stop;
+        }
+
+        if (template) {
+          const { app, deploymentId } = (await created.json()) as {
+            app: { id: string | number; slug: string; name: string };
+            deploymentId: string | number;
+          };
+
+          done(io, { ...app, url: appAddress(app.slug), template: template.id, deploymentId }, [
+            `[frogbot] Created ${app.slug} in ${workspace.name} from ${template.name}. Its first build is ${deploymentId}:`,
+            `${dojoProgram(io.program)} deployments logs ${deploymentId} --follow`,
+          ]);
+
+          return;
         }
 
         const { doc } = (await created.json()) as { doc: App };
@@ -133,22 +175,27 @@ export const apps: Noun = {
       },
     },
     delete: {
-      summary: 'Delete an app, its versions and its data.',
+      summary: 'Move an app to Trash. Dojo deletes it for good after 30 days.',
       args: '<app>',
       confirm: true,
       run: async ({ io, dojo, confirm, positionals: [ref = ''] }) => {
         const app = await findApp(dojo(), ref);
 
-        await confirm(`Delete ${app.slug} and everything in it? This can't be undone.`);
+        await confirm(
+          `Move ${app.slug} to Trash? It stops now and is deleted for good in 30 days unless restored.`,
+        );
 
-        await dojoJSON(dojo(), `/api/apps/${segment(app.id)}`, {
-          method: 'DELETE',
-          what: "Dojo couldn't delete the app",
-          needs: ownerNeeded,
-        });
+        const { purgeAt } = await dojoJSON<{ deletedAt: string; purgeAt: string }>(
+          dojo(),
+          `/api/apps/${segment(app.id)}/trash`,
+          { method: 'POST', what: "Dojo couldn't delete the app", needs: ownerNeeded },
+        );
 
-        done(io, { deleted: { id: app.id, slug: app.slug } }, [`[frogbot] Deleted ${app.slug}.`]);
+        done(io, { deleted: { id: app.id, slug: app.slug }, purgeAt }, [
+          `[frogbot] Moved ${app.slug} to Trash. It's deleted for good ${purgeAt}; ${dojoProgram(io.program)} apps restore ${app.slug} brings it back.`,
+        ]);
       },
     },
+    ...appActions,
   },
 };

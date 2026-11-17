@@ -18,13 +18,26 @@ const { freePort } = await import('../../../../../packages/frogbot/src/bin/servi
 
 const children: ChildProcess[] = [];
 const folders: string[] = [];
+const stops: (() => void)[] = [];
 const WAIT = { timeout: 30_000, interval: 50 };
 
-afterAll(() => {
+afterAll(async () => {
+  const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
+
+  try {
+    for (const stop of stops) stop();
+
+    await vi.waitFor(() => {
+      if (exit.mock.calls.length < stops.length) throw new Error('supervisors still stopping');
+    }, WAIT);
+  } finally {
+    exit.mockRestore();
+  }
+
   for (const child of children) child.kill('SIGKILL');
 
   for (const folder of folders) rmSync(folder, { recursive: true, force: true });
-});
+}, 60_000);
 
 function folder(prefix: string): string {
   const dir = mkdtempSync(join(tmpdir(), prefix));
@@ -50,6 +63,8 @@ function start(_app: unknown, _slot: string, port: number): ChildProcess {
 }
 
 async function superviseWith(dir: string, runtime: Omit<AppRuntime, 'start'>, port?: number) {
+  const before = new Set(process.listeners('SIGTERM'));
+
   await supervise({
     dir,
     port: port ?? (await freePort()),
@@ -57,6 +72,10 @@ async function superviseWith(dir: string, runtime: Omit<AppRuntime, 'start'>, po
     env: { ...process.env, XDG_STATE_HOME: folder('frogbot-supervisor-state-') },
     runtime: { ...runtime, start },
   });
+
+  stops.push(
+    ...(process.listeners('SIGTERM').filter((listener) => !before.has(listener)) as (() => void)[]),
+  );
 }
 
 const supervisorLog = (dir: string) =>

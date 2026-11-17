@@ -55,7 +55,7 @@ describe('frogbot deploy: paying for a first deploy', () => {
     expect(result.code).toBe(0);
     expect(result.stdout().slice(0, 4)).toEqual([
       why,
-      '[frogbot] Pay for it here; the deploy carries on once Dojo has the payment:',
+      '[frogbot] Pay for it here; this carries on once Dojo has the payment:',
       upgrade(),
       '[frogbot] Paid. Carrying on.',
     ]);
@@ -103,7 +103,7 @@ describe('frogbot deploy: paying for a first deploy', () => {
     expect(result.code).toBe(0);
     expect(result.stdout().slice(0, 3)).toEqual([
       why,
-      '[frogbot] Ask a workspace owner to pay for it here; the deploy carries on once Dojo has the payment:',
+      '[frogbot] Ask a workspace owner to pay for it here; this carries on once Dojo has the payment:',
       upgrade(),
     ]);
     expect(result.opened).toEqual([]);
@@ -115,7 +115,7 @@ describe('frogbot deploy: paying for a first deploy', () => {
 
     expect(result.code).toBe(1);
     expect(result.stderr()).toEqual([
-      "[frogbot] Dojo still has no payment for this app after 30 minutes. Once it's paid, deploy again.",
+      "[frogbot] Dojo still has no payment for this app after 30 minutes. Once it's paid, run the command again.",
     ]);
     expect(dojo.paths().filter((path) => path === 'GET /api/workspaces/1')).toHaveLength(360);
     expect(dojo.apps).toEqual([]);

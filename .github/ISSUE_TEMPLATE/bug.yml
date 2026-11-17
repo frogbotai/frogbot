@@ -1,0 +1,40 @@
+name: Bug
+description: "[REPRODUCTION REQUIRED] Something in FrogBot doesn't work as documented."
+labels: ['bug']
+body:
+  - type: textarea
+    id: bug
+    attributes:
+      label: Describe the bug
+      description: What happened, and what you expected instead.
+    validations:
+      required: true
+
+  - type: input
+    id: reproduction-link
+    attributes:
+      label: Link to the code that reproduces this issue
+      description: >-
+        Required: a public GitHub repository that shows the bug. Start one with
+        `npx create-frogbot-app@latest my-repro`, add the smallest config that fails, and push it.
+        A fork of this repository with a failing test works too. Issues without a public link
+        get the `invalid-reproduction` label and may be closed.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: The commands to run in the linked repository, and what each one shows. A failing test is best.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: FrogBot version
+      description: The `frogbot` version from your package.json, and your Node.js version.
+      placeholder: frogbot 0.42.0, Node 24
+    validations:
+      required: true
