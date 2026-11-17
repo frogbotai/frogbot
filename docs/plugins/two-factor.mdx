@@ -86,7 +86,7 @@ All live under `/api/<collection>` and answer errors as `{ errors: [{ message }]
 
 | `data.code` | Status | Means |
 | --- | --- | --- |
-| `wrong_code` | `401` | The code didn't match. It counts toward the lock. |
+| `wrong_code` | `401` | The code didn't match. On `verify`, `recovery-codes` and `disable` it counts toward the lock; on `setup` and `enable` it doesn't. |
 | `locked` | `429` | Five wrong codes locked code entry. `Retry-After` gives the seconds left. |
 | `code_missing` | `400` | `code` is missing, empty, or not a string or a whole number of up to six digits. It doesn't count. |
 | `body_unreadable` | `400` | The body isn't a JSON object or a URL-encoded form. It doesn't count. |
