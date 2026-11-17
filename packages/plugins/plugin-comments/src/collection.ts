@@ -9,6 +9,7 @@ import {
 } from 'frogbot';
 
 import { authorAccess, createAccess, readAccess } from './access.js';
+import { mentionChanges, notifyMentions } from './mentions.js';
 import { hasContent } from './shared.js';
 import type { CommentsCollectionOverrides, CommentsEditor } from './types.js';
 
@@ -43,6 +44,7 @@ function defaultFields({ editors, userSlug }: CollectionOptions): Field[] {
       admin: { readOnly: true },
     },
     { name: 'bodyField', type: 'text', access: fixed, admin: { hidden: true } },
+    { name: 'notified', type: 'relationship', relationTo: userSlug, hasMany: true, hidden: true },
     ...[...editors].map(([name, editor]): Field => ({
       name,
       type: 'richText',
@@ -65,6 +67,8 @@ function placeBody(bodies: Record<string, string>): CollectionBeforeValidateHook
     if (!data) return data;
 
     const { body, ...rest } = data;
+
+    delete rest.notified;
 
     if (operation === 'create') {
       const bodyField = bodies[rest.collection as string];
@@ -100,7 +104,16 @@ const fillMentions: CollectionBeforeChangeHook = ({ data, operation, originalDoc
     throw new APIError('A comment needs some text.', 400, null, true);
   }
 
-  return body === undefined ? data : { ...data, mentions: mentionedIds(body) };
+  if (body === undefined) return data;
+
+  const mentions = mentionedIds(body);
+  const { notified } = mentionChanges({
+    author: data.author ?? originalDoc?.author,
+    mentions,
+    notified: originalDoc?.notified,
+  });
+
+  return { ...data, mentions, notified };
 };
 
 function hideBodies(names: string[]): CollectionAfterReadHook {
@@ -139,6 +152,7 @@ export function createCommentsCollection(options: CollectionOptions): Collection
       beforeValidate: [placeBody(options.bodies), ...(overrides.hooks?.beforeValidate ?? [])],
       beforeChange: [fillMentions, ...(overrides.hooks?.beforeChange ?? [])],
       afterRead: [hideBodies([...options.editors.keys()]), ...(overrides.hooks?.afterRead ?? [])],
+      afterChange: [notifyMentions(options.userSlug), ...(overrides.hooks?.afterChange ?? [])],
     },
     fields: overrideFields ? overrideFields({ defaultFields: builtIns }) : builtIns,
   };

@@ -442,6 +442,7 @@ const testProjects = [
       'listGrid.browser.spec.ts',
       'listGrouping.browser.spec.ts',
       'listSummary.browser.spec.ts',
+      'notifications.browser.spec.ts',
       'recordPanel.browser.spec.ts',
       'views.browser.spec.ts',
     ],

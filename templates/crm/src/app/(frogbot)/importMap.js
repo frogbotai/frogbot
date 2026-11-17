@@ -58,11 +58,13 @@ import { FrogBotIcon as FrogBotIcon_a9b31afd548db1251f21130da6e46588 } from '@fr
 import { FrogBotLogo as FrogBotLogo_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { CollectionsSection as CollectionsSection_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { TodoToolRender as TodoToolRender_2c719b98e38ed5e4255b99adee478a55 } from '@frogbotai/ui/chat';
+import { NotificationsBell as NotificationsBell_62d784baad230d85fe82a00495e99c91 } from '@frogbotai/plugin-notifications/rsc';
 import { SeedPanel as SeedPanel_66d8080948ca3305f56d70e4a9bc7f3b } from '../../components/SeedPanel';
 import { ImportExportProvider as ImportExportProvider_4174734ae0c0aa7fd57002a832979351 } from '@frogbotai/plugin-import-export/rsc';
 import { StepNavReset as StepNavReset_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { FolderIcon as FolderIcon_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
 import { HierarchySidebarTabServer as HierarchySidebarTabServer_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
+import { InboxView as InboxView_62d784baad230d85fe82a00495e99c91 } from '@frogbotai/plugin-notifications/rsc';
 import { SettingsView as SettingsView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { WelcomeWidget as WelcomeWidget_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { CollectionCards as CollectionCards_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
@@ -192,6 +194,8 @@ export const importMap = {
     CollectionsSection_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/chat#TodoToolRender':
     TodoToolRender_2c719b98e38ed5e4255b99adee478a55,
+  '@frogbotai/plugin-notifications/rsc#NotificationsBell':
+    NotificationsBell_62d784baad230d85fe82a00495e99c91,
   '/components/SeedPanel#SeedPanel': SeedPanel_66d8080948ca3305f56d70e4a9bc7f3b,
   '@frogbotai/plugin-import-export/rsc#ImportExportProvider':
     ImportExportProvider_4174734ae0c0aa7fd57002a832979351,
@@ -200,6 +204,8 @@ export const importMap = {
   '@frogbotai/ui/admin#FolderIcon': FolderIcon_53ccb9913b2925da8adcdf5fd85e01f4,
   '@frogbotai/ui/admin/rsc#HierarchySidebarTabServer':
     HierarchySidebarTabServer_a9b31afd548db1251f21130da6e46588,
+  '@frogbotai/plugin-notifications/rsc#InboxView':
+    InboxView_62d784baad230d85fe82a00495e99c91,
   '@frogbotai/ui/admin/rsc#SettingsView':
     SettingsView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/ui/admin/rsc#WelcomeWidget':

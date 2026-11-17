@@ -84,6 +84,7 @@
     "@frogbotai/plugin-forms": "workspace:*",
     "@frogbotai/plugin-import-export": "workspace:*",
     "@frogbotai/plugin-mcp": "workspace:*",
+    "@frogbotai/plugin-notifications": "workspace:*",
     "@frogbotai/plugin-nested-docs": "workspace:*",
     "@frogbotai/plugin-redirects": "workspace:*",
     "@frogbotai/plugin-roles": "workspace:*",
