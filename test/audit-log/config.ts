@@ -8,6 +8,7 @@ import { getCurrentDatabaseAdapter } from '../__helpers/shared/db/dbAdapters.js'
 
 const Accounts: CollectionConfig = {
   slug: 'accounts',
+  admin: { useAsTitle: 'email' },
   auth: true,
   access: openAccess,
   fields: [],
@@ -55,6 +56,16 @@ const Ledgers: CollectionConfig = {
       type: 'number',
       access: { read: ({ req }) => req.user?.email === 'audit@frogbot.local' },
     },
+    {
+      name: 'stage',
+      type: 'select',
+      options: [
+        { label: 'Lead', value: 'lead' },
+        { label: 'Qualified', value: 'qualified' },
+      ],
+    },
+    { name: 'owner', type: 'relationship', relationTo: 'accounts' },
+    { name: 'due', type: 'date', timezone: true },
   ],
 };
 

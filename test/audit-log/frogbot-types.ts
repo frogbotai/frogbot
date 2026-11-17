@@ -230,6 +230,10 @@ export interface Ledger {
   id: number;
   title?: string | null;
   cost?: number | null;
+  stage?: ('lead' | 'qualified') | null;
+  owner?: (number | null) | Account;
+  due?: string | null;
+  due_tz?: SupportedTimezones;
   createdBy?: {
     relationTo: 'accounts';
     value: number | Account;
@@ -401,6 +405,10 @@ export interface VaultSelect {
 export interface LedgersSelect {
   title?: boolean;
   cost?: boolean;
+  stage?: boolean;
+  owner?: boolean;
+  due?: boolean;
+  due_tz?: boolean;
   createdBy?: boolean;
   updatedBy?: boolean;
   updatedAt?: boolean;

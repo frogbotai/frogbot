@@ -1,11 +1,24 @@
 import './ActivityField.css';
 
 import { PanelSection } from '@frogbotai/ui/admin';
-import { getTranslation, type I18nClient } from '@payloadcms/translations';
+import type { getTranslation, I18nClient } from '@payloadcms/translations';
 
 import { defaultAuditSlug } from '../collection.js';
 import { auditLogCustomKey } from '../fields/activity.js';
 import type { AuditOperation } from '../types.js';
+import {
+  type ConfigField,
+  type FieldInfo,
+  fieldInfo,
+  findField,
+  formatDate,
+  formatValue,
+  relatedIds,
+  showsTime,
+  titleOf,
+  type Titles,
+  translate,
+} from './values.js';
 
 type Doc = Record<string, unknown> & { id: number | string };
 
@@ -19,13 +32,12 @@ type FindArgs = {
 type ActivityPayload = {
   collections: Record<
     string,
-    | { config: { admin?: { useAsTitle?: string }; fields: Array<Record<string, unknown>> } }
-    | undefined
+    { config: { admin?: { useAsTitle?: string }; fields: ConfigField[] } } | undefined
   >;
   config: { custom?: Record<string, unknown> };
   find: (
     args: FindArgs & { limit: number; sort: string; where: Record<string, unknown> },
-  ) => Promise<{ docs: Entry[] }>;
+  ) => Promise<{ docs: Doc[] }>;
   findByID: (args: FindArgs & { disableErrors: true; id: number | string }) => Promise<Doc | null>;
 };
 
@@ -46,6 +58,8 @@ type Entry = {
   user?: Doc | number | string | null;
 };
 
+type Label = Parameters<typeof getTranslation>[0];
+
 const LIMIT = 20;
 
 function auditSlugOf(payload: ActivityPayload): string {
@@ -54,95 +68,145 @@ function auditSlugOf(payload: ActivityPayload): string {
   return options?.auditSlug ?? defaultAuditSlug;
 }
 
-function startCase(name: string): string {
-  return name
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/[_-]+/g, ' ')
-    .replace(/^./, (first) => first.toUpperCase());
+function titleKeyOf(payload: ActivityPayload, slug: unknown): string | undefined {
+  return typeof slug === 'string' ? payload.collections[slug]?.config.admin?.useAsTitle : undefined;
 }
 
-type ConfigField = Record<string, unknown>;
+type DatesFor = (field: ConfigField) => Intl.DateTimeFormat;
 
-type Label = Parameters<typeof getTranslation>[0];
+function titleFormat(
+  payload: ActivityPayload,
+  slug: string,
+  titleKey: string | undefined,
+  datesFor: DatesFor,
+) {
+  const titleField = findField(payload.collections[slug]?.config.fields ?? [], titleKey);
 
-type Translator = ActivityFieldProps['i18n'];
-
-function translate(label: unknown, i18n: Translator): string | undefined {
-  if (typeof label === 'string') return label;
-  if (!i18n || !label || (typeof label !== 'object' && typeof label !== 'function')) {
-    return undefined;
-  }
-
-  const text: unknown = getTranslation(label as Label, i18n as I18nClient);
-
-  return typeof text === 'string' && text ? text : undefined;
-}
-
-function childFields(field: ConfigField): ConfigField[] {
-  if (Array.isArray(field.tabs)) {
-    return (field.tabs as ConfigField[]).flatMap((tab) =>
-      typeof tab.name === 'string' ? [tab] : childFields(tab),
-    );
-  }
-
-  return Array.isArray(field.fields) ? (field.fields as ConfigField[]) : [];
-}
-
-function fieldLabels(
-  fields: ConfigField[],
-  i18n: Translator,
-  labels = new Map<string, string>(),
-): Map<string, string> {
-  for (const field of fields) {
-    if (typeof field.name === 'string') {
-      labels.set(field.name, translate(field.label, i18n) ?? startCase(field.name));
-    } else {
-      fieldLabels(childFields(field), i18n, labels);
-    }
-  }
-
-  return labels;
-}
-
-function userTitleKey(payload: ActivityPayload, auditSlug: string): string | undefined {
-  const userField = payload.collections[auditSlug]?.config.fields.find(
-    (field) => field.name === 'user',
-  );
-
-  const relationTo = userField?.relationTo;
-
-  return typeof relationTo === 'string'
-    ? payload.collections[relationTo]?.config.admin?.useAsTitle
+  return titleField?.type === 'date'
+    ? (value: string) => formatDate(value, datesFor(titleField))
     : undefined;
 }
 
 function userName(user: Entry['user'], titleKey: string | undefined): string {
   if (!user || typeof user !== 'object') return 'Someone';
 
-  for (const key of [titleKey, 'name', 'email']) {
-    const value = key && key !== 'id' ? user[key] : undefined;
-    if (typeof value === 'string' && value) return value;
-  }
+  const email = typeof user.email === 'string' && user.email ? user.email : undefined;
 
-  return 'Someone';
+  return titleOf(user, titleKey) ?? email ?? `#${user.id}`;
 }
 
-function describe(entry: Entry, labels: Map<string, string>, readable: Doc): string {
-  if (entry.operation === 'create') return 'created this';
-  if (entry.operation === 'delete') return 'deleted this';
+async function relatedTitles(
+  payload: ActivityPayload,
+  req: unknown,
+  entries: Entry[],
+  info: Map<string, FieldInfo>,
+  datesFor: DatesFor,
+): Promise<Titles> {
+  const titles: Titles = new Map();
+  const lookups = [
+    ...relatedIds(
+      entries.filter((entry) => entry.operation === 'update').map((entry) => entry.changes),
+      info,
+    ),
+  ].map(async ([collection, ids]) => {
+    if (!payload.collections[collection]) return;
 
-  const changed = Object.keys(entry.changes ?? {})
-    .filter((key) => key in readable && labels.has(key))
-    .map((key) => labels.get(key));
+    const { docs } = await payload
+      .find({
+        collection,
+        depth: 0,
+        limit: ids.size,
+        overrideAccess: false,
+        req,
+        sort: 'id',
+        where: { id: { in: [...ids] } },
+      })
+      .catch(() => ({ docs: [] as Doc[] }));
 
-  return changed.length ? `changed ${changed.join(', ')}` : 'edited this';
+    const titleKey = titleKeyOf(payload, collection);
+    const format = titleFormat(payload, collection, titleKey, datesFor);
+
+    for (const doc of docs) {
+      const title = titleOf(doc, titleKey, format);
+      if (title) titles.set(`${collection}:${doc.id}`, title);
+    }
+  });
+
+  await Promise.all(lookups);
+
+  return titles;
+}
+
+type Line = { key: string; label?: string; value?: string; verb: string };
+
+type Format = (field: FieldInfo['field'], value: unknown, withTime: boolean) => string | undefined;
+
+const GROUP_GAP = 10 * 60 * 1000;
+
+function changeLine(key: string, info: FieldInfo, diff: unknown, format: Format): Line[] {
+  const { field, label } = info;
+  const { new: next, old } = (diff ?? {}) as { new?: unknown; old?: unknown };
+  let from = format(field, old, showsTime(field));
+  let to = format(field, next, showsTime(field));
+
+  if (from === to && field.type === 'date') {
+    from = format(field, old, true);
+    to = format(field, next, true);
+  }
+
+  if (to === undefined || from === undefined) return [{ key, label, verb: 'changed' }];
+  if (from === to) return [];
+  if (to === 'None') return [{ key, label, verb: 'cleared' }];
+
+  return [{ key, label, value: to, verb: 'changed' }];
+}
+
+function describe(entry: Entry, info: Map<string, FieldInfo>, format: Format): Line[] {
+  if (entry.operation === 'create') return [{ key: 'create', verb: 'created this' }];
+  if (entry.operation === 'delete') return [{ key: 'delete', verb: 'deleted this' }];
+
+  const keys = Object.keys(entry.changes ?? {}).filter((key) => info.has(key));
+  if (!keys.length) return [{ key: 'edit', verb: 'edited this' }];
+
+  return keys.flatMap((key) =>
+    changeLine(key, info.get(key) as FieldInfo, entry.changes?.[key], format),
+  );
+}
+
+function actorOf(entry: Entry): unknown {
+  return entry.user && typeof entry.user === 'object' ? entry.user.id : entry.user;
+}
+
+function groupRuns(entries: Entry[]): Entry[][] {
+  const runs: Entry[][] = [];
+
+  for (const entry of entries) {
+    const run = runs.at(-1);
+    const last = run?.at(-1);
+
+    if (
+      run &&
+      last &&
+      actorOf(last) === actorOf(entry) &&
+      Date.parse(entry.timestamp) - Date.parse(last.timestamp) <= GROUP_GAP
+    ) {
+      run.push(entry);
+    } else {
+      runs.push([entry]);
+    }
+  }
+
+  return runs;
 }
 
 /**
- * Lists the open record's audit entries, newest first. Both the record and its entries are read
- * with the signed-in user's access, and a change names only fields the user can read, so a
- * record the user can't read shows nothing. Entries older than the record are skipped, since a
- * database can reuse a deleted record's id. Renders nothing on a create form.
+ * Lists the open record's latest audit entries, oldest first, one line per changed field, with
+ * runs by the same person a few minutes apart grouped together. Both the record and its entries
+ * are read with the signed-in user's access, and a change names only fields the user can read,
+ * so a record the user can't read shows nothing. A change to an option, related record, text,
+ * number, date or checkbox also shows its new value, with options by label and related records
+ * by their `useAsTitle`; a related record whose title the user can't read shows its ID. Entries older than the record are
+ * skipped, since a database can reuse a deleted record's id. Renders nothing on a create form.
  */
 export async function ActivityField({ collectionSlug, field, i18n, id, req }: ActivityFieldProps) {
   if (!req?.user || !collectionSlug || id === undefined || id === null || id === '') return null;
@@ -165,7 +229,7 @@ export async function ActivityField({ collectionSlug, field, i18n, id, req }: Ac
   if (!record) return null;
 
   const auditSlug = auditSlugOf(payload);
-  const { docs: entries } = await payload
+  const { docs } = await payload
     .find({
       collection: auditSlug,
       depth: 1,
@@ -183,29 +247,67 @@ export async function ActivityField({ collectionSlug, field, i18n, id, req }: Ac
         ],
       },
     })
-    .catch(() => ({ docs: [] as Entry[] }));
+    .catch(() => ({ docs: [] as Doc[] }));
 
-  const titleKey = userTitleKey(payload, auditSlug);
-  const labels = fieldLabels(collection.config.fields, i18n);
+  const entries = (docs as Entry[]).reverse();
+  const userField = payload.collections[auditSlug]?.config.fields.find(
+    (auditField) => auditField.name === 'user',
+  );
+
+  const userTitleKey = titleKeyOf(payload, userField?.relationTo);
+  const info = fieldInfo(collection.config.fields, i18n);
+  const readable = new Map([...info].filter(([key]) => key in record));
   const heading = translate(field?.label, i18n) ?? 'Activity';
-  const formatter = new Intl.DateTimeFormat(i18n?.language, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+  const language = i18n?.language;
+  const full = new Intl.DateTimeFormat(language, { dateStyle: 'medium', timeStyle: 'short' });
+  const day = new Intl.DateTimeFormat(language, { dateStyle: 'medium' });
+  const thisYear = new Intl.DateTimeFormat(language, { day: 'numeric', month: 'short' });
+  const year = new Date().getFullYear();
+  const short = (date: Date) => (date.getFullYear() === year ? thisYear : day).format(date);
+  const titles = await relatedTitles(payload, req, entries, readable, (config) =>
+    showsTime(config) ? full : day,
+  );
+
+  const format: Format = (config, value, withTime) =>
+    formatValue(config, value, titles, i18n, withTime ? full : day);
+
+  const runs = groupRuns(entries)
+    .map((run) =>
+      run.flatMap((entry) => describe(entry, readable, format).map((line) => ({ ...line, entry }))),
+    )
+    .filter((lines) => lines.length);
 
   return (
     <PanelSection className="fb-activity" heading={heading}>
-      {entries.length ? (
+      {runs.length ? (
         <ol className="fb-activity__list">
-          {entries.map((entry) => (
-            <li className="fb-activity__entry" key={entry.id}>
-              <span className="fb-activity__dot" />
-              <p className="fb-activity__text">
-                <strong>{userName(entry.user, titleKey)}</strong> {describe(entry, labels, record)}
-              </p>
-              <time className="fb-activity__time" dateTime={entry.timestamp}>
-                {formatter.format(new Date(entry.timestamp))}
-              </time>
+          {runs.map((lines) => (
+            <li className="fb-activity__run" key={`${lines[0].entry.id}`}>
+              {lines.map(({ entry, key, label, value, verb }) => {
+                const date = new Date(entry.timestamp);
+
+                return (
+                  <p className="fb-activity__line" key={`${entry.id}:${key}`}>
+                    <strong>{userName(entry.user, userTitleKey)}</strong> {verb}
+                    {label ? (
+                      <>
+                        {' '}
+                        <strong>{label}</strong>
+                      </>
+                    ) : null}
+                    {value ? (
+                      <>
+                        {' to '}
+                        <strong>{value}</strong>
+                      </>
+                    ) : null}
+                    {' · '}
+                    <time dateTime={entry.timestamp} title={full.format(date)}>
+                      {short(date)}
+                    </time>
+                  </p>
+                );
+              })}
             </li>
           ))}
         </ol>
