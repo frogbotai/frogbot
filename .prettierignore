@@ -16,3 +16,9 @@ eslint-suppressions.json
 tsconfig.json
 
 pnpm-lock.yaml
+
+# On-screen video code keeps the video script's line breaks
+examples/acme-deals/src/collections/Deals.ts
+examples/acme-deals/src/agents/dealDesk.ts
+examples/acme-deals/src/tools/deals.ts
+examples/acme-deals/video/stages
