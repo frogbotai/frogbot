@@ -209,10 +209,10 @@ export function safeReturnTo(value: string, origin: string): string | null {
     : null;
 }
 
-/** Reads a JSON or URL-encoded body. `form` is true for the browser's own form posts. */
+/** Reads a JSON object or URL-encoded body; `body` is `null` when it is neither. `form` is true for the browser's own form posts. */
 export async function readBody(
   req: FrogBotRequest,
-): Promise<{ body: Record<string, unknown>; form: boolean }> {
+): Promise<{ body: Record<string, unknown> | null; form: boolean }> {
   const type = (req.headers.get('content-type') ?? '').split(';', 1)[0].trim().toLowerCase();
 
   try {
@@ -220,7 +220,10 @@ export async function readBody(
       const body: unknown = JSON.parse((await req.text?.()) || '{}');
 
       return {
-        body: typeof body === 'object' && body ? (body as Record<string, unknown>) : {},
+        body:
+          typeof body === 'object' && body && !Array.isArray(body)
+            ? (body as Record<string, unknown>)
+            : null,
         form: false,
       };
     }
@@ -232,14 +235,25 @@ export async function readBody(
       };
     }
   } catch {
-    return { body: {}, form: type !== 'application/json' };
+    return { body: null, form: type !== 'application/json' };
   }
 
-  return { body: {}, form: false };
+  return { body: null, form: false };
 }
 
-export const jsonError = (message: string, status: number, headers?: HeadersInit) =>
-  Response.json({ errors: [{ message }] }, { status, headers: noStore(headers) });
+/** The stable `data.code` on a refusal, so callers branch on it rather than on the message. */
+export type RefusalCode =
+  'wrong_code' | 'locked' | 'expired' | 'pending_missing' | 'code_missing' | 'body_unreadable';
+
+export const jsonError = (
+  message: string,
+  status: number,
+  { code, headers }: { code?: RefusalCode; headers?: HeadersInit } = {},
+) =>
+  Response.json(
+    { errors: [code ? { message, data: { code } } : { message }] },
+    { status, headers: noStore(headers) },
+  );
 
 export function noStore(init?: HeadersInit): Headers {
   const headers = new Headers(init);

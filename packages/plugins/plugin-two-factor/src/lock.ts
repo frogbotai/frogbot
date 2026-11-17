@@ -45,13 +45,17 @@ async function readFailures(req: FrogBotRequest, key: string): Promise<Failures 
   return stored && stored.until > Date.now() ? stored : null;
 }
 
-/** True when five wrong codes in ten minutes locked the user's code entry. */
-export async function isCodeLocked(
+/** Seconds left on the lock that five wrong codes in ten minutes put on the user's code entry, or 0. */
+export async function codeLockSeconds(
   req: FrogBotRequest,
   slug: string,
   id: string | number,
-): Promise<boolean> {
-  return ((await readFailures(req, failuresKey(slug, id)))?.count ?? 0) >= MAX_FAILURES;
+): Promise<number> {
+  const failures = await readFailures(req, failuresKey(slug, id));
+
+  return failures && failures.count >= MAX_FAILURES
+    ? Math.ceil((failures.until - Date.now()) / 1000)
+    : 0;
 }
 
 /** Counts a wrong code. The fifth in ten minutes locks code entry for ten minutes. */

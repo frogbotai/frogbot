@@ -20,10 +20,14 @@ export type PendingSignIn = {
 const key = (slug: string, id: string) =>
   `two-factor:pending:${JSON.stringify([slug, createHash('sha256').update(id).digest('hex')])}`;
 
-function cookie(req: FrogBotRequest, slug: string, value: string, maxAge: number): string {
-  const { base, secure, cookiePrefix } = routes(req, slug);
+/** The name of the cookie that holds a pending sign-in's id. */
+export const pendingCookieName = (req: FrogBotRequest, slug: string) =>
+  `${routes(req, slug).cookiePrefix}-two-factor`;
 
-  return `${cookiePrefix}-two-factor=${value}; Path=${base}; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`;
+function cookie(req: FrogBotRequest, slug: string, value: string, maxAge: number): string {
+  const { base, secure } = routes(req, slug);
+
+  return `${pendingCookieName(req, slug)}=${value}; Path=${base}; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`;
 }
 
 /** The `set-cookie` value that removes the pending sign-in cookie. */
@@ -50,12 +54,19 @@ export async function createPending({
   return cookie(req, slug, id, TEN_MINUTES / 1000);
 }
 
+const pendingId = (req: FrogBotRequest, slug: string) =>
+  parseCookies(req.headers).get(pendingCookieName(req, slug));
+
+/** True when the request sends the pending sign-in cookie, whether or not its sign-in is still pending. */
+export const hasPendingCookie = (req: FrogBotRequest, slug: string) =>
+  Boolean(pendingId(req, slug));
+
 /** The pending sign-in this request's cookie points to, unless it expired. */
 export async function readPending(
   req: FrogBotRequest,
   slug: string,
 ): Promise<{ id: string; pending: PendingSignIn } | null> {
-  const id = parseCookies(req.headers).get(`${routes(req, slug).cookiePrefix}-two-factor`);
+  const id = pendingId(req, slug);
   if (!id) return null;
 
   const pending = (await req.frogbot.kv.get(key(slug, id))) as PendingSignIn | null;
