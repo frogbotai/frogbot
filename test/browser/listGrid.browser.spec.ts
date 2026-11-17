@@ -174,7 +174,12 @@ test('reaches the resize handle with Tab from a sortable header', async ({ page 
 });
 
 test('another user keeps their own widths', async ({ browser, page }) => {
-  const other = { email: 'grid-other@example.com', password: 'grid-other-password' };
+  const other = {
+    email: 'grid-other@example.com',
+    name: 'Grid Other',
+    password: 'grid-other-password',
+  };
+
   const created = await page.request.post('/api/users', { data: other });
   const { doc } = (await created.json()) as { doc: { id: number | string } };
 

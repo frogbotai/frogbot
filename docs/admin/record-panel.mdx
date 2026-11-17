@@ -125,10 +125,11 @@ The back link asks before throwing away unsaved edits, and skips records deleted
 
 ## Activity and comments
 
-Activity and comments are fields, so the full edit page shows them too. Put a tabs field at the end of `fields`, with [`activityField()`](/plugins/audit-log#activity-field) from the audit log plugin in one tab:
+Activity and comments are fields, so the full edit page shows them too. Put a tabs field at the end of `fields`, with [`commentsField()`](/plugins/comments#placing-the-field) from the comments plugin in one tab and [`activityField()`](/plugins/audit-log#activity-field) from the audit log plugin in another:
 
 ```ts
 import { activityField } from '@frogbotai/plugin-audit-log'
+import { commentsField } from '@frogbotai/plugin-comments'
 import type { CollectionConfig } from 'frogbot'
 
 export const Tasks: CollectionConfig = {
@@ -141,13 +142,15 @@ export const Tasks: CollectionConfig = {
       type: 'tabs',
       admin: { className: 'fb-pill-tabs' },
       tabs: [
+        { label: 'Comments', fields: [commentsField()] },
         { label: 'Activity', fields: [activityField()] },
-        // a Comments tab goes here
       ],
     },
   ],
 }
 ```
+
+Either field also works alone, outside a tabs field. Posting a comment doesn't change the record, so the panel doesn't ask before closing.
 
 ## Saving
 

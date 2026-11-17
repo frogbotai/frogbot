@@ -1,6 +1,7 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { aiPolicyPlugin } from '@frogbotai/plugin-ai-policy';
 import { auditLogPlugin } from '@frogbotai/plugin-audit-log';
+import { commentsPlugin } from '@frogbotai/plugin-comments';
 import { dojo } from '@frogbotai/plugin-dojo';
 import { importExportPlugin } from '@frogbotai/plugin-import-export';
 import { lexicalEditor } from '@frogbotai/richtext-lexical';
@@ -78,6 +79,7 @@ const config: FrogBotConfig = {
     dojo(),
     roles,
     auditLogPlugin({ overrides: { access: auditLogAccess } }),
+    commentsPlugin(),
     importExportPlugin(importExport),
   ],
   upload: { transformers: [sharpTransformer()] },

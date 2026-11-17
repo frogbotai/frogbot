@@ -1,0 +1,110 @@
+@layer frogbot {
+  .fb-comments {
+    display: grid;
+    gap: var(--spacer-3);
+    margin-block: var(--spacer-2);
+  }
+
+  .fb-comments__list {
+    display: grid;
+    gap: var(--spacer-3);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fb-comments__item {
+    column-gap: var(--spacer-2);
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+
+  .fb-comments__avatar {
+    display: flex;
+    padding-top: 1px;
+  }
+
+  .fb-comments__main {
+    display: grid;
+    gap: var(--spacer-1);
+    min-width: 0;
+  }
+
+  .fb-comments__edited {
+    color: var(--color-text-tertiary);
+  }
+
+  .fb-comments__menu {
+    align-items: center;
+    background: none;
+    border: 0;
+    border-radius: var(--radius-small);
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    display: inline-flex;
+    margin-inline-start: auto;
+    opacity: 0;
+    padding: 2px;
+  }
+
+  .fb-comments__item:hover .fb-comments__menu,
+  .fb-comments__menu:focus-visible,
+  .fb-comments__menu[data-state="open"] {
+    opacity: 1;
+  }
+
+  .fb-comments__menu:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text);
+  }
+
+  .fb-comments__danger {
+    color: var(--color-text-danger);
+  }
+
+  .fb-comments__meta {
+    align-items: baseline;
+    color: var(--color-text-tertiary);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: var(--text-body-small-font-size);
+    gap: var(--spacer-2);
+  }
+
+  .fb-comments__meta strong {
+    color: var(--color-text);
+    font-size: var(--text-body-font-size);
+    font-weight: 600;
+  }
+
+  .fb-comments__meta {
+    align-items: center;
+    gap: var(--spacer-1);
+  }
+
+  .fb-comments__body {
+    color: var(--color-text);
+    overflow-wrap: anywhere;
+  }
+
+  .fb-comments__body > :first-child {
+    margin-top: 0;
+  }
+
+  .fb-comments__body > :last-child {
+    margin-bottom: 0;
+  }
+
+  .fb-comments__empty {
+    color: var(--color-text-tertiary);
+    font-size: var(--text-body-small-font-size);
+    margin: 0;
+  }
+
+  .fb-comments__actions {
+    display: flex;
+    gap: var(--spacer-2);
+    justify-content: flex-end;
+    margin-top: var(--spacer-2);
+  }
+}

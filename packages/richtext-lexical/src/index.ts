@@ -14,6 +14,15 @@ export {
 export { lexicalHTMLField } from './features/converters/lexicalToHtml/async/field/index.js';
 export { getFrogBotPopulateFn } from './features/converters/utilities/frogbotPopulateFn.js';
 export { LinkFeature, type LinkFeatureServerProps } from './features/link/server/index.js';
+export { MentionFeature, type MentionFeatureProps } from './features/mention/server/index.js';
+export {
+  type MentionData,
+  mentionedIds,
+  type MentionFeatureClientProps,
+  mentionInitials,
+  mentionText,
+  type SerializedMentionNode,
+} from './features/mention/shared.js';
 export type {
   ExtractSerializedNode,
   NodeValidation,

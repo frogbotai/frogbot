@@ -6,6 +6,7 @@ import type { getTranslation, I18nClient } from '@payloadcms/translations';
 import { defaultAuditSlug } from '../collection.js';
 import { auditLogCustomKey } from '../fields/activity.js';
 import type { AuditOperation } from '../types.js';
+import { type PlacementProps, soleInTab } from './heading.js';
 import {
   type ConfigField,
   type FieldInfo,
@@ -42,7 +43,7 @@ type ActivityPayload = {
 };
 
 /** The server props Payload gives a field component that `ActivityField` reads. */
-export type ActivityFieldProps = {
+export type ActivityFieldProps = PlacementProps & {
   collectionSlug?: string;
   field?: { label?: Label };
   i18n?: Pick<I18nClient, 'fallbackLanguage' | 'language' | 't'>;
@@ -206,9 +207,18 @@ function groupRuns(entries: Entry[]): Entry[][] {
  * so a record the user can't read shows nothing. A change to an option, related record, text,
  * number, date or checkbox also shows its new value, with options by label and related records
  * by their `useAsTitle`; a related record whose title the user can't read shows its ID. Entries older than the record are
- * skipped, since a database can reuse a deleted record's id. Renders nothing on a create form.
+ * skipped, since a database can reuse a deleted record's id. The field's label is the heading,
+ * unless the field is the only one in a tab, whose label already names it. Renders nothing on a
+ * create form.
  */
-export async function ActivityField({ collectionSlug, field, i18n, id, req }: ActivityFieldProps) {
+export async function ActivityField({
+  collectionSlug,
+  field,
+  i18n,
+  id,
+  req,
+  ...placement
+}: ActivityFieldProps) {
   if (!req?.user || !collectionSlug || id === undefined || id === null || id === '') return null;
 
   const { payload } = req;
@@ -277,43 +287,47 @@ export async function ActivityField({ collectionSlug, field, i18n, id, req }: Ac
     )
     .filter((lines) => lines.length);
 
-  return (
-    <PanelSection className="fb-activity" heading={heading}>
-      {runs.length ? (
-        <ol className="fb-activity__list">
-          {runs.map((lines) => (
-            <li className="fb-activity__run" key={`${lines[0].entry.id}`}>
-              {lines.map(({ entry, key, label, value, verb }) => {
-                const date = new Date(entry.timestamp);
+  const content = runs.length ? (
+    <ol className="fb-activity__list">
+      {runs.map((lines) => (
+        <li className="fb-activity__run" key={`${lines[0].entry.id}`}>
+          {lines.map(({ entry, key, label, value, verb }) => {
+            const date = new Date(entry.timestamp);
 
-                return (
-                  <p className="fb-activity__line" key={`${entry.id}:${key}`}>
-                    <strong>{userName(entry.user, userTitleKey)}</strong> {verb}
-                    {label ? (
-                      <>
-                        {' '}
-                        <strong>{label}</strong>
-                      </>
-                    ) : null}
-                    {value ? (
-                      <>
-                        {' to '}
-                        <strong>{value}</strong>
-                      </>
-                    ) : null}
-                    {' · '}
-                    <time dateTime={entry.timestamp} title={full.format(date)}>
-                      {short(date)}
-                    </time>
-                  </p>
-                );
-              })}
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <p className="fb-activity__empty">No activity yet.</p>
-      )}
+            return (
+              <p className="fb-activity__line" key={`${entry.id}:${key}`}>
+                <strong>{userName(entry.user, userTitleKey)}</strong> {verb}
+                {label ? (
+                  <>
+                    {' '}
+                    <strong>{label}</strong>
+                  </>
+                ) : null}
+                {value ? (
+                  <>
+                    {' to '}
+                    <strong>{value}</strong>
+                  </>
+                ) : null}
+                {' · '}
+                <time dateTime={entry.timestamp} title={full.format(date)}>
+                  {short(date)}
+                </time>
+              </p>
+            );
+          })}
+        </li>
+      ))}
+    </ol>
+  ) : (
+    <p className="fb-activity__empty">No activity yet.</p>
+  );
+
+  return soleInTab(placement) ? (
+    <section className="fb-activity">{content}</section>
+  ) : (
+    <PanelSection className="fb-activity" heading={heading}>
+      {content}
     </PanelSection>
   );
 }

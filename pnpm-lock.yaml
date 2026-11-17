@@ -1836,6 +1836,31 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/plugins/plugin-comments:
+    dependencies:
+      '@frogbotai/richtext-lexical':
+        specifier: workspace:*
+        version: link:../../richtext-lexical
+    devDependencies:
+      '@frogbotai/ui':
+        specifier: workspace:*
+        version: link:../../ui
+      '@payloadcms/translations':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.9
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      react:
+        specifier: 'catalog:'
+        version: 19.3.1
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/plugins/plugin-dojo:
     dependencies:
       '@aws-sdk/client-s3':
@@ -2129,11 +2154,20 @@ importers:
     dependencies:
       '@payloadcms/richtext-lexical':
         specifier: 'catalog:'
-        version: 4.0.0-beta.9(@faceless-ui/modal@3.0.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(@faceless-ui/scroll-info@2.0.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(bufferutil@4.1.0)(payload@4.0.0-beta.9(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3)(yjs@13.6.32)
+        version: 4.0.0-beta.9(@faceless-ui/modal@3.0.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(@faceless-ui/scroll-info@2.0.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(@types/react@19.2.14)(bufferutil@4.1.0)(payload@4.0.0-beta.9(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3)(yjs@13.6.32)
       payload:
         specifier: 'catalog:'
         version: 4.0.0-beta.9(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
     devDependencies:
+      '@frogbotai/ui':
+        specifier: workspace:*
+        version: link:../ui
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
       frogbot:
         specifier: workspace:*
         version: link:../frogbot
@@ -2482,6 +2516,9 @@ importers:
       '@frogbotai/plugin-audit-log':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-audit-log
+      '@frogbotai/plugin-comments':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-comments
       '@frogbotai/plugin-dojo':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-dojo
@@ -2838,6 +2875,9 @@ importers:
       '@frogbotai/plugin-audit-log':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-audit-log
+      '@frogbotai/plugin-comments':
+        specifier: workspace:*
+        version: link:../packages/plugins/plugin-comments
       '@frogbotai/plugin-dojo':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-dojo
@@ -15530,7 +15570,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@payloadcms/richtext-lexical@4.0.0-beta.9(@faceless-ui/modal@3.0.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(@faceless-ui/scroll-info@2.0.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(bufferutil@4.1.0)(payload@4.0.0-beta.9(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3)(yjs@13.6.32)':
+  '@payloadcms/richtext-lexical@4.0.0-beta.9(@faceless-ui/modal@3.0.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(@faceless-ui/scroll-info@2.0.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(@types/react@19.2.14)(bufferutil@4.1.0)(payload@4.0.0-beta.9(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3)(yjs@13.6.32)':
     dependencies:
       '@faceless-ui/modal': 3.0.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@faceless-ui/scroll-info': 2.0.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -15547,7 +15587,7 @@ snapshots:
       '@lexical/table': 0.53.0(typescript@6.0.3)
       '@lexical/utils': 0.53.0(typescript@6.0.3)
       '@payloadcms/translations': 4.0.0-beta.9
-      '@payloadcms/ui': 4.0.0-beta.9(monaco-editor@0.55.1)(payload@4.0.0-beta.9(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3)
+      '@payloadcms/ui': 4.0.0-beta.9(@types/react@19.2.14)(monaco-editor@0.55.1)(payload@4.0.0-beta.9(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3)
       acorn: 8.16.0
       bson-objectid: 2.0.4
       csstype: 3.2.3

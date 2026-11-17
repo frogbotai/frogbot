@@ -1,0 +1,170 @@
+---
+title: Comments
+description: Rich text comments with @mentions on any FrogBot record.
+---
+
+The comments plugin lets people discuss a record in place. Each record gets a rich text comment box with [@mentions](/rich-text/official-features#configure-mentions), and comments live in their own `comments` collection, so a comment isn't an edit of the record: it writes no audit entry or version, and commenters don't need update access.
+
+## Installation
+
+```bash
+pnpm add @frogbotai/plugin-comments
+```
+
+## Configuration
+
+```ts
+import { commentsPlugin } from '@frogbotai/plugin-comments'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  collections: [
+    {
+      slug: 'deals',
+      fields: [{ name: 'name', type: 'text' }],
+    },
+  ],
+  plugins: [commentsPlugin({ collections: ['deals'] })],
+})
+```
+
+Each collection in `collections` gets a comments field at the end of its `fields`. The plugin runs with `order: 95`, after plugins that add collections or fields.
+
+## Placing the field
+
+`commentsField()` returns a normal `ui` field. Place it yourself and the collection needs no `collections` entry. It works alone anywhere in `fields`, or in a tab, for example next to the audit log's [`activityField()`](/plugins/audit-log#activity-field):
+
+```ts
+import { activityField } from '@frogbotai/plugin-audit-log'
+import { commentsField } from '@frogbotai/plugin-comments'
+import type { CollectionConfig } from 'frogbot'
+
+// Comments and Activity as tabs, like Asana
+export const Deals: CollectionConfig = {
+  slug: 'deals',
+  fields: [
+    { name: 'name', type: 'text' },
+    {
+      type: 'tabs',
+      admin: { className: 'fb-pill-tabs' },
+      tabs: [
+        { label: 'Comments', fields: [commentsField()] },
+        { label: 'Activity', fields: [activityField()] },
+      ],
+    },
+  ],
+}
+
+// Comments only, below the other fields
+export const Tasks: CollectionConfig = {
+  slug: 'tasks',
+  fields: [{ name: 'title', type: 'text' }, commentsField()],
+}
+```
+
+For activity without comments, place `activityField()` alone and leave this plugin out. Either field shows its label as a heading, except when it is the only field in a tab, whose label already names it. Pass field options to change it, for example `commentsField({ label: 'Discussion' })`. Both fields show on the edit page and in the [record panel](/admin/record-panel#activity-and-comments).
+
+The list shows the latest 50 comments, oldest first. Each shows the author's picture and name, when it was posted ("Just now", "6 minutes ago", then a date after a day), and "(edited)" when it was changed. Hovering your own comment shows a `···` menu to edit it in place or delete it. Typing in the box never marks the record's form as changed: **Comment** saves through the comments API.
+
+## Names and pictures
+
+Comments, the `@` menu and mentions name people the way the rest of the admin does:
+
+- **Name**: the users collection's `admin.useAsTitle`, then their email. Set `useAsTitle: 'name'` on a users collection with a name field to show names rather than emails.
+- **Picture**: the app's [`admin.avatar`](/admin/overview), with no extra setting.
+  - `'gravatar'` (the default) shows each person's Gravatar, or their initials when they have none.
+  - `'default'` shows initials.
+  - A custom `{ Component }` renders on comment rows with the person as `user` and the size in pixels as `size`. Read the person from `user`, not the signed-in user. The `@` menu shows initials for it, since its results load in the browser.
+
+```tsx
+// admin: { avatar: { Component: '/components/UserPhoto#UserPhoto' } }
+export function UserPhoto({ size = 24, user }: { size?: number; user?: { name?: string; photo?: { url?: string } } }) {
+  return user?.photo?.url ? (
+    <img alt={user.name ?? ''} height={size} src={user.photo.url} style={{ borderRadius: '50%' }} width={size} />
+  ) : null
+}
+```
+
+A mention shows the person's current name whenever the comment is read with `depth`, so a renamed person reads correctly in old comments.
+
+## Choosing the editor
+
+Comments use the same order as any rich text field: the app's `editor`, then the plugin's `editor`, then the collection's.
+
+```ts
+import { commentFeatures, commentsField, commentsPlugin } from '@frogbotai/plugin-comments'
+import { lexicalEditor, UploadFeature } from '@frogbotai/richtext-lexical'
+
+commentsPlugin({ collections: ['deals', 'tasks'] }) // the app's editor, plus mentions
+
+commentsPlugin({
+  collections: ['deals', 'tasks'],
+  editor: lexicalEditor({ features: commentFeatures() }), // a compact toolbar for every collection
+})
+
+commentsPlugin({
+  collections: { deals: { editor: lexicalEditor({ features: commentFeatures() }) }, tasks: true },
+})
+
+// in the Tickets collection: image uploads in Tickets comments only
+commentsField({ editor: lexicalEditor({ features: [...commentFeatures(), UploadFeature()] }) })
+```
+
+Whichever editor applies, `MentionFeature()` is added when it's missing, because mentions record who a comment is for. `commentFeatures()` returns the compact set: bold, italic, strikethrough, inline code, links, lists and mentions.
+
+Each different editor gets its own hidden rich text field on the comments collection, so a comment is validated, and its uploads and links are populated, with exactly the features of the editor it was written in. You never name these fields: the API reads and writes a comment's rich text as `body`. A collection can't hold two comments fields with different editors.
+
+## The comments collection
+
+| Field | Holds |
+| --- | --- |
+| `collection` | The record's collection slug. Can't be changed after create. |
+| `documentId` | The record's id, as text. Can't be changed after create. |
+| `author` | The user who wrote it, set from the signed-in user. |
+| `mentions` | The users the body mentions, filled from its mention nodes on every save. |
+| `body` | The rich text, in the editor of the record's collection. |
+
+```ts
+await fetch('/api/comments', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ collection: 'deals', documentId: '12', body: editorState }),
+})
+```
+
+A comment needs some text or a node such as a mention or upload. Creating one on a collection without comments fails.
+
+Deleting a record deletes its comments, so a new record that gets the same id starts with none. Moving a record to the trash keeps them.
+
+### Access
+
+FrogBot adds no tenant rules. The defaults:
+
+- **Read**: signed in, and only comments on records the user may read, checked with each collection's own read access.
+- **Create**: signed in, on a collection with comments, on a record the user may read.
+- **Update and delete**: the comment's author.
+
+Change them with `overrides.access`.
+
+## Custom views
+
+The pieces the field uses are exported for custom views and dashboards:
+
+```tsx
+import { RecordComments } from '@frogbotai/plugin-comments/rsc'
+
+export async function DealSummary({ id, req }) {
+  return <RecordComments collection="deals" heading="Discussion" id={id} req={req} />
+}
+```
+
+`RecordComments` loads a record's comments with the signed-in user's access and renders the list and box, or nothing when the user can't read the record. The client parts are in `@frogbotai/plugin-comments/client`: `Comments` (list and box, reloading after changes), `CommentList`, `CommentBox`, `CommentEditor` (the rich text box with its own value) and `formatWhen`. `UserAvatar` from `@frogbotai/ui` draws a person's Gravatar or initials anywhere else.
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collections` | `string[] \| Record<string, { editor?: CommentsEditor } \| true>` | None | Collections that get a comments field at the end of their fields, with an optional editor each. Collections that place `commentsField()` need no entry. |
+| `editor` | `CommentsEditor` | The app's `editor` | The editor for every collection's comments. `MentionFeature()` is added when it's missing. |
+| `overrides` | `Partial<CollectionConfig>` with `fields?: ({ defaultFields }) => Field[]` | None | Changes the comments collection: `slug` (default `'comments'`), `access`, `admin`, `hooks`, `fields` and any other collection key. |

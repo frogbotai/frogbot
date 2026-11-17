@@ -1,0 +1,86 @@
+import os from 'node:os';
+import path from 'node:path';
+
+import { sqliteAdapter } from '@frogbotai/db-sqlite';
+import { auditLogPlugin } from '@frogbotai/plugin-audit-log';
+import { commentFeatures, commentsField, commentsPlugin } from '@frogbotai/plugin-comments';
+import { lexicalEditor, UploadFeature } from '@frogbotai/richtext-lexical';
+import type { CollectionConfig } from 'frogbot';
+
+import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
+import { getCurrentDatabaseAdapter } from '../__helpers/shared/db/dbAdapters.js';
+
+const Users: CollectionConfig = {
+  slug: 'users',
+  admin: { useAsTitle: 'name' },
+  auth: true,
+  access: openAccess,
+  fields: [{ name: 'name', type: 'text' }],
+};
+
+const Customers: CollectionConfig = {
+  slug: 'customers',
+  auth: true,
+  access: openAccess,
+  fields: [],
+};
+
+const Media: CollectionConfig = {
+  slug: 'media',
+  access: openAccess,
+  upload: { staticDir: path.join(os.tmpdir(), 'frogbot-plugin-comments-int') },
+  fields: [],
+};
+
+const Deals: CollectionConfig = {
+  slug: 'deals',
+  versions: true,
+  access: {
+    ...openAccess,
+    read: ({ req }) => Boolean(req.user && req.user.email !== 'blocked@frogbot.local'),
+  },
+  fields: [
+    { name: 'name', type: 'text' },
+    commentsField({
+      editor: lexicalEditor({ features: [...commentFeatures(), UploadFeature()] }),
+    }),
+  ],
+};
+
+const Tasks: CollectionConfig = {
+  slug: 'tasks',
+  access: openAccess,
+  fields: [{ name: 'title', type: 'text' }],
+};
+
+const Notes: CollectionConfig = {
+  slug: 'notes',
+  access: {
+    ...openAccess,
+    read: ({ req }) => (req.user ? { owner: { equals: req.user.id } } : false),
+  },
+  fields: [
+    { name: 'title', type: 'text' },
+    { name: 'owner', type: 'relationship', relationTo: 'users' },
+  ],
+};
+
+export default await buildTestConfig({
+  ...(getCurrentDatabaseAdapter() === 'sqlite'
+    ? {
+        db: sqliteAdapter({
+          client: {
+            url: process.env.SQLITE_URL || process.env.DATABASE_URL || 'file:./test-payload.db',
+          },
+          transactionOptions: {},
+        }),
+      }
+    : {}),
+  editor: lexicalEditor(),
+  admin: { user: 'users' },
+  collections: [Users, Customers, Media, Deals, Tasks, Notes],
+  plugins: [
+    auditLogPlugin({ collections: ['deals'] }),
+    commentsPlugin({ collections: ['tasks', 'notes'] }),
+  ],
+});

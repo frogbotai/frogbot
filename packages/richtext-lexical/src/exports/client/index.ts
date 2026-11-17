@@ -1,3 +1,5 @@
+export { MentionFeatureClient } from '../../features/mention/client/index.js';
+export { $createMentionNode, $isMentionNode, MentionNode } from '../../features/mention/node.js';
 export type {
   DefaultNodeTypes,
   DefaultTypedEditorState,

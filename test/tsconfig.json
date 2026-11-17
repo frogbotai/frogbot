@@ -45,6 +45,7 @@
     "hooks-access",
     "kv",
     "list-grouping",
+    "plugin-comments",
     "plugin-dojo",
     "plugin-ai-evals",
     "plugin-forms",
