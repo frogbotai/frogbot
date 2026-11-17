@@ -502,6 +502,20 @@ describe('chat writes: a chat is written only from its home', () => {
       expect(await storedMessages(chat)).toEqual([]);
     });
 
+    it('POST /api/messages refuses a message whose chat is not an ID', async () => {
+      const chat = await createWebChat(owner);
+
+      const response = await request(
+        'POST',
+        `/${messagesSlug}`,
+        { ...restMessage(chat, 'rest-malformed-chat'), chat: Number(chat.id) + 0.5 },
+        stranger.headers,
+      );
+
+      expect(response.status).toBe(403);
+      expect(await storedMessages(chat)).toEqual([]);
+    });
+
     it('POST /api/messages still writes into the caller’s own web chat', async () => {
       const chat = await createWebChat(owner);
 
