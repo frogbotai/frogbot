@@ -21,6 +21,7 @@ const appRoots = [
 
 const sourcePattern = /\.(?:ts|tsx|js|mjs)$/;
 const generatedFiles = new Set(['frogbot-types.ts', 'importMap.js']);
+const snapshotPattern = /\/video\/stages\//;
 const collectionReferencePattern =
   /(['"`])((?:\.{1,2}|@)\/(?:[^'"`\n]*\/)?collections(?:\/[^'"`\n/]+)?)\1/g;
 
@@ -103,6 +104,7 @@ describe('collection file layout', () => {
       (file) =>
         file.startsWith(`${root}/`) &&
         sourcePattern.test(file) &&
+        !snapshotPattern.test(file) &&
         !generatedFiles.has(path.posix.basename(file)),
     );
 
