@@ -36,7 +36,7 @@
 
 **Define agents, tools, integrations, and your entire data layer in one config — FrogBot turns it into a sleek production UI, database, and backend.**
 
-FrogBot is the fastest way to vibe code production-grade applications in the AI era. Prompting an AI from scratch produces 15,000 lines of fragile glue code for auth, tables, permissions, and background queues. FrogBot gives your coding agent established, declarative building blocks in one MIT codebase you own forever.
+FrogBot is the fastest way to vibe code production-grade applications in the AI era. Prompting an AI from scratch has it rebuild auth, tables, permissions, and background queues every time, in about 15,000 lines of fragile code. FrogBot gives your coding agent established, declarative building blocks in one MIT codebase you own forever.
 
 ## Start with a coding agent
 
