@@ -82,7 +82,16 @@ A user who loses both their authenticator and their recovery codes needs an admi
 
 ## Endpoints
 
-All live under `/api/<collection>` and answer errors as `{ errors: [{ message }] }`.
+All live under `/api/<collection>` and answer errors as `{ errors: [{ message }] }`. A refused code, here and on `/two-factor/verify` and `/two-factor/setup`, also carries `data.code`, so a client branches on that rather than the message:
+
+| `data.code` | Status | Means |
+| --- | --- | --- |
+| `wrong_code` | `401` | The code didn't match. On `verify`, `recovery-codes` and `disable` it counts toward the lock; on `setup` and `enable` it doesn't. |
+| `locked` | `429` | Five wrong codes locked code entry. `Retry-After` gives the seconds left. |
+| `code_missing` | `400` | `code` is missing, empty, or not a string or a whole number of up to six digits. It doesn't count. |
+| `body_unreadable` | `400` | The body isn't a JSON object or a URL-encoded form. It doesn't count. |
+| `pending_missing` | `400` | The request didn't send the pending sign-in cookie. |
+| `expired` | `400` | The pending sign-in, or the start of turning it on, expired or was used. Sign in, or start, again. |
 
 | Endpoint | Body | Answer |
 | --- | --- | --- |

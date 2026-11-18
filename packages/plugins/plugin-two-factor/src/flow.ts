@@ -1,7 +1,16 @@
 import { type Endpoint, finishSignIn, type FrogBotRequest } from 'frogbot';
 import QRCode from 'qrcode';
 
-import { readCode, verifyNewSecret, withStoredCode } from './codes.js';
+import {
+  codeRefusal,
+  EXPIRED,
+  readCode,
+  type Refusal,
+  refusalResponse,
+  verifyNewSecret,
+  withStoredCode,
+  WRONG,
+} from './codes.js';
 import {
   FIELDS,
   hasTwoFactor,
@@ -13,7 +22,6 @@ import {
   safeReturnTo,
   type TwoFactorContext,
   writeUser,
-  WRONG_CODE,
 } from './context.js';
 import { sendTwoFactorEmail } from './emails.js';
 import { withCodeLock } from './lock.js';
@@ -28,6 +36,8 @@ import {
 import {
   clearPendingCookie,
   deletePending,
+  hasPendingCookie,
+  pendingCookieName,
   type PendingSignIn,
   readPending,
   updatePending,
@@ -35,9 +45,16 @@ import {
 import { createRecoveryCodes } from './recovery.js';
 import { totpURI } from './totp.js';
 
-export const LOCKED = 'Too many wrong codes. Try again in 10 minutes.';
+const ENTER_CODE = 'Enter the code from your authenticator app.';
 
-const EXPIRED = 'This sign-in expired or was already used. Sign in again.';
+const pendingGone = (req: FrogBotRequest, slug: string): Refusal =>
+  hasPendingCookie(req, slug)
+    ? EXPIRED
+    : {
+        status: 400,
+        message: `No pending sign-in: send the \`${pendingCookieName(req, slug)}\` cookie from the sign-in response, or sign in again.`,
+        code: 'pending_missing',
+      };
 
 const wantsJSON = (req: FrogBotRequest) =>
   (req.headers.get('accept') ?? '').includes('application/json');
@@ -106,21 +123,28 @@ function fail({
   req,
   ctx,
   form,
-  status,
-  message,
+  refusal,
   body,
 }: {
   req: FrogBotRequest;
   ctx: TwoFactorContext;
   form: boolean;
-  status: number;
-  message: string;
+  refusal: Refusal;
   body?: string;
 }): Response {
-  if (!form) return jsonError(message, status);
-  if (status === 400) return expiredPage(req, ctx.slug);
+  if (!form) return refusalResponse(refusal);
+  if (refusal.code === 'expired' || refusal.code === 'pending_missing') {
+    return expiredPage(req, ctx.slug);
+  }
 
-  return renderPage({ req, slug: ctx.slug, title: 'Two-factor sign-in', body: body ?? '', status });
+  return renderPage({
+    req,
+    slug: ctx.slug,
+    title: 'Two-factor sign-in',
+    body: body ?? '',
+    status: refusal.status,
+    headers: refusal.headers,
+  });
 }
 
 async function setupBody(
@@ -151,7 +175,7 @@ export const createFlowEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
       handler: async (req) => {
         const found = await readPending(req, slug);
         const json = wantsJSON(req);
-        if (!found) return json ? jsonError(EXPIRED, 400) : expiredPage(req, slug);
+        if (!found) return json ? refusalResponse(pendingGone(req, slug)) : expiredPage(req, slug);
 
         const { pending } = found;
         const { base } = routes(req, slug);
@@ -186,14 +210,25 @@ export const createFlowEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
         const { base } = routes(req, slug);
 
         if (!found || found.pending.mode !== 'code') {
-          return fail({ req, ctx, form, status: 400, message: EXPIRED });
+          return fail({ req, ctx, form, refusal: pendingGone(req, slug) });
+        }
+
+        const { code, refused } = readCode(body);
+        if (refused) {
+          return fail({
+            req,
+            ctx,
+            form,
+            refusal: refused,
+            body: codePageBody({ base, error: ENTER_CODE }),
+          });
         }
 
         const outcome = await withStoredCode({
           req,
           ctx,
           userId: found.pending.userId,
-          code: readCode(body),
+          code,
           guard: async () => (await readPending(req, slug))?.id === found.id,
           fn: async ({ data }) => {
             await deletePending(req, slug, found.id);
@@ -203,19 +238,14 @@ export const createFlowEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
 
         if (outcome.status === 'ok') return finish({ req, ctx, pending: found.pending });
 
-        if (outcome.status === 'expired') {
-          return fail({ req, ctx, form, status: 400, message: EXPIRED });
-        }
-
-        const message = outcome.status === 'locked' ? LOCKED : WRONG_CODE;
+        const refusal = codeRefusal(outcome);
 
         return fail({
           req,
           ctx,
           form,
-          status: outcome.status === 'locked' ? 429 : 401,
-          message,
-          body: codePageBody({ base, error: message }),
+          refusal,
+          body: codePageBody({ base, error: refusal.message }),
         });
       },
     },
@@ -227,10 +257,21 @@ export const createFlowEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
         const found = await readPending(req, slug);
 
         if (!found || found.pending.mode !== 'setup' || found.pending.confirmed) {
-          return fail({ req, ctx, form, status: 400, message: EXPIRED });
+          return fail({ req, ctx, form, refusal: pendingGone(req, slug) });
         }
 
         const { id, pending } = found;
+        const { code, refused } = readCode(body);
+
+        if (refused) {
+          return fail({
+            req,
+            ctx,
+            form,
+            refusal: refused,
+            body: (await setupBody(req, ctx, pending, ENTER_CODE)).body,
+          });
+        }
 
         const outcome = await withCodeLock({
           req,
@@ -245,11 +286,7 @@ export const createFlowEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
               return 'expired' as const;
             }
 
-            const step = await verifyNewSecret({
-              req,
-              secret: pending.secret!,
-              code: readCode(body),
-            });
+            const step = await verifyNewSecret({ req, secret: pending.secret!, code });
 
             if (step === null) return 'wrong' as const;
 
@@ -275,16 +312,15 @@ export const createFlowEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
           },
         });
 
-        if (outcome === 'expired') return fail({ req, ctx, form, status: 400, message: EXPIRED });
+        if (outcome === 'expired') return fail({ req, ctx, form, refusal: EXPIRED });
 
         if (outcome === 'wrong') {
           return fail({
             req,
             ctx,
             form,
-            status: 401,
-            message: WRONG_CODE,
-            body: (await setupBody(req, ctx, pending, WRONG_CODE)).body,
+            refusal: WRONG,
+            body: (await setupBody(req, ctx, pending, WRONG.message)).body,
           });
         }
 
@@ -311,7 +347,7 @@ export const createFlowEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
         const found = await readPending(req, slug);
 
         if (!found || found.pending.mode !== 'setup' || !found.pending.confirmed) {
-          return fail({ req, ctx, form, status: 400, message: EXPIRED });
+          return fail({ req, ctx, form, refusal: pendingGone(req, slug) });
         }
 
         const consumed = await withCodeLock({
@@ -331,7 +367,7 @@ export const createFlowEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
 
         return consumed
           ? finish({ req, ctx, pending: found.pending })
-          : fail({ req, ctx, form, status: 400, message: EXPIRED });
+          : fail({ req, ctx, form, refusal: EXPIRED });
       },
     },
   ];

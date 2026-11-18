@@ -1,7 +1,14 @@
 import type { Endpoint, FrogBotRequest } from 'frogbot';
 import { combineQueries, executeAccess } from 'payload';
 
-import { readCode, verifyNewSecret, withStoredCode } from './codes.js';
+import {
+  codeRefusal,
+  readCode,
+  refusalResponse,
+  verifyNewSecret,
+  withStoredCode,
+  WRONG,
+} from './codes.js';
 import {
   CLEARED,
   FIELDS,
@@ -15,10 +22,9 @@ import {
   type TwoFactorContext,
   type TwoFactorUser,
   writeUser,
-  WRONG_CODE,
 } from './context.js';
 import { sendTwoFactorEmail } from './emails.js';
-import { LOCKED, setupDetails } from './flow.js';
+import { setupDetails } from './flow.js';
 import { clearCodeFailures, withCodeLock } from './lock.js';
 import { createRecoveryCodes } from './recovery.js';
 import { createTOTPSecret } from './totp.js';
@@ -74,10 +80,6 @@ async function findResettable(
   return readUser(req, slug, id);
 }
 
-function codeFailure(status: 'locked' | 'wrong' | 'expired'): Response {
-  return status === 'locked' ? jsonError(LOCKED, 429) : jsonError(WRONG_CODE, 401);
-}
-
 /** The signed-in endpoints under `/two-factor`: `enable/start`, `enable`, `recovery-codes`, `disable` and `reset`. */
 export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
   const { slug, options } = ctx;
@@ -119,7 +121,8 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
         const refused = await mayEnable(req, user);
         if (refused) return refused;
 
-        const { body } = await readBody(req);
+        const { code, refused: unread } = readCode((await readBody(req)).body);
+        if (unread) return refusalResponse(unread);
         const key = enablingKey(slug, user.id);
 
         const codes = await withCodeLock({
@@ -132,7 +135,7 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
               return 'expired' as const;
             }
 
-            const step = await verifyNewSecret({ req, secret, code: readCode(body) });
+            const step = await verifyNewSecret({ req, secret, code });
             if (step === null) return 'wrong' as const;
 
             const { codes, hashes } = createRecoveryCodes();
@@ -158,10 +161,10 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
         });
 
         if (codes === 'expired') {
-          return jsonError('Start turning on two-factor sign-in again.', 400);
+          return jsonError('Start turning on two-factor sign-in again.', 400, { code: 'expired' });
         }
 
-        if (codes === 'wrong') return jsonError(WRONG_CODE, 401);
+        if (codes === 'wrong') return refusalResponse(WRONG);
 
         await sendTwoFactorEmail({ req, ctx, event: 'enabled', user });
 
@@ -176,13 +179,14 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
         if (anonymous) return anonymous;
         if (!hasTwoFactor(user)) return jsonError('Two-factor sign-in is off.', 400);
 
-        const { body } = await readBody(req);
+        const { code, refused: unread } = readCode((await readBody(req)).body);
+        if (unread) return refusalResponse(unread);
 
         const outcome = await withStoredCode({
           req,
           ctx,
           userId: user.id,
-          code: readCode(body),
+          code,
           fn: async ({ data }) => {
             const { codes, hashes } = createRecoveryCodes();
 
@@ -197,7 +201,7 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
           },
         });
 
-        if (outcome.status !== 'ok') return codeFailure(outcome.status);
+        if (outcome.status !== 'ok') return refusalResponse(codeRefusal(outcome));
 
         await sendTwoFactorEmail({ req, ctx, event: 'recoveryCodesCreated', user });
 
@@ -216,17 +220,18 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
           return jsonError('Two-factor sign-in is required for this account.', 403);
         }
 
-        const { body } = await readBody(req);
+        const { code, refused: unread } = readCode((await readBody(req)).body);
+        if (unread) return refusalResponse(unread);
 
         const outcome = await withStoredCode({
           req,
           ctx,
           userId: user.id,
-          code: readCode(body),
+          code,
           fn: () => writeUser({ req, slug, id: user.id, data: CLEARED }),
         });
 
-        if (outcome.status !== 'ok') return codeFailure(outcome.status);
+        if (outcome.status !== 'ok') return refusalResponse(codeRefusal(outcome));
 
         await sendTwoFactorEmail({ req, ctx, event: 'disabled', user });
 
@@ -241,7 +246,9 @@ export const createAccountEndpoints = (ctx: TwoFactorContext): Endpoint[] => {
         if (anonymous) return anonymous;
 
         const { body } = await readBody(req);
-        const id = typeof body.id === 'string' || typeof body.id === 'number' ? body.id : undefined;
+        const id =
+          typeof body?.id === 'string' || typeof body?.id === 'number' ? body.id : undefined;
+
         if (id === undefined) return jsonError('Send the id of the user to reset.', 400);
         if (String(id) === String(admin.id)) {
           return jsonError("You can't reset your own two-factor sign-in.", 403);
