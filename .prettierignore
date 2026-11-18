@@ -18,7 +18,7 @@ tsconfig.json
 pnpm-lock.yaml
 
 # On-screen video code keeps the video script's line breaks
-examples/acme-deals/src/collections/Deals.ts
-examples/acme-deals/src/agents/dealDesk.ts
-examples/acme-deals/src/tools/deals.ts
-examples/acme-deals/video/stages
+examples/mow-money/src/collections/Jobs.ts
+examples/mow-money/src/agents/foreman.ts
+examples/mow-money/src/tools/jobs.ts
+examples/mow-money/video/stages
