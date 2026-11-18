@@ -46,3 +46,5 @@ export type { AnyTool } from '../tools/types.js';
 export { isClientTool } from '../tools/types.js';
 export type { StorageAdapterOptions, StorageAdapterProps } from '../uploads/storage.js';
 export { storageAdapter } from '../uploads/storage.js';
+export { isId } from '../utilities/isId.js';
+export { relationID } from '../utilities/relationID.js';

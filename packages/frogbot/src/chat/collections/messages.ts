@@ -1,5 +1,6 @@
-import type { Access, CollectionAccess, DocID } from '../../collections/config/types.js';
+import type { Access, CollectionAccess } from '../../collections/config/types.js';
 import type { CollectionConfig } from '../../collections/config/types.js';
+import { relationID } from '../../utilities/relationID.js';
 import { canWriteChat } from '../access/canWriteChat.js';
 import type { ChatDocument } from '../findChat.js';
 
@@ -61,9 +62,11 @@ function createAccess(chatsSlug: string): Access {
   return async ({ req, data }) => {
     if (!req.user) return false;
 
-    const chatId = relationID(data?.chat);
+    if (data?.chat == null) return true;
 
-    if (chatId === undefined) return true;
+    const chatId = relationID(data.chat);
+
+    if (chatId === null) return false;
 
     const chat = (await req.frogbot.findByID({
       collection: chatsSlug,
@@ -76,16 +79,6 @@ function createAccess(chatsSlug: string): Access {
 
     return !!chat && canWriteChat({ req, chat });
   };
-}
-
-function relationID(value: unknown): DocID | undefined {
-  if (typeof value === 'string' || typeof value === 'number') return value;
-
-  if (typeof value === 'object' && value !== null && 'id' in value) {
-    return relationID(value.id);
-  }
-
-  return undefined;
 }
 
 const readOnly = { create: () => false, update: () => false };

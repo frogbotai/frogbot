@@ -5,6 +5,7 @@ import { commitTransaction, initTransaction, killTransaction, NotFound } from 'p
 import type { DocID } from '../collections/config/types.js';
 import { toPayloadRequest } from '../seams/request.js';
 import type { FrogBotRequest } from '../types/request.js';
+import { relationID } from '../utilities/relationID.js';
 import { MESSAGE_USAGE_CONTEXT_KEY } from './collections/messages.js';
 import { placeholderChatTitle } from './title.js';
 import { repairInterruptedParts } from './turn/messages.js';
@@ -36,10 +37,6 @@ type MessageDocument = {
   usage?: unknown;
   createdAt: string;
 };
-
-function relationID(value: { id: DocID } | DocID | null | undefined): DocID | null {
-  return typeof value === 'object' && value !== null ? value.id : (value ?? null);
-}
 
 function duplicateBase(title: string): string {
   return title.replace(/ \((\d+)\)$/, '').trim();

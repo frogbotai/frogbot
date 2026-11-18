@@ -1,4 +1,5 @@
 import { APIError, type FrogBotRequest } from 'frogbot';
+import { relationID } from 'frogbot/internal';
 
 import { createFormLinkContext, createFormSubmission } from '../access.js';
 import { withLock } from '../closing.js';
@@ -14,7 +15,7 @@ const TOKEN_MAX_LENGTH = 256;
 export type ResolvedLink = { link: FormLinkDocument; context: FormLinkContext };
 
 function formId(link: FormLinkDocument): string {
-  return String(typeof link.form === 'object' ? link.form.id : link.form);
+  return String(relationID(link.form));
 }
 
 /** True when the link opens this form's record right now. */

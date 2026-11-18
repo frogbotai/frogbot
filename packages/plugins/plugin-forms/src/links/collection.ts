@@ -1,4 +1,5 @@
 import type { CollectionConfig, FieldHook } from 'frogbot';
+import { isId } from 'frogbot/internal';
 import { APIError, Forbidden } from 'payload';
 
 import type { FormLinkDocument, FormLinkDuration, FormLinkStatus } from '../types.js';
@@ -43,10 +44,6 @@ const readStatus: FieldHook = async ({ originalDoc, req, siblingData }) => {
 
   return linkStatus(row as FormLinkDocument);
 };
-
-function isId(value: unknown): value is number | string {
-  return typeof value === 'number' || (typeof value === 'string' && value !== '');
-}
 
 export function createFormLinksCollection({
   targets,

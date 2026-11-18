@@ -1,4 +1,5 @@
 import type { CollectionConfig } from '../collections/config/types.js';
+import { relationID } from '../utilities/relationID.js';
 
 export function defaultConnectionsCollection({
   slug,
@@ -51,12 +52,9 @@ export function defaultConnectionsCollection({
         hooks: {
           beforeValidate: [
             ({ siblingData }) => {
-              const owner = siblingData?.owner;
-              const id = owner && typeof owner === 'object' ? owner.id : owner;
+              const id = relationID(siblingData?.owner);
 
-              return id != null && id !== ''
-                ? `user:${String(id)}`
-                : `app:${siblingData?.app ?? ''}`;
+              return id !== null ? `user:${String(id)}` : `app:${siblingData?.app ?? ''}`;
             },
           ],
         },
