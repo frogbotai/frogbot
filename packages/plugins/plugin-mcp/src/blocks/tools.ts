@@ -7,7 +7,7 @@ import type { SanitizedCollectionConfig, SanitizedConfig } from 'payload';
 import { ValidationError } from 'payload';
 import { z } from 'zod';
 
-import type { BlockData, BlockList, BlockSpot } from './tree.js';
+import type { BlockData, BlockList, BlockSpot, FieldLink } from './tree.js';
 import {
   blockSpots,
   blockTitle,
@@ -75,7 +75,6 @@ type Loaded = {
   doc: Record<string, unknown>;
   lists: BlockList[];
   all: BlockList[];
-  hidden: Set<string>;
   input: Target;
 };
 
@@ -221,7 +220,7 @@ export function blockTools(options: BlockToolsOptions = {}): AnyTool[] {
           throw new Error("A block can't move inside itself.");
         }
 
-        const field = input.field === undefined ? undefined : resolve(loaded, input.field);
+        const field = input.field === undefined ? undefined : await resolve(loaded, input.field);
 
         from.list.rows.splice(from.index, 1);
 
@@ -245,7 +244,7 @@ export function blockTools(options: BlockToolsOptions = {}): AnyTool[] {
         const { saved } = await persist(loaded, [list]);
         const left = blockSpots(blockListsOf(loaded, saved), removed?.id ?? '');
 
-        if (left.length && (await may(loaded, list, 'read'))) throw notSaved(list.path);
+        if (left.length && (await may(loaded, list.chain, 'read'))) throw notSaved(list.path);
 
         return {
           removed: { path: list.path, index, id: removed?.id, blockType: removed?.blockType },
@@ -341,9 +340,7 @@ async function load({
     ? readable(all, collectBlockLists(checked, collection.flattenedFields, config))
     : all;
 
-  const hidden = new Set(all.filter((list) => !lists.includes(list)).map(({ path }) => path));
-
-  return { collection, config, ctx, doc, lists, all, hidden, input };
+  return { collection, config, ctx, doc, lists, all, input };
 }
 
 function readable(all: BlockList[], seen: BlockList[]): BlockList[] {
@@ -392,21 +389,26 @@ function assertMovable(loaded: Loaded, from: BlockList, row: BlockData): void {
   }
 }
 
-async function may(loaded: Loaded, list: BlockList, operation: 'read' | 'update') {
+async function may(
+  loaded: Loaded,
+  chain: FieldLink[],
+  operation: 'read' | 'update',
+  sent?: Record<string, unknown>,
+) {
   const { collection, ctx, doc } = loaded;
 
   if (ctx.overrideAccess) return true;
 
-  for (const { field, siblingData, blockData } of list.chain) {
+  for (const { field, siblingData, blockData } of chain) {
     const access = field.access?.[operation];
     const args = {
       id: doc.id as number | string,
       blockData,
       collection,
-      data: doc,
+      data: sent ?? doc,
       doc,
       req: toPayloadRequest(ctx.req),
-      siblingData,
+      siblingData: sent && siblingData === doc ? sent : siblingData,
     };
 
     if (access && !(await access(args))) return false;
@@ -432,8 +434,8 @@ async function save(loaded: Loaded, lists: BlockList[], spot: BlockSpot) {
 
   if (found.length === 1 && hit && hit.list.path === where.path && hit.index === where.index) {
     result = describe(hit);
-  } else if (!hit && !(await may(loaded, spot.list, 'read'))) {
-    result = where;
+  } else if (!hit && !(await may(loaded, spot.list.chain, 'read'))) {
+    result = { path: where.path };
   } else {
     throw notSaved(where.path);
   }
@@ -443,19 +445,18 @@ async function save(loaded: Loaded, lists: BlockList[], spot: BlockSpot) {
 
 async function persist(loaded: Loaded, lists: BlockList[]) {
   const { collection, ctx, doc, input } = loaded;
-
-  for (const list of new Set(lists)) {
-    if (!(await may(loaded, list, 'update'))) {
-      throw new Error(`You can't edit the blocks in ${list.path}.`);
-    }
-  }
-
   const keys = new Set(lists.map(({ path }) => path.split('.')[0]));
   const data: Record<string, unknown> = Object.fromEntries([...keys].map((key) => [key, doc[key]]));
 
   const draft = hasDrafts(collection) ? (input.draft ?? true) : undefined;
 
   if (draft === false) data._status = 'published';
+
+  for (const list of new Set(lists)) {
+    if (!(await may(loaded, list.chain, 'update', data))) {
+      throw new Error(`You can't edit the blocks in ${list.path}.`);
+    }
+  }
 
   const saved = (await ctx.frogbot.update({
     collection: collection.slug,
@@ -496,15 +497,19 @@ async function place(
   let spot: BlockSpot;
 
   if (anchor === undefined) {
-    const list = field ?? resolve(loaded, input.field as string);
+    const list = field ?? (await resolve(loaded, input.field as string));
     const index = input.index ?? list.rows.length;
 
-    if (index > list.rows.length) {
-      const count = (await may(loaded, list, 'read'))
-        ? `, which has ${list.rows.length} blocks`
-        : '';
+    if (input.index !== undefined && !(await may(loaded, list.chain, 'read'))) {
+      throw new Error(
+        `You can't read ${list.path}, so you can't pick an index in it. Leave index out to add at the end.`,
+      );
+    }
 
-      throw new Error(`index ${index} is past the end of ${list.path}${count}.`);
+    if (index > list.rows.length) {
+      throw new Error(
+        `index ${index} is past the end of ${list.path}, which has ${list.rows.length} blocks.`,
+      );
     }
 
     spot = { list, index };
@@ -527,10 +532,10 @@ async function place(
   return spot;
 }
 
-function resolve(loaded: Loaded, path: string): BlockList {
+async function resolve(loaded: Loaded, path: string): Promise<BlockList> {
   const list = resolveBlockList(loaded.doc, loaded.collection.flattenedFields, path, loaded.config);
 
-  if (loaded.hidden.has(list.path)) {
+  if (!(await may(loaded, list.chain.slice(0, -1), 'read'))) {
     throw new Error(`'${path}' is not a blocks field. Call listBlocks to see the fields' paths.`);
   }
 

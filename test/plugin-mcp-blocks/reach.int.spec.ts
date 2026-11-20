@@ -225,7 +225,7 @@ describe('block tools and blocks fields the caller may not update or read', () =
     expect(ids(after.vault)).toEqual(['v0', 'm1']);
   });
 
-  it('checks update access that reads a sibling field against what the save sends', async () => {
+  it('never loses a block in a field whose update access reads a sibling field', async () => {
     const into = await page({ flag: true, body: [{ id: 'm1', blockType: 'tile', label: 'In' }] });
     const outOf = await page({
       flag: true,
@@ -235,23 +235,12 @@ describe('block tools and blocks fields the caller may not update or read', () =
     const movedIn = await member('moveBlock', { ...target(into), blockId: 'm1', field: 'flagged' });
     const movedOut = await member('moveBlock', { ...target(outOf), blockId: 'f1', field: 'body' });
 
-    expect(movedIn.isError).toBe(false);
-    expect(movedOut.isError).toBe(false);
-
     const a = await stored('pages', into);
     const b = await stored('pages', outOf);
 
-    expect([ids(a.body), ids(a.flagged)]).toEqual([[], ['m1']]);
-    expect([ids(b.body), ids(b.flagged)]).toEqual([['f1'], []]);
-  });
-
-  it('never loses a block when update access that reads a sibling field refuses', async () => {
-    const id = await page({ flag: false, body: [{ id: 'm1', blockType: 'tile', label: 'In' }] });
-
-    const moved = await member('moveBlock', { ...target(id), blockId: 'm1', field: 'flagged' });
-    const after = await stored('pages', id);
-
-    expect(moved).toMatchObject({ isError: true });
-    expect([ids(after.body), ids(after.flagged)]).toEqual([['m1'], []]);
+    expect([movedIn.isError, movedOut.isError]).toEqual([true, true]);
+    expect(movedIn.text).toContain("can't edit the blocks in flagged");
+    expect([ids(a.body), ids(a.flagged)]).toEqual([['m1'], []]);
+    expect([ids(b.body), ids(b.flagged)]).toEqual([[], ['f1']]);
   });
 });
