@@ -376,7 +376,7 @@ export interface Folder {
  */
 export interface User {
   id: number;
-  name?: string | null;
+  name: string;
   /**
    * Leave empty to allow all models.
    */
