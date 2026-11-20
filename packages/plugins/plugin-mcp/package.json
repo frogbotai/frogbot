@@ -32,7 +32,8 @@
     "node": ">=24.22.3"
   },
   "dependencies": {
-    "@payloadcms/plugin-mcp": "catalog:"
+    "@payloadcms/plugin-mcp": "catalog:",
+    "zod": "^4.3.6"
   },
   "peerDependencies": {
     "@frogbotai/plugin-api-keys": "workspace:*",

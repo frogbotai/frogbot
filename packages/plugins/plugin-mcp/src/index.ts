@@ -7,6 +7,8 @@ import { authorizeMcp } from './access.js';
 import type { AUTH_TOOLS, COLLECTION_TOOLS, McpTool } from './tools.js';
 import { toPayloadTools } from './tools.js';
 
+export type { BlockToolsOptions } from './blocks/tools.js';
+export { blockTools } from './blocks/tools.js';
 export type { McpTool } from './tools.js';
 export { definePrompt } from '@payloadcms/plugin-mcp';
 
