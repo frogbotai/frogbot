@@ -73,6 +73,7 @@ export interface Config {
     locked: Locked;
     unlisted: Unlisted;
     plain: Plain;
+    grouped: Grouped;
     'api-keys': ApiKey;
     'frogbot-waitpoints': FrogBotWaitpoint;
   };
@@ -84,6 +85,7 @@ export interface Config {
     locked: LockedSelect;
     unlisted: UnlistedSelect;
     plain: PlainSelect;
+    grouped: GroupedSelect;
     'api-keys': ApiKeysSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
   };
@@ -313,6 +315,29 @@ export interface Unlisted {
 export interface Plain {
   id: number;
   title?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "grouped".
+ */
+export interface Grouped {
+  id: number;
+  content?: {
+    layout?: Heading[] | null;
+  };
+  seo?: {
+    extra?: Quote[] | null;
+  };
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -598,6 +623,54 @@ export interface PlainSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "grouped_select".
+ */
+export interface GroupedSelect {
+  content?:
+    | boolean
+    | {
+        layout?:
+          | boolean
+          | {
+              heading?:
+                | boolean
+                | {
+                    text?: boolean;
+                    secret?: boolean;
+                    style?:
+                      | boolean
+                      | {
+                          size?: boolean;
+                          color?: boolean;
+                        };
+                    id?: boolean;
+                    blockName?: boolean;
+                  };
+            };
+      };
+  seo?:
+    | boolean
+    | {
+        extra?:
+          | boolean
+          | {
+              quote?:
+                | boolean
+                | {
+                    body?: boolean;
+                    author?: boolean;
+                    id?: boolean;
+                    blockName?: boolean;
+                  };
+            };
+      };
+  createdBy?: boolean;
+  updatedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-keys_select".
  */
 export interface ApiKeysSelect {
@@ -668,6 +741,7 @@ export interface CollectionQueryWidget {
       | 'locked'
       | 'unlisted'
       | 'plain'
+      | 'grouped'
       | 'api-keys';
     where?:
       | {
@@ -698,6 +772,7 @@ export interface ActivityWidget {
           | 'locked'
           | 'unlisted'
           | 'plain'
+          | 'grouped'
           | 'api-keys'
         )[]
       | null;

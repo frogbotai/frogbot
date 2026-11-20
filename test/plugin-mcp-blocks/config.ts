@@ -12,6 +12,7 @@ export const notesSlug = 'notes';
 export const lockedSlug = 'locked';
 export const unlistedSlug = 'unlisted';
 export const plainSlug = 'plain';
+export const groupedSlug = 'grouped';
 export const mcpEndpoint = '/api/mcp';
 export const apiKeyToken = `fb_${'A'.repeat(43)}`;
 export const testCredentials = { email: 'blocks-owner@frogbot.local', password: 'frogbot-test' };
@@ -89,6 +90,22 @@ const Unlisted: CollectionConfig = {
   fields: [{ name: 'body', type: 'blocks', blocks: [heading] }],
 };
 
+const Grouped: CollectionConfig = {
+  slug: groupedSlug,
+  access: openAccess,
+  fields: [
+    {
+      name: 'content',
+      type: 'group',
+      fields: [{ name: 'layout', type: 'blocks', blocks: [heading] }],
+    },
+    {
+      type: 'tabs',
+      tabs: [{ name: 'seo', fields: [{ name: 'extra', type: 'blocks', blocks: [quote] }] }],
+    },
+  ],
+};
+
 const Plain: CollectionConfig = {
   slug: plainSlug,
   access: openAccess,
@@ -97,7 +114,7 @@ const Plain: CollectionConfig = {
 
 export default await buildTestConfig({
   admin: { user: usersSlug },
-  collections: [Users, Pages, Notes, Locked, Unlisted, Plain],
+  collections: [Users, Pages, Notes, Locked, Unlisted, Plain, Grouped],
   localization: { locales: ['en', 'es'], defaultLocale: 'en' },
   plugins: [
     rolesPlugin(),

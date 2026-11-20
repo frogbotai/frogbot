@@ -10,6 +10,7 @@ import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import {
   apiKeysSlug,
   apiKeyToken,
+  groupedSlug,
   lockedSlug,
   mcpEndpoint,
   notesSlug,
@@ -459,6 +460,27 @@ describe('MCP block tools', () => {
       data: { removed: { path: 'layout', index: 2, id: 'c1', blockType: 'columns' } },
     });
     expect(ids((await draftPage()).layout)).toEqual(['h1', 'q1']);
+  });
+
+  it('edits blocks fields inside a group and a named tab, even when they are empty', async () => {
+    const doc = await booted.frogbot.create({
+      collection: groupedSlug,
+      data: { content: { layout: [{ id: 'g1', blockType: 'heading', text: 'G' }] } },
+      overrideAccess: true,
+    });
+
+    const target = { collection: groupedSlug, id: doc.id };
+    const outline = await call('listBlocks', target);
+
+    expect(outline.isError).toBe(false);
+    expect((outline.data as Outline).fields.map(({ path }) => path)).toContain('content.layout');
+    expect(
+      await call('insertBlock', {
+        ...target,
+        field: 'seo.extra',
+        block: { blockType: 'quote', id: 'e1' },
+      }),
+    ).toMatchObject({ isError: false, data: { path: 'seo.extra', index: 0 } });
   });
 
   it("runs under the key owner's access: a collection they can read but not update can't be edited", async () => {
