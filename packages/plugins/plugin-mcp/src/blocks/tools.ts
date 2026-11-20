@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 
 import type { Tool, ToolCtx } from 'frogbot';
 import type { AnyTool } from 'frogbot/internal';
-import { getPayloadConfig, isInternalCollection } from 'frogbot/internal';
+import { getPayloadConfig, isInternalCollection, toPayloadRequest } from 'frogbot/internal';
 import type { SanitizedCollectionConfig, SanitizedConfig } from 'payload';
 import { ValidationError } from 'payload';
 import { z } from 'zod';
@@ -155,7 +155,7 @@ export function blockTools(options: BlockToolsOptions = {}): AnyTool[] {
 
         claimIds(blockIds(row), takenIds(loaded));
 
-        const spot = place(loaded, lists, input, row);
+        const spot = await place(loaded, lists, input, row);
 
         return save(loaded, [spot.list], spot);
       }),
@@ -183,13 +183,15 @@ export function blockTools(options: BlockToolsOptions = {}): AnyTool[] {
         const row = list.rows[index];
         const fields = blockOf(loaded, list, row)?.flattenedFields ?? [];
 
-        claimIds(blockIds(input.data), takenIds(loaded, new Set(blockIds(row))));
-
-        list.rows[index] = {
+        const merged: BlockData = {
           ...mergePatch(row, input.data, fields),
           id: row.id,
           blockType: row.blockType,
         };
+
+        claimIds(nestedIds(merged), takenIds(loaded, new Set(nestedIds(row))));
+
+        list.rows[index] = merged;
 
         return save(loaded, [list], { list, index });
       }),
@@ -223,7 +225,7 @@ export function blockTools(options: BlockToolsOptions = {}): AnyTool[] {
 
         from.list.rows.splice(from.index, 1);
 
-        const spot = place(loaded, lists, input, row, field);
+        const spot = await place(loaded, lists, input, row, field);
 
         if (spot.list.rows !== from.list.rows) assertMovable(loaded, from.list, row);
 
@@ -240,8 +242,10 @@ export function blockTools(options: BlockToolsOptions = {}): AnyTool[] {
       edit(input, ctx, async ({ lists, loaded }) => {
         const { list, index } = findBlock(lists, input.blockId);
         const [removed] = list.rows.splice(index, 1);
+        const { saved } = await persist(loaded, [list]);
+        const left = blockSpots(blockListsOf(loaded, saved), removed?.id ?? '');
 
-        await save(loaded, [list]);
+        if (left.length && (await may(loaded, list, 'read'))) throw notSaved(list.path);
 
         return {
           removed: { path: list.path, index, id: removed?.id, blockType: removed?.blockType },
@@ -388,8 +392,64 @@ function assertMovable(loaded: Loaded, from: BlockList, row: BlockData): void {
   }
 }
 
-async function save(loaded: Loaded, lists: BlockList[], spot?: BlockSpot) {
+async function may(loaded: Loaded, list: BlockList, operation: 'read' | 'update') {
+  const { collection, ctx, doc } = loaded;
+
+  if (ctx.overrideAccess) return true;
+
+  for (const { field, siblingData, blockData } of list.chain) {
+    const access = field.access?.[operation];
+    const args = {
+      id: doc.id as number | string,
+      blockData,
+      collection,
+      data: doc,
+      doc,
+      req: toPayloadRequest(ctx.req),
+      siblingData,
+    };
+
+    if (access && !(await access(args))) return false;
+  }
+
+  return true;
+}
+
+function notSaved(path: string): Error {
+  return new Error(`The change to ${path} didn't save. Call listBlocks to see the document now.`);
+}
+
+function blockListsOf(loaded: Loaded, doc: Record<string, unknown>): BlockList[] {
+  return collectBlockLists(doc, loaded.collection.flattenedFields, loaded.config);
+}
+
+async function save(loaded: Loaded, lists: BlockList[], spot: BlockSpot) {
+  const { saved, draft } = await persist(loaded, lists);
+  const where = placed(loaded, spot);
+  const found = blockSpots(blockListsOf(loaded, saved), spot.list.rows[spot.index]?.id ?? '');
+  const [hit] = found;
+  let result: Record<string, unknown>;
+
+  if (found.length === 1 && hit && hit.list.path === where.path && hit.index === where.index) {
+    result = describe(hit);
+  } else if (!hit && !(await may(loaded, spot.list, 'read'))) {
+    result = where;
+  } else {
+    throw notSaved(where.path);
+  }
+
+  return draft === undefined ? result : { ...result, draft };
+}
+
+async function persist(loaded: Loaded, lists: BlockList[]) {
   const { collection, ctx, doc, input } = loaded;
+
+  for (const list of new Set(lists)) {
+    if (!(await may(loaded, list, 'update'))) {
+      throw new Error(`You can't edit the blocks in ${list.path}.`);
+    }
+  }
+
   const keys = new Set(lists.map(({ path }) => path.split('.')[0]));
   const data: Record<string, unknown> = Object.fromEntries([...keys].map((key) => [key, doc[key]]));
 
@@ -408,34 +468,22 @@ async function save(loaded: Loaded, lists: BlockList[], spot?: BlockSpot) {
     req: ctx.req,
   })) as Record<string, unknown>;
 
-  if (!spot) return undefined;
-
-  const row = spot.list.rows[spot.index];
-  const [found] = blockSpots(
-    collectBlockLists(saved, collection.flattenedFields, loaded.config),
-    row?.id ?? '',
-  );
-
-  const result = found ? describe(found) : placed(loaded, spot);
-
-  return draft === undefined ? result : { ...result, draft };
+  return { saved, draft };
 }
 
 function placed(loaded: Loaded, { list, index }: BlockSpot) {
-  const now = collectBlockLists(loaded.doc, loaded.collection.flattenedFields, loaded.config).find(
-    ({ rows }) => rows === list.rows,
-  );
+  const now = blockListsOf(loaded, loaded.doc).find(({ rows }) => rows === list.rows);
 
   return { path: now?.path ?? list.path, index };
 }
 
-function place(
+async function place(
   loaded: Loaded,
   lists: BlockList[],
   input: Position,
   row: BlockData,
   field?: BlockList,
-): BlockSpot {
+): Promise<BlockSpot> {
   const given = [input.field, input.before, input.after].filter((value) => value !== undefined);
 
   if (given.length !== 1) throw new Error('Pass exactly one of field, before or after.');
@@ -452,9 +500,11 @@ function place(
     const index = input.index ?? list.rows.length;
 
     if (index > list.rows.length) {
-      throw new Error(
-        `index ${index} is past the end of ${list.path}, which has ${list.rows.length} blocks.`,
-      );
+      const count = (await may(loaded, list, 'read'))
+        ? `, which has ${list.rows.length} blocks`
+        : '';
+
+      throw new Error(`index ${index} is past the end of ${list.path}${count}.`);
     }
 
     spot = { list, index };
@@ -503,6 +553,10 @@ function blockIds(value: unknown): string[] {
   const own = typeof value.blockType === 'string' && value.id != null ? [String(value.id)] : [];
 
   return [...own, ...Object.values(value).flatMap(blockIds)];
+}
+
+function nestedIds(row: BlockData): string[] {
+  return blockIds(Object.values(row));
 }
 
 function toID(id: number | string, type: string): number | string {
