@@ -116,7 +116,15 @@ mcpPlugin({
 
 ## Edit blocks
 
-Every collection with a [blocks field](/fields/blocks) gets six tools that edit one block at a time, so a client never rewrites a whole blocks array to change one block. Each takes the collection `slug` and the document `id`, and finds blocks by their `id`, in nested blocks fields too.
+`blockTools()` returns six tools that edit one block at a time, so a client never rewrites a whole blocks array to change one block. They're plain FrogBot tools: add them to `tools` here, or to an agent's `tools`.
+
+```ts
+import { blockTools, mcpPlugin } from '@frogbotai/plugin-mcp'
+
+mcpPlugin({ tools: [...blockTools({ collections: ['pages'] })] })
+```
+
+`collections` limits which collections they edit. Without it, they edit every app collection with a blocks field. Each call takes the `collection` and the document `id`, and finds blocks by their `id`, in nested blocks fields too.
 
 | Tool | Does |
 | --- | --- |
@@ -128,15 +136,14 @@ Every collection with a [blocks field](/fields/blocks) gets six tools that edit 
 | `removeBlock` | Deletes a block and the blocks inside it. |
 
 ```json
-{ "slug": "pages", "id": 12, "after": "6650f1c2e4b0a1b2c3d4e5f6", "block": { "blockType": "quote", "body": "Ship it" } }
+{ "collection": "pages", "id": 12, "after": "6650f1c2e4b0a1b2c3d4e5f6", "block": { "blockType": "quote", "body": "Ship it" } }
 ```
 
 - **Drafts.** On a collection with drafts, an edit reads the newest draft and saves a new one; pass `draft: false` to publish. Drafts skip `required` checks unless the collection sets `versions.drafts.validate`, as in the admin.
-- **Checks.** A block type the field doesn't accept, a missing block or anchor, or an index past the end is refused before anything is saved. Each save goes through the collection's hooks and validation, and a failed one returns each error with its path, such as `layout.2.text`.
-- **Access.** The reading tools need read access to the collection, the editing ones update access, and every call runs as the signed-in user. An edit keeps the fields the user can't see, such as `hidden` ones, on the block, even when it moves to another field, and no response includes them.
+- **Checks.** A block type the field doesn't accept, a missing block or anchor, a block id already in the document, or an index past the end is refused before anything is saved. Each save goes through the collection's hooks and validation, and a failed one returns each error with its path, such as `layout.2.text`.
+- **Access.** Every call runs with the caller's access (`ctx.overrideAccess`), so over MCP the signed-in user needs read access to list and update access to edit. An edit keeps the fields the caller can't see, such as `hidden` ones, on the block, even when it moves to another field, and no response includes them.
 - **Localized fields.** Pass `locale` to read and edit one locale. A locale with no blocks reads as empty, not as the fallback locale's blocks.
 - **Edits at once.** Each edit reads the document, changes it and saves it back. Two edits to the same document at the same moment can lose one, as two people saving in the admin can, so send a document's edits one after another.
-- **Turning them off.** `tools: { insertBlock: false }` on a collection removes one tool. `find: false` removes `listBlocks` and `getBlock`, and `update: false` removes the four editing tools.
 
 ## Tools
 
@@ -175,7 +182,7 @@ mcpPlugin({ tools: [lookupTicket, slack] })
 - **Errors.** A thrown error becomes an error result with its message; the server keeps serving.
 - **Annotations.** A tool's [`annotations`](/agents/overview#tool-options), such as `{ destructiveHint: true }`, are sent unchanged in `tools/list`, so a client can ask before a destructive call. A piece action's `idempotent` flag is sent as `idempotentHint`. To change a piece's hints, spread its tool: `{ ...slack.sendChannelMessage, annotations: { openWorldHint: true } }`.
 - **Approval.** Nobody can approve a call over MCP, so a tool whose [`approval`](/chat/tool-approval) asks returns an error result, `Not run: this tool needs a person's approval, and nobody can approve it in this run.`, without running.
-- **Refused.** `mcpPlugin` throws for a client tool such as `question`, a duplicate slug, a slug that a built-in tool already uses (`getConfigInfo`, `findDocuments`, `login`, `insertBlock` and the rest), or an input schema that isn't an object or can't be written as JSON Schema (such as `z.date()`), since one such schema would break `tools/list` for every tool.
+- **Refused.** `mcpPlugin` throws for a client tool such as `question`, a duplicate slug, a slug that a built-in tool already uses (`getConfigInfo`, `findDocuments`, `login` and the rest), or an input schema that isn't an object or can't be written as JSON Schema (such as `z.date()`), since one such schema would break `tools/list` for every tool.
 
 <Warning>
 Piece tools resolve credentials as they do in an agent: a piece without `auth` in its config, like `slack` above, acts with the signed-in user's [connected account](/connections/overview). Tools that need a chat, such as `write_todos` and `read_todos`, always fail over MCP.
@@ -191,7 +198,7 @@ FrogBot handles authorization itself, so there's no option to replace it.
 
 | Option | Type | Description |
 | --- | --- | --- |
-| `collections` | `object` | Map keyed by collection slug: `description`, `tools` (turn built-in and block tools off with `false`, reword built-in tools, or turn on auth tools with `true`) and `overrideResponse`. |
+| `collections` | `object` | Map keyed by collection slug: `description`, `tools` (turn built-in tools off with `false`, reword them, or turn on auth tools with `true`) and `overrideResponse`. |
 | `tools` | `array` | FrogBot tools, piece actions and piece instances to serve. See [Tools](#tools). |
 | `resourceMetadataURL` | `string` | Absolute `http(s)` URL of your OAuth protected resource metadata, sent on every `401` as `WWW-Authenticate: Bearer resource_metadata="<url>"`. Anything else, or a URL containing `"` or `\`, throws at startup. See [Sign in with your own OAuth server](#sign-in-with-your-own-oauth-server). |
 | `prompts` | `object` | Custom prompts, keyed by name. |

@@ -71,7 +71,7 @@ export interface Config {
     pages: Page;
     notes: Note;
     locked: Locked;
-    frozen: Frozen;
+    unlisted: Unlisted;
     plain: Plain;
     'api-keys': ApiKey;
     'frogbot-waitpoints': FrogBotWaitpoint;
@@ -82,7 +82,7 @@ export interface Config {
     pages: PagesSelect;
     notes: NotesSelect;
     locked: LockedSelect;
-    frozen: FrozenSelect;
+    unlisted: UnlistedSelect;
     plain: PlainSelect;
     'api-keys': ApiKeysSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
@@ -290,9 +290,9 @@ export interface Locked {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "frozen".
+ * via the `definition` "unlisted".
  */
-export interface Frozen {
+export interface Unlisted {
   id: number;
   body?: Heading[] | null;
   createdBy?: {
@@ -559,9 +559,9 @@ export interface LockedSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "frozen_select".
+ * via the `definition` "unlisted_select".
  */
-export interface FrozenSelect {
+export interface UnlistedSelect {
   body?:
     | boolean
     | {
@@ -662,7 +662,13 @@ export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
     relatedCollection:
-      'users' | 'pages' | 'notes' | 'locked' | 'frozen' | 'plain' | 'api-keys';
+      | 'users'
+      | 'pages'
+      | 'notes'
+      | 'locked'
+      | 'unlisted'
+      | 'plain'
+      | 'api-keys';
     where?:
       | {
           [k: string]: unknown;
@@ -690,7 +696,7 @@ export interface ActivityWidget {
           | 'pages'
           | 'notes'
           | 'locked'
-          | 'frozen'
+          | 'unlisted'
           | 'plain'
           | 'api-keys'
         )[]

@@ -1,5 +1,5 @@
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
-import { mcpPlugin } from '@frogbotai/plugin-mcp';
+import { blockTools, mcpPlugin } from '@frogbotai/plugin-mcp';
 import { rolesPlugin } from '@frogbotai/plugin-roles';
 import type { Block, CollectionConfig } from 'frogbot';
 
@@ -10,7 +10,7 @@ export const apiKeysSlug = 'api-keys';
 export const pagesSlug = 'pages';
 export const notesSlug = 'notes';
 export const lockedSlug = 'locked';
-export const frozenSlug = 'frozen';
+export const unlistedSlug = 'unlisted';
 export const plainSlug = 'plain';
 export const mcpEndpoint = '/api/mcp';
 export const apiKeyToken = `fb_${'A'.repeat(43)}`;
@@ -83,8 +83,8 @@ const Locked: CollectionConfig = {
   fields: [{ name: 'body', type: 'blocks', blocks: [heading] }],
 };
 
-const Frozen: CollectionConfig = {
-  slug: frozenSlug,
+const Unlisted: CollectionConfig = {
+  slug: unlistedSlug,
   access: openAccess,
   fields: [{ name: 'body', type: 'blocks', blocks: [heading] }],
 };
@@ -97,11 +97,15 @@ const Plain: CollectionConfig = {
 
 export default await buildTestConfig({
   admin: { user: usersSlug },
-  collections: [Users, Pages, Notes, Locked, Frozen, Plain],
+  collections: [Users, Pages, Notes, Locked, Unlisted, Plain],
   localization: { locales: ['en', 'es'], defaultLocale: 'en' },
   plugins: [
     rolesPlugin(),
     apiKeysPlugin({ authCollection: usersSlug, collectionSlug: apiKeysSlug }),
-    mcpPlugin({ collections: { [frozenSlug]: { tools: { update: false } } } }),
+    mcpPlugin({
+      tools: blockTools({
+        collections: [pagesSlug, notesSlug, lockedSlug, plainSlug, apiKeysSlug],
+      }),
+    }),
   ],
 });

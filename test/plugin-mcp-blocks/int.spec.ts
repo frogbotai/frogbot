@@ -10,13 +10,13 @@ import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import {
   apiKeysSlug,
   apiKeyToken,
-  frozenSlug,
   lockedSlug,
   mcpEndpoint,
   notesSlug,
   pagesSlug,
   plainSlug,
   testCredentials,
+  unlistedSlug,
   usersSlug,
 } from './config.js';
 
@@ -139,7 +139,11 @@ describe('MCP block tools', () => {
     };
   }
 
-  const onPage = (args: Record<string, unknown>) => ({ slug: pagesSlug, id: pageId, ...args });
+  const onPage = (args: Record<string, unknown>) => ({
+    collection: pagesSlug,
+    id: pageId,
+    ...args,
+  });
 
   type PageData = Record<string, unknown> & { layout: Block[]; hero: Block[] };
 
@@ -237,13 +241,16 @@ describe('MCP block tools', () => {
     expect(heading.data.block).not.toHaveProperty('secret');
   });
 
-  it('a collection without blocks fields has no block tools', async () => {
-    const { isError, text } = await call('listBlocks', { slug: plainSlug, id: 1 });
+  it.each([
+    ['has no blocks fields', plainSlug],
+    ['is not in the list', unlistedSlug],
+    ["is one of FrogBot's own", apiKeysSlug],
+    ['does not exist', 'nope'],
+  ])('refuses a collection that %s', async (_name, collection) => {
+    const { isError, text } = await call('listBlocks', { collection, id: 1 });
 
     expect(isError).toBe(true);
-    expect(text).toBe(
-      `Error: MCP access to "listBlocks" is not enabled for collection "${plainSlug}"`,
-    );
+    expect(text).toBe(`The block tools can't edit the collection '${collection}'.`);
   });
 
   it('insertBlock places a block after another, saves a draft, and leaves the published page alone', async () => {
@@ -454,42 +461,28 @@ describe('MCP block tools', () => {
     expect(ids((await draftPage()).layout)).toEqual(['h1', 'q1']);
   });
 
-  it("runs under the key owner's access: a collection they can read but not update gets only the read tools", async () => {
+  it("runs under the key owner's access: a collection they can read but not update can't be edited", async () => {
     const locked = await booted.frogbot.create({
       collection: lockedSlug,
       data: { body: [{ id: 'l1', blockType: 'heading', text: 'Fixed' }] },
       overrideAccess: true,
     });
 
-    expect((await call('listBlocks', { slug: lockedSlug, id: locked.id })).isError).toBe(false);
-    expect(
-      await call('removeBlock', { slug: lockedSlug, id: locked.id, blockId: 'l1' }),
-    ).toMatchObject({
-      isError: true,
-      text: `Error: MCP access to "removeBlock" is not enabled for collection "${lockedSlug}"`,
-    });
-  });
+    const target = { collection: lockedSlug, id: locked.id };
 
-  it('a collection with update: false gets no writing block tools', async () => {
-    const frozen = await booted.frogbot.create({
-      collection: frozenSlug,
-      data: { body: [{ id: 'f1', blockType: 'heading', text: 'Cold' }] },
+    expect((await call('listBlocks', target)).isError).toBe(false);
+    expect(await call('removeBlock', { ...target, blockId: 'l1' })).toMatchObject({
+      isError: true,
+      text: 'You are not allowed to perform this action.',
+    });
+
+    const stored = await booted.frogbot.findByID({
+      collection: lockedSlug,
+      id: locked.id,
       overrideAccess: true,
     });
 
-    expect(
-      (await call('getBlock', { slug: frozenSlug, id: frozen.id, blockId: 'f1' })).isError,
-    ).toBe(false);
-    expect(
-      (
-        await call('updateBlock', {
-          slug: frozenSlug,
-          id: frozen.id,
-          blockId: 'f1',
-          data: { text: 'x' },
-        })
-      ).text,
-    ).toBe(`Error: MCP access to "updateBlock" is not enabled for collection "${frozenSlug}"`);
+    expect(stored.body?.map(({ id }) => id)).toEqual(['l1']);
   });
 
   describe('break-it', () => {
@@ -533,7 +526,7 @@ describe('MCP block tools', () => {
       });
 
       const edit = await call('updateBlock', {
-        slug: notesSlug,
+        collection: notesSlug,
         id: note.id,
         locale: 'es',
         blockId: 'n2',
@@ -567,12 +560,16 @@ describe('MCP block tools', () => {
         overrideAccess: true,
       });
 
-      const outline = await call('listBlocks', { slug: notesSlug, id: note.id, locale: 'es' });
+      const outline = await call('listBlocks', {
+        collection: notesSlug,
+        id: note.id,
+        locale: 'es',
+      });
 
       expect((outline.data as Outline).fields[0]?.blocks).toEqual([]);
 
       const insert = await call('insertBlock', {
-        slug: notesSlug,
+        collection: notesSlug,
         id: note.id,
         locale: 'es',
         field: 'body',
@@ -588,11 +585,11 @@ describe('MCP block tools', () => {
               collection: notesSlug,
               id: note.id,
               locale,
-              fallbackLocale: false,
+              fallbackLocale: 'none',
               overrideAccess: true,
             })
           ).body ?? []
-        ).map(({ body }) => body);
+        ).map((block) => ('body' in block ? block.body : null));
 
       expect(await read('en')).toEqual(['Hello']);
       expect(await read('es')).toEqual(['Hola']);
@@ -617,7 +614,7 @@ describe('MCP block tools', () => {
 
     it('a doc id that does not exist is an error, not a new document', async () => {
       const result = await call('insertBlock', {
-        slug: pagesSlug,
+        collection: pagesSlug,
         id: 999999,
         field: 'layout',
         block: { blockType: 'quote' },
