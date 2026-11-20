@@ -1,0 +1,27 @@
+---
+title: "Sign in"
+description: "Sign in to Dojo with Google in the browser, or from the terminal with a code you confirm in the browser."
+keywords: ["Dojo", "sign in", "login", "Google", "device code", "frogbot dojo login"]
+---
+
+## In the browser
+
+Open [dojo.frogbot.ai](https://dojo.frogbot.ai) and choose **Continue with Google**. Your first sign-in creates your Dojo account and your own workspace. If someone added your email to their workspace, you join it when you sign in with that email.
+
+## From the terminal
+
+```bash
+npx frogbot dojo login
+```
+
+The CLI prints a link and a short code, and opens the link in your browser. Check that the code in the browser matches the one in your terminal, then approve it. The CLI keeps the sign-in in `auth.json` and uses it for every later command.
+
+Each terminal sign-in is a [device](/dojo/api-keys#signed-in-devices) named after your computer, such as `CLI on bobs-macbook`. To sign out, run `npx frogbot dojo logout`, or revoke the device in the browser.
+
+## In scripts and CI
+
+A browser can't be opened in CI, so set `FROGBOT_DOJO_TOKEN` to a Dojo [API key](/dojo/api-keys) instead. The CLI uses it ahead of any stored sign-in, and exits with an error rather than waiting for a browser when it's missing. See [Scripts and agents](/plugins/dojo#scripts-and-agents).
+
+## Signing in to your apps
+
+Apps on Dojo get a **Continue with Dojo** button on their login page, so the people you share an app with sign in with the same Dojo account. The first time, Dojo asks them once to share their name and email with the app. See [Sign in with Dojo](/plugins/dojo#sign-in-with-dojo) for how accounts are created and how to turn the button off.
