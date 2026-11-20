@@ -2,13 +2,14 @@ import { randomBytes } from 'node:crypto';
 
 import type { Tool, ToolCtx } from 'frogbot';
 import type { AnyTool } from 'frogbot/internal';
-import { getPayloadConfig, isInternalCollection } from 'frogbot/internal';
+import { getPayloadConfig, isInternalCollection, toPayloadRequest } from 'frogbot/internal';
 import type { SanitizedCollectionConfig, SanitizedConfig } from 'payload';
 import { ValidationError } from 'payload';
 import { z } from 'zod';
 
-import type { BlockData, BlockList, BlockSpot } from './tree.js';
+import type { BlockData, BlockList, BlockSpot, FieldLink } from './tree.js';
 import {
+  blockSpots,
   blockTitle,
   collectBlockLists,
   fieldBlocks,
@@ -17,6 +18,7 @@ import {
   isRecord,
   mergePatch,
   resolveBlockList,
+  rowBoundFields,
 } from './tree.js';
 
 export type BlockToolsOptions = {
@@ -72,6 +74,7 @@ type Loaded = {
   ctx: ToolCtx;
   doc: Record<string, unknown>;
   lists: BlockList[];
+  all: BlockList[];
   input: Target;
 };
 
@@ -149,17 +152,11 @@ export function blockTools(options: BlockToolsOptions = {}): AnyTool[] {
           id: typeof block.id === 'string' && block.id ? block.id : randomBytes(12).toString('hex'),
         };
 
-        const taken = new Set(lists.flatMap(({ rows }) => rows.map(({ id }) => String(id))));
+        claimIds(blockIds(row), takenIds(loaded));
 
-        for (const id of blockIds(row)) {
-          if (taken.has(id)) throw new Error(`A block with the id '${id}' already exists.`);
+        const spot = await place(loaded, lists, input, row);
 
-          taken.add(id);
-        }
-
-        const spot = place(loaded, lists, input, row);
-
-        return save(loaded, [spot.list], row.id);
+        return save(loaded, [spot.list], spot);
       }),
   });
 
@@ -185,13 +182,17 @@ export function blockTools(options: BlockToolsOptions = {}): AnyTool[] {
         const row = list.rows[index];
         const fields = blockOf(loaded, list, row)?.flattenedFields ?? [];
 
-        list.rows[index] = {
+        const merged: BlockData = {
           ...mergePatch(row, input.data, fields),
           id: row.id,
           blockType: row.blockType,
         };
 
-        return save(loaded, [list], row.id);
+        claimIds(nestedIds(merged), takenIds(loaded, new Set(nestedIds(row))));
+
+        list.rows[index] = merged;
+
+        return save(loaded, [list], { list, index });
       }),
   });
 
@@ -219,13 +220,15 @@ export function blockTools(options: BlockToolsOptions = {}): AnyTool[] {
           throw new Error("A block can't move inside itself.");
         }
 
-        const field = input.field === undefined ? undefined : resolve(loaded, input.field);
+        const field = input.field === undefined ? undefined : await resolve(loaded, input.field);
 
         from.list.rows.splice(from.index, 1);
 
-        const spot = place(loaded, lists, input, row, field);
+        const spot = await place(loaded, lists, input, row, field);
 
-        return save(loaded, [from.list, spot.list], row.id);
+        if (spot.list.rows !== from.list.rows) assertMovable(loaded, from.list, row);
+
+        return save(loaded, [from.list, spot.list], spot);
       }),
   });
 
@@ -238,8 +241,10 @@ export function blockTools(options: BlockToolsOptions = {}): AnyTool[] {
       edit(input, ctx, async ({ lists, loaded }) => {
         const { list, index } = findBlock(lists, input.blockId);
         const [removed] = list.rows.splice(index, 1);
+        const { saved } = await persist(loaded, [list]);
+        const left = blockSpots(blockListsOf(loaded, saved), removed?.id ?? '');
 
-        await save(loaded, [list]);
+        if (left.length && (await may(loaded, list.chain, 'read'))) throw notSaved(list.path);
 
         return {
           removed: { path: list.path, index, id: removed?.id, blockType: removed?.blockType },
@@ -330,16 +335,128 @@ async function load({
       })) as Record<string, unknown>)
     : checked;
 
-  const lists = collectBlockLists(doc, collection.flattenedFields, config);
+  const all = collectBlockLists(doc, collection.flattenedFields, config);
+  const lists = writes
+    ? readable(all, collectBlockLists(checked, collection.flattenedFields, config))
+    : all;
 
-  return { collection, config, ctx, doc, lists, input };
+  return { collection, config, ctx, doc, lists, all, input };
 }
 
-async function save(loaded: Loaded, lists: BlockList[], blockId?: number | string) {
+function readable(all: BlockList[], seen: BlockList[]): BlockList[] {
+  const rowsAt = new Map(seen.map((list) => [list.path, rowKey(list)]));
+
+  return all.filter((list) => rowsAt.get(list.path) === rowKey(list));
+}
+
+function rowKey({ rows }: BlockList): string {
+  return JSON.stringify(rows.map(({ id }) => String(id)));
+}
+
+function takenIds(loaded: Loaded, except = new Set<string>()): Set<string> {
+  return new Set(
+    loaded.all
+      .flatMap(({ rows }) => rows.map(({ id }) => String(id)))
+      .filter((id) => !except.has(id)),
+  );
+}
+
+function claimIds(ids: string[], taken: Set<string>): void {
+  for (const id of ids) {
+    if (taken.has(id)) throw new Error(`A block with the id '${id}' already exists.`);
+
+    taken.add(id);
+  }
+}
+
+function assertMovable(loaded: Loaded, from: BlockList, row: BlockData): void {
+  const block = blockOf(loaded, from, row);
+
+  if (!block) return;
+
+  const { guarded, localized } = rowBoundFields(row, block, loaded.config);
+  const lost = [
+    ...(guarded.length && !loaded.ctx.overrideAccess
+      ? [`fields with their own edit access (${guarded.join(', ')})`]
+      : []),
+    ...(localized.length ? [`the other locales of ${localized.join(', ')}`] : []),
+  ];
+
+  if (lost.length) {
+    throw new Error(
+      `Moving this block to another blocks field would lose ${lost.join(' and ')}. Move it within its field instead.`,
+    );
+  }
+}
+
+async function may(
+  loaded: Loaded,
+  chain: FieldLink[],
+  operation: 'read' | 'update',
+  sent?: Record<string, unknown>,
+) {
+  const { collection, ctx, doc } = loaded;
+
+  if (ctx.overrideAccess) return true;
+
+  for (const { field, siblingData, blockData } of chain) {
+    const access = field.access?.[operation];
+    const args = {
+      id: doc.id as number | string,
+      blockData,
+      collection,
+      data: sent ?? doc,
+      doc,
+      req: toPayloadRequest(ctx.req),
+      siblingData: sent && siblingData === doc ? sent : siblingData,
+    };
+
+    if (access && !(await access(args))) return false;
+  }
+
+  return true;
+}
+
+function notSaved(path: string): Error {
+  return new Error(`The change to ${path} didn't save. Call listBlocks to see the document now.`);
+}
+
+function blockListsOf(loaded: Loaded, doc: Record<string, unknown>): BlockList[] {
+  return collectBlockLists(doc, loaded.collection.flattenedFields, loaded.config);
+}
+
+async function save(loaded: Loaded, lists: BlockList[], spot: BlockSpot) {
+  const { saved, draft } = await persist(loaded, lists);
+  const where = placed(loaded, spot);
+  const found = blockSpots(blockListsOf(loaded, saved), spot.list.rows[spot.index]?.id ?? '');
+  const [hit] = found;
+  let result: Record<string, unknown>;
+
+  if (found.length === 1 && hit && hit.list.path === where.path && hit.index === where.index) {
+    result = describe(hit);
+  } else if (!hit && !(await may(loaded, spot.list.chain, 'read'))) {
+    result = { path: where.path };
+  } else {
+    throw notSaved(where.path);
+  }
+
+  return draft === undefined ? result : { ...result, draft };
+}
+
+async function persist(loaded: Loaded, lists: BlockList[]) {
   const { collection, ctx, doc, input } = loaded;
   const keys = new Set(lists.map(({ path }) => path.split('.')[0]));
-  const data = Object.fromEntries([...keys].map((key) => [key, doc[key]]));
+  const data: Record<string, unknown> = Object.fromEntries([...keys].map((key) => [key, doc[key]]));
+
   const draft = hasDrafts(collection) ? (input.draft ?? true) : undefined;
+
+  if (draft === false) data._status = 'published';
+
+  for (const list of new Set(lists)) {
+    if (!(await may(loaded, list.chain, 'update', data))) {
+      throw new Error(`You can't edit the blocks in ${list.path}.`);
+    }
+  }
 
   const saved = (await ctx.frogbot.update({
     collection: collection.slug,
@@ -352,22 +469,22 @@ async function save(loaded: Loaded, lists: BlockList[], blockId?: number | strin
     req: ctx.req,
   })) as Record<string, unknown>;
 
-  if (blockId === undefined) return undefined;
-
-  const result = describe(
-    findBlock(collectBlockLists(saved, collection.flattenedFields, loaded.config), blockId),
-  );
-
-  return draft === undefined ? result : { ...result, draft };
+  return { saved, draft };
 }
 
-function place(
+function placed(loaded: Loaded, { list, index }: BlockSpot) {
+  const now = blockListsOf(loaded, loaded.doc).find(({ rows }) => rows === list.rows);
+
+  return { path: now?.path ?? list.path, index };
+}
+
+async function place(
   loaded: Loaded,
   lists: BlockList[],
   input: Position,
   row: BlockData,
   field?: BlockList,
-): BlockSpot {
+): Promise<BlockSpot> {
   const given = [input.field, input.before, input.after].filter((value) => value !== undefined);
 
   if (given.length !== 1) throw new Error('Pass exactly one of field, before or after.');
@@ -380,8 +497,14 @@ function place(
   let spot: BlockSpot;
 
   if (anchor === undefined) {
-    const list = field ?? resolve(loaded, input.field as string);
+    const list = field ?? (await resolve(loaded, input.field as string));
     const index = input.index ?? list.rows.length;
+
+    if (input.index !== undefined && !(await may(loaded, list.chain, 'read'))) {
+      throw new Error(
+        `You can't read ${list.path}, so you can't pick an index in it. Leave index out to add at the end.`,
+      );
+    }
 
     if (index > list.rows.length) {
       throw new Error(
@@ -409,8 +532,14 @@ function place(
   return spot;
 }
 
-function resolve(loaded: Loaded, path: string): BlockList {
-  return resolveBlockList(loaded.doc, loaded.collection.flattenedFields, path, loaded.config);
+async function resolve(loaded: Loaded, path: string): Promise<BlockList> {
+  const list = resolveBlockList(loaded.doc, loaded.collection.flattenedFields, path, loaded.config);
+
+  if (!(await may(loaded, list.chain.slice(0, -1), 'read'))) {
+    throw new Error(`'${path}' is not a blocks field. Call listBlocks to see the fields' paths.`);
+  }
+
+  return list;
 }
 
 function describe({ list, index }: BlockSpot) {
@@ -429,6 +558,10 @@ function blockIds(value: unknown): string[] {
   const own = typeof value.blockType === 'string' && value.id != null ? [String(value.id)] : [];
 
   return [...own, ...Object.values(value).flatMap(blockIds)];
+}
+
+function nestedIds(row: BlockData): string[] {
+  return blockIds(Object.values(row));
 }
 
 function toID(id: number | string, type: string): number | string {

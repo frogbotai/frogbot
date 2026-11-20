@@ -7,11 +7,22 @@ import type {
 
 export type BlockData = Record<string, unknown> & { blockType: string; id?: number | string };
 
-/** One blocks field in a document: where it is, its schema and its rows. */
+/** A field on the way to a blocks field, with the data around it, for checking its access. */
+export type FieldLink = {
+  field: FlattenedField;
+  siblingData: Container;
+  blockData: Container | undefined;
+};
+
+/**
+ * One blocks field in a document: where it is, its schema, its rows, and every field from the
+ * document's top down to it, itself included.
+ */
 export type BlockList = {
   path: string;
   field: FlattenedBlocksField;
   rows: BlockData[];
+  chain: FieldLink[];
 };
 
 /** Where a block sits: its list and its index in that list. */
@@ -20,6 +31,7 @@ export type BlockSpot = { list: BlockList; index: number };
 type Container = Record<string, unknown>;
 
 const TITLE_LENGTH = 80;
+const INDEX = /^(0|[1-9]\d*)$/;
 
 export function isRecord(value: unknown): value is Container {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -47,40 +59,72 @@ export function collectBlockLists(
 ): BlockList[] {
   const lists: BlockList[] = [];
 
-  walk(doc, fields, '', config, lists);
+  walk({ container: doc, fields, prefix: '', config, lists, chain: [], blockData: undefined });
 
   return lists;
 }
 
-function walk(
-  container: Container,
-  fields: FlattenedField[],
-  prefix: string,
-  config: SanitizedConfig,
-  lists: BlockList[],
-): void {
+function walk({
+  container,
+  fields,
+  prefix,
+  config,
+  lists,
+  chain,
+  blockData,
+}: {
+  container: Container;
+  fields: FlattenedField[];
+  prefix: string;
+  config: SanitizedConfig;
+  lists: BlockList[];
+  chain: FieldLink[];
+  blockData: Container | undefined;
+}): void {
   for (const field of fields) {
     const value = container[field.name];
     const path = `${prefix}${field.name}`;
+    const down = [...chain, { field, siblingData: container, blockData }];
+    const next = { config, lists, chain: down, blockData };
 
     if (field.type === 'blocks') {
       const rows: BlockData[] = Array.isArray(value) ? value : [];
 
-      lists.push({ path, field, rows });
+      lists.push({ path, field, rows, chain: down });
 
       const blocks = fieldBlocks(field, config);
 
       rows.forEach((row, index) => {
         const block = isBlock(row) && blocks.find(({ slug }) => slug === row.blockType);
 
-        if (block) walk(row, block.flattenedFields, `${path}.${index}.`, config, lists);
+        if (block) {
+          walk({
+            ...next,
+            container: row,
+            fields: block.flattenedFields,
+            prefix: `${path}.${index}.`,
+            blockData: row,
+          });
+        }
       });
     } else if (field.type === 'array' && Array.isArray(value)) {
       value.forEach((row: unknown, index) => {
-        if (isRecord(row)) walk(row, field.flattenedFields, `${path}.${index}.`, config, lists);
+        if (isRecord(row)) {
+          walk({
+            ...next,
+            container: row,
+            fields: field.flattenedFields,
+            prefix: `${path}.${index}.`,
+          });
+        }
       });
     } else if (field.type === 'group' || field.type === 'tab') {
-      walk(isRecord(value) ? value : {}, field.flattenedFields, `${path}.`, config, lists);
+      walk({
+        ...next,
+        container: isRecord(value) ? value : {},
+        fields: field.flattenedFields,
+        prefix: `${path}.`,
+      });
     }
   }
 }
@@ -99,14 +143,18 @@ function isBlock(value: unknown): value is BlockData {
   return isRecord(value) && typeof value.blockType === 'string';
 }
 
-/** Finds a block by its id anywhere in the document. */
-export function findBlock(lists: BlockList[], blockId: number | string): BlockSpot {
-  const spots = lists.flatMap((list) =>
+/** Every place a block with this id sits in the document. */
+export function blockSpots(lists: BlockList[], blockId: number | string): BlockSpot[] {
+  return lists.flatMap((list) =>
     list.rows.flatMap((row, index) =>
       String(row.id) === String(blockId) ? [{ list, index }] : [],
     ),
   );
+}
 
+/** Finds a block by its id anywhere in the document. */
+export function findBlock(lists: BlockList[], blockId: number | string): BlockSpot {
+  const spots = blockSpots(lists, blockId);
   const [spot] = spots;
 
   if (!spot) {
@@ -118,6 +166,57 @@ export function findBlock(lists: BlockList[], blockId: number | string): BlockSp
   }
 
   return spot;
+}
+
+/**
+ * The fields in a block, nested ones included, whose values Payload keeps only while the block
+ * stays in the same blocks field: those with their own update access, and localized ones.
+ */
+export function rowBoundFields(
+  row: BlockData,
+  block: FlattenedBlock,
+  config: SanitizedConfig,
+): { guarded: string[]; localized: string[] } {
+  const found = { guarded: [] as string[], localized: [] as string[] };
+
+  scan(row, block.flattenedFields, '', config, found);
+
+  return found;
+}
+
+function scan(
+  value: unknown,
+  fields: FlattenedField[],
+  prefix: string,
+  config: SanitizedConfig,
+  found: { guarded: string[]; localized: string[] },
+): void {
+  if (!isRecord(value)) return;
+
+  for (const field of fields) {
+    const path = `${prefix}${field.name}`;
+    const child = value[field.name];
+
+    if (field.access?.update) found.guarded.push(path);
+
+    if (field.localized && config.localization) found.localized.push(path);
+
+    if (field.type === 'group' || field.type === 'tab') {
+      scan(child, field.flattenedFields, `${path}.`, config, found);
+    } else if (field.type === 'array' && Array.isArray(child)) {
+      child.forEach((row: unknown, index) =>
+        scan(row, field.flattenedFields, `${path}.${index}.`, config, found),
+      );
+    } else if (field.type === 'blocks' && Array.isArray(child)) {
+      const blocks = fieldBlocks(field, config);
+
+      child.forEach((row: unknown, index) => {
+        const nested = isBlock(row) && blocks.find(({ slug }) => slug === row.blockType);
+
+        if (nested) scan(row, nested.flattenedFields, `${path}.${index}.`, config, found);
+      });
+    }
+  }
 }
 
 /**
@@ -137,6 +236,8 @@ export function resolveBlockList(
 
   let container = doc;
   let current = fields;
+  let blockData: Container | undefined;
+  const chain: FieldLink[] = [];
 
   for (let i = 0; i < segments.length; i++) {
     const field = current.find(({ name }) => name === segments[i]);
@@ -144,26 +245,29 @@ export function resolveBlockList(
 
     if (!field) throw notFound;
 
+    chain.push({ field, siblingData: container, blockData });
+
     if (field.type === 'blocks') {
       if (!Array.isArray(container[field.name])) container[field.name] = [];
 
       const rows = container[field.name] as BlockData[];
 
-      if (last) return { path, field, rows };
+      if (last) return { path, field, rows, chain };
 
       const row = rows[Number(segments[++i])];
       const block = row && fieldBlocks(field, config).find(({ slug }) => slug === row.blockType);
 
-      if (!block || !/^\d+$/.test(segments[i] ?? '')) throw notFound;
+      if (!block || !INDEX.test(segments[i] ?? '')) throw notFound;
 
       container = row;
       current = block.flattenedFields;
+      blockData = row;
     } else if (field.type === 'array' && !last) {
       const row: unknown = Array.isArray(container[field.name])
         ? (container[field.name] as unknown[])[Number(segments[++i])]
         : undefined;
 
-      if (!isRecord(row) || !/^\d+$/.test(segments[i] ?? '')) throw notFound;
+      if (!isRecord(row) || !INDEX.test(segments[i] ?? '')) throw notFound;
 
       container = row;
       current = field.flattenedFields;
