@@ -1,123 +1,13 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 
-import { getApiKeyPrefix, hashApiKeyToken } from '@frogbotai/plugin-api-keys';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-
-import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
-import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
-import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
-import { adminEmail, memberEmail } from './access/config.js';
-
-const dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const adminToken = `fb_${'B'.repeat(43)}`;
-const memberToken = `fb_${'C'.repeat(43)}`;
-
-type Row = Record<string, unknown> & { id: string; blockType: string };
-
-type Doc = Record<string, unknown>;
-
-type ToolCallBody = {
-  result: {
-    content: Array<{ type: 'text'; text: string }>;
-    isError?: boolean;
-    structuredContent?: Record<string, unknown>;
-  };
-};
-
-function parse<T>(body: T | string): T {
-  const json =
-    typeof body === 'string'
-      ? (body
-          .split('\n')
-          .find((line) => line.startsWith('data: '))
-          ?.slice(6) ?? body)
-      : JSON.stringify(body);
-
-  return JSON.parse(json) as T;
-}
+import type { Row } from './access/harness.js';
+import { useAccessHarness } from './access/harness.js';
 
 describe('block tools and field access, drafts and locales', () => {
-  let booted: BootedFrogBot;
-  let adminId: number | string;
-  let memberId: number | string;
-
-  beforeAll(async () => {
-    booted = await bootFrogBot(path.join(dirname, 'access'), 'plugin-mcp-blocks-access');
-  });
-
-  afterAll(async () => {
-    await clearAndSeed(booted.frogbot, 'empty');
-    await booted.shutdown();
-  });
-
-  beforeEach(async () => {
-    await clearAndSeed(booted.frogbot, 'empty');
-
-    const make = async (email: string, token: string) => {
-      const user = await booted.frogbot.create({
-        collection: 'users',
-        data: { email, password: 'frogbot-test' },
-        overrideAccess: true,
-      });
-
-      await booted.frogbot.create({
-        collection: 'api-keys',
-        data: {
-          name: email,
-          owner: user.id,
-          prefix: getApiKeyPrefix(token),
-          tokenHash: hashApiKeyToken(token),
-        },
-        overrideAccess: true,
-      });
-
-      return user.id as number | string;
-    };
-
-    adminId = await make(adminEmail, adminToken);
-    memberId = await make(memberEmail, memberToken);
-  });
-
-  async function call(token: string, name: string, args: Record<string, unknown>) {
-    const response = await booted.restClient.post<ToolCallBody | string>(
-      '/api/mcp',
-      { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } },
-      {
-        headers: {
-          accept: 'application/json, text/event-stream',
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    const { result } = parse<ToolCallBody>(response.body);
-
-    return {
-      isError: result.isError === true,
-      text: result.content.map(({ text }) => text).join(''),
-      data: result.structuredContent ?? {},
-    };
-  }
-
-  const member = (name: string, args: Record<string, unknown>) => call(memberToken, name, args);
-
-  async function stored(collection: string, id: number | string, extra: Doc = {}): Promise<Doc> {
-    const doc = await booted.frogbot.findByID({
-      collection: collection as 'users',
-      id,
-      depth: 0,
-      overrideAccess: true,
-      showHiddenFields: true,
-      ...extra,
-    });
-
-    return JSON.parse(JSON.stringify(doc)) as Doc;
-  }
+  const { state, member, stored } = useAccessHarness('plugin-mcp-blocks-access');
 
   async function guarded(owner: number | string) {
-    const doc = await booted.frogbot.create({
+    const doc = await state.booted.frogbot.create({
       collection: 'guarded' as 'users',
       data: {
         owner,
@@ -138,7 +28,7 @@ describe('block tools and field access, drafts and locales', () => {
   }
 
   async function docsInTwoLocales() {
-    const created = await booted.frogbot.create({
+    const created = await state.booted.frogbot.create({
       collection: 'docs' as 'users',
       data: {
         title: 'T',
@@ -154,7 +44,7 @@ describe('block tools and field access, drafts and locales', () => {
 
     const id = created.id as number | string;
 
-    await booted.frogbot.update({
+    await state.booted.frogbot.update({
       collection: 'docs' as 'users',
       id,
       locale: 'es',
@@ -172,7 +62,7 @@ describe('block tools and field access, drafts and locales', () => {
   }
 
   it('refuses to move a block with a field the caller may not update to another field, and saves nothing', async () => {
-    const id = await guarded(memberId);
+    const id = await guarded(state.memberId);
     const before = await stored('guarded', id);
 
     const byField = await member('moveBlock', {
@@ -182,7 +72,7 @@ describe('block tools and field access, drafts and locales', () => {
       field: 'aside',
     });
 
-    await booted.frogbot.update({
+    await state.booted.frogbot.update({
       collection: 'guarded' as 'users',
       id,
       data: { aside: [{ id: 'a1', blockType: 'card', text: 'Aside' }] } as never,
@@ -229,7 +119,7 @@ describe('block tools and field access, drafts and locales', () => {
   });
 
   it('updateBlock refuses nested blocks that reuse an id from elsewhere in the document', async () => {
-    const id = await guarded(memberId);
+    const id = await guarded(state.memberId);
     const result = await member('updateBlock', {
       collection: 'guarded',
       id,
@@ -245,7 +135,7 @@ describe('block tools and field access, drafts and locales', () => {
   });
 
   it('updateBlock keeps the nested block ids it already has', async () => {
-    const id = await guarded(memberId);
+    const id = await guarded(state.memberId);
     const target = { collection: 'guarded', id, blockId: 'b1' };
 
     await member('updateBlock', {
@@ -265,7 +155,7 @@ describe('block tools and field access, drafts and locales', () => {
   });
 
   it("write tools don't find blocks inside a blocks field the caller can't read", async () => {
-    const id = await guarded(memberId);
+    const id = await guarded(state.memberId);
     const target = { collection: 'guarded', id };
 
     expect((await member('getBlock', { ...target, blockId: 'i1' })).isError).toBe(true);
@@ -289,7 +179,7 @@ describe('block tools and field access, drafts and locales', () => {
   });
 
   it("refuses a move or insert into a blocks field the caller can't read, without counting its rows", async () => {
-    const id = await guarded(memberId);
+    const id = await guarded(state.memberId);
     const moved = await member('moveBlock', {
       collection: 'guarded',
       id,
@@ -312,7 +202,7 @@ describe('block tools and field access, drafts and locales', () => {
   });
 
   it("reports where a block went when it saved into a field the caller can't read back", async () => {
-    const id = await guarded(memberId);
+    const id = await guarded(state.memberId);
     const inserted = await member('insertBlock', {
       collection: 'guarded',
       id,
@@ -326,10 +216,10 @@ describe('block tools and field access, drafts and locales', () => {
   });
 
   it('a block field the caller cannot read never shows in getBlock, listBlocks titles or write results', async () => {
-    const id = await guarded(memberId);
+    const id = await guarded(state.memberId);
     const target = { collection: 'guarded', id };
 
-    await booted.frogbot.update({
+    await state.booted.frogbot.update({
       collection: 'guarded' as 'users',
       id,
       data: {
@@ -357,7 +247,7 @@ describe('block tools and field access, drafts and locales', () => {
   });
 
   it('updateBlock and in-field moves never change a field the caller may not update', async () => {
-    const id = await guarded(memberId);
+    const id = await guarded(state.memberId);
     const target = { collection: 'guarded', id };
 
     await member('updateBlock', {
@@ -376,7 +266,7 @@ describe('block tools and field access, drafts and locales', () => {
   });
 
   it("a caller who may read but not update this document (where-constrained) can't edit it", async () => {
-    const id = await guarded(adminId);
+    const id = await guarded(state.adminId);
     const target = { collection: 'guarded', id };
     const before = await stored('guarded', id);
 
@@ -395,7 +285,7 @@ describe('block tools and field access, drafts and locales', () => {
   });
 
   it('updateBlock starts from the newest draft, keeps its other changes, and draft:false publishes them', async () => {
-    const created = await booted.frogbot.create({
+    const created = await state.booted.frogbot.create({
       collection: 'docs' as 'users',
       data: {
         title: 'Pub',
@@ -415,7 +305,7 @@ describe('block tools and field access, drafts and locales', () => {
 
     const id = created.id as number | string;
 
-    await booted.frogbot.update({
+    await state.booted.frogbot.update({
       collection: 'docs' as 'users',
       id,
       draft: true,
@@ -469,7 +359,7 @@ describe('block tools and field access, drafts and locales', () => {
   });
 
   it('editing locale es leaves en alone and never writes the en fallback into es', async () => {
-    const created = await booted.frogbot.create({
+    const created = await state.booted.frogbot.create({
       collection: 'docs' as 'users',
       data: {
         title: 'T',
@@ -515,7 +405,7 @@ describe('block tools and field access, drafts and locales', () => {
   });
 
   it("locale 'all' on an edit tool errors or keeps every locale's blocks", async () => {
-    const note = await booted.frogbot.create({
+    const note = await state.booted.frogbot.create({
       collection: 'notes' as 'users',
       data: { body: [{ id: 'e1', blockType: 'intl', size: 'en' }] } as never,
       locale: 'en',
@@ -524,7 +414,7 @@ describe('block tools and field access, drafts and locales', () => {
 
     const id = note.id as number | string;
 
-    await booted.frogbot.update({
+    await state.booted.frogbot.update({
       collection: 'notes' as 'users',
       id,
       locale: 'es',

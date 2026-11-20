@@ -24,6 +24,17 @@ const card: Block = {
 
 const tile: Block = { slug: 'tile', fields: [{ name: 'label', type: 'text' }] };
 
+const box: Block = {
+  slug: 'box',
+  fields: [
+    { name: 'text', type: 'text' },
+    { name: 'items', type: 'blocks', blocks: ['tile'] },
+    { name: 'more', type: 'blocks', blocks: ['tile'] },
+    { name: 'slots', type: 'blocks', blocks: ['tile'], access: { update: isAdmin } },
+    { name: 'inner', type: 'blocks', blocks: ['tile'], access: { read: isAdmin } },
+  ],
+};
+
 const intl: Block = {
   slug: 'intl',
   fields: [
@@ -58,6 +69,16 @@ const Docs: CollectionConfig = {
   ],
 };
 
+const Pages: CollectionConfig = {
+  slug: 'pages',
+  access: openAccess,
+  fields: [
+    { name: 'body', type: 'blocks', blocks: ['box', 'tile'] },
+    { name: 'frozen', type: 'blocks', blocks: ['tile'], access: { update: isAdmin } },
+    { name: 'vault', type: 'blocks', blocks: ['tile'], access: { read: isAdmin } },
+  ],
+};
+
 const Notes: CollectionConfig = {
   slug: 'notes',
   access: openAccess,
@@ -66,8 +87,8 @@ const Notes: CollectionConfig = {
 
 export default await buildTestConfig({
   admin: { user: 'users' },
-  blocks: [card, tile, intl],
-  collections: [Users, Guarded, Docs, Notes],
+  blocks: [card, tile, box, intl],
+  collections: [Users, Guarded, Docs, Pages, Notes],
   localization: { locales: ['en', 'es'], defaultLocale: 'en' },
   plugins: [
     rolesPlugin(),
