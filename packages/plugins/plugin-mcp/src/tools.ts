@@ -13,6 +13,8 @@ import {
   toApprovalStatus,
 } from 'frogbot/internal';
 
+import { BLOCK_TOOLS } from './blocks/tools.js';
+
 type PayloadTool = NonNullable<MCPPluginConfig['tools']>[string];
 
 type PayloadToolResponse = Awaited<ReturnType<PayloadTool['handler']>>;
@@ -46,9 +48,10 @@ export const AUTH_TOOLS = {
   verify: 'verify',
 } as const;
 
-/** MCP names Payload's plugin registers itself. Payload doesn't export them. */
+/** MCP names the plugin registers itself: Payload's, which Payload doesn't export, and the block tools. */
 export const RESERVED_TOOL_NAMES: ReadonlySet<string> = new Set([
   'getConfigInfo',
+  ...Object.keys(BLOCK_TOOLS),
   ...Object.values(COLLECTION_TOOLS),
   ...Object.values(AUTH_TOOLS),
 ]);

@@ -4,6 +4,8 @@ import { mcpPlugin as payloadMcpPlugin } from '@payloadcms/plugin-mcp';
 import { definePlugin, type Plugin } from 'frogbot';
 
 import { authorizeMcp } from './access.js';
+import { withBlockTools } from './blocks/config.js';
+import type { BlockToolName } from './blocks/tools.js';
 import type { AUTH_TOOLS, COLLECTION_TOOLS, McpTool } from './tools.js';
 import { toPayloadTools } from './tools.js';
 
@@ -15,10 +17,13 @@ type PayloadCollectionOptions = NonNullable<NonNullable<MCPPluginConfig['collect
 type PayloadCollectionTools = NonNullable<PayloadCollectionOptions['tools']>;
 
 export type McpCollectionOptions = Omit<PayloadCollectionOptions, 'tools'> & {
-  /** Turn off or reword Payload's built-in tools for this collection, or opt in to its auth tools. */
+  /**
+   * Turn off or reword Payload's built-in tools for this collection, opt in to its auth tools, or
+   * turn off a block tool with `false`.
+   */
   tools?: {
     [K in keyof typeof COLLECTION_TOOLS | keyof typeof AUTH_TOOLS]?: PayloadCollectionTools[K];
-  };
+  } & { [K in BlockToolName]?: false };
 };
 
 export type McpPluginOptions = Pick<
@@ -79,6 +84,7 @@ export function mcpPlugin(options: McpPluginOptions = {}): Plugin {
           ...(config._payloadPlugins ?? []),
           payloadMcpPlugin({
             ...rest,
+            collections: withBlockTools(config.collections, rest.collections),
             tools: payloadTools,
             overrideGetAuthorizedMCP: ({ pluginConfig, req }) =>
               authorizeMcp({
