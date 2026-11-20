@@ -141,24 +141,32 @@ describe('MCP block tools', () => {
 
   const onPage = (args: Record<string, unknown>) => ({ slug: pagesSlug, id: pageId, ...args });
 
+  type PageData = Record<string, unknown> & { layout: Block[]; hero: Block[] };
+
+  const asData = (doc: object): PageData => JSON.parse(JSON.stringify(doc)) as PageData;
+
   async function draftPage() {
-    return (await booted.frogbot.findByID({
-      collection: pagesSlug,
-      id: pageId,
-      depth: 0,
-      draft: true,
-      overrideAccess: true,
-      showHiddenFields: true,
-    })) as Record<string, unknown> & { layout: Block[]; hero: Block[] };
+    return asData(
+      await booted.frogbot.findByID({
+        collection: pagesSlug,
+        id: pageId,
+        depth: 0,
+        draft: true,
+        overrideAccess: true,
+        showHiddenFields: true,
+      }),
+    );
   }
 
   async function publishedPage() {
-    return (await booted.frogbot.findByID({
-      collection: pagesSlug,
-      id: pageId,
-      depth: 0,
-      overrideAccess: true,
-    })) as Record<string, unknown> & { layout: Block[] };
+    return asData(
+      await booted.frogbot.findByID({
+        collection: pagesSlug,
+        id: pageId,
+        depth: 0,
+        overrideAccess: true,
+      }),
+    );
   }
 
   const ids = (blocks: Block[]) => blocks.map(({ id }) => id);
