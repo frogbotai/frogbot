@@ -99,14 +99,18 @@ function isBlock(value: unknown): value is BlockData {
   return isRecord(value) && typeof value.blockType === 'string';
 }
 
-/** Finds a block by its id anywhere in the document. */
-export function findBlock(lists: BlockList[], blockId: number | string): BlockSpot {
-  const spots = lists.flatMap((list) =>
+/** Every place a block with this id sits in the document. */
+export function blockSpots(lists: BlockList[], blockId: number | string): BlockSpot[] {
+  return lists.flatMap((list) =>
     list.rows.flatMap((row, index) =>
       String(row.id) === String(blockId) ? [{ list, index }] : [],
     ),
   );
+}
 
+/** Finds a block by its id anywhere in the document. */
+export function findBlock(lists: BlockList[], blockId: number | string): BlockSpot {
+  const spots = blockSpots(lists, blockId);
   const [spot] = spots;
 
   if (!spot) {
@@ -118,6 +122,57 @@ export function findBlock(lists: BlockList[], blockId: number | string): BlockSp
   }
 
   return spot;
+}
+
+/**
+ * The fields in a block, nested ones included, whose values Payload keeps only while the block
+ * stays in the same blocks field: those with their own update access, and localized ones.
+ */
+export function rowBoundFields(
+  row: BlockData,
+  block: FlattenedBlock,
+  config: SanitizedConfig,
+): { guarded: string[]; localized: string[] } {
+  const found = { guarded: [] as string[], localized: [] as string[] };
+
+  scan(row, block.flattenedFields, '', config, found);
+
+  return found;
+}
+
+function scan(
+  value: unknown,
+  fields: FlattenedField[],
+  prefix: string,
+  config: SanitizedConfig,
+  found: { guarded: string[]; localized: string[] },
+): void {
+  if (!isRecord(value)) return;
+
+  for (const field of fields) {
+    const path = `${prefix}${field.name}`;
+    const child = value[field.name];
+
+    if (field.access?.update) found.guarded.push(path);
+
+    if (field.localized && config.localization) found.localized.push(path);
+
+    if (field.type === 'group' || field.type === 'tab') {
+      scan(child, field.flattenedFields, `${path}.`, config, found);
+    } else if (field.type === 'array' && Array.isArray(child)) {
+      child.forEach((row: unknown, index) =>
+        scan(row, field.flattenedFields, `${path}.${index}.`, config, found),
+      );
+    } else if (field.type === 'blocks' && Array.isArray(child)) {
+      const blocks = fieldBlocks(field, config);
+
+      child.forEach((row: unknown, index) => {
+        const nested = isBlock(row) && blocks.find(({ slug }) => slug === row.blockType);
+
+        if (nested) scan(row, nested.flattenedFields, `${path}.${index}.`, config, found);
+      });
+    }
+  }
 }
 
 /**
