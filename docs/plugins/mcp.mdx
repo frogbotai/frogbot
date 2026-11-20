@@ -134,7 +134,8 @@ Every collection with a [blocks field](/fields/blocks) gets six tools that edit 
 - **Drafts.** On a collection with drafts, an edit reads the newest draft and saves a new one; pass `draft: false` to publish. Drafts skip `required` checks unless the collection sets `versions.drafts.validate`, as in the admin.
 - **Checks.** A block type the field doesn't accept, a missing block or anchor, or an index past the end is refused before anything is saved. Each save goes through the collection's hooks and validation, and a failed one returns each error with its path, such as `layout.2.text`.
 - **Access.** The reading tools need read access to the collection, the editing ones update access, and every call runs as the signed-in user. An edit keeps the fields the user can't see, such as `hidden` ones, on the block, even when it moves to another field, and no response includes them.
-- **Localized fields.** Pass `locale` to read and edit one locale.
+- **Localized fields.** Pass `locale` to read and edit one locale. A locale with no blocks reads as empty, not as the fallback locale's blocks.
+- **Edits at once.** Each edit reads the document, changes it and saves it back. Two edits to the same document at the same moment can lose one, as two people saving in the admin can, so send a document's edits one after another.
 - **Turning them off.** `tools: { insertBlock: false }` on a collection removes one tool. `find: false` removes `listBlocks` and `getBlock`, and `update: false` removes the four editing tools.
 
 ## Tools

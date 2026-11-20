@@ -157,8 +157,12 @@ export const blockTools: Record<BlockToolName, CollectionTool> = {
         id: typeof block.id === 'string' && block.id ? block.id : randomBytes(12).toString('hex'),
       };
 
-      if (lists.some((list) => list.rows.some(({ id }) => String(id) === String(row.id)))) {
-        throw new Error(`A block with the id '${row.id}' already exists.`);
+      const taken = new Set(lists.flatMap(({ rows }) => rows.map(({ id }) => String(id))));
+
+      for (const id of blockIds(row)) {
+        if (taken.has(id)) throw new Error(`A block with the id '${id}' already exists.`);
+
+        taken.add(id);
       }
 
       const spot = place(loaded, lists, input, row);
@@ -300,6 +304,7 @@ async function load(
     }),
     depth: 0,
     draft: hasDrafts(collection),
+    fallbackLocale: 'none',
     locale: input.locale,
     req: frogbotReq,
   };
@@ -406,6 +411,16 @@ function describe({ list, index }: BlockSpot) {
 
 function blockOf(loaded: Loaded, list: BlockList, row: BlockData) {
   return fieldBlocks(list.field, loaded.config).find(({ slug }) => slug === row.blockType);
+}
+
+function blockIds(value: unknown): string[] {
+  if (Array.isArray(value)) return value.flatMap(blockIds);
+
+  if (!isRecord(value)) return [];
+
+  const own = typeof value.blockType === 'string' && value.id != null ? [String(value.id)] : [];
+
+  return [...own, ...Object.values(value).flatMap(blockIds)];
 }
 
 function hasDrafts(collection: SanitizedCollectionConfig): boolean {
