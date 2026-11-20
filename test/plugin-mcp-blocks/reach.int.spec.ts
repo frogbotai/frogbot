@@ -170,4 +170,88 @@ describe('block tools and blocks fields the caller may not update or read', () =
     expect(result).toMatchObject({ isError: true });
     expect(result.text).not.toMatch(/has \d+ blocks/);
   });
+
+  it("inserts into a field the caller may update but can't read, and answers only its path", async () => {
+    const id = await page({ vault: [{ id: 'v0', blockType: 'tile', label: 'Secret' }] });
+
+    const inserted = await member('insertBlock', {
+      ...target(id),
+      field: 'vault',
+      block: { id: 'n1', blockType: 'tile', label: 'New' },
+    });
+
+    expect(inserted).toMatchObject({ isError: false, data: { path: 'vault' } });
+    expect(inserted.data).not.toHaveProperty('index');
+    expect(inserted.data).not.toHaveProperty('block');
+    expect(JSON.stringify(inserted)).not.toContain('Secret');
+    expect(ids((await stored('pages', id)).vault)).toEqual(['v0', 'n1']);
+  });
+
+  it("refuses an index in a field the caller can't read, without counting its rows", async () => {
+    const id = await page({
+      vault: [
+        { id: 'v0', blockType: 'tile' },
+        { id: 'v1', blockType: 'tile' },
+      ],
+    });
+
+    for (const index of [0, 1, 2, 5]) {
+      const result = await member('insertBlock', {
+        ...target(id),
+        field: 'vault',
+        index,
+        block: { blockType: 'tile' },
+      });
+
+      expect(result).toMatchObject({ isError: true });
+      expect(result.text).not.toMatch(/\d+ blocks/);
+    }
+
+    expect(ids((await stored('pages', id)).vault)).toEqual(['v0', 'v1']);
+  });
+
+  it("moves a block into a field the caller may update but can't read", async () => {
+    const id = await page({
+      body: [{ id: 'm1', blockType: 'tile', label: 'Mine' }],
+      vault: [{ id: 'v0', blockType: 'tile', label: 'Secret' }],
+    });
+
+    const moved = await member('moveBlock', { ...target(id), blockId: 'm1', field: 'vault' });
+    const after = await stored('pages', id);
+
+    expect(moved).toMatchObject({ isError: false, data: { path: 'vault' } });
+    expect(moved.data).not.toHaveProperty('index');
+    expect(ids(after.body)).toEqual([]);
+    expect(ids(after.vault)).toEqual(['v0', 'm1']);
+  });
+
+  it('checks update access that reads a sibling field against what the save sends', async () => {
+    const into = await page({ flag: true, body: [{ id: 'm1', blockType: 'tile', label: 'In' }] });
+    const outOf = await page({
+      flag: true,
+      flagged: [{ id: 'f1', blockType: 'tile', label: 'Out' }],
+    });
+
+    const movedIn = await member('moveBlock', { ...target(into), blockId: 'm1', field: 'flagged' });
+    const movedOut = await member('moveBlock', { ...target(outOf), blockId: 'f1', field: 'body' });
+
+    expect(movedIn.isError).toBe(false);
+    expect(movedOut.isError).toBe(false);
+
+    const a = await stored('pages', into);
+    const b = await stored('pages', outOf);
+
+    expect([ids(a.body), ids(a.flagged)]).toEqual([[], ['m1']]);
+    expect([ids(b.body), ids(b.flagged)]).toEqual([['f1'], []]);
+  });
+
+  it('never loses a block when update access that reads a sibling field refuses', async () => {
+    const id = await page({ flag: false, body: [{ id: 'm1', blockType: 'tile', label: 'In' }] });
+
+    const moved = await member('moveBlock', { ...target(id), blockId: 'm1', field: 'flagged' });
+    const after = await stored('pages', id);
+
+    expect(moved).toMatchObject({ isError: true });
+    expect([ids(after.body), ids(after.flagged)]).toEqual([['m1'], []]);
+  });
 });

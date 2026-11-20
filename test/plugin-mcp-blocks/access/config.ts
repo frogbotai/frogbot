@@ -76,6 +76,13 @@ const Pages: CollectionConfig = {
     { name: 'body', type: 'blocks', blocks: ['box', 'tile'] },
     { name: 'frozen', type: 'blocks', blocks: ['tile'], access: { update: isAdmin } },
     { name: 'vault', type: 'blocks', blocks: ['tile'], access: { read: isAdmin } },
+    { name: 'flag', type: 'checkbox' },
+    {
+      name: 'flagged',
+      type: 'blocks',
+      blocks: ['tile'],
+      access: { update: ({ siblingData }) => siblingData?.flag === true },
+    },
   ],
 };
 

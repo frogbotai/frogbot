@@ -201,7 +201,7 @@ describe('block tools and field access, drafts and locales', () => {
     expect(((await stored('guarded', id)).internal as Row[]).map(({ id }) => id)).toEqual(['i1']);
   });
 
-  it("reports where a block went when it saved into a field the caller can't read back", async () => {
+  it("reports only the field a block went to when the caller can't read it back", async () => {
     const id = await guarded(state.memberId);
     const inserted = await member('insertBlock', {
       collection: 'guarded',
@@ -210,7 +210,8 @@ describe('block tools and field access, drafts and locales', () => {
       block: { id: 'v1', blockType: 'tile', label: 'Kept' },
     });
 
-    expect(inserted).toMatchObject({ isError: false, data: { path: 'vault', index: 0 } });
+    expect(inserted).toMatchObject({ isError: false, data: { path: 'vault' } });
+    expect(inserted.data).not.toHaveProperty('index');
     expect(inserted.data).not.toHaveProperty('block');
     expect((await stored('guarded', id)).vault).toMatchObject([{ id: 'v1', label: 'Kept' }]);
   });
