@@ -121,7 +121,7 @@ export default await buildTestConfig({
     apiKeysPlugin({ authCollection: usersSlug, collectionSlug: apiKeysSlug }),
     mcpPlugin({
       tools: blockTools({
-        collections: [pagesSlug, notesSlug, lockedSlug, plainSlug, apiKeysSlug],
+        collections: [pagesSlug, notesSlug, lockedSlug, plainSlug, apiKeysSlug, groupedSlug],
       }),
     }),
   ],

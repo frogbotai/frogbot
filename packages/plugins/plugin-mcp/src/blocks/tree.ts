@@ -79,10 +79,20 @@ function walk(
       value.forEach((row: unknown, index) => {
         if (isRecord(row)) walk(row, field.flattenedFields, `${path}.${index}.`, config, lists);
       });
-    } else if ((field.type === 'group' || field.type === 'tab') && isRecord(value)) {
-      walk(value, field.flattenedFields, `${path}.`, config, lists);
+    } else if (field.type === 'group' || field.type === 'tab') {
+      walk(isRecord(value) ? value : {}, field.flattenedFields, `${path}.`, config, lists);
     }
   }
+}
+
+/** Whether the fields hold a blocks field, at any depth outside blocks. */
+export function hasBlocksField(fields: FlattenedField[]): boolean {
+  return fields.some(
+    (field) =>
+      field.type === 'blocks' ||
+      ((field.type === 'group' || field.type === 'tab' || field.type === 'array') &&
+        hasBlocksField(field.flattenedFields)),
+  );
 }
 
 function isBlock(value: unknown): value is BlockData {

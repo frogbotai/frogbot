@@ -13,6 +13,7 @@ import {
   collectBlockLists,
   fieldBlocks,
   findBlock,
+  hasBlocksField,
   isRecord,
   mergePatch,
   resolveBlockList,
@@ -296,7 +297,7 @@ async function load({
     collection &&
     !isInternalCollection(collection) &&
     (allowed?.includes(collection.slug) ?? true) &&
-    collectBlockLists({}, collection.flattenedFields, config).length > 0;
+    hasBlocksField(collection.flattenedFields);
 
   if (!collection || !editable) {
     throw new Error(`The block tools can't edit the collection '${input.collection}'.`);
