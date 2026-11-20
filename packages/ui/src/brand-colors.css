@@ -1,18 +1,25 @@
 /*
  * FrogBot's default brand colour: green on Payload's own brand and selected tokens, in the admin and on
  * FrogBot UI pages. Override the same tokens on :root and [data-theme] to rebrand.
+ * No white on green: text and icons on a green fill use Payload's black, and hover and pressed get lighter,
+ * not darker, so the black stays readable. Core keeps Payload's blacks rather than a branded dark.
  */
 @layer theme.frogbot {
   :root,
   [data-theme] {
     --color-bg-brand: #2f964f;
-    --color-bg-brand-hover: #166d30;
-    --color-bg-brand-pressed: #0e5523;
-    --color-bg-brand-secondary: #0e5523;
+    --color-bg-brand-hover: #3acf6a;
+    --color-bg-brand-pressed: #67c285;
+    --color-bg-brand-secondary: #3acf6a;
     --color-bg-selected-strong: var(--color-bg-brand);
     --color-bg-selected-strong-hover: var(--color-bg-brand-hover);
     --color-bg-selected-strong-pressed: var(--color-bg-brand-pressed);
     --color-border-selected: var(--color-bg-brand);
+    --color-border-onbrand-strong: rgba(0, 0, 0, 0.9);
+    --color-icon-onbrand: rgba(0, 0, 0, 0.9);
+    --color-icon-onbrand-secondary: rgba(0, 0, 0, 0.6);
+    --color-text-onbrand: rgba(0, 0, 0, 0.9);
+    --color-text-onbrand-secondary: rgba(0, 0, 0, 0.6);
   }
 
   :root,
