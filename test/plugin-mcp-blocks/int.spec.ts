@@ -559,6 +559,62 @@ describe('MCP block tools', () => {
       expect(await read('es')).toEqual(['Buenas']);
     });
 
+    it("edits an empty locale as empty, without copying or losing the fallback locale's blocks", async () => {
+      const note = await booted.frogbot.create({
+        collection: notesSlug,
+        data: { title: 'Note', body: [{ id: 'n1', blockType: 'quote', body: 'Hello' }] },
+        locale: 'en',
+        overrideAccess: true,
+      });
+
+      const outline = await call('listBlocks', { slug: notesSlug, id: note.id, locale: 'es' });
+
+      expect((outline.data as Outline).fields[0]?.blocks).toEqual([]);
+
+      const insert = await call('insertBlock', {
+        slug: notesSlug,
+        id: note.id,
+        locale: 'es',
+        field: 'body',
+        block: { blockType: 'quote', body: 'Hola' },
+      });
+
+      expect(insert.isError).toBe(false);
+
+      const read = async (locale: 'en' | 'es') =>
+        (
+          (
+            await booted.frogbot.findByID({
+              collection: notesSlug,
+              id: note.id,
+              locale,
+              fallbackLocale: false,
+              overrideAccess: true,
+            })
+          ).body ?? []
+        ).map(({ body }) => body);
+
+      expect(await read('en')).toEqual(['Hello']);
+      expect(await read('es')).toEqual(['Hola']);
+    });
+
+    it('insertBlock refuses a block whose nested blocks reuse an id', async () => {
+      const before = await draftPage();
+      const result = await call(
+        'insertBlock',
+        onPage({
+          field: 'layout',
+          block: { blockType: 'columns', items: [{ id: 'h2', blockType: 'heading', text: 'Dup' }] },
+        }),
+      );
+
+      expect(result).toMatchObject({
+        isError: true,
+        text: "A block with the id 'h2' already exists.",
+      });
+      expect((await draftPage()).layout).toEqual(before.layout);
+    });
+
     it('a doc id that does not exist is an error, not a new document', async () => {
       const result = await call('insertBlock', {
         slug: pagesSlug,
