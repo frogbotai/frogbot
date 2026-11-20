@@ -105,7 +105,7 @@ describe('block tools and field access, drafts and locales', () => {
 
   async function stored(collection: string, id: number | string, extra: Doc = {}): Promise<Doc> {
     const doc = await booted.frogbot.findByID({
-      collection: collection as 'guarded',
+      collection: collection as 'users',
       id,
       depth: 0,
       overrideAccess: true,
