@@ -260,7 +260,7 @@ describe('bump', () => {
     const references = snapshot(join(root, 'skills/frogbot/reference'));
     const version = JSON.parse(originalRoot.toString()).version;
 
-    expect(Object.keys(references)).toHaveLength(26);
+    expect(Object.keys(references)).toHaveLength(27);
     expect(original).toContain(`  version: '${version}'`);
 
     const result = run();
