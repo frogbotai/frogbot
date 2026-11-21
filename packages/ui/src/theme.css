@@ -4,7 +4,7 @@
  * What FrogBot exposes (what a designer or an app changes):
  *   1. Ramps: the raw colors, exactly the Figma "Primitives".
  *   2. Roles: which ramp step each job uses in light and dark, exactly the Figma "Color" collection
- *      (shadcn names). One role is NEW and not in Figma yet.
+ *      (shadcn names).
  *   3. Type, spacing and radius, with Tailwind and shadcn names.
  * How it reaches Payload (FrogBot's job, nobody else edits it):
  *   4. Every Payload color token, set from a role.
@@ -125,6 +125,8 @@
     --popover: var(--neutral-white);
     --popover-foreground: var(--neutral-950);
     --primary: var(--green-400);
+    --primary-hover: var(--green-300);
+    --primary-pressed: var(--green-500);
     --primary-foreground: var(--green-950);
     --secondary: var(--neutral-100);
     --secondary-foreground: var(--neutral-950);
@@ -135,7 +137,7 @@
     --accent-foreground: var(--neutral-950);
     --brand: var(--green-700);
     --brand-subtle: var(--green-100);
-    --brand-subtle-hover: var(--green-200); /* NEW: not in Figma yet */
+    --brand-subtle-hover: var(--green-200);
     --destructive: var(--red-700);
     --warning: var(--amber-700);
     --success: var(--green-700);
@@ -175,7 +177,7 @@
     --accent-foreground: var(--neutral-100);
     --brand: var(--green-400);
     --brand-subtle: var(--green-900);
-    --brand-subtle-hover: var(--green-800); /* NEW: not in Figma yet */
+    --brand-subtle-hover: var(--green-800);
     --destructive: var(--red-400);
     --warning: var(--amber-400);
     --success: var(--green-400);
@@ -246,10 +248,6 @@
   /* ───── 4. Payload map: colors ───── */
   :root,
   [data-theme] {
-    /* mixed in every section, so a --primary set on any [data-theme] gets matching states */
-    --primary-hover: color-mix(in srgb, var(--primary), white 16%);
-    --primary-pressed: color-mix(in srgb, var(--primary), black 11%);
-
     /* --background */
     --color-bg: var(--background); /* was #ffffff | #2c2c2c */
     --color-icon-oncomponent: var(--background); /* was #ffffff */
@@ -663,17 +661,17 @@
     --field-min-height-large: calc(var(--control-height) + var(--spacing)); /* was 32px */
 
     /* radius: Figma radius/sm 6, md 8, lg 12, xl 20, full */
-    --radius-small: calc(var(--radius) - 4px); /* was 2px */
+    --radius-small: var(--fb-radius-sm); /* was 2px */
     --radius-chip: 9999px; /* was 3px: Figma badges are pills */
-    --radius-medium: var(--radius); /* was 5px */
-    --radius-large: calc(var(--radius) + 4px); /* was 13px: menus, popups */
+    --radius-medium: var(--fb-radius-md); /* was 5px */
+    --radius-large: var(--fb-radius-lg); /* was 13px: menus, popups */
     --button-radius: 9999px; /* was 5px: Figma buttons are pills */
-    --field-border-radius: calc(var(--radius) + 4px); /* was 5px: Figma fields use radius/lg */
+    --field-border-radius: var(--fb-radius-lg); /* was 5px: Figma fields use radius/lg */
     --fb-radius: var(--radius); /* FrogBot UI's radius */
-    --fb-radius-sm: calc(var(--fb-radius) - 4px);
-    --fb-radius-md: calc(var(--fb-radius) - 2px);
-    --fb-radius-lg: var(--fb-radius);
-    --fb-radius-xl: calc(var(--fb-radius) + 4px);
+    --fb-radius-sm: calc(var(--fb-radius) * 0.75);
+    --fb-radius-md: var(--fb-radius);
+    --fb-radius-lg: calc(var(--fb-radius) * 1.5);
+    --fb-radius-xl: calc(var(--fb-radius) * 2.5);
 
     /* FrogBot UI's type: Tailwind's sizes, FrogBot's line heights for reading */
     --fb-text-xs: var(--text-xs);
@@ -683,15 +681,15 @@
     --fb-text-base: var(--text-base);
     --fb-text-base--line-height: 1.75rem;
     --fb-text-lg: var(--text-lg);
-    --fb-text-lg--line-height: 1.625rem;
+    --fb-text-lg--line-height: 1.75rem;
     --fb-text-xl: var(--text-xl);
-    --fb-text-xl--line-height: 1.625rem;
+    --fb-text-xl--line-height: 1.75rem;
     --fb-text-2xl: var(--text-2xl);
     --fb-text-2xl--line-height: 2rem;
     --fb-text-3xl: var(--text-3xl);
-    --fb-text-3xl--line-height: 2.5rem;
+    --fb-text-3xl--line-height: 2.25rem;
     --fb-text-4xl: var(--text-4xl);
-    --fb-text-4xl--line-height: 2.75rem;
+    --fb-text-4xl--line-height: 2.5rem;
     --fb-text-5xl: var(--text-5xl);
     --fb-text-5xl--line-height: 3rem;
 

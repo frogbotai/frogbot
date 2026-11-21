@@ -120,7 +120,7 @@ test("the docs' blue theme leaves no green on primary hover and pressed", async 
   await openPostCreate(page, 'light');
 
   await page.addStyleTag({
-    content: `:root { --blue-400: #60a5fa; --primary: var(--blue-400); --primary-foreground: var(--neutral-950); --brand: var(--blue-700); }
+    content: `:root { --blue-400: #60a5fa; --primary: var(--blue-400); --primary-hover: var(--blue-300); --primary-pressed: var(--blue-500); --primary-foreground: var(--neutral-950); --brand: var(--blue-700); }
 [data-theme='dark'] { --brand: var(--blue-400); }`,
   });
 
@@ -188,23 +188,20 @@ test('Tailwind pages keep JetBrains Mono as the FrogBot code font', async ({ pag
   expect(font).toMatch(/^"JetBrains Mono"/);
 });
 
-test('a dark --primary set on [data-theme=dark] drives hover and pressed in a dark section', async ({
+test('dark primary roles set on [data-theme=dark] reach brand fills in a dark section', async ({
   page,
 }) => {
   await openPostCreate(page, 'light');
-  await page.addStyleTag({ content: `[data-theme='dark'] { --primary: rgb(37, 99, 235); }` });
+
+  await page.addStyleTag({
+    content: `[data-theme='dark'] { --primary: rgb(37, 99, 235); --primary-hover: rgb(96, 165, 250); --primary-pressed: rgb(29, 78, 216); }`,
+  });
 
   const section = '<div data-theme="dark" data-leaf></div>';
-  const mixed = (amount: string) =>
-    tokenIn(
-      page,
-      '--mixed',
-      `<div data-theme="dark" data-leaf style="--mixed: color-mix(in srgb, rgb(37, 99, 235), ${amount})"></div>`,
-    );
 
   expect(await tokenIn(page, '--color-bg-brand', section)).toBe('rgb(37, 99, 235)');
-  expect(await tokenIn(page, '--color-bg-brand-hover', section)).toBe(await mixed('white 16%'));
-  expect(await tokenIn(page, '--color-bg-brand-pressed', section)).toBe(await mixed('black 11%'));
+  expect(await tokenIn(page, '--color-bg-brand-hover', section)).toBe('rgb(96, 165, 250)');
+  expect(await tokenIn(page, '--color-bg-brand-pressed', section)).toBe('rgb(29, 78, 216)');
 });
 
 test("the admin's body line height stays a length when Tailwind's theme sets --text-sm--line-height", async ({
