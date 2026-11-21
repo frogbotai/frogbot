@@ -200,7 +200,11 @@ test.describe('FrogBot UI in the admin', () => {
 
     expect(defaultRadius).not.toMatch(/^(0px|2px)$/);
     await page.addStyleTag({ content: ':root { --fb-radius: 2px; }' });
-    await expect(code).toHaveCSS('border-radius', '2px');
+
+    await expect(code, 'code blocks use --fb-radius-lg, 1.5 times the base').toHaveCSS(
+      'border-radius',
+      '3px',
+    );
   });
 
   test('colors user code blocks with the admin theme', async ({ page }) => {

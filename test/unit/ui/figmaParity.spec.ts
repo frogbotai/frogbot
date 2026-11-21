@@ -18,19 +18,9 @@ const theme = readFileSync(join(root, 'packages/ui/src/theme.css'), 'utf8').repl
   '',
 );
 
-const knownDifferences = {
-  color: {
-    'primary-hover':
-      'Mixed from --primary so a custom primary gets matching states; Figma names green/300.',
-    'primary-pressed':
-      'Mixed from --primary so a custom primary gets matching states; Figma names green/500.',
-  },
-  radius: {
-    'radius/sm': 'Owner to decide: FrogBot steps 4/6/8/12px from --radius, Figma 6/8/12/20px.',
-    'radius/md': 'Owner to decide: FrogBot steps 4/6/8/12px from --radius, Figma 6/8/12/20px.',
-    'radius/lg': 'Owner to decide: FrogBot steps 4/6/8/12px from --radius, Figma 6/8/12/20px.',
-    'radius/xl': 'Owner to decide: FrogBot steps 4/6/8/12px from --radius, Figma 6/8/12/20px.',
-  },
+const knownDifferences: { color: Record<string, string>; radius: Record<string, string> } = {
+  color: {},
+  radius: {},
 };
 
 const appText = {
@@ -67,13 +57,12 @@ const cssName = (figmaName: string) => `--${figmaName.replace('/', '-')}`;
 const px = (rem: string | undefined) => Number.parseFloat(rem ?? 'NaN') * 16;
 
 function radiusPx(value: string | undefined): number {
-  const step = /^calc\(var\(--fb-radius\) ([+-]) (\d+)px\)$/.exec(value ?? '');
   const base = px(scale.get('--radius'));
+  const step = /^calc\(var\(--fb-radius\) \* ([\d.]+)\)$/.exec(value ?? '');
 
   if (value === 'var(--fb-radius)') return base;
-  if (!step) return Number.NaN;
 
-  return step[1] === '+' ? base + Number(step[2]) : base - Number(step[2]);
+  return step ? base * Number(step[1]) : Number.NaN;
 }
 
 describe("theme.css matches the designer's Figma design system", () => {

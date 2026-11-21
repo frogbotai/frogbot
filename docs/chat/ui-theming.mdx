@@ -29,7 +29,7 @@ The theme has two levels, like FrogBot's design system:
 | `--background`, `--foreground` | Page and its text | white, `neutral-950` | `neutral-950`, `neutral-100` |
 | `--card`, `--popover` (and `-foreground`) | Raised panels, menus and dialogs | white | `neutral-900`, `neutral-700` |
 | `--primary` | Primary buttons, checked checkboxes, the chat's send button | `green-400` | `green-400` |
-| `--primary-hover`, `--primary-pressed` | Hover and pressed fills, mixed from `--primary` | | |
+| `--primary-hover`, `--primary-pressed` | Hover and pressed primary fills; set them with `--primary` | `green-300`, `green-500` | `green-300`, `green-500` |
 | `--primary-foreground` | Text and icons on a primary fill | `green-950` | `green-950` |
 | `--brand`, `--brand-subtle`, `--brand-subtle-hover` | Brand text, selected rows and their tint | `green-700`, `green-100` | `green-400`, `green-900` |
 | `--secondary`, `--muted`, `--accent` (and `-foreground`) | Secondary buttons, quiet panels, hover and pressed states | `neutral-50` to `-100` | `neutral-700` to `-800` |
@@ -48,6 +48,8 @@ For example, to make the theme blue on a cool grey:
 :root {
   --blue-400: #60a5fa;
   --primary: var(--blue-400);
+  --primary-hover: var(--blue-300);
+  --primary-pressed: var(--blue-500);
   --primary-foreground: var(--neutral-950);
   --brand: var(--blue-700);
 }

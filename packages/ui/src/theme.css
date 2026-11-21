@@ -125,6 +125,8 @@
     --popover: var(--neutral-white);
     --popover-foreground: var(--neutral-950);
     --primary: var(--green-400);
+    --primary-hover: var(--green-300);
+    --primary-pressed: var(--green-500);
     --primary-foreground: var(--green-950);
     --secondary: var(--neutral-100);
     --secondary-foreground: var(--neutral-950);
@@ -246,10 +248,6 @@
   /* ───── 4. Payload map: colors ───── */
   :root,
   [data-theme] {
-    /* mixed in every section, so a --primary set on any [data-theme] gets matching states */
-    --primary-hover: color-mix(in srgb, var(--primary), white 16%);
-    --primary-pressed: color-mix(in srgb, var(--primary), black 11%);
-
     /* --background */
     --color-bg: var(--background); /* was #ffffff | #2c2c2c */
     --color-icon-oncomponent: var(--background); /* was #ffffff */
@@ -670,10 +668,10 @@
     --button-radius: 9999px; /* was 5px: Figma buttons are pills */
     --field-border-radius: calc(var(--radius) + 4px); /* was 5px: Figma fields use radius/lg */
     --fb-radius: var(--radius); /* FrogBot UI's radius */
-    --fb-radius-sm: calc(var(--fb-radius) - 4px);
-    --fb-radius-md: calc(var(--fb-radius) - 2px);
-    --fb-radius-lg: var(--fb-radius);
-    --fb-radius-xl: calc(var(--fb-radius) + 4px);
+    --fb-radius-sm: calc(var(--fb-radius) * 0.75);
+    --fb-radius-md: var(--fb-radius);
+    --fb-radius-lg: calc(var(--fb-radius) * 1.5);
+    --fb-radius-xl: calc(var(--fb-radius) * 2.5);
 
     /* FrogBot UI's type: Tailwind's sizes, FrogBot's line heights for reading */
     --fb-text-xs: var(--text-xs);

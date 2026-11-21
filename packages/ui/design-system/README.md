@@ -12,9 +12,12 @@ FrogBot's theme matches the designer's Figma file, [FrogBot Design System](https
 
 `Marketing/*` text styles are for the marketing site, not core.
 
-## When the designer changes Figma
+## Sync, when the owner asks
+
+The designer experiments in Figma, so nothing syncs on its own. When the owner asks to sync:
 
 1. Run `export-figma.js` with the Figma MCP `use_figma` tool on file `SX483mR8PAHG5zZ1GL4pgi`, and save its result as `figma.json`.
 2. Run `pnpm test:unit test/unit/ui/figmaParity.spec.ts`. Each failure names the token and the Figma value.
 3. Update `src/theme.css` until the test passes. A Figma role that theme.css lacks is new: add it, and point the admin tokens that fit at it.
 4. A difference kept on purpose goes in `knownDifferences` in the test, with its reason. The test fails if the list is out of date.
+5. Open a PR with before and after screenshots of what changed.
