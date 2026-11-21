@@ -18,7 +18,7 @@ npx skills add frogbotai/frogbot
 
 Select the `frogbot` skill and the agents you use. Choose project scope to share the installation with your project. The recommended symlink installation keeps a canonical copy in `.agents/skills/frogbot` and links agent-specific directories, such as `.claude/skills/frogbot`, to it. Agents that read `.agents/skills` use that copy directly. Use `--copy` if you need independent copies instead of symlinks.
 
-GitHub installation includes all 24 Markdown files: `SKILL.md` and 23 files in `reference/`. Prefer this route when you want the references available locally.
+GitHub installation includes `SKILL.md` and every file in `reference/`. Prefer this route when you want the references available locally.
 
 ## Install as a Claude Code plugin
 
@@ -34,7 +34,7 @@ Then install the plugin:
 /plugin install frogbot@frogbot
 ```
 
-The plugin includes the same complete 24-file skill directory. Claude Code discovers it within the plugin; follow any reload instructions shown by the client.
+The plugin includes the same complete skill directory. Claude Code discovers it within the plugin; follow any reload instructions shown by the client.
 
 ## Include the skill in a new app
 
@@ -71,6 +71,7 @@ Start with `SKILL.md`; its task routing table directs your agent to the relevant
 
 | Area | Topics |
 | --- | --- |
+| Getting started | Setting up FrogBot and building a first app from an empty folder: one question, then a running app with sample records and a login |
 | Data and APIs | Collections, fields, field type guards, queries, endpoints, and database, storage, and email adapters |
 | Application behavior | Hooks, access control, authentication, admin customization, preview, localization, and plugin development |
 | AI applications | Agents, tools, providers, chat UI, pieces, and connections |
@@ -86,7 +87,7 @@ For an HTTP-based installation, use the documentation site as the source:
 npx skills add https://docs.frogbot.ai
 ```
 
-Select `frogbot` from discovery. Hosted installation provides **only `SKILL.md`**. It does not download the 23 reference files. When a local reference is unavailable, the agent can fetch its explicit raw GitHub fallback from the entry's final reference index. For example:
+Select `frogbot` from discovery. Hosted installation provides **only `SKILL.md`**. It does not download the reference files. When a local reference is unavailable, the agent can fetch its explicit raw GitHub fallback from the entry's final reference index. For example:
 
 ```text
 https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/COLLECTIONS.md
