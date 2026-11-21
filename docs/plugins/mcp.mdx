@@ -124,7 +124,7 @@ import { blockTools, mcpPlugin } from '@frogbotai/plugin-mcp'
 mcpPlugin({ tools: [...blockTools({ collections: ['pages'] })] })
 ```
 
-`collections` limits which collections they edit. Without it, they edit every app collection with a blocks field. Each call takes the `collection` and the document `id`, and finds blocks by their `id`, in nested blocks fields too.
+There are six tools whatever the number of collections: each call names its `collection` and the document `id`, and finds blocks by their `id`, in nested blocks fields too. `collections` limits which collections they edit. Without it, they edit every app collection with a blocks field. Over MCP, `collection` lists those collections as its choices in `tools/list`, so a client sees the valid slugs, and a wrong one is refused with the list.
 
 | Tool | Does |
 | --- | --- |

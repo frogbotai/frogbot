@@ -33,7 +33,14 @@ type ToolCallBody = {
   };
 };
 
-type ToolsListBody = { result: { tools: Array<{ name: string }> } };
+type ToolsListBody = {
+  result: {
+    tools: Array<{
+      name: string;
+      inputSchema: { properties: Record<string, { enum?: string[] } | undefined> };
+    }>;
+  };
+};
 
 type Outline = {
   fields: Array<{
@@ -176,7 +183,7 @@ describe('MCP block tools', () => {
 
   const ids = (blocks: Block[]) => blocks.map(({ id }) => id);
 
-  it('lists the six block tools', async () => {
+  it('lists the six block tools, with the collections they can edit as choices', async () => {
     const response = await booted.restClient.post<ToolsListBody | string>(
       mcpEndpoint,
       { jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} },
@@ -188,7 +195,12 @@ describe('MCP block tools', () => {
       },
     );
 
-    const names = parse<ToolsListBody>(response.body).result.tools.map(({ name }) => name);
+    const { tools } = parse<ToolsListBody>(response.body).result;
+    const names = tools.map(({ name }) => name);
+    const collection = tools.find(({ name }) => name === 'insertBlock')?.inputSchema.properties
+      .collection;
+
+    expect(collection?.enum).toEqual([pagesSlug, notesSlug, lockedSlug, groupedSlug]);
 
     expect(names).toEqual(
       expect.arrayContaining([
@@ -251,7 +263,9 @@ describe('MCP block tools', () => {
     const { isError, text } = await call('listBlocks', { collection, id: 1 });
 
     expect(isError).toBe(true);
-    expect(text).toBe(`The block tools can't edit the collection '${collection}'.`);
+    expect(text).toContain(
+      `collection: Invalid option: expected one of "pages"|"notes"|"locked"|"grouped"`,
+    );
   });
 
   it('insertBlock places a block after another, saves a draft, and leaves the published page alone', async () => {
