@@ -9,7 +9,7 @@ import {
   readAdminColor,
   readBackground,
 } from './__helpers/adminTheme';
-import { colorDifference, contrast } from './__helpers/color';
+import { colorDifference, contrast, flatten } from './__helpers/color';
 import { signedOut } from './__helpers/signIn';
 
 const optionColors = ['gray', 'blue', 'green', 'yellow', 'red', 'pink', 'purple'];
@@ -61,10 +61,10 @@ test.describe('FrogBot UI in the admin', () => {
 
       await expect(page.locator('.btn--style-primary').first()).toHaveCSS(
         'background-color',
-        'rgb(47, 150, 79)',
+        'rgb(58, 207, 106)',
       );
       expect(await readAdminColor(page, '--color-text-brand')).toBe(
-        theme === 'dark' ? 'rgb(103, 194, 133)' : 'rgb(22, 109, 48)',
+        theme === 'dark' ? 'rgb(58, 207, 106)' : 'rgb(22, 109, 48)',
       );
     });
   }
@@ -108,9 +108,9 @@ test.describe('FrogBot UI in the admin', () => {
 
   for (const [theme, background] of [
     ['light', 'rgb(255, 255, 255)'],
-    ['dark', 'rgb(44, 44, 44)'],
+    ['dark', 'rgb(9, 14, 27)'],
   ] as const) {
-    test(`leaves the ${theme} admin's own tokens in place`, async ({ page }) => {
+    test(`sets the ${theme} admin's tokens from the FrogBot theme`, async ({ page }) => {
       await openPostCreate(page, theme);
       await expect(page.locator('html')).toHaveAttribute('data-fb-ui-page', '');
       await expect(page.getByTestId('theme-probe-default').first()).toBeVisible();
@@ -119,7 +119,7 @@ test.describe('FrogBot UI in the admin', () => {
       expect(await readRootProperty(page, '--font-body')).toMatch(/^"Inter",/);
       await expect(page.locator('html')).toHaveCSS('background-color', background);
 
-      for (const removed of ['--fb-base-0', '--fb-theme-base-0', '--background', '--primary']) {
+      for (const removed of ['--fb-base-0', '--fb-theme-base-0']) {
         expect(await readRootProperty(page, removed), removed).toBe('');
       }
     });
@@ -248,7 +248,7 @@ test("uses the admin's color tokens on pages outside the admin", async ({ page }
   const button = page.getByTestId('theme-check-default');
 
   await expect(button).toBeVisible();
-  await expectBackground(button, 'rgb(44, 44, 44)');
+  await expectBackground(button, 'rgb(9, 14, 27)');
   await expect(page.locator('html')).not.toHaveAttribute('data-fb-ui-page');
   expect(
     await page.evaluate(() => {
@@ -274,15 +274,15 @@ test("uses the admin's color tokens on pages outside the admin", async ({ page }
       };
     }),
   ).toEqual({
-    bg: { light: 'rgb(255, 255, 255)', dark: 'rgb(44, 44, 44)' },
-    brand: 'rgb(47, 150, 79)',
+    bg: { light: 'rgb(255, 255, 255)', dark: 'rgb(9, 14, 27)' },
+    brand: 'rgb(58, 207, 106)',
     removed: '',
   });
 });
 
-for (const [colorScheme, codeBackground, grayBackground] of [
-  ['light', 'rgb(245, 245, 245)', 'rgb(245, 245, 245)'],
-  ['dark', 'rgb(56, 56, 56)', 'rgb(56, 56, 56)'],
+for (const [colorScheme, codeBackground, grayBackground, pageBackground] of [
+  ['light', 'rgb(245, 246, 249)', 'rgb(245, 246, 249)', 'rgb(255, 255, 255)'],
+  ['dark', 'rgb(20, 26, 42)', 'rgb(20, 26, 42)', 'rgb(9, 14, 27)'],
 ] as const) {
   test.describe(`on a ${colorScheme} operating system outside the admin`, () => {
     test.use({ colorScheme });
@@ -313,8 +313,13 @@ for (const [colorScheme, codeBackground, grayBackground] of [
         })),
       );
 
+      const shown = (pill: (typeof colors)[number]) => ({
+        text: pill.text,
+        background: flatten(pill.background, pageBackground),
+      });
+
       for (const pill of colors) {
-        expect(contrast(pill), `${pill.name} contrast`).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(shown(pill)), `${pill.name} contrast`).toBeGreaterThanOrEqual(4.5);
         expect(pill.background, `${pill.name} background`).toBe(
           await readAdminColor(page, optionPillTokens[pill.name].background),
         );
@@ -331,7 +336,7 @@ for (const [colorScheme, codeBackground, grayBackground] of [
         for (const b of optionColors.slice(index + 1)) {
           expect(
             Math.max(
-              colorDifference(byName[a].background, byName[b].background),
+              colorDifference(shown(byName[a]).background, shown(byName[b]).background),
               colorDifference(byName[a].text, byName[b].text),
             ),
             `${a}/${b} difference`,

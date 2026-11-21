@@ -12,6 +12,22 @@ function srgbChannels(color: string) {
   return rgb!.slice(1, 4).map((value) => Number(value) / 255);
 }
 
+function alpha(color: string) {
+  const value =
+    color.match(/\/ ([\d.e-]+)\)$/) ?? color.match(/^rgba\([^,]+,[^,]+,[^,]+, ([\d.e-]+)\)$/);
+
+  return value ? Number(value[1]) : 1;
+}
+
+/** Paints a translucent color over an opaque backdrop, as the screen shows it. */
+export function flatten(color: string, backdrop: string) {
+  const opacity = alpha(color);
+  const top = srgbChannels(color);
+  const bottom = srgbChannels(backdrop);
+
+  return `color(srgb ${top.map((channel, index) => channel * opacity + bottom[index] * (1 - opacity)).join(' ')})`;
+}
+
 function linearChannels(color: string) {
   return srgbChannels(color).map((channel) =>
     channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,

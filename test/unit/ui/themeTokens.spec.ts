@@ -38,8 +38,7 @@ const oldTokenPattern = new RegExp(
 
 const pageSelector = ':where(html:not([data-fb-ui-page]))';
 const payloadTokensPath = join(root, 'packages/ui/src/payload-tokens.css');
-const brandColorsPath = join(root, 'packages/ui/src/brand-colors.css');
-const brandToken = /brand|selected/;
+const themePath = join(root, 'packages/ui/src/theme.css');
 
 const removedTokenPattern = new RegExp(
   [
@@ -48,8 +47,8 @@ const removedTokenPattern = new RegExp(
     /--font-payload/,
     /--color-brand-[\w-]+/,
     /--color-(?:green|purple|orange)-350/,
-    /(?<![\w-])--(?:color-)?(?:background|foreground|card|popover|primary|secondary|muted|accent|destructive|success|warning|input|ring|sidebar)(?:-[\w-]+)?(?![\w-])/,
-    /(?<![\w-])--border(?:-hover)?(?![\w-])/,
+    /--color-(?:background|foreground|card|popover|primary|secondary|muted|accent|destructive|success|warning|input|ring|sidebar)(?:-[\w-]+)?(?![\w-])/,
+    /(?<![\w-])--border-hover(?![\w-])/,
   ]
     .map((pattern) => pattern.source)
     .join('|'),
@@ -216,6 +215,7 @@ describe('FrogBot cascade layers', () => {
       readTopLevelBlocks(file)
         .filter((prelude) => !frogbotLayers.includes(prelude))
         .filter((prelude) => file !== resetPath || prelude !== '@layer frogbot-reset')
+        .filter((prelude) => file !== themePath || !['@font-face', 'html:root'].includes(prelude))
         .map((prelude) => `${relative(root, file)}: ${prelude}`),
     );
 
@@ -228,7 +228,7 @@ describe('FrogBot cascade layers', () => {
     expect(readImports(stylesPath).slice(0, 4)).toEqual([
       layerOrderFiles[0],
       payloadTokensPath,
-      brandColorsPath,
+      themePath,
       resetPath,
     ]);
   });
@@ -261,7 +261,9 @@ describe('FrogBot theme tokens', () => {
       (directory) => listCssFiles(join(root, directory)),
     );
 
-    const offenders = files.filter((file) => oldTokenPattern.test(readFileSync(file, 'utf8')));
+    const offenders = files
+      .filter((file) => file !== themePath)
+      .filter((file) => oldTokenPattern.test(readFileSync(file, 'utf8')));
 
     expect(files.length).toBeGreaterThan(50);
     expect(offenders).toEqual([]);
@@ -300,19 +302,16 @@ describe('FrogBot theme tokens', () => {
     expect(offenders.map((file) => relative(root, file))).toEqual([]);
   });
 
-  it('declares color tokens only in payload-tokens.css and brand tokens in brand-colors.css', () => {
+  it('declares color tokens only in payload-tokens.css and theme.css', () => {
     const payloadNames = readDeclaredNames(payloadTokensPath);
     const colorName = (name: string) =>
       payloadNames.has(name) || /^--(?:color|ramp|elevation|special|field-color)-/.test(name);
 
     const offenders = frogbotCssFiles
-      .filter((file) => file !== payloadTokensPath)
+      .filter((file) => file !== payloadTokensPath && file !== themePath)
       .flatMap((file) =>
         [...readDeclaredNames(file)]
           .filter(colorName)
-          .filter(
-            (name) => file !== brandColorsPath || !brandToken.test(name) || !adminNames.has(name),
-          )
           .map((name) => `${relative(root, file)}: ${name}`),
       );
 
@@ -321,62 +320,123 @@ describe('FrogBot theme tokens', () => {
     expect(offenders).toEqual([]);
   });
 
-  it("sets FrogBot's brand on Payload's own brand tokens, light and dark", () => {
-    const rules = parseRules(stripComments(readFileSync(brandColorsPath, 'utf8')));
-    const page = rules.find((rule) => rule.selectors.join() === ':root,[data-theme]');
-    const light = rules.find((rule) => rule.selectors.includes('[data-theme="light"]'));
-    const dark = rules.find((rule) => rule.selectors.includes('[data-theme="dark"]'));
+  describe('theme.css', () => {
+    const themeRules = parseRules(stripComments(readFileSync(themePath, 'utf8')));
+    const ruleFor = (selectors: string) => {
+      const rule = themeRules.find((candidate) => candidate.selectors.join() === selectors);
 
-    expect(rules.every((rule) => rule.layer === 'theme.frogbot')).toBe(true);
-    expect(light?.selectors).toEqual([':root', '[data-theme="light"]']);
-    expect(page?.declarations.get('--color-bg-brand')).toBe('#2f964f');
-    expect([...(light?.declarations.keys() ?? [])].sort()).toEqual(
-      [...(dark?.declarations.keys() ?? [])].sort(),
-    );
-    expect(dark?.declarations.get('--color-text-brand')).toBe('#67c285');
-    expect(
-      [...readDeclaredNames(brandColorsPath)].filter((name) => !brandToken.test(name)),
-    ).toEqual([]);
-  });
+      if (!rule) throw new Error(`No theme rule for ${selectors}`);
 
-  it('draws selected borders, such as a checked checkbox, in the brand color, light and dark', () => {
-    const rules = parseRules(stripComments(readFileSync(brandColorsPath, 'utf8')));
-    const page = rules.find((rule) => rule.selectors.join() === ':root,[data-theme]');
-    const light = rules.find((rule) => rule.selectors.includes('[data-theme="light"]'));
-    const dark = rules.find((rule) => rule.selectors.includes('[data-theme="dark"]'));
+      return rule;
+    };
 
-    expect(page?.declarations.get('--color-border-selected')).toBe('var(--color-bg-brand)');
+    const light = ruleFor(':root,[data-theme="light"]');
+    const dark = ruleFor('[data-theme="dark"]');
+    const payloadMap = ruleFor(':root,[data-theme]');
 
-    for (const theme of [light, dark]) {
-      expect(theme?.declarations.get('--color-border-selected-strong')).toBe(
-        'var(--color-border-brand-strong)',
+    it('keeps every token in theme.frogbot, the mono font override aside', () => {
+      const outside = themeRules.filter((rule) => rule.layer !== 'theme.frogbot');
+
+      expect(outside.map((rule) => rule.selectors)).toEqual([['html:root']]);
+      expect(outside[0].properties).toEqual(['--font-family-mono']);
+    });
+
+    it('declares the same roles in light and dark', () => {
+      expect(light.properties.length).toBeGreaterThan(30);
+      expect([...light.properties].sort()).toEqual([...dark.properties].sort());
+    });
+
+    it('draws text on the green fill in dark ink, never white, light and dark', () => {
+      for (const theme of [light, dark]) {
+        expect(theme.declarations.get('--primary')).toBe('var(--green-400)');
+        expect(theme.declarations.get('--primary-foreground')).toBe('var(--green-950)');
+      }
+
+      for (const name of [
+        '--color-text-onbrand',
+        '--color-icon-onbrand',
+        '--color-text-onsuccess',
+      ]) {
+        expect(payloadMap.declarations.get(name)).toBe('var(--primary-foreground)');
+      }
+    });
+
+    it('builds every Payload color token it sets from theme tokens, never a raw color', () => {
+      const payloadColors = payloadMap.properties.filter((name) => adminNames.has(name));
+      const raw = payloadColors.filter((name) => {
+        const value = payloadMap.declarations.get(name)!;
+        const reads = Array.from(value.matchAll(/var\(\s*(--[\w-]+)/g), (match) => match[1]);
+
+        return (
+          /#[\da-f]{3,8}\b|\b(?:rgba?|hsla?|oklch)\(/i.test(value) ||
+          reads.length === 0 ||
+          reads.some((read) => adminNames.has(read))
+        );
+      });
+
+      expect(payloadColors.length).toBeGreaterThan(100);
+      expect(raw).toEqual([]);
+    });
+
+    it('fills brand and selected states with the primary role and its hover and pressed steps', () => {
+      expect(
+        Object.fromEntries(
+          [
+            '--color-bg-brand',
+            '--color-bg-brand-hover',
+            '--color-bg-brand-pressed',
+            '--color-bg-selected-strong',
+            '--color-bg-selected-strong-hover',
+            '--color-bg-selected-strong-pressed',
+            '--color-bg-selected',
+            '--color-text-selected',
+            '--color-border-selected',
+          ].map((name) => [name, payloadMap.declarations.get(name)]),
+        ),
+      ).toEqual({
+        '--color-bg-brand': 'var(--primary)',
+        '--color-bg-brand-hover': 'var(--primary-hover)',
+        '--color-bg-brand-pressed': 'var(--primary-pressed)',
+        '--color-bg-selected-strong': 'var(--primary)',
+        '--color-bg-selected-strong-hover': 'var(--primary-hover)',
+        '--color-bg-selected-strong-pressed': 'var(--primary-pressed)',
+        '--color-bg-selected': 'var(--brand-subtle)',
+        '--color-text-selected': 'var(--brand)',
+        '--color-border-selected': 'var(--ring)',
+      });
+    });
+
+    it("uses Tailwind's type sizes under Tailwind's names", () => {
+      const tailwind = new Map(
+        Array.from(
+          readFileSync(resolveFrom('examples/tailwind', 'tailwindcss/theme.css'), 'utf8').matchAll(
+            /(--text-[\w-]+)\s*:\s*([^;]+);/g,
+          ),
+          (match) => [match[1], match[2].trim()] as const,
+        ),
       );
-    }
-  });
 
-  it('fills selected rows and pills with the brand color, light and dark', () => {
-    const rules = parseRules(stripComments(readFileSync(brandColorsPath, 'utf8')));
-    const page = rules.find((rule) => rule.selectors.join() === ':root,[data-theme]');
-    const light = rules.find((rule) => rule.selectors.includes('[data-theme="light"]'));
-    const dark = rules.find((rule) => rule.selectors.includes('[data-theme="dark"]'));
+      const sizes = themeRules
+        .flatMap((rule) => [...rule.declarations])
+        .filter(([name]) => /^--text-(?:xs|sm|base|lg|xl|[2-5]xl)$/.test(name));
 
-    expect(page?.declarations.get('--color-bg-selected-strong')).toBe('var(--color-bg-brand)');
-    expect(page?.declarations.get('--color-bg-selected-strong-hover')).toBe(
-      'var(--color-bg-brand-hover)',
-    );
-    expect(page?.declarations.get('--color-bg-selected-strong-pressed')).toBe(
-      'var(--color-bg-brand-pressed)',
-    );
+      expect(sizes).toHaveLength(9);
+      expect(sizes.filter(([name, value]) => tailwind.get(name) !== value)).toEqual([]);
+    });
 
-    for (const theme of [light, dark]) {
-      expect(theme?.declarations.get('--color-bg-selected')).toBe('var(--color-bg-brand-tertiary)');
-      expect(theme?.declarations.get('--color-bg-selected-hover')).toBe(
-        'var(--color-bg-brand-tertiary-hover)',
-      );
-      expect(theme?.declarations.get('--color-bg-selected-pressed')).toBeDefined();
-      expect(theme?.declarations.get('--color-text-selected')).toBe('var(--color-text-brand)');
-      expect(theme?.declarations.get('--color-icon-selected')).toBe('var(--color-icon-brand)');
-    }
+    it('sets JetBrains Mono as the code font, for FrogBot and the admin', () => {
+      expect(
+        themeRules
+          .flatMap((rule) => [...rule.declarations])
+          .filter(([name]) => name === '--font-mono'),
+      ).toEqual([['--font-mono', '"JetBrains Mono", monospace']]);
+      expect(
+        themeRules
+          .find((rule) => rule.declarations.has('--text-mono-family'))
+          ?.declarations.get('--text-mono-family'),
+      ).toBe('var(--font-mono)');
+      expect(ruleFor('html:root').declarations.get('--font-family-mono')).toBe('var(--font-mono)');
+    });
   });
 
   it('declares the Payload tokens outside the admin only, the light section aside', () => {

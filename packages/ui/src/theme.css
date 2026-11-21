@@ -1,0 +1,679 @@
+/*
+ * FrogBot theme.
+ *
+ * What FrogBot exposes (what a designer or an app changes):
+ *   1. Ramps: the raw colors, exactly the Figma "Primitives".
+ *   2. Roles: which ramp step each job uses in light and dark, exactly the Figma "Color" collection
+ *      (shadcn names). One role is NEW and not in Figma yet.
+ *   3. Type, spacing and radius, with Tailwind and shadcn names.
+ * How it reaches Payload (FrogBot's job, nobody else edits it):
+ *   4. Every Payload color token, set from a role.
+ *   5. Payload's type, spacing and radius tokens, set from part 3.
+ * Comments show Payload's own value ("light | dark", or one value for both).
+ * A value an app sets on a Payload token still wins over parts 4 and 5.
+ *
+ * Part 4 follows the rules the Figma components use:
+ *   soft tint (badges, banners) = role at 14%      color-mix(in srgb, var(--role) 14%, transparent)
+ *   outline (badge borders)     = role at 50%
+ *   hover on a colored fill     = role + 16% white  color-mix(in srgb, var(--role), white 16%)
+ *   text on a red fill          = background
+ *   hover and pressed on plain surfaces = accent
+ */
+/* JetBrains Mono, the Figma code font (SIL Open Font License 1.1). Downloads only where code shows. */
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url("./fonts/jetbrains-mono-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@layer theme.frogbot {
+  /* ───── 1. Ramps (Figma Primitives) ───── */
+  :root {
+    /* neutral */
+    --neutral-white: #ffffff;
+    --neutral-50: #f5f6f9;
+    --neutral-100: #e6e9ef;
+    --neutral-200: #d6dae2;
+    --neutral-300: #b4b9c4;
+    --neutral-400: #8a8f99;
+    --neutral-500: #6a7084;
+    --neutral-600: #363e52;
+    --neutral-700: #202738;
+    --neutral-800: #141a2a;
+    --neutral-900: #0e1422;
+    --neutral-950: #090e1b;
+    --neutral-black: #050912;
+
+    /* green */
+    --green-50: #ebfaf0;
+    --green-100: #d1f0db;
+    --green-200: #a0ddb4;
+    --green-300: #5be084;
+    --green-400: #3acf6a;
+    --green-500: #2fb85c;
+    --green-600: #22903f;
+    --green-700: #166d30;
+    --green-800: #114c25;
+    --green-900: #0d2b1a;
+    --green-950: #04210d;
+
+    /* red */
+    --red-50: #fef2f2;
+    --red-100: #fee2e2;
+    --red-200: #fecaca;
+    --red-300: #fca5a5;
+    --red-400: #f87171;
+    --red-500: #ef4444;
+    --red-600: #dc2626;
+    --red-700: #b91c1c;
+    --red-800: #991b1b;
+    --red-900: #7f1d1d;
+    --red-950: #450a0a;
+
+    /* amber */
+    --amber-50: #fffbeb;
+    --amber-100: #fef3c7;
+    --amber-200: #fde68a;
+    --amber-300: #fcd34d;
+    --amber-400: #fbbf24;
+    --amber-500: #f59e0b;
+    --amber-600: #d97706;
+    --amber-700: #b45309;
+    --amber-800: #92400e;
+    --amber-900: #78350f;
+    --amber-950: #451a03;
+
+    /* blue */
+    --blue-50: #eff6ff;
+    --blue-100: #dbeafe;
+    --blue-200: #bfdbfe;
+    --blue-300: #93c5fd;
+    --blue-400: #60a5fa;
+    --blue-500: #3b82f6;
+    --blue-600: #2563eb;
+    --blue-700: #1d4ed8;
+    --blue-800: #1e40af;
+    --blue-900: #1e3a8a;
+    --blue-950: #172554;
+
+    /* violet */
+    --violet-50: #f5f3ff;
+    --violet-100: #ede9fe;
+    --violet-200: #ddd6fe;
+    --violet-300: #c4b5fd;
+    --violet-400: #a78bfa;
+    --violet-500: #8b5cf6;
+    --violet-600: #7c3aed;
+    --violet-700: #6d28d9;
+    --violet-800: #5b21b6;
+    --violet-900: #4c1d95;
+    --violet-950: #2e1065;
+  }
+
+  /* ───── 2. Roles (Figma Color) ───── */
+  :root,
+  [data-theme="light"] {
+    --background: var(--neutral-white);
+    --foreground: var(--neutral-950);
+    --card: var(--neutral-white);
+    --card-foreground: var(--neutral-950);
+    --popover: var(--neutral-white);
+    --popover-foreground: var(--neutral-950);
+    --primary: var(--green-400);
+    --primary-hover: var(--green-300);
+    --primary-pressed: var(--green-500);
+    --primary-foreground: var(--green-950);
+    --secondary: var(--neutral-100);
+    --secondary-foreground: var(--neutral-950);
+    --muted: var(--neutral-50);
+    --muted-foreground: var(--neutral-500);
+    --disabled-foreground: var(--neutral-400);
+    --accent: var(--neutral-100);
+    --accent-foreground: var(--neutral-950);
+    --brand: var(--green-700);
+    --brand-subtle: var(--green-100);
+    --brand-subtle-hover: var(--green-200); /* NEW: not in Figma yet */
+    --destructive: var(--red-700);
+    --warning: var(--amber-700);
+    --success: var(--green-700);
+    --info: var(--blue-700);
+    --border: var(--neutral-200);
+    --input: var(--neutral-300);
+    --ring: var(--green-700);
+    --chart-1: var(--green-400);
+    --chart-2: var(--blue-700);
+    --chart-3: var(--violet-700);
+    --chart-4: var(--amber-700);
+    --chart-5: var(--neutral-500);
+    --sidebar: var(--neutral-50);
+    --sidebar-foreground: var(--neutral-950);
+    --sidebar-primary: var(--green-400);
+    --sidebar-primary-foreground: var(--green-950);
+    --sidebar-accent: var(--neutral-100);
+    --sidebar-accent-foreground: var(--neutral-950);
+    --sidebar-border: var(--neutral-200);
+    --sidebar-ring: var(--green-700);
+  }
+
+  [data-theme="dark"] {
+    --background: var(--neutral-950);
+    --foreground: var(--neutral-100);
+    --card: var(--neutral-900);
+    --card-foreground: var(--neutral-100);
+    --popover: var(--neutral-700);
+    --popover-foreground: var(--neutral-100);
+    --primary: var(--green-400);
+    --primary-hover: var(--green-300);
+    --primary-pressed: var(--green-500);
+    --primary-foreground: var(--green-950);
+    --secondary: var(--neutral-800);
+    --secondary-foreground: var(--neutral-100);
+    --muted: var(--neutral-800);
+    --muted-foreground: var(--neutral-400);
+    --disabled-foreground: var(--neutral-500);
+    --accent: var(--neutral-700);
+    --accent-foreground: var(--neutral-100);
+    --brand: var(--green-400);
+    --brand-subtle: var(--green-900);
+    --brand-subtle-hover: var(--green-800); /* NEW: not in Figma yet */
+    --destructive: var(--red-400);
+    --warning: var(--amber-400);
+    --success: var(--green-400);
+    --info: var(--blue-400);
+    --border: var(--neutral-700);
+    --input: var(--neutral-600);
+    --ring: var(--green-400);
+    --chart-1: var(--green-400);
+    --chart-2: var(--blue-400);
+    --chart-3: var(--violet-400);
+    --chart-4: var(--amber-400);
+    --chart-5: var(--neutral-400);
+    --sidebar: var(--neutral-900);
+    --sidebar-foreground: var(--neutral-100);
+    --sidebar-primary: var(--green-400);
+    --sidebar-primary-foreground: var(--green-950);
+    --sidebar-accent: var(--neutral-800);
+    --sidebar-accent-foreground: var(--neutral-100);
+    --sidebar-border: var(--neutral-700);
+    --sidebar-ring: var(--green-400);
+  }
+
+  /* ───── 3. Type, spacing, radius (Tailwind and shadcn names) ───── */
+  :root {
+    --font-mono: "JetBrains Mono", monospace;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-extrabold: 800;
+    --text-xs: 0.75rem;
+    --text-xs--line-height: 1rem;
+    --text-sm: 0.875rem;
+    --text-sm--line-height: 1.25rem;
+    --text-base: 1rem;
+    --text-base--line-height: 1.5rem;
+    --text-lg: 1.125rem;
+    --text-lg--line-height: 1.75rem;
+    --text-xl: 1.25rem;
+    --text-xl--line-height: 1.75rem;
+    --text-2xl: 1.5rem;
+    --text-2xl--line-height: 2rem;
+    --text-3xl: 1.875rem;
+    --text-3xl--line-height: 2.25rem;
+    --text-4xl: 2.25rem;
+    --text-4xl--line-height: 2.5rem;
+    --text-5xl: 3rem;
+    --text-5xl--line-height: 1;
+    --spacing: 0.25rem;
+    --radius: 0.5rem;
+    --control-height: calc(var(--spacing) * 8);
+    --sidebar-width: 275px;
+  }
+
+  /* ───── 4. Payload map: colors ───── */
+  :root,
+  [data-theme] {
+    /* --background */
+    --color-bg: var(--background); /* was #ffffff | #2c2c2c */
+    --color-icon-oncomponent: var(--background); /* was #ffffff */
+    --color-icon-ondanger: var(--background); /* was #ffffff */
+    --color-icon-ondanger-secondary: var(--background); /* was rgba(255, 255, 255, 0.8) */
+    --color-icon-oninverse: var(
+      --background
+    ); /* was rgba(255, 255, 255, 0.9) | rgba(0, 0, 0, 0.9) */
+    --color-text-oncomponent: var(--background); /* was #ffffff */
+    --color-text-ondanger: var(--background); /* was #ffffff */
+    --color-text-ondanger-secondary: var(--background); /* was rgba(255, 255, 255, 0.8) */
+    --color-text-oninverse: var(
+      --background
+    ); /* was rgba(255, 255, 255, 0.9) | rgba(0, 0, 0, 0.9) */
+    --color-text-oninverse-secondary: var(
+      --background
+    ); /* was rgba(255, 255, 255, 0.8) | rgba(0, 0, 0, 0.8) */
+    --color-text-ontooltip: var(--background); /* was rgba(255, 255, 255, 0.9) */
+
+    /* --foreground */
+    --color-bg-inverse: var(--foreground); /* was #2c2c2c | #ffffff */
+    --color-bg-inverse-hover: var(--foreground); /* was #383838 | #f5f5f5 */
+    --color-bg-inverse-pressed: var(--foreground); /* was #444444 | #e6e6e6 */
+    --color-bg-tooltip: var(--foreground); /* was #1e1e1e */
+    --color-icon: var(--foreground); /* was rgba(0, 0, 0, 0.9) | #ffffff */
+    --color-icon-hover: var(--foreground); /* was rgba(0, 0, 0, 0.9) | #ffffff */
+    --color-icon-secondary-hover: var(--foreground); /* was rgba(0, 0, 0, 0.9) | #ffffff */
+    --color-text: var(--foreground); /* was rgba(0, 0, 0, 0.9) | #ffffff */
+
+    /* --card */
+    --field-color-bg: var(--card); /* was --color-bg */
+    --field-color-bg-readonly: var(--card); /* was --color-bg */
+
+    /* --popover */
+    --color-bg-elevated: var(--popover); /* was #ffffff | #1e1e1e */
+    --color-bg-menu: var(--popover); /* was #1e1e1e */
+
+    /* --muted */
+    --color-bg-secondary: var(--muted); /* was #f5f5f5 | #383838 */
+    --color-bg-disabled: var(--muted); /* was #d9d9d9 | #757575 */
+    --field-color-bg-disabled: var(--muted); /* was transparent */
+
+    /* --muted-foreground */
+    --color-border-control-strong: var(
+      --muted-foreground
+    ); /* was --special-border-translucent-strong */
+    --color-icon-secondary: var(
+      --muted-foreground
+    ); /* was rgba(0, 0, 0, 0.5) | rgba(255, 255, 255, 0.7) */
+    --color-text-secondary: var(
+      --muted-foreground
+    ); /* was rgba(0, 0, 0, 0.5) | rgba(255, 255, 255, 0.7) */
+    --special-border-translucent-strong: var(
+      --muted-foreground
+    ); /* was rgba(0, 0, 0, 0.2) | rgba(255, 255, 255, 0.2) */
+
+    /* --disabled-foreground */
+    --color-icon-tertiary: var(
+      --disabled-foreground
+    ); /* was rgba(0, 0, 0, 0.3) | rgba(255, 255, 255, 0.4) */
+    --color-icon-disabled: var(
+      --disabled-foreground
+    ); /* was rgba(0, 0, 0, 0.3) | rgba(255, 255, 255, 0.4) */
+    --color-icon-ondisabled: var(--disabled-foreground); /* was #ffffff | #2c2c2c */
+    --color-text-tertiary: var(
+      --disabled-foreground
+    ); /* was rgba(0, 0, 0, 0.3) | rgba(255, 255, 255, 0.4) */
+    --color-text-disabled: var(
+      --disabled-foreground
+    ); /* was rgba(0, 0, 0, 0.3) | rgba(255, 255, 255, 0.4) */
+    --color-text-ondisabled: var(--disabled-foreground); /* was #ffffff | #2c2c2c */
+
+    /* --secondary */
+    --color-bg-secondary-hover: var(--secondary); /* was #e6e6e6 | #444444 */
+    --color-bg-secondary-pressed: var(--secondary); /* was #d9d9d9 | #757575 */
+    --color-bg-tertiary: var(--secondary); /* was #e6e6e6 | #444444 */
+
+    /* --accent */
+    --color-bg-hover: var(--accent); /* was #f5f5f5 | #383838 */
+    --color-bg-pressed: var(--accent); /* was #e6e6e6 | #444444 */
+    --color-bg-transparent-hover: var(
+      --accent
+    ); /* was rgba(0, 0, 0, 0.05) | rgba(255, 255, 255, 0.05) */
+    --color-bg-transparent-pressed: var(
+      --accent
+    ); /* was rgba(0, 0, 0, 0.1) | rgba(255, 255, 255, 0.1) */
+    --special-bg-hover-transparent: var(
+      --accent
+    ); /* was rgba(0, 0, 0, 0.05) | rgba(255, 255, 255, 0.05) */
+    --special-bg-transparent-secondary-hover: var(
+      --accent
+    ); /* was rgba(0, 0, 0, 0.1) | rgba(255, 255, 255, 0.1) */
+
+    /* --border */
+    --color-border: var(--border); /* was #e6e6e6 | #444444 */
+    --color-border-menu-separator: var(--border); /* was rgba(255, 255, 255, 0.1) */
+    --color-border-disabled: var(--border); /* was #e6e6e6 | #444444 */
+
+    /* --input */
+    --color-border-strong: var(--input); /* was #2c2c2c | rgba(255, 255, 255, 0.9) */
+    --color-border-control: var(--input); /* was --special-border-translucent */
+    --special-border-translucent: var(
+      --input
+    ); /* was rgba(0, 0, 0, 0.1) | rgba(255, 255, 255, 0.1) */
+
+    /* --ring */
+    --color-border-selected: var(--ring); /* was #0d99ff */
+    --color-border-selected-strong: var(--ring); /* was #007be5 | #80caff */
+
+    /* --primary */
+    --color-bg-brand: var(--primary); /* was #0d99ff */
+    --color-bg-selected-strong: var(--primary); /* was #0d99ff */
+    --color-bg-success: var(--primary); /* was #14ae5c */
+
+    /* --primary-hover */
+    --color-bg-brand-hover: var(--primary-hover); /* was #007be5 */
+    --color-bg-selected-strong-hover: var(--primary-hover); /* was #007be5 */
+    --color-bg-success-hover: var(--primary-hover); /* was #009951 */
+
+    /* --primary-pressed */
+    --color-bg-brand-pressed: var(--primary-pressed); /* was #0768cf */
+    --color-bg-brand-secondary: var(--primary-pressed); /* was #0768cf */
+    --color-bg-selected-strong-pressed: var(--primary-pressed); /* was #0768cf */
+    --color-bg-success-pressed: var(--primary-pressed); /* was #008043 */
+
+    /* --primary-foreground */
+    --color-border-onbrand-strong: var(--primary-foreground); /* was #ffffff */
+    --color-icon-onbrand: var(--primary-foreground); /* was #ffffff */
+    --color-icon-onbrand-secondary: var(--primary-foreground); /* was rgba(255, 255, 255, 0.8) */
+    --color-icon-onselected-strong: var(--primary-foreground); /* was #ffffff */
+    --color-icon-onsuccess: var(--primary-foreground); /* was #ffffff */
+    --color-icon-onsuccess-secondary: var(--primary-foreground); /* was rgba(255, 255, 255, 0.8) */
+    --color-text-onbrand: var(--primary-foreground); /* was #ffffff */
+    --color-text-onbrand-secondary: var(--primary-foreground); /* was rgba(255, 255, 255, 0.8) */
+    --color-text-onselected-strong: var(--primary-foreground); /* was #ffffff */
+    --color-text-onsuccess: var(--primary-foreground); /* was #ffffff */
+    --color-text-onsuccess-secondary: var(--primary-foreground); /* was rgba(255, 255, 255, 0.8) */
+
+    /* --brand */
+    --color-border-brand-strong: var(--brand); /* was #007be5 | #80caff */
+    --color-icon-brand: var(--brand); /* was #007be5 | #80caff */
+    --color-icon-selected: var(--brand); /* was #007be5 | #80caff */
+    --color-text-brand: var(--brand); /* was #007be5 | #80caff */
+    --color-text-brand-secondary: var(--brand); /* was #007be5 */
+    --color-text-selected: var(--brand); /* was #007be5 | #80caff */
+
+    /* --brand-subtle */
+    --color-bg-brand-tertiary: var(--brand-subtle); /* was #e5f4ff | #394360 */
+    --color-bg-selected: var(--brand-subtle); /* was #e5f4ff | #4a5878 */
+
+    /* --brand-subtle-hover */
+    --color-bg-brand-tertiary-hover: var(--brand-subtle-hover); /* was #bde3ff | #4a5878 */
+    --color-bg-selected-hover: var(--brand-subtle-hover); /* was #bde3ff | #536383 */
+    --color-bg-selected-pressed: var(--brand-subtle-hover); /* was #80caff | #4a5878 */
+    --color-border-brand: var(--brand-subtle-hover); /* was #bde3ff | #536383 */
+
+    /* --destructive */
+    --special-multiplayer-red: var(--destructive); /* was #f24822 */
+    --color-bg-danger: var(--destructive); /* was #f24822 | #e03e1a */
+    --color-bg-danger-hover: color-mix(
+      in srgb,
+      var(--destructive),
+      white 16%
+    ); /* was #dc3412 | #c4381c */
+    --color-bg-danger-pressed: color-mix(
+      in srgb,
+      var(--destructive),
+      white 16%
+    ); /* was #bd2915 | #963323 */
+    --color-bg-danger-tertiary: color-mix(
+      in srgb,
+      var(--destructive) 14%,
+      transparent
+    ); /* was #ffe2e0 | #60332a */
+    --color-bg-danger-tertiary-hover: color-mix(
+      in srgb,
+      var(--destructive) 22%,
+      transparent
+    ); /* was #ffc7c2 | #864537 */
+    --color-bg-danger-tertiary-pressed: color-mix(
+      in srgb,
+      var(--destructive) 22%,
+      transparent
+    ); /* was #ffafa3 | #a55440 */
+    --color-border-danger: color-mix(
+      in srgb,
+      var(--destructive) 50%,
+      transparent
+    ); /* was #ffc7c2 | #864537 */
+    --color-border-danger-strong: var(--destructive); /* was #dc3412 | #ffafa3 */
+    --color-icon-danger: var(--destructive); /* was #dc3412 | #ffafa3 */
+    --color-text-danger: var(--destructive); /* was #dc3412 | #ffafa3 */
+    --color-text-danger-secondary: var(--destructive); /* was #dc3412 */
+
+    /* --success */
+    --color-bg-success-tertiary: color-mix(
+      in srgb,
+      var(--success) 14%,
+      transparent
+    ); /* was #d5f7da | #2f483c */
+    --color-bg-success-tertiary-hover: color-mix(
+      in srgb,
+      var(--success) 22%,
+      transparent
+    ); /* was #aff4c6 | #476656 */
+    --color-border-success: color-mix(
+      in srgb,
+      var(--success) 50%,
+      transparent
+    ); /* was #aff4c6 | #517361 */
+    --color-border-success-strong: var(--success); /* was #009951 | #85e0a3 */
+    --color-icon-success: var(--success); /* was #009951 | #85e0a3 */
+    --color-text-success: var(--success); /* was #009951 | #85e0a3 */
+
+    /* --warning */
+    --special-multiplayer-yellow: var(--warning); /* was #ffcd29 */
+    --color-bg-warning: color-mix(in srgb, var(--warning) 14%, transparent); /* was #ffcd29 */
+    --color-bg-warning-tertiary: color-mix(
+      in srgb,
+      var(--warning) 14%,
+      transparent
+    ); /* was #fff1c2 | #5c4100 */
+    --color-bg-warning-tertiary-hover: color-mix(
+      in srgb,
+      var(--warning) 22%,
+      transparent
+    ); /* was #ffe8a3 | #7a5800 */
+    --color-border-warning: color-mix(
+      in srgb,
+      var(--warning) 50%,
+      transparent
+    ); /* was #f5dfa8 | #7a5800 */
+    --color-border-warning-strong: var(--warning); /* was #b86200 | #ffd966 */
+    --color-icon-favorite: var(--warning); /* was #ffcd29 */
+    --color-icon-warning: var(--warning); /* was #b86200 | #ffd966 */
+    --color-icon-warning-pressed: var(--warning); /* was #b86200 | #ffd966 */
+    --color-text-onwarning: var(--warning); /* was rgba(0, 0, 0, 0.9) */
+    --color-text-warning: var(--warning); /* was #b86200 | #ffd966 */
+
+    /* --info */
+    --color-bg-info: color-mix(in srgb, var(--info) 14%, transparent); /* was #e5f4ff */
+
+    /* --chart-1 */
+    --special-multiplayer-green: var(--chart-1); /* was #14ae5c */
+
+    /* --chart-2 */
+    --special-multiplayer-blue: var(--chart-2); /* was #007be5 */
+
+    /* --chart-3 */
+    --special-multiplayer-purple: var(--chart-3); /* was #9747ff */
+    --color-bg-component: var(--chart-3); /* was #9747ff */
+    --color-bg-component-tertiary: color-mix(
+      in srgb,
+      var(--chart-3) 14%,
+      transparent
+    ); /* was #f1e5ff | #473956 */
+    --color-bg-component-tertiary-hover: color-mix(
+      in srgb,
+      var(--chart-3) 22%,
+      transparent
+    ); /* was #e4ccff | #604d75 */
+    --color-border-component: color-mix(
+      in srgb,
+      var(--chart-3) 50%,
+      transparent
+    ); /* was #e4ccff | #604d75 */
+    --color-border-component-strong: var(--chart-3); /* was #8638e5 | #e4ccff */
+    --color-icon-component: var(--chart-3); /* was #8638e5 | #d9b8ff */
+    --color-icon-component-pressed: var(--chart-3); /* was #7c2bda | #e4ccff */
+    --color-icon-component-secondary: var(--chart-3); /* was #c5b2dc | #7f699b */
+    --color-icon-component-tertiary: var(--chart-3); /* was #c5b2dc | #7f699b */
+    --color-text-component: var(--chart-3); /* was #8638e5 | #d9b8ff */
+    --color-text-component-pressed: var(--chart-3); /* was #7c2bda | #e4ccff */
+    --color-text-component-secondary: var(--chart-3); /* was #c5b2dc | #7f699b */
+    --color-text-component-tertiary: var(--chart-3); /* was #c5b2dc | #7f699b */
+
+    /* --chart-5 */
+    --special-multiplayer-grey: var(--chart-5); /* was #667799 */
+  }
+
+  /* ───── 5. Payload map: type, spacing, radius ───── */
+  :root {
+    --text-mono-family: var(--font-mono); /* was Roboto Mono */
+    --text-mono-small-font-size: 0.75rem; /* was 11px: Figma Code/S 12/18 */
+    --text-mono-small-line-height: 1.125rem; /* was 18px */
+    --text-mono-medium-font-size: 0.875rem; /* was 13px: Figma Code/M 14/22 */
+    --text-mono-medium-line-height: 1.375rem; /* was 22px */
+
+    /* body small: was 10/14px */
+    --text-body-small-font-size: var(--text-xs);
+    --text-body-small-line-height: var(--text-xs--line-height);
+    --text-body-small-font-weight: var(--font-weight-normal);
+    --text-body-small-letter-spacing: 0;
+    --text-body-small-bold-font-size: var(--text-xs);
+    --text-body-small-bold-line-height: var(--text-xs--line-height);
+    --text-body-small-bold-font-weight: var(--font-weight-medium);
+    --text-body-small-bold-letter-spacing: 0;
+    --text-body-small-paragraph-font-size: var(--text-xs);
+    --text-body-small-paragraph-line-height: 1.125rem;
+    --text-body-small-paragraph-font-weight: var(--font-weight-normal);
+
+    /* body medium: was 12/16px */
+    --text-body-medium-font-size: var(--text-sm);
+    --text-body-medium-line-height: var(--text-sm--line-height);
+    --text-body-medium-font-weight: var(--font-weight-normal);
+    --text-body-medium-letter-spacing: 0;
+    --text-body-medium-bold-font-size: var(--text-sm);
+    --text-body-medium-bold-line-height: var(--text-sm--line-height);
+    --text-body-medium-bold-font-weight: var(--font-weight-medium);
+    --text-body-medium-bold-letter-spacing: 0;
+    --text-body-medium-paragraph-font-size: var(--text-sm);
+    --text-body-medium-paragraph-line-height: 1.5rem;
+    --text-body-medium-paragraph-font-weight: var(--font-weight-normal);
+
+    /* body large: was 14/20px */
+    --text-body-large-font-size: var(--text-sm);
+    --text-body-large-line-height: var(--text-sm--line-height);
+    --text-body-large-font-weight: var(--font-weight-normal);
+    --text-body-large-letter-spacing: 0;
+    --text-body-large-bold-font-size: var(--text-sm);
+    --text-body-large-bold-line-height: var(--text-sm--line-height);
+    --text-body-large-bold-font-weight: var(--font-weight-medium);
+    --text-body-large-bold-letter-spacing: 0;
+    --text-body-large-paragraph-font-size: var(--text-sm);
+    --text-body-large-paragraph-line-height: 1.5rem;
+    --text-body-large-paragraph-font-weight: var(--font-weight-normal);
+
+    /* body xl: was 16/22px */
+    --text-body-xl-font-size: var(--text-base);
+    --text-body-xl-line-height: var(--text-base--line-height);
+    --text-body-xl-font-weight: var(--font-weight-normal);
+    --text-body-xl-letter-spacing: 0;
+    --text-body-xl-bold-font-size: var(--text-base);
+    --text-body-xl-bold-line-height: var(--text-base--line-height);
+    --text-body-xl-bold-font-weight: var(--font-weight-medium);
+    --text-body-xl-bold-letter-spacing: 0;
+    --text-body-xl-paragraph-font-size: var(--text-base);
+    --text-body-xl-paragraph-line-height: 1.625rem;
+    --text-body-xl-paragraph-font-weight: var(--font-weight-normal);
+
+    /* body 2xl: was 22/28px */
+    --text-body-2xl-font-size: var(--text-xl);
+    --text-body-2xl-line-height: var(--text-xl--line-height);
+    --text-body-2xl-font-weight: var(--font-weight-normal);
+    --text-body-2xl-letter-spacing: 0;
+    --text-body-2xl-bold-font-size: var(--text-xl);
+    --text-body-2xl-bold-line-height: var(--text-xl--line-height);
+    --text-body-2xl-bold-font-weight: var(--font-weight-medium);
+    --text-body-2xl-bold-letter-spacing: 0;
+    --text-body-2xl-paragraph-font-size: var(--text-xl);
+    --text-body-2xl-paragraph-line-height: 1.75rem;
+    --text-body-2xl-paragraph-font-weight: var(--font-weight-normal);
+
+    /* heading small: was 14/20px, 600 */
+    --text-heading-small-font-size: var(--text-sm);
+    --text-heading-small-line-height: var(--text-sm--line-height);
+    --text-heading-small-font-weight: var(--font-weight-semibold);
+    --text-heading-small-letter-spacing: 0;
+
+    /* heading medium: was 16/22px, 600 */
+    --text-heading-medium-font-size: var(--text-base);
+    --text-heading-medium-line-height: var(--text-base--line-height);
+    --text-heading-medium-font-weight: var(--font-weight-semibold);
+    --text-heading-medium-letter-spacing: 0;
+
+    /* heading large: was 20/27px, 600 */
+    --text-heading-large-font-size: var(--text-xl);
+    --text-heading-large-line-height: var(--text-xl--line-height);
+    --text-heading-large-font-weight: var(--font-weight-semibold);
+    --text-heading-large-letter-spacing: -0.015em;
+
+    /* heading xl: was 24/31px, 600 */
+    --text-heading-xl-font-size: var(--text-2xl);
+    --text-heading-xl-line-height: var(--text-2xl--line-height);
+    --text-heading-xl-font-weight: var(--font-weight-semibold);
+    --text-heading-xl-letter-spacing: -0.02em;
+
+    /* heading 2xl: was 32/40px, 600 */
+    --text-heading-2xl-font-size: var(--text-3xl);
+    --text-heading-2xl-line-height: var(--text-3xl--line-height);
+    --text-heading-2xl-font-weight: var(--font-weight-semibold);
+    --text-heading-2xl-letter-spacing: -0.025em;
+
+    /* heading 3xl: was 40/47px, 600 */
+    --text-heading-3xl-font-size: var(--text-4xl);
+    --text-heading-3xl-line-height: var(--text-4xl--line-height);
+    --text-heading-3xl-font-weight: var(--font-weight-extrabold);
+    --text-heading-3xl-letter-spacing: -0.025em;
+
+    /* heading 4xl: was 48/53px, 600 */
+    --text-heading-4xl-font-size: var(--text-5xl);
+    --text-heading-4xl-line-height: var(--text-5xl--line-height);
+    --text-heading-4xl-font-weight: var(--font-weight-extrabold);
+    --text-heading-4xl-letter-spacing: -0.025em;
+
+    /* spacing: same pixels, now one --spacing scales them */
+    --spacer-1: calc(var(--spacing) * 1); /* was 4px */
+    --spacer-1-5: calc(var(--spacing) * 1.5); /* was 6px */
+    --spacer-2: calc(var(--spacing) * 2); /* was 8px */
+    --spacer-2-5: calc(var(--spacing) * 3); /* was 12px */
+    --spacer-3: calc(var(--spacing) * 4); /* was 16px */
+    --spacer-4: calc(var(--spacing) * 6); /* was 24px */
+    --spacer-5: calc(var(--spacing) * 8); /* was 32px */
+    --spacer-6: calc(var(--spacing) * 10); /* was 40px */
+
+    /* heights */
+    --button-height: var(--control-height); /* was 24px */
+    --field-min-height-medium: var(--control-height); /* was 24px */
+    --field-min-height-large: calc(var(--control-height) + var(--spacing)); /* was 32px */
+
+    /* radius: Figma radius/sm 6, md 8, lg 12, xl 20, full */
+    --radius-small: calc(var(--radius) - 4px); /* was 2px */
+    --radius-chip: 9999px; /* was 3px: Figma badges are pills */
+    --radius-medium: var(--radius); /* was 5px */
+    --radius-large: calc(var(--radius) + 4px); /* was 13px: menus, popups */
+    --button-radius: 9999px; /* was 5px: Figma buttons are pills */
+    --field-border-radius: calc(var(--radius) + 4px); /* was 5px: Figma fields use radius/lg */
+    --fb-radius: var(--radius); /* FrogBot UI's radius */
+
+    --nav-width: var(--sidebar-width); /* was 275px */
+  }
+}
+
+/*
+ * The admin loads Roboto Mono through a class on <html> that sets --font-family-mono outside any
+ * layer, so the code font is pointed at --font-mono here, outside the layers, with a stronger selector.
+ */
+html:root {
+  --font-family-mono: var(--font-mono);
+}
+
+/*
+ * Payload color tokens left as they are:
+ *   follow the tokens above (Payload points them at --color-*) (32): --scrollbar-color, --multiplayer-blue, --multiplayer-purple, --multiplayer-pink, --multiplayer-red, --multiplayer-yellow, --multiplayer-green, --multiplayer-grey, --field-color-border, --field-color-text, --field-color-placeholder, --field-color-border-hover, --field-color-border-focus, --field-color-border-disabled, --field-color-text-disabled, --field-color-border-readonly, --field-color-text-readonly, --field-color-border-error, --field-color-label, --field-color-label-required, --field-color-description, --field-color-error-bg, --field-color-error-text, --field-color-toggle-border, --field-color-toggle-border-hover, --field-color-toggle-bg-checked, --field-color-toggle-border-checked, --field-color-toggle-icon, --field-color-toggle-bg-disabled, --field-color-toggle-border-disabled, --field-color-upload-bg, --field-color-upload-border
+ *   black overlays that work in any theme (9): --color-drawer-backdrop, --color-modalbackdrop, --color-focal-point-backdrop, --special-bg-transparent, --special-bg-hover-on-light-canvas, --fullscreen-default-icon, --fullscreen-default-icon-tertiary, --fullscreen-special-autofill-highlight, --special-text-highlight
+ *   text on live-editing colors (white, black on yellow) (7): --special-text-on-multiplayer-blue, --special-text-on-multiplayer-purple, --special-text-on-multiplayer-pink, --special-text-on-multiplayer-red, --special-text-on-multiplayer-yellow, --special-text-on-multiplayer-green, --special-text-on-multiplayer-grey
+ *   pink "assistive": no Payload screen shows it (19): --color-bg-assistive, --color-bg-assistive-hover, --color-bg-assistive-pressed, --color-bg-assistive-secondary, --color-bg-assistive-tertiary, --color-border-assistive, --color-border-assistive-strong, --color-border-onassistive, --color-border-onassistive-strong, --color-icon-assistive, --color-icon-assistive-pressed, --color-icon-onassistive, --color-icon-onassistive-secondary, --color-icon-onassistive-tertiary, --color-text-assistive, --color-text-assistive-pressed, --color-text-onassistive, --color-text-onassistive-secondary, --color-text-onassistive-tertiary
+ *   live-editing pink: no FrogBot role (1): --special-multiplayer-pink
+ * Shadows (--elevation-*), z-index and the large mono sizes stay Payload's. Text font: Payload's Inter, unchanged.
+ */

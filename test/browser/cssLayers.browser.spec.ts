@@ -272,7 +272,7 @@ test.describe('FrogBot CSS layer on app pages', () => {
 
   test('Tailwind Preflight does not reset FrogBot buttons', async ({ page }) => {
     await page.goto('/tw/frogbot-first');
-    await expectBackground(page.getByTestId('layer-default'), 'rgb(44, 44, 44)');
+    await expectBackground(page.getByTestId('layer-default'), 'rgb(9, 14, 27)');
   });
 
   test('a Tailwind @theme static override reaches buttons, menus and dialogs', async ({ page }) => {
