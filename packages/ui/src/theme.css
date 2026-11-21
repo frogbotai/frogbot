@@ -661,12 +661,12 @@
     --field-min-height-large: calc(var(--control-height) + var(--spacing)); /* was 32px */
 
     /* radius: Figma radius/sm 6, md 8, lg 12, xl 20, full */
-    --radius-small: calc(var(--radius) - 4px); /* was 2px */
+    --radius-small: var(--fb-radius-sm); /* was 2px */
     --radius-chip: 9999px; /* was 3px: Figma badges are pills */
-    --radius-medium: var(--radius); /* was 5px */
-    --radius-large: calc(var(--radius) + 4px); /* was 13px: menus, popups */
+    --radius-medium: var(--fb-radius-md); /* was 5px */
+    --radius-large: var(--fb-radius-lg); /* was 13px: menus, popups */
     --button-radius: 9999px; /* was 5px: Figma buttons are pills */
-    --field-border-radius: calc(var(--radius) + 4px); /* was 5px: Figma fields use radius/lg */
+    --field-border-radius: var(--fb-radius-lg); /* was 5px: Figma fields use radius/lg */
     --fb-radius: var(--radius); /* FrogBot UI's radius */
     --fb-radius-sm: calc(var(--fb-radius) * 0.75);
     --fb-radius-md: var(--fb-radius);
