@@ -1,7 +1,8 @@
 ---
 name: frogbot
 description: >-
-  Builds and maintains FrogBot applications. Use when working with
+  Builds and maintains FrogBot applications. Use when setting up FrogBot or building a first
+  FrogBot app from scratch, or when working with
   frogbot.config.ts, getFrogBot, collections, fields, hooks, access control,
   Local API queries, agents, tools, pieces, connections, jobs, automations, webhooks, KV, chat or gateway configuration,
   or when sharing, hosting or deploying a FrogBot app on Dojo with `frogbot deploy`, or managing
@@ -16,12 +17,17 @@ metadata:
 
 Use FrogBot names, imports, generated types, and request APIs. Check the installed source and types before assuming an API exists.
 
+## Starting From Zero
+
+When the folder has no `frogbot.config.ts` and the person wants to set up FrogBot or build their first app, follow [FIRST-APP.md](reference/FIRST-APP.md): one question, then a running app with their data, a login and sample records.
+
 ## Task Routing
 
 Read the smallest relevant reference before editing:
 
 | Task                                                                               | Reference                                                          |
 | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Set up FrogBot and build a first app from an empty folder                          | [FIRST-APP.md](reference/FIRST-APP.md)                             |
 | Define auth, upload, draft, preview, or managed collections                        | [COLLECTIONS.md](reference/COLLECTIONS.md)                         |
 | Configure fields, edit page layout, recursive structures, slugs, or rich text      | [FIELDS.md](reference/FIELDS.md)                                   |
 | Inspect or traverse field configuration safely                                     | [FIELD-TYPE-GUARDS.md](reference/FIELD-TYPE-GUARDS.md)             |
@@ -312,6 +318,7 @@ Prefer each bundled local file. If only this hosted entry is available, use its 
 
 | Topic                   | Local                                                              | Raw fallback                                                                                                        |
 | ----------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| First app               | [FIRST-APP.md](reference/FIRST-APP.md)                             | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/FIRST-APP.md)               |
 | Collections             | [COLLECTIONS.md](reference/COLLECTIONS.md)                         | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/COLLECTIONS.md)             |
 | Fields                  | [FIELDS.md](reference/FIELDS.md)                                   | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/FIELDS.md)                  |
 | Field type guards       | [FIELD-TYPE-GUARDS.md](reference/FIELD-TYPE-GUARDS.md)             | [raw](https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/FIELD-TYPE-GUARDS.md)       |

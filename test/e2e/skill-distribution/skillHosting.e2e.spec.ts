@@ -45,8 +45,8 @@ function expectEntryOnly(directory: string) {
   const urls = fallbackURLs(installed.toString());
 
   expect(installed).toEqual(entry);
-  expect(urls).toHaveLength(26);
-  expect(new Set(urls).size).toBe(26);
+  expect(urls).toHaveLength(27);
+  expect(new Set(urls).size).toBe(27);
   expect(urls.map((url) => url.split('/').at(-1)).sort()).toEqual(references);
 
   for (const name of references) {
@@ -124,7 +124,7 @@ describe('hosted skill protocol with prepared real clients', () => {
   });
 
   it('serves the canonical skill with its references through the docs link', () => {
-    expect(references).toHaveLength(26);
+    expect(references).toHaveLength(27);
     expect(readdirSync(canonical).sort()).toEqual(['SKILL.md', 'reference']);
     expect(readlinkSync(join(repoRoot, 'docs/.mintlify/skills'))).toBe('../../skills');
     expect(realpathSync(join(repoRoot, 'docs/.mintlify/skills/frogbot'))).toBe(
@@ -282,7 +282,7 @@ describe('hosted skill protocol with prepared real clients', () => {
 
         expect(found).toHaveLength(1);
         expect(found[0].location).toBe(join(profile.cached, 'SKILL.md'));
-        expect(fallbackURLs(found[0].content)).toHaveLength(26);
+        expect(fallbackURLs(found[0].content)).toHaveLength(27);
 
         expectEntryOnly(profile.cached);
 

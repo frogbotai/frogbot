@@ -26,7 +26,7 @@ Fields code needs but people don't act on (external ids, sync cursors, import ba
 
 - `admin: { disabled: true }` hides one from every admin surface. To keep it filterable, hide it per area: `admin: { disabled: { field: true, column: true } }`.
 - If people must still edit it now and then, put it at the end of the form in a `collapsible` with `admin: { initCollapsed: true }` instead.
-- Set `useAsTitle`, and give a list 4 to 6 `defaultColumns`, the ones people scan.
+- Set `useAsTitle`, and give the list view 4 to 6 `defaultFields`, the columns people scan (see [COLLECTIONS.md](COLLECTIONS.md)). There is no `defaultColumns`.
 
 ## First screen
 

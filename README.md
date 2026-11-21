@@ -40,19 +40,15 @@ FrogBot is the fastest way to vibe code production-grade applications in the AI 
 
 ## Start with a coding agent
 
-Paste this prompt into Claude Code, Cursor, Codex, or OpenCode to scaffold a FrogBot app with the bundled [FrogBot skill](https://docs.frogbot.ai/skills/coding-agents):
+Paste this into Claude Code, Cursor, Codex, or OpenCode:
 
 ```text
-Set up a new FrogBot app on this machine and help me build with it:
-
-1. Verify Node.js >= 24.22.3 (node --version). If missing, give me https://nodejs.org/en/download and wait.
-2. Ask which AI provider key I want to use (openai, anthropic, or google) and where to create the project folder.
-3. Run: npx create-frogbot-app@latest my-frogbot --yes --ai <PROVIDER> --agents <AGENT>
-   (Use claude, codex, cursor, opencode, copilot, or gemini for <AGENT>.)
-4. Read the installed FrogBot skill inside my-frogbot (.claude/skills/frogbot/SKILL.md or .agents/skills/frogbot/SKILL.md) before editing any files.
-5. Help me add my provider API key to my-frogbot/.env, start the dev server (npm run dev), and open http://localhost:3000.
-6. Ask what app or SaaS tool I want to build or replace, then configure collections, views, pieces, and agents in src/frogbot.config.ts.
+Install the frogbot skill from github.com/frogbotai/frogbot and help me build my first app.
 ```
+
+Your agent asks what the app is for, creates it, adds sample records and a login, and starts it.
+
+> **Coding agents:** in an empty folder, follow [skills/frogbot/reference/FIRST-APP.md](./skills/frogbot/reference/FIRST-APP.md). `create-frogbot-app` installs the [FrogBot skill](https://docs.frogbot.ai/skills/coding-agents) into the new app, so don't install it separately first.
 
 ## Quickstart
 
