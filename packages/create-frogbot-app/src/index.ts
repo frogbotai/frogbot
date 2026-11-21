@@ -10,6 +10,7 @@ import { openConfig, saveConfig } from './lib/config.js';
 import { applyDatabase } from './lib/db.js';
 import { writeEnv } from './lib/env.js';
 import { CliError } from './lib/errors.js';
+import { generateFiles } from './lib/generate.js';
 import { initializeGit } from './lib/git.js';
 import { applyMeta } from './lib/meta.js';
 import { applyPackageJson, type DatabaseDependencies } from './lib/package-json.js';
@@ -186,6 +187,12 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         `${plan.packageManager} install failed.${git} Fix the error above, then run ${plan.packageManager} install in ${plan.projectName}.`,
       );
     }
+  }
+
+  if (plan.install && !generateFiles(plan.dest)) {
+    p.log.warn(
+      'Could not generate types and the import map. Run frogbot generate:types and frogbot generate:importmap in the project.',
+    );
   }
 
   if (plan.git && !initializeGit(plan.dest)) {
