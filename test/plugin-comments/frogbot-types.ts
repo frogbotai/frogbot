@@ -576,6 +576,7 @@ export interface Comment {
   author?: (number | null) | User;
   mentions?: (number | User)[] | null;
   bodyField?: string | null;
+  notified?: (number | User)[] | null;
   body_0?: LexicalRichText<LexicalNodes_5BED233F> | null;
   body_1?: LexicalRichText<LexicalNodes_732223E2> | null;
   body?:
@@ -735,7 +736,6 @@ export interface MediaSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
-  notified?: (number | User)[] | null;
  * via the `definition` "deals_select".
  */
 export interface DealsSelect {
@@ -794,6 +794,7 @@ export interface CommentsSelect {
   author?: boolean;
   mentions?: boolean;
   bodyField?: boolean;
+  notified?: boolean;
   body_0?: boolean;
   body_1?: boolean;
   body?: boolean;
@@ -969,7 +970,6 @@ export interface SerializedTabNode {
   version: number;
 }
 
-  notified?: boolean;
 export interface SerializedLineBreakNode {
   type: 'linebreak';
   /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */

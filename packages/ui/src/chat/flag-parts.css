@@ -21,7 +21,7 @@
     overflow: hidden;
     white-space: pre-wrap;
     overflow-wrap: break-word;
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-size: 10px;
     line-height: 1.375;
     opacity: 0.9;

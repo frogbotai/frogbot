@@ -68,7 +68,7 @@
     overflow: hidden;
     white-space: pre-wrap;
     overflow-wrap: break-word;
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-size: 0.625rem;
     line-height: 1.375;
     -webkit-box-orient: vertical;

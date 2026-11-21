@@ -31,7 +31,7 @@ Read the [root contribution guide](../../CONTRIBUTING.md) first for shared codin
 - Do not add Tailwind, variant utilities, styling dependencies, component dark-mode selectors, or media-query theme overrides.
 - Preserve external `className` values with plain string concatenation.
 - Wrap every rule in a new CSS file in `@layer frogbot { … }`.
-- Define non-color tokens only in the `@layer theme.frogbot` `:root` block in `src/styles.css`. Colors use the [color tokens](../../CONTRIBUTING.md#domain-rules); dark mode comes from them, never from `light-dark()` or `[data-theme]` selectors in component CSS.
+- Define tokens only in `src/theme.css`. Colors use the [color tokens](../../CONTRIBUTING.md#domain-rules); dark mode comes from them, never from `light-dark()` or `[data-theme]` selectors in component CSS.
 - Don't add top-level `@layer` order statements outside `src/layers.css`.
 
 ## Firmware Ports
