@@ -82,7 +82,7 @@
   :where(code, kbd, samp, pre):where([data-fb-ui] *, [class^="fb-"], [class*=" fb-"]):where(
       :not([data-fb-ui-page] *)
     ) {
-    font-family: var(--font-mono);
+    font-family: var(--fb-font-mono);
     font-feature-settings: normal;
     font-variation-settings: normal;
     font-size: 1em;

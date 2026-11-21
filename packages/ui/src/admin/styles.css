@@ -10,6 +10,11 @@
 @import "./views/List/ListView.css";
 
 @layer frogbot {
+  /* Payload hovers this row on a plain fill but colors it for a brand fill; FrogBot's brand ink is dark. */
+  .user-menu__submenu-header-row {
+    --popup-item-color-hover: var(--color-text);
+  }
+
   .frogbot-chat-view {
     color: var(--color-text);
     height: calc(100dvh - var(--app-header-height));

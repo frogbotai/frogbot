@@ -377,6 +377,7 @@ const testProjects = [
     testMatch: [
       'customField.browser.spec.ts',
       'adminTheme.browser.spec.ts',
+      'themeOverrides.browser.spec.ts',
       'cssLayers.browser.spec.ts',
       'recordPanelSlots.browser.spec.ts',
       'sidePanelMatrix.browser.spec.ts',

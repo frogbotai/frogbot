@@ -96,43 +96,6 @@
 @import "./chat/working.css";
 @import "./nav/nav.css";
 
-@layer theme.frogbot {
-  :root {
-    --fb-text-xs: 0.75rem;
-    --fb-text-xs--line-height: 1rem;
-    --fb-text-sm: 0.875rem;
-    --fb-text-sm--line-height: 1.5rem;
-    --fb-text-base: 1rem;
-    --fb-text-base--line-height: 1.75rem;
-    --fb-text-lg: 1.125rem;
-    --fb-text-lg--line-height: 1.625rem;
-    --fb-text-xl: 1.25rem;
-    --fb-text-xl--line-height: 1.625rem;
-    --fb-text-2xl: 1.5rem;
-    --fb-text-2xl--line-height: 2rem;
-    --fb-text-3xl: 2rem;
-    --fb-text-3xl--line-height: 2.5rem;
-    --fb-text-4xl: 2.25rem;
-    --fb-text-4xl--line-height: 2.75rem;
-    --fb-text-5xl: 3rem;
-    --fb-text-5xl--line-height: 3rem;
-    --fb-radius: 0.5rem;
-    --fb-radius-sm: calc(var(--fb-radius) - 4px);
-    --fb-radius-md: calc(var(--fb-radius) - 2px);
-    --fb-radius-lg: var(--fb-radius);
-    --fb-radius-xl: calc(var(--fb-radius) + 4px);
-    /* Payload's regular text, raised from 12px to 14px; FrogBot's own pages read it too. */
-    --text-body-medium-font-size: 0.875rem;
-    --text-body-medium-line-height: 1.25rem;
-    --text-body-medium-bold-font-size: 0.875rem;
-    --text-body-medium-bold-line-height: 1.25rem;
-  }
-
-  :where(html:not([data-fb-ui-page])) {
-    --font-body: Inter, sans-serif;
-  }
-}
-
 @layer frogbot {
   .fb-portal {
     display: contents;
