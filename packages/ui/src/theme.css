@@ -685,13 +685,13 @@
     --fb-text-lg: var(--text-lg);
     --fb-text-lg--line-height: 1.625rem;
     --fb-text-xl: var(--text-xl);
-    --fb-text-xl--line-height: 1.625rem;
+    --fb-text-xl--line-height: 1.75rem;
     --fb-text-2xl: var(--text-2xl);
     --fb-text-2xl--line-height: 2rem;
     --fb-text-3xl: var(--text-3xl);
-    --fb-text-3xl--line-height: 2.5rem;
+    --fb-text-3xl--line-height: 2.25rem;
     --fb-text-4xl: var(--text-4xl);
-    --fb-text-4xl--line-height: 2.75rem;
+    --fb-text-4xl--line-height: 2.5rem;
     --fb-text-5xl: var(--text-5xl);
     --fb-text-5xl--line-height: 3rem;
 
