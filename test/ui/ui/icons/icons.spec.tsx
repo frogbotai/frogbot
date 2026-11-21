@@ -58,6 +58,7 @@ const iconNames = [
   'KeyRoundIcon',
   'PencilIcon',
   'BrandFacebookIcon',
+  'BrandFrogBotHeadIcon',
   'BrandFrogBotIcon',
   'FileIcon',
   'FirmwareFavicon',
