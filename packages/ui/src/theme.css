@@ -125,8 +125,6 @@
     --popover: var(--neutral-white);
     --popover-foreground: var(--neutral-950);
     --primary: var(--green-400);
-    --primary-hover: var(--green-300);
-    --primary-pressed: var(--green-500);
     --primary-foreground: var(--green-950);
     --secondary: var(--neutral-100);
     --secondary-foreground: var(--neutral-950);
@@ -160,6 +158,7 @@
     --sidebar-ring: var(--green-700);
   }
 
+  /* Dark sets only the roles that change, so a role set once on :root reaches every dark section. */
   [data-theme="dark"] {
     --background: var(--neutral-950);
     --foreground: var(--neutral-100);
@@ -167,10 +166,6 @@
     --card-foreground: var(--neutral-100);
     --popover: var(--neutral-700);
     --popover-foreground: var(--neutral-100);
-    --primary: var(--green-400);
-    --primary-hover: var(--green-300);
-    --primary-pressed: var(--green-500);
-    --primary-foreground: var(--green-950);
     --secondary: var(--neutral-800);
     --secondary-foreground: var(--neutral-100);
     --muted: var(--neutral-800);
@@ -188,24 +183,38 @@
     --border: var(--neutral-700);
     --input: var(--neutral-600);
     --ring: var(--green-400);
-    --chart-1: var(--green-400);
     --chart-2: var(--blue-400);
     --chart-3: var(--violet-400);
     --chart-4: var(--amber-400);
     --chart-5: var(--neutral-400);
     --sidebar: var(--neutral-900);
     --sidebar-foreground: var(--neutral-100);
-    --sidebar-primary: var(--green-400);
-    --sidebar-primary-foreground: var(--green-950);
     --sidebar-accent: var(--neutral-800);
     --sidebar-accent-foreground: var(--neutral-100);
     --sidebar-border: var(--neutral-700);
     --sidebar-ring: var(--green-400);
   }
 
+  /* Payload's high-contrast setting: stronger secondary text and borders. Roles, not in Figma yet. */
+  html[data-enhanced-contrast],
+  html[data-enhanced-contrast] [data-theme="light"] {
+    --muted-foreground: var(--neutral-700);
+    --disabled-foreground: var(--neutral-600);
+    --input: var(--neutral-500);
+    --border: var(--input);
+  }
+
+  html[data-enhanced-contrast][data-theme="dark"],
+  html[data-enhanced-contrast] [data-theme="dark"] {
+    --muted-foreground: var(--neutral-300);
+    --disabled-foreground: var(--neutral-400);
+    --input: var(--neutral-400);
+    --border: var(--input);
+  }
+
   /* ───── 3. Type, spacing, radius (Tailwind and shadcn names) ───── */
   :root {
-    --font-mono: "JetBrains Mono", monospace;
+    --fb-font-mono: "JetBrains Mono", monospace; /* FrogBot's own name: Tailwind sets --font-mono */
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
@@ -237,6 +246,10 @@
   /* ───── 4. Payload map: colors ───── */
   :root,
   [data-theme] {
+    /* mixed in every section, so a --primary set on any [data-theme] gets matching states */
+    --primary-hover: color-mix(in srgb, var(--primary), white 16%);
+    --primary-pressed: color-mix(in srgb, var(--primary), black 11%);
+
     /* --background */
     --color-bg: var(--background); /* was #ffffff | #2c2c2c */
     --color-icon-oncomponent: var(--background); /* was #ffffff */
@@ -254,13 +267,11 @@
     --color-text-oninverse-secondary: var(
       --background
     ); /* was rgba(255, 255, 255, 0.8) | rgba(0, 0, 0, 0.8) */
-    --color-text-ontooltip: var(--background); /* was rgba(255, 255, 255, 0.9) */
 
     /* --foreground */
     --color-bg-inverse: var(--foreground); /* was #2c2c2c | #ffffff */
     --color-bg-inverse-hover: var(--foreground); /* was #383838 | #f5f5f5 */
     --color-bg-inverse-pressed: var(--foreground); /* was #444444 | #e6e6e6 */
-    --color-bg-tooltip: var(--foreground); /* was #1e1e1e */
     --color-icon: var(--foreground); /* was rgba(0, 0, 0, 0.9) | #ffffff */
     --color-icon-hover: var(--foreground); /* was rgba(0, 0, 0, 0.9) | #ffffff */
     --color-icon-secondary-hover: var(--foreground); /* was rgba(0, 0, 0, 0.9) | #ffffff */
@@ -273,6 +284,10 @@
     /* --popover */
     --color-bg-elevated: var(--popover); /* was #ffffff | #1e1e1e */
     --color-bg-menu: var(--popover); /* was #1e1e1e */
+    --color-bg-tooltip: var(--popover); /* was #1e1e1e: Payload draws tooltips and menus alike */
+
+    /* --popover-foreground */
+    --color-text-ontooltip: var(--popover-foreground); /* was rgba(255, 255, 255, 0.9) */
 
     /* --muted */
     --color-bg-secondary: var(--muted); /* was #f5f5f5 | #383838 */
@@ -519,7 +534,7 @@
 
   /* ───── 5. Payload map: type, spacing, radius ───── */
   :root {
-    --text-mono-family: var(--font-mono); /* was Roboto Mono */
+    --text-mono-family: var(--fb-font-mono); /* was Roboto Mono */
     --text-mono-small-font-size: 0.75rem; /* was 11px: Figma Code/S 12/18 */
     --text-mono-small-line-height: 1.125rem; /* was 18px */
     --text-mono-medium-font-size: 0.875rem; /* was 13px: Figma Code/M 14/22 */
@@ -540,11 +555,11 @@
 
     /* body medium: was 12/16px */
     --text-body-medium-font-size: var(--text-sm);
-    --text-body-medium-line-height: var(--text-sm--line-height);
+    --text-body-medium-line-height: 1.25rem;
     --text-body-medium-font-weight: var(--font-weight-normal);
     --text-body-medium-letter-spacing: 0;
     --text-body-medium-bold-font-size: var(--text-sm);
-    --text-body-medium-bold-line-height: var(--text-sm--line-height);
+    --text-body-medium-bold-line-height: 1.25rem;
     --text-body-medium-bold-font-weight: var(--font-weight-medium);
     --text-body-medium-bold-letter-spacing: 0;
     --text-body-medium-paragraph-font-size: var(--text-sm);
@@ -655,17 +670,46 @@
     --button-radius: 9999px; /* was 5px: Figma buttons are pills */
     --field-border-radius: calc(var(--radius) + 4px); /* was 5px: Figma fields use radius/lg */
     --fb-radius: var(--radius); /* FrogBot UI's radius */
+    --fb-radius-sm: calc(var(--fb-radius) - 4px);
+    --fb-radius-md: calc(var(--fb-radius) - 2px);
+    --fb-radius-lg: var(--fb-radius);
+    --fb-radius-xl: calc(var(--fb-radius) + 4px);
+
+    /* FrogBot UI's type: Tailwind's sizes, FrogBot's line heights for reading */
+    --fb-text-xs: var(--text-xs);
+    --fb-text-xs--line-height: 1rem;
+    --fb-text-sm: var(--text-sm);
+    --fb-text-sm--line-height: 1.5rem;
+    --fb-text-base: var(--text-base);
+    --fb-text-base--line-height: 1.75rem;
+    --fb-text-lg: var(--text-lg);
+    --fb-text-lg--line-height: 1.625rem;
+    --fb-text-xl: var(--text-xl);
+    --fb-text-xl--line-height: 1.625rem;
+    --fb-text-2xl: var(--text-2xl);
+    --fb-text-2xl--line-height: 2rem;
+    --fb-text-3xl: var(--text-3xl);
+    --fb-text-3xl--line-height: 2.5rem;
+    --fb-text-4xl: var(--text-4xl);
+    --fb-text-4xl--line-height: 2.75rem;
+    --fb-text-5xl: var(--text-5xl);
+    --fb-text-5xl--line-height: 3rem;
 
     --nav-width: var(--sidebar-width); /* was 275px */
+  }
+
+  /* The admin's text font, for pages without the admin (the admin loads Inter itself). */
+  :where(html:not([data-fb-ui-page])) {
+    --font-body: Inter, sans-serif;
   }
 }
 
 /*
  * The admin loads Roboto Mono through a class on <html> that sets --font-family-mono outside any
- * layer, so the code font is pointed at --font-mono here, outside the layers, with a stronger selector.
+ * layer, so the code font is pointed at --fb-font-mono here, outside the layers, with a stronger selector.
  */
 html:root {
-  --font-family-mono: var(--font-mono);
+  --font-family-mono: var(--fb-font-mono);
 }
 
 /*

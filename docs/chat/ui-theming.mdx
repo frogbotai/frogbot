@@ -15,7 +15,7 @@ FrogBot's theme is a set of CSS variables with [shadcn/ui](https://ui.shadcn.com
 }
 ```
 
-With Tailwind CSS v4, set the same variables in `@theme static`. Tailwind drops `@theme` values that no utility uses, so they need `static`.
+With Tailwind CSS v4, set the same variables in `@theme static`. Tailwind drops `@theme` values that no utility uses, so they need `static`. Values are full CSS colors, such as `oklch(…)` or `#60a5fa`.
 
 ## Color tokens
 
@@ -28,7 +28,8 @@ The theme has two levels, like FrogBot's design system:
 | --- | --- | --- | --- |
 | `--background`, `--foreground` | Page and its text | white, `neutral-950` | `neutral-950`, `neutral-100` |
 | `--card`, `--popover` (and `-foreground`) | Raised panels, menus and dialogs | white | `neutral-900`, `neutral-700` |
-| `--primary` (`-hover`, `-pressed`) | Primary buttons, checked checkboxes, the chat's send button | `green-400` | `green-400` |
+| `--primary` | Primary buttons, checked checkboxes, the chat's send button | `green-400` | `green-400` |
+| `--primary-hover`, `--primary-pressed` | Hover and pressed fills, mixed from `--primary` | | |
 | `--primary-foreground` | Text and icons on a primary fill | `green-950` | `green-950` |
 | `--brand`, `--brand-subtle`, `--brand-subtle-hover` | Brand text, selected rows and their tint | `green-700`, `green-100` | `green-400`, `green-900` |
 | `--secondary`, `--muted`, `--accent` (and `-foreground`) | Secondary buttons, quiet panels, hover and pressed states | `neutral-50` to `-100` | `neutral-700` to `-800` |
@@ -87,11 +88,11 @@ FrogBot sets the regular text size to 14px, in the admin panel (where it raises 
 }
 ```
 
-Code uses JetBrains Mono, in the admin and on your own pages. It comes with `@frogbotai/ui/styles.css` and downloads only on pages that show code. To use another code font, set `--font-mono` on `:root`:
+Code uses JetBrains Mono, in the admin and on your own pages. It comes with `@frogbotai/ui/styles.css` and downloads only on pages that show code. To use another code font, set `--fb-font-mono` on `:root`. FrogBot doesn't read `--font-mono`, so Tailwind's own code font doesn't change FrogBot's:
 
 ```css
 :root {
-  --font-mono: 'Fira Code', monospace;
+  --fb-font-mono: 'Fira Code', monospace;
 }
 ```
 
@@ -111,7 +112,7 @@ The composer's animated rainbow ring is a reusable block. Put `fb-glow` on a wra
 
 ## Light and dark modes
 
-Light values are set on `:root` and dark values on `[data-theme='dark']`. A value you set on `:root` applies in light mode, and in dark mode too unless dark mode sets that token. To set a dark value, set it on `[data-theme='dark']`:
+Light values are set on `:root` and dark values on `[data-theme='dark']`. Dark mode sets only the roles whose value changes, so `--primary`, `--primary-foreground` and the hover and pressed fills set on `:root` apply in both modes. To set a dark value, set it on `[data-theme='dark']`:
 
 ```css
 :root {
@@ -124,6 +125,8 @@ Light values are set on `:root` and dark values on `[data-theme='dark']`. A valu
 ```
 
 A ramp you override on `:root` applies in both modes, because the dark tokens read the same ramps.
+
+The admin's high-contrast setting darkens `--muted-foreground`, `--disabled-foreground`, `--border` and `--input`. A value you set for one of these yourself stays as you set it.
 
 On your own pages, `<html data-theme="dark">` turns on dark mode for the whole page. `ThemeProvider` sets it for you.
 
@@ -237,6 +240,8 @@ To use Tailwind CSS in the admin, import only its theme and utilities, after `@f
 Set the [color tokens](#color-tokens) the components read instead.
 
 To change colors at runtime, for example per tenant, set the CSS variables on `document.documentElement` yourself.
+
+The admin's `--ramp-*` variables and `--font-family-mono` no longer change its colors or code font, which now read FrogBot's tokens. Set the [ramps and roles](#color-tokens) and `--fb-font-mono` instead.
 
 <Warning>
   Internal utility classes can change between releases and are not public API. Do not use them for white-label overrides.

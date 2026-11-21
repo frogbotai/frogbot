@@ -189,14 +189,6 @@ const rules = parseRules(stripComments(readFileSync(stylesPath, 'utf8')));
 const adminNames = readDeclaredNames(resolveFrom('packages/next', '@payloadcms/next/css'));
 const tailwindNames = readDeclaredNames(resolveFrom('examples/tailwind', 'tailwindcss/theme.css'));
 
-function findRule(selector: string): CssRule {
-  const rule = rules.find((candidate) => candidate.selectors.includes(selector));
-
-  if (!rule) throw new Error(`No rule for ${selector}`);
-
-  return rule;
-}
-
 const frogbotCssFiles = [
   stylesPath,
   ...readImports(stylesPath).filter((path) => !layerOrderFiles.includes(path)),
@@ -341,16 +333,20 @@ describe('FrogBot theme tokens', () => {
       expect(outside[0].properties).toEqual(['--font-family-mono']);
     });
 
-    it('declares the same roles in light and dark', () => {
+    it('declares in dark only roles light declares, and only where the value changes', () => {
+      const same = dark.properties.filter(
+        (name) => light.declarations.get(name) === dark.declarations.get(name),
+      );
+
       expect(light.properties.length).toBeGreaterThan(30);
-      expect([...light.properties].sort()).toEqual([...dark.properties].sort());
+      expect(dark.properties.filter((name) => !light.declarations.has(name))).toEqual([]);
+      expect(same).toEqual([]);
     });
 
     it('draws text on the green fill in dark ink, never white, light and dark', () => {
-      for (const theme of [light, dark]) {
-        expect(theme.declarations.get('--primary')).toBe('var(--green-400)');
-        expect(theme.declarations.get('--primary-foreground')).toBe('var(--green-950)');
-      }
+      expect(light.declarations.get('--primary')).toBe('var(--green-400)');
+      expect(light.declarations.get('--primary-foreground')).toBe('var(--green-950)');
+      expect(dark.declarations.has('--primary-foreground')).toBe(false);
 
       for (const name of [
         '--color-text-onbrand',
@@ -428,14 +424,16 @@ describe('FrogBot theme tokens', () => {
       expect(
         themeRules
           .flatMap((rule) => [...rule.declarations])
-          .filter(([name]) => name === '--font-mono'),
-      ).toEqual([['--font-mono', '"JetBrains Mono", monospace']]);
+          .filter(([name]) => name === '--fb-font-mono'),
+      ).toEqual([['--fb-font-mono', '"JetBrains Mono", monospace']]);
       expect(
         themeRules
           .find((rule) => rule.declarations.has('--text-mono-family'))
           ?.declarations.get('--text-mono-family'),
-      ).toBe('var(--font-mono)');
-      expect(ruleFor('html:root').declarations.get('--font-family-mono')).toBe('var(--font-mono)');
+      ).toBe('var(--fb-font-mono)');
+      expect(ruleFor('html:root').declarations.get('--font-family-mono')).toBe(
+        'var(--fb-font-mono)',
+      );
     });
   });
 
@@ -462,15 +460,12 @@ describe('FrogBot theme tokens', () => {
     expect(shared).toEqual([]);
   });
 
-  it('defines its own tokens once, on the page, in theme.frogbot', () => {
+  it('declares no token in styles.css itself: theme.css owns them', () => {
     const tokenRules = rules.filter((rule) =>
       rule.properties.some((name) => name.startsWith('--')),
     );
 
-    expect(tokenRules.map(({ layer, media, selectors }) => ({ layer, media, selectors }))).toEqual([
-      { layer: 'theme.frogbot', media: undefined, selectors: [':root'] },
-      { layer: 'theme.frogbot', media: undefined, selectors: [pageSelector] },
-    ]);
+    expect(tokenRules).toEqual([]);
   });
 
   it('declares no token on a FrogBot wrapper', () => {
@@ -482,23 +477,24 @@ describe('FrogBot theme tokens', () => {
     expect(wrapperTokens).toEqual([]);
   });
 
-  it("page-level tokens declare no admin or Tailwind custom property but the admin's body text size", () => {
-    const clashes = findRule(':root').properties.filter(
-      (name) =>
-        (adminNames.has(name) && !name.startsWith('--text-body-medium-')) ||
-        tailwindNames.has(name),
-    );
+  it("reads the admin's body text size from Tailwind's --text-sm", () => {
+    const themeRules = parseRules(stripComments(readFileSync(themePath, 'utf8')));
+    const sizes = themeRules.find((rule) => rule.declarations.has('--text-body-medium-font-size'));
 
-    expect(adminNames.has('--color-border')).toBe(true);
-    expect(clashes).toEqual([]);
+    expect(sizes?.declarations.get('--text-body-medium-font-size')).toBe('var(--text-sm)');
+    expect(sizes?.declarations.get('--text-body-medium-bold-font-size')).toBe('var(--text-sm)');
   });
 
   it("supplies the admin's body font only outside the admin", () => {
+    const themeRules = parseRules(stripComments(readFileSync(themePath, 'utf8')));
+
     expect(adminNames.has('--font-body')).toBe(true);
-    expect(findRule(pageSelector).properties).toEqual(['--font-body']);
+    expect(themeRules.find((rule) => rule.selectors.includes(pageSelector))?.properties).toEqual([
+      '--font-body',
+    ]);
   });
 
-  it("leaves the root font size alone and raises the admin's body text to 14px", () => {
+  it('leaves the root font size alone', () => {
     const files = [
       ...new Set([...frogbotCssFiles, ...listCssFiles(join(root, 'packages/ui/src'))]),
     ];
@@ -510,14 +506,8 @@ describe('FrogBot theme tokens', () => {
         .map(() => relative(root, file)),
     );
 
-    const page = parseRules(stripComments(readFileSync(stylesPath, 'utf8'))).find(
-      (rule) => rule.layer === 'theme.frogbot' && rule.selectors.includes(':root'),
-    );
-
     expect(rootFontSizes).toEqual([]);
     expect(adminNames.has('--text-body-medium-font-size')).toBe(true);
-    expect(page?.declarations.get('--text-body-medium-font-size')).toBe('0.875rem');
-    expect(page?.declarations.get('--text-body-medium-bold-font-size')).toBe('0.875rem');
   });
 
   it('keeps font-family and color on the wrapper rule only', () => {

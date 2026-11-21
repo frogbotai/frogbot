@@ -7,9 +7,9 @@
     padding-inline: var(--spacer-2, 0.5rem);
     overflow-wrap: break-word;
     border-radius: var(--radius-medium, 0.3125rem);
-    background-color: var(--color-bg-tooltip);
+    background-color: var(--color-bg-inverse);
     box-shadow: var(--elevation-300-tooltip);
-    color: var(--color-text-ontooltip);
+    color: var(--color-text-oninverse);
     pointer-events: none;
     font-family: var(--font-body);
     font-size: var(--text-body-medium-font-size);
@@ -26,13 +26,13 @@
   }
 
   .fb-tooltip__caret-fill {
-    fill: var(--color-bg-tooltip);
-    stroke: var(--color-bg-tooltip);
+    fill: var(--color-bg-inverse);
+    stroke: var(--color-bg-inverse);
   }
 
   .fb-tooltip__caret-stroke {
     fill: none;
-    stroke: color-mix(in srgb, var(--color-text-ontooltip) 12%, var(--color-bg-tooltip));
+    stroke: color-mix(in srgb, var(--color-text-oninverse) 12%, var(--color-bg-inverse));
     stroke-width: 1.5px;
   }
 
