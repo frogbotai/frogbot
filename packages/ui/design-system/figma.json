@@ -1,0 +1,749 @@
+{
+  "file": "SX483mR8PAHG5zZ1GL4pgi",
+  "collections": {
+    "Primitives": {
+      "amber/100": {
+        "Value": "#fef3c7"
+      },
+      "amber/200": {
+        "Value": "#fde68a"
+      },
+      "amber/300": {
+        "Value": "#fcd34d"
+      },
+      "amber/400": {
+        "Value": "#fbbf24"
+      },
+      "amber/50": {
+        "Value": "#fffbeb"
+      },
+      "amber/500": {
+        "Value": "#f59e0b"
+      },
+      "amber/600": {
+        "Value": "#d97706"
+      },
+      "amber/700": {
+        "Value": "#b45309"
+      },
+      "amber/800": {
+        "Value": "#92400e"
+      },
+      "amber/900": {
+        "Value": "#78350f"
+      },
+      "amber/950": {
+        "Value": "#451a03"
+      },
+      "blue/100": {
+        "Value": "#dbeafe"
+      },
+      "blue/200": {
+        "Value": "#bfdbfe"
+      },
+      "blue/300": {
+        "Value": "#93c5fd"
+      },
+      "blue/400": {
+        "Value": "#60a5fa"
+      },
+      "blue/50": {
+        "Value": "#eff6ff"
+      },
+      "blue/500": {
+        "Value": "#3b82f6"
+      },
+      "blue/600": {
+        "Value": "#2563eb"
+      },
+      "blue/700": {
+        "Value": "#1d4ed8"
+      },
+      "blue/800": {
+        "Value": "#1e40af"
+      },
+      "blue/900": {
+        "Value": "#1e3a8a"
+      },
+      "blue/950": {
+        "Value": "#172554"
+      },
+      "green/100": {
+        "Value": "#d1f0db"
+      },
+      "green/200": {
+        "Value": "#a0ddb4"
+      },
+      "green/300": {
+        "Value": "#5be084"
+      },
+      "green/400": {
+        "Value": "#3acf6a"
+      },
+      "green/50": {
+        "Value": "#ebfaf0"
+      },
+      "green/500": {
+        "Value": "#2fb85c"
+      },
+      "green/600": {
+        "Value": "#22903f"
+      },
+      "green/700": {
+        "Value": "#166d30"
+      },
+      "green/800": {
+        "Value": "#114c25"
+      },
+      "green/900": {
+        "Value": "#0d2b1a"
+      },
+      "green/950": {
+        "Value": "#04210d"
+      },
+      "neutral/100": {
+        "Value": "#e6e9ef"
+      },
+      "neutral/200": {
+        "Value": "#d6dae2"
+      },
+      "neutral/300": {
+        "Value": "#b4b9c4"
+      },
+      "neutral/400": {
+        "Value": "#8a8f99"
+      },
+      "neutral/50": {
+        "Value": "#f5f6f9"
+      },
+      "neutral/500": {
+        "Value": "#6a7084"
+      },
+      "neutral/600": {
+        "Value": "#363e52"
+      },
+      "neutral/700": {
+        "Value": "#202738"
+      },
+      "neutral/800": {
+        "Value": "#141a2a"
+      },
+      "neutral/900": {
+        "Value": "#0e1422"
+      },
+      "neutral/950": {
+        "Value": "#090e1b"
+      },
+      "neutral/black": {
+        "Value": "#050912"
+      },
+      "neutral/white": {
+        "Value": "#ffffff"
+      },
+      "red/100": {
+        "Value": "#fee2e2"
+      },
+      "red/200": {
+        "Value": "#fecaca"
+      },
+      "red/300": {
+        "Value": "#fca5a5"
+      },
+      "red/400": {
+        "Value": "#f87171"
+      },
+      "red/50": {
+        "Value": "#fef2f2"
+      },
+      "red/500": {
+        "Value": "#ef4444"
+      },
+      "red/600": {
+        "Value": "#dc2626"
+      },
+      "red/700": {
+        "Value": "#b91c1c"
+      },
+      "red/800": {
+        "Value": "#991b1b"
+      },
+      "red/900": {
+        "Value": "#7f1d1d"
+      },
+      "red/950": {
+        "Value": "#450a0a"
+      },
+      "violet/100": {
+        "Value": "#ede9fe"
+      },
+      "violet/200": {
+        "Value": "#ddd6fe"
+      },
+      "violet/300": {
+        "Value": "#c4b5fd"
+      },
+      "violet/400": {
+        "Value": "#a78bfa"
+      },
+      "violet/50": {
+        "Value": "#f5f3ff"
+      },
+      "violet/500": {
+        "Value": "#8b5cf6"
+      },
+      "violet/600": {
+        "Value": "#7c3aed"
+      },
+      "violet/700": {
+        "Value": "#6d28d9"
+      },
+      "violet/800": {
+        "Value": "#5b21b6"
+      },
+      "violet/900": {
+        "Value": "#4c1d95"
+      },
+      "violet/950": {
+        "Value": "#2e1065"
+      }
+    },
+    "Color": {
+      "accent": {
+        "Light": {
+          "alias": "neutral/100"
+        },
+        "Dark": {
+          "alias": "neutral/700"
+        }
+      },
+      "accent-foreground": {
+        "Light": {
+          "alias": "neutral/950"
+        },
+        "Dark": {
+          "alias": "neutral/100"
+        }
+      },
+      "background": {
+        "Light": {
+          "alias": "neutral/white"
+        },
+        "Dark": {
+          "alias": "neutral/950"
+        }
+      },
+      "border": {
+        "Light": {
+          "alias": "neutral/200"
+        },
+        "Dark": {
+          "alias": "neutral/700"
+        }
+      },
+      "brand": {
+        "Light": {
+          "alias": "green/700"
+        },
+        "Dark": {
+          "alias": "green/400"
+        }
+      },
+      "brand-subtle": {
+        "Light": {
+          "alias": "green/100"
+        },
+        "Dark": {
+          "alias": "green/900"
+        }
+      },
+      "brand-subtle-hover": {
+        "Light": {
+          "alias": "green/200"
+        },
+        "Dark": {
+          "alias": "green/800"
+        }
+      },
+      "card": {
+        "Light": {
+          "alias": "neutral/white"
+        },
+        "Dark": {
+          "alias": "neutral/900"
+        }
+      },
+      "card-foreground": {
+        "Light": {
+          "alias": "neutral/950"
+        },
+        "Dark": {
+          "alias": "neutral/100"
+        }
+      },
+      "chart-1": {
+        "Light": {
+          "alias": "green/400"
+        },
+        "Dark": {
+          "alias": "green/400"
+        }
+      },
+      "chart-2": {
+        "Light": {
+          "alias": "blue/700"
+        },
+        "Dark": {
+          "alias": "blue/400"
+        }
+      },
+      "chart-3": {
+        "Light": {
+          "alias": "violet/700"
+        },
+        "Dark": {
+          "alias": "violet/400"
+        }
+      },
+      "chart-4": {
+        "Light": {
+          "alias": "amber/700"
+        },
+        "Dark": {
+          "alias": "amber/400"
+        }
+      },
+      "chart-5": {
+        "Light": {
+          "alias": "neutral/500"
+        },
+        "Dark": {
+          "alias": "neutral/400"
+        }
+      },
+      "destructive": {
+        "Light": {
+          "alias": "red/700"
+        },
+        "Dark": {
+          "alias": "red/400"
+        }
+      },
+      "disabled-foreground": {
+        "Light": {
+          "alias": "neutral/400"
+        },
+        "Dark": {
+          "alias": "neutral/500"
+        }
+      },
+      "foreground": {
+        "Light": {
+          "alias": "neutral/950"
+        },
+        "Dark": {
+          "alias": "neutral/100"
+        }
+      },
+      "info": {
+        "Light": {
+          "alias": "blue/700"
+        },
+        "Dark": {
+          "alias": "blue/400"
+        }
+      },
+      "input": {
+        "Light": {
+          "alias": "neutral/300"
+        },
+        "Dark": {
+          "alias": "neutral/600"
+        }
+      },
+      "muted": {
+        "Light": {
+          "alias": "neutral/50"
+        },
+        "Dark": {
+          "alias": "neutral/800"
+        }
+      },
+      "muted-foreground": {
+        "Light": {
+          "alias": "neutral/500"
+        },
+        "Dark": {
+          "alias": "neutral/400"
+        }
+      },
+      "popover": {
+        "Light": {
+          "alias": "neutral/white"
+        },
+        "Dark": {
+          "alias": "neutral/700"
+        }
+      },
+      "popover-foreground": {
+        "Light": {
+          "alias": "neutral/950"
+        },
+        "Dark": {
+          "alias": "neutral/100"
+        }
+      },
+      "primary": {
+        "Light": {
+          "alias": "green/400"
+        },
+        "Dark": {
+          "alias": "green/400"
+        }
+      },
+      "primary-foreground": {
+        "Light": {
+          "alias": "green/950"
+        },
+        "Dark": {
+          "alias": "green/950"
+        }
+      },
+      "primary-hover": {
+        "Light": {
+          "alias": "green/300"
+        },
+        "Dark": {
+          "alias": "green/300"
+        }
+      },
+      "primary-pressed": {
+        "Light": {
+          "alias": "green/500"
+        },
+        "Dark": {
+          "alias": "green/500"
+        }
+      },
+      "ring": {
+        "Light": {
+          "alias": "green/700"
+        },
+        "Dark": {
+          "alias": "green/400"
+        }
+      },
+      "secondary": {
+        "Light": {
+          "alias": "neutral/100"
+        },
+        "Dark": {
+          "alias": "neutral/800"
+        }
+      },
+      "secondary-foreground": {
+        "Light": {
+          "alias": "neutral/950"
+        },
+        "Dark": {
+          "alias": "neutral/100"
+        }
+      },
+      "sidebar": {
+        "Light": {
+          "alias": "neutral/50"
+        },
+        "Dark": {
+          "alias": "neutral/900"
+        }
+      },
+      "sidebar-accent": {
+        "Light": {
+          "alias": "neutral/100"
+        },
+        "Dark": {
+          "alias": "neutral/800"
+        }
+      },
+      "sidebar-accent-foreground": {
+        "Light": {
+          "alias": "neutral/950"
+        },
+        "Dark": {
+          "alias": "neutral/100"
+        }
+      },
+      "sidebar-border": {
+        "Light": {
+          "alias": "neutral/200"
+        },
+        "Dark": {
+          "alias": "neutral/700"
+        }
+      },
+      "sidebar-foreground": {
+        "Light": {
+          "alias": "neutral/950"
+        },
+        "Dark": {
+          "alias": "neutral/100"
+        }
+      },
+      "sidebar-primary": {
+        "Light": {
+          "alias": "green/400"
+        },
+        "Dark": {
+          "alias": "green/400"
+        }
+      },
+      "sidebar-primary-foreground": {
+        "Light": {
+          "alias": "green/950"
+        },
+        "Dark": {
+          "alias": "green/950"
+        }
+      },
+      "sidebar-ring": {
+        "Light": {
+          "alias": "green/700"
+        },
+        "Dark": {
+          "alias": "green/400"
+        }
+      },
+      "success": {
+        "Light": {
+          "alias": "green/700"
+        },
+        "Dark": {
+          "alias": "green/400"
+        }
+      },
+      "warning": {
+        "Light": {
+          "alias": "amber/700"
+        },
+        "Dark": {
+          "alias": "amber/400"
+        }
+      }
+    },
+    "Spacing": {
+      "spacing/0": {
+        "Value": 0
+      },
+      "spacing/1": {
+        "Value": 4
+      },
+      "spacing/10": {
+        "Value": 40
+      },
+      "spacing/12": {
+        "Value": 48
+      },
+      "spacing/14": {
+        "Value": 56
+      },
+      "spacing/16": {
+        "Value": 64
+      },
+      "spacing/2": {
+        "Value": 8
+      },
+      "spacing/20": {
+        "Value": 80
+      },
+      "spacing/24": {
+        "Value": 96
+      },
+      "spacing/3": {
+        "Value": 12
+      },
+      "spacing/30": {
+        "Value": 120
+      },
+      "spacing/32": {
+        "Value": 128
+      },
+      "spacing/4": {
+        "Value": 16
+      },
+      "spacing/5": {
+        "Value": 20
+      },
+      "spacing/6": {
+        "Value": 24
+      },
+      "spacing/8": {
+        "Value": 32
+      }
+    },
+    "Radius": {
+      "radius/full": {
+        "Value": 9999
+      },
+      "radius/lg": {
+        "Value": 12
+      },
+      "radius/md": {
+        "Value": 8
+      },
+      "radius/none": {
+        "Value": 0
+      },
+      "radius/sm": {
+        "Value": 6
+      },
+      "radius/xl": {
+        "Value": 20
+      }
+    }
+  },
+  "textStyles": {
+    "App/Body": {
+      "family": "Inter",
+      "weight": "Regular",
+      "size": 14,
+      "lineHeight": 24
+    },
+    "App/Body Medium": {
+      "family": "Inter",
+      "weight": "Medium",
+      "size": 14,
+      "lineHeight": 20
+    },
+    "App/H1": {
+      "family": "Inter",
+      "weight": "Extra Bold",
+      "size": 36,
+      "lineHeight": 40
+    },
+    "App/H2": {
+      "family": "Inter",
+      "weight": "Semi Bold",
+      "size": 30,
+      "lineHeight": 36
+    },
+    "App/H3": {
+      "family": "Inter",
+      "weight": "Semi Bold",
+      "size": 24,
+      "lineHeight": 32
+    },
+    "App/H4": {
+      "family": "Inter",
+      "weight": "Semi Bold",
+      "size": 20,
+      "lineHeight": 28
+    },
+    "App/Large": {
+      "family": "Inter",
+      "weight": "Semi Bold",
+      "size": 18,
+      "lineHeight": 28
+    },
+    "App/Lead": {
+      "family": "Inter",
+      "weight": "Regular",
+      "size": 20,
+      "lineHeight": 28
+    },
+    "App/Small": {
+      "family": "Inter",
+      "weight": "Medium",
+      "size": 12,
+      "lineHeight": 16
+    },
+    "Code/M": {
+      "family": "JetBrains Mono",
+      "weight": "Regular",
+      "size": 14,
+      "lineHeight": 22
+    },
+    "Code/S": {
+      "family": "JetBrains Mono",
+      "weight": "Regular",
+      "size": 12,
+      "lineHeight": 18
+    },
+    "Marketing/Body/L": {
+      "family": "Funnel Sans",
+      "weight": "Regular",
+      "size": 18,
+      "lineHeight": 28
+    },
+    "Marketing/Body/M": {
+      "family": "Funnel Sans",
+      "weight": "Regular",
+      "size": 16,
+      "lineHeight": 26
+    },
+    "Marketing/Body/S": {
+      "family": "Funnel Sans",
+      "weight": "Regular",
+      "size": 14,
+      "lineHeight": 22
+    },
+    "Marketing/Caption": {
+      "family": "Funnel Sans",
+      "weight": "Medium",
+      "size": 12,
+      "lineHeight": 16
+    },
+    "Marketing/Display/L": {
+      "family": "Funnel Display",
+      "weight": "SemiBold",
+      "size": 64,
+      "lineHeight": 68
+    },
+    "Marketing/Display/M": {
+      "family": "Funnel Display",
+      "weight": "SemiBold",
+      "size": 48,
+      "lineHeight": 54
+    },
+    "Marketing/Display/XL": {
+      "family": "Funnel Display",
+      "weight": "SemiBold",
+      "size": 80,
+      "lineHeight": 84
+    },
+    "Marketing/Heading/L": {
+      "family": "Funnel Display",
+      "weight": "SemiBold",
+      "size": 40,
+      "lineHeight": 48
+    },
+    "Marketing/Heading/M": {
+      "family": "Funnel Display",
+      "weight": "SemiBold",
+      "size": 32,
+      "lineHeight": 40
+    },
+    "Marketing/Heading/S": {
+      "family": "Funnel Display",
+      "weight": "SemiBold",
+      "size": 24,
+      "lineHeight": 32
+    },
+    "Marketing/Heading/XS": {
+      "family": "Funnel Display",
+      "weight": "SemiBold",
+      "size": 20,
+      "lineHeight": 28
+    },
+    "Marketing/Label/M": {
+      "family": "Funnel Sans",
+      "weight": "SemiBold",
+      "size": 16,
+      "lineHeight": 24
+    },
+    "Marketing/Label/S": {
+      "family": "Funnel Sans",
+      "weight": "SemiBold",
+      "size": 14,
+      "lineHeight": 20
+    }
+  }
+}

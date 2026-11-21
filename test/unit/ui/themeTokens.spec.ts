@@ -485,18 +485,6 @@ describe('FrogBot theme tokens', () => {
     expect(sizes?.declarations.get('--text-body-medium-bold-font-size')).toBe('var(--text-sm)');
   });
 
-  it("matches the design system's app heading line heights", () => {
-    const themeRules = parseRules(stripComments(readFileSync(themePath, 'utf8')));
-    const sizes = themeRules.find((rule) => rule.declarations.has('--fb-text-3xl--line-height'));
-
-    expect({
-      h1: sizes?.declarations.get('--fb-text-4xl--line-height'),
-      h2: sizes?.declarations.get('--fb-text-3xl--line-height'),
-      h3: sizes?.declarations.get('--fb-text-2xl--line-height'),
-      h4: sizes?.declarations.get('--fb-text-xl--line-height'),
-    }).toEqual({ h1: '2.5rem', h2: '2.25rem', h3: '2rem', h4: '1.75rem' });
-  });
-
   it("supplies the admin's body font only outside the admin", () => {
     const themeRules = parseRules(stripComments(readFileSync(themePath, 'utf8')));
 

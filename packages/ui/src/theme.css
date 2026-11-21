@@ -4,7 +4,7 @@
  * What FrogBot exposes (what a designer or an app changes):
  *   1. Ramps: the raw colors, exactly the Figma "Primitives".
  *   2. Roles: which ramp step each job uses in light and dark, exactly the Figma "Color" collection
- *      (shadcn names). One role is NEW and not in Figma yet.
+ *      (shadcn names).
  *   3. Type, spacing and radius, with Tailwind and shadcn names.
  * How it reaches Payload (FrogBot's job, nobody else edits it):
  *   4. Every Payload color token, set from a role.
@@ -135,7 +135,7 @@
     --accent-foreground: var(--neutral-950);
     --brand: var(--green-700);
     --brand-subtle: var(--green-100);
-    --brand-subtle-hover: var(--green-200); /* NEW: not in Figma yet */
+    --brand-subtle-hover: var(--green-200);
     --destructive: var(--red-700);
     --warning: var(--amber-700);
     --success: var(--green-700);
@@ -175,7 +175,7 @@
     --accent-foreground: var(--neutral-100);
     --brand: var(--green-400);
     --brand-subtle: var(--green-900);
-    --brand-subtle-hover: var(--green-800); /* NEW: not in Figma yet */
+    --brand-subtle-hover: var(--green-800);
     --destructive: var(--red-400);
     --warning: var(--amber-400);
     --success: var(--green-400);
@@ -683,7 +683,7 @@
     --fb-text-base: var(--text-base);
     --fb-text-base--line-height: 1.75rem;
     --fb-text-lg: var(--text-lg);
-    --fb-text-lg--line-height: 1.625rem;
+    --fb-text-lg--line-height: 1.75rem;
     --fb-text-xl: var(--text-xl);
     --fb-text-xl--line-height: 1.75rem;
     --fb-text-2xl: var(--text-2xl);
